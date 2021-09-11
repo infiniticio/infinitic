@@ -30,38 +30,39 @@ import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskIndex
 import kotlinx.serialization.Serializable
 
 @Serializable
-sealed class StepStatus
+sealed class StepStatus {
 
-@Serializable
-object StepOngoing : StepStatus() {
-    override fun equals(other: Any?) = javaClass == other?.javaClass
+    @Serializable
+    object Waiting : StepStatus() {
+        override fun equals(other: Any?) = javaClass == other?.javaClass
+    }
+
+    @Serializable
+    data class Completed(
+        val returnValue: StepReturnValue,
+        val completionWorkflowTaskIndex: WorkflowTaskIndex
+    ) : StepStatus()
+
+    @Serializable
+    data class Canceled(
+        val commandId: CommandId,
+        val cancellationWorkflowTaskIndex: WorkflowTaskIndex
+    ) : StepStatus()
+
+    @Serializable
+    data class Failed(
+        val commandId: CommandId,
+        val failureWorkflowTaskIndex: WorkflowTaskIndex
+    ) : StepStatus()
+
+    /**
+     * OngoingFailure is a transient status given when the failure of a task triggers the failure of a step
+     * - if next workflowTask related to this branch run correctly (error caught in workflow code), status will eventually be Failed
+     * - if not, task can be retried and status can transition to Completed
+     */
+    @Serializable
+    data class OngoingFailure(
+        val commandId: CommandId,
+        val failureWorkflowTaskIndex: WorkflowTaskIndex
+    ) : StepStatus()
 }
-
-@Serializable
-data class StepCompleted(
-    val returnValue: StepReturnValue,
-    val completionWorkflowTaskIndex: WorkflowTaskIndex
-) : StepStatus()
-
-@Serializable
-data class StepCanceled(
-    val commandId: CommandId,
-    val cancellationWorkflowTaskIndex: WorkflowTaskIndex
-) : StepStatus()
-
-@Serializable
-data class StepFailed(
-    val commandId: CommandId,
-    val failureWorkflowTaskIndex: WorkflowTaskIndex
-) : StepStatus()
-
-/**
- * StepOngoingFailure is a transient status given when the failure of a task triggers the failure of a step
- * - if next workflowTask related to this branch run correctly (error caught in workflow code), status will eventually be StepStatusFailed
- * - if not, task can be retried and status can transition to StepCompleted
- */
-@Serializable
-data class StepOngoingFailure(
-    val commandId: CommandId,
-    val failureWorkflowTaskIndex: WorkflowTaskIndex
-) : StepStatus()

@@ -81,6 +81,7 @@ class TaskAImpl : Task(), TaskA {
         0 -> throw Exception()
         else -> "ok"
     }
+
     override fun retryTaskA(id: UUID) {
         Thread.sleep(50)
         context.client.retryTask<TaskA>(id)

@@ -516,6 +516,10 @@ internal class WorkflowTests : StringSpec({
         workflowA.failing9() shouldBe true
     }
 
+    "properties should be correctly set after a deferred cancellation" {
+        workflowA.failing10() shouldBe "ok"
+    }
+
     "child workflow is canceled when parent workflow is canceled - tag are also added and deleted" {
 
         client.async(workflowATagged) { cancel1() }.join()

@@ -28,6 +28,7 @@ package io.infinitic.tests.workflows
 import com.jayway.jsonpath.Criteria.where
 import io.infinitic.common.tasks.data.TaskMeta
 import io.infinitic.common.workflows.data.workflows.WorkflowMeta
+import io.infinitic.exceptions.workflows.CanceledDeferredException
 import io.infinitic.exceptions.workflows.FailedDeferredException
 import io.infinitic.tests.tasks.ParentInterface
 import io.infinitic.tests.tasks.TaskA
@@ -552,23 +553,20 @@ class WorkflowAImpl : Workflow(), WorkflowA {
     }
 
     override fun failing3(): Long {
-        async {
-            taskA.failing()
-        }
+        async { taskA.failing() }
 
         return taskA.await(100)
     }
 
     override fun failing3b(): Long {
-        async {
-            throw Exception()
-        }
+        async { throw Exception() }
 
         return taskA.await(100)
     }
 
     override fun failing4(): Long {
         val deferred = async(taskA) { await(1000) }
+
         taskA.cancelTaskA(deferred.id!!)
 
         return deferred.await()
@@ -620,7 +618,21 @@ class WorkflowAImpl : Workflow(), WorkflowA {
     }
 
     override fun failing10(): String {
-        return "ok"
+        p1 = "o"
+
+        val deferred = async(taskA) { await(1000) }
+
+        async { p1 += "k" }
+
+        async(taskA) { cancelTaskA(deferred.id!!) }
+
+        try {
+            deferred.await()
+        } catch (e: CanceledDeferredException) {
+            // continue
+        }
+
+        return p1 // should be "ok"
     }
 
     override fun cancel1() {

@@ -48,8 +48,8 @@ import io.infinitic.common.workflows.data.commands.StartInlineTask
 import io.infinitic.common.workflows.data.commands.StartInstantTimer
 import io.infinitic.common.workflows.data.methodRuns.MethodRun
 import io.infinitic.common.workflows.data.steps.PastStep
-import io.infinitic.common.workflows.data.steps.StepFailed
-import io.infinitic.common.workflows.data.steps.StepOngoingFailure
+import io.infinitic.common.workflows.data.steps.StepStatus.Failed
+import io.infinitic.common.workflows.data.steps.StepStatus.OngoingFailure
 import io.infinitic.common.workflows.data.timers.TimerId
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskReturnValue
 import io.infinitic.common.workflows.data.workflowTasks.plus
@@ -84,8 +84,8 @@ internal fun CoroutineScope.workflowTaskCompleted(
     methodRun.getStepByPosition(state.runningMethodRunPosition!!)
         ?.run {
             val status = stepStatus
-            if (status is StepOngoingFailure) {
-                stepStatus = StepFailed(status.commandId, status.failureWorkflowTaskIndex)
+            if (status is OngoingFailure) {
+                stepStatus = Failed(status.commandId, status.failureWorkflowTaskIndex)
             }
         }
 
@@ -125,7 +125,7 @@ internal fun CoroutineScope.workflowTaskCompleted(
                 stepPosition = it.stepPosition,
                 step = it.step,
                 stepHash = it.stepHash,
-                stepStatus = it.step.stepStatus()
+                stepStatus = it.step.status()
             )
         )
     }

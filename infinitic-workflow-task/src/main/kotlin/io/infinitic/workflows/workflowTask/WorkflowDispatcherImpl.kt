@@ -44,7 +44,7 @@ import io.infinitic.common.workflows.data.commands.Command
 import io.infinitic.common.workflows.data.commands.CommandId
 import io.infinitic.common.workflows.data.commands.CommandReturnValue
 import io.infinitic.common.workflows.data.commands.CommandSimpleName
-import io.infinitic.common.workflows.data.commands.CommandStatus.Completed
+import io.infinitic.common.workflows.data.commands.CommandStatus
 import io.infinitic.common.workflows.data.commands.CommandType
 import io.infinitic.common.workflows.data.commands.DispatchChildWorkflow
 import io.infinitic.common.workflows.data.commands.DispatchTask
@@ -64,11 +64,11 @@ import io.infinitic.common.workflows.data.properties.PropertyValue
 import io.infinitic.common.workflows.data.steps.NewStep
 import io.infinitic.common.workflows.data.steps.PastStep
 import io.infinitic.common.workflows.data.steps.Step
-import io.infinitic.common.workflows.data.steps.StepCanceled
-import io.infinitic.common.workflows.data.steps.StepCompleted
-import io.infinitic.common.workflows.data.steps.StepFailed
-import io.infinitic.common.workflows.data.steps.StepOngoing
-import io.infinitic.common.workflows.data.steps.StepOngoingFailure
+import io.infinitic.common.workflows.data.steps.StepStatus.Canceled
+import io.infinitic.common.workflows.data.steps.StepStatus.Completed
+import io.infinitic.common.workflows.data.steps.StepStatus.Failed
+import io.infinitic.common.workflows.data.steps.StepStatus.OngoingFailure
+import io.infinitic.common.workflows.data.steps.StepStatus.Waiting
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskParameters
 import io.infinitic.exceptions.thisShouldNotHappen
 import io.infinitic.exceptions.workflows.CanceledDeferredException
@@ -232,7 +232,7 @@ internal class WorkflowDispatcherImpl(
         } else {
             @Suppress("UNCHECKED_CAST")
             return when (val status = pastCommand.commandStatus) {
-                is Completed -> status.returnValue.get() as S
+                is CommandStatus.Completed -> status.returnValue.get() as S
                 else -> thisShouldNotHappen("inline task with status $status")
             }
         }
@@ -253,25 +253,29 @@ internal class WorkflowDispatcherImpl(
         )
         val pastStep = getSimilarPastStep(newStep)
 
-        // new step (eg. a logical combination of previous deferred)
+        // new step (e.g. a logical combination of previous deferred)
         if (pastStep == null) {
-            // add a new step
-            newSteps.add(newStep)
+
             // determine status
-            deferred.stepStatus = newStep.step.stepStatusAt(workflowTaskIndex)
+            deferred.stepStatus = newStep.step.statusAt(workflowTaskIndex)
 
             return when (val stepStatus = deferred.stepStatus) {
-                is StepCompleted -> stepStatus.returnValue.get() as T
-                is StepOngoing -> throw NewStepException
-                is StepCanceled -> throw CanceledDeferredException(
+                is Completed -> stepStatus.returnValue.get() as T
+                is Waiting -> {
+                    // add this step
+                    newSteps.add(newStep)
+
+                    throw NewStepException
+                }
+                is Canceled -> throw CanceledDeferredException(
                     getCommandName(stepStatus.commandId)?.toString(),
                     stepStatus.commandId.id
                 )
-                is StepFailed -> throw FailedDeferredException(
+                is Failed -> throw FailedDeferredException(
                     getCommandName(stepStatus.commandId)?.toString(),
                     stepStatus.commandId.id
                 )
-                is StepOngoingFailure -> throw FailedDeferredException(
+                is OngoingFailure -> throw FailedDeferredException(
                     getCommandName(stepStatus.commandId)?.toString(),
                     stepStatus.commandId.id
                 )
@@ -279,49 +283,69 @@ internal class WorkflowDispatcherImpl(
         }
 
         // known step
-        val stepStatus = when (val stepStatus = pastStep.stepStatus) {
-            is StepCompleted -> stepStatus
-            is StepOngoing -> throw KnownStepException
-            is StepCanceled -> throw CanceledDeferredException(
-                getCommandName(stepStatus.commandId)?.toString(),
-                stepStatus.commandId.id
-            )
-            is StepFailed -> throw FailedDeferredException(
-                getCommandName(stepStatus.commandId)?.toString(),
-                stepStatus.commandId.id
-            )
-            is StepOngoingFailure -> throw FailedDeferredException(
-                getCommandName(stepStatus.commandId)?.toString(),
-                stepStatus.commandId.id
-            )
-        }
+        val stepStatus = pastStep.stepStatus
 
-        // update deferred status (StepStatusCompleted)
+        // update deferred status
         deferred.stepStatus = stepStatus
 
-        // workflowTaskIndex is now the one where this deferred was completed
-        workflowTaskIndex = stepStatus.completionWorkflowTaskIndex
+        // if still ongoing, we stop here
+        if (stepStatus == Waiting) throw KnownStepException
 
-        // instance properties are now as when this deferred was completed
+        // instance properties are now as when this deferred was terminated
         setProperties(
             workflowTaskParameters.workflowPropertiesHashValue,
             pastStep.propertiesNameHashAtTermination!!
         )
 
         // return deferred value
-        return stepStatus.returnValue.get() as T
+        return when (stepStatus) {
+            is Waiting -> thisShouldNotHappen()
+            is Completed -> {
+                // workflowTaskIndex is now the one where this deferred was completed
+                workflowTaskIndex = stepStatus.completionWorkflowTaskIndex
+
+                stepStatus.returnValue.get() as T
+            }
+            is Canceled -> {
+                // workflowTaskIndex is now the one where this deferred was canceled
+                workflowTaskIndex = stepStatus.cancellationWorkflowTaskIndex
+
+                throw CanceledDeferredException(
+                    getCommandName(stepStatus.commandId)?.toString(),
+                    stepStatus.commandId.id
+                )
+            }
+            is Failed -> {
+                // workflowTaskIndex is now the one where this deferred was failed
+                workflowTaskIndex = stepStatus.failureWorkflowTaskIndex
+
+                throw FailedDeferredException(
+                    getCommandName(stepStatus.commandId)?.toString(),
+                    stepStatus.commandId.id
+                )
+            }
+            is OngoingFailure -> {
+                // workflowTaskIndex is now the one where this deferred was failed
+                workflowTaskIndex = stepStatus.failureWorkflowTaskIndex
+
+                throw FailedDeferredException(
+                    getCommandName(stepStatus.commandId)?.toString(),
+                    stepStatus.commandId.id
+                )
+            }
+        }
     }
 
     /*
      * Deferred status()
      */
     override fun <T> status(deferred: Deferred<T>): DeferredStatus =
-        when (deferred.step.stepStatusAt(workflowTaskIndex)) {
-            is StepOngoing -> DeferredStatus.ONGOING
-            is StepCompleted -> DeferredStatus.COMPLETED
-            is StepCanceled -> DeferredStatus.CANCELED
-            is StepFailed -> DeferredStatus.FAILED
-            is StepOngoingFailure -> DeferredStatus.FAILED
+        when (deferred.step.statusAt(workflowTaskIndex)) {
+            is Waiting -> DeferredStatus.ONGOING
+            is Completed -> DeferredStatus.COMPLETED
+            is Canceled -> DeferredStatus.CANCELED
+            is Failed -> DeferredStatus.FAILED
+            is OngoingFailure -> DeferredStatus.FAILED
         }
 
     /*
@@ -532,7 +556,7 @@ internal class WorkflowDispatcherImpl(
 
         // if it exists, check it has not changed
         if (pastStep != null && !pastStep.isSimilarTo(newStep)) {
-            logger.error { "pastStep =  $pastStep" }
+            logger.error { "pastStep = $pastStep" }
             logger.error { "newStep = $newStep" }
             throw WorkflowUpdatedWhileRunningException(
                 workflowTaskParameters.workflowName.name,
