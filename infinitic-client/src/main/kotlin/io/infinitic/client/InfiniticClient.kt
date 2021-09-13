@@ -242,28 +242,28 @@ abstract class InfiniticClient : Closeable {
         { s: S1 -> run { method.check().call(s) } }
 
     fun <S1, S2, R : Any?> dispatch(method: KFunction2<S1, S2, R>): (S1, S2) -> Deferred<R> =
-        { s1: S1, s2: S2 -> run { checkMethod(method); method(s1, s2) } }
+        { s1: S1, s2: S2 -> run { method.check().call(s1, s2) } }
 
     fun <S1, S2, S3, R : Any?> dispatch(method: KFunction3<S1, S2, S3, R>): (S1, S2, S3) -> Deferred<R> =
-        { s1: S1, s2: S2, s3: S3 -> run { checkMethod(method); method(s1, s2, s3) } }
+        { s1: S1, s2: S2, s3: S3 -> run { method.check().call(s1, s2, s3) } }
 
     fun <S1, S2, S3, S4, R : Any?> dispatch(method: KFunction4<S1, S2, S3, S4, R>): (S1, S2, S3, S4) -> Deferred<R> =
-        { s1: S1, s2: S2, s3: S3, s4: S4 -> run { checkMethod(method); method(s1, s2, s3, s4) } }
+        { s1: S1, s2: S2, s3: S3, s4: S4 -> run { method.check().call(s1, s2, s3, s4) } }
 
     fun <S1, S2, S3, S4, S5, R : Any?> dispatch(method: KFunction5<S1, S2, S3, S4, S5, R>): (S1, S2, S3, S4, S5) -> Deferred<R> =
-        { s1: S1, s2: S2, s3: S3, s4: S4, s5: S5 -> run { checkMethod(method); method(s1, s2, s3, s4, s5) } }
+        { s1: S1, s2: S2, s3: S3, s4: S4, s5: S5 -> run { method.check().call(s1, s2, s3, s4, s5) } }
 
     fun <S1, S2, S3, S4, S5, S6, R : Any?> dispatch(method: KFunction6<S1, S2, S3, S4, S5, S6, R>): (S1, S2, S3, S4, S5, S6) -> Deferred<R> =
-        { s1: S1, s2: S2, s3: S3, s4: S4, s5: S5, s6: S6 -> run { checkMethod(method); method(s1, s2, s3, s4, s5, s6) } }
+        { s1: S1, s2: S2, s3: S3, s4: S4, s5: S5, s6: S6 -> run { method.check().call(s1, s2, s3, s4, s5, s6) } }
 
     fun <S1, S2, S3, S4, S5, S6, S7, R : Any?> dispatch(method: KFunction7<S1, S2, S3, S4, S5, S6, S7, R>): (S1, S2, S3, S4, S5, S6, S7) -> Deferred<R> =
-        { s1: S1, s2: S2, s3: S3, s4: S4, s5: S5, s6: S6, s7: S7 -> run { checkMethod(method); method(s1, s2, s3, s4, s5, s6, s7) } }
+        { s1: S1, s2: S2, s3: S3, s4: S4, s5: S5, s6: S6, s7: S7 -> run { method.check().call(s1, s2, s3, s4, s5, s6, s7) } }
 
     fun <S1, S2, S3, S4, S5, S6, S7, S8, R : Any?> dispatch(method: KFunction8<S1, S2, S3, S4, S5, S6, S7, S8, R>): (S1, S2, S3, S4, S5, S6, S7, S8) -> Deferred<R> =
-        { s1: S1, s2: S2, s3: S3, s4: S4, s5: S5, s6: S6, s7: S7, s8: S8 -> run { checkMethod(method); method(s1, s2, s3, s4, s5, s6, s7, s8) } }
+        { s1: S1, s2: S2, s3: S3, s4: S4, s5: S5, s6: S6, s7: S7, s8: S8 -> run { method.check().call(s1, s2, s3, s4, s5, s6, s7, s8) } }
 
     fun <S1, S2, S3, S4, S5, S6, S7, S8, S9, R : Any?> dispatch(method: KFunction9<S1, S2, S3, S4, S5, S6, S7, S8, S9, R>): (S1, S2, S3, S4, S5, S6, S7, S8, S9) -> Deferred<R> =
-        { s1: S1, s2: S2, s3: S3, s4: S4, s5: S5, s6: S6, s7: S7, s8: S8, s9: S9 -> run { checkMethod(method); method(s1, s2, s3, s4, s5, s6, s7, s8, s9) } }
+        { s1: S1, s2: S2, s3: S3, s4: S4, s5: S5, s6: S6, s7: S7, s8: S8, s9: S9 -> run { method.check().call(s1, s2, s3, s4, s5, s6, s7, s8, s9) } }
 
     /**
      *  Asynchronously process a task (helper)
@@ -274,7 +274,11 @@ abstract class InfiniticClient : Closeable {
         tags: Set<String> = setOf(),
         options: TaskOptions? = null,
         meta: Map<String, ByteArray> = mapOf()
-    ): () -> Deferred<R> = { run { method.checkTask<K, R>(tags, options, meta).call() } }
+    ): () -> Deferred<R> = {
+        run {
+            method.checkTask<K, R>(tags, options, meta).call()
+        }
+    }
 
     @JvmOverloads
     fun <K : Any, S1, R : Any?> dispatchTask(
@@ -395,7 +399,6 @@ abstract class InfiniticClient : Closeable {
         meta: Map<String, ByteArray> = mapOf()
     ): () -> Deferred<R> = {
         run {
-            @Suppress("UNCHECKED_CAST")
             method.checkWorkflow<K, R>(tags, options, meta).call()
         }
     }
@@ -532,6 +535,10 @@ abstract class InfiniticClient : Closeable {
         id: UUID
     ) = cancel(getTask(klass, id))
 
+    inline fun <reified T : Any> cancelTask(
+        id: UUID
+    ) = cancelTask(T::class.java, id)
+
     /**
      *  Cancel a task by tag
      */
@@ -539,6 +546,10 @@ abstract class InfiniticClient : Closeable {
         klass: Class<out T>,
         tag: String
     ) = cancel(getTask(klass, tag))
+
+    inline fun <reified T : Any> cancelTask(
+        tag: String
+    ) = cancelTask(T::class.java, tag)
 
     /**
      *  Cancel a workflow by id
@@ -548,6 +559,10 @@ abstract class InfiniticClient : Closeable {
         id: UUID
     ) = cancel(getWorkflow(klass, id))
 
+    inline fun <reified T : Any> cancelWorkflow(
+        id: UUID
+    ) = cancelWorkflow(T::class.java, id)
+
     /**
      *  Cancel a workflow by tag
      */
@@ -555,6 +570,10 @@ abstract class InfiniticClient : Closeable {
         klass: Class<out T>,
         tag: String
     ) = cancel(getWorkflow(klass, tag))
+
+    inline fun <reified T : Any> cancelWorkflow(
+        tag: String
+    ) = cancelWorkflow(T::class.java, tag)
 
     /**
      * Await a task or a workflowTask from a stub
@@ -581,6 +600,10 @@ abstract class InfiniticClient : Closeable {
         id: UUID
     ): Any = await(getTask(klass, id))
 
+    inline fun <reified T : Any> awaitTask(
+        id: UUID
+    ) = awaitTask(T::class.java, id)
+
     /**
      * Await a workflow by id
      */
@@ -588,6 +611,10 @@ abstract class InfiniticClient : Closeable {
         klass: Class<out T>,
         id: UUID
     ): Any = await(getWorkflow(klass, id))
+
+    inline fun <reified T : Any> awaitWorkflow(
+        id: UUID
+    ) = awaitWorkflow(T::class.java, id)
 
     /**
      *  Complete a task or a workflow from a stub
@@ -614,6 +641,11 @@ abstract class InfiniticClient : Closeable {
         value: Any?
     ) = complete(getTask(klass, id), value)
 
+    inline fun <reified T : Any> completeTask(
+        id: UUID,
+        value: Any?
+    ) = completeTask(T::class.java, id, value)
+
     /**
      *  Complete a task by tag
      */
@@ -622,6 +654,11 @@ abstract class InfiniticClient : Closeable {
         tag: String,
         value: Any?
     ) = complete(getTask(klass, tag), value)
+
+    inline fun <reified T : Any> completeTask(
+        tag: String,
+        value: Any?
+    ) = completeTask(T::class.java, tag, value)
 
     /**
      *  Complete a workflow by id
@@ -632,6 +669,11 @@ abstract class InfiniticClient : Closeable {
         value: Any?
     ) = complete(getWorkflow(klass, id), value)
 
+    inline fun <reified T : Any> completeWorkflow(
+        id: UUID,
+        value: Any?
+    ) = completeWorkflow(T::class.java, id, value)
+
     /**
      *  Complete a workflow by tag
      */
@@ -640,6 +682,11 @@ abstract class InfiniticClient : Closeable {
         tag: String,
         value: Any?
     ) = complete(getWorkflow(klass, tag), value)
+
+    inline fun <reified T : Any> completeWorkflow(
+        tag: String,
+        value: Any?
+    ) = completeWorkflow(T::class.java, tag, value)
 
     /**
      * Retry a task or a workflowTask from a stub
@@ -666,6 +713,10 @@ abstract class InfiniticClient : Closeable {
         id: UUID
     ) = retry(getTask(klass, id))
 
+    inline fun <reified T : Any> retryTask(
+        id: UUID
+    ) = retryTask(T::class.java, id)
+
     /**
      * Retry a task by tag
      */
@@ -673,6 +724,10 @@ abstract class InfiniticClient : Closeable {
         klass: Class<out T>,
         tag: String
     ) = retry(getTask(klass, tag))
+
+    inline fun <reified T : Any> retryTask(
+        tag: String
+    ) = retryTask(T::class.java, tag)
 
     /**
      * Retry a workflow by id
@@ -682,6 +737,10 @@ abstract class InfiniticClient : Closeable {
         id: UUID
     ) = retry(getWorkflow(klass, id))
 
+    inline fun <reified T : Any> retryWorkflow(
+        id: UUID
+    ) = retryWorkflow(T::class.java, id)
+
     /**
      * Retry a workflow by tag
      */
@@ -690,27 +749,25 @@ abstract class InfiniticClient : Closeable {
         tag: String
     ) = retry(getWorkflow(klass, tag))
 
-    private fun <R : Any?> run(invoke: () -> R): Deferred<R> = dispatcher.dispatch(ProxyHandler.async(invoke), false)
+    inline fun <reified T : Any> retryWorkflow(
+        tag: String
+    ) = retryWorkflow(T::class.java, tag)
 
-    private fun checkMethod(method: KFunction<*>) {
-        if (method.javaMethod?.declaringClass?.isInterface != true) throw NotAnInterfaceException(method.name, "dispatch")
-    }
+    private fun <R> run(invoke: () -> R): Deferred<R> = dispatcher.dispatch(ProxyHandler.async(invoke), false)
 
-    private fun <R> KFunction<R>.check(): KFunction<R> {
+    private fun <R> KFunction<R>.check(): KFunction<R> = this.also {
         if (javaMethod?.declaringClass?.isInterface != true) throw NotAnInterfaceException(name, "dispatch")
-
-        return this
     }
 
     @Suppress("UNCHECKED_CAST")
-    private fun <K : Any, R> KFunction<R>.checkTask(
+    private fun <K: Any, R> KFunction<R>.checkTask(
         tags: Set<String>,
         options: TaskOptions?,
         meta: Map<String, ByteArray>
     ): KCallable<R> = check().withInstance(newTask(javaMethod?.declaringClass as Class<out K>, tags, options, meta))
 
     @Suppress("UNCHECKED_CAST")
-    private fun <K : Any, R> KFunction<R>.checkWorkflow(
+    private fun <K: Any, R> KFunction<R>.checkWorkflow(
         tags: Set<String>,
         options: WorkflowOptions?,
         meta: Map<String, ByteArray>
