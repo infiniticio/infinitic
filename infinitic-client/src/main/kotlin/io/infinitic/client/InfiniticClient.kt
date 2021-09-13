@@ -535,10 +535,6 @@ abstract class InfiniticClient : Closeable {
         id: UUID
     ) = cancel(getTask(klass, id))
 
-    inline fun <reified T : Any> cancelTask(
-        id: UUID
-    ) = cancelTask(T::class.java, id)
-
     /**
      *  Cancel a task by tag
      */
@@ -546,10 +542,6 @@ abstract class InfiniticClient : Closeable {
         klass: Class<out T>,
         tag: String
     ) = cancel(getTask(klass, tag))
-
-    inline fun <reified T : Any> cancelTask(
-        tag: String
-    ) = cancelTask(T::class.java, tag)
 
     /**
      *  Cancel a workflow by id
@@ -559,10 +551,6 @@ abstract class InfiniticClient : Closeable {
         id: UUID
     ) = cancel(getWorkflow(klass, id))
 
-    inline fun <reified T : Any> cancelWorkflow(
-        id: UUID
-    ) = cancelWorkflow(T::class.java, id)
-
     /**
      *  Cancel a workflow by tag
      */
@@ -570,10 +558,6 @@ abstract class InfiniticClient : Closeable {
         klass: Class<out T>,
         tag: String
     ) = cancel(getWorkflow(klass, tag))
-
-    inline fun <reified T : Any> cancelWorkflow(
-        tag: String
-    ) = cancelWorkflow(T::class.java, tag)
 
     /**
      * Await a task or a workflowTask from a stub
@@ -600,10 +584,6 @@ abstract class InfiniticClient : Closeable {
         id: UUID
     ): Any = await(getTask(klass, id))
 
-    inline fun <reified T : Any> awaitTask(
-        id: UUID
-    ) = awaitTask(T::class.java, id)
-
     /**
      * Await a workflow by id
      */
@@ -611,10 +591,6 @@ abstract class InfiniticClient : Closeable {
         klass: Class<out T>,
         id: UUID
     ): Any = await(getWorkflow(klass, id))
-
-    inline fun <reified T : Any> awaitWorkflow(
-        id: UUID
-    ) = awaitWorkflow(T::class.java, id)
 
     /**
      *  Complete a task or a workflow from a stub
@@ -641,11 +617,6 @@ abstract class InfiniticClient : Closeable {
         value: Any?
     ) = complete(getTask(klass, id), value)
 
-    inline fun <reified T : Any> completeTask(
-        id: UUID,
-        value: Any?
-    ) = completeTask(T::class.java, id, value)
-
     /**
      *  Complete a task by tag
      */
@@ -654,11 +625,6 @@ abstract class InfiniticClient : Closeable {
         tag: String,
         value: Any?
     ) = complete(getTask(klass, tag), value)
-
-    inline fun <reified T : Any> completeTask(
-        tag: String,
-        value: Any?
-    ) = completeTask(T::class.java, tag, value)
 
     /**
      *  Complete a workflow by id
@@ -669,11 +635,6 @@ abstract class InfiniticClient : Closeable {
         value: Any?
     ) = complete(getWorkflow(klass, id), value)
 
-    inline fun <reified T : Any> completeWorkflow(
-        id: UUID,
-        value: Any?
-    ) = completeWorkflow(T::class.java, id, value)
-
     /**
      *  Complete a workflow by tag
      */
@@ -682,11 +643,6 @@ abstract class InfiniticClient : Closeable {
         tag: String,
         value: Any?
     ) = complete(getWorkflow(klass, tag), value)
-
-    inline fun <reified T : Any> completeWorkflow(
-        tag: String,
-        value: Any?
-    ) = completeWorkflow(T::class.java, tag, value)
 
     /**
      * Retry a task or a workflowTask from a stub
@@ -713,10 +669,6 @@ abstract class InfiniticClient : Closeable {
         id: UUID
     ) = retry(getTask(klass, id))
 
-    inline fun <reified T : Any> retryTask(
-        id: UUID
-    ) = retryTask(T::class.java, id)
-
     /**
      * Retry a task by tag
      */
@@ -724,10 +676,6 @@ abstract class InfiniticClient : Closeable {
         klass: Class<out T>,
         tag: String
     ) = retry(getTask(klass, tag))
-
-    inline fun <reified T : Any> retryTask(
-        tag: String
-    ) = retryTask(T::class.java, tag)
 
     /**
      * Retry a workflow by id
@@ -737,10 +685,6 @@ abstract class InfiniticClient : Closeable {
         id: UUID
     ) = retry(getWorkflow(klass, id))
 
-    inline fun <reified T : Any> retryWorkflow(
-        id: UUID
-    ) = retryWorkflow(T::class.java, id)
-
     /**
      * Retry a workflow by tag
      */
@@ -749,10 +693,6 @@ abstract class InfiniticClient : Closeable {
         tag: String
     ) = retry(getWorkflow(klass, tag))
 
-    inline fun <reified T : Any> retryWorkflow(
-        tag: String
-    ) = retryWorkflow(T::class.java, tag)
-
     private fun <R> run(invoke: () -> R): Deferred<R> = dispatcher.dispatch(ProxyHandler.async(invoke), false)
 
     private fun <R> KFunction<R>.check(): KFunction<R> = this.also {
@@ -760,14 +700,14 @@ abstract class InfiniticClient : Closeable {
     }
 
     @Suppress("UNCHECKED_CAST")
-    private fun <K: Any, R> KFunction<R>.checkTask(
+    private fun <K : Any, R> KFunction<R>.checkTask(
         tags: Set<String>,
         options: TaskOptions?,
         meta: Map<String, ByteArray>
     ): KCallable<R> = check().withInstance(newTask(javaMethod?.declaringClass as Class<out K>, tags, options, meta))
 
     @Suppress("UNCHECKED_CAST")
-    private fun <K: Any, R> KFunction<R>.checkWorkflow(
+    private fun <K : Any, R> KFunction<R>.checkWorkflow(
         tags: Set<String>,
         options: WorkflowOptions?,
         meta: Map<String, ByteArray>

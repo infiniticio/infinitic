@@ -103,19 +103,20 @@ class ClientWorkflowTests : StringSpec({
         }
     }
 
-    "Should throw when retrying new stub" {
+    "Should throw when using new stub" {
         // when
         val fakeWorkflow = client.newWorkflow<FakeWorkflow>()
-        shouldThrow<CanNotApplyOnNewWorkflowStubException> {
-            client.retry(fakeWorkflow)
-        }
-    }
 
-    "Should throw when canceling new stub" {
-        // when
-        val fakeWorkflow = client.newWorkflow<FakeWorkflow>()
         shouldThrow<CanNotApplyOnNewWorkflowStubException> {
             client.cancel(fakeWorkflow)
+        }
+
+        shouldThrow<CanNotApplyOnNewWorkflowStubException> {
+            client.complete(fakeWorkflow, null)
+        }
+
+        shouldThrow<CanNotApplyOnNewWorkflowStubException> {
+            client.retry(fakeWorkflow)
         }
     }
 
@@ -127,10 +128,32 @@ class ClientWorkflowTests : StringSpec({
         }
     }
 
-    "Should be able to dispatch a workflow without parameter" {
+    "Should be able to dispatch a workflow - syntax 1" {
         // when
         val fakeWorkflow = client.newWorkflow<FakeWorkflow>()
         val deferred = client.dispatch(fakeWorkflow::m0)().join()
+        // then
+        workflowTagSlots.size shouldBe 0
+        workflowSlot.captured shouldBe DispatchWorkflow(
+            clientName = client.clientName,
+            clientWaiting = false,
+            workflowId = WorkflowId(deferred.id),
+            workflowName = WorkflowName(FakeWorkflow::class.java.name),
+            methodName = MethodName("m0"),
+            methodParameterTypes = MethodParameterTypes(listOf()),
+            methodParameters = MethodParameters(),
+            parentWorkflowId = null,
+            parentWorkflowName = null,
+            parentMethodRunId = null,
+            workflowTags = setOf(),
+            workflowOptions = WorkflowOptions(),
+            workflowMeta = WorkflowMeta()
+        )
+    }
+
+    "Should be able to dispatch a workflow - syntax 2" {
+        // when
+        val deferred = client.dispatchWorkflow(FakeWorkflow::m0)().join()
         // then
         workflowTagSlots.size shouldBe 0
         workflowSlot.captured shouldBe DispatchWorkflow(
@@ -219,9 +242,14 @@ class ClientWorkflowTests : StringSpec({
         )
     }
 
-    "Should be able to dispatch a workflow with Java syntax" {
+    "Should be able to dispatch a workflow with options and meta - syntax 1" {
         // when
-        val fakeWorkflow = client.newWorkflow(FakeWorkflow::class.java)
+        val options = TestFactory.random<WorkflowOptions>()
+        val meta = mapOf(
+            "foo" to TestFactory.random<ByteArray>(),
+            "bar" to TestFactory.random<ByteArray>()
+        )
+        val fakeWorkflow = client.newWorkflow<FakeWorkflow>(options = options, meta = meta)
         val deferred = client.dispatch(fakeWorkflow::m0)().join()
         // then
         workflowTagSlots.size shouldBe 0
@@ -237,20 +265,19 @@ class ClientWorkflowTests : StringSpec({
             parentWorkflowName = null,
             parentMethodRunId = null,
             workflowTags = setOf(),
-            workflowOptions = WorkflowOptions(),
-            workflowMeta = WorkflowMeta()
+            workflowOptions = options,
+            workflowMeta = WorkflowMeta(meta)
         )
     }
 
-    "Should be able to dispatch a workflow with options and meta" {
+    "Should be able to dispatch a workflow with options and meta - syntax 2" {
         // when
         val options = TestFactory.random<WorkflowOptions>()
         val meta = mapOf(
             "foo" to TestFactory.random<ByteArray>(),
             "bar" to TestFactory.random<ByteArray>()
         )
-        val fakeWorkflow = client.newWorkflow<FakeWorkflow>(options = options, meta = meta)
-        val deferred = client.dispatch(fakeWorkflow::m0)().join()
+        val deferred = client.dispatchWorkflow(FakeWorkflow::m0, options = options, meta = meta)().join()
         // then
         workflowTagSlots.size shouldBe 0
         workflowSlot.captured shouldBe DispatchWorkflow(
@@ -306,7 +333,7 @@ class ClientWorkflowTests : StringSpec({
         )
     }
 
-    "Should be able to dispatch a workflow with a primitive as parameter" {
+    "Should be able to dispatch a workflow with a one primitive as parameter" {
         // when
         val fakeWorkflow = client.newWorkflow<FakeWorkflow>()
         val deferred = client.dispatch(fakeWorkflow::m1)(0).join()
@@ -330,31 +357,7 @@ class ClientWorkflowTests : StringSpec({
         )
     }
 
-    "Should be able to dispatch a workflow with multiple method definition" {
-        // when
-        val fakeWorkflow = client.newWorkflow<FakeWorkflow>()
-        val deferred = client.dispatch(fakeWorkflow::m2)("a").join()
-        // then
-        workflowSlot.isCaptured shouldBe true
-        val msg = workflowSlot.captured
-        msg shouldBe DispatchWorkflow(
-            clientName = client.clientName,
-            clientWaiting = false,
-            workflowId = WorkflowId(deferred.id),
-            workflowName = WorkflowName(FakeWorkflow::class.java.name),
-            methodName = MethodName("m2"),
-            methodParameterTypes = MethodParameterTypes(listOf(String::class.java.name)),
-            methodParameters = MethodParameters.from("a"),
-            parentWorkflowId = null,
-            parentWorkflowName = null,
-            parentMethodRunId = null,
-            workflowTags = setOf(),
-            workflowOptions = WorkflowOptions(),
-            workflowMeta = WorkflowMeta()
-        )
-    }
-
-    "Should be able to dispatch a workflow with multiple parameters" {
+    "Should be able to dispatch a workflow with two primitive parameters" {
         // when
         val fakeWorkflow = client.newWorkflow<FakeWorkflow>()
         val deferred = client.dispatch(fakeWorkflow::m3)(0, "a").join()
@@ -531,7 +534,7 @@ class ClientWorkflowTests : StringSpec({
         )
     }
 
-    "Should be able to cancel workflow per id" {
+    "Should be able to cancel workflow per id - syntax 1" {
         // when
         val id = UUID.randomUUID()
         val fakeWorkflow = client.getWorkflow(FakeWorkflow::class.java, id)
@@ -545,7 +548,33 @@ class ClientWorkflowTests : StringSpec({
         )
     }
 
-    "Should be able to cancel workflow per tag" {
+    "Should be able to cancel workflow per id - syntax 2" {
+        // when
+        val id = UUID.randomUUID()
+        client.cancelWorkflow<FakeWorkflow>(id).join()
+        // then
+        workflowTagSlots.size shouldBe 0
+        workflowSlot.captured shouldBe CancelWorkflow(
+            workflowId = WorkflowId(id),
+            workflowName = WorkflowName(FakeWorkflow::class.java.name),
+            reason = WorkflowCancellationReason.CANCELED_BY_CLIENT
+        )
+    }
+
+    "Should be able to cancel workflow per id - syntax 3" {
+        // when
+        val id = UUID.randomUUID()
+        client.cancelWorkflow(FakeWorkflow::class.java, id).join()
+        // then
+        workflowTagSlots.size shouldBe 0
+        workflowSlot.captured shouldBe CancelWorkflow(
+            workflowId = WorkflowId(id),
+            workflowName = WorkflowName(FakeWorkflow::class.java.name),
+            reason = WorkflowCancellationReason.CANCELED_BY_CLIENT
+        )
+    }
+
+    "Should be able to cancel workflow per tag - syntax1" {
         // when
         val fakeWorkflow = client.getWorkflow<FakeWorkflow>("foo")
         client.cancel(fakeWorkflow).join()
@@ -559,10 +588,22 @@ class ClientWorkflowTests : StringSpec({
         workflowSlot.isCaptured shouldBe false
     }
 
-    "Should be able to cancel workflow per tag with output" {
+    "Should be able to cancel workflow per tag - syntax2" {
         // when
-        val fakeWorkflow = client.getWorkflow<FakeWorkflow>("foo")
-        client.cancel(fakeWorkflow).join()
+        client.cancelWorkflow<FakeWorkflow>("foo").join()
+        // then
+        workflowTagSlots.size shouldBe 1
+        workflowTagSlots[0] shouldBe CancelWorkflowPerTag(
+            workflowTag = WorkflowTag("foo"),
+            workflowName = WorkflowName(FakeWorkflow::class.java.name),
+            reason = WorkflowCancellationReason.CANCELED_BY_CLIENT
+        )
+        workflowSlot.isCaptured shouldBe false
+    }
+
+    "Should be able to cancel workflow per tag - syntax3" {
+        // when
+        client.cancelWorkflow(FakeWorkflow::class.java, "foo").join()
         // then
         workflowTagSlots.size shouldBe 1
         workflowTagSlots[0] shouldBe CancelWorkflowPerTag(
