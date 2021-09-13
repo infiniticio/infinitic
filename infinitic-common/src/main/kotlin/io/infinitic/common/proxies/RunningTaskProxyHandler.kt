@@ -26,53 +26,19 @@
 package io.infinitic.common.proxies
 
 import io.infinitic.common.tasks.data.TaskId
-import io.infinitic.common.tasks.data.TaskMeta
 import io.infinitic.common.tasks.data.TaskName
-import io.infinitic.common.tasks.data.TaskOptions
 import io.infinitic.common.tasks.data.TaskTag
-import io.infinitic.exceptions.clients.MultipleMethodCallsException
-import io.infinitic.exceptions.clients.NoMethodCallException
-import java.lang.reflect.Method
 
-class TaskProxyHandler<T : Any>(
-    override val klass: Class<T>,
-    val taskTags: Set<TaskTag>? = null,
-    val taskOptions: TaskOptions? = null,
-    val taskMeta: TaskMeta? = null,
+class RunningTaskProxyHandler<K : Any>(
+    override val klass: Class<K>,
     var perTaskId: TaskId? = null,
     var perTag: TaskTag? = null,
-    private val dispatcherFn: () -> Dispatcher
-) : MethodProxyHandler<T>(klass) {
+    override val dispatcherFn: () -> Dispatcher
+) : RunningProxyHandler<K>(klass, dispatcherFn) {
 
     val taskName = TaskName(className)
-
-    override val method: Method
-        get() {
-            if (methods.isEmpty()) {
-                throw NoMethodCallException(klass.name)
-            }
-
-            if (methods.size > 1) {
-                throw MultipleMethodCallsException(klass.name, methods.first().name, methods.last().name)
-            }
-
-            return methods.last()
-        }
 
     init {
         require(perTaskId == null || perTag == null)
     }
-
-    override fun invoke(proxy: Any, method: Method, args: Array<out Any>?): Any? {
-        val any = super.invoke(proxy, method, args)
-
-        if (method.declaringClass == Object::class.java) return any
-
-        return when (isSync) {
-            true -> dispatcherFn().dispatchAndWait(this)
-            false -> any
-        }
-    }
-
-    fun isNew() = perTaskId == null && perTag == null
 }

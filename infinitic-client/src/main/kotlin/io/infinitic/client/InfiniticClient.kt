@@ -25,51 +25,40 @@
 
 package io.infinitic.client
 
-import io.infinitic.client.deferred.DeferredTask
-import io.infinitic.client.deferred.DeferredWorkflow
 import io.infinitic.client.proxies.ClientDispatcher
 import io.infinitic.common.clients.data.ClientName
 import io.infinitic.common.clients.messages.ClientMessage
+import io.infinitic.common.proxies.NewTaskProxyHandler
+import io.infinitic.common.proxies.NewWorkflowProxyHandler
+import io.infinitic.common.proxies.ProxyHandler
+import io.infinitic.common.proxies.RunningProxyHandler
+import io.infinitic.common.proxies.RunningTaskProxyHandler
+import io.infinitic.common.proxies.RunningWorkflowProxyHandler
 import io.infinitic.common.proxies.SendChannelProxyHandler
-import io.infinitic.common.proxies.TaskProxyHandler
-import io.infinitic.common.proxies.WorkflowProxyHandler
 import io.infinitic.common.tasks.data.TaskId
 import io.infinitic.common.tasks.data.TaskMeta
 import io.infinitic.common.tasks.data.TaskName
 import io.infinitic.common.tasks.data.TaskOptions
 import io.infinitic.common.tasks.data.TaskTag
 import io.infinitic.common.tasks.engine.SendToTaskEngine
-import io.infinitic.common.tasks.engine.messages.CancelTask
-import io.infinitic.common.tasks.engine.messages.RetryTask
 import io.infinitic.common.tasks.tags.SendToTaskTagEngine
-import io.infinitic.common.tasks.tags.messages.CancelTaskPerTag
-import io.infinitic.common.tasks.tags.messages.RetryTaskPerTag
-import io.infinitic.common.workflows.data.workflows.WorkflowCancellationReason
 import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.data.workflows.WorkflowMeta
 import io.infinitic.common.workflows.data.workflows.WorkflowName
 import io.infinitic.common.workflows.data.workflows.WorkflowOptions
 import io.infinitic.common.workflows.data.workflows.WorkflowTag
 import io.infinitic.common.workflows.engine.SendToWorkflowEngine
-import io.infinitic.common.workflows.engine.messages.CancelWorkflow
-import io.infinitic.common.workflows.engine.messages.RetryWorkflowTask
 import io.infinitic.common.workflows.tags.SendToWorkflowTagEngine
-import io.infinitic.common.workflows.tags.messages.CancelWorkflowPerTag
-import io.infinitic.common.workflows.tags.messages.RetryWorkflowTaskPerTag
 import io.infinitic.exceptions.clients.CanNotApplyOnChannelException
 import io.infinitic.exceptions.clients.CanNotApplyOnNewTaskStubException
 import io.infinitic.exceptions.clients.CanNotApplyOnNewWorkflowStubException
-import io.infinitic.exceptions.clients.CanNotAwaitStubPerTag
-import io.infinitic.exceptions.clients.CanNotReuseWorkflowStubException
 import io.infinitic.exceptions.clients.NotAStubException
-import io.infinitic.exceptions.thisShouldNotHappen
+import io.infinitic.exceptions.clients.NotAnInterfaceException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.cancel
-import kotlinx.coroutines.future.future
 import kotlinx.coroutines.job
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import mu.KotlinLogging
 import java.io.Closeable
@@ -77,6 +66,18 @@ import java.lang.reflect.Proxy
 import java.util.UUID
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.Executors
+import kotlin.reflect.KFunction
+import kotlin.reflect.KFunction0
+import kotlin.reflect.KFunction1
+import kotlin.reflect.KFunction2
+import kotlin.reflect.KFunction3
+import kotlin.reflect.KFunction4
+import kotlin.reflect.KFunction5
+import kotlin.reflect.KFunction6
+import kotlin.reflect.KFunction7
+import kotlin.reflect.KFunction8
+import kotlin.reflect.KFunction9
+import kotlin.reflect.jvm.javaMethod
 
 @Suppress("MemberVisibilityCanBePrivate", "unused")
 abstract class InfiniticClient : Closeable {
@@ -139,7 +140,7 @@ abstract class InfiniticClient : Closeable {
         tags: Set<String> = setOf(),
         options: TaskOptions? = null,
         meta: Map<String, ByteArray> = mapOf()
-    ): T = TaskProxyHandler(
+    ): T = NewTaskProxyHandler(
         klass = klass,
         taskTags = tags.map { TaskTag(it) }.toSet(),
         taskOptions = options ?: TaskOptions(),
@@ -152,10 +153,9 @@ abstract class InfiniticClient : Closeable {
     fun <T : Any> getTask(
         klass: Class<out T>,
         id: UUID
-    ): T = TaskProxyHandler(
+    ): T = RunningTaskProxyHandler(
         klass = klass,
-        perTaskId = TaskId(id),
-        perTag = null
+        perTaskId = TaskId(id)
     ) { dispatcher }.stub()
 
     /**
@@ -164,9 +164,8 @@ abstract class InfiniticClient : Closeable {
     fun <T : Any> getTask(
         klass: Class<out T>,
         tag: String
-    ): T = TaskProxyHandler(
+    ): T = RunningTaskProxyHandler(
         klass = klass,
-        perTaskId = null,
         perTag = TaskTag(tag)
     ) { dispatcher }.stub()
 
@@ -190,7 +189,7 @@ abstract class InfiniticClient : Closeable {
         tags: Set<String> = setOf(),
         options: WorkflowOptions? = null,
         meta: Map<String, ByteArray> = mapOf()
-    ): T = WorkflowProxyHandler(
+    ): T = NewWorkflowProxyHandler(
         klass = klass,
         workflowTags = tags.map { WorkflowTag(it) }.toSet(),
         workflowOptions = options ?: WorkflowOptions(),
@@ -203,9 +202,8 @@ abstract class InfiniticClient : Closeable {
     fun <T : Any> getWorkflow(
         klass: Class<out T>,
         id: UUID
-    ): T = WorkflowProxyHandler(
+    ): T = RunningWorkflowProxyHandler(
         klass = klass,
-        perTag = null,
         perWorkflowId = WorkflowId(id)
     ) { dispatcher }.stub()
 
@@ -215,10 +213,9 @@ abstract class InfiniticClient : Closeable {
     fun <T : Any> getWorkflow(
         klass: Class<out T>,
         tag: String
-    ): T = WorkflowProxyHandler(
+    ): T = RunningWorkflowProxyHandler(
         klass = klass,
-        perTag = WorkflowTag(tag),
-        perWorkflowId = null
+        perTag = WorkflowTag(tag)
     ) { dispatcher }.stub()
 
     /**
@@ -235,62 +232,87 @@ abstract class InfiniticClient : Closeable {
     /**
      *  Asynchronously process a task or a workflow
      */
-    fun <T : Any, S> async(proxy: T, method: T.() -> S): Deferred<S> {
-        if (proxy !is Proxy) throw NotAStubException(proxy::class.java.name, "async")
 
-        return when (val handler = Proxy.getInvocationHandler(proxy)) {
-            is TaskProxyHandler<*> -> {
-                handler.reset()
-                handler.isSync = false
-                proxy.method()
-                dispatcher.dispatch(handler)
-            }
-            is WorkflowProxyHandler<*> -> {
-                if (! handler.isNew()) throw CanNotReuseWorkflowStubException("${handler.workflowName}")
-                handler.isSync = false
-                proxy.method()
-                dispatcher.dispatch(handler)
-            }
-            is SendChannelProxyHandler<*> -> throw CanNotApplyOnChannelException("cancel")
-            else -> thisShouldNotHappen("unknown handle type ${handler::class}")
-        }
+    private fun <R : Any?> run(invoke: () -> R): Deferred<R> = dispatcher.dispatch(ProxyHandler.async(invoke), false)
+
+    fun <R : Any?> dispatch(method: KFunction0<R>): () -> Deferred<R> =
+        { run { checkIsInterface(method); method() } }
+
+    fun <S1, R : Any?> dispatch(method: KFunction1<S1, R>): (S1) -> Deferred<R> =
+        { s: S1 -> run { checkIsInterface(method); method(s) } }
+
+    fun <S1, S2, R : Any?> dispatch(method: KFunction2<S1, S2, R>): (S1, S2) -> Deferred<R> =
+        { s1: S1, s2: S2 -> run { checkIsInterface(method); method(s1, s2) } }
+
+    fun <S1, S2, S3, R : Any?> dispatch(method: KFunction3<S1, S2, S3, R>): (S1, S2, S3) -> Deferred<R> =
+        { s1: S1, s2: S2, s3: S3 -> run { checkIsInterface(method); method(s1, s2, s3) } }
+
+    fun <S1, S2, S3, S4, R : Any?> dispatch(method: KFunction4<S1, S2, S3, S4, R>): (S1, S2, S3, S4) -> Deferred<R> =
+        { s1: S1, s2: S2, s3: S3, s4: S4 -> run { checkIsInterface(method); method(s1, s2, s3, s4) } }
+
+    fun <S1, S2, S3, S4, S5, R : Any?> dispatch(method: KFunction5<S1, S2, S3, S4, S5, R>): (S1, S2, S3, S4, S5) -> Deferred<R> =
+        { s1: S1, s2: S2, s3: S3, s4: S4, s5: S5 -> run { checkIsInterface(method); method(s1, s2, s3, s4, s5) } }
+
+    fun <S1, S2, S3, S4, S5, S6, R : Any?> dispatch(method: KFunction6<S1, S2, S3, S4, S5, S6, R>): (S1, S2, S3, S4, S5, S6) -> Deferred<R> =
+        { s1: S1, s2: S2, s3: S3, s4: S4, s5: S5, s6: S6 -> run { checkIsInterface(method); method(s1, s2, s3, s4, s5, s6) } }
+
+    fun <S1, S2, S3, S4, S5, S6, S7, R : Any?> dispatch(method: KFunction7<S1, S2, S3, S4, S5, S6, S7, R>): (S1, S2, S3, S4, S5, S6, S7) -> Deferred<R> =
+        { s1: S1, s2: S2, s3: S3, s4: S4, s5: S5, s6: S6, s7: S7 -> run { checkIsInterface(method); method(s1, s2, s3, s4, s5, s6, s7) } }
+
+    fun <S1, S2, S3, S4, S5, S6, S7, S8, R : Any?> dispatch(method: KFunction8<S1, S2, S3, S4, S5, S6, S7, S8, R>): (S1, S2, S3, S4, S5, S6, S7, S8) -> Deferred<R> =
+        { s1: S1, s2: S2, s3: S3, s4: S4, s5: S5, s6: S6, s7: S7, s8: S8 -> run { checkIsInterface(method); method(s1, s2, s3, s4, s5, s6, s7, s8) } }
+
+    fun <S1, S2, S3, S4, S5, S6, S7, S8, S9, R : Any?> dispatch(method: KFunction9<S1, S2, S3, S4, S5, S6, S7, S8, S9, R>): (S1, S2, S3, S4, S5, S6, S7, S8, S9) -> Deferred<R> =
+        { s1: S1, s2: S2, s3: S3, s4: S4, s5: S5, s6: S6, s7: S7, s8: S8, s9: S9 -> run { checkIsInterface(method); method(s1, s2, s3, s4, s5, s6, s7, s8, s9) } }
+
+    private fun checkIsInterface(method: KFunction<*>) {
+        if (method.javaMethod?.declaringClass?.isInterface != true) throw NotAnInterfaceException(method.name, "dispatch")
     }
 
     /**
      *  Asynchronously process a task (helper)
      */
     @JvmOverloads
-    fun <T : Any, S> asyncTask(
-        klass: Class<out T>,
+    fun <K : Any, S1, R : Any?> dispatchTask(
+        method: KFunction2<K, S1, R>,
         tags: Set<String> = setOf(),
         options: TaskOptions? = null,
-        meta: Map<String, ByteArray> = mapOf(),
-        method: T.() -> S
-    ) = async(newTask(klass, tags, options, meta), method)
+        meta: Map<String, ByteArray> = mapOf()
+    ): (S1) -> Deferred<R> {
+        checkIsInterface(method)
+        val task = newTask(method.javaMethod?.declaringClass as Class<K>, tags, options, meta)
+
+        return { s: S1 -> run { method(task, s) } }
+    }
 
     /**
      *  Asynchronously process a workflow (helper)
      */
     @JvmOverloads
-    fun <T : Any, S> asyncWorkflow(
-        klass: Class<out T>,
+    fun <K : Any, S1, R : Any?> dispatchWorkflow(
+        method: KFunction2<K, S1, R>,
         tags: Set<String> = setOf(),
         options: WorkflowOptions? = null,
-        meta: Map<String, ByteArray> = mapOf(),
-        method: T.() -> S
-    ) = async(newWorkflow(klass, tags, options, meta), method)
+        meta: Map<String, ByteArray> = mapOf()
+    ): (S1) -> Deferred<R> {
+        val workflow = newWorkflow(method.javaMethod?.declaringClass as Class<K>, tags, options, meta)
 
+        return { s: S1 -> run { method(workflow, s) } }
+    }
     /**
      *  Cancel a task or a workflow from a stub
      */
     fun <T : Any> cancel(proxy: T): CompletableFuture<Unit> {
         if (proxy !is Proxy) throw NotAStubException(proxy::class.java.name, "cancel")
 
-        return when (val handler = Proxy.getInvocationHandler(proxy)) {
-            is TaskProxyHandler<*> -> cancelTaskHandler(handler)
-            is WorkflowProxyHandler<*> -> cancelWorkflowHandler(handler)
-            is SendChannelProxyHandler<*> -> throw CanNotApplyOnChannelException("cancel")
-            else -> thisShouldNotHappen("Unknown handle type ${handler::class}")
+        return when (val handler = Proxy.getInvocationHandler(proxy) as ProxyHandler<*>) {
+            is NewTaskProxyHandler -> throw CanNotApplyOnNewTaskStubException(handler.klass.name, "cancel")
+            is NewWorkflowProxyHandler -> throw CanNotApplyOnNewWorkflowStubException(handler.klass.name, "cancel")
+            is RunningProxyHandler -> when (handler) {
+                is RunningTaskProxyHandler<*> -> dispatcher.cancelTask(handler)
+                is RunningWorkflowProxyHandler<*> -> dispatcher.cancelWorkflow(handler)
+                is SendChannelProxyHandler<*> -> throw CanNotApplyOnChannelException("cancel")
+            }
         }
     }
 
@@ -329,14 +351,18 @@ abstract class InfiniticClient : Closeable {
     /**
      * Await a task or a workflowTask from a stub
      */
-    fun <T : Any> await(proxy: T): Any {
-        if (proxy !is Proxy) throw NotAStubException(proxy::class.java.name, "retry")
+    fun <K : Any, R : Any> await(proxy: K): R {
+        if (proxy !is Proxy) throw NotAStubException(proxy::class.java.name, "await")
 
-        return when (val handler = Proxy.getInvocationHandler(proxy)) {
-            is TaskProxyHandler<*> -> awaitTaskHandler(handler)
-            is WorkflowProxyHandler<*> -> awaitWorkflowHandler(handler)
-            is SendChannelProxyHandler<*> -> throw CanNotApplyOnChannelException("await")
-            else -> thisShouldNotHappen("Unknown handle type ${handler::class}")
+        return when (val handler = Proxy.getInvocationHandler(proxy) as ProxyHandler<*>) {
+            is NewTaskProxyHandler -> throw CanNotApplyOnNewTaskStubException(handler.klass.name, "await")
+            is NewWorkflowProxyHandler -> throw CanNotApplyOnNewWorkflowStubException(handler.klass.name, "await")
+            is RunningProxyHandler -> when (handler) {
+                is RunningTaskProxyHandler -> dispatcher.awaitTask(handler)
+                is RunningWorkflowProxyHandler -> dispatcher.awaitWorkflow(handler)
+                is SendChannelProxyHandler -> throw CanNotApplyOnChannelException("await")
+                else -> throw Exception()
+            }
         }
     }
 
@@ -362,11 +388,14 @@ abstract class InfiniticClient : Closeable {
     fun <T : Any> complete(proxy: T, value: Any?) {
         if (proxy !is Proxy) throw NotAStubException(proxy::class.java.name, "complete")
 
-        when (val handler = Proxy.getInvocationHandler(proxy)) {
-            is TaskProxyHandler<*> -> TODO("Not yet implemented")
-            is WorkflowProxyHandler<*> -> TODO("Not yet implemented")
-            is SendChannelProxyHandler<*> -> throw CanNotApplyOnChannelException("complete")
-            else -> throw RuntimeException("Unknown handle type ${handler::class}")
+        return when (val handler = Proxy.getInvocationHandler(proxy) as ProxyHandler<*>) {
+            is NewTaskProxyHandler -> throw CanNotApplyOnNewTaskStubException(handler.klass.name, "complete")
+            is NewWorkflowProxyHandler -> throw CanNotApplyOnNewWorkflowStubException(handler.klass.name, "complete")
+            is RunningProxyHandler -> when (handler) {
+                is RunningTaskProxyHandler<*> -> TODO("Not yet implemented")
+                is RunningWorkflowProxyHandler<*> -> TODO("Not yet implemented")
+                is SendChannelProxyHandler<*> -> throw CanNotApplyOnChannelException("complete")
+            }
         }
     }
 
@@ -412,11 +441,14 @@ abstract class InfiniticClient : Closeable {
     fun <T : Any> retry(proxy: T): CompletableFuture<Unit> {
         if (proxy !is Proxy) throw NotAStubException(proxy::class.java.name, "retry")
 
-        return when (val handler = Proxy.getInvocationHandler(proxy)) {
-            is TaskProxyHandler<*> -> retryTaskHandler(handler)
-            is WorkflowProxyHandler<*> -> retryWorkflowHandler(handler)
-            is SendChannelProxyHandler<*> -> throw CanNotApplyOnChannelException("retry")
-            else -> throw RuntimeException("Unknown handle type ${handler::class}")
+        return when (val handler = Proxy.getInvocationHandler(proxy) as ProxyHandler<*>) {
+            is NewTaskProxyHandler -> throw CanNotApplyOnNewTaskStubException(handler.klass.name, "retry")
+            is NewWorkflowProxyHandler -> throw CanNotApplyOnNewWorkflowStubException(handler.klass.name, "retry")
+            is RunningProxyHandler -> when (handler) {
+                is RunningTaskProxyHandler<*> -> dispatcher.retryTask(handler)
+                is RunningWorkflowProxyHandler<*> -> dispatcher.retryWorkflow(handler)
+                is SendChannelProxyHandler<*> -> throw CanNotApplyOnChannelException("retry")
+            }
         }
     }
 
@@ -451,140 +483,4 @@ abstract class InfiniticClient : Closeable {
         klass: Class<out T>,
         tag: String
     ) = retry(getWorkflow(klass, tag))
-
-    private fun <T : Any> cancelTaskHandler(handler: TaskProxyHandler<T>): CompletableFuture<Unit> {
-        if (handler.isNew()) throw CanNotApplyOnNewTaskStubException("${handler.taskName}", "cancel")
-
-        return sendingScope.future {
-            when {
-                handler.perTaskId != null -> {
-                    val msg = CancelTask(
-                        taskId = handler.perTaskId!!,
-                        taskName = handler.taskName
-                    )
-                    launch { sendToTaskEngine(msg) }
-                }
-                handler.perTag != null -> {
-                    val msg = CancelTaskPerTag(
-                        taskTag = handler.perTag!!,
-                        taskName = handler.taskName
-                    )
-                    launch { sendToTaskTagEngine(msg) }
-                }
-                else -> thisShouldNotHappen()
-            }
-
-            Unit
-        }
-    }
-
-    private fun <T : Any> retryTaskHandler(handler: TaskProxyHandler<T>): CompletableFuture<Unit> {
-        if (handler.isNew()) throw CanNotApplyOnNewTaskStubException("${handler.taskName}", "retry")
-
-        return sendingScope.future {
-            when {
-                handler.perTaskId != null -> {
-                    val msg = RetryTask(
-                        taskId = handler.perTaskId!!,
-                        taskName = handler.taskName
-                    )
-                    launch { sendToTaskEngine(msg) }
-                }
-                handler.perTag != null -> {
-                    val msg = RetryTaskPerTag(
-                        taskTag = handler.perTag!!,
-                        taskName = handler.taskName
-                    )
-                    launch { sendToTaskTagEngine(msg) }
-                }
-                else -> thisShouldNotHappen()
-            }
-
-            Unit
-        }
-    }
-
-    private fun <T : Any> awaitTaskHandler(handler: TaskProxyHandler<T>): Any {
-        if (handler.isNew()) throw CanNotApplyOnNewTaskStubException("${handler.taskName}", "await")
-
-        return when {
-            handler.perTaskId != null -> DeferredTask<Any>(
-                taskName = handler.taskName,
-                taskId = handler.perTaskId!!,
-                isSync = false,
-                dispatcher = dispatcher
-            ).await()
-            handler.perTag != null -> throw CanNotAwaitStubPerTag("${handler.taskName}")
-            else -> thisShouldNotHappen()
-        }
-    }
-
-    private fun <T : Any> cancelWorkflowHandler(handler: WorkflowProxyHandler<T>): CompletableFuture<Unit> {
-        if (handler.isNew()) throw CanNotApplyOnNewWorkflowStubException("${handler.workflowName}", "cancel")
-
-        return sendingScope.future {
-            when {
-                handler.perWorkflowId != null -> {
-                    val msg = CancelWorkflow(
-                        workflowId = handler.perWorkflowId!!,
-                        workflowName = handler.workflowName,
-                        reason = WorkflowCancellationReason.CANCELED_BY_CLIENT
-                    )
-                    launch { sendToWorkflowEngine(msg) }
-                }
-                handler.perTag != null -> {
-                    val msg = CancelWorkflowPerTag(
-                        workflowTag = handler.perTag!!,
-                        workflowName = handler.workflowName,
-                        reason = WorkflowCancellationReason.CANCELED_BY_CLIENT
-                    )
-                    launch { sendToWorkflowTagEngine(msg) }
-                }
-                else -> thisShouldNotHappen()
-            }
-
-            Unit
-        }
-    }
-
-    private fun <T : Any> retryWorkflowHandler(handler: WorkflowProxyHandler<T>): CompletableFuture<Unit> {
-        if (handler.isNew()) throw CanNotApplyOnNewWorkflowStubException("${handler.workflowName}", "retry")
-
-        return sendingScope.future {
-            when {
-                handler.perWorkflowId != null -> {
-                    val msg = RetryWorkflowTask(
-                        workflowId = handler.perWorkflowId!!,
-                        workflowName = handler.workflowName
-                    )
-                    launch { sendToWorkflowEngine(msg) }
-                }
-                handler.perTag != null -> {
-                    val msg = RetryWorkflowTaskPerTag(
-                        workflowTag = handler.perTag!!,
-                        workflowName = handler.workflowName
-                    )
-                    launch { sendToWorkflowTagEngine(msg) }
-                }
-                else -> thisShouldNotHappen()
-            }
-
-            Unit
-        }
-    }
-
-    private fun <T : Any> awaitWorkflowHandler(handler: WorkflowProxyHandler<T>): Any {
-        if (handler.isNew()) throw CanNotApplyOnNewWorkflowStubException("${handler.workflowName}", "await")
-
-        return when {
-            handler.perWorkflowId != null -> DeferredWorkflow<Any>(
-                workflowName = handler.workflowName,
-                workflowId = handler.perWorkflowId!!,
-                isSync = false,
-                dispatcher = dispatcher
-            ).await()
-            handler.perTag != null -> throw CanNotAwaitStubPerTag("${handler.workflowName}")
-            else -> thisShouldNotHappen()
-        }
-    }
 }

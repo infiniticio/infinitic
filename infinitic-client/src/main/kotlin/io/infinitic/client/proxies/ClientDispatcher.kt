@@ -25,6 +25,9 @@
 
 package io.infinitic.client.proxies
 
+import io.infinitic.client.Deferred
+import io.infinitic.client.deferred.DeferredChannel
+import io.infinitic.client.deferred.DeferredSendChannel
 import io.infinitic.client.deferred.DeferredTask
 import io.infinitic.client.deferred.DeferredWorkflow
 import io.infinitic.common.clients.data.ClientName
@@ -46,35 +49,50 @@ import io.infinitic.common.data.methods.MethodName
 import io.infinitic.common.data.methods.MethodParameterTypes
 import io.infinitic.common.data.methods.MethodParameters
 import io.infinitic.common.proxies.Dispatcher
+import io.infinitic.common.proxies.NewProxyHandler
+import io.infinitic.common.proxies.NewTaskProxyHandler
+import io.infinitic.common.proxies.NewWorkflowProxyHandler
+import io.infinitic.common.proxies.ProxyHandler
+import io.infinitic.common.proxies.RunningProxyHandler
+import io.infinitic.common.proxies.RunningTaskProxyHandler
+import io.infinitic.common.proxies.RunningWorkflowProxyHandler
 import io.infinitic.common.proxies.SendChannelProxyHandler
-import io.infinitic.common.proxies.TaskProxyHandler
-import io.infinitic.common.proxies.WorkflowProxyHandler
 import io.infinitic.common.tasks.data.TaskId
 import io.infinitic.common.tasks.data.TaskName
 import io.infinitic.common.tasks.data.TaskTag
 import io.infinitic.common.tasks.engine.SendToTaskEngine
+import io.infinitic.common.tasks.engine.messages.CancelTask
 import io.infinitic.common.tasks.engine.messages.DispatchTask
+import io.infinitic.common.tasks.engine.messages.RetryTask
 import io.infinitic.common.tasks.engine.messages.WaitTask
 import io.infinitic.common.tasks.tags.SendToTaskTagEngine
 import io.infinitic.common.tasks.tags.messages.AddTaskTag
+import io.infinitic.common.tasks.tags.messages.CancelTaskPerTag
 import io.infinitic.common.tasks.tags.messages.GetTaskIds
+import io.infinitic.common.tasks.tags.messages.RetryTaskPerTag
 import io.infinitic.common.workflows.data.channels.ChannelEvent
 import io.infinitic.common.workflows.data.channels.ChannelEventId
 import io.infinitic.common.workflows.data.channels.ChannelEventType
-import io.infinitic.common.workflows.data.channels.ChannelName
+import io.infinitic.common.workflows.data.workflows.WorkflowCancellationReason
 import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.data.workflows.WorkflowName
 import io.infinitic.common.workflows.data.workflows.WorkflowTag
 import io.infinitic.common.workflows.engine.SendToWorkflowEngine
+import io.infinitic.common.workflows.engine.messages.CancelWorkflow
 import io.infinitic.common.workflows.engine.messages.DispatchWorkflow
+import io.infinitic.common.workflows.engine.messages.RetryWorkflowTask
 import io.infinitic.common.workflows.engine.messages.SendToChannel
 import io.infinitic.common.workflows.engine.messages.WaitWorkflow
 import io.infinitic.common.workflows.tags.SendToWorkflowTagEngine
 import io.infinitic.common.workflows.tags.messages.AddWorkflowTag
+import io.infinitic.common.workflows.tags.messages.CancelWorkflowPerTag
 import io.infinitic.common.workflows.tags.messages.GetWorkflowIds
+import io.infinitic.common.workflows.tags.messages.RetryWorkflowTaskPerTag
 import io.infinitic.common.workflows.tags.messages.SendToChannelPerTag
 import io.infinitic.exceptions.clients.AlreadyCompletedWorkflowException
+import io.infinitic.exceptions.clients.CanNotAwaitStubPerTag
 import io.infinitic.exceptions.clients.CanceledDeferredException
+import io.infinitic.exceptions.clients.ChannelUsedOnNewWorkflowException
 import io.infinitic.exceptions.clients.FailedDeferredException
 import io.infinitic.exceptions.clients.UnknownMethodInSendChannelException
 import io.infinitic.exceptions.clients.UnknownTaskException
@@ -144,30 +162,62 @@ internal class ClientDispatcher(
         return workflowIdsPerTag.workflowIds.map { it.id }.toSet()
     }
 
-    // synchronous call: task.method()
-    override fun <T> dispatchAndWait(handler: TaskProxyHandler<*>): T = dispatch<T>(handler).await()
+    // synchronous call: stub.method()
+    override fun <R : Any?> dispatchAndWait(handler: ProxyHandler<*>): R = dispatch<R>(handler, true).await()
 
-    // asynchronous call: async(newTask) { method() }
-    internal fun <T> dispatch(handler: TaskProxyHandler<*>): DeferredTask<T> {
-        checkMethodIsNotSuspend(handler.method)
+    // asynchronous call: async(stub::method)(*args)
+    internal fun <R : Any?> dispatch(handler: ProxyHandler<*>, isSync: Boolean): Deferred<R> = when (handler) {
+        is NewProxyHandler -> dispatchNew(handler, isSync)
+        is RunningProxyHandler -> dispatchRunning(handler, isSync)
+    }
 
+    // asynchronous call: async(newStub::method)(*args)
+    private fun <R : Any?> dispatchNew(handler: NewProxyHandler<*>, isSync: Boolean): Deferred<R> {
+        val method = handler.method
+        checkMethodIsNotSuspend(method)
+
+        return when (handler) {
+            is NewTaskProxyHandler -> dispatchNewTask(handler, isSync)
+            is NewWorkflowProxyHandler -> dispatchNewWorkflow(handler, isSync)
+        }
+    }
+
+    // asynchronous call: async(existingStub::method)(*args)
+    private fun <R : Any?> dispatchRunning(handler: RunningProxyHandler<*>, isSync: Boolean): Deferred<R> {
+        val method = handler.method
+        checkMethodIsNotSuspend(method)
+
+        return when (handler) {
+            is RunningTaskProxyHandler -> throw Exception("can not dispatch a method on running task")
+            is RunningWorkflowProxyHandler -> {
+                when (method.returnType.kotlin.isSubclassOf(SendChannel::class)) {
+                    // special case of getting a channel from a workflow
+                    true -> {
+                        val channel = SendChannelProxyHandler(method.returnType as Class<out SendChannel<*>>, handler).stub()
+
+                        DeferredChannel(handler, channel) as Deferred<R>
+                    }
+                    false -> TODO("Not Yet Implemented")
+                }
+            }
+            is SendChannelProxyHandler -> dispatchSendChannel(handler)
+        }
+    }
+
+    // asynchronous call: async(task::method)(*args)
+    private fun <R : Any?> dispatchNewTask(handler: NewTaskProxyHandler<*>, isSync: Boolean = false): Deferred<R> {
         val taskId = TaskId()
+
+        val runningTaskProxyHandler = handler.runningTaskProxyHandler(taskId)
 
         // store values
         val taskName = handler.taskName
-        val isSync = handler.isSync
         val methodName = handler.methodName
         val method = handler.method
-        val methodArgs = handler.methodArgs
+        val methodArgs = handler.args
         val taskTags = handler.taskTags!!
         val taskOptions = handler.taskOptions!!
         val taskMeta = handler.taskMeta!!
-
-        // reset for reuse
-        handler.reset()
-
-        // handler now target an existing task
-        handler.perTaskId = taskId
 
         // send messages asynchronously
         val future = scope.future {
@@ -203,76 +253,17 @@ internal class ClientDispatcher(
             Unit
         }
 
-        return DeferredTask(taskName, taskId, isSync, this, future)
+        return DeferredTask(runningTaskProxyHandler, isSync, this, future)
     }
 
-    internal fun <T> await(deferredTask: DeferredTask<T>): T {
-        val taskResult = scope.future {
-            // if task was initially not sync, then send WaitTask message
-            if (! deferredTask.isSync) {
-                val waitTask = WaitTask(
-                    taskId = deferredTask.taskId,
-                    taskName = deferredTask.taskName,
-                    clientName = clientName
-                )
-                launch { sendToTaskEngine(waitTask) }
-            }
-            // wait for result
-            responseFlow.first {
-                logger.debug { "ResponseFlow: $it" }
-                it is TaskMessage && it.taskId == deferredTask.taskId
-            }
-        }.join()
-
-        @Suppress("UNCHECKED_CAST")
-        return when (taskResult) {
-            is TaskCompleted -> taskResult.taskReturnValue.get() as T
-            is TaskCanceled -> throw CanceledDeferredException(
-                "${deferredTask.taskId}",
-                "${deferredTask.taskName}",
-            )
-            is TaskFailed -> throw FailedDeferredException(
-                "${deferredTask.taskId}",
-                "${deferredTask.taskName}",
-                taskResult.error
-            )
-            is UnknownTask -> throw UnknownTaskException(
-                "${deferredTask.taskId}",
-                "${deferredTask.taskName}"
-            )
-            else -> throw RuntimeException("Unexpected ${taskResult::class}")
-        }
-    }
-
-    // synchronous call on a new workflow: newWorkflow.method()
-    @Suppress("UNCHECKED_CAST")
-    override fun <S> dispatchAndWait(handler: WorkflowProxyHandler<*>): S {
-        // special case of getting a channel
-        val method = handler.method
-
-        if (method.returnType.kotlin.isSubclassOf(SendChannel::class)) {
-            return SendChannelProxyHandler(
-                method.returnType,
-                handler.workflowName,
-                ChannelName(method.name),
-                handler.perWorkflowId,
-                handler.perTag
-            ) { this }.stub() as S
-        }
-
-        // dispatch and wait
-        return dispatch<S>(handler).await()
-    }
-
-    // asynchronous workflow: async(newWorkflow) { method() }
-    internal fun <T> dispatch(handler: WorkflowProxyHandler<*>): DeferredWorkflow<T> {
-        checkMethodIsNotSuspend(handler.method)
-
+    // asynchronous call: async(workflow::method)(*args)
+    private fun <R : Any?> dispatchNewWorkflow(handler: NewWorkflowProxyHandler<*>, isSync: Boolean = false): Deferred<R> {
         val workflowId = WorkflowId()
+
+        val runningWorkflowProxyHandler = handler.runningWorkflowProxyHandler(workflowId)
 
         // store values to use after handler reset
         val workflowName = handler.workflowName
-        val isSync = handler.isSync
 
         // send messages asynchronously
         val future = scope.future() {
@@ -295,7 +286,7 @@ internal class ClientDispatcher(
                 workflowName = workflowName,
                 methodName = MethodName(handler.methodName),
                 methodParameterTypes = MethodParameterTypes.from(handler.method),
-                methodParameters = MethodParameters.from(handler.method, handler.methodArgs),
+                methodParameters = MethodParameters.from(handler.method, handler.args),
                 parentWorkflowId = null,
                 parentWorkflowName = null,
                 parentMethodRunId = null,
@@ -308,15 +299,96 @@ internal class ClientDispatcher(
             Unit
         }
 
-        // handler now target an existing task
-        handler.perWorkflowId = workflowId
-        // reset isSync only
-        handler.isSync = true
-
-        return DeferredWorkflow(workflowName, workflowId, isSync, this, future)
+        return DeferredWorkflow(runningWorkflowProxyHandler, isSync, this, future)
     }
 
-    internal fun <T> await(deferredWorkflow: DeferredWorkflow<T>): T {
+    // asynchronous send on a channel: async(existingWorkflow.channel) { send() }
+    private fun <R : Any?> dispatchSendChannel(handler: SendChannelProxyHandler<*>): DeferredSendChannel<R> {
+        val method = handler.method
+
+        if (method.name != SendChannel<*>::send.name) throw UnknownMethodInSendChannelException(
+            "${handler.workflowName}",
+            "${handler.channelName}",
+            method.name
+        )
+
+        val channelEventId = ChannelEventId()
+        val event = handler.args[0]
+
+        val future = scope.future() {
+            when {
+                handler.perTag != null -> {
+                    val sendToChannelPerTag = SendToChannelPerTag(
+                        workflowTag = handler.perTag!!,
+                        workflowName = handler.workflowName,
+                        clientName = clientName,
+                        channelEventId = channelEventId,
+                        channelName = handler.channelName,
+                        channelEvent = ChannelEvent.from(event),
+                        channelEventTypes = ChannelEventType.allFrom(event::class.java)
+                    )
+                    launch { sendToWorkflowTagEngine(sendToChannelPerTag) }
+                }
+                handler.perWorkflowId != null -> {
+                    val sendToChannel = SendToChannel(
+                        workflowId = handler.perWorkflowId!!,
+                        workflowName = handler.workflowName,
+                        clientName = clientName,
+                        channelEventId = channelEventId,
+                        channelName = handler.channelName,
+                        channelEvent = ChannelEvent.from(event),
+                        channelEventTypes = ChannelEventType.allFrom(event::class.java)
+                    )
+                    launch { sendToWorkflowEngine(sendToChannel) }
+                }
+                else -> throw ChannelUsedOnNewWorkflowException("${handler.workflowName}")
+            }
+
+            Unit
+        }
+
+        return DeferredSendChannel(handler.instance as RunningWorkflowProxyHandler<*>, channelEventId, future)
+    }
+
+    internal fun <R : Any?> await(deferredTask: DeferredTask<R>): R {
+        val taskResult = scope.future {
+            // if task was initially not sync, then send WaitTask message
+            if (! deferredTask.isSync) {
+                val waitTask = WaitTask(
+                    taskId = deferredTask.taskId,
+                    taskName = deferredTask.taskName,
+                    clientName = clientName
+                )
+                launch { sendToTaskEngine(waitTask) }
+            }
+            // wait for result
+            responseFlow.first {
+                logger.debug { "ResponseFlow: $it" }
+                it is TaskMessage && it.taskId == deferredTask.taskId
+            }
+        }.join()
+
+        @Suppress("UNCHECKED_CAST")
+        return when (taskResult) {
+            is TaskCompleted -> taskResult.taskReturnValue.get() as R
+            is TaskCanceled -> throw CanceledDeferredException(
+                "${deferredTask.taskId}",
+                "${deferredTask.taskName}",
+            )
+            is TaskFailed -> throw FailedDeferredException(
+                "${deferredTask.taskId}",
+                "${deferredTask.taskName}",
+                taskResult.error
+            )
+            is UnknownTask -> throw UnknownTaskException(
+                "${deferredTask.taskId}",
+                "${deferredTask.taskName}"
+            )
+            else -> throw RuntimeException("Unexpected ${taskResult::class}")
+        }
+    }
+
+    internal fun <R : Any?> await(deferredWorkflow: DeferredWorkflow<R>): R {
         val workflowResult = scope.future {
             // if task was not initially sync, then send WaitTask message
             if (! deferredWorkflow.isSync) {
@@ -337,7 +409,7 @@ internal class ClientDispatcher(
 
         @Suppress("UNCHECKED_CAST")
         return when (workflowResult) {
-            is WorkflowCompleted -> workflowResult.workflowReturnValue.get() as T
+            is WorkflowCompleted -> workflowResult.workflowReturnValue.get() as R
             is WorkflowCanceled -> throw CanceledDeferredException(
                 "${deferredWorkflow.workflowId}",
                 "${deferredWorkflow.workflowName}"
@@ -359,52 +431,125 @@ internal class ClientDispatcher(
         }
     }
 
-    // synchronous send on a channel: existingWorkflow.channel.send()
-    override fun dispatchAndWait(handler: SendChannelProxyHandler<*>) = dispatch(handler)
+    internal fun <T : Any> cancelTask(handler: RunningTaskProxyHandler<T>): CompletableFuture<Unit> {
 
-    // asynchronous send on a channel: async(existingWorkflow.channel) { send() }
-    private fun dispatch(handler: SendChannelProxyHandler<*>): CompletableFuture<Unit> {
-        val method = handler.method
-
-        if (method.name != SendChannel<*>::send.name) throw UnknownMethodInSendChannelException(
-            "${handler.workflowName}",
-            "${handler.channelName}",
-            method.name
-        )
-
-        val event = handler.methodArgs[0]
-
-        return scope.future() {
+        return scope.future {
             when {
-                handler.perTag != null -> {
-                    val sendToChannelPerTag = SendToChannelPerTag(
-                        workflowTag = handler.perTag!!,
-                        workflowName = handler.workflowName,
-                        clientName = clientName,
-                        clientWaiting = handler.isSync,
-                        channelEventId = ChannelEventId(),
-                        channelName = handler.channelName,
-                        channelEvent = ChannelEvent.from(event),
-                        channelEventTypes = ChannelEventType.allFrom(event::class.java)
+                handler.perTaskId != null -> {
+                    val msg = CancelTask(
+                        taskId = handler.perTaskId!!,
+                        taskName = handler.taskName
                     )
-                    launch { sendToWorkflowTagEngine(sendToChannelPerTag) }
+                    launch { sendToTaskEngine(msg) }
                 }
-                handler.perWorkflowId != null -> {
-                    val sendToChannel = SendToChannel(
-                        workflowId = handler.perWorkflowId!!,
-                        workflowName = handler.workflowName,
-                        clientName = clientName,
-                        channelEventId = ChannelEventId(),
-                        channelName = handler.channelName,
-                        channelEvent = ChannelEvent.from(event),
-                        channelEventTypes = ChannelEventType.allFrom(event::class.java)
+                handler.perTag != null -> {
+                    val msg = CancelTaskPerTag(
+                        taskTag = handler.perTag!!,
+                        taskName = handler.taskName
                     )
-                    launch { sendToWorkflowEngine(sendToChannel) }
+                    launch { sendToTaskTagEngine(msg) }
                 }
                 else -> thisShouldNotHappen()
             }
 
             Unit
         }
+    }
+
+    internal fun <T : Any> cancelWorkflow(handler: RunningWorkflowProxyHandler<T>): CompletableFuture<Unit> {
+
+        return scope.future {
+            when {
+                handler.perWorkflowId != null -> {
+                    val msg = CancelWorkflow(
+                        workflowId = handler.perWorkflowId!!,
+                        workflowName = handler.workflowName,
+                        reason = WorkflowCancellationReason.CANCELED_BY_CLIENT
+                    )
+                    launch { sendToWorkflowEngine(msg) }
+                }
+                handler.perTag != null -> {
+                    val msg = CancelWorkflowPerTag(
+                        workflowTag = handler.perTag!!,
+                        workflowName = handler.workflowName,
+                        reason = WorkflowCancellationReason.CANCELED_BY_CLIENT
+                    )
+                    launch { sendToWorkflowTagEngine(msg) }
+                }
+                else -> thisShouldNotHappen()
+            }
+
+            Unit
+        }
+    }
+
+    internal fun <T : Any> retryTask(handler: RunningTaskProxyHandler<T>): CompletableFuture<Unit> {
+
+        return scope.future {
+            when {
+                handler.perTaskId != null -> {
+                    val msg = RetryTask(
+                        taskId = handler.perTaskId!!,
+                        taskName = handler.taskName
+                    )
+                    launch { sendToTaskEngine(msg) }
+                }
+                handler.perTag != null -> {
+                    val msg = RetryTaskPerTag(
+                        taskTag = handler.perTag!!,
+                        taskName = handler.taskName
+                    )
+                    launch { sendToTaskTagEngine(msg) }
+                }
+                else -> thisShouldNotHappen()
+            }
+
+            Unit
+        }
+    }
+
+    internal fun <T : Any> retryWorkflow(handler: RunningWorkflowProxyHandler<T>): CompletableFuture<Unit> {
+
+        return scope.future {
+            when {
+                handler.perWorkflowId != null -> {
+                    val msg = RetryWorkflowTask(
+                        workflowId = handler.perWorkflowId!!,
+                        workflowName = handler.workflowName
+                    )
+                    launch { sendToWorkflowEngine(msg) }
+                }
+                handler.perTag != null -> {
+                    val msg = RetryWorkflowTaskPerTag(
+                        workflowTag = handler.perTag!!,
+                        workflowName = handler.workflowName
+                    )
+                    launch { sendToWorkflowTagEngine(msg) }
+                }
+                else -> thisShouldNotHappen()
+            }
+
+            Unit
+        }
+    }
+
+    internal fun <R : Any?> awaitTask(handler: RunningTaskProxyHandler<*>): R = when {
+        handler.perTaskId != null -> DeferredTask<R>(
+            handler,
+            isSync = false,
+            dispatcher = this
+        ).await()
+        handler.perTag != null -> throw CanNotAwaitStubPerTag("${handler.taskName}")
+        else -> thisShouldNotHappen()
+    }
+
+    internal fun <R : Any?> awaitWorkflow(handler: RunningWorkflowProxyHandler<*>): R = when {
+        handler.perWorkflowId != null -> DeferredWorkflow<R>(
+            handler,
+            isSync = false,
+            dispatcher = this
+        ).await()
+        handler.perTag != null -> throw CanNotAwaitStubPerTag("${handler.workflowName}")
+        else -> thisShouldNotHappen()
     }
 }

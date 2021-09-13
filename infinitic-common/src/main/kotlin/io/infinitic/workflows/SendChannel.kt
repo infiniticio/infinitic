@@ -25,8 +25,6 @@
 
 package io.infinitic.workflows
 
-import java.util.concurrent.CompletableFuture
-
 interface SendChannel<T> {
-    fun send(event: T): CompletableFuture<Unit>
+    fun send(event: T)
 }

@@ -78,26 +78,6 @@ inline fun <reified T : Any> InfiniticClient.getWorkflow(
 ): T = getWorkflow(T::class.java, tag)
 
 /**
- *  Dispatch a task (helper)
- */
-inline fun <reified T : Any, S> InfiniticClient.asyncTask(
-    tags: Set<String> = setOf(),
-    options: TaskOptions? = null,
-    meta: Map<String, ByteArray> = mapOf(),
-    noinline method: T.() -> S
-) = asyncTask(T::class.java, tags, options, meta, method)
-
-/**
- *  Dispatch a workflow (helper)
- */
-inline fun <reified T : Any, S> InfiniticClient.asyncWorkflow(
-    tags: Set<String> = setOf(),
-    options: WorkflowOptions? = null,
-    meta: Map<String, ByteArray> = mapOf(),
-    noinline method: T.() -> S
-) = asyncWorkflow(T::class.java, tags, options, meta, method)
-
-/**
  * Cancel task per id
  */
 inline fun <reified T : Any> InfiniticClient.cancelTask(

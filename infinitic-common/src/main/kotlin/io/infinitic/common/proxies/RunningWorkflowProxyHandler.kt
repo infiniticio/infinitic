@@ -25,18 +25,18 @@
 
 package io.infinitic.common.proxies
 
-import io.infinitic.common.workflows.data.channels.ChannelName
-import io.infinitic.workflows.SendChannel
+import io.infinitic.common.workflows.data.workflows.WorkflowId
+import io.infinitic.common.workflows.data.workflows.WorkflowName
+import io.infinitic.common.workflows.data.workflows.WorkflowTag
 
-class SendChannelProxyHandler<K : SendChannel<*>>(
-    override val klass: Class<out K>,
-    val instance: RunningWorkflowProxyHandler<*>,
-) : RunningProxyHandler<K>(klass, instance.dispatcherFn) {
+class RunningWorkflowProxyHandler<K : Any>(
+    override val klass: Class<K>,
+    val perWorkflowId: WorkflowId? = null,
+    val perTag: WorkflowTag? = null,
+    override val dispatcherFn: () -> Dispatcher
+) : RunningProxyHandler<K>(klass, dispatcherFn) {
 
-    val workflowName = instance.workflowName
-    val perWorkflowId = instance.perWorkflowId
-    val perTag = instance.perTag
-    val channelName = ChannelName(instance.method.name)
+    val workflowName = WorkflowName(className)
 
     init {
         require(perWorkflowId == null || perTag == null)

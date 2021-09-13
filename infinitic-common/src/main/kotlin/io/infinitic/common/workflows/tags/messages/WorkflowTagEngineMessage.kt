@@ -52,7 +52,6 @@ data class SendToChannelPerTag(
     override val workflowTag: WorkflowTag,
     override val workflowName: WorkflowName,
     val clientName: ClientName,
-    val clientWaiting: Boolean,
     val channelEventId: ChannelEventId,
     val channelName: ChannelName,
     val channelEvent: ChannelEvent,

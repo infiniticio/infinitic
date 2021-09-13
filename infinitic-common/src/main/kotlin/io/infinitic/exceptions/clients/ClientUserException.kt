@@ -41,18 +41,19 @@ class NotAStubException(
     help = "Make sure to provide the stub returned by client.newTask($name) or client.newWorkflow($name) function"
 )
 
+class NotAnInterfaceException(
+    method: String,
+    action: String
+) : ClientUserException(
+    msg = "When using client.$action function, $method must be a method from an interface",
+    help = "Make sure to provide a method defined from an interface, not from an actual instance."
+)
+
 class CanNotApplyOnChannelException(
     action: String
 ) : ClientUserException(
     msg = "First parameter of client.$action should be the stub of an existing task or workflow",
     help = "Make sure to provide the stub returned by client.getTask or client.getWorkflow function"
-)
-
-class CanNotReuseWorkflowStubException(
-    name: String
-) : ClientUserException(
-    msg = "You can not reuse a workflow stub ($name) already dispatched",
-    help = "Please create a new stub using `newWorkflow()` for each workflow dispatch`"
 )
 
 class CanNotApplyOnNewTaskStubException(
@@ -77,22 +78,6 @@ class SuspendMethodNotSupportedException(
 ) : ClientUserException(
     msg = "method \"$method\" in class \"$klass\" is a suspend function",
     help = "Suspend functions are not supporteds"
-)
-
-class NoMethodCallException(
-    klass: String
-) : ClientUserException(
-    msg = "The method to call for your task or workflow is missing",
-    help = "Make sure to call a method of \"$klass\""
-)
-
-class MultipleMethodCallsException(
-    klass: String,
-    method1: String,
-    method2: String
-) : ClientUserException(
-    msg = "Only one method of \"$klass\" can be called at a time. You can not call \"$method2\" method as you have already called \"$method1\"",
-    help = "Make sure you call only one method of \"$klass\" - multiple calls in the provided lambda is forbidden"
 )
 
 class ChannelUsedOnNewWorkflowException(

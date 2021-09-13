@@ -26,40 +26,41 @@
 package io.infinitic.client.deferred
 
 import io.infinitic.client.Deferred
-import io.infinitic.client.proxies.ClientDispatcher
-import io.infinitic.common.proxies.RunningTaskProxyHandler
-import io.infinitic.exceptions.thisShouldNotHappen
+import io.infinitic.common.proxies.RunningWorkflowProxyHandler
+import io.infinitic.common.workflows.data.channels.ChannelEventId
 import java.util.UUID
 import java.util.concurrent.CompletableFuture
 
-internal class DeferredTask<R : Any?> (
-    private val runningTaskProxyHandler: RunningTaskProxyHandler<*>,
-    internal val isSync: Boolean,
-    private val dispatcher: ClientDispatcher,
-    private val future: CompletableFuture<Unit>? = null
+internal class DeferredSendChannel<R : Any?> (
+    private val runningWorkflowProxyHandler: RunningWorkflowProxyHandler<*>,
+    channelEventId: ChannelEventId,
+    private val future: CompletableFuture<Unit>
 ) : Deferred<R> {
 
-    val taskName = runningTaskProxyHandler.taskName
-    val taskId = runningTaskProxyHandler.perTaskId!!
+    override fun cancel(): CompletableFuture<Unit> {
+        TODO("Not yet implemented")
+    }
 
-    override fun cancel() = dispatcher.cancelTask(runningTaskProxyHandler)
+    override fun retry(): CompletableFuture<Unit> {
+        TODO("Not yet implemented")
+    }
 
-    override fun retry() = dispatcher.retryTask(runningTaskProxyHandler)
+    override fun await(): R {
+        join()
 
-    override fun await(): R = dispatcher.await(this)
+        // Channel::send has Unit as return type
+        @Suppress("UNCHECKED_CAST")
+        return Unit as R
+    }
 
     override fun join(): Deferred<R> {
-        when (future) {
-            null -> thisShouldNotHappen()
-            else -> future.join()
-        }
+        future.join()
 
         return this
     }
 
-    override val id: UUID
-        get() = taskId.id
+    override val id: UUID = channelEventId.id
 
     @Suppress("UNCHECKED_CAST")
-    override fun <K : Any> instance() = runningTaskProxyHandler.stub() as K
+    override fun <K : Any> instance() = runningWorkflowProxyHandler.stub() as K
 }

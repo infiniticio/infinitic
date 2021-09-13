@@ -27,22 +27,28 @@ package io.infinitic.client.deferred
 
 import io.infinitic.client.Deferred
 import io.infinitic.client.proxies.ClientDispatcher
-import io.infinitic.common.workflows.data.workflows.WorkflowId
-import io.infinitic.common.workflows.data.workflows.WorkflowName
+import io.infinitic.common.proxies.RunningWorkflowProxyHandler
 import io.infinitic.exceptions.thisShouldNotHappen
 import java.util.UUID
 import java.util.concurrent.CompletableFuture
 
-internal class DeferredWorkflow<T> (
-    internal val workflowName: WorkflowName,
-    internal val workflowId: WorkflowId,
+internal class DeferredWorkflow<R : Any?> (
+    private val runningWorkflowProxyHandler: RunningWorkflowProxyHandler<*>,
     internal val isSync: Boolean,
     private val dispatcher: ClientDispatcher,
     private val future: CompletableFuture<Unit>? = null
-) : Deferred<T> {
-    override fun await(): T = dispatcher.await(this)
+) : Deferred<R> {
 
-    override fun join(): Deferred<T> {
+    override fun cancel() = dispatcher.cancelWorkflow(runningWorkflowProxyHandler)
+
+    override fun retry() = dispatcher.retryWorkflow(runningWorkflowProxyHandler)
+
+    val workflowName = runningWorkflowProxyHandler.workflowName
+    val workflowId = runningWorkflowProxyHandler.perWorkflowId!!
+
+    override fun await(): R = dispatcher.await(this)
+
+    override fun join(): Deferred<R> {
         when (future) {
             null -> thisShouldNotHappen()
             else -> future.join()
@@ -51,6 +57,8 @@ internal class DeferredWorkflow<T> (
         return this
     }
 
-    override val id: UUID
-        get() = workflowId.id
+    override val id: UUID = workflowId.id
+
+    @Suppress("UNCHECKED_CAST")
+    override fun <K : Any> instance() = runningWorkflowProxyHandler.stub() as K
 }

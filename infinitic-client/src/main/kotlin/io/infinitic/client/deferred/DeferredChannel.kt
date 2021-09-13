@@ -23,22 +23,34 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.common.proxies
+package io.infinitic.client.deferred
 
-import io.infinitic.common.workflows.data.channels.ChannelName
+import io.infinitic.client.Deferred
+import io.infinitic.common.proxies.RunningWorkflowProxyHandler
 import io.infinitic.workflows.SendChannel
+import java.util.UUID
+import java.util.concurrent.CompletableFuture
 
-class SendChannelProxyHandler<K : SendChannel<*>>(
-    override val klass: Class<out K>,
-    val instance: RunningWorkflowProxyHandler<*>,
-) : RunningProxyHandler<K>(klass, instance.dispatcherFn) {
+internal class DeferredChannel<R : SendChannel<*>> (
+    private val runningWorkflowProxyHandler: RunningWorkflowProxyHandler<*>,
+    private val channel: R
+) : Deferred<R> {
 
-    val workflowName = instance.workflowName
-    val perWorkflowId = instance.perWorkflowId
-    val perTag = instance.perTag
-    val channelName = ChannelName(instance.method.name)
-
-    init {
-        require(perWorkflowId == null || perTag == null)
+    override fun cancel(): CompletableFuture<Unit> {
+        TODO("Not yet implemented")
     }
+
+    override fun retry(): CompletableFuture<Unit> {
+        TODO("Not yet implemented")
+    }
+
+    override fun await(): R = channel
+
+    override fun join(): Deferred<R> = this
+
+    override val id: UUID
+        get() = throw Exception()
+
+    @Suppress("UNCHECKED_CAST")
+    override fun <K : Any> instance() = runningWorkflowProxyHandler.stub() as K
 }

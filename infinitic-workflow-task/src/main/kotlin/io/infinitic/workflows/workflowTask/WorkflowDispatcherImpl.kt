@@ -32,9 +32,9 @@ import io.infinitic.common.data.Name
 import io.infinitic.common.data.methods.MethodName
 import io.infinitic.common.data.methods.MethodParameterTypes
 import io.infinitic.common.data.methods.MethodParameters
+import io.infinitic.common.proxies.NewTaskProxyHandler
+import io.infinitic.common.proxies.NewWorkflowProxyHandler
 import io.infinitic.common.proxies.SendChannelProxyHandler
-import io.infinitic.common.proxies.TaskProxyHandler
-import io.infinitic.common.proxies.WorkflowProxyHandler
 import io.infinitic.common.workflows.data.channels.ChannelEvent
 import io.infinitic.common.workflows.data.channels.ChannelEventFilter
 import io.infinitic.common.workflows.data.channels.ChannelEventType
@@ -111,12 +111,12 @@ internal class WorkflowDispatcherImpl(
         proxy: T,
         method: T.() -> S
     ): Deferred<S> = when (val handler = Proxy.getInvocationHandler(proxy)) {
-        is TaskProxyHandler<*> -> {
+        is NewTaskProxyHandler<*> -> {
             handler.isSync = false
             proxy.method()
             dispatchTask(handler)
         }
-        is WorkflowProxyHandler<*> -> {
+        is NewWorkflowProxyHandler<*> -> {
             handler.isSync = false
             proxy.method()
             dispatchWorkflow(handler)
@@ -351,7 +351,7 @@ internal class WorkflowDispatcherImpl(
     /*
      * Task dispatching
      */
-    override fun <S> dispatchTask(handler: TaskProxyHandler<*>): Deferred<S> {
+    override fun <S> dispatchTask(handler: NewTaskProxyHandler<*>): Deferred<S> {
         val method = handler.method
         val methodArgs = handler.methodArgs
 
@@ -373,13 +373,13 @@ internal class WorkflowDispatcherImpl(
         return deferred
     }
 
-    override fun <S> dispatchAndWait(handler: TaskProxyHandler<*>): S =
+    override fun <S> dispatchAndWait(handler: NewTaskProxyHandler<*>): S =
         dispatchTask<S>(handler).await()
 
     /*
      * Workflow dispatching
      */
-    override fun <S> dispatchWorkflow(handler: WorkflowProxyHandler<*>): Deferred<S> {
+    override fun <S> dispatchWorkflow(handler: NewWorkflowProxyHandler<*>): Deferred<S> {
         val method = handler.method
         val args = handler.methodArgs
         val name = handler.methodName
@@ -405,7 +405,7 @@ internal class WorkflowDispatcherImpl(
     /*
      * Start another running child workflow
      */
-    override fun <S> dispatchAndWait(handler: WorkflowProxyHandler<*>): S =
+    override fun <S> dispatchAndWait(handler: NewWorkflowProxyHandler<*>): S =
         dispatchWorkflow<S>(handler).await()
 
     /*
