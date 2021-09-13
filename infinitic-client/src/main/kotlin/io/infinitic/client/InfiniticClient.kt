@@ -66,9 +66,11 @@ import java.lang.reflect.Proxy
 import java.util.UUID
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.Executors
+import kotlin.reflect.KCallable
 import kotlin.reflect.KFunction
 import kotlin.reflect.KFunction0
 import kotlin.reflect.KFunction1
+import kotlin.reflect.KFunction10
 import kotlin.reflect.KFunction2
 import kotlin.reflect.KFunction3
 import kotlin.reflect.KFunction4
@@ -233,79 +235,285 @@ abstract class InfiniticClient : Closeable {
      *  Asynchronously process a task or a workflow
      */
 
-    private fun <R : Any?> run(invoke: () -> R): Deferred<R> = dispatcher.dispatch(ProxyHandler.async(invoke), false)
-
     fun <R : Any?> dispatch(method: KFunction0<R>): () -> Deferred<R> =
-        { run { checkIsInterface(method); method() } }
+        { run { method.check().call() } }
 
     fun <S1, R : Any?> dispatch(method: KFunction1<S1, R>): (S1) -> Deferred<R> =
-        { s: S1 -> run { checkIsInterface(method); method(s) } }
+        { s: S1 -> run { method.check().call(s) } }
 
     fun <S1, S2, R : Any?> dispatch(method: KFunction2<S1, S2, R>): (S1, S2) -> Deferred<R> =
-        { s1: S1, s2: S2 -> run { checkIsInterface(method); method(s1, s2) } }
+        { s1: S1, s2: S2 -> run { checkMethod(method); method(s1, s2) } }
 
     fun <S1, S2, S3, R : Any?> dispatch(method: KFunction3<S1, S2, S3, R>): (S1, S2, S3) -> Deferred<R> =
-        { s1: S1, s2: S2, s3: S3 -> run { checkIsInterface(method); method(s1, s2, s3) } }
+        { s1: S1, s2: S2, s3: S3 -> run { checkMethod(method); method(s1, s2, s3) } }
 
     fun <S1, S2, S3, S4, R : Any?> dispatch(method: KFunction4<S1, S2, S3, S4, R>): (S1, S2, S3, S4) -> Deferred<R> =
-        { s1: S1, s2: S2, s3: S3, s4: S4 -> run { checkIsInterface(method); method(s1, s2, s3, s4) } }
+        { s1: S1, s2: S2, s3: S3, s4: S4 -> run { checkMethod(method); method(s1, s2, s3, s4) } }
 
     fun <S1, S2, S3, S4, S5, R : Any?> dispatch(method: KFunction5<S1, S2, S3, S4, S5, R>): (S1, S2, S3, S4, S5) -> Deferred<R> =
-        { s1: S1, s2: S2, s3: S3, s4: S4, s5: S5 -> run { checkIsInterface(method); method(s1, s2, s3, s4, s5) } }
+        { s1: S1, s2: S2, s3: S3, s4: S4, s5: S5 -> run { checkMethod(method); method(s1, s2, s3, s4, s5) } }
 
     fun <S1, S2, S3, S4, S5, S6, R : Any?> dispatch(method: KFunction6<S1, S2, S3, S4, S5, S6, R>): (S1, S2, S3, S4, S5, S6) -> Deferred<R> =
-        { s1: S1, s2: S2, s3: S3, s4: S4, s5: S5, s6: S6 -> run { checkIsInterface(method); method(s1, s2, s3, s4, s5, s6) } }
+        { s1: S1, s2: S2, s3: S3, s4: S4, s5: S5, s6: S6 -> run { checkMethod(method); method(s1, s2, s3, s4, s5, s6) } }
 
     fun <S1, S2, S3, S4, S5, S6, S7, R : Any?> dispatch(method: KFunction7<S1, S2, S3, S4, S5, S6, S7, R>): (S1, S2, S3, S4, S5, S6, S7) -> Deferred<R> =
-        { s1: S1, s2: S2, s3: S3, s4: S4, s5: S5, s6: S6, s7: S7 -> run { checkIsInterface(method); method(s1, s2, s3, s4, s5, s6, s7) } }
+        { s1: S1, s2: S2, s3: S3, s4: S4, s5: S5, s6: S6, s7: S7 -> run { checkMethod(method); method(s1, s2, s3, s4, s5, s6, s7) } }
 
     fun <S1, S2, S3, S4, S5, S6, S7, S8, R : Any?> dispatch(method: KFunction8<S1, S2, S3, S4, S5, S6, S7, S8, R>): (S1, S2, S3, S4, S5, S6, S7, S8) -> Deferred<R> =
-        { s1: S1, s2: S2, s3: S3, s4: S4, s5: S5, s6: S6, s7: S7, s8: S8 -> run { checkIsInterface(method); method(s1, s2, s3, s4, s5, s6, s7, s8) } }
+        { s1: S1, s2: S2, s3: S3, s4: S4, s5: S5, s6: S6, s7: S7, s8: S8 -> run { checkMethod(method); method(s1, s2, s3, s4, s5, s6, s7, s8) } }
 
     fun <S1, S2, S3, S4, S5, S6, S7, S8, S9, R : Any?> dispatch(method: KFunction9<S1, S2, S3, S4, S5, S6, S7, S8, S9, R>): (S1, S2, S3, S4, S5, S6, S7, S8, S9) -> Deferred<R> =
-        { s1: S1, s2: S2, s3: S3, s4: S4, s5: S5, s6: S6, s7: S7, s8: S8, s9: S9 -> run { checkIsInterface(method); method(s1, s2, s3, s4, s5, s6, s7, s8, s9) } }
-
-    private fun checkIsInterface(method: KFunction<*>) {
-        if (method.javaMethod?.declaringClass?.isInterface != true) throw NotAnInterfaceException(method.name, "dispatch")
-    }
+        { s1: S1, s2: S2, s3: S3, s4: S4, s5: S5, s6: S6, s7: S7, s8: S8, s9: S9 -> run { checkMethod(method); method(s1, s2, s3, s4, s5, s6, s7, s8, s9) } }
 
     /**
      *  Asynchronously process a task (helper)
      */
+    @JvmOverloads
+    fun <K : Any, R : Any?> dispatchTask(
+        method: KFunction1<K, R>,
+        tags: Set<String> = setOf(),
+        options: TaskOptions? = null,
+        meta: Map<String, ByteArray> = mapOf()
+    ): () -> Deferred<R> = { run { method.checkTask<K, R>(tags, options, meta).call() } }
+
     @JvmOverloads
     fun <K : Any, S1, R : Any?> dispatchTask(
         method: KFunction2<K, S1, R>,
         tags: Set<String> = setOf(),
         options: TaskOptions? = null,
         meta: Map<String, ByteArray> = mapOf()
-    ): (S1) -> Deferred<R> {
-        checkIsInterface(method)
-        val task = newTask(method.javaMethod?.declaringClass as Class<K>, tags, options, meta)
+    ): (S1) -> Deferred<R> = { s1: S1 ->
+        run {
+            method.checkTask<K, R>(tags, options, meta).call(s1)
+        }
+    }
 
-        return { s: S1 -> run { method(task, s) } }
+    @JvmOverloads
+    fun <K : Any, S1, S2, R : Any?> dispatchTask(
+        method: KFunction3<K, S1, S2, R>,
+        tags: Set<String> = setOf(),
+        options: TaskOptions? = null,
+        meta: Map<String, ByteArray> = mapOf()
+    ): (S1, S2) -> Deferred<R> = { s1: S1, s2: S2 ->
+        run {
+            method.checkTask<K, R>(tags, options, meta).call(s1, s2)
+        }
+    }
+
+    @JvmOverloads
+    fun <K : Any, S1, S2, S3, R : Any?> dispatchTask(
+        method: KFunction4<K, S1, S2, S3, R>,
+        tags: Set<String> = setOf(),
+        options: TaskOptions? = null,
+        meta: Map<String, ByteArray> = mapOf()
+    ): (S1, S2, S3) -> Deferred<R> = { s1: S1, s2: S2, s3: S3 ->
+        run {
+            method.checkTask<K, R>(tags, options, meta).call(s1, s2, s3)
+        }
+    }
+
+    @JvmOverloads
+    fun <K : Any, S1, S2, S3, S4, R : Any?> dispatchTask(
+        method: KFunction5<K, S1, S2, S3, S4, R>,
+        tags: Set<String> = setOf(),
+        options: TaskOptions? = null,
+        meta: Map<String, ByteArray> = mapOf()
+    ): (S1, S2, S3, S4) -> Deferred<R> = { s1: S1, s2: S2, s3: S3, s4: S4 ->
+        run {
+            method.checkTask<K, R>(tags, options, meta).call(s1, s2, s3, s4)
+        }
+    }
+
+    @JvmOverloads
+    fun <K : Any, S1, S2, S3, S4, S5, R : Any?> dispatchTask(
+        method: KFunction6<K, S1, S2, S3, S4, S5, R>,
+        tags: Set<String> = setOf(),
+        options: TaskOptions? = null,
+        meta: Map<String, ByteArray> = mapOf()
+    ): (S1, S2, S3, S4, S5) -> Deferred<R> = { s1: S1, s2: S2, s3: S3, s4: S4, s5: S5 ->
+        run {
+            method.checkTask<K, R>(tags, options, meta).call(s1, s2, s3, s4, s5)
+        }
+    }
+
+    @JvmOverloads
+    fun <K : Any, S1, S2, S3, S4, S5, S6, R : Any?> dispatchTask(
+        method: KFunction7<K, S1, S2, S3, S4, S5, S6, R>,
+        tags: Set<String> = setOf(),
+        options: TaskOptions? = null,
+        meta: Map<String, ByteArray> = mapOf()
+    ): (S1, S2, S3, S4, S5, S6) -> Deferred<R> = { s1: S1, s2: S2, s3: S3, s4: S4, s5: S5, s6: S6 ->
+        run {
+            method.checkTask<K, R>(tags, options, meta).call(s1, s2, s3, s4, s5, s6)
+        }
+    }
+
+    @JvmOverloads
+    fun <K : Any, S1, S2, S3, S4, S5, S6, S7, R : Any?> dispatchTask(
+        method: KFunction8<K, S1, S2, S3, S4, S5, S6, S7, R>,
+        tags: Set<String> = setOf(),
+        options: TaskOptions? = null,
+        meta: Map<String, ByteArray> = mapOf()
+    ): (S1, S2, S3, S4, S5, S6, S7) -> Deferred<R> = { s1: S1, s2: S2, s3: S3, s4: S4, s5: S5, s6: S6, s7: S7 ->
+        run {
+            method.checkTask<K, R>(tags, options, meta).call(s1, s2, s3, s4, s5, s6, s7)
+        }
+    }
+
+    @JvmOverloads
+    fun <K : Any, S1, S2, S3, S4, S5, S6, S7, S8, R : Any?> dispatchTask(
+        method: KFunction9<K, S1, S2, S3, S4, S5, S6, S7, S8, R>,
+        tags: Set<String> = setOf(),
+        options: TaskOptions? = null,
+        meta: Map<String, ByteArray> = mapOf()
+    ): (S1, S2, S3, S4, S5, S6, S7, S8) -> Deferred<R> = { s1: S1, s2: S2, s3: S3, s4: S4, s5: S5, s6: S6, s7: S7, s8: S8 ->
+        run {
+            method.checkTask<K, R>(tags, options, meta).call(s1, s2, s3, s4, s5, s6, s7, s8)
+        }
+    }
+
+    @JvmOverloads
+    fun <K : Any, S1, S2, S3, S4, S5, S6, S7, S8, S9, R : Any?> dispatchTask(
+        method: KFunction10<K, S1, S2, S3, S4, S5, S6, S7, S8, S9, R>,
+        tags: Set<String> = setOf(),
+        options: TaskOptions? = null,
+        meta: Map<String, ByteArray> = mapOf()
+    ): (S1, S2, S3, S4, S5, S6, S7, S8, S9) -> Deferred<R> = { s1: S1, s2: S2, s3: S3, s4: S4, s5: S5, s6: S6, s7: S7, s8: S8, s9: S9 ->
+        run {
+            method.checkTask<K, R>(tags, options, meta).call(s1, s2, s3, s4, s5, s6, s7, s8, s9)
+        }
     }
 
     /**
      *  Asynchronously process a workflow (helper)
      */
     @JvmOverloads
+    fun <K : Any, R : Any?> dispatchWorkflow(
+        method: KFunction1<K, R>,
+        tags: Set<String> = setOf(),
+        options: WorkflowOptions? = null,
+        meta: Map<String, ByteArray> = mapOf()
+    ): () -> Deferred<R> = {
+        run {
+            @Suppress("UNCHECKED_CAST")
+            method.checkWorkflow<K, R>(tags, options, meta).call()
+        }
+    }
+
+    @JvmOverloads
     fun <K : Any, S1, R : Any?> dispatchWorkflow(
         method: KFunction2<K, S1, R>,
         tags: Set<String> = setOf(),
         options: WorkflowOptions? = null,
         meta: Map<String, ByteArray> = mapOf()
-    ): (S1) -> Deferred<R> {
-        val workflow = newWorkflow(method.javaMethod?.declaringClass as Class<K>, tags, options, meta)
-
-        return { s: S1 -> run { method(workflow, s) } }
+    ): (S1) -> Deferred<R> = { s1: S1 ->
+        run {
+            method.checkWorkflow<K, R>(tags, options, meta).call(s1)
+        }
     }
+
+    @JvmOverloads
+    fun <K : Any, S1, S2, R : Any?> dispatchWorkflow(
+        method: KFunction3<K, S1, S2, R>,
+        tags: Set<String> = setOf(),
+        options: WorkflowOptions? = null,
+        meta: Map<String, ByteArray> = mapOf()
+    ): (S1, S2) -> Deferred<R> = { s1: S1, s2: S2 ->
+        run {
+            method.checkWorkflow<K, R>(tags, options, meta).call(s1, s2)
+        }
+    }
+
+    @JvmOverloads
+    fun <K : Any, S1, S2, S3, R : Any?> dispatchWorkflow(
+        method: KFunction4<K, S1, S2, S3, R>,
+        tags: Set<String> = setOf(),
+        options: WorkflowOptions? = null,
+        meta: Map<String, ByteArray> = mapOf()
+    ): (S1, S2, S3) -> Deferred<R> = { s1: S1, s2: S2, s3: S3 ->
+        run {
+            method.checkWorkflow<K, R>(tags, options, meta).call(s1, s2, s3)
+        }
+    }
+
+    @JvmOverloads
+    fun <K : Any, S1, S2, S3, S4, R : Any?> dispatchWorkflow(
+        method: KFunction5<K, S1, S2, S3, S4, R>,
+        tags: Set<String> = setOf(),
+        options: WorkflowOptions? = null,
+        meta: Map<String, ByteArray> = mapOf()
+    ): (S1, S2, S3, S4) -> Deferred<R> = { s1: S1, s2: S2, s3: S3, s4: S4 ->
+        run {
+            method.checkWorkflow<K, R>(tags, options, meta).call(s1, s2, s3, s4)
+        }
+    }
+
+    @JvmOverloads
+    fun <K : Any, S1, S2, S3, S4, S5, R : Any?> dispatchWorkflow(
+        method: KFunction6<K, S1, S2, S3, S4, S5, R>,
+        tags: Set<String> = setOf(),
+        options: WorkflowOptions? = null,
+        meta: Map<String, ByteArray> = mapOf()
+    ): (S1, S2, S3, S4, S5) -> Deferred<R> = { s1: S1, s2: S2, s3: S3, s4: S4, s5: S5 ->
+        run {
+            method.checkWorkflow<K, R>(tags, options, meta).call(s1, s2, s3, s4, s5)
+        }
+    }
+
+    @JvmOverloads
+    fun <K : Any, S1, S2, S3, S4, S5, S6, R : Any?> dispatchWorkflow(
+        method: KFunction7<K, S1, S2, S3, S4, S5, S6, R>,
+        tags: Set<String> = setOf(),
+        options: WorkflowOptions? = null,
+        meta: Map<String, ByteArray> = mapOf()
+    ): (S1, S2, S3, S4, S5, S6) -> Deferred<R> = { s1: S1, s2: S2, s3: S3, s4: S4, s5: S5, s6: S6 ->
+        run {
+            method.checkWorkflow<K, R>(tags, options, meta).call(s1, s2, s3, s4, s5, s6)
+        }
+    }
+
+    @JvmOverloads
+    fun <K : Any, S1, S2, S3, S4, S5, S6, S7, R : Any?> dispatchWorkflow(
+        method: KFunction8<K, S1, S2, S3, S4, S5, S6, S7, R>,
+        tags: Set<String> = setOf(),
+        options: WorkflowOptions? = null,
+        meta: Map<String, ByteArray> = mapOf()
+    ): (S1, S2, S3, S4, S5, S6, S7) -> Deferred<R> = { s1: S1, s2: S2, s3: S3, s4: S4, s5: S5, s6: S6, s7: S7 ->
+        run {
+            method.checkWorkflow<K, R>(tags, options, meta).call(s1, s2, s3, s4, s5, s6, s7)
+        }
+    }
+
+    @JvmOverloads
+    fun <K : Any, S1, S2, S3, S4, S5, S6, S7, S8, R : Any?> dispatchWorkflow(
+        method: KFunction9<K, S1, S2, S3, S4, S5, S6, S7, S8, R>,
+        tags: Set<String> = setOf(),
+        options: WorkflowOptions? = null,
+        meta: Map<String, ByteArray> = mapOf()
+    ): (S1, S2, S3, S4, S5, S6, S7, S8) -> Deferred<R> = { s1: S1, s2: S2, s3: S3, s4: S4, s5: S5, s6: S6, s7: S7, s8: S8 ->
+        run {
+            method.checkWorkflow<K, R>(tags, options, meta).call(s1, s2, s3, s4, s5, s6, s7, s8)
+        }
+    }
+
+    @JvmOverloads
+    fun <K : Any, S1, S2, S3, S4, S5, S6, S7, S8, S9, R : Any?> dispatchWorkflow(
+        method: KFunction10<K, S1, S2, S3, S4, S5, S6, S7, S8, S9, R>,
+        tags: Set<String> = setOf(),
+        options: WorkflowOptions? = null,
+        meta: Map<String, ByteArray> = mapOf()
+    ): (S1, S2, S3, S4, S5, S6, S7, S8, S9) -> Deferred<R> = { s1: S1, s2: S2, s3: S3, s4: S4, s5: S5, s6: S6, s7: S7, s8: S8, s9: S9 ->
+        run {
+            method.checkWorkflow<K, R>(tags, options, meta).call(s1, s2, s3, s4, s5, s6, s7, s8, s9)
+        }
+    }
+
     /**
      *  Cancel a task or a workflow from a stub
      */
-    fun <T : Any> cancel(proxy: T): CompletableFuture<Unit> {
-        if (proxy !is Proxy) throw NotAStubException(proxy::class.java.name, "cancel")
-
-        return when (val handler = Proxy.getInvocationHandler(proxy) as ProxyHandler<*>) {
+    fun <T : Any> cancel(proxy: T): CompletableFuture<Unit> = when (Proxy.isProxyClass(proxy::class.java)) {
+        false -> throw NotAStubException(proxy::class.java.name, "cancel")
+        true -> when (val handler = Proxy.getInvocationHandler(proxy) as ProxyHandler<*>) {
             is NewTaskProxyHandler -> throw CanNotApplyOnNewTaskStubException(handler.klass.name, "cancel")
             is NewWorkflowProxyHandler -> throw CanNotApplyOnNewWorkflowStubException(handler.klass.name, "cancel")
             is RunningProxyHandler -> when (handler) {
@@ -351,14 +559,13 @@ abstract class InfiniticClient : Closeable {
     /**
      * Await a task or a workflowTask from a stub
      */
-    fun <K : Any, R : Any> await(proxy: K): R {
-        if (proxy !is Proxy) throw NotAStubException(proxy::class.java.name, "await")
-
-        return when (val handler = Proxy.getInvocationHandler(proxy) as ProxyHandler<*>) {
+    fun <R : Any?> await(proxy: Any): R = when (Proxy.isProxyClass(proxy::class.java)) {
+        false -> throw NotAStubException(proxy::class.java.name, "await")
+        true -> when (val handler = Proxy.getInvocationHandler(proxy) as ProxyHandler<*>) {
             is NewTaskProxyHandler -> throw CanNotApplyOnNewTaskStubException(handler.klass.name, "await")
             is NewWorkflowProxyHandler -> throw CanNotApplyOnNewWorkflowStubException(handler.klass.name, "await")
             is RunningProxyHandler -> when (handler) {
-                is RunningTaskProxyHandler -> dispatcher.awaitTask(handler)
+                is RunningTaskProxyHandler -> dispatcher.awaitTask<R>(handler)
                 is RunningWorkflowProxyHandler -> dispatcher.awaitWorkflow(handler)
                 is SendChannelProxyHandler -> throw CanNotApplyOnChannelException("await")
                 else -> throw Exception()
@@ -385,10 +592,9 @@ abstract class InfiniticClient : Closeable {
     /**
      *  Complete a task or a workflow from a stub
      */
-    fun <T : Any> complete(proxy: T, value: Any?) {
-        if (proxy !is Proxy) throw NotAStubException(proxy::class.java.name, "complete")
-
-        return when (val handler = Proxy.getInvocationHandler(proxy) as ProxyHandler<*>) {
+    fun complete(proxy: Any, value: Any?): Unit = when (Proxy.isProxyClass(proxy::class.java)) {
+        false -> throw NotAStubException(proxy::class.java.name, "complete")
+        true -> when (val handler = Proxy.getInvocationHandler(proxy) as ProxyHandler<*>) {
             is NewTaskProxyHandler -> throw CanNotApplyOnNewTaskStubException(handler.klass.name, "complete")
             is NewWorkflowProxyHandler -> throw CanNotApplyOnNewWorkflowStubException(handler.klass.name, "complete")
             is RunningProxyHandler -> when (handler) {
@@ -483,4 +689,30 @@ abstract class InfiniticClient : Closeable {
         klass: Class<out T>,
         tag: String
     ) = retry(getWorkflow(klass, tag))
+
+    private fun <R : Any?> run(invoke: () -> R): Deferred<R> = dispatcher.dispatch(ProxyHandler.async(invoke), false)
+
+    private fun checkMethod(method: KFunction<*>) {
+        if (method.javaMethod?.declaringClass?.isInterface != true) throw NotAnInterfaceException(method.name, "dispatch")
+    }
+
+    private fun <R> KFunction<R>.check(): KFunction<R> {
+        if (javaMethod?.declaringClass?.isInterface != true) throw NotAnInterfaceException(name, "dispatch")
+
+        return this
+    }
+
+    @Suppress("UNCHECKED_CAST")
+    private fun <K : Any, R> KFunction<R>.checkTask(
+        tags: Set<String>,
+        options: TaskOptions?,
+        meta: Map<String, ByteArray>
+    ): KCallable<R> = check().withInstance(newTask(javaMethod?.declaringClass as Class<out K>, tags, options, meta))
+
+    @Suppress("UNCHECKED_CAST")
+    private fun <K : Any, R> KFunction<R>.checkWorkflow(
+        tags: Set<String>,
+        options: WorkflowOptions?,
+        meta: Map<String, ByteArray>
+    ): KCallable<R> = check().withInstance(newWorkflow(javaMethod?.declaringClass as Class<out K>, tags, options, meta))
 }

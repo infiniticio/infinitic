@@ -92,16 +92,16 @@ class ClientTaskTests : StringSpec({
     }
 
     "Should throw when not using a stub" {
-//        shouldThrow<NotAStubException> {
-//            client.dispatch("") { }
-//        }
-
         shouldThrow<NotAStubException> {
-            client.retry("")
+            client.cancel("")
         }
 
         shouldThrow<NotAStubException> {
-            client.cancel("")
+            client.complete("", null)
+        }
+
+        shouldThrow<NotAStubException> {
+            client.retry("")
         }
     }
 
@@ -114,19 +114,20 @@ class ClientTaskTests : StringSpec({
         }
     }
 
-    "Should throw when retrying new stub" {
+    "Should throw when using new stub" {
         // when
         val fakeTask = client.newTask<FakeTask>()
-        shouldThrow<CanNotApplyOnNewTaskStubException> {
-            client.retry(fakeTask)
-        }
-    }
 
-    "Should throw when canceling new stub" {
-        // when
-        val fakeTask = client.newTask<FakeTask>()
         shouldThrow<CanNotApplyOnNewTaskStubException> {
             client.cancel(fakeTask)
+        }
+
+        shouldThrow<CanNotApplyOnNewTaskStubException> {
+            client.complete(fakeTask, null)
+        }
+
+        shouldThrow<CanNotApplyOnNewTaskStubException> {
+            client.retry(fakeTask)
         }
     }
 
@@ -142,6 +143,28 @@ class ClientTaskTests : StringSpec({
         // when
         val fakeTask = client.newTask<FakeTask>()
         val deferred: Deferred<Unit> = client.dispatch(fakeTask::m0)().join()
+        // then
+        taskTagSlots.size shouldBe 0
+        taskSlot.captured shouldBe DispatchTask(
+            clientName = client.clientName,
+            clientWaiting = false,
+            taskId = TaskId(deferred.id),
+            taskName = TaskName(FakeTask::class.java.name),
+            methodName = MethodName("m0"),
+            methodParameterTypes = MethodParameterTypes(listOf()),
+            methodParameters = MethodParameters(),
+            workflowId = null,
+            workflowName = null,
+            methodRunId = null,
+            taskTags = setOf(),
+            taskOptions = TaskOptions(),
+            taskMeta = TaskMeta()
+        )
+    }
+
+    "dispatch method with helper without parameter" {
+        // when
+        val deferred: Deferred<Unit> = client.dispatchTask(FakeTask::m0)().join()
         // then
         taskTagSlots.size shouldBe 0
         taskSlot.captured shouldBe DispatchTask(
