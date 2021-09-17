@@ -29,17 +29,17 @@ import com.jayway.jsonpath.Criteria
 import io.infinitic.common.data.MillisDuration
 import io.infinitic.common.data.MillisInstant
 import io.infinitic.common.data.Name
-import io.infinitic.common.data.methods.MethodName
-import io.infinitic.common.data.methods.MethodParameterTypes
-import io.infinitic.common.data.methods.MethodParameters
+import io.infinitic.common.proxies.ChannelProxyHandler
 import io.infinitic.common.proxies.NewTaskProxyHandler
 import io.infinitic.common.proxies.NewWorkflowProxyHandler
-import io.infinitic.common.proxies.SendChannelProxyHandler
-import io.infinitic.common.workflows.data.channels.ChannelEvent
+import io.infinitic.common.proxies.ProxyHandler
+import io.infinitic.common.proxies.RunningTaskProxyHandler
+import io.infinitic.common.proxies.RunningWorkflowProxyHandler
 import io.infinitic.common.workflows.data.channels.ChannelEventFilter
-import io.infinitic.common.workflows.data.channels.ChannelEventType
 import io.infinitic.common.workflows.data.channels.ChannelImpl
 import io.infinitic.common.workflows.data.channels.ChannelName
+import io.infinitic.common.workflows.data.channels.ChannelSignal
+import io.infinitic.common.workflows.data.channels.ChannelSignalType
 import io.infinitic.common.workflows.data.commands.Command
 import io.infinitic.common.workflows.data.commands.CommandId
 import io.infinitic.common.workflows.data.commands.CommandReturnValue
@@ -80,8 +80,6 @@ import io.infinitic.workflows.Deferred
 import io.infinitic.workflows.DeferredStatus
 import io.infinitic.workflows.WorkflowDispatcher
 import mu.KotlinLogging
-import java.lang.reflect.Proxy
-import java.util.concurrent.CompletableFuture
 import java.time.Duration as JavaDuration
 import java.time.Instant as JavaInstant
 
@@ -104,24 +102,41 @@ internal class WorkflowDispatcherImpl(
     // new steps discovered during execution the method (possibly more than one due to `async` function)
     var newSteps: MutableList<NewStep> = mutableListOf()
 
+    override fun <R> dispatchAndWait(handler: ProxyHandler<*>): R = when (handler) {
+        is NewTaskProxyHandler -> dispatchAndWait(handler)
+        is NewWorkflowProxyHandler -> dispatchAndWait(handler)
+        is RunningTaskProxyHandler -> TODO("Not yet implemented")
+        is RunningWorkflowProxyHandler -> TODO("Not yet implemented")
+        is ChannelProxyHandler -> dispatchAndWait(handler)
+    }
+
+    private fun <R> dispatchAndWait(handler: NewTaskProxyHandler<*>): R =
+        dispatchTask<R>(handler).await()
+
     /*
-     * Async Task dispatching
+     * Start another running child workflow
      */
-    override fun <T : Any, S> dispatch(
-        proxy: T,
-        method: T.() -> S
-    ): Deferred<S> = when (val handler = Proxy.getInvocationHandler(proxy)) {
-        is NewTaskProxyHandler<*> -> {
-            handler.isSync = false
-            proxy.method()
-            dispatchTask(handler)
+    private fun <R> dispatchAndWait(handler: NewWorkflowProxyHandler<*>): R =
+        dispatchWorkflow<R>(handler).await()
+
+    /*
+     * Send event to another workflow's channel
+     */
+    private fun <R> dispatchAndWait(handler: ChannelProxyHandler<*>): R {
+        TODO("Not yet implemented")
+    }
+
+    override fun <R : Any?> dispatch(handler: ProxyHandler<*>, isSync: Boolean): Deferred<R> {
+        val method = handler.method
+        checkMethodIsNotSuspend(method)
+
+        return when (handler) {
+            is NewTaskProxyHandler -> dispatchTask(handler)
+            is NewWorkflowProxyHandler -> dispatchWorkflow(handler)
+            is RunningTaskProxyHandler -> throw Exception("can not dispatch a method on running task")
+            is RunningWorkflowProxyHandler -> TODO("Not Yet Implemented")
+            is ChannelProxyHandler -> TODO("Not Yet Implemented")
         }
-        is NewWorkflowProxyHandler<*> -> {
-            handler.isSync = false
-            proxy.method()
-            dispatchWorkflow(handler)
-        }
-        else -> throw RuntimeException("Not Yet Implemented")
     }
 
     /*
@@ -352,67 +367,44 @@ internal class WorkflowDispatcherImpl(
      * Task dispatching
      */
     override fun <S> dispatchTask(handler: NewTaskProxyHandler<*>): Deferred<S> {
-        val method = handler.method
-        val methodArgs = handler.methodArgs
+        checkMethodIsNotSuspend(handler.method)
 
-        checkMethodIsNotSuspend(method)
-
-        val deferred = dispatchCommand<S>(
-            DispatchTask(
-                taskName = handler.taskName,
-                methodParameters = MethodParameters.from(method, methodArgs),
-                methodParameterTypes = MethodParameterTypes.from(method),
-                methodName = MethodName(handler.methodName),
-                taskTags = handler.taskTags!!,
-                taskMeta = handler.taskMeta!!,
-                taskOptions = handler.taskOptions!!
-            ),
-            CommandSimpleName(handler.simpleName)
-        )
-        handler.reset()
-        return deferred
+        return with(handler.get()) {
+            dispatchCommand(
+                DispatchTask(
+                    taskName = taskName,
+                    methodParameters = methodParameters,
+                    methodParameterTypes = methodParameterTypes,
+                    methodName = methodName,
+                    taskTags = handler.taskTags,
+                    taskMeta = handler.taskMeta,
+                    taskOptions = handler.taskOptions
+                ),
+                CommandSimpleName(handler.simpleName)
+            )
+        }
     }
-
-    override fun <S> dispatchAndWait(handler: NewTaskProxyHandler<*>): S =
-        dispatchTask<S>(handler).await()
 
     /*
      * Workflow dispatching
      */
     override fun <S> dispatchWorkflow(handler: NewWorkflowProxyHandler<*>): Deferred<S> {
-        val method = handler.method
-        val args = handler.methodArgs
-        val name = handler.methodName
+        checkMethodIsNotSuspend(handler.method)
 
-        checkMethodIsNotSuspend(method)
-
-        val deferred = dispatchCommand<S>(
-            DispatchChildWorkflow(
-                childWorkflowName = handler.workflowName,
-                childMethodName = MethodName(name),
-                childMethodParameterTypes = MethodParameterTypes.from(method),
-                childMethodParameters = MethodParameters.from(method, args),
-                workflowTags = handler.workflowTags!!,
-                workflowMeta = handler.workflowMeta!!,
-                workflowOptions = handler.workflowOptions!!
-            ),
-            CommandSimpleName(handler.simpleName)
-        )
-        handler.reset()
-        return deferred
-    }
-
-    /*
-     * Start another running child workflow
-     */
-    override fun <S> dispatchAndWait(handler: NewWorkflowProxyHandler<*>): S =
-        dispatchWorkflow<S>(handler).await()
-
-    /*
-     * Send event to another workflow's channel
-     */
-    override fun dispatchAndWait(handler: SendChannelProxyHandler<*>): CompletableFuture<Unit> {
-        TODO("Not yet implemented")
+        return with(handler.get()) {
+            dispatchCommand(
+                DispatchChildWorkflow(
+                    childWorkflowName = workflowName,
+                    childMethodName = methodName,
+                    childMethodParameterTypes = methodParameterTypes,
+                    childMethodParameters = methodParameters,
+                    workflowTags = handler.workflowTags,
+                    workflowMeta = handler.workflowMeta,
+                    workflowOptions = handler.workflowOptions
+                ),
+                CommandSimpleName(handler.simpleName)
+            )
+        }
     }
 
     /*
@@ -459,7 +451,7 @@ internal class WorkflowDispatcherImpl(
     ): Deferred<S> = dispatchCommand(
         ReceiveInChannel(
             ChannelName(channel.getNameOrThrow()),
-            ChannelEventType.from(klass),
+            ChannelSignalType.from(klass),
             ChannelEventFilter.from(jsonPath, criteria)
         ),
         CommandSimpleName("${CommandType.RECEIVE_IN_CHANNEL}")
@@ -472,8 +464,8 @@ internal class WorkflowDispatcherImpl(
         dispatchCommand<T>(
             SendToChannel(
                 ChannelName(channel.getNameOrThrow()),
-                ChannelEvent.from(event),
-                ChannelEventType.allFrom(event::class.java)
+                ChannelSignal.from(event),
+                ChannelSignalType.allFrom(event::class.java)
             ),
             CommandSimpleName("${CommandType.SENT_TO_CHANNEL}")
         )

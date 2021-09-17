@@ -26,13 +26,13 @@
 package io.infinitic.client.deferred
 
 import io.infinitic.client.Deferred
-import io.infinitic.common.proxies.RunningWorkflowProxyHandler
+import io.infinitic.common.proxies.RunningWorkflow
 import io.infinitic.workflows.SendChannel
 import java.util.UUID
 import java.util.concurrent.CompletableFuture
 
 internal class DeferredChannel<R : SendChannel<*>> (
-    private val runningWorkflowProxyHandler: RunningWorkflowProxyHandler<*>,
+    private val workflow: RunningWorkflow,
     private val channel: R
 ) : Deferred<R> {
 
@@ -50,7 +50,4 @@ internal class DeferredChannel<R : SendChannel<*>> (
 
     override val id: UUID
         get() = throw Exception()
-
-    @Suppress("UNCHECKED_CAST")
-    override fun <K : Any> instance() = runningWorkflowProxyHandler.stub() as K
 }

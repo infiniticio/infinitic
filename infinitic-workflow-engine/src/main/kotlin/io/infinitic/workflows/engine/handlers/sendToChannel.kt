@@ -43,8 +43,8 @@ internal fun CoroutineScope.sendToChannel(
 ) {
     state.receivingChannels.firstOrNull {
         it.channelName == msg.channelName &&
-            (it.channelEventType == null || msg.channelEventTypes.contains(it.channelEventType)) &&
-            (it.channelEventFilter == null || it.channelEventFilter!!.check(msg.channelEvent))
+            (it.channelSignalType == null || msg.channelSignalTypes.contains(it.channelSignalType)) &&
+            (it.channelEventFilter == null || it.channelEventFilter!!.check(msg.channelSignal))
     }
         ?.also {
             state.receivingChannels.remove(it)
@@ -54,7 +54,7 @@ internal fun CoroutineScope.sendToChannel(
                 state,
                 it.methodRunId,
                 it.commandId,
-                Completed(CommandReturnValue(msg.channelEvent.serializedData), state.workflowTaskIndex)
+                Completed(CommandReturnValue(msg.channelSignal.serializedData), state.workflowTaskIndex)
             )
         }
         ?: logger.debug { "discarding non-waited event $msg" }

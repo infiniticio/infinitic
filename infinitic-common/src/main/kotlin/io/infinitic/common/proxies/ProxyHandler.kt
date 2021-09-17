@@ -33,18 +33,18 @@ import java.lang.reflect.Proxy
 
 sealed class ProxyHandler<T : Any>(
     open val klass: Class<out T>,
-    open val dispatcherFn: () -> Dispatcher
+    open val dispatcherFn: () -> ProxyDispatcher
 ) : InvocationHandler {
 
     companion object {
-        @JvmStatic private val invocationType: ThreadLocal<ProxyInvokeType> = ThreadLocal.withInitial { ProxyInvokeType.DISPATCH_SYNC }
+        @JvmStatic private val invocationType: ThreadLocal<ProxyInvokeMode> = ThreadLocal.withInitial { ProxyInvokeMode.DISPATCH_SYNC }
         @JvmStatic private val invocationHandler: ThreadLocal<ProxyHandler<*>?> = ThreadLocal()
 
-        fun <R : Any?> async(invoke: () -> R): ProxyHandler<*> {
-            invocationType.set(ProxyInvokeType.DISPATCH_ASYNC)
+        fun <R : Any?> async(invoke: () -> R): ProxyHandler<*>? {
+            invocationType.set(ProxyInvokeMode.DISPATCH_ASYNC)
             invoke()
-            invocationType.set(ProxyInvokeType.DISPATCH_SYNC)
-            val handler = invocationHandler.get()!!
+            invocationType.set(ProxyInvokeMode.DISPATCH_SYNC)
+            val handler = invocationHandler.get()
             invocationHandler.set(null)
 
             return handler
@@ -52,7 +52,7 @@ sealed class ProxyHandler<T : Any>(
     }
 
     lateinit var method: Method
-    lateinit var args: Array<out Any>
+    lateinit var methodArgs: Array<out Any>
 
     /**
      * Name provided by @Name annotation, if any
@@ -70,17 +70,19 @@ sealed class ProxyHandler<T : Any>(
 
     /**
      * SimpleName provided by @Name annotation, or class name by default
+     *
+     * MUST be a get() as this.methodName can change when reusing instance
      */
-    protected val simpleName: String by lazy {
-        "${classAnnotatedName ?: klass.simpleName}::$methodName"
-    }
+    val simpleName: String
+        get() = "${classAnnotatedName ?: klass.simpleName}::$methodName"
 
     /**
      * Method name provided by @Name annotation, or java method name by default
+     *
+     * MUST be a get() as this.method can change when reusing instance
      */
-    val methodName: String by lazy {
-        findMethodNamePerAnnotation(klass, method) ?: method.name
-    }
+    val methodName: String
+        get() = findMethodNamePerAnnotation(klass, method) ?: method.name
 
     /*
      * provides a stub of type T
@@ -101,7 +103,7 @@ sealed class ProxyHandler<T : Any>(
         }
 
         this.method = method
-        this.args = args ?: arrayOf()
+        this.methodArgs = args ?: arrayOf()
 
         return when (isInvokeSync()) {
             // sync => run directly from dispatcher
@@ -112,14 +114,12 @@ sealed class ProxyHandler<T : Any>(
     }
 
     private fun isInvokeSync(): Boolean = when (invocationType.get()) {
-        ProxyInvokeType.DISPATCH_SYNC -> true
-        ProxyInvokeType.DISPATCH_ASYNC -> false
+        ProxyInvokeMode.DISPATCH_SYNC -> true
+        ProxyInvokeMode.DISPATCH_ASYNC -> false
         null -> thisShouldNotHappen()
     }
 
-    /**
-     * Returns a type-compatible value to avoid a java runtime exception
-     */
+    // Returns a type-compatible value to avoid an exception at runtime
     private fun getAsyncReturnValue(method: Method) = when (method.returnType.name) {
         "long" -> 0L
         "int" -> 0

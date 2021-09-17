@@ -25,6 +25,9 @@
 
 package io.infinitic.common.proxies
 
+import io.infinitic.common.data.methods.MethodName
+import io.infinitic.common.data.methods.MethodParameterTypes
+import io.infinitic.common.data.methods.MethodParameters
 import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.data.workflows.WorkflowMeta
 import io.infinitic.common.workflows.data.workflows.WorkflowName
@@ -33,18 +36,17 @@ import io.infinitic.common.workflows.data.workflows.WorkflowTag
 
 class NewWorkflowProxyHandler<K : Any>(
     override val klass: Class<K>,
-    val workflowTags: Set<WorkflowTag>? = null,
-    val workflowOptions: WorkflowOptions? = null,
-    val workflowMeta: WorkflowMeta? = null,
-    override val dispatcherFn: () -> Dispatcher
+    val workflowTags: Set<WorkflowTag>,
+    val workflowOptions: WorkflowOptions,
+    val workflowMeta: WorkflowMeta,
+    override val dispatcherFn: () -> ProxyDispatcher
 ) : NewProxyHandler<K>(klass, dispatcherFn) {
 
-    val workflowName = WorkflowName(className)
-
-    fun runningWorkflowProxyHandler(workflowId: WorkflowId) = RunningWorkflowProxyHandler(
-        klass,
-        workflowId,
-        null,
-        dispatcherFn
+    fun get() = NewWorkflow(
+        WorkflowName(className),
+        workflowId = WorkflowId(),
+        MethodParameterTypes.from(method),
+        MethodParameters.from(method, methodArgs),
+        MethodName(methodName)
     )
 }

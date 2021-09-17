@@ -28,10 +28,10 @@ package io.infinitic.common.workflows.tags.messages
 import io.infinitic.common.clients.data.ClientName
 import io.infinitic.common.data.MessageId
 import io.infinitic.common.messages.Message
-import io.infinitic.common.workflows.data.channels.ChannelEvent
-import io.infinitic.common.workflows.data.channels.ChannelEventId
-import io.infinitic.common.workflows.data.channels.ChannelEventType
 import io.infinitic.common.workflows.data.channels.ChannelName
+import io.infinitic.common.workflows.data.channels.ChannelSignal
+import io.infinitic.common.workflows.data.channels.ChannelSignalId
+import io.infinitic.common.workflows.data.channels.ChannelSignalType
 import io.infinitic.common.workflows.data.workflows.WorkflowCancellationReason
 import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.data.workflows.WorkflowName
@@ -52,10 +52,10 @@ data class SendToChannelPerTag(
     override val workflowTag: WorkflowTag,
     override val workflowName: WorkflowName,
     val clientName: ClientName,
-    val channelEventId: ChannelEventId,
+    val channelSignalId: ChannelSignalId,
     val channelName: ChannelName,
-    val channelEvent: ChannelEvent,
-    val channelEventTypes: Set<ChannelEventType>
+    val channelSignal: ChannelSignal,
+    val channelSignalTypes: Set<ChannelSignalType>
 ) : WorkflowTagEngineMessage()
 
 @Serializable

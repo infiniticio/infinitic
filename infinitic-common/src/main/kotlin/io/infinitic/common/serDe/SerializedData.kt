@@ -26,6 +26,7 @@
 package io.infinitic.common.serDe
 
 import com.fasterxml.jackson.core.JsonProcessingException
+import io.infinitic.common.config.logger
 import io.infinitic.common.serDe.kserializer.getKSerializerOrNull
 import io.infinitic.exceptions.serialization.ClassNotFoundException
 import io.infinitic.exceptions.serialization.JsonDeserializationException
@@ -152,6 +153,7 @@ data class SerializedData(
     private fun <T : Any> fromJsonJackson(klass: Class<out T>): T = try {
         JsonJackson.parse(getJson(), klass)
     } catch (e: JsonProcessingException) {
+        logger.error(e) { }
         throw JsonDeserializationException(klass.name, causeString = e.toString())
     }
 

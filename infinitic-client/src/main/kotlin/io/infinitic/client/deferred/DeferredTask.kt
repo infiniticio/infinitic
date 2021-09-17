@@ -26,27 +26,24 @@
 package io.infinitic.client.deferred
 
 import io.infinitic.client.Deferred
-import io.infinitic.client.proxies.ClientDispatcher
-import io.infinitic.common.proxies.RunningTaskProxyHandler
+import io.infinitic.client.dispatcher.ClientDispatcher
+import io.infinitic.common.proxies.RunningTask
 import io.infinitic.exceptions.thisShouldNotHappen
 import java.util.UUID
 import java.util.concurrent.CompletableFuture
 
-internal class DeferredTask<R : Any?> (
-    private val runningTaskProxyHandler: RunningTaskProxyHandler<*>,
-    internal val isSync: Boolean,
+class DeferredTask<R : Any?> (
+    private val task: RunningTask,
+    private val clientWaiting: Boolean,
     private val dispatcher: ClientDispatcher,
     private val future: CompletableFuture<Unit>? = null
 ) : Deferred<R> {
 
-    val taskName = runningTaskProxyHandler.taskName
-    val taskId = runningTaskProxyHandler.perTaskId!!
+    override fun cancel() = dispatcher.cancelTask(task)
 
-    override fun cancel() = dispatcher.cancelTask(runningTaskProxyHandler)
+    override fun retry() = dispatcher.retryTask(task)
 
-    override fun retry() = dispatcher.retryTask(runningTaskProxyHandler)
-
-    override fun await(): R = dispatcher.await(this)
+    override fun await(): R = dispatcher.await(task, clientWaiting)
 
     override fun join(): Deferred<R> {
         when (future) {
@@ -58,8 +55,8 @@ internal class DeferredTask<R : Any?> (
     }
 
     override val id: UUID
-        get() = taskId.id
+        get() = task.perTaskId!!.id
 
-    @Suppress("UNCHECKED_CAST")
-    override fun <K : Any> instance() = runningTaskProxyHandler.stub() as K
+//    @Suppress("UNCHECKED_CAST")
+//    override fun <K : Any> instance() = runningTaskProxyHandler.stub() as K
 }

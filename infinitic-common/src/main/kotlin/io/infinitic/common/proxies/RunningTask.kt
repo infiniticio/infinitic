@@ -25,14 +25,16 @@
 
 package io.infinitic.common.proxies
 
-import io.infinitic.exceptions.clients.SuspendMethodNotSupportedException
-import java.lang.reflect.Method
-import kotlin.reflect.jvm.kotlinFunction
+import io.infinitic.common.tasks.data.TaskId
+import io.infinitic.common.tasks.data.TaskName
+import io.infinitic.common.tasks.data.TaskTag
 
-interface Dispatcher {
-    fun <R : Any?> dispatchAndWait(handler: ProxyHandler<*>): R
-
-    fun checkMethodIsNotSuspend(method: Method) {
-        if (method.kotlinFunction?.isSuspend == true) throw SuspendMethodNotSupportedException(method.declaringClass.name, method.name)
+data class RunningTask(
+    val taskName: TaskName,
+    val perTaskId: TaskId? = null,
+    val perTaskTag: TaskTag? = null,
+) {
+    init {
+        require((perTaskId == null && perTaskTag != null) || (perTaskId != null && perTaskTag == null))
     }
 }

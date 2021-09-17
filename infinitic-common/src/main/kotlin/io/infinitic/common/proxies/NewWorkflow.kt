@@ -23,23 +23,20 @@
  * Licensor: infinitic.io
  */
 
-dependencies {
-//    implementation("com.github.valfirst:slf4j-test:2.3.0")
+package io.infinitic.common.proxies
 
-    testImplementation(Libs.Coroutines.core)
-    testImplementation(Libs.Coroutines.jdk8)
-    testImplementation(Libs.Hoplite.core)
-    testImplementation(Libs.Hoplite.yaml)
+import io.infinitic.common.data.methods.MethodName
+import io.infinitic.common.data.methods.MethodParameterTypes
+import io.infinitic.common.data.methods.MethodParameters
+import io.infinitic.common.workflows.data.workflows.WorkflowId
+import io.infinitic.common.workflows.data.workflows.WorkflowName
 
-    testImplementation(project(":infinitic-workflow-engine"))
-    testImplementation(project(":infinitic-task-executor"))
-    testImplementation(project(":infinitic-factory"))
-    testImplementation(project(":infinitic-inMemory"))
-    testImplementation(project(":infinitic-pulsar"))
-
-    testImplementation("org.assertj:assertj-core:3.20.2")
-    // should be removed with pulsar 2.8
-    testImplementation("org.apache.avro:avro") { version { strictly("1.9.+") } }
+data class NewWorkflow(
+    val workflowName: WorkflowName,
+    val workflowId: WorkflowId,
+    val methodParameterTypes: MethodParameterTypes,
+    val methodParameters: MethodParameters,
+    var methodName: MethodName
+) {
+    fun running() = RunningWorkflow(workflowName, workflowId)
 }
-
-apply("../publish.gradle.kts")

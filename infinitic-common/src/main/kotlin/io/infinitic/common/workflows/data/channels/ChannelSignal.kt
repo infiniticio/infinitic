@@ -1,5 +1,5 @@
 /**
-* "Commons Clause" License Condition v1.0
+ * "Commons Clause" License Condition v1.0
  *
  * The Software is provided to you by the Licensor under the License, as defined
  * below, subject to the following condition.
@@ -25,25 +25,26 @@
 
 package io.infinitic.common.workflows.data.channels
 
-import io.infinitic.common.data.Name
+import io.infinitic.common.data.Data
+import io.infinitic.common.serDe.SerializedData
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.descriptors.PrimitiveKind
-import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
 import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
 
-@Serializable(with = ChannelEventTypeSerializer::class)
-data class ChannelEventType(override val name: String) : Name(name) {
+@Serializable(with = ChannelEventSerializer::class)
+data class ChannelSignal(override val serializedData: SerializedData) : Data(serializedData) {
     companion object {
-        fun <T> from(klass: Class<T>) = ChannelEventType(klass.name)
-        fun <T> allFrom(klass: Class<T>) = getAllExtendedOrImplementedTypes(klass)
+        fun from(data: Any?) = ChannelSignal(SerializedData.from(data))
     }
 }
 
-object ChannelEventTypeSerializer : KSerializer<ChannelEventType> {
-    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ChannelEventType", PrimitiveKind.STRING)
-    override fun serialize(encoder: Encoder, value: ChannelEventType) { encoder.encodeString(value.name) }
-    override fun deserialize(decoder: Decoder) = ChannelEventType(decoder.decodeString())
+object ChannelEventSerializer : KSerializer<ChannelSignal> {
+    override val descriptor: SerialDescriptor = SerializedData.serializer().descriptor
+    override fun serialize(encoder: Encoder, value: ChannelSignal) {
+        SerializedData.serializer().serialize(encoder, value.serializedData)
+    }
+    override fun deserialize(decoder: Decoder) =
+        ChannelSignal(SerializedData.serializer().deserialize(decoder))
 }

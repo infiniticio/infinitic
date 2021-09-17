@@ -23,23 +23,9 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.common.workflows.data.channels
+package io.infinitic.common.proxies
 
-import io.infinitic.common.data.Id
-import kotlinx.serialization.KSerializer
-import kotlinx.serialization.Serializable
-import kotlinx.serialization.descriptors.PrimitiveKind
-import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
-import kotlinx.serialization.descriptors.SerialDescriptor
-import kotlinx.serialization.encoding.Decoder
-import kotlinx.serialization.encoding.Encoder
-import java.util.UUID
-
-@Serializable(with = SendIdSerializer::class)
-data class ChannelEventId(override val id: UUID = UUID.randomUUID()) : Id(id)
-
-object SendIdSerializer : KSerializer<ChannelEventId> {
-    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("SendId", PrimitiveKind.STRING)
-    override fun serialize(encoder: Encoder, value: ChannelEventId) { encoder.encodeString("${value.id}") }
-    override fun deserialize(decoder: Decoder) = ChannelEventId(UUID.fromString(decoder.decodeString()))
+enum class ProxyInvokeMode {
+    DISPATCH_SYNC,
+    DISPATCH_ASYNC
 }

@@ -25,7 +25,24 @@
 
 package io.infinitic.common.proxies
 
-enum class ProxyInvokeType {
-    DISPATCH_SYNC,
-    DISPATCH_ASYNC
+import io.infinitic.common.workflows.data.channels.ChannelName
+import io.infinitic.common.workflows.data.channels.ChannelSignal
+import io.infinitic.common.workflows.data.channels.ChannelSignalId
+import io.infinitic.common.workflows.data.channels.ChannelSignalType
+import io.infinitic.common.workflows.data.workflows.WorkflowId
+import io.infinitic.common.workflows.data.workflows.WorkflowName
+import io.infinitic.common.workflows.data.workflows.WorkflowTag
+
+data class SentSignal(
+    val workflowName: WorkflowName,
+    var channelName: ChannelName,
+    val channelSignalId: ChannelSignalId,
+    val channelSignal: ChannelSignal,
+    val channelSignalTypes: Set<ChannelSignalType>,
+    val perWorkflowId: WorkflowId? = null,
+    val perWorkflowTag: WorkflowTag? = null,
+) {
+    init {
+        require((perWorkflowId == null && perWorkflowTag != null) || (perWorkflowId != null && perWorkflowTag == null))
+    }
 }

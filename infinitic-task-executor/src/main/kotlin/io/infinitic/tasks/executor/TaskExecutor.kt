@@ -87,6 +87,7 @@ class TaskExecutor(
         val (task, method, parameters, options) = try {
             parse(message)
         } catch (e: Throwable) {
+            logger.error(e) {}
             // returning the exception (no retry)
             sendTaskAttemptFailed(message, e, null, message.taskMeta)
             // stop here
@@ -106,6 +107,8 @@ class TaskExecutor(
             }
             sendTaskCompleted(message, output, TaskMeta(task.context.meta))
         } catch (e: InvocationTargetException) {
+            logger.error(e) {}
+
             val cause = e.cause
             if (cause is Exception) {
                 failTaskWithRetry(task, message, cause)
@@ -113,10 +116,12 @@ class TaskExecutor(
                 sendTaskAttemptFailed(message, cause ?: e, null, TaskMeta(task.context.meta))
             }
         } catch (e: TimeoutCancellationException) {
+            logger.error(e) {}
             val cause = ProcessingTimeoutException(task.javaClass.name, options.runningTimeout!!)
             // returning a timeout
             failTaskWithRetry(task, message, cause)
         } catch (e: Throwable) {
+            logger.error(e) {}
             // returning the exception (no retry)
             sendTaskAttemptFailed(message, e, null, TaskMeta(task.context.meta))
         }

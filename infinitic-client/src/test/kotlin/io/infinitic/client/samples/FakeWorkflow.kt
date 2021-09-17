@@ -26,7 +26,7 @@
 package io.infinitic.client.samples
 
 import io.infinitic.annotations.Name
-import io.infinitic.workflows.Channel
+import io.infinitic.workflows.SendChannel
 
 internal interface FakeWorkflowParent {
     fun parent(): String
@@ -43,7 +43,7 @@ internal interface FakeWorkflow : FakeWorkflowParent {
     fun m4(id: FakeInterface): String
     suspend fun suspendedMethod()
 
-    val channel: Channel<String>
+    val channel: SendChannel<String>
 }
 
 @Name(name = "foo")

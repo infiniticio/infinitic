@@ -32,13 +32,19 @@ import io.infinitic.common.workflows.data.workflows.WorkflowTag
 class RunningWorkflowProxyHandler<K : Any>(
     override val klass: Class<K>,
     val perWorkflowId: WorkflowId? = null,
-    val perTag: WorkflowTag? = null,
-    override val dispatcherFn: () -> Dispatcher
+    val perWorkflowTag: WorkflowTag? = null,
+    override val dispatcherFn: () -> ProxyDispatcher
 ) : RunningProxyHandler<K>(klass, dispatcherFn) {
 
     val workflowName = WorkflowName(className)
 
     init {
-        require(perWorkflowId == null || perTag == null)
+        require(perWorkflowId == null || perWorkflowTag == null)
     }
+
+    fun get() = RunningWorkflow(
+        WorkflowName(className),
+        perWorkflowId,
+        perWorkflowTag
+    )
 }

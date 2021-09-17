@@ -26,16 +26,17 @@
 package io.infinitic.workflows
 
 import com.jayway.jsonpath.Criteria
-import io.infinitic.common.proxies.Dispatcher
 import io.infinitic.common.proxies.NewTaskProxyHandler
 import io.infinitic.common.proxies.NewWorkflowProxyHandler
+import io.infinitic.common.proxies.ProxyDispatcher
+import io.infinitic.common.proxies.ProxyHandler
 import io.infinitic.common.workflows.data.channels.ChannelImpl
 import java.time.Duration
 import java.time.Instant
 
-interface WorkflowDispatcher : Dispatcher {
+interface WorkflowDispatcher : ProxyDispatcher {
 
-    fun <T : Any, S> dispatch(proxy: T, method: T.() -> S): Deferred<S>
+    fun <R : Any?> dispatch(handler: ProxyHandler<*>, isSync: Boolean): Deferred<R>
 
     fun <T> async(branch: () -> T): Deferred<T>
 

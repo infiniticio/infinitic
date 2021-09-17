@@ -36,10 +36,10 @@ import io.infinitic.common.tasks.data.TaskMeta
 import io.infinitic.common.tasks.data.TaskName
 import io.infinitic.common.tasks.data.TaskOptions
 import io.infinitic.common.tasks.data.TaskTag
-import io.infinitic.common.workflows.data.channels.ChannelEvent
 import io.infinitic.common.workflows.data.channels.ChannelEventFilter
-import io.infinitic.common.workflows.data.channels.ChannelEventType
 import io.infinitic.common.workflows.data.channels.ChannelName
+import io.infinitic.common.workflows.data.channels.ChannelSignal
+import io.infinitic.common.workflows.data.channels.ChannelSignalType
 import io.infinitic.common.workflows.data.workflows.WorkflowMeta
 import io.infinitic.common.workflows.data.workflows.WorkflowName
 import io.infinitic.common.workflows.data.workflows.WorkflowOptions
@@ -113,13 +113,13 @@ data class StartInstantTimer(
 @Serializable
 data class ReceiveInChannel(
     val channelName: ChannelName,
-    val channelEventType: ChannelEventType?,
+    val channelSignalType: ChannelSignalType?,
     val channelEventFilter: ChannelEventFilter?
 ) : Command()
 
 @Serializable
 data class SendToChannel(
     val channelName: ChannelName,
-    val channelEvent: ChannelEvent,
-    val channelEventTypes: Set<ChannelEventType>
+    val channelSignal: ChannelSignal,
+    val channelSignalTypes: Set<ChannelSignalType>
 ) : Command()

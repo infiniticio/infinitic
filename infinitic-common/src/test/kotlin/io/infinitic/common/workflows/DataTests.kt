@@ -27,10 +27,10 @@ package io.infinitic.common.workflows
 
 import io.infinitic.common.fixtures.TestFactory
 import io.infinitic.common.serDe.SerializedData
-import io.infinitic.common.workflows.data.channels.ChannelEvent
-import io.infinitic.common.workflows.data.channels.ChannelEventId
-import io.infinitic.common.workflows.data.channels.ChannelEventType
 import io.infinitic.common.workflows.data.channels.ChannelName
+import io.infinitic.common.workflows.data.channels.ChannelSignal
+import io.infinitic.common.workflows.data.channels.ChannelSignalId
+import io.infinitic.common.workflows.data.channels.ChannelSignalType
 import io.infinitic.common.workflows.data.commands.CommandHash
 import io.infinitic.common.workflows.data.commands.CommandId
 import io.infinitic.common.workflows.data.commands.CommandReturnValue
@@ -100,29 +100,29 @@ class DataTests : StringSpec({
     }
 
     "ChannelEvent should be serialized as SerializedData" {
-        val m = ChannelEvent(SerializedData.from("qwerty"))
+        val m = ChannelSignal(SerializedData.from("qwerty"))
 
         val json = Json.encodeToString(m)
         json shouldBe Json.encodeToString(SerializedData.from("qwerty"))
 
-        val m2 = Json.decodeFromString<ChannelEvent>(json)
+        val m2 = Json.decodeFromString<ChannelSignal>(json)
         m2 shouldBe m
     }
 
     "ChannelEventId should be serialized as String" {
-        val m = ChannelEventId()
+        val m = ChannelSignalId()
         val json = Json.encodeToString(m)
-        val m2 = Json.decodeFromString<ChannelEventId>(json)
+        val m2 = Json.decodeFromString<ChannelSignalId>(json)
 
         m2 shouldBe m
     }
 
     "ChannelEventType should be serialized as String" {
-        val m = ChannelEventType("qwerty")
+        val m = ChannelSignalType("qwerty")
 
         val json = Json.encodeToString(m)
         json shouldBe "\"qwerty\""
-        val m2 = Json.decodeFromString<ChannelEventType>(json)
+        val m2 = Json.decodeFromString<ChannelSignalType>(json)
         m2 shouldBe m
     }
 

@@ -35,10 +35,10 @@ import io.infinitic.common.errors.Error
 import io.infinitic.common.messages.Message
 import io.infinitic.common.tasks.data.TaskId
 import io.infinitic.common.tasks.data.TaskName
-import io.infinitic.common.workflows.data.channels.ChannelEvent
-import io.infinitic.common.workflows.data.channels.ChannelEventId
-import io.infinitic.common.workflows.data.channels.ChannelEventType
 import io.infinitic.common.workflows.data.channels.ChannelName
+import io.infinitic.common.workflows.data.channels.ChannelSignal
+import io.infinitic.common.workflows.data.channels.ChannelSignalId
+import io.infinitic.common.workflows.data.channels.ChannelSignalType
 import io.infinitic.common.workflows.data.methodRuns.MethodRunId
 import io.infinitic.common.workflows.data.timers.TimerId
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTask
@@ -76,8 +76,8 @@ data class DispatchWorkflow(
     val methodParameterTypes: MethodParameterTypes?,
     val methodParameters: MethodParameters,
     val workflowTags: Set<WorkflowTag>,
-    val workflowMeta: WorkflowMeta,
-    val workflowOptions: WorkflowOptions
+    val workflowOptions: WorkflowOptions,
+    val workflowMeta: WorkflowMeta
 ) : WorkflowEngineMessage()
 
 @Serializable
@@ -112,10 +112,10 @@ data class SendToChannel(
     val clientName: ClientName,
     override val workflowId: WorkflowId,
     override val workflowName: WorkflowName,
-    val channelEventId: ChannelEventId,
+    val channelSignalId: ChannelSignalId,
     val channelName: ChannelName,
-    val channelEvent: ChannelEvent,
-    val channelEventTypes: Set<ChannelEventType>
+    val channelSignal: ChannelSignal,
+    val channelSignalTypes: Set<ChannelSignalType>
 ) : WorkflowEngineMessage()
 
 @Serializable

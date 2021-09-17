@@ -26,14 +26,12 @@
 package io.infinitic.client.deferred
 
 import io.infinitic.client.Deferred
-import io.infinitic.common.proxies.RunningWorkflowProxyHandler
-import io.infinitic.common.workflows.data.channels.ChannelEventId
+import io.infinitic.common.proxies.SentSignal
 import java.util.UUID
 import java.util.concurrent.CompletableFuture
 
 internal class DeferredSendChannel<R : Any?> (
-    private val runningWorkflowProxyHandler: RunningWorkflowProxyHandler<*>,
-    channelEventId: ChannelEventId,
+    private val signal: SentSignal,
     private val future: CompletableFuture<Unit>
 ) : Deferred<R> {
 
@@ -59,8 +57,8 @@ internal class DeferredSendChannel<R : Any?> (
         return this
     }
 
-    override val id: UUID = channelEventId.id
+    override val id: UUID = signal.channelSignalId.id
 
-    @Suppress("UNCHECKED_CAST")
-    override fun <K : Any> instance() = runningWorkflowProxyHandler.stub() as K
+//    @Suppress("UNCHECKED_CAST")
+//    override fun <K : Any> instance() = runningWorkflowProxyHandler.stub() as K
 }

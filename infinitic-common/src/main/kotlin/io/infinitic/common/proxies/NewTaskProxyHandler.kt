@@ -25,6 +25,9 @@
 
 package io.infinitic.common.proxies
 
+import io.infinitic.common.data.methods.MethodName
+import io.infinitic.common.data.methods.MethodParameterTypes
+import io.infinitic.common.data.methods.MethodParameters
 import io.infinitic.common.tasks.data.TaskId
 import io.infinitic.common.tasks.data.TaskMeta
 import io.infinitic.common.tasks.data.TaskName
@@ -33,18 +36,17 @@ import io.infinitic.common.tasks.data.TaskTag
 
 class NewTaskProxyHandler<K : Any>(
     override val klass: Class<K>,
-    val taskTags: Set<TaskTag>? = null,
-    val taskOptions: TaskOptions? = null,
-    val taskMeta: TaskMeta? = null,
-    override val dispatcherFn: () -> Dispatcher
+    val taskTags: Set<TaskTag>,
+    val taskOptions: TaskOptions,
+    val taskMeta: TaskMeta,
+    override val dispatcherFn: () -> ProxyDispatcher
 ) : NewProxyHandler<K>(klass, dispatcherFn) {
 
-    val taskName = TaskName(className)
-
-    fun runningTaskProxyHandler(taskId: TaskId) = RunningTaskProxyHandler(
-        klass,
-        taskId,
-        null,
-        dispatcherFn
+    fun get() = NewTask(
+        TaskName(className),
+        taskId = TaskId(),
+        MethodParameterTypes.from(method),
+        MethodParameters.from(method, methodArgs),
+        MethodName(methodName)
     )
 }

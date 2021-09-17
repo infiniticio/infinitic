@@ -144,10 +144,10 @@ class WorkflowTagEngine(
                     clientName = message.clientName,
                     workflowId = it,
                     workflowName = message.workflowName,
-                    channelEventId = message.channelEventId,
+                    channelSignalId = message.channelSignalId,
                     channelName = message.channelName,
-                    channelEvent = message.channelEvent,
-                    channelEventTypes = message.channelEventTypes
+                    channelSignal = message.channelSignal,
+                    channelSignalTypes = message.channelSignalTypes
                 )
                 scope.launch { sendToWorkflowEngine(sendToChannel) }
             }

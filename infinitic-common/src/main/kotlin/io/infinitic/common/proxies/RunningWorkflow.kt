@@ -23,33 +23,18 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.common.workflows.data.channels
+package io.infinitic.common.proxies
 
-import com.jayway.jsonpath.Criteria
-import io.infinitic.exceptions.workflows.NameNotInitializedInChannelException
-import io.infinitic.workflows.Channel
-import io.infinitic.workflows.Deferred
-import io.infinitic.workflows.WorkflowDispatcher
+import io.infinitic.common.workflows.data.workflows.WorkflowId
+import io.infinitic.common.workflows.data.workflows.WorkflowName
+import io.infinitic.common.workflows.data.workflows.WorkflowTag
 
-class ChannelImpl<T : Any>(
-    private val dispatcherFn: () -> WorkflowDispatcher
-) : Channel<T> {
-    lateinit var name: String
-
-    fun isNameInitialized() = ::name.isInitialized
-
-    fun getNameOrThrow() = when (isNameInitialized()) {
-        true -> name
-        else -> throw NameNotInitializedInChannelException
+data class RunningWorkflow(
+    val workflowName: WorkflowName,
+    val perWorkflowId: WorkflowId? = null,
+    val perWorkflowTag: WorkflowTag? = null,
+) {
+    init {
+        require((perWorkflowId == null && perWorkflowTag != null) || (perWorkflowId != null && perWorkflowTag == null))
     }
-
-    override fun send(event: T) {
-        dispatcherFn().sendToChannel(this, event)
-    }
-
-    override fun receive(jsonPath: String?, criteria: Criteria?): Deferred<T> =
-        dispatcherFn().receiveFromChannel(this, jsonPath, criteria)
-
-    override fun <S : T> receive(klass: Class<S>, jsonPath: String?, criteria: Criteria?): Deferred<S> =
-        dispatcherFn().receiveFromChannel(this, klass, jsonPath, criteria)
 }

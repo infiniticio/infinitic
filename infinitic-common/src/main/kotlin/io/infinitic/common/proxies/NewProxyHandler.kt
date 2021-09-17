@@ -27,5 +27,5 @@ package io.infinitic.common.proxies
 
 sealed class NewProxyHandler<T : Any>(
     override val klass: Class<T>,
-    override val dispatcherFn: () -> Dispatcher
+    override val dispatcherFn: () -> ProxyDispatcher
 ) : ProxyHandler<T>(klass, dispatcherFn)

@@ -23,33 +23,16 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.common.workflows.data.channels
+package io.infinitic.common.proxies
 
-import com.jayway.jsonpath.Criteria
-import io.infinitic.exceptions.workflows.NameNotInitializedInChannelException
-import io.infinitic.workflows.Channel
-import io.infinitic.workflows.Deferred
-import io.infinitic.workflows.WorkflowDispatcher
+import io.infinitic.exceptions.clients.SuspendMethodNotSupportedException
+import java.lang.reflect.Method
+import kotlin.reflect.jvm.kotlinFunction
 
-class ChannelImpl<T : Any>(
-    private val dispatcherFn: () -> WorkflowDispatcher
-) : Channel<T> {
-    lateinit var name: String
+interface ProxyDispatcher {
+    fun <R : Any?> dispatchAndWait(handler: ProxyHandler<*>): R
 
-    fun isNameInitialized() = ::name.isInitialized
-
-    fun getNameOrThrow() = when (isNameInitialized()) {
-        true -> name
-        else -> throw NameNotInitializedInChannelException
+    fun checkMethodIsNotSuspend(method: Method) {
+        if (method.kotlinFunction?.isSuspend == true) throw SuspendMethodNotSupportedException(method.declaringClass.name, method.name)
     }
-
-    override fun send(event: T) {
-        dispatcherFn().sendToChannel(this, event)
-    }
-
-    override fun receive(jsonPath: String?, criteria: Criteria?): Deferred<T> =
-        dispatcherFn().receiveFromChannel(this, jsonPath, criteria)
-
-    override fun <S : T> receive(klass: Class<S>, jsonPath: String?, criteria: Criteria?): Deferred<S> =
-        dispatcherFn().receiveFromChannel(this, klass, jsonPath, criteria)
 }

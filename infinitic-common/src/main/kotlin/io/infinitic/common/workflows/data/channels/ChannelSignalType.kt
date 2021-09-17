@@ -1,5 +1,5 @@
 /**
- * "Commons Clause" License Condition v1.0
+* "Commons Clause" License Condition v1.0
  *
  * The Software is provided to you by the Licensor under the License, as defined
  * below, subject to the following condition.
@@ -23,13 +23,9 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.common.workflows.data.commands
+package io.infinitic.common.workflows.data.channels
 
-import io.infinitic.common.data.Id
-import io.infinitic.common.tasks.data.TaskId
-import io.infinitic.common.workflows.data.channels.ChannelSignalId
-import io.infinitic.common.workflows.data.timers.TimerId
-import io.infinitic.common.workflows.data.workflows.WorkflowId
+import io.infinitic.common.data.Name
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.descriptors.PrimitiveKind
@@ -37,18 +33,17 @@ import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
 import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
-import java.util.UUID
 
-@Serializable(with = CommandIdSerializer::class)
-data class CommandId(override val id: UUID = UUID.randomUUID()) : Id(id) {
-    constructor(taskId: TaskId) : this(taskId.id)
-    constructor(timerId: TimerId) : this(timerId.id)
-    constructor(workflowId: WorkflowId) : this(workflowId.id)
-    constructor(eventId: ChannelSignalId) : this(eventId.id)
+@Serializable(with = ChannelEventTypeSerializer::class)
+data class ChannelSignalType(override val name: String) : Name(name) {
+    companion object {
+        fun <T> from(klass: Class<T>) = ChannelSignalType(klass.name)
+        fun <T> allFrom(klass: Class<T>) = getAllExtendedOrImplementedTypes(klass)
+    }
 }
 
-object CommandIdSerializer : KSerializer<CommandId> {
-    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("CommandId", PrimitiveKind.STRING)
-    override fun serialize(encoder: Encoder, value: CommandId) { encoder.encodeString("${value.id}") }
-    override fun deserialize(decoder: Decoder) = CommandId(UUID.fromString(decoder.decodeString()))
+object ChannelEventTypeSerializer : KSerializer<ChannelSignalType> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ChannelEventType", PrimitiveKind.STRING)
+    override fun serialize(encoder: Encoder, value: ChannelSignalType) { encoder.encodeString(value.name) }
+    override fun deserialize(decoder: Decoder) = ChannelSignalType(decoder.decodeString())
 }

@@ -25,7 +25,9 @@
 
 package io.infinitic.client
 
+import io.infinitic.common.proxies.ProxyHandler
 import io.infinitic.exceptions.thisShouldNotHappen
+import java.lang.reflect.Proxy
 import kotlin.reflect.KCallable
 import kotlin.reflect.KParameter
 import kotlin.reflect.full.extensionReceiverParameter
@@ -40,11 +42,14 @@ internal class KCallableWithInstance<out R>(private val func: KCallable<R>, priv
 
     init {
         val instanceParamType = instanceParam.type.jvmErasure
-        if (!instance::class.isSubclassOf(instanceParamType))
+        val klass = getKlass(instance)
+
+        if (!instanceParamType.isSubclassOf(klass)) {
             throw thisShouldNotHappen(
-                "Provided instance (${instance::class.qualifiedName}) isn't an subclass of " +
+                "Provided instance (${klass.qualifiedName}) isn't an subclass of " +
                     "instance param's value's class (${instanceParamType::class.qualifiedName})"
             )
+        }
     }
 
     override fun call(vararg args: Any?): R = func.call(instance, *args)
@@ -52,6 +57,11 @@ internal class KCallableWithInstance<out R>(private val func: KCallable<R>, priv
     override fun callBy(args: Map<KParameter, Any?>): R = func.callBy(args + (instanceParam to instance))
 
     override val parameters = func.parameters.filter { it != instanceParam }
+
+    private fun getKlass(instance: Any) = when (Proxy.isProxyClass(instance::class.java)) {
+        true -> (Proxy.getInvocationHandler(instance) as ProxyHandler<*>).klass.kotlin
+        false -> instance::class
+    }
 }
 
 internal fun <R> KCallable<R>.withInstance(instance: Any): KCallable<R> = KCallableWithInstance(this, instance)

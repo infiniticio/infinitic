@@ -32,13 +32,19 @@ import io.infinitic.common.tasks.data.TaskTag
 class RunningTaskProxyHandler<K : Any>(
     override val klass: Class<K>,
     var perTaskId: TaskId? = null,
-    var perTag: TaskTag? = null,
-    override val dispatcherFn: () -> Dispatcher
+    var perTaskTag: TaskTag? = null,
+    override val dispatcherFn: () -> ProxyDispatcher
 ) : RunningProxyHandler<K>(klass, dispatcherFn) {
 
     val taskName = TaskName(className)
 
     init {
-        require(perTaskId == null || perTag == null)
+        require((perTaskId == null && perTaskTag != null) || (perTaskId != null && perTaskTag == null))
     }
+
+    fun get() = RunningTask(
+        TaskName(className),
+        perTaskId,
+        perTaskTag
+    )
 }

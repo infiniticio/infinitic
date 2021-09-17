@@ -132,10 +132,10 @@ internal class WorkflowTagEngineTests : StringSpec({
         with(sendToChannel) {
             workflowId shouldBe workflowIds.last()
             workflowName shouldBe msgIn.workflowName
-            channelEvent shouldBe msgIn.channelEvent
-            channelEventId shouldBe msgIn.channelEventId
-            channelEvent shouldBe msgIn.channelEvent
-            channelEventTypes shouldBe msgIn.channelEventTypes
+            channelSignal shouldBe msgIn.channelSignal
+            channelSignalId shouldBe msgIn.channelSignalId
+            channelSignal shouldBe msgIn.channelSignal
+            channelSignalTypes shouldBe msgIn.channelSignalTypes
             channelName shouldBe msgIn.channelName
         }
     }

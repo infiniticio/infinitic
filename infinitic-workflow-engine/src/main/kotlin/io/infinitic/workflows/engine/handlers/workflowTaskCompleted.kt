@@ -299,7 +299,7 @@ private fun receiveFromChannel(
     state.receivingChannels.add(
         ReceivingChannel(
             channelName = command.channelName,
-            channelEventType = command.channelEventType,
+            channelSignalType = command.channelSignalType,
             channelEventFilter = command.channelEventFilter,
             methodRunId = methodRun.methodRunId,
             commandId = newCommand.commandId
@@ -358,10 +358,10 @@ private fun CoroutineScope.dispatchChildWorkflow(
 
     // send task to task engine
     val dispatchWorkflow = DispatchWorkflow(
-        clientName = ClientName("workflow engine"),
-        clientWaiting = false,
         workflowId = WorkflowId(newCommand.commandId.id),
         workflowName = command.childWorkflowName,
+        clientName = ClientName("workflow engine"),
+        clientWaiting = false,
         parentWorkflowId = state.workflowId,
         parentWorkflowName = state.workflowName,
         parentMethodRunId = methodRun.methodRunId,
@@ -369,8 +369,8 @@ private fun CoroutineScope.dispatchChildWorkflow(
         methodParameterTypes = command.childMethodParameterTypes,
         methodParameters = command.childMethodParameters,
         workflowTags = state.workflowTags,
-        workflowMeta = state.workflowMeta,
-        workflowOptions = state.workflowOptions
+        workflowOptions = state.workflowOptions,
+        workflowMeta = state.workflowMeta
     )
     launch { output.sendToWorkflowEngine(dispatchWorkflow) }
 

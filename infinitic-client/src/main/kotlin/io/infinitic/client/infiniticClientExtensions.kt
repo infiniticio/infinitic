@@ -34,22 +34,23 @@ import java.util.UUID
 /**
  * Create stub for a new task
  */
-inline fun <reified T : Any> InfiniticClient.newTask(
+inline fun <reified T : Any> InfiniticClient.task(
     tags: Set<String> = setOf(),
-    options: TaskOptions? = null,
+    options: TaskOptions = TaskOptions(),
     meta: Map<String, ByteArray> = mapOf()
-): T = newTask(T::class.java, tags, options, meta)
+): T = task(T::class.java, tags, options, meta)
 
 /**
  * Create stub for a new workflow
  */
-inline fun <reified T : Any> InfiniticClient.newWorkflow(
+inline fun <reified T : Any> InfiniticClient.workflow(
     tags: Set<String> = setOf(),
-    options: WorkflowOptions? = null,
+    options: WorkflowOptions = WorkflowOptions(),
     meta: Map<String, ByteArray> = mapOf()
-): T = newWorkflow(T::class.java, tags, options, meta)
+): T = workflow(T::class.java, tags, options, meta)
 
 /**
+ *
  * Create stub for an existing task targeted per id
  */
 inline fun <reified T : Any> InfiniticClient.getTask(

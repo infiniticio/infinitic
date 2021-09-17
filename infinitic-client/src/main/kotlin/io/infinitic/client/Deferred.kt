@@ -34,5 +34,4 @@ interface Deferred<R> {
     fun join(): Deferred<R>
     fun cancel(): CompletableFuture<Unit>
     fun retry(): CompletableFuture<Unit>
-    fun <K : Any> instance(): K
 }
