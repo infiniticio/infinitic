@@ -75,8 +75,8 @@ class ClientTask : InfiniticClient() {
 class ClientTaskTests : StringSpec({
     val client = ClientTask()
 
-    val fakeTask = client.task(FakeTask::class.java)
-    val fooTask = client.task(FooTask::class.java)
+    val fakeTask = client.newTaskStub(FakeTask::class.java)
+    val fooTask = client.newTaskStub(FooTask::class.java)
 
     beforeTest {
         taskTagSlots.clear()
@@ -425,7 +425,7 @@ class ClientTaskTests : StringSpec({
     "cancel task per id - syntax 1" {
         // when
         val id = UUID.randomUUID()
-        client.cancelTask<FakeTask>(id).join()
+        client.cancel(fakeTask, id).join()
         // then
         taskTagSlots.size shouldBe 0
         taskSlot.captured shouldBe CancelTask(
@@ -437,7 +437,7 @@ class ClientTaskTests : StringSpec({
     "cancel task per id - syntax 2" {
         // when
         val id = UUID.randomUUID()
-        client.cancelTask(FakeTask::class.java, id).join()
+        client.cancel(fakeTask, id).join()
         // then
         taskTagSlots.size shouldBe 0
         taskSlot.captured shouldBe CancelTask(
@@ -448,7 +448,7 @@ class ClientTaskTests : StringSpec({
 
     "cancel task per tag - syntax 1" {
         // when
-        client.cancelTask<FakeTask>("foo").join()
+        client.cancel(fakeTask, "foo").join()
         // then
         taskTagSlots.size shouldBe 1
         taskTagSlots[0] shouldBe CancelTaskPerTag(
@@ -460,7 +460,7 @@ class ClientTaskTests : StringSpec({
 
     "cancel task per tag - syntax 2" {
         // when
-        client.cancelTask(FakeTask::class.java, "foo").join()
+        client.cancel(fakeTask, "foo").join()
         // then
         taskTagSlots.size shouldBe 1
         taskTagSlots[0] shouldBe CancelTaskPerTag(
@@ -485,7 +485,8 @@ class ClientTaskTests : StringSpec({
     "retry task per id - syntax 1" {
         // when
         val id = UUID.randomUUID()
-        client.retryTask<FakeTask>(id).join()
+        client.retry(fakeTask, id).join()
+
         // then
         taskTagSlots.size shouldBe 0
         taskSlot.captured shouldBe RetryTask(
@@ -497,7 +498,7 @@ class ClientTaskTests : StringSpec({
     "retry task per id - syntax 2" {
         // when
         val id = UUID.randomUUID()
-        client.retryTask(FakeTask::class.java, id).join()
+        client.retry(fakeTask, id).join()
         // then
         taskTagSlots.size shouldBe 0
         taskSlot.captured shouldBe RetryTask(
@@ -520,7 +521,7 @@ class ClientTaskTests : StringSpec({
 
     "retry task per tag - syntax 1" {
         // when
-        client.retryTask<FakeTask>("foo").join()
+        client.retry(fakeTask, "foo").join()
         // then
         taskTagSlots.size shouldBe 1
         taskTagSlots[0] shouldBe RetryTaskPerTag(
@@ -532,7 +533,7 @@ class ClientTaskTests : StringSpec({
 
     "retry task per tag - syntax 2" {
         // when
-        client.retryTask(FakeTask::class.java, "foo").join()
+        client.retry(fakeTask, "foo").join()
         // then
         taskTagSlots.size shouldBe 1
         taskTagSlots[0] shouldBe RetryTaskPerTag(
@@ -543,7 +544,7 @@ class ClientTaskTests : StringSpec({
     }
 
     "get task ids par name and workflow" {
-        val taskIds = client.getTaskIds<FakeTask>("foo")
+        val taskIds = client.getIds(fakeTask, "foo")
         // then
         taskIds.size shouldBe 2
         taskTagSlots.size shouldBe 1

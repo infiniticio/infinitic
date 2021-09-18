@@ -40,9 +40,9 @@ class NewWorkflowProxyHandler<K : Any>(
     val workflowOptions: WorkflowOptions,
     val workflowMeta: WorkflowMeta,
     override val dispatcherFn: () -> ProxyDispatcher
-) : NewProxyHandler<K>(klass, dispatcherFn) {
+) : ProxyHandler<K>(klass, dispatcherFn) {
 
-    fun get() = NewWorkflow(
+    fun newWorkflow() = NewWorkflow(
         WorkflowName(className),
         workflowId = WorkflowId(),
         MethodParameterTypes.from(method),

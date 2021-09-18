@@ -30,11 +30,11 @@ import io.infinitic.common.data.MillisDuration
 import io.infinitic.common.data.MillisInstant
 import io.infinitic.common.data.Name
 import io.infinitic.common.proxies.ChannelProxyHandler
+import io.infinitic.common.proxies.InstanceTaskProxyHandler
+import io.infinitic.common.proxies.InstanceWorkflowProxyHandler
 import io.infinitic.common.proxies.NewTaskProxyHandler
 import io.infinitic.common.proxies.NewWorkflowProxyHandler
 import io.infinitic.common.proxies.ProxyHandler
-import io.infinitic.common.proxies.RunningTaskProxyHandler
-import io.infinitic.common.proxies.RunningWorkflowProxyHandler
 import io.infinitic.common.workflows.data.channels.ChannelEventFilter
 import io.infinitic.common.workflows.data.channels.ChannelImpl
 import io.infinitic.common.workflows.data.channels.ChannelName
@@ -80,6 +80,7 @@ import io.infinitic.workflows.Deferred
 import io.infinitic.workflows.DeferredStatus
 import io.infinitic.workflows.WorkflowDispatcher
 import mu.KotlinLogging
+import java.util.concurrent.CompletableFuture
 import java.time.Duration as JavaDuration
 import java.time.Instant as JavaInstant
 
@@ -105,8 +106,8 @@ internal class WorkflowDispatcherImpl(
     override fun <R> dispatchAndWait(handler: ProxyHandler<*>): R = when (handler) {
         is NewTaskProxyHandler -> dispatchAndWait(handler)
         is NewWorkflowProxyHandler -> dispatchAndWait(handler)
-        is RunningTaskProxyHandler -> TODO("Not yet implemented")
-        is RunningWorkflowProxyHandler -> TODO("Not yet implemented")
+        is InstanceTaskProxyHandler -> TODO("Not yet implemented")
+        is InstanceWorkflowProxyHandler -> TODO("Not yet implemented")
         is ChannelProxyHandler -> dispatchAndWait(handler)
     }
 
@@ -133,8 +134,8 @@ internal class WorkflowDispatcherImpl(
         return when (handler) {
             is NewTaskProxyHandler -> dispatchTask(handler)
             is NewWorkflowProxyHandler -> dispatchWorkflow(handler)
-            is RunningTaskProxyHandler -> throw Exception("can not dispatch a method on running task")
-            is RunningWorkflowProxyHandler -> TODO("Not Yet Implemented")
+            is InstanceTaskProxyHandler -> throw Exception("can not dispatch a method on running task")
+            is InstanceWorkflowProxyHandler -> TODO("Not Yet Implemented")
             is ChannelProxyHandler -> TODO("Not Yet Implemented")
         }
     }
@@ -369,7 +370,7 @@ internal class WorkflowDispatcherImpl(
     override fun <S> dispatchTask(handler: NewTaskProxyHandler<*>): Deferred<S> {
         checkMethodIsNotSuspend(handler.method)
 
-        return with(handler.get()) {
+        return with(handler.newTask()) {
             dispatchCommand(
                 DispatchTask(
                     taskName = taskName,
@@ -391,7 +392,7 @@ internal class WorkflowDispatcherImpl(
     override fun <S> dispatchWorkflow(handler: NewWorkflowProxyHandler<*>): Deferred<S> {
         checkMethodIsNotSuspend(handler.method)
 
-        return with(handler.get()) {
+        return with(handler.newWorkflow()) {
             dispatchCommand(
                 DispatchChildWorkflow(
                     childWorkflowName = workflowName,
@@ -460,7 +461,7 @@ internal class WorkflowDispatcherImpl(
     /*
      * Sent_to_Channel command dispatching
      */
-    override fun <T : Any> sendToChannel(channel: ChannelImpl<T>, event: T) {
+    override fun <T : Any> sendToChannel(channel: ChannelImpl<T>, event: T): CompletableFuture<Unit> {
         dispatchCommand<T>(
             SendToChannel(
                 ChannelName(channel.getNameOrThrow()),
@@ -469,6 +470,8 @@ internal class WorkflowDispatcherImpl(
             ),
             CommandSimpleName("${CommandType.SENT_TO_CHANNEL}")
         )
+
+        return CompletableFuture.completedFuture(Unit)
     }
 
     /*

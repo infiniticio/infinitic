@@ -33,16 +33,16 @@ import io.infinitic.workflows.SendChannel
 
 class ChannelProxyHandler<K : SendChannel<*>>(
     override val klass: Class<out K>,
-    val instance: RunningWorkflowProxyHandler<*>,
-) : RunningProxyHandler<K>(klass, instance.dispatcherFn) {
+    val instance: InstanceWorkflowProxyHandler<*>,
+) : ProxyHandler<K>(klass, instance.dispatcherFn) {
 
     val workflowName = instance.workflowName
     val channelName = ChannelName(instance.method.name)
 
-    fun signal(): SentSignal {
+    fun signal(): Signal {
         val signal = methodArgs[0]
 
-        return SentSignal(
+        return Signal(
             workflowName,
             channelName,
             ChannelSignalId(),

@@ -33,12 +33,11 @@ import io.infinitic.common.clients.data.ClientName
 import io.infinitic.common.clients.messages.ClientMessage
 import io.infinitic.common.data.JobOptions
 import io.infinitic.common.proxies.ChannelProxyHandler
+import io.infinitic.common.proxies.InstanceTaskProxyHandler
+import io.infinitic.common.proxies.InstanceWorkflowProxyHandler
 import io.infinitic.common.proxies.NewTaskProxyHandler
 import io.infinitic.common.proxies.NewWorkflowProxyHandler
 import io.infinitic.common.proxies.ProxyHandler
-import io.infinitic.common.proxies.RunningProxyHandler
-import io.infinitic.common.proxies.RunningTaskProxyHandler
-import io.infinitic.common.proxies.RunningWorkflowProxyHandler
 import io.infinitic.common.tasks.data.TaskId
 import io.infinitic.common.tasks.data.TaskMeta
 import io.infinitic.common.tasks.data.TaskName
@@ -55,8 +54,8 @@ import io.infinitic.common.workflows.engine.SendToWorkflowEngine
 import io.infinitic.common.workflows.tags.SendToWorkflowTagEngine
 import io.infinitic.exceptions.clients.CanNotApplyOnChannelException
 import io.infinitic.exceptions.clients.CanNotAwaitStubPerTag
-import io.infinitic.exceptions.clients.NotAStubException
-import io.infinitic.exceptions.clients.NotAnInterfaceException
+import io.infinitic.exceptions.clients.InvalidInterfaceException
+import io.infinitic.exceptions.clients.InvalidStubException
 import io.infinitic.exceptions.thisShouldNotHappen
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
@@ -141,7 +140,7 @@ abstract class InfiniticClient : Closeable {
      *  Create a stub for a task
      */
     @JvmOverloads
-    fun <T : Any> task(
+    fun <T : Any> newTaskStub(
         klass: Class<out T>,
         tags: Set<String> = setOf(),
         options: TaskOptions = TaskOptions(),
@@ -157,7 +156,7 @@ abstract class InfiniticClient : Closeable {
      *  Create a stub for a workflow
      */
     @JvmOverloads
-    fun <T : Any> workflow(
+    fun <T : Any> newWorkflowStub(
         klass: Class<out T>,
         tags: Set<String> = setOf(),
         options: WorkflowOptions = WorkflowOptions(),
@@ -320,186 +319,136 @@ abstract class InfiniticClient : Closeable {
     }
 
     /**
-     * Create stub for an existing task targeted per id
+     * Create instance stub per id
      */
-    fun <T : Any> getTask(
-        klass: Class<out T>,
+    @Suppress("UNCHECKED_CAST")
+    fun <T : Any> getInstanceStub(
+        stub: T,
         id: UUID
-    ): T = RunningTaskProxyHandler(
-        klass = klass,
-        perTaskId = TaskId(id)
-    ) { dispatcher }.stub()
+    ): T = when (val handler = getProxyHandler(stub, object {}.javaClass.name)) {
+        is NewTaskProxyHandler, is InstanceTaskProxyHandler -> getTask(handler.klass as Class<T>, id)
+        is NewWorkflowProxyHandler, is InstanceWorkflowProxyHandler -> getWorkflow(handler.klass as Class<T>, id)
+        is ChannelProxyHandler -> throw CanNotApplyOnChannelException("getInstanceStub")
+    }
 
     /**
-     * Create stub for an existing task targeted per tag
+     * Create instance stub per tag
      */
-    fun <T : Any> getTask(
-        klass: Class<out T>,
+    @Suppress("UNCHECKED_CAST")
+    fun <T : Any> getInstanceStub(
+        stub: T,
         tag: String
-    ): T = RunningTaskProxyHandler(
-        klass = klass,
-        perTaskTag = TaskTag(tag)
-    ) { dispatcher }.stub()
+    ): T = when (val handler = getProxyHandler(stub, object {}.javaClass.name)) {
+        is NewTaskProxyHandler, is InstanceTaskProxyHandler -> getTask(handler.klass as Class<T>, tag)
+        is NewWorkflowProxyHandler, is InstanceWorkflowProxyHandler -> getWorkflow(handler.klass as Class<T>, tag)
+        is ChannelProxyHandler -> throw CanNotApplyOnChannelException("getInstanceStub")
+    }
 
     /**
-     * Create stub for an existing workflow per id
+     * Await by id
      */
-    fun <T : Any> getWorkflow(
-        klass: Class<out T>,
+    @Suppress("UNCHECKED_CAST")
+    fun <T : Any> await(
+        stub: T,
         id: UUID
-    ): T = RunningWorkflowProxyHandler(
-        klass = klass,
-        perWorkflowId = WorkflowId(id)
-    ) { dispatcher }.stub()
+    ): Any = when (val handler = getProxyHandler(stub, object {}.javaClass.name)) {
+        is NewTaskProxyHandler, is InstanceTaskProxyHandler -> awaitTask(handler.klass as Class<T>, id)
+        is NewWorkflowProxyHandler, is InstanceWorkflowProxyHandler -> awaitWorkflow(handler.klass as Class<T>, id)
+        is ChannelProxyHandler -> throw CanNotApplyOnChannelException("await")
+    }
 
     /**
-     * Create stub for an existing workflow per tag
+     * Cancel by id
      */
-    fun <T : Any> getWorkflow(
-        klass: Class<out T>,
+    @Suppress("UNCHECKED_CAST")
+    fun <T : Any> cancel(
+        stub: T,
+        id: UUID
+    ): CompletableFuture<Unit> = when (val handler = getProxyHandler(stub, object {}.javaClass.name)) {
+        is NewTaskProxyHandler, is InstanceTaskProxyHandler -> cancelTask(handler.klass as Class<T>, id)
+        is NewWorkflowProxyHandler, is InstanceWorkflowProxyHandler -> cancelWorkflow(handler.klass as Class<T>, id)
+        is ChannelProxyHandler -> throw Exception("can not ")
+    }
+
+    /**
+     * Cancel by tag
+     */
+    @Suppress("UNCHECKED_CAST")
+    fun <T : Any> cancel(
+        stub: T,
         tag: String
-    ): T = RunningWorkflowProxyHandler(
-        klass = klass,
-        perWorkflowTag = WorkflowTag(tag)
-    ) { dispatcher }.stub()
+    ): CompletableFuture<Unit> = when (val handler = getProxyHandler(stub, object {}.javaClass.name)) {
+        is NewTaskProxyHandler, is InstanceTaskProxyHandler -> cancelTask(handler.klass as Class<T>, tag)
+        is NewWorkflowProxyHandler, is InstanceWorkflowProxyHandler -> cancelWorkflow(handler.klass as Class<T>, tag)
+        is ChannelProxyHandler -> throw Exception("can not ")
+    }
 
     /**
-     * Await a task by id
+     * Completed by tag
      */
-    fun <T : Any> awaitTask(
-        klass: Class<out T>,
-        id: UUID
-    ): Any = await(getTask(klass, id))
-
-    /**
-     * Await a workflow by id
-     */
-    fun <T : Any> awaitWorkflow(
-        klass: Class<out T>,
-        id: UUID
-    ): Any = await(getWorkflow(klass, id))
-
-    /**
-     *  Cancel a task by id
-     */
-    fun <T : Any> cancelTask(
-        klass: Class<out T>,
-        id: UUID
-    ) = cancel(getTask(klass, id))
-
-    /**
-     *  Cancel a task by tag
-     */
-    fun <T : Any> cancelTask(
-        klass: Class<out T>,
-        tag: String
-    ) = cancel(getTask(klass, tag))
-
-    /**
-     *  Cancel a workflow by id
-     */
-    fun <T : Any> cancelWorkflow(
-        klass: Class<out T>,
-        id: UUID
-    ) = cancel(getWorkflow(klass, id))
-
-    /**
-     *  Cancel a workflow by tag
-     */
-    fun <T : Any> cancelWorkflow(
-        klass: Class<out T>,
-        tag: String
-    ) = cancel(getWorkflow(klass, tag))
-
-    /**
-     *  Complete a task by id
-     */
-    fun <T : Any> completeTask(
-        klass: Class<out T>,
+    @Suppress("UNCHECKED_CAST")
+    fun <T : Any> complete(
+        stub: T,
         id: UUID,
         value: Any?
-    ) = complete(getTask(klass, id), value)
+    ): CompletableFuture<Unit> = when (val handler = getProxyHandler(stub, object {}.javaClass.name)) {
+        is NewTaskProxyHandler, is InstanceTaskProxyHandler -> completeTask(handler.klass as Class<T>, id, value)
+        is NewWorkflowProxyHandler, is InstanceWorkflowProxyHandler -> completeWorkflow(handler.klass as Class<T>, id, value)
+        is ChannelProxyHandler -> throw Exception("can not ")
+    }
 
     /**
-     *  Complete a task by tag
+     * Completed by tag
      */
-    fun <T : Any> completeTask(
-        klass: Class<out T>,
+    @Suppress("UNCHECKED_CAST")
+    fun <T : Any> complete(
+        stub: T,
         tag: String,
         value: Any?
-    ) = complete(getTask(klass, tag), value)
+    ): CompletableFuture<Unit> = when (val handler = getProxyHandler(stub, object {}.javaClass.name)) {
+        is NewTaskProxyHandler, is InstanceTaskProxyHandler -> completeTask(handler.klass as Class<T>, tag, value)
+        is NewWorkflowProxyHandler, is InstanceWorkflowProxyHandler -> completeWorkflow(handler.klass as Class<T>, tag, value)
+        is ChannelProxyHandler -> throw Exception("can not ")
+    }
 
     /**
-     *  Complete a workflow by id
+     * Retry by id
      */
-    fun <T : Any> completeWorkflow(
-        klass: Class<out T>,
-        id: UUID,
-        value: Any?
-    ) = complete(getWorkflow(klass, id), value)
-
-    /**
-     *  Complete a workflow by tag
-     */
-    fun <T : Any> completeWorkflow(
-        klass: Class<out T>,
-        tag: String,
-        value: Any?
-    ) = complete(getWorkflow(klass, tag), value)
-
-    /**
-     * Retry a task by id
-     */
-    fun <T : Any> retryTask(
-        klass: Class<out T>,
+    @Suppress("UNCHECKED_CAST")
+    fun <T : Any> retry(
+        stub: T,
         id: UUID
-    ) = retry(getTask(klass, id))
+    ): CompletableFuture<Unit> = when (val handler = getProxyHandler(stub, object {}.javaClass.name)) {
+        is NewTaskProxyHandler, is InstanceTaskProxyHandler -> retryTask(handler.klass as Class<T>, id)
+        is NewWorkflowProxyHandler, is InstanceWorkflowProxyHandler -> retryWorkflow(handler.klass as Class<T>, id)
+        is ChannelProxyHandler -> throw Exception("can not ")
+    }
 
     /**
-     * Retry a task by tag
+     * Retry by tag
      */
-    fun <T : Any> retryTask(
-        klass: Class<out T>,
+    @Suppress("UNCHECKED_CAST")
+    fun <T : Any> retry(
+        stub: T,
         tag: String
-    ) = retry(getTask(klass, tag))
+    ): CompletableFuture<Unit> = when (val handler = getProxyHandler(stub, object {}.javaClass.name)) {
+        is NewTaskProxyHandler, is InstanceTaskProxyHandler -> retryTask(handler.klass as Class<T>, tag)
+        is NewWorkflowProxyHandler, is InstanceWorkflowProxyHandler -> retryWorkflow(handler.klass as Class<T>, tag)
+        is ChannelProxyHandler -> throw Exception("can not ")
+    }
 
     /**
-     * Retry a workflow by id
+     * get ids of a stub, associated to a specific tag
      */
-    fun <T : Any> retryWorkflow(
-        klass: Class<out T>,
-        id: UUID
-    ) = retry(getWorkflow(klass, id))
-
-    /**
-     * Retry a workflow by tag
-     */
-    fun <T : Any> retryWorkflow(
-        klass: Class<out T>,
+    @Suppress("UNCHECKED_CAST")
+    fun <T : Any> getIds(
+        stub: T,
         tag: String
-    ) = retry(getWorkflow(klass, tag))
-
-    /**
-     * Synchronous call to get task'ids per tag and name
-     */
-    fun <T : Any> getTaskIds(
-        klass: Class<out T>,
-        tag: String
-    ): Set<UUID> = dispatcher.getTaskIdsPerTag(
-        TaskName(klass.name),
-        TaskTag(tag)
-    )
-
-    /**
-     * Synchronous call to get WorkflowIds per tag and name
-     */
-    fun <T : Any> getWorkflowIds(
-        klass: Class<out T>,
-        tag: String
-    ): Set<UUID> = dispatcher.getWorkflowIdsPerTag(
-        WorkflowName(klass.name),
-        WorkflowTag(tag)
-    )
+    ): Set<UUID> = when (val handler = getProxyHandler(stub, object {}.javaClass.name)) {
+        is NewTaskProxyHandler, is InstanceTaskProxyHandler -> getTaskIds(handler.klass as Class<T>, tag)
+        is NewWorkflowProxyHandler, is InstanceWorkflowProxyHandler -> getWorkflowIds(handler.klass as Class<T>, tag)
+        is ChannelProxyHandler -> throw Exception("can not ")
+    }
 
     private fun <R> dispatch(
         tags: Set<String>?,
@@ -507,16 +456,16 @@ abstract class InfiniticClient : Closeable {
         meta: Map<String, ByteArray>?,
         invoke: () -> R
     ): Deferred<R> {
-        val handler = ProxyHandler.async(invoke) ?: throw thisShouldNotHappen("should be called through a proxy")
+        val handler = ProxyHandler.async(invoke) ?: throw thisShouldNotHappen("should be called through a stub")
 
         return dispatcher.dispatch(handler, false, tags, options, meta)
     }
 
-    private fun getProxyHandler(proxy: Any, action: String): ProxyHandler<*> {
-        val exception = NotAStubException(proxy::class.java.name, action)
+    private fun getProxyHandler(stub: Any, action: String): ProxyHandler<*> {
+        val exception = InvalidStubException(stub::class.java.name, action)
 
         val handler = try {
-            Proxy.getInvocationHandler(proxy)
+            Proxy.getInvocationHandler(stub)
         } catch (e: IllegalArgumentException) {
             throw exception
         }
@@ -527,56 +476,233 @@ abstract class InfiniticClient : Closeable {
     }
 
     private fun <R> KFunction<R>.check(): KFunction<R> = this.also {
-        if (javaMethod?.declaringClass?.isInterface != true) throw NotAnInterfaceException(name, "dispatch")
-        if ((instanceParameter ?: extensionReceiverParameter) != null)
-            throw NotAnInterfaceException(name, "dispatch")
+        if (javaMethod?.declaringClass?.isInterface != true || (instanceParameter ?: extensionReceiverParameter) != null)
+            throw InvalidInterfaceException(name, "dispatch")
     }
 
-    private fun <R : Any?> await(proxy: Any): R =
-        when (val handler = getProxyHandler(proxy, "await")) {
+    private fun <R : Any?> await(stub: Any): R =
+        when (val handler = getProxyHandler(stub, "await")) {
             is NewTaskProxyHandler -> thisShouldNotHappen()
             is NewWorkflowProxyHandler -> thisShouldNotHappen()
-            is RunningTaskProxyHandler -> when {
-                handler.perTaskId != null -> DeferredTask<R>(handler.get(), false, dispatcher).await()
+            is InstanceTaskProxyHandler -> when {
+                handler.perTaskId != null -> DeferredTask<R>(handler.instanceTask(), false, dispatcher).await()
                 handler.perTaskTag != null -> throw CanNotAwaitStubPerTag("${handler.taskName}")
                 else -> thisShouldNotHappen()
             }
-            is RunningWorkflowProxyHandler -> when {
-                handler.perWorkflowId != null -> DeferredWorkflow<R>(handler.get(), false, dispatcher).await()
+            is InstanceWorkflowProxyHandler -> when {
+                handler.perWorkflowId != null -> DeferredWorkflow<R>(handler.instanceWorkflow(), false, dispatcher).await()
                 handler.perWorkflowTag != null -> throw CanNotAwaitStubPerTag("${handler.workflowName}")
                 else -> thisShouldNotHappen()
             }
             is ChannelProxyHandler -> throw CanNotApplyOnChannelException("await")
         }
 
-    private fun <T : Any> retry(proxy: T): CompletableFuture<Unit> =
-        when (val handler = getProxyHandler(proxy, "retry")) {
+    private fun retry(stub: Any): CompletableFuture<Unit> =
+        when (val handler = getProxyHandler(stub, "retry")) {
             is NewTaskProxyHandler -> thisShouldNotHappen()
             is NewWorkflowProxyHandler -> thisShouldNotHappen()
-            is RunningProxyHandler -> when (handler) {
-                is RunningTaskProxyHandler<*> -> dispatcher.retryTask(handler.get())
-                is RunningWorkflowProxyHandler<*> -> dispatcher.retryWorkflow(handler.get())
-                is ChannelProxyHandler<*> -> throw CanNotApplyOnChannelException("retry")
-            }
+            is InstanceTaskProxyHandler<*> -> dispatcher.retryTask(handler.instanceTask())
+            is InstanceWorkflowProxyHandler<*> -> dispatcher.retryWorkflow(handler.instanceWorkflow())
+            is ChannelProxyHandler<*> -> throw CanNotApplyOnChannelException("retry")
         }
 
-    private fun <T : Any> cancel(proxy: T): CompletableFuture<Unit> =
-        when (val handler = getProxyHandler(proxy, "cancel")) {
+    private fun cancel(stub: Any): CompletableFuture<Unit> =
+        when (val handler = getProxyHandler(stub, "cancel")) {
             is NewTaskProxyHandler -> thisShouldNotHappen()
             is NewWorkflowProxyHandler -> thisShouldNotHappen()
-            is RunningProxyHandler -> when (handler) {
-                is RunningTaskProxyHandler<*> -> dispatcher.cancelTask(handler.get())
-                is RunningWorkflowProxyHandler<*> -> dispatcher.cancelWorkflow(handler.get())
-                is ChannelProxyHandler<*> -> throw CanNotApplyOnChannelException("cancel")
-            }
+            is InstanceTaskProxyHandler<*> -> dispatcher.cancelTask(handler.instanceTask())
+            is InstanceWorkflowProxyHandler<*> -> dispatcher.cancelWorkflow(handler.instanceWorkflow())
+            is ChannelProxyHandler<*> -> throw CanNotApplyOnChannelException("cancel")
         }
 
-    private fun complete(proxy: Any, value: Any?): Unit =
-        when (val handler = getProxyHandler(proxy, "complete")) {
+    private fun complete(stub: Any, value: Any?): CompletableFuture<Unit> =
+        when (val handler = getProxyHandler(stub, "complete")) {
             is NewTaskProxyHandler -> thisShouldNotHappen()
             is NewWorkflowProxyHandler -> thisShouldNotHappen()
-            is RunningTaskProxyHandler<*> -> TODO("Not yet implemented")
-            is RunningWorkflowProxyHandler<*> -> TODO("Not yet implemented")
+            is InstanceTaskProxyHandler<*> -> TODO("Not yet implemented")
+            is InstanceWorkflowProxyHandler<*> -> TODO("Not yet implemented")
             is ChannelProxyHandler<*> -> throw CanNotApplyOnChannelException("complete")
         }
+
+    /**
+     * Create stub for an existing task targeted per id
+     */
+    private fun <T : Any> getTask(
+        klass: Class<out T>,
+        id: UUID
+    ): T = InstanceTaskProxyHandler(
+        klass = klass,
+        perTaskId = TaskId(id)
+    ) { dispatcher }.stub()
+
+    /**
+     * Create stub for an existing task targeted per tag
+     */
+    private fun <T : Any> getTask(
+        klass: Class<out T>,
+        tag: String
+    ): T = InstanceTaskProxyHandler(
+        klass = klass,
+        perTaskTag = TaskTag(tag)
+    ) { dispatcher }.stub()
+
+    /**
+     * Create stub for an existing workflow per id
+     */
+    private fun <T : Any> getWorkflow(
+        klass: Class<out T>,
+        id: UUID
+    ): T = InstanceWorkflowProxyHandler(
+        klass = klass,
+        perWorkflowId = WorkflowId(id)
+    ) { dispatcher }.stub()
+
+    /**
+     * Create stub for an existing workflow per tag
+     */
+    private fun <T : Any> getWorkflow(
+        klass: Class<out T>,
+        tag: String
+    ): T = InstanceWorkflowProxyHandler(
+        klass = klass,
+        perWorkflowTag = WorkflowTag(tag)
+    ) { dispatcher }.stub()
+
+    /**
+     * Await a task by id
+     */
+    private fun <T : Any> awaitTask(
+        klass: Class<out T>,
+        id: UUID
+    ): Any = await(getTask(klass, id))
+
+    /**
+     * Await a workflow by id
+     */
+    private fun <T : Any> awaitWorkflow(
+        klass: Class<out T>,
+        id: UUID
+    ): Any = await(getWorkflow(klass, id))
+
+    /**
+     *  Cancel a task by id
+     */
+    private fun <T : Any> cancelTask(
+        klass: Class<out T>,
+        id: UUID
+    ) = cancel(getTask(klass, id))
+
+    /**
+     *  Cancel a workflow by id
+     */
+    private fun <T : Any> cancelWorkflow(
+        klass: Class<out T>,
+        id: UUID
+    ) = cancel(getWorkflow(klass, id))
+
+    /**
+     *  Cancel a task by tag
+     */
+    private fun <T : Any> cancelTask(
+        klass: Class<out T>,
+        tag: String
+    ) = cancel(getTask(klass, tag))
+
+    /**
+     *  Cancel a workflow by tag
+     */
+    private fun <T : Any> cancelWorkflow(
+        klass: Class<out T>,
+        tag: String
+    ) = cancel(getWorkflow(klass, tag))
+
+    /**
+     *  Complete a task by id
+     */
+    private fun <T : Any> completeTask(
+        klass: Class<out T>,
+        id: UUID,
+        value: Any?
+    ) = complete(getTask(klass, id), value)
+
+    /**
+     *  Complete a workflow by id
+     */
+    private fun <T : Any> completeWorkflow(
+        klass: Class<out T>,
+        id: UUID,
+        value: Any?
+    ) = complete(getWorkflow(klass, id), value)
+
+    /**
+     *  Complete a task by tag
+     */
+    private fun <T : Any> completeTask(
+        klass: Class<out T>,
+        tag: String,
+        value: Any?
+    ) = complete(getTask(klass, tag), value)
+
+    /**
+     *  Complete a workflow by tag
+     */
+    private fun <T : Any> completeWorkflow(
+        klass: Class<out T>,
+        tag: String,
+        value: Any?
+    ) = complete(getWorkflow(klass, tag), value)
+
+    /**
+     * Retry a task by id
+     */
+    private fun <T : Any> retryTask(
+        klass: Class<out T>,
+        id: UUID
+    ) = retry(getTask(klass, id))
+
+    /**
+     * Retry a workflow by id
+     */
+    private fun <T : Any> retryWorkflow(
+        klass: Class<out T>,
+        id: UUID
+    ) = retry(getWorkflow(klass, id))
+
+    /**
+     * Retry a task by tag
+     */
+    private fun <T : Any> retryTask(
+        klass: Class<out T>,
+        tag: String
+    ) = retry(getTask(klass, tag))
+
+    /**
+     * Retry a workflow by tag
+     */
+    private fun <T : Any> retryWorkflow(
+        klass: Class<out T>,
+        tag: String
+    ) = retry(getWorkflow(klass, tag))
+
+    /**
+     * Synchronous call to get task'ids per tag and name
+     */
+    private fun <T : Any> getTaskIds(
+        klass: Class<out T>,
+        tag: String
+    ): Set<UUID> = dispatcher.getTaskIdsPerTag(
+        TaskName(klass.name),
+        TaskTag(tag)
+    )
+
+    /**
+     * Synchronous call to get WorkflowIds per tag and name
+     */
+    private fun <T : Any> getWorkflowIds(
+        klass: Class<out T>,
+        tag: String
+    ): Set<UUID> = dispatcher.getWorkflowIdsPerTag(
+        WorkflowName(klass.name),
+        WorkflowTag(tag)
+    )
 }

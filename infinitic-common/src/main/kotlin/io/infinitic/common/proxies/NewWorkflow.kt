@@ -38,5 +38,5 @@ data class NewWorkflow(
     val methodParameters: MethodParameters,
     var methodName: MethodName
 ) {
-    fun running() = RunningWorkflow(workflowName, workflowId)
+    fun running() = InstanceWorkflow(workflowName, workflowId)
 }

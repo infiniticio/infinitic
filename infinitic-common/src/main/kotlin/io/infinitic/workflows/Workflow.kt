@@ -35,7 +35,7 @@ import io.infinitic.common.workflows.data.channels.ChannelImpl
 import io.infinitic.common.workflows.data.workflows.WorkflowMeta
 import io.infinitic.common.workflows.data.workflows.WorkflowOptions
 import io.infinitic.common.workflows.data.workflows.WorkflowTag
-import io.infinitic.exceptions.clients.NotAnInterfaceException
+import io.infinitic.exceptions.clients.InvalidInterfaceException
 import java.time.Duration
 import java.time.Instant
 import kotlin.reflect.KFunction
@@ -164,7 +164,7 @@ abstract class Workflow {
     fun timer(instant: Instant): Deferred<Instant> = dispatcher.timer(instant)
 
     private fun <R> KFunction<R>.check(): KFunction<R> = this.also {
-        if (javaMethod?.declaringClass?.isInterface != true) throw NotAnInterfaceException(name, "dispatch")
+        if (javaMethod?.declaringClass?.isInterface != true) throw InvalidInterfaceException(name, "dispatch")
     }
 
     private fun <R> dispatch(invoke: () -> R): Deferred<R> = dispatcher.dispatch(ProxyHandler.async(invoke)!!, false)

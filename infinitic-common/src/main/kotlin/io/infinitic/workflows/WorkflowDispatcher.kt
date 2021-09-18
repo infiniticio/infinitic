@@ -33,6 +33,7 @@ import io.infinitic.common.proxies.ProxyHandler
 import io.infinitic.common.workflows.data.channels.ChannelImpl
 import java.time.Duration
 import java.time.Instant
+import java.util.concurrent.CompletableFuture
 
 interface WorkflowDispatcher : ProxyDispatcher {
 
@@ -58,5 +59,5 @@ interface WorkflowDispatcher : ProxyDispatcher {
 
     fun <S : T, T : Any> receiveFromChannel(channel: ChannelImpl<T>, klass: Class<S>, jsonPath: String?, criteria: Criteria?): Deferred<S>
 
-    fun <T : Any> sendToChannel(channel: ChannelImpl<T>, event: T)
+    fun <T : Any> sendToChannel(channel: ChannelImpl<T>, event: T): CompletableFuture<Unit>
 }

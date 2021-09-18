@@ -26,12 +26,12 @@
 package io.infinitic.client.deferred
 
 import io.infinitic.client.Deferred
-import io.infinitic.common.proxies.SentSignal
+import io.infinitic.common.proxies.Signal
 import java.util.UUID
 import java.util.concurrent.CompletableFuture
 
-internal class DeferredSendChannel<R : Any?> (
-    private val signal: SentSignal,
+internal class DeferredSend<R : Any?> (
+    private val signal: Signal,
     private val future: CompletableFuture<Unit>
 ) : Deferred<R> {
 
@@ -43,22 +43,14 @@ internal class DeferredSendChannel<R : Any?> (
         TODO("Not yet implemented")
     }
 
-    override fun await(): R {
-        join()
+    // Send return type is always CompletableFuture<Unit>
+    // also we do not apply the join method
+    // in order to send asynchronously the message
+    // despite the synchronous syntax: workflow.channel.send
+    @Suppress("UNCHECKED_CAST")
+    override fun await(): R = future as R
 
-        // Channel::send has Unit as return type
-        @Suppress("UNCHECKED_CAST")
-        return Unit as R
-    }
-
-    override fun join(): Deferred<R> {
-        future.join()
-
-        return this
-    }
+    override fun join(): Deferred<R> = this.also { future.join() }
 
     override val id: UUID = signal.channelSignalId.id
-
-//    @Suppress("UNCHECKED_CAST")
-//    override fun <K : Any> instance() = runningWorkflowProxyHandler.stub() as K
 }

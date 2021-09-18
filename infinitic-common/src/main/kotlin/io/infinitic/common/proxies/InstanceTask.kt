@@ -25,24 +25,16 @@
 
 package io.infinitic.common.proxies
 
-import io.infinitic.common.workflows.data.channels.ChannelName
-import io.infinitic.common.workflows.data.channels.ChannelSignal
-import io.infinitic.common.workflows.data.channels.ChannelSignalId
-import io.infinitic.common.workflows.data.channels.ChannelSignalType
-import io.infinitic.common.workflows.data.workflows.WorkflowId
-import io.infinitic.common.workflows.data.workflows.WorkflowName
-import io.infinitic.common.workflows.data.workflows.WorkflowTag
+import io.infinitic.common.tasks.data.TaskId
+import io.infinitic.common.tasks.data.TaskName
+import io.infinitic.common.tasks.data.TaskTag
 
-data class SentSignal(
-    val workflowName: WorkflowName,
-    var channelName: ChannelName,
-    val channelSignalId: ChannelSignalId,
-    val channelSignal: ChannelSignal,
-    val channelSignalTypes: Set<ChannelSignalType>,
-    val perWorkflowId: WorkflowId? = null,
-    val perWorkflowTag: WorkflowTag? = null,
+data class InstanceTask(
+    val taskName: TaskName,
+    val perTaskId: TaskId? = null,
+    val perTaskTag: TaskTag? = null,
 ) {
     init {
-        require((perWorkflowId == null && perWorkflowTag != null) || (perWorkflowId != null && perWorkflowTag == null))
+        require((perTaskId == null && perTaskTag != null) || (perTaskId != null && perTaskTag == null))
     }
 }

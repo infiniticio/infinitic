@@ -196,7 +196,16 @@ class TaskEngine(
                 )
                 launch { sendToClient(taskCanceled) }
             }
-            else -> state.waitingClients.add(message.clientName)
+            TaskStatus.RUNNING_ERROR -> {
+                val taskFailed = TaskFailedInClient(
+                    clientName = message.clientName,
+                    taskId = state.taskId,
+                    error = state.lastError!!,
+                )
+                launch { sendToClient(taskFailed) }
+            }
+            TaskStatus.RUNNING_OK, TaskStatus.RUNNING_WARNING ->
+                state.waitingClients.add(message.clientName)
         }
     }
 

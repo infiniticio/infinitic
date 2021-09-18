@@ -27,13 +27,13 @@ package io.infinitic.client.deferred
 
 import io.infinitic.client.Deferred
 import io.infinitic.client.dispatcher.ClientDispatcher
-import io.infinitic.common.proxies.RunningTask
+import io.infinitic.common.proxies.InstanceTask
 import io.infinitic.exceptions.thisShouldNotHappen
 import java.util.UUID
 import java.util.concurrent.CompletableFuture
 
 class DeferredTask<R : Any?> (
-    private val task: RunningTask,
+    private val task: InstanceTask,
     private val clientWaiting: Boolean,
     private val dispatcher: ClientDispatcher,
     private val future: CompletableFuture<Unit>? = null
@@ -45,18 +45,7 @@ class DeferredTask<R : Any?> (
 
     override fun await(): R = dispatcher.await(task, clientWaiting)
 
-    override fun join(): Deferred<R> {
-        when (future) {
-            null -> thisShouldNotHappen()
-            else -> future.join()
-        }
+    override fun join(): Deferred<R> = this.also { future?.join() ?: thisShouldNotHappen() }
 
-        return this
-    }
-
-    override val id: UUID
-        get() = task.perTaskId!!.id
-
-//    @Suppress("UNCHECKED_CAST")
-//    override fun <K : Any> instance() = runningTaskProxyHandler.stub() as K
+    override val id: UUID by lazy { task.perTaskId!!.id }
 }

@@ -43,9 +43,8 @@ class ChannelImpl<T : Any>(
         else -> throw NameNotInitializedInChannelException
     }
 
-    override fun send(event: T) {
-        dispatcherFn().sendToChannel(this, event)
-    }
+    override fun send(signal: T) =
+        dispatcherFn().sendToChannel(this, signal)
 
     override fun receive(jsonPath: String?, criteria: Criteria?): Deferred<T> =
         dispatcherFn().receiveFromChannel(this, jsonPath, criteria)

@@ -33,27 +33,35 @@ sealed class ClientUserException(
     help: String,
 ) : UserException("$msg.\n$help")
 
-class NotAStubException(
+class InvalidStubException(
     name: String,
-    async: String
+    action: String
 ) : ClientUserException(
-    msg = "First parameter of client.$async function should be a stub",
-    help = "Make sure to provide the stub returned by client.newTask($name) or client.newWorkflow($name) function"
+    msg = "First parameter of InfiniticClient::$action function should be the stub of a task or workflow interface.",
+    help = "Make sure to provide the stub returned by InfiniticClient::newTaskStub($name) or InfiniticClient::newWorkflowStub($name) functions"
 )
 
-class NotAnInterfaceException(
+class InvalidInterfaceException(
     method: String,
     action: String
 ) : ClientUserException(
-    msg = "When using client.$action function, $method must be a method from an interface",
+    msg = "When using InfiniticClient::$action function, $method must be a method declared from an interface",
     help = "Make sure to provide a method defined from an interface, not from an actual instance."
 )
 
 class CanNotApplyOnChannelException(
     action: String
 ) : ClientUserException(
-    msg = "First parameter of client.$action should be the stub of an existing task or workflow",
-    help = "Make sure to provide the stub returned by client.getTask or client.getWorkflow function"
+    msg = "First parameter of InfiniticClient::$action function should be the stub of a task or workflow interface.",
+    help = "Make sure to provide the stub returned by InfiniticClient::newTaskStub or InfiniticClient::newWorkflowStub functions"
+)
+
+class CanNotApplyOnChannelStubException(
+    name: String,
+    action: String
+) : ClientUserException(
+    msg = "`$action` can not be used on the stub of a Channel!",
+    help = "Please target an existing $name task using `client.getTask()` "
 )
 
 class CanNotApplyOnNewTaskStubException(
@@ -64,27 +72,35 @@ class CanNotApplyOnNewTaskStubException(
     help = "Please target an existing $name task using `client.getTask()` "
 )
 
+class CanNotDispatchOnTaskInstanceStubException(
+    name: String,
+    action: String
+) : ClientUserException(
+    msg = "You can not dispatch a method using the stub of an instance task",
+    help = "Please use a new  "
+)
+
 class CanNotApplyOnNewWorkflowStubException(
     name: String,
     action: String
 ) : ClientUserException(
-    msg = "You can not `$action` on the stub of a new workflow",
-    help = "Please target an existing $name workflow using `client.getWorkflow()` "
+    msg = "InfiniticClient::$action can not be used with provided stub",
+    help = "Make sure to target a running workflow got with InfiniticClient::getInstanceStub"
 )
 
 class SuspendMethodNotSupportedException(
     klass: String,
     method: String
 ) : ClientUserException(
-    msg = "method \"$method\" in class \"$klass\" is a suspend function",
-    help = "Suspend functions are not supporteds"
+    msg = "method \"$klass:$method\" is a suspend function",
+    help = "Suspend functions are not supported yet"
 )
 
 class ChannelUsedOnNewWorkflowException(
     workflow: String
 ) : ClientUserException(
-    msg = "Channels can only be used for an existing instance of $workflow workflow",
-    help = "Make sure you target a running workflow, by providing and id when defining your workflow stub"
+    msg = "Channels can only be used with an existing instance of $workflow workflow",
+    help = "Make sure to target a running workflow got with InfiniticClient::getInstanceStub"
 )
 
 class UnknownMethodInSendChannelException(

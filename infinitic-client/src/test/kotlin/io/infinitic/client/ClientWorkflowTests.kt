@@ -55,6 +55,8 @@ import io.infinitic.common.workflows.tags.messages.CancelWorkflowPerTag
 import io.infinitic.common.workflows.tags.messages.GetWorkflowIds
 import io.infinitic.common.workflows.tags.messages.SendToChannelPerTag
 import io.infinitic.common.workflows.tags.messages.WorkflowTagEngineMessage
+import io.infinitic.exceptions.clients.ChannelUsedOnNewWorkflowException
+import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
 import io.mockk.slot
@@ -80,8 +82,8 @@ class ClientWorkflow : InfiniticClient() {
 class ClientWorkflowTests : StringSpec({
     val client = ClientWorkflow()
 
-    val fakeWorkflow = client.workflow(FakeWorkflow::class.java)
-    val fooWorkflow = client.workflow(FooWorkflow::class.java)
+    val fakeWorkflow = client.newWorkflowStub(FakeWorkflow::class.java)
+    val fooWorkflow = client.newWorkflowStub(FooWorkflow::class.java)
 
     beforeTest {
         taskTagSlots.clear()
@@ -329,11 +331,18 @@ class ClientWorkflowTests : StringSpec({
         )
     }
 
+    "Should throw when calling a channel from a new workflow" {
+        // when
+        shouldThrow<ChannelUsedOnNewWorkflowException> {
+            fakeWorkflow.channel.send("a")
+        }
+    }
+
     "Should be able to emit to a channel by id synchronously" {
         // when
         val id = UUID.randomUUID()
-        val instance = client.getWorkflow(FakeWorkflow::class.java, id)
-        instance.channel.send("a")
+        val instance = client.getInstanceStub(fakeWorkflow, id)
+        instance.channel.send("a").join()
         // then
         workflowTagSlots.size shouldBe 0
         val msg = workflowSlot.captured as SendToChannel
@@ -351,7 +360,7 @@ class ClientWorkflowTests : StringSpec({
     "Should be able to emit to a channel by id asynchronously" {
         // when
         val id = UUID.randomUUID()
-        val instance = client.getWorkflow(FakeWorkflow::class.java, id)
+        val instance = client.getInstanceStub(fakeWorkflow, id)
         client.dispatch(instance.channel::send)("a").join()
         // then
         workflowTagSlots.size shouldBe 0
@@ -370,8 +379,8 @@ class ClientWorkflowTests : StringSpec({
     "Should be able to emit to a channel by id" {
         // when
         val id = UUID.randomUUID()
-        val instance = client.getWorkflow(FakeWorkflow::class.java, id)
-        instance.channel.send("a")
+        val instance = client.getInstanceStub(fakeWorkflow, id)
+        instance.channel.send("a").join()
         // then
         workflowTagSlots.size shouldBe 0
         val msg = workflowSlot.captured as SendToChannel
@@ -389,8 +398,8 @@ class ClientWorkflowTests : StringSpec({
     "Should be able to emit to a channel by tag" {
         val tag = "foo"
         // when
-        val instance = client.getWorkflow(FakeWorkflow::class.java, tag)
-        instance.channel.send("a")
+        val instance = client.getInstanceStub(fakeWorkflow, tag)
+        instance.channel.send("a").join()
         // then
         val msg = workflowTagSlots[0] as SendToChannelPerTag
         msg shouldBe SendToChannelPerTag(
@@ -407,7 +416,7 @@ class ClientWorkflowTests : StringSpec({
     "Should be able to emit to a channel after workflow dispatch" {
         // when
         val deferred = client.dispatch(fakeWorkflow::m3)(0, "a").join()
-        client.getWorkflow<FakeWorkflow>(deferred.id).channel.send("a")
+        client.getInstanceStub(fakeWorkflow, deferred.id).channel.send("a").join()
         // then
         workflowTagSlots.size shouldBe 0
         val msg = workflowSlot.captured as SendToChannel
@@ -425,7 +434,7 @@ class ClientWorkflowTests : StringSpec({
     "Should be able to cancel workflow per id - syntax 1" {
         // when
         val id = UUID.randomUUID()
-        client.cancelWorkflow<FakeWorkflow>(id).join()
+        client.cancel(fakeWorkflow, id).join()
         // then
         workflowTagSlots.size shouldBe 0
         workflowSlot.captured shouldBe CancelWorkflow(
@@ -438,7 +447,7 @@ class ClientWorkflowTests : StringSpec({
     "Should be able to cancel workflow per id - syntax 2" {
         // when
         val id = UUID.randomUUID()
-        client.cancelWorkflow(FakeWorkflow::class.java, id).join()
+        client.cancel(fakeWorkflow, id).join()
         // then
         workflowTagSlots.size shouldBe 0
         workflowSlot.captured shouldBe CancelWorkflow(
@@ -450,7 +459,7 @@ class ClientWorkflowTests : StringSpec({
 
     "Should be able to cancel workflow per tag - syntax 1" {
         // when
-        client.cancelWorkflow<FakeWorkflow>("foo").join()
+        client.cancel(fakeWorkflow, "foo").join()
         // then
         workflowTagSlots.size shouldBe 1
         workflowTagSlots[0] shouldBe CancelWorkflowPerTag(
@@ -463,7 +472,7 @@ class ClientWorkflowTests : StringSpec({
 
     "Should be able to cancel workflow per tag - syntax 2" {
         // when
-        client.cancelWorkflow(FakeWorkflow::class.java, "foo").join()
+        client.cancel(fakeWorkflow, "foo").join()
         // then
         workflowTagSlots.size shouldBe 1
         workflowTagSlots[0] shouldBe CancelWorkflowPerTag(
@@ -488,7 +497,7 @@ class ClientWorkflowTests : StringSpec({
     }
 
     "get task ids par name and workflow" {
-        val workflowIds = client.getWorkflowIds<FakeWorkflow>("foo")
+        val workflowIds = client.getIds(fakeWorkflow, "foo")
         // then
         workflowIds.size shouldBe 2
         workflowTagSlots.size shouldBe 1

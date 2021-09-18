@@ -27,13 +27,13 @@ package io.infinitic.client.deferred
 
 import io.infinitic.client.Deferred
 import io.infinitic.client.dispatcher.ClientDispatcher
-import io.infinitic.common.proxies.RunningWorkflow
+import io.infinitic.common.proxies.InstanceWorkflow
 import io.infinitic.exceptions.thisShouldNotHappen
 import java.util.UUID
 import java.util.concurrent.CompletableFuture
 
 class DeferredWorkflow<R : Any?> (
-    private val workflow: RunningWorkflow,
+    private val workflow: InstanceWorkflow,
     private val clientWaiting: Boolean,
     private val dispatcher: ClientDispatcher,
     private val future: CompletableFuture<Unit>? = null
@@ -45,17 +45,7 @@ class DeferredWorkflow<R : Any?> (
 
     override fun await(): R = dispatcher.await(workflow, clientWaiting)
 
-    override fun join(): Deferred<R> {
-        when (future) {
-            null -> thisShouldNotHappen()
-            else -> future.join()
-        }
+    override fun join(): Deferred<R> = this.also { future?.join() ?: thisShouldNotHappen() }
 
-        return this
-    }
-
-    override val id: UUID = workflow.perWorkflowId!!.id
-
-//    @Suppress("UNCHECKED_CAST")
-//    override fun <K : Any> instance() = runningWorkflowProxyHandler.stub() as K
+    override val id: UUID by lazy { workflow.perWorkflowId!!.id }
 }

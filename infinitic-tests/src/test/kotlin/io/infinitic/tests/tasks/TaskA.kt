@@ -25,9 +25,6 @@
 
 package io.infinitic.tests.tasks
 
-import io.infinitic.client.cancelTask
-import io.infinitic.client.cancelWorkflow
-import io.infinitic.client.retryTask
 import io.infinitic.common.tasks.data.TaskMeta
 import io.infinitic.tasks.Task
 import io.infinitic.tests.workflows.WorkflowA
@@ -55,6 +52,9 @@ interface TaskA : ParentInterface {
 }
 
 class TaskAImpl : Task(), TaskA {
+    val workflowA by lazy { context.client.newWorkflowStub(WorkflowA::class.java) }
+    val taskA by lazy { context.client.newTaskStub(TaskA::class.java) }
+
     override fun concat(str1: String, str2: String) = str1 + str2
 
     override fun reverse(str: String) = str.reversed()
@@ -67,12 +67,12 @@ class TaskAImpl : Task(), TaskA {
 
     override fun cancelWorkflowA(id: UUID) {
         Thread.sleep(50)
-        context.client.cancelWorkflow<WorkflowA>(id)
+        context.client.cancel(workflowA, id)
     }
 
     override fun cancelTaskA(id: UUID) {
         Thread.sleep(50)
-        context.client.cancelTask<TaskA>(id)
+        context.client.cancel(taskA, id)
     }
 
     override fun failing() = throw Exception("sorry")
@@ -84,7 +84,7 @@ class TaskAImpl : Task(), TaskA {
 
     override fun retryTaskA(id: UUID) {
         Thread.sleep(50)
-        context.client.retryTask<TaskA>(id)
+        context.client.retry(taskA, id)
     }
 
     override fun parent() = "ok"

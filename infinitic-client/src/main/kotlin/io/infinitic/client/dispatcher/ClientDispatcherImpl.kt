@@ -27,7 +27,7 @@ package io.infinitic.client.dispatcher
 
 import io.infinitic.client.Deferred
 import io.infinitic.client.deferred.DeferredChannel
-import io.infinitic.client.deferred.DeferredSendChannel
+import io.infinitic.client.deferred.DeferredSend
 import io.infinitic.client.deferred.DeferredTask
 import io.infinitic.client.deferred.DeferredWorkflow
 import io.infinitic.common.clients.data.ClientName
@@ -47,16 +47,16 @@ import io.infinitic.common.clients.messages.interfaces.TaskMessage
 import io.infinitic.common.clients.messages.interfaces.WorkflowMessage
 import io.infinitic.common.data.JobOptions
 import io.infinitic.common.proxies.ChannelProxyHandler
+import io.infinitic.common.proxies.InstanceTask
+import io.infinitic.common.proxies.InstanceTaskProxyHandler
+import io.infinitic.common.proxies.InstanceWorkflow
+import io.infinitic.common.proxies.InstanceWorkflowProxyHandler
 import io.infinitic.common.proxies.NewTask
 import io.infinitic.common.proxies.NewTaskProxyHandler
 import io.infinitic.common.proxies.NewWorkflow
 import io.infinitic.common.proxies.NewWorkflowProxyHandler
 import io.infinitic.common.proxies.ProxyHandler
-import io.infinitic.common.proxies.RunningTask
-import io.infinitic.common.proxies.RunningTaskProxyHandler
-import io.infinitic.common.proxies.RunningWorkflow
-import io.infinitic.common.proxies.RunningWorkflowProxyHandler
-import io.infinitic.common.proxies.SentSignal
+import io.infinitic.common.proxies.Signal
 import io.infinitic.common.tasks.data.TaskMeta
 import io.infinitic.common.tasks.data.TaskName
 import io.infinitic.common.tasks.data.TaskOptions
@@ -89,6 +89,7 @@ import io.infinitic.common.workflows.tags.messages.GetWorkflowIds
 import io.infinitic.common.workflows.tags.messages.RetryWorkflowTaskPerTag
 import io.infinitic.common.workflows.tags.messages.SendToChannelPerTag
 import io.infinitic.exceptions.clients.AlreadyCompletedWorkflowException
+import io.infinitic.exceptions.clients.CanNotDispatchOnTaskInstanceStubException
 import io.infinitic.exceptions.clients.CanceledDeferredException
 import io.infinitic.exceptions.clients.ChannelUsedOnNewWorkflowException
 import io.infinitic.exceptions.clients.FailedDeferredException
@@ -134,37 +135,43 @@ internal class ClientDispatcherImpl(
         options: JobOptions?,
         meta: Map<String, ByteArray>?,
     ): Deferred<R> = when (handler) {
-        is NewTaskProxyHandler -> dispatchNewTask(
-            handler.get(),
-            clientWaiting,
-            tags?.map { TaskTag(it) }?.toSet() ?: handler.taskTags,
-            (options as TaskOptions?) ?: handler.taskOptions,
-            meta?.run { TaskMeta(this) } ?: handler.taskMeta
-        )
-        is NewWorkflowProxyHandler -> dispatchNewWorkflow<R>(
-            handler.get(),
-            clientWaiting,
-            tags?.map { WorkflowTag(it) }?.toSet() ?: handler.workflowTags,
-            (options as WorkflowOptions?) ?: handler.workflowOptions,
-            meta?.run { WorkflowMeta(this) } ?: handler.workflowMeta
-        )
-        is RunningTaskProxyHandler -> throw Exception(" can not dispatch a running task")
-        // throw
-        is RunningWorkflowProxyHandler -> when (handler.method.returnType.kotlin.isSubclassOf(SendChannel::class)) {
-            // special case of getting a channel from a workflow
-            true -> {
-                @Suppress("UNCHECKED_CAST")
-                val channel = ChannelProxyHandler(handler.method.returnType as Class<out SendChannel<*>>, handler).stub()
-
-                @Suppress("UNCHECKED_CAST")
-                DeferredChannel(handler.get(), channel) as Deferred<R>
-            }
-            false -> TODO("Not Yet Implemented")
+        is NewTaskProxyHandler ->
+            dispatchNewTask(
+                handler.newTask(),
+                clientWaiting,
+                tags?.map { TaskTag(it) }?.toSet() ?: handler.taskTags,
+                (options as TaskOptions?) ?: handler.taskOptions,
+                meta?.run { TaskMeta(this) } ?: handler.taskMeta
+            )
+        is NewWorkflowProxyHandler -> when (handler.method.returnType.kotlin.isSubclassOf(SendChannel::class)) {
+            true -> throw ChannelUsedOnNewWorkflowException(handler.klass.name)
+            false -> dispatchNewWorkflow(
+                handler.newWorkflow(),
+                clientWaiting,
+                tags?.map { WorkflowTag(it) }?.toSet() ?: handler.workflowTags,
+                (options as WorkflowOptions?) ?: handler.workflowOptions,
+                meta?.run { WorkflowMeta(this) } ?: handler.workflowMeta
+            )
         }
-        is ChannelProxyHandler -> dispatchSignal(handler.signal())
+        is InstanceTaskProxyHandler ->
+            throw CanNotDispatchOnTaskInstanceStubException(handler.klass.name, "dispatch")
+        is InstanceWorkflowProxyHandler ->
+            when (handler.method.returnType.kotlin.isSubclassOf(SendChannel::class)) {
+                // special case of getting a channel from a workflow
+                true -> {
+                    @Suppress("UNCHECKED_CAST")
+                    val channel = ChannelProxyHandler(handler.method.returnType as Class<out SendChannel<*>>, handler).stub()
+
+                    @Suppress("UNCHECKED_CAST")
+                    DeferredChannel(handler.instanceWorkflow(), channel) as Deferred<R>
+                }
+                false -> TODO("Not Yet Implemented")
+            }
+        is ChannelProxyHandler ->
+            dispatchSend(handler.signal())
     }
 
-    override fun <R : Any?> await(task: RunningTask, clientWaiting: Boolean): R {
+    override fun <R : Any?> await(task: InstanceTask, clientWaiting: Boolean): R {
         val taskId = task.perTaskId ?: throw Exception("can not await per tag")
 
         val taskResult = scope.future {
@@ -204,7 +211,7 @@ internal class ClientDispatcherImpl(
         }
     }
 
-    override fun <R : Any?> await(workflow: RunningWorkflow, clientWaiting: Boolean): R {
+    override fun <R : Any?> await(workflow: InstanceWorkflow, clientWaiting: Boolean): R {
         val workflowId = workflow.perWorkflowId ?: throw Exception("can not await per tag")
 
         val workflowResult = scope.future {
@@ -249,7 +256,7 @@ internal class ClientDispatcherImpl(
         }
     }
 
-    override fun cancelTask(task: RunningTask): CompletableFuture<Unit> = scope.future {
+    override fun cancelTask(task: InstanceTask): CompletableFuture<Unit> = scope.future {
         when {
             task.perTaskId != null -> {
                 val msg = CancelTask(
@@ -271,7 +278,7 @@ internal class ClientDispatcherImpl(
         Unit
     }
 
-    override fun cancelWorkflow(workflow: RunningWorkflow): CompletableFuture<Unit> = scope.future {
+    override fun cancelWorkflow(workflow: InstanceWorkflow): CompletableFuture<Unit> = scope.future {
         when {
             workflow.perWorkflowId != null -> {
                 val msg = CancelWorkflow(
@@ -295,7 +302,7 @@ internal class ClientDispatcherImpl(
         Unit
     }
 
-    override fun retryTask(task: RunningTask): CompletableFuture<Unit> = scope.future {
+    override fun retryTask(task: InstanceTask): CompletableFuture<Unit> = scope.future {
         when {
             task.perTaskId != null -> {
                 val msg = RetryTask(
@@ -317,7 +324,7 @@ internal class ClientDispatcherImpl(
         Unit
     }
 
-    override fun retryWorkflow(workflow: RunningWorkflow): CompletableFuture<Unit> = scope.future {
+    override fun retryWorkflow(workflow: InstanceWorkflow): CompletableFuture<Unit> = scope.future {
         when {
             workflow.perWorkflowId != null -> {
                 val msg = RetryWorkflowTask(
@@ -467,7 +474,7 @@ internal class ClientDispatcherImpl(
     }
 
     // asynchronous send a signal: existingWorkflow.channel.send()
-    private fun <R : Any?> dispatchSignal(signal: SentSignal): DeferredSendChannel<R> {
+    private fun <R : Any?> dispatchSend(signal: Signal): DeferredSend<R> {
         // send messages asynchronously
         val future = scope.future() {
             when {
@@ -501,6 +508,6 @@ internal class ClientDispatcherImpl(
             Unit
         }
 
-        return DeferredSendChannel(signal, future)
+        return DeferredSend(signal, future)
     }
 }

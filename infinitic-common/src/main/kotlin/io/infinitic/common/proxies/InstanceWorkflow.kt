@@ -25,7 +25,16 @@
 
 package io.infinitic.common.proxies
 
-sealed class NewProxyHandler<T : Any>(
-    override val klass: Class<T>,
-    override val dispatcherFn: () -> ProxyDispatcher
-) : ProxyHandler<T>(klass, dispatcherFn)
+import io.infinitic.common.workflows.data.workflows.WorkflowId
+import io.infinitic.common.workflows.data.workflows.WorkflowName
+import io.infinitic.common.workflows.data.workflows.WorkflowTag
+
+data class InstanceWorkflow(
+    val workflowName: WorkflowName,
+    val perWorkflowId: WorkflowId? = null,
+    val perWorkflowTag: WorkflowTag? = null,
+) {
+    init {
+        require((perWorkflowId == null && perWorkflowTag != null) || (perWorkflowId != null && perWorkflowTag == null))
+    }
+}

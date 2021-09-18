@@ -38,5 +38,5 @@ data class NewTask(
     val methodParameters: MethodParameters,
     var methodName: MethodName,
 ) {
-    fun running() = RunningTask(taskName, taskId)
+    fun running() = InstanceTask(taskName, taskId)
 }

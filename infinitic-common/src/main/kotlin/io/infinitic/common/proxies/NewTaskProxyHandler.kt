@@ -40,9 +40,9 @@ class NewTaskProxyHandler<K : Any>(
     val taskOptions: TaskOptions,
     val taskMeta: TaskMeta,
     override val dispatcherFn: () -> ProxyDispatcher
-) : NewProxyHandler<K>(klass, dispatcherFn) {
+) : ProxyHandler<K>(klass, dispatcherFn) {
 
-    fun get() = NewTask(
+    fun newTask() = NewTask(
         TaskName(className),
         taskId = TaskId(),
         MethodParameterTypes.from(method),
