@@ -25,9 +25,10 @@
 
 package io.infinitic.workflows
 
-import io.infinitic.common.proxies.NewTaskProxyHandler
-import io.infinitic.common.proxies.NewWorkflowProxyHandler
+import io.infinitic.common.data.JobOptions
 import io.infinitic.common.proxies.ProxyHandler
+import io.infinitic.common.proxies.TaskInstanceProxyHandler
+import io.infinitic.common.proxies.WorkflowInstanceProxyHandler
 import io.infinitic.common.tasks.data.TaskMeta
 import io.infinitic.common.tasks.data.TaskOptions
 import io.infinitic.common.tasks.data.TaskTag
@@ -36,6 +37,7 @@ import io.infinitic.common.workflows.data.workflows.WorkflowMeta
 import io.infinitic.common.workflows.data.workflows.WorkflowOptions
 import io.infinitic.common.workflows.data.workflows.WorkflowTag
 import io.infinitic.exceptions.clients.InvalidInterfaceException
+import io.infinitic.exceptions.thisShouldNotHappen
 import java.time.Duration
 import java.time.Instant
 import kotlin.reflect.KFunction
@@ -49,6 +51,8 @@ import kotlin.reflect.KFunction6
 import kotlin.reflect.KFunction7
 import kotlin.reflect.KFunction8
 import kotlin.reflect.KFunction9
+import kotlin.reflect.full.extensionReceiverParameter
+import kotlin.reflect.full.instanceParameter
 import kotlin.reflect.jvm.javaMethod
 
 @Suppress("unused")
@@ -56,116 +60,224 @@ abstract class Workflow {
     lateinit var context: WorkflowContext
     lateinit var dispatcher: WorkflowDispatcher
 
-    /*
-     *  Create a channel
+    /**
+     *  Create a stub for a task
      */
-    fun <T : Any> channel(): Channel<T> = ChannelImpl { dispatcher }
-
-    /*
-     * Stub task
-     */
-    @JvmOverloads fun <T : Any> newTask(
+    @JvmOverloads fun <T : Any> newTaskStub(
         klass: Class<out T>,
         tags: Set<String> = setOf(),
         options: TaskOptions = TaskOptions(),
         meta: Map<String, ByteArray> = mapOf()
-    ): T = NewTaskProxyHandler(
+    ): T = TaskInstanceProxyHandler(
         klass = klass,
         taskTags = tags.map { TaskTag(it) }.toSet(),
         taskOptions = options,
         taskMeta = TaskMeta(meta)
     ) { dispatcher }.stub()
 
-    /*
-     * Stub task
+    /**
+     *  Create a stub for a workflow
      */
-    inline fun <reified T : Any> newTask(
-        tags: Set<String> = setOf(),
-        options: TaskOptions = TaskOptions(),
-        meta: Map<String, ByteArray> = mapOf()
-    ): T = newTask(T::class.java, tags, options, meta)
-
-    /*
-     * Stub workflow
-     */
-    @JvmOverloads fun <T : Any> newWorkflow(
+    @JvmOverloads fun <T : Any> newWorkflowStub(
         klass: Class<out T>,
         tags: Set<String> = setOf(),
         options: WorkflowOptions = WorkflowOptions(),
         meta: Map<String, ByteArray> = mapOf()
-    ): T = NewWorkflowProxyHandler(
+    ): T = WorkflowInstanceProxyHandler(
         klass = klass,
         workflowTags = tags.map { WorkflowTag(it) }.toSet(),
         workflowOptions = options,
         workflowMeta = WorkflowMeta(meta)
     ) { dispatcher }.stub()
 
-    /*
-     * Stub workflow
-     * (Kotlin way)
+    /**
+     *  Dispatch a task or workflow without parameter
      */
-    inline fun <reified T : Any> newWorkflow(
-        tags: Set<String> = setOf(),
-        options: WorkflowOptions = WorkflowOptions(),
-        meta: Map<String, ByteArray> = mapOf()
-    ): T = newWorkflow(T::class.java, tags, options, meta)
+    @JvmOverloads
+    fun <R : Any?> dispatch(
+        method: KFunction0<R>,
+        tags: Set<String>? = null,
+        options: JobOptions? = null,
+        meta: Map<String, ByteArray>? = null
+    ): () -> Deferred<R> = {
+        dispatch(tags, options, meta) {
+            method.check().call()
+        }
+    }
 
-    /*
-     *  Dispatch a task or a workflow asynchronously
+    /**
+     *  Dispatch a task or workflow with 1 parameter
      */
-    fun <R : Any?> dispatch(method: KFunction0<R>): () -> Deferred<R> =
-        { dispatch { method.check().call() } }
+    @JvmOverloads
+    fun <P1, R : Any?> dispatch(
+        method: KFunction1<P1, R>,
+        tags: Set<String>? = null,
+        options: JobOptions? = null,
+        meta: Map<String, ByteArray>? = null
+    ): (P1) -> Deferred<R> = { p1: P1 ->
+        dispatch(tags, options, meta) {
+            method.check().call(p1)
+        }
+    }
 
-    fun <S1, R : Any?> dispatch(method: KFunction1<S1, R>): (S1) -> Deferred<R> =
-        { s: S1 -> dispatch { method.check().call(s) } }
+    /**
+     *  Dispatch a task or workflow with 2 parameters
+     */
+    @JvmOverloads
+    fun <P1, P2, R : Any?> dispatch(
+        method: KFunction2<P1, P2, R>,
+        tags: Set<String>? = null,
+        options: JobOptions? = null,
+        meta: Map<String, ByteArray>? = null
+    ): (P1, P2) -> Deferred<R> = { p1: P1, p2: P2 ->
+        dispatch(tags, options, meta) {
+            method.check().call(p1, p2)
+        }
+    }
 
-    fun <S1, S2, R : Any?> dispatch(method: KFunction2<S1, S2, R>): (S1, S2) -> Deferred<R> =
-        { s1: S1, s2: S2 -> dispatch { method.check().call(s1, s2) } }
+    /**
+     *  Dispatch a task or workflow with 3 parameters
+     */
+    @JvmOverloads
+    fun <P1, P2, P3, R : Any?> dispatch(
+        method: KFunction3<P1, P2, P3, R>,
+        tags: Set<String>? = null,
+        options: JobOptions? = null,
+        meta: Map<String, ByteArray>? = null
+    ): (P1, P2, P3) -> Deferred<R> = { p1: P1, p2: P2, p3: P3 ->
+        dispatch(tags, options, meta) {
+            method.check().call(p1, p2, p3)
+        }
+    }
 
-    fun <S1, S2, S3, R : Any?> dispatch(method: KFunction3<S1, S2, S3, R>): (S1, S2, S3) -> Deferred<R> =
-        { s1: S1, s2: S2, s3: S3 -> dispatch { method.check().call(s1, s2, s3) } }
+    /**
+     *  Dispatch a task or workflow with 4 parameters
+     */
+    @JvmOverloads
+    fun <P1, P2, P3, P4, R : Any?> dispatch(
+        method: KFunction4<P1, P2, P3, P4, R>,
+        tags: Set<String>? = null,
+        options: JobOptions? = null,
+        meta: Map<String, ByteArray>? = null
+    ): (P1, P2, P3, P4) -> Deferred<R> = { p1: P1, p2: P2, p3: P3, p4: P4 ->
+        dispatch(tags, options, meta) {
+            method.check().call(p1, p2, p3, p4)
+        }
+    }
 
-    fun <S1, S2, S3, S4, R : Any?> dispatch(method: KFunction4<S1, S2, S3, S4, R>): (S1, S2, S3, S4) -> Deferred<R> =
-        { s1: S1, s2: S2, s3: S3, s4: S4 -> dispatch { method.check().call(s1, s2, s3, s4) } }
+    /**
+     *  Dispatch a task or workflow with 5 parameters
+     */
+    @JvmOverloads
+    fun <P1, P2, P3, P4, P5, R : Any?> dispatch(
+        method: KFunction5<P1, P2, P3, P4, P5, R>,
+        tags: Set<String>? = null,
+        options: JobOptions? = null,
+        meta: Map<String, ByteArray>? = null
+    ): (P1, P2, P3, P4, P5) -> Deferred<R> = { p1: P1, p2: P2, p3: P3, p4: P4, p5: P5 ->
+        dispatch(tags, options, meta) {
+            method.check().call(p1, p2, p3, p4, p5)
+        }
+    }
 
-    fun <S1, S2, S3, S4, S5, R : Any?> dispatch(method: KFunction5<S1, S2, S3, S4, S5, R>): (S1, S2, S3, S4, S5) -> Deferred<R> =
-        { s1: S1, s2: S2, s3: S3, s4: S4, s5: S5 -> dispatch { method.check().call(s1, s2, s3, s4, s5) } }
+    /**
+     *  Dispatch a task or workflow with 6 parameters
+     */
+    @JvmOverloads
+    fun <P1, P2, P3, P4, P5, P6, R : Any?> dispatch(
+        method: KFunction6<P1, P2, P3, P4, P5, P6, R>,
+        tags: Set<String>? = null,
+        options: JobOptions? = null,
+        meta: Map<String, ByteArray>? = null
+    ): (P1, P2, P3, P4, P5, P6) -> Deferred<R> = { p1: P1, p2: P2, p3: P3, p4: P4, p5: P5, p6: P6 ->
+        dispatch(tags, options, meta) {
+            method.check().call(p1, p2, p3, p4, p5, p6)
+        }
+    }
 
-    fun <S1, S2, S3, S4, S5, S6, R : Any?> dispatch(method: KFunction6<S1, S2, S3, S4, S5, S6, R>): (S1, S2, S3, S4, S5, S6) -> Deferred<R> =
-        { s1: S1, s2: S2, s3: S3, s4: S4, s5: S5, s6: S6 -> dispatch { method.check().call(s1, s2, s3, s4, s5, s6) } }
+    /**
+     *  Dispatch a task or workflow with 7 parameters
+     */
+    @JvmOverloads
+    fun <P1, P2, P3, P4, P5, P6, P7, R : Any?> dispatch(
+        method: KFunction7<P1, P2, P3, P4, P5, P6, P7, R>,
+        tags: Set<String>? = null,
+        options: JobOptions? = null,
+        meta: Map<String, ByteArray>? = null
+    ): (P1, P2, P3, P4, P5, P6, P7) -> Deferred<R> = { p1: P1, p2: P2, p3: P3, p4: P4, p5: P5, p6: P6, p7: P7 ->
+        dispatch(tags, options, meta) {
+            method.check().call(p1, p2, p3, p4, p5, p6, p7)
+        }
+    }
 
-    fun <S1, S2, S3, S4, S5, S6, S7, R : Any?> dispatch(method: KFunction7<S1, S2, S3, S4, S5, S6, S7, R>): (S1, S2, S3, S4, S5, S6, S7) -> Deferred<R> =
-        { s1: S1, s2: S2, s3: S3, s4: S4, s5: S5, s6: S6, s7: S7 -> dispatch { method.check().call(s1, s2, s3, s4, s5, s6, s7) } }
+    /**
+     *  Dispatch a task or workflow with 8 parameters
+     */
+    @JvmOverloads
+    fun <P1, P2, P3, P4, P5, P6, P7, P8, R : Any?> dispatch(
+        method: KFunction8<P1, P2, P3, P4, P5, P6, P7, P8, R>,
+        tags: Set<String>? = null,
+        options: JobOptions? = null,
+        meta: Map<String, ByteArray>? = null
+    ): (P1, P2, P3, P4, P5, P6, P7, P8) -> Deferred<R> = { p1: P1, p2: P2, p3: P3, p4: P4, p5: P5, p6: P6, p7: P7, p8: P8 ->
+        dispatch(tags, options, meta) {
+            method.check().call(p1, p2, p3, p4, p5, p6, p7, p8)
+        }
+    }
 
-    fun <S1, S2, S3, S4, S5, S6, S7, S8, R : Any?> dispatch(method: KFunction8<S1, S2, S3, S4, S5, S6, S7, S8, R>): (S1, S2, S3, S4, S5, S6, S7, S8) -> Deferred<R> =
-        { s1: S1, s2: S2, s3: S3, s4: S4, s5: S5, s6: S6, s7: S7, s8: S8 -> dispatch { method.check().call(s1, s2, s3, s4, s5, s6, s7, s8) } }
+    /**
+     *  Dispatch a task or workflow with 9 parameters
+     */
+    @JvmOverloads
+    fun <P1, P2, P3, P4, P5, P6, P7, P8, P9, R : Any?> dispatch(
+        method: KFunction9<P1, P2, P3, P4, P5, P6, P7, P8, P9, R>,
+        tags: Set<String>? = null,
+        options: JobOptions? = null,
+        meta: Map<String, ByteArray>? = null
+    ): (P1, P2, P3, P4, P5, P6, P7, P8, P9) -> Deferred<R> = { p1: P1, p2: P2, p3: P3, p4: P4, p5: P5, p6: P6, p7: P7, p8: P8, p9: P9 ->
+        dispatch(tags, options, meta) {
+            method.check().call(p1, p2, p3, p4, p5, p6, p7, p8, p9)
+        }
+    }
 
-    fun <S1, S2, S3, S4, S5, S6, S7, S8, S9, R : Any?> dispatch(method: KFunction9<S1, S2, S3, S4, S5, S6, S7, S8, S9, R>): (S1, S2, S3, S4, S5, S6, S7, S8, S9) -> Deferred<R> =
-        { s1: S1, s2: S2, s3: S3, s4: S4, s5: S5, s6: S6, s7: S7, s8: S8, s9: S9 -> dispatch { method.check().call(s1, s2, s3, s4, s5, s6, s7, s8, s9) } }
+    /**
+     *  Create a channel
+     */
+    fun <T : Any> channel(): Channel<T> = ChannelImpl { dispatcher }
 
-    /*
+    /**
      * Create an async branch
      */
     fun <S> async(branch: () -> S): Deferred<S> = dispatcher.async(branch)
 
-    /*
+    /**
      * Create an inline task
      */
     fun <S> inline(task: () -> S): S = dispatcher.inline(task)
 
-    /*
+    /**
      * Create a timer from a duration
      */
     fun timer(duration: Duration): Deferred<Instant> = dispatcher.timer(duration)
 
-    /*
+    /**
      * Create a timer from an instant
      */
     fun timer(instant: Instant): Deferred<Instant> = dispatcher.timer(instant)
 
-    private fun <R> KFunction<R>.check(): KFunction<R> = this.also {
-        if (javaMethod?.declaringClass?.isInterface != true) throw InvalidInterfaceException(name, "dispatch")
+    private fun <R> dispatch(
+        tags: Set<String>?,
+        options: JobOptions?,
+        meta: Map<String, ByteArray>?,
+        invoke: () -> R
+    ): Deferred<R> {
+        val handler = ProxyHandler.async(invoke) ?: throw thisShouldNotHappen("should be called through a stub")
+
+        return dispatcher.dispatch(handler, false, tags, options, meta)
     }
 
-    private fun <R> dispatch(invoke: () -> R): Deferred<R> = dispatcher.dispatch(ProxyHandler.async(invoke)!!, false)
+    private fun <R> KFunction<R>.check(): KFunction<R> = this.also {
+        if (javaMethod?.declaringClass?.isInterface != true || (instanceParameter ?: extensionReceiverParameter) != null)
+            throw InvalidInterfaceException(name, "dispatch")
+    }
 }

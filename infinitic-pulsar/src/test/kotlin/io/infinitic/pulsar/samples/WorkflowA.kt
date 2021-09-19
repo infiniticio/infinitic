@@ -57,8 +57,8 @@ interface WorkflowA {
 }
 
 class WorkflowAImpl : Workflow(), WorkflowA {
-    private val taskA = newTask<TaskA>()
-    private val workflowB = newWorkflow<WorkflowB>()
+    private val taskA = newTaskStub(TaskA::class.java)
+    private val workflowB = newWorkflowStub(WorkflowB::class.java)
     private var p1 = ""
 
     override fun empty() = "void"

@@ -25,24 +25,37 @@
 
 package io.infinitic.common.proxies
 
-import io.infinitic.common.workflows.data.channels.ChannelName
-import io.infinitic.common.workflows.data.channels.ChannelSignal
-import io.infinitic.common.workflows.data.channels.ChannelSignalId
-import io.infinitic.common.workflows.data.channels.ChannelSignalType
+import io.infinitic.common.data.methods.MethodName
+import io.infinitic.common.data.methods.MethodParameterTypes
+import io.infinitic.common.data.methods.MethodParameters
+import io.infinitic.common.proxies.data.Method
+import io.infinitic.common.proxies.data.WorkflowSelection
 import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.data.workflows.WorkflowName
 import io.infinitic.common.workflows.data.workflows.WorkflowTag
 
-data class Signal(
-    val workflowName: WorkflowName,
-    var channelName: ChannelName,
-    val channelSignalId: ChannelSignalId,
-    val channelSignal: ChannelSignal,
-    val channelSignalTypes: Set<ChannelSignalType>,
+class WorkflowSelectionProxyHandler<K : Any>(
+    override val klass: Class<K>,
     val perWorkflowId: WorkflowId? = null,
     val perWorkflowTag: WorkflowTag? = null,
-) {
+    override val dispatcherFn: () -> ProxyDispatcher
+) : ProxyHandler<K>(klass, dispatcherFn) {
+
+    val workflowName = WorkflowName(className)
+
     init {
-        require((perWorkflowId == null && perWorkflowTag != null) || (perWorkflowId != null && perWorkflowTag == null))
+        require(perWorkflowId == null || perWorkflowTag == null)
     }
+
+    fun selection() = WorkflowSelection(
+        workflowName,
+        perWorkflowId,
+        perWorkflowTag
+    )
+
+    fun method() = Method(
+        MethodName(methodName),
+        MethodParameterTypes.from(method),
+        MethodParameters.from(method, methodArgs),
+    )
 }

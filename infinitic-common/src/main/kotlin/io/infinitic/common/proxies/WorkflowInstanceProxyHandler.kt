@@ -25,26 +25,33 @@
 
 package io.infinitic.common.proxies
 
+import io.infinitic.common.data.methods.MethodName
+import io.infinitic.common.data.methods.MethodParameterTypes
+import io.infinitic.common.data.methods.MethodParameters
+import io.infinitic.common.proxies.data.Method
+import io.infinitic.common.proxies.data.WorkflowInstance
 import io.infinitic.common.workflows.data.workflows.WorkflowId
+import io.infinitic.common.workflows.data.workflows.WorkflowMeta
 import io.infinitic.common.workflows.data.workflows.WorkflowName
+import io.infinitic.common.workflows.data.workflows.WorkflowOptions
 import io.infinitic.common.workflows.data.workflows.WorkflowTag
 
-class InstanceWorkflowProxyHandler<K : Any>(
+class WorkflowInstanceProxyHandler<K : Any>(
     override val klass: Class<K>,
-    val perWorkflowId: WorkflowId? = null,
-    val perWorkflowTag: WorkflowTag? = null,
+    val workflowTags: Set<WorkflowTag>,
+    val workflowOptions: WorkflowOptions,
+    val workflowMeta: WorkflowMeta,
     override val dispatcherFn: () -> ProxyDispatcher
 ) : ProxyHandler<K>(klass, dispatcherFn) {
 
-    val workflowName = WorkflowName(className)
-
-    init {
-        require(perWorkflowId == null || perWorkflowTag == null)
-    }
-
-    fun instanceWorkflow() = InstanceWorkflow(
+    fun instance() = WorkflowInstance(
         WorkflowName(className),
-        perWorkflowId,
-        perWorkflowTag
+        WorkflowId()
+    )
+
+    fun method() = Method(
+        MethodName(methodName),
+        MethodParameterTypes.from(method),
+        MethodParameters.from(method, methodArgs),
     )
 }

@@ -23,20 +23,18 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.common.proxies
+package io.infinitic.common.proxies.data
 
-import io.infinitic.common.data.methods.MethodName
-import io.infinitic.common.data.methods.MethodParameterTypes
-import io.infinitic.common.data.methods.MethodParameters
 import io.infinitic.common.tasks.data.TaskId
 import io.infinitic.common.tasks.data.TaskName
+import io.infinitic.common.tasks.data.TaskTag
 
-data class NewTask(
+data class TaskSelection(
     val taskName: TaskName,
-    val taskId: TaskId,
-    val methodParameterTypes: MethodParameterTypes,
-    val methodParameters: MethodParameters,
-    var methodName: MethodName,
+    val perTaskId: TaskId? = null,
+    val perTaskTag: TaskTag? = null,
 ) {
-    fun running() = InstanceTask(taskName, taskId)
+    init {
+        require((perTaskId == null && perTaskTag != null) || (perTaskId != null && perTaskTag == null))
+    }
 }

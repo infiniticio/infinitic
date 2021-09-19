@@ -27,13 +27,13 @@ package io.infinitic.client.deferred
 
 import io.infinitic.client.Deferred
 import io.infinitic.client.dispatcher.ClientDispatcher
-import io.infinitic.common.proxies.InstanceTask
+import io.infinitic.common.proxies.data.TaskSelection
 import io.infinitic.exceptions.thisShouldNotHappen
 import java.util.UUID
 import java.util.concurrent.CompletableFuture
 
 class DeferredTask<R : Any?> (
-    private val task: InstanceTask,
+    private val task: TaskSelection,
     private val clientWaiting: Boolean,
     private val dispatcher: ClientDispatcher,
     private val future: CompletableFuture<Unit>? = null

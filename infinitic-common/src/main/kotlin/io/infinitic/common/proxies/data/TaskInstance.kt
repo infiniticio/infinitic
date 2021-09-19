@@ -23,30 +23,14 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.common.proxies
+package io.infinitic.common.proxies.data
 
-import io.infinitic.common.data.methods.MethodName
-import io.infinitic.common.data.methods.MethodParameterTypes
-import io.infinitic.common.data.methods.MethodParameters
 import io.infinitic.common.tasks.data.TaskId
-import io.infinitic.common.tasks.data.TaskMeta
 import io.infinitic.common.tasks.data.TaskName
-import io.infinitic.common.tasks.data.TaskOptions
-import io.infinitic.common.tasks.data.TaskTag
 
-class NewTaskProxyHandler<K : Any>(
-    override val klass: Class<K>,
-    val taskTags: Set<TaskTag>,
-    val taskOptions: TaskOptions,
-    val taskMeta: TaskMeta,
-    override val dispatcherFn: () -> ProxyDispatcher
-) : ProxyHandler<K>(klass, dispatcherFn) {
-
-    fun newTask() = NewTask(
-        TaskName(className),
-        taskId = TaskId(),
-        MethodParameterTypes.from(method),
-        MethodParameters.from(method, methodArgs),
-        MethodName(methodName)
-    )
+data class TaskInstance(
+    val taskName: TaskName,
+    val taskId: TaskId,
+) {
+    fun selection() = TaskSelection(taskName, taskId)
 }

@@ -23,20 +23,18 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.common.proxies
+package io.infinitic.common.proxies.data
 
-import io.infinitic.common.data.methods.MethodName
-import io.infinitic.common.data.methods.MethodParameterTypes
-import io.infinitic.common.data.methods.MethodParameters
 import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.data.workflows.WorkflowName
+import io.infinitic.common.workflows.data.workflows.WorkflowTag
 
-data class NewWorkflow(
+data class WorkflowSelection(
     val workflowName: WorkflowName,
-    val workflowId: WorkflowId,
-    val methodParameterTypes: MethodParameterTypes,
-    val methodParameters: MethodParameters,
-    var methodName: MethodName
+    val perWorkflowId: WorkflowId? = null,
+    val perWorkflowTag: WorkflowTag? = null,
 ) {
-    fun running() = InstanceWorkflow(workflowName, workflowId)
+    init {
+        require((perWorkflowId == null && perWorkflowTag != null) || (perWorkflowId != null && perWorkflowTag == null))
+    }
 }

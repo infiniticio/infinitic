@@ -26,15 +26,22 @@
 package io.infinitic.workflows.workflowTask
 
 import com.jayway.jsonpath.Criteria
+import io.infinitic.common.data.JobOptions
 import io.infinitic.common.data.MillisDuration
 import io.infinitic.common.data.MillisInstant
 import io.infinitic.common.data.Name
 import io.infinitic.common.proxies.ChannelProxyHandler
-import io.infinitic.common.proxies.InstanceTaskProxyHandler
-import io.infinitic.common.proxies.InstanceWorkflowProxyHandler
-import io.infinitic.common.proxies.NewTaskProxyHandler
-import io.infinitic.common.proxies.NewWorkflowProxyHandler
 import io.infinitic.common.proxies.ProxyHandler
+import io.infinitic.common.proxies.TaskInstanceProxyHandler
+import io.infinitic.common.proxies.TaskSelectionProxyHandler
+import io.infinitic.common.proxies.WorkflowInstanceProxyHandler
+import io.infinitic.common.proxies.WorkflowSelectionProxyHandler
+import io.infinitic.common.proxies.data.Method
+import io.infinitic.common.proxies.data.TaskInstance
+import io.infinitic.common.proxies.data.WorkflowInstance
+import io.infinitic.common.tasks.data.TaskMeta
+import io.infinitic.common.tasks.data.TaskOptions
+import io.infinitic.common.tasks.data.TaskTag
 import io.infinitic.common.workflows.data.channels.ChannelEventFilter
 import io.infinitic.common.workflows.data.channels.ChannelImpl
 import io.infinitic.common.workflows.data.channels.ChannelName
@@ -70,6 +77,11 @@ import io.infinitic.common.workflows.data.steps.StepStatus.Failed
 import io.infinitic.common.workflows.data.steps.StepStatus.OngoingFailure
 import io.infinitic.common.workflows.data.steps.StepStatus.Waiting
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskParameters
+import io.infinitic.common.workflows.data.workflows.WorkflowMeta
+import io.infinitic.common.workflows.data.workflows.WorkflowOptions
+import io.infinitic.common.workflows.data.workflows.WorkflowTag
+import io.infinitic.exceptions.clients.DispatchTaskSelectionException
+import io.infinitic.exceptions.clients.UseChannelOnNewWorkflowException
 import io.infinitic.exceptions.thisShouldNotHappen
 import io.infinitic.exceptions.workflows.CanceledDeferredException
 import io.infinitic.exceptions.workflows.FailedDeferredException
@@ -103,43 +115,46 @@ internal class WorkflowDispatcherImpl(
     // new steps discovered during execution the method (possibly more than one due to `async` function)
     var newSteps: MutableList<NewStep> = mutableListOf()
 
-    override fun <R> dispatchAndWait(handler: ProxyHandler<*>): R = when (handler) {
-        is NewTaskProxyHandler -> dispatchAndWait(handler)
-        is NewWorkflowProxyHandler -> dispatchAndWait(handler)
-        is InstanceTaskProxyHandler -> TODO("Not yet implemented")
-        is InstanceWorkflowProxyHandler -> TODO("Not yet implemented")
-        is ChannelProxyHandler -> dispatchAndWait(handler)
-    }
-
-    private fun <R> dispatchAndWait(handler: NewTaskProxyHandler<*>): R =
-        dispatchTask<R>(handler).await()
-
-    /*
-     * Start another running child workflow
-     */
-    private fun <R> dispatchAndWait(handler: NewWorkflowProxyHandler<*>): R =
-        dispatchWorkflow<R>(handler).await()
-
-    /*
-     * Send event to another workflow's channel
-     */
-    private fun <R> dispatchAndWait(handler: ChannelProxyHandler<*>): R {
-        TODO("Not yet implemented")
-    }
-
-    override fun <R : Any?> dispatch(handler: ProxyHandler<*>, isSync: Boolean): Deferred<R> {
-        val method = handler.method
-        checkMethodIsNotSuspend(method)
-
-        return when (handler) {
-            is NewTaskProxyHandler -> dispatchTask(handler)
-            is NewWorkflowProxyHandler -> dispatchWorkflow(handler)
-            is InstanceTaskProxyHandler -> throw Exception("can not dispatch a method on running task")
-            is InstanceWorkflowProxyHandler -> TODO("Not Yet Implemented")
-            is ChannelProxyHandler -> TODO("Not Yet Implemented")
+    // asynchronous call: dispatch(stub::method)(*args)
+    override fun <R : Any?> dispatch(
+        handler: ProxyHandler<*>,
+        clientWaiting: Boolean,
+        tags: Set<String>?,
+        options: JobOptions?,
+        meta: Map<String, ByteArray>?,
+    ): Deferred<R> = when (handler) {
+        is TaskInstanceProxyHandler ->
+            dispatchNewTask(
+                handler.instance(),
+                handler.method(),
+                handler.simpleName,
+                tags?.map { TaskTag(it) }?.toSet() ?: handler.taskTags,
+                (options as TaskOptions?) ?: handler.taskOptions,
+                meta?.run { TaskMeta(this) } ?: handler.taskMeta
+            )
+        is WorkflowInstanceProxyHandler -> when (handler.isMethodChannel()) {
+            true -> throw UseChannelOnNewWorkflowException(handler.klass.name)
+            false -> dispatchNewWorkflow(
+                handler.instance(),
+                handler.method(),
+                handler.simpleName,
+                tags?.map { WorkflowTag(it) }?.toSet() ?: handler.workflowTags,
+                (options as WorkflowOptions?) ?: handler.workflowOptions,
+                meta?.run { WorkflowMeta(this) } ?: handler.workflowMeta
+            )
         }
+        is TaskSelectionProxyHandler ->
+            throw DispatchTaskSelectionException(handler.klass.name, "dispatch")
+        is WorkflowSelectionProxyHandler ->
+            when (handler.isMethodChannel()) {
+                // special case of getting a channel from a workflow
+                true -> TODO("Not Yet Implemented")
+                false -> TODO("Not Yet Implemented")
+                // dispatchWorkflowMethod(handler.selection(), handler.method(), clientWaiting)
+            }
+        is ChannelProxyHandler ->
+            TODO("Not yet implemented")
     }
-
     /*
      * Async Branch dispatching
      */
@@ -367,46 +382,48 @@ internal class WorkflowDispatcherImpl(
     /*
      * Task dispatching
      */
-    override fun <S> dispatchTask(handler: NewTaskProxyHandler<*>): Deferred<S> {
-        checkMethodIsNotSuspend(handler.method)
-
-        return with(handler.newTask()) {
-            dispatchCommand(
-                DispatchTask(
-                    taskName = taskName,
-                    methodParameters = methodParameters,
-                    methodParameterTypes = methodParameterTypes,
-                    methodName = methodName,
-                    taskTags = handler.taskTags,
-                    taskMeta = handler.taskMeta,
-                    taskOptions = handler.taskOptions
-                ),
-                CommandSimpleName(handler.simpleName)
-            )
-        }
-    }
+    private fun <R : Any?> dispatchNewTask(
+        task: TaskInstance,
+        method: Method,
+        simpleName: String,
+        tags: Set<TaskTag>,
+        options: TaskOptions,
+        meta: TaskMeta
+    ): Deferred<R> = dispatchCommand(
+        DispatchTask(
+            taskName = task.taskName,
+            methodParameters = method.methodParameters,
+            methodParameterTypes = method.methodParameterTypes,
+            methodName = method.methodName,
+            taskTags = tags,
+            taskOptions = options,
+            taskMeta = meta
+        ),
+        CommandSimpleName(simpleName)
+    )
 
     /*
      * Workflow dispatching
      */
-    override fun <S> dispatchWorkflow(handler: NewWorkflowProxyHandler<*>): Deferred<S> {
-        checkMethodIsNotSuspend(handler.method)
-
-        return with(handler.newWorkflow()) {
-            dispatchCommand(
-                DispatchChildWorkflow(
-                    childWorkflowName = workflowName,
-                    childMethodName = methodName,
-                    childMethodParameterTypes = methodParameterTypes,
-                    childMethodParameters = methodParameters,
-                    workflowTags = handler.workflowTags,
-                    workflowMeta = handler.workflowMeta,
-                    workflowOptions = handler.workflowOptions
-                ),
-                CommandSimpleName(handler.simpleName)
-            )
-        }
-    }
+    private fun <R : Any?> dispatchNewWorkflow(
+        workflow: WorkflowInstance,
+        method: Method,
+        simpleName: String,
+        tags: Set<WorkflowTag>,
+        options: WorkflowOptions,
+        meta: WorkflowMeta
+    ): Deferred<R> = dispatchCommand(
+        DispatchChildWorkflow(
+            childWorkflowName = workflow.workflowName,
+            childMethodName = method.methodName,
+            childMethodParameterTypes = method.methodParameterTypes,
+            childMethodParameters = method.methodParameters,
+            workflowTags = tags,
+            workflowOptions = options,
+            workflowMeta = meta,
+        ),
+        CommandSimpleName(simpleName)
+    )
 
     /*
      * Start_Duration_Timer command dispatching

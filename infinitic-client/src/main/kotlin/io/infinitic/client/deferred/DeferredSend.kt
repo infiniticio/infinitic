@@ -26,7 +26,7 @@
 package io.infinitic.client.deferred
 
 import io.infinitic.client.Deferred
-import io.infinitic.common.proxies.Signal
+import io.infinitic.common.proxies.data.Signal
 import java.util.UUID
 import java.util.concurrent.CompletableFuture
 

@@ -23,28 +23,29 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.tests.workflows
+package io.infinitic.common.proxies
 
-import io.infinitic.annotations.Name
-import io.infinitic.tests.tasks.TaskAnnotated
-import io.infinitic.workflows.Workflow
+import io.infinitic.common.proxies.data.TaskSelection
+import io.infinitic.common.tasks.data.TaskId
+import io.infinitic.common.tasks.data.TaskName
+import io.infinitic.common.tasks.data.TaskTag
 
-@Name("annotatedWorkflow")
-interface WorkflowAnnotated {
-    @Name("bar")
-    fun foo(input: String): String
-}
+class TaskSelectionProxyHandler<K : Any>(
+    override val klass: Class<K>,
+    var perTaskId: TaskId? = null,
+    var perTaskTag: TaskTag? = null,
+    override val dispatcherFn: () -> ProxyDispatcher
+) : ProxyHandler<K>(klass, dispatcherFn) {
 
-class WorkflowAnnotatedImpl : Workflow(), WorkflowAnnotated {
-    private val task = newTaskStub(TaskAnnotated::class.java)
+    val taskName = TaskName(className)
 
-    override fun foo(input: String): String {
-        var str = input
-
-        str = task.foo(str, "a")
-        str = task.foo(str, "b")
-        str = task.foo(str, "c")
-
-        return str // should be "${input}abc"
+    init {
+        require((perTaskId == null && perTaskTag != null) || (perTaskId != null && perTaskTag == null))
     }
+
+    fun selection() = TaskSelection(
+        taskName,
+        perTaskId,
+        perTaskTag
+    )
 }

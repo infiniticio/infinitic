@@ -28,25 +28,30 @@ package io.infinitic.common.proxies
 import io.infinitic.common.data.methods.MethodName
 import io.infinitic.common.data.methods.MethodParameterTypes
 import io.infinitic.common.data.methods.MethodParameters
-import io.infinitic.common.workflows.data.workflows.WorkflowId
-import io.infinitic.common.workflows.data.workflows.WorkflowMeta
-import io.infinitic.common.workflows.data.workflows.WorkflowName
-import io.infinitic.common.workflows.data.workflows.WorkflowOptions
-import io.infinitic.common.workflows.data.workflows.WorkflowTag
+import io.infinitic.common.proxies.data.Method
+import io.infinitic.common.proxies.data.TaskInstance
+import io.infinitic.common.tasks.data.TaskId
+import io.infinitic.common.tasks.data.TaskMeta
+import io.infinitic.common.tasks.data.TaskName
+import io.infinitic.common.tasks.data.TaskOptions
+import io.infinitic.common.tasks.data.TaskTag
 
-class NewWorkflowProxyHandler<K : Any>(
+class TaskInstanceProxyHandler<K : Any>(
     override val klass: Class<K>,
-    val workflowTags: Set<WorkflowTag>,
-    val workflowOptions: WorkflowOptions,
-    val workflowMeta: WorkflowMeta,
+    val taskTags: Set<TaskTag>,
+    val taskOptions: TaskOptions,
+    val taskMeta: TaskMeta,
     override val dispatcherFn: () -> ProxyDispatcher
 ) : ProxyHandler<K>(klass, dispatcherFn) {
 
-    fun newWorkflow() = NewWorkflow(
-        WorkflowName(className),
-        workflowId = WorkflowId(),
+    fun instance() = TaskInstance(
+        TaskName(className),
+        TaskId(),
+    )
+
+    fun method() = Method(
+        MethodName(methodName),
         MethodParameterTypes.from(method),
-        MethodParameters.from(method, methodArgs),
-        MethodName(methodName)
+        MethodParameters.from(method, methodArgs)
     )
 }

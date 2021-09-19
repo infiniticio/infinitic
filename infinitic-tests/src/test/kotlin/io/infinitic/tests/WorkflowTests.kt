@@ -498,14 +498,14 @@ internal class WorkflowTests : StringSpec({
         workflowA.failing7() shouldBe 100
     }
 
-    "retry a failed task from client should restart a workflow" {
+    "Retry a failed task from client should restart a workflow" {
         val deferred = client.dispatch(workflowA::failing8)()
 
         val e = shouldThrow<FailedDeferredException> { deferred.await() }
 
         e.causeError?.whereName shouldBe TaskA::class.java.name
 
-        later { client.retry(taskA, e.causeError?.whereId!!) }
+        client.retry(taskA, e.causeError?.whereId!!).join()
 
         deferred.await() shouldBe "ok"
     }

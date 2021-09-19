@@ -25,6 +25,7 @@
 
 package io.infinitic.common.proxies
 
+import io.infinitic.common.proxies.data.Signal
 import io.infinitic.common.workflows.data.channels.ChannelName
 import io.infinitic.common.workflows.data.channels.ChannelSignal
 import io.infinitic.common.workflows.data.channels.ChannelSignalId
@@ -33,7 +34,7 @@ import io.infinitic.workflows.SendChannel
 
 class ChannelProxyHandler<K : SendChannel<*>>(
     override val klass: Class<out K>,
-    val instance: InstanceWorkflowProxyHandler<*>,
+    val instance: WorkflowSelectionProxyHandler<*>,
 ) : ProxyHandler<K>(klass, instance.dispatcherFn) {
 
     val workflowName = instance.workflowName

@@ -27,9 +27,11 @@ package io.infinitic.common.proxies
 
 import io.infinitic.annotations.Name
 import io.infinitic.exceptions.thisShouldNotHappen
+import io.infinitic.workflows.SendChannel
 import java.lang.reflect.InvocationHandler
 import java.lang.reflect.Method
 import java.lang.reflect.Proxy
+import kotlin.reflect.full.isSubclassOf
 
 sealed class ProxyHandler<T : Any>(
     open val klass: Class<out T>,
@@ -112,6 +114,11 @@ sealed class ProxyHandler<T : Any>(
             false -> { invocationHandler.set(this); any }
         }
     }
+
+    /**
+     * Check if method called was a getter on a SendChannel
+     */
+    fun isMethodChannel(): Boolean = method.returnType.kotlin.isSubclassOf(SendChannel::class)
 
     private fun isInvokeSync(): Boolean = when (invocationType.get()) {
         ProxyInvokeMode.DISPATCH_SYNC -> true

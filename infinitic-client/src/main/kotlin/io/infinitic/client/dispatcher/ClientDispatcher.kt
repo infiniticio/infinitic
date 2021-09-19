@@ -28,10 +28,10 @@ package io.infinitic.client.dispatcher
 import io.infinitic.client.Deferred
 import io.infinitic.common.clients.messages.ClientMessage
 import io.infinitic.common.data.JobOptions
-import io.infinitic.common.proxies.InstanceTask
-import io.infinitic.common.proxies.InstanceWorkflow
 import io.infinitic.common.proxies.ProxyDispatcher
 import io.infinitic.common.proxies.ProxyHandler
+import io.infinitic.common.proxies.data.TaskSelection
+import io.infinitic.common.proxies.data.WorkflowSelection
 import io.infinitic.common.tasks.data.TaskName
 import io.infinitic.common.tasks.data.TaskTag
 import io.infinitic.common.workflows.data.workflows.WorkflowName
@@ -43,6 +43,9 @@ interface ClientDispatcher : ProxyDispatcher {
 
     suspend fun handle(message: ClientMessage)
 
+    override fun <R : Any?> dispatchAndWait(handler: ProxyHandler<*>): R =
+        dispatch<R>(handler, true, null, null, null).await()
+
     fun <R : Any?> dispatch(
         handler: ProxyHandler<*>,
         clientWaiting: Boolean,
@@ -51,17 +54,17 @@ interface ClientDispatcher : ProxyDispatcher {
         meta: Map<String, ByteArray>?,
     ): Deferred<R>
 
-    fun <R : Any?> await(task: InstanceTask, clientWaiting: Boolean): R
+    fun <R : Any?> await(task: TaskSelection, clientWaiting: Boolean): R
 
-    fun <R : Any?> await(workflow: InstanceWorkflow, clientWaiting: Boolean): R
+    fun <R : Any?> await(workflow: WorkflowSelection, clientWaiting: Boolean): R
 
-    fun cancelTask(task: InstanceTask): CompletableFuture<Unit>
+    fun cancelTask(task: TaskSelection): CompletableFuture<Unit>
 
-    fun cancelWorkflow(workflow: InstanceWorkflow): CompletableFuture<Unit>
+    fun cancelWorkflow(workflow: WorkflowSelection): CompletableFuture<Unit>
 
-    fun retryTask(task: InstanceTask): CompletableFuture<Unit>
+    fun retryTask(task: TaskSelection): CompletableFuture<Unit>
 
-    fun retryWorkflow(workflow: InstanceWorkflow): CompletableFuture<Unit>
+    fun retryWorkflow(workflow: WorkflowSelection): CompletableFuture<Unit>
 
     fun getTaskIdsPerTag(taskName: TaskName, taskTag: TaskTag): Set<UUID>
 

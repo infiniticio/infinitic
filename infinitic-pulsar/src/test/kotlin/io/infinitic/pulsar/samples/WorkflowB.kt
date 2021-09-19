@@ -33,8 +33,8 @@ interface WorkflowB {
 }
 
 class WorkflowBImpl() : Workflow(), WorkflowB {
-    private val task = newTask<TaskA>()
-    private val workflow = newWorkflow<WorkflowB>()
+    private val task = newTaskStub(TaskA::class.java)
+    private val workflow = newWorkflowStub(WorkflowB::class.java)
 
     override fun concat(input: String): String {
         var str = input
@@ -43,7 +43,7 @@ class WorkflowBImpl() : Workflow(), WorkflowB {
         str = task.concat(str, "b")
         str = task.concat(str, "c")
 
-        return str // should be "${input}123"
+        return str // should be "${input}abc"
     }
 
     override fun factorial(n: Long): Long {

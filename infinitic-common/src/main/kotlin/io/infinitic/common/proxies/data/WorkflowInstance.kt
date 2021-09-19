@@ -23,28 +23,14 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.common.proxies
+package io.infinitic.common.proxies.data
 
-import io.infinitic.common.tasks.data.TaskId
-import io.infinitic.common.tasks.data.TaskName
-import io.infinitic.common.tasks.data.TaskTag
+import io.infinitic.common.workflows.data.workflows.WorkflowId
+import io.infinitic.common.workflows.data.workflows.WorkflowName
 
-class InstanceTaskProxyHandler<K : Any>(
-    override val klass: Class<K>,
-    var perTaskId: TaskId? = null,
-    var perTaskTag: TaskTag? = null,
-    override val dispatcherFn: () -> ProxyDispatcher
-) : ProxyHandler<K>(klass, dispatcherFn) {
-
-    val taskName = TaskName(className)
-
-    init {
-        require((perTaskId == null && perTaskTag != null) || (perTaskId != null && perTaskTag == null))
-    }
-
-    fun instanceTask() = InstanceTask(
-        TaskName(className),
-        perTaskId,
-        perTaskTag
-    )
+data class WorkflowInstance(
+    val workflowName: WorkflowName,
+    val workflowId: WorkflowId
+) {
+    fun selection() = WorkflowSelection(workflowName, workflowId)
 }

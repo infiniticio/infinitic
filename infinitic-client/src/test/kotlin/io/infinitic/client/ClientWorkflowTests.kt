@@ -55,7 +55,8 @@ import io.infinitic.common.workflows.tags.messages.CancelWorkflowPerTag
 import io.infinitic.common.workflows.tags.messages.GetWorkflowIds
 import io.infinitic.common.workflows.tags.messages.SendToChannelPerTag
 import io.infinitic.common.workflows.tags.messages.WorkflowTagEngineMessage
-import io.infinitic.exceptions.clients.ChannelUsedOnNewWorkflowException
+import io.infinitic.exceptions.clients.InvalidInstanceStubException
+import io.infinitic.exceptions.clients.UseChannelOnNewWorkflowException
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
@@ -333,7 +334,7 @@ class ClientWorkflowTests : StringSpec({
 
     "Should throw when calling a channel from a new workflow" {
         // when
-        shouldThrow<ChannelUsedOnNewWorkflowException> {
+        shouldThrow<UseChannelOnNewWorkflowException> {
             fakeWorkflow.channel.send("a")
         }
     }
@@ -496,7 +497,7 @@ class ClientWorkflowTests : StringSpec({
         )
     }
 
-    "get task ids par name and workflow" {
+    "Get task ids par name and workflow" {
         val workflowIds = client.getIds(fakeWorkflow, "foo")
         // then
         workflowIds.size shouldBe 2
@@ -507,5 +508,13 @@ class ClientWorkflowTests : StringSpec({
             clientName = ClientName("clientTest")
         )
         workflowSlot.isCaptured shouldBe false
+    }
+
+    "Get ids from channel should throw" {
+        val instance = client.getInstanceStub(fakeWorkflow, "foo")
+
+        shouldThrow<InvalidInstanceStubException> {
+            client.getIds(instance.channel, "foo")
+        }
     }
 })

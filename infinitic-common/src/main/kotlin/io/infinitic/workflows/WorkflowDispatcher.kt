@@ -26,8 +26,7 @@
 package io.infinitic.workflows
 
 import com.jayway.jsonpath.Criteria
-import io.infinitic.common.proxies.NewTaskProxyHandler
-import io.infinitic.common.proxies.NewWorkflowProxyHandler
+import io.infinitic.common.data.JobOptions
 import io.infinitic.common.proxies.ProxyDispatcher
 import io.infinitic.common.proxies.ProxyHandler
 import io.infinitic.common.workflows.data.channels.ChannelImpl
@@ -37,7 +36,16 @@ import java.util.concurrent.CompletableFuture
 
 interface WorkflowDispatcher : ProxyDispatcher {
 
-    fun <R : Any?> dispatch(handler: ProxyHandler<*>, isSync: Boolean): Deferred<R>
+    override fun <R : Any?> dispatchAndWait(handler: ProxyHandler<*>): R =
+        dispatch<R>(handler, true, null, null, null).await()
+
+    fun <R : Any?> dispatch(
+        handler: ProxyHandler<*>,
+        clientWaiting: Boolean,
+        tags: Set<String>?,
+        options: JobOptions?,
+        meta: Map<String, ByteArray>?,
+    ): Deferred<R>
 
     fun <T> async(branch: () -> T): Deferred<T>
 
@@ -46,10 +54,6 @@ interface WorkflowDispatcher : ProxyDispatcher {
     fun <T> await(deferred: Deferred<T>): T
 
     fun <T> status(deferred: Deferred<T>): DeferredStatus
-
-    fun <T> dispatchTask(handler: NewTaskProxyHandler<*>): Deferred<T>
-
-    fun <T> dispatchWorkflow(handler: NewWorkflowProxyHandler<*>): Deferred<T>
 
     fun timer(duration: Duration): Deferred<Instant>
 

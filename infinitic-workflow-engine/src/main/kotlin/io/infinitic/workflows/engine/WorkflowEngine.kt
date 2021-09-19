@@ -37,6 +37,7 @@ import io.infinitic.common.workflows.engine.messages.ChildWorkflowCompleted
 import io.infinitic.common.workflows.engine.messages.ChildWorkflowFailed
 import io.infinitic.common.workflows.engine.messages.CompleteWorkflow
 import io.infinitic.common.workflows.engine.messages.DispatchWorkflow
+import io.infinitic.common.workflows.engine.messages.DispatchWorkflowMethod
 import io.infinitic.common.workflows.engine.messages.RetryWorkflowTask
 import io.infinitic.common.workflows.engine.messages.SendToChannel
 import io.infinitic.common.workflows.engine.messages.TaskCanceled
@@ -210,6 +211,7 @@ class WorkflowEngine(
         @Suppress("UNUSED_VARIABLE")
         val m = when (message) {
             is DispatchWorkflow -> thisShouldNotHappen("DispatchWorkflow should not reach this point")
+            is DispatchWorkflowMethod -> TODO()
             is CancelWorkflow -> cancelWorkflow(output, state, message)
             is SendToChannel -> sendToChannel(output, state, message)
             is WaitWorkflow -> waitWorkflow(output, state, message)

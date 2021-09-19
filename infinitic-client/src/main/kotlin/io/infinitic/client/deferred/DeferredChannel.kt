@@ -26,13 +26,13 @@
 package io.infinitic.client.deferred
 
 import io.infinitic.client.Deferred
-import io.infinitic.common.proxies.InstanceWorkflow
+import io.infinitic.common.proxies.data.WorkflowSelection
 import io.infinitic.workflows.SendChannel
 import java.util.UUID
 import java.util.concurrent.CompletableFuture
 
 internal class DeferredChannel<R : SendChannel<*>> (
-    private val workflow: InstanceWorkflow,
+    private val workflow: WorkflowSelection,
     private val channel: R
 ) : Deferred<R> {
 

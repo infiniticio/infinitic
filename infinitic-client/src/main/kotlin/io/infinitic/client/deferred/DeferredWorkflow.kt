@@ -27,13 +27,13 @@ package io.infinitic.client.deferred
 
 import io.infinitic.client.Deferred
 import io.infinitic.client.dispatcher.ClientDispatcher
-import io.infinitic.common.proxies.InstanceWorkflow
+import io.infinitic.common.proxies.data.WorkflowSelection
 import io.infinitic.exceptions.thisShouldNotHappen
 import java.util.UUID
 import java.util.concurrent.CompletableFuture
 
 class DeferredWorkflow<R : Any?> (
-    private val workflow: InstanceWorkflow,
+    private val workflow: WorkflowSelection,
     private val clientWaiting: Boolean,
     private val dispatcher: ClientDispatcher,
     private val future: CompletableFuture<Unit>? = null

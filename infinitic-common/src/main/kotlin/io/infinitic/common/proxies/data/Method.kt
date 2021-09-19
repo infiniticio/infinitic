@@ -23,18 +23,14 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.common.proxies
+package io.infinitic.common.proxies.data
 
-import io.infinitic.common.workflows.data.workflows.WorkflowId
-import io.infinitic.common.workflows.data.workflows.WorkflowName
-import io.infinitic.common.workflows.data.workflows.WorkflowTag
+import io.infinitic.common.data.methods.MethodName
+import io.infinitic.common.data.methods.MethodParameterTypes
+import io.infinitic.common.data.methods.MethodParameters
 
-data class InstanceWorkflow(
-    val workflowName: WorkflowName,
-    val perWorkflowId: WorkflowId? = null,
-    val perWorkflowTag: WorkflowTag? = null,
-) {
-    init {
-        require((perWorkflowId == null && perWorkflowTag != null) || (perWorkflowId != null && perWorkflowTag == null))
-    }
-}
+data class Method(
+    var methodName: MethodName,
+    val methodParameterTypes: MethodParameterTypes,
+    val methodParameters: MethodParameters,
+)
