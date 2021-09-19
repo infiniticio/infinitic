@@ -499,7 +499,7 @@ internal class WorkflowTests : StringSpec({
     }
 
     "Retry a failed task from client should restart a workflow" {
-        val deferred = client.dispatch(workflowA::failing8)()
+        val deferred = client.dispatch(workflowA::failing8)().join()
 
         val e = shouldThrow<FailedDeferredException> { deferred.await() }
 
@@ -519,7 +519,6 @@ internal class WorkflowTests : StringSpec({
     }
 
     "child workflow is canceled when parent workflow is canceled - tag are also added and deleted" {
-
         val deferred = client.dispatch(workflowATagged::cancel1)().join()
 
         delay(1000)
