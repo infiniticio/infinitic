@@ -61,6 +61,10 @@ interface ClientDispatcher : ProxyDispatcher {
 
     fun <R : Any?> await(workflow: WorkflowSelection, clientWaiting: Boolean): R
 
+    fun completeTask(task: TaskSelection): CompletableFuture<Unit>
+
+    fun completeWorkflow(workflow: WorkflowSelection): CompletableFuture<Unit>
+
     fun cancelTask(task: TaskSelection): CompletableFuture<Unit>
 
     fun cancelWorkflow(workflow: WorkflowSelection): CompletableFuture<Unit>

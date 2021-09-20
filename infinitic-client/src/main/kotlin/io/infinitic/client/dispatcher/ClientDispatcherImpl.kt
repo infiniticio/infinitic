@@ -262,6 +262,10 @@ internal class ClientDispatcherImpl(
         }
     }
 
+    override fun completeTask(task: TaskSelection): CompletableFuture<Unit> = TODO("Not yet Implemented")
+
+    override fun completeWorkflow(workflow: WorkflowSelection): CompletableFuture<Unit> = TODO("Not yet Implemented")
+
     override fun cancelTask(task: TaskSelection): CompletableFuture<Unit> = scope.future {
         when {
             task.perTaskId != null -> {
