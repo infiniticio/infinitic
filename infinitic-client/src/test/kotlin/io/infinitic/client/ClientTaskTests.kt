@@ -75,8 +75,8 @@ class ClientTask : InfiniticClient() {
 class ClientTaskTests : StringSpec({
     val client = ClientTask()
 
-    val fakeTask = client.newTaskStub(FakeTask::class.java)
-    val fooTask = client.newTaskStub(FooTask::class.java)
+    val fakeTask = client.taskStub(FakeTask::class.java)
+    val fooTask = client.taskStub(FooTask::class.java)
 
     beforeTest {
         taskTagSlots.clear()

@@ -35,9 +35,9 @@ class TaskSelectionProxyHandler<K : Any>(
     var perTaskId: TaskId? = null,
     var perTaskTag: TaskTag? = null,
     override val dispatcherFn: () -> ProxyDispatcher
-) : ProxyHandler<K>(klass, dispatcherFn) {
+) : ProxyHandler<K>(klass, dispatcherFn), TaskProxyHandler {
 
-    val taskName = TaskName(className)
+    override val taskName = TaskName(className)
 
     init {
         require((perTaskId == null && perTaskTag != null) || (perTaskId != null && perTaskTag == null))

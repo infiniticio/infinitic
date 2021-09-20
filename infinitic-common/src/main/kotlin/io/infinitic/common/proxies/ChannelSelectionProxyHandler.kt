@@ -23,29 +23,38 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.client.deferred
+package io.infinitic.common.proxies
 
-import io.infinitic.client.Deferred
+import io.infinitic.common.proxies.data.Signal
+import io.infinitic.common.workflows.data.channels.ChannelName
+import io.infinitic.common.workflows.data.channels.ChannelSignal
+import io.infinitic.common.workflows.data.channels.ChannelSignalId
+import io.infinitic.common.workflows.data.channels.ChannelSignalType
 import io.infinitic.workflows.SendChannel
-import java.util.UUID
-import java.util.concurrent.CompletableFuture
 
-internal class DeferredChannel<R : SendChannel<*>> (
-    private val channel: R
-) : Deferred<R> {
+@Suppress("UNCHECKED_CAST")
+class ChannelSelectionProxyHandler<K : SendChannel<*>>(
+    val handler: WorkflowSelectionProxyHandler<*>,
+) : ProxyHandler<K>(
+    handler.method.returnType as Class<out K>,
+    handler.dispatcherFn
+),
+    ChannelProxyHandler {
 
-    override fun cancel(): CompletableFuture<Unit> {
-        TODO("Not yet implemented")
+    override val workflowName = handler.workflowName
+    override val channelName = ChannelName(handler.methodName)
+
+    fun signal(): Signal {
+        val signal = methodArgs[0]
+
+        return Signal(
+            workflowName,
+            channelName,
+            ChannelSignalId(),
+            ChannelSignal.from(signal),
+            ChannelSignalType.allFrom(signal::class.java),
+            handler.perWorkflowId,
+            handler.perWorkflowTag
+        )
     }
-
-    override fun retry(): CompletableFuture<Unit> {
-        TODO("Not yet implemented")
-    }
-
-    override fun await(): R = channel
-
-    override fun join(): Deferred<R> = this
-
-    override val id: UUID
-        get() = throw Exception()
 }

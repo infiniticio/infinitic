@@ -52,8 +52,8 @@ interface TaskA : ParentInterface {
 }
 
 class TaskAImpl : Task(), TaskA {
-    val workflowA by lazy { context.client.newWorkflowStub(WorkflowA::class.java) }
-    val taskA by lazy { context.client.newTaskStub(TaskA::class.java) }
+    val workflowA by lazy { context.client.workflowStub(WorkflowA::class.java) }
+    val taskA by lazy { context.client.taskStub(TaskA::class.java) }
 
     override fun concat(str1: String, str2: String) = str1 + str2
 

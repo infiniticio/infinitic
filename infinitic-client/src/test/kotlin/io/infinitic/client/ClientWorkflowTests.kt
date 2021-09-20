@@ -83,8 +83,8 @@ class ClientWorkflow : InfiniticClient() {
 class ClientWorkflowTests : StringSpec({
     val client = ClientWorkflow()
 
-    val fakeWorkflow = client.newWorkflowStub(FakeWorkflow::class.java)
-    val fooWorkflow = client.newWorkflowStub(FooWorkflow::class.java)
+    val fakeWorkflow = client.workflowStub(FakeWorkflow::class.java)
+    val fooWorkflow = client.workflowStub(FooWorkflow::class.java)
 
     beforeTest {
         taskTagSlots.clear()
@@ -342,8 +342,7 @@ class ClientWorkflowTests : StringSpec({
     "Should be able to emit to a channel by id synchronously" {
         // when
         val id = UUID.randomUUID()
-        val instance = client.getInstanceStub(fakeWorkflow, id)
-        instance.channel.send("a").join()
+        client.send(fakeWorkflow.channel, id)("a").join()
         // then
         workflowTagSlots.size shouldBe 0
         val msg = workflowSlot.captured as SendToChannel
@@ -361,8 +360,7 @@ class ClientWorkflowTests : StringSpec({
     "Should be able to emit to a channel by id asynchronously" {
         // when
         val id = UUID.randomUUID()
-        val instance = client.getInstanceStub(fakeWorkflow, id)
-        client.dispatch(instance.channel::send)("a").join()
+        client.send(fakeWorkflow.channel, id)("a").join()
         // then
         workflowTagSlots.size shouldBe 0
         val msg = workflowSlot.captured as SendToChannel
@@ -380,8 +378,7 @@ class ClientWorkflowTests : StringSpec({
     "Should be able to emit to a channel by id" {
         // when
         val id = UUID.randomUUID()
-        val instance = client.getInstanceStub(fakeWorkflow, id)
-        instance.channel.send("a").join()
+        client.send(fakeWorkflow.channel, id)("a").join()
         // then
         workflowTagSlots.size shouldBe 0
         val msg = workflowSlot.captured as SendToChannel
@@ -399,8 +396,7 @@ class ClientWorkflowTests : StringSpec({
     "Should be able to emit to a channel by tag" {
         val tag = "foo"
         // when
-        val instance = client.getInstanceStub(fakeWorkflow, tag)
-        instance.channel.send("a").join()
+        client.send(fakeWorkflow.channel, tag)("a").join()
         // then
         val msg = workflowTagSlots[0] as SendToChannelPerTag
         msg shouldBe SendToChannelPerTag(
@@ -417,7 +413,8 @@ class ClientWorkflowTests : StringSpec({
     "Should be able to emit to a channel after workflow dispatch" {
         // when
         val deferred = client.dispatch(fakeWorkflow::m3)(0, "a").join()
-        client.getInstanceStub(fakeWorkflow, deferred.id).channel.send("a").join()
+        client.send(fakeWorkflow.channel, deferred.id)("a").join()
+
         // then
         workflowTagSlots.size shouldBe 0
         val msg = workflowSlot.captured as SendToChannel
@@ -511,10 +508,8 @@ class ClientWorkflowTests : StringSpec({
     }
 
     "Get ids from channel should throw" {
-        val instance = client.getInstanceStub(fakeWorkflow, "foo")
-
         shouldThrow<InvalidInstanceStubException> {
-            client.getIds(instance.channel, "foo")
+            client.getIds(fakeWorkflow.channel, "foo")
         }
     }
 })

@@ -26,12 +26,16 @@
 package io.infinitic.common.proxies
 
 import io.infinitic.annotations.Name
+import io.infinitic.common.data.methods.MethodName
+import io.infinitic.common.data.methods.MethodParameterTypes
+import io.infinitic.common.data.methods.MethodParameters
 import io.infinitic.exceptions.thisShouldNotHappen
 import io.infinitic.workflows.SendChannel
 import java.lang.reflect.InvocationHandler
 import java.lang.reflect.Method
 import java.lang.reflect.Proxy
 import kotlin.reflect.full.isSubclassOf
+import io.infinitic.common.proxies.data.Method as DataMethod
 
 sealed class ProxyHandler<T : Any>(
     open val klass: Class<out T>,
@@ -86,7 +90,7 @@ sealed class ProxyHandler<T : Any>(
     val methodName: String
         get() = findMethodNamePerAnnotation(klass, method) ?: method.name
 
-    /*
+    /**
      * provides a stub of type T
      */
     @Suppress("UNCHECKED_CAST")
@@ -95,6 +99,15 @@ sealed class ProxyHandler<T : Any>(
         arrayOf(klass),
         this
     ) as T
+
+    /**
+     * provides details of method called
+     */
+    fun method() = DataMethod(
+        MethodName(methodName),
+        MethodParameterTypes.from(method),
+        MethodParameters.from(method, methodArgs),
+    )
 
     override fun invoke(proxy: Any, method: Method, args: Array<out Any>?): Any? {
         val any = getAsyncReturnValue(method)

@@ -46,7 +46,8 @@ import io.infinitic.common.clients.messages.WorkflowIdsPerTag
 import io.infinitic.common.clients.messages.interfaces.TaskMessage
 import io.infinitic.common.clients.messages.interfaces.WorkflowMessage
 import io.infinitic.common.data.JobOptions
-import io.infinitic.common.proxies.ChannelProxyHandler
+import io.infinitic.common.proxies.ChannelInstanceProxyHandler
+import io.infinitic.common.proxies.ChannelSelectionProxyHandler
 import io.infinitic.common.proxies.ProxyHandler
 import io.infinitic.common.proxies.TaskInstanceProxyHandler
 import io.infinitic.common.proxies.TaskSelectionProxyHandler
@@ -141,8 +142,16 @@ internal class ClientDispatcherImpl(
                 (options as TaskOptions?) ?: handler.taskOptions,
                 meta?.run { TaskMeta(this) } ?: handler.taskMeta
             )
+        is TaskSelectionProxyHandler ->
+            throw DispatchTaskSelectionException(handler.klass.name, "dispatch")
         is WorkflowInstanceProxyHandler -> when (handler.isMethodChannel()) {
-            true -> throw UseChannelOnNewWorkflowException(handler.klass.name)
+            // special case of getting a channel from a workflow
+            true -> {
+                @Suppress("UNCHECKED_CAST")
+                val channel = ChannelInstanceProxyHandler<SendChannel<*>>(handler).stub()
+                @Suppress("UNCHECKED_CAST")
+                DeferredChannel(channel) as Deferred<R>
+            }
             false -> dispatchNewWorkflow(
                 handler.instance(),
                 handler.method(),
@@ -152,22 +161,20 @@ internal class ClientDispatcherImpl(
                 meta?.run { WorkflowMeta(this) } ?: handler.workflowMeta
             )
         }
-        is TaskSelectionProxyHandler ->
-            throw DispatchTaskSelectionException(handler.klass.name, "dispatch")
-        is WorkflowSelectionProxyHandler ->
-            when (handler.isMethodChannel()) {
-                // special case of getting a channel from a workflow
-                true -> {
-                    @Suppress("UNCHECKED_CAST")
-                    val channel = ChannelProxyHandler(handler.method.returnType as Class<out SendChannel<*>>, handler).stub()
-
-                    @Suppress("UNCHECKED_CAST")
-                    DeferredChannel(handler.selection(), channel) as Deferred<R>
-                }
-                false -> dispatchWorkflowMethod(handler.selection(), handler.method(), clientWaiting)
+        is WorkflowSelectionProxyHandler -> when (handler.isMethodChannel()) {
+            // special case of getting a channel from a workflow
+            true -> {
+                @Suppress("UNCHECKED_CAST")
+                val channel = ChannelSelectionProxyHandler<SendChannel<*>>(handler).stub()
+                @Suppress("UNCHECKED_CAST")
+                DeferredChannel(channel) as Deferred<R>
             }
-        is ChannelProxyHandler ->
-            dispatchSend(handler.signal())
+            false -> dispatchWorkflowMethod(handler.selection(), handler.method(), clientWaiting)
+        }
+        is ChannelInstanceProxyHandler ->
+            throw UseChannelOnNewWorkflowException(handler.workflowName.name)
+        is ChannelSelectionProxyHandler ->
+            send(handler.signal())
     }
 
     override fun <R : Any?> await(task: TaskSelection, clientWaiting: Boolean): R {
@@ -513,7 +520,7 @@ internal class ClientDispatcherImpl(
     }
 
     // asynchronous send a signal: existingWorkflow.channel.send()
-    private fun <R : Any?> dispatchSend(signal: Signal): DeferredSend<R> {
+    override fun <R : Any?> send(signal: Signal): DeferredSend<R> {
         // send messages asynchronously
         val future = scope.future() {
             when {

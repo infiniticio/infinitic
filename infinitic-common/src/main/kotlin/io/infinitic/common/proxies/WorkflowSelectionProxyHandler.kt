@@ -25,10 +25,6 @@
 
 package io.infinitic.common.proxies
 
-import io.infinitic.common.data.methods.MethodName
-import io.infinitic.common.data.methods.MethodParameterTypes
-import io.infinitic.common.data.methods.MethodParameters
-import io.infinitic.common.proxies.data.Method
 import io.infinitic.common.proxies.data.WorkflowSelection
 import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.data.workflows.WorkflowName
@@ -39,23 +35,17 @@ class WorkflowSelectionProxyHandler<K : Any>(
     val perWorkflowId: WorkflowId? = null,
     val perWorkflowTag: WorkflowTag? = null,
     override val dispatcherFn: () -> ProxyDispatcher
-) : ProxyHandler<K>(klass, dispatcherFn) {
+) : ProxyHandler<K>(klass, dispatcherFn), WorkflowProxyHandler {
 
-    val workflowName = WorkflowName(className)
+    override val workflowName = WorkflowName(className)
 
     init {
-        require(perWorkflowId == null || perWorkflowTag == null)
+        require((perWorkflowId != null && perWorkflowTag == null) || (perWorkflowId == null && perWorkflowTag != null))
     }
 
     fun selection() = WorkflowSelection(
         workflowName,
         perWorkflowId,
         perWorkflowTag
-    )
-
-    fun method() = Method(
-        MethodName(methodName),
-        MethodParameterTypes.from(method),
-        MethodParameters.from(method, methodArgs),
     )
 }

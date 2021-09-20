@@ -25,25 +25,17 @@
 
 package io.infinitic.common.proxies
 
-import io.infinitic.common.proxies.data.WorkflowInstance
-import io.infinitic.common.workflows.data.workflows.WorkflowId
-import io.infinitic.common.workflows.data.workflows.WorkflowMeta
-import io.infinitic.common.workflows.data.workflows.WorkflowName
-import io.infinitic.common.workflows.data.workflows.WorkflowOptions
-import io.infinitic.common.workflows.data.workflows.WorkflowTag
+import io.infinitic.common.workflows.data.channels.ChannelName
+import io.infinitic.workflows.SendChannel
 
-class WorkflowInstanceProxyHandler<K : Any>(
-    override val klass: Class<K>,
-    val workflowTags: Set<WorkflowTag>,
-    val workflowOptions: WorkflowOptions,
-    val workflowMeta: WorkflowMeta,
-    override val dispatcherFn: () -> ProxyDispatcher
-) : ProxyHandler<K>(klass, dispatcherFn), WorkflowProxyHandler {
-
-    override val workflowName = WorkflowName(className)
-
-    fun instance() = WorkflowInstance(
-        workflowName,
-        WorkflowId()
-    )
+@Suppress("UNCHECKED_CAST")
+class ChannelInstanceProxyHandler<K : SendChannel<*>>(
+    handler: WorkflowInstanceProxyHandler<*>,
+) : ProxyHandler<K>(
+    handler.method.returnType as Class<out K>,
+    handler.dispatcherFn
+),
+    ChannelProxyHandler {
+    override val workflowName = handler.workflowName
+    override val channelName = ChannelName(handler.methodName)
 }

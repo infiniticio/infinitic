@@ -594,6 +594,7 @@ class WorkflowAImpl : Workflow(), WorkflowA {
         async {
             workflowABis.failing2()
         }
+
         return taskA.await(100)
     }
 

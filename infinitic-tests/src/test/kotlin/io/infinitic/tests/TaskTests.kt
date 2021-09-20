@@ -52,8 +52,8 @@ internal class TaskTests : StringSpec({
     val client = autoClose(InfiniticClientFactory.fromConfigResource("/pulsar.yml"))
     val worker = autoClose(InfiniticWorkerFactory.fromConfigResource("/pulsar.yml"))
 
-    val taskTest = client.newTaskStub(TaskTest::class.java)
-    val taskTestWithTags = client.newTaskStub(TaskTest::class.java, tags = setOf("foo", "bar"))
+    val taskTest = client.taskStub(TaskTest::class.java)
+    val taskTestWithTags = client.taskStub(TaskTest::class.java, tags = setOf("foo", "bar"))
 
     beforeTest {
         worker.storageFlush()
@@ -248,13 +248,13 @@ internal class TaskTests : StringSpec({
     }
 
     "get tags from context" {
-        val taskWithTags = client.newTaskStub(TaskA::class.java, tags = setOf("foo", "bar"))
+        val taskWithTags = client.taskStub(TaskA::class.java, tags = setOf("foo", "bar"))
 
         taskWithTags.tags() shouldBe setOf("foo", "bar")
     }
 
     "get meta from context" {
-        val taskWithMeta = client.newTaskStub(TaskA::class.java, meta = mapOf("foo" to "bar".toByteArray()))
+        val taskWithMeta = client.taskStub(TaskA::class.java, meta = mapOf("foo" to "bar".toByteArray()))
 
         taskWithMeta.meta() shouldBe TaskMeta(mapOf("foo" to "bar".toByteArray()))
     }

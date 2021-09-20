@@ -30,7 +30,8 @@ import io.infinitic.common.data.JobOptions
 import io.infinitic.common.data.MillisDuration
 import io.infinitic.common.data.MillisInstant
 import io.infinitic.common.data.Name
-import io.infinitic.common.proxies.ChannelProxyHandler
+import io.infinitic.common.proxies.ChannelInstanceProxyHandler
+import io.infinitic.common.proxies.ChannelSelectionProxyHandler
 import io.infinitic.common.proxies.ProxyHandler
 import io.infinitic.common.proxies.TaskInstanceProxyHandler
 import io.infinitic.common.proxies.TaskSelectionProxyHandler
@@ -152,8 +153,9 @@ internal class WorkflowDispatcherImpl(
                 false -> TODO("Not Yet Implemented")
                 // dispatchWorkflowMethod(handler.selection(), handler.method(), clientWaiting)
             }
-        is ChannelProxyHandler ->
+        is ChannelSelectionProxyHandler ->
             TODO("Not yet implemented")
+        is ChannelInstanceProxyHandler -> TODO()
     }
     /*
      * Async Branch dispatching

@@ -30,6 +30,7 @@ import io.infinitic.common.clients.messages.ClientMessage
 import io.infinitic.common.data.JobOptions
 import io.infinitic.common.proxies.ProxyDispatcher
 import io.infinitic.common.proxies.ProxyHandler
+import io.infinitic.common.proxies.data.Signal
 import io.infinitic.common.proxies.data.TaskSelection
 import io.infinitic.common.proxies.data.WorkflowSelection
 import io.infinitic.common.tasks.data.TaskName
@@ -53,6 +54,8 @@ interface ClientDispatcher : ProxyDispatcher {
         options: JobOptions?,
         meta: Map<String, ByteArray>?,
     ): Deferred<R>
+
+    fun <R : Any?> send(signal: Signal): Deferred<R>
 
     fun <R : Any?> await(task: TaskSelection, clientWaiting: Boolean): R
 
