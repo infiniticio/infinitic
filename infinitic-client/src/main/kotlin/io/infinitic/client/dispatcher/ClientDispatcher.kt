@@ -30,11 +30,11 @@ import io.infinitic.common.clients.messages.ClientMessage
 import io.infinitic.common.data.JobOptions
 import io.infinitic.common.proxies.ProxyDispatcher
 import io.infinitic.common.proxies.ProxyHandler
-import io.infinitic.common.proxies.data.Signal
-import io.infinitic.common.proxies.data.TaskSelection
-import io.infinitic.common.proxies.data.WorkflowSelection
+import io.infinitic.common.tasks.data.TaskId
 import io.infinitic.common.tasks.data.TaskName
 import io.infinitic.common.tasks.data.TaskTag
+import io.infinitic.common.workflows.data.channels.ChannelName
+import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.data.workflows.WorkflowName
 import io.infinitic.common.workflows.data.workflows.WorkflowTag
 import java.util.UUID
@@ -55,23 +55,47 @@ interface ClientDispatcher : ProxyDispatcher {
         meta: Map<String, ByteArray>?,
     ): Deferred<R>
 
-    fun <R : Any?> send(signal: Signal): Deferred<R>
+    fun <R : Any?> send(
+        workflowName: WorkflowName,
+        channelName: ChannelName,
+        perWorkflowId: WorkflowId,
+        signal: Any
+    ): Deferred<R>
 
-    fun <R : Any?> await(task: TaskSelection, clientWaiting: Boolean): R
+    fun <R : Any?> send(
+        workflowName: WorkflowName,
+        channelName: ChannelName,
+        perWorkflowTag: WorkflowTag,
+        signal: Any
+    ): Deferred<R>
 
-    fun <R : Any?> await(workflow: WorkflowSelection, clientWaiting: Boolean): R
+    fun <R : Any?> awaitTask(taskName: TaskName, perTaskId: TaskId, clientWaiting: Boolean): R
 
-    fun completeTask(task: TaskSelection): CompletableFuture<Unit>
+    fun <R : Any?> awaitWorkflow(workflowName: WorkflowName, perWorkflowId: WorkflowId, clientWaiting: Boolean): R
 
-    fun completeWorkflow(workflow: WorkflowSelection): CompletableFuture<Unit>
+    fun completeTask(taskName: TaskName, perTaskId: TaskId, value: Any?): CompletableFuture<Unit>
 
-    fun cancelTask(task: TaskSelection): CompletableFuture<Unit>
+    fun completeTask(taskName: TaskName, perTaskTag: TaskTag, value: Any?): CompletableFuture<Unit>
 
-    fun cancelWorkflow(workflow: WorkflowSelection): CompletableFuture<Unit>
+    fun completeWorkflow(workflowName: WorkflowName, perWorkflowId: WorkflowId, value: Any?): CompletableFuture<Unit>
 
-    fun retryTask(task: TaskSelection): CompletableFuture<Unit>
+    fun completeWorkflow(workflowName: WorkflowName, perWorkflowTag: WorkflowTag, value: Any?): CompletableFuture<Unit>
 
-    fun retryWorkflow(workflow: WorkflowSelection): CompletableFuture<Unit>
+    fun cancelTask(taskName: TaskName, perTaskId: TaskId): CompletableFuture<Unit>
+
+    fun cancelTask(taskName: TaskName, perTaskTag: TaskTag): CompletableFuture<Unit>
+
+    fun cancelWorkflow(workflowName: WorkflowName, perWorkflowId: WorkflowId): CompletableFuture<Unit>
+
+    fun cancelWorkflow(workflowName: WorkflowName, perWorkflowTag: WorkflowTag): CompletableFuture<Unit>
+
+    fun retryTask(taskName: TaskName, perTaskId: TaskId): CompletableFuture<Unit>
+
+    fun retryTask(taskName: TaskName, perTaskTag: TaskTag): CompletableFuture<Unit>
+
+    fun retryWorkflow(workflowName: WorkflowName, perWorkflowId: WorkflowId): CompletableFuture<Unit>
+
+    fun retryWorkflow(workflowName: WorkflowName, perWorkflowTag: WorkflowTag): CompletableFuture<Unit>
 
     fun getTaskIdsPerTag(taskName: TaskName, taskTag: TaskTag): Set<UUID>
 

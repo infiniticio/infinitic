@@ -35,7 +35,7 @@ import java.lang.reflect.InvocationHandler
 import java.lang.reflect.Method
 import java.lang.reflect.Proxy
 import kotlin.reflect.full.isSubclassOf
-import io.infinitic.common.proxies.data.Method as DataMethod
+import io.infinitic.common.proxies.Method as DataMethod
 
 sealed class ProxyHandler<T : Any>(
     open val klass: Class<out T>,

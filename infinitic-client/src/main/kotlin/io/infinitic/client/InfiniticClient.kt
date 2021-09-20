@@ -30,35 +30,25 @@ import io.infinitic.client.dispatcher.ClientDispatcherImpl
 import io.infinitic.common.clients.data.ClientName
 import io.infinitic.common.clients.messages.ClientMessage
 import io.infinitic.common.data.JobOptions
-import io.infinitic.common.proxies.ChannelInstanceProxyHandler
 import io.infinitic.common.proxies.ChannelProxyHandler
-import io.infinitic.common.proxies.ChannelSelectionProxyHandler
 import io.infinitic.common.proxies.ProxyHandler
-import io.infinitic.common.proxies.TaskInstanceProxyHandler
-import io.infinitic.common.proxies.TaskSelectionProxyHandler
-import io.infinitic.common.proxies.WorkflowInstanceProxyHandler
-import io.infinitic.common.proxies.WorkflowSelectionProxyHandler
-import io.infinitic.common.proxies.data.Signal
-import io.infinitic.common.proxies.data.TaskSelection
-import io.infinitic.common.proxies.data.WorkflowSelection
+import io.infinitic.common.proxies.TaskProxyHandler
+import io.infinitic.common.proxies.WorkflowProxyHandler
 import io.infinitic.common.tasks.data.TaskId
 import io.infinitic.common.tasks.data.TaskMeta
 import io.infinitic.common.tasks.data.TaskOptions
 import io.infinitic.common.tasks.data.TaskTag
 import io.infinitic.common.tasks.engine.SendToTaskEngine
 import io.infinitic.common.tasks.tags.SendToTaskTagEngine
-import io.infinitic.common.workflows.data.channels.ChannelSignal
-import io.infinitic.common.workflows.data.channels.ChannelSignalId
-import io.infinitic.common.workflows.data.channels.ChannelSignalType
 import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.data.workflows.WorkflowMeta
 import io.infinitic.common.workflows.data.workflows.WorkflowOptions
 import io.infinitic.common.workflows.data.workflows.WorkflowTag
 import io.infinitic.common.workflows.engine.SendToWorkflowEngine
 import io.infinitic.common.workflows.tags.SendToWorkflowTagEngine
-import io.infinitic.exceptions.clients.InvalidInstanceStubException
+import io.infinitic.exceptions.clients.InvalidChannelException
 import io.infinitic.exceptions.clients.InvalidInterfaceException
-import io.infinitic.exceptions.clients.InvalidNewStubException
+import io.infinitic.exceptions.clients.InvalidStubException
 import io.infinitic.exceptions.thisShouldNotHappen
 import io.infinitic.workflows.SendChannel
 import kotlinx.coroutines.CoroutineScope
@@ -149,7 +139,7 @@ abstract class InfiniticClient : Closeable {
         tags: Set<String> = setOf(),
         options: TaskOptions = TaskOptions(),
         meta: Map<String, ByteArray> = mapOf()
-    ): T = TaskInstanceProxyHandler(
+    ): T = TaskProxyHandler(
         klass = klass,
         taskTags = tags.map { TaskTag(it) }.toSet(),
         taskOptions = options,
@@ -165,7 +155,7 @@ abstract class InfiniticClient : Closeable {
         tags: Set<String> = setOf(),
         options: WorkflowOptions = WorkflowOptions(),
         meta: Map<String, ByteArray> = mapOf(),
-    ): T = WorkflowInstanceProxyHandler(
+    ): T = WorkflowProxyHandler(
         klass = klass,
         workflowTags = tags.map { WorkflowTag(it) }.toSet(),
         workflowOptions = options,
@@ -325,44 +315,31 @@ abstract class InfiniticClient : Closeable {
     fun <S : Any> send(
         stub: SendChannel<S>,
         id: UUID,
-    ): (S) -> Deferred<S> = when (val handler = getProxyHandler(stub, "send")) {
-        is TaskInstanceProxyHandler, is TaskSelectionProxyHandler -> throw Exception("can not")
-        is WorkflowInstanceProxyHandler, is WorkflowSelectionProxyHandler -> throw Exception("can not")
+    ): (S) -> Deferred<S> = when (val handler = getProxyHandler(stub)) {
         is ChannelProxyHandler -> { signal: S ->
             dispatcher.send(
-                Signal(
-                    handler.workflowName,
-                    handler.channelName,
-                    ChannelSignalId(),
-                    ChannelSignal.from(signal),
-                    ChannelSignalType.allFrom(signal::class.java),
-                    perWorkflowId = WorkflowId(id)
-                )
+                handler.workflowName,
+                handler.channelName,
+                perWorkflowId = WorkflowId(id),
+                signal
             )
         }
-        else -> thisShouldNotHappen()
+        else -> throw InvalidChannelException("$stub")
     }
 
     fun <S : Any> send(
         stub: SendChannel<S>,
         tag: String,
-    ): (S) -> Deferred<S> = when (val handler = getProxyHandler(stub, "send")) {
-        is TaskInstanceProxyHandler, is TaskSelectionProxyHandler -> throw Exception("can not")
-        is WorkflowInstanceProxyHandler, is WorkflowSelectionProxyHandler -> throw Exception("can not")
+    ): (S) -> Deferred<S> = when (val handler = getProxyHandler(stub)) {
         is ChannelProxyHandler -> { signal: S ->
             dispatcher.send(
-                Signal(
-                    handler.workflowName,
-                    handler.channelName,
-                    ChannelSignalId(),
-                    ChannelSignal.from(signal),
-                    ChannelSignalType.allFrom(signal::class.java),
-                    perWorkflowTag = WorkflowTag(tag)
-                )
+                handler.workflowName,
+                handler.channelName,
+                perWorkflowTag = WorkflowTag(tag),
+                signal
             )
         }
-
-        else -> thisShouldNotHappen()
+        else -> throw InvalidChannelException("$stub")
     }
 
     /**
@@ -372,14 +349,13 @@ abstract class InfiniticClient : Closeable {
     fun <T : Any> await(
         stub: T,
         id: UUID
-    ): Any = when (val handler = getProxyHandler(stub, "await")) {
-        is TaskInstanceProxyHandler ->
-            dispatcher.await<Any>(TaskSelection(handler.taskName, perTaskId = TaskId(id)), false)
-        is WorkflowInstanceProxyHandler ->
-            dispatcher.await<Any>(WorkflowSelection(handler.workflowName, perWorkflowId = WorkflowId(id)), false)
-        is TaskSelectionProxyHandler -> thisShouldNotHappen()
-        is WorkflowSelectionProxyHandler -> thisShouldNotHappen()
-        is ChannelInstanceProxyHandler, is ChannelSelectionProxyHandler -> throw InvalidInstanceStubException(handler.klass.name, "await")
+    ): Any = when (val handler = getProxyHandler(stub)) {
+        is TaskProxyHandler ->
+            dispatcher.awaitTask<Any>(handler.taskName, perTaskId = TaskId(id), false)
+        is WorkflowProxyHandler ->
+            dispatcher.awaitWorkflow<Any>(handler.workflowName, perWorkflowId = WorkflowId(id), false)
+        is ChannelProxyHandler ->
+            throw InvalidStubException("$stub")
     }
 
     /**
@@ -389,14 +365,13 @@ abstract class InfiniticClient : Closeable {
     fun <T : Any> cancel(
         stub: T,
         id: UUID
-    ): CompletableFuture<Unit> = when (val handler = getProxyHandler(stub, "cancel")) {
-        is TaskInstanceProxyHandler ->
-            dispatcher.cancelTask(TaskSelection(handler.taskName, perTaskId = TaskId(id)))
-        is WorkflowInstanceProxyHandler ->
-            dispatcher.cancelWorkflow(WorkflowSelection(handler.workflowName, perWorkflowId = WorkflowId(id)))
-        is TaskSelectionProxyHandler -> thisShouldNotHappen()
-        is WorkflowSelectionProxyHandler -> thisShouldNotHappen()
-        is ChannelInstanceProxyHandler, is ChannelSelectionProxyHandler -> throw InvalidInstanceStubException(handler.klass.name, "cancel")
+    ): CompletableFuture<Unit> = when (val handler = getProxyHandler(stub)) {
+        is TaskProxyHandler ->
+            dispatcher.cancelTask(handler.taskName, perTaskId = TaskId(id))
+        is WorkflowProxyHandler ->
+            dispatcher.cancelWorkflow(handler.workflowName, perWorkflowId = WorkflowId(id))
+        is ChannelProxyHandler ->
+            throw InvalidStubException("$stub")
     }
 
     /**
@@ -406,14 +381,13 @@ abstract class InfiniticClient : Closeable {
     fun <T : Any> cancel(
         stub: T,
         tag: String
-    ): CompletableFuture<Unit> = when (val handler = getProxyHandler(stub, "cancel")) {
-        is TaskInstanceProxyHandler ->
-            dispatcher.cancelTask(TaskSelection(handler.taskName, perTaskTag = TaskTag(tag)))
-        is WorkflowInstanceProxyHandler ->
-            dispatcher.cancelWorkflow(WorkflowSelection(handler.workflowName, perWorkflowTag = WorkflowTag(tag)))
-        is TaskSelectionProxyHandler -> thisShouldNotHappen()
-        is WorkflowSelectionProxyHandler -> thisShouldNotHappen()
-        is ChannelInstanceProxyHandler, is ChannelSelectionProxyHandler -> throw InvalidInstanceStubException(handler.klass.name, "cancel")
+    ): CompletableFuture<Unit> = when (val handler = getProxyHandler(stub)) {
+        is TaskProxyHandler ->
+            dispatcher.cancelTask(handler.taskName, perTaskTag = TaskTag(tag))
+        is WorkflowProxyHandler ->
+            dispatcher.cancelWorkflow(handler.workflowName, perWorkflowTag = WorkflowTag(tag))
+        is ChannelProxyHandler ->
+            throw InvalidStubException("$stub")
     }
 
     /**
@@ -424,14 +398,13 @@ abstract class InfiniticClient : Closeable {
         stub: T,
         id: UUID,
         value: Any?
-    ): CompletableFuture<Unit> = when (val handler = getProxyHandler(stub, "complete")) {
-        is TaskInstanceProxyHandler ->
-            dispatcher.completeTask(TaskSelection(handler.taskName, perTaskId = TaskId(id)))
-        is WorkflowInstanceProxyHandler ->
-            dispatcher.completeWorkflow(WorkflowSelection(handler.workflowName, perWorkflowId = WorkflowId(id)))
-        is TaskSelectionProxyHandler -> thisShouldNotHappen()
-        is WorkflowSelectionProxyHandler -> thisShouldNotHappen()
-        is ChannelInstanceProxyHandler, is ChannelSelectionProxyHandler -> throw InvalidInstanceStubException(handler.klass.name, "complete")
+    ): CompletableFuture<Unit> = when (val handler = getProxyHandler(stub)) {
+        is TaskProxyHandler ->
+            dispatcher.completeTask(handler.taskName, perTaskId = TaskId(id), value)
+        is WorkflowProxyHandler ->
+            dispatcher.completeWorkflow(handler.workflowName, perWorkflowId = WorkflowId(id), value)
+        is ChannelProxyHandler ->
+            throw InvalidStubException("$stub")
     }
 
     /**
@@ -442,14 +415,13 @@ abstract class InfiniticClient : Closeable {
         stub: T,
         tag: String,
         value: Any?
-    ): CompletableFuture<Unit> = when (val handler = getProxyHandler(stub, "complete")) {
-        is TaskInstanceProxyHandler ->
-            dispatcher.completeTask(TaskSelection(handler.taskName, perTaskTag = TaskTag(tag)))
-        is WorkflowInstanceProxyHandler ->
-            dispatcher.completeWorkflow(WorkflowSelection(handler.workflowName, perWorkflowTag = WorkflowTag(tag)))
-        is TaskSelectionProxyHandler -> thisShouldNotHappen()
-        is WorkflowSelectionProxyHandler -> thisShouldNotHappen()
-        is ChannelInstanceProxyHandler, is ChannelSelectionProxyHandler -> throw InvalidInstanceStubException(handler.klass.name, "complete")
+    ): CompletableFuture<Unit> = when (val handler = getProxyHandler(stub)) {
+        is TaskProxyHandler ->
+            dispatcher.completeTask(handler.taskName, perTaskTag = TaskTag(tag), value)
+        is WorkflowProxyHandler ->
+            dispatcher.completeWorkflow(handler.workflowName, perWorkflowTag = WorkflowTag(tag), value)
+        is ChannelProxyHandler ->
+            throw InvalidStubException("$stub")
     }
 
     /**
@@ -459,14 +431,13 @@ abstract class InfiniticClient : Closeable {
     fun <T : Any> retry(
         stub: T,
         id: UUID
-    ): CompletableFuture<Unit> = when (val handler = getProxyHandler(stub, "retry")) {
-        is TaskInstanceProxyHandler ->
-            dispatcher.retryTask(TaskSelection(handler.taskName, perTaskId = TaskId(id)))
-        is WorkflowInstanceProxyHandler ->
-            dispatcher.retryWorkflow(WorkflowSelection(handler.workflowName, perWorkflowId = WorkflowId(id)))
-        is TaskSelectionProxyHandler -> thisShouldNotHappen()
-        is WorkflowSelectionProxyHandler -> thisShouldNotHappen()
-        is ChannelInstanceProxyHandler, is ChannelSelectionProxyHandler -> throw InvalidInstanceStubException(handler.klass.name, "complete")
+    ): CompletableFuture<Unit> = when (val handler = getProxyHandler(stub)) {
+        is TaskProxyHandler ->
+            dispatcher.retryTask(handler.taskName, perTaskId = TaskId(id))
+        is WorkflowProxyHandler ->
+            dispatcher.retryWorkflow(handler.workflowName, perWorkflowId = WorkflowId(id))
+        is ChannelProxyHandler ->
+            throw InvalidStubException("$stub")
     }
 
     /**
@@ -476,14 +447,13 @@ abstract class InfiniticClient : Closeable {
     fun <T : Any> retry(
         stub: T,
         tag: String
-    ): CompletableFuture<Unit> = when (val handler = getProxyHandler(stub, "retry")) {
-        is TaskInstanceProxyHandler ->
-            dispatcher.retryTask(TaskSelection(handler.taskName, perTaskTag = TaskTag(tag)))
-        is WorkflowInstanceProxyHandler ->
-            dispatcher.retryWorkflow(WorkflowSelection(handler.workflowName, perWorkflowTag = WorkflowTag(tag)))
-        is TaskSelectionProxyHandler -> thisShouldNotHappen()
-        is WorkflowSelectionProxyHandler -> thisShouldNotHappen()
-        is ChannelInstanceProxyHandler, is ChannelSelectionProxyHandler -> throw InvalidInstanceStubException(handler.klass.name, "complete")
+    ): CompletableFuture<Unit> = when (val handler = getProxyHandler(stub)) {
+        is TaskProxyHandler ->
+            dispatcher.retryTask(handler.taskName, perTaskTag = TaskTag(tag))
+        is WorkflowProxyHandler ->
+            dispatcher.retryWorkflow(handler.workflowName, perWorkflowTag = WorkflowTag(tag))
+        is ChannelProxyHandler ->
+            throw InvalidStubException("$stub")
     }
 
     /**
@@ -493,14 +463,13 @@ abstract class InfiniticClient : Closeable {
     fun <T : Any> getIds(
         stub: T,
         tag: String
-    ): Set<UUID> = when (val handler = getProxyHandler(stub, "getIds")) {
-        is TaskInstanceProxyHandler ->
+    ): Set<UUID> = when (val handler = getProxyHandler(stub)) {
+        is TaskProxyHandler ->
             dispatcher.getTaskIdsPerTag(handler.taskName, TaskTag(tag))
-        is WorkflowInstanceProxyHandler ->
+        is WorkflowProxyHandler ->
             dispatcher.getWorkflowIdsPerTag(handler.workflowName, WorkflowTag(tag))
-        is TaskSelectionProxyHandler -> thisShouldNotHappen()
-        is WorkflowSelectionProxyHandler -> thisShouldNotHappen()
-        is ChannelInstanceProxyHandler, is ChannelSelectionProxyHandler -> throw InvalidInstanceStubException(handler.klass.name, "complete")
+        is ChannelProxyHandler ->
+            throw InvalidStubException("$stub")
     }
 
     private fun <R> dispatch(
@@ -514,8 +483,8 @@ abstract class InfiniticClient : Closeable {
         return dispatcher.dispatch(handler, false, tags, options, meta)
     }
 
-    private fun getProxyHandler(stub: Any, action: String): ProxyHandler<*> {
-        val exception by lazy { InvalidNewStubException(stub::class.java.name, action) }
+    private fun getProxyHandler(stub: Any): ProxyHandler<*> {
+        val exception by lazy { InvalidStubException(stub::class.java.name) }
 
         val handler = try {
             Proxy.getInvocationHandler(stub)

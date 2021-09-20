@@ -55,8 +55,8 @@ import io.infinitic.common.workflows.tags.messages.CancelWorkflowPerTag
 import io.infinitic.common.workflows.tags.messages.GetWorkflowIds
 import io.infinitic.common.workflows.tags.messages.SendToChannelPerTag
 import io.infinitic.common.workflows.tags.messages.WorkflowTagEngineMessage
-import io.infinitic.exceptions.clients.InvalidInstanceStubException
-import io.infinitic.exceptions.clients.UseChannelOnNewWorkflowException
+import io.infinitic.exceptions.clients.InvalidChannelUsageException
+import io.infinitic.exceptions.clients.InvalidStubException
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
@@ -334,7 +334,7 @@ class ClientWorkflowTests : StringSpec({
 
     "Should throw when calling a channel from a new workflow" {
         // when
-        shouldThrow<UseChannelOnNewWorkflowException> {
+        shouldThrow<InvalidChannelUsageException> {
             fakeWorkflow.channel.send("a")
         }
     }
@@ -507,8 +507,44 @@ class ClientWorkflowTests : StringSpec({
         workflowSlot.isCaptured shouldBe false
     }
 
+    "Wait a channel should throw" {
+        shouldThrow<InvalidStubException> {
+            client.await(fakeWorkflow.channel, UUID.randomUUID())
+        }
+    }
+
+    "Retry a channel should throw" {
+        shouldThrow<InvalidStubException> {
+            client.retry(fakeWorkflow.channel, UUID.randomUUID())
+        }
+
+        shouldThrow<InvalidStubException> {
+            client.retry(fakeWorkflow.channel, "foo")
+        }
+    }
+
+    "Cancel a channel should throw" {
+        shouldThrow<InvalidStubException> {
+            client.cancel(fakeWorkflow.channel, UUID.randomUUID())
+        }
+
+        shouldThrow<InvalidStubException> {
+            client.cancel(fakeWorkflow.channel, "foo")
+        }
+    }
+
+    "Complete a channel should throw" {
+        shouldThrow<InvalidStubException> {
+            client.complete(fakeWorkflow.channel, UUID.randomUUID(), null)
+        }
+
+        shouldThrow<InvalidStubException> {
+            client.complete(fakeWorkflow.channel, "foo", null)
+        }
+    }
+
     "Get ids from channel should throw" {
-        shouldThrow<InvalidInstanceStubException> {
+        shouldThrow<InvalidStubException> {
             client.getIds(fakeWorkflow.channel, "foo")
         }
     }

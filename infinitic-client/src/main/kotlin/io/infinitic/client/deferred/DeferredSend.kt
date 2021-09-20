@@ -26,12 +26,12 @@
 package io.infinitic.client.deferred
 
 import io.infinitic.client.Deferred
-import io.infinitic.common.proxies.data.Signal
+import io.infinitic.common.workflows.data.channels.ChannelSignalId
 import java.util.UUID
 import java.util.concurrent.CompletableFuture
 
 internal class DeferredSend<R : Any?> (
-    private val signal: Signal,
+    channelSignalId: ChannelSignalId,
     private val future: CompletableFuture<Unit>
 ) : Deferred<R> {
 
@@ -52,5 +52,5 @@ internal class DeferredSend<R : Any?> (
 
     override fun join(): Deferred<R> = this.also { future.join() }
 
-    override val id: UUID = signal.channelSignalId.id
+    override val id: UUID = channelSignalId.id
 }

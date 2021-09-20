@@ -25,8 +25,18 @@
 
 package io.infinitic.common.proxies
 
+import io.infinitic.common.workflows.data.workflows.WorkflowMeta
 import io.infinitic.common.workflows.data.workflows.WorkflowName
+import io.infinitic.common.workflows.data.workflows.WorkflowOptions
+import io.infinitic.common.workflows.data.workflows.WorkflowTag
 
-interface WorkflowProxyHandler {
-    val workflowName: WorkflowName
+class WorkflowProxyHandler<K : Any>(
+    override val klass: Class<K>,
+    val workflowTags: Set<WorkflowTag>,
+    val workflowOptions: WorkflowOptions,
+    val workflowMeta: WorkflowMeta,
+    override val dispatcherFn: () -> ProxyDispatcher
+) : ProxyHandler<K>(klass, dispatcherFn) {
+
+    val workflowName = WorkflowName(className)
 }

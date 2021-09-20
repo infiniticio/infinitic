@@ -32,20 +32,19 @@ sealed class ClientUserException(
     help: String,
 ) : UserException("$msg.\n$help")
 
-class InvalidNewStubException(
-    klass: String,
-    action: String
+class InvalidStubException(
+    klass: String
 ) : ClientUserException(
-    msg = "The provided instance of $klass is not the stub of a class or of a workflow",
-    help = "In InfiniticClient::$action, make sure to use a stub returned by InfiniticClient::newTaskStub or InfiniticClient::newWorkflowStub"
+    msg = "$klass is not the stub of a class or of a workflow",
+    help = "Make sure to use a stub returned by taskStub(Class<*>) or workflowStub(Class<*>)"
 )
 
-class InvalidInstanceStubException(
-    klass: String,
-    action: String
+class InvalidChannelException(
+    klass: String
 ) : ClientUserException(
-    msg = "The provided instance of $klass is not the stub of a class or of a workflow",
-    help = "In InfiniticClient::$action, make sure to use a stub returned by InfiniticClient::getInstanceStub "
+    msg = "$klass is not the stub of a Channel",
+    help = "Make sure to use something like `workflow.getchannel()` where `workflow` is the stub " +
+        "of a workflow and `getChannel()` is a Channel getter"
 )
 
 class InvalidInterfaceException(
@@ -56,14 +55,6 @@ class InvalidInterfaceException(
     help = "Make sure to provide a method defined from an interface, not from an actual instance."
 )
 
-class DispatchTaskSelectionException(
-    name: String,
-    action: String
-) : ClientUserException(
-    msg = "First parameter of InfiniticClient::$action can not be the stub of existing task",
-    help = "Make sure to use the stub returned by InfiniticClient::newTaskStub($name)"
-)
-
 class SuspendMethodNotSupportedException(
     klass: String,
     method: String
@@ -72,16 +63,7 @@ class SuspendMethodNotSupportedException(
     help = "Suspend functions are not supported yet"
 )
 
-class UseChannelOnNewWorkflowException(
-    workflow: String
-) : ClientUserException(
-    msg = "Channels can only be used with an existing instance of $workflow workflow",
-    help = "Make sure to target a running workflow InfiniticClient::getInstanceStub"
-)
-
-class CanNotAwaitStubPerTag(
-    klass: String
-) : ClientUserException(
-    msg = "You can not await a task or workflow ($klass) based on a tag",
-    help = "Please target the task or workflow per id"
+class InvalidChannelUsageException() : ClientUserException(
+    msg = "send method of channels can not be used directly",
+    help = "Make sure to use the send(workflow, id) function"
 )

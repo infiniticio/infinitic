@@ -25,8 +25,18 @@
 
 package io.infinitic.common.proxies
 
+import io.infinitic.common.tasks.data.TaskMeta
 import io.infinitic.common.tasks.data.TaskName
+import io.infinitic.common.tasks.data.TaskOptions
+import io.infinitic.common.tasks.data.TaskTag
 
-interface TaskProxyHandler {
-    val taskName: TaskName
+class TaskProxyHandler<K : Any>(
+    override val klass: Class<K>,
+    val taskTags: Set<TaskTag>,
+    val taskOptions: TaskOptions,
+    val taskMeta: TaskMeta,
+    override val dispatcherFn: () -> ProxyDispatcher
+) : ProxyHandler<K>(klass, dispatcherFn) {
+
+    val taskName = TaskName(className)
 }

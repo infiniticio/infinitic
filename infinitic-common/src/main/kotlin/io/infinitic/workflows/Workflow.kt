@@ -27,8 +27,8 @@ package io.infinitic.workflows
 
 import io.infinitic.common.data.JobOptions
 import io.infinitic.common.proxies.ProxyHandler
-import io.infinitic.common.proxies.TaskInstanceProxyHandler
-import io.infinitic.common.proxies.WorkflowInstanceProxyHandler
+import io.infinitic.common.proxies.TaskProxyHandler
+import io.infinitic.common.proxies.WorkflowProxyHandler
 import io.infinitic.common.tasks.data.TaskMeta
 import io.infinitic.common.tasks.data.TaskOptions
 import io.infinitic.common.tasks.data.TaskTag
@@ -68,7 +68,7 @@ abstract class Workflow {
         tags: Set<String> = setOf(),
         options: TaskOptions = TaskOptions(),
         meta: Map<String, ByteArray> = mapOf()
-    ): T = TaskInstanceProxyHandler(
+    ): T = TaskProxyHandler(
         klass = klass,
         taskTags = tags.map { TaskTag(it) }.toSet(),
         taskOptions = options,
@@ -83,7 +83,7 @@ abstract class Workflow {
         tags: Set<String> = setOf(),
         options: WorkflowOptions = WorkflowOptions(),
         meta: Map<String, ByteArray> = mapOf()
-    ): T = WorkflowInstanceProxyHandler(
+    ): T = WorkflowProxyHandler(
         klass = klass,
         workflowTags = tags.map { WorkflowTag(it) }.toSet(),
         workflowOptions = options,

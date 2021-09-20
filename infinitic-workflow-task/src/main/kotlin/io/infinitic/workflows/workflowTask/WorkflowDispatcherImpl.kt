@@ -30,17 +30,13 @@ import io.infinitic.common.data.JobOptions
 import io.infinitic.common.data.MillisDuration
 import io.infinitic.common.data.MillisInstant
 import io.infinitic.common.data.Name
-import io.infinitic.common.proxies.ChannelInstanceProxyHandler
-import io.infinitic.common.proxies.ChannelSelectionProxyHandler
+import io.infinitic.common.proxies.ChannelProxyHandler
+import io.infinitic.common.proxies.Method
 import io.infinitic.common.proxies.ProxyHandler
-import io.infinitic.common.proxies.TaskInstanceProxyHandler
-import io.infinitic.common.proxies.TaskSelectionProxyHandler
-import io.infinitic.common.proxies.WorkflowInstanceProxyHandler
-import io.infinitic.common.proxies.WorkflowSelectionProxyHandler
-import io.infinitic.common.proxies.data.Method
-import io.infinitic.common.proxies.data.TaskInstance
-import io.infinitic.common.proxies.data.WorkflowInstance
+import io.infinitic.common.proxies.TaskProxyHandler
+import io.infinitic.common.proxies.WorkflowProxyHandler
 import io.infinitic.common.tasks.data.TaskMeta
+import io.infinitic.common.tasks.data.TaskName
 import io.infinitic.common.tasks.data.TaskOptions
 import io.infinitic.common.tasks.data.TaskTag
 import io.infinitic.common.workflows.data.channels.ChannelEventFilter
@@ -79,10 +75,10 @@ import io.infinitic.common.workflows.data.steps.StepStatus.OngoingFailure
 import io.infinitic.common.workflows.data.steps.StepStatus.Waiting
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskParameters
 import io.infinitic.common.workflows.data.workflows.WorkflowMeta
+import io.infinitic.common.workflows.data.workflows.WorkflowName
 import io.infinitic.common.workflows.data.workflows.WorkflowOptions
 import io.infinitic.common.workflows.data.workflows.WorkflowTag
-import io.infinitic.exceptions.clients.DispatchTaskSelectionException
-import io.infinitic.exceptions.clients.UseChannelOnNewWorkflowException
+import io.infinitic.exceptions.clients.InvalidChannelUsageException
 import io.infinitic.exceptions.thisShouldNotHappen
 import io.infinitic.exceptions.workflows.CanceledDeferredException
 import io.infinitic.exceptions.workflows.FailedDeferredException
@@ -124,19 +120,19 @@ internal class WorkflowDispatcherImpl(
         options: JobOptions?,
         meta: Map<String, ByteArray>?,
     ): Deferred<R> = when (handler) {
-        is TaskInstanceProxyHandler ->
+        is TaskProxyHandler ->
             dispatchNewTask(
-                handler.instance(),
+                handler.taskName,
                 handler.method(),
                 handler.simpleName,
                 tags?.map { TaskTag(it) }?.toSet() ?: handler.taskTags,
                 (options as TaskOptions?) ?: handler.taskOptions,
                 meta?.run { TaskMeta(this) } ?: handler.taskMeta
             )
-        is WorkflowInstanceProxyHandler -> when (handler.isMethodChannel()) {
-            true -> throw UseChannelOnNewWorkflowException(handler.klass.name)
+        is WorkflowProxyHandler -> when (handler.isMethodChannel()) {
+            true -> TODO("Not Yet Implemented")
             false -> dispatchNewWorkflow(
-                handler.instance(),
+                handler.workflowName,
                 handler.method(),
                 handler.simpleName,
                 tags?.map { WorkflowTag(it) }?.toSet() ?: handler.workflowTags,
@@ -144,18 +140,7 @@ internal class WorkflowDispatcherImpl(
                 meta?.run { WorkflowMeta(this) } ?: handler.workflowMeta
             )
         }
-        is TaskSelectionProxyHandler ->
-            throw DispatchTaskSelectionException(handler.klass.name, "dispatch")
-        is WorkflowSelectionProxyHandler ->
-            when (handler.isMethodChannel()) {
-                // special case of getting a channel from a workflow
-                true -> TODO("Not Yet Implemented")
-                false -> TODO("Not Yet Implemented")
-                // dispatchWorkflowMethod(handler.selection(), handler.method(), clientWaiting)
-            }
-        is ChannelSelectionProxyHandler ->
-            TODO("Not yet implemented")
-        is ChannelInstanceProxyHandler -> TODO()
+        is ChannelProxyHandler -> throw InvalidChannelUsageException()
     }
     /*
      * Async Branch dispatching
@@ -385,7 +370,7 @@ internal class WorkflowDispatcherImpl(
      * Task dispatching
      */
     private fun <R : Any?> dispatchNewTask(
-        task: TaskInstance,
+        taskName: TaskName,
         method: Method,
         simpleName: String,
         tags: Set<TaskTag>,
@@ -393,7 +378,7 @@ internal class WorkflowDispatcherImpl(
         meta: TaskMeta
     ): Deferred<R> = dispatchCommand(
         DispatchTask(
-            taskName = task.taskName,
+            taskName = taskName,
             methodParameters = method.methodParameters,
             methodParameterTypes = method.methodParameterTypes,
             methodName = method.methodName,
@@ -408,7 +393,7 @@ internal class WorkflowDispatcherImpl(
      * Workflow dispatching
      */
     private fun <R : Any?> dispatchNewWorkflow(
-        workflow: WorkflowInstance,
+        workflowName: WorkflowName,
         method: Method,
         simpleName: String,
         tags: Set<WorkflowTag>,
@@ -416,7 +401,7 @@ internal class WorkflowDispatcherImpl(
         meta: WorkflowMeta
     ): Deferred<R> = dispatchCommand(
         DispatchChildWorkflow(
-            childWorkflowName = workflow.workflowName,
+            childWorkflowName = workflowName,
             childMethodName = method.methodName,
             childMethodParameterTypes = method.methodParameterTypes,
             childMethodParameters = method.methodParameters,

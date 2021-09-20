@@ -23,18 +23,14 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.common.proxies.data
+package io.infinitic.common.proxies
 
-import io.infinitic.common.tasks.data.TaskId
-import io.infinitic.common.tasks.data.TaskName
-import io.infinitic.common.tasks.data.TaskTag
+import io.infinitic.common.data.methods.MethodName
+import io.infinitic.common.data.methods.MethodParameterTypes
+import io.infinitic.common.data.methods.MethodParameters
 
-data class TaskSelection(
-    val taskName: TaskName,
-    val perTaskId: TaskId? = null,
-    val perTaskTag: TaskTag? = null,
-) {
-    init {
-        require((perTaskId == null && perTaskTag != null) || (perTaskId != null && perTaskTag == null))
-    }
-}
+data class Method(
+    var methodName: MethodName,
+    val methodParameterTypes: MethodParameterTypes,
+    val methodParameters: MethodParameters,
+)

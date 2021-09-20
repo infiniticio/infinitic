@@ -27,25 +27,27 @@ package io.infinitic.client.deferred
 
 import io.infinitic.client.Deferred
 import io.infinitic.client.dispatcher.ClientDispatcher
-import io.infinitic.common.proxies.data.WorkflowSelection
+import io.infinitic.common.workflows.data.workflows.WorkflowId
+import io.infinitic.common.workflows.data.workflows.WorkflowName
 import io.infinitic.exceptions.thisShouldNotHappen
 import java.util.UUID
 import java.util.concurrent.CompletableFuture
 
 class DeferredWorkflow<R : Any?> (
-    private val workflow: WorkflowSelection,
+    private val workflowName: WorkflowName,
+    private val workflowId: WorkflowId,
     private val clientWaiting: Boolean,
     private val dispatcher: ClientDispatcher,
     private val future: CompletableFuture<Unit>? = null
 ) : Deferred<R> {
 
-    override fun cancel() = dispatcher.cancelWorkflow(workflow)
+    override fun cancel() = dispatcher.cancelWorkflow(workflowName, workflowId)
 
-    override fun retry() = dispatcher.retryWorkflow(workflow)
+    override fun retry() = dispatcher.retryWorkflow(workflowName, workflowId)
 
-    override fun await(): R = dispatcher.await(workflow, clientWaiting)
+    override fun await(): R = dispatcher.awaitWorkflow(workflowName, workflowId, clientWaiting)
 
     override fun join(): Deferred<R> = this.also { future?.join() ?: thisShouldNotHappen() }
 
-    override val id: UUID by lazy { workflow.perWorkflowId!!.id }
+    override val id: UUID by lazy { workflowId.id }
 }
