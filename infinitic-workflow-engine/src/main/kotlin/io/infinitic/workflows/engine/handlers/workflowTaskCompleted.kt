@@ -65,15 +65,15 @@ import io.infinitic.workflows.engine.helpers.stepTerminated
 import io.infinitic.workflows.engine.output.WorkflowEngineOutput
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
-import io.infinitic.common.clients.messages.WorkflowCompleted as WorkflowCompletedInClient
+import io.infinitic.common.clients.messages.MethodCompleted as MethodCompletedInClient
 import io.infinitic.common.workflows.data.commands.DispatchTask as DispatchTaskInWorkflow
 
 internal fun CoroutineScope.workflowTaskCompleted(
     workflowEngineOutput: WorkflowEngineOutput,
     state: WorkflowState,
-    msg: TaskCompleted
+    message: TaskCompleted
 ) {
-    val workflowTaskOutput = msg.taskReturnValue.get() as WorkflowTaskReturnValue
+    val workflowTaskOutput = message.taskReturnValue.get() as WorkflowTaskReturnValue
 
     // retrieve current methodRun
     val methodRun = state.getRunningMethodRun()
@@ -137,9 +137,10 @@ internal fun CoroutineScope.workflowTaskCompleted(
 
         // send output back to waiting clients
         methodRun.waitingClients.map {
-            val workflowCompleted = WorkflowCompletedInClient(
+            val workflowCompleted = MethodCompletedInClient(
                 clientName = it,
                 workflowId = state.workflowId,
+                methodRunId = methodRun.methodRunId,
                 workflowReturnValue = methodRun.methodReturnValue!!
             )
             launch { workflowEngineOutput.sendEventsToClient(workflowCompleted) }

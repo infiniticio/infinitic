@@ -36,13 +36,13 @@ import kotlinx.coroutines.CoroutineScope
 internal fun CoroutineScope.childWorkflowCanceled(
     workflowEngineOutput: WorkflowEngineOutput,
     state: WorkflowState,
-    msg: ChildWorkflowCanceled
+    message: ChildWorkflowCanceled
 ) {
     commandTerminated(
         workflowEngineOutput,
         state,
-        msg.methodRunId,
-        CommandId(msg.childWorkflowId),
+        message.methodRunId,
+        CommandId(message.childWorkflowId),
         Canceled(state.workflowTaskIndex)
     )
 }

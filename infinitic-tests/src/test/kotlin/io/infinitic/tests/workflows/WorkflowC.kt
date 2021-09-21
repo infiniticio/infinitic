@@ -23,10 +23,47 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.common.clients.messages.interfaces
+package io.infinitic.tests.workflows
 
-import io.infinitic.common.workflows.data.workflows.WorkflowId
+import io.infinitic.tests.tasks.TaskA
+import io.infinitic.workflows.SendChannel
+import io.infinitic.workflows.Workflow
 
-interface WorkflowMessage {
-    val workflowId: WorkflowId
+interface WorkflowC {
+    val log: String
+    val channelA: SendChannel<String>
+    fun receive(str: String): String
+    fun concat(str: String): String
+    fun add(str: String): String
+}
+
+class WorkflowCImpl : Workflow(), WorkflowC {
+    override val channelA = channel<String>()
+    val taskA = taskStub(TaskA::class.java)
+
+    override var log = ""
+
+    override fun receive(str: String): String {
+        log += str
+
+        val r = channelA.receive().await()
+
+        log += r
+
+        return log
+    }
+
+    override fun concat(str: String): String {
+
+        log = taskA.concat(log, str)
+
+        return log
+    }
+
+    override fun add(str: String): String {
+
+        log += str
+
+        return log
+    }
 }

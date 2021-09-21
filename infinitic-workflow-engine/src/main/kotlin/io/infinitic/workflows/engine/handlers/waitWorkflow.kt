@@ -25,20 +25,30 @@
 
 package io.infinitic.workflows.engine.handlers
 
-import io.infinitic.common.clients.messages.WorkflowAlreadyCompleted
+import io.infinitic.common.clients.messages.MethodAlreadyCompleted
 import io.infinitic.common.workflows.engine.messages.WaitWorkflow
 import io.infinitic.common.workflows.engine.state.WorkflowState
 import io.infinitic.workflows.engine.output.WorkflowEngineOutput
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
-internal fun CoroutineScope.waitWorkflow(output: WorkflowEngineOutput, state: WorkflowState, msg: WaitWorkflow) {
-    when (val main = state.getMainMethodRun()) {
+internal fun CoroutineScope.waitWorkflow(
+    output: WorkflowEngineOutput,
+    state: WorkflowState,
+    message: WaitWorkflow
+) {
+    when (val methodRun = state.getMethodRun(message.methodRunId)) {
         null -> {
-            // main branch is already completed (can not be canceled, the state would be deleted)
-            val workflowAlreadyCompleted = WorkflowAlreadyCompleted(msg.clientName, msg.workflowId)
+            println(state.methodRuns)
+            println(message)
+            // this branch is already completed (can not be canceled, the state would be deleted)
+            val workflowAlreadyCompleted = MethodAlreadyCompleted(
+                message.clientName,
+                message.workflowId,
+                message.methodRunId
+            )
             launch { output.sendEventsToClient(workflowAlreadyCompleted) }
         }
-        else -> main.waitingClients.add(msg.clientName)
+        else -> methodRun.waitingClients.add(message.clientName)
     }
 }

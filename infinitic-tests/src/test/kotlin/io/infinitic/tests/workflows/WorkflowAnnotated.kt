@@ -36,7 +36,7 @@ interface WorkflowAnnotated {
 }
 
 class WorkflowAnnotatedImpl : Workflow(), WorkflowAnnotated {
-    private val task = newTaskStub(TaskAnnotated::class.java)
+    private val task = taskStub(TaskAnnotated::class.java)
 
     override fun foo(input: String): String {
         var str = input

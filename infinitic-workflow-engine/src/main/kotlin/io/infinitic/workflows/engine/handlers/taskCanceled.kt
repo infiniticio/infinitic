@@ -36,16 +36,16 @@ import kotlinx.coroutines.CoroutineScope
 internal fun CoroutineScope.taskCanceled(
     workflowEngineOutput: WorkflowEngineOutput,
     state: WorkflowState,
-    msg: TaskCanceled
+    message: TaskCanceled
 ) {
 
-    when (msg.isWorkflowTask()) {
+    when (message.isWorkflowTask()) {
         true -> TODO()
         false -> commandTerminated(
             workflowEngineOutput,
             state,
-            msg.methodRunId,
-            CommandId(msg.taskId),
+            message.methodRunId,
+            CommandId(message.taskId),
             Canceled(state.workflowTaskIndex)
         )
     }

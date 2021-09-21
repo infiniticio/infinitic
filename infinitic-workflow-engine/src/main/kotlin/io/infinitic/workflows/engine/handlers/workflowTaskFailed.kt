@@ -25,7 +25,7 @@
 
 package io.infinitic.workflows.engine.handlers
 
-import io.infinitic.common.clients.messages.WorkflowFailed
+import io.infinitic.common.clients.messages.MethodFailed
 import io.infinitic.common.workflows.data.commands.CommandId
 import io.infinitic.common.workflows.data.commands.CommandStatus.Canceled
 import io.infinitic.common.workflows.data.commands.CommandStatus.Completed
@@ -42,28 +42,28 @@ import kotlinx.coroutines.launch
 internal fun CoroutineScope.workflowTaskFailed(
     output: WorkflowEngineOutput,
     state: WorkflowState,
-    msg: TaskFailed
+    message: TaskFailed
 ) {
     // if on main path, forward the error
     if (state.isRunningWorkflowTaskOnMainPath()) {
         val methodRun = state.getRunningMethodRun()
 
         // if the error is due to a a command failure, we enrich the error
-        val error = when (msg.error.errorCause == null && msg.error.whereId != null) {
-            true -> msg.error.copy(
-                errorCause = when (val commandStatus = methodRun.getPastCommand(CommandId(msg.error.whereId!!)).commandStatus) {
+        val error = when (message.error.errorCause == null && message.error.whereId != null) {
+            true -> message.error.copy(
+                errorCause = when (val commandStatus = methodRun.getPastCommand(CommandId(message.error.whereId!!)).commandStatus) {
                     is Completed -> thisShouldNotHappen()
                     Running -> thisShouldNotHappen()
                     is CurrentlyFailed -> commandStatus.error
                     is Canceled -> null
                 }
             )
-            false -> msg.error
+            false -> message.error
         }
 
         // send to waiting clients
         methodRun.waitingClients.forEach {
-            val workflowFailed = WorkflowFailed(it, state.workflowId, error)
+            val workflowFailed = MethodFailed(it, state.workflowId, methodRun.methodRunId, error)
             launch { output.sendEventsToClient(workflowFailed) }
         }
 

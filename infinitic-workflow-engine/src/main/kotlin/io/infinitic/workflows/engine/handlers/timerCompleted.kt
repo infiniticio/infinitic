@@ -37,13 +37,13 @@ import kotlinx.coroutines.CoroutineScope
 internal fun CoroutineScope.timerCompleted(
     workflowEngineOutput: WorkflowEngineOutput,
     state: WorkflowState,
-    msg: TimerCompleted
+    message: TimerCompleted
 ) {
     commandTerminated(
         workflowEngineOutput,
         state,
-        msg.methodRunId,
-        CommandId(msg.timerId),
+        message.methodRunId,
+        CommandId(message.timerId),
         Completed(CommandReturnValue.now(), state.workflowTaskIndex)
     )
 }

@@ -25,32 +25,36 @@
 
 package io.infinitic.workflows.engine.handlers
 
-import io.infinitic.common.workflows.data.commands.CommandId
-import io.infinitic.common.workflows.data.commands.CommandStatus.CurrentlyFailed
-import io.infinitic.common.workflows.engine.messages.TaskFailed
+import io.infinitic.common.workflows.data.methodRuns.MethodRun
+import io.infinitic.common.workflows.data.methodRuns.MethodRunPosition
+import io.infinitic.common.workflows.data.workflowTasks.plus
+import io.infinitic.common.workflows.engine.messages.DispatchMethodRun
 import io.infinitic.common.workflows.engine.state.WorkflowState
-import io.infinitic.workflows.engine.helpers.commandTerminated
+import io.infinitic.workflows.engine.helpers.dispatchWorkflowTask
 import io.infinitic.workflows.engine.output.WorkflowEngineOutput
 import kotlinx.coroutines.CoroutineScope
 
-internal fun CoroutineScope.taskFailed(
+internal fun CoroutineScope.dispatchMethodRun(
     workflowEngineOutput: WorkflowEngineOutput,
     state: WorkflowState,
-    message: TaskFailed
-) {
+    message: DispatchMethodRun
+): WorkflowState {
+    val methodRun = MethodRun(
+        methodRunId = message.methodRunId,
+        waitingClients = mutableSetOf(),
+        parentWorkflowId = message.parentWorkflowId,
+        parentWorkflowName = message.parentWorkflowName,
+        parentMethodRunId = message.parentMethodRunId,
+        methodName = message.methodName,
+        methodParameterTypes = message.methodParameterTypes,
+        methodParameters = message.methodParameters,
+        workflowTaskIndexAtStart = state.workflowTaskIndex,
+        propertiesNameHashAtStart = state.currentPropertiesNameHash.toMap()
+    )
 
-    when (message.isWorkflowTask()) {
-        true -> workflowTaskFailed(
-            workflowEngineOutput,
-            state,
-            message
-        )
-        false -> commandTerminated(
-            workflowEngineOutput,
-            state,
-            message.methodRunId,
-            CommandId(message.taskId),
-            CurrentlyFailed(message.error, state.workflowTaskIndex)
-        )
-    }
+    state.methodRuns.add(methodRun)
+
+    dispatchWorkflowTask(workflowEngineOutput, state, methodRun, MethodRunPosition(""))
+
+    return state
 }

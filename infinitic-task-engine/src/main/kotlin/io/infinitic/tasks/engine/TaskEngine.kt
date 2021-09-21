@@ -25,7 +25,7 @@
 
 package io.infinitic.tasks.engine
 
-import io.infinitic.common.clients.messages.UnknownTask
+import io.infinitic.common.clients.messages.TaskUnknown
 import io.infinitic.common.clients.transport.SendToClient
 import io.infinitic.common.metrics.perName.messages.TaskStatusUpdated
 import io.infinitic.common.metrics.perName.transport.SendToMetricsPerName
@@ -57,7 +57,6 @@ import io.infinitic.tasks.engine.storage.LoggedTaskStateStorage
 import io.infinitic.tasks.engine.storage.TaskStateStorage
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import mu.KotlinLogging
 import io.infinitic.common.clients.messages.TaskCanceled as TaskCanceledInClient
@@ -103,8 +102,8 @@ class TaskEngine(
             }
 
             if (message is WaitTask) {
-                val unknownTask = UnknownTask(message.clientName, message.taskId)
-                launch { sendToClient(unknownTask) }
+                val taskUnknown = TaskUnknown(message.clientName, message.taskId)
+                launch { sendToClient(taskUnknown) }
             }
 
             // is should happen only if a previous retry or a cancel command has terminated this task

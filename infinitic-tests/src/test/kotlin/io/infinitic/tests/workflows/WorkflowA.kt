@@ -121,7 +121,7 @@ class WorkflowAImpl : Workflow(), WorkflowA {
     override val channelA = channel<String>()
     override val channelB = channel<String>()
 
-    private val taskA = newTaskStub(TaskA::class.java, tags = setOf("foo", "bar"), meta = mapOf("foo" to "bar".toByteArray()))
+    private val taskA = taskStub(TaskA::class.java, tags = setOf("foo", "bar"), meta = mapOf("foo" to "bar".toByteArray()))
     private var p1 = ""
 
     override fun empty() = "void"
@@ -131,7 +131,7 @@ class WorkflowAImpl : Workflow(), WorkflowA {
     override fun parent() = taskA.parent()
 
     override fun wparent(): String {
-        val workflowA = newWorkflowStub(WorkflowA::class.java)
+        val workflowA = workflowStub(WorkflowA::class.java)
         return workflowA.parent()
     }
 
@@ -339,7 +339,7 @@ class WorkflowAImpl : Workflow(), WorkflowA {
     }
 
     override fun child1(): String {
-        val workflowB = newWorkflowStub(WorkflowB::class.java)
+        val workflowB = workflowStub(WorkflowB::class.java)
         var str: String = workflowB.concat("-")
         str = taskA.concat(str, "-")
 
@@ -347,7 +347,7 @@ class WorkflowAImpl : Workflow(), WorkflowA {
     }
 
     override fun child2(): String {
-        val workflowB = newWorkflowStub(WorkflowB::class.java)
+        val workflowB = workflowStub(WorkflowB::class.java)
         val str = taskA.reverse("12")
         val d = dispatch(workflowB::concat)(str)
 
@@ -583,13 +583,13 @@ class WorkflowAImpl : Workflow(), WorkflowA {
     }
 
     override fun failing6() {
-        val workflowABis = newWorkflowStub(WorkflowA::class.java)
+        val workflowABis = workflowStub(WorkflowA::class.java)
 
         return workflowABis.failing2()
     }
 
     override fun failing7(): Long {
-        val workflowABis = newWorkflowStub(WorkflowA::class.java)
+        val workflowABis = workflowStub(WorkflowA::class.java)
 
         async {
             workflowABis.failing2()
@@ -637,7 +637,7 @@ class WorkflowAImpl : Workflow(), WorkflowA {
     }
 
     override fun cancel1() {
-        val taggedChild = newWorkflowStub(WorkflowA::class.java, tags = setOf("foo", "bar"))
+        val taggedChild = workflowStub(WorkflowA::class.java, tags = setOf("foo", "bar"))
 
         taggedChild.channel1()
     }

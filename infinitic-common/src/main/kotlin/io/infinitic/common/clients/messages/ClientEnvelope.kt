@@ -37,13 +37,13 @@ data class ClientEnvelope(
     private val taskCompleted: TaskCompleted? = null,
     private val taskCanceled: TaskCanceled? = null,
     private val taskFailed: TaskFailed? = null,
-    private val unknownTask: UnknownTask? = null,
+    private val taskUnknown: TaskUnknown? = null,
     private val taskIdsPerTag: TaskIdsPerTag? = null,
-    private val workflowCompleted: WorkflowCompleted? = null,
-    private val workflowCanceled: WorkflowCanceled? = null,
-    private val workflowFailed: WorkflowFailed? = null,
-    private val unknownWorkflow: UnknownWorkflow? = null,
-    private val workflowAlreadyCompleted: WorkflowAlreadyCompleted? = null,
+    private val workflowCompleted: MethodCompleted? = null,
+    private val workflowCanceled: MethodCanceled? = null,
+    private val workflowFailed: MethodFailed? = null,
+    private val unknownWorkflow: MethodUnknown? = null,
+    private val workflowAlreadyCompleted: MethodAlreadyCompleted? = null,
     private val workflowIdsPerTag: WorkflowIdsPerTag? = null
 ) : Envelope<ClientMessage> {
     init {
@@ -51,7 +51,7 @@ data class ClientEnvelope(
             taskCompleted,
             taskCanceled,
             taskFailed,
-            unknownTask,
+            taskUnknown,
             taskIdsPerTag,
             workflowCompleted,
             workflowCanceled,
@@ -83,37 +83,37 @@ data class ClientEnvelope(
                 ClientMessageType.TASK_FAILED,
                 taskFailed = msg
             )
-            is UnknownTask -> ClientEnvelope(
+            is TaskUnknown -> ClientEnvelope(
                 msg.clientName,
                 ClientMessageType.UNKNOWN_TASK,
-                unknownTask = msg
+                taskUnknown = msg
             )
             is TaskIdsPerTag -> ClientEnvelope(
                 msg.clientName,
                 ClientMessageType.TASK_IDS_PER_TAG,
                 taskIdsPerTag = msg
             )
-            is WorkflowCompleted -> ClientEnvelope(
+            is MethodCompleted -> ClientEnvelope(
                 msg.clientName,
                 ClientMessageType.WORKFLOW_COMPLETED,
                 workflowCompleted = msg
             )
-            is WorkflowCanceled -> ClientEnvelope(
+            is MethodCanceled -> ClientEnvelope(
                 msg.clientName,
                 ClientMessageType.WORKFLOW_CANCELED,
                 workflowCanceled = msg
             )
-            is WorkflowFailed -> ClientEnvelope(
+            is MethodFailed -> ClientEnvelope(
                 msg.clientName,
                 ClientMessageType.WORKFLOW_FAILED,
                 workflowFailed = msg
             )
-            is UnknownWorkflow -> ClientEnvelope(
+            is MethodUnknown -> ClientEnvelope(
                 msg.clientName,
                 ClientMessageType.UNKNOWN_WORKFLOW,
                 unknownWorkflow = msg
             )
-            is WorkflowAlreadyCompleted -> ClientEnvelope(
+            is MethodAlreadyCompleted -> ClientEnvelope(
                 msg.clientName,
                 ClientMessageType.WORKFLOW_ALREADY_COMPLETED,
                 workflowAlreadyCompleted = msg
@@ -129,7 +129,7 @@ data class ClientEnvelope(
     }
 
     override fun message(): ClientMessage = when (type) {
-        ClientMessageType.UNKNOWN_TASK -> unknownTask!!
+        ClientMessageType.UNKNOWN_TASK -> taskUnknown!!
         ClientMessageType.TASK_COMPLETED -> taskCompleted!!
         ClientMessageType.TASK_CANCELED -> taskCanceled!!
         ClientMessageType.TASK_FAILED -> taskFailed!!

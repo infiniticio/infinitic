@@ -28,6 +28,7 @@ package io.infinitic.workflows.engine.handlers
 import io.infinitic.common.workflows.data.methodRuns.MethodRun
 import io.infinitic.common.workflows.data.methodRuns.MethodRunId
 import io.infinitic.common.workflows.data.methodRuns.MethodRunPosition
+import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskIndex
 import io.infinitic.common.workflows.engine.messages.DispatchWorkflow
 import io.infinitic.common.workflows.engine.state.WorkflowState
 import io.infinitic.workflows.engine.helpers.dispatchWorkflowTask
@@ -50,6 +51,7 @@ internal fun CoroutineScope.dispatchWorkflow(
         methodName = message.methodName,
         methodParameterTypes = message.methodParameterTypes,
         methodParameters = message.methodParameters,
+        workflowTaskIndexAtStart = WorkflowTaskIndex(0),
         propertiesNameHashAtStart = mapOf()
     )
 

@@ -39,6 +39,7 @@ import io.infinitic.common.tasks.tags.messages.TaskTagEngineMessage
 import io.infinitic.common.workflows.data.channels.ChannelName
 import io.infinitic.common.workflows.data.channels.ChannelSignal
 import io.infinitic.common.workflows.data.channels.ChannelSignalType
+import io.infinitic.common.workflows.data.methodRuns.MethodRunId
 import io.infinitic.common.workflows.data.workflows.WorkflowCancellationReason
 import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.data.workflows.WorkflowMeta
@@ -46,6 +47,7 @@ import io.infinitic.common.workflows.data.workflows.WorkflowName
 import io.infinitic.common.workflows.data.workflows.WorkflowOptions
 import io.infinitic.common.workflows.data.workflows.WorkflowTag
 import io.infinitic.common.workflows.engine.messages.CancelWorkflow
+import io.infinitic.common.workflows.engine.messages.DispatchMethodRun
 import io.infinitic.common.workflows.engine.messages.DispatchWorkflow
 import io.infinitic.common.workflows.engine.messages.SendToChannel
 import io.infinitic.common.workflows.engine.messages.WaitWorkflow
@@ -328,6 +330,7 @@ class ClientWorkflowTests : StringSpec({
         msg shouldBe WaitWorkflow(
             workflowId = msg.workflowId,
             workflowName = WorkflowName(FakeWorkflow::class.java.name),
+            methodRunId = MethodRunId(msg.workflowId.id),
             clientName = client.clientName
         )
     }
@@ -547,5 +550,26 @@ class ClientWorkflowTests : StringSpec({
         shouldThrow<InvalidStubException> {
             client.getIds(fakeWorkflow.channel, "foo")
         }
+    }
+
+    "Should be able to dispatch a workflow method with a one primitive as parameter" {
+        // when
+        val id = UUID.randomUUID()
+        val deferred = client.dispatch(fakeWorkflow::m1, id)(0).join()
+        // then
+        workflowSlot.isCaptured shouldBe true
+        val msg = workflowSlot.captured as DispatchMethodRun
+        msg shouldBe DispatchMethodRun(
+            workflowId = WorkflowId(id),
+            workflowName = WorkflowName(FakeWorkflow::class.java.name),
+            methodRunId = MethodRunId(deferred.id),
+            clientName = client.clientName,
+            parentWorkflowId = null,
+            parentWorkflowName = null,
+            parentMethodRunId = null,
+            methodName = MethodName("m1"),
+            methodParameterTypes = MethodParameterTypes(listOf(Integer::class.java.name)),
+            methodParameters = MethodParameters.from(0)
+        )
     }
 })

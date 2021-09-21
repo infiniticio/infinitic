@@ -25,7 +25,7 @@
 
 package io.infinitic.workflows.engine
 
-import io.infinitic.common.clients.messages.UnknownWorkflow
+import io.infinitic.common.clients.messages.MethodUnknown
 import io.infinitic.common.clients.transport.SendToClient
 import io.infinitic.common.tasks.engine.SendToTaskEngine
 import io.infinitic.common.tasks.tags.SendToTaskTagEngine
@@ -36,8 +36,8 @@ import io.infinitic.common.workflows.engine.messages.ChildWorkflowCanceled
 import io.infinitic.common.workflows.engine.messages.ChildWorkflowCompleted
 import io.infinitic.common.workflows.engine.messages.ChildWorkflowFailed
 import io.infinitic.common.workflows.engine.messages.CompleteWorkflow
+import io.infinitic.common.workflows.engine.messages.DispatchMethodRun
 import io.infinitic.common.workflows.engine.messages.DispatchWorkflow
-import io.infinitic.common.workflows.engine.messages.DispatchWorkflowMethod
 import io.infinitic.common.workflows.engine.messages.RetryWorkflowTask
 import io.infinitic.common.workflows.engine.messages.SendToChannel
 import io.infinitic.common.workflows.engine.messages.TaskCanceled
@@ -54,6 +54,7 @@ import io.infinitic.workflows.engine.handlers.cancelWorkflow
 import io.infinitic.workflows.engine.handlers.childWorkflowCanceled
 import io.infinitic.workflows.engine.handlers.childWorkflowCompleted
 import io.infinitic.workflows.engine.handlers.childWorkflowFailed
+import io.infinitic.workflows.engine.handlers.dispatchMethodRun
 import io.infinitic.workflows.engine.handlers.dispatchWorkflow
 import io.infinitic.workflows.engine.handlers.retryWorkflowTask
 import io.infinitic.workflows.engine.handlers.sendToChannel
@@ -124,7 +125,7 @@ class WorkflowEngine(
             }
 
             if (message is WaitWorkflow) {
-                val unknownWorkflow = UnknownWorkflow(message.clientName, message.workflowId)
+                val unknownWorkflow = MethodUnknown(message.clientName, message.workflowId, message.methodRunId)
                 launch { output.sendEventsToClient(unknownWorkflow) }
             }
             // discard all other messages if workflow is already terminated
@@ -211,7 +212,7 @@ class WorkflowEngine(
         @Suppress("UNUSED_VARIABLE")
         val m = when (message) {
             is DispatchWorkflow -> thisShouldNotHappen("DispatchWorkflow should not reach this point")
-            is DispatchWorkflowMethod -> TODO()
+            is DispatchMethodRun -> dispatchMethodRun(output, state, message)
             is CancelWorkflow -> cancelWorkflow(output, state, message)
             is SendToChannel -> sendToChannel(output, state, message)
             is WaitWorkflow -> waitWorkflow(output, state, message)

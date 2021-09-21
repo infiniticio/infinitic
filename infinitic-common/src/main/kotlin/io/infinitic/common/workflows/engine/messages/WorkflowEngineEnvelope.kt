@@ -44,7 +44,7 @@ data class WorkflowEngineEnvelope(
     val childWorkflowCompleted: ChildWorkflowCompleted? = null,
     val timerCompleted: TimerCompleted? = null,
     val dispatchWorkflow: DispatchWorkflow? = null,
-    val dispatchWorkflowMethod: DispatchWorkflowMethod? = null,
+    val dispatchMethodRun: DispatchMethodRun? = null,
     val taskFailed: TaskFailed? = null,
     val taskCanceled: TaskCanceled? = null,
     val taskCompleted: TaskCompleted? = null
@@ -61,7 +61,7 @@ data class WorkflowEngineEnvelope(
             childWorkflowCompleted,
             timerCompleted,
             dispatchWorkflow,
-            dispatchWorkflowMethod,
+            dispatchMethodRun,
             taskFailed,
             taskCanceled,
             taskCompleted
@@ -136,10 +136,10 @@ data class WorkflowEngineEnvelope(
                 WorkflowEngineMessageType.DISPATCH_WORKFLOW,
                 dispatchWorkflow = msg
             )
-            is DispatchWorkflowMethod -> WorkflowEngineEnvelope(
+            is DispatchMethodRun -> WorkflowEngineEnvelope(
                 msg.workflowId,
                 WorkflowEngineMessageType.DISPATCH_WORKFLOW_METHOD,
-                dispatchWorkflowMethod = msg
+                dispatchMethodRun = msg
             )
             is TaskFailed -> WorkflowEngineEnvelope(
                 msg.workflowId,
@@ -172,7 +172,7 @@ data class WorkflowEngineEnvelope(
         WorkflowEngineMessageType.CHILD_WORKFLOW_COMPLETED -> childWorkflowCompleted!!
         WorkflowEngineMessageType.TIMER_COMPLETED -> timerCompleted!!
         WorkflowEngineMessageType.DISPATCH_WORKFLOW -> dispatchWorkflow!!
-        WorkflowEngineMessageType.DISPATCH_WORKFLOW_METHOD -> dispatchWorkflowMethod!!
+        WorkflowEngineMessageType.DISPATCH_WORKFLOW_METHOD -> dispatchMethodRun!!
         WorkflowEngineMessageType.TASK_FAILED -> taskFailed!!
         WorkflowEngineMessageType.TASK_CANCELED -> taskCanceled!!
         WorkflowEngineMessageType.TASK_COMPLETED -> taskCompleted!!

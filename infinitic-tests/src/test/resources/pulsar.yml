@@ -52,6 +52,9 @@ workflows:
   - name: io.infinitic.tests.workflows.WorkflowB
     class: io.infinitic.tests.workflows.WorkflowBImpl
     concurrency: 2
+  - name: io.infinitic.tests.workflows.WorkflowC
+    class: io.infinitic.tests.workflows.WorkflowCImpl
+    concurrency: 2
   - name: annotatedWorkflow
     class: io.infinitic.tests.workflows.WorkflowAnnotatedImpl
     concurrency: 2

@@ -39,12 +39,12 @@ private val logger = KotlinLogging.logger {}
 internal fun CoroutineScope.sendToChannel(
     workflowEngineOutput: WorkflowEngineOutput,
     state: WorkflowState,
-    msg: SendToChannel
+    message: SendToChannel
 ) {
     state.receivingChannels.firstOrNull {
-        it.channelName == msg.channelName &&
-            (it.channelSignalType == null || msg.channelSignalTypes.contains(it.channelSignalType)) &&
-            (it.channelEventFilter == null || it.channelEventFilter!!.check(msg.channelSignal))
+        it.channelName == message.channelName &&
+            (it.channelSignalType == null || message.channelSignalTypes.contains(it.channelSignalType)) &&
+            (it.channelEventFilter == null || it.channelEventFilter!!.check(message.channelSignal))
     }
         ?.also {
             state.receivingChannels.remove(it)
@@ -54,8 +54,8 @@ internal fun CoroutineScope.sendToChannel(
                 state,
                 it.methodRunId,
                 it.commandId,
-                Completed(CommandReturnValue(msg.channelSignal.serializedData), state.workflowTaskIndex)
+                Completed(CommandReturnValue(message.channelSignal.serializedData), state.workflowTaskIndex)
             )
         }
-        ?: logger.debug { "discarding non-waited event $msg" }
+        ?: logger.debug { "discarding non-waited event $message" }
 }

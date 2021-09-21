@@ -81,11 +81,11 @@ data class DispatchWorkflow(
 ) : WorkflowEngineMessage()
 
 @Serializable
-data class DispatchWorkflowMethod(
+data class DispatchMethodRun(
     override val workflowId: WorkflowId,
     override val workflowName: WorkflowName,
+    val methodRunId: MethodRunId,
     val clientName: ClientName,
-    val clientWaiting: Boolean,
     var parentWorkflowId: WorkflowId?,
     var parentWorkflowName: WorkflowName?,
     var parentMethodRunId: MethodRunId?,
@@ -98,6 +98,7 @@ data class DispatchWorkflowMethod(
 data class WaitWorkflow(
     override val workflowId: WorkflowId,
     override val workflowName: WorkflowName,
+    val methodRunId: MethodRunId,
     val clientName: ClientName
 ) : WorkflowEngineMessage()
 

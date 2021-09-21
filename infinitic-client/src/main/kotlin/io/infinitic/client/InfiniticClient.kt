@@ -40,6 +40,7 @@ import io.infinitic.common.tasks.data.TaskOptions
 import io.infinitic.common.tasks.data.TaskTag
 import io.infinitic.common.tasks.engine.SendToTaskEngine
 import io.infinitic.common.tasks.tags.SendToTaskTagEngine
+import io.infinitic.common.workflows.data.methodRuns.MethodRunId
 import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.data.workflows.WorkflowMeta
 import io.infinitic.common.workflows.data.workflows.WorkflowOptions
@@ -49,6 +50,7 @@ import io.infinitic.common.workflows.tags.SendToWorkflowTagEngine
 import io.infinitic.exceptions.clients.InvalidChannelException
 import io.infinitic.exceptions.clients.InvalidInterfaceException
 import io.infinitic.exceptions.clients.InvalidStubException
+import io.infinitic.exceptions.clients.InvalidWorkflowException
 import io.infinitic.exceptions.thisShouldNotHappen
 import io.infinitic.workflows.SendChannel
 import kotlinx.coroutines.CoroutineScope
@@ -312,6 +314,129 @@ abstract class InfiniticClient : Closeable {
         }
     }
 
+    /**
+     *  Dispatch a method without parameter for a running workflow targeted by id
+     */
+    fun <R : Any?> dispatch(
+        method: KFunction0<R>,
+        id: UUID
+    ): () -> Deferred<R> = {
+        dispatch(id) {
+            method.check().call()
+        }
+    }
+
+    /**
+     *  Dispatch a method with 1 parameter for a running workflow targeted by id
+     */
+    fun <P1, R : Any?> dispatch(
+        method: KFunction1<P1, R>,
+        id: UUID
+    ): (P1) -> Deferred<R> = { p1: P1 ->
+        dispatch(id) {
+            method.check().call(p1)
+        }
+    }
+
+    /**
+     *  Dispatch a method with 2 parameters for a running workflow targeted by id
+     */
+    fun <P1, P2, R : Any?> dispatch(
+        method: KFunction2<P1, P2, R>,
+        id: UUID
+    ): (P1, P2) -> Deferred<R> = { p1: P1, p2: P2 ->
+        dispatch(id) {
+            method.check().call(p1, p2)
+        }
+    }
+
+    /**
+     *  Dispatch a method with 3 parameters for a running workflow targeted by id
+     */
+    fun <P1, P2, P3, R : Any?> dispatch(
+        method: KFunction3<P1, P2, P3, R>,
+        id: UUID
+    ): (P1, P2, P3) -> Deferred<R> = { p1: P1, p2: P2, p3: P3 ->
+        dispatch(id) {
+            method.check().call(p1, p2, p3)
+        }
+    }
+
+    /**
+     *  Dispatch a method with 4 parameters for a running workflow targeted by id
+     */
+    fun <P1, P2, P3, P4, R : Any?> dispatch(
+        method: KFunction4<P1, P2, P3, P4, R>,
+        id: UUID
+    ): (P1, P2, P3, P4) -> Deferred<R> = { p1: P1, p2: P2, p3: P3, p4: P4 ->
+        dispatch(id) {
+            method.check().call(p1, p2, p3, p4)
+        }
+    }
+
+    /**
+     *  Dispatch a method with 5 parameters for a running workflow targeted by id
+     */
+    fun <P1, P2, P3, P4, P5, R : Any?> dispatch(
+        method: KFunction5<P1, P2, P3, P4, P5, R>,
+        id: UUID
+    ): (P1, P2, P3, P4, P5) -> Deferred<R> = { p1: P1, p2: P2, p3: P3, p4: P4, p5: P5 ->
+        dispatch(id) {
+            method.check().call(p1, p2, p3, p4, p5)
+        }
+    }
+
+    /**
+     *  Dispatch a method with 6 parameters for a running workflow targeted by id
+     */
+    fun <P1, P2, P3, P4, P5, P6, R : Any?> dispatch(
+        method: KFunction6<P1, P2, P3, P4, P5, P6, R>,
+        id: UUID
+    ): (P1, P2, P3, P4, P5, P6) -> Deferred<R> = { p1: P1, p2: P2, p3: P3, p4: P4, p5: P5, p6: P6 ->
+        dispatch(id) {
+            method.check().call(p1, p2, p3, p4, p5, p6)
+        }
+    }
+
+    /**
+     *  Dispatch a method with 7 parameters for a running workflow targeted by id
+     */
+    fun <P1, P2, P3, P4, P5, P6, P7, R : Any?> dispatch(
+        method: KFunction7<P1, P2, P3, P4, P5, P6, P7, R>,
+        id: UUID
+    ): (P1, P2, P3, P4, P5, P6, P7) -> Deferred<R> = { p1: P1, p2: P2, p3: P3, p4: P4, p5: P5, p6: P6, p7: P7 ->
+        dispatch(id) {
+            method.check().call(p1, p2, p3, p4, p5, p6, p7)
+        }
+    }
+
+    /**
+     *  Dispatch a method with 8 parameters for a running workflow targeted by id
+     */
+    fun <P1, P2, P3, P4, P5, P6, P7, P8, R : Any?> dispatch(
+        method: KFunction8<P1, P2, P3, P4, P5, P6, P7, P8, R>,
+        id: UUID
+    ): (P1, P2, P3, P4, P5, P6, P7, P8) -> Deferred<R> = { p1: P1, p2: P2, p3: P3, p4: P4, p5: P5, p6: P6, p7: P7, p8: P8 ->
+        dispatch(id) {
+            method.check().call(p1, p2, p3, p4, p5, p6, p7, p8)
+        }
+    }
+
+    /**
+     *  Dispatch a method with 8 parameters for a running workflow targeted by id
+     */
+    fun <P1, P2, P3, P4, P5, P6, P7, P8, P9, R : Any?> dispatch(
+        method: KFunction9<P1, P2, P3, P4, P5, P6, P7, P8, P9, R>,
+        id: UUID
+    ): (P1, P2, P3, P4, P5, P6, P7, P8, P9) -> Deferred<R> = { p1: P1, p2: P2, p3: P3, p4: P4, p5: P5, p6: P6, p7: P7, p8: P8, p9: P9 ->
+        dispatch(id) {
+            method.check().call(p1, p2, p3, p4, p5, p6, p7, p8, p9)
+        }
+    }
+
+    /**
+     * Send a signal in a channel of a workflow targeted by its id
+     */
     fun <S : Any> send(
         stub: SendChannel<S>,
         id: UUID,
@@ -320,13 +445,16 @@ abstract class InfiniticClient : Closeable {
             dispatcher.send(
                 handler.workflowName,
                 handler.channelName,
-                perWorkflowId = WorkflowId(id),
+                workflowId = WorkflowId(id),
                 signal
             )
         }
         else -> throw InvalidChannelException("$stub")
     }
 
+    /**
+     * Send a signal in a channel of workflows targeted by tag
+     */
     fun <S : Any> send(
         stub: SendChannel<S>,
         tag: String,
@@ -335,7 +463,7 @@ abstract class InfiniticClient : Closeable {
             dispatcher.send(
                 handler.workflowName,
                 handler.channelName,
-                perWorkflowTag = WorkflowTag(tag),
+                workflowTag = WorkflowTag(tag),
                 signal
             )
         }
@@ -343,23 +471,48 @@ abstract class InfiniticClient : Closeable {
     }
 
     /**
-     * Await by id
+     * Await a task or a workflow targeted by its id
      */
     @Suppress("UNCHECKED_CAST")
     fun <T : Any> await(
         stub: T,
-        id: UUID
+        workflowId: UUID
     ): Any = when (val handler = getProxyHandler(stub)) {
-        is TaskProxyHandler ->
-            dispatcher.awaitTask<Any>(handler.taskName, perTaskId = TaskId(id), false)
-        is WorkflowProxyHandler ->
-            dispatcher.awaitWorkflow<Any>(handler.workflowName, perWorkflowId = WorkflowId(id), false)
-        is ChannelProxyHandler ->
-            throw InvalidStubException("$stub")
+        is TaskProxyHandler -> dispatcher.awaitTask<Any>(
+            handler.taskName,
+            TaskId(workflowId),
+            false
+        )
+        is WorkflowProxyHandler -> dispatcher.awaitWorkflow(
+            handler.workflowName,
+            WorkflowId(workflowId),
+            MethodRunId(workflowId),
+            false
+        )
+        is ChannelProxyHandler -> throw InvalidStubException("$stub")
     }
 
     /**
-     * Cancel by id
+     * Await a method from a running workflow targeted by its id and the methodRunId
+     */
+    @Suppress("UNCHECKED_CAST")
+    fun <T : Any> await(
+        stub: T,
+        workflowId: UUID,
+        methodRunId: UUID
+    ): Any = when (val handler = getProxyHandler(stub)) {
+        is TaskProxyHandler -> throw InvalidWorkflowException("$stub")
+        is WorkflowProxyHandler -> dispatcher.awaitWorkflow<Any>(
+            handler.workflowName,
+            WorkflowId(workflowId),
+            MethodRunId(methodRunId),
+            false
+        )
+        is ChannelProxyHandler -> throw InvalidStubException("$stub")
+    }
+
+    /**
+     * Cancel a task or a workflow targeted by its id
      */
     @Suppress("UNCHECKED_CAST")
     fun <T : Any> cancel(
@@ -367,15 +520,15 @@ abstract class InfiniticClient : Closeable {
         id: UUID
     ): CompletableFuture<Unit> = when (val handler = getProxyHandler(stub)) {
         is TaskProxyHandler ->
-            dispatcher.cancelTask(handler.taskName, perTaskId = TaskId(id))
+            dispatcher.cancelTask(handler.taskName, taskId = TaskId(id))
         is WorkflowProxyHandler ->
-            dispatcher.cancelWorkflow(handler.workflowName, perWorkflowId = WorkflowId(id))
+            dispatcher.cancelWorkflow(handler.workflowName, workflowId = WorkflowId(id))
         is ChannelProxyHandler ->
             throw InvalidStubException("$stub")
     }
 
     /**
-     * Cancel by tag
+     * Cancel tasks or workflows targeted per tag
      */
     @Suppress("UNCHECKED_CAST")
     fun <T : Any> cancel(
@@ -383,15 +536,15 @@ abstract class InfiniticClient : Closeable {
         tag: String
     ): CompletableFuture<Unit> = when (val handler = getProxyHandler(stub)) {
         is TaskProxyHandler ->
-            dispatcher.cancelTask(handler.taskName, perTaskTag = TaskTag(tag))
+            dispatcher.cancelTask(handler.taskName, taskTag = TaskTag(tag))
         is WorkflowProxyHandler ->
-            dispatcher.cancelWorkflow(handler.workflowName, perWorkflowTag = WorkflowTag(tag))
+            dispatcher.cancelWorkflow(handler.workflowName, workflowTag = WorkflowTag(tag))
         is ChannelProxyHandler ->
             throw InvalidStubException("$stub")
     }
 
     /**
-     * Completed by tag
+     * Complete a task or a workflow targeted by its id
      */
     @Suppress("UNCHECKED_CAST")
     fun <T : Any> complete(
@@ -400,15 +553,15 @@ abstract class InfiniticClient : Closeable {
         value: Any?
     ): CompletableFuture<Unit> = when (val handler = getProxyHandler(stub)) {
         is TaskProxyHandler ->
-            dispatcher.completeTask(handler.taskName, perTaskId = TaskId(id), value)
+            dispatcher.completeTask(handler.taskName, taskId = TaskId(id), value)
         is WorkflowProxyHandler ->
-            dispatcher.completeWorkflow(handler.workflowName, perWorkflowId = WorkflowId(id), value)
+            dispatcher.completeWorkflow(handler.workflowName, workflowId = WorkflowId(id), value)
         is ChannelProxyHandler ->
             throw InvalidStubException("$stub")
     }
 
     /**
-     * Completed by tag
+     * Complete tasks or workflows targeted per tag
      */
     @Suppress("UNCHECKED_CAST")
     fun <T : Any> complete(
@@ -417,15 +570,15 @@ abstract class InfiniticClient : Closeable {
         value: Any?
     ): CompletableFuture<Unit> = when (val handler = getProxyHandler(stub)) {
         is TaskProxyHandler ->
-            dispatcher.completeTask(handler.taskName, perTaskTag = TaskTag(tag), value)
+            dispatcher.completeTask(handler.taskName, taskTag = TaskTag(tag), value)
         is WorkflowProxyHandler ->
-            dispatcher.completeWorkflow(handler.workflowName, perWorkflowTag = WorkflowTag(tag), value)
+            dispatcher.completeWorkflow(handler.workflowName, workflowTag = WorkflowTag(tag), value)
         is ChannelProxyHandler ->
             throw InvalidStubException("$stub")
     }
 
     /**
-     * Retry by id
+     * Retry a task or a workflow targeted by its id
      */
     @Suppress("UNCHECKED_CAST")
     fun <T : Any> retry(
@@ -435,13 +588,13 @@ abstract class InfiniticClient : Closeable {
         is TaskProxyHandler ->
             dispatcher.retryTask(handler.taskName, perTaskId = TaskId(id))
         is WorkflowProxyHandler ->
-            dispatcher.retryWorkflow(handler.workflowName, perWorkflowId = WorkflowId(id))
+            dispatcher.retryWorkflow(handler.workflowName, workflowId = WorkflowId(id))
         is ChannelProxyHandler ->
             throw InvalidStubException("$stub")
     }
 
     /**
-     * Retry by tag
+     * Retry tasks or workflows targeted per tag
      */
     @Suppress("UNCHECKED_CAST")
     fun <T : Any> retry(
@@ -451,7 +604,7 @@ abstract class InfiniticClient : Closeable {
         is TaskProxyHandler ->
             dispatcher.retryTask(handler.taskName, perTaskTag = TaskTag(tag))
         is WorkflowProxyHandler ->
-            dispatcher.retryWorkflow(handler.workflowName, perWorkflowTag = WorkflowTag(tag))
+            dispatcher.retryWorkflow(handler.workflowName, workflowTag = WorkflowTag(tag))
         is ChannelProxyHandler ->
             throw InvalidStubException("$stub")
     }
@@ -481,6 +634,24 @@ abstract class InfiniticClient : Closeable {
         val handler = ProxyHandler.async(invoke) ?: throw thisShouldNotHappen("should be called through a stub")
 
         return dispatcher.dispatch(handler, false, tags, options, meta)
+    }
+
+    private fun <R> dispatch(
+        id: UUID,
+        invoke: () -> R
+    ): Deferred<R> {
+        val handler = ProxyHandler.async(invoke) ?: throw thisShouldNotHappen("should be called through a stub")
+
+        return dispatcher.dispatch(handler, id)
+    }
+
+    private fun <R> dispatch(
+        tag: String,
+        invoke: () -> R
+    ): Deferred<R> {
+        val handler = ProxyHandler.async(invoke) ?: throw thisShouldNotHappen("should be called through a stub")
+
+        return dispatcher.dispatch(handler, tag)
     }
 
     private fun getProxyHandler(stub: Any): ProxyHandler<*> {

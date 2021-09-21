@@ -47,6 +47,13 @@ class InvalidChannelException(
         "of a workflow and `getChannel()` is a Channel getter"
 )
 
+class InvalidWorkflowException(
+    klass: String
+) : ClientUserException(
+    msg = "$klass is not the stub of a workflow",
+    help = "Make sure to use a stub returned by workflowStub(Class<*>)"
+)
+
 class InvalidInterfaceException(
     method: String,
     action: String

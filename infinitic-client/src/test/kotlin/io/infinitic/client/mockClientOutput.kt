@@ -25,9 +25,9 @@
 
 package io.infinitic.client
 
+import io.infinitic.common.clients.messages.MethodCompleted
 import io.infinitic.common.clients.messages.TaskCompleted
 import io.infinitic.common.clients.messages.TaskIdsPerTag
-import io.infinitic.common.clients.messages.WorkflowCompleted
 import io.infinitic.common.clients.messages.WorkflowIdsPerTag
 import io.infinitic.common.data.methods.MethodReturnValue
 import io.infinitic.common.tasks.data.TaskId
@@ -39,6 +39,7 @@ import io.infinitic.common.tasks.engine.messages.WaitTask
 import io.infinitic.common.tasks.tags.SendToTaskTagEngine
 import io.infinitic.common.tasks.tags.messages.GetTaskIds
 import io.infinitic.common.tasks.tags.messages.TaskTagEngineMessage
+import io.infinitic.common.workflows.data.methodRuns.MethodRunId
 import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.engine.SendToWorkflowEngine
 import io.infinitic.common.workflows.engine.messages.DispatchWorkflow
@@ -132,11 +133,12 @@ fun mockSendToWorkflowEngine(
 ): SendToWorkflowEngine {
     val sendToWorkflowEngine = mockk<SendToWorkflowEngine>()
     every { sendToWorkflowEngine(capture(message)) } answers {
-        val msg = message.captured
+        val msg: WorkflowEngineMessage = message.captured
         if (msg is DispatchWorkflow && msg.clientWaiting || msg is WaitWorkflow) {
-            val workflowCompleted = WorkflowCompleted(
+            val workflowCompleted = MethodCompleted(
                 clientName = client.clientName,
                 workflowId = msg.workflowId,
+                methodRunId = MethodRunId(msg.workflowId.id),
                 workflowReturnValue = MethodReturnValue.from("success")
             )
             client.sendingScope.future {

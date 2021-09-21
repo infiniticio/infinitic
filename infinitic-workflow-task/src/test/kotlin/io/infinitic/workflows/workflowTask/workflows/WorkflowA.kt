@@ -48,10 +48,10 @@ class WorkflowAImpl : Workflow(), WorkflowA {
     override val channelObj = channel<Obj>()
 
     // a task
-    private val taskA = newTaskStub(TaskA::class.java)
+    private val taskA = taskStub(TaskA::class.java)
 
     // a workflow
-    private val workflowA = newWorkflowStub(WorkflowA::class.java)
+    private val workflowA = workflowStub(WorkflowA::class.java)
 
     // a logger
     private var logger1 = LoggerFactory.getLogger(WorkflowAImpl::class.qualifiedName)

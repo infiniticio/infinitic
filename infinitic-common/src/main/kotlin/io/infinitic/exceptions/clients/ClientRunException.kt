@@ -34,7 +34,7 @@ sealed class ClientRunException(
     causeError: Error? = null
 ) : RunException("$msg.\n$help", causeError)
 
-class CanceledDeferredException(
+class CanceledException(
     val id: String,
     val name: String,
 ) : ClientRunException(
@@ -42,7 +42,7 @@ class CanceledDeferredException(
     help = ""
 )
 
-class FailedDeferredException(
+class FailedException(
     val id: String,
     val name: String,
     causeError: Error
@@ -68,7 +68,7 @@ class UnknownTaskException(
     help = "This instance is probably already completed"
 )
 
-class UnknownWorkflowException(
+class UnknownException(
     workflowId: String,
     workflowName: String
 ) : ClientRunException(
@@ -76,10 +76,10 @@ class UnknownWorkflowException(
     help = "This instance is probably already completed"
 )
 
-class AlreadyCompletedWorkflowException(
+class AlreadyCompletedException(
     workflowId: String,
     workflowName: String
 ) : ClientRunException(
-    msg = "Workflow instance's main method already completed: $workflowName ($workflowId)",
+    msg = "Workflow's method is already completed: $workflowName ($workflowId)",
     help = ""
 )

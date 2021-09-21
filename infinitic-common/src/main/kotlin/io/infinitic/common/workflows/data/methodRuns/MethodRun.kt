@@ -56,7 +56,7 @@ data class MethodRun(
     val methodParameterTypes: MethodParameterTypes?,
     val methodParameters: MethodParameters,
     var methodReturnValue: MethodReturnValue? = null,
-    val workflowTaskIndexAtStart: WorkflowTaskIndex = WorkflowTaskIndex(0),
+    val workflowTaskIndexAtStart: WorkflowTaskIndex,
     val propertiesNameHashAtStart: Map<PropertyName, PropertyHash>,
     val pastCommands: MutableList<PastCommand> = mutableListOf(),
     val pastSteps: MutableList<PastStep> = mutableListOf()

@@ -23,34 +23,12 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.workflows.engine.handlers
+package io.infinitic.common.clients.messages.interfaces
 
-import io.infinitic.common.workflows.data.commands.CommandId
-import io.infinitic.common.workflows.data.commands.CommandStatus.CurrentlyFailed
-import io.infinitic.common.workflows.engine.messages.TaskFailed
-import io.infinitic.common.workflows.engine.state.WorkflowState
-import io.infinitic.workflows.engine.helpers.commandTerminated
-import io.infinitic.workflows.engine.output.WorkflowEngineOutput
-import kotlinx.coroutines.CoroutineScope
+import io.infinitic.common.workflows.data.methodRuns.MethodRunId
+import io.infinitic.common.workflows.data.workflows.WorkflowId
 
-internal fun CoroutineScope.taskFailed(
-    workflowEngineOutput: WorkflowEngineOutput,
-    state: WorkflowState,
-    message: TaskFailed
-) {
-
-    when (message.isWorkflowTask()) {
-        true -> workflowTaskFailed(
-            workflowEngineOutput,
-            state,
-            message
-        )
-        false -> commandTerminated(
-            workflowEngineOutput,
-            state,
-            message.methodRunId,
-            CommandId(message.taskId),
-            CurrentlyFailed(message.error, state.workflowTaskIndex)
-        )
-    }
+interface MethodMessage {
+    val workflowId: WorkflowId
+    val methodRunId: MethodRunId
 }

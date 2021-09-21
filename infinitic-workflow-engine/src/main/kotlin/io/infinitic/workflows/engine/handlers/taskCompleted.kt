@@ -37,21 +37,21 @@ import kotlinx.coroutines.CoroutineScope
 internal fun CoroutineScope.taskCompleted(
     workflowEngineOutput: WorkflowEngineOutput,
     state: WorkflowState,
-    msg: TaskCompleted
+    message: TaskCompleted
 ) {
 
-    when (msg.isWorkflowTask()) {
+    when (message.isWorkflowTask()) {
         true -> workflowTaskCompleted(
             workflowEngineOutput,
             state,
-            msg
+            message
         )
         false -> commandTerminated(
             workflowEngineOutput,
             state,
-            msg.methodRunId,
-            CommandId(msg.taskId),
-            Completed(CommandReturnValue(msg.taskReturnValue.serializedData), state.workflowTaskIndex)
+            message.methodRunId,
+            CommandId(message.taskId),
+            Completed(CommandReturnValue(message.taskReturnValue.serializedData), state.workflowTaskIndex)
         )
     }
 }

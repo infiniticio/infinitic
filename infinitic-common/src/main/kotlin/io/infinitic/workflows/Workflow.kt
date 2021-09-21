@@ -63,7 +63,8 @@ abstract class Workflow {
     /**
      *  Create a stub for a task
      */
-    @JvmOverloads fun <T : Any> newTaskStub(
+    @JvmOverloads
+    fun <T : Any> taskStub(
         klass: Class<out T>,
         tags: Set<String> = setOf(),
         options: TaskOptions = TaskOptions(),
@@ -78,7 +79,8 @@ abstract class Workflow {
     /**
      *  Create a stub for a workflow
      */
-    @JvmOverloads fun <T : Any> newWorkflowStub(
+    @JvmOverloads
+    fun <T : Any> workflowStub(
         klass: Class<out T>,
         tags: Set<String> = setOf(),
         options: WorkflowOptions = WorkflowOptions(),
@@ -219,11 +221,12 @@ abstract class Workflow {
         tags: Set<String>? = null,
         options: JobOptions? = null,
         meta: Map<String, ByteArray>? = null
-    ): (P1, P2, P3, P4, P5, P6, P7, P8) -> Deferred<R> = { p1: P1, p2: P2, p3: P3, p4: P4, p5: P5, p6: P6, p7: P7, p8: P8 ->
-        dispatch(tags, options, meta) {
-            method.check().call(p1, p2, p3, p4, p5, p6, p7, p8)
+    ): (P1, P2, P3, P4, P5, P6, P7, P8) -> Deferred<R> =
+        { p1: P1, p2: P2, p3: P3, p4: P4, p5: P5, p6: P6, p7: P7, p8: P8 ->
+            dispatch(tags, options, meta) {
+                method.check().call(p1, p2, p3, p4, p5, p6, p7, p8)
+            }
         }
-    }
 
     /**
      *  Dispatch a task or workflow with 9 parameters
@@ -234,11 +237,12 @@ abstract class Workflow {
         tags: Set<String>? = null,
         options: JobOptions? = null,
         meta: Map<String, ByteArray>? = null
-    ): (P1, P2, P3, P4, P5, P6, P7, P8, P9) -> Deferred<R> = { p1: P1, p2: P2, p3: P3, p4: P4, p5: P5, p6: P6, p7: P7, p8: P8, p9: P9 ->
-        dispatch(tags, options, meta) {
-            method.check().call(p1, p2, p3, p4, p5, p6, p7, p8, p9)
+    ): (P1, P2, P3, P4, P5, P6, P7, P8, P9) -> Deferred<R> =
+        { p1: P1, p2: P2, p3: P3, p4: P4, p5: P5, p6: P6, p7: P7, p8: P8, p9: P9 ->
+            dispatch(tags, options, meta) {
+                method.check().call(p1, p2, p3, p4, p5, p6, p7, p8, p9)
+            }
         }
-    }
 
     /**
      *  Create a channel
@@ -277,7 +281,11 @@ abstract class Workflow {
     }
 
     private fun <R> KFunction<R>.check(): KFunction<R> = this.also {
-        if (javaMethod?.declaringClass?.isInterface != true || (instanceParameter ?: extensionReceiverParameter) != null)
+        if (javaMethod?.declaringClass?.isInterface != true || (
+            instanceParameter
+                ?: extensionReceiverParameter
+            ) != null
+        )
             throw InvalidInterfaceException(name, "dispatch")
     }
 }

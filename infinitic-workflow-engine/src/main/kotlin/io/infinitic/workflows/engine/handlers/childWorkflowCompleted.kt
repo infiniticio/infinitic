@@ -37,13 +37,13 @@ import kotlinx.coroutines.CoroutineScope
 internal fun CoroutineScope.childWorkflowCompleted(
     workflowEngineOutput: WorkflowEngineOutput,
     state: WorkflowState,
-    msg: ChildWorkflowCompleted
+    message: ChildWorkflowCompleted
 ) {
     commandTerminated(
         workflowEngineOutput,
         state,
-        msg.methodRunId,
-        CommandId(msg.childWorkflowId),
-        Completed(CommandReturnValue(msg.childWorkflowReturnValue.serializedData), state.workflowTaskIndex)
+        message.methodRunId,
+        CommandId(message.childWorkflowId),
+        Completed(CommandReturnValue(message.childWorkflowReturnValue.serializedData), state.workflowTaskIndex)
     )
 }

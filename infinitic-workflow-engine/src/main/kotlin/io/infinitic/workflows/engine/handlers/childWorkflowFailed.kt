@@ -36,13 +36,13 @@ import kotlinx.coroutines.CoroutineScope
 internal fun CoroutineScope.childWorkflowFailed(
     workflowEngineOutput: WorkflowEngineOutput,
     state: WorkflowState,
-    msg: ChildWorkflowFailed
+    message: ChildWorkflowFailed
 ) {
     commandTerminated(
         workflowEngineOutput,
         state,
-        msg.methodRunId,
-        CommandId(msg.childWorkflowId),
-        CurrentlyFailed(msg.childWorkflowError, state.workflowTaskIndex)
+        message.methodRunId,
+        CommandId(message.childWorkflowId),
+        CurrentlyFailed(message.childWorkflowError, state.workflowTaskIndex)
     )
 }

@@ -27,8 +27,8 @@ package io.infinitic.tests
 
 import io.infinitic.common.fixtures.later
 import io.infinitic.common.tasks.data.TaskMeta
-import io.infinitic.exceptions.clients.CanceledDeferredException
-import io.infinitic.exceptions.clients.FailedDeferredException
+import io.infinitic.exceptions.clients.CanceledException
+import io.infinitic.exceptions.clients.FailedException
 import io.infinitic.factory.InfiniticClientFactory
 import io.infinitic.factory.InfiniticWorkerFactory
 import io.infinitic.tests.tasks.ExpectedException
@@ -104,7 +104,7 @@ internal class TaskTests : StringSpec({
     "Task fails at first try" {
         TaskTestImpl.behavior = { _, _ -> Status.FAILED_WITHOUT_RETRY }
 
-        val e = shouldThrow<FailedDeferredException> { taskTest.log() }
+        val e = shouldThrow<FailedException> { taskTest.log() }
 
         e.causeError?.errorName shouldBe ExpectedException::class.java.name
     }
@@ -118,7 +118,7 @@ internal class TaskTests : StringSpec({
             }
         }
 
-        val e = shouldThrow<FailedDeferredException> { taskTest.log() }
+        val e = shouldThrow<FailedException> { taskTest.log() }
 
         e.causeError?.errorName shouldBe ExpectedException::class.java.name
     }
@@ -134,7 +134,7 @@ internal class TaskTests : StringSpec({
 
         val deferred = client.dispatch(taskTest::log)().join()
 
-        shouldThrow<FailedDeferredException> { deferred.await() }
+        shouldThrow<FailedException> { deferred.await() }
 
         deferred.retry().join()
 
@@ -152,7 +152,7 @@ internal class TaskTests : StringSpec({
 
         val deferred = client.dispatch(taskTest::log)().join()
 
-        shouldThrow<FailedDeferredException> { deferred.await() }
+        shouldThrow<FailedException> { deferred.await() }
 
         deferred.retry().join()
 
@@ -169,7 +169,7 @@ internal class TaskTests : StringSpec({
         }
         val deferred = client.dispatch(taskTestWithTags::log)().join()
 
-        shouldThrow<FailedDeferredException> { deferred.await() }
+        shouldThrow<FailedException> { deferred.await() }
 
         client.retry(taskTest, "foo").join()
 
@@ -185,7 +185,7 @@ internal class TaskTests : StringSpec({
 
         later { client.cancel(taskTest, deferred.id) }
 
-        shouldThrow<CanceledDeferredException> { deferred.await() }
+        shouldThrow<CanceledException> { deferred.await() }
     }
 
     "Task canceled using A tag" {
@@ -195,7 +195,7 @@ internal class TaskTests : StringSpec({
 
         later { client.cancel(taskTest, "foo") }
 
-        shouldThrow<CanceledDeferredException> { deferred.await() }
+        shouldThrow<CanceledException> { deferred.await() }
     }
 
     "2 Task canceled using A tag" {
@@ -207,8 +207,8 @@ internal class TaskTests : StringSpec({
         later { client.cancel(taskTest, "foo") }
 
         later(0) {
-            launch { shouldThrow<CanceledDeferredException> { deferred1.await() } }
-            launch { shouldThrow<CanceledDeferredException> { deferred2.await() } }
+            launch { shouldThrow<CanceledException> { deferred1.await() } }
+            launch { shouldThrow<CanceledException> { deferred2.await() } }
         }.join()
     }
 
@@ -239,7 +239,7 @@ internal class TaskTests : StringSpec({
 
         later { client.cancel(taskTest, deferred.id) }
 
-        shouldThrow<CanceledDeferredException> { deferred.await() }
+        shouldThrow<CanceledException> { deferred.await() }
 
         // wait a bit to ensure tag propagation
         delay(200)
