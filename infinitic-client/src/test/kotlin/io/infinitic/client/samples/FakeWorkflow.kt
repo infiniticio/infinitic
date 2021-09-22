@@ -27,6 +27,7 @@ package io.infinitic.client.samples
 
 import io.infinitic.annotations.Name
 import io.infinitic.workflows.SendChannel
+import io.infinitic.workflows.Workflow
 
 internal interface FakeWorkflowParent {
     fun parent(): String
@@ -44,6 +45,18 @@ internal interface FakeWorkflow : FakeWorkflowParent {
     suspend fun suspendedMethod()
 
     val channel: SendChannel<String>
+}
+
+internal class FakeWorkflowImpl : Workflow(), FakeWorkflow {
+    override fun m0() { }
+    override fun m1(i: Int?): String = "$i"
+    override fun m2(str: String): Any? = str
+    override fun m3(p1: Int, p2: String): String = "$p1$p2"
+    override fun m4(id: FakeInterface): String = "$id"
+    override suspend fun suspendedMethod() { }
+    override val channel: SendChannel<String> = channel()
+    override fun parent(): String = "foo"
+    override fun annotated(): String = "foo"
 }
 
 @Name(name = "foo")

@@ -48,10 +48,8 @@ import io.infinitic.common.workflows.data.workflows.WorkflowTag
 import io.infinitic.common.workflows.engine.SendToWorkflowEngine
 import io.infinitic.common.workflows.tags.SendToWorkflowTagEngine
 import io.infinitic.exceptions.clients.InvalidChannelException
-import io.infinitic.exceptions.clients.InvalidInterfaceException
 import io.infinitic.exceptions.clients.InvalidStubException
 import io.infinitic.exceptions.clients.InvalidWorkflowException
-import io.infinitic.exceptions.thisShouldNotHappen
 import io.infinitic.workflows.SendChannel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
@@ -65,20 +63,6 @@ import java.lang.reflect.Proxy
 import java.util.UUID
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.Executors
-import kotlin.reflect.KFunction
-import kotlin.reflect.KFunction0
-import kotlin.reflect.KFunction1
-import kotlin.reflect.KFunction2
-import kotlin.reflect.KFunction3
-import kotlin.reflect.KFunction4
-import kotlin.reflect.KFunction5
-import kotlin.reflect.KFunction6
-import kotlin.reflect.KFunction7
-import kotlin.reflect.KFunction8
-import kotlin.reflect.KFunction9
-import kotlin.reflect.full.extensionReceiverParameter
-import kotlin.reflect.full.instanceParameter
-import kotlin.reflect.jvm.javaMethod
 
 @Suppress("MemberVisibilityCanBePrivate", "unused")
 abstract class InfiniticClient : Closeable {
@@ -164,274 +148,235 @@ abstract class InfiniticClient : Closeable {
         workflowMeta = WorkflowMeta(meta)
     ) { dispatcher }.stub()
 
+
     /**
-     *  Dispatch a task or workflow without parameter
+     *  Start a task or workflow without parameter
      */
     @JvmOverloads
-    fun <R : Any?> dispatch(
-        method: KFunction0<R>,
+    fun <R> start(
+        method: Function0<R>,
         tags: Set<String>? = null,
         options: JobOptions? = null,
         meta: Map<String, ByteArray>? = null
-    ): () -> Deferred<R> = {
-        dispatch(tags, options, meta) {
-            method.check().call()
-        }
+    ): With0<R> = With0 {
+        dispatch(tags, options, meta) { method.invoke() }
     }
 
     /**
-     *  Dispatch a task or workflow with 1 parameter
+     *  Start a task or workflow with 1 parameter
      */
     @JvmOverloads
-    fun <P1, R : Any?> dispatch(
-        method: KFunction1<P1, R>,
+    fun <P1, R> start(
+        method: Function1<P1, R>,
         tags: Set<String>? = null,
         options: JobOptions? = null,
         meta: Map<String, ByteArray>? = null
-    ): (P1) -> Deferred<R> = { p1: P1 ->
-        dispatch(tags, options, meta) {
-            method.check().call(p1)
-        }
+    ): With1<P1, R> = With1 { p1 ->
+        dispatch(tags, options, meta) { method.invoke(p1) }
     }
 
     /**
-     *  Dispatch a task or workflow with 2 parameters
+     *  Start a task or workflow with 2 parameters
      */
     @JvmOverloads
-    fun <P1, P2, R : Any?> dispatch(
-        method: KFunction2<P1, P2, R>,
+    fun <P1, P2, R : Any?> start(
+        method: Function2<P1, P2, R>,
         tags: Set<String>? = null,
         options: JobOptions? = null,
         meta: Map<String, ByteArray>? = null
-    ): (P1, P2) -> Deferred<R> = { p1: P1, p2: P2 ->
-        dispatch(tags, options, meta) {
-            method.check().call(p1, p2)
-        }
+    ): With2<P1, P2, R> = With2 { p1, p2 ->
+        dispatch(tags, options, meta) { method.invoke(p1, p2) }
     }
 
     /**
-     *  Dispatch a task or workflow with 3 parameters
+     *  Start a task or workflow with 3 parameters
      */
     @JvmOverloads
-    fun <P1, P2, P3, R : Any?> dispatch(
-        method: KFunction3<P1, P2, P3, R>,
+    fun <P1, P2, P3, R : Any?> start(
+        method: Function3<P1, P2, P3, R>,
         tags: Set<String>? = null,
         options: JobOptions? = null,
         meta: Map<String, ByteArray>? = null
-    ): (P1, P2, P3) -> Deferred<R> = { p1: P1, p2: P2, p3: P3 ->
-        dispatch(tags, options, meta) {
-            method.check().call(p1, p2, p3)
-        }
+    ): With3<P1, P2, P3, R> = With3 { p1, p2, p3 ->
+        dispatch(tags, options, meta) { method.invoke(p1, p2, p3) }
     }
 
     /**
-     *  Dispatch a task or workflow with 4 parameters
+     *  Start a task or workflow with 4 parameters
      */
     @JvmOverloads
-    fun <P1, P2, P3, P4, R : Any?> dispatch(
-        method: KFunction4<P1, P2, P3, P4, R>,
+    fun <P1, P2, P3, P4, R : Any?> start(
+        method: Function4<P1, P2, P3, P4, R>,
         tags: Set<String>? = null,
         options: JobOptions? = null,
         meta: Map<String, ByteArray>? = null
-    ): (P1, P2, P3, P4) -> Deferred<R> = { p1: P1, p2: P2, p3: P3, p4: P4 ->
-        dispatch(tags, options, meta) {
-            method.check().call(p1, p2, p3, p4)
-        }
+    ): With4<P1, P2, P3, P4, R> = With4 { p1, p2, p3, p4 ->
+        dispatch(tags, options, meta) { method.invoke(p1, p2, p3, p4) }
     }
 
     /**
-     *  Dispatch a task or workflow with 5 parameters
+     *  Start a task or workflow with 5 parameters
      */
     @JvmOverloads
-    fun <P1, P2, P3, P4, P5, R : Any?> dispatch(
-        method: KFunction5<P1, P2, P3, P4, P5, R>,
+    fun <P1, P2, P3, P4, P5, R : Any?> start(
+        method: Function5<P1, P2, P3, P4, P5, R>,
         tags: Set<String>? = null,
         options: JobOptions? = null,
         meta: Map<String, ByteArray>? = null
-    ): (P1, P2, P3, P4, P5) -> Deferred<R> = { p1: P1, p2: P2, p3: P3, p4: P4, p5: P5 ->
-        dispatch(tags, options, meta) {
-            method.check().call(p1, p2, p3, p4, p5)
-        }
+    ): With5<P1, P2, P3, P4, P5, R> = With5 { p1, p2, p3, p4, p5 ->
+        dispatch(tags, options, meta) { method.invoke(p1, p2, p3, p4, p5) }
     }
 
     /**
-     *  Dispatch a task or workflow with 6 parameters
+     *  Start a task or workflow with 6 parameters
      */
     @JvmOverloads
-    fun <P1, P2, P3, P4, P5, P6, R : Any?> dispatch(
-        method: KFunction6<P1, P2, P3, P4, P5, P6, R>,
+    fun <P1, P2, P3, P4, P5, P6, R : Any?> start(
+        method: Function6<P1, P2, P3, P4, P5, P6, R>,
         tags: Set<String>? = null,
         options: JobOptions? = null,
         meta: Map<String, ByteArray>? = null
-    ): (P1, P2, P3, P4, P5, P6) -> Deferred<R> = { p1: P1, p2: P2, p3: P3, p4: P4, p5: P5, p6: P6 ->
-        dispatch(tags, options, meta) {
-            method.check().call(p1, p2, p3, p4, p5, p6)
-        }
+    ): With6<P1, P2, P3, P4, P5, P6, R> = With6 { p1, p2, p3, p4, p5, p6 ->
+        dispatch(tags, options, meta) { method.invoke(p1, p2, p3, p4, p5, p6) }
     }
 
     /**
-     *  Dispatch a task or workflow with 7 parameters
+     *  Start a task or workflow with 7 parameters
      */
     @JvmOverloads
-    fun <P1, P2, P3, P4, P5, P6, P7, R : Any?> dispatch(
-        method: KFunction7<P1, P2, P3, P4, P5, P6, P7, R>,
+    fun <P1, P2, P3, P4, P5, P6, P7, R : Any?> start(
+        method: Function7<P1, P2, P3, P4, P5, P6, P7, R>,
         tags: Set<String>? = null,
         options: JobOptions? = null,
         meta: Map<String, ByteArray>? = null
-    ): (P1, P2, P3, P4, P5, P6, P7) -> Deferred<R> = { p1: P1, p2: P2, p3: P3, p4: P4, p5: P5, p6: P6, p7: P7 ->
-        dispatch(tags, options, meta) {
-            method.check().call(p1, p2, p3, p4, p5, p6, p7)
-        }
+    ): With7<P1, P2, P3, P4, P5, P6, P7, R> = With7 { p1, p2, p3, p4, p5, p6, p7 ->
+        dispatch(tags, options, meta) { method.invoke(p1, p2, p3, p4, p5, p6, p7) }
     }
 
     /**
-     *  Dispatch a task or workflow with 8 parameters
+     *  Start a task or workflow with 8 parameters
      */
     @JvmOverloads
-    fun <P1, P2, P3, P4, P5, P6, P7, P8, R : Any?> dispatch(
-        method: KFunction8<P1, P2, P3, P4, P5, P6, P7, P8, R>,
+    fun <P1, P2, P3, P4, P5, P6, P7, P8, R : Any?> start(
+        method: Function8<P1, P2, P3, P4, P5, P6, P7, P8, R>,
         tags: Set<String>? = null,
         options: JobOptions? = null,
         meta: Map<String, ByteArray>? = null
-    ): (P1, P2, P3, P4, P5, P6, P7, P8) -> Deferred<R> = { p1: P1, p2: P2, p3: P3, p4: P4, p5: P5, p6: P6, p7: P7, p8: P8 ->
-        dispatch(tags, options, meta) {
-            method.check().call(p1, p2, p3, p4, p5, p6, p7, p8)
-        }
+    ): With8<P1, P2, P3, P4, P5, P6, P7, P8, R> = With8 { p1, p2, p3, p4, p5, p6, p7, p8 ->
+        dispatch(tags, options, meta) { method.invoke(p1, p2, p3, p4, p5, p6, p7, p8) }
     }
 
     /**
-     *  Dispatch a task or workflow with 9 parameters
+     *  Start a task or workflow with 9 parameters
      */
     @JvmOverloads
-    fun <P1, P2, P3, P4, P5, P6, P7, P8, P9, R : Any?> dispatch(
-        method: KFunction9<P1, P2, P3, P4, P5, P6, P7, P8, P9, R>,
+    fun <P1, P2, P3, P4, P5, P6, P7, P8, P9, R : Any?> start(
+        method: Function9<P1, P2, P3, P4, P5, P6, P7, P8, P9, R>,
         tags: Set<String>? = null,
         options: JobOptions? = null,
         meta: Map<String, ByteArray>? = null
-    ): (P1, P2, P3, P4, P5, P6, P7, P8, P9) -> Deferred<R> = { p1: P1, p2: P2, p3: P3, p4: P4, p5: P5, p6: P6, p7: P7, p8: P8, p9: P9 ->
-        dispatch(tags, options, meta) {
-            method.check().call(p1, p2, p3, p4, p5, p6, p7, p8, p9)
-        }
+    ): With9<P1, P2, P3, P4, P5, P6, P7, P8, P9, R> = With9 { p1, p2, p3, p4, p5, p6, p7, p8, p9 ->
+        dispatch(tags, options, meta) { method.invoke(p1, p2, p3, p4, p5, p6, p7, p8, p9) }
     }
 
     /**
-     *  Dispatch a method without parameter for a running workflow targeted by id
+     *  Start a method without parameter for a running workflow targeted by id
      */
-    fun <R : Any?> dispatch(
-        method: KFunction0<R>,
+    fun <R : Any?> start(
+        method: Function0<R>,
         id: UUID
-    ): () -> Deferred<R> = {
-        dispatch(id) {
-            method.check().call()
-        }
+    ): With0<R> = With0 {
+        dispatch(id) { method.invoke() }
     }
 
     /**
-     *  Dispatch a method with 1 parameter for a running workflow targeted by id
+     *  Start a method with 1 parameter for a running workflow targeted by id
      */
-    fun <P1, R : Any?> dispatch(
-        method: KFunction1<P1, R>,
+    fun <P1, R : Any?> start(
+        method: Function1<P1, R>,
         id: UUID
-    ): (P1) -> Deferred<R> = { p1: P1 ->
-        dispatch(id) {
-            method.check().call(p1)
-        }
+    ): With1<P1, R> = With1 { p1 ->
+        dispatch(id) { method.invoke(p1) }
     }
 
     /**
-     *  Dispatch a method with 2 parameters for a running workflow targeted by id
+     *  Start a method with 2 parameters for a running workflow targeted by id
      */
-    fun <P1, P2, R : Any?> dispatch(
-        method: KFunction2<P1, P2, R>,
+    fun <P1, P2, R : Any?> start(
+        method: Function2<P1, P2, R>,
         id: UUID
-    ): (P1, P2) -> Deferred<R> = { p1: P1, p2: P2 ->
-        dispatch(id) {
-            method.check().call(p1, p2)
-        }
+    ): With2<P1, P2, R> = With2 { p1, p2 ->
+        dispatch(id) { method.invoke(p1, p2) }
     }
 
     /**
-     *  Dispatch a method with 3 parameters for a running workflow targeted by id
+     *  Start a method with 3 parameters for a running workflow targeted by id
      */
-    fun <P1, P2, P3, R : Any?> dispatch(
-        method: KFunction3<P1, P2, P3, R>,
+    fun <P1, P2, P3, R : Any?> start(
+        method: Function3<P1, P2, P3, R>,
         id: UUID
-    ): (P1, P2, P3) -> Deferred<R> = { p1: P1, p2: P2, p3: P3 ->
-        dispatch(id) {
-            method.check().call(p1, p2, p3)
-        }
+    ): With3<P1, P2, P3, R> = With3 { p1, p2, p3 ->
+        dispatch(id) { method.invoke(p1, p2, p3) }
     }
 
     /**
-     *  Dispatch a method with 4 parameters for a running workflow targeted by id
+     *  Start a method with 4 parameters for a running workflow targeted by id
      */
-    fun <P1, P2, P3, P4, R : Any?> dispatch(
-        method: KFunction4<P1, P2, P3, P4, R>,
+    fun <P1, P2, P3, P4, R : Any?> start(
+        method: Function4<P1, P2, P3, P4, R>,
         id: UUID
-    ): (P1, P2, P3, P4) -> Deferred<R> = { p1: P1, p2: P2, p3: P3, p4: P4 ->
-        dispatch(id) {
-            method.check().call(p1, p2, p3, p4)
-        }
+    ): With4<P1, P2, P3, P4, R> = With4 { p1, p2, p3, p4 ->
+        dispatch(id) { method.invoke(p1, p2, p3, p4) }
     }
 
     /**
-     *  Dispatch a method with 5 parameters for a running workflow targeted by id
+     *  Start a method with 5 parameters for a running workflow targeted by id
      */
-    fun <P1, P2, P3, P4, P5, R : Any?> dispatch(
-        method: KFunction5<P1, P2, P3, P4, P5, R>,
+    fun <P1, P2, P3, P4, P5, R : Any?> start(
+        method: Function5<P1, P2, P3, P4, P5, R>,
         id: UUID
-    ): (P1, P2, P3, P4, P5) -> Deferred<R> = { p1: P1, p2: P2, p3: P3, p4: P4, p5: P5 ->
-        dispatch(id) {
-            method.check().call(p1, p2, p3, p4, p5)
-        }
+    ): With5<P1, P2, P3, P4, P5, R> = With5 { p1, p2, p3, p4, p5 ->
+        dispatch(id) { method.invoke(p1, p2, p3, p4, p5) }
     }
 
     /**
-     *  Dispatch a method with 6 parameters for a running workflow targeted by id
+     *  Start a method with 6 parameters for a running workflow targeted by id
      */
-    fun <P1, P2, P3, P4, P5, P6, R : Any?> dispatch(
-        method: KFunction6<P1, P2, P3, P4, P5, P6, R>,
+    fun <P1, P2, P3, P4, P5, P6, R : Any?> start(
+        method: Function6<P1, P2, P3, P4, P5, P6, R>,
         id: UUID
-    ): (P1, P2, P3, P4, P5, P6) -> Deferred<R> = { p1: P1, p2: P2, p3: P3, p4: P4, p5: P5, p6: P6 ->
-        dispatch(id) {
-            method.check().call(p1, p2, p3, p4, p5, p6)
-        }
+    ): With6<P1, P2, P3, P4, P5, P6, R> = With6 { p1, p2, p3, p4, p5, p6 ->
+        dispatch(id) { method.invoke(p1, p2, p3, p4, p5, p6) }
     }
 
     /**
-     *  Dispatch a method with 7 parameters for a running workflow targeted by id
+     *  Start a method with 7 parameters for a running workflow targeted by id
      */
-    fun <P1, P2, P3, P4, P5, P6, P7, R : Any?> dispatch(
-        method: KFunction7<P1, P2, P3, P4, P5, P6, P7, R>,
+    fun <P1, P2, P3, P4, P5, P6, P7, R : Any?> start(
+        method: Function7<P1, P2, P3, P4, P5, P6, P7, R>,
         id: UUID
-    ): (P1, P2, P3, P4, P5, P6, P7) -> Deferred<R> = { p1: P1, p2: P2, p3: P3, p4: P4, p5: P5, p6: P6, p7: P7 ->
-        dispatch(id) {
-            method.check().call(p1, p2, p3, p4, p5, p6, p7)
-        }
+    ): With7<P1, P2, P3, P4, P5, P6, P7, R> = With7 { p1, p2, p3, p4, p5, p6, p7 ->
+        dispatch(id) { method.invoke(p1, p2, p3, p4, p5, p6, p7) }
     }
 
     /**
-     *  Dispatch a method with 8 parameters for a running workflow targeted by id
+     *  Start a method with 8 parameters for a running workflow targeted by id
      */
-    fun <P1, P2, P3, P4, P5, P6, P7, P8, R : Any?> dispatch(
-        method: KFunction8<P1, P2, P3, P4, P5, P6, P7, P8, R>,
+    fun <P1, P2, P3, P4, P5, P6, P7, P8, R : Any?> start(
+        method: Function8<P1, P2, P3, P4, P5, P6, P7, P8, R>,
         id: UUID
-    ): (P1, P2, P3, P4, P5, P6, P7, P8) -> Deferred<R> = { p1: P1, p2: P2, p3: P3, p4: P4, p5: P5, p6: P6, p7: P7, p8: P8 ->
-        dispatch(id) {
-            method.check().call(p1, p2, p3, p4, p5, p6, p7, p8)
-        }
+    ): With8<P1, P2, P3, P4, P5, P6, P7, P8, R> = With8 { p1, p2, p3, p4, p5, p6, p7, p8 ->
+        dispatch(id) { method.invoke(p1, p2, p3, p4, p5, p6, p7, p8) }
     }
 
     /**
-     *  Dispatch a method with 8 parameters for a running workflow targeted by id
+     *  Start a method with 8 parameters for a running workflow targeted by id
      */
-    fun <P1, P2, P3, P4, P5, P6, P7, P8, P9, R : Any?> dispatch(
-        method: KFunction9<P1, P2, P3, P4, P5, P6, P7, P8, P9, R>,
+    fun <P1, P2, P3, P4, P5, P6, P7, P8, P9, R : Any?> start(
+        method: Function9<P1, P2, P3, P4, P5, P6, P7, P8, P9, R>,
         id: UUID
-    ): (P1, P2, P3, P4, P5, P6, P7, P8, P9) -> Deferred<R> = { p1: P1, p2: P2, p3: P3, p4: P4, p5: P5, p6: P6, p7: P7, p8: P8, p9: P9 ->
-        dispatch(id) {
-            method.check().call(p1, p2, p3, p4, p5, p6, p7, p8, p9)
-        }
+    ): With9<P1, P2, P3, P4, P5, P6, P7, P8, P9, R> = With9 { p1, p2, p3, p4, p5, p6, p7, p8, p9 ->
+        dispatch(id) { method.invoke(p1, p2, p3, p4, p5, p6, p7, p8, p9) }
     }
 
     /**
@@ -440,15 +385,15 @@ abstract class InfiniticClient : Closeable {
     fun <S : Any> send(
         stub: SendChannel<S>,
         id: UUID,
-    ): (S) -> Deferred<S> = when (val handler = getProxyHandler(stub)) {
-        is ChannelProxyHandler -> { signal: S ->
+        signal: S
+    ): Deferred<S> = when (val handler = getProxyHandler(stub)) {
+        is ChannelProxyHandler ->
             dispatcher.send(
                 handler.workflowName,
                 handler.channelName,
                 workflowId = WorkflowId(id),
                 signal
             )
-        }
         else -> throw InvalidChannelException("$stub")
     }
 
@@ -458,15 +403,15 @@ abstract class InfiniticClient : Closeable {
     fun <S : Any> send(
         stub: SendChannel<S>,
         tag: String,
-    ): (S) -> Deferred<S> = when (val handler = getProxyHandler(stub)) {
-        is ChannelProxyHandler -> { signal: S ->
+        signal: S
+    ): Deferred<S> = when (val handler = getProxyHandler(stub)) {
+        is ChannelProxyHandler ->
             dispatcher.send(
                 handler.workflowName,
                 handler.channelName,
                 workflowTag = WorkflowTag(tag),
                 signal
             )
-        }
         else -> throw InvalidChannelException("$stub")
     }
 
@@ -631,7 +576,7 @@ abstract class InfiniticClient : Closeable {
         meta: Map<String, ByteArray>?,
         invoke: () -> R
     ): Deferred<R> {
-        val handler = ProxyHandler.async(invoke) ?: throw thisShouldNotHappen("should be called through a stub")
+        val handler = ProxyHandler.async(invoke) ?: throw InvalidStubException()
 
         return dispatcher.dispatch(handler, false, tags, options, meta)
     }
@@ -640,7 +585,7 @@ abstract class InfiniticClient : Closeable {
         id: UUID,
         invoke: () -> R
     ): Deferred<R> {
-        val handler = ProxyHandler.async(invoke) ?: throw thisShouldNotHappen("should be called through a stub")
+        val handler = ProxyHandler.async(invoke) ?: throw InvalidStubException()
 
         return dispatcher.dispatch(handler, id)
     }
@@ -649,7 +594,7 @@ abstract class InfiniticClient : Closeable {
         tag: String,
         invoke: () -> R
     ): Deferred<R> {
-        val handler = ProxyHandler.async(invoke) ?: throw thisShouldNotHappen("should be called through a stub")
+        val handler = ProxyHandler.async(invoke) ?: throw InvalidStubException()
 
         return dispatcher.dispatch(handler, tag)
     }
@@ -666,10 +611,5 @@ abstract class InfiniticClient : Closeable {
         if (handler !is ProxyHandler<*>) throw exception
 
         return handler
-    }
-
-    private fun <R> KFunction<R>.check(): KFunction<R> = this.also {
-        if (javaMethod?.declaringClass?.isInterface != true || (instanceParameter ?: extensionReceiverParameter) != null)
-            throw InvalidInterfaceException(name, "dispatch")
     }
 }

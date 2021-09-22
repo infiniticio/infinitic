@@ -81,7 +81,6 @@ class WorkflowEngine(
     sendToWorkflowEngine: SendToWorkflowEngine,
     sendToWorkflowEngineAfter: SendToWorkflowEngineAfter
 ) {
-
     companion object {
         const val NO_STATE_DISCARDING_REASON = "for having null workflow state"
     }
@@ -128,6 +127,7 @@ class WorkflowEngine(
                 val unknownWorkflow = MethodUnknown(message.clientName, message.workflowId, message.methodRunId)
                 launch { output.sendEventsToClient(unknownWorkflow) }
             }
+
             // discard all other messages if workflow is already terminated
             logDiscardingMessage(message, NO_STATE_DISCARDING_REASON)
 
@@ -211,7 +211,7 @@ class WorkflowEngine(
 
         @Suppress("UNUSED_VARIABLE")
         val m = when (message) {
-            is DispatchWorkflow -> thisShouldNotHappen("DispatchWorkflow should not reach this point")
+            is DispatchWorkflow -> thisShouldNotHappen()
             is DispatchMethodRun -> dispatchMethodRun(output, state, message)
             is CancelWorkflow -> cancelWorkflow(output, state, message)
             is SendToChannel -> sendToChannel(output, state, message)

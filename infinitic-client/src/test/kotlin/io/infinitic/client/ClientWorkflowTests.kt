@@ -28,6 +28,7 @@ package io.infinitic.client
 import io.infinitic.client.samples.FakeClass
 import io.infinitic.client.samples.FakeInterface
 import io.infinitic.client.samples.FakeWorkflow
+import io.infinitic.client.samples.FakeWorkflowImpl
 import io.infinitic.client.samples.FooWorkflow
 import io.infinitic.common.clients.data.ClientName
 import io.infinitic.common.data.methods.MethodName
@@ -47,7 +48,6 @@ import io.infinitic.common.workflows.data.workflows.WorkflowName
 import io.infinitic.common.workflows.data.workflows.WorkflowOptions
 import io.infinitic.common.workflows.data.workflows.WorkflowTag
 import io.infinitic.common.workflows.engine.messages.CancelWorkflow
-import io.infinitic.common.workflows.engine.messages.DispatchMethodRun
 import io.infinitic.common.workflows.engine.messages.DispatchWorkflow
 import io.infinitic.common.workflows.engine.messages.SendToChannel
 import io.infinitic.common.workflows.engine.messages.WaitWorkflow
@@ -101,7 +101,7 @@ class ClientWorkflowTests : StringSpec({
 
     "Should be able to dispatch a workflow" {
         // when
-        val deferred = client.dispatch(fakeWorkflow::m0)().join()
+        val deferred = client.start(fakeWorkflow::m0).with().join()
         // then
         workflowTagSlots.size shouldBe 0
         workflowSlot.captured shouldBe DispatchWorkflow(
@@ -123,7 +123,7 @@ class ClientWorkflowTests : StringSpec({
 
     "Should be able to dispatch a workflow with annotation" {
         // when
-        val deferred = client.dispatch(fooWorkflow::m)().join()
+        val deferred = client.start(fooWorkflow::m).with().join()
         // then
         workflowTagSlots.size shouldBe 0
         workflowSlot.captured shouldBe DispatchWorkflow(
@@ -145,7 +145,7 @@ class ClientWorkflowTests : StringSpec({
 
     "Should be able to dispatch a workflow with annotation on parent" {
         // when
-        val deferred = client.dispatch(fooWorkflow::annotated)().join()
+        val deferred = client.start(fooWorkflow::annotated).with().join()
         // then
         workflowTagSlots.size shouldBe 0
         workflowSlot.captured shouldBe DispatchWorkflow(
@@ -167,7 +167,7 @@ class ClientWorkflowTests : StringSpec({
 
     "Should be able to dispatch a workflow from a parent interface" {
         // when
-        val deferred = client.dispatch(fakeWorkflow::parent)().join()
+        val deferred = client.start(fakeWorkflow::parent).with().join()
         // then
         workflowTagSlots.size shouldBe 0
         workflowSlot.captured shouldBe DispatchWorkflow(
@@ -194,7 +194,7 @@ class ClientWorkflowTests : StringSpec({
             "foo" to TestFactory.random(),
             "bar" to TestFactory.random()
         )
-        val deferred = client.dispatch(fakeWorkflow::m0, options = options, meta = meta)().join()
+        val deferred = client.start(fakeWorkflow::m0, options = options, meta = meta).with().join()
         // then
         workflowTagSlots.size shouldBe 0
         workflowSlot.captured shouldBe DispatchWorkflow(
@@ -217,7 +217,7 @@ class ClientWorkflowTests : StringSpec({
     "Should be able to dispatch a workflow with tags" {
         // when
         val tags = setOf("foo", "bar")
-        val deferred = client.dispatch(fakeWorkflow::m0, tags = tags)().join()
+        val deferred = client.start(fakeWorkflow::m0, tags = tags).with().join()
         // then
         workflowTagSlots.size shouldBe 2
         workflowTagSlots.toSet() shouldBe setOf(
@@ -251,7 +251,7 @@ class ClientWorkflowTests : StringSpec({
 
     "Should be able to dispatch a workflow with a one primitive as parameter" {
         // when
-        val deferred = client.dispatch(fakeWorkflow::m1)(0).join()
+        val deferred = client.start(fakeWorkflow::m1).with(0).join()
         // then
         workflowSlot.isCaptured shouldBe true
         val msg = workflowSlot.captured
@@ -274,7 +274,7 @@ class ClientWorkflowTests : StringSpec({
 
     "Should be able to dispatch a workflow with two primitive parameters" {
         // when
-        val deferred = client.dispatch(fakeWorkflow::m3)(0, "a").join()
+        val deferred = client.start(fakeWorkflow::m3).with(0, "a").join()
         // then
         workflowSlot.isCaptured shouldBe true
         val msg = workflowSlot.captured
@@ -298,7 +298,7 @@ class ClientWorkflowTests : StringSpec({
     "Should be able to dispatch a workflow with an interface as parameter" {
         // when
         val klass = FakeClass()
-        val deferred = client.dispatch(fakeWorkflow::m4)(klass).join()
+        val deferred = client.start(fakeWorkflow::m4).with(klass).join()
         // then
         workflowSlot.isCaptured shouldBe true
         val msg = workflowSlot.captured
@@ -322,7 +322,7 @@ class ClientWorkflowTests : StringSpec({
 
     "Should be able to wait for a dispatched workflow" {
         // when
-        val result = client.dispatch(fakeWorkflow::m3)(0, "a").await()
+        val result = client.start(fakeWorkflow::m3).with(0, "a").await()
         // then
         result shouldBe "success"
 
@@ -345,7 +345,7 @@ class ClientWorkflowTests : StringSpec({
     "Should be able to emit to a channel by id synchronously" {
         // when
         val id = UUID.randomUUID()
-        client.send(fakeWorkflow.channel, id)("a").join()
+        client.send(fakeWorkflow.channel, id, "a").join()
         // then
         workflowTagSlots.size shouldBe 0
         val msg = workflowSlot.captured as SendToChannel
@@ -363,7 +363,7 @@ class ClientWorkflowTests : StringSpec({
     "Should be able to emit to a channel by id asynchronously" {
         // when
         val id = UUID.randomUUID()
-        client.send(fakeWorkflow.channel, id)("a").join()
+        client.send(fakeWorkflow.channel, id, "a").join()
         // then
         workflowTagSlots.size shouldBe 0
         val msg = workflowSlot.captured as SendToChannel
@@ -381,7 +381,7 @@ class ClientWorkflowTests : StringSpec({
     "Should be able to emit to a channel by id" {
         // when
         val id = UUID.randomUUID()
-        client.send(fakeWorkflow.channel, id)("a").join()
+        client.send(fakeWorkflow.channel, id, "a").join()
         // then
         workflowTagSlots.size shouldBe 0
         val msg = workflowSlot.captured as SendToChannel
@@ -399,7 +399,7 @@ class ClientWorkflowTests : StringSpec({
     "Should be able to emit to a channel by tag" {
         val tag = "foo"
         // when
-        client.send(fakeWorkflow.channel, tag)("a").join()
+        client.send(fakeWorkflow.channel, tag, "a").join()
         // then
         val msg = workflowTagSlots[0] as SendToChannelPerTag
         msg shouldBe SendToChannelPerTag(
@@ -415,8 +415,8 @@ class ClientWorkflowTests : StringSpec({
 
     "Should be able to emit to a channel after workflow dispatch" {
         // when
-        val deferred = client.dispatch(fakeWorkflow::m3)(0, "a").join()
-        client.send(fakeWorkflow.channel, deferred.id)("a").join()
+        val deferred = client.start(fakeWorkflow::m3).with(0, "a").join()
+        client.send(fakeWorkflow.channel, deferred.id, "a").join()
 
         // then
         workflowTagSlots.size shouldBe 0
@@ -486,7 +486,7 @@ class ClientWorkflowTests : StringSpec({
 
     "Should be able to cancel workflow just dispatched" {
         // when
-        val deferred = client.dispatch(fakeWorkflow::m0)().join()
+        val deferred = client.start(fakeWorkflow::m0).with().join()
         deferred.cancel().join()
         // then
         workflowTagSlots.size shouldBe 0
@@ -552,24 +552,10 @@ class ClientWorkflowTests : StringSpec({
         }
     }
 
-    "Should be able to dispatch a workflow method with a one primitive as parameter" {
-        // when
-        val id = UUID.randomUUID()
-        val deferred = client.dispatch(fakeWorkflow::m1, id)(0).join()
-        // then
-        workflowSlot.isCaptured shouldBe true
-        val msg = workflowSlot.captured as DispatchMethodRun
-        msg shouldBe DispatchMethodRun(
-            workflowId = WorkflowId(id),
-            workflowName = WorkflowName(FakeWorkflow::class.java.name),
-            methodRunId = MethodRunId(deferred.id),
-            clientName = client.clientName,
-            parentWorkflowId = null,
-            parentWorkflowName = null,
-            parentMethodRunId = null,
-            methodName = MethodName("m1"),
-            methodParameterTypes = MethodParameterTypes(listOf(Integer::class.java.name)),
-            methodParameters = MethodParameters.from(0)
-        )
+    "Should throw when using an instance" {
+        val fake = FakeWorkflowImpl()
+        shouldThrow<InvalidStubException> {
+            client.start(fake::m0).with()
+        }
     }
 })

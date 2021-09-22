@@ -113,7 +113,7 @@ internal class WorkflowTests : StringSpec({
     }
 
     "get id from context" {
-        val deferred = client.dispatch(workflowA::context1)().join()
+        val deferred = client.start(workflowA::context1).with().join()
 
         deferred.await() shouldBe deferred.id
     }
@@ -127,7 +127,7 @@ internal class WorkflowTests : StringSpec({
     }
 
     "get workflow id from task context" {
-        val deferred = client.dispatch(workflowA::context4)().join()
+        val deferred = client.start(workflowA::context4).with().join()
 
         deferred.await() shouldBe deferred.id
     }
@@ -149,7 +149,7 @@ internal class WorkflowTests : StringSpec({
     }
 
     "Wait for a dispatched Workflow" {
-        val deferred = client.dispatch(workflowA::seq1)().join()
+        val deferred = client.start(workflowA::seq1).with().join()
 
         deferred.await() shouldBe "123"
     }
@@ -276,58 +276,58 @@ internal class WorkflowTests : StringSpec({
     }
 
     "Waiting for event, sent after dispatched" {
-        val deferred = client.dispatch(workflowA::channel1)().join()
+        val deferred = client.start(workflowA::channel1).with().join()
 
-        later { client.send(workflowA.channelA, deferred.id)("test") }
+        later { client.send(workflowA.channelA, deferred.id, "test") }
 
         deferred.await() shouldBe "test"
     }
 
     "Waiting for event, sent by id" {
-        val deferred = client.dispatch(workflowA::channel1)().join()
+        val deferred = client.start(workflowA::channel1).with().join()
 
-        later { client.send(workflowA.channelA, deferred.id)("test") }
+        later { client.send(workflowA.channelA, deferred.id, "test") }
 
         deferred.await() shouldBe "test"
     }
 
     "Waiting for event, sent by tag" {
-        val deferred = client.dispatch(workflowATagged::channel1)().join()
+        val deferred = client.start(workflowATagged::channel1).with().join()
 
-        later { client.send(workflowA.channelA, "foo")("test") }
+        later { client.send(workflowA.channelA, "foo", "test") }
 
         deferred.await() shouldBe "test"
     }
 
     "Waiting for event, sent to the right channel" {
-        val deferred = client.dispatch(workflowA::channel2)().join()
+        val deferred = client.start(workflowA::channel2).with().join()
 
-        later { client.send(workflowA.channelA, deferred.id)("test") }
+        later { client.send(workflowA.channelA, deferred.id, "test") }
 
         deferred.await() shouldBe "test"
     }
 
     "Waiting for event but sent to the wrong channel" {
-        val deferred = client.dispatch(workflowA::channel2)().join()
+        val deferred = client.start(workflowA::channel2).with().join()
 
-        later { client.send(workflowA.channelB, deferred.id)("test") }
+        later { client.send(workflowA.channelB, deferred.id, "test") }
 
         deferred.await()::class.java.name shouldBe Instant::class.java.name
     }
 
     "Sending event before waiting for it prevents catching" {
-        val deferred = client.dispatch(workflowA::channel3)().join()
+        val deferred = client.start(workflowA::channel3).with().join()
 
-        later { client.send(workflowA.channelA, deferred.id)("test") }
+        later { client.send(workflowA.channelA, deferred.id, "test") }
 
         deferred.await()::class.java.name shouldBe Instant::class.java.name
     }
 
     "Waiting for Obj event" {
         val obj1 = Obj1("foo", 42)
-        val deferred = client.dispatch(workflowA::channel4)().join()
+        val deferred = client.start(workflowA::channel4).with().join()
 
-        later { client.send(workflowA.channelObj, deferred.id)(obj1) }
+        later { client.send(workflowA.channelObj, deferred.id, obj1) }
 
         deferred.await() shouldBe obj1
     }
@@ -335,12 +335,11 @@ internal class WorkflowTests : StringSpec({
     "Waiting for filtered event using jsonPath only" {
         val obj1a = Obj1("oof", 12)
         val obj1b = Obj1("foo", 12)
-        val deferred = client.dispatch(workflowA::channel4bis)().join()
+        val deferred = client.start(workflowA::channel4bis).with().join()
 
         later {
-            val send = client.send(workflowA.channelObj, deferred.id)
-            send(obj1a)
-            send(obj1b)
+            client.send(workflowA.channelObj, deferred.id, obj1a)
+            client.send(workflowA.channelObj, deferred.id, obj1b)
         }
 
         deferred.await() shouldBe obj1b
@@ -349,12 +348,11 @@ internal class WorkflowTests : StringSpec({
     "Waiting for filtered event using using jsonPath and criteria" {
         val obj1a = Obj1("oof", 12)
         val obj1b = Obj1("foo", 12)
-        val deferred = client.dispatch(workflowA::channel4ter)().join()
+        val deferred = client.start(workflowA::channel4ter).with().join()
 
         later {
-            val send = client.send(workflowA.channelObj, deferred.id)
-            send(obj1a)
-            send(obj1b)
+            client.send(workflowA.channelObj, deferred.id, obj1a)
+            client.send(workflowA.channelObj, deferred.id, obj1b)
         }
 
         deferred.await() shouldBe obj1b
@@ -363,12 +361,11 @@ internal class WorkflowTests : StringSpec({
     "Waiting for event of specific type" {
         val obj1 = Obj1("foo", 42)
         val obj2 = Obj2("foo", 42)
-        val deferred = client.dispatch(workflowA::channel5)().join()
+        val deferred = client.start(workflowA::channel5).with().join()
 
         later {
-            val send = client.send(workflowA.channelObj, deferred.id)
-            send(obj2)
-            send(obj1)
+            client.send(workflowA.channelObj, deferred.id, obj2)
+            client.send(workflowA.channelObj, deferred.id, obj1)
         }
 
         deferred.await() shouldBe obj1
@@ -378,13 +375,12 @@ internal class WorkflowTests : StringSpec({
         val obj1 = Obj1("foo", 42)
         val obj2 = Obj2("foo", 42)
         val obj3 = Obj1("oof", 42)
-        val deferred = client.dispatch(workflowA::channel5bis)().join()
+        val deferred = client.start(workflowA::channel5bis).with().join()
 
         later {
-            val send = client.send(workflowA.channelObj, deferred.id)
-            send(obj3)
-            send(obj2)
-            send(obj1)
+            client.send(workflowA.channelObj, deferred.id, obj3)
+            client.send(workflowA.channelObj, deferred.id, obj2)
+            client.send(workflowA.channelObj, deferred.id, obj1)
         }
 
         deferred.await() shouldBe obj1
@@ -394,13 +390,12 @@ internal class WorkflowTests : StringSpec({
         val obj1 = Obj1("foo", 42)
         val obj2 = Obj2("foo", 42)
         val obj3 = Obj1("oof", 42)
-        val deferred = client.dispatch(workflowA::channel5ter)().join()
+        val deferred = client.start(workflowA::channel5ter).with().join()
 
         later {
-            val send = client.send(workflowA.channelObj, deferred.id)
-            send(obj3)
-            send(obj2)
-            send(obj1)
+            client.send(workflowA.channelObj, deferred.id, obj3)
+            client.send(workflowA.channelObj, deferred.id, obj2)
+            client.send(workflowA.channelObj, deferred.id, obj1)
         }
 
         deferred.await() shouldBe obj1
@@ -409,19 +404,18 @@ internal class WorkflowTests : StringSpec({
     "Waiting for 2 events of specific types presented in wrong order" {
         val obj1 = Obj1("foo", 6)
         val obj2 = Obj2("bar", 7)
-        val deferred = client.dispatch(workflowA::channel6)().join()
+        val deferred = client.start(workflowA::channel6).with().join()
 
         later {
-            val send = client.send(workflowA.channelObj, deferred.id)
-            send(obj2)
-            send(obj1)
+            client.send(workflowA.channelObj, deferred.id, obj2)
+            client.send(workflowA.channelObj, deferred.id, obj1)
         }
 
         deferred.await() shouldBe "foobar42"
     }
 
     "Cancelling async workflow" {
-        val deferred = client.dispatch(workflowA::channel1)().join()
+        val deferred = client.start(workflowA::channel1).with().join()
 
         later { client.cancel(workflowA, deferred.id) }
 
@@ -429,7 +423,7 @@ internal class WorkflowTests : StringSpec({
     }
 
     "Cancelling workflow" {
-        val deferred = client.dispatch(workflowA::channel1)().join()
+        val deferred = client.start(workflowA::channel1).with().join()
 
         later { client.cancel(workflowA, deferred.id) }
 
@@ -500,7 +494,7 @@ internal class WorkflowTests : StringSpec({
     }
 
     "Retry a failed task from client should restart a workflow" {
-        val deferred = client.dispatch(workflowA::failing8)().join()
+        val deferred = client.start(workflowA::failing8).with().join()
 
         val e = shouldThrow<FailedException> { deferred.await() }
 
@@ -520,7 +514,7 @@ internal class WorkflowTests : StringSpec({
     }
 
     "child workflow is canceled when parent workflow is canceled - tag are also added and deleted" {
-        val deferred = client.dispatch(workflowATagged::cancel1)().join()
+        val deferred = client.start(workflowATagged::cancel1).with().join()
 
         delay(1000)
         val size = client.getIds(workflowA, "foo").size
@@ -532,14 +526,14 @@ internal class WorkflowTests : StringSpec({
     }
 
     "Tag should be added then deleted after completion" {
-        val deferred = client.dispatch(workflowATagged::channel1)().join()
+        val deferred = client.start(workflowATagged::channel1).with().join()
 
         // delay is necessary to be sure that tag engine has processed
         delay(500)
         client.getIds(workflowA, "foo").contains(deferred.id) shouldBe true
 
         // complete workflow
-        client.send(workflowA.channelA, "foo")("").join()
+        client.send(workflowA.channelA, "foo", "").join()
 
         // delay is necessary to be sure that tag engine has processed
         delay(500)
@@ -553,38 +547,38 @@ internal class WorkflowTests : StringSpec({
     }
 
     "Check runBranch" {
-        val deferred1 = client.dispatch(workflowC::receive)("a").join()
+        val deferred1 = client.start(workflowC::receive).with("a").join()
 
-        val deferred2 = client.dispatch(workflowC::concat, deferred1.id)("b").join()
+        val deferred2 = client.start(workflowC::concat, deferred1.id).with("b").join()
 
         deferred2.await() shouldBe "ab"
 
-        client.send(workflowC.channelA, deferred1.id)("c")
+        client.send(workflowC.channelA, deferred1.id, "c")
 
         deferred1.await() shouldBe "abc"
     }
 
     "Check multiple runBranch" {
-        val deferred1 = client.dispatch(workflowC::receive)("a").join()
+        val deferred1 = client.start(workflowC::receive).with("a").join()
 
-        client.dispatch(workflowC::add, deferred1.id)("b").join()
-        client.dispatch(workflowC::add, deferred1.id)("c").join()
-        client.dispatch(workflowC::add, deferred1.id)("d").join()
+        client.start(workflowC::add, deferred1.id).with("b").join()
+        client.start(workflowC::add, deferred1.id).with("c").join()
+        client.start(workflowC::add, deferred1.id).with("d").join()
 
-        client.send(workflowC.channelA, deferred1.id)("e")
+        client.send(workflowC.channelA, deferred1.id, "e")
 
         deferred1.await() shouldBe "abcde"
     }
 
     "Check numerous runBranch" {
-        val deferred1 = client.dispatch(workflowC::receive)("a").join()
+        val deferred1 = client.start(workflowC::receive).with("a").join()
 
         repeat(100) {
-            client.dispatch(workflowC::add, deferred1.id)("b")
+            client.start(workflowC::add, deferred1.id).with("b")
         }
         client.join()
 
-        client.send(workflowC.channelA, deferred1.id)("c")
+        client.send(workflowC.channelA, deferred1.id, "c")
 
         deferred1.await() shouldBe "a" + "b".repeat(100) + "c"
     }

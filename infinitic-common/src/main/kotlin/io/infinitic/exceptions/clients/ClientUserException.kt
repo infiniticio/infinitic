@@ -33,9 +33,12 @@ sealed class ClientUserException(
 ) : UserException("$msg.\n$help")
 
 class InvalidStubException(
-    klass: String
+    klass: String? = null
 ) : ClientUserException(
-    msg = "$klass is not the stub of a class or of a workflow",
+    msg = when (klass) {
+        null -> "Instance used"
+        else -> "$klass is not the stub of a class or of a workflow"
+    },
     help = "Make sure to use a stub returned by taskStub(Class<*>) or workflowStub(Class<*>)"
 )
 
@@ -55,10 +58,9 @@ class InvalidWorkflowException(
 )
 
 class InvalidInterfaceException(
-    method: String,
-    action: String
+    method: String
 ) : ClientUserException(
-    msg = "When using InfiniticClient::$action, $method must be a method declared from an interface",
+    msg = "$method must be a method declared from an interface",
     help = "Make sure to provide a method defined from an interface, not from an actual instance."
 )
 

@@ -51,7 +51,7 @@ class WorkflowBImpl : Workflow(), WorkflowB {
     }
 
     override fun cancelChild1(): Long {
-        val def = dispatch(workflowA::channel1)()
+        val def = start(workflowA::channel1).with()
 
         task.cancelWorkflowA(def.id!!)
 
@@ -61,7 +61,7 @@ class WorkflowBImpl : Workflow(), WorkflowB {
     }
 
     override fun cancelChild2(): Long {
-        val deferred = dispatch(workflowA::channel1)()
+        val deferred = start(workflowA::channel1).with()
 
         task.cancelWorkflowA(deferred.id!!)
 

@@ -47,13 +47,14 @@ sealed class ProxyHandler<T : Any>(
         @JvmStatic private val invocationHandler: ThreadLocal<ProxyHandler<*>?> = ThreadLocal()
 
         fun <R : Any?> async(invoke: () -> R): ProxyHandler<*>? {
+            // set async mode
             invocationType.set(ProxyInvokeMode.DISPATCH_ASYNC)
+            // call method
             invoke()
+            // restore default sync mode
             invocationType.set(ProxyInvokeMode.DISPATCH_SYNC)
-            val handler = invocationHandler.get()
-            invocationHandler.set(null)
 
-            return handler
+            return invocationHandler.get()
         }
     }
 
@@ -120,11 +121,14 @@ sealed class ProxyHandler<T : Any>(
         this.method = method
         this.methodArgs = args ?: arrayOf()
 
+        // set current handler
+        invocationHandler.set(this)
+
         return when (isInvokeSync()) {
             // sync => run directly from dispatcher
             true -> dispatcherFn().dispatchAndWait(this)
             // store current instance to get retrieved from ProxyHandler.async
-            false -> { invocationHandler.set(this); any }
+            false -> any
         }
     }
 

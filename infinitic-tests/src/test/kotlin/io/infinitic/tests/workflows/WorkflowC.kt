@@ -54,6 +54,7 @@ class WorkflowCImpl : Workflow(), WorkflowC {
     }
 
     override fun concat(str: String): String {
+        Thread.sleep(50)
 
         log = taskA.concat(log, str)
 

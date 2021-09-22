@@ -91,7 +91,7 @@ class ClientTaskTests : StringSpec({
 
     "dispatch method without parameter" {
         // when
-        val deferred: Deferred<Unit> = client.dispatch(fakeTask::m0)().join()
+        val deferred: Deferred<Unit> = client.start(fakeTask::m0).with().join()
         // then
         taskTagSlots.size shouldBe 0
         taskSlot.captured shouldBe DispatchTask(
@@ -113,7 +113,7 @@ class ClientTaskTests : StringSpec({
 
     "dispatch method with annotations" {
         // when
-        val deferred: Deferred<Unit> = client.dispatch(fooTask::m)().join()
+        val deferred: Deferred<Unit> = client.start(fooTask::m).with().join()
         // then
         taskTagSlots.size shouldBe 0
         taskSlot.captured shouldBe DispatchTask(
@@ -135,7 +135,7 @@ class ClientTaskTests : StringSpec({
 
     "dispatch method with annotations on super" {
         // when
-        val deferred: Deferred<String> = client.dispatch(fooTask::annotated)().join()
+        val deferred: Deferred<String> = client.start(fooTask::annotated).with().join()
         // then
         taskTagSlots.size shouldBe 0
         taskSlot.captured shouldBe DispatchTask(
@@ -157,7 +157,7 @@ class ClientTaskTests : StringSpec({
 
     "dispatch method without parameter (Java syntax)" {
         // when
-        val deferred: Deferred<Unit> = client.dispatch(fakeTask::m0)().join()
+        val deferred: Deferred<Unit> = client.start(fakeTask::m0).with().join()
         // then
         taskTagSlots.size shouldBe 0
         taskSlot.captured shouldBe DispatchTask(
@@ -184,7 +184,7 @@ class ClientTaskTests : StringSpec({
             "foo" to TestFactory.random(),
             "bar" to TestFactory.random()
         )
-        val deferred: Deferred<Unit> = client.dispatch(fakeTask::m0, options = options, meta = meta)().join()
+        val deferred: Deferred<Unit> = client.start(fakeTask::m0, options = options, meta = meta).with().join()
         // then
         taskTagSlots.size shouldBe 0
         taskSlot.captured shouldBe DispatchTask(
@@ -206,7 +206,7 @@ class ClientTaskTests : StringSpec({
 
     "dispatch method with tags" {
         // when
-        val deferred = client.dispatch(fakeTask::m0, tags = setOf("foo", "bar"))().join()
+        val deferred = client.start(fakeTask::m0, tags = setOf("foo", "bar")).with().join()
         // then
         taskTagSlots.toSet() shouldBe setOf(
             AddTaskTag(
@@ -239,9 +239,9 @@ class ClientTaskTests : StringSpec({
 
     "second method should not overwrite the first one" {
         // when
-        client.dispatch(fakeTask::m0)().join()
+        client.start(fakeTask::m0).with().join()
 
-        val deferred = client.dispatch(fakeTask::m1)(0).join()
+        val deferred = client.start(fakeTask::m1).with(0).join()
         // then
         taskTagSlots.size shouldBe 0
         taskSlot.captured shouldBe DispatchTask(
@@ -263,7 +263,7 @@ class ClientTaskTests : StringSpec({
 
     "dispatch a method with a primitive as parameter" {
         // when
-        val deferred: Deferred<String> = client.dispatch(fakeTask::m1)(0).join()
+        val deferred: Deferred<String> = client.start(fakeTask::m1).with(0).join()
         // then
         taskTagSlots.size shouldBe 0
         taskSlot.captured shouldBe DispatchTask(
@@ -285,7 +285,7 @@ class ClientTaskTests : StringSpec({
 
     "dispatch a method with null as parameter" {
         // when
-        val deferred = client.dispatch(fakeTask::m2)(null).join()
+        val deferred = client.start(fakeTask::m2).with(null).join()
         // then
         taskTagSlots.size shouldBe 0
         taskSlot.captured shouldBe DispatchTask(
@@ -307,7 +307,7 @@ class ClientTaskTests : StringSpec({
 
     "dispatch a method with multiple definition" {
         // when
-        val deferred = client.dispatch(fakeTask::m2)("a").join()
+        val deferred = client.start(fakeTask::m2).with("a").join()
         // then
         taskTagSlots.size shouldBe 0
         taskSlot.captured shouldBe DispatchTask(
@@ -329,7 +329,7 @@ class ClientTaskTests : StringSpec({
 
     "dispatch a method with multiple parameters" {
         // when
-        val deferred = client.dispatch(fakeTask::m3)(0, "a").join()
+        val deferred = client.start(fakeTask::m3).with(0, "a").join()
         // then
         taskTagSlots.size shouldBe 0
         taskSlot.captured shouldBe DispatchTask(
@@ -352,7 +352,7 @@ class ClientTaskTests : StringSpec({
     "dispatch a method with an interface as parameter" {
         // when
         val fake = FakeClass()
-        val deferred = client.dispatch(fakeTask::m4)(fake).join()
+        val deferred = client.start(fakeTask::m4).with(fake).join()
         // then
         taskTagSlots.size shouldBe 0
         taskSlot.captured shouldBe DispatchTask(
@@ -374,7 +374,7 @@ class ClientTaskTests : StringSpec({
 
     "dispatch a method with a primitive as return value" {
         // when
-        val deferred = client.dispatch(fakeTask::m5)().join()
+        val deferred = client.start(fakeTask::m5).with().join()
         // then
         taskTagSlots.size shouldBe 0
         taskSlot.captured shouldBe DispatchTask(
@@ -419,7 +419,7 @@ class ClientTaskTests : StringSpec({
     }
 
     "await for a task just dispatched" {
-        client.dispatch(fakeTask::m3)(0, "a").await() shouldBe "success"
+        client.start(fakeTask::m3).with(0, "a").await() shouldBe "success"
     }
 
     "cancel task per id - syntax 1" {
@@ -472,7 +472,7 @@ class ClientTaskTests : StringSpec({
 
     "cancel task just dispatched" {
         // when
-        val deferred = client.dispatch(fakeTask::m0)().join()
+        val deferred = client.start(fakeTask::m0).with().join()
         deferred.cancel().join()
         // then
         taskTagSlots.size shouldBe 0
@@ -509,7 +509,7 @@ class ClientTaskTests : StringSpec({
 
     "retry a task just dispatched " {
         // when
-        val deferred = client.dispatch(fakeTask::m0)().join()
+        val deferred = client.start(fakeTask::m0).with().join()
         deferred.retry().join()
         // then
         taskTagSlots.size shouldBe 0
