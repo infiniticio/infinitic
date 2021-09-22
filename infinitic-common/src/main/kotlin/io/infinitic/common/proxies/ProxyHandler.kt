@@ -47,11 +47,13 @@ sealed class ProxyHandler<T : Any>(
         @JvmStatic private val invocationHandler: ThreadLocal<ProxyHandler<*>?> = ThreadLocal()
 
         fun <R : Any?> async(invoke: () -> R): ProxyHandler<*>? {
-            // set async mode
+            // set mode flag to Async
             invocationType.set(ProxyInvokeMode.DISPATCH_ASYNC)
-            // call method
+            // this is needed ofr nullity test in private InfiniticClient::dispatch function
+            invocationHandler.set(null)
+            // call the method reference
             invoke()
-            // restore default sync mode
+            // reset mode flag to default Sync
             invocationType.set(ProxyInvokeMode.DISPATCH_SYNC)
 
             return invocationHandler.get()

@@ -25,6 +25,7 @@
 
 package io.infinitic.client
 
+import io.infinitic.client.deferred.DeferredTask
 import io.infinitic.client.samples.FakeClass
 import io.infinitic.client.samples.FakeInterface
 import io.infinitic.client.samples.FakeTask
@@ -87,6 +88,16 @@ class ClientTaskTests : StringSpec({
 
     afterTest {
         client.join()
+    }
+
+    "first call to getLastSyncDeferred() should be null" {
+        client.getLastSyncDeferred() shouldBe null
+    }
+
+    "call to getLastSyncDeferred() should be provided last deferred" {
+        fooTask.annotated()
+
+        client.getLastSyncDeferred()!!::class shouldBe DeferredTask::class
     }
 
     "dispatch method without parameter" {

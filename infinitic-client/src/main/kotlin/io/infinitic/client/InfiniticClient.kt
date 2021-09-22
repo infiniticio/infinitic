@@ -58,6 +58,7 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.job
 import kotlinx.coroutines.runBlocking
 import mu.KotlinLogging
+import org.jetbrains.annotations.TestOnly
 import java.io.Closeable
 import java.lang.reflect.Proxy
 import java.util.UUID
@@ -117,6 +118,12 @@ abstract class InfiniticClient : Closeable {
     }
 
     /**
+     *  Get last Deferred created by the synchronous call of a stub
+     */
+    @TestOnly
+    fun getLastSyncDeferred() = dispatcher.getLastSyncDeferred()
+
+    /**
      *  Create a stub for a task
      */
     @JvmOverloads
@@ -147,7 +154,6 @@ abstract class InfiniticClient : Closeable {
         workflowOptions = options,
         workflowMeta = WorkflowMeta(meta)
     ) { dispatcher }.stub()
-
 
     /**
      *  Start a task or workflow without parameter

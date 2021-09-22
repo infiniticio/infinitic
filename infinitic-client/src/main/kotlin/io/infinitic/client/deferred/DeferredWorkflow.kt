@@ -47,7 +47,12 @@ class DeferredWorkflow<R : Any?> (
 
     override fun retry() = dispatcher.retryWorkflow(workflowName, workflowId)
 
-    override fun await(): R = dispatcher.awaitWorkflow(workflowName, workflowId, methodRunId, clientWaiting)
+    override fun await(): R {
+        // making sure that dispatch is done
+        join()
+
+        return dispatcher.awaitWorkflow(workflowName, workflowId, methodRunId, clientWaiting)
+    }
 
     override fun join(): Deferred<R> = this.also { future?.join() ?: thisShouldNotHappen() }
 

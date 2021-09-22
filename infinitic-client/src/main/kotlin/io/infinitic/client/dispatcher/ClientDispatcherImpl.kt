@@ -120,8 +120,22 @@ internal class ClientDispatcherImpl(
 
     private val responseFlow = MutableSharedFlow<ClientMessage>(replay = 0)
 
+    companion object {
+        @JvmStatic private val syncDeferred: ThreadLocal<Deferred<*>?> = ThreadLocal()
+    }
+
     override suspend fun handle(message: ClientMessage) {
         responseFlow.emit(message)
+    }
+
+    override fun getLastSyncDeferred(): Deferred<*>? = syncDeferred.get()
+
+    override fun <R : Any?> dispatchAndWait(handler: ProxyHandler<*>): R {
+        val deferred = dispatch<R>(handler, true, null, null, null)
+        // store in ThreadLocal to be used in ::getLastSyncDeferred
+        syncDeferred.set(deferred)
+
+        return deferred.await()
     }
 
     // asynchronous call: dispatch(stub::method)(*args)

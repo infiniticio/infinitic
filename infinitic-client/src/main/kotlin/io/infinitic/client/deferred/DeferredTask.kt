@@ -45,7 +45,12 @@ class DeferredTask<R : Any?> (
 
     override fun retry() = dispatcher.retryTask(taskName, taskId)
 
-    override fun await(): R = dispatcher.awaitTask(taskName, taskId, clientWaiting)
+    override fun await(): R {
+        // making sure that dispatch is done
+        join()
+
+        return dispatcher.awaitTask(taskName, taskId, clientWaiting)
+    }
 
     override fun join(): Deferred<R> = this.also { future?.join() ?: thisShouldNotHappen() }
 

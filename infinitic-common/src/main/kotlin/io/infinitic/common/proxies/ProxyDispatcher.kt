@@ -25,14 +25,6 @@
 
 package io.infinitic.common.proxies
 
-import io.infinitic.exceptions.clients.SuspendMethodNotSupportedException
-import java.lang.reflect.Method
-import kotlin.reflect.jvm.kotlinFunction
-
 interface ProxyDispatcher {
     fun <R : Any?> dispatchAndWait(handler: ProxyHandler<*>): R
-
-    fun checkMethodIsNotSuspend(method: Method) {
-        if (method.kotlinFunction?.isSuspend == true) throw SuspendMethodNotSupportedException(method.declaringClass.name, method.name)
-    }
 }

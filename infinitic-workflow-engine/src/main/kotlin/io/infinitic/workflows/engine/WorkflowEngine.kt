@@ -163,10 +163,7 @@ class WorkflowEngine(
         state.lastMessageId = message.messageId
 
         // if a workflow task is ongoing then buffer this message, except for WorkflowTaskCompleted of course
-        // except also for WaitWorkflow, as we want to handle it asap to avoid terminating the workflow before it
-        if (state.runningWorkflowTaskId != null &&
-            ! message.isWorkflowTask() &&
-            message !is WaitWorkflow
+        if (state.runningWorkflowTaskId != null && ! message.isWorkflowTask()
         ) {
             // buffer this message
             state.messagesBuffer.add(message)

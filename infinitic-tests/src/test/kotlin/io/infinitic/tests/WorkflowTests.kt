@@ -113,9 +113,7 @@ internal class WorkflowTests : StringSpec({
     }
 
     "get id from context" {
-        val deferred = client.start(workflowA::context1).with().join()
-
-        deferred.await() shouldBe deferred.id
+        workflowA.context1() shouldBe client.getLastSyncDeferred()!!.id
     }
 
     "get tags from context" {

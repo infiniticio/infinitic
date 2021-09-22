@@ -39,8 +39,6 @@ internal fun CoroutineScope.waitWorkflow(
 ) {
     when (val methodRun = state.getMethodRun(message.methodRunId)) {
         null -> {
-            println(state.methodRuns)
-            println(message)
             // this branch is already completed (can not be canceled, the state would be deleted)
             val workflowAlreadyCompleted = MethodAlreadyCompleted(
                 message.clientName,

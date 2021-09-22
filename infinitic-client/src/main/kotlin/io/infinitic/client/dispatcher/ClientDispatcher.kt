@@ -45,8 +45,7 @@ interface ClientDispatcher : ProxyDispatcher {
 
     suspend fun handle(message: ClientMessage)
 
-    override fun <R : Any?> dispatchAndWait(handler: ProxyHandler<*>): R =
-        dispatch<R>(handler, true, null, null, null).await()
+    fun getLastSyncDeferred(): Deferred<*>?
 
     fun <R : Any?> dispatch(
         handler: ProxyHandler<*>,
