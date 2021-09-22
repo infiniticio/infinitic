@@ -163,7 +163,7 @@ class WorkflowAImpl : Workflow(), WorkflowA {
     override fun seq2(): String {
         var str = ""
 
-        val d = start(taskA::reverse).with("ab")
+        val d = dispatch(taskA::reverse).with("ab")
         str = taskA.concat(str, "2")
         str = taskA.concat(str, "3")
 
@@ -195,8 +195,8 @@ class WorkflowAImpl : Workflow(), WorkflowA {
 
     override fun seq5(): Long {
         var l = 0L
-        val d1 = start(taskA::await).with(500)
-        val d2 = start(taskA::await).with(100)
+        val d1 = dispatch(taskA::await).with(500)
+        val d2 = dispatch(taskA::await).with(100)
 
         l += d1.await()
         l += d2.await()
@@ -206,8 +206,8 @@ class WorkflowAImpl : Workflow(), WorkflowA {
 
     override fun seq6(): Long {
         var l = 0L
-        val d1 = start(taskA::await).with(500)
-        val d2 = start(taskA::await).with(100)
+        val d1 = dispatch(taskA::await).with(500)
+        val d2 = dispatch(taskA::await).with(100)
 
         l += d1.await()
         l += d2.await()
@@ -252,26 +252,26 @@ class WorkflowAImpl : Workflow(), WorkflowA {
 //    }
 
     override fun or1(): String {
-        val d1 = start(taskA::reverse).with("ab")
-        val d2 = start(taskA::reverse).with("cd")
-        val d3 = start(taskA::reverse).with("ef")
+        val d1 = dispatch(taskA::reverse).with("ab")
+        val d2 = dispatch(taskA::reverse).with("cd")
+        val d3 = dispatch(taskA::reverse).with("ef")
 
         return (d1 or d2 or d3).await() // should be "ba" or "dc" or "fe"
     }
 
     override fun or2(): Any {
-        val d1 = start(taskA::reverse).with("ab")
-        val d2 = start(taskA::reverse).with("cd")
-        val d3 = start(taskA::reverse).with("ef")
+        val d1 = dispatch(taskA::reverse).with("ab")
+        val d2 = dispatch(taskA::reverse).with("cd")
+        val d3 = dispatch(taskA::reverse).with("ef")
 
         return ((d1 and d2) or d3).await() // should be listOf("ba","dc") or "fe"
     }
 
     override fun or3(): String {
         val list: MutableList<Deferred<String>> = mutableListOf()
-        list.add(start(taskA::reverse).with("ab"))
-        list.add(start(taskA::reverse).with("cd"))
-        list.add(start(taskA::reverse).with("ef"))
+        list.add(dispatch(taskA::reverse).with("ab"))
+        list.add(dispatch(taskA::reverse).with("cd"))
+        list.add(dispatch(taskA::reverse).with("ef"))
 
         return list.or().await() // should be "ba" or "dc" or "fe"
     }
@@ -279,7 +279,7 @@ class WorkflowAImpl : Workflow(), WorkflowA {
     override fun or4(): String {
         var s3 = taskA.concat("1", "2")
 
-        val d1 = start(taskA::reverse).with("ab")
+        val d1 = dispatch(taskA::reverse).with("ab")
         val d2 = timer(Duration.ofMillis(2000))
         val d = (d1 or d2)
         if (d.status() != DeferredStatus.COMPLETED) {
@@ -290,9 +290,9 @@ class WorkflowAImpl : Workflow(), WorkflowA {
     }
 
     override fun and1(): List<String> {
-        val d1 = start(taskA::reverse).with("ab")
-        val d2 = start(taskA::reverse).with("cd")
-        val d3 = start(taskA::reverse).with("ef")
+        val d1 = dispatch(taskA::reverse).with("ab")
+        val d2 = dispatch(taskA::reverse).with("cd")
+        val d3 = dispatch(taskA::reverse).with("ef")
 
         return (d1 and d2 and d3).await() // should be listOf("ba","dc","fe")
     }
@@ -300,9 +300,9 @@ class WorkflowAImpl : Workflow(), WorkflowA {
     override fun and2(): List<String> {
 
         val list: MutableList<Deferred<String>> = mutableListOf()
-        list.add(start(taskA::reverse).with("ab"))
-        list.add(start(taskA::reverse).with("cd"))
-        list.add(start(taskA::reverse).with("ef"))
+        list.add(dispatch(taskA::reverse).with("ab"))
+        list.add(dispatch(taskA::reverse).with("cd"))
+        list.add(dispatch(taskA::reverse).with("ef"))
 
         return list.and().await() // should be listOf("ba","dc","fe")
     }
@@ -311,7 +311,7 @@ class WorkflowAImpl : Workflow(), WorkflowA {
 
         val list: MutableList<Deferred<String>> = mutableListOf()
         for (i in 1..1_00) {
-            list.add(start(taskA::reverse).with("ab"))
+            list.add(dispatch(taskA::reverse).with("ab"))
         }
         return list.and().await() // should be listOf("ba","dc","fe")
     }
@@ -323,7 +323,7 @@ class WorkflowAImpl : Workflow(), WorkflowA {
 
     override fun inline2(i: Int): String {
         val result = inline {
-            start(taskA::reverse).with("ab")
+            dispatch(taskA::reverse).with("ab")
             2 * i
         }
 
@@ -349,7 +349,7 @@ class WorkflowAImpl : Workflow(), WorkflowA {
     override fun child2(): String {
         val workflowB = workflowStub(WorkflowB::class.java)
         val str = taskA.reverse("12")
-        val d = start(workflowB::concat).with(str)
+        val d = dispatch(workflowB::concat).with(str)
 
         return taskA.concat(d.await(), str) // should be "21abc21"
     }
@@ -422,7 +422,7 @@ class WorkflowAImpl : Workflow(), WorkflowA {
     }
 
     override fun prop6(): String {
-        val d1 = start(taskA::reverse).with("12")
+        val d1 = dispatch(taskA::reverse).with("12")
 
         val d2 = async {
             d1.await()
@@ -547,7 +547,7 @@ class WorkflowAImpl : Workflow(), WorkflowA {
     override fun failing2() = taskA.failing()
 
     override fun failing2a(): Long {
-        start(taskA::failing).with()
+        dispatch(taskA::failing).with()
 
         return taskA.await(100)
     }
@@ -565,7 +565,7 @@ class WorkflowAImpl : Workflow(), WorkflowA {
     }
 
     override fun failing4(): Long {
-        val deferred = start(taskA::await).with(1000)
+        val deferred = dispatch(taskA::await).with(1000)
 
         taskA.cancelTaskA(deferred.id!!)
 
@@ -573,7 +573,7 @@ class WorkflowAImpl : Workflow(), WorkflowA {
     }
 
     override fun failing5(): Long {
-        val deferred = start(taskA::await).with(1000)
+        val deferred = dispatch(taskA::await).with(1000)
 
         taskA.cancelTaskA(deferred.id!!)
 
@@ -602,7 +602,7 @@ class WorkflowAImpl : Workflow(), WorkflowA {
 
     override fun failing9(): Boolean {
         // this method will complete only after retry
-        val deferred = start(taskA::successAtRetry).with()
+        val deferred = dispatch(taskA::successAtRetry).with()
 
         val result = try {
             deferred.await()
@@ -621,11 +621,11 @@ class WorkflowAImpl : Workflow(), WorkflowA {
     override fun failing10(): String {
         p1 = "o"
 
-        val deferred = start(taskA::await).with(1000)
+        val deferred = dispatch(taskA::await).with(1000)
 
         async { p1 += "k" }
 
-        start(taskA::cancelTaskA).with(deferred.id!!)
+        dispatch(taskA::cancelTaskA).with(deferred.id!!)
 
         try {
             deferred.await()

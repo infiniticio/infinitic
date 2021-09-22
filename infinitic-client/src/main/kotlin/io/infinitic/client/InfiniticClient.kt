@@ -159,7 +159,7 @@ abstract class InfiniticClient : Closeable {
      *  Start a task or workflow without parameter
      */
     @JvmOverloads
-    fun <R> start(
+    fun <R> dispatch(
         method: Function0<R>,
         tags: Set<String>? = null,
         options: JobOptions? = null,
@@ -172,7 +172,7 @@ abstract class InfiniticClient : Closeable {
      *  Start a task or workflow with 1 parameter
      */
     @JvmOverloads
-    fun <P1, R> start(
+    fun <P1, R> dispatch(
         method: Function1<P1, R>,
         tags: Set<String>? = null,
         options: JobOptions? = null,
@@ -185,7 +185,7 @@ abstract class InfiniticClient : Closeable {
      *  Start a task or workflow with 2 parameters
      */
     @JvmOverloads
-    fun <P1, P2, R : Any?> start(
+    fun <P1, P2, R : Any?> dispatch(
         method: Function2<P1, P2, R>,
         tags: Set<String>? = null,
         options: JobOptions? = null,
@@ -198,7 +198,7 @@ abstract class InfiniticClient : Closeable {
      *  Start a task or workflow with 3 parameters
      */
     @JvmOverloads
-    fun <P1, P2, P3, R : Any?> start(
+    fun <P1, P2, P3, R : Any?> dispatch(
         method: Function3<P1, P2, P3, R>,
         tags: Set<String>? = null,
         options: JobOptions? = null,
@@ -211,7 +211,7 @@ abstract class InfiniticClient : Closeable {
      *  Start a task or workflow with 4 parameters
      */
     @JvmOverloads
-    fun <P1, P2, P3, P4, R : Any?> start(
+    fun <P1, P2, P3, P4, R : Any?> dispatch(
         method: Function4<P1, P2, P3, P4, R>,
         tags: Set<String>? = null,
         options: JobOptions? = null,
@@ -224,7 +224,7 @@ abstract class InfiniticClient : Closeable {
      *  Start a task or workflow with 5 parameters
      */
     @JvmOverloads
-    fun <P1, P2, P3, P4, P5, R : Any?> start(
+    fun <P1, P2, P3, P4, P5, R : Any?> dispatch(
         method: Function5<P1, P2, P3, P4, P5, R>,
         tags: Set<String>? = null,
         options: JobOptions? = null,
@@ -237,7 +237,7 @@ abstract class InfiniticClient : Closeable {
      *  Start a task or workflow with 6 parameters
      */
     @JvmOverloads
-    fun <P1, P2, P3, P4, P5, P6, R : Any?> start(
+    fun <P1, P2, P3, P4, P5, P6, R : Any?> dispatch(
         method: Function6<P1, P2, P3, P4, P5, P6, R>,
         tags: Set<String>? = null,
         options: JobOptions? = null,
@@ -250,7 +250,7 @@ abstract class InfiniticClient : Closeable {
      *  Start a task or workflow with 7 parameters
      */
     @JvmOverloads
-    fun <P1, P2, P3, P4, P5, P6, P7, R : Any?> start(
+    fun <P1, P2, P3, P4, P5, P6, P7, R : Any?> dispatch(
         method: Function7<P1, P2, P3, P4, P5, P6, P7, R>,
         tags: Set<String>? = null,
         options: JobOptions? = null,
@@ -263,7 +263,7 @@ abstract class InfiniticClient : Closeable {
      *  Start a task or workflow with 8 parameters
      */
     @JvmOverloads
-    fun <P1, P2, P3, P4, P5, P6, P7, P8, R : Any?> start(
+    fun <P1, P2, P3, P4, P5, P6, P7, P8, R : Any?> dispatch(
         method: Function8<P1, P2, P3, P4, P5, P6, P7, P8, R>,
         tags: Set<String>? = null,
         options: JobOptions? = null,
@@ -276,7 +276,7 @@ abstract class InfiniticClient : Closeable {
      *  Start a task or workflow with 9 parameters
      */
     @JvmOverloads
-    fun <P1, P2, P3, P4, P5, P6, P7, P8, P9, R : Any?> start(
+    fun <P1, P2, P3, P4, P5, P6, P7, P8, P9, R : Any?> dispatch(
         method: Function9<P1, P2, P3, P4, P5, P6, P7, P8, P9, R>,
         tags: Set<String>? = null,
         options: JobOptions? = null,
@@ -288,7 +288,7 @@ abstract class InfiniticClient : Closeable {
     /**
      *  Start a method without parameter for a running workflow targeted by id
      */
-    fun <R : Any?> start(
+    fun <R : Any?> dispatch(
         method: Function0<R>,
         id: UUID
     ): With0<R> = With0 {
@@ -298,7 +298,7 @@ abstract class InfiniticClient : Closeable {
     /**
      *  Start a method with 1 parameter for a running workflow targeted by id
      */
-    fun <P1, R : Any?> start(
+    fun <P1, R : Any?> dispatch(
         method: Function1<P1, R>,
         id: UUID
     ): With1<P1, R> = With1 { p1 ->
@@ -308,7 +308,7 @@ abstract class InfiniticClient : Closeable {
     /**
      *  Start a method with 2 parameters for a running workflow targeted by id
      */
-    fun <P1, P2, R : Any?> start(
+    fun <P1, P2, R : Any?> dispatch(
         method: Function2<P1, P2, R>,
         id: UUID
     ): With2<P1, P2, R> = With2 { p1, p2 ->
@@ -318,7 +318,7 @@ abstract class InfiniticClient : Closeable {
     /**
      *  Start a method with 3 parameters for a running workflow targeted by id
      */
-    fun <P1, P2, P3, R : Any?> start(
+    fun <P1, P2, P3, R : Any?> dispatch(
         method: Function3<P1, P2, P3, R>,
         id: UUID
     ): With3<P1, P2, P3, R> = With3 { p1, p2, p3 ->
@@ -328,7 +328,7 @@ abstract class InfiniticClient : Closeable {
     /**
      *  Start a method with 4 parameters for a running workflow targeted by id
      */
-    fun <P1, P2, P3, P4, R : Any?> start(
+    fun <P1, P2, P3, P4, R : Any?> dispatch(
         method: Function4<P1, P2, P3, P4, R>,
         id: UUID
     ): With4<P1, P2, P3, P4, R> = With4 { p1, p2, p3, p4 ->
@@ -338,7 +338,7 @@ abstract class InfiniticClient : Closeable {
     /**
      *  Start a method with 5 parameters for a running workflow targeted by id
      */
-    fun <P1, P2, P3, P4, P5, R : Any?> start(
+    fun <P1, P2, P3, P4, P5, R : Any?> dispatch(
         method: Function5<P1, P2, P3, P4, P5, R>,
         id: UUID
     ): With5<P1, P2, P3, P4, P5, R> = With5 { p1, p2, p3, p4, p5 ->
@@ -348,7 +348,7 @@ abstract class InfiniticClient : Closeable {
     /**
      *  Start a method with 6 parameters for a running workflow targeted by id
      */
-    fun <P1, P2, P3, P4, P5, P6, R : Any?> start(
+    fun <P1, P2, P3, P4, P5, P6, R : Any?> dispatch(
         method: Function6<P1, P2, P3, P4, P5, P6, R>,
         id: UUID
     ): With6<P1, P2, P3, P4, P5, P6, R> = With6 { p1, p2, p3, p4, p5, p6 ->
@@ -358,7 +358,7 @@ abstract class InfiniticClient : Closeable {
     /**
      *  Start a method with 7 parameters for a running workflow targeted by id
      */
-    fun <P1, P2, P3, P4, P5, P6, P7, R : Any?> start(
+    fun <P1, P2, P3, P4, P5, P6, P7, R : Any?> dispatch(
         method: Function7<P1, P2, P3, P4, P5, P6, P7, R>,
         id: UUID
     ): With7<P1, P2, P3, P4, P5, P6, P7, R> = With7 { p1, p2, p3, p4, p5, p6, p7 ->
@@ -368,7 +368,7 @@ abstract class InfiniticClient : Closeable {
     /**
      *  Start a method with 8 parameters for a running workflow targeted by id
      */
-    fun <P1, P2, P3, P4, P5, P6, P7, P8, R : Any?> start(
+    fun <P1, P2, P3, P4, P5, P6, P7, P8, R : Any?> dispatch(
         method: Function8<P1, P2, P3, P4, P5, P6, P7, P8, R>,
         id: UUID
     ): With8<P1, P2, P3, P4, P5, P6, P7, P8, R> = With8 { p1, p2, p3, p4, p5, p6, p7, p8 ->
@@ -378,7 +378,7 @@ abstract class InfiniticClient : Closeable {
     /**
      *  Start a method with 8 parameters for a running workflow targeted by id
      */
-    fun <P1, P2, P3, P4, P5, P6, P7, P8, P9, R : Any?> start(
+    fun <P1, P2, P3, P4, P5, P6, P7, P8, P9, R : Any?> dispatch(
         method: Function9<P1, P2, P3, P4, P5, P6, P7, P8, P9, R>,
         id: UUID
     ): With9<P1, P2, P3, P4, P5, P6, P7, P8, P9, R> = With9 { p1, p2, p3, p4, p5, p6, p7, p8, p9 ->

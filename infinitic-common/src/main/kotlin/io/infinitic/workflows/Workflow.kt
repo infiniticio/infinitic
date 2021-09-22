@@ -81,7 +81,7 @@ abstract class Workflow {
      *  Start a task or workflow without parameter
      */
     @JvmOverloads
-    fun <R> start(
+    fun <R> dispatch(
         method: Function0<R>,
         tags: Set<String>? = null,
         options: JobOptions? = null,
@@ -94,7 +94,7 @@ abstract class Workflow {
      *  Start a task or workflow with 1 parameter
      */
     @JvmOverloads
-    fun <P1, R> start(
+    fun <P1, R> dispatch(
         method: Function1<P1, R>,
         tags: Set<String>? = null,
         options: JobOptions? = null,
@@ -107,7 +107,7 @@ abstract class Workflow {
      *  Start a task or workflow with 2 parameters
      */
     @JvmOverloads
-    fun <P1, P2, R : Any?> start(
+    fun <P1, P2, R : Any?> dispatch(
         method: Function2<P1, P2, R>,
         tags: Set<String>? = null,
         options: JobOptions? = null,
@@ -120,7 +120,7 @@ abstract class Workflow {
      *  Start a task or workflow with 3 parameters
      */
     @JvmOverloads
-    fun <P1, P2, P3, R : Any?> start(
+    fun <P1, P2, P3, R : Any?> dispatch(
         method: Function3<P1, P2, P3, R>,
         tags: Set<String>? = null,
         options: JobOptions? = null,
@@ -133,7 +133,7 @@ abstract class Workflow {
      *  Start a task or workflow with 4 parameters
      */
     @JvmOverloads
-    fun <P1, P2, P3, P4, R : Any?> start(
+    fun <P1, P2, P3, P4, R : Any?> dispatch(
         method: Function4<P1, P2, P3, P4, R>,
         tags: Set<String>? = null,
         options: JobOptions? = null,
@@ -146,7 +146,7 @@ abstract class Workflow {
      *  Start a task or workflow with 5 parameters
      */
     @JvmOverloads
-    fun <P1, P2, P3, P4, P5, R : Any?> start(
+    fun <P1, P2, P3, P4, P5, R : Any?> dispatch(
         method: Function5<P1, P2, P3, P4, P5, R>,
         tags: Set<String>? = null,
         options: JobOptions? = null,
@@ -159,7 +159,7 @@ abstract class Workflow {
      *  Start a task or workflow with 6 parameters
      */
     @JvmOverloads
-    fun <P1, P2, P3, P4, P5, P6, R : Any?> start(
+    fun <P1, P2, P3, P4, P5, P6, R : Any?> dispatch(
         method: Function6<P1, P2, P3, P4, P5, P6, R>,
         tags: Set<String>? = null,
         options: JobOptions? = null,
@@ -172,7 +172,7 @@ abstract class Workflow {
      *  Start a task or workflow with 7 parameters
      */
     @JvmOverloads
-    fun <P1, P2, P3, P4, P5, P6, P7, R : Any?> start(
+    fun <P1, P2, P3, P4, P5, P6, P7, R : Any?> dispatch(
         method: Function7<P1, P2, P3, P4, P5, P6, P7, R>,
         tags: Set<String>? = null,
         options: JobOptions? = null,
@@ -185,7 +185,7 @@ abstract class Workflow {
      *  Start a task or workflow with 8 parameters
      */
     @JvmOverloads
-    fun <P1, P2, P3, P4, P5, P6, P7, P8, R : Any?> start(
+    fun <P1, P2, P3, P4, P5, P6, P7, P8, R : Any?> dispatch(
         method: Function8<P1, P2, P3, P4, P5, P6, P7, P8, R>,
         tags: Set<String>? = null,
         options: JobOptions? = null,
@@ -198,7 +198,7 @@ abstract class Workflow {
      *  Start a task or workflow with 9 parameters
      */
     @JvmOverloads
-    fun <P1, P2, P3, P4, P5, P6, P7, P8, P9, R : Any?> start(
+    fun <P1, P2, P3, P4, P5, P6, P7, P8, P9, R : Any?> dispatch(
         method: Function9<P1, P2, P3, P4, P5, P6, P7, P8, P9, R>,
         tags: Set<String>? = null,
         options: JobOptions? = null,
