@@ -42,7 +42,6 @@ import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import kotlin.concurrent.thread
 
 internal class TaskTests : StringSpec({
 
@@ -52,21 +51,21 @@ internal class TaskTests : StringSpec({
     val client = autoClose(InfiniticClientFactory.fromConfigResource("/pulsar.yml"))
     val worker = autoClose(InfiniticWorkerFactory.fromConfigResource("/pulsar.yml"))
 
-    val taskTest = client.taskStub(TaskTest::class.java)
-    val taskTestWithTags = client.taskStub(TaskTest::class.java, tags = setOf("foo", "bar"))
+    val taskTest = client.newTask(TaskTest::class.java)
+    val taskTestWithTags = client.newTask(TaskTest::class.java, tags = setOf("foo", "bar"))
 
     beforeTest {
         worker.storageFlush()
     }
 
     beforeSpec {
-        thread { worker.start() }
+        worker.startAsync()
     }
 
     "Asynchronous execution succeeds at first try" {
         TaskTestImpl.behavior = { _, _ -> Status.SUCCESS }
 
-        val deferred = client.dispatch(taskTest::await).with(400L).join()
+        val deferred = client.dispatch(taskTest::await, 400L)
 
         deferred.await() shouldBe 400L
     }
@@ -96,7 +95,7 @@ internal class TaskTests : StringSpec({
             }
         }
 
-        val deferred = client.dispatch(taskTest::log).with().join()
+        val deferred = client.dispatch(taskTest::log)
 
         deferred.await() shouldBe "00000000001"
     }
@@ -132,11 +131,11 @@ internal class TaskTests : StringSpec({
             }
         }
 
-        val deferred = client.dispatch(taskTest::log).with().join()
+        val deferred = client.dispatch(taskTest::log)
 
         shouldThrow<FailedException> { deferred.await() }
 
-        deferred.retry().join()
+        deferred.retry()
 
         deferred.await() shouldBe "01"
     }
@@ -150,11 +149,11 @@ internal class TaskTests : StringSpec({
             }
         }
 
-        val deferred = client.dispatch(taskTest::log).with().join()
+        val deferred = client.dispatch(taskTest::log)
 
         shouldThrow<FailedException> { deferred.await() }
 
-        deferred.retry().join()
+        deferred.retry()
 
         deferred.await() shouldBe "00000001"
     }
@@ -167,11 +166,12 @@ internal class TaskTests : StringSpec({
                 else -> Status.SUCCESS
             }
         }
-        val deferred = client.dispatch(taskTestWithTags::log).with().join()
+        val deferred = client.dispatch(taskTestWithTags::log)
 
         shouldThrow<FailedException> { deferred.await() }
 
-        client.retry(taskTest, "foo").join()
+        val t = client.getTask(TaskTest::class.java, "foo")
+        client.retry(t)
 
         delay(50)
 
@@ -181,30 +181,36 @@ internal class TaskTests : StringSpec({
     "Task canceled during automatic retry" {
         TaskTestImpl.behavior = { _, _ -> Status.FAILED_WITH_RETRY }
 
-        val deferred = client.dispatch(taskTest::log).with().join()
+        val deferred = client.dispatch(taskTest::log)
 
-        later { client.cancel(taskTest, deferred.id) }
-
-        shouldThrow<CanceledException> { deferred.await() }
-    }
-
-    "Task canceled using A tag" {
-        TaskTestImpl.behavior = { _, _ -> Status.FAILED_WITH_RETRY }
-
-        val deferred = client.dispatch(taskTestWithTags::log).with().join()
-
-        later { client.cancel(taskTest, "foo") }
+        later { deferred.cancel() }
 
         shouldThrow<CanceledException> { deferred.await() }
     }
 
-    "2 Task canceled using A tag" {
+    "Task canceled using tag" {
         TaskTestImpl.behavior = { _, _ -> Status.FAILED_WITH_RETRY }
 
-        val deferred1 = client.dispatch(taskTestWithTags::log).with().join()
-        val deferred2 = client.dispatch(taskTestWithTags::log).with().join()
+        val deferred = client.dispatch(taskTestWithTags::log)
 
-        later { client.cancel(taskTest, "foo") }
+        later {
+            val t = client.getTask(TaskTest::class.java, "foo")
+            client.cancel(t)
+        }
+
+        shouldThrow<CanceledException> { deferred.await() }
+    }
+
+    "2 Task canceled using tag" {
+        TaskTestImpl.behavior = { _, _ -> Status.FAILED_WITH_RETRY }
+
+        val deferred1 = client.dispatch(taskTestWithTags::log)
+        val deferred2 = client.dispatch(taskTestWithTags::log)
+
+        later {
+            val t = client.getTask(TaskTest::class.java, "foo")
+            client.cancel(t)
+        }
 
         later(0) {
             launch { shouldThrow<CanceledException> { deferred1.await() } }
@@ -215,46 +221,50 @@ internal class TaskTests : StringSpec({
     "Tag should be added then deleted after completion" {
         TaskTestImpl.behavior = { _, _ -> Status.SUCCESS }
 
-        val deferred = client.dispatch(taskTestWithTags::await).with(200).join()
+        val deferred = client.dispatch(taskTestWithTags::await, 200)
+        val foo = client.getTask(TaskTest::class.java, "foo")
+        val bar = client.getTask(TaskTest::class.java, "bar")
 
-        client.getIds(taskTest, "foo").contains(deferred.id) shouldBe true
-        client.getIds(taskTest, "bar").contains(deferred.id) shouldBe true
+        client.getIds(foo).contains(deferred.id) shouldBe true
+        client.getIds(bar).contains(deferred.id) shouldBe true
 
         deferred.await()
 
         // wait a bit to ensure tag propagation
-        delay(200)
+        delay(500)
 
-        client.getIds(taskTest, "foo").contains(deferred.id) shouldBe false
-        client.getIds(taskTest, "bar").contains(deferred.id) shouldBe false
+        client.getIds(foo).contains(deferred.id) shouldBe false
+        client.getIds(bar).contains(deferred.id) shouldBe false
     }
 
     "Tag should be added then deleted after cancellation" {
         TaskTestImpl.behavior = { _, _ -> Status.FAILED_WITH_RETRY }
 
-        val deferred = client.dispatch(taskTestWithTags::log).with().join()
+        val deferred = client.dispatch(taskTestWithTags::log)
+        val foo = client.getTask(TaskTest::class.java, "foo")
+        val bar = client.getTask(TaskTest::class.java, "bar")
 
-        client.getIds(taskTest, "foo").contains(deferred.id) shouldBe true
-        client.getIds(taskTest, "bar").contains(deferred.id) shouldBe true
+        client.getIds(foo).contains(deferred.id) shouldBe true
+        client.getIds(bar).contains(deferred.id) shouldBe true
 
-        later { client.cancel(taskTest, deferred.id) }
+        later { deferred.cancel() }
 
         shouldThrow<CanceledException> { deferred.await() }
 
         // wait a bit to ensure tag propagation
         delay(200)
-        client.getIds(taskTest, "foo").contains(deferred.id) shouldBe false
-        client.getIds(taskTest, "bar").contains(deferred.id) shouldBe false
+        client.getIds(foo).contains(deferred.id) shouldBe false
+        client.getIds(bar).contains(deferred.id) shouldBe false
     }
 
     "Get tags from context" {
-        val taskWithTags = client.taskStub(TaskA::class.java, tags = setOf("foo", "bar"))
+        val taskWithTags = client.newTask(TaskA::class.java, tags = setOf("foo", "bar"))
 
         taskWithTags.tags() shouldBe setOf("foo", "bar")
     }
 
     "Get meta from context" {
-        val taskWithMeta = client.taskStub(TaskA::class.java, meta = mapOf("foo" to "bar".toByteArray()))
+        val taskWithMeta = client.newTask(TaskA::class.java, meta = mapOf("foo" to "bar".toByteArray()))
 
         taskWithMeta.meta() shouldBe TaskMeta(mapOf("foo" to "bar".toByteArray()))
     }

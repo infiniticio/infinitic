@@ -52,8 +52,8 @@ interface TaskA : ParentInterface {
 }
 
 class TaskAImpl : Task(), TaskA {
-    val workflowA by lazy { context.client.workflowStub(WorkflowA::class.java) }
-    val taskA by lazy { context.client.taskStub(TaskA::class.java) }
+    val workflowA by lazy { context.client.newWorkflow(WorkflowA::class.java) }
+    val taskA by lazy { context.client.newTask(TaskA::class.java) }
 
     override fun concat(str1: String, str2: String): String = str1 + str2
 
@@ -67,12 +67,14 @@ class TaskAImpl : Task(), TaskA {
 
     override fun cancelWorkflowA(id: UUID) {
         Thread.sleep(50)
-        context.client.cancel(workflowA, id)
+        val t = context.client.getWorkflow(WorkflowA::class.java, id)
+        context.client.cancel(t)
     }
 
     override fun cancelTaskA(id: UUID) {
         Thread.sleep(50)
-        context.client.cancel(taskA, id)
+        val t = context.client.getTask(TaskA::class.java, id)
+        context.client.cancel(t)
     }
 
     override fun failing() = throw Exception("sorry")
@@ -84,7 +86,8 @@ class TaskAImpl : Task(), TaskA {
 
     override fun retryTaskA(id: UUID) {
         Thread.sleep(50)
-        context.client.retry(taskA, id)
+        val t = context.client.getTask(TaskA::class.java, id)
+        context.client.retry(t)
     }
 
     override fun parent() = "ok"

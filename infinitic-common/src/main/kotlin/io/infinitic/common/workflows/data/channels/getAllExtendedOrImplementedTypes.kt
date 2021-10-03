@@ -43,7 +43,7 @@ internal fun getAllExtendedOrImplementedTypes(klass: Class<*>): Set<ChannelSigna
         // Add the super class
         val superClass = clazz.superclass ?: break
 
-        // Interfaces does not have java,lang.Object as superclass, they have null, so break the cycle and return
+        // Interfaces do not have java,lang.Object as superclass, they have null, so break the cycle and return
 
         // Now inspect the superclass
         clazz = superClass

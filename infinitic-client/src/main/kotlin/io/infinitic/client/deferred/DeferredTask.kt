@@ -29,30 +29,20 @@ import io.infinitic.client.Deferred
 import io.infinitic.client.dispatcher.ClientDispatcher
 import io.infinitic.common.tasks.data.TaskId
 import io.infinitic.common.tasks.data.TaskName
-import io.infinitic.exceptions.thisShouldNotHappen
 import java.util.UUID
-import java.util.concurrent.CompletableFuture
 
 class DeferredTask<R : Any?> (
-    private val taskName: TaskName,
-    private val taskId: TaskId,
-    private val clientWaiting: Boolean,
+    internal val taskName: TaskName,
+    internal val taskId: TaskId,
+    internal val clientWaiting: Boolean,
     private val dispatcher: ClientDispatcher,
-    private val future: CompletableFuture<Unit>? = null
 ) : Deferred<R> {
 
-    override fun cancel() = dispatcher.cancelTask(taskName, taskId)
+    override fun cancelAsync() = dispatcher.cancelTaskAsync(taskName, taskId, null)
 
-    override fun retry() = dispatcher.retryTask(taskName, taskId)
+    override fun retryAsync() = dispatcher.retryTaskAsync(taskName, taskId, null)
 
-    override fun await(): R {
-        // making sure that dispatch is done
-        join()
-
-        return dispatcher.awaitTask(taskName, taskId, clientWaiting)
-    }
-
-    override fun join(): Deferred<R> = this.also { future?.join() ?: thisShouldNotHappen() }
+    override fun await(): R = dispatcher.awaitTask(taskName, taskId, clientWaiting)
 
     override val id: UUID by lazy { taskId.id }
 }

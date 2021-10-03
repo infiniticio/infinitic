@@ -27,30 +27,28 @@ package io.infinitic.client.deferred
 
 import io.infinitic.client.Deferred
 import io.infinitic.common.workflows.data.channels.ChannelSignalId
+import io.infinitic.exceptions.thisShouldNotHappen
 import java.util.UUID
 import java.util.concurrent.CompletableFuture
 
 internal class DeferredSend<R : Any?> (
-    channelSignalId: ChannelSignalId,
-    private val future: CompletableFuture<Unit>
+    internal val channelSignalId: ChannelSignalId
 ) : Deferred<R> {
 
-    override fun cancel(): CompletableFuture<Unit> {
-        TODO("Not yet implemented")
+    override fun cancelAsync(): CompletableFuture<Unit> {
+        throw thisShouldNotHappen()
     }
 
-    override fun retry(): CompletableFuture<Unit> {
-        TODO("Not yet implemented")
+    override fun retryAsync(): CompletableFuture<Unit> {
+        throw thisShouldNotHappen()
     }
 
     // Send return type is always CompletableFuture<Unit>
     // also we do not apply the join method
     // in order to send asynchronously the message
-    // despite the synchronous syntax: workflow.channel.send
+    // despite the synchronous syntax: workflow.channel
     @Suppress("UNCHECKED_CAST")
-    override fun await(): R = future as R
-
-    override fun join(): Deferred<R> = this.also { future.join() }
+    override fun await(): R = Unit as R
 
     override val id: UUID = channelSignalId.id
 }

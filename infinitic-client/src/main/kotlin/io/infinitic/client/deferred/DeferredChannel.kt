@@ -26,6 +26,7 @@
 package io.infinitic.client.deferred
 
 import io.infinitic.client.Deferred
+import io.infinitic.exceptions.thisShouldNotHappen
 import io.infinitic.workflows.SendChannel
 import java.util.UUID
 import java.util.concurrent.CompletableFuture
@@ -34,18 +35,16 @@ internal class DeferredChannel<R : SendChannel<*>> (
     private val channel: R
 ) : Deferred<R> {
 
-    override fun cancel(): CompletableFuture<Unit> {
-        TODO("Not yet implemented")
+    override fun cancelAsync(): CompletableFuture<Unit> {
+        throw thisShouldNotHappen()
     }
 
-    override fun retry(): CompletableFuture<Unit> {
-        TODO("Not yet implemented")
+    override fun retryAsync(): CompletableFuture<Unit> {
+        throw thisShouldNotHappen()
     }
 
     override fun await(): R = channel
 
-    override fun join(): Deferred<R> = this
-
     override val id: UUID
-        get() = throw Exception()
+        get() { throw thisShouldNotHappen() }
 }

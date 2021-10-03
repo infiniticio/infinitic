@@ -76,8 +76,17 @@ class ClientTask : InfiniticClient() {
 class ClientTaskTests : StringSpec({
     val client = ClientTask()
 
-    val fakeTask = client.taskStub(FakeTask::class.java)
-    val fooTask = client.taskStub(FooTask::class.java)
+    val fakeTask = client.newTask(FakeTask::class.java)
+    val fooTask = client.newTask(FooTask::class.java)
+
+    val options = TestFactory.random<TaskOptions>()
+    val meta: Map<String, ByteArray> = mapOf(
+        "foo" to TestFactory.random(),
+        "bar" to TestFactory.random()
+    )
+    val fakeTaskWithOptions = client.newTask(FakeTask::class.java, options = options)
+    val fakeTaskWithMeta = client.newTask(FakeTask::class.java, meta = meta)
+    val fakeTaskWithTags = client.newTask(FakeTask::class.java, tags = setOf("foo", "bar"))
 
     beforeTest {
         taskTagSlots.clear()
@@ -91,18 +100,18 @@ class ClientTaskTests : StringSpec({
     }
 
     "First call to getLastSyncDeferred() should be null" {
-        client.getLastSyncDeferred() shouldBe null
+        client.lastDeferred shouldBe null
     }
 
     "Call to getLastSyncDeferred() should be provided last deferred" {
         fooTask.annotated()
 
-        client.getLastSyncDeferred()!!::class shouldBe DeferredTask::class
+        client.lastDeferred!!::class shouldBe DeferredTask::class
     }
 
     "Dispatch method without parameter" {
         // when
-        val deferred: Deferred<Unit> = client.dispatch(fakeTask::m0).with().join()
+        val deferred: Deferred<Unit> = client.dispatch(fakeTask::m0)
         // then
         taskTagSlots.size shouldBe 0
         taskSlot.captured shouldBe DispatchTask(
@@ -124,7 +133,7 @@ class ClientTaskTests : StringSpec({
 
     "Dispatch method with annotations" {
         // when
-        val deferred: Deferred<Unit> = client.dispatch(fooTask::m).with().join()
+        val deferred: Deferred<Unit> = client.dispatch(fooTask::m)
         // then
         taskTagSlots.size shouldBe 0
         taskSlot.captured shouldBe DispatchTask(
@@ -146,7 +155,7 @@ class ClientTaskTests : StringSpec({
 
     "Dispatch method with annotations on super" {
         // when
-        val deferred: Deferred<String> = client.dispatch(fooTask::annotated).with().join()
+        val deferred: Deferred<String> = client.dispatch(fooTask::annotated)
         // then
         taskTagSlots.size shouldBe 0
         taskSlot.captured shouldBe DispatchTask(
@@ -168,7 +177,7 @@ class ClientTaskTests : StringSpec({
 
     "Dispatch method without parameter (Java syntax)" {
         // when
-        val deferred: Deferred<Unit> = client.dispatch(fakeTask::m0).with().join()
+        val deferred: Deferred<Unit> = client.dispatch(fakeTask::m0)
         // then
         taskTagSlots.size shouldBe 0
         taskSlot.captured shouldBe DispatchTask(
@@ -188,14 +197,9 @@ class ClientTaskTests : StringSpec({
         )
     }
 
-    "Dispatch method with options and meta" {
+    "Dispatch method with options" {
         // when
-        val options = TestFactory.random<TaskOptions>()
-        val meta: Map<String, ByteArray> = mapOf(
-            "foo" to TestFactory.random(),
-            "bar" to TestFactory.random()
-        )
-        val deferred: Deferred<Unit> = client.dispatch(fakeTask::m0, options = options, meta = meta).with().join()
+        val deferred: Deferred<Unit> = client.dispatch(fakeTaskWithOptions::m0)
         // then
         taskTagSlots.size shouldBe 0
         taskSlot.captured shouldBe DispatchTask(
@@ -211,13 +215,35 @@ class ClientTaskTests : StringSpec({
             methodRunId = null,
             taskTags = setOf(),
             taskOptions = options,
+            taskMeta = TaskMeta()
+        )
+    }
+
+    "Dispatch method with meta" {
+        // when
+        val deferred: Deferred<Unit> = client.dispatch(fakeTaskWithMeta::m0)
+        // then
+        taskTagSlots.size shouldBe 0
+        taskSlot.captured shouldBe DispatchTask(
+            clientName = client.clientName,
+            clientWaiting = false,
+            taskId = TaskId(deferred.id),
+            taskName = TaskName(FakeTask::class.java.name),
+            methodName = MethodName("m0"),
+            methodParameterTypes = MethodParameterTypes(listOf()),
+            methodParameters = MethodParameters(),
+            workflowId = null,
+            workflowName = null,
+            methodRunId = null,
+            taskTags = setOf(),
+            taskOptions = TaskOptions(),
             taskMeta = TaskMeta(meta)
         )
     }
 
     "Dispatch method with tags" {
         // when
-        val deferred = client.dispatch(fakeTask::m0, tags = setOf("foo", "bar")).with().join()
+        val deferred = client.dispatch(fakeTaskWithTags::m0)
         // then
         taskTagSlots.toSet() shouldBe setOf(
             AddTaskTag(
@@ -250,9 +276,9 @@ class ClientTaskTests : StringSpec({
 
     "Second method should not overwrite the first one" {
         // when
-        client.dispatch(fakeTask::m0).with().join()
+        client.dispatch(fakeTask::m0)
 
-        val deferred = client.dispatch(fakeTask::m1).with(0).join()
+        val deferred = client.dispatch(fakeTask::m1, 0)
         // then
         taskTagSlots.size shouldBe 0
         taskSlot.captured shouldBe DispatchTask(
@@ -274,7 +300,7 @@ class ClientTaskTests : StringSpec({
 
     "Dispatch a method with a primitive as parameter" {
         // when
-        val deferred: Deferred<String> = client.dispatch(fakeTask::m1).with(0).join()
+        val deferred: Deferred<String> = client.dispatch(fakeTask::m1, 0)
         // then
         taskTagSlots.size shouldBe 0
         taskSlot.captured shouldBe DispatchTask(
@@ -296,7 +322,7 @@ class ClientTaskTests : StringSpec({
 
     "Dispatch a method with null as parameter" {
         // when
-        val deferred = client.dispatch(fakeTask::m2).with(null).join()
+        val deferred = client.dispatch(fakeTask::m2, null)
         // then
         taskTagSlots.size shouldBe 0
         taskSlot.captured shouldBe DispatchTask(
@@ -318,7 +344,7 @@ class ClientTaskTests : StringSpec({
 
     "Dispatch a method with multiple definition" {
         // when
-        val deferred = client.dispatch(fakeTask::m2).with("a").join()
+        val deferred = client.dispatch(fakeTask::m2, "a")
         // then
         taskTagSlots.size shouldBe 0
         taskSlot.captured shouldBe DispatchTask(
@@ -340,7 +366,7 @@ class ClientTaskTests : StringSpec({
 
     "Dispatch a method with multiple parameters" {
         // when
-        val deferred = client.dispatch(fakeTask::m3).with(0, "a").join()
+        val deferred = client.dispatch(fakeTask::m3, 0, "a")
         // then
         taskTagSlots.size shouldBe 0
         taskSlot.captured shouldBe DispatchTask(
@@ -363,7 +389,7 @@ class ClientTaskTests : StringSpec({
     "Dispatch a method with an interface as parameter" {
         // when
         val fake = FakeClass()
-        val deferred = client.dispatch(fakeTask::m4).with(fake).join()
+        val deferred = client.dispatch(fakeTask::m4, fake)
         // then
         taskTagSlots.size shouldBe 0
         taskSlot.captured shouldBe DispatchTask(
@@ -385,7 +411,7 @@ class ClientTaskTests : StringSpec({
 
     "Dispatch a method with a primitive as return value" {
         // when
-        val deferred = client.dispatch(fakeTask::m5).with().join()
+        val deferred = client.dispatch(fakeTask::m5)
         // then
         taskTagSlots.size shouldBe 0
         taskSlot.captured shouldBe DispatchTask(
@@ -430,13 +456,16 @@ class ClientTaskTests : StringSpec({
     }
 
     "wait fAor a task just dispatched" {
-        client.dispatch(fakeTask::m3).with(0, "a").await() shouldBe "success"
+        client.dispatch(fakeTask::m3, 0, "a").await() shouldBe "success"
     }
 
-    "Cancel task per id - syntax 1" {
+    "Cancel task per id (sync)" {
         // when
+
         val id = UUID.randomUUID()
-        client.cancel(fakeTask, id).join()
+        val task = client.getTask(FakeTask::class.java, id)
+
+        client.cancel(task)
         // then
         taskTagSlots.size shouldBe 0
         taskSlot.captured shouldBe CancelTask(
@@ -445,10 +474,12 @@ class ClientTaskTests : StringSpec({
         )
     }
 
-    "Cancel task per id - syntax 2" {
+    "Cancel task per id (async)" {
         // when
         val id = UUID.randomUUID()
-        client.cancel(fakeTask, id).join()
+        val task = client.getTask(FakeTask::class.java, id)
+
+        client.cancelAsync(task).join()
         // then
         taskTagSlots.size shouldBe 0
         taskSlot.captured shouldBe CancelTask(
@@ -457,9 +488,10 @@ class ClientTaskTests : StringSpec({
         )
     }
 
-    "Cancel task per tag - syntax 1" {
+    "Cancel task per tag (sync)" {
         // when
-        client.cancel(fakeTask, "foo").join()
+        val task = client.getTask(FakeTask::class.java, "foo")
+        client.cancel(task)
         // then
         taskTagSlots.size shouldBe 1
         taskTagSlots[0] shouldBe CancelTaskPerTag(
@@ -469,9 +501,10 @@ class ClientTaskTests : StringSpec({
         taskSlot.isCaptured shouldBe false
     }
 
-    "Cancel task per tag - syntax 2" {
+    "Cancel task per tag (async)" {
         // when
-        client.cancel(fakeTask, "foo").join()
+        val task = client.getTask(FakeTask::class.java, "foo")
+        client.cancelAsync(task).join()
         // then
         taskTagSlots.size shouldBe 1
         taskTagSlots[0] shouldBe CancelTaskPerTag(
@@ -481,10 +514,10 @@ class ClientTaskTests : StringSpec({
         taskSlot.isCaptured shouldBe false
     }
 
-    "Cancel task just dispatched" {
+    "Cancel task just dispatched (sync)" {
         // when
-        val deferred = client.dispatch(fakeTask::m0).with().join()
-        deferred.cancel().join()
+        val deferred = client.dispatch(fakeTask::m0)
+        deferred.cancel()
         // then
         taskTagSlots.size shouldBe 0
         taskSlot.captured shouldBe CancelTask(
@@ -493,10 +526,23 @@ class ClientTaskTests : StringSpec({
         )
     }
 
-    "Retry task per id - syntax 1" {
+    "Cancel task just dispatched (async)" {
+        // when
+        val deferred = client.dispatch(fakeTask::m0)
+        deferred.cancelAsync().join()
+        // then
+        taskTagSlots.size shouldBe 0
+        taskSlot.captured shouldBe CancelTask(
+            taskId = TaskId(deferred.id),
+            taskName = TaskName(FakeTask::class.java.name)
+        )
+    }
+
+    "Retry task per id (sync)" {
         // when
         val id = UUID.randomUUID()
-        client.retry(fakeTask, id).join()
+        val task = client.getTask(FakeTask::class.java, id)
+        client.retry(task)
 
         // then
         taskTagSlots.size shouldBe 0
@@ -506,10 +552,11 @@ class ClientTaskTests : StringSpec({
         )
     }
 
-    "Retry task per id - syntax 2" {
+    "Retry task per id (async)" {
         // when
         val id = UUID.randomUUID()
-        client.retry(fakeTask, id).join()
+        val task = client.getTask(FakeTask::class.java, id)
+        client.retryAsync(task).join()
         // then
         taskTagSlots.size shouldBe 0
         taskSlot.captured shouldBe RetryTask(
@@ -520,8 +567,8 @@ class ClientTaskTests : StringSpec({
 
     "Retry a task just dispatched " {
         // when
-        val deferred = client.dispatch(fakeTask::m0).with().join()
-        deferred.retry().join()
+        val deferred = client.dispatch(fakeTask::m0)
+        deferred.retry()
         // then
         taskTagSlots.size shouldBe 0
         taskSlot.captured shouldBe RetryTask(
@@ -530,9 +577,10 @@ class ClientTaskTests : StringSpec({
         )
     }
 
-    "Retry task per tag - syntax 1" {
+    "Retry task per tag (sync)" {
         // when
-        client.retry(fakeTask, "foo").join()
+        val task = client.getTask(FakeTask::class.java, "foo")
+        client.retry(task)
         // then
         taskTagSlots.size shouldBe 1
         taskTagSlots[0] shouldBe RetryTaskPerTag(
@@ -542,9 +590,10 @@ class ClientTaskTests : StringSpec({
         taskSlot.isCaptured shouldBe false
     }
 
-    "Retry task per tag - syntax 2" {
+    "Retry task per tag (async)" {
         // when
-        client.retry(fakeTask, "foo").join()
+        val task = client.getTask(FakeTask::class.java, "foo")
+        client.retryAsync(task).join()
         // then
         taskTagSlots.size shouldBe 1
         taskTagSlots[0] shouldBe RetryTaskPerTag(
@@ -555,7 +604,8 @@ class ClientTaskTests : StringSpec({
     }
 
     "Get task ids par name and workflow" {
-        val taskIds = client.getIds(fakeTask, "foo")
+        val task = client.getTask(FakeTask::class.java, "foo")
+        val taskIds = client.getIds(task)
         // then
         taskIds.size shouldBe 2
         taskTagSlots.size shouldBe 1

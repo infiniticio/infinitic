@@ -49,7 +49,7 @@ sealed class ProxyHandler<T : Any>(
         fun <R : Any?> async(invoke: () -> R): ProxyHandler<*>? {
             // set mode flag to Async
             invocationType.set(ProxyInvokeMode.DISPATCH_ASYNC)
-            // this is needed ofr nullity test in private InfiniticClient::dispatch function
+            // this is needed for nullity test in private InfiniticClient::dispatch function
             invocationHandler.set(null)
             // call the method reference
             invoke()
@@ -79,18 +79,16 @@ sealed class ProxyHandler<T : Any>(
 
     /**
      * SimpleName provided by @Name annotation, or class name by default
-     *
-     * MUST be a get() as this.methodName can change when reusing instance
      */
     val simpleName: String
+        // MUST be a get() as this.methodName can change when reusing instance
         get() = "${classAnnotatedName ?: klass.simpleName}::$methodName"
 
     /**
      * Method name provided by @Name annotation, or java method name by default
-     *
-     * MUST be a get() as this.method can change when reusing instance
      */
     val methodName: String
+        //  MUST be a get() as this.method can change when reusing instance
         get() = findMethodNamePerAnnotation(klass, method) ?: method.name
 
     /**
@@ -135,10 +133,11 @@ sealed class ProxyHandler<T : Any>(
     }
 
     /**
-     * Check if method called was a getter on a SendChannel
+     * Check if method is a getter on a SendChannel
      */
-    fun isMethodChannel(): Boolean = method.returnType.kotlin.isSubclassOf(SendChannel::class)
+    fun isChannelGetter(): Boolean = method.returnType.kotlin.isSubclassOf(SendChannel::class)
 
+    // Check if user has asked for a synchronous call
     private fun isInvokeSync(): Boolean = when (invocationType.get()) {
         ProxyInvokeMode.DISPATCH_SYNC -> true
         ProxyInvokeMode.DISPATCH_ASYNC -> false
@@ -158,6 +157,7 @@ sealed class ProxyHandler<T : Any>(
         else -> null
     }
 
+    // search for a @Name annotation given by user to this method, in the class, its interfaces, or its parent
     private fun findMethodNamePerAnnotation(klass: Class<*>, method: Method): String? {
         var clazz = klass
 
@@ -184,6 +184,7 @@ sealed class ProxyHandler<T : Any>(
         return null
     }
 
+    // search for a @Name annotation given by user to this class, its interfaces, or its parent
     private fun findClassNamePerAnnotation(klass: Class<*>): String? {
         var clazz = klass
 
@@ -198,7 +199,7 @@ sealed class ProxyHandler<T : Any>(
 
             // if not, inspect the superclass
             clazz = clazz.superclass ?: break
-        } while ("java.lang.Object" != clazz.canonicalName)
+        } while (Object::class.java.name != clazz.canonicalName)
 
         return null
     }

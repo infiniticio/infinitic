@@ -29,11 +29,11 @@ import io.infinitic.client.dispatcher.ClientDispatcher
 import io.infinitic.client.dispatcher.ClientDispatcherImpl
 import io.infinitic.common.clients.data.ClientName
 import io.infinitic.common.clients.messages.ClientMessage
-import io.infinitic.common.data.JobOptions
-import io.infinitic.common.proxies.ChannelProxyHandler
+import io.infinitic.common.proxies.GetTaskProxyHandler
+import io.infinitic.common.proxies.GetWorkflowProxyHandler
+import io.infinitic.common.proxies.NewTaskProxyHandler
+import io.infinitic.common.proxies.NewWorkflowProxyHandler
 import io.infinitic.common.proxies.ProxyHandler
-import io.infinitic.common.proxies.TaskProxyHandler
-import io.infinitic.common.proxies.WorkflowProxyHandler
 import io.infinitic.common.tasks.data.TaskId
 import io.infinitic.common.tasks.data.TaskMeta
 import io.infinitic.common.tasks.data.TaskOptions
@@ -47,10 +47,18 @@ import io.infinitic.common.workflows.data.workflows.WorkflowOptions
 import io.infinitic.common.workflows.data.workflows.WorkflowTag
 import io.infinitic.common.workflows.engine.SendToWorkflowEngine
 import io.infinitic.common.workflows.tags.SendToWorkflowTagEngine
-import io.infinitic.exceptions.clients.InvalidChannelException
 import io.infinitic.exceptions.clients.InvalidStubException
-import io.infinitic.exceptions.clients.InvalidWorkflowException
-import io.infinitic.workflows.SendChannel
+import io.infinitic.exceptions.thisShouldNotHappen
+import io.infinitic.workflows.Consumer0
+import io.infinitic.workflows.Consumer1
+import io.infinitic.workflows.Consumer2
+import io.infinitic.workflows.Consumer3
+import io.infinitic.workflows.Consumer4
+import io.infinitic.workflows.Consumer5
+import io.infinitic.workflows.Consumer6
+import io.infinitic.workflows.Consumer7
+import io.infinitic.workflows.Consumer8
+import io.infinitic.workflows.Consumer9
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.asCoroutineDispatcher
@@ -58,7 +66,6 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.job
 import kotlinx.coroutines.runBlocking
 import mu.KotlinLogging
-import org.jetbrains.annotations.TestOnly
 import java.io.Closeable
 import java.lang.reflect.Proxy
 import java.util.UUID
@@ -84,7 +91,7 @@ abstract class InfiniticClient : Closeable {
 
     open val runningScope = CoroutineScope(runningThreadPool.asCoroutineDispatcher() + Job())
 
-    private val dispatcher: ClientDispatcher by lazy {
+    val dispatcher: ClientDispatcher by lazy {
         ClientDispatcherImpl(
             sendingScope,
             clientName,
@@ -94,6 +101,11 @@ abstract class InfiniticClient : Closeable {
             sendToWorkflowEngine
         )
     }
+
+    /**
+     *  Get last Deferred created by the call of a stub
+     */
+    val lastDeferred get() = dispatcher.getLastDeferred()
 
     override fun close() {
         // first make sure that all messages are sent
@@ -107,6 +119,9 @@ abstract class InfiniticClient : Closeable {
         runningThreadPool.shutdown()
     }
 
+    /**
+     * Wait for all coroutines dispatched in sendingScope
+     */
     fun join() = runBlocking {
         sendingScope.coroutineContext.job.children.forEach { it.join() }
     }
@@ -118,21 +133,15 @@ abstract class InfiniticClient : Closeable {
     }
 
     /**
-     *  Get last Deferred created by the synchronous call of a stub
-     */
-    @TestOnly
-    fun getLastSyncDeferred() = dispatcher.getLastSyncDeferred()
-
-    /**
-     *  Create a stub for a task
+     *  Create a stub for a new task
      */
     @JvmOverloads
-    fun <T : Any> taskStub(
+    fun <T : Any> newTask(
         klass: Class<out T>,
         tags: Set<String> = setOf(),
         options: TaskOptions = TaskOptions(),
         meta: Map<String, ByteArray> = mapOf()
-    ): T = TaskProxyHandler(
+    ): T = NewTaskProxyHandler(
         klass = klass,
         taskTags = tags.map { TaskTag(it) }.toSet(),
         taskOptions = options,
@@ -140,15 +149,15 @@ abstract class InfiniticClient : Closeable {
     ) { dispatcher }.stub()
 
     /**
-     *  Create a stub for a workflow
+     *  Create a stub for a new workflow
      */
     @JvmOverloads
-    fun <T : Any> workflowStub(
+    fun <T : Any> newWorkflow(
         klass: Class<out T>,
         tags: Set<String> = setOf(),
         options: WorkflowOptions = WorkflowOptions(),
         meta: Map<String, ByteArray> = mapOf(),
-    ): T = WorkflowProxyHandler(
+    ): T = NewWorkflowProxyHandler(
         klass = klass,
         workflowTags = tags.map { WorkflowTag(it) }.toSet(),
         workflowOptions = options,
@@ -156,291 +165,546 @@ abstract class InfiniticClient : Closeable {
     ) { dispatcher }.stub()
 
     /**
-     *  Start a task or workflow without parameter
+     *  Create a stub for an existing task targeted by id
      */
-    @JvmOverloads
-    fun <R> dispatch(
-        method: Function0<R>,
-        tags: Set<String>? = null,
-        options: JobOptions? = null,
-        meta: Map<String, ByteArray>? = null
-    ): With0<R> = With0 {
-        dispatch(tags, options, meta) { method.invoke() }
-    }
+    fun <T : Any> getTask(
+        klass: Class<out T>,
+        id: UUID
+    ): T = GetTaskProxyHandler(
+        klass = klass,
+        TaskId(id),
+        null
+    ) { dispatcher }.stub()
 
     /**
-     *  Start a task or workflow with 1 parameter
+     *  Create a stub for existing task targeted by tag
      */
-    @JvmOverloads
-    fun <P1, R> dispatch(
-        method: Function1<P1, R>,
-        tags: Set<String>? = null,
-        options: JobOptions? = null,
-        meta: Map<String, ByteArray>? = null
-    ): With1<P1, R> = With1 { p1 ->
-        dispatch(tags, options, meta) { method.invoke(p1) }
-    }
+    fun <T : Any> getTask(
+        klass: Class<out T>,
+        tag: String
+    ): T = GetTaskProxyHandler(
+        klass = klass,
+        null,
+        TaskTag(tag)
+    ) { dispatcher }.stub()
 
     /**
-     *  Start a task or workflow with 2 parameters
+     *  Create a stub for an existing workflow targeted by id
      */
-    @JvmOverloads
-    fun <P1, P2, R : Any?> dispatch(
-        method: Function2<P1, P2, R>,
-        tags: Set<String>? = null,
-        options: JobOptions? = null,
-        meta: Map<String, ByteArray>? = null
-    ): With2<P1, P2, R> = With2 { p1, p2 ->
-        dispatch(tags, options, meta) { method.invoke(p1, p2) }
-    }
+    fun <T : Any> getWorkflow(
+        klass: Class<out T>,
+        id: UUID
+    ): T = GetWorkflowProxyHandler(
+        klass = klass,
+        WorkflowId(id),
+        null
+    ) { dispatcher }.stub()
 
     /**
-     *  Start a task or workflow with 3 parameters
+     *  Create a stub for existing workflow targeted by tag
      */
-    @JvmOverloads
-    fun <P1, P2, P3, R : Any?> dispatch(
-        method: Function3<P1, P2, P3, R>,
-        tags: Set<String>? = null,
-        options: JobOptions? = null,
-        meta: Map<String, ByteArray>? = null
-    ): With3<P1, P2, P3, R> = With3 { p1, p2, p3 ->
-        dispatch(tags, options, meta) { method.invoke(p1, p2, p3) }
-    }
+    fun <T : Any> getWorkflow(
+        klass: Class<out T>,
+        tag: String
+    ): T = GetWorkflowProxyHandler(
+        klass = klass,
+        null,
+        WorkflowTag(tag)
+    ) { dispatcher }.stub()
 
     /**
-     *  Start a task or workflow with 4 parameters
+     *  Dispatch without parameter a task or workflow returning an object
      */
-    @JvmOverloads
-    fun <P1, P2, P3, P4, R : Any?> dispatch(
-        method: Function4<P1, P2, P3, P4, R>,
-        tags: Set<String>? = null,
-        options: JobOptions? = null,
-        meta: Map<String, ByteArray>? = null
-    ): With4<P1, P2, P3, P4, R> = With4 { p1, p2, p3, p4 ->
-        dispatch(tags, options, meta) { method.invoke(p1, p2, p3, p4) }
-    }
+    fun <R : Any?> dispatchAsync(
+        method: () -> R
+    ): CompletableFuture<Deferred<R>> = startAsync() { method.invoke() }
 
     /**
-     *  Start a task or workflow with 5 parameters
+     *  Dispatch with 1 parameter a task or workflow returning an object
      */
-    @JvmOverloads
-    fun <P1, P2, P3, P4, P5, R : Any?> dispatch(
-        method: Function5<P1, P2, P3, P4, P5, R>,
-        tags: Set<String>? = null,
-        options: JobOptions? = null,
-        meta: Map<String, ByteArray>? = null
-    ): With5<P1, P2, P3, P4, P5, R> = With5 { p1, p2, p3, p4, p5 ->
-        dispatch(tags, options, meta) { method.invoke(p1, p2, p3, p4, p5) }
-    }
+    fun <P1, R : Any?> dispatchAsync(
+        method: (p1: P1) -> R,
+        p1: P1
+    ): CompletableFuture<Deferred<R>> = startAsync() { method.invoke(p1) }
 
     /**
-     *  Start a task or workflow with 6 parameters
+     *  Dispatch with 2 parameters a task or workflow returning an object
      */
-    @JvmOverloads
-    fun <P1, P2, P3, P4, P5, P6, R : Any?> dispatch(
-        method: Function6<P1, P2, P3, P4, P5, P6, R>,
-        tags: Set<String>? = null,
-        options: JobOptions? = null,
-        meta: Map<String, ByteArray>? = null
-    ): With6<P1, P2, P3, P4, P5, P6, R> = With6 { p1, p2, p3, p4, p5, p6 ->
-        dispatch(tags, options, meta) { method.invoke(p1, p2, p3, p4, p5, p6) }
-    }
+    fun <P1, P2, R : Any?> dispatchAsync(
+        method: (p1: P1, p2: P2) -> R,
+        p1: P1,
+        p2: P2
+    ): CompletableFuture<Deferred<R>> = startAsync() { method.invoke(p1, p2) }
 
     /**
-     *  Start a task or workflow with 7 parameters
+     *  Dispatch with 3 parameters a task or workflow returning an object
      */
-    @JvmOverloads
-    fun <P1, P2, P3, P4, P5, P6, P7, R : Any?> dispatch(
-        method: Function7<P1, P2, P3, P4, P5, P6, P7, R>,
-        tags: Set<String>? = null,
-        options: JobOptions? = null,
-        meta: Map<String, ByteArray>? = null
-    ): With7<P1, P2, P3, P4, P5, P6, P7, R> = With7 { p1, p2, p3, p4, p5, p6, p7 ->
-        dispatch(tags, options, meta) { method.invoke(p1, p2, p3, p4, p5, p6, p7) }
-    }
+    fun <P1, P2, P3, R : Any?> dispatchAsync(
+        method: (p1: P1, p2: P2, p3: P3) -> R,
+        p1: P1,
+        p2: P2,
+        p3: P3
+    ): CompletableFuture<Deferred<R>> = startAsync() { method.invoke(p1, p2, p3) }
 
     /**
-     *  Start a task or workflow with 8 parameters
+     *  Dispatch with 4 parameters a task or workflow returning an object
      */
-    @JvmOverloads
-    fun <P1, P2, P3, P4, P5, P6, P7, P8, R : Any?> dispatch(
-        method: Function8<P1, P2, P3, P4, P5, P6, P7, P8, R>,
-        tags: Set<String>? = null,
-        options: JobOptions? = null,
-        meta: Map<String, ByteArray>? = null
-    ): With8<P1, P2, P3, P4, P5, P6, P7, P8, R> = With8 { p1, p2, p3, p4, p5, p6, p7, p8 ->
-        dispatch(tags, options, meta) { method.invoke(p1, p2, p3, p4, p5, p6, p7, p8) }
-    }
+    fun <P1, P2, P3, P4, R : Any?> dispatchAsync(
+        method: (p1: P1, p2: P2, p3: P3, p4: P4) -> R,
+        p1: P1,
+        p2: P2,
+        p3: P3,
+        p4: P4
+    ): CompletableFuture<Deferred<R>> = startAsync() { method.invoke(p1, p2, p3, p4) }
 
     /**
-     *  Start a task or workflow with 9 parameters
+     *  Dispatch with 5 parameters a task or workflow returning an object
      */
-    @JvmOverloads
-    fun <P1, P2, P3, P4, P5, P6, P7, P8, P9, R : Any?> dispatch(
-        method: Function9<P1, P2, P3, P4, P5, P6, P7, P8, P9, R>,
-        tags: Set<String>? = null,
-        options: JobOptions? = null,
-        meta: Map<String, ByteArray>? = null
-    ): With9<P1, P2, P3, P4, P5, P6, P7, P8, P9, R> = With9 { p1, p2, p3, p4, p5, p6, p7, p8, p9 ->
-        dispatch(tags, options, meta) { method.invoke(p1, p2, p3, p4, p5, p6, p7, p8, p9) }
-    }
+    fun <P1, P2, P3, P4, P5, R : Any?> dispatchAsync(
+        method: (p1: P1, p2: P2, p3: P3, p4: P4, p5: P5) -> R,
+        p1: P1,
+        p2: P2,
+        p3: P3,
+        p4: P4,
+        p5: P5
+    ): CompletableFuture<Deferred<R>> = startAsync() { method.invoke(p1, p2, p3, p4, p5) }
 
     /**
-     *  Start a method without parameter for a running workflow targeted by id
+     *  Dispatch with 6 parameters a task or workflow returning an object
+     */
+    fun <P1, P2, P3, P4, P5, P6, R : Any?> dispatchAsync(
+        method: (p1: P1, p2: P2, p3: P3, p4: P4, p5: P5, p6: P6) -> R,
+        p1: P1,
+        p2: P2,
+        p3: P3,
+        p4: P4,
+        p5: P5,
+        p6: P6
+    ): CompletableFuture<Deferred<R>> = startAsync() { method.invoke(p1, p2, p3, p4, p5, p6) }
+
+    /**
+     *  Dispatch with 7 parameters a task or workflow returning an object
+     */
+    fun <P1, P2, P3, P4, P5, P6, P7, R : Any?> dispatchAsync(
+        method: (p1: P1, p2: P2, p3: P3, p4: P4, p5: P5, p6: P6, p7: P7) -> R,
+        p1: P1,
+        p2: P2,
+        p3: P3,
+        p4: P4,
+        p5: P5,
+        p6: P6,
+        p7: P7
+    ): CompletableFuture<Deferred<R>> = startAsync() { method.invoke(p1, p2, p3, p4, p5, p6, p7) }
+
+    /**
+     *  Dispatch with 8 parameters a task or workflow returning an object
+     */
+    fun <P1, P2, P3, P4, P5, P6, P7, P8, R : Any?> dispatchAsync(
+        method: (p1: P1, p2: P2, p3: P3, p4: P4, p5: P5, p6: P6, p7: P7, p8: P8) -> R,
+        p1: P1,
+        p2: P2,
+        p3: P3,
+        p4: P4,
+        p5: P5,
+        p6: P6,
+        p7: P7,
+        p8: P8
+    ): CompletableFuture<Deferred<R>> = startAsync() { method.invoke(p1, p2, p3, p4, p5, p6, p7, p8) }
+
+    /**
+     *  Dispatch with 9 parameters a task or workflow returning an object
+     */
+    fun <P1, P2, P3, P4, P5, P6, P7, P8, P9, R : Any?> dispatchAsync(
+        method: (p1: P1, p2: P2, p3: P3, p4: P4, p5: P5, p6: P6, p7: P7, p8: P8, p9: P9) -> R,
+        p1: P1,
+        p2: P2,
+        p3: P3,
+        p4: P4,
+        p5: P5,
+        p6: P6,
+        p7: P7,
+        p8: P8,
+        p9: P9
+    ): CompletableFuture<Deferred<R>> = startAsync() { method.invoke(p1, p2, p3, p4, p5, p6, p7, p8, p9) }
+
+    /**
+     *  Dispatch without parameter a task or workflow returning an object
      */
     fun <R : Any?> dispatch(
-        method: Function0<R>,
-        id: UUID
-    ): With0<R> = With0 {
-        dispatch(id) { method.invoke() }
-    }
+        method: () -> R
+    ): Deferred<R> = dispatchAsync(method).join()
 
     /**
-     *  Start a method with 1 parameter for a running workflow targeted by id
+     *  Dispatch with 1 parameter a task or workflow returning an object
      */
     fun <P1, R : Any?> dispatch(
-        method: Function1<P1, R>,
-        id: UUID
-    ): With1<P1, R> = With1 { p1 ->
-        dispatch(id) { method.invoke(p1) }
-    }
+        method: (p1: P1) -> R,
+        p1: P1
+    ): Deferred<R> = dispatchAsync(method, p1).join()
 
     /**
-     *  Start a method with 2 parameters for a running workflow targeted by id
+     *  Dispatch with 2 parameters a task or workflow returning an object
      */
     fun <P1, P2, R : Any?> dispatch(
-        method: Function2<P1, P2, R>,
-        id: UUID
-    ): With2<P1, P2, R> = With2 { p1, p2 ->
-        dispatch(id) { method.invoke(p1, p2) }
-    }
+        method: (p1: P1, p2: P2) -> R,
+        p1: P1,
+        p2: P2
+    ): Deferred<R> = dispatchAsync(method, p1, p2).join()
 
     /**
-     *  Start a method with 3 parameters for a running workflow targeted by id
+     *  Dispatch with 3 parameters a task or workflow returning an object
      */
     fun <P1, P2, P3, R : Any?> dispatch(
-        method: Function3<P1, P2, P3, R>,
-        id: UUID
-    ): With3<P1, P2, P3, R> = With3 { p1, p2, p3 ->
-        dispatch(id) { method.invoke(p1, p2, p3) }
-    }
+        method: (p1: P1, p2: P2, p3: P3) -> R,
+        p1: P1,
+        p2: P2,
+        p3: P3
+    ): Deferred<R> = dispatchAsync(method, p1, p2, p3).join()
 
     /**
-     *  Start a method with 4 parameters for a running workflow targeted by id
+     *  Dispatch with 4 parameters a task or workflow returning an object
      */
     fun <P1, P2, P3, P4, R : Any?> dispatch(
-        method: Function4<P1, P2, P3, P4, R>,
-        id: UUID
-    ): With4<P1, P2, P3, P4, R> = With4 { p1, p2, p3, p4 ->
-        dispatch(id) { method.invoke(p1, p2, p3, p4) }
-    }
+        method: (p1: P1, p2: P2, p3: P3, p4: P4) -> R,
+        p1: P1,
+        p2: P2,
+        p3: P3,
+        p4: P4
+    ): Deferred<R> = dispatchAsync(method, p1, p2, p3, p4).join()
 
     /**
-     *  Start a method with 5 parameters for a running workflow targeted by id
+     *  Dispatch with 5 parameters a task or workflow returning an object
      */
     fun <P1, P2, P3, P4, P5, R : Any?> dispatch(
-        method: Function5<P1, P2, P3, P4, P5, R>,
-        id: UUID
-    ): With5<P1, P2, P3, P4, P5, R> = With5 { p1, p2, p3, p4, p5 ->
-        dispatch(id) { method.invoke(p1, p2, p3, p4, p5) }
-    }
+        method: (p1: P1, p2: P2, p3: P3, p4: P4, p5: P5) -> R,
+        p1: P1,
+        p2: P2,
+        p3: P3,
+        p4: P4,
+        p5: P5
+    ): Deferred<R> = dispatchAsync(method, p1, p2, p3, p4, p5).join()
 
     /**
-     *  Start a method with 6 parameters for a running workflow targeted by id
+     *  Dispatch with 6 parameters a task or workflow returning an object
      */
     fun <P1, P2, P3, P4, P5, P6, R : Any?> dispatch(
-        method: Function6<P1, P2, P3, P4, P5, P6, R>,
-        id: UUID
-    ): With6<P1, P2, P3, P4, P5, P6, R> = With6 { p1, p2, p3, p4, p5, p6 ->
-        dispatch(id) { method.invoke(p1, p2, p3, p4, p5, p6) }
-    }
+        method: (p1: P1, p2: P2, p3: P3, p4: P4, p5: P5, p6: P6) -> R,
+        p1: P1,
+        p2: P2,
+        p3: P3,
+        p4: P4,
+        p5: P5,
+        p6: P6
+    ): Deferred<R> = dispatchAsync(method, p1, p2, p3, p4, p5, p6).join()
 
     /**
-     *  Start a method with 7 parameters for a running workflow targeted by id
+     *  Dispatch with 7 parameters a task or workflow returning an object
      */
     fun <P1, P2, P3, P4, P5, P6, P7, R : Any?> dispatch(
-        method: Function7<P1, P2, P3, P4, P5, P6, P7, R>,
-        id: UUID
-    ): With7<P1, P2, P3, P4, P5, P6, P7, R> = With7 { p1, p2, p3, p4, p5, p6, p7 ->
-        dispatch(id) { method.invoke(p1, p2, p3, p4, p5, p6, p7) }
-    }
+        method: (p1: P1, p2: P2, p3: P3, p4: P4, p5: P5, p6: P6, p7: P7) -> R,
+        p1: P1,
+        p2: P2,
+        p3: P3,
+        p4: P4,
+        p5: P5,
+        p6: P6,
+        p7: P7
+    ): Deferred<R> = dispatchAsync(method, p1, p2, p3, p4, p5, p6, p7).join()
 
     /**
-     *  Start a method with 8 parameters for a running workflow targeted by id
+     *  Dispatch with 8 parameters a task or workflow returning an object
      */
     fun <P1, P2, P3, P4, P5, P6, P7, P8, R : Any?> dispatch(
-        method: Function8<P1, P2, P3, P4, P5, P6, P7, P8, R>,
-        id: UUID
-    ): With8<P1, P2, P3, P4, P5, P6, P7, P8, R> = With8 { p1, p2, p3, p4, p5, p6, p7, p8 ->
-        dispatch(id) { method.invoke(p1, p2, p3, p4, p5, p6, p7, p8) }
-    }
+        method: (p1: P1, p2: P2, p3: P3, p4: P4, p5: P5, p6: P6, p7: P7, p8: P8) -> R,
+        p1: P1,
+        p2: P2,
+        p3: P3,
+        p4: P4,
+        p5: P5,
+        p6: P6,
+        p7: P7,
+        p8: P8
+    ): Deferred<R> = dispatchAsync(method, p1, p2, p3, p4, p5, p6, p7, p8).join()
 
     /**
-     *  Start a method with 8 parameters for a running workflow targeted by id
+     *  Dispatch with 9 parameters a task or workflow returning an object
      */
     fun <P1, P2, P3, P4, P5, P6, P7, P8, P9, R : Any?> dispatch(
-        method: Function9<P1, P2, P3, P4, P5, P6, P7, P8, P9, R>,
-        id: UUID
-    ): With9<P1, P2, P3, P4, P5, P6, P7, P8, P9, R> = With9 { p1, p2, p3, p4, p5, p6, p7, p8, p9 ->
-        dispatch(id) { method.invoke(p1, p2, p3, p4, p5, p6, p7, p8, p9) }
-    }
+        method: (p1: P1, p2: P2, p3: P3, p4: P4, p5: P5, p6: P6, p7: P7, p8: P8, p9: P9) -> R,
+        p1: P1,
+        p2: P2,
+        p3: P3,
+        p4: P4,
+        p5: P5,
+        p6: P6,
+        p7: P7,
+        p8: P8,
+        p9: P9
+    ): Deferred<R> = dispatchAsync(method, p1, p2, p3, p4, p5, p6, p7, p8, p9).join()
 
     /**
-     * Send a signal in a channel of a workflow targeted by its id
+     *  Dispatch without parameter a task or workflow returning void
      */
-    fun <S : Any> send(
-        stub: SendChannel<S>,
-        id: UUID,
-        signal: S
-    ): Deferred<S> = when (val handler = getProxyHandler(stub)) {
-        is ChannelProxyHandler ->
-            dispatcher.send(
-                handler.workflowName,
-                handler.channelName,
-                workflowId = WorkflowId(id),
-                signal
-            )
-        else -> throw InvalidChannelException("$stub")
-    }
+    fun dispatchVoidAsync(
+        method: Consumer0
+    ): CompletableFuture<Deferred<Void>> = startVoidAsync() { method.apply() }
 
     /**
-     * Send a signal in a channel of workflows targeted by tag
+     *  Dispatch with 1 parameter a task or workflow returning void
      */
-    fun <S : Any> send(
-        stub: SendChannel<S>,
-        tag: String,
-        signal: S
-    ): Deferred<S> = when (val handler = getProxyHandler(stub)) {
-        is ChannelProxyHandler ->
-            dispatcher.send(
-                handler.workflowName,
-                handler.channelName,
-                workflowTag = WorkflowTag(tag),
-                signal
-            )
-        else -> throw InvalidChannelException("$stub")
-    }
+    fun <P1> dispatchVoidAsync(
+        method: Consumer1<P1>,
+        p1: P1
+    ): CompletableFuture<Deferred<Void>> = startVoidAsync() { method.apply(p1) }
+
+    /**
+     *  Dispatch with 2 parameters a task or workflow returning void
+     */
+    fun <P1, P2> dispatchVoidAsync(
+        method: Consumer2<P1, P2>,
+        p1: P1,
+        p2: P2
+    ): CompletableFuture<Deferred<Void>> = startVoidAsync() { method.apply(p1, p2) }
+
+    /**
+     *  Dispatch with 3 parameters a task or workflow returning void
+     */
+    fun <P1, P2, P3> dispatchVoidAsync(
+        method: Consumer3<P1, P2, P3>,
+        p1: P1,
+        p2: P2,
+        p3: P3
+    ): CompletableFuture<Deferred<Void>> = startVoidAsync() { method.apply(p1, p2, p3) }
+
+    /**
+     *  Dispatch with 4 parameters a task or workflow returning void
+     */
+    fun <P1, P2, P3, P4> dispatchVoidAsync(
+        method: Consumer4<P1, P2, P3, P4>,
+        p1: P1,
+        p2: P2,
+        p3: P3,
+        p4: P4
+    ): CompletableFuture<Deferred<Void>> = startVoidAsync() { method.apply(p1, p2, p3, p4) }
+
+    /**
+     *  Dispatch with 5 parameters a task or workflow returning void
+     */
+    fun <P1, P2, P3, P4, P5> dispatchVoidAsync(
+        method: Consumer5<P1, P2, P3, P4, P5>,
+        p1: P1,
+        p2: P2,
+        p3: P3,
+        p4: P4,
+        p5: P5
+    ): CompletableFuture<Deferred<Void>> = startVoidAsync() { method.apply(p1, p2, p3, p4, p5) }
+
+    /**
+     *  Dispatch with 6 parameters a task or workflow returning void
+     */
+    fun <P1, P2, P3, P4, P5, P6> dispatchVoidAsync(
+        method: Consumer6<P1, P2, P3, P4, P5, P6>,
+        p1: P1,
+        p2: P2,
+        p3: P3,
+        p4: P4,
+        p5: P5,
+        p6: P6
+    ): CompletableFuture<Deferred<Void>> = startVoidAsync() { method.apply(p1, p2, p3, p4, p5, p6) }
+
+    /**
+     *  Dispatch with 7 parameters a task or workflow returning void
+     */
+    fun <P1, P2, P3, P4, P5, P6, P7> dispatchVoidAsync(
+        method: Consumer7<P1, P2, P3, P4, P5, P6, P7>,
+        p1: P1,
+        p2: P2,
+        p3: P3,
+        p4: P4,
+        p5: P5,
+        p6: P6,
+        p7: P7
+    ): CompletableFuture<Deferred<Void>> = startVoidAsync() { method.apply(p1, p2, p3, p4, p5, p6, p7) }
+
+    /**
+     *  Dispatch with 8 parameters a task or workflow returning void
+     */
+    fun <P1, P2, P3, P4, P5, P6, P7, P8> dispatchVoidAsync(
+        method: Consumer8<P1, P2, P3, P4, P5, P6, P7, P8>,
+        p1: P1,
+        p2: P2,
+        p3: P3,
+        p4: P4,
+        p5: P5,
+        p6: P6,
+        p7: P7,
+        p8: P8
+    ): CompletableFuture<Deferred<Void>> = startVoidAsync() { method.apply(p1, p2, p3, p4, p5, p6, p7, p8) }
+
+    /**
+     *  Dispatch with 9 parameters a task or workflow returning void
+     */
+    fun <P1, P2, P3, P4, P5, P6, P7, P8, P9> dispatchVoidAsync(
+        method: Consumer9<P1, P2, P3, P4, P5, P6, P7, P8, P9>,
+        p1: P1,
+        p2: P2,
+        p3: P3,
+        p4: P4,
+        p5: P5,
+        p6: P6,
+        p7: P7,
+        p8: P8,
+        p9: P9
+    ): CompletableFuture<Deferred<Void>> = startVoidAsync() { method.apply(p1, p2, p3, p4, p5, p6, p7, p8, p9) }
+
+    /**
+     *  Dispatch without parameter a task or workflow returning void
+     */
+    fun dispatchVoid(
+        method: Consumer0
+    ): Deferred<Void> = dispatchVoidAsync(method).join()
+
+    /**
+     *  Dispatch with 1 parameter a task or workflow returning void
+     */
+    fun <P1> dispatchVoid(
+        method: Consumer1<P1>,
+        p1: P1
+    ): Deferred<Void> = dispatchVoidAsync(method, p1).join()
+
+    /**
+     *  Dispatch with 2 parameters a task or workflow returning void
+     */
+    fun <P1, P2> dispatchVoid(
+        method: Consumer2<P1, P2>,
+        p1: P1,
+        p2: P2
+    ): Deferred<Void> = dispatchVoidAsync(method, p1, p2).join()
+
+    /**
+     *  Dispatch with 3 parameters a task or workflow returning void
+     */
+    fun <P1, P2, P3> dispatchVoid(
+        method: Consumer3<P1, P2, P3>,
+        p1: P1,
+        p2: P2,
+        p3: P3
+    ): Deferred<Void> = dispatchVoidAsync(method, p1, p2, p3).join()
+
+    /**
+     *  Dispatch with 4 parameters a task or workflow returning void
+     */
+    fun <P1, P2, P3, P4> dispatchVoid(
+        method: Consumer4<P1, P2, P3, P4>,
+        p1: P1,
+        p2: P2,
+        p3: P3,
+        p4: P4
+    ): Deferred<Void> = dispatchVoidAsync(method, p1, p2, p3, p4).join()
+
+    /**
+     *  Dispatch with 5 parameters a task or workflow returning void
+     */
+    fun <P1, P2, P3, P4, P5> dispatchVoid(
+        method: Consumer5<P1, P2, P3, P4, P5>,
+        p1: P1,
+        p2: P2,
+        p3: P3,
+        p4: P4,
+        p5: P5
+    ): Deferred<Void> = dispatchVoidAsync(method, p1, p2, p3, p4, p5).join()
+
+    /**
+     *  Dispatch with 6 parameters a task or workflow returning void
+     */
+    fun <P1, P2, P3, P4, P5, P6> dispatchVoid(
+        method: Consumer6<P1, P2, P3, P4, P5, P6>,
+        p1: P1,
+        p2: P2,
+        p3: P3,
+        p4: P4,
+        p5: P5,
+        p6: P6
+    ): Deferred<Void> = dispatchVoidAsync(method, p1, p2, p3, p4, p5, p6).join()
+
+    /**
+     *  Dispatch with 7 parameters a task or workflow returning void
+     */
+    fun <P1, P2, P3, P4, P5, P6, P7> dispatchVoid(
+        method: Consumer7<P1, P2, P3, P4, P5, P6, P7>,
+        p1: P1,
+        p2: P2,
+        p3: P3,
+        p4: P4,
+        p5: P5,
+        p6: P6,
+        p7: P7
+    ): Deferred<Void> = dispatchVoidAsync(method, p1, p2, p3, p4, p5, p6, p7).join()
+
+    /**
+     *  Dispatch with 8 parameters a task or workflow returning void
+     */
+    fun <P1, P2, P3, P4, P5, P6, P7, P8> dispatchVoid(
+        method: Consumer8<P1, P2, P3, P4, P5, P6, P7, P8>,
+        p1: P1,
+        p2: P2,
+        p3: P3,
+        p4: P4,
+        p5: P5,
+        p6: P6,
+        p7: P7,
+        p8: P8
+    ): Deferred<Void> = dispatchVoidAsync(method, p1, p2, p3, p4, p5, p6, p7, p8).join()
+
+    /**
+     *  Dispatch with 9 parameters a task or workflow returning void
+     */
+    fun <P1, P2, P3, P4, P5, P6, P7, P8, P9> dispatchVoid(
+        method: Consumer9<P1, P2, P3, P4, P5, P6, P7, P8, P9>,
+        p1: P1,
+        p2: P2,
+        p3: P3,
+        p4: P4,
+        p5: P5,
+        p6: P6,
+        p7: P7,
+        p8: P8,
+        p9: P9
+    ): Deferred<Void> = dispatchVoidAsync(method, p1, p2, p3, p4, p5, p6, p7, p8, p9).join()
 
     /**
      * Await a task or a workflow targeted by its id
      */
     @Suppress("UNCHECKED_CAST")
     fun <T : Any> await(
-        stub: T,
-        workflowId: UUID
+        stub: T
     ): Any = when (val handler = getProxyHandler(stub)) {
-        is TaskProxyHandler -> dispatcher.awaitTask<Any>(
-            handler.taskName,
-            TaskId(workflowId),
-            false
-        )
-        is WorkflowProxyHandler -> dispatcher.awaitWorkflow(
-            handler.workflowName,
-            WorkflowId(workflowId),
-            MethodRunId(workflowId),
-            false
-        )
-        is ChannelProxyHandler -> throw InvalidStubException("$stub")
+        is GetTaskProxyHandler -> when {
+            handler.taskId != null ->
+                dispatcher.awaitTask<Any>(
+                    handler.taskName,
+                    handler.taskId!!,
+                    false
+                )
+            handler.taskTag != null ->
+                TODO("Not yet implemented")
+            else ->
+                throw thisShouldNotHappen()
+        }
+        is GetWorkflowProxyHandler -> when {
+            handler.workflowId != null ->
+                dispatcher.awaitWorkflow(
+                    handler.workflowName,
+                    handler.workflowId!!,
+                    MethodRunId(handler.workflowId!!.id),
+                    false
+                )
+            handler.workflowTag != null ->
+                TODO("Not yet implemented")
+            else ->
+                throw thisShouldNotHappen()
+        }
+        else -> throw InvalidStubException("$stub")
     }
 
     /**
@@ -449,160 +713,124 @@ abstract class InfiniticClient : Closeable {
     @Suppress("UNCHECKED_CAST")
     fun <T : Any> await(
         stub: T,
-        workflowId: UUID,
         methodRunId: UUID
     ): Any = when (val handler = getProxyHandler(stub)) {
-        is TaskProxyHandler -> throw InvalidWorkflowException("$stub")
-        is WorkflowProxyHandler -> dispatcher.awaitWorkflow<Any>(
-            handler.workflowName,
-            WorkflowId(workflowId),
-            MethodRunId(methodRunId),
-            false
-        )
-        is ChannelProxyHandler -> throw InvalidStubException("$stub")
+        is GetWorkflowProxyHandler -> when {
+            handler.workflowId != null ->
+                dispatcher.awaitWorkflow<Any>(
+                    handler.workflowName,
+                    handler.workflowId!!,
+                    MethodRunId(methodRunId),
+                    false
+                )
+            handler.workflowTag != null ->
+                TODO("Not yet implemented")
+            else ->
+                throw thisShouldNotHappen()
+        }
+        else -> throw InvalidStubException("$stub")
     }
 
     /**
-     * Cancel a task or a workflow targeted by its id
+     * Cancel a task or a workflow
      */
     @Suppress("UNCHECKED_CAST")
-    fun <T : Any> cancel(
-        stub: T,
-        id: UUID
+    fun <T : Any> cancelAsync(
+        stub: T
     ): CompletableFuture<Unit> = when (val handler = getProxyHandler(stub)) {
-        is TaskProxyHandler ->
-            dispatcher.cancelTask(handler.taskName, taskId = TaskId(id))
-        is WorkflowProxyHandler ->
-            dispatcher.cancelWorkflow(handler.workflowName, workflowId = WorkflowId(id))
-        is ChannelProxyHandler ->
+        is GetTaskProxyHandler ->
+            dispatcher.cancelTaskAsync(handler.taskName, handler.taskId, handler.taskTag)
+        is GetWorkflowProxyHandler ->
+            dispatcher.cancelWorkflowAsync(handler.workflowName, handler.workflowId, handler.workflowTag)
+        else ->
             throw InvalidStubException("$stub")
     }
 
     /**
-     * Cancel tasks or workflows targeted per tag
+     * Cancel a task or a workflow
      */
     @Suppress("UNCHECKED_CAST")
     fun <T : Any> cancel(
+        stub: T
+    ): Unit = cancelAsync(stub).join()
+
+    /**
+     * Complete a task or a workflow
+     */
+    @Suppress("UNCHECKED_CAST")
+    fun <T : Any> completeAsync(
         stub: T,
-        tag: String
+        value: Any?
     ): CompletableFuture<Unit> = when (val handler = getProxyHandler(stub)) {
-        is TaskProxyHandler ->
-            dispatcher.cancelTask(handler.taskName, taskTag = TaskTag(tag))
-        is WorkflowProxyHandler ->
-            dispatcher.cancelWorkflow(handler.workflowName, workflowTag = WorkflowTag(tag))
-        is ChannelProxyHandler ->
+        is GetTaskProxyHandler ->
+            dispatcher.completeTaskAsync(handler.taskName, handler.taskId, handler.taskTag, value)
+        is GetWorkflowProxyHandler ->
+            dispatcher.completeWorkflowAsync(handler.workflowName, handler.workflowId, handler.workflowTag, value)
+        else ->
             throw InvalidStubException("$stub")
     }
 
     /**
-     * Complete a task or a workflow targeted by its id
+     * Complete a task or a workflow
      */
     @Suppress("UNCHECKED_CAST")
     fun <T : Any> complete(
         stub: T,
-        id: UUID,
         value: Any?
-    ): CompletableFuture<Unit> = when (val handler = getProxyHandler(stub)) {
-        is TaskProxyHandler ->
-            dispatcher.completeTask(handler.taskName, taskId = TaskId(id), value)
-        is WorkflowProxyHandler ->
-            dispatcher.completeWorkflow(handler.workflowName, workflowId = WorkflowId(id), value)
-        is ChannelProxyHandler ->
-            throw InvalidStubException("$stub")
-    }
+    ): Unit = completeAsync(stub, value).join()
 
     /**
-     * Complete tasks or workflows targeted per tag
+     * Retry a task or a workflow
      */
     @Suppress("UNCHECKED_CAST")
-    fun <T : Any> complete(
+    fun <T : Any> retryAsync(
         stub: T,
-        tag: String,
-        value: Any?
     ): CompletableFuture<Unit> = when (val handler = getProxyHandler(stub)) {
-        is TaskProxyHandler ->
-            dispatcher.completeTask(handler.taskName, taskTag = TaskTag(tag), value)
-        is WorkflowProxyHandler ->
-            dispatcher.completeWorkflow(handler.workflowName, workflowTag = WorkflowTag(tag), value)
-        is ChannelProxyHandler ->
+        is GetTaskProxyHandler ->
+            dispatcher.retryTaskAsync(handler.taskName, handler.taskId, handler.taskTag)
+        is GetWorkflowProxyHandler ->
+            dispatcher.retryWorkflowAsync(handler.workflowName, handler.workflowId, handler.workflowTag)
+        else ->
             throw InvalidStubException("$stub")
     }
 
     /**
-     * Retry a task or a workflow targeted by its id
+     * Retry a task or a workflow
      */
     @Suppress("UNCHECKED_CAST")
     fun <T : Any> retry(
         stub: T,
-        id: UUID
-    ): CompletableFuture<Unit> = when (val handler = getProxyHandler(stub)) {
-        is TaskProxyHandler ->
-            dispatcher.retryTask(handler.taskName, perTaskId = TaskId(id))
-        is WorkflowProxyHandler ->
-            dispatcher.retryWorkflow(handler.workflowName, workflowId = WorkflowId(id))
-        is ChannelProxyHandler ->
-            throw InvalidStubException("$stub")
-    }
-
-    /**
-     * Retry tasks or workflows targeted per tag
-     */
-    @Suppress("UNCHECKED_CAST")
-    fun <T : Any> retry(
-        stub: T,
-        tag: String
-    ): CompletableFuture<Unit> = when (val handler = getProxyHandler(stub)) {
-        is TaskProxyHandler ->
-            dispatcher.retryTask(handler.taskName, perTaskTag = TaskTag(tag))
-        is WorkflowProxyHandler ->
-            dispatcher.retryWorkflow(handler.workflowName, workflowTag = WorkflowTag(tag))
-        is ChannelProxyHandler ->
-            throw InvalidStubException("$stub")
-    }
+    ): Unit = retryAsync(stub).join()
 
     /**
      * get ids of a stub, associated to a specific tag
      */
     @Suppress("UNCHECKED_CAST")
     fun <T : Any> getIds(
-        stub: T,
-        tag: String
+        stub: T
     ): Set<UUID> = when (val handler = getProxyHandler(stub)) {
-        is TaskProxyHandler ->
-            dispatcher.getTaskIdsPerTag(handler.taskName, TaskTag(tag))
-        is WorkflowProxyHandler ->
-            dispatcher.getWorkflowIdsPerTag(handler.workflowName, WorkflowTag(tag))
-        is ChannelProxyHandler ->
+        is GetTaskProxyHandler ->
+            dispatcher.getTaskIdsPerTag(handler.taskName, handler.taskId, handler.taskTag)
+        is GetWorkflowProxyHandler ->
+            dispatcher.getWorkflowIdsPerTag(handler.workflowName, handler.workflowId, handler.workflowTag)
+        else ->
             throw InvalidStubException("$stub")
     }
 
-    private fun <R> dispatch(
-        tags: Set<String>?,
-        options: JobOptions?,
-        meta: Map<String, ByteArray>?,
+    private fun <R> startAsync(
         invoke: () -> R
-    ): Deferred<R> {
+    ): CompletableFuture<Deferred<R>> {
         val handler = ProxyHandler.async(invoke) ?: throw InvalidStubException()
 
-        return dispatcher.dispatch(handler, false, tags, options, meta)
+        return dispatcher.dispatchAsync(handler)
     }
 
-    private fun <R> dispatch(
-        id: UUID,
-        invoke: () -> R
-    ): Deferred<R> {
+    private fun startVoidAsync(
+        invoke: () -> Unit
+    ): CompletableFuture<Deferred<Void>> {
         val handler = ProxyHandler.async(invoke) ?: throw InvalidStubException()
 
-        return dispatcher.dispatch(handler, id)
-    }
-
-    private fun <R> dispatch(
-        tag: String,
-        invoke: () -> R
-    ): Deferred<R> {
-        val handler = ProxyHandler.async(invoke) ?: throw InvalidStubException()
-
-        return dispatcher.dispatch(handler, tag)
+        return dispatcher.dispatchAsync(handler)
     }
 
     private fun getProxyHandler(stub: Any): ProxyHandler<*> {

@@ -25,10 +25,9 @@
 
 package io.infinitic.workflows
 
-import io.infinitic.common.data.JobOptions
+import io.infinitic.common.proxies.NewTaskProxyHandler
+import io.infinitic.common.proxies.NewWorkflowProxyHandler
 import io.infinitic.common.proxies.ProxyHandler
-import io.infinitic.common.proxies.TaskProxyHandler
-import io.infinitic.common.proxies.WorkflowProxyHandler
 import io.infinitic.common.tasks.data.TaskMeta
 import io.infinitic.common.tasks.data.TaskOptions
 import io.infinitic.common.tasks.data.TaskTag
@@ -49,12 +48,12 @@ abstract class Workflow {
      *  Create a stub for a task
      */
     @JvmOverloads
-    fun <T : Any> taskStub(
+    fun <T : Any> newTask(
         klass: Class<out T>,
         tags: Set<String> = setOf(),
         options: TaskOptions = TaskOptions(),
         meta: Map<String, ByteArray> = mapOf()
-    ): T = TaskProxyHandler(
+    ): T = NewTaskProxyHandler(
         klass = klass,
         taskTags = tags.map { TaskTag(it) }.toSet(),
         taskOptions = options,
@@ -65,12 +64,12 @@ abstract class Workflow {
      *  Create a stub for a workflow
      */
     @JvmOverloads
-    fun <T : Any> workflowStub(
+    fun <T : Any> newWorkflow(
         klass: Class<out T>,
         tags: Set<String> = setOf(),
         options: WorkflowOptions = WorkflowOptions(),
         meta: Map<String, ByteArray> = mapOf()
-    ): T = WorkflowProxyHandler(
+    ): T = NewWorkflowProxyHandler(
         klass = klass,
         workflowTags = tags.map { WorkflowTag(it) }.toSet(),
         workflowOptions = options,
@@ -78,144 +77,239 @@ abstract class Workflow {
     ) { dispatcher }.stub()
 
     /**
-     *  Start a task or workflow without parameter
+     *  Dispatch without parameter a task or workflow returning an object
      */
-    @JvmOverloads
-    fun <R> dispatch(
-        method: Function0<R>,
-        tags: Set<String>? = null,
-        options: JobOptions? = null,
-        meta: Map<String, ByteArray>? = null
-    ): With0<R> = With0 {
-        dispatch(tags, options, meta) { method.invoke() }
-    }
+    fun <R : Any?> dispatch(
+        method: () -> R
+    ): Deferred<R> = start() { method.invoke() }
 
     /**
-     *  Start a task or workflow with 1 parameter
+     *  Dispatch with 1 parameter a task or workflow returning an object
      */
-    @JvmOverloads
-    fun <P1, R> dispatch(
-        method: Function1<P1, R>,
-        tags: Set<String>? = null,
-        options: JobOptions? = null,
-        meta: Map<String, ByteArray>? = null
-    ): With1<P1, R> = With1 { p1 ->
-        dispatch(tags, options, meta) { method.invoke(p1) }
-    }
+    fun <P1, R : Any?> dispatch(
+        method: (p1: P1) -> R,
+        p1: P1
+    ): Deferred<R> = start() { method.invoke(p1) }
 
     /**
-     *  Start a task or workflow with 2 parameters
+     *  Dispatch with 2 parameters a task or workflow returning an object
      */
-    @JvmOverloads
     fun <P1, P2, R : Any?> dispatch(
-        method: Function2<P1, P2, R>,
-        tags: Set<String>? = null,
-        options: JobOptions? = null,
-        meta: Map<String, ByteArray>? = null
-    ): With2<P1, P2, R> = With2 { p1, p2 ->
-        dispatch(tags, options, meta) { method.invoke(p1, p2) }
-    }
+        method: (p1: P1, p2: P2) -> R,
+        p1: P1,
+        p2: P2
+    ): Deferred<R> = start() { method.invoke(p1, p2) }
 
     /**
-     *  Start a task or workflow with 3 parameters
+     *  Dispatch with 3 parameters a task or workflow returning an object
      */
-    @JvmOverloads
     fun <P1, P2, P3, R : Any?> dispatch(
-        method: Function3<P1, P2, P3, R>,
-        tags: Set<String>? = null,
-        options: JobOptions? = null,
-        meta: Map<String, ByteArray>? = null
-    ): With3<P1, P2, P3, R> = With3 { p1, p2, p3 ->
-        dispatch(tags, options, meta) { method.invoke(p1, p2, p3) }
-    }
+        method: (p1: P1, p2: P2, p3: P3) -> R,
+        p1: P1,
+        p2: P2,
+        p3: P3
+    ): Deferred<R> = start() { method.invoke(p1, p2, p3) }
 
     /**
-     *  Start a task or workflow with 4 parameters
+     *  Dispatch with 4 parameters a task or workflow returning an object
      */
-    @JvmOverloads
     fun <P1, P2, P3, P4, R : Any?> dispatch(
-        method: Function4<P1, P2, P3, P4, R>,
-        tags: Set<String>? = null,
-        options: JobOptions? = null,
-        meta: Map<String, ByteArray>? = null
-    ): With4<P1, P2, P3, P4, R> = With4 { p1, p2, p3, p4 ->
-        dispatch(tags, options, meta) { method.invoke(p1, p2, p3, p4) }
-    }
+        method: (p1: P1, p2: P2, p3: P3, p4: P4) -> R,
+        p1: P1,
+        p2: P2,
+        p3: P3,
+        p4: P4
+    ): Deferred<R> = start() { method.invoke(p1, p2, p3, p4) }
 
     /**
-     *  Start a task or workflow with 5 parameters
+     *  Dispatch with 5 parameters a task or workflow returning an object
      */
-    @JvmOverloads
     fun <P1, P2, P3, P4, P5, R : Any?> dispatch(
-        method: Function5<P1, P2, P3, P4, P5, R>,
-        tags: Set<String>? = null,
-        options: JobOptions? = null,
-        meta: Map<String, ByteArray>? = null
-    ): With5<P1, P2, P3, P4, P5, R> = With5 { p1, p2, p3, p4, p5 ->
-        dispatch(tags, options, meta) { method.invoke(p1, p2, p3, p4, p5) }
-    }
+        method: (p1: P1, p2: P2, p3: P3, p4: P4, p5: P5) -> R,
+        p1: P1,
+        p2: P2,
+        p3: P3,
+        p4: P4,
+        p5: P5
+    ): Deferred<R> = start() { method.invoke(p1, p2, p3, p4, p5) }
 
     /**
-     *  Start a task or workflow with 6 parameters
+     *  Dispatch with 6 parameters a task or workflow returning an object
      */
-    @JvmOverloads
     fun <P1, P2, P3, P4, P5, P6, R : Any?> dispatch(
-        method: Function6<P1, P2, P3, P4, P5, P6, R>,
-        tags: Set<String>? = null,
-        options: JobOptions? = null,
-        meta: Map<String, ByteArray>? = null
-    ): With6<P1, P2, P3, P4, P5, P6, R> = With6 { p1, p2, p3, p4, p5, p6 ->
-        dispatch(tags, options, meta) { method.invoke(p1, p2, p3, p4, p5, p6) }
-    }
+        method: (p1: P1, p2: P2, p3: P3, p4: P4, p5: P5, p6: P6) -> R,
+        p1: P1,
+        p2: P2,
+        p3: P3,
+        p4: P4,
+        p5: P5,
+        p6: P6
+    ): Deferred<R> = start() { method.invoke(p1, p2, p3, p4, p5, p6) }
 
     /**
-     *  Start a task or workflow with 7 parameters
+     *  Dispatch with 7 parameters a task or workflow returning an object
      */
-    @JvmOverloads
     fun <P1, P2, P3, P4, P5, P6, P7, R : Any?> dispatch(
-        method: Function7<P1, P2, P3, P4, P5, P6, P7, R>,
-        tags: Set<String>? = null,
-        options: JobOptions? = null,
-        meta: Map<String, ByteArray>? = null
-    ): With7<P1, P2, P3, P4, P5, P6, P7, R> = With7 { p1, p2, p3, p4, p5, p6, p7 ->
-        dispatch(tags, options, meta) { method.invoke(p1, p2, p3, p4, p5, p6, p7) }
-    }
+        method: (p1: P1, p2: P2, p3: P3, p4: P4, p5: P5, p6: P6, p7: P7) -> R,
+        p1: P1,
+        p2: P2,
+        p3: P3,
+        p4: P4,
+        p5: P5,
+        p6: P6,
+        p7: P7
+    ): Deferred<R> = start() { method.invoke(p1, p2, p3, p4, p5, p6, p7) }
 
     /**
-     *  Start a task or workflow with 8 parameters
+     *  Dispatch with 8 parameters a task or workflow returning an object
      */
-    @JvmOverloads
     fun <P1, P2, P3, P4, P5, P6, P7, P8, R : Any?> dispatch(
-        method: Function8<P1, P2, P3, P4, P5, P6, P7, P8, R>,
-        tags: Set<String>? = null,
-        options: JobOptions? = null,
-        meta: Map<String, ByteArray>? = null
-    ): With8<P1, P2, P3, P4, P5, P6, P7, P8, R> = With8 { p1, p2, p3, p4, p5, p6, p7, p8 ->
-        dispatch(tags, options, meta) { method.invoke(p1, p2, p3, p4, p5, p6, p7, p8) }
-    }
+        method: (p1: P1, p2: P2, p3: P3, p4: P4, p5: P5, p6: P6, p7: P7, p8: P8) -> R,
+        p1: P1,
+        p2: P2,
+        p3: P3,
+        p4: P4,
+        p5: P5,
+        p6: P6,
+        p7: P7,
+        p8: P8
+    ): Deferred<R> = start() { method.invoke(p1, p2, p3, p4, p5, p6, p7, p8) }
 
     /**
-     *  Start a task or workflow with 9 parameters
+     *  Dispatch with 9 parameters a task or workflow returning an object
      */
-    @JvmOverloads
     fun <P1, P2, P3, P4, P5, P6, P7, P8, P9, R : Any?> dispatch(
-        method: Function9<P1, P2, P3, P4, P5, P6, P7, P8, P9, R>,
-        tags: Set<String>? = null,
-        options: JobOptions? = null,
-        meta: Map<String, ByteArray>? = null
-    ): With9<P1, P2, P3, P4, P5, P6, P7, P8, P9, R> = With9 { p1, p2, p3, p4, p5, p6, p7, p8, p9 ->
-        dispatch(tags, options, meta) { method.invoke(p1, p2, p3, p4, p5, p6, p7, p8, p9) }
-    }
+        method: (p1: P1, p2: P2, p3: P3, p4: P4, p5: P5, p6: P6, p7: P7, p8: P8, p9: P9) -> R,
+        p1: P1,
+        p2: P2,
+        p3: P3,
+        p4: P4,
+        p5: P5,
+        p6: P6,
+        p7: P7,
+        p8: P8,
+        p9: P9
+    ): Deferred<R> = start() { method.invoke(p1, p2, p3, p4, p5, p6, p7, p8, p9) }
+
+    /**
+     *  Dispatch without parameter a task or workflow returning void
+     */
+    fun dispatchVoid(
+        method: Consumer0
+    ): Deferred<Void> = startVoid() { method.apply() }
+
+    /**
+     *  Dispatch with 1 parameter a task or workflow returning void
+     */
+    fun <P1> dispatchVoid(
+        method: Consumer1<P1>,
+        p1: P1
+    ): Deferred<Void> = startVoid() { method.apply(p1) }
+
+    /**
+     *  Dispatch with 2 parameters a task or workflow returning void
+     */
+    fun <P1, P2> dispatchVoid(
+        method: Consumer2<P1, P2>,
+        p1: P1,
+        p2: P2
+    ): Deferred<Void> = startVoid() { method.apply(p1, p2) }
+
+    /**
+     *  Dispatch with 3 parameters a task or workflow returning void
+     */
+    fun <P1, P2, P3> dispatchVoid(
+        method: Consumer3<P1, P2, P3>,
+        p1: P1,
+        p2: P2,
+        p3: P3
+    ): Deferred<Void> = startVoid() { method.apply(p1, p2, p3) }
+
+    /**
+     *  Dispatch with 4 parameters a task or workflow returning void
+     */
+    fun <P1, P2, P3, P4> dispatchVoid(
+        method: Consumer4<P1, P2, P3, P4>,
+        p1: P1,
+        p2: P2,
+        p3: P3,
+        p4: P4
+    ): Deferred<Void> = startVoid() { method.apply(p1, p2, p3, p4) }
+
+    /**
+     *  Dispatch with 5 parameters a task or workflow returning void
+     */
+    fun <P1, P2, P3, P4, P5> dispatchVoid(
+        method: Consumer5<P1, P2, P3, P4, P5>,
+        p1: P1,
+        p2: P2,
+        p3: P3,
+        p4: P4,
+        p5: P5
+    ): Deferred<Void> = startVoid() { method.apply(p1, p2, p3, p4, p5) }
+
+    /**
+     *  Dispatch with 6 parameters a task or workflow returning void
+     */
+    fun <P1, P2, P3, P4, P5, P6> dispatchVoid(
+        method: Consumer6<P1, P2, P3, P4, P5, P6>,
+        p1: P1,
+        p2: P2,
+        p3: P3,
+        p4: P4,
+        p5: P5,
+        p6: P6
+    ): Deferred<Void> = startVoid() { method.apply(p1, p2, p3, p4, p5, p6) }
+
+    /**
+     *  Dispatch with 7 parameters a task or workflow returning void
+     */
+    fun <P1, P2, P3, P4, P5, P6, P7> dispatchVoid(
+        method: Consumer7<P1, P2, P3, P4, P5, P6, P7>,
+        p1: P1,
+        p2: P2,
+        p3: P3,
+        p4: P4,
+        p5: P5,
+        p6: P6,
+        p7: P7
+    ): Deferred<Void> = startVoid() { method.apply(p1, p2, p3, p4, p5, p6, p7) }
+
+    /**
+     *  Dispatch with 8 parameters a task or workflow returning void
+     */
+    fun <P1, P2, P3, P4, P5, P6, P7, P8> dispatchVoid(
+        method: Consumer8<P1, P2, P3, P4, P5, P6, P7, P8>,
+        p1: P1,
+        p2: P2,
+        p3: P3,
+        p4: P4,
+        p5: P5,
+        p6: P6,
+        p7: P7,
+        p8: P8
+    ): Deferred<Void> = startVoid() { method.apply(p1, p2, p3, p4, p5, p6, p7, p8) }
+
+    /**
+     *  Dispatch with 9 parameters a task or workflow returning void
+     */
+    fun <P1, P2, P3, P4, P5, P6, P7, P8, P9> dispatchVoid(
+        method: Consumer9<P1, P2, P3, P4, P5, P6, P7, P8, P9>,
+        p1: P1,
+        p2: P2,
+        p3: P3,
+        p4: P4,
+        p5: P5,
+        p6: P6,
+        p7: P7,
+        p8: P8,
+        p9: P9
+    ): Deferred<Void> = startVoid() { method.apply(p1, p2, p3, p4, p5, p6, p7, p8, p9) }
 
     /**
      *  Create a channel
      */
     fun <T : Any> channel(): Channel<T> = ChannelImpl { dispatcher }
-
-    /**
-     * Create an async branch
-     */
-    fun <S> async(branch: () -> S): Deferred<S> = dispatcher.async(branch)
 
     /**
      * Create an inline task
@@ -232,14 +326,24 @@ abstract class Workflow {
      */
     fun timer(instant: Instant): Deferred<Instant> = dispatcher.timer(instant)
 
-    private fun <R> dispatch(
-        tags: Set<String>?,
-        options: JobOptions?,
-        meta: Map<String, ByteArray>?,
+    /*
+     * Create an async branch
+     */
+    fun <S> async(branch: () -> S): Deferred<S> = dispatcher.async(branch)
+
+    private fun <R> start(
         invoke: () -> R
     ): Deferred<R> {
         val handler = ProxyHandler.async(invoke) ?: throw InvalidStubException()
 
-        return dispatcher.dispatch(handler, false, tags, options, meta)
+        return dispatcher.dispatch(handler, false)
+    }
+
+    private fun startVoid(
+        invoke: () -> Unit
+    ): Deferred<Void> {
+        val handler = ProxyHandler.async(invoke) ?: throw InvalidStubException()
+
+        return dispatcher.dispatch(handler, false)
     }
 }

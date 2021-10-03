@@ -42,12 +42,27 @@ class InvalidStubException(
     help = "Make sure to use a stub returned by taskStub(Class<*>) or workflowStub(Class<*>)"
 )
 
+class InvalidCommandException(
+    msg: String,
+    help: String = ""
+) : ClientUserException(
+    msg = msg,
+    help = msg
+)
+
 class InvalidChannelException(
     klass: String
 ) : ClientUserException(
     msg = "$klass is not the stub of a Channel",
     help = "Make sure to use something like `workflow.getchannel()` where `workflow` is the stub " +
         "of a workflow and `getChannel()` is a Channel getter"
+)
+
+class InvalidRunningTaskException(
+    klass: String
+) : ClientUserException(
+    msg = "$klass is not the stub of a running task",
+    help = "Make sure to use a stub returned by workflowStub(Class<*>)"
 )
 
 class InvalidWorkflowException(

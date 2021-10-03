@@ -86,6 +86,7 @@ data class DispatchMethodRun(
     override val workflowName: WorkflowName,
     val methodRunId: MethodRunId,
     val clientName: ClientName,
+    val clientWaiting: Boolean,
     var parentWorkflowId: WorkflowId?,
     var parentWorkflowName: WorkflowName?,
     var parentMethodRunId: MethodRunId?,

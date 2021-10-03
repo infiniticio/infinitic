@@ -51,10 +51,11 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.future.future
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.job
 import mu.KotlinLogging
 import org.jetbrains.annotations.TestOnly
 import java.io.Closeable
+import java.util.concurrent.CompletableFuture
 import java.util.concurrent.Executors
 
 @Suppress("MemberVisibilityCanBePrivate", "unused")
@@ -76,30 +77,20 @@ abstract class InfiniticWorker(open val workerConfig: WorkerConfig) : Closeable 
 
     abstract val name: String
 
-    protected abstract fun CoroutineScope.startTaskExecutors(name: Name, concurrency: Int)
+    protected abstract fun startTaskExecutors(name: Name, concurrency: Int)
 
-    protected abstract fun CoroutineScope.startWorkflowTagEngines(workflowName: WorkflowName, concurrency: Int, storage: WorkflowTagStorage)
-    protected abstract fun CoroutineScope.startTaskEngines(workflowName: WorkflowName, concurrency: Int, storage: TaskStateStorage)
-    protected abstract fun CoroutineScope.startTaskDelayEngines(workflowName: WorkflowName, concurrency: Int)
-    protected abstract fun CoroutineScope.startWorkflowEngines(workflowName: WorkflowName, concurrency: Int, storage: WorkflowStateStorage)
-    protected abstract fun CoroutineScope.startWorkflowDelayEngines(workflowName: WorkflowName, concurrency: Int)
+    protected abstract fun startWorkflowTagEngines(workflowName: WorkflowName, concurrency: Int, storage: WorkflowTagStorage)
+    protected abstract fun startTaskEngines(workflowName: WorkflowName, concurrency: Int, storage: TaskStateStorage)
+    protected abstract fun startTaskDelayEngines(workflowName: WorkflowName, concurrency: Int)
+    protected abstract fun startWorkflowEngines(workflowName: WorkflowName, concurrency: Int, storage: WorkflowStateStorage)
+    protected abstract fun startWorkflowDelayEngines(workflowName: WorkflowName, concurrency: Int)
 
-    protected abstract fun CoroutineScope.startTaskTagEngines(taskName: TaskName, concurrency: Int, storage: TaskTagStorage)
-    protected abstract fun CoroutineScope.startTaskEngines(taskName: TaskName, concurrency: Int, storage: TaskStateStorage)
-    protected abstract fun CoroutineScope.startTaskDelayEngines(taskName: TaskName, concurrency: Int)
-    protected abstract fun CoroutineScope.startMetricsPerNameEngines(taskName: TaskName, storage: MetricsPerNameStateStorage)
+    protected abstract fun startTaskTagEngines(taskName: TaskName, concurrency: Int, storage: TaskTagStorage)
+    protected abstract fun startTaskEngines(taskName: TaskName, concurrency: Int, storage: TaskStateStorage)
+    protected abstract fun startTaskDelayEngines(taskName: TaskName, concurrency: Int)
+    protected abstract fun startMetricsPerNameEngines(taskName: TaskName, storage: MetricsPerNameStateStorage)
 
-    protected abstract fun CoroutineScope.startMetricsGlobalEngine(storage: MetricsGlobalStateStorage)
-
-    /**
-     * Start worker
-     */
-    open fun start() {
-        // register WorkflowTasks
-        taskExecutorRegister.registerTask(WorkflowTask::class.java.name) { WorkflowTaskImpl() }
-
-        runningScope.future { start() }.join()
-    }
+    protected abstract fun startMetricsGlobalEngine(storage: MetricsGlobalStateStorage)
 
     /**
      * Close worker
@@ -122,7 +113,17 @@ abstract class InfiniticWorker(open val workerConfig: WorkerConfig) : Closeable 
         globalStorages.forEach { it.value.flush() }
     }
 
-    private fun CoroutineScope.start() = launch {
+    /**
+     * Start worker synchronously
+     */
+    open fun start(): Unit = startAsync().join()
+
+    /**
+     * Start worker asynchronously
+     */
+    open fun startAsync(): CompletableFuture<Unit> {
+        // register WorkflowTasks
+        taskExecutorRegister.registerTask(WorkflowTask::class.java.name) { WorkflowTaskImpl() }
 
         for (workflow in workerConfig.workflows) {
             val workflowName = WorkflowName(workflow.name)
@@ -295,5 +296,8 @@ abstract class InfiniticWorker(open val workerConfig: WorkerConfig) : Closeable 
             }
         }
         logger.info { "Worker \"$name\" ready" }
+
+        // provides a CompletableFuture that waits for completion of all launched coroutines
+        return runningScope.future { coroutineContext.job.join() }
     }
 }

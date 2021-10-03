@@ -123,6 +123,11 @@ class WorkflowEngine(
                 return@coroutineScope dispatchWorkflow(output, message)
             }
 
+            if (message is DispatchMethodRun && message.clientWaiting) {
+                val unknownWorkflow = MethodUnknown(message.clientName, message.workflowId, message.methodRunId)
+                launch { output.sendEventsToClient(unknownWorkflow) }
+            }
+
             if (message is WaitWorkflow) {
                 val unknownWorkflow = MethodUnknown(message.clientName, message.workflowId, message.methodRunId)
                 launch { output.sendEventsToClient(unknownWorkflow) }
@@ -176,7 +181,6 @@ class WorkflowEngine(
 
         // process all buffered messages
         while (
-            state.methodRuns.size > 0 &&
             state.runningWorkflowTaskId == null && // if a workflowTask is not ongoing
             state.messagesBuffer.size > 0 // if there is at least one buffered message
         ) {

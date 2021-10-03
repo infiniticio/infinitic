@@ -23,8 +23,25 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.workflows
+package io.infinitic.common.proxies
 
-interface SendChannel<T> {
-    fun send(signal: T)
+import io.infinitic.common.workflows.data.workflows.WorkflowId
+import io.infinitic.common.workflows.data.workflows.WorkflowName
+import io.infinitic.common.workflows.data.workflows.WorkflowTag
+import io.infinitic.exceptions.thisShouldNotHappen
+
+class GetWorkflowProxyHandler<K : Any>(
+    override val klass: Class<K>,
+    val workflowId: WorkflowId?,
+    val workflowTag: WorkflowTag?,
+    override val dispatcherFn: () -> ProxyDispatcher
+) : ProxyHandler<K>(klass, dispatcherFn) {
+
+    init {
+        require((workflowId == null && workflowTag != null) || (workflowId != null && workflowTag == null)) {
+            thisShouldNotHappen()
+        }
+    }
+
+    val workflowName = WorkflowName(className)
 }

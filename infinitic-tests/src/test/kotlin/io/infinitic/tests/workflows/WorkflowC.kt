@@ -39,7 +39,7 @@ interface WorkflowC {
 
 class WorkflowCImpl : Workflow(), WorkflowC {
     override val channelA = channel<String>()
-    val taskA = taskStub(TaskA::class.java)
+    val taskA = newTask(TaskA::class.java)
 
     override var log = ""
 

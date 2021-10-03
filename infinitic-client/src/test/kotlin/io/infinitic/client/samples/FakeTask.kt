@@ -37,6 +37,7 @@ internal interface FakeTaskParent {
 
 internal interface FakeTask : FakeTaskParent {
     fun m0()
+    fun m0String(): String
     fun m1(i: Int): String
     fun m2(str: String?): Any?
     fun m3(p1: Int, p2: String): String
@@ -49,4 +50,26 @@ internal interface FakeTask : FakeTaskParent {
 internal interface FooTask : FakeTaskParent {
     @Name("bar")
     fun m()
+}
+
+internal class FakeTaskImpl : FakeTask {
+    override fun m0() { }
+
+    override fun m0String(): String = "Not needed"
+
+    override fun m1(i: Int): String = "Not needed"
+
+    override fun m2(str: String?): Any? = "Not needed"
+
+    override fun m3(p1: Int, p2: String): String = "Not needed"
+
+    override fun m4(id: FakeInterface): TaskId = TaskId()
+
+    override fun m5(): Boolean = true
+
+    override suspend fun suspendedMethod() { }
+
+    override fun parent() = "Not needed"
+
+    override fun annotated(): String = "Not needed"
 }

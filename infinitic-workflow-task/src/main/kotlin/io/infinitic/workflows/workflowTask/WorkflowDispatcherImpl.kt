@@ -26,15 +26,13 @@
 package io.infinitic.workflows.workflowTask
 
 import com.jayway.jsonpath.Criteria
-import io.infinitic.common.data.JobOptions
 import io.infinitic.common.data.MillisDuration
 import io.infinitic.common.data.MillisInstant
 import io.infinitic.common.data.Name
-import io.infinitic.common.proxies.ChannelProxyHandler
 import io.infinitic.common.proxies.Method
+import io.infinitic.common.proxies.NewTaskProxyHandler
+import io.infinitic.common.proxies.NewWorkflowProxyHandler
 import io.infinitic.common.proxies.ProxyHandler
-import io.infinitic.common.proxies.TaskProxyHandler
-import io.infinitic.common.proxies.WorkflowProxyHandler
 import io.infinitic.common.tasks.data.TaskMeta
 import io.infinitic.common.tasks.data.TaskName
 import io.infinitic.common.tasks.data.TaskOptions
@@ -89,7 +87,6 @@ import io.infinitic.workflows.Deferred
 import io.infinitic.workflows.DeferredStatus
 import io.infinitic.workflows.WorkflowDispatcher
 import mu.KotlinLogging
-import java.util.concurrent.CompletableFuture
 import java.time.Duration as JavaDuration
 import java.time.Instant as JavaInstant
 
@@ -116,31 +113,28 @@ internal class WorkflowDispatcherImpl(
     override fun <R : Any?> dispatch(
         handler: ProxyHandler<*>,
         clientWaiting: Boolean,
-        tags: Set<String>?,
-        options: JobOptions?,
-        meta: Map<String, ByteArray>?,
     ): Deferred<R> = when (handler) {
-        is TaskProxyHandler ->
+        is NewTaskProxyHandler ->
             dispatchNewTask(
                 handler.taskName,
                 handler.method(),
                 handler.simpleName,
-                tags?.map { TaskTag(it) }?.toSet() ?: handler.taskTags,
-                (options as TaskOptions?) ?: handler.taskOptions,
-                meta?.run { TaskMeta(this) } ?: handler.taskMeta
+                handler.taskTags,
+                handler.taskOptions,
+                handler.taskMeta
             )
-        is WorkflowProxyHandler -> when (handler.isMethodChannel()) {
-            true -> TODO("Not Yet Implemented")
+        is NewWorkflowProxyHandler -> when (handler.isChannelGetter()) {
+            true -> TODO("Not yet implemented")
             false -> dispatchNewWorkflow(
                 handler.workflowName,
                 handler.method(),
                 handler.simpleName,
-                tags?.map { WorkflowTag(it) }?.toSet() ?: handler.workflowTags,
-                (options as WorkflowOptions?) ?: handler.workflowOptions,
-                meta?.run { WorkflowMeta(this) } ?: handler.workflowMeta
+                handler.workflowTags,
+                handler.workflowOptions,
+                handler.workflowMeta
             )
         }
-        is ChannelProxyHandler -> throw InvalidChannelUsageException()
+        else -> throw InvalidChannelUsageException()
     }
     /*
      * Async Branch dispatching
@@ -465,7 +459,7 @@ internal class WorkflowDispatcherImpl(
     /*
      * Sent_to_Channel command dispatching
      */
-    override fun <T : Any> sendToChannel(channel: ChannelImpl<T>, event: T): CompletableFuture<Unit> {
+    override fun <T : Any> sendToChannel(channel: ChannelImpl<T>, event: T) {
         dispatchCommand<T>(
             SendToChannel(
                 ChannelName(channel.getNameOrThrow()),
@@ -474,8 +468,6 @@ internal class WorkflowDispatcherImpl(
             ),
             CommandSimpleName("${CommandType.SENT_TO_CHANNEL}")
         )
-
-        return CompletableFuture.completedFuture(Unit)
     }
 
     /*

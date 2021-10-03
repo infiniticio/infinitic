@@ -75,7 +75,7 @@ class InMemoryInfiniticClient(
             )
         }
 
-        worker.runningScope.launch { worker.start() }
+        worker.startAsync()
     }
 
     override fun close() {

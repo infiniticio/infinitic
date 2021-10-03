@@ -30,8 +30,14 @@ import java.util.concurrent.CompletableFuture
 
 interface Deferred<R> {
     val id: UUID
+
     fun await(): R
-    fun join(): Deferred<R>
-    fun cancel(): CompletableFuture<Unit>
-    fun retry(): CompletableFuture<Unit>
+
+    fun cancelAsync(): CompletableFuture<Unit>
+
+    fun cancel(): Unit = cancelAsync().join()
+
+    fun retryAsync(): CompletableFuture<Unit>
+
+    fun retry(): Unit = retryAsync().join()
 }
