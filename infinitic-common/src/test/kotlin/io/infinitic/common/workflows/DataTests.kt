@@ -59,7 +59,7 @@ class DataTests : StringSpec({
     "WorkflowId should be stringify as id" {
         val workflowId = TestFactory.random<WorkflowId>()
 
-        "$workflowId" shouldBe workflowId.id.toString()
+        "$workflowId" shouldBe workflowId.toString()
     }
 
     "CommandHash should be serialized as String" {
@@ -72,7 +72,7 @@ class DataTests : StringSpec({
     }
 
     "CommandId should be serialized as String" {
-        val m = CommandId()
+        val m = CommandId.random()
         val json = Json.encodeToString(m)
         val m2 = Json.decodeFromString<CommandId>(json)
 
@@ -136,7 +136,7 @@ class DataTests : StringSpec({
     }
 
     "MethodRunId should be serialized as String" {
-        val m = MethodRunId()
+        val m = MethodRunId.random()
         val json = Json.encodeToString(m)
         val m2 = Json.decodeFromString<MethodRunId>(json)
 

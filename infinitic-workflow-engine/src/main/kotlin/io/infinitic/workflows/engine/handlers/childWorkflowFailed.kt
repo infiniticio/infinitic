@@ -42,7 +42,7 @@ internal fun CoroutineScope.childWorkflowFailed(
         workflowEngineOutput,
         state,
         message.methodRunId,
-        CommandId(message.childWorkflowId),
+        CommandId.from(message.childWorkflowId),
         CurrentlyFailed(message.childWorkflowError, state.workflowTaskIndex)
     )
 }

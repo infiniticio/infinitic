@@ -29,7 +29,6 @@ import io.infinitic.common.tasks.data.TaskMeta
 import io.infinitic.tasks.Task
 import io.infinitic.tests.workflows.WorkflowA
 import java.time.Duration
-import java.util.UUID
 
 interface ParentInterface {
     fun parent(): String
@@ -39,13 +38,13 @@ interface TaskA : ParentInterface {
     fun concat(str1: String, str2: String): String
     fun reverse(str: String): String
     fun await(delay: Long): Long
-    fun workflowId(): UUID?
+    fun workflowId(): String?
     fun workflowName(): String?
-    fun cancelWorkflowA(id: UUID)
-    fun cancelTaskA(id: UUID)
+    fun cancelWorkflowA(id: String)
+    fun cancelTaskA(id: String)
     fun failing()
     fun successAtRetry(): String
-    fun retryTaskA(id: UUID)
+    fun retryTaskA(id: String)
 
     fun tags(): Set<String>
     fun meta(): TaskMeta
@@ -65,15 +64,15 @@ class TaskAImpl : Task(), TaskA {
 
     override fun workflowName() = context.workflowName
 
-    override fun cancelWorkflowA(id: UUID) {
+    override fun cancelWorkflowA(id: String) {
         Thread.sleep(50)
-        val t = context.client.getWorkflow(WorkflowA::class.java, id)
+        val t = context.client.getWorkflowById(WorkflowA::class.java, id)
         context.client.cancel(t)
     }
 
-    override fun cancelTaskA(id: UUID) {
+    override fun cancelTaskA(id: String) {
         Thread.sleep(50)
-        val t = context.client.getTask(TaskA::class.java, id)
+        val t = context.client.getTaskById(TaskA::class.java, id)
         context.client.cancel(t)
     }
 
@@ -84,9 +83,9 @@ class TaskAImpl : Task(), TaskA {
         else -> "ok"
     }
 
-    override fun retryTaskA(id: UUID) {
+    override fun retryTaskA(id: String) {
         Thread.sleep(50)
-        val t = context.client.getTask(TaskA::class.java, id)
+        val t = context.client.getTaskById(TaskA::class.java, id)
         context.client.retry(t)
     }
 

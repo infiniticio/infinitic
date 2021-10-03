@@ -25,11 +25,10 @@
 
 package io.infinitic.client
 
-import java.util.UUID
 import java.util.concurrent.CompletableFuture
 
 interface Deferred<R> {
-    val id: UUID
+    val id: String
 
     fun await(): R
 

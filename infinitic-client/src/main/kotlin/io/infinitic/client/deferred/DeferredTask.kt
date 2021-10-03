@@ -29,7 +29,6 @@ import io.infinitic.client.Deferred
 import io.infinitic.client.dispatcher.ClientDispatcher
 import io.infinitic.common.tasks.data.TaskId
 import io.infinitic.common.tasks.data.TaskName
-import java.util.UUID
 
 class DeferredTask<R : Any?> (
     internal val taskName: TaskName,
@@ -44,5 +43,5 @@ class DeferredTask<R : Any?> (
 
     override fun await(): R = dispatcher.awaitTask(taskName, taskId, clientWaiting)
 
-    override val id: UUID by lazy { taskId.id }
+    override val id: String by lazy { taskId.toString() }
 }

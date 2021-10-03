@@ -170,7 +170,7 @@ internal class TaskTests : StringSpec({
 
         shouldThrow<FailedException> { deferred.await() }
 
-        val t = client.getTask(TaskTest::class.java, "foo")
+        val t = client.getTaskByTag(TaskTest::class.java, "foo")
         client.retry(t)
 
         delay(50)
@@ -194,7 +194,7 @@ internal class TaskTests : StringSpec({
         val deferred = client.dispatch(taskTestWithTags::log)
 
         later {
-            val t = client.getTask(TaskTest::class.java, "foo")
+            val t = client.getTaskByTag(TaskTest::class.java, "foo")
             client.cancel(t)
         }
 
@@ -208,7 +208,7 @@ internal class TaskTests : StringSpec({
         val deferred2 = client.dispatch(taskTestWithTags::log)
 
         later {
-            val t = client.getTask(TaskTest::class.java, "foo")
+            val t = client.getTaskByTag(TaskTest::class.java, "foo")
             client.cancel(t)
         }
 
@@ -222,8 +222,8 @@ internal class TaskTests : StringSpec({
         TaskTestImpl.behavior = { _, _ -> Status.SUCCESS }
 
         val deferred = client.dispatch(taskTestWithTags::await, 200)
-        val foo = client.getTask(TaskTest::class.java, "foo")
-        val bar = client.getTask(TaskTest::class.java, "bar")
+        val foo = client.getTaskByTag(TaskTest::class.java, "foo")
+        val bar = client.getTaskByTag(TaskTest::class.java, "bar")
 
         client.getIds(foo).contains(deferred.id) shouldBe true
         client.getIds(bar).contains(deferred.id) shouldBe true
@@ -241,8 +241,8 @@ internal class TaskTests : StringSpec({
         TaskTestImpl.behavior = { _, _ -> Status.FAILED_WITH_RETRY }
 
         val deferred = client.dispatch(taskTestWithTags::log)
-        val foo = client.getTask(TaskTest::class.java, "foo")
-        val bar = client.getTask(TaskTest::class.java, "bar")
+        val foo = client.getTaskByTag(TaskTest::class.java, "foo")
+        val bar = client.getTaskByTag(TaskTest::class.java, "bar")
 
         client.getIds(foo).contains(deferred.id) shouldBe true
         client.getIds(bar).contains(deferred.id) shouldBe true

@@ -36,7 +36,6 @@ import io.infinitic.common.workflows.data.methodRuns.MethodRunId
 import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.data.workflows.WorkflowName
 import io.infinitic.common.workflows.data.workflows.WorkflowTag
-import java.util.UUID
 import java.util.concurrent.CompletableFuture
 
 interface ClientDispatcher : ProxyDispatcher {
@@ -100,15 +99,15 @@ interface ClientDispatcher : ProxyDispatcher {
         workflowTag: WorkflowTag?
     ): CompletableFuture<Unit>
 
-    fun getTaskIdsPerTag(
+    fun getTaskIdsByTag(
         taskName: TaskName,
         taskId: TaskId?,
         taskTag: TaskTag?
-    ): Set<UUID>
+    ): Set<String>
 
-    fun getWorkflowIdsPerTag(
+    fun getWorkflowIdsByTag(
         workflowName: WorkflowName,
         workflowId: WorkflowId?,
         workflowTag: WorkflowTag?
-    ): Set<UUID>
+    ): Set<String>
 }

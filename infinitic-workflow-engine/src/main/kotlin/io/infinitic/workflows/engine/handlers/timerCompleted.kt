@@ -43,7 +43,7 @@ internal fun CoroutineScope.timerCompleted(
         workflowEngineOutput,
         state,
         message.methodRunId,
-        CommandId(message.timerId),
+        CommandId.from(message.timerId),
         Completed(CommandReturnValue.now(), state.workflowTaskIndex)
     )
 }

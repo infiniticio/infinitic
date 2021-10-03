@@ -70,10 +70,10 @@ class TaskExecutor(
     private suspend fun executeTaskAttempt(message: ExecuteTaskAttempt) {
         val taskContext = TaskContextImpl(
             register = this,
-            id = message.taskId.id,
-            workflowId = message.workflowId?.id,
+            id = message.taskId.toString(),
+            workflowId = message.workflowId?.toString(),
             workflowName = message.workflowName?.name,
-            attemptId = message.taskAttemptId.id,
+            attemptId = message.taskAttemptId.toString(),
             retrySequence = message.taskRetrySequence.int,
             retryIndex = message.taskRetryIndex.int,
             lastError = message.lastError,

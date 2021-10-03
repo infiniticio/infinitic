@@ -260,7 +260,7 @@ private fun CoroutineScope.startDurationTimer(
         workflowId = state.workflowId,
         workflowName = state.workflowName,
         methodRunId = methodRun.methodRunId,
-        timerId = TimerId(newCommand.commandId.id)
+        timerId = TimerId.from(newCommand.commandId)
     )
 
     val diff: MillisDuration = state.runningWorkflowTaskInstant!! - MillisInstant.now()
@@ -282,7 +282,7 @@ private fun CoroutineScope.startInstantTimer(
         workflowId = state.workflowId,
         workflowName = state.workflowName,
         methodRunId = methodRun.methodRunId,
-        timerId = TimerId(newCommand.commandId.id)
+        timerId = TimerId.from(newCommand.commandId)
     )
 
     launch { output.sendToWorkflowEngineAfter(msg, command.instant - MillisInstant.now()) }
@@ -322,7 +322,7 @@ private fun CoroutineScope.dispatchTask(
     val dispatchTask = DispatchTask(
         clientName = ClientName("workflow engine"),
         clientWaiting = false,
-        taskId = TaskId(newCommand.commandId.id),
+        taskId = TaskId.from(newCommand.commandId),
         taskName = command.taskName,
         methodName = command.methodName,
         methodParameterTypes = command.methodParameterTypes,
@@ -359,7 +359,7 @@ private fun CoroutineScope.dispatchChildWorkflow(
 
     // send task to task engine
     val dispatchWorkflow = DispatchWorkflow(
-        workflowId = WorkflowId(newCommand.commandId.id),
+        workflowId = WorkflowId.from(newCommand.commandId),
         workflowName = command.childWorkflowName,
         clientName = ClientName("workflow engine"),
         clientWaiting = false,

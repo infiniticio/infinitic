@@ -31,7 +31,7 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 data class NewCommand(
-    val commandId: CommandId = CommandId(),
+    val commandId: CommandId = CommandId.random(),
     val command: Command,
     val commandName: Name?,
     val commandSimpleName: CommandSimpleName,

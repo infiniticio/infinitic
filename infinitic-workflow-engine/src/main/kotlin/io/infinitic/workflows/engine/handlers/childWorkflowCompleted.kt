@@ -43,7 +43,7 @@ internal fun CoroutineScope.childWorkflowCompleted(
         workflowEngineOutput,
         state,
         message.methodRunId,
-        CommandId(message.childWorkflowId),
+        CommandId.from(message.childWorkflowId),
         Completed(CommandReturnValue(message.childWorkflowReturnValue.serializedData), state.workflowTaskIndex)
     )
 }

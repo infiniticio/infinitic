@@ -25,22 +25,14 @@
 
 package io.infinitic.common.data
 
-import kotlinx.serialization.KSerializer
-import kotlinx.serialization.Serializable
-import kotlinx.serialization.descriptors.PrimitiveKind
-import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
-import kotlinx.serialization.descriptors.SerialDescriptor
-import kotlinx.serialization.encoding.Decoder
-import kotlinx.serialization.encoding.Encoder
-import java.util.UUID
+import io.infinitic.common.fixtures.TestFactory
+import io.kotest.core.spec.style.StringSpec
+import io.kotest.matchers.shouldBe
 
-@Serializable(with = IdSerializer::class)
-open class Id(open val id: UUID) {
-    final override fun toString() = id.toString()
-}
+class DataTests : StringSpec({
+    "MessageId should be reversible with ByteArray" {
+        val messageId = TestFactory.random<MessageId>()
 
-object IdSerializer : KSerializer<Id> {
-    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("Id", PrimitiveKind.STRING)
-    override fun serialize(encoder: Encoder, value: Id) { encoder.encodeString("${value.id}") }
-    override fun deserialize(decoder: Decoder) = Id(UUID.fromString(decoder.decodeString()))
-}
+        MessageId.fromByteArray(messageId.toByteArray()) shouldBe messageId
+    }
+})

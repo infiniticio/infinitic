@@ -28,15 +28,14 @@ package io.infinitic.tasks
 import io.infinitic.client.InfiniticClient
 import io.infinitic.common.errors.Error
 import io.infinitic.common.tasks.data.TaskOptions
-import java.util.UUID
 
 interface TaskContext {
     val register: TaskExecutorRegister
     val client: InfiniticClient
-    val id: UUID
-    val workflowId: UUID?
+    val id: String
+    val workflowId: String?
     val workflowName: String?
-    val attemptId: UUID
+    val attemptId: String
     val retrySequence: Int
     val retryIndex: Int
     val lastError: Error?

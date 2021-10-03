@@ -35,7 +35,7 @@ import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskIndex
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
 
-fun getStepId() = Step.Id(CommandId(), Running)
+fun getStepId() = Step.Id(CommandId.random(), Running)
 
 fun getCompletedStatus(output: Any? = null, index: Int = 0) = Completed(
     returnValue = CommandReturnValue.from(output),

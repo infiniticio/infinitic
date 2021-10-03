@@ -28,7 +28,6 @@ package io.infinitic.client.deferred
 import io.infinitic.client.Deferred
 import io.infinitic.exceptions.thisShouldNotHappen
 import io.infinitic.workflows.SendChannel
-import java.util.UUID
 import java.util.concurrent.CompletableFuture
 
 internal class DeferredChannel<R : SendChannel<*>> (
@@ -45,6 +44,6 @@ internal class DeferredChannel<R : SendChannel<*>> (
 
     override fun await(): R = channel
 
-    override val id: UUID
+    override val id: String
         get() { throw thisShouldNotHappen() }
 }

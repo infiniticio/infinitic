@@ -281,15 +281,15 @@ internal class WorkflowDispatcherImpl(
                 }
                 is Canceled -> throw CanceledDeferredException(
                     getCommandName(stepStatus.commandId)?.toString(),
-                    stepStatus.commandId.id
+                    stepStatus.commandId.toString()
                 )
                 is Failed -> throw FailedDeferredException(
                     getCommandName(stepStatus.commandId)?.toString(),
-                    stepStatus.commandId.id
+                    stepStatus.commandId.toString()
                 )
                 is OngoingFailure -> throw FailedDeferredException(
                     getCommandName(stepStatus.commandId)?.toString(),
-                    stepStatus.commandId.id
+                    stepStatus.commandId.toString()
                 )
             }
         }
@@ -324,7 +324,7 @@ internal class WorkflowDispatcherImpl(
 
                 throw CanceledDeferredException(
                     getCommandName(stepStatus.commandId)?.toString(),
-                    stepStatus.commandId.id
+                    stepStatus.commandId.toString()
                 )
             }
             is Failed -> {
@@ -333,7 +333,7 @@ internal class WorkflowDispatcherImpl(
 
                 throw FailedDeferredException(
                     getCommandName(stepStatus.commandId)?.toString(),
-                    stepStatus.commandId.id
+                    stepStatus.commandId.toString()
                 )
             }
             is OngoingFailure -> {
@@ -342,7 +342,7 @@ internal class WorkflowDispatcherImpl(
 
                 throw FailedDeferredException(
                     getCommandName(stepStatus.commandId)?.toString(),
-                    stepStatus.commandId.id
+                    stepStatus.commandId.toString()
                 )
             }
         }

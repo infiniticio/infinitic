@@ -25,21 +25,15 @@
 
 package io.infinitic.common.tasks.data
 
-import io.infinitic.common.data.Id
-import kotlinx.serialization.KSerializer
+import io.infinitic.common.workflows.data.commands.CommandId
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.descriptors.PrimitiveKind
-import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
-import kotlinx.serialization.descriptors.SerialDescriptor
-import kotlinx.serialization.encoding.Decoder
-import kotlinx.serialization.encoding.Encoder
 import java.util.UUID
 
-@Serializable(with = TaskIdSerializer::class)
-data class TaskId(override val id: UUID = UUID.randomUUID()) : Id(id)
+@JvmInline @Serializable
+value class TaskId(private val id: String = UUID.randomUUID().toString()) {
+    companion object {
+        fun from(commandId: CommandId) = TaskId(commandId.toString())
+    }
 
-object TaskIdSerializer : KSerializer<TaskId> {
-    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("TaskId", PrimitiveKind.STRING)
-    override fun serialize(encoder: Encoder, value: TaskId) { encoder.encodeString("${value.id}") }
-    override fun deserialize(decoder: Decoder) = TaskId(UUID.fromString(decoder.decodeString()))
+    override fun toString() = id
 }

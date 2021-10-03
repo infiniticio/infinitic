@@ -109,7 +109,7 @@ object TestFactory {
     }
 
     private fun steps(): Map<String, Step> {
-        fun getStepId() = Step.Id(CommandId(), Running)
+        fun getStepId() = Step.Id(CommandId.random(), Running)
         val stepA = getStepId()
         val stepB = getStepId()
         val stepC = getStepId()

@@ -40,7 +40,6 @@ import io.infinitic.workflows.and
 import io.infinitic.workflows.or
 import kotlinx.serialization.Serializable
 import java.time.Duration
-import java.util.UUID
 
 sealed class Obj
 @Serializable
@@ -56,10 +55,10 @@ interface WorkflowA : ParentInterface {
     fun empty(): String
     fun await(duration: Long): Long
     fun wparent(): String
-    fun context1(): UUID
+    fun context1(): String
     fun context2(): Set<String>
     fun context3(): WorkflowMeta
-    fun context4(): UUID?
+    fun context4(): String?
     fun context5(): String?
     fun context6(): Set<String>
     fun context7(): TaskMeta
@@ -135,7 +134,7 @@ class WorkflowAImpl : Workflow(), WorkflowA {
         return workflowA.parent()
     }
 
-    override fun context1(): UUID = context.id
+    override fun context1(): String = context.id
 
     override fun context2(): Set<String> = context.tags
 

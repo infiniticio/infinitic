@@ -50,7 +50,7 @@ internal fun CoroutineScope.taskCompleted(
             workflowEngineOutput,
             state,
             message.methodRunId,
-            CommandId(message.taskId),
+            CommandId.from(message.taskId),
             Completed(CommandReturnValue(message.taskReturnValue.serializedData), state.workflowTaskIndex)
         )
     }

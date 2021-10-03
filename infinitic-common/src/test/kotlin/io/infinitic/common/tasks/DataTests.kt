@@ -38,6 +38,7 @@ import io.infinitic.common.tasks.data.TaskMeta
 import io.infinitic.common.tasks.data.TaskName
 import io.infinitic.common.tasks.data.TaskRetryIndex
 import io.infinitic.common.tasks.data.TaskRetrySequence
+import io.infinitic.common.tasks.engine.state.TaskState
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
 import kotlinx.serialization.ExperimentalSerializationApi
@@ -47,16 +48,22 @@ import kotlinx.serialization.json.Json
 
 @OptIn(ExperimentalSerializationApi::class)
 class DataTests : StringSpec({
-    "TaskId should be stringify as id" {
-        val taskId = TestFactory.random<TaskId>()
+    "TaskId should be json-serializable" {
+        val m1 = TestFactory.random<TaskId>()
 
-        "$taskId" shouldBe taskId.id.toString()
+        val json = Json.encodeToString(m1)
+        val m2 = Json.decodeFromString<TaskId>(json)
+
+        m2 shouldBe m1
     }
 
-    "TaskAttemptId should be stringify as id" {
-        val taskAttemptId = TestFactory.random<TaskAttemptId>()
+    "TaskAttemptId should be json-serializable" {
+        val m1 = TestFactory.random<TaskAttemptId>()
 
-        "$taskAttemptId" shouldBe taskAttemptId.id.toString()
+        val json = Json.encodeToString(m1)
+        val m2 = Json.decodeFromString<TaskAttemptId>(json)
+
+        m2 shouldBe m1
     }
 
     "MethodInput should be serialized as List<SerializedData>" {
@@ -162,5 +169,11 @@ class DataTests : StringSpec({
 
         val m2 = Json.decodeFromString<Name>(json)
         m2 shouldBe m
+    }
+
+    "TaskState can be serDe to byteArray" {
+        val taskState = TestFactory.random<TaskState>()
+
+        TaskState.fromByteArray(taskState.toByteArray()) shouldBe taskState
     }
 })

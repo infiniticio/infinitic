@@ -25,30 +25,23 @@
 
 package io.infinitic.common.workflows.data.commands
 
-import io.infinitic.common.data.Id
 import io.infinitic.common.tasks.data.TaskId
-import io.infinitic.common.workflows.data.channels.ChannelSignalId
 import io.infinitic.common.workflows.data.timers.TimerId
 import io.infinitic.common.workflows.data.workflows.WorkflowId
-import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.descriptors.PrimitiveKind
-import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
-import kotlinx.serialization.descriptors.SerialDescriptor
-import kotlinx.serialization.encoding.Decoder
-import kotlinx.serialization.encoding.Encoder
 import java.util.UUID
 
-@Serializable(with = CommandIdSerializer::class)
-data class CommandId(override val id: UUID = UUID.randomUUID()) : Id(id) {
-    constructor(taskId: TaskId) : this(taskId.id)
-    constructor(timerId: TimerId) : this(timerId.id)
-    constructor(workflowId: WorkflowId) : this(workflowId.id)
-    constructor(eventId: ChannelSignalId) : this(eventId.id)
-}
+@JvmInline @Serializable
+value class CommandId(private val id: String) {
+    companion object {
+        fun random() = CommandId(UUID.randomUUID().toString())
 
-object CommandIdSerializer : KSerializer<CommandId> {
-    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("CommandId", PrimitiveKind.STRING)
-    override fun serialize(encoder: Encoder, value: CommandId) { encoder.encodeString("${value.id}") }
-    override fun deserialize(decoder: Decoder) = CommandId(UUID.fromString(decoder.decodeString()))
+        fun from(taskId: TaskId) = CommandId(taskId.toString())
+
+        fun from(workflowId: WorkflowId) = CommandId(workflowId.toString())
+
+        fun from(timerId: TimerId) = CommandId(timerId.toString())
+    }
+
+    override fun toString() = id
 }

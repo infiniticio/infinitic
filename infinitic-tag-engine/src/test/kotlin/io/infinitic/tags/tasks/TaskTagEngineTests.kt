@@ -59,8 +59,8 @@ import io.mockk.slot
 
 private fun <T : Any> captured(slot: CapturingSlot<T>) = if (slot.isCaptured) slot.captured else null
 
-private lateinit var stateMessageId: CapturingSlot<MessageId>
-private lateinit var stateTaskId: CapturingSlot<TaskId>
+private lateinit var stateMessageId: CapturingSlot<String>
+private lateinit var stateTaskId: CapturingSlot<String>
 private lateinit var clientMessage: CapturingSlot<ClientMessage>
 private lateinit var taskEngineMessage: CapturingSlot<TaskEngineMessage>
 
@@ -200,10 +200,10 @@ private fun mockSendToTaskEngine(slots: CapturingSlot<TaskEngineMessage>): SendT
 private fun mockTagStateStorage(tag: TaskTag, name: TaskName, messageId: MessageId?, taskIds: Set<TaskId>): TaskTagStorage {
     val tagStateStorage = mockk<TaskTagStorage>()
     coEvery { tagStateStorage.getLastMessageId(tag, name) } returns messageId
-    coEvery { tagStateStorage.setLastMessageId(tag, name, capture(stateMessageId)) } just Runs
+    coEvery { tagStateStorage.setLastMessageId(tag, name, MessageId(capture(stateMessageId))) } just Runs
     coEvery { tagStateStorage.getTaskIds(tag, name) } returns taskIds
-    coEvery { tagStateStorage.addTaskId(tag, name, capture(stateTaskId)) } just Runs
-    coEvery { tagStateStorage.removeTaskId(tag, name, capture(stateTaskId)) } just Runs
+    coEvery { tagStateStorage.addTaskId(tag, name, TaskId(capture(stateTaskId))) } just Runs
+    coEvery { tagStateStorage.removeTaskId(tag, name, TaskId(capture(stateTaskId))) } just Runs
 
     return tagStateStorage
 }

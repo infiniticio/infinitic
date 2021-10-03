@@ -28,7 +28,6 @@ package io.infinitic.client.deferred
 import io.infinitic.client.Deferred
 import io.infinitic.common.workflows.data.channels.ChannelSignalId
 import io.infinitic.exceptions.thisShouldNotHappen
-import java.util.UUID
 import java.util.concurrent.CompletableFuture
 
 internal class DeferredSend<R : Any?> (
@@ -50,5 +49,5 @@ internal class DeferredSend<R : Any?> (
     @Suppress("UNCHECKED_CAST")
     override fun await(): R = Unit as R
 
-    override val id: UUID = channelSignalId.id
+    override val id: String = channelSignalId.toString()
 }

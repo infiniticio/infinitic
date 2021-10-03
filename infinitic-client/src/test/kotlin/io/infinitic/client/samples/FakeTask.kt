@@ -26,7 +26,6 @@
 package io.infinitic.client.samples
 
 import io.infinitic.annotations.Name
-import io.infinitic.common.tasks.data.TaskId
 
 internal interface FakeTaskParent {
     fun parent(): String
@@ -41,7 +40,7 @@ internal interface FakeTask : FakeTaskParent {
     fun m1(i: Int): String
     fun m2(str: String?): Any?
     fun m3(p1: Int, p2: String): String
-    fun m4(id: FakeInterface): TaskId
+    fun m4(id: FakeInterface): FooTask
     fun m5(): Boolean
     suspend fun suspendedMethod()
 }
@@ -63,7 +62,7 @@ internal class FakeTaskImpl : FakeTask {
 
     override fun m3(p1: Int, p2: String): String = "Not needed"
 
-    override fun m4(id: FakeInterface): TaskId = TaskId()
+    override fun m4(id: FakeInterface): FooTask = throw Exception()
 
     override fun m5(): Boolean = true
 

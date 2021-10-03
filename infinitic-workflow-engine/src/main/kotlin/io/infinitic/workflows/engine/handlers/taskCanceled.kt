@@ -45,7 +45,7 @@ internal fun CoroutineScope.taskCanceled(
             workflowEngineOutput,
             state,
             message.methodRunId,
-            CommandId(message.taskId),
+            CommandId.from(message.taskId),
             Canceled(state.workflowTaskIndex)
         )
     }

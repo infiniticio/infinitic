@@ -25,28 +25,16 @@
 
 package io.infinitic.common.data
 
-import io.infinitic.common.data.UUIDConversion.toByteArray
-import io.infinitic.common.data.UUIDConversion.toUUID
-import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.descriptors.PrimitiveKind
-import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
-import kotlinx.serialization.descriptors.SerialDescriptor
-import kotlinx.serialization.encoding.Decoder
-import kotlinx.serialization.encoding.Encoder
 import java.util.UUID
 
-@Serializable(with = MessageIdSerializer::class)
-data class MessageId(override val id: UUID = UUID.randomUUID()) : Id(id) {
+@JvmInline @Serializable
+value class MessageId(private val id: String = UUID.randomUUID().toString()) {
     companion object {
-        fun fromByteArray(bytes: ByteArray) = MessageId(bytes.toUUID())
+        fun fromByteArray(bytes: ByteArray) = MessageId(bytes.decodeToString())
     }
 
-    fun toByteArray() = id.toByteArray()
-}
+    override fun toString() = id
 
-object MessageIdSerializer : KSerializer<MessageId> {
-    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("MessageId", PrimitiveKind.STRING)
-    override fun serialize(encoder: Encoder, value: MessageId) { encoder.encodeString("${value.id}") }
-    override fun deserialize(decoder: Decoder) = MessageId(UUID.fromString(decoder.decodeString()))
+    fun toByteArray() = id.toByteArray()
 }

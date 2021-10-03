@@ -25,12 +25,10 @@
 
 package io.infinitic.common.errors
 
-import io.infinitic.common.serDe.kserializer.UUIDSerializer
 import io.infinitic.exceptions.workflows.CanceledDeferredException
 import io.infinitic.exceptions.workflows.FailedDeferredException
 import io.infinitic.exceptions.workflows.TimedOutDeferredException
 import kotlinx.serialization.Serializable
-import java.util.UUID
 
 /**
  * Data class representing an error
@@ -57,7 +55,7 @@ data class Error(
      * for CanceledDeferredException, FailedDeferredException, TimedOutDeferredException
      * id of the failing task or child workflow where the error occurred
      */
-    @Serializable(with = UUIDSerializer::class) val whereId: UUID? = null,
+    val whereId: String? = null,
 
     /**
      * for CanceledDeferredException, FailedDeferredException, TimedOutDeferredException

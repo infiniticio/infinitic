@@ -45,7 +45,7 @@ class InMemoryInfiniticClient(
         InMemoryInfiniticWorker(workerConfig).apply {
             output = inMemoryOutput
             client = this@InMemoryInfiniticClient
-            name = clientName.name
+            name = clientName.toString()
         }
     }
 

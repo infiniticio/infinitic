@@ -462,8 +462,8 @@ class ClientTaskTests : StringSpec({
     "Cancel task per id (sync)" {
         // when
 
-        val id = UUID.randomUUID()
-        val task = client.getTask(FakeTask::class.java, id)
+        val id = UUID.randomUUID().toString()
+        val task = client.getTaskById(FakeTask::class.java, id)
 
         client.cancel(task)
         // then
@@ -476,8 +476,8 @@ class ClientTaskTests : StringSpec({
 
     "Cancel task per id (async)" {
         // when
-        val id = UUID.randomUUID()
-        val task = client.getTask(FakeTask::class.java, id)
+        val id = UUID.randomUUID().toString()
+        val task = client.getTaskById(FakeTask::class.java, id)
 
         client.cancelAsync(task).join()
         // then
@@ -490,7 +490,7 @@ class ClientTaskTests : StringSpec({
 
     "Cancel task per tag (sync)" {
         // when
-        val task = client.getTask(FakeTask::class.java, "foo")
+        val task = client.getTaskByTag(FakeTask::class.java, "foo")
         client.cancel(task)
         // then
         taskTagSlots.size shouldBe 1
@@ -503,7 +503,7 @@ class ClientTaskTests : StringSpec({
 
     "Cancel task per tag (async)" {
         // when
-        val task = client.getTask(FakeTask::class.java, "foo")
+        val task = client.getTaskByTag(FakeTask::class.java, "foo")
         client.cancelAsync(task).join()
         // then
         taskTagSlots.size shouldBe 1
@@ -540,8 +540,8 @@ class ClientTaskTests : StringSpec({
 
     "Retry task per id (sync)" {
         // when
-        val id = UUID.randomUUID()
-        val task = client.getTask(FakeTask::class.java, id)
+        val id = UUID.randomUUID().toString()
+        val task = client.getTaskById(FakeTask::class.java, id)
         client.retry(task)
 
         // then
@@ -554,8 +554,8 @@ class ClientTaskTests : StringSpec({
 
     "Retry task per id (async)" {
         // when
-        val id = UUID.randomUUID()
-        val task = client.getTask(FakeTask::class.java, id)
+        val id = UUID.randomUUID().toString()
+        val task = client.getTaskById(FakeTask::class.java, id)
         client.retryAsync(task).join()
         // then
         taskTagSlots.size shouldBe 0
@@ -579,7 +579,7 @@ class ClientTaskTests : StringSpec({
 
     "Retry task per tag (sync)" {
         // when
-        val task = client.getTask(FakeTask::class.java, "foo")
+        val task = client.getTaskByTag(FakeTask::class.java, "foo")
         client.retry(task)
         // then
         taskTagSlots.size shouldBe 1
@@ -592,7 +592,7 @@ class ClientTaskTests : StringSpec({
 
     "Retry task per tag (async)" {
         // when
-        val task = client.getTask(FakeTask::class.java, "foo")
+        val task = client.getTaskByTag(FakeTask::class.java, "foo")
         client.retryAsync(task).join()
         // then
         taskTagSlots.size shouldBe 1
@@ -604,7 +604,7 @@ class ClientTaskTests : StringSpec({
     }
 
     "Get task ids par name and workflow" {
-        val task = client.getTask(FakeTask::class.java, "foo")
+        val task = client.getTaskByTag(FakeTask::class.java, "foo")
         val taskIds = client.getIds(task)
         // then
         taskIds.size shouldBe 2

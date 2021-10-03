@@ -49,7 +49,7 @@ internal fun CoroutineScope.taskFailed(
             workflowEngineOutput,
             state,
             message.methodRunId,
-            CommandId(message.taskId),
+            CommandId.from(message.taskId),
             CurrentlyFailed(message.error, state.workflowTaskIndex)
         )
     }

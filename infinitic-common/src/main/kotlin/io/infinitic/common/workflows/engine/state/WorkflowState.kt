@@ -170,7 +170,7 @@ data class WorkflowState(
         removeUnusedPropertyHash()
     }
 
-    fun getMainMethodRun() = methodRuns.find { it.methodRunId.id == workflowId.id }
+    fun getMainMethodRun() = methodRuns.find { it.methodRunId.toString() == workflowId.toString() }
 
     /**
      * true if the current workflow task is on main path

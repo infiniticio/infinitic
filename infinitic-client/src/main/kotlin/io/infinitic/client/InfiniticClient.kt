@@ -68,7 +68,6 @@ import kotlinx.coroutines.runBlocking
 import mu.KotlinLogging
 import java.io.Closeable
 import java.lang.reflect.Proxy
-import java.util.UUID
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.Executors
 
@@ -167,9 +166,9 @@ abstract class InfiniticClient : Closeable {
     /**
      *  Create a stub for an existing task targeted by id
      */
-    fun <T : Any> getTask(
+    fun <T : Any> getTaskById(
         klass: Class<out T>,
-        id: UUID
+        id: String
     ): T = GetTaskProxyHandler(
         klass = klass,
         TaskId(id),
@@ -179,7 +178,7 @@ abstract class InfiniticClient : Closeable {
     /**
      *  Create a stub for existing task targeted by tag
      */
-    fun <T : Any> getTask(
+    fun <T : Any> getTaskByTag(
         klass: Class<out T>,
         tag: String
     ): T = GetTaskProxyHandler(
@@ -191,9 +190,9 @@ abstract class InfiniticClient : Closeable {
     /**
      *  Create a stub for an existing workflow targeted by id
      */
-    fun <T : Any> getWorkflow(
+    fun <T : Any> getWorkflowById(
         klass: Class<out T>,
-        id: UUID
+        id: String
     ): T = GetWorkflowProxyHandler(
         klass = klass,
         WorkflowId(id),
@@ -203,7 +202,7 @@ abstract class InfiniticClient : Closeable {
     /**
      *  Create a stub for existing workflow targeted by tag
      */
-    fun <T : Any> getWorkflow(
+    fun <T : Any> getWorkflowByTag(
         klass: Class<out T>,
         tag: String
     ): T = GetWorkflowProxyHandler(
@@ -696,7 +695,7 @@ abstract class InfiniticClient : Closeable {
                 dispatcher.awaitWorkflow(
                     handler.workflowName,
                     handler.workflowId!!,
-                    MethodRunId(handler.workflowId!!.id),
+                    MethodRunId.from(handler.workflowId!!),
                     false
                 )
             handler.workflowTag != null ->
@@ -713,14 +712,14 @@ abstract class InfiniticClient : Closeable {
     @Suppress("UNCHECKED_CAST")
     fun <T : Any> await(
         stub: T,
-        methodRunId: UUID
+        methodRunId: String
     ): Any = when (val handler = getProxyHandler(stub)) {
         is GetWorkflowProxyHandler -> when {
             handler.workflowId != null ->
                 dispatcher.awaitWorkflow<Any>(
                     handler.workflowName,
                     handler.workflowId!!,
-                    MethodRunId(methodRunId),
+                    MethodRunId.from(methodRunId),
                     false
                 )
             handler.workflowTag != null ->
@@ -808,11 +807,11 @@ abstract class InfiniticClient : Closeable {
     @Suppress("UNCHECKED_CAST")
     fun <T : Any> getIds(
         stub: T
-    ): Set<UUID> = when (val handler = getProxyHandler(stub)) {
+    ): Set<String> = when (val handler = getProxyHandler(stub)) {
         is GetTaskProxyHandler ->
-            dispatcher.getTaskIdsPerTag(handler.taskName, handler.taskId, handler.taskTag)
+            dispatcher.getTaskIdsByTag(handler.taskName, handler.taskId, handler.taskTag)
         is GetWorkflowProxyHandler ->
-            dispatcher.getWorkflowIdsPerTag(handler.workflowName, handler.workflowId, handler.workflowTag)
+            dispatcher.getWorkflowIdsByTag(handler.workflowName, handler.workflowId, handler.workflowTag)
         else ->
             throw InvalidStubException("$stub")
     }

@@ -49,7 +49,7 @@ internal fun CoroutineScope.cancelWorkflow(
             val workflowCanceled = MethodCanceled(
                 clientName = it,
                 workflowId = state.workflowId,
-                methodRunId = MethodRunId(state.workflowId.id)
+                methodRunId = MethodRunId.from(state.workflowId)
             )
             launch { output.sendEventsToClient(workflowCanceled) }
         }
@@ -71,7 +71,7 @@ internal fun CoroutineScope.cancelWorkflow(
             .filter { it.commandType == CommandType.DISPATCH_CHILD_WORKFLOW }
             .forEach {
                 val cancelWorkflow = CancelWorkflow(
-                    workflowId = WorkflowId(it.commandId.id),
+                    workflowId = WorkflowId(it.commandId.toString()),
                     workflowName = WorkflowName("${it.commandName}"),
                     reason = WorkflowCancellationReason.CANCELED_BY_PARENT
                 )

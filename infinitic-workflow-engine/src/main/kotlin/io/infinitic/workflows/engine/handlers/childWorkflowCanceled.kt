@@ -42,7 +42,7 @@ internal fun CoroutineScope.childWorkflowCanceled(
         workflowEngineOutput,
         state,
         message.methodRunId,
-        CommandId(message.childWorkflowId),
+        CommandId.from(message.childWorkflowId),
         Canceled(state.workflowTaskIndex)
     )
 }

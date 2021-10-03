@@ -138,7 +138,7 @@ fun mockSendToWorkflowEngine(
             val workflowCompleted = MethodCompleted(
                 clientName = client.clientName,
                 workflowId = msg.workflowId,
-                methodRunId = MethodRunId(msg.workflowId.id),
+                methodRunId = MethodRunId.from(msg.workflowId),
                 workflowReturnValue = MethodReturnValue.from("success")
             )
             client.sendingScope.future {

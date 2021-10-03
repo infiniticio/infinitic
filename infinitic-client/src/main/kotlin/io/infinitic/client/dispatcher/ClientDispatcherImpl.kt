@@ -104,7 +104,6 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.future.future
 import kotlinx.coroutines.launch
 import mu.KotlinLogging
-import java.util.UUID
 import java.util.concurrent.CompletableFuture
 
 internal class ClientDispatcherImpl(
@@ -352,12 +351,12 @@ internal class ClientDispatcherImpl(
     }
 
     // synchronously get task ids per tag
-    override fun getTaskIdsPerTag(
+    override fun getTaskIdsByTag(
         taskName: TaskName,
         taskId: TaskId?,
         taskTag: TaskTag?
-    ): Set<UUID> = when {
-        taskId != null -> setOf(taskId.id)
+    ): Set<String> = when {
+        taskId != null -> setOf(taskId.toString())
         taskTag != null -> {
             val taskIdsPerTag = scope.future() {
                 val msg = GetTaskIds(
@@ -372,17 +371,17 @@ internal class ClientDispatcherImpl(
                 } as TaskIdsPerTag
             }.join()
 
-            taskIdsPerTag.taskIds.map { it.id }.toSet()
+            taskIdsPerTag.taskIds.map { it.toString() }.toSet()
         }
         else -> throw thisShouldNotHappen()
     }
 
-    override fun getWorkflowIdsPerTag(
+    override fun getWorkflowIdsByTag(
         workflowName: WorkflowName,
         workflowId: WorkflowId?,
         workflowTag: WorkflowTag?
-    ): Set<UUID> = when {
-        workflowId != null -> setOf(workflowId.id)
+    ): Set<String> = when {
+        workflowId != null -> setOf(workflowId.toString())
         workflowTag != null -> {
             val workflowIdsPerTag = scope.future() {
                 val msg = GetWorkflowIds(
@@ -398,7 +397,7 @@ internal class ClientDispatcherImpl(
                 } as WorkflowIdsPerTag
             }.join()
 
-            workflowIdsPerTag.workflowIds.map { it.id }.toSet()
+            workflowIdsPerTag.workflowIds.map { it.toString() }.toSet()
         }
         else -> thisShouldNotHappen()
     }
@@ -545,7 +544,7 @@ internal class ClientDispatcherImpl(
         clientWaiting: Boolean,
     ): DeferredWorkflow<R> {
         val workflowId = WorkflowId()
-        val methodRunId = MethodRunId(workflowId.id)
+        val methodRunId = MethodRunId.from(workflowId)
 
         val deferredWorkflow = DeferredWorkflow<R>(workflowName, workflowId, methodRunId, clientWaiting, this)
 
@@ -643,7 +642,7 @@ internal class ClientDispatcherImpl(
         clientWaiting: Boolean,
     ): DeferredWorkflow<R> = when {
         workflowId != null -> {
-            val deferredMethod = DeferredWorkflow<R>(workflowName, workflowId, MethodRunId(), clientWaiting, this)
+            val deferredMethod = DeferredWorkflow<R>(workflowName, workflowId, MethodRunId.random(), clientWaiting, this)
 
             // store in ThreadLocal to be used in ::getDeferred
             localLastDeferred.set(deferredMethod)

@@ -33,6 +33,7 @@ import io.infinitic.common.fixtures.TestFactory
 import io.infinitic.common.metrics.perName.messages.MetricsPerNameMessage
 import io.infinitic.common.metrics.perName.messages.TaskStatusUpdated
 import io.infinitic.common.metrics.perName.transport.SendToMetricsPerName
+import io.infinitic.common.tasks.data.TaskId
 import io.infinitic.common.tasks.data.TaskName
 import io.infinitic.common.tasks.data.TaskRetryIndex
 import io.infinitic.common.tasks.data.TaskStatus
@@ -145,10 +146,11 @@ internal class TaskEngineTests : StringSpec({
         val stateIn = random<TaskState>(
             mapOf(
                 "taskStatus" to TaskStatus.RUNNING_OK,
-                "taskTags" to setOf(TaskTag("foo"), TaskTag("bar"))
+                "taskTags" to setOf(TaskTag("foo"), TaskTag("bar")),
+                "waitingClients" to mutableSetOf(ClientName("foo"))
             )
         )
-        val msgIn = random<CancelTask>(mapOf("taskId" to stateIn.taskId))
+        val msgIn = random<CancelTask>(mapOf("taskId" to stateIn.taskId.toString()))
         // when
         getEngine(stateIn).handle(msgIn)
         // then
@@ -184,7 +186,7 @@ internal class TaskEngineTests : StringSpec({
         )
         val msgIn = random<RetryTask>(
             mapOf(
-                "taskId" to stateIn.taskId,
+                "taskId" to stateIn.taskId.toString(),
                 "taskName" to stateIn.taskName,
                 "methodName" to null,
                 "methodParameterTypes" to null,
@@ -247,7 +249,7 @@ internal class TaskEngineTests : StringSpec({
         )
         val msgIn = random<TaskAttemptCompleted>(
             mapOf(
-                "taskId" to stateIn.taskId
+                "taskId" to stateIn.taskId.toString()
             )
         )
         // when
@@ -289,8 +291,8 @@ internal class TaskEngineTests : StringSpec({
         )
         val msgIn = random<TaskAttemptFailed>(
             mapOf(
-                "taskId" to stateIn.taskId,
-                "taskAttemptId" to stateIn.taskAttemptId,
+                "taskId" to stateIn.taskId.toString(),
+                "taskAttemptId" to stateIn.taskAttemptId.toString(),
                 "taskRetryIndex" to stateIn.taskRetryIndex,
                 "taskAttemptDelayBeforeRetry" to null
             )
@@ -327,8 +329,8 @@ internal class TaskEngineTests : StringSpec({
         )
         val msgIn = random<TaskAttemptFailed>(
             mapOf(
-                "taskId" to stateIn.taskId,
-                "taskAttemptId" to stateIn.taskAttemptId,
+                "taskId" to stateIn.taskId.toString(),
+                "taskAttemptId" to stateIn.taskAttemptId.toString(),
                 "taskRetryIndex" to stateIn.taskRetryIndex,
                 "taskAttemptDelayBeforeRetry" to MillisDuration(42000)
             )
@@ -371,8 +373,8 @@ internal class TaskEngineTests : StringSpec({
         )
         val msgIn = random<TaskAttemptFailed>(
             mapOf(
-                "taskId" to stateIn.taskId,
-                "taskAttemptId" to stateIn.taskAttemptId,
+                "taskId" to stateIn.taskId.toString(),
+                "taskAttemptId" to stateIn.taskAttemptId.toString(),
                 "taskRetryIndex" to stateIn.taskRetryIndex,
                 "taskAttemptDelayBeforeRetry" to MillisDuration(0)
             )
@@ -392,8 +394,8 @@ internal class TaskEngineTests : StringSpec({
         )
         val msgIn = random<TaskAttemptFailed>(
             mapOf(
-                "taskId" to stateIn.taskId,
-                "taskAttemptId" to stateIn.taskAttemptId,
+                "taskId" to stateIn.taskId.toString(),
+                "taskAttemptId" to stateIn.taskAttemptId.toString(),
                 "taskRetryIndex" to stateIn.taskRetryIndex,
                 "taskAttemptDelayBeforeRetry" to MillisDuration(-42000)
             )
@@ -413,8 +415,8 @@ internal class TaskEngineTests : StringSpec({
         )
         val msgIn = random<RetryTaskAttempt>(
             mapOf(
-                "taskId" to stateIn.taskId,
-                "taskAttemptId" to stateIn.taskAttemptId,
+                "taskId" to stateIn.taskId.toString(),
+                "taskAttemptId" to stateIn.taskAttemptId.toString(),
                 "taskRetryIndex" to stateIn.taskRetryIndex
             )
         )
@@ -506,9 +508,9 @@ private fun mockSendToWorkflowEngine(slot: CapturingSlot<WorkflowEngineMessage>)
 
 private fun mockTaskStateStorage(state: TaskState?): TaskStateStorage {
     val taskStateStorage = mockk<TaskStateStorage>()
-    coEvery { taskStateStorage.getState(any()) } returns state?.deepCopy()
-    coEvery { taskStateStorage.putState(any(), capture(taskState)) } just Runs
-    coEvery { taskStateStorage.delState(any()) } just Runs
+    coEvery { taskStateStorage.getState(TaskId(any())) } returns state?.deepCopy()
+    coEvery { taskStateStorage.putState(TaskId(any()), capture(taskState)) } just Runs
+    coEvery { taskStateStorage.delState(TaskId(any())) } just Runs
 
     return taskStateStorage
 }

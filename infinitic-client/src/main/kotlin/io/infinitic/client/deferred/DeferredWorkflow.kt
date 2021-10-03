@@ -30,7 +30,6 @@ import io.infinitic.client.dispatcher.ClientDispatcher
 import io.infinitic.common.workflows.data.methodRuns.MethodRunId
 import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.data.workflows.WorkflowName
-import java.util.UUID
 
 class DeferredWorkflow<R : Any?> (
     internal val workflowName: WorkflowName,
@@ -46,5 +45,5 @@ class DeferredWorkflow<R : Any?> (
 
     override fun await(): R = dispatcher.awaitWorkflow(workflowName, workflowId, methodRunId, clientWaiting)
 
-    override val id: UUID = methodRunId.id
+    override val id: String = methodRunId.toString()
 }

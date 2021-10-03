@@ -57,8 +57,8 @@ import io.mockk.slot
 
 private fun <T : Any> captured(slot: CapturingSlot<T>) = if (slot.isCaptured) slot.captured else null
 
-private lateinit var stateMessageId: CapturingSlot<MessageId>
-private lateinit var stateWorkflowId: CapturingSlot<WorkflowId>
+private lateinit var stateMessageId: CapturingSlot<String>
+private lateinit var stateWorkflowId: CapturingSlot<String>
 private lateinit var workflowEngineMessage: CapturingSlot<WorkflowEngineMessage>
 private lateinit var clientMessage: CapturingSlot<ClientMessage>
 
@@ -183,10 +183,10 @@ private fun mockWorkflowTagStorage(
 ): WorkflowTagStorage {
     val tagStateStorage = mockk<WorkflowTagStorage>()
     coEvery { tagStateStorage.getLastMessageId(workflowTag, workflowName) } returns messageId
-    coEvery { tagStateStorage.setLastMessageId(workflowTag, workflowName, capture(stateMessageId)) } just Runs
+    coEvery { tagStateStorage.setLastMessageId(workflowTag, workflowName, MessageId(capture(stateMessageId))) } just Runs
     coEvery { tagStateStorage.getWorkflowIds(workflowTag, workflowName) } returns workflowIds
-    coEvery { tagStateStorage.addWorkflowId(workflowTag, workflowName, capture(stateWorkflowId)) } just Runs
-    coEvery { tagStateStorage.removeWorkflowId(workflowTag, workflowName, capture(stateWorkflowId)) } just Runs
+    coEvery { tagStateStorage.addWorkflowId(workflowTag, workflowName, WorkflowId(capture(stateWorkflowId))) } just Runs
+    coEvery { tagStateStorage.removeWorkflowId(workflowTag, workflowName, WorkflowId(capture(stateWorkflowId))) } just Runs
 
     return tagStateStorage
 }
