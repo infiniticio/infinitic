@@ -143,9 +143,13 @@ internal class WorkflowTests : StringSpec({
     }
 
     "Wait for a dispatched Workflow" {
-        val deferred = client.dispatch(workflowA::seq1)
+        val deferred = client.dispatch(workflowA::await, 200L)
 
-        deferred.await() shouldBe "123"
+        deferred.await() shouldBe 200L
+    }
+
+    "Simple sequential Workflow" {
+        workflowA.seq1() shouldBe "123"
     }
 
     "Sequential Workflow with an async task" {

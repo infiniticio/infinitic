@@ -154,7 +154,6 @@ class WorkflowAImpl : Workflow(), WorkflowA {
 
         str = taskA.concat(str, "1")
         str = taskA.concat(str, "2")
-
         str = taskA.concat(str, "3")
 
         return str // should be "123"

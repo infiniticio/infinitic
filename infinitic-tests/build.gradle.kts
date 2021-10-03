@@ -37,7 +37,6 @@ dependencies {
     testImplementation(project(":infinitic-inMemory"))
     testImplementation(project(":infinitic-pulsar"))
 
-    testImplementation("org.assertj:assertj-core:3.20.2")
     // should be removed with pulsar 2.8
     testImplementation("org.apache.avro:avro") { version { strictly("1.9.+") } }
 }
