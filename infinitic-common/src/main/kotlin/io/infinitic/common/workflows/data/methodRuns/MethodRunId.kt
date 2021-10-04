@@ -30,13 +30,9 @@ import kotlinx.serialization.Serializable
 import java.util.UUID
 
 @JvmInline @Serializable
-value class MethodRunId private constructor(private val id: String) {
+value class MethodRunId(private val id: String = UUID.randomUUID().toString()) {
     companion object {
-        fun random() = MethodRunId(UUID.randomUUID().toString())
-
         fun from(workflowId: WorkflowId) = MethodRunId(workflowId.toString())
-
-        fun from(id: String) = MethodRunId(id)
     }
 
     override fun toString() = id

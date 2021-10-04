@@ -719,7 +719,7 @@ abstract class InfiniticClient : Closeable {
                 dispatcher.awaitWorkflow(
                     handler.workflowName,
                     handler.workflowId!!,
-                    MethodRunId.from(methodRunId),
+                    MethodRunId(methodRunId),
                     false
                 )
             handler.workflowTag != null ->

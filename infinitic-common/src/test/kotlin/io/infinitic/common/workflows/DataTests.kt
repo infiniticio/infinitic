@@ -136,7 +136,7 @@ class DataTests : StringSpec({
     }
 
     "MethodRunId should be serialized as String" {
-        val m = MethodRunId.random()
+        val m = MethodRunId()
         val json = Json.encodeToString(m)
         val m2 = Json.decodeFromString<MethodRunId>(json)
 

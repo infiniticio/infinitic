@@ -646,15 +646,17 @@ internal class ClientDispatcherImpl(
         clientWaiting: Boolean,
     ): DeferredWorkflow<R> = when {
         workflowId != null -> {
-            val deferredMethod = DeferredWorkflow<R>(workflowName, workflowId, MethodRunId.random(), clientWaiting, this)
+            val deferredMethod = DeferredWorkflow<R>(workflowName, workflowId, MethodRunId(), clientWaiting, this)
 
             // store in ThreadLocal to be used in ::getDeferred
             localLastDeferred.set(deferredMethod)
 
             deferredMethod
         }
-        workflowTag != null -> TODO("Not yet implemented")
-        else -> throw thisShouldNotHappen()
+        workflowTag != null ->
+            TODO("Not yet implemented")
+        else ->
+            throw thisShouldNotHappen()
     }
 
     private fun <R : Any?> dispatchMethod(
