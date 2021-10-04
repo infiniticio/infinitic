@@ -360,7 +360,7 @@ internal class ClientDispatcherImpl(
         taskTag != null -> {
             val taskIdsPerTag = scope.future() {
                 val msg = GetTaskIds(
-                    taskTag = taskTag!!,
+                    taskTag = taskTag,
                     taskName = taskName,
                     clientName = clientName
                 )
@@ -386,7 +386,7 @@ internal class ClientDispatcherImpl(
             val workflowIdsPerTag = scope.future() {
                 val msg = GetWorkflowIds(
                     clientName = clientName,
-                    workflowTag = workflowTag!!,
+                    workflowTag = workflowTag,
                     workflowName = workflowName
                 )
                 launch { sendToWorkflowTagEngine(msg) }

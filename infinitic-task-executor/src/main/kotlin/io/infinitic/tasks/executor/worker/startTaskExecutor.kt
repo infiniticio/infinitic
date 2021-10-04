@@ -54,6 +54,7 @@ fun <T : TaskExecutorMessageToProcess> CoroutineScope.startTaskExecutor(
     sendToTaskEngine: SendToTaskEngine,
     clientFactory: () -> InfiniticClient
 ) = launch(CoroutineName(coroutineName)) {
+
     val taskExecutor = TaskExecutor(register, sendToTaskEngine, clientFactory)
 
     for (message in inputChannel) {

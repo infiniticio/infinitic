@@ -66,8 +66,6 @@ import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
 import io.mockk.slot
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import java.util.UUID
 import java.util.concurrent.CopyOnWriteArrayList
 
@@ -77,7 +75,6 @@ private val taskSlot = slot<TaskEngineMessage>()
 private val workflowSlot = slot<WorkflowEngineMessage>()
 
 class ClientWorkflow : InfiniticClient() {
-    override val sendingScope = CoroutineScope(Dispatchers.IO)
     override val clientName = ClientName("clientTest")
     override val sendToTaskTagEngine = mockSendToTaskTagEngine(this, taskTagSlots)
     override val sendToTaskEngine = mockSendToTaskEngine(this, taskSlot)
@@ -407,7 +404,6 @@ class ClientWorkflowTests : StringSpec({
     "Should be able to emit to a channel by tag (sync)" {
         val tag = "foo"
         // when
-        val id = UUID.randomUUID().toString()
         client.getWorkflowByTag(FakeWorkflow::class.java, tag).channelString.send("a")
         // then
         val msg = workflowTagSlots[0] as SendToChannelPerTag
@@ -425,7 +421,6 @@ class ClientWorkflowTests : StringSpec({
     "Should be able to emit to a channel by tag (async)" {
         val tag = "foo"
         // when
-        val id = UUID.randomUUID().toString()
         val w = client.getWorkflowByTag(FakeWorkflow::class.java, tag)
         client.dispatchAsync(w.channelString::send, "a").join()
         // then

@@ -34,13 +34,13 @@ import io.infinitic.worker.config.WorkerConfig
 @Suppress("unused")
 object InfiniticWorkerFactory {
     /**
-     * Create InfiniticWorker from file in resources directory
+     * Create InfiniticWorker with config from resources directory
      */
     @JvmStatic
     fun fromConfigResource(vararg resources: String): InfiniticWorker = fromConfig(WorkerConfig.fromResource(*resources))
 
     /**
-     * Create InfiniticWorker from file in system file
+     * Create InfiniticWorker with config from system file
      */
     @JvmStatic
     fun fromConfigFile(vararg files: String): InfiniticWorker = fromConfig(WorkerConfig.fromFile(*files))

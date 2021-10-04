@@ -54,8 +54,6 @@ import io.infinitic.common.workflows.tags.messages.WorkflowTagEngineMessage
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
 import io.mockk.slot
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import java.util.UUID
 import java.util.concurrent.CopyOnWriteArrayList
 
@@ -65,7 +63,6 @@ private val taskSlot = slot<TaskEngineMessage>()
 private val workflowSlot = slot<WorkflowEngineMessage>()
 
 class ClientTask : InfiniticClient() {
-    override val sendingScope = CoroutineScope(Dispatchers.IO)
     override val clientName = ClientName("clientTest")
     override val sendToTaskTagEngine = mockSendToTaskTagEngine(this, taskTagSlots)
     override val sendToTaskEngine = mockSendToTaskEngine(this, taskSlot)
