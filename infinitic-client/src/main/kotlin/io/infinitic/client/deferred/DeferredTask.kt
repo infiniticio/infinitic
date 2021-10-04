@@ -41,7 +41,8 @@ class DeferredTask<R : Any?> (
 
     override fun retryAsync() = dispatcher.retryTaskAsync(taskName, taskId, null)
 
-    override fun await(): R = dispatcher.awaitTask(taskName, taskId, clientWaiting)
+    @Suppress("UNCHECKED_CAST")
+    override fun await(): R = dispatcher.awaitTask(taskName, taskId, clientWaiting) as R
 
     override val id: String by lazy { taskId.toString() }
 }

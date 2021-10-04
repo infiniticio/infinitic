@@ -48,18 +48,18 @@ interface ClientDispatcher : ProxyDispatcher {
         handler: ProxyHandler<*>
     ): CompletableFuture<Deferred<R>>
 
-    fun <R : Any?> awaitTask(
+    fun awaitTask(
         taskName: TaskName,
         taskId: TaskId,
         clientWaiting: Boolean
-    ): R
+    ): Any?
 
-    fun <R : Any?> awaitWorkflow(
+    fun awaitWorkflow(
         workflowName: WorkflowName,
         workflowId: WorkflowId,
         methodRunId: MethodRunId,
         clientWaiting: Boolean
-    ): R
+    ): Any?
 
     fun completeTaskAsync(
         taskName: TaskName,

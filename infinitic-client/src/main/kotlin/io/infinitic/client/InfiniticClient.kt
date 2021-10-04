@@ -216,7 +216,7 @@ abstract class InfiniticClient : Closeable {
      */
     fun <R : Any?> dispatchAsync(
         method: () -> R
-    ): CompletableFuture<Deferred<R>> = startAsync() { method.invoke() }
+    ): CompletableFuture<Deferred<R>> = startAsync { method.invoke() }
 
     /**
      *  Dispatch with 1 parameter a task or workflow returning an object
@@ -224,7 +224,7 @@ abstract class InfiniticClient : Closeable {
     fun <P1, R : Any?> dispatchAsync(
         method: (p1: P1) -> R,
         p1: P1
-    ): CompletableFuture<Deferred<R>> = startAsync() { method.invoke(p1) }
+    ): CompletableFuture<Deferred<R>> = startAsync { method.invoke(p1) }
 
     /**
      *  Dispatch with 2 parameters a task or workflow returning an object
@@ -233,7 +233,7 @@ abstract class InfiniticClient : Closeable {
         method: (p1: P1, p2: P2) -> R,
         p1: P1,
         p2: P2
-    ): CompletableFuture<Deferred<R>> = startAsync() { method.invoke(p1, p2) }
+    ): CompletableFuture<Deferred<R>> = startAsync { method.invoke(p1, p2) }
 
     /**
      *  Dispatch with 3 parameters a task or workflow returning an object
@@ -243,7 +243,7 @@ abstract class InfiniticClient : Closeable {
         p1: P1,
         p2: P2,
         p3: P3
-    ): CompletableFuture<Deferred<R>> = startAsync() { method.invoke(p1, p2, p3) }
+    ): CompletableFuture<Deferred<R>> = startAsync { method.invoke(p1, p2, p3) }
 
     /**
      *  Dispatch with 4 parameters a task or workflow returning an object
@@ -254,7 +254,7 @@ abstract class InfiniticClient : Closeable {
         p2: P2,
         p3: P3,
         p4: P4
-    ): CompletableFuture<Deferred<R>> = startAsync() { method.invoke(p1, p2, p3, p4) }
+    ): CompletableFuture<Deferred<R>> = startAsync { method.invoke(p1, p2, p3, p4) }
 
     /**
      *  Dispatch with 5 parameters a task or workflow returning an object
@@ -266,7 +266,7 @@ abstract class InfiniticClient : Closeable {
         p3: P3,
         p4: P4,
         p5: P5
-    ): CompletableFuture<Deferred<R>> = startAsync() { method.invoke(p1, p2, p3, p4, p5) }
+    ): CompletableFuture<Deferred<R>> = startAsync { method.invoke(p1, p2, p3, p4, p5) }
 
     /**
      *  Dispatch with 6 parameters a task or workflow returning an object
@@ -279,7 +279,7 @@ abstract class InfiniticClient : Closeable {
         p4: P4,
         p5: P5,
         p6: P6
-    ): CompletableFuture<Deferred<R>> = startAsync() { method.invoke(p1, p2, p3, p4, p5, p6) }
+    ): CompletableFuture<Deferred<R>> = startAsync { method.invoke(p1, p2, p3, p4, p5, p6) }
 
     /**
      *  Dispatch with 7 parameters a task or workflow returning an object
@@ -293,7 +293,7 @@ abstract class InfiniticClient : Closeable {
         p5: P5,
         p6: P6,
         p7: P7
-    ): CompletableFuture<Deferred<R>> = startAsync() { method.invoke(p1, p2, p3, p4, p5, p6, p7) }
+    ): CompletableFuture<Deferred<R>> = startAsync { method.invoke(p1, p2, p3, p4, p5, p6, p7) }
 
     /**
      *  Dispatch with 8 parameters a task or workflow returning an object
@@ -308,7 +308,7 @@ abstract class InfiniticClient : Closeable {
         p6: P6,
         p7: P7,
         p8: P8
-    ): CompletableFuture<Deferred<R>> = startAsync() { method.invoke(p1, p2, p3, p4, p5, p6, p7, p8) }
+    ): CompletableFuture<Deferred<R>> = startAsync { method.invoke(p1, p2, p3, p4, p5, p6, p7, p8) }
 
     /**
      *  Dispatch with 9 parameters a task or workflow returning an object
@@ -324,7 +324,7 @@ abstract class InfiniticClient : Closeable {
         p7: P7,
         p8: P8,
         p9: P9
-    ): CompletableFuture<Deferred<R>> = startAsync() { method.invoke(p1, p2, p3, p4, p5, p6, p7, p8, p9) }
+    ): CompletableFuture<Deferred<R>> = startAsync { method.invoke(p1, p2, p3, p4, p5, p6, p7, p8, p9) }
 
     /**
      *  Dispatch without parameter a task or workflow returning an object
@@ -446,7 +446,7 @@ abstract class InfiniticClient : Closeable {
      */
     fun dispatchVoidAsync(
         method: Consumer0
-    ): CompletableFuture<Deferred<Void>> = startVoidAsync() { method.apply() }
+    ): CompletableFuture<Deferred<Void>> = startVoidAsync { method.apply() }
 
     /**
      *  Dispatch with 1 parameter a task or workflow returning void
@@ -454,7 +454,7 @@ abstract class InfiniticClient : Closeable {
     fun <P1> dispatchVoidAsync(
         method: Consumer1<P1>,
         p1: P1
-    ): CompletableFuture<Deferred<Void>> = startVoidAsync() { method.apply(p1) }
+    ): CompletableFuture<Deferred<Void>> = startVoidAsync { method.apply(p1) }
 
     /**
      *  Dispatch with 2 parameters a task or workflow returning void
@@ -463,7 +463,7 @@ abstract class InfiniticClient : Closeable {
         method: Consumer2<P1, P2>,
         p1: P1,
         p2: P2
-    ): CompletableFuture<Deferred<Void>> = startVoidAsync() { method.apply(p1, p2) }
+    ): CompletableFuture<Deferred<Void>> = startVoidAsync { method.apply(p1, p2) }
 
     /**
      *  Dispatch with 3 parameters a task or workflow returning void
@@ -473,7 +473,7 @@ abstract class InfiniticClient : Closeable {
         p1: P1,
         p2: P2,
         p3: P3
-    ): CompletableFuture<Deferred<Void>> = startVoidAsync() { method.apply(p1, p2, p3) }
+    ): CompletableFuture<Deferred<Void>> = startVoidAsync { method.apply(p1, p2, p3) }
 
     /**
      *  Dispatch with 4 parameters a task or workflow returning void
@@ -484,7 +484,7 @@ abstract class InfiniticClient : Closeable {
         p2: P2,
         p3: P3,
         p4: P4
-    ): CompletableFuture<Deferred<Void>> = startVoidAsync() { method.apply(p1, p2, p3, p4) }
+    ): CompletableFuture<Deferred<Void>> = startVoidAsync { method.apply(p1, p2, p3, p4) }
 
     /**
      *  Dispatch with 5 parameters a task or workflow returning void
@@ -496,7 +496,7 @@ abstract class InfiniticClient : Closeable {
         p3: P3,
         p4: P4,
         p5: P5
-    ): CompletableFuture<Deferred<Void>> = startVoidAsync() { method.apply(p1, p2, p3, p4, p5) }
+    ): CompletableFuture<Deferred<Void>> = startVoidAsync { method.apply(p1, p2, p3, p4, p5) }
 
     /**
      *  Dispatch with 6 parameters a task or workflow returning void
@@ -509,7 +509,7 @@ abstract class InfiniticClient : Closeable {
         p4: P4,
         p5: P5,
         p6: P6
-    ): CompletableFuture<Deferred<Void>> = startVoidAsync() { method.apply(p1, p2, p3, p4, p5, p6) }
+    ): CompletableFuture<Deferred<Void>> = startVoidAsync { method.apply(p1, p2, p3, p4, p5, p6) }
 
     /**
      *  Dispatch with 7 parameters a task or workflow returning void
@@ -523,7 +523,7 @@ abstract class InfiniticClient : Closeable {
         p5: P5,
         p6: P6,
         p7: P7
-    ): CompletableFuture<Deferred<Void>> = startVoidAsync() { method.apply(p1, p2, p3, p4, p5, p6, p7) }
+    ): CompletableFuture<Deferred<Void>> = startVoidAsync { method.apply(p1, p2, p3, p4, p5, p6, p7) }
 
     /**
      *  Dispatch with 8 parameters a task or workflow returning void
@@ -538,7 +538,7 @@ abstract class InfiniticClient : Closeable {
         p6: P6,
         p7: P7,
         p8: P8
-    ): CompletableFuture<Deferred<Void>> = startVoidAsync() { method.apply(p1, p2, p3, p4, p5, p6, p7, p8) }
+    ): CompletableFuture<Deferred<Void>> = startVoidAsync { method.apply(p1, p2, p3, p4, p5, p6, p7, p8) }
 
     /**
      *  Dispatch with 9 parameters a task or workflow returning void
@@ -554,7 +554,7 @@ abstract class InfiniticClient : Closeable {
         p7: P7,
         p8: P8,
         p9: P9
-    ): CompletableFuture<Deferred<Void>> = startVoidAsync() { method.apply(p1, p2, p3, p4, p5, p6, p7, p8, p9) }
+    ): CompletableFuture<Deferred<Void>> = startVoidAsync { method.apply(p1, p2, p3, p4, p5, p6, p7, p8, p9) }
 
     /**
      *  Dispatch without parameter a task or workflow returning void
@@ -677,10 +677,10 @@ abstract class InfiniticClient : Closeable {
     @Suppress("UNCHECKED_CAST")
     fun <T : Any> await(
         stub: T
-    ): Any = when (val handler = getProxyHandler(stub)) {
+    ): Any? = when (val handler = getProxyHandler(stub)) {
         is GetTaskProxyHandler -> when {
             handler.taskId != null ->
-                dispatcher.awaitTask<Any>(
+                dispatcher.awaitTask(
                     handler.taskName,
                     handler.taskId!!,
                     false
@@ -713,10 +713,10 @@ abstract class InfiniticClient : Closeable {
     fun <T : Any> await(
         stub: T,
         methodRunId: String
-    ): Any = when (val handler = getProxyHandler(stub)) {
+    ): Any? = when (val handler = getProxyHandler(stub)) {
         is GetWorkflowProxyHandler -> when {
             handler.workflowId != null ->
-                dispatcher.awaitWorkflow<Any>(
+                dispatcher.awaitWorkflow(
                     handler.workflowName,
                     handler.workflowId!!,
                     MethodRunId.from(methodRunId),

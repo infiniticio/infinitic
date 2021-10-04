@@ -148,7 +148,7 @@ internal class ClientDispatcherImpl(
         is ChannelProxyHandler -> dispatchSendAndWait(handler)
     }
 
-    override fun <R : Any?> awaitTask(taskName: TaskName, taskId: TaskId, clientWaiting: Boolean): R {
+    override fun awaitTask(taskName: TaskName, taskId: TaskId, clientWaiting: Boolean): Any? {
         // if task was initially not sync, then send WaitTask message
         if (! clientWaiting) {
             val waitTask = WaitTask(
@@ -169,7 +169,7 @@ internal class ClientDispatcherImpl(
 
         @Suppress("UNCHECKED_CAST")
         return when (taskResult) {
-            is TaskCompleted -> taskResult.taskReturnValue.get() as R
+            is TaskCompleted -> taskResult.taskReturnValue.get()
             is TaskCanceled -> throw CanceledException(
                 "$taskId",
                 "$taskName",
@@ -187,12 +187,12 @@ internal class ClientDispatcherImpl(
         }
     }
 
-    override fun <R : Any?> awaitWorkflow(
+    override fun awaitWorkflow(
         workflowName: WorkflowName,
         workflowId: WorkflowId,
         methodRunId: MethodRunId,
         clientWaiting: Boolean
-    ): R {
+    ): Any? {
         // if task was not initially sync, then send WaitTask message
         if (! clientWaiting) {
             val waitWorkflow = WaitWorkflow(
@@ -216,7 +216,7 @@ internal class ClientDispatcherImpl(
 
         @Suppress("UNCHECKED_CAST")
         return when (workflowResult) {
-            is MethodCompleted -> workflowResult.workflowReturnValue.get() as R
+            is MethodCompleted -> workflowResult.workflowReturnValue.get()
             is MethodCanceled -> throw CanceledException(
                 "$workflowId",
                 "$workflowName"
@@ -356,9 +356,10 @@ internal class ClientDispatcherImpl(
         taskId: TaskId?,
         taskTag: TaskTag?
     ): Set<String> = when {
-        taskId != null -> setOf(taskId.toString())
+        taskId != null ->
+            setOf(taskId.toString())
         taskTag != null -> {
-            val taskIdsPerTag = scope.future() {
+            val taskIdsPerTag = scope.future {
                 val msg = GetTaskIds(
                     taskTag = taskTag,
                     taskName = taskName,
@@ -373,7 +374,8 @@ internal class ClientDispatcherImpl(
 
             taskIdsPerTag.taskIds.map { it.toString() }.toSet()
         }
-        else -> throw thisShouldNotHappen()
+        else ->
+            throw thisShouldNotHappen()
     }
 
     override fun getWorkflowIdsByTag(
@@ -381,9 +383,10 @@ internal class ClientDispatcherImpl(
         workflowId: WorkflowId?,
         workflowTag: WorkflowTag?
     ): Set<String> = when {
-        workflowId != null -> setOf(workflowId.toString())
+        workflowId != null ->
+            setOf(workflowId.toString())
         workflowTag != null -> {
-            val workflowIdsPerTag = scope.future() {
+            val workflowIdsPerTag = scope.future {
                 val msg = GetWorkflowIds(
                     clientName = clientName,
                     workflowTag = workflowTag,
@@ -399,7 +402,8 @@ internal class ClientDispatcherImpl(
 
             workflowIdsPerTag.workflowIds.map { it.toString() }.toSet()
         }
-        else -> thisShouldNotHappen()
+        else ->
+            thisShouldNotHappen()
     }
 
     // asynchronous call: dispatch(stub::method)(*args)
