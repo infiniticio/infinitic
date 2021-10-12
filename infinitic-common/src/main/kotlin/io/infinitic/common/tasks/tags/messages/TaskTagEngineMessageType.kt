@@ -26,9 +26,9 @@
 package io.infinitic.common.tasks.tags.messages
 
 enum class TaskTagEngineMessageType {
-    ADD_TASK_TAG,
-    REMOVE_TASK_TAG,
-    CANCEL_TASK_PER_TAG,
-    RETRY_TASK_PER_TAG,
-    GET_TASK_IDS
+    ADD_TAG_TO_TASK,
+    REMOVE_TAG_FROM_TASK,
+    CANCEL_TASK_BY_TAG,
+    RETRY_TASK_BY_TAG,
+    GET_TASK_IDS_BY_TAG
 }
