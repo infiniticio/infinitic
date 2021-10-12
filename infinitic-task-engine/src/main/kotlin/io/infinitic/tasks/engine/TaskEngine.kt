@@ -105,9 +105,9 @@ class TaskEngine(
 
             if (message is WaitTask) {
                 val taskUnknown = TaskUnknown(
-                    emitterName = clientName,
                     recipientName = message.emitterName,
-                    taskId = message.taskId
+                    taskId = message.taskId,
+                    emitterName = clientName
                 )
                 launch { sendToClient(taskUnknown) }
             }
@@ -291,6 +291,7 @@ class TaskEngine(
             )
             launch { sendToClient(taskCanceledInClient) }
         }
+        state.waitingClients.clear()
 
         // delete stored state
         removeTags(state)
@@ -382,11 +383,9 @@ class TaskEngine(
                 taskReturnValue = message.taskReturnValue,
                 taskMeta = state.taskMeta
             )
-            launch {
-                sendToClient(taskCompleted)
-                state.waitingClients.remove(it)
-            }
+            launch { sendToClient(taskCompleted) }
         }
+        state.waitingClients.clear()
 
         removeTags(state)
     }
@@ -438,11 +437,9 @@ class TaskEngine(
                         taskId = state.taskId,
                         error = msg.taskAttemptError,
                     )
-                    launch {
-                        sendToClient(taskFailed)
-                        state.waitingClients.remove(it)
-                    }
+                    launch { sendToClient(taskFailed) }
                 }
+                state.waitingClients.clear()
             }
             // immediate retry
             delay.long <= 0 -> retryTaskAttempt(state)

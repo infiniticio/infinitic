@@ -26,10 +26,10 @@
 package io.infinitic.client
 
 import io.infinitic.common.clients.data.ClientName
-import io.infinitic.common.clients.messages.CompletedMethod
+import io.infinitic.common.clients.messages.MethodCompleted
 import io.infinitic.common.clients.messages.TaskCompleted
-import io.infinitic.common.clients.messages.TaskIdsPerTag
-import io.infinitic.common.clients.messages.WorkflowIdsPerTag
+import io.infinitic.common.clients.messages.TaskIdsByTag
+import io.infinitic.common.clients.messages.WorkflowIdsByTag
 import io.infinitic.common.data.ReturnValue
 import io.infinitic.common.tasks.data.TaskId
 import io.infinitic.common.tasks.data.TaskMeta
@@ -64,16 +64,16 @@ fun mockSendToTaskTagEngine(
     every { sendToTaskTagEngine(capture(taskTagSlots)) } answers {
         taskTagSlots.forEach {
             if (it is GetTaskIdsByTag) {
-                val taskIdsPerTag = TaskIdsPerTag(
+                val taskIdsByTag = TaskIdsByTag(
                     recipientName = client.clientName,
-                    emitterName = ClientName("mockk"),
                     taskName = it.taskName,
                     taskTag = it.taskTag,
-                    taskIds = setOf(TaskId(), TaskId())
+                    taskIds = setOf(TaskId(), TaskId()),
+                    emitterName = ClientName("mockk")
                 )
                 client.sendingScope.future {
                     delay(100)
-                    client.handle(taskIdsPerTag)
+                    client.handle(taskIdsByTag)
                 }
             }
         }
@@ -89,16 +89,16 @@ fun mockSendToWorkflowTagEngine(
     every { sendToWorkflowTagEngine(capture(workflowTagSlots)) } answers {
         workflowTagSlots.forEach {
             if (it is GetWorkflowIdsByTag) {
-                val workflowIdsPerTag = WorkflowIdsPerTag(
+                val workflowIdsByTag = WorkflowIdsByTag(
                     recipientName = client.clientName,
-                    emitterName = ClientName("mockk"),
                     workflowName = it.workflowName,
                     workflowTag = it.workflowTag,
-                    workflowIds = setOf(WorkflowId(), WorkflowId())
+                    workflowIds = setOf(WorkflowId(), WorkflowId()),
+                    emitterName = ClientName("mockk")
                 )
                 client.sendingScope.future {
                     delay(100)
-                    client.handle(workflowIdsPerTag)
+                    client.handle(workflowIdsByTag)
                 }
             }
         }
@@ -139,12 +139,12 @@ fun mockSendToWorkflowEngine(
     every { sendToWorkflowEngine(capture(message)) } answers {
         val msg: WorkflowEngineMessage = message.captured
         if (msg is DispatchWorkflow && msg.clientWaiting || msg is WaitWorkflow) {
-            val workflowCompleted = CompletedMethod(
+            val workflowCompleted = MethodCompleted(
                 recipientName = client.clientName,
-                emitterName = ClientName("mockk"),
                 workflowId = msg.workflowId,
                 methodRunId = MethodRunId.from(msg.workflowId),
-                methodReturnValue = ReturnValue.from("success")
+                methodReturnValue = ReturnValue.from("success"),
+                emitterName = ClientName("mockk")
             )
             client.sendingScope.future {
                 delay(100)

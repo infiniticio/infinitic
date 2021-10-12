@@ -26,7 +26,7 @@
 package io.infinitic.tags.workflows
 
 import io.infinitic.common.clients.data.ClientName
-import io.infinitic.common.clients.messages.WorkflowIdsPerTag
+import io.infinitic.common.clients.messages.WorkflowIdsByTag
 import io.infinitic.common.clients.transport.SendToClient
 import io.infinitic.common.workflows.data.methodRuns.MethodRunId
 import io.infinitic.common.workflows.engine.SendToWorkflowEngine
@@ -202,14 +202,14 @@ class WorkflowTagEngine(
     private suspend fun getWorkflowIds(message: GetWorkflowIdsByTag) {
         val workflowIds = storage.getWorkflowIds(message.workflowTag, message.workflowName)
 
-        val workflowIdsPerTag = WorkflowIdsPerTag(
-            emitterName = clientName,
+        val workflowIdsByTag = WorkflowIdsByTag(
             recipientName = message.emitterName,
             message.workflowName,
             message.workflowTag,
-            workflowIds
+            workflowIds,
+            emitterName = clientName
         )
-        scope.launch { sendToClient(workflowIdsPerTag) }
+        scope.launch { sendToClient(workflowIdsByTag) }
     }
 
     private suspend fun hasMessageAlreadyBeenHandled(message: WorkflowTagEngineMessage) =

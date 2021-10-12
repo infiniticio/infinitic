@@ -26,7 +26,7 @@
 package io.infinitic.tags.tasks
 
 import io.infinitic.common.clients.data.ClientName
-import io.infinitic.common.clients.messages.TaskIdsPerTag
+import io.infinitic.common.clients.messages.TaskIdsByTag
 import io.infinitic.common.clients.transport.SendToClient
 import io.infinitic.common.tasks.engine.SendToTaskEngine
 import io.infinitic.common.tasks.engine.messages.CancelTask
@@ -129,15 +129,15 @@ class TaskTagEngine(
     private suspend fun getTaskIds(message: GetTaskIdsByTag) {
         val taskIds = storage.getTaskIds(message.taskTag, message.taskName)
 
-        val taskIdsPerTag = TaskIdsPerTag(
-            emitterName = clientName,
+        val taskIdsByTag = TaskIdsByTag(
             recipientName = message.emitterName,
             message.taskName,
             message.taskTag,
-            taskIds
+            taskIds,
+            emitterName = clientName
         )
 
-        scope.launch { sendToClient(taskIdsPerTag) }
+        scope.launch { sendToClient(taskIdsByTag) }
     }
 
     private suspend fun hasMessageAlreadyBeenHandled(message: TaskTagEngineMessage) =

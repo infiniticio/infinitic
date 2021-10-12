@@ -100,7 +100,7 @@ data class DispatchMethod(
 data class WaitWorkflow(
     override val workflowName: WorkflowName,
     override val workflowId: WorkflowId,
-    val methodRunId: MethodRunId?,
+    val methodRunId: MethodRunId,
     override val emitterName: ClientName,
 ) : WorkflowEngineMessage()
 

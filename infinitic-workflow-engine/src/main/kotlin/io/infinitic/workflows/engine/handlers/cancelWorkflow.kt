@@ -25,7 +25,7 @@
 
 package io.infinitic.workflows.engine.handlers
 
-import io.infinitic.common.clients.messages.CanceledMethod
+import io.infinitic.common.clients.messages.MethodCanceled
 import io.infinitic.common.workflows.data.commands.CommandType
 import io.infinitic.common.workflows.data.methodRuns.MethodRun
 import io.infinitic.common.workflows.data.methodRuns.MethodRunId
@@ -73,14 +73,15 @@ private fun CoroutineScope.cancelMethodRun(
 ) {
     // inform waiting clients of cancellation
     methodRun.waitingClients.forEach {
-        val workflowCanceled = CanceledMethod(
-            emitterName = output.clientName,
+        val workflowCanceled = MethodCanceled(
             recipientName = it,
             workflowId = state.workflowId,
-            methodRunId = methodRun.methodRunId
+            methodRunId = methodRun.methodRunId,
+            emitterName = output.clientName
         )
         launch { output.sendEventsToClient(workflowCanceled) }
     }
+    methodRun.waitingClients.clear()
 
     // inform parents of cancellation (if parent did not trigger the cancellation!)
     if (reason != WorkflowCancellationReason.CANCELED_BY_PARENT && methodRun.parentWorkflowId != null) {

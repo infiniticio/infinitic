@@ -26,7 +26,7 @@
 package io.infinitic.workflows.engine
 
 import io.infinitic.common.clients.data.ClientName
-import io.infinitic.common.clients.messages.UnknownMethod
+import io.infinitic.common.clients.messages.MethodRunUnknown
 import io.infinitic.common.clients.transport.SendToClient
 import io.infinitic.common.data.ReturnValue
 import io.infinitic.common.tasks.engine.SendToTaskEngine
@@ -127,23 +127,23 @@ class WorkflowEngine(
             }
 
             if (message is DispatchMethod && message.clientWaiting) {
-                val unknownWorkflow = UnknownMethod(
-                    emitterName = clientName,
+                val methodRunUnknown = MethodRunUnknown(
                     recipientName = message.emitterName,
                     message.workflowId,
-                    message.methodRunId
+                    message.methodRunId,
+                    emitterName = clientName
                 )
-                launch { output.sendEventsToClient(unknownWorkflow) }
+                launch { output.sendEventsToClient(methodRunUnknown) }
             }
 
             if (message is WaitWorkflow) {
-                val unknownWorkflow = UnknownMethod(
-                    emitterName = clientName,
+                val methodRunUnknown = MethodRunUnknown(
                     recipientName = message.emitterName,
                     message.workflowId,
-                    message.methodRunId
+                    message.methodRunId,
+                    emitterName = clientName
                 )
-                launch { output.sendEventsToClient(unknownWorkflow) }
+                launch { output.sendEventsToClient(methodRunUnknown) }
             }
 
             // discard all other messages if workflow is already terminated

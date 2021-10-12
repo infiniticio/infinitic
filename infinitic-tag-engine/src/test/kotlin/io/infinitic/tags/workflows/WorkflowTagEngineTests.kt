@@ -27,7 +27,7 @@ package io.infinitic.tags.workflows
 
 import io.infinitic.common.clients.data.ClientName
 import io.infinitic.common.clients.messages.ClientMessage
-import io.infinitic.common.clients.messages.WorkflowIdsPerTag
+import io.infinitic.common.clients.messages.WorkflowIdsByTag
 import io.infinitic.common.clients.transport.SendToClient
 import io.infinitic.common.data.MessageId
 import io.infinitic.common.fixtures.TestFactory
@@ -153,13 +153,13 @@ internal class WorkflowTagEngineTests : StringSpec({
         // then
         coVerifySequence {
             workflowTagStorage.getWorkflowIds(msgIn.workflowTag, msgIn.workflowName)
-            sendToClient(ofType<WorkflowIdsPerTag>())
+            sendToClient(ofType<WorkflowIdsByTag>())
             workflowTagStorage.setLastMessageId(msgIn.workflowTag, msgIn.workflowName, msgIn.messageId)
         }
         verifyAll()
 
-        captured(clientMessage).shouldBeInstanceOf<WorkflowIdsPerTag>()
-        (captured(clientMessage) as WorkflowIdsPerTag).workflowIds shouldBe setOf(workflowId1, workflowId2)
+        captured(clientMessage).shouldBeInstanceOf<WorkflowIdsByTag>()
+        (captured(clientMessage) as WorkflowIdsByTag).workflowIds shouldBe setOf(workflowId1, workflowId2)
     }
 })
 

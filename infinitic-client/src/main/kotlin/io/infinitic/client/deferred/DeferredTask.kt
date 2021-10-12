@@ -31,10 +31,9 @@ import io.infinitic.common.tasks.data.TaskId
 import io.infinitic.common.tasks.data.TaskName
 
 class DeferredTask<R> (
-    private val returnClass: Class<R>,
+    internal val returnClass: Class<R>,
     internal val taskName: TaskName,
     internal val taskId: TaskId,
-    internal val clientWaiting: Boolean,
     private val dispatcher: ClientDispatcher,
 ) : Deferred<R> {
 
@@ -42,7 +41,7 @@ class DeferredTask<R> (
 
     override fun retryAsync() = dispatcher.retryTaskAsync(taskName, taskId, null)
 
-    override fun await(): R = dispatcher.awaitTask(returnClass, taskName, taskId, clientWaiting)
+    override fun await(): R = dispatcher.awaitTask(returnClass, taskName, taskId, true)
 
     override val id: String by lazy { taskId.toString() }
 }

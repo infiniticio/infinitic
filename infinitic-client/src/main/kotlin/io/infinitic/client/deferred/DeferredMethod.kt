@@ -34,12 +34,11 @@ import io.infinitic.common.workflows.data.workflows.WorkflowTag
 import io.infinitic.exceptions.thisShouldNotHappen
 
 class DeferredMethod<R> (
-    private val returnClass: Class<R>,
+    internal val returnClass: Class<R>,
     internal val workflowName: WorkflowName,
     internal val workflowId: WorkflowId?,
     internal val methodRunId: MethodRunId?,
     internal val workflowTag: WorkflowTag?,
-    internal val clientWaiting: Boolean,
     private val dispatcher: ClientDispatcher,
 ) : Deferred<R> {
 
@@ -58,9 +57,9 @@ class DeferredMethod<R> (
     @Suppress("UNCHECKED_CAST")
     override fun await(): R = when {
         workflowId != null ->
-            dispatcher.awaitWorkflow(returnClass, workflowName, workflowId, methodRunId!!, clientWaiting)
+            dispatcher.awaitWorkflow(returnClass, workflowName, workflowId, methodRunId!!, true)
         workflowTag != null ->
-            throw Exception()
+            throw TODO()
         else ->
             thisShouldNotHappen()
     }

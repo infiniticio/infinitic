@@ -25,7 +25,7 @@
 
 package io.infinitic.workflows.engine.handlers
 
-import io.infinitic.common.clients.messages.FailedMethod
+import io.infinitic.common.clients.messages.MethodFailed
 import io.infinitic.common.workflows.data.commands.CommandId
 import io.infinitic.common.workflows.data.commands.CommandStatus.Canceled
 import io.infinitic.common.workflows.data.commands.CommandStatus.Completed
@@ -62,15 +62,16 @@ internal fun CoroutineScope.workflowTaskFailed(
 
     // send to waiting clients
     methodRun.waitingClients.forEach {
-        val failedMethod = FailedMethod(
-            emitterName = output.clientName,
+        val methodFailed = MethodFailed(
             recipientName = it,
             state.workflowId,
             methodRun.methodRunId,
-            error
+            error,
+            emitterName = output.clientName
         )
-        launch { output.sendEventsToClient(failedMethod) }
+        launch { output.sendEventsToClient(methodFailed) }
     }
+    methodRun.waitingClients.clear()
 
     val bufferedMessages = mutableListOf<WorkflowEngineMessage>()
 

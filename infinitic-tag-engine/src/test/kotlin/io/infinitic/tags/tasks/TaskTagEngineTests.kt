@@ -27,7 +27,7 @@ package io.infinitic.tags.tasks
 
 import io.infinitic.common.clients.data.ClientName
 import io.infinitic.common.clients.messages.ClientMessage
-import io.infinitic.common.clients.messages.TaskIdsPerTag
+import io.infinitic.common.clients.messages.TaskIdsByTag
 import io.infinitic.common.clients.transport.SendToClient
 import io.infinitic.common.data.MessageId
 import io.infinitic.common.fixtures.TestFactory
@@ -175,13 +175,13 @@ internal class TaskTagEngineTests : StringSpec({
         // then
         coVerifySequence {
             tagStateStorage.getTaskIds(msgIn.taskTag, msgIn.taskName)
-            sendToClient(ofType<TaskIdsPerTag>())
+            sendToClient(ofType<TaskIdsByTag>())
             tagStateStorage.setLastMessageId(msgIn.taskTag, msgIn.taskName, msgIn.messageId)
         }
         verifyAll()
 
-        captured(clientMessage).shouldBeInstanceOf<TaskIdsPerTag>()
-        (captured(clientMessage) as TaskIdsPerTag).taskIds shouldBe setOf(taskId1, taskId2)
+        captured(clientMessage).shouldBeInstanceOf<TaskIdsByTag>()
+        (captured(clientMessage) as TaskIdsByTag).taskIds shouldBe setOf(taskId1, taskId2)
     }
 })
 

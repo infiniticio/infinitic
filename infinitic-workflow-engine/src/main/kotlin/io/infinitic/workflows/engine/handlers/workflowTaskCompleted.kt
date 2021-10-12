@@ -26,7 +26,7 @@
 package io.infinitic.workflows.engine.handlers
 
 import io.infinitic.common.clients.data.ClientName
-import io.infinitic.common.clients.messages.CompletedMethod
+import io.infinitic.common.clients.messages.MethodCompleted
 import io.infinitic.common.data.MillisDuration
 import io.infinitic.common.data.MillisInstant
 import io.infinitic.common.data.minus
@@ -143,16 +143,17 @@ internal fun CoroutineScope.workflowTaskCompleted(
         methodRun.methodReturnValue = workflowTaskOutput.methodReturnValue
 
         // send output back to waiting clients
-        methodRun.waitingClients.map {
-            val workflowCompleted = CompletedMethod(
-                emitterName = output.clientName,
+        methodRun.waitingClients.forEach {
+            val workflowCompleted = MethodCompleted(
                 recipientName = it,
                 workflowId = state.workflowId,
                 methodRunId = methodRun.methodRunId,
-                methodReturnValue = methodRun.methodReturnValue!!
+                methodReturnValue = methodRun.methodReturnValue!!,
+                emitterName = output.clientName
             )
             launch { output.sendEventsToClient(workflowCompleted) }
         }
+        methodRun.waitingClients.clear()
 
         // tell parent workflow if any
         methodRun.parentWorkflowId?.let {
