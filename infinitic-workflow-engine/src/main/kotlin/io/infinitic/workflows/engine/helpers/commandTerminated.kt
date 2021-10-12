@@ -75,9 +75,11 @@ internal fun CoroutineScope.stepTerminated(
         .filter { it.currentStep?.isTerminatedBy(pastCommand) == true }
 
     // get step with lowest workflowTaskIndexAtStart
-    methodRuns.minWithOrNull(Comparator.comparingInt {
-        it.currentStep!!.workflowTaskIndexAtStart.int
-    })?.let {
+    methodRuns.minWithOrNull(
+        Comparator.comparingInt {
+            it.currentStep!!.workflowTaskIndexAtStart.int
+        }
+    )?.let {
         val pastStep = it.currentStep!!
         // terminate step
         pastStep.updateWith(pastCommand)

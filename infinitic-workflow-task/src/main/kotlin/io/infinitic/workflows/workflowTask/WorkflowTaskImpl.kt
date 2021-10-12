@@ -30,7 +30,6 @@ import io.infinitic.common.parser.getMethodPerNameAndParameters
 import io.infinitic.common.workflows.data.channels.ChannelImpl
 import io.infinitic.common.workflows.data.properties.PropertyHash
 import io.infinitic.common.workflows.data.properties.PropertyName
-import io.infinitic.common.workflows.data.properties.PropertyValue
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTask
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskParameters
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskReturnValue
@@ -62,7 +61,7 @@ class WorkflowTaskImpl : Task(), WorkflowTask {
         )
 
         // set context
-        val dispatcher =  WorkflowDispatcherImpl(workflowTaskParameters)
+        val dispatcher = WorkflowDispatcherImpl(workflowTaskParameters)
         workflow.context = WorkflowContextImpl(workflowTaskParameters)
         workflow.dispatcher = dispatcher
 

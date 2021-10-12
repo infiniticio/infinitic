@@ -462,7 +462,6 @@ class WorkflowAImpl : Workflow(), WorkflowA {
 
     override fun prop7bis(): String { deferred.await(); p1 += "b"; return p1 }
 
-
     override fun prop8(): String {
         p1 = taskA.reverse("a")
         dispatch(self::prop8bis)
