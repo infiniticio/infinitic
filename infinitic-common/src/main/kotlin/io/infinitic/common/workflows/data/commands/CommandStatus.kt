@@ -27,6 +27,7 @@ package io.infinitic.common.workflows.data.commands
 
 import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.annotation.JsonTypeInfo
+import io.infinitic.common.data.ReturnValue
 import io.infinitic.common.errors.Error
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskIndex
 import kotlinx.serialization.SerialName
@@ -50,7 +51,7 @@ sealed class CommandStatus {
     @Serializable
     @SerialName("CommandStatus.Completed")
     data class Completed(
-        val returnValue: CommandReturnValue,
+        val returnValue: ReturnValue,
         val completionWorkflowTaskIndex: WorkflowTaskIndex
     ) : CommandStatus()
 

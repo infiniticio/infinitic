@@ -44,11 +44,11 @@ class ChannelImpl<T : Any>(
     }
 
     override fun send(signal: T) =
-        dispatcherFn().sendToChannel(this, signal)
+        dispatcherFn().sendSignal(this, signal)
 
     override fun receive(jsonPath: String?, criteria: Criteria?): Deferred<T> =
-        dispatcherFn().receiveFromChannel(this, jsonPath, criteria)
+        dispatcherFn().receiveSignal(this, jsonPath, criteria)
 
     override fun <S : T> receive(klass: Class<S>, jsonPath: String?, criteria: Criteria?): Deferred<S> =
-        dispatcherFn().receiveFromChannel(this, klass, jsonPath, criteria)
+        dispatcherFn().receiveSignal(this, klass, jsonPath, criteria)
 }

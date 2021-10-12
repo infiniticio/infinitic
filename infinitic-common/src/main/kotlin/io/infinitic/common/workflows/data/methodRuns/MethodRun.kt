@@ -26,10 +26,10 @@
 package io.infinitic.common.workflows.data.methodRuns
 
 import io.infinitic.common.clients.data.ClientName
+import io.infinitic.common.data.ReturnValue
 import io.infinitic.common.data.methods.MethodName
 import io.infinitic.common.data.methods.MethodParameterTypes
 import io.infinitic.common.data.methods.MethodParameters
-import io.infinitic.common.data.methods.MethodReturnValue
 import io.infinitic.common.workflows.data.commands.CommandId
 import io.infinitic.common.workflows.data.commands.CommandType
 import io.infinitic.common.workflows.data.commands.PastCommand
@@ -55,7 +55,7 @@ data class MethodRun(
     val methodName: MethodName,
     val methodParameterTypes: MethodParameterTypes?,
     val methodParameters: MethodParameters,
-    var methodReturnValue: MethodReturnValue? = null,
+    var methodReturnValue: ReturnValue? = null,
     val workflowTaskIndexAtStart: WorkflowTaskIndex,
     val propertiesNameHashAtStart: Map<PropertyName, PropertyHash>,
     val pastCommands: MutableList<PastCommand> = mutableListOf(),

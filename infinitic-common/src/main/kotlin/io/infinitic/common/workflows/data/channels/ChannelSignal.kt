@@ -25,7 +25,6 @@
 
 package io.infinitic.common.workflows.data.channels
 
-import io.infinitic.common.data.Data
 import io.infinitic.common.serDe.SerializedData
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
@@ -34,10 +33,14 @@ import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
 
 @Serializable(with = ChannelEventSerializer::class)
-data class ChannelSignal(override val serializedData: SerializedData) : Data(serializedData) {
+data class ChannelSignal(val serializedData: SerializedData) {
     companion object {
         fun from(data: Any?) = ChannelSignal(SerializedData.from(data))
     }
+
+    override fun toString() = serializedData.toString()
+
+    fun signal(): Any? = serializedData.deserialize()
 }
 
 object ChannelEventSerializer : KSerializer<ChannelSignal> {

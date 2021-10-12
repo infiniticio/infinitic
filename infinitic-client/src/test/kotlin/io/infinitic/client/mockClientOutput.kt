@@ -30,7 +30,7 @@ import io.infinitic.common.clients.messages.CompletedMethod
 import io.infinitic.common.clients.messages.TaskCompleted
 import io.infinitic.common.clients.messages.TaskIdsPerTag
 import io.infinitic.common.clients.messages.WorkflowIdsPerTag
-import io.infinitic.common.data.methods.MethodReturnValue
+import io.infinitic.common.data.ReturnValue
 import io.infinitic.common.tasks.data.TaskId
 import io.infinitic.common.tasks.data.TaskMeta
 import io.infinitic.common.tasks.engine.SendToTaskEngine
@@ -118,7 +118,7 @@ fun mockSendToTaskEngine(
                 recipientName = client.clientName,
                 emitterName = ClientName("mockk"),
                 taskId = msg.taskId,
-                taskReturnValue = MethodReturnValue.from("success"),
+                taskReturnValue = ReturnValue.from("success"),
                 taskMeta = TaskMeta()
             )
             client.sendingScope.future {
@@ -144,7 +144,7 @@ fun mockSendToWorkflowEngine(
                 emitterName = ClientName("mockk"),
                 workflowId = msg.workflowId,
                 methodRunId = MethodRunId.from(msg.workflowId),
-                methodReturnValue = MethodReturnValue.from("success")
+                methodReturnValue = ReturnValue.from("success")
             )
             client.sendingScope.future {
                 delay(100)

@@ -27,6 +27,7 @@ package io.infinitic.common.workflows.data.commands
 
 import io.infinitic.common.data.MillisDuration
 import io.infinitic.common.data.MillisInstant
+import io.infinitic.common.data.ReturnValue
 import io.infinitic.common.data.methods.MethodName
 import io.infinitic.common.data.methods.MethodParameterTypes
 import io.infinitic.common.data.methods.MethodParameters
@@ -67,18 +68,18 @@ data class DispatchTask(
 ) : Command()
 
 @Serializable
-data class DispatchChildWorkflow(
-    val childWorkflowName: WorkflowName,
-    val childMethodName: MethodName,
-    val childMethodParameterTypes: MethodParameterTypes,
-    val childMethodParameters: MethodParameters,
+data class DispatchWorkflow(
+    val workflowName: WorkflowName,
+    val methodName: MethodName,
+    val methodParameterTypes: MethodParameterTypes,
+    val methodParameters: MethodParameters,
     val workflowTags: Set<WorkflowTag>,
     val workflowMeta: WorkflowMeta,
     val workflowOptions: WorkflowOptions
 ) : Command()
 
 @Serializable
-data class DispatchChildMethod(
+data class DispatchMethod(
     val workflowName: WorkflowName,
     val workflowId: WorkflowId?,
     val workflowTag: WorkflowTag?,
@@ -88,7 +89,7 @@ data class DispatchChildMethod(
 ) : Command()
 
 @Serializable
-data class DispatchSignal(
+data class SendSignal(
     val workflowName: WorkflowName,
     val workflowId: WorkflowId?,
     val workflowTag: WorkflowTag?,
@@ -98,8 +99,15 @@ data class DispatchSignal(
 ) : Command()
 
 @Serializable
+data class ReceiveSignal(
+    val channelName: ChannelName,
+    val channelSignalType: ChannelSignalType?,
+    val channelEventFilter: ChannelEventFilter?
+) : Command()
+
+@Serializable
 data class InlineTask(
-    val value: CommandReturnValue
+    val value: ReturnValue
 ) : Command() {
     // value of an inline task should not be checked for similarities
     override fun hash() = CommandHash("inline")
@@ -113,11 +121,4 @@ data class StartDurationTimer(
 @Serializable
 data class StartInstantTimer(
     val instant: MillisInstant
-) : Command()
-
-@Serializable
-data class ReceiveFromChannel(
-    val channelName: ChannelName,
-    val channelSignalType: ChannelSignalType?,
-    val channelEventFilter: ChannelEventFilter?
 ) : Command()

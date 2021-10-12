@@ -28,10 +28,10 @@ package io.infinitic.common.tasks.engine.messages
 import io.infinitic.common.clients.data.ClientName
 import io.infinitic.common.data.MessageId
 import io.infinitic.common.data.MillisDuration
+import io.infinitic.common.data.ReturnValue
 import io.infinitic.common.data.methods.MethodName
 import io.infinitic.common.data.methods.MethodParameterTypes
 import io.infinitic.common.data.methods.MethodParameters
-import io.infinitic.common.data.methods.MethodReturnValue
 import io.infinitic.common.errors.Error
 import io.infinitic.common.messages.Message
 import io.infinitic.common.tasks.data.TaskAttemptId
@@ -101,7 +101,7 @@ data class CancelTask(
 data class CompleteTask(
     override val taskName: TaskName,
     override val taskId: TaskId,
-    val taskReturnValue: MethodReturnValue,
+    val taskReturnValue: ReturnValue,
     override val emitterName: ClientName
 ) : TaskEngineMessage()
 
@@ -122,7 +122,7 @@ data class TaskAttemptCompleted(
     override val taskRetryIndex: TaskRetryIndex,
     override val taskAttemptId: TaskAttemptId,
     override val taskRetrySequence: TaskRetrySequence,
-    val taskReturnValue: MethodReturnValue,
+    val taskReturnValue: ReturnValue,
     val taskMeta: TaskMeta,
     override val emitterName: ClientName
 ) : TaskEngineMessage(), TaskAttemptMessage

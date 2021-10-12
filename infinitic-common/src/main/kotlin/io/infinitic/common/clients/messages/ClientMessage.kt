@@ -30,7 +30,7 @@ import io.infinitic.common.clients.messages.interfaces.MethodMessage
 import io.infinitic.common.clients.messages.interfaces.TaskMessage
 import io.infinitic.common.clients.messages.interfaces.WorkflowMessage
 import io.infinitic.common.data.MessageId
-import io.infinitic.common.data.methods.MethodReturnValue
+import io.infinitic.common.data.ReturnValue
 import io.infinitic.common.errors.Error
 import io.infinitic.common.messages.Message
 import io.infinitic.common.tasks.data.TaskId
@@ -57,7 +57,7 @@ data class TaskCompleted(
     override val emitterName: ClientName,
     override val recipientName: ClientName,
     override val taskId: TaskId,
-    val taskReturnValue: MethodReturnValue,
+    val taskReturnValue: ReturnValue,
     val taskMeta: TaskMeta
 ) : ClientMessage(), TaskMessage
 
@@ -99,7 +99,7 @@ data class CompletedMethod(
     override val recipientName: ClientName,
     override val workflowId: WorkflowId,
     override val methodRunId: MethodRunId,
-    val methodReturnValue: MethodReturnValue
+    val methodReturnValue: ReturnValue
 ) : ClientMessage(), MethodMessage
 
 @Serializable

@@ -25,8 +25,8 @@
 
 package io.infinitic.common.workflows.data.steps
 
+import io.infinitic.common.data.ReturnValue
 import io.infinitic.common.workflows.data.commands.CommandId
-import io.infinitic.common.workflows.data.commands.CommandReturnValue
 import io.infinitic.common.workflows.data.commands.CommandStatus.Completed
 import io.infinitic.common.workflows.data.steps.Step.And
 import io.infinitic.common.workflows.data.steps.Step.Or
@@ -37,7 +37,7 @@ import io.kotest.matchers.shouldBe
 fun getStepId() = Step.Id(CommandId())
 
 fun getCompletedStatus(output: Any? = null, index: Int = 0) = Completed(
-    returnValue = CommandReturnValue.from(output),
+    returnValue = ReturnValue.from(output),
     completionWorkflowTaskIndex = WorkflowTaskIndex(index)
 )
 

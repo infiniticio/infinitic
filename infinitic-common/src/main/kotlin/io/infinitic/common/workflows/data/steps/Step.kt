@@ -28,6 +28,7 @@ package io.infinitic.common.workflows.data.steps
 import com.fasterxml.jackson.annotation.JsonCreator
 import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.annotation.JsonTypeInfo
+import io.infinitic.common.data.ReturnValue
 import io.infinitic.common.serDe.SerializedData
 import io.infinitic.common.workflows.data.commands.CommandId
 import io.infinitic.common.workflows.data.commands.CommandStatus
@@ -86,7 +87,7 @@ sealed class Step {
         override fun statusAt(index: WorkflowTaskIndex) = when (val status = commandStatus) {
             is Running -> StepStatus.Waiting
             is Completed -> when (index >= status.completionWorkflowTaskIndex) {
-                true -> StepStatus.Completed(StepReturnValue.from(status.returnValue.get()), status.completionWorkflowTaskIndex)
+                true -> StepStatus.Completed(status.returnValue, status.completionWorkflowTaskIndex)
                 false -> StepStatus.Waiting
             }
             is Canceled -> when (index >= status.cancellationWorkflowTaskIndex) {
@@ -130,9 +131,9 @@ sealed class Step {
             // if all steps are completed, then And(...steps) is completed
             if (statuses.all { it is StepStatus.Completed }) {
                 val maxIndex = statuses.maxOf { (it as StepStatus.Completed).completionWorkflowTaskIndex }
-                val results = statuses.map { (it as StepStatus.Completed).returnValue.get() }
+                val results = statuses.map { (it as StepStatus.Completed).returnValue.value() }
 
-                return StepStatus.Completed(StepReturnValue.from(results), maxIndex)
+                return StepStatus.Completed(ReturnValue.from(results), maxIndex)
             }
 
             thisShouldNotHappen()

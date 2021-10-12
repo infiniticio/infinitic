@@ -25,6 +25,7 @@
 
 package io.infinitic.common.workflows
 
+import io.infinitic.common.data.ReturnValue
 import io.infinitic.common.fixtures.TestFactory
 import io.infinitic.common.serDe.SerializedData
 import io.infinitic.common.workflows.data.channels.ChannelName
@@ -33,7 +34,6 @@ import io.infinitic.common.workflows.data.channels.ChannelSignalId
 import io.infinitic.common.workflows.data.channels.ChannelSignalType
 import io.infinitic.common.workflows.data.commands.CommandHash
 import io.infinitic.common.workflows.data.commands.CommandId
-import io.infinitic.common.workflows.data.commands.CommandReturnValue
 import io.infinitic.common.workflows.data.commands.CommandSimpleName
 import io.infinitic.common.workflows.data.methodRuns.MethodRunId
 import io.infinitic.common.workflows.data.methodRuns.MethodRunPosition
@@ -42,7 +42,6 @@ import io.infinitic.common.workflows.data.properties.PropertyName
 import io.infinitic.common.workflows.data.properties.PropertyValue
 import io.infinitic.common.workflows.data.steps.StepHash
 import io.infinitic.common.workflows.data.steps.StepId
-import io.infinitic.common.workflows.data.steps.StepReturnValue
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskIndex
 import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.data.workflows.WorkflowMeta
@@ -89,9 +88,9 @@ class DataTests : StringSpec({
 
     "CommandOutput should be serialized as SerializedData and reversible in json" {
         val id = TestFactory.random<String>()
-        val m = CommandReturnValue.from(id)
+        val m = ReturnValue.from(id)
         val json = Json.encodeToString(m)
-        val m2 = Json.decodeFromString<CommandReturnValue>(json)
+        val m2 = Json.decodeFromString<ReturnValue>(json)
 
         json shouldBe Json.encodeToString(SerializedData.from(id))
         m2 shouldBe m
@@ -218,9 +217,9 @@ class DataTests : StringSpec({
 
     "StepOutput should be serialized as SerializedData and reversible in json" {
         val id = TestFactory.random<String>()
-        val m = StepReturnValue.from(id)
+        val m = ReturnValue.from(id)
         val json = Json.encodeToString(m)
-        val m2 = Json.decodeFromString<StepReturnValue>(json)
+        val m2 = Json.decodeFromString<ReturnValue>(json)
 
         json shouldBe Json.encodeToString(SerializedData.from(id))
         m2 shouldBe m

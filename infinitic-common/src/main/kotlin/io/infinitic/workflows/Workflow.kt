@@ -396,14 +396,14 @@ abstract class Workflow {
     }
 
     // from klass for the given workflow name
-    internal fun findClassPerWorkflowName() = try {
+    protected fun findClassPerWorkflowName() = try {
         Class.forName(context.name)
     } catch (e: ClassNotFoundException) {
         findClassPerAnnotationName(this::class.java, context.name)
     }
 
     // from klass, search for a given @Name annotation
-    internal fun findClassPerAnnotationName(klass: Class<*>, name: String): Class<*>? {
+    protected fun findClassPerAnnotationName(klass: Class<*>, name: String): Class<*>? {
         var clazz = klass
 
         do {

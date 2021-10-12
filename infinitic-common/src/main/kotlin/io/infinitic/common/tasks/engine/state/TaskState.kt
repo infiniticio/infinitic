@@ -27,10 +27,10 @@ package io.infinitic.common.tasks.engine.state
 
 import io.infinitic.common.clients.data.ClientName
 import io.infinitic.common.data.MessageId
+import io.infinitic.common.data.ReturnValue
 import io.infinitic.common.data.methods.MethodName
 import io.infinitic.common.data.methods.MethodParameterTypes
 import io.infinitic.common.data.methods.MethodParameters
-import io.infinitic.common.data.methods.MethodReturnValue
 import io.infinitic.common.errors.Error
 import io.infinitic.common.serDe.avro.AvroSerDe
 import io.infinitic.common.tasks.data.TaskAttemptId
@@ -53,7 +53,7 @@ data class TaskState(
     var lastMessageId: MessageId,
     val taskId: TaskId,
     val taskName: TaskName,
-    var taskReturnValue: MethodReturnValue?,
+    var taskReturnValue: ReturnValue?,
     val methodName: MethodName,
     val methodParameterTypes: MethodParameterTypes?,
     val methodParameters: MethodParameters,

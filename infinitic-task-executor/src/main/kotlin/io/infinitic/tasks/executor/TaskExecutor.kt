@@ -28,8 +28,8 @@ package io.infinitic.tasks.executor
 import io.infinitic.client.InfiniticClient
 import io.infinitic.common.clients.data.ClientName
 import io.infinitic.common.data.MillisDuration
+import io.infinitic.common.data.ReturnValue
 import io.infinitic.common.data.methods.MethodParameters
-import io.infinitic.common.data.methods.MethodReturnValue
 import io.infinitic.common.errors.Error
 import io.infinitic.common.parser.getMethodPerNameAndParameters
 import io.infinitic.common.tasks.data.TaskMeta
@@ -220,7 +220,7 @@ class TaskExecutor(
             taskRetryIndex = message.taskRetryIndex,
             taskAttemptId = message.taskAttemptId,
             taskRetrySequence = message.taskRetrySequence,
-            taskReturnValue = MethodReturnValue.from(returnValue),
+            taskReturnValue = ReturnValue.from(returnValue),
             taskMeta = taskMeta,
             emitterName = clientName
         )

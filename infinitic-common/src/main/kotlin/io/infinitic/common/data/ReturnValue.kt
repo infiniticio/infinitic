@@ -23,9 +23,8 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.common.workflows.data.steps
+package io.infinitic.common.data
 
-import io.infinitic.common.data.Data
 import io.infinitic.common.serDe.SerializedData
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
@@ -33,18 +32,22 @@ import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
 
-@Serializable(with = StepOutputSerializer::class)
-data class StepReturnValue(override val serializedData: SerializedData) : Data(serializedData) {
+@Serializable(with = ReturnValueSerializer::class)
+data class ReturnValue(val serializedData: SerializedData) {
     companion object {
-        inline fun <reified T> from(data: T?) = StepReturnValue(SerializedData.from(data))
+        fun from(data: Any?) = ReturnValue(SerializedData.from(data))
     }
+
+    override fun toString() = serializedData.toString()
+
+    fun value(): Any? = serializedData.deserialize()
 }
 
-object StepOutputSerializer : KSerializer<StepReturnValue> {
+object ReturnValueSerializer : KSerializer<ReturnValue> {
     override val descriptor: SerialDescriptor = SerializedData.serializer().descriptor
-    override fun serialize(encoder: Encoder, value: StepReturnValue) {
+    override fun serialize(encoder: Encoder, value: ReturnValue) {
         SerializedData.serializer().serialize(encoder, value.serializedData)
     }
     override fun deserialize(decoder: Decoder) =
-        StepReturnValue(SerializedData.serializer().deserialize(decoder))
+        ReturnValue(SerializedData.serializer().deserialize(decoder))
 }

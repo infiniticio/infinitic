@@ -25,7 +25,7 @@
 
 package io.infinitic.workflows.workflowTask
 
-import io.infinitic.common.data.methods.MethodReturnValue
+import io.infinitic.common.data.ReturnValue
 import io.infinitic.common.parser.getMethodPerNameAndParameters
 import io.infinitic.common.workflows.data.channels.ChannelImpl
 import io.infinitic.common.workflows.data.properties.PropertyHash
@@ -91,7 +91,7 @@ class WorkflowTaskImpl : Task(), WorkflowTask {
 
         // run method and get return value (null if end not reached)
         val methodReturnValue = try {
-            MethodReturnValue.from(method.invoke(workflow, *parameters))
+            ReturnValue.from(method.invoke(workflow, *parameters))
         } catch (e: InvocationTargetException) {
             when (e.cause) {
                 is WorkflowTaskException -> null

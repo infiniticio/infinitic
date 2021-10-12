@@ -28,6 +28,7 @@ package io.infinitic.workflows.workflowTask
 import com.jayway.jsonpath.Criteria
 import io.infinitic.common.data.MillisDuration
 import io.infinitic.common.data.MillisInstant
+import io.infinitic.common.data.ReturnValue
 import io.infinitic.common.proxies.ChannelProxyHandler
 import io.infinitic.common.proxies.GetTaskProxyHandler
 import io.infinitic.common.proxies.GetWorkflowProxyHandler
@@ -42,18 +43,17 @@ import io.infinitic.common.workflows.data.channels.ChannelSignalType
 import io.infinitic.common.workflows.data.commands.Command
 import io.infinitic.common.workflows.data.commands.CommandId
 import io.infinitic.common.workflows.data.commands.CommandName
-import io.infinitic.common.workflows.data.commands.CommandReturnValue
 import io.infinitic.common.workflows.data.commands.CommandSimpleName
 import io.infinitic.common.workflows.data.commands.CommandStatus
 import io.infinitic.common.workflows.data.commands.CommandType
-import io.infinitic.common.workflows.data.commands.DispatchChildMethod
-import io.infinitic.common.workflows.data.commands.DispatchChildWorkflow
-import io.infinitic.common.workflows.data.commands.DispatchSignal
+import io.infinitic.common.workflows.data.commands.DispatchMethod
 import io.infinitic.common.workflows.data.commands.DispatchTask
+import io.infinitic.common.workflows.data.commands.DispatchWorkflow
 import io.infinitic.common.workflows.data.commands.InlineTask
 import io.infinitic.common.workflows.data.commands.NewCommand
 import io.infinitic.common.workflows.data.commands.PastCommand
-import io.infinitic.common.workflows.data.commands.ReceiveFromChannel
+import io.infinitic.common.workflows.data.commands.ReceiveSignal
+import io.infinitic.common.workflows.data.commands.SendSignal
 import io.infinitic.common.workflows.data.commands.StartDurationTimer
 import io.infinitic.common.workflows.data.commands.StartInstantTimer
 import io.infinitic.common.workflows.data.methodRuns.MethodRunPosition
@@ -133,7 +133,7 @@ internal class WorkflowDispatcherImpl(
                 val value = ProxyHandler.inline(task)
                 // record result
                 val endCommand = NewCommand(
-                    command = InlineTask(CommandReturnValue.from(value)),
+                    command = InlineTask(ReturnValue.from(value)),
                     commandName = null,
                     commandSimpleName = CommandSimpleName("${CommandType.INLINE_TASK}"),
                     commandPosition = methodRunPosition
@@ -144,7 +144,7 @@ internal class WorkflowDispatcherImpl(
             }
             else -> when (pastCommand.commandType == CommandType.INLINE_TASK) {
                 true -> when (val status = pastCommand.commandStatus) {
-                    is CommandStatus.Completed -> status.returnValue.get() as S
+                    is CommandStatus.Completed -> status.returnValue.value() as S
                     else -> thisShouldNotHappen()
                 }
                 else -> throwWorkflowUpdatedException(pastCommand, null)
@@ -174,7 +174,7 @@ internal class WorkflowDispatcherImpl(
 
                 when (val stepStatus = deferred.stepStatus) {
                     is Completed ->
-                        stepStatus.returnValue.get() as T
+                        stepStatus.returnValue.value() as T
                     is Waiting -> {
                         // found a new step
                         newStep = step
@@ -222,7 +222,7 @@ internal class WorkflowDispatcherImpl(
                         // workflowTaskIndex is now the one where this deferred was completed
                         workflowTaskIndex = stepStatus.completionWorkflowTaskIndex
 
-                        stepStatus.returnValue.get() as T
+                        stepStatus.returnValue.value() as T
                     }
                     is Canceled -> {
                         // workflowTaskIndex is now the one where this deferred was canceled
@@ -278,12 +278,12 @@ internal class WorkflowDispatcherImpl(
         CommandSimpleName("${CommandType.START_INSTANT_TIMER}")
     )
 
-    override fun <T : Any> receiveFromChannel(
+    override fun <T : Any> receiveSignal(
         channel: ChannelImpl<T>,
         jsonPath: String?,
         criteria: Criteria?
     ): Deferred<T> = dispatchCommand(
-        ReceiveFromChannel(
+        ReceiveSignal(
             ChannelName(channel.getNameOrThrow()),
             null,
             ChannelEventFilter.from(jsonPath, criteria)
@@ -292,13 +292,13 @@ internal class WorkflowDispatcherImpl(
         CommandSimpleName("${CommandType.RECEIVE_IN_CHANNEL}")
     )
 
-    override fun <S : T, T : Any> receiveFromChannel(
+    override fun <S : T, T : Any> receiveSignal(
         channel: ChannelImpl<T>,
         klass: Class<S>,
         jsonPath: String?,
         criteria: Criteria?
     ): Deferred<S> = dispatchCommand(
-        ReceiveFromChannel(
+        ReceiveSignal(
             ChannelName(channel.getNameOrThrow()),
             ChannelSignalType.from(klass),
             ChannelEventFilter.from(jsonPath, criteria)
@@ -306,9 +306,9 @@ internal class WorkflowDispatcherImpl(
         CommandSimpleName("${CommandType.RECEIVE_IN_CHANNEL}")
     )
 
-    override fun <T : Any> sendToChannel(channel: ChannelImpl<T>, signal: T) {
+    override fun <T : Any> sendSignal(channel: ChannelImpl<T>, signal: T) {
         dispatchCommand<T>(
-            DispatchSignal(
+            SendSignal(
                 workflowName = workflowTaskParameters.workflowName,
                 workflowId = workflowTaskParameters.workflowId,
                 workflowTag = null,
@@ -349,11 +349,11 @@ internal class WorkflowDispatcherImpl(
     private fun <R : Any?> dispatchWorkflow(handler: NewWorkflowProxyHandler<*>): Deferred<R> = when (handler.isChannelGetter()) {
         true -> throw InvalidChannelUsageException()
         false -> dispatchCommand(
-            DispatchChildWorkflow(
-                childWorkflowName = handler.workflowName,
-                childMethodName = handler.methodName,
-                childMethodParameterTypes = handler.methodParameterTypes,
-                childMethodParameters = handler.methodParameters,
+            DispatchWorkflow(
+                workflowName = handler.workflowName,
+                methodName = handler.methodName,
+                methodParameterTypes = handler.methodParameterTypes,
+                methodParameters = handler.methodParameters,
                 workflowTags = handler.workflowTags,
                 workflowOptions = handler.workflowOptions,
                 workflowMeta = handler.workflowMeta,
@@ -368,7 +368,7 @@ internal class WorkflowDispatcherImpl(
     private fun <R : Any?> dispatchMethod(handler: GetWorkflowProxyHandler<*>): Deferred<R> = when (handler.isChannelGetter()) {
         true -> throw InvalidChannelUsageException()
         false -> dispatchCommand(
-            DispatchChildMethod(
+            DispatchMethod(
                 workflowName = handler.workflowName,
                 workflowId = handler.workflowId,
                 workflowTag = handler.workflowTag,
@@ -387,7 +387,7 @@ internal class WorkflowDispatcherImpl(
         if (handler.methodName.toString() != SendChannel<*>::send.name) thisShouldNotHappen()
 
         return dispatchCommand(
-            DispatchSignal(
+            SendSignal(
                 workflowName = handler.workflowName,
                 workflowId = handler.workflowId,
                 workflowTag = handler.workflowTag,
@@ -409,9 +409,9 @@ internal class WorkflowDispatcherImpl(
             command = command,
             commandName = when (command) {
                 is DispatchTask -> CommandName.from(command.taskName)
-                is DispatchChildWorkflow -> CommandName.from(command.childWorkflowName)
-                is DispatchChildMethod -> CommandName.from(command.methodName)
-                is DispatchSignal -> CommandName.from(command.channelName)
+                is DispatchWorkflow -> CommandName.from(command.workflowName)
+                is DispatchMethod -> CommandName.from(command.methodName)
+                is SendSignal -> CommandName.from(command.channelName)
                 else -> null
             },
             commandSimpleName = commandSimpleName,

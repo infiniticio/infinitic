@@ -65,9 +65,7 @@ internal class TaskTests : StringSpec({
     "Asynchronous execution succeeds at first try" {
         TaskTestImpl.behavior = { _, _ -> Status.SUCCESS }
 
-        val deferred = client.dispatch(taskTest::await, 400L)
-
-        deferred.await() shouldBe 400L
+        client.dispatch(taskTest::await, 500L).await() shouldBe 500L
     }
 
     "Synchronous execution succeeds at first try" {

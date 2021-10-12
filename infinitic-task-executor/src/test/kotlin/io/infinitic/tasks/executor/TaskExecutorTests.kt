@@ -30,10 +30,10 @@ package io.infinitic.tasks.executor
 import io.infinitic.client.InfiniticClient
 import io.infinitic.common.clients.data.ClientName
 import io.infinitic.common.data.MillisDuration
+import io.infinitic.common.data.ReturnValue
 import io.infinitic.common.data.methods.MethodName
 import io.infinitic.common.data.methods.MethodParameterTypes
 import io.infinitic.common.data.methods.MethodParameters
-import io.infinitic.common.data.methods.MethodReturnValue
 import io.infinitic.common.tasks.data.TaskAttemptId
 import io.infinitic.common.tasks.data.TaskId
 import io.infinitic.common.tasks.data.TaskMeta
@@ -103,7 +103,7 @@ class TaskExecutorTests : StringSpec({
             taskAttemptId = msg.taskAttemptId,
             taskRetrySequence = msg.taskRetrySequence,
             taskRetryIndex = msg.taskRetryIndex,
-            taskReturnValue = MethodReturnValue.from("9"),
+            taskReturnValue = ReturnValue.from("9"),
             taskMeta = msg.taskMeta,
             emitterName = clientName
         )
@@ -124,7 +124,7 @@ class TaskExecutorTests : StringSpec({
             taskAttemptId = msg.taskAttemptId,
             taskRetrySequence = msg.taskRetrySequence,
             taskRetryIndex = msg.taskRetryIndex,
-            taskReturnValue = MethodReturnValue.from("12"),
+            taskReturnValue = ReturnValue.from("12"),
             taskMeta = msg.taskMeta,
             emitterName = clientName
         )
@@ -261,7 +261,7 @@ class TaskExecutorTests : StringSpec({
             taskAttemptId = msg.taskAttemptId,
             taskRetrySequence = msg.taskRetrySequence,
             taskRetryIndex = msg.taskRetryIndex,
-            taskReturnValue = MethodReturnValue.from("72"),
+            taskReturnValue = ReturnValue.from("72"),
             taskMeta = msg.taskMeta,
             emitterName = clientName
         )

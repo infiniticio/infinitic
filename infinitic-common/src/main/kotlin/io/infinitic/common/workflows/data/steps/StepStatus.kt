@@ -25,6 +25,7 @@
 
 package io.infinitic.common.workflows.data.steps
 
+import io.infinitic.common.data.ReturnValue
 import io.infinitic.common.workflows.data.commands.CommandId
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskIndex
 import kotlinx.serialization.Serializable
@@ -39,7 +40,7 @@ sealed class StepStatus {
 
     @Serializable
     data class Completed(
-        val returnValue: StepReturnValue,
+        val returnValue: ReturnValue,
         val completionWorkflowTaskIndex: WorkflowTaskIndex
     ) : StepStatus()
 

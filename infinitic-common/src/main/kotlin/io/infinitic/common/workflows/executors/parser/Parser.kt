@@ -36,7 +36,7 @@ fun <T : Any> setPropertiesToObject(obj: T, values: Map<PropertyName, PropertyVa
     val properties = obj::class.memberProperties
     values.forEach { (name, value) ->
         properties.find { it.name == name.name }
-            ?.let { setProperty(obj, it, value.get()) }
+            ?.let { setProperty(obj, it, value.value()) }
             ?: thisShouldNotHappen("Trying to set unknown property ${obj::class.java.name}:${name.name}")
     }
 }

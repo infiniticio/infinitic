@@ -28,10 +28,10 @@ package io.infinitic.workflows.engine
 import io.infinitic.common.clients.data.ClientName
 import io.infinitic.common.clients.messages.UnknownMethod
 import io.infinitic.common.clients.transport.SendToClient
+import io.infinitic.common.data.ReturnValue
 import io.infinitic.common.tasks.engine.SendToTaskEngine
 import io.infinitic.common.tasks.tags.SendToTaskTagEngine
 import io.infinitic.common.workflows.data.commands.CommandId
-import io.infinitic.common.workflows.data.commands.CommandReturnValue
 import io.infinitic.common.workflows.data.commands.CommandStatus
 import io.infinitic.common.workflows.engine.SendToWorkflowEngine
 import io.infinitic.common.workflows.engine.SendToWorkflowEngineAfter
@@ -58,7 +58,7 @@ import io.infinitic.workflows.engine.handlers.cancelWorkflow
 import io.infinitic.workflows.engine.handlers.dispatchMethodRun
 import io.infinitic.workflows.engine.handlers.dispatchWorkflow
 import io.infinitic.workflows.engine.handlers.retryWorkflowTask
-import io.infinitic.workflows.engine.handlers.sendToChannel
+import io.infinitic.workflows.engine.handlers.sendSignal
 import io.infinitic.workflows.engine.handlers.waitWorkflow
 import io.infinitic.workflows.engine.handlers.workflowTaskCompleted
 import io.infinitic.workflows.engine.handlers.workflowTaskFailed
@@ -227,7 +227,7 @@ class WorkflowEngine(
             is DispatchWorkflow -> thisShouldNotHappen()
             is DispatchMethod -> dispatchMethodRun(output, state, message)
             is CancelWorkflow -> cancelWorkflow(output, state, message)
-            is SendSignal -> sendToChannel(output, state, message)
+            is SendSignal -> sendSignal(output, state, message)
             is WaitWorkflow -> waitWorkflow(output, state, message)
             is CompleteWorkflow -> TODO()
             is RetryWorkflowTask -> retryWorkflowTask(output, state)
@@ -251,7 +251,7 @@ class WorkflowEngine(
                 message.methodRunId,
                 CommandId.from(message.childMethodRunId),
                 CommandStatus.Completed(
-                    CommandReturnValue.from(message.childWorkflowReturnValue),
+                    message.childWorkflowReturnValue,
                     state.workflowTaskIndex
                 )
             )
@@ -260,7 +260,7 @@ class WorkflowEngine(
                 state,
                 message.methodRunId,
                 CommandId.from(message.timerId),
-                CommandStatus.Completed(CommandReturnValue.from(Instant.now()), state.workflowTaskIndex)
+                CommandStatus.Completed(ReturnValue.from(Instant.now()), state.workflowTaskIndex)
             )
             is TaskFailed -> when (message.isWorkflowTask()) {
                 true -> {
@@ -299,7 +299,7 @@ class WorkflowEngine(
                     state,
                     message.methodRunId,
                     CommandId.from(message.taskId),
-                    CommandStatus.Completed(CommandReturnValue.from(message.taskReturnValue), state.workflowTaskIndex)
+                    CommandStatus.Completed(message.taskReturnValue, state.workflowTaskIndex)
                 )
             }
         }

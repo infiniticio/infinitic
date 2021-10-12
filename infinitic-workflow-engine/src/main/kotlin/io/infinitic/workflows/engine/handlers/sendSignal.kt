@@ -25,7 +25,7 @@
 
 package io.infinitic.workflows.engine.handlers
 
-import io.infinitic.common.workflows.data.commands.CommandReturnValue
+import io.infinitic.common.data.ReturnValue
 import io.infinitic.common.workflows.data.commands.CommandStatus.Completed
 import io.infinitic.common.workflows.engine.messages.SendSignal
 import io.infinitic.common.workflows.engine.state.WorkflowState
@@ -36,7 +36,7 @@ import mu.KotlinLogging
 
 private val logger = KotlinLogging.logger {}
 
-internal fun CoroutineScope.sendToChannel(
+internal fun CoroutineScope.sendSignal(
     workflowEngineOutput: WorkflowEngineOutput,
     state: WorkflowState,
     message: SendSignal
@@ -54,7 +54,7 @@ internal fun CoroutineScope.sendToChannel(
                 state,
                 it.methodRunId,
                 it.commandId,
-                Completed(CommandReturnValue(message.channelSignal.serializedData), state.workflowTaskIndex)
+                Completed(ReturnValue(message.channelSignal.serializedData), state.workflowTaskIndex)
             )
         }
         ?: logger.debug { "discarding non-waited event $message" }

@@ -169,7 +169,7 @@ internal class ClientDispatcherImpl(
 
         @Suppress("UNCHECKED_CAST")
         return when (taskResult) {
-            is TaskCompleted -> taskResult.taskReturnValue.get() as T
+            is TaskCompleted -> taskResult.taskReturnValue.value() as T
             is TaskCanceled -> throw CanceledException(
                 "$taskId",
                 "$taskName",
@@ -217,7 +217,7 @@ internal class ClientDispatcherImpl(
 
         @Suppress("UNCHECKED_CAST")
         return when (workflowResult) {
-            is CompletedMethod -> workflowResult.methodReturnValue.get() as T
+            is CompletedMethod -> workflowResult.methodReturnValue.value() as T
             is CanceledMethod -> throw CanceledException(
                 "$workflowId",
                 "$workflowName"
