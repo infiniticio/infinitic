@@ -43,5 +43,5 @@ class GetTaskProxyHandler<K : Any>(
         }
     }
 
-    val taskName = TaskName(className)
+    val taskName = TaskName(name)
 }

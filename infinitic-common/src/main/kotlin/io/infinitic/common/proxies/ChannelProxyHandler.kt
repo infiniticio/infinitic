@@ -38,10 +38,11 @@ class ChannelProxyHandler<K : SendChannel<*>>(
     handler.dispatcherFn
 ) {
     val workflowName = handler.workflowName
-    val channelName = ChannelName(handler.methodName)
+    val channelName = ChannelName.from(handler.methodName)
     val workflowId = handler.workflowId
     val workflowTag = handler.workflowTag
 
     val channelSignalTypes by lazy { ChannelSignalType.allFrom(methodArgs.first()::class.java) }
     val channelSignal by lazy { ChannelSignal.from(methodArgs.first()) }
+    val channelType by lazy { handler.method.returnType }
 }

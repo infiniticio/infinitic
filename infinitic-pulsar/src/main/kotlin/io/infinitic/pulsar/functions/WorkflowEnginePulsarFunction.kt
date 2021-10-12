@@ -27,6 +27,7 @@ package io.infinitic.pulsar.functions
 
 import io.infinitic.cache.caffeine.Caffeine
 import io.infinitic.cache.caffeine.CaffeineKeyValueCache
+import io.infinitic.common.clients.data.ClientName
 import io.infinitic.common.storage.keyValue.CachedKeyValueStorage
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineEnvelope
 import io.infinitic.pulsar.functions.storage.keyValueStorage
@@ -53,10 +54,11 @@ class WorkflowEnginePulsarFunction : Function<WorkflowEngineEnvelope, Void> {
         null
     }
 
-    internal fun getWorkflowEngine(context: Context): WorkflowEngine {
+    private fun getWorkflowEngine(context: Context): WorkflowEngine {
         val output = PulsarOutput.from(context)
 
         return WorkflowEngine(
+            ClientName(""),
             BinaryWorkflowStateStorage(
                 // context storage decorated with logging and a 1h cache
                 CachedKeyValueStorage(

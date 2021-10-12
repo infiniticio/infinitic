@@ -26,7 +26,6 @@
 package io.infinitic.common.workflows.data.workflowTasks
 
 import io.infinitic.common.workflows.data.methodRuns.MethodRun
-import io.infinitic.common.workflows.data.methodRuns.MethodRunPosition
 import io.infinitic.common.workflows.data.properties.PropertyHash
 import io.infinitic.common.workflows.data.properties.PropertyValue
 import io.infinitic.common.workflows.data.workflows.WorkflowId
@@ -46,8 +45,7 @@ data class WorkflowTaskParameters(
     val workflowPropertiesHashValue: Map<PropertyHash, PropertyValue>,
     val workflowTaskIndex: WorkflowTaskIndex,
 
-    val methodRun: MethodRun,
-    val targetPosition: MethodRunPosition = MethodRunPosition("")
+    val methodRun: MethodRun
 ) {
     fun getFullMethodName() = "$workflowName::${methodRun.methodName}"
 }

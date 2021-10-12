@@ -25,6 +25,7 @@
 
 package io.infinitic.common.workflows.data.channels
 
+import io.infinitic.common.data.methods.MethodName
 import kotlinx.serialization.Serializable
 import java.lang.reflect.Method
 
@@ -32,6 +33,7 @@ import java.lang.reflect.Method
 value class ChannelName(private val name: String) {
     companion object {
         fun from(method: Method) = ChannelName(method.name)
+        fun from(methodName: MethodName) = ChannelName(methodName.toString())
     }
 
     override fun toString() = name

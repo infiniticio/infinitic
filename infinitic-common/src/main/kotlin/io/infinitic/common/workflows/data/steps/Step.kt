@@ -25,6 +25,9 @@
 
 package io.infinitic.common.workflows.data.steps
 
+import com.fasterxml.jackson.annotation.JsonCreator
+import com.fasterxml.jackson.annotation.JsonIgnore
+import com.fasterxml.jackson.annotation.JsonTypeInfo
 import io.infinitic.common.serDe.SerializedData
 import io.infinitic.common.workflows.data.commands.CommandId
 import io.infinitic.common.workflows.data.commands.CommandStatus
@@ -36,31 +39,43 @@ import io.infinitic.common.workflows.data.commands.NewCommand
 import io.infinitic.common.workflows.data.commands.PastCommand
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskIndex
 import io.infinitic.exceptions.thisShouldNotHappen
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlin.Int.Companion.MAX_VALUE
 
 @Serializable
+@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.PROPERTY, property = "@class")
 sealed class Step {
-    fun isTerminated() = isTerminatedAt(WorkflowTaskIndex(MAX_VALUE))
+    @JsonIgnore fun isTerminated() = isTerminatedAt(WorkflowTaskIndex(MAX_VALUE))
     fun status() = statusAt(WorkflowTaskIndex(MAX_VALUE))
 
-    abstract fun isTerminatedAt(index: WorkflowTaskIndex): Boolean
+    @JsonIgnore abstract fun isTerminatedAt(index: WorkflowTaskIndex): Boolean
     abstract fun statusAt(index: WorkflowTaskIndex): StepStatus
 
-    /*
-     * hash function is defined to exclude commandStatus and provide a hopefully unique hash linked to the structure of the step
+    /**
+     * hash function excludes commandStatus and provide a hopefully unique hash linked to the structure of the step
      */
     abstract fun hash(): StepHash
 
     @Serializable
+    @SerialName("Step.Id")
     data class Id(
-        val commandId: CommandId,
-        var commandStatus: CommandStatus
+        val commandId: CommandId
     ) : Step() {
+        @JsonIgnore var commandStatus: CommandStatus = Running
+
+        companion object {
+            fun from(newCommand: NewCommand) = Id(newCommand.commandId)
+            fun from(pastCommand: PastCommand) = Id(pastCommand.commandId).apply { commandStatus = pastCommand.commandStatus }
+
+            @JsonCreator @JvmStatic
+            // This is needed for Jackson deserialization, CommandId being an inline type
+            fun new(commandId: String) = Id(CommandId(commandId))
+        }
 
         override fun hash() = StepHash(SerializedData.from(commandId).hash())
 
-        override fun isTerminatedAt(index: WorkflowTaskIndex) = when (statusAt(index)) {
+        @JsonIgnore override fun isTerminatedAt(index: WorkflowTaskIndex) = when (statusAt(index)) {
             is StepStatus.Waiting -> false
             is StepStatus.OngoingFailure -> true
             is StepStatus.Completed -> true
@@ -83,19 +98,15 @@ sealed class Step {
                 false -> StepStatus.Waiting
             }
         }
-
-        companion object {
-            fun from(newCommand: NewCommand) = Id(newCommand.commandId, Running)
-            fun from(pastCommand: PastCommand) = Id(pastCommand.commandId, pastCommand.commandStatus)
-        }
     }
 
     @Serializable
+    @SerialName("Step.And")
     data class And(var steps: List<Step>) : Step() {
 
         override fun hash() = StepHash(SerializedData.from(steps.map { it.hash() }).hash())
 
-        override fun isTerminatedAt(index: WorkflowTaskIndex) =
+        @JsonIgnore override fun isTerminatedAt(index: WorkflowTaskIndex) =
             this.steps.all { it.isTerminatedAt(index) }
 
         override fun statusAt(index: WorkflowTaskIndex): StepStatus {
@@ -129,11 +140,12 @@ sealed class Step {
     }
 
     @Serializable
+    @SerialName("Step.Or")
     data class Or(var steps: List<Step>) : Step() {
 
         override fun hash() = StepHash(SerializedData.from(steps.map { it.hash() }).hash())
 
-        override fun isTerminatedAt(index: WorkflowTaskIndex) =
+        @JsonIgnore override fun isTerminatedAt(index: WorkflowTaskIndex) =
             this.steps.any { it.isTerminatedAt(index) }
 
         override fun statusAt(index: WorkflowTaskIndex): StepStatus {
@@ -165,11 +177,11 @@ sealed class Step {
     /*
      * Used in engine to update a step after having cancelled or completed a command
      */
-    fun update(commandId: CommandId, commandStatus: CommandStatus): Step {
+    fun updateWith(commandId: CommandId, commandStatus: CommandStatus): Step {
         when (this) {
             is Id -> if (this.commandId == commandId) this.commandStatus = commandStatus
-            is And -> steps = steps.map { it.update(commandId, commandStatus) }
-            is Or -> steps = steps.map { it.update(commandId, commandStatus) }
+            is And -> steps = steps.map { it.updateWith(commandId, commandStatus) }
+            is Or -> steps = steps.map { it.updateWith(commandId, commandStatus) }
         }
         return this.resolveOr().compose()
     }

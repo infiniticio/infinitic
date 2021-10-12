@@ -33,21 +33,24 @@ import kotlinx.serialization.Serializable
 data class WorkflowTagEngineEnvelope(
     val name: String,
     val type: WorkflowTagEngineMessageType,
-    val addWorkflowTag: AddWorkflowTag? = null,
-    val removeWorkflowTag: RemoveWorkflowTag? = null,
-    val sendToChannelPerTag: SendToChannelPerTag? = null,
-    val cancelWorkflowPerTag: CancelWorkflowPerTag? = null,
-    val retryWorkflowTaskPerTag: RetryWorkflowTaskPerTag? = null,
-    val getWorkflowIds: GetWorkflowIds? = null,
+    val addTagToWorkflow: AddTagToWorkflow? = null,
+    val removeTagFromWorkflow: RemoveTagFromWorkflow? = null,
+    val sendSignalByTag: SendSignalByTag? = null,
+    val cancelWorkflowByTag: CancelWorkflowByTag? = null,
+    val retryWorkflowTaskByTag: RetryWorkflowTaskByTag? = null,
+    val dispatchMethodByTag: DispatchMethodByTag? = null,
+    val getWorkflowIdsByTag: GetWorkflowIdsByTag? = null,
 ) : Envelope<WorkflowTagEngineMessage> {
+
     init {
         val noNull = listOfNotNull(
-            addWorkflowTag,
-            removeWorkflowTag,
-            sendToChannelPerTag,
-            cancelWorkflowPerTag,
-            retryWorkflowTaskPerTag,
-            getWorkflowIds
+            addTagToWorkflow,
+            removeTagFromWorkflow,
+            sendSignalByTag,
+            cancelWorkflowByTag,
+            retryWorkflowTaskByTag,
+            dispatchMethodByTag,
+            getWorkflowIdsByTag
         )
 
         require(noNull.size == 1)
@@ -57,35 +60,40 @@ data class WorkflowTagEngineEnvelope(
 
     companion object {
         fun from(msg: WorkflowTagEngineMessage) = when (msg) {
-            is AddWorkflowTag -> WorkflowTagEngineEnvelope(
+            is AddTagToWorkflow -> WorkflowTagEngineEnvelope(
                 "${msg.workflowName}",
-                WorkflowTagEngineMessageType.ADD_WORKFLOW_TAG,
-                addWorkflowTag = msg
+                WorkflowTagEngineMessageType.ADD_TAG_TO_WORKFLOW,
+                addTagToWorkflow = msg
             )
-            is RemoveWorkflowTag -> WorkflowTagEngineEnvelope(
+            is RemoveTagFromWorkflow -> WorkflowTagEngineEnvelope(
                 "${msg.workflowName}",
-                WorkflowTagEngineMessageType.REMOVE_WORKFLOW_TAG,
-                removeWorkflowTag = msg
+                WorkflowTagEngineMessageType.REMOVE_TAG_FROM_WORKFLOW,
+                removeTagFromWorkflow = msg
             )
-            is SendToChannelPerTag -> WorkflowTagEngineEnvelope(
+            is SendSignalByTag -> WorkflowTagEngineEnvelope(
                 "${msg.workflowName}",
-                WorkflowTagEngineMessageType.SEND_TO_CHANNEL_PER_TAG,
-                sendToChannelPerTag = msg
+                WorkflowTagEngineMessageType.SEND_SIGNAL_BY_TAG,
+                sendSignalByTag = msg
             )
-            is CancelWorkflowPerTag -> WorkflowTagEngineEnvelope(
+            is CancelWorkflowByTag -> WorkflowTagEngineEnvelope(
                 "${msg.workflowName}",
-                WorkflowTagEngineMessageType.CANCEL_WORKFLOW_PER_TAG,
-                cancelWorkflowPerTag = msg
+                WorkflowTagEngineMessageType.CANCEL_WORKFLOW_BY_TAG,
+                cancelWorkflowByTag = msg
             )
-            is RetryWorkflowTaskPerTag -> WorkflowTagEngineEnvelope(
+            is RetryWorkflowTaskByTag -> WorkflowTagEngineEnvelope(
                 "${msg.workflowName}",
-                WorkflowTagEngineMessageType.RETRY_WORKFLOW_TASK_PER_TAG,
-                retryWorkflowTaskPerTag = msg
+                WorkflowTagEngineMessageType.RETRY_WORKFLOW_TASK_BY_TAG,
+                retryWorkflowTaskByTag = msg
             )
-            is GetWorkflowIds -> WorkflowTagEngineEnvelope(
+            is DispatchMethodByTag -> WorkflowTagEngineEnvelope(
                 "${msg.workflowName}",
-                WorkflowTagEngineMessageType.GET_WORKFLOW_IDS,
-                getWorkflowIds = msg
+                WorkflowTagEngineMessageType.DISPATCH_METHOD_BY_TAG,
+                dispatchMethodByTag = msg
+            )
+            is GetWorkflowIdsByTag -> WorkflowTagEngineEnvelope(
+                "${msg.workflowName}",
+                WorkflowTagEngineMessageType.GET_WORKFLOW_IDS_BY_TAG,
+                getWorkflowIdsByTag = msg
             )
         }
 
@@ -93,12 +101,13 @@ data class WorkflowTagEngineEnvelope(
     }
 
     override fun message() = when (type) {
-        WorkflowTagEngineMessageType.ADD_WORKFLOW_TAG -> addWorkflowTag!!
-        WorkflowTagEngineMessageType.REMOVE_WORKFLOW_TAG -> removeWorkflowTag!!
-        WorkflowTagEngineMessageType.SEND_TO_CHANNEL_PER_TAG -> sendToChannelPerTag!!
-        WorkflowTagEngineMessageType.CANCEL_WORKFLOW_PER_TAG -> cancelWorkflowPerTag!!
-        WorkflowTagEngineMessageType.RETRY_WORKFLOW_TASK_PER_TAG -> retryWorkflowTaskPerTag!!
-        WorkflowTagEngineMessageType.GET_WORKFLOW_IDS -> getWorkflowIds!!
+        WorkflowTagEngineMessageType.ADD_TAG_TO_WORKFLOW -> addTagToWorkflow!!
+        WorkflowTagEngineMessageType.REMOVE_TAG_FROM_WORKFLOW -> removeTagFromWorkflow!!
+        WorkflowTagEngineMessageType.SEND_SIGNAL_BY_TAG -> sendSignalByTag!!
+        WorkflowTagEngineMessageType.CANCEL_WORKFLOW_BY_TAG -> cancelWorkflowByTag!!
+        WorkflowTagEngineMessageType.RETRY_WORKFLOW_TASK_BY_TAG -> retryWorkflowTaskByTag!!
+        WorkflowTagEngineMessageType.DISPATCH_METHOD_BY_TAG -> dispatchMethodByTag!!
+        WorkflowTagEngineMessageType.GET_WORKFLOW_IDS_BY_TAG -> getWorkflowIdsByTag!!
     }
 
     fun toByteArray() = AvroSerDe.writeBinary(this, serializer())

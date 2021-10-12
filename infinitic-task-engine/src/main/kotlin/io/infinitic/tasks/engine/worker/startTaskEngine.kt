@@ -25,6 +25,7 @@
 
 package io.infinitic.tasks.engine.worker
 
+import io.infinitic.common.clients.data.ClientName
 import io.infinitic.common.clients.transport.SendToClient
 import io.infinitic.common.metrics.perName.transport.SendToMetricsPerName
 import io.infinitic.common.tasks.engine.SendToTaskEngineAfter
@@ -53,7 +54,7 @@ private fun logError(messageToProcess: TaskEngineMessageToProcess, e: Throwable)
 }
 
 fun <T : TaskEngineMessageToProcess> CoroutineScope.startTaskEngine(
-    coroutineName: String,
+    name: String,
     taskStateStorage: TaskStateStorage,
     eventsInputChannel: ReceiveChannel<T>,
     eventsOutputChannel: SendChannel<T>,
@@ -65,9 +66,10 @@ fun <T : TaskEngineMessageToProcess> CoroutineScope.startTaskEngine(
     sendToWorkflowEngine: SendToWorkflowEngine,
     sendToTaskExecutors: SendToTaskExecutors,
     sendToMetricsPerName: SendToMetricsPerName
-) = launch(CoroutineName(coroutineName)) {
+) = launch(CoroutineName(name)) {
 
     val taskEngine = TaskEngine(
+        ClientName(name),
         taskStateStorage,
         sendToClient,
         sendToTaskTagEngine,

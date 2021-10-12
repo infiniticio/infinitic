@@ -25,7 +25,6 @@
 
 package io.infinitic.common.workflows.data.commands
 
-import com.fasterxml.jackson.annotation.JsonProperty
 import io.infinitic.common.data.MillisDuration
 import io.infinitic.common.data.MillisInstant
 import io.infinitic.common.data.methods.MethodName
@@ -40,6 +39,7 @@ import io.infinitic.common.workflows.data.channels.ChannelEventFilter
 import io.infinitic.common.workflows.data.channels.ChannelName
 import io.infinitic.common.workflows.data.channels.ChannelSignal
 import io.infinitic.common.workflows.data.channels.ChannelSignalType
+import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.data.workflows.WorkflowMeta
 import io.infinitic.common.workflows.data.workflows.WorkflowName
 import io.infinitic.common.workflows.data.workflows.WorkflowOptions
@@ -78,27 +78,32 @@ data class DispatchChildWorkflow(
 ) : Command()
 
 @Serializable
-object StartAsync : Command() {
-    override fun equals(other: Any?) = javaClass == other?.javaClass
-}
-
-@Serializable
-data class EndAsync(
-    @JsonProperty("output")
-    val asyncReturnValue: CommandReturnValue
+data class DispatchChildMethod(
+    val workflowName: WorkflowName,
+    val workflowId: WorkflowId?,
+    val workflowTag: WorkflowTag?,
+    val methodName: MethodName,
+    val methodParameterTypes: MethodParameterTypes,
+    val methodParameters: MethodParameters
 ) : Command()
 
 @Serializable
-object StartInlineTask : Command() {
-    // as we can not define a data class without parameter, we add manually the equals func
-    override fun equals(other: Any?) = javaClass == other?.javaClass
-}
+data class DispatchSignal(
+    val workflowName: WorkflowName,
+    val workflowId: WorkflowId?,
+    val workflowTag: WorkflowTag?,
+    val channelName: ChannelName,
+    val channelSignal: ChannelSignal,
+    val channelSignalTypes: Set<ChannelSignalType>
+) : Command()
 
 @Serializable
-data class EndInlineTask(
-    @JsonProperty("output")
-    val inlineTaskReturnValue: CommandReturnValue
-) : Command()
+data class InlineTask(
+    val value: CommandReturnValue
+) : Command() {
+    // value of an inline task should not be checked for similarities
+    override fun hash() = CommandHash("inline")
+}
 
 @Serializable
 data class StartDurationTimer(
@@ -111,15 +116,8 @@ data class StartInstantTimer(
 ) : Command()
 
 @Serializable
-data class ReceiveInChannel(
+data class ReceiveFromChannel(
     val channelName: ChannelName,
     val channelSignalType: ChannelSignalType?,
     val channelEventFilter: ChannelEventFilter?
-) : Command()
-
-@Serializable
-data class SendToChannel(
-    val channelName: ChannelName,
-    val channelSignal: ChannelSignal,
-    val channelSignalTypes: Set<ChannelSignalType>
 ) : Command()

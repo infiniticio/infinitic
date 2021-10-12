@@ -38,5 +38,5 @@ class NewWorkflowProxyHandler<K : Any>(
     override val dispatcherFn: () -> ProxyDispatcher
 ) : ProxyHandler<K>(klass, dispatcherFn) {
 
-    val workflowName = WorkflowName(className)
+    val workflowName = WorkflowName(name)
 }

@@ -26,6 +26,7 @@
 package io.infinitic.common.workflows.data.workflows
 
 import io.infinitic.common.data.Name
+import io.infinitic.common.workflows.data.commands.CommandName
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.descriptors.PrimitiveKind
@@ -35,7 +36,11 @@ import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
 
 @Serializable(with = WorkflowNameSerializer::class)
-data class WorkflowName(override val name: String) : Name(name)
+data class WorkflowName(override val name: String) : Name(name) {
+    companion object {
+        fun from(commandName: CommandName) = WorkflowName(commandName.toString())
+    }
+}
 
 object WorkflowNameSerializer : KSerializer<WorkflowName> {
     override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("WorkflowName", PrimitiveKind.STRING)

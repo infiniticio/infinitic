@@ -38,9 +38,9 @@ import org.apache.pulsar.client.api.Consumer
 
 @Suppress("UNCHECKED_CAST")
 fun CoroutineScope.startPulsarWorkflowDelayEngines(
-    workflowName: WorkflowName,
+    name: String,
     concurrency: Int,
-    consumerName: String,
+    workflowName: WorkflowName,
     consumerFactory: PulsarConsumerFactory,
     output: PulsarOutput
 ) {
@@ -49,7 +49,7 @@ fun CoroutineScope.startPulsarWorkflowDelayEngines(
 
     repeat(concurrency) {
         startWorkflowDelayEngine(
-            consumerName,
+            name,
             inputChannel,
             outputChannel,
             output.sendToWorkflowEngine(TopicType.EXISTING)
@@ -58,7 +58,7 @@ fun CoroutineScope.startPulsarWorkflowDelayEngines(
 
     // Pulsar consumer
     val consumer = consumerFactory.newConsumer(
-        consumerName = consumerName,
+        consumerName = name,
         workflowTopic = WorkflowTopic.DELAYS,
         workflowName = workflowName
     ) as Consumer<WorkflowEngineEnvelope>

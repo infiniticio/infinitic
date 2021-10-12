@@ -122,7 +122,7 @@ class InMemoryInfiniticWorker(
 
         runningScope.launch {
             startTaskTagEngine(
-                "in-memory-task-tag-engine: $taskName",
+                "task-tag-engine: $name",
                 storage,
                 eventsInputChannel = eventsChannel,
                 eventsOutputChannel = output.logChannel,
@@ -172,7 +172,7 @@ class InMemoryInfiniticWorker(
 
         runningScope.launch {
             startWorkflowTagEngine(
-                "in-memory-workflow-tag-engine: $workflowName",
+                "workflow-tag-engine: $name",
                 storage,
                 eventsInputChannel = eventsChannel,
                 eventsOutputChannel = output.logChannel,
@@ -193,7 +193,7 @@ class InMemoryInfiniticWorker(
 
         runningScope.launch {
             startWorkflowEngine(
-                "in-memory-workflow-engine",
+                "workflow-engine: $name",
                 storage,
                 eventsInputChannel = eventsChannel,
                 eventsOutputChannel = output.logChannel,
@@ -253,7 +253,7 @@ class InMemoryInfiniticWorker(
 
         runningScope.launch {
             startMetricsPerNameEngine(
-                "in-memory-metrics-per-name-engine",
+                "metrics-per-name-engine",
                 storage,
                 inputChannel = channel,
                 outputChannel = output.logChannel,

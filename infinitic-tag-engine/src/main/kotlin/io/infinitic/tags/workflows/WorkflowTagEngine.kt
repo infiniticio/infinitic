@@ -25,18 +25,22 @@
 
 package io.infinitic.tags.workflows
 
+import io.infinitic.common.clients.data.ClientName
 import io.infinitic.common.clients.messages.WorkflowIdsPerTag
 import io.infinitic.common.clients.transport.SendToClient
+import io.infinitic.common.workflows.data.methodRuns.MethodRunId
 import io.infinitic.common.workflows.engine.SendToWorkflowEngine
 import io.infinitic.common.workflows.engine.messages.CancelWorkflow
+import io.infinitic.common.workflows.engine.messages.DispatchMethod
 import io.infinitic.common.workflows.engine.messages.RetryWorkflowTask
-import io.infinitic.common.workflows.engine.messages.SendToChannel
-import io.infinitic.common.workflows.tags.messages.AddWorkflowTag
-import io.infinitic.common.workflows.tags.messages.CancelWorkflowPerTag
-import io.infinitic.common.workflows.tags.messages.GetWorkflowIds
-import io.infinitic.common.workflows.tags.messages.RemoveWorkflowTag
-import io.infinitic.common.workflows.tags.messages.RetryWorkflowTaskPerTag
-import io.infinitic.common.workflows.tags.messages.SendToChannelPerTag
+import io.infinitic.common.workflows.engine.messages.SendSignal
+import io.infinitic.common.workflows.tags.messages.AddTagToWorkflow
+import io.infinitic.common.workflows.tags.messages.CancelWorkflowByTag
+import io.infinitic.common.workflows.tags.messages.DispatchMethodByTag
+import io.infinitic.common.workflows.tags.messages.GetWorkflowIdsByTag
+import io.infinitic.common.workflows.tags.messages.RemoveTagFromWorkflow
+import io.infinitic.common.workflows.tags.messages.RetryWorkflowTaskByTag
+import io.infinitic.common.workflows.tags.messages.SendSignalByTag
 import io.infinitic.common.workflows.tags.messages.WorkflowTagEngineMessage
 import io.infinitic.tags.workflows.storage.LoggedWorkflowTagStorage
 import io.infinitic.tags.workflows.storage.WorkflowTagStorage
@@ -46,6 +50,7 @@ import kotlinx.coroutines.launch
 import mu.KotlinLogging
 
 class WorkflowTagEngine(
+    private val clientName: ClientName,
     storage: WorkflowTagStorage,
     val sendToWorkflowEngine: SendToWorkflowEngine,
     val sendToClient: SendToClient
@@ -72,28 +77,17 @@ class WorkflowTagEngine(
 
         @Suppress("UNUSED_VARIABLE")
         val o = when (message) {
-            is AddWorkflowTag -> addWorkflowTag(message)
-            is RemoveWorkflowTag -> removeWorkflowTag(message)
-            is SendToChannelPerTag -> sendToChannelPerTag(message)
-            is CancelWorkflowPerTag -> cancelWorkflowPerTag(message)
-            is RetryWorkflowTaskPerTag -> retryWorkflowTaskPerTag(message)
-            is GetWorkflowIds -> getWorkflowIds(message)
+            is AddTagToWorkflow -> addWorkflowTag(message)
+            is RemoveTagFromWorkflow -> removeWorkflowTag(message)
+            is SendSignalByTag -> sendToChannelPerTag(message)
+            is CancelWorkflowByTag -> cancelWorkflowPerTag(message)
+            is RetryWorkflowTaskByTag -> retryWorkflowTaskPerTag(message)
+            is DispatchMethodByTag -> dispatchMethodRunPerTag(message)
+            is GetWorkflowIdsByTag -> getWorkflowIds(message)
         }
     }
 
-    private suspend fun getWorkflowIds(message: GetWorkflowIds) {
-        val workflowIds = storage.getWorkflowIds(message.workflowTag, message.workflowName)
-
-        val workflowIdsPerTag = WorkflowIdsPerTag(
-            message.clientName,
-            message.workflowName,
-            message.workflowTag,
-            workflowIds = workflowIds
-        )
-        scope.launch { sendToClient(workflowIdsPerTag) }
-    }
-
-    private suspend fun retryWorkflowTaskPerTag(message: RetryWorkflowTaskPerTag) {
+    private suspend fun dispatchMethodRunPerTag(message: DispatchMethodByTag) {
         // is not an idempotent action
         if (hasMessageAlreadyBeenHandled(message)) return
 
@@ -103,16 +97,28 @@ class WorkflowTagEngine(
                 discardTagWithoutIds(message)
             }
             false -> ids.forEach {
-                val retryWorkflowTask = RetryWorkflowTask(
-                    workflowId = it,
-                    workflowName = message.workflowName
-                )
-                scope.launch { sendToWorkflowEngine(retryWorkflowTask) }
+                // parent workflow already applied method to self
+                if (it != message.parentWorkflowId) {
+                    val dispatchMethod = DispatchMethod(
+                        workflowName = message.workflowName,
+                        workflowId = it,
+                        methodRunId = message.methodRunId,
+                        methodName = message.methodName,
+                        methodParameters = message.methodParameters,
+                        methodParameterTypes = message.methodParameterTypes,
+                        parentWorkflowId = message.parentWorkflowId,
+                        parentWorkflowName = message.parentWorkflowName,
+                        parentMethodRunId = message.parentMethodRunId,
+                        clientWaiting = false,
+                        emitterName = clientName
+                    )
+                    scope.launch { sendToWorkflowEngine(dispatchMethod) }
+                }
             }
         }
     }
 
-    private suspend fun cancelWorkflowPerTag(message: CancelWorkflowPerTag) {
+    private suspend fun retryWorkflowTaskPerTag(message: RetryWorkflowTaskByTag) {
         // is not an idempotent action
         if (hasMessageAlreadyBeenHandled(message)) return
 
@@ -122,17 +128,45 @@ class WorkflowTagEngine(
                 discardTagWithoutIds(message)
             }
             false -> ids.forEach {
-                val cancelWorkflow = CancelWorkflow(
-                    workflowId = it,
-                    workflowName = message.workflowName,
-                    reason = message.reason
-                )
-                scope.launch { sendToWorkflowEngine(cancelWorkflow) }
+                // parent workflow already applied method to self
+                if (it != message.emitterWorkflowId) {
+                    val retryWorkflowTask = RetryWorkflowTask(
+                        workflowName = message.workflowName,
+                        workflowId = it,
+                        emitterName = clientName
+                    )
+                    scope.launch { sendToWorkflowEngine(retryWorkflowTask) }
+                }
             }
         }
     }
 
-    private suspend fun sendToChannelPerTag(message: SendToChannelPerTag) {
+    private suspend fun cancelWorkflowPerTag(message: CancelWorkflowByTag) {
+        // is not an idempotent action
+        if (hasMessageAlreadyBeenHandled(message)) return
+
+        val ids = storage.getWorkflowIds(message.workflowTag, message.workflowName)
+        when (ids.isEmpty()) {
+            true -> {
+                discardTagWithoutIds(message)
+            }
+            false -> ids.forEach {
+                // parent workflow already applied method to self
+                if (it != message.emitterWorkflowId) {
+                    val cancelWorkflow = CancelWorkflow(
+                        workflowName = message.workflowName,
+                        workflowId = it,
+                        methodRunId = MethodRunId.from(it),
+                        reason = message.reason,
+                        emitterName = clientName
+                    )
+                    scope.launch { sendToWorkflowEngine(cancelWorkflow) }
+                }
+            }
+        }
+    }
+
+    private suspend fun sendToChannelPerTag(message: SendSignalByTag) {
         // sending to channel is not an idempotent action
         if (hasMessageAlreadyBeenHandled(message)) return
 
@@ -140,26 +174,42 @@ class WorkflowTagEngine(
         when (ids.isEmpty()) {
             true -> discardTagWithoutIds(message)
             false -> ids.forEach {
-                val sendToChannel = SendToChannel(
-                    clientName = message.clientName,
-                    workflowId = it,
-                    workflowName = message.workflowName,
-                    channelSignalId = message.channelSignalId,
-                    channelName = message.channelName,
-                    channelSignal = message.channelSignal,
-                    channelSignalTypes = message.channelSignalTypes
-                )
-                scope.launch { sendToWorkflowEngine(sendToChannel) }
+                // parent workflow already applied method to self
+                if (it != message.emitterWorkflowId) {
+                    val sendSignal = SendSignal(
+                        workflowName = message.workflowName,
+                        workflowId = it,
+                        channelName = message.channelName,
+                        channelSignalId = message.channelSignalId,
+                        channelSignal = message.channelSignal,
+                        channelSignalTypes = message.channelSignalTypes,
+                        emitterName = clientName
+                    )
+                    scope.launch { sendToWorkflowEngine(sendSignal) }
+                }
             }
         }
     }
 
-    private suspend fun addWorkflowTag(message: AddWorkflowTag) {
+    private suspend fun addWorkflowTag(message: AddTagToWorkflow) {
         storage.addWorkflowId(message.workflowTag, message.workflowName, message.workflowId)
     }
 
-    private suspend fun removeWorkflowTag(message: RemoveWorkflowTag) {
+    private suspend fun removeWorkflowTag(message: RemoveTagFromWorkflow) {
         storage.removeWorkflowId(message.workflowTag, message.workflowName, message.workflowId)
+    }
+
+    private suspend fun getWorkflowIds(message: GetWorkflowIdsByTag) {
+        val workflowIds = storage.getWorkflowIds(message.workflowTag, message.workflowName)
+
+        val workflowIdsPerTag = WorkflowIdsPerTag(
+            emitterName = clientName,
+            recipientName = message.emitterName,
+            message.workflowName,
+            message.workflowTag,
+            workflowIds
+        )
+        scope.launch { sendToClient(workflowIdsPerTag) }
     }
 
     private suspend fun hasMessageAlreadyBeenHandled(message: WorkflowTagEngineMessage) =

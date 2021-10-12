@@ -44,10 +44,10 @@ typealias PulsarWorkflowEngineMessageToProcess = PulsarMessageToProcess<Workflow
 
 @Suppress("UNCHECKED_CAST")
 fun CoroutineScope.startPulsarWorkflowEngines(
-    workflowName: WorkflowName,
+    name: String,
     concurrency: Int,
     storage: WorkflowStateStorage,
-    consumerName: String,
+    workflowName: WorkflowName,
     consumerFactory: PulsarConsumerFactory,
     output: PulsarOutput
 ) {
@@ -62,7 +62,7 @@ fun CoroutineScope.startPulsarWorkflowEngines(
         val workflowTaskEngine = output.sendToTaskEngine(TopicType.NEW, workflowName)
 
         startWorkflowEngine(
-            "workflow-engine:$count",
+            "workflow-engine-$count: $name",
             storage,
             eventsInputChannel = eventsInputChannel,
             eventsOutputChannel = eventsOutputChannel,
@@ -78,13 +78,13 @@ fun CoroutineScope.startPulsarWorkflowEngines(
 
         // Pulsar consumers
         val existingConsumer = consumerFactory.newConsumer(
-            consumerName = "$consumerName:$count",
+            consumerName = "$name:$count",
             workflowTopic = WorkflowTopic.ENGINE_EXISTING,
             workflowName = workflowName
         ) as Consumer<WorkflowEngineEnvelope>
 
         val newConsumer = consumerFactory.newConsumer(
-            consumerName = "$consumerName:$count",
+            consumerName = "$name:$count",
             workflowTopic = WorkflowTopic.ENGINE_NEW,
             workflowName = workflowName
         ) as Consumer<WorkflowEngineEnvelope>

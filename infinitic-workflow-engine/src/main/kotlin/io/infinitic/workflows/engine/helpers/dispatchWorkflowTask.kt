@@ -25,7 +25,6 @@
 
 package io.infinitic.workflows.engine.helpers
 
-import io.infinitic.common.clients.data.ClientName
 import io.infinitic.common.data.MillisInstant
 import io.infinitic.common.data.methods.MethodName
 import io.infinitic.common.data.methods.MethodParameterTypes
@@ -46,7 +45,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
 internal fun CoroutineScope.dispatchWorkflowTask(
-    workflowEngineOutput: WorkflowEngineOutput,
+    output: WorkflowEngineOutput,
     state: WorkflowState,
     methodRun: MethodRun,
     methodRunPosition: MethodRunPosition
@@ -62,16 +61,15 @@ internal fun CoroutineScope.dispatchWorkflowTask(
         workflowMeta = state.workflowMeta,
         workflowPropertiesHashValue = state.propertiesHashValue, // TODO filterStore(state.propertyStore, listOf(methodRun))
         workflowTaskIndex = state.workflowTaskIndex,
-        methodRun = methodRun,
-        targetPosition = methodRunPosition
+        methodRun = methodRun
     )
 
     // defines workflow task
     val workflowTask = DispatchTask(
-        clientName = ClientName("workflow engine"),
-        clientWaiting = false,
-        taskId = TaskId(),
         taskName = TaskName(WorkflowTask::class.java.name),
+        taskId = TaskId(),
+        taskOptions = TaskOptions(),
+        clientWaiting = false,
         methodName = MethodName(WorkflowTask::handle.name),
         methodParameterTypes = MethodParameterTypes(listOf(WorkflowTaskParameters::class.java.name)),
         methodParameters = MethodParameters.from(workflowTaskParameters),
@@ -79,12 +77,12 @@ internal fun CoroutineScope.dispatchWorkflowTask(
         workflowName = state.workflowName,
         methodRunId = methodRun.methodRunId,
         taskTags = setOf(),
-        taskOptions = TaskOptions(),
-        taskMeta = TaskMeta()
+        taskMeta = TaskMeta(),
+        emitterName = output.clientName
     )
 
     // dispatch workflow task
-    launch { workflowEngineOutput.sendToTaskEngine(workflowTask) }
+    launch { output.sendToTaskEngine(workflowTask) }
 
     with(state) {
         runningWorkflowTaskId = workflowTask.taskId

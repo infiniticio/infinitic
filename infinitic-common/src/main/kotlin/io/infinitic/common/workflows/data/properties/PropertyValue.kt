@@ -36,7 +36,7 @@ import kotlinx.serialization.encoding.Encoder
 @Serializable(with = PropertyValueSerializer::class)
 data class PropertyValue(override val serializedData: SerializedData) : Data(serializedData) {
     companion object {
-        fun from(data: Any?) = PropertyValue(SerializedData.from(data))
+        inline fun <reified T> from(data: T?) = PropertyValue(SerializedData.from(data))
     }
 
     fun hash() = PropertyHash(serializedData.hash())

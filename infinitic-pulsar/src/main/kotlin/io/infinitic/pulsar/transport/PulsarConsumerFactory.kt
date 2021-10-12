@@ -209,7 +209,7 @@ class PulsarConsumerFactory(
                 subscriptionName = subscriptionName,
                 ackTimeout = 60
             )
-            GlobalTopic.NAMER -> throw thisShouldNotHappen()
+            GlobalTopic.NAMER -> thisShouldNotHappen()
         }
     }
 

@@ -25,14 +25,15 @@
 
 package io.infinitic.workflows.engine.handlers
 
-import io.infinitic.common.clients.messages.MethodFailed
+import io.infinitic.common.clients.messages.FailedMethod
 import io.infinitic.common.workflows.data.commands.CommandId
 import io.infinitic.common.workflows.data.commands.CommandStatus.Canceled
 import io.infinitic.common.workflows.data.commands.CommandStatus.Completed
 import io.infinitic.common.workflows.data.commands.CommandStatus.CurrentlyFailed
 import io.infinitic.common.workflows.data.commands.CommandStatus.Running
-import io.infinitic.common.workflows.engine.messages.ChildWorkflowFailed
+import io.infinitic.common.workflows.engine.messages.ChildMethodFailed
 import io.infinitic.common.workflows.engine.messages.TaskFailed
+import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
 import io.infinitic.common.workflows.engine.state.WorkflowState
 import io.infinitic.exceptions.thisShouldNotHappen
 import io.infinitic.workflows.engine.output.WorkflowEngineOutput
@@ -43,40 +44,54 @@ internal fun CoroutineScope.workflowTaskFailed(
     output: WorkflowEngineOutput,
     state: WorkflowState,
     message: TaskFailed
-) {
-    // if on main path, forward the error
-    if (state.isRunningWorkflowTaskOnMainPath()) {
-        val methodRun = state.getRunningMethodRun()
+): MutableList<WorkflowEngineMessage> {
+    val methodRun = state.getRunningMethodRun()
 
-        // if the error is due to a a command failure, we enrich the error
-        val error = when (message.error.errorCause == null && message.error.whereId != null) {
-            true -> message.error.copy(
-                errorCause = when (val commandStatus = methodRun.getPastCommand(CommandId(message.error.whereId!!)).commandStatus) {
-                    is Completed -> thisShouldNotHappen()
-                    Running -> thisShouldNotHappen()
-                    is CurrentlyFailed -> commandStatus.error
-                    is Canceled -> null
-                }
-            )
-            false -> message.error
-        }
+    // if the error is due to a command failure, we enrich the error
+    val error = when (message.taskError.errorCause == null && message.taskError.whereId != null) {
+        true -> message.taskError.copy(
+            errorCause = when (val commandStatus = state.getPastCommand(CommandId(message.taskError.whereId!!), methodRun).commandStatus) {
+                is Completed -> thisShouldNotHappen()
+                Running -> thisShouldNotHappen()
+                is CurrentlyFailed -> commandStatus.error
+                is Canceled -> null
+            }
+        )
+        false -> message.taskError
+    }
 
-        // send to waiting clients
-        methodRun.waitingClients.forEach {
-            val workflowFailed = MethodFailed(it, state.workflowId, methodRun.methodRunId, error)
-            launch { output.sendEventsToClient(workflowFailed) }
-        }
+    // send to waiting clients
+    methodRun.waitingClients.forEach {
+        val failedMethod = FailedMethod(
+            emitterName = output.clientName,
+            recipientName = it,
+            state.workflowId,
+            methodRun.methodRunId,
+            error
+        )
+        launch { output.sendEventsToClient(failedMethod) }
+    }
 
-        // send to parent workflow
-        methodRun.parentWorkflowId?. run {
-            val childWorkflowFailed = ChildWorkflowFailed(
-                workflowId = methodRun.parentWorkflowId!!,
-                workflowName = methodRun.parentWorkflowName!!,
-                methodRunId = methodRun.parentMethodRunId!!,
-                childWorkflowId = state.workflowId,
-                childWorkflowError = error
-            )
-            launch { output.sendToWorkflowEngine(childWorkflowFailed) }
+    val bufferedMessages = mutableListOf<WorkflowEngineMessage>()
+
+    // send to parent workflow
+    methodRun.parentWorkflowId?.let {
+        val childMethodFailed = ChildMethodFailed(
+            workflowName = methodRun.parentWorkflowName ?: thisShouldNotHappen(),
+            workflowId = methodRun.parentWorkflowId ?: thisShouldNotHappen(),
+            methodRunId = methodRun.parentMethodRunId ?: thisShouldNotHappen(),
+            childWorkflowId = state.workflowId,
+            childMethodRunId = methodRun.methodRunId,
+            childWorkflowError = error,
+            emitterName = output.clientName
+        )
+        if (it == state.workflowId) {
+            // case of method dispatched within same workflow
+            bufferedMessages.add(childMethodFailed)
+        } else {
+            launch { output.sendToWorkflowEngine(childMethodFailed) }
         }
     }
+
+    return bufferedMessages
 }

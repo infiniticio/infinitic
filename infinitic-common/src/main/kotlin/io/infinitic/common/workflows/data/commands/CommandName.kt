@@ -23,26 +23,21 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.workflows.engine.handlers
+package io.infinitic.common.workflows.data.commands
 
-import io.infinitic.common.workflows.data.commands.CommandId
-import io.infinitic.common.workflows.data.commands.CommandStatus.Canceled
-import io.infinitic.common.workflows.engine.messages.ChildWorkflowCanceled
-import io.infinitic.common.workflows.engine.state.WorkflowState
-import io.infinitic.workflows.engine.helpers.commandTerminated
-import io.infinitic.workflows.engine.output.WorkflowEngineOutput
-import kotlinx.coroutines.CoroutineScope
+import io.infinitic.common.data.methods.MethodName
+import io.infinitic.common.tasks.data.TaskName
+import io.infinitic.common.workflows.data.channels.ChannelName
+import io.infinitic.common.workflows.data.workflows.WorkflowName
+import kotlinx.serialization.Serializable
 
-internal fun CoroutineScope.childWorkflowCanceled(
-    workflowEngineOutput: WorkflowEngineOutput,
-    state: WorkflowState,
-    message: ChildWorkflowCanceled
-) {
-    commandTerminated(
-        workflowEngineOutput,
-        state,
-        message.methodRunId,
-        CommandId.from(message.childWorkflowId),
-        Canceled(state.workflowTaskIndex)
-    )
+@JvmInline @Serializable
+value class CommandName private constructor(private val name: String) {
+    companion object {
+        fun from(taskName: TaskName) = CommandName(taskName.toString())
+        fun from(workflowName: WorkflowName) = CommandName(workflowName.toString())
+        fun from(methodName: MethodName) = CommandName(methodName.toString())
+        fun from(channelName: ChannelName) = CommandName(channelName.toString())
+    }
+    override fun toString() = name
 }

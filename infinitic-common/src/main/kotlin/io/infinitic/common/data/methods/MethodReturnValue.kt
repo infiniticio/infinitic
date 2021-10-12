@@ -36,7 +36,7 @@ import kotlinx.serialization.encoding.Encoder
 @Serializable(with = MethodReturnValueSerializer::class)
 data class MethodReturnValue(override val serializedData: SerializedData) : Data(serializedData) {
     companion object {
-        fun from(data: Any?) = MethodReturnValue(SerializedData.from(data))
+        inline fun <reified T> from(data: T?) = MethodReturnValue(SerializedData.from(data))
     }
 }
 

@@ -25,6 +25,7 @@
 
 package io.infinitic.tasks.executor.task
 
+import io.infinitic.common.data.methods.MethodParameters
 import io.infinitic.common.tasks.data.TaskOptions
 import io.infinitic.tasks.Task
 import java.lang.reflect.Method
@@ -32,6 +33,6 @@ import java.lang.reflect.Method
 internal data class TaskCommand(
     val task: Task,
     val method: Method,
-    val parameters: List<Any?>,
+    val parameters: MethodParameters,
     val options: TaskOptions
 )

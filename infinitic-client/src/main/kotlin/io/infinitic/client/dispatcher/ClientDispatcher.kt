@@ -44,22 +44,24 @@ interface ClientDispatcher : ProxyDispatcher {
 
     fun getLastDeferred(): Deferred<*>?
 
-    fun <R : Any?> dispatchAsync(
+    fun <R> dispatchAsync(
         handler: ProxyHandler<*>
     ): CompletableFuture<Deferred<R>>
 
-    fun awaitTask(
+    fun <T> awaitTask(
+        returnClass: Class<T>,
         taskName: TaskName,
         taskId: TaskId,
         clientWaiting: Boolean
-    ): Any?
+    ): T
 
-    fun awaitWorkflow(
+    fun <T> awaitWorkflow(
+        returnClass: Class<T>,
         workflowName: WorkflowName,
         workflowId: WorkflowId,
-        methodRunId: MethodRunId,
+        methodRunId: MethodRunId?,
         clientWaiting: Boolean
-    ): Any?
+    ): T
 
     fun completeTaskAsync(
         taskName: TaskName,
@@ -84,6 +86,7 @@ interface ClientDispatcher : ProxyDispatcher {
     fun cancelWorkflowAsync(
         workflowName: WorkflowName,
         workflowId: WorkflowId?,
+        methodRunId: MethodRunId?,
         workflowTag: WorkflowTag?
     ): CompletableFuture<Unit>
 

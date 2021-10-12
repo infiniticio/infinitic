@@ -38,13 +38,13 @@ data class WorkflowEngineEnvelope(
     val cancelWorkflow: CancelWorkflow? = null,
     val retryWorkflowTask: RetryWorkflowTask? = null,
     val completeWorkflow: CompleteWorkflow? = null,
-    val sendToChannel: SendToChannel? = null,
-    val childWorkflowFailed: ChildWorkflowFailed? = null,
-    val childWorkflowCanceled: ChildWorkflowCanceled? = null,
-    val childWorkflowCompleted: ChildWorkflowCompleted? = null,
+    val sendSignal: SendSignal? = null,
+    val childMethodFailed: ChildMethodFailed? = null,
+    val childMethodCanceled: ChildMethodCanceled? = null,
+    val childMethodCompleted: ChildMethodCompleted? = null,
     val timerCompleted: TimerCompleted? = null,
     val dispatchWorkflow: DispatchWorkflow? = null,
-    val dispatchMethodRun: DispatchMethodRun? = null,
+    val dispatchMethod: DispatchMethod? = null,
     val taskFailed: TaskFailed? = null,
     val taskCanceled: TaskCanceled? = null,
     val taskCompleted: TaskCompleted? = null
@@ -55,13 +55,13 @@ data class WorkflowEngineEnvelope(
             cancelWorkflow,
             retryWorkflowTask,
             completeWorkflow,
-            sendToChannel,
-            childWorkflowFailed,
-            childWorkflowCanceled,
-            childWorkflowCompleted,
+            sendSignal,
+            childMethodFailed,
+            childMethodCanceled,
+            childMethodCompleted,
             timerCompleted,
             dispatchWorkflow,
-            dispatchMethodRun,
+            dispatchMethod,
             taskFailed,
             taskCanceled,
             taskCompleted
@@ -106,25 +106,25 @@ data class WorkflowEngineEnvelope(
                 WorkflowEngineMessageType.COMPLETE_WORKFLOW,
                 completeWorkflow = msg
             )
-            is SendToChannel -> WorkflowEngineEnvelope(
+            is SendSignal -> WorkflowEngineEnvelope(
                 msg.workflowId,
                 WorkflowEngineMessageType.EMIT_TO_CHANNEL,
-                sendToChannel = msg
+                sendSignal = msg
             )
-            is ChildWorkflowFailed -> WorkflowEngineEnvelope(
+            is ChildMethodFailed -> WorkflowEngineEnvelope(
                 msg.workflowId,
                 WorkflowEngineMessageType.CHILD_WORKFLOW_FAILED,
-                childWorkflowFailed = msg
+                childMethodFailed = msg
             )
-            is ChildWorkflowCanceled -> WorkflowEngineEnvelope(
+            is ChildMethodCanceled -> WorkflowEngineEnvelope(
                 msg.workflowId,
                 WorkflowEngineMessageType.CHILD_WORKFLOW_CANCELED,
-                childWorkflowCanceled = msg
+                childMethodCanceled = msg
             )
-            is ChildWorkflowCompleted -> WorkflowEngineEnvelope(
+            is ChildMethodCompleted -> WorkflowEngineEnvelope(
                 msg.workflowId,
                 WorkflowEngineMessageType.CHILD_WORKFLOW_COMPLETED,
-                childWorkflowCompleted = msg
+                childMethodCompleted = msg
             )
             is TimerCompleted -> WorkflowEngineEnvelope(
                 msg.workflowId,
@@ -136,10 +136,10 @@ data class WorkflowEngineEnvelope(
                 WorkflowEngineMessageType.DISPATCH_WORKFLOW,
                 dispatchWorkflow = msg
             )
-            is DispatchMethodRun -> WorkflowEngineEnvelope(
+            is DispatchMethod -> WorkflowEngineEnvelope(
                 msg.workflowId,
                 WorkflowEngineMessageType.DISPATCH_WORKFLOW_METHOD,
-                dispatchMethodRun = msg
+                dispatchMethod = msg
             )
             is TaskFailed -> WorkflowEngineEnvelope(
                 msg.workflowId,
@@ -166,13 +166,13 @@ data class WorkflowEngineEnvelope(
         WorkflowEngineMessageType.CANCEL_WORKFLOW -> cancelWorkflow!!
         WorkflowEngineMessageType.RETRY_WORKFLOW_TASK -> retryWorkflowTask!!
         WorkflowEngineMessageType.COMPLETE_WORKFLOW -> completeWorkflow!!
-        WorkflowEngineMessageType.EMIT_TO_CHANNEL -> sendToChannel!!
-        WorkflowEngineMessageType.CHILD_WORKFLOW_FAILED -> childWorkflowFailed!!
-        WorkflowEngineMessageType.CHILD_WORKFLOW_CANCELED -> childWorkflowCanceled!!
-        WorkflowEngineMessageType.CHILD_WORKFLOW_COMPLETED -> childWorkflowCompleted!!
+        WorkflowEngineMessageType.EMIT_TO_CHANNEL -> sendSignal!!
+        WorkflowEngineMessageType.CHILD_WORKFLOW_FAILED -> childMethodFailed!!
+        WorkflowEngineMessageType.CHILD_WORKFLOW_CANCELED -> childMethodCanceled!!
+        WorkflowEngineMessageType.CHILD_WORKFLOW_COMPLETED -> childMethodCompleted!!
         WorkflowEngineMessageType.TIMER_COMPLETED -> timerCompleted!!
         WorkflowEngineMessageType.DISPATCH_WORKFLOW -> dispatchWorkflow!!
-        WorkflowEngineMessageType.DISPATCH_WORKFLOW_METHOD -> dispatchMethodRun!!
+        WorkflowEngineMessageType.DISPATCH_WORKFLOW_METHOD -> dispatchMethod!!
         WorkflowEngineMessageType.TASK_FAILED -> taskFailed!!
         WorkflowEngineMessageType.TASK_CANCELED -> taskCanceled!!
         WorkflowEngineMessageType.TASK_COMPLETED -> taskCompleted!!

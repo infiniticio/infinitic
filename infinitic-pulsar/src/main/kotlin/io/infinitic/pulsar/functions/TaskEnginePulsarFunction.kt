@@ -27,6 +27,7 @@ package io.infinitic.pulsar.functions
 
 import io.infinitic.cache.caffeine.Caffeine
 import io.infinitic.cache.caffeine.CaffeineKeyValueCache
+import io.infinitic.common.clients.data.ClientName
 import io.infinitic.common.storage.keyValue.CachedKeyValueStorage
 import io.infinitic.common.tasks.engine.messages.TaskEngineEnvelope
 import io.infinitic.pulsar.functions.storage.keyValueStorage
@@ -57,6 +58,7 @@ class TaskEnginePulsarFunction : Function<TaskEngineEnvelope, Void> {
         val output = PulsarOutput.from(context)
 
         return TaskEngine(
+            ClientName(""),
             BinaryTaskStateStorage(
                 // context storage decorated with logging and a 1h cache
                 CachedKeyValueStorage(

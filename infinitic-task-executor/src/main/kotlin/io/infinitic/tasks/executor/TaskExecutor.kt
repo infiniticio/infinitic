@@ -26,7 +26,9 @@
 package io.infinitic.tasks.executor
 
 import io.infinitic.client.InfiniticClient
+import io.infinitic.common.clients.data.ClientName
 import io.infinitic.common.data.MillisDuration
+import io.infinitic.common.data.methods.MethodParameters
 import io.infinitic.common.data.methods.MethodReturnValue
 import io.infinitic.common.errors.Error
 import io.infinitic.common.parser.getMethodPerNameAndParameters
@@ -52,6 +54,7 @@ import java.lang.reflect.InvocationTargetException
 import java.lang.reflect.Method
 
 class TaskExecutor(
+    private val clientName: ClientName,
     private val taskExecutorRegister: TaskExecutorRegister,
     private val sendToTaskEngine: SendToTaskEngine,
     private val clientFactory: () -> InfiniticClient
@@ -107,8 +110,6 @@ class TaskExecutor(
             }
             sendTaskCompleted(message, output, TaskMeta(task.context.meta))
         } catch (e: InvocationTargetException) {
-            logger.error(e) {}
-
             val cause = e.cause
             if (cause is Exception) {
                 failTaskWithRetry(task, message, cause)
@@ -116,19 +117,18 @@ class TaskExecutor(
                 sendTaskAttemptFailed(message, cause ?: e, null, TaskMeta(task.context.meta))
             }
         } catch (e: TimeoutCancellationException) {
-            logger.error(e) {}
             val cause = ProcessingTimeoutException(task.javaClass.name, options.runningTimeout!!)
             // returning a timeout
             failTaskWithRetry(task, message, cause)
         } catch (e: Throwable) {
-            logger.error(e) {}
             // returning the exception (no retry)
             sendTaskAttemptFailed(message, e, null, TaskMeta(task.context.meta))
         }
     }
 
-    private suspend fun runTask(method: Method, task: Any, parameters: List<Any?>) = coroutineScope {
-        val output = method.invoke(task, *parameters.toTypedArray())
+    private suspend fun runTask(method: Method, task: Any, methodParameters: MethodParameters) = coroutineScope {
+        val parameter = methodParameters.map { it.deserialize() }.toTypedArray()
+        val output = method.invoke(task, *parameter)
         ensureActive()
         output
     }
@@ -172,7 +172,7 @@ class TaskExecutor(
             msg.methodParameters.size
         )
 
-        return TaskCommand(task, method, msg.methodParameters.get(), msg.taskOptions)
+        return TaskCommand(task, method, msg.methodParameters, msg.taskOptions)
     }
 
     private fun getDurationBeforeRetry(task: Task, cause: Exception) = try {
@@ -195,14 +195,15 @@ class TaskExecutor(
         logger.error(cause) { "task ${message.taskName} (${message.taskId}) - error: $cause" }
 
         val taskAttemptFailed = TaskAttemptFailed(
-            taskId = message.taskId,
             taskName = message.taskName,
+            taskId = message.taskId,
+            taskAttemptDelayBeforeRetry = delay,
             taskAttemptId = message.taskAttemptId,
             taskRetrySequence = message.taskRetrySequence,
             taskRetryIndex = message.taskRetryIndex,
-            taskAttemptDelayBeforeRetry = delay,
             taskAttemptError = Error.from(cause),
-            taskMeta = taskMeta
+            taskMeta = taskMeta,
+            emitterName = clientName
         )
 
         sendToTaskEngine(taskAttemptFailed)
@@ -214,13 +215,14 @@ class TaskExecutor(
         taskMeta: TaskMeta
     ) {
         val taskAttemptCompleted = TaskAttemptCompleted(
-            taskId = message.taskId,
             taskName = message.taskName,
+            taskId = message.taskId,
+            taskRetryIndex = message.taskRetryIndex,
             taskAttemptId = message.taskAttemptId,
             taskRetrySequence = message.taskRetrySequence,
-            taskRetryIndex = message.taskRetryIndex,
             taskReturnValue = MethodReturnValue.from(returnValue),
-            taskMeta = taskMeta
+            taskMeta = taskMeta,
+            emitterName = clientName
         )
 
         sendToTaskEngine(taskAttemptCompleted)

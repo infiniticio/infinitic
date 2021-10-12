@@ -62,8 +62,8 @@ internal fun Workflow.getProperties() = getPropertiesFromObject(this) {
         it.first.returnType.javaType.typeName != WorkflowDispatcher::class.java.name &&
         // excludes Channels
         !it.first.returnType.isSubtypeOf(Channel::class.starProjectedType) &&
-        // excludes Proxies (tasks and workflows)
-        !Proxy.isProxyClass(it.second!!::class.java) &&
+        // excludes Proxies (tasks and workflows) and null
+        !(it.second?. let { Proxy.isProxyClass(it::class.java) } ?: true) &&
         // exclude SLF4J loggers
         !it.first.returnType.isSubtypeOf(org.slf4j.Logger::class.createType()) &&
         // exclude Ignore annotation

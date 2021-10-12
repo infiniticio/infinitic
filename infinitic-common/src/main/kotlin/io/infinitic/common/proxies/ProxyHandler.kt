@@ -29,13 +29,12 @@ import io.infinitic.annotations.Name
 import io.infinitic.common.data.methods.MethodName
 import io.infinitic.common.data.methods.MethodParameterTypes
 import io.infinitic.common.data.methods.MethodParameters
-import io.infinitic.exceptions.thisShouldNotHappen
+import io.infinitic.exceptions.workflows.InvalidInlineException
 import io.infinitic.workflows.SendChannel
 import java.lang.reflect.InvocationHandler
 import java.lang.reflect.Method
 import java.lang.reflect.Proxy
 import kotlin.reflect.full.isSubclassOf
-import io.infinitic.common.proxies.Method as DataMethod
 
 sealed class ProxyHandler<T : Any>(
     open val klass: Class<out T>,
@@ -43,24 +42,47 @@ sealed class ProxyHandler<T : Any>(
 ) : InvocationHandler {
 
     companion object {
-        @JvmStatic private val invocationType: ThreadLocal<ProxyInvokeMode> = ThreadLocal.withInitial { ProxyInvokeMode.DISPATCH_SYNC }
-        @JvmStatic private val invocationHandler: ThreadLocal<ProxyHandler<*>?> = ThreadLocal()
+        @JvmStatic private val isInlined: ThreadLocal<Boolean> = ThreadLocal.withInitial { false }
+        @JvmStatic private val isInvocationAsync: ThreadLocal<Boolean> = ThreadLocal.withInitial { false }
+        @JvmStatic private val invocationHandler: ThreadLocal<ProxyHandler<*>?> = ThreadLocal.withInitial { null }
 
-        fun <R : Any?> async(invoke: () -> R): ProxyHandler<*>? {
-            // set mode flag to Async
-            invocationType.set(ProxyInvokeMode.DISPATCH_ASYNC)
-            // this is needed for nullity test in private InfiniticClient::dispatch function
-            invocationHandler.set(null)
+        fun <R> async(fct: () -> R): ProxyHandler<*>? {
+            if (isInlined.get()) throw InvalidInlineException
+
+            // set invocation flag to Async
+            isInvocationAsync.set(true)
             // call the method reference
-            invoke()
-            // reset mode flag to default Sync
-            invocationType.set(ProxyInvokeMode.DISPATCH_SYNC)
+            fct()
+            val handler = invocationHandler.get()
+            // reset default value
+            isInvocationAsync.set(false)
+            invocationHandler.set(null)
 
-            return invocationHandler.get()
+            return handler
+        }
+
+        /**
+         * This method can be used to get the result of fct()
+         * an InvalidInlineException is thrown if `fct` uses a proxy
+         */
+        fun <R> inline(fct: () -> R): R {
+            isInlined.set(true)
+            return try {
+                fct()
+            } finally {
+                isInlined.set(false)
+            }
         }
     }
 
+    /**
+     * Method called
+     */
     lateinit var method: Method
+
+    /**
+     * Args of method called
+     */
     lateinit var methodArgs: Array<out Any>
 
     /**
@@ -73,7 +95,7 @@ sealed class ProxyHandler<T : Any>(
     /**
      * Class name provided by @Name annotation, or java class name by default
      */
-    protected val className: String by lazy {
+    protected val name: String by lazy {
         classAnnotatedName ?: klass.name
     }
 
@@ -85,11 +107,32 @@ sealed class ProxyHandler<T : Any>(
         get() = "${classAnnotatedName ?: klass.simpleName}::$methodName"
 
     /**
-     * Method name provided by @Name annotation, or java method name by default
+     * MethodName provided by @Name annotation, or java method name by default
      */
-    val methodName: String
-        //  MUST be a get() as this.method can change when reusing instance
-        get() = findMethodNamePerAnnotation(klass, method) ?: method.name
+    val methodName: MethodName
+        //  MUST be a get() as this.method changes
+        get() = MethodName(findMethodNamePerAnnotation(klass, method) ?: method.name)
+
+    /**
+     * MethodParameterTypes from method
+     */
+    val methodParameterTypes: MethodParameterTypes
+        //  MUST be a get() as this.method changes
+        get() = MethodParameterTypes.from(method)
+
+    /**
+     * ReturnType from method
+     */
+    val returnType: Class<*>
+        //  MUST be a get() as this.method changes
+        get() = method.returnType
+
+    /**
+     * MethodParameters from method
+     */
+    val methodParameters: MethodParameters
+        //  MUST be a get() as this.method changes
+        get() = MethodParameters.from(method, methodArgs)
 
     /**
      * provides a stub of type T
@@ -101,16 +144,9 @@ sealed class ProxyHandler<T : Any>(
         this
     ) as T
 
-    /**
-     * provides details of method called
-     */
-    fun method() = DataMethod(
-        MethodName(methodName),
-        MethodParameterTypes.from(method),
-        MethodParameters.from(method, methodArgs),
-    )
-
     override fun invoke(proxy: Any, method: Method, args: Array<out Any>?): Any? {
+        if (isInlined.get()) throw InvalidInlineException
+
         val any = getAsyncReturnValue(method)
 
         if (method.declaringClass == Object::class.java) return when (method.name) {
@@ -121,14 +157,16 @@ sealed class ProxyHandler<T : Any>(
         this.method = method
         this.methodArgs = args ?: arrayOf()
 
-        // set current handler
-        invocationHandler.set(this)
-
-        return when (isInvokeSync()) {
+        return when (isInvocationAsync.get()) {
             // sync => run directly from dispatcher
-            true -> dispatcherFn().dispatchAndWait(this)
+            false -> dispatcherFn().dispatchAndWait(this)
             // store current instance to get retrieved from ProxyHandler.async
-            false -> any
+            true -> {
+                // set current handler
+                invocationHandler.set(this)
+                // return fake value
+                any
+            }
         }
     }
 
@@ -136,13 +174,6 @@ sealed class ProxyHandler<T : Any>(
      * Check if method is a getter on a SendChannel
      */
     fun isChannelGetter(): Boolean = method.returnType.kotlin.isSubclassOf(SendChannel::class)
-
-    // Check if user has asked for a synchronous call
-    private fun isInvokeSync(): Boolean = when (invocationType.get()) {
-        ProxyInvokeMode.DISPATCH_SYNC -> true
-        ProxyInvokeMode.DISPATCH_ASYNC -> false
-        null -> thisShouldNotHappen()
-    }
 
     // Returns a type-compatible value to avoid an exception at runtime
     private fun getAsyncReturnValue(method: Method) = when (method.returnType.name) {

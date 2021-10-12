@@ -25,9 +25,7 @@
 
 package io.infinitic.common.errors
 
-import io.infinitic.exceptions.workflows.CanceledDeferredException
-import io.infinitic.exceptions.workflows.FailedDeferredException
-import io.infinitic.exceptions.workflows.TimedOutDeferredException
+import io.infinitic.exceptions.workflows.WorkflowRunException
 import kotlinx.serialization.Serializable
 
 /**
@@ -53,7 +51,7 @@ data class Error(
 
     /**
      * for CanceledDeferredException, FailedDeferredException, TimedOutDeferredException
-     * id of the failing task or child workflow where the error occurred
+     * id of the failing task or workflow where the error occurred
      */
     val whereId: String? = null,
 
@@ -69,34 +67,33 @@ data class Error(
     val errorCause: Error?
 ) {
     companion object {
-        fun from(throwable: Throwable): Error {
-            val whereId = when (throwable) {
-                is CanceledDeferredException -> throwable.id
-                is FailedDeferredException -> throwable.id
-                is TimedOutDeferredException -> throwable.id
+        fun from(throwable: Throwable): Error = Error(
+            errorName = throwable::class.java.name,
+            errorMessage = throwable.message,
+            errorStackTraceToString = when (throwable) {
+                is WorkflowRunException -> null
+                else -> throwable.stackTraceToString()
+            },
+            whereId = when (throwable) {
+                is WorkflowRunException -> throwable.id
                 else -> null
-            }
-
-            val whereName = when (throwable) {
-                is CanceledDeferredException -> throwable.name
-                is FailedDeferredException -> throwable.name
-                is TimedOutDeferredException -> throwable.name
+            },
+            whereName = when (throwable) {
+                is WorkflowRunException -> throwable.name
                 else -> null
+            },
+            errorCause = when (val cause = throwable.cause) {
+                throwable, null -> null
+                else -> from(cause)
             }
-
-            return Error(
-                errorName = throwable::class.java.name,
-                errorMessage = throwable.message,
-                errorStackTraceToString = if (whereId != null) throwable.stackTraceToString() else null,
-                errorCause = run {
-                    val cause = throwable.cause
-                    if (cause == throwable || cause == null) null else from(cause)
-                },
-                whereId = whereId,
-                whereName = whereName
-            )
-        }
+        )
     }
 
-    override fun toString(): String = errorStackTraceToString ?: "$errorName: $errorMessage"
+    override fun toString(): String = mapOf(
+        "errorName" to errorName,
+        "errorMessage" to errorMessage,
+        "whereId" to whereId,
+        "whereName" to whereName,
+        "errorCause" to errorCause.toString()
+    ).toString()
 }

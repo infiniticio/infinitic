@@ -34,15 +34,7 @@ import java.time.Instant
 
 interface WorkflowDispatcher : ProxyDispatcher {
 
-    override fun <R : Any?> dispatchAndWait(handler: ProxyHandler<*>): R =
-        dispatch<R>(handler, true).await()
-
-    fun <R : Any?> dispatch(
-        handler: ProxyHandler<*>,
-        clientWaiting: Boolean
-    ): Deferred<R>
-
-    fun <T> async(branch: () -> T): Deferred<T>
+    fun <R : Any?> dispatch(handler: ProxyHandler<*>, clientWaiting: Boolean): Deferred<R>
 
     fun <T> inline(task: () -> T): T
 
@@ -58,5 +50,5 @@ interface WorkflowDispatcher : ProxyDispatcher {
 
     fun <S : T, T : Any> receiveFromChannel(channel: ChannelImpl<T>, klass: Class<S>, jsonPath: String?, criteria: Criteria?): Deferred<S>
 
-    fun <T : Any> sendToChannel(channel: ChannelImpl<T>, event: T)
+    fun <T : Any> sendToChannel(channel: ChannelImpl<T>, signal: T)
 }

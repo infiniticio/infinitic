@@ -25,6 +25,7 @@
 
 package io.infinitic.tags.workflows
 
+import io.infinitic.common.clients.data.ClientName
 import io.infinitic.common.clients.messages.ClientMessage
 import io.infinitic.common.clients.messages.WorkflowIdsPerTag
 import io.infinitic.common.clients.transport.SendToClient
@@ -35,11 +36,11 @@ import io.infinitic.common.workflows.data.workflows.WorkflowName
 import io.infinitic.common.workflows.data.workflows.WorkflowTag
 import io.infinitic.common.workflows.engine.SendToWorkflowEngine
 import io.infinitic.common.workflows.engine.messages.CancelWorkflow
-import io.infinitic.common.workflows.engine.messages.SendToChannel
+import io.infinitic.common.workflows.engine.messages.SendSignal
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
-import io.infinitic.common.workflows.tags.messages.CancelWorkflowPerTag
-import io.infinitic.common.workflows.tags.messages.GetWorkflowIds
-import io.infinitic.common.workflows.tags.messages.SendToChannelPerTag
+import io.infinitic.common.workflows.tags.messages.CancelWorkflowByTag
+import io.infinitic.common.workflows.tags.messages.GetWorkflowIdsByTag
+import io.infinitic.common.workflows.tags.messages.SendSignalByTag
 import io.infinitic.common.workflows.tags.messages.WorkflowTagEngineMessage
 import io.infinitic.tags.workflows.storage.WorkflowTagStorage
 import io.kotest.core.spec.style.StringSpec
@@ -56,6 +57,8 @@ import io.mockk.mockk
 import io.mockk.slot
 
 private fun <T : Any> captured(slot: CapturingSlot<T>) = if (slot.isCaptured) slot.captured else null
+
+private val clientName = ClientName("clientWorkflowTagEngineTests")
 
 private lateinit var stateMessageId: CapturingSlot<String>
 private lateinit var stateWorkflowId: CapturingSlot<String>
@@ -91,7 +94,7 @@ internal class WorkflowTagEngineTests : StringSpec({
     "cancelWorkflowPerTag should cancel workflow" {
         // given
         val workflowIds = setOf(WorkflowId(), WorkflowId())
-        val msgIn = random<CancelWorkflowPerTag>()
+        val msgIn = random<CancelWorkflowByTag>()
         // when
         getEngine(msgIn.workflowTag, msgIn.workflowName, workflowIds = workflowIds).handle(msgIn)
         // then
@@ -114,22 +117,22 @@ internal class WorkflowTagEngineTests : StringSpec({
     "sendToChannelPerTag should send to channel" {
         // given
         val workflowIds = setOf(WorkflowId(), WorkflowId())
-        val msgIn = random<SendToChannelPerTag>()
+        val msgIn = random<SendSignalByTag>()
         // when
         getEngine(msgIn.workflowTag, msgIn.workflowName, workflowIds = workflowIds).handle(msgIn)
         // then
         coVerifySequence {
             workflowTagStorage.getLastMessageId(msgIn.workflowTag, msgIn.workflowName)
             workflowTagStorage.getWorkflowIds(msgIn.workflowTag, msgIn.workflowName)
-            sendToWorkflowEngine(ofType<SendToChannel>())
-            sendToWorkflowEngine(ofType<SendToChannel>())
+            sendToWorkflowEngine(ofType<SendSignal>())
+            sendToWorkflowEngine(ofType<SendSignal>())
             workflowTagStorage.setLastMessageId(msgIn.workflowTag, msgIn.workflowName, msgIn.messageId)
         }
         verifyAll()
         // checking last message
-        val sendToChannel = captured(workflowEngineMessage)!! as SendToChannel
+        val sendSignal = captured(workflowEngineMessage)!! as SendSignal
 
-        with(sendToChannel) {
+        with(sendSignal) {
             workflowId shouldBe workflowIds.last()
             workflowName shouldBe msgIn.workflowName
             channelSignal shouldBe msgIn.channelSignal
@@ -142,7 +145,7 @@ internal class WorkflowTagEngineTests : StringSpec({
 
     "getWorkflowIdsPerTag should return set of ids" {
         // given
-        val msgIn = random<GetWorkflowIds>()
+        val msgIn = random<GetWorkflowIdsByTag>()
         val workflowId1 = WorkflowId()
         val workflowId2 = WorkflowId()
         // when
@@ -206,7 +209,7 @@ private fun getEngine(
     sendToWorkflowEngine = mockSendToWorkflowEngine(workflowEngineMessage)
     sendToClient = mockSendToClient(clientMessage)
 
-    return WorkflowTagEngine(workflowTagStorage, sendToWorkflowEngine, sendToClient)
+    return WorkflowTagEngine(clientName, workflowTagStorage, sendToWorkflowEngine, sendToClient)
 }
 
 private fun verifyAll() = confirmVerified(

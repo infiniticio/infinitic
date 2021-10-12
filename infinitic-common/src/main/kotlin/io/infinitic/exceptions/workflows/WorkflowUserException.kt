@@ -40,15 +40,6 @@ class NoMethodCallAtAsyncException(
     help = "Make sure to call exactly one method of \"$klass\" within the curly braces - example: async(foo) { bar(*args) }"
 )
 
-class MultipleMethodCallsAtAsyncException(
-    klass: String,
-    method1: String?,
-    method2: String
-) : WorkflowUserException(
-    msg = "Only one method of \"$klass\" can be called at a time. You can not call \"$method2\" method as you have already called \"$method1\"",
-    help = "Make sure you call only one method of \"$klass\" - multiple calls in the provided lambda is forbidden"
-)
-
 class ShouldNotWaitInsideInlinedTaskException(
     method: String
 ) : WorkflowUserException(
@@ -56,11 +47,9 @@ class ShouldNotWaitInsideInlinedTaskException(
     help = "In $method, make sure you do not wait for task or child workflow completion inside `inline { ... }`"
 )
 
-class ShouldNotUseAsyncFunctionInsideInlinedTaskException(
-    method: String
-) : WorkflowUserException(
-    msg = "Asynchronous computation inside an inlined task in forbidden",
-    help = "In $method, make sure you do not use `async { ... }` function inside `task { ... }`"
+object InvalidInlineException : WorkflowUserException(
+    msg = "Task or workflow must not be used inside an inline function",
+    help = ""
 )
 
 class ParametersInChannelMethodException(
@@ -93,7 +82,7 @@ object NameNotInitializedInChannelException : WorkflowUserException(
     help = "Make sure to have a method that returns this channel."
 )
 
-class WorkflowUpdatedWhileRunningException(
+class WorkflowUpdatedException(
     workflow: String,
     method: String,
     position: String

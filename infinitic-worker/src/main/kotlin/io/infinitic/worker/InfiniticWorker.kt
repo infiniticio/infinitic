@@ -222,7 +222,7 @@ abstract class InfiniticWorker(open val workerConfig: WorkerConfig) : Closeable 
                 startTaskExecutors(taskName, task.concurrency)
             }
 
-            // starting engines managing tags of tasks
+            // starting engines managing tags of taskws
             task.tagEngine?.let {
                 logger.info {
                     "- tag engine".padEnd(25) + ": (" +

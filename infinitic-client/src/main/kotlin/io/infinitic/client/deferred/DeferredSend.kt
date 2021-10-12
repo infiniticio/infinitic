@@ -35,11 +35,11 @@ internal class DeferredSend<R : Any?> (
 ) : Deferred<R> {
 
     override fun cancelAsync(): CompletableFuture<Unit> {
-        throw thisShouldNotHappen()
+        thisShouldNotHappen()
     }
 
     override fun retryAsync(): CompletableFuture<Unit> {
-        throw thisShouldNotHappen()
+        thisShouldNotHappen()
     }
 
     // Send return type is always CompletableFuture<Unit>

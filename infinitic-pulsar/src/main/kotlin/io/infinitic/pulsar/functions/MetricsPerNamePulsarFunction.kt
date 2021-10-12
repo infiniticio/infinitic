@@ -27,6 +27,7 @@ package io.infinitic.pulsar.functions
 
 import io.infinitic.cache.caffeine.Caffeine
 import io.infinitic.cache.caffeine.CaffeineKeyValueCache
+import io.infinitic.common.clients.data.ClientName
 import io.infinitic.common.metrics.perName.messages.MetricsPerNameEnvelope
 import io.infinitic.common.storage.keyValue.CachedKeyValueStorage
 import io.infinitic.metrics.perName.engine.MetricsPerNameEngine
@@ -53,6 +54,7 @@ class MetricsPerNamePulsarFunction : Function<MetricsPerNameEnvelope, Void> {
     }
 
     internal fun getMetricsPerNameEngine(context: Context) = MetricsPerNameEngine(
+        ClientName(""),
         BinaryMetricsPerNameStateStorage(
             // context storage decorated with logging and a 1h cache
             CachedKeyValueStorage(

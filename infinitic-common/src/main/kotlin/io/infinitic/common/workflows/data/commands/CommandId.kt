@@ -26,20 +26,18 @@
 package io.infinitic.common.workflows.data.commands
 
 import io.infinitic.common.tasks.data.TaskId
+import io.infinitic.common.workflows.data.methodRuns.MethodRunId
 import io.infinitic.common.workflows.data.timers.TimerId
 import io.infinitic.common.workflows.data.workflows.WorkflowId
 import kotlinx.serialization.Serializable
 import java.util.UUID
 
 @JvmInline @Serializable
-value class CommandId(private val id: String) {
+value class CommandId(private val id: String = UUID.randomUUID().toString()) {
     companion object {
-        fun random() = CommandId(UUID.randomUUID().toString())
-
         fun from(taskId: TaskId) = CommandId(taskId.toString())
-
         fun from(workflowId: WorkflowId) = CommandId(workflowId.toString())
-
+        fun from(methodRunId: MethodRunId) = CommandId(methodRunId.toString())
         fun from(timerId: TimerId) = CommandId(timerId.toString())
     }
 

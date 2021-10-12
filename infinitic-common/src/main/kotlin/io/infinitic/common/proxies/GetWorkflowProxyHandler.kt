@@ -43,5 +43,5 @@ class GetWorkflowProxyHandler<K : Any>(
         }
     }
 
-    val workflowName = WorkflowName(className)
+    val workflowName = WorkflowName(name)
 }

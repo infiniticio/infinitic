@@ -29,19 +29,27 @@ import io.infinitic.common.errors.Error
 import io.infinitic.exceptions.RunException
 
 sealed class WorkflowRunException(
+    val name: String?,
+    val id: String,
     msg: String,
     causeError: Error? = null
 ) : RunException(msg, causeError)
 
-class CanceledDeferredException(val name: String?, val id: String) : WorkflowRunException(
+class CanceledDeferredException(name: String?, id: String) : WorkflowRunException(
+    name,
+    id,
     msg = "Waiting for a canceled deferred: $name ($id)",
 )
 
-class FailedDeferredException(val name: String?, val id: String, error: Error? = null) : WorkflowRunException(
+class FailedDeferredException(name: String?, id: String, error: Error? = null) : WorkflowRunException(
+    name,
+    id,
     msg = "Waiting for a failed deferred: $name ($id)",
     causeError = error
 )
 
-class TimedOutDeferredException(val name: String?, val id: String) : WorkflowRunException(
+class TimedOutDeferredException(name: String?, id: String) : WorkflowRunException(
+    name,
+    id,
     msg = "Waiting for a timed-out deferred: $name ($id)",
 )

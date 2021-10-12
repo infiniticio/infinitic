@@ -94,10 +94,10 @@ abstract class InfiniticClient : Closeable {
         ClientDispatcherImpl(
             sendingScope,
             clientName,
-            sendToTaskTagEngine,
             sendToTaskEngine,
-            sendToWorkflowTagEngine,
-            sendToWorkflowEngine
+            sendToWorkflowEngine,
+            sendToTaskTagEngine,
+            sendToWorkflowTagEngine
         )
     }
 
@@ -681,6 +681,7 @@ abstract class InfiniticClient : Closeable {
         is GetTaskProxyHandler -> when {
             handler.taskId != null ->
                 dispatcher.awaitTask(
+                    handler.returnType,
                     handler.taskName,
                     handler.taskId!!,
                     false
@@ -688,20 +689,21 @@ abstract class InfiniticClient : Closeable {
             handler.taskTag != null ->
                 TODO("Not yet implemented")
             else ->
-                throw thisShouldNotHappen()
+                thisShouldNotHappen()
         }
         is GetWorkflowProxyHandler -> when {
             handler.workflowId != null ->
                 dispatcher.awaitWorkflow(
+                    handler.returnType,
                     handler.workflowName,
                     handler.workflowId!!,
-                    MethodRunId.from(handler.workflowId!!),
+                    null,
                     false
                 )
             handler.workflowTag != null ->
                 TODO("Not yet implemented")
             else ->
-                throw thisShouldNotHappen()
+                thisShouldNotHappen()
         }
         else -> throw InvalidStubException("$stub")
     }
@@ -717,15 +719,16 @@ abstract class InfiniticClient : Closeable {
         is GetWorkflowProxyHandler -> when {
             handler.workflowId != null ->
                 dispatcher.awaitWorkflow(
+                    handler.returnType,
                     handler.workflowName,
                     handler.workflowId!!,
                     MethodRunId(methodRunId),
                     false
                 )
             handler.workflowTag != null ->
-                TODO("Not yet implemented")
+                throw InvalidStubException("$stub")
             else ->
-                throw thisShouldNotHappen()
+                thisShouldNotHappen()
         }
         else -> throw InvalidStubException("$stub")
     }
@@ -740,7 +743,7 @@ abstract class InfiniticClient : Closeable {
         is GetTaskProxyHandler ->
             dispatcher.cancelTaskAsync(handler.taskName, handler.taskId, handler.taskTag)
         is GetWorkflowProxyHandler ->
-            dispatcher.cancelWorkflowAsync(handler.workflowName, handler.workflowId, handler.workflowTag)
+            dispatcher.cancelWorkflowAsync(handler.workflowName, handler.workflowId, null, handler.workflowTag)
         else ->
             throw InvalidStubException("$stub")
     }

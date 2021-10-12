@@ -25,6 +25,7 @@
 
 package io.infinitic.metrics.perName.engine
 
+import io.infinitic.common.clients.data.ClientName
 import io.infinitic.common.fixtures.TestFactory
 import io.infinitic.common.metrics.global.messages.TaskCreated
 import io.infinitic.common.metrics.global.transport.SendToMetricsGlobal
@@ -42,6 +43,8 @@ import io.mockk.runs
 import io.mockk.slot
 
 class MetricsPerNameTests : ShouldSpec({
+    val clientName = ClientName("clientMetricsPerNameTests")
+
     context("TaskMetrics.handle") {
         should("should update TaskMetricsState when receiving TaskStatusUpdate message") {
             val storage = mockk<MetricsPerNameStateStorage>()
@@ -58,6 +61,7 @@ class MetricsPerNameTests : ShouldSpec({
             coEvery { storage.putState(msg.taskName, capture(stateOutSlot)) } just runs
 
             val metricsPerName = MetricsPerNameEngine(
+                clientName,
                 storage,
                 mockSendToMetricsGlobal()
             )
@@ -86,7 +90,7 @@ class MetricsPerNameTests : ShouldSpec({
             coEvery { storage.getState(msg.taskName) } returns null
             coEvery { storage.putState(msg.taskName, capture(stateOutSlot)) } just runs
             val sendToMetricsGlobal = mockSendToMetricsGlobal()
-            val metricsPerName = MetricsPerNameEngine(storage, sendToMetricsGlobal)
+            val metricsPerName = MetricsPerNameEngine(clientName, storage, sendToMetricsGlobal)
 
             // when
             metricsPerName.handle(msg)

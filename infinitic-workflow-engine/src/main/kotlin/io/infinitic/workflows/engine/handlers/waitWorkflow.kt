@@ -25,7 +25,8 @@
 
 package io.infinitic.workflows.engine.handlers
 
-import io.infinitic.common.clients.messages.MethodAlreadyCompleted
+import io.infinitic.common.clients.messages.UnknownMethod
+import io.infinitic.common.workflows.data.methodRuns.MethodRunId
 import io.infinitic.common.workflows.engine.messages.WaitWorkflow
 import io.infinitic.common.workflows.engine.state.WorkflowState
 import io.infinitic.workflows.engine.output.WorkflowEngineOutput
@@ -37,16 +38,17 @@ internal fun CoroutineScope.waitWorkflow(
     state: WorkflowState,
     message: WaitWorkflow
 ) {
-    when (val methodRun = state.getMethodRun(message.methodRunId)) {
+
+    when (val methodRun = state.getMethodRun(message.methodRunId ?: MethodRunId.from(message.workflowId))) {
         null -> {
-            // this branch is already completed (can not be canceled, the state would be deleted)
-            val workflowAlreadyCompleted = MethodAlreadyCompleted(
-                message.clientName,
+            val unknownMethod = UnknownMethod(
+                output.clientName,
+                message.emitterName,
                 message.workflowId,
                 message.methodRunId
             )
-            launch { output.sendEventsToClient(workflowAlreadyCompleted) }
+            launch { output.sendEventsToClient(unknownMethod) }
         }
-        else -> methodRun.waitingClients.add(message.clientName)
+        else -> methodRun.waitingClients.add(message.emitterName)
     }
 }

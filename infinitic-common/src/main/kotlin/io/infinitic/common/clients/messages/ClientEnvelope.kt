@@ -39,11 +39,11 @@ data class ClientEnvelope(
     private val taskFailed: TaskFailed? = null,
     private val taskUnknown: TaskUnknown? = null,
     private val taskIdsPerTag: TaskIdsPerTag? = null,
-    private val workflowCompleted: MethodCompleted? = null,
-    private val workflowCanceled: MethodCanceled? = null,
-    private val workflowFailed: MethodFailed? = null,
-    private val unknownWorkflow: MethodUnknown? = null,
-    private val workflowAlreadyCompleted: MethodAlreadyCompleted? = null,
+    private val workflowCompleted: CompletedMethod? = null,
+    private val workflowCanceled: CanceledMethod? = null,
+    private val workflowFailed: FailedMethod? = null,
+    private val unknownWorkflow: UnknownMethod? = null,
+    private val workflowAlreadyCompleted: AlreadyCompletedMethod? = null,
     private val workflowIdsPerTag: WorkflowIdsPerTag? = null
 ) : Envelope<ClientMessage> {
     init {
@@ -63,63 +63,63 @@ data class ClientEnvelope(
 
         require(noNull.size == 1)
         require(noNull.first() == message())
-        require(noNull.first().clientName == clientName)
+        require(noNull.first().emitterName == clientName)
     }
 
     companion object {
         fun from(msg: ClientMessage) = when (msg) {
             is TaskCompleted -> ClientEnvelope(
-                msg.clientName,
+                msg.emitterName,
                 ClientMessageType.TASK_COMPLETED,
                 taskCompleted = msg
             )
             is TaskCanceled -> ClientEnvelope(
-                msg.clientName,
+                msg.emitterName,
                 ClientMessageType.TASK_CANCELED,
                 taskCanceled = msg
             )
             is TaskFailed -> ClientEnvelope(
-                msg.clientName,
+                msg.emitterName,
                 ClientMessageType.TASK_FAILED,
                 taskFailed = msg
             )
             is TaskUnknown -> ClientEnvelope(
-                msg.clientName,
+                msg.emitterName,
                 ClientMessageType.UNKNOWN_TASK,
                 taskUnknown = msg
             )
             is TaskIdsPerTag -> ClientEnvelope(
-                msg.clientName,
+                msg.emitterName,
                 ClientMessageType.TASK_IDS_PER_TAG,
                 taskIdsPerTag = msg
             )
-            is MethodCompleted -> ClientEnvelope(
-                msg.clientName,
+            is CompletedMethod -> ClientEnvelope(
+                msg.emitterName,
                 ClientMessageType.WORKFLOW_COMPLETED,
                 workflowCompleted = msg
             )
-            is MethodCanceled -> ClientEnvelope(
-                msg.clientName,
+            is CanceledMethod -> ClientEnvelope(
+                msg.emitterName,
                 ClientMessageType.WORKFLOW_CANCELED,
                 workflowCanceled = msg
             )
-            is MethodFailed -> ClientEnvelope(
-                msg.clientName,
+            is FailedMethod -> ClientEnvelope(
+                msg.emitterName,
                 ClientMessageType.WORKFLOW_FAILED,
                 workflowFailed = msg
             )
-            is MethodUnknown -> ClientEnvelope(
-                msg.clientName,
+            is UnknownMethod -> ClientEnvelope(
+                msg.emitterName,
                 ClientMessageType.UNKNOWN_WORKFLOW,
                 unknownWorkflow = msg
             )
-            is MethodAlreadyCompleted -> ClientEnvelope(
-                msg.clientName,
+            is AlreadyCompletedMethod -> ClientEnvelope(
+                msg.emitterName,
                 ClientMessageType.WORKFLOW_ALREADY_COMPLETED,
                 workflowAlreadyCompleted = msg
             )
             is WorkflowIdsPerTag -> ClientEnvelope(
-                msg.clientName,
+                msg.emitterName,
                 ClientMessageType.WORKFLOW_IDS_PER_TAG,
                 workflowIdsPerTag = msg
             )

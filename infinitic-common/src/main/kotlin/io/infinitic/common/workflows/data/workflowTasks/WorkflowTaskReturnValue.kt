@@ -35,7 +35,7 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class WorkflowTaskReturnValue(
     val newCommands: List<NewCommand>,
-    val newSteps: List<NewStep>,
+    val newStep: NewStep?,
     val properties: Map<PropertyName, PropertyValue>,
     val methodReturnValue: MethodReturnValue?
 )

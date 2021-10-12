@@ -38,5 +38,5 @@ class NewTaskProxyHandler<K : Any>(
     override val dispatcherFn: () -> ProxyDispatcher
 ) : ProxyHandler<K>(klass, dispatcherFn) {
 
-    val taskName = TaskName(className)
+    val taskName = TaskName(name)
 }

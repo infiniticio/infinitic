@@ -41,11 +41,11 @@ private fun logError(messageToProcess: WorkflowEngineMessageToProcess, e: Throwa
 }
 
 fun <T : WorkflowEngineMessageToProcess> CoroutineScope.startWorkflowDelayEngine(
-    coroutineName: String,
+    name: String,
     inputChannel: ReceiveChannel<T>,
     outputChannel: SendChannel<T>,
     sendToWorkflowEngine: SendToWorkflowEngine,
-) = launch(CoroutineName(coroutineName)) {
+) = launch(CoroutineName(name)) {
 
     for (messageToProcess in inputChannel) {
         try {

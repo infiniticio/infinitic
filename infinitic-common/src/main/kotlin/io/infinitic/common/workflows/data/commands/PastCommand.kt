@@ -25,12 +25,11 @@
 
 package io.infinitic.common.workflows.data.commands
 
-import io.infinitic.common.data.Name
 import io.infinitic.common.workflows.data.methodRuns.MethodRunPosition
-import io.infinitic.common.workflows.data.properties.PropertyHash
-import io.infinitic.common.workflows.data.properties.PropertyName
-import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskIndex
 import io.infinitic.common.workflows.data.workflows.WorkflowChangeCheckMode
+import io.infinitic.common.workflows.data.workflows.WorkflowChangeCheckMode.ALL
+import io.infinitic.common.workflows.data.workflows.WorkflowChangeCheckMode.NONE
+import io.infinitic.common.workflows.data.workflows.WorkflowChangeCheckMode.SIMPLE_NAME_ONLY
 import kotlinx.serialization.Serializable
 
 @Serializable
@@ -39,23 +38,20 @@ data class PastCommand(
     val commandType: CommandType,
     val commandId: CommandId,
     val commandHash: CommandHash,
-    val commandName: Name?,
+    val commandName: CommandName?,
     val commandSimpleName: CommandSimpleName,
-    var commandStatus: CommandStatus,
-    // property below are used only for start_async command
-    var propertiesNameHashAtStart: Map<PropertyName, PropertyHash>? = null,
-    var workflowTaskIndexAtStart: WorkflowTaskIndex? = null
+    var commandStatus: CommandStatus
 ) {
     fun isTerminated() = commandStatus.isTerminated()
 
     fun isSameThan(newCommand: NewCommand, mode: WorkflowChangeCheckMode): Boolean =
         newCommand.commandPosition == commandPosition &&
             when (mode) {
-                WorkflowChangeCheckMode.NONE -> true
-                WorkflowChangeCheckMode.SIMPLE_NAME_ONLY ->
-                    newCommand.commandType == commandType &&
-                        newCommand.commandSimpleName == commandSimpleName
-                WorkflowChangeCheckMode.ALL ->
+                NONE ->
+                    true
+                SIMPLE_NAME_ONLY ->
+                    newCommand.commandType == commandType && newCommand.commandSimpleName == commandSimpleName
+                ALL ->
                     newCommand.commandHash == commandHash
             }
 }

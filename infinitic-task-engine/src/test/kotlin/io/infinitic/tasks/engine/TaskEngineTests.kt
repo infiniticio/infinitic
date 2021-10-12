@@ -53,7 +53,7 @@ import io.infinitic.common.tasks.executors.SendToTaskExecutors
 import io.infinitic.common.tasks.executors.messages.ExecuteTaskAttempt
 import io.infinitic.common.tasks.executors.messages.TaskExecutorMessage
 import io.infinitic.common.tasks.tags.SendToTaskTagEngine
-import io.infinitic.common.tasks.tags.messages.RemoveTaskTag
+import io.infinitic.common.tasks.tags.messages.RemoveTagFromTask
 import io.infinitic.common.tasks.tags.messages.TaskTagEngineMessage
 import io.infinitic.common.workflows.engine.SendToWorkflowEngine
 import io.infinitic.common.workflows.engine.messages.TaskFailed
@@ -78,6 +78,8 @@ import io.infinitic.common.workflows.engine.messages.TaskCanceled as TaskCancele
 import io.infinitic.common.workflows.engine.messages.TaskCompleted as TaskCompletedInWorkflow
 
 private fun <T : Any> captured(slot: CapturingSlot<T>) = if (slot.isCaptured) slot.captured else null
+
+private val clientName = ClientName("clientTaskEngineTests")
 
 private lateinit var taskStateStorage: TaskStateStorage
 
@@ -158,8 +160,8 @@ internal class TaskEngineTests : StringSpec({
             taskStateStorage.getState(msgIn.taskId)
             sendToWorkflowEngine(ofType<TaskCanceledInWorkflow>())
             sendToClient(ofType<TaskCanceledInClient>())
-            sendToTaskTagEngine(ofType<RemoveTaskTag>())
-            sendToTaskTagEngine(ofType<RemoveTaskTag>())
+            sendToTaskTagEngine(ofType<RemoveTagFromTask>())
+            sendToTaskTagEngine(ofType<RemoveTagFromTask>())
             sendToMetricsPerName(ofType<TaskStatusUpdated>())
             taskStateStorage.delState(msgIn.taskId)
         }
@@ -261,8 +263,8 @@ internal class TaskEngineTests : StringSpec({
             sendToWorkflowEngine(ofType<TaskCompletedInWorkflow>())
             sendToClient(ofType<TaskCompletedInClient>())
             sendToClient(ofType<TaskCompletedInClient>())
-            sendToTaskTagEngine(ofType<RemoveTaskTag>())
-            sendToTaskTagEngine(ofType<RemoveTaskTag>())
+            sendToTaskTagEngine(ofType<RemoveTagFromTask>())
+            sendToTaskTagEngine(ofType<RemoveTagFromTask>())
             sendToMetricsPerName(ofType<TaskStatusUpdated>())
             taskStateStorage.delState(msgIn.taskId)
         }
@@ -536,6 +538,7 @@ private fun getEngine(state: TaskState?): TaskEngine {
     sendToMetricsPerName = mockSendToMetricsPerName(metricsPerNameMessage)
 
     return TaskEngine(
+        clientName,
         taskStateStorage,
         sendToClient,
         sendToTaskTagEngine,

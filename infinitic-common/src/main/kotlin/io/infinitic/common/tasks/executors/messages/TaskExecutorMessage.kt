@@ -25,6 +25,7 @@
 
 package io.infinitic.common.tasks.executors.messages
 
+import io.infinitic.common.clients.data.ClientName
 import io.infinitic.common.data.MessageId
 import io.infinitic.common.data.methods.MethodName
 import io.infinitic.common.data.methods.MethodParameterTypes
@@ -46,6 +47,7 @@ import kotlinx.serialization.Serializable
 @Serializable
 sealed class TaskExecutorMessage : Message {
     val messageId = MessageId()
+    abstract val emitterName: ClientName
     abstract val taskId: TaskId
     abstract val taskName: TaskName
 
@@ -54,8 +56,9 @@ sealed class TaskExecutorMessage : Message {
 
 @Serializable
 data class ExecuteTaskAttempt(
-    override val taskId: TaskId,
     override val taskName: TaskName,
+    override val taskId: TaskId,
+    val taskTags: Set<TaskTag>,
     val workflowId: WorkflowId?,
     val workflowName: WorkflowName?,
     val taskAttemptId: TaskAttemptId,
@@ -67,5 +70,5 @@ data class ExecuteTaskAttempt(
     val methodParameters: MethodParameters,
     val taskOptions: TaskOptions,
     val taskMeta: TaskMeta,
-    val taskTags: Set<TaskTag>
+    override val emitterName: ClientName
 ) : TaskExecutorMessage()

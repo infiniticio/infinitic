@@ -35,15 +35,15 @@ internal class DeferredChannel<R : SendChannel<*>> (
 ) : Deferred<R> {
 
     override fun cancelAsync(): CompletableFuture<Unit> {
-        throw thisShouldNotHappen()
+        thisShouldNotHappen()
     }
 
     override fun retryAsync(): CompletableFuture<Unit> {
-        throw thisShouldNotHappen()
+        thisShouldNotHappen()
     }
 
     override fun await(): R = channel
 
     override val id: String
-        get() { throw thisShouldNotHappen() }
+        get() { thisShouldNotHappen() }
 }

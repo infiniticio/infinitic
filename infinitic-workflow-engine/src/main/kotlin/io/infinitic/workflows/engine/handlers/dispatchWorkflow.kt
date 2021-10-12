@@ -42,7 +42,7 @@ internal fun CoroutineScope.dispatchWorkflow(
     val methodRun = MethodRun(
         methodRunId = MethodRunId.from(message.workflowId),
         waitingClients = when (message.clientWaiting) {
-            true -> mutableSetOf(message.clientName)
+            true -> mutableSetOf(message.emitterName)
             false -> mutableSetOf()
         },
         parentWorkflowId = message.parentWorkflowId,
@@ -65,7 +65,7 @@ internal fun CoroutineScope.dispatchWorkflow(
         methodRuns = mutableListOf(methodRun)
     )
 
-    dispatchWorkflowTask(workflowEngineOutput, state, methodRun, MethodRunPosition(""))
+    dispatchWorkflowTask(workflowEngineOutput, state, methodRun, MethodRunPosition.new())
 
     return state
 }

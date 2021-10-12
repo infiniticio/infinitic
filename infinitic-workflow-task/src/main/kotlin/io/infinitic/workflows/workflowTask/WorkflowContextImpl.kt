@@ -31,8 +31,10 @@ import io.infinitic.workflows.WorkflowContext
 internal data class WorkflowContextImpl(
     private val workflowTaskParameters: WorkflowTaskParameters
 ) : WorkflowContext {
+    // workflow name
+    override val name: String = workflowTaskParameters.workflowName.toString()
 
-    // internal workflow id
+    // workflow id
     override val id: String = workflowTaskParameters.workflowId.toString()
 
     // workflow tags provided at launch

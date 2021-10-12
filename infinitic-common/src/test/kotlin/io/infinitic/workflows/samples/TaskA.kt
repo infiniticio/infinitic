@@ -23,27 +23,14 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.workflows.engine.handlers
+package io.infinitic.workflows.samples
 
-import io.infinitic.common.workflows.data.commands.CommandId
-import io.infinitic.common.workflows.data.commands.CommandReturnValue
-import io.infinitic.common.workflows.data.commands.CommandStatus.Completed
-import io.infinitic.common.workflows.engine.messages.ChildWorkflowCompleted
-import io.infinitic.common.workflows.engine.state.WorkflowState
-import io.infinitic.workflows.engine.helpers.commandTerminated
-import io.infinitic.workflows.engine.output.WorkflowEngineOutput
-import kotlinx.coroutines.CoroutineScope
+interface ParentInterface {
+    fun parent(): String
+}
 
-internal fun CoroutineScope.childWorkflowCompleted(
-    workflowEngineOutput: WorkflowEngineOutput,
-    state: WorkflowState,
-    message: ChildWorkflowCompleted
-) {
-    commandTerminated(
-        workflowEngineOutput,
-        state,
-        message.methodRunId,
-        CommandId.from(message.childWorkflowId),
-        Completed(CommandReturnValue(message.childWorkflowReturnValue.serializedData), state.workflowTaskIndex)
-    )
+interface TaskA : ParentInterface {
+    fun concat(str1: String, str2: String): String
+    fun reverse(str: String): String
+    fun await(delay: Long): Long
 }

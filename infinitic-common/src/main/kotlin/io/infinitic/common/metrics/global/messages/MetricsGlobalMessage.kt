@@ -25,6 +25,7 @@
 
 package io.infinitic.common.metrics.global.messages
 
+import io.infinitic.common.clients.data.ClientName
 import io.infinitic.common.data.MessageId
 import io.infinitic.common.messages.Message
 import io.infinitic.common.tasks.data.TaskName
@@ -33,11 +34,12 @@ import kotlinx.serialization.Serializable
 @Serializable
 sealed class MetricsGlobalMessage : Message {
     val messageId = MessageId()
-
+    abstract val emitterName: ClientName
     override fun envelope() = MetricsGlobalEnvelope.from(this)
 }
 
 @Serializable
 data class TaskCreated(
-    val taskName: TaskName
+    val taskName: TaskName,
+    override val emitterName: ClientName
 ) : MetricsGlobalMessage()

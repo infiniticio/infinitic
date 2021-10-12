@@ -21,7 +21,7 @@
 #
 # Licensor: infinitic.io
 
-# Comment the line below to perform test on a local Pulsar cluster
+# Comment the line below to perform tests on a local Pulsar cluster
 transport: inMemory
 
 stateStorage: inMemory
@@ -32,7 +32,7 @@ pulsar:
   brokerServiceUrl: pulsar://localhost:6650
   webServiceUrl: http://localhost:8080
   tenant: infinitic
-  namespace: dev5
+  namespace: dev
 
 tasks:
   - name: annotatedTask

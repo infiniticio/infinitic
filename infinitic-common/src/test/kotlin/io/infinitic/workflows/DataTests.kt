@@ -23,23 +23,36 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.common.workflows
+package io.infinitic.workflows
 
-import com.github.avrokotlin.avro4k.Avro
 import io.infinitic.common.fixtures.TestFactory
-import io.infinitic.common.workflows.engine.state.WorkflowState
-import io.kotest.assertions.throwables.shouldNotThrowAny
+import io.infinitic.common.serDe.SerializedData
+import io.infinitic.common.workflows.data.steps.Step
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
+import io.mockk.mockk
+import kotlinx.serialization.decodeFromString
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
 
-class StateTests : StringSpec({
-    "WorkflowState should be avro-convertible" {
-        shouldNotThrowAny {
-            val msg = TestFactory.random<WorkflowState>()
-            val ser = WorkflowState.serializer()
-            val byteArray = Avro.default.encodeToByteArray(ser, msg)
-            val msg2 = Avro.default.decodeFromByteArray(ser, byteArray)
-            msg shouldBe msg2
-        }
+@OptIn(kotlinx.serialization.ExperimentalSerializationApi::class)
+class DataTests : StringSpec({
+    "Deferred should be serDe with SerializedData" {
+        val step = TestFactory.random<Step>()
+        val m1 = Deferred<String>(step).apply { this.workflowDispatcher = mockk(); this.stepStatus = mockk() }
+
+        val data = SerializedData.from(m1)
+        val m2 = data.deserialize()
+
+        m2 shouldBe m1
+    }
+
+    "Deferred should be json-serializable by kotlinx.serialization" {
+        val step = TestFactory.random<Step>()
+        val m1 = Deferred<String>(step).apply { this.workflowDispatcher = mockk() }
+        val json = Json.encodeToString(m1)
+        val m2 = Json.decodeFromString<Deferred<String>>(json)
+
+        m2 shouldBe m1
     }
 })

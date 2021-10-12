@@ -51,7 +51,7 @@ object Json {
         false -> mapper.writeValueAsString(msg)
     }
 
-    fun <T : Any> parse(json: String, klass: Class<out T>): T = mapper.readValue(json, klass)
+    fun <T> parse(json: String, klass: Class<out T>): T = mapper.readValue(json, klass)
 
     /**
      * Cause should not be included to the json, as it triggers

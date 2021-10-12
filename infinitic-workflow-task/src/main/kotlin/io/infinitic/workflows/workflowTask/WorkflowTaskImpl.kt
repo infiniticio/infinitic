@@ -39,6 +39,7 @@ import io.infinitic.exceptions.workflows.NonUniqueChannelFromChannelMethodExcept
 import io.infinitic.exceptions.workflows.ParametersInChannelMethodException
 import io.infinitic.tasks.Task
 import io.infinitic.workflows.Channel
+import io.infinitic.workflows.Deferred
 import io.infinitic.workflows.Workflow
 import java.lang.reflect.InvocationTargetException
 import java.time.Duration
@@ -81,9 +82,14 @@ class WorkflowTaskImpl : Task(), WorkflowTask {
             methodRun.methodParameters.size
         )
 
-        // run method and get return value (null if end not reached)
-        val parameters = methodRun.methodParameters.get().toTypedArray()
+        // get method parameters
+        // just in case those parameters contain some Deferred, we set the current dispatcher in the LocalThread
+        Deferred.setWorkflowDispatcher(workflow.dispatcher)
+        val parameters = methodRun.methodParameters.map { it.deserialize() }.toTypedArray()
+        // to avoid any side effect, we clear the LocalThread right away
+        Deferred.delWorkflowDispatcher()
 
+        // run method and get return value (null if end not reached)
         val methodReturnValue = try {
             MethodReturnValue.from(method.invoke(workflow, *parameters))
         } catch (e: InvocationTargetException) {
@@ -97,7 +103,7 @@ class WorkflowTaskImpl : Task(), WorkflowTask {
 
         return WorkflowTaskReturnValue(
             (workflow.dispatcher as WorkflowDispatcherImpl).newCommands,
-            (workflow.dispatcher as WorkflowDispatcherImpl).newSteps,
+            (workflow.dispatcher as WorkflowDispatcherImpl).newStep,
             properties,
             methodReturnValue
         )

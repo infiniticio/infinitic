@@ -25,15 +25,15 @@
 
 package io.infinitic.common.workflows.data.commands
 
-import io.infinitic.common.data.Name
+// import io.infinitic.common.data.Name
 import io.infinitic.common.workflows.data.methodRuns.MethodRunPosition
 import kotlinx.serialization.Serializable
 
 @Serializable
 data class NewCommand(
-    val commandId: CommandId = CommandId.random(),
+    val commandId: CommandId = CommandId(),
     val command: Command,
-    val commandName: Name?,
+    val commandName: CommandName?,
     val commandSimpleName: CommandSimpleName,
     val commandPosition: MethodRunPosition
 ) {
@@ -44,13 +44,11 @@ data class NewCommand(
     val commandType: CommandType = when (command) {
         is DispatchTask -> CommandType.DISPATCH_TASK
         is DispatchChildWorkflow -> CommandType.DISPATCH_CHILD_WORKFLOW
+        is DispatchChildMethod -> CommandType.DISPATCH_METHOD
+        is DispatchSignal -> CommandType.DISPATCH_SIGNAL
         is StartDurationTimer -> CommandType.START_DURATION_TIMER
         is StartInstantTimer -> CommandType.START_INSTANT_TIMER
-        is StartAsync -> CommandType.START_ASYNC
-        is EndAsync -> CommandType.END_ASYNC
-        is StartInlineTask -> CommandType.START_INLINE_TASK
-        is EndInlineTask -> CommandType.END_INLINE_TASK
-        is ReceiveInChannel -> CommandType.RECEIVE_IN_CHANNEL
-        is SendToChannel -> CommandType.SENT_TO_CHANNEL
+        is InlineTask -> CommandType.INLINE_TASK
+        is ReceiveFromChannel -> CommandType.RECEIVE_IN_CHANNEL
     }
 }

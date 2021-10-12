@@ -47,10 +47,10 @@ typealias PulsarTaskEngineMessageToProcess = PulsarMessageToProcess<TaskEngineMe
 
 @Suppress("UNCHECKED_CAST")
 fun CoroutineScope.startPulsarTaskEngines(
-    name: Name,
+    name: String,
     concurrency: Int,
     storage: TaskStateStorage,
-    consumerName: String,
+    jobName: Name,
     consumerFactory: PulsarConsumerFactory,
     output: PulsarOutput
 ) {
@@ -62,7 +62,7 @@ fun CoroutineScope.startPulsarTaskEngines(
         val commandsOutputChannel = Channel<PulsarTaskEngineMessageToProcess>()
 
         startTaskEngine(
-            "task-engine:$it",
+            "task-engine-$it: $name",
             storage,
             eventsInputChannel = eventsInputChannel,
             eventsOutputChannel = eventsOutputChannel,
@@ -70,39 +70,39 @@ fun CoroutineScope.startPulsarTaskEngines(
             commandsOutputChannel = commandsOutputChannel,
             output.sendToClient(),
             output.sendToTaskTagEngine(TopicType.EXISTING),
-            output.sendToTaskEngineAfter(name),
+            output.sendToTaskEngineAfter(jobName),
             output.sendToWorkflowEngine(TopicType.EXISTING),
-            output.sendToTaskExecutors(name),
+            output.sendToTaskExecutors(jobName),
             output.sendToMetricsPerName()
         )
 
         // Pulsar consumers
-        val existingConsumer = when (name) {
+        val existingConsumer = when (jobName) {
             is TaskName -> consumerFactory.newConsumer(
-                consumerName = "$consumerName:$it",
+                consumerName = "$name:$it",
                 taskTopic = TaskTopic.ENGINE_EXISTING,
-                taskName = name
+                taskName = jobName
             )
             is WorkflowName -> consumerFactory.newConsumer(
-                consumerName = "$consumerName:$it",
+                consumerName = "$name:$it",
                 workflowTaskTopic = WorkflowTaskTopic.ENGINE_EXISTING,
-                workflowName = name
+                workflowName = jobName
             )
-            else -> throw thisShouldNotHappen()
+            else -> thisShouldNotHappen()
         } as Consumer<TaskEngineEnvelope>
 
-        val newConsumer = when (name) {
+        val newConsumer = when (jobName) {
             is TaskName -> consumerFactory.newConsumer(
-                consumerName = "$consumerName:$it",
+                consumerName = "$name:$it",
                 taskTopic = TaskTopic.ENGINE_NEW,
-                taskName = name
+                taskName = jobName
             )
             is WorkflowName -> consumerFactory.newConsumer(
-                consumerName = "$consumerName:$it",
+                consumerName = "$name:$it",
                 workflowTaskTopic = WorkflowTaskTopic.ENGINE_NEW,
-                workflowName = name
+                workflowName = jobName
             )
-            else -> throw thisShouldNotHappen()
+            else -> thisShouldNotHappen()
         } as Consumer<TaskEngineEnvelope>
 
         // coroutine pulling pulsar events messages

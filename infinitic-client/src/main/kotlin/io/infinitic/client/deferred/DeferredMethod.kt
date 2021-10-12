@@ -30,24 +30,44 @@ import io.infinitic.client.dispatcher.ClientDispatcher
 import io.infinitic.common.workflows.data.methodRuns.MethodRunId
 import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.data.workflows.WorkflowName
+import io.infinitic.common.workflows.data.workflows.WorkflowTag
+import io.infinitic.exceptions.thisShouldNotHappen
 
-class DeferredWorkflow<R> (
+class DeferredMethod<R> (
     private val returnClass: Class<R>,
     internal val workflowName: WorkflowName,
-    internal val workflowId: WorkflowId,
+    internal val workflowId: WorkflowId?,
+    internal val methodRunId: MethodRunId?,
+    internal val workflowTag: WorkflowTag?,
     internal val clientWaiting: Boolean,
     private val dispatcher: ClientDispatcher,
 ) : Deferred<R> {
 
-    override fun cancelAsync() =
-        dispatcher.cancelWorkflowAsync(workflowName, workflowId, null, null)
+    override fun cancelAsync() = when {
+        workflowId != null ->
+            dispatcher.cancelWorkflowAsync(workflowName, workflowId, methodRunId, null)
+        workflowTag != null ->
+            dispatcher.cancelWorkflowAsync(workflowName, null, null, workflowTag)
+        else ->
+            thisShouldNotHappen()
+    }
 
-    override fun retryAsync() =
-        dispatcher.retryWorkflowAsync(workflowName, workflowId, null)
+    // this method retries workflowTask (unique for a workflow instance)
+    override fun retryAsync() = dispatcher.retryWorkflowAsync(workflowName, workflowId, workflowTag)
 
     @Suppress("UNCHECKED_CAST")
-    override fun await(): R =
-        dispatcher.awaitWorkflow(returnClass, workflowName, workflowId, MethodRunId.from(workflowId), clientWaiting)
+    override fun await(): R = when {
+        workflowId != null ->
+            dispatcher.awaitWorkflow(returnClass, workflowName, workflowId, methodRunId!!, clientWaiting)
+        workflowTag != null ->
+            throw Exception()
+        else ->
+            thisShouldNotHappen()
+    }
 
-    override val id: String = workflowId.toString()
+    override val id: String = when {
+        workflowId != null -> methodRunId!!.toString()
+        workflowTag != null -> throw Exception()
+        else -> thisShouldNotHappen()
+    }
 }

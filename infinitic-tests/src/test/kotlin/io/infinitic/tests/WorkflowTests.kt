@@ -31,6 +31,9 @@ import io.infinitic.common.tasks.data.TaskMeta
 import io.infinitic.common.workflows.data.workflows.WorkflowMeta
 import io.infinitic.exceptions.clients.CanceledException
 import io.infinitic.exceptions.clients.FailedException
+import io.infinitic.exceptions.workflows.CanceledDeferredException
+import io.infinitic.exceptions.workflows.FailedDeferredException
+import io.infinitic.exceptions.workflows.InvalidInlineException
 import io.infinitic.factory.InfiniticClientFactory
 import io.infinitic.factory.InfiniticWorkerFactory
 import io.infinitic.tests.tasks.TaskA
@@ -46,10 +49,7 @@ import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.collections.shouldBeIn
 import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.delay
-// import uk.org.lidalia.slf4jext.Level
 import java.time.Instant
-import io.infinitic.exceptions.workflows.CanceledDeferredException as CanceledInWorkflowException
-import io.infinitic.exceptions.workflows.FailedDeferredException as FailedInWorkflowException
 
 internal class WorkflowTests : StringSpec({
 
@@ -212,7 +212,8 @@ internal class WorkflowTests : StringSpec({
     }
 
     "Inline task with asynchronous task inside" {
-        workflowA.inline2(21) shouldBe "2 * 21 = 42"
+        val e = shouldThrow<FailedException> { workflowA.inline2(21) }
+        e.causeError!!.errorName shouldBe InvalidInlineException::class.java.name
     }
 
     "Inline task with synchronous task inside" {
@@ -457,7 +458,7 @@ internal class WorkflowTests : StringSpec({
     "failing task on main path should throw" {
         val e = shouldThrow<FailedException> { workflowA.failing2() }
 
-        e.causeError?.errorName shouldBe FailedInWorkflowException::class.java.name
+        e.causeError?.errorName shouldBe FailedDeferredException::class.java.name
         e.causeError?.whereName shouldBe TaskA::class.java.name
     }
 
@@ -480,7 +481,7 @@ internal class WorkflowTests : StringSpec({
     "Cancelling task on main path should throw " {
         val e = shouldThrow<FailedException> { workflowA.failing4() }
 
-        e.causeError?.errorName shouldBe CanceledInWorkflowException::class.java.name
+        e.causeError?.errorName shouldBe CanceledDeferredException::class.java.name
         e.causeError?.whereName shouldBe TaskA::class.java.name
     }
 
@@ -491,21 +492,21 @@ internal class WorkflowTests : StringSpec({
     "Cancelling child workflow on main path should throw" {
         val e = shouldThrow<FailedException> { workflowB.cancelChild1() }
 
-        e.causeError?.errorName shouldBe CanceledInWorkflowException::class.java.name
+        e.causeError?.errorName shouldBe CanceledDeferredException::class.java.name
         e.causeError?.whereName shouldBe WorkflowA::class.java.name
     }
 
     "Cancelling child workflow not on main path should not throw" {
-        workflowB.cancelChild2() shouldBe 100
+        workflowB.cancelChild2() shouldBe 200L
     }
 
     "Failure in child workflow on main path should throw exception" {
         val e = shouldThrow<FailedException> { workflowA.failing6() }
 
-        e.causeError?.errorName shouldBe FailedInWorkflowException::class.java.name
+        e.causeError?.errorName shouldBe FailedDeferredException::class.java.name
         e.causeError?.whereName shouldBe WorkflowA::class.java.name
 
-        e.causeError?.errorCause?.errorName shouldBe FailedInWorkflowException::class.java.name
+        e.causeError?.errorCause?.errorName shouldBe FailedDeferredException::class.java.name
         e.causeError?.errorCause?.whereName shouldBe TaskA::class.java.name
     }
 
@@ -522,6 +523,7 @@ internal class WorkflowTests : StringSpec({
 
         later {
             val t = client.getTaskById(TaskA::class.java, e.causeError?.whereId!!)
+            println("retry")
             client.retry(t)
         }
 

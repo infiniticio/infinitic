@@ -26,6 +26,8 @@
 package io.infinitic.workflows
 
 interface WorkflowContext {
+    val name: String
+
     val id: String
 
     val tags: Set<String>

@@ -27,8 +27,7 @@ package io.infinitic.workflows.engine.handlers
 
 import io.infinitic.common.workflows.data.methodRuns.MethodRun
 import io.infinitic.common.workflows.data.methodRuns.MethodRunPosition
-import io.infinitic.common.workflows.data.workflowTasks.plus
-import io.infinitic.common.workflows.engine.messages.DispatchMethodRun
+import io.infinitic.common.workflows.engine.messages.DispatchMethod
 import io.infinitic.common.workflows.engine.state.WorkflowState
 import io.infinitic.workflows.engine.helpers.dispatchWorkflowTask
 import io.infinitic.workflows.engine.output.WorkflowEngineOutput
@@ -37,12 +36,12 @@ import kotlinx.coroutines.CoroutineScope
 internal fun CoroutineScope.dispatchMethodRun(
     workflowEngineOutput: WorkflowEngineOutput,
     state: WorkflowState,
-    message: DispatchMethodRun
+    message: DispatchMethod
 ) {
     val methodRun = MethodRun(
         methodRunId = message.methodRunId,
         waitingClients = when (message.clientWaiting) {
-            true -> mutableSetOf(message.clientName)
+            true -> mutableSetOf(message.emitterName)
             false -> mutableSetOf()
         },
         parentWorkflowId = message.parentWorkflowId,
@@ -57,5 +56,5 @@ internal fun CoroutineScope.dispatchMethodRun(
 
     state.methodRuns.add(methodRun)
 
-    dispatchWorkflowTask(workflowEngineOutput, state, methodRun, MethodRunPosition(""))
+    dispatchWorkflowTask(workflowEngineOutput, state, methodRun, MethodRunPosition.new())
 }

@@ -47,6 +47,18 @@ fun getMethodPerNameAndParameters(
         ?: throw NoMethodFoundWithParameterTypesException(klass.name, name, parameterTypes)
 }
 
+fun classForName(name: String): Class<out Any> = when (name) {
+    "long" -> Long::class.java
+    "int" -> Int::class.java
+    "short" -> Short::class.java
+    "byte" -> Byte::class.java
+    "double" -> Double::class.java
+    "float" -> Float::class.java
+    "char" -> Char::class.java
+    "boolean" -> Boolean::class.java
+    else -> Class.forName(name)
+}
+
 private fun getMethodPerAnnotationAndParameterTypes(klass: Class<*>, name: String, parameterTypes: List<String>): Method? {
     var clazz = klass
 
@@ -78,18 +90,6 @@ private fun getMethodPerNameAndParameterTypes(klass: Class<*>, name: String, par
     klass.getMethod(name, *(parameterTypes.map { classForName(it) }.toTypedArray()))
 } catch (e: NoSuchMethodException) {
     null
-}
-
-private fun classForName(name: String): Class<out Any> = when (name) {
-    "long" -> Long::class.java
-    "int" -> Int::class.java
-    "short" -> Short::class.java
-    "byte" -> Byte::class.java
-    "double" -> Double::class.java
-    "float" -> Float::class.java
-    "char" -> Char::class.java
-    "boolean" -> Boolean::class.java
-    else -> Class.forName(name)
 }
 
 private fun getMethodPerAnnotationAndParametersCount(klass: Class<*>, name: String, parameterCount: Int): Method? {

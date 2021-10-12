@@ -25,6 +25,7 @@
 
 package io.infinitic.metrics.perName.engine
 
+import io.infinitic.common.clients.data.ClientName
 import io.infinitic.common.metrics.global.messages.TaskCreated
 import io.infinitic.common.metrics.global.transport.SendToMetricsGlobal
 import io.infinitic.common.metrics.perName.messages.MetricsPerNameMessage
@@ -36,6 +37,7 @@ import io.infinitic.metrics.perName.engine.storage.MetricsPerNameStateStorage
 import mu.KotlinLogging
 
 class MetricsPerNameEngine(
+    private val clientName: ClientName,
     storage: MetricsPerNameStateStorage,
     val sendToMetricsGlobal: SendToMetricsGlobal
 ) {
@@ -64,7 +66,10 @@ class MetricsPerNameEngine(
 
         // It's a new task type
         if (oldState == null) {
-            val taskCreated = TaskCreated(taskName = message.taskName)
+            val taskCreated = TaskCreated(
+                taskName = message.taskName,
+                emitterName = clientName
+            )
             sendToMetricsGlobal(taskCreated)
         }
 

@@ -23,9 +23,10 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.common.proxies
+package io.infinitic.common.clients.messages.interfaces
 
-enum class ProxyInvokeMode {
-    DISPATCH_SYNC,
-    DISPATCH_ASYNC
+import io.infinitic.common.workflows.data.workflows.WorkflowId
+
+interface WorkflowMessage {
+    val workflowId: WorkflowId
 }

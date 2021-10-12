@@ -31,7 +31,7 @@ import io.infinitic.common.serDe.avro.AvroSerDe
 import io.infinitic.common.tasks.data.TaskId
 import io.infinitic.common.workflows.data.channels.ReceivingChannel
 import io.infinitic.common.workflows.data.commands.CommandId
-import io.infinitic.common.workflows.data.commands.CommandType
+import io.infinitic.common.workflows.data.commands.PastCommand
 import io.infinitic.common.workflows.data.methodRuns.MethodRun
 import io.infinitic.common.workflows.data.methodRuns.MethodRunId
 import io.infinitic.common.workflows.data.methodRuns.MethodRunPosition
@@ -98,10 +98,9 @@ data class WorkflowState(
     /**
      * In some situations, we know that multiples branches must be processed.
      * As WorkflowTask handles branch one by one, we orderly buffer these branches here
-     * (it happens when a workflowTask decide to launch more than one async branch,
-     * or when more than one branch' steps are completed by the same message)
+     * (it happens when a terminated command completes currentStep on multiple MethodRuns)
      */
-    val runningMethodRunBufferedCommands: MutableList<CommandId> = mutableListOf(),
+    val runningTerminatedCommands: MutableList<CommandId> = mutableListOf(),
 
     /**
      * Instant when WorkflowTask currently running was triggered
@@ -150,6 +149,13 @@ data class WorkflowState(
 
     fun getMethodRun(methodRunId: MethodRunId) = methodRuns.firstOrNull() { it.methodRunId == methodRunId }
 
+    fun getPastCommand(commandId: CommandId, methodRun: MethodRun): PastCommand =
+        methodRun.getPastCommand(commandId)
+            // if we do not find in this methodRun, then search within others
+            ?: methodRuns.map { it.getPastCommand(commandId) }.firstOrNull() { it != null }
+            // methodRun should not be deleted if a step is still running
+            ?: thisShouldNotHappen()
+
     fun removeMethodRun(methodRun: MethodRun) {
         methodRuns.remove(methodRun)
 
@@ -170,18 +176,6 @@ data class WorkflowState(
         removeUnusedPropertyHash()
     }
 
-    fun getMainMethodRun() = methodRuns.find { it.methodRunId.toString() == workflowId.toString() }
-
-    /**
-     * true if the current workflow task is on main path
-     */
-    fun isRunningWorkflowTaskOnMainPath(): Boolean {
-        val p = runningMethodRunPosition ?: throw thisShouldNotHappen()
-
-        return p.isOnMainPath() &&
-            getRunningMethodRun().getCommandByPosition(p)?.commandType != CommandType.START_ASYNC
-    }
-
     /**
      * After completion or cancellation of methodRuns, we can clean up the properties not used anymore
      */
@@ -192,9 +186,6 @@ data class WorkflowState(
         methodRuns.forEach { methodRun ->
             methodRun.pastSteps.forEach { pastStep ->
                 pastStep.propertiesNameHashAtTermination?.forEach { propertyHashes.add(it.value) }
-            }
-            methodRun.pastCommands.forEach { pastCommand ->
-                pastCommand.propertiesNameHashAtStart?.forEach { propertyHashes.add(it.value) }
             }
             methodRun.propertiesNameHashAtStart.forEach { propertyHashes.add(it.value) }
         }

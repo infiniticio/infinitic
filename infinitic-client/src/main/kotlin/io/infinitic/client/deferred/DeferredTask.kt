@@ -30,7 +30,8 @@ import io.infinitic.client.dispatcher.ClientDispatcher
 import io.infinitic.common.tasks.data.TaskId
 import io.infinitic.common.tasks.data.TaskName
 
-class DeferredTask<R : Any?> (
+class DeferredTask<R> (
+    private val returnClass: Class<R>,
     internal val taskName: TaskName,
     internal val taskId: TaskId,
     internal val clientWaiting: Boolean,
@@ -41,8 +42,7 @@ class DeferredTask<R : Any?> (
 
     override fun retryAsync() = dispatcher.retryTaskAsync(taskName, taskId, null)
 
-    @Suppress("UNCHECKED_CAST")
-    override fun await(): R = dispatcher.awaitTask(taskName, taskId, clientWaiting) as R
+    override fun await(): R = dispatcher.awaitTask(returnClass, taskName, taskId, clientWaiting)
 
     override val id: String by lazy { taskId.toString() }
 }

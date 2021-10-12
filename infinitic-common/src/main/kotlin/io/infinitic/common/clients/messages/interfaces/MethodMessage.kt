@@ -26,9 +26,7 @@
 package io.infinitic.common.clients.messages.interfaces
 
 import io.infinitic.common.workflows.data.methodRuns.MethodRunId
-import io.infinitic.common.workflows.data.workflows.WorkflowId
 
-interface MethodMessage {
-    val workflowId: WorkflowId
+interface MethodMessage : WorkflowMessage {
     val methodRunId: MethodRunId
 }

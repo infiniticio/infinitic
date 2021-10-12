@@ -27,7 +27,7 @@ package io.infinitic.workflows.engine.handlers
 
 import io.infinitic.common.workflows.data.commands.CommandReturnValue
 import io.infinitic.common.workflows.data.commands.CommandStatus.Completed
-import io.infinitic.common.workflows.engine.messages.SendToChannel
+import io.infinitic.common.workflows.engine.messages.SendSignal
 import io.infinitic.common.workflows.engine.state.WorkflowState
 import io.infinitic.workflows.engine.helpers.commandTerminated
 import io.infinitic.workflows.engine.output.WorkflowEngineOutput
@@ -39,7 +39,7 @@ private val logger = KotlinLogging.logger {}
 internal fun CoroutineScope.sendToChannel(
     workflowEngineOutput: WorkflowEngineOutput,
     state: WorkflowState,
-    message: SendToChannel
+    message: SendSignal
 ) {
     state.receivingChannels.firstOrNull {
         it.channelName == message.channelName &&

@@ -36,7 +36,7 @@ import kotlinx.serialization.encoding.Encoder
 @Serializable(with = StepOutputSerializer::class)
 data class StepReturnValue(override val serializedData: SerializedData) : Data(serializedData) {
     companion object {
-        fun from(data: Any?) = StepReturnValue(SerializedData.from(data))
+        inline fun <reified T> from(data: T?) = StepReturnValue(SerializedData.from(data))
     }
 }
 

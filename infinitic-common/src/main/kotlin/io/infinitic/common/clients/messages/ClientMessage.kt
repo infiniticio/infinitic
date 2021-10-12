@@ -28,6 +28,7 @@ package io.infinitic.common.clients.messages
 import io.infinitic.common.clients.data.ClientName
 import io.infinitic.common.clients.messages.interfaces.MethodMessage
 import io.infinitic.common.clients.messages.interfaces.TaskMessage
+import io.infinitic.common.clients.messages.interfaces.WorkflowMessage
 import io.infinitic.common.data.MessageId
 import io.infinitic.common.data.methods.MethodReturnValue
 import io.infinitic.common.errors.Error
@@ -45,14 +46,16 @@ import kotlinx.serialization.Serializable
 @Serializable
 sealed class ClientMessage : Message {
     val messageId: MessageId = MessageId()
-    abstract val clientName: ClientName
+    abstract val emitterName: ClientName
+    abstract val recipientName: ClientName
 
     override fun envelope() = ClientEnvelope.from(this)
 }
 
 @Serializable
 data class TaskCompleted(
-    override val clientName: ClientName,
+    override val emitterName: ClientName,
+    override val recipientName: ClientName,
     override val taskId: TaskId,
     val taskReturnValue: MethodReturnValue,
     val taskMeta: TaskMeta
@@ -60,72 +63,82 @@ data class TaskCompleted(
 
 @Serializable
 data class TaskFailed(
-    override val clientName: ClientName,
+    override val emitterName: ClientName,
+    override val recipientName: ClientName,
     override val taskId: TaskId,
     val error: Error,
 ) : ClientMessage(), TaskMessage
 
 @Serializable
 data class TaskCanceled(
-    override val clientName: ClientName,
+    override val emitterName: ClientName,
+    override val recipientName: ClientName,
     override val taskId: TaskId,
     val taskMeta: TaskMeta
 ) : ClientMessage(), TaskMessage
 
 @Serializable
 data class TaskUnknown(
-    override val clientName: ClientName,
+    override val emitterName: ClientName,
+    override val recipientName: ClientName,
     override val taskId: TaskId
 ) : ClientMessage(), TaskMessage
 
 @Serializable
 data class TaskIdsPerTag(
-    override val clientName: ClientName,
+    override val emitterName: ClientName,
+    override val recipientName: ClientName,
     val taskName: TaskName,
     val taskTag: TaskTag,
     val taskIds: Set<TaskId>
 ) : ClientMessage()
 
 @Serializable
-data class MethodCompleted(
-    override val clientName: ClientName,
+data class CompletedMethod(
+    override val emitterName: ClientName,
+    override val recipientName: ClientName,
     override val workflowId: WorkflowId,
     override val methodRunId: MethodRunId,
-    val workflowReturnValue: MethodReturnValue
+    val methodReturnValue: MethodReturnValue
 ) : ClientMessage(), MethodMessage
 
 @Serializable
-data class MethodFailed(
-    override val clientName: ClientName,
+data class FailedMethod(
+    override val emitterName: ClientName,
+    override val recipientName: ClientName,
     override val workflowId: WorkflowId,
     override val methodRunId: MethodRunId,
     val error: Error
 ) : ClientMessage(), MethodMessage
 
 @Serializable
-data class MethodCanceled(
-    override val clientName: ClientName,
+data class CanceledMethod(
+    override val emitterName: ClientName,
+    override val recipientName: ClientName,
     override val workflowId: WorkflowId,
     override val methodRunId: MethodRunId,
 ) : ClientMessage(), MethodMessage
 
 @Serializable
-data class MethodUnknown(
-    override val clientName: ClientName,
+data class UnknownMethod(
+    override val emitterName: ClientName,
+    override val recipientName: ClientName,
     override val workflowId: WorkflowId,
-    override val methodRunId: MethodRunId,
-) : ClientMessage(), MethodMessage
+    val methodRunId: MethodRunId?,
+) : ClientMessage(), WorkflowMessage
 
 @Serializable
-data class MethodAlreadyCompleted(
-    override val clientName: ClientName,
+data class AlreadyCompletedMethod(
+    override val emitterName: ClientName,
+    override val recipientName: ClientName,
     override val workflowId: WorkflowId,
     override val methodRunId: MethodRunId,
 ) : ClientMessage(), MethodMessage
 
 @Serializable
 data class WorkflowIdsPerTag(
-    override val clientName: ClientName,
+    override val emitterName: ClientName,
+    override val recipientName: ClientName,
     val workflowName: WorkflowName,
     val workflowTag: WorkflowTag,
     val workflowIds: Set<WorkflowId>

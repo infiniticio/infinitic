@@ -42,25 +42,33 @@ data class PastStep(
     val stepPosition: MethodRunPosition,
     val step: Step,
     val stepHash: StepHash,
+    val workflowTaskIndexAtStart: WorkflowTaskIndex,
     var stepStatus: StepStatus = StepStatus.Waiting,
     var propertiesNameHashAtTermination: Map<PropertyName, PropertyHash>? = null,
     var workflowTaskIndexAtTermination: WorkflowTaskIndex? = null
 ) {
     @JsonIgnore
     fun isTerminated() =
-        stepStatus is Completed ||
-            stepStatus is Canceled ||
-            stepStatus is Failed
+        stepStatus is Completed || stepStatus is Canceled || stepStatus is Failed
+
+    fun updateWith(pastCommand: PastCommand) {
+        step.updateWith(pastCommand.commandId, pastCommand.commandStatus)
+        stepStatus = step.status()
+    }
 
     fun isTerminatedBy(pastCommand: PastCommand): Boolean {
         // returns false if already terminated
         if (isTerminated()) return false
-        // apply update
-        step.update(pastCommand.commandId, pastCommand.commandStatus)
-        stepStatus = step.status()
-        // returns true only if newly terminated
-        return isTerminated() || stepStatus is OngoingFailure
+
+        val isWaiting = stepStatus is StepStatus.Waiting
+        // working on a copy to check without updating
+        with(copy()) {
+            // apply update
+            updateWith(pastCommand)
+
+            return isTerminated() || (stepStatus is OngoingFailure && isWaiting)
+        }
     }
 
-    fun isSimilarTo(newStep: NewStep) = newStep.stepHash == stepHash
+    fun isSameThan(newStep: NewStep) = newStep.stepHash == stepHash
 }
