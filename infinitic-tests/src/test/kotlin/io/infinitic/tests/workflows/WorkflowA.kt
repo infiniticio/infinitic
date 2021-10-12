@@ -99,7 +99,9 @@ interface WorkflowA : ParentInterface {
     fun prop6(): String
     fun prop6bis(deferred: Deferred<String>): String
     fun prop7(): String
-    fun prop7bis()
+    fun prop7bis(): String
+    fun prop8(): String
+    fun prop8bis()
     fun channel1(): String
     fun channel2(): Any
     fun channel3(): Any
@@ -136,6 +138,8 @@ interface WorkflowA : ParentInterface {
 class WorkflowAImpl : Workflow(), WorkflowA {
 
     @Ignore private val self by lazy { getWorkflowById(WorkflowA::class.java, context.id) }
+
+    lateinit var deferred: Deferred<String>
 
     override val channelObj = channel<Obj>()
     override val channelA = channel<String>()
@@ -444,8 +448,24 @@ class WorkflowAImpl : Workflow(), WorkflowA {
     override fun prop6bis(deferred: Deferred<String>): String { deferred.await(); p1 += "b"; return p1 }
 
     override fun prop7(): String {
+        deferred = dispatch(taskA::reverse, "12")
+        val d2 = dispatch(self::prop7bis)
+        deferred.await()
+        p1 += "a"
+        p1 = d2.await() + p1
+        // unfortunately p1 = p1 + d2.await() would fail the test
+        // because d2.await() updates p1 value too lately in the expression
+        // not sure, how to fix that or if it should be fixed
+
+        return p1 // should be "abab"
+    }
+
+    override fun prop7bis(): String { deferred.await(); p1 += "b"; return p1 }
+
+
+    override fun prop8(): String {
         p1 = taskA.reverse("a")
-        dispatch(self::prop7bis)
+        dispatch(self::prop8bis)
         p1 += "c"
         taskA.await(200)
         p1 += "d"
@@ -453,7 +473,7 @@ class WorkflowAImpl : Workflow(), WorkflowA {
         return p1 // should be "acbd"
     }
 
-    override fun prop7bis() { p1 += taskA.reverse("b") }
+    override fun prop8bis() { p1 += taskA.reverse("b") }
 
     override fun channel1(): String {
         val deferred: Deferred<String> = channelA.receive()

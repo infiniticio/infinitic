@@ -52,27 +52,6 @@ class WorkflowTaskImpl : Task(), WorkflowTask {
         // get  instance workflow by name
         val workflow = context.register.getWorkflowInstance("${workflowTaskParameters.workflowName}")
 
-        // setProperties function
-        val setProperties = {
-            hashValues: Map<PropertyHash, PropertyValue>,
-            nameHashes: Map<PropertyName, PropertyHash>
-            ->
-            workflow.setProperties(hashValues, nameHashes)
-        }
-
-        // set workflow's initial properties
-        setProperties(
-            workflowTaskParameters.workflowPropertiesHashValue,
-            workflowTaskParameters.methodRun.propertiesNameHashAtStart
-        )
-
-        // set context
-        workflow.context = WorkflowContextImpl(workflowTaskParameters)
-        workflow.dispatcher = WorkflowDispatcherImpl(workflowTaskParameters, setProperties)
-
-        // initialize name of channels for this workflow, based on the methods that provide them
-        setChannelNames(workflow)
-
         // get method
         val methodRun = workflowTaskParameters.methodRun
         val method = getMethodPerNameAndParameters(
@@ -82,11 +61,34 @@ class WorkflowTaskImpl : Task(), WorkflowTask {
             methodRun.methodParameters.size
         )
 
+        // set context
+        val dispatcher =  WorkflowDispatcherImpl(workflowTaskParameters)
+        workflow.context = WorkflowContextImpl(workflowTaskParameters)
+        workflow.dispatcher = dispatcher
+
+        // define setProperties function
+        val setProperties = {
+            nameHashes: Map<PropertyName, PropertyHash>
+            ->
+            // in case properties contain some Deferred
+            Deferred.setWorkflowDispatcher(dispatcher)
+            workflow.setProperties(workflowTaskParameters.workflowPropertiesHashValue, nameHashes)
+            Deferred.delWorkflowDispatcher()
+        }
+
+        // give it to dispatcher
+        dispatcher.setProperties = setProperties
+
+        // set workflow's initial properties
+        setProperties(methodRun.propertiesNameHashAtStart)
+
+        // initialize name of channels for this workflow, based on the methods that provide them
+        setChannelNames(workflow)
+
         // get method parameters
-        // just in case those parameters contain some Deferred, we set the current dispatcher in the LocalThread
-        Deferred.setWorkflowDispatcher(workflow.dispatcher)
+        // in case parameters contain some Deferred
+        Deferred.setWorkflowDispatcher(dispatcher)
         val parameters = methodRun.methodParameters.map { it.deserialize() }.toTypedArray()
-        // to avoid any side effect, we clear the LocalThread right away
         Deferred.delWorkflowDispatcher()
 
         // run method and get return value (null if end not reached)

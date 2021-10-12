@@ -263,7 +263,13 @@ internal class WorkflowTests : StringSpec({
     }
 
     "Check prop7" {
-        workflowA.prop7() shouldBe "acbd"
+        workflowA.prop7() shouldBe "abab"
+
+        expectDiscardingForHavingNullState()
+    }
+
+    "Check prop8" {
+        workflowA.prop8() shouldBe "acbd"
     }
 
     "Check multiple sync" {

@@ -44,8 +44,5 @@ data class WorkflowTaskParameters(
     val workflowMeta: WorkflowMeta,
     val workflowPropertiesHashValue: Map<PropertyHash, PropertyValue>,
     val workflowTaskIndex: WorkflowTaskIndex,
-
     val methodRun: MethodRun
-) {
-    fun getFullMethodName() = "$workflowName::${methodRun.methodName}"
-}
+)

@@ -85,22 +85,24 @@ import java.time.Instant as JavaInstant
 
 internal class WorkflowDispatcherImpl(
     private val workflowTaskParameters: WorkflowTaskParameters,
-    private val setProperties: (Map<PropertyHash, PropertyValue>, Map<PropertyName, PropertyHash>) -> Unit,
 ) : WorkflowDispatcher {
 
     private val logger = KotlinLogging.logger {}
 
-    // position in the current method processing
-    private var methodRunPosition = MethodRunPosition.new()
-
-    // current workflowTaskIndex (useful to retrieve status of Deferred)
-    private var workflowTaskIndex = workflowTaskParameters.methodRun.workflowTaskIndexAtStart
+    // function used to set properties on workflow
+    lateinit var setProperties: (Map<PropertyName, PropertyHash>) -> Unit
 
     // new commands discovered during execution of the method
     var newCommands: MutableList<NewCommand> = mutableListOf()
 
     // new step discovered during execution the method
     var newStep: NewStep? = null
+
+    // position in the current method processing
+    private var methodRunPosition = MethodRunPosition.new()
+
+    // current workflowTaskIndex (useful to retrieve status of Deferred)
+    private var workflowTaskIndex = workflowTaskParameters.methodRun.workflowTaskIndexAtStart
 
     // synchronous call: stub.method(*args)
     @Suppress("UNCHECKED_CAST")
@@ -210,8 +212,7 @@ internal class WorkflowDispatcherImpl(
 
                 // instance properties are now as when this deferred was terminated
                 setProperties(
-                    workflowTaskParameters.workflowPropertiesHashValue,
-                    pastStep.propertiesNameHashAtTermination!!
+                    pastStep.propertiesNameHashAtTermination ?: thisShouldNotHappen()
                 )
 
                 // return deferred value
