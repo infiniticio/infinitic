@@ -61,6 +61,7 @@ data class PastStep(
         if (isTerminated()) return false
 
         val isWaiting = stepStatus is StepStatus.Waiting
+
         // working on a copy to check without updating
         with(copy()) {
             // apply update

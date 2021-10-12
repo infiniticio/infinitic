@@ -111,7 +111,7 @@ internal class ClientDispatcherImpl(
 ) : ClientDispatcher {
     val logger = KotlinLogging.logger {}
 
-    val responseFlow = MutableSharedFlow<ClientMessage>(replay = 0)
+    private val responseFlow = MutableSharedFlow<ClientMessage>(replay = 0)
 
     companion object {
         @JvmStatic
