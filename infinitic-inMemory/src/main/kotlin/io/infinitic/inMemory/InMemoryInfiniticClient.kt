@@ -36,7 +36,7 @@ import kotlinx.coroutines.launch
 @Suppress("MemberVisibilityCanBePrivate")
 class InMemoryInfiniticClient(
     workerConfig: WorkerConfig,
-    val name: String? = null
+    name: String? = null
 ) : InfiniticClient() {
 
     private val inMemoryOutput = InMemoryOutput(sendingScope)
@@ -45,7 +45,7 @@ class InMemoryInfiniticClient(
         InMemoryInfiniticWorker(workerConfig).apply {
             output = inMemoryOutput
             client = this@InMemoryInfiniticClient
-            name = clientName.toString()
+            this.name = clientName.toString()
         }
     }
 

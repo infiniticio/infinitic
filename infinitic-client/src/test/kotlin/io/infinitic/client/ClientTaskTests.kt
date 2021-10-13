@@ -61,13 +61,14 @@ private val taskTagSlots = CopyOnWriteArrayList<TaskTagEngineMessage>() // multi
 private val workflowTagSlots = CopyOnWriteArrayList<WorkflowTagEngineMessage>() // multithread update
 private val taskSlot = slot<TaskEngineMessage>()
 private val workflowSlot = slot<WorkflowEngineMessage>()
+private val clientNameTest = ClientName("clientTest")
 
 class ClientTask : InfiniticClient() {
-    override val clientName = ClientName("clientTest")
-    override val sendToTaskTagEngine = mockSendToTaskTagEngine(this, taskTagSlots)
-    override val sendToTaskEngine = mockSendToTaskEngine(this, taskSlot)
-    override val sendToWorkflowTagEngine = mockSendToWorkflowTagEngine(this, workflowTagSlots)
-    override val sendToWorkflowEngine = mockSendToWorkflowEngine(this, workflowSlot)
+    override val clientName = clientNameTest
+    override val sendToTaskTagEngine = mockSendToTaskTagEngine(this, taskTagSlots, clientName, sendingScope)
+    override val sendToTaskEngine = mockSendToTaskEngine(this, taskSlot, clientName, sendingScope)
+    override val sendToWorkflowTagEngine = mockSendToWorkflowTagEngine(this, workflowTagSlots, clientName, sendingScope)
+    override val sendToWorkflowEngine = mockSendToWorkflowEngine(this, workflowSlot, clientName, sendingScope)
 }
 
 class ClientTaskTests : StringSpec({
@@ -124,7 +125,7 @@ class ClientTaskTests : StringSpec({
             methodRunId = null,
             taskTags = setOf(),
             taskMeta = TaskMeta(),
-            emitterName = client.clientName
+            emitterName = clientNameTest
         )
     }
 
@@ -146,7 +147,7 @@ class ClientTaskTests : StringSpec({
             methodRunId = null,
             taskTags = setOf(),
             taskMeta = TaskMeta(),
-            emitterName = client.clientName
+            emitterName = clientNameTest
         )
     }
 
@@ -168,7 +169,7 @@ class ClientTaskTests : StringSpec({
             methodRunId = null,
             taskTags = setOf(),
             taskMeta = TaskMeta(),
-            emitterName = client.clientName
+            emitterName = clientNameTest
         )
     }
 
@@ -190,7 +191,7 @@ class ClientTaskTests : StringSpec({
             methodRunId = null,
             taskTags = setOf(),
             taskMeta = TaskMeta(),
-            emitterName = client.clientName
+            emitterName = clientNameTest
         )
     }
 
@@ -212,7 +213,7 @@ class ClientTaskTests : StringSpec({
             methodRunId = null,
             taskTags = setOf(),
             taskMeta = TaskMeta(),
-            emitterName = client.clientName
+            emitterName = clientNameTest
         )
     }
 
@@ -234,7 +235,7 @@ class ClientTaskTests : StringSpec({
             methodRunId = null,
             taskTags = setOf(),
             taskMeta = TaskMeta(meta),
-            emitterName = client.clientName
+            emitterName = clientNameTest
         )
     }
 
@@ -247,13 +248,13 @@ class ClientTaskTests : StringSpec({
                 taskName = TaskName(FakeTask::class.java.name),
                 taskTag = TaskTag("foo"),
                 taskId = TaskId(deferred.id),
-                emitterName = client.clientName,
+                emitterName = clientNameTest,
             ),
             AddTagToTask(
                 taskName = TaskName(FakeTask::class.java.name),
                 taskTag = TaskTag("bar"),
                 taskId = TaskId(deferred.id),
-                emitterName = client.clientName,
+                emitterName = clientNameTest,
             )
         )
         taskSlot.captured shouldBe DispatchTask(
@@ -269,7 +270,7 @@ class ClientTaskTests : StringSpec({
             methodRunId = null,
             taskTags = setOf(TaskTag("foo"), TaskTag("bar")),
             taskMeta = TaskMeta(),
-            emitterName = client.clientName
+            emitterName = clientNameTest
         )
     }
 
@@ -293,7 +294,7 @@ class ClientTaskTests : StringSpec({
             methodRunId = null,
             taskTags = setOf(),
             taskMeta = TaskMeta(),
-            emitterName = client.clientName
+            emitterName = clientNameTest
         )
     }
 
@@ -315,7 +316,7 @@ class ClientTaskTests : StringSpec({
             methodRunId = null,
             taskTags = setOf(),
             taskMeta = TaskMeta(),
-            emitterName = client.clientName
+            emitterName = clientNameTest
         )
     }
 
@@ -337,7 +338,7 @@ class ClientTaskTests : StringSpec({
             methodRunId = null,
             taskTags = setOf(),
             taskMeta = TaskMeta(),
-            emitterName = client.clientName
+            emitterName = clientNameTest
         )
     }
 
@@ -359,7 +360,7 @@ class ClientTaskTests : StringSpec({
             methodRunId = null,
             taskTags = setOf(),
             taskMeta = TaskMeta(),
-            emitterName = client.clientName
+            emitterName = clientNameTest
         )
     }
 
@@ -382,7 +383,7 @@ class ClientTaskTests : StringSpec({
             methodRunId = null,
             taskTags = setOf(),
             taskMeta = TaskMeta(),
-            emitterName = client.clientName
+            emitterName = clientNameTest
         )
     }
 
@@ -405,7 +406,7 @@ class ClientTaskTests : StringSpec({
             methodRunId = null,
             taskTags = setOf(),
             taskMeta = TaskMeta(),
-            emitterName = client.clientName
+            emitterName = clientNameTest
         )
     }
 
@@ -427,7 +428,7 @@ class ClientTaskTests : StringSpec({
             methodRunId = null,
             taskTags = setOf(),
             taskMeta = TaskMeta(),
-            emitterName = client.clientName
+            emitterName = clientNameTest
         )
     }
 
@@ -451,7 +452,7 @@ class ClientTaskTests : StringSpec({
             methodRunId = null,
             taskTags = setOf(),
             taskMeta = TaskMeta(),
-            emitterName = client.clientName
+            emitterName = clientNameTest
         )
     }
 
@@ -471,7 +472,7 @@ class ClientTaskTests : StringSpec({
         taskSlot.captured shouldBe CancelTask(
             taskName = TaskName(FakeTask::class.java.name),
             taskId = TaskId(id),
-            emitterName = client.clientName
+            emitterName = clientNameTest
         )
     }
 
@@ -486,7 +487,7 @@ class ClientTaskTests : StringSpec({
         taskSlot.captured shouldBe CancelTask(
             taskName = TaskName(FakeTask::class.java.name),
             taskId = TaskId(id),
-            emitterName = client.clientName
+            emitterName = clientNameTest
         )
     }
 
@@ -499,7 +500,7 @@ class ClientTaskTests : StringSpec({
         taskTagSlots[0] shouldBe CancelTaskByTag(
             taskName = TaskName(FakeTask::class.java.name),
             taskTag = TaskTag("foo"),
-            emitterName = client.clientName
+            emitterName = clientNameTest
         )
         taskSlot.isCaptured shouldBe false
     }
@@ -513,7 +514,7 @@ class ClientTaskTests : StringSpec({
         taskTagSlots[0] shouldBe CancelTaskByTag(
             taskName = TaskName(FakeTask::class.java.name),
             taskTag = TaskTag("foo"),
-            emitterName = client.clientName
+            emitterName = clientNameTest
         )
         taskSlot.isCaptured shouldBe false
     }
@@ -527,7 +528,7 @@ class ClientTaskTests : StringSpec({
         taskSlot.captured shouldBe CancelTask(
             taskName = TaskName(FakeTask::class.java.name),
             taskId = TaskId(deferred.id),
-            emitterName = client.clientName
+            emitterName = clientNameTest
         )
     }
 
@@ -540,7 +541,7 @@ class ClientTaskTests : StringSpec({
         taskSlot.captured shouldBe CancelTask(
             taskName = TaskName(FakeTask::class.java.name),
             taskId = TaskId(deferred.id),
-            emitterName = client.clientName
+            emitterName = clientNameTest
         )
     }
 
@@ -555,7 +556,7 @@ class ClientTaskTests : StringSpec({
         taskSlot.captured shouldBe RetryTask(
             taskName = TaskName(FakeTask::class.java.name),
             taskId = TaskId(id),
-            emitterName = client.clientName
+            emitterName = clientNameTest
         )
     }
 
@@ -569,7 +570,7 @@ class ClientTaskTests : StringSpec({
         taskSlot.captured shouldBe RetryTask(
             taskName = TaskName(FakeTask::class.java.name),
             taskId = TaskId(id),
-            emitterName = client.clientName
+            emitterName = clientNameTest
         )
     }
 
@@ -582,7 +583,7 @@ class ClientTaskTests : StringSpec({
         taskSlot.captured shouldBe RetryTask(
             taskName = TaskName(FakeTask::class.java.name),
             taskId = TaskId(deferred.id),
-            emitterName = client.clientName
+            emitterName = clientNameTest
         )
     }
 
@@ -595,7 +596,7 @@ class ClientTaskTests : StringSpec({
         taskTagSlots[0] shouldBe RetryTaskByTag(
             taskName = TaskName(FakeTask::class.java.name),
             taskTag = TaskTag("foo"),
-            emitterName = client.clientName
+            emitterName = clientNameTest
         )
         taskSlot.isCaptured shouldBe false
     }
@@ -609,7 +610,7 @@ class ClientTaskTests : StringSpec({
         taskTagSlots[0] shouldBe RetryTaskByTag(
             taskName = TaskName(FakeTask::class.java.name),
             taskTag = TaskTag("foo"),
-            emitterName = client.clientName
+            emitterName = clientNameTest
         )
         taskSlot.isCaptured shouldBe false
     }
@@ -623,7 +624,7 @@ class ClientTaskTests : StringSpec({
         taskTagSlots[0] shouldBe GetTaskIdsByTag(
             taskName = TaskName(FakeTask::class.java.name),
             taskTag = TaskTag("foo"),
-            emitterName = client.clientName,
+            emitterName = clientNameTest,
         )
         taskSlot.isCaptured shouldBe false
     }

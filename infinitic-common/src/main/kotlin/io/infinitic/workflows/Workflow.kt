@@ -365,9 +365,14 @@ abstract class Workflow {
     protected fun <T : Any> channel(): Channel<T> = ChannelImpl { dispatcher }
 
     /**
-     * Create an inline task
+     * Run inline task
      */
     protected fun <S> inline(task: () -> S): S = dispatcher.inline(task)
+
+    /**
+     * Run inline task returning void
+     */
+    protected fun inlineVoid(task: Consumer0): Unit = dispatcher.inline { task.apply() }
 
     /**
      * Create a timer from a duration

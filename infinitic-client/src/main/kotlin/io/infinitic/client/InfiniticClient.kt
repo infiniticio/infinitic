@@ -73,24 +73,26 @@ import java.util.concurrent.Executors
 
 @Suppress("MemberVisibilityCanBePrivate", "unused")
 abstract class InfiniticClient : Closeable {
-    abstract val clientName: ClientName
+    /**
+     * Client's name
+     * This name must be unique
+     */
+    val name by lazy { clientName.toString() }
 
+    protected abstract val clientName: ClientName
     protected abstract val sendToTaskTagEngine: SendToTaskTagEngine
     protected abstract val sendToTaskEngine: SendToTaskEngine
     protected abstract val sendToWorkflowTagEngine: SendToWorkflowTagEngine
     protected abstract val sendToWorkflowEngine: SendToWorkflowEngine
-
     protected val logger = KotlinLogging.logger {}
 
     private val sendThreadPool = Executors.newCachedThreadPool()
-
-    open val sendingScope = CoroutineScope(sendThreadPool.asCoroutineDispatcher() + Job())
+    protected val sendingScope = CoroutineScope(sendThreadPool.asCoroutineDispatcher() + Job())
 
     private val runningThreadPool = Executors.newCachedThreadPool()
+    protected val runningScope = CoroutineScope(runningThreadPool.asCoroutineDispatcher() + Job())
 
-    open val runningScope = CoroutineScope(runningThreadPool.asCoroutineDispatcher() + Job())
-
-    val dispatcher: ClientDispatcher by lazy {
+    protected val dispatcher: ClientDispatcher by lazy {
         ClientDispatcherImpl(
             sendingScope,
             clientName,
@@ -106,6 +108,9 @@ abstract class InfiniticClient : Closeable {
      */
     val lastDeferred get() = dispatcher.getLastDeferred()
 
+    /**
+     * Close all resources used
+     */
     override fun close() {
         // first make sure that all messages are sent
         join()
@@ -119,13 +124,13 @@ abstract class InfiniticClient : Closeable {
     }
 
     /**
-     * Wait for all coroutines dispatched in sendingScope
+     * Wait for all messages to be sent
      */
     fun join() = runBlocking {
         sendingScope.coroutineContext.job.children.forEach { it.join() }
     }
 
-    suspend fun handle(message: ClientMessage) {
+    internal suspend fun handle(message: ClientMessage) {
         logger.debug { "receiving $message" }
 
         dispatcher.handle(message)

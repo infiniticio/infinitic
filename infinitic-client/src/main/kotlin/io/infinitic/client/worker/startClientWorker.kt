@@ -44,7 +44,7 @@ fun <T : ClientMessageToProcess> CoroutineScope.startClientWorker(
     client: InfiniticClient,
     inputChannel: ReceiveChannel<T>,
     outputChannel: SendChannel<T>
-) = launch(CoroutineName("client: ${client.clientName}")) {
+) = launch(CoroutineName("client: ${client.name}")) {
 
     for (message in inputChannel) {
         try {
