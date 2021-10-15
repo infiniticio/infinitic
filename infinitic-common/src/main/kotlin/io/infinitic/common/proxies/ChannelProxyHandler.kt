@@ -28,6 +28,7 @@ package io.infinitic.common.proxies
 import io.infinitic.common.workflows.data.channels.ChannelName
 import io.infinitic.common.workflows.data.channels.ChannelSignal
 import io.infinitic.common.workflows.data.channels.ChannelSignalType
+import io.infinitic.exceptions.clients.InvalidChannelGetterException
 import io.infinitic.workflows.SendChannel
 
 @Suppress("UNCHECKED_CAST")
@@ -37,6 +38,10 @@ class ChannelProxyHandler<K : SendChannel<*>>(
     handler.method.returnType as Class<out K>,
     handler.dispatcherFn
 ) {
+    init {
+        if (handler.method.returnType != SendChannel::class.java) throw InvalidChannelGetterException(handler.method.returnType.name)
+    }
+
     val workflowName = handler.workflowName
     val channelName = ChannelName.from(handler.methodName)
     val workflowId = handler.workflowId

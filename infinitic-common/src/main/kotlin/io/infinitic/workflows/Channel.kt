@@ -26,7 +26,7 @@
 package io.infinitic.workflows
 
 import com.jayway.jsonpath.Criteria
-import io.infinitic.exceptions.workflows.NameNotInitializedInChannelException
+import io.infinitic.exceptions.workflows.ChannelWithoutGetterException
 
 class Channel<T : Any>(
     private val dispatcherFn: () -> WorkflowDispatcher
@@ -40,7 +40,7 @@ class Channel<T : Any>(
     val name by lazy {
         when (hasName()) {
             true -> _name
-            else -> throw NameNotInitializedInChannelException
+            else -> throw ChannelWithoutGetterException
         }
     }
 

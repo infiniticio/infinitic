@@ -35,7 +35,6 @@ import io.infinitic.common.proxies.GetWorkflowProxyHandler
 import io.infinitic.common.proxies.NewTaskProxyHandler
 import io.infinitic.common.proxies.NewWorkflowProxyHandler
 import io.infinitic.common.proxies.ProxyHandler
-import io.infinitic.workflows.Channel
 import io.infinitic.common.workflows.data.channels.ChannelEventFilter
 import io.infinitic.common.workflows.data.channels.ChannelName
 import io.infinitic.common.workflows.data.channels.ChannelSignal
@@ -74,6 +73,7 @@ import io.infinitic.exceptions.thisShouldNotHappen
 import io.infinitic.exceptions.workflows.CanceledDeferredException
 import io.infinitic.exceptions.workflows.FailedDeferredException
 import io.infinitic.exceptions.workflows.WorkflowUpdatedException
+import io.infinitic.workflows.Channel
 import io.infinitic.workflows.Deferred
 import io.infinitic.workflows.DeferredStatus
 import io.infinitic.workflows.SendChannel
@@ -171,9 +171,7 @@ internal class WorkflowDispatcherImpl(
             // new step
             null -> {
                 // determine status
-                deferred.stepStatus = step.step.statusAt(workflowTaskIndex)
-
-                when (val stepStatus = deferred.stepStatus) {
+                when (val stepStatus = step.step.statusAt(workflowTaskIndex)) {
                     is Completed ->
                         stepStatus.returnValue.value() as T
                     is Waiting -> {
@@ -202,9 +200,6 @@ internal class WorkflowDispatcherImpl(
             // known step
             else -> {
                 val stepStatus = pastStep.stepStatus
-
-                // update deferred status
-                deferred.stepStatus = stepStatus
 
                 // if still ongoing, we stop here
                 if (stepStatus == Waiting) throw KnownStepException

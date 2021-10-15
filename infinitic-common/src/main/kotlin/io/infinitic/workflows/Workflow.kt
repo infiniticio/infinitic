@@ -38,8 +38,8 @@ import io.infinitic.common.workflows.data.workflows.WorkflowMeta
 import io.infinitic.common.workflows.data.workflows.WorkflowOptions
 import io.infinitic.common.workflows.data.workflows.WorkflowTag
 import io.infinitic.exceptions.clients.InvalidStubException
-import io.infinitic.exceptions.workflows.MultipleNamesForChannelException
-import io.infinitic.exceptions.workflows.NonUniqueChannelFromChannelMethodException
+import io.infinitic.exceptions.workflows.MultipleGettersForSameChannelException
+import io.infinitic.exceptions.workflows.NonIdempotentChannelGetterException
 import java.time.Duration
 import java.time.Instant
 
@@ -438,14 +438,12 @@ fun Workflow.setChannelNames() {
             it.isAccessible = true
             val channel = it.invoke(this)
             if (channel !== it.invoke(this)) {
-                throw NonUniqueChannelFromChannelMethodException(this::class.java.name, it.name)
+                throw NonIdempotentChannelGetterException(this::class.java.name, it.name)
             }
             // this channel must not have a name already
-            println(it)
-            println(channel)
             channel as Channel<*>
             if (channel.hasName()) {
-                throw MultipleNamesForChannelException(this::class.java.name, it.name, channel.name)
+                throw MultipleGettersForSameChannelException(this::class.java.name, it.name, channel.name)
             }
             // set channel name
             channel.setName(it.name)

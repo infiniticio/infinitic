@@ -27,7 +27,6 @@ package io.infinitic.workflows
 
 import com.fasterxml.jackson.annotation.JsonIgnore
 import io.infinitic.common.workflows.data.steps.Step
-import io.infinitic.common.workflows.data.steps.StepStatus
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
@@ -40,8 +39,6 @@ import io.infinitic.common.workflows.data.steps.or as stepOr
 @Serializable(with = DeferredSerializer::class)
 data class Deferred<T> (val step: Step) {
     @Transient @JsonIgnore lateinit var workflowDispatcher: WorkflowDispatcher
-
-    @Transient @JsonIgnore lateinit var stepStatus: StepStatus
 
     @Transient @JsonIgnore val id: String? = when (step) {
         is Step.Id -> step.commandId.toString()

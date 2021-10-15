@@ -39,7 +39,7 @@ import kotlinx.serialization.json.Json
 class DataTests : StringSpec({
     "Deferred should be serDe with SerializedData" {
         val step = TestFactory.random<Step>()
-        val m1 = Deferred<String>(step).apply { this.workflowDispatcher = mockk(); this.stepStatus = mockk() }
+        val m1 = Deferred<String>(step).apply { this.workflowDispatcher = mockk(); }
 
         val data = SerializedData.from(m1)
         val m2 = data.deserialize()

@@ -26,6 +26,7 @@
 package io.infinitic.exceptions.clients
 
 import io.infinitic.exceptions.UserException
+import io.infinitic.workflows.SendChannel
 
 sealed class ClientUserException(
     msg: String,
@@ -50,12 +51,12 @@ class InvalidCommandException(
     help = msg
 )
 
-class InvalidChannelException(
+class InvalidChannelGetterException(
     klass: String
 ) : ClientUserException(
-    msg = "$klass is not the stub of a Channel",
-    help = "Make sure to use something like `workflow.getchannel()` where `workflow` is the stub " +
-        "of a workflow and `getChannel()` is a Channel getter"
+    msg = "Invalid channel getter",
+    help = "When defining getters of channels in your workflow interface, " +
+        "make sure to have ${SendChannel::class.java.name} as return type, not $klass"
 )
 
 class InvalidRunningTaskException(
