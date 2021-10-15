@@ -38,48 +38,48 @@ import io.infinitic.transport.TransportConfig
 import io.infinitic.transport.pulsar.Pulsar
 
 data class WorkerConfig(
-    /*
-    Worker name
+    /**
+     * Worker name
      */
     val name: String? = null,
 
-    /*
-    Transport configuration
+    /**
+     * Transport configuration
      */
     override val transport: Transport = Transport.pulsar,
 
-    /*
-    Pulsar configuration
+    /**
+     * Pulsar configuration
      */
     override val pulsar: Pulsar?,
 
-    /*
-    Default state storage
+    /**
+     * Default state storage
      */
     override var stateStorage: StateStorage? = null,
 
-    /*
-    Redis configuration
+    /**
+     * Redis configuration
      */
     override val redis: Redis? = null,
 
-    /*
-    Default state cache
+    /**
+     * Default state cache
      */
     override var stateCache: StateCache = StateCache.caffeine,
 
-    /*
-    Caffeine configuration
+    /**
+     * Caffeine configuration
      */
     override val caffeine: Caffeine? = null,
 
-    /*
-    Tasks configuration
+    /**
+     Tasks configuration
      */
     val tasks: List<Task> = listOf(),
 
-    /*
-    Workflows configuration
+    /**
+     * Workflows configuration
      */
     val workflows: List<Workflow> = listOf(),
 

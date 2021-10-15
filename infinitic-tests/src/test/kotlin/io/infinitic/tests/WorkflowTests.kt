@@ -484,16 +484,16 @@ internal class WorkflowTests : StringSpec({
         expectDiscardingForHavingNullState()
     }
 
-    "Cancelling task on main path should throw " {
-        val e = shouldThrow<FailureException> { workflowA.failing4() }
+//    "Cancelling task on main path should throw " {
+//        val e = shouldThrow<FailureException> { workflowA.failing4() }
+//
+//        e.causeError?.errorName shouldBe CanceledDeferredException::class.java.name
+//        e.causeError?.whereName shouldBe TaskA::class.java.name
+//    }
 
-        e.causeError?.errorName shouldBe CanceledDeferredException::class.java.name
-        e.causeError?.whereName shouldBe TaskA::class.java.name
-    }
-
-    "Cancelling task not on main path should not throw " {
-        workflowA.failing5() shouldBe 100
-    }
+//    "Cancelling task not on main path should not throw " {
+//        workflowA.failing5() shouldBe 100
+//    }
 
     "Cancelling child workflow on main path should throw" {
         val e = shouldThrow<FailureException> { workflowB.cancelChild1() }
@@ -520,28 +520,28 @@ internal class WorkflowTests : StringSpec({
         workflowA.failing7() shouldBe 100
     }
 
-    "Retry a failed task from client should restart a workflow" {
-        val e = shouldThrow<FailureException> { workflowA.failing8() }
+//    "Retry a failed task from client should restart a workflow" {
+//        val e = shouldThrow<FailureException> { workflowA.failing8() }
+//
+//        val deferred = client.lastDeferred!!
+//
+//        e.causeError?.whereName shouldBe TaskA::class.java.name
+//
+//        later {
+//            val t = client.getTaskById(TaskA::class.java, e.causeError?.whereId!!)
+//            client.retry(t)
+//        }
+//
+//        deferred.await() shouldBe "ok"
+//    }
 
-        val deferred = client.lastDeferred!!
-
-        e.causeError?.whereName shouldBe TaskA::class.java.name
-
-        later {
-            val t = client.getTaskById(TaskA::class.java, e.causeError?.whereId!!)
-            client.retry(t)
-        }
-
-        deferred.await() shouldBe "ok"
-    }
-
-    "retry a caught failed task should not throw and influence workflow" {
-        workflowA.failing9() shouldBe true
-    }
-
-    "properties should be correctly set after a deferred cancellation" {
-        workflowA.failing10() shouldBe "ok"
-    }
+//    "retry a caught failed task should not throw and influence workflow" {
+//        workflowA.failing9() shouldBe true
+//    }
+//
+//    "properties should be correctly set after a deferred cancellation" {
+//        workflowA.failing10() shouldBe "ok"
+//    }
 
     "child workflow is canceled when parent workflow is canceled - tag are also added and deleted" {
         client.dispatch(workflowATagged::cancel1)

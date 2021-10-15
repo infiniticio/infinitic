@@ -26,21 +26,20 @@
 package io.infinitic.workflows
 
 import io.infinitic.annotations.Name
-import io.infinitic.common.proxies.GetTaskProxyHandler
 import io.infinitic.common.proxies.GetWorkflowProxyHandler
 import io.infinitic.common.proxies.NewTaskProxyHandler
 import io.infinitic.common.proxies.NewWorkflowProxyHandler
 import io.infinitic.common.proxies.ProxyHandler
-import io.infinitic.common.tasks.data.TaskId
 import io.infinitic.common.tasks.data.TaskMeta
 import io.infinitic.common.tasks.data.TaskOptions
 import io.infinitic.common.tasks.data.TaskTag
-import io.infinitic.common.workflows.data.channels.ChannelImpl
 import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.data.workflows.WorkflowMeta
 import io.infinitic.common.workflows.data.workflows.WorkflowOptions
 import io.infinitic.common.workflows.data.workflows.WorkflowTag
 import io.infinitic.exceptions.clients.InvalidStubException
+import io.infinitic.exceptions.workflows.MultipleNamesForChannelException
+import io.infinitic.exceptions.workflows.NonUniqueChannelFromChannelMethodException
 import java.time.Duration
 import java.time.Instant
 
@@ -81,29 +80,29 @@ abstract class Workflow {
         workflowMeta = WorkflowMeta(meta)
     ) { dispatcher }.stub()
 
-    /**
-     *  Create a stub for an existing task targeted by id
-     */
-    fun <T : Any> getTaskById(
-        klass: Class<out T>,
-        id: String
-    ): T = GetTaskProxyHandler(
-        klass = klass,
-        TaskId(id),
-        null
-    ) { dispatcher }.stub()
-
-    /**
-     *  Create a stub for existing task targeted by tag
-     */
-    fun <T : Any> getTaskByTag(
-        klass: Class<out T>,
-        tag: String
-    ): T = GetTaskProxyHandler(
-        klass = klass,
-        null,
-        TaskTag(tag)
-    ) { dispatcher }.stub()
+//    /**
+//     *  Create a stub for an existing task targeted by id
+//     */
+//    fun <T : Any> getTaskById(
+//        klass: Class<out T>,
+//        id: String
+//    ): T = GetTaskProxyHandler(
+//        klass = klass,
+//        TaskId(id),
+//        null
+//    ) { dispatcher }.stub()
+//
+//    /**
+//     *  Create a stub for existing task targeted by tag
+//     */
+//    fun <T : Any> getTaskByTag(
+//        klass: Class<out T>,
+//        tag: String
+//    ): T = GetTaskProxyHandler(
+//        klass = klass,
+//        null,
+//        TaskTag(tag)
+//    ) { dispatcher }.stub()
 
     /**
      *  Create a stub for an existing workflow targeted by id
@@ -362,7 +361,7 @@ abstract class Workflow {
     /**
      *  Create a channel
      */
-    protected fun <T : Any> channel(): Channel<T> = ChannelImpl { dispatcher }
+    protected fun <T : Any> channel(): Channel<T> = Channel { dispatcher }
 
     /**
      * Run inline task
@@ -401,14 +400,14 @@ abstract class Workflow {
     }
 
     // from klass for the given workflow name
-    protected fun findClassPerWorkflowName() = try {
+    private fun findClassPerWorkflowName() = try {
         Class.forName(context.name)
     } catch (e: ClassNotFoundException) {
         findClassPerAnnotationName(this::class.java, context.name)
     }
 
     // from klass, search for a given @Name annotation
-    protected fun findClassPerAnnotationName(klass: Class<*>, name: String): Class<*>? {
+    private fun findClassPerAnnotationName(klass: Class<*>, name: String): Class<*>? {
         var clazz = klass
 
         do {
@@ -426,4 +425,29 @@ abstract class Workflow {
 
         return null
     }
+}
+
+/**
+ * Set names of all channels in this workflow
+ */
+fun Workflow.setChannelNames() {
+    this::class.java.declaredMethods
+        .filter { it.returnType.name == Channel::class.java.name && it.parameterCount == 0 }
+        .map {
+            // channel must be created only once per method
+            it.isAccessible = true
+            val channel = it.invoke(this)
+            if (channel !== it.invoke(this)) {
+                throw NonUniqueChannelFromChannelMethodException(this::class.java.name, it.name)
+            }
+            // this channel must not have a name already
+            println(it)
+            println(channel)
+            channel as Channel<*>
+            if (channel.hasName()) {
+                throw MultipleNamesForChannelException(this::class.java.name, it.name, channel.name)
+            }
+            // set channel name
+            channel.setName(it.name)
+        }
 }

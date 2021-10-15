@@ -35,8 +35,8 @@ import io.infinitic.common.proxies.GetWorkflowProxyHandler
 import io.infinitic.common.proxies.NewTaskProxyHandler
 import io.infinitic.common.proxies.NewWorkflowProxyHandler
 import io.infinitic.common.proxies.ProxyHandler
+import io.infinitic.workflows.Channel
 import io.infinitic.common.workflows.data.channels.ChannelEventFilter
-import io.infinitic.common.workflows.data.channels.ChannelImpl
 import io.infinitic.common.workflows.data.channels.ChannelName
 import io.infinitic.common.workflows.data.channels.ChannelSignal
 import io.infinitic.common.workflows.data.channels.ChannelSignalType
@@ -278,45 +278,31 @@ internal class WorkflowDispatcherImpl(
         CommandSimpleName("${CommandType.START_INSTANT_TIMER}")
     )
 
-    override fun <T : Any> receiveSignal(
-        channel: ChannelImpl<T>,
-        jsonPath: String?,
-        criteria: Criteria?
-    ): Deferred<T> = dispatchCommand(
-        ReceiveSignal(
-            ChannelName(channel.getNameOrThrow()),
-            null,
-            ChannelEventFilter.from(jsonPath, criteria)
-
-        ),
-        CommandSimpleName("${CommandType.RECEIVE_IN_CHANNEL}")
-    )
-
     override fun <S : T, T : Any> receiveSignal(
-        channel: ChannelImpl<T>,
-        klass: Class<S>,
+        channel: Channel<T>,
+        klass: Class<S>?,
         jsonPath: String?,
         criteria: Criteria?
     ): Deferred<S> = dispatchCommand(
         ReceiveSignal(
-            ChannelName(channel.getNameOrThrow()),
-            ChannelSignalType.from(klass),
+            ChannelName(channel.name),
+            klass?.let { ChannelSignalType.from(it) },
             ChannelEventFilter.from(jsonPath, criteria)
         ),
         CommandSimpleName("${CommandType.RECEIVE_IN_CHANNEL}")
     )
 
-    override fun <T : Any> sendSignal(channel: ChannelImpl<T>, signal: T) {
+    override fun <T : Any> sendSignal(channel: Channel<T>, signal: T) {
         dispatchCommand<T>(
             SendSignal(
                 workflowName = workflowTaskParameters.workflowName,
                 workflowId = workflowTaskParameters.workflowId,
                 workflowTag = null,
-                channelName = ChannelName(channel.getNameOrThrow()),
+                channelName = ChannelName(channel.name),
                 channelSignalTypes = ChannelSignalType.allFrom(signal::class.java),
                 channelSignal = ChannelSignal.from(signal)
             ),
-            CommandSimpleName("${CommandType.SENT_TO_CHANNEL}")
+            CommandSimpleName("${CommandType.SEND_SIGNAL}")
         )
     }
 
@@ -395,7 +381,7 @@ internal class WorkflowDispatcherImpl(
                 channelSignalTypes = handler.channelSignalTypes,
                 channelSignal = handler.channelSignal
             ),
-            CommandSimpleName("${CommandType.SENT_TO_CHANNEL}")
+            CommandSimpleName("${CommandType.SEND_SIGNAL}")
         )
     }
 

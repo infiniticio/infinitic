@@ -25,8 +25,8 @@
 
 package io.infinitic.exceptions.workflows
 
-import io.infinitic.exceptions.UserException
 import io.infinitic.workflows.Channel
+import io.infinitic.exceptions.UserException
 
 sealed class WorkflowUserException(
     msg: String,

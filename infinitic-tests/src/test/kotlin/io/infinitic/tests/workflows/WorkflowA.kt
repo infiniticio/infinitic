@@ -29,7 +29,6 @@ import com.jayway.jsonpath.Criteria.where
 import io.infinitic.annotations.Ignore
 import io.infinitic.common.tasks.data.TaskMeta
 import io.infinitic.common.workflows.data.workflows.WorkflowMeta
-import io.infinitic.exceptions.workflows.CanceledDeferredException
 import io.infinitic.exceptions.workflows.FailedDeferredException
 import io.infinitic.tests.tasks.ParentInterface
 import io.infinitic.tests.tasks.TaskA
@@ -121,15 +120,15 @@ interface WorkflowA : ParentInterface {
     fun failing3bis()
     fun failing3bException()
     fun failing3b(): Long
-    fun failing4(): Long
-    fun failing5(): Long
+//    fun failing4(): Long
+//    fun failing5(): Long
     fun failing5bis(deferred: Deferred<Long>): Long
     fun failing6()
     fun failing7(): Long
     fun failing7bis()
     fun failing8(): String
-    fun failing9(): Boolean
-    fun failing10(): String
+//    fun failing9(): Boolean
+//    fun failing10(): String
     fun failing10bis()
     fun cancel1()
 }
@@ -590,23 +589,23 @@ class WorkflowAImpl : Workflow(), WorkflowA {
 
     override fun failing3bException() { throw Exception() }
 
-    override fun failing4(): Long {
-        val deferred = dispatch(taskA::await, 1000)
+//    override fun failing4(): Long {
+//        val deferred = dispatch(taskA::await, 1000)
+//
+//        taskA.cancelTaskA(deferred.id!!)
+//
+//        return deferred.await()
+//    }
 
-        taskA.cancelTaskA(deferred.id!!)
-
-        return deferred.await()
-    }
-
-    override fun failing5(): Long {
-        val deferred = dispatch(taskA::await, 1000)
-
-        taskA.cancelTaskA(deferred.id!!)
-
-        dispatch(self::failing5bis, deferred)
-
-        return taskA.await(100)
-    }
+//    override fun failing5(): Long {
+//        val deferred = dispatch(taskA::await, 1000)
+//
+//        taskA.cancelTaskA(deferred.id!!)
+//
+//        dispatch(self::failing5bis, deferred)
+//
+//        return taskA.await(100)
+//    }
 
     override fun failing5bis(deferred: Deferred<Long>): Long { return deferred.await() }
 
@@ -622,37 +621,37 @@ class WorkflowAImpl : Workflow(), WorkflowA {
 
     override fun failing8() = taskA.successAtRetry()
 
-    override fun failing9(): Boolean {
-        // this method will complete only after retry
-        val deferred = dispatch(taskA::successAtRetry,)
-
-        val result = try {
-            deferred.await()
-        } catch (e: FailedDeferredException) {
-            "caught"
-        }
-
-        taskA.retryTaskA(deferred.id!!)
-
-        // we wait here only on avoid to make sure the previous retry is completed
-        taskA.await(100)
-
-        return deferred.await() == "ok" && result == "caught"
-    }
-
-    override fun failing10(): String {
-        p1 = "o"
-        val deferred = dispatch(taskA::await, 1000)
-        dispatch(self::failing10bis)
-        dispatch(taskA::cancelTaskA, deferred.id!!)
-        try {
-            deferred.await()
-        } catch (e: CanceledDeferredException) {
-            // continue
-        }
-
-        return p1 // should be "ok"
-    }
+//    override fun failing9(): Boolean {
+//        // this method will complete only after retry
+//        val deferred = dispatch(taskA::successAtRetry,)
+//
+//        val result = try {
+//            deferred.await()
+//        } catch (e: FailedDeferredException) {
+//            "caught"
+//        }
+//
+//        taskA.retryTaskA(deferred.id!!)
+//
+//        // we wait here only on avoid to make sure the previous retry is completed
+//        taskA.await(100)
+//
+//        return deferred.await() == "ok" && result == "caught"
+//    }
+//
+//    override fun failing10(): String {
+//        p1 = "o"
+//        val deferred = dispatch(taskA::await, 1000)
+//        dispatch(self::failing10bis)
+//        dispatch(taskA::cancelTaskA, deferred.id!!)
+//        try {
+//            deferred.await()
+//        } catch (e: CanceledDeferredException) {
+//            // continue
+//        }
+//
+//        return p1 // should be "ok"
+//    }
 
     override fun failing10bis() { p1 += "k" }
 

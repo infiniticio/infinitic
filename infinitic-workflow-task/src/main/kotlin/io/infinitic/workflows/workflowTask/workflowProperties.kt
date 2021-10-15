@@ -26,13 +26,13 @@
 package io.infinitic.workflows.workflowTask
 
 import io.infinitic.annotations.Ignore
+import io.infinitic.workflows.Channel
 import io.infinitic.common.workflows.data.properties.PropertyHash
 import io.infinitic.common.workflows.data.properties.PropertyName
 import io.infinitic.common.workflows.data.properties.PropertyValue
 import io.infinitic.common.workflows.executors.parser.getPropertiesFromObject
 import io.infinitic.common.workflows.executors.parser.setPropertiesToObject
 import io.infinitic.exceptions.thisShouldNotHappen
-import io.infinitic.workflows.Channel
 import io.infinitic.workflows.Workflow
 import io.infinitic.workflows.WorkflowContext
 import io.infinitic.workflows.WorkflowDispatcher

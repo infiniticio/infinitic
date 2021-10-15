@@ -40,8 +40,6 @@ import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.config.configuration
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
 
 internal class TaskTests : StringSpec({
 
@@ -156,25 +154,25 @@ internal class TaskTests : StringSpec({
         deferred.await() shouldBe "00000001"
     }
 
-    "Task succeeds after manual retry using tags" {
-        // task will succeed only after manual retry
-        TaskTestImpl.behavior = { index, retry ->
-            when (index) {
-                0 -> if (retry < 3) Status.FAILED_WITH_RETRY else Status.FAILED_WITHOUT_RETRY
-                else -> Status.SUCCESS
-            }
-        }
-        val deferred = client.dispatch(taskTestWithTags::log)
-
-        shouldThrow<FailureException> { deferred.await() }
-
-        val t = client.getTaskByTag(TaskTest::class.java, "foo")
-        client.retry(t)
-
-        delay(50)
-
-        deferred.await() shouldBe "00001"
-    }
+//    "Task succeeds after manual retry using tags" {
+//        // task will succeed only after manual retry
+//        TaskTestImpl.behavior = { index, retry ->
+//            when (index) {
+//                0 -> if (retry < 3) Status.FAILED_WITH_RETRY else Status.FAILED_WITHOUT_RETRY
+//                else -> Status.SUCCESS
+//            }
+//        }
+//        val deferred = client.dispatch(taskTestWithTags::log)
+//
+//        shouldThrow<FailureException> { deferred.await() }
+//
+//        val t = client.getTaskByTag(TaskTest::class.java, "foo")
+//        client.retry(t)
+//
+//        delay(50)
+//
+//        deferred.await() shouldBe "00001"
+//    }
 
     "Task canceled during automatic retry" {
         TaskTestImpl.behavior = { _, _ -> Status.FAILED_WITH_RETRY }
@@ -186,74 +184,74 @@ internal class TaskTests : StringSpec({
         shouldThrow<CancelationException> { deferred.await() }
     }
 
-    "Task canceled using tag" {
-        TaskTestImpl.behavior = { _, _ -> Status.FAILED_WITH_RETRY }
+//    "Task canceled using tag" {
+//        TaskTestImpl.behavior = { _, _ -> Status.FAILED_WITH_RETRY }
+//
+//        val deferred = client.dispatch(taskTestWithTags::log)
+//
+//        later {
+//            val t = client.getTaskByTag(TaskTest::class.java, "foo")
+//            client.cancel(t)
+//        }
+//
+//        shouldThrow<CancelationException> { deferred.await() }
+//    }
 
-        val deferred = client.dispatch(taskTestWithTags::log)
+//    "2 Task canceled using tag" {
+//        TaskTestImpl.behavior = { _, _ -> Status.FAILED_WITH_RETRY }
+//
+//        val deferred1 = client.dispatch(taskTestWithTags::log)
+//        val deferred2 = client.dispatch(taskTestWithTags::log)
+//
+//        later {
+//            val t = client.getTaskByTag(TaskTest::class.java, "foo")
+//            client.cancel(t)
+//        }
+//
+//        later(0) {
+//            launch { shouldThrow<CancelationException> { deferred1.await() } }
+//            launch { shouldThrow<CancelationException> { deferred2.await() } }
+//        }.join()
+//    }
 
-        later {
-            val t = client.getTaskByTag(TaskTest::class.java, "foo")
-            client.cancel(t)
-        }
+//    "Tag should be added then deleted after completion" {
+//        TaskTestImpl.behavior = { _, _ -> Status.SUCCESS }
+//
+//        val deferred = client.dispatch(taskTestWithTags::await, 200)
+//        val foo = client.getTaskByTag(TaskTest::class.java, "foo")
+//        val bar = client.getTaskByTag(TaskTest::class.java, "bar")
+//
+//        client.getIds(foo).contains(deferred.id) shouldBe true
+//        client.getIds(bar).contains(deferred.id) shouldBe true
+//
+//        deferred.await()
+//
+//        // wait a bit to ensure tag propagation
+//        delay(500)
+//
+//        client.getIds(foo).contains(deferred.id) shouldBe false
+//        client.getIds(bar).contains(deferred.id) shouldBe false
+//    }
 
-        shouldThrow<CancelationException> { deferred.await() }
-    }
-
-    "2 Task canceled using tag" {
-        TaskTestImpl.behavior = { _, _ -> Status.FAILED_WITH_RETRY }
-
-        val deferred1 = client.dispatch(taskTestWithTags::log)
-        val deferred2 = client.dispatch(taskTestWithTags::log)
-
-        later {
-            val t = client.getTaskByTag(TaskTest::class.java, "foo")
-            client.cancel(t)
-        }
-
-        later(0) {
-            launch { shouldThrow<CancelationException> { deferred1.await() } }
-            launch { shouldThrow<CancelationException> { deferred2.await() } }
-        }.join()
-    }
-
-    "Tag should be added then deleted after completion" {
-        TaskTestImpl.behavior = { _, _ -> Status.SUCCESS }
-
-        val deferred = client.dispatch(taskTestWithTags::await, 200)
-        val foo = client.getTaskByTag(TaskTest::class.java, "foo")
-        val bar = client.getTaskByTag(TaskTest::class.java, "bar")
-
-        client.getIds(foo).contains(deferred.id) shouldBe true
-        client.getIds(bar).contains(deferred.id) shouldBe true
-
-        deferred.await()
-
-        // wait a bit to ensure tag propagation
-        delay(500)
-
-        client.getIds(foo).contains(deferred.id) shouldBe false
-        client.getIds(bar).contains(deferred.id) shouldBe false
-    }
-
-    "Tag should be added then deleted after cancellation" {
-        TaskTestImpl.behavior = { _, _ -> Status.FAILED_WITH_RETRY }
-
-        val deferred = client.dispatch(taskTestWithTags::log)
-        val foo = client.getTaskByTag(TaskTest::class.java, "foo")
-        val bar = client.getTaskByTag(TaskTest::class.java, "bar")
-
-        client.getIds(foo).contains(deferred.id) shouldBe true
-        client.getIds(bar).contains(deferred.id) shouldBe true
-
-        later { deferred.cancel() }
-
-        shouldThrow<CancelationException> { deferred.await() }
-
-        // wait a bit to ensure tag propagation
-        delay(200)
-        client.getIds(foo).contains(deferred.id) shouldBe false
-        client.getIds(bar).contains(deferred.id) shouldBe false
-    }
+//    "Tag should be added then deleted after cancellation" {
+//        TaskTestImpl.behavior = { _, _ -> Status.FAILED_WITH_RETRY }
+//
+//        val deferred = client.dispatch(taskTestWithTags::log)
+//        val foo = client.getTaskByTag(TaskTest::class.java, "foo")
+//        val bar = client.getTaskByTag(TaskTest::class.java, "bar")
+//
+//        client.getIds(foo).contains(deferred.id) shouldBe true
+//        client.getIds(bar).contains(deferred.id) shouldBe true
+//
+//        later { deferred.cancel() }
+//
+//        shouldThrow<CancelationException> { deferred.await() }
+//
+//        // wait a bit to ensure tag propagation
+//        delay(200)
+//        client.getIds(foo).contains(deferred.id) shouldBe false
+//        client.getIds(bar).contains(deferred.id) shouldBe false
+//    }
 
     "Get tags from context" {
         val taskWithTags = client.newTask(TaskA::class.java, tags = setOf("foo", "bar"))

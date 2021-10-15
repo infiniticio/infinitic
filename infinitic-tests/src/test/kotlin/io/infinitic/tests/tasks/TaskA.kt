@@ -41,10 +41,10 @@ interface TaskA : ParentInterface {
     fun workflowId(): String?
     fun workflowName(): String?
     fun cancelWorkflowA(id: String)
-    fun cancelTaskA(id: String)
+//    fun cancelTaskA(id: String)
     fun failing()
     fun successAtRetry(): String
-    fun retryTaskA(id: String)
+//    fun retryTaskA(id: String)
 
     fun tags(): Set<String>
     fun meta(): TaskMeta
@@ -67,11 +67,11 @@ class TaskAImpl : Task(), TaskA {
         context.client.cancel(t)
     }
 
-    override fun cancelTaskA(id: String) {
-        Thread.sleep(50)
-        val t = context.client.getTaskById(TaskA::class.java, id)
-        context.client.cancel(t)
-    }
+//    override fun cancelTaskA(id: String) {
+//        Thread.sleep(50)
+//        val t = context.client.getTaskById(TaskA::class.java, id)
+//        context.client.cancel(t)
+//    }
 
     override fun failing() = throw Exception("sorry")
 
@@ -80,11 +80,11 @@ class TaskAImpl : Task(), TaskA {
         else -> "ok"
     }
 
-    override fun retryTaskA(id: String) {
-        Thread.sleep(50)
-        val t = context.client.getTaskById(TaskA::class.java, id)
-        context.client.retry(t)
-    }
+//    override fun retryTaskA(id: String) {
+//        Thread.sleep(50)
+//        val t = context.client.getTaskById(TaskA::class.java, id)
+//        context.client.retry(t)
+//    }
 
     override fun parent() = "ok"
 

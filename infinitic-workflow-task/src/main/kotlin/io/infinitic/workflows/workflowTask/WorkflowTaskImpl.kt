@@ -27,19 +27,14 @@ package io.infinitic.workflows.workflowTask
 
 import io.infinitic.common.data.ReturnValue
 import io.infinitic.common.parser.getMethodPerNameAndParameters
-import io.infinitic.common.workflows.data.channels.ChannelImpl
 import io.infinitic.common.workflows.data.properties.PropertyHash
 import io.infinitic.common.workflows.data.properties.PropertyName
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTask
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskParameters
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskReturnValue
-import io.infinitic.exceptions.workflows.MultipleNamesForChannelException
-import io.infinitic.exceptions.workflows.NonUniqueChannelFromChannelMethodException
-import io.infinitic.exceptions.workflows.ParametersInChannelMethodException
 import io.infinitic.tasks.Task
-import io.infinitic.workflows.Channel
 import io.infinitic.workflows.Deferred
-import io.infinitic.workflows.Workflow
+import io.infinitic.workflows.setChannelNames
 import java.lang.reflect.InvocationTargetException
 import java.time.Duration
 
@@ -82,7 +77,7 @@ class WorkflowTaskImpl : Task(), WorkflowTask {
         setProperties(methodRun.propertiesNameHashAtStart)
 
         // initialize name of channels for this workflow, based on the methods that provide them
-        setChannelNames(workflow)
+        workflow.setChannelNames()
 
         // get method parameters
         // in case parameters contain some Deferred
@@ -108,30 +103,5 @@ class WorkflowTaskImpl : Task(), WorkflowTask {
             properties,
             methodReturnValue
         )
-    }
-
-    private fun setChannelNames(workflow: Workflow) {
-        workflow::class.java.declaredMethods
-            .filter { it.returnType.name == Channel::class.java.name }
-            .map {
-                // channel must not have parameters
-                if (it.parameterCount > 0) {
-                    throw ParametersInChannelMethodException(workflow::class.java.name, it.name)
-                }
-                // channel must be created only once per method
-                it.isAccessible = true
-                val channel = it.invoke(workflow)
-                val channelBis = it.invoke(workflow)
-                if (channel !== channelBis) {
-                    throw NonUniqueChannelFromChannelMethodException(workflow::class.java.name, it.name)
-                }
-                // this channel must not have a name already
-                channel as ChannelImpl<*>
-                if (channel.isNameInitialized()) {
-                    throw MultipleNamesForChannelException(workflow::class.java.name, it.name, channel.name)
-                }
-                // set channel name
-                channel.name = it.name
-            }
     }
 }

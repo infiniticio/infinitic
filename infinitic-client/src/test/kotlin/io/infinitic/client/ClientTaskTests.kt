@@ -40,21 +40,15 @@ import io.infinitic.common.tasks.data.TaskMeta
 import io.infinitic.common.tasks.data.TaskName
 import io.infinitic.common.tasks.data.TaskOptions
 import io.infinitic.common.tasks.data.TaskTag
-import io.infinitic.common.tasks.engine.messages.CancelTask
 import io.infinitic.common.tasks.engine.messages.DispatchTask
-import io.infinitic.common.tasks.engine.messages.RetryTask
 import io.infinitic.common.tasks.engine.messages.TaskEngineMessage
 import io.infinitic.common.tasks.tags.messages.AddTagToTask
-import io.infinitic.common.tasks.tags.messages.CancelTaskByTag
-import io.infinitic.common.tasks.tags.messages.GetTaskIdsByTag
-import io.infinitic.common.tasks.tags.messages.RetryTaskByTag
 import io.infinitic.common.tasks.tags.messages.TaskTagEngineMessage
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
 import io.infinitic.common.workflows.tags.messages.WorkflowTagEngineMessage
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
 import io.mockk.slot
-import java.util.UUID
 import java.util.concurrent.CopyOnWriteArrayList
 
 private val taskTagSlots = CopyOnWriteArrayList<TaskTagEngineMessage>() // multithread update
@@ -460,172 +454,172 @@ class ClientTaskTests : StringSpec({
         client.dispatch(fakeTask::m3, 0, "a").await() shouldBe "success"
     }
 
-    "Cancel task per id (sync)" {
-        // when
-
-        val id = UUID.randomUUID().toString()
-        val task = client.getTaskById(FakeTask::class.java, id)
-
-        client.cancel(task)
-        // then
-        taskTagSlots.size shouldBe 0
-        taskSlot.captured shouldBe CancelTask(
-            taskName = TaskName(FakeTask::class.java.name),
-            taskId = TaskId(id),
-            emitterName = clientNameTest
-        )
-    }
-
-    "Cancel task per id (async)" {
-        // when
-        val id = UUID.randomUUID().toString()
-        val task = client.getTaskById(FakeTask::class.java, id)
-
-        client.cancelAsync(task).join()
-        // then
-        taskTagSlots.size shouldBe 0
-        taskSlot.captured shouldBe CancelTask(
-            taskName = TaskName(FakeTask::class.java.name),
-            taskId = TaskId(id),
-            emitterName = clientNameTest
-        )
-    }
-
-    "Cancel task per tag (sync)" {
-        // when
-        val task = client.getTaskByTag(FakeTask::class.java, "foo")
-        client.cancel(task)
-        // then
-        taskTagSlots.size shouldBe 1
-        taskTagSlots[0] shouldBe CancelTaskByTag(
-            taskName = TaskName(FakeTask::class.java.name),
-            taskTag = TaskTag("foo"),
-            emitterName = clientNameTest
-        )
-        taskSlot.isCaptured shouldBe false
-    }
-
-    "Cancel task per tag (async)" {
-        // when
-        val task = client.getTaskByTag(FakeTask::class.java, "foo")
-        client.cancelAsync(task).join()
-        // then
-        taskTagSlots.size shouldBe 1
-        taskTagSlots[0] shouldBe CancelTaskByTag(
-            taskName = TaskName(FakeTask::class.java.name),
-            taskTag = TaskTag("foo"),
-            emitterName = clientNameTest
-        )
-        taskSlot.isCaptured shouldBe false
-    }
-
-    "Cancel task just dispatched (sync)" {
-        // when
-        val deferred = client.dispatch(fakeTask::m0)
-        deferred.cancel()
-        // then
-        taskTagSlots.size shouldBe 0
-        taskSlot.captured shouldBe CancelTask(
-            taskName = TaskName(FakeTask::class.java.name),
-            taskId = TaskId(deferred.id),
-            emitterName = clientNameTest
-        )
-    }
-
-    "Cancel task just dispatched (async)" {
-        // when
-        val deferred = client.dispatch(fakeTask::m0)
-        deferred.cancelAsync().join()
-        // then
-        taskTagSlots.size shouldBe 0
-        taskSlot.captured shouldBe CancelTask(
-            taskName = TaskName(FakeTask::class.java.name),
-            taskId = TaskId(deferred.id),
-            emitterName = clientNameTest
-        )
-    }
-
-    "Retry task per id (sync)" {
-        // when
-        val id = UUID.randomUUID().toString()
-        val task = client.getTaskById(FakeTask::class.java, id)
-        client.retry(task)
-
-        // then
-        taskTagSlots.size shouldBe 0
-        taskSlot.captured shouldBe RetryTask(
-            taskName = TaskName(FakeTask::class.java.name),
-            taskId = TaskId(id),
-            emitterName = clientNameTest
-        )
-    }
-
-    "Retry task per id (async)" {
-        // when
-        val id = UUID.randomUUID().toString()
-        val task = client.getTaskById(FakeTask::class.java, id)
-        client.retryAsync(task).join()
-        // then
-        taskTagSlots.size shouldBe 0
-        taskSlot.captured shouldBe RetryTask(
-            taskName = TaskName(FakeTask::class.java.name),
-            taskId = TaskId(id),
-            emitterName = clientNameTest
-        )
-    }
-
-    "Retry a task just dispatched " {
-        // when
-        val deferred = client.dispatch(fakeTask::m0)
-        deferred.retry()
-        // then
-        taskTagSlots.size shouldBe 0
-        taskSlot.captured shouldBe RetryTask(
-            taskName = TaskName(FakeTask::class.java.name),
-            taskId = TaskId(deferred.id),
-            emitterName = clientNameTest
-        )
-    }
-
-    "Retry task per tag (sync)" {
-        // when
-        val task = client.getTaskByTag(FakeTask::class.java, "foo")
-        client.retry(task)
-        // then
-        taskTagSlots.size shouldBe 1
-        taskTagSlots[0] shouldBe RetryTaskByTag(
-            taskName = TaskName(FakeTask::class.java.name),
-            taskTag = TaskTag("foo"),
-            emitterName = clientNameTest
-        )
-        taskSlot.isCaptured shouldBe false
-    }
-
-    "Retry task per tag (async)" {
-        // when
-        val task = client.getTaskByTag(FakeTask::class.java, "foo")
-        client.retryAsync(task).join()
-        // then
-        taskTagSlots.size shouldBe 1
-        taskTagSlots[0] shouldBe RetryTaskByTag(
-            taskName = TaskName(FakeTask::class.java.name),
-            taskTag = TaskTag("foo"),
-            emitterName = clientNameTest
-        )
-        taskSlot.isCaptured shouldBe false
-    }
-
-    "Get task ids par name and workflow" {
-        val task = client.getTaskByTag(FakeTask::class.java, "foo")
-        val taskIds = client.getIds(task)
-        // then
-        taskIds.size shouldBe 2
-        taskTagSlots.size shouldBe 1
-        taskTagSlots[0] shouldBe GetTaskIdsByTag(
-            taskName = TaskName(FakeTask::class.java.name),
-            taskTag = TaskTag("foo"),
-            emitterName = clientNameTest,
-        )
-        taskSlot.isCaptured shouldBe false
-    }
+//    "Cancel task per id (sync)" {
+//        // when
+//
+//        val id = UUID.randomUUID().toString()
+//        val task = client.getTaskById(FakeTask::class.java, id)
+//
+//        client.cancel(task)
+//        // then
+//        taskTagSlots.size shouldBe 0
+//        taskSlot.captured shouldBe CancelTask(
+//            taskName = TaskName(FakeTask::class.java.name),
+//            taskId = TaskId(id),
+//            emitterName = clientNameTest
+//        )
+//    }
+//
+//    "Cancel task per id (async)" {
+//        // when
+//        val id = UUID.randomUUID().toString()
+//        val task = client.getTaskById(FakeTask::class.java, id)
+//
+//        client.cancelAsync(task).join()
+//        // then
+//        taskTagSlots.size shouldBe 0
+//        taskSlot.captured shouldBe CancelTask(
+//            taskName = TaskName(FakeTask::class.java.name),
+//            taskId = TaskId(id),
+//            emitterName = clientNameTest
+//        )
+//    }
+//
+//    "Cancel task per tag (sync)" {
+//        // when
+//        val task = client.getTaskByTag(FakeTask::class.java, "foo")
+//        client.cancel(task)
+//        // then
+//        taskTagSlots.size shouldBe 1
+//        taskTagSlots[0] shouldBe CancelTaskByTag(
+//            taskName = TaskName(FakeTask::class.java.name),
+//            taskTag = TaskTag("foo"),
+//            emitterName = clientNameTest
+//        )
+//        taskSlot.isCaptured shouldBe false
+//    }
+//
+//    "Cancel task per tag (async)" {
+//        // when
+//        val task = client.getTaskByTag(FakeTask::class.java, "foo")
+//        client.cancelAsync(task).join()
+//        // then
+//        taskTagSlots.size shouldBe 1
+//        taskTagSlots[0] shouldBe CancelTaskByTag(
+//            taskName = TaskName(FakeTask::class.java.name),
+//            taskTag = TaskTag("foo"),
+//            emitterName = clientNameTest
+//        )
+//        taskSlot.isCaptured shouldBe false
+//    }
+//
+//    "Cancel task just dispatched (sync)" {
+//        // when
+//        val deferred = client.dispatch(fakeTask::m0)
+//        deferred.cancel()
+//        // then
+//        taskTagSlots.size shouldBe 0
+//        taskSlot.captured shouldBe CancelTask(
+//            taskName = TaskName(FakeTask::class.java.name),
+//            taskId = TaskId(deferred.id),
+//            emitterName = clientNameTest
+//        )
+//    }
+//
+//    "Cancel task just dispatched (async)" {
+//        // when
+//        val deferred = client.dispatch(fakeTask::m0)
+//        deferred.cancelAsync().join()
+//        // then
+//        taskTagSlots.size shouldBe 0
+//        taskSlot.captured shouldBe CancelTask(
+//            taskName = TaskName(FakeTask::class.java.name),
+//            taskId = TaskId(deferred.id),
+//            emitterName = clientNameTest
+//        )
+//    }
+//
+//    "Retry task per id (sync)" {
+//        // when
+//        val id = UUID.randomUUID().toString()
+//        val task = client.getTaskById(FakeTask::class.java, id)
+//        client.retry(task)
+//
+//        // then
+//        taskTagSlots.size shouldBe 0
+//        taskSlot.captured shouldBe RetryTask(
+//            taskName = TaskName(FakeTask::class.java.name),
+//            taskId = TaskId(id),
+//            emitterName = clientNameTest
+//        )
+//    }
+//
+//    "Retry task per id (async)" {
+//        // when
+//        val id = UUID.randomUUID().toString()
+//        val task = client.getTaskById(FakeTask::class.java, id)
+//        client.retryAsync(task).join()
+//        // then
+//        taskTagSlots.size shouldBe 0
+//        taskSlot.captured shouldBe RetryTask(
+//            taskName = TaskName(FakeTask::class.java.name),
+//            taskId = TaskId(id),
+//            emitterName = clientNameTest
+//        )
+//    }
+//
+//    "Retry a task just dispatched " {
+//        // when
+//        val deferred = client.dispatch(fakeTask::m0)
+//        deferred.retry()
+//        // then
+//        taskTagSlots.size shouldBe 0
+//        taskSlot.captured shouldBe RetryTask(
+//            taskName = TaskName(FakeTask::class.java.name),
+//            taskId = TaskId(deferred.id),
+//            emitterName = clientNameTest
+//        )
+//    }
+//
+//    "Retry task per tag (sync)" {
+//        // when
+//        val task = client.getTaskByTag(FakeTask::class.java, "foo")
+//        client.retry(task)
+//        // then
+//        taskTagSlots.size shouldBe 1
+//        taskTagSlots[0] shouldBe RetryTaskByTag(
+//            taskName = TaskName(FakeTask::class.java.name),
+//            taskTag = TaskTag("foo"),
+//            emitterName = clientNameTest
+//        )
+//        taskSlot.isCaptured shouldBe false
+//    }
+//
+//    "Retry task per tag (async)" {
+//        // when
+//        val task = client.getTaskByTag(FakeTask::class.java, "foo")
+//        client.retryAsync(task).join()
+//        // then
+//        taskTagSlots.size shouldBe 1
+//        taskTagSlots[0] shouldBe RetryTaskByTag(
+//            taskName = TaskName(FakeTask::class.java.name),
+//            taskTag = TaskTag("foo"),
+//            emitterName = clientNameTest
+//        )
+//        taskSlot.isCaptured shouldBe false
+//    }
+//
+//    "Get task ids par name and workflow" {
+//        val task = client.getTaskByTag(FakeTask::class.java, "foo")
+//        val taskIds = client.getIds(task)
+//        // then
+//        taskIds.size shouldBe 2
+//        taskTagSlots.size shouldBe 1
+//        taskTagSlots[0] shouldBe GetTaskIdsByTag(
+//            taskName = TaskName(FakeTask::class.java.name),
+//            taskTag = TaskTag("foo"),
+//            emitterName = clientNameTest,
+//        )
+//        taskSlot.isCaptured shouldBe false
+//    }
 })

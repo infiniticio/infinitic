@@ -53,7 +53,7 @@ class WorkflowAImpl : Workflow(), WorkflowA {
     private val newTaskA = newTask(TaskA::class.java)
 
     // an existing task
-    private val getTaskA = getTaskById(TaskA::class.java, UUID.randomUUID().toString())
+//    private val getTaskA = getTaskById(TaskA::class.java, UUID.randomUUID().toString())
 
     // a new workflow
     private val newWorkflowA = newWorkflow(WorkflowA::class.java)

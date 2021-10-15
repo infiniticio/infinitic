@@ -416,12 +416,13 @@ private fun CoroutineScope.dispatchMethod(
 
 private fun getSendSignal(
     emitterName: ClientName,
+    commandId: CommandId,
     command: SendSignalCmd
 ) = SendSignal(
     workflowName = command.workflowName,
     workflowId = command.workflowId!!,
     channelName = command.channelName,
-    channelSignalId = ChannelSignalId(),
+    channelSignalId = ChannelSignalId.from(commandId),
     channelSignal = command.channelSignal,
     channelSignalTypes = command.channelSignalTypes,
     emitterName = emitterName
@@ -438,7 +439,7 @@ private fun CoroutineScope.sendSignal(
 
     when {
         command.workflowId != null -> {
-            val sendToChannel = getSendSignal(output.clientName, command)
+            val sendToChannel = getSendSignal(output.clientName, newCommand.commandId, command)
 
             when (command.workflowId) {
                 state.workflowId ->
@@ -451,7 +452,8 @@ private fun CoroutineScope.sendSignal(
         }
         command.workflowTag != null -> {
             if (state.workflowTags.contains(command.workflowTag!!)) {
-                bufferedMessages.add(getSendSignal(output.clientName, command))
+                val sendToChannel = getSendSignal(output.clientName, newCommand.commandId, command)
+                bufferedMessages.add(sendToChannel)
             }
             // dispatch signal per tag
             val sendSignalByTag = SendSignalByTag(

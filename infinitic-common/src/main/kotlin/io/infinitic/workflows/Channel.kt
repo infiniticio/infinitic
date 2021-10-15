@@ -25,4 +25,33 @@
 
 package io.infinitic.workflows
 
-interface Channel<T : Any> : SendChannel<T>, ReceiveChannel<T>
+import com.jayway.jsonpath.Criteria
+import io.infinitic.exceptions.workflows.NameNotInitializedInChannelException
+
+class Channel<T : Any>(
+    private val dispatcherFn: () -> WorkflowDispatcher
+) : SendChannel<T> {
+    private lateinit var _name: String
+
+    internal fun setName(name: String) { _name = name }
+
+    internal fun hasName() = ::_name.isInitialized
+
+    val name by lazy {
+        when (hasName()) {
+            true -> _name
+            else -> throw NameNotInitializedInChannelException
+        }
+    }
+
+    override fun send(signal: T) =
+        dispatcherFn().sendSignal(this, signal)
+
+    @JvmOverloads
+    fun receive(jsonPath: String? = null, criteria: Criteria? = null): Deferred<T> =
+        dispatcherFn().receiveSignal(this, null, jsonPath, criteria)
+
+    @JvmOverloads
+    fun <S : T> receive(klass: Class<S>, jsonPath: String? = null, criteria: Criteria? = null): Deferred<S> =
+        dispatcherFn().receiveSignal(this, klass, jsonPath, criteria)
+}

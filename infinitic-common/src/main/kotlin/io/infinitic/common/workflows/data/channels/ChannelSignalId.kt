@@ -25,13 +25,15 @@
 
 package io.infinitic.common.workflows.data.channels
 
+import io.infinitic.common.workflows.data.commands.CommandId
 import kotlinx.serialization.Serializable
-import java.lang.reflect.Method
 import java.util.UUID
 
 @JvmInline @Serializable
 value class ChannelSignalId(private val id: String = UUID.randomUUID().toString()) {
     companion object {
-        fun from(method: Method) = ChannelName(method.name)
+        fun from(command: CommandId) = ChannelSignalId(command.toString())
     }
+
+    override fun toString() = id
 }

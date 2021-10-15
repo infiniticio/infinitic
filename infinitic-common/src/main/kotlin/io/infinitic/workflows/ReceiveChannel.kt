@@ -28,7 +28,11 @@ package io.infinitic.workflows
 import com.jayway.jsonpath.Criteria
 
 interface ReceiveChannel<T : Any> {
-    fun receive(jsonPath: String? = null, criteria: Criteria? = null): Deferred<T>
+    fun receive(): Deferred<T>
+
+    fun receive(jsonPath: String): Deferred<T>
+
+    fun receive(jsonPath: String, criteria: Criteria? = null): Deferred<T>
 
     fun <S : T> receive(klass: Class<S>, jsonPath: String? = null, criteria: Criteria? = null): Deferred<S>
 }

@@ -34,7 +34,6 @@ import io.infinitic.common.proxies.GetWorkflowProxyHandler
 import io.infinitic.common.proxies.NewTaskProxyHandler
 import io.infinitic.common.proxies.NewWorkflowProxyHandler
 import io.infinitic.common.proxies.ProxyHandler
-import io.infinitic.common.tasks.data.TaskId
 import io.infinitic.common.tasks.data.TaskMeta
 import io.infinitic.common.tasks.data.TaskOptions
 import io.infinitic.common.tasks.data.TaskTag
@@ -168,29 +167,29 @@ abstract class InfiniticClient : Closeable {
         workflowMeta = WorkflowMeta(meta)
     ) { dispatcher }.stub()
 
-    /**
-     *  Create a stub for an existing task targeted by id
-     */
-    fun <T : Any> getTaskById(
-        klass: Class<out T>,
-        id: String
-    ): T = GetTaskProxyHandler(
-        klass = klass,
-        TaskId(id),
-        null
-    ) { dispatcher }.stub()
-
-    /**
-     *  Create a stub for existing task targeted by tag
-     */
-    fun <T : Any> getTaskByTag(
-        klass: Class<out T>,
-        tag: String
-    ): T = GetTaskProxyHandler(
-        klass = klass,
-        null,
-        TaskTag(tag)
-    ) { dispatcher }.stub()
+//    /**
+//     *  Create a stub for an existing task targeted by id
+//     */
+//    fun <T : Any> getTaskById(
+//        klass: Class<out T>,
+//        id: String
+//    ): T = GetTaskProxyHandler(
+//        klass = klass,
+//        TaskId(id),
+//        null
+//    ) { dispatcher }.stub()
+//
+//    /**
+//     *  Create a stub for existing task targeted by tag
+//     */
+//    fun <T : Any> getTaskByTag(
+//        klass: Class<out T>,
+//        tag: String
+//    ): T = GetTaskProxyHandler(
+//        klass = klass,
+//        null,
+//        TaskTag(tag)
+//    ) { dispatcher }.stub()
 
     /**
      *  Create a stub for an existing workflow targeted by id

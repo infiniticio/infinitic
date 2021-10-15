@@ -28,7 +28,6 @@ package io.infinitic.workflows
 import com.jayway.jsonpath.Criteria
 import io.infinitic.common.proxies.ProxyDispatcher
 import io.infinitic.common.proxies.ProxyHandler
-import io.infinitic.common.workflows.data.channels.ChannelImpl
 import java.time.Duration
 import java.time.Instant
 
@@ -46,9 +45,9 @@ interface WorkflowDispatcher : ProxyDispatcher {
 
     fun timer(instant: Instant): Deferred<Instant>
 
-    fun <T : Any> receiveSignal(channel: ChannelImpl<T>, jsonPath: String?, criteria: Criteria?): Deferred<T>
+//    fun <T : Any> receiveSignal(channel: Channel<T>, jsonPath: String?, criteria: Criteria?): Deferred<T>
 
-    fun <S : T, T : Any> receiveSignal(channel: ChannelImpl<T>, klass: Class<S>, jsonPath: String?, criteria: Criteria?): Deferred<S>
+    fun <S : T, T : Any> receiveSignal(channel: Channel<T>, klass: Class<S>?, jsonPath: String?, criteria: Criteria?): Deferred<S>
 
-    fun <T : Any> sendSignal(channel: ChannelImpl<T>, signal: T)
+    fun <T : Any> sendSignal(channel: Channel<T>, signal: T)
 }
