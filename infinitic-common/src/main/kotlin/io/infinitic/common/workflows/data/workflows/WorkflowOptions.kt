@@ -30,10 +30,10 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 data class WorkflowOptions(
-    val workflowChangeCheckMode: WorkflowChangeCheckMode = WorkflowChangeCheckMode.ALL
+    val workflowChangeCheckMode: WorkflowChangeCheckMode = WorkflowChangeCheckMode.STRICT
 ) : JobOptions
 
 @Serializable
 enum class WorkflowChangeCheckMode {
-    NONE, SIMPLE_NAME_ONLY, ALL
+    NONE, SIMPLE, STRICT
 }

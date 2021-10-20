@@ -35,6 +35,7 @@ import io.infinitic.common.workflows.data.channels.ChannelSignalType
 import io.infinitic.common.workflows.data.commands.CommandHash
 import io.infinitic.common.workflows.data.commands.CommandId
 import io.infinitic.common.workflows.data.commands.CommandSimpleName
+import io.infinitic.common.workflows.data.commands.DispatchWorkflowPastCommand
 import io.infinitic.common.workflows.data.methodRuns.MethodRunId
 import io.infinitic.common.workflows.data.methodRuns.MethodRunPosition
 import io.infinitic.common.workflows.data.properties.PropertyHash
@@ -250,6 +251,14 @@ class DataTests : StringSpec({
         val m2 = Json.decodeFromString<WorkflowTaskIndex>(json)
 
         json shouldBe "42"
+        m2 shouldBe m
+    }
+
+    "DispatchWorkflowPastCommand should reversible in json" {
+        val m = TestFactory.random<DispatchWorkflowPastCommand>()
+        val json = Json.encodeToString(m)
+        val m2 = Json.decodeFromString<DispatchWorkflowPastCommand>(json)
+
         m2 shouldBe m
     }
 })

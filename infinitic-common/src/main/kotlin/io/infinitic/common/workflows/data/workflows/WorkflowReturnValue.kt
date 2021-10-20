@@ -23,33 +23,15 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.exceptions.workflows
+package io.infinitic.common.workflows.data.workflows
 
-import io.infinitic.common.errors.Error
-import io.infinitic.exceptions.RunException
+import io.infinitic.common.data.ReturnValue
+import io.infinitic.common.workflows.data.methodRuns.MethodRunId
+import kotlinx.serialization.Serializable
 
-sealed class WorkflowRunException(
-    val name: String?,
-    val id: String,
-    msg: String,
-    causeError: Error? = null
-) : RunException(msg, causeError)
-
-class CanceledDeferredException(name: String?, id: String) : WorkflowRunException(
-    name,
-    id,
-    msg = "Waiting for a canceled deferred: $name ($id)",
-)
-
-class FailedDeferredException(name: String?, id: String, error: Error? = null) : WorkflowRunException(
-    name,
-    id,
-    msg = "Waiting for a failed deferred: $name ($id)",
-    causeError = error
-)
-
-class TimedOutDeferredException(name: String?, id: String) : WorkflowRunException(
-    name,
-    id,
-    msg = "Waiting for a timed-out deferred: $name ($id)",
+@Serializable
+data class WorkflowReturnValue(
+    val workflowId: WorkflowId,
+    val methodRunId: MethodRunId,
+    val returnValue: ReturnValue
 )

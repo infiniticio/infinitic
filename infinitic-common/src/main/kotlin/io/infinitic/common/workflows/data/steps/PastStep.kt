@@ -32,8 +32,9 @@ import io.infinitic.common.workflows.data.properties.PropertyHash
 import io.infinitic.common.workflows.data.properties.PropertyName
 import io.infinitic.common.workflows.data.steps.StepStatus.Canceled
 import io.infinitic.common.workflows.data.steps.StepStatus.Completed
+import io.infinitic.common.workflows.data.steps.StepStatus.CurrentlyFailed
 import io.infinitic.common.workflows.data.steps.StepStatus.Failed
-import io.infinitic.common.workflows.data.steps.StepStatus.OngoingFailure
+import io.infinitic.common.workflows.data.steps.StepStatus.Unknown
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskIndex
 import kotlinx.serialization.Serializable
 
@@ -49,7 +50,7 @@ data class PastStep(
 ) {
     @JsonIgnore
     fun isTerminated() =
-        stepStatus is Completed || stepStatus is Canceled || stepStatus is Failed
+        stepStatus is Completed || stepStatus is Canceled || stepStatus is Failed || stepStatus is Unknown
 
     fun updateWith(pastCommand: PastCommand) {
         step.updateWith(pastCommand.commandId, pastCommand.commandStatus)
@@ -67,7 +68,7 @@ data class PastStep(
             // apply update
             updateWith(pastCommand)
 
-            return isTerminated() || (stepStatus is OngoingFailure && isWaiting)
+            return isTerminated() || (stepStatus is CurrentlyFailed && isWaiting)
         }
     }
 

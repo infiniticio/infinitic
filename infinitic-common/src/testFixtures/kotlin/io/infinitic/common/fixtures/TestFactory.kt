@@ -26,7 +26,7 @@
 package io.infinitic.common.fixtures
 
 import io.infinitic.common.data.methods.MethodParameters
-import io.infinitic.common.errors.Error
+import io.infinitic.common.errors.DeferredError
 import io.infinitic.common.metrics.global.messages.MetricsGlobalEnvelope
 import io.infinitic.common.metrics.global.messages.MetricsGlobalMessage
 import io.infinitic.common.metrics.perName.messages.MetricsPerNameEnvelope
@@ -89,15 +89,9 @@ object TestFactory {
                 val sub = MetricsGlobalMessage::class.sealedSubclasses.shuffled().first()
                 MetricsGlobalEnvelope.from(random(sub))
             }
-            .randomize(Error::class.java) {
-                Error(
-                    errorName = random(),
-                    errorStackTraceToString = random(),
-                    errorMessage = random(),
-                    errorCause = null,
-                    whereId = null,
-                    whereName = null
-                )
+            .randomize(DeferredError::class.java) {
+                val sub = DeferredError::class.sealedSubclasses.shuffled().first()
+                random(sub)
             }
 
         values?.forEach {

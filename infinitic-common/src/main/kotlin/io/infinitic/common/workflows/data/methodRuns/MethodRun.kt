@@ -31,7 +31,9 @@ import io.infinitic.common.data.methods.MethodName
 import io.infinitic.common.data.methods.MethodParameterTypes
 import io.infinitic.common.data.methods.MethodParameters
 import io.infinitic.common.workflows.data.commands.CommandId
-import io.infinitic.common.workflows.data.commands.CommandType
+import io.infinitic.common.workflows.data.commands.DispatchMethodCommand
+import io.infinitic.common.workflows.data.commands.DispatchTaskCommand
+import io.infinitic.common.workflows.data.commands.DispatchWorkflowCommand
 import io.infinitic.common.workflows.data.commands.PastCommand
 import io.infinitic.common.workflows.data.properties.PropertyHash
 import io.infinitic.common.workflows.data.properties.PropertyName
@@ -83,10 +85,10 @@ data class MethodRun(
     fun isTerminated() = methodReturnValue != null &&
         pastSteps.all { it.isTerminated() } &&
         pastCommands.filter {
-            when (it.commandType) {
-                CommandType.DISPATCH_CHILD_WORKFLOW,
-                CommandType.DISPATCH_METHOD,
-                CommandType.DISPATCH_TASK -> true
+            when (it.command) {
+                is DispatchWorkflowCommand,
+                is DispatchMethodCommand,
+                is DispatchTaskCommand -> true
                 else -> false
             }
         }.all { it.isTerminated() }

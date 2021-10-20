@@ -687,6 +687,7 @@ abstract class InfiniticClient : Closeable {
                 dispatcher.awaitTask(
                     handler.returnType,
                     handler.taskName,
+                    handler.methodName,
                     handler.taskId!!,
                     false
                 )
@@ -700,6 +701,7 @@ abstract class InfiniticClient : Closeable {
                 dispatcher.awaitWorkflow(
                     handler.returnType,
                     handler.workflowName,
+                    handler.methodName,
                     handler.workflowId!!,
                     null,
                     false
@@ -725,6 +727,7 @@ abstract class InfiniticClient : Closeable {
                 dispatcher.awaitWorkflow(
                     handler.returnType,
                     handler.workflowName,
+                    handler.methodName,
                     handler.workflowId!!,
                     MethodRunId(methodRunId),
                     false

@@ -23,27 +23,75 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.client.deferred
+package io.infinitic.common.errors
 
-import io.infinitic.client.Deferred
-import io.infinitic.client.dispatcher.ClientDispatcher
 import io.infinitic.common.data.methods.MethodName
 import io.infinitic.common.tasks.data.TaskId
 import io.infinitic.common.tasks.data.TaskName
+import io.infinitic.exceptions.thisShouldNotHappen
+import kotlinx.serialization.Serializable
 
-class DeferredTask<R> (
-    internal val returnClass: Class<R>,
-    internal val taskName: TaskName,
-    internal val methodName: MethodName,
-    internal val taskId: TaskId,
-    private val dispatcher: ClientDispatcher,
-) : Deferred<R> {
+@Serializable
+sealed class ExecutorError
 
-    override fun cancelAsync() = dispatcher.cancelTaskAsync(taskName, taskId, null)
+/**
+ * Task error
+ */
+@Serializable
+data class TaskError(
+    /**
+     * Name of the task
+     */
+    val taskName: TaskName,
 
-    override fun retryAsync() = dispatcher.retryTaskAsync(taskName, taskId, null)
+    /**
+     * Id of the task
+     */
+    val taskId: TaskId,
 
-    override fun await(): R = dispatcher.awaitTask(returnClass, taskName, methodName, taskId, true)
+    /**
+     * Method called
+     */
+    val methodName: MethodName,
 
-    override val id: String by lazy { taskId.toString() }
+    /**
+     * cause of the error
+     */
+    val runtimeError: RuntimeError
+) : ExecutorError()
+
+/**
+ * Workflow Task error
+ */
+@Serializable
+data class WorkflowTaskError(
+    /**
+     * Name of the task
+     */
+    val taskName: TaskName,
+
+    /**
+     * Id of the task
+     */
+    val taskId: TaskId,
+
+    /**
+     * Method called
+     */
+    val methodName: MethodName,
+
+    /**
+     * cause of the error
+     */
+    val deferredError: DeferredError?,
+
+    /**
+     * cause of the error
+     */
+    val runtimeError: RuntimeError?
+) : ExecutorError() {
+    init {
+        // only one of deferredError / runtimeError should be set
+        if (listOfNotNull(deferredError, runtimeError).size != 1) thisShouldNotHappen()
+    }
 }

@@ -30,7 +30,9 @@ import io.infinitic.common.clients.data.ClientName
 import io.infinitic.common.data.MillisDuration
 import io.infinitic.common.data.ReturnValue
 import io.infinitic.common.data.methods.MethodParameters
-import io.infinitic.common.errors.Error
+import io.infinitic.common.errors.DeferredError
+import io.infinitic.common.errors.RuntimeError
+import io.infinitic.common.exceptions.DeferredException
 import io.infinitic.common.parser.getMethodPerNameAndParameters
 import io.infinitic.common.tasks.data.TaskMeta
 import io.infinitic.common.tasks.engine.SendToTaskEngine
@@ -111,7 +113,8 @@ class TaskExecutor(
             sendTaskCompleted(message, output, TaskMeta(task.context.meta))
         } catch (e: InvocationTargetException) {
             val cause = e.cause
-            if (cause is Exception) {
+            // do not retry failed workflow task due to failed/canceled task/workflow
+            if (cause is Exception && cause !is DeferredException) {
                 failTaskWithRetry(task, message, cause)
             } else {
                 sendTaskAttemptFailed(message, cause ?: e, null, TaskMeta(task.context.meta))
@@ -188,12 +191,10 @@ class TaskExecutor(
 
     private fun sendTaskAttemptFailed(
         message: ExecuteTaskAttempt,
-        cause: Throwable,
+        throwable: Throwable,
         delay: MillisDuration?,
         taskMeta: TaskMeta
     ) {
-        logger.error(cause) { "task ${message.taskName} (${message.taskId}) - error: $cause" }
-
         val taskAttemptFailed = TaskAttemptFailed(
             taskName = message.taskName,
             taskId = message.taskId,
@@ -201,7 +202,14 @@ class TaskExecutor(
             taskAttemptId = message.taskAttemptId,
             taskRetrySequence = message.taskRetrySequence,
             taskRetryIndex = message.taskRetryIndex,
-            taskAttemptError = Error.from(cause),
+            deferredError = when (throwable is DeferredException) {
+                true -> DeferredError.from(throwable)
+                false -> null
+            },
+            runtimeError = when (throwable is DeferredException) {
+                true -> null
+                false -> RuntimeError.from(throwable)
+            },
             taskMeta = taskMeta,
             emitterName = clientName
         )

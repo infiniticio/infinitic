@@ -27,6 +27,7 @@ package io.infinitic.client.dispatcher
 
 import io.infinitic.client.Deferred
 import io.infinitic.common.clients.messages.ClientMessage
+import io.infinitic.common.data.methods.MethodName
 import io.infinitic.common.proxies.ProxyDispatcher
 import io.infinitic.common.proxies.ProxyHandler
 import io.infinitic.common.tasks.data.TaskId
@@ -51,6 +52,7 @@ interface ClientDispatcher : ProxyDispatcher {
     fun <T> awaitTask(
         returnClass: Class<T>,
         taskName: TaskName,
+        methodName: MethodName,
         taskId: TaskId,
         clientWaiting: Boolean
     ): T
@@ -58,6 +60,7 @@ interface ClientDispatcher : ProxyDispatcher {
     fun <T> awaitWorkflow(
         returnClass: Class<T>,
         workflowName: WorkflowName,
+        methodName: MethodName,
         workflowId: WorkflowId,
         methodRunId: MethodRunId?,
         clientWaiting: Boolean

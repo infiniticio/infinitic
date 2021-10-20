@@ -31,7 +31,7 @@ import io.infinitic.common.data.ReturnValue
 import io.infinitic.common.data.methods.MethodName
 import io.infinitic.common.data.methods.MethodParameterTypes
 import io.infinitic.common.data.methods.MethodParameters
-import io.infinitic.common.errors.Error
+import io.infinitic.common.errors.RuntimeError
 import io.infinitic.common.serDe.avro.AvroSerDe
 import io.infinitic.common.tasks.data.TaskAttemptId
 import io.infinitic.common.tasks.data.TaskId
@@ -64,7 +64,7 @@ data class TaskState(
     var taskRetrySequence: TaskRetrySequence = TaskRetrySequence(0),
     var taskAttemptId: TaskAttemptId,
     var taskRetryIndex: TaskRetryIndex = TaskRetryIndex(0),
-    var lastError: Error? = null,
+    var lastError: RuntimeError? = null,
     val taskTags: Set<TaskTag>,
     val taskOptions: TaskOptions,
     var taskMeta: TaskMeta

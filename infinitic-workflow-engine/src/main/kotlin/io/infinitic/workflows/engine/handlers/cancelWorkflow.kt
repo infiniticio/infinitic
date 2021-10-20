@@ -26,15 +26,17 @@
 package io.infinitic.workflows.engine.handlers
 
 import io.infinitic.common.clients.messages.MethodCanceled
-import io.infinitic.common.workflows.data.commands.CommandType
+import io.infinitic.common.errors.CanceledWorkflowError
+import io.infinitic.common.workflows.data.commands.DispatchMethodCommand
+import io.infinitic.common.workflows.data.commands.DispatchWorkflowCommand
 import io.infinitic.common.workflows.data.methodRuns.MethodRun
 import io.infinitic.common.workflows.data.methodRuns.MethodRunId
 import io.infinitic.common.workflows.data.workflows.WorkflowCancellationReason
 import io.infinitic.common.workflows.data.workflows.WorkflowId
-import io.infinitic.common.workflows.data.workflows.WorkflowName
 import io.infinitic.common.workflows.engine.messages.CancelWorkflow
 import io.infinitic.common.workflows.engine.messages.ChildMethodCanceled
 import io.infinitic.common.workflows.engine.state.WorkflowState
+import io.infinitic.common.workflows.tags.messages.CancelWorkflowByTag
 import io.infinitic.exceptions.thisShouldNotHappen
 import io.infinitic.workflows.engine.output.WorkflowEngineOutput
 import kotlinx.coroutines.CoroutineScope
@@ -86,28 +88,57 @@ private fun CoroutineScope.cancelMethodRun(
     // inform parents of cancellation (if parent did not trigger the cancellation!)
     if (reason != WorkflowCancellationReason.CANCELED_BY_PARENT && methodRun.parentWorkflowId != null) {
         val childMethodCanceled = ChildMethodCanceled(
+            workflowId = methodRun.parentWorkflowId!!,
             workflowName = methodRun.parentWorkflowName ?: thisShouldNotHappen(),
-            workflowId = methodRun.parentWorkflowId ?: thisShouldNotHappen(),
             methodRunId = methodRun.parentMethodRunId ?: thisShouldNotHappen(),
-            childWorkflowName = state.workflowName,
-            childWorkflowId = state.workflowId,
-            childMethodRunId = methodRun.methodRunId,
+            childCanceledWorkflowError = CanceledWorkflowError(
+                workflowName = state.workflowName,
+                workflowId = state.workflowId,
+                methodRunId = methodRun.methodRunId,
+            ),
             emitterName = output.clientName
         )
         launch { output.sendToWorkflowEngine(childMethodCanceled) }
     }
 
     // cancel children
-    methodRun.pastCommands
-        .filter { it.commandType == CommandType.DISPATCH_CHILD_WORKFLOW }
-        .forEach {
-            val cancelWorkflow = CancelWorkflow(
-                workflowName = WorkflowName.from(it.commandName ?: thisShouldNotHappen()),
-                workflowId = WorkflowId(it.commandId.toString()),
-                methodRunId = MethodRunId.from(it.commandId),
-                reason = WorkflowCancellationReason.CANCELED_BY_PARENT,
-                emitterName = output.clientName
-            )
-            launch { output.sendToWorkflowEngine(cancelWorkflow) }
+    methodRun.pastCommands.forEach {
+        when (val command = it.command) {
+            is DispatchMethodCommand -> {
+                when {
+                    command.workflowId != null -> {
+                        val cancelWorkflow = CancelWorkflow(
+                            workflowId = command.workflowId!!,
+                            workflowName = command.workflowName,
+                            methodRunId = MethodRunId.from(it.commandId),
+                            reason = WorkflowCancellationReason.CANCELED_BY_PARENT,
+                            emitterName = output.clientName
+                        )
+                        launch { output.sendToWorkflowEngine(cancelWorkflow) }
+                    }
+                    command.workflowTag != null -> {
+                        val cancelWorkflowByTag = CancelWorkflowByTag(
+                            workflowTag = command.workflowTag!!,
+                            workflowName = command.workflowName,
+                            reason = WorkflowCancellationReason.CANCELED_BY_PARENT,
+                            emitterWorkflowId = state.workflowId,
+                            emitterName = output.clientName
+                        )
+                        launch { output.sendToWorkflowTagEngine(cancelWorkflowByTag) }
+                    }
+                    else -> thisShouldNotHappen()
+                }
+            }
+            is DispatchWorkflowCommand -> {
+                val cancelWorkflow = CancelWorkflow(
+                    workflowId = WorkflowId.from(it.commandId),
+                    workflowName = command.workflowName,
+                    methodRunId = null,
+                    reason = WorkflowCancellationReason.CANCELED_BY_PARENT,
+                    emitterName = output.clientName
+                )
+                launch { output.sendToWorkflowEngine(cancelWorkflow) }
+            }
         }
+    }
 }

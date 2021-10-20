@@ -45,6 +45,15 @@ import io.infinitic.common.clients.messages.TaskUnknown
 import io.infinitic.common.clients.messages.WorkflowIdsByTag
 import io.infinitic.common.clients.messages.interfaces.MethodMessage
 import io.infinitic.common.clients.messages.interfaces.TaskMessage
+import io.infinitic.common.data.methods.MethodName
+import io.infinitic.common.errors.FailedWorkflowError
+import io.infinitic.common.exceptions.CanceledTaskException
+import io.infinitic.common.exceptions.CanceledWorkflowException
+import io.infinitic.common.exceptions.FailedTaskException
+import io.infinitic.common.exceptions.FailedWorkflowException
+import io.infinitic.common.exceptions.RuntimeException
+import io.infinitic.common.exceptions.UnknownTaskException
+import io.infinitic.common.exceptions.UnknownWorkflowException
 import io.infinitic.common.proxies.ChannelProxyHandler
 import io.infinitic.common.proxies.GetTaskProxyHandler
 import io.infinitic.common.proxies.GetWorkflowProxyHandler
@@ -84,12 +93,8 @@ import io.infinitic.common.workflows.tags.messages.DispatchMethodByTag
 import io.infinitic.common.workflows.tags.messages.GetWorkflowIdsByTag
 import io.infinitic.common.workflows.tags.messages.RetryWorkflowTaskByTag
 import io.infinitic.common.workflows.tags.messages.SendSignalByTag
-import io.infinitic.exceptions.clients.CancelationException
-import io.infinitic.exceptions.clients.FailureException
 import io.infinitic.exceptions.clients.InvalidChannelUsageException
 import io.infinitic.exceptions.clients.InvalidRunningTaskException
-import io.infinitic.exceptions.clients.UnknownTaskException
-import io.infinitic.exceptions.clients.UnknownWorkflowException
 import io.infinitic.exceptions.thisShouldNotHappen
 import io.infinitic.workflows.SendChannel
 import kotlinx.coroutines.CoroutineScope
@@ -146,6 +151,7 @@ internal class ClientDispatcherImpl(
     override fun <T> awaitTask(
         returnClass: Class<T>,
         taskName: TaskName,
+        methodName: MethodName,
         taskId: TaskId,
         clientWaiting: Boolean
     ): T {
@@ -170,18 +176,23 @@ internal class ClientDispatcherImpl(
         @Suppress("UNCHECKED_CAST")
         return when (taskResult) {
             is TaskCompleted -> taskResult.taskReturnValue.value() as T
-            is TaskCanceled -> throw CancelationException(
-                "$taskId",
-                "$taskName",
+            is TaskCanceled -> throw CanceledTaskException(
+                taskName = taskName.toString(),
+                taskId = taskId.toString(),
+                methodName = methodName.toString()
             )
-            is TaskFailed -> throw FailureException(
-                "$taskId",
-                "$taskName",
-                taskResult.error
+            is TaskFailed -> throw FailedTaskException(
+                taskName = taskName.toString(),
+                taskId = taskId.toString(),
+                methodName = methodName.toString(),
+                name = taskResult.error.name,
+                message = taskResult.error.message,
+                stackTraceToString = taskResult.error.stackTraceToString,
+                cause = taskResult.error.cause?.let { RuntimeException.from(it) }
             )
             is TaskUnknown -> throw UnknownTaskException(
-                "$taskId",
-                "$taskName"
+                taskName = taskName.toString(),
+                taskId = taskId.toString()
             )
             else -> thisShouldNotHappen("Unexpected ${taskResult::class}")
         }
@@ -190,6 +201,7 @@ internal class ClientDispatcherImpl(
     override fun <T> awaitWorkflow(
         returnClass: Class<T>,
         workflowName: WorkflowName,
+        methodName: MethodName,
         workflowId: WorkflowId,
         mRunId: MethodRunId?,
         clientWaiting: Boolean
@@ -219,21 +231,37 @@ internal class ClientDispatcherImpl(
 
         @Suppress("UNCHECKED_CAST")
         return when (workflowResult) {
-            is MethodCompleted -> workflowResult.methodReturnValue.value() as T
-            is MethodCanceled -> throw CancelationException(
-                "$workflowId",
-                "$workflowName"
-            )
-            is MethodFailed -> throw FailureException(
-                "$workflowId",
-                "$workflowName",
-                workflowResult.error
-            )
-            is MethodRunUnknown -> throw UnknownWorkflowException(
-                "$workflowId",
-                "$workflowName"
-            )
-            else -> thisShouldNotHappen("Unexpected ${workflowResult::class}")
+            is MethodCompleted -> {
+                workflowResult.methodReturnValue.value() as T
+            }
+            is MethodCanceled -> {
+                throw CanceledWorkflowException(
+                    workflowName = workflowName.toString(),
+                    workflowId = workflowId.toString(),
+                    methodRunId = mRunId?.toString()
+                )
+            }
+            is MethodFailed -> {
+                throw FailedWorkflowException.from(
+                    FailedWorkflowError(
+                        workflowName = workflowName,
+                        methodName = methodName,
+                        workflowId = workflowId,
+                        methodRunId = mRunId,
+                        cause = workflowResult.cause
+                    )
+                )
+            }
+            is MethodRunUnknown -> {
+                throw UnknownWorkflowException(
+                    workflowName = workflowName.toString(),
+                    workflowId = workflowId.toString(),
+                    methodRunId = mRunId?.toString()
+                )
+            }
+            else -> {
+                thisShouldNotHappen("Unexpected ${workflowResult::class}")
+            }
         }
     }
 
@@ -423,7 +451,11 @@ internal class ClientDispatcherImpl(
         handler: NewTaskProxyHandler<*>
     ): CompletableFuture<Deferred<R>> {
         val deferredTask: DeferredTask<R> =
-            deferredTask(handler.method.returnType as Class<R>, handler.taskName)
+            deferredTask(
+                handler.method.returnType as Class<R>,
+                handler.taskName,
+                handler.methodName
+            )
 
         return scope.future { dispatchTask(deferredTask, false, handler); deferredTask }
     }
@@ -433,20 +465,25 @@ internal class ClientDispatcherImpl(
         handler: NewTaskProxyHandler<*>
     ): R {
         val deferredTask: DeferredTask<R> =
-            deferredTask(handler.method.returnType as Class<R>, handler.taskName)
+            deferredTask(
+                handler.method.returnType as Class<R>,
+                handler.taskName,
+                handler.methodName
+            )
 
         scope.launch { dispatchTask(deferredTask, true, handler) }
 
         with(deferredTask) {
-            return awaitTask(returnClass, taskName, taskId, false)
+            return awaitTask(returnClass, taskName, handler.methodName, taskId, false)
         }
     }
 
     private fun <R> deferredTask(
         returnClass: Class<R>,
-        taskName: TaskName
+        taskName: TaskName,
+        methodName: MethodName
     ): DeferredTask<R> {
-        val deferredTask = DeferredTask(returnClass, taskName, TaskId(), this)
+        val deferredTask = DeferredTask(returnClass, taskName, methodName, TaskId(), this)
 
         // store in ThreadLocal to be used in ::getLastDeferred
         localLastDeferred.set(deferredTask)
@@ -501,7 +538,11 @@ internal class ClientDispatcherImpl(
         true ->
             throw InvalidChannelUsageException()
         false -> {
-            val deferredWorkflow = deferredWorkflow(handler.method.returnType as Class<R>, handler.workflowName)
+            val deferredWorkflow = deferredWorkflow(
+                handler.method.returnType as Class<R>,
+                handler.workflowName,
+                handler.methodName
+            )
 
             scope.future { dispatchWorkflow(deferredWorkflow, false, handler); deferredWorkflow }
         }
@@ -515,12 +556,16 @@ internal class ClientDispatcherImpl(
         true ->
             throw InvalidChannelUsageException()
         false -> {
-            val deferredWorkflow = deferredWorkflow(handler.method.returnType as Class<R>, handler.workflowName)
+            val deferredWorkflow = deferredWorkflow(
+                handler.method.returnType as Class<R>,
+                handler.workflowName,
+                handler.methodName
+            )
 
             scope.launch { dispatchWorkflow(deferredWorkflow, true, handler) }
 
             with(deferredWorkflow) {
-                awaitWorkflow(returnClass, workflowName, workflowId, null, false)
+                awaitWorkflow(returnClass, workflowName, methodName, workflowId, null, false)
             }
         }
     }
@@ -528,10 +573,11 @@ internal class ClientDispatcherImpl(
     private fun <R : Any?> deferredWorkflow(
         returnClass: Class<R>,
         workflowName: WorkflowName,
+        methodName: MethodName,
     ): DeferredWorkflow<R> {
         val workflowId = WorkflowId()
 
-        val deferredWorkflow = DeferredWorkflow<R>(returnClass, workflowName, workflowId, this)
+        val deferredWorkflow = DeferredWorkflow(returnClass, workflowName, methodName, workflowId, this)
 
         // store in ThreadLocal to be used in ::getDeferred
         localLastDeferred.set(deferredWorkflow)
@@ -593,6 +639,7 @@ internal class ClientDispatcherImpl(
             val deferredMethod = deferredMethod(
                 handler.method.returnType as Class<R>,
                 handler.workflowName,
+                handler.methodName,
                 handler.workflowId,
                 handler.workflowTag
             )
@@ -615,6 +662,7 @@ internal class ClientDispatcherImpl(
             val deferredMethod = deferredMethod(
                 handler.method.returnType as Class<R>,
                 handler.workflowName,
+                handler.methodName,
                 handler.workflowId,
                 handler.workflowTag
             )
@@ -624,7 +672,7 @@ internal class ClientDispatcherImpl(
             with(deferredMethod) {
                 when {
                     workflowId != null ->
-                        awaitWorkflow(returnClass, workflowName, workflowId, methodRunId, false)
+                        awaitWorkflow(returnClass, workflowName, methodName, workflowId, methodRunId, false)
                     workflowTag != null ->
                         throw TODO()
                     else ->
@@ -637,15 +685,16 @@ internal class ClientDispatcherImpl(
     private fun <R : Any?> deferredMethod(
         returnClass: Class<R>,
         workflowName: WorkflowName,
+        methodName: MethodName,
         workflowId: WorkflowId?,
         workflowTag: WorkflowTag?
     ): DeferredMethod<R> {
         val methodRunId = MethodRunId()
         val deferredMethod = when {
             workflowId != null ->
-                DeferredMethod(returnClass, workflowName, workflowId, methodRunId, null, this)
+                DeferredMethod(returnClass, workflowName, methodName, workflowId, methodRunId, null, this)
             workflowTag != null ->
-                DeferredMethod(returnClass, workflowName, null, methodRunId, workflowTag, this)
+                DeferredMethod(returnClass, workflowName, methodName, null, methodRunId, workflowTag, this)
             else ->
                 thisShouldNotHappen()
         }

@@ -26,11 +26,8 @@
 package io.infinitic.workflows.engine.handlers
 
 import io.infinitic.common.clients.messages.MethodFailed
-import io.infinitic.common.workflows.data.commands.CommandId
-import io.infinitic.common.workflows.data.commands.CommandStatus.Canceled
-import io.infinitic.common.workflows.data.commands.CommandStatus.Completed
-import io.infinitic.common.workflows.data.commands.CommandStatus.CurrentlyFailed
-import io.infinitic.common.workflows.data.commands.CommandStatus.Running
+import io.infinitic.common.errors.FailedWorkflowError
+import io.infinitic.common.workflows.data.methodRuns.MethodRun
 import io.infinitic.common.workflows.engine.messages.ChildMethodFailed
 import io.infinitic.common.workflows.engine.messages.TaskFailed
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
@@ -45,28 +42,20 @@ internal fun CoroutineScope.workflowTaskFailed(
     state: WorkflowState,
     message: TaskFailed
 ): MutableList<WorkflowEngineMessage> {
-    val methodRun = state.getRunningMethodRun()
+    val methodRun: MethodRun = state.getRunningMethodRun()
 
-    // if the error is due to a command failure, we enrich the error
-    val error = when (message.taskError.errorCause == null && message.taskError.whereId != null) {
-        true -> message.taskError.copy(
-            errorCause = when (val commandStatus = state.getPastCommand(CommandId(message.taskError.whereId!!), methodRun).commandStatus) {
-                is Completed -> thisShouldNotHappen()
-                Running -> thisShouldNotHappen()
-                is CurrentlyFailed -> commandStatus.error
-                is Canceled -> null
-            }
-        )
-        false -> message.taskError
+    val deferredError = when (val deferredError = message.deferredError) {
+        null -> message.failedTaskError
+        else -> deferredError
     }
 
     // send to waiting clients
     methodRun.waitingClients.forEach {
         val methodFailed = MethodFailed(
             recipientName = it,
-            state.workflowId,
-            methodRun.methodRunId,
-            error,
+            workflowId = state.workflowId,
+            methodRunId = methodRun.methodRunId,
+            cause = deferredError,
             emitterName = output.clientName
         )
         launch { output.sendEventsToClient(methodFailed) }
@@ -78,12 +67,16 @@ internal fun CoroutineScope.workflowTaskFailed(
     // send to parent workflow
     methodRun.parentWorkflowId?.let {
         val childMethodFailed = ChildMethodFailed(
+            workflowId = it,
             workflowName = methodRun.parentWorkflowName ?: thisShouldNotHappen(),
-            workflowId = methodRun.parentWorkflowId ?: thisShouldNotHappen(),
             methodRunId = methodRun.parentMethodRunId ?: thisShouldNotHappen(),
-            childWorkflowId = state.workflowId,
-            childMethodRunId = methodRun.methodRunId,
-            childWorkflowError = error,
+            childFailedWorkflowError = FailedWorkflowError(
+                workflowName = state.workflowName,
+                workflowId = state.workflowId,
+                methodName = methodRun.methodName,
+                methodRunId = methodRun.methodRunId,
+                cause = deferredError
+            ),
             emitterName = output.clientName
         )
         if (it == state.workflowId) {

@@ -26,13 +26,13 @@
 package io.infinitic.tests
 
 // import com.github.valfirst.slf4jtest.TestLoggerFactory
+import io.infinitic.common.exceptions.CanceledWorkflowException
+import io.infinitic.common.exceptions.FailedTaskException
+import io.infinitic.common.exceptions.FailedWorkflowException
+import io.infinitic.common.exceptions.FailedWorkflowTaskException
 import io.infinitic.common.fixtures.later
 import io.infinitic.common.tasks.data.TaskMeta
 import io.infinitic.common.workflows.data.workflows.WorkflowMeta
-import io.infinitic.exceptions.clients.CancelationException
-import io.infinitic.exceptions.clients.FailureException
-import io.infinitic.exceptions.workflows.CanceledDeferredException
-import io.infinitic.exceptions.workflows.FailedDeferredException
 import io.infinitic.exceptions.workflows.InvalidInlineException
 import io.infinitic.factory.InfiniticClientFactory
 import io.infinitic.factory.InfiniticWorkerFactory
@@ -212,12 +212,17 @@ internal class WorkflowTests : StringSpec({
     }
 
     "Inline task with asynchronous task inside" {
-        val e = shouldThrow<FailureException> { workflowA.inline2(21) }
-        e.causeError!!.errorName shouldBe InvalidInlineException::class.java.name
+        val error = shouldThrow<FailedWorkflowException> { workflowA.inline2(21) }
+
+        val cause = error.cause as FailedWorkflowTaskException
+        cause.name shouldBe InvalidInlineException::class.java.name
     }
 
     "Inline task with synchronous task inside" {
-        shouldThrow<FailureException> { workflowA.inline3(14) }
+        val error = shouldThrow<FailedWorkflowException> { workflowA.inline3(14) }
+
+        val cause = error.cause as FailedWorkflowTaskException
+        cause.name shouldBe InvalidInlineException::class.java.name
     }
 
     "Sequential Child Workflow" {
@@ -435,17 +440,6 @@ internal class WorkflowTests : StringSpec({
         deferred.await() shouldBe "foobar42"
     }
 
-    "Cancelling async workflow" {
-        val deferred = client.dispatch(workflowA::channel1)
-
-        later {
-            val w = client.getWorkflowById(WorkflowA::class.java, deferred.id)
-            client.cancel(w)
-        }
-
-        shouldThrow<CancelationException> { deferred.await() }
-    }
-
     "Cancelling workflow" {
         val deferred = client.dispatch(workflowA::channel1)
 
@@ -454,7 +448,7 @@ internal class WorkflowTests : StringSpec({
             client.cancel(w)
         }
 
-        shouldThrow<CancelationException> { deferred.await() }
+        shouldThrow<CanceledWorkflowException> { deferred.await() }
     }
 
     "try/catch a failing task" {
@@ -462,10 +456,11 @@ internal class WorkflowTests : StringSpec({
     }
 
     "failing task on main path should throw" {
-        val e = shouldThrow<FailureException> { workflowA.failing2() }
+        val error = shouldThrow<FailedWorkflowException> { workflowA.failing2() }
 
-        e.causeError?.errorName shouldBe FailedDeferredException::class.java.name
-        e.causeError?.whereName shouldBe TaskA::class.java.name
+        val cause = error.cause as FailedTaskException
+        cause.taskName shouldBe TaskA::class.java.name
+        cause.name shouldBe Exception::class.java.name
     }
 
     "failing async task on main path should not throw" {
@@ -485,7 +480,7 @@ internal class WorkflowTests : StringSpec({
     }
 
 //    "Cancelling task on main path should throw " {
-//        val e = shouldThrow<FailureException> { workflowA.failing4() }
+//        val e = shouldThrow<FailedWorkflowException> { workflowA.failing4() }
 //
 //        e.causeError?.errorName shouldBe CanceledDeferredException::class.java.name
 //        e.causeError?.whereName shouldBe TaskA::class.java.name
@@ -496,10 +491,10 @@ internal class WorkflowTests : StringSpec({
 //    }
 
     "Cancelling child workflow on main path should throw" {
-        val e = shouldThrow<FailureException> { workflowB.cancelChild1() }
+        val error = shouldThrow<FailedWorkflowException> { workflowB.cancelChild1() }
 
-        e.causeError?.errorName shouldBe CanceledDeferredException::class.java.name
-        e.causeError?.whereName shouldBe WorkflowA::class.java.name
+        val cause = error.cause as CanceledWorkflowException
+        cause.workflowName shouldBe WorkflowA::class.java.name
     }
 
     "Cancelling child workflow not on main path should not throw" {
@@ -507,13 +502,13 @@ internal class WorkflowTests : StringSpec({
     }
 
     "Failure in child workflow on main path should throw exception" {
-        val e = shouldThrow<FailureException> { workflowA.failing6() }
+        val error = shouldThrow<FailedWorkflowException> { workflowA.failing6() }
 
-        e.causeError?.errorName shouldBe FailedDeferredException::class.java.name
-        e.causeError?.whereName shouldBe WorkflowA::class.java.name
+        val cause1 = error.cause as FailedWorkflowException
+        cause1.workflowName shouldBe WorkflowA::class.java.name
 
-        e.causeError?.errorCause?.errorName shouldBe FailedDeferredException::class.java.name
-        e.causeError?.errorCause?.whereName shouldBe TaskA::class.java.name
+        val cause2 = cause1.cause as FailedTaskException
+        cause2.taskName shouldBe TaskA::class.java.name
     }
 
     "Failure in child workflow not on main path should not throw" {
@@ -521,7 +516,7 @@ internal class WorkflowTests : StringSpec({
     }
 
 //    "Retry a failed task from client should restart a workflow" {
-//        val e = shouldThrow<FailureException> { workflowA.failing8() }
+//        val e = shouldThrow<FailedWorkflowException> { workflowA.failing8() }
 //
 //        val deferred = client.lastDeferred!!
 //
@@ -542,6 +537,10 @@ internal class WorkflowTests : StringSpec({
 //    "properties should be correctly set after a deferred cancellation" {
 //        workflowA.failing10() shouldBe "ok"
 //    }
+
+    "Synchronous call of unknown workflow should throw" {
+        val e = shouldThrow<FailedWorkflowException> { workflowA.failing11() }
+    }
 
     "child workflow is canceled when parent workflow is canceled - tag are also added and deleted" {
         client.dispatch(workflowATagged::cancel1)

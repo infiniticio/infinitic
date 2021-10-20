@@ -25,19 +25,19 @@
 
 package io.infinitic.common.workflows.data.commands
 
-import io.infinitic.common.data.methods.MethodName
-import io.infinitic.common.tasks.data.TaskName
-import io.infinitic.common.workflows.data.channels.ChannelName
-import io.infinitic.common.workflows.data.workflows.WorkflowName
+import io.infinitic.exceptions.thisShouldNotHappen
 import kotlinx.serialization.Serializable
 
 @JvmInline @Serializable
 value class CommandName private constructor(private val name: String) {
     companion object {
-        fun from(taskName: TaskName) = CommandName(taskName.toString())
-        fun from(workflowName: WorkflowName) = CommandName(workflowName.toString())
-        fun from(methodName: MethodName) = CommandName(methodName.toString())
-        fun from(channelName: ChannelName) = CommandName(channelName.toString())
+        fun from(command: Command) = when (command) {
+            is DispatchTaskCommand -> CommandName("${command.taskName}::${command.methodName}")
+            is DispatchWorkflowCommand -> CommandName("${command.workflowName}::${command.methodName}")
+            is DispatchMethodCommand -> CommandName("${command.workflowName}::${command.methodName}")
+            is SendSignalCommand -> CommandName("${command.workflowName}::${command.channelName}")
+            else -> thisShouldNotHappen()
+        }
     }
     override fun toString() = name
 }

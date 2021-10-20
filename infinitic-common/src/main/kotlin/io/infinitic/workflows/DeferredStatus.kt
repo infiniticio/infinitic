@@ -27,7 +27,8 @@ package io.infinitic.workflows
 
 enum class DeferredStatus {
     ONGOING,
-    COMPLETED,
+    UNKNOWN,
     CANCELED,
-    FAILED
+    FAILED,
+    COMPLETED,
 }

@@ -27,9 +27,9 @@ package io.infinitic.tests.workflows
 
 import com.jayway.jsonpath.Criteria.where
 import io.infinitic.annotations.Ignore
+import io.infinitic.common.exceptions.FailedTaskException
 import io.infinitic.common.tasks.data.TaskMeta
 import io.infinitic.common.workflows.data.workflows.WorkflowMeta
-import io.infinitic.exceptions.workflows.FailedDeferredException
 import io.infinitic.tests.tasks.ParentInterface
 import io.infinitic.tests.tasks.TaskA
 import io.infinitic.workflows.Deferred
@@ -129,6 +129,7 @@ interface WorkflowA : ParentInterface {
     fun failing8(): String
 //    fun failing9(): Boolean
 //    fun failing10(): String
+    fun failing11()
     fun failing10bis()
     fun cancel1()
 }
@@ -561,14 +562,14 @@ class WorkflowAImpl : Workflow(), WorkflowA {
     override fun failing1() = try {
         taskA.failing()
         "ok"
-    } catch (e: FailedDeferredException) {
+    } catch (e: FailedTaskException) {
         taskA.reverse("ok")
     }
 
     override fun failing2() = taskA.failing()
 
     override fun failing2a(): Long {
-        dispatch(taskA::failing,)
+        dispatch(taskA::failing)
 
         return taskA.await(100)
     }
@@ -654,6 +655,10 @@ class WorkflowAImpl : Workflow(), WorkflowA {
 //    }
 
     override fun failing10bis() { p1 += "k" }
+
+    override fun failing11() {
+        getWorkflowById(WorkflowA::class.java, "unknown").empty()
+    }
 
     override fun cancel1() {
         val taggedChild = newWorkflow(WorkflowA::class.java, tags = setOf("foo", "bar"))

@@ -35,7 +35,17 @@ import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
 
 @Serializable(with = WorkflowMetaSerializer::class)
-data class WorkflowMeta(val map: Map<String, ByteArray> = mapOf()) : Map<String, ByteArray> by map
+data class WorkflowMeta(val map: Map<String, ByteArray> = mapOf()) : Map<String, ByteArray> by map {
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (javaClass != other?.javaClass) return false
+        other as WorkflowMeta
+        if (map.keys != other.map.keys) return false
+        if (map.map { it.value.contentEquals(other.map[it.key]!!) }.any { !it }) return false
+
+        return true
+    }
+}
 
 object WorkflowMetaSerializer : KSerializer<WorkflowMeta> {
     val ser = MapSerializer(String.serializer(), ByteArraySerializer())

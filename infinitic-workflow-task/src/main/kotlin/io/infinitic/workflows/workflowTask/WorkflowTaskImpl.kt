@@ -26,6 +26,9 @@
 package io.infinitic.workflows.workflowTask
 
 import io.infinitic.common.data.ReturnValue
+import io.infinitic.common.exceptions.DeferredException
+import io.infinitic.common.exceptions.FailedWorkflowTaskException
+import io.infinitic.common.exceptions.RuntimeException
 import io.infinitic.common.parser.getMethodPerNameAndParameters
 import io.infinitic.common.workflows.data.properties.PropertyHash
 import io.infinitic.common.workflows.data.properties.PropertyName
@@ -89,17 +92,34 @@ class WorkflowTaskImpl : Task(), WorkflowTask {
         val methodReturnValue = try {
             ReturnValue.from(method.invoke(workflow, *parameters))
         } catch (e: InvocationTargetException) {
-            when (e.cause) {
+            when (val cause = e.cause) {
                 is WorkflowTaskException -> null
-                else -> throw e.cause ?: e // this error will be caught by the task executor
+                // the errors below will be caught by the task executor
+                is DeferredException -> throw cause
+                else -> {
+                    val throwable = cause ?: e
+
+                    throw FailedWorkflowTaskException(
+                        workflowName = workflowTaskParameters.workflowName.toString(),
+                        workflowId = workflowTaskParameters.workflowId.toString(),
+                        workflowTaskId = context.id,
+                        name = throwable::class.java.name,
+                        message = throwable.message,
+                        stackTraceToString = throwable.stackTraceToString(),
+                        cause = when (val c = throwable.cause) {
+                            null, throwable -> null
+                            else -> RuntimeException.from(c)
+                        }
+                    )
+                }
             }
         }
 
         val properties = workflow.getProperties()
 
         return WorkflowTaskReturnValue(
-            (workflow.dispatcher as WorkflowDispatcherImpl).newCommands,
-            (workflow.dispatcher as WorkflowDispatcherImpl).newStep,
+            dispatcher.newCommands,
+            dispatcher.newStep,
             properties,
             methodReturnValue
         )

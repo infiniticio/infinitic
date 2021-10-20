@@ -28,11 +28,14 @@ package io.infinitic.tasks.engine
 import io.infinitic.common.clients.data.ClientName
 import io.infinitic.common.clients.messages.TaskUnknown
 import io.infinitic.common.clients.transport.SendToClient
+import io.infinitic.common.errors.CanceledTaskError
+import io.infinitic.common.errors.FailedTaskError
 import io.infinitic.common.metrics.perName.messages.TaskStatusUpdated
 import io.infinitic.common.metrics.perName.transport.SendToMetricsPerName
 import io.infinitic.common.tasks.data.TaskAttemptId
 import io.infinitic.common.tasks.data.TaskName
 import io.infinitic.common.tasks.data.TaskRetryIndex
+import io.infinitic.common.tasks.data.TaskReturnValue
 import io.infinitic.common.tasks.data.TaskStatus
 import io.infinitic.common.tasks.data.plus
 import io.infinitic.common.tasks.engine.SendToTaskEngineAfter
@@ -200,16 +203,16 @@ class TaskEngine(
                     emitterName = clientName,
                     recipientName = message.emitterName,
                     taskId = state.taskId,
-                    taskMeta = state.taskMeta
                 )
                 launch { sendToClient(taskCanceled) }
             }
             TaskStatus.RUNNING_ERROR -> {
+                val lastError = state.lastError ?: thisShouldNotHappen()
                 val taskFailed = TaskFailedInClient(
                     emitterName = clientName,
                     recipientName = message.emitterName,
                     taskId = state.taskId,
-                    error = state.lastError!!,
+                    error = lastError,
                 )
                 launch { sendToClient(taskFailed) }
             }
@@ -275,8 +278,11 @@ class TaskEngine(
                 workflowId = it,
                 workflowName = state.workflowName!!,
                 methodRunId = state.methodRunId!!,
-                taskId = state.taskId,
-                taskName = state.taskName
+                canceledTaskError = CanceledTaskError(
+                    taskName = state.taskName,
+                    taskId = state.taskId,
+                    methodName = state.methodName,
+                )
             )
             launch { sendToWorkflowEngine(taskCanceled) }
         }
@@ -286,8 +292,7 @@ class TaskEngine(
             val taskCanceledInClient = TaskCanceledInClient(
                 emitterName = clientName,
                 recipientName = it,
-                taskId = state.taskId,
-                taskMeta = state.taskMeta
+                taskId = state.taskId
             )
             launch { sendToClient(taskCanceledInClient) }
         }
@@ -367,9 +372,11 @@ class TaskEngine(
                 workflowId = it,
                 workflowName = state.workflowName!!,
                 methodRunId = state.methodRunId!!,
-                taskId = state.taskId,
-                taskName = state.taskName,
-                taskReturnValue = message.taskReturnValue
+                taskReturnValue = TaskReturnValue(
+                    taskId = state.taskId,
+                    taskName = state.taskName,
+                    returnValue = message.taskReturnValue
+                )
             )
             launch { sendToWorkflowEngine(taskCompleted) }
         }
@@ -405,7 +412,7 @@ class TaskEngine(
 
     private fun CoroutineScope.taskAttemptFailed(state: TaskState, msg: TaskAttemptFailed) {
         with(state) {
-            lastError = msg.taskAttemptError
+            lastError = msg.runtimeError
             taskMeta = msg.taskMeta
         }
 
@@ -422,10 +429,17 @@ class TaskEngine(
                         workflowName = state.workflowName!!,
                         workflowId = it,
                         methodRunId = state.methodRunId!!,
-                        taskName = state.taskName,
-                        taskId = state.taskId,
-                        taskError = msg.taskAttemptError,
-                        emitterName = clientName
+                        emitterName = clientName,
+                        failedTaskError = FailedTaskError(
+                            taskName = msg.taskName,
+                            taskId = msg.taskId,
+                            methodName = state.methodName,
+                            name = msg.runtimeError?.name ?: "",
+                            message = msg.runtimeError?.message ?: "",
+                            stackTraceToString = msg.runtimeError?.stackTraceToString ?: "",
+                            cause = msg.runtimeError?.cause
+                        ),
+                        deferredError = msg.deferredError
                     )
                     launch { sendToWorkflowEngine(taskFailed) }
                 }
@@ -435,7 +449,7 @@ class TaskEngine(
                         emitterName = clientName,
                         recipientName = it,
                         taskId = state.taskId,
-                        error = msg.taskAttemptError,
+                        error = msg.runtimeError ?: thisShouldNotHappen(),
                     )
                     launch { sendToClient(taskFailed) }
                 }

@@ -30,7 +30,8 @@ import io.infinitic.common.clients.messages.interfaces.MethodMessage
 import io.infinitic.common.clients.messages.interfaces.TaskMessage
 import io.infinitic.common.data.MessageId
 import io.infinitic.common.data.ReturnValue
-import io.infinitic.common.errors.Error
+import io.infinitic.common.errors.DeferredError
+import io.infinitic.common.errors.RuntimeError
 import io.infinitic.common.messages.Message
 import io.infinitic.common.tasks.data.TaskId
 import io.infinitic.common.tasks.data.TaskMeta
@@ -64,7 +65,7 @@ data class TaskCompleted(
 data class TaskFailed(
     override val recipientName: ClientName,
     override val taskId: TaskId,
-    val error: Error,
+    val error: RuntimeError,
     override val emitterName: ClientName,
 ) : ClientMessage(), TaskMessage
 
@@ -72,7 +73,6 @@ data class TaskFailed(
 data class TaskCanceled(
     override val recipientName: ClientName,
     override val taskId: TaskId,
-    val taskMeta: TaskMeta,
     override val emitterName: ClientName
 ) : ClientMessage(), TaskMessage
 
@@ -106,7 +106,7 @@ data class MethodFailed(
     override val recipientName: ClientName,
     override val workflowId: WorkflowId,
     override val methodRunId: MethodRunId,
-    val error: Error,
+    val cause: DeferredError,
     override val emitterName: ClientName
 ) : ClientMessage(), MethodMessage
 

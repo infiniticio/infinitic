@@ -27,12 +27,14 @@ package io.infinitic.client.deferred
 
 import io.infinitic.client.Deferred
 import io.infinitic.client.dispatcher.ClientDispatcher
+import io.infinitic.common.data.methods.MethodName
 import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.data.workflows.WorkflowName
 
 class DeferredWorkflow<R> (
     internal val returnClass: Class<R>,
     internal val workflowName: WorkflowName,
+    internal val methodName: MethodName,
     internal val workflowId: WorkflowId,
     private val dispatcher: ClientDispatcher,
 ) : Deferred<R> {
@@ -45,7 +47,7 @@ class DeferredWorkflow<R> (
 
     @Suppress("UNCHECKED_CAST")
     override fun await(): R =
-        dispatcher.awaitWorkflow(returnClass, workflowName, workflowId, null, true)
+        dispatcher.awaitWorkflow(returnClass, workflowName, methodName, workflowId, null, true)
 
     override val id: String = workflowId.toString()
 }

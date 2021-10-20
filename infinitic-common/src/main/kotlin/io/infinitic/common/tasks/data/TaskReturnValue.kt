@@ -23,19 +23,14 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.common.workflows.data.commands
+package io.infinitic.common.tasks.data
 
+import io.infinitic.common.data.ReturnValue
 import kotlinx.serialization.Serializable
 
 @Serializable
-enum class CommandType {
-    DISPATCH_TASK,
-    DISPATCH_CHILD_WORKFLOW,
-    DISPATCH_METHOD,
-    DISPATCH_SIGNAL,
-    START_DURATION_TIMER,
-    START_INSTANT_TIMER,
-    RECEIVE_IN_CHANNEL,
-    SEND_SIGNAL,
-    INLINE_TASK
-}
+data class TaskReturnValue(
+    val taskId: TaskId,
+    val taskName: TaskName,
+    val returnValue: ReturnValue
+)

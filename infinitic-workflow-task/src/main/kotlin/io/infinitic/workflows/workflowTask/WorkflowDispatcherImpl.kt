@@ -29,6 +29,9 @@ import com.jayway.jsonpath.Criteria
 import io.infinitic.common.data.MillisDuration
 import io.infinitic.common.data.MillisInstant
 import io.infinitic.common.data.ReturnValue
+import io.infinitic.common.exceptions.CanceledDeferredException
+import io.infinitic.common.exceptions.FailedDeferredException
+import io.infinitic.common.exceptions.UnknownDeferredException
 import io.infinitic.common.proxies.ChannelProxyHandler
 import io.infinitic.common.proxies.GetTaskProxyHandler
 import io.infinitic.common.proxies.GetWorkflowProxyHandler
@@ -40,38 +43,34 @@ import io.infinitic.common.workflows.data.channels.ChannelName
 import io.infinitic.common.workflows.data.channels.ChannelSignal
 import io.infinitic.common.workflows.data.channels.ChannelSignalType
 import io.infinitic.common.workflows.data.commands.Command
-import io.infinitic.common.workflows.data.commands.CommandId
-import io.infinitic.common.workflows.data.commands.CommandName
 import io.infinitic.common.workflows.data.commands.CommandSimpleName
 import io.infinitic.common.workflows.data.commands.CommandStatus
-import io.infinitic.common.workflows.data.commands.CommandType
-import io.infinitic.common.workflows.data.commands.DispatchMethod
-import io.infinitic.common.workflows.data.commands.DispatchTask
-import io.infinitic.common.workflows.data.commands.DispatchWorkflow
-import io.infinitic.common.workflows.data.commands.InlineTask
-import io.infinitic.common.workflows.data.commands.NewCommand
+import io.infinitic.common.workflows.data.commands.DispatchMethodCommand
+import io.infinitic.common.workflows.data.commands.DispatchTaskCommand
+import io.infinitic.common.workflows.data.commands.DispatchWorkflowCommand
+import io.infinitic.common.workflows.data.commands.InlineTaskCommand
 import io.infinitic.common.workflows.data.commands.PastCommand
-import io.infinitic.common.workflows.data.commands.ReceiveSignal
-import io.infinitic.common.workflows.data.commands.SendSignal
-import io.infinitic.common.workflows.data.commands.StartDurationTimer
-import io.infinitic.common.workflows.data.commands.StartInstantTimer
+import io.infinitic.common.workflows.data.commands.ReceiveSignalCommand
+import io.infinitic.common.workflows.data.commands.SendSignalCommand
+import io.infinitic.common.workflows.data.commands.StartDurationTimerCommand
+import io.infinitic.common.workflows.data.commands.StartInstantTimerCommand
 import io.infinitic.common.workflows.data.methodRuns.MethodRunPosition
 import io.infinitic.common.workflows.data.properties.PropertyHash
 import io.infinitic.common.workflows.data.properties.PropertyName
 import io.infinitic.common.workflows.data.steps.NewStep
 import io.infinitic.common.workflows.data.steps.PastStep
 import io.infinitic.common.workflows.data.steps.Step
+import io.infinitic.common.workflows.data.steps.StepStatus
 import io.infinitic.common.workflows.data.steps.StepStatus.Canceled
 import io.infinitic.common.workflows.data.steps.StepStatus.Completed
+import io.infinitic.common.workflows.data.steps.StepStatus.CurrentlyFailed
 import io.infinitic.common.workflows.data.steps.StepStatus.Failed
-import io.infinitic.common.workflows.data.steps.StepStatus.OngoingFailure
+import io.infinitic.common.workflows.data.steps.StepStatus.Unknown
 import io.infinitic.common.workflows.data.steps.StepStatus.Waiting
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskParameters
 import io.infinitic.exceptions.clients.InvalidChannelUsageException
 import io.infinitic.exceptions.clients.InvalidRunningTaskException
 import io.infinitic.exceptions.thisShouldNotHappen
-import io.infinitic.exceptions.workflows.CanceledDeferredException
-import io.infinitic.exceptions.workflows.FailedDeferredException
 import io.infinitic.exceptions.workflows.WorkflowUpdatedException
 import io.infinitic.workflows.Channel
 import io.infinitic.workflows.Deferred
@@ -92,7 +91,7 @@ internal class WorkflowDispatcherImpl(
     lateinit var setProperties: (Map<PropertyName, PropertyHash>) -> Unit
 
     // new commands discovered during execution of the method
-    var newCommands: MutableList<NewCommand> = mutableListOf()
+    var newCommands: MutableList<PastCommand> = mutableListOf()
 
     // new step discovered during execution the method
     var newStep: NewStep? = null
@@ -128,22 +127,23 @@ internal class WorkflowDispatcherImpl(
         nextPosition()
 
         @Suppress("UNCHECKED_CAST")
-        return when (val pastCommand = getPastCommand()) {
+        return when (val pastCommand = getPastCommandAtCurrentPosition()) {
             null -> {
                 // run inline task, checking that no proxy are used inside
                 val value = ProxyHandler.inline(task)
                 // record result
-                val endCommand = NewCommand(
-                    command = InlineTask(ReturnValue.from(value)),
-                    commandName = null,
-                    commandSimpleName = CommandSimpleName("${CommandType.INLINE_TASK}"),
-                    commandPosition = methodRunPosition
+                val command = InlineTaskCommand()
+                val endCommand = PastCommand.from(
+                    commandPosition = methodRunPosition,
+                    commandSimpleName = InlineTaskCommand.simpleName(),
+                    commandStatus = CommandStatus.Completed(ReturnValue.from(value), workflowTaskIndex),
+                    command = command,
                 )
                 newCommands.add(endCommand)
                 // returns value
                 value
             }
-            else -> when (pastCommand.commandType == CommandType.INLINE_TASK) {
+            else -> when (pastCommand.commandSimpleName == InlineTaskCommand.simpleName()) {
                 true -> when (val status = pastCommand.commandStatus) {
                     is CommandStatus.Completed -> status.returnValue.value() as S
                     else -> thisShouldNotHappen()
@@ -172,29 +172,16 @@ internal class WorkflowDispatcherImpl(
             null -> {
                 // determine status
                 when (val stepStatus = step.step.statusAt(workflowTaskIndex)) {
-                    is Completed ->
-                        stepStatus.returnValue.value() as T
                     is Waiting -> {
                         // found a new step
                         newStep = step
 
                         throw NewStepException
                     }
-                    is Canceled ->
-                        throw CanceledDeferredException(
-                            getCommandName(stepStatus.commandId)?.toString(),
-                            stepStatus.commandId.toString()
-                        )
-                    is Failed ->
-                        throw FailedDeferredException(
-                            getCommandName(stepStatus.commandId)?.toString(),
-                            stepStatus.commandId.toString()
-                        )
-                    is OngoingFailure ->
-                        throw FailedDeferredException(
-                            getCommandName(stepStatus.commandId)?.toString(),
-                            stepStatus.commandId.toString()
-                        )
+                    is Canceled, is Failed, is CurrentlyFailed, is Unknown ->
+                        throw getDeferredException(stepStatus)
+                    is Completed ->
+                        stepStatus.returnValue.value() as T
                 }
             }
             // known step
@@ -211,40 +198,38 @@ internal class WorkflowDispatcherImpl(
 
                 // return deferred value
                 when (stepStatus) {
-                    is Waiting ->
+                    is Waiting -> {
                         thisShouldNotHappen()
-                    is Completed -> {
-                        // workflowTaskIndex is now the one where this deferred was completed
-                        workflowTaskIndex = stepStatus.completionWorkflowTaskIndex
+                    }
+                    is Unknown -> {
+                        // workflowTaskIndex is now the one where this deferred was unknowing
+                        workflowTaskIndex = stepStatus.unknowingWorkflowTaskIndex
 
-                        stepStatus.returnValue.value() as T
+                        throw getDeferredException(stepStatus)
                     }
                     is Canceled -> {
                         // workflowTaskIndex is now the one where this deferred was canceled
                         workflowTaskIndex = stepStatus.cancellationWorkflowTaskIndex
 
-                        throw CanceledDeferredException(
-                            getCommandName(stepStatus.commandId)?.toString(),
-                            stepStatus.commandId.toString()
-                        )
+                        throw getDeferredException(stepStatus)
+                    }
+                    is CurrentlyFailed -> {
+                        // workflowTaskIndex is now the one where this deferred was failed
+                        workflowTaskIndex = stepStatus.failureWorkflowTaskIndex
+
+                        throw getDeferredException(stepStatus)
                     }
                     is Failed -> {
                         // workflowTaskIndex is now the one where this deferred was failed
                         workflowTaskIndex = stepStatus.failureWorkflowTaskIndex
 
-                        throw FailedDeferredException(
-                            getCommandName(stepStatus.commandId)?.toString(),
-                            stepStatus.commandId.toString()
-                        )
+                        throw getDeferredException(stepStatus)
                     }
-                    is OngoingFailure -> {
-                        // workflowTaskIndex is now the one where this deferred was failed
-                        workflowTaskIndex = stepStatus.failureWorkflowTaskIndex
+                    is Completed -> {
+                        // workflowTaskIndex is now the one where this deferred was completed
+                        workflowTaskIndex = stepStatus.completionWorkflowTaskIndex
 
-                        throw FailedDeferredException(
-                            getCommandName(stepStatus.commandId)?.toString(),
-                            stepStatus.commandId.toString()
-                        )
+                        stepStatus.returnValue.value() as T
                     }
                 }
             }
@@ -257,20 +242,21 @@ internal class WorkflowDispatcherImpl(
     override fun <T> status(deferred: Deferred<T>): DeferredStatus =
         when (deferred.step.statusAt(workflowTaskIndex)) {
             is Waiting -> DeferredStatus.ONGOING
+            is Unknown -> DeferredStatus.UNKNOWN
             is Completed -> DeferredStatus.COMPLETED
             is Canceled -> DeferredStatus.CANCELED
             is Failed -> DeferredStatus.FAILED
-            is OngoingFailure -> DeferredStatus.FAILED
+            is CurrentlyFailed -> DeferredStatus.FAILED
         }
 
     override fun timer(duration: JavaDuration): Deferred<JavaInstant> = dispatchCommand(
-        StartDurationTimer(MillisDuration(duration.toMillis())),
-        CommandSimpleName("${CommandType.START_DURATION_TIMER}")
+        StartDurationTimerCommand(MillisDuration(duration.toMillis())),
+        StartDurationTimerCommand.simpleName()
     )
 
     override fun timer(instant: JavaInstant): Deferred<JavaInstant> = dispatchCommand(
-        StartInstantTimer(MillisInstant(instant.toEpochMilli())),
-        CommandSimpleName("${CommandType.START_INSTANT_TIMER}")
+        StartInstantTimerCommand(MillisInstant(instant.toEpochMilli())),
+        StartInstantTimerCommand.simpleName()
     )
 
     override fun <S : T, T : Any> receiveSignal(
@@ -279,17 +265,17 @@ internal class WorkflowDispatcherImpl(
         jsonPath: String?,
         criteria: Criteria?
     ): Deferred<S> = dispatchCommand(
-        ReceiveSignal(
+        ReceiveSignalCommand(
             ChannelName(channel.name),
             klass?.let { ChannelSignalType.from(it) },
             ChannelEventFilter.from(jsonPath, criteria)
         ),
-        CommandSimpleName("${CommandType.RECEIVE_IN_CHANNEL}")
+        ReceiveSignalCommand.simpleName()
     )
 
     override fun <T : Any> sendSignal(channel: Channel<T>, signal: T) {
         dispatchCommand<T>(
-            SendSignal(
+            SendSignalCommand(
                 workflowName = workflowTaskParameters.workflowName,
                 workflowId = workflowTaskParameters.workflowId,
                 workflowTag = null,
@@ -297,7 +283,7 @@ internal class WorkflowDispatcherImpl(
                 channelSignalTypes = ChannelSignalType.allFrom(signal::class.java),
                 channelSignal = ChannelSignal.from(signal)
             ),
-            CommandSimpleName("${CommandType.SEND_SIGNAL}")
+            SendSignalCommand.simpleName()
         )
     }
 
@@ -312,7 +298,7 @@ internal class WorkflowDispatcherImpl(
      * Task dispatching
      */
     private fun <R : Any?> dispatchTask(handler: NewTaskProxyHandler<*>): Deferred<R> = dispatchCommand(
-        DispatchTask(
+        DispatchTaskCommand(
             taskName = handler.taskName,
             methodParameters = handler.methodParameters,
             methodParameterTypes = handler.methodParameterTypes,
@@ -330,7 +316,7 @@ internal class WorkflowDispatcherImpl(
     private fun <R : Any?> dispatchWorkflow(handler: NewWorkflowProxyHandler<*>): Deferred<R> = when (handler.isChannelGetter()) {
         true -> throw InvalidChannelUsageException()
         false -> dispatchCommand(
-            DispatchWorkflow(
+            DispatchWorkflowCommand(
                 workflowName = handler.workflowName,
                 methodName = handler.methodName,
                 methodParameterTypes = handler.methodParameterTypes,
@@ -349,7 +335,7 @@ internal class WorkflowDispatcherImpl(
     private fun <R : Any?> dispatchMethod(handler: GetWorkflowProxyHandler<*>): Deferred<R> = when (handler.isChannelGetter()) {
         true -> throw InvalidChannelUsageException()
         false -> dispatchCommand(
-            DispatchMethod(
+            DispatchMethodCommand(
                 workflowName = handler.workflowName,
                 workflowId = handler.workflowId,
                 workflowTag = handler.workflowTag,
@@ -368,7 +354,7 @@ internal class WorkflowDispatcherImpl(
         if (handler.methodName.toString() != SendChannel<*>::send.name) thisShouldNotHappen()
 
         return dispatchCommand(
-            SendSignal(
+            SendSignalCommand(
                 workflowName = handler.workflowName,
                 workflowId = handler.workflowId,
                 workflowTag = handler.workflowTag,
@@ -376,7 +362,7 @@ internal class WorkflowDispatcherImpl(
                 channelSignalTypes = handler.channelSignalTypes,
                 channelSignal = handler.channelSignal
             ),
-            CommandSimpleName("${CommandType.SEND_SIGNAL}")
+            SendSignalCommand.simpleName()
         )
     }
 
@@ -386,17 +372,11 @@ internal class WorkflowDispatcherImpl(
 
         // create instruction that will be sent to engine
         // if it does not already exist in the history
-        val newCommand = NewCommand(
+        val newCommand = PastCommand.from(
             command = command,
-            commandName = when (command) {
-                is DispatchTask -> CommandName.from(command.taskName)
-                is DispatchWorkflow -> CommandName.from(command.workflowName)
-                is DispatchMethod -> CommandName.from(command.methodName)
-                is SendSignal -> CommandName.from(command.channelName)
-                else -> null
-            },
             commandSimpleName = commandSimpleName,
-            commandPosition = methodRunPosition
+            commandPosition = methodRunPosition,
+            commandStatus = CommandStatus.Running,
         )
 
         val pastCommand = getSimilarPastCommand(newCommand)
@@ -412,12 +392,12 @@ internal class WorkflowDispatcherImpl(
         }
     }
 
-    private fun getPastCommand(): PastCommand? = workflowTaskParameters.methodRun.pastCommands
+    private fun getPastCommandAtCurrentPosition(): PastCommand? = workflowTaskParameters.methodRun.pastCommands
         .find { it.commandPosition == methodRunPosition }
 
-    private fun throwWorkflowUpdatedException(pastCommand: PastCommand?, newCommand: NewCommand?): Nothing {
-        logger.error { "pastCommand =  $pastCommand" }
-        logger.error { "newCommand =  $newCommand" }
+    private fun throwWorkflowUpdatedException(pastCommand: PastCommand?, newCommand: PastCommand?): Nothing {
+        logger.error { "pastCommand = ${pastCommand?.command}" }
+        logger.error { "newCommand  = ${newCommand?.command}" }
         logger.error { "workflowChangeCheckMode = ${workflowTaskParameters.workflowOptions.workflowChangeCheckMode}" }
         throw WorkflowUpdatedException(
             workflowTaskParameters.workflowName.name,
@@ -426,10 +406,9 @@ internal class WorkflowDispatcherImpl(
         )
     }
 
-    private fun getSimilarPastCommand(newCommand: NewCommand): PastCommand? {
+    private fun getSimilarPastCommand(newCommand: PastCommand): PastCommand? {
         // find pastCommand in current position
-        val pastCommand = getPastCommand()
-
+        val pastCommand = getPastCommandAtCurrentPosition()
         // if it exists, check it has not changed
         if (pastCommand != null && !pastCommand.isSameThan(newCommand, workflowTaskParameters.workflowOptions.workflowChangeCheckMode))
             throwWorkflowUpdatedException(pastCommand, newCommand)
@@ -442,7 +421,9 @@ internal class WorkflowDispatcherImpl(
         val currentStep = workflowTaskParameters.methodRun.currentStep
         val pastStep = if (currentStep?.stepPosition == methodRunPosition) {
             currentStep
-        } else workflowTaskParameters.methodRun.pastSteps.find { it.stepPosition == methodRunPosition }
+        } else {
+            workflowTaskParameters.methodRun.pastSteps.find { it.stepPosition == methodRunPosition }
+        }
 
         // if it exists, check it has not changed
         if (pastStep != null && !pastStep.isSameThan(step)) {
@@ -458,7 +439,11 @@ internal class WorkflowDispatcherImpl(
         return pastStep
     }
 
-    private fun getCommandName(commandId: CommandId): CommandName? = workflowTaskParameters.methodRun
-        .pastCommands.firstOrNull { it.commandId == commandId }?.commandName
-        ?: newCommands.firstOrNull { it.commandId == commandId }?.commandName
+    private fun getDeferredException(stepStatus: StepStatus) = when (stepStatus) {
+        is Unknown -> UnknownDeferredException.from(stepStatus.unknownDeferredError)
+        is Canceled -> CanceledDeferredException.from(stepStatus.canceledDeferredError)
+        is Failed -> FailedDeferredException.from(stepStatus.failedDeferredError)
+        is CurrentlyFailed -> FailedDeferredException.from(stepStatus.failedDeferredError)
+        is Completed, Waiting -> thisShouldNotHappen()
+    }
 }
