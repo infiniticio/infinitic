@@ -27,6 +27,7 @@ package io.infinitic.workflows.engine.handlers
 
 import io.infinitic.common.clients.messages.MethodCanceled
 import io.infinitic.common.errors.CanceledWorkflowError
+import io.infinitic.common.exceptions.thisShouldNotHappen
 import io.infinitic.common.workflows.data.commands.DispatchMethodCommand
 import io.infinitic.common.workflows.data.commands.DispatchWorkflowCommand
 import io.infinitic.common.workflows.data.methodRuns.MethodRun
@@ -37,7 +38,6 @@ import io.infinitic.common.workflows.engine.messages.CancelWorkflow
 import io.infinitic.common.workflows.engine.messages.ChildMethodCanceled
 import io.infinitic.common.workflows.engine.state.WorkflowState
 import io.infinitic.common.workflows.tags.messages.CancelWorkflowByTag
-import io.infinitic.exceptions.thisShouldNotHappen
 import io.infinitic.workflows.engine.output.WorkflowEngineOutput
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch

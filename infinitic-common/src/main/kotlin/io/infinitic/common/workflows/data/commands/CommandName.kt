@@ -25,7 +25,7 @@
 
 package io.infinitic.common.workflows.data.commands
 
-import io.infinitic.exceptions.thisShouldNotHappen
+import io.infinitic.common.exceptions.thisShouldNotHappen
 import kotlinx.serialization.Serializable
 
 @JvmInline @Serializable

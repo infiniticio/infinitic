@@ -23,7 +23,7 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.exceptions
+package io.infinitic.common.exceptions
 
 fun thisShouldNotHappen(reason: String? = null): Nothing = throw RuntimeException(
     "this should not happen${

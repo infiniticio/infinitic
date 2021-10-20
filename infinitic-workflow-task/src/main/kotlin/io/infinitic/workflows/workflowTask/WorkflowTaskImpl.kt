@@ -26,15 +26,15 @@
 package io.infinitic.workflows.workflowTask
 
 import io.infinitic.common.data.ReturnValue
-import io.infinitic.common.exceptions.DeferredException
-import io.infinitic.common.exceptions.FailedWorkflowTaskException
-import io.infinitic.common.exceptions.RuntimeException
 import io.infinitic.common.parser.getMethodPerNameAndParameters
 import io.infinitic.common.workflows.data.properties.PropertyHash
 import io.infinitic.common.workflows.data.properties.PropertyName
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTask
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskParameters
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskReturnValue
+import io.infinitic.exceptions.DeferredException
+import io.infinitic.exceptions.FailedWorkflowTaskException
+import io.infinitic.exceptions.RuntimeException
 import io.infinitic.tasks.Task
 import io.infinitic.workflows.Deferred
 import io.infinitic.workflows.setChannelNames

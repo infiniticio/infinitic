@@ -32,7 +32,6 @@ import io.infinitic.common.data.ReturnValue
 import io.infinitic.common.data.methods.MethodParameters
 import io.infinitic.common.errors.DeferredError
 import io.infinitic.common.errors.RuntimeError
-import io.infinitic.common.exceptions.DeferredException
 import io.infinitic.common.parser.getMethodPerNameAndParameters
 import io.infinitic.common.tasks.data.TaskMeta
 import io.infinitic.common.tasks.engine.SendToTaskEngine
@@ -40,6 +39,7 @@ import io.infinitic.common.tasks.engine.messages.TaskAttemptCompleted
 import io.infinitic.common.tasks.engine.messages.TaskAttemptFailed
 import io.infinitic.common.tasks.executors.messages.ExecuteTaskAttempt
 import io.infinitic.common.tasks.executors.messages.TaskExecutorMessage
+import io.infinitic.exceptions.DeferredException
 import io.infinitic.exceptions.tasks.ProcessingTimeoutException
 import io.infinitic.tasks.Task
 import io.infinitic.tasks.TaskExecutorRegister

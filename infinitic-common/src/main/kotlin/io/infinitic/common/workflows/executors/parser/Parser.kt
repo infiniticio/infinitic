@@ -25,9 +25,9 @@
 
 package io.infinitic.common.workflows.executors.parser
 
+import io.infinitic.common.exceptions.thisShouldNotHappen
 import io.infinitic.common.workflows.data.properties.PropertyName
 import io.infinitic.common.workflows.data.properties.PropertyValue
-import io.infinitic.exceptions.thisShouldNotHappen
 import kotlin.reflect.KProperty1
 import kotlin.reflect.full.memberProperties
 import kotlin.reflect.jvm.javaField

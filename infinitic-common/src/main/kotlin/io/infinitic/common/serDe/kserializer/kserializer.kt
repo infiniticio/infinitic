@@ -26,6 +26,7 @@
 package io.infinitic.common.serDe.kserializer
 
 import io.infinitic.common.clients.messages.ClientEnvelope
+import io.infinitic.common.exceptions.thisShouldNotHappen
 import io.infinitic.common.metrics.global.messages.MetricsGlobalEnvelope
 import io.infinitic.common.metrics.perName.messages.MetricsPerNameEnvelope
 import io.infinitic.common.tasks.engine.messages.TaskEngineEnvelope
@@ -33,10 +34,8 @@ import io.infinitic.common.tasks.executors.messages.TaskExecutorEnvelope
 import io.infinitic.common.tasks.tags.messages.TaskTagEngineEnvelope
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineEnvelope
 import io.infinitic.common.workflows.tags.messages.WorkflowTagEngineEnvelope
-import io.infinitic.exceptions.thisShouldNotHappen
 import kotlinx.serialization.InternalSerializationApi
 import kotlinx.serialization.KSerializer
-import kotlinx.serialization.serializer
 import kotlinx.serialization.serializerOrNull
 import kotlin.reflect.KClass
 

@@ -31,4 +31,4 @@ import java.lang.RuntimeException
 open class RunException(
     message: String,
     val causeError: DeferredError? = null
-) : RuntimeException(message)
+) : kotlin.RuntimeException(message)

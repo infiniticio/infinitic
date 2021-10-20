@@ -27,11 +27,11 @@ package io.infinitic.tests.workflows
 
 import com.jayway.jsonpath.Criteria.where
 import io.infinitic.annotations.Ignore
-import io.infinitic.common.exceptions.FailedTaskException
-import io.infinitic.common.exceptions.FailedWorkflowException
-import io.infinitic.common.exceptions.UnknownWorkflowException
 import io.infinitic.common.tasks.data.TaskMeta
 import io.infinitic.common.workflows.data.workflows.WorkflowMeta
+import io.infinitic.exceptions.FailedTaskException
+import io.infinitic.exceptions.FailedWorkflowException
+import io.infinitic.exceptions.UnknownWorkflowException
 import io.infinitic.tests.tasks.ParentInterface
 import io.infinitic.tests.tasks.TaskA
 import io.infinitic.workflows.Deferred

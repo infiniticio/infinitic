@@ -26,14 +26,14 @@
 package io.infinitic.tests
 
 // import com.github.valfirst.slf4jtest.TestLoggerFactory
-import io.infinitic.common.exceptions.CanceledWorkflowException
-import io.infinitic.common.exceptions.FailedTaskException
-import io.infinitic.common.exceptions.FailedWorkflowException
-import io.infinitic.common.exceptions.FailedWorkflowTaskException
-import io.infinitic.common.exceptions.UnknownWorkflowException
 import io.infinitic.common.fixtures.later
 import io.infinitic.common.tasks.data.TaskMeta
 import io.infinitic.common.workflows.data.workflows.WorkflowMeta
+import io.infinitic.exceptions.CanceledWorkflowException
+import io.infinitic.exceptions.FailedTaskException
+import io.infinitic.exceptions.FailedWorkflowException
+import io.infinitic.exceptions.FailedWorkflowTaskException
+import io.infinitic.exceptions.UnknownWorkflowException
 import io.infinitic.exceptions.workflows.InvalidInlineException
 import io.infinitic.factory.InfiniticClientFactory
 import io.infinitic.factory.InfiniticWorkerFactory

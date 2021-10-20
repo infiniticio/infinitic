@@ -29,9 +29,7 @@ import com.jayway.jsonpath.Criteria
 import io.infinitic.common.data.MillisDuration
 import io.infinitic.common.data.MillisInstant
 import io.infinitic.common.data.ReturnValue
-import io.infinitic.common.exceptions.CanceledDeferredException
-import io.infinitic.common.exceptions.FailedDeferredException
-import io.infinitic.common.exceptions.UnknownDeferredException
+import io.infinitic.common.exceptions.thisShouldNotHappen
 import io.infinitic.common.proxies.ChannelProxyHandler
 import io.infinitic.common.proxies.GetTaskProxyHandler
 import io.infinitic.common.proxies.GetWorkflowProxyHandler
@@ -68,9 +66,11 @@ import io.infinitic.common.workflows.data.steps.StepStatus.Failed
 import io.infinitic.common.workflows.data.steps.StepStatus.Unknown
 import io.infinitic.common.workflows.data.steps.StepStatus.Waiting
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskParameters
+import io.infinitic.exceptions.CanceledDeferredException
+import io.infinitic.exceptions.FailedDeferredException
+import io.infinitic.exceptions.UnknownDeferredException
 import io.infinitic.exceptions.clients.InvalidChannelUsageException
 import io.infinitic.exceptions.clients.InvalidRunningTaskException
-import io.infinitic.exceptions.thisShouldNotHappen
 import io.infinitic.exceptions.workflows.WorkflowUpdatedException
 import io.infinitic.workflows.Channel
 import io.infinitic.workflows.Deferred

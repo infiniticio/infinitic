@@ -25,10 +25,10 @@
 
 package io.infinitic.common.proxies
 
+import io.infinitic.common.exceptions.thisShouldNotHappen
 import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.data.workflows.WorkflowName
 import io.infinitic.common.workflows.data.workflows.WorkflowTag
-import io.infinitic.exceptions.thisShouldNotHappen
 
 class GetWorkflowProxyHandler<K : Any>(
     override val klass: Class<K>,

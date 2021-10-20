@@ -29,6 +29,7 @@ import com.fasterxml.jackson.annotation.JsonCreator
 import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.annotation.JsonTypeInfo
 import io.infinitic.common.data.ReturnValue
+import io.infinitic.common.exceptions.thisShouldNotHappen
 import io.infinitic.common.serDe.SerializedData
 import io.infinitic.common.workflows.data.commands.CommandId
 import io.infinitic.common.workflows.data.commands.CommandStatus
@@ -39,7 +40,6 @@ import io.infinitic.common.workflows.data.commands.CommandStatus.Running
 import io.infinitic.common.workflows.data.commands.CommandStatus.Unknown
 import io.infinitic.common.workflows.data.commands.PastCommand
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskIndex
-import io.infinitic.exceptions.thisShouldNotHappen
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlin.Int.Companion.MAX_VALUE

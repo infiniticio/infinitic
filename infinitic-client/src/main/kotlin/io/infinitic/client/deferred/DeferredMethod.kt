@@ -28,11 +28,11 @@ package io.infinitic.client.deferred
 import io.infinitic.client.Deferred
 import io.infinitic.client.dispatcher.ClientDispatcher
 import io.infinitic.common.data.methods.MethodName
+import io.infinitic.common.exceptions.thisShouldNotHappen
 import io.infinitic.common.workflows.data.methodRuns.MethodRunId
 import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.data.workflows.WorkflowName
 import io.infinitic.common.workflows.data.workflows.WorkflowTag
-import io.infinitic.exceptions.thisShouldNotHappen
 
 class DeferredMethod<R> (
     internal val returnClass: Class<R>,

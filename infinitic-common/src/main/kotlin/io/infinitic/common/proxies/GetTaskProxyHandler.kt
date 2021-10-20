@@ -25,10 +25,10 @@
 
 package io.infinitic.common.proxies
 
+import io.infinitic.common.exceptions.thisShouldNotHappen
 import io.infinitic.common.tasks.data.TaskId
 import io.infinitic.common.tasks.data.TaskName
 import io.infinitic.common.tasks.data.TaskTag
-import io.infinitic.exceptions.thisShouldNotHappen
 
 class GetTaskProxyHandler<K : Any>(
     override val klass: Class<K>,

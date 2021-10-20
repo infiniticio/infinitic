@@ -23,7 +23,7 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.common.exceptions
+package io.infinitic.exceptions
 
 import io.infinitic.common.errors.RuntimeError
 

@@ -29,6 +29,7 @@ import io.infinitic.client.dispatcher.ClientDispatcher
 import io.infinitic.client.dispatcher.ClientDispatcherImpl
 import io.infinitic.common.clients.data.ClientName
 import io.infinitic.common.clients.messages.ClientMessage
+import io.infinitic.common.exceptions.thisShouldNotHappen
 import io.infinitic.common.proxies.GetTaskProxyHandler
 import io.infinitic.common.proxies.GetWorkflowProxyHandler
 import io.infinitic.common.proxies.NewTaskProxyHandler
@@ -47,7 +48,6 @@ import io.infinitic.common.workflows.data.workflows.WorkflowTag
 import io.infinitic.common.workflows.engine.SendToWorkflowEngine
 import io.infinitic.common.workflows.tags.SendToWorkflowTagEngine
 import io.infinitic.exceptions.clients.InvalidStubException
-import io.infinitic.exceptions.thisShouldNotHappen
 import io.infinitic.workflows.Consumer0
 import io.infinitic.workflows.Consumer1
 import io.infinitic.workflows.Consumer2

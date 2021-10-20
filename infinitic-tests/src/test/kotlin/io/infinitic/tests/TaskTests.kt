@@ -25,10 +25,10 @@
 
 package io.infinitic.tests
 
-import io.infinitic.common.exceptions.CanceledTaskException
-import io.infinitic.common.exceptions.FailedTaskException
 import io.infinitic.common.fixtures.later
 import io.infinitic.common.tasks.data.TaskMeta
+import io.infinitic.exceptions.CanceledTaskException
+import io.infinitic.exceptions.FailedTaskException
 import io.infinitic.factory.InfiniticClientFactory
 import io.infinitic.factory.InfiniticWorkerFactory
 import io.infinitic.tests.tasks.ExpectedException

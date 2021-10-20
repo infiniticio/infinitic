@@ -26,8 +26,8 @@
 package io.infinitic.client.deferred
 
 import io.infinitic.client.Deferred
+import io.infinitic.common.exceptions.thisShouldNotHappen
 import io.infinitic.common.workflows.data.channels.ChannelSignalId
-import io.infinitic.exceptions.thisShouldNotHappen
 import java.util.concurrent.CompletableFuture
 
 internal class DeferredSend<R : Any?> (
