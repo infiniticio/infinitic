@@ -28,6 +28,8 @@ package io.infinitic.tests.workflows
 import com.jayway.jsonpath.Criteria.where
 import io.infinitic.annotations.Ignore
 import io.infinitic.common.exceptions.FailedTaskException
+import io.infinitic.common.exceptions.FailedWorkflowException
+import io.infinitic.common.exceptions.UnknownWorkflowException
 import io.infinitic.common.tasks.data.TaskMeta
 import io.infinitic.common.workflows.data.workflows.WorkflowMeta
 import io.infinitic.tests.tasks.ParentInterface
@@ -126,11 +128,13 @@ interface WorkflowA : ParentInterface {
     fun failing6()
     fun failing7(): Long
     fun failing7bis()
+    fun failing7ter(): String
     fun failing8(): String
 //    fun failing9(): Boolean
 //    fun failing10(): String
-    fun failing11()
     fun failing10bis()
+    fun failing11()
+    fun failing12(): String
     fun cancel1()
 }
 
@@ -620,6 +624,15 @@ class WorkflowAImpl : Workflow(), WorkflowA {
 
     override fun failing7bis() { workflowA.failing2() }
 
+    override fun failing7ter(): String = try {
+        workflowA.failing2()
+        "ok"
+    } catch (e: FailedWorkflowException) {
+        val cause = e.cause as FailedTaskException
+        taskA.await(100)
+        cause.name
+    }
+
     override fun failing8() = taskA.successAtRetry()
 
 //    override fun failing9(): Boolean {
@@ -658,6 +671,14 @@ class WorkflowAImpl : Workflow(), WorkflowA {
 
     override fun failing11() {
         getWorkflowById(WorkflowA::class.java, "unknown").empty()
+    }
+
+    override fun failing12(): String {
+        return try {
+            getWorkflowById(WorkflowA::class.java, "unknown").empty()
+        } catch (e: UnknownWorkflowException) {
+            taskA.reverse("caught".reversed())
+        }
     }
 
     override fun cancel1() {

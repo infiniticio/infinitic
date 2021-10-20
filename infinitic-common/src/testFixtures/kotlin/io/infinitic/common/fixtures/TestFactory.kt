@@ -27,6 +27,7 @@ package io.infinitic.common.fixtures
 
 import io.infinitic.common.data.methods.MethodParameters
 import io.infinitic.common.errors.DeferredError
+import io.infinitic.common.errors.RuntimeError
 import io.infinitic.common.metrics.global.messages.MetricsGlobalEnvelope
 import io.infinitic.common.metrics.global.messages.MetricsGlobalMessage
 import io.infinitic.common.metrics.perName.messages.MetricsPerNameEnvelope
@@ -71,8 +72,9 @@ object TestFactory {
             .randomize(String::class.java) { String(random(), Charsets.UTF_8) }
             .randomize(ByteArray::class.java) { Random(seed).nextBytes(10) }
             .randomize(ByteBuffer::class.java) { ByteBuffer.wrap(random()) }
-            .randomize(MethodParameters::class.java) { MethodParameters.from(random<ByteArray>(), random<String>()) }
+            .randomize(RuntimeError::class.java) { RuntimeError(random(), random(), random(), null) }
             .randomize(SerializedData::class.java) { SerializedData.from(random<String>()) }
+            .randomize(MethodParameters::class.java) { MethodParameters.from(random<ByteArray>(), random<String>()) }
             .randomize(WorkflowEngineEnvelope::class.java) {
                 val sub = WorkflowEngineMessage::class.sealedSubclasses.shuffled().first()
                 WorkflowEngineEnvelope.from(random(sub))

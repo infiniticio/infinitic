@@ -30,6 +30,7 @@ import io.infinitic.common.exceptions.CanceledWorkflowException
 import io.infinitic.common.exceptions.FailedTaskException
 import io.infinitic.common.exceptions.FailedWorkflowException
 import io.infinitic.common.exceptions.FailedWorkflowTaskException
+import io.infinitic.common.exceptions.UnknownWorkflowException
 import io.infinitic.common.fixtures.later
 import io.infinitic.common.tasks.data.TaskMeta
 import io.infinitic.common.workflows.data.workflows.WorkflowMeta
@@ -515,6 +516,21 @@ internal class WorkflowTests : StringSpec({
         workflowA.failing7() shouldBe 100
     }
 
+    "Failure in child workflow on main path should throw" {
+        val error = shouldThrow<FailedWorkflowException> { workflowA.failing7bis() }
+
+        val cause1 = error.cause as FailedWorkflowException
+        cause1.workflowName shouldBe WorkflowA::class.java.name
+        cause1.methodName shouldBe "failing2"
+
+        val cause2 = cause1.cause as FailedTaskException
+        cause2.taskName shouldBe TaskA::class.java.name
+    }
+
+    "Failure in child workflow on main path can be caught" {
+        workflowA.failing7ter() shouldBe Exception::class.java.name
+    }
+
 //    "Retry a failed task from client should restart a workflow" {
 //        val e = shouldThrow<FailedWorkflowException> { workflowA.failing8() }
 //
@@ -539,7 +555,15 @@ internal class WorkflowTests : StringSpec({
 //    }
 
     "Synchronous call of unknown workflow should throw" {
-        val e = shouldThrow<FailedWorkflowException> { workflowA.failing11() }
+        val error = shouldThrow<FailedWorkflowException> { workflowA.failing11() }
+
+        val cause = error.cause as UnknownWorkflowException
+        cause.workflowName shouldBe WorkflowA::class.java.name
+        cause.workflowId shouldBe "unknown"
+    }
+
+    "Synchronous call of unknown workflow can be caught" {
+        workflowA.failing12() shouldBe "caught"
     }
 
     "child workflow is canceled when parent workflow is canceled - tag are also added and deleted" {

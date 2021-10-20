@@ -25,7 +25,6 @@
 
 package io.infinitic.common.errors
 
-import io.infinitic.exceptions.thisShouldNotHappen
 import kotlinx.serialization.Serializable
 
 /**
@@ -63,27 +62,12 @@ data class RuntimeError(
                 else -> from(cause)
             }
         )
-
-        fun from(error: DeferredError) = when (error) {
-            is FailedTaskError -> RuntimeError(
-                name = error.name,
-                message = error.message,
-                stackTraceToString = error.stackTraceToString,
-                cause = error.cause
-            )
-            is FailedWorkflowTaskError -> RuntimeError(
-                name = error.name,
-                message = error.message,
-                stackTraceToString = error.stackTraceToString,
-                cause = error.cause
-            )
-            else -> thisShouldNotHappen()
-        }
     }
 
-    override fun toString(): String = mapOf(
+    // removing stackTraceToString of the output to preserve logs
+    override fun toString(): String = this::class.java.simpleName + "(" + listOf(
         "name" to name,
         "message" to message,
-        "cause" to cause.toString()
-    ).toString()
+        "cause" to cause
+    ).joinToString() { "${it.first}=${it.second}" } + ")"
 }
