@@ -69,11 +69,15 @@ data class Deferred<T> (val step: Step) {
      */
     fun status(): DeferredStatus = workflowDispatcher.status(this)
 
-    @JsonIgnore fun isCompleted() = status() == DeferredStatus.COMPLETED
+    @JsonIgnore fun isOngoing() = status() == DeferredStatus.ONGOING
+
+    @JsonIgnore fun isUnknown() = status() == DeferredStatus.UNKNOWN
 
     @JsonIgnore fun isCanceled() = status() == DeferredStatus.CANCELED
 
-    @JsonIgnore fun isOngoing() = status() == DeferredStatus.ONGOING
+    @JsonIgnore fun isFailed() = status() == DeferredStatus.FAILED
+
+    @JsonIgnore fun isCompleted() = status() == DeferredStatus.COMPLETED
 }
 
 object DeferredSerializer : KSerializer<Deferred<*>> {
