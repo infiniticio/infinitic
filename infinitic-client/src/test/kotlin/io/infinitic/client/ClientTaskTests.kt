@@ -30,7 +30,7 @@ import io.infinitic.client.samples.FakeClass
 import io.infinitic.client.samples.FakeInterface
 import io.infinitic.client.samples.FakeTask
 import io.infinitic.client.samples.FooTask
-import io.infinitic.common.clients.data.ClientName
+import io.infinitic.common.data.ClientName
 import io.infinitic.common.data.methods.MethodName
 import io.infinitic.common.data.methods.MethodParameterTypes
 import io.infinitic.common.data.methods.MethodParameters

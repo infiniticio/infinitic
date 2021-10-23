@@ -27,7 +27,7 @@ package io.infinitic.inMemory
 
 import io.infinitic.client.InfiniticClient
 import io.infinitic.client.worker.startClientWorker
-import io.infinitic.common.clients.data.ClientName
+import io.infinitic.common.data.ClientName
 import io.infinitic.inMemory.transport.InMemoryOutput
 import io.infinitic.worker.config.WorkerConfig
 import kotlinx.coroutines.CoroutineName

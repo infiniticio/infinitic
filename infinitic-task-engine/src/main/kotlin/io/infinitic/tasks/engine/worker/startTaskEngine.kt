@@ -25,8 +25,8 @@
 
 package io.infinitic.tasks.engine.worker
 
-import io.infinitic.common.clients.data.ClientName
 import io.infinitic.common.clients.transport.SendToClient
+import io.infinitic.common.data.ClientName
 import io.infinitic.common.metrics.perName.transport.SendToMetricsPerName
 import io.infinitic.common.tasks.engine.SendToTaskEngineAfter
 import io.infinitic.common.tasks.engine.messages.TaskEngineMessage

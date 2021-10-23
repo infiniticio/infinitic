@@ -25,7 +25,7 @@
 
 package io.infinitic.metrics.perName.engine.worker
 
-import io.infinitic.common.clients.data.ClientName
+import io.infinitic.common.data.ClientName
 import io.infinitic.common.metrics.global.transport.SendToMetricsGlobal
 import io.infinitic.common.metrics.perName.messages.MetricsPerNameMessage
 import io.infinitic.common.workers.MessageToProcess

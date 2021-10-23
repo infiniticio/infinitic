@@ -25,7 +25,7 @@
 
 package io.infinitic.common.metrics.global.messages
 
-import io.infinitic.common.clients.data.ClientName
+import io.infinitic.common.data.ClientName
 import io.infinitic.common.data.MessageId
 import io.infinitic.common.messages.Message
 import io.infinitic.common.tasks.data.TaskName

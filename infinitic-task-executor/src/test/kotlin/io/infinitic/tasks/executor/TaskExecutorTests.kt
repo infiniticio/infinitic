@@ -28,7 +28,7 @@
 package io.infinitic.tasks.executor
 
 import io.infinitic.client.InfiniticClient
-import io.infinitic.common.clients.data.ClientName
+import io.infinitic.common.data.ClientName
 import io.infinitic.common.data.MillisDuration
 import io.infinitic.common.data.ReturnValue
 import io.infinitic.common.data.methods.MethodName
@@ -147,7 +147,7 @@ class TaskExecutorTests : StringSpec({
         fail.taskRetrySequence shouldBe msg.taskRetrySequence
         fail.taskRetryIndex shouldBe msg.taskRetryIndex
         fail.taskAttemptDelayBeforeRetry shouldBe null
-        fail.runtimeError!!.name shouldBe ClassNotFoundException::class.java.name
+        fail.workerError!!.name shouldBe ClassNotFoundException::class.java.name
     }
 
     "Should throw NoMethodFoundWithParameterTypes when trying to process an unknown method" {
@@ -167,7 +167,7 @@ class TaskExecutorTests : StringSpec({
         fail.taskRetrySequence shouldBe msg.taskRetrySequence
         fail.taskRetryIndex shouldBe msg.taskRetryIndex
         fail.taskAttemptDelayBeforeRetry shouldBe null
-        fail.runtimeError!!.name shouldBe NoMethodFoundWithParameterTypesException::class.java.name
+        fail.workerError!!.name shouldBe NoMethodFoundWithParameterTypesException::class.java.name
     }
 
     "Should throw NoMethodFoundWithParameterCount when trying to process an unknown method without parameterTypes" {
@@ -186,7 +186,7 @@ class TaskExecutorTests : StringSpec({
         fail.taskRetrySequence shouldBe msg.taskRetrySequence
         fail.taskRetryIndex shouldBe msg.taskRetryIndex
         fail.taskAttemptDelayBeforeRetry shouldBe null
-        fail.runtimeError!!.name shouldBe NoMethodFoundWithParameterCountException::class.java.name
+        fail.workerError!!.name shouldBe NoMethodFoundWithParameterCountException::class.java.name
     }
 
     "Should throw TooManyMethodsFoundWithParameterCount when trying to process an unknown method without parameterTypes" {
@@ -205,7 +205,7 @@ class TaskExecutorTests : StringSpec({
         fail.taskRetrySequence shouldBe msg.taskRetrySequence
         fail.taskRetryIndex shouldBe msg.taskRetryIndex
         fail.taskAttemptDelayBeforeRetry shouldBe null
-        fail.runtimeError!!.name shouldBe TooManyMethodsFoundWithParameterCountException::class.java.name
+        fail.workerError!!.name shouldBe TooManyMethodsFoundWithParameterCountException::class.java.name
     }
 
     "Should retry with correct exception" {
@@ -224,7 +224,7 @@ class TaskExecutorTests : StringSpec({
         fail.taskRetrySequence shouldBe msg.taskRetrySequence
         fail.taskRetryIndex shouldBe msg.taskRetryIndex
         fail.taskAttemptDelayBeforeRetry shouldBe MillisDuration(3000)
-        fail.runtimeError!!.name shouldBe IllegalStateException::class.java.name
+        fail.workerError!!.name shouldBe IllegalStateException::class.java.name
     }
 
     "Should throw when getRetryDelay throw an exception" {
@@ -243,7 +243,7 @@ class TaskExecutorTests : StringSpec({
         fail.taskRetrySequence shouldBe msg.taskRetrySequence
         fail.taskRetryIndex shouldBe msg.taskRetryIndex
         fail.taskAttemptDelayBeforeRetry shouldBe null
-        fail.runtimeError!!.name shouldBe IllegalArgumentException::class.java.name
+        fail.workerError!!.name shouldBe IllegalArgumentException::class.java.name
     }
 
     "Should be able to access context from task" {
@@ -284,7 +284,7 @@ class TaskExecutorTests : StringSpec({
         fail.taskRetrySequence shouldBe msg.taskRetrySequence
         fail.taskRetryIndex shouldBe msg.taskRetryIndex
         fail.taskAttemptDelayBeforeRetry shouldBe null
-        fail.runtimeError!!.name shouldBe ProcessingTimeoutException::class.java.name
+        fail.workerError!!.name shouldBe ProcessingTimeoutException::class.java.name
     }
 })
 

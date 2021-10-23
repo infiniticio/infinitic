@@ -25,8 +25,8 @@
 
 package io.infinitic.workflows.engine.handlers
 
-import io.infinitic.common.clients.data.ClientName
 import io.infinitic.common.clients.messages.MethodCompleted
+import io.infinitic.common.data.ClientName
 import io.infinitic.common.data.MillisDuration
 import io.infinitic.common.data.MillisInstant
 import io.infinitic.common.data.minus

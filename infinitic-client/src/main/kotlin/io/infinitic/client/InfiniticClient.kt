@@ -27,8 +27,8 @@ package io.infinitic.client
 
 import io.infinitic.client.dispatcher.ClientDispatcher
 import io.infinitic.client.dispatcher.ClientDispatcherImpl
-import io.infinitic.common.clients.data.ClientName
 import io.infinitic.common.clients.messages.ClientMessage
+import io.infinitic.common.data.ClientName
 import io.infinitic.common.exceptions.thisShouldNotHappen
 import io.infinitic.common.proxies.GetTaskProxyHandler
 import io.infinitic.common.proxies.GetWorkflowProxyHandler

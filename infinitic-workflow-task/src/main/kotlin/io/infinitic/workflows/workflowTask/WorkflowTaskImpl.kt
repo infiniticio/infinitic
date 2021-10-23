@@ -25,6 +25,7 @@
 
 package io.infinitic.workflows.workflowTask
 
+import io.infinitic.common.data.ClientName
 import io.infinitic.common.data.ReturnValue
 import io.infinitic.common.parser.getMethodPerNameAndParameters
 import io.infinitic.common.workflows.data.properties.PropertyHash
@@ -34,7 +35,7 @@ import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskParameters
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskReturnValue
 import io.infinitic.exceptions.DeferredException
 import io.infinitic.exceptions.FailedWorkflowTaskException
-import io.infinitic.exceptions.RuntimeException
+import io.infinitic.exceptions.WorkerException
 import io.infinitic.tasks.Task
 import io.infinitic.workflows.Deferred
 import io.infinitic.workflows.setChannelNames
@@ -103,13 +104,7 @@ class WorkflowTaskImpl : Task(), WorkflowTask {
                         workflowName = workflowTaskParameters.workflowName.toString(),
                         workflowId = workflowTaskParameters.workflowId.toString(),
                         workflowTaskId = context.id,
-                        name = throwable::class.java.name,
-                        message = throwable.message,
-                        stackTraceToString = throwable.stackTraceToString(),
-                        cause = when (val c = throwable.cause) {
-                            null, throwable -> null
-                            else -> RuntimeException.from(c)
-                        }
+                        workerException = WorkerException.from(ClientName(context.client.name), throwable)
                     )
                 }
             }

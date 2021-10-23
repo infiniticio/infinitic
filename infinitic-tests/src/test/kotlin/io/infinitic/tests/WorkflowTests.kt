@@ -215,15 +215,15 @@ internal class WorkflowTests : StringSpec({
     "Inline task with asynchronous task inside" {
         val error = shouldThrow<FailedWorkflowException> { workflowA.inline2(21) }
 
-        val cause = error.cause as FailedWorkflowTaskException
-        cause.name shouldBe InvalidInlineException::class.java.name
+        val deferredException = error.deferredException as FailedWorkflowTaskException
+        deferredException.workerException.name shouldBe InvalidInlineException::class.java.name
     }
 
     "Inline task with synchronous task inside" {
         val error = shouldThrow<FailedWorkflowException> { workflowA.inline3(14) }
 
-        val cause = error.cause as FailedWorkflowTaskException
-        cause.name shouldBe InvalidInlineException::class.java.name
+        val deferredException = error.deferredException as FailedWorkflowTaskException
+        deferredException.workerException.name shouldBe InvalidInlineException::class.java.name
     }
 
     "Sequential Child Workflow" {
@@ -459,9 +459,9 @@ internal class WorkflowTests : StringSpec({
     "failing task on main path should throw" {
         val error = shouldThrow<FailedWorkflowException> { workflowA.failing2() }
 
-        val cause = error.cause as FailedTaskException
-        cause.taskName shouldBe TaskA::class.java.name
-        cause.name shouldBe Exception::class.java.name
+        val taskException = error.deferredException as FailedTaskException
+        taskException.taskName shouldBe TaskA::class.java.name
+        taskException.workerException.name shouldBe Exception::class.java.name
     }
 
     "failing async task on main path should not throw" {
@@ -494,7 +494,7 @@ internal class WorkflowTests : StringSpec({
     "Cancelling child workflow on main path should throw" {
         val error = shouldThrow<FailedWorkflowException> { workflowB.cancelChild1() }
 
-        val cause = error.cause as CanceledWorkflowException
+        val cause = error.deferredException as CanceledWorkflowException
         cause.workflowName shouldBe WorkflowA::class.java.name
     }
 
@@ -505,10 +505,10 @@ internal class WorkflowTests : StringSpec({
     "Failure in child workflow on main path should throw exception" {
         val error = shouldThrow<FailedWorkflowException> { workflowA.failing6() }
 
-        val cause1 = error.cause as FailedWorkflowException
+        val cause1 = error.deferredException as FailedWorkflowException
         cause1.workflowName shouldBe WorkflowA::class.java.name
 
-        val cause2 = cause1.cause as FailedTaskException
+        val cause2 = cause1.deferredException as FailedTaskException
         cause2.taskName shouldBe TaskA::class.java.name
     }
 
@@ -519,11 +519,11 @@ internal class WorkflowTests : StringSpec({
     "Failure in child workflow on main path should throw" {
         val error = shouldThrow<FailedWorkflowException> { workflowA.failing7bis() }
 
-        val cause1 = error.cause as FailedWorkflowException
+        val cause1 = error.deferredException as FailedWorkflowException
         cause1.workflowName shouldBe WorkflowA::class.java.name
         cause1.methodName shouldBe "failing2"
 
-        val cause2 = cause1.cause as FailedTaskException
+        val cause2 = cause1.deferredException as FailedTaskException
         cause2.taskName shouldBe TaskA::class.java.name
     }
 
@@ -557,7 +557,7 @@ internal class WorkflowTests : StringSpec({
     "Synchronous call of unknown workflow should throw" {
         val error = shouldThrow<FailedWorkflowException> { workflowA.failing11() }
 
-        val cause = error.cause as UnknownWorkflowException
+        val cause = error.deferredException as UnknownWorkflowException
         cause.workflowName shouldBe WorkflowA::class.java.name
         cause.workflowId shouldBe "unknown"
     }

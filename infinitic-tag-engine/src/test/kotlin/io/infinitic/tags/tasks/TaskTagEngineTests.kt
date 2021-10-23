@@ -25,10 +25,10 @@
 
 package io.infinitic.tags.tasks
 
-import io.infinitic.common.clients.data.ClientName
 import io.infinitic.common.clients.messages.ClientMessage
 import io.infinitic.common.clients.messages.TaskIdsByTag
 import io.infinitic.common.clients.transport.SendToClient
+import io.infinitic.common.data.ClientName
 import io.infinitic.common.data.MessageId
 import io.infinitic.common.fixtures.TestFactory
 import io.infinitic.common.tasks.data.TaskId

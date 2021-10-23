@@ -25,9 +25,9 @@
 
 package io.infinitic.tags.tasks
 
-import io.infinitic.common.clients.data.ClientName
 import io.infinitic.common.clients.messages.TaskIdsByTag
 import io.infinitic.common.clients.transport.SendToClient
+import io.infinitic.common.data.ClientName
 import io.infinitic.common.tasks.engine.SendToTaskEngine
 import io.infinitic.common.tasks.engine.messages.CancelTask
 import io.infinitic.common.tasks.engine.messages.RetryTask

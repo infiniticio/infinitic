@@ -25,7 +25,7 @@
 
 package io.infinitic.common.workflows.engine.messages
 
-import io.infinitic.common.clients.data.ClientName
+import io.infinitic.common.data.ClientName
 import io.infinitic.common.data.MessageId
 import io.infinitic.common.data.ReturnValue
 import io.infinitic.common.data.methods.MethodName

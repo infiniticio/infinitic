@@ -25,7 +25,7 @@
 
 package io.infinitic.common.clients.messages
 
-import io.infinitic.common.clients.data.ClientName
+import io.infinitic.common.data.ClientName
 import io.infinitic.common.messages.Envelope
 import io.infinitic.common.serDe.avro.AvroSerDe
 import kotlinx.serialization.Serializable

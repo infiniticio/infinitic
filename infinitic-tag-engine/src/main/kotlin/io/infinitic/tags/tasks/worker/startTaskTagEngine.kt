@@ -25,8 +25,8 @@
 
 package io.infinitic.tags.tasks.worker
 
-import io.infinitic.common.clients.data.ClientName
 import io.infinitic.common.clients.transport.SendToClient
+import io.infinitic.common.data.ClientName
 import io.infinitic.common.tasks.engine.SendToTaskEngine
 import io.infinitic.common.tasks.tags.messages.TaskTagEngineMessage
 import io.infinitic.common.workers.MessageToProcess

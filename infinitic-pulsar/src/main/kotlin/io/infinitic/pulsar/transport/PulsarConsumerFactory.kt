@@ -25,8 +25,8 @@
 
 package io.infinitic.pulsar.transport
 
-import io.infinitic.common.clients.data.ClientName
 import io.infinitic.common.clients.messages.ClientEnvelope
+import io.infinitic.common.data.ClientName
 import io.infinitic.common.exceptions.thisShouldNotHappen
 import io.infinitic.common.messages.Envelope
 import io.infinitic.common.metrics.global.messages.MetricsGlobalEnvelope

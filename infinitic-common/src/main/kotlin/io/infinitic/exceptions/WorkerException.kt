@@ -25,9 +25,15 @@
 
 package io.infinitic.exceptions
 
-import io.infinitic.common.errors.RuntimeError
+import io.infinitic.common.data.ClientName
+import io.infinitic.common.errors.WorkerError
 
-class RuntimeException(
+class WorkerException(
+    /**
+     * Name of the worker
+     */
+    val workerName: String,
+
     /**
      * Name of the error
      */
@@ -46,24 +52,26 @@ class RuntimeException(
     /**
      * cause of the error
      */
-    override val cause: RuntimeException?
+    override val cause: WorkerException?
 
 ) : kotlin.RuntimeException() {
     companion object {
-        fun from(error: RuntimeError): RuntimeException = RuntimeException(
+        fun from(error: WorkerError): WorkerException = WorkerException(
+            workerName = error.workerName.toString(),
             name = error.name,
             message = error.message,
             stackTraceToString = error.stackTraceToString,
             cause = error.cause?.let { from(it) }
         )
 
-        fun from(throwable: Throwable): RuntimeException = RuntimeException(
+        fun from(workerName: ClientName, throwable: Throwable): WorkerException = WorkerException(
+            workerName = workerName.toString(),
             name = throwable::class.java.name,
             message = throwable.message,
             stackTraceToString = throwable.stackTraceToString(),
             cause = when (val cause = throwable.cause) {
                 null, throwable -> null
-                else -> from(cause)
+                else -> from(workerName, cause)
             }
         )
     }

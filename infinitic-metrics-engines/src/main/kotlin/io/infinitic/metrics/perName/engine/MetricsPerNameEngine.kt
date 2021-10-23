@@ -25,7 +25,7 @@
 
 package io.infinitic.metrics.perName.engine
 
-import io.infinitic.common.clients.data.ClientName
+import io.infinitic.common.data.ClientName
 import io.infinitic.common.metrics.global.messages.TaskCreated
 import io.infinitic.common.metrics.global.transport.SendToMetricsGlobal
 import io.infinitic.common.metrics.perName.messages.MetricsPerNameMessage

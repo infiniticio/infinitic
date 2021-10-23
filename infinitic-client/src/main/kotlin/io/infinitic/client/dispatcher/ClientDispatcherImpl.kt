@@ -31,7 +31,6 @@ import io.infinitic.client.deferred.DeferredMethod
 import io.infinitic.client.deferred.DeferredSend
 import io.infinitic.client.deferred.DeferredTask
 import io.infinitic.client.deferred.DeferredWorkflow
-import io.infinitic.common.clients.data.ClientName
 import io.infinitic.common.clients.messages.ClientMessage
 import io.infinitic.common.clients.messages.MethodCanceled
 import io.infinitic.common.clients.messages.MethodCompleted
@@ -45,6 +44,7 @@ import io.infinitic.common.clients.messages.TaskUnknown
 import io.infinitic.common.clients.messages.WorkflowIdsByTag
 import io.infinitic.common.clients.messages.interfaces.MethodMessage
 import io.infinitic.common.clients.messages.interfaces.TaskMessage
+import io.infinitic.common.data.ClientName
 import io.infinitic.common.data.methods.MethodName
 import io.infinitic.common.errors.FailedWorkflowError
 import io.infinitic.common.exceptions.thisShouldNotHappen
@@ -91,9 +91,9 @@ import io.infinitic.exceptions.CanceledTaskException
 import io.infinitic.exceptions.CanceledWorkflowException
 import io.infinitic.exceptions.FailedTaskException
 import io.infinitic.exceptions.FailedWorkflowException
-import io.infinitic.exceptions.RuntimeException
 import io.infinitic.exceptions.UnknownTaskException
 import io.infinitic.exceptions.UnknownWorkflowException
+import io.infinitic.exceptions.WorkerException
 import io.infinitic.exceptions.clients.InvalidChannelUsageException
 import io.infinitic.exceptions.clients.InvalidRunningTaskException
 import io.infinitic.workflows.SendChannel
@@ -185,10 +185,7 @@ internal class ClientDispatcherImpl(
                 taskName = taskName.toString(),
                 taskId = taskId.toString(),
                 methodName = methodName.toString(),
-                name = taskResult.error.name,
-                message = taskResult.error.message,
-                stackTraceToString = taskResult.error.stackTraceToString,
-                cause = taskResult.error.cause?.let { RuntimeException.from(it) }
+                workerException = WorkerException.from(taskResult.error)
             )
             is TaskUnknown -> throw UnknownTaskException(
                 taskName = taskName.toString(),
@@ -203,17 +200,17 @@ internal class ClientDispatcherImpl(
         workflowName: WorkflowName,
         methodName: MethodName,
         workflowId: WorkflowId,
-        mRunId: MethodRunId?,
+        methodRunId: MethodRunId?,
         clientWaiting: Boolean
     ): T {
-        val methodRunId = mRunId ?: MethodRunId.from(workflowId)
+        val runId = methodRunId ?: MethodRunId.from(workflowId)
 
         // if task was not initially sync, then send WaitTask message
         if (clientWaiting) {
             val waitWorkflow = WaitWorkflow(
                 workflowName = workflowName,
                 workflowId = workflowId,
-                methodRunId = methodRunId,
+                methodRunId = runId,
                 emitterName = clientName
             )
             scope.launch { sendToWorkflowEngine(waitWorkflow) }
@@ -225,7 +222,7 @@ internal class ClientDispatcherImpl(
                 logger.debug { "ResponseFlow: $it" }
                 it is MethodMessage &&
                     it.workflowId == workflowId &&
-                    it.methodRunId == methodRunId
+                    it.methodRunId == runId
             }
         }.join()
 
@@ -238,7 +235,7 @@ internal class ClientDispatcherImpl(
                 throw CanceledWorkflowException(
                     workflowName = workflowName.toString(),
                     workflowId = workflowId.toString(),
-                    methodRunId = mRunId?.toString()
+                    methodRunId = methodRunId?.toString()
                 )
             }
             is MethodFailed -> {
@@ -247,8 +244,8 @@ internal class ClientDispatcherImpl(
                         workflowName = workflowName,
                         methodName = methodName,
                         workflowId = workflowId,
-                        methodRunId = mRunId,
-                        cause = workflowResult.cause
+                        methodRunId = methodRunId,
+                        deferredError = workflowResult.cause
                     )
                 )
             }
@@ -256,7 +253,7 @@ internal class ClientDispatcherImpl(
                 throw UnknownWorkflowException(
                     workflowName = workflowName.toString(),
                     workflowId = workflowId.toString(),
-                    methodRunId = mRunId?.toString()
+                    methodRunId = methodRunId?.toString()
                 )
             }
             else -> {

@@ -23,7 +23,7 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.common.clients.data
+package io.infinitic.common.data
 
 import kotlinx.serialization.Serializable
 import java.lang.reflect.Method

@@ -25,11 +25,12 @@
 
 package io.infinitic.tasks.engine
 
-import io.infinitic.common.clients.data.ClientName
 import io.infinitic.common.clients.messages.TaskUnknown
 import io.infinitic.common.clients.transport.SendToClient
+import io.infinitic.common.data.ClientName
 import io.infinitic.common.errors.CanceledTaskError
 import io.infinitic.common.errors.FailedTaskError
+import io.infinitic.common.errors.WorkerError
 import io.infinitic.common.exceptions.thisShouldNotHappen
 import io.infinitic.common.metrics.perName.messages.TaskStatusUpdated
 import io.infinitic.common.metrics.perName.transport.SendToMetricsPerName
@@ -412,7 +413,7 @@ class TaskEngine(
 
     private fun CoroutineScope.taskAttemptFailed(state: TaskState, msg: TaskAttemptFailed) {
         with(state) {
-            lastError = msg.runtimeError
+            lastError = msg.workerError
             taskMeta = msg.taskMeta
         }
 
@@ -434,10 +435,7 @@ class TaskEngine(
                             taskName = msg.taskName,
                             taskId = msg.taskId,
                             methodName = state.methodName,
-                            name = msg.runtimeError?.name ?: "",
-                            message = msg.runtimeError?.message ?: "",
-                            stackTraceToString = msg.runtimeError?.stackTraceToString ?: "",
-                            cause = msg.runtimeError?.cause
+                            cause = msg.workerError ?: WorkerError.from(ClientName("unsused"), Exception("unused"))
                         ),
                         deferredError = msg.deferredError
                     )
@@ -449,7 +447,7 @@ class TaskEngine(
                         emitterName = clientName,
                         recipientName = it,
                         taskId = state.taskId,
-                        error = msg.runtimeError ?: thisShouldNotHappen(),
+                        error = msg.workerError ?: thisShouldNotHappen(),
                     )
                     launch { sendToClient(taskFailed) }
                 }

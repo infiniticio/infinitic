@@ -25,11 +25,11 @@
 
 package io.infinitic.client
 
-import io.infinitic.common.clients.data.ClientName
 import io.infinitic.common.clients.messages.MethodCompleted
 import io.infinitic.common.clients.messages.TaskCompleted
 import io.infinitic.common.clients.messages.TaskIdsByTag
 import io.infinitic.common.clients.messages.WorkflowIdsByTag
+import io.infinitic.common.data.ClientName
 import io.infinitic.common.data.ReturnValue
 import io.infinitic.common.tasks.data.TaskId
 import io.infinitic.common.tasks.data.TaskMeta

@@ -26,7 +26,7 @@
 package io.infinitic.tasks
 
 import io.infinitic.client.InfiniticClient
-import io.infinitic.common.errors.RuntimeError
+import io.infinitic.common.errors.WorkerError
 import io.infinitic.common.tasks.data.TaskOptions
 
 interface TaskContext {
@@ -38,7 +38,7 @@ interface TaskContext {
     val attemptId: String
     val retrySequence: Int
     val retryIndex: Int
-    val lastError: RuntimeError?
+    val lastError: WorkerError?
     val tags: Set<String>
     val meta: MutableMap<String, ByteArray>
     val options: TaskOptions

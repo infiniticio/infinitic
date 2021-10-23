@@ -628,9 +628,9 @@ class WorkflowAImpl : Workflow(), WorkflowA {
         workflowA.failing2()
         "ok"
     } catch (e: FailedWorkflowException) {
-        val cause = e.cause as FailedTaskException
+        val deferredException = e.deferredException as FailedTaskException
         taskA.await(100)
-        cause.name
+        deferredException.workerException.name
     }
 
     override fun failing8() = taskA.successAtRetry()

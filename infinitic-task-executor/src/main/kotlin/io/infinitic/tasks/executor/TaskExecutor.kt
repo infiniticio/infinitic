@@ -26,12 +26,12 @@
 package io.infinitic.tasks.executor
 
 import io.infinitic.client.InfiniticClient
-import io.infinitic.common.clients.data.ClientName
+import io.infinitic.common.data.ClientName
 import io.infinitic.common.data.MillisDuration
 import io.infinitic.common.data.ReturnValue
 import io.infinitic.common.data.methods.MethodParameters
 import io.infinitic.common.errors.DeferredError
-import io.infinitic.common.errors.RuntimeError
+import io.infinitic.common.errors.WorkerError
 import io.infinitic.common.parser.getMethodPerNameAndParameters
 import io.infinitic.common.tasks.data.TaskMeta
 import io.infinitic.common.tasks.engine.SendToTaskEngine
@@ -206,9 +206,9 @@ class TaskExecutor(
                 true -> DeferredError.from(throwable)
                 false -> null
             },
-            runtimeError = when (throwable is DeferredException) {
+            workerError = when (throwable is DeferredException) {
                 true -> null
-                false -> RuntimeError.from(throwable)
+                false -> WorkerError.from(clientName, throwable)
             },
             taskMeta = taskMeta,
             emitterName = clientName

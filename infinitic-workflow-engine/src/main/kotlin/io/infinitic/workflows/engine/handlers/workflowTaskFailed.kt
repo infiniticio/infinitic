@@ -75,7 +75,7 @@ internal fun CoroutineScope.workflowTaskFailed(
                 workflowId = state.workflowId,
                 methodName = methodRun.methodName,
                 methodRunId = methodRun.methodRunId,
-                cause = deferredError
+                deferredError = deferredError
             ),
             emitterName = output.clientName
         )

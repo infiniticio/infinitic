@@ -101,17 +101,6 @@ sealed class UnknownDeferredError : DeferredError() {
     }
 }
 
-interface WorkflowError {
-    val workflowName: WorkflowName
-    val workflowId: WorkflowId
-    val methodRunId: MethodRunId?
-}
-
-interface TaskErrorInterface {
-    val taskName: TaskName
-    val taskId: TaskId
-}
-
 /**
  * Error occurring when waiting for an unknown task
  */
@@ -120,13 +109,13 @@ data class UnknownTaskError(
     /**
      * Name of the unknown task
      */
-    override val taskName: TaskName,
+    val taskName: TaskName,
 
     /**
      * Id of the unknown task
      */
-    override val taskId: TaskId
-) : UnknownDeferredError(), TaskErrorInterface {
+    val taskId: TaskId
+) : UnknownDeferredError() {
     companion object {
         fun from(exception: UnknownTaskException) = UnknownTaskError(
             taskName = TaskName(exception.taskName),
@@ -143,18 +132,18 @@ data class UnknownWorkflowError(
     /**
      * Name of the unknown workflow
      */
-    override val workflowName: WorkflowName,
+    val workflowName: WorkflowName,
 
     /**
      * Id of the unknown workflow
      */
-    override val workflowId: WorkflowId,
+    val workflowId: WorkflowId,
 
     /**
      * Id of the methodRun
      */
-    override val methodRunId: MethodRunId?
-) : UnknownDeferredError(), WorkflowError {
+    val methodRunId: MethodRunId?
+) : UnknownDeferredError() {
     companion object {
         fun from(exception: UnknownWorkflowException) = UnknownWorkflowError(
             workflowName = WorkflowName(exception.workflowName),
@@ -172,19 +161,19 @@ data class TimedOutTaskError(
     /**
      * Name of the canceled task
      */
-    override val taskName: TaskName,
+    val taskName: TaskName,
 
     /**
      * Id of the canceled task
      */
-    override val taskId: TaskId,
+    val taskId: TaskId,
 
     /**
      * Method called
      */
     val methodName: MethodName
 
-) : TimedOutDeferredError(), TaskErrorInterface {
+) : TimedOutDeferredError() {
     companion object {
         fun from(exception: TimedOutTaskException) = TimedOutTaskError(
             taskName = TaskName(exception.taskName),
@@ -202,12 +191,12 @@ data class TimedOutWorkflowError(
     /**
      * Name of the canceled child workflow
      */
-    override val workflowName: WorkflowName,
+    val workflowName: WorkflowName,
 
     /**
      * Id of the canceled child workflow
      */
-    override val workflowId: WorkflowId,
+    val workflowId: WorkflowId,
 
     /**
      * Method called
@@ -217,8 +206,8 @@ data class TimedOutWorkflowError(
     /**
      * Id of the methodRun
      */
-    override val methodRunId: MethodRunId?
-) : TimedOutDeferredError(), WorkflowError {
+    val methodRunId: MethodRunId?
+) : TimedOutDeferredError() {
     companion object {
         fun from(exception: TimedOutWorkflowException) = TimedOutWorkflowError(
             workflowName = WorkflowName(exception.workflowName),
@@ -237,19 +226,19 @@ data class CanceledTaskError(
     /**
      * Name of the canceled task
      */
-    override val taskName: TaskName,
+    val taskName: TaskName,
 
     /**
      * Id of the canceled task
      */
-    override val taskId: TaskId,
+    val taskId: TaskId,
 
     /**
      * Method called
      */
     val methodName: MethodName,
 
-) : CanceledDeferredError(), TaskErrorInterface {
+) : CanceledDeferredError() {
     companion object {
         fun from(exception: CanceledTaskException) = CanceledTaskError(
             taskName = TaskName(exception.taskName),
@@ -267,18 +256,18 @@ data class CanceledWorkflowError(
     /**
      * Name of the canceled child workflow
      */
-    override val workflowName: WorkflowName,
+    val workflowName: WorkflowName,
 
     /**
      * Id of the canceled child workflow
      */
-    override val workflowId: WorkflowId,
+    val workflowId: WorkflowId,
 
     /**
      * Id of the methodRun
      */
-    override val methodRunId: MethodRunId?
-) : CanceledDeferredError(), WorkflowError {
+    val methodRunId: MethodRunId?
+) : CanceledDeferredError() {
     companion object {
         fun from(exception: CanceledWorkflowException) = CanceledWorkflowError(
             workflowName = WorkflowName(exception.workflowName),
@@ -296,12 +285,12 @@ data class FailedTaskError(
     /**
      * Name of the task where the error occurred
      */
-    override val taskName: TaskName,
+    val taskName: TaskName,
 
     /**
      * Id of the task where the error occurred
      */
-    override val taskId: TaskId,
+    val taskId: TaskId,
 
     /**
      * Method called where the error occurred
@@ -309,46 +298,18 @@ data class FailedTaskError(
     val methodName: MethodName,
 
     /**
-     * Name of the error
-     */
-    val name: String,
-
-    /**
-     * Message of the error
-     */
-    val message: String?,
-
-    /**
-     * String version of the stack trace
-     */
-    val stackTraceToString: String,
-
-    /**
      * cause of the error
      */
-    val cause: RuntimeError?
-) : FailedDeferredError(), TaskErrorInterface {
+    val cause: WorkerError
+) : FailedDeferredError() {
     companion object {
         fun from(exception: FailedTaskException) = FailedTaskError(
             taskName = TaskName(exception.taskName),
             taskId = TaskId(exception.taskId),
             methodName = MethodName(exception.methodName),
-            name = exception.name,
-            message = exception.message,
-            stackTraceToString = exception.stackTraceToString,
-            cause = exception.cause?.let { RuntimeError.from(it) }
+            cause = WorkerError.from(exception.workerException)
         )
     }
-
-    // removing stackTraceToString of the output to preserve logs
-    override fun toString(): String = this::class.java.simpleName + "(" + listOf(
-        "taskName" to taskName,
-        "taskId" to taskId,
-        "methodName" to methodName,
-        "name" to name,
-        "message" to message,
-        "cause" to cause
-    ).joinToString() { "${it.first}=${it.second}" } + ")"
 }
 
 /**
@@ -379,7 +340,7 @@ data class FailedWorkflowError(
     /**
      * error
      */
-    val cause: DeferredError?
+    val deferredError: DeferredError
 ) : FailedDeferredError() {
     companion object {
         fun from(exception: FailedWorkflowException): FailedWorkflowError = FailedWorkflowError(
@@ -387,7 +348,7 @@ data class FailedWorkflowError(
             workflowId = WorkflowId(exception.workflowId),
             methodName = MethodName(exception.methodName),
             methodRunId = exception.methodRunId?.let { MethodRunId(it) },
-            cause = exception.cause?.let { from(it) }
+            deferredError = from(exception.deferredException)
         )
     }
 }
@@ -413,44 +374,16 @@ data class FailedWorkflowTaskError(
     val workflowTaskId: TaskId,
 
     /**
-     * Name of the error
-     */
-    val name: String,
-
-    /**
-     * Message of the error
-     */
-    val message: String?,
-
-    /**
-     * String version of the stack trace
-     */
-    val stackTraceToString: String,
-
-    /**
      * cause of the error
      */
-    val cause: RuntimeError?
+    val cause: WorkerError
 ) : FailedDeferredError() {
     companion object {
         fun from(exception: FailedWorkflowTaskException): FailedWorkflowTaskError = FailedWorkflowTaskError(
             workflowName = WorkflowName(exception.workflowName),
             workflowId = WorkflowId(exception.workflowId),
             workflowTaskId = TaskId(exception.workflowTaskId),
-            name = exception.name,
-            message = exception.message,
-            stackTraceToString = exception.stackTraceToString,
-            cause = exception.cause?.let { RuntimeError.from(it) }
+            cause = WorkerError.from(exception.workerException)
         )
     }
-
-    // removing stackTraceToString of the output to preserve logs
-    override fun toString(): String = this::class.java.simpleName + "(" + listOf(
-        "workflowName" to workflowName,
-        "workflowId" to workflowId,
-        "workflowTaskId" to workflowTaskId,
-        "name" to name,
-        "message" to message,
-        "cause" to cause
-    ).joinToString() { "${it.first}=${it.second}" } + ")"
 }

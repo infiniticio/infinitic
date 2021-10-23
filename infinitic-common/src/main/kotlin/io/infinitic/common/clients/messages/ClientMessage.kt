@@ -25,13 +25,13 @@
 
 package io.infinitic.common.clients.messages
 
-import io.infinitic.common.clients.data.ClientName
 import io.infinitic.common.clients.messages.interfaces.MethodMessage
 import io.infinitic.common.clients.messages.interfaces.TaskMessage
+import io.infinitic.common.data.ClientName
 import io.infinitic.common.data.MessageId
 import io.infinitic.common.data.ReturnValue
 import io.infinitic.common.errors.DeferredError
-import io.infinitic.common.errors.RuntimeError
+import io.infinitic.common.errors.WorkerError
 import io.infinitic.common.messages.Message
 import io.infinitic.common.tasks.data.TaskId
 import io.infinitic.common.tasks.data.TaskMeta
@@ -65,7 +65,7 @@ data class TaskCompleted(
 data class TaskFailed(
     override val recipientName: ClientName,
     override val taskId: TaskId,
-    val error: RuntimeError,
+    val error: WorkerError,
     override val emitterName: ClientName,
 ) : ClientMessage(), TaskMessage
 

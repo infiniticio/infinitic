@@ -33,7 +33,7 @@ import io.infinitic.client.samples.FakeTaskParent
 import io.infinitic.client.samples.FakeWorkflow
 import io.infinitic.client.samples.FakeWorkflowImpl
 import io.infinitic.client.samples.FooWorkflow
-import io.infinitic.common.clients.data.ClientName
+import io.infinitic.common.data.ClientName
 import io.infinitic.common.data.methods.MethodName
 import io.infinitic.common.data.methods.MethodParameterTypes
 import io.infinitic.common.data.methods.MethodParameters

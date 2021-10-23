@@ -25,13 +25,20 @@
 
 package io.infinitic.common.errors
 
+import io.infinitic.common.data.ClientName
+import io.infinitic.exceptions.WorkerException
 import kotlinx.serialization.Serializable
 
 /**
  * Data class representing an error
  */
 @Serializable
-data class RuntimeError(
+data class WorkerError(
+    /**
+     * Name of the worker
+     */
+    val workerName: ClientName,
+
     /**
      * Name of the error
      */
@@ -50,16 +57,25 @@ data class RuntimeError(
     /**
      * cause of the error
      */
-    val cause: RuntimeError?
+    val cause: WorkerError?
 ) {
     companion object {
-        fun from(throwable: Throwable): RuntimeError = RuntimeError(
+        fun from(exception: WorkerException): WorkerError = WorkerError(
+            workerName = ClientName(exception.workerName),
+            name = exception.name,
+            message = exception.message,
+            stackTraceToString = exception.stackTraceToString,
+            cause = exception.cause?.let { from(it) }
+        )
+
+        fun from(workerName: ClientName, throwable: Throwable): WorkerError = WorkerError(
+            workerName = workerName,
             name = throwable::class.java.name,
             message = throwable.message,
             stackTraceToString = throwable.stackTraceToString(),
             cause = when (val cause = throwable.cause) {
                 null, throwable -> null
-                else -> from(cause)
+                else -> from(workerName, cause)
             }
         )
     }

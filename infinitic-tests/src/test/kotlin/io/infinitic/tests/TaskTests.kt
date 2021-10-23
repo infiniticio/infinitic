@@ -50,7 +50,6 @@ internal class TaskTests : StringSpec({
     val worker = autoClose(InfiniticWorkerFactory.fromConfigResource("/pulsar.yml"))
 
     val taskTest = client.newTask(TaskTest::class.java)
-    val taskTestWithTags = client.newTask(TaskTest::class.java, tags = setOf("foo", "bar"))
 
     beforeTest {
         worker.storageFlush()
@@ -101,7 +100,7 @@ internal class TaskTests : StringSpec({
 
         val error = shouldThrow<FailedTaskException> { taskTest.log() }
 
-        error.name shouldBe ExpectedException::class.java.name
+        error.workerException.name shouldBe ExpectedException::class.java.name
     }
 
     "Task fails after 4 tries " {
@@ -115,7 +114,7 @@ internal class TaskTests : StringSpec({
 
         val error = shouldThrow<FailedTaskException> { taskTest.log() }
 
-        error.name shouldBe ExpectedException::class.java.name
+        error.workerException.name shouldBe ExpectedException::class.java.name
     }
 
     "Task succeeds after manual retry" {

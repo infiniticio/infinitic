@@ -26,7 +26,7 @@
 package io.infinitic.pulsar
 
 import io.infinitic.client.InfiniticClient
-import io.infinitic.common.clients.data.ClientName
+import io.infinitic.common.data.ClientName
 import io.infinitic.common.workflows.engine.SendToWorkflowEngine
 import io.infinitic.pulsar.config.ClientConfig
 import io.infinitic.pulsar.topics.TopicName

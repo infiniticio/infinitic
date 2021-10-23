@@ -25,12 +25,12 @@
 
 package io.infinitic.common.tasks.executors.messages
 
-import io.infinitic.common.clients.data.ClientName
+import io.infinitic.common.data.ClientName
 import io.infinitic.common.data.MessageId
 import io.infinitic.common.data.methods.MethodName
 import io.infinitic.common.data.methods.MethodParameterTypes
 import io.infinitic.common.data.methods.MethodParameters
-import io.infinitic.common.errors.RuntimeError
+import io.infinitic.common.errors.WorkerError
 import io.infinitic.common.messages.Message
 import io.infinitic.common.tasks.data.TaskAttemptId
 import io.infinitic.common.tasks.data.TaskId
@@ -67,7 +67,7 @@ data class ExecuteTaskAttempt(
     val taskAttemptId: TaskAttemptId,
     val taskRetrySequence: TaskRetrySequence,
     val taskRetryIndex: TaskRetryIndex,
-    val lastError: RuntimeError?,
+    val lastError: WorkerError?,
     val methodName: MethodName,
     val methodParameterTypes: MethodParameterTypes?,
     val methodParameters: MethodParameters,

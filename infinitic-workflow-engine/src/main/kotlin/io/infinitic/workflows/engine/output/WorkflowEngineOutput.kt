@@ -25,8 +25,8 @@
 
 package io.infinitic.workflows.engine.output
 
-import io.infinitic.common.clients.data.ClientName
 import io.infinitic.common.clients.transport.SendToClient
+import io.infinitic.common.data.ClientName
 import io.infinitic.common.tasks.engine.SendToTaskEngine
 import io.infinitic.common.tasks.tags.SendToTaskTagEngine
 import io.infinitic.common.workflows.engine.SendToWorkflowEngine

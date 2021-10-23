@@ -278,34 +278,16 @@ class FailedTaskException(
     val methodName: String,
 
     /**
-     * Name of the error
-     */
-    val name: String,
-
-    /**
-     * Message of the error
-     */
-    override val message: String?,
-
-    /**
-     * String version of the stack trace
-     */
-    val stackTraceToString: String,
-
-    /**
      * cause of the error
      */
-    override val cause: RuntimeException?
+    val workerException: WorkerException
 ) : FailedDeferredException() {
     companion object {
         fun from(error: FailedTaskError) = FailedTaskException(
             taskName = error.taskName.toString(),
             taskId = error.taskId.toString(),
             methodName = error.methodName.toString(),
-            name = error.name,
-            message = error.message,
-            stackTraceToString = error.stackTraceToString,
-            cause = error.cause?.let { RuntimeException.from(it) }
+            workerException = WorkerException.from(error.cause)
         )
     }
 }
@@ -337,7 +319,7 @@ class FailedWorkflowException(
     /**
      * cause of the error
      */
-    override val cause: DeferredException?
+    val deferredException: DeferredException
 ) : FailedDeferredException() {
     companion object {
         fun from(error: FailedWorkflowError): FailedWorkflowException = FailedWorkflowException(
@@ -345,7 +327,7 @@ class FailedWorkflowException(
             workflowId = error.workflowId.toString(),
             methodName = error.methodName.toString(),
             methodRunId = error.methodRunId.toString(),
-            cause = error.cause?.let { from(it) }
+            deferredException = from(error.deferredError)
         )
     }
 }
@@ -370,34 +352,16 @@ class FailedWorkflowTaskException(
     val workflowTaskId: String,
 
     /**
-     * Name of the error
-     */
-    val name: String,
-
-    /**
-     * Message of the error
-     */
-    override val message: String?,
-
-    /**
-     * String version of the stack trace
-     */
-    val stackTraceToString: String,
-
-    /**
      * cause of the error
      */
-    override val cause: RuntimeException?
+    val workerException: WorkerException
 ) : FailedDeferredException() {
     companion object {
         fun from(error: FailedWorkflowTaskError) = FailedWorkflowTaskException(
             workflowName = error.workflowName.toString(),
             workflowId = error.workflowId.toString(),
             workflowTaskId = error.workflowTaskId.toString(),
-            name = error.name,
-            message = error.message,
-            stackTraceToString = error.stackTraceToString,
-            cause = error.cause?.let { RuntimeException.from(it) }
+            workerException = WorkerException.from(error.cause)
         )
     }
 }
