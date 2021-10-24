@@ -25,21 +25,18 @@
 
 package io.infinitic.common.workflows.data.methodRuns
 
-import io.infinitic.common.data.Id
-import kotlinx.serialization.KSerializer
+import io.infinitic.common.workflows.data.commands.CommandId
+import io.infinitic.common.workflows.data.workflows.WorkflowId
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.descriptors.PrimitiveKind
-import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
-import kotlinx.serialization.descriptors.SerialDescriptor
-import kotlinx.serialization.encoding.Decoder
-import kotlinx.serialization.encoding.Encoder
 import java.util.UUID
 
-@Serializable(with = MethodRunIdSerializer::class)
-data class MethodRunId(override val id: UUID = UUID.randomUUID()) : Id(id)
+@JvmInline @Serializable
+value class MethodRunId(private val id: String = UUID.randomUUID().toString()) {
+    companion object {
+        fun from(workflowId: WorkflowId) = MethodRunId(workflowId.toString())
 
-object MethodRunIdSerializer : KSerializer<MethodRunId> {
-    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("MethodRunId", PrimitiveKind.STRING)
-    override fun serialize(encoder: Encoder, value: MethodRunId) { encoder.encodeString("${value.id}") }
-    override fun deserialize(decoder: Decoder) = MethodRunId(UUID.fromString(decoder.decodeString()))
+        fun from(commandId: CommandId) = MethodRunId(commandId.toString())
+    }
+
+    override fun toString() = id
 }

@@ -29,6 +29,6 @@ import io.infinitic.common.tasks.data.TaskId
 import io.infinitic.common.tasks.data.TaskName
 
 interface TaskMessage {
-    val taskId: TaskId
-    val taskName: TaskName
+    fun taskId(): TaskId
+    fun taskName(): TaskName
 }

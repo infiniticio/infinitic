@@ -25,6 +25,11 @@
 
 package io.infinitic.common.workflows.data.steps
 
+import com.fasterxml.jackson.annotation.JsonCreator
+import com.fasterxml.jackson.annotation.JsonIgnore
+import com.fasterxml.jackson.annotation.JsonTypeInfo
+import io.infinitic.common.data.ReturnValue
+import io.infinitic.common.exceptions.thisShouldNotHappen
 import io.infinitic.common.serDe.SerializedData
 import io.infinitic.common.workflows.data.commands.CommandId
 import io.infinitic.common.workflows.data.commands.CommandStatus
@@ -32,82 +37,93 @@ import io.infinitic.common.workflows.data.commands.CommandStatus.Canceled
 import io.infinitic.common.workflows.data.commands.CommandStatus.Completed
 import io.infinitic.common.workflows.data.commands.CommandStatus.CurrentlyFailed
 import io.infinitic.common.workflows.data.commands.CommandStatus.Running
-import io.infinitic.common.workflows.data.commands.NewCommand
+import io.infinitic.common.workflows.data.commands.CommandStatus.Unknown
 import io.infinitic.common.workflows.data.commands.PastCommand
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskIndex
-import io.infinitic.exceptions.thisShouldNotHappen
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlin.Int.Companion.MAX_VALUE
 
 @Serializable
+@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.PROPERTY, property = "@class")
 sealed class Step {
-    fun isTerminated() = isTerminatedAt(WorkflowTaskIndex(MAX_VALUE))
+    @JsonIgnore fun isTerminated() = isTerminatedAt(WorkflowTaskIndex(MAX_VALUE))
     fun status() = statusAt(WorkflowTaskIndex(MAX_VALUE))
 
-    abstract fun isTerminatedAt(index: WorkflowTaskIndex): Boolean
+    @JsonIgnore abstract fun isTerminatedAt(index: WorkflowTaskIndex): Boolean
     abstract fun statusAt(index: WorkflowTaskIndex): StepStatus
 
-    /*
-     * hash function is defined to exclude commandStatus and provide a hopefully unique hash linked to the structure of the step
+    /**
+     * hash function excludes commandStatus and provide a hopefully unique hash linked to the structure of the step
      */
     abstract fun hash(): StepHash
 
-    @Serializable
+    @Serializable @SerialName("Step.Id")
     data class Id(
-        val commandId: CommandId,
-        var commandStatus: CommandStatus
+        val commandId: CommandId
     ) : Step() {
+        @JsonIgnore var commandStatus: CommandStatus = Running
+
+        companion object {
+            fun from(pastCommand: PastCommand) = Id(pastCommand.commandId)
+                .apply { commandStatus = pastCommand.commandStatus }
+
+            @JsonCreator @JvmStatic
+            // This is needed for Jackson deserialization, CommandId being an inline type
+            fun new(commandId: String) = Id(CommandId(commandId))
+        }
 
         override fun hash() = StepHash(SerializedData.from(commandId).hash())
 
-        override fun isTerminatedAt(index: WorkflowTaskIndex) = when (statusAt(index)) {
+        @JsonIgnore override fun isTerminatedAt(index: WorkflowTaskIndex) = when (statusAt(index)) {
             is StepStatus.Waiting -> false
-            is StepStatus.OngoingFailure -> true
-            is StepStatus.Completed -> true
+            is StepStatus.Unknown -> true
             is StepStatus.Canceled -> true
+            is StepStatus.CurrentlyFailed -> true
             is StepStatus.Failed -> thisShouldNotHappen()
+            is StepStatus.Completed -> true
         }
 
         override fun statusAt(index: WorkflowTaskIndex) = when (val status = commandStatus) {
             is Running -> StepStatus.Waiting
-            is Completed -> when (index >= status.completionWorkflowTaskIndex) {
-                true -> StepStatus.Completed(StepReturnValue.from(status.returnValue.get()), status.completionWorkflowTaskIndex)
+            is Unknown -> when (index >= status.unknowingWorkflowTaskIndex) {
+                true -> StepStatus.Unknown(status.unknownDeferredError, status.unknowingWorkflowTaskIndex)
                 false -> StepStatus.Waiting
             }
             is Canceled -> when (index >= status.cancellationWorkflowTaskIndex) {
-                true -> StepStatus.Canceled(commandId, status.cancellationWorkflowTaskIndex)
+                true -> StepStatus.Canceled(status.canceledDeferredError, status.cancellationWorkflowTaskIndex)
                 false -> StepStatus.Waiting
             }
             is CurrentlyFailed -> when (index >= status.failureWorkflowTaskIndex) {
-                true -> StepStatus.OngoingFailure(commandId, status.failureWorkflowTaskIndex)
+                true -> StepStatus.CurrentlyFailed(status.failedDeferredError, status.failureWorkflowTaskIndex)
+                false -> StepStatus.Waiting
+            }
+            is Completed -> when (index >= status.completionWorkflowTaskIndex) {
+                true -> StepStatus.Completed(status.returnValue, status.completionWorkflowTaskIndex)
                 false -> StepStatus.Waiting
             }
         }
-
-        companion object {
-            fun from(newCommand: NewCommand) = Id(newCommand.commandId, Running)
-            fun from(pastCommand: PastCommand) = Id(pastCommand.commandId, pastCommand.commandStatus)
-        }
     }
 
-    @Serializable
+    @Serializable @SerialName("Step.And")
     data class And(var steps: List<Step>) : Step() {
 
         override fun hash() = StepHash(SerializedData.from(steps.map { it.hash() }).hash())
 
-        override fun isTerminatedAt(index: WorkflowTaskIndex) =
+        @JsonIgnore override fun isTerminatedAt(index: WorkflowTaskIndex) =
             this.steps.all { it.isTerminatedAt(index) }
 
         override fun statusAt(index: WorkflowTaskIndex): StepStatus {
             val statuses = steps.map { it.statusAt(index) }
 
-            // if at least one step is canceled or ongoingFailure, then And(...steps) is the first of them
+            // if at least one step is canceled or currentlyFailed, then And(...steps) is the first of them
             val firstTerminated = statuses
-                .filter { it is StepStatus.OngoingFailure && it is StepStatus.Canceled }
+                .filter { it is StepStatus.CurrentlyFailed || it is StepStatus.Canceled || it is StepStatus.Unknown }
                 .minByOrNull {
                     when (it) {
-                        is StepStatus.OngoingFailure -> it.failureWorkflowTaskIndex
+                        is StepStatus.CurrentlyFailed -> it.failureWorkflowTaskIndex
                         is StepStatus.Canceled -> it.cancellationWorkflowTaskIndex
+                        is StepStatus.Unknown -> it.unknowingWorkflowTaskIndex
                         is StepStatus.Completed, is StepStatus.Failed, is StepStatus.Waiting -> thisShouldNotHappen()
                     }
                 }
@@ -119,21 +135,21 @@ sealed class Step {
             // if all steps are completed, then And(...steps) is completed
             if (statuses.all { it is StepStatus.Completed }) {
                 val maxIndex = statuses.maxOf { (it as StepStatus.Completed).completionWorkflowTaskIndex }
-                val results = statuses.map { (it as StepStatus.Completed).returnValue.get() }
+                val results = statuses.map { (it as StepStatus.Completed).returnValue.value() }
 
-                return StepStatus.Completed(StepReturnValue.from(results), maxIndex)
+                return StepStatus.Completed(ReturnValue.from(results), maxIndex)
             }
 
             thisShouldNotHappen()
         }
     }
 
-    @Serializable
+    @Serializable @SerialName("Step.Or")
     data class Or(var steps: List<Step>) : Step() {
 
         override fun hash() = StepHash(SerializedData.from(steps.map { it.hash() }).hash())
 
-        override fun isTerminatedAt(index: WorkflowTaskIndex) =
+        @JsonIgnore override fun isTerminatedAt(index: WorkflowTaskIndex) =
             this.steps.any { it.isTerminatedAt(index) }
 
         override fun statusAt(index: WorkflowTaskIndex): StepStatus {
@@ -151,8 +167,9 @@ sealed class Step {
             // all steps are neither completed, neither ongoing => canceled, failed based on last one
             val lastTerminated = statuses.maxByOrNull {
                 when (it) {
-                    is StepStatus.OngoingFailure -> it.failureWorkflowTaskIndex
+                    is StepStatus.CurrentlyFailed -> it.failureWorkflowTaskIndex
                     is StepStatus.Canceled -> it.cancellationWorkflowTaskIndex
+                    is StepStatus.Unknown -> it.unknowingWorkflowTaskIndex
                     is StepStatus.Completed, is StepStatus.Failed, is StepStatus.Waiting -> thisShouldNotHappen()
                 }
             }
@@ -165,11 +182,11 @@ sealed class Step {
     /*
      * Used in engine to update a step after having cancelled or completed a command
      */
-    fun update(commandId: CommandId, commandStatus: CommandStatus): Step {
+    fun updateWith(commandId: CommandId, commandStatus: CommandStatus): Step {
         when (this) {
             is Id -> if (this.commandId == commandId) this.commandStatus = commandStatus
-            is And -> steps = steps.map { it.update(commandId, commandStatus) }
-            is Or -> steps = steps.map { it.update(commandId, commandStatus) }
+            is And -> steps = steps.map { it.updateWith(commandId, commandStatus) }
+            is Or -> steps = steps.map { it.updateWith(commandId, commandStatus) }
         }
         return this.resolveOr().compose()
     }

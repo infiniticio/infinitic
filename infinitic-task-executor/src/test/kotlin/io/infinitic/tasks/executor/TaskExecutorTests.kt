@@ -28,11 +28,12 @@
 package io.infinitic.tasks.executor
 
 import io.infinitic.client.InfiniticClient
+import io.infinitic.common.data.ClientName
 import io.infinitic.common.data.MillisDuration
+import io.infinitic.common.data.ReturnValue
 import io.infinitic.common.data.methods.MethodName
 import io.infinitic.common.data.methods.MethodParameterTypes
 import io.infinitic.common.data.methods.MethodParameters
-import io.infinitic.common.data.methods.MethodReturnValue
 import io.infinitic.common.tasks.data.TaskAttemptId
 import io.infinitic.common.tasks.data.TaskId
 import io.infinitic.common.tasks.data.TaskMeta
@@ -65,6 +66,8 @@ import io.mockk.just
 import io.mockk.mockk
 import kotlinx.coroutines.coroutineScope
 
+private val clientName = ClientName("clientTaskExecutorTests")
+
 fun mockSendToTaskEngine(slots: MutableList<TaskEngineMessage>): SendToTaskEngine {
     val sendToTaskEngine = mockk<SendToTaskEngine>()
     coEvery { sendToTaskEngine(capture(slots)) } just Runs
@@ -77,7 +80,7 @@ class TaskExecutorTests : StringSpec({
     val taskExecutorRegister = TaskExecutorRegisterImpl()
     val mockClientFactory = mockk<()-> InfiniticClient>()
     val taskExecutor =
-        TaskExecutor(taskExecutorRegister, mockSendToTaskEngine(slots), mockClientFactory)
+        TaskExecutor(clientName, taskExecutorRegister, mockSendToTaskEngine(slots), mockClientFactory)
 
     // ensure slots are emptied between each test
     beforeTest {
@@ -100,8 +103,9 @@ class TaskExecutorTests : StringSpec({
             taskAttemptId = msg.taskAttemptId,
             taskRetrySequence = msg.taskRetrySequence,
             taskRetryIndex = msg.taskRetryIndex,
-            taskReturnValue = MethodReturnValue.from("9"),
-            taskMeta = msg.taskMeta
+            taskReturnValue = ReturnValue.from("9"),
+            taskMeta = msg.taskMeta,
+            emitterName = clientName
         )
     }
 
@@ -120,8 +124,9 @@ class TaskExecutorTests : StringSpec({
             taskAttemptId = msg.taskAttemptId,
             taskRetrySequence = msg.taskRetrySequence,
             taskRetryIndex = msg.taskRetryIndex,
-            taskReturnValue = MethodReturnValue.from("12"),
-            taskMeta = msg.taskMeta
+            taskReturnValue = ReturnValue.from("12"),
+            taskMeta = msg.taskMeta,
+            emitterName = clientName
         )
     }
 
@@ -142,7 +147,7 @@ class TaskExecutorTests : StringSpec({
         fail.taskRetrySequence shouldBe msg.taskRetrySequence
         fail.taskRetryIndex shouldBe msg.taskRetryIndex
         fail.taskAttemptDelayBeforeRetry shouldBe null
-        fail.taskAttemptError.errorName shouldBe ClassNotFoundException::class.java.name
+        fail.workerError!!.name shouldBe ClassNotFoundException::class.java.name
     }
 
     "Should throw NoMethodFoundWithParameterTypes when trying to process an unknown method" {
@@ -162,7 +167,7 @@ class TaskExecutorTests : StringSpec({
         fail.taskRetrySequence shouldBe msg.taskRetrySequence
         fail.taskRetryIndex shouldBe msg.taskRetryIndex
         fail.taskAttemptDelayBeforeRetry shouldBe null
-        fail.taskAttemptError.errorName shouldBe NoMethodFoundWithParameterTypesException::class.java.name
+        fail.workerError!!.name shouldBe NoMethodFoundWithParameterTypesException::class.java.name
     }
 
     "Should throw NoMethodFoundWithParameterCount when trying to process an unknown method without parameterTypes" {
@@ -181,7 +186,7 @@ class TaskExecutorTests : StringSpec({
         fail.taskRetrySequence shouldBe msg.taskRetrySequence
         fail.taskRetryIndex shouldBe msg.taskRetryIndex
         fail.taskAttemptDelayBeforeRetry shouldBe null
-        fail.taskAttemptError.errorName shouldBe NoMethodFoundWithParameterCountException::class.java.name
+        fail.workerError!!.name shouldBe NoMethodFoundWithParameterCountException::class.java.name
     }
 
     "Should throw TooManyMethodsFoundWithParameterCount when trying to process an unknown method without parameterTypes" {
@@ -200,7 +205,7 @@ class TaskExecutorTests : StringSpec({
         fail.taskRetrySequence shouldBe msg.taskRetrySequence
         fail.taskRetryIndex shouldBe msg.taskRetryIndex
         fail.taskAttemptDelayBeforeRetry shouldBe null
-        fail.taskAttemptError.errorName shouldBe TooManyMethodsFoundWithParameterCountException::class.java.name
+        fail.workerError!!.name shouldBe TooManyMethodsFoundWithParameterCountException::class.java.name
     }
 
     "Should retry with correct exception" {
@@ -219,7 +224,7 @@ class TaskExecutorTests : StringSpec({
         fail.taskRetrySequence shouldBe msg.taskRetrySequence
         fail.taskRetryIndex shouldBe msg.taskRetryIndex
         fail.taskAttemptDelayBeforeRetry shouldBe MillisDuration(3000)
-        fail.taskAttemptError.errorName shouldBe IllegalStateException::class.java.name
+        fail.workerError!!.name shouldBe IllegalStateException::class.java.name
     }
 
     "Should throw when getRetryDelay throw an exception" {
@@ -238,7 +243,7 @@ class TaskExecutorTests : StringSpec({
         fail.taskRetrySequence shouldBe msg.taskRetrySequence
         fail.taskRetryIndex shouldBe msg.taskRetryIndex
         fail.taskAttemptDelayBeforeRetry shouldBe null
-        fail.taskAttemptError.errorName shouldBe IllegalArgumentException::class.java.name
+        fail.workerError!!.name shouldBe IllegalArgumentException::class.java.name
     }
 
     "Should be able to access context from task" {
@@ -256,8 +261,9 @@ class TaskExecutorTests : StringSpec({
             taskAttemptId = msg.taskAttemptId,
             taskRetrySequence = msg.taskRetrySequence,
             taskRetryIndex = msg.taskRetryIndex,
-            taskReturnValue = MethodReturnValue.from("72"),
-            taskMeta = msg.taskMeta
+            taskReturnValue = ReturnValue.from("72"),
+            taskMeta = msg.taskMeta,
+            emitterName = clientName
         )
     }
 
@@ -278,7 +284,7 @@ class TaskExecutorTests : StringSpec({
         fail.taskRetrySequence shouldBe msg.taskRetrySequence
         fail.taskRetryIndex shouldBe msg.taskRetryIndex
         fail.taskAttemptDelayBeforeRetry shouldBe null
-        fail.taskAttemptError.errorName shouldBe ProcessingTimeoutException::class.java.name
+        fail.workerError!!.name shouldBe ProcessingTimeoutException::class.java.name
     }
 })
 
@@ -296,5 +302,6 @@ private fun getExecuteTaskAttempt(name: String, method: String, input: Array<out
     methodParameters = MethodParameters.from(*input),
     taskOptions = TaskOptions(runningTimeout = .2F),
     taskTags = setOf(),
-    taskMeta = TaskMeta()
+    taskMeta = TaskMeta(),
+    emitterName = clientName
 )

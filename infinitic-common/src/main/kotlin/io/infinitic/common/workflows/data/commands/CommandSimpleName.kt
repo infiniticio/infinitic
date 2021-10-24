@@ -25,20 +25,9 @@
 
 package io.infinitic.common.workflows.data.commands
 
-import io.infinitic.common.data.Name
-import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.descriptors.PrimitiveKind
-import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
-import kotlinx.serialization.descriptors.SerialDescriptor
-import kotlinx.serialization.encoding.Decoder
-import kotlinx.serialization.encoding.Encoder
 
-@Serializable(with = CommandSimpleNameSerializer::class)
-data class CommandSimpleName(override val name: String) : Name(name)
-
-object CommandSimpleNameSerializer : KSerializer<CommandSimpleName> {
-    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("CommandSimpleName", PrimitiveKind.STRING)
-    override fun serialize(encoder: Encoder, value: CommandSimpleName) { encoder.encodeString(value.name) }
-    override fun deserialize(decoder: Decoder) = CommandSimpleName(decoder.decodeString())
+@JvmInline @Serializable
+value class CommandSimpleName(private val name: String) {
+    override fun toString() = name
 }

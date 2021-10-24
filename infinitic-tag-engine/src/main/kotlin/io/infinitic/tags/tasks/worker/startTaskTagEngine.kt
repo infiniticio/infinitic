@@ -26,6 +26,7 @@
 package io.infinitic.tags.tasks.worker
 
 import io.infinitic.common.clients.transport.SendToClient
+import io.infinitic.common.data.ClientName
 import io.infinitic.common.tasks.engine.SendToTaskEngine
 import io.infinitic.common.tasks.tags.messages.TaskTagEngineMessage
 import io.infinitic.common.workers.MessageToProcess
@@ -49,7 +50,7 @@ private fun logError(messageToProcess: TaskTagEngineMessageToProcess, e: Throwab
 }
 
 fun <T : TaskTagEngineMessageToProcess> CoroutineScope.startTaskTagEngine(
-    coroutineName: String,
+    name: String,
     taskTagStorage: TaskTagStorage,
     eventsInputChannel: ReceiveChannel<T>,
     eventsOutputChannel: SendChannel<T>,
@@ -57,9 +58,10 @@ fun <T : TaskTagEngineMessageToProcess> CoroutineScope.startTaskTagEngine(
     commandsOutputChannel: SendChannel<T>,
     sendToTaskEngine: SendToTaskEngine,
     sendToClient: SendToClient,
-) = launch(CoroutineName(coroutineName)) {
+) = launch(CoroutineName(name)) {
 
     val tagEngine = TaskTagEngine(
+        ClientName(name),
         taskTagStorage,
         sendToTaskEngine,
         sendToClient

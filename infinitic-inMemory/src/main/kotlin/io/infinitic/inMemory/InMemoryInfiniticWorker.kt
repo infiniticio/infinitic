@@ -26,10 +26,10 @@
 package io.infinitic.inMemory
 
 import io.infinitic.common.data.Name
+import io.infinitic.common.exceptions.thisShouldNotHappen
 import io.infinitic.common.tasks.data.TaskName
 import io.infinitic.common.workflows.data.workflowTasks.isWorkflowTask
 import io.infinitic.common.workflows.data.workflows.WorkflowName
-import io.infinitic.exceptions.thisShouldNotHappen
 import io.infinitic.inMemory.transport.InMemoryOutput
 import io.infinitic.metrics.global.engine.storage.MetricsGlobalStateStorage
 import io.infinitic.metrics.global.engine.worker.startMetricsGlobalEngine
@@ -52,8 +52,9 @@ import io.infinitic.worker.config.WorkerConfig
 import io.infinitic.workflows.engine.storage.WorkflowStateStorage
 import io.infinitic.workflows.engine.worker.WorkflowEngineMessageToProcess
 import io.infinitic.workflows.engine.worker.startWorkflowEngine
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.launch
+import java.util.concurrent.CompletableFuture
 
 @Suppress("MemberVisibilityCanBePrivate")
 class InMemoryInfiniticWorker(
@@ -64,15 +65,15 @@ class InMemoryInfiniticWorker(
     lateinit var client: InMemoryInfiniticClient
     override lateinit var name: String
 
-    override fun start() {
+    override fun startAsync(): CompletableFuture<Unit> =
         if (this::output.isInitialized && this::client.isInitialized && this::name.isInitialized) {
-            super.start()
+            super.startAsync()
         } else {
-            logger.warn { "Can not start ${InMemoryInfiniticWorker::class.java.name} outside of an in-memory client - Closing" }
+            logger.warn { "Should not start ${InMemoryInfiniticWorker::class.java.name} outside of an in-memory client - Closing" }
+            CompletableFuture.completedFuture(null)
         }
-    }
 
-    override fun CoroutineScope.startTaskExecutors(name: Name, concurrency: Int) {
+    override fun startTaskExecutors(name: Name, concurrency: Int) {
         when (name) {
             is TaskName ->
                 {
@@ -80,14 +81,15 @@ class InMemoryInfiniticWorker(
                     output.taskExecutorChannel[name] = channel
 
                     repeat(concurrency) {
-                        startTaskExecutor(
-                            "in-memory-task-executor-$it: $name",
-                            taskExecutorRegister,
-                            inputChannel = channel,
-                            outputChannel = output.logChannel,
-                            output.sendEventsToTaskEngine(name),
-                            { client }
-                        )
+                        runningScope.launch {
+                            startTaskExecutor(
+                                "in-memory-task-executor-$it: $name",
+                                taskExecutorRegister,
+                                inputChannel = channel,
+                                outputChannel = output.logChannel,
+                                output.sendEventsToTaskEngine(name)
+                            ) { client }
+                        }
                     }
                 }
             is WorkflowName ->
@@ -96,163 +98,178 @@ class InMemoryInfiniticWorker(
                     output.workflowTaskExecutorChannel[name] = channel
 
                     repeat(concurrency) {
-                        startTaskExecutor(
-                            "in-memory-workflow-task-executor-$it: $name",
-                            taskExecutorRegister,
-                            inputChannel = channel,
-                            outputChannel = output.logChannel,
-                            output.sendEventsToTaskEngine(name),
-                            { client }
-                        )
+                        runningScope.launch {
+                            startTaskExecutor(
+                                "in-memory-workflow-task-executor-$it: $name",
+                                taskExecutorRegister,
+                                inputChannel = channel,
+                                outputChannel = output.logChannel,
+                                output.sendEventsToTaskEngine(name)
+                            ) { client }
+                        }
                     }
                 }
             else -> thisShouldNotHappen()
         }
     }
 
-    override fun CoroutineScope.startTaskTagEngines(taskName: TaskName, concurrency: Int, storage: TaskTagStorage) {
+    override fun startTaskTagEngines(taskName: TaskName, concurrency: Int, storage: TaskTagStorage) {
         val commandsChannel = Channel<TaskTagEngineMessageToProcess>()
         val eventsChannel = Channel<TaskTagEngineMessageToProcess>()
 
         output.taskTagCommandsChannel[taskName] = commandsChannel
         output.taskTagEventsChannel[taskName] = eventsChannel
 
-        startTaskTagEngine(
-            "in-memory-task-tag-engine: $taskName",
-            storage,
-            eventsInputChannel = eventsChannel,
-            eventsOutputChannel = output.logChannel,
-            commandsInputChannel = commandsChannel,
-            commandsOutputChannel = output.logChannel,
-            output.sendCommandsToTaskEngine(taskName),
-            output.sendToClient
-        )
+        runningScope.launch {
+            startTaskTagEngine(
+                "task-tag-engine: $name",
+                storage,
+                eventsInputChannel = eventsChannel,
+                eventsOutputChannel = output.logChannel,
+                commandsInputChannel = commandsChannel,
+                commandsOutputChannel = output.logChannel,
+                output.sendCommandsToTaskEngine(taskName),
+                output.sendToClient
+            )
+        }
     }
 
-    override fun CoroutineScope.startTaskEngines(taskName: TaskName, concurrency: Int, storage: TaskStateStorage) {
+    override fun startTaskEngines(taskName: TaskName, concurrency: Int, storage: TaskStateStorage) {
         val commandsChannel = Channel<TaskEngineMessageToProcess>()
         val eventsChannel = Channel<TaskEngineMessageToProcess>()
 
         output.taskCommandsChannel[taskName] = commandsChannel
         output.taskEventsChannel[taskName] = eventsChannel
 
-        startTaskEngine(
-            "in-memory-task-engine: $taskName",
-            storage,
-            eventsInputChannel = eventsChannel,
-            eventsOutputChannel = output.logChannel,
-            commandsInputChannel = commandsChannel,
-            commandsOutputChannel = output.logChannel,
-            output.sendToClient,
-            output.sendEventsToTaskTagEngine,
-            output.sendToTaskEngineAfter(taskName),
-            output.sendEventsToWorkflowEngine,
-            output.sendToTaskExecutors(taskName),
-            output.sendToMetricsPerName(taskName)
-        )
+        runningScope.launch {
+            startTaskEngine(
+                "in-memory-task-engine: $taskName",
+                storage,
+                eventsInputChannel = eventsChannel,
+                eventsOutputChannel = output.logChannel,
+                commandsInputChannel = commandsChannel,
+                commandsOutputChannel = output.logChannel,
+                output.sendToClient,
+                output.sendEventsToTaskTagEngine,
+                output.sendToTaskEngineAfter(taskName),
+                output.sendEventsToWorkflowEngine,
+                output.sendToTaskExecutors(taskName),
+                output.sendToMetricsPerName(taskName)
+            )
+        }
     }
 
-    override fun CoroutineScope.startTaskDelayEngines(taskName: TaskName, concurrency: Int) {
-        // Implementation not needed
+    override fun startTaskDelayEngines(taskName: TaskName, concurrency: Int) {
+        // not needed
     }
 
-    override fun CoroutineScope.startWorkflowTagEngines(workflowName: WorkflowName, concurrency: Int, storage: WorkflowTagStorage) {
+    override fun startWorkflowTagEngines(workflowName: WorkflowName, concurrency: Int, storage: WorkflowTagStorage) {
         val commandsChannel = Channel<WorkflowTagEngineMessageToProcess>()
         val eventsChannel = Channel<WorkflowTagEngineMessageToProcess>()
 
         output.workflowTagCommandsChannel[workflowName] = commandsChannel
         output.workflowTagEventsChannel[workflowName] = eventsChannel
 
-        startWorkflowTagEngine(
-            "in-memory-workflow-tag-engine: $workflowName",
-            storage,
-            eventsInputChannel = eventsChannel,
-            eventsOutputChannel = output.logChannel,
-            commandsInputChannel = commandsChannel,
-            commandsOutputChannel = output.logChannel,
-            output.sendCommandsToWorkflowEngine,
-            output.sendToClient
-        )
+        runningScope.launch {
+            startWorkflowTagEngine(
+                "workflow-tag-engine: $name",
+                storage,
+                eventsInputChannel = eventsChannel,
+                eventsOutputChannel = output.logChannel,
+                commandsInputChannel = commandsChannel,
+                commandsOutputChannel = output.logChannel,
+                output.sendCommandsToWorkflowEngine,
+                output.sendToClient
+            )
+        }
     }
 
-    override fun CoroutineScope.startWorkflowEngines(workflowName: WorkflowName, concurrency: Int, storage: WorkflowStateStorage) {
+    override fun startWorkflowEngines(workflowName: WorkflowName, concurrency: Int, storage: WorkflowStateStorage) {
         val commandsChannel = Channel<WorkflowEngineMessageToProcess>()
         val eventsChannel = Channel<WorkflowEngineMessageToProcess>()
 
         output.workflowCommandsChannel[workflowName] = commandsChannel
         output.workflowEventsChannel[workflowName] = eventsChannel
 
-        startWorkflowEngine(
-            "in-memory-workflow-engine",
-            storage,
-            eventsInputChannel = eventsChannel,
-            eventsOutputChannel = output.logChannel,
-            commandsInputChannel = commandsChannel,
-            commandsOutputChannel = output.logChannel,
-            output.sendToClient,
-            output.sendCommandsToTaskTagEngine,
-            {
-                when (it.isWorkflowTask()) {
-                    true -> output.sendCommandsToTaskEngine(workflowName)(it)
-                    false -> output.sendCommandsToTaskEngine(it.taskName)(it)
-                }
-            },
-            output.sendEventsToWorkflowTagEngine,
-            output.sendEventsToWorkflowEngine,
-            output.sendToWorkflowEngineAfter
-        )
+        runningScope.launch {
+            startWorkflowEngine(
+                "workflow-engine: $name",
+                storage,
+                eventsInputChannel = eventsChannel,
+                eventsOutputChannel = output.logChannel,
+                commandsInputChannel = commandsChannel,
+                commandsOutputChannel = output.logChannel,
+                output.sendToClient,
+                output.sendCommandsToTaskTagEngine,
+                {
+                    when (it.isWorkflowTask()) {
+                        true -> output.sendCommandsToTaskEngine(workflowName)(it)
+                        false -> output.sendCommandsToTaskEngine(it.taskName)(it)
+                    }
+                },
+                output.sendEventsToWorkflowTagEngine,
+                output.sendEventsToWorkflowEngine,
+                output.sendToWorkflowEngineAfter
+            )
+        }
     }
 
-    override fun CoroutineScope.startWorkflowDelayEngines(workflowName: WorkflowName, concurrency: Int) {
+    override fun startWorkflowDelayEngines(workflowName: WorkflowName, concurrency: Int) {
         // Implementation not needed
     }
 
-    override fun CoroutineScope.startTaskEngines(workflowName: WorkflowName, concurrency: Int, storage: TaskStateStorage) {
+    override fun startTaskEngines(workflowName: WorkflowName, concurrency: Int, storage: TaskStateStorage) {
         val commandsChannel = Channel<TaskEngineMessageToProcess>()
         val eventsChannel = Channel<TaskEngineMessageToProcess>()
 
         output.workflowTaskCommandsChannel[workflowName] = commandsChannel
         output.workflowTaskEventsChannel[workflowName] = eventsChannel
 
-        startTaskEngine(
-            "in-memory-workflow-task-engine: $workflowName",
-            storage,
-            eventsInputChannel = eventsChannel,
-            eventsOutputChannel = output.logChannel,
-            commandsInputChannel = commandsChannel,
-            commandsOutputChannel = output.logChannel,
-            output.sendToClient,
-            output.sendEventsToTaskTagEngine,
-            output.sendToTaskEngineAfter(workflowName),
-            output.sendEventsToWorkflowEngine,
-            output.sendToTaskExecutors(workflowName),
-            output.sendToMetricsPerName(workflowName)
-        )
+        runningScope.launch {
+            startTaskEngine(
+                "in-memory-workflow-task-engine: $workflowName",
+                storage,
+                eventsInputChannel = eventsChannel,
+                eventsOutputChannel = output.logChannel,
+                commandsInputChannel = commandsChannel,
+                commandsOutputChannel = output.logChannel,
+                output.sendToClient,
+                output.sendEventsToTaskTagEngine,
+                output.sendToTaskEngineAfter(workflowName),
+                output.sendEventsToWorkflowEngine,
+                output.sendToTaskExecutors(workflowName),
+                output.sendToMetricsPerName(workflowName)
+            )
+        }
     }
 
-    override fun CoroutineScope.startTaskDelayEngines(workflowName: WorkflowName, concurrency: Int) {
+    override fun startTaskDelayEngines(workflowName: WorkflowName, concurrency: Int) {
         // Implementation not needed
     }
 
-    override fun CoroutineScope.startMetricsPerNameEngines(taskName: TaskName, storage: MetricsPerNameStateStorage) {
+    override fun startMetricsPerNameEngines(taskName: TaskName, storage: MetricsPerNameStateStorage) {
         val channel = Channel<MetricsPerNameMessageToProcess>()
         output.taskMetricsPerNameChannel[taskName] = channel
 
-        startMetricsPerNameEngine(
-            "in-memory-metrics-per-name-engine",
-            storage,
-            inputChannel = channel,
-            outputChannel = output.logChannel,
-            output.sendToMetricsGlobal
-        )
+        runningScope.launch {
+            startMetricsPerNameEngine(
+                "metrics-per-name-engine",
+                storage,
+                inputChannel = channel,
+                outputChannel = output.logChannel,
+                output.sendToMetricsGlobal
+            )
+        }
     }
 
-    override fun CoroutineScope.startMetricsGlobalEngine(storage: MetricsGlobalStateStorage) {
-        startMetricsGlobalEngine(
-            "in-memory-metrics-global-engine",
-            storage,
-            inputChannel = output.metricsGlobalChannel,
-            outputChannel = output.logChannel
-        )
+    override fun startMetricsGlobalEngine(storage: MetricsGlobalStateStorage) {
+        runningScope.launch {
+            startMetricsGlobalEngine(
+                "in-memory-metrics-global-engine",
+                storage,
+                inputChannel = output.metricsGlobalChannel,
+                outputChannel = output.logChannel
+            )
+        }
     }
 }

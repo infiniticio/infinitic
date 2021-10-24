@@ -26,31 +26,24 @@
 package io.infinitic.client.deferred
 
 import io.infinitic.client.Deferred
-import io.infinitic.client.proxies.ClientDispatcher
+import io.infinitic.client.dispatcher.ClientDispatcher
+import io.infinitic.common.data.methods.MethodName
 import io.infinitic.common.tasks.data.TaskId
 import io.infinitic.common.tasks.data.TaskName
-import io.infinitic.exceptions.thisShouldNotHappen
-import java.util.UUID
-import java.util.concurrent.CompletableFuture
 
-internal class DeferredTask<T> (
+class DeferredTask<R> (
+    internal val returnClass: Class<R>,
     internal val taskName: TaskName,
+    internal val methodName: MethodName,
     internal val taskId: TaskId,
-    internal val isSync: Boolean,
     private val dispatcher: ClientDispatcher,
-    private val future: CompletableFuture<Unit>? = null
-) : Deferred<T> {
-    override fun await(): T = dispatcher.await(this)
+) : Deferred<R> {
 
-    override fun join(): Deferred<T> {
-        when (future) {
-            null -> thisShouldNotHappen()
-            else -> future.join()
-        }
+    override fun cancelAsync() = dispatcher.cancelTaskAsync(taskName, taskId, null)
 
-        return this
-    }
+    override fun retryAsync() = dispatcher.retryTaskAsync(taskName, taskId, null)
 
-    override val id: UUID
-        get() = taskId.id
+    override fun await(): R = dispatcher.awaitTask(returnClass, taskName, methodName, taskId, true)
+
+    override val id: String by lazy { taskId.toString() }
 }

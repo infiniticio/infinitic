@@ -26,8 +26,6 @@
 package io.infinitic.tags.tasks.storage
 
 import io.infinitic.common.data.MessageId
-import io.infinitic.common.data.UUIDConversion.toByteArray
-import io.infinitic.common.data.UUIDConversion.toUUID
 import io.infinitic.common.storage.Flushable
 import io.infinitic.common.storage.keySet.KeySetStorage
 import io.infinitic.common.storage.keyValue.KeyValueStorage
@@ -61,18 +59,18 @@ class BinaryTaskTagStorage(
         val key = getTagSetIdsKey(tag, taskName)
         return keySetStorage
             .get(key)
-            .map { TaskId(it.toUUID()) }
+            .map { TaskId(String(it)) }
             .toSet()
     }
 
     override suspend fun addTaskId(tag: TaskTag, taskName: TaskName, taskId: TaskId) {
         val key = getTagSetIdsKey(tag, taskName)
-        keySetStorage.add(key, taskId.id.toByteArray())
+        keySetStorage.add(key, taskId.toString().toByteArray())
     }
 
     override suspend fun removeTaskId(tag: TaskTag, taskName: TaskName, taskId: TaskId) {
         val key = getTagSetIdsKey(tag, taskName)
-        keySetStorage.remove(key, taskId.id.toByteArray())
+        keySetStorage.remove(key, taskId.toString().toByteArray())
     }
 
     private fun getTagMessageIdKey(tag: TaskTag, taskName: TaskName) = "task:$taskName|tag:$tag|messageId"

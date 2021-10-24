@@ -28,6 +28,7 @@ package io.infinitic.pulsar.transport
 import io.infinitic.common.clients.transport.SendToClient
 import io.infinitic.common.data.MillisDuration
 import io.infinitic.common.data.Name
+import io.infinitic.common.exceptions.thisShouldNotHappen
 import io.infinitic.common.metrics.global.messages.MetricsGlobalMessage
 import io.infinitic.common.metrics.global.transport.SendToMetricsGlobal
 import io.infinitic.common.metrics.perName.messages.MetricsPerNameMessage
@@ -41,7 +42,6 @@ import io.infinitic.common.workflows.data.workflows.WorkflowName
 import io.infinitic.common.workflows.engine.SendToWorkflowEngine
 import io.infinitic.common.workflows.engine.SendToWorkflowEngineAfter
 import io.infinitic.common.workflows.tags.SendToWorkflowTagEngine
-import io.infinitic.exceptions.thisShouldNotHappen
 import io.infinitic.pulsar.messageBuilders.PulsarMessageBuilder
 import io.infinitic.pulsar.messageBuilders.PulsarMessageBuilderFromClient
 import io.infinitic.pulsar.messageBuilders.PulsarMessageBuilderFromFunction
@@ -92,7 +92,7 @@ class PulsarOutput(
     }
 
     fun sendToClient(): SendToClient = { message ->
-        val topic = topicName.of(message.clientName)
+        val topic = topicName.of(message.recipientName)
         val key = null
         logger.debug { "topic: $topic, sendToClient: $message" }
         pulsarMessageBuilder.sendPulsarMessage(topic, message.envelope(), key, zero)
@@ -132,7 +132,7 @@ class PulsarOutput(
                 }
                 topicName.of(taskTopic, "${message.taskName}")
             }
-            else -> throw thisShouldNotHappen()
+            else -> thisShouldNotHappen()
         }
         val key = "${message.taskId}"
         logger.debug { "topic: $topic, sendToTaskEngine: $message" }
@@ -144,7 +144,7 @@ class PulsarOutput(
             is WorkflowName -> topicName.of(WorkflowTaskTopic.DELAYS, "$name")
             is TaskName -> topicName.of(TaskTopic.DELAYS, "$name")
             null -> topicName.of(TaskTopic.DELAYS, "${message.taskName}")
-            else -> throw thisShouldNotHappen()
+            else -> thisShouldNotHappen()
         }
         val key = null
         logger.debug { "topic: $topic, sendToTaskEngineAfter: $message" }
@@ -185,7 +185,7 @@ class PulsarOutput(
             is WorkflowName -> topicName.of(WorkflowTaskTopic.EXECUTORS, "$name")
             is TaskName -> topicName.of(TaskTopic.EXECUTORS, "$name")
             null -> topicName.of(TaskTopic.EXECUTORS, "${message.taskName}")
-            else -> throw thisShouldNotHappen()
+            else -> thisShouldNotHappen()
         }
         val key = null
         logger.debug { "topic: $topic, sendToTaskExecutors: $message" }
@@ -197,7 +197,7 @@ class PulsarOutput(
             is WorkflowName -> topicName.of(WorkflowTaskTopic.METRICS, "$name")
             is TaskName -> topicName.of(TaskTopic.METRICS, "$name")
             null -> topicName.of(TaskTopic.METRICS, "${message.taskName}")
-            else -> throw thisShouldNotHappen()
+            else -> thisShouldNotHappen()
         }
 //        val key = null
         logger.debug { "topic: $topic, sendToMetricsPerName: $message" }

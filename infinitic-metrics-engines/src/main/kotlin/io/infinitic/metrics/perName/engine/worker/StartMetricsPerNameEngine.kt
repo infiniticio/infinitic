@@ -25,6 +25,7 @@
 
 package io.infinitic.metrics.perName.engine.worker
 
+import io.infinitic.common.data.ClientName
 import io.infinitic.common.metrics.global.transport.SendToMetricsGlobal
 import io.infinitic.common.metrics.perName.messages.MetricsPerNameMessage
 import io.infinitic.common.workers.MessageToProcess
@@ -46,14 +47,15 @@ private fun logError(messageToProcess: MetricsPerNameMessageToProcess, e: Throwa
 }
 
 fun <T : MetricsPerNameMessageToProcess> CoroutineScope.startMetricsPerNameEngine(
-    coroutineName: String,
+    name: String,
     metricsPerNameStateStorage: MetricsPerNameStateStorage,
     inputChannel: ReceiveChannel<T>,
     outputChannel: SendChannel<T>,
     sendToMetricsGlobal: SendToMetricsGlobal
-) = launch(CoroutineName(coroutineName)) {
+) = launch(CoroutineName(name)) {
 
     val metricsPerNameEngine = MetricsPerNameEngine(
+        ClientName(name),
         metricsPerNameStateStorage,
         sendToMetricsGlobal
     )

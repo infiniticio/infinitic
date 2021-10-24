@@ -26,7 +26,8 @@
 package io.infinitic.common.fixtures
 
 import io.infinitic.common.data.methods.MethodParameters
-import io.infinitic.common.errors.Error
+import io.infinitic.common.errors.DeferredError
+import io.infinitic.common.errors.WorkerError
 import io.infinitic.common.metrics.global.messages.MetricsGlobalEnvelope
 import io.infinitic.common.metrics.global.messages.MetricsGlobalMessage
 import io.infinitic.common.metrics.perName.messages.MetricsPerNameEnvelope
@@ -35,7 +36,6 @@ import io.infinitic.common.serDe.SerializedData
 import io.infinitic.common.tasks.engine.messages.TaskEngineEnvelope
 import io.infinitic.common.tasks.engine.messages.TaskEngineMessage
 import io.infinitic.common.workflows.data.commands.CommandId
-import io.infinitic.common.workflows.data.commands.CommandStatus.Running
 import io.infinitic.common.workflows.data.steps.Step
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineEnvelope
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
@@ -72,8 +72,9 @@ object TestFactory {
             .randomize(String::class.java) { String(random(), Charsets.UTF_8) }
             .randomize(ByteArray::class.java) { Random(seed).nextBytes(10) }
             .randomize(ByteBuffer::class.java) { ByteBuffer.wrap(random()) }
-            .randomize(MethodParameters::class.java) { MethodParameters.from(random<ByteArray>(), random<String>()) }
+            .randomize(WorkerError::class.java) { WorkerError(random(), random(), random(), random(), null) }
             .randomize(SerializedData::class.java) { SerializedData.from(random<String>()) }
+            .randomize(MethodParameters::class.java) { MethodParameters.from(random<ByteArray>(), random<String>()) }
             .randomize(WorkflowEngineEnvelope::class.java) {
                 val sub = WorkflowEngineMessage::class.sealedSubclasses.shuffled().first()
                 WorkflowEngineEnvelope.from(random(sub))
@@ -90,15 +91,9 @@ object TestFactory {
                 val sub = MetricsGlobalMessage::class.sealedSubclasses.shuffled().first()
                 MetricsGlobalEnvelope.from(random(sub))
             }
-            .randomize(Error::class.java) {
-                Error(
-                    errorName = random(),
-                    errorStackTraceToString = random(),
-                    errorMessage = random(),
-                    errorCause = null,
-                    whereId = null,
-                    whereName = null
-                )
+            .randomize(DeferredError::class.java) {
+                val sub = DeferredError::class.sealedSubclasses.shuffled().first()
+                random(sub)
             }
 
         values?.forEach {
@@ -109,7 +104,7 @@ object TestFactory {
     }
 
     private fun steps(): Map<String, Step> {
-        fun getStepId() = Step.Id(CommandId(), Running)
+        fun getStepId() = Step.Id(CommandId())
         val stepA = getStepId()
         val stepB = getStepId()
         val stepC = getStepId()

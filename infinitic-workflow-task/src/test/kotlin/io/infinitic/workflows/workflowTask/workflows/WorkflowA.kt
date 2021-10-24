@@ -32,6 +32,7 @@ import io.infinitic.workflows.workflowTask.tasks.TaskA
 import kotlinx.serialization.Serializable
 import mu.KotlinLogging
 import org.slf4j.LoggerFactory
+import java.util.UUID
 
 sealed class Obj
 @Serializable
@@ -44,14 +45,21 @@ interface WorkflowA {
 }
 
 class WorkflowAImpl : Workflow(), WorkflowA {
+
     // a channel
     override val channelObj = channel<Obj>()
 
-    // a task
-    private val taskA = newTask<TaskA>()
+    // a new task
+    private val newTaskA = newTask(TaskA::class.java)
 
-    // a workflow
-    private val workflowA = newWorkflow<WorkflowA>()
+    // an existing task
+//    private val getTaskA = getTaskById(TaskA::class.java, UUID.randomUUID().toString())
+
+    // a new workflow
+    private val newWorkflowA = newWorkflow(WorkflowA::class.java)
+
+    // an existing workflow
+    private val getWorkflowA = getWorkflowById(WorkflowA::class.java, UUID.randomUUID().toString())
 
     // a logger
     private var logger1 = LoggerFactory.getLogger(WorkflowAImpl::class.qualifiedName)

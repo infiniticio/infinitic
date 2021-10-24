@@ -26,12 +26,12 @@
 package io.infinitic.workflows.workflowTask
 
 import io.infinitic.annotations.Ignore
+import io.infinitic.common.exceptions.thisShouldNotHappen
 import io.infinitic.common.workflows.data.properties.PropertyHash
 import io.infinitic.common.workflows.data.properties.PropertyName
 import io.infinitic.common.workflows.data.properties.PropertyValue
 import io.infinitic.common.workflows.executors.parser.getPropertiesFromObject
 import io.infinitic.common.workflows.executors.parser.setPropertiesToObject
-import io.infinitic.exceptions.thisShouldNotHappen
 import io.infinitic.workflows.Channel
 import io.infinitic.workflows.Workflow
 import io.infinitic.workflows.WorkflowContext
@@ -62,8 +62,8 @@ internal fun Workflow.getProperties() = getPropertiesFromObject(this) {
         it.first.returnType.javaType.typeName != WorkflowDispatcher::class.java.name &&
         // excludes Channels
         !it.first.returnType.isSubtypeOf(Channel::class.starProjectedType) &&
-        // excludes Proxies (tasks and workflows)
-        !Proxy.isProxyClass(it.second!!::class.java) &&
+        // excludes Proxies (tasks and workflows) and null
+        !(it.second?. let { Proxy.isProxyClass(it::class.java) } ?: true) &&
         // exclude SLF4J loggers
         !it.first.returnType.isSubtypeOf(org.slf4j.Logger::class.createType()) &&
         // exclude Ignore annotation

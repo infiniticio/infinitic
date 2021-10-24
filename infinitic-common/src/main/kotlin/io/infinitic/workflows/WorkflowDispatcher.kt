@@ -26,18 +26,14 @@
 package io.infinitic.workflows
 
 import com.jayway.jsonpath.Criteria
-import io.infinitic.common.proxies.Dispatcher
-import io.infinitic.common.proxies.TaskProxyHandler
-import io.infinitic.common.proxies.WorkflowProxyHandler
-import io.infinitic.common.workflows.data.channels.ChannelImpl
+import io.infinitic.common.proxies.ProxyDispatcher
+import io.infinitic.common.proxies.ProxyHandler
 import java.time.Duration
 import java.time.Instant
 
-interface WorkflowDispatcher : Dispatcher {
+interface WorkflowDispatcher : ProxyDispatcher {
 
-    fun <T : Any, S> dispatch(proxy: T, method: T.() -> S): Deferred<S>
-
-    fun <T> async(branch: () -> T): Deferred<T>
+    fun <R : Any?> dispatch(handler: ProxyHandler<*>, clientWaiting: Boolean): Deferred<R>
 
     fun <T> inline(task: () -> T): T
 
@@ -45,17 +41,13 @@ interface WorkflowDispatcher : Dispatcher {
 
     fun <T> status(deferred: Deferred<T>): DeferredStatus
 
-    fun <T> dispatchTask(handler: TaskProxyHandler<*>): Deferred<T>
-
-    fun <T> dispatchWorkflow(handler: WorkflowProxyHandler<*>): Deferred<T>
-
     fun timer(duration: Duration): Deferred<Instant>
 
     fun timer(instant: Instant): Deferred<Instant>
 
-    fun <T : Any> receiveFromChannel(channel: ChannelImpl<T>, jsonPath: String?, criteria: Criteria?): Deferred<T>
+//    fun <T : Any> receiveSignal(channel: Channel<T>, jsonPath: String?, criteria: Criteria?): Deferred<T>
 
-    fun <S : T, T : Any> receiveFromChannel(channel: ChannelImpl<T>, klass: Class<S>, jsonPath: String?, criteria: Criteria?): Deferred<S>
+    fun <S : T, T : Any> receiveSignal(channel: Channel<T>, klass: Class<S>?, jsonPath: String?, criteria: Criteria?): Deferred<S>
 
-    fun <T : Any> sendToChannel(channel: ChannelImpl<T>, event: T)
+    fun <T : Any> sendSignal(channel: Channel<T>, signal: T)
 }

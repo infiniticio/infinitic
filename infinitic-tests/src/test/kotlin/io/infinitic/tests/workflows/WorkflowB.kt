@@ -25,7 +25,9 @@
 
 package io.infinitic.tests.workflows
 
+import io.infinitic.annotations.Ignore
 import io.infinitic.tests.tasks.TaskA
+import io.infinitic.workflows.Deferred
 import io.infinitic.workflows.Workflow
 
 interface WorkflowB {
@@ -33,12 +35,15 @@ interface WorkflowB {
     fun factorial(n: Long): Long
     fun cancelChild1(): Long
     fun cancelChild2(): Long
+    fun cancelChild2bis(deferred: Deferred<String>): String
 }
 
 class WorkflowBImpl : Workflow(), WorkflowB {
-    private val task = newTask<TaskA>()
-    private val workflowB = newWorkflow<WorkflowB>()
-    private val workflowA = newWorkflow<WorkflowA>()
+    private val task = newTask(TaskA::class.java)
+    private val workflowB = newWorkflow(WorkflowB::class.java)
+    private val workflowA = newWorkflow(WorkflowA::class.java)
+    @Ignore
+    private val self by lazy { getWorkflowById(WorkflowB::class.java, context.id) }
 
     override fun concat(input: String): String {
         var str = input
@@ -51,7 +56,7 @@ class WorkflowBImpl : Workflow(), WorkflowB {
     }
 
     override fun cancelChild1(): Long {
-        val def = async(workflowA) { channel1() }
+        val def = dispatch(workflowA::channel1)
 
         task.cancelWorkflowA(def.id!!)
 
@@ -61,14 +66,16 @@ class WorkflowBImpl : Workflow(), WorkflowB {
     }
 
     override fun cancelChild2(): Long {
-        val deferred = async(workflowA) { channel1() }
+        val deferred = dispatch(workflowA::channel1)
 
         task.cancelWorkflowA(deferred.id!!)
 
-        async { deferred.await() }
+        dispatch(self::cancelChild2bis, deferred)
 
-        return task.await(100)
+        return task.await(200)
     }
+
+    override fun cancelChild2bis(deferred: Deferred<String>): String { return deferred.await() }
 
     override fun factorial(n: Long) = when {
         n > 1 -> n * workflowB.factorial(n - 1)

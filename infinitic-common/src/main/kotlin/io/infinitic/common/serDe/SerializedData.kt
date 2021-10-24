@@ -26,16 +26,16 @@
 package io.infinitic.common.serDe
 
 import com.fasterxml.jackson.core.JsonProcessingException
-import io.infinitic.common.serDe.kserializer.getKSerializerOrNull
 import io.infinitic.exceptions.serialization.ClassNotFoundException
 import io.infinitic.exceptions.serialization.JsonDeserializationException
 import io.infinitic.exceptions.serialization.KotlinDeserializationException
 import io.infinitic.exceptions.serialization.MissingMetaJavaClassException
 import io.infinitic.exceptions.serialization.SerializerNotFoundException
-import io.infinitic.exceptions.serialization.WrongSerializationTypeException
+import kotlinx.serialization.InternalSerializationApi
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.SerializationException
+import kotlinx.serialization.serializerOrNull
 import java.math.BigInteger
 import java.security.MessageDigest
 import io.infinitic.common.serDe.json.Json as JsonJackson
@@ -56,62 +56,63 @@ data class SerializedData(
         /**
          * @return serialized value
          */
+        @OptIn(InternalSerializationApi::class)
         fun <T : Any> from(value: T?): SerializedData {
             val bytes: ByteArray
             val type: SerializedDataType
-            val meta = mapOf(META_JAVA_CLASS to (value ?: "")::class.java.name.toByteArray(charset = Charsets.UTF_8))
+            val meta: Map<String, ByteArray>
 
             when (value) {
                 null -> {
-                    bytes = ByteArray(0)
+                    bytes = "null".toByteArray()
                     type = SerializedDataType.NULL
-                }
-                is ByteArray -> {
-                    bytes = value
-                    type = SerializedDataType.BYTES
+                    meta = mapOf()
                 }
                 else -> {
-                    val serializer = getKSerializerOrNull(value::class.java)
-                    if (serializer == null) {
-                        bytes = toJsonJacksonByteArray(value)
-                        type = SerializedDataType.JSON_JACKSON
-                    } else {
-                        @Suppress("UNCHECKED_CAST")
-                        bytes = toJsonKotlinByteArray(serializer as KSerializer<T>, value)
-                        type = SerializedDataType.JSON_KOTLIN
+                    @Suppress("UNCHECKED_CAST")
+                    when (val serializer = value::class.serializerOrNull()?. let { it as KSerializer<T> }) {
+                        null -> {
+                            bytes = JsonJackson.stringify(value).toByteArray()
+                            type = SerializedDataType.JSON_JACKSON
+                        }
+                        else -> {
+                            bytes = jsonKotlin.encodeToString(serializer, value).toByteArray()
+                            type = SerializedDataType.JSON_KOTLIN
+                        }
                     }
+                    meta = mapOf(META_JAVA_CLASS to value::class.java.name.toByteArray(charset = Charsets.UTF_8))
                 }
             }
             return SerializedData(bytes, type, meta)
         }
-
-        private fun toJsonJacksonByteArray(value: Any): ByteArray =
-            JsonJackson.stringify(value).toByteArray(charset = Charsets.UTF_8)
-
-        private fun <T : Any> toJsonKotlinByteArray(serializer: KSerializer<T>, value: T): ByteArray =
-            jsonKotlin.encodeToString(serializer, value).toByteArray(charset = Charsets.UTF_8)
     }
 
     /**
      * @return deserialized value
      */
-    fun deserialize(): Any? {
-        val klassName = getClassName() ?: throw MissingMetaJavaClassException
-
-        val klass = try {
-            Class.forName(klassName)
-        } catch (e: java.lang.ClassNotFoundException) {
-            throw ClassNotFoundException(klassName)
+    @OptIn(InternalSerializationApi::class)
+    fun deserialize(): Any? = when (type) {
+        SerializedDataType.NULL -> null
+        SerializedDataType.JSON_JACKSON -> {
+            val klass = getClassObject()
+            try {
+                JsonJackson.parse(getJson(), klass)
+            } catch (e: JsonProcessingException) {
+                throw JsonDeserializationException(klass.name, causeString = e.toString())
+            }
         }
-
-        return deserialize(klass)
+        SerializedDataType.JSON_KOTLIN -> {
+            val klass = getClassObject()
+            val serializer = klass.kotlin.serializerOrNull() ?: throw SerializerNotFoundException(klass.name)
+            try {
+                jsonKotlin.decodeFromString(serializer, getJson())
+            } catch (e: SerializationException) {
+                throw KotlinDeserializationException(klass.name, causeString = e.toString())
+            }
+        }
     }
 
-    fun getJson(): String = when (type) {
-        SerializedDataType.JSON_KOTLIN,
-        SerializedDataType.JSON_JACKSON -> String(bytes, Charsets.UTF_8)
-        else -> throw WrongSerializationTypeException(getClassName(), type)
-    }
+    fun getJson(): String = String(bytes, Charsets.UTF_8)
 
     fun hash(): String {
         // MD5 implementation, enough to avoid collision in practical cases
@@ -119,9 +120,14 @@ data class SerializedData(
         return BigInteger(1, md.digest(bytes)).toString(16).padStart(32, '0')
     }
 
-    override fun toString() = try { "${deserialize()}" } catch (e: Throwable) {
-        "** SerializedData - can't display due to deserialization error :**\n$e"
-    }
+    /**
+     * Readable version
+     */
+    override fun toString() = mapOf(
+        "bytes" to String(bytes),
+        "type" to type,
+        "meta" to meta.mapValues { String(it.value) }
+    ).toString()
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
@@ -132,36 +138,23 @@ data class SerializedData(
         if (!bytes.contentEquals(other.bytes)) return false
         if (type != other.type) return false
 
+        if (meta.keys != other.meta.keys) return false
+        if (meta.map { it.value.contentEquals(other.meta[it.key]!!) }.any { !it }) return false
+
         return true
     }
 
-    override fun hashCode(): Int {
-        return bytes.contentHashCode()
-    }
+    override fun hashCode(): Int = bytes.contentHashCode()
 
     private fun getClassName(): String? = meta[META_JAVA_CLASS]?.let { String(it, charset = Charsets.UTF_8) }
 
-    private fun deserialize(klass: Class<*>) = when (type) {
-        SerializedDataType.NULL -> null
-        SerializedDataType.BYTES -> bytes
-        SerializedDataType.JSON_JACKSON -> fromJsonJackson(klass)
-        SerializedDataType.JSON_KOTLIN -> fromJsonKotlin(klass)
-        SerializedDataType.CUSTOM -> throw RuntimeException("Can't deserialize data with CUSTOM serialization")
-    }
-
-    private fun <T : Any> fromJsonJackson(klass: Class<out T>): T = try {
-        JsonJackson.parse(getJson(), klass)
-    } catch (e: JsonProcessingException) {
-        throw JsonDeserializationException(klass.name, causeString = e.toString())
-    }
-
-    private fun fromJsonKotlin(klass: Class<*>): Any? {
-        val serializer = getKSerializerOrNull(klass) ?: throw SerializerNotFoundException(klass.name)
+    private fun getClassObject(): Class<out Any> {
+        val klassName = getClassName() ?: throw MissingMetaJavaClassException
 
         return try {
-            jsonKotlin.decodeFromString(serializer, getJson())
-        } catch (e: SerializationException) {
-            throw KotlinDeserializationException(klass.name, causeString = e.toString())
+            Class.forName(klassName)
+        } catch (e: java.lang.ClassNotFoundException) {
+            throw ClassNotFoundException(klassName)
         }
     }
 }

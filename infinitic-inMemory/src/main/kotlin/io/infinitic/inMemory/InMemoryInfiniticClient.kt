@@ -27,7 +27,7 @@ package io.infinitic.inMemory
 
 import io.infinitic.client.InfiniticClient
 import io.infinitic.client.worker.startClientWorker
-import io.infinitic.common.clients.data.ClientName
+import io.infinitic.common.data.ClientName
 import io.infinitic.inMemory.transport.InMemoryOutput
 import io.infinitic.worker.config.WorkerConfig
 import kotlinx.coroutines.CoroutineName
@@ -36,7 +36,7 @@ import kotlinx.coroutines.launch
 @Suppress("MemberVisibilityCanBePrivate")
 class InMemoryInfiniticClient(
     workerConfig: WorkerConfig,
-    val name: String? = null
+    name: String? = null
 ) : InfiniticClient() {
 
     private val inMemoryOutput = InMemoryOutput(sendingScope)
@@ -45,7 +45,7 @@ class InMemoryInfiniticClient(
         InMemoryInfiniticWorker(workerConfig).apply {
             output = inMemoryOutput
             client = this@InMemoryInfiniticClient
-            name = clientName.name
+            this.name = clientName.toString()
         }
     }
 
@@ -75,7 +75,7 @@ class InMemoryInfiniticClient(
             )
         }
 
-        worker.runningScope.launch { worker.start() }
+        worker.startAsync()
     }
 
     override fun close() {

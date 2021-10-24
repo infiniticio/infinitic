@@ -32,8 +32,9 @@ import io.infinitic.common.workflows.data.properties.PropertyHash
 import io.infinitic.common.workflows.data.properties.PropertyName
 import io.infinitic.common.workflows.data.steps.StepStatus.Canceled
 import io.infinitic.common.workflows.data.steps.StepStatus.Completed
+import io.infinitic.common.workflows.data.steps.StepStatus.CurrentlyFailed
 import io.infinitic.common.workflows.data.steps.StepStatus.Failed
-import io.infinitic.common.workflows.data.steps.StepStatus.OngoingFailure
+import io.infinitic.common.workflows.data.steps.StepStatus.Unknown
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskIndex
 import kotlinx.serialization.Serializable
 
@@ -42,25 +43,34 @@ data class PastStep(
     val stepPosition: MethodRunPosition,
     val step: Step,
     val stepHash: StepHash,
+    val workflowTaskIndexAtStart: WorkflowTaskIndex,
     var stepStatus: StepStatus = StepStatus.Waiting,
     var propertiesNameHashAtTermination: Map<PropertyName, PropertyHash>? = null,
     var workflowTaskIndexAtTermination: WorkflowTaskIndex? = null
 ) {
     @JsonIgnore
     fun isTerminated() =
-        stepStatus is Completed ||
-            stepStatus is Canceled ||
-            stepStatus is Failed
+        stepStatus is Completed || stepStatus is Canceled || stepStatus is Failed || stepStatus is Unknown
+
+    fun updateWith(pastCommand: PastCommand) {
+        step.updateWith(pastCommand.commandId, pastCommand.commandStatus)
+        stepStatus = step.status()
+    }
 
     fun isTerminatedBy(pastCommand: PastCommand): Boolean {
         // returns false if already terminated
         if (isTerminated()) return false
-        // apply update
-        step.update(pastCommand.commandId, pastCommand.commandStatus)
-        stepStatus = step.status()
-        // returns true only if newly terminated
-        return isTerminated() || stepStatus is OngoingFailure
+
+        val isWaiting = stepStatus is StepStatus.Waiting
+
+        // working on a copy to check without updating
+        with(copy()) {
+            // apply update
+            updateWith(pastCommand)
+
+            return isTerminated() || (stepStatus is CurrentlyFailed && isWaiting)
+        }
     }
 
-    fun isSimilarTo(newStep: NewStep) = newStep.stepHash == stepHash
+    fun isSameThan(newStep: NewStep) = newStep.stepHash == stepHash
 }

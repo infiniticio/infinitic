@@ -40,8 +40,8 @@ typealias PulsarMetricsGlobalMessageToProcess = PulsarMessageToProcess<MetricsGl
 
 @Suppress("UNCHECKED_CAST")
 fun CoroutineScope.startPulsarMetricsGlobalEngine(
+    name: String,
     storage: MetricsGlobalStateStorage,
-    consumerName: String,
     consumerFactory: PulsarConsumerFactory
 ) {
 
@@ -49,13 +49,13 @@ fun CoroutineScope.startPulsarMetricsGlobalEngine(
     val outputChannel = Channel<PulsarMetricsGlobalMessageToProcess>()
 
     startMetricsGlobalEngine(
-        "metrics-global-engine",
+        "metrics-global-engine: $name",
         storage,
         inputChannel = inputChannel,
         outputChannel = outputChannel
     )
 
-    val consumer = consumerFactory.newConsumer(consumerName, GlobalTopic.METRICS) as Consumer<MetricsGlobalEnvelope>
+    val consumer = consumerFactory.newConsumer(name, GlobalTopic.METRICS) as Consumer<MetricsGlobalEnvelope>
 
     // coroutine pulling pulsar messages
     pullMessages(consumer, inputChannel)

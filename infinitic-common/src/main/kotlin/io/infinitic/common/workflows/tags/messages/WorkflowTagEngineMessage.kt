@@ -25,13 +25,17 @@
 
 package io.infinitic.common.workflows.tags.messages
 
-import io.infinitic.common.clients.data.ClientName
+import io.infinitic.common.data.ClientName
 import io.infinitic.common.data.MessageId
+import io.infinitic.common.data.methods.MethodName
+import io.infinitic.common.data.methods.MethodParameterTypes
+import io.infinitic.common.data.methods.MethodParameters
 import io.infinitic.common.messages.Message
-import io.infinitic.common.workflows.data.channels.ChannelEvent
-import io.infinitic.common.workflows.data.channels.ChannelEventId
-import io.infinitic.common.workflows.data.channels.ChannelEventType
 import io.infinitic.common.workflows.data.channels.ChannelName
+import io.infinitic.common.workflows.data.channels.ChannelSignal
+import io.infinitic.common.workflows.data.channels.ChannelSignalId
+import io.infinitic.common.workflows.data.channels.ChannelSignalType
+import io.infinitic.common.workflows.data.methodRuns.MethodRunId
 import io.infinitic.common.workflows.data.workflows.WorkflowCancellationReason
 import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.data.workflows.WorkflowName
@@ -41,6 +45,7 @@ import kotlinx.serialization.Serializable
 @Serializable
 sealed class WorkflowTagEngineMessage : Message {
     val messageId = MessageId()
+    abstract val emitterName: ClientName
     abstract val workflowTag: WorkflowTag
     abstract val workflowName: WorkflowName
 
@@ -48,47 +53,68 @@ sealed class WorkflowTagEngineMessage : Message {
 }
 
 @Serializable
-data class SendToChannelPerTag(
-    override val workflowTag: WorkflowTag,
+data class SendSignalByTag(
     override val workflowName: WorkflowName,
-    val clientName: ClientName,
-    val clientWaiting: Boolean,
-    val channelEventId: ChannelEventId,
+    override val workflowTag: WorkflowTag,
     val channelName: ChannelName,
-    val channelEvent: ChannelEvent,
-    val channelEventTypes: Set<ChannelEventType>
+    val channelSignalId: ChannelSignalId,
+    val channelSignal: ChannelSignal,
+    val channelSignalTypes: Set<ChannelSignalType>,
+    var emitterWorkflowId: WorkflowId?,
+    override val emitterName: ClientName
 ) : WorkflowTagEngineMessage()
 
 @Serializable
-data class CancelWorkflowPerTag(
-    override val workflowTag: WorkflowTag,
+data class CancelWorkflowByTag(
     override val workflowName: WorkflowName,
-    val reason: WorkflowCancellationReason
+    override val workflowTag: WorkflowTag,
+    val reason: WorkflowCancellationReason,
+    var emitterWorkflowId: WorkflowId?,
+    override val emitterName: ClientName
 ) : WorkflowTagEngineMessage()
 
 @Serializable
-data class RetryWorkflowTaskPerTag(
-    override val workflowTag: WorkflowTag,
-    override val workflowName: WorkflowName
-) : WorkflowTagEngineMessage()
-
-@Serializable
-data class AddWorkflowTag(
-    override val workflowTag: WorkflowTag,
+data class RetryWorkflowTaskByTag(
     override val workflowName: WorkflowName,
+    override val workflowTag: WorkflowTag,
+    var emitterWorkflowId: WorkflowId?,
+    override val emitterName: ClientName,
+) : WorkflowTagEngineMessage()
+
+@Serializable
+data class AddTagToWorkflow(
+    override val workflowName: WorkflowName,
+    override val workflowTag: WorkflowTag,
     val workflowId: WorkflowId,
+    override val emitterName: ClientName,
 ) : WorkflowTagEngineMessage()
 
 @Serializable
-data class RemoveWorkflowTag(
-    override val workflowTag: WorkflowTag,
+data class RemoveTagFromWorkflow(
     override val workflowName: WorkflowName,
+    override val workflowTag: WorkflowTag,
     val workflowId: WorkflowId,
+    override val emitterName: ClientName,
 ) : WorkflowTagEngineMessage()
 
 @Serializable
-data class GetWorkflowIds(
-    override val workflowTag: WorkflowTag,
+data class GetWorkflowIdsByTag(
     override val workflowName: WorkflowName,
-    val clientName: ClientName
+    override val workflowTag: WorkflowTag,
+    override val emitterName: ClientName,
+) : WorkflowTagEngineMessage()
+
+@Serializable
+data class DispatchMethodByTag(
+    override val workflowName: WorkflowName,
+    override val workflowTag: WorkflowTag,
+    var parentWorkflowId: WorkflowId?,
+    var parentWorkflowName: WorkflowName?,
+    var parentMethodRunId: MethodRunId?,
+    val methodRunId: MethodRunId,
+    val methodName: MethodName,
+    val methodParameterTypes: MethodParameterTypes?,
+    val methodParameters: MethodParameters,
+    val clientWaiting: Boolean,
+    override val emitterName: ClientName,
 ) : WorkflowTagEngineMessage()

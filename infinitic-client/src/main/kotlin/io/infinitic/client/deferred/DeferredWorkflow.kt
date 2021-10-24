@@ -26,31 +26,28 @@
 package io.infinitic.client.deferred
 
 import io.infinitic.client.Deferred
-import io.infinitic.client.proxies.ClientDispatcher
+import io.infinitic.client.dispatcher.ClientDispatcher
+import io.infinitic.common.data.methods.MethodName
 import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.data.workflows.WorkflowName
-import io.infinitic.exceptions.thisShouldNotHappen
-import java.util.UUID
-import java.util.concurrent.CompletableFuture
 
-internal class DeferredWorkflow<T> (
+class DeferredWorkflow<R> (
+    internal val returnClass: Class<R>,
     internal val workflowName: WorkflowName,
+    internal val methodName: MethodName,
     internal val workflowId: WorkflowId,
-    internal val isSync: Boolean,
     private val dispatcher: ClientDispatcher,
-    private val future: CompletableFuture<Unit>? = null
-) : Deferred<T> {
-    override fun await(): T = dispatcher.await(this)
+) : Deferred<R> {
 
-    override fun join(): Deferred<T> {
-        when (future) {
-            null -> thisShouldNotHappen()
-            else -> future.join()
-        }
+    override fun cancelAsync() =
+        dispatcher.cancelWorkflowAsync(workflowName, workflowId, null, null)
 
-        return this
-    }
+    override fun retryAsync() =
+        dispatcher.retryWorkflowAsync(workflowName, workflowId, null)
 
-    override val id: UUID
-        get() = workflowId.id
+    @Suppress("UNCHECKED_CAST")
+    override fun await(): R =
+        dispatcher.awaitWorkflow(returnClass, workflowName, methodName, workflowId, null, true)
+
+    override val id: String = workflowId.toString()
 }

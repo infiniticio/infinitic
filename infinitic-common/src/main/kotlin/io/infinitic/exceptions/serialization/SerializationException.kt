@@ -89,5 +89,5 @@ class ParameterSerializationException(
     msg = "Error during Json serialization of parameter $parameterName of $className::$methodName",
     help = "We are using Jackson library per default to serialize object through the ${Json::class.java.name} wrapper. If an exception is thrown during serialization, please consider those options:\n" +
         "- modifying $parameterType to make it serializable by ${Json::class.java.name}\n" +
-        "- replacing $parameterType per simpler parameters in $className::$methodName\n"
+        "- replacing $parameterType by more simple parameters in $className::$methodName\n"
 )

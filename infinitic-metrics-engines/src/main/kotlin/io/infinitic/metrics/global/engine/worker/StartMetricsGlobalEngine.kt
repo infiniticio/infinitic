@@ -45,11 +45,11 @@ private fun logError(messageToProcess: MetricsGlobalMessageToProcess, e: Throwab
 }
 
 fun <T : MetricsGlobalMessageToProcess> CoroutineScope.startMetricsGlobalEngine(
-    coroutineName: String,
+    name: String,
     metricsGlobalStateStorage: MetricsGlobalStateStorage,
     inputChannel: ReceiveChannel<T>,
     outputChannel: SendChannel<T>
-) = launch(CoroutineName(coroutineName)) {
+) = launch(CoroutineName(name)) {
 
     val metricsGlobalEngine = MetricsGlobalEngine(
         metricsGlobalStateStorage

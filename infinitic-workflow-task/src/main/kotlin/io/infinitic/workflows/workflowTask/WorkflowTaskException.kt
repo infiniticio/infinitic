@@ -30,5 +30,3 @@ internal sealed class WorkflowTaskException : RuntimeException()
 internal object NewStepException : WorkflowTaskException()
 
 internal object KnownStepException : WorkflowTaskException()
-
-internal object AsyncCompletedException : WorkflowTaskException()

@@ -25,25 +25,16 @@
 
 package io.infinitic.common.workflows.data.channels
 
-import io.infinitic.common.data.Name
-import kotlinx.serialization.KSerializer
+import io.infinitic.common.data.methods.MethodName
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.descriptors.PrimitiveKind
-import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
-import kotlinx.serialization.descriptors.SerialDescriptor
-import kotlinx.serialization.encoding.Decoder
-import kotlinx.serialization.encoding.Encoder
 import java.lang.reflect.Method
 
-@Serializable(with = ChannelNameSerializer::class)
-data class ChannelName(override val name: String) : Name(name) {
+@JvmInline @Serializable
+value class ChannelName(private val name: String) {
     companion object {
         fun from(method: Method) = ChannelName(method.name)
+        fun from(methodName: MethodName) = ChannelName(methodName.toString())
     }
-}
 
-object ChannelNameSerializer : KSerializer<ChannelName> {
-    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ChannelName", PrimitiveKind.STRING)
-    override fun serialize(encoder: Encoder, value: ChannelName) { encoder.encodeString(value.name) }
-    override fun deserialize(decoder: Decoder) = ChannelName(decoder.decodeString())
+    override fun toString() = name
 }

@@ -33,87 +33,62 @@ sealed class ClientUserException(
     help: String,
 ) : UserException("$msg.\n$help")
 
-class NotAStubException(
-    name: String,
-    async: String
+class InvalidStubException(
+    klass: String? = null
 ) : ClientUserException(
-    msg = "First parameter of client.$async function should be a stub",
-    help = "Make sure to provide the stub returned by client.newTask($name) or client.newWorkflow($name) function"
+    msg = when (klass) {
+        null -> "Instance used"
+        else -> "$klass is not the stub of a class or of a workflow"
+    },
+    help = "Make sure to use a stub returned by taskStub(Class<*>) or workflowStub(Class<*>)"
 )
 
-class CanNotApplyOnChannelException(
-    action: String
+class InvalidCommandException(
+    msg: String,
+    help: String = ""
 ) : ClientUserException(
-    msg = "First parameter of client.$action should be the stub of an existing task or workflow",
-    help = "Make sure to provide the stub returned by client.getTask or client.getWorkflow function"
+    msg = msg,
+    help = msg
 )
 
-class CanNotReuseWorkflowStubException(
-    name: String
+class InvalidChannelGetterException(
+    klass: String
 ) : ClientUserException(
-    msg = "You can not reuse a workflow stub ($name) already dispatched",
-    help = "Please create a new stub using `newWorkflow()` for each workflow dispatch`"
+    msg = "Invalid channel getter",
+    help = "When defining getters of channels in your workflow interface, " +
+        "make sure to have ${SendChannel::class.java.name} as return type, not $klass"
 )
 
-class CanNotApplyOnNewTaskStubException(
-    name: String,
-    action: String
+class InvalidRunningTaskException(
+    klass: String
 ) : ClientUserException(
-    msg = "You can not `$action` on the stub of a new task",
-    help = "Please target an existing $name task using `client.getTask()` "
+    msg = "$klass is not the stub of a running task",
+    help = "Make sure to use a stub returned by workflowStub(Class<*>)"
 )
 
-class CanNotApplyOnNewWorkflowStubException(
-    name: String,
-    action: String
+class InvalidWorkflowException(
+    klass: String
 ) : ClientUserException(
-    msg = "You can not `$action` on the stub of a new workflow",
-    help = "Please target an existing $name workflow using `client.getWorkflow()` "
+    msg = "$klass is not the stub of a workflow",
+    help = "Make sure to use a stub returned by workflowStub(Class<*>)"
+)
+
+class InvalidInterfaceException(
+    method: String
+) : ClientUserException(
+    msg = "$method must be a method declared from an interface",
+    help = "Make sure to provide a method defined from an interface, not from an actual instance."
 )
 
 class SuspendMethodNotSupportedException(
     klass: String,
     method: String
 ) : ClientUserException(
-    msg = "method \"$method\" in class \"$klass\" is a suspend function",
-    help = "Suspend functions are not supporteds"
+    msg = "Method \"$klass:$method\" is a suspend function",
+    help = "Suspend functions are not supported yet"
 )
 
-class NoMethodCallException(
-    klass: String
-) : ClientUserException(
-    msg = "The method to call for your task or workflow is missing",
-    help = "Make sure to call a method of \"$klass\""
-)
-
-class MultipleMethodCallsException(
-    klass: String,
-    method1: String,
-    method2: String
-) : ClientUserException(
-    msg = "Only one method of \"$klass\" can be called at a time. You can not call \"$method2\" method as you have already called \"$method1\"",
-    help = "Make sure you call only one method of \"$klass\" - multiple calls in the provided lambda is forbidden"
-)
-
-class ChannelUsedOnNewWorkflowException(
-    workflow: String
-) : ClientUserException(
-    msg = "Channels can only be used for an existing instance of $workflow workflow",
-    help = "Make sure you target a running workflow, by providing and id when defining your workflow stub"
-)
-
-class UnknownMethodInSendChannelException(
-    workflow: String,
-    channel: String,
-    method: String
-) : ClientUserException(
-    msg = "Unknown method $method used on channel $channel in $workflow",
-    help = "Make sure to use the ${SendChannel<*>::send.name} method"
-)
-
-class CanNotAwaitStubPerTag(
-    klass: String
-) : ClientUserException(
-    msg = "You can not await a task or workflow ($klass) based on a tag",
-    help = "Please target the task or workflow per id"
+class InvalidChannelUsageException() : ClientUserException(
+    msg = "send method of channels can not be used directly",
+    help = "Make sure to use the send(workflow, id) function"
 )

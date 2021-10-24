@@ -26,6 +26,7 @@
 package io.infinitic.tasks.executor.worker
 
 import io.infinitic.client.InfiniticClient
+import io.infinitic.common.data.ClientName
 import io.infinitic.common.tasks.engine.SendToTaskEngine
 import io.infinitic.common.tasks.executors.messages.TaskExecutorMessage
 import io.infinitic.common.workers.MessageToProcess
@@ -47,14 +48,15 @@ private fun logError(messageToProcess: TaskExecutorMessageToProcess, e: Throwabl
 }
 
 fun <T : TaskExecutorMessageToProcess> CoroutineScope.startTaskExecutor(
-    coroutineName: String,
+    name: String,
     register: TaskExecutorRegister,
     inputChannel: ReceiveChannel<T>,
     outputChannel: SendChannel<T>,
     sendToTaskEngine: SendToTaskEngine,
     clientFactory: () -> InfiniticClient
-) = launch(CoroutineName(coroutineName)) {
-    val taskExecutor = TaskExecutor(register, sendToTaskEngine, clientFactory)
+) = launch(CoroutineName(name)) {
+
+    val taskExecutor = TaskExecutor(ClientName(name), register, sendToTaskEngine, clientFactory)
 
     for (message in inputChannel) {
         try {

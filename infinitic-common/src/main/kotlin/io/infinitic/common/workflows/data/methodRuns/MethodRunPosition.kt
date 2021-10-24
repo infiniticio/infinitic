@@ -25,27 +25,15 @@
 
 package io.infinitic.common.workflows.data.methodRuns
 
-import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.descriptors.PrimitiveKind
-import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
-import kotlinx.serialization.descriptors.SerialDescriptor
-import kotlinx.serialization.encoding.Decoder
-import kotlinx.serialization.encoding.Encoder
 
-@Serializable(with = MethodRunPositionSerializer::class)
-data class MethodRunPosition(val position: String) {
+@JvmInline @Serializable
+value class MethodRunPosition private constructor(private val index: Int) {
     companion object {
-        const val POSITION_SEPARATOR = "."
+        fun new() = MethodRunPosition(-1)
     }
 
-    override fun toString() = position
+    override fun toString() = "$index"
 
-    fun isOnMainPath() = ! position.contains(POSITION_SEPARATOR)
-}
-
-object MethodRunPositionSerializer : KSerializer<MethodRunPosition> {
-    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("MethodRunPosition", PrimitiveKind.STRING)
-    override fun serialize(encoder: Encoder, value: MethodRunPosition) { encoder.encodeString(value.position) }
-    override fun deserialize(decoder: Decoder) = MethodRunPosition(decoder.decodeString())
+    fun next() = MethodRunPosition(index + 1)
 }

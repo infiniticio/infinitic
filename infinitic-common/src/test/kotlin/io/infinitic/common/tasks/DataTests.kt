@@ -26,10 +26,10 @@
 package io.infinitic.common.tasks
 
 import io.infinitic.common.data.Name
+import io.infinitic.common.data.ReturnValue
 import io.infinitic.common.data.methods.MethodName
 import io.infinitic.common.data.methods.MethodParameterTypes
 import io.infinitic.common.data.methods.MethodParameters
-import io.infinitic.common.data.methods.MethodReturnValue
 import io.infinitic.common.fixtures.TestFactory
 import io.infinitic.common.serDe.SerializedData
 import io.infinitic.common.tasks.data.TaskAttemptId
@@ -38,6 +38,7 @@ import io.infinitic.common.tasks.data.TaskMeta
 import io.infinitic.common.tasks.data.TaskName
 import io.infinitic.common.tasks.data.TaskRetryIndex
 import io.infinitic.common.tasks.data.TaskRetrySequence
+import io.infinitic.common.tasks.engine.state.TaskState
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
 import kotlinx.serialization.ExperimentalSerializationApi
@@ -47,45 +48,52 @@ import kotlinx.serialization.json.Json
 
 @OptIn(ExperimentalSerializationApi::class)
 class DataTests : StringSpec({
-    "TaskId should be stringify as id" {
-        val taskId = TestFactory.random<TaskId>()
+    "TaskId should be json-serializable" {
+        val id = TestFactory.random<String>()
+        val m1 = TaskId(id)
+        val json = Json.encodeToString(m1)
+        val m2 = Json.decodeFromString<TaskId>(json)
 
-        "$taskId" shouldBe taskId.id.toString()
+        json shouldBe Json.encodeToString(id)
+        m2 shouldBe m1
     }
 
-    "TaskAttemptId should be stringify as id" {
-        val taskAttemptId = TestFactory.random<TaskAttemptId>()
+    "TaskAttemptId should be json-serializable" {
+        val id = TestFactory.random<String>()
+        val m1 = TaskAttemptId(id)
+        val json = Json.encodeToString(m1)
+        val m2 = Json.decodeFromString<TaskAttemptId>(json)
 
-        "$taskAttemptId" shouldBe taskAttemptId.id.toString()
+        json shouldBe Json.encodeToString(id)
+        m2 shouldBe m1
     }
 
     "MethodInput should be serialized as List<SerializedData>" {
         val m = MethodParameters.from("a", "b")
-
         val json = Json.encodeToString(m)
-        json shouldBe Json.encodeToString(listOf(SerializedData.from("a"), SerializedData.from("b")))
-
         val m2 = Json.decodeFromString<MethodParameters>(json)
+
+        json shouldBe Json.encodeToString(listOf(SerializedData.from("a"), SerializedData.from("b")))
         m2 shouldBe m
     }
 
     "MethodName should be serialized as String" {
-        val m = MethodName("qwerty")
-
+        val id = TestFactory.random<String>()
+        val m = MethodName(id)
         val json = Json.encodeToString(m)
-        json shouldBe "\"qwerty\""
-
         val m2 = Json.decodeFromString<MethodName>(json)
+
+        json shouldBe Json.encodeToString(id)
         m2 shouldBe m
     }
 
-    "MethodReturnValue should be serialized as SerializedData" {
-        val m = MethodReturnValue.from("qwerty")
-
+    "ReturnValue should be serialized as SerializedData" {
+        val id = TestFactory.random<String>()
+        val m = ReturnValue.from(id)
         val json = Json.encodeToString(m)
-        json shouldBe Json.encodeToString(SerializedData.from(m.get()))
+        val m2 = Json.decodeFromString<ReturnValue>(json)
 
-        val m2 = Json.decodeFromString<MethodReturnValue>(json)
+        json shouldBe Json.encodeToString(SerializedData.from(id))
         m2 shouldBe m
     }
 
@@ -100,67 +108,64 @@ class DataTests : StringSpec({
     }
 
     "TaskAttemptId should be serialized as String" {
-        val m = TaskAttemptId()
+        val id = TestFactory.random<String>()
+        val m = TaskAttemptId(id)
         val json = Json.encodeToString(m)
         val m2 = Json.decodeFromString<TaskAttemptId>(json)
 
+        json shouldBe Json.encodeToString(id)
         m2 shouldBe m
     }
 
     "TaskRetry should be serialized as Int" {
         val m = TaskRetrySequence(42)
-
         val json = Json.encodeToString(m)
-        json shouldBe "42"
-
         val m2 = Json.decodeFromString<TaskRetrySequence>(json)
+
+        json shouldBe "42"
         m2 shouldBe m
     }
 
     "TaskAttemptRetry should be serialized as Int" {
         val m = TaskRetryIndex(42)
-
         val json = Json.encodeToString(m)
-        json shouldBe "42"
-
         val m2 = Json.decodeFromString<TaskRetryIndex>(json)
-        m2 shouldBe m
-    }
 
-    "TaskId should be serialized as String" {
-        val m = TaskId()
-        val json = Json.encodeToString(m)
-        val m2 = Json.decodeFromString<TaskId>(json)
-
+        json shouldBe "42"
         m2 shouldBe m
     }
 
     "TaskMeta should be serialized as Map<String, SerializedData>" {
         val m = TaskMeta(mapOf("a" to "1".toByteArray()))
-
         val json = Json.encodeToString(m)
-
         val m2 = Json.decodeFromString<TaskMeta>(json)
+
         m2 shouldBe m
     }
 
     "TaskName should be serialized as String" {
-        val m = TaskName("qwerty")
-
+        val id = TestFactory.random<String>()
+        val m = TaskName(id)
         val json = Json.encodeToString(m)
-        json shouldBe "\"qwerty\""
-
         val m2 = Json.decodeFromString<TaskName>(json)
+
+        json shouldBe Json.encodeToString(id)
         m2 shouldBe m
     }
 
     "Name should be serialized as String" {
-        val m = Name("qwerty")
-
+        val id = TestFactory.random<String>()
+        val m = Name(id)
         val json = Json.encodeToString(m)
-        json shouldBe "\"qwerty\""
-
         val m2 = Json.decodeFromString<Name>(json)
+
+        json shouldBe Json.encodeToString(id)
         m2 shouldBe m
+    }
+
+    "TaskState can be serDe to byteArray" {
+        val taskState = TestFactory.random<TaskState>()
+
+        TaskState.fromByteArray(taskState.toByteArray()) shouldBe taskState
     }
 })

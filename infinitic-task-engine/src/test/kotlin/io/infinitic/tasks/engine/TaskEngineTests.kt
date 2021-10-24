@@ -25,14 +25,15 @@
 
 package io.infinitic.tasks.engine
 
-import io.infinitic.common.clients.data.ClientName
 import io.infinitic.common.clients.messages.ClientMessage
 import io.infinitic.common.clients.transport.SendToClient
+import io.infinitic.common.data.ClientName
 import io.infinitic.common.data.MillisDuration
 import io.infinitic.common.fixtures.TestFactory
 import io.infinitic.common.metrics.perName.messages.MetricsPerNameMessage
 import io.infinitic.common.metrics.perName.messages.TaskStatusUpdated
 import io.infinitic.common.metrics.perName.transport.SendToMetricsPerName
+import io.infinitic.common.tasks.data.TaskId
 import io.infinitic.common.tasks.data.TaskName
 import io.infinitic.common.tasks.data.TaskRetryIndex
 import io.infinitic.common.tasks.data.TaskStatus
@@ -52,7 +53,7 @@ import io.infinitic.common.tasks.executors.SendToTaskExecutors
 import io.infinitic.common.tasks.executors.messages.ExecuteTaskAttempt
 import io.infinitic.common.tasks.executors.messages.TaskExecutorMessage
 import io.infinitic.common.tasks.tags.SendToTaskTagEngine
-import io.infinitic.common.tasks.tags.messages.RemoveTaskTag
+import io.infinitic.common.tasks.tags.messages.RemoveTagFromTask
 import io.infinitic.common.tasks.tags.messages.TaskTagEngineMessage
 import io.infinitic.common.workflows.engine.SendToWorkflowEngine
 import io.infinitic.common.workflows.engine.messages.TaskFailed
@@ -77,6 +78,8 @@ import io.infinitic.common.workflows.engine.messages.TaskCanceled as TaskCancele
 import io.infinitic.common.workflows.engine.messages.TaskCompleted as TaskCompletedInWorkflow
 
 private fun <T : Any> captured(slot: CapturingSlot<T>) = if (slot.isCaptured) slot.captured else null
+
+private val clientName = ClientName("clientTaskEngineTests")
 
 private lateinit var taskStateStorage: TaskStateStorage
 
@@ -145,10 +148,11 @@ internal class TaskEngineTests : StringSpec({
         val stateIn = random<TaskState>(
             mapOf(
                 "taskStatus" to TaskStatus.RUNNING_OK,
-                "taskTags" to setOf(TaskTag("foo"), TaskTag("bar"))
+                "taskTags" to setOf(TaskTag("foo"), TaskTag("bar")),
+                "waitingClients" to mutableSetOf(ClientName("foo"))
             )
         )
-        val msgIn = random<CancelTask>(mapOf("taskId" to stateIn.taskId))
+        val msgIn = random<CancelTask>(mapOf("taskId" to stateIn.taskId.toString()))
         // when
         getEngine(stateIn).handle(msgIn)
         // then
@@ -156,8 +160,8 @@ internal class TaskEngineTests : StringSpec({
             taskStateStorage.getState(msgIn.taskId)
             sendToWorkflowEngine(ofType<TaskCanceledInWorkflow>())
             sendToClient(ofType<TaskCanceledInClient>())
-            sendToTaskTagEngine(ofType<RemoveTaskTag>())
-            sendToTaskTagEngine(ofType<RemoveTaskTag>())
+            sendToTaskTagEngine(ofType<RemoveTagFromTask>())
+            sendToTaskTagEngine(ofType<RemoveTagFromTask>())
             sendToMetricsPerName(ofType<TaskStatusUpdated>())
             taskStateStorage.delState(msgIn.taskId)
         }
@@ -184,7 +188,7 @@ internal class TaskEngineTests : StringSpec({
         )
         val msgIn = random<RetryTask>(
             mapOf(
-                "taskId" to stateIn.taskId,
+                "taskId" to stateIn.taskId.toString(),
                 "taskName" to stateIn.taskName,
                 "methodName" to null,
                 "methodParameterTypes" to null,
@@ -247,7 +251,7 @@ internal class TaskEngineTests : StringSpec({
         )
         val msgIn = random<TaskAttemptCompleted>(
             mapOf(
-                "taskId" to stateIn.taskId
+                "taskId" to stateIn.taskId.toString()
             )
         )
         // when
@@ -259,8 +263,8 @@ internal class TaskEngineTests : StringSpec({
             sendToWorkflowEngine(ofType<TaskCompletedInWorkflow>())
             sendToClient(ofType<TaskCompletedInClient>())
             sendToClient(ofType<TaskCompletedInClient>())
-            sendToTaskTagEngine(ofType<RemoveTaskTag>())
-            sendToTaskTagEngine(ofType<RemoveTaskTag>())
+            sendToTaskTagEngine(ofType<RemoveTagFromTask>())
+            sendToTaskTagEngine(ofType<RemoveTagFromTask>())
             sendToMetricsPerName(ofType<TaskStatusUpdated>())
             taskStateStorage.delState(msgIn.taskId)
         }
@@ -289,8 +293,8 @@ internal class TaskEngineTests : StringSpec({
         )
         val msgIn = random<TaskAttemptFailed>(
             mapOf(
-                "taskId" to stateIn.taskId,
-                "taskAttemptId" to stateIn.taskAttemptId,
+                "taskId" to stateIn.taskId.toString(),
+                "taskAttemptId" to stateIn.taskAttemptId.toString(),
                 "taskRetryIndex" to stateIn.taskRetryIndex,
                 "taskAttemptDelayBeforeRetry" to null
             )
@@ -327,8 +331,8 @@ internal class TaskEngineTests : StringSpec({
         )
         val msgIn = random<TaskAttemptFailed>(
             mapOf(
-                "taskId" to stateIn.taskId,
-                "taskAttemptId" to stateIn.taskAttemptId,
+                "taskId" to stateIn.taskId.toString(),
+                "taskAttemptId" to stateIn.taskAttemptId.toString(),
                 "taskRetryIndex" to stateIn.taskRetryIndex,
                 "taskAttemptDelayBeforeRetry" to MillisDuration(42000)
             )
@@ -371,8 +375,8 @@ internal class TaskEngineTests : StringSpec({
         )
         val msgIn = random<TaskAttemptFailed>(
             mapOf(
-                "taskId" to stateIn.taskId,
-                "taskAttemptId" to stateIn.taskAttemptId,
+                "taskId" to stateIn.taskId.toString(),
+                "taskAttemptId" to stateIn.taskAttemptId.toString(),
                 "taskRetryIndex" to stateIn.taskRetryIndex,
                 "taskAttemptDelayBeforeRetry" to MillisDuration(0)
             )
@@ -392,8 +396,8 @@ internal class TaskEngineTests : StringSpec({
         )
         val msgIn = random<TaskAttemptFailed>(
             mapOf(
-                "taskId" to stateIn.taskId,
-                "taskAttemptId" to stateIn.taskAttemptId,
+                "taskId" to stateIn.taskId.toString(),
+                "taskAttemptId" to stateIn.taskAttemptId.toString(),
                 "taskRetryIndex" to stateIn.taskRetryIndex,
                 "taskAttemptDelayBeforeRetry" to MillisDuration(-42000)
             )
@@ -413,8 +417,8 @@ internal class TaskEngineTests : StringSpec({
         )
         val msgIn = random<RetryTaskAttempt>(
             mapOf(
-                "taskId" to stateIn.taskId,
-                "taskAttemptId" to stateIn.taskAttemptId,
+                "taskId" to stateIn.taskId.toString(),
+                "taskAttemptId" to stateIn.taskAttemptId.toString(),
                 "taskRetryIndex" to stateIn.taskRetryIndex
             )
         )
@@ -506,9 +510,9 @@ private fun mockSendToWorkflowEngine(slot: CapturingSlot<WorkflowEngineMessage>)
 
 private fun mockTaskStateStorage(state: TaskState?): TaskStateStorage {
     val taskStateStorage = mockk<TaskStateStorage>()
-    coEvery { taskStateStorage.getState(any()) } returns state?.deepCopy()
-    coEvery { taskStateStorage.putState(any(), capture(taskState)) } just Runs
-    coEvery { taskStateStorage.delState(any()) } just Runs
+    coEvery { taskStateStorage.getState(TaskId(any())) } returns state?.deepCopy()
+    coEvery { taskStateStorage.putState(TaskId(any()), capture(taskState)) } just Runs
+    coEvery { taskStateStorage.delState(TaskId(any())) } just Runs
 
     return taskStateStorage
 }
@@ -534,6 +538,7 @@ private fun getEngine(state: TaskState?): TaskEngine {
     sendToMetricsPerName = mockSendToMetricsPerName(metricsPerNameMessage)
 
     return TaskEngine(
+        clientName,
         taskStateStorage,
         sendToClient,
         sendToTaskTagEngine,

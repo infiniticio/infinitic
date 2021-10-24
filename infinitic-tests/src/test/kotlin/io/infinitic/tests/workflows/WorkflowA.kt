@@ -26,10 +26,12 @@
 package io.infinitic.tests.workflows
 
 import com.jayway.jsonpath.Criteria.where
+import io.infinitic.annotations.Ignore
 import io.infinitic.common.tasks.data.TaskMeta
 import io.infinitic.common.workflows.data.workflows.WorkflowMeta
-import io.infinitic.exceptions.workflows.CanceledDeferredException
-import io.infinitic.exceptions.workflows.FailedDeferredException
+import io.infinitic.exceptions.FailedTaskException
+import io.infinitic.exceptions.FailedWorkflowException
+import io.infinitic.exceptions.UnknownWorkflowException
 import io.infinitic.tests.tasks.ParentInterface
 import io.infinitic.tests.tasks.TaskA
 import io.infinitic.workflows.Deferred
@@ -40,7 +42,6 @@ import io.infinitic.workflows.and
 import io.infinitic.workflows.or
 import kotlinx.serialization.Serializable
 import java.time.Duration
-import java.util.UUID
 
 sealed class Obj
 @Serializable
@@ -56,20 +57,23 @@ interface WorkflowA : ParentInterface {
     fun empty(): String
     fun await(duration: Long): Long
     fun wparent(): String
-    fun context1(): UUID
+    fun context1(): String
     fun context2(): Set<String>
     fun context3(): WorkflowMeta
-    fun context4(): UUID?
+    fun context4(): String?
     fun context5(): String?
     fun context6(): Set<String>
     fun context7(): TaskMeta
     fun seq1(): String
     fun seq2(): String
     fun seq3(): String
+    fun seq3bis(): String
     fun seq4(): String
+    fun seq4bis(): String
     fun seq5(): Long
     fun seq6(): Long
     fun deferred1(): String
+    fun deferred1bis(): String
     fun or1(): String
     fun or2(): Any
     fun or3(): String
@@ -83,12 +87,22 @@ interface WorkflowA : ParentInterface {
     fun child1(): String
     fun child2(): String
     fun prop1(): String
+    fun prop1bis()
     fun prop2(): String
+    fun prop2bis()
     fun prop3(): String
+    fun prop3bis()
     fun prop4(): String
+    fun prop4bis()
     fun prop5(): String
+    fun prop5bis()
+    fun prop5ter()
     fun prop6(): String
+    fun prop6bis(deferred: Deferred<String>): String
     fun prop7(): String
+    fun prop7bis(): String
+    fun prop8(): String
+    fun prop8bis()
     fun channel1(): String
     fun channel2(): Any
     fun channel3(): Any
@@ -105,23 +119,39 @@ interface WorkflowA : ParentInterface {
     fun failing2()
     fun failing2a(): Long
     fun failing3(): Long
+    fun failing3bis()
+    fun failing3bException()
     fun failing3b(): Long
-    fun failing4(): Long
-    fun failing5(): Long
+//    fun failing4(): Long
+//    fun failing5(): Long
+    fun failing5bis(deferred: Deferred<Long>): Long
     fun failing6()
     fun failing7(): Long
+    fun failing7bis()
+    fun failing7ter(): String
     fun failing8(): String
-    fun failing9(): Boolean
-    fun failing10(): String
+//    fun failing9(): Boolean
+//    fun failing10(): String
+    fun failing10bis()
+    fun failing11()
+    fun failing12(): String
     fun cancel1()
 }
 
+@Suppress("unused")
 class WorkflowAImpl : Workflow(), WorkflowA {
+
+    @Ignore private val self by lazy { getWorkflowById(WorkflowA::class.java, context.id) }
+
+    lateinit var deferred: Deferred<String>
+
     override val channelObj = channel<Obj>()
     override val channelA = channel<String>()
     override val channelB = channel<String>()
 
-    private val taskA = newTask<TaskA>(tags = setOf("foo", "bar"), meta = mapOf("foo" to "bar".toByteArray()))
+    private val taskA = newTask(TaskA::class.java, tags = setOf("foo", "bar"), meta = mapOf("foo" to "bar".toByteArray()))
+    private val workflowA = newWorkflow(WorkflowA::class.java)
+
     private var p1 = ""
 
     override fun empty() = "void"
@@ -130,12 +160,9 @@ class WorkflowAImpl : Workflow(), WorkflowA {
 
     override fun parent() = taskA.parent()
 
-    override fun wparent(): String {
-        val workflowA = newWorkflow<WorkflowA>()
-        return workflowA.parent()
-    }
+    override fun wparent(): String = workflowA.parent()
 
-    override fun context1(): UUID = context.id
+    override fun context1(): String = context.id
 
     override fun context2(): Set<String> = context.tags
 
@@ -151,10 +178,8 @@ class WorkflowAImpl : Workflow(), WorkflowA {
 
     override fun seq1(): String {
         var str = ""
-
         str = taskA.concat(str, "1")
         str = taskA.concat(str, "2")
-
         str = taskA.concat(str, "3")
 
         return str // should be "123"
@@ -162,8 +187,7 @@ class WorkflowAImpl : Workflow(), WorkflowA {
 
     override fun seq2(): String {
         var str = ""
-
-        val d = async(taskA) { reverse("ab") }
+        val d = dispatch(taskA::reverse, "ab")
         str = taskA.concat(str, "2")
         str = taskA.concat(str, "3")
 
@@ -172,32 +196,33 @@ class WorkflowAImpl : Workflow(), WorkflowA {
 
     override fun seq3(): String {
         var str = ""
-
-        val d = async { taskA.reverse("ab") }
+        val d = dispatch(self::seq3bis)
         str = taskA.concat(str, "2")
         str = taskA.concat(str, "3")
 
         return str + d.await() // should be "23ba"
     }
 
+    override fun seq3bis(): String { return taskA.reverse("ab") }
+
     override fun seq4(): String {
         var str = ""
-
-        val d = async {
-            val s = taskA.reverse("ab")
-            taskA.concat(s, "c")
-        }
+        val d = dispatch(self::seq4bis)
         str = taskA.concat(str, "2")
         str = taskA.concat(str, "3")
 
         return str + d.await() // should be "23bac"
     }
 
+    override fun seq4bis(): String {
+        val s = taskA.reverse("ab")
+        return taskA.concat(s, "c")
+    }
+
     override fun seq5(): Long {
         var l = 0L
-        val d1 = async(taskA) { await(500) }
-        val d2 = async(taskA) { await(100) }
-
+        val d1 = dispatch(taskA::await, 500)
+        val d2 = dispatch(taskA::await, 100)
         l += d1.await()
         l += d2.await()
 
@@ -206,9 +231,8 @@ class WorkflowAImpl : Workflow(), WorkflowA {
 
     override fun seq6(): Long {
         var l = 0L
-        val d1 = async(taskA) { await(500) }
-        val d2 = async(taskA) { await(100) }
-
+        val d1 = dispatch(taskA::await, 500)
+        val d2 = dispatch(taskA::await, 100)
         l += d1.await()
         l += d2.await()
 
@@ -220,10 +244,7 @@ class WorkflowAImpl : Workflow(), WorkflowA {
 
     override fun deferred1(): String {
         var str = ""
-
-        val d = async {
-            taskA.reverse("X")
-        }
+        val d = dispatch(self::deferred1bis)
         str += d.isOngoing().toString()
         str += d.isCompleted().toString()
         d.await()
@@ -232,6 +253,8 @@ class WorkflowAImpl : Workflow(), WorkflowA {
 
         return str // should be "truefalsefalsetrue"
     }
+
+    override fun deferred1bis(): String { return taskA.reverse("X") }
 
 //    override fun deferred1(): String {
 //        var str = ""
@@ -252,26 +275,26 @@ class WorkflowAImpl : Workflow(), WorkflowA {
 //    }
 
     override fun or1(): String {
-        val d1 = async(taskA) { reverse("ab") }
-        val d2 = async(taskA) { reverse("cd") }
-        val d3 = async(taskA) { reverse("ef") }
+        val d1 = dispatch(taskA::reverse, "ab")
+        val d2 = dispatch(taskA::reverse, "cd")
+        val d3 = dispatch(taskA::reverse, "ef")
 
         return (d1 or d2 or d3).await() // should be "ba" or "dc" or "fe"
     }
 
     override fun or2(): Any {
-        val d1 = async(taskA) { reverse("ab") }
-        val d2 = async(taskA) { reverse("cd") }
-        val d3 = async(taskA) { reverse("ef") }
+        val d1 = dispatch(taskA::reverse, "ab")
+        val d2 = dispatch(taskA::reverse, "cd")
+        val d3 = dispatch(taskA::reverse, "ef")
 
         return ((d1 and d2) or d3).await() // should be listOf("ba","dc") or "fe"
     }
 
     override fun or3(): String {
         val list: MutableList<Deferred<String>> = mutableListOf()
-        list.add(async(taskA) { reverse("ab") })
-        list.add(async(taskA) { reverse("cd") })
-        list.add(async(taskA) { reverse("ef") })
+        list.add(dispatch(taskA::reverse, "ab"))
+        list.add(dispatch(taskA::reverse, "cd"))
+        list.add(dispatch(taskA::reverse, "ef"))
 
         return list.or().await() // should be "ba" or "dc" or "fe"
     }
@@ -279,9 +302,9 @@ class WorkflowAImpl : Workflow(), WorkflowA {
     override fun or4(): String {
         var s3 = taskA.concat("1", "2")
 
-        val d1 = async(taskA) { reverse("ab") }
+        val d1 = dispatch(taskA::reverse, "ab")
         val d2 = timer(Duration.ofMillis(2000))
-        val d = (d1 or d2)
+        val d: Deferred<Any> = (d1 or d2)
         if (d.status() != DeferredStatus.COMPLETED) {
             s3 = taskA.reverse("ab")
         }
@@ -290,9 +313,9 @@ class WorkflowAImpl : Workflow(), WorkflowA {
     }
 
     override fun and1(): List<String> {
-        val d1 = async(taskA) { reverse("ab") }
-        val d2 = async(taskA) { reverse("cd") }
-        val d3 = async(taskA) { reverse("ef") }
+        val d1 = dispatch(taskA::reverse, "ab")
+        val d2 = dispatch(taskA::reverse, "cd")
+        val d3 = dispatch(taskA::reverse, "ef")
 
         return (d1 and d2 and d3).await() // should be listOf("ba","dc","fe")
     }
@@ -300,9 +323,9 @@ class WorkflowAImpl : Workflow(), WorkflowA {
     override fun and2(): List<String> {
 
         val list: MutableList<Deferred<String>> = mutableListOf()
-        list.add(async(taskA) { reverse("ab") })
-        list.add(async(taskA) { reverse("cd") })
-        list.add(async(taskA) { reverse("ef") })
+        list.add(dispatch(taskA::reverse, "ab"))
+        list.add(dispatch(taskA::reverse, "cd"))
+        list.add(dispatch(taskA::reverse, "ef"))
 
         return list.and().await() // should be listOf("ba","dc","fe")
     }
@@ -311,7 +334,7 @@ class WorkflowAImpl : Workflow(), WorkflowA {
 
         val list: MutableList<Deferred<String>> = mutableListOf()
         for (i in 1..1_00) {
-            list.add(async(taskA) { reverse("ab") })
+            list.add(dispatch(taskA::reverse, "ab"))
         }
         return list.and().await() // should be listOf("ba","dc","fe")
     }
@@ -323,7 +346,7 @@ class WorkflowAImpl : Workflow(), WorkflowA {
 
     override fun inline2(i: Int): String {
         val result = inline {
-            async(taskA) { reverse("ab") }
+            dispatch(taskA::reverse, "ab")
             2 * i
         }
 
@@ -339,7 +362,7 @@ class WorkflowAImpl : Workflow(), WorkflowA {
     }
 
     override fun child1(): String {
-        val workflowB = newWorkflow<WorkflowB>()
+        val workflowB = newWorkflow(WorkflowB::class.java)
         var str: String = workflowB.concat("-")
         str = taskA.concat(str, "-")
 
@@ -347,28 +370,26 @@ class WorkflowAImpl : Workflow(), WorkflowA {
     }
 
     override fun child2(): String {
-        val workflowB = newWorkflow<WorkflowB>()
+        val workflowB = newWorkflow(WorkflowB::class.java)
         val str = taskA.reverse("12")
-        val d = async(workflowB) { concat(str) }
+        val d = dispatch(workflowB::concat, str)
 
         return taskA.concat(d.await(), str) // should be "21abc21"
     }
 
     override fun prop1(): String {
         p1 = "a"
-
-        async { p1 += "b" }
-
+        dispatch(self::prop1bis)
         p1 += "c"
 
         return p1 // should be "ac"
     }
 
+    override fun prop1bis() { p1 += "b" }
+
     override fun prop2(): String {
         p1 = "a"
-
-        async { p1 += "b" }
-
+        dispatch(self::prop2bis)
         p1 += "c"
         taskA.await(100)
         p1 += "d"
@@ -376,13 +397,11 @@ class WorkflowAImpl : Workflow(), WorkflowA {
         return p1 // should be "acbd"
     }
 
+    override fun prop2bis() { p1 += "b" }
+
     override fun prop3(): String {
         p1 = "a"
-
-        async {
-            taskA.await(50)
-            p1 += "b"
-        }
+        dispatch(self::prop3bis)
         p1 += "c"
         taskA.await(200)
         p1 += "d"
@@ -390,13 +409,11 @@ class WorkflowAImpl : Workflow(), WorkflowA {
         return p1 // should be "acbd"
     }
 
+    override fun prop3bis() { taskA.await(50); p1 += "b" }
+
     override fun prop4(): String {
         p1 = "a"
-
-        async {
-            taskA.await(200)
-            p1 += "b"
-        }
+        dispatch(self::prop4bis)
         p1 += "c"
         taskA.await(100)
         p1 += "d"
@@ -404,47 +421,54 @@ class WorkflowAImpl : Workflow(), WorkflowA {
         return p1 // should be "acd"
     }
 
+    override fun prop4bis() { taskA.await(200); p1 += "b" }
+
     override fun prop5(): String {
         p1 = "a"
-
-        async {
-            p1 += "b"
-        }
-
-        async {
-            p1 += "c"
-        }
+        dispatch(self::prop5bis)
+        dispatch(self::prop5ter)
         p1 += "d"
-
         taskA.await(100)
 
         return p1 // should be "adbc"
     }
 
-    override fun prop6(): String {
-        val d1 = async(taskA) { reverse("12") }
+    override fun prop5bis() { p1 += "b" }
+    override fun prop5ter() { p1 += "c" }
 
-        val d2 = async {
-            d1.await()
-            p1 += "b"
-            p1
-        }
+    override fun prop6(): String {
+        val d1 = dispatch(taskA::reverse, "12")
+        val d2 = dispatch(self::prop6bis, d1)
         d1.await()
         p1 += "a"
         p1 = d2.await() + p1
         // unfortunately p1 = p1 + d2.await() would fail the test
         // because d2.await() updates p1 value too lately in the expression
-        // not sure, how to avoid that
+        // not sure, how to fix that or if it should be fixed
 
         return p1 // should be "abab"
     }
 
-    override fun prop7(): String {
-        p1 = taskA.reverse("a")
+    override fun prop6bis(deferred: Deferred<String>): String { deferred.await(); p1 += "b"; return p1 }
 
-        async {
-            p1 += taskA.reverse("b")
-        }
+    override fun prop7(): String {
+        deferred = dispatch(taskA::reverse, "12")
+        val d2 = dispatch(self::prop7bis)
+        deferred.await()
+        p1 += "a"
+        p1 = d2.await() + p1
+        // unfortunately p1 = p1 + d2.await() would fail the test
+        // because d2.await() updates p1 value too lately in the expression
+        // not sure, how to fix that or if it should be fixed
+
+        return p1 // should be "abab"
+    }
+
+    override fun prop7bis(): String { deferred.await(); p1 += "b"; return p1 }
+
+    override fun prop8(): String {
+        p1 = taskA.reverse("a")
+        dispatch(self::prop8bis)
         p1 += "c"
         taskA.await(200)
         p1 += "d"
@@ -452,10 +476,12 @@ class WorkflowAImpl : Workflow(), WorkflowA {
         return p1 // should be "acbd"
     }
 
+    override fun prop8bis() { p1 += taskA.reverse("b") }
+
     override fun channel1(): String {
         val deferred: Deferred<String> = channelA.receive()
 
-        return deferred.await()
+        return deferred.await().also { println(it) }
     }
 
     override fun channel2(): Any {
@@ -493,26 +519,26 @@ class WorkflowAImpl : Workflow(), WorkflowA {
     }
 
     override fun channel5(): Obj1 {
-        val deferred: Deferred<Obj1> = channelObj.receive(Obj1::class)
+        val deferred: Deferred<Obj1> = channelObj.receive(Obj1::class.java)
 
         return deferred.await()
     }
 
     override fun channel5bis(): Obj1 {
-        val deferred: Deferred<Obj1> = channelObj.receive(Obj1::class, "[?(\$.foo == \"foo\")]")
+        val deferred: Deferred<Obj1> = channelObj.receive(Obj1::class.java, "[?(\$.foo == \"foo\")]")
 
         return deferred.await()
     }
 
     override fun channel5ter(): Obj1 {
-        val deferred: Deferred<Obj1> = channelObj.receive(Obj1::class, "[?]", where("foo").eq("foo"))
+        val deferred: Deferred<Obj1> = channelObj.receive(Obj1::class.java, "[?]", where("foo").eq("foo"))
 
         return deferred.await()
     }
 
     override fun channel6(): String {
-        val deferred1: Deferred<Obj1> = channelObj.receive(Obj1::class)
-        val deferred2: Deferred<Obj2> = channelObj.receive(Obj2::class)
+        val deferred1: Deferred<Obj1> = channelObj.receive(Obj1::class.java)
+        val deferred2: Deferred<Obj2> = channelObj.receive(Obj2::class.java)
         val obj1 = deferred1.await()
         val obj2 = deferred2.await()
 
@@ -520,8 +546,8 @@ class WorkflowAImpl : Workflow(), WorkflowA {
     }
 
     override fun channel6bis(): String {
-        val deferred1: Deferred<Obj1> = channelObj.receive(Obj1::class, "[?(\$.foo == \"foo\")]")
-        val deferred2: Deferred<Obj2> = channelObj.receive(Obj2::class, "[?(\$.foo == \"foo\")]")
+        val deferred1: Deferred<Obj1> = channelObj.receive(Obj1::class.java, "[?(\$.foo == \"foo\")]")
+        val deferred2: Deferred<Obj2> = channelObj.receive(Obj2::class.java, "[?(\$.foo == \"foo\")]")
         val obj1 = deferred1.await()
         val obj2 = deferred2.await()
 
@@ -529,8 +555,8 @@ class WorkflowAImpl : Workflow(), WorkflowA {
     }
 
     override fun channel6ter(): String {
-        val deferred1: Deferred<Obj1> = channelObj.receive(Obj1::class, "[?]", where("foo").eq("foo"))
-        val deferred2: Deferred<Obj2> = channelObj.receive(Obj2::class, "[?]", where("foo").eq("foo"))
+        val deferred1: Deferred<Obj1> = channelObj.receive(Obj1::class.java, "[?]", where("foo").eq("foo"))
+        val deferred2: Deferred<Obj2> = channelObj.receive(Obj2::class.java, "[?]", where("foo").eq("foo"))
         val obj1 = deferred1.await()
         val obj2 = deferred2.await()
 
@@ -540,103 +566,123 @@ class WorkflowAImpl : Workflow(), WorkflowA {
     override fun failing1() = try {
         taskA.failing()
         "ok"
-    } catch (e: FailedDeferredException) {
+    } catch (e: FailedTaskException) {
         taskA.reverse("ok")
     }
 
     override fun failing2() = taskA.failing()
 
     override fun failing2a(): Long {
-        async(taskA) { failing() }
+        dispatch(taskA::failing)
 
         return taskA.await(100)
     }
 
     override fun failing3(): Long {
-        async { taskA.failing() }
+        dispatch(self::failing3bis)
 
         return taskA.await(100)
     }
+
+    override fun failing3bis() { taskA.failing() }
 
     override fun failing3b(): Long {
-        async { throw Exception() }
+        dispatch(self::failing3bException)
 
         return taskA.await(100)
     }
 
-    override fun failing4(): Long {
-        val deferred = async(taskA) { await(1000) }
+    override fun failing3bException() { throw Exception() }
 
-        taskA.cancelTaskA(deferred.id!!)
+//    override fun failing4(): Long {
+//        val deferred = dispatch(taskA::await, 1000)
+//
+//        taskA.cancelTaskA(deferred.id!!)
+//
+//        return deferred.await()
+//    }
 
-        return deferred.await()
-    }
+//    override fun failing5(): Long {
+//        val deferred = dispatch(taskA::await, 1000)
+//
+//        taskA.cancelTaskA(deferred.id!!)
+//
+//        dispatch(self::failing5bis, deferred)
+//
+//        return taskA.await(100)
+//    }
 
-    override fun failing5(): Long {
-        val deferred = async(taskA) { await(1000) }
+    override fun failing5bis(deferred: Deferred<Long>): Long { return deferred.await() }
 
-        taskA.cancelTaskA(deferred.id!!)
-
-        async { deferred.await() }
-
-        return taskA.await(100)
-    }
-
-    override fun failing6() {
-        val workflowABis = newWorkflow<WorkflowA>()
-
-        return workflowABis.failing2()
-    }
+    override fun failing6() = workflowA.failing2()
 
     override fun failing7(): Long {
-        val workflowABis = newWorkflow<WorkflowA>()
+        dispatch(self::failing7bis)
 
-        async {
-            workflowABis.failing2()
-        }
         return taskA.await(100)
+    }
+
+    override fun failing7bis() { workflowA.failing2() }
+
+    override fun failing7ter(): String = try {
+        workflowA.failing2()
+        "ok"
+    } catch (e: FailedWorkflowException) {
+        val deferredException = e.deferredException as FailedTaskException
+        taskA.await(100)
+        deferredException.workerException.name
     }
 
     override fun failing8() = taskA.successAtRetry()
 
-    override fun failing9(): Boolean {
-        // this method will complete only after retry
-        val deferred = async(taskA) { successAtRetry() }
+//    override fun failing9(): Boolean {
+//        // this method will complete only after retry
+//        val deferred = dispatch(taskA::successAtRetry,)
+//
+//        val result = try {
+//            deferred.await()
+//        } catch (e: FailedDeferredException) {
+//            "caught"
+//        }
+//
+//        taskA.retryTaskA(deferred.id!!)
+//
+//        // we wait here only on avoid to make sure the previous retry is completed
+//        taskA.await(100)
+//
+//        return deferred.await() == "ok" && result == "caught"
+//    }
+//
+//    override fun failing10(): String {
+//        p1 = "o"
+//        val deferred = dispatch(taskA::await, 1000)
+//        dispatch(self::failing10bis)
+//        dispatch(taskA::cancelTaskA, deferred.id!!)
+//        try {
+//            deferred.await()
+//        } catch (e: CanceledDeferredException) {
+//            // continue
+//        }
+//
+//        return p1 // should be "ok"
+//    }
 
-        val result = try {
-            deferred.await()
-        } catch (e: FailedDeferredException) {
-            "caught"
-        }
+    override fun failing10bis() { p1 += "k" }
 
-        taskA.retryTaskA(deferred.id!!)
-
-        // we wait here only on avoid to make sure the previous retry is completed
-        taskA.await(100)
-
-        return deferred.await() == "ok" && result == "caught"
+    override fun failing11() {
+        getWorkflowById(WorkflowA::class.java, "unknown").empty()
     }
 
-    override fun failing10(): String {
-        p1 = "o"
-
-        val deferred = async(taskA) { await(1000) }
-
-        async { p1 += "k" }
-
-        async(taskA) { cancelTaskA(deferred.id!!) }
-
-        try {
-            deferred.await()
-        } catch (e: CanceledDeferredException) {
-            // continue
+    override fun failing12(): String {
+        return try {
+            getWorkflowById(WorkflowA::class.java, "unknown").empty()
+        } catch (e: UnknownWorkflowException) {
+            taskA.reverse("caught".reversed())
         }
-
-        return p1 // should be "ok"
     }
 
     override fun cancel1() {
-        val taggedChild = newWorkflow<WorkflowA>(tags = setOf("foo", "bar"))
+        val taggedChild = newWorkflow(WorkflowA::class.java, tags = setOf("foo", "bar"))
 
         taggedChild.channel1()
     }

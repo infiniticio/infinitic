@@ -25,9 +25,10 @@
 
 package io.infinitic.common.tasks.data
 
+import io.infinitic.common.data.JobOptions
 import kotlinx.serialization.Serializable
 
 @Serializable
 data class TaskOptions(
     val runningTimeout: Float? = null
-)
+) : JobOptions

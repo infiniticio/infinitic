@@ -25,16 +25,16 @@
 
 package io.infinitic.common.workflows.data.channels
 
-internal fun getAllExtendedOrImplementedTypes(klass: Class<*>): Set<ChannelEventType> {
+internal fun getAllExtendedOrImplementedTypes(klass: Class<*>): Set<ChannelSignalType> {
     var clazz = klass
-    val all: MutableList<ChannelEventType> = mutableListOf()
+    val all: MutableList<ChannelSignalType> = mutableListOf()
     do {
-        all.add(ChannelEventType(clazz.name))
+        all.add(ChannelSignalType(clazz.name))
 
         // First, add all the interfaces implemented by this class
         val interfaces = clazz.interfaces.toList()
         if (interfaces.isNotEmpty()) {
-            all.addAll(interfaces.map { ChannelEventType(it.name) })
+            all.addAll(interfaces.map { ChannelSignalType(it.name) })
             for (interfaze in interfaces) {
                 all.addAll(getAllExtendedOrImplementedTypes(interfaze))
             }
@@ -43,7 +43,7 @@ internal fun getAllExtendedOrImplementedTypes(klass: Class<*>): Set<ChannelEvent
         // Add the super class
         val superClass = clazz.superclass ?: break
 
-        // Interfaces does not have java,lang.Object as superclass, they have null, so break the cycle and return
+        // Interfaces do not have java,lang.Object as superclass, they have null, so break the cycle and return
 
         // Now inspect the superclass
         clazz = superClass

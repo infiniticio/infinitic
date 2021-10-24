@@ -25,8 +25,8 @@
 
 package io.infinitic.common.workflows.data.workflowTasks
 
-import io.infinitic.common.data.methods.MethodReturnValue
-import io.infinitic.common.workflows.data.commands.NewCommand
+import io.infinitic.common.data.ReturnValue
+import io.infinitic.common.workflows.data.commands.PastCommand
 import io.infinitic.common.workflows.data.properties.PropertyName
 import io.infinitic.common.workflows.data.properties.PropertyValue
 import io.infinitic.common.workflows.data.steps.NewStep
@@ -34,8 +34,8 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 data class WorkflowTaskReturnValue(
-    val newCommands: List<NewCommand>,
-    val newSteps: List<NewStep>,
+    val newCommands: List<PastCommand>,
+    val newStep: NewStep?,
     val properties: Map<PropertyName, PropertyValue>,
-    val methodReturnValue: MethodReturnValue?
+    val methodReturnValue: ReturnValue?
 )

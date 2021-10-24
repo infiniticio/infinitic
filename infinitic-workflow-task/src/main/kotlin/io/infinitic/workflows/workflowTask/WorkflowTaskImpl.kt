@@ -25,21 +25,20 @@
 
 package io.infinitic.workflows.workflowTask
 
-import io.infinitic.common.data.methods.MethodReturnValue
+import io.infinitic.common.data.ClientName
+import io.infinitic.common.data.ReturnValue
 import io.infinitic.common.parser.getMethodPerNameAndParameters
-import io.infinitic.common.workflows.data.channels.ChannelImpl
 import io.infinitic.common.workflows.data.properties.PropertyHash
 import io.infinitic.common.workflows.data.properties.PropertyName
-import io.infinitic.common.workflows.data.properties.PropertyValue
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTask
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskParameters
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskReturnValue
-import io.infinitic.exceptions.workflows.MultipleNamesForChannelException
-import io.infinitic.exceptions.workflows.NonUniqueChannelFromChannelMethodException
-import io.infinitic.exceptions.workflows.ParametersInChannelMethodException
+import io.infinitic.exceptions.DeferredException
+import io.infinitic.exceptions.FailedWorkflowTaskException
+import io.infinitic.exceptions.WorkerException
 import io.infinitic.tasks.Task
-import io.infinitic.workflows.Channel
-import io.infinitic.workflows.Workflow
+import io.infinitic.workflows.Deferred
+import io.infinitic.workflows.setChannelNames
 import java.lang.reflect.InvocationTargetException
 import java.time.Duration
 
@@ -51,27 +50,6 @@ class WorkflowTaskImpl : Task(), WorkflowTask {
         // get  instance workflow by name
         val workflow = context.register.getWorkflowInstance("${workflowTaskParameters.workflowName}")
 
-        // setProperties function
-        val setProperties = {
-            hashValues: Map<PropertyHash, PropertyValue>,
-            nameHashes: Map<PropertyName, PropertyHash>
-            ->
-            workflow.setProperties(hashValues, nameHashes)
-        }
-
-        // set workflow's initial properties
-        setProperties(
-            workflowTaskParameters.workflowPropertiesHashValue,
-            workflowTaskParameters.methodRun.propertiesNameHashAtStart
-        )
-
-        // set context
-        workflow.context = WorkflowContextImpl(workflowTaskParameters)
-        workflow.dispatcher = WorkflowDispatcherImpl(workflowTaskParameters, setProperties)
-
-        // initialize name of channels for this workflow, based on the methods that provide them
-        setChannelNames(workflow)
-
         // get method
         val methodRun = workflowTaskParameters.methodRun
         val method = getMethodPerNameAndParameters(
@@ -81,50 +59,64 @@ class WorkflowTaskImpl : Task(), WorkflowTask {
             methodRun.methodParameters.size
         )
 
-        // run method and get return value (null if end not reached)
-        val parameters = methodRun.methodParameters.get().toTypedArray()
+        // set context
+        val dispatcher = WorkflowDispatcherImpl(workflowTaskParameters)
+        workflow.context = WorkflowContextImpl(workflowTaskParameters)
+        workflow.dispatcher = dispatcher
 
+        // define setProperties function
+        val setProperties = {
+            nameHashes: Map<PropertyName, PropertyHash>
+            ->
+            // in case properties contain some Deferred
+            Deferred.setWorkflowDispatcher(dispatcher)
+            workflow.setProperties(workflowTaskParameters.workflowPropertiesHashValue, nameHashes)
+            Deferred.delWorkflowDispatcher()
+        }
+
+        // give it to dispatcher
+        dispatcher.setProperties = setProperties
+
+        // set workflow's initial properties
+        setProperties(methodRun.propertiesNameHashAtStart)
+
+        // initialize name of channels for this workflow, based on the methods that provide them
+        workflow.setChannelNames()
+
+        // get method parameters
+        // in case parameters contain some Deferred
+        Deferred.setWorkflowDispatcher(dispatcher)
+        val parameters = methodRun.methodParameters.map { it.deserialize() }.toTypedArray()
+        Deferred.delWorkflowDispatcher()
+
+        // run method and get return value (null if end not reached)
         val methodReturnValue = try {
-            MethodReturnValue.from(method.invoke(workflow, *parameters))
+            ReturnValue.from(method.invoke(workflow, *parameters))
         } catch (e: InvocationTargetException) {
-            when (e.cause) {
+            when (val cause = e.cause) {
                 is WorkflowTaskException -> null
-                else -> throw e.cause ?: e // this error will be caught by the task executor
+                // the errors below will be caught by the task executor
+                is DeferredException -> throw cause
+                else -> {
+                    val throwable = cause ?: e
+
+                    throw FailedWorkflowTaskException(
+                        workflowName = workflowTaskParameters.workflowName.toString(),
+                        workflowId = workflowTaskParameters.workflowId.toString(),
+                        workflowTaskId = context.id,
+                        workerException = WorkerException.from(ClientName(context.client.name), throwable)
+                    )
+                }
             }
         }
 
         val properties = workflow.getProperties()
 
         return WorkflowTaskReturnValue(
-            (workflow.dispatcher as WorkflowDispatcherImpl).newCommands,
-            (workflow.dispatcher as WorkflowDispatcherImpl).newSteps,
+            dispatcher.newCommands,
+            dispatcher.newStep,
             properties,
             methodReturnValue
         )
-    }
-
-    private fun setChannelNames(workflow: Workflow) {
-        workflow::class.java.declaredMethods
-            .filter { it.returnType.name == Channel::class.java.name }
-            .map {
-                // channel must not have parameters
-                if (it.parameterCount > 0) {
-                    throw ParametersInChannelMethodException(workflow::class.java.name, it.name)
-                }
-                // channel must be created only once per method
-                it.isAccessible = true
-                val channel = it.invoke(workflow)
-                val channelBis = it.invoke(workflow)
-                if (channel !== channelBis) {
-                    throw NonUniqueChannelFromChannelMethodException(workflow::class.java.name, it.name)
-                }
-                // this channel must not have a name already
-                channel as ChannelImpl<*>
-                if (channel.isNameInitialized()) {
-                    throw MultipleNamesForChannelException(workflow::class.java.name, it.name, channel.name)
-                }
-                // set channel name
-                channel.name = it.name
-            }
     }
 }

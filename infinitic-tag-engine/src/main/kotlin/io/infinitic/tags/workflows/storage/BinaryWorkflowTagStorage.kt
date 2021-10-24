@@ -27,7 +27,6 @@ package io.infinitic.tags.workflows.storage
 
 import io.infinitic.common.data.MessageId
 import io.infinitic.common.data.UUIDConversion.toByteArray
-import io.infinitic.common.data.UUIDConversion.toUUID
 import io.infinitic.common.storage.Flushable
 import io.infinitic.common.storage.keySet.KeySetStorage
 import io.infinitic.common.storage.keyValue.KeyValueStorage
@@ -61,18 +60,18 @@ class BinaryWorkflowTagStorage(
         val key = getTagSetIdsKey(tag, workflowName)
         return keySetStorage
             .get(key)
-            .map { WorkflowId(it.toUUID()) }
+            .map { WorkflowId(String(it)) }
             .toSet()
     }
 
     override suspend fun addWorkflowId(tag: WorkflowTag, workflowName: WorkflowName, workflowId: WorkflowId) {
         val key = getTagSetIdsKey(tag, workflowName)
-        keySetStorage.add(key, workflowId.id.toByteArray())
+        keySetStorage.add(key, workflowId.toString().toByteArray())
     }
 
     override suspend fun removeWorkflowId(tag: WorkflowTag, workflowName: WorkflowName, workflowId: WorkflowId) {
         val key = getTagSetIdsKey(tag, workflowName)
-        keySetStorage.remove(key, workflowId.id.toByteArray())
+        keySetStorage.remove(key, workflowId.toString().toByteArray())
     }
 
     private fun getTagMessageIdKey(tag: WorkflowTag, workflowName: WorkflowName) = "workflow:$workflowName|tag:$tag|messageId"

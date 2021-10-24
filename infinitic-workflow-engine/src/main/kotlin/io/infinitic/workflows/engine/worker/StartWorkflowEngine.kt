@@ -26,6 +26,7 @@
 package io.infinitic.workflows.engine.worker
 
 import io.infinitic.common.clients.transport.SendToClient
+import io.infinitic.common.data.ClientName
 import io.infinitic.common.tasks.engine.SendToTaskEngine
 import io.infinitic.common.tasks.tags.SendToTaskTagEngine
 import io.infinitic.common.workers.MessageToProcess
@@ -53,7 +54,7 @@ private fun logError(messageToProcess: WorkflowEngineMessageToProcess, e: Throwa
 }
 
 fun <T : WorkflowEngineMessageToProcess> CoroutineScope.startWorkflowEngine(
-    coroutineName: String,
+    name: String,
     workflowStateStorage: WorkflowStateStorage,
     eventsInputChannel: ReceiveChannel<T>,
     eventsOutputChannel: SendChannel<T>,
@@ -65,9 +66,10 @@ fun <T : WorkflowEngineMessageToProcess> CoroutineScope.startWorkflowEngine(
     sendToWorkflowTagEngine: SendToWorkflowTagEngine,
     sendToWorkflowEngine: SendToWorkflowEngine,
     sendToWorkflowEngineAfter: SendToWorkflowEngineAfter
-) = launch(CoroutineName(coroutineName)) {
+) = launch(CoroutineName(name)) {
 
     val workflowEngine = WorkflowEngine(
+        ClientName(name),
         workflowStateStorage,
         sendEventsToClient,
         sendToTaskTagEngine,

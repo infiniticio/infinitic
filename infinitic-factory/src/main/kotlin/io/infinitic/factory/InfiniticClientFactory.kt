@@ -34,9 +34,8 @@ import io.infinitic.worker.config.WorkerConfig
 
 @Suppress("unused")
 object InfiniticClientFactory {
-
     /**
-     * Create InfiniticWorker from file in resources directory
+     * Create InfiniticClient with config from resources directory
      */
     @JvmStatic
     fun fromConfigResource(vararg resources: String): InfiniticClient {
@@ -49,7 +48,7 @@ object InfiniticClientFactory {
     }
 
     /**
-     * Create InfiniticWorker from file in system file
+     * Create InfiniticClient with config from system file
      */
     @JvmStatic
     fun fromConfigFile(vararg files: String): InfiniticClient {

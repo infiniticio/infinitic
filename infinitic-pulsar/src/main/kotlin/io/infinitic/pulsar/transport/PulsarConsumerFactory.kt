@@ -25,8 +25,9 @@
 
 package io.infinitic.pulsar.transport
 
-import io.infinitic.common.clients.data.ClientName
 import io.infinitic.common.clients.messages.ClientEnvelope
+import io.infinitic.common.data.ClientName
+import io.infinitic.common.exceptions.thisShouldNotHappen
 import io.infinitic.common.messages.Envelope
 import io.infinitic.common.metrics.global.messages.MetricsGlobalEnvelope
 import io.infinitic.common.metrics.perName.messages.MetricsPerNameEnvelope
@@ -37,7 +38,6 @@ import io.infinitic.common.tasks.tags.messages.TaskTagEngineEnvelope
 import io.infinitic.common.workflows.data.workflows.WorkflowName
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineEnvelope
 import io.infinitic.common.workflows.tags.messages.WorkflowTagEngineEnvelope
-import io.infinitic.exceptions.thisShouldNotHappen
 import io.infinitic.pulsar.schemas.schemaDefinition
 import io.infinitic.pulsar.topics.GlobalTopic
 import io.infinitic.pulsar.topics.TaskTopic
@@ -209,7 +209,7 @@ class PulsarConsumerFactory(
                 subscriptionName = subscriptionName,
                 ackTimeout = 60
             )
-            GlobalTopic.NAMER -> throw thisShouldNotHappen()
+            GlobalTopic.NAMER -> thisShouldNotHappen()
         }
     }
 

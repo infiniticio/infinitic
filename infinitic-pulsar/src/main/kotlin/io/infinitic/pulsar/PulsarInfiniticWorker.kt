@@ -61,6 +61,7 @@ import org.apache.pulsar.client.admin.PulsarAdminException
 import org.apache.pulsar.client.admin.Tenants
 import org.apache.pulsar.client.admin.Topics
 import org.apache.pulsar.client.api.PulsarClient
+import java.util.concurrent.CompletableFuture
 import kotlin.system.exitProcess
 
 @Suppress("MemberVisibilityCanBePrivate", "unused")
@@ -133,7 +134,7 @@ class PulsarInfiniticWorker private constructor(
     /**
      * Start worker
      */
-    override fun start() {
+    override fun startAsync(): CompletableFuture<Unit> {
         // make sure all needed topics exists
         runningScope.future {
             try {
@@ -155,7 +156,7 @@ class PulsarInfiniticWorker private constructor(
             }
         }.join()
 
-        super.start()
+        return super.startAsync()
     }
 
     private fun Tenants.checkOrCreateTenant() {
@@ -261,130 +262,152 @@ class PulsarInfiniticWorker private constructor(
         }
     }
 
-    override fun CoroutineScope.startTaskExecutors(name: Name, concurrency: Int) {
-        startPulsarTaskExecutors(
-            name,
-            concurrency,
-            this@PulsarInfiniticWorker.name,
-            taskExecutorRegister,
-            pulsarConsumerFactory,
-            pulsarOutput,
-            clientFactory
-        )
+    override fun startTaskExecutors(name: Name, concurrency: Int) {
+        runningScope.launch {
+            startPulsarTaskExecutors(
+                name,
+                concurrency,
+                this@PulsarInfiniticWorker.name,
+                taskExecutorRegister,
+                pulsarConsumerFactory,
+                pulsarOutput,
+                clientFactory
+            )
+        }
     }
 
-    override fun CoroutineScope.startWorkflowTagEngines(
+    override fun startWorkflowTagEngines(
         workflowName: WorkflowName,
         concurrency: Int,
         storage: WorkflowTagStorage
     ) {
-        startPulsarWorkflowTagEngines(
-            workflowName,
-            concurrency,
-            storage,
-            name,
-            pulsarConsumerFactory,
-            pulsarOutput
-        )
+        runningScope.launch {
+            startPulsarWorkflowTagEngines(
+                name,
+                concurrency,
+                storage,
+                workflowName,
+                pulsarConsumerFactory,
+                pulsarOutput
+            )
+        }
     }
 
-    override fun CoroutineScope.startTaskEngines(
+    override fun startTaskEngines(
         workflowName: WorkflowName,
         concurrency: Int,
         storage: TaskStateStorage
     ) {
-        startPulsarTaskEngines(
-            workflowName,
-            concurrency,
-            storage,
-            name,
-            pulsarConsumerFactory,
-            pulsarOutput
-        )
+        runningScope.launch {
+            startPulsarTaskEngines(
+                name,
+                concurrency,
+                storage,
+                workflowName,
+                pulsarConsumerFactory,
+                pulsarOutput
+            )
+        }
     }
 
-    override fun CoroutineScope.startTaskEngines(taskName: TaskName, concurrency: Int, storage: TaskStateStorage) {
-        startPulsarTaskEngines(
-            taskName,
-            concurrency,
-            storage,
-            name,
-            pulsarConsumerFactory,
-            pulsarOutput
-        )
+    override fun startTaskEngines(taskName: TaskName, concurrency: Int, storage: TaskStateStorage) {
+        runningScope.launch {
+            startPulsarTaskEngines(
+                name,
+                concurrency,
+                storage,
+                taskName,
+                pulsarConsumerFactory,
+                pulsarOutput
+            )
+        }
     }
 
-    override fun CoroutineScope.startTaskDelayEngines(workflowName: WorkflowName, concurrency: Int) {
-        startPulsarTaskDelayEngines(
-            workflowName,
-            concurrency,
-            name,
-            pulsarConsumerFactory,
-            pulsarOutput
-        )
+    override fun startTaskDelayEngines(workflowName: WorkflowName, concurrency: Int) {
+        runningScope.launch {
+            startPulsarTaskDelayEngines(
+                name,
+                concurrency,
+                workflowName,
+                pulsarConsumerFactory,
+                pulsarOutput
+            )
+        }
     }
 
-    override fun CoroutineScope.startTaskDelayEngines(taskName: TaskName, concurrency: Int) {
-        startPulsarTaskDelayEngines(
-            taskName,
-            concurrency,
-            name,
-            pulsarConsumerFactory,
-            pulsarOutput
-        )
+    override fun startTaskDelayEngines(taskName: TaskName, concurrency: Int) {
+        runningScope.launch {
+            startPulsarTaskDelayEngines(
+                name,
+                concurrency,
+                taskName,
+                pulsarConsumerFactory,
+                pulsarOutput
+            )
+        }
     }
 
-    override fun CoroutineScope.startWorkflowEngines(
+    override fun startWorkflowEngines(
         workflowName: WorkflowName,
         concurrency: Int,
         storage: WorkflowStateStorage
     ) {
-        startPulsarWorkflowEngines(
-            workflowName,
-            concurrency,
-            storage,
-            name,
-            pulsarConsumerFactory,
-            pulsarOutput
-        )
+        runningScope.launch {
+            startPulsarWorkflowEngines(
+                name,
+                concurrency,
+                storage,
+                workflowName,
+                pulsarConsumerFactory,
+                pulsarOutput
+            )
+        }
     }
 
-    override fun CoroutineScope.startWorkflowDelayEngines(workflowName: WorkflowName, concurrency: Int) {
-        startPulsarWorkflowDelayEngines(
-            workflowName,
-            concurrency,
-            name,
-            pulsarConsumerFactory,
-            pulsarOutput
-        )
+    override fun startWorkflowDelayEngines(workflowName: WorkflowName, concurrency: Int) {
+        runningScope.launch {
+            startPulsarWorkflowDelayEngines(
+                name,
+                concurrency,
+                workflowName,
+                pulsarConsumerFactory,
+                pulsarOutput
+            )
+        }
     }
 
-    override fun CoroutineScope.startTaskTagEngines(taskName: TaskName, concurrency: Int, storage: TaskTagStorage) {
-        startPulsarTaskTagEngines(
-            taskName,
-            concurrency,
-            storage,
-            name,
-            pulsarConsumerFactory,
-            pulsarOutput
-        )
+    override fun startTaskTagEngines(taskName: TaskName, concurrency: Int, storage: TaskTagStorage) {
+        runningScope.launch {
+            startPulsarTaskTagEngines(
+                name,
+                concurrency,
+                storage,
+                taskName,
+                pulsarConsumerFactory,
+                pulsarOutput
+            )
+        }
     }
 
-    override fun CoroutineScope.startMetricsPerNameEngines(taskName: TaskName, storage: MetricsPerNameStateStorage) {
-        startPulsarMetricsPerNameEngines(
-            taskName,
-            storage,
-            name,
-            pulsarConsumerFactory,
-            pulsarOutput
-        )
+    override fun startMetricsPerNameEngines(taskName: TaskName, storage: MetricsPerNameStateStorage) {
+        runningScope.launch {
+            startPulsarMetricsPerNameEngines(
+                name,
+                storage,
+                taskName,
+                pulsarConsumerFactory,
+                pulsarOutput
+            )
+        }
     }
 
-    override fun CoroutineScope.startMetricsGlobalEngine(storage: MetricsGlobalStateStorage) {
-        startPulsarMetricsGlobalEngine(
-            storage,
-            name,
-            pulsarConsumerFactory
-        )
+    override fun startMetricsGlobalEngine(storage: MetricsGlobalStateStorage) {
+        runningScope.launch {
+            startPulsarMetricsGlobalEngine(
+                name,
+                storage,
+                pulsarConsumerFactory
+            )
+        }
     }
 }

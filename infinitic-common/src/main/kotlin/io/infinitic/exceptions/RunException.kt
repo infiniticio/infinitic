@@ -25,10 +25,10 @@
 
 package io.infinitic.exceptions
 
-import io.infinitic.common.errors.Error
+import io.infinitic.common.errors.DeferredError
 import java.lang.RuntimeException
 
 open class RunException(
     message: String,
-    val causeError: Error?
-) : RuntimeException(message)
+    val causeError: DeferredError? = null
+) : kotlin.RuntimeException(message)

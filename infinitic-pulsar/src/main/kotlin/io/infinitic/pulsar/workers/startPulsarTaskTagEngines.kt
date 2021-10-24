@@ -43,10 +43,10 @@ typealias PulsarTaskTagEngineMessageToProcess = PulsarMessageToProcess<TaskTagEn
 
 @Suppress("UNCHECKED_CAST")
 fun CoroutineScope.startPulsarTaskTagEngines(
-    taskName: TaskName,
+    name: String,
     concurrency: Int,
     storage: TaskTagStorage,
-    consumerName: String,
+    taskName: TaskName,
     consumerFactory: PulsarConsumerFactory,
     output: PulsarOutput
 ) {
@@ -58,7 +58,7 @@ fun CoroutineScope.startPulsarTaskTagEngines(
         val commandsOutputChannel = Channel<PulsarTaskTagEngineMessageToProcess>()
 
         startTaskTagEngine(
-            "task-tag-engine:$it",
+            "task-tag-engine-$it: $name",
             storage,
             eventsInputChannel = eventsInputChannel,
             eventsOutputChannel = eventsOutputChannel,
@@ -70,13 +70,13 @@ fun CoroutineScope.startPulsarTaskTagEngines(
 
         // Pulsar consumers
         val existingConsumer = consumerFactory.newConsumer(
-            consumerName = "$consumerName:$it",
+            consumerName = "$name:$it",
             taskTopic = TaskTopic.TAG_EXISTING,
             taskName = taskName
         ) as Consumer<TaskTagEngineEnvelope>
 
         val newConsumer = consumerFactory.newConsumer(
-            consumerName = "$consumerName:$it",
+            consumerName = "$name:$it",
             taskTopic = TaskTopic.TAG_NEW,
             taskName = taskName
         ) as Consumer<TaskTagEngineEnvelope>

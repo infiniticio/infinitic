@@ -25,16 +25,17 @@
 
 package io.infinitic.tags.tasks
 
-import io.infinitic.common.clients.messages.TaskIdsPerTag
+import io.infinitic.common.clients.messages.TaskIdsByTag
 import io.infinitic.common.clients.transport.SendToClient
+import io.infinitic.common.data.ClientName
 import io.infinitic.common.tasks.engine.SendToTaskEngine
 import io.infinitic.common.tasks.engine.messages.CancelTask
 import io.infinitic.common.tasks.engine.messages.RetryTask
-import io.infinitic.common.tasks.tags.messages.AddTaskTag
-import io.infinitic.common.tasks.tags.messages.CancelTaskPerTag
-import io.infinitic.common.tasks.tags.messages.GetTaskIds
-import io.infinitic.common.tasks.tags.messages.RemoveTaskTag
-import io.infinitic.common.tasks.tags.messages.RetryTaskPerTag
+import io.infinitic.common.tasks.tags.messages.AddTagToTask
+import io.infinitic.common.tasks.tags.messages.CancelTaskByTag
+import io.infinitic.common.tasks.tags.messages.GetTaskIdsByTag
+import io.infinitic.common.tasks.tags.messages.RemoveTagFromTask
+import io.infinitic.common.tasks.tags.messages.RetryTaskByTag
 import io.infinitic.common.tasks.tags.messages.TaskTagEngineMessage
 import io.infinitic.tags.tasks.storage.LoggedTaskTagStorage
 import io.infinitic.tags.tasks.storage.TaskTagStorage
@@ -44,6 +45,7 @@ import kotlinx.coroutines.launch
 import mu.KotlinLogging
 
 class TaskTagEngine(
+    val clientName: ClientName,
     storage: TaskTagStorage,
     val sendToTaskEngine: SendToTaskEngine,
     val sendToClient: SendToClient
@@ -68,36 +70,23 @@ class TaskTagEngine(
         scope = this
 
         when (message) {
-            is AddTaskTag -> addTaskTag(message)
-            is RemoveTaskTag -> removeTaskTag(message)
-            is CancelTaskPerTag -> cancelTaskPerTag(message)
-            is RetryTaskPerTag -> retryTaskPerTag(message)
-            is GetTaskIds -> getTaskIds(message)
+            is AddTagToTask -> addTagToTask(message)
+            is RemoveTagFromTask -> removeTagFromTask(message)
+            is CancelTaskByTag -> cancelTaskByTag(message)
+            is RetryTaskByTag -> retryTaskByTag(message)
+            is GetTaskIdsByTag -> getTaskIds(message)
         }
     }
 
-    private suspend fun getTaskIds(message: GetTaskIds) {
-        val taskIds = storage.getTaskIds(message.taskTag, message.taskName)
-
-        val taskIdsPerTag = TaskIdsPerTag(
-            message.clientName,
-            message.taskName,
-            message.taskTag,
-            taskIds = taskIds
-        )
-
-        scope.launch { sendToClient(taskIdsPerTag) }
-    }
-
-    private suspend fun addTaskTag(message: AddTaskTag) {
+    private suspend fun addTagToTask(message: AddTagToTask) {
         storage.addTaskId(message.taskTag, message.taskName, message.taskId)
     }
 
-    private suspend fun removeTaskTag(message: RemoveTaskTag) {
+    private suspend fun removeTagFromTask(message: RemoveTagFromTask) {
         storage.removeTaskId(message.taskTag, message.taskName, message.taskId)
     }
 
-    private suspend fun retryTaskPerTag(message: RetryTaskPerTag) {
+    private suspend fun retryTaskByTag(message: RetryTaskByTag) {
         // is not an idempotent action
         if (hasMessageAlreadyBeenHandled(message)) return
 
@@ -108,15 +97,16 @@ class TaskTagEngine(
             }
             false -> taskIds.forEach {
                 val retryTask = RetryTask(
+                    taskName = message.taskName,
                     taskId = it,
-                    taskName = message.taskName
+                    emitterName = clientName
                 )
                 scope.launch { sendToTaskEngine(retryTask) }
             }
         }
     }
 
-    private suspend fun cancelTaskPerTag(message: CancelTaskPerTag) {
+    private suspend fun cancelTaskByTag(message: CancelTaskByTag) {
         // is not an idempotent action
         if (hasMessageAlreadyBeenHandled(message)) return
 
@@ -127,12 +117,27 @@ class TaskTagEngine(
             }
             false -> ids.forEach {
                 val cancelTask = CancelTask(
+                    taskName = message.taskName,
                     taskId = it,
-                    taskName = message.taskName
+                    emitterName = clientName
                 )
                 scope.launch { sendToTaskEngine(cancelTask) }
             }
         }
+    }
+
+    private suspend fun getTaskIds(message: GetTaskIdsByTag) {
+        val taskIds = storage.getTaskIds(message.taskTag, message.taskName)
+
+        val taskIdsByTag = TaskIdsByTag(
+            recipientName = message.emitterName,
+            message.taskName,
+            message.taskTag,
+            taskIds,
+            emitterName = clientName
+        )
+
+        scope.launch { sendToClient(taskIdsByTag) }
     }
 
     private suspend fun hasMessageAlreadyBeenHandled(message: TaskTagEngineMessage) =

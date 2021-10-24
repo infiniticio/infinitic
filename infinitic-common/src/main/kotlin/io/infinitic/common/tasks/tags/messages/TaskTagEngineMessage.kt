@@ -25,7 +25,7 @@
 
 package io.infinitic.common.tasks.tags.messages
 
-import io.infinitic.common.clients.data.ClientName
+import io.infinitic.common.data.ClientName
 import io.infinitic.common.data.MessageId
 import io.infinitic.common.messages.Message
 import io.infinitic.common.tasks.data.TaskId
@@ -36,6 +36,7 @@ import kotlinx.serialization.Serializable
 @Serializable
 sealed class TaskTagEngineMessage : Message {
     val messageId = MessageId()
+    abstract val emitterName: ClientName
     abstract val taskTag: TaskTag
     abstract val taskName: TaskName
 
@@ -43,34 +44,38 @@ sealed class TaskTagEngineMessage : Message {
 }
 
 @Serializable
-data class RetryTaskPerTag(
-    override val taskTag: TaskTag,
-    override val taskName: TaskName
-) : TaskTagEngineMessage()
-
-@Serializable
-data class CancelTaskPerTag(
-    override val taskTag: TaskTag,
-    override val taskName: TaskName
-) : TaskTagEngineMessage()
-
-@Serializable
-data class AddTaskTag(
-    override val taskTag: TaskTag,
+data class RetryTaskByTag(
     override val taskName: TaskName,
+    override val taskTag: TaskTag,
+    override val emitterName: ClientName
+) : TaskTagEngineMessage()
+
+@Serializable
+data class CancelTaskByTag(
+    override val taskName: TaskName,
+    override val taskTag: TaskTag,
+    override val emitterName: ClientName
+) : TaskTagEngineMessage()
+
+@Serializable
+data class AddTagToTask(
+    override val taskName: TaskName,
+    override val taskTag: TaskTag,
     val taskId: TaskId,
+    override val emitterName: ClientName,
 ) : TaskTagEngineMessage()
 
 @Serializable
-data class RemoveTaskTag(
-    override val taskTag: TaskTag,
+data class RemoveTagFromTask(
     override val taskName: TaskName,
+    override val taskTag: TaskTag,
     val taskId: TaskId,
+    override val emitterName: ClientName,
 ) : TaskTagEngineMessage()
 
 @Serializable
-data class GetTaskIds(
-    override val taskTag: TaskTag,
+data class GetTaskIdsByTag(
     override val taskName: TaskName,
-    val clientName: ClientName
+    override val taskTag: TaskTag,
+    override val emitterName: ClientName
 ) : TaskTagEngineMessage()

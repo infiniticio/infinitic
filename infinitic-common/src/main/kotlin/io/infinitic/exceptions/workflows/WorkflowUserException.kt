@@ -33,67 +33,34 @@ sealed class WorkflowUserException(
     help: String
 ) : UserException("$msg.\n$help")
 
-class NoMethodCallAtAsyncException(
-    klass: String
-) : WorkflowUserException(
-    msg = "You must use a method of \"$klass\" when using \"async\" method",
-    help = "Make sure to call exactly one method of \"$klass\" within the curly braces - example: async(foo) { bar(*args) }"
-)
-
-class MultipleMethodCallsAtAsyncException(
-    klass: String,
-    method1: String?,
-    method2: String
-) : WorkflowUserException(
-    msg = "Only one method of \"$klass\" can be called at a time. You can not call \"$method2\" method as you have already called \"$method1\"",
-    help = "Make sure you call only one method of \"$klass\" - multiple calls in the provided lambda is forbidden"
-)
-
-class ShouldNotWaitInsideInlinedTaskException(
-    method: String
-) : WorkflowUserException(
-    msg = "Asynchronous computation inside an inlined task in forbidden",
-    help = "In $method, make sure you do not wait for task or child workflow completion inside `inline { ... }`"
-)
-
-class ShouldNotUseAsyncFunctionInsideInlinedTaskException(
-    method: String
-) : WorkflowUserException(
-    msg = "Asynchronous computation inside an inlined task in forbidden",
-    help = "In $method, make sure you do not use `async { ... }` function inside `task { ... }`"
-)
-
-class ParametersInChannelMethodException(
-    workflow: String,
-    method: String
-) : WorkflowUserException(
-    msg = "in workflow $workflow, method $method returning a ${Channel::class.simpleName} should NOT have any parameter",
+object InvalidInlineException : WorkflowUserException(
+    msg = "Task or workflow must not be used inside an inline function",
     help = ""
 )
 
-class NonUniqueChannelFromChannelMethodException(
+class NonIdempotentChannelGetterException(
     workflow: String,
     method: String
 ) : WorkflowUserException(
-    msg = "in workflow $workflow, method $method should return the same ${Channel::class.simpleName} instance when called multiple times",
+    msg = "in workflow $workflow, method $method should return the same object when called multiple times",
     help = ""
 )
 
-class MultipleNamesForChannelException(
+class MultipleGettersForSameChannelException(
     workflow: String,
     method: String,
     otherMethod: String
 ) : WorkflowUserException(
-    msg = "in workflow $workflow, method $method return a ${Channel::class.simpleName} instance already associated with name $otherMethod",
-    help = "Make sure to not have multiple methods returning the same channel"
+    msg = "in workflow $workflow, getter $method and $otherMethod return the same channel",
+    help = "Make sure to not have multiple getters returning the same channel"
 )
 
-object NameNotInitializedInChannelException : WorkflowUserException(
-    msg = "A ${Channel::class.simpleName} is used without name",
-    help = "Make sure to have a method that returns this channel."
+object ChannelWithoutGetterException : WorkflowUserException(
+    msg = "A ${Channel::class.simpleName} is used without getter",
+    help = "Make sure to add a getter of this channel to the workflow interface"
 )
 
-class WorkflowUpdatedWhileRunningException(
+class WorkflowUpdatedException(
     workflow: String,
     method: String,
     position: String

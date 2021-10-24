@@ -26,6 +26,7 @@
 package io.infinitic.tags.workflows.worker
 
 import io.infinitic.common.clients.transport.SendToClient
+import io.infinitic.common.data.ClientName
 import io.infinitic.common.workers.MessageToProcess
 import io.infinitic.common.workflows.engine.SendToWorkflowEngine
 import io.infinitic.common.workflows.tags.messages.WorkflowTagEngineMessage
@@ -49,7 +50,7 @@ private fun logError(messageToProcess: WorkflowTagEngineMessageToProcess, e: Thr
 }
 
 fun <T : WorkflowTagEngineMessageToProcess> CoroutineScope.startWorkflowTagEngine(
-    coroutineName: String,
+    name: String,
     workflowTagStorage: WorkflowTagStorage,
     eventsInputChannel: ReceiveChannel<T>,
     eventsOutputChannel: SendChannel<T>,
@@ -57,9 +58,10 @@ fun <T : WorkflowTagEngineMessageToProcess> CoroutineScope.startWorkflowTagEngin
     commandsOutputChannel: SendChannel<T>,
     sendToWorkflowEngine: SendToWorkflowEngine,
     sendToClient: SendToClient,
-) = launch(CoroutineName(coroutineName)) {
+) = launch(CoroutineName(name)) {
 
     val tagEngine = WorkflowTagEngine(
+        ClientName(name),
         workflowTagStorage,
         sendToWorkflowEngine,
         sendToClient

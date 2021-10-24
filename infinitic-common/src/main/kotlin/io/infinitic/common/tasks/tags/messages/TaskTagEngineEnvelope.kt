@@ -33,19 +33,19 @@ import kotlinx.serialization.Serializable
 data class TaskTagEngineEnvelope(
     val name: String,
     val type: TaskTagEngineMessageType,
-    val addTaskTag: AddTaskTag? = null,
-    val removeTaskTag: RemoveTaskTag? = null,
-    val cancelTaskPerTag: CancelTaskPerTag? = null,
-    val retryTaskPerTag: RetryTaskPerTag? = null,
-    val getTaskIds: GetTaskIds? = null
+    val addTagToTask: AddTagToTask? = null,
+    val removeTagFromTask: RemoveTagFromTask? = null,
+    val cancelTaskByTag: CancelTaskByTag? = null,
+    val retryTaskByTag: RetryTaskByTag? = null,
+    val getTaskIdsByTag: GetTaskIdsByTag? = null
 ) : Envelope<TaskTagEngineMessage> {
     init {
         val noNull = listOfNotNull(
-            addTaskTag,
-            removeTaskTag,
-            cancelTaskPerTag,
-            retryTaskPerTag,
-            getTaskIds
+            addTagToTask,
+            removeTagFromTask,
+            cancelTaskByTag,
+            retryTaskByTag,
+            getTaskIdsByTag
         )
 
         require(noNull.size == 1)
@@ -55,30 +55,30 @@ data class TaskTagEngineEnvelope(
 
     companion object {
         fun from(msg: TaskTagEngineMessage) = when (msg) {
-            is AddTaskTag -> TaskTagEngineEnvelope(
+            is AddTagToTask -> TaskTagEngineEnvelope(
                 "${msg.taskName}",
-                TaskTagEngineMessageType.ADD_TASK_TAG,
-                addTaskTag = msg
+                TaskTagEngineMessageType.ADD_TAG_TO_TASK,
+                addTagToTask = msg
             )
-            is RemoveTaskTag -> TaskTagEngineEnvelope(
+            is RemoveTagFromTask -> TaskTagEngineEnvelope(
                 "${msg.taskName}",
-                TaskTagEngineMessageType.REMOVE_TASK_TAG,
-                removeTaskTag = msg
+                TaskTagEngineMessageType.REMOVE_TAG_FROM_TASK,
+                removeTagFromTask = msg
             )
-            is CancelTaskPerTag -> TaskTagEngineEnvelope(
+            is CancelTaskByTag -> TaskTagEngineEnvelope(
                 "${msg.taskName}",
-                TaskTagEngineMessageType.CANCEL_TASK_PER_TAG,
-                cancelTaskPerTag = msg
+                TaskTagEngineMessageType.CANCEL_TASK_BY_TAG,
+                cancelTaskByTag = msg
             )
-            is RetryTaskPerTag -> TaskTagEngineEnvelope(
+            is RetryTaskByTag -> TaskTagEngineEnvelope(
                 "${msg.taskName}",
-                TaskTagEngineMessageType.RETRY_TASK_PER_TAG,
-                retryTaskPerTag = msg
+                TaskTagEngineMessageType.RETRY_TASK_BY_TAG,
+                retryTaskByTag = msg
             )
-            is GetTaskIds -> TaskTagEngineEnvelope(
+            is GetTaskIdsByTag -> TaskTagEngineEnvelope(
                 "${msg.taskName}",
-                TaskTagEngineMessageType.GET_TASK_IDS,
-                getTaskIds = msg
+                TaskTagEngineMessageType.GET_TASK_IDS_BY_TAG,
+                getTaskIdsByTag = msg
             )
         }
 
@@ -86,11 +86,11 @@ data class TaskTagEngineEnvelope(
     }
 
     override fun message() = when (type) {
-        TaskTagEngineMessageType.ADD_TASK_TAG -> addTaskTag!!
-        TaskTagEngineMessageType.REMOVE_TASK_TAG -> removeTaskTag!!
-        TaskTagEngineMessageType.CANCEL_TASK_PER_TAG -> cancelTaskPerTag!!
-        TaskTagEngineMessageType.RETRY_TASK_PER_TAG -> retryTaskPerTag!!
-        TaskTagEngineMessageType.GET_TASK_IDS -> getTaskIds!!
+        TaskTagEngineMessageType.ADD_TAG_TO_TASK -> addTagToTask!!
+        TaskTagEngineMessageType.REMOVE_TAG_FROM_TASK -> removeTagFromTask!!
+        TaskTagEngineMessageType.CANCEL_TASK_BY_TAG -> cancelTaskByTag!!
+        TaskTagEngineMessageType.RETRY_TASK_BY_TAG -> retryTaskByTag!!
+        TaskTagEngineMessageType.GET_TASK_IDS_BY_TAG -> getTaskIdsByTag!!
     }
 
     fun toByteArray() = AvroSerDe.writeBinary(this, serializer())

@@ -25,7 +25,7 @@
 
 package io.infinitic.dashboard
 
-import io.infinitic.exceptions.thisShouldNotHappen
+import io.infinitic.common.exceptions.thisShouldNotHappen
 
 fun main(args: Array<String>) {
     // get name of config file

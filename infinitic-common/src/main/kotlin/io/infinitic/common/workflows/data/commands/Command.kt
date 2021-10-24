@@ -25,38 +25,38 @@
 
 package io.infinitic.common.workflows.data.commands
 
-import com.fasterxml.jackson.annotation.JsonProperty
 import io.infinitic.common.data.MillisDuration
 import io.infinitic.common.data.MillisInstant
 import io.infinitic.common.data.methods.MethodName
 import io.infinitic.common.data.methods.MethodParameterTypes
 import io.infinitic.common.data.methods.MethodParameters
-import io.infinitic.common.serDe.SerializedData
 import io.infinitic.common.tasks.data.TaskMeta
 import io.infinitic.common.tasks.data.TaskName
 import io.infinitic.common.tasks.data.TaskOptions
 import io.infinitic.common.tasks.data.TaskTag
-import io.infinitic.common.workflows.data.channels.ChannelEvent
 import io.infinitic.common.workflows.data.channels.ChannelEventFilter
-import io.infinitic.common.workflows.data.channels.ChannelEventType
 import io.infinitic.common.workflows.data.channels.ChannelName
+import io.infinitic.common.workflows.data.channels.ChannelSignal
+import io.infinitic.common.workflows.data.channels.ChannelSignalType
+import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.data.workflows.WorkflowMeta
 import io.infinitic.common.workflows.data.workflows.WorkflowName
 import io.infinitic.common.workflows.data.workflows.WorkflowOptions
 import io.infinitic.common.workflows.data.workflows.WorkflowTag
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 @Serializable
 sealed class Command {
-    open fun hash() = CommandHash(SerializedData.from(this).hash())
+    abstract fun isSameThan(other: Any?): Boolean
 }
 
 /**
  * Commands are asynchronously processed
  */
 
-@Serializable
-data class DispatchTask(
+@Serializable @SerialName("DispatchTaskCommand")
+data class DispatchTaskCommand(
     val taskName: TaskName,
     val methodName: MethodName,
     val methodParameterTypes: MethodParameterTypes,
@@ -64,62 +64,124 @@ data class DispatchTask(
     val taskTags: Set<TaskTag>,
     val taskMeta: TaskMeta,
     val taskOptions: TaskOptions
-) : Command()
+) : Command() {
+    override fun isSameThan(other: Any?): Boolean {
+        if (this === other) return true
+        if (javaClass != other?.javaClass) return false
+        other as DispatchTaskCommand
 
-@Serializable
-data class DispatchChildWorkflow(
-    val childWorkflowName: WorkflowName,
-    val childMethodName: MethodName,
-    val childMethodParameterTypes: MethodParameterTypes,
-    val childMethodParameters: MethodParameters,
+        return taskName == other.taskName &&
+            methodName == other.methodName &&
+            methodParameterTypes == methodParameterTypes &&
+            methodParameters == other.methodParameters
+    }
+}
+
+@Serializable @SerialName("DispatchWorkflowCommand")
+data class DispatchWorkflowCommand(
+    val workflowName: WorkflowName,
+    val methodName: MethodName,
+    val methodParameterTypes: MethodParameterTypes,
+    val methodParameters: MethodParameters,
     val workflowTags: Set<WorkflowTag>,
     val workflowMeta: WorkflowMeta,
     val workflowOptions: WorkflowOptions
-) : Command()
+) : Command() {
+    override fun isSameThan(other: Any?): Boolean {
+        if (this === other) return true
+        if (javaClass != other?.javaClass) return false
+        other as DispatchWorkflowCommand
 
-@Serializable
-object StartAsync : Command() {
-    override fun equals(other: Any?) = javaClass == other?.javaClass
+        return workflowName == other.workflowName &&
+            methodName == other.methodName &&
+            methodParameterTypes == methodParameterTypes &&
+            methodParameters == other.methodParameters
+    }
 }
 
-@Serializable
-data class EndAsync(
-    @JsonProperty("output")
-    val asyncReturnValue: CommandReturnValue
-) : Command()
+@Serializable @SerialName("DispatchMethodCommand")
+data class DispatchMethodCommand(
+    val workflowName: WorkflowName,
+    val workflowId: WorkflowId?,
+    val workflowTag: WorkflowTag?,
+    val methodName: MethodName,
+    val methodParameterTypes: MethodParameterTypes,
+    val methodParameters: MethodParameters
+) : Command() {
+    override fun isSameThan(other: Any?): Boolean {
+        if (this === other) return true
+        if (javaClass != other?.javaClass) return false
+        other as DispatchMethodCommand
 
-@Serializable
-object StartInlineTask : Command() {
-    // as we can not define a data class without parameter, we add manually the equals func
-    override fun equals(other: Any?) = javaClass == other?.javaClass
+        return workflowName == other.workflowName &&
+            workflowId == other.workflowId &&
+            workflowTag == other.workflowTag &&
+            methodName == other.methodName &&
+            methodParameterTypes == methodParameterTypes &&
+            methodParameters == other.methodParameters
+    }
 }
 
-@Serializable
-data class EndInlineTask(
-    @JsonProperty("output")
-    val inlineTaskReturnValue: CommandReturnValue
-) : Command()
-
-@Serializable
-data class StartDurationTimer(
-    val duration: MillisDuration
-) : Command()
-
-@Serializable
-data class StartInstantTimer(
-    val instant: MillisInstant
-) : Command()
-
-@Serializable
-data class ReceiveInChannel(
+@Serializable @SerialName("SendSignalCommand")
+data class SendSignalCommand(
+    val workflowName: WorkflowName,
+    val workflowId: WorkflowId?,
+    val workflowTag: WorkflowTag?,
     val channelName: ChannelName,
-    val channelEventType: ChannelEventType?,
+    val channelSignal: ChannelSignal,
+    val channelSignalTypes: Set<ChannelSignalType>
+) : Command() {
+    companion object {
+        fun simpleName() = CommandSimpleName("SEND_SIGNAL")
+    }
+
+    override fun isSameThan(other: Any?) = other == this
+}
+
+@Serializable @SerialName("ReceiveSignalCommand")
+data class ReceiveSignalCommand(
+    val channelName: ChannelName,
+    val channelSignalType: ChannelSignalType?,
     val channelEventFilter: ChannelEventFilter?
-) : Command()
+) : Command() {
+    companion object {
+        fun simpleName() = CommandSimpleName("RECEIVE_SIGNAL")
+    }
 
-@Serializable
-data class SendToChannel(
-    val channelName: ChannelName,
-    val channelEvent: ChannelEvent,
-    val channelEventTypes: Set<ChannelEventType>
-) : Command()
+    override fun isSameThan(other: Any?) = other == this
+}
+
+@Serializable @SerialName("InlineTaskCommand")
+data class InlineTaskCommand(
+    val task: String = "inline"
+) : Command() {
+    companion object {
+        fun simpleName() = CommandSimpleName("INLINE_TASK")
+    }
+
+    override fun equals(other: Any?) = other is InlineTaskCommand
+
+    override fun isSameThan(other: Any?) = other == this
+}
+
+@Serializable @SerialName("StartDurationTimerCommand")
+data class StartDurationTimerCommand(
+    val duration: MillisDuration
+) : Command() {
+    companion object {
+        fun simpleName() = CommandSimpleName("START_DURATION_TIMER")
+    }
+
+    override fun isSameThan(other: Any?) = other == this
+}
+
+@Serializable @SerialName("StartInstantTimerCommand")
+data class StartInstantTimerCommand(
+    val instant: MillisInstant
+) : Command() {
+    companion object {
+        fun simpleName() = CommandSimpleName("START_INSTANT_TIMER")
+    }
+
+    override fun isSameThan(other: Any?) = other == this
+}

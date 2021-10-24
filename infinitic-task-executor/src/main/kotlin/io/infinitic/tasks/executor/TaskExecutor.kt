@@ -26,9 +26,12 @@
 package io.infinitic.tasks.executor
 
 import io.infinitic.client.InfiniticClient
+import io.infinitic.common.data.ClientName
 import io.infinitic.common.data.MillisDuration
-import io.infinitic.common.data.methods.MethodReturnValue
-import io.infinitic.common.errors.Error
+import io.infinitic.common.data.ReturnValue
+import io.infinitic.common.data.methods.MethodParameters
+import io.infinitic.common.errors.DeferredError
+import io.infinitic.common.errors.WorkerError
 import io.infinitic.common.parser.getMethodPerNameAndParameters
 import io.infinitic.common.tasks.data.TaskMeta
 import io.infinitic.common.tasks.engine.SendToTaskEngine
@@ -36,6 +39,7 @@ import io.infinitic.common.tasks.engine.messages.TaskAttemptCompleted
 import io.infinitic.common.tasks.engine.messages.TaskAttemptFailed
 import io.infinitic.common.tasks.executors.messages.ExecuteTaskAttempt
 import io.infinitic.common.tasks.executors.messages.TaskExecutorMessage
+import io.infinitic.exceptions.DeferredException
 import io.infinitic.exceptions.tasks.ProcessingTimeoutException
 import io.infinitic.tasks.Task
 import io.infinitic.tasks.TaskExecutorRegister
@@ -52,6 +56,7 @@ import java.lang.reflect.InvocationTargetException
 import java.lang.reflect.Method
 
 class TaskExecutor(
+    private val clientName: ClientName,
     private val taskExecutorRegister: TaskExecutorRegister,
     private val sendToTaskEngine: SendToTaskEngine,
     private val clientFactory: () -> InfiniticClient
@@ -70,10 +75,10 @@ class TaskExecutor(
     private suspend fun executeTaskAttempt(message: ExecuteTaskAttempt) {
         val taskContext = TaskContextImpl(
             register = this,
-            id = message.taskId.id,
-            workflowId = message.workflowId?.id,
+            id = message.taskId.toString(),
+            workflowId = message.workflowId?.toString(),
             workflowName = message.workflowName?.name,
-            attemptId = message.taskAttemptId.id,
+            attemptId = message.taskAttemptId.toString(),
             retrySequence = message.taskRetrySequence.int,
             retryIndex = message.taskRetryIndex.int,
             lastError = message.lastError,
@@ -87,6 +92,7 @@ class TaskExecutor(
         val (task, method, parameters, options) = try {
             parse(message)
         } catch (e: Throwable) {
+            logger.error(e) {}
             // returning the exception (no retry)
             sendTaskAttemptFailed(message, e, null, message.taskMeta)
             // stop here
@@ -107,7 +113,8 @@ class TaskExecutor(
             sendTaskCompleted(message, output, TaskMeta(task.context.meta))
         } catch (e: InvocationTargetException) {
             val cause = e.cause
-            if (cause is Exception) {
+            // do not retry failed workflow task due to failed/canceled task/workflow
+            if (cause is Exception && cause !is DeferredException) {
                 failTaskWithRetry(task, message, cause)
             } else {
                 sendTaskAttemptFailed(message, cause ?: e, null, TaskMeta(task.context.meta))
@@ -122,8 +129,9 @@ class TaskExecutor(
         }
     }
 
-    private suspend fun runTask(method: Method, task: Any, parameters: List<Any?>) = coroutineScope {
-        val output = method.invoke(task, *parameters.toTypedArray())
+    private suspend fun runTask(method: Method, task: Any, methodParameters: MethodParameters) = coroutineScope {
+        val parameter = methodParameters.map { it.deserialize() }.toTypedArray()
+        val output = method.invoke(task, *parameter)
         ensureActive()
         output
     }
@@ -167,7 +175,7 @@ class TaskExecutor(
             msg.methodParameters.size
         )
 
-        return TaskCommand(task, method, msg.methodParameters.get(), msg.taskOptions)
+        return TaskCommand(task, method, msg.methodParameters, msg.taskOptions)
     }
 
     private fun getDurationBeforeRetry(task: Task, cause: Exception) = try {
@@ -183,21 +191,27 @@ class TaskExecutor(
 
     private fun sendTaskAttemptFailed(
         message: ExecuteTaskAttempt,
-        cause: Throwable,
+        throwable: Throwable,
         delay: MillisDuration?,
         taskMeta: TaskMeta
     ) {
-        logger.error(cause) { "task ${message.taskName} (${message.taskId}) - error: $cause" }
-
         val taskAttemptFailed = TaskAttemptFailed(
-            taskId = message.taskId,
             taskName = message.taskName,
+            taskId = message.taskId,
+            taskAttemptDelayBeforeRetry = delay,
             taskAttemptId = message.taskAttemptId,
             taskRetrySequence = message.taskRetrySequence,
             taskRetryIndex = message.taskRetryIndex,
-            taskAttemptDelayBeforeRetry = delay,
-            taskAttemptError = Error.from(cause),
-            taskMeta = taskMeta
+            deferredError = when (throwable is DeferredException) {
+                true -> DeferredError.from(throwable)
+                false -> null
+            },
+            workerError = when (throwable is DeferredException) {
+                true -> null
+                false -> WorkerError.from(clientName, throwable)
+            },
+            taskMeta = taskMeta,
+            emitterName = clientName
         )
 
         sendToTaskEngine(taskAttemptFailed)
@@ -209,13 +223,14 @@ class TaskExecutor(
         taskMeta: TaskMeta
     ) {
         val taskAttemptCompleted = TaskAttemptCompleted(
-            taskId = message.taskId,
             taskName = message.taskName,
+            taskId = message.taskId,
+            taskRetryIndex = message.taskRetryIndex,
             taskAttemptId = message.taskAttemptId,
             taskRetrySequence = message.taskRetrySequence,
-            taskRetryIndex = message.taskRetryIndex,
-            taskReturnValue = MethodReturnValue.from(returnValue),
-            taskMeta = taskMeta
+            taskReturnValue = ReturnValue.from(returnValue),
+            taskMeta = taskMeta,
+            emitterName = clientName
         )
 
         sendToTaskEngine(taskAttemptCompleted)

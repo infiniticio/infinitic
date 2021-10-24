@@ -32,7 +32,7 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class ReceivingChannel(
     val channelName: ChannelName,
-    val channelEventType: ChannelEventType?,
+    val channelSignalType: ChannelSignalType?,
     val channelEventFilter: ChannelEventFilter?,
     val methodRunId: MethodRunId,
     val commandId: CommandId

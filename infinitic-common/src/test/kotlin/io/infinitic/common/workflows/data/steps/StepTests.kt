@@ -25,20 +25,19 @@
 
 package io.infinitic.common.workflows.data.steps
 
+import io.infinitic.common.data.ReturnValue
 import io.infinitic.common.workflows.data.commands.CommandId
-import io.infinitic.common.workflows.data.commands.CommandReturnValue
 import io.infinitic.common.workflows.data.commands.CommandStatus.Completed
-import io.infinitic.common.workflows.data.commands.CommandStatus.Running
 import io.infinitic.common.workflows.data.steps.Step.And
 import io.infinitic.common.workflows.data.steps.Step.Or
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskIndex
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
 
-fun getStepId() = Step.Id(CommandId(), Running)
+fun getStepId() = Step.Id(CommandId())
 
 fun getCompletedStatus(output: Any? = null, index: Int = 0) = Completed(
-    returnValue = CommandReturnValue.from(output),
+    returnValue = ReturnValue.from(output),
     completionWorkflowTaskIndex = WorkflowTaskIndex(index)
 )
 
@@ -54,7 +53,7 @@ class StepTests : StringSpec({
         val step = Or(listOf(stepA))
 
         step.isTerminated() shouldBe false
-        step.update(stepA.commandId, getCompletedStatus())
+        step.updateWith(stepA.commandId, getCompletedStatus())
         step.isTerminated() shouldBe true
     }
 
@@ -63,7 +62,7 @@ class StepTests : StringSpec({
         val step = And(listOf(stepA))
 
         step.isTerminated() shouldBe false
-        step.update(stepA.commandId, getCompletedStatus())
+        step.updateWith(stepA.commandId, getCompletedStatus())
         step.isTerminated() shouldBe true
     }
 
@@ -73,9 +72,9 @@ class StepTests : StringSpec({
         val step = And(listOf(stepA, stepB))
 
         step.isTerminated() shouldBe false
-        step.update(stepA.commandId, getCompletedStatus())
+        step.updateWith(stepA.commandId, getCompletedStatus())
         step.isTerminated() shouldBe false
-        step.update(stepB.commandId, getCompletedStatus())
+        step.updateWith(stepB.commandId, getCompletedStatus())
         step.isTerminated() shouldBe true
         step shouldBe And(listOf(stepA, stepB))
     }
@@ -86,7 +85,7 @@ class StepTests : StringSpec({
         val step = Or(listOf(stepA, stepB))
 
         step.isTerminated() shouldBe false
-        step.update(stepA.commandId, getCompletedStatus())
+        step.updateWith(stepA.commandId, getCompletedStatus())
         step shouldBe Or(listOf(stepA))
     }
 
@@ -97,7 +96,7 @@ class StepTests : StringSpec({
         val step = Or(listOf(stepA, Or(listOf(stepB, stepC))))
 
         step.isTerminated() shouldBe false
-        step.update(stepB.commandId, getCompletedStatus())
+        step.updateWith(stepB.commandId, getCompletedStatus())
         step shouldBe Or(listOf(stepB))
     }
 
@@ -108,9 +107,9 @@ class StepTests : StringSpec({
         val step = And(listOf(stepA, Or(listOf(stepB, stepC))))
 
         step.isTerminated() shouldBe false
-        step.update(stepA.commandId, getCompletedStatus())
+        step.updateWith(stepA.commandId, getCompletedStatus())
         step.isTerminated() shouldBe false
-        step.update(stepB.commandId, getCompletedStatus())
+        step.updateWith(stepB.commandId, getCompletedStatus())
         step shouldBe And(listOf(stepA, stepB))
     }
 
@@ -121,11 +120,11 @@ class StepTests : StringSpec({
         val step = And(listOf(stepA, And(listOf(stepB, stepC))))
 
         step.isTerminated() shouldBe false
-        step.update(stepA.commandId, getCompletedStatus())
+        step.updateWith(stepA.commandId, getCompletedStatus())
         step.isTerminated() shouldBe false
-        step.update(stepB.commandId, getCompletedStatus())
+        step.updateWith(stepB.commandId, getCompletedStatus())
         step.isTerminated() shouldBe false
-        step.update(stepC.commandId, getCompletedStatus())
+        step.updateWith(stepC.commandId, getCompletedStatus())
         step.isTerminated() shouldBe true
         step shouldBe And(listOf(stepA, stepB, stepC))
     }
@@ -135,7 +134,7 @@ class StepTests : StringSpec({
         val stepB = getStepId()
         val step = Or(listOf(stepA, stepB))
 
-        step.update(stepA.commandId, getCompletedStatus())
+        step.updateWith(stepA.commandId, getCompletedStatus())
         step shouldBe Or(listOf(stepA))
     }
 
@@ -145,7 +144,7 @@ class StepTests : StringSpec({
         val stepC = getStepId()
         val step = Or(listOf(stepA, Or(listOf(stepB, stepC))))
 
-        step.update(stepB.commandId, getCompletedStatus())
+        step.updateWith(stepB.commandId, getCompletedStatus())
         step shouldBe Or(listOf(stepB))
     }
 
@@ -155,8 +154,8 @@ class StepTests : StringSpec({
         val stepC = getStepId()
         val step = Or(listOf(stepA, And(listOf(stepB, stepC))))
 
-        step.update(stepB.commandId, getCompletedStatus())
-        step.update(stepC.commandId, getCompletedStatus())
+        step.updateWith(stepB.commandId, getCompletedStatus())
+        step.updateWith(stepC.commandId, getCompletedStatus())
         step.isTerminated() shouldBe true
         step shouldBe Or(listOf(And(listOf(stepB, stepC))))
     }
@@ -167,7 +166,7 @@ class StepTests : StringSpec({
         val stepC = getStepId()
         val step = And(listOf(stepA, Or(listOf(stepB, stepC))))
 
-        step.update(stepB.commandId, getCompletedStatus())
+        step.updateWith(stepB.commandId, getCompletedStatus())
         step shouldBe And(listOf(stepA, stepB))
     }
 
@@ -178,8 +177,8 @@ class StepTests : StringSpec({
         val stepD = getStepId()
         val step = Or(listOf(stepA, And(listOf(stepB, Or(listOf(stepC, stepD))))))
 
-        step.update(stepC.commandId, getCompletedStatus())
-        step.update(stepB.commandId, getCompletedStatus())
+        step.updateWith(stepC.commandId, getCompletedStatus())
+        step.updateWith(stepB.commandId, getCompletedStatus())
         step shouldBe Or(listOf(And(listOf(stepB, stepC))))
     }
 })

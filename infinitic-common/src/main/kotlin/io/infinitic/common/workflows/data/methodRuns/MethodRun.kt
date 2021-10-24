@@ -25,13 +25,15 @@
 
 package io.infinitic.common.workflows.data.methodRuns
 
-import io.infinitic.common.clients.data.ClientName
+import io.infinitic.common.data.ClientName
+import io.infinitic.common.data.ReturnValue
 import io.infinitic.common.data.methods.MethodName
 import io.infinitic.common.data.methods.MethodParameterTypes
 import io.infinitic.common.data.methods.MethodParameters
-import io.infinitic.common.data.methods.MethodReturnValue
 import io.infinitic.common.workflows.data.commands.CommandId
-import io.infinitic.common.workflows.data.commands.CommandType
+import io.infinitic.common.workflows.data.commands.DispatchMethodCommand
+import io.infinitic.common.workflows.data.commands.DispatchTaskCommand
+import io.infinitic.common.workflows.data.commands.DispatchWorkflowCommand
 import io.infinitic.common.workflows.data.commands.PastCommand
 import io.infinitic.common.workflows.data.properties.PropertyHash
 import io.infinitic.common.workflows.data.properties.PropertyName
@@ -55,42 +57,39 @@ data class MethodRun(
     val methodName: MethodName,
     val methodParameterTypes: MethodParameterTypes?,
     val methodParameters: MethodParameters,
-    var methodReturnValue: MethodReturnValue? = null,
-    val workflowTaskIndexAtStart: WorkflowTaskIndex = WorkflowTaskIndex(0),
+    var methodReturnValue: ReturnValue? = null,
+    val workflowTaskIndexAtStart: WorkflowTaskIndex,
     val propertiesNameHashAtStart: Map<PropertyName, PropertyHash>,
     val pastCommands: MutableList<PastCommand> = mutableListOf(),
-    val pastSteps: MutableList<PastStep> = mutableListOf()
+    val pastSteps: MutableList<PastStep> = mutableListOf(),
+    var currentStep: PastStep? = null
 ) {
     /**
      * Retrieve step by position
-     * This value could be null (eg. for starting position of async command)
      */
     fun getStepByPosition(position: MethodRunPosition): PastStep? =
         pastSteps.firstOrNull { it.stepPosition == position }
 
     /**
-     * Retrieve step by position
-     * This value could be null (eg. for starting position of async command)
-     */
-    fun getCommandByPosition(position: MethodRunPosition): PastCommand? =
-        pastCommands.firstOrNull { it.commandPosition == position }
-
-    /**
      * Retrieve pastCommand per commandId.
-     * This value should always be present.
      */
-    fun getPastCommand(commandId: CommandId): PastCommand =
-        pastCommands.first { it.commandId == commandId }
+    fun getPastCommand(commandId: CommandId): PastCommand? =
+        pastCommands.firstOrNull { it.commandId == commandId }
 
     /**
      * To be terminated, a method should provide a return value and have all steps and branches terminated.
-     * We add a constraint on child-workflows as well to ensure that this methodRun is not deleted
-     * before child workflows are completed, so that child workflows can be canceled
-     * if the workflow itself is canceled
+     * We ensure that this methodRun is not deleted before children are terminated
+     * - child workflows should be canceled if the workflow itself is canceled
+     * - other methods could use reference to deferred owned by current method
      */
     fun isTerminated() = methodReturnValue != null &&
         pastSteps.all { it.isTerminated() } &&
-        pastCommands
-            .filter { it.commandType == CommandType.DISPATCH_CHILD_WORKFLOW || it.commandType == CommandType.START_ASYNC }
-            .all { it.isTerminated() }
+        pastCommands.filter {
+            when (it.command) {
+                is DispatchWorkflowCommand,
+                is DispatchMethodCommand,
+                is DispatchTaskCommand -> true
+                else -> false
+            }
+        }.all { it.isTerminated() }
 }

@@ -25,21 +25,15 @@
 
 package io.infinitic.common.workflows.data.timers
 
-import io.infinitic.common.data.Id
-import kotlinx.serialization.KSerializer
+import io.infinitic.common.workflows.data.commands.CommandId
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.descriptors.PrimitiveKind
-import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
-import kotlinx.serialization.descriptors.SerialDescriptor
-import kotlinx.serialization.encoding.Decoder
-import kotlinx.serialization.encoding.Encoder
 import java.util.UUID
 
-@Serializable(with = TimerIdSerializer::class)
-data class TimerId(override val id: UUID = UUID.randomUUID()) : Id(id)
+@JvmInline @Serializable
+value class TimerId(private val id: String = UUID.randomUUID().toString()) {
+    companion object {
+        fun from(commandId: CommandId) = TimerId(commandId.toString())
+    }
 
-object TimerIdSerializer : KSerializer<TimerId> {
-    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("TimerId", PrimitiveKind.STRING)
-    override fun serialize(encoder: Encoder, value: TimerId) { encoder.encodeString("${value.id}") }
-    override fun deserialize(decoder: Decoder) = TimerId(UUID.fromString(decoder.decodeString()))
+    override fun toString() = id
 }

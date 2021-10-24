@@ -47,6 +47,18 @@ fun getMethodPerNameAndParameters(
         ?: throw NoMethodFoundWithParameterTypesException(klass.name, name, parameterTypes)
 }
 
+fun classForName(name: String): Class<out Any> = when (name) {
+    "long" -> Long::class.java
+    "int" -> Int::class.java
+    "short" -> Short::class.java
+    "byte" -> Byte::class.java
+    "double" -> Double::class.java
+    "float" -> Float::class.java
+    "char" -> Char::class.java
+    "boolean" -> Boolean::class.java
+    else -> Class.forName(name)
+}
+
 private fun getMethodPerAnnotationAndParameterTypes(klass: Class<*>, name: String, parameterTypes: List<String>): Method? {
     var clazz = klass
 
@@ -54,8 +66,7 @@ private fun getMethodPerAnnotationAndParameterTypes(klass: Class<*>, name: Strin
         // has current class a method with @Name annotation and right parameters?
         val methods = clazz.methods.filter { method ->
             method.isAccessible = true
-            method.isAnnotationPresent(Name::class.java) &&
-                method.parameterTypes.map { it.name } == parameterTypes
+            method.isAnnotationPresent(Name::class.java) && method.parameterTypes.map { it.name } == parameterTypes
         }
         when (methods.size) {
             0 -> Unit
@@ -75,17 +86,10 @@ private fun getMethodPerAnnotationAndParameterTypes(klass: Class<*>, name: Strin
     return null
 }
 
-private fun getMethodPerNameAndParameterTypes(klass: Class<*>, name: String, parameterTypes: List<String>): Method? {
-    val methods = klass.methods.filter { method ->
-        method.isAccessible = true
-        method.name == name && method.parameterTypes.map { it.name } == parameterTypes
-    }
-
-    return when (methods.size) {
-        0 -> null
-        1 -> methods[0]
-        else -> throw TooManyMethodsFoundWithParameterTypesException(klass.name, name, parameterTypes)
-    }
+private fun getMethodPerNameAndParameterTypes(klass: Class<*>, name: String, parameterTypes: List<String>): Method? = try {
+    klass.getMethod(name, *(parameterTypes.map { classForName(it) }.toTypedArray()))
+} catch (e: NoSuchMethodException) {
+    null
 }
 
 private fun getMethodPerAnnotationAndParametersCount(klass: Class<*>, name: String, parameterCount: Int): Method? {
@@ -95,9 +99,9 @@ private fun getMethodPerAnnotationAndParametersCount(klass: Class<*>, name: Stri
         // has current class a method with @Name annotation and right count of parameters?
         val methods = clazz.methods.filter { method ->
             method.isAccessible = true
-            method.isAnnotationPresent(Name::class.java) &&
-                method.parameterTypes.size == parameterCount
+            method.isAnnotationPresent(Name::class.java) && method.parameterTypes.size == parameterCount
         }
+
         when (methods.size) {
             0 -> Unit
             1 -> return methods[0]

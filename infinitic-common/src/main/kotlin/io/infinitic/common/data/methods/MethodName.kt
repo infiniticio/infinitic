@@ -25,20 +25,9 @@
 
 package io.infinitic.common.data.methods
 
-import io.infinitic.common.data.Name
-import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.descriptors.PrimitiveKind
-import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
-import kotlinx.serialization.descriptors.SerialDescriptor
-import kotlinx.serialization.encoding.Decoder
-import kotlinx.serialization.encoding.Encoder
 
-@Serializable(with = MethodNameSerializer::class)
-data class MethodName(override val name: String) : Name(name)
-
-object MethodNameSerializer : KSerializer<MethodName> {
-    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("MethodName", PrimitiveKind.STRING)
-    override fun serialize(encoder: Encoder, value: MethodName) { encoder.encodeString(value.name) }
-    override fun deserialize(decoder: Decoder) = MethodName(decoder.decodeString())
+@JvmInline @Serializable
+value class MethodName(private val name: String) {
+    override fun toString() = name
 }

@@ -33,7 +33,7 @@ interface TaskTest {
     fun await(delay: Long): Long
 }
 
-class TaskException(val log: String) : Exception()
+class ExpectedException(val log: String) : Exception()
 
 class TaskTestImpl : Task(), TaskTest {
     companion object {
@@ -56,7 +56,7 @@ class TaskTestImpl : Task(), TaskTest {
 
         when (status) {
             Status.TIMEOUT_WITH_RETRY, Status.TIMEOUT_WITHOUT_RETRY -> Thread.sleep(1000)
-            Status.FAILED_WITH_RETRY, Status.FAILED_WITHOUT_RETRY -> throw TaskException(log)
+            Status.FAILED_WITH_RETRY, Status.FAILED_WITHOUT_RETRY -> throw ExpectedException(log)
             else -> Unit
         }
 

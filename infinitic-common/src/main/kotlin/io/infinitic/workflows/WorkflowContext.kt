@@ -25,10 +25,10 @@
 
 package io.infinitic.workflows
 
-import java.util.UUID
-
 interface WorkflowContext {
-    val id: UUID
+    val name: String
+
+    val id: String
 
     val tags: Set<String>
 

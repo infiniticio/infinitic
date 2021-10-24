@@ -25,15 +25,21 @@
 
 package io.infinitic.workflows
 
-import io.infinitic.common.proxies.TaskProxyHandler
-import io.infinitic.common.proxies.WorkflowProxyHandler
+import io.infinitic.annotations.Name
+import io.infinitic.common.proxies.GetWorkflowProxyHandler
+import io.infinitic.common.proxies.NewTaskProxyHandler
+import io.infinitic.common.proxies.NewWorkflowProxyHandler
+import io.infinitic.common.proxies.ProxyHandler
 import io.infinitic.common.tasks.data.TaskMeta
 import io.infinitic.common.tasks.data.TaskOptions
 import io.infinitic.common.tasks.data.TaskTag
-import io.infinitic.common.workflows.data.channels.ChannelImpl
+import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.data.workflows.WorkflowMeta
 import io.infinitic.common.workflows.data.workflows.WorkflowOptions
 import io.infinitic.common.workflows.data.workflows.WorkflowTag
+import io.infinitic.exceptions.clients.InvalidStubException
+import io.infinitic.exceptions.workflows.MultipleGettersForSameChannelException
+import io.infinitic.exceptions.workflows.NonIdempotentChannelGetterException
 import java.time.Duration
 import java.time.Instant
 
@@ -42,82 +48,404 @@ abstract class Workflow {
     lateinit var context: WorkflowContext
     lateinit var dispatcher: WorkflowDispatcher
 
-    /*
-     *  Create a channel
+    /**
+     *  Create a stub for a task
      */
-    fun <T : Any> channel(): Channel<T> = ChannelImpl { dispatcher }
-
-    /*
-     * Stub task
-     */
-    @JvmOverloads fun <T : Any> newTask(
+    @JvmOverloads
+    protected fun <T : Any> newTask(
         klass: Class<out T>,
         tags: Set<String> = setOf(),
         options: TaskOptions = TaskOptions(),
         meta: Map<String, ByteArray> = mapOf()
-    ): T = TaskProxyHandler(
+    ): T = NewTaskProxyHandler(
         klass = klass,
         taskTags = tags.map { TaskTag(it) }.toSet(),
         taskOptions = options,
         taskMeta = TaskMeta(meta)
     ) { dispatcher }.stub()
 
-    /*
-     * (Kotlin) Stub task
+    /**
+     *  Create a stub for a workflow
      */
-    inline fun <reified T : Any> newTask(
-        tags: Set<String> = setOf(),
-        options: TaskOptions = TaskOptions(),
-        meta: Map<String, ByteArray> = mapOf()
-    ): T = newTask(T::class.java, tags, options, meta)
-
-    /*
-     * Stub workflow
-     */
-    @JvmOverloads fun <T : Any> newWorkflow(
+    @JvmOverloads
+    protected fun <T : Any> newWorkflow(
         klass: Class<out T>,
         tags: Set<String> = setOf(),
         options: WorkflowOptions = WorkflowOptions(),
         meta: Map<String, ByteArray> = mapOf()
-    ): T = WorkflowProxyHandler(
+    ): T = NewWorkflowProxyHandler(
         klass = klass,
         workflowTags = tags.map { WorkflowTag(it) }.toSet(),
         workflowOptions = options,
         workflowMeta = WorkflowMeta(meta)
     ) { dispatcher }.stub()
 
-    /*
-     * Stub workflow
-     * (Kotlin way)
-     */
-    inline fun <reified T : Any> newWorkflow(
-        tags: Set<String> = setOf(),
-        options: WorkflowOptions = WorkflowOptions(),
-        meta: Map<String, ByteArray> = mapOf()
-    ): T = newWorkflow(T::class.java, tags, options, meta)
+//    /**
+//     *  Create a stub for an existing task targeted by id
+//     */
+//    fun <T : Any> getTaskById(
+//        klass: Class<out T>,
+//        id: String
+//    ): T = GetTaskProxyHandler(
+//        klass = klass,
+//        TaskId(id),
+//        null
+//    ) { dispatcher }.stub()
+//
+//    /**
+//     *  Create a stub for existing task targeted by tag
+//     */
+//    fun <T : Any> getTaskByTag(
+//        klass: Class<out T>,
+//        tag: String
+//    ): T = GetTaskProxyHandler(
+//        klass = klass,
+//        null,
+//        TaskTag(tag)
+//    ) { dispatcher }.stub()
 
-    /*
-     *  Dispatch a task or a workflow asynchronously
+    /**
+     *  Create a stub for an existing workflow targeted by id
      */
-    fun <T : Any, S> async(proxy: T, method: T.() -> S): Deferred<S> = dispatcher.dispatch(proxy, method)
+    protected fun <T : Any> getWorkflowById(
+        klass: Class<out T>,
+        id: String
+    ): T = GetWorkflowProxyHandler(
+        klass = klass,
+        WorkflowId(id),
+        null
+    ) { dispatcher }.stub()
 
-    /*
-     * Create an async branch
+    /**
+     *  Create a stub for existing workflow targeted by tag
      */
-    fun <S> async(branch: () -> S): Deferred<S> = dispatcher.async(branch)
+    protected fun <T : Any> getWorkflowByTag(
+        klass: Class<out T>,
+        tag: String
+    ): T = GetWorkflowProxyHandler(
+        klass = klass,
+        null,
+        WorkflowTag(tag)
+    ) { dispatcher }.stub()
 
-    /*
-     * Create an inline task
+    /**
+     *  Dispatch without parameter a task or workflow returning an object
      */
-    fun <S> inline(task: () -> S): S = dispatcher.inline(task)
+    protected fun <R : Any?> dispatch(
+        method: () -> R
+    ): Deferred<R> = start { method.invoke() }
 
-    /*
+    /**
+     *  Dispatch with 1 parameter a task or workflow returning an object
+     */
+    protected fun <P1, R : Any?> dispatch(
+        method: (p1: P1) -> R,
+        p1: P1
+    ): Deferred<R> = start { method.invoke(p1) }
+
+    /**
+     *  Dispatch with 2 parameters a task or workflow returning an object
+     */
+    protected fun <P1, P2, R : Any?> dispatch(
+        method: (p1: P1, p2: P2) -> R,
+        p1: P1,
+        p2: P2
+    ): Deferred<R> = start { method.invoke(p1, p2) }
+
+    /**
+     *  Dispatch with 3 parameters a task or workflow returning an object
+     */
+    protected fun <P1, P2, P3, R : Any?> dispatch(
+        method: (p1: P1, p2: P2, p3: P3) -> R,
+        p1: P1,
+        p2: P2,
+        p3: P3
+    ): Deferred<R> = start { method.invoke(p1, p2, p3) }
+
+    /**
+     *  Dispatch with 4 parameters a task or workflow returning an object
+     */
+    protected fun <P1, P2, P3, P4, R : Any?> dispatch(
+        method: (p1: P1, p2: P2, p3: P3, p4: P4) -> R,
+        p1: P1,
+        p2: P2,
+        p3: P3,
+        p4: P4
+    ): Deferred<R> = start { method.invoke(p1, p2, p3, p4) }
+
+    /**
+     *  Dispatch with 5 parameters a task or workflow returning an object
+     */
+    protected fun <P1, P2, P3, P4, P5, R : Any?> dispatch(
+        method: (p1: P1, p2: P2, p3: P3, p4: P4, p5: P5) -> R,
+        p1: P1,
+        p2: P2,
+        p3: P3,
+        p4: P4,
+        p5: P5
+    ): Deferred<R> = start { method.invoke(p1, p2, p3, p4, p5) }
+
+    /**
+     *  Dispatch with 6 parameters a task or workflow returning an object
+     */
+    protected fun <P1, P2, P3, P4, P5, P6, R : Any?> dispatch(
+        method: (p1: P1, p2: P2, p3: P3, p4: P4, p5: P5, p6: P6) -> R,
+        p1: P1,
+        p2: P2,
+        p3: P3,
+        p4: P4,
+        p5: P5,
+        p6: P6
+    ): Deferred<R> = start { method.invoke(p1, p2, p3, p4, p5, p6) }
+
+    /**
+     *  Dispatch with 7 parameters a task or workflow returning an object
+     */
+    protected fun <P1, P2, P3, P4, P5, P6, P7, R : Any?> dispatch(
+        method: (p1: P1, p2: P2, p3: P3, p4: P4, p5: P5, p6: P6, p7: P7) -> R,
+        p1: P1,
+        p2: P2,
+        p3: P3,
+        p4: P4,
+        p5: P5,
+        p6: P6,
+        p7: P7
+    ): Deferred<R> = start { method.invoke(p1, p2, p3, p4, p5, p6, p7) }
+
+    /**
+     *  Dispatch with 8 parameters a task or workflow returning an object
+     */
+    protected fun <P1, P2, P3, P4, P5, P6, P7, P8, R : Any?> dispatch(
+        method: (p1: P1, p2: P2, p3: P3, p4: P4, p5: P5, p6: P6, p7: P7, p8: P8) -> R,
+        p1: P1,
+        p2: P2,
+        p3: P3,
+        p4: P4,
+        p5: P5,
+        p6: P6,
+        p7: P7,
+        p8: P8
+    ): Deferred<R> = start { method.invoke(p1, p2, p3, p4, p5, p6, p7, p8) }
+
+    /**
+     *  Dispatch with 9 parameters a task or workflow returning an object
+     */
+    protected fun <P1, P2, P3, P4, P5, P6, P7, P8, P9, R : Any?> dispatch(
+        method: (p1: P1, p2: P2, p3: P3, p4: P4, p5: P5, p6: P6, p7: P7, p8: P8, p9: P9) -> R,
+        p1: P1,
+        p2: P2,
+        p3: P3,
+        p4: P4,
+        p5: P5,
+        p6: P6,
+        p7: P7,
+        p8: P8,
+        p9: P9
+    ): Deferred<R> = start { method.invoke(p1, p2, p3, p4, p5, p6, p7, p8, p9) }
+
+    /**
+     *  Dispatch without parameter a task or workflow returning void
+     */
+    protected fun dispatchVoid(
+        method: Consumer0
+    ): Deferred<Void> = startVoid { method.apply() }
+
+    /**
+     *  Dispatch with 1 parameter a task or workflow returning void
+     */
+    protected fun <P1> dispatchVoid(
+        method: Consumer1<P1>,
+        p1: P1
+    ): Deferred<Void> = startVoid { method.apply(p1) }
+
+    /**
+     *  Dispatch with 2 parameters a task or workflow returning void
+     */
+    protected fun <P1, P2> dispatchVoid(
+        method: Consumer2<P1, P2>,
+        p1: P1,
+        p2: P2
+    ): Deferred<Void> = startVoid { method.apply(p1, p2) }
+
+    /**
+     *  Dispatch with 3 parameters a task or workflow returning void
+     */
+    protected fun <P1, P2, P3> dispatchVoid(
+        method: Consumer3<P1, P2, P3>,
+        p1: P1,
+        p2: P2,
+        p3: P3
+    ): Deferred<Void> = startVoid { method.apply(p1, p2, p3) }
+
+    /**
+     *  Dispatch with 4 parameters a task or workflow returning void
+     */
+    protected fun <P1, P2, P3, P4> dispatchVoid(
+        method: Consumer4<P1, P2, P3, P4>,
+        p1: P1,
+        p2: P2,
+        p3: P3,
+        p4: P4
+    ): Deferred<Void> = startVoid { method.apply(p1, p2, p3, p4) }
+
+    /**
+     *  Dispatch with 5 parameters a task or workflow returning void
+     */
+    protected fun <P1, P2, P3, P4, P5> dispatchVoid(
+        method: Consumer5<P1, P2, P3, P4, P5>,
+        p1: P1,
+        p2: P2,
+        p3: P3,
+        p4: P4,
+        p5: P5
+    ): Deferred<Void> = startVoid { method.apply(p1, p2, p3, p4, p5) }
+
+    /**
+     *  Dispatch with 6 parameters a task or workflow returning void
+     */
+    protected fun <P1, P2, P3, P4, P5, P6> dispatchVoid(
+        method: Consumer6<P1, P2, P3, P4, P5, P6>,
+        p1: P1,
+        p2: P2,
+        p3: P3,
+        p4: P4,
+        p5: P5,
+        p6: P6
+    ): Deferred<Void> = startVoid { method.apply(p1, p2, p3, p4, p5, p6) }
+
+    /**
+     *  Dispatch with 7 parameters a task or workflow returning void
+     */
+    protected fun <P1, P2, P3, P4, P5, P6, P7> dispatchVoid(
+        method: Consumer7<P1, P2, P3, P4, P5, P6, P7>,
+        p1: P1,
+        p2: P2,
+        p3: P3,
+        p4: P4,
+        p5: P5,
+        p6: P6,
+        p7: P7
+    ): Deferred<Void> = startVoid { method.apply(p1, p2, p3, p4, p5, p6, p7) }
+
+    /**
+     *  Dispatch with 8 parameters a task or workflow returning void
+     */
+    protected fun <P1, P2, P3, P4, P5, P6, P7, P8> dispatchVoid(
+        method: Consumer8<P1, P2, P3, P4, P5, P6, P7, P8>,
+        p1: P1,
+        p2: P2,
+        p3: P3,
+        p4: P4,
+        p5: P5,
+        p6: P6,
+        p7: P7,
+        p8: P8
+    ): Deferred<Void> = startVoid { method.apply(p1, p2, p3, p4, p5, p6, p7, p8) }
+
+    /**
+     *  Dispatch with 9 parameters a task or workflow returning void
+     */
+    protected fun <P1, P2, P3, P4, P5, P6, P7, P8, P9> dispatchVoid(
+        method: Consumer9<P1, P2, P3, P4, P5, P6, P7, P8, P9>,
+        p1: P1,
+        p2: P2,
+        p3: P3,
+        p4: P4,
+        p5: P5,
+        p6: P6,
+        p7: P7,
+        p8: P8,
+        p9: P9
+    ): Deferred<Void> = startVoid { method.apply(p1, p2, p3, p4, p5, p6, p7, p8, p9) }
+
+    /**
+     *  Create a channel
+     */
+    protected fun <T : Any> channel(): Channel<T> = Channel { dispatcher }
+
+    /**
+     * Run inline task
+     */
+    protected fun <S> inline(task: () -> S): S = dispatcher.inline(task)
+
+    /**
+     * Run inline task returning void
+     */
+    protected fun inlineVoid(task: Consumer0): Unit = dispatcher.inline { task.apply() }
+
+    /**
      * Create a timer from a duration
      */
-    fun timer(duration: Duration): Deferred<Instant> = dispatcher.timer(duration)
+    protected fun timer(duration: Duration): Deferred<Instant> = dispatcher.timer(duration)
 
-    /*
+    /**
      * Create a timer from an instant
      */
-    fun timer(instant: Instant): Deferred<Instant> = dispatcher.timer(instant)
+    protected fun timer(instant: Instant): Deferred<Instant> = dispatcher.timer(instant)
+
+    private fun <R> start(
+        invoke: () -> R
+    ): Deferred<R> {
+        val handler = ProxyHandler.async(invoke) ?: throw InvalidStubException()
+
+        return dispatcher.dispatch(handler, false)
+    }
+
+    private fun startVoid(
+        invoke: () -> Unit
+    ): Deferred<Void> {
+        val handler = ProxyHandler.async(invoke) ?: throw InvalidStubException()
+
+        return dispatcher.dispatch(handler, false)
+    }
+
+    // from klass for the given workflow name
+    private fun findClassPerWorkflowName() = try {
+        Class.forName(context.name)
+    } catch (e: ClassNotFoundException) {
+        findClassPerAnnotationName(this::class.java, context.name)
+    }
+
+    // from klass, search for a given @Name annotation
+    private fun findClassPerAnnotationName(klass: Class<*>, name: String): Class<*>? {
+        var clazz = klass
+
+        do {
+            // has current clazz the right @Name annotation?
+            if (clazz.getAnnotation(Name::class.java)?.name == name) return clazz
+
+            // has any of the interfaces the right @Name annotation?
+            clazz.interfaces.forEach { interfaze ->
+                findClassPerAnnotationName(interfaze, name)?.also { return it }
+            }
+
+            // if not, inspect the superclass
+            clazz = clazz.superclass ?: break
+        } while (Object::class.java.name != clazz.canonicalName)
+
+        return null
+    }
+}
+
+/**
+ * Set names of all channels in this workflow
+ */
+fun Workflow.setChannelNames() {
+    this::class.java.declaredMethods
+        .filter { it.returnType.name == Channel::class.java.name && it.parameterCount == 0 }
+        .map {
+            // channel must be created only once per method
+            it.isAccessible = true
+            val channel = it.invoke(this)
+            if (channel !== it.invoke(this)) {
+                throw NonIdempotentChannelGetterException(this::class.java.name, it.name)
+            }
+            // this channel must not have a name already
+            channel as Channel<*>
+            if (channel.hasName()) {
+                throw MultipleGettersForSameChannelException(this::class.java.name, it.name, channel.name)
+            }
+            // set channel name
+            channel.setName(it.name)
+        }
 }

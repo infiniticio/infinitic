@@ -25,55 +25,63 @@
 
 package io.infinitic.workflows.engine.handlers
 
-import io.infinitic.common.clients.data.ClientName
+import io.infinitic.common.clients.messages.MethodCompleted
+import io.infinitic.common.data.ClientName
 import io.infinitic.common.data.MillisDuration
 import io.infinitic.common.data.MillisInstant
 import io.infinitic.common.data.minus
+import io.infinitic.common.exceptions.thisShouldNotHappen
 import io.infinitic.common.tasks.data.TaskId
 import io.infinitic.common.tasks.engine.messages.DispatchTask
-import io.infinitic.common.tasks.tags.messages.AddTaskTag
+import io.infinitic.common.tasks.tags.messages.AddTagToTask
+import io.infinitic.common.workflows.data.channels.ChannelSignalId
 import io.infinitic.common.workflows.data.channels.ReceivingChannel
-import io.infinitic.common.workflows.data.commands.CommandStatus
-import io.infinitic.common.workflows.data.commands.CommandType
-import io.infinitic.common.workflows.data.commands.DispatchChildWorkflow
-import io.infinitic.common.workflows.data.commands.EndAsync
-import io.infinitic.common.workflows.data.commands.EndInlineTask
-import io.infinitic.common.workflows.data.commands.NewCommand
-import io.infinitic.common.workflows.data.commands.PastCommand
-import io.infinitic.common.workflows.data.commands.ReceiveInChannel
-import io.infinitic.common.workflows.data.commands.SendToChannel
-import io.infinitic.common.workflows.data.commands.StartAsync
-import io.infinitic.common.workflows.data.commands.StartDurationTimer
-import io.infinitic.common.workflows.data.commands.StartInlineTask
-import io.infinitic.common.workflows.data.commands.StartInstantTimer
-import io.infinitic.common.workflows.data.methodRuns.MethodRun
+import io.infinitic.common.workflows.data.commands.CommandId
+import io.infinitic.common.workflows.data.commands.DispatchMethodCommand
+import io.infinitic.common.workflows.data.commands.DispatchMethodPastCommand
+import io.infinitic.common.workflows.data.commands.DispatchTaskCommand
+import io.infinitic.common.workflows.data.commands.DispatchTaskPastCommand
+import io.infinitic.common.workflows.data.commands.DispatchWorkflowCommand
+import io.infinitic.common.workflows.data.commands.DispatchWorkflowPastCommand
+import io.infinitic.common.workflows.data.commands.InlineTaskPastCommand
+import io.infinitic.common.workflows.data.commands.ReceiveSignalCommand
+import io.infinitic.common.workflows.data.commands.ReceiveSignalPastCommand
+import io.infinitic.common.workflows.data.commands.SendSignalCommand
+import io.infinitic.common.workflows.data.commands.SendSignalPastCommand
+import io.infinitic.common.workflows.data.commands.StartDurationTimerCommand
+import io.infinitic.common.workflows.data.commands.StartDurationTimerPastCommand
+import io.infinitic.common.workflows.data.commands.StartInstantTimerCommand
+import io.infinitic.common.workflows.data.commands.StartInstantTimerPastCommand
+import io.infinitic.common.workflows.data.methodRuns.MethodRunId
 import io.infinitic.common.workflows.data.steps.PastStep
+import io.infinitic.common.workflows.data.steps.StepStatus.CurrentlyFailed
 import io.infinitic.common.workflows.data.steps.StepStatus.Failed
-import io.infinitic.common.workflows.data.steps.StepStatus.OngoingFailure
 import io.infinitic.common.workflows.data.timers.TimerId
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskReturnValue
-import io.infinitic.common.workflows.data.workflowTasks.plus
 import io.infinitic.common.workflows.data.workflows.WorkflowId
-import io.infinitic.common.workflows.engine.messages.ChildWorkflowCompleted
+import io.infinitic.common.workflows.data.workflows.WorkflowReturnValue
+import io.infinitic.common.workflows.engine.messages.ChildMethodCompleted
+import io.infinitic.common.workflows.engine.messages.DispatchMethod
 import io.infinitic.common.workflows.engine.messages.DispatchWorkflow
+import io.infinitic.common.workflows.engine.messages.SendSignal
 import io.infinitic.common.workflows.engine.messages.TaskCompleted
 import io.infinitic.common.workflows.engine.messages.TimerCompleted
+import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
 import io.infinitic.common.workflows.engine.state.WorkflowState
-import io.infinitic.common.workflows.tags.messages.AddWorkflowTag
-import io.infinitic.workflows.engine.helpers.dispatchWorkflowTask
+import io.infinitic.common.workflows.tags.messages.AddTagToWorkflow
+import io.infinitic.common.workflows.tags.messages.DispatchMethodByTag
+import io.infinitic.common.workflows.tags.messages.SendSignalByTag
 import io.infinitic.workflows.engine.helpers.stepTerminated
 import io.infinitic.workflows.engine.output.WorkflowEngineOutput
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
-import io.infinitic.common.clients.messages.WorkflowCompleted as WorkflowCompletedInClient
-import io.infinitic.common.workflows.data.commands.DispatchTask as DispatchTaskInWorkflow
 
 internal fun CoroutineScope.workflowTaskCompleted(
-    workflowEngineOutput: WorkflowEngineOutput,
+    output: WorkflowEngineOutput,
     state: WorkflowState,
-    msg: TaskCompleted
-) {
-    val workflowTaskOutput = msg.taskReturnValue.get() as WorkflowTaskReturnValue
+    message: TaskCompleted
+): MutableList<WorkflowEngineMessage> {
+    val workflowTaskOutput = message.taskReturnValue.returnValue.value() as WorkflowTaskReturnValue
 
     // retrieve current methodRun
     val methodRun = state.getRunningMethodRun()
@@ -81,13 +89,14 @@ internal fun CoroutineScope.workflowTaskCompleted(
     // if current step status was ongoingFailure
     // convert it to a definitive StepStatusFailed
     // as the error has been caught by the workflow
-    methodRun.getStepByPosition(state.runningMethodRunPosition!!)
-        ?.run {
-            val status = stepStatus
-            if (status is OngoingFailure) {
-                stepStatus = Failed(status.commandId, status.failureWorkflowTaskIndex)
-            }
+    methodRun.currentStep?.let {
+        val oldStatus = it.stepStatus
+        if (oldStatus is CurrentlyFailed) {
+            it.stepStatus = Failed(oldStatus.failedDeferredError, oldStatus.failureWorkflowTaskIndex)
+            methodRun.pastSteps.add(it)
+            methodRun.currentStep = null
         }
+    }
 
     // properties updates
     workflowTaskOutput.properties.map {
@@ -101,32 +110,35 @@ internal fun CoroutineScope.workflowTaskCompleted(
         }
     }
 
+    val bufferedMessages = mutableListOf<WorkflowEngineMessage>()
+
     // add new commands to past commands
     workflowTaskOutput.newCommands.forEach {
         @Suppress("UNUSED_VARIABLE")
-        val o = when (it.command) {
-            is DispatchTaskInWorkflow -> dispatchTask(workflowEngineOutput, methodRun, it, state)
-            is DispatchChildWorkflow -> dispatchChildWorkflow(workflowEngineOutput, methodRun, it, state)
-            is StartAsync -> startAsync(methodRun, it, state)
-            is EndAsync -> endAsync(workflowEngineOutput, methodRun, it, state)
-            is StartInlineTask -> startInlineTask(methodRun, it)
-            is EndInlineTask -> endInlineTask(methodRun, it, state)
-            is StartDurationTimer -> startDurationTimer(workflowEngineOutput, methodRun, it, state)
-            is StartInstantTimer -> startInstantTimer(workflowEngineOutput, methodRun, it, state)
-            is ReceiveInChannel -> receiveFromChannel(methodRun, it, state)
-            is SendToChannel -> TODO()
+        val o = when (it) {
+            is DispatchTaskPastCommand -> dispatchTask(output, it, state)
+            is DispatchWorkflowPastCommand -> dispatchWorkflow(output, it, state)
+            is DispatchMethodPastCommand -> dispatchMethod(output, it, state, bufferedMessages)
+            is SendSignalPastCommand -> sendSignal(output, it, state, bufferedMessages)
+            is InlineTaskPastCommand -> Unit // Nothing to do
+            is StartDurationTimerPastCommand -> startDurationTimer(output, it, state)
+            is StartInstantTimerPastCommand -> startInstantTimer(output, it, state)
+            is ReceiveSignalPastCommand -> receiveFromChannel(it, state)
         }
+        methodRun.pastCommands.add(it)
     }
 
-    // add new steps to past steps
-    workflowTaskOutput.newSteps.map {
-        methodRun.pastSteps.add(
-            PastStep(
-                stepPosition = it.stepPosition,
-                step = it.step,
-                stepHash = it.stepHash,
-                stepStatus = it.step.status()
-            )
+    // add new step to past steps
+    workflowTaskOutput.newStep?.let {
+        // checking that currennt step is empty
+        if (methodRun.currentStep != null) thisShouldNotHappen("non null current step")
+        // set new step
+        methodRun.currentStep = PastStep(
+            stepPosition = it.stepPosition,
+            step = it.step,
+            stepHash = it.stepHash,
+            stepStatus = it.step.status(),
+            workflowTaskIndexAtStart = state.workflowTaskIndex
         )
     }
 
@@ -136,272 +148,305 @@ internal fun CoroutineScope.workflowTaskCompleted(
         methodRun.methodReturnValue = workflowTaskOutput.methodReturnValue
 
         // send output back to waiting clients
-        methodRun.waitingClients.map {
-            val workflowCompleted = WorkflowCompletedInClient(
-                clientName = it,
+        methodRun.waitingClients.forEach {
+            val workflowCompleted = MethodCompleted(
+                recipientName = it,
                 workflowId = state.workflowId,
-                workflowReturnValue = methodRun.methodReturnValue!!
+                methodRunId = methodRun.methodRunId,
+                methodReturnValue = methodRun.methodReturnValue!!,
+                emitterName = output.clientName
             )
-            launch { workflowEngineOutput.sendEventsToClient(workflowCompleted) }
+            launch { output.sendEventsToClient(workflowCompleted) }
         }
+        methodRun.waitingClients.clear()
 
         // tell parent workflow if any
         methodRun.parentWorkflowId?.let {
-            val childWorkflowCompleted = ChildWorkflowCompleted(
+            val childMethodCompleted = ChildMethodCompleted(
+                workflowName = methodRun.parentWorkflowName ?: thisShouldNotHappen(),
                 workflowId = it,
-                workflowName = methodRun.parentWorkflowName!!,
-                methodRunId = methodRun.parentMethodRunId!!,
-                childWorkflowId = state.workflowId,
-                childWorkflowReturnValue = workflowTaskOutput.methodReturnValue!!
+                methodRunId = methodRun.parentMethodRunId ?: thisShouldNotHappen(),
+                childWorkflowReturnValue = WorkflowReturnValue(
+                    workflowId = state.workflowId,
+                    methodRunId = methodRun.methodRunId,
+                    returnValue = workflowTaskOutput.methodReturnValue!!,
+                ),
+                emitterName = output.clientName
             )
-            launch { workflowEngineOutput.sendToWorkflowEngine(childWorkflowCompleted) }
-        }
-    }
-
-    // does previous commands trigger another workflowTask?
-    while (state.runningMethodRunBufferedCommands.isNotEmpty() && state.runningWorkflowTaskId == null) {
-        val commandId = state.runningMethodRunBufferedCommands.first()
-        val pastCommand = methodRun.getPastCommand(commandId)
-
-        if (pastCommand.commandType == CommandType.START_ASYNC && ! pastCommand.isTerminated()) {
-            // update pastCommand with a copy (!) of current properties and anticipated workflowTaskIndex
-            pastCommand.propertiesNameHashAtStart = state.currentPropertiesNameHash.toMap()
-            pastCommand.workflowTaskIndexAtStart = state.workflowTaskIndex + 1
-            // dispatch a new workflowTask
-            dispatchWorkflowTask(
-                workflowEngineOutput,
-                state,
-                methodRun,
-                pastCommand.commandPosition
-            )
-            // removes this command
-            state.runningMethodRunBufferedCommands.removeFirst()
-        } else {
-            if (!stepTerminated(
-                    workflowEngineOutput,
-                    state,
-                    methodRun,
-                    pastCommand
-                )
-            ) {
-                // no step is completed, we can remove this command
-                state.runningMethodRunBufferedCommands.removeFirst()
+            if (it == state.workflowId) {
+                // case of method dispatched within same workflow
+                bufferedMessages.add(childMethodCompleted)
+            } else {
+                launch { output.sendToWorkflowEngine(childMethodCompleted) }
             }
         }
     }
 
+    // does previous commands trigger another workflowTask?
+    while (state.runningTerminatedCommands.isNotEmpty() && state.runningWorkflowTaskId == null) {
+        val commandId = state.runningTerminatedCommands.first()
+        val pastCommand = state.getPastCommand(commandId, methodRun)
+
+        if (!stepTerminated(output, state, pastCommand)) {
+            // if no additional step can be completed, we can remove this command
+            state.runningTerminatedCommands.removeFirst()
+        }
+    }
+
     if (methodRun.isTerminated()) state.removeMethodRun(methodRun)
-}
 
-private fun startAsync(methodRun: MethodRun, newCommand: NewCommand, state: WorkflowState) {
-    val pastCommand = addPastCommand(methodRun, newCommand)
-
-    state.runningMethodRunBufferedCommands.add(pastCommand.commandId)
-}
-
-private fun CoroutineScope.endAsync(
-    output: WorkflowEngineOutput,
-    methodRun: MethodRun,
-    newCommand: NewCommand,
-    state: WorkflowState
-) {
-    val command = newCommand.command as EndAsync
-
-    // look for previous Start Async command
-    val pastCommand = methodRun.pastCommands.first {
-        it.commandPosition == newCommand.commandPosition && it.commandType == CommandType.START_ASYNC
-    }
-
-    // do nothing if this command is already terminated (i.e. canceled or completed, failed is transient)
-    if (pastCommand.isTerminated()) return
-
-    // update command status
-    pastCommand.commandStatus = CommandStatus.Completed(command.asyncReturnValue, state.workflowTaskIndex)
-
-    if (stepTerminated(
-            output,
-            state,
-            methodRun,
-            pastCommand
-        )
-    ) {
-        // keep this command as we could have another pastStep solved by it
-        state.runningMethodRunBufferedCommands.add(pastCommand.commandId)
-    }
-}
-
-private fun startInlineTask(methodRun: MethodRun, newCommand: NewCommand) {
-    addPastCommand(methodRun, newCommand)
-}
-
-private fun endInlineTask(methodRun: MethodRun, newCommand: NewCommand, state: WorkflowState) {
-    val command = newCommand.command as EndInlineTask
-    // look for previous StartInlineTask command
-    val pastCommand = methodRun.pastCommands.first {
-        it.commandPosition == newCommand.commandPosition && it.commandType == CommandType.START_INLINE_TASK
-    }
-    // past command completed
-    pastCommand.commandStatus = CommandStatus.Completed(
-        returnValue = command.inlineTaskReturnValue,
-        completionWorkflowTaskIndex = state.workflowTaskIndex
-    )
+    return bufferedMessages
 }
 
 private fun CoroutineScope.startDurationTimer(
     output: WorkflowEngineOutput,
-    methodRun: MethodRun,
-    newCommand: NewCommand,
+    newCommand: StartDurationTimerPastCommand,
     state: WorkflowState
 ) {
-    val command = newCommand.command as StartDurationTimer
+    val command: StartDurationTimerCommand = newCommand.command
 
     val msg = TimerCompleted(
-        workflowId = state.workflowId,
         workflowName = state.workflowName,
-        methodRunId = methodRun.methodRunId,
-        timerId = TimerId(newCommand.commandId.id)
+        workflowId = state.workflowId,
+        methodRunId = state.runningMethodRunId ?: thisShouldNotHappen(),
+        timerId = TimerId.from(newCommand.commandId),
+        emitterName = output.clientName
     )
 
     val diff: MillisDuration = state.runningWorkflowTaskInstant!! - MillisInstant.now()
 
     launch { output.sendToWorkflowEngineAfter(msg, command.duration - diff) }
-
-    addPastCommand(methodRun, newCommand)
 }
 
 private fun CoroutineScope.startInstantTimer(
     output: WorkflowEngineOutput,
-    methodRun: MethodRun,
-    newCommand: NewCommand,
+    newCommand: StartInstantTimerPastCommand,
     state: WorkflowState
 ) {
-    val command = newCommand.command as StartInstantTimer
+    val command: StartInstantTimerCommand = newCommand.command
 
     val msg = TimerCompleted(
-        workflowId = state.workflowId,
         workflowName = state.workflowName,
-        methodRunId = methodRun.methodRunId,
-        timerId = TimerId(newCommand.commandId.id)
+        workflowId = state.workflowId,
+        methodRunId = state.runningMethodRunId ?: thisShouldNotHappen(),
+        timerId = TimerId.from(newCommand.commandId),
+        emitterName = output.clientName
     )
 
     launch { output.sendToWorkflowEngineAfter(msg, command.instant - MillisInstant.now()) }
-
-    addPastCommand(methodRun, newCommand)
 }
 
 private fun receiveFromChannel(
-    methodRun: MethodRun,
-    newCommand: NewCommand,
+    newCommand: ReceiveSignalPastCommand,
     state: WorkflowState
 ) {
-    val command = newCommand.command as ReceiveInChannel
+    val command: ReceiveSignalCommand = newCommand.command
 
     state.receivingChannels.add(
         ReceivingChannel(
             channelName = command.channelName,
-            channelEventType = command.channelEventType,
+            channelSignalType = command.channelSignalType,
             channelEventFilter = command.channelEventFilter,
-            methodRunId = methodRun.methodRunId,
+            methodRunId = state.runningMethodRunId!!,
             commandId = newCommand.commandId
         )
     )
-
-    addPastCommand(methodRun, newCommand)
 }
 
 private fun CoroutineScope.dispatchTask(
     output: WorkflowEngineOutput,
-    methodRun: MethodRun,
-    newCommand: NewCommand,
+    newCommand: DispatchTaskPastCommand,
     state: WorkflowState
 ) {
-    val command = newCommand.command as DispatchTaskInWorkflow
+    val command: DispatchTaskCommand = newCommand.command
 
     // send task to task engine
     val dispatchTask = DispatchTask(
-        clientName = ClientName("workflow engine"),
-        clientWaiting = false,
-        taskId = TaskId(newCommand.commandId.id),
         taskName = command.taskName,
+        taskId = TaskId.from(newCommand.commandId),
+        taskOptions = command.taskOptions,
+        clientWaiting = false,
         methodName = command.methodName,
         methodParameterTypes = command.methodParameterTypes,
         methodParameters = command.methodParameters,
         workflowId = state.workflowId,
         workflowName = state.workflowName,
-        methodRunId = methodRun.methodRunId,
+        methodRunId = state.runningMethodRunId,
         taskTags = command.taskTags,
         taskMeta = command.taskMeta,
-        taskOptions = command.taskOptions
+        emitterName = ClientName("workflow engine")
     )
     launch { output.sendToTaskEngine(dispatchTask) }
 
     // add provided tags
     dispatchTask.taskTags.forEach {
-        val addTaskTag = AddTaskTag(
-            taskTag = it,
+        val addTagToTask = AddTagToTask(
             taskName = dispatchTask.taskName,
-            taskId = dispatchTask.taskId
+            taskTag = it,
+            taskId = dispatchTask.taskId,
+            emitterName = output.clientName
         )
-        launch { output.sendToTaskTagEngine(addTaskTag) }
+        launch { output.sendToTaskTagEngine(addTagToTask) }
     }
-
-    addPastCommand(methodRun, newCommand)
 }
 
-private fun CoroutineScope.dispatchChildWorkflow(
+private fun CoroutineScope.dispatchWorkflow(
     output: WorkflowEngineOutput,
-    methodRun: MethodRun,
-    newCommand: NewCommand,
+    newCommand: DispatchWorkflowPastCommand,
     state: WorkflowState
 ) {
-    val command = newCommand.command as DispatchChildWorkflow
+    val command: DispatchWorkflowCommand = newCommand.command
 
     // send task to task engine
     val dispatchWorkflow = DispatchWorkflow(
-        clientName = ClientName("workflow engine"),
-        clientWaiting = false,
-        workflowId = WorkflowId(newCommand.commandId.id),
-        workflowName = command.childWorkflowName,
-        parentWorkflowId = state.workflowId,
-        parentWorkflowName = state.workflowName,
-        parentMethodRunId = methodRun.methodRunId,
-        methodName = command.childMethodName,
-        methodParameterTypes = command.childMethodParameterTypes,
-        methodParameters = command.childMethodParameters,
+        workflowName = command.workflowName,
+        workflowId = WorkflowId.from(newCommand.commandId),
+        methodName = command.methodName,
+        methodParameters = command.methodParameters,
+        methodParameterTypes = command.methodParameterTypes,
+        workflowOptions = state.workflowOptions,
         workflowTags = state.workflowTags,
         workflowMeta = state.workflowMeta,
-        workflowOptions = state.workflowOptions
+        parentWorkflowName = state.workflowName,
+        parentWorkflowId = state.workflowId,
+        parentMethodRunId = state.runningMethodRunId,
+        clientWaiting = false,
+        emitterName = ClientName("workflow engine")
     )
     launch { output.sendToWorkflowEngine(dispatchWorkflow) }
 
     // add provided tags
     dispatchWorkflow.workflowTags.forEach {
-        val addWorkflowTag = AddWorkflowTag(
-            workflowTag = it,
+        val addTagToWorkflow = AddTagToWorkflow(
             workflowName = dispatchWorkflow.workflowName,
-            workflowId = dispatchWorkflow.workflowId
+            workflowTag = it,
+            workflowId = dispatchWorkflow.workflowId,
+            emitterName = output.clientName
         )
-        launch { output.sendToWorkflowTagEngine(addWorkflowTag) }
+        launch { output.sendToWorkflowTagEngine(addTagToWorkflow) }
     }
-
-    addPastCommand(methodRun, newCommand)
 }
 
-private fun addPastCommand(
-    methodRun: MethodRun,
-    newCommand: NewCommand
-): PastCommand {
-    val pastCommand = PastCommand(
-        commandPosition = newCommand.commandPosition,
-        commandType = newCommand.commandType,
-        commandId = newCommand.commandId,
-        commandHash = newCommand.commandHash,
-        commandName = newCommand.commandName,
-        commandSimpleName = newCommand.commandSimpleName,
-        commandStatus = CommandStatus.Running
-    )
+private fun getDispatchMethod(
+    emitterName: ClientName,
+    commandId: CommandId,
+    command: DispatchMethodCommand,
+    state: WorkflowState
+) = DispatchMethod(
+    workflowName = command.workflowName,
+    workflowId = command.workflowId!!,
+    methodRunId = MethodRunId.from(commandId),
+    methodName = command.methodName,
+    methodParameters = command.methodParameters,
+    methodParameterTypes = command.methodParameterTypes,
+    parentWorkflowId = state.workflowId,
+    parentWorkflowName = state.workflowName,
+    parentMethodRunId = state.runningMethodRunId,
+    clientWaiting = false,
+    emitterName = emitterName
+)
 
-    methodRun.pastCommands.add(pastCommand)
+private fun CoroutineScope.dispatchMethod(
+    output: WorkflowEngineOutput,
+    newCommand: DispatchMethodPastCommand,
+    state: WorkflowState,
+    bufferedMessages: MutableList<WorkflowEngineMessage>
 
-    return pastCommand
+) {
+    val command: DispatchMethodCommand = newCommand.command
+
+    when {
+        command.workflowId != null -> {
+            val dispatchMethodRun = getDispatchMethod(output.clientName, newCommand.commandId, command, state)
+
+            when (command.workflowId) {
+                state.workflowId ->
+                    // dispatch method on this workflow
+                    bufferedMessages.add(dispatchMethodRun)
+                else ->
+                    // dispatch method on another workflow
+                    launch { output.sendToWorkflowEngine(dispatchMethodRun) }
+            }
+        }
+        command.workflowTag != null -> {
+            if (state.workflowTags.contains(command.workflowTag!!)) {
+                // dispatch method on this workflow
+                bufferedMessages.add(getDispatchMethod(output.clientName, newCommand.commandId, command, state))
+            }
+
+            val dispatchMethodByTag = DispatchMethodByTag(
+                workflowName = command.workflowName,
+                workflowTag = command.workflowTag!!,
+                parentWorkflowId = state.workflowId,
+                parentWorkflowName = state.workflowName,
+                parentMethodRunId = state.runningMethodRunId,
+                methodRunId = MethodRunId.from(newCommand.commandId),
+                methodName = command.methodName,
+                methodParameterTypes = command.methodParameterTypes,
+                methodParameters = command.methodParameters,
+                clientWaiting = false,
+                emitterName = output.clientName
+            )
+            // tag engine must ignore this message if parentWorkflowId has the provided tag
+            launch { output.sendToWorkflowTagEngine(dispatchMethodByTag) }
+        }
+        else -> thisShouldNotHappen()
+    }
+}
+
+private fun getSendSignal(
+    emitterName: ClientName,
+    commandId: CommandId,
+    command: SendSignalCommand
+) = SendSignal(
+    workflowName = command.workflowName,
+    workflowId = command.workflowId!!,
+    channelName = command.channelName,
+    channelSignalId = ChannelSignalId.from(commandId),
+    channelSignal = command.channelSignal,
+    channelSignalTypes = command.channelSignalTypes,
+    emitterName = emitterName
+)
+
+private fun CoroutineScope.sendSignal(
+    output: WorkflowEngineOutput,
+    newCommand: SendSignalPastCommand,
+    state: WorkflowState,
+    bufferedMessages: MutableList<WorkflowEngineMessage>
+) {
+    val command: SendSignalCommand = newCommand.command
+
+    when {
+        command.workflowId != null -> {
+            val sendToChannel = getSendSignal(output.clientName, newCommand.commandId, command)
+
+            when (command.workflowId) {
+                state.workflowId ->
+                    // dispatch signal on current workflow
+                    bufferedMessages.add(sendToChannel)
+                else ->
+                    // dispatch signal on another workflow
+                    launch { output.sendToWorkflowEngine(sendToChannel) }
+            }
+        }
+        command.workflowTag != null -> {
+            if (state.workflowTags.contains(command.workflowTag!!)) {
+                val sendToChannel = getSendSignal(output.clientName, newCommand.commandId, command)
+                bufferedMessages.add(sendToChannel)
+            }
+            // dispatch signal per tag
+            val sendSignalByTag = SendSignalByTag(
+                workflowName = command.workflowName,
+                workflowTag = command.workflowTag!!,
+                channelName = command.channelName,
+                channelSignalId = ChannelSignalId(),
+                channelSignal = command.channelSignal,
+                channelSignalTypes = command.channelSignalTypes,
+                emitterWorkflowId = state.workflowId,
+                emitterName = output.clientName
+            )
+            launch { output.sendToWorkflowTagEngine(sendSignalByTag) }
+        }
+        else -> thisShouldNotHappen()
+    }
 }

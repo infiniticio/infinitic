@@ -27,8 +27,6 @@ package io.infinitic.common.serDe
 
 enum class SerializedDataType {
     NULL,
-    BYTES,
     JSON_JACKSON,
-    JSON_KOTLIN,
-    CUSTOM
+    JSON_KOTLIN
 }

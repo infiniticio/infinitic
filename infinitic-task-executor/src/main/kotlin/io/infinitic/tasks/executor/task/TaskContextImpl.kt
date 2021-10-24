@@ -26,21 +26,20 @@
 package io.infinitic.tasks.executor.task
 
 import io.infinitic.client.InfiniticClient
-import io.infinitic.common.errors.Error
+import io.infinitic.common.errors.WorkerError
 import io.infinitic.common.tasks.data.TaskOptions
 import io.infinitic.tasks.TaskContext
 import io.infinitic.tasks.executor.TaskExecutor
-import java.util.UUID
 
 data class TaskContextImpl(
     override val register: TaskExecutor,
-    override val id: UUID,
-    override val workflowId: UUID?,
+    override val id: String,
+    override val workflowId: String?,
     override val workflowName: String?,
-    override val attemptId: UUID,
+    override val attemptId: String,
     override val retrySequence: Int,
     override val retryIndex: Int,
-    override val lastError: Error?,
+    override val lastError: WorkerError?,
     override val tags: Set<String>,
     override val meta: MutableMap<String, ByteArray>,
     override val options: TaskOptions,

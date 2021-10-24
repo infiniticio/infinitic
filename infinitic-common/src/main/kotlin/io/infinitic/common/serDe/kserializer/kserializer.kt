@@ -26,6 +26,7 @@
 package io.infinitic.common.serDe.kserializer
 
 import io.infinitic.common.clients.messages.ClientEnvelope
+import io.infinitic.common.exceptions.thisShouldNotHappen
 import io.infinitic.common.metrics.global.messages.MetricsGlobalEnvelope
 import io.infinitic.common.metrics.perName.messages.MetricsPerNameEnvelope
 import io.infinitic.common.tasks.engine.messages.TaskEngineEnvelope
@@ -33,9 +34,9 @@ import io.infinitic.common.tasks.executors.messages.TaskExecutorEnvelope
 import io.infinitic.common.tasks.tags.messages.TaskTagEngineEnvelope
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineEnvelope
 import io.infinitic.common.workflows.tags.messages.WorkflowTagEngineEnvelope
-import io.infinitic.exceptions.thisShouldNotHappen
+import kotlinx.serialization.InternalSerializationApi
 import kotlinx.serialization.KSerializer
-import java.lang.reflect.Modifier.isStatic
+import kotlinx.serialization.serializerOrNull
 import kotlin.reflect.KClass
 
 // @OptIn(ExperimentalStdlibApi::class)
@@ -46,21 +47,23 @@ import kotlin.reflect.KClass
 //    null
 // }
 
-fun getKSerializerOrNull(klass: Class<*>): KSerializer<*>? {
-    val companionField = klass.declaredFields.find {
-        it.name == "Companion" && isStatic(it.modifiers)
-    } ?: return null
-    val companion = companionField.get(klass)
-    val serializerMethod = try {
-        companion::class.java.getMethod("serializer")
-    } catch (e: NoSuchMethodException) {
-        return null
-    }
-    if (serializerMethod.returnType.name != KSerializer::class.qualifiedName) {
-        return null
-    }
-    @Suppress("UNCHECKED_CAST")
-    return serializerMethod.invoke(companion) as KSerializer<*>
+@OptIn(InternalSerializationApi::class)
+fun <T : Any> getKSerializerOrNull(klass: Class<T>): KSerializer<T>? {
+    return klass.kotlin.serializerOrNull()
+//    val companionField = klass.declaredFields.find {
+//        it.name == "Companion" && isStatic(it.modifiers)
+//    } ?: return null
+//    val companion = companionField.get(klass)
+//    val serializerMethod = try {
+//        companion::class.java.getMethod("serializer")
+//    } catch (e: NoSuchMethodException) {
+//        return null
+//    }
+//    if (serializerMethod.returnType.name != KSerializer::class.qualifiedName) {
+//        return null
+//    }
+//    @Suppress("UNCHECKED_CAST")
+//    return serializerMethod.invoke(companion) as KSerializer<T>
 }
 
 @Suppress("UNCHECKED_CAST")

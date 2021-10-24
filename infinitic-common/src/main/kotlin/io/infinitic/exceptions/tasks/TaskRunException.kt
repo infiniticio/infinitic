@@ -26,12 +26,12 @@
 package io.infinitic.exceptions.tasks
 
 import io.infinitic.common.tasks.data.TaskOptions
-import io.infinitic.exceptions.UserException
+import io.infinitic.exceptions.RunException
 
 sealed class TaskRunException(
     msg: String,
     help: String
-) : UserException("$msg.\n$help")
+) : RunException("$msg.\n$help")
 
 class ProcessingTimeoutException(
     klass: String,

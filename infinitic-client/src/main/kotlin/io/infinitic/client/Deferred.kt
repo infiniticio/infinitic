@@ -25,10 +25,18 @@
 
 package io.infinitic.client
 
-import java.util.UUID
+import java.util.concurrent.CompletableFuture
 
-interface Deferred<T> {
-    val id: UUID
-    fun await(): T
-    fun join(): Deferred<T>
+interface Deferred<R> {
+    val id: String
+
+    fun await(): R
+
+    fun cancelAsync(): CompletableFuture<Unit>
+
+    fun cancel(): Unit = cancelAsync().join()
+
+    fun retryAsync(): CompletableFuture<Unit>
+
+    fun retry(): Unit = retryAsync().join()
 }

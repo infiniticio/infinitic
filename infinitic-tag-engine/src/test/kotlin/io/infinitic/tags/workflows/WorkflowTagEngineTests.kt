@@ -26,8 +26,9 @@
 package io.infinitic.tags.workflows
 
 import io.infinitic.common.clients.messages.ClientMessage
-import io.infinitic.common.clients.messages.WorkflowIdsPerTag
+import io.infinitic.common.clients.messages.WorkflowIdsByTag
 import io.infinitic.common.clients.transport.SendToClient
+import io.infinitic.common.data.ClientName
 import io.infinitic.common.data.MessageId
 import io.infinitic.common.fixtures.TestFactory
 import io.infinitic.common.workflows.data.workflows.WorkflowId
@@ -35,11 +36,11 @@ import io.infinitic.common.workflows.data.workflows.WorkflowName
 import io.infinitic.common.workflows.data.workflows.WorkflowTag
 import io.infinitic.common.workflows.engine.SendToWorkflowEngine
 import io.infinitic.common.workflows.engine.messages.CancelWorkflow
-import io.infinitic.common.workflows.engine.messages.SendToChannel
+import io.infinitic.common.workflows.engine.messages.SendSignal
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
-import io.infinitic.common.workflows.tags.messages.CancelWorkflowPerTag
-import io.infinitic.common.workflows.tags.messages.GetWorkflowIds
-import io.infinitic.common.workflows.tags.messages.SendToChannelPerTag
+import io.infinitic.common.workflows.tags.messages.CancelWorkflowByTag
+import io.infinitic.common.workflows.tags.messages.GetWorkflowIdsByTag
+import io.infinitic.common.workflows.tags.messages.SendSignalByTag
 import io.infinitic.common.workflows.tags.messages.WorkflowTagEngineMessage
 import io.infinitic.tags.workflows.storage.WorkflowTagStorage
 import io.kotest.core.spec.style.StringSpec
@@ -57,8 +58,10 @@ import io.mockk.slot
 
 private fun <T : Any> captured(slot: CapturingSlot<T>) = if (slot.isCaptured) slot.captured else null
 
-private lateinit var stateMessageId: CapturingSlot<MessageId>
-private lateinit var stateWorkflowId: CapturingSlot<WorkflowId>
+private val clientName = ClientName("clientWorkflowTagEngineTests")
+
+private lateinit var stateMessageId: CapturingSlot<String>
+private lateinit var stateWorkflowId: CapturingSlot<String>
 private lateinit var workflowEngineMessage: CapturingSlot<WorkflowEngineMessage>
 private lateinit var clientMessage: CapturingSlot<ClientMessage>
 
@@ -91,7 +94,7 @@ internal class WorkflowTagEngineTests : StringSpec({
     "cancelWorkflowPerTag should cancel workflow" {
         // given
         val workflowIds = setOf(WorkflowId(), WorkflowId())
-        val msgIn = random<CancelWorkflowPerTag>()
+        val msgIn = random<CancelWorkflowByTag>()
         // when
         getEngine(msgIn.workflowTag, msgIn.workflowName, workflowIds = workflowIds).handle(msgIn)
         // then
@@ -114,35 +117,35 @@ internal class WorkflowTagEngineTests : StringSpec({
     "sendToChannelPerTag should send to channel" {
         // given
         val workflowIds = setOf(WorkflowId(), WorkflowId())
-        val msgIn = random<SendToChannelPerTag>()
+        val msgIn = random<SendSignalByTag>()
         // when
         getEngine(msgIn.workflowTag, msgIn.workflowName, workflowIds = workflowIds).handle(msgIn)
         // then
         coVerifySequence {
             workflowTagStorage.getLastMessageId(msgIn.workflowTag, msgIn.workflowName)
             workflowTagStorage.getWorkflowIds(msgIn.workflowTag, msgIn.workflowName)
-            sendToWorkflowEngine(ofType<SendToChannel>())
-            sendToWorkflowEngine(ofType<SendToChannel>())
+            sendToWorkflowEngine(ofType<SendSignal>())
+            sendToWorkflowEngine(ofType<SendSignal>())
             workflowTagStorage.setLastMessageId(msgIn.workflowTag, msgIn.workflowName, msgIn.messageId)
         }
         verifyAll()
         // checking last message
-        val sendToChannel = captured(workflowEngineMessage)!! as SendToChannel
+        val sendSignal = captured(workflowEngineMessage)!! as SendSignal
 
-        with(sendToChannel) {
+        with(sendSignal) {
             workflowId shouldBe workflowIds.last()
             workflowName shouldBe msgIn.workflowName
-            channelEvent shouldBe msgIn.channelEvent
-            channelEventId shouldBe msgIn.channelEventId
-            channelEvent shouldBe msgIn.channelEvent
-            channelEventTypes shouldBe msgIn.channelEventTypes
+            channelSignal shouldBe msgIn.channelSignal
+            channelSignalId shouldBe msgIn.channelSignalId
+            channelSignal shouldBe msgIn.channelSignal
+            channelSignalTypes shouldBe msgIn.channelSignalTypes
             channelName shouldBe msgIn.channelName
         }
     }
 
     "getWorkflowIdsPerTag should return set of ids" {
         // given
-        val msgIn = random<GetWorkflowIds>()
+        val msgIn = random<GetWorkflowIdsByTag>()
         val workflowId1 = WorkflowId()
         val workflowId2 = WorkflowId()
         // when
@@ -150,13 +153,13 @@ internal class WorkflowTagEngineTests : StringSpec({
         // then
         coVerifySequence {
             workflowTagStorage.getWorkflowIds(msgIn.workflowTag, msgIn.workflowName)
-            sendToClient(ofType<WorkflowIdsPerTag>())
+            sendToClient(ofType<WorkflowIdsByTag>())
             workflowTagStorage.setLastMessageId(msgIn.workflowTag, msgIn.workflowName, msgIn.messageId)
         }
         verifyAll()
 
-        captured(clientMessage).shouldBeInstanceOf<WorkflowIdsPerTag>()
-        (captured(clientMessage) as WorkflowIdsPerTag).workflowIds shouldBe setOf(workflowId1, workflowId2)
+        captured(clientMessage).shouldBeInstanceOf<WorkflowIdsByTag>()
+        (captured(clientMessage) as WorkflowIdsByTag).workflowIds shouldBe setOf(workflowId1, workflowId2)
     }
 })
 
@@ -183,10 +186,10 @@ private fun mockWorkflowTagStorage(
 ): WorkflowTagStorage {
     val tagStateStorage = mockk<WorkflowTagStorage>()
     coEvery { tagStateStorage.getLastMessageId(workflowTag, workflowName) } returns messageId
-    coEvery { tagStateStorage.setLastMessageId(workflowTag, workflowName, capture(stateMessageId)) } just Runs
+    coEvery { tagStateStorage.setLastMessageId(workflowTag, workflowName, MessageId(capture(stateMessageId))) } just Runs
     coEvery { tagStateStorage.getWorkflowIds(workflowTag, workflowName) } returns workflowIds
-    coEvery { tagStateStorage.addWorkflowId(workflowTag, workflowName, capture(stateWorkflowId)) } just Runs
-    coEvery { tagStateStorage.removeWorkflowId(workflowTag, workflowName, capture(stateWorkflowId)) } just Runs
+    coEvery { tagStateStorage.addWorkflowId(workflowTag, workflowName, WorkflowId(capture(stateWorkflowId))) } just Runs
+    coEvery { tagStateStorage.removeWorkflowId(workflowTag, workflowName, WorkflowId(capture(stateWorkflowId))) } just Runs
 
     return tagStateStorage
 }
@@ -206,7 +209,7 @@ private fun getEngine(
     sendToWorkflowEngine = mockSendToWorkflowEngine(workflowEngineMessage)
     sendToClient = mockSendToClient(clientMessage)
 
-    return WorkflowTagEngine(workflowTagStorage, sendToWorkflowEngine, sendToClient)
+    return WorkflowTagEngine(clientName, workflowTagStorage, sendToWorkflowEngine, sendToClient)
 }
 
 private fun verifyAll() = confirmVerified(

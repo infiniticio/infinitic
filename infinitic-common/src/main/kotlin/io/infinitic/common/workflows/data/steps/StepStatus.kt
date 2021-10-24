@@ -25,8 +25,12 @@
 
 package io.infinitic.common.workflows.data.steps
 
-import io.infinitic.common.workflows.data.commands.CommandId
+import io.infinitic.common.data.ReturnValue
+import io.infinitic.common.errors.CanceledDeferredError
+import io.infinitic.common.errors.FailedDeferredError
+import io.infinitic.common.errors.UnknownDeferredError
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskIndex
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 @Serializable
@@ -37,22 +41,28 @@ sealed class StepStatus {
         override fun equals(other: Any?) = javaClass == other?.javaClass
     }
 
-    @Serializable
-    data class Completed(
-        val returnValue: StepReturnValue,
-        val completionWorkflowTaskIndex: WorkflowTaskIndex
+    @Serializable @SerialName("StepStatus.Unknown")
+    data class Unknown(
+        val unknownDeferredError: UnknownDeferredError,
+        val unknowingWorkflowTaskIndex: WorkflowTaskIndex
     ) : StepStatus()
 
-    @Serializable
+    @Serializable @SerialName("StepStatus.Canceled")
     data class Canceled(
-        val commandId: CommandId,
+        val canceledDeferredError: CanceledDeferredError,
         val cancellationWorkflowTaskIndex: WorkflowTaskIndex
     ) : StepStatus()
 
-    @Serializable
+    @Serializable @SerialName("StepStatus.Failed")
     data class Failed(
-        val commandId: CommandId,
+        val failedDeferredError: FailedDeferredError,
         val failureWorkflowTaskIndex: WorkflowTaskIndex
+    ) : StepStatus()
+
+    @Serializable @SerialName("StepStatus.Completed")
+    data class Completed(
+        val returnValue: ReturnValue,
+        val completionWorkflowTaskIndex: WorkflowTaskIndex
     ) : StepStatus()
 
     /**
@@ -60,9 +70,9 @@ sealed class StepStatus {
      * - if next workflowTask related to this branch run correctly (error caught in workflow code), status will eventually be Failed
      * - if not, task can be retried and status can transition to Completed
      */
-    @Serializable
-    data class OngoingFailure(
-        val commandId: CommandId,
+    @Serializable @SerialName("StepStatus.CurrentlyFailed")
+    data class CurrentlyFailed(
+        val failedDeferredError: FailedDeferredError,
         val failureWorkflowTaskIndex: WorkflowTaskIndex
     ) : StepStatus()
 }

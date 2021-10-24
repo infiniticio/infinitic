@@ -29,6 +29,7 @@ dependencies {
     implementation(Libs.JsonPath.jayway)
 
     implementation(project(":infinitic-common"))
+    implementation(project(":infinitic-client"))
     implementation(project(":infinitic-task-executor"))
 }
 
