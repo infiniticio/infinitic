@@ -97,6 +97,6 @@ object Libs {
     }
 
     object Logging {
-        const val api = "io.github.microutils:kotlin-logging:1.12.5"
+        const val api = "io.github.microutils:kotlin-logging:2.1.20"
     }
 }
