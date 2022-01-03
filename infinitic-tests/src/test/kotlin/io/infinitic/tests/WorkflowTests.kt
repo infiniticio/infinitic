@@ -45,7 +45,6 @@ import io.infinitic.tests.workflows.WorkflowAnnotated
 import io.infinitic.tests.workflows.WorkflowB
 import io.infinitic.tests.workflows.WorkflowC
 import io.kotest.assertions.throwables.shouldThrow
-import io.kotest.core.config.configuration
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.collections.shouldBeIn
 import io.kotest.matchers.shouldBe
@@ -55,7 +54,7 @@ import java.time.Instant
 internal class WorkflowTests : StringSpec({
 
     // each test should not be longer than 10s
-    configuration.timeout = 10000
+    timeout = 10000
 
     val client = autoClose(InfiniticClientFactory.fromConfigResource("/pulsar.yml"))
     val worker = autoClose(InfiniticWorkerFactory.fromConfigResource("/pulsar.yml"))

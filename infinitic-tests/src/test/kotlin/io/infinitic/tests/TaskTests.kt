@@ -37,7 +37,6 @@ import io.infinitic.tests.tasks.TaskA
 import io.infinitic.tests.tasks.TaskTest
 import io.infinitic.tests.tasks.TaskTestImpl
 import io.kotest.assertions.throwables.shouldThrow
-import io.kotest.core.config.configuration
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.delay
@@ -46,7 +45,7 @@ import kotlinx.coroutines.launch
 internal class TaskTests : StringSpec({
 
     // each test should not be longer than 5s
-    configuration.timeout = 5000
+    timeout = 5000
 
     val client = autoClose(InfiniticClientFactory.fromConfigResource("/pulsar.yml"))
     val worker = autoClose(InfiniticWorkerFactory.fromConfigResource("/pulsar.yml"))
