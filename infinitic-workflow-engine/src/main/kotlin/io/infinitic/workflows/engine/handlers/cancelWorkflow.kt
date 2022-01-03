@@ -139,6 +139,10 @@ private fun CoroutineScope.cancelMethodRun(
                 )
                 launch { output.sendToWorkflowEngine(cancelWorkflow) }
             }
+            else -> {
+                // TODO check this
+                // thisShouldNotHappen()
+            }
         }
     }
 }

@@ -64,7 +64,7 @@ object Libs {
     }
 
     object Avro4k {
-        const val core = "com.github.avro-kotlin.avro4k:avro4k-core:1.3.0"
+        const val core = "com.github.avro-kotlin.avro4k:avro4k-core:1.5.0"
     }
 
     object Hoplite {
@@ -74,7 +74,7 @@ object Libs {
     }
 
     object Pulsar {
-        private const val version = "2.7.2"
+        private const val version = "2.9.1"
         const val client = "org.apache.pulsar:pulsar-client:$version"
         const val clientAdmin = "org.apache.pulsar:pulsar-client-admin:$version"
         const val functions = "org.apache.pulsar:pulsar-functions-api:$version"
