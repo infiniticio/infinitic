@@ -87,7 +87,7 @@ object Libs {
     }
 
     object EasyRandom {
-        const val core = "org.jeasy:easy-random-core:4.3.0"
+        const val core = "org.jeasy:easy-random-core:5.0.0"
     }
 
     object Slf4j {
