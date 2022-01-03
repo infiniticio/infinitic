@@ -87,7 +87,8 @@ object Libs {
     }
 
     object EasyRandom {
-        const val core = "org.jeasy:easy-random-core:5.0.0"
+        // can not upgrade to 5.0.0 that requires java 11 as minimal version
+        const val core = "org.jeasy:easy-random-core:4.3.0"
     }
 
     object Slf4j {
