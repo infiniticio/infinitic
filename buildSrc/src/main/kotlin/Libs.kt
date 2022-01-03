@@ -60,7 +60,7 @@ object Libs {
     }
 
     object Mockk {
-        const val mockk = "io.mockk:mockk:1.12.0"
+        const val mockk = "io.mockk:mockk:1.12.2"
     }
 
     object Avro4k {
@@ -68,7 +68,7 @@ object Libs {
     }
 
     object Hoplite {
-        private const val version = "1.4.7"
+        private const val version = "1.4.16"
         const val core = "com.sksamuel.hoplite:hoplite-core:$version"
         const val yaml = "com.sksamuel.hoplite:hoplite-yaml:$version"
     }
