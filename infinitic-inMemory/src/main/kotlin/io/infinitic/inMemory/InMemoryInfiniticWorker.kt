@@ -83,7 +83,7 @@ class InMemoryInfiniticWorker(
                     repeat(concurrency) {
                         runningScope.launch {
                             startTaskExecutor(
-                                "in-memory-task-executor-$it: $name",
+                                "task-executor-$it: $name",
                                 taskExecutorRegister,
                                 inputChannel = channel,
                                 outputChannel = output.logChannel,
@@ -100,7 +100,7 @@ class InMemoryInfiniticWorker(
                     repeat(concurrency) {
                         runningScope.launch {
                             startTaskExecutor(
-                                "in-memory-workflow-task-executor-$it: $name",
+                                "workflow-task-executor-$it: $name",
                                 taskExecutorRegister,
                                 inputChannel = channel,
                                 outputChannel = output.logChannel,
@@ -204,7 +204,7 @@ class InMemoryInfiniticWorker(
 
         runningScope.launch {
             startTaskEngine(
-                "in-memory-workflow-task-engine: $workflowName",
+                "workflow-task-engine: $workflowName",
                 storage,
                 inputChannel = channel,
                 outputChannel = output.logChannel,
@@ -240,7 +240,7 @@ class InMemoryInfiniticWorker(
     override fun startMetricsGlobalEngine(storage: MetricsGlobalStateStorage) {
         runningScope.launch {
             startMetricsGlobalEngine(
-                "in-memory-metrics-global-engine",
+                "metrics-global-engine",
                 storage,
                 inputChannel = output.metricsGlobalChannel,
                 outputChannel = output.logChannel
