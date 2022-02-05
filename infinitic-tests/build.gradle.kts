@@ -36,9 +36,6 @@ dependencies {
     testImplementation(project(":infinitic-factory"))
     testImplementation(project(":infinitic-inMemory"))
     testImplementation(project(":infinitic-pulsar"))
-
-    // should be removed with pulsar 2.8
-    testImplementation("org.apache.avro:avro") { version { strictly("1.9.+") } }
 }
 
 apply("../publish.gradle.kts")

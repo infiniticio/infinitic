@@ -43,7 +43,7 @@ object Json {
         addMixIn(Exception::class.java, ExceptionMixIn::class.java)
         configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false)
         addModule(JavaTimeModule())
-        addModule(KotlinModule())
+        addModule(KotlinModule.Builder().build())
     }
 
     fun stringify(msg: Any?, pretty: Boolean = false): String = when (pretty) {

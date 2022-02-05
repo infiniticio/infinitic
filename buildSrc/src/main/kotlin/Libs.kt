@@ -32,13 +32,13 @@ object Libs {
     }
 
     object Coroutines {
-        private const val version = "1.5.2"
+        private const val version = "1.6.0"
         const val core = "org.jetbrains.kotlinx:kotlinx-coroutines-core:$version"
         const val jdk8 = "org.jetbrains.kotlinx:kotlinx-coroutines-jdk8:$version"
     }
 
     object Serialization {
-        const val json = "org.jetbrains.kotlinx:kotlinx-serialization-json:1.2.2"
+        const val json = "org.jetbrains.kotlinx:kotlinx-serialization-json:1.3.2"
     }
 
     object JsonPath {
@@ -46,7 +46,7 @@ object Libs {
     }
 
     object Jackson {
-        private const val version = "2.12.5"
+        private const val version = "2.13.1"
         const val core = "com.fasterxml.jackson.core:jackson-core:$version"
         const val databind = "com.fasterxml.jackson.core:jackson-databind:$version"
         const val kotlin = "com.fasterxml.jackson.module:jackson-module-kotlin:$version"
@@ -54,27 +54,27 @@ object Libs {
     }
 
     object Kotest {
-        private const val version = "4.6.1"
+        private const val version = "5.1.0"
         const val property = "io.kotest:kotest-property-jvm:$version"
         const val junit5 = "io.kotest:kotest-runner-junit5-jvm:$version"
     }
 
     object Mockk {
-        const val mockk = "io.mockk:mockk:1.12.0"
+        const val mockk = "io.mockk:mockk:1.12.2"
     }
 
     object Avro4k {
-        const val core = "com.github.avro-kotlin.avro4k:avro4k-core:1.3.0"
+        const val core = "com.github.avro-kotlin.avro4k:avro4k-core:1.6.0"
     }
 
     object Hoplite {
-        private const val version = "1.4.7"
+        private const val version = "1.4.16"
         const val core = "com.sksamuel.hoplite:hoplite-core:$version"
         const val yaml = "com.sksamuel.hoplite:hoplite-yaml:$version"
     }
 
     object Pulsar {
-        private const val version = "2.7.2"
+        private const val version = "2.9.1"
         const val client = "org.apache.pulsar:pulsar-client:$version"
         const val clientAdmin = "org.apache.pulsar:pulsar-client-admin:$version"
         const val functions = "org.apache.pulsar:pulsar-functions-api:$version"
@@ -87,16 +87,17 @@ object Libs {
     }
 
     object EasyRandom {
+        // can not upgrade to 5.0.0 that requires java 11 as minimal version
         const val core = "org.jeasy:easy-random-core:4.3.0"
     }
 
     object Slf4j {
-        private const val version = "1.7.30"
+        private const val version = "1.7.35"
         const val simple = "org.slf4j:slf4j-simple:$version"
         const val api = "org.slf4j:slf4j-api:$version"
     }
 
     object Logging {
-        const val api = "io.github.microutils:kotlin-logging:2.1.20"
+        const val api = "io.github.microutils:kotlin-logging:2.1.21"
     }
 }

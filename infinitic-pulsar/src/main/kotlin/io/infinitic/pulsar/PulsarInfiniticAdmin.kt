@@ -34,14 +34,14 @@ import io.infinitic.transport.pulsar.Pulsar
 import mu.KotlinLogging
 import org.apache.pulsar.client.admin.PulsarAdmin
 import org.apache.pulsar.client.admin.PulsarAdminException
-import org.apache.pulsar.common.policies.data.AutoTopicCreationOverride
-import org.apache.pulsar.common.policies.data.DelayedDeliveryPolicies
 import org.apache.pulsar.common.policies.data.PartitionedTopicStats
 import org.apache.pulsar.common.policies.data.Policies
 import org.apache.pulsar.common.policies.data.RetentionPolicies
 import org.apache.pulsar.common.policies.data.SchemaCompatibilityStrategy
 import org.apache.pulsar.common.policies.data.TenantInfo
 import org.apache.pulsar.common.policies.data.TopicType
+import org.apache.pulsar.common.policies.data.impl.AutoTopicCreationOverrideImpl
+import org.apache.pulsar.common.policies.data.impl.DelayedDeliveryPoliciesImpl
 import java.io.Closeable
 
 @Suppress("MemberVisibilityCanBePrivate", "unused")
@@ -57,7 +57,7 @@ class PulsarInfiniticAdmin constructor(
     private val policies: Policies by lazy {
         Policies().apply {
             // all new topics (especially tasks and workflows) are partitioned
-            autoTopicCreationOverride = AutoTopicCreationOverride(
+            autoTopicCreationOverride = AutoTopicCreationOverrideImpl(
                 false,
                 TopicType.PARTITIONED.toString(),
                 1
@@ -76,7 +76,7 @@ class PulsarInfiniticAdmin constructor(
                 pulsar.policies.retentionSizeInMB
             )
             message_ttl_in_seconds = pulsar.policies.messageTTLInSeconds
-            delayed_delivery_policies = DelayedDeliveryPolicies(
+            delayed_delivery_policies = DelayedDeliveryPoliciesImpl(
                 pulsar.policies.delayedDeliveryTickTimeMillis,
                 true
             )
@@ -84,15 +84,17 @@ class PulsarInfiniticAdmin constructor(
     }
 
     private val tenantInfo by lazy {
-        TenantInfo().apply {
-            // if authorizedClusters is not provided, default is all clusters
-            allowedClusters = when (pulsar.allowedClusters) {
-                null -> pulsarAdmin.clusters().clusters.toSet()
-                else -> pulsar.allowedClusters
+        TenantInfo.builder()
+            .allowedClusters(
+                when (pulsar.allowedClusters) {
+                    null -> pulsarAdmin.clusters().clusters.toSet()
+                    else -> pulsar.allowedClusters
+                }
+            )
+            .also {
+                if (pulsar.adminRoles != null) it.adminRoles(pulsar.adminRoles)
             }
-            // apply adminRoles if provided
-            if (adminRoles != null) this.adminRoles = adminRoles
-        }
+            .build()
     }
 
     companion object {
