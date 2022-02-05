@@ -43,14 +43,6 @@ class InvalidStubException(
     help = "Make sure to use a stub returned by taskStub(Class<*>) or workflowStub(Class<*>)"
 )
 
-class InvalidCommandException(
-    msg: String,
-    help: String = ""
-) : ClientUserException(
-    msg = msg,
-    help = msg
-)
-
 class InvalidChannelGetterException(
     klass: String
 ) : ClientUserException(

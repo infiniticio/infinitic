@@ -29,7 +29,6 @@ import io.infinitic.dashboard.menus.InfraMenu
 import io.infinitic.dashboard.menus.logo
 import io.infinitic.dashboard.menus.offCanvasMenuCloseButton
 import io.infinitic.dashboard.menus.offCanvasMenuOverlay
-import io.infinitic.dashboard.menus.profile
 import io.infinitic.dashboard.svgs.icons.iconHamburger
 import kweb.Element
 import kweb.ElementCreator
@@ -80,8 +79,6 @@ object AppPanel {
 //                                SettingsMenu.render(this, true)
                             }
                         }
-                        // profile
-                        profile(true)
                     }
                     // Force sidebar to shrink to fit close icon
                     div().classes("flex-shrink-0 w-14")
@@ -104,8 +101,6 @@ object AppPanel {
 //                                SettingsMenu.render(this)
                             }
                         }
-                        // Profile
-                        profile()
                     }
                 }
             }

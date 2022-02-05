@@ -54,7 +54,7 @@ object Libs {
     }
 
     object Kotest {
-        private const val version = "5.0.3"
+        private const val version = "5.1.0"
         const val property = "io.kotest:kotest-property-jvm:$version"
         const val junit5 = "io.kotest:kotest-runner-junit5-jvm:$version"
     }
@@ -64,7 +64,7 @@ object Libs {
     }
 
     object Avro4k {
-        const val core = "com.github.avro-kotlin.avro4k:avro4k-core:1.5.0"
+        const val core = "com.github.avro-kotlin.avro4k:avro4k-core:1.6.0"
     }
 
     object Hoplite {
@@ -92,7 +92,7 @@ object Libs {
     }
 
     object Slf4j {
-        private const val version = "1.7.32"
+        private const val version = "1.7.35"
         const val simple = "org.slf4j:slf4j-simple:$version"
         const val api = "org.slf4j:slf4j-api:$version"
     }
