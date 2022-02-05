@@ -474,6 +474,6 @@ class TaskEngine(
     }
 
     private fun logDiscardingMessage(message: TaskEngineMessage, cause: String) {
-        logger.info { "$cause - discarding $message" }
+        logger.warn { "$cause - discarding $message" }
     }
 }

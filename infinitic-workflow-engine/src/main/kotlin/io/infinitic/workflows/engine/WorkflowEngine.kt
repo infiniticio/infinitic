@@ -229,7 +229,7 @@ class WorkflowEngine(
     }
 
     private fun logDiscardingMessage(message: WorkflowEngineMessage, cause: String) {
-        logger.info { "workflowId ${message.workflowId} - discarding $cause: $message" }
+        logger.warn { "workflowId ${message.workflowId} - discarding $cause: $message" }
     }
 
     private fun CoroutineScope.processMessage(state: WorkflowState, message: WorkflowEngineMessage) {
