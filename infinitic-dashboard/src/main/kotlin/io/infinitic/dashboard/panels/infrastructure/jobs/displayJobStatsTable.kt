@@ -31,7 +31,7 @@ import io.infinitic.dashboard.panels.infrastructure.requests.Failed
 import io.infinitic.dashboard.panels.infrastructure.requests.Loading
 import io.infinitic.dashboard.panels.infrastructure.requests.Request
 import io.infinitic.dashboard.slideovers.Slideover
-import io.infinitic.pulsar.topics.TopicSet
+import io.infinitic.pulsar.topics.Topic
 import kweb.Element
 import kweb.ElementCreator
 import kweb.div
@@ -48,9 +48,9 @@ import org.apache.pulsar.common.policies.data.PartitionedTopicStats
 
 internal fun ElementCreator<Element>.displayJobStatsTable(
     name: String,
-    state: KVar<out JobState<out TopicSet>>,
+    state: KVar<out JobState<out Topic>>,
     selectionSlide: Slideover<*>,
-    selectionType: KVar<TopicSet>,
+    selectionType: KVar<Topic>,
     selectionStats: KVar<Request<PartitionedTopicStats>>
 ) {
     // Topics table

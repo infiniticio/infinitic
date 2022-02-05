@@ -25,11 +25,9 @@
 
 package io.infinitic.pulsar.topics
 
-enum class TaskTopic(override val prefix: String) : TopicSet {
-    TAG_NEW("task-tag-new"),
-    TAG_EXISTING("task-tag-existing"),
-    ENGINE_NEW("task-engine-new"),
-    ENGINE_EXISTING("task-engine-existing"),
+enum class TaskTopic(override val prefix: String) : Topic {
+    TAG("task-tag"),
+    ENGINE("task-engine"),
     DELAYS("task-$TOPIC_WITH_DELAYS"),
     EXECUTORS("task-executors"),
     METRICS("task-metrics")

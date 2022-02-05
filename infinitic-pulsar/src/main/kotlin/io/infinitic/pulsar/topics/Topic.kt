@@ -25,6 +25,6 @@
 
 package io.infinitic.pulsar.topics
 
-interface TopicSet {
+interface Topic {
     val prefix: String
 }

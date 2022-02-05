@@ -32,7 +32,6 @@ import io.infinitic.common.tasks.engine.messages.TaskEngineEnvelope
 import io.infinitic.common.tasks.engine.messages.TaskEngineMessage
 import io.infinitic.common.workflows.data.workflows.WorkflowName
 import io.infinitic.pulsar.topics.TaskTopic
-import io.infinitic.pulsar.topics.TopicType
 import io.infinitic.pulsar.topics.WorkflowTaskTopic
 import io.infinitic.pulsar.transport.PulsarConsumerFactory
 import io.infinitic.pulsar.transport.PulsarMessageToProcess
@@ -56,65 +55,41 @@ fun CoroutineScope.startPulsarTaskEngines(
 ) {
     repeat(concurrency) {
 
-        val eventsInputChannel = Channel<PulsarTaskEngineMessageToProcess>()
-        val eventsOutputChannel = Channel<PulsarTaskEngineMessageToProcess>()
-        val commandsInputChannel = Channel<PulsarTaskEngineMessageToProcess>()
-        val commandsOutputChannel = Channel<PulsarTaskEngineMessageToProcess>()
+        val inputChannel = Channel<PulsarTaskEngineMessageToProcess>()
+        val outputChannel = Channel<PulsarTaskEngineMessageToProcess>()
 
         startTaskEngine(
             "task-engine-$it: $name",
             storage,
-            eventsInputChannel = eventsInputChannel,
-            eventsOutputChannel = eventsOutputChannel,
-            commandsInputChannel = commandsInputChannel,
-            commandsOutputChannel = commandsOutputChannel,
+            inputChannel = inputChannel,
+            outputChannel = outputChannel,
             output.sendToClient(),
-            output.sendToTaskTagEngine(TopicType.EXISTING),
+            output.sendToTaskTagEngine(),
             output.sendToTaskEngineAfter(jobName),
-            output.sendToWorkflowEngine(TopicType.EXISTING),
+            output.sendToWorkflowEngine(),
             output.sendToTaskExecutors(jobName),
             output.sendToMetricsPerName()
         )
 
         // Pulsar consumers
-        val existingConsumer = when (jobName) {
+        val consumer = when (jobName) {
             is TaskName -> consumerFactory.newConsumer(
                 consumerName = "$name:$it",
-                taskTopic = TaskTopic.ENGINE_EXISTING,
+                taskTopic = TaskTopic.ENGINE,
                 taskName = jobName
             )
             is WorkflowName -> consumerFactory.newConsumer(
                 consumerName = "$name:$it",
-                workflowTaskTopic = WorkflowTaskTopic.ENGINE_EXISTING,
+                workflowTaskTopic = WorkflowTaskTopic.ENGINE,
                 workflowName = jobName
             )
             else -> thisShouldNotHappen()
         } as Consumer<TaskEngineEnvelope>
 
-        val newConsumer = when (jobName) {
-            is TaskName -> consumerFactory.newConsumer(
-                consumerName = "$name:$it",
-                taskTopic = TaskTopic.ENGINE_NEW,
-                taskName = jobName
-            )
-            is WorkflowName -> consumerFactory.newConsumer(
-                consumerName = "$name:$it",
-                workflowTaskTopic = WorkflowTaskTopic.ENGINE_NEW,
-                workflowName = jobName
-            )
-            else -> thisShouldNotHappen()
-        } as Consumer<TaskEngineEnvelope>
+        // coroutine pulling pulsar messages
+        pullMessages(consumer, inputChannel)
 
-        // coroutine pulling pulsar events messages
-        pullMessages(existingConsumer, eventsInputChannel)
-
-        // coroutine pulling pulsar commands messages
-        pullMessages(newConsumer, commandsInputChannel)
-
-        // coroutine acknowledging pulsar event messages
-        acknowledgeMessages(existingConsumer, eventsOutputChannel)
-
-        // coroutine acknowledging pulsar commands messages
-        acknowledgeMessages(newConsumer, commandsOutputChannel)
+        // coroutine acknowledging pulsar messages
+        acknowledgeMessages(consumer, outputChannel)
     }
 }

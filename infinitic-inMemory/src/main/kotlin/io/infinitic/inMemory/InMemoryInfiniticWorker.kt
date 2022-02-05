@@ -114,20 +114,15 @@ class InMemoryInfiniticWorker(
     }
 
     override fun startTaskTagEngines(taskName: TaskName, concurrency: Int, storage: TaskTagStorage) {
-        val commandsChannel = Channel<TaskTagEngineMessageToProcess>()
-        val eventsChannel = Channel<TaskTagEngineMessageToProcess>()
-
-        output.taskTagCommandsChannel[taskName] = commandsChannel
-        output.taskTagEventsChannel[taskName] = eventsChannel
+        val channel = Channel<TaskTagEngineMessageToProcess>()
+        output.taskTagChannel[taskName] = channel
 
         runningScope.launch {
             startTaskTagEngine(
                 "task-tag-engine: $name",
                 storage,
-                eventsInputChannel = eventsChannel,
-                eventsOutputChannel = output.logChannel,
-                commandsInputChannel = commandsChannel,
-                commandsOutputChannel = output.logChannel,
+                inputChannel = channel,
+                outputChannel = output.logChannel,
                 output.sendCommandsToTaskEngine(taskName),
                 output.sendToClient
             )
@@ -135,20 +130,15 @@ class InMemoryInfiniticWorker(
     }
 
     override fun startTaskEngines(taskName: TaskName, concurrency: Int, storage: TaskStateStorage) {
-        val commandsChannel = Channel<TaskEngineMessageToProcess>()
-        val eventsChannel = Channel<TaskEngineMessageToProcess>()
-
-        output.taskCommandsChannel[taskName] = commandsChannel
-        output.taskEventsChannel[taskName] = eventsChannel
+        val channel = Channel<TaskEngineMessageToProcess>()
+        output.taskChannel[taskName] = channel
 
         runningScope.launch {
             startTaskEngine(
-                "in-memory-task-engine: $taskName",
+                "task-engine: $taskName",
                 storage,
-                eventsInputChannel = eventsChannel,
-                eventsOutputChannel = output.logChannel,
-                commandsInputChannel = commandsChannel,
-                commandsOutputChannel = output.logChannel,
+                inputChannel = channel,
+                outputChannel = output.logChannel,
                 output.sendToClient,
                 output.sendEventsToTaskTagEngine,
                 output.sendToTaskEngineAfter(taskName),
@@ -164,20 +154,15 @@ class InMemoryInfiniticWorker(
     }
 
     override fun startWorkflowTagEngines(workflowName: WorkflowName, concurrency: Int, storage: WorkflowTagStorage) {
-        val commandsChannel = Channel<WorkflowTagEngineMessageToProcess>()
-        val eventsChannel = Channel<WorkflowTagEngineMessageToProcess>()
-
-        output.workflowTagCommandsChannel[workflowName] = commandsChannel
-        output.workflowTagEventsChannel[workflowName] = eventsChannel
+        val channel = Channel<WorkflowTagEngineMessageToProcess>()
+        output.workflowTagChannel[workflowName] = channel
 
         runningScope.launch {
             startWorkflowTagEngine(
                 "workflow-tag-engine: $name",
                 storage,
-                eventsInputChannel = eventsChannel,
-                eventsOutputChannel = output.logChannel,
-                commandsInputChannel = commandsChannel,
-                commandsOutputChannel = output.logChannel,
+                inputChannel = channel,
+                outputChannel = output.logChannel,
                 output.sendCommandsToWorkflowEngine,
                 output.sendToClient
             )
@@ -185,20 +170,15 @@ class InMemoryInfiniticWorker(
     }
 
     override fun startWorkflowEngines(workflowName: WorkflowName, concurrency: Int, storage: WorkflowStateStorage) {
-        val commandsChannel = Channel<WorkflowEngineMessageToProcess>()
-        val eventsChannel = Channel<WorkflowEngineMessageToProcess>()
-
-        output.workflowCommandsChannel[workflowName] = commandsChannel
-        output.workflowEventsChannel[workflowName] = eventsChannel
+        val channel = Channel<WorkflowEngineMessageToProcess>()
+        output.workflowChannel[workflowName] = channel
 
         runningScope.launch {
             startWorkflowEngine(
                 "workflow-engine: $name",
                 storage,
-                eventsInputChannel = eventsChannel,
-                eventsOutputChannel = output.logChannel,
-                commandsInputChannel = commandsChannel,
-                commandsOutputChannel = output.logChannel,
+                inputChannel = channel,
+                outputChannel = output.logChannel,
                 output.sendToClient,
                 output.sendCommandsToTaskTagEngine,
                 {
@@ -219,20 +199,15 @@ class InMemoryInfiniticWorker(
     }
 
     override fun startTaskEngines(workflowName: WorkflowName, concurrency: Int, storage: TaskStateStorage) {
-        val commandsChannel = Channel<TaskEngineMessageToProcess>()
-        val eventsChannel = Channel<TaskEngineMessageToProcess>()
-
-        output.workflowTaskCommandsChannel[workflowName] = commandsChannel
-        output.workflowTaskEventsChannel[workflowName] = eventsChannel
+        val channel = Channel<TaskEngineMessageToProcess>()
+        output.workflowTaskChannel[workflowName] = channel
 
         runningScope.launch {
             startTaskEngine(
                 "in-memory-workflow-task-engine: $workflowName",
                 storage,
-                eventsInputChannel = eventsChannel,
-                eventsOutputChannel = output.logChannel,
-                commandsInputChannel = commandsChannel,
-                commandsOutputChannel = output.logChannel,
+                inputChannel = channel,
+                outputChannel = output.logChannel,
                 output.sendToClient,
                 output.sendEventsToTaskTagEngine,
                 output.sendToTaskEngineAfter(workflowName),

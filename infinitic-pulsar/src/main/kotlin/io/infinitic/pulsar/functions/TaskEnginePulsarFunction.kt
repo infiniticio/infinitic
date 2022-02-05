@@ -31,7 +31,6 @@ import io.infinitic.common.data.ClientName
 import io.infinitic.common.storage.keyValue.CachedKeyValueStorage
 import io.infinitic.common.tasks.engine.messages.TaskEngineEnvelope
 import io.infinitic.pulsar.functions.storage.keyValueStorage
-import io.infinitic.pulsar.topics.TopicType
 import io.infinitic.pulsar.transport.PulsarOutput
 import io.infinitic.tasks.engine.TaskEngine
 import io.infinitic.tasks.engine.storage.BinaryTaskStateStorage
@@ -67,9 +66,9 @@ class TaskEnginePulsarFunction : Function<TaskEngineEnvelope, Void> {
                 )
             ),
             output.sendToClient(),
-            output.sendToTaskTagEngine(TopicType.EXISTING),
+            output.sendToTaskTagEngine(),
             output.sendToTaskEngineAfter(),
-            output.sendToWorkflowEngine(TopicType.EXISTING),
+            output.sendToWorkflowEngine(),
             output.sendToTaskExecutors(),
             output.sendToMetricsPerName()
         )

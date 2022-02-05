@@ -36,9 +36,7 @@ import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.coroutines.channels.SendChannel
-import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.selects.select
 import mu.KotlinLogging
 
 private val logger = KotlinLogging.logger(TaskTagEngine::class.java.name)
@@ -52,10 +50,8 @@ private fun logError(messageToProcess: TaskTagEngineMessageToProcess, e: Throwab
 fun <T : TaskTagEngineMessageToProcess> CoroutineScope.startTaskTagEngine(
     name: String,
     taskTagStorage: TaskTagStorage,
-    eventsInputChannel: ReceiveChannel<T>,
-    eventsOutputChannel: SendChannel<T>,
-    commandsInputChannel: ReceiveChannel<T>,
-    commandsOutputChannel: SendChannel<T>,
+    inputChannel: ReceiveChannel<T>,
+    outputChannel: SendChannel<T>,
     sendToTaskEngine: SendToTaskEngine,
     sendToClient: SendToClient,
 ) = launch(CoroutineName(name)) {
@@ -67,28 +63,14 @@ fun <T : TaskTagEngineMessageToProcess> CoroutineScope.startTaskTagEngine(
         sendToClient
     )
 
-    while (isActive) {
-        select<Unit> {
-            eventsInputChannel.onReceive {
-                try {
-                    it.returnValue = tagEngine.handle(it.message)
-                } catch (e: Throwable) {
-                    it.throwable = e
-                    logError(it, e)
-                } finally {
-                    eventsOutputChannel.send(it)
-                }
-            }
-            commandsInputChannel.onReceive {
-                try {
-                    it.returnValue = tagEngine.handle(it.message)
-                } catch (e: Throwable) {
-                    it.throwable = e
-                    logError(it, e)
-                } finally {
-                    commandsOutputChannel.send(it)
-                }
-            }
+    for (message in inputChannel) {
+        try {
+            message.returnValue = tagEngine.handle(message.message)
+        } catch (e: Throwable) {
+            message.throwable = e
+            logError(message, e)
+        } finally {
+            outputChannel.send(message)
         }
     }
 }

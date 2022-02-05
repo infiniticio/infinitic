@@ -35,7 +35,6 @@ import io.infinitic.common.tasks.executors.messages.TaskExecutorMessage
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineEnvelope
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
 import io.infinitic.pulsar.schemas.schemaDefinition
-import io.infinitic.pulsar.topics.TopicType
 import io.infinitic.pulsar.transport.PulsarOutput
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.core.spec.style.stringSpec
@@ -83,11 +82,11 @@ private fun shouldBeAbleToSendMessageToWorkflowEngineCommandsTopic(msg: Workflow
         every { builder.key(any()) } returns builder
         every { builder.send() } returns mockk()
         // when
-        PulsarOutput.from(context).sendToWorkflowEngine(TopicType.NEW)(msg)
+        PulsarOutput.from(context).sendToWorkflowEngine()(msg)
         // then
         verify {
             context.newOutputMessage(
-                "persistent://tenant/namespace/workflow-engine-new: ${msg.workflowName}",
+                "persistent://tenant/namespace/workflow-engine: ${msg.workflowName}",
                 slotSchema.captured
             )
         }
@@ -112,11 +111,11 @@ private fun shouldBeAbleToSendMessageToTaskEngineCommandsTopic(msg: TaskEngineMe
         every { builder.key(any()) } returns builder
         every { builder.send() } returns mockk()
         // when
-        PulsarOutput.from(context).sendToTaskEngine(TopicType.NEW)(msg)
+        PulsarOutput.from(context).sendToTaskEngine()(msg)
         // then
         verify {
             context.newOutputMessage(
-                "persistent://tenant/namespace/task-engine-new: ${msg.taskName}",
+                "persistent://tenant/namespace/task-engine: ${msg.taskName}",
                 slotSchema.captured
             )
         }

@@ -33,7 +33,6 @@ import io.infinitic.common.tasks.executors.messages.TaskExecutorMessage
 import io.infinitic.common.workflows.data.workflows.WorkflowName
 import io.infinitic.pulsar.PulsarInfiniticClient
 import io.infinitic.pulsar.topics.TaskTopic
-import io.infinitic.pulsar.topics.TopicType
 import io.infinitic.pulsar.topics.WorkflowTaskTopic
 import io.infinitic.pulsar.transport.PulsarConsumerFactory
 import io.infinitic.pulsar.transport.PulsarMessageToProcess
@@ -67,7 +66,7 @@ fun CoroutineScope.startPulsarTaskExecutors(
             taskExecutorRegister,
             inputChannel,
             outputChannel,
-            output.sendToTaskEngine(TopicType.EXISTING, name),
+            output.sendToTaskEngine(name),
             clientFactory
         )
     }

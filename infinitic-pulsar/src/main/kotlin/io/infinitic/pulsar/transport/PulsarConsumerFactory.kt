@@ -80,14 +80,14 @@ class PulsarConsumerFactory(
         val subscriptionName = taskTopic.prefix + "_subscription"
 
         return when (taskTopic) {
-            TaskTopic.TAG_NEW, TaskTopic.TAG_EXISTING -> newConsumer<TaskTagEngineEnvelope>(
+            TaskTopic.TAG -> newConsumer<TaskTagEngineEnvelope>(
                 consumerName = consumerName,
                 topic = topic,
                 subscriptionType = SubscriptionType.Key_Shared,
                 subscriptionName = subscriptionName,
                 ackTimeout = 60
             )
-            TaskTopic.ENGINE_NEW, TaskTopic.ENGINE_EXISTING -> newConsumer<TaskEngineEnvelope>(
+            TaskTopic.ENGINE -> newConsumer<TaskEngineEnvelope>(
                 consumerName = consumerName,
                 topic = topic,
                 subscriptionType = SubscriptionType.Key_Shared,
@@ -123,14 +123,14 @@ class PulsarConsumerFactory(
         val subscriptionName = workflowTaskTopic.prefix + "_subscription"
 
         return when (workflowTaskTopic) {
-            WorkflowTaskTopic.TAG_NEW, WorkflowTaskTopic.TAG_EXISTING -> newConsumer<TaskTagEngineEnvelope>(
+            WorkflowTaskTopic.TAG -> newConsumer<TaskTagEngineEnvelope>(
                 consumerName = consumerName,
                 topic = topic,
                 subscriptionType = SubscriptionType.Key_Shared,
                 subscriptionName = subscriptionName,
                 ackTimeout = 60
             )
-            WorkflowTaskTopic.ENGINE_NEW, WorkflowTaskTopic.ENGINE_EXISTING -> newConsumer<TaskEngineEnvelope>(
+            WorkflowTaskTopic.ENGINE -> newConsumer<TaskEngineEnvelope>(
                 consumerName = consumerName,
                 topic = topic,
                 subscriptionType = SubscriptionType.Key_Shared,
@@ -166,14 +166,14 @@ class PulsarConsumerFactory(
         val subscriptionName = workflowTopic.prefix + "_subscription"
 
         return when (workflowTopic) {
-            WorkflowTopic.TAG_NEW, WorkflowTopic.TAG_EXISTING -> newConsumer<WorkflowTagEngineEnvelope>(
+            WorkflowTopic.TAG -> newConsumer<WorkflowTagEngineEnvelope>(
                 consumerName = consumerName,
                 topic = topic,
                 subscriptionType = SubscriptionType.Key_Shared,
                 subscriptionName = subscriptionName,
                 ackTimeout = 60
             )
-            WorkflowTopic.ENGINE_NEW, WorkflowTopic.ENGINE_EXISTING -> newConsumer<WorkflowEngineEnvelope>(
+            WorkflowTopic.ENGINE -> newConsumer<WorkflowEngineEnvelope>(
                 consumerName = consumerName,
                 topic = topic,
                 subscriptionType = SubscriptionType.Key_Shared,
