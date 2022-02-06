@@ -26,10 +26,10 @@
 package io.infinitic.common.workflows.data.commands
 
 import io.infinitic.common.workflows.data.methodRuns.MethodRunPosition
-import io.infinitic.common.workflows.data.workflows.WorkflowChangeCheckMode
-import io.infinitic.common.workflows.data.workflows.WorkflowChangeCheckMode.NONE
-import io.infinitic.common.workflows.data.workflows.WorkflowChangeCheckMode.SIMPLE
-import io.infinitic.common.workflows.data.workflows.WorkflowChangeCheckMode.STRICT
+import io.infinitic.workflows.WorkflowChangeCheckMode
+import io.infinitic.workflows.WorkflowChangeCheckMode.NONE
+import io.infinitic.workflows.WorkflowChangeCheckMode.SIMPLE
+import io.infinitic.workflows.WorkflowChangeCheckMode.STRICT
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 

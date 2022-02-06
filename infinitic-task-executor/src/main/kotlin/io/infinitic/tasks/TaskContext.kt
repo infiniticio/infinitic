@@ -27,7 +27,6 @@ package io.infinitic.tasks
 
 import io.infinitic.client.InfiniticClient
 import io.infinitic.common.errors.WorkerError
-import io.infinitic.common.tasks.data.TaskOptions
 
 interface TaskContext {
     val register: TaskExecutorRegister

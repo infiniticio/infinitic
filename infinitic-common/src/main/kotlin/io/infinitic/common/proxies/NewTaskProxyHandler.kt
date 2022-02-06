@@ -27,8 +27,8 @@ package io.infinitic.common.proxies
 
 import io.infinitic.common.tasks.data.TaskMeta
 import io.infinitic.common.tasks.data.TaskName
-import io.infinitic.common.tasks.data.TaskOptions
 import io.infinitic.common.tasks.data.TaskTag
+import io.infinitic.tasks.TaskOptions
 
 class NewTaskProxyHandler<K : Any>(
     override val klass: Class<K>,

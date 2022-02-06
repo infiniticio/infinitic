@@ -31,15 +31,14 @@ import io.infinitic.common.proxies.NewTaskProxyHandler
 import io.infinitic.common.proxies.NewWorkflowProxyHandler
 import io.infinitic.common.proxies.ProxyHandler
 import io.infinitic.common.tasks.data.TaskMeta
-import io.infinitic.common.tasks.data.TaskOptions
 import io.infinitic.common.tasks.data.TaskTag
 import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.data.workflows.WorkflowMeta
-import io.infinitic.common.workflows.data.workflows.WorkflowOptions
 import io.infinitic.common.workflows.data.workflows.WorkflowTag
 import io.infinitic.exceptions.clients.InvalidStubException
 import io.infinitic.exceptions.workflows.MultipleGettersForSameChannelException
 import io.infinitic.exceptions.workflows.NonIdempotentChannelGetterException
+import io.infinitic.tasks.TaskOptions
 import java.time.Duration
 import java.time.Instant
 
@@ -79,30 +78,6 @@ abstract class Workflow {
         workflowOptions = options,
         workflowMeta = WorkflowMeta(meta)
     ) { dispatcher }.stub()
-
-//    /**
-//     *  Create a stub for an existing task targeted by id
-//     */
-//    fun <T : Any> getTaskById(
-//        klass: Class<out T>,
-//        id: String
-//    ): T = GetTaskProxyHandler(
-//        klass = klass,
-//        TaskId(id),
-//        null
-//    ) { dispatcher }.stub()
-//
-//    /**
-//     *  Create a stub for existing task targeted by tag
-//     */
-//    fun <T : Any> getTaskByTag(
-//        klass: Class<out T>,
-//        tag: String
-//    ): T = GetTaskProxyHandler(
-//        klass = klass,
-//        null,
-//        TaskTag(tag)
-//    ) { dispatcher }.stub()
 
     /**
      *  Create a stub for an existing workflow targeted by id

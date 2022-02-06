@@ -23,17 +23,14 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.common.workflows.data.workflows
+package io.infinitic.tasks
 
-import io.infinitic.common.data.JobOptions
+import io.infinitic.common.serDe.kserializer.DurationSerializer
 import kotlinx.serialization.Serializable
+import java.time.Duration
 
 @Serializable
-data class WorkflowOptions(
-    val workflowChangeCheckMode: WorkflowChangeCheckMode = WorkflowChangeCheckMode.STRICT
-) : JobOptions
-
-@Serializable
-enum class WorkflowChangeCheckMode {
-    NONE, SIMPLE, STRICT
-}
+data class TaskOptions(
+    @Serializable(with = DurationSerializer::class)
+    val maxRunDuration: Duration? = null
+)

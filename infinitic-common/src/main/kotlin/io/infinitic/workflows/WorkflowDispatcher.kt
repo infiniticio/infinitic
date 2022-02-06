@@ -45,8 +45,6 @@ interface WorkflowDispatcher : ProxyDispatcher {
 
     fun timer(instant: Instant): Deferred<Instant>
 
-//    fun <T : Any> receiveSignal(channel: Channel<T>, jsonPath: String?, criteria: Criteria?): Deferred<T>
-
     fun <S : T, T : Any> receiveSignal(channel: Channel<T>, klass: Class<S>?, jsonPath: String?, criteria: Criteria?): Deferred<S>
 
     fun <T : Any> sendSignal(channel: Channel<T>, signal: T)
