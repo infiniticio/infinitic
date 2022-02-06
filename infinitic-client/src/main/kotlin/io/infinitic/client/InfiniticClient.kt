@@ -37,18 +37,17 @@ import io.infinitic.common.proxies.NewWorkflowProxyHandler
 import io.infinitic.common.proxies.ProxyHandler
 import io.infinitic.common.tasks.data.TaskId
 import io.infinitic.common.tasks.data.TaskMeta
-import io.infinitic.common.tasks.data.TaskOptions
 import io.infinitic.common.tasks.data.TaskTag
 import io.infinitic.common.tasks.engine.SendToTaskEngine
 import io.infinitic.common.tasks.tags.SendToTaskTagEngine
 import io.infinitic.common.workflows.data.methodRuns.MethodRunId
 import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.data.workflows.WorkflowMeta
-import io.infinitic.common.workflows.data.workflows.WorkflowOptions
 import io.infinitic.common.workflows.data.workflows.WorkflowTag
 import io.infinitic.common.workflows.engine.SendToWorkflowEngine
 import io.infinitic.common.workflows.tags.SendToWorkflowTagEngine
 import io.infinitic.exceptions.clients.InvalidStubException
+import io.infinitic.tasks.TaskOptions
 import io.infinitic.workflows.Consumer0
 import io.infinitic.workflows.Consumer1
 import io.infinitic.workflows.Consumer2
@@ -59,6 +58,7 @@ import io.infinitic.workflows.Consumer6
 import io.infinitic.workflows.Consumer7
 import io.infinitic.workflows.Consumer8
 import io.infinitic.workflows.Consumer9
+import io.infinitic.workflows.WorkflowOptions
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.asCoroutineDispatcher
@@ -142,14 +142,14 @@ abstract class InfiniticClient : Closeable {
     @JvmOverloads
     fun <T : Any> newTask(
         klass: Class<out T>,
-        tags: Set<String> = setOf(),
-        options: TaskOptions = TaskOptions(),
-        meta: Map<String, ByteArray> = mapOf()
+        tags: Set<String>? = null,
+        options: TaskOptions? = null,
+        meta: Map<String, ByteArray>? = null
     ): T = NewTaskProxyHandler(
         klass = klass,
-        taskTags = tags.map { TaskTag(it) }.toSet(),
-        taskOptions = options,
-        taskMeta = TaskMeta(meta)
+        taskTags = tags?.map { TaskTag(it) }?.toSet() ?: setOf(),
+        taskOptions = options ?: TaskOptions(),
+        taskMeta = TaskMeta(meta ?: mapOf())
     ) { dispatcher }.stub()
 
     /**
@@ -158,14 +158,14 @@ abstract class InfiniticClient : Closeable {
     @JvmOverloads
     fun <T : Any> newWorkflow(
         klass: Class<out T>,
-        tags: Set<String> = setOf(),
-        options: WorkflowOptions = WorkflowOptions(),
-        meta: Map<String, ByteArray> = mapOf(),
+        tags: Set<String>? = null,
+        options: WorkflowOptions? = null,
+        meta: Map<String, ByteArray>? = null,
     ): T = NewWorkflowProxyHandler(
         klass = klass,
-        workflowTags = tags.map { WorkflowTag(it) }.toSet(),
-        workflowOptions = options,
-        workflowMeta = WorkflowMeta(meta)
+        workflowTags = tags?.map { WorkflowTag(it) }?.toSet() ?: setOf(),
+        workflowOptions = options ?: WorkflowOptions(),
+        workflowMeta = WorkflowMeta(meta ?: mapOf())
     ) { dispatcher }.stub()
 
     /**

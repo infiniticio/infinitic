@@ -23,17 +23,8 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.common.workflows.data.workflows
+package io.infinitic.pulsar.topics
 
-import io.infinitic.common.data.JobOptions
-import kotlinx.serialization.Serializable
-
-@Serializable
-data class WorkflowOptions(
-    val workflowChangeCheckMode: WorkflowChangeCheckMode = WorkflowChangeCheckMode.STRICT
-) : JobOptions
-
-@Serializable
-enum class WorkflowChangeCheckMode {
-    NONE, SIMPLE, STRICT
+interface Topic {
+    val prefix: String
 }

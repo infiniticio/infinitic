@@ -27,10 +27,8 @@ package io.infinitic.pulsar
 
 import io.infinitic.client.InfiniticClient
 import io.infinitic.common.data.ClientName
-import io.infinitic.common.workflows.engine.SendToWorkflowEngine
 import io.infinitic.pulsar.config.ClientConfig
 import io.infinitic.pulsar.topics.TopicName
-import io.infinitic.pulsar.topics.TopicType
 import io.infinitic.pulsar.transport.PulsarConsumerFactory
 import io.infinitic.pulsar.transport.PulsarOutput
 import io.infinitic.pulsar.workers.startClientResponseWorker
@@ -68,19 +66,19 @@ class PulsarInfiniticClient @JvmOverloads constructor(
     }
 
     override val sendToTaskTagEngine by lazy {
-        pulsarOutput.sendToTaskTagEngine(TopicType.NEW)
+        pulsarOutput.sendToTaskTagEngine()
     }
 
     override val sendToTaskEngine by lazy {
-        pulsarOutput.sendToTaskEngine(TopicType.NEW, null)
+        pulsarOutput.sendToTaskEngine()
     }
 
     override val sendToWorkflowTagEngine by lazy {
-        pulsarOutput.sendToWorkflowTagEngine(TopicType.NEW)
+        pulsarOutput.sendToWorkflowTagEngine()
     }
 
-    override val sendToWorkflowEngine: SendToWorkflowEngine by lazy {
-        pulsarOutput.sendToWorkflowEngine(TopicType.NEW)
+    override val sendToWorkflowEngine by lazy {
+        pulsarOutput.sendToWorkflowEngine()
     }
 
     override fun close() {

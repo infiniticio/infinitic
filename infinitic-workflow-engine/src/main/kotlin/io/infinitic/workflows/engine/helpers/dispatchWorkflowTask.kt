@@ -32,7 +32,6 @@ import io.infinitic.common.data.methods.MethodParameters
 import io.infinitic.common.tasks.data.TaskId
 import io.infinitic.common.tasks.data.TaskMeta
 import io.infinitic.common.tasks.data.TaskName
-import io.infinitic.common.tasks.data.TaskOptions
 import io.infinitic.common.tasks.engine.messages.DispatchTask
 import io.infinitic.common.workflows.data.methodRuns.MethodRun
 import io.infinitic.common.workflows.data.methodRuns.MethodRunPosition
@@ -40,6 +39,7 @@ import io.infinitic.common.workflows.data.workflowTasks.WorkflowTask
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskParameters
 import io.infinitic.common.workflows.data.workflowTasks.plus
 import io.infinitic.common.workflows.engine.state.WorkflowState
+import io.infinitic.tasks.TaskOptions
 import io.infinitic.workflows.engine.output.WorkflowEngineOutput
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch

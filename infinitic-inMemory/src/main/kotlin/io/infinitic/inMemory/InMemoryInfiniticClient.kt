@@ -61,7 +61,7 @@ class InMemoryInfiniticClient(
 
     init {
         runningScope.launch {
-            launch(CoroutineName("in-memory-client-logger")) {
+            launch(CoroutineName("client-logger")) {
                 @Suppress("ControlFlowWithEmptyBody")
                 for (messageToProcess in inMemoryOutput.logChannel) {
                     // just clear the channel

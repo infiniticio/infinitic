@@ -27,8 +27,8 @@ package io.infinitic.tasks.executor.task
 
 import io.infinitic.client.InfiniticClient
 import io.infinitic.common.errors.WorkerError
-import io.infinitic.common.tasks.data.TaskOptions
 import io.infinitic.tasks.TaskContext
+import io.infinitic.tasks.TaskOptions
 import io.infinitic.tasks.executor.TaskExecutor
 
 data class TaskContextImpl(

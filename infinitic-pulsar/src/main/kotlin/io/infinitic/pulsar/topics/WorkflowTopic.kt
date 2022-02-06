@@ -25,11 +25,9 @@
 
 package io.infinitic.pulsar.topics
 
-enum class WorkflowTopic(override val prefix: String) : TopicSet {
-    TAG_NEW("workflow-tag-new"),
-    TAG_EXISTING("workflow-tag-existing"),
-    ENGINE_NEW("workflow-engine-new"),
-    ENGINE_EXISTING("workflow-engine-existing"),
+enum class WorkflowTopic(override val prefix: String) : Topic {
+    TAG("workflow-tag"),
+    ENGINE("workflow-engine"),
     DELAYS("workflow-$TOPIC_WITH_DELAYS"),
     METRICS("workflow-metrics")
 }

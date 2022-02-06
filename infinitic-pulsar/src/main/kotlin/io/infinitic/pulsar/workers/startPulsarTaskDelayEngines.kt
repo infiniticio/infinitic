@@ -31,7 +31,6 @@ import io.infinitic.common.tasks.data.TaskName
 import io.infinitic.common.tasks.engine.messages.TaskEngineEnvelope
 import io.infinitic.common.workflows.data.workflows.WorkflowName
 import io.infinitic.pulsar.topics.TaskTopic
-import io.infinitic.pulsar.topics.TopicType
 import io.infinitic.pulsar.topics.WorkflowTaskTopic
 import io.infinitic.pulsar.transport.PulsarConsumerFactory
 import io.infinitic.pulsar.transport.PulsarOutput
@@ -56,7 +55,7 @@ fun CoroutineScope.startPulsarTaskDelayEngines(
             name,
             inputChannel,
             outputChannel,
-            output.sendToTaskEngine(TopicType.EXISTING)
+            output.sendToTaskEngine()
         )
     }
 
@@ -75,9 +74,9 @@ fun CoroutineScope.startPulsarTaskDelayEngines(
         else -> thisShouldNotHappen()
     } as Consumer<TaskEngineEnvelope>
 
-    // coroutine pulling pulsar events messages
+    // coroutine pulling pulsar messages
     pullMessages(consumer, inputChannel)
 
-    // coroutine acknowledging pulsar event messages
+    // coroutine acknowledging pulsar messages
     acknowledgeMessages(consumer, outputChannel)
 }

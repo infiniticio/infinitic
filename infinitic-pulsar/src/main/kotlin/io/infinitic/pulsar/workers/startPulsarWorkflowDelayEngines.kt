@@ -27,7 +27,6 @@ package io.infinitic.pulsar.workers
 
 import io.infinitic.common.workflows.data.workflows.WorkflowName
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineEnvelope
-import io.infinitic.pulsar.topics.TopicType
 import io.infinitic.pulsar.topics.WorkflowTopic
 import io.infinitic.pulsar.transport.PulsarConsumerFactory
 import io.infinitic.pulsar.transport.PulsarOutput
@@ -52,7 +51,7 @@ fun CoroutineScope.startPulsarWorkflowDelayEngines(
             name,
             inputChannel,
             outputChannel,
-            output.sendToWorkflowEngine(TopicType.EXISTING)
+            output.sendToWorkflowEngine()
         )
     }
 
@@ -63,9 +62,9 @@ fun CoroutineScope.startPulsarWorkflowDelayEngines(
         workflowName = workflowName
     ) as Consumer<WorkflowEngineEnvelope>
 
-    // coroutine pulling pulsar events messages
+    // coroutine pulling pulsar messages
     pullMessages(consumer, inputChannel)
 
-    // coroutine acknowledging pulsar event messages
+    // coroutine acknowledging pulsar messages
     acknowledgeMessages(consumer, outputChannel)
 }

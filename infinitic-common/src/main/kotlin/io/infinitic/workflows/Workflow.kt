@@ -31,15 +31,14 @@ import io.infinitic.common.proxies.NewTaskProxyHandler
 import io.infinitic.common.proxies.NewWorkflowProxyHandler
 import io.infinitic.common.proxies.ProxyHandler
 import io.infinitic.common.tasks.data.TaskMeta
-import io.infinitic.common.tasks.data.TaskOptions
 import io.infinitic.common.tasks.data.TaskTag
 import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.data.workflows.WorkflowMeta
-import io.infinitic.common.workflows.data.workflows.WorkflowOptions
 import io.infinitic.common.workflows.data.workflows.WorkflowTag
 import io.infinitic.exceptions.clients.InvalidStubException
 import io.infinitic.exceptions.workflows.MultipleGettersForSameChannelException
 import io.infinitic.exceptions.workflows.NonIdempotentChannelGetterException
+import io.infinitic.tasks.TaskOptions
 import java.time.Duration
 import java.time.Instant
 
@@ -54,14 +53,14 @@ abstract class Workflow {
     @JvmOverloads
     protected fun <T : Any> newTask(
         klass: Class<out T>,
-        tags: Set<String> = setOf(),
-        options: TaskOptions = TaskOptions(),
-        meta: Map<String, ByteArray> = mapOf()
+        tags: Set<String>? = null,
+        options: TaskOptions? = null,
+        meta: Map<String, ByteArray>? = null
     ): T = NewTaskProxyHandler(
         klass = klass,
-        taskTags = tags.map { TaskTag(it) }.toSet(),
-        taskOptions = options,
-        taskMeta = TaskMeta(meta)
+        taskTags = tags?.map { TaskTag(it) }?.toSet() ?: setOf(),
+        taskOptions = options ?: TaskOptions(),
+        taskMeta = TaskMeta(meta ?: mapOf())
     ) { dispatcher }.stub()
 
     /**
@@ -70,39 +69,15 @@ abstract class Workflow {
     @JvmOverloads
     protected fun <T : Any> newWorkflow(
         klass: Class<out T>,
-        tags: Set<String> = setOf(),
-        options: WorkflowOptions = WorkflowOptions(),
-        meta: Map<String, ByteArray> = mapOf()
+        tags: Set<String>? = null,
+        options: WorkflowOptions? = null,
+        meta: Map<String, ByteArray>? = null
     ): T = NewWorkflowProxyHandler(
         klass = klass,
-        workflowTags = tags.map { WorkflowTag(it) }.toSet(),
-        workflowOptions = options,
-        workflowMeta = WorkflowMeta(meta)
+        workflowTags = tags?.map { WorkflowTag(it) }?.toSet() ?: setOf(),
+        workflowOptions = options ?: WorkflowOptions(),
+        workflowMeta = WorkflowMeta(meta ?: mapOf())
     ) { dispatcher }.stub()
-
-//    /**
-//     *  Create a stub for an existing task targeted by id
-//     */
-//    fun <T : Any> getTaskById(
-//        klass: Class<out T>,
-//        id: String
-//    ): T = GetTaskProxyHandler(
-//        klass = klass,
-//        TaskId(id),
-//        null
-//    ) { dispatcher }.stub()
-//
-//    /**
-//     *  Create a stub for existing task targeted by tag
-//     */
-//    fun <T : Any> getTaskByTag(
-//        klass: Class<out T>,
-//        tag: String
-//    ): T = GetTaskProxyHandler(
-//        klass = klass,
-//        null,
-//        TaskTag(tag)
-//    ) { dispatcher }.stub()
 
     /**
      *  Create a stub for an existing workflow targeted by id

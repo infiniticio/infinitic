@@ -33,9 +33,9 @@ class TopicName(private val tenantName: String, private val namespace: String) {
 
     fun of(clientName: ClientName) = getPersistentTopicFullName("client: $clientName")
 
-    fun of(type: TopicSet, name: String) = getPersistentTopicFullName(type.prefix + ": " + name)
+    fun of(type: Topic) = getPersistentTopicFullName(type.prefix)
 
-    fun of(type: TopicSet) = getPersistentTopicFullName(type.prefix)
+    fun of(type: Topic, name: String) = getPersistentTopicFullName(type.prefix + ": " + name)
 
     private fun getPersistentTopicFullName(topic: String) =
         "persistent://$tenantName/$namespace/$topic"

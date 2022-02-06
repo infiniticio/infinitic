@@ -29,8 +29,10 @@ import io.infinitic.common.fixtures.later
 import io.infinitic.common.tasks.data.TaskMeta
 import io.infinitic.exceptions.CanceledTaskException
 import io.infinitic.exceptions.FailedTaskException
+import io.infinitic.exceptions.tasks.MaxRunDurationException
 import io.infinitic.factory.InfiniticClientFactory
 import io.infinitic.factory.InfiniticWorkerFactory
+import io.infinitic.tasks.TaskOptions
 import io.infinitic.tests.tasks.ExpectedException
 import io.infinitic.tests.tasks.Status
 import io.infinitic.tests.tasks.TaskA
@@ -41,6 +43,7 @@ import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import java.time.Duration
 
 internal class TaskTests : StringSpec({
 
@@ -52,6 +55,7 @@ internal class TaskTests : StringSpec({
 
     val taskTest = client.newTask(TaskTest::class.java)
     val taskTestWithTags = client.newTask(TaskTest::class.java, tags = setOf("foo", "bar"))
+    val taskTestWithOptions = client.newTask(TaskTest::class.java, options = TaskOptions(maxRunDuration = Duration.ofMillis(100)))
 
     beforeTest {
         worker.storageFlush()
@@ -95,6 +99,16 @@ internal class TaskTests : StringSpec({
         val deferred = client.dispatch(taskTest::log)
 
         deferred.await() shouldBe "00000000001"
+    }
+
+    "Task succeeds if max run duration not reached" {
+        taskTestWithOptions.await(50) shouldBe 50L
+    }
+
+    "Task fails due to max run duration" {
+        val error = shouldThrow<FailedTaskException> { taskTestWithOptions.await(200) }
+
+        error.workerException.name shouldBe MaxRunDurationException::class.java.name
     }
 
     "Task fails at first try" {

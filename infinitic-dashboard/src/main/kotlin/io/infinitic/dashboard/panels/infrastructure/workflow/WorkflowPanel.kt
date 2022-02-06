@@ -37,7 +37,7 @@ import io.infinitic.dashboard.panels.infrastructure.jobs.update
 import io.infinitic.dashboard.panels.infrastructure.requests.Loading
 import io.infinitic.dashboard.panels.infrastructure.requests.Request
 import io.infinitic.dashboard.svgs.icons.iconChevron
-import io.infinitic.pulsar.topics.TopicSet
+import io.infinitic.pulsar.topics.Topic
 import io.infinitic.pulsar.topics.WorkflowTaskTopic
 import io.infinitic.pulsar.topics.WorkflowTopic
 import kotlinx.coroutines.Job
@@ -79,7 +79,7 @@ class WorkflowPanel private constructor(private val workflowName: String) : Pane
     private val workflowTaskIsLoading = workflowTaskState.property(WorkflowTaskState::isLoading)
     private val workflowTaskLastUpdated = workflowTaskState.property(WorkflowTaskState::lastUpdatedAt)
 
-    private val selectionTopicType: KVar<TopicSet> = KVar(WorkflowTopic.ENGINE_NEW)
+    private val selectionTopicType: KVar<Topic> = KVar(WorkflowTopic.ENGINE)
     private val selectionTopicStats: KVar<Request<PartitionedTopicStats>> = KVar(Loading())
 
     private val selectionSlide = selectionSlide(selectionTopicType, selectionTopicStats)
@@ -183,7 +183,7 @@ class WorkflowPanel private constructor(private val workflowName: String) : Pane
         text: String,
         isLoading: KVar<Boolean>,
         lastUpdated: KVar<Instant>,
-        state: KVar<out JobState<out TopicSet>>
+        state: KVar<out JobState<out Topic>>
 
     ) {
         div().classes("pt-8 pb-8").new {

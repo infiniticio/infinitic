@@ -23,8 +23,14 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.pulsar.topics
+package io.infinitic.tasks
 
-interface TopicSet {
-    val prefix: String
-}
+import io.infinitic.common.serDe.kserializer.DurationSerializer
+import kotlinx.serialization.Serializable
+import java.time.Duration
+
+@Serializable
+data class TaskOptions(
+    @Serializable(with = DurationSerializer::class)
+    val maxRunDuration: Duration? = null
+)

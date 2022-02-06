@@ -67,19 +67,14 @@ class InMemoryOutput(private val scope: CoroutineScope) {
     val logChannel: Channel<MessageToProcess<Any>> = Channel()
     val clientChannel: Channel<ClientMessageToProcess> = Channel()
 
-    val taskTagCommandsChannel: ConcurrentHashMap<TaskName, Channel<TaskTagEngineMessageToProcess>> = ConcurrentHashMap()
-    val taskTagEventsChannel: ConcurrentHashMap<TaskName, Channel<TaskTagEngineMessageToProcess>> = ConcurrentHashMap()
-    val taskCommandsChannel: ConcurrentHashMap<TaskName, Channel<TaskEngineMessageToProcess>> = ConcurrentHashMap()
-    val taskEventsChannel: ConcurrentHashMap<TaskName, Channel<TaskEngineMessageToProcess>> = ConcurrentHashMap()
+    val taskTagChannel: ConcurrentHashMap<TaskName, Channel<TaskTagEngineMessageToProcess>> = ConcurrentHashMap()
+    val taskChannel: ConcurrentHashMap<TaskName, Channel<TaskEngineMessageToProcess>> = ConcurrentHashMap()
     val taskExecutorChannel: ConcurrentHashMap<TaskName, Channel<TaskExecutorMessageToProcess>> = ConcurrentHashMap()
     val taskMetricsPerNameChannel: ConcurrentHashMap<TaskName, Channel<MetricsPerNameMessageToProcess>> = ConcurrentHashMap()
 
-    val workflowTagCommandsChannel: ConcurrentHashMap<WorkflowName, Channel<WorkflowTagEngineMessageToProcess>> = ConcurrentHashMap()
-    val workflowTagEventsChannel: ConcurrentHashMap<WorkflowName, Channel<WorkflowTagEngineMessageToProcess>> = ConcurrentHashMap()
-    val workflowCommandsChannel: ConcurrentHashMap<WorkflowName, Channel<WorkflowEngineMessageToProcess>> = ConcurrentHashMap()
-    val workflowEventsChannel: ConcurrentHashMap<WorkflowName, Channel<WorkflowEngineMessageToProcess>> = ConcurrentHashMap()
-    val workflowTaskCommandsChannel: ConcurrentHashMap<WorkflowName, Channel<TaskEngineMessageToProcess>> = ConcurrentHashMap()
-    val workflowTaskEventsChannel: ConcurrentHashMap<WorkflowName, Channel<TaskEngineMessageToProcess>> = ConcurrentHashMap()
+    val workflowTagChannel: ConcurrentHashMap<WorkflowName, Channel<WorkflowTagEngineMessageToProcess>> = ConcurrentHashMap()
+    val workflowChannel: ConcurrentHashMap<WorkflowName, Channel<WorkflowEngineMessageToProcess>> = ConcurrentHashMap()
+    val workflowTaskChannel: ConcurrentHashMap<WorkflowName, Channel<TaskEngineMessageToProcess>> = ConcurrentHashMap()
     val workflowTaskExecutorChannel: ConcurrentHashMap<WorkflowName, Channel<TaskExecutorMessageToProcess>> = ConcurrentHashMap()
     val workflowMetricsPerNameChannel: ConcurrentHashMap<WorkflowName, Channel<MetricsPerNameMessageToProcess>> = ConcurrentHashMap()
 
@@ -96,7 +91,7 @@ class InMemoryOutput(private val scope: CoroutineScope) {
     val sendCommandsToTaskTagEngine: SendToTaskTagEngine = { message: TaskTagEngineMessage ->
         logger.debug { "sendCommandsToTaskTagEngine $message" }
         scope.future {
-            taskTagCommandsChannel[message.taskName]!!.send(InMemoryMessageToProcess(message))
+            taskTagChannel[message.taskName]!!.send(InMemoryMessageToProcess(message))
         }.join()
     }
 
@@ -104,7 +99,7 @@ class InMemoryOutput(private val scope: CoroutineScope) {
         logger.debug { "sendEventsToTaskTagEngine $message" }
         // As it's a back loop, we trigger it asynchronously to avoid deadlocks
         scope.future {
-            taskTagEventsChannel[message.taskName]!!.send(InMemoryMessageToProcess(message))
+            taskTagChannel[message.taskName]!!.send(InMemoryMessageToProcess(message))
         }
     }
 
@@ -112,19 +107,19 @@ class InMemoryOutput(private val scope: CoroutineScope) {
         null -> { message ->
             logger.debug { "sendCommandsToTaskEngine $message" }
             scope.future {
-                taskCommandsChannel[message.taskName]!!.send(InMemoryMessageToProcess(message))
+                taskChannel[message.taskName]!!.send(InMemoryMessageToProcess(message))
             }.join()
         }
         is TaskName -> { message ->
             logger.debug { "sendCommandsToTaskEngine $message" }
             scope.future {
-                taskCommandsChannel[name]!!.send(InMemoryMessageToProcess(message))
+                taskChannel[name]!!.send(InMemoryMessageToProcess(message))
             }.join()
         }
         is WorkflowName -> { message ->
             logger.debug { "sendCommandsToTaskEngine $message" }
             scope.future {
-                workflowTaskCommandsChannel[name]!!.send(InMemoryMessageToProcess(message))
+                workflowTaskChannel[name]!!.send(InMemoryMessageToProcess(message))
             }.join()
         }
         else -> thisShouldNotHappen()
@@ -135,14 +130,14 @@ class InMemoryOutput(private val scope: CoroutineScope) {
             logger.debug { "sendEventsToTaskEngine $message" }
             // As it's a back loop, we trigger it asynchronously to avoid deadlocks
             scope.future {
-                taskEventsChannel[name]!!.send(InMemoryMessageToProcess(message))
+                taskChannel[name]!!.send(InMemoryMessageToProcess(message))
             }
         }
         is WorkflowName -> { message ->
             logger.debug { "sendEventsToTaskEngine $message" }
             // As it's a back loop, we trigger it asynchronously to avoid deadlocks
             scope.future {
-                workflowTaskEventsChannel[name]!!.send(InMemoryMessageToProcess(message))
+                workflowTaskChannel[name]!!.send(InMemoryMessageToProcess(message))
             }
         }
         else -> thisShouldNotHappen()
@@ -154,7 +149,7 @@ class InMemoryOutput(private val scope: CoroutineScope) {
             // As it's a back loop, we trigger it asynchronously to avoid deadlocks
             scope.future {
                 delay(after.long)
-                taskEventsChannel[name]!!.send(InMemoryMessageToProcess(message))
+                taskChannel[name]!!.send(InMemoryMessageToProcess(message))
             }
         }
         is WorkflowName -> { message, after ->
@@ -162,7 +157,7 @@ class InMemoryOutput(private val scope: CoroutineScope) {
             // As it's a back loop, we trigger it asynchronously to avoid deadlocks
             scope.future {
                 delay(after.long)
-                workflowTaskEventsChannel[name]!!.send(InMemoryMessageToProcess(message))
+                workflowTaskChannel[name]!!.send(InMemoryMessageToProcess(message))
             }
         }
         else -> thisShouldNotHappen()
@@ -190,7 +185,7 @@ class InMemoryOutput(private val scope: CoroutineScope) {
     val sendCommandsToWorkflowTagEngine: SendToWorkflowTagEngine = { message ->
         logger.debug { "sendCommandsToWorkflowTagEngine $message" }
         scope.future {
-            workflowTagCommandsChannel[message.workflowName]!!.send(InMemoryMessageToProcess(message))
+            workflowTagChannel[message.workflowName]!!.send(InMemoryMessageToProcess(message))
         }.join()
     }
 
@@ -198,14 +193,14 @@ class InMemoryOutput(private val scope: CoroutineScope) {
         logger.debug { "sendEventsToWorkflowTagEngine $message" }
         // As it's a back loop, we trigger it asynchronously to avoid deadlocks
         scope.future {
-            workflowTagEventsChannel[message.workflowName]!!.send(InMemoryMessageToProcess(message))
+            workflowTagChannel[message.workflowName]!!.send(InMemoryMessageToProcess(message))
         }
     }
 
     val sendCommandsToWorkflowEngine: SendToWorkflowEngine = { message ->
         logger.debug { "sendCommandsToWorkflowEngine $message" }
         scope.future {
-            workflowCommandsChannel[message.workflowName]!!.send(InMemoryMessageToProcess(message))
+            workflowChannel[message.workflowName]!!.send(InMemoryMessageToProcess(message))
         }.join()
     }
 
@@ -213,7 +208,7 @@ class InMemoryOutput(private val scope: CoroutineScope) {
         logger.debug { "sendEventsToWorkflowEngine $message" }
         // As it's a back loop, we trigger it asynchronously to avoid deadlocks
         scope.future {
-            workflowEventsChannel[message.workflowName]!!.send(InMemoryMessageToProcess(message))
+            workflowChannel[message.workflowName]!!.send(InMemoryMessageToProcess(message))
         }
     }
 
@@ -222,7 +217,7 @@ class InMemoryOutput(private val scope: CoroutineScope) {
         // As it's a back loop, we trigger it asynchronously to avoid deadlocks
         scope.launch {
             delay(after.long)
-            workflowEventsChannel[message.workflowName]!!.send(InMemoryMessageToProcess(message))
+            workflowChannel[message.workflowName]!!.send(InMemoryMessageToProcess(message))
         }
     }
 

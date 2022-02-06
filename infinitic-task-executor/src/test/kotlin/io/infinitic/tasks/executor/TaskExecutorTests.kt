@@ -38,7 +38,6 @@ import io.infinitic.common.tasks.data.TaskAttemptId
 import io.infinitic.common.tasks.data.TaskId
 import io.infinitic.common.tasks.data.TaskMeta
 import io.infinitic.common.tasks.data.TaskName
-import io.infinitic.common.tasks.data.TaskOptions
 import io.infinitic.common.tasks.data.TaskRetryIndex
 import io.infinitic.common.tasks.data.TaskRetrySequence
 import io.infinitic.common.tasks.engine.SendToTaskEngine
@@ -47,10 +46,11 @@ import io.infinitic.common.tasks.engine.messages.TaskAttemptFailed
 import io.infinitic.common.tasks.engine.messages.TaskEngineMessage
 import io.infinitic.common.tasks.executors.messages.ExecuteTaskAttempt
 import io.infinitic.exceptions.tasks.ClassNotFoundException
+import io.infinitic.exceptions.tasks.MaxRunDurationException
 import io.infinitic.exceptions.tasks.NoMethodFoundWithParameterCountException
 import io.infinitic.exceptions.tasks.NoMethodFoundWithParameterTypesException
-import io.infinitic.exceptions.tasks.ProcessingTimeoutException
 import io.infinitic.exceptions.tasks.TooManyMethodsFoundWithParameterCountException
+import io.infinitic.tasks.TaskOptions
 import io.infinitic.tasks.executor.register.TaskExecutorRegisterImpl
 import io.infinitic.tasks.executor.samples.SampleTaskWithBuggyRetry
 import io.infinitic.tasks.executor.samples.SampleTaskWithContext
@@ -65,6 +65,7 @@ import io.mockk.coEvery
 import io.mockk.just
 import io.mockk.mockk
 import kotlinx.coroutines.coroutineScope
+import java.time.Duration
 
 private val clientName = ClientName("clientTaskExecutorTests")
 
@@ -284,7 +285,7 @@ class TaskExecutorTests : StringSpec({
         fail.taskRetrySequence shouldBe msg.taskRetrySequence
         fail.taskRetryIndex shouldBe msg.taskRetryIndex
         fail.taskAttemptDelayBeforeRetry shouldBe null
-        fail.workerError!!.name shouldBe ProcessingTimeoutException::class.java.name
+        fail.workerError!!.name shouldBe MaxRunDurationException::class.java.name
     }
 })
 
@@ -300,7 +301,7 @@ private fun getExecuteTaskAttempt(name: String, method: String, input: Array<out
     methodName = MethodName(method),
     methodParameterTypes = types?.let { MethodParameterTypes(it) },
     methodParameters = MethodParameters.from(*input),
-    taskOptions = TaskOptions(runningTimeout = .2F),
+    taskOptions = TaskOptions(maxRunDuration = Duration.ofMillis(200)),
     taskTags = setOf(),
     taskMeta = TaskMeta(),
     emitterName = clientName

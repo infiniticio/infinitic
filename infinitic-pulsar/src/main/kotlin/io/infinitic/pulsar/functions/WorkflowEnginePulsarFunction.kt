@@ -31,7 +31,6 @@ import io.infinitic.common.data.ClientName
 import io.infinitic.common.storage.keyValue.CachedKeyValueStorage
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineEnvelope
 import io.infinitic.pulsar.functions.storage.keyValueStorage
-import io.infinitic.pulsar.topics.TopicType
 import io.infinitic.pulsar.transport.PulsarOutput
 import io.infinitic.workflows.engine.WorkflowEngine
 import io.infinitic.workflows.engine.storage.BinaryWorkflowStateStorage
@@ -67,10 +66,10 @@ class WorkflowEnginePulsarFunction : Function<WorkflowEngineEnvelope, Void> {
                 )
             ),
             output.sendToClient(),
-            output.sendToTaskTagEngine(TopicType.NEW),
-            output.sendToTaskEngine(TopicType.NEW),
-            output.sendToWorkflowTagEngine(TopicType.EXISTING),
-            output.sendToWorkflowEngine(TopicType.EXISTING),
+            output.sendToTaskTagEngine(),
+            output.sendToTaskEngine(),
+            output.sendToWorkflowTagEngine(),
+            output.sendToWorkflowEngine(),
             output.sendToWorkflowEngineAfter()
         )
     }

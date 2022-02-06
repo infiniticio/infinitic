@@ -29,7 +29,6 @@ import io.infinitic.common.tasks.data.TaskName
 import io.infinitic.common.tasks.tags.messages.TaskTagEngineEnvelope
 import io.infinitic.common.tasks.tags.messages.TaskTagEngineMessage
 import io.infinitic.pulsar.topics.TaskTopic
-import io.infinitic.pulsar.topics.TopicType
 import io.infinitic.pulsar.transport.PulsarConsumerFactory
 import io.infinitic.pulsar.transport.PulsarMessageToProcess
 import io.infinitic.pulsar.transport.PulsarOutput
@@ -52,45 +51,29 @@ fun CoroutineScope.startPulsarTaskTagEngines(
 ) {
     repeat(concurrency) {
 
-        val eventsInputChannel = Channel<PulsarTaskTagEngineMessageToProcess>()
-        val eventsOutputChannel = Channel<PulsarTaskTagEngineMessageToProcess>()
-        val commandsInputChannel = Channel<PulsarTaskTagEngineMessageToProcess>()
-        val commandsOutputChannel = Channel<PulsarTaskTagEngineMessageToProcess>()
+        val inputChannel = Channel<PulsarTaskTagEngineMessageToProcess>()
+        val outputChannel = Channel<PulsarTaskTagEngineMessageToProcess>()
 
         startTaskTagEngine(
             "task-tag-engine-$it: $name",
             storage,
-            eventsInputChannel = eventsInputChannel,
-            eventsOutputChannel = eventsOutputChannel,
-            commandsInputChannel = commandsInputChannel,
-            commandsOutputChannel = commandsOutputChannel,
-            output.sendToTaskEngine(TopicType.NEW),
+            inputChannel = inputChannel,
+            outputChannel = outputChannel,
+            output.sendToTaskEngine(),
             output.sendToClient()
         )
 
         // Pulsar consumers
-        val existingConsumer = consumerFactory.newConsumer(
+        val consumer = consumerFactory.newConsumer(
             consumerName = "$name:$it",
-            taskTopic = TaskTopic.TAG_EXISTING,
-            taskName = taskName
-        ) as Consumer<TaskTagEngineEnvelope>
-
-        val newConsumer = consumerFactory.newConsumer(
-            consumerName = "$name:$it",
-            taskTopic = TaskTopic.TAG_NEW,
+            taskTopic = TaskTopic.TAG,
             taskName = taskName
         ) as Consumer<TaskTagEngineEnvelope>
 
         // coroutine pulling pulsar messages
-        pullMessages(existingConsumer, eventsInputChannel)
-
-        // coroutine pulling pulsar messages
-        pullMessages(newConsumer, commandsInputChannel)
+        pullMessages(consumer, inputChannel)
 
         // coroutine acknowledging pulsar event messages
-        acknowledgeMessages(existingConsumer, eventsOutputChannel)
-
-        // coroutine acknowledging pulsar commands messages
-        acknowledgeMessages(newConsumer, commandsOutputChannel)
+        acknowledgeMessages(consumer, outputChannel)
     }
 }
