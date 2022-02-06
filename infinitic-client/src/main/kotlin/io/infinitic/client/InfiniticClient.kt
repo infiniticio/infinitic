@@ -142,14 +142,14 @@ abstract class InfiniticClient : Closeable {
     @JvmOverloads
     fun <T : Any> newTask(
         klass: Class<out T>,
-        tags: Set<String> = setOf(),
-        options: TaskOptions = TaskOptions(),
-        meta: Map<String, ByteArray> = mapOf()
+        tags: Set<String>? = null,
+        options: TaskOptions? = null,
+        meta: Map<String, ByteArray>? = null
     ): T = NewTaskProxyHandler(
         klass = klass,
-        taskTags = tags.map { TaskTag(it) }.toSet(),
-        taskOptions = options,
-        taskMeta = TaskMeta(meta)
+        taskTags = tags?.map { TaskTag(it) }?.toSet() ?: setOf(),
+        taskOptions = options ?: TaskOptions(),
+        taskMeta = TaskMeta(meta ?: mapOf())
     ) { dispatcher }.stub()
 
     /**
@@ -158,14 +158,14 @@ abstract class InfiniticClient : Closeable {
     @JvmOverloads
     fun <T : Any> newWorkflow(
         klass: Class<out T>,
-        tags: Set<String> = setOf(),
-        options: WorkflowOptions = WorkflowOptions(),
-        meta: Map<String, ByteArray> = mapOf(),
+        tags: Set<String>? = null,
+        options: WorkflowOptions? = null,
+        meta: Map<String, ByteArray>? = null,
     ): T = NewWorkflowProxyHandler(
         klass = klass,
-        workflowTags = tags.map { WorkflowTag(it) }.toSet(),
-        workflowOptions = options,
-        workflowMeta = WorkflowMeta(meta)
+        workflowTags = tags?.map { WorkflowTag(it) }?.toSet() ?: setOf(),
+        workflowOptions = options ?: WorkflowOptions(),
+        workflowMeta = WorkflowMeta(meta ?: mapOf())
     ) { dispatcher }.stub()
 
     /**
