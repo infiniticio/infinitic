@@ -603,7 +603,7 @@ internal class WorkflowTests : StringSpec({
 
     "Tag should be added then deleted after completion" {
         val deferred = client.dispatch(workflowATagged::channel1)
-        
+
         val w = client.getWorkflowByTag(WorkflowA::class.java, "foo")
         client.getIds(w).contains(deferred.id) shouldBe true
 
