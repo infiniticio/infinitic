@@ -61,14 +61,16 @@ class DeferredMethod<R> (
         workflowId != null ->
             dispatcher.awaitWorkflow(returnClass, workflowName, methodName, workflowId, methodRunId!!, true)
         workflowTag != null ->
-            throw TODO()
+            TODO()
         else ->
             thisShouldNotHappen()
     }
 
-    override val id: String = when {
-        workflowId != null -> methodRunId!!.toString()
-        workflowTag != null -> throw Exception()
-        else -> thisShouldNotHappen()
+    override val id: String by lazy {
+        when {
+            workflowId != null -> methodRunId!!.toString()
+            workflowTag != null -> TODO()
+            else -> thisShouldNotHappen()
+        }
     }
 }

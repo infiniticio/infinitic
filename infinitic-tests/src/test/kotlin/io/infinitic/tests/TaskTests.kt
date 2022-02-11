@@ -184,7 +184,7 @@ internal class TaskTests : StringSpec({
         val t = client.getTaskByTag(TaskTest::class.java, "foo")
         client.retry(t)
 
-        delay(50)
+        delay(30)
 
         deferred.await() shouldBe "00001"
     }
