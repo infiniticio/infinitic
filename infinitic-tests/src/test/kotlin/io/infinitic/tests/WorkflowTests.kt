@@ -565,7 +565,7 @@ internal class WorkflowTests : StringSpec({
         workflowA.failing12() shouldBe "caught"
     }
 
-    "child workflow is canceled when parent workflow is canceled - tag are also added and deleted" {
+    "Child workflow is canceled when parent workflow is canceled - tag are also added and deleted" {
         client.dispatch(workflowATagged::cancel1)
 
         delay(1000)
@@ -578,11 +578,32 @@ internal class WorkflowTests : StringSpec({
         client.getIds(w).size shouldBe size - 2
     }
 
+    "Synchronous method call on workflow targeted by tag should not throw NotImplementedError" {
+        client.dispatch(workflowATagged::channel1)
+
+        val w = client.getWorkflowByTag(WorkflowA::class.java, "foo")
+
+        shouldThrow<NotImplementedError> {
+            w.empty()
+        }
+        // clean up
+        client.cancel(w)
+    }
+
+    "Asynchronous method call on workflow targeted by tag should not throw NotImplementedError" {
+        client.dispatch(workflowATagged::channel1)
+
+        val w = client.getWorkflowByTag(WorkflowA::class.java, "foo")
+
+        client.dispatch(w::empty)
+
+        // clean up
+        client.cancel(w)
+    }
+
     "Tag should be added then deleted after completion" {
         val deferred = client.dispatch(workflowATagged::channel1)
 
-        // delay is necessary to be sure that tag engine has processed
-        delay(500)
         val w = client.getWorkflowByTag(WorkflowA::class.java, "foo")
         client.getIds(w).contains(deferred.id) shouldBe true
 
