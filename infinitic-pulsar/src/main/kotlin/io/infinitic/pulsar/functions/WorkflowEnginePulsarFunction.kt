@@ -59,7 +59,7 @@ class WorkflowEnginePulsarFunction : Function<WorkflowEngineEnvelope, Void> {
         return WorkflowEngine(
             ClientName(""),
             BinaryWorkflowStateStorage(
-                // context storage decorated with logging and a 1h cache
+                // storage decorated with cache
                 CachedKeyValueStorage(
                     CaffeineKeyValueCache(Caffeine(expireAfterAccess = 3600)),
                     context.keyValueStorage()

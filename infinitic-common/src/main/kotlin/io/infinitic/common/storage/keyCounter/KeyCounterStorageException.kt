@@ -23,28 +23,8 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.tags.tasks.storage
+package io.infinitic.common.storage.keyCounter
 
-import io.infinitic.common.data.MessageId
-import io.infinitic.common.storage.Flushable
-import io.infinitic.common.tasks.data.TaskId
-import io.infinitic.common.tasks.data.TaskName
-import io.infinitic.common.tasks.data.TaskTag
+import io.infinitic.common.storage.StorageException
 
-/**
- * TagStateStorage implementations are responsible for storing the different state objects used by the engine.
- *
- * No assumptions are made on whether the storage should be persistent or not, nor how the data should be
- * transformed before being stored. These details are left to the implementation.
- */
-interface TaskTagStorage : Flushable {
-    suspend fun getLastMessageId(tag: TaskTag, taskName: TaskName): MessageId?
-
-    suspend fun setLastMessageId(tag: TaskTag, taskName: TaskName, messageId: MessageId)
-
-    suspend fun getTaskIds(tag: TaskTag, taskName: TaskName): Set<TaskId>
-
-    suspend fun addTaskId(tag: TaskTag, taskName: TaskName, taskId: TaskId)
-
-    suspend fun removeTaskId(tag: TaskTag, taskName: TaskName, taskId: TaskId)
-}
+class KeyCounterStorageException(e: Throwable) : StorageException(e)

@@ -25,28 +25,28 @@
 
 package io.infinitic.common.storage.keyCounter
 
-import mu.KotlinLogging
+import org.jetbrains.annotations.TestOnly
 
-class LoggedKeyCounterCache(
-    val cache: KeyCounterCache
-) : KeyCounterCache by cache {
+class WrappedKeyCounterStorage(
+    val storage: KeyCounterStorage
+) : KeyCounterStorage {
 
-    private val logger = KotlinLogging.logger {}
-
-    override fun get(key: String): Long? {
-        val value = cache.get(key)
-        logger.debug { "key $key - getCounter $value" }
-
-        return value
+    override suspend fun get(key: String) = try {
+        storage.get(key)
+    } catch (e: Throwable) {
+        throw KeyCounterStorageException(e)
     }
 
-    override fun set(key: String, amount: Long) {
-        logger.debug { "key $key - setCounter $amount" }
-        cache.set(key, amount)
+    override suspend fun incr(key: String, amount: Long) = try {
+        storage.incr(key, amount)
+    } catch (e: Throwable) {
+        throw KeyCounterStorageException(e)
     }
 
-    override fun incr(key: String, amount: Long) {
-        logger.debug { "key $key - incrCounter $amount" }
-        cache.incr(key, amount)
+    @TestOnly
+    override fun flush() = try {
+        storage.flush()
+    } catch (e: Throwable) {
+        throw KeyCounterStorageException(e)
     }
 }

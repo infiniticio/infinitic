@@ -26,23 +26,30 @@
 package io.infinitic.tags.workflows.storage
 
 import io.infinitic.common.data.MessageId
-import io.infinitic.common.data.UUIDConversion.toByteArray
-import io.infinitic.common.storage.Flushable
 import io.infinitic.common.storage.keySet.KeySetStorage
+import io.infinitic.common.storage.keySet.WrappedKeySetStorage
 import io.infinitic.common.storage.keyValue.KeyValueStorage
+import io.infinitic.common.storage.keyValue.WrappedKeyValueStorage
 import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.data.workflows.WorkflowName
 import io.infinitic.common.workflows.data.workflows.WorkflowTag
 import org.jetbrains.annotations.TestOnly
 
 /**
- * This StateStorage implementation converts state objects used by the engine to Avro objects, and saves
- * them in a persistent key value storage.
+ * WorkflowTagStorage implementation
+ *
+ * LastMessageId is saved in a key value store in a binary format
+ * WorkflowIds are saved in a key set store in a binary format
+ *
+ * Any exception thrown by the storage is wrapped into KeyValueStorageException
  */
 class BinaryWorkflowTagStorage(
-    private val keyValueStorage: KeyValueStorage,
-    private val keySetStorage: KeySetStorage,
-) : WorkflowTagStorage, Flushable {
+    keyValueStorage: KeyValueStorage,
+    keySetStorage: KeySetStorage,
+) : WorkflowTagStorage {
+
+    private val keyValueStorage = WrappedKeyValueStorage(keyValueStorage)
+    private val keySetStorage = WrappedKeySetStorage(keySetStorage)
 
     override suspend fun getLastMessageId(tag: WorkflowTag, workflowName: WorkflowName): MessageId? {
         val key = getTagMessageIdKey(tag, workflowName)

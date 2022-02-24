@@ -23,30 +23,36 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.common.storage.keySet
+package io.infinitic.common.storage.keyValue
 
-import mu.KotlinLogging
+import org.jetbrains.annotations.TestOnly
 
-class LoggedKeySetStorage(
-    val storage: KeySetStorage
-) : KeySetStorage by storage {
+class WrappedKeyValueStorage(
+    val storage: KeyValueStorage
+) : KeyValueStorage {
 
-    private val logger = KotlinLogging.logger {}
-
-    override suspend fun get(key: String): Set<ByteArray> {
-        val value = storage.get(key)
-        logger.debug { "key $key - getSet.size ${value.size}" }
-
-        return value
+    override suspend fun get(key: String): ByteArray? = try {
+        storage.get(key)
+    } catch (e: Throwable) {
+        throw KeyValueStorageException(e)
     }
 
-    override suspend fun add(key: String, value: ByteArray) {
-        logger.debug { "key $key - addToSet $value" }
-        storage.add(key, value)
+    override suspend fun put(key: String, value: ByteArray) = try {
+        storage.put(key, value)
+    } catch (e: Throwable) {
+        throw KeyValueStorageException(e)
     }
 
-    override suspend fun remove(key: String, value: ByteArray) {
-        logger.debug { "key $key - removeFromSet $value" }
-        storage.remove(key, value)
+    override suspend fun del(key: String) = try {
+        storage.del(key)
+    } catch (e: Throwable) {
+        throw KeyValueStorageException(e)
+    }
+
+    @TestOnly
+    override fun flush() = try {
+        storage.flush()
+    } catch (e: Throwable) {
+        throw KeyValueStorageException(e)
     }
 }

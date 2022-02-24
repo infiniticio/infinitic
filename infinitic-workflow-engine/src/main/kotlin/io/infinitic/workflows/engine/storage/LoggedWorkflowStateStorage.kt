@@ -30,10 +30,6 @@ import io.infinitic.common.workflows.engine.state.WorkflowState
 import mu.KotlinLogging
 import org.jetbrains.annotations.TestOnly
 
-/**
- * This WorkflowStateStorage implementation converts state objects used by the engine to Avro objects, and saves
- * them in a persistent key value storage.
- */
 class LoggedWorkflowStateStorage(
     private val storage: WorkflowStateStorage,
 ) : WorkflowStateStorage {

@@ -25,45 +25,52 @@
 
 package io.infinitic.common.storage.keyMap
 
-import mu.KotlinLogging
+import org.jetbrains.annotations.TestOnly
 
-class LoggedKeyMapStorage(
+class WrappedKeyMapStorage(
     val storage: KeyMapStorage
-) : KeyMapStorage by storage {
+) : KeyMapStorage {
 
-    private val logger = KotlinLogging.logger {}
-
-    override suspend fun get(key: String, field: String): ByteArray? {
-        val value = storage.get(key, field)
-        logger.debug { "key $key - get field $field value $value" }
-
-        return value
+    override suspend fun get(key: String, field: String) = try {
+        storage.get(key, field)
+    } catch (e: Throwable) {
+        throw KeyMapStorageException(e)
     }
 
-    override suspend fun get(key: String): Map<String, ByteArray>? {
-        val map = storage.get(key)
-        logger.debug { "key $key - get fields ${map?.keys?.joinToString(", ")}" }
-
-        return map
+    override suspend fun get(key: String) = try {
+        storage.get(key)
+    } catch (e: Throwable) {
+        throw KeyMapStorageException(e)
     }
 
-    override suspend fun put(key: String, field: String, value: ByteArray) {
-        logger.debug { "key $key - put field $field value $value" }
+    override suspend fun put(key: String, field: String, value: ByteArray) = try {
         storage.put(key, field, value)
+    } catch (e: Throwable) {
+        throw KeyMapStorageException(e)
     }
 
-    override suspend fun put(key: String, map: Map<String, ByteArray>) {
-        logger.debug { "key $key - put fields ${map.keys.joinToString(", ")}" }
+    override suspend fun put(key: String, map: Map<String, ByteArray>) = try {
         storage.put(key, map)
+    } catch (e: Throwable) {
+        throw KeyMapStorageException(e)
     }
 
-    override suspend fun del(key: String, field: String) {
-        logger.debug { "key $key - del field $field" }
+    override suspend fun del(key: String, field: String) = try {
         storage.del(key, field)
+    } catch (e: Throwable) {
+        throw KeyMapStorageException(e)
     }
 
-    override suspend fun del(key: String) {
-        logger.debug { "key $key - del" }
+    override suspend fun del(key: String) = try {
         storage.del(key)
+    } catch (e: Throwable) {
+        throw KeyMapStorageException(e)
+    }
+
+    @TestOnly
+    override fun flush() = try {
+        storage.flush()
+    } catch (e: Throwable) {
+        throw KeyMapStorageException(e)
     }
 }

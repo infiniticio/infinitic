@@ -26,16 +26,19 @@
 package io.infinitic.metrics.global.engine.storage
 
 import io.infinitic.common.metrics.global.state.MetricsGlobalState
-import io.infinitic.common.storage.Flushable
 import io.infinitic.common.storage.keyValue.KeyValueStorage
+import io.infinitic.common.storage.keyValue.WrappedKeyValueStorage
+import org.jetbrains.annotations.TestOnly
 
 /**
  * This StateStorage implementation converts state objects used by the engine to Avro objects, and saves
  * them in a persistent key value storage.
  */
 class BinaryMetricsGlobalStateStorage(
-    private val storage: KeyValueStorage,
-) : MetricsGlobalStateStorage, Flushable by storage {
+    storage: KeyValueStorage,
+) : MetricsGlobalStateStorage {
+
+    private val storage = WrappedKeyValueStorage(storage)
 
     override suspend fun getState(): MetricsGlobalState? {
         val key = getMetricsGlobalStateKey()
@@ -52,6 +55,9 @@ class BinaryMetricsGlobalStateStorage(
         val key = getMetricsGlobalStateKey()
         storage.del(key)
     }
+
+    @TestOnly
+    override fun flush() = storage.flush()
 
     private fun getMetricsGlobalStateKey() = "metricsGlobal.state"
 }

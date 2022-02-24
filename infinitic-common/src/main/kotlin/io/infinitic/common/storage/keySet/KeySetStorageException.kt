@@ -23,29 +23,8 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.common.storage.keyValue
+package io.infinitic.common.storage.keySet
 
-import mu.KotlinLogging
+import io.infinitic.common.storage.StorageException
 
-class LoggedKeyValueCache<T>(
-    val cache: KeyValueCache<T>
-) : KeyValueCache<T> by cache {
-
-    private val logger = KotlinLogging.logger {}
-
-    override fun getValue(key: String): T? {
-        val value = cache.getValue(key)
-        logger.debug { "key $key - getValue $value" }
-
-        return value
-    }
-
-    override fun putValue(key: String, value: T) {
-        logger.debug { "key $key - putValue $value" }
-        cache.putValue(key, value)
-    }
-    override fun delValue(key: String) {
-        logger.debug { "key $key - delValue" }
-        cache.delValue(key)
-    }
-}
+class KeySetStorageException(e: Throwable) : StorageException(e)

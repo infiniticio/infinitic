@@ -25,32 +25,34 @@
 
 package io.infinitic.common.storage.keySet
 
-import mu.KotlinLogging
+import org.jetbrains.annotations.TestOnly
 
-class LoggedKeySetCache<T>(
-    val cache: KeySetCache<T>
-) : KeySetCache<T> by cache {
+class WrappedKeySetStorage(
+    val storage: KeySetStorage
+) : KeySetStorage {
 
-    private val logger = KotlinLogging.logger {}
-
-    override fun get(key: String): Set<T>? {
-        val value = cache.get(key)
-        logger.debug { "key $key - getSet.size ${value?.size}" }
-
-        return value
+    override suspend fun get(key: String) = try {
+        storage.get(key)
+    } catch (e: Throwable) {
+        throw KeySetStorageException(e)
     }
 
-    override fun set(key: String, value: Set<T>) {
-        logger.debug { "key $key - setSet.size ${value.size}" }
-        cache.set(key, value)
+    override suspend fun add(key: String, value: ByteArray) = try {
+        storage.add(key, value)
+    } catch (e: Throwable) {
+        throw KeySetStorageException(e)
     }
 
-    override fun add(key: String, value: T) {
-        logger.debug { "key $key - addToSet $value" }
-        cache.add(key, value)
+    override suspend fun remove(key: String, value: ByteArray) = try {
+        storage.remove(key, value)
+    } catch (e: Throwable) {
+        throw KeySetStorageException(e)
     }
-    override fun remove(key: String, value: T) {
-        logger.debug { "key $key - removeFromSet $value" }
-        cache.remove(key, value)
+
+    @TestOnly
+    override fun flush() = try {
+        storage.flush()
+    } catch (e: Throwable) {
+        throw KeySetStorageException(e)
     }
 }

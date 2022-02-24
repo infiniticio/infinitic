@@ -27,12 +27,22 @@ package io.infinitic.tasks.engine.storage
 
 import io.infinitic.common.storage.Flushable
 import io.infinitic.common.storage.keyValue.KeyValueStorage
+import io.infinitic.common.storage.keyValue.WrappedKeyValueStorage
 import io.infinitic.common.tasks.data.TaskId
 import io.infinitic.common.tasks.engine.state.TaskState
+import org.jetbrains.annotations.TestOnly
 
+/**
+ * TaskStateStorage implementation
+ *
+ * TaskState are converted to Avro bytes array and saved in a key value store by TaskId
+ * Any exception thrown by the storage is wrapped into KeyValueStorageException
+ */
 class BinaryTaskStateStorage(
-    private val storage: KeyValueStorage
-) : TaskStateStorage, Flushable by storage {
+    storage: KeyValueStorage
+) : TaskStateStorage {
+
+    private val storage = WrappedKeyValueStorage(storage)
 
     override suspend fun getState(taskId: TaskId): TaskState? {
         val key = getTaskStateKey(taskId)
@@ -49,6 +59,9 @@ class BinaryTaskStateStorage(
         val key = getTaskStateKey(taskId)
         storage.del(key)
     }
+
+    @TestOnly
+    override fun flush() = storage.flush()
 
     private fun getTaskStateKey(taskId: TaskId) = "task.state.$taskId"
 }

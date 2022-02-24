@@ -39,8 +39,7 @@ open class CachedKeyValueStorage(
         return cache.getValue(key)
             ?: run {
                 logger.debug { "key $key - getValue - absent from cache, get from storage" }
-                storage.get(key)
-                    ?.also { cache.putValue(key, it) }
+                storage.get(key) ?.also { cache.putValue(key, it) }
             }
     }
 

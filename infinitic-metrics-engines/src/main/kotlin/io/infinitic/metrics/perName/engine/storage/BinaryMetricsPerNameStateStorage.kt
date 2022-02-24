@@ -27,21 +27,26 @@ package io.infinitic.metrics.perName.engine.storage
 
 import io.infinitic.common.data.Name
 import io.infinitic.common.metrics.perName.state.MetricsPerNameState
-import io.infinitic.common.storage.Flushable
 import io.infinitic.common.storage.keyValue.KeyValueStorage
+import io.infinitic.common.storage.keyValue.WrappedKeyValueStorage
+import org.jetbrains.annotations.TestOnly
 
 /**
- * This MonitoringPerNameStateStorage implementation converts state objects used by the engine to Avro objects, and saves
- * them in a persistent key value storage.
+ * MetricsPerNameStateStorage implementation
+ *
+ * MetricsPerNameState are converted to Avro bytes array and saved in a key value store by Name
+ * Any exception thrown by the storage is wrapped into KeyValueStorageException
  */
 class BinaryMetricsPerNameStateStorage(
-    private val storage: KeyValueStorage
-) : MetricsPerNameStateStorage, Flushable by storage {
+    storage: KeyValueStorage
+) : MetricsPerNameStateStorage {
+
+    private val storage = WrappedKeyValueStorage(storage)
 
     override suspend fun getState(name: Name): MetricsPerNameState? {
         val key = getMetricsPerNameStateKey(name)
-        return storage.get(key)
-            ?.let { MetricsPerNameState.fromByteArray(it) }
+
+        return storage.get(key)?.let { MetricsPerNameState.fromByteArray(it) }
     }
     override suspend fun putState(name: Name, state: MetricsPerNameState) {
         val key = getMetricsPerNameStateKey(name)
@@ -52,6 +57,9 @@ class BinaryMetricsPerNameStateStorage(
         val key = getMetricsPerNameStateKey(name)
         storage.del(key)
     }
+
+    @TestOnly
+    override fun flush() = storage.flush()
 
     private fun getMetricsPerNameStateKey(name: Name) = "metricsPerName.state.$name"
 }

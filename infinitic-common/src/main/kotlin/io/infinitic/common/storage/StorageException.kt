@@ -23,30 +23,6 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.common.storage.keyValue
+package io.infinitic.common.storage
 
-import mu.KotlinLogging
-
-open class LoggedKeyValueStorage(
-    val storage: KeyValueStorage
-) : KeyValueStorage by storage {
-
-    private val logger = KotlinLogging.logger {}
-
-    override suspend fun get(key: String): ByteArray? {
-        val value = storage.get(key)
-        logger.debug { "key $key - getValue $value" }
-
-        return value
-    }
-
-    override suspend fun put(key: String, value: ByteArray) {
-        logger.debug { "key $key - putValue $value" }
-        storage.put(key, value)
-    }
-
-    override suspend fun del(key: String) {
-        logger.debug { "key $key - delValue" }
-        storage.del(key)
-    }
-}
+abstract class StorageException(e: Throwable) : RuntimeException(e.message, e)

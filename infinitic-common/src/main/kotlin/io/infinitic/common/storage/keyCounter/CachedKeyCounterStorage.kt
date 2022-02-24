@@ -39,8 +39,7 @@ class CachedKeyCounterStorage(
     override suspend fun get(key: String) = cache.get(key)
         ?: run {
             logger.debug("key {} - getCounter - absent from cache, get from storage", key)
-            storage.get(key)
-                .also { cache.set(key, it) }
+            storage.get(key).also { cache.set(key, it) }
         }
 
     override suspend fun incr(key: String, amount: Long) {

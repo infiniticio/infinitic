@@ -23,25 +23,8 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.common.storage.keyCounter
+package io.infinitic.common.storage.keyValue
 
-import mu.KotlinLogging
+import io.infinitic.common.storage.StorageException
 
-class LoggedKeyCounterStorage(
-    val storage: KeyCounterStorage
-) : KeyCounterStorage by storage {
-
-    private val logger = KotlinLogging.logger {}
-
-    override suspend fun get(key: String): Long {
-        val value = storage.get(key)
-        logger.debug { "key $key - getCounter $value" }
-
-        return value
-    }
-
-    override suspend fun incr(key: String, amount: Long) {
-        logger.debug { "key $key - incrCounter $amount" }
-        storage.incr(key, amount)
-    }
-}
+class KeyValueStorageException(e: Throwable) : StorageException(e)

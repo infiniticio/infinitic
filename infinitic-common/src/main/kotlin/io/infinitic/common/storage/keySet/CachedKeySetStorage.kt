@@ -38,8 +38,7 @@ class CachedKeySetStorage(
     override suspend fun get(key: String): Set<ByteArray> = cache.get(key)
         ?: run {
             logger.debug { "key $key - getSet - absent from cache, get from storage" }
-            storage.get(key)
-                .also { cache.set(key, it) }
+            storage.get(key).also { cache.set(key, it) }
         }
 
     override suspend fun add(key: String, value: ByteArray) {
