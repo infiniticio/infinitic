@@ -30,7 +30,6 @@ import io.infinitic.common.exceptions.thisShouldNotHappen
 import io.infinitic.common.tasks.data.TaskName
 import io.infinitic.common.workflows.data.workflowTasks.isWorkflowTask
 import io.infinitic.common.workflows.data.workflows.WorkflowName
-import io.infinitic.inMemory.transport.InMemoryOutput
 import io.infinitic.metrics.global.engine.storage.MetricsGlobalStateStorage
 import io.infinitic.metrics.global.engine.worker.startMetricsGlobalEngine
 import io.infinitic.metrics.perName.engine.storage.MetricsPerNameStateStorage
@@ -47,6 +46,7 @@ import io.infinitic.tasks.engine.worker.TaskEngineMessageToProcess
 import io.infinitic.tasks.engine.worker.startTaskEngine
 import io.infinitic.tasks.executor.worker.TaskExecutorMessageToProcess
 import io.infinitic.tasks.executor.worker.startTaskExecutor
+import io.infinitic.transport.inMemory.InMemoryOutput
 import io.infinitic.worker.InfiniticWorker
 import io.infinitic.worker.config.WorkerConfig
 import io.infinitic.workflows.engine.storage.WorkflowStateStorage

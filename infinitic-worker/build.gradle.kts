@@ -30,6 +30,7 @@ dependencies {
 
     implementation(project(":infinitic-client"))
     implementation(project(":infinitic-common"))
+    implementation(project(":infinitic-transport"))
     implementation(project(":infinitic-tag-engine"))
     implementation(project(":infinitic-task-engine"))
     implementation(project(":infinitic-task-executor"))

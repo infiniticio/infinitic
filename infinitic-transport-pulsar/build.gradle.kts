@@ -23,18 +23,14 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.transport
+dependencies {
+    implementation(Libs.Hoplite.core)
+    implementation(Libs.Pulsar.client)
+    implementation(Libs.Pulsar.clientAdmin)
+    implementation(Libs.Pulsar.authAthenz)
+    implementation(Libs.Pulsar.authSasl)
 
-import io.infinitic.transport.pulsar.Pulsar
-
-interface TransportConfig {
-    /**
-     * Transport configuration
-     */
-    val transport: Transport
-
-    /**
-     * Pulsar configuration
-     */
-    val pulsar: Pulsar?
+    implementation(project(":infinitic-common"))
 }
+
+apply("../publish.gradle.kts")

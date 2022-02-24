@@ -28,7 +28,6 @@ dependencies {
 
     api(project(":infinitic-common"))
     api(project(":infinitic-cache"))
-    api(project(":infinitic-transport"))
     api(project(":infinitic-storage"))
 }
 

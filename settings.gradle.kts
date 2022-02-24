@@ -24,11 +24,13 @@
  */
 
 include("infinitic-common")
+include("infinitic-cache")
 include("infinitic-storage")
 include("infinitic-storage-inmemory")
 include("infinitic-storage-redis")
-include("infinitic-cache")
 include("infinitic-transport")
+include("infinitic-transport-inmemory")
+include("infinitic-transport-pulsar")
 include("infinitic-client")
 include("infinitic-tag-engine")
 include("infinitic-metrics-engines")

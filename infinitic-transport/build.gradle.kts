@@ -25,12 +25,10 @@
 
 dependencies {
     implementation(Libs.Hoplite.core)
-    implementation(Libs.Pulsar.client)
-    implementation(Libs.Pulsar.clientAdmin)
-    implementation(Libs.Pulsar.authAthenz)
-    implementation(Libs.Pulsar.authSasl)
 
     implementation(project(":infinitic-common"))
+    api(project(":infinitic-transport-inmemory"))
+    api(project(":infinitic-transport-pulsar"))
 }
 
 apply("../publish.gradle.kts")

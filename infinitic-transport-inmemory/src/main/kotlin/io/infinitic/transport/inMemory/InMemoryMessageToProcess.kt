@@ -23,7 +23,7 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.inMemory.transport
+package io.infinitic.transport.inMemory
 
 import io.infinitic.common.workers.MessageToProcess
 

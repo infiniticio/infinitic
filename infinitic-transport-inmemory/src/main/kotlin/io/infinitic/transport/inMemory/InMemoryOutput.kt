@@ -23,7 +23,7 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.inMemory.transport
+package io.infinitic.transport.inMemory
 
 import io.infinitic.common.clients.messages.ClientMessage
 import io.infinitic.common.clients.transport.ClientMessageToProcess
@@ -46,10 +46,9 @@ import io.infinitic.common.workflows.data.workflows.WorkflowName
 import io.infinitic.common.workflows.engine.SendToWorkflowEngine
 import io.infinitic.common.workflows.engine.SendToWorkflowEngineAfter
 import io.infinitic.common.workflows.tags.SendToWorkflowTagEngine
+import io.infinitic.common.workflows.tags.messages.WorkflowTagEngineMessage
 import io.infinitic.metrics.global.engine.worker.MetricsGlobalMessageToProcess
 import io.infinitic.metrics.perName.engine.worker.MetricsPerNameMessageToProcess
-import io.infinitic.tags.tasks.worker.TaskTagEngineMessageToProcess
-import io.infinitic.tags.workflows.worker.WorkflowTagEngineMessageToProcess
 import io.infinitic.tasks.engine.worker.TaskEngineMessageToProcess
 import io.infinitic.tasks.executor.worker.TaskExecutorMessageToProcess
 import io.infinitic.workflows.engine.worker.WorkflowEngineMessageToProcess
@@ -61,18 +60,21 @@ import kotlinx.coroutines.launch
 import mu.KotlinLogging
 import java.util.concurrent.ConcurrentHashMap
 
+typealias WorkflowTagMessageToProcess = MessageToProcess<WorkflowTagEngineMessage>
+typealias TaskTagMessageToProcess = MessageToProcess<TaskTagEngineMessage>
+
 class InMemoryOutput(private val scope: CoroutineScope) {
     private val logger = KotlinLogging.logger {}
 
     val logChannel: Channel<MessageToProcess<Any>> = Channel()
     val clientChannel: Channel<ClientMessageToProcess> = Channel()
 
-    val taskTagChannel: ConcurrentHashMap<TaskName, Channel<TaskTagEngineMessageToProcess>> = ConcurrentHashMap()
+    val taskTagChannel: ConcurrentHashMap<TaskName, Channel<TaskTagMessageToProcess>> = ConcurrentHashMap()
     val taskChannel: ConcurrentHashMap<TaskName, Channel<TaskEngineMessageToProcess>> = ConcurrentHashMap()
     val taskExecutorChannel: ConcurrentHashMap<TaskName, Channel<TaskExecutorMessageToProcess>> = ConcurrentHashMap()
     val taskMetricsPerNameChannel: ConcurrentHashMap<TaskName, Channel<MetricsPerNameMessageToProcess>> = ConcurrentHashMap()
 
-    val workflowTagChannel: ConcurrentHashMap<WorkflowName, Channel<WorkflowTagEngineMessageToProcess>> = ConcurrentHashMap()
+    val workflowTagChannel: ConcurrentHashMap<WorkflowName, Channel<WorkflowTagMessageToProcess>> = ConcurrentHashMap()
     val workflowChannel: ConcurrentHashMap<WorkflowName, Channel<WorkflowEngineMessageToProcess>> = ConcurrentHashMap()
     val workflowTaskChannel: ConcurrentHashMap<WorkflowName, Channel<TaskEngineMessageToProcess>> = ConcurrentHashMap()
     val workflowTaskExecutorChannel: ConcurrentHashMap<WorkflowName, Channel<TaskExecutorMessageToProcess>> = ConcurrentHashMap()

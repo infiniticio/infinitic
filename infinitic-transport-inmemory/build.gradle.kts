@@ -23,18 +23,20 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.transport
+dependencies {
+    implementation(Libs.Coroutines.core)
+    implementation(Libs.Coroutines.jdk8)
 
-import io.infinitic.transport.pulsar.Pulsar
-
-interface TransportConfig {
-    /**
-     * Transport configuration
-     */
-    val transport: Transport
-
-    /**
-     * Pulsar configuration
-     */
-    val pulsar: Pulsar?
+    api(project(":infinitic-common"))
+    api(project(":infinitic-client"))
+    api(project(":infinitic-storage"))
+    implementation(project(":infinitic-cache"))
+//    implementation(project(":infinitic-tag-engine"))
+    implementation(project(":infinitic-task-engine"))
+    implementation(project(":infinitic-workflow-engine"))
+    implementation(project(":infinitic-metrics-engines"))
+    implementation(project(":infinitic-task-executor"))
+//    implementation(project(":infinitic-worker"))
 }
+
+apply("../publish.gradle.kts")

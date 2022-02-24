@@ -25,7 +25,7 @@
 
 package io.infinitic.tests.scaffolds
 
-import io.infinitic.inMemory.transport.InMemoryMessageToProcess
+import io.infinitic.transport.inMemory.InMemoryMessageToProcess
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.channels.Channel

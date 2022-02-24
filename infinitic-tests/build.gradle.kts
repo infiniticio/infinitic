@@ -35,6 +35,7 @@ dependencies {
     testImplementation(project(":infinitic-task-executor"))
     testImplementation(project(":infinitic-factory"))
     testImplementation(project(":infinitic-inMemory"))
+    testImplementation(project(":infinitic-transport"))
     testImplementation(project(":infinitic-pulsar"))
 }
 
