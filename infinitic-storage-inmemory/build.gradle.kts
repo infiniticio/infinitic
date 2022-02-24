@@ -24,11 +24,7 @@
  */
 
 dependencies {
-    implementation(Libs.Hoplite.core)
-
     implementation(project(":infinitic-common"))
-    api(project(":infinitic-storage-redis"))
-    api(project(":infinitic-storage-inmemory"))
 }
 
 apply("../publish.gradle.kts")

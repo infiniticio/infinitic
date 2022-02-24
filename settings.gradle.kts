@@ -25,6 +25,8 @@
 
 include("infinitic-common")
 include("infinitic-storage")
+include("infinitic-storage-inmemory")
+include("infinitic-storage-redis")
 include("infinitic-cache")
 include("infinitic-transport")
 include("infinitic-client")

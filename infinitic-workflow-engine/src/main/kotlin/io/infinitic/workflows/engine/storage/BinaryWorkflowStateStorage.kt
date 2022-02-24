@@ -35,7 +35,7 @@ import org.jetbrains.annotations.TestOnly
  * WorkflowStateStorage implementation
  *
  * Workflow state are converted to Avro bytes array and saved in a key value store by WorkflowId
- * 
+ *
  * Any exception thrown by the storage is wrapped into KeyValueStorageException
  */
 class BinaryWorkflowStateStorage(

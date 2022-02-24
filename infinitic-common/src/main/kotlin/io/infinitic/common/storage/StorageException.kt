@@ -25,4 +25,4 @@
 
 package io.infinitic.common.storage
 
-abstract class StorageException(e: Throwable) : RuntimeException(e.message, e)
+abstract class StorageException(e: Throwable) : RuntimeException(e)

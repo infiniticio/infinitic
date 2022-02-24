@@ -25,7 +25,6 @@
 
 package io.infinitic.tasks.engine.storage
 
-import io.infinitic.common.storage.Flushable
 import io.infinitic.common.storage.keyValue.KeyValueStorage
 import io.infinitic.common.storage.keyValue.WrappedKeyValueStorage
 import io.infinitic.common.tasks.data.TaskId
