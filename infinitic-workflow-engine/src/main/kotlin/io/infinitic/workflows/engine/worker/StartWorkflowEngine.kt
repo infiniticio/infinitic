@@ -28,14 +28,14 @@ package io.infinitic.workflows.engine.worker
 import io.infinitic.common.clients.transport.SendToClient
 import io.infinitic.common.data.ClientName
 import io.infinitic.common.tasks.engine.SendToTaskEngine
-import io.infinitic.common.tasks.tags.SendToTaskTagEngine
+import io.infinitic.common.tasks.tags.SendToTaskTag
 import io.infinitic.common.workers.MessageToProcess
 import io.infinitic.common.workflows.engine.SendToWorkflowEngine
 import io.infinitic.common.workflows.engine.SendToWorkflowEngineAfter
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
-import io.infinitic.common.workflows.tags.SendToWorkflowTagEngine
+import io.infinitic.common.workflows.engine.storage.WorkflowStateStorage
+import io.infinitic.common.workflows.tags.SendToWorkflowTag
 import io.infinitic.workflows.engine.WorkflowEngine
-import io.infinitic.workflows.engine.storage.WorkflowStateStorage
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.channels.ReceiveChannel
@@ -57,9 +57,10 @@ fun <T : WorkflowEngineMessageToProcess> CoroutineScope.startWorkflowEngine(
     inputChannel: ReceiveChannel<T>,
     outputChannel: SendChannel<T>,
     sendEventsToClient: SendToClient,
-    sendToTaskTagEngine: SendToTaskTagEngine,
+    sendToTaskTagEngine: SendToTaskTag,
     sendToTaskEngine: SendToTaskEngine,
-    sendToWorkflowTagEngine: SendToWorkflowTagEngine,
+    sendToWorkflowTaskEngine: SendToTaskEngine,
+    sendToWorkflowTagEngine: SendToWorkflowTag,
     sendToWorkflowEngine: SendToWorkflowEngine,
     sendToWorkflowEngineAfter: SendToWorkflowEngineAfter
 ) = launch(CoroutineName(name)) {
@@ -70,6 +71,7 @@ fun <T : WorkflowEngineMessageToProcess> CoroutineScope.startWorkflowEngine(
         sendEventsToClient,
         sendToTaskTagEngine,
         sendToTaskEngine,
+        sendToWorkflowTaskEngine,
         sendToWorkflowTagEngine,
         sendToWorkflowEngine,
         sendToWorkflowEngineAfter

@@ -26,9 +26,9 @@
 package io.infinitic.metrics.perName.engine.storage
 
 import io.infinitic.common.fixtures.TestFactory
-import io.infinitic.common.metrics.perName.state.MetricsPerNameState
 import io.infinitic.common.storage.keyValue.KeyValueStorage
 import io.infinitic.common.tasks.data.TaskName
+import io.infinitic.common.tasks.metrics.state.TaskMetricsState
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.shouldBe
 import io.mockk.coEvery
@@ -48,7 +48,7 @@ class BinaryMetricsPerNameStateStorageTests : ShouldSpec({
             val storage = mockk<KeyValueStorage>()
             coEvery { storage.get(any()) } returns null
             // when
-            val stateStorage = BinaryMetricsPerNameStateStorage(storage)
+            val stateStorage = BinaryTaskMetricsStateStorage(storage)
             val state = stateStorage.getState(taskName)
             // then
             coVerify(exactly = 1) { storage.get("metricsPerName.state.$taskName") }
@@ -58,11 +58,11 @@ class BinaryMetricsPerNameStateStorageTests : ShouldSpec({
 
         should("return state when state exists") {
             // given
-            val stateIn = TestFactory.random<MetricsPerNameState>()
+            val stateIn = TestFactory.random<TaskMetricsState>()
             val storage = mockk<KeyValueStorage>()
             coEvery { storage.get(any()) } returns stateIn.toByteArray()
             // when
-            val stateStorage = BinaryMetricsPerNameStateStorage(storage)
+            val stateStorage = BinaryTaskMetricsStateStorage(storage)
             val stateOut = stateStorage.getState(stateIn.taskName)
             // then
             coVerify(exactly = 1) { storage.get("metricsPerName.state.${stateIn.taskName}") }
@@ -75,27 +75,27 @@ class BinaryMetricsPerNameStateStorageTests : ShouldSpec({
 
         should("update state") {
             // given
-            val state = TestFactory.random<MetricsPerNameState>()
+            val state = TestFactory.random<TaskMetricsState>()
             val storage = mockk<KeyValueStorage>()
             val binSlot = slot<ByteArray>()
             coEvery { storage.put("metricsPerName.state.${state.taskName}", capture(binSlot)) } returns Unit
             // when
-            val stateStorage = BinaryMetricsPerNameStateStorage(storage)
+            val stateStorage = BinaryTaskMetricsStateStorage(storage)
             stateStorage.putState(state.taskName, state)
             // then
             binSlot.isCaptured shouldBe true
-            MetricsPerNameState.fromByteArray(binSlot.captured) shouldBe state
+            TaskMetricsState.fromByteArray(binSlot.captured) shouldBe state
         }
     }
 
     context("BinaryMetricsPerNameStateStorage.delState") {
         should("delete state") {
             // given
-            val state = TestFactory.random(MetricsPerNameState::class)
+            val state = TestFactory.random(TaskMetricsState::class)
             val storage = mockk<KeyValueStorage>()
             coEvery { storage.del(any()) } just runs
             // when
-            val stateStorage = BinaryMetricsPerNameStateStorage(storage)
+            val stateStorage = BinaryTaskMetricsStateStorage(storage)
             stateStorage.delState(state.taskName)
             // then
             coVerify(exactly = 1) { storage.del("metricsPerName.state.${state.taskName}") }

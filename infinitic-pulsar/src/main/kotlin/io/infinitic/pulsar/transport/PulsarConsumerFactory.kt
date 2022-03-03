@@ -29,21 +29,21 @@ import io.infinitic.common.clients.messages.ClientEnvelope
 import io.infinitic.common.data.ClientName
 import io.infinitic.common.exceptions.thisShouldNotHappen
 import io.infinitic.common.messages.Envelope
-import io.infinitic.common.metrics.global.messages.MetricsGlobalEnvelope
-import io.infinitic.common.metrics.perName.messages.MetricsPerNameEnvelope
+import io.infinitic.common.metrics.global.messages.GlobalMetricsEnvelope
 import io.infinitic.common.tasks.data.TaskName
 import io.infinitic.common.tasks.engine.messages.TaskEngineEnvelope
 import io.infinitic.common.tasks.executors.messages.TaskExecutorEnvelope
-import io.infinitic.common.tasks.tags.messages.TaskTagEngineEnvelope
+import io.infinitic.common.tasks.metrics.messages.TaskMetricsEnvelope
+import io.infinitic.common.tasks.tags.messages.TaskTagEnvelope
 import io.infinitic.common.workflows.data.workflows.WorkflowName
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineEnvelope
-import io.infinitic.common.workflows.tags.messages.WorkflowTagEngineEnvelope
-import io.infinitic.pulsar.schemas.schemaDefinition
-import io.infinitic.pulsar.topics.GlobalTopic
-import io.infinitic.pulsar.topics.TaskTopic
-import io.infinitic.pulsar.topics.TopicName
-import io.infinitic.pulsar.topics.WorkflowTaskTopic
-import io.infinitic.pulsar.topics.WorkflowTopic
+import io.infinitic.common.workflows.tags.messages.WorkflowTagEnvelope
+import io.infinitic.transport.pulsar.schemas.schemaDefinition
+import io.infinitic.transport.pulsar.topics.GlobalTopic
+import io.infinitic.transport.pulsar.topics.TaskTopic
+import io.infinitic.transport.pulsar.topics.TopicName
+import io.infinitic.transport.pulsar.topics.WorkflowTaskTopic
+import io.infinitic.transport.pulsar.topics.WorkflowTopic
 import mu.KotlinLogging
 import org.apache.pulsar.client.api.Consumer
 import org.apache.pulsar.client.api.PulsarClient
@@ -80,7 +80,7 @@ class PulsarConsumerFactory(
         val subscriptionName = taskTopic.prefix + "_subscription"
 
         return when (taskTopic) {
-            TaskTopic.TAG -> newConsumer<TaskTagEngineEnvelope>(
+            TaskTopic.TAG -> newConsumer<TaskTagEnvelope>(
                 consumerName = consumerName,
                 topic = topic,
                 subscriptionType = SubscriptionType.Key_Shared,
@@ -108,7 +108,7 @@ class PulsarConsumerFactory(
                 subscriptionName = subscriptionName,
                 ackTimeout = null
             )
-            TaskTopic.METRICS -> newConsumer<MetricsPerNameEnvelope>(
+            TaskTopic.METRICS -> newConsumer<TaskMetricsEnvelope>(
                 consumerName = consumerName,
                 topic = topic,
                 subscriptionType = SubscriptionType.Failover,
@@ -123,7 +123,7 @@ class PulsarConsumerFactory(
         val subscriptionName = workflowTaskTopic.prefix + "_subscription"
 
         return when (workflowTaskTopic) {
-            WorkflowTaskTopic.TAG -> newConsumer<TaskTagEngineEnvelope>(
+            WorkflowTaskTopic.TAG -> newConsumer<TaskTagEnvelope>(
                 consumerName = consumerName,
                 topic = topic,
                 subscriptionType = SubscriptionType.Key_Shared,
@@ -151,7 +151,7 @@ class PulsarConsumerFactory(
                 subscriptionName = subscriptionName,
                 ackTimeout = 60
             )
-            WorkflowTaskTopic.METRICS -> newConsumer<MetricsPerNameEnvelope>(
+            WorkflowTaskTopic.METRICS -> newConsumer<TaskMetricsEnvelope>(
                 consumerName = consumerName,
                 topic = topic,
                 subscriptionType = SubscriptionType.Failover,
@@ -166,7 +166,7 @@ class PulsarConsumerFactory(
         val subscriptionName = workflowTopic.prefix + "_subscription"
 
         return when (workflowTopic) {
-            WorkflowTopic.TAG -> newConsumer<WorkflowTagEngineEnvelope>(
+            WorkflowTopic.TAG -> newConsumer<WorkflowTagEnvelope>(
                 consumerName = consumerName,
                 topic = topic,
                 subscriptionType = SubscriptionType.Key_Shared,
@@ -187,7 +187,7 @@ class PulsarConsumerFactory(
                 subscriptionName = subscriptionName,
                 ackTimeout = 60
             )
-            WorkflowTopic.METRICS -> newConsumer<MetricsPerNameEnvelope>(
+            WorkflowTopic.METRICS -> newConsumer<TaskMetricsEnvelope>(
                 consumerName = consumerName,
                 topic = topic,
                 subscriptionType = SubscriptionType.Failover,
@@ -202,7 +202,7 @@ class PulsarConsumerFactory(
         val subscriptionName = globalTopic.prefix + "_subscription"
 
         return when (globalTopic) {
-            GlobalTopic.METRICS -> newConsumer<MetricsGlobalEnvelope>(
+            GlobalTopic.METRICS -> newConsumer<GlobalMetricsEnvelope>(
                 consumerName = consumerName,
                 topic = topic,
                 subscriptionType = SubscriptionType.Failover,

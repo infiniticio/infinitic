@@ -41,8 +41,8 @@ import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
 import io.infinitic.common.workflows.tags.messages.CancelWorkflowByTag
 import io.infinitic.common.workflows.tags.messages.GetWorkflowIdsByTag
 import io.infinitic.common.workflows.tags.messages.SendSignalByTag
-import io.infinitic.common.workflows.tags.messages.WorkflowTagEngineMessage
-import io.infinitic.tags.workflows.storage.WorkflowTagStorage
+import io.infinitic.common.workflows.tags.messages.WorkflowTagMessage
+import io.infinitic.common.workflows.tags.storage.WorkflowTagStorage
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
@@ -73,7 +73,7 @@ internal class WorkflowTagEngineTests : StringSpec({
 
     "should not handle known messageId" {
         // given
-        val msgIn = random<WorkflowTagEngineMessage>()
+        val msgIn = random<WorkflowTagMessage>()
         // when
         getEngine(msgIn.workflowTag, msgIn.workflowName, msgIn.messageId).handle(msgIn)
         // then
@@ -82,7 +82,7 @@ internal class WorkflowTagEngineTests : StringSpec({
 
     "should store last messageId" {
         // given
-        val msgIn = random<WorkflowTagEngineMessage>()
+        val msgIn = random<WorkflowTagMessage>()
         // when
         getEngine(msgIn.workflowTag, msgIn.workflowName).handle(msgIn)
         // then

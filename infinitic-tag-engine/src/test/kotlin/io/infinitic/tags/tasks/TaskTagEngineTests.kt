@@ -43,8 +43,8 @@ import io.infinitic.common.tasks.tags.messages.CancelTaskByTag
 import io.infinitic.common.tasks.tags.messages.GetTaskIdsByTag
 import io.infinitic.common.tasks.tags.messages.RemoveTagFromTask
 import io.infinitic.common.tasks.tags.messages.RetryTaskByTag
-import io.infinitic.common.tasks.tags.messages.TaskTagEngineMessage
-import io.infinitic.tags.tasks.storage.TaskTagStorage
+import io.infinitic.common.tasks.tags.messages.TaskTagMessage
+import io.infinitic.common.tasks.tags.storage.TaskTagStorage
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
@@ -75,7 +75,7 @@ internal class TaskTagEngineTests : StringSpec({
 
     "should not handle known messageId" {
         // given
-        val msgIn = random<TaskTagEngineMessage>()
+        val msgIn = random<TaskTagMessage>()
         // when
         getEngine(msgIn.taskTag, msgIn.taskName, msgIn.messageId).handle(msgIn)
         // then
@@ -84,7 +84,7 @@ internal class TaskTagEngineTests : StringSpec({
 
     "should store last messageId" {
         // given
-        val msgIn = random<TaskTagEngineMessage>()
+        val msgIn = random<TaskTagMessage>()
         // when
         getEngine(msgIn.taskTag, msgIn.taskName).handle(msgIn)
         // then

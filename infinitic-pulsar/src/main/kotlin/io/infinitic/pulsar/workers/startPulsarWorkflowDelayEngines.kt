@@ -27,9 +27,9 @@ package io.infinitic.pulsar.workers
 
 import io.infinitic.common.workflows.data.workflows.WorkflowName
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineEnvelope
-import io.infinitic.pulsar.topics.WorkflowTopic
 import io.infinitic.pulsar.transport.PulsarConsumerFactory
 import io.infinitic.pulsar.transport.PulsarOutput
+import io.infinitic.transport.pulsar.topics.WorkflowTopic
 import io.infinitic.workflows.engine.worker.startWorkflowDelayEngine
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.channels.Channel

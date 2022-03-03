@@ -25,7 +25,8 @@
 
 package io.infinitic.metrics.global.engine.storage
 
-import io.infinitic.common.metrics.global.state.MetricsGlobalState
+import io.infinitic.common.metrics.global.state.GlobalMetricsState
+import io.infinitic.common.metrics.global.storage.MetricsGlobalStateStorage
 import io.infinitic.common.storage.keyValue.KeyValueStorage
 import io.infinitic.common.storage.keyValue.WrappedKeyValueStorage
 import org.jetbrains.annotations.TestOnly
@@ -40,13 +41,13 @@ class BinaryMetricsGlobalStateStorage(
 
     private val storage = WrappedKeyValueStorage(storage)
 
-    override suspend fun getState(): MetricsGlobalState? {
+    override suspend fun getState(): GlobalMetricsState? {
         val key = getMetricsGlobalStateKey()
         return storage.get(key)
-            ?.let { MetricsGlobalState.fromByteArray(it) }
+            ?.let { GlobalMetricsState.fromByteArray(it) }
     }
 
-    override suspend fun putState(state: MetricsGlobalState) {
+    override suspend fun putState(state: GlobalMetricsState) {
         val key = getMetricsGlobalStateKey()
         storage.put(key, state.toByteArray())
     }

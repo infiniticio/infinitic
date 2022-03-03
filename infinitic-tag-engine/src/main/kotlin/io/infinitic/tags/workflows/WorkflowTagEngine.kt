@@ -41,9 +41,9 @@ import io.infinitic.common.workflows.tags.messages.GetWorkflowIdsByTag
 import io.infinitic.common.workflows.tags.messages.RemoveTagFromWorkflow
 import io.infinitic.common.workflows.tags.messages.RetryWorkflowTaskByTag
 import io.infinitic.common.workflows.tags.messages.SendSignalByTag
-import io.infinitic.common.workflows.tags.messages.WorkflowTagEngineMessage
+import io.infinitic.common.workflows.tags.messages.WorkflowTagMessage
+import io.infinitic.common.workflows.tags.storage.WorkflowTagStorage
 import io.infinitic.tags.workflows.storage.LoggedWorkflowTagStorage
-import io.infinitic.tags.workflows.storage.WorkflowTagStorage
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
@@ -62,7 +62,7 @@ class WorkflowTagEngine(
 
     private val logger = KotlinLogging.logger {}
 
-    suspend fun handle(message: WorkflowTagEngineMessage) {
+    suspend fun handle(message: WorkflowTagMessage) {
         logger.debug { "receiving $message" }
 
         process(message)
@@ -72,7 +72,7 @@ class WorkflowTagEngine(
 
     // coroutineScope let send messages in parallel
     // it's important as we can have a lot of them
-    private suspend fun process(message: WorkflowTagEngineMessage) = coroutineScope {
+    private suspend fun process(message: WorkflowTagMessage) = coroutineScope {
         scope = this
 
         @Suppress("UNUSED_VARIABLE")
@@ -212,7 +212,7 @@ class WorkflowTagEngine(
         scope.launch { sendToClient(workflowIdsByTag) }
     }
 
-    private suspend fun hasMessageAlreadyBeenHandled(message: WorkflowTagEngineMessage) =
+    private suspend fun hasMessageAlreadyBeenHandled(message: WorkflowTagMessage) =
         when (storage.getLastMessageId(message.workflowTag, message.workflowName)) {
             message.messageId -> {
                 logger.info { "discarding as state already contains this messageId: $message" }
@@ -221,7 +221,7 @@ class WorkflowTagEngine(
             else -> false
         }
 
-    private fun discardTagWithoutIds(message: WorkflowTagEngineMessage) {
+    private fun discardTagWithoutIds(message: WorkflowTagMessage) {
         logger.debug { "discarding as no id found for the provided tag: $message" }
     }
 }

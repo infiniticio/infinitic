@@ -32,8 +32,6 @@ import io.infinitic.common.errors.CanceledTaskError
 import io.infinitic.common.errors.FailedTaskError
 import io.infinitic.common.errors.WorkerError
 import io.infinitic.common.exceptions.thisShouldNotHappen
-import io.infinitic.common.metrics.perName.messages.TaskStatusUpdated
-import io.infinitic.common.metrics.perName.transport.SendToMetricsPerName
 import io.infinitic.common.tasks.data.TaskAttemptId
 import io.infinitic.common.tasks.data.TaskName
 import io.infinitic.common.tasks.data.TaskRetryIndex
@@ -52,14 +50,16 @@ import io.infinitic.common.tasks.engine.messages.TaskEngineMessage
 import io.infinitic.common.tasks.engine.messages.WaitTask
 import io.infinitic.common.tasks.engine.messages.interfaces.TaskAttemptMessage
 import io.infinitic.common.tasks.engine.state.TaskState
-import io.infinitic.common.tasks.executors.SendToTaskExecutors
+import io.infinitic.common.tasks.engine.storage.TaskStateStorage
+import io.infinitic.common.tasks.executors.SendToTaskExecutor
 import io.infinitic.common.tasks.executors.messages.ExecuteTaskAttempt
-import io.infinitic.common.tasks.tags.SendToTaskTagEngine
+import io.infinitic.common.tasks.metrics.SendToTaskMetrics
+import io.infinitic.common.tasks.metrics.messages.TaskStatusUpdated
+import io.infinitic.common.tasks.tags.SendToTaskTag
 import io.infinitic.common.tasks.tags.messages.RemoveTagFromTask
 import io.infinitic.common.workflows.engine.SendToWorkflowEngine
 import io.infinitic.common.workflows.engine.messages.TaskFailed
 import io.infinitic.tasks.engine.storage.LoggedTaskStateStorage
-import io.infinitic.tasks.engine.storage.TaskStateStorage
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
@@ -74,11 +74,11 @@ class TaskEngine(
     val clientName: ClientName,
     storage: TaskStateStorage,
     val sendToClient: SendToClient,
-    val sendToTaskTagEngine: SendToTaskTagEngine,
+    val sendToTaskTag: SendToTaskTag,
     val sendToTaskEngineAfter: SendToTaskEngineAfter,
     val sendToWorkflowEngine: SendToWorkflowEngine,
-    val sendToTaskExecutors: SendToTaskExecutors,
-    val sendToMetricsPerName: SendToMetricsPerName
+    val sendToTaskExecutors: SendToTaskExecutor,
+    val sendToTaskMetrics: SendToTaskMetrics
 ) {
     private val storage = LoggedTaskStateStorage(storage)
 
@@ -184,7 +184,7 @@ class TaskEngine(
             emitterName = clientName
         )
 
-        launch { sendToMetricsPerName(taskStatusUpdated) }
+        launch { sendToTaskMetrics(taskStatusUpdated) }
     }
 
     private fun CoroutineScope.waitTask(state: TaskState, message: WaitTask) {
@@ -407,7 +407,7 @@ class TaskEngine(
                 taskId = state.taskId,
                 emitterName = clientName,
             )
-            launch { sendToTaskTagEngine(removeTagFromTask) }
+            launch { sendToTaskTag(removeTagFromTask) }
         }
     }
 

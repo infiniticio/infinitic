@@ -25,6 +25,7 @@
 
 package io.infinitic.client
 
+import io.infinitic.common.clients.InfiniticClient
 import io.infinitic.common.clients.messages.MethodCompleted
 import io.infinitic.common.clients.messages.TaskCompleted
 import io.infinitic.common.clients.messages.TaskIdsByTag
@@ -37,18 +38,18 @@ import io.infinitic.common.tasks.engine.SendToTaskEngine
 import io.infinitic.common.tasks.engine.messages.DispatchTask
 import io.infinitic.common.tasks.engine.messages.TaskEngineMessage
 import io.infinitic.common.tasks.engine.messages.WaitTask
-import io.infinitic.common.tasks.tags.SendToTaskTagEngine
+import io.infinitic.common.tasks.tags.SendToTaskTag
 import io.infinitic.common.tasks.tags.messages.GetTaskIdsByTag
-import io.infinitic.common.tasks.tags.messages.TaskTagEngineMessage
+import io.infinitic.common.tasks.tags.messages.TaskTagMessage
 import io.infinitic.common.workflows.data.methodRuns.MethodRunId
 import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.engine.SendToWorkflowEngine
 import io.infinitic.common.workflows.engine.messages.DispatchWorkflow
 import io.infinitic.common.workflows.engine.messages.WaitWorkflow
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
-import io.infinitic.common.workflows.tags.SendToWorkflowTagEngine
+import io.infinitic.common.workflows.tags.SendToWorkflowTag
 import io.infinitic.common.workflows.tags.messages.GetWorkflowIdsByTag
-import io.infinitic.common.workflows.tags.messages.WorkflowTagEngineMessage
+import io.infinitic.common.workflows.tags.messages.WorkflowTagMessage
 import io.mockk.CapturingSlot
 import io.mockk.every
 import io.mockk.mockk
@@ -59,12 +60,12 @@ import java.util.concurrent.CopyOnWriteArrayList
 
 fun mockSendToTaskTagEngine(
     client: InfiniticClient,
-    taskTagSlots: CopyOnWriteArrayList<TaskTagEngineMessage>,
+    taskTagSlots: CopyOnWriteArrayList<TaskTagMessage>,
     clientName: ClientName,
     sendingScope: CoroutineScope
-): SendToTaskTagEngine {
-    val sendToTaskTagEngine = mockk<SendToTaskTagEngine>()
-    every { sendToTaskTagEngine(capture(taskTagSlots)) } answers {
+): SendToTaskTag {
+    val sendToTaskTag = mockk<SendToTaskTag>()
+    every { sendToTaskTag(capture(taskTagSlots)) } answers {
         taskTagSlots.forEach {
             if (it is GetTaskIdsByTag) {
                 val taskIdsByTag = TaskIdsByTag(
@@ -81,16 +82,16 @@ fun mockSendToTaskTagEngine(
             }
         }
     }
-    return sendToTaskTagEngine
+    return sendToTaskTag
 }
 
 fun mockSendToWorkflowTagEngine(
     client: InfiniticClient,
-    workflowTagSlots: CopyOnWriteArrayList<WorkflowTagEngineMessage>,
+    workflowTagSlots: CopyOnWriteArrayList<WorkflowTagMessage>,
     clientName: ClientName,
     sendingScope: CoroutineScope
-): SendToWorkflowTagEngine {
-    val sendToWorkflowTagEngine = mockk<SendToWorkflowTagEngine>()
+): SendToWorkflowTag {
+    val sendToWorkflowTagEngine = mockk<SendToWorkflowTag>()
     every { sendToWorkflowTagEngine(capture(workflowTagSlots)) } answers {
         workflowTagSlots.forEach {
             if (it is GetWorkflowIdsByTag) {

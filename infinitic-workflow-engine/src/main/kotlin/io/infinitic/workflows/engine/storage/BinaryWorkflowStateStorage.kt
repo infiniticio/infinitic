@@ -29,6 +29,7 @@ import io.infinitic.common.storage.keyValue.KeyValueStorage
 import io.infinitic.common.storage.keyValue.WrappedKeyValueStorage
 import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.engine.state.WorkflowState
+import io.infinitic.common.workflows.engine.storage.WorkflowStateStorage
 import org.jetbrains.annotations.TestOnly
 
 /**

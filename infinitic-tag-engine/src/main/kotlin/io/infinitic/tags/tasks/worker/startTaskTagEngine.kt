@@ -28,10 +28,10 @@ package io.infinitic.tags.tasks.worker
 import io.infinitic.common.clients.transport.SendToClient
 import io.infinitic.common.data.ClientName
 import io.infinitic.common.tasks.engine.SendToTaskEngine
-import io.infinitic.common.tasks.tags.messages.TaskTagEngineMessage
+import io.infinitic.common.tasks.tags.messages.TaskTagMessage
+import io.infinitic.common.tasks.tags.storage.TaskTagStorage
 import io.infinitic.common.workers.MessageToProcess
 import io.infinitic.tags.tasks.TaskTagEngine
-import io.infinitic.tags.tasks.storage.TaskTagStorage
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.channels.ReceiveChannel
@@ -41,7 +41,7 @@ import mu.KotlinLogging
 
 private val logger = KotlinLogging.logger(TaskTagEngine::class.java.name)
 
-typealias TaskTagEngineMessageToProcess = MessageToProcess<TaskTagEngineMessage>
+typealias TaskTagEngineMessageToProcess = MessageToProcess<TaskTagMessage>
 
 private fun logError(messageToProcess: TaskTagEngineMessageToProcess, e: Throwable) = logger.error(e) {
     "exception on message ${messageToProcess.message}: $e"

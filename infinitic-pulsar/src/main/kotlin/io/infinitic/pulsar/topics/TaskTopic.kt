@@ -25,6 +25,8 @@
 
 package io.infinitic.pulsar.topics
 
+import io.infinitic.transport.pulsar.topics.Topic
+
 enum class TaskTopic(override val prefix: String) : Topic {
     TAG("task-tag"),
     ENGINE("task-engine"),

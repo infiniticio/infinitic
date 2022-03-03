@@ -25,8 +25,8 @@
 
 package io.infinitic.pulsar.workers
 
-import io.infinitic.client.InfiniticClient
 import io.infinitic.client.worker.startClientWorker
+import io.infinitic.common.clients.InfiniticClient
 import io.infinitic.common.clients.messages.ClientEnvelope
 import io.infinitic.common.clients.messages.ClientMessage
 import io.infinitic.pulsar.transport.PulsarMessageToProcess

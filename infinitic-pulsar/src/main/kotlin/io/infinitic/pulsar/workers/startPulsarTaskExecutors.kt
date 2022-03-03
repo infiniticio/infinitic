@@ -25,20 +25,20 @@
 
 package io.infinitic.pulsar.workers
 
+import io.infinitic.common.clients.ClientFactory
 import io.infinitic.common.data.Name
 import io.infinitic.common.exceptions.thisShouldNotHappen
 import io.infinitic.common.tasks.data.TaskName
 import io.infinitic.common.tasks.executors.messages.TaskExecutorEnvelope
 import io.infinitic.common.tasks.executors.messages.TaskExecutorMessage
+import io.infinitic.common.workers.WorkerRegister
 import io.infinitic.common.workflows.data.workflows.WorkflowName
-import io.infinitic.pulsar.PulsarInfiniticClient
-import io.infinitic.pulsar.topics.TaskTopic
-import io.infinitic.pulsar.topics.WorkflowTaskTopic
 import io.infinitic.pulsar.transport.PulsarConsumerFactory
 import io.infinitic.pulsar.transport.PulsarMessageToProcess
 import io.infinitic.pulsar.transport.PulsarOutput
-import io.infinitic.tasks.TaskExecutorRegister
 import io.infinitic.tasks.executor.worker.startTaskExecutor
+import io.infinitic.transport.pulsar.topics.TaskTopic
+import io.infinitic.transport.pulsar.topics.WorkflowTaskTopic
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.channels.Channel
 import org.apache.pulsar.client.api.Consumer
@@ -50,10 +50,10 @@ fun CoroutineScope.startPulsarTaskExecutors(
     name: Name,
     concurrency: Int,
     consumerName: String,
-    taskExecutorRegister: TaskExecutorRegister,
+    workerRegister: WorkerRegister,
     consumerFactory: PulsarConsumerFactory,
     output: PulsarOutput,
-    clientFactory: () -> PulsarInfiniticClient
+    clientFactory: ClientFactory
 ) {
 
     val inputChannel = Channel<PulsarTaskExecutorMessageToProcess>()
@@ -61,12 +61,18 @@ fun CoroutineScope.startPulsarTaskExecutors(
 
     // launch n=concurrency coroutines running task executors
     repeat(concurrency) {
+        val sendToTaskEngine = when (name) {
+            is TaskName -> output.sendToTaskEngine()
+            is WorkflowName -> output.sendToWorkflowTaskEngine(name)
+            else -> thisShouldNotHappen()
+        }
+
         startTaskExecutor(
             "pulsar-task-executor:$it",
-            taskExecutorRegister,
+            workerRegister,
             inputChannel,
             outputChannel,
-            output.sendToTaskEngine(name),
+            sendToTaskEngine,
             clientFactory
         )
     }

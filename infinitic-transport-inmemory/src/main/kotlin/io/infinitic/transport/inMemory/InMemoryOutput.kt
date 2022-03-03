@@ -30,23 +30,24 @@ import io.infinitic.common.clients.transport.ClientMessageToProcess
 import io.infinitic.common.clients.transport.SendToClient
 import io.infinitic.common.data.Name
 import io.infinitic.common.exceptions.thisShouldNotHappen
-import io.infinitic.common.metrics.global.messages.MetricsGlobalMessage
-import io.infinitic.common.metrics.global.transport.SendToMetricsGlobal
-import io.infinitic.common.metrics.perName.messages.MetricsPerNameMessage
-import io.infinitic.common.metrics.perName.transport.SendToMetricsPerName
+import io.infinitic.common.metrics.global.SendToGlobalMetrics
+import io.infinitic.common.metrics.global.messages.GlobalMetricsMessage
 import io.infinitic.common.tasks.data.TaskName
 import io.infinitic.common.tasks.engine.SendToTaskEngine
 import io.infinitic.common.tasks.engine.SendToTaskEngineAfter
-import io.infinitic.common.tasks.executors.SendToTaskExecutors
+import io.infinitic.common.tasks.executors.SendToTaskExecutor
 import io.infinitic.common.tasks.executors.messages.TaskExecutorMessage
-import io.infinitic.common.tasks.tags.SendToTaskTagEngine
-import io.infinitic.common.tasks.tags.messages.TaskTagEngineMessage
+import io.infinitic.common.tasks.metrics.SendToTaskMetrics
+import io.infinitic.common.tasks.metrics.messages.TaskMetricsMessage
+import io.infinitic.common.tasks.tags.SendToTaskTag
+import io.infinitic.common.tasks.tags.messages.TaskTagMessage
 import io.infinitic.common.workers.MessageToProcess
+import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskParameters
 import io.infinitic.common.workflows.data.workflows.WorkflowName
 import io.infinitic.common.workflows.engine.SendToWorkflowEngine
 import io.infinitic.common.workflows.engine.SendToWorkflowEngineAfter
-import io.infinitic.common.workflows.tags.SendToWorkflowTagEngine
-import io.infinitic.common.workflows.tags.messages.WorkflowTagEngineMessage
+import io.infinitic.common.workflows.tags.SendToWorkflowTag
+import io.infinitic.common.workflows.tags.messages.WorkflowTagMessage
 import io.infinitic.metrics.global.engine.worker.MetricsGlobalMessageToProcess
 import io.infinitic.metrics.perName.engine.worker.MetricsPerNameMessageToProcess
 import io.infinitic.tasks.engine.worker.TaskEngineMessageToProcess
@@ -60,8 +61,8 @@ import kotlinx.coroutines.launch
 import mu.KotlinLogging
 import java.util.concurrent.ConcurrentHashMap
 
-typealias WorkflowTagMessageToProcess = MessageToProcess<WorkflowTagEngineMessage>
-typealias TaskTagMessageToProcess = MessageToProcess<TaskTagEngineMessage>
+typealias WorkflowTagMessageToProcess = MessageToProcess<WorkflowTagMessage>
+typealias TaskTagMessageToProcess = MessageToProcess<TaskTagMessage>
 
 class InMemoryOutput(private val scope: CoroutineScope) {
     private val logger = KotlinLogging.logger {}
@@ -90,15 +91,15 @@ class InMemoryOutput(private val scope: CoroutineScope) {
         }
     }
 
-    val sendCommandsToTaskTagEngine: SendToTaskTagEngine = { message: TaskTagEngineMessage ->
-        logger.debug { "sendCommandsToTaskTagEngine $message" }
+    val sendCommandsToTaskTag: SendToTaskTag = { message: TaskTagMessage ->
+        logger.debug { "sendCommandsToTaskTag $message" }
         scope.future {
             taskTagChannel[message.taskName]!!.send(InMemoryMessageToProcess(message))
         }.join()
     }
 
-    val sendEventsToTaskTagEngine: SendToTaskTagEngine = { message: TaskTagEngineMessage ->
-        logger.debug { "sendEventsToTaskTagEngine $message" }
+    val sendEventsToTaskTag: SendToTaskTag = { message: TaskTagMessage ->
+        logger.debug { "sendEventsToTaskTag $message" }
         // As it's a back loop, we trigger it asynchronously to avoid deadlocks
         scope.future {
             taskTagChannel[message.taskName]!!.send(InMemoryMessageToProcess(message))
@@ -165,7 +166,20 @@ class InMemoryOutput(private val scope: CoroutineScope) {
         else -> thisShouldNotHappen()
     }
 
-    fun sendToTaskExecutors(name: Name): SendToTaskExecutors = when (name) {
+    val sendToWorkflowTaskEngine = { workflowTask: WorkflowTaskParameters ->
+        logger.debug { "sendToWorkflowTaskEngine $workflowTask" }
+        scope.future {
+            workflowTaskChannel[workflowTask.workflowName]!!.send(
+                InMemoryMessageToProcess(
+                    workflowTask.toDispatchTaskMessage()
+                )
+            )
+        }
+
+        Unit
+    }
+
+    fun sendToTaskExecutors(name: Name): SendToTaskExecutor = when (name) {
         is TaskName ->
             { message: TaskExecutorMessage ->
                 logger.debug { "sendToTaskExecutors $message" }
@@ -184,14 +198,14 @@ class InMemoryOutput(private val scope: CoroutineScope) {
         else -> thisShouldNotHappen()
     }
 
-    val sendCommandsToWorkflowTagEngine: SendToWorkflowTagEngine = { message ->
+    val sendCommandsToWorkflowTagEngine: SendToWorkflowTag = { message ->
         logger.debug { "sendCommandsToWorkflowTagEngine $message" }
         scope.future {
             workflowTagChannel[message.workflowName]!!.send(InMemoryMessageToProcess(message))
         }.join()
     }
 
-    val sendEventsToWorkflowTagEngine: SendToWorkflowTagEngine = { message ->
+    val sendEventsToWorkflowTagEngine: SendToWorkflowTag = { message ->
         logger.debug { "sendEventsToWorkflowTagEngine $message" }
         // As it's a back loop, we trigger it asynchronously to avoid deadlocks
         scope.future {
@@ -223,14 +237,14 @@ class InMemoryOutput(private val scope: CoroutineScope) {
         }
     }
 
-    fun sendToMetricsPerName(name: Name): SendToMetricsPerName = when (name) {
-        is TaskName -> { message: MetricsPerNameMessage ->
+    fun sendToMetricsPerName(name: Name): SendToTaskMetrics = when (name) {
+        is TaskName -> { message: TaskMetricsMessage ->
             logger.debug { "sendToMonitoringPerName $message" }
             scope.future {
                 taskMetricsPerNameChannel[name]!!.send(InMemoryMessageToProcess(message))
             }.join()
         }
-        is WorkflowName -> { message: MetricsPerNameMessage ->
+        is WorkflowName -> { message: TaskMetricsMessage ->
             logger.debug { "sendToMonitoringPerName $message" }
             scope.future {
 //                workflowMetricsPerNameChannel[name]!!.send(InMemoryMessageToProcess(message))
@@ -239,7 +253,7 @@ class InMemoryOutput(private val scope: CoroutineScope) {
         else -> thisShouldNotHappen()
     }
 
-    val sendToMetricsGlobal: SendToMetricsGlobal = { message: MetricsGlobalMessage ->
+    val sendToGlobalMetrics: SendToGlobalMetrics = { message: GlobalMetricsMessage ->
         logger.debug { "sendToMonitoringGlobal $message" }
         scope.future {
             metricsGlobalChannel.send(InMemoryMessageToProcess(message))

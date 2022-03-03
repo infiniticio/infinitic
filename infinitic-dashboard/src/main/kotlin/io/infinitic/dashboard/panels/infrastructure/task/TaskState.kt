@@ -29,7 +29,7 @@ import io.infinitic.dashboard.Infinitic.topicName
 import io.infinitic.dashboard.panels.infrastructure.jobs.JobState
 import io.infinitic.dashboard.panels.infrastructure.jobs.TopicsStats
 import io.infinitic.dashboard.panels.infrastructure.requests.Loading
-import io.infinitic.pulsar.topics.TaskTopic
+import io.infinitic.transport.pulsar.topics.TaskTopic
 import java.time.Instant
 
 data class TaskState(

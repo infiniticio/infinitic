@@ -27,21 +27,21 @@ package io.infinitic.inMemory
 
 import io.infinitic.common.data.Name
 import io.infinitic.common.exceptions.thisShouldNotHappen
+import io.infinitic.common.metrics.global.storage.MetricsGlobalStateStorage
 import io.infinitic.common.tasks.data.TaskName
-import io.infinitic.common.workflows.data.workflowTasks.isWorkflowTask
+import io.infinitic.common.tasks.engine.storage.TaskStateStorage
+import io.infinitic.common.tasks.metrics.storage.TaskMetricsStateStorage
+import io.infinitic.common.tasks.tags.storage.TaskTagStorage
 import io.infinitic.common.workflows.data.workflows.WorkflowName
-import io.infinitic.metrics.global.engine.storage.MetricsGlobalStateStorage
+import io.infinitic.common.workflows.engine.storage.WorkflowStateStorage
+import io.infinitic.common.workflows.tags.storage.WorkflowTagStorage
 import io.infinitic.metrics.global.engine.worker.startMetricsGlobalEngine
-import io.infinitic.metrics.perName.engine.storage.MetricsPerNameStateStorage
 import io.infinitic.metrics.perName.engine.worker.MetricsPerNameMessageToProcess
 import io.infinitic.metrics.perName.engine.worker.startMetricsPerNameEngine
-import io.infinitic.tags.tasks.storage.TaskTagStorage
 import io.infinitic.tags.tasks.worker.TaskTagEngineMessageToProcess
 import io.infinitic.tags.tasks.worker.startTaskTagEngine
-import io.infinitic.tags.workflows.storage.WorkflowTagStorage
 import io.infinitic.tags.workflows.worker.WorkflowTagEngineMessageToProcess
 import io.infinitic.tags.workflows.worker.startWorkflowTagEngine
-import io.infinitic.tasks.engine.storage.TaskStateStorage
 import io.infinitic.tasks.engine.worker.TaskEngineMessageToProcess
 import io.infinitic.tasks.engine.worker.startTaskEngine
 import io.infinitic.tasks.executor.worker.TaskExecutorMessageToProcess
@@ -49,7 +49,6 @@ import io.infinitic.tasks.executor.worker.startTaskExecutor
 import io.infinitic.transport.inMemory.InMemoryOutput
 import io.infinitic.worker.InfiniticWorker
 import io.infinitic.worker.config.WorkerConfig
-import io.infinitic.workflows.engine.storage.WorkflowStateStorage
 import io.infinitic.workflows.engine.worker.WorkflowEngineMessageToProcess
 import io.infinitic.workflows.engine.worker.startWorkflowEngine
 import kotlinx.coroutines.channels.Channel
@@ -140,7 +139,7 @@ class InMemoryInfiniticWorker(
                 inputChannel = channel,
                 outputChannel = output.logChannel,
                 output.sendToClient,
-                output.sendEventsToTaskTagEngine,
+                output.sendEventsToTaskTag,
                 output.sendToTaskEngineAfter(taskName),
                 output.sendEventsToWorkflowEngine,
                 output.sendToTaskExecutors(taskName),
@@ -180,13 +179,9 @@ class InMemoryInfiniticWorker(
                 inputChannel = channel,
                 outputChannel = output.logChannel,
                 output.sendToClient,
-                output.sendCommandsToTaskTagEngine,
-                {
-                    when (it.isWorkflowTask()) {
-                        true -> output.sendCommandsToTaskEngine(workflowName)(it)
-                        false -> output.sendCommandsToTaskEngine(it.taskName)(it)
-                    }
-                },
+                output.sendCommandsToTaskTag,
+                output.sendCommandsToTaskEngine(),
+                output.sendCommandsToTaskEngine(workflowName),
                 output.sendEventsToWorkflowTagEngine,
                 output.sendEventsToWorkflowEngine,
                 output.sendToWorkflowEngineAfter
@@ -209,7 +204,7 @@ class InMemoryInfiniticWorker(
                 inputChannel = channel,
                 outputChannel = output.logChannel,
                 output.sendToClient,
-                output.sendEventsToTaskTagEngine,
+                output.sendEventsToTaskTag,
                 output.sendToTaskEngineAfter(workflowName),
                 output.sendEventsToWorkflowEngine,
                 output.sendToTaskExecutors(workflowName),
@@ -222,7 +217,7 @@ class InMemoryInfiniticWorker(
         // Implementation not needed
     }
 
-    override fun startMetricsPerNameEngines(taskName: TaskName, storage: MetricsPerNameStateStorage) {
+    override fun startMetricsPerNameEngines(taskName: TaskName, storage: TaskMetricsStateStorage) {
         val channel = Channel<MetricsPerNameMessageToProcess>()
         output.taskMetricsPerNameChannel[taskName] = channel
 
@@ -232,7 +227,7 @@ class InMemoryInfiniticWorker(
                 storage,
                 inputChannel = channel,
                 outputChannel = output.logChannel,
-                output.sendToMetricsGlobal
+                output.sendToGlobalMetrics
             )
         }
     }

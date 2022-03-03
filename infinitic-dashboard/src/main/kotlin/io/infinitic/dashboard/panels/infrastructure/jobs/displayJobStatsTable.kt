@@ -31,7 +31,7 @@ import io.infinitic.dashboard.panels.infrastructure.requests.Failed
 import io.infinitic.dashboard.panels.infrastructure.requests.Loading
 import io.infinitic.dashboard.panels.infrastructure.requests.Request
 import io.infinitic.dashboard.slideovers.Slideover
-import io.infinitic.pulsar.topics.Topic
+import io.infinitic.transport.pulsar.topics.Topic
 import kweb.Element
 import kweb.ElementCreator
 import kweb.div

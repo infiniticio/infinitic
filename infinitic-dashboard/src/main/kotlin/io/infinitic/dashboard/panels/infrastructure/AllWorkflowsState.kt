@@ -27,7 +27,7 @@ package io.infinitic.dashboard.panels.infrastructure
 
 import io.infinitic.dashboard.Infinitic
 import io.infinitic.dashboard.panels.infrastructure.requests.Loading
-import io.infinitic.pulsar.topics.WorkflowTaskTopic
+import io.infinitic.transport.pulsar.topics.WorkflowTaskTopic
 import org.apache.pulsar.common.policies.data.PartitionedTopicStats
 import java.time.Instant
 

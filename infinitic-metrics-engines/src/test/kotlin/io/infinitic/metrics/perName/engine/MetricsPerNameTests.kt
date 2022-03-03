@@ -27,12 +27,12 @@ package io.infinitic.metrics.perName.engine
 
 import io.infinitic.common.data.ClientName
 import io.infinitic.common.fixtures.TestFactory
+import io.infinitic.common.metrics.global.SendToGlobalMetrics
 import io.infinitic.common.metrics.global.messages.TaskCreated
-import io.infinitic.common.metrics.global.transport.SendToMetricsGlobal
-import io.infinitic.common.metrics.perName.messages.TaskStatusUpdated
-import io.infinitic.common.metrics.perName.state.MetricsPerNameState
 import io.infinitic.common.tasks.data.TaskStatus
-import io.infinitic.metrics.perName.engine.storage.MetricsPerNameStateStorage
+import io.infinitic.common.tasks.metrics.messages.TaskStatusUpdated
+import io.infinitic.common.tasks.metrics.state.TaskMetricsState
+import io.infinitic.common.tasks.metrics.storage.TaskMetricsStateStorage
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.shouldBe
 import io.mockk.coEvery
@@ -47,7 +47,7 @@ class MetricsPerNameTests : ShouldSpec({
 
     context("TaskMetrics.handle") {
         should("should update TaskMetricsState when receiving TaskStatusUpdate message") {
-            val storage = mockk<MetricsPerNameStateStorage>()
+            val storage = mockk<TaskMetricsStateStorage>()
             val msg = TestFactory.random(
                 TaskStatusUpdated::class,
                 mapOf(
@@ -55,12 +55,12 @@ class MetricsPerNameTests : ShouldSpec({
                     "newStatus" to TaskStatus.RUNNING_ERROR
                 )
             )
-            val stateIn = TestFactory.random(MetricsPerNameState::class, mapOf("taskName" to msg.taskName))
-            val stateOutSlot = slot<MetricsPerNameState>()
+            val stateIn = TestFactory.random(TaskMetricsState::class, mapOf("taskName" to msg.taskName))
+            val stateOutSlot = slot<TaskMetricsState>()
             coEvery { storage.getState(msg.taskName) } returns stateIn
             coEvery { storage.putState(msg.taskName, capture(stateOutSlot)) } just runs
 
-            val metricsPerName = MetricsPerNameEngine(
+            val metricsPerName = TaskMetricsEngine(
                 clientName,
                 storage,
                 mockSendToMetricsGlobal()
@@ -85,12 +85,12 @@ class MetricsPerNameTests : ShouldSpec({
                     "newStatus" to TaskStatus.RUNNING_OK
                 )
             )
-            val storage = mockk<MetricsPerNameStateStorage>()
-            val stateOutSlot = slot<MetricsPerNameState>()
+            val storage = mockk<TaskMetricsStateStorage>()
+            val stateOutSlot = slot<TaskMetricsState>()
             coEvery { storage.getState(msg.taskName) } returns null
             coEvery { storage.putState(msg.taskName, capture(stateOutSlot)) } just runs
             val sendToMetricsGlobal = mockSendToMetricsGlobal()
-            val metricsPerName = MetricsPerNameEngine(clientName, storage, sendToMetricsGlobal)
+            val metricsPerName = TaskMetricsEngine(clientName, storage, sendToMetricsGlobal)
 
             // when
             metricsPerName.handle(msg)
@@ -105,8 +105,8 @@ class MetricsPerNameTests : ShouldSpec({
     }
 })
 
-fun mockSendToMetricsGlobal(): SendToMetricsGlobal {
-    val mock = mockk<SendToMetricsGlobal>()
+fun mockSendToMetricsGlobal(): SendToGlobalMetrics {
+    val mock = mockk<SendToGlobalMetrics>()
     coEvery { mock(any()) } just runs
 
     return mock

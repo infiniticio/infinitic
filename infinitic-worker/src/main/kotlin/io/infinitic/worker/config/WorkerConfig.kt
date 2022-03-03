@@ -33,9 +33,9 @@ import io.infinitic.common.config.loadConfigFromResource
 import io.infinitic.storage.StateStorage
 import io.infinitic.storage.StorageConfig
 import io.infinitic.storage.redis.Redis
-import io.infinitic.transport.Transport
-import io.infinitic.transport.TransportConfig
-import io.infinitic.transport.pulsar.Pulsar
+import io.infinitic.transport.config.Transport
+import io.infinitic.transport.config.TransportConfig
+import io.infinitic.transport.pulsar.config.Pulsar
 
 data class WorkerConfig(
     /**

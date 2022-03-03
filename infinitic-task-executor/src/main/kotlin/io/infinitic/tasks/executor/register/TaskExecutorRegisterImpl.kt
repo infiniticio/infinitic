@@ -25,14 +25,15 @@
 
 package io.infinitic.tasks.executor.register
 
+import io.infinitic.common.workers.TaskFactory
+import io.infinitic.common.workers.WorkerRegister
+import io.infinitic.common.workers.WorkflowFactory
 import io.infinitic.exceptions.tasks.ClassNotFoundException
 import io.infinitic.tasks.Task
-import io.infinitic.tasks.TaskExecutorRegister
-import io.infinitic.tasks.TaskFactory
-import io.infinitic.tasks.WorkflowFactory
 import io.infinitic.workflows.Workflow
+import org.jetbrains.annotations.TestOnly
 
-class TaskExecutorRegisterImpl : TaskExecutorRegister {
+class TaskExecutorRegisterImpl : WorkerRegister {
     // map task name <> task factory
     private val registeredTasks = mutableMapOf<String, TaskFactory>()
     // map workflow name <> workflow factory
@@ -46,10 +47,12 @@ class TaskExecutorRegisterImpl : TaskExecutorRegister {
         registeredWorkflows[name] = factory
     }
 
+    @TestOnly
     override fun unregisterTask(name: String) {
         registeredTasks.remove(name)
     }
 
+    @TestOnly
     override fun unregisterWorkflow(name: String) {
         registeredWorkflows.remove(name)
     }

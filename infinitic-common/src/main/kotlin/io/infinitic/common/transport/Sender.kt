@@ -27,15 +27,15 @@ package io.infinitic.common.transport
 
 import io.infinitic.common.clients.messages.ClientMessage
 import io.infinitic.common.data.MillisDuration
-import io.infinitic.common.metrics.global.messages.MetricsGlobalMessage
-import io.infinitic.common.metrics.perName.messages.MetricsPerNameMessage
+import io.infinitic.common.metrics.global.messages.GlobalMetricsMessage
 import io.infinitic.common.tasks.data.TaskName
 import io.infinitic.common.tasks.engine.messages.TaskEngineMessage
 import io.infinitic.common.tasks.executors.messages.TaskExecutorMessage
-import io.infinitic.common.tasks.tags.messages.TaskTagEngineMessage
+import io.infinitic.common.tasks.metrics.messages.TaskMetricsMessage
+import io.infinitic.common.tasks.tags.messages.TaskTagMessage
 import io.infinitic.common.workflows.data.workflows.WorkflowName
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
-import io.infinitic.common.workflows.tags.messages.WorkflowTagEngineMessage
+import io.infinitic.common.workflows.tags.messages.WorkflowTagMessage
 
 interface Sender {
 
@@ -45,17 +45,17 @@ interface Sender {
 
     fun sendToClient(message: ClientMessage)
 
-    fun sendToTaskTag(message: TaskTagEngineMessage)
+    fun sendToTaskTag(message: TaskTagMessage)
 
     fun sendToTaskEngine(message: TaskEngineMessage, after: MillisDuration? = MillisDuration(0L))
 
-    fun sendToWorkflowTag(message: WorkflowTagEngineMessage)
+    fun sendToWorkflowTag(message: WorkflowTagMessage)
 
     fun sendToWorkflowEngine(message: WorkflowEngineMessage, after: MillisDuration? = MillisDuration(0L))
 
     fun sendToTaskExecutors(message: TaskExecutorMessage)
 
-    fun sendToMetricsPerName(message: MetricsPerNameMessage)
+    fun sendToTaskMetrics(message: TaskMetricsMessage)
 
-    fun sendToMetricsGlobal(message: MetricsGlobalMessage)
+    fun sendToGlobalMetrics(message: GlobalMetricsMessage)
 }

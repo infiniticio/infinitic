@@ -30,11 +30,11 @@ import io.infinitic.common.exceptions.thisShouldNotHappen
 import io.infinitic.common.tasks.data.TaskName
 import io.infinitic.common.tasks.engine.messages.TaskEngineEnvelope
 import io.infinitic.common.workflows.data.workflows.WorkflowName
-import io.infinitic.pulsar.topics.TaskTopic
-import io.infinitic.pulsar.topics.WorkflowTaskTopic
 import io.infinitic.pulsar.transport.PulsarConsumerFactory
 import io.infinitic.pulsar.transport.PulsarOutput
 import io.infinitic.tasks.engine.worker.startTaskDelayEngine
+import io.infinitic.transport.pulsar.topics.TaskTopic
+import io.infinitic.transport.pulsar.topics.WorkflowTaskTopic
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.channels.Channel
 import org.apache.pulsar.client.api.Consumer

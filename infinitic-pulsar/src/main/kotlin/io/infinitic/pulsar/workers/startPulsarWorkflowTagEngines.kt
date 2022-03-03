@@ -26,19 +26,19 @@
 package io.infinitic.pulsar.workers
 
 import io.infinitic.common.workflows.data.workflows.WorkflowName
-import io.infinitic.common.workflows.tags.messages.WorkflowTagEngineEnvelope
-import io.infinitic.common.workflows.tags.messages.WorkflowTagEngineMessage
-import io.infinitic.pulsar.topics.WorkflowTopic
+import io.infinitic.common.workflows.tags.messages.WorkflowTagEnvelope
+import io.infinitic.common.workflows.tags.messages.WorkflowTagMessage
+import io.infinitic.common.workflows.tags.storage.WorkflowTagStorage
 import io.infinitic.pulsar.transport.PulsarConsumerFactory
 import io.infinitic.pulsar.transport.PulsarMessageToProcess
 import io.infinitic.pulsar.transport.PulsarOutput
-import io.infinitic.tags.workflows.storage.WorkflowTagStorage
 import io.infinitic.tags.workflows.worker.startWorkflowTagEngine
+import io.infinitic.transport.pulsar.topics.WorkflowTopic
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.channels.Channel
 import org.apache.pulsar.client.api.Consumer
 
-typealias PulsarWorkflowTagEngineMessageToProcess = PulsarMessageToProcess<WorkflowTagEngineMessage>
+typealias PulsarWorkflowTagEngineMessageToProcess = PulsarMessageToProcess<WorkflowTagMessage>
 
 @Suppress("UNCHECKED_CAST")
 fun CoroutineScope.startPulsarWorkflowTagEngines(
@@ -68,7 +68,7 @@ fun CoroutineScope.startPulsarWorkflowTagEngines(
             consumerName = "$name:$it",
             workflowTopic = WorkflowTopic.TAG,
             workflowName = workflowName
-        ) as Consumer<WorkflowTagEngineEnvelope>
+        ) as Consumer<WorkflowTagEnvelope>
 
         // coroutine pulling pulsar messages
         pullMessages(consumer, inputChannel)

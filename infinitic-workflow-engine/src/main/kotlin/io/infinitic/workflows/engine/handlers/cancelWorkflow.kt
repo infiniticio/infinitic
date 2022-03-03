@@ -124,7 +124,7 @@ private fun CoroutineScope.cancelMethodRun(
                             emitterWorkflowId = state.workflowId,
                             emitterName = output.clientName
                         )
-                        launch { output.sendToWorkflowTagEngine(cancelWorkflowByTag) }
+                        launch { output.sendToWorkflowTag(cancelWorkflowByTag) }
                     }
                     else -> thisShouldNotHappen()
                 }

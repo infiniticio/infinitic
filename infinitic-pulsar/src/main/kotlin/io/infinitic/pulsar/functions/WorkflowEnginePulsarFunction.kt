@@ -29,6 +29,7 @@ import io.infinitic.cache.caffeine.Caffeine
 import io.infinitic.cache.caffeine.CaffeineKeyValueCache
 import io.infinitic.common.data.ClientName
 import io.infinitic.common.storage.keyValue.CachedKeyValueStorage
+import io.infinitic.common.workflows.data.workflows.WorkflowName
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineEnvelope
 import io.infinitic.pulsar.functions.storage.keyValueStorage
 import io.infinitic.pulsar.transport.PulsarOutput
@@ -38,7 +39,7 @@ import kotlinx.coroutines.runBlocking
 import org.apache.pulsar.functions.api.Context
 import org.apache.pulsar.functions.api.Function
 
-class WorkflowEnginePulsarFunction : Function<WorkflowEngineEnvelope, Void> {
+class WorkflowEnginePulsarFunction(val workflowName: WorkflowName) : Function<WorkflowEngineEnvelope, Void> {
 
     override fun process(envelope: WorkflowEngineEnvelope, context: Context?): Void? = runBlocking {
         val ctx = context ?: throw NullPointerException("Null Context received")
@@ -68,6 +69,7 @@ class WorkflowEnginePulsarFunction : Function<WorkflowEngineEnvelope, Void> {
             output.sendToClient(),
             output.sendToTaskTagEngine(),
             output.sendToTaskEngine(),
+            output.sendToWorkflowTaskEngine(workflowName),
             output.sendToWorkflowTagEngine(),
             output.sendToWorkflowEngine(),
             output.sendToWorkflowEngineAfter()

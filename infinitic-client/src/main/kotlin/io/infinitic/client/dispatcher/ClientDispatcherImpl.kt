@@ -25,12 +25,12 @@
 
 package io.infinitic.client.dispatcher
 
-import io.infinitic.client.Deferred
 import io.infinitic.client.deferred.DeferredChannel
 import io.infinitic.client.deferred.DeferredMethod
 import io.infinitic.client.deferred.DeferredSend
 import io.infinitic.client.deferred.DeferredTask
 import io.infinitic.client.deferred.DeferredWorkflow
+import io.infinitic.common.clients.Deferred
 import io.infinitic.common.clients.messages.ClientMessage
 import io.infinitic.common.clients.messages.MethodCanceled
 import io.infinitic.common.clients.messages.MethodCompleted
@@ -62,7 +62,7 @@ import io.infinitic.common.tasks.engine.messages.CancelTask
 import io.infinitic.common.tasks.engine.messages.DispatchTask
 import io.infinitic.common.tasks.engine.messages.RetryTask
 import io.infinitic.common.tasks.engine.messages.WaitTask
-import io.infinitic.common.tasks.tags.SendToTaskTagEngine
+import io.infinitic.common.tasks.tags.SendToTaskTag
 import io.infinitic.common.tasks.tags.messages.AddTagToTask
 import io.infinitic.common.tasks.tags.messages.CancelTaskByTag
 import io.infinitic.common.tasks.tags.messages.GetTaskIdsByTag
@@ -80,7 +80,7 @@ import io.infinitic.common.workflows.engine.messages.DispatchWorkflow
 import io.infinitic.common.workflows.engine.messages.RetryWorkflowTask
 import io.infinitic.common.workflows.engine.messages.SendSignal
 import io.infinitic.common.workflows.engine.messages.WaitWorkflow
-import io.infinitic.common.workflows.tags.SendToWorkflowTagEngine
+import io.infinitic.common.workflows.tags.SendToWorkflowTag
 import io.infinitic.common.workflows.tags.messages.AddTagToWorkflow
 import io.infinitic.common.workflows.tags.messages.CancelWorkflowByTag
 import io.infinitic.common.workflows.tags.messages.DispatchMethodByTag
@@ -111,8 +111,8 @@ internal class ClientDispatcherImpl(
     val clientName: ClientName,
     val sendToTaskEngine: SendToTaskEngine,
     val sendToWorkflowEngine: SendToWorkflowEngine,
-    val sendToTaskTagEngine: SendToTaskTagEngine,
-    val sendToWorkflowTagEngine: SendToWorkflowTagEngine
+    val sendToTaskTagEngine: SendToTaskTag,
+    val sendToWorkflowTagEngine: SendToWorkflowTag
 ) : ClientDispatcher {
     val logger = KotlinLogging.logger {}
 

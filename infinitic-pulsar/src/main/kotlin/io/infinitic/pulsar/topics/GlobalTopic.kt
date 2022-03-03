@@ -25,6 +25,8 @@
 
 package io.infinitic.pulsar.topics
 
+import io.infinitic.transport.pulsar.topics.Topic
+
 enum class GlobalTopic(override val prefix: String) : Topic {
     METRICS("global-metrics"),
     NAMER("namer")

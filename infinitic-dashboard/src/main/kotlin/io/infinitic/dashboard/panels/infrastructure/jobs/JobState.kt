@@ -29,7 +29,7 @@ import io.infinitic.dashboard.Infinitic.topics
 import io.infinitic.dashboard.panels.infrastructure.requests.Completed
 import io.infinitic.dashboard.panels.infrastructure.requests.Failed
 import io.infinitic.dashboard.panels.infrastructure.requests.Request
-import io.infinitic.pulsar.topics.Topic
+import io.infinitic.transport.pulsar.topics.Topic
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive

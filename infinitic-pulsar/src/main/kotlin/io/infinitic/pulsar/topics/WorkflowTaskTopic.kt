@@ -25,6 +25,8 @@
 
 package io.infinitic.pulsar.topics
 
+import io.infinitic.transport.pulsar.topics.Topic
+
 enum class WorkflowTaskTopic(override val prefix: String) : Topic {
     TAG("workflow-task-tag"),
     ENGINE("workflow-task-engine"),

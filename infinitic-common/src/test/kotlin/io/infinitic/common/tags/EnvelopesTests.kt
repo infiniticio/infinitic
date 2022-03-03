@@ -27,22 +27,22 @@ package io.infinitic.common.tags
 
 import com.github.avrokotlin.avro4k.Avro
 import io.infinitic.common.fixtures.TestFactory
-import io.infinitic.common.tasks.tags.messages.TaskTagEngineEnvelope
-import io.infinitic.common.tasks.tags.messages.TaskTagEngineMessage
-import io.infinitic.common.workflows.tags.messages.WorkflowTagEngineEnvelope
-import io.infinitic.common.workflows.tags.messages.WorkflowTagEngineMessage
+import io.infinitic.common.tasks.tags.messages.TaskTagEnvelope
+import io.infinitic.common.tasks.tags.messages.TaskTagMessage
+import io.infinitic.common.workflows.tags.messages.WorkflowTagEnvelope
+import io.infinitic.common.workflows.tags.messages.WorkflowTagMessage
 import io.kotest.assertions.throwables.shouldNotThrowAny
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
 
 class EnvelopesTests : StringSpec({
-    TaskTagEngineMessage::class.sealedSubclasses.map {
+    TaskTagMessage::class.sealedSubclasses.map {
         val msg = TestFactory.random(it)
 
         "TaskTagEngineMessage(${msg::class.simpleName}) should be avro-convertible" {
             shouldNotThrowAny {
-                val envelope = TaskTagEngineEnvelope.from(msg)
-                val ser = TaskTagEngineEnvelope.serializer()
+                val envelope = TaskTagEnvelope.from(msg)
+                val ser = TaskTagEnvelope.serializer()
                 val byteArray = Avro.default.encodeToByteArray(ser, envelope)
                 val envelope2 = Avro.default.decodeFromByteArray(ser, byteArray)
                 envelope shouldBe envelope2
@@ -50,13 +50,13 @@ class EnvelopesTests : StringSpec({
         }
     }
 
-    WorkflowTagEngineMessage::class.sealedSubclasses.map {
+    WorkflowTagMessage::class.sealedSubclasses.map {
         val msg = TestFactory.random(it)
 
         "WorkflowTagEngineMessage(${msg::class.simpleName}) should be avro-convertible" {
             shouldNotThrowAny {
-                val envelope = WorkflowTagEngineEnvelope.from(msg)
-                val ser = WorkflowTagEngineEnvelope.serializer()
+                val envelope = WorkflowTagEnvelope.from(msg)
+                val ser = WorkflowTagEnvelope.serializer()
                 val byteArray = Avro.default.encodeToByteArray(ser, envelope)
                 val envelope2 = Avro.default.decodeFromByteArray(ser, byteArray)
                 envelope shouldBe envelope2

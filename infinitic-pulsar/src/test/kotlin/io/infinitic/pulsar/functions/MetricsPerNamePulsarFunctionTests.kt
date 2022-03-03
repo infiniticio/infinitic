@@ -25,9 +25,9 @@
 
 package io.infinitic.pulsar.functions
 
-import io.infinitic.common.metrics.perName.messages.MetricsPerNameEnvelope
-import io.infinitic.common.metrics.perName.messages.MetricsPerNameMessage
-import io.infinitic.metrics.perName.engine.MetricsPerNameEngine
+import io.infinitic.common.tasks.metrics.messages.TaskMetricsEnvelope
+import io.infinitic.common.tasks.metrics.messages.TaskMetricsMessage
+import io.infinitic.metrics.perName.engine.TaskMetricsEngine
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.ShouldSpec
 import io.mockk.Runs
@@ -57,12 +57,12 @@ class MetricsPerNamePulsarFunctionTests : ShouldSpec({
             every { context.logger } returns mockk()
 
             // Mocking avro conversion
-            val envelope = mockk<MetricsPerNameEnvelope>()
-            val msg = mockk<MetricsPerNameMessage>()
+            val envelope = mockk<TaskMetricsEnvelope>()
+            val msg = mockk<TaskMetricsMessage>()
             every { envelope.message() } returns msg
 
             // Mocking Monitoring Per Name
-            val metricsPerName = mockk<MetricsPerNameEngine>()
+            val metricsPerName = mockk<TaskMetricsEngine>()
             val metricsPerNamePulsarFunction = spyk<MetricsPerNamePulsarFunction>()
             every { metricsPerNamePulsarFunction.getMetricsPerNameEngine(context) } returns metricsPerName
             coEvery { metricsPerName.handle(msg) } just Runs

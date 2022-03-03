@@ -323,7 +323,7 @@ private fun CoroutineScope.dispatchWorkflow(
             workflowId = dispatchWorkflow.workflowId,
             emitterName = output.clientName
         )
-        launch { output.sendToWorkflowTagEngine(addTagToWorkflow) }
+        launch { output.sendToWorkflowTag(addTagToWorkflow) }
     }
 }
 
@@ -388,7 +388,7 @@ private fun CoroutineScope.dispatchMethod(
                 emitterName = output.clientName
             )
             // tag engine must ignore this message if parentWorkflowId has the provided tag
-            launch { output.sendToWorkflowTagEngine(dispatchMethodByTag) }
+            launch { output.sendToWorkflowTag(dispatchMethodByTag) }
         }
         else -> thisShouldNotHappen()
     }
@@ -445,7 +445,7 @@ private fun CoroutineScope.sendSignal(
                 emitterWorkflowId = state.workflowId,
                 emitterName = output.clientName
             )
-            launch { output.sendToWorkflowTagEngine(sendSignalByTag) }
+            launch { output.sendToWorkflowTag(sendSignalByTag) }
         }
         else -> thisShouldNotHappen()
     }

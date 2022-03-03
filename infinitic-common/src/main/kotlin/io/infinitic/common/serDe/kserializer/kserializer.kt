@@ -27,13 +27,13 @@ package io.infinitic.common.serDe.kserializer
 
 import io.infinitic.common.clients.messages.ClientEnvelope
 import io.infinitic.common.exceptions.thisShouldNotHappen
-import io.infinitic.common.metrics.global.messages.MetricsGlobalEnvelope
-import io.infinitic.common.metrics.perName.messages.MetricsPerNameEnvelope
+import io.infinitic.common.metrics.global.messages.GlobalMetricsEnvelope
 import io.infinitic.common.tasks.engine.messages.TaskEngineEnvelope
 import io.infinitic.common.tasks.executors.messages.TaskExecutorEnvelope
-import io.infinitic.common.tasks.tags.messages.TaskTagEngineEnvelope
+import io.infinitic.common.tasks.metrics.messages.TaskMetricsEnvelope
+import io.infinitic.common.tasks.tags.messages.TaskTagEnvelope
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineEnvelope
-import io.infinitic.common.workflows.tags.messages.WorkflowTagEngineEnvelope
+import io.infinitic.common.workflows.tags.messages.WorkflowTagEnvelope
 import kotlinx.serialization.InternalSerializationApi
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.serializerOrNull
@@ -69,12 +69,12 @@ fun <T : Any> getKSerializerOrNull(klass: Class<T>): KSerializer<T>? {
 @Suppress("UNCHECKED_CAST")
 fun <T : Any> kserializer(klass: KClass<T>) = when (klass) {
     ClientEnvelope::class -> ClientEnvelope.serializer()
-    TaskTagEngineEnvelope::class -> TaskTagEngineEnvelope.serializer()
+    TaskTagEnvelope::class -> TaskTagEnvelope.serializer()
     TaskEngineEnvelope::class -> TaskEngineEnvelope.serializer()
     TaskExecutorEnvelope::class -> TaskExecutorEnvelope.serializer()
     WorkflowEngineEnvelope::class -> WorkflowEngineEnvelope.serializer()
-    WorkflowTagEngineEnvelope::class -> WorkflowTagEngineEnvelope.serializer()
-    MetricsPerNameEnvelope::class -> MetricsPerNameEnvelope.serializer()
-    MetricsGlobalEnvelope::class -> MetricsGlobalEnvelope.serializer()
+    WorkflowTagEnvelope::class -> WorkflowTagEnvelope.serializer()
+    TaskMetricsEnvelope::class -> TaskMetricsEnvelope.serializer()
+    GlobalMetricsEnvelope::class -> GlobalMetricsEnvelope.serializer()
     else -> thisShouldNotHappen("applying kserializer with ${klass.qualifiedName}")
 } as KSerializer <T>

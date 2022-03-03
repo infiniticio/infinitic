@@ -26,15 +26,14 @@
 package io.infinitic.pulsar
 
 import io.infinitic.common.data.Name
+import io.infinitic.common.metrics.global.storage.MetricsGlobalStateStorage
 import io.infinitic.common.tasks.data.TaskName
+import io.infinitic.common.tasks.engine.storage.TaskStateStorage
+import io.infinitic.common.tasks.metrics.storage.TaskMetricsStateStorage
+import io.infinitic.common.tasks.tags.storage.TaskTagStorage
 import io.infinitic.common.workflows.data.workflows.WorkflowName
-import io.infinitic.metrics.global.engine.storage.MetricsGlobalStateStorage
-import io.infinitic.metrics.perName.engine.storage.MetricsPerNameStateStorage
-import io.infinitic.pulsar.topics.GlobalTopic
-import io.infinitic.pulsar.topics.TaskTopic
-import io.infinitic.pulsar.topics.TopicName
-import io.infinitic.pulsar.topics.WorkflowTaskTopic
-import io.infinitic.pulsar.topics.WorkflowTopic
+import io.infinitic.common.workflows.engine.storage.WorkflowStateStorage
+import io.infinitic.common.workflows.tags.storage.WorkflowTagStorage
 import io.infinitic.pulsar.transport.PulsarConsumerFactory
 import io.infinitic.pulsar.transport.PulsarOutput
 import io.infinitic.pulsar.workers.startPulsarMetricsGlobalEngine
@@ -46,12 +45,13 @@ import io.infinitic.pulsar.workers.startPulsarTaskTagEngines
 import io.infinitic.pulsar.workers.startPulsarWorkflowDelayEngines
 import io.infinitic.pulsar.workers.startPulsarWorkflowEngines
 import io.infinitic.pulsar.workers.startPulsarWorkflowTagEngines
-import io.infinitic.tags.tasks.storage.TaskTagStorage
-import io.infinitic.tags.workflows.storage.WorkflowTagStorage
-import io.infinitic.tasks.engine.storage.TaskStateStorage
+import io.infinitic.transport.pulsar.topics.GlobalTopic
+import io.infinitic.transport.pulsar.topics.TaskTopic
+import io.infinitic.transport.pulsar.topics.TopicName
+import io.infinitic.transport.pulsar.topics.WorkflowTaskTopic
+import io.infinitic.transport.pulsar.topics.WorkflowTopic
 import io.infinitic.worker.InfiniticWorker
 import io.infinitic.worker.config.WorkerConfig
-import io.infinitic.workflows.engine.storage.WorkflowStateStorage
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.future.future
 import kotlinx.coroutines.launch
@@ -389,7 +389,7 @@ class PulsarInfiniticWorker private constructor(
         }
     }
 
-    override fun startMetricsPerNameEngines(taskName: TaskName, storage: MetricsPerNameStateStorage) {
+    override fun startMetricsPerNameEngines(taskName: TaskName, storage: TaskMetricsStateStorage) {
         runningScope.launch {
             startPulsarMetricsPerNameEngines(
                 name,

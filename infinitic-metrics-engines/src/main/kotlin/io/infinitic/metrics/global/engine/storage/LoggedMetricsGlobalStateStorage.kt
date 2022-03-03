@@ -25,7 +25,8 @@
 
 package io.infinitic.metrics.global.engine.storage
 
-import io.infinitic.common.metrics.global.state.MetricsGlobalState
+import io.infinitic.common.metrics.global.state.GlobalMetricsState
+import io.infinitic.common.metrics.global.storage.MetricsGlobalStateStorage
 import mu.KotlinLogging
 import org.jetbrains.annotations.TestOnly
 
@@ -35,14 +36,14 @@ class LoggedMetricsGlobalStateStorage(
 
     private val logger = KotlinLogging.logger {}
 
-    override suspend fun getState(): MetricsGlobalState? {
+    override suspend fun getState(): GlobalMetricsState? {
         val state = storage.getState()
         logger.debug { "getState $state" }
 
         return state
     }
 
-    override suspend fun putState(state: MetricsGlobalState) {
+    override suspend fun putState(state: GlobalMetricsState) {
         logger.debug { "putState $state" }
         storage.putState(state)
     }

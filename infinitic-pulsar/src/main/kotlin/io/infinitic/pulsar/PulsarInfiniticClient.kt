@@ -25,25 +25,26 @@
 
 package io.infinitic.pulsar
 
-import io.infinitic.client.InfiniticClient
+import io.infinitic.client.AbstractInfiniticClient
+import io.infinitic.common.clients.InfiniticClient
 import io.infinitic.common.data.ClientName
 import io.infinitic.pulsar.config.ClientConfig
-import io.infinitic.pulsar.topics.TopicName
 import io.infinitic.pulsar.transport.PulsarConsumerFactory
 import io.infinitic.pulsar.transport.PulsarOutput
 import io.infinitic.pulsar.workers.startClientResponseWorker
+import io.infinitic.transport.pulsar.topics.TopicName
 import org.apache.pulsar.client.admin.PulsarAdmin
 import org.apache.pulsar.client.api.PulsarClient
 import org.apache.pulsar.client.api.PulsarClientException
 
-@Suppress("unused", "MemberVisibilityCanBePrivate", "CanBeParameter")
+@Suppress("unused", "MemberVisibilityCanBePrivate")
 class PulsarInfiniticClient @JvmOverloads constructor(
     val pulsarClient: PulsarClient,
     val pulsarAdmin: PulsarAdmin,
     val pulsarTenant: String,
     val pulsarNamespace: String,
     name: String? = null
-) : InfiniticClient() {
+) : AbstractInfiniticClient() {
 
     private val producerName by lazy { getProducerName(pulsarClient, pulsarTenant, pulsarNamespace, name) }
 

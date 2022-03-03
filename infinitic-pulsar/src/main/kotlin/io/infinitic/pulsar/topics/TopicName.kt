@@ -26,6 +26,7 @@
 package io.infinitic.pulsar.topics
 
 import io.infinitic.common.data.ClientName
+import io.infinitic.transport.pulsar.topics.Topic
 
 const val TOPIC_WITH_DELAYS = "delays"
 

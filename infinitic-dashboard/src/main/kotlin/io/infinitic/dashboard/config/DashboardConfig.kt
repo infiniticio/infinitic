@@ -27,7 +27,7 @@ package io.infinitic.dashboard.config
 
 import io.infinitic.common.config.loadConfigFromFile
 import io.infinitic.common.config.loadConfigFromResource
-import io.infinitic.transport.pulsar.Pulsar
+import io.infinitic.transport.pulsar.config.Pulsar
 
 data class DashboardConfig(
     /*

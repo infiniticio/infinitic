@@ -28,13 +28,13 @@ package io.infinitic.common.fixtures
 import io.infinitic.common.data.methods.MethodParameters
 import io.infinitic.common.errors.DeferredError
 import io.infinitic.common.errors.WorkerError
-import io.infinitic.common.metrics.global.messages.MetricsGlobalEnvelope
-import io.infinitic.common.metrics.global.messages.MetricsGlobalMessage
-import io.infinitic.common.metrics.perName.messages.MetricsPerNameEnvelope
-import io.infinitic.common.metrics.perName.messages.MetricsPerNameMessage
+import io.infinitic.common.metrics.global.messages.GlobalMetricsEnvelope
+import io.infinitic.common.metrics.global.messages.GlobalMetricsMessage
 import io.infinitic.common.serDe.SerializedData
 import io.infinitic.common.tasks.engine.messages.TaskEngineEnvelope
 import io.infinitic.common.tasks.engine.messages.TaskEngineMessage
+import io.infinitic.common.tasks.metrics.messages.TaskMetricsEnvelope
+import io.infinitic.common.tasks.metrics.messages.TaskMetricsMessage
 import io.infinitic.common.workflows.data.commands.CommandId
 import io.infinitic.common.workflows.data.steps.Step
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineEnvelope
@@ -83,13 +83,13 @@ object TestFactory {
                 val sub = TaskEngineMessage::class.sealedSubclasses.shuffled().first()
                 TaskEngineEnvelope.from(random(sub))
             }
-            .randomize(MetricsPerNameEnvelope::class.java) {
-                val sub = MetricsPerNameMessage::class.sealedSubclasses.shuffled().first()
-                MetricsPerNameEnvelope.from(random(sub))
+            .randomize(TaskMetricsEnvelope::class.java) {
+                val sub = TaskMetricsMessage::class.sealedSubclasses.shuffled().first()
+                TaskMetricsEnvelope.from(random(sub))
             }
-            .randomize(MetricsGlobalEnvelope::class.java) {
-                val sub = MetricsGlobalMessage::class.sealedSubclasses.shuffled().first()
-                MetricsGlobalEnvelope.from(random(sub))
+            .randomize(GlobalMetricsEnvelope::class.java) {
+                val sub = GlobalMetricsMessage::class.sealedSubclasses.shuffled().first()
+                GlobalMetricsEnvelope.from(random(sub))
             }
             .randomize(DeferredError::class.java) {
                 val sub = DeferredError::class.sealedSubclasses.shuffled().first()

@@ -26,19 +26,19 @@
 package io.infinitic.pulsar.workers
 
 import io.infinitic.common.tasks.data.TaskName
-import io.infinitic.common.tasks.tags.messages.TaskTagEngineEnvelope
-import io.infinitic.common.tasks.tags.messages.TaskTagEngineMessage
-import io.infinitic.pulsar.topics.TaskTopic
+import io.infinitic.common.tasks.tags.messages.TaskTagEnvelope
+import io.infinitic.common.tasks.tags.messages.TaskTagMessage
+import io.infinitic.common.tasks.tags.storage.TaskTagStorage
 import io.infinitic.pulsar.transport.PulsarConsumerFactory
 import io.infinitic.pulsar.transport.PulsarMessageToProcess
 import io.infinitic.pulsar.transport.PulsarOutput
-import io.infinitic.tags.tasks.storage.TaskTagStorage
 import io.infinitic.tags.tasks.worker.startTaskTagEngine
+import io.infinitic.transport.pulsar.topics.TaskTopic
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.channels.Channel
 import org.apache.pulsar.client.api.Consumer
 
-typealias PulsarTaskTagEngineMessageToProcess = PulsarMessageToProcess<TaskTagEngineMessage>
+typealias PulsarTaskTagEngineMessageToProcess = PulsarMessageToProcess<TaskTagMessage>
 
 @Suppress("UNCHECKED_CAST")
 fun CoroutineScope.startPulsarTaskTagEngines(
@@ -68,7 +68,7 @@ fun CoroutineScope.startPulsarTaskTagEngines(
             consumerName = "$name:$it",
             taskTopic = TaskTopic.TAG,
             taskName = taskName
-        ) as Consumer<TaskTagEngineEnvelope>
+        ) as Consumer<TaskTagEnvelope>
 
         // coroutine pulling pulsar messages
         pullMessages(consumer, inputChannel)

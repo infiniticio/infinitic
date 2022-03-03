@@ -26,25 +26,25 @@
 package io.infinitic.worker
 
 import io.infinitic.common.data.Name
+import io.infinitic.common.metrics.global.storage.MetricsGlobalStateStorage
 import io.infinitic.common.storage.keySet.CachedKeySetStorage
 import io.infinitic.common.storage.keyValue.CachedKeyValueStorage
 import io.infinitic.common.tasks.data.TaskName
+import io.infinitic.common.tasks.engine.storage.TaskStateStorage
+import io.infinitic.common.tasks.metrics.storage.TaskMetricsStateStorage
+import io.infinitic.common.tasks.tags.storage.TaskTagStorage
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTask
 import io.infinitic.common.workflows.data.workflows.WorkflowName
+import io.infinitic.common.workflows.engine.storage.WorkflowStateStorage
+import io.infinitic.common.workflows.tags.storage.WorkflowTagStorage
 import io.infinitic.metrics.global.engine.storage.BinaryMetricsGlobalStateStorage
-import io.infinitic.metrics.global.engine.storage.MetricsGlobalStateStorage
-import io.infinitic.metrics.perName.engine.storage.BinaryMetricsPerNameStateStorage
-import io.infinitic.metrics.perName.engine.storage.MetricsPerNameStateStorage
+import io.infinitic.metrics.perName.engine.storage.BinaryTaskMetricsStateStorage
 import io.infinitic.tags.tasks.storage.BinaryTaskTagStorage
-import io.infinitic.tags.tasks.storage.TaskTagStorage
 import io.infinitic.tags.workflows.storage.BinaryWorkflowTagStorage
-import io.infinitic.tags.workflows.storage.WorkflowTagStorage
 import io.infinitic.tasks.engine.storage.BinaryTaskStateStorage
-import io.infinitic.tasks.engine.storage.TaskStateStorage
 import io.infinitic.tasks.executor.register.TaskExecutorRegisterImpl
 import io.infinitic.worker.config.WorkerConfig
 import io.infinitic.workflows.engine.storage.BinaryWorkflowStateStorage
-import io.infinitic.workflows.engine.storage.WorkflowStateStorage
 import io.infinitic.workflows.workflowTask.WorkflowTaskImpl
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
@@ -72,7 +72,7 @@ abstract class InfiniticWorker(open val workerConfig: WorkerConfig) : Closeable 
     protected val workflowStorages = mutableMapOf<WorkflowName, WorkflowStateStorage>()
     protected val workflowTagStorages = mutableMapOf<WorkflowName, WorkflowTagStorage>()
     protected val workflowTaskStorages = mutableMapOf<WorkflowName, TaskStateStorage>()
-    protected val perNameStorages = mutableMapOf<TaskName, MetricsPerNameStateStorage>()
+    protected val perNameStorages = mutableMapOf<TaskName, TaskMetricsStateStorage>()
     protected val globalStorages = mutableMapOf<TaskName, MetricsGlobalStateStorage>()
 
     abstract val name: String
@@ -88,7 +88,7 @@ abstract class InfiniticWorker(open val workerConfig: WorkerConfig) : Closeable 
     protected abstract fun startTaskTagEngines(taskName: TaskName, concurrency: Int, storage: TaskTagStorage)
     protected abstract fun startTaskEngines(taskName: TaskName, concurrency: Int, storage: TaskStateStorage)
     protected abstract fun startTaskDelayEngines(taskName: TaskName, concurrency: Int)
-    protected abstract fun startMetricsPerNameEngines(taskName: TaskName, storage: MetricsPerNameStateStorage)
+    protected abstract fun startMetricsPerNameEngines(taskName: TaskName, storage: TaskMetricsStateStorage)
 
     protected abstract fun startMetricsGlobalEngine(storage: MetricsGlobalStateStorage)
 
@@ -274,7 +274,7 @@ abstract class InfiniticWorker(open val workerConfig: WorkerConfig) : Closeable 
                         ", cache: ${it.stateCacheOrDefault})"
                 }
 
-                val perNameStorage = BinaryMetricsPerNameStateStorage(
+                val perNameStorage = BinaryTaskMetricsStateStorage(
                     CachedKeyValueStorage(
                         it.stateCacheOrDefault.keyValue(workerConfig),
                         it.stateStorage!!.keyValue(workerConfig)

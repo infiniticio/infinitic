@@ -33,6 +33,7 @@ import io.infinitic.common.storage.keyValue.WrappedKeyValueStorage
 import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.data.workflows.WorkflowName
 import io.infinitic.common.workflows.data.workflows.WorkflowTag
+import io.infinitic.common.workflows.tags.storage.WorkflowTagStorage
 import org.jetbrains.annotations.TestOnly
 
 /**

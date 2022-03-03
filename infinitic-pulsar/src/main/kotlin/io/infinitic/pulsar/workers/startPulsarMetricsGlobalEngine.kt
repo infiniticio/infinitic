@@ -25,18 +25,18 @@
 
 package io.infinitic.pulsar.workers
 
-import io.infinitic.common.metrics.global.messages.MetricsGlobalEnvelope
-import io.infinitic.common.metrics.global.messages.MetricsGlobalMessage
-import io.infinitic.metrics.global.engine.storage.MetricsGlobalStateStorage
+import io.infinitic.common.metrics.global.messages.GlobalMetricsEnvelope
+import io.infinitic.common.metrics.global.messages.GlobalMetricsMessage
+import io.infinitic.common.metrics.global.storage.MetricsGlobalStateStorage
 import io.infinitic.metrics.global.engine.worker.startMetricsGlobalEngine
-import io.infinitic.pulsar.topics.GlobalTopic
 import io.infinitic.pulsar.transport.PulsarConsumerFactory
 import io.infinitic.pulsar.transport.PulsarMessageToProcess
+import io.infinitic.transport.pulsar.topics.GlobalTopic
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.channels.Channel
 import org.apache.pulsar.client.api.Consumer
 
-typealias PulsarMetricsGlobalMessageToProcess = PulsarMessageToProcess<MetricsGlobalMessage>
+typealias PulsarMetricsGlobalMessageToProcess = PulsarMessageToProcess<GlobalMetricsMessage>
 
 @Suppress("UNCHECKED_CAST")
 fun CoroutineScope.startPulsarMetricsGlobalEngine(
@@ -55,7 +55,7 @@ fun CoroutineScope.startPulsarMetricsGlobalEngine(
         outputChannel = outputChannel
     )
 
-    val consumer = consumerFactory.newConsumer(name, GlobalTopic.METRICS) as Consumer<MetricsGlobalEnvelope>
+    val consumer = consumerFactory.newConsumer(name, GlobalTopic.METRICS) as Consumer<GlobalMetricsEnvelope>
 
     // coroutine pulling pulsar messages
     pullMessages(consumer, inputChannel)

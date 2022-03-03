@@ -27,6 +27,7 @@ package io.infinitic.tasks.engine.storage
 
 import io.infinitic.common.tasks.data.TaskId
 import io.infinitic.common.tasks.engine.state.TaskState
+import io.infinitic.common.tasks.engine.storage.TaskStateStorage
 import mu.KotlinLogging
 import org.jetbrains.annotations.TestOnly
 

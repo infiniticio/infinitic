@@ -32,7 +32,7 @@ import io.infinitic.common.data.ReturnValue
 import io.infinitic.common.errors.UnknownWorkflowError
 import io.infinitic.common.exceptions.thisShouldNotHappen
 import io.infinitic.common.tasks.engine.SendToTaskEngine
-import io.infinitic.common.tasks.tags.SendToTaskTagEngine
+import io.infinitic.common.tasks.tags.SendToTaskTag
 import io.infinitic.common.workflows.data.commands.CommandId
 import io.infinitic.common.workflows.data.commands.CommandStatus
 import io.infinitic.common.workflows.engine.SendToWorkflowEngine
@@ -56,7 +56,8 @@ import io.infinitic.common.workflows.engine.messages.WaitWorkflow
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
 import io.infinitic.common.workflows.engine.messages.interfaces.MethodRunMessage
 import io.infinitic.common.workflows.engine.state.WorkflowState
-import io.infinitic.common.workflows.tags.SendToWorkflowTagEngine
+import io.infinitic.common.workflows.engine.storage.WorkflowStateStorage
+import io.infinitic.common.workflows.tags.SendToWorkflowTag
 import io.infinitic.workflows.engine.handlers.cancelWorkflow
 import io.infinitic.workflows.engine.handlers.dispatchMethodRun
 import io.infinitic.workflows.engine.handlers.dispatchWorkflow
@@ -69,7 +70,6 @@ import io.infinitic.workflows.engine.helpers.commandTerminated
 import io.infinitic.workflows.engine.helpers.removeTags
 import io.infinitic.workflows.engine.output.WorkflowEngineOutput
 import io.infinitic.workflows.engine.storage.LoggedWorkflowStateStorage
-import io.infinitic.workflows.engine.storage.WorkflowStateStorage
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
@@ -80,9 +80,10 @@ class WorkflowEngine(
     val clientName: ClientName,
     storage: WorkflowStateStorage,
     sendEventsToClient: SendToClient,
-    sendToTaskTagEngine: SendToTaskTagEngine,
+    sendToTaskTag: SendToTaskTag,
     sendToTaskEngine: SendToTaskEngine,
-    sendToWorkflowTagEngine: SendToWorkflowTagEngine,
+    sendToWorkflowTaskEngine: SendToTaskEngine,
+    sendToWorkflowTag: SendToWorkflowTag,
     sendToWorkflowEngine: SendToWorkflowEngine,
     sendToWorkflowEngineAfter: SendToWorkflowEngineAfter
 ) {
@@ -92,16 +93,15 @@ class WorkflowEngine(
 
     private val logger = KotlinLogging.logger {}
 
-    private lateinit var scope: CoroutineScope
-
     private val storage = LoggedWorkflowStateStorage(storage)
 
     private val output = WorkflowEngineOutput(
         clientName,
         sendEventsToClient,
-        sendToTaskTagEngine,
+        sendToTaskTag,
         sendToTaskEngine,
-        sendToWorkflowTagEngine,
+        sendToWorkflowTaskEngine,
+        sendToWorkflowTag,
         sendToWorkflowEngine,
         sendToWorkflowEngineAfter
     )
@@ -116,7 +116,6 @@ class WorkflowEngine(
     }
 
     private suspend fun process(message: WorkflowEngineMessage): WorkflowState? = coroutineScope {
-        scope = this
 
         logger.debug { "receiving $message" }
 

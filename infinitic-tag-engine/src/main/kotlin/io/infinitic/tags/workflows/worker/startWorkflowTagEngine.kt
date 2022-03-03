@@ -29,9 +29,9 @@ import io.infinitic.common.clients.transport.SendToClient
 import io.infinitic.common.data.ClientName
 import io.infinitic.common.workers.MessageToProcess
 import io.infinitic.common.workflows.engine.SendToWorkflowEngine
-import io.infinitic.common.workflows.tags.messages.WorkflowTagEngineMessage
+import io.infinitic.common.workflows.tags.messages.WorkflowTagMessage
+import io.infinitic.common.workflows.tags.storage.WorkflowTagStorage
 import io.infinitic.tags.workflows.WorkflowTagEngine
-import io.infinitic.tags.workflows.storage.WorkflowTagStorage
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.channels.ReceiveChannel
@@ -41,7 +41,7 @@ import mu.KotlinLogging
 
 private val logger = KotlinLogging.logger(WorkflowTagEngine::class.java.name)
 
-typealias WorkflowTagEngineMessageToProcess = MessageToProcess<WorkflowTagEngineMessage>
+typealias WorkflowTagEngineMessageToProcess = MessageToProcess<WorkflowTagMessage>
 
 private fun logError(messageToProcess: WorkflowTagEngineMessageToProcess, e: Throwable) = logger.error(e) {
     "exception on message ${messageToProcess.message}: $e"

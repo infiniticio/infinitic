@@ -27,8 +27,8 @@ package io.infinitic.pulsar.config
 
 import io.infinitic.common.config.loadConfigFromFile
 import io.infinitic.common.config.loadConfigFromResource
-import io.infinitic.transport.Transport
-import io.infinitic.transport.pulsar.Pulsar
+import io.infinitic.transport.config.Transport
+import io.infinitic.transport.pulsar.config.Pulsar
 
 data class ClientConfig(
     /*

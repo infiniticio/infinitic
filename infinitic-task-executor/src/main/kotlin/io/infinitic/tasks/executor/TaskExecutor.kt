@@ -25,7 +25,7 @@
 
 package io.infinitic.tasks.executor
 
-import io.infinitic.client.InfiniticClient
+import io.infinitic.common.clients.ClientFactory
 import io.infinitic.common.data.ClientName
 import io.infinitic.common.data.MillisDuration
 import io.infinitic.common.data.ReturnValue
@@ -39,10 +39,10 @@ import io.infinitic.common.tasks.engine.messages.TaskAttemptCompleted
 import io.infinitic.common.tasks.engine.messages.TaskAttemptFailed
 import io.infinitic.common.tasks.executors.messages.ExecuteTaskAttempt
 import io.infinitic.common.tasks.executors.messages.TaskExecutorMessage
+import io.infinitic.common.workers.WorkerRegister
 import io.infinitic.exceptions.DeferredException
 import io.infinitic.exceptions.tasks.MaxRunDurationException
 import io.infinitic.tasks.Task
-import io.infinitic.tasks.TaskExecutorRegister
 import io.infinitic.tasks.executor.task.DurationBeforeRetryFailed
 import io.infinitic.tasks.executor.task.DurationBeforeRetryRetrieved
 import io.infinitic.tasks.executor.task.TaskCommand
@@ -57,10 +57,10 @@ import java.lang.reflect.Method
 
 class TaskExecutor(
     private val clientName: ClientName,
-    private val taskExecutorRegister: TaskExecutorRegister,
+    private val workerRegister: WorkerRegister,
     private val sendToTaskEngine: SendToTaskEngine,
-    private val clientFactory: () -> InfiniticClient
-) : TaskExecutorRegister by taskExecutorRegister {
+    private val clientFactory: ClientFactory
+) : WorkerRegister by workerRegister {
 
     private val logger = KotlinLogging.logger {}
 
@@ -74,8 +74,10 @@ class TaskExecutor(
 
     private suspend fun executeTaskAttempt(message: ExecuteTaskAttempt) {
         val taskContext = TaskContextImpl(
-            register = this,
+            workerName = "$clientName",
+            workerRegister = this,
             id = message.taskId.toString(),
+            name = message.taskName.toString(),
             workflowId = message.workflowId?.toString(),
             workflowName = message.workflowName?.name,
             attemptId = message.taskAttemptId.toString(),
@@ -85,7 +87,7 @@ class TaskExecutor(
             tags = message.taskTags.map { it.tag }.toSet(),
             meta = message.taskMeta.map.toMutableMap(),
             options = message.taskOptions,
-            clientFactory
+            clientFactory = clientFactory
         )
 
         // trying to instantiate the task

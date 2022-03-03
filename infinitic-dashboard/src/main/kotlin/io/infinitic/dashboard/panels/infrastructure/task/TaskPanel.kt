@@ -36,8 +36,8 @@ import io.infinitic.dashboard.panels.infrastructure.jobs.update
 import io.infinitic.dashboard.panels.infrastructure.requests.Loading
 import io.infinitic.dashboard.panels.infrastructure.requests.Request
 import io.infinitic.dashboard.svgs.icons.iconChevron
-import io.infinitic.pulsar.topics.TaskTopic
-import io.infinitic.pulsar.topics.Topic
+import io.infinitic.transport.pulsar.topics.TaskTopic
+import io.infinitic.transport.pulsar.topics.Topic
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import kweb.Element

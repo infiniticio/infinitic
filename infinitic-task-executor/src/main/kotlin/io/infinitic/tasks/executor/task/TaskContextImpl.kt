@@ -25,15 +25,18 @@
 
 package io.infinitic.tasks.executor.task
 
-import io.infinitic.client.InfiniticClient
+import io.infinitic.common.clients.ClientFactory
+import io.infinitic.common.clients.InfiniticClient
 import io.infinitic.common.errors.WorkerError
 import io.infinitic.tasks.TaskContext
 import io.infinitic.tasks.TaskOptions
 import io.infinitic.tasks.executor.TaskExecutor
 
 data class TaskContextImpl(
-    override val register: TaskExecutor,
+    override val workerName: String,
+    override val workerRegister: TaskExecutor,
     override val id: String,
+    override val name: String,
     override val workflowId: String?,
     override val workflowName: String?,
     override val attemptId: String,
@@ -43,7 +46,7 @@ data class TaskContextImpl(
     override val tags: Set<String>,
     override val meta: MutableMap<String, ByteArray>,
     override val options: TaskOptions,
-    private val clientFactory: () -> InfiniticClient
+    private val clientFactory: ClientFactory
 ) : TaskContext {
     override val client: InfiniticClient by lazy { clientFactory() }
 }

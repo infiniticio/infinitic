@@ -26,11 +26,11 @@
 package io.infinitic.pulsar
 
 import io.infinitic.pulsar.config.AdminConfig
-import io.infinitic.pulsar.topics.TaskTopic
-import io.infinitic.pulsar.topics.TopicName
-import io.infinitic.pulsar.topics.WorkflowTaskTopic
-import io.infinitic.pulsar.topics.WorkflowTopic
-import io.infinitic.transport.pulsar.Pulsar
+import io.infinitic.transport.pulsar.config.Pulsar
+import io.infinitic.transport.pulsar.topics.TaskTopic
+import io.infinitic.transport.pulsar.topics.TopicName
+import io.infinitic.transport.pulsar.topics.WorkflowTaskTopic
+import io.infinitic.transport.pulsar.topics.WorkflowTopic
 import mu.KotlinLogging
 import org.apache.pulsar.client.admin.PulsarAdmin
 import org.apache.pulsar.client.admin.PulsarAdminException
@@ -44,7 +44,7 @@ import org.apache.pulsar.common.policies.data.impl.AutoTopicCreationOverrideImpl
 import org.apache.pulsar.common.policies.data.impl.DelayedDeliveryPoliciesImpl
 import java.io.Closeable
 
-@Suppress("MemberVisibilityCanBePrivate", "unused")
+@Suppress("unused", "MemberVisibilityCanBePrivate")
 
 class PulsarInfiniticAdmin constructor(
     val pulsarAdmin: PulsarAdmin,

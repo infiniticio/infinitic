@@ -29,6 +29,7 @@ import io.infinitic.common.data.MessageId
 import io.infinitic.common.tasks.data.TaskId
 import io.infinitic.common.tasks.data.TaskName
 import io.infinitic.common.tasks.data.TaskTag
+import io.infinitic.common.tasks.tags.storage.TaskTagStorage
 import mu.KotlinLogging
 import org.jetbrains.annotations.TestOnly
 

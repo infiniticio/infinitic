@@ -30,14 +30,14 @@ import io.infinitic.common.exceptions.thisShouldNotHappen
 import io.infinitic.common.tasks.data.TaskName
 import io.infinitic.common.tasks.engine.messages.TaskEngineEnvelope
 import io.infinitic.common.tasks.engine.messages.TaskEngineMessage
+import io.infinitic.common.tasks.engine.storage.TaskStateStorage
 import io.infinitic.common.workflows.data.workflows.WorkflowName
-import io.infinitic.pulsar.topics.TaskTopic
-import io.infinitic.pulsar.topics.WorkflowTaskTopic
 import io.infinitic.pulsar.transport.PulsarConsumerFactory
 import io.infinitic.pulsar.transport.PulsarMessageToProcess
 import io.infinitic.pulsar.transport.PulsarOutput
-import io.infinitic.tasks.engine.storage.TaskStateStorage
 import io.infinitic.tasks.engine.worker.startTaskEngine
+import io.infinitic.transport.pulsar.topics.TaskTopic
+import io.infinitic.transport.pulsar.topics.WorkflowTaskTopic
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.channels.Channel
 import org.apache.pulsar.client.api.Consumer
@@ -68,7 +68,7 @@ fun CoroutineScope.startPulsarTaskEngines(
             output.sendToTaskEngineAfter(jobName),
             output.sendToWorkflowEngine(),
             output.sendToTaskExecutors(jobName),
-            output.sendToMetricsPerName()
+            output.sendToTaskMetrics()
         )
 
         // Pulsar consumers

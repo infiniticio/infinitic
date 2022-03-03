@@ -26,16 +26,16 @@
 package io.infinitic.pulsar
 
 import io.infinitic.common.fixtures.TestFactory
-import io.infinitic.common.metrics.global.messages.MetricsGlobalEnvelope
-import io.infinitic.common.metrics.global.messages.MetricsGlobalMessage
+import io.infinitic.common.metrics.global.messages.GlobalMetricsEnvelope
+import io.infinitic.common.metrics.global.messages.GlobalMetricsMessage
 import io.infinitic.common.tasks.engine.messages.TaskEngineEnvelope
 import io.infinitic.common.tasks.engine.messages.TaskEngineMessage
 import io.infinitic.common.tasks.executors.messages.TaskExecutorEnvelope
 import io.infinitic.common.tasks.executors.messages.TaskExecutorMessage
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineEnvelope
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
-import io.infinitic.pulsar.schemas.schemaDefinition
 import io.infinitic.pulsar.transport.PulsarOutput
+import io.infinitic.transport.pulsar.schemas.schemaDefinition
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.core.spec.style.stringSpec
 import io.kotest.matchers.shouldBe
@@ -62,7 +62,7 @@ class PulsarTransportTests : StringSpec({
 //        include(shouldBeAbleToSendMessageToMetricsPerNameTopic(TestFactory.random(it)))
 //    }
 
-    MetricsGlobalMessage::class.sealedSubclasses.forEach {
+    GlobalMetricsMessage::class.sealedSubclasses.forEach {
         include(shouldBeAbleToSendMessageToMetricsGlobalTopic(TestFactory.random(it)))
     }
 
@@ -157,24 +157,24 @@ private fun shouldBeAbleToSendMessageToTaskEngineCommandsTopic(msg: TaskEngineMe
 //    }
 // }
 
-private fun shouldBeAbleToSendMessageToMetricsGlobalTopic(msg: MetricsGlobalMessage) = stringSpec {
+private fun shouldBeAbleToSendMessageToMetricsGlobalTopic(msg: GlobalMetricsMessage) = stringSpec {
     "${msg::class.simpleName!!} can be send to MetricsGlobal topic " {
         // given
         val context = context()
-        val builder = mockk<TypedMessageBuilder<MetricsGlobalEnvelope>>()
-        val slotSchema = slot<AvroSchema<MetricsGlobalEnvelope>>()
+        val builder = mockk<TypedMessageBuilder<GlobalMetricsEnvelope>>()
+        val slotSchema = slot<AvroSchema<GlobalMetricsEnvelope>>()
         val slotTopic = slot<String>()
         every { context.newOutputMessage(capture(slotTopic), capture(slotSchema)) } returns builder
         every { builder.value(any()) } returns builder
         every { builder.key(any()) } returns builder
         every { builder.send() } returns mockk()
         // when
-        PulsarOutput.from(context).sendToMetricsGlobal()(msg)
+        PulsarOutput.from(context).sendToGlobalMetrics()(msg)
         // then
         verify(exactly = 1) { context.newOutputMessage(slotTopic.captured, slotSchema.captured) }
         slotTopic.captured shouldBe "persistent://tenant/namespace/global-metrics"
-        slotSchema.captured.avroSchema shouldBe AvroSchema.of(schemaDefinition<MetricsGlobalEnvelope>()).avroSchema
-        verify(exactly = 1) { builder.value(MetricsGlobalEnvelope.from(msg)) }
+        slotSchema.captured.avroSchema shouldBe AvroSchema.of(schemaDefinition<GlobalMetricsEnvelope>()).avroSchema
+        verify(exactly = 1) { builder.value(GlobalMetricsEnvelope.from(msg)) }
         verify(exactly = 1) { builder.send() }
         confirmVerified(builder)
     }

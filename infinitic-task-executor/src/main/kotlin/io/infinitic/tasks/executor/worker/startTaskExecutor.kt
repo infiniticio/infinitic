@@ -25,12 +25,12 @@
 
 package io.infinitic.tasks.executor.worker
 
-import io.infinitic.client.InfiniticClient
+import io.infinitic.common.clients.ClientFactory
 import io.infinitic.common.data.ClientName
 import io.infinitic.common.tasks.engine.SendToTaskEngine
 import io.infinitic.common.tasks.executors.messages.TaskExecutorMessage
 import io.infinitic.common.workers.MessageToProcess
-import io.infinitic.tasks.TaskExecutorRegister
+import io.infinitic.common.workers.WorkerRegister
 import io.infinitic.tasks.executor.TaskExecutor
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
@@ -49,11 +49,11 @@ private fun logError(messageToProcess: TaskExecutorMessageToProcess, e: Throwabl
 
 fun <T : TaskExecutorMessageToProcess> CoroutineScope.startTaskExecutor(
     name: String,
-    register: TaskExecutorRegister,
+    register: WorkerRegister,
     inputChannel: ReceiveChannel<T>,
     outputChannel: SendChannel<T>,
     sendToTaskEngine: SendToTaskEngine,
-    clientFactory: () -> InfiniticClient
+    clientFactory: ClientFactory
 ) = launch(CoroutineName(name)) {
 
     val taskExecutor = TaskExecutor(ClientName(name), register, sendToTaskEngine, clientFactory)

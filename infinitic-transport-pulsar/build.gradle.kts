@@ -24,13 +24,21 @@
  */
 
 dependencies {
+    implementation(Libs.Coroutines.core)
     implementation(Libs.Hoplite.core)
     implementation(Libs.Pulsar.client)
     implementation(Libs.Pulsar.clientAdmin)
     implementation(Libs.Pulsar.authAthenz)
     implementation(Libs.Pulsar.authSasl)
+    implementation(Libs.Pulsar.functions)
 
     implementation(project(":infinitic-common"))
+    implementation(project(":infinitic-client"))
+    implementation(project(":infinitic-metrics-engines"))
+    implementation(project(":infinitic-workflow-engine"))
+    implementation(project(":infinitic-task-engine"))
+    implementation(project(":infinitic-tag-engine"))
+    implementation(project(":infinitic-task-executor"))
 }
 
 apply("../publish.gradle.kts")

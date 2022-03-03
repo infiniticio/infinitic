@@ -25,15 +25,14 @@
 
 package io.infinitic.pulsar.workers
 
-import io.infinitic.common.workflows.data.workflowTasks.isWorkflowTask
 import io.infinitic.common.workflows.data.workflows.WorkflowName
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineEnvelope
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
-import io.infinitic.pulsar.topics.WorkflowTopic
+import io.infinitic.common.workflows.engine.storage.WorkflowStateStorage
 import io.infinitic.pulsar.transport.PulsarConsumerFactory
 import io.infinitic.pulsar.transport.PulsarMessageToProcess
 import io.infinitic.pulsar.transport.PulsarOutput
-import io.infinitic.workflows.engine.storage.WorkflowStateStorage
+import io.infinitic.transport.pulsar.topics.WorkflowTopic
 import io.infinitic.workflows.engine.worker.startWorkflowEngine
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.channels.Channel
@@ -55,9 +54,6 @@ fun CoroutineScope.startPulsarWorkflowEngines(
         val inputChannel = Channel<PulsarWorkflowEngineMessageToProcess>()
         val outputChannel = Channel<PulsarWorkflowEngineMessageToProcess>()
 
-        val sendToTaskEngine = output.sendToTaskEngine()
-        val sendToWorkflowTaskEngine = output.sendToTaskEngine(workflowName)
-
         startWorkflowEngine(
             "workflow-engine-$count: $name",
             storage,
@@ -65,7 +61,8 @@ fun CoroutineScope.startPulsarWorkflowEngines(
             outputChannel,
             output.sendToClient(),
             output.sendToTaskTagEngine(),
-            sendToTaskEngine = { if (it.isWorkflowTask()) sendToWorkflowTaskEngine(it) else sendToTaskEngine(it) },
+            output.sendToTaskEngine(),
+            output.sendToWorkflowTaskEngine(workflowName),
             output.sendToWorkflowTagEngine(),
             output.sendToWorkflowEngine(),
             output.sendToWorkflowEngineAfter()

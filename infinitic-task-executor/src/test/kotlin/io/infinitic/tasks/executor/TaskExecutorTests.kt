@@ -27,7 +27,7 @@
 
 package io.infinitic.tasks.executor
 
-import io.infinitic.client.InfiniticClient
+import io.infinitic.common.clients.InfiniticClient
 import io.infinitic.common.data.ClientName
 import io.infinitic.common.data.MillisDuration
 import io.infinitic.common.data.ReturnValue

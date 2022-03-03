@@ -70,7 +70,7 @@ class TaskEnginePulsarFunction : Function<TaskEngineEnvelope, Void> {
             output.sendToTaskEngineAfter(),
             output.sendToWorkflowEngine(),
             output.sendToTaskExecutors(),
-            output.sendToMetricsPerName()
+            output.sendToTaskMetrics()
         )
     }
 }

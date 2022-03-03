@@ -25,7 +25,7 @@
 
 package io.infinitic.client.dispatcher
 
-import io.infinitic.client.Deferred
+import io.infinitic.common.clients.Deferred
 import io.infinitic.common.clients.messages.ClientMessage
 import io.infinitic.common.data.methods.MethodName
 import io.infinitic.common.proxies.ProxyDispatcher

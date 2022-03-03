@@ -36,7 +36,7 @@ import io.infinitic.dashboard.panels.workflows.WorkflowsPanel
 import io.infinitic.dashboard.plugins.images.imagesPlugin
 import io.infinitic.dashboard.plugins.tailwind.tailwindPlugin
 import io.infinitic.pulsar.PulsarInfiniticAdmin
-import io.infinitic.transport.pulsar.Pulsar
+import io.infinitic.transport.pulsar.config.Pulsar
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job

@@ -28,17 +28,18 @@ package io.infinitic.workflows.engine.output
 import io.infinitic.common.clients.transport.SendToClient
 import io.infinitic.common.data.ClientName
 import io.infinitic.common.tasks.engine.SendToTaskEngine
-import io.infinitic.common.tasks.tags.SendToTaskTagEngine
+import io.infinitic.common.tasks.tags.SendToTaskTag
 import io.infinitic.common.workflows.engine.SendToWorkflowEngine
 import io.infinitic.common.workflows.engine.SendToWorkflowEngineAfter
-import io.infinitic.common.workflows.tags.SendToWorkflowTagEngine
+import io.infinitic.common.workflows.tags.SendToWorkflowTag
 
 internal data class WorkflowEngineOutput(
     val clientName: ClientName,
     val sendEventsToClient: SendToClient,
-    val sendToTaskTagEngine: SendToTaskTagEngine,
+    val sendToTaskTagEngine: SendToTaskTag,
     val sendToTaskEngine: SendToTaskEngine,
-    val sendToWorkflowTagEngine: SendToWorkflowTagEngine,
+    val sendToWorkflowTaskEngine: SendToTaskEngine,
+    val sendToWorkflowTag: SendToWorkflowTag,
     val sendToWorkflowEngine: SendToWorkflowEngine,
     val sendToWorkflowEngineAfter: SendToWorkflowEngineAfter
 )

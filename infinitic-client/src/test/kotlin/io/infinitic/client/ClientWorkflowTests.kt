@@ -39,7 +39,7 @@ import io.infinitic.common.data.methods.MethodParameterTypes
 import io.infinitic.common.data.methods.MethodParameters
 import io.infinitic.common.fixtures.TestFactory
 import io.infinitic.common.tasks.engine.messages.TaskEngineMessage
-import io.infinitic.common.tasks.tags.messages.TaskTagEngineMessage
+import io.infinitic.common.tasks.tags.messages.TaskTagMessage
 import io.infinitic.common.workflows.data.channels.ChannelName
 import io.infinitic.common.workflows.data.channels.ChannelSignal
 import io.infinitic.common.workflows.data.channels.ChannelSignalType
@@ -58,7 +58,7 @@ import io.infinitic.common.workflows.tags.messages.AddTagToWorkflow
 import io.infinitic.common.workflows.tags.messages.CancelWorkflowByTag
 import io.infinitic.common.workflows.tags.messages.GetWorkflowIdsByTag
 import io.infinitic.common.workflows.tags.messages.SendSignalByTag
-import io.infinitic.common.workflows.tags.messages.WorkflowTagEngineMessage
+import io.infinitic.common.workflows.tags.messages.WorkflowTagMessage
 import io.infinitic.exceptions.clients.InvalidChannelUsageException
 import io.infinitic.exceptions.clients.InvalidStubException
 import io.infinitic.workflows.WorkflowOptions
@@ -69,13 +69,13 @@ import io.mockk.slot
 import java.util.UUID
 import java.util.concurrent.CopyOnWriteArrayList
 
-private val taskTagSlots = CopyOnWriteArrayList<TaskTagEngineMessage>() // multithreading update
-private val workflowTagSlots = CopyOnWriteArrayList<WorkflowTagEngineMessage>() // multithreading update
+private val taskTagSlots = CopyOnWriteArrayList<TaskTagMessage>() // multithreading update
+private val workflowTagSlots = CopyOnWriteArrayList<WorkflowTagMessage>() // multithreading update
 private val taskSlot = slot<TaskEngineMessage>()
 private val workflowSlot = slot<WorkflowEngineMessage>()
 private val clientNameTest = ClientName("clientTest")
 
-class ClientWorkflow : InfiniticClient() {
+class ClientWorkflow : AbstractInfiniticClient() {
     override val clientName = clientNameTest
     override val sendToTaskTagEngine = mockSendToTaskTagEngine(this, taskTagSlots, clientName, sendingScope)
     override val sendToTaskEngine = mockSendToTaskEngine(this, taskSlot, clientName, sendingScope)

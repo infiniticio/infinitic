@@ -36,9 +36,9 @@ import io.infinitic.common.tasks.tags.messages.CancelTaskByTag
 import io.infinitic.common.tasks.tags.messages.GetTaskIdsByTag
 import io.infinitic.common.tasks.tags.messages.RemoveTagFromTask
 import io.infinitic.common.tasks.tags.messages.RetryTaskByTag
-import io.infinitic.common.tasks.tags.messages.TaskTagEngineMessage
+import io.infinitic.common.tasks.tags.messages.TaskTagMessage
+import io.infinitic.common.tasks.tags.storage.TaskTagStorage
 import io.infinitic.tags.tasks.storage.LoggedTaskTagStorage
-import io.infinitic.tags.tasks.storage.TaskTagStorage
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
@@ -56,7 +56,7 @@ class TaskTagEngine(
 
     private val logger = KotlinLogging.logger {}
 
-    suspend fun handle(message: TaskTagEngineMessage) {
+    suspend fun handle(message: TaskTagMessage) {
         logger.debug { "receiving $message" }
 
         process(message)
@@ -66,7 +66,7 @@ class TaskTagEngine(
 
     // coroutineScope let send messages in parallel
     // it's important as we can have a lot of them
-    private suspend fun process(message: TaskTagEngineMessage) = coroutineScope {
+    private suspend fun process(message: TaskTagMessage) = coroutineScope {
         scope = this
 
         when (message) {
@@ -140,7 +140,7 @@ class TaskTagEngine(
         scope.launch { sendToClient(taskIdsByTag) }
     }
 
-    private suspend fun hasMessageAlreadyBeenHandled(message: TaskTagEngineMessage) =
+    private suspend fun hasMessageAlreadyBeenHandled(message: TaskTagMessage) =
         when (storage.getLastMessageId(message.taskTag, message.taskName)) {
             message.messageId -> {
                 logger.info { "discarding as state already contains this messageId: $message" }
@@ -149,7 +149,7 @@ class TaskTagEngine(
             else -> false
         }
 
-    private fun discardTagWithoutIds(message: TaskTagEngineMessage) {
+    private fun discardTagWithoutIds(message: TaskTagMessage) {
         logger.debug { "discarding as no id found for the provided tag: $message" }
     }
 }

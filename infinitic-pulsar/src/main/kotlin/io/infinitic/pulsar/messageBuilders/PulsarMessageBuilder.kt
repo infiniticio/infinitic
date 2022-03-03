@@ -27,7 +27,7 @@ package io.infinitic.pulsar.messageBuilders
 
 import io.infinitic.common.data.MillisDuration
 import io.infinitic.common.messages.Envelope
-import io.infinitic.pulsar.schemas.schemaDefinition
+import io.infinitic.transport.pulsar.schemas.schemaDefinition
 import org.apache.pulsar.client.api.MessageId
 import org.apache.pulsar.client.api.Schema
 import org.apache.pulsar.client.api.TypedMessageBuilder

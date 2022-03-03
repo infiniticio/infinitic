@@ -25,10 +25,10 @@
 
 package io.infinitic.metrics.global.engine.worker
 
-import io.infinitic.common.metrics.global.messages.MetricsGlobalMessage
+import io.infinitic.common.metrics.global.messages.GlobalMetricsMessage
+import io.infinitic.common.metrics.global.storage.MetricsGlobalStateStorage
 import io.infinitic.common.workers.MessageToProcess
 import io.infinitic.metrics.global.engine.MetricsGlobalEngine
-import io.infinitic.metrics.global.engine.storage.MetricsGlobalStateStorage
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.channels.ReceiveChannel
@@ -38,7 +38,7 @@ import mu.KotlinLogging
 
 private val logger = KotlinLogging.logger(MetricsGlobalEngine::class.java.name)
 
-typealias MetricsGlobalMessageToProcess = MessageToProcess<MetricsGlobalMessage>
+typealias MetricsGlobalMessageToProcess = MessageToProcess<GlobalMetricsMessage>
 
 private fun logError(messageToProcess: MetricsGlobalMessageToProcess, e: Throwable) = logger.error(e) {
     "exception on message ${messageToProcess.message}: $e"

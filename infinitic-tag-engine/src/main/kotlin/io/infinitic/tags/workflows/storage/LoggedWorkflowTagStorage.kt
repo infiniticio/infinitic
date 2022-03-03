@@ -29,6 +29,7 @@ import io.infinitic.common.data.MessageId
 import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.data.workflows.WorkflowName
 import io.infinitic.common.workflows.data.workflows.WorkflowTag
+import io.infinitic.common.workflows.tags.storage.WorkflowTagStorage
 import mu.KotlinLogging
 import org.jetbrains.annotations.TestOnly
 

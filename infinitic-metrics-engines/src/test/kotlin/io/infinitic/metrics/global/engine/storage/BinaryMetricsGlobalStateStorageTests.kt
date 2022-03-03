@@ -26,7 +26,7 @@
 package io.infinitic.metrics.global.engine.storage
 
 import io.infinitic.common.fixtures.TestFactory
-import io.infinitic.common.metrics.global.state.MetricsGlobalState
+import io.infinitic.common.metrics.global.state.GlobalMetricsState
 import io.infinitic.common.storage.keyValue.KeyValueStorage
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.shouldBe
@@ -55,7 +55,7 @@ class BinaryMetricsGlobalStateStorageTests : ShouldSpec({
         should("BinaryMetricsGlobalStateStorage: return state when state exists") {
             // mocking
             val storage = mockk<KeyValueStorage>()
-            val stateIn = TestFactory.random(MetricsGlobalState::class)
+            val stateIn = TestFactory.random(GlobalMetricsState::class)
             coEvery { storage.get(any()) } returns stateIn.toByteArray()
             // given
             val stateStorage = BinaryMetricsGlobalStateStorage(storage)
@@ -72,7 +72,7 @@ class BinaryMetricsGlobalStateStorageTests : ShouldSpec({
         should("record state") {
             // mocking
             val storage = mockk<KeyValueStorage>()
-            val stateIn = TestFactory.random(MetricsGlobalState::class)
+            val stateIn = TestFactory.random(GlobalMetricsState::class)
             val binSlot = slot<ByteArray>()
 
             coEvery { storage.put("metricsGlobal.state", capture(binSlot)) } returns Unit
@@ -82,7 +82,7 @@ class BinaryMetricsGlobalStateStorageTests : ShouldSpec({
             stateStorage.putState(stateIn)
             // then
             binSlot.isCaptured shouldBe true
-            MetricsGlobalState.fromByteArray(binSlot.captured) shouldBe stateIn
+            GlobalMetricsState.fromByteArray(binSlot.captured) shouldBe stateIn
         }
     }
 

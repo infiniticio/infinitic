@@ -25,6 +25,7 @@
 
 package io.infinitic.pulsar.functions
 
+import io.infinitic.common.workflows.data.workflows.WorkflowName
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineEnvelope
 import io.kotest.assertions.throwables.shouldThrowAny
 import io.kotest.core.spec.style.StringSpec
@@ -33,7 +34,7 @@ import io.mockk.mockk
 class WorkflowEnginePulsarFunctionTests : StringSpec({
     "WorkflowEnginePulsarFunction should throw an exception if called without context" {
         // given
-        val engine = WorkflowEnginePulsarFunction()
+        val engine = WorkflowEnginePulsarFunction(WorkflowName(("Test")))
         // then
         shouldThrowAny {
             engine.process(mockk<WorkflowEngineEnvelope>(), null)
