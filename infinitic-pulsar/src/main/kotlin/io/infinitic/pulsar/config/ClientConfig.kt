@@ -31,18 +31,18 @@ import io.infinitic.transport.config.Transport
 import io.infinitic.transport.pulsar.config.Pulsar
 
 data class ClientConfig(
-    /*
-   Client name
-    */
+    /**
+     * Client name
+     */
     val name: String? = null,
 
-    /*
-    Transport configuration
+    /**
+     * Transport configuration
      */
     val transport: Transport = Transport.pulsar,
 
-    /*
-    Pulsar configuration
+    /**
+     * Pulsar configuration
      */
     val pulsar: Pulsar? = null
 ) {

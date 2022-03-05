@@ -25,24 +25,20 @@
 
 package io.infinitic.tests.scaffolds
 
-import io.infinitic.transport.inMemory.InMemoryMessageToProcess
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.selects.select
-import kotlinx.coroutines.yield
 import java.util.concurrent.Executors
-import kotlin.random.Random
 
 /**
  * This code checks:
  * - that a messages is pulled only when it can be handled
- * - that events are processed before commands
  * - that uncaught exception will terminate the app
+ * - that there is no deadlock when back messages are not synchronous
  */
 fun main() {
     val threadPool = Executors.newCachedThreadPool()
@@ -57,56 +53,76 @@ fun main() {
     }
 }
 
+private fun <T> CoroutineScope.startEngine(
+    executor: suspend (T) -> Unit,
+    channel: Channel<T>
+): Job = launch {
+    for (message in channel) {
+        try {
+            executor(message)
+        } catch (e: Throwable) {
+            println("Error while processing message $message")
+        }
+    }
+}
+
+suspend fun wait() = delay((Math.random() * 10L).toLong())
+
 fun CoroutineScope.startEngine() {
-    val concurrency = 10
-    val eventsNb = 100
-    val commandsNb = 100
-    val waiting = 300L
+    val msgNb = 1000
 
-    // 1  PER CONCURRENCY
-    repeat(concurrency) {
+    val workflowChannel = Channel<String>()
+    val taskChannel = Channel<String>()
+    val executorChannel = Channel<String>()
+    val metricsChannel = Channel<String>()
 
-        val eventChannel: Channel<InMemoryMessageToProcess<String>> = Channel()
-        val commandChannel: Channel<InMemoryMessageToProcess<String>> = Channel()
-
-        launch {
-            while (isActive) {
-                select<Unit> {
-                    eventChannel.onReceive {
-                        println("    receiving: ${it.message}")
-                        val out = Random.nextLong(500)
-                        Thread.sleep(waiting)
-                        it.returnValue = out
-                        println("    acknowledging: ${it.message}")
-                    }
-                    commandChannel.onReceive {
-                        println("    receiving: ${it.message}")
-                        val out = Random.nextLong(500)
-                        Thread.sleep(waiting)
-                        it.returnValue = out
-                        println("    acknowledging: ${it.message}")
-                    }
-                }
-            }
+    val workflowEngine: suspend (String) -> Unit = { message: String ->
+        println("A executing $message")
+        wait()
+        if (! message.startsWith("taskEngine")) {
+            taskChannel.send(message)
+        } else {
+            metricsChannel.send("workflowEngine: $message")
         }
+        println("A executed $message")
+    }
 
-        // ONE KEY_SHARED CONSUMER / THREAD
-        launch {
-            repeat(commandsNb) {
-                val command = "command-$it"
-                println("sending... $command")
-                commandChannel.send(InMemoryMessageToProcess(command))
-                yield()
-            }
+    val taskEngine: suspend (String) -> Unit = { message: String ->
+        println("B executing $message")
+        wait()
+        if (! message.startsWith("taskExecutor")) {
+            executorChannel.send(message)
+        } else {
+            launch { workflowChannel.send("taskEngine: $message") }
+            metricsChannel.send("taskEngine: $message")
         }
-        // ONE KEY_SHARED CONSUMER / THREAD
-        launch {
-            repeat(eventsNb) {
-                val event = "event-$it"
-                println("sending... $event")
-                eventChannel.send(InMemoryMessageToProcess(event))
-                yield()
-            }
+        println("B executed $message")
+    }
+
+    val taskExecutor: suspend (String) -> Unit = { message: String ->
+        println("C executing $message")
+        wait()
+        launch { taskChannel.send("taskExecutor: $message") }
+        println("C executed $message")
+    }
+
+    val taskMetrics: suspend (String) -> Unit = { message: String ->
+        println("D executing $message")
+        wait()
+        println("D executed $message")
+    }
+
+    startEngine(workflowEngine, workflowChannel)
+    startEngine(taskEngine, taskChannel)
+    startEngine(taskExecutor, executorChannel)
+    startEngine(taskMetrics, metricsChannel)
+
+    // Sending messages
+    launch {
+        repeat(msgNb) {
+            val msg = "message-$it"
+            println("sending... $msg")
+            workflowChannel.send(msg)
         }
     }
 

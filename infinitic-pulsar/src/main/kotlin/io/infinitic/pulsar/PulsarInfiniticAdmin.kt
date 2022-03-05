@@ -25,16 +25,17 @@
 
 package io.infinitic.pulsar
 
+import io.infinitic.common.tasks.data.TaskName
+import io.infinitic.common.workflows.data.workflows.WorkflowName
 import io.infinitic.pulsar.config.AdminConfig
 import io.infinitic.transport.pulsar.config.Pulsar
-import io.infinitic.transport.pulsar.topics.TaskTopic
-import io.infinitic.transport.pulsar.topics.TopicName
-import io.infinitic.transport.pulsar.topics.WorkflowTaskTopic
-import io.infinitic.transport.pulsar.topics.WorkflowTopic
+import io.infinitic.transport.pulsar.topics.PerNameTopics
+import io.infinitic.transport.pulsar.topics.TaskTopics
+import io.infinitic.transport.pulsar.topics.WorkflowTaskTopics
+import io.infinitic.transport.pulsar.topics.WorkflowTopics
 import mu.KotlinLogging
 import org.apache.pulsar.client.admin.PulsarAdmin
 import org.apache.pulsar.client.admin.PulsarAdminException
-import org.apache.pulsar.common.policies.data.PartitionedTopicStats
 import org.apache.pulsar.common.policies.data.Policies
 import org.apache.pulsar.common.policies.data.RetentionPolicies
 import org.apache.pulsar.common.policies.data.SchemaCompatibilityStrategy
@@ -50,7 +51,8 @@ class PulsarInfiniticAdmin constructor(
     val pulsarAdmin: PulsarAdmin,
     val pulsar: Pulsar
 ) : Closeable {
-    val topicName = TopicName(pulsar.tenant, pulsar.namespace)
+
+    val topicName = PerNameTopics(pulsar.tenant, pulsar.namespace)
 
     private val fullNamespace = "${pulsar.tenant}/${pulsar.namespace}"
 
@@ -143,7 +145,7 @@ class PulsarInfiniticAdmin constructor(
      */
     val tasks: Set<String> by lazy {
         val tasks = mutableSetOf<String>()
-        val prefix = topicName.of(TaskTopic.EXECUTORS, "")
+        val prefix = topicName.topic(TaskTopics.ENGINE, TaskName(""))
         topics.map { if (it.startsWith(prefix)) tasks.add(it.removePrefix(prefix)) }
 
         tasks
@@ -154,7 +156,7 @@ class PulsarInfiniticAdmin constructor(
      */
     val workflows: Set<String> by lazy {
         val workflows = mutableSetOf<String>()
-        val prefix = topicName.of(WorkflowTaskTopic.EXECUTORS, "")
+        val prefix = topicName.topic(WorkflowTopics.ENGINE, WorkflowName(""))
         topics.map { if (it.startsWith(prefix)) workflows.add(it.removePrefix(prefix)) }
 
         workflows
@@ -186,12 +188,13 @@ class PulsarInfiniticAdmin constructor(
      */
     fun createNamespace(): Boolean = with(pulsarAdmin.namespaces()) {
         try {
-            logger.info { "Checking if namespace $fullNamespace already exists by requesting its policies" }
+            logger.debug { "Checking if namespace $fullNamespace already exists by requesting its policies" }
             getPolicies(fullNamespace)
             logger.warn { "Namespace $fullNamespace already exists" }
 
             false
         } catch (e: PulsarAdminException.NotFoundException) {
+            logger.info { "Creating namespace $fullNamespace" }
             pulsarAdmin.namespaces().createNamespace(fullNamespace, policies)
 
             true
@@ -204,41 +207,49 @@ class PulsarInfiniticAdmin constructor(
     fun updatePolicies() {
         with(pulsarAdmin.namespaces()) {
             try {
+                logger.debug { "Updating policy AutoTopicCreation to ${policies.autoTopicCreationOverride}" }
                 setAutoTopicCreation(fullNamespace, policies.autoTopicCreationOverride)
             } catch (e: PulsarAdminException) {
                 logger.warn { "Failing to update autoTopicCreationOverride policy: ${e.message}" }
             }
             try {
+                logger.debug { "Updating policy SchemaValidationEnforced to ${policies.schema_validation_enforced}" }
                 setSchemaValidationEnforced(fullNamespace, policies.schema_validation_enforced)
             } catch (e: PulsarAdminException) {
                 logger.warn { "Failing to update schema_validation_enforced policy: ${e.message}" }
             }
             try {
+                logger.debug { "Updating policy IsAllowAutoUpdateSchema to ${policies.is_allow_auto_update_schema}" }
                 setIsAllowAutoUpdateSchema(fullNamespace, policies.is_allow_auto_update_schema)
             } catch (e: PulsarAdminException) {
                 logger.warn { "Failing to update is_allow_auto_update_schema policy: ${e.message}" }
             }
             try {
+                logger.debug { "Updating policy SchemaCompatibilityStrategy to ${policies.schema_compatibility_strategy}" }
                 setSchemaCompatibilityStrategy(fullNamespace, policies.schema_compatibility_strategy)
             } catch (e: PulsarAdminException) {
                 logger.warn { "Failing to update schema_compatibility_strategy policy: ${e.message}" }
             }
             try {
+                logger.debug { "Updating policy DeduplicationStatus to ${policies.deduplicationEnabled}" }
                 setDeduplicationStatus(fullNamespace, policies.deduplicationEnabled)
             } catch (e: PulsarAdminException) {
                 logger.warn { "Failing to update deduplicationEnabled policy: ${e.message}" }
             }
             try {
+                logger.debug { "Updating policy Retention to ${policies.retention_policies}" }
                 setRetention(fullNamespace, policies.retention_policies)
             } catch (e: PulsarAdminException) {
                 logger.warn { "Failing to update namespace's retention_policies: ${e.message}" }
             }
             try {
+                logger.debug { "Updating policy NamespaceMessageTTL to ${policies.message_ttl_in_seconds}" }
                 setNamespaceMessageTTL(fullNamespace, policies.message_ttl_in_seconds)
             } catch (e: PulsarAdminException) {
                 logger.warn { "Failing to update namespace's message_ttl_in_seconds policy: ${e.message}" }
             }
             try {
+                logger.debug { "Updating policy DelayedDeliveryMessages to ${policies.delayed_delivery_policies}" }
                 setDelayedDeliveryMessages(fullNamespace, policies.delayed_delivery_policies)
             } catch (e: PulsarAdminException) {
                 logger.warn { "Failing to update namespace's delayed_delivery_policies policy: ${e.message}" }
@@ -269,16 +280,12 @@ class PulsarInfiniticAdmin constructor(
             System.out.format(title)
             System.out.format(line)
 
-            WorkflowTopic.values().forEach {
-                val topic = topicName.of(it, workflow)
-                val stats = pulsarAdmin.topics().getPartitionedStats(topic, true, true, true)
-                displayStatsLine(stats)
+            WorkflowTopics.values().forEach {
+                displayStatsTopic(topicName.topic(it, WorkflowName(workflow)))
             }
 
-            WorkflowTaskTopic.values().forEach {
-                val topic = topicName.of(it, workflow)
-                val stats = pulsarAdmin.topics().getPartitionedStats(topic, true, true, true)
-                displayStatsLine(stats)
+            WorkflowTaskTopics.values().forEach {
+                displayStatsTopic(topicName.topic(it, WorkflowName(workflow)))
             }
 
             System.out.format(line)
@@ -296,10 +303,8 @@ class PulsarInfiniticAdmin constructor(
             System.out.format(title)
             System.out.format(line)
 
-            TaskTopic.values().forEach {
-                val topic = topicName.of(it, task)
-                val stats = pulsarAdmin.topics().getPartitionedStats(topic, true, true, true)
-                displayStatsLine(stats)
+            TaskTopics.values().forEach {
+                displayStatsTopic(topicName.topic(it, TaskName(task)))
             }
 
             System.out.format(line)
@@ -307,7 +312,9 @@ class PulsarInfiniticAdmin constructor(
         }
     }
 
-    private fun displayStatsLine(stats: PartitionedTopicStats) {
+    private fun displayStatsTopic(topic: String) {
+        val stats = pulsarAdmin.topics().getPartitionedStats(topic, true, true, true)
+
         val format = "| %-42s | %11d | %10d | %10f |%n"
 
         stats.subscriptions.map {

@@ -29,6 +29,7 @@ package io.infinitic.tests
 import io.infinitic.common.fixtures.later
 import io.infinitic.common.tasks.data.TaskMeta
 import io.infinitic.common.workflows.data.workflows.WorkflowMeta
+import io.infinitic.exceptions.CanceledTaskException
 import io.infinitic.exceptions.CanceledWorkflowException
 import io.infinitic.exceptions.FailedTaskException
 import io.infinitic.exceptions.FailedWorkflowException
@@ -479,16 +480,16 @@ internal class WorkflowTests : StringSpec({
         expectDiscardingForHavingNullState()
     }
 
-//    "Cancelling task on main path should throw " {
-//        val e = shouldThrow<FailedWorkflowException> { workflowA.failing4() }
-//
-//        e.causeError?.errorName shouldBe CanceledDeferredException::class.java.name
-//        e.causeError?.whereName shouldBe TaskA::class.java.name
-//    }
+    "Cancelling task on main path should throw " {
+        val error = shouldThrow<FailedWorkflowException> { workflowA.failing4() }
 
-//    "Cancelling task not on main path should not throw " {
-//        workflowA.failing5() shouldBe 100
-//    }
+        val cause = error.deferredException as CanceledTaskException
+        cause.taskName shouldBe TaskA::class.java.name
+    }
+
+    "Cancelling task not on main path should not throw " {
+        workflowA.failing5() shouldBe 100
+    }
 
     "Cancelling child workflow on main path should throw" {
         val error = shouldThrow<FailedWorkflowException> { workflowB.cancelChild1() }
@@ -530,28 +531,29 @@ internal class WorkflowTests : StringSpec({
         workflowA.failing7ter() shouldBe Exception::class.java.name
     }
 
-//    "Retry a failed task from client should restart a workflow" {
-//        val e = shouldThrow<FailedWorkflowException> { workflowA.failing8() }
-//
-//        val deferred = client.lastDeferred!!
-//
-//        e.causeError?.whereName shouldBe TaskA::class.java.name
-//
-//        later {
-//            val t = client.getTaskById(TaskA::class.java, e.causeError?.whereId!!)
-//            client.retry(t)
-//        }
-//
-//        deferred.await() shouldBe "ok"
-//    }
+    "Retry a failed task from client should restart a workflow" {
+        val error = shouldThrow<FailedWorkflowException> { workflowA.failing8() }
 
-//    "retry a caught failed task should not throw and influence workflow" {
-//        workflowA.failing9() shouldBe true
-//    }
-//
-//    "properties should be correctly set after a deferred cancellation" {
-//        workflowA.failing10() shouldBe "ok"
-//    }
+        val deferred = client.lastDeferred!!
+
+        val cause = error.deferredException as FailedTaskException
+        cause.taskName shouldBe TaskA::class.java.name
+
+        later {
+            val t = client.getTaskById(TaskA::class.java, cause.taskId)
+            client.retry(t)
+        }
+
+        deferred.await() shouldBe "ok"
+    }
+
+    "retry a caught failed task should not throw and influence workflow" {
+        workflowA.failing9() shouldBe true
+    }
+
+    "properties should be correctly set after a deferred cancellation" {
+        workflowA.failing10() shouldBe "ok"
+    }
 
     "Synchronous call of unknown workflow should throw" {
         val error = shouldThrow<FailedWorkflowException> { workflowA.failing11() }

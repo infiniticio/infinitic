@@ -25,8 +25,8 @@
 
 package io.infinitic.pulsar
 
-import io.infinitic.transport.pulsar.topics.GlobalTopic
-import io.infinitic.transport.pulsar.topics.TopicName
+import io.infinitic.transport.pulsar.topics.GlobalTopics
+import io.infinitic.transport.pulsar.topics.TopicNames
 import org.apache.pulsar.client.api.PulsarClient
 import org.apache.pulsar.client.api.PulsarClientException
 import kotlin.system.exitProcess
@@ -36,13 +36,12 @@ import kotlin.system.exitProcess
  */
 internal fun getProducerName(
     pulsarClient: PulsarClient,
-    pulsarTenant: String,
-    pulsarNamespace: String,
+    topicNames: TopicNames,
     name: String?
 ): String {
     val producer = try {
         pulsarClient.newProducer()
-            .topic(TopicName(pulsarTenant, pulsarNamespace).of(GlobalTopic.NAMER))
+            .topic(topicNames.topic(GlobalTopics.NAMER))
             .also {
                 if (name != null) {
                     it.producerName(name)
@@ -54,7 +53,6 @@ internal fun getProducerName(
         System.err.print("Another worker with name \"$name\" is already connected. Make sure to use a unique name.")
         exitProcess(1)
     }
-
     producer.close()
 
     return producer.producerName

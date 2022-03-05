@@ -31,7 +31,7 @@ import io.infinitic.common.data.ClientName
 import io.infinitic.common.data.ReturnValue
 import io.infinitic.common.errors.UnknownWorkflowError
 import io.infinitic.common.exceptions.thisShouldNotHappen
-import io.infinitic.common.tasks.engine.SendToTaskEngine
+import io.infinitic.common.tasks.engines.SendToTaskEngine
 import io.infinitic.common.tasks.tags.SendToTaskTag
 import io.infinitic.common.workflows.data.commands.CommandId
 import io.infinitic.common.workflows.data.commands.CommandStatus

@@ -27,10 +27,8 @@ package io.infinitic.common.tasks
 
 import com.github.avrokotlin.avro4k.Avro
 import io.infinitic.common.fixtures.TestFactory
-import io.infinitic.common.metrics.global.messages.GlobalMetricsEnvelope
-import io.infinitic.common.metrics.global.messages.GlobalMetricsMessage
-import io.infinitic.common.tasks.engine.messages.TaskEngineEnvelope
-import io.infinitic.common.tasks.engine.messages.TaskEngineMessage
+import io.infinitic.common.tasks.engines.messages.TaskEngineEnvelope
+import io.infinitic.common.tasks.engines.messages.TaskEngineMessage
 import io.infinitic.common.tasks.executors.messages.TaskExecutorMessage
 import io.infinitic.common.tasks.metrics.messages.TaskMetricsEnvelope
 import io.infinitic.common.tasks.metrics.messages.TaskMetricsMessage
@@ -60,20 +58,6 @@ class EnvelopesTests : StringSpec({
             shouldNotThrowAny {
                 val envelope = TaskMetricsEnvelope.from(msg)
                 val ser = TaskMetricsEnvelope.serializer()
-                val byteArray = Avro.default.encodeToByteArray(ser, envelope)
-                val envelope2 = Avro.default.decodeFromByteArray(ser, byteArray)
-                envelope shouldBe envelope2
-            }
-        }
-    }
-
-    GlobalMetricsMessage::class.sealedSubclasses.map {
-        val msg = TestFactory.random(it)
-
-        "MonitoringGlobalEnvelope(${msg::class.simpleName}) should be avro-convertible" {
-            shouldNotThrowAny {
-                val envelope = GlobalMetricsEnvelope.from(msg)
-                val ser = GlobalMetricsEnvelope.serializer()
                 val byteArray = Avro.default.encodeToByteArray(ser, envelope)
                 val envelope2 = Avro.default.decodeFromByteArray(ser, byteArray)
                 envelope shouldBe envelope2

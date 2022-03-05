@@ -34,9 +34,9 @@ import io.infinitic.common.errors.DeferredError
 import io.infinitic.common.errors.WorkerError
 import io.infinitic.common.parser.getMethodPerNameAndParameters
 import io.infinitic.common.tasks.data.TaskMeta
-import io.infinitic.common.tasks.engine.SendToTaskEngine
-import io.infinitic.common.tasks.engine.messages.TaskAttemptCompleted
-import io.infinitic.common.tasks.engine.messages.TaskAttemptFailed
+import io.infinitic.common.tasks.engines.SendToTaskEngine
+import io.infinitic.common.tasks.engines.messages.TaskAttemptCompleted
+import io.infinitic.common.tasks.engines.messages.TaskAttemptFailed
 import io.infinitic.common.tasks.executors.messages.ExecuteTaskAttempt
 import io.infinitic.common.tasks.executors.messages.TaskExecutorMessage
 import io.infinitic.common.workers.WorkerRegister

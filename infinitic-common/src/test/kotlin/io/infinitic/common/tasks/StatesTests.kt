@@ -26,8 +26,7 @@
 package io.infinitic.common.tasks
 
 import io.infinitic.common.fixtures.TestFactory
-import io.infinitic.common.metrics.global.state.GlobalMetricsState
-import io.infinitic.common.tasks.engine.state.TaskState
+import io.infinitic.common.tasks.engines.state.TaskState
 import io.infinitic.common.tasks.metrics.state.TaskMetricsState
 import io.kotest.assertions.throwables.shouldNotThrowAny
 import io.kotest.core.spec.style.StringSpec
@@ -42,17 +41,10 @@ class StatesTests : StringSpec({
         }
     }
 
-    "MonitoringPerNameState should be avro-convertible" {
+    "TaskMetricsState should be avro-convertible" {
         shouldNotThrowAny {
             val state = TestFactory.random<TaskMetricsState>()
             state shouldBe TaskMetricsState.fromByteArray(state.toByteArray())
-        }
-    }
-
-    "MonitoringGlobalState should be avro-convertible" {
-        shouldNotThrowAny {
-            val state = TestFactory.random<GlobalMetricsState>()
-            state shouldBe GlobalMetricsState.fromByteArray(state.toByteArray())
         }
     }
 })

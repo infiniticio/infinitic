@@ -40,7 +40,7 @@ import io.infinitic.common.proxies.ProxyHandler
 import io.infinitic.common.tasks.data.TaskId
 import io.infinitic.common.tasks.data.TaskMeta
 import io.infinitic.common.tasks.data.TaskTag
-import io.infinitic.common.tasks.engine.SendToTaskEngine
+import io.infinitic.common.tasks.engines.SendToTaskEngine
 import io.infinitic.common.tasks.tags.SendToTaskTag
 import io.infinitic.common.workflows.data.methodRuns.MethodRunId
 import io.infinitic.common.workflows.data.workflows.WorkflowId
@@ -65,8 +65,7 @@ import java.util.concurrent.Executors
 @Suppress("MemberVisibilityCanBePrivate", "unused")
 abstract class AbstractInfiniticClient : InfiniticClient {
     /**
-     * Client's name
-     * This name must be unique
+     * Client's name, must be unique
      */
     override val name by lazy { clientName.toString() }
 
@@ -75,6 +74,7 @@ abstract class AbstractInfiniticClient : InfiniticClient {
     protected abstract val sendToTaskEngine: SendToTaskEngine
     protected abstract val sendToWorkflowTagEngine: SendToWorkflowTag
     protected abstract val sendToWorkflowEngine: SendToWorkflowEngine
+
     protected val logger = KotlinLogging.logger {}
 
     private val sendThreadPool = Executors.newCachedThreadPool()
@@ -122,8 +122,7 @@ abstract class AbstractInfiniticClient : InfiniticClient {
     }
 
     override suspend fun handle(message: ClientMessage) {
-        logger.debug { "receiving $message" }
-
+        logger.debug { "Receiving $message" }
         dispatcher.handle(message)
     }
 

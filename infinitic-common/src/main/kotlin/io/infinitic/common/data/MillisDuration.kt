@@ -34,10 +34,14 @@ import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
 
 @Serializable(with = MillisDurationSerializer::class)
-data class MillisDuration(val long: Long = 0) : Comparable<Long> {
+data class MillisDuration(val long: Long) : Comparable<Long> {
     override fun toString() = "$long"
 
     override operator fun compareTo(other: Long): Int = this.long.compareTo(other)
+
+    companion object {
+        val ZERO = MillisDuration(0)
+    }
 }
 
 operator fun MillisDuration.plus(other: MillisDuration) = MillisDuration(this.long + other.long)

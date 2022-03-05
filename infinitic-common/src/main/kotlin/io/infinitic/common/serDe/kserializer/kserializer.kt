@@ -27,8 +27,7 @@ package io.infinitic.common.serDe.kserializer
 
 import io.infinitic.common.clients.messages.ClientEnvelope
 import io.infinitic.common.exceptions.thisShouldNotHappen
-import io.infinitic.common.metrics.global.messages.GlobalMetricsEnvelope
-import io.infinitic.common.tasks.engine.messages.TaskEngineEnvelope
+import io.infinitic.common.tasks.engines.messages.TaskEngineEnvelope
 import io.infinitic.common.tasks.executors.messages.TaskExecutorEnvelope
 import io.infinitic.common.tasks.metrics.messages.TaskMetricsEnvelope
 import io.infinitic.common.tasks.tags.messages.TaskTagEnvelope
@@ -75,6 +74,5 @@ fun <T : Any> kserializer(klass: KClass<T>) = when (klass) {
     WorkflowEngineEnvelope::class -> WorkflowEngineEnvelope.serializer()
     WorkflowTagEnvelope::class -> WorkflowTagEnvelope.serializer()
     TaskMetricsEnvelope::class -> TaskMetricsEnvelope.serializer()
-    GlobalMetricsEnvelope::class -> GlobalMetricsEnvelope.serializer()
     else -> thisShouldNotHappen("applying kserializer with ${klass.qualifiedName}")
 } as KSerializer <T>

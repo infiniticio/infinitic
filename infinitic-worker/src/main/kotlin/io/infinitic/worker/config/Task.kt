@@ -25,9 +25,9 @@
 
 package io.infinitic.worker.config
 
-import io.infinitic.metrics.config.Metrics
 import io.infinitic.tags.config.TagEngine
 import io.infinitic.tasks.engine.config.TaskEngine
+import io.infinitic.tasks.metrics.config.Metrics
 import java.lang.reflect.Constructor
 import java.lang.reflect.InvocationTargetException
 import io.infinitic.tasks.Task as TaskInstance

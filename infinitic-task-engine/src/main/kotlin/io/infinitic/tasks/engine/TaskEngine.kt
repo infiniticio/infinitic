@@ -33,24 +33,23 @@ import io.infinitic.common.errors.FailedTaskError
 import io.infinitic.common.errors.WorkerError
 import io.infinitic.common.exceptions.thisShouldNotHappen
 import io.infinitic.common.tasks.data.TaskAttemptId
-import io.infinitic.common.tasks.data.TaskName
 import io.infinitic.common.tasks.data.TaskRetryIndex
 import io.infinitic.common.tasks.data.TaskReturnValue
 import io.infinitic.common.tasks.data.TaskStatus
 import io.infinitic.common.tasks.data.plus
-import io.infinitic.common.tasks.engine.SendToTaskEngineAfter
-import io.infinitic.common.tasks.engine.messages.CancelTask
-import io.infinitic.common.tasks.engine.messages.CompleteTask
-import io.infinitic.common.tasks.engine.messages.DispatchTask
-import io.infinitic.common.tasks.engine.messages.RetryTask
-import io.infinitic.common.tasks.engine.messages.RetryTaskAttempt
-import io.infinitic.common.tasks.engine.messages.TaskAttemptCompleted
-import io.infinitic.common.tasks.engine.messages.TaskAttemptFailed
-import io.infinitic.common.tasks.engine.messages.TaskEngineMessage
-import io.infinitic.common.tasks.engine.messages.WaitTask
-import io.infinitic.common.tasks.engine.messages.interfaces.TaskAttemptMessage
-import io.infinitic.common.tasks.engine.state.TaskState
-import io.infinitic.common.tasks.engine.storage.TaskStateStorage
+import io.infinitic.common.tasks.engines.SendToTaskEngineAfter
+import io.infinitic.common.tasks.engines.messages.CancelTask
+import io.infinitic.common.tasks.engines.messages.CompleteTask
+import io.infinitic.common.tasks.engines.messages.DispatchTask
+import io.infinitic.common.tasks.engines.messages.RetryTask
+import io.infinitic.common.tasks.engines.messages.RetryTaskAttempt
+import io.infinitic.common.tasks.engines.messages.TaskAttemptCompleted
+import io.infinitic.common.tasks.engines.messages.TaskAttemptFailed
+import io.infinitic.common.tasks.engines.messages.TaskEngineMessage
+import io.infinitic.common.tasks.engines.messages.WaitTask
+import io.infinitic.common.tasks.engines.messages.interfaces.TaskAttemptMessage
+import io.infinitic.common.tasks.engines.state.TaskState
+import io.infinitic.common.tasks.engines.storage.TaskStateStorage
 import io.infinitic.common.tasks.executors.SendToTaskExecutor
 import io.infinitic.common.tasks.executors.messages.ExecuteTaskAttempt
 import io.infinitic.common.tasks.metrics.SendToTaskMetrics
@@ -177,7 +176,7 @@ class TaskEngine(
 
     private fun CoroutineScope.taskStatusUpdate(state: TaskState, oldStatus: TaskStatus?) {
         val taskStatusUpdated = TaskStatusUpdated(
-            taskName = TaskName("${state.taskName}::${state.methodName}"),
+            taskName = state.taskName,
             taskId = state.taskId,
             oldStatus = oldStatus,
             newStatus = state.taskStatus,

@@ -37,9 +37,9 @@ import io.infinitic.dashboard.panels.infrastructure.jobs.update
 import io.infinitic.dashboard.panels.infrastructure.requests.Loading
 import io.infinitic.dashboard.panels.infrastructure.requests.Request
 import io.infinitic.dashboard.svgs.icons.iconChevron
-import io.infinitic.transport.pulsar.topics.Topic
-import io.infinitic.transport.pulsar.topics.WorkflowTaskTopic
-import io.infinitic.transport.pulsar.topics.WorkflowTopic
+import io.infinitic.transport.pulsar.topics.TopicType
+import io.infinitic.transport.pulsar.topics.WorkflowTaskTopics
+import io.infinitic.transport.pulsar.topics.WorkflowTopics
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -79,7 +79,7 @@ class WorkflowPanel private constructor(private val workflowName: String) : Pane
     private val workflowTaskIsLoading = workflowTaskState.property(WorkflowTaskState::isLoading)
     private val workflowTaskLastUpdated = workflowTaskState.property(WorkflowTaskState::lastUpdatedAt)
 
-    private val selectionTopicType: KVar<Topic> = KVar(WorkflowTopic.ENGINE)
+    private val selectionTopicType: KVar<TopicType> = KVar(WorkflowTopics.ENGINE)
     private val selectionTopicStats: KVar<Request<PartitionedTopicStats>> = KVar(Loading())
 
     private val selectionSlide = selectionSlide(selectionTopicType, selectionTopicStats)
@@ -89,14 +89,14 @@ class WorkflowPanel private constructor(private val workflowName: String) : Pane
     init {
         // this listener ensures that the slideover appear/disappear with right content
         workflowState.addListener { _, new ->
-            if (selectionTopicType.value is WorkflowTopic) {
+            if (selectionTopicType.value is WorkflowTopics) {
                 selectionTopicStats.value = new.topicsStats[selectionTopicType.value]!!
             }
         }
 
         // this listener ensures that the slideover appear/disappear with right content
         workflowTaskState.addListener { _, new ->
-            if (selectionTopicType.value is WorkflowTaskTopic) {
+            if (selectionTopicType.value is WorkflowTaskTopics) {
                 selectionTopicStats.value = new.topicsStats[selectionTopicType.value]!!
             }
         }
@@ -183,7 +183,7 @@ class WorkflowPanel private constructor(private val workflowName: String) : Pane
         text: String,
         isLoading: KVar<Boolean>,
         lastUpdated: KVar<Instant>,
-        state: KVar<out JobState<out Topic>>
+        state: KVar<out JobState<out TopicType>>
 
     ) {
         div().classes("pt-8 pb-8").new {

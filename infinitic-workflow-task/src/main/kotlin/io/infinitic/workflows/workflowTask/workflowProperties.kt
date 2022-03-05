@@ -30,12 +30,13 @@ import io.infinitic.common.exceptions.thisShouldNotHappen
 import io.infinitic.common.workflows.data.properties.PropertyHash
 import io.infinitic.common.workflows.data.properties.PropertyName
 import io.infinitic.common.workflows.data.properties.PropertyValue
-import io.infinitic.common.workflows.executors.parser.getPropertiesFromObject
-import io.infinitic.common.workflows.executors.parser.setPropertiesToObject
+import io.infinitic.common.workflows.executors.getPropertiesFromObject
+import io.infinitic.common.workflows.executors.setPropertiesToObject
 import io.infinitic.workflows.Channel
 import io.infinitic.workflows.Workflow
 import io.infinitic.workflows.WorkflowContext
 import io.infinitic.workflows.WorkflowDispatcher
+import org.slf4j.Logger
 import java.lang.reflect.Proxy
 import kotlin.reflect.full.createType
 import kotlin.reflect.full.hasAnnotation
@@ -65,7 +66,7 @@ internal fun Workflow.getProperties() = getPropertiesFromObject(this) {
         // excludes Proxies (tasks and workflows) and null
         !(it.second?. let { Proxy.isProxyClass(it::class.java) } ?: true) &&
         // exclude SLF4J loggers
-        !it.first.returnType.isSubtypeOf(org.slf4j.Logger::class.createType()) &&
+        !it.first.returnType.isSubtypeOf(Logger::class.createType()) &&
         // exclude Ignore annotation
         !it.first.hasAnnotation<Ignore>()
 }

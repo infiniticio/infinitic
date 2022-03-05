@@ -34,10 +34,10 @@ import io.infinitic.common.fixtures.TestFactory
 import io.infinitic.common.tasks.data.TaskId
 import io.infinitic.common.tasks.data.TaskName
 import io.infinitic.common.tasks.data.TaskTag
-import io.infinitic.common.tasks.engine.SendToTaskEngine
-import io.infinitic.common.tasks.engine.messages.CancelTask
-import io.infinitic.common.tasks.engine.messages.RetryTask
-import io.infinitic.common.tasks.engine.messages.TaskEngineMessage
+import io.infinitic.common.tasks.engines.SendToTaskEngine
+import io.infinitic.common.tasks.engines.messages.CancelTask
+import io.infinitic.common.tasks.engines.messages.RetryTask
+import io.infinitic.common.tasks.engines.messages.TaskEngineMessage
 import io.infinitic.common.tasks.tags.messages.AddTagToTask
 import io.infinitic.common.tasks.tags.messages.CancelTaskByTag
 import io.infinitic.common.tasks.tags.messages.GetTaskIdsByTag

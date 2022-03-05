@@ -27,6 +27,7 @@ package io.infinitic.worker.config
 
 import io.infinitic.tags.config.TagEngine
 import io.infinitic.tasks.engine.config.TaskEngine
+import io.infinitic.tasks.metrics.config.Metrics
 import io.infinitic.workflows.engine.config.WorkflowEngine
 import java.lang.reflect.Constructor
 import java.lang.reflect.InvocationTargetException
@@ -38,7 +39,8 @@ data class Workflow(
     val concurrency: Int = 1,
     var tagEngine: TagEngine? = TagEngine().apply { default = true },
     var taskEngine: TaskEngine? = TaskEngine().apply { default = true },
-    var workflowEngine: WorkflowEngine? = WorkflowEngine().apply { default = true }
+    var workflowEngine: WorkflowEngine? = WorkflowEngine().apply { default = true },
+    var metrics: Metrics? = Metrics()
 ) {
     private lateinit var _constructor: Constructor<out Any>
 

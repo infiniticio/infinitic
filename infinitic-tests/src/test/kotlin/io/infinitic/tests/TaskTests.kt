@@ -65,6 +65,10 @@ internal class TaskTests : StringSpec({
         worker.startAsync()
     }
 
+    afterSpec {
+        worker.close()
+    }
+
     "Asynchronous execution succeeds at first try" {
         TaskTestImpl.behavior = { _, _ -> Status.SUCCESS }
 

@@ -31,10 +31,10 @@ dependencies {
     api(project(":infinitic-client"))
     api(project(":infinitic-storage"))
     implementation(project(":infinitic-cache"))
-//    implementation(project(":infinitic-tag-engine"))
+    implementation(project(":infinitic-tag-engine"))
     implementation(project(":infinitic-task-engine"))
     implementation(project(":infinitic-workflow-engine"))
-    implementation(project(":infinitic-metrics-engines"))
+    implementation(project(":infinitic-task-metrics"))
     implementation(project(":infinitic-task-executor"))
 //    implementation(project(":infinitic-worker"))
 }

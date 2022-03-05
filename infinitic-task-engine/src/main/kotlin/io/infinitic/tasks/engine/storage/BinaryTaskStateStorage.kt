@@ -28,8 +28,8 @@ package io.infinitic.tasks.engine.storage
 import io.infinitic.common.storage.keyValue.KeyValueStorage
 import io.infinitic.common.storage.keyValue.WrappedKeyValueStorage
 import io.infinitic.common.tasks.data.TaskId
-import io.infinitic.common.tasks.engine.state.TaskState
-import io.infinitic.common.tasks.engine.storage.TaskStateStorage
+import io.infinitic.common.tasks.engines.state.TaskState
+import io.infinitic.common.tasks.engines.storage.TaskStateStorage
 import org.jetbrains.annotations.TestOnly
 
 /**

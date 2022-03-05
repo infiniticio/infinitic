@@ -40,10 +40,10 @@ import io.infinitic.common.tasks.data.TaskMeta
 import io.infinitic.common.tasks.data.TaskName
 import io.infinitic.common.tasks.data.TaskRetryIndex
 import io.infinitic.common.tasks.data.TaskRetrySequence
-import io.infinitic.common.tasks.engine.SendToTaskEngine
-import io.infinitic.common.tasks.engine.messages.TaskAttemptCompleted
-import io.infinitic.common.tasks.engine.messages.TaskAttemptFailed
-import io.infinitic.common.tasks.engine.messages.TaskEngineMessage
+import io.infinitic.common.tasks.engines.SendToTaskEngine
+import io.infinitic.common.tasks.engines.messages.TaskAttemptCompleted
+import io.infinitic.common.tasks.engines.messages.TaskAttemptFailed
+import io.infinitic.common.tasks.engines.messages.TaskEngineMessage
 import io.infinitic.common.tasks.executors.messages.ExecuteTaskAttempt
 import io.infinitic.exceptions.tasks.ClassNotFoundException
 import io.infinitic.exceptions.tasks.MaxRunDurationException
@@ -51,7 +51,7 @@ import io.infinitic.exceptions.tasks.NoMethodFoundWithParameterCountException
 import io.infinitic.exceptions.tasks.NoMethodFoundWithParameterTypesException
 import io.infinitic.exceptions.tasks.TooManyMethodsFoundWithParameterCountException
 import io.infinitic.tasks.TaskOptions
-import io.infinitic.tasks.executor.register.TaskExecutorRegisterImpl
+import io.infinitic.tasks.executor.register.WorkerRegisterImpl
 import io.infinitic.tasks.executor.samples.SampleTaskWithBuggyRetry
 import io.infinitic.tasks.executor.samples.SampleTaskWithContext
 import io.infinitic.tasks.executor.samples.SampleTaskWithRetry
@@ -78,7 +78,7 @@ fun mockSendToTaskEngine(slots: MutableList<TaskEngineMessage>): SendToTaskEngin
 
 class TaskExecutorTests : StringSpec({
     val slots = mutableListOf<TaskEngineMessage>()
-    val taskExecutorRegister = TaskExecutorRegisterImpl()
+    val taskExecutorRegister = WorkerRegisterImpl()
     val mockClientFactory = mockk<()-> InfiniticClient>()
     val taskExecutor =
         TaskExecutor(clientName, taskExecutorRegister, mockSendToTaskEngine(slots), mockClientFactory)

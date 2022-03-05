@@ -32,7 +32,7 @@ import io.infinitic.common.data.MillisInstant
 import io.infinitic.common.data.minus
 import io.infinitic.common.exceptions.thisShouldNotHappen
 import io.infinitic.common.tasks.data.TaskId
-import io.infinitic.common.tasks.engine.messages.DispatchTask
+import io.infinitic.common.tasks.engines.messages.DispatchTask
 import io.infinitic.common.tasks.tags.messages.AddTagToTask
 import io.infinitic.common.workflows.data.channels.ChannelSignalId
 import io.infinitic.common.workflows.data.channels.ReceivingChannel

@@ -31,22 +31,21 @@ import io.infinitic.common.data.ClientName
 import io.infinitic.common.data.MillisDuration
 import io.infinitic.common.fixtures.TestFactory
 import io.infinitic.common.tasks.data.TaskId
-import io.infinitic.common.tasks.data.TaskName
 import io.infinitic.common.tasks.data.TaskRetryIndex
 import io.infinitic.common.tasks.data.TaskStatus
 import io.infinitic.common.tasks.data.TaskTag
 import io.infinitic.common.tasks.data.plus
-import io.infinitic.common.tasks.engine.SendToTaskEngine
-import io.infinitic.common.tasks.engine.SendToTaskEngineAfter
-import io.infinitic.common.tasks.engine.messages.CancelTask
-import io.infinitic.common.tasks.engine.messages.DispatchTask
-import io.infinitic.common.tasks.engine.messages.RetryTask
-import io.infinitic.common.tasks.engine.messages.RetryTaskAttempt
-import io.infinitic.common.tasks.engine.messages.TaskAttemptCompleted
-import io.infinitic.common.tasks.engine.messages.TaskAttemptFailed
-import io.infinitic.common.tasks.engine.messages.TaskEngineMessage
-import io.infinitic.common.tasks.engine.state.TaskState
-import io.infinitic.common.tasks.engine.storage.TaskStateStorage
+import io.infinitic.common.tasks.engines.SendToTaskEngine
+import io.infinitic.common.tasks.engines.SendToTaskEngineAfter
+import io.infinitic.common.tasks.engines.messages.CancelTask
+import io.infinitic.common.tasks.engines.messages.DispatchTask
+import io.infinitic.common.tasks.engines.messages.RetryTask
+import io.infinitic.common.tasks.engines.messages.RetryTaskAttempt
+import io.infinitic.common.tasks.engines.messages.TaskAttemptCompleted
+import io.infinitic.common.tasks.engines.messages.TaskAttemptFailed
+import io.infinitic.common.tasks.engines.messages.TaskEngineMessage
+import io.infinitic.common.tasks.engines.state.TaskState
+import io.infinitic.common.tasks.engines.storage.TaskStateStorage
 import io.infinitic.common.tasks.executors.SendToTaskExecutor
 import io.infinitic.common.tasks.executors.messages.ExecuteTaskAttempt
 import io.infinitic.common.tasks.executors.messages.TaskExecutorMessage
@@ -316,7 +315,7 @@ internal class TaskEngineTests : StringSpec({
 
         with(taskStatusUpdated) {
             taskId shouldBe stateIn.taskId
-            taskName shouldBe TaskName("${stateIn.taskName}::${stateIn.methodName}")
+            taskName shouldBe stateIn.taskName
             oldStatus shouldBe stateIn.taskStatus
             newStatus shouldBe TaskStatus.RUNNING_ERROR
         }
@@ -360,7 +359,7 @@ internal class TaskEngineTests : StringSpec({
         retryTaskAttemptDelay shouldBe msgIn.taskAttemptDelayBeforeRetry
         with(taskStatusUpdated) {
             taskId shouldBe stateIn.taskId
-            taskName shouldBe TaskName("${stateIn.taskName}::${stateIn.methodName}")
+            taskName shouldBe stateIn.taskName
             oldStatus shouldBe stateIn.taskStatus
             newStatus shouldBe TaskStatus.RUNNING_WARNING
         }

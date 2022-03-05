@@ -26,12 +26,8 @@
 package io.infinitic.inMemory
 
 import io.infinitic.client.AbstractInfiniticClient
-import io.infinitic.client.worker.startClientWorker
 import io.infinitic.common.data.ClientName
-import io.infinitic.transport.inMemory.InMemoryOutput
 import io.infinitic.worker.config.WorkerConfig
-import kotlinx.coroutines.CoroutineName
-import kotlinx.coroutines.launch
 
 @Suppress("MemberVisibilityCanBePrivate")
 class InMemoryInfiniticClient(
@@ -39,48 +35,34 @@ class InMemoryInfiniticClient(
     name: String? = null
 ) : AbstractInfiniticClient() {
 
-    private val inMemoryOutput = InMemoryOutput(sendingScope)
-
     private val worker by lazy {
         InMemoryInfiniticWorker(workerConfig).apply {
-            output = inMemoryOutput
             client = this@InMemoryInfiniticClient
-            this.name = clientName.toString()
+            runningScope = this@InMemoryInfiniticClient.runningScope
         }
     }
+
+    private val workerStarter by lazy { worker.workerStarter }
 
     override val clientName: ClientName = ClientName(name ?: "inMemory")
 
-    override val sendToTaskTagEngine = inMemoryOutput.sendCommandsToTaskTag
+    override val sendToTaskTagEngine = workerStarter.sendToTaskTag
 
-    override val sendToTaskEngine = inMemoryOutput.sendCommandsToTaskEngine()
+    override val sendToTaskEngine = workerStarter.sendToTaskEngine
 
-    override val sendToWorkflowTagEngine = inMemoryOutput.sendCommandsToWorkflowTagEngine
+    override val sendToWorkflowTagEngine = workerStarter.sendToWorkflowTag
 
-    override val sendToWorkflowEngine = inMemoryOutput.sendCommandsToWorkflowEngine
+    override val sendToWorkflowEngine = workerStarter.sendToWorkflowEngine
 
     init {
-        runningScope.launch {
-            launch(CoroutineName("client-logger")) {
-                @Suppress("ControlFlowWithEmptyBody")
-                for (messageToProcess in inMemoryOutput.logChannel) {
-                    // just clear the channel
-                }
-            }
-
-            startClientWorker(
-                this@InMemoryInfiniticClient,
-                inputChannel = inMemoryOutput.clientChannel,
-                outputChannel = inMemoryOutput.logChannel,
-            )
+        // start client response
+        with(workerStarter) {
+            runningScope.startClientResponse(this@InMemoryInfiniticClient)
         }
 
-        worker.startAsync()
-    }
-
-    override fun close() {
-        super.close()
-
-        worker.close()
+        // start worker
+        with(worker) {
+            runningScope.startAsync()
+        }
     }
 }

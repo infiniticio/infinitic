@@ -29,11 +29,12 @@ import io.infinitic.client.AbstractInfiniticClient
 import io.infinitic.common.clients.InfiniticClient
 import io.infinitic.common.data.ClientName
 import io.infinitic.pulsar.config.ClientConfig
-import io.infinitic.pulsar.transport.PulsarConsumerFactory
-import io.infinitic.pulsar.transport.PulsarOutput
-import io.infinitic.pulsar.workers.startClientResponseWorker
-import io.infinitic.transport.pulsar.topics.TopicName
+import io.infinitic.transport.pulsar.PulsarWorkerStarter
+import io.infinitic.transport.pulsar.topics.ClientTopics
+import io.infinitic.transport.pulsar.topics.PerNameTopics
+import kotlinx.coroutines.future.future
 import org.apache.pulsar.client.admin.PulsarAdmin
+import org.apache.pulsar.client.admin.PulsarAdminException
 import org.apache.pulsar.client.api.PulsarClient
 import org.apache.pulsar.client.api.PulsarClientException
 
@@ -46,40 +47,48 @@ class PulsarInfiniticClient @JvmOverloads constructor(
     name: String? = null
 ) : AbstractInfiniticClient() {
 
-    private val producerName by lazy { getProducerName(pulsarClient, pulsarTenant, pulsarNamespace, name) }
+    private val topics = PerNameTopics(pulsarTenant, pulsarNamespace)
+
+    private val producerName by lazy { getProducerName(pulsarClient, topics, name) }
 
     override val clientName by lazy { ClientName(producerName) }
 
-    private val topicClient by lazy { TopicName(pulsarTenant, pulsarNamespace).of(clientName) }
+    private val topicClient by lazy { topics.topic(ClientTopics.RESPONSE, clientName) }
 
-    private val pulsarOutput by lazy {
+    private val workerStarter by lazy {
         // create client's topic
-        pulsarAdmin.topics().createNonPartitionedTopicAsync(topicClient).join()
+        try {
+            pulsarAdmin.topics().createNonPartitionedTopic(topicClient)
+        } catch (e: PulsarAdminException.ConflictException) {
+            logger.debug { "Topic already exists: $topicClient: ${e.message}" }
+        } catch (e: PulsarAdminException.NotAllowedException) {
+            logger.warn { "Not allowed to create topic $topicClient: ${e.message}" }
+        } catch (e: PulsarAdminException.NotAuthorizedException) {
+            logger.warn { "Not authorized to create topic $topicClient: ${e.message}" }
+        }
 
-        // initialize response job handler
-        val clientResponseConsumer = PulsarConsumerFactory(pulsarClient, pulsarTenant, pulsarNamespace)
-            .newClientConsumer(producerName, ClientName(producerName))
-
-        runningScope.startClientResponseWorker(this, clientResponseConsumer)
-
-        // returns PulsarOutput instance
-        PulsarOutput.from(pulsarClient, pulsarTenant, pulsarNamespace, producerName)
+        with(PulsarWorkerStarter(topics, pulsarClient, producerName)) {
+            runningScope.future {
+                startClientResponse(this@PulsarInfiniticClient)
+            }
+            this
+        }
     }
 
     override val sendToTaskTagEngine by lazy {
-        pulsarOutput.sendToTaskTagEngine()
+        workerStarter.sendToTaskTag
     }
 
     override val sendToTaskEngine by lazy {
-        pulsarOutput.sendToTaskEngine()
+        workerStarter.sendToTaskEngine
     }
 
     override val sendToWorkflowTagEngine by lazy {
-        pulsarOutput.sendToWorkflowTagEngine()
+        workerStarter.sendToWorkflowTag
     }
 
     override val sendToWorkflowEngine by lazy {
-        pulsarOutput.sendToWorkflowEngine()
+        workerStarter.sendToWorkflowEngine
     }
 
     override fun close() {
@@ -87,9 +96,12 @@ class PulsarInfiniticClient @JvmOverloads constructor(
 
         // force delete client's topic
         try {
+            logger.debug { "Deleting topic $topicClient" }
             pulsarAdmin.topics().delete(topicClient, true)
         } catch (e: PulsarClientException.TopicDoesNotExistException) {
             // ignore
+        } catch (e: PulsarAdminException) {
+            logger.warn { "Error while deleting topic $topicClient: ${e.message}" }
         }
 
         pulsarClient.close()
