@@ -107,7 +107,8 @@ import mu.KotlinLogging
 import java.util.concurrent.CompletableFuture
 
 internal class ClientDispatcherImpl(
-    val scope: CoroutineScope,
+    private val sendingScope: CoroutineScope,
+    private val runningScope: CoroutineScope,
     val clientName: ClientName,
     val sendToTaskEngine: SendToTaskEngine,
     val sendToWorkflowEngine: SendToWorkflowEngine,
@@ -155,18 +156,18 @@ internal class ClientDispatcherImpl(
         taskId: TaskId,
         clientWaiting: Boolean
     ): T {
-        // if task was initially not sync, then send WaitTask message
-        if (clientWaiting) {
-            val waitTask = WaitTask(
-                taskName = taskName,
-                taskId = taskId,
-                emitterName = clientName
-            )
-            scope.launch { sendToTaskEngine(waitTask) }
-        }
-
         // wait for result
-        val taskResult = scope.future {
+        val taskResult = runningScope.future {
+            // if task was initially not sync, then send WaitTask message
+            if (clientWaiting) {
+                val waitTask = WaitTask(
+                    taskName = taskName,
+                    taskId = taskId,
+                    emitterName = clientName
+                )
+                sendingScope.launch { sendToTaskEngine(waitTask) }
+            }
+
             responseFlow.first {
                 logger.debug { "ResponseFlow: $it" }
                 it is TaskMessage && it.taskId == taskId
@@ -203,21 +204,20 @@ internal class ClientDispatcherImpl(
         methodRunId: MethodRunId?,
         clientWaiting: Boolean
     ): T {
-        val runId = methodRunId ?: MethodRunId.from(workflowId)
-
-        // if task was not initially sync, then send WaitTask message
-        if (clientWaiting) {
-            val waitWorkflow = WaitWorkflow(
-                workflowName = workflowName,
-                workflowId = workflowId,
-                methodRunId = runId,
-                emitterName = clientName
-            )
-            scope.launch { sendToWorkflowEngine(waitWorkflow) }
-        }
-
         // wait for result
-        val workflowResult = scope.future {
+        val workflowResult = runningScope.future {
+            val runId = methodRunId ?: MethodRunId.from(workflowId)
+            // if task was not initially sync, then send WaitTask message
+            if (clientWaiting) {
+                val waitWorkflow = WaitWorkflow(
+                    workflowName = workflowName,
+                    workflowId = workflowId,
+                    methodRunId = runId,
+                    emitterName = clientName
+                )
+                sendingScope.launch { sendToWorkflowEngine(waitWorkflow) }
+            }
+
             responseFlow.first {
                 logger.debug { "ResponseFlow: $it" }
                 it is MethodMessage &&
@@ -280,7 +280,7 @@ internal class ClientDispatcherImpl(
         taskName: TaskName,
         taskId: TaskId?,
         taskTag: TaskTag?
-    ): CompletableFuture<Unit> = scope.future {
+    ): CompletableFuture<Unit> = sendingScope.future {
         when {
             taskId != null -> {
                 val msg = CancelTask(
@@ -307,7 +307,7 @@ internal class ClientDispatcherImpl(
         workflowId: WorkflowId?,
         methodRunId: MethodRunId?,
         workflowTag: WorkflowTag?
-    ): CompletableFuture<Unit> = scope.future {
+    ): CompletableFuture<Unit> = sendingScope.future {
         when {
             workflowId != null -> {
                 val msg = CancelWorkflow(
@@ -337,7 +337,7 @@ internal class ClientDispatcherImpl(
         taskName: TaskName,
         taskId: TaskId?,
         taskTag: TaskTag?
-    ): CompletableFuture<Unit> = scope.future {
+    ): CompletableFuture<Unit> = sendingScope.future {
         when {
             taskId != null -> {
                 val msg = RetryTask(
@@ -363,7 +363,7 @@ internal class ClientDispatcherImpl(
         workflowName: WorkflowName,
         workflowId: WorkflowId?,
         workflowTag: WorkflowTag?
-    ): CompletableFuture<Unit> = scope.future {
+    ): CompletableFuture<Unit> = sendingScope.future {
         when {
             workflowId != null -> {
                 val msg = RetryWorkflowTask(
@@ -395,13 +395,13 @@ internal class ClientDispatcherImpl(
         taskId != null ->
             setOf(taskId.toString())
         taskTag != null -> {
-            val taskIdsByTag = scope.future {
+            val taskIdsByTag = runningScope.future {
                 val msg = GetTaskIdsByTag(
                     taskName = taskName,
                     taskTag = taskTag,
                     emitterName = clientName
                 )
-                launch { sendToTaskTagEngine(msg) }
+                sendingScope.launch { sendToTaskTagEngine(msg) }
 
                 responseFlow.first {
                     it is TaskIdsByTag && it.taskName == taskName && it.taskTag == taskTag
@@ -422,13 +422,13 @@ internal class ClientDispatcherImpl(
         workflowId != null ->
             setOf(workflowId.toString())
         workflowTag != null -> {
-            val workflowIdsByTag = scope.future {
+            val workflowIdsByTag = runningScope.future {
                 val msg = GetWorkflowIdsByTag(
                     workflowName = workflowName,
                     workflowTag = workflowTag,
                     emitterName = clientName
                 )
-                launch { sendToWorkflowTagEngine(msg) }
+                sendingScope.launch { sendToWorkflowTagEngine(msg) }
 
                 responseFlow.first {
                     logger.debug { "ResponseFlow: $it" }
@@ -454,7 +454,7 @@ internal class ClientDispatcherImpl(
                 handler.methodName
             )
 
-        return scope.future { dispatchTask(deferredTask, false, handler); deferredTask }
+        return sendingScope.future { dispatchTask(deferredTask, false, handler); deferredTask }
     }
 
     @Suppress("UNCHECKED_CAST")
@@ -468,7 +468,7 @@ internal class ClientDispatcherImpl(
                 handler.methodName
             )
 
-        scope.launch { dispatchTask(deferredTask, true, handler) }
+        sendingScope.launch { dispatchTask(deferredTask, true, handler) }
 
         with(deferredTask) {
             return awaitTask(returnClass, taskName, handler.methodName, taskId, false)
@@ -493,7 +493,7 @@ internal class ClientDispatcherImpl(
         clientWaiting: Boolean,
         handler: NewTaskProxyHandler<*>
     ) {
-        scope.future {
+        sendingScope.future {
             coroutineScope {
                 // add provided tags for this id
                 handler.taskTags.map {
@@ -541,7 +541,7 @@ internal class ClientDispatcherImpl(
                 handler.methodName
             )
 
-            scope.future { dispatchWorkflow(deferredWorkflow, false, handler); deferredWorkflow }
+            sendingScope.future { dispatchWorkflow(deferredWorkflow, false, handler); deferredWorkflow }
         }
     }
 
@@ -559,7 +559,7 @@ internal class ClientDispatcherImpl(
                 handler.methodName
             )
 
-            scope.launch { dispatchWorkflow(deferredWorkflow, true, handler) }
+            sendingScope.launch { dispatchWorkflow(deferredWorkflow, true, handler) }
 
             with(deferredWorkflow) {
                 awaitWorkflow(returnClass, workflowName, methodName, workflowId, null, false)
@@ -587,7 +587,7 @@ internal class ClientDispatcherImpl(
         clientWaiting: Boolean,
         handler: NewWorkflowProxyHandler<*>
     ) {
-        scope.future {
+        sendingScope.future {
             coroutineScope {
                 // add provided tags
                 handler.workflowTags.map {
@@ -641,7 +641,7 @@ internal class ClientDispatcherImpl(
                 handler.workflowTag
             )
 
-            scope.future { dispatchMethod(deferredMethod, false, handler); deferredMethod }
+            sendingScope.future { dispatchMethod(deferredMethod, false, handler); deferredMethod }
         }
     }
 
@@ -664,14 +664,14 @@ internal class ClientDispatcherImpl(
                 handler.workflowTag
             )
 
-            scope.launch { dispatchMethod(deferredMethod, true, handler) }
+            sendingScope.launch { dispatchMethod(deferredMethod, true, handler) }
 
             with(deferredMethod) {
                 when {
                     workflowId != null ->
                         awaitWorkflow(returnClass, workflowName, methodName, workflowId, methodRunId, false)
                     workflowTag != null ->
-                        throw TODO()
+                        TODO("Not implemented as tag can target multiple workflows")
                     else ->
                         thisShouldNotHappen()
                 }
@@ -750,7 +750,7 @@ internal class ClientDispatcherImpl(
 
         val deferredSend = deferredSend<S>()
 
-        return scope.future { dispatchSignal(deferredSend, handler); deferredSend }
+        return sendingScope.future { dispatchSignal(deferredSend, handler); deferredSend }
     }
 
     // synchronous call: stub.channel.send(signal)

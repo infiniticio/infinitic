@@ -86,6 +86,7 @@ abstract class AbstractInfiniticClient : InfiniticClient {
     protected val dispatcher: ClientDispatcher by lazy {
         ClientDispatcherImpl(
             sendingScope,
+            runningScope,
             clientName,
             sendToTaskEngine,
             sendToWorkflowEngine,
