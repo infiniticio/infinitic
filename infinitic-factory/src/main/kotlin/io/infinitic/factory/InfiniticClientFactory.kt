@@ -30,7 +30,7 @@ import io.infinitic.inMemory.InMemoryInfiniticClient
 import io.infinitic.pulsar.PulsarInfiniticClient
 import io.infinitic.pulsar.config.ClientConfig
 import io.infinitic.transport.config.Transport
-import io.infinitic.worker.config.WorkerConfig
+import io.infinitic.workers.config.WorkerConfig
 
 @Suppress("unused")
 object InfiniticClientFactory {

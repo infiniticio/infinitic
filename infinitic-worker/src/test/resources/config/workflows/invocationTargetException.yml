@@ -33,6 +33,6 @@ pulsar:
   namespace: dev
 
 workflows:
-  - name: io.infinitic.worker.samples.WorkflowA
-    class: io.infinitic.worker.samples.WorkflowWithInvocationTargetException
+  - name: io.infinitic.workers.samples.WorkflowA
+    class: io.infinitic.workers.samples.WorkflowWithInvocationTargetException
 

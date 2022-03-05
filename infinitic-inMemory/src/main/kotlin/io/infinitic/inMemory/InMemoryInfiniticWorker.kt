@@ -26,8 +26,8 @@
 package io.infinitic.inMemory
 
 import io.infinitic.transport.inMemory.InMemoryWorkerStarter
-import io.infinitic.worker.InfiniticWorker
-import io.infinitic.worker.config.WorkerConfig
+import io.infinitic.workers.InfiniticWorker
+import io.infinitic.workers.config.WorkerConfig
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.cancel
 import java.util.concurrent.CompletableFuture

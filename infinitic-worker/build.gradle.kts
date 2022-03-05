@@ -31,10 +31,11 @@ dependencies {
     implementation(project(":infinitic-client"))
     implementation(project(":infinitic-common"))
     implementation(project(":infinitic-transport"))
-    implementation(project(":infinitic-tag-engine"))
     implementation(project(":infinitic-task-engine"))
     implementation(project(":infinitic-task-executor"))
     implementation(project(":infinitic-task-metrics"))
+    implementation(project(":infinitic-task-tag"))
+    implementation(project(":infinitic-workflow-tag"))
     implementation(project(":infinitic-workflow-engine"))
     implementation(project(":infinitic-workflow-task"))
 

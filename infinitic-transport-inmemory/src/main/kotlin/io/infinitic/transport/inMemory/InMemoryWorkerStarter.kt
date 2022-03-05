@@ -55,12 +55,12 @@ import io.infinitic.common.workflows.engine.storage.WorkflowStateStorage
 import io.infinitic.common.workflows.tags.SendToWorkflowTag
 import io.infinitic.common.workflows.tags.messages.WorkflowTagMessage
 import io.infinitic.common.workflows.tags.storage.WorkflowTagStorage
-import io.infinitic.tags.tasks.TaskTagEngine
-import io.infinitic.tags.workflows.WorkflowTagEngine
 import io.infinitic.tasks.engine.TaskEngine
 import io.infinitic.tasks.executor.TaskExecutor
 import io.infinitic.tasks.metrics.TaskMetricsEngine
+import io.infinitic.tasks.tag.TaskTagEngine
 import io.infinitic.workflows.engine.WorkflowEngine
+import io.infinitic.workflows.tag.WorkflowTagEngine
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay

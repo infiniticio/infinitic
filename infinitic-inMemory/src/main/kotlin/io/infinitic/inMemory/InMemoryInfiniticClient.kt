@@ -27,7 +27,7 @@ package io.infinitic.inMemory
 
 import io.infinitic.client.AbstractInfiniticClient
 import io.infinitic.common.data.ClientName
-import io.infinitic.worker.config.WorkerConfig
+import io.infinitic.workers.config.WorkerConfig
 
 @Suppress("MemberVisibilityCanBePrivate")
 class InMemoryInfiniticClient(
