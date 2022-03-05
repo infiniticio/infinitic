@@ -38,7 +38,6 @@ enum class ClientTopics(override val prefix: String) : TopicType {
 }
 
 enum class GlobalTopics(override val prefix: String) : TopicType {
-    METRICS("global-metrics"),
     NAMER("global-namer")
 }
 

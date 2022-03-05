@@ -23,26 +23,22 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.cache.no
+package io.infinitic.cache.none
 
-import io.infinitic.common.storage.keySet.KeySetCache
+import io.infinitic.common.storage.keyCounter.KeyCounterCache
 import org.jetbrains.annotations.TestOnly
 
-class NoKeySetCache<T>() : KeySetCache<T> {
+class NoKeyCounterCache<T>() : KeyCounterCache {
 
-    override fun get(key: String): Set<T>? {
+    override fun get(key: String): Long? {
         return null
     }
 
-    override fun set(key: String, value: Set<T>) {
+    override fun set(key: String, amount: Long) {
         // nothing
     }
 
-    override fun add(key: String, value: T) {
-        // nothing
-    }
-
-    override fun remove(key: String, value: T) {
+    override fun incr(key: String, amount: Long) {
         // nothing
     }
 

@@ -79,11 +79,11 @@ import org.apache.pulsar.client.api.SubscriptionType
 class PulsarWorkerStarter(private val topicNames: TopicNames, val client: PulsarClient, val name: String) : WorkerStarter {
     private val zero = MillisDuration(0L)
     private val clientName = ClientName(name)
-    private val sender = Sender(client)
-    private val listener = Listener(client)
+    private val pulsarSender = PulsarSender(client)
+    private val pulsarListener = PulsarListener(client)
 
     override fun CoroutineScope.startClientResponse(client: InfiniticClient) {
-        with(listener) {
+        with(pulsarListener) {
             val topicType = ClientTopics.RESPONSE
             start<ClientMessage, ClientEnvelope>(
                 { message: ClientMessage -> client.handle(message) },
@@ -102,7 +102,7 @@ class PulsarWorkerStarter(private val topicNames: TopicNames, val client: Pulsar
             sendToClient
         )
 
-        with(listener) {
+        with(pulsarListener) {
             val topicType = WorkflowTopics.TAG
             start<WorkflowTagMessage, WorkflowTagEnvelope>(
                 { message: WorkflowTagMessage -> tagEngine.handle(message) },
@@ -127,7 +127,7 @@ class PulsarWorkerStarter(private val topicNames: TopicNames, val client: Pulsar
             sendToWorkflowEngineAfter
         )
 
-        with(listener) {
+        with(pulsarListener) {
             val topicType = WorkflowTopics.ENGINE
             start<WorkflowEngineMessage, WorkflowEngineEnvelope>(
                 { message: WorkflowEngineMessage -> workflowEngine.handle(message) },
@@ -140,7 +140,7 @@ class PulsarWorkerStarter(private val topicNames: TopicNames, val client: Pulsar
     }
 
     override fun CoroutineScope.startWorkflowDelay(workflowName: WorkflowName, concurrency: Int) {
-        with(listener) {
+        with(pulsarListener) {
             val topicType = WorkflowTopics.DELAY
             start<WorkflowEngineMessage, WorkflowEngineEnvelope>(
                 sendToWorkflowEngine,
@@ -160,7 +160,7 @@ class PulsarWorkerStarter(private val topicNames: TopicNames, val client: Pulsar
             sendToClient
         )
 
-        with(listener) {
+        with(pulsarListener) {
             val topicType = TaskTopics.TAG
             start<TaskTagMessage, TaskTagEnvelope>(
                 { message: TaskTagMessage -> tagEngine.handle(message) },
@@ -184,7 +184,7 @@ class PulsarWorkerStarter(private val topicNames: TopicNames, val client: Pulsar
             sendToTaskMetrics,
         )
 
-        with(listener) {
+        with(pulsarListener) {
             val topicType = TaskTopics.ENGINE
             start<TaskEngineMessage, TaskEngineEnvelope>(
                 { message: TaskEngineMessage -> taskEngine.handle(message) },
@@ -197,7 +197,7 @@ class PulsarWorkerStarter(private val topicNames: TopicNames, val client: Pulsar
     }
 
     override fun CoroutineScope.startTaskDelay(taskName: TaskName, concurrency: Int) {
-        with(listener) {
+        with(pulsarListener) {
             val topicType = TaskTopics.DELAY
             start<TaskEngineMessage, TaskEngineEnvelope>(
                 sendToTaskEngine,
@@ -212,7 +212,7 @@ class PulsarWorkerStarter(private val topicNames: TopicNames, val client: Pulsar
     override fun CoroutineScope.startTaskMetrics(taskName: TaskName, taskMetricsStateStorage: TaskMetricsStateStorage, concurrency: Int) {
         val taskMetricsEngine = TaskMetricsEngine(taskMetricsStateStorage)
 
-        with(listener) {
+        with(pulsarListener) {
             val topicType = TaskTopics.METRICS
             start<TaskMetricsMessage, TaskMetricsEnvelope>(
                 { message: TaskMetricsMessage -> taskMetricsEngine.handle(message) },
@@ -232,7 +232,7 @@ class PulsarWorkerStarter(private val topicNames: TopicNames, val client: Pulsar
             clientFactory
         )
 
-        with(listener) {
+        with(pulsarListener) {
             val topicType = TaskTopics.EXECUTOR
             start<TaskExecutorMessage, TaskExecutorEnvelope>(
                 { message: TaskExecutorMessage -> taskExecutor.handle(message) },
@@ -256,7 +256,7 @@ class PulsarWorkerStarter(private val topicNames: TopicNames, val client: Pulsar
             sendToWorkflowTaskMetrics(workflowName),
         )
 
-        with(listener) {
+        with(pulsarListener) {
             val topicType = WorkflowTaskTopics.ENGINE
             start<TaskEngineMessage, TaskEngineEnvelope>(
                 { message: TaskEngineMessage -> taskEngine.handle(message) },
@@ -270,7 +270,7 @@ class PulsarWorkerStarter(private val topicNames: TopicNames, val client: Pulsar
 
     override fun CoroutineScope.startWorkflowTaskDelay(workflowName: WorkflowName, concurrency: Int) {
         val topicType = WorkflowTaskTopics.DELAY
-        with(listener) {
+        with(pulsarListener) {
             start<TaskEngineMessage, TaskEngineEnvelope>(
                 sendToWorkflowTaskEngine(workflowName),
                 topicNames.topic(topicType, workflowName),
@@ -284,7 +284,7 @@ class PulsarWorkerStarter(private val topicNames: TopicNames, val client: Pulsar
     override fun CoroutineScope.startWorkflowTaskMetrics(workflowName: WorkflowName, taskMetricsStateStorage: TaskMetricsStateStorage, concurrency: Int) {
         val taskMetricsEngine = TaskMetricsEngine(taskMetricsStateStorage)
 
-        with(listener) {
+        with(pulsarListener) {
             val topicType = WorkflowTaskTopics.METRICS
             start<TaskMetricsMessage, TaskMetricsEnvelope>(
                 { message: TaskMetricsMessage -> taskMetricsEngine.handle(message) },
@@ -304,7 +304,7 @@ class PulsarWorkerStarter(private val topicNames: TopicNames, val client: Pulsar
             clientFactory
         )
 
-        with(listener) {
+        with(pulsarListener) {
             val topicType = WorkflowTaskTopics.EXECUTOR
             start<TaskExecutorMessage, TaskExecutorEnvelope>(
                 { message: TaskExecutorMessage -> taskExecutor.handle(message) },
@@ -323,7 +323,7 @@ class PulsarWorkerStarter(private val topicNames: TopicNames, val client: Pulsar
         return@run { message: ClientMessage ->
             val topic = topicNames.topic(topicType, clientName)
 
-            sender.send<ClientMessage, ClientEnvelope>(
+            pulsarSender.send<ClientMessage, ClientEnvelope>(
                 message, zero, topic, producerName
             )
         }
@@ -335,7 +335,7 @@ class PulsarWorkerStarter(private val topicNames: TopicNames, val client: Pulsar
 
         return@run { message: TaskTagMessage ->
             val topic = topicNames.topic(topicType, message.taskName)
-            sender.send<TaskTagMessage, TaskTagEnvelope>(
+            pulsarSender.send<TaskTagMessage, TaskTagEnvelope>(
                 message, zero, topic, producerName, "${message.taskTag}",
             )
         }
@@ -347,7 +347,7 @@ class PulsarWorkerStarter(private val topicNames: TopicNames, val client: Pulsar
 
         return@run { message: TaskEngineMessage ->
             val topic = topicNames.topic(topicType, message.taskName)
-            sender.send<TaskEngineMessage, TaskEngineEnvelope>(
+            pulsarSender.send<TaskEngineMessage, TaskEngineEnvelope>(
                 message, zero, topic, producerName, "${message.taskId}"
             )
         }
@@ -360,7 +360,7 @@ class PulsarWorkerStarter(private val topicNames: TopicNames, val client: Pulsar
         return@run { message: TaskEngineMessage, after: MillisDuration ->
             if (after > 0) {
                 val topic = topicNames.topic(topicType, message.taskName)
-                sender.send<TaskEngineMessage, TaskEngineEnvelope>(
+                pulsarSender.send<TaskEngineMessage, TaskEngineEnvelope>(
                     message, after, topic, producerName
                 )
             } else {
@@ -375,7 +375,7 @@ class PulsarWorkerStarter(private val topicNames: TopicNames, val client: Pulsar
 
         return@run { message: TaskMetricsMessage ->
             val topic = topicNames.topic(topicType, message.taskName)
-            sender.send<TaskMetricsMessage, TaskMetricsEnvelope>(
+            pulsarSender.send<TaskMetricsMessage, TaskMetricsEnvelope>(
                 message, zero, topic, producerName, "${message.taskName}"
             )
         }
@@ -387,7 +387,7 @@ class PulsarWorkerStarter(private val topicNames: TopicNames, val client: Pulsar
 
         return@run { message: TaskExecutorMessage ->
             val topic = topicNames.topic(topicType, message.taskName)
-            sender.send<TaskExecutorMessage, TaskExecutorEnvelope>(
+            pulsarSender.send<TaskExecutorMessage, TaskExecutorEnvelope>(
                 message, zero, topic, producerName
             )
         }
@@ -399,7 +399,7 @@ class PulsarWorkerStarter(private val topicNames: TopicNames, val client: Pulsar
         val topic = topicNames.topic(topicType, workflowName)
 
         return { message: TaskEngineMessage ->
-            sender.send<TaskEngineMessage, TaskEngineEnvelope>(
+            pulsarSender.send<TaskEngineMessage, TaskEngineEnvelope>(
                 message, zero, topic, producerName, "${message.taskId}"
             )
         }
@@ -413,7 +413,7 @@ class PulsarWorkerStarter(private val topicNames: TopicNames, val client: Pulsar
 
         return { message: TaskEngineMessage, after: MillisDuration ->
             if (after > 0) {
-                sender.send<TaskEngineMessage, TaskEngineEnvelope>(
+                pulsarSender.send<TaskEngineMessage, TaskEngineEnvelope>(
                     message, after, topic, producerName
                 )
             } else {
@@ -428,7 +428,7 @@ class PulsarWorkerStarter(private val topicNames: TopicNames, val client: Pulsar
         val topic = topicNames.topic(topicType, workflowName)
 
         return { message: TaskMetricsMessage ->
-            sender.send<TaskMetricsMessage, TaskMetricsEnvelope>(
+            pulsarSender.send<TaskMetricsMessage, TaskMetricsEnvelope>(
                 message, zero, topic, producerName, "$workflowName"
             )
         }
@@ -440,7 +440,7 @@ class PulsarWorkerStarter(private val topicNames: TopicNames, val client: Pulsar
         val topic = topicNames.topic(topicType, workflowName)
 
         return { message: TaskExecutorMessage ->
-            sender.send<TaskExecutorMessage, TaskExecutorEnvelope>(
+            pulsarSender.send<TaskExecutorMessage, TaskExecutorEnvelope>(
                 message, zero, topic, producerName
             )
         }
@@ -452,7 +452,7 @@ class PulsarWorkerStarter(private val topicNames: TopicNames, val client: Pulsar
 
         return@run { message: WorkflowTagMessage ->
             val topic = topicNames.topic(topicType, message.workflowName)
-            sender.send<WorkflowTagMessage, WorkflowTagEnvelope>(
+            pulsarSender.send<WorkflowTagMessage, WorkflowTagEnvelope>(
                 message, zero, topic, producerName, "${message.workflowTag}"
             )
         }
@@ -464,7 +464,7 @@ class PulsarWorkerStarter(private val topicNames: TopicNames, val client: Pulsar
 
         return@run { message: WorkflowEngineMessage ->
             val topic = topicNames.topic(topicType, message.workflowName)
-            sender.send<WorkflowEngineMessage, WorkflowEngineEnvelope>(
+            pulsarSender.send<WorkflowEngineMessage, WorkflowEngineEnvelope>(
                 message, zero, topic, producerName, "${message.workflowId}"
             )
         }
@@ -477,7 +477,7 @@ class PulsarWorkerStarter(private val topicNames: TopicNames, val client: Pulsar
         return@run { message: WorkflowEngineMessage, after: MillisDuration ->
             if (after > 0) {
                 val topic = topicNames.topic(topicType, message.workflowName)
-                sender.send<WorkflowEngineMessage, WorkflowEngineEnvelope>(
+                pulsarSender.send<WorkflowEngineMessage, WorkflowEngineEnvelope>(
                     message, after, topic, producerName
                 )
             } else {

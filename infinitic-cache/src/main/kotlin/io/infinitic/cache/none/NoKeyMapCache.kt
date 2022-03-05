@@ -23,22 +23,34 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.cache.no
+package io.infinitic.cache.none
 
-import io.infinitic.common.storage.keyValue.KeyValueCache
+import io.infinitic.common.storage.keyMap.KeyMapCache
 import org.jetbrains.annotations.TestOnly
 
-class NoKeyValueCache<T>() : KeyValueCache<T> {
+class NoKeyMapCache<T>() : KeyMapCache<T> {
 
-    override fun getValue(key: String): T? {
+    override suspend fun get(key: String, field: String): T? {
         return null
     }
 
-    override fun putValue(key: String, value: T) {
+    override suspend fun put(key: String, field: String, value: T) {
         // nothing
     }
 
-    override fun delValue(key: String) {
+    override suspend fun del(key: String, field: String) {
+        // nothing
+    }
+
+    override suspend fun get(key: String): Map<String, T>? {
+        return null
+    }
+
+    override suspend fun set(key: String, map: Map<String, T>) {
+        // nothing
+    }
+
+    override suspend fun del(key: String) {
         // nothing
     }
 

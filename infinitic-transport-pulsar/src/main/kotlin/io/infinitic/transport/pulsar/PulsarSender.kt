@@ -37,7 +37,7 @@ import org.apache.pulsar.client.api.Schema
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.TimeUnit
 
-internal class Sender(val client: PulsarClient) {
+internal class PulsarSender(val client: PulsarClient) {
 
     val logger = KotlinLogging.logger {}
 

@@ -40,7 +40,7 @@ import org.apache.pulsar.client.api.SubscriptionType
 import java.util.concurrent.TimeUnit
 import org.apache.pulsar.client.api.Message as PulsarMessage
 
-internal class Listener(val client: PulsarClient) {
+internal class PulsarListener(val client: PulsarClient) {
     val logger = KotlinLogging.logger {}
 
     inline fun <T : Message, reified S : Envelope<T>> CoroutineScope.start(
