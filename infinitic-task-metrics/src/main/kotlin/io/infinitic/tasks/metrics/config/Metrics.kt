@@ -26,13 +26,12 @@
 package io.infinitic.tasks.metrics.config
 
 import io.infinitic.cache.StateCache
-import io.infinitic.common.config.merge.Mergeable
 import io.infinitic.storage.StateStorage
 
 data class Metrics(
     var stateStorage: StateStorage? = null,
     var stateCache: StateCache? = null
-) : Mergeable {
+) {
     val stateCacheOrDefault: StateCache
         get() = stateCache ?: StateCache.none
 }

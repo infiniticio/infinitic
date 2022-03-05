@@ -57,6 +57,7 @@ internal class PulsarListener(val client: PulsarClient) {
         when (subscriptionType) {
             SubscriptionType.Key_Shared -> repeat(concurrency) {
 
+                // For Key_Shared subscription, we need to create a new consumer for each executor coroutine
                 val consumer = createConsumer<T, S>(
                     topic,
                     subscriptionType,
@@ -93,6 +94,7 @@ internal class PulsarListener(val client: PulsarClient) {
             else -> {
                 val channel = Channel<PulsarMessage<out Envelope<T>>>()
 
+                // For other subscription, we can use the same consumer for all executor coroutines
                 val consumer = createConsumer<T, S>(
                     topic,
                     subscriptionType,
@@ -126,6 +128,7 @@ internal class PulsarListener(val client: PulsarClient) {
                     }
                 }
 
+                // Channel is backpressure aware, so we can use it to send messages to the executor coroutines
                 while (isActive) {
                     channel.send(consumer.receive())
                 }

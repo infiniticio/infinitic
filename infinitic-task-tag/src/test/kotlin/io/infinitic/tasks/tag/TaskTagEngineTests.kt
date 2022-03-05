@@ -25,9 +25,9 @@
 
 package io.infinitic.tasks.tag
 
+import io.infinitic.common.clients.SendToClient
 import io.infinitic.common.clients.messages.ClientMessage
 import io.infinitic.common.clients.messages.TaskIdsByTag
-import io.infinitic.common.clients.transport.SendToClient
 import io.infinitic.common.data.ClientName
 import io.infinitic.common.data.MessageId
 import io.infinitic.common.fixtures.TestFactory

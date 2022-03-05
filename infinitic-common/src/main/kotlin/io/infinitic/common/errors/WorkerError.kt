@@ -85,5 +85,5 @@ data class WorkerError(
         "name" to name,
         "message" to message,
         "cause" to cause
-    ).joinToString() { "${it.first}=${it.second}" } + ")"
+    ).joinToString { "${it.first}=${it.second}" } + ")"
 }

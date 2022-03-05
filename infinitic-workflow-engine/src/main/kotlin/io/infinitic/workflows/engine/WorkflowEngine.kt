@@ -25,8 +25,8 @@
 
 package io.infinitic.workflows.engine
 
+import io.infinitic.common.clients.SendToClient
 import io.infinitic.common.clients.messages.MethodRunUnknown
-import io.infinitic.common.clients.transport.SendToClient
 import io.infinitic.common.data.ClientName
 import io.infinitic.common.data.ReturnValue
 import io.infinitic.common.errors.UnknownWorkflowError

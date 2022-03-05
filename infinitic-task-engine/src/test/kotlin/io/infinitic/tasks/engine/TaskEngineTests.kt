@@ -25,8 +25,8 @@
 
 package io.infinitic.tasks.engine
 
+import io.infinitic.common.clients.SendToClient
 import io.infinitic.common.clients.messages.ClientMessage
-import io.infinitic.common.clients.transport.SendToClient
 import io.infinitic.common.data.ClientName
 import io.infinitic.common.data.MillisDuration
 import io.infinitic.common.fixtures.TestFactory

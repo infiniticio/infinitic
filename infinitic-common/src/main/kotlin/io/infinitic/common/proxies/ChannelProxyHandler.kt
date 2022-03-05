@@ -49,5 +49,4 @@ class ChannelProxyHandler<K : SendChannel<*>>(
 
     val channelSignalTypes by lazy { ChannelSignalType.allFrom(methodArgs.first()::class.java) }
     val channelSignal by lazy { ChannelSignal.from(methodArgs.first()) }
-    val channelType by lazy { handler.method.returnType }
 }

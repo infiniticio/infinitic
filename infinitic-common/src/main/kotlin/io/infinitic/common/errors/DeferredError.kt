@@ -140,7 +140,7 @@ data class UnknownWorkflowError(
     val workflowId: WorkflowId,
 
     /**
-     * Id of the methodRun
+     * Id of the unknown workflow' method run
      */
     val methodRunId: MethodRunId?
 ) : UnknownDeferredError() {
@@ -159,17 +159,17 @@ data class UnknownWorkflowError(
 @Serializable @SerialName("TimedOutTaskError")
 data class TimedOutTaskError(
     /**
-     * Name of the canceled task
+     * Name of the timed-out task
      */
     val taskName: TaskName,
 
     /**
-     * Id of the canceled task
+     * Id of the timed-out task
      */
     val taskId: TaskId,
 
     /**
-     * Method called
+     * Method of the timed-out task
      */
     val methodName: MethodName
 
@@ -189,17 +189,17 @@ data class TimedOutTaskError(
 @Serializable @SerialName("TimedOutWorkflowError")
 data class TimedOutWorkflowError(
     /**
-     * Name of the canceled child workflow
+     * Name of timed-out child workflow
      */
     val workflowName: WorkflowName,
 
     /**
-     * Id of the canceled child workflow
+     * Id of timed-out child workflow
      */
     val workflowId: WorkflowId,
 
     /**
-     * Method called
+     * Method of timed-out child workflow
      */
     val methodName: MethodName,
 
@@ -224,17 +224,17 @@ data class TimedOutWorkflowError(
 @Serializable @SerialName("CanceledTaskError")
 data class CanceledTaskError(
     /**
-     * Name of the canceled task
+     * Name of canceled task
      */
     val taskName: TaskName,
 
     /**
-     * Id of the canceled task
+     * Id of canceled task
      */
     val taskId: TaskId,
 
     /**
-     * Method called
+     * Method of canceled task
      */
     val methodName: MethodName,
 
@@ -254,12 +254,12 @@ data class CanceledTaskError(
 @Serializable @SerialName("CanceledWorkflowError")
 data class CanceledWorkflowError(
     /**
-     * Name of the canceled child workflow
+     * Name of canceled child workflow
      */
     val workflowName: WorkflowName,
 
     /**
-     * Id of the canceled child workflow
+     * Id of canceled child workflow
      */
     val workflowId: WorkflowId,
 
@@ -283,17 +283,17 @@ data class CanceledWorkflowError(
 @Serializable @SerialName("FailedTaskError")
 data class FailedTaskError(
     /**
-     * Name of the task where the error occurred
+     * Name of failed task
      */
     val taskName: TaskName,
 
     /**
-     * Id of the task where the error occurred
+     * Id of failed task
      */
     val taskId: TaskId,
 
     /**
-     * Method called where the error occurred
+     * Method of failed task
      */
     val methodName: MethodName,
 
@@ -318,22 +318,22 @@ data class FailedTaskError(
 @Serializable @SerialName("FailedWorkflowError")
 data class FailedWorkflowError(
     /**
-     * Name of the child workflow where the error occurred
+     * Name of failed child workflow
      */
     val workflowName: WorkflowName,
 
     /**
-     * Method called where the error occurred
+     * Method of failed child workflow
      */
     val methodName: MethodName,
 
     /**
-     * Id of the child workflow where the error occurred
+     * Id of failed child workflow
      */
     val workflowId: WorkflowId,
 
     /**
-     * Id of the methodRun where the error occurred
+     * Id of failed method run
      */
     val methodRunId: MethodRunId?,
 
@@ -359,17 +359,17 @@ data class FailedWorkflowError(
 @Serializable @SerialName("FailedWorkflowTaskError")
 data class FailedWorkflowTaskError(
     /**
-     * Name of the child workflow where the error occurred
+     * Name of failed workflow
      */
     val workflowName: WorkflowName,
 
     /**
-     * Id of the child workflow where the error occurred
+     * Id of failed workflow
      */
     val workflowId: WorkflowId,
 
     /**
-     * Id of the workflow task where the error occurred
+     * Id of failed workflow task
      */
     val workflowTaskId: TaskId,
 

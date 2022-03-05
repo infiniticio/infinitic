@@ -25,8 +25,8 @@
 
 package io.infinitic.tasks.engine
 
+import io.infinitic.common.clients.SendToClient
 import io.infinitic.common.clients.messages.TaskUnknown
-import io.infinitic.common.clients.transport.SendToClient
 import io.infinitic.common.data.ClientName
 import io.infinitic.common.errors.CanceledTaskError
 import io.infinitic.common.errors.FailedTaskError

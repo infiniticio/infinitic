@@ -23,9 +23,8 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.common.clients.transport
+package io.infinitic.common.clients
 
 import io.infinitic.common.clients.messages.ClientMessage
-import io.infinitic.common.workers.MessageToProcess
 
-typealias ClientMessageToProcess = MessageToProcess<ClientMessage>
+typealias SendToClient = (ClientMessage) -> Unit

@@ -27,8 +27,8 @@ package io.infinitic.transport.inMemory
 
 import io.infinitic.common.clients.ClientFactory
 import io.infinitic.common.clients.InfiniticClient
+import io.infinitic.common.clients.SendToClient
 import io.infinitic.common.clients.messages.ClientMessage
-import io.infinitic.common.clients.transport.SendToClient
 import io.infinitic.common.data.ClientName
 import io.infinitic.common.data.MillisDuration
 import io.infinitic.common.messages.Message

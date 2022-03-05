@@ -26,14 +26,13 @@
 package io.infinitic.workflows.tag.config
 
 import io.infinitic.cache.StateCache
-import io.infinitic.common.config.merge.Mergeable
 import io.infinitic.storage.StateStorage
 
 data class WorkflowTag(
     var concurrency: Int = 1,
     var stateStorage: StateStorage? = null,
     var stateCache: StateCache? = null,
-) : Mergeable {
+) {
     var default: Boolean = false
 
     init {

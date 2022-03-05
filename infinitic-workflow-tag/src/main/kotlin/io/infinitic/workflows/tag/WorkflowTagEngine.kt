@@ -25,8 +25,8 @@
 
 package io.infinitic.workflows.tag
 
+import io.infinitic.common.clients.SendToClient
 import io.infinitic.common.clients.messages.WorkflowIdsByTag
-import io.infinitic.common.clients.transport.SendToClient
 import io.infinitic.common.data.ClientName
 import io.infinitic.common.workflows.data.methodRuns.MethodRunId
 import io.infinitic.common.workflows.engine.SendToWorkflowEngine
