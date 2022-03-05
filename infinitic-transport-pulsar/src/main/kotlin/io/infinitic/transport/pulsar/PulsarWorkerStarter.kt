@@ -77,7 +77,7 @@ import org.apache.pulsar.client.api.PulsarClient
 import org.apache.pulsar.client.api.SubscriptionType
 
 class PulsarWorkerStarter(private val topicNames: TopicNames, val client: PulsarClient, val name: String) : WorkerStarter {
-    private val zero = MillisDuration(0L)
+    private val zero = MillisDuration.ZERO
     private val clientName = ClientName(name)
     private val pulsarSender = PulsarSender(client)
     private val pulsarListener = PulsarListener(client)
@@ -316,19 +316,6 @@ class PulsarWorkerStarter(private val topicNames: TopicNames, val client: Pulsar
         }
     }
 
-    private val sendToClient: SendToClient = run {
-        val topicType = ClientTopics.RESPONSE
-        val producerName = topicType.consumerName(clientName)
-
-        return@run { message: ClientMessage ->
-            val topic = topicNames.topic(topicType, clientName)
-
-            pulsarSender.send<ClientMessage, ClientEnvelope>(
-                message, zero, topic, producerName
-            )
-        }
-    }
-
     override val sendToTaskTag: SendToTaskTag = run {
         val topicType = TaskTopics.TAG
         val producerName = topicType.consumerName(clientName)
@@ -349,6 +336,43 @@ class PulsarWorkerStarter(private val topicNames: TopicNames, val client: Pulsar
             val topic = topicNames.topic(topicType, message.taskName)
             pulsarSender.send<TaskEngineMessage, TaskEngineEnvelope>(
                 message, zero, topic, producerName, "${message.taskId}"
+            )
+        }
+    }
+
+    override val sendToWorkflowTag: SendToWorkflowTag = run {
+        val topicType = WorkflowTopics.TAG
+        val producerName = topicType.consumerName(clientName)
+
+        return@run { message: WorkflowTagMessage ->
+            val topic = topicNames.topic(topicType, message.workflowName)
+            pulsarSender.send<WorkflowTagMessage, WorkflowTagEnvelope>(
+                message, zero, topic, producerName, "${message.workflowTag}"
+            )
+        }
+    }
+
+    override val sendToWorkflowEngine: SendToWorkflowEngine = run {
+        val topicType = WorkflowTopics.ENGINE
+        val producerName = topicType.consumerName(clientName)
+
+        return@run { message: WorkflowEngineMessage ->
+            val topic = topicNames.topic(topicType, message.workflowName)
+            pulsarSender.send<WorkflowEngineMessage, WorkflowEngineEnvelope>(
+                message, zero, topic, producerName, "${message.workflowId}"
+            )
+        }
+    }
+
+    private val sendToClient: SendToClient = run {
+        val topicType = ClientTopics.RESPONSE
+        val producerName = topicType.consumerName(clientName)
+
+        return@run { message: ClientMessage ->
+            val topic = topicNames.topic(topicType, clientName)
+
+            pulsarSender.send<ClientMessage, ClientEnvelope>(
+                message, zero, topic, producerName
             )
         }
     }
@@ -442,30 +466,6 @@ class PulsarWorkerStarter(private val topicNames: TopicNames, val client: Pulsar
         return { message: TaskExecutorMessage ->
             pulsarSender.send<TaskExecutorMessage, TaskExecutorEnvelope>(
                 message, zero, topic, producerName
-            )
-        }
-    }
-
-    override val sendToWorkflowTag: SendToWorkflowTag = run {
-        val topicType = WorkflowTopics.TAG
-        val producerName = topicType.consumerName(clientName)
-
-        return@run { message: WorkflowTagMessage ->
-            val topic = topicNames.topic(topicType, message.workflowName)
-            pulsarSender.send<WorkflowTagMessage, WorkflowTagEnvelope>(
-                message, zero, topic, producerName, "${message.workflowTag}"
-            )
-        }
-    }
-
-    override val sendToWorkflowEngine: SendToWorkflowEngine = run {
-        val topicType = WorkflowTopics.ENGINE
-        val producerName = topicType.consumerName(clientName)
-
-        return@run { message: WorkflowEngineMessage ->
-            val topic = topicNames.topic(topicType, message.workflowName)
-            pulsarSender.send<WorkflowEngineMessage, WorkflowEngineEnvelope>(
-                message, zero, topic, producerName, "${message.workflowId}"
             )
         }
     }

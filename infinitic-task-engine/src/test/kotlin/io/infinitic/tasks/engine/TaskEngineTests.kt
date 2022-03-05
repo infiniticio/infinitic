@@ -112,7 +112,7 @@ internal class TaskEngineTests : StringSpec({
             taskStateStorage.getState(msgIn.taskId)
             sendToTaskExecutors(ofType<ExecuteTaskAttempt>())
             sendToTaskMetrics(ofType<TaskStatusUpdated>())
-            taskStateStorage.putState(msgIn.taskId, ofType<TaskState>())
+            taskStateStorage.putState(msgIn.taskId, ofType())
         }
         verifyAll()
 
@@ -377,7 +377,7 @@ internal class TaskEngineTests : StringSpec({
                 "taskId" to stateIn.taskId.toString(),
                 "taskAttemptId" to stateIn.taskAttemptId.toString(),
                 "taskRetryIndex" to stateIn.taskRetryIndex,
-                "taskAttemptDelayBeforeRetry" to MillisDuration(0)
+                "taskAttemptDelayBeforeRetry" to MillisDuration.ZERO
             )
         )
         // when

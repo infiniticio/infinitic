@@ -65,7 +65,7 @@ import java.util.concurrent.Executors
 @Suppress("MemberVisibilityCanBePrivate", "unused")
 abstract class AbstractInfiniticClient : InfiniticClient {
     /**
-     * Client's name, must be unique
+     * Client's name (must be unique)
      */
     override val name by lazy { clientName.toString() }
 
@@ -347,7 +347,7 @@ abstract class AbstractInfiniticClient : InfiniticClient {
     }
 
     private fun getProxyHandler(stub: Any): ProxyHandler<*> {
-        val exception by lazy { InvalidStubException(stub::class.java.name) }
+        val exception by lazy { InvalidStubException("$stub") }
 
         val handler = try {
             Proxy.getInvocationHandler(stub)
