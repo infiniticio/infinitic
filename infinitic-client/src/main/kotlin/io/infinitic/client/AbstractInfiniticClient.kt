@@ -52,15 +52,14 @@ import io.infinitic.exceptions.clients.InvalidStubException
 import io.infinitic.tasks.TaskOptions
 import io.infinitic.workflows.WorkflowOptions
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.job
 import kotlinx.coroutines.runBlocking
 import mu.KotlinLogging
 import java.lang.reflect.Proxy
 import java.util.concurrent.CompletableFuture
-import java.util.concurrent.Executors
 
 @Suppress("MemberVisibilityCanBePrivate", "unused")
 abstract class AbstractInfiniticClient : InfiniticClient {
@@ -77,11 +76,8 @@ abstract class AbstractInfiniticClient : InfiniticClient {
 
     protected val logger = KotlinLogging.logger {}
 
-    private val sendingThreadPool = Executors.newCachedThreadPool()
-    protected val sendingScope = CoroutineScope(sendingThreadPool.asCoroutineDispatcher() + Job())
-
-    private val runningThreadPool = Executors.newCachedThreadPool()
-    protected val runningScope = CoroutineScope(runningThreadPool.asCoroutineDispatcher() + Job())
+    protected val sendingScope = CoroutineScope(Dispatchers.IO + Job())
+    protected val runningScope = CoroutineScope(Dispatchers.IO + Job())
 
     protected val dispatcher: ClientDispatcher by lazy {
         ClientDispatcherImpl(
@@ -109,10 +105,7 @@ abstract class AbstractInfiniticClient : InfiniticClient {
 
         // only then, close everything
         sendingScope.cancel()
-        sendingThreadPool.shutdown()
-
         runningScope.cancel()
-        runningThreadPool.shutdown()
     }
 
     /**

@@ -32,6 +32,7 @@ import io.infinitic.transport.pulsar.schemas.schemaDefinition
 import mu.KotlinLogging
 import org.apache.pulsar.client.api.BatcherBuilder
 import org.apache.pulsar.client.api.Producer
+import org.apache.pulsar.client.api.ProducerAccessMode
 import org.apache.pulsar.client.api.PulsarClient
 import org.apache.pulsar.client.api.Schema
 import java.util.concurrent.ConcurrentHashMap
@@ -48,23 +49,29 @@ internal class PulsarSender(val client: PulsarClient) {
         producerName: String,
         key: String? = null
     ) {
-        logger.debug { "topic: $topic, after $after ms, send $message" }
-
         @Suppress("UNCHECKED_CAST")
         val producer = producers.computeIfAbsent(topic) {
             val schema: Schema<out Envelope<T>> = Schema.AVRO(schemaDefinition(S::class))
+
+            logger.debug { "Creating Producer with producerName='$producerName' topic='$topic'" }
 
             client
                 .newProducer(schema)
                 .topic(topic)
                 .producerName(producerName)
                 .also { if (key != null) { it.batcherBuilder(BatcherBuilder.KEY_BASED) } }
+                .accessMode(ProducerAccessMode.Shared)
                 .create()
         } as Producer<Envelope<out Message>>
+
+        logger.debug { "Sending producerName='$producerName' after=$after key='$key' message='$message'" }
 
         producer.newMessage()
             .value(message.envelope())
             .also {
+                if (key != null) {
+                    it.key(key)
+                }
                 if (after > 0) {
                     it.deliverAfter(after.long, TimeUnit.MILLISECONDS)
                 }

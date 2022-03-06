@@ -36,6 +36,7 @@ import mu.KotlinLogging
 import org.apache.pulsar.client.api.Consumer
 import org.apache.pulsar.client.api.PulsarClient
 import org.apache.pulsar.client.api.Schema
+import org.apache.pulsar.client.api.SubscriptionInitialPosition
 import org.apache.pulsar.client.api.SubscriptionType
 import java.util.concurrent.TimeUnit
 import org.apache.pulsar.client.api.Message as PulsarMessage
@@ -48,60 +49,65 @@ internal class PulsarListener(val client: PulsarClient) {
         topic: String,
         subscriptionType: SubscriptionType,
         consumerName: String,
-        concurrency: Int = 1,
+        concurrency: Int,
         subscriptionName: String = consumerName,
-        negativeAckRedeliveryDelay: Long = 30L,
-        ackTimeout: Long = 60L
-    ) = launch {
-
+        negativeAckRedeliveryDelaySeconds: Long = 30L,
+        ackTimeoutSeconds: Long = 60L
+    ) {
         when (subscriptionType) {
             SubscriptionType.Key_Shared -> repeat(concurrency) {
-
                 // For Key_Shared subscription, we need to create a new consumer for each executor coroutine
-                val consumer = createConsumer<T, S>(
-                    topic,
-                    subscriptionType,
-                    "$subscriptionName-$it",
-                    "$consumerName-$it",
-                    negativeAckRedeliveryDelay,
-                    ackTimeout
-                )
-
                 launch {
+                    val consumer = createConsumer<T, S>(
+                        topic,
+                        subscriptionType,
+                        subscriptionName, // subscriptionName MUST be the same for all concurrent instances!
+                        "$consumerName-$it",
+                        negativeAckRedeliveryDelaySeconds,
+                        ackTimeoutSeconds
+                    )
+
                     while (isActive) {
                         val pulsarMessage = consumer.receive()
 
                         val message = try {
                             pulsarMessage.value.message()
                         } catch (e: Throwable) {
-                            logger.error(e) { "exception when deserializing $pulsarMessage" }
+                            logger.error(e) { "Exception when deserializing $pulsarMessage" }
                             consumer.negativeAcknowledge(pulsarMessage.messageId)
                             continue
                         }
+                        logger.debug { "Receiving consumerName='$consumerName-$it' messageId='${pulsarMessage.messageId}' key='${pulsarMessage.key}' message='$message'" }
 
                         try {
                             executor(message)
                         } catch (e: Throwable) {
-                            logger.error(e) { "exception when handling $message" }
+                            logger.error(e) { "${pulsarMessage.messageId}: exception when handling $message" }
                             consumer.negativeAcknowledge(pulsarMessage.messageId)
                             continue
                         }
+
                         consumer.acknowledge(pulsarMessage.messageId)
                     }
                 }
             }
             else -> {
-                val channel = Channel<PulsarMessage<out Envelope<T>>>()
-
                 // For other subscription, we can use the same consumer for all executor coroutines
                 val consumer = createConsumer<T, S>(
                     topic,
                     subscriptionType,
                     subscriptionName,
                     consumerName,
-                    negativeAckRedeliveryDelay,
-                    ackTimeout
+                    negativeAckRedeliveryDelaySeconds,
+                    ackTimeoutSeconds
                 )
+
+                val channel = Channel<PulsarMessage<out Envelope<T>>>()
+
+                // Channel is backpressure aware, so we can use it to send messages to the executor coroutines
+                launch {
+                    while (isActive) { channel.send(consumer.receive()) }
+                }
 
                 repeat(concurrency) {
                     launch {
@@ -110,7 +116,7 @@ internal class PulsarListener(val client: PulsarClient) {
                             val message = try {
                                 pulsarMessage.value.message()
                             } catch (e: Throwable) {
-                                logger.error(e) { "exception when deserializing $pulsarMessage" }
+                                logger.error(e) { "${pulsarMessage.messageId}: exception when deserializing $pulsarMessage" }
                                 consumer.negativeAcknowledge(pulsarMessage.messageId)
                                 continue
                             }
@@ -118,18 +124,13 @@ internal class PulsarListener(val client: PulsarClient) {
                             try {
                                 executor(message)
                             } catch (e: Throwable) {
-                                logger.error(e) { "exception when handling $message" }
+                                logger.error(e) { "${pulsarMessage.messageId}: exception when handling $message" }
                                 consumer.negativeAcknowledge(pulsarMessage.messageId)
                                 continue
                             }
                             consumer.acknowledge(pulsarMessage.messageId)
                         }
                     }
-                }
-
-                // Channel is backpressure aware, so we can use it to send messages to the executor coroutines
-                while (isActive) {
-                    channel.send(consumer.receive())
                 }
             }
         }
@@ -144,15 +145,18 @@ internal class PulsarListener(val client: PulsarClient) {
         negativeAckRedeliveryDelay: Long,
         ackTimeout: Long,
     ): Consumer<out Envelope<T>> {
+        logger.debug { "Creating Consumer consumerName='$consumerName' subscriptionName='$subscriptionName' subscriptionType='$subscriptionType' topic='$topic'" }
+
         val schema: Schema<out Envelope<T>> = Schema.AVRO(schemaDefinition(S::class))
 
         return client.newConsumer(schema)
             .topic(topic)
-            .consumerName(consumerName)
-            .subscriptionName(subscriptionName)
             .subscriptionType(subscriptionType)
-            .ackTimeout(ackTimeout, TimeUnit.SECONDS)
+            .subscriptionName(subscriptionName)
+            .consumerName(consumerName)
             .negativeAckRedeliveryDelay(negativeAckRedeliveryDelay, TimeUnit.SECONDS)
+            .ackTimeout(ackTimeout, TimeUnit.SECONDS)
+            .subscriptionInitialPosition(SubscriptionInitialPosition.Earliest)
             .subscribe()
             as Consumer<out Envelope<T>>
     }

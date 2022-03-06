@@ -335,7 +335,7 @@ class WorkflowAImpl : Workflow(), WorkflowA {
     override fun and3(): List<String> {
 
         val list: MutableList<Deferred<String>> = mutableListOf()
-        for (i in 1..1_00) {
+        for (i in 1..20) {
             list.add(dispatch(taskA::reverse, "ab"))
         }
         return list.and().await() // should be listOf("ba","dc","fe")
@@ -483,7 +483,7 @@ class WorkflowAImpl : Workflow(), WorkflowA {
     override fun channel1(): String {
         val deferred: Deferred<String> = channelA.receive()
 
-        return deferred.await().also { println(it) }
+        return deferred.await()
     }
 
     override fun channel2(): Any {

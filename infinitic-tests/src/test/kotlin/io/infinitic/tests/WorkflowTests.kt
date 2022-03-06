@@ -205,7 +205,7 @@ internal class WorkflowTests : StringSpec({
     }
 
     "And step with 3 async tasks through large list" {
-        workflowA.and3() shouldBe MutableList(1_00) { "ba" }
+        workflowA.and3() shouldBe MutableList(20) { "ba" }
     }
 
     "Inline task" {

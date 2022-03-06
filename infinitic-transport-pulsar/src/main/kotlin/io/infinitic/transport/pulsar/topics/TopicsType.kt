@@ -30,7 +30,8 @@ import io.infinitic.common.data.ClientName
 interface TopicType {
     val prefix: String
 
-    fun consumerName(clientName: ClientName) = "$clientName:$prefix"
+    fun producerName(clientName: ClientName) = "$clientName-to-$prefix"
+    fun consumerName(clientName: ClientName) = "$clientName-$prefix"
 }
 
 enum class ClientTopics(override val prefix: String) : TopicType {
