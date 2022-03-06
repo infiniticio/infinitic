@@ -77,8 +77,8 @@ abstract class AbstractInfiniticClient : InfiniticClient {
 
     protected val logger = KotlinLogging.logger {}
 
-    private val sendThreadPool = Executors.newCachedThreadPool()
-    protected val sendingScope = CoroutineScope(sendThreadPool.asCoroutineDispatcher() + Job())
+    private val sendingThreadPool = Executors.newCachedThreadPool()
+    protected val sendingScope = CoroutineScope(sendingThreadPool.asCoroutineDispatcher() + Job())
 
     private val runningThreadPool = Executors.newCachedThreadPool()
     protected val runningScope = CoroutineScope(runningThreadPool.asCoroutineDispatcher() + Job())
@@ -109,7 +109,7 @@ abstract class AbstractInfiniticClient : InfiniticClient {
 
         // only then, close everything
         sendingScope.cancel()
-        sendThreadPool.shutdown()
+        sendingThreadPool.shutdown()
 
         runningScope.cancel()
         runningThreadPool.shutdown()

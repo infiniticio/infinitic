@@ -69,8 +69,7 @@ internal class PulsarListener(val client: PulsarClient) {
 
                 launch {
                     while (isActive) {
-                        val pulsarMessage = consumer
-                            .receive()
+                        val pulsarMessage = consumer.receive()
 
                         val message = try {
                             pulsarMessage.value.message()

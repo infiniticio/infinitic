@@ -42,8 +42,8 @@ import org.apache.pulsar.client.api.PulsarClientException
 class PulsarInfiniticClient @JvmOverloads constructor(
     val pulsarClient: PulsarClient,
     val pulsarAdmin: PulsarAdmin,
-    val pulsarTenant: String,
-    val pulsarNamespace: String,
+    pulsarTenant: String,
+    pulsarNamespace: String,
     name: String? = null
 ) : AbstractInfiniticClient() {
 

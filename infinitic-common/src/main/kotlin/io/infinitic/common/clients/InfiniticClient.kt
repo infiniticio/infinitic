@@ -54,11 +54,6 @@ interface InfiniticClient : Closeable {
     val lastDeferred: Deferred<*>?
 
     /**
-     * Close all resources used
-     */
-    override fun close()
-
-    /**
      * Wait for all messages to be sent
      */
     fun join()

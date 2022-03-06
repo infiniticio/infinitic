@@ -447,31 +447,29 @@ internal class ClientDispatcherImpl(
     private fun <R : Any?> dispatchTaskAsync(
         handler: NewTaskProxyHandler<*>
     ): CompletableFuture<Deferred<R>> {
-        val deferredTask: DeferredTask<R> =
-            deferredTask(
-                handler.method.returnType as Class<R>,
-                handler.taskName,
-                handler.methodName
-            )
+        val deferredTask: DeferredTask<R> = deferredTask(
+            handler.method.returnType as Class<R>,
+            handler.taskName,
+            handler.methodName
+        )
 
-        return sendingScope.future { dispatchTask(deferredTask, false, handler); deferredTask }
+        return dispatchTaskAsync(deferredTask, false, handler)
     }
 
     @Suppress("UNCHECKED_CAST")
     private fun <R> dispatchTaskAndWait(
         handler: NewTaskProxyHandler<*>
     ): R {
-        val deferredTask: DeferredTask<R> =
-            deferredTask(
-                handler.method.returnType as Class<R>,
-                handler.taskName,
-                handler.methodName
-            )
+        val deferredTask: DeferredTask<R> = deferredTask(
+            handler.method.returnType as Class<R>,
+            handler.taskName,
+            handler.methodName
+        )
 
-        sendingScope.launch { dispatchTask(deferredTask, true, handler) }
+        dispatchTaskAsync(deferredTask, true, handler)
 
-        with(deferredTask) {
-            return awaitTask(returnClass, taskName, handler.methodName, taskId, false)
+        return with(deferredTask) {
+            awaitTask(returnClass, taskName, handler.methodName, taskId, false)
         }
     }
 
@@ -488,43 +486,53 @@ internal class ClientDispatcherImpl(
         return deferredTask
     }
 
-    private fun <R : Any?> dispatchTask(
+    private fun <R : Any?> dispatchTaskAsync(
         deferred: DeferredTask<R>,
         clientWaiting: Boolean,
         handler: NewTaskProxyHandler<*>
-    ) {
-        sendingScope.future {
-            coroutineScope {
-                // add provided tags for this id
-                handler.taskTags.map {
-                    val addTagToTask = AddTagToTask(
-                        taskName = deferred.taskName,
-                        taskTag = it,
-                        taskId = deferred.taskId,
-                        emitterName = clientName
-                    )
-                    launch { sendToTaskTagEngine(addTagToTask) }
-                }
+    ): CompletableFuture<Deferred<R>> {
+        // it's important to build those objects out of the coroutine scope
+        // otherwise the handler's value could be changed if reused
 
-                // dispatch this task
-                val dispatchTask = DispatchTask(
-                    taskName = deferred.taskName,
-                    taskId = deferred.taskId,
-                    taskOptions = handler.taskOptions,
-                    clientWaiting = clientWaiting,
-                    methodName = handler.methodName,
-                    methodParameterTypes = handler.methodParameterTypes,
-                    methodParameters = handler.methodParameters,
-                    workflowId = null,
-                    workflowName = null,
-                    methodRunId = null,
-                    taskTags = handler.taskTags,
-                    taskMeta = handler.taskMeta,
-                    emitterName = clientName
-                )
-                launch { sendToTaskEngine(dispatchTask) }
+        // provided tags
+        val taskTags = handler.taskTags.map {
+            AddTagToTask(
+                taskName = deferred.taskName,
+                taskTag = it,
+                taskId = deferred.taskId,
+                emitterName = clientName
+            )
+        }
+
+        // dispatch task message
+        val dispatchTask = DispatchTask(
+            taskName = deferred.taskName,
+            taskId = deferred.taskId,
+            taskOptions = handler.taskOptions,
+            clientWaiting = clientWaiting,
+            methodName = handler.methodName,
+            methodParameterTypes = handler.methodParameterTypes,
+            methodParameters = handler.methodParameters,
+            workflowId = null,
+            workflowName = null,
+            methodRunId = null,
+            taskTags = handler.taskTags,
+            taskMeta = handler.taskMeta,
+            emitterName = clientName
+        )
+
+        return sendingScope.future {
+            // first, we send all tags in parallel
+            coroutineScope {
+                taskTags.forEach { launch { sendToTaskTagEngine(it) } }
             }
-        }.join()
+            // only then dispatch task message
+            // to avoid a potential race condition
+            // if the workflow engine remove some tags
+            sendToTaskEngine(dispatchTask)
+
+            deferred
+        }
     }
 
     // asynchronous call: dispatch(stub::method)(*args)
@@ -541,7 +549,7 @@ internal class ClientDispatcherImpl(
                 handler.methodName
             )
 
-            sendingScope.future { dispatchWorkflow(deferredWorkflow, false, handler); deferredWorkflow }
+            dispatchWorkflowAsync(deferredWorkflow, false, handler)
         }
     }
 
@@ -559,7 +567,7 @@ internal class ClientDispatcherImpl(
                 handler.methodName
             )
 
-            sendingScope.launch { dispatchWorkflow(deferredWorkflow, true, handler) }
+            dispatchWorkflowAsync(deferredWorkflow, true, handler)
 
             with(deferredWorkflow) {
                 awaitWorkflow(returnClass, workflowName, methodName, workflowId, null, false)
@@ -582,42 +590,52 @@ internal class ClientDispatcherImpl(
         return deferredWorkflow
     }
 
-    private fun <R : Any?> dispatchWorkflow(
+    private fun <R : Any?> dispatchWorkflowAsync(
         deferred: DeferredWorkflow<R>,
         clientWaiting: Boolean,
         handler: NewWorkflowProxyHandler<*>
-    ) {
-        sendingScope.future {
+    ): CompletableFuture<Deferred<R>> {
+        // it's important to build those objects out of the coroutine scope
+        // otherwise the handler's value could be changed if reused
+
+        // provided tags
+        val workflowTags = handler.workflowTags.map {
+            AddTagToWorkflow(
+                workflowName = deferred.workflowName,
+                workflowTag = it,
+                workflowId = deferred.workflowId,
+                emitterName = clientName
+            )
+        }
+        // dispatch workflow message
+        val dispatchWorkflow = DispatchWorkflow(
+            workflowName = deferred.workflowName,
+            workflowId = deferred.workflowId,
+            methodName = handler.methodName,
+            methodParameters = handler.methodParameters,
+            methodParameterTypes = handler.methodParameterTypes,
+            workflowOptions = handler.workflowOptions,
+            workflowTags = handler.workflowTags,
+            workflowMeta = handler.workflowMeta,
+            parentWorkflowName = null,
+            parentWorkflowId = null,
+            parentMethodRunId = null,
+            clientWaiting = clientWaiting,
+            emitterName = clientName
+        )
+
+        return sendingScope.future {
+            // first, we send all tags in parallel
             coroutineScope {
-                // add provided tags
-                handler.workflowTags.map {
-                    val addTagToWorkflow = AddTagToWorkflow(
-                        workflowName = deferred.workflowName,
-                        workflowTag = it,
-                        workflowId = deferred.workflowId,
-                        emitterName = clientName
-                    )
-                    launch { sendToWorkflowTagEngine(addTagToWorkflow) }
-                }
-                // dispatch workflow
-                val dispatchWorkflow = DispatchWorkflow(
-                    workflowName = deferred.workflowName,
-                    workflowId = deferred.workflowId,
-                    methodName = handler.methodName,
-                    methodParameters = handler.methodParameters,
-                    methodParameterTypes = handler.methodParameterTypes,
-                    workflowOptions = handler.workflowOptions,
-                    workflowTags = handler.workflowTags,
-                    workflowMeta = handler.workflowMeta,
-                    parentWorkflowName = null,
-                    parentWorkflowId = null,
-                    parentMethodRunId = null,
-                    clientWaiting = clientWaiting,
-                    emitterName = clientName
-                )
-                launch { sendToWorkflowEngine(dispatchWorkflow) }
+                workflowTags.forEach { launch { sendToWorkflowTagEngine(it) } }
             }
-        }.join()
+            // only then dispatch workflow message
+            // to avoid a potential race condition
+            // if the workflow engine remove tags
+            sendToWorkflowEngine(dispatchWorkflow)
+
+            deferred
+        }
     }
 
     // asynchronous call: dispatch(stub::method)(*args)
