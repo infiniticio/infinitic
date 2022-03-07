@@ -93,7 +93,7 @@ internal fun ElementCreator<Element>.displayJobStatsTable(
                                                     is Loading ->
                                                         row.classes("bg-white").new {
                                                             td().classes("px-6 py-4 text-sm font-medium text-gray-900")
-                                                                .text(type.prefix)
+                                                                .text(type.subscriptionPrefix)
                                                             td().classes("px-6 py-4 text-sm text-gray-500")
                                                                 .text("loading...")
                                                             td().classes("px-6 py-4 text-sm text-gray-500")
@@ -106,7 +106,7 @@ internal fun ElementCreator<Element>.displayJobStatsTable(
                                                     is Failed ->
                                                         row.classes("bg-white cursor-pointer hover:bg-gray-50").new {
                                                             td().classes("px-6 py-4 text-sm font-medium text-gray-900")
-                                                                .text(type.prefix)
+                                                                .text(type.subscriptionPrefix)
                                                             td().classes("px-6 py-4 text-sm text-gray-500 text-center italic")
                                                                 .setAttribute("colspan", 3)
                                                                 .text(request.title)
@@ -116,7 +116,7 @@ internal fun ElementCreator<Element>.displayJobStatsTable(
                                                     is Completed -> request.result.subscriptions.map {
                                                         row.classes("bg-white cursor-pointer hover:bg-gray-50").new {
                                                             td().classes("px-6 py-4 text-sm font-medium text-gray-900")
-                                                                .text(type.prefix)
+                                                                .text(type.subscriptionPrefix)
                                                             td().classes("px-6 py-4 text-sm text-gray-500")
                                                                 .text(it.value.consumers.size.toString())
                                                             td().classes("px-6 py-4 text-sm text-gray-500")

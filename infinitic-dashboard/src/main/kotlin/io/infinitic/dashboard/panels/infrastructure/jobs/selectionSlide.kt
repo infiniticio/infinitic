@@ -44,7 +44,7 @@ internal fun selectionSlide(
     selectionType: KVar<TopicType>,
     selectionStats: KVar<Request<PartitionedTopicStats>>
 ) = Slideover(
-    selectionType.map { "${it.prefix} stats".replaceFirstChar { c -> c.uppercase() } },
+    selectionType.map { "${it.subscriptionPrefix} stats".replaceFirstChar { c -> c.uppercase() } },
     selectionStats
 ) {
     p().classes("text-sm font-medium text-gray-900").new {

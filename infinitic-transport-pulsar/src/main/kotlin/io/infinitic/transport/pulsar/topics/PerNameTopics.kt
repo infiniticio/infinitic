@@ -30,13 +30,20 @@ import io.infinitic.common.tasks.data.TaskName
 import io.infinitic.common.workflows.data.workflows.WorkflowName
 
 class PerNameTopics(override val tenant: String, override val namespace: String) : TopicNames {
-    override fun topic(type: ClientTopics, clientName: ClientName) = fullName("${type.prefix}: $clientName")
 
-    override fun topic(type: GlobalTopics) = fullName(type.prefix)
+    override fun producerName(workerName: String, type: TopicType) = "$workerName > ${type.subscriptionPrefix}"
 
-    override fun topic(type: WorkflowTopics, workflowName: WorkflowName) = fullName("${type.prefix}: $workflowName")
+    override fun consumerName(workerName: String, type: TopicType) = "$workerName < ${type.subscriptionPrefix}"
 
-    override fun topic(type: WorkflowTaskTopics, workflowName: WorkflowName) = fullName("${type.prefix}: $workflowName")
+    override fun deadLetterQueue(topic: String) = "$topic-dead-letter-queue"
 
-    override fun topic(type: TaskTopics, taskName: TaskName) = fullName("${type.prefix}: $taskName")
+    override fun topic(type: ClientTopics, clientName: ClientName) = fullName("${type.subscriptionPrefix}: $clientName")
+
+    override fun topic(type: GlobalTopics) = fullName(type.subscriptionPrefix)
+
+    override fun topic(type: WorkflowTopics, workflowName: WorkflowName) = fullName("${type.subscriptionPrefix}: $workflowName")
+
+    override fun topic(type: WorkflowTaskTopics, workflowName: WorkflowName) = fullName("${type.subscriptionPrefix}: $workflowName")
+
+    override fun topic(type: TaskTopics, taskName: TaskName) = fullName("${type.subscriptionPrefix}: $taskName")
 }

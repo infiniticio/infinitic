@@ -25,42 +25,60 @@
 
 package io.infinitic.transport.pulsar.topics
 
-import io.infinitic.common.data.ClientName
+import org.apache.pulsar.client.api.SubscriptionType
+
+/**
+ * must NOT be changed
+ * (would change the name of the subscriptions of delayed messages)
+ */
+const val TOPIC_WITH_DELAY = "delays"
 
 interface TopicType {
-    val prefix: String
+    /**
+     * The subscriptionPrefix must NOT be changed
+     * (if subscription name is changed, all messages will appear as not acknowledged to a new worker!)
+     */
+    val subscriptionPrefix: String
 
-    fun producerName(clientName: ClientName) = "$clientName-to-$prefix"
-    fun consumerName(clientName: ClientName) = "$clientName-$prefix"
+    /**
+     * The subscriptionName must NOT be changed
+     * (if subscription name is changed, all messages will appear as not acknowledged to a new worker!)
+     */
+    val subscriptionName: String get() = "${subscriptionPrefix}_subscription"
+
+    /**
+     * The subscription type must NOT be changed
+     */
+    val subscriptionType: SubscriptionType
 }
 
-enum class ClientTopics(override val prefix: String) : TopicType {
-    RESPONSE("response")
+enum class ClientTopics(override val subscriptionPrefix: String, override val subscriptionType: SubscriptionType) : TopicType {
+    RESPONSE("response", SubscriptionType.Exclusive)
 }
 
-enum class GlobalTopics(override val prefix: String) : TopicType {
-    NAMER("global-namer")
+enum class GlobalTopics(override val subscriptionPrefix: String, override val subscriptionType: SubscriptionType) : TopicType {
+    NAMER("global-namer", SubscriptionType.Shared)
 }
 
-enum class WorkflowTopics(override val prefix: String) : TopicType {
-    TAG("workflow-tag"),
-    ENGINE("workflow-engine"),
-    DELAY("workflow-$TOPIC_WITH_DELAY"),
-    METRICS("workflow-metrics")
+enum class WorkflowTopics(override val subscriptionPrefix: String, override val subscriptionType: SubscriptionType) : TopicType {
+    TAG("workflow-tag", SubscriptionType.Key_Shared),
+    ENGINE("workflow-engine", SubscriptionType.Key_Shared),
+    DELAY("workflow-$TOPIC_WITH_DELAY", SubscriptionType.Shared),
+    METRICS("workflow-metrics", SubscriptionType.Key_Shared)
 }
 
-enum class WorkflowTaskTopics(override val prefix: String) : TopicType {
-    TAG("workflow-task-tag"),
-    ENGINE("workflow-task-engine"),
-    DELAY("workflow-task-$TOPIC_WITH_DELAY"),
-    EXECUTOR("workflow-task-executors"),
-    METRICS("workflow-task-metrics")
+enum class WorkflowTaskTopics(override val subscriptionPrefix: String, override val subscriptionType: SubscriptionType) : TopicType {
+    TAG("workflow-task-tag", SubscriptionType.Key_Shared),
+    ENGINE("workflow-task-engine", SubscriptionType.Key_Shared),
+    DELAY("workflow-task-$TOPIC_WITH_DELAY", SubscriptionType.Shared),
+    EXECUTOR("workflow-task-executors", SubscriptionType.Shared),
+    METRICS("workflow-task-metrics", SubscriptionType.Key_Shared)
 }
 
-enum class TaskTopics(override val prefix: String) : TopicType {
-    TAG("task-tag"),
-    ENGINE("task-engine"),
-    DELAY("task-$TOPIC_WITH_DELAY"),
-    EXECUTOR("task-executors"),
-    METRICS("task-metrics")
+enum class TaskTopics(override val subscriptionPrefix: String, override val subscriptionType: SubscriptionType) : TopicType {
+    TAG("task-tag", SubscriptionType.Key_Shared),
+    ENGINE("task-engine", SubscriptionType.Key_Shared),
+    DELAY("task-$TOPIC_WITH_DELAY", SubscriptionType.Shared),
+    EXECUTOR("task-executors", SubscriptionType.Shared),
+    METRICS("task-metrics", SubscriptionType.Key_Shared)
 }

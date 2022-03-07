@@ -32,6 +32,8 @@ import io.infinitic.common.clients.messages.ClientEnvelope
 import io.infinitic.common.clients.messages.ClientMessage
 import io.infinitic.common.data.ClientName
 import io.infinitic.common.data.MillisDuration
+import io.infinitic.common.messages.Envelope
+import io.infinitic.common.messages.Message
 import io.infinitic.common.tasks.data.TaskName
 import io.infinitic.common.tasks.engines.SendToTaskEngine
 import io.infinitic.common.tasks.engines.SendToTaskEngineAfter
@@ -68,31 +70,32 @@ import io.infinitic.tasks.tag.TaskTagEngine
 import io.infinitic.transport.pulsar.topics.ClientTopics
 import io.infinitic.transport.pulsar.topics.TaskTopics
 import io.infinitic.transport.pulsar.topics.TopicNames
+import io.infinitic.transport.pulsar.topics.TopicType
 import io.infinitic.transport.pulsar.topics.WorkflowTaskTopics
 import io.infinitic.transport.pulsar.topics.WorkflowTopics
 import io.infinitic.workflows.engine.WorkflowEngine
 import io.infinitic.workflows.tag.WorkflowTagEngine
 import kotlinx.coroutines.CoroutineScope
 import org.apache.pulsar.client.api.PulsarClient
-import org.apache.pulsar.client.api.SubscriptionType
 
-class PulsarWorkerStarter(private val topicNames: TopicNames, val client: PulsarClient, val name: String) : WorkerStarter {
+class PulsarWorkerStarter(
+    client: PulsarClient,
+    private val topicNames: TopicNames,
+    private val workerName: String
+) : WorkerStarter {
+
     private val zero = MillisDuration.ZERO
-    private val clientName = ClientName(name)
-    private val pulsarSender = PulsarSender(client)
-    private val pulsarListener = PulsarListener(client)
+    private val clientName = ClientName(workerName)
+    private val pulsarSender = PulsarProducer(client)
+    internal val pulsarListener = PulsarConsumer(client)
 
     override fun CoroutineScope.startClientResponse(client: InfiniticClient) {
-        with(pulsarListener) {
-            val topicType = ClientTopics.RESPONSE
-            start<ClientMessage, ClientEnvelope>(
-                { message: ClientMessage -> client.handle(message) },
-                topicNames.topic(topicType, ClientName(client.name)),
-                SubscriptionType.Exclusive,
-                topicType.consumerName(ClientName(client.name)),
-                1
-            )
-        }
+        start<ClientMessage, ClientEnvelope>(
+            executor = { message: ClientMessage -> client.handle(message) },
+            topicType = ClientTopics.RESPONSE,
+            concurrency = 1,
+            name = client.name
+        )
     }
 
     override fun CoroutineScope.startWorkflowTag(workflowName: WorkflowName, workflowTagStorage: WorkflowTagStorage, concurrency: Int) {
@@ -103,16 +106,12 @@ class PulsarWorkerStarter(private val topicNames: TopicNames, val client: Pulsar
             sendToClient
         )
 
-        with(pulsarListener) {
-            val topicType = WorkflowTopics.TAG
-            start<WorkflowTagMessage, WorkflowTagEnvelope>(
-                { message: WorkflowTagMessage -> tagEngine.handle(message) },
-                topicNames.topic(topicType, workflowName),
-                SubscriptionType.Key_Shared,
-                topicType.consumerName(clientName),
-                concurrency
-            )
-        }
+        start<WorkflowTagMessage, WorkflowTagEnvelope>(
+            executor = { message: WorkflowTagMessage -> tagEngine.handle(message) },
+            topicType = WorkflowTopics.TAG,
+            concurrency = concurrency,
+            name = "$workflowName"
+        )
     }
 
     override fun CoroutineScope.startWorkflowEngine(workflowName: WorkflowName, workflowStateStorage: WorkflowStateStorage, concurrency: Int) {
@@ -128,29 +127,21 @@ class PulsarWorkerStarter(private val topicNames: TopicNames, val client: Pulsar
             sendToWorkflowEngineAfter
         )
 
-        with(pulsarListener) {
-            val topicType = WorkflowTopics.ENGINE
-            start<WorkflowEngineMessage, WorkflowEngineEnvelope>(
-                { message: WorkflowEngineMessage -> workflowEngine.handle(message) },
-                topicNames.topic(topicType, workflowName),
-                SubscriptionType.Key_Shared,
-                topicType.consumerName(clientName),
-                concurrency
-            )
-        }
+        start<WorkflowEngineMessage, WorkflowEngineEnvelope>(
+            executor = { message: WorkflowEngineMessage -> workflowEngine.handle(message) },
+            topicType = WorkflowTopics.ENGINE,
+            concurrency = concurrency,
+            name = "$workflowName"
+        )
     }
 
     override fun CoroutineScope.startWorkflowDelay(workflowName: WorkflowName, concurrency: Int) {
-        with(pulsarListener) {
-            val topicType = WorkflowTopics.DELAY
-            start<WorkflowEngineMessage, WorkflowEngineEnvelope>(
-                sendToWorkflowEngine,
-                topicNames.topic(topicType, workflowName),
-                SubscriptionType.Shared,
-                topicType.consumerName(clientName),
-                concurrency
-            )
-        }
+        start<WorkflowEngineMessage, WorkflowEngineEnvelope>(
+            executor = sendToWorkflowEngine,
+            topicType = WorkflowTopics.DELAY,
+            concurrency = concurrency,
+            name = "$workflowName"
+        )
     }
 
     override fun CoroutineScope.startTaskTag(taskName: TaskName, taskTagStorage: TaskTagStorage, concurrency: Int) {
@@ -161,16 +152,12 @@ class PulsarWorkerStarter(private val topicNames: TopicNames, val client: Pulsar
             sendToClient
         )
 
-        with(pulsarListener) {
-            val topicType = TaskTopics.TAG
-            start<TaskTagMessage, TaskTagEnvelope>(
-                { message: TaskTagMessage -> tagEngine.handle(message) },
-                topicNames.topic(topicType, taskName),
-                SubscriptionType.Key_Shared,
-                topicType.consumerName(clientName),
-                concurrency
-            )
-        }
+        start<TaskTagMessage, TaskTagEnvelope>(
+            executor = { message: TaskTagMessage -> tagEngine.handle(message) },
+            topicType = TaskTopics.TAG,
+            concurrency = concurrency,
+            name = "$taskName"
+        )
     }
 
     override fun CoroutineScope.startTaskEngine(taskName: TaskName, taskStateStorage: TaskStateStorage, concurrency: Int) {
@@ -185,44 +172,32 @@ class PulsarWorkerStarter(private val topicNames: TopicNames, val client: Pulsar
             sendToTaskMetrics,
         )
 
-        with(pulsarListener) {
-            val topicType = TaskTopics.ENGINE
-            start<TaskEngineMessage, TaskEngineEnvelope>(
-                { message: TaskEngineMessage -> taskEngine.handle(message) },
-                topicNames.topic(topicType, taskName),
-                SubscriptionType.Key_Shared,
-                topicType.consumerName(clientName),
-                concurrency
-            )
-        }
+        start<TaskEngineMessage, TaskEngineEnvelope>(
+            executor = { message: TaskEngineMessage -> taskEngine.handle(message) },
+            topicType = TaskTopics.ENGINE,
+            concurrency = concurrency,
+            name = "$taskName"
+        )
     }
 
     override fun CoroutineScope.startTaskDelay(taskName: TaskName, concurrency: Int) {
-        with(pulsarListener) {
-            val topicType = TaskTopics.DELAY
-            start<TaskEngineMessage, TaskEngineEnvelope>(
-                sendToTaskEngine,
-                topicNames.topic(topicType, taskName),
-                SubscriptionType.Shared,
-                topicType.consumerName(clientName),
-                concurrency
-            )
-        }
+        start<TaskEngineMessage, TaskEngineEnvelope>(
+            executor = sendToTaskEngine,
+            topicType = TaskTopics.DELAY,
+            concurrency = concurrency,
+            name = "$taskName"
+        )
     }
 
     override fun CoroutineScope.startTaskMetrics(taskName: TaskName, taskMetricsStateStorage: TaskMetricsStateStorage, concurrency: Int) {
         val taskMetricsEngine = TaskMetricsEngine(taskMetricsStateStorage)
 
-        with(pulsarListener) {
-            val topicType = TaskTopics.METRICS
-            start<TaskMetricsMessage, TaskMetricsEnvelope>(
-                { message: TaskMetricsMessage -> taskMetricsEngine.handle(message) },
-                topicNames.topic(topicType, taskName),
-                SubscriptionType.Key_Shared,
-                topicType.consumerName(clientName),
-                concurrency
-            )
-        }
+        start<TaskMetricsMessage, TaskMetricsEnvelope>(
+            executor = { message: TaskMetricsMessage -> taskMetricsEngine.handle(message) },
+            topicType = TaskTopics.METRICS,
+            concurrency = concurrency,
+            name = "$taskName"
+        )
     }
 
     override fun CoroutineScope.startTaskExecutor(taskName: TaskName, concurrency: Int, workerRegister: WorkerRegister, clientFactory: ClientFactory) {
@@ -233,16 +208,12 @@ class PulsarWorkerStarter(private val topicNames: TopicNames, val client: Pulsar
             clientFactory
         )
 
-        with(pulsarListener) {
-            val topicType = TaskTopics.EXECUTOR
-            start<TaskExecutorMessage, TaskExecutorEnvelope>(
-                { message: TaskExecutorMessage -> taskExecutor.handle(message) },
-                topicNames.topic(topicType, taskName),
-                SubscriptionType.Shared,
-                topicType.consumerName(clientName),
-                concurrency
-            )
-        }
+        start<TaskExecutorMessage, TaskExecutorEnvelope>(
+            executor = { message: TaskExecutorMessage -> taskExecutor.handle(message) },
+            topicType = TaskTopics.EXECUTOR,
+            concurrency = concurrency,
+            name = "$taskName"
+        )
     }
 
     override fun CoroutineScope.startWorkflowTaskEngine(workflowName: WorkflowName, taskStateStorage: TaskStateStorage, concurrency: Int) {
@@ -257,44 +228,32 @@ class PulsarWorkerStarter(private val topicNames: TopicNames, val client: Pulsar
             sendToWorkflowTaskMetrics(workflowName),
         )
 
-        with(pulsarListener) {
-            val topicType = WorkflowTaskTopics.ENGINE
-            start<TaskEngineMessage, TaskEngineEnvelope>(
-                { message: TaskEngineMessage -> taskEngine.handle(message) },
-                topicNames.topic(topicType, workflowName),
-                SubscriptionType.Key_Shared,
-                topicType.consumerName(clientName),
-                concurrency
-            )
-        }
+        start<TaskEngineMessage, TaskEngineEnvelope>(
+            executor = { message: TaskEngineMessage -> taskEngine.handle(message) },
+            topicType = WorkflowTaskTopics.ENGINE,
+            concurrency = concurrency,
+            name = "$workflowName"
+        )
     }
 
     override fun CoroutineScope.startWorkflowTaskDelay(workflowName: WorkflowName, concurrency: Int) {
-        val topicType = WorkflowTaskTopics.DELAY
-        with(pulsarListener) {
-            start<TaskEngineMessage, TaskEngineEnvelope>(
-                sendToWorkflowTaskEngine(workflowName),
-                topicNames.topic(topicType, workflowName),
-                SubscriptionType.Shared,
-                topicType.consumerName(clientName),
-                concurrency
-            )
-        }
+        start<TaskEngineMessage, TaskEngineEnvelope>(
+            executor = sendToWorkflowTaskEngine(workflowName),
+            topicType = WorkflowTaskTopics.DELAY,
+            concurrency = concurrency,
+            name = "$workflowName"
+        )
     }
 
     override fun CoroutineScope.startWorkflowTaskMetrics(workflowName: WorkflowName, taskMetricsStateStorage: TaskMetricsStateStorage, concurrency: Int) {
         val taskMetricsEngine = TaskMetricsEngine(taskMetricsStateStorage)
 
-        with(pulsarListener) {
-            val topicType = WorkflowTaskTopics.METRICS
-            start<TaskMetricsMessage, TaskMetricsEnvelope>(
-                { message: TaskMetricsMessage -> taskMetricsEngine.handle(message) },
-                topicNames.topic(topicType, workflowName),
-                SubscriptionType.Key_Shared,
-                topicType.consumerName(clientName),
-                concurrency
-            )
-        }
+        start<TaskMetricsMessage, TaskMetricsEnvelope>(
+            executor = { message: TaskMetricsMessage -> taskMetricsEngine.handle(message) },
+            topicType = WorkflowTaskTopics.METRICS,
+            concurrency = concurrency,
+            name = "$workflowName"
+        )
     }
 
     override fun CoroutineScope.startWorkflowTaskExecutor(workflowName: WorkflowName, concurrency: Int, workerRegister: WorkerRegister, clientFactory: ClientFactory) {
@@ -305,21 +264,17 @@ class PulsarWorkerStarter(private val topicNames: TopicNames, val client: Pulsar
             clientFactory
         )
 
-        with(pulsarListener) {
-            val topicType = WorkflowTaskTopics.EXECUTOR
-            start<TaskExecutorMessage, TaskExecutorEnvelope>(
-                { message: TaskExecutorMessage -> taskExecutor.handle(message) },
-                topicNames.topic(topicType, workflowName),
-                SubscriptionType.Shared,
-                topicType.consumerName(clientName),
-                concurrency
-            )
-        }
+        start<TaskExecutorMessage, TaskExecutorEnvelope>(
+            executor = { message: TaskExecutorMessage -> taskExecutor.handle(message) },
+            topicType = WorkflowTaskTopics.EXECUTOR,
+            concurrency = concurrency,
+            name = "$workflowName"
+        )
     }
 
     override val sendToTaskTag: SendToTaskTag = run {
         val topicType = TaskTopics.TAG
-        val producerName = topicType.producerName(clientName)
+        val producerName = topicNames.producerName(workerName, topicType)
 
         return@run { message: TaskTagMessage ->
             val topic = topicNames.topic(topicType, message.taskName)
@@ -331,7 +286,7 @@ class PulsarWorkerStarter(private val topicNames: TopicNames, val client: Pulsar
 
     override val sendToTaskEngine: SendToTaskEngine = run {
         val topicType = TaskTopics.ENGINE
-        val producerName = topicType.producerName(clientName)
+        val producerName = topicNames.producerName(workerName, topicType)
 
         return@run { message: TaskEngineMessage ->
             val topic = topicNames.topic(topicType, message.taskName)
@@ -343,7 +298,7 @@ class PulsarWorkerStarter(private val topicNames: TopicNames, val client: Pulsar
 
     override val sendToWorkflowTag: SendToWorkflowTag = run {
         val topicType = WorkflowTopics.TAG
-        val producerName = topicType.producerName(clientName)
+        val producerName = topicNames.producerName(workerName, topicType)
 
         return@run { message: WorkflowTagMessage ->
             val topic = topicNames.topic(topicType, message.workflowName)
@@ -355,7 +310,7 @@ class PulsarWorkerStarter(private val topicNames: TopicNames, val client: Pulsar
 
     override val sendToWorkflowEngine: SendToWorkflowEngine = run {
         val topicType = WorkflowTopics.ENGINE
-        val producerName = topicType.producerName(clientName)
+        val producerName = topicNames.producerName(workerName, topicType)
 
         return@run { message: WorkflowEngineMessage ->
             val topic = topicNames.topic(topicType, message.workflowName)
@@ -367,11 +322,10 @@ class PulsarWorkerStarter(private val topicNames: TopicNames, val client: Pulsar
 
     private val sendToClient: SendToClient = run {
         val topicType = ClientTopics.RESPONSE
-        val producerName = topicType.producerName(clientName)
+        val producerName = topicNames.producerName(workerName, topicType)
 
         return@run { message: ClientMessage ->
-            val topic = topicNames.topic(topicType, clientName)
-
+            val topic = topicNames.topic(topicType, workerName)
             pulsarSender.send<ClientMessage, ClientEnvelope>(
                 message, zero, topic, producerName
             )
@@ -380,7 +334,7 @@ class PulsarWorkerStarter(private val topicNames: TopicNames, val client: Pulsar
 
     private val sendToTaskEngineAfter: SendToTaskEngineAfter = run {
         val topicType = TaskTopics.DELAY
-        val producerName = topicType.producerName(clientName)
+        val producerName = topicNames.producerName(workerName, topicType)
 
         return@run { message: TaskEngineMessage, after: MillisDuration ->
             if (after > 0) {
@@ -396,7 +350,7 @@ class PulsarWorkerStarter(private val topicNames: TopicNames, val client: Pulsar
 
     private val sendToTaskMetrics: SendToTaskMetrics = run {
         val topicType = TaskTopics.METRICS
-        val producerName = topicType.producerName(clientName)
+        val producerName = topicNames.producerName(workerName, topicType)
 
         return@run { message: TaskMetricsMessage ->
             val topic = topicNames.topic(topicType, message.taskName)
@@ -408,7 +362,7 @@ class PulsarWorkerStarter(private val topicNames: TopicNames, val client: Pulsar
 
     private val sendToTaskExecutor: SendToTaskExecutor = run {
         val topicType = TaskTopics.EXECUTOR
-        val producerName = topicType.producerName(clientName)
+        val producerName = topicNames.producerName(workerName, topicType)
 
         return@run { message: TaskExecutorMessage ->
             val topic = topicNames.topic(topicType, message.taskName)
@@ -420,7 +374,7 @@ class PulsarWorkerStarter(private val topicNames: TopicNames, val client: Pulsar
 
     private fun sendToWorkflowTaskEngine(workflowName: WorkflowName): SendToTaskEngine {
         val topicType = WorkflowTaskTopics.ENGINE
-        val producerName = topicType.producerName(clientName)
+        val producerName = topicNames.producerName(workerName, topicType)
         val topic = topicNames.topic(topicType, workflowName)
 
         return { message: TaskEngineMessage ->
@@ -432,7 +386,7 @@ class PulsarWorkerStarter(private val topicNames: TopicNames, val client: Pulsar
 
     private fun sendToWorkflowTaskEngineAfter(workflowName: WorkflowName): SendToTaskEngineAfter {
         val topicType = WorkflowTaskTopics.DELAY
-        val producerName = topicType.producerName(clientName)
+        val producerName = topicNames.producerName(workerName, topicType)
         val topic = topicNames.topic(topicType, workflowName)
         val sendToWorkflowTaskEngine = sendToWorkflowTaskEngine(workflowName)
 
@@ -449,7 +403,7 @@ class PulsarWorkerStarter(private val topicNames: TopicNames, val client: Pulsar
 
     private fun sendToWorkflowTaskMetrics(workflowName: WorkflowName): SendToTaskMetrics {
         val topicType = WorkflowTaskTopics.METRICS
-        val producerName = topicType.producerName(clientName)
+        val producerName = topicNames.producerName(workerName, topicType)
         val topic = topicNames.topic(topicType, workflowName)
 
         return { message: TaskMetricsMessage ->
@@ -461,7 +415,7 @@ class PulsarWorkerStarter(private val topicNames: TopicNames, val client: Pulsar
 
     private fun sendToWorkflowTaskExecutor(workflowName: WorkflowName): SendToTaskExecutor {
         val topicType = WorkflowTaskTopics.EXECUTOR
-        val producerName = topicType.producerName(clientName)
+        val producerName = topicNames.producerName(workerName, topicType)
         val topic = topicNames.topic(topicType, workflowName)
 
         return { message: TaskExecutorMessage ->
@@ -473,7 +427,7 @@ class PulsarWorkerStarter(private val topicNames: TopicNames, val client: Pulsar
 
     private val sendToWorkflowEngineAfter: SendToWorkflowEngineAfter = run {
         val topicType = WorkflowTopics.DELAY
-        val producerName = topicType.producerName(clientName)
+        val producerName = topicNames.producerName(workerName, topicType)
 
         return@run { message: WorkflowEngineMessage, after: MillisDuration ->
             if (after > 0) {
@@ -484,6 +438,26 @@ class PulsarWorkerStarter(private val topicNames: TopicNames, val client: Pulsar
             } else {
                 sendToWorkflowEngine(message)
             }
+        }
+    }
+
+    internal inline fun <T : Message, reified S : Envelope<T>> CoroutineScope.start(
+        crossinline executor: suspend (T) -> Unit,
+        topicType: TopicType,
+        concurrency: Int,
+        name: String
+    ) {
+        with(pulsarListener) {
+            val topic = topicNames.topic(topicType, name)
+            startConsumer<T, S>(
+                executor = executor,
+                topic = topic,
+                subscriptionName = topicType.subscriptionName,
+                subscriptionType = topicType.subscriptionType,
+                consumerName = topicNames.consumerName(workerName, topicType),
+                concurrency = concurrency,
+                topicDLQ = topicNames.deadLetterQueue(topic)
+            )
         }
     }
 }

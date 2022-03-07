@@ -112,19 +112,19 @@ class PulsarInfiniticWorker private constructor(
     /**
      * [TopicNames] instance: used to get topic's name
      */
-    private val topics: TopicNames = PerNameTopics(pulsar.tenant, pulsar.namespace)
+    private val topicNames: TopicNames = PerNameTopics(pulsar.tenant, pulsar.namespace)
 
     /**
      * Worker unique name: from workerConfig or generated through Pulsar
      */
     override val name by lazy {
-        getProducerName(pulsarClient, topics, workerConfig.name)
+        getProducerName(pulsarClient, topicNames, workerConfig.name)
     }
 
     private val fullNamespace = "${pulsar.tenant}/${pulsar.namespace}"
 
     override val workerStarter by lazy {
-        PulsarWorkerStarter(topics, pulsarClient, name)
+        PulsarWorkerStarter(pulsarClient, topicNames, name)
     }
 
     override val clientFactory = {
@@ -206,8 +206,6 @@ class PulsarInfiniticWorker private constructor(
     }
 
     private fun Topics.checkOrCreateTopics() {
-        val topics = PerNameTopics(pulsar.tenant, pulsar.namespace)
-
         // get current existing topics
         val existing: MutableList<String> = try {
             logger.debug { "Getting list of partitioned topics for namespace $fullNamespace" }
@@ -220,6 +218,7 @@ class PulsarInfiniticWorker private constructor(
             mutableListOf()
         }
 
+        // create a topic if it does not exist already
         val checkOrCreateTopic = { topic: String ->
             if (! existing.contains(topic)) {
                 try {
@@ -237,24 +236,32 @@ class PulsarInfiniticWorker private constructor(
             }
         }
 
+        // create a topic if it does not exist already, along with its dead letter queue
+        val checkOrCreateTopicAndDeadLetterQueue = { topic: String ->
+            checkOrCreateTopic(topic)
+            checkOrCreateTopic(topicNames.deadLetterQueue(topic))
+        }
+
         GlobalTopics.values().forEach {
-            checkOrCreateTopic(topics.topic(it))
+            checkOrCreateTopicAndDeadLetterQueue(topicNames.topic(it))
         }
 
         for (task in workerConfig.tasks) {
             val taskName = TaskName(task.name)
             TaskTopics.values().forEach {
-                checkOrCreateTopic(topics.topic(it, taskName))
+                checkOrCreateTopicAndDeadLetterQueue(topicNames.topic(it, taskName))
             }
         }
 
         for (workflow in workerConfig.workflows) {
             val workflowName = WorkflowName(workflow.name)
+
             WorkflowTopics.values().forEach {
-                checkOrCreateTopic(topics.topic(it, workflowName))
+                checkOrCreateTopicAndDeadLetterQueue(topicNames.topic(it, workflowName))
             }
+
             WorkflowTaskTopics.values().forEach {
-                checkOrCreateTopic(topics.topic(it, workflowName))
+                checkOrCreateTopicAndDeadLetterQueue(topicNames.topic(it, workflowName))
             }
         }
     }

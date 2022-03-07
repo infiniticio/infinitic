@@ -67,7 +67,7 @@ class PulsarInfiniticClient @JvmOverloads constructor(
             logger.warn { "Not authorized to create topic $topicClient: ${e.message}" }
         }
 
-        with(PulsarWorkerStarter(topics, pulsarClient, producerName)) {
+        with(PulsarWorkerStarter(pulsarClient, topics, producerName)) {
             runningScope.future {
                 startClientResponse(this@PulsarInfiniticClient)
             }

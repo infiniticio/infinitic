@@ -30,16 +30,20 @@ import io.infinitic.common.exceptions.thisShouldNotHappen
 import io.infinitic.common.tasks.data.TaskName
 import io.infinitic.common.workflows.data.workflows.WorkflowName
 
-const val TOPIC_WITH_DELAY = "delays"
-
 interface TopicNames {
     val tenant: String
     val namespace: String
 
     fun fullName(topic: String) = "persistent://$tenant/$namespace/$topic"
 
-    fun topic(type: ClientTopics, clientName: ClientName): String
+    fun producerName(workerName: String, type: TopicType): String
+
+    fun consumerName(workerName: String, type: TopicType): String
+
+    fun deadLetterQueue(topic: String): String
+
     fun topic(type: GlobalTopics): String
+    fun topic(type: ClientTopics, clientName: ClientName): String
     fun topic(type: WorkflowTopics, workflowName: WorkflowName): String
     fun topic(type: TaskTopics, taskName: TaskName): String
     fun topic(type: WorkflowTaskTopics, workflowName: WorkflowName): String
