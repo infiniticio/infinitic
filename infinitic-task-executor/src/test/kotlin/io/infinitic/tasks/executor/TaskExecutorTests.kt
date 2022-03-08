@@ -44,7 +44,7 @@ import io.infinitic.common.tasks.engines.SendToTaskEngine
 import io.infinitic.common.tasks.engines.messages.TaskAttemptCompleted
 import io.infinitic.common.tasks.engines.messages.TaskAttemptFailed
 import io.infinitic.common.tasks.engines.messages.TaskEngineMessage
-import io.infinitic.common.tasks.executors.messages.ExecuteTaskAttempt
+import io.infinitic.common.tasks.executors.messages.ExecuteTask
 import io.infinitic.exceptions.tasks.ClassNotFoundException
 import io.infinitic.exceptions.tasks.MaxRunDurationException
 import io.infinitic.exceptions.tasks.NoMethodFoundWithParameterCountException
@@ -289,7 +289,7 @@ class TaskExecutorTests : StringSpec({
     }
 })
 
-private fun getExecuteTaskAttempt(name: String, method: String, input: Array<out Any?>, types: List<String>?) = ExecuteTaskAttempt(
+private fun getExecuteTaskAttempt(name: String, method: String, input: Array<out Any?>, types: List<String>?) = ExecuteTask(
     taskName = TaskName(name),
     taskId = TaskId(),
     workflowId = null,

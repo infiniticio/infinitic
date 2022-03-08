@@ -31,7 +31,7 @@ import org.apache.pulsar.client.api.SubscriptionType
  * must NOT be changed
  * (would change the name of the subscriptions of delayed messages)
  */
-const val TOPIC_WITH_DELAY = "delays"
+const val TOPIC_WITH_DELAY = "delay"
 
 interface TopicType {
     /**
@@ -44,11 +44,8 @@ interface TopicType {
      * The subscriptionName must NOT be changed
      * (if subscription name is changed, all messages will appear as not acknowledged to a new worker!)
      */
-    val subscriptionName: String get() = "${subscriptionPrefix}_subscription"
+    val subscriptionName: String get() = "$subscriptionPrefix-subscription"
 
-    /**
-     * The subscription type must NOT be changed
-     */
     val subscriptionType: SubscriptionType
 }
 
@@ -70,12 +67,12 @@ enum class WorkflowTaskTopics(override val subscriptionPrefix: String, override 
     TAG("workflow-task-tag", SubscriptionType.Key_Shared),
     ENGINE("workflow-task-engine", SubscriptionType.Key_Shared),
     DELAY("workflow-task-$TOPIC_WITH_DELAY", SubscriptionType.Shared),
-    EXECUTOR("workflow-task-executors", SubscriptionType.Shared)
+    EXECUTOR("workflow-task-executor", SubscriptionType.Shared)
 }
 
 enum class TaskTopics(override val subscriptionPrefix: String, override val subscriptionType: SubscriptionType) : TopicType {
     TAG("task-tag", SubscriptionType.Key_Shared),
     ENGINE("task-engine", SubscriptionType.Key_Shared),
     DELAY("task-$TOPIC_WITH_DELAY", SubscriptionType.Shared),
-    EXECUTOR("task-executors", SubscriptionType.Shared)
+    EXECUTOR("task-executor", SubscriptionType.Shared)
 }

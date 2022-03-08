@@ -79,7 +79,7 @@ import java.time.Instant
 class WorkflowEngine(
     val clientName: ClientName,
     storage: WorkflowStateStorage,
-    sendEventsToClient: SendToClient,
+    sendToClient: SendToClient,
     sendToTaskTag: SendToTaskTag,
     sendToTaskEngine: SendToTaskEngine,
     sendToWorkflowTaskEngine: SendToTaskEngine,
@@ -97,7 +97,7 @@ class WorkflowEngine(
 
     private val output = WorkflowEngineOutput(
         clientName,
-        sendEventsToClient,
+        sendToClient,
         sendToTaskTag,
         sendToTaskEngine,
         sendToWorkflowTaskEngine,

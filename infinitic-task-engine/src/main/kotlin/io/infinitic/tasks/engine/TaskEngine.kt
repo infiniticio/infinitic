@@ -51,7 +51,7 @@ import io.infinitic.common.tasks.engines.messages.interfaces.TaskAttemptMessage
 import io.infinitic.common.tasks.engines.state.TaskState
 import io.infinitic.common.tasks.engines.storage.TaskStateStorage
 import io.infinitic.common.tasks.executors.SendToTaskExecutor
-import io.infinitic.common.tasks.executors.messages.ExecuteTaskAttempt
+import io.infinitic.common.tasks.executors.messages.ExecuteTask
 import io.infinitic.common.tasks.tags.SendToTaskTag
 import io.infinitic.common.tasks.tags.messages.RemoveTagFromTask
 import io.infinitic.common.workflows.engine.SendToWorkflowEngine
@@ -226,7 +226,7 @@ class TaskEngine(
         )
 
         // send task to workers
-        val executeTaskAttempt = ExecuteTaskAttempt(
+        val executeTask = ExecuteTask(
             taskName = state.taskName,
             taskId = state.taskId,
             taskTags = state.taskTags,
@@ -243,7 +243,7 @@ class TaskEngine(
             taskMeta = state.taskMeta,
             emitterName = clientName
         )
-        launch { sendToTaskExecutors(executeTaskAttempt) }
+        launch { sendToTaskExecutors(executeTask) }
 
         return state
     }
@@ -291,7 +291,7 @@ class TaskEngine(
         }
 
         // send task to workers
-        val executeTaskAttempt = ExecuteTaskAttempt(
+        val executeTask = ExecuteTask(
             taskName = state.taskName,
             taskId = state.taskId,
             taskTags = state.taskTags,
@@ -308,7 +308,7 @@ class TaskEngine(
             taskMeta = state.taskMeta,
             emitterName = clientName
         )
-        launch { sendToTaskExecutors(executeTaskAttempt) }
+        launch { sendToTaskExecutors(executeTask) }
     }
 
     private fun CoroutineScope.retryTaskAttempt(state: TaskState) {
@@ -318,7 +318,7 @@ class TaskEngine(
         }
 
         // send task to workers
-        val executeTaskAttempt = ExecuteTaskAttempt(
+        val executeTask = ExecuteTask(
             taskName = state.taskName,
             taskId = state.taskId,
             taskTags = state.taskTags,
@@ -335,7 +335,7 @@ class TaskEngine(
             taskMeta = state.taskMeta,
             emitterName = clientName
         )
-        launch { sendToTaskExecutors(executeTaskAttempt) }
+        launch { sendToTaskExecutors(executeTask) }
     }
 
     private fun CoroutineScope.taskAttemptCompleted(state: TaskState, message: TaskAttemptCompleted) {

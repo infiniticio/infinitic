@@ -34,7 +34,7 @@ import kotlinx.serialization.Serializable
 data class TaskExecutorEnvelope(
     val taskName: TaskName,
     val type: TaskExecutorMessageType,
-    val executeTask: ExecuteTaskAttempt? = null
+    val executeTask: ExecuteTask? = null
 ) : Envelope<TaskExecutorMessage> {
     init {
         val noNull = listOfNotNull(
@@ -48,9 +48,9 @@ data class TaskExecutorEnvelope(
 
     companion object {
         fun from(msg: TaskExecutorMessage) = when (msg) {
-            is ExecuteTaskAttempt -> TaskExecutorEnvelope(
+            is ExecuteTask -> TaskExecutorEnvelope(
                 msg.taskName,
-                TaskExecutorMessageType.EXECUTE_TASK_ATTEMPT,
+                TaskExecutorMessageType.EXECUTE_TASK,
                 executeTask = msg
             )
         }
@@ -59,7 +59,7 @@ data class TaskExecutorEnvelope(
     }
 
     override fun message(): TaskExecutorMessage = when (type) {
-        TaskExecutorMessageType.EXECUTE_TASK_ATTEMPT -> executeTask!!
+        TaskExecutorMessageType.EXECUTE_TASK -> executeTask!!
     }
 
     fun toByteArray() = AvroSerDe.writeBinary(this, serializer())

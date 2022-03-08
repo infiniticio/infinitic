@@ -39,7 +39,6 @@ import io.infinitic.common.tasks.data.TaskName
 import io.infinitic.common.tasks.data.TaskRetryIndex
 import io.infinitic.common.tasks.data.TaskRetrySequence
 import io.infinitic.common.tasks.data.TaskTag
-import io.infinitic.common.workflows.data.workflowTasks.WorkflowTask
 import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.data.workflows.WorkflowName
 import io.infinitic.tasks.TaskOptions
@@ -52,13 +51,11 @@ sealed class TaskExecutorMessage : Message {
     abstract val taskId: TaskId
     abstract val taskName: TaskName
 
-    fun isWorkflowTask() = (taskName == TaskName(WorkflowTask::class.java.name))
-
     override fun envelope() = TaskExecutorEnvelope.from(this)
 }
 
 @Serializable
-data class ExecuteTaskAttempt(
+data class ExecuteTask(
     override val taskName: TaskName,
     override val taskId: TaskId,
     val taskTags: Set<TaskTag>,

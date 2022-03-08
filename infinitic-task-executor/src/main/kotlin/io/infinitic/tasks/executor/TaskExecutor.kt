@@ -37,7 +37,7 @@ import io.infinitic.common.tasks.data.TaskMeta
 import io.infinitic.common.tasks.engines.SendToTaskEngine
 import io.infinitic.common.tasks.engines.messages.TaskAttemptCompleted
 import io.infinitic.common.tasks.engines.messages.TaskAttemptFailed
-import io.infinitic.common.tasks.executors.messages.ExecuteTaskAttempt
+import io.infinitic.common.tasks.executors.messages.ExecuteTask
 import io.infinitic.common.tasks.executors.messages.TaskExecutorMessage
 import io.infinitic.common.workers.WorkerRegister
 import io.infinitic.exceptions.DeferredException
@@ -68,11 +68,11 @@ class TaskExecutor(
         logger.debug { "receiving $message" }
 
         when (message) {
-            is ExecuteTaskAttempt -> executeTaskAttempt(message)
+            is ExecuteTask -> executeTask(message)
         }
     }
 
-    private suspend fun executeTaskAttempt(message: ExecuteTaskAttempt) {
+    private suspend fun executeTask(message: ExecuteTask) {
         val taskContext = TaskContextImpl(
             workerName = "$clientName",
             workerRegister = this,
@@ -140,7 +140,7 @@ class TaskExecutor(
 
     private fun failTaskWithRetry(
         task: Task,
-        msg: ExecuteTaskAttempt,
+        msg: ExecuteTask,
         cause: Exception
     ) {
         when (val delay = getDurationBeforeRetry(task, cause)) {
@@ -165,7 +165,7 @@ class TaskExecutor(
         }
     }
 
-    private fun parse(msg: ExecuteTaskAttempt): TaskCommand {
+    private fun parse(msg: ExecuteTask): TaskCommand {
         val task = getTaskInstance("${msg.taskName}")
 
         val parameterTypes = msg.methodParameterTypes
@@ -192,7 +192,7 @@ class TaskExecutor(
     }
 
     private fun sendTaskAttemptFailed(
-        message: ExecuteTaskAttempt,
+        message: ExecuteTask,
         throwable: Throwable,
         delay: MillisDuration?,
         taskMeta: TaskMeta
@@ -220,7 +220,7 @@ class TaskExecutor(
     }
 
     private fun sendTaskCompleted(
-        message: ExecuteTaskAttempt,
+        message: ExecuteTask,
         returnValue: Any?,
         taskMeta: TaskMeta
     ) {
