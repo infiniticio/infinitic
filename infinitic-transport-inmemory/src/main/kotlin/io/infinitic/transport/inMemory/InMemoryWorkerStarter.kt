@@ -39,9 +39,6 @@ import io.infinitic.common.tasks.engines.messages.TaskEngineMessage
 import io.infinitic.common.tasks.engines.storage.TaskStateStorage
 import io.infinitic.common.tasks.executors.SendToTaskExecutor
 import io.infinitic.common.tasks.executors.messages.TaskExecutorMessage
-import io.infinitic.common.tasks.metrics.SendToTaskMetrics
-import io.infinitic.common.tasks.metrics.messages.TaskMetricsMessage
-import io.infinitic.common.tasks.metrics.storage.TaskMetricsStateStorage
 import io.infinitic.common.tasks.tags.SendToTaskTag
 import io.infinitic.common.tasks.tags.messages.TaskTagMessage
 import io.infinitic.common.tasks.tags.storage.TaskTagStorage
@@ -57,7 +54,6 @@ import io.infinitic.common.workflows.tags.messages.WorkflowTagMessage
 import io.infinitic.common.workflows.tags.storage.WorkflowTagStorage
 import io.infinitic.tasks.engine.TaskEngine
 import io.infinitic.tasks.executor.TaskExecutor
-import io.infinitic.tasks.metrics.TaskMetricsEngine
 import io.infinitic.tasks.tag.TaskTagEngine
 import io.infinitic.workflows.engine.WorkflowEngine
 import io.infinitic.workflows.tag.WorkflowTagEngine
@@ -81,14 +77,12 @@ class InMemoryWorkerStarter(private val scope: CoroutineScope, name: String) : W
     // Task channels
     private val taskTagChannels = ConcurrentHashMap<TaskName, Channel<TaskTagMessage>>()
     private val taskEngineChannels = ConcurrentHashMap<TaskName, Channel<TaskEngineMessage>>()
-    private val taskMetricsChannels = ConcurrentHashMap<TaskName, Channel<TaskMetricsMessage>>()
     private val taskExecutorChannels = ConcurrentHashMap<TaskName, Channel<TaskExecutorMessage>>()
 
     // Workflow channels
     private val workflowTagChannels = ConcurrentHashMap<WorkflowName, Channel<WorkflowTagMessage>>()
     private val workflowEngineChannels = ConcurrentHashMap<WorkflowName, Channel<WorkflowEngineMessage>>()
     private val workflowTaskEngineChannels = ConcurrentHashMap<WorkflowName, Channel<TaskEngineMessage>>()
-    private val workflowTaskMetricsChannels = ConcurrentHashMap<WorkflowName, Channel<TaskMetricsMessage>>()
     private val workflowTaskExecutorChannels = ConcurrentHashMap<WorkflowName, Channel<TaskExecutorMessage>>()
 
     override fun CoroutineScope.startClientResponse(client: InfiniticClient) {
@@ -157,22 +151,12 @@ class InMemoryWorkerStarter(private val scope: CoroutineScope, name: String) : W
             sendToTaskTagAsync,
             sendToTaskEngineAfterAsync,
             sendToWorkflowEngineAsync,
-            sendToTaskExecutor,
-            sendToTaskMetrics,
+            sendToTaskExecutor
         )
 
         startAsync(
             { message: TaskEngineMessage -> taskEngine.handle(message) },
             getTaskEngineChannel(taskName)
-        )
-    }
-
-    override fun CoroutineScope.startTaskMetrics(taskName: TaskName, taskMetricsStateStorage: TaskMetricsStateStorage, concurrency: Int) {
-        val taskMetricsEngine = TaskMetricsEngine(taskMetricsStateStorage)
-
-        startAsync(
-            { message: TaskMetricsMessage -> taskMetricsEngine.handle(message) },
-            getTaskMetricsChannel(taskName)
         )
     }
 
@@ -204,22 +188,12 @@ class InMemoryWorkerStarter(private val scope: CoroutineScope, name: String) : W
             sendToTaskTagAsync,
             sendToWorkflowTaskEngineAfterAsync(workflowName),
             sendToWorkflowEngineAsync,
-            sendToWorkflowTaskExecutor(workflowName),
-            sendToWorkflowTaskMetrics(workflowName),
+            sendToWorkflowTaskExecutor(workflowName)
         )
 
         startAsync(
             { message: TaskEngineMessage -> taskEngine.handle(message) },
             getWorkflowTaskEngineChannel(workflowName)
-        )
-    }
-
-    override fun CoroutineScope.startWorkflowTaskMetrics(workflowName: WorkflowName, taskMetricsStateStorage: TaskMetricsStateStorage, concurrency: Int) {
-        val taskMetricsEngine = TaskMetricsEngine(taskMetricsStateStorage)
-
-        startAsync(
-            { message: TaskMetricsMessage -> taskMetricsEngine.handle(message) },
-            getWorkflowTaskMetricsChannel(workflowName)
         )
     }
 
@@ -289,10 +263,6 @@ class InMemoryWorkerStarter(private val scope: CoroutineScope, name: String) : W
         scope.sendAsync(message, getTaskExecutorChannel(message.taskName)).join()
     }
 
-    private val sendToTaskMetrics: SendToTaskMetrics = { message: TaskMetricsMessage ->
-        scope.sendAsync(message, getTaskMetricsChannel(message.taskName)).join()
-    }
-
     private val sendToWorkflowEngineAfterAsync: SendToWorkflowEngineAfter =
         { message: WorkflowEngineMessage, after: MillisDuration ->
             scope.sendAsync(message, getWorkflowEngineChannel(message.workflowName), after)
@@ -322,12 +292,6 @@ class InMemoryWorkerStarter(private val scope: CoroutineScope, name: String) : W
         return { message: TaskExecutorMessage -> scope.sendAsync(message, channel).join() }
     }
 
-    private fun sendToWorkflowTaskMetrics(workflowName: WorkflowName): SendToTaskMetrics {
-        val channel = getWorkflowTaskMetricsChannel(workflowName)
-
-        return { message: TaskMetricsMessage -> scope.sendAsync(message, channel).join() }
-    }
-
     private fun getTaskTagChannel(taskName: TaskName) =
         taskTagChannels[taskName] ?: run {
             val channel = Channel<TaskTagMessage>()
@@ -346,13 +310,6 @@ class InMemoryWorkerStarter(private val scope: CoroutineScope, name: String) : W
         taskExecutorChannels[taskName] ?: run {
             val channel = Channel<TaskExecutorMessage>()
             taskExecutorChannels[taskName] = channel
-            channel
-        }
-
-    private fun getTaskMetricsChannel(taskName: TaskName) =
-        taskMetricsChannels[taskName] ?: run {
-            val channel = Channel<TaskMetricsMessage>()
-            taskMetricsChannels[taskName] = channel
             channel
         }
 
@@ -381,13 +338,6 @@ class InMemoryWorkerStarter(private val scope: CoroutineScope, name: String) : W
         workflowTaskExecutorChannels[workflowName] ?: run {
             val channel = Channel<TaskExecutorMessage>()
             workflowTaskExecutorChannels[workflowName] = channel
-            channel
-        }
-
-    private fun getWorkflowTaskMetricsChannel(workflowName: WorkflowName) =
-        workflowTaskMetricsChannels[workflowName] ?: run {
-            val channel = Channel<TaskMetricsMessage>()
-            workflowTaskMetricsChannels[workflowName] = channel
             channel
         }
 

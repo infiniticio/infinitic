@@ -43,10 +43,6 @@ import io.infinitic.common.tasks.engines.storage.TaskStateStorage
 import io.infinitic.common.tasks.executors.SendToTaskExecutor
 import io.infinitic.common.tasks.executors.messages.TaskExecutorEnvelope
 import io.infinitic.common.tasks.executors.messages.TaskExecutorMessage
-import io.infinitic.common.tasks.metrics.SendToTaskMetrics
-import io.infinitic.common.tasks.metrics.messages.TaskMetricsEnvelope
-import io.infinitic.common.tasks.metrics.messages.TaskMetricsMessage
-import io.infinitic.common.tasks.metrics.storage.TaskMetricsStateStorage
 import io.infinitic.common.tasks.tags.SendToTaskTag
 import io.infinitic.common.tasks.tags.messages.TaskTagEnvelope
 import io.infinitic.common.tasks.tags.messages.TaskTagMessage
@@ -65,7 +61,6 @@ import io.infinitic.common.workflows.tags.messages.WorkflowTagMessage
 import io.infinitic.common.workflows.tags.storage.WorkflowTagStorage
 import io.infinitic.tasks.engine.TaskEngine
 import io.infinitic.tasks.executor.TaskExecutor
-import io.infinitic.tasks.metrics.TaskMetricsEngine
 import io.infinitic.tasks.tag.TaskTagEngine
 import io.infinitic.transport.pulsar.topics.ClientTopics
 import io.infinitic.transport.pulsar.topics.TaskTopics
@@ -168,8 +163,7 @@ class PulsarWorkerStarter(
             sendToTaskTag,
             sendToTaskEngineAfter,
             sendToWorkflowEngine,
-            sendToTaskExecutor,
-            sendToTaskMetrics,
+            sendToTaskExecutor
         )
 
         start<TaskEngineMessage, TaskEngineEnvelope>(
@@ -184,17 +178,6 @@ class PulsarWorkerStarter(
         start<TaskEngineMessage, TaskEngineEnvelope>(
             executor = sendToTaskEngine,
             topicType = TaskTopics.DELAY,
-            concurrency = concurrency,
-            name = "$taskName"
-        )
-    }
-
-    override fun CoroutineScope.startTaskMetrics(taskName: TaskName, taskMetricsStateStorage: TaskMetricsStateStorage, concurrency: Int) {
-        val taskMetricsEngine = TaskMetricsEngine(taskMetricsStateStorage)
-
-        start<TaskMetricsMessage, TaskMetricsEnvelope>(
-            executor = { message: TaskMetricsMessage -> taskMetricsEngine.handle(message) },
-            topicType = TaskTopics.METRICS,
             concurrency = concurrency,
             name = "$taskName"
         )
@@ -224,8 +207,7 @@ class PulsarWorkerStarter(
             sendToTaskTag,
             sendToWorkflowTaskEngineAfter(workflowName),
             sendToWorkflowEngine,
-            sendToWorkflowTaskExecutor(workflowName),
-            sendToWorkflowTaskMetrics(workflowName),
+            sendToWorkflowTaskExecutor(workflowName)
         )
 
         start<TaskEngineMessage, TaskEngineEnvelope>(
@@ -240,17 +222,6 @@ class PulsarWorkerStarter(
         start<TaskEngineMessage, TaskEngineEnvelope>(
             executor = sendToWorkflowTaskEngine(workflowName),
             topicType = WorkflowTaskTopics.DELAY,
-            concurrency = concurrency,
-            name = "$workflowName"
-        )
-    }
-
-    override fun CoroutineScope.startWorkflowTaskMetrics(workflowName: WorkflowName, taskMetricsStateStorage: TaskMetricsStateStorage, concurrency: Int) {
-        val taskMetricsEngine = TaskMetricsEngine(taskMetricsStateStorage)
-
-        start<TaskMetricsMessage, TaskMetricsEnvelope>(
-            executor = { message: TaskMetricsMessage -> taskMetricsEngine.handle(message) },
-            topicType = WorkflowTaskTopics.METRICS,
             concurrency = concurrency,
             name = "$workflowName"
         )
@@ -348,18 +319,6 @@ class PulsarWorkerStarter(
         }
     }
 
-    private val sendToTaskMetrics: SendToTaskMetrics = run {
-        val topicType = TaskTopics.METRICS
-        val producerName = topicNames.producerName(workerName, topicType)
-
-        return@run { message: TaskMetricsMessage ->
-            val topic = topicNames.topic(topicType, message.taskName)
-            pulsarSender.send<TaskMetricsMessage, TaskMetricsEnvelope>(
-                message, zero, topic, producerName, "${message.taskName}"
-            )
-        }
-    }
-
     private val sendToTaskExecutor: SendToTaskExecutor = run {
         val topicType = TaskTopics.EXECUTOR
         val producerName = topicNames.producerName(workerName, topicType)
@@ -398,18 +357,6 @@ class PulsarWorkerStarter(
             } else {
                 sendToWorkflowTaskEngine(message)
             }
-        }
-    }
-
-    private fun sendToWorkflowTaskMetrics(workflowName: WorkflowName): SendToTaskMetrics {
-        val topicType = WorkflowTaskTopics.METRICS
-        val producerName = topicNames.producerName(workerName, topicType)
-        val topic = topicNames.topic(topicType, workflowName)
-
-        return { message: TaskMetricsMessage ->
-            pulsarSender.send<TaskMetricsMessage, TaskMetricsEnvelope>(
-                message, zero, topic, producerName, "$workflowName"
-            )
         }
     }
 

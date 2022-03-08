@@ -63,22 +63,19 @@ enum class GlobalTopics(override val subscriptionPrefix: String, override val su
 enum class WorkflowTopics(override val subscriptionPrefix: String, override val subscriptionType: SubscriptionType) : TopicType {
     TAG("workflow-tag", SubscriptionType.Key_Shared),
     ENGINE("workflow-engine", SubscriptionType.Key_Shared),
-    DELAY("workflow-$TOPIC_WITH_DELAY", SubscriptionType.Shared),
-    METRICS("workflow-metrics", SubscriptionType.Key_Shared)
+    DELAY("workflow-$TOPIC_WITH_DELAY", SubscriptionType.Shared)
 }
 
 enum class WorkflowTaskTopics(override val subscriptionPrefix: String, override val subscriptionType: SubscriptionType) : TopicType {
     TAG("workflow-task-tag", SubscriptionType.Key_Shared),
     ENGINE("workflow-task-engine", SubscriptionType.Key_Shared),
     DELAY("workflow-task-$TOPIC_WITH_DELAY", SubscriptionType.Shared),
-    EXECUTOR("workflow-task-executors", SubscriptionType.Shared),
-    METRICS("workflow-task-metrics", SubscriptionType.Key_Shared)
+    EXECUTOR("workflow-task-executors", SubscriptionType.Shared)
 }
 
 enum class TaskTopics(override val subscriptionPrefix: String, override val subscriptionType: SubscriptionType) : TopicType {
     TAG("task-tag", SubscriptionType.Key_Shared),
     ENGINE("task-engine", SubscriptionType.Key_Shared),
     DELAY("task-$TOPIC_WITH_DELAY", SubscriptionType.Shared),
-    EXECUTOR("task-executors", SubscriptionType.Shared),
-    METRICS("task-metrics", SubscriptionType.Key_Shared)
+    EXECUTOR("task-executors", SubscriptionType.Shared)
 }

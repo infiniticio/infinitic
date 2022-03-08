@@ -36,7 +36,6 @@ dependencies {
     implementation(project(":infinitic-workflow-engine"))
     implementation(project(":infinitic-task-engine"))
     implementation(project(":infinitic-task-executor"))
-    implementation(project(":infinitic-task-metrics"))
     implementation(project(":infinitic-task-tag"))
     implementation(project(":infinitic-worker"))
 }

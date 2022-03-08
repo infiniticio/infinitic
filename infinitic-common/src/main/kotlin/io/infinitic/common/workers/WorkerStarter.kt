@@ -30,7 +30,6 @@ import io.infinitic.common.clients.InfiniticClient
 import io.infinitic.common.tasks.data.TaskName
 import io.infinitic.common.tasks.engines.SendToTaskEngine
 import io.infinitic.common.tasks.engines.storage.TaskStateStorage
-import io.infinitic.common.tasks.metrics.storage.TaskMetricsStateStorage
 import io.infinitic.common.tasks.tags.SendToTaskTag
 import io.infinitic.common.tasks.tags.storage.TaskTagStorage
 import io.infinitic.common.workflows.data.workflows.WorkflowName
@@ -53,15 +52,11 @@ interface WorkerStarter {
 
     fun CoroutineScope.startTaskEngine(taskName: TaskName, taskStateStorage: TaskStateStorage, concurrency: Int)
 
-    fun CoroutineScope.startTaskMetrics(taskName: TaskName, taskMetricsStateStorage: TaskMetricsStateStorage, concurrency: Int)
-
     fun CoroutineScope.startTaskDelay(taskName: TaskName, concurrency: Int)
 
     fun CoroutineScope.startTaskExecutor(taskName: TaskName, concurrency: Int, workerRegister: WorkerRegister, clientFactory: ClientFactory)
 
     fun CoroutineScope.startWorkflowTaskEngine(workflowName: WorkflowName, taskStateStorage: TaskStateStorage, concurrency: Int)
-
-    fun CoroutineScope.startWorkflowTaskMetrics(workflowName: WorkflowName, taskMetricsStateStorage: TaskMetricsStateStorage, concurrency: Int)
 
     fun CoroutineScope.startWorkflowTaskDelay(workflowName: WorkflowName, concurrency: Int)
 

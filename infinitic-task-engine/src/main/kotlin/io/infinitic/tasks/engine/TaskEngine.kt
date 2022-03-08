@@ -52,8 +52,6 @@ import io.infinitic.common.tasks.engines.state.TaskState
 import io.infinitic.common.tasks.engines.storage.TaskStateStorage
 import io.infinitic.common.tasks.executors.SendToTaskExecutor
 import io.infinitic.common.tasks.executors.messages.ExecuteTaskAttempt
-import io.infinitic.common.tasks.metrics.SendToTaskMetrics
-import io.infinitic.common.tasks.metrics.messages.TaskStatusUpdated
 import io.infinitic.common.tasks.tags.SendToTaskTag
 import io.infinitic.common.tasks.tags.messages.RemoveTagFromTask
 import io.infinitic.common.workflows.engine.SendToWorkflowEngine
@@ -76,8 +74,7 @@ class TaskEngine(
     val sendToTaskTag: SendToTaskTag,
     val sendToTaskEngineAfter: SendToTaskEngineAfter,
     val sendToWorkflowEngine: SendToWorkflowEngine,
-    val sendToTaskExecutors: SendToTaskExecutor,
-    val sendToTaskMetrics: SendToTaskMetrics
+    val sendToTaskExecutors: SendToTaskExecutor
 ) {
     private val storage = LoggedTaskStateStorage(storage)
 
@@ -100,10 +97,8 @@ class TaskEngine(
 
         if (state == null) {
             if (message is DispatchTask) {
-                val newState = dispatchTask(message)
-                taskStatusUpdate(newState, null)
 
-                return@coroutineScope newState
+                return@coroutineScope dispatchTask(message)
             }
 
             if (message is WaitTask) {
@@ -168,22 +163,7 @@ class TaskEngine(
             is DispatchTask -> thisShouldNotHappen()
         }
 
-        // Send TaskStatusUpdated if needed
-        if (state.taskStatus != oldStatus) taskStatusUpdate(state, oldStatus)
-
         return@coroutineScope state
-    }
-
-    private fun CoroutineScope.taskStatusUpdate(state: TaskState, oldStatus: TaskStatus?) {
-        val taskStatusUpdated = TaskStatusUpdated(
-            taskName = state.taskName,
-            taskId = state.taskId,
-            oldStatus = oldStatus,
-            newStatus = state.taskStatus,
-            emitterName = clientName
-        )
-
-        launch { sendToTaskMetrics(taskStatusUpdated) }
     }
 
     private fun CoroutineScope.waitTask(state: TaskState, message: WaitTask) {

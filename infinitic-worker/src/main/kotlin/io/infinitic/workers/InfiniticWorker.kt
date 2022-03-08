@@ -30,7 +30,6 @@ import io.infinitic.common.storage.keySet.CachedKeySetStorage
 import io.infinitic.common.storage.keyValue.CachedKeyValueStorage
 import io.infinitic.common.tasks.data.TaskName
 import io.infinitic.common.tasks.engines.storage.TaskStateStorage
-import io.infinitic.common.tasks.metrics.storage.TaskMetricsStateStorage
 import io.infinitic.common.tasks.tags.storage.TaskTagStorage
 import io.infinitic.common.workers.WorkerStarter
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTask
@@ -39,7 +38,6 @@ import io.infinitic.common.workflows.engine.storage.WorkflowStateStorage
 import io.infinitic.common.workflows.tags.storage.WorkflowTagStorage
 import io.infinitic.tasks.engine.storage.BinaryTaskStateStorage
 import io.infinitic.tasks.executor.register.WorkerRegisterImpl
-import io.infinitic.tasks.metrics.storage.BinaryTaskMetricsStateStorage
 import io.infinitic.tasks.tag.storage.BinaryTaskTagStorage
 import io.infinitic.workers.config.WorkerConfig
 import io.infinitic.workflows.engine.storage.BinaryWorkflowStateStorage
@@ -61,11 +59,9 @@ abstract class InfiniticWorker(open val workerConfig: WorkerConfig) : Closeable 
 
     protected val taskStateStorages = mutableMapOf<TaskName, TaskStateStorage>()
     protected val taskTagStorages = mutableMapOf<TaskName, TaskTagStorage>()
-    protected val taskMetricsStateStorages = mutableMapOf<TaskName, TaskMetricsStateStorage>()
     protected val workflowStateStorages = mutableMapOf<WorkflowName, WorkflowStateStorage>()
     protected val workflowTagStorages = mutableMapOf<WorkflowName, WorkflowTagStorage>()
     protected val workflowTaskStateStorages = mutableMapOf<WorkflowName, TaskStateStorage>()
-    protected val workflowTaskMetricsStateStorages = mutableMapOf<WorkflowName, TaskMetricsStateStorage>()
 
     protected abstract val workerStarter: WorkerStarter
     protected abstract val clientFactory: ClientFactory
@@ -91,7 +87,6 @@ abstract class InfiniticWorker(open val workerConfig: WorkerConfig) : Closeable 
         workflowStateStorages.forEach { it.value.flush() }
         workflowTagStorages.forEach { it.value.flush() }
         workflowTaskStateStorages.forEach { it.value.flush() }
-        taskMetricsStateStorages.forEach { it.value.flush() }
     }
 
     /**
@@ -194,26 +189,6 @@ abstract class InfiniticWorker(open val workerConfig: WorkerConfig) : Closeable 
                     startWorkflowTaskDelay(workflowName, it.concurrency)
                 }
             }
-
-            workflow.metrics?.let {
-                logger.info {
-                    "* workflow task metrics".padEnd(25) + ": (" +
-                        "storage: ${it.stateStorage}" +
-                        ", cache: ${it.stateCacheOrDefault})"
-                }
-
-                val workflowTaskMetricsStateStorage = BinaryTaskMetricsStateStorage(
-                    CachedKeyValueStorage(
-                        it.stateCacheOrDefault.keyValue(workerConfig),
-                        it.stateStorage!!.keyValue(workerConfig)
-                    )
-                )
-                workflowTaskMetricsStateStorages[workflowName] = workflowTaskMetricsStateStorage
-
-                with(workerStarter) {
-                    startWorkflowTaskMetrics(workflowName, workflowTaskMetricsStateStorage, workflow.concurrency)
-                }
-            }
         }
 
         for (task in workerConfig.tasks) {
@@ -279,32 +254,6 @@ abstract class InfiniticWorker(open val workerConfig: WorkerConfig) : Closeable 
                 with(workerStarter) {
                     startTaskEngine(taskName, storage, task.concurrency)
                     startTaskDelay(taskName, task.concurrency)
-                }
-            }
-
-            task.metrics?.let {
-                logger.info {
-                    "* task metrics".padEnd(25) + ": (" +
-                        "storage: ${it.stateStorage}" +
-                        ", cache: ${it.stateCacheOrDefault})"
-                }
-
-                val taskMetricsStateStorage = BinaryTaskMetricsStateStorage(
-                    CachedKeyValueStorage(
-                        it.stateCacheOrDefault.keyValue(workerConfig),
-                        it.stateStorage!!.keyValue(workerConfig)
-                    )
-                )
-                taskMetricsStateStorages[taskName] = taskMetricsStateStorage
-
-                with(workerStarter) {
-                    startTaskMetrics(taskName, taskMetricsStateStorage, task.concurrency)
-                }
-
-                logger.info {
-                    "* global metrics".padEnd(25) + ": (" +
-                        "storage: ${it.stateStorage}" +
-                        ", cache: ${it.stateCacheOrDefault})"
                 }
             }
         }

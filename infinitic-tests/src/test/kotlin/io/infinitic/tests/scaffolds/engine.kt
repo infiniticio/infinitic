@@ -74,15 +74,12 @@ fun CoroutineScope.startEngine() {
     val workflowChannel = Channel<String>()
     val taskChannel = Channel<String>()
     val executorChannel = Channel<String>()
-    val metricsChannel = Channel<String>()
 
     val workflowEngine: suspend (String) -> Unit = { message: String ->
         println("A executing $message")
         wait()
         if (! message.startsWith("taskEngine")) {
             taskChannel.send(message)
-        } else {
-            metricsChannel.send("workflowEngine: $message")
         }
         println("A executed $message")
     }
@@ -94,7 +91,6 @@ fun CoroutineScope.startEngine() {
             executorChannel.send(message)
         } else {
             launch { workflowChannel.send("taskEngine: $message") }
-            metricsChannel.send("taskEngine: $message")
         }
         println("B executed $message")
     }
@@ -106,16 +102,9 @@ fun CoroutineScope.startEngine() {
         println("C executed $message")
     }
 
-    val taskMetrics: suspend (String) -> Unit = { message: String ->
-        println("D executing $message")
-        wait()
-        println("D executed $message")
-    }
-
     startEngine(workflowEngine, workflowChannel)
     startEngine(taskEngine, taskChannel)
     startEngine(taskExecutor, executorChannel)
-    startEngine(taskMetrics, metricsChannel)
 
     // Sending messages
     launch {

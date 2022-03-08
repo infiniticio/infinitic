@@ -44,7 +44,6 @@ dependencies {
     api(project(":infinitic-task-executor"))
     api(project(":infinitic-transport"))
 
-    implementation(project(":infinitic-task-metrics"))
     implementation(project(":infinitic-workflow-tag"))
     implementation(project(":infinitic-task-engine"))
     implementation(project(":infinitic-task-tag"))

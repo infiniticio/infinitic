@@ -26,7 +26,6 @@
 package io.infinitic.workers.config
 
 import io.infinitic.tasks.engine.config.TaskEngine
-import io.infinitic.tasks.metrics.config.Metrics
 import io.infinitic.workflows.engine.config.WorkflowEngine
 import io.infinitic.workflows.tag.config.WorkflowTag
 import java.lang.reflect.Constructor
@@ -39,8 +38,7 @@ data class Workflow(
     val concurrency: Int = 1,
     var workflowTag: WorkflowTag? = WorkflowTag().apply { default = true },
     var taskEngine: TaskEngine? = TaskEngine().apply { default = true },
-    var workflowEngine: WorkflowEngine? = WorkflowEngine().apply { default = true },
-    var metrics: Metrics? = Metrics()
+    var workflowEngine: WorkflowEngine? = WorkflowEngine().apply { default = true }
 ) {
     private lateinit var _constructor: Constructor<out Any>
 

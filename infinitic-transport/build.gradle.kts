@@ -33,7 +33,6 @@ dependencies {
     implementation(project(":infinitic-task-tag"))
     implementation(project(":infinitic-task-engine"))
     implementation(project(":infinitic-task-executor"))
-    implementation(project(":infinitic-task-metrics"))
 
     api(project(":infinitic-transport-inmemory"))
     api(project(":infinitic-transport-pulsar"))

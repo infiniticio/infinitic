@@ -31,8 +31,6 @@ import io.infinitic.common.errors.WorkerError
 import io.infinitic.common.serDe.SerializedData
 import io.infinitic.common.tasks.engines.messages.TaskEngineEnvelope
 import io.infinitic.common.tasks.engines.messages.TaskEngineMessage
-import io.infinitic.common.tasks.metrics.messages.TaskMetricsEnvelope
-import io.infinitic.common.tasks.metrics.messages.TaskMetricsMessage
 import io.infinitic.common.workflows.data.commands.CommandId
 import io.infinitic.common.workflows.data.steps.Step
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineEnvelope
@@ -80,10 +78,6 @@ object TestFactory {
             .randomize(TaskEngineEnvelope::class.java) {
                 val sub = TaskEngineMessage::class.sealedSubclasses.shuffled().first()
                 TaskEngineEnvelope.from(random(sub))
-            }
-            .randomize(TaskMetricsEnvelope::class.java) {
-                val sub = TaskMetricsMessage::class.sealedSubclasses.shuffled().first()
-                TaskMetricsEnvelope.from(random(sub))
             }
             .randomize(DeferredError::class.java) {
                 val sub = DeferredError::class.sealedSubclasses.shuffled().first()

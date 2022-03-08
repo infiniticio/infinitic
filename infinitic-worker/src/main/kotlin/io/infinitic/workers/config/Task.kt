@@ -26,7 +26,6 @@
 package io.infinitic.workers.config
 
 import io.infinitic.tasks.engine.config.TaskEngine
-import io.infinitic.tasks.metrics.config.Metrics
 import io.infinitic.tasks.tag.config.TaskTag
 import java.lang.reflect.Constructor
 import java.lang.reflect.InvocationTargetException
@@ -37,8 +36,7 @@ data class Task(
     val `class`: String? = null,
     val concurrency: Int = 1,
     var taskTag: TaskTag? = TaskTag().apply { default = true },
-    var taskEngine: TaskEngine? = TaskEngine().apply { default = true },
-    var metrics: Metrics? = Metrics()
+    var taskEngine: TaskEngine? = TaskEngine().apply { default = true }
 ) {
     private lateinit var _constructor: Constructor<out Any>
 
