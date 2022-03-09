@@ -26,6 +26,7 @@
 package io.infinitic.transport.inMemory
 
 import io.infinitic.common.clients.ClientFactory
+import io.infinitic.common.clients.ClientStarter
 import io.infinitic.common.clients.InfiniticClient
 import io.infinitic.common.clients.SendToClient
 import io.infinitic.common.clients.messages.ClientMessage
@@ -65,7 +66,7 @@ import mu.KotlinLogging
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.ConcurrentHashMap
 
-class InMemoryWorkerStarter(private val scope: CoroutineScope, name: String) : WorkerStarter {
+class InMemoryStarter(private val scope: CoroutineScope, name: String) : ClientStarter, WorkerStarter {
 
     private val logger = KotlinLogging.logger {}
 
@@ -84,13 +85,6 @@ class InMemoryWorkerStarter(private val scope: CoroutineScope, name: String) : W
     private val workflowEngineChannels = ConcurrentHashMap<WorkflowName, Channel<WorkflowEngineMessage>>()
     private val workflowTaskEngineChannels = ConcurrentHashMap<WorkflowName, Channel<TaskEngineMessage>>()
     private val workflowTaskExecutorChannels = ConcurrentHashMap<WorkflowName, Channel<TaskExecutorMessage>>()
-
-    override fun CoroutineScope.startClientResponse(client: InfiniticClient) {
-        startAsync(
-            { message: ClientMessage -> client.handle(message) },
-            clientChannel
-        )
-    }
 
     override fun CoroutineScope.startWorkflowTag(workflowName: WorkflowName, workflowTagStorage: WorkflowTagStorage, concurrency: Int) {
         val workflowTagEngine = WorkflowTagEngine(
@@ -216,6 +210,13 @@ class InMemoryWorkerStarter(private val scope: CoroutineScope, name: String) : W
                 channel
             )
         }
+    }
+
+    override fun CoroutineScope.startClientResponse(client: InfiniticClient) {
+        startAsync(
+            { message: ClientMessage -> client.handle(message) },
+            clientChannel
+        )
     }
 
     override val sendToTaskTag: SendToTaskTag = { message: TaskTagMessage ->

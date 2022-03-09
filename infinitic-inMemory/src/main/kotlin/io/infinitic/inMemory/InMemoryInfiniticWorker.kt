@@ -25,10 +25,12 @@
 
 package io.infinitic.inMemory
 
-import io.infinitic.transport.inMemory.InMemoryWorkerStarter
+import io.infinitic.transport.inMemory.InMemoryStarter
 import io.infinitic.workers.InfiniticWorker
 import io.infinitic.workers.config.WorkerConfig
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancel
 import java.util.concurrent.CompletableFuture
 
@@ -38,10 +40,11 @@ class InMemoryInfiniticWorker(
 ) : InfiniticWorker(workerConfig) {
 
     lateinit var client: InMemoryInfiniticClient
-    lateinit var runningScope: CoroutineScope
+
+    private val scope = CoroutineScope(Dispatchers.IO + Job())
 
     public override val workerStarter by lazy {
-        InMemoryWorkerStarter(runningScope, name)
+        InMemoryStarter(scope, name)
     }
 
     override val clientFactory = { client }
@@ -51,14 +54,14 @@ class InMemoryInfiniticWorker(
     override fun start(): Unit = startAsync().join()
 
     override fun startAsync(): CompletableFuture<Unit> =
-        if (this::runningScope.isInitialized && this::client.isInitialized) {
-            with(runningScope) { startAsync() }
+        if (this::client.isInitialized) {
+            with(scope) { startAsync() }
         } else {
-            logger.warn { "Should not start ${this::class.java} outside of an in-memory client: closing" }
+            logger.warn { "Should not start ${this::class} outside of an in-memory client: closing" }
             CompletableFuture.completedFuture(null)
         }
 
     override fun close() {
-        if (this::runningScope.isInitialized) runningScope.cancel()
+        scope.cancel()
     }
 }

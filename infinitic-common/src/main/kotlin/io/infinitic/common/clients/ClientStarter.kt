@@ -23,35 +23,22 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.inMemory
+package io.infinitic.common.clients
 
-import io.infinitic.client.AbstractInfiniticClient
-import io.infinitic.common.data.ClientName
-import io.infinitic.workers.config.WorkerConfig
+import io.infinitic.common.tasks.engines.SendToTaskEngine
+import io.infinitic.common.tasks.tags.SendToTaskTag
+import io.infinitic.common.workflows.engine.SendToWorkflowEngine
+import io.infinitic.common.workflows.tags.SendToWorkflowTag
+import kotlinx.coroutines.CoroutineScope
 
-@Suppress("MemberVisibilityCanBePrivate")
-class InMemoryInfiniticClient(
-    workerConfig: WorkerConfig,
-    name: String? = null
-) : AbstractInfiniticClient() {
+interface ClientStarter {
+    fun CoroutineScope.startClientResponse(client: InfiniticClient)
 
-    private val worker by lazy {
-        InMemoryInfiniticWorker(workerConfig).apply {
-            client = this@InMemoryInfiniticClient
-        }
-    }
+    val sendToTaskTag: SendToTaskTag
 
-    override val clientStarter by lazy { worker.workerStarter }
+    val sendToTaskEngine: SendToTaskEngine
 
-    override val clientName: ClientName = ClientName(name ?: "inMemory")
+    val sendToWorkflowTag: SendToWorkflowTag
 
-    init {
-        // start client response
-        with(clientStarter) {
-            listeningScope.startClientResponse(this@InMemoryInfiniticClient)
-        }
-
-        // start worker
-        worker.startAsync()
-    }
+    val sendToWorkflowEngine: SendToWorkflowEngine
 }

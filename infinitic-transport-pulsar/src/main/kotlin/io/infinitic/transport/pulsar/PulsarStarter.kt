@@ -26,6 +26,7 @@
 package io.infinitic.transport.pulsar
 
 import io.infinitic.common.clients.ClientFactory
+import io.infinitic.common.clients.ClientStarter
 import io.infinitic.common.clients.InfiniticClient
 import io.infinitic.common.clients.SendToClient
 import io.infinitic.common.clients.messages.ClientEnvelope
@@ -73,25 +74,16 @@ import io.infinitic.workflows.tag.WorkflowTagEngine
 import kotlinx.coroutines.CoroutineScope
 import org.apache.pulsar.client.api.PulsarClient
 
-class PulsarWorkerStarter(
+class PulsarStarter(
     client: PulsarClient,
     private val topicNames: TopicNames,
     private val workerName: String
-) : WorkerStarter {
+) : ClientStarter, WorkerStarter {
 
     private val zero = MillisDuration.ZERO
     private val clientName = ClientName(workerName)
     private val pulsarSender = PulsarProducer(client)
     internal val pulsarListener = PulsarConsumer(client)
-
-    override fun CoroutineScope.startClientResponse(client: InfiniticClient) {
-        start<ClientMessage, ClientEnvelope>(
-            executor = { message: ClientMessage -> client.handle(message) },
-            topicType = ClientTopics.RESPONSE,
-            concurrency = 1,
-            name = client.name
-        )
-    }
 
     override fun CoroutineScope.startWorkflowTag(workflowName: WorkflowName, workflowTagStorage: WorkflowTagStorage, concurrency: Int) {
         val tagEngine = WorkflowTagEngine(
@@ -243,6 +235,15 @@ class PulsarWorkerStarter(
         )
     }
 
+    override fun CoroutineScope.startClientResponse(client: InfiniticClient) {
+        start<ClientMessage, ClientEnvelope>(
+            executor = { message: ClientMessage -> client.handle(message) },
+            topicType = ClientTopics.RESPONSE,
+            concurrency = 1,
+            name = client.name
+        )
+    }
+
     override val sendToTaskTag: SendToTaskTag = run {
         val topicType = TaskTopics.TAG
         val producerName = topicNames.producerName(workerName, topicType)
@@ -296,7 +297,7 @@ class PulsarWorkerStarter(
         val producerName = topicNames.producerName(workerName, topicType)
 
         return@run { message: ClientMessage ->
-            val topic = topicNames.topic(topicType, workerName)
+            val topic = topicNames.topic(topicType, message.recipientName)
             pulsarSender.send<ClientMessage, ClientEnvelope>(
                 message, zero, topic, producerName
             )

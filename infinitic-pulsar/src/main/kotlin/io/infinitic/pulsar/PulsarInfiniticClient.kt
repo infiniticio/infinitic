@@ -29,7 +29,7 @@ import io.infinitic.client.AbstractInfiniticClient
 import io.infinitic.common.clients.InfiniticClient
 import io.infinitic.common.data.ClientName
 import io.infinitic.pulsar.config.ClientConfig
-import io.infinitic.transport.pulsar.PulsarWorkerStarter
+import io.infinitic.transport.pulsar.PulsarStarter
 import io.infinitic.transport.pulsar.topics.ClientTopics
 import io.infinitic.transport.pulsar.topics.PerNameTopics
 import kotlinx.coroutines.future.future
@@ -49,15 +49,25 @@ class PulsarInfiniticClient @JvmOverloads constructor(
 
     private val topics = PerNameTopics(pulsarTenant, pulsarNamespace)
 
-    private val producerName by lazy { getProducerName(pulsarClient, topics, name) }
+    /**
+     * If [name] is provided, we check that no other client is connected with it
+     * If [name] is not provided, Pulsar provided a unique name
+     */
+    private val uniqueName by lazy { getProducerName(pulsarClient, topics, name) }
 
-    override val clientName by lazy { ClientName(producerName) }
+    override val clientName by lazy { ClientName(uniqueName) }
 
+    /**
+     * Name of the topic used to send messages to this client
+     */
     private val topicClient by lazy { topics.topic(ClientTopics.RESPONSE, clientName) }
 
-    private val workerStarter by lazy {
+    override val clientStarter by lazy { PulsarStarter(pulsarClient, topics, uniqueName) }
+
+    init {
         // create client's topic
         try {
+            logger.debug { "Creating topic $topicClient" }
             pulsarAdmin.topics().createNonPartitionedTopic(topicClient)
         } catch (e: PulsarAdminException.ConflictException) {
             logger.debug { "Topic already exists: $topicClient: ${e.message}" }
@@ -67,28 +77,12 @@ class PulsarInfiniticClient @JvmOverloads constructor(
             logger.warn { "Not authorized to create topic $topicClient: ${e.message}" }
         }
 
-        with(PulsarWorkerStarter(pulsarClient, topics, producerName)) {
-            runningScope.future {
+        with(clientStarter) {
+            listeningScope.future {
                 startClientResponse(this@PulsarInfiniticClient)
             }
             this
         }
-    }
-
-    override val sendToTaskTagEngine by lazy {
-        workerStarter.sendToTaskTag
-    }
-
-    override val sendToTaskEngine by lazy {
-        workerStarter.sendToTaskEngine
-    }
-
-    override val sendToWorkflowTagEngine by lazy {
-        workerStarter.sendToWorkflowTag
-    }
-
-    override val sendToWorkflowEngine by lazy {
-        workerStarter.sendToWorkflowEngine
     }
 
     override fun close() {

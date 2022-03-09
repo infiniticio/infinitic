@@ -27,7 +27,7 @@ package io.infinitic.pulsar
 
 import io.infinitic.common.tasks.data.TaskName
 import io.infinitic.common.workflows.data.workflows.WorkflowName
-import io.infinitic.transport.pulsar.PulsarWorkerStarter
+import io.infinitic.transport.pulsar.PulsarStarter
 import io.infinitic.transport.pulsar.config.Pulsar
 import io.infinitic.transport.pulsar.topics.GlobalTopics
 import io.infinitic.transport.pulsar.topics.PerNameTopics
@@ -90,14 +90,15 @@ class PulsarInfiniticWorker private constructor(
     }
 
     /**
-     * Thread pool used to run workers
+     * We use a thread pool that creates new threads as needed,
+     * to improve performance when processing messages in parallel
      */
-    private val runningThreadPool = Executors.newCachedThreadPool()
+    private val threadPool = Executors.newCachedThreadPool()
 
     /**
-     * [CoroutineScope] used to run workers
+     * Coroutine scope used to run workers
      */
-    private val runningScope = CoroutineScope(runningThreadPool.asCoroutineDispatcher() + Job())
+    private val scope = CoroutineScope(threadPool.asCoroutineDispatcher() + Job())
 
     /**
      * [Pulsar] configuration
@@ -124,7 +125,7 @@ class PulsarInfiniticWorker private constructor(
     private val fullNamespace = "${pulsar.tenant}/${pulsar.namespace}"
 
     override val workerStarter by lazy {
-        PulsarWorkerStarter(pulsarClient, topicNames, name)
+        PulsarStarter(pulsarClient, topicNames, name)
     }
 
     override val clientFactory = {
@@ -139,7 +140,7 @@ class PulsarInfiniticWorker private constructor(
     /**
      * Start worker asynchronously
      */
-    override fun startAsync(): CompletableFuture<Unit> = runningScope.future {
+    override fun startAsync(): CompletableFuture<Unit> = scope.future {
         try {
             // check that tenant exists or create it
             pulsarAdmin.tenants().checkOrCreateTenant()
@@ -165,8 +166,8 @@ class PulsarInfiniticWorker private constructor(
      * Close worker
      */
     override fun close() {
-        runningScope.cancel()
-        runningThreadPool.shutdown()
+        scope.cancel()
+        threadPool.shutdown()
 
         pulsarClient.close()
         pulsarAdmin.close()

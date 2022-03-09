@@ -30,6 +30,7 @@ import io.infinitic.client.samples.FakeClass
 import io.infinitic.client.samples.FakeInterface
 import io.infinitic.client.samples.FakeTask
 import io.infinitic.client.samples.FooTask
+import io.infinitic.common.clients.ClientStarter
 import io.infinitic.common.clients.Deferred
 import io.infinitic.common.data.ClientName
 import io.infinitic.common.data.methods.MethodName
@@ -49,6 +50,8 @@ import io.infinitic.common.workflows.tags.messages.WorkflowTagMessage
 import io.infinitic.tasks.TaskOptions
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
+import io.mockk.every
+import io.mockk.mockk
 import io.mockk.slot
 import java.util.concurrent.CopyOnWriteArrayList
 
@@ -56,14 +59,18 @@ private val taskTagSlots = CopyOnWriteArrayList<TaskTagMessage>() // multithread
 private val workflowTagSlots = CopyOnWriteArrayList<WorkflowTagMessage>() // multithread update
 private val taskSlot = slot<TaskEngineMessage>()
 private val workflowSlot = slot<WorkflowEngineMessage>()
-private val clientNameTest = ClientName("clientTest")
+private val clientNameTest = ClientName("test")
 
 class ClientTask : AbstractInfiniticClient() {
     override val clientName = clientNameTest
-    override val sendToTaskTagEngine = mockSendToTaskTagEngine(this, taskTagSlots, clientName, sendingScope)
-    override val sendToTaskEngine = mockSendToTaskEngine(this, taskSlot, clientName, sendingScope)
-    override val sendToWorkflowTagEngine = mockSendToWorkflowTagEngine(this, workflowTagSlots, clientName, sendingScope)
-    override val sendToWorkflowEngine = mockSendToWorkflowEngine(this, workflowSlot, clientName, sendingScope)
+    override val clientStarter by lazy {
+        mockk<ClientStarter> {
+            every { sendToTaskTag } returns mockSendToTaskTagEngine(this@ClientTask, taskTagSlots, clientName, sendingScope)
+            every { sendToTaskEngine } returns mockSendToTaskEngine(this@ClientTask, taskSlot, clientName, sendingScope)
+            every { sendToWorkflowTag } returns mockSendToWorkflowTagEngine(this@ClientTask, workflowTagSlots, clientName, sendingScope)
+            every { sendToWorkflowEngine } returns mockSendToWorkflowEngine(this@ClientTask, workflowSlot, clientName, sendingScope)
+        }
+    }
 }
 
 class ClientTaskTests : StringSpec({

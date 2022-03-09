@@ -169,12 +169,12 @@ class PulsarInfiniticAdmin constructor(
      */
     fun createTenant(): Boolean = with(pulsarAdmin.tenants()) {
         try {
-            logger.info { "Checking if tenant ${pulsar.tenant} already exists by requesting its info" }
+            logger.debug { "Checking if tenant ${pulsar.tenant} already exists by requesting its info" }
             getTenantInfo(pulsar.tenant)
-            logger.warn { "Tenant ${pulsar.tenant} already exists" }
 
             false
         } catch (e: PulsarAdminException.NotFoundException) {
+            logger.info { "Creating tenant ${pulsar.tenant}" }
             pulsarAdmin.tenants().createTenant(pulsar.tenant, tenantInfo)
 
             true
@@ -190,7 +190,6 @@ class PulsarInfiniticAdmin constructor(
         try {
             logger.debug { "Checking if namespace $fullNamespace already exists by requesting its policies" }
             getPolicies(fullNamespace)
-            logger.warn { "Namespace $fullNamespace already exists" }
 
             false
         } catch (e: PulsarAdminException.NotFoundException) {

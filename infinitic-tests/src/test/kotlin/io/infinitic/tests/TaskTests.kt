@@ -66,6 +66,7 @@ internal class TaskTests : StringSpec({
     }
 
     afterSpec {
+        client.close()
         worker.close()
     }
 

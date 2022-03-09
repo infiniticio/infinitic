@@ -33,6 +33,7 @@ import io.infinitic.client.samples.FakeTaskParent
 import io.infinitic.client.samples.FakeWorkflow
 import io.infinitic.client.samples.FakeWorkflowImpl
 import io.infinitic.client.samples.FooWorkflow
+import io.infinitic.common.clients.ClientStarter
 import io.infinitic.common.data.ClientName
 import io.infinitic.common.data.methods.MethodName
 import io.infinitic.common.data.methods.MethodParameterTypes
@@ -65,6 +66,8 @@ import io.infinitic.workflows.WorkflowOptions
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
+import io.mockk.every
+import io.mockk.mockk
 import io.mockk.slot
 import java.util.UUID
 import java.util.concurrent.CopyOnWriteArrayList
@@ -77,10 +80,12 @@ private val clientNameTest = ClientName("clientTest")
 
 class ClientWorkflow : AbstractInfiniticClient() {
     override val clientName = clientNameTest
-    override val sendToTaskTagEngine = mockSendToTaskTagEngine(this, taskTagSlots, clientName, sendingScope)
-    override val sendToTaskEngine = mockSendToTaskEngine(this, taskSlot, clientName, sendingScope)
-    override val sendToWorkflowTagEngine = mockSendToWorkflowTagEngine(this, workflowTagSlots, clientName, sendingScope)
-    override val sendToWorkflowEngine = mockSendToWorkflowEngine(this, workflowSlot, clientName, sendingScope)
+    override val clientStarter = mockk<ClientStarter> {
+        every { sendToTaskTag } returns mockSendToTaskTagEngine(this@ClientWorkflow, taskTagSlots, clientName, sendingScope)
+        every { sendToTaskEngine } returns mockSendToTaskEngine(this@ClientWorkflow, taskSlot, clientName, sendingScope)
+        every { sendToWorkflowTag } returns mockSendToWorkflowTagEngine(this@ClientWorkflow, workflowTagSlots, clientName, sendingScope)
+        every { sendToWorkflowEngine } returns mockSendToWorkflowEngine(this@ClientWorkflow, workflowSlot, clientName, sendingScope)
+    }
 }
 
 class ClientWorkflowTests : StringSpec({

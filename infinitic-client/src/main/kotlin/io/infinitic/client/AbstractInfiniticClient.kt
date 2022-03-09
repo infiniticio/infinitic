@@ -27,6 +27,7 @@ package io.infinitic.client
 
 import io.infinitic.client.dispatcher.ClientDispatcher
 import io.infinitic.client.dispatcher.ClientDispatcherImpl
+import io.infinitic.common.clients.ClientStarter
 import io.infinitic.common.clients.Deferred
 import io.infinitic.common.clients.InfiniticClient
 import io.infinitic.common.clients.messages.ClientMessage
@@ -40,26 +41,24 @@ import io.infinitic.common.proxies.ProxyHandler
 import io.infinitic.common.tasks.data.TaskId
 import io.infinitic.common.tasks.data.TaskMeta
 import io.infinitic.common.tasks.data.TaskTag
-import io.infinitic.common.tasks.engines.SendToTaskEngine
-import io.infinitic.common.tasks.tags.SendToTaskTag
 import io.infinitic.common.workflows.data.methodRuns.MethodRunId
 import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.data.workflows.WorkflowMeta
 import io.infinitic.common.workflows.data.workflows.WorkflowTag
-import io.infinitic.common.workflows.engine.SendToWorkflowEngine
-import io.infinitic.common.workflows.tags.SendToWorkflowTag
 import io.infinitic.exceptions.clients.InvalidStubException
 import io.infinitic.tasks.TaskOptions
 import io.infinitic.workflows.WorkflowOptions
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.job
 import kotlinx.coroutines.runBlocking
 import mu.KotlinLogging
 import java.lang.reflect.Proxy
 import java.util.concurrent.CompletableFuture
+import java.util.concurrent.Executors
 
 @Suppress("MemberVisibilityCanBePrivate", "unused")
 abstract class AbstractInfiniticClient : InfiniticClient {
@@ -69,20 +68,37 @@ abstract class AbstractInfiniticClient : InfiniticClient {
     override val name by lazy { clientName.toString() }
 
     protected abstract val clientName: ClientName
-    protected abstract val sendToTaskTagEngine: SendToTaskTag
-    protected abstract val sendToTaskEngine: SendToTaskEngine
-    protected abstract val sendToWorkflowTagEngine: SendToWorkflowTag
-    protected abstract val sendToWorkflowEngine: SendToWorkflowEngine
+
+    abstract val clientStarter: ClientStarter
+
+    private val sendToTaskTagEngine by lazy { clientStarter.sendToTaskTag }
+    private val sendToTaskEngine by lazy { clientStarter.sendToTaskEngine }
+    private val sendToWorkflowTagEngine by lazy { clientStarter.sendToWorkflowTag }
+    private val sendToWorkflowEngine by lazy { clientStarter.sendToWorkflowEngine }
 
     protected val logger = KotlinLogging.logger {}
 
-    protected val sendingScope = CoroutineScope(Dispatchers.IO + Job())
-    protected val runningScope = CoroutineScope(Dispatchers.IO + Job())
+    /**
+     * We use a thread pool that creates new threads as needed, to improve performance when sending messages
+     */
+    private val sendingThreadPool = Executors.newCachedThreadPool()
+
+    /**
+     * Coroutine scope used to send messages
+     */
+    protected val sendingScope = CoroutineScope(sendingThreadPool.asCoroutineDispatcher() + Job())
+
+    /**
+     * Coroutine scope used to listen messages coming back to client
+     *
+     * We use a different scope for listening than for sending,
+     * to be able to wait for all messages to be sent before closing the client
+     */
+    protected val listeningScope = CoroutineScope(Dispatchers.IO + Job())
 
     protected val dispatcher: ClientDispatcher by lazy {
         ClientDispatcherImpl(
             sendingScope,
-            runningScope,
             clientName,
             sendToTaskEngine,
             sendToWorkflowEngine,
@@ -103,9 +119,10 @@ abstract class AbstractInfiniticClient : InfiniticClient {
         // first make sure that all messages are sent
         join()
 
-        // only then, close everything
+        // then close everything
+        listeningScope.cancel()
         sendingScope.cancel()
-        runningScope.cancel()
+        sendingThreadPool.shutdown()
     }
 
     /**

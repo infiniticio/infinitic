@@ -26,22 +26,15 @@
 package io.infinitic.common.workers
 
 import io.infinitic.common.clients.ClientFactory
-import io.infinitic.common.clients.InfiniticClient
 import io.infinitic.common.tasks.data.TaskName
-import io.infinitic.common.tasks.engines.SendToTaskEngine
 import io.infinitic.common.tasks.engines.storage.TaskStateStorage
-import io.infinitic.common.tasks.tags.SendToTaskTag
 import io.infinitic.common.tasks.tags.storage.TaskTagStorage
 import io.infinitic.common.workflows.data.workflows.WorkflowName
-import io.infinitic.common.workflows.engine.SendToWorkflowEngine
 import io.infinitic.common.workflows.engine.storage.WorkflowStateStorage
-import io.infinitic.common.workflows.tags.SendToWorkflowTag
 import io.infinitic.common.workflows.tags.storage.WorkflowTagStorage
 import kotlinx.coroutines.CoroutineScope
 
 interface WorkerStarter {
-    fun CoroutineScope.startClientResponse(client: InfiniticClient)
-
     fun CoroutineScope.startWorkflowTag(workflowName: WorkflowName, workflowTagStorage: WorkflowTagStorage, concurrency: Int)
 
     fun CoroutineScope.startWorkflowEngine(workflowName: WorkflowName, workflowStateStorage: WorkflowStateStorage, concurrency: Int)
@@ -61,12 +54,4 @@ interface WorkerStarter {
     fun CoroutineScope.startWorkflowTaskDelay(workflowName: WorkflowName, concurrency: Int)
 
     fun CoroutineScope.startWorkflowTaskExecutor(workflowName: WorkflowName, concurrency: Int, workerRegister: WorkerRegister, clientFactory: ClientFactory)
-
-    val sendToTaskTag: SendToTaskTag
-
-    val sendToTaskEngine: SendToTaskEngine
-
-    val sendToWorkflowTag: SendToWorkflowTag
-
-    val sendToWorkflowEngine: SendToWorkflowEngine
 }
