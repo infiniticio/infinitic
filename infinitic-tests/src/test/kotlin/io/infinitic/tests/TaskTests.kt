@@ -50,8 +50,8 @@ internal class TaskTests : StringSpec({
     // each test should not be longer than 5s
     timeout = 5000
 
-    val client = autoClose(InfiniticClientFactory.fromConfigResource("/pulsar.yml"))
-    val worker = autoClose(InfiniticWorkerFactory.fromConfigResource("/pulsar.yml"))
+    val client = InfiniticClientFactory.fromConfigResource("/pulsar.yml")
+    val worker = InfiniticWorkerFactory.fromConfigResource("/pulsar.yml")
 
     val taskTest = client.newTask(TaskTest::class.java)
     val taskTestWithTags = client.newTask(TaskTest::class.java, tags = setOf("foo", "bar"))

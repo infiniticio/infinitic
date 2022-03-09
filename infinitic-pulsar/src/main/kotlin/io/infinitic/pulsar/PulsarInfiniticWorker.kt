@@ -140,7 +140,7 @@ class PulsarInfiniticWorker private constructor(
     /**
      * Start worker asynchronously
      */
-    override fun startAsync(): CompletableFuture<Unit> = scope.future {
+    override fun startAsync(): CompletableFuture<Unit> {
         try {
             // check that tenant exists or create it
             pulsarAdmin.tenants().checkOrCreateTenant()
@@ -159,7 +159,7 @@ class PulsarInfiniticWorker private constructor(
             exitProcess(1)
         }
 
-        start()
+        return scope.future { start() }
     }
 
     /**

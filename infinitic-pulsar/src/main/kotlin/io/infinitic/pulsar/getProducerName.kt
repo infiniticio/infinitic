@@ -50,7 +50,7 @@ internal fun getProducerName(
             .create()
     } catch (e: PulsarClientException.ProducerBusyException) {
         pulsarClient.close()
-        System.err.print("Another worker with name \"$name\" is already connected. Make sure to use a unique name.")
+        System.err.print("Another producer with name \"$name\" is already connected. Make sure to use a unique name.")
         exitProcess(1)
     }
     producer.close()
