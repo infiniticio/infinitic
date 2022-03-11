@@ -37,7 +37,6 @@ interface TaskContext {
     val name: String
     val workflowId: String?
     val workflowName: String?
-    val attemptId: String
     val retrySequence: Int
     val retryIndex: Int
     val lastError: WorkerError?

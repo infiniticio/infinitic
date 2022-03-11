@@ -28,7 +28,6 @@ package io.infinitic.tasks.tag
 import io.infinitic.common.clients.SendToClient
 import io.infinitic.common.clients.messages.TaskIdsByTag
 import io.infinitic.common.data.ClientName
-import io.infinitic.common.tasks.engines.SendToTaskEngine
 import io.infinitic.common.tasks.engines.messages.CancelTask
 import io.infinitic.common.tasks.engines.messages.RetryTask
 import io.infinitic.common.tasks.tags.messages.AddTagToTask
@@ -47,7 +46,6 @@ import mu.KotlinLogging
 class TaskTagEngine(
     private val clientName: ClientName,
     storage: TaskTagStorage,
-    private val sendToTaskEngine: SendToTaskEngine,
     private val sendToClient: SendToClient
 ) {
     private lateinit var scope: CoroutineScope
@@ -101,7 +99,7 @@ class TaskTagEngine(
                     taskId = it,
                     emitterName = clientName
                 )
-                scope.launch { sendToTaskEngine(retryTask) }
+                scope.launch { TODO() }
             }
         }
     }
@@ -121,7 +119,7 @@ class TaskTagEngine(
                     taskId = it,
                     emitterName = clientName
                 )
-                scope.launch { sendToTaskEngine(cancelTask) }
+                scope.launch { TODO() }
             }
         }
     }

@@ -32,5 +32,6 @@ import kotlinx.serialization.Serializable
 data class TaskReturnValue(
     val taskId: TaskId,
     val taskName: TaskName,
+    val taskMeta: TaskMeta,
     val returnValue: ReturnValue
 )

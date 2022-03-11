@@ -34,10 +34,9 @@ import io.infinitic.common.data.ClientName
 import io.infinitic.common.data.ReturnValue
 import io.infinitic.common.tasks.data.TaskId
 import io.infinitic.common.tasks.data.TaskMeta
-import io.infinitic.common.tasks.engines.SendToTaskEngine
-import io.infinitic.common.tasks.engines.messages.DispatchTask
-import io.infinitic.common.tasks.engines.messages.TaskEngineMessage
-import io.infinitic.common.tasks.engines.messages.WaitTask
+import io.infinitic.common.tasks.executors.SendToTaskExecutor
+import io.infinitic.common.tasks.executors.messages.ExecuteTask
+import io.infinitic.common.tasks.executors.messages.TaskExecutorMessage
 import io.infinitic.common.tasks.tags.SendToTaskTag
 import io.infinitic.common.tasks.tags.messages.GetTaskIdsByTag
 import io.infinitic.common.tasks.tags.messages.TaskTagMessage
@@ -112,16 +111,16 @@ fun mockSendToWorkflowTagEngine(
     return sendToWorkflowTagEngine
 }
 
-fun mockSendToTaskEngine(
+fun mockSendToTaskExecutor(
     client: InfiniticClient,
-    message: CapturingSlot<TaskEngineMessage>,
+    message: CapturingSlot<TaskExecutorMessage>,
     clientName: ClientName,
     sendingScope: CoroutineScope
-): SendToTaskEngine {
-    val sendToTaskEngine = mockk<SendToTaskEngine>()
-    every { sendToTaskEngine(capture(message)) } answers {
+): SendToTaskExecutor {
+    val sendToTaskExecutor = mockk<SendToTaskExecutor>()
+    every { sendToTaskExecutor(capture(message)) } answers {
         val msg = message.captured
-        if ((msg is DispatchTask && msg.clientWaiting) || (msg is WaitTask)) {
+        if (msg is ExecuteTask && msg.clientWaiting) {
             val taskCompleted = TaskCompleted(
                 recipientName = clientName,
                 emitterName = ClientName("mockk"),
@@ -136,7 +135,7 @@ fun mockSendToTaskEngine(
         }
     }
 
-    return sendToTaskEngine
+    return sendToTaskExecutor
 }
 
 fun mockSendToWorkflowEngine(

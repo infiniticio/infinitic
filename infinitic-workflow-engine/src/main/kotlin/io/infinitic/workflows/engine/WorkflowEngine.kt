@@ -31,7 +31,7 @@ import io.infinitic.common.data.ClientName
 import io.infinitic.common.data.ReturnValue
 import io.infinitic.common.errors.UnknownWorkflowError
 import io.infinitic.common.exceptions.thisShouldNotHappen
-import io.infinitic.common.tasks.engines.SendToTaskEngine
+import io.infinitic.common.tasks.executors.SendToTaskExecutor
 import io.infinitic.common.tasks.tags.SendToTaskTag
 import io.infinitic.common.workflows.data.commands.CommandId
 import io.infinitic.common.workflows.data.commands.CommandStatus
@@ -81,8 +81,8 @@ class WorkflowEngine(
     storage: WorkflowStateStorage,
     sendToClient: SendToClient,
     sendToTaskTag: SendToTaskTag,
-    sendToTaskEngine: SendToTaskEngine,
-    sendToWorkflowTaskEngine: SendToTaskEngine,
+    sendToTaskExecutor: SendToTaskExecutor,
+    sendToWorkflowTaskExecutor: SendToTaskExecutor,
     sendToWorkflowTag: SendToWorkflowTag,
     sendToWorkflowEngine: SendToWorkflowEngine,
     sendToWorkflowEngineAfter: SendToWorkflowEngineAfter
@@ -99,8 +99,8 @@ class WorkflowEngine(
         clientName,
         sendToClient,
         sendToTaskTag,
-        sendToTaskEngine,
-        sendToWorkflowTaskEngine,
+        sendToTaskExecutor,
+        sendToWorkflowTaskExecutor,
         sendToWorkflowTag,
         sendToWorkflowEngine,
         sendToWorkflowEngineAfter

@@ -29,7 +29,7 @@ dependencies {
     implementation(project(":infinitic-common"))
     implementation(project(":infinitic-cache"))
     implementation(project(":infinitic-storage"))
-    implementation(project(":infinitic-task-engine"))
+    implementation(project(":infinitic-task-executor"))
 }
 
 apply("../publish.gradle.kts")

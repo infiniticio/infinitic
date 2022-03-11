@@ -54,7 +54,7 @@ class DeferredMethod<R> (
     }
 
     // this method retries workflowTask (unique for a workflow instance)
-    override fun retryAsync() = dispatcher.retryWorkflowAsync(workflowName, workflowId, workflowTag)
+    override fun retryAsync() = dispatcher.retryWorkflowTaskAsync(workflowName, workflowId, workflowTag)
 
     @Suppress("UNCHECKED_CAST")
     override fun await(): R = when {

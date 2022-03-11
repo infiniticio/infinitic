@@ -26,22 +26,22 @@
 package io.infinitic.common.proxies
 
 import io.infinitic.common.exceptions.thisShouldNotHappen
-import io.infinitic.common.workflows.data.workflows.WorkflowId
-import io.infinitic.common.workflows.data.workflows.WorkflowName
-import io.infinitic.common.workflows.data.workflows.WorkflowTag
+import io.infinitic.common.tasks.data.TaskId
+import io.infinitic.common.tasks.data.TaskName
+import io.infinitic.common.tasks.data.TaskTag
 
-class GetWorkflowProxyHandler<K : Any>(
+class ExistingTaskProxyHandler<K : Any>(
     override val klass: Class<K>,
-    val workflowId: WorkflowId?,
-    val workflowTag: WorkflowTag?,
+    val taskId: TaskId?,
+    val taskTag: TaskTag?,
     override val dispatcherFn: () -> ProxyDispatcher
 ) : ProxyHandler<K>(klass, dispatcherFn) {
 
     init {
-        require((workflowId == null && workflowTag != null) || (workflowId != null && workflowTag == null)) {
+        require((taskId == null && taskTag != null) || (taskId != null && taskTag == null)) {
             thisShouldNotHappen()
         }
     }
 
-    val workflowName = WorkflowName(name)
+    val taskName = TaskName(name)
 }

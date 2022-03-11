@@ -32,7 +32,9 @@ import io.infinitic.common.data.MillisInstant
 import io.infinitic.common.data.minus
 import io.infinitic.common.exceptions.thisShouldNotHappen
 import io.infinitic.common.tasks.data.TaskId
-import io.infinitic.common.tasks.engines.messages.DispatchTask
+import io.infinitic.common.tasks.data.TaskRetryIndex
+import io.infinitic.common.tasks.data.TaskRetrySequence
+import io.infinitic.common.tasks.executors.messages.ExecuteTask
 import io.infinitic.common.tasks.tags.messages.AddTagToTask
 import io.infinitic.common.workflows.data.channels.ChannelSignalId
 import io.infinitic.common.workflows.data.channels.ReceivingChannel
@@ -261,7 +263,7 @@ private fun CoroutineScope.dispatchTask(
     val command: DispatchTaskCommand = newCommand.command
 
     // send task to task engine
-    val dispatchTask = DispatchTask(
+    val dispatchTask = ExecuteTask(
         taskName = command.taskName,
         taskId = TaskId.from(newCommand.commandId),
         taskOptions = command.taskOptions,
@@ -272,11 +274,14 @@ private fun CoroutineScope.dispatchTask(
         workflowId = state.workflowId,
         workflowName = state.workflowName,
         methodRunId = state.runningMethodRunId,
+        lastError = null,
+        taskRetryIndex = TaskRetryIndex(0),
+        taskRetrySequence = TaskRetrySequence(0),
         taskTags = command.taskTags,
         taskMeta = command.taskMeta,
         emitterName = ClientName("workflow engine")
     )
-    launch { output.sendToTaskEngine(dispatchTask) }
+    launch { output.sendToTaskExecutor(dispatchTask) }
 
     // add provided tags
     dispatchTask.taskTags.forEach {

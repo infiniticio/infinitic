@@ -114,24 +114,12 @@ data class WorkerConfig(
                 it.stateCache = it.stateCache ?: stateCache
                 if (it.default) it.concurrency = task.concurrency
             }
-            task.taskEngine?.let {
-                it.stateStorage = it.stateStorage ?: stateStorage
-                checkStateStorage(it.stateStorage, "tasks.${task.name}.taskEngine.stateStorage")
-                it.stateCache = it.stateCache ?: stateCache
-                if (it.default) it.concurrency = task.concurrency
-            }
         }
 
         workflows.map { workflow ->
             workflow.workflowTag?.let {
                 it.stateStorage = it.stateStorage ?: stateStorage
                 checkStateStorage(it.stateStorage, "workflows.${workflow.name}.tagEngine.stateStorage")
-                it.stateCache = it.stateCache ?: stateCache
-                if (it.default) it.concurrency = workflow.concurrency
-            }
-            workflow.taskEngine?.let {
-                it.stateStorage = it.stateStorage ?: stateStorage
-                checkStateStorage(it.stateStorage, "workflows.${workflow.name}.taskEngine.stateStorage")
                 it.stateCache = it.stateCache ?: stateCache
                 if (it.default) it.concurrency = workflow.concurrency
             }

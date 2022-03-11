@@ -26,7 +26,6 @@
 package io.infinitic.common.clients
 
 import io.infinitic.common.clients.messages.ClientMessage
-import io.infinitic.tasks.TaskOptions
 import io.infinitic.workflows.Consumer0
 import io.infinitic.workflows.Consumer1
 import io.infinitic.workflows.Consumer2
@@ -61,31 +60,6 @@ interface InfiniticClient : Closeable {
     suspend fun handle(message: ClientMessage)
 
     /**
-     *  Create a stub for a new task
-     */
-    fun <T : Any> newTask(
-        klass: Class<out T>,
-        tags: Set<String>? = null,
-        options: TaskOptions? = null,
-        meta: Map<String, ByteArray>? = null
-    ): T
-
-    fun <T : Any> newTask(
-        klass: Class<out T>,
-        tags: Set<String>? = null,
-        options: TaskOptions? = null
-    ): T = newTask(klass, tags, options, null)
-
-    fun <T : Any> newTask(
-        klass: Class<out T>,
-        tags: Set<String>? = null,
-    ): T = newTask(klass, tags, null, null)
-
-    fun <T : Any> newTask(
-        klass: Class<out T>,
-    ): T = newTask(klass, null, null, null)
-
-    /**
      *  Create a stub for a new workflow
      */
     fun <T : Any> newWorkflow(
@@ -109,22 +83,6 @@ interface InfiniticClient : Closeable {
     fun <T : Any> newWorkflow(
         klass: Class<out T>
     ): T = newWorkflow(klass, null, null, null)
-
-    /**
-     *  Create a stub for an existing task targeted by id
-     */
-    fun <T : Any> getTaskById(
-        klass: Class<out T>,
-        id: String
-    ): T
-
-    /**
-     *  Create a stub for existing task targeted by tag
-     */
-    fun <T : Any> getTaskByTag(
-        klass: Class<out T>,
-        tag: String
-    ): T
 
     /**
      *  Create a stub for an existing workflow targeted by id
@@ -603,7 +561,7 @@ interface InfiniticClient : Closeable {
     ): Deferred<Void> = dispatchVoidAsync(method, p1, p2, p3, p4, p5, p6, p7, p8, p9).join()
 
     /**
-     * Await a task or a workflow targeted by its id
+     * Await a workflow targeted by its id
      */
     @Suppress("UNCHECKED_CAST")
     fun <T : Any> await(
@@ -620,7 +578,7 @@ interface InfiniticClient : Closeable {
     ): Any?
 
     /**
-     * Cancel a task or a workflow
+     * Cancel a workflow
      */
     @Suppress("UNCHECKED_CAST")
     fun <T : Any> cancelAsync(
@@ -628,7 +586,7 @@ interface InfiniticClient : Closeable {
     ): CompletableFuture<Unit>
 
     /**
-     * Cancel a task or a workflow
+     * Cancel a workflow
      */
     @Suppress("UNCHECKED_CAST")
     fun <T : Any> cancel(
@@ -636,37 +594,19 @@ interface InfiniticClient : Closeable {
     ): Unit = cancelAsync(stub).join()
 
     /**
-     * Complete a task or a workflow
+     * Retry the workflow task
      */
     @Suppress("UNCHECKED_CAST")
-    fun <T : Any> completeAsync(
-        stub: T,
-        value: Any?
-    ): CompletableFuture<Unit>
-
-    /**
-     * Complete a task or a workflow
-     */
-    @Suppress("UNCHECKED_CAST")
-    fun <T : Any> complete(
-        stub: T,
-        value: Any?
-    ): Unit = completeAsync(stub, value).join()
-
-    /**
-     * Retry a task or a workflow
-     */
-    @Suppress("UNCHECKED_CAST")
-    fun <T : Any> retryAsync(
+    fun <T : Any> retryWorkflowTaskAsync(
         stub: T,
     ): CompletableFuture<Unit>
 
     /**
-     * Retry a task or a workflow
+     * Retry the workflow task
      */
-    fun <T : Any> retry(
+    fun <T : Any> retryWorkflowTask(
         stub: T,
-    ): Unit = retryAsync(stub).join()
+    ): Unit = retryWorkflowTaskAsync(stub).join()
 
     /**
      * get ids of a stub, associated to a specific tag

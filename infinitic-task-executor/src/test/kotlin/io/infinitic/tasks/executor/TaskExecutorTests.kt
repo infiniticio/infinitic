@@ -28,23 +28,34 @@
 package io.infinitic.tasks.executor
 
 import io.infinitic.common.clients.InfiniticClient
+import io.infinitic.common.clients.SendToClient
+import io.infinitic.common.clients.messages.ClientMessage
 import io.infinitic.common.data.ClientName
 import io.infinitic.common.data.MillisDuration
 import io.infinitic.common.data.ReturnValue
 import io.infinitic.common.data.methods.MethodName
 import io.infinitic.common.data.methods.MethodParameterTypes
 import io.infinitic.common.data.methods.MethodParameters
-import io.infinitic.common.tasks.data.TaskAttemptId
+import io.infinitic.common.errors.WorkerError
 import io.infinitic.common.tasks.data.TaskId
 import io.infinitic.common.tasks.data.TaskMeta
 import io.infinitic.common.tasks.data.TaskName
 import io.infinitic.common.tasks.data.TaskRetryIndex
 import io.infinitic.common.tasks.data.TaskRetrySequence
-import io.infinitic.common.tasks.engines.SendToTaskEngine
-import io.infinitic.common.tasks.engines.messages.TaskAttemptCompleted
-import io.infinitic.common.tasks.engines.messages.TaskAttemptFailed
-import io.infinitic.common.tasks.engines.messages.TaskEngineMessage
+import io.infinitic.common.tasks.data.TaskReturnValue
+import io.infinitic.common.tasks.data.TaskTag
+import io.infinitic.common.tasks.data.plus
+import io.infinitic.common.tasks.executors.SendToTaskExecutorAfter
 import io.infinitic.common.tasks.executors.messages.ExecuteTask
+import io.infinitic.common.tasks.executors.messages.TaskExecutorMessage
+import io.infinitic.common.tasks.tags.SendToTaskTag
+import io.infinitic.common.tasks.tags.messages.RemoveTagFromTask
+import io.infinitic.common.tasks.tags.messages.TaskTagMessage
+import io.infinitic.common.workflows.data.methodRuns.MethodRunId
+import io.infinitic.common.workflows.data.workflows.WorkflowId
+import io.infinitic.common.workflows.data.workflows.WorkflowName
+import io.infinitic.common.workflows.engine.SendToWorkflowEngine
+import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
 import io.infinitic.exceptions.tasks.ClassNotFoundException
 import io.infinitic.exceptions.tasks.MaxRunDurationException
 import io.infinitic.exceptions.tasks.NoMethodFoundWithParameterCountException
@@ -52,249 +63,344 @@ import io.infinitic.exceptions.tasks.NoMethodFoundWithParameterTypesException
 import io.infinitic.exceptions.tasks.TooManyMethodsFoundWithParameterCountException
 import io.infinitic.tasks.TaskOptions
 import io.infinitic.tasks.executor.register.WorkerRegisterImpl
+import io.infinitic.tasks.executor.samples.SampleTaskImpl
 import io.infinitic.tasks.executor.samples.SampleTaskWithBuggyRetry
 import io.infinitic.tasks.executor.samples.SampleTaskWithContext
 import io.infinitic.tasks.executor.samples.SampleTaskWithRetry
 import io.infinitic.tasks.executor.samples.SampleTaskWithTimeout
-import io.infinitic.tasks.executor.samples.TestingSampleTask
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
-import io.kotest.matchers.types.shouldBeInstanceOf
+import io.mockk.CapturingSlot
 import io.mockk.Runs
 import io.mockk.coEvery
 import io.mockk.just
 import io.mockk.mockk
+import io.mockk.slot
 import kotlinx.coroutines.coroutineScope
 import java.time.Duration
+import java.util.concurrent.CopyOnWriteArrayList
+import kotlin.reflect.KClass
+import io.infinitic.common.clients.messages.TaskCompleted as TaskCompletedClient
+import io.infinitic.common.clients.messages.TaskFailed as TaskFailedClient
+import io.infinitic.common.workflows.engine.messages.TaskCompleted as TaskCompletedWorkflow
+import io.infinitic.common.workflows.engine.messages.TaskFailed as TaskFailedWorkflow
 
 private val clientName = ClientName("clientTaskExecutorTests")
 
-fun mockSendToTaskEngine(slots: MutableList<TaskEngineMessage>): SendToTaskEngine {
-    val sendToTaskEngine = mockk<SendToTaskEngine>()
-    coEvery { sendToTaskEngine(capture(slots)) } just Runs
-
-    return sendToTaskEngine
-}
-
 class TaskExecutorTests : StringSpec({
-    val slots = mutableListOf<TaskEngineMessage>()
-    val taskExecutorRegister = WorkerRegisterImpl()
+    val after = slot<MillisDuration>()
+    val taskExecutorMessage = slot<TaskExecutorMessage>()
+    val taskTagMessages = CopyOnWriteArrayList<TaskTagMessage>() // multithreading update
+    val clientMessage = slot<ClientMessage>()
+    val workflowEngineMessage = slot<WorkflowEngineMessage>()
+    val workerRegister = WorkerRegisterImpl()
     val mockClientFactory = mockk<()-> InfiniticClient>()
-    val taskExecutor =
-        TaskExecutor(clientName, taskExecutorRegister, mockSendToTaskEngine(slots), mockClientFactory)
+    val taskExecutor = TaskExecutor(
+        clientName,
+        workerRegister,
+        mockSendToTaskExecutor(taskExecutorMessage, after),
+        mockSendToTaskTag(taskTagMessages),
+        mockSendToWorkflowEngine(workflowEngineMessage),
+        mockSendToClient(clientMessage),
+        mockClientFactory
+    )
 
     // ensure slots are emptied between each test
     beforeTest {
-        slots.clear()
+        after.clear()
+        taskExecutorMessage.clear()
+        taskTagMessages.clear()
+        workflowEngineMessage.clear()
+        clientMessage.clear()
+    }
+
+    "Task executed without waiting client neither workflow should not send message" {
+        taskExecutor.registerTask("task") { SampleTaskImpl() }
+        val input = arrayOf(3, 3)
+        val types = listOf(Int::class.java.name, Int::class.java.name)
+        // with
+        val msg = getExecuteTask("handle", input, types).copy(clientWaiting = false, workflowId = null)
+        // when
+        coroutineScope { taskExecutor.handle(msg) }
+        // then
+        taskExecutorMessage.isCaptured shouldBe false
+        clientMessage.isCaptured shouldBe false
+        workflowEngineMessage.isCaptured shouldBe false
+        taskTagMessages.size shouldBe 2
+        taskTagMessages[0] shouldBe getRemoveTag(msg, "foo")
+        taskTagMessages[1] shouldBe getRemoveTag(msg, "bar")
+    }
+
+    "Task executed with waiting client should send message to it" {
+        taskExecutor.registerTask("task") { SampleTaskImpl() }
+        val input = arrayOf(3, 3)
+        val types = listOf(Int::class.java.name, Int::class.java.name)
+        // with
+        val msg = getExecuteTask("handle", input, types).copy(workflowId = null)
+        // when
+        coroutineScope { taskExecutor.handle(msg) }
+        // then
+        taskExecutorMessage.isCaptured shouldBe false
+        clientMessage.captured shouldBe getTaskCompletedClient(msg, 9)
+        workflowEngineMessage.isCaptured shouldBe false
+
+        taskTagMessages.size shouldBe 2
+        taskTagMessages[0] shouldBe getRemoveTag(msg, "foo")
+        taskTagMessages[1] shouldBe getRemoveTag(msg, "bar")
+    }
+
+    "Task executed with workflow should send message to it" {
+        taskExecutor.registerTask("task") { SampleTaskImpl() }
+        val input = arrayOf(3, 3)
+        val types = listOf(Int::class.java.name, Int::class.java.name)
+        // with
+        val msg = getExecuteTask("handle", input, types).copy(clientWaiting = false)
+        // when
+        coroutineScope { taskExecutor.handle(msg) }
+        // then
+        taskExecutorMessage.isCaptured shouldBe false
+        clientMessage.isCaptured shouldBe false
+        workflowEngineMessage.captured shouldBe getTaskCompletedWorkflow(msg, 9)
+        taskTagMessages.size shouldBe 2
+        taskTagMessages[0] shouldBe getRemoveTag(msg, "foo")
+        taskTagMessages[1] shouldBe getRemoveTag(msg, "bar")
+    }
+
+    "Task executed with waiting client and workflow should send message to them" {
+        taskExecutor.registerTask("task") { SampleTaskImpl() }
+        val input = arrayOf(3, 3)
+        val types = listOf(Int::class.java.name, Int::class.java.name)
+        // with
+        val msg = getExecuteTask("handle", input, types)
+        // when
+        coroutineScope { taskExecutor.handle(msg) }
+        // then
+        taskExecutorMessage.isCaptured shouldBe false
+        clientMessage.captured shouldBe getTaskCompletedClient(msg, 9)
+        workflowEngineMessage.captured shouldBe getTaskCompletedWorkflow(msg, 9)
+        taskTagMessages.size shouldBe 2
+        taskTagMessages[0] shouldBe getRemoveTag(msg, "foo")
+        taskTagMessages[1] shouldBe getRemoveTag(msg, "bar")
     }
 
     "Should be able to run an explicit method with 2 parameters" {
+        taskExecutor.registerTask("task") { SampleTaskImpl() }
         val input = arrayOf(3, "3")
         val types = listOf(Int::class.java.name, String::class.java.name)
         // with
-        val msg = getExecuteTaskAttempt("foo", "other", input, types)
+        val msg = getExecuteTask("other", input, types)
         // when
-        taskExecutor.registerTask("foo") { TestingSampleTask() }
         coroutineScope { taskExecutor.handle(msg) }
         // then
-        slots.size shouldBe 1
-        slots[0] shouldBe TaskAttemptCompleted(
-            taskId = msg.taskId,
-            taskName = msg.taskName,
-            taskAttemptId = msg.taskAttemptId,
-            taskRetrySequence = msg.taskRetrySequence,
-            taskRetryIndex = msg.taskRetryIndex,
-            taskReturnValue = ReturnValue.from("9"),
-            taskMeta = msg.taskMeta,
-            emitterName = clientName
-        )
+        taskExecutorMessage.isCaptured shouldBe false
+        clientMessage.captured shouldBe getTaskCompletedClient(msg, "9")
+        workflowEngineMessage.captured shouldBe getTaskCompletedWorkflow(msg, "9")
+        taskTagMessages.size shouldBe 2
+        taskTagMessages[0] shouldBe getRemoveTag(msg, "foo")
+        taskTagMessages[1] shouldBe getRemoveTag(msg, "bar")
     }
 
     "Should be able to run an explicit method with 2 parameters without parameterTypes" {
+        taskExecutor.registerTask("task") { SampleTaskImpl() }
         val input = arrayOf(4, "3")
-        // with
-        val msg = getExecuteTaskAttempt("foo", "other", input, null)
+        val types = null
+        val msg = getExecuteTask("other", input, types)
         // when
-        taskExecutor.registerTask("foo") { TestingSampleTask() }
         coroutineScope { taskExecutor.handle(msg) }
         // then
-        slots.size shouldBe 1
-        slots[0] shouldBe TaskAttemptCompleted(
-            taskId = msg.taskId,
-            taskName = msg.taskName,
-            taskAttemptId = msg.taskAttemptId,
-            taskRetrySequence = msg.taskRetrySequence,
-            taskRetryIndex = msg.taskRetryIndex,
-            taskReturnValue = ReturnValue.from("12"),
-            taskMeta = msg.taskMeta,
-            emitterName = clientName
-        )
+        taskExecutorMessage.isCaptured shouldBe false
+        clientMessage.captured shouldBe getTaskCompletedClient(msg, "12")
+        workflowEngineMessage.captured shouldBe getTaskCompletedWorkflow(msg, "12")
+        taskTagMessages.size shouldBe 2
+        taskTagMessages[0] shouldBe getRemoveTag(msg, "foo")
+        taskTagMessages[1] shouldBe getRemoveTag(msg, "bar")
     }
 
-    "Should throw ClassNotFoundDuringTaskInstantiation when trying to process an unknown task" {
+    "Should throw ClassNotFoundException when trying to process an unknown task" {
+        taskExecutor.unregisterTask("task")
         val input = arrayOf(2, "3")
         val types = listOf(Int::class.java.name, String::class.java.name)
-        // with
-        val msg = getExecuteTaskAttempt("foo", "unknown", input, types)
+        val msg = getExecuteTask("unknown", input, types)
         // when
-        taskExecutor.unregisterTask("foo")
         coroutineScope { taskExecutor.handle(msg) }
         // then
-        slots.size shouldBe 1
-        slots[0].shouldBeInstanceOf<TaskAttemptFailed>()
-        val fail = slots[0] as TaskAttemptFailed
-        fail.taskId shouldBe msg.taskId
-        fail.taskAttemptId shouldBe msg.taskAttemptId
-        fail.taskRetrySequence shouldBe msg.taskRetrySequence
-        fail.taskRetryIndex shouldBe msg.taskRetryIndex
-        fail.taskAttemptDelayBeforeRetry shouldBe null
-        fail.workerError!!.name shouldBe ClassNotFoundException::class.java.name
+        taskExecutorMessage.isCaptured shouldBe false
+        checkClientException(clientMessage, msg, ClassNotFoundException::class)
+        checkWorkflowException(workflowEngineMessage, msg, ClassNotFoundException::class)
+        taskTagMessages.size shouldBe 2
+        taskTagMessages[0] shouldBe getRemoveTag(msg, "foo")
+        taskTagMessages[1] shouldBe getRemoveTag(msg, "bar")
     }
 
     "Should throw NoMethodFoundWithParameterTypes when trying to process an unknown method" {
+        taskExecutor.registerTask("task") { SampleTaskImpl() }
         val input = arrayOf(2, "3")
         val types = listOf(Int::class.java.name, String::class.java.name)
         // with
-        val msg = getExecuteTaskAttempt("foo", "unknown", input, types)
+        val msg = getExecuteTask("unknown", input, types)
         // when
-        taskExecutor.registerTask("foo") { TestingSampleTask() }
         coroutineScope { taskExecutor.handle(msg) }
         // then
-        slots.size shouldBe 1
-        slots[0].shouldBeInstanceOf<TaskAttemptFailed>()
-        val fail = slots[0] as TaskAttemptFailed
-        fail.taskId shouldBe msg.taskId
-        fail.taskAttemptId shouldBe msg.taskAttemptId
-        fail.taskRetrySequence shouldBe msg.taskRetrySequence
-        fail.taskRetryIndex shouldBe msg.taskRetryIndex
-        fail.taskAttemptDelayBeforeRetry shouldBe null
-        fail.workerError!!.name shouldBe NoMethodFoundWithParameterTypesException::class.java.name
+        taskExecutorMessage.isCaptured shouldBe false
+        checkClientException(clientMessage, msg, NoMethodFoundWithParameterTypesException::class)
+        checkWorkflowException(workflowEngineMessage, msg, NoMethodFoundWithParameterTypesException::class)
+        taskTagMessages.size shouldBe 2
+        taskTagMessages[0] shouldBe getRemoveTag(msg, "foo")
+        taskTagMessages[1] shouldBe getRemoveTag(msg, "bar")
     }
 
     "Should throw NoMethodFoundWithParameterCount when trying to process an unknown method without parameterTypes" {
+        taskExecutor.registerTask("task") { SampleTaskImpl() }
         val input = arrayOf(2, "3")
         // with
-        val msg = getExecuteTaskAttempt("foo", "unknown", input, null)
+        val msg = getExecuteTask("unknown", input, null)
         // when
-        taskExecutor.registerTask("foo") { TestingSampleTask() }
         coroutineScope { taskExecutor.handle(msg) }
         // then
-        slots.size shouldBe 1
-        slots[0].shouldBeInstanceOf<TaskAttemptFailed>()
-        val fail = slots[0] as TaskAttemptFailed
-        fail.taskId shouldBe msg.taskId
-        fail.taskAttemptId shouldBe msg.taskAttemptId
-        fail.taskRetrySequence shouldBe msg.taskRetrySequence
-        fail.taskRetryIndex shouldBe msg.taskRetryIndex
-        fail.taskAttemptDelayBeforeRetry shouldBe null
-        fail.workerError!!.name shouldBe NoMethodFoundWithParameterCountException::class.java.name
+        taskExecutorMessage.isCaptured shouldBe false
+        checkClientException(clientMessage, msg, NoMethodFoundWithParameterCountException::class)
+        checkWorkflowException(workflowEngineMessage, msg, NoMethodFoundWithParameterCountException::class)
+        taskTagMessages.size shouldBe 2
+        taskTagMessages[0] shouldBe getRemoveTag(msg, "foo")
+        taskTagMessages[1] shouldBe getRemoveTag(msg, "bar")
     }
 
     "Should throw TooManyMethodsFoundWithParameterCount when trying to process an unknown method without parameterTypes" {
+        taskExecutor.registerTask("task") { SampleTaskImpl() }
         val input = arrayOf(2, "3")
         // with
-        val msg = getExecuteTaskAttempt("foo", "handle", input, null)
+        val msg = getExecuteTask("handle", input, null)
         // when
-        taskExecutor.registerTask("foo") { TestingSampleTask() }
         coroutineScope { taskExecutor.handle(msg) }
         // then
-        slots.size shouldBe 1
-        slots[0].shouldBeInstanceOf<TaskAttemptFailed>()
-        val fail = slots[0] as TaskAttemptFailed
-        fail.taskId shouldBe msg.taskId
-        fail.taskAttemptId shouldBe msg.taskAttemptId
-        fail.taskRetrySequence shouldBe msg.taskRetrySequence
-        fail.taskRetryIndex shouldBe msg.taskRetryIndex
-        fail.taskAttemptDelayBeforeRetry shouldBe null
-        fail.workerError!!.name shouldBe TooManyMethodsFoundWithParameterCountException::class.java.name
+        taskExecutorMessage.isCaptured shouldBe false
+        checkClientException(clientMessage, msg, TooManyMethodsFoundWithParameterCountException::class)
+        checkWorkflowException(workflowEngineMessage, msg, TooManyMethodsFoundWithParameterCountException::class)
+        taskTagMessages.size shouldBe 2
+        taskTagMessages[0] shouldBe getRemoveTag(msg, "foo")
+        taskTagMessages[1] shouldBe getRemoveTag(msg, "bar")
     }
 
     "Should retry with correct exception" {
+        taskExecutor.registerTask("task") { SampleTaskWithRetry() }
         val input = arrayOf(2, "3")
         // with
-        val msg = getExecuteTaskAttempt("foo", "handle", input, null)
+        val msg = getExecuteTask("handle", input, null)
         // when
-        taskExecutor.registerTask("foo") { SampleTaskWithRetry() }
         coroutineScope { taskExecutor.handle(msg) }
         // then
-        slots.size shouldBe 1
-        slots[0].shouldBeInstanceOf<TaskAttemptFailed>()
-        val fail = slots[0] as TaskAttemptFailed
-        fail.taskId shouldBe msg.taskId
-        fail.taskAttemptId shouldBe msg.taskAttemptId
-        fail.taskRetrySequence shouldBe msg.taskRetrySequence
-        fail.taskRetryIndex shouldBe msg.taskRetryIndex
-        fail.taskAttemptDelayBeforeRetry shouldBe MillisDuration(3000)
-        fail.workerError!!.name shouldBe IllegalStateException::class.java.name
+        after.captured shouldBe MillisDuration(3000)
+        val executeTask = taskExecutorMessage.captured as ExecuteTask
+        executeTask shouldBe msg.copy(
+            taskRetryIndex = msg.taskRetryIndex + 1,
+            lastError = WorkerError.from(clientName, IllegalStateException()).copy(stackTraceToString = executeTask.lastError!!.stackTraceToString)
+        )
+        clientMessage.isCaptured shouldBe false
+        workflowEngineMessage.isCaptured shouldBe false
+        taskTagMessages.size shouldBe 0
     }
 
     "Should throw when getRetryDelay throw an exception" {
+        taskExecutor.registerTask("task") { SampleTaskWithBuggyRetry() }
         val input = arrayOf(2, "3")
         // with
-        val msg = getExecuteTaskAttempt("foo", "handle", input, null)
+        val msg = getExecuteTask("handle", input, null)
         // when
-        taskExecutor.registerTask("foo") { SampleTaskWithBuggyRetry() }
         coroutineScope { taskExecutor.handle(msg) }
         // then
-        slots.size shouldBe 1
-        slots[0].shouldBeInstanceOf<TaskAttemptFailed>()
-        val fail = slots[0] as TaskAttemptFailed
-        fail.taskId shouldBe msg.taskId
-        fail.taskAttemptId shouldBe msg.taskAttemptId
-        fail.taskRetrySequence shouldBe msg.taskRetrySequence
-        fail.taskRetryIndex shouldBe msg.taskRetryIndex
-        fail.taskAttemptDelayBeforeRetry shouldBe null
-        fail.workerError!!.name shouldBe IllegalArgumentException::class.java.name
+        taskExecutorMessage.isCaptured shouldBe false
+        checkClientException(clientMessage, msg, IllegalArgumentException::class)
+        checkWorkflowException(workflowEngineMessage, msg, IllegalArgumentException::class)
+        taskTagMessages.size shouldBe 2
+        taskTagMessages[0] shouldBe getRemoveTag(msg, "foo")
+        taskTagMessages[1] shouldBe getRemoveTag(msg, "bar")
     }
 
     "Should be able to access context from task" {
+        taskExecutor.registerTask("task") { SampleTaskWithContext() }
         val input = arrayOf(2, "3")
         // with
-        val msg = getExecuteTaskAttempt("foo", "handle", input, null)
+        val msg = getExecuteTask("handle", input, null)
         // when
-        taskExecutor.registerTask("foo") { SampleTaskWithContext() }
         coroutineScope { taskExecutor.handle(msg) }
         // then
-        slots.size shouldBe 1
-        slots[0] shouldBe TaskAttemptCompleted(
-            taskId = msg.taskId,
-            taskName = msg.taskName,
-            taskAttemptId = msg.taskAttemptId,
-            taskRetrySequence = msg.taskRetrySequence,
-            taskRetryIndex = msg.taskRetryIndex,
-            taskReturnValue = ReturnValue.from("72"),
-            taskMeta = msg.taskMeta,
-            emitterName = clientName
-        )
+        taskExecutorMessage.isCaptured shouldBe false
+        clientMessage.captured shouldBe getTaskCompletedClient(msg, "72")
+        workflowEngineMessage.captured shouldBe getTaskCompletedWorkflow(msg, "72")
+        taskTagMessages.size shouldBe 2
+        taskTagMessages[0] shouldBe getRemoveTag(msg, "foo")
+        taskTagMessages[1] shouldBe getRemoveTag(msg, "bar")
     }
 
     "Should throw ProcessingTimeout if processing time is too long" {
+        taskExecutor.registerTask("task") { SampleTaskWithTimeout() }
         val input = arrayOf(2, "3")
         val types = listOf(Int::class.java.name, String::class.java.name)
         // with
-        val msg = getExecuteTaskAttempt("foo", "handle", input, types)
+        val msg = getExecuteTask("handle", input, types)
         // when
-        taskExecutor.registerTask("foo") { SampleTaskWithTimeout() }
         coroutineScope { taskExecutor.handle(msg) }
         // then
-        slots.size shouldBe 1
-        slots[0].shouldBeInstanceOf<TaskAttemptFailed>()
-        val fail = slots[0] as TaskAttemptFailed
-        fail.taskId shouldBe msg.taskId
-        fail.taskAttemptId shouldBe msg.taskAttemptId
-        fail.taskRetrySequence shouldBe msg.taskRetrySequence
-        fail.taskRetryIndex shouldBe msg.taskRetryIndex
-        fail.taskAttemptDelayBeforeRetry shouldBe null
-        fail.workerError!!.name shouldBe MaxRunDurationException::class.java.name
+        taskExecutorMessage.isCaptured shouldBe false
+        checkClientException(clientMessage, msg, MaxRunDurationException::class)
+        checkWorkflowException(workflowEngineMessage, msg, MaxRunDurationException::class)
+        taskTagMessages.size shouldBe 2
+        taskTagMessages[0] shouldBe getRemoveTag(msg, "foo")
+        taskTagMessages[1] shouldBe getRemoveTag(msg, "bar")
     }
 })
 
-private fun getExecuteTaskAttempt(name: String, method: String, input: Array<out Any?>, types: List<String>?) = ExecuteTask(
-    taskName = TaskName(name),
+private fun mockSendToTaskExecutor(message: CapturingSlot<TaskExecutorMessage>, delay: CapturingSlot<MillisDuration>): SendToTaskExecutorAfter {
+    val sendToTaskExecutorAfter = mockk<SendToTaskExecutorAfter>()
+    coEvery { sendToTaskExecutorAfter(capture(message), capture(delay)) } just Runs
+
+    return sendToTaskExecutorAfter
+}
+
+private fun mockSendToTaskTag(message: CopyOnWriteArrayList<TaskTagMessage>): SendToTaskTag {
+    val sendToTaskTag = mockk<SendToTaskTag>()
+    coEvery { sendToTaskTag(capture(message)) } just Runs
+
+    return sendToTaskTag
+}
+
+private fun mockSendToClient(message: CapturingSlot<ClientMessage>): SendToClient {
+    val sendToClient = mockk<SendToClient>()
+    coEvery { sendToClient(capture(message)) } just Runs
+
+    return sendToClient
+}
+
+private fun mockSendToWorkflowEngine(message: CapturingSlot<WorkflowEngineMessage>): SendToWorkflowEngine {
+    val sendToWorkflowEngine = mockk<SendToWorkflowEngine>()
+    coEvery { sendToWorkflowEngine(capture(message)) } just Runs
+
+    return sendToWorkflowEngine
+}
+
+private fun getTaskCompletedClient(msg: ExecuteTask, returnValue: Any?) = TaskCompletedClient(
+    recipientName = msg.emitterName,
+    taskId = msg.taskId,
+    taskReturnValue = ReturnValue.from(returnValue),
+    taskMeta = msg.taskMeta,
+    emitterName = clientName
+)
+
+private fun getTaskCompletedWorkflow(msg: ExecuteTask, returnValue: Any?) = TaskCompletedWorkflow(
+    workflowName = msg.workflowName!!,
+    workflowId = msg.workflowId!!,
+    methodRunId = msg.methodRunId!!,
+    taskReturnValue = TaskReturnValue(msg.taskId, msg.taskName, msg.taskMeta, ReturnValue.from(returnValue)),
+    emitterName = clientName
+)
+
+private fun getExecuteTask(method: String, input: Array<out Any?>, types: List<String>?) = ExecuteTask(
+    clientWaiting = true,
+    taskName = TaskName("task"),
     taskId = TaskId(),
-    workflowId = null,
-    workflowName = null,
-    taskAttemptId = TaskAttemptId(),
+    workflowId = WorkflowId(),
+    workflowName = WorkflowName("workflowName"),
+    methodRunId = MethodRunId(),
     taskRetrySequence = TaskRetrySequence(12),
     taskRetryIndex = TaskRetryIndex(7),
     lastError = null,
@@ -302,7 +408,43 @@ private fun getExecuteTaskAttempt(name: String, method: String, input: Array<out
     methodParameterTypes = types?.let { MethodParameterTypes(it) },
     methodParameters = MethodParameters.from(*input),
     taskOptions = TaskOptions(maxRunDuration = Duration.ofMillis(200)),
-    taskTags = setOf(),
+    taskTags = setOf(TaskTag("foo"), TaskTag("bar")),
     taskMeta = TaskMeta(),
+    emitterName = clientName
+)
+
+private fun checkClientException(clientMessage: CapturingSlot<ClientMessage>, msg: ExecuteTask, exception: KClass<out Exception>) =
+    with(clientMessage.captured as TaskFailedClient) {
+        recipientName shouldBe msg.emitterName
+        emitterName shouldBe clientName
+        taskId shouldBe msg.taskId
+        with(cause) {
+            workerName shouldBe clientName
+            name shouldBe exception.java.name
+        }
+    }
+
+private fun checkWorkflowException(workflowMessage: CapturingSlot<WorkflowEngineMessage>, msg: ExecuteTask, exception: KClass<out Exception>) =
+    with(workflowMessage.captured as TaskFailedWorkflow) {
+        emitterName shouldBe clientName
+        workflowId shouldBe msg.workflowId
+        workflowName shouldBe msg.workflowName
+        methodRunId shouldBe msg.methodRunId
+        with(failedTaskError) {
+            taskName shouldBe msg.taskName
+            taskId shouldBe msg.taskId
+            methodName shouldBe msg.methodName
+            with(cause) {
+                workerName shouldBe clientName
+                name shouldBe exception.java.name
+            }
+        }
+        deferredError shouldBe null
+    }
+
+private fun getRemoveTag(message: ExecuteTask, tag: String) = RemoveTagFromTask(
+    taskId = message.taskId,
+    taskName = message.taskName,
+    taskTag = TaskTag(tag),
     emitterName = clientName
 )

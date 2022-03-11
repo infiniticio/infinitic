@@ -23,19 +23,9 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.tasks.executor.samples
+package io.infinitic.common.tasks.executors
 
-import io.infinitic.exceptions.tasks.MaxRunDurationException
-import io.infinitic.tasks.Task
-import java.time.Duration
+import io.infinitic.common.data.MillisDuration
+import io.infinitic.common.tasks.executors.messages.TaskExecutorMessage
 
-internal class SampleTaskWithTimeout() : Task() {
-    fun handle(i: Int, j: String): String {
-        Thread.sleep(400)
-
-        return (i * j.toInt() * context.retrySequence).toString()
-    }
-
-    override fun getDurationBeforeRetry(e: Exception): Duration? =
-        if (e is MaxRunDurationException) null else Duration.ofSeconds(3L)
-}
+typealias SendToTaskExecutorAfter = (TaskExecutorMessage, MillisDuration) -> Unit

@@ -40,8 +40,8 @@ interface TaskA : ParentInterface {
     fun await(delay: Long): Long
     fun workflowId(): String?
     fun workflowName(): String?
-    fun retryTaskA(id: String)
-    fun cancelTaskA(id: String)
+//    fun retryTaskA(id: String)
+//    fun cancelTaskA(id: String)
     fun cancelWorkflowA(id: String)
     fun failing()
     fun successAtRetry(): String
@@ -61,17 +61,17 @@ class TaskAImpl : Task(), TaskA {
 
     override fun workflowName() = context.workflowName
 
-    override fun cancelTaskA(id: String) {
-        Thread.sleep(50)
-        val t = context.client.getTaskById(TaskA::class.java, id)
-        context.client.cancel(t)
-    }
+//    override fun cancelTaskA(id: String) {
+//        Thread.sleep(50)
+//        val t = context.client.getTaskById(TaskA::class.java, id)
+//        context.client.cancel(t)
+//    }
 
-    override fun retryTaskA(id: String) {
-        Thread.sleep(50)
-        val t = context.client.getTaskById(TaskA::class.java, id)
-        context.client.retry(t)
-    }
+//    override fun retryTaskA(id: String) {
+//        Thread.sleep(50)
+//        val t = context.client.getTaskById(TaskA::class.java, id)
+//        context.client.retry(t)
+//    }
 
     override fun cancelWorkflowA(id: String) {
         Thread.sleep(50)

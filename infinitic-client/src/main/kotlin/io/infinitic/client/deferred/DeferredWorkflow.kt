@@ -43,7 +43,7 @@ class DeferredWorkflow<R> (
         dispatcher.cancelWorkflowAsync(workflowName, workflowId, null, null)
 
     override fun retryAsync() =
-        dispatcher.retryWorkflowAsync(workflowName, workflowId, null)
+        dispatcher.retryWorkflowTaskAsync(workflowName, workflowId, null)
 
     @Suppress("UNCHECKED_CAST")
     override fun await(): R =

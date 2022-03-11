@@ -32,7 +32,9 @@ import io.infinitic.common.data.methods.MethodParameters
 import io.infinitic.common.tasks.data.TaskId
 import io.infinitic.common.tasks.data.TaskMeta
 import io.infinitic.common.tasks.data.TaskName
-import io.infinitic.common.tasks.engines.messages.DispatchTask
+import io.infinitic.common.tasks.data.TaskRetryIndex
+import io.infinitic.common.tasks.data.TaskRetrySequence
+import io.infinitic.common.tasks.executors.messages.ExecuteTask
 import io.infinitic.common.workflows.data.methodRuns.MethodRun
 import io.infinitic.common.workflows.data.properties.PropertyHash
 import io.infinitic.common.workflows.data.properties.PropertyValue
@@ -57,7 +59,7 @@ data class WorkflowTaskParameters(
     val methodRun: MethodRun,
     val emitterName: ClientName
 ) {
-    fun toDispatchTaskMessage() = DispatchTask(
+    fun toExecuteTaskMessage() = ExecuteTask(
         taskName = TaskName(WorkflowTask::class.java.name),
         taskId = taskId,
         taskOptions = TaskOptions(),
@@ -68,6 +70,9 @@ data class WorkflowTaskParameters(
         workflowId = workflowId,
         workflowName = workflowName,
         methodRunId = methodRun.methodRunId,
+        lastError = null,
+        taskRetryIndex = TaskRetryIndex(0),
+        taskRetrySequence = TaskRetrySequence(0),
         taskTags = setOf(),
         taskMeta = TaskMeta(),
         emitterName = emitterName

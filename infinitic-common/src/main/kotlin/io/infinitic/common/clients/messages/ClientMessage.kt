@@ -65,7 +65,7 @@ data class TaskCompleted(
 data class TaskFailed(
     override val recipientName: ClientName,
     override val taskId: TaskId,
-    val error: WorkerError,
+    val cause: WorkerError,
     override val emitterName: ClientName,
 ) : ClientMessage(), TaskMessage
 

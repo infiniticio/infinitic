@@ -57,7 +57,7 @@ class InMemoryInfiniticWorker(
         if (this::client.isInitialized) {
             with(scope) { startAsync() }
         } else {
-            logger.warn { "Should not start ${this::class} outside of an in-memory client: closing" }
+            logger.info { "Should not start ${this::class} outside of an in-memory client: closing" }
             CompletableFuture.completedFuture(null)
         }
 

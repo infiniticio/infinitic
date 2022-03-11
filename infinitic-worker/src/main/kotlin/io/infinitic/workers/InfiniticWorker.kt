@@ -36,7 +36,6 @@ import io.infinitic.common.workflows.data.workflowTasks.WorkflowTask
 import io.infinitic.common.workflows.data.workflows.WorkflowName
 import io.infinitic.common.workflows.engine.storage.WorkflowStateStorage
 import io.infinitic.common.workflows.tags.storage.WorkflowTagStorage
-import io.infinitic.tasks.engine.storage.BinaryTaskStateStorage
 import io.infinitic.tasks.executor.register.WorkerRegisterImpl
 import io.infinitic.tasks.tag.storage.BinaryTaskTagStorage
 import io.infinitic.workers.config.WorkerConfig
@@ -166,29 +165,6 @@ abstract class InfiniticWorker(open val workerConfig: WorkerConfig) : Closeable 
                     startWorkflowDelay(workflowName, it.concurrency)
                 }
             }
-
-            // starting engines managing workflowTasks
-            workflow.taskEngine?.let {
-                logger.info {
-                    "* workflow task engine".padEnd(25) + ": (" +
-                        "storage: ${it.stateStorage}" +
-                        ", cache: ${it.stateCache}" +
-                        ", instances: ${it.concurrency})"
-                }
-
-                val storage = BinaryTaskStateStorage(
-                    CachedKeyValueStorage(
-                        it.stateCache!!.keyValue(workerConfig),
-                        it.stateStorage!!.keyValue(workerConfig)
-                    )
-                )
-                workflowTaskStateStorages[workflowName] = storage
-
-                with(workerStarter) {
-                    startWorkflowTaskEngine(workflowName, storage, it.concurrency)
-                    startWorkflowTaskDelay(workflowName, it.concurrency)
-                }
-            }
         }
 
         for (task in workerConfig.tasks) {
@@ -231,29 +207,6 @@ abstract class InfiniticWorker(open val workerConfig: WorkerConfig) : Closeable 
 
                 with(workerStarter) {
                     startTaskTag(taskName, storage, task.concurrency)
-                }
-            }
-
-            // starting engines managing tasks
-            task.taskEngine?.let {
-                logger.info {
-                    "* task engine".padEnd(25) + ": (" +
-                        "storage: ${it.stateStorage}" +
-                        ", cache: ${it.stateCache}" +
-                        ", instances: ${it.concurrency})"
-                }
-
-                val storage = BinaryTaskStateStorage(
-                    CachedKeyValueStorage(
-                        it.stateCache!!.keyValue(workerConfig),
-                        it.stateStorage!!.keyValue(workerConfig)
-                    )
-                )
-                taskStateStorages[taskName] = storage
-
-                with(workerStarter) {
-                    startTaskEngine(taskName, storage, task.concurrency)
-                    startTaskDelay(taskName, task.concurrency)
                 }
             }
         }

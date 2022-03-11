@@ -26,19 +26,18 @@
 package io.infinitic.common.tasks.executors.messages
 
 import io.infinitic.common.data.ClientName
-import io.infinitic.common.data.MessageId
 import io.infinitic.common.data.methods.MethodName
 import io.infinitic.common.data.methods.MethodParameterTypes
 import io.infinitic.common.data.methods.MethodParameters
 import io.infinitic.common.errors.WorkerError
 import io.infinitic.common.messages.Message
-import io.infinitic.common.tasks.data.TaskAttemptId
 import io.infinitic.common.tasks.data.TaskId
 import io.infinitic.common.tasks.data.TaskMeta
 import io.infinitic.common.tasks.data.TaskName
 import io.infinitic.common.tasks.data.TaskRetryIndex
 import io.infinitic.common.tasks.data.TaskRetrySequence
 import io.infinitic.common.tasks.data.TaskTag
+import io.infinitic.common.workflows.data.methodRuns.MethodRunId
 import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.data.workflows.WorkflowName
 import io.infinitic.tasks.TaskOptions
@@ -46,10 +45,9 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 sealed class TaskExecutorMessage : Message {
-    val messageId = MessageId()
-    abstract val emitterName: ClientName
     abstract val taskId: TaskId
     abstract val taskName: TaskName
+    abstract val emitterName: ClientName
 
     override fun envelope() = TaskExecutorEnvelope.from(this)
 }
@@ -58,17 +56,18 @@ sealed class TaskExecutorMessage : Message {
 data class ExecuteTask(
     override val taskName: TaskName,
     override val taskId: TaskId,
-    val taskTags: Set<TaskTag>,
-    val workflowId: WorkflowId?,
-    val workflowName: WorkflowName?,
-    val taskAttemptId: TaskAttemptId,
-    val taskRetrySequence: TaskRetrySequence,
-    val taskRetryIndex: TaskRetryIndex,
-    val lastError: WorkerError?,
+    override val emitterName: ClientName,
+    val clientWaiting: Boolean,
     val methodName: MethodName,
     val methodParameterTypes: MethodParameterTypes?,
     val methodParameters: MethodParameters,
+    val taskRetrySequence: TaskRetrySequence,
+    val taskRetryIndex: TaskRetryIndex,
+    val lastError: WorkerError?,
+    val workflowId: WorkflowId?,
+    val workflowName: WorkflowName?,
+    val methodRunId: MethodRunId?,
     val taskOptions: TaskOptions,
-    val taskMeta: TaskMeta,
-    override val emitterName: ClientName
+    val taskTags: Set<TaskTag>,
+    val taskMeta: TaskMeta
 ) : TaskExecutorMessage()

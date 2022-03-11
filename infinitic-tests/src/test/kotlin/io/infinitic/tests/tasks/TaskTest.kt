@@ -33,7 +33,7 @@ interface TaskTest {
     fun await(delay: Long): Long
 }
 
-class ExpectedException(val log: String) : Exception()
+class ExpectedException(log: String) : Exception(log)
 
 class TaskTestImpl : Task(), TaskTest {
     companion object {
@@ -69,11 +69,15 @@ class TaskTestImpl : Task(), TaskTest {
         return delay
     }
 
-    override fun getDurationBeforeRetry(e: Exception): Duration? =
-        when (behavior(context.retrySequence, context.retryIndex)) {
+    override fun getDurationBeforeRetry(e: Exception): Duration? {
+        print("context = ")
+        println(context)
+        val o = when (behavior(context.retrySequence, context.retryIndex)) {
             Status.FAILED_WITH_RETRY, Status.TIMEOUT_WITH_RETRY -> Duration.ofMillis(10L)
             else -> null
         }
+        return o
+    }
 }
 
 enum class Status {

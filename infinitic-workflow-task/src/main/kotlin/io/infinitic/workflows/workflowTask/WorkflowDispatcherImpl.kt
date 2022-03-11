@@ -31,8 +31,8 @@ import io.infinitic.common.data.MillisInstant
 import io.infinitic.common.data.ReturnValue
 import io.infinitic.common.exceptions.thisShouldNotHappen
 import io.infinitic.common.proxies.ChannelProxyHandler
-import io.infinitic.common.proxies.GetTaskProxyHandler
-import io.infinitic.common.proxies.GetWorkflowProxyHandler
+import io.infinitic.common.proxies.ExistingTaskProxyHandler
+import io.infinitic.common.proxies.ExistingWorkflowProxyHandler
 import io.infinitic.common.proxies.NewTaskProxyHandler
 import io.infinitic.common.proxies.NewWorkflowProxyHandler
 import io.infinitic.common.proxies.ProxyHandler
@@ -105,7 +105,7 @@ internal class WorkflowDispatcherImpl(
     // synchronous call: stub.method(*args)
     @Suppress("UNCHECKED_CAST")
     override fun <R : Any?> dispatchAndWait(handler: ProxyHandler<*>): R =
-        when (handler is GetWorkflowProxyHandler<*> && handler.isChannelGetter()) {
+        when (handler is ExistingWorkflowProxyHandler<*> && handler.isChannelGetter()) {
             true -> ChannelProxyHandler<SendChannel<*>>(handler).stub() as R
             false -> dispatch<R>(handler, true).await()
         }
@@ -114,8 +114,8 @@ internal class WorkflowDispatcherImpl(
     override fun <R : Any?> dispatch(handler: ProxyHandler<*>, clientWaiting: Boolean): Deferred<R> = when (handler) {
         is NewTaskProxyHandler -> dispatchTask(handler)
         is NewWorkflowProxyHandler -> dispatchWorkflow(handler)
-        is GetTaskProxyHandler -> throw InvalidRunningTaskException("${handler.stub()}")
-        is GetWorkflowProxyHandler -> dispatchMethod(handler)
+        is ExistingTaskProxyHandler -> throw InvalidRunningTaskException("${handler.stub()}")
+        is ExistingWorkflowProxyHandler -> dispatchMethod(handler)
         is ChannelProxyHandler -> dispatchSignal(handler)
     }
 
@@ -332,7 +332,7 @@ internal class WorkflowDispatcherImpl(
     /**
      * Method dispatching
      */
-    private fun <R : Any?> dispatchMethod(handler: GetWorkflowProxyHandler<*>): Deferred<R> = when (handler.isChannelGetter()) {
+    private fun <R : Any?> dispatchMethod(handler: ExistingWorkflowProxyHandler<*>): Deferred<R> = when (handler.isChannelGetter()) {
         true -> throw InvalidChannelUsageException()
         false -> dispatchCommand(
             DispatchMethodCommand(

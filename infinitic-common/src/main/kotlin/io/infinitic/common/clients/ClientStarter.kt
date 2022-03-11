@@ -25,18 +25,12 @@
 
 package io.infinitic.common.clients
 
-import io.infinitic.common.tasks.engines.SendToTaskEngine
-import io.infinitic.common.tasks.tags.SendToTaskTag
 import io.infinitic.common.workflows.engine.SendToWorkflowEngine
 import io.infinitic.common.workflows.tags.SendToWorkflowTag
 import kotlinx.coroutines.CoroutineScope
 
 interface ClientStarter {
     fun CoroutineScope.startClientResponse(client: InfiniticClient)
-
-    val sendToTaskTag: SendToTaskTag
-
-    val sendToTaskEngine: SendToTaskEngine
 
     val sendToWorkflowTag: SendToWorkflowTag
 

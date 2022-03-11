@@ -39,7 +39,6 @@ data class TaskContextImpl(
     override val name: String,
     override val workflowId: String?,
     override val workflowName: String?,
-    override val attemptId: String,
     override val retrySequence: Int,
     override val retryIndex: Int,
     override val lastError: WorkerError?,

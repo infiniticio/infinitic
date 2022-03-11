@@ -34,16 +34,11 @@ import io.infinitic.common.fixtures.TestFactory
 import io.infinitic.common.tasks.data.TaskId
 import io.infinitic.common.tasks.data.TaskName
 import io.infinitic.common.tasks.data.TaskTag
-import io.infinitic.common.tasks.engines.SendToTaskEngine
-import io.infinitic.common.tasks.engines.messages.CancelTask
-import io.infinitic.common.tasks.engines.messages.RetryTask
-import io.infinitic.common.tasks.engines.messages.TaskEngineMessage
+import io.infinitic.common.tasks.executors.SendToTaskExecutor
+import io.infinitic.common.tasks.executors.messages.TaskExecutorMessage
 import io.infinitic.common.tasks.tags.messages.AddTagToTask
-import io.infinitic.common.tasks.tags.messages.CancelTaskByTag
 import io.infinitic.common.tasks.tags.messages.GetTaskIdsByTag
 import io.infinitic.common.tasks.tags.messages.RemoveTagFromTask
-import io.infinitic.common.tasks.tags.messages.RetryTaskByTag
-import io.infinitic.common.tasks.tags.messages.TaskTagMessage
 import io.infinitic.common.tasks.tags.storage.TaskTagStorage
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
@@ -65,17 +60,16 @@ private val clientName = ClientName("clientTaskTagEngineTests")
 private lateinit var stateMessageId: CapturingSlot<String>
 private lateinit var stateTaskId: CapturingSlot<String>
 private lateinit var clientMessage: CapturingSlot<ClientMessage>
-private lateinit var taskEngineMessage: CapturingSlot<TaskEngineMessage>
+private lateinit var taskExecutorMessage: CapturingSlot<TaskExecutorMessage>
 
 private lateinit var tagStateStorage: TaskTagStorage
-private lateinit var sendToTaskEngine: SendToTaskEngine
 private lateinit var sendToClient: SendToClient
 
 internal class TaskTagEngineTests : StringSpec({
 
     "should not handle known messageId" {
         // given
-        val msgIn = random<TaskTagMessage>()
+        val msgIn = random<AddTagToTask>()
         // when
         getEngine(msgIn.taskTag, msgIn.taskName, msgIn.messageId).handle(msgIn)
         // then
@@ -84,7 +78,7 @@ internal class TaskTagEngineTests : StringSpec({
 
     "should store last messageId" {
         // given
-        val msgIn = random<TaskTagMessage>()
+        val msgIn = random<AddTagToTask>()
         // when
         getEngine(msgIn.taskTag, msgIn.taskName).handle(msgIn)
         // then
@@ -119,52 +113,6 @@ internal class TaskTagEngineTests : StringSpec({
         verifyAll()
     }
 
-    "retryTaskPerTag should retry task" {
-        // given
-        val taskIds = setOf(TaskId(), TaskId())
-        val msgIn = random<RetryTaskByTag>()
-        // when
-        getEngine(msgIn.taskTag, msgIn.taskName, taskIds = taskIds).handle(msgIn)
-        // then
-        coVerifySequence {
-            tagStateStorage.getLastMessageId(msgIn.taskTag, msgIn.taskName)
-            tagStateStorage.getTaskIds(msgIn.taskTag, msgIn.taskName)
-            sendToTaskEngine(ofType<RetryTask>())
-            sendToTaskEngine(ofType<RetryTask>())
-            tagStateStorage.setLastMessageId(msgIn.taskTag, msgIn.taskName, msgIn.messageId)
-        }
-        verifyAll()
-        // checking last message
-        val retryTask = captured(taskEngineMessage)!! as RetryTask
-
-        with(retryTask) {
-            taskId shouldBe taskIds.last()
-        }
-    }
-
-    "cancelTaskPerTag should cancel task" {
-        // given
-        val taskIds = setOf(TaskId(), TaskId())
-        val msgIn = random<CancelTaskByTag>()
-        // when
-        getEngine(msgIn.taskTag, msgIn.taskName, taskIds = taskIds).handle(msgIn)
-        // then
-        coVerifySequence {
-            tagStateStorage.getLastMessageId(msgIn.taskTag, msgIn.taskName)
-            tagStateStorage.getTaskIds(msgIn.taskTag, msgIn.taskName)
-            sendToTaskEngine(ofType<CancelTask>())
-            sendToTaskEngine(ofType<CancelTask>())
-            tagStateStorage.setLastMessageId(msgIn.taskTag, msgIn.taskName, msgIn.messageId)
-        }
-        verifyAll()
-        // checking last message
-        val cancelTask = captured(taskEngineMessage)!! as CancelTask
-
-        with(cancelTask) {
-            taskId shouldBe taskIds.last()
-        }
-    }
-
     "getTaskIdsPerTag should return set of ids" {
         // given
         val msgIn = random<GetTaskIdsByTag>()
@@ -194,8 +142,8 @@ private fun mockSendToClient(slot: CapturingSlot<ClientMessage>): SendToClient {
     return mock
 }
 
-private fun mockSendToTaskEngine(slots: CapturingSlot<TaskEngineMessage>): SendToTaskEngine {
-    val mock = mockk<SendToTaskEngine>()
+private fun mockSendToTaskExecutor(slots: CapturingSlot<TaskExecutorMessage>): SendToTaskExecutor {
+    val mock = mockk<SendToTaskExecutor>()
     coEvery { mock(capture(slots)) } just Runs
     return mock
 }
@@ -220,15 +168,12 @@ private fun getEngine(
     stateMessageId = slot()
     stateTaskId = slot()
     clientMessage = slot()
-    taskEngineMessage = slot()
+    taskExecutorMessage = slot()
 
     tagStateStorage = mockTagStateStorage(taskTag, taskName, messageId, taskIds)
-    sendToTaskEngine = mockSendToTaskEngine(taskEngineMessage)
     sendToClient = mockSendToClient(clientMessage)
 
-    return TaskTagEngine(clientName, tagStateStorage, sendToTaskEngine, sendToClient)
+    return TaskTagEngine(clientName, tagStateStorage, sendToClient)
 }
 
-private fun verifyAll() = confirmVerified(
-    sendToTaskEngine
-)
+private fun verifyAll() = confirmVerified()
