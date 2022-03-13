@@ -175,8 +175,8 @@ abstract class AbstractInfiniticClient : InfiniticClient {
      * Await a workflow targeted by its id
      */
     @Suppress("UNCHECKED_CAST")
-    override fun <T : Any> await(
-        stub: T
+    override fun await(
+        stub: Any
     ): Any? = when (val handler = getProxyHandler(stub)) {
         is ExistingWorkflowProxyHandler -> when {
             handler.workflowId != null ->
@@ -200,8 +200,8 @@ abstract class AbstractInfiniticClient : InfiniticClient {
      * Await a method from a running workflow targeted by its id and the methodRunId
      */
     @Suppress("UNCHECKED_CAST")
-    override fun <T : Any> await(
-        stub: T,
+    override fun await(
+        stub: Any,
         methodRunId: String
     ): Any? = when (val handler = getProxyHandler(stub)) {
         is ExistingWorkflowProxyHandler -> when {
@@ -226,8 +226,8 @@ abstract class AbstractInfiniticClient : InfiniticClient {
      * Cancel a workflow
      */
     @Suppress("UNCHECKED_CAST")
-    override fun <T : Any> cancelAsync(
-        stub: T
+    override fun cancelAsync(
+        stub: Any
     ): CompletableFuture<Unit> = when (val handler = getProxyHandler(stub)) {
         is ExistingWorkflowProxyHandler ->
             dispatcher.cancelWorkflowAsync(handler.workflowName, handler.workflowId, null, handler.workflowTag)
@@ -239,8 +239,8 @@ abstract class AbstractInfiniticClient : InfiniticClient {
      * Retry a workflow task
      */
     @Suppress("UNCHECKED_CAST")
-    override fun <T : Any> retryWorkflowTaskAsync(
-        stub: T,
+    override fun retryWorkflowTaskAsync(
+        stub: Any,
     ): CompletableFuture<Unit> = when (val handler = getProxyHandler(stub)) {
         is ExistingWorkflowProxyHandler ->
             dispatcher.retryWorkflowTaskAsync(handler.workflowName, handler.workflowId, handler.workflowTag)
@@ -249,32 +249,21 @@ abstract class AbstractInfiniticClient : InfiniticClient {
     }
 
     /**
-     * Retry task(s) within workflow(s)
+     * Retry task within workflow(s) by its id
      */
-    override fun <T : Any> retryTasksAsync(
-        stub: T,
-        taskClass: Class<*>?,
-        taskStatus: DeferredStatus?,
-        taskId: String?,
-    ): CompletableFuture<Unit> = when (val handler = getProxyHandler(stub)) {
-        is ExistingWorkflowProxyHandler -> {
-            val taskName = taskClass?.let {
-                // Use NewTaskProxyHandler in case of use of @Name annotation
-                NewTaskProxyHandler(it, setOf(), TaskOptions(), TaskMeta()) { dispatcher }.taskName
-            }
+    override fun retryTasksAsync(
+        stub: Any,
+        taskId: String,
+    ) = retryTasksAsync(stub, null, null, taskId)
 
-            dispatcher.retryTaskAsync(
-                workflowName = handler.workflowName,
-                workflowId = handler.workflowId,
-                workflowTag = handler.workflowTag,
-                taskName = taskName,
-                taskStatus = taskStatus,
-                taskId = taskId?.let { TaskId(it) }
-            )
-        }
-        else ->
-            throw InvalidStubException("$stub")
-    }
+    /**
+     * Retry task within workflow(s) by its status and/or its class
+     */
+    override fun retryTasksAsync(
+        stub: Any,
+        taskStatus: DeferredStatus?,
+        taskClass: Class<*>?,
+    ) = retryTasksAsync(stub, taskStatus, taskClass, null)
 
     /**
      * get ids of a stub, associated to a specific tag
@@ -317,5 +306,30 @@ abstract class AbstractInfiniticClient : InfiniticClient {
         if (handler !is ProxyHandler<*>) throw exception
 
         return handler
+    }
+
+    private fun retryTasksAsync(
+        stub: Any,
+        taskStatus: DeferredStatus?,
+        taskClass: Class<*>?,
+        taskId: String?,
+    ): CompletableFuture<Unit> = when (val handler = getProxyHandler(stub)) {
+        is ExistingWorkflowProxyHandler -> {
+            val taskName = taskClass?.let {
+                // Use NewTaskProxyHandler in case of use of @Name annotation
+                NewTaskProxyHandler(it, setOf(), TaskOptions(), TaskMeta()) { dispatcher }.taskName
+            }
+
+            dispatcher.retryTaskAsync(
+                workflowName = handler.workflowName,
+                workflowId = handler.workflowId,
+                workflowTag = handler.workflowTag,
+                taskName = taskName,
+                taskStatus = taskStatus,
+                taskId = taskId?.let { TaskId(it) }
+            )
+        }
+        else ->
+            throw InvalidStubException("$stub")
     }
 }

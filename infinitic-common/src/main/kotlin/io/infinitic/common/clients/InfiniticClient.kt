@@ -595,8 +595,8 @@ interface InfiniticClient : Closeable {
      *
      *  @property stub should be a workflow stub obtained by [getWorkflowById]
      */
-    fun <T : Any> await(
-        stub: T
+    fun await(
+        stub: Any
     ): Any?
 
     /**
@@ -605,8 +605,8 @@ interface InfiniticClient : Closeable {
      *  @property stub should be a workflow stub obtained by [getWorkflowById] or [getWorkflowByTag]
      *  @property methodRunId is the id of the method run to await
      */
-    fun <T : Any> await(
-        stub: T,
+    fun await(
+        stub: Any,
         methodRunId: String
     ): Any?
 
@@ -615,8 +615,8 @@ interface InfiniticClient : Closeable {
      *
      *  @property stub should be a workflow stub obtained by [getWorkflowById] or [getWorkflowByTag]
      */
-    fun <T : Any> cancelAsync(
-        stub: T
+    fun cancelAsync(
+        stub: Any
     ): CompletableFuture<Unit>
 
     /**
@@ -624,8 +624,8 @@ interface InfiniticClient : Closeable {
      *
      *  @property stub should be a workflow stub obtained by [getWorkflowById] or [getWorkflowByTag]
      */
-    fun <T : Any> cancel(
-        stub: T
+    fun cancel(
+        stub: Any
     ): Unit = cancelAsync(stub).join()
 
     /**
@@ -633,9 +633,8 @@ interface InfiniticClient : Closeable {
      *
      * @property stub should be a workflow stub obtained by [getWorkflowById] or [getWorkflowByTag]
      */
-    @Suppress("UNCHECKED_CAST")
-    fun <T : Any> retryWorkflowTaskAsync(
-        stub: T,
+    fun retryWorkflowTaskAsync(
+        stub: Any,
     ): CompletableFuture<Unit>
 
     /**
@@ -643,45 +642,64 @@ interface InfiniticClient : Closeable {
      *
      * @property stub should be a workflow stub obtained by [getWorkflowById] or [getWorkflowByTag]
      */
-    fun <T : Any> retryWorkflowTask(
-        stub: T,
+    fun retryWorkflowTask(
+        stub: Any,
     ): Unit = retryWorkflowTaskAsync(stub).join()
 
     /**
-     * Retry a task in workflow(s) by its class (without waiting for the message to be sent)
+     * Retry task in workflow(s) (without waiting for the message to be sent)
      *
-     * @property taskClass should be the interface of the task(s) to retry (null if all)
-     * @property taskStatus should be the status of the task(s) to retry (null if all)
+     * @property stub should be a workflow stub obtained by [getWorkflowById] or [getWorkflowByTag]
      * @property taskId should be the if of the task to retry (null if all)
-     *
-     * [taskClass], [taskStatus], [taskId] can be combined, eg. to target failed tasks of a specific class.
      */
-    fun <T : Any> retryTasksAsync(
-        stub: T,
-        taskClass: Class<*>? = null,
+    fun retryTasksAsync(
+        stub: Any,
+        taskId: String,
+    ): CompletableFuture<Unit>
+
+    /**
+     * Retry task in workflow(s)
+     *
+     * @property stub should be a workflow stub obtained by [getWorkflowById] or [getWorkflowByTag]
+     * @property taskId should be the if of the task to retry (null if all)
+     */
+    fun retryTasks(
+        stub: Any,
+        taskId: String,
+    ): Unit = retryTasksAsync(stub, taskId).join()
+
+    /**
+     * Retry task(s) in workflow(s) (without waiting for the message to be sent)
+     *
+     * @property stub should be a workflow stub obtained by [getWorkflowById] or [getWorkflowByTag]
+     * @property taskStatus should be the status of the task(s) to retry (null if all)
+     * @property taskClass should be the interface of the task(s) to retry (null if all)
+     *
+     * [taskStatus] and [taskClass] can be combined, eg. to target failed tasks of a specific class.
+     */
+    fun retryTasksAsync(
+        stub: Any,
         taskStatus: DeferredStatus? = null,
-        taskId: String? = null,
+        taskClass: Class<*>? = null,
     ): CompletableFuture<Unit>
 
     /**
      * Retry task(s) in workflow(s)
      *
      * @property stub should be a workflow stub obtained by [getWorkflowById] or [getWorkflowByTag]
-     * @property taskClass should be the interface of the task(s) to retry (null if all)
      * @property taskStatus should be the status of the task(s) to retry (null if all)
-     * @property taskId should be the if of the task to retry (null if all)
+     * @property taskClass should be the interface of the task(s) to retry (null if all)
      *
-     * [taskClass], [taskStatus], [taskId] can be combined, eg. to target failed tasks of a specific class.
+     * [taskStatus] and [taskClass] can be combined, eg. to target failed tasks of a specific class.
      */
-    fun <T : Any> retryTasks(
-        stub: T,
-        taskClass: Class<*>? = null,
+    fun retryTasks(
+        stub: Any,
         taskStatus: DeferredStatus? = null,
-        taskId: String? = null,
-    ): Unit = retryTasksAsync(stub, taskClass, taskStatus, taskId).join()
+        taskClass: Class<*>? = null,
+    ): Unit = retryTasksAsync(stub, taskStatus, taskClass).join()
 
     /**
-     * Get ids of a stub, associated to a specific tag
+     * Get ids of running workflows
      *
      * @property stub should be a workflow stub obtained by [getWorkflowById] or [getWorkflowByTag]
      */
