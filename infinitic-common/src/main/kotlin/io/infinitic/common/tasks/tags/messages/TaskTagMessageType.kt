@@ -25,6 +25,10 @@
 
 package io.infinitic.common.tasks.tags.messages
 
+import com.github.avrokotlin.avro4k.AvroNamespace
+import kotlinx.serialization.Serializable
+
+@Serializable @AvroNamespace("io.infinitic.tasks.tag")
 enum class TaskTagMessageType {
     ADD_TAG_TO_TASK,
     REMOVE_TAG_FROM_TASK,

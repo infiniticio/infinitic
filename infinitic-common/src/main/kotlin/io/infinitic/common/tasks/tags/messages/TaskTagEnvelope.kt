@@ -25,11 +25,12 @@
 
 package io.infinitic.common.tasks.tags.messages
 
+import com.github.avrokotlin.avro4k.AvroNamespace
 import io.infinitic.common.messages.Envelope
 import io.infinitic.common.serDe.avro.AvroSerDe
 import kotlinx.serialization.Serializable
 
-@Serializable
+@Serializable @AvroNamespace("io.infinitic.tasks.tag")
 data class TaskTagEnvelope(
     val name: String,
     val type: TaskTagMessageType,

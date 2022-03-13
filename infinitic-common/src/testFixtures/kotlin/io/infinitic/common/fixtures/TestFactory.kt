@@ -26,11 +26,9 @@
 package io.infinitic.common.fixtures
 
 import io.infinitic.common.data.methods.MethodParameters
-import io.infinitic.common.errors.DeferredError
-import io.infinitic.common.errors.WorkerError
 import io.infinitic.common.serDe.SerializedData
-import io.infinitic.common.tasks.engines.messages.TaskEngineEnvelope
-import io.infinitic.common.tasks.engines.messages.TaskEngineMessage
+import io.infinitic.common.tasks.executors.errors.DeferredError
+import io.infinitic.common.tasks.executors.errors.WorkerError
 import io.infinitic.common.workflows.data.commands.CommandId
 import io.infinitic.common.workflows.data.steps.Step
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineEnvelope
@@ -74,10 +72,6 @@ object TestFactory {
             .randomize(WorkflowEngineEnvelope::class.java) {
                 val sub = WorkflowEngineMessage::class.sealedSubclasses.shuffled().first()
                 WorkflowEngineEnvelope.from(random(sub))
-            }
-            .randomize(TaskEngineEnvelope::class.java) {
-                val sub = TaskEngineMessage::class.sealedSubclasses.shuffled().first()
-                TaskEngineEnvelope.from(random(sub))
             }
             .randomize(DeferredError::class.java) {
                 val sub = DeferredError::class.sealedSubclasses.shuffled().first()

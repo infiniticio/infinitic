@@ -36,7 +36,7 @@ import io.infinitic.common.workflows.tags.SendToWorkflowTag
 internal data class WorkflowEngineOutput(
     val clientName: ClientName,
     val sendEventsToClient: SendToClient,
-    val sendToTaskTagEngine: SendToTaskTag,
+    val sendToTaskTag: SendToTaskTag,
     val sendToTaskExecutor: SendToTaskExecutor,
     val sendToWorkflowTaskExecutor: SendToTaskExecutor,
     val sendToWorkflowTag: SendToWorkflowTag,

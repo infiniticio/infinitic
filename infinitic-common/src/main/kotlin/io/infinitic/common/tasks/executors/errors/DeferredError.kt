@@ -23,8 +23,9 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.common.errors
+package io.infinitic.common.tasks.executors.errors
 
+import com.github.avrokotlin.avro4k.AvroNamespace
 import io.infinitic.common.data.methods.MethodName
 import io.infinitic.common.tasks.data.TaskId
 import io.infinitic.common.tasks.data.TaskName
@@ -48,7 +49,7 @@ import io.infinitic.exceptions.UnknownWorkflowException
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
-@Serializable
+@Serializable @AvroNamespace("io.infinitic.tasks.executor")
 sealed class DeferredError {
     companion object {
         fun from(exception: DeferredException) = when (exception) {

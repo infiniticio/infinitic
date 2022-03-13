@@ -29,6 +29,7 @@ import com.jayway.jsonpath.Criteria.where
 import io.infinitic.annotations.Ignore
 import io.infinitic.common.tasks.data.TaskMeta
 import io.infinitic.common.workflows.data.workflows.WorkflowMeta
+import io.infinitic.exceptions.FailedDeferredException
 import io.infinitic.exceptions.FailedTaskException
 import io.infinitic.exceptions.FailedWorkflowException
 import io.infinitic.exceptions.UnknownWorkflowException
@@ -130,7 +131,7 @@ interface WorkflowA : ParentInterface {
     fun failing7bis()
     fun failing7ter(): String
     fun failing8(): String
-//    fun failing9(): Boolean
+    fun failing9(): Boolean
 //    fun failing10(): String
     fun failing10bis()
     fun failing11()
@@ -635,23 +636,21 @@ class WorkflowAImpl : Workflow(), WorkflowA {
 
     override fun failing8() = taskA.successAtRetry()
 
-//    override fun failing9(): Boolean {
-//        // this method will complete only after retry
-//        val deferred = dispatch(taskA::successAtRetry)
-//
-//        val result = try {
-//            deferred.await()
-//        } catch (e: FailedDeferredException) {
-//            "caught"
-//        }
-//
-//        taskA.retryTaskA(deferred.id!!)
-//
-//        // we wait here only on avoid to make sure the previous retry is completed
-//        taskA.await(100)
-//
-//        return deferred.await() == "ok" && result == "caught"
-//    }
+    override fun failing9(): Boolean {
+        // this method will success only after retry
+        val deferred = dispatch(taskA::successAtRetry)
+
+        val result = try {
+            deferred.await()
+        } catch (e: FailedDeferredException) {
+            "caught"
+        }
+
+        // trigger the retry of the previous task
+        taskA.retryTasks(WorkflowA::class.java.name, context.id)
+
+        return deferred.await() == "ok" && result == "caught"
+    }
 
 //    override fun failing10(): String {
 //        p1 = "o"

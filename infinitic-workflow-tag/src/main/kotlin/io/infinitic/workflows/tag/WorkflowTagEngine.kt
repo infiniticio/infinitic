@@ -32,6 +32,7 @@ import io.infinitic.common.workflows.data.methodRuns.MethodRunId
 import io.infinitic.common.workflows.engine.SendToWorkflowEngine
 import io.infinitic.common.workflows.engine.messages.CancelWorkflow
 import io.infinitic.common.workflows.engine.messages.DispatchMethod
+import io.infinitic.common.workflows.engine.messages.RetryFailedTasks
 import io.infinitic.common.workflows.engine.messages.RetryWorkflowTask
 import io.infinitic.common.workflows.engine.messages.SendSignal
 import io.infinitic.common.workflows.tags.messages.AddTagToWorkflow
@@ -39,6 +40,7 @@ import io.infinitic.common.workflows.tags.messages.CancelWorkflowByTag
 import io.infinitic.common.workflows.tags.messages.DispatchMethodByTag
 import io.infinitic.common.workflows.tags.messages.GetWorkflowIdsByTag
 import io.infinitic.common.workflows.tags.messages.RemoveTagFromWorkflow
+import io.infinitic.common.workflows.tags.messages.RetryFailedTasksByTag
 import io.infinitic.common.workflows.tags.messages.RetryWorkflowTaskByTag
 import io.infinitic.common.workflows.tags.messages.SendSignalByTag
 import io.infinitic.common.workflows.tags.messages.WorkflowTagMessage
@@ -82,6 +84,7 @@ class WorkflowTagEngine(
             is SendSignalByTag -> sendToChannelPerTag(message)
             is CancelWorkflowByTag -> cancelWorkflowPerTag(message)
             is RetryWorkflowTaskByTag -> retryWorkflowTaskPerTag(message)
+            is RetryFailedTasksByTag -> retryFailedTasksPerTag(message)
             is DispatchMethodByTag -> dispatchMethodRunPerTag(message)
             is GetWorkflowIdsByTag -> getWorkflowIds(message)
         }
@@ -128,15 +131,32 @@ class WorkflowTagEngine(
                 discardTagWithoutIds(message)
             }
             false -> ids.forEach {
-                // parent workflow already applied method to self
-                if (it != message.emitterWorkflowId) {
-                    val retryWorkflowTask = RetryWorkflowTask(
-                        workflowName = message.workflowName,
-                        workflowId = it,
-                        emitterName = clientName
-                    )
-                    scope.launch { sendToWorkflowEngine(retryWorkflowTask) }
-                }
+                val retryWorkflowTask = RetryWorkflowTask(
+                    workflowName = message.workflowName,
+                    workflowId = it,
+                    emitterName = clientName
+                )
+                scope.launch { sendToWorkflowEngine(retryWorkflowTask) }
+            }
+        }
+    }
+
+    private suspend fun retryFailedTasksPerTag(message: RetryFailedTasksByTag) {
+        // is not an idempotent action
+        if (hasMessageAlreadyBeenHandled(message)) return
+
+        val ids = storage.getWorkflowIds(message.workflowTag, message.workflowName)
+        when (ids.isEmpty()) {
+            true -> {
+                discardTagWithoutIds(message)
+            }
+            false -> ids.forEach {
+                val retryFailedTasks = RetryFailedTasks(
+                    workflowName = message.workflowName,
+                    workflowId = it,
+                    emitterName = clientName
+                )
+                scope.launch { sendToWorkflowEngine(retryFailedTasks) }
             }
         }
     }

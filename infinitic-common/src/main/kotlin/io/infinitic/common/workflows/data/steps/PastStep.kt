@@ -26,6 +26,7 @@
 package io.infinitic.common.workflows.data.steps
 
 import com.fasterxml.jackson.annotation.JsonIgnore
+import com.github.avrokotlin.avro4k.AvroNamespace
 import io.infinitic.common.workflows.data.commands.PastCommand
 import io.infinitic.common.workflows.data.methodRuns.MethodRunPosition
 import io.infinitic.common.workflows.data.properties.PropertyHash
@@ -38,7 +39,7 @@ import io.infinitic.common.workflows.data.steps.StepStatus.Unknown
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskIndex
 import kotlinx.serialization.Serializable
 
-@Serializable
+@Serializable @AvroNamespace("io.infinitic.workflows.data")
 data class PastStep(
     val stepPosition: MethodRunPosition,
     val step: Step,

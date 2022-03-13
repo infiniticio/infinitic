@@ -28,9 +28,9 @@ package io.infinitic.common.workflows.data.commands
 import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.annotation.JsonTypeInfo
 import io.infinitic.common.data.ReturnValue
-import io.infinitic.common.errors.CanceledDeferredError
-import io.infinitic.common.errors.FailedDeferredError
-import io.infinitic.common.errors.UnknownDeferredError
+import io.infinitic.common.tasks.executors.errors.CanceledDeferredError
+import io.infinitic.common.tasks.executors.errors.FailedDeferredError
+import io.infinitic.common.tasks.executors.errors.UnknownDeferredError
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskIndex
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -43,10 +43,10 @@ sealed class CommandStatus {
      */
     @JsonIgnore fun isTerminated() = this is Completed || this is Canceled
 
-    @Serializable @SerialName("CommandStatus.Running")
-    object Running : CommandStatus() {
+    @Serializable @SerialName("CommandStatus.Ongoing")
+    object Ongoing : CommandStatus() {
         override fun equals(other: Any?) = javaClass == other?.javaClass
-        override fun toString(): String = Running::class.java.name
+        override fun toString(): String = Ongoing::class.java.name
     }
 
     @Serializable @SerialName("CommandStatus.Unknown")
@@ -61,8 +61,8 @@ sealed class CommandStatus {
         val cancellationWorkflowTaskIndex: WorkflowTaskIndex
     ) : CommandStatus()
 
-    @Serializable @SerialName("CommandStatus.CurrentlyFailed")
-    data class CurrentlyFailed(
+    @Serializable @SerialName("CommandStatus.Failed")
+    data class Failed(
         val failedDeferredError: FailedDeferredError,
         val failureWorkflowTaskIndex: WorkflowTaskIndex
     ) : CommandStatus()

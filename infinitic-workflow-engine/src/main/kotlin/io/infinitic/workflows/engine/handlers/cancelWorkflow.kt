@@ -26,8 +26,8 @@
 package io.infinitic.workflows.engine.handlers
 
 import io.infinitic.common.clients.messages.MethodCanceled
-import io.infinitic.common.errors.CanceledWorkflowError
 import io.infinitic.common.exceptions.thisShouldNotHappen
+import io.infinitic.common.tasks.executors.errors.CanceledWorkflowError
 import io.infinitic.common.workflows.data.commands.DispatchMethodCommand
 import io.infinitic.common.workflows.data.commands.DispatchWorkflowCommand
 import io.infinitic.common.workflows.data.methodRuns.MethodRun

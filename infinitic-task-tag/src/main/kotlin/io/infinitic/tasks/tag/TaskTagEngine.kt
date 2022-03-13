@@ -28,8 +28,6 @@ package io.infinitic.tasks.tag
 import io.infinitic.common.clients.SendToClient
 import io.infinitic.common.clients.messages.TaskIdsByTag
 import io.infinitic.common.data.ClientName
-import io.infinitic.common.tasks.engines.messages.CancelTask
-import io.infinitic.common.tasks.engines.messages.RetryTask
 import io.infinitic.common.tasks.tags.messages.AddTagToTask
 import io.infinitic.common.tasks.tags.messages.CancelTaskByTag
 import io.infinitic.common.tasks.tags.messages.GetTaskIdsByTag
@@ -94,12 +92,7 @@ class TaskTagEngine(
                 discardTagWithoutIds(message)
             }
             false -> taskIds.forEach {
-                val retryTask = RetryTask(
-                    taskName = message.taskName,
-                    taskId = it,
-                    emitterName = clientName
-                )
-                scope.launch { TODO() }
+                TODO()
             }
         }
     }
@@ -114,12 +107,7 @@ class TaskTagEngine(
                 discardTagWithoutIds(message)
             }
             false -> ids.forEach {
-                val cancelTask = CancelTask(
-                    taskName = message.taskName,
-                    taskId = it,
-                    emitterName = clientName
-                )
-                scope.launch { TODO() }
+                TODO()
             }
         }
     }

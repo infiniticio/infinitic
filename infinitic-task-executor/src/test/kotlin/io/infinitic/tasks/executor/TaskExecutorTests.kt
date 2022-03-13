@@ -36,7 +36,6 @@ import io.infinitic.common.data.ReturnValue
 import io.infinitic.common.data.methods.MethodName
 import io.infinitic.common.data.methods.MethodParameterTypes
 import io.infinitic.common.data.methods.MethodParameters
-import io.infinitic.common.errors.WorkerError
 import io.infinitic.common.tasks.data.TaskId
 import io.infinitic.common.tasks.data.TaskMeta
 import io.infinitic.common.tasks.data.TaskName
@@ -44,8 +43,8 @@ import io.infinitic.common.tasks.data.TaskRetryIndex
 import io.infinitic.common.tasks.data.TaskRetrySequence
 import io.infinitic.common.tasks.data.TaskReturnValue
 import io.infinitic.common.tasks.data.TaskTag
-import io.infinitic.common.tasks.data.plus
 import io.infinitic.common.tasks.executors.SendToTaskExecutorAfter
+import io.infinitic.common.tasks.executors.errors.WorkerError
 import io.infinitic.common.tasks.executors.messages.ExecuteTask
 import io.infinitic.common.tasks.executors.messages.TaskExecutorMessage
 import io.infinitic.common.tasks.tags.SendToTaskTag

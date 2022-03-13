@@ -39,8 +39,6 @@ data class ChannelSignal(val serializedData: SerializedData) {
     }
 
     override fun toString() = serializedData.toString()
-
-    fun signal(): Any? = serializedData.deserialize()
 }
 
 object ChannelEventSerializer : KSerializer<ChannelSignal> {

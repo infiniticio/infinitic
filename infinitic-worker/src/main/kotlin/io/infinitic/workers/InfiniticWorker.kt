@@ -29,7 +29,6 @@ import io.infinitic.common.clients.ClientFactory
 import io.infinitic.common.storage.keySet.CachedKeySetStorage
 import io.infinitic.common.storage.keyValue.CachedKeyValueStorage
 import io.infinitic.common.tasks.data.TaskName
-import io.infinitic.common.tasks.engines.storage.TaskStateStorage
 import io.infinitic.common.tasks.tags.storage.TaskTagStorage
 import io.infinitic.common.workers.WorkerStarter
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTask
@@ -56,11 +55,9 @@ abstract class InfiniticWorker(open val workerConfig: WorkerConfig) : Closeable 
 
     protected val workerRegister = WorkerRegisterImpl()
 
-    protected val taskStateStorages = mutableMapOf<TaskName, TaskStateStorage>()
     protected val taskTagStorages = mutableMapOf<TaskName, TaskTagStorage>()
     protected val workflowStateStorages = mutableMapOf<WorkflowName, WorkflowStateStorage>()
     protected val workflowTagStorages = mutableMapOf<WorkflowName, WorkflowTagStorage>()
-    protected val workflowTaskStateStorages = mutableMapOf<WorkflowName, TaskStateStorage>()
 
     protected abstract val workerStarter: WorkerStarter
     protected abstract val clientFactory: ClientFactory
@@ -81,11 +78,9 @@ abstract class InfiniticWorker(open val workerConfig: WorkerConfig) : Closeable 
      */
     @TestOnly
     fun storageFlush() {
-        taskStateStorages.forEach { it.value.flush() }
         taskTagStorages.forEach { it.value.flush() }
         workflowStateStorages.forEach { it.value.flush() }
         workflowTagStorages.forEach { it.value.flush() }
-        workflowTaskStateStorages.forEach { it.value.flush() }
     }
 
     /**

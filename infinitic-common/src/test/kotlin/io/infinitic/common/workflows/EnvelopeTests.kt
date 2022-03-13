@@ -29,6 +29,8 @@ import com.github.avrokotlin.avro4k.Avro
 import io.infinitic.common.fixtures.TestFactory
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineEnvelope
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
+import io.infinitic.common.workflows.tags.messages.WorkflowTagEnvelope
+import io.infinitic.common.workflows.tags.messages.WorkflowTagMessage
 import io.kotest.assertions.throwables.shouldNotThrowAny
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
@@ -42,6 +44,20 @@ class EnvelopeTests : StringSpec({
             shouldNotThrowAny {
                 val envelope = WorkflowEngineEnvelope.from(msg)
                 val ser = WorkflowEngineEnvelope.serializer()
+                val byteArray = Avro.default.encodeToByteArray(ser, envelope)
+                val envelope2 = Avro.default.decodeFromByteArray(ser, byteArray)
+                envelope shouldBe envelope2
+            }
+        }
+    }
+
+    WorkflowTagMessage::class.sealedSubclasses.map {
+        val msg = TestFactory.random(it)
+
+        "WorkflowTagMessage(${msg::class.simpleName}) should be avro-convertible" {
+            shouldNotThrowAny {
+                val envelope = WorkflowTagEnvelope.from(msg)
+                val ser = WorkflowTagEnvelope.serializer()
                 val byteArray = Avro.default.encodeToByteArray(ser, envelope)
                 val envelope2 = Avro.default.decodeFromByteArray(ser, byteArray)
                 envelope shouldBe envelope2

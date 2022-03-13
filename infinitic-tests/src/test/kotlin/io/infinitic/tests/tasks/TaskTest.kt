@@ -33,7 +33,7 @@ interface TaskTest {
     fun await(delay: Long): Long
 }
 
-class ExpectedException(log: String) : Exception(log)
+class ExpectedException(log: String? = null) : Exception(log)
 
 class TaskTestImpl : Task(), TaskTest {
     companion object {

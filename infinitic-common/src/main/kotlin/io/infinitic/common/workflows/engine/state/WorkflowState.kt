@@ -25,6 +25,7 @@
 
 package io.infinitic.common.workflows.engine.state
 
+import com.github.avrokotlin.avro4k.AvroNamespace
 import io.infinitic.common.data.MessageId
 import io.infinitic.common.data.MillisInstant
 import io.infinitic.common.exceptions.thisShouldNotHappen
@@ -48,7 +49,7 @@ import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
 import io.infinitic.workflows.WorkflowOptions
 import kotlinx.serialization.Serializable
 
-@Serializable
+@Serializable @AvroNamespace("io.infinitic.workflows.engine")
 data class WorkflowState(
     /**
      * Id of last handled message (used to ensure idempotency)

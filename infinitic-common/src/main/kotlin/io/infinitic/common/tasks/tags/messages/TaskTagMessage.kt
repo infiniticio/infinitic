@@ -25,6 +25,7 @@
 
 package io.infinitic.common.tasks.tags.messages
 
+import com.github.avrokotlin.avro4k.AvroNamespace
 import io.infinitic.common.data.ClientName
 import io.infinitic.common.data.MessageId
 import io.infinitic.common.messages.Message
@@ -33,7 +34,7 @@ import io.infinitic.common.tasks.data.TaskName
 import io.infinitic.common.tasks.data.TaskTag
 import kotlinx.serialization.Serializable
 
-@Serializable
+@Serializable @AvroNamespace("io.infinitic.tasks.tag")
 sealed class TaskTagMessage : Message {
     val messageId = MessageId()
     abstract val emitterName: ClientName
@@ -43,21 +44,21 @@ sealed class TaskTagMessage : Message {
     override fun envelope() = TaskTagEnvelope.from(this)
 }
 
-@Serializable
+@Serializable @AvroNamespace("io.infinitic.tasks.tag")
 data class RetryTaskByTag(
     override val taskName: TaskName,
     override val taskTag: TaskTag,
     override val emitterName: ClientName
 ) : TaskTagMessage()
 
-@Serializable
+@Serializable @AvroNamespace("io.infinitic.tasks.tag")
 data class CancelTaskByTag(
     override val taskName: TaskName,
     override val taskTag: TaskTag,
     override val emitterName: ClientName
 ) : TaskTagMessage()
 
-@Serializable
+@Serializable @AvroNamespace("io.infinitic.tasks.tag")
 data class AddTagToTask(
     override val taskName: TaskName,
     override val taskTag: TaskTag,
@@ -65,7 +66,7 @@ data class AddTagToTask(
     override val emitterName: ClientName,
 ) : TaskTagMessage()
 
-@Serializable
+@Serializable @AvroNamespace("io.infinitic.tasks.tag")
 data class RemoveTagFromTask(
     override val taskName: TaskName,
     override val taskTag: TaskTag,
@@ -73,7 +74,7 @@ data class RemoveTagFromTask(
     override val emitterName: ClientName,
 ) : TaskTagMessage()
 
-@Serializable
+@Serializable @AvroNamespace("io.infinitic.tasks.tag")
 data class GetTaskIdsByTag(
     override val taskName: TaskName,
     override val taskTag: TaskTag,

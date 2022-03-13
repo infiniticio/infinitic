@@ -609,6 +609,21 @@ interface InfiniticClient : Closeable {
     ): Unit = retryWorkflowTaskAsync(stub).join()
 
     /**
+     * Retry all failed tasks
+     */
+    @Suppress("UNCHECKED_CAST")
+    fun <T : Any> retryFailedTasksAsync(
+        stub: T,
+    ): CompletableFuture<Unit>
+
+    /**
+     * Retry all failed tasks
+     */
+    fun <T : Any> retryFailedTasks(
+        stub: T,
+    ): Unit = retryFailedTasksAsync(stub).join()
+
+    /**
      * get ids of a stub, associated to a specific tag
      */
     fun <T : Any> getIds(

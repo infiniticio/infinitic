@@ -30,7 +30,6 @@ import io.infinitic.common.workflows.data.commands.CommandId
 import io.infinitic.common.workflows.data.commands.CommandStatus
 import io.infinitic.common.workflows.data.commands.PastCommand
 import io.infinitic.common.workflows.data.methodRuns.MethodRunId
-import io.infinitic.common.workflows.data.workflowTasks.plus
 import io.infinitic.common.workflows.engine.state.WorkflowState
 import io.infinitic.workflows.engine.output.WorkflowEngineOutput
 import kotlinx.coroutines.CoroutineScope
@@ -71,8 +70,7 @@ internal fun CoroutineScope.stepTerminated(
     pastCommand: PastCommand
 ): Boolean {
     // get all methodRuns terminated by this command
-    val methodRuns = state.methodRuns
-        .filter { it.currentStep?.isTerminatedBy(pastCommand) == true }
+    val methodRuns = state.methodRuns.filter { it.currentStep?.isTerminatedBy(pastCommand) == true }
 
     // get step with lowest workflowTaskIndexAtStart
     methodRuns.minByOrNull { it.currentStep!!.workflowTaskIndexAtStart }?.let {
@@ -97,7 +95,7 @@ internal fun CoroutineScope.stepTerminated(
             pastStep.stepPosition
         )
 
-        // keep this command if more than 1 methodRun is completed by this command
+        // if more than 1 methodRun is completed by this command, we need to keep it
         return methodRuns.size > 1
     }
 

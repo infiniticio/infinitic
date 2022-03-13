@@ -23,8 +23,9 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.common.errors
+package io.infinitic.common.tasks.executors.errors
 
+import com.github.avrokotlin.avro4k.AvroNamespace
 import io.infinitic.common.data.ClientName
 import io.infinitic.exceptions.WorkerException
 import kotlinx.serialization.Serializable
@@ -32,7 +33,7 @@ import kotlinx.serialization.Serializable
 /**
  * Data class representing an error
  */
-@Serializable
+@Serializable @AvroNamespace("io.infinitic.tasks.executor")
 data class WorkerError(
     /**
      * Name of the worker

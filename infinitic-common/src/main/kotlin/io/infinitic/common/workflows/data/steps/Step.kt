@@ -35,8 +35,8 @@ import io.infinitic.common.workflows.data.commands.CommandId
 import io.infinitic.common.workflows.data.commands.CommandStatus
 import io.infinitic.common.workflows.data.commands.CommandStatus.Canceled
 import io.infinitic.common.workflows.data.commands.CommandStatus.Completed
-import io.infinitic.common.workflows.data.commands.CommandStatus.CurrentlyFailed
-import io.infinitic.common.workflows.data.commands.CommandStatus.Running
+import io.infinitic.common.workflows.data.commands.CommandStatus.Failed
+import io.infinitic.common.workflows.data.commands.CommandStatus.Ongoing
 import io.infinitic.common.workflows.data.commands.CommandStatus.Unknown
 import io.infinitic.common.workflows.data.commands.PastCommand
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskIndex
@@ -62,7 +62,7 @@ sealed class Step {
     data class Id(
         val commandId: CommandId
     ) : Step() {
-        @JsonIgnore var commandStatus: CommandStatus = Running
+        @JsonIgnore var commandStatus: CommandStatus = Ongoing
 
         companion object {
             fun from(pastCommand: PastCommand) = Id(pastCommand.commandId)
@@ -85,7 +85,7 @@ sealed class Step {
         }
 
         override fun statusAt(index: WorkflowTaskIndex) = when (val status = commandStatus) {
-            is Running -> StepStatus.Waiting
+            is Ongoing -> StepStatus.Waiting
             is Unknown -> when (index >= status.unknowingWorkflowTaskIndex) {
                 true -> StepStatus.Unknown(status.unknownDeferredError, status.unknowingWorkflowTaskIndex)
                 false -> StepStatus.Waiting
@@ -94,7 +94,7 @@ sealed class Step {
                 true -> StepStatus.Canceled(status.canceledDeferredError, status.cancellationWorkflowTaskIndex)
                 false -> StepStatus.Waiting
             }
-            is CurrentlyFailed -> when (index >= status.failureWorkflowTaskIndex) {
+            is Failed -> when (index >= status.failureWorkflowTaskIndex) {
                 true -> StepStatus.CurrentlyFailed(status.failedDeferredError, status.failureWorkflowTaskIndex)
                 false -> StepStatus.Waiting
             }

@@ -30,13 +30,13 @@ import io.infinitic.common.clients.messages.interfaces.TaskMessage
 import io.infinitic.common.data.ClientName
 import io.infinitic.common.data.MessageId
 import io.infinitic.common.data.ReturnValue
-import io.infinitic.common.errors.DeferredError
-import io.infinitic.common.errors.WorkerError
 import io.infinitic.common.messages.Message
 import io.infinitic.common.tasks.data.TaskId
 import io.infinitic.common.tasks.data.TaskMeta
 import io.infinitic.common.tasks.data.TaskName
 import io.infinitic.common.tasks.data.TaskTag
+import io.infinitic.common.tasks.executors.errors.DeferredError
+import io.infinitic.common.tasks.executors.errors.WorkerError
 import io.infinitic.common.workflows.data.methodRuns.MethodRunId
 import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.data.workflows.WorkflowName
@@ -71,13 +71,6 @@ data class TaskFailed(
 
 @Serializable
 data class TaskCanceled(
-    override val recipientName: ClientName,
-    override val taskId: TaskId,
-    override val emitterName: ClientName
-) : ClientMessage(), TaskMessage
-
-@Serializable
-data class TaskUnknown(
     override val recipientName: ClientName,
     override val taskId: TaskId,
     override val emitterName: ClientName

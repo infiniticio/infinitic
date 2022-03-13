@@ -25,11 +25,12 @@
 
 package io.infinitic.common.workflows.data.channels
 
+import com.github.avrokotlin.avro4k.AvroNamespace
 import io.infinitic.common.workflows.data.commands.CommandId
 import io.infinitic.common.workflows.data.methodRuns.MethodRunId
 import kotlinx.serialization.Serializable
 
-@Serializable
+@Serializable @AvroNamespace("io.infinitic.workflows.data")
 data class ReceivingChannel(
     val channelName: ChannelName,
     val channelSignalType: ChannelSignalType?,

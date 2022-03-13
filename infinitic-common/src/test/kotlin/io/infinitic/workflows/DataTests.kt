@@ -35,7 +35,6 @@ import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 
-@OptIn(kotlinx.serialization.ExperimentalSerializationApi::class)
 class DataTests : StringSpec({
     "Deferred should be serDe with SerializedData" {
         val step = TestFactory.random<Step>()

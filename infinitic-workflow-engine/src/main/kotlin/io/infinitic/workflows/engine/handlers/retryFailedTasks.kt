@@ -25,24 +25,30 @@
 
 package io.infinitic.workflows.engine.handlers
 
+import io.infinitic.common.workflows.data.commands.CommandStatus
+import io.infinitic.common.workflows.data.commands.DispatchTaskPastCommand
 import io.infinitic.common.workflows.engine.state.WorkflowState
-import io.infinitic.workflows.engine.helpers.dispatchWorkflowTask
+import io.infinitic.workflows.engine.helpers.dispatchTask
 import io.infinitic.workflows.engine.output.WorkflowEngineOutput
 import kotlinx.coroutines.CoroutineScope
 
-internal fun CoroutineScope.retryWorkflowTask(
+internal fun CoroutineScope.retryFailedTasks(
     output: WorkflowEngineOutput,
     state: WorkflowState
 ) {
-    // we do not check if a workflow task is already running:
-    // this command will update state.runningWorkflowTaskId
-    // so that another workflow task coming back later will be ignored
+    // for all method runs
+    state.methodRuns.forEach { methodRun ->
+        // for all past tasks
+        methodRun.pastCommands.filterIsInstance<DispatchTaskPastCommand>()
+            // that are failed
+            .filter { it.commandStatus is CommandStatus.Failed }
+            // dispatch a new sequence of this task
+            .forEach { dispatchTaskPastCommand ->
+                dispatchTaskPastCommand.taskRetrySequence = dispatchTaskPastCommand.taskRetrySequence + 1
 
-    // retry last workflowTask
-    dispatchWorkflowTask(
-        output,
-        state,
-        state.getRunningMethodRun(),
-        state.runningMethodRunPosition!!
-    )
+                dispatchTask(output, state, dispatchTaskPastCommand)
+
+                dispatchTaskPastCommand.commandStatus = CommandStatus.Ongoing
+            }
+    }
 }

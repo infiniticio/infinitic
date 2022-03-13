@@ -25,11 +25,12 @@
 
 package io.infinitic.common.workflows.tags.messages
 
+import com.github.avrokotlin.avro4k.AvroNamespace
 import io.infinitic.common.messages.Envelope
 import io.infinitic.common.serDe.avro.AvroSerDe
 import kotlinx.serialization.Serializable
 
-@Serializable
+@Serializable @AvroNamespace("io.infinitic.workflows.tag")
 data class WorkflowTagEnvelope(
     val name: String,
     val type: WorkflowTagMessageType,
@@ -38,6 +39,7 @@ data class WorkflowTagEnvelope(
     val sendSignalByTag: SendSignalByTag? = null,
     val cancelWorkflowByTag: CancelWorkflowByTag? = null,
     val retryWorkflowTaskByTag: RetryWorkflowTaskByTag? = null,
+    val retryFailedTasksByTag: RetryFailedTasksByTag? = null,
     val dispatchMethodByTag: DispatchMethodByTag? = null,
     val getWorkflowIdsByTag: GetWorkflowIdsByTag? = null,
 ) : Envelope<WorkflowTagMessage> {
@@ -49,6 +51,7 @@ data class WorkflowTagEnvelope(
             sendSignalByTag,
             cancelWorkflowByTag,
             retryWorkflowTaskByTag,
+            retryFailedTasksByTag,
             dispatchMethodByTag,
             getWorkflowIdsByTag
         )
@@ -85,6 +88,11 @@ data class WorkflowTagEnvelope(
                 WorkflowTagMessageType.RETRY_WORKFLOW_TASK_BY_TAG,
                 retryWorkflowTaskByTag = msg
             )
+            is RetryFailedTasksByTag -> WorkflowTagEnvelope(
+                "${msg.workflowName}",
+                WorkflowTagMessageType.RETRY_FAILED_TASKS_BY_TAG,
+                retryFailedTasksByTag = msg
+            )
             is DispatchMethodByTag -> WorkflowTagEnvelope(
                 "${msg.workflowName}",
                 WorkflowTagMessageType.DISPATCH_METHOD_BY_TAG,
@@ -106,6 +114,7 @@ data class WorkflowTagEnvelope(
         WorkflowTagMessageType.SEND_SIGNAL_BY_TAG -> sendSignalByTag!!
         WorkflowTagMessageType.CANCEL_WORKFLOW_BY_TAG -> cancelWorkflowByTag!!
         WorkflowTagMessageType.RETRY_WORKFLOW_TASK_BY_TAG -> retryWorkflowTaskByTag!!
+        WorkflowTagMessageType.RETRY_FAILED_TASKS_BY_TAG -> retryFailedTasksByTag!!
         WorkflowTagMessageType.DISPATCH_METHOD_BY_TAG -> dispatchMethodByTag!!
         WorkflowTagMessageType.GET_WORKFLOW_IDS_BY_TAG -> getWorkflowIdsByTag!!
     }

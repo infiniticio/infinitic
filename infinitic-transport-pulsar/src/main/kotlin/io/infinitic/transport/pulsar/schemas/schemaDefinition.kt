@@ -37,5 +37,3 @@ fun <T : Any> schemaDefinition(klass: KClass<T>): SchemaDefinition<T> =
         .withSupportSchemaVersioning(true)
         .withJSR310ConversionEnabled(true)
         .build()
-
-inline fun <reified T : Any> schemaDefinition() = schemaDefinition(T::class)

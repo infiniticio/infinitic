@@ -244,6 +244,19 @@ abstract class AbstractInfiniticClient : InfiniticClient {
     }
 
     /**
+     * Retry all failed tasks
+     */
+    @Suppress("UNCHECKED_CAST")
+    override fun <T : Any> retryFailedTasksAsync(
+        stub: T,
+    ): CompletableFuture<Unit> = when (val handler = getProxyHandler(stub)) {
+        is ExistingWorkflowProxyHandler ->
+            dispatcher.retryFailedTasksAsync(handler.workflowName, handler.workflowId, handler.workflowTag)
+        else ->
+            throw InvalidStubException("$stub")
+    }
+
+    /**
      * get ids of a stub, associated to a specific tag
      */
     @Suppress("UNCHECKED_CAST")

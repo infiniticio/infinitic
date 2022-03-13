@@ -68,6 +68,12 @@ interface ClientDispatcher : ProxyDispatcher {
         workflowTag: WorkflowTag?
     ): CompletableFuture<Unit>
 
+    fun retryFailedTasksAsync(
+        workflowName: WorkflowName,
+        workflowId: WorkflowId?,
+        workflowTag: WorkflowTag?
+    ): CompletableFuture<Unit>
+
     fun getWorkflowIdsByTag(
         workflowName: WorkflowName,
         workflowId: WorkflowId?,

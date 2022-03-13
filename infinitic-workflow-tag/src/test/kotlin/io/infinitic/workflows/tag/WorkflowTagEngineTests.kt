@@ -36,10 +36,14 @@ import io.infinitic.common.workflows.data.workflows.WorkflowName
 import io.infinitic.common.workflows.data.workflows.WorkflowTag
 import io.infinitic.common.workflows.engine.SendToWorkflowEngine
 import io.infinitic.common.workflows.engine.messages.CancelWorkflow
+import io.infinitic.common.workflows.engine.messages.RetryFailedTasks
+import io.infinitic.common.workflows.engine.messages.RetryWorkflowTask
 import io.infinitic.common.workflows.engine.messages.SendSignal
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
 import io.infinitic.common.workflows.tags.messages.CancelWorkflowByTag
 import io.infinitic.common.workflows.tags.messages.GetWorkflowIdsByTag
+import io.infinitic.common.workflows.tags.messages.RetryFailedTasksByTag
+import io.infinitic.common.workflows.tags.messages.RetryWorkflowTaskByTag
 import io.infinitic.common.workflows.tags.messages.SendSignalByTag
 import io.infinitic.common.workflows.tags.messages.WorkflowTagMessage
 import io.infinitic.common.workflows.tags.storage.WorkflowTagStorage
@@ -111,6 +115,50 @@ internal class WorkflowTagEngineTests : StringSpec({
 
         with(cancelWorkflow) {
             workflowId shouldBe workflowIds.last()
+        }
+    }
+
+    "RetryWorkflowTaskByTag should retry workflow task" {
+        // given
+        val workflowIds = setOf(WorkflowId(), WorkflowId())
+        val msgIn = random<RetryWorkflowTaskByTag>()
+        // when
+        getEngine(msgIn.workflowTag, msgIn.workflowName, workflowIds = workflowIds).handle(msgIn)
+        // then
+        coVerifySequence {
+            workflowTagStorage.getLastMessageId(msgIn.workflowTag, msgIn.workflowName)
+            workflowTagStorage.getWorkflowIds(msgIn.workflowTag, msgIn.workflowName)
+            sendToWorkflowEngine(ofType<RetryWorkflowTask>())
+            sendToWorkflowEngine(ofType<RetryWorkflowTask>())
+            workflowTagStorage.setLastMessageId(msgIn.workflowTag, msgIn.workflowName, msgIn.messageId)
+        }
+        verifyAll()
+        // checking last message
+        with(captured(workflowEngineMessage)!! as RetryWorkflowTask) {
+            workflowId shouldBe workflowIds.last()
+            workflowName shouldBe msgIn.workflowName
+        }
+    }
+
+    "RetryFailedTasksByTag should retry failed tasks" {
+        // given
+        val workflowIds = setOf(WorkflowId(), WorkflowId())
+        val msgIn = random<RetryFailedTasksByTag>()
+        // when
+        getEngine(msgIn.workflowTag, msgIn.workflowName, workflowIds = workflowIds).handle(msgIn)
+        // then
+        coVerifySequence {
+            workflowTagStorage.getLastMessageId(msgIn.workflowTag, msgIn.workflowName)
+            workflowTagStorage.getWorkflowIds(msgIn.workflowTag, msgIn.workflowName)
+            sendToWorkflowEngine(ofType<RetryFailedTasks>())
+            sendToWorkflowEngine(ofType<RetryFailedTasks>())
+            workflowTagStorage.setLastMessageId(msgIn.workflowTag, msgIn.workflowName, msgIn.messageId)
+        }
+        verifyAll()
+        // checking last message
+        with(captured(workflowEngineMessage)!! as RetryFailedTasks) {
+            workflowId shouldBe workflowIds.last()
+            workflowName shouldBe msgIn.workflowName
         }
     }
 

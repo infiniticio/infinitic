@@ -26,9 +26,9 @@
 package io.infinitic.common.workflows.data.steps
 
 import io.infinitic.common.data.ReturnValue
-import io.infinitic.common.errors.CanceledDeferredError
-import io.infinitic.common.errors.FailedDeferredError
-import io.infinitic.common.errors.UnknownDeferredError
+import io.infinitic.common.tasks.executors.errors.CanceledDeferredError
+import io.infinitic.common.tasks.executors.errors.FailedDeferredError
+import io.infinitic.common.tasks.executors.errors.UnknownDeferredError
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskIndex
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -36,7 +36,7 @@ import kotlinx.serialization.Serializable
 @Serializable
 sealed class StepStatus {
 
-    @Serializable
+    @Serializable @SerialName("StepStatus.Waiting")
     object Waiting : StepStatus() {
         override fun equals(other: Any?) = javaClass == other?.javaClass
     }
@@ -66,7 +66,7 @@ sealed class StepStatus {
     ) : StepStatus()
 
     /**
-     * OngoingFailure is a transient status given when the failure of a task triggers the failure of a step
+     * CurrentlyFailed is a transient status given when the failure of a task triggers the failure of a step
      * - if next workflowTask related to this branch run correctly (error caught in workflow code), status will eventually be Failed
      * - if not, task can be retried and status can transition to Completed
      */

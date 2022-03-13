@@ -25,11 +25,11 @@
 
 package io.infinitic.common.tasks.executors.messages
 
+import com.github.avrokotlin.avro4k.AvroNamespace
 import io.infinitic.common.data.ClientName
 import io.infinitic.common.data.methods.MethodName
 import io.infinitic.common.data.methods.MethodParameterTypes
 import io.infinitic.common.data.methods.MethodParameters
-import io.infinitic.common.errors.WorkerError
 import io.infinitic.common.messages.Message
 import io.infinitic.common.tasks.data.TaskId
 import io.infinitic.common.tasks.data.TaskMeta
@@ -37,6 +37,7 @@ import io.infinitic.common.tasks.data.TaskName
 import io.infinitic.common.tasks.data.TaskRetryIndex
 import io.infinitic.common.tasks.data.TaskRetrySequence
 import io.infinitic.common.tasks.data.TaskTag
+import io.infinitic.common.tasks.executors.errors.WorkerError
 import io.infinitic.common.workflows.data.methodRuns.MethodRunId
 import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.data.workflows.WorkflowName
@@ -52,7 +53,7 @@ sealed class TaskExecutorMessage : Message {
     override fun envelope() = TaskExecutorEnvelope.from(this)
 }
 
-@Serializable
+@Serializable @AvroNamespace("io.infinitic.tasks.executor")
 data class ExecuteTask(
     override val taskName: TaskName,
     override val taskId: TaskId,

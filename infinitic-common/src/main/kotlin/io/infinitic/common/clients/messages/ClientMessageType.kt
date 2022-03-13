@@ -26,7 +26,6 @@
 package io.infinitic.common.clients.messages
 
 enum class ClientMessageType {
-    UNKNOWN_TASK,
     TASK_COMPLETED,
     TASK_CANCELED,
     TASK_FAILED,

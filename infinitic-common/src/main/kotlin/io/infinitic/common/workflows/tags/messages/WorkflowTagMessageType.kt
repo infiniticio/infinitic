@@ -25,12 +25,17 @@
 
 package io.infinitic.common.workflows.tags.messages
 
+import com.github.avrokotlin.avro4k.AvroNamespace
+import kotlinx.serialization.Serializable
+
+@Serializable @AvroNamespace("io.infinitic.workflows.tag")
 enum class WorkflowTagMessageType {
     ADD_TAG_TO_WORKFLOW,
     REMOVE_TAG_FROM_WORKFLOW,
     SEND_SIGNAL_BY_TAG,
     CANCEL_WORKFLOW_BY_TAG,
     RETRY_WORKFLOW_TASK_BY_TAG,
+    RETRY_FAILED_TASKS_BY_TAG,
     DISPATCH_METHOD_BY_TAG,
     GET_WORKFLOW_IDS_BY_TAG
 }

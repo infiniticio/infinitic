@@ -39,7 +39,6 @@ import io.infinitic.common.clients.messages.WorkflowIdsByTag
 import io.infinitic.common.clients.messages.interfaces.MethodMessage
 import io.infinitic.common.data.ClientName
 import io.infinitic.common.data.methods.MethodName
-import io.infinitic.common.errors.FailedWorkflowError
 import io.infinitic.common.exceptions.thisShouldNotHappen
 import io.infinitic.common.proxies.ChannelProxyHandler
 import io.infinitic.common.proxies.ExistingTaskProxyHandler
@@ -47,6 +46,7 @@ import io.infinitic.common.proxies.ExistingWorkflowProxyHandler
 import io.infinitic.common.proxies.NewTaskProxyHandler
 import io.infinitic.common.proxies.NewWorkflowProxyHandler
 import io.infinitic.common.proxies.ProxyHandler
+import io.infinitic.common.tasks.executors.errors.FailedWorkflowError
 import io.infinitic.common.workflows.data.channels.ChannelSignalId
 import io.infinitic.common.workflows.data.methodRuns.MethodRunId
 import io.infinitic.common.workflows.data.workflows.WorkflowCancellationReason
@@ -57,6 +57,7 @@ import io.infinitic.common.workflows.engine.SendToWorkflowEngine
 import io.infinitic.common.workflows.engine.messages.CancelWorkflow
 import io.infinitic.common.workflows.engine.messages.DispatchMethod
 import io.infinitic.common.workflows.engine.messages.DispatchWorkflow
+import io.infinitic.common.workflows.engine.messages.RetryFailedTasks
 import io.infinitic.common.workflows.engine.messages.RetryWorkflowTask
 import io.infinitic.common.workflows.engine.messages.SendSignal
 import io.infinitic.common.workflows.engine.messages.WaitWorkflow
@@ -65,6 +66,7 @@ import io.infinitic.common.workflows.tags.messages.AddTagToWorkflow
 import io.infinitic.common.workflows.tags.messages.CancelWorkflowByTag
 import io.infinitic.common.workflows.tags.messages.DispatchMethodByTag
 import io.infinitic.common.workflows.tags.messages.GetWorkflowIdsByTag
+import io.infinitic.common.workflows.tags.messages.RetryFailedTasksByTag
 import io.infinitic.common.workflows.tags.messages.RetryWorkflowTaskByTag
 import io.infinitic.common.workflows.tags.messages.SendSignalByTag
 import io.infinitic.exceptions.CanceledWorkflowException
@@ -236,7 +238,32 @@ internal class ClientDispatcherImpl(
                 val msg = RetryWorkflowTaskByTag(
                     workflowName = workflowName,
                     workflowTag = workflowTag,
-                    emitterWorkflowId = null,
+                    emitterName = clientName
+                )
+                sendToWorkflowTagEngine(msg)
+            }
+            else -> thisShouldNotHappen()
+        }
+    }
+
+    override fun retryFailedTasksAsync(
+        workflowName: WorkflowName,
+        workflowId: WorkflowId?,
+        workflowTag: WorkflowTag?
+    ): CompletableFuture<Unit> = scope.future {
+        when {
+            workflowId != null -> {
+                val msg = RetryFailedTasks(
+                    workflowName = workflowName,
+                    workflowId = workflowId,
+                    emitterName = clientName
+                )
+                sendToWorkflowEngine(msg)
+            }
+            workflowTag != null -> {
+                val msg = RetryFailedTasksByTag(
+                    workflowName = workflowName,
+                    workflowTag = workflowTag,
                     emitterName = clientName
                 )
                 sendToWorkflowTagEngine(msg)

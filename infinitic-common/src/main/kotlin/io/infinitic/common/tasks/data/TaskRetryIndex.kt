@@ -38,9 +38,9 @@ data class TaskRetryIndex(val int: Int = 0) : Comparable<TaskRetryIndex> {
     override fun toString() = "$int"
 
     override operator fun compareTo(other: TaskRetryIndex): Int = this.int.compareTo(other.int)
-}
 
-operator fun TaskRetryIndex.plus(increment: Int) = TaskRetryIndex(this.int + increment)
+    operator fun plus(increment: Int) = TaskRetryIndex(this.int + increment)
+}
 
 object TaskRetryIndexSerializer : KSerializer<TaskRetryIndex> {
     override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("TaskRetryIndex", PrimitiveKind.INT)

@@ -530,25 +530,25 @@ internal class WorkflowTests : StringSpec({
         workflowA.failing7ter() shouldBe Exception::class.java.name
     }
 
-//    "Retry a failed task from client should restart a workflow" {
-//        val error = shouldThrow<FailedWorkflowException> { workflowA.failing8() }
-//
-//        val deferred = client.lastDeferred!!
-//
-//        val cause = error.deferredException as FailedTaskException
-//        cause.taskName shouldBe TaskA::class.java.name
-//
-//        later {
-//            val t = client.getTaskById(TaskA::class.java, cause.taskId)
-//            client.retry(t)
-//        }
-//
-//        deferred.await() shouldBe "ok"
-//    }
+    "Retry a failed task from client should restart a workflow" {
+        val error = shouldThrow<FailedWorkflowException> { workflowA.failing8() }
 
-//    "retry a caught failed task should not throw and influence workflow" {
-//        workflowA.failing9() shouldBe true
-//    }
+        val deferred = client.lastDeferred!!
+
+        val cause = error.deferredException as FailedTaskException
+        cause.taskName shouldBe TaskA::class.java.name
+
+        later {
+            val w = client.getWorkflowById(WorkflowA::class.java, deferred.id)
+            client.retryFailedTasks(w)
+        }
+
+        deferred.await() shouldBe "ok"
+    }
+
+    "retry a caught failed task should not throw and influence workflow" {
+        workflowA.failing9() shouldBe true
+    }
 
 //    "properties should be correctly set after a deferred cancellation" {
 //        workflowA.failing10() shouldBe "ok"

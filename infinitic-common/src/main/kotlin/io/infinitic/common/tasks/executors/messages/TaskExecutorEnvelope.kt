@@ -25,12 +25,13 @@
 
 package io.infinitic.common.tasks.executors.messages
 
+import com.github.avrokotlin.avro4k.AvroNamespace
 import io.infinitic.common.messages.Envelope
 import io.infinitic.common.serDe.avro.AvroSerDe
 import io.infinitic.common.tasks.data.TaskName
 import kotlinx.serialization.Serializable
 
-@Serializable
+@Serializable @AvroNamespace("io.infinitic.tasks.executor")
 data class TaskExecutorEnvelope(
     val taskName: TaskName,
     val type: TaskExecutorMessageType,

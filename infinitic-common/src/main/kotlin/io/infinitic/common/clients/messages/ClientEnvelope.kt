@@ -37,7 +37,6 @@ data class ClientEnvelope(
     private val taskCompleted: TaskCompleted? = null,
     private val taskCanceled: TaskCanceled? = null,
     private val taskFailed: TaskFailed? = null,
-    private val taskUnknown: TaskUnknown? = null,
     private val taskIdsByTag: TaskIdsByTag? = null,
     private val workflowCompleted: MethodCompleted? = null,
     private val workflowCanceled: MethodCanceled? = null,
@@ -51,7 +50,6 @@ data class ClientEnvelope(
             taskCompleted,
             taskCanceled,
             taskFailed,
-            taskUnknown,
             taskIdsByTag,
             workflowCompleted,
             workflowCanceled,
@@ -82,11 +80,6 @@ data class ClientEnvelope(
                 msg.emitterName,
                 ClientMessageType.TASK_FAILED,
                 taskFailed = msg
-            )
-            is TaskUnknown -> ClientEnvelope(
-                msg.emitterName,
-                ClientMessageType.UNKNOWN_TASK,
-                taskUnknown = msg
             )
             is TaskIdsByTag -> ClientEnvelope(
                 msg.emitterName,
@@ -129,7 +122,6 @@ data class ClientEnvelope(
     }
 
     override fun message(): ClientMessage = when (type) {
-        ClientMessageType.UNKNOWN_TASK -> taskUnknown!!
         ClientMessageType.TASK_COMPLETED -> taskCompleted!!
         ClientMessageType.TASK_CANCELED -> taskCanceled!!
         ClientMessageType.TASK_FAILED -> taskFailed!!
