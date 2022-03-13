@@ -36,13 +36,13 @@ import io.infinitic.common.workflows.data.workflows.WorkflowName
 import io.infinitic.common.workflows.data.workflows.WorkflowTag
 import io.infinitic.common.workflows.engine.SendToWorkflowEngine
 import io.infinitic.common.workflows.engine.messages.CancelWorkflow
-import io.infinitic.common.workflows.engine.messages.RetryFailedTasks
+import io.infinitic.common.workflows.engine.messages.RetryTasks
 import io.infinitic.common.workflows.engine.messages.RetryWorkflowTask
 import io.infinitic.common.workflows.engine.messages.SendSignal
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
 import io.infinitic.common.workflows.tags.messages.CancelWorkflowByTag
 import io.infinitic.common.workflows.tags.messages.GetWorkflowIdsByTag
-import io.infinitic.common.workflows.tags.messages.RetryFailedTasksByTag
+import io.infinitic.common.workflows.tags.messages.RetryTasksByTag
 import io.infinitic.common.workflows.tags.messages.RetryWorkflowTaskByTag
 import io.infinitic.common.workflows.tags.messages.SendSignalByTag
 import io.infinitic.common.workflows.tags.messages.WorkflowTagMessage
@@ -140,25 +140,28 @@ internal class WorkflowTagEngineTests : StringSpec({
         }
     }
 
-    "RetryFailedTasksByTag should retry failed tasks" {
+    "RetryTasksByTag should retry tasks" {
         // given
         val workflowIds = setOf(WorkflowId(), WorkflowId())
-        val msgIn = random<RetryFailedTasksByTag>()
+        val msgIn = random<RetryTasksByTag>()
         // when
         getEngine(msgIn.workflowTag, msgIn.workflowName, workflowIds = workflowIds).handle(msgIn)
         // then
         coVerifySequence {
             workflowTagStorage.getLastMessageId(msgIn.workflowTag, msgIn.workflowName)
             workflowTagStorage.getWorkflowIds(msgIn.workflowTag, msgIn.workflowName)
-            sendToWorkflowEngine(ofType<RetryFailedTasks>())
-            sendToWorkflowEngine(ofType<RetryFailedTasks>())
+            sendToWorkflowEngine(ofType<RetryTasks>())
+            sendToWorkflowEngine(ofType<RetryTasks>())
             workflowTagStorage.setLastMessageId(msgIn.workflowTag, msgIn.workflowName, msgIn.messageId)
         }
         verifyAll()
         // checking last message
-        with(captured(workflowEngineMessage)!! as RetryFailedTasks) {
+        with(captured(workflowEngineMessage)!! as RetryTasks) {
             workflowId shouldBe workflowIds.last()
             workflowName shouldBe msgIn.workflowName
+            taskId shouldBe msgIn.taskId
+            taskStatus shouldBe msgIn.taskStatus
+            taskName shouldBe msgIn.taskName
         }
     }
 

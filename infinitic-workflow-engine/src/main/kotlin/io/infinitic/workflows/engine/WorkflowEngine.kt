@@ -45,7 +45,7 @@ import io.infinitic.common.workflows.engine.messages.ChildMethodUnknown
 import io.infinitic.common.workflows.engine.messages.CompleteWorkflow
 import io.infinitic.common.workflows.engine.messages.DispatchMethod
 import io.infinitic.common.workflows.engine.messages.DispatchWorkflow
-import io.infinitic.common.workflows.engine.messages.RetryFailedTasks
+import io.infinitic.common.workflows.engine.messages.RetryTasks
 import io.infinitic.common.workflows.engine.messages.RetryWorkflowTask
 import io.infinitic.common.workflows.engine.messages.SendSignal
 import io.infinitic.common.workflows.engine.messages.TaskCanceled
@@ -62,7 +62,7 @@ import io.infinitic.common.workflows.tags.SendToWorkflowTag
 import io.infinitic.workflows.engine.handlers.cancelWorkflow
 import io.infinitic.workflows.engine.handlers.dispatchMethodRun
 import io.infinitic.workflows.engine.handlers.dispatchWorkflow
-import io.infinitic.workflows.engine.handlers.retryFailedTasks
+import io.infinitic.workflows.engine.handlers.retryTasks
 import io.infinitic.workflows.engine.handlers.retryWorkflowTask
 import io.infinitic.workflows.engine.handlers.sendSignal
 import io.infinitic.workflows.engine.handlers.waitWorkflow
@@ -256,7 +256,7 @@ class WorkflowEngine(
             is WaitWorkflow -> waitWorkflow(output, state, message)
             is CompleteWorkflow -> TODO()
             is RetryWorkflowTask -> retryWorkflowTask(output, state)
-            is RetryFailedTasks -> retryFailedTasks(output, state)
+            is RetryTasks -> retryTasks(output, state, message)
             is TimerCompleted -> commandTerminated(
                 output,
                 state,

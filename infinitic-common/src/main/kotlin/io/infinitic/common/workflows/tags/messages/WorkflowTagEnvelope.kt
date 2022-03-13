@@ -39,7 +39,7 @@ data class WorkflowTagEnvelope(
     val sendSignalByTag: SendSignalByTag? = null,
     val cancelWorkflowByTag: CancelWorkflowByTag? = null,
     val retryWorkflowTaskByTag: RetryWorkflowTaskByTag? = null,
-    val retryFailedTasksByTag: RetryFailedTasksByTag? = null,
+    val retryTasksByTag: RetryTasksByTag? = null,
     val dispatchMethodByTag: DispatchMethodByTag? = null,
     val getWorkflowIdsByTag: GetWorkflowIdsByTag? = null,
 ) : Envelope<WorkflowTagMessage> {
@@ -51,7 +51,7 @@ data class WorkflowTagEnvelope(
             sendSignalByTag,
             cancelWorkflowByTag,
             retryWorkflowTaskByTag,
-            retryFailedTasksByTag,
+            retryTasksByTag,
             dispatchMethodByTag,
             getWorkflowIdsByTag
         )
@@ -88,10 +88,10 @@ data class WorkflowTagEnvelope(
                 WorkflowTagMessageType.RETRY_WORKFLOW_TASK_BY_TAG,
                 retryWorkflowTaskByTag = msg
             )
-            is RetryFailedTasksByTag -> WorkflowTagEnvelope(
+            is RetryTasksByTag -> WorkflowTagEnvelope(
                 "${msg.workflowName}",
-                WorkflowTagMessageType.RETRY_FAILED_TASKS_BY_TAG,
-                retryFailedTasksByTag = msg
+                WorkflowTagMessageType.RETRY_TASKS_BY_TAG,
+                retryTasksByTag = msg
             )
             is DispatchMethodByTag -> WorkflowTagEnvelope(
                 "${msg.workflowName}",
@@ -114,7 +114,7 @@ data class WorkflowTagEnvelope(
         WorkflowTagMessageType.SEND_SIGNAL_BY_TAG -> sendSignalByTag!!
         WorkflowTagMessageType.CANCEL_WORKFLOW_BY_TAG -> cancelWorkflowByTag!!
         WorkflowTagMessageType.RETRY_WORKFLOW_TASK_BY_TAG -> retryWorkflowTaskByTag!!
-        WorkflowTagMessageType.RETRY_FAILED_TASKS_BY_TAG -> retryFailedTasksByTag!!
+        WorkflowTagMessageType.RETRY_TASKS_BY_TAG -> retryTasksByTag!!
         WorkflowTagMessageType.DISPATCH_METHOD_BY_TAG -> dispatchMethodByTag!!
         WorkflowTagMessageType.GET_WORKFLOW_IDS_BY_TAG -> getWorkflowIdsByTag!!
     }

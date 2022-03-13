@@ -33,6 +33,7 @@ import io.infinitic.common.data.methods.MethodName
 import io.infinitic.common.data.methods.MethodParameterTypes
 import io.infinitic.common.data.methods.MethodParameters
 import io.infinitic.common.messages.Message
+import io.infinitic.common.tasks.data.TaskId
 import io.infinitic.common.tasks.data.TaskName
 import io.infinitic.common.tasks.data.TaskReturnValue
 import io.infinitic.common.tasks.executors.errors.CanceledTaskError
@@ -56,6 +57,7 @@ import io.infinitic.common.workflows.data.workflows.WorkflowReturnValue
 import io.infinitic.common.workflows.data.workflows.WorkflowTag
 import io.infinitic.common.workflows.engine.messages.interfaces.MethodRunMessage
 import io.infinitic.common.workflows.engine.messages.interfaces.TaskMessage
+import io.infinitic.workflows.DeferredStatus
 import io.infinitic.workflows.WorkflowOptions
 import kotlinx.serialization.Serializable
 
@@ -128,9 +130,12 @@ data class RetryWorkflowTask(
 ) : WorkflowEngineMessage()
 
 @Serializable @AvroNamespace("io.infinitic.workflows.engine")
-data class RetryFailedTasks(
+data class RetryTasks(
     override val workflowName: WorkflowName,
     override val workflowId: WorkflowId,
+    val taskId: TaskId?,
+    val taskStatus: DeferredStatus?,
+    val taskName: TaskName?,
     override val emitterName: ClientName
 ) : WorkflowEngineMessage()
 

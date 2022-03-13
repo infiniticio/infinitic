@@ -40,7 +40,7 @@ data class WorkflowEngineEnvelope(
     val waitWorkflow: WaitWorkflow? = null,
     val cancelWorkflow: CancelWorkflow? = null,
     val retryWorkflowTask: RetryWorkflowTask? = null,
-    val retryFailedTasks: RetryFailedTasks? = null,
+    val retryTasks: RetryTasks? = null,
     val completeWorkflow: CompleteWorkflow? = null,
     val sendSignal: SendSignal? = null,
     val timerCompleted: TimerCompleted? = null,
@@ -59,7 +59,7 @@ data class WorkflowEngineEnvelope(
             waitWorkflow,
             cancelWorkflow,
             retryWorkflowTask,
-            retryFailedTasks,
+            retryTasks,
             completeWorkflow,
             sendSignal,
             timerCompleted,
@@ -116,10 +116,10 @@ data class WorkflowEngineEnvelope(
                 WorkflowEngineMessageType.RETRY_WORKFLOW_TASK,
                 retryWorkflowTask = msg
             )
-            is RetryFailedTasks -> WorkflowEngineEnvelope(
+            is RetryTasks -> WorkflowEngineEnvelope(
                 msg.workflowId,
-                WorkflowEngineMessageType.RETRY_FAILED_TASKS,
-                retryFailedTasks = msg
+                WorkflowEngineMessageType.RETRY_TASKS,
+                retryTasks = msg
             )
             is CompleteWorkflow -> WorkflowEngineEnvelope(
                 msg.workflowId,
@@ -182,7 +182,7 @@ data class WorkflowEngineEnvelope(
         WorkflowEngineMessageType.WAIT_WORKFLOW -> waitWorkflow!!
         WorkflowEngineMessageType.CANCEL_WORKFLOW -> cancelWorkflow!!
         WorkflowEngineMessageType.RETRY_WORKFLOW_TASK -> retryWorkflowTask!!
-        WorkflowEngineMessageType.RETRY_FAILED_TASKS -> retryFailedTasks!!
+        WorkflowEngineMessageType.RETRY_TASKS -> retryTasks!!
         WorkflowEngineMessageType.COMPLETE_WORKFLOW -> completeWorkflow!!
         WorkflowEngineMessageType.SEND_SIGNAL -> sendSignal!!
         WorkflowEngineMessageType.TIMER_COMPLETED -> timerCompleted!!

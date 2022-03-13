@@ -84,11 +84,11 @@ class TaskExecutor(
         }
     }
 
-    private suspend fun executeTask(message: ExecuteTask) {
+    private suspend fun executeTask(message: ExecuteTask) = coroutineScope {
 
         val taskContext = TaskContextImpl(
             workerName = "$clientName",
-            workerRegister = this,
+            workerRegister = this@TaskExecutor,
             id = message.taskId.toString(),
             name = message.taskName.toString(),
             workflowId = message.workflowId?.toString(),
@@ -109,7 +109,7 @@ class TaskExecutor(
             // returning the exception (no retry)
             sendTaskFailed(message, e)
             // stop here
-            return
+            return@coroutineScope
         }
 
         // set taskContext into task

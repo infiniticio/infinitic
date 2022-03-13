@@ -32,7 +32,7 @@ import io.infinitic.common.workflows.data.methodRuns.MethodRunId
 import io.infinitic.common.workflows.engine.SendToWorkflowEngine
 import io.infinitic.common.workflows.engine.messages.CancelWorkflow
 import io.infinitic.common.workflows.engine.messages.DispatchMethod
-import io.infinitic.common.workflows.engine.messages.RetryFailedTasks
+import io.infinitic.common.workflows.engine.messages.RetryTasks
 import io.infinitic.common.workflows.engine.messages.RetryWorkflowTask
 import io.infinitic.common.workflows.engine.messages.SendSignal
 import io.infinitic.common.workflows.tags.messages.AddTagToWorkflow
@@ -40,7 +40,7 @@ import io.infinitic.common.workflows.tags.messages.CancelWorkflowByTag
 import io.infinitic.common.workflows.tags.messages.DispatchMethodByTag
 import io.infinitic.common.workflows.tags.messages.GetWorkflowIdsByTag
 import io.infinitic.common.workflows.tags.messages.RemoveTagFromWorkflow
-import io.infinitic.common.workflows.tags.messages.RetryFailedTasksByTag
+import io.infinitic.common.workflows.tags.messages.RetryTasksByTag
 import io.infinitic.common.workflows.tags.messages.RetryWorkflowTaskByTag
 import io.infinitic.common.workflows.tags.messages.SendSignalByTag
 import io.infinitic.common.workflows.tags.messages.WorkflowTagMessage
@@ -84,7 +84,7 @@ class WorkflowTagEngine(
             is SendSignalByTag -> sendToChannelPerTag(message)
             is CancelWorkflowByTag -> cancelWorkflowPerTag(message)
             is RetryWorkflowTaskByTag -> retryWorkflowTaskPerTag(message)
-            is RetryFailedTasksByTag -> retryFailedTasksPerTag(message)
+            is RetryTasksByTag -> retryTaskPerTag(message)
             is DispatchMethodByTag -> dispatchMethodRunPerTag(message)
             is GetWorkflowIdsByTag -> getWorkflowIds(message)
         }
@@ -141,7 +141,7 @@ class WorkflowTagEngine(
         }
     }
 
-    private suspend fun retryFailedTasksPerTag(message: RetryFailedTasksByTag) {
+    private suspend fun retryTaskPerTag(message: RetryTasksByTag) {
         // is not an idempotent action
         if (hasMessageAlreadyBeenHandled(message)) return
 
@@ -151,12 +151,15 @@ class WorkflowTagEngine(
                 discardTagWithoutIds(message)
             }
             false -> ids.forEach {
-                val retryFailedTasks = RetryFailedTasks(
+                val retryTasks = RetryTasks(
                     workflowName = message.workflowName,
                     workflowId = it,
+                    taskId = message.taskId,
+                    taskName = message.taskName,
+                    taskStatus = message.taskStatus,
                     emitterName = clientName
                 )
-                scope.launch { sendToWorkflowEngine(retryFailedTasks) }
+                scope.launch { sendToWorkflowEngine(retryTasks) }
             }
         }
     }

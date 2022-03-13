@@ -36,6 +36,7 @@ import io.infinitic.workflows.Consumer6
 import io.infinitic.workflows.Consumer7
 import io.infinitic.workflows.Consumer8
 import io.infinitic.workflows.Consumer9
+import io.infinitic.workflows.DeferredStatus
 import io.infinitic.workflows.WorkflowOptions
 import java.io.Closeable
 import java.util.concurrent.CompletableFuture
@@ -61,6 +62,11 @@ interface InfiniticClient : Closeable {
 
     /**
      *  Create a stub for a new workflow
+     *
+     *  @property klass the interface of a workflow
+     *  @property tags the workflow's tags
+     *  @property options the workflow's options
+     *  @property meta the workflow's meta
      */
     fun <T : Any> newWorkflow(
         klass: Class<out T>,
@@ -69,23 +75,44 @@ interface InfiniticClient : Closeable {
         meta: Map<String, ByteArray>?,
     ): T
 
+    /**
+     *  Create a stub for a new workflow
+     *
+     *  @property klass the interface of a workflow
+     *  @property tags the workflow's tags
+     *  @property options the workflow's options
+     */
     fun <T : Any> newWorkflow(
         klass: Class<out T>,
         tags: Set<String>? = null,
         options: WorkflowOptions? = null
     ): T = newWorkflow(klass, tags, options, null)
 
+    /**
+     *  Create a stub for a new workflow
+     *
+     *  @property klass the interface of a workflow
+     *  @property tags the workflow's tags
+     */
     fun <T : Any> newWorkflow(
         klass: Class<out T>,
         tags: Set<String>? = null
     ): T = newWorkflow(klass, tags, null, null)
 
+    /**
+     *  Create a stub for a new workflow
+     *
+     *  @property klass the interface of a workflow
+     */
     fun <T : Any> newWorkflow(
         klass: Class<out T>
     ): T = newWorkflow(klass, null, null, null)
 
     /**
-     *  Create a stub for an existing workflow targeted by id
+     *  Create a stub for an existing workflow (targeted by id)
+     *
+     *  @property klass should the interface of a workflow
+     *  @property id should the workflow's id
      */
     fun <T : Any> getWorkflowById(
         klass: Class<out T>,
@@ -93,7 +120,10 @@ interface InfiniticClient : Closeable {
     ): T
 
     /**
-     *  Create a stub for existing workflow targeted by tag
+     *  Create a stub for existing workflow(s) (targeted by tag)
+     *
+     *  @property klass should the interface of a workflow
+     *  @property tag should the workflow's tag
      */
     fun <T : Any> getWorkflowByTag(
         klass: Class<out T>,
@@ -562,39 +592,46 @@ interface InfiniticClient : Closeable {
 
     /**
      * Await a workflow targeted by its id
+     *
+     *  @property stub should be a workflow stub obtained by [getWorkflowById]
      */
-    @Suppress("UNCHECKED_CAST")
     fun <T : Any> await(
         stub: T
     ): Any?
 
     /**
      * Await a method from a running workflow targeted by its id and the methodRunId
+     *
+     *  @property stub should be a workflow stub obtained by [getWorkflowById] or [getWorkflowByTag]
+     *  @property methodRunId is the id of the method run to await
      */
-    @Suppress("UNCHECKED_CAST")
     fun <T : Any> await(
         stub: T,
         methodRunId: String
     ): Any?
 
     /**
-     * Cancel a workflow
+     * Cancel workflow(s) (without waiting for the message to be sent)
+     *
+     *  @property stub should be a workflow stub obtained by [getWorkflowById] or [getWorkflowByTag]
      */
-    @Suppress("UNCHECKED_CAST")
     fun <T : Any> cancelAsync(
         stub: T
     ): CompletableFuture<Unit>
 
     /**
-     * Cancel a workflow
+     * Cancel workflow(s)
+     *
+     *  @property stub should be a workflow stub obtained by [getWorkflowById] or [getWorkflowByTag]
      */
-    @Suppress("UNCHECKED_CAST")
     fun <T : Any> cancel(
         stub: T
     ): Unit = cancelAsync(stub).join()
 
     /**
-     * Retry the workflow task
+     * Retry the workflow task (without waiting for the message to be sent)
+     *
+     * @property stub should be a workflow stub obtained by [getWorkflowById] or [getWorkflowByTag]
      */
     @Suppress("UNCHECKED_CAST")
     fun <T : Any> retryWorkflowTaskAsync(
@@ -603,28 +640,50 @@ interface InfiniticClient : Closeable {
 
     /**
      * Retry the workflow task
+     *
+     * @property stub should be a workflow stub obtained by [getWorkflowById] or [getWorkflowByTag]
      */
     fun <T : Any> retryWorkflowTask(
         stub: T,
     ): Unit = retryWorkflowTaskAsync(stub).join()
 
     /**
-     * Retry all failed tasks
+     * Retry a task in workflow(s) by its class (without waiting for the message to be sent)
+     *
+     * @property taskClass should be the interface of the task(s) to retry (null if all)
+     * @property taskStatus should be the status of the task(s) to retry (null if all)
+     * @property taskId should be the if of the task to retry (null if all)
+     *
+     * [taskClass], [taskStatus], [taskId] can be combined, eg. to target failed tasks of a specific class.
      */
-    @Suppress("UNCHECKED_CAST")
-    fun <T : Any> retryFailedTasksAsync(
+    fun <T : Any> retryTasksAsync(
         stub: T,
+        taskClass: Class<*>? = null,
+        taskStatus: DeferredStatus? = null,
+        taskId: String? = null,
     ): CompletableFuture<Unit>
 
     /**
-     * Retry all failed tasks
+     * Retry task(s) in workflow(s)
+     *
+     * @property stub should be a workflow stub obtained by [getWorkflowById] or [getWorkflowByTag]
+     * @property taskClass should be the interface of the task(s) to retry (null if all)
+     * @property taskStatus should be the status of the task(s) to retry (null if all)
+     * @property taskId should be the if of the task to retry (null if all)
+     *
+     * [taskClass], [taskStatus], [taskId] can be combined, eg. to target failed tasks of a specific class.
      */
-    fun <T : Any> retryFailedTasks(
+    fun <T : Any> retryTasks(
         stub: T,
-    ): Unit = retryFailedTasksAsync(stub).join()
+        taskClass: Class<*>? = null,
+        taskStatus: DeferredStatus? = null,
+        taskId: String? = null,
+    ): Unit = retryTasksAsync(stub, taskClass, taskStatus, taskId).join()
 
     /**
-     * get ids of a stub, associated to a specific tag
+     * Get ids of a stub, associated to a specific tag
+     *
+     * @property stub should be a workflow stub obtained by [getWorkflowById] or [getWorkflowByTag]
      */
     fun <T : Any> getIds(
         stub: T

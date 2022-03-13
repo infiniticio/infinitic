@@ -46,6 +46,8 @@ import io.infinitic.common.proxies.ExistingWorkflowProxyHandler
 import io.infinitic.common.proxies.NewTaskProxyHandler
 import io.infinitic.common.proxies.NewWorkflowProxyHandler
 import io.infinitic.common.proxies.ProxyHandler
+import io.infinitic.common.tasks.data.TaskId
+import io.infinitic.common.tasks.data.TaskName
 import io.infinitic.common.tasks.executors.errors.FailedWorkflowError
 import io.infinitic.common.workflows.data.channels.ChannelSignalId
 import io.infinitic.common.workflows.data.methodRuns.MethodRunId
@@ -57,7 +59,6 @@ import io.infinitic.common.workflows.engine.SendToWorkflowEngine
 import io.infinitic.common.workflows.engine.messages.CancelWorkflow
 import io.infinitic.common.workflows.engine.messages.DispatchMethod
 import io.infinitic.common.workflows.engine.messages.DispatchWorkflow
-import io.infinitic.common.workflows.engine.messages.RetryFailedTasks
 import io.infinitic.common.workflows.engine.messages.RetryWorkflowTask
 import io.infinitic.common.workflows.engine.messages.SendSignal
 import io.infinitic.common.workflows.engine.messages.WaitWorkflow
@@ -66,13 +67,13 @@ import io.infinitic.common.workflows.tags.messages.AddTagToWorkflow
 import io.infinitic.common.workflows.tags.messages.CancelWorkflowByTag
 import io.infinitic.common.workflows.tags.messages.DispatchMethodByTag
 import io.infinitic.common.workflows.tags.messages.GetWorkflowIdsByTag
-import io.infinitic.common.workflows.tags.messages.RetryFailedTasksByTag
 import io.infinitic.common.workflows.tags.messages.RetryWorkflowTaskByTag
 import io.infinitic.common.workflows.tags.messages.SendSignalByTag
 import io.infinitic.exceptions.CanceledWorkflowException
 import io.infinitic.exceptions.FailedWorkflowException
 import io.infinitic.exceptions.UnknownWorkflowException
 import io.infinitic.exceptions.clients.InvalidChannelUsageException
+import io.infinitic.workflows.DeferredStatus
 import io.infinitic.workflows.SendChannel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.coroutineScope
@@ -82,6 +83,8 @@ import kotlinx.coroutines.future.future
 import kotlinx.coroutines.launch
 import mu.KotlinLogging
 import java.util.concurrent.CompletableFuture
+import io.infinitic.common.workflows.engine.messages.RetryTasks as RetryTaskInWorkflow
+import io.infinitic.common.workflows.tags.messages.RetryTasksByTag as RetryTaskInWorkflowByTag
 
 internal class ClientDispatcherImpl(
     private val scope: CoroutineScope,
@@ -246,25 +249,34 @@ internal class ClientDispatcherImpl(
         }
     }
 
-    override fun retryFailedTasksAsync(
+    override fun retryTaskAsync(
         workflowName: WorkflowName,
         workflowId: WorkflowId?,
-        workflowTag: WorkflowTag?
+        workflowTag: WorkflowTag?,
+        taskId: TaskId?,
+        taskStatus: DeferredStatus?,
+        taskName: TaskName?
     ): CompletableFuture<Unit> = scope.future {
         when {
             workflowId != null -> {
-                val msg = RetryFailedTasks(
+                val msg = RetryTaskInWorkflow(
                     workflowName = workflowName,
                     workflowId = workflowId,
-                    emitterName = clientName
+                    emitterName = clientName,
+                    taskId = taskId,
+                    taskStatus = taskStatus,
+                    taskName = taskName
                 )
                 sendToWorkflowEngine(msg)
             }
             workflowTag != null -> {
-                val msg = RetryFailedTasksByTag(
+                val msg = RetryTaskInWorkflowByTag(
                     workflowName = workflowName,
                     workflowTag = workflowTag,
-                    emitterName = clientName
+                    emitterName = clientName,
+                    taskId = taskId,
+                    taskStatus = taskStatus,
+                    taskName = taskName
                 )
                 sendToWorkflowTagEngine(msg)
             }

@@ -32,6 +32,8 @@ import io.infinitic.common.data.methods.MethodName
 import io.infinitic.common.data.methods.MethodParameterTypes
 import io.infinitic.common.data.methods.MethodParameters
 import io.infinitic.common.messages.Message
+import io.infinitic.common.tasks.data.TaskId
+import io.infinitic.common.tasks.data.TaskName
 import io.infinitic.common.workflows.data.channels.ChannelName
 import io.infinitic.common.workflows.data.channels.ChannelSignal
 import io.infinitic.common.workflows.data.channels.ChannelSignalId
@@ -41,6 +43,7 @@ import io.infinitic.common.workflows.data.workflows.WorkflowCancellationReason
 import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.data.workflows.WorkflowName
 import io.infinitic.common.workflows.data.workflows.WorkflowTag
+import io.infinitic.workflows.DeferredStatus
 import kotlinx.serialization.Serializable
 
 @Serializable @AvroNamespace("io.infinitic.workflows.tag")
@@ -82,9 +85,12 @@ data class RetryWorkflowTaskByTag(
 ) : WorkflowTagMessage()
 
 @Serializable @AvroNamespace("io.infinitic.workflows.tag")
-data class RetryFailedTasksByTag(
+data class RetryTasksByTag(
     override val workflowName: WorkflowName,
     override val workflowTag: WorkflowTag,
+    val taskId: TaskId?,
+    val taskStatus: DeferredStatus?,
+    val taskName: TaskName?,
     override val emitterName: ClientName,
 ) : WorkflowTagMessage()
 

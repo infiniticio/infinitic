@@ -132,7 +132,7 @@ interface WorkflowA : ParentInterface {
     fun failing7ter(): String
     fun failing8(): String
     fun failing9(): Boolean
-//    fun failing10(): String
+    fun failing10(): String
     fun failing10bis()
     fun failing11()
     fun failing12(): String
@@ -256,24 +256,6 @@ class WorkflowAImpl : Workflow(), WorkflowA {
     }
 
     override fun deferred1bis(): String { return taskA.reverse("X") }
-
-//    override fun deferred1(): String {
-//        var str = ""
-//
-//        val d = async {
-//            println("str = $str")
-//            str += taskA.reverse("X")
-//        }
-//        str += d.isOngoing().toString()
-//        str += d.isCompleted().toString()
-//        str += d.isTerminated().toString()
-//        d.await()
-//        str += d.isOngoing().toString()
-//        str += d.isCompleted().toString()
-//        str += d.isTerminated().toString()
-//
-//        return str  // should be "truefalsefalseXfalsetruetrue"
-//    }
 
     override fun or1(): String {
         val d1 = dispatch(taskA::reverse, "ab")
@@ -647,28 +629,26 @@ class WorkflowAImpl : Workflow(), WorkflowA {
         }
 
         // trigger the retry of the previous task
-        taskA.retryTasks(WorkflowA::class.java.name, context.id)
+        taskA.retryFailedTasks(WorkflowA::class.java.name, context.id)
 
         return deferred.await() == "ok" && result == "caught"
     }
 
-//    override fun failing10(): String {
-//        p1 = "o"
-//
-//        val deferred = dispatch(taskA::await, 1000)
-//
-//        dispatch(self::failing10bis)
-//
-//        dispatch(taskA::cancelTaskA, deferred.id!!)
-//
-//        try {
-//            deferred.await()
-//        } catch (e: CanceledDeferredException) {
-//            // continue
-//        }
-//
-//        return p1 // should be "ok"
-//    }
+    override fun failing10(): String {
+        p1 = "o"
+
+        val deferred = dispatch(taskA::successAtRetry)
+
+        dispatch(self::failing10bis)
+
+        try {
+            deferred.await()
+        } catch (e: FailedDeferredException) {
+            // continue
+        }
+
+        return p1 // should be "ok"
+    }
 
     override fun failing10bis() { p1 += "k" }
 

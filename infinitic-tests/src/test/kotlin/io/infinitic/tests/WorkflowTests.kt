@@ -44,6 +44,7 @@ import io.infinitic.tests.workflows.WorkflowA
 import io.infinitic.tests.workflows.WorkflowAnnotated
 import io.infinitic.tests.workflows.WorkflowB
 import io.infinitic.tests.workflows.WorkflowC
+import io.infinitic.workflows.DeferredStatus
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.collections.shouldBeIn
@@ -530,7 +531,7 @@ internal class WorkflowTests : StringSpec({
         workflowA.failing7ter() shouldBe Exception::class.java.name
     }
 
-    "Retry a failed task from client should restart a workflow" {
+    "Retry all failed tasks should restart a workflow" {
         val error = shouldThrow<FailedWorkflowException> { workflowA.failing8() }
 
         val deferred = client.lastDeferred!!
@@ -540,7 +541,37 @@ internal class WorkflowTests : StringSpec({
 
         later {
             val w = client.getWorkflowById(WorkflowA::class.java, deferred.id)
-            client.retryFailedTasks(w)
+            client.retryTasks(w, taskStatus = DeferredStatus.FAILED)
+        }
+
+        deferred.await() shouldBe "ok"
+    }
+
+    "Retry a failed task by id should restart a workflow" {
+        val error = shouldThrow<FailedWorkflowException> { workflowA.failing8() }
+        val deferred = client.lastDeferred!!
+
+        val cause = error.deferredException as FailedTaskException
+        cause.taskName shouldBe TaskA::class.java.name
+
+        later {
+            val w = client.getWorkflowById(WorkflowA::class.java, deferred.id)
+            client.retryTasks(w, taskId = cause.taskId)
+        }
+
+        deferred.await() shouldBe "ok"
+    }
+
+    "Retry a failed task by class should restart a workflow" {
+        val error = shouldThrow<FailedWorkflowException> { workflowA.failing8() }
+        val deferred = client.lastDeferred!!
+
+        val cause = error.deferredException as FailedTaskException
+        cause.taskName shouldBe TaskA::class.java.name
+
+        later {
+            val w = client.getWorkflowById(WorkflowA::class.java, deferred.id)
+            client.retryTasks(w, taskClass = TaskA::class.java)
         }
 
         deferred.await() shouldBe "ok"
@@ -550,9 +581,9 @@ internal class WorkflowTests : StringSpec({
         workflowA.failing9() shouldBe true
     }
 
-//    "properties should be correctly set after a deferred cancellation" {
-//        workflowA.failing10() shouldBe "ok"
-//    }
+    "properties should be correctly set after a failed deferred" {
+        workflowA.failing10() shouldBe "ok"
+    }
 
     "Synchronous call of unknown workflow should throw" {
         val error = shouldThrow<FailedWorkflowException> { workflowA.failing11() }
@@ -613,6 +644,7 @@ internal class WorkflowTests : StringSpec({
 
         // delay is necessary to be sure that tag engine has processed
         delay(500)
+
         client.getIds(w).contains(deferred.id) shouldBe false
     }
 

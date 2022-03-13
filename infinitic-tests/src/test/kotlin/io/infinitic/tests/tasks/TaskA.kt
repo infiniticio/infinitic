@@ -28,6 +28,7 @@ package io.infinitic.tests.tasks
 import io.infinitic.common.tasks.data.TaskMeta
 import io.infinitic.tasks.Task
 import io.infinitic.tests.workflows.WorkflowA
+import io.infinitic.workflows.DeferredStatus
 import java.time.Duration
 
 interface ParentInterface {
@@ -40,7 +41,7 @@ interface TaskA : ParentInterface {
     fun await(delay: Long): Long
     fun workflowId(): String?
     fun workflowName(): String?
-    fun retryTasks(workflowName: String, id: String)
+    fun retryFailedTasks(workflowName: String, id: String)
 //    fun cancelTaskA(id: String)
     fun cancelWorkflowA(id: String)
     fun failing()
@@ -67,10 +68,10 @@ class TaskAImpl : Task(), TaskA {
 //        context.client.cancel(t)
 //    }
 
-    override fun retryTasks(workflowName: String, id: String) {
+    override fun retryFailedTasks(workflowName: String, id: String) {
         Thread.sleep(50)
         val w = context.client.getWorkflowById(Class.forName(workflowName), id)
-        context.client.retryFailedTasks(w)
+        context.client.retryTasks(w, taskStatus = DeferredStatus.FAILED)
     }
 
     override fun cancelWorkflowA(id: String) {

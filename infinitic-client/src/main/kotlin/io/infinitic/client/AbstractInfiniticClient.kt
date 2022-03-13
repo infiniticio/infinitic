@@ -34,13 +34,18 @@ import io.infinitic.common.clients.messages.ClientMessage
 import io.infinitic.common.data.ClientName
 import io.infinitic.common.exceptions.thisShouldNotHappen
 import io.infinitic.common.proxies.ExistingWorkflowProxyHandler
+import io.infinitic.common.proxies.NewTaskProxyHandler
 import io.infinitic.common.proxies.NewWorkflowProxyHandler
 import io.infinitic.common.proxies.ProxyHandler
+import io.infinitic.common.tasks.data.TaskId
+import io.infinitic.common.tasks.data.TaskMeta
 import io.infinitic.common.workflows.data.methodRuns.MethodRunId
 import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.data.workflows.WorkflowMeta
 import io.infinitic.common.workflows.data.workflows.WorkflowTag
 import io.infinitic.exceptions.clients.InvalidStubException
+import io.infinitic.tasks.TaskOptions
+import io.infinitic.workflows.DeferredStatus
 import io.infinitic.workflows.WorkflowOptions
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -231,7 +236,7 @@ abstract class AbstractInfiniticClient : InfiniticClient {
     }
 
     /**
-     * Retry a workflow
+     * Retry a workflow task
      */
     @Suppress("UNCHECKED_CAST")
     override fun <T : Any> retryWorkflowTaskAsync(
@@ -244,14 +249,29 @@ abstract class AbstractInfiniticClient : InfiniticClient {
     }
 
     /**
-     * Retry all failed tasks
+     * Retry task(s) within workflow(s)
      */
-    @Suppress("UNCHECKED_CAST")
-    override fun <T : Any> retryFailedTasksAsync(
+    override fun <T : Any> retryTasksAsync(
         stub: T,
+        taskClass: Class<*>?,
+        taskStatus: DeferredStatus?,
+        taskId: String?,
     ): CompletableFuture<Unit> = when (val handler = getProxyHandler(stub)) {
-        is ExistingWorkflowProxyHandler ->
-            dispatcher.retryFailedTasksAsync(handler.workflowName, handler.workflowId, handler.workflowTag)
+        is ExistingWorkflowProxyHandler -> {
+            val taskName = taskClass?.let {
+                // Use NewTaskProxyHandler in case of use of @Name annotation
+                NewTaskProxyHandler(it, setOf(), TaskOptions(), TaskMeta()) { dispatcher }.taskName
+            }
+
+            dispatcher.retryTaskAsync(
+                workflowName = handler.workflowName,
+                workflowId = handler.workflowId,
+                workflowTag = handler.workflowTag,
+                taskName = taskName,
+                taskStatus = taskStatus,
+                taskId = taskId?.let { TaskId(it) }
+            )
+        }
         else ->
             throw InvalidStubException("$stub")
     }

@@ -25,24 +25,42 @@
 
 package io.infinitic.workflows.engine.handlers
 
+import io.infinitic.common.workflows.data.commands.CommandId
 import io.infinitic.common.workflows.data.commands.CommandStatus
 import io.infinitic.common.workflows.data.commands.DispatchTaskPastCommand
+import io.infinitic.common.workflows.engine.messages.RetryTasks
 import io.infinitic.common.workflows.engine.state.WorkflowState
+import io.infinitic.workflows.DeferredStatus
 import io.infinitic.workflows.engine.helpers.dispatchTask
 import io.infinitic.workflows.engine.output.WorkflowEngineOutput
 import kotlinx.coroutines.CoroutineScope
 
-internal fun CoroutineScope.retryFailedTasks(
+internal fun CoroutineScope.retryTasks(
     output: WorkflowEngineOutput,
-    state: WorkflowState
+    state: WorkflowState,
+    message: RetryTasks
 ) {
+    val taskId = message.taskId?.run { CommandId.from(this) }
+    val taskStatus = when (message.taskStatus) {
+        DeferredStatus.ONGOING -> CommandStatus.Ongoing::class
+        DeferredStatus.UNKNOWN -> CommandStatus.Unknown::class
+        DeferredStatus.CANCELED -> CommandStatus.Canceled::class
+        DeferredStatus.FAILED -> CommandStatus.Failed::class
+        DeferredStatus.COMPLETED -> CommandStatus.Completed::class
+        null -> null
+    }
+    val taskName = message.taskName
+
     // for all method runs
     state.methodRuns.forEach { methodRun ->
         // for all past tasks
         methodRun.pastCommands.filterIsInstance<DispatchTaskPastCommand>()
-            // that are failed
-            .filter { it.commandStatus is CommandStatus.Failed }
-            // dispatch a new sequence of this task
+            .filter {
+                (taskId == null || it.commandId == taskId) &&
+                    (taskStatus == null || it.commandStatus::class == taskStatus) &&
+                    (taskName == null || it.command.taskName == taskName)
+            }
+            // dispatch a new sequence of those task
             .forEach { dispatchTaskPastCommand ->
                 dispatchTaskPastCommand.taskRetrySequence = dispatchTaskPastCommand.taskRetrySequence + 1
 
