@@ -27,6 +27,7 @@ package io.infinitic.common.serDe.json
 
 import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.core.JsonGenerator
+import com.fasterxml.jackson.databind.DeserializationFeature
 import com.fasterxml.jackson.databind.JsonSerializer
 import com.fasterxml.jackson.databind.SerializationFeature
 import com.fasterxml.jackson.databind.SerializerProvider
@@ -44,6 +45,7 @@ object Json {
         configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false)
         addModule(JavaTimeModule())
         addModule(KotlinModule.Builder().build())
+        configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
     }
 
     fun stringify(msg: Any?, pretty: Boolean = false): String = when (pretty) {
