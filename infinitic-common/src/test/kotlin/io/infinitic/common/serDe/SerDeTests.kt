@@ -118,6 +118,18 @@ class SerDeTests : StringSpec({
         val2 shouldBe val1
     }
 
+    "Object should be deserializable with additionnal properties" {
+        val val1 = Obj1("42", 42, Type.TYPE_1)
+        val valtmp = Obj2("40", 40)
+        val data = SerializedData.from(valtmp).also {
+            it.bytes = SerializedData.from(val1).bytes
+        }
+        val val2 = data.deserialize() as Obj2
+
+        val2.foo shouldBe val1.foo
+        val2.bar shouldBe val2.bar
+    }
+
     "Object containing set of sealed should be serializable / deserializable (even with a 'type' property)" {
         val val1 = Objs(setOf(Obj1("42", 42, Type.TYPE_1)))
         val val2 = SerializedData.from(val1).deserialize()
@@ -172,6 +184,9 @@ enum class Type {
 
 @Serializable
 data class Obj1(val foo: String, val bar: Int, val type: Type) : Obj()
+
+@Serializable
+data class Obj2(val foo: String, val bar: Int) : Obj()
 
 @Serializable
 data class Objs(val objs: Set<Obj>)
