@@ -33,13 +33,14 @@ import io.infinitic.client.samples.FakeTaskParent
 import io.infinitic.client.samples.FakeWorkflow
 import io.infinitic.client.samples.FakeWorkflowImpl
 import io.infinitic.client.samples.FooWorkflow
+import io.infinitic.common.clients.ClientStarter
 import io.infinitic.common.data.ClientName
 import io.infinitic.common.data.methods.MethodName
 import io.infinitic.common.data.methods.MethodParameterTypes
 import io.infinitic.common.data.methods.MethodParameters
 import io.infinitic.common.fixtures.TestFactory
-import io.infinitic.common.tasks.engine.messages.TaskEngineMessage
-import io.infinitic.common.tasks.tags.messages.TaskTagEngineMessage
+import io.infinitic.common.tasks.executors.messages.TaskExecutorMessage
+import io.infinitic.common.tasks.tags.messages.TaskTagMessage
 import io.infinitic.common.workflows.data.channels.ChannelName
 import io.infinitic.common.workflows.data.channels.ChannelSignal
 import io.infinitic.common.workflows.data.channels.ChannelSignalType
@@ -58,29 +59,31 @@ import io.infinitic.common.workflows.tags.messages.AddTagToWorkflow
 import io.infinitic.common.workflows.tags.messages.CancelWorkflowByTag
 import io.infinitic.common.workflows.tags.messages.GetWorkflowIdsByTag
 import io.infinitic.common.workflows.tags.messages.SendSignalByTag
-import io.infinitic.common.workflows.tags.messages.WorkflowTagEngineMessage
+import io.infinitic.common.workflows.tags.messages.WorkflowTagMessage
 import io.infinitic.exceptions.clients.InvalidChannelUsageException
 import io.infinitic.exceptions.clients.InvalidStubException
 import io.infinitic.workflows.WorkflowOptions
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
+import io.mockk.every
+import io.mockk.mockk
 import io.mockk.slot
 import java.util.UUID
 import java.util.concurrent.CopyOnWriteArrayList
 
-private val taskTagSlots = CopyOnWriteArrayList<TaskTagEngineMessage>() // multithreading update
-private val workflowTagSlots = CopyOnWriteArrayList<WorkflowTagEngineMessage>() // multithreading update
-private val taskSlot = slot<TaskEngineMessage>()
+private val taskTagSlots = CopyOnWriteArrayList<TaskTagMessage>() // multithreading update
+private val workflowTagSlots = CopyOnWriteArrayList<WorkflowTagMessage>() // multithreading update
+private val taskSlot = slot<TaskExecutorMessage>()
 private val workflowSlot = slot<WorkflowEngineMessage>()
 private val clientNameTest = ClientName("clientTest")
 
-class ClientWorkflow : InfiniticClient() {
+class ClientWorkflow : AbstractInfiniticClient() {
     override val clientName = clientNameTest
-    override val sendToTaskTagEngine = mockSendToTaskTagEngine(this, taskTagSlots, clientName, sendingScope)
-    override val sendToTaskEngine = mockSendToTaskEngine(this, taskSlot, clientName, sendingScope)
-    override val sendToWorkflowTagEngine = mockSendToWorkflowTagEngine(this, workflowTagSlots, clientName, sendingScope)
-    override val sendToWorkflowEngine = mockSendToWorkflowEngine(this, workflowSlot, clientName, sendingScope)
+    override val clientStarter = mockk<ClientStarter> {
+        every { sendToWorkflowTag } returns mockSendToWorkflowTagEngine(this@ClientWorkflow, workflowTagSlots, clientName, sendingScope)
+        every { sendToWorkflowEngine } returns mockSendToWorkflowEngine(this@ClientWorkflow, workflowSlot, clientName, sendingScope)
+    }
 }
 
 class ClientWorkflowTests : StringSpec({
@@ -616,17 +619,17 @@ class ClientWorkflowTests : StringSpec({
 
     "Retry a channel should throw" {
         shouldThrow<InvalidChannelUsageException> {
-            client.retry(fakeWorkflow.channelString)
+            client.retryWorkflowTask(fakeWorkflow.channelString)
         }
 
         val byId = client.getWorkflowById(FakeWorkflow::class.java, UUID.randomUUID().toString())
         shouldThrow<InvalidStubException> {
-            client.retry(byId.channelString)
+            client.retryWorkflowTask(byId.channelString)
         }
 
         val byTag = client.getWorkflowByTag(FakeWorkflow::class.java, "foo")
         shouldThrow<InvalidStubException> {
-            client.retry(byTag.channelString)
+            client.retryWorkflowTask(byTag.channelString)
         }
     }
 
@@ -643,22 +646,6 @@ class ClientWorkflowTests : StringSpec({
         val byTag = client.getWorkflowByTag(FakeWorkflow::class.java, "foo")
         shouldThrow<InvalidStubException> {
             client.cancel(byTag.channelString)
-        }
-    }
-
-    "Complete a channel should throw" {
-        shouldThrow<InvalidChannelUsageException> {
-            client.complete(fakeWorkflow.channelString, null)
-        }
-
-        val byId = client.getWorkflowById(FakeWorkflow::class.java, UUID.randomUUID().toString())
-        shouldThrow<InvalidStubException> {
-            client.complete(byId.channelString, null)
-        }
-
-        val byTag = client.getWorkflowByTag(FakeWorkflow::class.java, "foo")
-        shouldThrow<InvalidStubException> {
-            client.complete(byTag.channelString, null)
         }
     }
 

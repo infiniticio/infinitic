@@ -25,6 +25,10 @@
 
 package io.infinitic.common.tasks.executors.messages
 
+import com.github.avrokotlin.avro4k.AvroNamespace
+import kotlinx.serialization.Serializable
+
+@Serializable @AvroNamespace("io.infinitic.tasks.executor")
 enum class TaskExecutorMessageType {
-    EXECUTE_TASK_ATTEMPT
+    EXECUTE_TASK
 }

@@ -34,7 +34,9 @@ internal fun CoroutineScope.retryWorkflowTask(
     output: WorkflowEngineOutput,
     state: WorkflowState
 ) {
-    if (state.runningWorkflowTaskId != null) return
+    // we do not check if a workflow task is already running:
+    // this command will update state.runningWorkflowTaskId
+    // so that another workflow task coming back later will be ignored
 
     // retry last workflowTask
     dispatchWorkflowTask(

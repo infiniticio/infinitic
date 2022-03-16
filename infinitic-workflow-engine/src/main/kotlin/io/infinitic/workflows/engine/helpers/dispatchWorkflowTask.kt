@@ -26,20 +26,11 @@
 package io.infinitic.workflows.engine.helpers
 
 import io.infinitic.common.data.MillisInstant
-import io.infinitic.common.data.methods.MethodName
-import io.infinitic.common.data.methods.MethodParameterTypes
-import io.infinitic.common.data.methods.MethodParameters
 import io.infinitic.common.tasks.data.TaskId
-import io.infinitic.common.tasks.data.TaskMeta
-import io.infinitic.common.tasks.data.TaskName
-import io.infinitic.common.tasks.engine.messages.DispatchTask
 import io.infinitic.common.workflows.data.methodRuns.MethodRun
 import io.infinitic.common.workflows.data.methodRuns.MethodRunPosition
-import io.infinitic.common.workflows.data.workflowTasks.WorkflowTask
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskParameters
-import io.infinitic.common.workflows.data.workflowTasks.plus
 import io.infinitic.common.workflows.engine.state.WorkflowState
-import io.infinitic.tasks.TaskOptions
 import io.infinitic.workflows.engine.output.WorkflowEngineOutput
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
@@ -54,6 +45,7 @@ internal fun CoroutineScope.dispatchWorkflowTask(
 
     // defines workflow task input
     val workflowTaskParameters = WorkflowTaskParameters(
+        taskId = TaskId(),
         workflowId = state.workflowId,
         workflowName = state.workflowName,
         workflowOptions = state.workflowOptions,
@@ -61,31 +53,17 @@ internal fun CoroutineScope.dispatchWorkflowTask(
         workflowMeta = state.workflowMeta,
         workflowPropertiesHashValue = state.propertiesHashValue, // TODO filterStore(state.propertyStore, listOf(methodRun))
         workflowTaskIndex = state.workflowTaskIndex,
-        methodRun = methodRun
-    )
-
-    // defines workflow task
-    val workflowTask = DispatchTask(
-        taskName = TaskName(WorkflowTask::class.java.name),
-        taskId = TaskId(),
-        taskOptions = TaskOptions(),
-        clientWaiting = false,
-        methodName = MethodName(WorkflowTask::handle.name),
-        methodParameterTypes = MethodParameterTypes(listOf(WorkflowTaskParameters::class.java.name)),
-        methodParameters = MethodParameters.from(workflowTaskParameters),
-        workflowId = state.workflowId,
-        workflowName = state.workflowName,
-        methodRunId = methodRun.methodRunId,
-        taskTags = setOf(),
-        taskMeta = TaskMeta(),
+        methodRun = methodRun,
         emitterName = output.clientName
     )
 
+    val dispatchTaskMessage = workflowTaskParameters.toExecuteTaskMessage()
+
     // dispatch workflow task
-    launch { output.sendToTaskEngine(workflowTask) }
+    launch { output.sendToWorkflowTaskExecutor(dispatchTaskMessage) }
 
     with(state) {
-        runningWorkflowTaskId = workflowTask.taskId
+        runningWorkflowTaskId = workflowTaskParameters.taskId
         // do not update runningWorkflowTaskInstant if it is a retry
         if (runningMethodRunId != methodRun.methodRunId || runningMethodRunPosition != methodRunPosition) {
             runningWorkflowTaskInstant = MillisInstant.now()

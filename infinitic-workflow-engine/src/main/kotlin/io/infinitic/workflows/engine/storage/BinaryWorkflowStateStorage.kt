@@ -25,18 +25,26 @@
 
 package io.infinitic.workflows.engine.storage
 
-import io.infinitic.common.storage.Flushable
 import io.infinitic.common.storage.keyValue.KeyValueStorage
+import io.infinitic.common.storage.keyValue.WrappedKeyValueStorage
 import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.engine.state.WorkflowState
+import io.infinitic.common.workflows.engine.storage.WorkflowStateStorage
+import org.jetbrains.annotations.TestOnly
 
 /**
- * This WorkflowStateStorage implementation converts state objects used by the engine to Avro objects, and saves
- * them in a persistent key value storage.
+ * WorkflowStateStorage implementation
+ *
+ * Workflow state are converted to Avro bytes array and saved in a key value store by WorkflowId
+ *
+ * Any exception thrown by the storage is wrapped into KeyValueStorageException
  */
 class BinaryWorkflowStateStorage(
-    private val storage: KeyValueStorage,
-) : WorkflowStateStorage, Flushable by storage {
+    storage: KeyValueStorage,
+) : WorkflowStateStorage {
+
+    // wrap any exception into KeyValueStorageException
+    private val storage = WrappedKeyValueStorage(storage)
 
     override suspend fun getState(workflowId: WorkflowId): WorkflowState? {
         val key = getWorkflowStateKey(workflowId)
@@ -53,6 +61,9 @@ class BinaryWorkflowStateStorage(
         val key = getWorkflowStateKey(workflowId)
         storage.del(key)
     }
+
+    @TestOnly
+    override fun flush() = storage.flush()
 
     private fun getWorkflowStateKey(workflowId: WorkflowId) = "workflow.state.$workflowId"
 }

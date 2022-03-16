@@ -38,7 +38,7 @@ import io.infinitic.common.tasks.data.TaskMeta
 import io.infinitic.common.tasks.data.TaskName
 import io.infinitic.common.tasks.data.TaskRetryIndex
 import io.infinitic.common.tasks.data.TaskRetrySequence
-import io.infinitic.common.tasks.engine.state.TaskState
+import io.infinitic.common.tasks.data.TaskTag
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
 import kotlinx.serialization.ExperimentalSerializationApi
@@ -163,9 +163,9 @@ class DataTests : StringSpec({
         m2 shouldBe m
     }
 
-    "TaskState can be serDe to byteArray" {
-        val taskState = TestFactory.random<TaskState>()
+    "TaskTak should be stringify as string" {
+        val taskTag = TestFactory.random<TaskTag>()
 
-        TaskState.fromByteArray(taskState.toByteArray()) shouldBe taskState
+        "$taskTag" shouldBe taskTag.tag
     }
 })

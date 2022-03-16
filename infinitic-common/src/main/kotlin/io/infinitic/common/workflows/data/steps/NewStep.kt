@@ -25,10 +25,11 @@
 
 package io.infinitic.common.workflows.data.steps
 
+import com.github.avrokotlin.avro4k.AvroNamespace
 import io.infinitic.common.workflows.data.methodRuns.MethodRunPosition
 import kotlinx.serialization.Serializable
 
-@Serializable
+@Serializable @AvroNamespace("io.infinitic.workflows.data")
 data class NewStep(
     val stepId: StepId = StepId(),
     val step: Step,

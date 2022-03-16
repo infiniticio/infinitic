@@ -29,7 +29,7 @@ import io.infinitic.dashboard.Infinitic.topics
 import io.infinitic.dashboard.panels.infrastructure.requests.Completed
 import io.infinitic.dashboard.panels.infrastructure.requests.Failed
 import io.infinitic.dashboard.panels.infrastructure.requests.Request
-import io.infinitic.pulsar.topics.Topic
+import io.infinitic.transport.pulsar.topics.TopicType
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
@@ -45,7 +45,7 @@ private val logger = KotlinLogging.logger {}
 
 typealias TopicsStats<T> = Map<T, Request<PartitionedTopicStats>>
 
-abstract class JobState<T : Topic>(
+abstract class JobState<T : TopicType>(
     open val name: String,
     open val topicsStats: TopicsStats<T>,
 ) {
@@ -64,7 +64,7 @@ abstract class JobState<T : Topic>(
     fun statsLoading() = create(topicsStats = topicsStats.mapValues { it.value.copyLoading() })
 }
 
-internal fun <S : Topic, T : JobState<S>> CoroutineScope.update(kvar: KVar<T>) = launch {
+internal fun <S : TopicType, T : JobState<S>> CoroutineScope.update(kvar: KVar<T>) = launch {
     while (isActive) {
         with(kvar) {
             val delay = launch { delay(UPDATE_DELAY) }

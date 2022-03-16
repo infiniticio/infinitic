@@ -26,7 +26,7 @@
 package io.infinitic.workflows
 
 import io.infinitic.annotations.Name
-import io.infinitic.common.proxies.GetWorkflowProxyHandler
+import io.infinitic.common.proxies.ExistingWorkflowProxyHandler
 import io.infinitic.common.proxies.NewTaskProxyHandler
 import io.infinitic.common.proxies.NewWorkflowProxyHandler
 import io.infinitic.common.proxies.ProxyHandler
@@ -85,7 +85,7 @@ abstract class Workflow {
     protected fun <T : Any> getWorkflowById(
         klass: Class<out T>,
         id: String
-    ): T = GetWorkflowProxyHandler(
+    ): T = ExistingWorkflowProxyHandler(
         klass = klass,
         WorkflowId(id),
         null
@@ -97,7 +97,7 @@ abstract class Workflow {
     protected fun <T : Any> getWorkflowByTag(
         klass: Class<out T>,
         tag: String
-    ): T = GetWorkflowProxyHandler(
+    ): T = ExistingWorkflowProxyHandler(
         klass = klass,
         null,
         WorkflowTag(tag)

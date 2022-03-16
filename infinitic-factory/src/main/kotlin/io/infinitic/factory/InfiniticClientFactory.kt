@@ -25,12 +25,12 @@
 
 package io.infinitic.factory
 
-import io.infinitic.client.InfiniticClient
+import io.infinitic.common.clients.InfiniticClient
 import io.infinitic.inMemory.InMemoryInfiniticClient
 import io.infinitic.pulsar.PulsarInfiniticClient
 import io.infinitic.pulsar.config.ClientConfig
-import io.infinitic.transport.Transport
-import io.infinitic.worker.config.WorkerConfig
+import io.infinitic.transport.config.Transport
+import io.infinitic.workers.config.WorkerConfig
 
 @Suppress("unused")
 object InfiniticClientFactory {

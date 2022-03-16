@@ -25,62 +25,33 @@
 
 package io.infinitic.inMemory
 
-import io.infinitic.client.InfiniticClient
-import io.infinitic.client.worker.startClientWorker
+import io.infinitic.client.AbstractInfiniticClient
 import io.infinitic.common.data.ClientName
-import io.infinitic.inMemory.transport.InMemoryOutput
-import io.infinitic.worker.config.WorkerConfig
-import kotlinx.coroutines.CoroutineName
-import kotlinx.coroutines.launch
+import io.infinitic.workers.config.WorkerConfig
 
 @Suppress("MemberVisibilityCanBePrivate")
 class InMemoryInfiniticClient(
     workerConfig: WorkerConfig,
     name: String? = null
-) : InfiniticClient() {
-
-    private val inMemoryOutput = InMemoryOutput(sendingScope)
+) : AbstractInfiniticClient() {
 
     private val worker by lazy {
         InMemoryInfiniticWorker(workerConfig).apply {
-            output = inMemoryOutput
             client = this@InMemoryInfiniticClient
-            this.name = clientName.toString()
         }
     }
+
+    override val clientStarter by lazy { worker.workerStarter }
 
     override val clientName: ClientName = ClientName(name ?: "inMemory")
 
-    override val sendToTaskTagEngine = inMemoryOutput.sendCommandsToTaskTagEngine
-
-    override val sendToTaskEngine = inMemoryOutput.sendCommandsToTaskEngine()
-
-    override val sendToWorkflowTagEngine = inMemoryOutput.sendCommandsToWorkflowTagEngine
-
-    override val sendToWorkflowEngine = inMemoryOutput.sendCommandsToWorkflowEngine
-
     init {
-        runningScope.launch {
-            launch(CoroutineName("client-logger")) {
-                @Suppress("ControlFlowWithEmptyBody")
-                for (messageToProcess in inMemoryOutput.logChannel) {
-                    // just clear the channel
-                }
-            }
-
-            startClientWorker(
-                this@InMemoryInfiniticClient,
-                inputChannel = inMemoryOutput.clientChannel,
-                outputChannel = inMemoryOutput.logChannel,
-            )
+        // start client response
+        with(clientStarter) {
+            listeningScope.startClientResponse(this@InMemoryInfiniticClient)
         }
 
+        // start worker
         worker.startAsync()
-    }
-
-    override fun close() {
-        super.close()
-
-        worker.close()
     }
 }

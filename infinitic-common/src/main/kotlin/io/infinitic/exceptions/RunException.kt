@@ -25,8 +25,7 @@
 
 package io.infinitic.exceptions
 
-import io.infinitic.common.errors.DeferredError
-import java.lang.RuntimeException
+import io.infinitic.common.tasks.executors.errors.DeferredError
 
 open class RunException(
     message: String,

@@ -25,6 +25,10 @@
 
 package io.infinitic.common.serDe
 
+import com.github.avrokotlin.avro4k.AvroNamespace
+import kotlinx.serialization.Serializable
+
+@Serializable @AvroNamespace("io.infinitic.data")
 enum class SerializedDataType {
     NULL,
     JSON_JACKSON,

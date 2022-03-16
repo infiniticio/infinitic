@@ -25,16 +25,17 @@
 
 package io.infinitic.common.tasks.executors.messages
 
+import com.github.avrokotlin.avro4k.AvroNamespace
 import io.infinitic.common.messages.Envelope
 import io.infinitic.common.serDe.avro.AvroSerDe
 import io.infinitic.common.tasks.data.TaskName
 import kotlinx.serialization.Serializable
 
-@Serializable
+@Serializable @AvroNamespace("io.infinitic.tasks.executor")
 data class TaskExecutorEnvelope(
     val taskName: TaskName,
     val type: TaskExecutorMessageType,
-    val executeTask: ExecuteTaskAttempt? = null
+    val executeTask: ExecuteTask? = null
 ) : Envelope<TaskExecutorMessage> {
     init {
         val noNull = listOfNotNull(
@@ -48,9 +49,9 @@ data class TaskExecutorEnvelope(
 
     companion object {
         fun from(msg: TaskExecutorMessage) = when (msg) {
-            is ExecuteTaskAttempt -> TaskExecutorEnvelope(
+            is ExecuteTask -> TaskExecutorEnvelope(
                 msg.taskName,
-                TaskExecutorMessageType.EXECUTE_TASK_ATTEMPT,
+                TaskExecutorMessageType.EXECUTE_TASK,
                 executeTask = msg
             )
         }
@@ -59,7 +60,7 @@ data class TaskExecutorEnvelope(
     }
 
     override fun message(): TaskExecutorMessage = when (type) {
-        TaskExecutorMessageType.EXECUTE_TASK_ATTEMPT -> executeTask!!
+        TaskExecutorMessageType.EXECUTE_TASK -> executeTask!!
     }
 
     fun toByteArray() = AvroSerDe.writeBinary(this, serializer())

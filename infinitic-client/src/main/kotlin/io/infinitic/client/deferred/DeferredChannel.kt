@@ -25,7 +25,7 @@
 
 package io.infinitic.client.deferred
 
-import io.infinitic.client.Deferred
+import io.infinitic.common.clients.Deferred
 import io.infinitic.common.exceptions.thisShouldNotHappen
 import io.infinitic.workflows.SendChannel
 import java.util.concurrent.CompletableFuture

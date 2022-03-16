@@ -25,8 +25,8 @@
 
 package io.infinitic.client.deferred
 
-import io.infinitic.client.Deferred
 import io.infinitic.client.dispatcher.ClientDispatcher
+import io.infinitic.common.clients.Deferred
 import io.infinitic.common.data.methods.MethodName
 import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.data.workflows.WorkflowName
@@ -43,7 +43,7 @@ class DeferredWorkflow<R> (
         dispatcher.cancelWorkflowAsync(workflowName, workflowId, null, null)
 
     override fun retryAsync() =
-        dispatcher.retryWorkflowAsync(workflowName, workflowId, null)
+        dispatcher.retryWorkflowTaskAsync(workflowName, workflowId, null)
 
     @Suppress("UNCHECKED_CAST")
     override fun await(): R =

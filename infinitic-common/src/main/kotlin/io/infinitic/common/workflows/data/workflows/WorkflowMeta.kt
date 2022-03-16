@@ -45,6 +45,10 @@ data class WorkflowMeta(val map: Map<String, ByteArray> = mapOf()) : Map<String,
 
         return true
     }
+
+    override fun hashCode(): Int {
+        return map.hashCode()
+    }
 }
 
 object WorkflowMetaSerializer : KSerializer<WorkflowMeta> {

@@ -36,8 +36,8 @@ import io.infinitic.dashboard.panels.infrastructure.jobs.update
 import io.infinitic.dashboard.panels.infrastructure.requests.Loading
 import io.infinitic.dashboard.panels.infrastructure.requests.Request
 import io.infinitic.dashboard.svgs.icons.iconChevron
-import io.infinitic.pulsar.topics.TaskTopic
-import io.infinitic.pulsar.topics.Topic
+import io.infinitic.transport.pulsar.topics.TaskTopics
+import io.infinitic.transport.pulsar.topics.TopicType
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import kweb.Element
@@ -75,7 +75,7 @@ class TaskPanel private constructor(private val taskName: String) : Panel() {
     private val lastUpdated = state.property(TaskState::lastUpdatedAt)
     private val isLoading = state.property(TaskState::isLoading)
 
-    private val selectionTopicType: KVar<Topic> = KVar(TaskTopic.EXECUTORS)
+    private val selectionTopicType: KVar<TopicType> = KVar(TaskTopics.EXECUTOR)
     private val selectionTopicStats: KVar<Request<PartitionedTopicStats>> = KVar(Loading())
 
     private val selectionSlide = selectionSlide(selectionTopicType, selectionTopicStats)

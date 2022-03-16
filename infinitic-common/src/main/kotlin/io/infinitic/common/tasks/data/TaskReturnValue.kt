@@ -25,12 +25,14 @@
 
 package io.infinitic.common.tasks.data
 
+import com.github.avrokotlin.avro4k.AvroNamespace
 import io.infinitic.common.data.ReturnValue
 import kotlinx.serialization.Serializable
 
-@Serializable
+@Serializable @AvroNamespace("io.infinitic.tasks.data")
 data class TaskReturnValue(
     val taskId: TaskId,
     val taskName: TaskName,
+    val taskMeta: TaskMeta,
     val returnValue: ReturnValue
 )

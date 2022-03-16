@@ -25,6 +25,7 @@
 
 package io.infinitic.common.workflows.data.channels
 
+import com.github.avrokotlin.avro4k.AvroNamespace
 import com.jayway.jsonpath.Configuration
 import com.jayway.jsonpath.Criteria
 import com.jayway.jsonpath.Filter
@@ -36,7 +37,7 @@ import com.jayway.jsonpath.spi.mapper.JacksonMappingProvider
 import kotlinx.serialization.Serializable
 import java.security.InvalidParameterException
 
-@Serializable
+@Serializable @AvroNamespace("io.infinitic.workflows.data")
 data class ChannelEventFilter(val jsonPath: String, val filter: String? = null) {
     companion object {
         @JvmOverloads

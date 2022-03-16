@@ -25,12 +25,13 @@
 
 package io.infinitic.common.workflows.engine.messages
 
+import com.github.avrokotlin.avro4k.AvroNamespace
 import io.infinitic.common.messages.Envelope
 import io.infinitic.common.serDe.avro.AvroSerDe
 import io.infinitic.common.workflows.data.workflows.WorkflowId
 import kotlinx.serialization.Serializable
 
-@Serializable
+@Serializable @AvroNamespace("io.infinitic.workflows.engine")
 data class WorkflowEngineEnvelope(
     val workflowId: WorkflowId,
     val type: WorkflowEngineMessageType,
@@ -39,6 +40,7 @@ data class WorkflowEngineEnvelope(
     val waitWorkflow: WaitWorkflow? = null,
     val cancelWorkflow: CancelWorkflow? = null,
     val retryWorkflowTask: RetryWorkflowTask? = null,
+    val retryTasks: RetryTasks? = null,
     val completeWorkflow: CompleteWorkflow? = null,
     val sendSignal: SendSignal? = null,
     val timerCompleted: TimerCompleted? = null,
@@ -46,7 +48,6 @@ data class WorkflowEngineEnvelope(
     val childMethodCanceled: ChildMethodCanceled? = null,
     val childMethodFailed: ChildMethodFailed? = null,
     val childMethodCompleted: ChildMethodCompleted? = null,
-    val taskUnknown: TaskUnknown? = null,
     val taskCanceled: TaskCanceled? = null,
     val taskFailed: TaskFailed? = null,
     val taskCompleted: TaskCompleted? = null
@@ -58,6 +59,7 @@ data class WorkflowEngineEnvelope(
             waitWorkflow,
             cancelWorkflow,
             retryWorkflowTask,
+            retryTasks,
             completeWorkflow,
             sendSignal,
             timerCompleted,
@@ -65,7 +67,6 @@ data class WorkflowEngineEnvelope(
             childMethodFailed,
             childMethodCanceled,
             childMethodCompleted,
-            taskUnknown,
             taskCanceled,
             taskFailed,
             taskCompleted
@@ -115,6 +116,11 @@ data class WorkflowEngineEnvelope(
                 WorkflowEngineMessageType.RETRY_WORKFLOW_TASK,
                 retryWorkflowTask = msg
             )
+            is RetryTasks -> WorkflowEngineEnvelope(
+                msg.workflowId,
+                WorkflowEngineMessageType.RETRY_TASKS,
+                retryTasks = msg
+            )
             is CompleteWorkflow -> WorkflowEngineEnvelope(
                 msg.workflowId,
                 WorkflowEngineMessageType.COMPLETE_WORKFLOW,
@@ -150,11 +156,6 @@ data class WorkflowEngineEnvelope(
                 WorkflowEngineMessageType.CHILD_WORKFLOW_COMPLETED,
                 childMethodCompleted = msg
             )
-            is TaskUnknown -> WorkflowEngineEnvelope(
-                msg.workflowId,
-                WorkflowEngineMessageType.TASK_UNKNOWN,
-                taskUnknown = msg
-            )
             is TaskCanceled -> WorkflowEngineEnvelope(
                 msg.workflowId,
                 WorkflowEngineMessageType.TASK_CANCELED,
@@ -181,6 +182,7 @@ data class WorkflowEngineEnvelope(
         WorkflowEngineMessageType.WAIT_WORKFLOW -> waitWorkflow!!
         WorkflowEngineMessageType.CANCEL_WORKFLOW -> cancelWorkflow!!
         WorkflowEngineMessageType.RETRY_WORKFLOW_TASK -> retryWorkflowTask!!
+        WorkflowEngineMessageType.RETRY_TASKS -> retryTasks!!
         WorkflowEngineMessageType.COMPLETE_WORKFLOW -> completeWorkflow!!
         WorkflowEngineMessageType.SEND_SIGNAL -> sendSignal!!
         WorkflowEngineMessageType.TIMER_COMPLETED -> timerCompleted!!
@@ -188,7 +190,6 @@ data class WorkflowEngineEnvelope(
         WorkflowEngineMessageType.CHILD_WORKFLOW_CANCELED -> childMethodCanceled!!
         WorkflowEngineMessageType.CHILD_WORKFLOW_FAILED -> childMethodFailed!!
         WorkflowEngineMessageType.CHILD_WORKFLOW_COMPLETED -> childMethodCompleted!!
-        WorkflowEngineMessageType.TASK_UNKNOWN -> taskUnknown!!
         WorkflowEngineMessageType.TASK_CANCELED -> taskCanceled!!
         WorkflowEngineMessageType.TASK_FAILED -> taskFailed!!
         WorkflowEngineMessageType.TASK_COMPLETED -> taskCompleted!!

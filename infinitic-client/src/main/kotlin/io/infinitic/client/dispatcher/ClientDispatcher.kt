@@ -25,18 +25,18 @@
 
 package io.infinitic.client.dispatcher
 
-import io.infinitic.client.Deferred
+import io.infinitic.common.clients.Deferred
 import io.infinitic.common.clients.messages.ClientMessage
 import io.infinitic.common.data.methods.MethodName
 import io.infinitic.common.proxies.ProxyDispatcher
 import io.infinitic.common.proxies.ProxyHandler
 import io.infinitic.common.tasks.data.TaskId
 import io.infinitic.common.tasks.data.TaskName
-import io.infinitic.common.tasks.data.TaskTag
 import io.infinitic.common.workflows.data.methodRuns.MethodRunId
 import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.data.workflows.WorkflowName
 import io.infinitic.common.workflows.data.workflows.WorkflowTag
+import io.infinitic.workflows.DeferredStatus
 import java.util.concurrent.CompletableFuture
 
 interface ClientDispatcher : ProxyDispatcher {
@@ -49,14 +49,6 @@ interface ClientDispatcher : ProxyDispatcher {
         handler: ProxyHandler<*>
     ): CompletableFuture<Deferred<R>>
 
-    fun <T> awaitTask(
-        returnClass: Class<T>,
-        taskName: TaskName,
-        methodName: MethodName,
-        taskId: TaskId,
-        clientWaiting: Boolean
-    ): T
-
     fun <T> awaitWorkflow(
         returnClass: Class<T>,
         workflowName: WorkflowName,
@@ -66,26 +58,6 @@ interface ClientDispatcher : ProxyDispatcher {
         clientWaiting: Boolean
     ): T
 
-    fun completeTaskAsync(
-        taskName: TaskName,
-        taskId: TaskId?,
-        taskTag: TaskTag?,
-        value: Any?
-    ): CompletableFuture<Unit>
-
-    fun completeWorkflowAsync(
-        workflowName: WorkflowName,
-        workflowId: WorkflowId?,
-        workflowTag: WorkflowTag?,
-        value: Any?
-    ): CompletableFuture<Unit>
-
-    fun cancelTaskAsync(
-        taskName: TaskName,
-        taskId: TaskId?,
-        taskTag: TaskTag?
-    ): CompletableFuture<Unit>
-
     fun cancelWorkflowAsync(
         workflowName: WorkflowName,
         workflowId: WorkflowId?,
@@ -93,23 +65,20 @@ interface ClientDispatcher : ProxyDispatcher {
         workflowTag: WorkflowTag?
     ): CompletableFuture<Unit>
 
-    fun retryTaskAsync(
-        taskName: TaskName,
-        taskId: TaskId?,
-        taskTag: TaskTag?
-    ): CompletableFuture<Unit>
-
-    fun retryWorkflowAsync(
+    fun retryWorkflowTaskAsync(
         workflowName: WorkflowName,
         workflowId: WorkflowId?,
         workflowTag: WorkflowTag?
     ): CompletableFuture<Unit>
 
-    fun getTaskIdsByTag(
-        taskName: TaskName,
-        taskId: TaskId?,
-        taskTag: TaskTag?
-    ): Set<String>
+    fun retryTaskAsync(
+        workflowName: WorkflowName,
+        workflowId: WorkflowId?,
+        workflowTag: WorkflowTag?,
+        taskId: TaskId? = null,
+        taskStatus: DeferredStatus? = null,
+        taskName: TaskName? = null
+    ): CompletableFuture<Unit>
 
     fun getWorkflowIdsByTag(
         workflowName: WorkflowName,

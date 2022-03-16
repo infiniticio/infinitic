@@ -26,7 +26,7 @@
 package io.infinitic.exceptions
 
 import io.infinitic.common.data.ClientName
-import io.infinitic.common.errors.WorkerError
+import io.infinitic.common.tasks.executors.errors.WorkerError
 
 class WorkerException(
     /**

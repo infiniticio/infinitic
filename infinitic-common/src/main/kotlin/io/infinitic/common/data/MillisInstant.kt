@@ -43,13 +43,13 @@ data class MillisInstant(val long: Long = 0) : Comparable<Long> {
     override fun toString() = "$long"
 
     override operator fun compareTo(other: Long): Int = this.long.compareTo(other)
+
+    operator fun plus(other: MillisDuration) = MillisInstant(this.long + other.long)
+
+    operator fun minus(other: MillisDuration) = MillisInstant(this.long - other.long)
+
+    operator fun minus(other: MillisInstant) = MillisDuration(this.long - other.long)
 }
-
-operator fun MillisInstant.plus(other: MillisDuration) = MillisInstant(this.long + other.long)
-
-operator fun MillisInstant.minus(other: MillisDuration) = MillisInstant(this.long - other.long)
-
-operator fun MillisInstant.minus(other: MillisInstant) = MillisDuration(this.long - other.long)
 
 object MillisInstantSerializer : KSerializer<MillisInstant> {
     override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("MillisInstant", PrimitiveKind.LONG)

@@ -29,17 +29,12 @@ import io.infinitic.common.clients.messages.MethodCompleted
 import io.infinitic.common.data.ClientName
 import io.infinitic.common.data.MillisDuration
 import io.infinitic.common.data.MillisInstant
-import io.infinitic.common.data.minus
 import io.infinitic.common.exceptions.thisShouldNotHappen
-import io.infinitic.common.tasks.data.TaskId
-import io.infinitic.common.tasks.engine.messages.DispatchTask
-import io.infinitic.common.tasks.tags.messages.AddTagToTask
 import io.infinitic.common.workflows.data.channels.ChannelSignalId
 import io.infinitic.common.workflows.data.channels.ReceivingChannel
 import io.infinitic.common.workflows.data.commands.CommandId
 import io.infinitic.common.workflows.data.commands.DispatchMethodCommand
 import io.infinitic.common.workflows.data.commands.DispatchMethodPastCommand
-import io.infinitic.common.workflows.data.commands.DispatchTaskCommand
 import io.infinitic.common.workflows.data.commands.DispatchTaskPastCommand
 import io.infinitic.common.workflows.data.commands.DispatchWorkflowCommand
 import io.infinitic.common.workflows.data.commands.DispatchWorkflowPastCommand
@@ -71,6 +66,7 @@ import io.infinitic.common.workflows.engine.state.WorkflowState
 import io.infinitic.common.workflows.tags.messages.AddTagToWorkflow
 import io.infinitic.common.workflows.tags.messages.DispatchMethodByTag
 import io.infinitic.common.workflows.tags.messages.SendSignalByTag
+import io.infinitic.workflows.engine.helpers.dispatchTask
 import io.infinitic.workflows.engine.helpers.stepTerminated
 import io.infinitic.workflows.engine.output.WorkflowEngineOutput
 import kotlinx.coroutines.CoroutineScope
@@ -86,8 +82,8 @@ internal fun CoroutineScope.workflowTaskCompleted(
     // retrieve current methodRun
     val methodRun = state.getRunningMethodRun()
 
-    // if current step status was ongoingFailure
-    // convert it to a definitive StepStatusFailed
+    // if current step status was CurrentlyFailed
+    // convert it to a definitive StepStatus.Failed
     // as the error has been caught by the workflow
     methodRun.currentStep?.let {
         val oldStatus = it.stepStatus
@@ -116,7 +112,7 @@ internal fun CoroutineScope.workflowTaskCompleted(
     workflowTaskOutput.newCommands.forEach {
         @Suppress("UNUSED_VARIABLE")
         val o = when (it) {
-            is DispatchTaskPastCommand -> dispatchTask(output, it, state)
+            is DispatchTaskPastCommand -> dispatchTask(output, state, it)
             is DispatchWorkflowPastCommand -> dispatchWorkflow(output, it, state)
             is DispatchMethodPastCommand -> dispatchMethod(output, it, state, bufferedMessages)
             is SendSignalPastCommand -> sendSignal(output, it, state, bufferedMessages)
@@ -253,43 +249,6 @@ private fun receiveFromChannel(
     )
 }
 
-private fun CoroutineScope.dispatchTask(
-    output: WorkflowEngineOutput,
-    newCommand: DispatchTaskPastCommand,
-    state: WorkflowState
-) {
-    val command: DispatchTaskCommand = newCommand.command
-
-    // send task to task engine
-    val dispatchTask = DispatchTask(
-        taskName = command.taskName,
-        taskId = TaskId.from(newCommand.commandId),
-        taskOptions = command.taskOptions,
-        clientWaiting = false,
-        methodName = command.methodName,
-        methodParameterTypes = command.methodParameterTypes,
-        methodParameters = command.methodParameters,
-        workflowId = state.workflowId,
-        workflowName = state.workflowName,
-        methodRunId = state.runningMethodRunId,
-        taskTags = command.taskTags,
-        taskMeta = command.taskMeta,
-        emitterName = ClientName("workflow engine")
-    )
-    launch { output.sendToTaskEngine(dispatchTask) }
-
-    // add provided tags
-    dispatchTask.taskTags.forEach {
-        val addTagToTask = AddTagToTask(
-            taskName = dispatchTask.taskName,
-            taskTag = it,
-            taskId = dispatchTask.taskId,
-            emitterName = output.clientName
-        )
-        launch { output.sendToTaskTagEngine(addTagToTask) }
-    }
-}
-
 private fun CoroutineScope.dispatchWorkflow(
     output: WorkflowEngineOutput,
     newCommand: DispatchWorkflowPastCommand,
@@ -311,7 +270,7 @@ private fun CoroutineScope.dispatchWorkflow(
         parentWorkflowId = state.workflowId,
         parentMethodRunId = state.runningMethodRunId,
         clientWaiting = false,
-        emitterName = ClientName("workflow engine")
+        emitterName = output.clientName
     )
     launch { output.sendToWorkflowEngine(dispatchWorkflow) }
 
@@ -323,7 +282,7 @@ private fun CoroutineScope.dispatchWorkflow(
             workflowId = dispatchWorkflow.workflowId,
             emitterName = output.clientName
         )
-        launch { output.sendToWorkflowTagEngine(addTagToWorkflow) }
+        launch { output.sendToWorkflowTag(addTagToWorkflow) }
     }
 }
 
@@ -388,7 +347,7 @@ private fun CoroutineScope.dispatchMethod(
                 emitterName = output.clientName
             )
             // tag engine must ignore this message if parentWorkflowId has the provided tag
-            launch { output.sendToWorkflowTagEngine(dispatchMethodByTag) }
+            launch { output.sendToWorkflowTag(dispatchMethodByTag) }
         }
         else -> thisShouldNotHappen()
     }
@@ -445,7 +404,7 @@ private fun CoroutineScope.sendSignal(
                 emitterWorkflowId = state.workflowId,
                 emitterName = output.clientName
             )
-            launch { output.sendToWorkflowTagEngine(sendSignalByTag) }
+            launch { output.sendToWorkflowTag(sendSignalByTag) }
         }
         else -> thisShouldNotHappen()
     }

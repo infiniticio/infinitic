@@ -24,14 +24,11 @@
  */
 
 dependencies {
-    implementation("redis.clients:jedis:3.3.0")
     implementation(Libs.Hoplite.core)
-    implementation(Libs.Coroutines.core)
 
     implementation(project(":infinitic-common"))
-    implementation(project(":infinitic-cache"))
-
-    testImplementation("com.github.kstyrc:embedded-redis:0.6")
+    api(project(":infinitic-storage-redis"))
+    api(project(":infinitic-storage-inmemory"))
 }
 
 apply("../publish.gradle.kts")

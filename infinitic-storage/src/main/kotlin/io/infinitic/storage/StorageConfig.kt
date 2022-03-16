@@ -28,13 +28,13 @@ package io.infinitic.storage
 import io.infinitic.storage.redis.Redis
 
 interface StorageConfig {
-    /*
-     Default state storage
-      */
+    /**
+     * Default state storage
+     */
     var stateStorage: StateStorage?
 
-    /*
-    Redis configuration
+    /**
+     * Redis configuration
      */
     val redis: Redis?
 }

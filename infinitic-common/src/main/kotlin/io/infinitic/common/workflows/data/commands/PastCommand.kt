@@ -25,6 +25,7 @@
 
 package io.infinitic.common.workflows.data.commands
 
+import io.infinitic.common.tasks.data.TaskRetrySequence
 import io.infinitic.common.workflows.data.methodRuns.MethodRunPosition
 import io.infinitic.workflows.WorkflowChangeCheckMode
 import io.infinitic.workflows.WorkflowChangeCheckMode.NONE
@@ -52,7 +53,7 @@ sealed class PastCommand {
                 DispatchMethodPastCommand(CommandId(), commandPosition, commandSimpleName, commandStatus, command)
             }
             is DispatchTaskCommand -> {
-                DispatchTaskPastCommand(CommandId(), commandPosition, commandSimpleName, commandStatus, command)
+                DispatchTaskPastCommand(CommandId(), commandPosition, commandSimpleName, commandStatus, command, TaskRetrySequence(0))
             }
             is DispatchWorkflowCommand -> {
                 DispatchWorkflowPastCommand(CommandId(), commandPosition, commandSimpleName, commandStatus, command)
@@ -88,16 +89,17 @@ sealed class PastCommand {
             }
 }
 
-@Serializable @SerialName("DispatchTaskPastCommand")
+@Serializable @SerialName("PastCommand.DispatchTask")
 data class DispatchTaskPastCommand(
     override val commandId: CommandId,
     override val commandPosition: MethodRunPosition,
     override val commandSimpleName: CommandSimpleName,
     override var commandStatus: CommandStatus,
-    override val command: DispatchTaskCommand
+    override val command: DispatchTaskCommand,
+    var taskRetrySequence: TaskRetrySequence
 ) : PastCommand()
 
-@Serializable @SerialName("DispatchWorkflowPastCommand")
+@Serializable @SerialName("PastCommand.DispatchWorkflow")
 data class DispatchWorkflowPastCommand(
     override val commandId: CommandId,
     override val commandPosition: MethodRunPosition,
@@ -106,7 +108,7 @@ data class DispatchWorkflowPastCommand(
     override val command: DispatchWorkflowCommand
 ) : PastCommand()
 
-@Serializable @SerialName("DispatchMethodPastCommand")
+@Serializable @SerialName("PastCommand.DispatchMethod")
 data class DispatchMethodPastCommand(
     override val commandId: CommandId,
     override val commandPosition: MethodRunPosition,
@@ -115,7 +117,7 @@ data class DispatchMethodPastCommand(
     override val command: DispatchMethodCommand
 ) : PastCommand()
 
-@Serializable @SerialName("InlineTaskPastCommand")
+@Serializable @SerialName("PastCommand.InlineTask")
 data class InlineTaskPastCommand(
     override val commandId: CommandId,
     override val commandPosition: MethodRunPosition,
@@ -124,7 +126,7 @@ data class InlineTaskPastCommand(
     override val command: InlineTaskCommand
 ) : PastCommand()
 
-@Serializable @SerialName("ReceiveSignalPastCommand")
+@Serializable @SerialName("PastCommand.ReceiveSignal")
 data class ReceiveSignalPastCommand(
     override val commandId: CommandId,
     override val commandPosition: MethodRunPosition,
@@ -133,7 +135,7 @@ data class ReceiveSignalPastCommand(
     override val command: ReceiveSignalCommand
 ) : PastCommand()
 
-@Serializable @SerialName("SendSignalPastCommand")
+@Serializable @SerialName("PastCommand.SendSignal")
 data class SendSignalPastCommand(
     override val commandId: CommandId,
     override val commandPosition: MethodRunPosition,
@@ -142,7 +144,7 @@ data class SendSignalPastCommand(
     override val command: SendSignalCommand
 ) : PastCommand()
 
-@Serializable @SerialName("StartDurationTimerPastCommand")
+@Serializable @SerialName("PastCommand.StartDurationTimer")
 data class StartDurationTimerPastCommand(
     override val commandId: CommandId,
     override val commandPosition: MethodRunPosition,
@@ -151,7 +153,7 @@ data class StartDurationTimerPastCommand(
     override val command: StartDurationTimerCommand
 ) : PastCommand()
 
-@Serializable @SerialName("StartInstantTimerPastCommand")
+@Serializable @SerialName("PastCommand.StartInstantTimer")
 data class StartInstantTimerPastCommand(
     override val commandId: CommandId,
     override val commandPosition: MethodRunPosition,

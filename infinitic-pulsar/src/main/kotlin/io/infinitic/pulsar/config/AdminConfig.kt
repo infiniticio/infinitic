@@ -27,11 +27,11 @@ package io.infinitic.pulsar.config
 
 import io.infinitic.common.config.loadConfigFromFile
 import io.infinitic.common.config.loadConfigFromResource
-import io.infinitic.transport.pulsar.Pulsar
+import io.infinitic.transport.pulsar.config.Pulsar
 
 data class AdminConfig(
-    /*
-    Pulsar configuration
+    /**
+     * Pulsar configuration
      */
     val pulsar: Pulsar
 ) {

@@ -30,10 +30,10 @@ import io.infinitic.cache.caffeine.CaffeineKeyCounterCache
 import io.infinitic.cache.caffeine.CaffeineKeyMapCache
 import io.infinitic.cache.caffeine.CaffeineKeySetCache
 import io.infinitic.cache.caffeine.CaffeineKeyValueCache
-import io.infinitic.cache.no.NoKeyCounterCache
-import io.infinitic.cache.no.NoKeyMapCache
-import io.infinitic.cache.no.NoKeySetCache
-import io.infinitic.cache.no.NoKeyValueCache
+import io.infinitic.cache.none.NoKeyCounterCache
+import io.infinitic.cache.none.NoKeyMapCache
+import io.infinitic.cache.none.NoKeySetCache
+import io.infinitic.cache.none.NoKeyValueCache
 import io.infinitic.common.storage.keyCounter.KeyCounterCache
 import io.infinitic.common.storage.keyMap.KeyMapCache
 import io.infinitic.common.storage.keySet.KeySetCache
@@ -53,7 +53,13 @@ enum class StateCache : KeyCounter, KeySet, KeyValue, KeyMap {
         override fun keyValue(config: CacheConfig) = CaffeineKeyValueCache<ByteArray>(caffeineConfig(config))
         override fun keyMap(config: CacheConfig) = CaffeineKeyMapCache(caffeineConfig(config))
 
-        private fun caffeineConfig(config: CacheConfig) = config.caffeine ?: Caffeine(expireAfterAccess = 3600)
+        /**
+         * Default Caffeine configuration
+         * - expireAfterAccess = 3600
+         * - maximumSize = 10000
+         */
+        private fun caffeineConfig(config: CacheConfig) =
+            config.caffeine ?: Caffeine(expireAfterAccess = 3600, maximumSize = 10000)
     }
 }
 

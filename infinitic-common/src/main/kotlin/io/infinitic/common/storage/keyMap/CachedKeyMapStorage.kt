@@ -38,15 +38,13 @@ class CachedKeyMapStorage(
     override suspend fun get(key: String, field: String): ByteArray? = cache.get(key, field)
         ?: run {
             logger.debug { "key $key - get field $field - absent from cache, get from storage" }
-            storage.get(key, field)
-                ?.also { cache.put(key, field, it) }
+            storage.get(key, field)?.also { cache.put(key, field, it) }
         }
 
     override suspend fun get(key: String): Map<String, ByteArray>? = cache.get(key)
         ?: run {
             logger.debug { "key $key - get - absent from cache, get from storage" }
-            storage.get(key)
-                ?.also { cache.set(key, it) }
+            storage.get(key)?.also { cache.set(key, it) }
         }
 
     override suspend fun put(key: String, field: String, value: ByteArray) {

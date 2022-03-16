@@ -27,9 +27,9 @@ package io.infinitic.factory
 
 import io.infinitic.inMemory.InMemoryInfiniticWorker
 import io.infinitic.pulsar.PulsarInfiniticWorker
-import io.infinitic.transport.Transport
-import io.infinitic.worker.InfiniticWorker
-import io.infinitic.worker.config.WorkerConfig
+import io.infinitic.transport.config.Transport
+import io.infinitic.workers.InfiniticWorker
+import io.infinitic.workers.config.WorkerConfig
 
 @Suppress("unused")
 object InfiniticWorkerFactory {

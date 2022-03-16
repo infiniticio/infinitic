@@ -47,6 +47,7 @@ import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskIndex
 import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.data.workflows.WorkflowMeta
 import io.infinitic.common.workflows.data.workflows.WorkflowName
+import io.infinitic.common.workflows.data.workflows.WorkflowTag
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
 import kotlinx.serialization.ExperimentalSerializationApi
@@ -260,5 +261,11 @@ class DataTests : StringSpec({
         val m2 = Json.decodeFromString<DispatchWorkflowPastCommand>(json)
 
         m2 shouldBe m
+    }
+
+    "WorkflowTag should be stringify as string" {
+        val workflowTag = TestFactory.random<WorkflowTag>()
+
+        "$workflowTag" shouldBe workflowTag.tag
     }
 })

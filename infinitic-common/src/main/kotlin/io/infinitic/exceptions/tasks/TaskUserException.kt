@@ -36,7 +36,7 @@ class ClassNotFoundException(
     name: String
 ) : TaskUserException(
     msg = "No implementation class provided for $name",
-    help = "Use \"register\" method to provide an instance that will be used associated to $name"
+    help = ""
 )
 
 class NoMethodFoundWithParameterTypesException(
@@ -45,7 +45,7 @@ class NoMethodFoundWithParameterTypesException(
     parameterTypes: List<String>
 ) : TaskUserException(
     msg = "No method \"$method(${ parameterTypes.joinToString() })\" found in \"$klass\" class",
-    help = "Make sure parameter types are consistent with your method definition"
+    help = ""
 )
 
 class NoMethodFoundWithParameterCountException(

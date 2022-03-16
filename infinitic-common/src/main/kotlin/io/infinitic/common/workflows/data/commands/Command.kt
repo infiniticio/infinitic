@@ -55,7 +55,7 @@ sealed class Command {
  * Commands are asynchronously processed
  */
 
-@Serializable @SerialName("DispatchTaskCommand")
+@Serializable @SerialName("Command.DispatchTask")
 data class DispatchTaskCommand(
     val taskName: TaskName,
     val methodName: MethodName,
@@ -77,7 +77,7 @@ data class DispatchTaskCommand(
     }
 }
 
-@Serializable @SerialName("DispatchWorkflowCommand")
+@Serializable @SerialName("Command.DispatchWorkflow")
 data class DispatchWorkflowCommand(
     val workflowName: WorkflowName,
     val methodName: MethodName,
@@ -99,7 +99,7 @@ data class DispatchWorkflowCommand(
     }
 }
 
-@Serializable @SerialName("DispatchMethodCommand")
+@Serializable @SerialName("Command.DispatchMethod")
 data class DispatchMethodCommand(
     val workflowName: WorkflowName,
     val workflowId: WorkflowId?,
@@ -122,7 +122,7 @@ data class DispatchMethodCommand(
     }
 }
 
-@Serializable @SerialName("SendSignalCommand")
+@Serializable @SerialName("Command.SendSignal")
 data class SendSignalCommand(
     val workflowName: WorkflowName,
     val workflowId: WorkflowId?,
@@ -138,7 +138,7 @@ data class SendSignalCommand(
     override fun isSameThan(other: Any?) = other == this
 }
 
-@Serializable @SerialName("ReceiveSignalCommand")
+@Serializable @SerialName("Command.ReceiveSignal")
 data class ReceiveSignalCommand(
     val channelName: ChannelName,
     val channelSignalType: ChannelSignalType?,
@@ -151,7 +151,7 @@ data class ReceiveSignalCommand(
     override fun isSameThan(other: Any?) = other == this
 }
 
-@Serializable @SerialName("InlineTaskCommand")
+@Serializable @SerialName("Command.InlineTask")
 data class InlineTaskCommand(
     val task: String = "inline"
 ) : Command() {
@@ -164,7 +164,7 @@ data class InlineTaskCommand(
     override fun isSameThan(other: Any?) = other == this
 }
 
-@Serializable @SerialName("StartDurationTimerCommand")
+@Serializable @SerialName("Command.StartDurationTimer")
 data class StartDurationTimerCommand(
     val duration: MillisDuration
 ) : Command() {
@@ -175,7 +175,7 @@ data class StartDurationTimerCommand(
     override fun isSameThan(other: Any?) = other == this
 }
 
-@Serializable @SerialName("StartInstantTimerCommand")
+@Serializable @SerialName("Command.StartInstantTimer")
 data class StartInstantTimerCommand(
     val instant: MillisInstant
 ) : Command() {

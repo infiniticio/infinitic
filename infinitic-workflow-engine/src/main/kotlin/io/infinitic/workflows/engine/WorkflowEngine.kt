@@ -25,14 +25,14 @@
 
 package io.infinitic.workflows.engine
 
+import io.infinitic.common.clients.SendToClient
 import io.infinitic.common.clients.messages.MethodRunUnknown
-import io.infinitic.common.clients.transport.SendToClient
 import io.infinitic.common.data.ClientName
 import io.infinitic.common.data.ReturnValue
-import io.infinitic.common.errors.UnknownWorkflowError
 import io.infinitic.common.exceptions.thisShouldNotHappen
-import io.infinitic.common.tasks.engine.SendToTaskEngine
-import io.infinitic.common.tasks.tags.SendToTaskTagEngine
+import io.infinitic.common.tasks.executors.SendToTaskExecutor
+import io.infinitic.common.tasks.executors.errors.UnknownWorkflowError
+import io.infinitic.common.tasks.tags.SendToTaskTag
 import io.infinitic.common.workflows.data.commands.CommandId
 import io.infinitic.common.workflows.data.commands.CommandStatus
 import io.infinitic.common.workflows.engine.SendToWorkflowEngine
@@ -45,21 +45,24 @@ import io.infinitic.common.workflows.engine.messages.ChildMethodUnknown
 import io.infinitic.common.workflows.engine.messages.CompleteWorkflow
 import io.infinitic.common.workflows.engine.messages.DispatchMethod
 import io.infinitic.common.workflows.engine.messages.DispatchWorkflow
+import io.infinitic.common.workflows.engine.messages.RetryTasks
 import io.infinitic.common.workflows.engine.messages.RetryWorkflowTask
 import io.infinitic.common.workflows.engine.messages.SendSignal
 import io.infinitic.common.workflows.engine.messages.TaskCanceled
 import io.infinitic.common.workflows.engine.messages.TaskCompleted
 import io.infinitic.common.workflows.engine.messages.TaskFailed
-import io.infinitic.common.workflows.engine.messages.TaskUnknown
 import io.infinitic.common.workflows.engine.messages.TimerCompleted
 import io.infinitic.common.workflows.engine.messages.WaitWorkflow
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
 import io.infinitic.common.workflows.engine.messages.interfaces.MethodRunMessage
+import io.infinitic.common.workflows.engine.messages.interfaces.TaskMessage
 import io.infinitic.common.workflows.engine.state.WorkflowState
-import io.infinitic.common.workflows.tags.SendToWorkflowTagEngine
+import io.infinitic.common.workflows.engine.storage.WorkflowStateStorage
+import io.infinitic.common.workflows.tags.SendToWorkflowTag
 import io.infinitic.workflows.engine.handlers.cancelWorkflow
 import io.infinitic.workflows.engine.handlers.dispatchMethodRun
 import io.infinitic.workflows.engine.handlers.dispatchWorkflow
+import io.infinitic.workflows.engine.handlers.retryTasks
 import io.infinitic.workflows.engine.handlers.retryWorkflowTask
 import io.infinitic.workflows.engine.handlers.sendSignal
 import io.infinitic.workflows.engine.handlers.waitWorkflow
@@ -69,7 +72,6 @@ import io.infinitic.workflows.engine.helpers.commandTerminated
 import io.infinitic.workflows.engine.helpers.removeTags
 import io.infinitic.workflows.engine.output.WorkflowEngineOutput
 import io.infinitic.workflows.engine.storage.LoggedWorkflowStateStorage
-import io.infinitic.workflows.engine.storage.WorkflowStateStorage
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
@@ -79,10 +81,11 @@ import java.time.Instant
 class WorkflowEngine(
     val clientName: ClientName,
     storage: WorkflowStateStorage,
-    sendEventsToClient: SendToClient,
-    sendToTaskTagEngine: SendToTaskTagEngine,
-    sendToTaskEngine: SendToTaskEngine,
-    sendToWorkflowTagEngine: SendToWorkflowTagEngine,
+    sendToClient: SendToClient,
+    sendToTaskTag: SendToTaskTag,
+    sendToTaskExecutor: SendToTaskExecutor,
+    sendToWorkflowTaskExecutor: SendToTaskExecutor,
+    sendToWorkflowTag: SendToWorkflowTag,
     sendToWorkflowEngine: SendToWorkflowEngine,
     sendToWorkflowEngineAfter: SendToWorkflowEngineAfter
 ) {
@@ -92,16 +95,15 @@ class WorkflowEngine(
 
     private val logger = KotlinLogging.logger {}
 
-    private lateinit var scope: CoroutineScope
-
     private val storage = LoggedWorkflowStateStorage(storage)
 
     private val output = WorkflowEngineOutput(
         clientName,
-        sendEventsToClient,
-        sendToTaskTagEngine,
-        sendToTaskEngine,
-        sendToWorkflowTagEngine,
+        sendToClient,
+        sendToTaskTag,
+        sendToTaskExecutor,
+        sendToWorkflowTaskExecutor,
+        sendToWorkflowTag,
         sendToWorkflowEngine,
         sendToWorkflowEngineAfter
     )
@@ -116,7 +118,6 @@ class WorkflowEngine(
     }
 
     private suspend fun process(message: WorkflowEngineMessage): WorkflowState? = coroutineScope {
-        scope = this
 
         logger.debug { "receiving $message" }
 
@@ -190,19 +191,19 @@ class WorkflowEngine(
         }
 
         // check is this workflowTask is the current one
-        // (a workflowTask can be dispatched twice if the engine is shutdown while processing a workflowTask)
-        if (message.isWorkflowTask() &&
-            message is TaskCompleted &&
-            message.taskId() != state.runningWorkflowTaskId
+        // this can happen if the workflow task was retried
+        // or in case of some transport issues
+        if (message.isWorkflowTask() && (message as TaskMessage).taskId() != state.runningWorkflowTaskId
         ) {
-            logDiscardingMessage(message, "as workflowTask is not the current one")
+            logDiscardingMessage(message, "as workflowTask is not the right one")
 
             return@coroutineScope null
         }
 
-        // if a workflow task is ongoing then buffer this message, except for WorkflowTaskCompleted of course
-        if (state.runningWorkflowTaskId != null && ! message.isWorkflowTask()
-        ) {
+        // if a workflow task is ongoing then buffer this message,
+        // - except for TaskCompleted/TaskFailed/TaskCanceled associated to a WorkflowTask
+        // - except for RetryWorkflowTask
+        if (state.runningWorkflowTaskId != null && ! message.isWorkflowTask() && message !is RetryWorkflowTask) {
             // buffer this message
             state.messagesBuffer.add(message)
 
@@ -255,6 +256,7 @@ class WorkflowEngine(
             is WaitWorkflow -> waitWorkflow(output, state, message)
             is CompleteWorkflow -> TODO()
             is RetryWorkflowTask -> retryWorkflowTask(output, state)
+            is RetryTasks -> retryTasks(output, state, message)
             is TimerCompleted -> commandTerminated(
                 output,
                 state,
@@ -287,7 +289,7 @@ class WorkflowEngine(
                 state,
                 message.methodRunId,
                 CommandId.from(message.childFailedWorkflowError.methodRunId ?: thisShouldNotHappen()),
-                CommandStatus.CurrentlyFailed(
+                CommandStatus.Failed(
                     message.childFailedWorkflowError,
                     state.workflowTaskIndex
                 )
@@ -299,16 +301,6 @@ class WorkflowEngine(
                 CommandId.from(message.childWorkflowReturnValue.methodRunId),
                 CommandStatus.Completed(
                     message.childWorkflowReturnValue.returnValue,
-                    state.workflowTaskIndex
-                )
-            )
-            is TaskUnknown -> commandTerminated(
-                output,
-                state,
-                message.methodRunId,
-                CommandId.from(message.unknownTaskError.taskId),
-                CommandStatus.Unknown(
-                    message.unknownTaskError,
                     state.workflowTaskIndex
                 )
             )
@@ -329,9 +321,9 @@ class WorkflowEngine(
             }
             is TaskFailed -> when (message.isWorkflowTask()) {
                 true -> {
-                    val messages = workflowTaskFailed(output, state, message)
-                    // add fake messages at the top of the messagesBuffer list
-                    state.messagesBuffer.addAll(0, messages); Unit
+                    val msg = workflowTaskFailed(output, state, message)
+                    // add fake message at the top of the messagesBuffer list
+                    state.messagesBuffer.addAll(0, msg); Unit
                 }
                 false -> {
                     commandTerminated(
@@ -339,7 +331,7 @@ class WorkflowEngine(
                         state,
                         message.methodRunId,
                         CommandId.from(message.failedTaskError.taskId),
-                        CommandStatus.CurrentlyFailed(
+                        CommandStatus.Failed(
                             message.failedTaskError,
                             state.workflowTaskIndex
                         )

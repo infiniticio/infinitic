@@ -27,13 +27,10 @@ package io.infinitic.workflows.engine.storage
 
 import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.engine.state.WorkflowState
+import io.infinitic.common.workflows.engine.storage.WorkflowStateStorage
 import mu.KotlinLogging
 import org.jetbrains.annotations.TestOnly
 
-/**
- * This WorkflowStateStorage implementation converts state objects used by the engine to Avro objects, and saves
- * them in a persistent key value storage.
- */
 class LoggedWorkflowStateStorage(
     private val storage: WorkflowStateStorage,
 ) : WorkflowStateStorage {

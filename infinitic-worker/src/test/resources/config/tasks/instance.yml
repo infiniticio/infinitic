@@ -31,6 +31,6 @@ pulsar:
   namespace: dev
 
 tasks:
-  - name: io.infinitic.worker.samples.TaskA
-    class: io.infinitic.worker.samples.TaskAImpl
+  - name: io.infinitic.workers.samples.TaskA
+    class: io.infinitic.workers.samples.TaskAImpl
 

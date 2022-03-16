@@ -25,36 +25,23 @@
 
 package io.infinitic.pulsar
 
-import io.infinitic.common.data.Name
 import io.infinitic.common.tasks.data.TaskName
 import io.infinitic.common.workflows.data.workflows.WorkflowName
-import io.infinitic.metrics.global.engine.storage.MetricsGlobalStateStorage
-import io.infinitic.metrics.perName.engine.storage.MetricsPerNameStateStorage
-import io.infinitic.pulsar.topics.GlobalTopic
-import io.infinitic.pulsar.topics.TaskTopic
-import io.infinitic.pulsar.topics.TopicName
-import io.infinitic.pulsar.topics.WorkflowTaskTopic
-import io.infinitic.pulsar.topics.WorkflowTopic
-import io.infinitic.pulsar.transport.PulsarConsumerFactory
-import io.infinitic.pulsar.transport.PulsarOutput
-import io.infinitic.pulsar.workers.startPulsarMetricsGlobalEngine
-import io.infinitic.pulsar.workers.startPulsarMetricsPerNameEngines
-import io.infinitic.pulsar.workers.startPulsarTaskDelayEngines
-import io.infinitic.pulsar.workers.startPulsarTaskEngines
-import io.infinitic.pulsar.workers.startPulsarTaskExecutors
-import io.infinitic.pulsar.workers.startPulsarTaskTagEngines
-import io.infinitic.pulsar.workers.startPulsarWorkflowDelayEngines
-import io.infinitic.pulsar.workers.startPulsarWorkflowEngines
-import io.infinitic.pulsar.workers.startPulsarWorkflowTagEngines
-import io.infinitic.tags.tasks.storage.TaskTagStorage
-import io.infinitic.tags.workflows.storage.WorkflowTagStorage
-import io.infinitic.tasks.engine.storage.TaskStateStorage
-import io.infinitic.worker.InfiniticWorker
-import io.infinitic.worker.config.WorkerConfig
-import io.infinitic.workflows.engine.storage.WorkflowStateStorage
+import io.infinitic.transport.pulsar.PulsarStarter
+import io.infinitic.transport.pulsar.config.Pulsar
+import io.infinitic.transport.pulsar.topics.GlobalTopics
+import io.infinitic.transport.pulsar.topics.PerNameTopics
+import io.infinitic.transport.pulsar.topics.TaskTopics
+import io.infinitic.transport.pulsar.topics.TopicNames
+import io.infinitic.transport.pulsar.topics.WorkflowTaskTopics
+import io.infinitic.transport.pulsar.topics.WorkflowTopics
+import io.infinitic.workers.InfiniticWorker
+import io.infinitic.workers.config.WorkerConfig
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.asCoroutineDispatcher
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.future.future
-import kotlinx.coroutines.launch
 import org.apache.pulsar.client.admin.Namespaces
 import org.apache.pulsar.client.admin.PulsarAdmin
 import org.apache.pulsar.client.admin.PulsarAdminException
@@ -62,6 +49,7 @@ import org.apache.pulsar.client.admin.Tenants
 import org.apache.pulsar.client.admin.Topics
 import org.apache.pulsar.client.api.PulsarClient
 import java.util.concurrent.CompletableFuture
+import java.util.concurrent.Executors
 import kotlin.system.exitProcess
 
 @Suppress("MemberVisibilityCanBePrivate", "unused")
@@ -73,90 +61,116 @@ class PulsarInfiniticWorker private constructor(
 
     companion object {
         /**
-         * Create PulsarInfiniticWorker from a custom PulsarClient and PulsarAdmin and a WorkerConfig instance
+         * Create [PulsarInfiniticWorker] from custom PulsarClient and PulsarAdmin and a WorkerConfig instance
          */
         @JvmStatic
         fun from(pulsarClient: PulsarClient, pulsarAdmin: PulsarAdmin, workerConfig: WorkerConfig) =
             PulsarInfiniticWorker(pulsarClient, pulsarAdmin, workerConfig)
 
         /**
-         * Create PulsarInfiniticWorker from a WorkerConfig instance
+         * Create [PulsarInfiniticWorker] from a WorkerConfig instance
          */
         @JvmStatic
         fun fromConfig(workerConfig: WorkerConfig): PulsarInfiniticWorker =
             PulsarInfiniticWorker(workerConfig.pulsar!!.client, workerConfig.pulsar!!.admin, workerConfig)
 
         /**
-         * Create PulsarInfiniticWorker from a config in resources directory
+         * Create [PulsarInfiniticWorker] from a config in resources directory
          */
         @JvmStatic
         fun fromConfigResource(vararg resources: String) =
             fromConfig(WorkerConfig.fromResource(*resources))
 
         /**
-         * Create PulsarInfiniticWorker from a config in system file
+         * Create [PulsarInfiniticWorker] from a config in system file
          */
         @JvmStatic
         fun fromConfigFile(vararg files: String) =
             fromConfig(WorkerConfig.fromFile(*files))
     }
 
-    val pulsar = workerConfig.pulsar!!
+    /**
+     * We use a thread pool that creates new threads as needed,
+     * to improve performance when processing messages in parallel
+     */
+    private val threadPool = Executors.newCachedThreadPool()
 
+    /**
+     * Coroutine scope used to run workers
+     */
+    private val scope = CoroutineScope(threadPool.asCoroutineDispatcher() + Job())
+
+    /**
+     * [Pulsar] configuration
+     */
+    val pulsar: Pulsar = workerConfig.pulsar!!
+
+    /**
+     * [PulsarInfiniticAdmin] instance: used to create tenant, namespace, topics, etc.
+     */
     val infiniticAdmin by lazy { PulsarInfiniticAdmin(pulsarAdmin, pulsar) }
+
+    /**
+     * [TopicNames] instance: used to get topic's name
+     */
+    private val topicNames: TopicNames = PerNameTopics(pulsar.tenant, pulsar.namespace)
+
+    /**
+     * Worker unique name: from workerConfig or generated through Pulsar
+     */
+    override val name by lazy {
+        getProducerName(pulsarClient, topicNames, workerConfig.name)
+    }
 
     private val fullNamespace = "${pulsar.tenant}/${pulsar.namespace}"
 
-    override val name by lazy {
-        getProducerName(pulsarClient, pulsar.tenant, pulsar.namespace, workerConfig.name)
+    override val workerStarter by lazy {
+        PulsarStarter(pulsarClient, topicNames, name)
     }
 
-    private val pulsarConsumerFactory by lazy {
-        PulsarConsumerFactory(pulsarClient, pulsar.tenant, pulsar.namespace)
+    override val clientFactory = {
+        PulsarInfiniticClient(pulsarClient, pulsarAdmin, pulsar.tenant, pulsar.namespace)
     }
 
-    private val pulsarOutput by lazy {
-        PulsarOutput.from(pulsarClient, pulsar.tenant, pulsar.namespace, name)
-    }
+    /**
+     * Start worker synchronously
+     */
+    override fun start(): Unit = startAsync().join()
 
-    private val clientFactory = { PulsarInfiniticClient(pulsarClient, pulsarAdmin, pulsar.tenant, pulsar.namespace) }
+    /**
+     * Start worker asynchronously
+     */
+    override fun startAsync(): CompletableFuture<Unit> {
+        try {
+            // check that tenant exists or create it
+            pulsarAdmin.tenants().checkOrCreateTenant()
+            // check that namespace exists or create it
+            pulsarAdmin.namespaces().checkOrCreateNamespace()
+            // check that topics exist or create them
+            pulsarAdmin.topics().checkOrCreateTopics()
+        } catch (e: Exception) {
+            logger.error(e) {
+                when (e) {
+                    is PulsarAdminException.NotAuthorizedException -> "Not authorized - check your credentials"
+                    else -> Unit
+                }
+            }
+            close()
+            exitProcess(1)
+        }
+
+        return scope.future { start() }
+    }
 
     /**
      * Close worker
      */
     override fun close() {
-        super.close()
+        scope.cancel()
+        threadPool.shutdown()
 
         pulsarClient.close()
         pulsarAdmin.close()
-    }
-
-    /**
-     * Start worker
-     */
-    override fun startAsync(): CompletableFuture<Unit> {
-        // make sure all needed topics exists
-        runningScope.future {
-            try {
-                // check that tenant exists or create it
-                pulsarAdmin.tenants().checkOrCreateTenant()
-                // check that namespace exists or create it
-                pulsarAdmin.namespaces().checkOrCreateNamespace()
-                // check that topics exist or create them
-                checkOrCreateTopics()
-            } catch (e: Exception) {
-                logger.error(e) {
-                    when (e) {
-                        is PulsarAdminException.NotAuthorizedException -> "Not authorized - check your credentials"
-                        else -> Unit
-                    }
-                }
-                close()
-                exitProcess(1)
-            }
-        }.join()
-
-        return super.startAsync()
     }
 
     private fun Tenants.checkOrCreateTenant() {
@@ -192,58 +206,10 @@ class PulsarInfiniticWorker private constructor(
         }
     }
 
-    private fun CoroutineScope.checkOrCreateTopics() {
-        val topicName = TopicName(pulsar.tenant, pulsar.namespace)
-
+    private fun Topics.checkOrCreateTopics() {
         // get current existing topics
-        val topics = pulsarAdmin.topics().getPartitionedTopicList()
-
-        GlobalTopic.values().forEach {
-            val name = topicName.of(it)
-            if (!topics.contains(name)) {
-                logger.info { "Creation of topic: $name" }
-                launch {
-                    pulsarAdmin.topics().createInfiniticPartitionedTopic(name)
-                }
-            }
-        }
-
-        for (workflow in workerConfig.workflows) {
-            WorkflowTopic.values().forEach {
-                val name = topicName.of(it, workflow.name)
-                if (!topics.contains(name)) {
-                    logger.info { "Creation of topic: $name" }
-                    launch {
-                        pulsarAdmin.topics().createInfiniticPartitionedTopic(name)
-                    }
-                }
-            }
-            WorkflowTaskTopic.values().forEach {
-                val name = topicName.of(it, workflow.name)
-                if (!topics.contains(name)) {
-                    logger.info { "Creation of topic: $name" }
-                    launch {
-                        pulsarAdmin.topics().createInfiniticPartitionedTopic(name)
-                    }
-                }
-            }
-        }
-
-        for (task in workerConfig.tasks) {
-            TaskTopic.values().forEach {
-                val name = topicName.of(it, task.name)
-                if (!topics.contains(name)) {
-                    logger.info { "Creation of topic: $name" }
-                    launch {
-                        pulsarAdmin.topics().createInfiniticPartitionedTopic(name)
-                    }
-                }
-            }
-        }
-    }
-
-    private fun Topics.getPartitionedTopicList(): MutableList<String> {
-        return try {
+        val existing: MutableList<String> = try {
+            logger.debug { "Getting list of partitioned topics for namespace $fullNamespace" }
             getPartitionedTopicList(fullNamespace)
         } catch (e: PulsarAdminException.NotAllowedException) {
             logger.warn { "Not allowed to get list of topics for $fullNamespace: ${e.message}" }
@@ -252,162 +218,52 @@ class PulsarInfiniticWorker private constructor(
             logger.warn { "Not authorized to get list of topics for $fullNamespace: ${e.message}" }
             mutableListOf()
         }
-    }
 
-    private fun Topics.createInfiniticPartitionedTopic(topicName: String) {
-        try {
-            createPartitionedTopic(topicName, 1)
-        } catch (e: PulsarAdminException.ConflictException) {
-            logger.warn { "Topic already exists: $topicName" }
+        // create a topic if it does not exist already
+        val checkOrCreateTopic = { topic: String ->
+            if (! existing.contains(topic)) {
+                try {
+                    logger.debug { "Creating topic $topic" }
+                    createPartitionedTopic(topic, 1)
+                    existing.add(topic)
+                } catch (e: PulsarAdminException.ConflictException) {
+                    logger.warn { "Topic already exists: $topic: ${e.message}" }
+                    existing.add(topic)
+                } catch (e: PulsarAdminException.NotAllowedException) {
+                    logger.warn { "Not allowed to create topic $topic: ${e.message}" }
+                } catch (e: PulsarAdminException.NotAuthorizedException) {
+                    logger.warn { "Not authorized to create topic $topic: ${e.message}" }
+                }
+            }
         }
-    }
 
-    override fun startTaskExecutors(name: Name, concurrency: Int) {
-        runningScope.launch {
-            startPulsarTaskExecutors(
-                name,
-                concurrency,
-                this@PulsarInfiniticWorker.name,
-                taskExecutorRegister,
-                pulsarConsumerFactory,
-                pulsarOutput,
-                clientFactory
-            )
+        // create a topic if it does not exist already, along with its dead letter queue
+        val checkOrCreateTopicAndDeadLetterQueue = { topic: String ->
+            checkOrCreateTopic(topic)
+            checkOrCreateTopic(topicNames.deadLetterQueue(topic))
         }
-    }
 
-    override fun startWorkflowTagEngines(
-        workflowName: WorkflowName,
-        concurrency: Int,
-        storage: WorkflowTagStorage
-    ) {
-        runningScope.launch {
-            startPulsarWorkflowTagEngines(
-                name,
-                concurrency,
-                storage,
-                workflowName,
-                pulsarConsumerFactory,
-                pulsarOutput
-            )
+        GlobalTopics.values().forEach {
+            checkOrCreateTopicAndDeadLetterQueue(topicNames.topic(it))
         }
-    }
 
-    override fun startTaskEngines(
-        workflowName: WorkflowName,
-        concurrency: Int,
-        storage: TaskStateStorage
-    ) {
-        runningScope.launch {
-            startPulsarTaskEngines(
-                name,
-                concurrency,
-                storage,
-                workflowName,
-                pulsarConsumerFactory,
-                pulsarOutput
-            )
+        for (task in workerConfig.tasks) {
+            val taskName = TaskName(task.name)
+            TaskTopics.values().forEach {
+                checkOrCreateTopicAndDeadLetterQueue(topicNames.topic(it, taskName))
+            }
         }
-    }
 
-    override fun startTaskEngines(taskName: TaskName, concurrency: Int, storage: TaskStateStorage) {
-        runningScope.launch {
-            startPulsarTaskEngines(
-                name,
-                concurrency,
-                storage,
-                taskName,
-                pulsarConsumerFactory,
-                pulsarOutput
-            )
-        }
-    }
+        for (workflow in workerConfig.workflows) {
+            val workflowName = WorkflowName(workflow.name)
 
-    override fun startTaskDelayEngines(workflowName: WorkflowName, concurrency: Int) {
-        runningScope.launch {
-            startPulsarTaskDelayEngines(
-                name,
-                concurrency,
-                workflowName,
-                pulsarConsumerFactory,
-                pulsarOutput
-            )
-        }
-    }
+            WorkflowTopics.values().forEach {
+                checkOrCreateTopicAndDeadLetterQueue(topicNames.topic(it, workflowName))
+            }
 
-    override fun startTaskDelayEngines(taskName: TaskName, concurrency: Int) {
-        runningScope.launch {
-            startPulsarTaskDelayEngines(
-                name,
-                concurrency,
-                taskName,
-                pulsarConsumerFactory,
-                pulsarOutput
-            )
-        }
-    }
-
-    override fun startWorkflowEngines(
-        workflowName: WorkflowName,
-        concurrency: Int,
-        storage: WorkflowStateStorage
-    ) {
-        runningScope.launch {
-            startPulsarWorkflowEngines(
-                name,
-                concurrency,
-                storage,
-                workflowName,
-                pulsarConsumerFactory,
-                pulsarOutput
-            )
-        }
-    }
-
-    override fun startWorkflowDelayEngines(workflowName: WorkflowName, concurrency: Int) {
-        runningScope.launch {
-            startPulsarWorkflowDelayEngines(
-                name,
-                concurrency,
-                workflowName,
-                pulsarConsumerFactory,
-                pulsarOutput
-            )
-        }
-    }
-
-    override fun startTaskTagEngines(taskName: TaskName, concurrency: Int, storage: TaskTagStorage) {
-        runningScope.launch {
-            startPulsarTaskTagEngines(
-                name,
-                concurrency,
-                storage,
-                taskName,
-                pulsarConsumerFactory,
-                pulsarOutput
-            )
-        }
-    }
-
-    override fun startMetricsPerNameEngines(taskName: TaskName, storage: MetricsPerNameStateStorage) {
-        runningScope.launch {
-            startPulsarMetricsPerNameEngines(
-                name,
-                storage,
-                taskName,
-                pulsarConsumerFactory,
-                pulsarOutput
-            )
-        }
-    }
-
-    override fun startMetricsGlobalEngine(storage: MetricsGlobalStateStorage) {
-        runningScope.launch {
-            startPulsarMetricsGlobalEngine(
-                name,
-                storage,
-                pulsarConsumerFactory
-            )
+            WorkflowTaskTopics.values().forEach {
+                checkOrCreateTopicAndDeadLetterQueue(topicNames.topic(it, workflowName))
+            }
         }
     }
 }

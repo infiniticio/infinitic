@@ -25,20 +25,20 @@
 
 package io.infinitic.exceptions
 
-import io.infinitic.common.errors.CanceledDeferredError
-import io.infinitic.common.errors.CanceledTaskError
-import io.infinitic.common.errors.CanceledWorkflowError
-import io.infinitic.common.errors.DeferredError
-import io.infinitic.common.errors.FailedDeferredError
-import io.infinitic.common.errors.FailedTaskError
-import io.infinitic.common.errors.FailedWorkflowError
-import io.infinitic.common.errors.FailedWorkflowTaskError
-import io.infinitic.common.errors.TimedOutDeferredError
-import io.infinitic.common.errors.TimedOutTaskError
-import io.infinitic.common.errors.TimedOutWorkflowError
-import io.infinitic.common.errors.UnknownDeferredError
-import io.infinitic.common.errors.UnknownTaskError
-import io.infinitic.common.errors.UnknownWorkflowError
+import io.infinitic.common.tasks.executors.errors.CanceledDeferredError
+import io.infinitic.common.tasks.executors.errors.CanceledTaskError
+import io.infinitic.common.tasks.executors.errors.CanceledWorkflowError
+import io.infinitic.common.tasks.executors.errors.DeferredError
+import io.infinitic.common.tasks.executors.errors.FailedDeferredError
+import io.infinitic.common.tasks.executors.errors.FailedTaskError
+import io.infinitic.common.tasks.executors.errors.FailedWorkflowError
+import io.infinitic.common.tasks.executors.errors.FailedWorkflowTaskError
+import io.infinitic.common.tasks.executors.errors.TimedOutDeferredError
+import io.infinitic.common.tasks.executors.errors.TimedOutTaskError
+import io.infinitic.common.tasks.executors.errors.TimedOutWorkflowError
+import io.infinitic.common.tasks.executors.errors.UnknownDeferredError
+import io.infinitic.common.tasks.executors.errors.UnknownTaskError
+import io.infinitic.common.tasks.executors.errors.UnknownWorkflowError
 
 sealed class DeferredException : kotlin.RuntimeException() {
     companion object {

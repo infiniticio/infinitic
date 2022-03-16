@@ -32,7 +32,7 @@ import io.infinitic.dashboard.panels.infrastructure.requests.Failed
 import io.infinitic.dashboard.panels.infrastructure.requests.Loading
 import io.infinitic.dashboard.panels.infrastructure.requests.Request
 import io.infinitic.dashboard.slideovers.Slideover
-import io.infinitic.pulsar.topics.Topic
+import io.infinitic.transport.pulsar.topics.TopicType
 import kweb.a
 import kweb.new
 import kweb.p
@@ -41,10 +41,10 @@ import kweb.state.KVar
 import org.apache.pulsar.common.policies.data.PartitionedTopicStats
 
 internal fun selectionSlide(
-    selectionType: KVar<Topic>,
+    selectionType: KVar<TopicType>,
     selectionStats: KVar<Request<PartitionedTopicStats>>
 ) = Slideover(
-    selectionType.map { "${it.prefix} stats".replaceFirstChar { c -> c.uppercase() } },
+    selectionType.map { "${it.subscriptionPrefix} stats".replaceFirstChar { c -> c.uppercase() } },
     selectionStats
 ) {
     p().classes("text-sm font-medium text-gray-900").new {

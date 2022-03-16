@@ -48,7 +48,7 @@ class WorkflowTaskImpl : Task(), WorkflowTask {
 
     override fun handle(workflowTaskParameters: WorkflowTaskParameters): WorkflowTaskReturnValue {
         // get  instance workflow by name
-        val workflow = context.register.getWorkflowInstance("${workflowTaskParameters.workflowName}")
+        val workflow = context.workerRegister.getWorkflowInstance("${workflowTaskParameters.workflowName}")
 
         // get method
         val methodRun = workflowTaskParameters.methodRun
@@ -104,7 +104,7 @@ class WorkflowTaskImpl : Task(), WorkflowTask {
                         workflowName = workflowTaskParameters.workflowName.toString(),
                         workflowId = workflowTaskParameters.workflowId.toString(),
                         workflowTaskId = context.id,
-                        workerException = WorkerException.from(ClientName(context.client.name), throwable)
+                        workerException = WorkerException.from(ClientName(context.workerName), throwable)
                     )
                 }
             }

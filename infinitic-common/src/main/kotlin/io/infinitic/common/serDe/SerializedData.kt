@@ -26,6 +26,7 @@
 package io.infinitic.common.serDe
 
 import com.fasterxml.jackson.core.JsonProcessingException
+import com.github.avrokotlin.avro4k.AvroNamespace
 import io.infinitic.exceptions.serialization.ClassNotFoundException
 import io.infinitic.exceptions.serialization.JsonDeserializationException
 import io.infinitic.exceptions.serialization.KotlinDeserializationException
@@ -40,7 +41,7 @@ import java.math.BigInteger
 import java.security.MessageDigest
 import io.infinitic.common.serDe.json.Json as JsonJackson
 
-@Serializable
+@Serializable @AvroNamespace("io.infinitic.data")
 data class SerializedData(
     var bytes: ByteArray,
     var type: SerializedDataType,

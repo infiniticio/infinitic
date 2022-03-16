@@ -25,16 +25,54 @@
 
 package io.infinitic.tasks.executor.samples
 
+import io.infinitic.exceptions.tasks.MaxRunDurationException
 import io.infinitic.tasks.Task
+import java.time.Duration
 
 interface SampleTask {
     fun handle(i: Int, j: String): String
-    fun handle(i: Int, j: Int): String
+    fun handle(i: Int, j: Int): Int
     fun other(i: Int, j: String): String
 }
 
-class TestingSampleTask() : Task(), SampleTask {
+class SampleTaskImpl() : Task(), SampleTask {
     override fun handle(i: Int, j: String) = (i * j.toInt()).toString()
-    override fun handle(i: Int, j: Int) = (i * j).toString()
+    override fun handle(i: Int, j: Int) = (i * j)
     override fun other(i: Int, j: String) = (i * j.toInt()).toString()
+}
+
+internal class SampleTaskWithContext : Task() {
+    fun handle(i: Int, j: String) = (i * j.toInt() * context.retrySequence).toString()
+}
+
+internal class SampleTaskWithRetry : Task() {
+    fun handle(i: Int, j: String): String = if (i < 0) (i * j.toInt()).toString() else throw IllegalStateException()
+
+    override fun getDurationBeforeRetry(e: Exception): Duration? =
+        if (e is IllegalStateException) Duration.ofSeconds(3L) else null
+}
+
+internal class SampleTaskWithBadTypeRetry : Task() {
+    fun handle(i: Int, j: String): String = if (i < 0) (i * j.toInt()).toString() else throw IllegalStateException()
+
+    override fun getDurationBeforeRetry(e: Exception): Duration? =
+        Duration.ofSeconds(3L)
+}
+
+internal class SampleTaskWithBuggyRetry : Task() {
+    fun handle(i: Int, j: String): String = if (i < 0) (i * j.toInt()).toString() else throw IllegalStateException()
+
+    override fun getDurationBeforeRetry(e: Exception): Duration? =
+        if (e is IllegalStateException) throw IllegalArgumentException() else Duration.ofSeconds(3L)
+}
+
+internal class SampleTaskWithTimeout() : Task() {
+    fun handle(i: Int, j: String): String {
+        Thread.sleep(400)
+
+        return (i * j.toInt() * context.retrySequence).toString()
+    }
+
+    override fun getDurationBeforeRetry(e: Exception): Duration? =
+        if (e is MaxRunDurationException) null else Duration.ofSeconds(3L)
 }

@@ -25,8 +25,12 @@
 
 package io.infinitic.cache.caffeine
 
+import com.github.benmanes.caffeine.cache.RemovalCause
+import mu.KotlinLogging
 import java.util.concurrent.TimeUnit
 import com.github.benmanes.caffeine.cache.Caffeine as CaffeineCache
+
+internal val logger = KotlinLogging.logger {}
 
 data class Caffeine(
     @JvmField val maximumSize: Int? = null,
@@ -49,6 +53,13 @@ fun <S, T> CaffeineCache<S, T>.setup(config: Caffeine): CaffeineCache<S, T> {
     }
     if (config.expireAfterWrite is Int) {
         this.expireAfterWrite(config.expireAfterWrite.toLong(), TimeUnit.SECONDS)
+    }
+    this.removalListener<S, T> { key, _, cause ->
+        when (cause) {
+            RemovalCause.SIZE -> logger.debug { "Cache size exceeded, removing $key" }
+            RemovalCause.EXPIRED -> logger.debug { "Cache expired, removing $key" }
+            else -> Unit // Do nothing
+        }
     }
 
     return this

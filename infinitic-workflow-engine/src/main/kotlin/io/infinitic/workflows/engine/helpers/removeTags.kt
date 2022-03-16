@@ -39,6 +39,6 @@ internal fun CoroutineScope.removeTags(output: WorkflowEngineOutput, state: Work
             workflowId = state.workflowId,
             emitterName = output.clientName,
         )
-        launch { output.sendToWorkflowTagEngine(removeTagFromWorkflow) }
+        launch { output.sendToWorkflowTag(removeTagFromWorkflow) }
     }
 }

@@ -33,7 +33,7 @@ import io.infinitic.workflows.SendChannel
 
 @Suppress("UNCHECKED_CAST")
 class ChannelProxyHandler<K : SendChannel<*>>(
-    handler: GetWorkflowProxyHandler<*>,
+    handler: ExistingWorkflowProxyHandler<*>,
 ) : ProxyHandler<K>(
     handler.method.returnType as Class<out K>,
     handler.dispatcherFn
@@ -49,5 +49,4 @@ class ChannelProxyHandler<K : SendChannel<*>>(
 
     val channelSignalTypes by lazy { ChannelSignalType.allFrom(methodArgs.first()::class.java) }
     val channelSignal by lazy { ChannelSignal.from(methodArgs.first()) }
-    val channelType by lazy { handler.method.returnType }
 }

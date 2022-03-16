@@ -41,9 +41,7 @@ import io.kotest.matchers.shouldBe
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.slot
-import kotlinx.serialization.ExperimentalSerializationApi
 
-@OptIn(ExperimentalSerializationApi::class)
 class WorkflowTests : StringSpec({
     val dispatcher = mockk<WorkflowDispatcher>()
     val newTaskSlot = slot<NewTaskProxyHandler<*>>()
@@ -58,12 +56,13 @@ class WorkflowTests : StringSpec({
 
         w.syncTask(100)
 
-        val proxy = newTaskSlot.captured
-        proxy.taskName shouldBe TaskName(TaskA::class.java.name)
-        proxy.methodName.toString() shouldBe TaskA::await.name
-        proxy.methodArgs.toList() shouldBe listOf(100)
-        proxy.taskTags shouldBe setOf(TaskTag("foo"), TaskTag("bar"))
-        proxy.taskMeta shouldBe TaskMeta(mapOf("foo" to "bar".toByteArray()))
+        with(newTaskSlot.captured) {
+            taskName shouldBe TaskName(TaskA::class.java.name)
+            methodName.toString() shouldBe TaskA::await.name
+            methodArgs.toList() shouldBe listOf(100)
+            taskTags shouldBe setOf(TaskTag("foo"), TaskTag("bar"))
+            taskMeta shouldBe TaskMeta(mapOf("foo" to "bar".toByteArray()))
+        }
     }
 
     "Workflow should trigger asynchronously a task" {
@@ -71,12 +70,13 @@ class WorkflowTests : StringSpec({
 
         w.asyncTask(100)
 
-        val proxy = newTaskSlot.captured
-        proxy.taskName shouldBe TaskName(TaskA::class.java.name)
-        proxy.methodName.toString() shouldBe TaskA::await.name
-        proxy.methodArgs.toList() shouldBe listOf(100)
-        proxy.taskTags shouldBe setOf(TaskTag("foo"), TaskTag("bar"))
-        proxy.taskMeta shouldBe TaskMeta(mapOf("foo" to "bar".toByteArray()))
+        with(newTaskSlot.captured) {
+            taskName shouldBe TaskName(TaskA::class.java.name)
+            methodName.toString() shouldBe TaskA::await.name
+            methodArgs.toList() shouldBe listOf(100)
+            taskTags shouldBe setOf(TaskTag("foo"), TaskTag("bar"))
+            taskMeta shouldBe TaskMeta(mapOf("foo" to "bar".toByteArray()))
+        }
     }
 
     "Workflow should trigger synchronously a child-workflow" {
@@ -84,12 +84,13 @@ class WorkflowTests : StringSpec({
 
         w.syncWorkflow(100)
 
-        val proxy = newWorkflowSlot.captured
-        proxy.workflowName shouldBe WorkflowName(WorkflowA::class.java.name)
-        proxy.methodName.toString() shouldBe WorkflowA::syncTask.name
-        proxy.methodArgs.toList() shouldBe listOf(100)
-        proxy.workflowTags shouldBe setOf(WorkflowTag("foo"), WorkflowTag("bar"))
-        proxy.workflowMeta shouldBe WorkflowMeta(mapOf("foo" to "bar".toByteArray()))
+        with(newWorkflowSlot.captured) {
+            workflowName shouldBe WorkflowName(WorkflowA::class.java.name)
+            methodName.toString() shouldBe WorkflowA::syncTask.name
+            methodArgs.toList() shouldBe listOf(100)
+            workflowTags shouldBe setOf(WorkflowTag("foo"), WorkflowTag("bar"))
+            workflowMeta shouldBe WorkflowMeta(mapOf("foo" to "bar".toByteArray()))
+        }
     }
 
     "Workflow should trigger asynchronously a child-workflow" {
@@ -97,19 +98,12 @@ class WorkflowTests : StringSpec({
 
         w.asyncWorkflow(100)
 
-        val proxy = newWorkflowSlot.captured
-        proxy.workflowName shouldBe WorkflowName(WorkflowA::class.java.name)
-        proxy.methodName.toString() shouldBe WorkflowA::syncTask.name
-        proxy.methodArgs.toList() shouldBe listOf(100)
-        proxy.workflowTags shouldBe setOf(WorkflowTag("foo"), WorkflowTag("bar"))
-        proxy.workflowMeta shouldBe WorkflowMeta(mapOf("foo" to "bar".toByteArray()))
+        with(newWorkflowSlot.captured) {
+            workflowName shouldBe WorkflowName(WorkflowA::class.java.name)
+            methodName.toString() shouldBe WorkflowA::syncTask.name
+            methodArgs.toList() shouldBe listOf(100)
+            workflowTags shouldBe setOf(WorkflowTag("foo"), WorkflowTag("bar"))
+            workflowMeta shouldBe WorkflowMeta(mapOf("foo" to "bar".toByteArray()))
+        }
     }
-
-//    "Workflow should throw when dispatching its own method" {
-//        val w = WorkflowAImpl().apply { this.dispatcher = dispatcher }
-//
-//        w.dispatchSelf()
-//
-// //        println(newTaskSlot.captured.method())
-//    }
 })

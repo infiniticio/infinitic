@@ -38,9 +38,9 @@ data class WorkflowTaskIndex(val int: Int = 0) : Comparable<WorkflowTaskIndex> {
     override fun toString() = "$int"
 
     override operator fun compareTo(other: WorkflowTaskIndex): Int = this.int.compareTo(other.int)
-}
 
-operator fun WorkflowTaskIndex.plus(increment: Int) = WorkflowTaskIndex(this.int + increment)
+    operator fun plus(increment: Int) = WorkflowTaskIndex(this.int + increment)
+}
 
 object WorkflowTaskIndexSerializer : KSerializer<WorkflowTaskIndex> {
     override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("WorkflowTaskIndex", PrimitiveKind.INT)

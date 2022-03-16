@@ -27,54 +27,21 @@ package io.infinitic.common.serDe.kserializer
 
 import io.infinitic.common.clients.messages.ClientEnvelope
 import io.infinitic.common.exceptions.thisShouldNotHappen
-import io.infinitic.common.metrics.global.messages.MetricsGlobalEnvelope
-import io.infinitic.common.metrics.perName.messages.MetricsPerNameEnvelope
-import io.infinitic.common.tasks.engine.messages.TaskEngineEnvelope
 import io.infinitic.common.tasks.executors.messages.TaskExecutorEnvelope
-import io.infinitic.common.tasks.tags.messages.TaskTagEngineEnvelope
+import io.infinitic.common.tasks.tags.messages.TaskTagEnvelope
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineEnvelope
-import io.infinitic.common.workflows.tags.messages.WorkflowTagEngineEnvelope
-import kotlinx.serialization.InternalSerializationApi
+import io.infinitic.common.workflows.engine.state.WorkflowState
+import io.infinitic.common.workflows.tags.messages.WorkflowTagEnvelope
 import kotlinx.serialization.KSerializer
-import kotlinx.serialization.serializerOrNull
 import kotlin.reflect.KClass
-
-// @OptIn(ExperimentalStdlibApi::class)
-// fun getKSerializerOrNull(klass: Class<*>) = try {
-//    @Suppress("UNCHECKED_CAST")
-//    serializer(klass.kotlin.createType())
-// } catch (e: Exception) {
-//    null
-// }
-
-@OptIn(InternalSerializationApi::class)
-fun <T : Any> getKSerializerOrNull(klass: Class<T>): KSerializer<T>? {
-    return klass.kotlin.serializerOrNull()
-//    val companionField = klass.declaredFields.find {
-//        it.name == "Companion" && isStatic(it.modifiers)
-//    } ?: return null
-//    val companion = companionField.get(klass)
-//    val serializerMethod = try {
-//        companion::class.java.getMethod("serializer")
-//    } catch (e: NoSuchMethodException) {
-//        return null
-//    }
-//    if (serializerMethod.returnType.name != KSerializer::class.qualifiedName) {
-//        return null
-//    }
-//    @Suppress("UNCHECKED_CAST")
-//    return serializerMethod.invoke(companion) as KSerializer<T>
-}
 
 @Suppress("UNCHECKED_CAST")
 fun <T : Any> kserializer(klass: KClass<T>) = when (klass) {
     ClientEnvelope::class -> ClientEnvelope.serializer()
-    TaskTagEngineEnvelope::class -> TaskTagEngineEnvelope.serializer()
-    TaskEngineEnvelope::class -> TaskEngineEnvelope.serializer()
+    TaskTagEnvelope::class -> TaskTagEnvelope.serializer()
     TaskExecutorEnvelope::class -> TaskExecutorEnvelope.serializer()
     WorkflowEngineEnvelope::class -> WorkflowEngineEnvelope.serializer()
-    WorkflowTagEngineEnvelope::class -> WorkflowTagEngineEnvelope.serializer()
-    MetricsPerNameEnvelope::class -> MetricsPerNameEnvelope.serializer()
-    MetricsGlobalEnvelope::class -> MetricsGlobalEnvelope.serializer()
+    WorkflowTagEnvelope::class -> WorkflowTagEnvelope.serializer()
+    WorkflowState::class -> WorkflowState.serializer()
     else -> thisShouldNotHappen("applying kserializer with ${klass.qualifiedName}")
 } as KSerializer <T>

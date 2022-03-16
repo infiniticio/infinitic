@@ -25,9 +25,10 @@
 
 package io.infinitic.common.workflows.data.workflows
 
+import com.github.avrokotlin.avro4k.AvroNamespace
 import kotlinx.serialization.Serializable
 
-@Serializable
+@Serializable @AvroNamespace("io.infinitic.workflows.data")
 enum class WorkflowCancellationReason {
     /**
      * Cancellation was directly asked by user

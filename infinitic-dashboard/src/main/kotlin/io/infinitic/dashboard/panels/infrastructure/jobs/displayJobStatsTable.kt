@@ -31,7 +31,7 @@ import io.infinitic.dashboard.panels.infrastructure.requests.Failed
 import io.infinitic.dashboard.panels.infrastructure.requests.Loading
 import io.infinitic.dashboard.panels.infrastructure.requests.Request
 import io.infinitic.dashboard.slideovers.Slideover
-import io.infinitic.pulsar.topics.Topic
+import io.infinitic.transport.pulsar.topics.TopicType
 import kweb.Element
 import kweb.ElementCreator
 import kweb.div
@@ -48,9 +48,9 @@ import org.apache.pulsar.common.policies.data.PartitionedTopicStats
 
 internal fun ElementCreator<Element>.displayJobStatsTable(
     name: String,
-    state: KVar<out JobState<out Topic>>,
+    state: KVar<out JobState<out TopicType>>,
     selectionSlide: Slideover<*>,
-    selectionType: KVar<Topic>,
+    selectionType: KVar<TopicType>,
     selectionStats: KVar<Request<PartitionedTopicStats>>
 ) {
     // Topics table
@@ -86,14 +86,14 @@ internal fun ElementCreator<Element>.displayJobStatsTable(
                                             state.topicsStats.forEach {
                                                 val type = it.key
                                                 val request = it.value
-                                                val topic = Infinitic.topicName.of(type, name)
+                                                val topic = Infinitic.topicName.topic(type, name)
                                                 val row = tr()
 
                                                 when (request) {
                                                     is Loading ->
                                                         row.classes("bg-white").new {
                                                             td().classes("px-6 py-4 text-sm font-medium text-gray-900")
-                                                                .text(type.prefix)
+                                                                .text(type.subscriptionPrefix)
                                                             td().classes("px-6 py-4 text-sm text-gray-500")
                                                                 .text("loading...")
                                                             td().classes("px-6 py-4 text-sm text-gray-500")
@@ -106,7 +106,7 @@ internal fun ElementCreator<Element>.displayJobStatsTable(
                                                     is Failed ->
                                                         row.classes("bg-white cursor-pointer hover:bg-gray-50").new {
                                                             td().classes("px-6 py-4 text-sm font-medium text-gray-900")
-                                                                .text(type.prefix)
+                                                                .text(type.subscriptionPrefix)
                                                             td().classes("px-6 py-4 text-sm text-gray-500 text-center italic")
                                                                 .setAttribute("colspan", 3)
                                                                 .text(request.title)
@@ -116,7 +116,7 @@ internal fun ElementCreator<Element>.displayJobStatsTable(
                                                     is Completed -> request.result.subscriptions.map {
                                                         row.classes("bg-white cursor-pointer hover:bg-gray-50").new {
                                                             td().classes("px-6 py-4 text-sm font-medium text-gray-900")
-                                                                .text(type.prefix)
+                                                                .text(type.subscriptionPrefix)
                                                             td().classes("px-6 py-4 text-sm text-gray-500")
                                                                 .text(it.value.consumers.size.toString())
                                                             td().classes("px-6 py-4 text-sm text-gray-500")
