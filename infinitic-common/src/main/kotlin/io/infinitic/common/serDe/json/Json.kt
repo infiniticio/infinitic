@@ -33,6 +33,7 @@ import com.fasterxml.jackson.databind.SerializationFeature
 import com.fasterxml.jackson.databind.SerializerProvider
 import com.fasterxml.jackson.databind.annotation.JsonSerialize
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
+import com.fasterxml.jackson.module.kotlin.KotlinFeature
 import com.fasterxml.jackson.module.kotlin.KotlinModule
 import com.fasterxml.jackson.module.kotlin.jsonMapper
 import org.apache.avro.specific.SpecificRecordBase
@@ -44,7 +45,7 @@ object Json {
         addMixIn(Exception::class.java, ExceptionMixIn::class.java)
         configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false)
         addModule(JavaTimeModule())
-        addModule(KotlinModule.Builder().build())
+        addModule(KotlinModule.Builder().configure(KotlinFeature.NullIsSameAsDefault, true).build())
         configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
     }
 

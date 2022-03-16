@@ -26,19 +26,13 @@
 package io.infinitic.common.serDe
 
 import io.infinitic.common.fixtures.TestFactory
+import io.infinitic.common.serDe.SerializedData.Companion.META_JAVA_CLASS
 import io.infinitic.common.workflows.data.steps.Step
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
 import kotlinx.serialization.Serializable
 
 class SerDeTests : StringSpec({
-
-    "Null (Obj) should be serializable / deserializable" {
-        val obj1: Obj1? = null
-        val obj2 = SerializedData.from(obj1).deserialize()
-
-        obj2 shouldBe obj1
-    }
 
     "Primitive (ByteArray) should be serializable / deserializable" {
         val bytes1: ByteArray = TestFactory.random()
@@ -111,6 +105,13 @@ class SerDeTests : StringSpec({
         val2 shouldBe val1
     }
 
+    "Null (Obj) should be serializable / deserializable" {
+        val obj1: Obj1? = null
+        val obj2 = SerializedData.from(obj1).deserialize()
+
+        obj2 shouldBe obj1
+    }
+
     "Simple Object should be serializable / deserializable" {
         val val1 = Obj1("42", 42, Type.TYPE_1)
         val val2 = SerializedData.from(val1).deserialize()
@@ -118,16 +119,27 @@ class SerDeTests : StringSpec({
         val2 shouldBe val1
     }
 
-    "Object should be deserializable with additionnal properties" {
+    "Object should be deserializable with more properties" {
         val val1 = Obj1("42", 42, Type.TYPE_1)
-        val valtmp = Obj2("40", 40)
-        val data = SerializedData.from(valtmp).also {
-            it.bytes = SerializedData.from(val1).bytes
-        }
+        val data = SerializedData.from(val1).copy(
+            meta = mapOf(META_JAVA_CLASS to Obj2::class.java.name.toByteArray(charset = Charsets.UTF_8))
+        )
         val val2 = data.deserialize() as Obj2
 
         val2.foo shouldBe val1.foo
         val2.bar shouldBe val2.bar
+    }
+
+    "Object should be deserializable with less properties using default values" {
+        val val1 = Obj2("42", 42)
+        val data = SerializedData.from(val1).copy(
+            meta = mapOf(META_JAVA_CLASS to Obj1::class.java.name.toByteArray(charset = Charsets.UTF_8))
+        )
+        val val2 = data.deserialize() as Obj1
+
+        val2.foo shouldBe val1.foo
+        val2.bar shouldBe val1.bar
+        val2.type shouldBe Type.TYPE_1
     }
 
     "Object containing set of sealed should be serializable / deserializable (even with a 'type' property)" {
@@ -175,18 +187,17 @@ class SerDeTests : StringSpec({
 })
 
 @Serializable
-sealed class Obj
+private sealed class Obj
 
-enum class Type {
-    TYPE_1,
-    TYPE_2,
+private enum class Type {
+    TYPE_1
 }
 
 @Serializable
-data class Obj1(val foo: String, val bar: Int, val type: Type) : Obj()
+private data class Obj1(val foo: String, val bar: Int, val type: Type = Type.TYPE_1) : Obj()
 
 @Serializable
-data class Obj2(val foo: String, val bar: Int) : Obj()
+private data class Obj2(val foo: String, val bar: Int) : Obj()
 
 @Serializable
-data class Objs(val objs: Set<Obj>)
+private data class Objs(val objs: Set<Obj>)
