@@ -61,6 +61,7 @@ internal class PulsarProducer(val client: PulsarClient) {
                 .producerName(producerName)
                 .also { if (key != null) { it.batcherBuilder(BatcherBuilder.KEY_BASED) } }
                 .accessMode(ProducerAccessMode.Shared)
+                .blockIfQueueFull(true)
                 .create()
         } as Producer<Envelope<out Message>>
 
