@@ -65,9 +65,7 @@ class WorkflowTaskImpl : Task(), WorkflowTask {
         workflow.dispatcher = dispatcher
 
         // define setProperties function
-        val setProperties = {
-            nameHashes: Map<PropertyName, PropertyHash>
-            ->
+        val setProperties = { nameHashes: Map<PropertyName, PropertyHash> ->
             // in case properties contain some Deferred
             Deferred.setWorkflowDispatcher(dispatcher)
             workflow.setProperties(workflowTaskParameters.workflowPropertiesHashValue, nameHashes)

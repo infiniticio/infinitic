@@ -40,13 +40,18 @@ interface TopicNames {
 
     fun consumerName(workerName: String, type: TopicType): String
 
-    fun deadLetterQueue(topic: String): String
-
     fun topic(type: GlobalTopics): String
+
     fun topic(type: ClientTopics, clientName: ClientName): String
+
     fun topic(type: WorkflowTopics, workflowName: WorkflowName): String
+    fun topicDLQ(type: WorkflowTopics, workflowName: WorkflowName): String
+
     fun topic(type: TaskTopics, taskName: TaskName): String
+    fun topicDLQ(type: TaskTopics, taskName: TaskName): String
+
     fun topic(type: WorkflowTaskTopics, workflowName: WorkflowName): String
+    fun topicDLQ(type: WorkflowTaskTopics, workflowName: WorkflowName): String
 
     fun topic(type: TopicType, name: String) = when (type) {
         is ClientTopics -> topic(type, ClientName(name))
@@ -54,6 +59,13 @@ interface TopicNames {
         is WorkflowTopics -> topic(type, WorkflowName(name))
         is TaskTopics -> topic(type, TaskName(name))
         is WorkflowTaskTopics -> topic(type, WorkflowName(name))
+        else -> thisShouldNotHappen()
+    }
+
+    fun topicDLQ(type: TopicType, name: String) = when (type) {
+        is WorkflowTopics -> topicDLQ(type, WorkflowName(name))
+        is TaskTopics -> topicDLQ(type, TaskName(name))
+        is WorkflowTaskTopics -> topicDLQ(type, WorkflowName(name))
         else -> thisShouldNotHappen()
     }
 }

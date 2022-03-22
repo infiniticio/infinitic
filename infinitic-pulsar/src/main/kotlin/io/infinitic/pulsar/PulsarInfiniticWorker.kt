@@ -234,23 +234,20 @@ class PulsarInfiniticWorker private constructor(
                 } catch (e: PulsarAdminException.NotAuthorizedException) {
                     logger.warn { "Not authorized to create topic $topic: ${e.message}" }
                 }
+            } else {
+                logger.debug { "Topic $topic already exists" }
             }
         }
 
-        // create a topic if it does not exist already, along with its dead letter queue
-        val checkOrCreateTopicAndDeadLetterQueue = { topic: String ->
-            checkOrCreateTopic(topic)
-            checkOrCreateTopic(topicNames.deadLetterQueue(topic))
-        }
-
         GlobalTopics.values().forEach {
-            checkOrCreateTopicAndDeadLetterQueue(topicNames.topic(it))
+            checkOrCreateTopic(topicNames.topic(it))
         }
 
         for (task in workerConfig.tasks) {
             val taskName = TaskName(task.name)
             TaskTopics.values().forEach {
-                checkOrCreateTopicAndDeadLetterQueue(topicNames.topic(it, taskName))
+                checkOrCreateTopic(topicNames.topic(it, taskName))
+                checkOrCreateTopic(topicNames.topicDLQ(it, taskName))
             }
         }
 
@@ -258,11 +255,13 @@ class PulsarInfiniticWorker private constructor(
             val workflowName = WorkflowName(workflow.name)
 
             WorkflowTopics.values().forEach {
-                checkOrCreateTopicAndDeadLetterQueue(topicNames.topic(it, workflowName))
+                checkOrCreateTopic(topicNames.topic(it, workflowName))
+                checkOrCreateTopic(topicNames.topicDLQ(it, workflowName))
             }
 
             WorkflowTaskTopics.values().forEach {
-                checkOrCreateTopicAndDeadLetterQueue(topicNames.topic(it, workflowName))
+                checkOrCreateTopic(topicNames.topic(it, workflowName))
+                checkOrCreateTopic(topicNames.topicDLQ(it, workflowName))
             }
         }
     }
