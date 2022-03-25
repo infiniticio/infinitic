@@ -2,6 +2,7 @@ ignorePaths:
   - "infinitic-*/build/**"
   - "webui/dist/**"
   - "**/*.md"
+  - "**/*.avsc"
   - "**/compiled.css"
 
 hasLicensePatterns:

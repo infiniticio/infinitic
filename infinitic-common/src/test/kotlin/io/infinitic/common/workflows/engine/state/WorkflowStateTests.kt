@@ -23,16 +23,17 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.common.workflows
+package io.infinitic.common.workflows.engine.state
 
 import com.github.avrokotlin.avro4k.Avro
 import io.infinitic.common.fixtures.TestFactory
-import io.infinitic.common.workflows.engine.state.WorkflowState
 import io.kotest.assertions.throwables.shouldNotThrowAny
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
+import org.apache.avro.Schema
+import org.apache.avro.SchemaCompatibility
 
-class StateTests : StringSpec({
+class WorkflowStateTests : StringSpec({
     "WorkflowState should be avro-convertible" {
         shouldNotThrowAny {
             val msg = TestFactory.random<WorkflowState>()
@@ -41,5 +42,16 @@ class StateTests : StringSpec({
             val msg2 = Avro.default.decodeFromByteArray(ser, byteArray)
             msg shouldBe msg2
         }
+    }
+
+    "WorkflowState should be backward-compatible with v0.9.0" {
+        val newSchema = Avro.default.schema(WorkflowState.serializer())
+
+        val fileContent = WorkflowStateTests::class.java.classLoader
+            .getResource("workflowState-0.9.0.avsc")!!.readText()
+        val oldSchema = Schema.Parser().parse(fileContent)
+
+        SchemaCompatibility.checkReaderWriterCompatibility(newSchema, oldSchema)
+            .type shouldBe SchemaCompatibility.SchemaCompatibilityType.COMPATIBLE
     }
 })

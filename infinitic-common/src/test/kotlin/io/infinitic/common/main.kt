@@ -23,10 +23,22 @@
  * Licensor: infinitic.io
  */
 
-repositories {
-    jcenter()
-}
+package io.infinitic.common
 
-plugins {
-    `kotlin-dsl`
+import Ci
+import com.github.avrokotlin.avro4k.Avro
+import io.infinitic.common.workflows.engine.state.WorkflowState
+import io.infinitic.common.workflows.engine.state.WorkflowStateTests
+import org.apache.avro.Schema
+import java.io.File
+
+/**
+ * This creates the current schema of the workflow state
+ */
+fun main() {
+    val file = WorkflowStateTests::class.java.classLoader.getResource("workflowState.avsc")!!.file.replace("/build/resources/test/", "/src/test/resources/")
+    val versionedFile = file.split(".").let { it[0] + "-${Ci.version}." + it[1] }
+
+    val schema: Schema = Avro.default.schema(WorkflowState.serializer())
+    File(versionedFile).writeText(schema.toString(true))
 }

@@ -38,6 +38,8 @@ dependencies {
     implementation(Libs.Coroutines.core)
     implementation(Libs.Coroutines.jdk8)
 
+    testImplementation(files("${project.rootDir}/buildSrc/build/libs/buildSrc.jar"))
+
     testFixturesImplementation(Libs.Kotlin.reflect)
     testFixturesImplementation(Libs.EasyRandom.core)
     testFixturesImplementation(Libs.Coroutines.core)

@@ -227,7 +227,7 @@ class PulsarInfiniticWorker private constructor(
                     createPartitionedTopic(topic, 1)
                     existing.add(topic)
                 } catch (e: PulsarAdminException.ConflictException) {
-                    logger.warn { "Topic already exists: $topic: ${e.message}" }
+                    logger.warn { "Already existing topic $topic: ${e.message}" }
                     existing.add(topic)
                 } catch (e: PulsarAdminException.NotAllowedException) {
                     logger.warn { "Not allowed to create topic $topic: ${e.message}" }
@@ -235,7 +235,7 @@ class PulsarInfiniticWorker private constructor(
                     logger.warn { "Not authorized to create topic $topic: ${e.message}" }
                 }
             } else {
-                logger.debug { "Topic $topic already exists" }
+                logger.debug { "Already existing topic $topic" }
             }
         }
 
