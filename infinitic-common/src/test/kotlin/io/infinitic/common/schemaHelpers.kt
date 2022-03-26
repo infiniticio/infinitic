@@ -46,28 +46,22 @@ internal fun getSchemasResourcesPath(): Path {
 }
 
 internal inline fun <reified T : Any> createSchemaFileIfAbsent(serializer: KSerializer<T>) {
-    val schemaFile = getCurrentFile<T>()
+    val schemaFile = getCurrentSchemaFile<T>()
 
-    if (!File(getSchemasResourcesPath().toString(), schemaFile).exists()) {
-        // if it's a release, we try to move the snapshot file to the release file
-        val snapshotFile = File(getSchemasResourcesPath().toString(), getCurrentSnapshotFile<T>())
+    if (!schemaFile.exists()) {
+        val snapshotFile = getSnapshotSchemaFile<T>()
         if (Ci.isRelease && snapshotFile.exists()) {
+            // if it's a release, we move the snapshot file to the release file
             Files.move(snapshotFile.toPath(), snapshotFile.resolveSibling(schemaFile).toPath())
         } else {
             // write WorkflowState schema to schemaFile in resources
-            val schema = Avro.default.schema(serializer)
-            val file = File(getSchemasResourcesPath().toString(), schemaFile)
-            file.writeText(schema.toString(true))
+            schemaFile.writeText(Avro.default.schema(serializer).toString(true))
         }
     }
 }
 
 internal inline fun <reified T : Any> checkCurrentFileIsUpToDate(serializer: KSerializer<T>) {
-    val schemaFile = getCurrentFile<T>()
-
-    val savedSchema = File(getSchemasResourcesPath().toString(), schemaFile).readText()
-
-    savedSchema shouldBe Avro.default.schema(serializer).toString(true)
+    getCurrentSchemaFile<T>().readText() shouldBe Avro.default.schema(serializer).toString(true)
 }
 
 internal inline fun <reified T : Any> checkBackwardCompatibility(serializer: KSerializer<T>) {
@@ -79,7 +73,7 @@ internal inline fun <reified T : Any> checkBackwardCompatibility(serializer: KSe
         .forEach { schemaList.add(Schema.Parser().parse(it.readText())) }
 
     // checking that we did not silently break something
-    schemaList.size shouldBeGreaterThan 0
+    schemaList.size shouldBeGreaterThan 1
 
     // checking that we can read T from any previous version
     val validator = SchemaValidatorBuilder().canReadStrategy().validateAll()
@@ -89,9 +83,12 @@ internal inline fun <reified T : Any> checkBackwardCompatibility(serializer: KSe
 
 internal inline fun <reified T : Any> getFilePrefix() = T::class.simpleName!!.replaceFirstChar { it.lowercase() }
 
-internal inline fun <reified T : Any> getCurrentFile() = "${getFilePrefix<T>()}-${Ci.version}.avsc"
+internal inline fun <reified T : Any> getCurrentSchemaFile() = File(getSchemasResourcesPath().toString(), "${getFilePrefix<T>()}-${Ci.version}.avsc")
 
-internal inline fun <reified T : Any> getCurrentSnapshotFile() = when (Ci.isRelease) {
-    true -> "${getFilePrefix<T>()}-${Ci.version}-SNAPSHOT.avsc"
-    false -> "${getFilePrefix<T>()}-${Ci.version}.avsc"
-}
+internal inline fun <reified T : Any> getSnapshotSchemaFile() = File(
+    getSchemasResourcesPath().toString(),
+    when (Ci.isRelease) {
+        true -> "${getFilePrefix<T>()}-${Ci.version}-SNAPSHOT.avsc"
+        false -> "${getFilePrefix<T>()}-${Ci.version}.avsc"
+    }
+)
