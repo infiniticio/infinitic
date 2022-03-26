@@ -23,27 +23,25 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.common.workflows
+package io.infinitic.common.clients.messages
 
 import com.github.avrokotlin.avro4k.Avro
+import io.infinitic.common.checkBackwardCompatibility
+import io.infinitic.common.checkCurrentFileIsUpToDate
+import io.infinitic.common.createShemaFileIfAbsent
 import io.infinitic.common.fixtures.TestFactory
-import io.infinitic.common.workflows.engine.messages.WorkflowEngineEnvelope
-import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
-import io.infinitic.common.workflows.tags.messages.WorkflowTagEnvelope
-import io.infinitic.common.workflows.tags.messages.WorkflowTagMessage
 import io.kotest.assertions.throwables.shouldNotThrowAny
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
 
-class EnvelopeTests : StringSpec({
-
-    WorkflowEngineMessage::class.sealedSubclasses.map {
+class ClientEnvelopeTests : StringSpec({
+    ClientMessage::class.sealedSubclasses.map {
         val msg = TestFactory.random(it)
 
-        "WorkflowEngineEnvelope(${msg::class.simpleName}) should be avro-convertible" {
+        "ClientMessage(${msg::class.simpleName}) should be avro-convertible" {
             shouldNotThrowAny {
-                val envelope = WorkflowEngineEnvelope.from(msg)
-                val ser = WorkflowEngineEnvelope.serializer()
+                val envelope = ClientEnvelope.from(msg)
+                val ser = ClientEnvelope.serializer()
                 val byteArray = Avro.default.encodeToByteArray(ser, envelope)
                 val envelope2 = Avro.default.decodeFromByteArray(ser, byteArray)
                 envelope shouldBe envelope2
@@ -51,17 +49,15 @@ class EnvelopeTests : StringSpec({
         }
     }
 
-    WorkflowTagMessage::class.sealedSubclasses.map {
-        val msg = TestFactory.random(it)
+    "Create ClientEnvelope schema file for the current version" {
+        createShemaFileIfAbsent(ClientEnvelope.serializer())
+    }
 
-        "WorkflowTagMessage(${msg::class.simpleName}) should be avro-convertible" {
-            shouldNotThrowAny {
-                val envelope = WorkflowTagEnvelope.from(msg)
-                val ser = WorkflowTagEnvelope.serializer()
-                val byteArray = Avro.default.encodeToByteArray(ser, envelope)
-                val envelope2 = Avro.default.decodeFromByteArray(ser, byteArray)
-                envelope shouldBe envelope2
-            }
-        }
+    "Saved ClientEnvelope schema should be up-to-date with for the current version" {
+        checkCurrentFileIsUpToDate(ClientEnvelope.serializer())
+    }
+
+    "We should be able to read ClientEnvelope from any previous version since 0.9.0" {
+        checkBackwardCompatibility(ClientEnvelope.serializer())
     }
 })

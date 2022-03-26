@@ -23,7 +23,7 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.common.workflows.engine.state
+package io.infinitic.common.workflows.tags.messages
 
 import com.github.avrokotlin.avro4k.Avro
 import io.infinitic.common.checkBackwardCompatibility
@@ -34,27 +34,30 @@ import io.kotest.assertions.throwables.shouldNotThrowAny
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
 
-class WorkflowStateTests : StringSpec({
+class WorkflowTagEnvelopeTests : StringSpec({
+    WorkflowTagMessage::class.sealedSubclasses.map {
+        val msg = TestFactory.random(it)
 
-    "WorkflowState should be avro-convertible" {
-        shouldNotThrowAny {
-            val msg = TestFactory.random<WorkflowState>()
-            val ser = WorkflowState.serializer()
-            val byteArray = Avro.default.encodeToByteArray(ser, msg)
-            val msg2 = Avro.default.decodeFromByteArray(ser, byteArray)
-            msg shouldBe msg2
+        "WorkflowTagMessage(${msg::class.simpleName}) should be avro-convertible" {
+            shouldNotThrowAny {
+                val envelope = WorkflowTagEnvelope.from(msg)
+                val ser = WorkflowTagEnvelope.serializer()
+                val byteArray = Avro.default.encodeToByteArray(ser, envelope)
+                val envelope2 = Avro.default.decodeFromByteArray(ser, byteArray)
+                envelope shouldBe envelope2
+            }
         }
     }
 
-    "Create WorkflowState schema for the current version" {
-        createShemaFileIfAbsent(WorkflowState.serializer())
+    "Create WorkflowTagEnvelope schema file for the current version" {
+        createShemaFileIfAbsent(WorkflowTagEnvelope.serializer())
     }
 
-    "Saved WorkflowState schema should be up-to-date with for the current version" {
-        checkCurrentFileIsUpToDate(WorkflowState.serializer())
+    "Saved WorkflowTagEnvelope schema should be up-to-date with for the current version" {
+        checkCurrentFileIsUpToDate(WorkflowTagEnvelope.serializer())
     }
 
-    "We should be able to read WorkflowState from any previous version since 0.9.0" {
-        checkBackwardCompatibility(WorkflowState.serializer())
+    "We should be able to read WorkflowTagEnvelope from any previous version since 0.9.0" {
+        checkBackwardCompatibility(WorkflowTagEnvelope.serializer())
     }
 })

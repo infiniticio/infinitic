@@ -25,6 +25,8 @@
 
 package io.infinitic.common.workflows.engine.state
 
+import Ci
+import com.github.avrokotlin.avro4k.AvroDefault
 import com.github.avrokotlin.avro4k.AvroNamespace
 import io.infinitic.common.data.MessageId
 import io.infinitic.common.data.MillisInstant
@@ -51,6 +53,12 @@ import kotlinx.serialization.Serializable
 
 @Serializable @AvroNamespace("io.infinitic.workflows.engine")
 data class WorkflowState(
+    /**
+     * Infinitic version
+     */
+    @AvroDefault("0.9.0")
+    val version: String = Ci.version,
+
     /**
      * Id of last handled message (used to ensure idempotency)
      */

@@ -23,7 +23,7 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.common.workflows.engine.state
+package io.infinitic.common.tasks.executors.messages
 
 import com.github.avrokotlin.avro4k.Avro
 import io.infinitic.common.checkBackwardCompatibility
@@ -34,27 +34,30 @@ import io.kotest.assertions.throwables.shouldNotThrowAny
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
 
-class WorkflowStateTests : StringSpec({
+class TaskExecutorEnvelopeTests : StringSpec({
+    TaskExecutorMessage::class.sealedSubclasses.map {
+        val msg = TestFactory.random(it)
 
-    "WorkflowState should be avro-convertible" {
-        shouldNotThrowAny {
-            val msg = TestFactory.random<WorkflowState>()
-            val ser = WorkflowState.serializer()
-            val byteArray = Avro.default.encodeToByteArray(ser, msg)
-            val msg2 = Avro.default.decodeFromByteArray(ser, byteArray)
-            msg shouldBe msg2
+        "TaskExecutorMessage(${msg::class.simpleName}) should be avro-convertible" {
+            shouldNotThrowAny {
+                val envelope = TaskExecutorEnvelope.from(msg)
+                val ser = TaskExecutorEnvelope.serializer()
+                val byteArray = Avro.default.encodeToByteArray(ser, envelope)
+                val envelope2 = Avro.default.decodeFromByteArray(ser, byteArray)
+                envelope shouldBe envelope2
+            }
         }
     }
 
-    "Create WorkflowState schema for the current version" {
-        createShemaFileIfAbsent(WorkflowState.serializer())
+    "Create TaskExecutorEnvelope schema file for the current version" {
+        createShemaFileIfAbsent(TaskExecutorEnvelope.serializer())
     }
 
-    "Saved WorkflowState schema should be up-to-date with for the current version" {
-        checkCurrentFileIsUpToDate(WorkflowState.serializer())
+    "Saved TaskExecutorEnvelope schema should be up-to-date with for the current version" {
+        checkCurrentFileIsUpToDate(TaskExecutorEnvelope.serializer())
     }
 
-    "We should be able to read WorkflowState from any previous version since 0.9.0" {
-        checkBackwardCompatibility(WorkflowState.serializer())
+    "We should be able to read TaskExecutorEnvelope from any previous version since 0.9.0" {
+        checkBackwardCompatibility(TaskExecutorEnvelope.serializer())
     }
 })

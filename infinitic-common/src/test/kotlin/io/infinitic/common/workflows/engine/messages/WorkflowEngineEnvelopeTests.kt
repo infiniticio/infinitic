@@ -23,26 +23,26 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.common.tasks
+package io.infinitic.common.workflows.engine.messages
 
 import com.github.avrokotlin.avro4k.Avro
+import io.infinitic.common.checkBackwardCompatibility
+import io.infinitic.common.checkCurrentFileIsUpToDate
+import io.infinitic.common.createShemaFileIfAbsent
 import io.infinitic.common.fixtures.TestFactory
-import io.infinitic.common.tasks.executors.messages.TaskExecutorEnvelope
-import io.infinitic.common.tasks.executors.messages.TaskExecutorMessage
-import io.infinitic.common.tasks.tags.messages.TaskTagEnvelope
-import io.infinitic.common.tasks.tags.messages.TaskTagMessage
 import io.kotest.assertions.throwables.shouldNotThrowAny
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
 
-class EnvelopesTests : StringSpec({
-    TaskTagMessage::class.sealedSubclasses.map {
+class WorkflowEngineEnvelopeTests : StringSpec({
+
+    WorkflowEngineMessage::class.sealedSubclasses.map {
         val msg = TestFactory.random(it)
 
-        "TaskTagMessage(${msg::class.simpleName}) should be avro-convertible" {
+        "WorkflowEngineEnvelope(${msg::class.simpleName}) should be avro-convertible" {
             shouldNotThrowAny {
-                val envelope = TaskTagEnvelope.from(msg)
-                val ser = TaskTagEnvelope.serializer()
+                val envelope = WorkflowEngineEnvelope.from(msg)
+                val ser = WorkflowEngineEnvelope.serializer()
                 val byteArray = Avro.default.encodeToByteArray(ser, envelope)
                 val envelope2 = Avro.default.decodeFromByteArray(ser, byteArray)
                 envelope shouldBe envelope2
@@ -50,17 +50,15 @@ class EnvelopesTests : StringSpec({
         }
     }
 
-    TaskExecutorMessage::class.sealedSubclasses.map {
-        val msg = TestFactory.random(it)
+    "Create WorkflowEngineEnvelope schema file for the current version" {
+        createShemaFileIfAbsent(WorkflowEngineEnvelope.serializer())
+    }
 
-        "TaskExecutorMessage(${msg::class.simpleName}) should be avro-convertible" {
-            shouldNotThrowAny {
-                val envelope = TaskExecutorEnvelope.from(msg)
-                val ser = TaskExecutorEnvelope.serializer()
-                val byteArray = Avro.default.encodeToByteArray(ser, envelope)
-                val envelope2 = Avro.default.decodeFromByteArray(ser, byteArray)
-                envelope shouldBe envelope2
-            }
-        }
+    "Saved WorkflowEngineEnvelope schema should be up-to-date with for the current version" {
+        checkCurrentFileIsUpToDate(WorkflowEngineEnvelope.serializer())
+    }
+
+    "We should be able to read WorkflowEngineEnvelope from any previous version since 0.9.0" {
+        checkBackwardCompatibility(WorkflowEngineEnvelope.serializer())
     }
 })

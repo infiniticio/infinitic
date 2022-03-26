@@ -3,6 +3,10 @@
   "name" : "WorkflowState",
   "namespace" : "io.infinitic.workflows.engine",
   "fields" : [ {
+    "name" : "version",
+    "type" : "string",
+    "default" : "0.9.0"
+  }, {
     "name" : "lastMessageId",
     "type" : "string"
   }, {
