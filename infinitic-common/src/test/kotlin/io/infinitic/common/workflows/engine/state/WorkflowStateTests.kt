@@ -25,15 +25,23 @@
 
 package io.infinitic.common.workflows.engine.state
 
+import Ci
 import com.github.avrokotlin.avro4k.Avro
 import io.infinitic.common.fixtures.TestFactory
 import io.kotest.assertions.throwables.shouldNotThrowAny
 import io.kotest.core.spec.style.StringSpec
+import io.kotest.matchers.ints.shouldBeGreaterThan
 import io.kotest.matchers.shouldBe
 import org.apache.avro.Schema
-import org.apache.avro.SchemaCompatibility
+import org.apache.avro.SchemaValidatorBuilder
+import java.io.File
+import java.nio.file.Files
+import java.nio.file.Path
+import java.nio.file.Paths
+import kotlin.io.path.readText
 
 class WorkflowStateTests : StringSpec({
+
     "WorkflowState should be avro-convertible" {
         shouldNotThrowAny {
             val msg = TestFactory.random<WorkflowState>()
@@ -44,14 +52,42 @@ class WorkflowStateTests : StringSpec({
         }
     }
 
-    "WorkflowState should be backward-compatible with v0.9.0" {
+    fun getSchemasResourcesPath(): Path {
+        val projectDirAbsolutePath = Paths.get("").toAbsolutePath().toString()
+
+        return Paths.get(projectDirAbsolutePath, "/src/test/resources/schemas/")
+    }
+
+    "Create WorkflowState schema for the current version" {
+        val schemaFile = "workflowState-${Ci.version}.avsc"
+        if (javaClass.classLoader.getResource(schemaFile) == null) {
+            // write WorkflowState schema to schemaFile in resources
+            val schema = Avro.default.schema(WorkflowState.serializer())
+            val file = File(getSchemasResourcesPath().toString(), schemaFile)
+            file.writeText(schema.toString(true))
+        }
+    }
+
+    "Saved WorkflowState schema should be up-to-date with for the current version" {
+        val schemaFile = "workflowState-${Ci.version}.avsc"
+        val savedSchema = File(getSchemasResourcesPath().toString(), schemaFile).readText()
+
+        savedSchema shouldBe Avro.default.schema(WorkflowState.serializer()).toString(true)
+    }
+
+    "We should be able to read WorkflowState from any previous version since 0.9.0" {
+        val schemaList = mutableListOf<Schema>()
+        Files.walk(getSchemasResourcesPath())
+            .filter { Files.isRegularFile(it) }
+            .filter { ".*/workflowState-.*\\.avsc$".toRegex().matches(it.toString()) }
+            .forEach { schemaList.add(Schema.Parser().parse(it.readText())) }
+
+        // checking that we did not silently break something
+        schemaList.size shouldBeGreaterThan 0
+
+        // checking that we can read WorkflowState from any previous version
+        val validator = SchemaValidatorBuilder().canReadStrategy().validateAll()
         val newSchema = Avro.default.schema(WorkflowState.serializer())
-
-        val fileContent = WorkflowStateTests::class.java.classLoader
-            .getResource("workflowState-0.9.0.avsc")!!.readText()
-        val oldSchema = Schema.Parser().parse(fileContent)
-
-        SchemaCompatibility.checkReaderWriterCompatibility(newSchema, oldSchema)
-            .type shouldBe SchemaCompatibility.SchemaCompatibilityType.COMPATIBLE
+        shouldNotThrowAny { validator.validate(newSchema, schemaList) }
     }
 })
