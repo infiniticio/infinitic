@@ -28,7 +28,7 @@ package io.infinitic.common.workflows.engine.messages
 import com.github.avrokotlin.avro4k.Avro
 import io.infinitic.common.checkBackwardCompatibility
 import io.infinitic.common.checkCurrentFileIsUpToDate
-import io.infinitic.common.createShemaFileIfAbsent
+import io.infinitic.common.createSchemaFileIfAbsent
 import io.infinitic.common.fixtures.TestFactory
 import io.kotest.assertions.throwables.shouldNotThrowAny
 import io.kotest.core.spec.style.StringSpec
@@ -51,7 +51,7 @@ class WorkflowEngineEnvelopeTests : StringSpec({
     }
 
     "Create WorkflowEngineEnvelope schema file for the current version" {
-        createShemaFileIfAbsent(WorkflowEngineEnvelope.serializer())
+        createSchemaFileIfAbsent(WorkflowEngineEnvelope.serializer())
     }
 
     "Saved WorkflowEngineEnvelope schema should be up-to-date with for the current version" {

@@ -28,7 +28,7 @@ package io.infinitic.common.clients.messages
 import com.github.avrokotlin.avro4k.Avro
 import io.infinitic.common.checkBackwardCompatibility
 import io.infinitic.common.checkCurrentFileIsUpToDate
-import io.infinitic.common.createShemaFileIfAbsent
+import io.infinitic.common.createSchemaFileIfAbsent
 import io.infinitic.common.fixtures.TestFactory
 import io.kotest.assertions.throwables.shouldNotThrowAny
 import io.kotest.core.spec.style.StringSpec
@@ -50,7 +50,7 @@ class ClientEnvelopeTests : StringSpec({
     }
 
     "Create ClientEnvelope schema file for the current version" {
-        createShemaFileIfAbsent(ClientEnvelope.serializer())
+        createSchemaFileIfAbsent(ClientEnvelope.serializer())
     }
 
     "Saved ClientEnvelope schema should be up-to-date with for the current version" {

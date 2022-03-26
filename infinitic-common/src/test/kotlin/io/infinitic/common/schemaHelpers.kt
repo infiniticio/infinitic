@@ -45,14 +45,20 @@ internal fun getSchemasResourcesPath(): Path {
     return Paths.get(projectDirAbsolutePath, "/src/test/resources/schemas/")
 }
 
-internal inline fun <reified T : Any> createShemaFileIfAbsent(serializer: KSerializer<T>) {
+internal inline fun <reified T : Any> createSchemaFileIfAbsent(serializer: KSerializer<T>) {
     val schemaFile = getCurrentFile<T>()
 
     if (!File(getSchemasResourcesPath().toString(), schemaFile).exists()) {
-        // write WorkflowState schema to schemaFile in resources
-        val schema = Avro.default.schema(serializer)
-        val file = File(getSchemasResourcesPath().toString(), schemaFile)
-        file.writeText(schema.toString(true))
+        // if it's a release, we try to move the snapshot file to the release file
+        val snapshotFile = File(getSchemasResourcesPath().toString(), getCurrentSnapshotFile<T>())
+        if (Ci.isRelease && snapshotFile.exists()) {
+            Files.move(snapshotFile.toPath(), snapshotFile.resolveSibling(schemaFile).toPath())
+        } else {
+            // write WorkflowState schema to schemaFile in resources
+            val schema = Avro.default.schema(serializer)
+            val file = File(getSchemasResourcesPath().toString(), schemaFile)
+            file.writeText(schema.toString(true))
+        }
     }
 }
 
@@ -84,3 +90,8 @@ internal inline fun <reified T : Any> checkBackwardCompatibility(serializer: KSe
 internal inline fun <reified T : Any> getFilePrefix() = T::class.simpleName!!.replaceFirstChar { it.lowercase() }
 
 internal inline fun <reified T : Any> getCurrentFile() = "${getFilePrefix<T>()}-${Ci.version}.avsc"
+
+internal inline fun <reified T : Any> getCurrentSnapshotFile() = when (Ci.isRelease) {
+    true -> "${getFilePrefix<T>()}-${Ci.version}-SNAPSHOT.avsc"
+    false -> "${getFilePrefix<T>()}-${Ci.version}.avsc"
+}

@@ -28,7 +28,7 @@ package io.infinitic.common.tasks.tags.messages
 import com.github.avrokotlin.avro4k.Avro
 import io.infinitic.common.checkBackwardCompatibility
 import io.infinitic.common.checkCurrentFileIsUpToDate
-import io.infinitic.common.createShemaFileIfAbsent
+import io.infinitic.common.createSchemaFileIfAbsent
 import io.infinitic.common.fixtures.TestFactory
 import io.kotest.assertions.throwables.shouldNotThrowAny
 import io.kotest.core.spec.style.StringSpec
@@ -50,7 +50,7 @@ class TaskTagEnvelopeTests : StringSpec({
     }
 
     "Create TaskTagEnvelope schema file for the current version" {
-        createShemaFileIfAbsent(TaskTagEnvelope.serializer())
+        createSchemaFileIfAbsent(TaskTagEnvelope.serializer())
     }
 
     "Saved TaskTagEnvelope schema should be up-to-date with for the current version" {
