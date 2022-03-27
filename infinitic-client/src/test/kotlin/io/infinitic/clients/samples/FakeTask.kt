@@ -23,7 +23,7 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.client.samples
+package io.infinitic.clients.samples
 
 import io.infinitic.annotations.Name
 

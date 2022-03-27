@@ -25,8 +25,8 @@
 
 package io.infinitic.pulsar
 
-import io.infinitic.client.AbstractInfiniticClient
-import io.infinitic.common.clients.InfiniticClient
+import io.infinitic.clients.AbstractInfiniticClient
+import io.infinitic.clients.InfiniticClient
 import io.infinitic.common.data.ClientName
 import io.infinitic.pulsar.config.ClientConfig
 import io.infinitic.transport.pulsar.PulsarStarter

@@ -23,13 +23,13 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.client.dispatcher
+package io.infinitic.clients.dispatcher
 
-import io.infinitic.client.deferred.DeferredChannel
-import io.infinitic.client.deferred.DeferredMethod
-import io.infinitic.client.deferred.DeferredSend
-import io.infinitic.client.deferred.DeferredWorkflow
-import io.infinitic.common.clients.Deferred
+import io.infinitic.clients.Deferred
+import io.infinitic.clients.deferred.DeferredChannel
+import io.infinitic.clients.deferred.DeferredMethod
+import io.infinitic.clients.deferred.DeferredSend
+import io.infinitic.clients.deferred.DeferredWorkflow
 import io.infinitic.common.clients.messages.ClientMessage
 import io.infinitic.common.clients.messages.MethodCanceled
 import io.infinitic.common.clients.messages.MethodCompleted

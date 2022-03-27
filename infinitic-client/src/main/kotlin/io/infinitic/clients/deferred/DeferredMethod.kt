@@ -23,10 +23,10 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.client.deferred
+package io.infinitic.clients.deferred
 
-import io.infinitic.client.dispatcher.ClientDispatcher
-import io.infinitic.common.clients.Deferred
+import io.infinitic.clients.Deferred
+import io.infinitic.clients.dispatcher.ClientDispatcher
 import io.infinitic.common.data.methods.MethodName
 import io.infinitic.common.exceptions.thisShouldNotHappen
 import io.infinitic.common.workflows.data.methodRuns.MethodRunId

@@ -23,7 +23,7 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.common.clients
+package io.infinitic.clients
 
 import io.infinitic.common.clients.messages.ClientMessage
 import io.infinitic.workflows.Consumer0

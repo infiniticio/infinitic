@@ -23,13 +23,11 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.client
+package io.infinitic.clients
 
-import io.infinitic.client.dispatcher.ClientDispatcher
-import io.infinitic.client.dispatcher.ClientDispatcherImpl
+import io.infinitic.clients.dispatcher.ClientDispatcher
+import io.infinitic.clients.dispatcher.ClientDispatcherImpl
 import io.infinitic.common.clients.ClientStarter
-import io.infinitic.common.clients.Deferred
-import io.infinitic.common.clients.InfiniticClient
 import io.infinitic.common.clients.messages.ClientMessage
 import io.infinitic.common.data.ClientName
 import io.infinitic.common.exceptions.thisShouldNotHappen

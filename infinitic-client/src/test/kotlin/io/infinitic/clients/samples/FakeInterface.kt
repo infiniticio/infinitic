@@ -23,20 +23,8 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.common.clients
+package io.infinitic.clients.samples
 
-import java.util.concurrent.CompletableFuture
+internal interface FakeInterface
 
-interface Deferred<R> {
-    val id: String
-
-    fun await(): R
-
-    fun cancelAsync(): CompletableFuture<Unit>
-
-    fun cancel(): Unit = cancelAsync().join()
-
-    fun retryAsync(): CompletableFuture<Unit>
-
-    fun retry(): Unit = retryAsync().join()
-}
+internal data class FakeClass(val i: Int ? = 0) : FakeInterface

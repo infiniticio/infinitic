@@ -23,31 +23,27 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.client.deferred
+package io.infinitic.clients.deferred
 
-import io.infinitic.client.dispatcher.ClientDispatcher
-import io.infinitic.common.clients.Deferred
-import io.infinitic.common.data.methods.MethodName
-import io.infinitic.common.workflows.data.workflows.WorkflowId
-import io.infinitic.common.workflows.data.workflows.WorkflowName
+import io.infinitic.clients.Deferred
+import io.infinitic.common.exceptions.thisShouldNotHappen
+import io.infinitic.workflows.SendChannel
+import java.util.concurrent.CompletableFuture
 
-class DeferredWorkflow<R> (
-    internal val returnClass: Class<R>,
-    internal val workflowName: WorkflowName,
-    internal val methodName: MethodName,
-    internal val workflowId: WorkflowId,
-    private val dispatcher: ClientDispatcher,
+internal class DeferredChannel<R : SendChannel<*>> (
+    private val channel: R
 ) : Deferred<R> {
 
-    override fun cancelAsync() =
-        dispatcher.cancelWorkflowAsync(workflowName, workflowId, null, null)
+    override fun cancelAsync(): CompletableFuture<Unit> {
+        thisShouldNotHappen()
+    }
 
-    override fun retryAsync() =
-        dispatcher.retryWorkflowTaskAsync(workflowName, workflowId, null)
+    override fun retryAsync(): CompletableFuture<Unit> {
+        thisShouldNotHappen()
+    }
 
-    @Suppress("UNCHECKED_CAST")
-    override fun await(): R =
-        dispatcher.awaitWorkflow(returnClass, workflowName, methodName, workflowId, null, true)
+    override fun await(): R = channel
 
-    override val id: String = workflowId.toString()
+    override val id: String
+        get() { thisShouldNotHappen() }
 }

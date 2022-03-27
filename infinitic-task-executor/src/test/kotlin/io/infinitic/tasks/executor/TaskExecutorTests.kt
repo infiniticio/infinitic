@@ -27,7 +27,7 @@
 
 package io.infinitic.tasks.executor
 
-import io.infinitic.common.clients.InfiniticClient
+import io.infinitic.clients.InfiniticClient
 import io.infinitic.common.clients.SendToClient
 import io.infinitic.common.clients.messages.ClientMessage
 import io.infinitic.common.data.ClientName

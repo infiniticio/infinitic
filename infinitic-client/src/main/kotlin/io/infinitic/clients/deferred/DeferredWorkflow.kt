@@ -23,31 +23,31 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.client.deferred
+package io.infinitic.clients.deferred
 
-import io.infinitic.common.clients.Deferred
-import io.infinitic.common.exceptions.thisShouldNotHappen
-import io.infinitic.common.workflows.data.channels.ChannelSignalId
-import java.util.concurrent.CompletableFuture
+import io.infinitic.clients.Deferred
+import io.infinitic.clients.dispatcher.ClientDispatcher
+import io.infinitic.common.data.methods.MethodName
+import io.infinitic.common.workflows.data.workflows.WorkflowId
+import io.infinitic.common.workflows.data.workflows.WorkflowName
 
-internal class DeferredSend<R : Any?> (
-    internal val channelSignalId: ChannelSignalId
+class DeferredWorkflow<R> (
+    internal val returnClass: Class<R>,
+    internal val workflowName: WorkflowName,
+    internal val methodName: MethodName,
+    internal val workflowId: WorkflowId,
+    private val dispatcher: ClientDispatcher,
 ) : Deferred<R> {
 
-    override fun cancelAsync(): CompletableFuture<Unit> {
-        thisShouldNotHappen()
-    }
+    override fun cancelAsync() =
+        dispatcher.cancelWorkflowAsync(workflowName, workflowId, null, null)
 
-    override fun retryAsync(): CompletableFuture<Unit> {
-        thisShouldNotHappen()
-    }
+    override fun retryAsync() =
+        dispatcher.retryWorkflowTaskAsync(workflowName, workflowId, null)
 
-    // Send return type is always CompletableFuture<Unit>
-    // also we do not apply the join method
-    // in order to send asynchronously the message
-    // despite the synchronous syntax: workflow.channel
     @Suppress("UNCHECKED_CAST")
-    override fun await(): R = Unit as R
+    override fun await(): R =
+        dispatcher.awaitWorkflow(returnClass, workflowName, methodName, workflowId, null, true)
 
-    override val id: String = channelSignalId.toString()
+    override val id: String = workflowId.toString()
 }

@@ -23,27 +23,20 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.client.deferred
+package io.infinitic.clients
 
-import io.infinitic.common.clients.Deferred
-import io.infinitic.common.exceptions.thisShouldNotHappen
-import io.infinitic.workflows.SendChannel
 import java.util.concurrent.CompletableFuture
 
-internal class DeferredChannel<R : SendChannel<*>> (
-    private val channel: R
-) : Deferred<R> {
+interface Deferred<R> {
+    val id: String
 
-    override fun cancelAsync(): CompletableFuture<Unit> {
-        thisShouldNotHappen()
-    }
+    fun await(): R
 
-    override fun retryAsync(): CompletableFuture<Unit> {
-        thisShouldNotHappen()
-    }
+    fun cancelAsync(): CompletableFuture<Unit>
 
-    override fun await(): R = channel
+    fun cancel(): Unit = cancelAsync().join()
 
-    override val id: String
-        get() { thisShouldNotHappen() }
+    fun retryAsync(): CompletableFuture<Unit>
+
+    fun retry(): Unit = retryAsync().join()
 }

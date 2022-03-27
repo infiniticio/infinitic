@@ -23,9 +23,8 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.client
+package io.infinitic.clients
 
-import io.infinitic.common.clients.InfiniticClient
 import io.infinitic.common.clients.messages.MethodCompleted
 import io.infinitic.common.clients.messages.TaskCompleted
 import io.infinitic.common.clients.messages.TaskIdsByTag

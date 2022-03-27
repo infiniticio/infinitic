@@ -23,8 +23,31 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.client.samples
+package io.infinitic.clients.deferred
 
-internal interface FakeInterface
+import io.infinitic.clients.Deferred
+import io.infinitic.common.exceptions.thisShouldNotHappen
+import io.infinitic.common.workflows.data.channels.ChannelSignalId
+import java.util.concurrent.CompletableFuture
 
-internal data class FakeClass(val i: Int ? = 0) : FakeInterface
+internal class DeferredSend<R : Any?> (
+    internal val channelSignalId: ChannelSignalId
+) : Deferred<R> {
+
+    override fun cancelAsync(): CompletableFuture<Unit> {
+        thisShouldNotHappen()
+    }
+
+    override fun retryAsync(): CompletableFuture<Unit> {
+        thisShouldNotHappen()
+    }
+
+    // Send return type is always CompletableFuture<Unit>
+    // also we do not apply the join method
+    // in order to send asynchronously the message
+    // despite the synchronous syntax: workflow.channel
+    @Suppress("UNCHECKED_CAST")
+    override fun await(): R = Unit as R
+
+    override val id: String = channelSignalId.toString()
+}

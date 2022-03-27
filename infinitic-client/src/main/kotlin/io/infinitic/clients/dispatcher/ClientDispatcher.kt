@@ -23,9 +23,9 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.client.dispatcher
+package io.infinitic.clients.dispatcher
 
-import io.infinitic.common.clients.Deferred
+import io.infinitic.clients.Deferred
 import io.infinitic.common.clients.messages.ClientMessage
 import io.infinitic.common.data.methods.MethodName
 import io.infinitic.common.proxies.ProxyDispatcher

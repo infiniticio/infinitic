@@ -23,16 +23,16 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.client
+package io.infinitic.clients
 
-import io.infinitic.client.samples.FakeClass
-import io.infinitic.client.samples.FakeInterface
-import io.infinitic.client.samples.FakeTask
-import io.infinitic.client.samples.FakeTaskImpl
-import io.infinitic.client.samples.FakeTaskParent
-import io.infinitic.client.samples.FakeWorkflow
-import io.infinitic.client.samples.FakeWorkflowImpl
-import io.infinitic.client.samples.FooWorkflow
+import io.infinitic.clients.samples.FakeClass
+import io.infinitic.clients.samples.FakeInterface
+import io.infinitic.clients.samples.FakeTask
+import io.infinitic.clients.samples.FakeTaskImpl
+import io.infinitic.clients.samples.FakeTaskParent
+import io.infinitic.clients.samples.FakeWorkflow
+import io.infinitic.clients.samples.FakeWorkflowImpl
+import io.infinitic.clients.samples.FooWorkflow
 import io.infinitic.common.clients.ClientStarter
 import io.infinitic.common.data.ClientName
 import io.infinitic.common.data.methods.MethodName
