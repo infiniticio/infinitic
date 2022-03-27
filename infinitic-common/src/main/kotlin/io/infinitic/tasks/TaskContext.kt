@@ -25,7 +25,7 @@
 
 package io.infinitic.tasks
 
-import io.infinitic.common.clients.InfiniticClient
+import io.infinitic.clients.InfiniticClient
 import io.infinitic.common.tasks.executors.errors.WorkerError
 import io.infinitic.common.workers.WorkerRegister
 

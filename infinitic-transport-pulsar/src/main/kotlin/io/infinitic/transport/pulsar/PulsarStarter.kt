@@ -25,9 +25,9 @@
 
 package io.infinitic.transport.pulsar
 
+import io.infinitic.clients.InfiniticClient
 import io.infinitic.common.clients.ClientFactory
 import io.infinitic.common.clients.ClientStarter
-import io.infinitic.common.clients.InfiniticClient
 import io.infinitic.common.clients.SendToClient
 import io.infinitic.common.clients.messages.ClientEnvelope
 import io.infinitic.common.clients.messages.ClientMessage
@@ -307,15 +307,14 @@ class PulsarStarter(
         name: String
     ) {
         with(pulsarListener) {
-            val topic = topicNames.topic(topicType, name)
             startConsumer<T, S>(
                 executor = executor,
-                topic = topic,
+                topic = topicNames.topic(topicType, name),
                 subscriptionName = topicType.subscriptionName,
                 subscriptionType = topicType.subscriptionType,
                 consumerName = topicNames.consumerName(workerName, topicType),
                 concurrency = concurrency,
-                topicDLQ = topicNames.deadLetterQueue(topic)
+                topicDLQ = topicNames.topicDLQ(topicType, name)
             )
         }
     }

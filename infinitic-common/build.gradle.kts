@@ -37,6 +37,7 @@ dependencies {
     implementation(Libs.Avro4k.core)
     implementation(Libs.Coroutines.core)
     implementation(Libs.Coroutines.jdk8)
+    implementation(files("${project.rootDir}/buildSrc/build/libs/buildSrc.jar"))
 
     testFixturesImplementation(Libs.Kotlin.reflect)
     testFixturesImplementation(Libs.EasyRandom.core)

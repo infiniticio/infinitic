@@ -25,7 +25,7 @@
 
 package io.infinitic.factory
 
-import io.infinitic.common.clients.InfiniticClient
+import io.infinitic.clients.InfiniticClient
 import io.infinitic.inMemory.InMemoryInfiniticClient
 import io.infinitic.pulsar.PulsarInfiniticClient
 import io.infinitic.pulsar.config.ClientConfig

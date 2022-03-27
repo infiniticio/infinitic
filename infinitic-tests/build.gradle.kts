@@ -38,5 +38,3 @@ dependencies {
     testImplementation(project(":infinitic-transport"))
     testImplementation(project(":infinitic-pulsar"))
 }
-
-apply("../publish.gradle.kts")

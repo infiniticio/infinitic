@@ -145,7 +145,7 @@ class PulsarInfiniticAdmin constructor(
      */
     val tasks: Set<String> by lazy {
         val tasks = mutableSetOf<String>()
-        val prefix = topicName.topic(TaskTopics.ENGINE, TaskName(""))
+        val prefix = topicName.topic(TaskTopics.EXECUTOR, TaskName(""))
         topics.map { if (it.startsWith(prefix)) tasks.add(it.removePrefix(prefix)) }
 
         tasks

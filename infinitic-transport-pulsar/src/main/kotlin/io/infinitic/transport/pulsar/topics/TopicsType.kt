@@ -54,7 +54,7 @@ enum class ClientTopics(override val subscriptionPrefix: String, override val su
 }
 
 enum class GlobalTopics(override val subscriptionPrefix: String, override val subscriptionType: SubscriptionType) : TopicType {
-    NAMER("global-namer", SubscriptionType.Shared)
+    NAMER("namer", SubscriptionType.Shared)
 }
 
 enum class WorkflowTopics(override val subscriptionPrefix: String, override val subscriptionType: SubscriptionType) : TopicType {
@@ -64,15 +64,10 @@ enum class WorkflowTopics(override val subscriptionPrefix: String, override val 
 }
 
 enum class WorkflowTaskTopics(override val subscriptionPrefix: String, override val subscriptionType: SubscriptionType) : TopicType {
-    TAG("workflow-task-tag", SubscriptionType.Key_Shared),
-    ENGINE("workflow-task-engine", SubscriptionType.Key_Shared),
-    DELAY("workflow-task-$TOPIC_WITH_DELAY", SubscriptionType.Shared),
     EXECUTOR("workflow-task-executor", SubscriptionType.Shared)
 }
 
 enum class TaskTopics(override val subscriptionPrefix: String, override val subscriptionType: SubscriptionType) : TopicType {
     TAG("task-tag", SubscriptionType.Key_Shared),
-    ENGINE("task-engine", SubscriptionType.Key_Shared),
-    DELAY("task-$TOPIC_WITH_DELAY", SubscriptionType.Shared),
     EXECUTOR("task-executor", SubscriptionType.Shared)
 }

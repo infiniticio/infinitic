@@ -25,4 +25,6 @@
 
 package io.infinitic.common.clients
 
+import io.infinitic.clients.InfiniticClient
+
 typealias ClientFactory = () -> InfiniticClient

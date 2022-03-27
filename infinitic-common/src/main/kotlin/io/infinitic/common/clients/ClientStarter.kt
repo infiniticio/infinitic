@@ -25,6 +25,7 @@
 
 package io.infinitic.common.clients
 
+import io.infinitic.clients.InfiniticClient
 import io.infinitic.common.workflows.engine.SendToWorkflowEngine
 import io.infinitic.common.workflows.tags.SendToWorkflowTag
 import kotlinx.coroutines.CoroutineScope
