@@ -68,7 +68,8 @@ object Libs {
     }
 
     object Hoplite {
-        private const val version = "2.0.3"
+        // can not upgrade to 2.+ that requires java 11 as minimal version
+        private const val version = "1.4.16"
         const val core = "com.sksamuel.hoplite:hoplite-core:$version"
         const val yaml = "com.sksamuel.hoplite:hoplite-yaml:$version"
     }

@@ -33,10 +33,10 @@ val logger = KotlinLogging.logger("io.infinitic.common.config.loaders")
 
 inline fun <reified T : Any> loadConfigFromResource(resources: List<String>): T {
     val config = ConfigLoader
-        .builder()
+        .Builder()
         .also { builder -> resources.map { builder.addSource(PropertySource.resource(it, false)) } }
         .build()
-        .loadConfigOrThrow(T::class, listOf())
+        .loadConfigOrThrow<T>()
     logger.info { "Config loaded from resource: $config" }
 
     return config
@@ -44,10 +44,10 @@ inline fun <reified T : Any> loadConfigFromResource(resources: List<String>): T 
 
 inline fun <reified T : Any> loadConfigFromFile(files: List<String>): T {
     val config = ConfigLoader
-        .builder()
+        .Builder()
         .also { builder -> files.map { builder.addSource(PropertySource.file(File(it), false)) } }
         .build()
-        .loadConfigOrThrow(T::class, listOf())
+        .loadConfigOrThrow<T>()
     logger.info { "Config loaded from file: $config" }
 
     return config
