@@ -81,4 +81,10 @@ subprojects {
             jvmTarget = JavaVersion.VERSION_1_8.toString()
         }
     }
+
+    // Keep this to tell compatibility to applications
+    tasks.withType<JavaCompile> {
+        sourceCompatibility = JavaVersion.VERSION_1_8.toString()
+        targetCompatibility = JavaVersion.VERSION_1_8.toString()
+    }
 }
