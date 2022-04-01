@@ -38,7 +38,8 @@ object Libs {
     }
 
     object Caffeine {
-        const val caffeine = "com.github.ben-manes.caffeine:caffeine:3.0.6"
+        // can not upgrade to 3.+ that requires java 11 as minimal version
+        const val caffeine = "com.github.ben-manes.caffeine:caffeine:2.9.3"
     }
 
     object Serialization {
