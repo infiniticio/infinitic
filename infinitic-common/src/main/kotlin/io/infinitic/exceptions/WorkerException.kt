@@ -27,8 +27,10 @@ package io.infinitic.exceptions
 
 import io.infinitic.common.data.ClientName
 import io.infinitic.common.tasks.executors.errors.WorkerError
+import kotlinx.serialization.Serializable
 
-class WorkerException(
+@Serializable
+data class WorkerException(
     /**
      * Name of the worker
      */

@@ -24,8 +24,6 @@
  */
 
 dependencies {
-//    implementation("com.github.valfirst:slf4j-test:2.3.0")
-
     testImplementation(Libs.Coroutines.core)
     testImplementation(Libs.Coroutines.jdk8)
     testImplementation(Libs.Hoplite.core)

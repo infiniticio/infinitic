@@ -50,24 +50,12 @@ internal class PulsarProducer(val client: PulsarClient) {
         key: String? = null
     ) {
         @Suppress("UNCHECKED_CAST")
-        val producer = producers.computeIfAbsent(topic) {
-            val schema: Schema<out Envelope<T>> = Schema.AVRO(schemaDefinition(S::class))
-
-            logger.debug { "Creating Producer with producerName='$producerName' topic='$topic'" }
-
-            client
-                .newProducer(schema)
-                .topic(topic)
-                .producerName(producerName)
-                .also { if (key != null) { it.batcherBuilder(BatcherBuilder.KEY_BASED) } }
-                .accessMode(ProducerAccessMode.Shared)
-                .blockIfQueueFull(true)
-                .create()
-        } as Producer<Envelope<out Message>>
+        val producer = getProducer<T, S>(topic, producerName, key)
 
         logger.debug { "Sending producerName='$producerName' after=$after key='$key' message='$message'" }
 
-        producer.newMessage()
+        producer
+            .newMessage()
             .value(message.envelope())
             .also {
                 if (key != null) {
@@ -79,6 +67,27 @@ internal class PulsarProducer(val client: PulsarClient) {
             }
             .send()
     }
+
+    @Suppress("UNCHECKED_CAST")
+    inline fun <T : Message, reified S : Envelope<T>> getProducer(topic: String, producerName: String, key: String?) =
+        producers.computeIfAbsent(topic) {
+            logger.debug { "Creating Producer with producerName='$producerName' topic='$topic'" }
+
+            val schema: Schema<out Envelope<T>> = Schema.AVRO(schemaDefinition(S::class))
+
+            client
+                .newProducer(schema)
+                .topic(topic)
+                .producerName(producerName)
+                .also {
+                    if (key != null) {
+                        it.batcherBuilder(BatcherBuilder.KEY_BASED)
+                    }
+                }
+                .accessMode(ProducerAccessMode.Shared)
+                .blockIfQueueFull(true)
+                .create()
+        } as Producer<Envelope<out Message>>
 
     companion object {
         val producers = ConcurrentHashMap<String, Producer<out Envelope<out Message>>>()

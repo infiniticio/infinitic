@@ -24,7 +24,7 @@
  */
 
 dependencies {
-    implementation("com.github.ben-manes.caffeine:caffeine:2.8.8")
+    implementation(Libs.Caffeine.caffeine)
 
     implementation(project(":infinitic-common"))
 }

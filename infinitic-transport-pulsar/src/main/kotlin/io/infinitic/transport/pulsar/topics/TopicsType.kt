@@ -33,7 +33,7 @@ import org.apache.pulsar.client.api.SubscriptionType
  */
 const val TOPIC_WITH_DELAY = "delay"
 
-interface TopicType {
+sealed interface TopicType {
     /**
      * The subscriptionPrefix must NOT be changed
      * (if subscription name is changed, all messages will appear as not acknowledged to a new worker!)

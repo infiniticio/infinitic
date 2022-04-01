@@ -39,7 +39,9 @@ import io.infinitic.common.tasks.executors.errors.TimedOutWorkflowError
 import io.infinitic.common.tasks.executors.errors.UnknownDeferredError
 import io.infinitic.common.tasks.executors.errors.UnknownTaskError
 import io.infinitic.common.tasks.executors.errors.UnknownWorkflowError
+import kotlinx.serialization.Serializable
 
+@Serializable
 sealed class DeferredException : kotlin.RuntimeException() {
     companion object {
         fun from(error: DeferredError) = when (error) {
@@ -51,6 +53,7 @@ sealed class DeferredException : kotlin.RuntimeException() {
     }
 }
 
+@Serializable
 sealed class UnknownDeferredException : DeferredException() {
     companion object {
         fun from(error: UnknownDeferredError) = when (error) {
@@ -60,6 +63,7 @@ sealed class UnknownDeferredException : DeferredException() {
     }
 }
 
+@Serializable
 sealed class TimedOutDeferredException : DeferredException() {
     companion object {
         fun from(error: TimedOutDeferredError) = when (error) {
@@ -69,6 +73,7 @@ sealed class TimedOutDeferredException : DeferredException() {
     }
 }
 
+@Serializable
 sealed class CanceledDeferredException : DeferredException() {
     companion object {
         fun from(error: CanceledDeferredError) = when (error) {
@@ -78,6 +83,7 @@ sealed class CanceledDeferredException : DeferredException() {
     }
 }
 
+@Serializable
 sealed class FailedDeferredException : DeferredException() {
     companion object {
         fun from(error: FailedDeferredError) = when (error) {
@@ -91,7 +97,8 @@ sealed class FailedDeferredException : DeferredException() {
 /**
  * Exception occurring when waiting for an unknown task
  */
-class UnknownTaskException(
+@Serializable
+data class UnknownTaskException(
     /**
      * Name of the canceled task
      */
@@ -113,7 +120,8 @@ class UnknownTaskException(
 /**
  * Exception occurring when waiting for an unknown workflow
  */
-class UnknownWorkflowException(
+@Serializable
+data class UnknownWorkflowException(
     /**
      * Name of the canceled child workflow
      */
@@ -141,7 +149,8 @@ class UnknownWorkflowException(
 /**
  * Exception occurring when waiting for a timed-out task
  */
-class TimedOutTaskException(
+@Serializable
+data class TimedOutTaskException(
     /**
      * Name of the canceled task
      */
@@ -170,7 +179,8 @@ class TimedOutTaskException(
 /**
  * Error occurring when waiting for an timed-out workflow
  */
-class TimedOutWorkflowException(
+@Serializable
+data class TimedOutWorkflowException(
     /**
      * Name of the canceled child workflow
      */
@@ -204,7 +214,8 @@ class TimedOutWorkflowException(
 /**
  * Exception occurring when waiting for a canceled task
  */
-class CanceledTaskException(
+@Serializable
+data class CanceledTaskException(
     /**
      * Name of the canceled task
      */
@@ -233,7 +244,8 @@ class CanceledTaskException(
 /**
  * Exception occurring when waiting for a canceled workflow
  */
-class CanceledWorkflowException(
+@Serializable
+data class CanceledWorkflowException(
     /**
      * Name of the canceled child workflow
      */
@@ -261,7 +273,8 @@ class CanceledWorkflowException(
 /**
  * Exception occurring when waiting fora failed task
  */
-class FailedTaskException(
+@Serializable
+data class FailedTaskException(
     /**
      * Name of the task where the error occurred
      */
@@ -295,7 +308,8 @@ class FailedTaskException(
 /**
  * Exception occurring when waiting fora failed task
  */
-class FailedWorkflowException(
+@Serializable
+data class FailedWorkflowException(
     /**
      * Name of the workflow where the error occurred
      */
@@ -335,7 +349,8 @@ class FailedWorkflowException(
 /**
  * Exception occurred during a workflow task
  */
-class FailedWorkflowTaskException(
+@Serializable
+data class FailedWorkflowTaskException(
     /**
      * Name of the workflow for which the error occurred
      */

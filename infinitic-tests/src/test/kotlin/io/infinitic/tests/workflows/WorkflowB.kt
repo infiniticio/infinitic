@@ -39,7 +39,7 @@ interface WorkflowB {
 }
 
 class WorkflowBImpl : Workflow(), WorkflowB {
-    private val task = newTask(TaskA::class.java)
+    private val taskA = newTask(TaskA::class.java)
     private val workflowB = newWorkflow(WorkflowB::class.java)
     private val workflowA = newWorkflow(WorkflowA::class.java)
     @Ignore
@@ -48,9 +48,9 @@ class WorkflowBImpl : Workflow(), WorkflowB {
     override fun concat(input: String): String {
         var str = input
 
-        str = task.concat(str, "a")
-        str = task.concat(str, "b")
-        str = task.concat(str, "c")
+        str = taskA.concat(str, "a")
+        str = taskA.concat(str, "b")
+        str = taskA.concat(str, "c")
 
         return str // should be "${input}abc"
     }
@@ -58,21 +58,21 @@ class WorkflowBImpl : Workflow(), WorkflowB {
     override fun cancelChild1(): Long {
         val def = dispatch(workflowA::channel1)
 
-        task.cancelWorkflowA(def.id!!)
+        taskA.cancelWorkflowA(def.id!!)
 
         def.await()
 
-        return task.await(100)
+        return taskA.await(100)
     }
 
     override fun cancelChild2(): Long {
         val deferred = dispatch(workflowA::channel1)
 
-        task.cancelWorkflowA(deferred.id!!)
+        taskA.cancelWorkflowA(deferred.id!!)
 
         dispatch(self::cancelChild2bis, deferred)
 
-        return task.await(200)
+        return taskA.await(200)
     }
 
     override fun cancelChild2bis(deferred: Deferred<String>): String { return deferred.await() }

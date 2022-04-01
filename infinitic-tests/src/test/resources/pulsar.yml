@@ -24,37 +24,48 @@
 # Comment the line below to perform tests on a local Pulsar cluster
 transport: inMemory
 
-stateStorage: inMemory
+stateStorage: redis
 
 stateCache: caffeine
 
+redis:
+  host: localhost
+  port: 6379
+  user:
+  password:
+  database: 0
+
 pulsar:
-  brokerServiceUrl: pulsar://localhost:6650
-  webServiceUrl: http://localhost:8080
   tenant: infinitic
-  namespace: 0.9.0-SNAPSHOT
+  namespace: 0.9.0
+  brokerServiceUrl: pulsar+ssl://test2.zenaton.snio.cloud:6651
+  webServiceUrl: https://test2.zenaton.snio.cloud
+  authentication:
+    issuerUrl: https://auth.streamnative.cloud
+    privateKey: file:///Users/gilles/.sn/streamnative-zenaton.json
+    audience: urn:sn:pulsar:zenaton:infinitic
 
 tasks:
   - name: annotatedTask
     class: io.infinitic.tests.tasks.TaskAnnotatedImpl
-    concurrency: 3
+    concurrency: 5
   - name: io.infinitic.tests.tasks.TaskA
     class: io.infinitic.tests.tasks.TaskAImpl
-    concurrency: 3
+    concurrency: 5
   - name: io.infinitic.tests.tasks.TaskTest
     class: io.infinitic.tests.tasks.TaskTestImpl
-    concurrency: 3
+    concurrency: 5
 
 workflows:
   - name: io.infinitic.tests.workflows.WorkflowA
     class: io.infinitic.tests.workflows.WorkflowAImpl
-    concurrency: 2
+    concurrency: 5
   - name: io.infinitic.tests.workflows.WorkflowB
     class: io.infinitic.tests.workflows.WorkflowBImpl
-    concurrency: 2
+    concurrency: 5
   - name: io.infinitic.tests.workflows.WorkflowC
     class: io.infinitic.tests.workflows.WorkflowCImpl
-    concurrency: 2
+    concurrency: 5
   - name: annotatedWorkflow
     class: io.infinitic.tests.workflows.WorkflowAnnotatedImpl
-    concurrency: 2
+    concurrency: 5
