@@ -24,7 +24,7 @@
 # Comment the line below to perform tests on a local Pulsar cluster
 transport: inMemory
 
-stateStorage: redis
+stateStorage: inMemory
 
 stateCache: caffeine
 
@@ -37,13 +37,13 @@ redis:
 
 pulsar:
   tenant: infinitic
-  namespace: 0.9.0
-  brokerServiceUrl: pulsar+ssl://test2.zenaton.snio.cloud:6651
-  webServiceUrl: https://test2.zenaton.snio.cloud
-  authentication:
-    issuerUrl: https://auth.streamnative.cloud
-    privateKey: file:///Users/gilles/.sn/streamnative-zenaton.json
-    audience: urn:sn:pulsar:zenaton:infinitic
+  namespace: dev
+#  brokerServiceUrl:
+#  webServiceUrl:
+#  authentication:
+#    issuerUrl:
+#    privateKey:
+#    audience:
 
 tasks:
   - name: annotatedTask
