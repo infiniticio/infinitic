@@ -25,7 +25,6 @@
 
 package io.infinitic.common.workflows.engine.state
 
-import Ci
 import com.github.avrokotlin.avro4k.AvroDefault
 import com.github.avrokotlin.avro4k.AvroNamespace
 import io.infinitic.common.data.MessageId
@@ -56,8 +55,8 @@ data class WorkflowState(
     /**
      * Infinitic version
      */
-    @AvroDefault("0.9.0")
-    val version: String = Ci.version,
+    @AvroDefault("0.9.0") // last version without this field
+    val version: String = io.infinitic.version,
 
     /**
      * Id of last handled message (used to ensure idempotency)

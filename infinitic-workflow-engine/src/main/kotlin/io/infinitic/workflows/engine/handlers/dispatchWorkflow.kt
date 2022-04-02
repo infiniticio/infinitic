@@ -39,6 +39,7 @@ internal fun CoroutineScope.dispatchWorkflow(
     workflowEngineOutput: WorkflowEngineOutput,
     message: DispatchWorkflow
 ): WorkflowState {
+
     val methodRun = MethodRun(
         methodRunId = MethodRunId.from(message.workflowId),
         waitingClients = when (message.clientWaiting) {

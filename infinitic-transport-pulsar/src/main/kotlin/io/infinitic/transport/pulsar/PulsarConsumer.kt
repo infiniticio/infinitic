@@ -30,11 +30,13 @@ import io.infinitic.common.messages.Message
 import io.infinitic.transport.pulsar.schemas.schemaDefinition
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.future.await
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import mu.KotlinLogging
 import org.apache.pulsar.client.api.Consumer
 import org.apache.pulsar.client.api.DeadLetterPolicy
+import org.apache.pulsar.client.api.MessageId
 import org.apache.pulsar.client.api.PulsarClient
 import org.apache.pulsar.client.api.Schema
 import org.apache.pulsar.client.api.SubscriptionInitialPosition
@@ -45,14 +47,14 @@ import org.apache.pulsar.client.api.Message as PulsarMessage
 internal class PulsarConsumer(val client: PulsarClient) {
     val logger = KotlinLogging.logger {}
 
-    internal inline fun <T : Message, reified S : Envelope<T>> CoroutineScope.startConsumer(
+    internal inline fun <T : Message, reified S : Envelope<out T>> CoroutineScope.startConsumer(
         crossinline executor: suspend (T) -> Unit,
         topic: String,
         subscriptionName: String,
         subscriptionType: SubscriptionType,
         consumerName: String,
         concurrency: Int,
-        topicDLQ: String,
+        topicDLQ: String?,
         negativeAckRedeliveryDelaySeconds: Long = 30L,
         maxRedeliverCount: Int = 3
     ) {
@@ -72,27 +74,38 @@ internal class PulsarConsumer(val client: PulsarClient) {
                     ) as Consumer<S>
 
                     while (isActive) {
-                        val pulsarMessage = consumer.receive()
+                        // await() ensures this coroutine exits in case of throwable not caught
+                        val pulsarMessage = try {
+                            consumer.receiveAsync().await()
+                        } catch (e: Throwable) {
+                            logger.error(e) { "Error when receiving message" }
+                            throw e
+                        }
 
                         val message = try {
                             pulsarMessage.value.message()
                         } catch (e: Exception) {
-                            logger.error(e) { "Exception when deserializing $pulsarMessage" }
-                            consumer.negativeAcknowledge(pulsarMessage.messageId)
+                            logger.error(e) { "${pulsarMessage.messageId}: Exception when deserializing $pulsarMessage" }
+                            negativeAcknowledge(consumer, pulsarMessage.messageId)
                             continue
+                        } catch (e: Throwable) {
+                            logger.error(e) { "${pulsarMessage.messageId}: Throwable when deserializing $pulsarMessage" }
+                            throw e
                         }
 
                         logger.debug { "Receiving consumerName='$consumerName-$it' messageId='${pulsarMessage.messageId}' key='${pulsarMessage.key}' message='$message'" }
 
                         try {
                             executor(message)
+                            consumer.acknowledge(pulsarMessage.messageId)
                         } catch (e: Exception) {
-                            logger.error(e) { "${pulsarMessage.messageId}: exception when handling $message" }
-                            consumer.negativeAcknowledge(pulsarMessage.messageId)
+                            logger.error(e) { "${pulsarMessage.messageId}: Exception when handling $message" }
+                            negativeAcknowledge(consumer, pulsarMessage.messageId)
                             continue
+                        } catch (e: Throwable) {
+                            logger.error(e) { "${pulsarMessage.messageId}: Throwable when handling $message" }
+                            throw e
                         }
-
-                        consumer.acknowledge(pulsarMessage.messageId)
                     }
                 }
             }
@@ -112,29 +125,37 @@ internal class PulsarConsumer(val client: PulsarClient) {
 
                 // Channel is backpressure aware, so we can use it to send messages to the executor coroutines
                 launch {
-                    while (isActive) { channel.send(consumer.receive()) }
+                    while (isActive) {
+                        // await() ensures this coroutine exits in case of throwable not caught
+                        channel.send(consumer.receiveAsync().await())
+                    }
                 }
 
                 repeat(concurrency) {
                     launch {
                         for (pulsarMessage in channel) {
-
                             val message = try {
                                 pulsarMessage.value.message()
                             } catch (e: Exception) {
-                                logger.error(e) { "${pulsarMessage.messageId}: exception when deserializing $pulsarMessage" }
-                                consumer.negativeAcknowledge(pulsarMessage.messageId)
+                                logger.error(e) { "${pulsarMessage.messageId}: Exception when deserializing $pulsarMessage" }
+                                negativeAcknowledge(consumer, pulsarMessage.messageId)
                                 continue
+                            } catch (e: Throwable) {
+                                logger.error(e) { "${pulsarMessage.messageId}: Throwable when deserializing $pulsarMessage" }
+                                throw e
                             }
 
                             try {
                                 executor(message)
+                                consumer.acknowledge(pulsarMessage.messageId)
                             } catch (e: Exception) {
-                                logger.error(e) { "${pulsarMessage.messageId}: exception when handling $message" }
-                                consumer.negativeAcknowledge(pulsarMessage.messageId)
+                                logger.error(e) { "${pulsarMessage.messageId}: Exception when handling $message" }
+                                negativeAcknowledge(consumer, pulsarMessage.messageId)
                                 continue
+                            } catch (e: Throwable) {
+                                logger.error(e) { "${pulsarMessage.messageId}: Throwable when handling $message" }
+                                throw e
                             }
-                            consumer.acknowledge(pulsarMessage.messageId)
                         }
                     }
                 }
@@ -142,19 +163,28 @@ internal class PulsarConsumer(val client: PulsarClient) {
         }
     }
 
+    private fun negativeAcknowledge(consumer: Consumer<*>, messageId: MessageId) {
+        try {
+            consumer.negativeAcknowledge(messageId)
+        } catch (e: Exception) {
+            logger.error(e) { "Exception when negativeAcknowledging $messageId" }
+            // message will be timeout and be redelivered
+        }
+    }
+
     @Suppress("UNCHECKED_CAST")
-    inline fun <T : Message, reified S : Envelope<T>> createConsumer(
+    inline fun <T : Message, reified S : Envelope<out T>> createConsumer(
         topic: String,
         subscriptionName: String,
         subscriptionType: SubscriptionType,
         consumerName: String,
-        topicDLQ: String,
+        topicDLQ: String?,
         negativeAckRedeliveryDelay: Long,
         maxRedeliverCount: Int
     ): Consumer<out Envelope<T>> {
         logger.debug { "Creating Consumer consumerName='$consumerName' subscriptionName='$subscriptionName' subscriptionType='$subscriptionType' topic='$topic'" }
 
-        val schema: Schema<out Envelope<T>> = Schema.AVRO(schemaDefinition(S::class))
+        val schema: Schema<out Envelope<out T>> = Schema.AVRO(schemaDefinition(S::class))
 
         return client.newConsumer(schema)
             .topic(topic)
@@ -163,14 +193,16 @@ internal class PulsarConsumer(val client: PulsarClient) {
             .consumerName(consumerName)
             .negativeAckRedeliveryDelay(negativeAckRedeliveryDelay, TimeUnit.SECONDS)
             .also {
-                when (subscriptionType) {
-                    SubscriptionType.Key_Shared, SubscriptionType.Shared -> it.deadLetterPolicy(
-                        DeadLetterPolicy.builder()
-                            .maxRedeliverCount(maxRedeliverCount)
-                            .deadLetterTopic(topicDLQ)
-                            .build()
-                    )
-                    else -> Unit
+                if (topicDLQ != null) {
+                    when (subscriptionType) {
+                        SubscriptionType.Key_Shared, SubscriptionType.Shared -> it.deadLetterPolicy(
+                            DeadLetterPolicy.builder()
+                                .maxRedeliverCount(maxRedeliverCount)
+                                .deadLetterTopic(topicDLQ)
+                                .build()
+                        )
+                        else -> Unit
+                    }
                 }
             }
             .subscriptionInitialPosition(SubscriptionInitialPosition.Earliest)

@@ -25,6 +25,7 @@
 
 package io.infinitic.common.tasks.tags.messages
 
+import com.github.avrokotlin.avro4k.AvroDefault
 import com.github.avrokotlin.avro4k.AvroNamespace
 import io.infinitic.common.messages.Envelope
 import io.infinitic.common.serDe.avro.AvroSerDe
@@ -32,13 +33,15 @@ import kotlinx.serialization.Serializable
 
 @Serializable @AvroNamespace("io.infinitic.tasks.tag")
 data class TaskTagEnvelope(
-    val name: String,
-    val type: TaskTagMessageType,
-    val addTagToTask: AddTagToTask? = null,
-    val removeTagFromTask: RemoveTagFromTask? = null,
-    val cancelTaskByTag: CancelTaskByTag? = null,
-    val retryTaskByTag: RetryTaskByTag? = null,
-    val getTaskIdsByTag: GetTaskIdsByTag? = null
+    @AvroDefault("0.9.0") // last version without this field
+    private val version: String = io.infinitic.version,
+    private val name: String,
+    private val type: TaskTagMessageType,
+    private val addTagToTask: AddTagToTask? = null,
+    private val removeTagFromTask: RemoveTagFromTask? = null,
+    private val cancelTaskByTag: CancelTaskByTag? = null,
+    private val retryTaskByTag: RetryTaskByTag? = null,
+    private val getTaskIdsByTag: GetTaskIdsByTag? = null
 ) : Envelope<TaskTagMessage> {
     init {
         val noNull = listOfNotNull(
@@ -57,28 +60,28 @@ data class TaskTagEnvelope(
     companion object {
         fun from(msg: TaskTagMessage) = when (msg) {
             is AddTagToTask -> TaskTagEnvelope(
-                "${msg.taskName}",
-                TaskTagMessageType.ADD_TAG_TO_TASK,
+                name = "${msg.taskName}",
+                type = TaskTagMessageType.ADD_TAG_TO_TASK,
                 addTagToTask = msg
             )
             is RemoveTagFromTask -> TaskTagEnvelope(
-                "${msg.taskName}",
-                TaskTagMessageType.REMOVE_TAG_FROM_TASK,
+                name = "${msg.taskName}",
+                type = TaskTagMessageType.REMOVE_TAG_FROM_TASK,
                 removeTagFromTask = msg
             )
             is CancelTaskByTag -> TaskTagEnvelope(
-                "${msg.taskName}",
-                TaskTagMessageType.CANCEL_TASK_BY_TAG,
+                name = "${msg.taskName}",
+                type = TaskTagMessageType.CANCEL_TASK_BY_TAG,
                 cancelTaskByTag = msg
             )
             is RetryTaskByTag -> TaskTagEnvelope(
-                "${msg.taskName}",
-                TaskTagMessageType.RETRY_TASK_BY_TAG,
+                name = "${msg.taskName}",
+                type = TaskTagMessageType.RETRY_TASK_BY_TAG,
                 retryTaskByTag = msg
             )
             is GetTaskIdsByTag -> TaskTagEnvelope(
-                "${msg.taskName}",
-                TaskTagMessageType.GET_TASK_IDS_BY_TAG,
+                name = "${msg.taskName}",
+                type = TaskTagMessageType.GET_TASK_IDS_BY_TAG,
                 getTaskIdsByTag = msg
             )
         }

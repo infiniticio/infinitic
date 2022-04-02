@@ -32,6 +32,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.future.future
 import java.util.concurrent.CompletableFuture
 
 @Suppress("MemberVisibilityCanBePrivate")
@@ -55,7 +56,7 @@ class InMemoryInfiniticWorker(
 
     override fun startAsync(): CompletableFuture<Unit> =
         if (this::client.isInitialized) {
-            with(scope) { startAsync() }
+            scope.future { startWorker().join() }
         } else {
             logger.info { "Should not start ${this::class} outside of an in-memory client: closing" }
             CompletableFuture.completedFuture(null)

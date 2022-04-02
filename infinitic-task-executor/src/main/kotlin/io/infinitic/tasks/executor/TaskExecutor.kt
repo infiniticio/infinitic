@@ -76,7 +76,7 @@ class TaskExecutor(
 
     private val logger = KotlinLogging.logger {}
 
-    suspend fun handle(message: TaskExecutorMessage): Any? {
+    suspend fun handle(message: TaskExecutorMessage) {
         logger.debug { "receiving $message" }
 
         return when (message) {
@@ -125,12 +125,13 @@ class TaskExecutor(
             }
             sendTaskCompleted(message, output, getMeta(task))
         } catch (e: InvocationTargetException) {
-            val cause = e.cause
-            // do not retry failed workflow task due to failed/canceled task/workflow
-            if (cause is Exception && cause !is DeferredException) {
-                failTaskWithRetry(task, message, cause)
-            } else {
-                sendTaskFailed(message, cause ?: e)
+            when (val cause = e.cause) {
+                // do not retry failed workflow task due to failed/canceled task/workflow
+                is DeferredException -> sendTaskFailed(message, cause)
+                // simple exception
+                is Exception -> failTaskWithRetry(task, message, cause)
+                // Throwable are not caught
+                else -> throw cause!!
             }
         } catch (e: TimeoutCancellationException) {
             val cause = MaxRunDurationException(task.javaClass.name, options.maxRunDuration!!)

@@ -25,6 +25,7 @@
 
 package io.infinitic.common.tasks.executors.messages
 
+import com.github.avrokotlin.avro4k.AvroDefault
 import com.github.avrokotlin.avro4k.AvroNamespace
 import io.infinitic.common.messages.Envelope
 import io.infinitic.common.serDe.avro.AvroSerDe
@@ -33,9 +34,11 @@ import kotlinx.serialization.Serializable
 
 @Serializable @AvroNamespace("io.infinitic.tasks.executor")
 data class TaskExecutorEnvelope(
-    val taskName: TaskName,
-    val type: TaskExecutorMessageType,
-    val executeTask: ExecuteTask? = null
+    @AvroDefault("0.9.0") // last version without this field
+    private val version: String = io.infinitic.version,
+    private val taskName: TaskName,
+    private val type: TaskExecutorMessageType,
+    private val executeTask: ExecuteTask? = null
 ) : Envelope<TaskExecutorMessage> {
     init {
         val noNull = listOfNotNull(
@@ -50,8 +53,8 @@ data class TaskExecutorEnvelope(
     companion object {
         fun from(msg: TaskExecutorMessage) = when (msg) {
             is ExecuteTask -> TaskExecutorEnvelope(
-                msg.taskName,
-                TaskExecutorMessageType.EXECUTE_TASK,
+                taskName = msg.taskName,
+                type = TaskExecutorMessageType.EXECUTE_TASK,
                 executeTask = msg
             )
         }

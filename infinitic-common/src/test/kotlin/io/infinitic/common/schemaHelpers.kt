@@ -37,6 +37,7 @@ import java.io.File
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
+import kotlin.io.path.ExperimentalPathApi
 import kotlin.io.path.readText
 
 internal fun getSchemasResourcesPath(): Path {
@@ -64,6 +65,7 @@ internal inline fun <reified T : Any> checkCurrentFileIsUpToDate(serializer: KSe
     getCurrentSchemaFile<T>().readText() shouldBe Avro.default.schema(serializer).toString(true)
 }
 
+@OptIn(ExperimentalPathApi::class)
 internal inline fun <reified T : Any> checkBackwardCompatibility(serializer: KSerializer<T>) {
     val regex = ".*/${getFilePrefix<T>()}-.*\\.avsc$".toRegex()
     val schemaList = mutableListOf<Schema>()
@@ -81,6 +83,7 @@ internal inline fun <reified T : Any> checkBackwardCompatibility(serializer: KSe
     shouldNotThrowAny { validator.validate(newSchema, schemaList) }
 }
 
+@OptIn(ExperimentalStdlibApi::class)
 internal inline fun <reified T : Any> getFilePrefix() = T::class.simpleName!!.replaceFirstChar { it.lowercase() }
 
 internal inline fun <reified T : Any> getCurrentSchemaFile() = File(getSchemasResourcesPath().toString(), "${getFilePrefix<T>()}-${Ci.version}.avsc")

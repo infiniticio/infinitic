@@ -25,7 +25,6 @@
 
 package io.infinitic.tests
 
-// import com.github.valfirst.slf4jtest.TestLoggerFactory
 import io.infinitic.common.fixtures.later
 import io.infinitic.common.tasks.data.TaskMeta
 import io.infinitic.common.workflows.data.workflows.WorkflowMeta
@@ -57,8 +56,8 @@ internal class WorkflowTests : StringSpec({
     // each test should not be longer than 10s
     timeout = 10000
 
-    val client = autoClose(InfiniticClientFactory.fromConfigResource("/pulsar.yml"))
     val worker = autoClose(InfiniticWorkerFactory.fromConfigResource("/pulsar.yml"))
+    val client = autoClose(InfiniticClientFactory.fromConfigResource("/pulsar.yml"))
 
     val workflowA = client.newWorkflow(WorkflowA::class.java)
     val workflowATagged = client.newWorkflow(WorkflowA::class.java, tags = setOf("foo", "bar"))
@@ -67,36 +66,12 @@ internal class WorkflowTests : StringSpec({
     val workflowAnnotated = client.newWorkflow(WorkflowAnnotated::class.java)
     val workflowC = client.newWorkflow(WorkflowC::class.java)
 
-//    val logger = TestLoggerFactory.getTestLogger(WorkflowTests::class.java)
-
     beforeSpec {
-        //  print info level log - despite using inMemory TestLoggerFactory implementation
-//        TestLoggerFactory.getInstance().printLevel = Level.DEBUG
-
         worker.startAsync()
     }
 
     beforeTest {
-        // note that log events of previous test can continue to fill at this stage, due to asynchronous calls
-//        TestLoggerFactory.clearAll()
-//        logger.clear()
-
         worker.storageFlush()
-    }
-
-    suspend fun expectDiscardingForHavingNullState(expected: Boolean = false) {
-        // When processed by Pulsar, logs are always flowing - this test can not be written that way
-//        if (! PulsarInfiniticClient::class.isInstance(client)) {
-//            // make sure all events are recorded
-//            delay(1000)
-//            // check that workflow state is not deleted too early
-//            TestLoggerFactory.getAllLoggingEvents()
-//                .filter { it.level == Level.INFO }
-//                .map { "${it.timestamp} ${it.message}" }
-//                .joinToString("\n")
-// //                 .also { println(it) }
-//                .contains(WorkflowEngine.NO_STATE_DISCARDING_REASON) shouldBe expected
-//        }
     }
 
     "empty Workflow" {
@@ -264,14 +239,10 @@ internal class WorkflowTests : StringSpec({
 
     "Check prop6" {
         workflowA.prop6() shouldBe "abab"
-
-        expectDiscardingForHavingNullState()
     }
 
     "Check prop7" {
         workflowA.prop7() shouldBe "abab"
-
-        expectDiscardingForHavingNullState()
     }
 
     "Check prop8" {
@@ -470,14 +441,10 @@ internal class WorkflowTests : StringSpec({
 
     "failing task not on main path should not throw" {
         workflowA.failing3() shouldBe 100
-
-        expectDiscardingForHavingNullState()
     }
 
     "failing instruction not on main path should not throw" {
         workflowA.failing3b() shouldBe 100
-
-        expectDiscardingForHavingNullState()
     }
 
 //    "Cancelling task on main path should throw " {

@@ -92,19 +92,19 @@ class WorkflowTaskImpl : Task(), WorkflowTask {
             ReturnValue.from(method.invoke(workflow, *parameters))
         } catch (e: InvocationTargetException) {
             when (val cause = e.cause) {
+                // we reach an uncompleted step
                 is WorkflowTaskException -> null
                 // the errors below will be caught by the task executor
                 is DeferredException -> throw cause
-                else -> {
-                    val throwable = cause ?: e
-
-                    throw FailedWorkflowTaskException(
-                        workflowName = workflowTaskParameters.workflowName.toString(),
-                        workflowId = workflowTaskParameters.workflowId.toString(),
-                        workflowTaskId = context.id,
-                        workerException = WorkerException.from(ClientName(context.workerName), throwable)
-                    )
-                }
+                // Send back other exception
+                is Exception -> throw FailedWorkflowTaskException(
+                    workflowName = workflowTaskParameters.workflowName.toString(),
+                    workflowId = workflowTaskParameters.workflowId.toString(),
+                    workflowTaskId = context.id,
+                    workerException = WorkerException.from(ClientName(context.workerName), cause)
+                )
+                // Throwable are not caught
+                else -> throw cause!!
             }
         }
 

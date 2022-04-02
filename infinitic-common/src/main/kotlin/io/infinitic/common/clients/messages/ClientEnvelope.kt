@@ -25,6 +25,7 @@
 
 package io.infinitic.common.clients.messages
 
+import com.github.avrokotlin.avro4k.AvroDefault
 import io.infinitic.common.data.ClientName
 import io.infinitic.common.messages.Envelope
 import io.infinitic.common.serDe.avro.AvroSerDe
@@ -32,6 +33,8 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 data class ClientEnvelope(
+    @AvroDefault("0.9.0") // last version without this field
+    private val version: String = io.infinitic.version,
     private val clientName: ClientName,
     private val type: ClientMessageType,
     private val taskCompleted: TaskCompleted? = null,
@@ -67,53 +70,53 @@ data class ClientEnvelope(
     companion object {
         fun from(msg: ClientMessage) = when (msg) {
             is TaskCompleted -> ClientEnvelope(
-                msg.emitterName,
-                ClientMessageType.TASK_COMPLETED,
+                clientName = msg.emitterName,
+                type = ClientMessageType.TASK_COMPLETED,
                 taskCompleted = msg
             )
             is TaskCanceled -> ClientEnvelope(
-                msg.emitterName,
-                ClientMessageType.TASK_CANCELED,
+                clientName = msg.emitterName,
+                type = ClientMessageType.TASK_CANCELED,
                 taskCanceled = msg
             )
             is TaskFailed -> ClientEnvelope(
-                msg.emitterName,
-                ClientMessageType.TASK_FAILED,
+                clientName = msg.emitterName,
+                type = ClientMessageType.TASK_FAILED,
                 taskFailed = msg
             )
             is TaskIdsByTag -> ClientEnvelope(
-                msg.emitterName,
-                ClientMessageType.TASK_IDS_PER_TAG,
+                clientName = msg.emitterName,
+                type = ClientMessageType.TASK_IDS_PER_TAG,
                 taskIdsByTag = msg
             )
             is MethodCompleted -> ClientEnvelope(
-                msg.emitterName,
-                ClientMessageType.WORKFLOW_COMPLETED,
+                clientName = msg.emitterName,
+                type = ClientMessageType.WORKFLOW_COMPLETED,
                 workflowCompleted = msg
             )
             is MethodCanceled -> ClientEnvelope(
-                msg.emitterName,
-                ClientMessageType.WORKFLOW_CANCELED,
+                clientName = msg.emitterName,
+                type = ClientMessageType.WORKFLOW_CANCELED,
                 workflowCanceled = msg
             )
             is MethodFailed -> ClientEnvelope(
-                msg.emitterName,
-                ClientMessageType.WORKFLOW_FAILED,
+                clientName = msg.emitterName,
+                type = ClientMessageType.WORKFLOW_FAILED,
                 workflowFailed = msg
             )
             is MethodRunUnknown -> ClientEnvelope(
-                msg.emitterName,
-                ClientMessageType.UNKNOWN_WORKFLOW,
+                clientName = msg.emitterName,
+                type = ClientMessageType.UNKNOWN_WORKFLOW,
                 unknownWorkflow = msg
             )
             is MethodAlreadyCompleted -> ClientEnvelope(
-                msg.emitterName,
-                ClientMessageType.WORKFLOW_ALREADY_COMPLETED,
+                clientName = msg.emitterName,
+                type = ClientMessageType.WORKFLOW_ALREADY_COMPLETED,
                 methodAlreadyCompleted = msg
             )
             is WorkflowIdsByTag -> ClientEnvelope(
-                msg.emitterName,
-                ClientMessageType.WORKFLOW_IDS_PER_TAG,
+                clientName = msg.emitterName,
+                type = ClientMessageType.WORKFLOW_IDS_PER_TAG,
                 workflowIdsByTag = msg
             )
         }

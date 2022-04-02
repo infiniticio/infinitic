@@ -23,6 +23,8 @@
  * Licensor: infinitic.io
  */
 
+import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+
 plugins {
     id("java-test-fixtures")
 }
@@ -37,11 +39,19 @@ dependencies {
     implementation(Libs.Avro4k.core)
     implementation(Libs.Coroutines.core)
     implementation(Libs.Coroutines.jdk8)
-    implementation(files("${project.rootDir}/buildSrc/build/libs/buildSrc.jar"))
+
+    testImplementation(files("${project.rootDir}/buildSrc/build/libs/buildSrc.jar"))
 
     testFixturesImplementation(Libs.Kotlin.reflect)
     testFixturesImplementation(Libs.EasyRandom.core)
     testFixturesImplementation(Libs.Coroutines.core)
+}
+
+tasks.withType<KotlinCompile> {
+    doFirst {
+        // current version is put in resources
+        File(project.projectDir.absolutePath, "/src/main/resources/version.properties").writeText(Ci.version)
+    }
 }
 
 apply("../publish.gradle.kts")

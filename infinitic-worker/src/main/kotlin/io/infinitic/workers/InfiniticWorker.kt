@@ -42,7 +42,7 @@ import io.infinitic.workflows.engine.storage.BinaryWorkflowStateStorage
 import io.infinitic.workflows.tag.storage.BinaryWorkflowTagStorage
 import io.infinitic.workflows.workflowTask.WorkflowTaskImpl
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.future.future
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.job
 import mu.KotlinLogging
 import org.jetbrains.annotations.TestOnly
@@ -84,14 +84,9 @@ abstract class InfiniticWorker(open val workerConfig: WorkerConfig) : Closeable 
     }
 
     /**
-     * Start worker synchronously on provided scope
-     */
-    fun CoroutineScope.start(): Unit = startAsync().join()
-
-    /**
      * Start worker asynchronously on provided scope
      */
-    fun CoroutineScope.startAsync() = future {
+    protected fun CoroutineScope.startWorker(): Job {
         // register WorkflowTasks
         workerRegister.registerTask(WorkflowTask::class.java.name) { WorkflowTaskImpl() }
 
@@ -207,7 +202,6 @@ abstract class InfiniticWorker(open val workerConfig: WorkerConfig) : Closeable 
         }
         logger.info { "Worker \"$name\" ready" }
 
-        // wait for completion of all launched coroutines
-        coroutineContext.job.join()
+        return coroutineContext.job
     }
 }

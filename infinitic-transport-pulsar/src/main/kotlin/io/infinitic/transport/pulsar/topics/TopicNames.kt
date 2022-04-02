@@ -26,7 +26,6 @@
 package io.infinitic.transport.pulsar.topics
 
 import io.infinitic.common.data.ClientName
-import io.infinitic.common.exceptions.thisShouldNotHappen
 import io.infinitic.common.tasks.data.TaskName
 import io.infinitic.common.workflows.data.workflows.WorkflowName
 
@@ -59,13 +58,12 @@ interface TopicNames {
         is WorkflowTopics -> topic(type, WorkflowName(name))
         is TaskTopics -> topic(type, TaskName(name))
         is WorkflowTaskTopics -> topic(type, WorkflowName(name))
-        else -> thisShouldNotHappen()
     }
 
     fun topicDLQ(type: TopicType, name: String) = when (type) {
         is WorkflowTopics -> topicDLQ(type, WorkflowName(name))
         is TaskTopics -> topicDLQ(type, TaskName(name))
         is WorkflowTaskTopics -> topicDLQ(type, WorkflowName(name))
-        else -> thisShouldNotHappen()
+        else -> null
     }
 }

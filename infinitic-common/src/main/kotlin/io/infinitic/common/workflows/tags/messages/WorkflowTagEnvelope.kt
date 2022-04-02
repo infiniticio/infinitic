@@ -25,6 +25,7 @@
 
 package io.infinitic.common.workflows.tags.messages
 
+import com.github.avrokotlin.avro4k.AvroDefault
 import com.github.avrokotlin.avro4k.AvroNamespace
 import io.infinitic.common.messages.Envelope
 import io.infinitic.common.serDe.avro.AvroSerDe
@@ -32,16 +33,18 @@ import kotlinx.serialization.Serializable
 
 @Serializable @AvroNamespace("io.infinitic.workflows.tag")
 data class WorkflowTagEnvelope(
-    val name: String,
-    val type: WorkflowTagMessageType,
-    val addTagToWorkflow: AddTagToWorkflow? = null,
-    val removeTagFromWorkflow: RemoveTagFromWorkflow? = null,
-    val sendSignalByTag: SendSignalByTag? = null,
-    val cancelWorkflowByTag: CancelWorkflowByTag? = null,
-    val retryWorkflowTaskByTag: RetryWorkflowTaskByTag? = null,
-    val retryTasksByTag: RetryTasksByTag? = null,
-    val dispatchMethodByTag: DispatchMethodByTag? = null,
-    val getWorkflowIdsByTag: GetWorkflowIdsByTag? = null,
+    @AvroDefault("0.9.0") // last version without this field
+    private val version: String = io.infinitic.version,
+    private val name: String,
+    private val type: WorkflowTagMessageType,
+    private val addTagToWorkflow: AddTagToWorkflow? = null,
+    private val removeTagFromWorkflow: RemoveTagFromWorkflow? = null,
+    private val sendSignalByTag: SendSignalByTag? = null,
+    private val cancelWorkflowByTag: CancelWorkflowByTag? = null,
+    private val retryWorkflowTaskByTag: RetryWorkflowTaskByTag? = null,
+    private val retryTasksByTag: RetryTasksByTag? = null,
+    private val dispatchMethodByTag: DispatchMethodByTag? = null,
+    private val getWorkflowIdsByTag: GetWorkflowIdsByTag? = null,
 ) : Envelope<WorkflowTagMessage> {
 
     init {
@@ -64,43 +67,43 @@ data class WorkflowTagEnvelope(
     companion object {
         fun from(msg: WorkflowTagMessage) = when (msg) {
             is AddTagToWorkflow -> WorkflowTagEnvelope(
-                "${msg.workflowName}",
-                WorkflowTagMessageType.ADD_TAG_TO_WORKFLOW,
+                name = "${msg.workflowName}",
+                type = WorkflowTagMessageType.ADD_TAG_TO_WORKFLOW,
                 addTagToWorkflow = msg
             )
             is RemoveTagFromWorkflow -> WorkflowTagEnvelope(
-                "${msg.workflowName}",
-                WorkflowTagMessageType.REMOVE_TAG_FROM_WORKFLOW,
+                name = "${msg.workflowName}",
+                type = WorkflowTagMessageType.REMOVE_TAG_FROM_WORKFLOW,
                 removeTagFromWorkflow = msg
             )
             is SendSignalByTag -> WorkflowTagEnvelope(
-                "${msg.workflowName}",
-                WorkflowTagMessageType.SEND_SIGNAL_BY_TAG,
+                name = "${msg.workflowName}",
+                type = WorkflowTagMessageType.SEND_SIGNAL_BY_TAG,
                 sendSignalByTag = msg
             )
             is CancelWorkflowByTag -> WorkflowTagEnvelope(
-                "${msg.workflowName}",
-                WorkflowTagMessageType.CANCEL_WORKFLOW_BY_TAG,
+                name = "${msg.workflowName}",
+                type = WorkflowTagMessageType.CANCEL_WORKFLOW_BY_TAG,
                 cancelWorkflowByTag = msg
             )
             is RetryWorkflowTaskByTag -> WorkflowTagEnvelope(
-                "${msg.workflowName}",
-                WorkflowTagMessageType.RETRY_WORKFLOW_TASK_BY_TAG,
+                name = "${msg.workflowName}",
+                type = WorkflowTagMessageType.RETRY_WORKFLOW_TASK_BY_TAG,
                 retryWorkflowTaskByTag = msg
             )
             is RetryTasksByTag -> WorkflowTagEnvelope(
-                "${msg.workflowName}",
-                WorkflowTagMessageType.RETRY_TASKS_BY_TAG,
+                name = "${msg.workflowName}",
+                type = WorkflowTagMessageType.RETRY_TASKS_BY_TAG,
                 retryTasksByTag = msg
             )
             is DispatchMethodByTag -> WorkflowTagEnvelope(
-                "${msg.workflowName}",
-                WorkflowTagMessageType.DISPATCH_METHOD_BY_TAG,
+                name = "${msg.workflowName}",
+                type = WorkflowTagMessageType.DISPATCH_METHOD_BY_TAG,
                 dispatchMethodByTag = msg
             )
             is GetWorkflowIdsByTag -> WorkflowTagEnvelope(
-                "${msg.workflowName}",
-                WorkflowTagMessageType.GET_WORKFLOW_IDS_BY_TAG,
+                name = "${msg.workflowName}",
+                type = WorkflowTagMessageType.GET_WORKFLOW_IDS_BY_TAG,
                 getWorkflowIdsByTag = msg
             )
         }

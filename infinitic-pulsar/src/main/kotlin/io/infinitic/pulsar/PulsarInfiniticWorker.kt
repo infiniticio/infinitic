@@ -159,7 +159,7 @@ class PulsarInfiniticWorker private constructor(
             exitProcess(1)
         }
 
-        return scope.future { start() }
+        return scope.future { startWorker().join() }
     }
 
     /**

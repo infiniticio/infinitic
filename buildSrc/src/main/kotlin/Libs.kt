@@ -37,6 +37,11 @@ object Libs {
         const val jdk8 = "org.jetbrains.kotlinx:kotlinx-coroutines-jdk8:$version"
     }
 
+    object Caffeine {
+        // can not upgrade to 3.+ that requires java 11 as minimal version
+        const val caffeine = "com.github.ben-manes.caffeine:caffeine:2.9.3"
+    }
+
     object Serialization {
         const val json = "org.jetbrains.kotlinx:kotlinx-serialization-json:1.3.2"
     }
@@ -54,7 +59,7 @@ object Libs {
     }
 
     object Kotest {
-        private const val version = "5.1.0"
+        private const val version = "5.2.2"
         const val property = "io.kotest:kotest-property-jvm:$version"
         const val junit5 = "io.kotest:kotest-runner-junit5-jvm:$version"
     }

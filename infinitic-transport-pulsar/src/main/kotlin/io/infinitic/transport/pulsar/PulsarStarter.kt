@@ -67,6 +67,8 @@ import io.infinitic.transport.pulsar.topics.WorkflowTopics
 import io.infinitic.workflows.engine.WorkflowEngine
 import io.infinitic.workflows.tag.WorkflowTagEngine
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.isActive
+import mu.KotlinLogging
 import org.apache.pulsar.client.api.PulsarClient
 
 class PulsarStarter(
@@ -74,11 +76,12 @@ class PulsarStarter(
     private val topicNames: TopicNames,
     private val workerName: String
 ) : ClientStarter, WorkerStarter {
+    private val logger = KotlinLogging.logger {}
 
     private val zero = MillisDuration.ZERO
     private val clientName = ClientName(workerName)
-    private val pulsarSender = PulsarProducer(client)
-    internal val pulsarListener = PulsarConsumer(client)
+    private val pulsarProducer = PulsarProducer(client)
+    private val pulsarConsumer = PulsarConsumer(client)
 
     override fun CoroutineScope.startWorkflowTag(workflowName: WorkflowName, workflowTagStorage: WorkflowTagStorage, concurrency: Int) {
         val tagEngine = WorkflowTagEngine(
@@ -194,7 +197,7 @@ class PulsarStarter(
 
         return@run { message: WorkflowTagMessage ->
             val topic = topicNames.topic(topicType, message.workflowName)
-            pulsarSender.send<WorkflowTagMessage, WorkflowTagEnvelope>(
+            pulsarProducer.send<WorkflowTagMessage, WorkflowTagEnvelope>(
                 message, zero, topic, producerName, "${message.workflowTag}"
             )
         }
@@ -206,7 +209,7 @@ class PulsarStarter(
 
         return@run { message: TaskTagMessage ->
             val topic = topicNames.topic(topicType, message.taskName)
-            pulsarSender.send<TaskTagMessage, TaskTagEnvelope>(
+            pulsarProducer.send<TaskTagMessage, TaskTagEnvelope>(
                 message, zero, topic, producerName, "${message.taskTag}",
             )
         }
@@ -218,7 +221,7 @@ class PulsarStarter(
 
         return@run { message: TaskExecutorMessage ->
             val topic = topicNames.topic(topicType, message.taskName)
-            pulsarSender.send<TaskExecutorMessage, TaskExecutorEnvelope>(
+            pulsarProducer.send<TaskExecutorMessage, TaskExecutorEnvelope>(
                 message, zero, topic, producerName
             )
         }
@@ -230,7 +233,7 @@ class PulsarStarter(
 
         return@run { message: WorkflowEngineMessage ->
             val topic = topicNames.topic(topicType, message.workflowName)
-            pulsarSender.send<WorkflowEngineMessage, WorkflowEngineEnvelope>(
+            pulsarProducer.send<WorkflowEngineMessage, WorkflowEngineEnvelope>(
                 message, zero, topic, producerName, "${message.workflowId}"
             )
         }
@@ -242,7 +245,7 @@ class PulsarStarter(
 
         return@run { message: ClientMessage ->
             val topic = topicNames.topic(topicType, message.recipientName)
-            pulsarSender.send<ClientMessage, ClientEnvelope>(
+            pulsarProducer.send<ClientMessage, ClientEnvelope>(
                 message, zero, topic, producerName
             )
         }
@@ -254,7 +257,7 @@ class PulsarStarter(
 
         return@run { message: TaskExecutorMessage, after: MillisDuration ->
             val topic = topicNames.topic(topicType, message.taskName)
-            pulsarSender.send<TaskExecutorMessage, TaskExecutorEnvelope>(
+            pulsarProducer.send<TaskExecutorMessage, TaskExecutorEnvelope>(
                 message, after, topic, producerName
             )
         }
@@ -266,7 +269,7 @@ class PulsarStarter(
         val topic = topicNames.topic(topicType, workflowName)
 
         return { message: TaskExecutorMessage ->
-            pulsarSender.send<TaskExecutorMessage, TaskExecutorEnvelope>(
+            pulsarProducer.send<TaskExecutorMessage, TaskExecutorEnvelope>(
                 message, zero, topic, producerName
             )
         }
@@ -278,7 +281,7 @@ class PulsarStarter(
         val topic = topicNames.topic(topicType, workflowName)
 
         return { message: TaskExecutorMessage, after: MillisDuration ->
-            pulsarSender.send<TaskExecutorMessage, TaskExecutorEnvelope>(
+            pulsarProducer.send<TaskExecutorMessage, TaskExecutorEnvelope>(
                 message, after, topic, producerName
             )
         }
@@ -291,7 +294,7 @@ class PulsarStarter(
         return@run { message: WorkflowEngineMessage, after: MillisDuration ->
             if (after > 0) {
                 val topic = topicNames.topic(topicType, message.workflowName)
-                pulsarSender.send<WorkflowEngineMessage, WorkflowEngineEnvelope>(
+                pulsarProducer.send<WorkflowEngineMessage, WorkflowEngineEnvelope>(
                     message, after, topic, producerName
                 )
             } else {
@@ -306,16 +309,20 @@ class PulsarStarter(
         concurrency: Int,
         name: String
     ) {
-        with(pulsarListener) {
-            startConsumer<T, S>(
-                executor = executor,
-                topic = topicNames.topic(topicType, name),
-                subscriptionName = topicType.subscriptionName,
-                subscriptionType = topicType.subscriptionType,
-                consumerName = topicNames.consumerName(workerName, topicType),
-                concurrency = concurrency,
-                topicDLQ = topicNames.topicDLQ(topicType, name)
-            )
+        if (isActive) {
+            with(pulsarConsumer) {
+                startConsumer<T, S>(
+                    executor = executor,
+                    topic = topicNames.topic(topicType, name),
+                    subscriptionName = topicType.subscriptionName,
+                    subscriptionType = topicType.subscriptionType,
+                    consumerName = topicNames.consumerName(workerName, topicType),
+                    concurrency = concurrency,
+                    topicDLQ = topicNames.topicDLQ(topicType, name)
+                )
+            }
+        } else {
+            logger.warn("Coroutine not active, cannot start consumer ${topicNames.consumerName(workerName, topicType)}")
         }
     }
 }

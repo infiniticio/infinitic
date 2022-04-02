@@ -28,33 +28,44 @@ stateStorage: inMemory
 
 stateCache: caffeine
 
+redis:
+  host: localhost
+  port: 6379
+  user:
+  password:
+  database: 0
+
 pulsar:
-  brokerServiceUrl: pulsar://localhost:6650
-  webServiceUrl: http://localhost:8080
   tenant: infinitic
-  namespace: 0.9.0-SNAPSHOT
+  namespace: dev
+#  brokerServiceUrl:
+#  webServiceUrl:
+#  authentication:
+#    issuerUrl:
+#    privateKey:
+#    audience:
 
 tasks:
   - name: annotatedTask
     class: io.infinitic.tests.tasks.TaskAnnotatedImpl
-    concurrency: 3
+    concurrency: 5
   - name: io.infinitic.tests.tasks.TaskA
     class: io.infinitic.tests.tasks.TaskAImpl
-    concurrency: 3
+    concurrency: 5
   - name: io.infinitic.tests.tasks.TaskTest
     class: io.infinitic.tests.tasks.TaskTestImpl
-    concurrency: 3
+    concurrency: 5
 
 workflows:
   - name: io.infinitic.tests.workflows.WorkflowA
     class: io.infinitic.tests.workflows.WorkflowAImpl
-    concurrency: 2
+    concurrency: 5
   - name: io.infinitic.tests.workflows.WorkflowB
     class: io.infinitic.tests.workflows.WorkflowBImpl
-    concurrency: 2
+    concurrency: 5
   - name: io.infinitic.tests.workflows.WorkflowC
     class: io.infinitic.tests.workflows.WorkflowCImpl
-    concurrency: 2
+    concurrency: 5
   - name: annotatedWorkflow
     class: io.infinitic.tests.workflows.WorkflowAnnotatedImpl
-    concurrency: 2
+    concurrency: 5
