@@ -150,9 +150,7 @@ internal class ClientDispatcherImpl(
 
             responseFlow.first {
                 logger.debug { "ResponseFlow: $it" }
-                it is MethodMessage &&
-                    it.workflowId == workflowId &&
-                    it.methodRunId == runId
+                it is MethodMessage && it.workflowId == workflowId && it.methodRunId == runId
             }
         }.join()
 
