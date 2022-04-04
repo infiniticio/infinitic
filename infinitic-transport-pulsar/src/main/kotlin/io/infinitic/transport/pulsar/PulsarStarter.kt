@@ -87,6 +87,7 @@ class PulsarStarter(
         val tagEngine = WorkflowTagEngine(
             clientName,
             workflowTagStorage,
+            sendToWorkflowTag,
             sendToWorkflowEngine,
             sendToClient
         )

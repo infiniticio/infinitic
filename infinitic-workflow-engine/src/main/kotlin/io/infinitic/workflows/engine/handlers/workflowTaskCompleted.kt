@@ -65,6 +65,7 @@ import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
 import io.infinitic.common.workflows.engine.state.WorkflowState
 import io.infinitic.common.workflows.tags.messages.AddTagToWorkflow
 import io.infinitic.common.workflows.tags.messages.DispatchMethodByTag
+import io.infinitic.common.workflows.tags.messages.DispatchWorkflowByCustomId
 import io.infinitic.common.workflows.tags.messages.SendSignalByTag
 import io.infinitic.workflows.engine.helpers.dispatchTask
 import io.infinitic.workflows.engine.helpers.stepTerminated
@@ -256,33 +257,63 @@ private fun CoroutineScope.dispatchWorkflow(
 ) {
     val command: DispatchWorkflowCommand = newCommand.command
 
-    // send task to task engine
-    val dispatchWorkflow = DispatchWorkflow(
-        workflowName = command.workflowName,
-        workflowId = WorkflowId.from(newCommand.commandId),
-        methodName = command.methodName,
-        methodParameters = command.methodParameters,
-        methodParameterTypes = command.methodParameterTypes,
-        workflowOptions = state.workflowOptions,
-        workflowTags = state.workflowTags,
-        workflowMeta = state.workflowMeta,
-        parentWorkflowName = state.workflowName,
-        parentWorkflowId = state.workflowId,
-        parentMethodRunId = state.runningMethodRunId,
-        clientWaiting = false,
-        emitterName = output.clientName
-    )
-    launch { output.sendToWorkflowEngine(dispatchWorkflow) }
+    val customIds = command.workflowTags.filter { it.isCustomId() }
 
-    // add provided tags
-    dispatchWorkflow.workflowTags.forEach {
-        val addTagToWorkflow = AddTagToWorkflow(
-            workflowName = dispatchWorkflow.workflowName,
-            workflowTag = it,
-            workflowId = dispatchWorkflow.workflowId,
-            emitterName = output.clientName
-        )
-        launch { output.sendToWorkflowTag(addTagToWorkflow) }
+    when (customIds.size) {
+        // no customId tag provided
+        0 -> {
+            // send workflow to workflow engine
+            val dispatchWorkflow = DispatchWorkflow(
+                workflowName = command.workflowName,
+                workflowId = WorkflowId.from(newCommand.commandId),
+                methodName = command.methodName,
+                methodParameters = command.methodParameters,
+                methodParameterTypes = command.methodParameterTypes,
+                workflowOptions = command.workflowOptions,
+                workflowTags = command.workflowTags,
+                workflowMeta = command.workflowMeta,
+                parentWorkflowName = state.workflowName,
+                parentWorkflowId = state.workflowId,
+                parentMethodRunId = state.runningMethodRunId,
+                clientWaiting = false,
+                emitterName = output.clientName
+            )
+            launch { output.sendToWorkflowEngine(dispatchWorkflow) }
+
+            // add provided tags
+            dispatchWorkflow.workflowTags.forEach {
+                val addTagToWorkflow = AddTagToWorkflow(
+                    workflowName = dispatchWorkflow.workflowName,
+                    workflowTag = it,
+                    workflowId = dispatchWorkflow.workflowId,
+                    emitterName = output.clientName
+                )
+                launch { output.sendToWorkflowTag(addTagToWorkflow) }
+            }
+        }
+        1 -> {
+            // dispatch workflow message with customId tag
+            val dispatchWorkflowByCustomId = DispatchWorkflowByCustomId(
+                workflowName = command.workflowName,
+                workflowTag = customIds.first(),
+                workflowId = WorkflowId.from(newCommand.commandId),
+                methodName = command.methodName,
+                methodParameters = command.methodParameters,
+                methodParameterTypes = command.methodParameterTypes,
+                workflowOptions = command.workflowOptions,
+                workflowTags = command.workflowTags,
+                workflowMeta = command.workflowMeta,
+                parentWorkflowName = state.workflowName,
+                parentWorkflowId = state.workflowId,
+                parentMethodRunId = state.runningMethodRunId,
+                clientWaiting = false,
+                emitterName = output.clientName
+            )
+
+            launch { output.sendToWorkflowTag(dispatchWorkflowByCustomId) }
+        }
+        // this must be excluded from workflow task
+        else -> thisShouldNotHappen()
     }
 }
 

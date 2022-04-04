@@ -71,6 +71,7 @@ import io.infinitic.exceptions.FailedDeferredException
 import io.infinitic.exceptions.UnknownDeferredException
 import io.infinitic.exceptions.clients.InvalidChannelUsageException
 import io.infinitic.exceptions.clients.InvalidRunningTaskException
+import io.infinitic.exceptions.workflows.MultipleCustomIdException
 import io.infinitic.exceptions.workflows.WorkflowUpdatedException
 import io.infinitic.workflows.Channel
 import io.infinitic.workflows.Deferred
@@ -315,18 +316,23 @@ internal class WorkflowDispatcherImpl(
      */
     private fun <R : Any?> dispatchWorkflow(handler: NewWorkflowProxyHandler<*>): Deferred<R> = when (handler.isChannelGetter()) {
         true -> throw InvalidChannelUsageException()
-        false -> dispatchCommand(
-            DispatchWorkflowCommand(
-                workflowName = handler.workflowName,
-                methodName = handler.methodName,
-                methodParameterTypes = handler.methodParameterTypes,
-                methodParameters = handler.methodParameters,
-                workflowTags = handler.workflowTags,
-                workflowOptions = handler.workflowOptions,
-                workflowMeta = handler.workflowMeta,
-            ),
-            CommandSimpleName(handler.simpleName)
-        )
+        false -> run {
+            // it's not possible to have multiple customIds in tags
+            if (handler.workflowTags.count { it.isCustomId() } > 1) { throw MultipleCustomIdException }
+
+            dispatchCommand(
+                DispatchWorkflowCommand(
+                    workflowName = handler.workflowName,
+                    methodName = handler.methodName,
+                    methodParameterTypes = handler.methodParameterTypes,
+                    methodParameters = handler.methodParameters,
+                    workflowTags = handler.workflowTags,
+                    workflowOptions = handler.workflowOptions,
+                    workflowMeta = handler.workflowMeta,
+                ),
+                CommandSimpleName(handler.simpleName)
+            )
+        }
     }
 
     /**

@@ -36,6 +36,12 @@ import kotlinx.serialization.encoding.Encoder
 @Serializable(with = WorkflowTagSerializer::class)
 data class WorkflowTag(val tag: String) {
     override fun toString() = tag
+
+    companion object {
+        const val CUSTOM_ID_PREFIX = "customId:"
+    }
+
+    fun isCustomId() = tag.startsWith(CUSTOM_ID_PREFIX)
 }
 
 object WorkflowTagSerializer : KSerializer<WorkflowTag> {

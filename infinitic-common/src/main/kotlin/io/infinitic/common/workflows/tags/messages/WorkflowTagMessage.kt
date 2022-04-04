@@ -41,9 +41,11 @@ import io.infinitic.common.workflows.data.channels.ChannelSignalType
 import io.infinitic.common.workflows.data.methodRuns.MethodRunId
 import io.infinitic.common.workflows.data.workflows.WorkflowCancellationReason
 import io.infinitic.common.workflows.data.workflows.WorkflowId
+import io.infinitic.common.workflows.data.workflows.WorkflowMeta
 import io.infinitic.common.workflows.data.workflows.WorkflowName
 import io.infinitic.common.workflows.data.workflows.WorkflowTag
 import io.infinitic.workflows.DeferredStatus
+import io.infinitic.workflows.WorkflowOptions
 import kotlinx.serialization.Serializable
 
 @Serializable @AvroNamespace("io.infinitic.workflows.tag")
@@ -54,6 +56,28 @@ sealed class WorkflowTagMessage : Message {
     abstract val workflowName: WorkflowName
 
     override fun envelope() = WorkflowTagEnvelope.from(this)
+}
+
+@Serializable @AvroNamespace("io.infinitic.workflows.tag")
+data class DispatchWorkflowByCustomId(
+    override val workflowName: WorkflowName,
+    override val workflowTag: WorkflowTag,
+    val workflowId: WorkflowId,
+    val methodName: MethodName,
+    val methodParameters: MethodParameters,
+    val methodParameterTypes: MethodParameterTypes?,
+    val workflowOptions: WorkflowOptions,
+    val workflowTags: Set<WorkflowTag>,
+    val workflowMeta: WorkflowMeta,
+    var parentWorkflowName: WorkflowName?,
+    var parentWorkflowId: WorkflowId?,
+    var parentMethodRunId: MethodRunId?,
+    val clientWaiting: Boolean,
+    override val emitterName: ClientName
+) : WorkflowTagMessage() {
+    init {
+        require(workflowTag.isCustomId()) { "workflowTag must be a custom id" }
+    }
 }
 
 @Serializable @AvroNamespace("io.infinitic.workflows.tag")

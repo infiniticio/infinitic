@@ -58,26 +58,9 @@ class InvalidRunningTaskException(
     help = "Make sure to use a stub returned by workflowStub(Class<*>)"
 )
 
-class InvalidWorkflowException(
-    klass: String
-) : ClientUserException(
-    msg = "$klass is not the stub of a workflow",
-    help = "Make sure to use a stub returned by workflowStub(Class<*>)"
-)
-
-class InvalidInterfaceException(
-    method: String
-) : ClientUserException(
-    msg = "$method must be a method declared from an interface",
-    help = "Make sure to provide a method defined from an interface, not from an actual instance."
-)
-
-class SuspendMethodNotSupportedException(
-    klass: String,
-    method: String
-) : ClientUserException(
-    msg = "Method \"$klass:$method\" is a suspend function",
-    help = "Suspend functions are not supported yet"
+object MultipleCustomIdException : ClientUserException(
+    msg = "",
+    help = ""
 )
 
 class InvalidChannelUsageException() : ClientUserException(

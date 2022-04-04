@@ -40,6 +40,7 @@ import io.infinitic.common.workflows.engine.messages.RetryTasks
 import io.infinitic.common.workflows.engine.messages.RetryWorkflowTask
 import io.infinitic.common.workflows.engine.messages.SendSignal
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
+import io.infinitic.common.workflows.tags.SendToWorkflowTag
 import io.infinitic.common.workflows.tags.messages.CancelWorkflowByTag
 import io.infinitic.common.workflows.tags.messages.GetWorkflowIdsByTag
 import io.infinitic.common.workflows.tags.messages.RetryTasksByTag
@@ -67,10 +68,12 @@ private val clientName = ClientName("clientWorkflowTagEngineTests")
 private lateinit var stateMessageId: CapturingSlot<String>
 private lateinit var stateWorkflowId: CapturingSlot<String>
 private lateinit var workflowEngineMessage: CapturingSlot<WorkflowEngineMessage>
+private lateinit var workflowTagMessage: CapturingSlot<WorkflowTagMessage>
 private lateinit var clientMessage: CapturingSlot<ClientMessage>
 
 private lateinit var workflowTagStorage: WorkflowTagStorage
 private lateinit var sendToWorkflowEngine: SendToWorkflowEngine
+private lateinit var sendToWorkflowTag: SendToWorkflowTag
 private lateinit var sendToClient: SendToClient
 
 internal class WorkflowTagEngineTests : StringSpec({
@@ -229,6 +232,12 @@ private fun mockSendToWorkflowEngine(slot: CapturingSlot<WorkflowEngineMessage>)
     return mock
 }
 
+private fun mockSendToWorkflowTag(slot: CapturingSlot<WorkflowTagMessage>): SendToWorkflowTag {
+    val mock = mockk<SendToWorkflowTag>()
+    coEvery { mock(capture(slot)) } just Runs
+    return mock
+}
+
 private fun mockWorkflowTagStorage(
     workflowTag: WorkflowTag,
     workflowName: WorkflowName,
@@ -255,12 +264,14 @@ private fun getEngine(
     stateWorkflowId = slot()
     clientMessage = slot()
     workflowEngineMessage = slot()
+    workflowTagMessage = slot()
 
     workflowTagStorage = mockWorkflowTagStorage(workflowTag, workflowName, messageId, workflowIds)
     sendToWorkflowEngine = mockSendToWorkflowEngine(workflowEngineMessage)
+    sendToWorkflowTag = mockSendToWorkflowTag(workflowTagMessage)
     sendToClient = mockSendToClient(clientMessage)
 
-    return WorkflowTagEngine(clientName, workflowTagStorage, sendToWorkflowEngine, sendToClient)
+    return WorkflowTagEngine(clientName, workflowTagStorage, sendToWorkflowTag, sendToWorkflowEngine, sendToClient)
 }
 
 private fun verifyAll() = confirmVerified(

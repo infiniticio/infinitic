@@ -30,13 +30,20 @@ import io.infinitic.common.checkBackwardCompatibility
 import io.infinitic.common.checkCurrentFileIsUpToDate
 import io.infinitic.common.createSchemaFileIfAbsent
 import io.infinitic.common.fixtures.TestFactory
+import io.infinitic.common.workflows.data.workflows.WorkflowTag
 import io.kotest.assertions.throwables.shouldNotThrowAny
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
 
 class WorkflowTagEnvelopeTests : StringSpec({
     WorkflowTagMessage::class.sealedSubclasses.map {
-        val msg = TestFactory.random(it)
+        val msg = when (it) {
+            DispatchWorkflowByCustomId::class -> TestFactory.random(
+                it,
+                mapOf("workflowTag" to WorkflowTag(WorkflowTag.CUSTOM_ID_PREFIX + TestFactory.random(String::class)))
+            )
+            else -> TestFactory.random(it)
+        }
 
         "WorkflowTagMessage(${msg::class.simpleName}) should be avro-convertible" {
             shouldNotThrowAny {
