@@ -25,29 +25,36 @@
 
 package io.infinitic.common.workflows.data.workflowTasks
 
+import com.github.avrokotlin.avro4k.Avro
+import io.infinitic.common.checkBackwardCompatibility
+import io.infinitic.common.checkCurrentFileIsUpToDate
+import io.infinitic.common.createSchemaFileIfAbsent
+import io.infinitic.common.fixtures.TestFactory
+import io.kotest.assertions.throwables.shouldNotThrowAny
 import io.kotest.core.spec.style.StringSpec
+import io.kotest.matchers.shouldBe
 
 class WorkflowTaskParametersTests : StringSpec({
 
-//    "WorkflowTaskParameters should be avro-convertible" {
-//        shouldNotThrowAny {
-//            val msg = TestFactory.random<WorkflowTaskParameters>()
-//            val ser = WorkflowTaskParameters.serializer()
-//            val byteArray = Avro.default.encodeToByteArray(ser, msg)
-//            val msg2 = Avro.default.decodeFromByteArray(ser, byteArray)
-//            msg shouldBe msg2
-//        }
-//    }
-//
-//    "Create WorkflowTaskParameters schema for the current version" {
-//        createSchemaFileIfAbsent(WorkflowTaskParameters.serializer())
-//    }
-//
-//    "Saved WorkflowTaskParameters schema should be up-to-date with for the current version" {
-//        checkCurrentFileIsUpToDate(WorkflowTaskParameters.serializer())
-//    }
-//
-//    "We should be able to read WorkflowTaskParameters from any previous version since 0.9.0" {
-//        checkBackwardCompatibility(WorkflowTaskParameters.serializer())
-//    }
+    "WorkflowTaskParameters should be avro-convertible" {
+        shouldNotThrowAny {
+            val msg = TestFactory.random<WorkflowTaskParameters>()
+            val ser = WorkflowTaskParameters.serializer()
+            val byteArray = Avro.default.encodeToByteArray(ser, msg)
+            val msg2 = Avro.default.decodeFromByteArray(ser, byteArray)
+            msg shouldBe msg2
+        }
+    }
+
+    "Create WorkflowTaskParameters schema for the current version" {
+        createSchemaFileIfAbsent(WorkflowTaskParameters.serializer())
+    }
+
+    "Saved WorkflowTaskParameters schema should be up-to-date with for the current version" {
+        checkCurrentFileIsUpToDate(WorkflowTaskParameters.serializer())
+    }
+
+    "We should be able to read WorkflowTaskParameters from any previous version since 0.9.0" {
+        checkBackwardCompatibility(WorkflowTaskParameters.serializer())
+    }
 })
