@@ -235,7 +235,16 @@ class PulsarInfiniticWorker private constructor(
                     logger.warn { "Not authorized to create topic $topic: ${e.message}" }
                 }
             } else {
-                logger.debug { "Already existing topic $topic" }
+                try {
+                    logger.debug { "Already existing topic $topic" }
+                    createMissedPartitions(topic)
+                } catch (e: PulsarAdminException.ConflictException) {
+                    logger.warn { "Already existing partition $topic: ${e.message}" }
+                } catch (e: PulsarAdminException.NotAllowedException) {
+                    logger.warn { "Not allowed to create topic $topic: ${e.message}" }
+                } catch (e: PulsarAdminException.NotAuthorizedException) {
+                    logger.warn { "Not authorized to create topic $topic: ${e.message}" }
+                }
             }
         }
 
