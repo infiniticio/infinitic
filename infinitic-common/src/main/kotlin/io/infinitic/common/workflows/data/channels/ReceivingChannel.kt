@@ -25,6 +25,8 @@
 
 package io.infinitic.common.workflows.data.channels
 
+import com.github.avrokotlin.avro4k.AvroDefault
+import com.github.avrokotlin.avro4k.AvroName
 import com.github.avrokotlin.avro4k.AvroNamespace
 import io.infinitic.common.workflows.data.commands.CommandId
 import io.infinitic.common.workflows.data.methodRuns.MethodRunId
@@ -34,7 +36,10 @@ import kotlinx.serialization.Serializable
 data class ReceivingChannel(
     val channelName: ChannelName,
     val channelSignalType: ChannelSignalType?,
-    val channelEventFilter: ChannelEventFilter?,
+    @AvroDefault("1")
+    var channelSignalLimit: Int?,
+    @AvroName("channelEventFilter")
+    val channelSignalFilter: ChannelSignalFilter?,
     val methodRunId: MethodRunId,
     val commandId: CommandId
 )

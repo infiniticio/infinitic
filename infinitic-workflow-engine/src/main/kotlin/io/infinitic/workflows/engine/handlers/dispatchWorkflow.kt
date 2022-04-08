@@ -66,7 +66,7 @@ internal fun CoroutineScope.dispatchWorkflow(
         methodRuns = mutableListOf(methodRun)
     )
 
-    dispatchWorkflowTask(workflowEngineOutput, state, methodRun, MethodRunPosition.new())
+    dispatchWorkflowTask(workflowEngineOutput, state, methodRun, MethodRunPosition())
 
     return state
 }

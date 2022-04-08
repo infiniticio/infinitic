@@ -159,7 +159,7 @@ class DataTests : StringSpec({
     }
 
     "MethodRunPosition should be serialized as String and reversible in json" {
-        val m = MethodRunPosition.new()
+        val m = MethodRunPosition()
         val json = Json.encodeToString(m)
         val m2 = Json.decodeFromString<MethodRunPosition>(json)
 

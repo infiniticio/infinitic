@@ -43,6 +43,11 @@ object MultipleCustomIdException : WorkflowUserException(
     help = ""
 )
 
+object OutOfBoundAwaitException : WorkflowUserException(
+    msg = "",
+    help = ""
+)
+
 class NonIdempotentChannelGetterException(
     workflow: String,
     method: String

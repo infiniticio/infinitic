@@ -38,9 +38,11 @@ import io.infinitic.common.workflows.data.steps.or as stepOr
 
 @Serializable(with = DeferredSerializer::class)
 data class Deferred<T> (val step: Step) {
-    @Transient @JsonIgnore lateinit var workflowDispatcher: WorkflowDispatcher
+    @Transient @JsonIgnore
+    lateinit var workflowDispatcher: WorkflowDispatcher
 
-    @Transient @JsonIgnore val id: String? = when (step) {
+    @Transient @JsonIgnore
+    val id: String? = when (step) {
         is Step.Id -> step.commandId.toString()
         else -> null
     }
@@ -65,18 +67,33 @@ data class Deferred<T> (val step: Step) {
     fun await(): T = workflowDispatcher.await(this)
 
     /**
-     * Status of a deferred
+     * Current status of a deferred
      */
     fun status(): DeferredStatus = workflowDispatcher.status(this)
 
+    /**
+     * This deferred is still ongoing
+     */
     @JsonIgnore fun isOngoing() = status() == DeferredStatus.ONGOING
 
+    /**
+     * This deferred is unknown, it can happen when targeting an unknown id, or already terminated
+     */
     @JsonIgnore fun isUnknown() = status() == DeferredStatus.UNKNOWN
 
+    /**
+     * This deferred is now cancelled
+     */
     @JsonIgnore fun isCanceled() = status() == DeferredStatus.CANCELED
 
+    /**
+     * This deferred is now failed
+     */
     @JsonIgnore fun isFailed() = status() == DeferredStatus.FAILED
 
+    /**
+     * This deferred is now completed
+     */
     @JsonIgnore fun isCompleted() = status() == DeferredStatus.COMPLETED
 }
 

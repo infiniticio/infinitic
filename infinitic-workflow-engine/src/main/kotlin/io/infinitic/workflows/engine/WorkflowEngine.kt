@@ -205,6 +205,7 @@ class WorkflowEngine(
         // - except for RetryWorkflowTask
         if (state.runningWorkflowTaskId != null && ! message.isWorkflowTask() && message !is RetryWorkflowTask) {
             // buffer this message
+            logger.debug { "workflowId ${state.workflowId} - buffering $message" }
             state.messagesBuffer.add(message)
 
             return@coroutineScope state
@@ -219,7 +220,7 @@ class WorkflowEngine(
             state.messagesBuffer.size > 0 // if there is at least one buffered message
         ) {
             val bufferedMsg = state.messagesBuffer.removeAt(0)
-            logger.debug { "workflowId ${bufferedMsg.workflowId} - processing buffered message $bufferedMsg" }
+            logger.debug { "workflowId ${bufferedMsg.workflowId} - processing buffered $bufferedMsg" }
             processMessage(state, bufferedMsg)
         }
 

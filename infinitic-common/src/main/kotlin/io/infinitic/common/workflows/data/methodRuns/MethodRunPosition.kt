@@ -28,10 +28,7 @@ package io.infinitic.common.workflows.data.methodRuns
 import kotlinx.serialization.Serializable
 
 @JvmInline @Serializable
-value class MethodRunPosition private constructor(private val index: Int) {
-    companion object {
-        fun new() = MethodRunPosition(-1)
-    }
+value class MethodRunPosition(private val index: Int = -1) {
 
     override fun toString() = "$index"
 

@@ -45,13 +45,22 @@ class Channel<T : Any>(
     }
 
     override fun send(signal: T) =
-        dispatcherFn().sendSignal(this, signal)
+        dispatcherFn().send(this, signal)
 
     @JvmOverloads
-    fun receive(jsonPath: String? = null, criteria: Criteria? = null): Deferred<T> =
-        dispatcherFn().receiveSignal(this, null, jsonPath, criteria)
+    fun receive(
+        limit: Int? = null,
+        jsonPath: String? = null,
+        criteria: Criteria? = null
+    ): Deferred<T> =
+        dispatcherFn().receive(this, null, limit, jsonPath, criteria)
 
     @JvmOverloads
-    fun <S : T> receive(klass: Class<S>, jsonPath: String? = null, criteria: Criteria? = null): Deferred<S> =
-        dispatcherFn().receiveSignal(this, klass, jsonPath, criteria)
+    fun <S : T> receive(
+        klass: Class<S>,
+        limit: Int? = null,
+        jsonPath: String? = null,
+        criteria: Criteria? = null
+    ): Deferred<S> =
+        dispatcherFn().receive(this, klass, limit, jsonPath, criteria)
 }

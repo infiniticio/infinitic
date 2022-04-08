@@ -25,6 +25,7 @@
 
 package io.infinitic.common.workflows.data.commands
 
+import com.github.avrokotlin.avro4k.AvroDefault
 import io.infinitic.common.tasks.data.TaskRetrySequence
 import io.infinitic.common.workflows.data.methodRuns.MethodRunPosition
 import io.infinitic.workflows.WorkflowChangeCheckMode
@@ -62,7 +63,7 @@ sealed class PastCommand {
                 InlineTaskPastCommand(CommandId(), commandPosition, commandSimpleName, commandStatus, command)
             }
             is ReceiveSignalCommand -> {
-                ReceiveSignalPastCommand(CommandId(), commandPosition, commandSimpleName, commandStatus, command)
+                ReceiveSignalPastCommand(CommandId(), commandPosition, commandSimpleName, commandStatus, listOf(), command)
             }
             is SendSignalCommand -> {
                 SendSignalPastCommand(CommandId(), commandPosition, commandSimpleName, commandStatus, command)
@@ -132,6 +133,8 @@ data class ReceiveSignalPastCommand(
     override val commandPosition: MethodRunPosition,
     override val commandSimpleName: CommandSimpleName,
     override var commandStatus: CommandStatus,
+    @AvroDefault("[]")
+    var commandStatuses: List<CommandStatus>,
     override val command: ReceiveSignalCommand
 ) : PastCommand()
 

@@ -56,5 +56,5 @@ internal fun CoroutineScope.dispatchMethodRun(
 
     state.methodRuns.add(methodRun)
 
-    dispatchWorkflowTask(workflowEngineOutput, state, methodRun, MethodRunPosition.new())
+    dispatchWorkflowTask(workflowEngineOutput, state, methodRun, MethodRunPosition())
 }

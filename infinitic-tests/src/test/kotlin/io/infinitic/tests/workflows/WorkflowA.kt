@@ -116,6 +116,7 @@ interface WorkflowA : ParentInterface {
     fun channel6(): String
     fun channel6bis(): String
     fun channel6ter(): String
+    fun channel7(): String
     fun failing1(): String
     fun failing2()
     fun failing2a(): Long
@@ -427,7 +428,7 @@ class WorkflowAImpl : Workflow(), WorkflowA {
         p1 = d2.await() + p1
         // unfortunately p1 = p1 + d2.await() would fail the test
         // because d2.await() updates p1 value too lately in the expression
-        // not sure, how to fix that or if it should be fixed
+        // not sure how to fix that or if it should be fixed
 
         return p1 // should be "abab"
     }
@@ -490,13 +491,13 @@ class WorkflowAImpl : Workflow(), WorkflowA {
     }
 
     override fun channel4bis(): Obj {
-        val deferred: Deferred<Obj> = channelObj.receive("[?(\$.foo == \"foo\")]")
+        val deferred: Deferred<Obj> = channelObj.receive(jsonPath = "[?(\$.foo == \"foo\")]")
 
         return deferred.await()
     }
 
     override fun channel4ter(): Obj {
-        val deferred: Deferred<Obj> = channelObj.receive("[?]", where("foo").eq("foo"))
+        val deferred: Deferred<Obj> = channelObj.receive(jsonPath = "[?]", criteria = where("foo").eq("foo"))
 
         return deferred.await()
     }
@@ -508,13 +509,13 @@ class WorkflowAImpl : Workflow(), WorkflowA {
     }
 
     override fun channel5bis(): Obj1 {
-        val deferred: Deferred<Obj1> = channelObj.receive(Obj1::class.java, "[?(\$.foo == \"foo\")]")
+        val deferred: Deferred<Obj1> = channelObj.receive(Obj1::class.java, jsonPath = "[?(\$.foo == \"foo\")]")
 
         return deferred.await()
     }
 
     override fun channel5ter(): Obj1 {
-        val deferred: Deferred<Obj1> = channelObj.receive(Obj1::class.java, "[?]", where("foo").eq("foo"))
+        val deferred: Deferred<Obj1> = channelObj.receive(Obj1::class.java, jsonPath = "[?]", criteria = where("foo").eq("foo"))
 
         return deferred.await()
     }
@@ -529,8 +530,8 @@ class WorkflowAImpl : Workflow(), WorkflowA {
     }
 
     override fun channel6bis(): String {
-        val deferred1: Deferred<Obj1> = channelObj.receive(Obj1::class.java, "[?(\$.foo == \"foo\")]")
-        val deferred2: Deferred<Obj2> = channelObj.receive(Obj2::class.java, "[?(\$.foo == \"foo\")]")
+        val deferred1: Deferred<Obj1> = channelObj.receive(Obj1::class.java, jsonPath = "[?(\$.foo == \"foo\")]")
+        val deferred2: Deferred<Obj2> = channelObj.receive(Obj2::class.java, jsonPath = "[?(\$.foo == \"foo\")]")
         val obj1 = deferred1.await()
         val obj2 = deferred2.await()
 
@@ -538,12 +539,26 @@ class WorkflowAImpl : Workflow(), WorkflowA {
     }
 
     override fun channel6ter(): String {
-        val deferred1: Deferred<Obj1> = channelObj.receive(Obj1::class.java, "[?]", where("foo").eq("foo"))
-        val deferred2: Deferred<Obj2> = channelObj.receive(Obj2::class.java, "[?]", where("foo").eq("foo"))
+        val deferred1: Deferred<Obj1> = channelObj.receive(Obj1::class.java, jsonPath = "[?]", criteria = where("foo").eq("foo"))
+        val deferred2: Deferred<Obj2> = channelObj.receive(Obj2::class.java, jsonPath = "[?]", criteria = where("foo").eq("foo"))
         val obj1 = deferred1.await()
         val obj2 = deferred2.await()
 
         return obj1.foo + obj2.foo + obj1.bar * obj2.bar
+    }
+
+    override fun channel7(): String {
+        val deferred1 = channelA.receive()
+        taskA.await(100)
+        val s1 = deferred1.await()
+        val deferred2 = channelA.receive()
+        taskA.await(100)
+        val s2 = deferred2.await()
+        val deferred3 = channelA.receive()
+        taskA.await(100)
+        val s3 = deferred3.await()
+
+        return "$s1$s2$s3"
     }
 
     override fun failing1() = try {
