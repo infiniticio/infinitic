@@ -23,28 +23,31 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.tests.workflows
+package io.infinitic.tests.syntax
 
-import io.infinitic.annotations.Name
-import io.infinitic.tests.tasks.TaskAnnotated
+import io.infinitic.tests.utils.ParentInterface
+import io.infinitic.tests.utils.UtilTask
 import io.infinitic.workflows.Workflow
 
-@Name("annotatedWorkflow")
-interface WorkflowAnnotated {
-    @Name("bar")
-    fun foo(input: String): String
+interface SyntaxWorkflow : ParentInterface {
+    fun empty(): String
+    fun await(duration: Long): Long
+    fun wparent(): String
 }
 
-class WorkflowAnnotatedImpl : Workflow(), WorkflowAnnotated {
-    private val task = newTask(TaskAnnotated::class.java)
+@Suppress("unused")
+class SyntaxWorkflowImpl : Workflow(), SyntaxWorkflow {
 
-    override fun foo(input: String): String {
-        var str = input
+    private val utilTask = newTask(UtilTask::class.java, tags = setOf("foo", "bar"), meta = mapOf("foo" to "bar".toByteArray()))
+    private val syntaxWorkflow = newWorkflow(SyntaxWorkflow::class.java)
 
-        str = task.foo(str, "a")
-        str = task.foo(str, "b")
-        str = task.foo(str, "c")
+    private var p1 = ""
 
-        return str // should be "${input}abc"
-    }
+    override fun empty() = "void"
+
+    override fun await(duration: Long) = utilTask.await(duration)
+
+    override fun parent() = utilTask.parent()
+
+    override fun wparent(): String = syntaxWorkflow.parent()
 }

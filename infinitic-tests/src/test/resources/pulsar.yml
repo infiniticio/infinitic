@@ -47,25 +47,47 @@ pulsar:
 
 tasks:
   - name: annotatedTask
-    class: io.infinitic.tests.tasks.TaskAnnotatedImpl
+    class: io.infinitic.tests.utils.AnnotatedTaskImpl
     concurrency: 5
-  - name: io.infinitic.tests.tasks.TaskA
-    class: io.infinitic.tests.tasks.TaskAImpl
+  - name: io.infinitic.tests.utils.UtilTask
+    class: io.infinitic.tests.utils.UtilTaskImpl
     concurrency: 5
-  - name: io.infinitic.tests.tasks.TaskTest
-    class: io.infinitic.tests.tasks.TaskTestImpl
+  - name: io.infinitic.tests.utils.TestTask
+    class: io.infinitic.tests.utils.TestTaskImpl
     concurrency: 5
 
 workflows:
-  - name: io.infinitic.tests.workflows.WorkflowA
-    class: io.infinitic.tests.workflows.WorkflowAImpl
-    concurrency: 5
-  - name: io.infinitic.tests.workflows.WorkflowB
-    class: io.infinitic.tests.workflows.WorkflowBImpl
-    concurrency: 5
-  - name: io.infinitic.tests.workflows.WorkflowC
-    class: io.infinitic.tests.workflows.WorkflowCImpl
-    concurrency: 5
   - name: annotatedWorkflow
-    class: io.infinitic.tests.workflows.WorkflowAnnotatedImpl
+    class: io.infinitic.tests.utils.AnnotatedWorkflowImpl
     concurrency: 5
+  - name: io.infinitic.tests.utils.UtilWorkflow
+    class: io.infinitic.tests.utils.UtilWorkflowImpl
+    concurrency: 5
+  - name: io.infinitic.tests.branches.BranchesWorkflow
+    class: io.infinitic.tests.branches.BranchesWorkflowImpl
+    concurrency: 5
+  - name: io.infinitic.tests.channels.ChannelsWorkflow
+    class: io.infinitic.tests.channels.ChannelsWorkflowImpl
+    concurrency: 5
+  - name: io.infinitic.tests.children.ChildrenWorkflow
+    class: io.infinitic.tests.children.ChildrenWorkflowImpl
+    concurrency: 5
+  - name: io.infinitic.tests.context.ContextWorkflow
+    class: io.infinitic.tests.context.ContextWorkflowImpl
+    concurrency: 5
+  - name: io.infinitic.tests.deferred.DeferredWorkflow
+    class: io.infinitic.tests.deferred.DeferredWorkflowImpl
+    concurrency: 5
+  - name: io.infinitic.tests.errors.ErrorsWorkflow
+    class: io.infinitic.tests.errors.ErrorsWorkflowImpl
+    concurrency: 5
+  - name: io.infinitic.tests.inline.InlineWorkflow
+    class: io.infinitic.tests.inline.InlineWorkflowImpl
+    concurrency: 5
+  - name: io.infinitic.tests.properties.PropertiesWorkflow
+    class: io.infinitic.tests.properties.PropertiesWorkflowImpl
+    concurrency: 5
+  - name: io.infinitic.tests.syntax.SyntaxWorkflow
+    class: io.infinitic.tests.syntax.SyntaxWorkflowImpl
+    concurrency: 5
+

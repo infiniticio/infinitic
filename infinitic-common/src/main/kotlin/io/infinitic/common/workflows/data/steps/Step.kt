@@ -80,10 +80,10 @@ sealed class Step {
         var awaitOccurrence: Int = 0
     ) : Step() {
         @JsonIgnore
-        internal var commandStatus: CommandStatus = Ongoing
+        var commandStatus: CommandStatus = Ongoing
         // statuses of multiple wait occurrences, non-null for ReceiveSignalPastCommand only
         @JsonIgnore @AvroDefault("[]")
-        internal var commandStatuses: List<CommandStatus>? = null
+        var commandStatuses: List<CommandStatus>? = null
 
         companion object {
             fun from(pastCommand: PastCommand) = Id(pastCommand.commandId)

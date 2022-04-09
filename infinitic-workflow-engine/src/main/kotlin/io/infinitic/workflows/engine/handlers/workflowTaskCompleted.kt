@@ -243,10 +243,10 @@ private fun receiveFromChannel(
         ReceivingChannel(
             channelName = command.channelName,
             channelSignalType = command.channelSignalType,
-            channelSignalLimit = command.channelSignalLimit,
             channelSignalFilter = command.channelSignalFilter,
             methodRunId = state.runningMethodRunId!!,
-            commandId = newCommand.commandId
+            commandId = newCommand.commandId,
+            remainingCount = command.channelSignalLimit
         )
     )
 }

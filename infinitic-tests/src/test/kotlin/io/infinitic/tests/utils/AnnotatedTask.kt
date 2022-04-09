@@ -23,19 +23,19 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.tests.tasks
+package io.infinitic.tests.utils
 
 import io.infinitic.annotations.Name
 import io.infinitic.tasks.Task
 import java.time.Duration
 
 @Name("annotatedTask")
-interface TaskAnnotated {
+interface AnnotatedTask {
     @Name("bar")
     fun foo(str1: String, str2: String): String
 }
 
-class TaskAnnotatedImpl : Task(), TaskAnnotated {
+class AnnotatedTaskImpl : Task(), AnnotatedTask {
 
     override fun foo(str1: String, str2: String) = str1 + str2
 

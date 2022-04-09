@@ -26,6 +26,7 @@
 package io.infinitic.common.workflows.data.commands
 
 import com.github.avrokotlin.avro4k.AvroDefault
+import io.infinitic.common.exceptions.thisShouldNotHappen
 import io.infinitic.common.tasks.data.TaskRetrySequence
 import io.infinitic.common.workflows.data.methodRuns.MethodRunPosition
 import io.infinitic.workflows.WorkflowChangeCheckMode
@@ -47,7 +48,7 @@ sealed class PastCommand {
         fun from(
             commandPosition: MethodRunPosition,
             commandSimpleName: CommandSimpleName,
-            commandStatus: CommandStatus,
+            commandStatus: CommandStatus = CommandStatus.Ongoing,
             command: Command
         ) = when (command) {
             is DispatchMethodCommand -> {
@@ -63,7 +64,7 @@ sealed class PastCommand {
                 InlineTaskPastCommand(CommandId(), commandPosition, commandSimpleName, commandStatus, command)
             }
             is ReceiveSignalCommand -> {
-                ReceiveSignalPastCommand(CommandId(), commandPosition, commandSimpleName, commandStatus, listOf(), command)
+                ReceiveSignalPastCommand(CommandId(), commandPosition, commandSimpleName, commandStatus, mutableListOf(), command)
             }
             is SendSignalCommand -> {
                 SendSignalPastCommand(CommandId(), commandPosition, commandSimpleName, commandStatus, command)
@@ -76,7 +77,32 @@ sealed class PastCommand {
             }
         }
     }
-    fun isTerminated() = commandStatus.isTerminated()
+
+    fun setStatus(commandStatus: CommandStatus) {
+        when (this) {
+            is ReceiveSignalPastCommand -> when (this.commandStatus) {
+                CommandStatus.Ongoing -> this.commandStatus = commandStatus
+                else -> when {
+                    command.channelSignalLimit == null -> commandStatuses.add(commandStatus)
+                    command.channelSignalLimit > commandStatuses.size + 1 -> commandStatuses.add(commandStatus)
+                    else -> thisShouldNotHappen()
+                }
+            }
+            else -> {
+                this.commandStatus = commandStatus
+            }
+        }
+    }
+
+    fun isTerminated() = when (this) {
+        is ReceiveSignalPastCommand -> when (command.channelSignalLimit) {
+            null -> false
+            else -> commandStatus.isTerminated() &&
+                commandStatuses.all { it.isTerminated() } &&
+                command.channelSignalLimit == (commandStatuses.size + 1)
+        }
+        else -> commandStatus.isTerminated()
+    }
 
     fun isSameThan(other: PastCommand, mode: WorkflowChangeCheckMode): Boolean =
         other.commandPosition == commandPosition &&
@@ -134,7 +160,7 @@ data class ReceiveSignalPastCommand(
     override val commandSimpleName: CommandSimpleName,
     override var commandStatus: CommandStatus,
     @AvroDefault("[]")
-    var commandStatuses: List<CommandStatus>,
+    val commandStatuses: MutableList<CommandStatus>,
     override val command: ReceiveSignalCommand
 ) : PastCommand()
 

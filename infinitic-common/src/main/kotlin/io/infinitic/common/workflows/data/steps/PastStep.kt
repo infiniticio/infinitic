@@ -62,14 +62,14 @@ data class PastStep(
         // returns false if already terminated
         if (isTerminated()) return false
 
-        val isWaiting = stepStatus is StepStatus.Waiting
+        val wasWaiting = stepStatus is StepStatus.Waiting
 
         // working on a copy to check without updating
         with(copy()) {
             // apply update
             updateWith(pastCommand)
 
-            return isTerminated() || (stepStatus is CurrentlyFailed && isWaiting)
+            return isTerminated() || (stepStatus is CurrentlyFailed && wasWaiting)
         }
     }
 

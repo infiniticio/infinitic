@@ -23,48 +23,27 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.tests.workflows
+package io.infinitic.tests.utils
 
-import io.infinitic.tests.tasks.TaskA
-import io.infinitic.workflows.SendChannel
+import io.infinitic.annotations.Name
 import io.infinitic.workflows.Workflow
 
-interface WorkflowC {
-    val log: String
-    val channelA: SendChannel<String>
-    fun receive(str: String): String
-    fun concat(str: String): String
-    fun add(str: String): String
+@Name("annotatedWorkflow")
+interface AnnotatedWorkflow {
+    @Name("bar")
+    fun concatABC(input: String): String
 }
 
-class WorkflowCImpl : Workflow(), WorkflowC {
-    override val channelA = channel<String>()
-    val taskA = newTask(TaskA::class.java)
+class AnnotatedWorkflowImpl : Workflow(), AnnotatedWorkflow {
+    private val task = newTask(AnnotatedTask::class.java)
 
-    override var log = ""
+    override fun concatABC(input: String): String {
+        var str = input
 
-    override fun receive(str: String): String {
-        log += str
+        str = task.foo(str, "a")
+        str = task.foo(str, "b")
+        str = task.foo(str, "c")
 
-        val r = channelA.receive().await()
-
-        log += r
-
-        return log
-    }
-
-    override fun concat(str: String): String {
-        Thread.sleep(50)
-
-        log = taskA.concat(log, str)
-
-        return log
-    }
-
-    override fun add(str: String): String {
-
-        log += str
-
-        return log
+        return str // should be "${input}abc"
     }
 }

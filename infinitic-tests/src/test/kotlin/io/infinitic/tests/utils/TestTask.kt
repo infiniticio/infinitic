@@ -23,19 +23,19 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.tests.tasks
+package io.infinitic.tests.utils
 
 import io.infinitic.tasks.Task
 import java.time.Duration
 
-interface TaskTest {
+interface TestTask {
     fun log(): String
     fun await(delay: Long): Long
 }
 
 class ExpectedException(log: String? = null) : Exception(log)
 
-class TaskTestImpl : Task(), TaskTest {
+class TestTaskImpl : Task(), TestTask {
     companion object {
         lateinit var behavior: (index: Int, retry: Int) -> Status
     }

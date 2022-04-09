@@ -60,7 +60,6 @@ data class SerializedData(
         /**
          * @return serialized value
          */
-        @OptIn(InternalSerializationApi::class)
         fun <T : Any> from(value: T?): SerializedData {
             val bytes: ByteArray
             val type: SerializedDataType
@@ -74,6 +73,7 @@ data class SerializedData(
                 }
                 else -> {
                     @Suppress("UNCHECKED_CAST")
+                    @OptIn(InternalSerializationApi::class)
                     when (val serializer = value::class.serializerOrNull()?. let { it as KSerializer<T> }) {
                         null -> {
                             bytes = JsonJackson.stringify(value).toByteArray()

@@ -737,6 +737,16 @@
                           "name" : "awaitOccurrence",
                           "type" : "int",
                           "default" : 0
+                        }, {
+                          "name" : "commandStatus",
+                          "type" : [ "CommandStatus.Canceled", "CommandStatus.Completed", "CommandStatus.Failed", "CommandStatus.Ongoing", "CommandStatus.Unknown" ]
+                        }, {
+                          "name" : "commandStatuses",
+                          "type" : [ {
+                            "type" : "array",
+                            "items" : [ "CommandStatus.Canceled", "CommandStatus.Completed", "CommandStatus.Failed", "CommandStatus.Ongoing", "CommandStatus.Unknown" ]
+                          }, "null" ],
+                          "default" : [ ]
                         } ]
                       }, {
                         "type" : "record",
@@ -854,10 +864,6 @@
           "name" : "channelSignalType",
           "type" : [ "null", "string" ]
         }, {
-          "name" : "channelSignalLimit",
-          "type" : [ "int", "null" ],
-          "default" : 1
-        }, {
           "name" : "channelEventFilter",
           "type" : [ "null", "ChannelEventFilter" ]
         }, {
@@ -866,6 +872,10 @@
         }, {
           "name" : "commandId",
           "type" : "string"
+        }, {
+          "name" : "remainingCount",
+          "type" : [ "int", "null" ],
+          "default" : 1
         } ]
       }
     }

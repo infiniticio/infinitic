@@ -55,7 +55,7 @@ internal fun CoroutineScope.commandTerminated(
     if (pastCommand.isTerminated()) return
 
     // update command status
-    pastCommand.commandStatus = commandStatus
+    pastCommand.setStatus(commandStatus)
 
     if (stepTerminated(output, state, pastCommand)) {
         // keep this command as we could have another pastStep solved by it

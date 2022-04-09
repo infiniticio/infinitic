@@ -47,10 +47,10 @@ internal fun CoroutineScope.sendSignal(
             (it.channelSignalFilter == null || it.channelSignalFilter!!.check(message.channelSignal))
     }
         ?.also {
-            when (it.channelSignalLimit) {
+            when (it.remainingCount) {
                 1 -> state.receivingChannels.remove(it)
                 null -> Unit
-                else -> it.channelSignalLimit = it.channelSignalLimit!! - 1
+                else -> it.remainingCount = it.remainingCount!! - 1
             }
 
             commandTerminated(

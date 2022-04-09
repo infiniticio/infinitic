@@ -67,6 +67,10 @@ sealed class CommandStatus {
         val failureWorkflowTaskIndex: WorkflowTaskIndex
     ) : CommandStatus()
 
+    /**
+     * @param returnValue the return value of the completed command
+     * @param completionWorkflowTaskIndex the value of WorkflowTaskIndex at completion
+     */
     @Serializable @SerialName("CommandStatus.Completed")
     data class Completed(
         val returnValue: ReturnValue,
