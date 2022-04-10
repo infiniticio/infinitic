@@ -159,16 +159,12 @@ class ChannelsWorkflowImpl : Workflow(), ChannelsWorkflow {
     }
 
     override fun channel7(): String {
-        val deferred1 = channelA.receive()
-        utilTask.await(100)
-        val s1 = deferred1.await()
-        val deferred2 = channelA.receive()
-        utilTask.await(100)
-        val s2 = deferred2.await()
-        val deferred3 = channelA.receive()
-        utilTask.await(100)
-        val s3 = deferred3.await()
+        val deferred: Deferred<String> = channelA.receive()
 
-        return "$s1$s2$s3"
+        val signal1 = deferred.await()
+        val signal2 = deferred.await()
+        val signal3 = deferred.await()
+
+        return signal1 + signal2 + signal3
     }
 }

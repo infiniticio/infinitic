@@ -206,4 +206,36 @@ internal class ChannelWorkflowTests : StringSpec({
 
         deferred.await() shouldBe "foobar42"
     }
+
+    "Waiting for 2 events of specific types filtered using jsonPath and criteria presented in wrong order" {
+        val obj1 = Obj1("foo", 5)
+        val obj2 = Obj2("bar", 6)
+        val obj3 = Obj2("foo", 7)
+        val deferred = client.dispatch(channelsWorkflow::channel6bis)
+
+        later {
+            val w = client.getWorkflowById(ChannelsWorkflow::class.java, deferred.id)
+            w.channelObj.send(obj2)
+            w.channelObj.send(obj1)
+            w.channelObj.send(obj3)
+        }
+
+        deferred.await() shouldBe "foofoo35"
+    }
+
+    "Waiting for multiple events on same deferred" {
+        val obj1 = Obj1("foo", 5)
+        val obj2 = Obj2("bar", 6)
+
+        val deferred = client.dispatch(channelsWorkflow::channel7)
+
+        later {
+            val w = client.getWorkflowById(ChannelsWorkflow::class.java, deferred.id)
+            w.channelA.send("a")
+            w.channelA.send("b")
+            w.channelA.send("c")
+        }
+
+        deferred.await() shouldBe "abc"
+    }
 })

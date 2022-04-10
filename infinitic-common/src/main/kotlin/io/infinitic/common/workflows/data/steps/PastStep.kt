@@ -54,7 +54,7 @@ data class PastStep(
         stepStatus is Completed || stepStatus is Canceled || stepStatus is Failed || stepStatus is Unknown
 
     fun updateWith(pastCommand: PastCommand) {
-        step.updateWith(pastCommand.commandId, pastCommand.commandStatus)
+        step.updateWith(pastCommand.commandId, pastCommand.commandStatus, pastCommand.commandStatuses)
         stepStatus = step.status()
     }
 

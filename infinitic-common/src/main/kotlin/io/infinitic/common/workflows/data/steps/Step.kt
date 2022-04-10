@@ -28,6 +28,7 @@ package io.infinitic.common.workflows.data.steps
 import com.fasterxml.jackson.annotation.JsonCreator
 import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.annotation.JsonTypeInfo
+import com.github.avrokotlin.avro4k.Avro
 import com.github.avrokotlin.avro4k.AvroDefault
 import io.infinitic.common.data.ReturnValue
 import io.infinitic.common.exceptions.thisShouldNotHappen
@@ -40,9 +41,7 @@ import io.infinitic.common.workflows.data.commands.CommandStatus.Failed
 import io.infinitic.common.workflows.data.commands.CommandStatus.Ongoing
 import io.infinitic.common.workflows.data.commands.CommandStatus.Unknown
 import io.infinitic.common.workflows.data.commands.PastCommand
-import io.infinitic.common.workflows.data.commands.ReceiveSignalPastCommand
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskIndex
-import io.infinitic.exceptions.workflows.OutOfBoundAwaitException
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlin.Int.Companion.MAX_VALUE
@@ -82,18 +81,14 @@ sealed class Step {
         @JsonIgnore
         var commandStatus: CommandStatus = Ongoing
         // statuses of multiple wait occurrences, non-null for ReceiveSignalPastCommand only
-        @JsonIgnore @AvroDefault("[]")
+        @JsonIgnore @AvroDefault(Avro.NULL)
         var commandStatuses: List<CommandStatus>? = null
 
         companion object {
-            fun from(pastCommand: PastCommand) = Id(pastCommand.commandId)
-                .apply { commandStatus = pastCommand.commandStatus }
-                .also {
-                    // ReceiveSignalPastCommand is currently the only command that take into account the multiple wait occurrences
-                    if (pastCommand is ReceiveSignalPastCommand) {
-                        it.commandStatuses = pastCommand.commandStatuses
-                    }
-                }
+            fun from(pastCommand: PastCommand) = Id(pastCommand.commandId).apply {
+                commandStatus = pastCommand.commandStatus
+                commandStatuses = pastCommand.commandStatuses
+            }
 
             // This is needed for Jackson deserialization, CommandId being an inline type
             @JsonCreator @JvmStatic
@@ -140,9 +135,9 @@ sealed class Step {
             // first request for channel.receive()
             awaitOccurrence <= 0 -> commandStatus
             // nth request for channel.receive()
-            awaitOccurrence < commandStatuses!!.size -> commandStatuses!![awaitOccurrence - 1]
+            awaitOccurrence <= commandStatuses!!.size -> commandStatuses!![awaitOccurrence - 1]
             // user makes a mistake and waits for more results than requested
-            else -> throw OutOfBoundAwaitException
+            else -> Ongoing // throw OutOfBoundAwaitException
         }
     }
 
@@ -228,11 +223,14 @@ sealed class Step {
     /**
      * Used in engine to update a step after having cancelled or completed a command
      */
-    fun updateWith(commandId: CommandId, commandStatus: CommandStatus): Step {
+    fun updateWith(commandId: CommandId, commandStatus: CommandStatus, commandStatuses: List<CommandStatus>? = null): Step {
         when (this) {
-            is Id -> if (this.commandId == commandId) this.commandStatus = commandStatus
-            is And -> steps = steps.map { it.updateWith(commandId, commandStatus) }
-            is Or -> steps = steps.map { it.updateWith(commandId, commandStatus) }
+            is Id -> if (this.commandId == commandId) {
+                this.commandStatus = commandStatus
+                this.commandStatuses = commandStatuses
+            }
+            is And -> steps = steps.map { it.updateWith(commandId, commandStatus, commandStatuses) }
+            is Or -> steps = steps.map { it.updateWith(commandId, commandStatus, commandStatuses) }
         }
         return this.resolveOr().compose()
     }

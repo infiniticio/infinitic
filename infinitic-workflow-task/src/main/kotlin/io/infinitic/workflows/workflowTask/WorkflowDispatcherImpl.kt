@@ -135,10 +135,10 @@ internal class WorkflowDispatcherImpl(
                 // record result
                 val command = InlineTaskCommand()
                 val endCommand = PastCommand.from(
+                    command = command,
                     commandPosition = methodRunPosition,
                     commandSimpleName = InlineTaskCommand.simpleName(),
                     commandStatus = CommandStatus.Completed(ReturnValue.from(value), workflowTaskIndex),
-                    command = command,
                 )
                 newCommands.add(endCommand)
                 // returns value
@@ -392,8 +392,8 @@ internal class WorkflowDispatcherImpl(
         // if it does not already exist in the history
         val newCommand = PastCommand.from(
             command = command,
-            commandSimpleName = commandSimpleName,
-            commandPosition = methodRunPosition
+            commandPosition = methodRunPosition,
+            commandSimpleName = commandSimpleName
         )
 
         val pastCommand = getSimilarPastCommand(newCommand)

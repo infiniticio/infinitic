@@ -48,7 +48,6 @@ interface DeferredWorkflow {
     fun and1(): List<String>
     fun and2(): List<String>
     fun and3(): List<String>
-
 }
 
 @Suppress("unused")

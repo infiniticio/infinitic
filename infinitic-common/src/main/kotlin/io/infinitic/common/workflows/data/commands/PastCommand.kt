@@ -25,6 +25,7 @@
 
 package io.infinitic.common.workflows.data.commands
 
+import com.github.avrokotlin.avro4k.Avro
 import com.github.avrokotlin.avro4k.AvroDefault
 import io.infinitic.common.exceptions.thisShouldNotHappen
 import io.infinitic.common.tasks.data.TaskRetrySequence
@@ -42,38 +43,39 @@ sealed class PastCommand {
     abstract val commandPosition: MethodRunPosition
     abstract val commandSimpleName: CommandSimpleName
     abstract var commandStatus: CommandStatus
+    abstract val commandStatuses: List<CommandStatus>?
     abstract val command: Command
 
     companion object {
         fun from(
+            command: Command,
             commandPosition: MethodRunPosition,
             commandSimpleName: CommandSimpleName,
-            commandStatus: CommandStatus = CommandStatus.Ongoing,
-            command: Command
+            commandStatus: CommandStatus = CommandStatus.Ongoing
         ) = when (command) {
             is DispatchMethodCommand -> {
-                DispatchMethodPastCommand(CommandId(), commandPosition, commandSimpleName, commandStatus, command)
+                DispatchMethodPastCommand(command, commandPosition, commandSimpleName, commandStatus)
             }
             is DispatchTaskCommand -> {
-                DispatchTaskPastCommand(CommandId(), commandPosition, commandSimpleName, commandStatus, command, TaskRetrySequence(0))
+                DispatchTaskPastCommand(command, commandPosition, commandSimpleName, commandStatus)
             }
             is DispatchWorkflowCommand -> {
-                DispatchWorkflowPastCommand(CommandId(), commandPosition, commandSimpleName, commandStatus, command)
+                DispatchWorkflowPastCommand(command, commandPosition, commandSimpleName, commandStatus)
             }
             is InlineTaskCommand -> {
-                InlineTaskPastCommand(CommandId(), commandPosition, commandSimpleName, commandStatus, command)
+                InlineTaskPastCommand(command, commandPosition, commandSimpleName, commandStatus)
             }
             is ReceiveSignalCommand -> {
-                ReceiveSignalPastCommand(CommandId(), commandPosition, commandSimpleName, commandStatus, mutableListOf(), command)
+                ReceiveSignalPastCommand(command, commandPosition, commandSimpleName, commandStatus)
             }
             is SendSignalCommand -> {
-                SendSignalPastCommand(CommandId(), commandPosition, commandSimpleName, commandStatus, command)
+                SendSignalPastCommand(command, commandPosition, commandSimpleName, commandStatus)
             }
             is StartDurationTimerCommand -> {
-                StartDurationTimerPastCommand(CommandId(), commandPosition, commandSimpleName, commandStatus, command)
+                StartDurationTimerPastCommand(command, commandPosition, commandSimpleName, commandStatus)
             }
             is StartInstantTimerCommand -> {
-                StartInstantTimerPastCommand(CommandId(), commandPosition, commandSimpleName, commandStatus, command)
+                StartInstantTimerPastCommand(command, commandPosition, commandSimpleName, commandStatus)
             }
         }
     }
@@ -118,75 +120,96 @@ sealed class PastCommand {
 
 @Serializable @SerialName("PastCommand.DispatchTask")
 data class DispatchTaskPastCommand(
-    override val commandId: CommandId,
+    override val command: DispatchTaskCommand,
     override val commandPosition: MethodRunPosition,
     override val commandSimpleName: CommandSimpleName,
     override var commandStatus: CommandStatus,
-    override val command: DispatchTaskCommand,
-    var taskRetrySequence: TaskRetrySequence
-) : PastCommand()
+    var taskRetrySequence: TaskRetrySequence = TaskRetrySequence(0),
+    override val commandId: CommandId = CommandId(),
+) : PastCommand() {
+    @AvroDefault(Avro.NULL)
+    override val commandStatuses: List<CommandStatus>? = null
+}
 
 @Serializable @SerialName("PastCommand.DispatchWorkflow")
 data class DispatchWorkflowPastCommand(
-    override val commandId: CommandId,
+    override val command: DispatchWorkflowCommand,
     override val commandPosition: MethodRunPosition,
     override val commandSimpleName: CommandSimpleName,
     override var commandStatus: CommandStatus,
-    override val command: DispatchWorkflowCommand
-) : PastCommand()
+    override val commandId: CommandId = CommandId(),
+) : PastCommand() {
+    @AvroDefault(Avro.NULL)
+    override val commandStatuses: List<CommandStatus>? = null
+}
 
 @Serializable @SerialName("PastCommand.DispatchMethod")
 data class DispatchMethodPastCommand(
-    override val commandId: CommandId,
+    override val command: DispatchMethodCommand,
     override val commandPosition: MethodRunPosition,
     override val commandSimpleName: CommandSimpleName,
     override var commandStatus: CommandStatus,
-    override val command: DispatchMethodCommand
-) : PastCommand()
+    override val commandId: CommandId = CommandId(),
+) : PastCommand() {
+    @AvroDefault(Avro.NULL)
+    override val commandStatuses: List<CommandStatus>? = null
+}
 
 @Serializable @SerialName("PastCommand.InlineTask")
 data class InlineTaskPastCommand(
-    override val commandId: CommandId,
+    override val command: InlineTaskCommand,
     override val commandPosition: MethodRunPosition,
     override val commandSimpleName: CommandSimpleName,
     override var commandStatus: CommandStatus,
-    override val command: InlineTaskCommand
-) : PastCommand()
+    override val commandId: CommandId = CommandId(),
+) : PastCommand() {
+    @AvroDefault(Avro.NULL)
+    override val commandStatuses: List<CommandStatus>? = null
+}
 
 @Serializable @SerialName("PastCommand.ReceiveSignal")
 data class ReceiveSignalPastCommand(
-    override val commandId: CommandId,
+    override val command: ReceiveSignalCommand,
     override val commandPosition: MethodRunPosition,
     override val commandSimpleName: CommandSimpleName,
     override var commandStatus: CommandStatus,
+    override val commandId: CommandId = CommandId(),
     @AvroDefault("[]")
-    val commandStatuses: MutableList<CommandStatus>,
-    override val command: ReceiveSignalCommand
+    override val commandStatuses: MutableList<CommandStatus> = mutableListOf(),
 ) : PastCommand()
 
 @Serializable @SerialName("PastCommand.SendSignal")
 data class SendSignalPastCommand(
-    override val commandId: CommandId,
+    override val command: SendSignalCommand,
     override val commandPosition: MethodRunPosition,
     override val commandSimpleName: CommandSimpleName,
     override var commandStatus: CommandStatus,
-    override val command: SendSignalCommand
-) : PastCommand()
+    override val commandId: CommandId = CommandId(),
+) : PastCommand() {
+    @AvroDefault(Avro.NULL)
+    override val commandStatuses: List<CommandStatus>? = null
+}
 
 @Serializable @SerialName("PastCommand.StartDurationTimer")
 data class StartDurationTimerPastCommand(
-    override val commandId: CommandId,
+    override val command: StartDurationTimerCommand,
     override val commandPosition: MethodRunPosition,
     override val commandSimpleName: CommandSimpleName,
     override var commandStatus: CommandStatus,
-    override val command: StartDurationTimerCommand
-) : PastCommand()
+    override val commandId: CommandId = CommandId(),
+) : PastCommand() {
+    @AvroDefault(Avro.NULL)
+    override val commandStatuses: List<CommandStatus>? = null
+}
 
 @Serializable @SerialName("PastCommand.StartInstantTimer")
 data class StartInstantTimerPastCommand(
-    override val commandId: CommandId,
+    override val command: StartInstantTimerCommand,
     override val commandPosition: MethodRunPosition,
     override val commandSimpleName: CommandSimpleName,
     override var commandStatus: CommandStatus,
-    override val command: StartInstantTimerCommand
-) : PastCommand()
+    override val commandId: CommandId = CommandId(),
+) : PastCommand() {
+    @AvroDefault(Avro.NULL)
+    override val commandStatuses: List<CommandStatus>? = null
+}

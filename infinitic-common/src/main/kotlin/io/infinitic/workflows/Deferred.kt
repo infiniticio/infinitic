@@ -47,6 +47,7 @@ data class Deferred<T> (val step: Step) {
         else -> null
     }
 
+    // used in WorkflowTaskImpl to set workflowDispatcher
     companion object {
         private val workflowDispatcherLocal: ThreadLocal<WorkflowDispatcher> = ThreadLocal()
 
@@ -103,7 +104,7 @@ object DeferredSerializer : KSerializer<Deferred<*>> {
     override fun deserialize(decoder: Decoder): Deferred<*> = Deferred<Any>(decoder.decodeSerializableValue(Step.serializer()))
 }
 
-fun or(vararg others: Deferred<*>) = others.reduce { acc, deferred -> acc or deferred }
+fun <T> or(vararg others: Deferred<out T>) = others.reduce { acc, deferred -> acc or deferred }
 
 fun and(vararg others: Deferred<*>) = others.reduce { acc, deferred -> acc and deferred }
 

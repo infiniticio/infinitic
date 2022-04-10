@@ -66,11 +66,11 @@ internal class BranchesWorkflowTests : StringSpec({
     "Check runBranch" {
         val deferred = client.dispatch(utilWorkflow::receive, "a")
 
-        val utilWorkflow = client.getWorkflowById(UtilWorkflow::class.java, deferred.id)
+        val uw = client.getWorkflowById(UtilWorkflow::class.java, deferred.id)
 
-        utilWorkflow.concat("b") shouldBe "ab"
+        uw.concat("b") shouldBe "ab"
 
-        later { utilWorkflow.channelA.send("c") }
+        later { uw.channelA.send("c") }
 
         deferred.await() shouldBe "abc"
     }
