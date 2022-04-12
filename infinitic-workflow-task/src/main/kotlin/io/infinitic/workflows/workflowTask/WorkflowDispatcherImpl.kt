@@ -393,9 +393,11 @@ internal class WorkflowDispatcherImpl(
         val newCommand = PastCommand.from(
             command = command,
             commandPosition = methodRunPosition,
-            commandSimpleName = commandSimpleName
+            commandSimpleName = commandSimpleName,
+            commandStatus = CommandStatus.Ongoing
         )
 
+        // do we know the same command from the history?
         val pastCommand = getSimilarPastCommand(newCommand)
 
         return if (pastCommand == null) {

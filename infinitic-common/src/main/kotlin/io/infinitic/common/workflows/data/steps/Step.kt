@@ -78,6 +78,7 @@ sealed class Step {
         @AvroDefault("0") // before this feature was added, we consider it was the first wait
         var awaitOccurrence: Int = 0
     ) : Step() {
+        // status of first wait occurrence
         @JsonIgnore
         var commandStatus: CommandStatus = Ongoing
         // statuses of multiple wait occurrences, non-null for ReceiveSignalPastCommand only
@@ -137,7 +138,7 @@ sealed class Step {
             // nth request for channel.receive()
             awaitOccurrence <= commandStatuses!!.size -> commandStatuses!![awaitOccurrence - 1]
             // user makes a mistake and waits for more results than requested
-            else -> Ongoing // throw OutOfBoundAwaitException
+            else -> Ongoing
         }
     }
 

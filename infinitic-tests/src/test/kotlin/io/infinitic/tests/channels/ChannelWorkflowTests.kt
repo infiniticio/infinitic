@@ -32,6 +32,7 @@ import io.infinitic.tests.utils.Obj1
 import io.infinitic.tests.utils.Obj2
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
+import kotlinx.coroutines.delay
 import java.time.Instant
 
 internal class ChannelWorkflowTests : StringSpec({
@@ -224,15 +225,28 @@ internal class ChannelWorkflowTests : StringSpec({
     }
 
     "Waiting for multiple events on same deferred" {
-        val obj1 = Obj1("foo", 5)
-        val obj2 = Obj2("bar", 6)
-
         val deferred = client.dispatch(channelsWorkflow::channel7)
 
         later {
             val w = client.getWorkflowById(ChannelsWorkflow::class.java, deferred.id)
             w.channelA.send("a")
             w.channelA.send("b")
+            w.channelA.send("c")
+        }
+
+        deferred.await() shouldBe "abc"
+    }
+
+    "Waiting for multiple events on same deferred, client being late" {
+        val deferred = client.dispatch(channelsWorkflow::channel7)
+
+        later {
+            val w = client.getWorkflowById(ChannelsWorkflow::class.java, deferred.id)
+            delay(300)
+            w.channelA.send("a")
+            delay(300)
+            w.channelA.send("b")
+            delay(300)
             w.channelA.send("c")
         }
 

@@ -51,7 +51,7 @@ sealed class PastCommand {
             command: Command,
             commandPosition: MethodRunPosition,
             commandSimpleName: CommandSimpleName,
-            commandStatus: CommandStatus = CommandStatus.Ongoing
+            commandStatus: CommandStatus
         ) = when (command) {
             is DispatchMethodCommand -> {
                 DispatchMethodPastCommand(command, commandPosition, commandSimpleName, commandStatus)
