@@ -79,7 +79,6 @@ internal fun CoroutineScope.workflowTaskCompleted(
     message: TaskCompleted
 ): MutableList<WorkflowEngineMessage> {
     val workflowTaskOutput = message.taskReturnValue.returnValue.value() as WorkflowTaskReturnValue
-
     // retrieve current methodRun
     val methodRun = state.getRunningMethodRun()
 
@@ -127,7 +126,7 @@ internal fun CoroutineScope.workflowTaskCompleted(
 
     // add new step to past steps
     workflowTaskOutput.newStep?.let {
-        // checking that currennt step is empty
+        // checking that current step is empty
         if (methodRun.currentStep != null) thisShouldNotHappen("non null current step")
         // set new step
         methodRun.currentStep = PastStep(

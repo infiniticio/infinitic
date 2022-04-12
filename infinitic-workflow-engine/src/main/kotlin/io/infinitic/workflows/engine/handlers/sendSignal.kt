@@ -49,7 +49,7 @@ internal fun CoroutineScope.sendSignal(
         ?.also {
             when (it.remainingCount) {
                 1 -> state.receivingChannels.remove(it)
-                null -> Unit
+                null -> Unit // do nothing
                 else -> it.remainingCount = it.remainingCount!! - 1
             }
 

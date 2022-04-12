@@ -54,7 +54,7 @@ interface ChannelsWorkflow {
     fun channel6(): String
     fun channel6bis(): String
     fun channel6ter(): String
-    fun channel7(): String
+    fun channel7(count: Int, max: Int? = null): String
 }
 
 @Suppress("unused")
@@ -158,13 +158,15 @@ class ChannelsWorkflowImpl : Workflow(), ChannelsWorkflow {
         return obj1.foo + obj2.foo + obj1.bar * obj2.bar
     }
 
-    override fun channel7(): String {
-        val deferred: Deferred<String> = channelA.receive()
+    override fun channel7(count: Int, max: Int?): String {
+        val deferred: Deferred<String> = channelA.receive(max)
 
-        val signal1 = deferred.await()
-        val signal2 = deferred.await()
-        val signal3 = deferred.await()
+        var signal = ""
 
-        return signal1 + signal2 + signal3
+        repeat(count) {
+            signal += deferred.await()
+        }
+
+        return signal
     }
 }

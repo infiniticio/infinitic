@@ -162,6 +162,8 @@ internal class WorkflowDispatcherImpl(
         // increment position
         nextPosition()
 
+        deferred.step.nextAwait()
+
         // create a new step
         val newStep = NewStep(
             step = deferred.step,
@@ -181,13 +183,9 @@ internal class WorkflowDispatcherImpl(
                     }
                     // we already know the status of this step based on history
                     is Canceled, is Failed, is CurrentlyFailed, is Unknown -> {
-                        deferred.step.nextAwait()
-
                         throw getDeferredException(stepStatus)
                     }
                     is Completed -> {
-                        deferred.step.nextAwait()
-
                         stepStatus.returnValue.value() as T
                     }
                 }
@@ -203,9 +201,6 @@ internal class WorkflowDispatcherImpl(
                 setProperties(
                     pastStep.propertiesNameHashAtTermination ?: thisShouldNotHappen()
                 )
-
-                //
-                deferred.step.nextAwait()
 
                 // return deferred value
                 when (stepStatus) {

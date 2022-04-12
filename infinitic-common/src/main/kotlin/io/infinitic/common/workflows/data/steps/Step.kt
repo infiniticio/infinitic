@@ -41,9 +41,12 @@ import io.infinitic.common.workflows.data.commands.CommandStatus.Failed
 import io.infinitic.common.workflows.data.commands.CommandStatus.Ongoing
 import io.infinitic.common.workflows.data.commands.CommandStatus.Unknown
 import io.infinitic.common.workflows.data.commands.PastCommand
+import io.infinitic.common.workflows.data.commands.ReceiveSignalPastCommand
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskIndex
+import io.infinitic.exceptions.workflows.OutOfBoundAwaitException
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.Transient
 import kotlin.Int.Companion.MAX_VALUE
 
 @Serializable
@@ -75,20 +78,28 @@ sealed class Step {
     data class Id(
         val commandId: CommandId,
         // store the # of time we have already waited this command
-        @AvroDefault("0") // before this feature was added, we consider it was the first wait
-        var awaitOccurrence: Int = 0
+        @AvroDefault("-1") // before this feature was added, we consider it was the first wait
+        var awaitOccurrence: Int = -1
     ) : Step() {
         // status of first wait occurrence
         @JsonIgnore
         var commandStatus: CommandStatus = Ongoing
+        // only used in workflow task
         // statuses of multiple wait occurrences, non-null for ReceiveSignalPastCommand only
-        @JsonIgnore @AvroDefault(Avro.NULL)
+        @Transient @JsonIgnore @AvroDefault(Avro.NULL)
         var commandStatuses: List<CommandStatus>? = null
+        // max number of result for the command
+        @Transient @JsonIgnore @AvroDefault("1")
+        var commandStatusLimit: Int? = null
 
         companion object {
+            // only used in workflow task
             fun from(pastCommand: PastCommand) = Id(pastCommand.commandId).apply {
                 commandStatus = pastCommand.commandStatus
-                commandStatuses = pastCommand.commandStatuses
+                if (pastCommand is ReceiveSignalPastCommand) {
+                    commandStatuses = pastCommand.commandStatuses
+                    commandStatusLimit = pastCommand.command.channelSignalLimit
+                }
             }
 
             // This is needed for Jackson deserialization, CommandId being an inline type
@@ -108,9 +119,23 @@ sealed class Step {
             is StepStatus.Completed -> true
         }
 
-        override fun nextAwait() { awaitOccurrence++ }
+        override fun nextAwait() {
+            awaitOccurrence++
+            if (commandStatuses != null) {
+                // user is asking more than the limit, we consider it as a failure
+                if (commandStatusLimit != null && awaitOccurrence >= commandStatusLimit!!) throw OutOfBoundAwaitException
+                // else update the status
+                commandStatus = when {
+                    awaitOccurrence == 0 -> commandStatus
+                    // nth request for channel.receive()
+                    awaitOccurrence < commandStatuses!!.size -> commandStatuses!![awaitOccurrence]
+                    // not known yet
+                    else -> Ongoing
+                }
+            }
+        }
 
-        override fun statusAt(index: WorkflowTaskIndex) = when (val status = commandStatus()) {
+        override fun statusAt(index: WorkflowTaskIndex) = when (val status = commandStatus) {
             is Ongoing -> StepStatus.Waiting
             is Unknown -> when (index >= status.unknowingWorkflowTaskIndex) {
                 true -> StepStatus.Unknown(status.unknownDeferredError, status.unknowingWorkflowTaskIndex)
@@ -128,17 +153,6 @@ sealed class Step {
                 true -> StepStatus.Completed(status.returnValue, status.completionWorkflowTaskIndex)
                 false -> StepStatus.Waiting
             }
-        }
-
-        private fun commandStatus() = when {
-            // all deferred have a single status except channel.receive()
-            commandStatuses == null -> commandStatus
-            // first request for channel.receive()
-            awaitOccurrence <= 0 -> commandStatus
-            // nth request for channel.receive()
-            awaitOccurrence <= commandStatuses!!.size -> commandStatuses!![awaitOccurrence - 1]
-            // user makes a mistake and waits for more results than requested
-            else -> Ongoing
         }
     }
 
@@ -227,8 +241,11 @@ sealed class Step {
     fun updateWith(commandId: CommandId, commandStatus: CommandStatus, commandStatuses: List<CommandStatus>? = null): Step {
         when (this) {
             is Id -> if (this.commandId == commandId) {
-                this.commandStatus = commandStatus
-                this.commandStatuses = commandStatuses
+                this.commandStatus = if (commandStatuses == null) { commandStatus } else when {
+                    awaitOccurrence == 0 -> commandStatus
+                    awaitOccurrence <= commandStatuses.size -> commandStatuses[awaitOccurrence - 1]
+                    else -> thisShouldNotHappen()
+                }
             }
             is And -> steps = steps.map { it.updateWith(commandId, commandStatus, commandStatuses) }
             is Or -> steps = steps.map { it.updateWith(commandId, commandStatus, commandStatuses) }

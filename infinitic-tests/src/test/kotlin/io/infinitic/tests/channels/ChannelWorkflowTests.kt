@@ -26,10 +26,14 @@
 package io.infinitic.tests.channels
 
 import io.infinitic.common.fixtures.later
+import io.infinitic.exceptions.FailedWorkflowException
+import io.infinitic.exceptions.FailedWorkflowTaskException
+import io.infinitic.exceptions.workflows.OutOfBoundAwaitException
 import io.infinitic.factory.InfiniticClientFactory
 import io.infinitic.factory.InfiniticWorkerFactory
 import io.infinitic.tests.utils.Obj1
 import io.infinitic.tests.utils.Obj2
+import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.delay
@@ -225,7 +229,7 @@ internal class ChannelWorkflowTests : StringSpec({
     }
 
     "Waiting for multiple events on same deferred" {
-        val deferred = client.dispatch(channelsWorkflow::channel7)
+        val deferred = client.dispatch(channelsWorkflow::channel7, 3, 3)
 
         later {
             val w = client.getWorkflowById(ChannelsWorkflow::class.java, deferred.id)
@@ -238,7 +242,7 @@ internal class ChannelWorkflowTests : StringSpec({
     }
 
     "Waiting for multiple events on same deferred, client being late" {
-        val deferred = client.dispatch(channelsWorkflow::channel7)
+        val deferred = client.dispatch(channelsWorkflow::channel7, 3, 3)
 
         later {
             val w = client.getWorkflowById(ChannelsWorkflow::class.java, deferred.id)
@@ -251,5 +255,48 @@ internal class ChannelWorkflowTests : StringSpec({
         }
 
         deferred.await() shouldBe "abc"
+    }
+
+    "Waiting for a lot of events events on same deferred" {
+        val count = 100
+        val deferred = client.dispatch(channelsWorkflow::channel7, count)
+
+        val w = client.getWorkflowById(ChannelsWorkflow::class.java, deferred.id)
+        later {
+            repeat(count) { w.channelA.send("a") }
+        }
+
+        deferred.await() shouldBe "a".repeat(count)
+    }
+
+    "Waiting for more signals than anticipated throw a OutOfBoundAwaitException" {
+        val count = 2
+        val deferred = client.dispatch(channelsWorkflow::channel7, count, 1)
+
+        val w = client.getWorkflowById(ChannelsWorkflow::class.java, deferred.id)
+        later {
+            repeat(count) { w.channelA.send("a") }
+        }
+
+        val error = shouldThrow<FailedWorkflowException> { deferred.await() }
+
+        (error.deferredException as FailedWorkflowTaskException).workerException.name shouldBe OutOfBoundAwaitException::class.java.name
+    }
+
+    "Waiting for more signals than anticipated throw a OutOfBoundAwaitException, client being late" {
+        val count = 2
+        val deferred = client.dispatch(channelsWorkflow::channel7, count, 1)
+
+        val w = client.getWorkflowById(ChannelsWorkflow::class.java, deferred.id)
+        later {
+            repeat(count) {
+                delay(300)
+                w.channelA.send("a")
+            }
+        }
+
+        val error = shouldThrow<FailedWorkflowException> { deferred.await() }
+
+        (error.deferredException as FailedWorkflowTaskException).workerException.name shouldBe OutOfBoundAwaitException::class.java.name
     }
 })

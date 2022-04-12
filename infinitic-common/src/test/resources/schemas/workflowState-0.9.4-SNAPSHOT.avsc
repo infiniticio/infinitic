@@ -391,13 +391,6 @@
               }, {
                 "name" : "commandId",
                 "type" : "string"
-              }, {
-                "name" : "commandStatuses",
-                "type" : [ "null", {
-                  "type" : "array",
-                  "items" : [ "CommandStatus.Canceled", "CommandStatus.Completed", "CommandStatus.Failed", "CommandStatus.Ongoing", "CommandStatus.Unknown" ]
-                } ],
-                "default" : null
               } ]
             }, {
               "type" : "record",
@@ -467,13 +460,6 @@
               }, {
                 "name" : "commandId",
                 "type" : "string"
-              }, {
-                "name" : "commandStatuses",
-                "type" : [ "null", {
-                  "type" : "array",
-                  "items" : [ "CommandStatus.Canceled", "CommandStatus.Completed", "CommandStatus.Failed", "CommandStatus.Ongoing", "CommandStatus.Unknown" ]
-                } ],
-                "default" : null
               } ]
             }, {
               "type" : "record",
@@ -532,13 +518,6 @@
               }, {
                 "name" : "commandId",
                 "type" : "string"
-              }, {
-                "name" : "commandStatuses",
-                "type" : [ "null", {
-                  "type" : "array",
-                  "items" : [ "CommandStatus.Canceled", "CommandStatus.Completed", "CommandStatus.Failed", "CommandStatus.Ongoing", "CommandStatus.Unknown" ]
-                } ],
-                "default" : null
               } ]
             }, {
               "type" : "record",
@@ -567,13 +546,6 @@
               }, {
                 "name" : "commandId",
                 "type" : "string"
-              }, {
-                "name" : "commandStatuses",
-                "type" : [ "null", {
-                  "type" : "array",
-                  "items" : [ "CommandStatus.Canceled", "CommandStatus.Completed", "CommandStatus.Failed", "CommandStatus.Ongoing", "CommandStatus.Unknown" ]
-                } ],
-                "default" : null
               } ]
             }, {
               "type" : "record",
@@ -676,13 +648,6 @@
               }, {
                 "name" : "commandId",
                 "type" : "string"
-              }, {
-                "name" : "commandStatuses",
-                "type" : [ "null", {
-                  "type" : "array",
-                  "items" : [ "CommandStatus.Canceled", "CommandStatus.Completed", "CommandStatus.Failed", "CommandStatus.Ongoing", "CommandStatus.Unknown" ]
-                } ],
-                "default" : null
               } ]
             }, {
               "type" : "record",
@@ -711,13 +676,6 @@
               }, {
                 "name" : "commandId",
                 "type" : "string"
-              }, {
-                "name" : "commandStatuses",
-                "type" : [ "null", {
-                  "type" : "array",
-                  "items" : [ "CommandStatus.Canceled", "CommandStatus.Completed", "CommandStatus.Failed", "CommandStatus.Ongoing", "CommandStatus.Unknown" ]
-                } ],
-                "default" : null
               } ]
             }, {
               "type" : "record",
@@ -746,13 +704,6 @@
               }, {
                 "name" : "commandId",
                 "type" : "string"
-              }, {
-                "name" : "commandStatuses",
-                "type" : [ "null", {
-                  "type" : "array",
-                  "items" : [ "CommandStatus.Canceled", "CommandStatus.Completed", "CommandStatus.Failed", "CommandStatus.Ongoing", "CommandStatus.Unknown" ]
-                } ],
-                "default" : null
               } ]
             } ]
           }
@@ -785,17 +736,10 @@
                         }, {
                           "name" : "awaitOccurrence",
                           "type" : "int",
-                          "default" : 0
+                          "default" : -1
                         }, {
                           "name" : "commandStatus",
                           "type" : [ "CommandStatus.Canceled", "CommandStatus.Completed", "CommandStatus.Failed", "CommandStatus.Ongoing", "CommandStatus.Unknown" ]
-                        }, {
-                          "name" : "commandStatuses",
-                          "type" : [ "null", {
-                            "type" : "array",
-                            "items" : [ "CommandStatus.Canceled", "CommandStatus.Completed", "CommandStatus.Failed", "CommandStatus.Ongoing", "CommandStatus.Unknown" ]
-                          } ],
-                          "default" : null
                         } ]
                       }, {
                         "type" : "record",

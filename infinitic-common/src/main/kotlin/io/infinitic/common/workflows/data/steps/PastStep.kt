@@ -28,6 +28,7 @@ package io.infinitic.common.workflows.data.steps
 import com.fasterxml.jackson.annotation.JsonIgnore
 import com.github.avrokotlin.avro4k.AvroNamespace
 import io.infinitic.common.workflows.data.commands.PastCommand
+import io.infinitic.common.workflows.data.commands.ReceiveSignalPastCommand
 import io.infinitic.common.workflows.data.methodRuns.MethodRunPosition
 import io.infinitic.common.workflows.data.properties.PropertyHash
 import io.infinitic.common.workflows.data.properties.PropertyName
@@ -54,7 +55,14 @@ data class PastStep(
         stepStatus is Completed || stepStatus is Canceled || stepStatus is Failed || stepStatus is Unknown
 
     fun updateWith(pastCommand: PastCommand) {
-        step.updateWith(pastCommand.commandId, pastCommand.commandStatus, pastCommand.commandStatuses)
+        step.updateWith(
+            pastCommand.commandId,
+            pastCommand.commandStatus,
+            when (pastCommand is ReceiveSignalPastCommand) {
+                true -> pastCommand.commandStatuses
+                false -> null
+            }
+        )
         stepStatus = step.status()
     }
 
