@@ -165,6 +165,8 @@ class ChannelsWorkflowImpl : Workflow(), ChannelsWorkflow {
 
         repeat(count) {
             signal += deferred.await()
+
+            utilTask.await(50)
         }
 
         return signal

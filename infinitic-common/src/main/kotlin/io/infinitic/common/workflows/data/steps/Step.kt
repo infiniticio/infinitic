@@ -121,6 +121,8 @@ sealed class Step {
 
         override fun nextAwait() {
             awaitOccurrence++
+
+            // update commandStatus if needed
             if (commandStatuses != null) {
                 // user is asking more than the limit, we consider it as a failure
                 if (commandStatusLimit != null && awaitOccurrence >= commandStatusLimit!!) throw OutOfBoundAwaitException
@@ -128,7 +130,7 @@ sealed class Step {
                 commandStatus = when {
                     awaitOccurrence == 0 -> commandStatus
                     // nth request for channel.receive()
-                    awaitOccurrence < commandStatuses!!.size -> commandStatuses!![awaitOccurrence]
+                    awaitOccurrence <= commandStatuses!!.size -> commandStatuses!![awaitOccurrence - 1]
                     // not known yet
                     else -> Ongoing
                 }

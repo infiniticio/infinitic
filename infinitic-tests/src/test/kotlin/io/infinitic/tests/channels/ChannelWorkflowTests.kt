@@ -229,7 +229,7 @@ internal class ChannelWorkflowTests : StringSpec({
     }
 
     "Waiting for multiple events on same deferred" {
-        val deferred = client.dispatch(channelsWorkflow::channel7, 3, 3)
+        val deferred = client.dispatch(channelsWorkflow::channel7, 3)
 
         later {
             val w = client.getWorkflowById(ChannelsWorkflow::class.java, deferred.id)
@@ -258,7 +258,7 @@ internal class ChannelWorkflowTests : StringSpec({
     }
 
     "Waiting for a lot of events events on same deferred" {
-        val count = 100
+        val count = 20
         val deferred = client.dispatch(channelsWorkflow::channel7, count)
 
         val w = client.getWorkflowById(ChannelsWorkflow::class.java, deferred.id)
