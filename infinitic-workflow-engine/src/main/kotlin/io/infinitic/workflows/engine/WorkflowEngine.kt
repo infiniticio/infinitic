@@ -205,6 +205,7 @@ class WorkflowEngine(
         // - except for RetryWorkflowTask
         if (state.runningWorkflowTaskId != null && ! message.isWorkflowTask() && message !is RetryWorkflowTask) {
             // buffer this message
+            logger.debug { "workflowId ${state.workflowId} - buffering $message" }
             state.messagesBuffer.add(message)
 
             return@coroutineScope state
@@ -219,7 +220,7 @@ class WorkflowEngine(
             state.messagesBuffer.size > 0 // if there is at least one buffered message
         ) {
             val bufferedMsg = state.messagesBuffer.removeAt(0)
-            logger.debug { "workflowId ${bufferedMsg.workflowId} - processing buffered message $bufferedMsg" }
+            logger.debug { "workflowId ${bufferedMsg.workflowId} - processing buffered $bufferedMsg" }
             processMessage(state, bufferedMsg)
         }
 
@@ -262,7 +263,10 @@ class WorkflowEngine(
                 state,
                 message.methodRunId,
                 CommandId.from(message.timerId),
-                CommandStatus.Completed(ReturnValue.from(Instant.now()), state.workflowTaskIndex)
+                CommandStatus.Completed(
+                    returnValue = ReturnValue.from(Instant.now()),
+                    completionWorkflowTaskIndex = state.workflowTaskIndex
+                )
             )
             is ChildMethodUnknown -> commandTerminated(
                 output,
@@ -300,8 +304,8 @@ class WorkflowEngine(
                 message.methodRunId,
                 CommandId.from(message.childWorkflowReturnValue.methodRunId),
                 CommandStatus.Completed(
-                    message.childWorkflowReturnValue.returnValue,
-                    state.workflowTaskIndex
+                    returnValue = message.childWorkflowReturnValue.returnValue,
+                    completionWorkflowTaskIndex = state.workflowTaskIndex
                 )
             )
             is TaskCanceled -> when (message.isWorkflowTask()) {
@@ -350,8 +354,8 @@ class WorkflowEngine(
                     message.methodRunId,
                     CommandId.from(message.taskReturnValue.taskId),
                     CommandStatus.Completed(
-                        message.taskReturnValue.returnValue,
-                        state.workflowTaskIndex
+                        returnValue = message.taskReturnValue.returnValue,
+                        completionWorkflowTaskIndex = state.workflowTaskIndex
                     )
                 )
             }

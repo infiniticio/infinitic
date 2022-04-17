@@ -25,16 +25,16 @@
 
 package io.infinitic.common.workflows.data.channels
 
-internal fun getAllExtendedOrImplementedTypes(klass: Class<*>): Set<ChannelSignalType> {
+internal fun getAllExtendedOrImplementedTypes(klass: Class<*>): Set<ChannelType> {
     var clazz = klass
-    val all: MutableList<ChannelSignalType> = mutableListOf()
+    val all: MutableList<ChannelType> = mutableListOf()
     do {
-        all.add(ChannelSignalType(clazz.name))
+        all.add(ChannelType(clazz.name))
 
         // First, add all the interfaces implemented by this class
         val interfaces = clazz.interfaces.toList()
         if (interfaces.isNotEmpty()) {
-            all.addAll(interfaces.map { ChannelSignalType(it.name) })
+            all.addAll(interfaces.map { ChannelType(it.name) })
             for (interfaze in interfaces) {
                 all.addAll(getAllExtendedOrImplementedTypes(interfaze))
             }

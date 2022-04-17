@@ -66,6 +66,7 @@ import io.infinitic.common.workflows.tags.SendToWorkflowTag
 import io.infinitic.common.workflows.tags.messages.AddTagToWorkflow
 import io.infinitic.common.workflows.tags.messages.CancelWorkflowByTag
 import io.infinitic.common.workflows.tags.messages.DispatchMethodByTag
+import io.infinitic.common.workflows.tags.messages.DispatchWorkflowByCustomId
 import io.infinitic.common.workflows.tags.messages.GetWorkflowIdsByTag
 import io.infinitic.common.workflows.tags.messages.RetryWorkflowTaskByTag
 import io.infinitic.common.workflows.tags.messages.SendSignalByTag
@@ -73,6 +74,7 @@ import io.infinitic.exceptions.CanceledWorkflowException
 import io.infinitic.exceptions.FailedWorkflowException
 import io.infinitic.exceptions.UnknownWorkflowException
 import io.infinitic.exceptions.clients.InvalidChannelUsageException
+import io.infinitic.exceptions.clients.MultipleCustomIdException
 import io.infinitic.workflows.DeferredStatus
 import io.infinitic.workflows.SendChannel
 import kotlinx.coroutines.CoroutineScope
@@ -90,7 +92,7 @@ internal class ClientDispatcherImpl(
     private val scope: CoroutineScope,
     val clientName: ClientName,
     val sendToWorkflowEngine: SendToWorkflowEngine,
-    val sendToWorkflowTagEngine: SendToWorkflowTag
+    val sendToWorkflowTag: SendToWorkflowTag
 ) : ClientDispatcher {
     val logger = KotlinLogging.logger {}
 
@@ -215,7 +217,7 @@ internal class ClientDispatcherImpl(
                     emitterWorkflowId = null,
                     emitterName = clientName
                 )
-                sendToWorkflowTagEngine(msg)
+                sendToWorkflowTag(msg)
             }
             else -> thisShouldNotHappen()
         }
@@ -241,7 +243,7 @@ internal class ClientDispatcherImpl(
                     workflowTag = workflowTag,
                     emitterName = clientName
                 )
-                sendToWorkflowTagEngine(msg)
+                sendToWorkflowTag(msg)
             }
             else -> thisShouldNotHappen()
         }
@@ -276,7 +278,7 @@ internal class ClientDispatcherImpl(
                     taskStatus = taskStatus,
                     taskName = taskName
                 )
-                sendToWorkflowTagEngine(msg)
+                sendToWorkflowTag(msg)
             }
             else -> thisShouldNotHappen()
         }
@@ -296,7 +298,7 @@ internal class ClientDispatcherImpl(
                     workflowTag = workflowTag,
                     emitterName = clientName
                 )
-                launch { sendToWorkflowTagEngine(msg) }
+                launch { sendToWorkflowTag(msg) }
 
                 responseFlow.first {
                     (it is WorkflowIdsByTag) && (it.workflowName == workflowName) && (it.workflowTag == workflowTag)
@@ -372,43 +374,80 @@ internal class ClientDispatcherImpl(
         // it's important to build those objects out of the coroutine scope
         // otherwise the handler's value could be changed if reused
 
-        // provided tags
-        val workflowTags = handler.workflowTags.map {
-            AddTagToWorkflow(
-                workflowName = deferred.workflowName,
-                workflowTag = it,
-                workflowId = deferred.workflowId,
-                emitterName = clientName
-            )
-        }
-        // dispatch workflow message
-        val dispatchWorkflow = DispatchWorkflow(
-            workflowName = deferred.workflowName,
-            workflowId = deferred.workflowId,
-            methodName = handler.methodName,
-            methodParameters = handler.methodParameters,
-            methodParameterTypes = handler.methodParameterTypes,
-            workflowOptions = handler.workflowOptions,
-            workflowTags = handler.workflowTags,
-            workflowMeta = handler.workflowMeta,
-            parentWorkflowName = null,
-            parentWorkflowId = null,
-            parentMethodRunId = null,
-            clientWaiting = clientWaiting,
-            emitterName = clientName
-        )
+        val customIds = handler.workflowTags.filter { it.isCustomId() }
 
-        return scope.future {
-            // first, we send all tags in parallel
-            coroutineScope {
-                workflowTags.forEach { launch { sendToWorkflowTagEngine(it) } }
+        return when (customIds.size) {
+            // no customId tag provided
+            0 -> {
+                // provided tags
+                val workflowTags = handler.workflowTags.map {
+                    AddTagToWorkflow(
+                        workflowName = deferred.workflowName,
+                        workflowTag = it,
+                        workflowId = deferred.workflowId,
+                        emitterName = clientName
+                    )
+                }
+                // dispatch workflow message
+                val dispatchWorkflow = DispatchWorkflow(
+                    workflowName = deferred.workflowName,
+                    workflowId = deferred.workflowId,
+                    methodName = handler.methodName,
+                    methodParameters = handler.methodParameters,
+                    methodParameterTypes = handler.methodParameterTypes,
+                    workflowOptions = handler.workflowOptions,
+                    workflowTags = handler.workflowTags,
+                    workflowMeta = handler.workflowMeta,
+                    parentWorkflowName = null,
+                    parentWorkflowId = null,
+                    parentMethodRunId = null,
+                    clientWaiting = clientWaiting,
+                    emitterName = clientName
+                )
+
+                scope.future {
+                    // first, we send all tags in parallel
+                    coroutineScope {
+                        workflowTags.forEach { launch { sendToWorkflowTag(it) } }
+                    }
+                    // only then dispatch workflow message
+                    // to avoid a potential race condition
+                    // if the engine remove tags
+                    sendToWorkflowEngine(dispatchWorkflow)
+
+                    deferred
+                }
             }
-            // only then dispatch workflow message
-            // to avoid a potential race condition
-            // if the engine remove tags
-            sendToWorkflowEngine(dispatchWorkflow)
+            // a customId tag was provided
+            1 -> {
+                // dispatch workflow message with customId tag
+                val dispatchWorkflowByCustomId = DispatchWorkflowByCustomId(
+                    workflowName = deferred.workflowName,
+                    workflowTag = customIds.first(),
+                    workflowId = deferred.workflowId,
+                    methodName = deferred.methodName,
+                    methodParameters = handler.methodParameters,
+                    methodParameterTypes = handler.methodParameterTypes,
+                    workflowOptions = handler.workflowOptions,
+                    workflowTags = handler.workflowTags,
+                    workflowMeta = handler.workflowMeta,
+                    parentWorkflowName = null,
+                    parentWorkflowId = null,
+                    parentMethodRunId = null,
+                    clientWaiting = clientWaiting,
+                    emitterName = clientName
+                )
 
-            deferred
+                scope.future {
+                    sendToWorkflowTag(dispatchWorkflowByCustomId)
+
+                    deferred
+                }
+            }
+            // more than 1 custom tag were provided
+            else -> {
+                throw MultipleCustomIdException
+            }
         }
     }
 
@@ -527,7 +566,7 @@ internal class ClientDispatcherImpl(
                 clientWaiting = clientWaiting,
                 emitterName = clientName
             )
-            sendToWorkflowTagEngine(dispatchMethodByTag)
+            sendToWorkflowTag(dispatchMethodByTag)
         }
         else ->
             thisShouldNotHappen()
@@ -571,7 +610,7 @@ internal class ClientDispatcherImpl(
                     channelName = handler.channelName,
                     channelSignalId = deferredSend.channelSignalId,
                     channelSignal = handler.channelSignal,
-                    channelSignalTypes = handler.channelSignalTypes,
+                    channelTypes = handler.channelTypes,
                     emitterName = clientName
                 )
                 sendToWorkflowEngine(sendSignal)
@@ -583,11 +622,11 @@ internal class ClientDispatcherImpl(
                     channelName = handler.channelName,
                     channelSignalId = deferredSend.channelSignalId,
                     channelSignal = handler.channelSignal,
-                    channelSignalTypes = handler.channelSignalTypes,
+                    channelTypes = handler.channelTypes,
                     emitterWorkflowId = null,
                     emitterName = clientName
                 )
-                sendToWorkflowTagEngine(sendSignalByTag)
+                sendToWorkflowTag(sendSignalByTag)
             }
             else ->
                 thisShouldNotHappen()

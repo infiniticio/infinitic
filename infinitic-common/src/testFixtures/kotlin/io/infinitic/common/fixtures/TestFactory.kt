@@ -30,6 +30,7 @@ import io.infinitic.common.serDe.SerializedData
 import io.infinitic.common.tasks.executors.errors.DeferredError
 import io.infinitic.common.tasks.executors.errors.WorkerError
 import io.infinitic.common.workflows.data.commands.CommandId
+import io.infinitic.common.workflows.data.steps.NewStep
 import io.infinitic.common.workflows.data.steps.Step
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineEnvelope
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
@@ -64,6 +65,7 @@ object TestFactory {
             .randomize(Any::class.java) { random<String>() }
             .randomize(Step::class.java) { randomStep() }
             .randomize(String::class.java) { String(random(), Charsets.UTF_8) }
+            .randomize(NewStep::class.java) { NewStep(step = random(), stepPosition = random()) }
             .randomize(ByteArray::class.java) { Random(seed).nextBytes(10) }
             .randomize(ByteBuffer::class.java) { ByteBuffer.wrap(random()) }
             .randomize(WorkerError::class.java) { WorkerError(random(), random(), random(), random(), null) }

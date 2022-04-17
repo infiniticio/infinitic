@@ -23,11 +23,10 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.tests.tasks
+package io.infinitic.tests.utils
 
 import io.infinitic.common.tasks.data.TaskMeta
 import io.infinitic.tasks.Task
-import io.infinitic.tests.workflows.WorkflowA
 import io.infinitic.workflows.DeferredStatus
 import java.time.Duration
 
@@ -35,15 +34,14 @@ interface ParentInterface {
     fun parent(): String
 }
 
-interface TaskA : ParentInterface {
+interface UtilTask : ParentInterface {
     fun concat(str1: String, str2: String): String
     fun reverse(str: String): String
     fun await(delay: Long): Long
     fun workflowId(): String?
     fun workflowName(): String?
     fun retryFailedTasks(workflowName: String, id: String)
-//    fun cancelTaskA(id: String)
-    fun cancelWorkflowA(id: String)
+    fun cancelWorkflow(workflowName: String, id: String)
     fun failing()
     fun successAtRetry(): String
 
@@ -51,7 +49,7 @@ interface TaskA : ParentInterface {
     fun meta(): TaskMeta
 }
 
-class TaskAImpl : Task(), TaskA {
+class UtilTaskImpl : Task(), UtilTask {
     override fun concat(str1: String, str2: String): String = str1 + str2
 
     override fun reverse(str: String) = str.reversed()
@@ -62,22 +60,16 @@ class TaskAImpl : Task(), TaskA {
 
     override fun workflowName() = context.workflowName
 
-//    override fun cancelTaskA(id: String) {
-//        Thread.sleep(50)
-//        val t = context.client.getTaskById(TaskA::class.java, id)
-//        context.client.cancel(t)
-//    }
-
     override fun retryFailedTasks(workflowName: String, id: String) {
         Thread.sleep(50)
         val w = context.client.getWorkflowById(Class.forName(workflowName), id)
         context.client.retryTasks(w, taskStatus = DeferredStatus.FAILED)
     }
 
-    override fun cancelWorkflowA(id: String) {
+    override fun cancelWorkflow(workflowName: String, id: String) {
         Thread.sleep(50)
-        val t = context.client.getWorkflowById(WorkflowA::class.java, id)
-        context.client.cancel(t)
+        val w = context.client.getWorkflowById(Class.forName(workflowName), id)
+        context.client.cancel(w)
     }
 
     override fun failing() = throw Exception("sorry")

@@ -25,6 +25,8 @@
 
 package io.infinitic.common.workflows.data.commands
 
+import com.github.avrokotlin.avro4k.AvroDefault
+import com.github.avrokotlin.avro4k.AvroName
 import io.infinitic.common.data.MillisDuration
 import io.infinitic.common.data.MillisInstant
 import io.infinitic.common.data.methods.MethodName
@@ -33,10 +35,10 @@ import io.infinitic.common.data.methods.MethodParameters
 import io.infinitic.common.tasks.data.TaskMeta
 import io.infinitic.common.tasks.data.TaskName
 import io.infinitic.common.tasks.data.TaskTag
-import io.infinitic.common.workflows.data.channels.ChannelEventFilter
+import io.infinitic.common.workflows.data.channels.ChannelFilter
 import io.infinitic.common.workflows.data.channels.ChannelName
 import io.infinitic.common.workflows.data.channels.ChannelSignal
-import io.infinitic.common.workflows.data.channels.ChannelSignalType
+import io.infinitic.common.workflows.data.channels.ChannelType
 import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.data.workflows.WorkflowMeta
 import io.infinitic.common.workflows.data.workflows.WorkflowName
@@ -48,7 +50,7 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 sealed class Command {
-    abstract fun isSameThan(other: Any?): Boolean
+    abstract fun isSameThan(other: Command): Boolean
 }
 
 /**
@@ -65,14 +67,14 @@ data class DispatchTaskCommand(
     val taskMeta: TaskMeta,
     val taskOptions: TaskOptions
 ) : Command() {
-    override fun isSameThan(other: Any?): Boolean {
+    override fun isSameThan(other: Command): Boolean {
         if (this === other) return true
-        if (javaClass != other?.javaClass) return false
+        if (javaClass != other.javaClass) return false
         other as DispatchTaskCommand
 
         return taskName == other.taskName &&
             methodName == other.methodName &&
-            methodParameterTypes == methodParameterTypes &&
+            methodParameterTypes == other.methodParameterTypes &&
             methodParameters == other.methodParameters
     }
 }
@@ -87,14 +89,14 @@ data class DispatchWorkflowCommand(
     val workflowMeta: WorkflowMeta,
     val workflowOptions: WorkflowOptions
 ) : Command() {
-    override fun isSameThan(other: Any?): Boolean {
+    override fun isSameThan(other: Command): Boolean {
         if (this === other) return true
-        if (javaClass != other?.javaClass) return false
+        if (javaClass != other.javaClass) return false
         other as DispatchWorkflowCommand
 
         return workflowName == other.workflowName &&
             methodName == other.methodName &&
-            methodParameterTypes == methodParameterTypes &&
+            methodParameterTypes == other.methodParameterTypes &&
             methodParameters == other.methodParameters
     }
 }
@@ -108,16 +110,16 @@ data class DispatchMethodCommand(
     val methodParameterTypes: MethodParameterTypes,
     val methodParameters: MethodParameters
 ) : Command() {
-    override fun isSameThan(other: Any?): Boolean {
+    override fun isSameThan(other: Command): Boolean {
         if (this === other) return true
-        if (javaClass != other?.javaClass) return false
+        if (javaClass != other.javaClass) return false
         other as DispatchMethodCommand
 
         return workflowName == other.workflowName &&
             workflowId == other.workflowId &&
             workflowTag == other.workflowTag &&
             methodName == other.methodName &&
-            methodParameterTypes == methodParameterTypes &&
+            methodParameterTypes == other.methodParameterTypes &&
             methodParameters == other.methodParameters
     }
 }
@@ -129,26 +131,31 @@ data class SendSignalCommand(
     val workflowTag: WorkflowTag?,
     val channelName: ChannelName,
     val channelSignal: ChannelSignal,
-    val channelSignalTypes: Set<ChannelSignalType>
+    @AvroName("channelSignalTypes")
+    val channelTypes: Set<ChannelType>
 ) : Command() {
     companion object {
         fun simpleName() = CommandSimpleName("SEND_SIGNAL")
     }
 
-    override fun isSameThan(other: Any?) = other == this
+    override fun isSameThan(other: Command) = other == this
 }
 
 @Serializable @SerialName("Command.ReceiveSignal")
 data class ReceiveSignalCommand(
     val channelName: ChannelName,
-    val channelSignalType: ChannelSignalType?,
-    val channelEventFilter: ChannelEventFilter?
+    @AvroName("channelSignalType")
+    val channelType: ChannelType?,
+    @AvroName("channelEventFilter")
+    val channelFilter: ChannelFilter?,
+    @AvroDefault("1")
+    val receivedSignalLimit: Int?
 ) : Command() {
     companion object {
         fun simpleName() = CommandSimpleName("RECEIVE_SIGNAL")
     }
 
-    override fun isSameThan(other: Any?) = other == this
+    override fun isSameThan(other: Command) = other == this
 }
 
 @Serializable @SerialName("Command.InlineTask")
@@ -159,9 +166,11 @@ data class InlineTaskCommand(
         fun simpleName() = CommandSimpleName("INLINE_TASK")
     }
 
+    override fun hashCode() = task.hashCode()
+
     override fun equals(other: Any?) = other is InlineTaskCommand
 
-    override fun isSameThan(other: Any?) = other == this
+    override fun isSameThan(other: Command) = other == this
 }
 
 @Serializable @SerialName("Command.StartDurationTimer")
@@ -172,7 +181,7 @@ data class StartDurationTimerCommand(
         fun simpleName() = CommandSimpleName("START_DURATION_TIMER")
     }
 
-    override fun isSameThan(other: Any?) = other == this
+    override fun isSameThan(other: Command) = other == this
 }
 
 @Serializable @SerialName("Command.StartInstantTimer")
@@ -183,5 +192,5 @@ data class StartInstantTimerCommand(
         fun simpleName() = CommandSimpleName("START_INSTANT_TIMER")
     }
 
-    override fun isSameThan(other: Any?) = other == this
+    override fun isSameThan(other: Command) = other == this
 }

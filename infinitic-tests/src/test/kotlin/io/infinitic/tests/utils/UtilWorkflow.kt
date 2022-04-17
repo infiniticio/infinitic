@@ -23,62 +23,82 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.tests.workflows
+package io.infinitic.tests.utils
 
 import io.infinitic.annotations.Ignore
-import io.infinitic.tests.tasks.TaskA
+import io.infinitic.tests.channels.ChannelsWorkflow
 import io.infinitic.workflows.Deferred
+import io.infinitic.workflows.SendChannel
 import io.infinitic.workflows.Workflow
 
-interface WorkflowB {
+interface UtilWorkflow {
+    val log: String
+    val channelA: SendChannel<String>
     fun concat(input: String): String
+    fun receive(str: String): String
+    fun add(str: String): String
     fun factorial(n: Long): Long
     fun cancelChild1(): Long
     fun cancelChild2(): Long
     fun cancelChild2bis(deferred: Deferred<String>): String
 }
 
-class WorkflowBImpl : Workflow(), WorkflowB {
-    private val taskA = newTask(TaskA::class.java)
-    private val workflowB = newWorkflow(WorkflowB::class.java)
-    private val workflowA = newWorkflow(WorkflowA::class.java)
-    @Ignore
-    private val self by lazy { getWorkflowById(WorkflowB::class.java, context.id) }
+class UtilWorkflowImpl : Workflow(), UtilWorkflow {
+    override val channelA = channel<String>()
+    override var log = ""
+    private val utilTask = newTask(UtilTask::class.java)
+    private val utilWorkflow = newWorkflow(UtilWorkflow::class.java)
+    private val channelsWorkflow = newWorkflow(ChannelsWorkflow::class.java)
+    @Ignore private val self by lazy { getWorkflowById(UtilWorkflow::class.java, context.id) }
 
     override fun concat(input: String): String {
-        var str = input
 
-        str = taskA.concat(str, "a")
-        str = taskA.concat(str, "b")
-        str = taskA.concat(str, "c")
+        log = utilTask.concat(log, input)
 
-        return str // should be "${input}abc"
+        return log
+    }
+
+    override fun receive(str: String): String {
+        log += str
+
+        val signal = channelA.receive().await()
+
+        log += signal
+
+        return log
+    }
+
+    override fun add(str: String): String {
+
+        log += str
+
+        return log
     }
 
     override fun cancelChild1(): Long {
-        val def = dispatch(workflowA::channel1)
+        val deferred = dispatch(channelsWorkflow::channel1)
 
-        taskA.cancelWorkflowA(def.id!!)
+        utilTask.cancelWorkflow(ChannelsWorkflow::class.java.name, deferred.id!!)
 
-        def.await()
+        deferred.await()
 
-        return taskA.await(100)
+        return utilTask.await(200)
     }
 
     override fun cancelChild2(): Long {
-        val deferred = dispatch(workflowA::channel1)
+        val deferred = dispatch(channelsWorkflow::channel1)
 
-        taskA.cancelWorkflowA(deferred.id!!)
+        utilTask.cancelWorkflow(ChannelsWorkflow::class.java.name, deferred.id!!)
 
         dispatch(self::cancelChild2bis, deferred)
 
-        return taskA.await(200)
+        return utilTask.await(200)
     }
 
     override fun cancelChild2bis(deferred: Deferred<String>): String { return deferred.await() }
 
     override fun factorial(n: Long) = when {
-        n > 1 -> n * workflowB.factorial(n - 1)
+        n > 1 -> n * utilWorkflow.factorial(n - 1)
         else -> 1
     }
 }

@@ -30,12 +30,13 @@ import kotlinx.serialization.Serializable
 
 @Serializable @AvroNamespace("io.infinitic.workflows.tag")
 enum class WorkflowTagMessageType {
+    DISPATCH_WORKFLOW_BY_CUSTOM_ID,
+    DISPATCH_METHOD_BY_TAG,
     ADD_TAG_TO_WORKFLOW,
     REMOVE_TAG_FROM_WORKFLOW,
     SEND_SIGNAL_BY_TAG,
     CANCEL_WORKFLOW_BY_TAG,
     RETRY_WORKFLOW_TASK_BY_TAG,
     RETRY_TASKS_BY_TAG,
-    DISPATCH_METHOD_BY_TAG,
     GET_WORKFLOW_IDS_BY_TAG
 }

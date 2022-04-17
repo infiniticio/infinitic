@@ -38,6 +38,16 @@ object InvalidInlineException : WorkflowUserException(
     help = ""
 )
 
+object MultipleCustomIdException : WorkflowUserException(
+    msg = "",
+    help = ""
+)
+
+object OutOfBoundAwaitException : WorkflowUserException(
+    msg = "",
+    help = ""
+)
+
 class NonIdempotentChannelGetterException(
     workflow: String,
     method: String

@@ -84,6 +84,7 @@ class InMemoryStarter(private val scope: CoroutineScope, name: String) : ClientS
         val workflowTagEngine = WorkflowTagEngine(
             clientName,
             workflowTagStorage,
+            sendToWorkflowTagAsync,
             sendToWorkflowEngine,
             sendToClientAsync
         )
@@ -285,7 +286,7 @@ class InMemoryStarter(private val scope: CoroutineScope, name: String) : ClientS
         after: MillisDuration = MillisDuration.ZERO
     ): CompletableFuture<Unit> = future {
         logger.debug {
-            val prefix = if (after> 0) "after $after ms, " else ""
+            val prefix = if (after > 0) "after $after ms, " else ""
             "${prefix}sending $message"
         }
         if (after > 0) delay(after.long)

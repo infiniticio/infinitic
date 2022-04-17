@@ -31,7 +31,7 @@ import io.infinitic.common.serDe.SerializedData
 import io.infinitic.common.workflows.data.channels.ChannelName
 import io.infinitic.common.workflows.data.channels.ChannelSignal
 import io.infinitic.common.workflows.data.channels.ChannelSignalId
-import io.infinitic.common.workflows.data.channels.ChannelSignalType
+import io.infinitic.common.workflows.data.channels.ChannelType
 import io.infinitic.common.workflows.data.commands.CommandHash
 import io.infinitic.common.workflows.data.commands.CommandId
 import io.infinitic.common.workflows.data.commands.CommandSimpleName
@@ -130,9 +130,9 @@ class DataTests : StringSpec({
 
     "ChannelSignalType should be serialized as String and reversible in json" {
         val id = TestFactory.random<String>()
-        val m = ChannelSignalType(id)
+        val m = ChannelType(id)
         val json = Json.encodeToString(m)
-        val m2 = Json.decodeFromString<ChannelSignalType>(json)
+        val m2 = Json.decodeFromString<ChannelType>(json)
 
         json shouldBe Json.encodeToString(id)
         m2 shouldBe m
@@ -159,7 +159,7 @@ class DataTests : StringSpec({
     }
 
     "MethodRunPosition should be serialized as String and reversible in json" {
-        val m = MethodRunPosition.new()
+        val m = MethodRunPosition()
         val json = Json.encodeToString(m)
         val m2 = Json.decodeFromString<MethodRunPosition>(json)
 

@@ -25,6 +25,7 @@
 
 package io.infinitic.common.workflows.tags.messages
 
+import com.github.avrokotlin.avro4k.Avro
 import com.github.avrokotlin.avro4k.AvroDefault
 import com.github.avrokotlin.avro4k.AvroNamespace
 import io.infinitic.common.messages.Envelope
@@ -37,18 +38,20 @@ data class WorkflowTagEnvelope(
     private val version: String = io.infinitic.version,
     private val name: String,
     private val type: WorkflowTagMessageType,
+    @AvroDefault(Avro.NULL) private val dispatchWorkflowByCustomId: DispatchWorkflowByCustomId? = null,
+    private val dispatchMethodByTag: DispatchMethodByTag? = null,
     private val addTagToWorkflow: AddTagToWorkflow? = null,
     private val removeTagFromWorkflow: RemoveTagFromWorkflow? = null,
     private val sendSignalByTag: SendSignalByTag? = null,
     private val cancelWorkflowByTag: CancelWorkflowByTag? = null,
     private val retryWorkflowTaskByTag: RetryWorkflowTaskByTag? = null,
     private val retryTasksByTag: RetryTasksByTag? = null,
-    private val dispatchMethodByTag: DispatchMethodByTag? = null,
     private val getWorkflowIdsByTag: GetWorkflowIdsByTag? = null,
 ) : Envelope<WorkflowTagMessage> {
 
     init {
         val noNull = listOfNotNull(
+            dispatchWorkflowByCustomId,
             addTagToWorkflow,
             removeTagFromWorkflow,
             sendSignalByTag,
@@ -66,6 +69,11 @@ data class WorkflowTagEnvelope(
 
     companion object {
         fun from(msg: WorkflowTagMessage) = when (msg) {
+            is DispatchWorkflowByCustomId -> WorkflowTagEnvelope(
+                name = "${msg.workflowName}",
+                type = WorkflowTagMessageType.DISPATCH_WORKFLOW_BY_CUSTOM_ID,
+                dispatchWorkflowByCustomId = msg
+            )
             is AddTagToWorkflow -> WorkflowTagEnvelope(
                 name = "${msg.workflowName}",
                 type = WorkflowTagMessageType.ADD_TAG_TO_WORKFLOW,
@@ -112,15 +120,16 @@ data class WorkflowTagEnvelope(
     }
 
     override fun message() = when (type) {
-        WorkflowTagMessageType.ADD_TAG_TO_WORKFLOW -> addTagToWorkflow!!
-        WorkflowTagMessageType.REMOVE_TAG_FROM_WORKFLOW -> removeTagFromWorkflow!!
-        WorkflowTagMessageType.SEND_SIGNAL_BY_TAG -> sendSignalByTag!!
-        WorkflowTagMessageType.CANCEL_WORKFLOW_BY_TAG -> cancelWorkflowByTag!!
-        WorkflowTagMessageType.RETRY_WORKFLOW_TASK_BY_TAG -> retryWorkflowTaskByTag!!
-        WorkflowTagMessageType.RETRY_TASKS_BY_TAG -> retryTasksByTag!!
-        WorkflowTagMessageType.DISPATCH_METHOD_BY_TAG -> dispatchMethodByTag!!
-        WorkflowTagMessageType.GET_WORKFLOW_IDS_BY_TAG -> getWorkflowIdsByTag!!
-    }
+        WorkflowTagMessageType.DISPATCH_WORKFLOW_BY_CUSTOM_ID -> dispatchWorkflowByCustomId
+        WorkflowTagMessageType.ADD_TAG_TO_WORKFLOW -> addTagToWorkflow
+        WorkflowTagMessageType.REMOVE_TAG_FROM_WORKFLOW -> removeTagFromWorkflow
+        WorkflowTagMessageType.SEND_SIGNAL_BY_TAG -> sendSignalByTag
+        WorkflowTagMessageType.CANCEL_WORKFLOW_BY_TAG -> cancelWorkflowByTag
+        WorkflowTagMessageType.RETRY_WORKFLOW_TASK_BY_TAG -> retryWorkflowTaskByTag
+        WorkflowTagMessageType.RETRY_TASKS_BY_TAG -> retryTasksByTag
+        WorkflowTagMessageType.DISPATCH_METHOD_BY_TAG -> dispatchMethodByTag
+        WorkflowTagMessageType.GET_WORKFLOW_IDS_BY_TAG -> getWorkflowIdsByTag
+    }!!
 
     fun toByteArray() = AvroSerDe.writeBinary(this, serializer())
 }
