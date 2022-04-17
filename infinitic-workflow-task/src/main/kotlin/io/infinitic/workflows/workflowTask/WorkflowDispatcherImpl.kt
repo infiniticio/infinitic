@@ -36,10 +36,10 @@ import io.infinitic.common.proxies.ExistingWorkflowProxyHandler
 import io.infinitic.common.proxies.NewTaskProxyHandler
 import io.infinitic.common.proxies.NewWorkflowProxyHandler
 import io.infinitic.common.proxies.ProxyHandler
+import io.infinitic.common.workflows.data.channels.ChannelFilter
 import io.infinitic.common.workflows.data.channels.ChannelName
 import io.infinitic.common.workflows.data.channels.ChannelSignal
-import io.infinitic.common.workflows.data.channels.ChannelSignalFilter
-import io.infinitic.common.workflows.data.channels.ChannelSignalType
+import io.infinitic.common.workflows.data.channels.ChannelType
 import io.infinitic.common.workflows.data.commands.Command
 import io.infinitic.common.workflows.data.commands.CommandSimpleName
 import io.infinitic.common.workflows.data.commands.CommandStatus
@@ -134,13 +134,18 @@ internal class WorkflowDispatcherImpl(
                 val value = ProxyHandler.inline(task)
                 // record result
                 val command = InlineTaskCommand()
-                val endCommand = PastCommand.from(
-                    command = command,
-                    commandPosition = methodRunPosition,
-                    commandSimpleName = InlineTaskCommand.simpleName(),
-                    commandStatus = CommandStatus.Completed(ReturnValue.from(value), workflowTaskIndex),
+
+                newCommands.add(
+                    PastCommand.from(
+                        command = command,
+                        commandPosition = methodRunPosition,
+                        commandSimpleName = InlineTaskCommand.simpleName(),
+                        commandStatus = CommandStatus.Completed(
+                            returnValue = ReturnValue.from(value),
+                            completionWorkflowTaskIndex = workflowTaskIndex
+                        ),
+                    )
                 )
-                newCommands.add(endCommand)
                 // returns value
                 value
             }
@@ -274,9 +279,9 @@ internal class WorkflowDispatcherImpl(
     ): Deferred<S> = dispatchCommand(
         ReceiveSignalCommand(
             ChannelName(channel.name),
-            klass?.let { ChannelSignalType.from(it) },
-            limit,
-            ChannelSignalFilter.from(jsonPath, criteria)
+            klass?.let { ChannelType.from(it) },
+            ChannelFilter.from(jsonPath, criteria),
+            limit
         ),
         ReceiveSignalCommand.simpleName()
     )
@@ -288,7 +293,7 @@ internal class WorkflowDispatcherImpl(
                 workflowId = workflowTaskParameters.workflowId,
                 workflowTag = null,
                 channelName = ChannelName(channel.name),
-                channelSignalTypes = ChannelSignalType.allFrom(signal::class.java),
+                channelTypes = ChannelType.allFrom(signal::class.java),
                 channelSignal = ChannelSignal.from(signal)
             ),
             SendSignalCommand.simpleName()
@@ -372,7 +377,7 @@ internal class WorkflowDispatcherImpl(
                 workflowId = handler.workflowId,
                 workflowTag = handler.workflowTag,
                 channelName = handler.channelName,
-                channelSignalTypes = handler.channelSignalTypes,
+                channelTypes = handler.channelTypes,
                 channelSignal = handler.channelSignal
             ),
             SendSignalCommand.simpleName()

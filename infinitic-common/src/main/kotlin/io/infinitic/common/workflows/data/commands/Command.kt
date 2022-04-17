@@ -35,10 +35,10 @@ import io.infinitic.common.data.methods.MethodParameters
 import io.infinitic.common.tasks.data.TaskMeta
 import io.infinitic.common.tasks.data.TaskName
 import io.infinitic.common.tasks.data.TaskTag
+import io.infinitic.common.workflows.data.channels.ChannelFilter
 import io.infinitic.common.workflows.data.channels.ChannelName
 import io.infinitic.common.workflows.data.channels.ChannelSignal
-import io.infinitic.common.workflows.data.channels.ChannelSignalFilter
-import io.infinitic.common.workflows.data.channels.ChannelSignalType
+import io.infinitic.common.workflows.data.channels.ChannelType
 import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.data.workflows.WorkflowMeta
 import io.infinitic.common.workflows.data.workflows.WorkflowName
@@ -131,7 +131,8 @@ data class SendSignalCommand(
     val workflowTag: WorkflowTag?,
     val channelName: ChannelName,
     val channelSignal: ChannelSignal,
-    val channelSignalTypes: Set<ChannelSignalType>
+    @AvroName("channelSignalTypes")
+    val channelTypes: Set<ChannelType>
 ) : Command() {
     companion object {
         fun simpleName() = CommandSimpleName("SEND_SIGNAL")
@@ -143,11 +144,12 @@ data class SendSignalCommand(
 @Serializable @SerialName("Command.ReceiveSignal")
 data class ReceiveSignalCommand(
     val channelName: ChannelName,
-    val channelSignalType: ChannelSignalType?,
-    @AvroDefault("1")
-    val channelSignalLimit: Int?,
+    @AvroName("channelSignalType")
+    val channelType: ChannelType?,
     @AvroName("channelEventFilter")
-    val channelSignalFilter: ChannelSignalFilter?
+    val channelFilter: ChannelFilter?,
+    @AvroDefault("1")
+    val receivedSignalLimit: Int?
 ) : Command() {
     companion object {
         fun simpleName() = CommandSimpleName("RECEIVE_SIGNAL")

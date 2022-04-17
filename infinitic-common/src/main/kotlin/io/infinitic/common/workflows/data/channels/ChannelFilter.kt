@@ -39,11 +39,11 @@ import kotlinx.serialization.Serializable
 import java.security.InvalidParameterException
 
 @Serializable @AvroNamespace("io.infinitic.workflows.data") @AvroName("ChannelEventFilter")
-data class ChannelSignalFilter(val jsonPath: String, val filter: String? = null) {
+data class ChannelFilter(val jsonPath: String, val filter: String? = null) {
     companion object {
         @JvmOverloads
-        fun from(jsonPath: String?, criteria: Criteria? = null): ChannelSignalFilter? = jsonPath
-            ?.let { ChannelSignalFilter(it, criteria?.let { c -> filter(c).toString() }) }
+        fun from(jsonPath: String?, criteria: Criteria? = null): ChannelFilter? = jsonPath
+            ?.let { ChannelFilter(it, criteria?.let { c -> filter(c).toString() }) }
             ?: if (criteria != null) throw InvalidParameterException("jsonPath can not be null if criteria is non null") else null
 
         init {

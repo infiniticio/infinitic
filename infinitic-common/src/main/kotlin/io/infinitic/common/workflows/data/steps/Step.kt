@@ -70,7 +70,7 @@ sealed class Step {
     abstract fun nextAwait()
 
     /**
-     * hash function excludes commandStatus and provide a hopefully unique hash linked to the structure of the step
+     * hash provides a unique hash linked to the structure of the step (excluding commandStatus)
      */
     abstract fun hash(): StepHash
 
@@ -79,7 +79,7 @@ sealed class Step {
         val commandId: CommandId,
         // store the # of time we have already waited this command
         @AvroDefault("-1") // before this feature was added, we consider it was the first wait
-        var awaitOccurrence: Int = -1
+        var awaitIndex: Int = -1
     ) : Step() {
         // status of first wait occurrence
         @JsonIgnore
@@ -98,11 +98,11 @@ sealed class Step {
                 commandStatus = pastCommand.commandStatus
                 if (pastCommand is ReceiveSignalPastCommand) {
                     commandStatuses = pastCommand.commandStatuses
-                    commandStatusLimit = pastCommand.command.channelSignalLimit
+                    commandStatusLimit = pastCommand.command.receivedSignalLimit
                 }
             }
 
-            // This is needed for Jackson deserialization, CommandId being an inline type
+            // This is needed for Jackson deserialization
             @JsonCreator @JvmStatic
             fun new(commandId: String) = Id(CommandId(commandId))
         }
@@ -120,19 +120,17 @@ sealed class Step {
         }
 
         override fun nextAwait() {
-            awaitOccurrence++
+            awaitIndex++
 
             // update commandStatus if needed
             if (commandStatuses != null) {
                 // user is asking more than the limit, we consider it as a failure
-                if (commandStatusLimit != null && awaitOccurrence >= commandStatusLimit!!) throw OutOfBoundAwaitException
+                if (commandStatusLimit != null && awaitIndex >= commandStatusLimit!!) throw OutOfBoundAwaitException
                 // else update the status
-                commandStatus = when {
-                    awaitOccurrence == 0 -> commandStatus
+                commandStatus = when (awaitIndex) {
+                    0 -> commandStatus
                     // nth request for channel.receive()
-                    awaitOccurrence <= commandStatuses!!.size -> commandStatuses!![awaitOccurrence - 1]
-                    // not known yet
-                    else -> Ongoing
+                    else -> commandStatuses!!.firstOrNull { it is Completed && it.returnIndex == awaitIndex } ?: Ongoing
                 }
             }
         }
@@ -243,10 +241,9 @@ sealed class Step {
     fun updateWith(commandId: CommandId, commandStatus: CommandStatus, commandStatuses: List<CommandStatus>? = null): Step {
         when (this) {
             is Id -> if (this.commandId == commandId) {
-                this.commandStatus = if (commandStatuses == null) { commandStatus } else when {
-                    awaitOccurrence == 0 -> commandStatus
-                    awaitOccurrence <= commandStatuses.size -> commandStatuses[awaitOccurrence - 1]
-                    else -> thisShouldNotHappen()
+                this.commandStatus = if (commandStatuses == null) { commandStatus } else when (awaitIndex) {
+                    0 -> commandStatus
+                    else -> commandStatuses.firstOrNull { it is Completed && it.returnIndex == awaitIndex } ?: thisShouldNotHappen()
                 }
             }
             is And -> steps = steps.map { it.updateWith(commandId, commandStatus, commandStatuses) }

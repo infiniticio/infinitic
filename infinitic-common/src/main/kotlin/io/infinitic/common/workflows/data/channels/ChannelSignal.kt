@@ -32,7 +32,7 @@ import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
 
-@Serializable(with = ChannelEventSerializer::class)
+@Serializable(with = ChannelSignalSerializer::class)
 data class ChannelSignal(val serializedData: SerializedData) {
     companion object {
         fun from(data: Any?) = ChannelSignal(SerializedData.from(data))
@@ -41,7 +41,7 @@ data class ChannelSignal(val serializedData: SerializedData) {
     override fun toString() = serializedData.toString()
 }
 
-object ChannelEventSerializer : KSerializer<ChannelSignal> {
+object ChannelSignalSerializer : KSerializer<ChannelSignal> {
     override val descriptor: SerialDescriptor = SerializedData.serializer().descriptor
     override fun serialize(encoder: Encoder, value: ChannelSignal) {
         SerializedData.serializer().serialize(encoder, value.serializedData)

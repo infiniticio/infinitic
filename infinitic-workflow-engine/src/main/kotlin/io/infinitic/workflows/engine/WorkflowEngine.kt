@@ -263,7 +263,10 @@ class WorkflowEngine(
                 state,
                 message.methodRunId,
                 CommandId.from(message.timerId),
-                CommandStatus.Completed(ReturnValue.from(Instant.now()), state.workflowTaskIndex)
+                CommandStatus.Completed(
+                    returnValue = ReturnValue.from(Instant.now()),
+                    completionWorkflowTaskIndex = state.workflowTaskIndex
+                )
             )
             is ChildMethodUnknown -> commandTerminated(
                 output,
@@ -301,8 +304,8 @@ class WorkflowEngine(
                 message.methodRunId,
                 CommandId.from(message.childWorkflowReturnValue.methodRunId),
                 CommandStatus.Completed(
-                    message.childWorkflowReturnValue.returnValue,
-                    state.workflowTaskIndex
+                    returnValue = message.childWorkflowReturnValue.returnValue,
+                    completionWorkflowTaskIndex = state.workflowTaskIndex
                 )
             )
             is TaskCanceled -> when (message.isWorkflowTask()) {
@@ -351,8 +354,8 @@ class WorkflowEngine(
                     message.methodRunId,
                     CommandId.from(message.taskReturnValue.taskId),
                     CommandStatus.Completed(
-                        message.taskReturnValue.returnValue,
-                        state.workflowTaskIndex
+                        returnValue = message.taskReturnValue.returnValue,
+                        completionWorkflowTaskIndex = state.workflowTaskIndex
                     )
                 )
             }

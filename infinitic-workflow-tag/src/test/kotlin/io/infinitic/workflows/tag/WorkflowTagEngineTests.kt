@@ -192,7 +192,7 @@ internal class WorkflowTagEngineTests : StringSpec({
             channelSignal shouldBe msgIn.channelSignal
             channelSignalId shouldBe msgIn.channelSignalId
             channelSignal shouldBe msgIn.channelSignal
-            channelSignalTypes shouldBe msgIn.channelSignalTypes
+            channelTypes shouldBe msgIn.channelTypes
             channelName shouldBe msgIn.channelName
         }
     }

@@ -275,7 +275,7 @@ class WorkflowTagEngine(
                         channelName = message.channelName,
                         channelSignalId = message.channelSignalId,
                         channelSignal = message.channelSignal,
-                        channelSignalTypes = message.channelSignalTypes,
+                        channelTypes = message.channelTypes,
                         emitterName = clientName
                     )
                     scope.launch { sendToWorkflowEngine(sendSignal) }

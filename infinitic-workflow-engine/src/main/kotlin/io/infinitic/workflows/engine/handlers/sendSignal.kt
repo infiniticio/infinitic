@@ -43,14 +43,15 @@ internal fun CoroutineScope.sendSignal(
 ) {
     state.receivingChannels.firstOrNull {
         it.channelName == message.channelName &&
-            (it.channelSignalType == null || message.channelSignalTypes.contains(it.channelSignalType)) &&
-            (it.channelSignalFilter == null || it.channelSignalFilter!!.check(message.channelSignal))
+            (it.channelType == null || message.channelTypes.contains(it.channelType)) &&
+            (it.channelFilter == null || it.channelFilter!!.check(message.channelSignal))
     }
         ?.also {
-            when (it.remainingCount) {
-                1 -> state.receivingChannels.remove(it)
-                null -> Unit // do nothing
-                else -> it.remainingCount = it.remainingCount!! - 1
+            it.receivedSignalCount = it.receivedSignalCount + 1
+
+            // remove this ReceivingChannel from state.receivingChannels if this signal is the last one
+            if (it.receivedSignalCount == it.receivedSignalLimit) {
+                state.receivingChannels.remove(it)
             }
 
             commandTerminated(
@@ -58,7 +59,11 @@ internal fun CoroutineScope.sendSignal(
                 state,
                 it.methodRunId,
                 it.commandId,
-                Completed(ReturnValue(message.channelSignal.serializedData), state.workflowTaskIndex)
+                Completed(
+                    returnIndex = it.receivedSignalCount - 1,
+                    returnValue = ReturnValue(message.channelSignal.serializedData),
+                    completionWorkflowTaskIndex = state.workflowTaskIndex
+                )
             )
         }
         ?: logger.debug { "discarding non-waited signal $message" }

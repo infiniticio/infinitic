@@ -115,6 +115,10 @@
             "name" : "Completed",
             "namespace" : "CommandStatus",
             "fields" : [ {
+              "name" : "returnIndex",
+              "type" : "int",
+              "default" : 0
+            }, {
               "name" : "returnValue",
               "type" : "io.infinitic.data.SerializedData"
             }, {
@@ -462,10 +466,6 @@
               "name" : "channelSignalType",
               "type" : [ "null", "string" ]
             }, {
-              "name" : "channelSignalLimit",
-              "type" : [ "int", "null" ],
-              "default" : 1
-            }, {
               "name" : "channelEventFilter",
               "type" : [ "null", {
                 "type" : "record",
@@ -479,6 +479,10 @@
                   "type" : [ "null", "string" ]
                 } ]
               } ]
+            }, {
+              "name" : "receivedSignalLimit",
+              "type" : [ "int", "null" ],
+              "default" : 1
             } ]
           }
         }, {
@@ -631,7 +635,7 @@
                   "name" : "commandId",
                   "type" : "string"
                 }, {
-                  "name" : "awaitOccurrence",
+                  "name" : "awaitIndex",
                   "type" : "int",
                   "default" : -1
                 }, {

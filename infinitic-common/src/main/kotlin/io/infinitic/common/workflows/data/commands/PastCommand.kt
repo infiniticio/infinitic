@@ -26,7 +26,6 @@
 package io.infinitic.common.workflows.data.commands
 
 import com.github.avrokotlin.avro4k.AvroDefault
-import io.infinitic.common.exceptions.thisShouldNotHappen
 import io.infinitic.common.tasks.data.TaskRetrySequence
 import io.infinitic.common.workflows.data.methodRuns.MethodRunPosition
 import io.infinitic.workflows.WorkflowChangeCheckMode
@@ -78,31 +77,11 @@ sealed class PastCommand {
         }
     }
 
-    fun setStatus(commandStatus: CommandStatus) {
-        when (this) {
-            is ReceiveSignalPastCommand -> when (this.commandStatus) {
-                CommandStatus.Ongoing -> this.commandStatus = commandStatus
-                else -> when {
-                    command.channelSignalLimit == null -> commandStatuses.add(commandStatus)
-                    command.channelSignalLimit > commandStatuses.size + 1 -> commandStatuses.add(commandStatus)
-                    else -> thisShouldNotHappen()
-                }
-            }
-            else -> {
-                this.commandStatus = commandStatus
-            }
-        }
+    open fun setTerminatedStatus(commandStatus: CommandStatus) {
+        this.commandStatus = commandStatus
     }
 
-    fun isTerminated() = when (this) {
-        is ReceiveSignalPastCommand -> when (command.channelSignalLimit) {
-            null -> false
-            else -> commandStatus.isTerminated() &&
-                commandStatuses.all { it.isTerminated() } &&
-                command.channelSignalLimit == (commandStatuses.size + 1)
-        }
-        else -> commandStatus.isTerminated()
-    }
+    open fun isTerminated() = commandStatus.isTerminated()
 
     fun isSameThan(other: PastCommand, mode: WorkflowChangeCheckMode): Boolean =
         other.commandPosition == commandPosition &&
@@ -162,7 +141,20 @@ data class ReceiveSignalPastCommand(
     override val commandId: CommandId = CommandId(),
     @AvroDefault("[]")
     val commandStatuses: MutableList<CommandStatus> = mutableListOf(),
-) : PastCommand()
+) : PastCommand() {
+    override fun setTerminatedStatus(commandStatus: CommandStatus) {
+        when (commandStatus) {
+            is CommandStatus.Completed -> when (commandStatus.returnIndex) {
+                0 -> this.commandStatus = commandStatus
+                else -> commandStatuses.add(commandStatus)
+            }
+            else -> this.commandStatus = commandStatus
+        }
+    }
+
+    // Per default this command is never terminated
+    override fun isTerminated() = false
+}
 
 @Serializable @SerialName("PastCommand.SendSignal")
 data class SendSignalPastCommand(

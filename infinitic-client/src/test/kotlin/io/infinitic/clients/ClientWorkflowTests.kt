@@ -43,7 +43,7 @@ import io.infinitic.common.tasks.executors.messages.TaskExecutorMessage
 import io.infinitic.common.tasks.tags.messages.TaskTagMessage
 import io.infinitic.common.workflows.data.channels.ChannelName
 import io.infinitic.common.workflows.data.channels.ChannelSignal
-import io.infinitic.common.workflows.data.channels.ChannelSignalType
+import io.infinitic.common.workflows.data.channels.ChannelType
 import io.infinitic.common.workflows.data.methodRuns.MethodRunId
 import io.infinitic.common.workflows.data.workflows.WorkflowCancellationReason
 import io.infinitic.common.workflows.data.workflows.WorkflowId
@@ -382,7 +382,7 @@ class ClientWorkflowTests : StringSpec({
             channelName = ChannelName("getChannelString"),
             channelSignalId = msg.channelSignalId,
             channelSignal = ChannelSignal.from("a"),
-            channelSignalTypes = ChannelSignalType.allFrom(String::class.java),
+            channelTypes = ChannelType.allFrom(String::class.java),
             emitterName = clientNameTest
         )
     }
@@ -401,7 +401,7 @@ class ClientWorkflowTests : StringSpec({
             channelName = ChannelName("getChannelString"),
             channelSignalId = msg.channelSignalId,
             channelSignal = ChannelSignal.from("a"),
-            channelSignalTypes = ChannelSignalType.allFrom(String::class.java),
+            channelTypes = ChannelType.allFrom(String::class.java),
             emitterName = clientNameTest
         )
     }
@@ -418,7 +418,7 @@ class ClientWorkflowTests : StringSpec({
             channelName = ChannelName("getChannelString"),
             channelSignalId = msg.channelSignalId,
             channelSignal = ChannelSignal.from("a"),
-            channelSignalTypes = ChannelSignalType.allFrom(String::class.java),
+            channelTypes = ChannelType.allFrom(String::class.java),
             emitterWorkflowId = null,
             emitterName = clientNameTest
         )
@@ -437,7 +437,7 @@ class ClientWorkflowTests : StringSpec({
             channelName = ChannelName("getChannelString"),
             channelSignalId = msg.channelSignalId,
             channelSignal = ChannelSignal.from("a"),
-            channelSignalTypes = ChannelSignalType.allFrom(String::class.java),
+            channelTypes = ChannelType.allFrom(String::class.java),
             emitterWorkflowId = null,
             emitterName = clientNameTest
         )
@@ -457,10 +457,10 @@ class ClientWorkflowTests : StringSpec({
             channelName = ChannelName("getChannelFakeTask"),
             channelSignalId = msg.channelSignalId,
             channelSignal = ChannelSignal.from(signal),
-            channelSignalTypes = setOf(
-                ChannelSignalType.from(FakeTaskImpl::class.java),
-                ChannelSignalType.from(FakeTask::class.java),
-                ChannelSignalType.from(FakeTaskParent::class.java)
+            channelTypes = setOf(
+                ChannelType.from(FakeTaskImpl::class.java),
+                ChannelType.from(FakeTask::class.java),
+                ChannelType.from(FakeTaskParent::class.java)
             ),
             emitterName = clientNameTest
         )
@@ -480,10 +480,10 @@ class ClientWorkflowTests : StringSpec({
             channelName = ChannelName("getChannelFakeTaskParent"),
             channelSignalId = msg.channelSignalId,
             channelSignal = ChannelSignal.from(signal),
-            channelSignalTypes = setOf(
-                ChannelSignalType.from(FakeTaskImpl::class.java),
-                ChannelSignalType.from(FakeTask::class.java),
-                ChannelSignalType.from(FakeTaskParent::class.java)
+            channelTypes = setOf(
+                ChannelType.from(FakeTaskImpl::class.java),
+                ChannelType.from(FakeTask::class.java),
+                ChannelType.from(FakeTaskParent::class.java)
             ),
             emitterName = clientNameTest
         )

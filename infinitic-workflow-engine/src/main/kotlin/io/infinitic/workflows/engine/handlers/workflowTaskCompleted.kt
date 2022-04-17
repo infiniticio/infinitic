@@ -241,11 +241,11 @@ private fun receiveFromChannel(
     state.receivingChannels.add(
         ReceivingChannel(
             channelName = command.channelName,
-            channelSignalType = command.channelSignalType,
-            channelSignalFilter = command.channelSignalFilter,
+            channelType = command.channelType,
+            channelFilter = command.channelFilter,
             methodRunId = state.runningMethodRunId!!,
             commandId = newCommand.commandId,
-            remainingCount = command.channelSignalLimit
+            receivedSignalLimit = command.receivedSignalLimit
         )
     )
 }
@@ -394,7 +394,7 @@ private fun getSendSignal(
     channelName = command.channelName,
     channelSignalId = ChannelSignalId.from(commandId),
     channelSignal = command.channelSignal,
-    channelSignalTypes = command.channelSignalTypes,
+    channelTypes = command.channelTypes,
     emitterName = emitterName
 )
 
@@ -431,7 +431,7 @@ private fun CoroutineScope.sendSignal(
                 channelName = command.channelName,
                 channelSignalId = ChannelSignalId(),
                 channelSignal = command.channelSignal,
-                channelSignalTypes = command.channelSignalTypes,
+                channelTypes = command.channelTypes,
                 emitterWorkflowId = state.workflowId,
                 emitterName = output.clientName
             )

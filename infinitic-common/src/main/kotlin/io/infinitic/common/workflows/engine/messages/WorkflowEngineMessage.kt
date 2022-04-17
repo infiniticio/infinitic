@@ -25,6 +25,7 @@
 
 package io.infinitic.common.workflows.engine.messages
 
+import com.github.avrokotlin.avro4k.AvroName
 import com.github.avrokotlin.avro4k.AvroNamespace
 import io.infinitic.common.data.ClientName
 import io.infinitic.common.data.MessageId
@@ -45,7 +46,7 @@ import io.infinitic.common.tasks.executors.errors.UnknownWorkflowError
 import io.infinitic.common.workflows.data.channels.ChannelName
 import io.infinitic.common.workflows.data.channels.ChannelSignal
 import io.infinitic.common.workflows.data.channels.ChannelSignalId
-import io.infinitic.common.workflows.data.channels.ChannelSignalType
+import io.infinitic.common.workflows.data.channels.ChannelType
 import io.infinitic.common.workflows.data.methodRuns.MethodRunId
 import io.infinitic.common.workflows.data.timers.TimerId
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTask
@@ -154,7 +155,8 @@ data class SendSignal(
     val channelName: ChannelName,
     val channelSignalId: ChannelSignalId,
     val channelSignal: ChannelSignal,
-    val channelSignalTypes: Set<ChannelSignalType>,
+    @AvroName("channelSignalTypes")
+    val channelTypes: Set<ChannelType>,
     override val emitterName: ClientName
 ) : WorkflowEngineMessage()
 

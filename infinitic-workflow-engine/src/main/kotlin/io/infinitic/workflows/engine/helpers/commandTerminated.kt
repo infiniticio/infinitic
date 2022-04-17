@@ -29,6 +29,7 @@ import io.infinitic.common.exceptions.thisShouldNotHappen
 import io.infinitic.common.workflows.data.commands.CommandId
 import io.infinitic.common.workflows.data.commands.CommandStatus
 import io.infinitic.common.workflows.data.commands.PastCommand
+import io.infinitic.common.workflows.data.commands.ReceiveSignalPastCommand
 import io.infinitic.common.workflows.data.methodRuns.MethodRunId
 import io.infinitic.common.workflows.engine.state.WorkflowState
 import io.infinitic.workflows.engine.output.WorkflowEngineOutput
@@ -55,11 +56,17 @@ internal fun CoroutineScope.commandTerminated(
     if (pastCommand.isTerminated()) return
 
     // update command status
-    pastCommand.setStatus(commandStatus)
+    pastCommand.setTerminatedStatus(commandStatus)
 
     if (stepTerminated(output, state, pastCommand)) {
-        // keep this command as we could have another pastStep solved by it
-        state.runningTerminatedCommands.add(0, commandId)
+        if (pastCommand is ReceiveSignalPastCommand) {
+            // if a step is completed right away, we remove this status from state
+            pastCommand.commandStatuses.remove(commandStatus)
+            // this command can not complete another step, because only one step can be associated with a signal
+        } else {
+            // keep this command as we could have another pastStep solved by it
+            state.runningTerminatedCommands.add(0, commandId)
+        }
     }
 }
 

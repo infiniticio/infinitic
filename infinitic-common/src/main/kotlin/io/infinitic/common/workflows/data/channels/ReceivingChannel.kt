@@ -35,11 +35,14 @@ import kotlinx.serialization.Serializable
 @Serializable @AvroNamespace("io.infinitic.workflows.data")
 data class ReceivingChannel(
     val channelName: ChannelName,
-    val channelSignalType: ChannelSignalType?,
+    @AvroName("channelSignalType")
+    val channelType: ChannelType?,
     @AvroName("channelEventFilter")
-    val channelSignalFilter: ChannelSignalFilter?,
+    val channelFilter: ChannelFilter?,
     val methodRunId: MethodRunId,
     val commandId: CommandId,
     @AvroDefault("1")
-    var remainingCount: Int?
+    val receivedSignalLimit: Int?,
+    @AvroDefault("0")
+    var receivedSignalCount: Int = 0
 )

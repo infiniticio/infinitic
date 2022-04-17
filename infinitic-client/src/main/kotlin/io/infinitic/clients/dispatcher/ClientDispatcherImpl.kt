@@ -610,7 +610,7 @@ internal class ClientDispatcherImpl(
                     channelName = handler.channelName,
                     channelSignalId = deferredSend.channelSignalId,
                     channelSignal = handler.channelSignal,
-                    channelSignalTypes = handler.channelSignalTypes,
+                    channelTypes = handler.channelTypes,
                     emitterName = clientName
                 )
                 sendToWorkflowEngine(sendSignal)
@@ -622,7 +622,7 @@ internal class ClientDispatcherImpl(
                     channelName = handler.channelName,
                     channelSignalId = deferredSend.channelSignalId,
                     channelSignal = handler.channelSignal,
-                    channelSignalTypes = handler.channelSignalTypes,
+                    channelTypes = handler.channelTypes,
                     emitterWorkflowId = null,
                     emitterName = clientName
                 )
