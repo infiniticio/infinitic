@@ -207,47 +207,32 @@ class PulsarInfiniticWorker private constructor(
     }
 
     private fun Topics.checkOrCreateTopics() {
-        // get current existing topics
-        val existing: MutableList<String> = try {
-            logger.debug { "Getting list of partitioned topics for namespace $fullNamespace" }
-            getPartitionedTopicList(fullNamespace)
-        } catch (e: PulsarAdminException.NotAllowedException) {
-            logger.warn { "Not allowed to get list of topics for $fullNamespace: ${e.message}" }
-            mutableListOf()
-        } catch (e: PulsarAdminException.NotAuthorizedException) {
-            logger.warn { "Not authorized to get list of topics for $fullNamespace: ${e.message}" }
-            mutableListOf()
-        }
-
         // create a topic if it does not exist already
-        val checkOrCreateTopic = { topic: String ->
-            if (! existing.contains(topic)) {
-                try {
-                    logger.debug { "Creating topic $topic" }
-                    createPartitionedTopic(topic, 1)
-                    existing.add(topic)
-                } catch (e: PulsarAdminException.ConflictException) {
-                    logger.warn { "Already existing topic $topic: ${e.message}" }
-                    existing.add(topic)
-                } catch (e: PulsarAdminException.NotAllowedException) {
-                    logger.warn { "Not allowed to create topic $topic: ${e.message}" }
-                } catch (e: PulsarAdminException.NotAuthorizedException) {
-                    logger.warn { "Not authorized to create topic $topic: ${e.message}" }
+        val checkOrCreateTopic = { topic: String, isPartitioned: Boolean ->
+            try {
+                logger.debug { "Creating topic $topic" }
+                when (isPartitioned) {
+                    true -> createPartitionedTopic(topic, 1)
+                    false -> createNonPartitionedTopic(topic)
                 }
-            } else {
-                logger.debug { "Already existing topic $topic" }
+            } catch (e: PulsarAdminException.ConflictException) {
+                logger.debug { "Already existing topic $topic: ${e.message}" }
+            } catch (e: PulsarAdminException.NotAllowedException) {
+                logger.warn { "Not allowed to create topic $topic: ${e.message}" }
+            } catch (e: PulsarAdminException.NotAuthorizedException) {
+                logger.warn { "Not authorized to create topic $topic: ${e.message}" }
             }
         }
 
         GlobalTopics.values().forEach {
-            checkOrCreateTopic(topicNames.topic(it))
+            checkOrCreateTopic(topicNames.topic(it), it.isPartitioned)
         }
 
         for (task in workerConfig.tasks) {
             val taskName = TaskName(task.name)
             TaskTopics.values().forEach {
-                checkOrCreateTopic(topicNames.topic(it, taskName))
-                checkOrCreateTopic(topicNames.topicDLQ(it, taskName))
+                checkOrCreateTopic(topicNames.topic(it, taskName), it.isPartitioned)
+                checkOrCreateTopic(topicNames.topicDLQ(it, taskName), it.isPartitioned)
             }
         }
 
@@ -255,13 +240,13 @@ class PulsarInfiniticWorker private constructor(
             val workflowName = WorkflowName(workflow.name)
 
             WorkflowTopics.values().forEach {
-                checkOrCreateTopic(topicNames.topic(it, workflowName))
-                checkOrCreateTopic(topicNames.topicDLQ(it, workflowName))
+                checkOrCreateTopic(topicNames.topic(it, workflowName), it.isPartitioned)
+                checkOrCreateTopic(topicNames.topicDLQ(it, workflowName), it.isPartitioned)
             }
 
             WorkflowTaskTopics.values().forEach {
-                checkOrCreateTopic(topicNames.topic(it, workflowName))
-                checkOrCreateTopic(topicNames.topicDLQ(it, workflowName))
+                checkOrCreateTopic(topicNames.topic(it, workflowName), it.isPartitioned)
+                checkOrCreateTopic(topicNames.topicDLQ(it, workflowName), it.isPartitioned)
             }
         }
     }

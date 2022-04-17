@@ -47,27 +47,49 @@ sealed interface TopicType {
     val subscriptionName: String get() = "$subscriptionPrefix-subscription"
 
     val subscriptionType: SubscriptionType
+
+    val isPartitioned: Boolean
 }
 
-enum class ClientTopics(override val subscriptionPrefix: String, override val subscriptionType: SubscriptionType) : TopicType {
-    RESPONSE("response", SubscriptionType.Exclusive)
+enum class ClientTopics(
+    override val subscriptionPrefix: String,
+    override val subscriptionType: SubscriptionType,
+    override val isPartitioned: Boolean
+) : TopicType {
+    RESPONSE("response", SubscriptionType.Exclusive, false)
 }
 
-enum class GlobalTopics(override val subscriptionPrefix: String, override val subscriptionType: SubscriptionType) : TopicType {
-    NAMER("namer", SubscriptionType.Shared)
+enum class GlobalTopics(
+    override val subscriptionPrefix: String,
+    override val subscriptionType: SubscriptionType,
+    override val isPartitioned: Boolean
+) : TopicType {
+    NAMER("namer", SubscriptionType.Shared, false)
 }
 
-enum class WorkflowTopics(override val subscriptionPrefix: String, override val subscriptionType: SubscriptionType) : TopicType {
-    TAG("workflow-tag", SubscriptionType.Key_Shared),
-    ENGINE("workflow-engine", SubscriptionType.Key_Shared),
-    DELAY("workflow-$TOPIC_WITH_DELAY", SubscriptionType.Shared)
+enum class WorkflowTopics(
+    override val subscriptionPrefix: String,
+    override val subscriptionType: SubscriptionType,
+    override val isPartitioned: Boolean
+) : TopicType {
+    TAG("workflow-tag", SubscriptionType.Key_Shared, true),
+    ENGINE("workflow-engine", SubscriptionType.Key_Shared, true),
+    DELAY("workflow-$TOPIC_WITH_DELAY", SubscriptionType.Shared, true)
 }
 
-enum class WorkflowTaskTopics(override val subscriptionPrefix: String, override val subscriptionType: SubscriptionType) : TopicType {
-    EXECUTOR("workflow-task-executor", SubscriptionType.Shared)
+enum class WorkflowTaskTopics(
+    override val subscriptionPrefix: String,
+    override val subscriptionType: SubscriptionType,
+    override val isPartitioned: Boolean
+) : TopicType {
+    EXECUTOR("workflow-task-executor", SubscriptionType.Shared, true)
 }
 
-enum class TaskTopics(override val subscriptionPrefix: String, override val subscriptionType: SubscriptionType) : TopicType {
-    TAG("task-tag", SubscriptionType.Key_Shared),
-    EXECUTOR("task-executor", SubscriptionType.Shared)
+enum class TaskTopics(
+    override val subscriptionPrefix: String,
+    override val subscriptionType: SubscriptionType,
+    override val isPartitioned: Boolean
+) : TopicType {
+    TAG("task-tag", SubscriptionType.Key_Shared, true),
+    EXECUTOR("task-executor", SubscriptionType.Shared, true)
 }
