@@ -23,7 +23,7 @@
  * Licensor: infinitic.io
  */
 
-const val kotlinVersion = "1.6.10"
+const val kotlinVersion = "1.6.20"
 
 object Plugins {
     object Kotlin {
@@ -43,6 +43,6 @@ object Plugins {
 
     object TestLogger {
         const val id = "com.adarshr.test-logger"
-        const val version = "3.0.0"
+        const val version = "3.2.0"
     }
 }

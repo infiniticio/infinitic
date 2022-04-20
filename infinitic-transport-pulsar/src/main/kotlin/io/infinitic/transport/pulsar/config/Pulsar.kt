@@ -25,7 +25,7 @@
 
 package io.infinitic.transport.pulsar.config
 
-import com.sksamuel.hoplite.Masked
+import com.sksamuel.hoplite.Secret
 import io.infinitic.common.serDe.json.Json
 import io.infinitic.transport.pulsar.config.auth.AuthenticationAthenz
 import io.infinitic.transport.pulsar.config.auth.AuthenticationOAuth2
@@ -51,7 +51,7 @@ data class Pulsar(
     val useKeyStoreTls: Boolean = false,
     val tlsTrustStoreType: TlsTrustStoreType = TlsTrustStoreType.JKS,
     val tlsTrustStorePath: String? = null,
-    val tlsTrustStorePassword: Masked? = null,
+    val tlsTrustStorePassword: Secret? = null,
     val authentication: ClientAuthentication? = null,
     val policies: Policies = Policies()
 ) {
@@ -96,7 +96,7 @@ data class Pulsar(
             .also {
                 when (authentication) {
                     is AuthenticationToken -> it.authentication(
-                        AuthenticationFactory.token(authentication.token)
+                        AuthenticationFactory.token(authentication.token.value)
                     )
                     is AuthenticationAthenz -> it.authentication(
                         AuthenticationFactory.create(
@@ -141,7 +141,7 @@ data class Pulsar(
             .also {
                 when (authentication) {
                     is AuthenticationToken -> it.authentication(
-                        AuthenticationFactory.token(authentication.token)
+                        AuthenticationFactory.token(authentication.token.value)
                     )
                     is AuthenticationAthenz -> it.authentication(
                         AuthenticationFactory.create(
