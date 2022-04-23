@@ -38,7 +38,6 @@ object Libs {
     }
 
     object Caffeine {
-        // can not upgrade to 3.+ that requires java 11 as minimal version
         const val caffeine = "com.github.ben-manes.caffeine:caffeine:3.0.6"
     }
 
@@ -73,14 +72,13 @@ object Libs {
     }
 
     object Hoplite {
-        // can not upgrade to 2.+ that requires java 11 as minimal version
-        private const val version = "2.1.1"
+        private const val version = "2.1.2"
         const val core = "com.sksamuel.hoplite:hoplite-core:$version"
         const val yaml = "com.sksamuel.hoplite:hoplite-yaml:$version"
     }
 
     object Pulsar {
-        private const val version = "2.9.2"
+        private const val version = "2.10.0"
         const val client = "org.apache.pulsar:pulsar-client:$version"
         const val clientAdmin = "org.apache.pulsar:pulsar-client-admin:$version"
         const val functions = "org.apache.pulsar:pulsar-functions-api:$version"
@@ -93,8 +91,7 @@ object Libs {
     }
 
     object EasyRandom {
-        // can not upgrade to 5.0.0 that requires java 11 as minimal version
-        const val core = "org.jeasy:easy-random-core:4.3.0"
+        const val core = "org.jeasy:easy-random-core:5.0.0"
     }
 
     object Slf4j {
