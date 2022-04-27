@@ -25,6 +25,8 @@
 
 package io.infinitic.transport.pulsar.config.auth
 
+import com.sksamuel.hoplite.Secret
+
 data class AuthenticationToken(
-    val token: String
+    val token: Secret
 ) : ClientAuthentication()

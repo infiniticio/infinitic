@@ -25,12 +25,12 @@
 
 package io.infinitic.transport.pulsar.config.auth
 
-import com.sksamuel.hoplite.Masked
+import com.sksamuel.hoplite.Secret
 
 data class AuthenticationAthenz(
     val tenantDomain: String,
     val tenantService: String,
     val providerDomain: String,
-    val privateKey: Masked,
+    val privateKey: Secret,
     val keyId: String = "0",
 ) : ClientAuthentication()

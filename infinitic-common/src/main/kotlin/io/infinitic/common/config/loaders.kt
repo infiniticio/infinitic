@@ -24,7 +24,7 @@
  */
 package io.infinitic.common.config
 
-import com.sksamuel.hoplite.ConfigLoader
+import com.sksamuel.hoplite.ConfigLoaderBuilder
 import com.sksamuel.hoplite.PropertySource
 import mu.KotlinLogging
 import java.io.File
@@ -32,8 +32,8 @@ import java.io.File
 val logger = KotlinLogging.logger("io.infinitic.common.config.loaders")
 
 inline fun <reified T : Any> loadConfigFromResource(resources: List<String>): T {
-    val config = ConfigLoader
-        .Builder()
+    val config = ConfigLoaderBuilder
+        .default()
         .also { builder -> resources.map { builder.addSource(PropertySource.resource(it, false)) } }
         .build()
         .loadConfigOrThrow<T>()
@@ -43,8 +43,8 @@ inline fun <reified T : Any> loadConfigFromResource(resources: List<String>): T 
 }
 
 inline fun <reified T : Any> loadConfigFromFile(files: List<String>): T {
-    val config = ConfigLoader
-        .Builder()
+    val config = ConfigLoaderBuilder
+        .default()
         .also { builder -> files.map { builder.addSource(PropertySource.file(File(it), false)) } }
         .build()
         .loadConfigOrThrow<T>()

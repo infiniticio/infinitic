@@ -32,14 +32,13 @@ object Libs {
     }
 
     object Coroutines {
-        private const val version = "1.6.0"
+        private const val version = "1.6.1"
         const val core = "org.jetbrains.kotlinx:kotlinx-coroutines-core:$version"
         const val jdk8 = "org.jetbrains.kotlinx:kotlinx-coroutines-jdk8:$version"
     }
 
     object Caffeine {
-        // can not upgrade to 3.+ that requires java 11 as minimal version
-        const val caffeine = "com.github.ben-manes.caffeine:caffeine:2.9.3"
+        const val caffeine = "com.github.ben-manes.caffeine:caffeine:3.0.6"
     }
 
     object Serialization {
@@ -47,11 +46,11 @@ object Libs {
     }
 
     object JsonPath {
-        const val jayway = "com.jayway.jsonpath:json-path:2.6.0"
+        const val jayway = "com.jayway.jsonpath:json-path:2.7.0"
     }
 
     object Jackson {
-        private const val version = "2.13.1"
+        private const val version = "2.13.2"
         const val core = "com.fasterxml.jackson.core:jackson-core:$version"
         const val databind = "com.fasterxml.jackson.core:jackson-databind:$version"
         const val kotlin = "com.fasterxml.jackson.module:jackson-module-kotlin:$version"
@@ -59,13 +58,13 @@ object Libs {
     }
 
     object Kotest {
-        private const val version = "5.2.2"
+        private const val version = "5.2.3"
         const val property = "io.kotest:kotest-property-jvm:$version"
         const val junit5 = "io.kotest:kotest-runner-junit5-jvm:$version"
     }
 
     object Mockk {
-        const val mockk = "io.mockk:mockk:1.12.2"
+        const val mockk = "io.mockk:mockk:1.12.3"
     }
 
     object Avro4k {
@@ -73,14 +72,13 @@ object Libs {
     }
 
     object Hoplite {
-        // can not upgrade to 2.+ that requires java 11 as minimal version
-        private const val version = "1.4.16"
+        private const val version = "2.1.2"
         const val core = "com.sksamuel.hoplite:hoplite-core:$version"
         const val yaml = "com.sksamuel.hoplite:hoplite-yaml:$version"
     }
 
     object Pulsar {
-        private const val version = "2.9.1"
+        private const val version = "2.10.0"
         const val client = "org.apache.pulsar:pulsar-client:$version"
         const val clientAdmin = "org.apache.pulsar:pulsar-client-admin:$version"
         const val functions = "org.apache.pulsar:pulsar-functions-api:$version"
@@ -89,16 +87,15 @@ object Libs {
     }
 
     object Kweb {
-        const val core = "com.github.kwebio:kweb-core:0.10.13"
+        const val core = "com.github.kwebio:kweb-core:0.11.2"
     }
 
     object EasyRandom {
-        // can not upgrade to 5.0.0 that requires java 11 as minimal version
-        const val core = "org.jeasy:easy-random-core:4.3.0"
+        const val core = "org.jeasy:easy-random-core:5.0.0"
     }
 
     object Slf4j {
-        private const val version = "1.7.35"
+        private const val version = "1.7.36"
         const val simple = "org.slf4j:slf4j-simple:$version"
         const val api = "org.slf4j:slf4j-api:$version"
     }
