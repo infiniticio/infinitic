@@ -299,4 +299,12 @@ internal class ChannelWorkflowTests : StringSpec({
 
         (error.deferredException as FailedWorkflowTaskException).workerException.name shouldBe OutOfBoundAwaitException::class.java.name
     }
+
+    "testing isCompleted" {
+        val deferred = client.dispatch(channelsWorkflow::channel8)
+
+        later { client.getWorkflowById(ChannelsWorkflow::class.java, deferred.id).channelA.send("test") }
+
+        deferred.await() shouldBe "falsetruefalse"
+    }
 })

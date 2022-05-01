@@ -167,15 +167,15 @@ internal class WorkflowDispatcherImpl(
         // increment position
         nextPosition()
 
-        deferred.step.nextAwait()
-
         // create a new step
         val newStep = NewStep(
             step = deferred.step,
             stepPosition = methodRunPosition
         )
 
-        return when (val pastStep = getSimilarPastStep(newStep)) {
+        deferred.step.checkAwaitIndex()
+
+        val result = when (val pastStep = getSimilarPastStep(newStep)) {
             // this step is not found in the history
             null -> {
                 // determine this step status based on history
@@ -245,6 +245,10 @@ internal class WorkflowDispatcherImpl(
                 }
             }
         }
+
+        deferred.step.nextAwaitIndex()
+
+        return result
     }
 
     /**
