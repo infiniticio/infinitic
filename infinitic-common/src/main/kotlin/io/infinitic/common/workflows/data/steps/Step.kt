@@ -66,8 +66,10 @@ sealed class Step {
     // get status at provided index
     abstract fun statusAt(index: WorkflowTaskIndex): StepStatus
 
-    // get status at provided index for a wait
-    abstract fun nextAwait()
+    // increase wait index and update current status
+    abstract fun nextAwaitIndex()
+    // check wait index is valid
+    abstract fun checkAwaitIndex()
 
     /**
      * hash provides a unique hash linked to the structure of the step (excluding commandStatus)
@@ -78,8 +80,8 @@ sealed class Step {
     data class Id(
         val commandId: CommandId,
         // store the # of time we have already waited this command
-        @AvroDefault("-1") // before this feature was added, we consider it was the first wait
-        var awaitIndex: Int = -1
+        @AvroDefault("0") // before this feature was added, we consider it was the first wait
+        var awaitIndex: Int = 0
     ) : Step() {
         // status of first wait occurrence
         @JsonIgnore
@@ -96,6 +98,7 @@ sealed class Step {
             // only used in workflow task
             fun from(pastCommand: PastCommand) = Id(pastCommand.commandId).apply {
                 commandStatus = pastCommand.commandStatus
+
                 if (pastCommand is ReceiveSignalPastCommand) {
                     commandStatuses = pastCommand.commandStatuses
                     commandStatusLimit = pastCommand.command.receivedSignalLimit
@@ -119,19 +122,21 @@ sealed class Step {
             is StepStatus.Completed -> true
         }
 
-        override fun nextAwait() {
+        override fun checkAwaitIndex() {
+            // user is asking more than the limit, we consider it as a failure
+            if (commandStatuses != null && commandStatusLimit != null && awaitIndex >= commandStatusLimit!!) {
+                throw OutOfBoundAwaitException
+            }
+        }
+        override fun nextAwaitIndex() {
             awaitIndex++
 
             // update commandStatus if needed
             if (commandStatuses != null) {
-                // user is asking more than the limit, we consider it as a failure
-                if (commandStatusLimit != null && awaitIndex >= commandStatusLimit!!) throw OutOfBoundAwaitException
-                // else update the status
-                commandStatus = when (awaitIndex) {
-                    0 -> commandStatus
-                    // nth request for channel.receive()
-                    else -> commandStatuses!!.firstOrNull { it is Completed && it.returnIndex == awaitIndex } ?: Ongoing
-                }
+                // update current status
+                commandStatus = commandStatuses!!.firstOrNull {
+                    (it is Completed) && (it.returnIndex == awaitIndex)
+                } ?: Ongoing
             }
         }
 
@@ -164,7 +169,9 @@ sealed class Step {
         @JsonIgnore
         override fun isTerminatedAt(index: WorkflowTaskIndex) = this.steps.all { it.isTerminatedAt(index) }
 
-        override fun nextAwait() { steps.map { it.nextAwait() } }
+        override fun checkAwaitIndex() { steps.map { it.checkAwaitIndex() } }
+
+        override fun nextAwaitIndex() { steps.map { it.nextAwaitIndex() } }
 
         override fun statusAt(index: WorkflowTaskIndex): StepStatus {
             val statuses = steps.map { it.statusAt(index) }
@@ -206,7 +213,8 @@ sealed class Step {
         @JsonIgnore
         override fun isTerminatedAt(index: WorkflowTaskIndex) = this.steps.any { it.isTerminatedAt(index) }
 
-        override fun nextAwait() { steps.map { it.nextAwait() } }
+        override fun checkAwaitIndex() { steps.map { it.checkAwaitIndex() } }
+        override fun nextAwaitIndex() { steps.map { it.nextAwaitIndex() } }
 
         override fun statusAt(index: WorkflowTaskIndex): StepStatus {
             val statuses = steps.map { it.statusAt(index) }

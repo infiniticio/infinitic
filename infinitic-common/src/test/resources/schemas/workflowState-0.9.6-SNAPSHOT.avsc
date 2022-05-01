@@ -740,7 +740,7 @@
                         }, {
                           "name" : "awaitIndex",
                           "type" : "int",
-                          "default" : -1
+                          "default" : 0
                         }, {
                           "name" : "commandStatus",
                           "type" : [ "CommandStatus.Canceled", "CommandStatus.Completed", "CommandStatus.Failed", "CommandStatus.Ongoing", "CommandStatus.Unknown" ]
