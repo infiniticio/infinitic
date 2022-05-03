@@ -23,20 +23,20 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.storage.jdbc
+package io.infinitic.storage.mysql
 
 import com.sksamuel.hoplite.Secret
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
 
-class JDBCKeyCounterStorageTests : StringSpec({
+class MySQLKeyCounterStorageTests : StringSpec({
 
-    val storage = JDBCKeyCounterStorage.of(
-        JDBC(
+    val storage = MySQLKeyCounterStorage.of(
+        MySQL(
             host = "mysql-main.dev.aws.internal",
-            user = "user_ghacout_dev_aws",
-            password = Secret("8d244011-50ef-4500-a414-95dee8920b7f"),
-            database = "data_alfounet"
+            user = "user",
+            password = Secret("password"),
+            database = "infinitic"
         )
     )
 

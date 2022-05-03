@@ -23,7 +23,7 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.storage.jdbc
+package io.infinitic.storage.mysql
 
 import com.zaxxer.hikari.HikariConfig
 import com.zaxxer.hikari.HikariDataSource
@@ -39,7 +39,7 @@ fun getPools(
 ):HikariDataSource {
    return HikariDataSource(
         HikariConfig().apply {
-            jdbcUrl         = "jdbc:mysql://$host:$port/$database"
+            jdbcUrl         = "jdbc:mysql://$host:$port/$database?profileSQL=true"
             driverClassName = "com.mysql.cj.jdbc.Driver"
             username        = user
             password        = passwd
@@ -49,7 +49,7 @@ fun getPools(
     )
 }
 
-fun getPool(config: JDBC) = getPools(
+fun getPool(config: MySQL) = getPools(
     host = config.host,
     port = config.port,
     timeout = config.timeout,

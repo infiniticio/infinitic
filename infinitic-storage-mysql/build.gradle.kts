@@ -24,10 +24,9 @@
  */
 
 dependencies {
-
     // For connection pooling
     implementation("com.zaxxer:HikariCP:5.0.1")
-    // Specific JDBC drivers
+    // Specific JDBC driver
     implementation("mysql:mysql-connector-java:8.0.28")
 
     implementation(Libs.Hoplite.core)

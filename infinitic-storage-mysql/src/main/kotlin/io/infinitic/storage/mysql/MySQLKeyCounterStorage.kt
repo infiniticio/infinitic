@@ -23,18 +23,19 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.storage.jdbc
+package io.infinitic.storage.mysql
 
 import com.zaxxer.hikari.HikariDataSource
 import io.infinitic.common.storage.keyCounter.KeyCounterStorage
 import org.jetbrains.annotations.TestOnly
 
-class JDBCKeyCounterStorage(
+private const val MYSQL_TABLE = "infinitic.key_counter_storage"
+class MySQLKeyCounterStorage(
     private val pool: HikariDataSource
 ) : KeyCounterStorage {
 
     companion object {
-        fun of(config: JDBC) = JDBCKeyCounterStorage(getPool(config))
+        fun of(config: MySQL) = MySQLKeyCounterStorage(getPool(config))
     }
 
     init {
@@ -49,29 +50,39 @@ class JDBCKeyCounterStorage(
     }
 
     override suspend fun get(key: String): Long =
-        pool.connection.use{
-            it.prepareStatement("SELECT counter FROM infinitic.key_counter_storage WHERE key=?")
-        }?.let {
-            it.setString(1, key)
-            it.executeQuery()
-        }?.let {
-            if (it.next()) {  it.getLong(1) } else 0L
+        pool.connection.use{ connection ->
+            connection.prepareStatement("SELECT counter FROM $MYSQL_TABLE WHERE `key`=?")
+                ?.use { statement ->
+                    statement.setString(1, key)
+                    statement.executeQuery()
+                        ?.use { result ->
+                            if (result.next()) {
+                                result.getLong("counter")
+                            } else 0L
+                        }
+                }
         } ?: 0L
 
     override suspend fun incr(key: String, amount: Long): Unit =
         pool.connection.use{
             it.prepareStatement(
-                "INSERT INTO infinitic.key_counter_storage (key, counter) VALUES (?, ?) " +
-                    "ON DUPLICATE KEY UPDATE counter=counter+?")
-        }?.let {
-            it.setString(1, key)
-            it.setLong(2, amount)
-            it.setLong(2, amount)
-            it.execute()
-        }.run {}
+                "INSERT INTO $MYSQL_TABLE (`key`, counter) VALUES (?, ?) " +
+                    "ON DUPLICATE KEY UPDATE counter=counter+?"
+            )?.use { statement ->
+                statement.setString(1, key)
+                statement.setLong(2, amount)
+                statement.setLong(3, amount)
+                statement.executeUpdate()
+            }
+        }
 
     @TestOnly
     override fun flush() {
-        // TRUNCATE table ?
+        pool.connection.use{
+            it.prepareStatement("TRUNCATE $MYSQL_TABLE")
+                ?.use { statement ->
+                    statement.executeUpdate()
+            }
+        }
     }
 }
