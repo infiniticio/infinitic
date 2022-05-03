@@ -31,6 +31,10 @@ import io.infinitic.common.storage.keyValue.KeyValueStorage
 import io.infinitic.storage.inMemory.InMemoryKeyCounterStorage
 import io.infinitic.storage.inMemory.InMemoryKeySetStorage
 import io.infinitic.storage.inMemory.InMemoryKeyValueStorage
+import io.infinitic.storage.mysql.MySQL
+import io.infinitic.storage.mysql.MySQLKeyCounterStorage
+import io.infinitic.storage.mysql.MySQLKeySetStorage
+import io.infinitic.storage.mysql.MySQLKeyValueStorage
 import io.infinitic.storage.redis.Redis
 import io.infinitic.storage.redis.RedisKeyCounterStorage
 import io.infinitic.storage.redis.RedisKeySetStorage
@@ -49,6 +53,13 @@ enum class StateStorage : KeyCounter, KeySet, KeyValue {
         override fun keyValue(config: StorageConfig) = RedisKeyValueStorage.of(redisConfig(config))
 
         private fun redisConfig(config: StorageConfig) = config.redis ?: Redis()
+    },
+    mysql {
+        override fun keyCounter(config: StorageConfig) = MySQLKeyCounterStorage.of(mysqlConfig(config))
+        override fun keySet(config: StorageConfig) = MySQLKeySetStorage.of(mysqlConfig(config))
+        override fun keyValue(config: StorageConfig) = MySQLKeyValueStorage.of(mysqlConfig(config))
+
+        private fun mysqlConfig(config: StorageConfig) = config.mysql ?: MySQL()
     }
 }
 

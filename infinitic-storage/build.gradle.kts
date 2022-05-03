@@ -29,6 +29,7 @@ dependencies {
     implementation(project(":infinitic-common"))
     api(project(":infinitic-storage-redis"))
     api(project(":infinitic-storage-inmemory"))
+    api(project(":infinitic-storage-mysql"))
 }
 
 apply("../publish.gradle.kts")
