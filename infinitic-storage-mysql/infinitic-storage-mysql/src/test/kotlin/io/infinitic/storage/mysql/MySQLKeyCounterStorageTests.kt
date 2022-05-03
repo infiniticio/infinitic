@@ -23,25 +23,48 @@
  * Licensor: infinitic.io
  */
 
-include("infinitic-common")
-include("infinitic-cache")
-include("infinitic-storage")
-include("infinitic-storage-inmemory")
-include("infinitic-storage-mysql")
-include("infinitic-storage-redis")
-include("infinitic-transport")
-include("infinitic-transport-inmemory")
-include("infinitic-transport-pulsar")
-include("infinitic-client")
-include("infinitic-task-tag")
-include("infinitic-task-executor")
-include("infinitic-workflow-tag")
-include("infinitic-workflow-engine")
-include("infinitic-workflow-task")
-include("infinitic-dashboard")
-include("infinitic-worker")
-include("infinitic-factory")
+package io.infinitic.storage.mysql
 
-include("infinitic-inMemory")
-include("infinitic-pulsar")
-include("infinitic-tests")
+import com.sksamuel.hoplite.Secret
+import io.kotest.core.spec.style.StringSpec
+import io.kotest.matchers.shouldBe
+
+class MySQLKeyCounterStorageTests : StringSpec({
+
+    val storage = MySQLKeyCounterStorage.of(
+        MySQL(
+            host = "mysql-main.dev.aws.internal",
+            user = "user",
+            password = Secret("password"),
+            database = "infinitic"
+        )
+    )
+
+    beforeTest {
+        storage.incr("foo", 42)
+    }
+
+    afterTest {
+        storage.flush()
+    }
+
+    "getCounter should return 0 on unknown key" {
+        storage.get("unknown") shouldBe 0
+    }
+
+    "getCounter should return value on known key" {
+        storage.get("foo") shouldBe 42
+    }
+
+    "incrCounter on unknown key should incr value from 0" {
+        storage.incr("unknown", 42)
+
+        storage.get("unknown") shouldBe 42
+    }
+
+    "incrCounter on known key should incr value from current" {
+        storage.incr("foo", -7)
+
+        storage.get("foo") shouldBe 35
+    }
+})

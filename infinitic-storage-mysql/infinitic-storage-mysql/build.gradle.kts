@@ -23,25 +23,15 @@
  * Licensor: infinitic.io
  */
 
-include("infinitic-common")
-include("infinitic-cache")
-include("infinitic-storage")
-include("infinitic-storage-inmemory")
-include("infinitic-storage-mysql")
-include("infinitic-storage-redis")
-include("infinitic-transport")
-include("infinitic-transport-inmemory")
-include("infinitic-transport-pulsar")
-include("infinitic-client")
-include("infinitic-task-tag")
-include("infinitic-task-executor")
-include("infinitic-workflow-tag")
-include("infinitic-workflow-engine")
-include("infinitic-workflow-task")
-include("infinitic-dashboard")
-include("infinitic-worker")
-include("infinitic-factory")
+dependencies {
+    // For connection pooling
+    implementation("com.zaxxer:HikariCP:5.0.1")
+    // Specific JDBC driver
+    implementation("mysql:mysql-connector-java:8.0.28")
 
-include("infinitic-inMemory")
-include("infinitic-pulsar")
-include("infinitic-tests")
+    implementation(Libs.Hoplite.core)
+
+    implementation(project(":infinitic-common"))
+}
+
+apply("../publish.gradle.kts")

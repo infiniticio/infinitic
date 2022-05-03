@@ -23,25 +23,37 @@
  * Licensor: infinitic.io
  */
 
-include("infinitic-common")
-include("infinitic-cache")
-include("infinitic-storage")
-include("infinitic-storage-inmemory")
-include("infinitic-storage-mysql")
-include("infinitic-storage-redis")
-include("infinitic-transport")
-include("infinitic-transport-inmemory")
-include("infinitic-transport-pulsar")
-include("infinitic-client")
-include("infinitic-task-tag")
-include("infinitic-task-executor")
-include("infinitic-workflow-tag")
-include("infinitic-workflow-engine")
-include("infinitic-workflow-task")
-include("infinitic-dashboard")
-include("infinitic-worker")
-include("infinitic-factory")
+package io.infinitic.storage.mysql
 
-include("infinitic-inMemory")
-include("infinitic-pulsar")
-include("infinitic-tests")
+import com.zaxxer.hikari.HikariConfig
+import com.zaxxer.hikari.HikariDataSource
+
+// Renaming of getPools ? because in order to name it getPool I have to create a different type of fun
+fun getPools(
+    host: String,
+    port: Int,
+    timeout: Int,
+    user: String?,
+    passwd: String?,
+    database: String,
+):HikariDataSource {
+   return HikariDataSource(
+        HikariConfig().apply {
+            jdbcUrl         = "jdbc:mysql://$host:$port/$database?profileSQL=true"
+            driverClassName = "com.mysql.cj.jdbc.Driver"
+            username        = user
+            password        = passwd
+            maximumPoolSize = 10
+            maxLifetime     = timeout.toLong()
+        }
+    )
+}
+
+fun getPool(config: MySQL) = getPools(
+    host = config.host,
+    port = config.port,
+    timeout = config.timeout,
+    user = config.user,
+    passwd = config.password?.value,
+    database = config.database,
+)
