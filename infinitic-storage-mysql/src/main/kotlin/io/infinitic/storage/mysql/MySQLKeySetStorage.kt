@@ -42,11 +42,17 @@ class MySQLKeySetStorage(
     init {
         // Init with Database + Table creation IF NOT EXISTS ?
         // CREATE DATABASE IF NOT EXISTS infinitic;
-        // CREATE TABLE IF NOT EXISTS infinitic.key_set_storage (
-        //   `id` INT AUTO_INCREMENT PRIMARY KEY,
-        //   `key` VARCHAR(255) NOT NULL,
-        //   `value` VARBINARY(255) NOT NULL
-        //) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+        pool.connection.use{
+            it.prepareStatement(
+                "CREATE TABLE IF NOT EXISTS $MYSQL_TABLE ("+
+                    "`id` INT AUTO_INCREMENT PRIMARY KEY,"+
+                    "`key` VARCHAR(255) NOT NULL,"+
+                    "`value` VARBINARY(1000) NOT NULL"+
+                    ") ENGINE=InnoDB DEFAULT CHARSET=utf8")
+                ?.use { statement ->
+                    statement.executeUpdate()
+                }
+        }
         Runtime.getRuntime().addShutdownHook(Thread { pool.close() })
     }
 

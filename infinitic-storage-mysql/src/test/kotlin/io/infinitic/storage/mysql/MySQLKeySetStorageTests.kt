@@ -29,17 +29,32 @@ import com.sksamuel.hoplite.Secret
 import io.infinitic.common.data.Bytes
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
+import org.testcontainers.containers.MySQLContainer
 
 class MySQLKeySetStorageTests : StringSpec({
 
+    val mysql = MySQLContainer<Nothing>("mysql:5.7")
+        .apply {
+            startupAttempts = 1
+            withUsername("test")
+            withPassword("password")
+            withDatabaseName("infinitic")
+        }
+        .let { it.start(); it }
+
     val storage = MySQLKeySetStorage.of(
         MySQL(
-            host = "mysql-main.dev.aws.internal",
-            user = "user",
-            password = Secret("password"),
-            database = "infinitic"
+            host = mysql.host,
+            port = mysql.firstMappedPort,
+            user = mysql.username,
+            password = Secret(mysql.password),
+            database = mysql.databaseName
         )
     )
+
+    afterSpec {
+        mysql.stop()
+    }
 
     beforeTest {
         storage.add("foo", "bar".toByteArray())
