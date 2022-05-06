@@ -28,31 +28,28 @@ package io.infinitic.storage.mysql
 import com.zaxxer.hikari.HikariConfig
 import com.zaxxer.hikari.HikariDataSource
 
-// Renaming of getPools ? because in order to name it getPool I have to create a different type of fun
-fun getPools(
+fun getPool(
     host: String,
     port: Int,
-    timeout: Int,
     user: String?,
     passwd: String?,
-    database: String,
-):HikariDataSource {
-   return HikariDataSource(
+    database: String?,
+): HikariDataSource {
+    return HikariDataSource(
+        // Default values set according to https://github.com/brettwooldridge/HikariCP/wiki/MySQL-Configuration
         HikariConfig().apply {
-            jdbcUrl         = "jdbc:mysql://$host:$port/$database?profileSQL=true"
+            jdbcUrl = "jdbc:mysql://$host:$port/$database"
             driverClassName = "com.mysql.cj.jdbc.Driver"
-            username        = user
-            password        = passwd
+            username = user
+            password = passwd
             maximumPoolSize = 10
-            maxLifetime     = timeout.toLong()
         }
     )
 }
 
-fun getPool(config: MySQL) = getPools(
+fun getPool(config: MySQL) = getPool(
     host = config.host,
     port = config.port,
-    timeout = config.timeout,
     user = config.user,
     passwd = config.password?.value,
     database = config.database,

@@ -29,7 +29,7 @@ import com.zaxxer.hikari.HikariDataSource
 import io.infinitic.common.storage.keyCounter.KeyCounterStorage
 import org.jetbrains.annotations.TestOnly
 
-private const val MYSQL_TABLE = "infinitic.key_counter_storage"
+private const val MYSQL_TABLE = "key_counter_storage"
 class MySQLKeyCounterStorage(
     private val pool: HikariDataSource
 ) : KeyCounterStorage {
@@ -39,24 +39,24 @@ class MySQLKeyCounterStorage(
     }
 
     init {
-        // Init with Database creation IF NOT EXISTS ?
-        // CREATE DATABASE IF NOT EXISTS infinitic;
-        pool.connection.use{
+        // Create MySQL table at init, for first time usage
+        pool.connection.use {
             it.prepareStatement(
-                "CREATE TABLE IF NOT EXISTS $MYSQL_TABLE ("+
-                        "`id` INT AUTO_INCREMENT PRIMARY KEY,"+
-                        "`key` VARCHAR(255) NOT NULL UNIQUE,"+
-                        "`counter` INT DEFAULT 0"+
-                    ") ENGINE=InnoDB DEFAULT CHARSET=utf8")
-            ?.use { statement ->
-                statement.executeUpdate()
-            }
+                "CREATE TABLE IF NOT EXISTS $MYSQL_TABLE (" +
+                    "`id` INT AUTO_INCREMENT PRIMARY KEY," +
+                    "`key` VARCHAR(255) NOT NULL UNIQUE," +
+                    "`counter` INT DEFAULT 0" +
+                    ") ENGINE=InnoDB DEFAULT CHARSET=utf8"
+            )
+                ?.use { statement ->
+                    statement.executeUpdate()
+                }
         }
         Runtime.getRuntime().addShutdownHook(Thread { pool.close() })
     }
 
     override suspend fun get(key: String): Long =
-        pool.connection.use{ connection ->
+        pool.connection.use { connection ->
             connection.prepareStatement("SELECT counter FROM $MYSQL_TABLE WHERE `key`=?")
                 ?.use { statement ->
                     statement.setString(1, key)
@@ -70,7 +70,7 @@ class MySQLKeyCounterStorage(
         } ?: 0L
 
     override suspend fun incr(key: String, amount: Long): Unit =
-        pool.connection.use{
+        pool.connection.use {
             it.prepareStatement(
                 "INSERT INTO $MYSQL_TABLE (`key`, counter) VALUES (?, ?) " +
                     "ON DUPLICATE KEY UPDATE counter=counter+?"
@@ -84,11 +84,11 @@ class MySQLKeyCounterStorage(
 
     @TestOnly
     override fun flush() {
-        pool.connection.use{
+        pool.connection.use {
             it.prepareStatement("TRUNCATE $MYSQL_TABLE")
                 ?.use { statement ->
                     statement.executeUpdate()
-            }
+                }
         }
     }
 }

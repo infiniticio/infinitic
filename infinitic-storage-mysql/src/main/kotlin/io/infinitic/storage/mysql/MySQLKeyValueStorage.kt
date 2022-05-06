@@ -29,7 +29,7 @@ import com.zaxxer.hikari.HikariDataSource
 import io.infinitic.common.storage.keyValue.KeyValueStorage
 import org.jetbrains.annotations.TestOnly
 
-private const val MYSQL_TABLE = "infinitic.key_value_storage"
+private const val MYSQL_TABLE = "key_value_storage"
 
 class MySQLKeyValueStorage(
     private val pool: HikariDataSource
@@ -40,15 +40,15 @@ class MySQLKeyValueStorage(
     }
 
     init {
-        // Init with Database + Table creation IF NOT EXISTS ?
-        // CREATE DATABASE IF NOT EXISTS infinitic;
-        pool.connection.use{
+        // Create MySQL table at init, for first time usage
+        pool.connection.use {
             it.prepareStatement(
-                "CREATE TABLE IF NOT EXISTS $MYSQL_TABLE ("+
-                    "`id` INT AUTO_INCREMENT PRIMARY KEY,"+
-                    "`key` VARCHAR(255) NOT NULL UNIQUE,"+
-                    "`value` VARBINARY(1000) NOT NULL"+
-                    ") ENGINE=InnoDB DEFAULT CHARSET=utf8")
+                "CREATE TABLE IF NOT EXISTS $MYSQL_TABLE (" +
+                    "`id` INT AUTO_INCREMENT PRIMARY KEY," +
+                    "`key` VARCHAR(255) NOT NULL UNIQUE," +
+                    "`value` VARBINARY(1000) NOT NULL" +
+                    ") ENGINE=InnoDB DEFAULT CHARSET=utf8"
+            )
                 ?.use { statement ->
                     statement.executeUpdate()
                 }
@@ -59,10 +59,10 @@ class MySQLKeyValueStorage(
     override suspend fun get(key: String): ByteArray? =
         pool.connection.use {
             it.prepareStatement("SELECT `value` FROM $MYSQL_TABLE WHERE `key`=?")
-                ?.use {statement ->
+                ?.use { statement ->
                     statement.setString(1, key)
                     statement.executeQuery()
-                        ?.use {result ->
+                        ?.use { result ->
                             if (result.next()) {
                                 result.getBytes("value")
                             } else null
@@ -74,8 +74,9 @@ class MySQLKeyValueStorage(
         pool.connection.use {
             it.prepareStatement(
                 "INSERT INTO $MYSQL_TABLE (`key`, `value`) VALUES (?, ?) " +
-                    "ON DUPLICATE KEY UPDATE `value`=?")
-                ?.use {statement ->
+                    "ON DUPLICATE KEY UPDATE `value`=?"
+            )
+                ?.use { statement ->
                     statement.setString(1, key)
                     statement.setBytes(2, value)
                     statement.setBytes(3, value)
@@ -87,7 +88,7 @@ class MySQLKeyValueStorage(
     override suspend fun del(key: String) =
         pool.connection.use {
             it.prepareStatement("DELETE FROM $MYSQL_TABLE WHERE `key`=?")
-                ?.use {statement ->
+                ?.use { statement ->
                     statement.setString(1, key)
                     statement.executeUpdate()
                 }
@@ -96,7 +97,7 @@ class MySQLKeyValueStorage(
 
     @TestOnly
     override fun flush() {
-        pool.connection.use{
+        pool.connection.use {
             it.prepareStatement("TRUNCATE $MYSQL_TABLE")
                 ?.use { statement ->
                     statement.executeUpdate()
