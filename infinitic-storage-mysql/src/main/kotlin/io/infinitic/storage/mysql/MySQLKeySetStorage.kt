@@ -46,7 +46,8 @@ class MySQLKeySetStorage(
                 "CREATE TABLE IF NOT EXISTS $MYSQL_TABLE ( " +
                     "`id` INT AUTO_INCREMENT PRIMARY KEY," +
                     "`key` VARCHAR(255) NOT NULL," +
-                    "`value` VARBINARY(1000) NOT NULL" +
+                    "`value` BLOB NOT NULL," +
+                    "KEY(`key`)" + // Non unique index creation for faster search
                     ") ENGINE=InnoDB DEFAULT CHARSET=utf8"
             )
                 ?.use { statement ->
@@ -74,6 +75,7 @@ class MySQLKeySetStorage(
 
     override suspend fun add(key: String, value: ByteArray) =
         pool.connection.use {
+            println("KEY SET ADD : $key OF SIZE ${value.size}")
             it.prepareStatement("INSERT INTO $MYSQL_TABLE (`key`, `value`) VALUES (?, ?)")
                 ?.use { statement ->
                     statement.setString(1, key)

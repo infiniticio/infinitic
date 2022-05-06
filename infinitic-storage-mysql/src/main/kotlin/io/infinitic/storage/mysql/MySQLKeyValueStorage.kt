@@ -46,7 +46,7 @@ class MySQLKeyValueStorage(
                 "CREATE TABLE IF NOT EXISTS $MYSQL_TABLE (" +
                     "`id` INT AUTO_INCREMENT PRIMARY KEY," +
                     "`key` VARCHAR(255) NOT NULL UNIQUE," +
-                    "`value` VARBINARY(1000) NOT NULL" +
+                    "`value` BLOB NOT NULL" +
                     ") ENGINE=InnoDB DEFAULT CHARSET=utf8"
             )
                 ?.use { statement ->
@@ -72,6 +72,7 @@ class MySQLKeyValueStorage(
 
     override suspend fun put(key: String, value: ByteArray) =
         pool.connection.use {
+            println("KEY VALUE PUT : $key OF SIZE ${value.size}")
             it.prepareStatement(
                 "INSERT INTO $MYSQL_TABLE (`key`, `value`) VALUES (?, ?) " +
                     "ON DUPLICATE KEY UPDATE `value`=?"
