@@ -39,7 +39,7 @@ class MySQLKeyCounterStorageTests : StringSpec({
             withPassword("password")
             withDatabaseName("infinitic")
         }
-        .let { it.start(); it }
+        .also { it.start() }
 
     val storage = MySQLKeyCounterStorage.of(
         MySQL(

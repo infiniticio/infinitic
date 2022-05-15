@@ -33,10 +33,6 @@ import org.apache.avro.file.SeekableByteArrayInput
 import org.apache.avro.generic.GenericDatumReader
 import org.apache.avro.generic.GenericRecord
 import org.apache.avro.io.DecoderFactory
-import org.apache.avro.io.EncoderFactory
-import org.apache.avro.specific.SpecificDatumReader
-import org.apache.avro.specific.SpecificDatumWriter
-import org.apache.avro.specific.SpecificRecord
 import java.io.ByteArrayOutputStream
 import kotlin.reflect.KClass
 
@@ -44,22 +40,6 @@ import kotlin.reflect.KClass
  * This object provides methods to serialize/deserialize an Avro-generated class
  */
 object AvroSerDe {
-    fun writeBinary(data: SpecificRecord): ByteArray {
-        val out = ByteArrayOutputStream()
-        val encoder = EncoderFactory.get().binaryEncoder(out, null)
-        val writer = SpecificDatumWriter<SpecificRecord>(data.schema)
-        writer.write(data, encoder)
-        encoder.flush()
-        out.close()
-        return out.toByteArray()
-    }
-
-    fun <T : SpecificRecord> readBinary(bytes: ByteArray, klass: Class<out T>): T {
-        val reader = SpecificDatumReader(klass)
-        val binaryDecoder = DecoderFactory.get().binaryDecoder(bytes, null)
-        return reader.read(null, binaryDecoder)
-    }
-
     fun <T : Any> schema(klass: KClass<T>) = Avro.default.schema(kserializer(klass))
 
     fun <T : Any> writeBinary(t: T, serializer: KSerializer<T>): ByteArray {
