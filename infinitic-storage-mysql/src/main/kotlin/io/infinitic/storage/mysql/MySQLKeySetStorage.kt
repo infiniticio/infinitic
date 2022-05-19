@@ -75,7 +75,6 @@ class MySQLKeySetStorage(
 
     override suspend fun add(key: String, value: ByteArray) =
         pool.connection.use {
-            println("KEY SET ADD : $key OF SIZE ${value.size}")
             it.prepareStatement("INSERT INTO $MYSQL_TABLE (`key`, `value`) VALUES (?, ?)")
                 ?.use { statement ->
                     statement.setString(1, key)

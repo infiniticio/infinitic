@@ -30,7 +30,7 @@ import com.sksamuel.hoplite.Secret
 data class MySQL(
     val host: String = "127.0.0.1",
     var port: Int = 3306,
-    var user: String? = null,
+    var user: String = "root",
     var password: Secret? = null,
-    var database: String? = null
+    var database: String = "infinitic"
 )

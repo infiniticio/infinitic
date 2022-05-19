@@ -72,7 +72,6 @@ class MySQLKeyValueStorage(
 
     override suspend fun put(key: String, value: ByteArray) =
         pool.connection.use {
-            println("KEY VALUE PUT : $key OF SIZE ${value.size}")
             it.prepareStatement(
                 "INSERT INTO $MYSQL_TABLE (`key`, `value`) VALUES (?, ?) " +
                     "ON DUPLICATE KEY UPDATE `value`=?"

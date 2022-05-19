@@ -140,13 +140,5 @@ data class WorkerConfig(
 
     private fun checkStateStorage(stateStorage: StateStorage?, name: String) {
         require(stateStorage != null) { "`stateStorage` can not be null for $name" }
-
-        if (stateStorage == StateStorage.redis) {
-            require(redis != null) { "`${StateStorage.redis}` is used for $name but not configured" }
-        }
-
-        if (stateStorage == StateStorage.mysql) {
-            require(mysql != null) { "`${StateStorage.mysql}` is used for $name but not configured" }
-        }
     }
 }
