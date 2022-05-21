@@ -52,16 +52,15 @@ class MySQLKeyCounterStorage(
     }
     override suspend fun get(key: String): Long =
         pool.connection.use { connection ->
-            connection.prepareStatement("SELECT counter FROM $MYSQL_TABLE WHERE `key`=?")
-                .use { statement ->
-                    statement.setString(1, key)
-                    statement.executeQuery()
-                        .use { result ->
-                            if (result.next()) {
-                                result.getLong("counter")
-                            } else 0L
-                        }
-                }
+            connection.prepareStatement(
+                "SELECT counter FROM $MYSQL_TABLE WHERE `key`=?"
+            ).use { statement ->
+                statement.setString(1, key)
+                statement.executeQuery()
+                    .use {
+                        if (it.next()) { it.getLong("counter") } else 0L
+                    }
+            }
         }
 
     override suspend fun incr(key: String, amount: Long) {
@@ -81,8 +80,9 @@ class MySQLKeyCounterStorage(
     @TestOnly
     override fun flush() {
         pool.connection.use { connection ->
-            connection.prepareStatement("TRUNCATE $MYSQL_TABLE")
-                .use { it.executeUpdate() }
+            connection.prepareStatement(
+                "TRUNCATE $MYSQL_TABLE"
+            ).use { it.executeUpdate() }
         }
     }
 }

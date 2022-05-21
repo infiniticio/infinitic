@@ -39,6 +39,11 @@ data class MySQL(
 ) {
     companion object {
         val pools = ConcurrentHashMap<MySQL, HikariDataSource>()
+
+        fun close() {
+            pools.values.forEach { it.close() }
+            pools.clear()
+        }
     }
 
     fun getPool() = pools.computeIfAbsent(this) {

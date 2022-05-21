@@ -55,37 +55,40 @@ class MySQLKeySetStorage(
 
     override suspend fun get(key: String): Set<ByteArray> =
         pool.connection.use { connection ->
-            connection.prepareStatement("SELECT `value` FROM $MYSQL_TABLE WHERE `key` = ?")
-                .use { statement ->
-                    statement.setString(1, key)
-                    statement.executeQuery()
-                        .use {
-                            val values = mutableSetOf<ByteArray>()
-                            while (it.next()) { values.add(it.getBytes("value")) }
-                            values
-                        }
-                }
+            connection.prepareStatement(
+                "SELECT `value` FROM $MYSQL_TABLE WHERE `key` = ?"
+            ).use { statement ->
+                statement.setString(1, key)
+                statement.executeQuery()
+                    .use {
+                        val values = mutableSetOf<ByteArray>()
+                        while (it.next()) { values.add(it.getBytes("value")) }
+                        values
+                    }
+            }
         }
 
     override suspend fun add(key: String, value: ByteArray) {
         pool.connection.use { connection ->
-            connection.prepareStatement("INSERT INTO $MYSQL_TABLE (`key`, `value`) VALUES (?, ?)")
-                .use {
-                    it.setString(1, key)
-                    it.setBytes(2, value)
-                    it.executeUpdate()
-                }
+            connection.prepareStatement(
+                "INSERT INTO $MYSQL_TABLE (`key`, `value`) VALUES (?, ?)"
+            ).use {
+                it.setString(1, key)
+                it.setBytes(2, value)
+                it.executeUpdate()
+            }
         }
     }
 
     override suspend fun remove(key: String, value: ByteArray) {
         pool.connection.use { connection ->
-            connection.prepareStatement("DELETE FROM $MYSQL_TABLE WHERE `key`=? AND `value`=?")
-                ?.use {
-                    it.setString(1, key)
-                    it.setBytes(2, value)
-                    it.executeUpdate()
-                }
+            connection.prepareStatement(
+                "DELETE FROM $MYSQL_TABLE WHERE `key`=? AND `value`=?"
+            ).use {
+                it.setString(1, key)
+                it.setBytes(2, value)
+                it.executeUpdate()
+            }
         }
     }
 

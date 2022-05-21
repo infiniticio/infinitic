@@ -42,16 +42,21 @@ data class Redis(
 ) {
     companion object {
         val pools = ConcurrentHashMap<Redis, JedisPool>()
+
+        fun close() {
+            pools.values.forEach { it.close() }
+            pools.clear()
+        }
     }
 
     fun getPool(
         jedisPoolConfig: JedisPoolConfig = JedisPoolConfig()
     ) = pools.computeIfAbsent(this) {
-        when (password?.value.isNullOrEmpty()) {
-            true -> JedisPool(jedisPoolConfig, host, port, database)
-            false -> JedisPool(jedisPoolConfig, host, port, timeout, user, password?.value, database, ssl)
-        }.also {
-            Runtime.getRuntime().addShutdownHook(Thread { it.close() })
+        when (it.password?.value.isNullOrEmpty()) {
+            true -> JedisPool(jedisPoolConfig, it.host, it.port, it.database)
+            false -> JedisPool(jedisPoolConfig, it.host, it.port, it.timeout, it.user, it.password?.value, it.database, it.ssl)
+        }.also { pool ->
+            Runtime.getRuntime().addShutdownHook(Thread { pool.close() })
         }
     }
 }

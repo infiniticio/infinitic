@@ -35,7 +35,7 @@ import org.testcontainers.containers.MySQLContainer
 @EnabledIf(DockerOnly::class)
 class MySQLKeySetStorageTests : StringSpec({
 
-    val mysql = MySQLContainer<Nothing>("mysql:5.7")
+    val mysqlServer = MySQLContainer<Nothing>("mysql:5.7")
         .apply {
             startupAttempts = 1
             withUsername("test")
@@ -46,16 +46,17 @@ class MySQLKeySetStorageTests : StringSpec({
 
     val storage = MySQLKeySetStorage.of(
         MySQL(
-            host = mysql.host,
-            port = mysql.firstMappedPort,
-            user = mysql.username,
-            password = Secret(mysql.password),
-            database = mysql.databaseName
+            host = mysqlServer.host,
+            port = mysqlServer.firstMappedPort,
+            user = mysqlServer.username,
+            password = Secret(mysqlServer.password),
+            database = mysqlServer.databaseName
         )
     )
 
     afterSpec {
-        mysql.stop()
+        MySQL.close()
+        mysqlServer.stop()
     }
 
     beforeTest {
