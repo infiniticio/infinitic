@@ -36,25 +36,21 @@ class MySQLKeySetStorage(
 ) : KeySetStorage {
 
     companion object {
-        fun of(config: MySQL) = MySQLKeySetStorage(getPool(config))
+        fun of(config: MySQL) = MySQLKeySetStorage(config.getPool())
     }
 
     init {
         // Create MySQL table at init, for first time usage
-        pool.connection.use {
-            it.prepareStatement(
+        pool.connection.use { connection ->
+            connection.prepareStatement(
                 "CREATE TABLE IF NOT EXISTS $MYSQL_TABLE ( " +
                     "`id` INT AUTO_INCREMENT PRIMARY KEY," +
                     "`key` VARCHAR(255) NOT NULL," +
                     "`value` BLOB NOT NULL," +
                     "KEY(`key`)" + // Non unique index creation for faster search
                     ") ENGINE=InnoDB DEFAULT CHARSET=utf8"
-            )
-                ?.use { statement ->
-                    statement.executeUpdate()
-                }
+            ).use { it.executeUpdate() }
         }
-        Runtime.getRuntime().addShutdownHook(Thread { pool.close() })
     }
 
     override suspend fun get(key: String): Set<ByteArray> =

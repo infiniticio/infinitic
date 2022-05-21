@@ -34,11 +34,7 @@ class RedisKeyValueStorage(
 ) : KeyValueStorage {
 
     companion object {
-        fun of(config: Redis) = RedisKeyValueStorage(getPool(config))
-    }
-
-    init {
-        Runtime.getRuntime().addShutdownHook(Thread { pool.close() })
+        fun of(config: Redis) = RedisKeyValueStorage(config.getPool())
     }
 
     override suspend fun get(key: String): ByteArray? =

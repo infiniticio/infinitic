@@ -34,11 +34,7 @@ class RedisKeyCounterStorage(
 ) : KeyCounterStorage {
 
     companion object {
-        fun of(config: Redis) = RedisKeyCounterStorage(getPool(config))
-    }
-
-    init {
-        Runtime.getRuntime().addShutdownHook(Thread { pool.close() })
+        fun of(config: Redis) = RedisKeyCounterStorage(config.getPool())
     }
 
     override suspend fun get(key: String): Long =

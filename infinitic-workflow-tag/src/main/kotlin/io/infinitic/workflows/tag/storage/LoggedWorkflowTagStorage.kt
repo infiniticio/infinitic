@@ -34,7 +34,7 @@ import mu.KotlinLogging
 import org.jetbrains.annotations.TestOnly
 
 class LoggedWorkflowTagStorage(
-    val storage: WorkflowTagStorage
+    private val storage: WorkflowTagStorage
 ) : WorkflowTagStorage {
 
     private val logger = KotlinLogging.logger {}
@@ -53,7 +53,7 @@ class LoggedWorkflowTagStorage(
 
     override suspend fun getWorkflowIds(tag: WorkflowTag, workflowName: WorkflowName): Set<WorkflowId> {
         val workflowIds = storage.getWorkflowIds(tag, workflowName)
-        logger.debug { "tag $tag - workflowName $workflowName - getWorkflowIds $workflowIds" }
+        logger.debug { "tag $tag - workflowName $workflowName - getWorkflowIds ${workflowIds.size} found" }
 
         return workflowIds
     }

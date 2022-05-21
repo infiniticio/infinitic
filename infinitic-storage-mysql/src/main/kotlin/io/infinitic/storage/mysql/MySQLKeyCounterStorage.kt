@@ -35,26 +35,21 @@ class MySQLKeyCounterStorage(
 ) : KeyCounterStorage {
 
     companion object {
-        fun of(config: MySQL) = MySQLKeyCounterStorage(getPool(config))
+        fun of(config: MySQL) = MySQLKeyCounterStorage(config.getPool())
     }
 
     init {
         // Create MySQL table at init, for first time usage
-        pool.connection.use {
-            it.prepareStatement(
+        pool.connection.use { connection ->
+            connection.prepareStatement(
                 "CREATE TABLE IF NOT EXISTS $MYSQL_TABLE (" +
                     "`id` INT AUTO_INCREMENT PRIMARY KEY," +
                     "`key` VARCHAR(255) NOT NULL UNIQUE," +
                     "`counter` INT DEFAULT 0" +
                     ") ENGINE=InnoDB DEFAULT CHARSET=utf8"
-            )
-                ?.use { statement ->
-                    statement.executeUpdate()
-                }
+            ).use { it.executeUpdate() }
         }
-        Runtime.getRuntime().addShutdownHook(Thread { pool.close() })
     }
-
     override suspend fun get(key: String): Long =
         pool.connection.use { connection ->
             connection.prepareStatement("SELECT counter FROM $MYSQL_TABLE WHERE `key`=?")
