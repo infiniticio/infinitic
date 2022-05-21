@@ -53,51 +53,49 @@ class MySQLKeyValueStorage(
     }
 
     override suspend fun get(key: String): ByteArray? =
-        pool.connection.use {
-            it.prepareStatement("SELECT `value` FROM $MYSQL_TABLE WHERE `key`=?")
-                ?.use { statement ->
-                    statement.setString(1, key)
-                    statement.executeQuery()
-                        ?.use { result ->
-                            if (result.next()) {
-                                result.getBytes("value")
-                            } else null
-                        }
-                }
+        pool.connection.use { connection ->
+            connection.prepareStatement(
+                "SELECT `value` FROM $MYSQL_TABLE WHERE `key`=?"
+            ).use { statement ->
+                statement.setString(1, key)
+                statement.executeQuery()
+                    .use {
+                        if (it.next()) { it.getBytes("value") } else null
+                    }
+            }
         }
 
-    override suspend fun put(key: String, value: ByteArray) =
-        pool.connection.use {
-            it.prepareStatement(
+    override suspend fun put(key: String, value: ByteArray) {
+        pool.connection.use { connection ->
+            connection.prepareStatement(
                 "INSERT INTO $MYSQL_TABLE (`key`, `value`) VALUES (?, ?) " +
                     "ON DUPLICATE KEY UPDATE `value`=?"
-            )
-                ?.use { statement ->
-                    statement.setString(1, key)
-                    statement.setBytes(2, value)
-                    statement.setBytes(3, value)
-                    statement.executeUpdate()
-                }
-            Unit
+            ).use {
+                it.setString(1, key)
+                it.setBytes(2, value)
+                it.setBytes(3, value)
+                it.executeUpdate()
+            }
         }
+    }
 
-    override suspend fun del(key: String) =
-        pool.connection.use {
-            it.prepareStatement("DELETE FROM $MYSQL_TABLE WHERE `key`=?")
-                ?.use { statement ->
-                    statement.setString(1, key)
-                    statement.executeUpdate()
-                }
-            Unit
+    override suspend fun del(key: String) {
+        pool.connection.use { connection ->
+            connection.prepareStatement(
+                "DELETE FROM $MYSQL_TABLE WHERE `key`=?"
+            ).use {
+                it.setString(1, key)
+                it.executeUpdate()
+            }
         }
+    }
 
     @TestOnly
     override fun flush() {
-        pool.connection.use {
-            it.prepareStatement("TRUNCATE $MYSQL_TABLE")
-                ?.use { statement ->
-                    statement.executeUpdate()
-                }
+        pool.connection.use { connection ->
+            connection.prepareStatement(
+                "TRUNCATE $MYSQL_TABLE"
+            ).use { it.executeUpdate() }
         }
     }
 }

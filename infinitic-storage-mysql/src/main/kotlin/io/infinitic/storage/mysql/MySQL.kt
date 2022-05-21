@@ -49,7 +49,6 @@ data class MySQL(
                 driverClassName = "com.mysql.cj.jdbc.Driver"
                 username = user
                 password = this@MySQL.password?.value
-                maximumPoolSize = 10
             }
         ).also {
             Runtime.getRuntime().addShutdownHook(Thread { it.close() })
