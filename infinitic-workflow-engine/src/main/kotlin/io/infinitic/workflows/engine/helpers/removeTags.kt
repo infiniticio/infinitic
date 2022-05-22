@@ -28,10 +28,10 @@ package io.infinitic.workflows.engine.helpers
 import io.infinitic.common.workflows.engine.state.WorkflowState
 import io.infinitic.common.workflows.tags.messages.RemoveTagFromWorkflow
 import io.infinitic.workflows.engine.output.WorkflowEngineOutput
-import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 
-internal fun CoroutineScope.removeTags(output: WorkflowEngineOutput, state: WorkflowState) {
+internal suspend fun removeTags(output: WorkflowEngineOutput, state: WorkflowState) = coroutineScope {
     state.workflowTags.map {
         val removeTagFromWorkflow = RemoveTagFromWorkflow(
             workflowName = state.workflowName,
