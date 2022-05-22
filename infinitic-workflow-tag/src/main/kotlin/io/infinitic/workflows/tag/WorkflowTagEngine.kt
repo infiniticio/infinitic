@@ -70,14 +70,6 @@ class WorkflowTagEngine(
     suspend fun handle(message: WorkflowTagMessage) {
         logger.debug { "receiving $message" }
 
-        process(message)
-
-        storage.setLastMessageId(message.workflowTag, message.workflowName, message.messageId)
-    }
-
-    // coroutineScope let send messages in parallel
-    // it's important as we can have a lot of them
-    private suspend fun process(message: WorkflowTagMessage) {
         when (message) {
             is DispatchWorkflowByCustomId -> dispatchWorkflowByCustomId(message)
             is DispatchMethodByTag -> dispatchMethodByTag(message)
@@ -92,11 +84,9 @@ class WorkflowTagEngine(
     }
 
     private suspend fun dispatchWorkflowByCustomId(message: DispatchWorkflowByCustomId) {
-        // is not an idempotent action
-        if (hasMessageAlreadyBeenHandled(message)) return
-
         val ids = storage.getWorkflowIds(message.workflowTag, message.workflowName)
 
+        // with coroutineScope, we send messages in parallel and wait for all of them to be processed
         coroutineScope {
             when (ids.size) {
                 // this workflow instance does not exist yet
@@ -160,11 +150,9 @@ class WorkflowTagEngine(
     }
 
     private suspend fun dispatchMethodByTag(message: DispatchMethodByTag) {
-        // is not an idempotent action
-        if (hasMessageAlreadyBeenHandled(message)) return
-
         val ids = storage.getWorkflowIds(message.workflowTag, message.workflowName)
 
+        // with coroutineScope, we send messages in parallel and wait for all of them to be processed
         coroutineScope {
             when (ids.isEmpty()) {
                 true -> {
@@ -194,11 +182,9 @@ class WorkflowTagEngine(
     }
 
     private suspend fun retryWorkflowTaskByTag(message: RetryWorkflowTaskByTag) {
-        // is not an idempotent action
-        if (hasMessageAlreadyBeenHandled(message)) return
-
         val ids = storage.getWorkflowIds(message.workflowTag, message.workflowName)
 
+        // with coroutineScope, we send messages in parallel and wait for all of them to be processed
         coroutineScope {
             when (ids.isEmpty()) {
                 true -> {
@@ -217,11 +203,9 @@ class WorkflowTagEngine(
     }
 
     private suspend fun retryTaskByTag(message: RetryTasksByTag) {
-        // is not an idempotent action
-        if (hasMessageAlreadyBeenHandled(message)) return
-
         val ids = storage.getWorkflowIds(message.workflowTag, message.workflowName)
 
+        // with coroutineScope, we send messages in parallel and wait for all of them to be processed
         coroutineScope {
             when (ids.isEmpty()) {
                 true -> {
@@ -243,11 +227,9 @@ class WorkflowTagEngine(
     }
 
     private suspend fun cancelWorkflowByTag(message: CancelWorkflowByTag) {
-        // is not an idempotent action
-        if (hasMessageAlreadyBeenHandled(message)) return
-
         val ids = storage.getWorkflowIds(message.workflowTag, message.workflowName)
 
+        // with coroutineScope, we send messages in parallel and wait for all of them to be processed
         coroutineScope {
             when (ids.isEmpty()) {
                 true -> {
@@ -271,11 +253,9 @@ class WorkflowTagEngine(
     }
 
     private suspend fun sendToChannelByTag(message: SendSignalByTag) {
-        // sending to channel is not an idempotent action
-        if (hasMessageAlreadyBeenHandled(message)) return
-
         val ids = storage.getWorkflowIds(message.workflowTag, message.workflowName)
 
+        // with coroutineScope, we send messages in parallel and wait for all of them to be processed
         coroutineScope {
             when (ids.isEmpty()) {
                 true -> discardTagWithoutIds(message)
@@ -318,15 +298,6 @@ class WorkflowTagEngine(
         )
         sendToClient(workflowIdsByTag)
     }
-
-    private suspend fun hasMessageAlreadyBeenHandled(message: WorkflowTagMessage) =
-        when (storage.getLastMessageId(message.workflowTag, message.workflowName)) {
-            message.messageId -> {
-                logger.info { "discarding as state already contains this messageId: $message" }
-                true
-            }
-            else -> false
-        }
 
     private fun discardTagWithoutIds(message: WorkflowTagMessage) {
         logger.debug { "discarding as no id found for the provided tag: $message" }
