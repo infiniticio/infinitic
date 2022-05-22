@@ -36,9 +36,9 @@ import io.infinitic.common.messages.Message
 import io.infinitic.common.tasks.data.TaskId
 import io.infinitic.common.tasks.data.TaskName
 import io.infinitic.common.workflows.data.channels.ChannelName
-import io.infinitic.common.workflows.data.channels.ChannelSignal
-import io.infinitic.common.workflows.data.channels.ChannelSignalId
 import io.infinitic.common.workflows.data.channels.ChannelType
+import io.infinitic.common.workflows.data.channels.SignalData
+import io.infinitic.common.workflows.data.channels.SignalId
 import io.infinitic.common.workflows.data.methodRuns.MethodRunId
 import io.infinitic.common.workflows.data.workflows.WorkflowCancellationReason
 import io.infinitic.common.workflows.data.workflows.WorkflowId
@@ -86,8 +86,10 @@ data class SendSignalByTag(
     override val workflowName: WorkflowName,
     override val workflowTag: WorkflowTag,
     val channelName: ChannelName,
-    val channelSignalId: ChannelSignalId,
-    val channelSignal: ChannelSignal,
+    @AvroName("channelSignalId")
+    val signalId: SignalId,
+    @AvroName("channelSignal")
+    val signalData: SignalData,
     @AvroName("channelSignalTypes")
     val channelTypes: Set<ChannelType>,
     var emitterWorkflowId: WorkflowId?,

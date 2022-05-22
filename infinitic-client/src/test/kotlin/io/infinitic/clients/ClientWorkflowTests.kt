@@ -42,8 +42,8 @@ import io.infinitic.common.fixtures.TestFactory
 import io.infinitic.common.tasks.executors.messages.TaskExecutorMessage
 import io.infinitic.common.tasks.tags.messages.TaskTagMessage
 import io.infinitic.common.workflows.data.channels.ChannelName
-import io.infinitic.common.workflows.data.channels.ChannelSignal
 import io.infinitic.common.workflows.data.channels.ChannelType
+import io.infinitic.common.workflows.data.channels.SignalData
 import io.infinitic.common.workflows.data.methodRuns.MethodRunId
 import io.infinitic.common.workflows.data.workflows.WorkflowCancellationReason
 import io.infinitic.common.workflows.data.workflows.WorkflowId
@@ -380,8 +380,8 @@ class ClientWorkflowTests : StringSpec({
             workflowName = WorkflowName(FakeWorkflow::class.java.name),
             workflowId = WorkflowId(id),
             channelName = ChannelName("getChannelString"),
-            channelSignalId = msg.channelSignalId,
-            channelSignal = ChannelSignal.from("a"),
+            signalId = msg.signalId,
+            signalData = SignalData.from("a"),
             channelTypes = ChannelType.allFrom(String::class.java),
             emitterName = clientNameTest
         )
@@ -399,8 +399,8 @@ class ClientWorkflowTests : StringSpec({
             workflowName = WorkflowName(FakeWorkflow::class.java.name),
             workflowId = WorkflowId(id),
             channelName = ChannelName("getChannelString"),
-            channelSignalId = msg.channelSignalId,
-            channelSignal = ChannelSignal.from("a"),
+            signalId = msg.signalId,
+            signalData = SignalData.from("a"),
             channelTypes = ChannelType.allFrom(String::class.java),
             emitterName = clientNameTest
         )
@@ -416,8 +416,8 @@ class ClientWorkflowTests : StringSpec({
             workflowName = WorkflowName(FakeWorkflow::class.java.name),
             workflowTag = WorkflowTag(tag),
             channelName = ChannelName("getChannelString"),
-            channelSignalId = msg.channelSignalId,
-            channelSignal = ChannelSignal.from("a"),
+            signalId = msg.signalId,
+            signalData = SignalData.from("a"),
             channelTypes = ChannelType.allFrom(String::class.java),
             emitterWorkflowId = null,
             emitterName = clientNameTest
@@ -435,8 +435,8 @@ class ClientWorkflowTests : StringSpec({
             workflowName = WorkflowName(FakeWorkflow::class.java.name),
             workflowTag = WorkflowTag(tag),
             channelName = ChannelName("getChannelString"),
-            channelSignalId = msg.channelSignalId,
-            channelSignal = ChannelSignal.from("a"),
+            signalId = msg.signalId,
+            signalData = SignalData.from("a"),
             channelTypes = ChannelType.allFrom(String::class.java),
             emitterWorkflowId = null,
             emitterName = clientNameTest
@@ -455,8 +455,8 @@ class ClientWorkflowTests : StringSpec({
             workflowName = WorkflowName(FakeWorkflow::class.java.name),
             workflowId = WorkflowId(id),
             channelName = ChannelName("getChannelFakeTask"),
-            channelSignalId = msg.channelSignalId,
-            channelSignal = ChannelSignal.from(signal),
+            signalId = msg.signalId,
+            signalData = SignalData.from(signal),
             channelTypes = setOf(
                 ChannelType.from(FakeTaskImpl::class.java),
                 ChannelType.from(FakeTask::class.java),
@@ -478,8 +478,8 @@ class ClientWorkflowTests : StringSpec({
             workflowName = WorkflowName(FakeWorkflow::class.java.name),
             workflowId = WorkflowId(id),
             channelName = ChannelName("getChannelFakeTaskParent"),
-            channelSignalId = msg.channelSignalId,
-            channelSignal = ChannelSignal.from(signal),
+            signalId = msg.signalId,
+            signalData = SignalData.from(signal),
             channelTypes = setOf(
                 ChannelType.from(FakeTaskImpl::class.java),
                 ChannelType.from(FakeTask::class.java),

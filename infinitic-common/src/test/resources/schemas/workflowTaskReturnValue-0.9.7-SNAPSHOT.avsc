@@ -124,6 +124,10 @@
             }, {
               "name" : "completionWorkflowTaskIndex",
               "type" : "int"
+            }, {
+              "name" : "signalId",
+              "type" : [ "string", "null" ],
+              "default" : "null"
             } ]
           }, {
             "type" : "record",

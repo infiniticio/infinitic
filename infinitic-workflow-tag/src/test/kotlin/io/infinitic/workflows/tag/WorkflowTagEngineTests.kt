@@ -189,9 +189,9 @@ internal class WorkflowTagEngineTests : StringSpec({
         with(sendSignal) {
             workflowId shouldBe workflowIds.last()
             workflowName shouldBe msgIn.workflowName
-            channelSignal shouldBe msgIn.channelSignal
-            channelSignalId shouldBe msgIn.channelSignalId
-            channelSignal shouldBe msgIn.channelSignal
+            signalData shouldBe msgIn.signalData
+            signalId shouldBe msgIn.signalId
+            signalData shouldBe msgIn.signalData
             channelTypes shouldBe msgIn.channelTypes
             channelName shouldBe msgIn.channelName
         }

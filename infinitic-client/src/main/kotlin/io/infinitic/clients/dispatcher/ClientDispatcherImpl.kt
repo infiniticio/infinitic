@@ -49,7 +49,7 @@ import io.infinitic.common.proxies.ProxyHandler
 import io.infinitic.common.tasks.data.TaskId
 import io.infinitic.common.tasks.data.TaskName
 import io.infinitic.common.tasks.executors.errors.FailedWorkflowError
-import io.infinitic.common.workflows.data.channels.ChannelSignalId
+import io.infinitic.common.workflows.data.channels.SignalId
 import io.infinitic.common.workflows.data.methodRuns.MethodRunId
 import io.infinitic.common.workflows.data.workflows.WorkflowCancellationReason
 import io.infinitic.common.workflows.data.workflows.WorkflowId
@@ -608,8 +608,8 @@ internal class ClientDispatcherImpl(
                     workflowName = handler.workflowName,
                     workflowId = handler.workflowId!!,
                     channelName = handler.channelName,
-                    channelSignalId = deferredSend.channelSignalId,
-                    channelSignal = handler.channelSignal,
+                    signalId = deferredSend.signalId,
+                    signalData = handler.signalData,
                     channelTypes = handler.channelTypes,
                     emitterName = clientName
                 )
@@ -620,8 +620,8 @@ internal class ClientDispatcherImpl(
                     workflowName = handler.workflowName,
                     workflowTag = handler.workflowTag!!,
                     channelName = handler.channelName,
-                    channelSignalId = deferredSend.channelSignalId,
-                    channelSignal = handler.channelSignal,
+                    signalId = deferredSend.signalId,
+                    signalData = handler.signalData,
                     channelTypes = handler.channelTypes,
                     emitterWorkflowId = null,
                     emitterName = clientName
@@ -634,7 +634,7 @@ internal class ClientDispatcherImpl(
     }
 
     private fun <R : Any?> deferredSend(): DeferredSend<R> {
-        val deferredSend = DeferredSend<R>(ChannelSignalId())
+        val deferredSend = DeferredSend<R>(SignalId())
 
         // store in ThreadLocal to be used in ::getLastDeferred
         localLastDeferred.set(deferredSend)

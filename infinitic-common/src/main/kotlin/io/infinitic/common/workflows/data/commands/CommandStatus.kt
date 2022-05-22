@@ -32,6 +32,7 @@ import io.infinitic.common.data.ReturnValue
 import io.infinitic.common.tasks.executors.errors.CanceledDeferredError
 import io.infinitic.common.tasks.executors.errors.FailedDeferredError
 import io.infinitic.common.tasks.executors.errors.UnknownDeferredError
+import io.infinitic.common.workflows.data.channels.SignalId
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskIndex
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -77,6 +78,8 @@ sealed class CommandStatus {
         @AvroDefault("0")
         val returnIndex: Int = 0,
         val returnValue: ReturnValue,
-        val completionWorkflowTaskIndex: WorkflowTaskIndex
+        val completionWorkflowTaskIndex: WorkflowTaskIndex,
+        @AvroDefault("null")
+        val signalId: SignalId? = null
     ) : CommandStatus()
 }

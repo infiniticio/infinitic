@@ -27,11 +27,11 @@ package io.infinitic.clients.deferred
 
 import io.infinitic.clients.Deferred
 import io.infinitic.common.exceptions.thisShouldNotHappen
-import io.infinitic.common.workflows.data.channels.ChannelSignalId
+import io.infinitic.common.workflows.data.channels.SignalId
 import java.util.concurrent.CompletableFuture
 
 internal class DeferredSend<R : Any?> (
-    internal val channelSignalId: ChannelSignalId
+    internal val signalId: SignalId
 ) : Deferred<R> {
 
     override fun cancelAsync(): CompletableFuture<Unit> {
@@ -49,5 +49,5 @@ internal class DeferredSend<R : Any?> (
     @Suppress("UNCHECKED_CAST")
     override fun await(): R = Unit as R
 
-    override val id: String = channelSignalId.toString()
+    override val id: String = signalId.toString()
 }

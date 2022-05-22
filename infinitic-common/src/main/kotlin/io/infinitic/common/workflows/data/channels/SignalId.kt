@@ -25,27 +25,15 @@
 
 package io.infinitic.common.workflows.data.channels
 
-import io.infinitic.common.serDe.SerializedData
-import kotlinx.serialization.KSerializer
+import io.infinitic.common.workflows.data.commands.CommandId
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.descriptors.SerialDescriptor
-import kotlinx.serialization.encoding.Decoder
-import kotlinx.serialization.encoding.Encoder
+import java.util.UUID
 
-@Serializable(with = ChannelSignalSerializer::class)
-data class ChannelSignal(val serializedData: SerializedData) {
+@JvmInline @Serializable
+value class SignalId(private val id: String = UUID.randomUUID().toString()) {
     companion object {
-        fun from(data: Any?) = ChannelSignal(SerializedData.from(data))
+        fun from(command: CommandId) = SignalId(command.toString())
     }
 
-    override fun toString() = serializedData.toString()
-}
-
-object ChannelSignalSerializer : KSerializer<ChannelSignal> {
-    override val descriptor: SerialDescriptor = SerializedData.serializer().descriptor
-    override fun serialize(encoder: Encoder, value: ChannelSignal) {
-        SerializedData.serializer().serialize(encoder, value.serializedData)
-    }
-    override fun deserialize(decoder: Decoder) =
-        ChannelSignal(SerializedData.serializer().deserialize(decoder))
+    override fun toString() = id
 }

@@ -190,28 +190,28 @@ class WorkflowEngine(
             return@coroutineScope null
         }
 
-        // check is this workflow has already been launched
+        // Idempotency: do not relaunch if this workflow has already been launched
         if (message is DispatchWorkflow) {
             logDiscardingMessage(message, "as workflow has already been launched")
 
             return@coroutineScope null
         }
 
-        // check if this method has already been launched
+        // Idempotency: do not relaunch if this method has already been launched
         if (message is DispatchMethod && state.getMethodRun(message.methodRunId) != null) {
             logDiscardingMessage(message, "as this method has already been launched")
 
             return@coroutineScope null
         }
 
-        // check if this signal has already been launched
-//        if (message is SendSignal && state.getSignalRun(message.channelSignalId) != null) {
-//            logDiscardingMessage(message, "as this signal has already been sent")
-//
-//            return@coroutineScope null
-//        }
+        // Idempotency: do not relaunch if this signal has already been received
+        if (message is SendSignal && state.hasSignalAlreadyBeenReceived(message.signalId)) {
+            logDiscardingMessage(message, "as this signal has already been received")
 
-        // check is this workflowTask is the current one
+            return@coroutineScope null
+        }
+
+        // Idempotency: discard if this workflowTask is not the current one
         if (message.isWorkflowTaskEvent() && (message as TaskEvent).taskId() != state.runningWorkflowTaskId) {
             logDiscardingMessage(message, "as workflowTask is not the right one")
 

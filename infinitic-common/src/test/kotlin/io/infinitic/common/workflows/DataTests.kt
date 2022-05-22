@@ -29,9 +29,9 @@ import io.infinitic.common.data.ReturnValue
 import io.infinitic.common.fixtures.TestFactory
 import io.infinitic.common.serDe.SerializedData
 import io.infinitic.common.workflows.data.channels.ChannelName
-import io.infinitic.common.workflows.data.channels.ChannelSignal
-import io.infinitic.common.workflows.data.channels.ChannelSignalId
 import io.infinitic.common.workflows.data.channels.ChannelType
+import io.infinitic.common.workflows.data.channels.SignalData
+import io.infinitic.common.workflows.data.channels.SignalId
 import io.infinitic.common.workflows.data.commands.CommandHash
 import io.infinitic.common.workflows.data.commands.CommandId
 import io.infinitic.common.workflows.data.commands.CommandSimpleName
@@ -110,9 +110,9 @@ class DataTests : StringSpec({
 
     "ChannelSignal should be serialized as SerializedData and reversible in json" {
         val id = TestFactory.random<String>()
-        val m = ChannelSignal(SerializedData.from(id))
+        val m = SignalData(SerializedData.from(id))
         val json = Json.encodeToString(m)
-        val m2 = Json.decodeFromString<ChannelSignal>(json)
+        val m2 = Json.decodeFromString<SignalData>(json)
 
         json shouldBe Json.encodeToString(SerializedData.from(id))
         m2 shouldBe m
@@ -120,9 +120,9 @@ class DataTests : StringSpec({
 
     "ChannelSignalId should be serialized as String and reversible in json" {
         val id = TestFactory.random<String>()
-        val m = ChannelSignalId(id)
+        val m = SignalId(id)
         val json = Json.encodeToString(m)
-        val m2 = Json.decodeFromString<ChannelSignalId>(json)
+        val m2 = Json.decodeFromString<SignalId>(json)
 
         json shouldBe Json.encodeToString(id)
         m2 shouldBe m

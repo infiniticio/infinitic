@@ -44,9 +44,9 @@ import io.infinitic.common.tasks.executors.errors.FailedTaskError
 import io.infinitic.common.tasks.executors.errors.FailedWorkflowError
 import io.infinitic.common.tasks.executors.errors.UnknownWorkflowError
 import io.infinitic.common.workflows.data.channels.ChannelName
-import io.infinitic.common.workflows.data.channels.ChannelSignal
-import io.infinitic.common.workflows.data.channels.ChannelSignalId
 import io.infinitic.common.workflows.data.channels.ChannelType
+import io.infinitic.common.workflows.data.channels.SignalData
+import io.infinitic.common.workflows.data.channels.SignalId
 import io.infinitic.common.workflows.data.methodRuns.MethodRunId
 import io.infinitic.common.workflows.data.timers.TimerId
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTask
@@ -162,8 +162,10 @@ data class SendSignal(
     override val workflowName: WorkflowName,
     override val workflowId: WorkflowId,
     val channelName: ChannelName,
-    val channelSignalId: ChannelSignalId,
-    val channelSignal: ChannelSignal,
+    @AvroName("channelSignalId")
+    val signalId: SignalId,
+    @AvroName("channelSignal")
+    val signalData: SignalData,
     @AvroName("channelSignalTypes")
     val channelTypes: Set<ChannelType>,
     override val emitterName: ClientName

@@ -286,8 +286,8 @@ class WorkflowTagEngine(
                             workflowName = message.workflowName,
                             workflowId = it,
                             channelName = message.channelName,
-                            channelSignalId = message.channelSignalId,
-                            channelSignal = message.channelSignal,
+                            signalId = message.signalId,
+                            signalData = message.signalData,
                             channelTypes = message.channelTypes,
                             emitterName = clientName
                         )

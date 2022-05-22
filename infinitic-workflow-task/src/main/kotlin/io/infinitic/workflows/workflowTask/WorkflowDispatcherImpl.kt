@@ -38,8 +38,8 @@ import io.infinitic.common.proxies.NewWorkflowProxyHandler
 import io.infinitic.common.proxies.ProxyHandler
 import io.infinitic.common.workflows.data.channels.ChannelFilter
 import io.infinitic.common.workflows.data.channels.ChannelName
-import io.infinitic.common.workflows.data.channels.ChannelSignal
 import io.infinitic.common.workflows.data.channels.ChannelType
+import io.infinitic.common.workflows.data.channels.SignalData
 import io.infinitic.common.workflows.data.commands.Command
 import io.infinitic.common.workflows.data.commands.CommandSimpleName
 import io.infinitic.common.workflows.data.commands.CommandStatus
@@ -298,7 +298,7 @@ internal class WorkflowDispatcherImpl(
                 workflowTag = null,
                 channelName = ChannelName(channel.name),
                 channelTypes = ChannelType.allFrom(signal::class.java),
-                channelSignal = ChannelSignal.from(signal)
+                signalData = SignalData.from(signal)
             ),
             SendSignalCommand.simpleName()
         )
@@ -382,7 +382,7 @@ internal class WorkflowDispatcherImpl(
                 workflowTag = handler.workflowTag,
                 channelName = handler.channelName,
                 channelTypes = handler.channelTypes,
-                channelSignal = handler.channelSignal
+                signalData = handler.signalData
             ),
             SendSignalCommand.simpleName()
         )

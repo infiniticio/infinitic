@@ -54,7 +54,7 @@ internal fun CoroutineScope.cancelWorkflow(
             }
 
             // clean state
-            state.removeAllMethodRuns()
+            state.removeMethodRuns()
         }
         else -> {
             state.getMethodRun(message.methodRunId!!)?. let { methodRun ->

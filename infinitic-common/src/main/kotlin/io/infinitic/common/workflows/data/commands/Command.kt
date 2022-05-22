@@ -37,8 +37,8 @@ import io.infinitic.common.tasks.data.TaskName
 import io.infinitic.common.tasks.data.TaskTag
 import io.infinitic.common.workflows.data.channels.ChannelFilter
 import io.infinitic.common.workflows.data.channels.ChannelName
-import io.infinitic.common.workflows.data.channels.ChannelSignal
 import io.infinitic.common.workflows.data.channels.ChannelType
+import io.infinitic.common.workflows.data.channels.SignalData
 import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.data.workflows.WorkflowMeta
 import io.infinitic.common.workflows.data.workflows.WorkflowName
@@ -130,7 +130,8 @@ data class SendSignalCommand(
     val workflowId: WorkflowId?,
     val workflowTag: WorkflowTag?,
     val channelName: ChannelName,
-    val channelSignal: ChannelSignal,
+    @AvroName("channelSignal")
+    val signalData: SignalData,
     @AvroName("channelSignalTypes")
     val channelTypes: Set<ChannelType>
 ) : Command() {
