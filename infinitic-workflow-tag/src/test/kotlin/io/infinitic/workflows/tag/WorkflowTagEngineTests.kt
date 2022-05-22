@@ -29,7 +29,6 @@ import io.infinitic.common.clients.SendToClient
 import io.infinitic.common.clients.messages.ClientMessage
 import io.infinitic.common.clients.messages.WorkflowIdsByTag
 import io.infinitic.common.data.ClientName
-import io.infinitic.common.data.MessageId
 import io.infinitic.common.fixtures.TestFactory
 import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.data.workflows.WorkflowName
@@ -54,7 +53,6 @@ import io.kotest.matchers.types.shouldBeInstanceOf
 import io.mockk.CapturingSlot
 import io.mockk.Runs
 import io.mockk.coEvery
-import io.mockk.coVerify
 import io.mockk.coVerifySequence
 import io.mockk.confirmVerified
 import io.mockk.just
@@ -78,26 +76,6 @@ private lateinit var sendToClient: SendToClient
 
 internal class WorkflowTagEngineTests : StringSpec({
 
-    "should not handle known messageId" {
-        // given
-        val msgIn = random<WorkflowTagMessage>()
-        // when
-        getEngine(msgIn.workflowTag, msgIn.workflowName, msgIn.messageId).handle(msgIn)
-        // then
-        verifyAll()
-    }
-
-    "should store last messageId" {
-        // given
-        val msgIn = random<WorkflowTagMessage>()
-        // when
-        getEngine(msgIn.workflowTag, msgIn.workflowName).handle(msgIn)
-        // then
-        coVerify {
-            workflowTagStorage.setLastMessageId(msgIn.workflowTag, msgIn.workflowName, msgIn.messageId)
-        }
-    }
-
     "cancelWorkflowPerTag should cancel workflow" {
         // given
         val workflowIds = setOf(WorkflowId(), WorkflowId())
@@ -106,11 +84,9 @@ internal class WorkflowTagEngineTests : StringSpec({
         getEngine(msgIn.workflowTag, msgIn.workflowName, workflowIds = workflowIds).handle(msgIn)
         // then
         coVerifySequence {
-            workflowTagStorage.getLastMessageId(msgIn.workflowTag, msgIn.workflowName)
             workflowTagStorage.getWorkflowIds(msgIn.workflowTag, msgIn.workflowName)
             sendToWorkflowEngine(ofType<CancelWorkflow>())
             sendToWorkflowEngine(ofType<CancelWorkflow>())
-            workflowTagStorage.setLastMessageId(msgIn.workflowTag, msgIn.workflowName, msgIn.messageId)
         }
         verifyAll()
         // checking last message
@@ -129,11 +105,9 @@ internal class WorkflowTagEngineTests : StringSpec({
         getEngine(msgIn.workflowTag, msgIn.workflowName, workflowIds = workflowIds).handle(msgIn)
         // then
         coVerifySequence {
-            workflowTagStorage.getLastMessageId(msgIn.workflowTag, msgIn.workflowName)
             workflowTagStorage.getWorkflowIds(msgIn.workflowTag, msgIn.workflowName)
             sendToWorkflowEngine(ofType<RetryWorkflowTask>())
             sendToWorkflowEngine(ofType<RetryWorkflowTask>())
-            workflowTagStorage.setLastMessageId(msgIn.workflowTag, msgIn.workflowName, msgIn.messageId)
         }
         verifyAll()
         // checking last message
@@ -151,11 +125,9 @@ internal class WorkflowTagEngineTests : StringSpec({
         getEngine(msgIn.workflowTag, msgIn.workflowName, workflowIds = workflowIds).handle(msgIn)
         // then
         coVerifySequence {
-            workflowTagStorage.getLastMessageId(msgIn.workflowTag, msgIn.workflowName)
             workflowTagStorage.getWorkflowIds(msgIn.workflowTag, msgIn.workflowName)
             sendToWorkflowEngine(ofType<RetryTasks>())
             sendToWorkflowEngine(ofType<RetryTasks>())
-            workflowTagStorage.setLastMessageId(msgIn.workflowTag, msgIn.workflowName, msgIn.messageId)
         }
         verifyAll()
         // checking last message
@@ -176,11 +148,9 @@ internal class WorkflowTagEngineTests : StringSpec({
         getEngine(msgIn.workflowTag, msgIn.workflowName, workflowIds = workflowIds).handle(msgIn)
         // then
         coVerifySequence {
-            workflowTagStorage.getLastMessageId(msgIn.workflowTag, msgIn.workflowName)
             workflowTagStorage.getWorkflowIds(msgIn.workflowTag, msgIn.workflowName)
             sendToWorkflowEngine(ofType<SendSignal>())
             sendToWorkflowEngine(ofType<SendSignal>())
-            workflowTagStorage.setLastMessageId(msgIn.workflowTag, msgIn.workflowName, msgIn.messageId)
         }
         verifyAll()
         // checking last message
@@ -189,9 +159,9 @@ internal class WorkflowTagEngineTests : StringSpec({
         with(sendSignal) {
             workflowId shouldBe workflowIds.last()
             workflowName shouldBe msgIn.workflowName
-            channelSignal shouldBe msgIn.channelSignal
-            channelSignalId shouldBe msgIn.channelSignalId
-            channelSignal shouldBe msgIn.channelSignal
+            signalData shouldBe msgIn.signalData
+            signalId shouldBe msgIn.signalId
+            signalData shouldBe msgIn.signalData
             channelTypes shouldBe msgIn.channelTypes
             channelName shouldBe msgIn.channelName
         }
@@ -208,7 +178,6 @@ internal class WorkflowTagEngineTests : StringSpec({
         coVerifySequence {
             workflowTagStorage.getWorkflowIds(msgIn.workflowTag, msgIn.workflowName)
             sendToClient(ofType<WorkflowIdsByTag>())
-            workflowTagStorage.setLastMessageId(msgIn.workflowTag, msgIn.workflowName, msgIn.messageId)
         }
         verifyAll()
 
@@ -241,12 +210,9 @@ private fun mockSendToWorkflowTag(slot: CapturingSlot<WorkflowTagMessage>): Send
 private fun mockWorkflowTagStorage(
     workflowTag: WorkflowTag,
     workflowName: WorkflowName,
-    messageId: MessageId?,
     workflowIds: Set<WorkflowId>
 ): WorkflowTagStorage {
     val tagStateStorage = mockk<WorkflowTagStorage>()
-    coEvery { tagStateStorage.getLastMessageId(workflowTag, workflowName) } returns messageId
-    coEvery { tagStateStorage.setLastMessageId(workflowTag, workflowName, MessageId(capture(stateMessageId))) } just Runs
     coEvery { tagStateStorage.getWorkflowIds(workflowTag, workflowName) } returns workflowIds
     coEvery { tagStateStorage.addWorkflowId(workflowTag, workflowName, WorkflowId(capture(stateWorkflowId))) } just Runs
     coEvery { tagStateStorage.removeWorkflowId(workflowTag, workflowName, WorkflowId(capture(stateWorkflowId))) } just Runs
@@ -257,7 +223,6 @@ private fun mockWorkflowTagStorage(
 private fun getEngine(
     workflowTag: WorkflowTag,
     workflowName: WorkflowName,
-    messageId: MessageId? = MessageId(),
     workflowIds: Set<WorkflowId> = setOf(WorkflowId())
 ): WorkflowTagEngine {
     stateMessageId = slot()
@@ -266,7 +231,7 @@ private fun getEngine(
     workflowEngineMessage = slot()
     workflowTagMessage = slot()
 
-    workflowTagStorage = mockWorkflowTagStorage(workflowTag, workflowName, messageId, workflowIds)
+    workflowTagStorage = mockWorkflowTagStorage(workflowTag, workflowName, workflowIds)
     sendToWorkflowEngine = mockSendToWorkflowEngine(workflowEngineMessage)
     sendToWorkflowTag = mockSendToWorkflowTag(workflowTagMessage)
     sendToClient = mockSendToClient(clientMessage)

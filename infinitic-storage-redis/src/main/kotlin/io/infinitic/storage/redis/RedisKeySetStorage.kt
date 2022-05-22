@@ -34,21 +34,19 @@ class RedisKeySetStorage(
 ) : KeySetStorage {
 
     companion object {
-        fun of(config: Redis) = RedisKeySetStorage(getPool(config))
-    }
-
-    init {
-        Runtime.getRuntime().addShutdownHook(Thread { pool.close() })
+        fun of(config: Redis) = RedisKeySetStorage(config.getPool())
     }
 
     override suspend fun get(key: String): Set<ByteArray> =
         pool.resource.use { it.smembers(key.toByteArray()) }
 
-    override suspend fun add(key: String, value: ByteArray) =
-        pool.resource.use { it.sadd(key.toByteArray(), value); Unit }
+    override suspend fun add(key: String, value: ByteArray) {
+        pool.resource.use { it.sadd(key.toByteArray(), value) }
+    }
 
-    override suspend fun remove(key: String, value: ByteArray) =
-        pool.resource.use { it.srem(key.toByteArray(), value); Unit }
+    override suspend fun remove(key: String, value: ByteArray) {
+        pool.resource.use { it.srem(key.toByteArray(), value) }
+    }
 
     @TestOnly
     override fun flush() {

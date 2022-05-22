@@ -23,17 +23,21 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.common.workflows.data.channels
+package io.infinitic.storage.mysql
 
-import io.infinitic.common.workflows.data.commands.CommandId
-import kotlinx.serialization.Serializable
-import java.util.UUID
+import io.kotest.core.annotation.EnabledCondition
+import io.kotest.core.spec.Spec
+import org.testcontainers.DockerClientFactory
+import kotlin.reflect.KClass
 
-@JvmInline @Serializable
-value class ChannelSignalId(private val id: String = UUID.randomUUID().toString()) {
+internal class DockerOnly : EnabledCondition {
+    override fun enabled(kclass: KClass<out Spec>) = shouldRun
+
     companion object {
-        fun from(command: CommandId) = ChannelSignalId(command.toString())
+        val shouldRun by lazy {
+            // if Docker is not available, skip the tests
+            // On GitHub, we must run all tests
+            (System.getenv("GITHUB_RUN_NUMBER") != null) || DockerClientFactory.instance().isDockerAvailable
+        }
     }
-
-    override fun toString() = id
 }

@@ -44,7 +44,7 @@ internal fun CoroutineScope.sendSignal(
     state.receivingChannels.firstOrNull {
         it.channelName == message.channelName &&
             (it.channelType == null || message.channelTypes.contains(it.channelType)) &&
-            (it.channelFilter == null || it.channelFilter!!.check(message.channelSignal))
+            (it.channelFilter == null || it.channelFilter!!.check(message.signalData))
     }
         ?.also {
             it.receivedSignalCount = it.receivedSignalCount + 1
@@ -61,8 +61,9 @@ internal fun CoroutineScope.sendSignal(
                 it.commandId,
                 Completed(
                     returnIndex = it.receivedSignalCount - 1,
-                    returnValue = ReturnValue(message.channelSignal.serializedData),
-                    completionWorkflowTaskIndex = state.workflowTaskIndex
+                    returnValue = ReturnValue(message.signalData.serializedData),
+                    completionWorkflowTaskIndex = state.workflowTaskIndex,
+                    signalId = message.signalId
                 )
             )
         }

@@ -23,10 +23,17 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.common.workflows.engine.messages.interfaces
+package io.infinitic.common.workflows.data.channels
 
-import io.infinitic.common.workflows.data.methodRuns.MethodRunId
+import io.infinitic.common.workflows.data.commands.CommandId
+import kotlinx.serialization.Serializable
+import java.util.UUID
 
-interface MethodRunMessage {
-    val methodRunId: MethodRunId
+@JvmInline @Serializable
+value class SignalId(private val id: String = UUID.randomUUID().toString()) {
+    companion object {
+        fun from(command: CommandId) = SignalId(command.toString())
+    }
+
+    override fun toString() = id
 }

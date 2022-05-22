@@ -60,7 +60,7 @@ data class ChannelFilter(val jsonPath: String, val filter: String? = null) {
      * true if this event should be caught
      * false either
      */
-    fun check(event: ChannelSignal): Boolean {
+    fun check(event: SignalData): Boolean {
         // get Json of the provided event
         val json = event.serializedData.getJson()
         // is this json filtered by the provided jsonPath

@@ -30,8 +30,8 @@ import io.infinitic.common.data.ClientName
 import io.infinitic.common.data.MillisDuration
 import io.infinitic.common.data.MillisInstant
 import io.infinitic.common.exceptions.thisShouldNotHappen
-import io.infinitic.common.workflows.data.channels.ChannelSignalId
 import io.infinitic.common.workflows.data.channels.ReceivingChannel
+import io.infinitic.common.workflows.data.channels.SignalId
 import io.infinitic.common.workflows.data.commands.CommandId
 import io.infinitic.common.workflows.data.commands.DispatchMethodCommand
 import io.infinitic.common.workflows.data.commands.DispatchMethodPastCommand
@@ -392,8 +392,8 @@ private fun getSendSignal(
     workflowName = command.workflowName,
     workflowId = command.workflowId!!,
     channelName = command.channelName,
-    channelSignalId = ChannelSignalId.from(commandId),
-    channelSignal = command.channelSignal,
+    signalId = SignalId.from(commandId),
+    signalData = command.signalData,
     channelTypes = command.channelTypes,
     emitterName = emitterName
 )
@@ -429,8 +429,8 @@ private fun CoroutineScope.sendSignal(
                 workflowName = command.workflowName,
                 workflowTag = command.workflowTag!!,
                 channelName = command.channelName,
-                channelSignalId = ChannelSignalId(),
-                channelSignal = command.channelSignal,
+                signalId = SignalId(),
+                signalData = command.signalData,
                 channelTypes = command.channelTypes,
                 emitterWorkflowId = state.workflowId,
                 emitterName = output.clientName

@@ -25,6 +25,7 @@
 
 package io.infinitic.storage
 
+import io.infinitic.storage.mysql.MySQL
 import io.infinitic.storage.redis.Redis
 
 interface StorageConfig {
@@ -37,4 +38,9 @@ interface StorageConfig {
      * Redis configuration
      */
     val redis: Redis?
+
+    /**
+     * MySQL configuration
+     */
+    val mysql: MySQL?
 }

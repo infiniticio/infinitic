@@ -33,17 +33,17 @@ buildscript {
 }
 
 plugins {
-    id(Plugins.Kotlin.id).version(Plugins.Kotlin.version) apply false
+    id(Plugins.Kotlin.id).version(Plugins.Kotlin.version)
     id(Plugins.Serialization.id).version(Plugins.Serialization.version) apply false
     id(Plugins.Ktlint.id).version(Plugins.Ktlint.version) apply false
     id(Plugins.TestLogger.id).version(Plugins.TestLogger.version) apply true
 }
 
-subprojects {
-    repositories {
-        mavenCentral()
-    }
+repositories {
+    mavenCentral()
+}
 
+subprojects {
     apply(plugin = Plugins.Kotlin.id)
     apply(plugin = Plugins.Serialization.id)
     apply(plugin = Plugins.Ktlint.id)
@@ -52,17 +52,21 @@ subprojects {
     group = Libs.org
     version = Ci.version
 
-    dependencies {
-        "implementation"(platform("org.jetbrains.kotlin:kotlin-bom"))
-        "implementation"(Libs.Logging.api)
+    repositories {
+        mavenCentral()
+    }
 
-        "testImplementation"(Libs.Slf4j.simple)
-        "testImplementation"(Libs.Kotest.junit5)
-        "testImplementation"(Libs.Kotest.property)
-        "testImplementation"(Libs.Mockk.mockk)
+    dependencies {
+        implementation(platform("org.jetbrains.kotlin:kotlin-bom"))
+        implementation(Libs.Logging.api)
+
+        testImplementation(Libs.Slf4j.simple)
+        testImplementation(Libs.Kotest.junit5)
+        testImplementation(Libs.Kotest.property)
+        testImplementation(Libs.Mockk.mockk)
 
         if (name != "infinitic-common") {
-            "testImplementation"(testFixtures(project(":infinitic-common")))
+            testImplementation(testFixtures(project(":infinitic-common")))
         }
     }
 

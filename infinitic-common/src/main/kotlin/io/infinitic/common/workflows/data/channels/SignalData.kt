@@ -23,31 +23,29 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.storage.redis
+package io.infinitic.common.workflows.data.channels
 
-import redis.clients.jedis.JedisPool
-import redis.clients.jedis.JedisPoolConfig
+import io.infinitic.common.serDe.SerializedData
+import kotlinx.serialization.KSerializer
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.descriptors.SerialDescriptor
+import kotlinx.serialization.encoding.Decoder
+import kotlinx.serialization.encoding.Encoder
 
-fun getPool(
-    host: String,
-    port: Int,
-    timeout: Int,
-    user: String?,
-    password: String?,
-    database: Int,
-    ssl: Boolean,
-    jedisPoolConfig: JedisPoolConfig = JedisPoolConfig()
-) = when (password.isNullOrEmpty()) {
-    true -> JedisPool(jedisPoolConfig, host, port, database)
-    false -> JedisPool(jedisPoolConfig, host, port, timeout, user, password, database, ssl)
+@Serializable(with = ChannelSignalSerializer::class)
+data class SignalData(val serializedData: SerializedData) {
+    companion object {
+        fun from(data: Any?) = SignalData(SerializedData.from(data))
+    }
+
+    override fun toString() = serializedData.toString()
 }
 
-fun getPool(config: Redis) = getPool(
-    host = config.host,
-    port = config.port,
-    timeout = config.timeout,
-    user = config.user,
-    password = config.password?.value,
-    database = config.database,
-    ssl = config.ssl
-)
+object ChannelSignalSerializer : KSerializer<SignalData> {
+    override val descriptor: SerialDescriptor = SerializedData.serializer().descriptor
+    override fun serialize(encoder: Encoder, value: SignalData) {
+        SerializedData.serializer().serialize(encoder, value.serializedData)
+    }
+    override fun deserialize(decoder: Decoder) =
+        SignalData(SerializedData.serializer().deserialize(decoder))
+}

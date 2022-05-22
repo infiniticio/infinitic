@@ -31,14 +31,11 @@ import redis.embedded.RedisServer
 
 class RedisKeyCounterStorageTests : StringSpec({
 
-    val redisServer = RedisServer(6380)
+    val redisServer = RedisServer(6380).also { it.start() }
     val storage = RedisKeyCounterStorage.of(Redis("localhost", 6380))
 
-    beforeSpec {
-        redisServer.start()
-    }
-
     afterSpec {
+        Redis.close()
         redisServer.stop()
     }
 

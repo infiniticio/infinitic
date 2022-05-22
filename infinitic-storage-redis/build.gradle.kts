@@ -24,7 +24,7 @@
  */
 
 dependencies {
-    implementation("redis.clients:jedis:4.2.1")
+    implementation("redis.clients:jedis:4.2.3")
     implementation(Libs.Hoplite.core)
 
     implementation(project(":infinitic-common"))

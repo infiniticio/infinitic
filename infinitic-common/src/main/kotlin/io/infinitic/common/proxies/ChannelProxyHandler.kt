@@ -26,8 +26,8 @@
 package io.infinitic.common.proxies
 
 import io.infinitic.common.workflows.data.channels.ChannelName
-import io.infinitic.common.workflows.data.channels.ChannelSignal
 import io.infinitic.common.workflows.data.channels.ChannelType
+import io.infinitic.common.workflows.data.channels.SignalData
 import io.infinitic.exceptions.clients.InvalidChannelGetterException
 import io.infinitic.workflows.SendChannel
 
@@ -48,5 +48,5 @@ class ChannelProxyHandler<K : SendChannel<*>>(
     val workflowTag = handler.workflowTag
 
     val channelTypes by lazy { ChannelType.allFrom(methodArgs.first()::class.java) }
-    val channelSignal by lazy { ChannelSignal.from(methodArgs.first()) }
+    val signalData by lazy { SignalData.from(methodArgs.first()) }
 }

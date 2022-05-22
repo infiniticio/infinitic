@@ -51,7 +51,7 @@ internal fun CoroutineScope.commandTerminated(
     val methodRun = state.getMethodRun(methodRunId) ?: thisShouldNotHappen()
     val pastCommand = state.getPastCommand(commandId, methodRun)
 
-    // do nothing if this command is already terminated
+    // Idempotency: do nothing if this command is already terminated
     // (i.e. canceled or completed, not failed as it's a transient status)
     if (pastCommand.isTerminated()) return
 

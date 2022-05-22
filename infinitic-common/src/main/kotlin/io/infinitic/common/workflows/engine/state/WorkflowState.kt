@@ -33,7 +33,9 @@ import io.infinitic.common.exceptions.thisShouldNotHappen
 import io.infinitic.common.serDe.avro.AvroSerDe
 import io.infinitic.common.tasks.data.TaskId
 import io.infinitic.common.workflows.data.channels.ReceivingChannel
+import io.infinitic.common.workflows.data.channels.SignalId
 import io.infinitic.common.workflows.data.commands.CommandId
+import io.infinitic.common.workflows.data.commands.CommandStatus
 import io.infinitic.common.workflows.data.commands.PastCommand
 import io.infinitic.common.workflows.data.methodRuns.MethodRun
 import io.infinitic.common.workflows.data.methodRuns.MethodRunId
@@ -153,6 +155,12 @@ data class WorkflowState(
 
     fun toByteArray() = AvroSerDe.writeBinary(this, serializer())
 
+    fun hasSignalAlreadyBeenReceived(signalId: SignalId) = methodRuns.any { methodRun ->
+        methodRun.pastCommands.any {
+            it.commandStatus is CommandStatus.Completed && (it.commandStatus as CommandStatus.Completed).signalId == signalId
+        }
+    }
+
     fun getRunningMethodRun(): MethodRun = methodRuns.first { it.methodRunId == runningMethodRunId }
 
     fun getMethodRun(methodRunId: MethodRunId) = methodRuns.firstOrNull { it.methodRunId == methodRunId }
@@ -174,7 +182,7 @@ data class WorkflowState(
         removeUnusedPropertyHash()
     }
 
-    fun removeAllMethodRuns() {
+    fun removeMethodRuns() {
         methodRuns.clear()
 
         // clean receivingChannels once deleted

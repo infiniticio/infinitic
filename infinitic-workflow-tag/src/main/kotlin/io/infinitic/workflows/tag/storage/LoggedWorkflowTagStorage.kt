@@ -25,7 +25,6 @@
 
 package io.infinitic.workflows.tag.storage
 
-import io.infinitic.common.data.MessageId
 import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.data.workflows.WorkflowName
 import io.infinitic.common.workflows.data.workflows.WorkflowTag
@@ -34,26 +33,14 @@ import mu.KotlinLogging
 import org.jetbrains.annotations.TestOnly
 
 class LoggedWorkflowTagStorage(
-    val storage: WorkflowTagStorage
+    private val storage: WorkflowTagStorage
 ) : WorkflowTagStorage {
 
     private val logger = KotlinLogging.logger {}
 
-    override suspend fun getLastMessageId(tag: WorkflowTag, workflowName: WorkflowName): MessageId? {
-        val messageId = storage.getLastMessageId(tag, workflowName)
-        logger.debug { "tag $tag - name $workflowName - getLastMessageId $messageId" }
-
-        return messageId
-    }
-
-    override suspend fun setLastMessageId(tag: WorkflowTag, workflowName: WorkflowName, messageId: MessageId) {
-        logger.debug { "tag $tag - name $workflowName - setLastMessageId $messageId" }
-        storage.setLastMessageId(tag, workflowName, messageId)
-    }
-
     override suspend fun getWorkflowIds(tag: WorkflowTag, workflowName: WorkflowName): Set<WorkflowId> {
         val workflowIds = storage.getWorkflowIds(tag, workflowName)
-        logger.debug { "tag $tag - workflowName $workflowName - getWorkflowIds $workflowIds" }
+        logger.debug { "tag $tag - workflowName $workflowName - getWorkflowIds ${workflowIds.size} found" }
 
         return workflowIds
     }

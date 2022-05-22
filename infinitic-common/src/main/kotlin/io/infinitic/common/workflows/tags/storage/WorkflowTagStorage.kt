@@ -25,7 +25,6 @@
 
 package io.infinitic.common.workflows.tags.storage
 
-import io.infinitic.common.data.MessageId
 import io.infinitic.common.storage.Flushable
 import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.data.workflows.WorkflowName
@@ -38,10 +37,6 @@ import io.infinitic.common.workflows.data.workflows.WorkflowTag
  * transformed before being stored. These details are left to the different implementations.
  */
 interface WorkflowTagStorage : Flushable {
-    suspend fun getLastMessageId(tag: WorkflowTag, workflowName: WorkflowName): MessageId?
-
-    suspend fun setLastMessageId(tag: WorkflowTag, workflowName: WorkflowName, messageId: MessageId)
-
     suspend fun getWorkflowIds(tag: WorkflowTag, workflowName: WorkflowName): Set<WorkflowId>
 
     suspend fun addWorkflowId(tag: WorkflowTag, workflowName: WorkflowName, workflowId: WorkflowId)

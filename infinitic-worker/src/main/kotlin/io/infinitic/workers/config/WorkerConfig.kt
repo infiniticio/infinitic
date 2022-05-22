@@ -32,6 +32,7 @@ import io.infinitic.common.config.loadConfigFromFile
 import io.infinitic.common.config.loadConfigFromResource
 import io.infinitic.storage.StateStorage
 import io.infinitic.storage.StorageConfig
+import io.infinitic.storage.mysql.MySQL
 import io.infinitic.storage.redis.Redis
 import io.infinitic.transport.config.Transport
 import io.infinitic.transport.config.TransportConfig
@@ -62,6 +63,11 @@ data class WorkerConfig(
      * Redis configuration
      */
     override val redis: Redis? = null,
+
+    /**
+     * MySQL configuration
+     */
+    override val mysql: MySQL? = null,
 
     /**
      * Default state cache
@@ -134,9 +140,5 @@ data class WorkerConfig(
 
     private fun checkStateStorage(stateStorage: StateStorage?, name: String) {
         require(stateStorage != null) { "`stateStorage` can not be null for $name" }
-
-        if (stateStorage == StateStorage.redis) {
-            require(redis != null) { "`${StateStorage.redis}` is used for $name but not configured" }
-        }
     }
 }

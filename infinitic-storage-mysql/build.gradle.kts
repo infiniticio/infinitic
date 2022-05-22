@@ -23,12 +23,16 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.common.workflows.engine.messages.interfaces
+dependencies {
+    // For connection pooling
+    implementation("com.zaxxer:HikariCP:5.0.1")
+    implementation("mysql:mysql-connector-java:8.0.29")
+    // For integration tests
+    testImplementation("org.testcontainers:mysql:1.17.1")
 
-import io.infinitic.common.tasks.data.TaskId
-import io.infinitic.common.tasks.data.TaskName
+    implementation(Libs.Hoplite.core)
 
-interface TaskMessage {
-    fun taskId(): TaskId
-    fun taskName(): TaskName
+    implementation(project(":infinitic-common"))
 }
+
+apply("../publish.gradle.kts")

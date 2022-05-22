@@ -26,7 +26,10 @@
 package io.infinitic.storage.redis
 
 import com.sksamuel.hoplite.Secret
+import redis.clients.jedis.JedisPool
+import redis.clients.jedis.JedisPoolConfig
 import redis.clients.jedis.Protocol
+import java.util.concurrent.ConcurrentHashMap
 
 data class Redis(
     val host: String = Protocol.DEFAULT_HOST,
@@ -36,4 +39,24 @@ data class Redis(
     var password: Secret? = null,
     var database: Int = Protocol.DEFAULT_DATABASE,
     var ssl: Boolean = false
-)
+) {
+    companion object {
+        val pools = ConcurrentHashMap<Redis, JedisPool>()
+
+        fun close() {
+            pools.values.forEach { it.close() }
+            pools.clear()
+        }
+    }
+
+    fun getPool(
+        jedisPoolConfig: JedisPoolConfig = JedisPoolConfig()
+    ) = pools.computeIfAbsent(this) {
+        when (it.password?.value.isNullOrEmpty()) {
+            true -> JedisPool(jedisPoolConfig, it.host, it.port, it.database)
+            false -> JedisPool(jedisPoolConfig, it.host, it.port, it.timeout, it.user, it.password?.value, it.database, it.ssl)
+        }.also { pool ->
+            Runtime.getRuntime().addShutdownHook(Thread { pool.close() })
+        }
+    }
+}

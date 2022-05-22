@@ -32,14 +32,11 @@ import redis.embedded.RedisServer
 
 class RedisKeySetStorageTests : StringSpec({
 
-    val redisServer = RedisServer(6380)
+    val redisServer = RedisServer(6380).also { it.start() }
     val storage = RedisKeySetStorage.of(Redis("localhost", 6380))
 
-    beforeSpec {
-        redisServer.start()
-    }
-
     afterSpec {
+        Redis.close()
         redisServer.stop()
     }
 
