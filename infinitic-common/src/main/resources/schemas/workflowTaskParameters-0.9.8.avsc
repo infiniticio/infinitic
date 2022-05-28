@@ -3,6 +3,10 @@
   "name" : "WorkflowTaskParameters",
   "namespace" : "io.infinitic.common.workflows.data.workflowTasks",
   "fields" : [ {
+    "name" : "version",
+    "type" : "string",
+    "default" : "0.9.7"
+  }, {
     "name" : "taskId",
     "type" : "string"
   }, {

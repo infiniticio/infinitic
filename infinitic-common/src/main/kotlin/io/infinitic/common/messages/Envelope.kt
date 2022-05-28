@@ -45,7 +45,7 @@ fun <T : Envelope<*>> KClass<T>.fromByteArray(bytes: ByteArray, schema: Schema) 
     TaskExecutorEnvelope::class -> TaskExecutorEnvelope.fromByteArray(bytes, schema)
     WorkflowEngineEnvelope::class -> WorkflowEngineEnvelope.fromByteArray(bytes, schema)
     WorkflowTagEnvelope::class -> WorkflowTagEnvelope.fromByteArray(bytes, schema)
-    else -> thisShouldNotHappen("applying fromByteArray on $qualifiedName")
+    else -> thisShouldNotHappen("applying fromByteArray() on $qualifiedName")
 } as T
 
 fun <T : Envelope<*>> KClass<T>.schema() = when (this) {
@@ -54,7 +54,7 @@ fun <T : Envelope<*>> KClass<T>.schema() = when (this) {
     TaskExecutorEnvelope::class -> TaskExecutorEnvelope.schema
     WorkflowEngineEnvelope::class -> WorkflowEngineEnvelope.schema
     WorkflowTagEnvelope::class -> WorkflowTagEnvelope.schema
-    else -> thisShouldNotHappen("applying fromByteArray on $qualifiedName")
+    else -> thisShouldNotHappen("applying schema() on $qualifiedName")
 }
 
 fun <T : Envelope<*>> T.toByteArray() = when (this) {
@@ -63,5 +63,5 @@ fun <T : Envelope<*>> T.toByteArray() = when (this) {
     is TaskExecutorEnvelope -> this.toByteArray()
     is WorkflowEngineEnvelope -> this.toByteArray()
     is WorkflowTagEnvelope -> this.toByteArray()
-    else -> thisShouldNotHappen("applying fromByteArray on $this")
+    else -> thisShouldNotHappen("applying fromByteArray() on $this")
 }

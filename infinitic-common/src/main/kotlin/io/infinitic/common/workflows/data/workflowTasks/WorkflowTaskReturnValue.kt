@@ -25,6 +25,7 @@
 
 package io.infinitic.common.workflows.data.workflowTasks
 
+import com.github.avrokotlin.avro4k.AvroDefault
 import io.infinitic.common.data.ReturnValue
 import io.infinitic.common.workflows.data.commands.PastCommand
 import io.infinitic.common.workflows.data.properties.PropertyName
@@ -34,6 +35,8 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 data class WorkflowTaskReturnValue(
+    @AvroDefault("0.9.7")
+    val version: String = io.infinitic.version,
     val newCommands: List<PastCommand>,
     val newStep: NewStep?,
     val properties: Map<PropertyName, PropertyValue>,
