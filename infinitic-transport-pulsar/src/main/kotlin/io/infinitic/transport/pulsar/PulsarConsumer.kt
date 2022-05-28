@@ -27,6 +27,7 @@ package io.infinitic.transport.pulsar
 
 import io.infinitic.common.messages.Envelope
 import io.infinitic.common.messages.Message
+import io.infinitic.common.serDe.kserializer.kserializer
 import io.infinitic.transport.pulsar.schemas.schemaDefinition
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.channels.Channel
@@ -184,7 +185,7 @@ internal class PulsarConsumer(val client: PulsarClient) {
     ): Consumer<out Envelope<T>> {
         logger.debug { "Creating Consumer consumerName='$consumerName' subscriptionName='$subscriptionName' subscriptionType='$subscriptionType' topic='$topic'" }
 
-        val schema: Schema<out Envelope<out T>> = Schema.AVRO(schemaDefinition(S::class))
+        val schema = Schema.AVRO(schemaDefinition(kserializer<S>()))
 
         return client.newConsumer(schema)
             .topic(topic)

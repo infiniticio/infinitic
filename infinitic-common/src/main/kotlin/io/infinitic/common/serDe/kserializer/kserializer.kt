@@ -27,21 +27,19 @@ package io.infinitic.common.serDe.kserializer
 
 import io.infinitic.common.clients.messages.ClientEnvelope
 import io.infinitic.common.exceptions.thisShouldNotHappen
+import io.infinitic.common.messages.Envelope
 import io.infinitic.common.tasks.executors.messages.TaskExecutorEnvelope
 import io.infinitic.common.tasks.tags.messages.TaskTagEnvelope
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineEnvelope
-import io.infinitic.common.workflows.engine.state.WorkflowState
 import io.infinitic.common.workflows.tags.messages.WorkflowTagEnvelope
 import kotlinx.serialization.KSerializer
-import kotlin.reflect.KClass
 
 @Suppress("UNCHECKED_CAST")
-fun <T : Any> kserializer(klass: KClass<T>) = when (klass) {
+inline fun <reified T : Envelope<*>> kserializer() = when (T::class) {
     ClientEnvelope::class -> ClientEnvelope.serializer()
     TaskTagEnvelope::class -> TaskTagEnvelope.serializer()
     TaskExecutorEnvelope::class -> TaskExecutorEnvelope.serializer()
     WorkflowEngineEnvelope::class -> WorkflowEngineEnvelope.serializer()
     WorkflowTagEnvelope::class -> WorkflowTagEnvelope.serializer()
-    WorkflowState::class -> WorkflowState.serializer()
-    else -> thisShouldNotHappen("applying kserializer with ${klass.qualifiedName}")
-} as KSerializer <T>
+    else -> thisShouldNotHappen("applying kSerializer with ${T::class.qualifiedName}")
+} as KSerializer<T>

@@ -25,17 +25,17 @@
 
 package io.infinitic.transport.pulsar.schemas
 
+import io.infinitic.common.messages.Envelope
 import io.infinitic.common.serDe.avro.AvroSerDe
-import io.infinitic.common.serDe.kserializer.kserializer
+import kotlinx.serialization.KSerializer
 import org.apache.avro.Schema
 import org.apache.pulsar.client.api.schema.SchemaInfoProvider
 import org.apache.pulsar.client.api.schema.SchemaReader
 import org.apache.pulsar.common.schema.SchemaInfo
 import java.io.InputStream
 import java.util.concurrent.ConcurrentHashMap
-import kotlin.reflect.KClass
 
-class KSchemaReader<T : Any>(private val klass: KClass<T>) : SchemaReader<T> {
+class KSchemaReader<T : Envelope<*>>(private val kserializer: KSerializer<T>) : SchemaReader<T> {
     companion object {
         private val schemasCache = ConcurrentHashMap<String, Schema>()
     }
@@ -48,10 +48,10 @@ class KSchemaReader<T : Any>(private val klass: KClass<T>) : SchemaReader<T> {
         read(bytes.inputStream(offset, length))
 
     override fun read(inputStream: InputStream) =
-        AvroSerDe.readBinary(inputStream.readBytes(), kserializer(klass))
+        AvroSerDe.readBinary(inputStream.readBytes(), kserializer)
 
     override fun read(bytes: ByteArray, schemaVersion: ByteArray): T =
-        AvroSerDe.readBinary(bytes, kserializer(klass), parseAvroSchema(getSchemaInfoByVersion(schemaVersion)))
+        AvroSerDe.readBinary(bytes, kserializer, parseAvroSchema(getSchemaInfoByVersion(schemaVersion)))
 
     override fun read(inputStream: InputStream, schemaVersion: ByteArray): T {
         return read(inputStream.readBytes(), schemaVersion)
@@ -66,7 +66,8 @@ class KSchemaReader<T : Any>(private val klass: KClass<T>) : SchemaReader<T> {
 
     // retrieve Pulsar SchemaInfo from the schemaVersion
     // luckily, the method getSchemaByVersion includes a cache
-    private fun getSchemaInfoByVersion(schemaVersion: ByteArray): SchemaInfo? = schemaInfoProvider.getSchemaByVersion(schemaVersion).get()
+    private fun getSchemaInfoByVersion(schemaVersion: ByteArray): SchemaInfo? =
+        schemaInfoProvider.getSchemaByVersion(schemaVersion).get()
 
     // retrieve the Avro Schema from our cache or parse it from the SchemaInfo schema definition
     private fun parseAvroSchema(schemaInfo: SchemaInfo?): Schema? = schemaInfo?.schemaDefinition!!.let {
