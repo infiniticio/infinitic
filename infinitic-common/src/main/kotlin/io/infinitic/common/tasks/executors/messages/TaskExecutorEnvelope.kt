@@ -30,8 +30,10 @@ import io.infinitic.common.messages.Envelope
 import io.infinitic.common.serDe.avro.AvroSerDe
 import io.infinitic.common.tasks.data.TaskName
 import kotlinx.serialization.Serializable
+import org.apache.avro.Schema
 
-@Serializable @AvroNamespace("io.infinitic.tasks.executor")
+@Serializable
+@AvroNamespace("io.infinitic.tasks.executor")
 data class TaskExecutorEnvelope(
     private val taskName: TaskName,
     private val type: TaskExecutorMessageType,
@@ -56,7 +58,9 @@ data class TaskExecutorEnvelope(
             )
         }
 
-        fun fromByteArray(bytes: ByteArray) = AvroSerDe.readBinary(bytes, serializer())
+        fun fromByteArray(bytes: ByteArray, schema: Schema) = AvroSerDe.readBinary(bytes, serializer(), schema)
+
+        val schema = AvroSerDe.schema(serializer())
     }
 
     override fun message(): TaskExecutorMessage = when (type) {

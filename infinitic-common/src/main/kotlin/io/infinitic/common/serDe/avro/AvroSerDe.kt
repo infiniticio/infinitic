@@ -115,8 +115,8 @@ object AvroSerDe {
     /**
      * Avro binary + schema -> Object
      */
-    fun <T> readBinary(bytes: ByteArray, serializer: KSerializer<T>, readerSchema: Schema? = null): T {
-        val datumReader = GenericDatumReader<GenericRecord>(readerSchema ?: schema(serializer))
+    fun <T> readBinary(bytes: ByteArray, serializer: KSerializer<T>, readerSchema: Schema): T {
+        val datumReader = GenericDatumReader<GenericRecord>(readerSchema)
         val decoder = DecoderFactory.get().binaryDecoder(SeekableByteArrayInput(bytes), null)
         val record = datumReader.read(null, decoder)
 

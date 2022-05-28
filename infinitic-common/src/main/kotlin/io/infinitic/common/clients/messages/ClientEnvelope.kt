@@ -29,6 +29,7 @@ import io.infinitic.common.data.ClientName
 import io.infinitic.common.messages.Envelope
 import io.infinitic.common.serDe.avro.AvroSerDe
 import kotlinx.serialization.Serializable
+import org.apache.avro.Schema
 
 @Serializable
 data class ClientEnvelope(
@@ -118,7 +119,9 @@ data class ClientEnvelope(
             )
         }
 
-        fun fromByteArray(bytes: ByteArray) = AvroSerDe.readBinary(bytes, serializer())
+        fun fromByteArray(bytes: ByteArray, schema: Schema) = AvroSerDe.readBinary(bytes, serializer(), schema)
+
+        val schema = AvroSerDe.schema(serializer())
     }
 
     override fun message(): ClientMessage = when (type) {

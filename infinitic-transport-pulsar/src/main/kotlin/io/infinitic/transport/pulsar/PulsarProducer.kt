@@ -28,7 +28,6 @@ package io.infinitic.transport.pulsar
 import io.infinitic.common.data.MillisDuration
 import io.infinitic.common.messages.Envelope
 import io.infinitic.common.messages.Message
-import io.infinitic.common.serDe.kserializer.kserializer
 import io.infinitic.transport.pulsar.schemas.schemaDefinition
 import mu.KotlinLogging
 import org.apache.pulsar.client.api.BatcherBuilder
@@ -78,7 +77,7 @@ internal class PulsarProducer(val client: PulsarClient) {
         producers.computeIfAbsent(topic) {
             logger.debug { "Creating Producer with producerName='$producerName' topic='$topic'" }
 
-            val schema = Schema.AVRO(schemaDefinition(kserializer<S>()))
+            val schema = Schema.AVRO(schemaDefinition<S>())
 
             client
                 .newProducer(schema)

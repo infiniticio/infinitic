@@ -31,8 +31,10 @@ import com.github.avrokotlin.avro4k.AvroNamespace
 import io.infinitic.common.messages.Envelope
 import io.infinitic.common.serDe.avro.AvroSerDe
 import kotlinx.serialization.Serializable
+import org.apache.avro.Schema
 
-@Serializable @AvroNamespace("io.infinitic.workflows.tag")
+@Serializable
+@AvroNamespace("io.infinitic.workflows.tag")
 data class WorkflowTagEnvelope(
     private val name: String,
     private val type: WorkflowTagMessageType,
@@ -114,7 +116,9 @@ data class WorkflowTagEnvelope(
             )
         }
 
-        fun fromByteArray(bytes: ByteArray) = AvroSerDe.readBinary(bytes, serializer())
+        fun fromByteArray(bytes: ByteArray, schema: Schema) = AvroSerDe.readBinary(bytes, serializer(), schema)
+
+        val schema = AvroSerDe.schema(serializer())
     }
 
     override fun message() = when (type) {

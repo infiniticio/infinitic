@@ -42,7 +42,7 @@ class TaskTagEnvelopeTests : StringSpec({
                 val envelope = TaskTagEnvelope.from(msg)
                 val byteArray = envelope.toByteArray()
 
-                TaskTagEnvelope.fromByteArray(byteArray) shouldBe envelope
+                TaskTagEnvelope.fromByteArray(byteArray, TaskTagEnvelope.schema) shouldBe envelope
             }
         }
     }

@@ -43,7 +43,7 @@ class WorkflowEngineEnvelopeTests : StringSpec({
                 val envelope = WorkflowEngineEnvelope.from(msg)
                 val byteArray = envelope.toByteArray()
 
-                WorkflowEngineEnvelope.fromByteArray(byteArray) shouldBe envelope
+                WorkflowEngineEnvelope.fromByteArray(byteArray, WorkflowEngineEnvelope.schema) shouldBe envelope
             }
         }
     }

@@ -30,6 +30,7 @@ import io.infinitic.common.messages.Envelope
 import io.infinitic.common.serDe.avro.AvroSerDe
 import io.infinitic.common.workflows.data.workflows.WorkflowId
 import kotlinx.serialization.Serializable
+import org.apache.avro.Schema
 
 @Serializable
 @AvroNamespace("io.infinitic.workflows.engine")
@@ -174,7 +175,9 @@ data class WorkflowEngineEnvelope(
             )
         }
 
-        fun fromByteArray(bytes: ByteArray) = AvroSerDe.readBinary(bytes, serializer())
+        fun fromByteArray(bytes: ByteArray, schema: Schema) = AvroSerDe.readBinary(bytes, serializer(), schema)
+
+        val schema = AvroSerDe.schema(serializer())
     }
 
     override fun message(): WorkflowEngineMessage = when (type) {

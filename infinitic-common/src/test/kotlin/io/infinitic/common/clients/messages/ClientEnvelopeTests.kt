@@ -42,7 +42,7 @@ class ClientEnvelopeTests : StringSpec({
                 val envelope = ClientEnvelope.from(msg)
                 val byteArray = envelope.toByteArray()
 
-                ClientEnvelope.fromByteArray(byteArray) shouldBe envelope
+                ClientEnvelope.fromByteArray(byteArray, ClientEnvelope.schema) shouldBe envelope
             }
         }
     }
