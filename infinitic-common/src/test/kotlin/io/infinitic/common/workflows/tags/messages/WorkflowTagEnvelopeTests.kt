@@ -25,7 +25,6 @@
 
 package io.infinitic.common.workflows.tags.messages
 
-import com.github.avrokotlin.avro4k.Avro
 import io.infinitic.common.checkBackwardCompatibility
 import io.infinitic.common.checkCurrentFileIsUpToDate
 import io.infinitic.common.createSchemaFileIfAbsent
@@ -48,23 +47,22 @@ class WorkflowTagEnvelopeTests : StringSpec({
         "WorkflowTagMessage(${msg::class.simpleName}) should be avro-convertible" {
             shouldNotThrowAny {
                 val envelope = WorkflowTagEnvelope.from(msg)
-                val ser = WorkflowTagEnvelope.serializer()
-                val byteArray = Avro.default.encodeToByteArray(ser, envelope)
-                val envelope2 = Avro.default.decodeFromByteArray(ser, byteArray)
-                envelope shouldBe envelope2
+                val bytes: ByteArray = envelope.toByteArray()
+
+                WorkflowTagEnvelope.fromByteArray(bytes) shouldBe envelope
             }
         }
     }
 
-    "Create WorkflowTagEnvelope schema file for the current version" {
+    "Create schema file for the current version if it does not exist yet" {
         createSchemaFileIfAbsent(WorkflowTagEnvelope.serializer())
     }
 
-    "Saved WorkflowTagEnvelope schema should be up-to-date with for the current version" {
+    "Existing schema file should be up-to-date with the current version" {
         checkCurrentFileIsUpToDate(WorkflowTagEnvelope.serializer())
     }
 
-    "We should be able to read WorkflowTagEnvelope from any previous version since 0.9.0" {
+    "Avro Schema should be backward compatible to 0.9.0" {
         checkBackwardCompatibility(WorkflowTagEnvelope.serializer())
     }
 })

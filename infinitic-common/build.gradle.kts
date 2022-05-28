@@ -40,8 +40,6 @@ dependencies {
     implementation(Libs.Coroutines.core)
     implementation(Libs.Coroutines.jdk8)
 
-    testImplementation(files("${project.rootDir}/buildSrc/build/libs/buildSrc.jar"))
-
     testFixturesImplementation(Libs.Kotlin.reflect)
     testFixturesImplementation(Libs.EasyRandom.core)
     testFixturesImplementation(Libs.Coroutines.core)
@@ -49,8 +47,15 @@ dependencies {
 
 tasks.withType<KotlinCompile> {
     doFirst {
-        // current version is put in resources
-        File(project.projectDir.absolutePath, "/src/main/resources/version.properties").writeText(Ci.version)
+        // all versions
+        val file = File(project.projectDir.absolutePath, "/src/main/resources/versions")
+        // append current version
+        if (!file.useLines { lines -> lines.any { it == Ci.base } }) {
+            file.appendText(Ci.base)
+        }
+
+        // current version
+        File(project.projectDir.absolutePath, "/src/main/resources/version").writeText(Ci.base)
     }
 }
 

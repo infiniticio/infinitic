@@ -26,36 +26,111 @@
 package io.infinitic.common.serDe.avro
 
 import com.github.avrokotlin.avro4k.Avro
-import com.github.avrokotlin.avro4k.io.AvroEncodeFormat
-import io.infinitic.common.serDe.kserializer.kserializer
+import io.infinitic.common.SchemasUti.getAllSchemas
 import kotlinx.serialization.KSerializer
+import org.apache.avro.Schema
 import org.apache.avro.file.SeekableByteArrayInput
+import org.apache.avro.generic.GenericData
 import org.apache.avro.generic.GenericDatumReader
+import org.apache.avro.generic.GenericDatumWriter
 import org.apache.avro.generic.GenericRecord
 import org.apache.avro.io.DecoderFactory
+import org.apache.avro.io.EncoderFactory
+import org.apache.avro.message.BinaryMessageDecoder
+import org.apache.avro.message.BinaryMessageEncoder
+import org.apache.avro.util.RandomData
+import org.jetbrains.annotations.TestOnly
 import java.io.ByteArrayOutputStream
-import kotlin.reflect.KClass
+import java.util.concurrent.ConcurrentHashMap
 
 /**
  * This object provides methods to serialize/deserialize an Avro-generated class
  */
 object AvroSerDe {
-    fun <T : Any> schema(klass: KClass<T>) = Avro.default.schema(kserializer(klass))
 
-    fun <T : Any> writeBinary(t: T, serializer: KSerializer<T>): ByteArray {
+    /**
+     * BinaryMessageEncoder cache by class serializer
+     */
+    private val binaryMessageEncoders = ConcurrentHashMap<KSerializer<*>, BinaryMessageEncoder<GenericRecord>>()
+
+    /**
+     * BinaryMessageDecoder cache by class serializer
+     */
+    val binaryMessageDecoders = ConcurrentHashMap<KSerializer<*>, BinaryMessageDecoder<GenericRecord>>()
+
+    /**
+     * Schema cache by class serializer
+     */
+    private val schemas = ConcurrentHashMap<KSerializer<*>, Schema>()
+
+    /**
+     * Get schema from the serializer
+     */
+    fun <T> schema(serializer: KSerializer<T>): Schema =
+        schemas.getOrPut(serializer) { Avro.default.schema(serializer) }
+
+    /**
+     * Object -> Avro binary with schema fingerprint
+     */
+    fun <T : Any> writeBinaryWithSchemaFingerprint(t: T, serializer: KSerializer<T>): ByteArray {
+        val record: GenericRecord = Avro.default.toRecord(serializer, t)
+
+        val encoder = binaryMessageEncoders.getOrPut(serializer) {
+            BinaryMessageEncoder<GenericRecord>(GenericData.get(), schema(serializer))
+        }
         val out = ByteArrayOutputStream()
-        Avro.default.openOutputStream(serializer) {
-            encodeFormat = AvroEncodeFormat.Binary
-            schema = Avro.default.schema(serializer)
-        }.to(out).write(t).close()
+        encoder.encode(record, out)
 
         return out.toByteArray()
     }
 
-    fun <T> readBinary(bytes: ByteArray, serializer: KSerializer<T>): T {
-        val datumReader = GenericDatumReader<GenericRecord>(Avro.default.schema(serializer))
-        val decoder = DecoderFactory.get().binaryDecoder(SeekableByteArrayInput(bytes), null)
+    /**
+     * Avro binary with schema fingerprint -> Object
+     */
+    inline fun <reified T : Any> readBinaryWithSchemaFingerprint(bytes: ByteArray, serializer: KSerializer<T>): T {
+        val decoder = binaryMessageDecoders.getOrPut(serializer) {
+            BinaryMessageDecoder<GenericRecord>(GenericData.get(), schema(serializer)).also { decoder ->
+                getAllSchemas<T>().also { it.values.forEach { schema -> decoder.addSchema(schema) } }
+            }
+        }
 
-        return Avro.default.fromRecord(serializer, datumReader.read(null, decoder))
+        return Avro.default.fromRecord(serializer, decoder.decode(SeekableByteArrayInput(bytes), null))
+    }
+
+    /**
+     * Object -> Avro binary
+     */
+    fun <T : Any> writeBinary(t: T, serializer: KSerializer<T>): ByteArray {
+        val record: GenericRecord = Avro.default.toRecord(serializer, t)
+
+        val datumWriter = GenericDatumWriter<GenericRecord>(schema(serializer))
+        val out = ByteArrayOutputStream()
+        val encoder = EncoderFactory.get().binaryEncoder(out, null)
+        datumWriter.write(record, encoder)
+        encoder.flush()
+
+        return out.toByteArray()
+    }
+
+    /**
+     * Avro binary + schema -> Object
+     */
+    fun <T> readBinary(bytes: ByteArray, serializer: KSerializer<T>, readerSchema: Schema? = null): T {
+        val datumReader = GenericDatumReader<GenericRecord>(readerSchema ?: schema(serializer))
+        val decoder = DecoderFactory.get().binaryDecoder(SeekableByteArrayInput(bytes), null)
+        val record = datumReader.read(null, decoder)
+
+        return Avro.default.fromRecord(serializer, record)
+    }
+
+    @TestOnly
+    fun getRandomBinaryWithSchemaFingerprint(schema: Schema): ByteArray {
+        val o = RandomData(schema, 1).first()
+
+        val encoder = BinaryMessageEncoder<Any>(GenericData.get(), schema)
+        val out = ByteArrayOutputStream()
+        encoder.encode(o, out)
+
+        return out.toByteArray()
     }
 }

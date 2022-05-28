@@ -25,6 +25,14 @@
 
 package io.infinitic
 
-import io.infinitic.common.workflows.engine.state.WorkflowState
+import io.infinitic.common.serDe.avro.AvroSerDe
 
-val version by lazy { WorkflowState::class.java.classLoader.getResource("version.properties")!!.readText() }
+/**
+ * Current version
+ */
+val version: String = AvroSerDe::class.java.getResource("/version")!!.readText()
+
+/**
+ * List of all versions used for schema backward compatibility
+ */
+val versions: List<String> = AvroSerDe::class.java.getResource("/versions")!!.readText().split(System.lineSeparator())

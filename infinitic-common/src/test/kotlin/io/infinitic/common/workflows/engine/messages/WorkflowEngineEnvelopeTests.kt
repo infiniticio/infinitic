@@ -25,7 +25,6 @@
 
 package io.infinitic.common.workflows.engine.messages
 
-import com.github.avrokotlin.avro4k.Avro
 import io.infinitic.common.checkBackwardCompatibility
 import io.infinitic.common.checkCurrentFileIsUpToDate
 import io.infinitic.common.createSchemaFileIfAbsent
@@ -42,23 +41,22 @@ class WorkflowEngineEnvelopeTests : StringSpec({
         "WorkflowEngineEnvelope(${msg::class.simpleName}) should be avro-convertible" {
             shouldNotThrowAny {
                 val envelope = WorkflowEngineEnvelope.from(msg)
-                val ser = WorkflowEngineEnvelope.serializer()
-                val byteArray = Avro.default.encodeToByteArray(ser, envelope)
-                val envelope2 = Avro.default.decodeFromByteArray(ser, byteArray)
-                envelope shouldBe envelope2
+                val byteArray = envelope.toByteArray()
+
+                WorkflowEngineEnvelope.fromByteArray(byteArray) shouldBe envelope
             }
         }
     }
 
-    "Create WorkflowEngineEnvelope schema file for the current version" {
+    "Create schema file for the current version if it does not exist yet" {
         createSchemaFileIfAbsent(WorkflowEngineEnvelope.serializer())
     }
 
-    "Saved WorkflowEngineEnvelope schema should be up-to-date with for the current version" {
+    "Existing schema file should be up-to-date with the current version" {
         checkCurrentFileIsUpToDate(WorkflowEngineEnvelope.serializer())
     }
 
-    "We should be able to read WorkflowEngineEnvelope from any previous version since 0.9.0" {
+    "Avro Schema should be backward compatible to 0.9.0" {
         checkBackwardCompatibility(WorkflowEngineEnvelope.serializer())
     }
 })

@@ -23,18 +23,26 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.transport.pulsar.schemas
+package io.infinitic.common
 
-import io.infinitic.common.serDe.avro.AvroSerDe
-import io.infinitic.common.serDe.kserializer.kserializer
-import org.apache.pulsar.client.api.schema.SchemaDefinition
-import kotlin.reflect.KClass
+import io.infinitic.common.exceptions.thisShouldNotHappen
+import io.infinitic.versions
+import org.apache.avro.Schema
 
-fun <T : Any> schemaDefinition(klass: KClass<T>): SchemaDefinition<T> =
-    SchemaDefinition.builder<T>()
-        .withJsonDef(AvroSerDe.schema(kserializer(klass)).toString())
-        .withSchemaReader(KSchemaReader(klass))
-        .withSchemaWriter(KSchemaWriter(klass))
-        .withSupportSchemaVersioning(true)
-        .withJSR310ConversionEnabled(true)
-        .build()
+object SchemasUti {
+
+    const val SCHEMAS_FOLDER = "schemas"
+
+    inline fun <reified T : Any> getFilePrefix() = T::class.simpleName!!.replaceFirstChar { it.lowercase() }
+
+    inline fun <reified T : Any> getAllSchemas(): Map<String, Schema> {
+        val prefix = getFilePrefix<T>()
+
+        return versions.associateWith { version ->
+            val url = "/$SCHEMAS_FOLDER/$prefix-$version.avsc"
+            val schemaTxt = this::class.java.getResource(url)?.readText()
+                ?: thisShouldNotHappen("Can't find schema $url")
+            Schema.Parser().parse(schemaTxt)
+        }
+    }
+}

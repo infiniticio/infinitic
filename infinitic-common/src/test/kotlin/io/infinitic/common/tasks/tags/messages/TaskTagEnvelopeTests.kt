@@ -25,7 +25,6 @@
 
 package io.infinitic.common.tasks.tags.messages
 
-import com.github.avrokotlin.avro4k.Avro
 import io.infinitic.common.checkBackwardCompatibility
 import io.infinitic.common.checkCurrentFileIsUpToDate
 import io.infinitic.common.createSchemaFileIfAbsent
@@ -41,23 +40,22 @@ class TaskTagEnvelopeTests : StringSpec({
         "TaskTagMessage(${msg::class.simpleName}) should be avro-convertible" {
             shouldNotThrowAny {
                 val envelope = TaskTagEnvelope.from(msg)
-                val ser = TaskTagEnvelope.serializer()
-                val byteArray = Avro.default.encodeToByteArray(ser, envelope)
-                val envelope2 = Avro.default.decodeFromByteArray(ser, byteArray)
-                envelope shouldBe envelope2
+                val byteArray = envelope.toByteArray()
+
+                TaskTagEnvelope.fromByteArray(byteArray) shouldBe envelope
             }
         }
     }
 
-    "Create TaskTagEnvelope schema file for the current version" {
+    "Create schema file for the current version if it does not exist yet" {
         createSchemaFileIfAbsent(TaskTagEnvelope.serializer())
     }
 
-    "Saved TaskTagEnvelope schema should be up-to-date with for the current version" {
+    "Existing schema file should be up-to-date with the current version" {
         checkCurrentFileIsUpToDate(TaskTagEnvelope.serializer())
     }
 
-    "We should be able to read TaskTagEnvelope from any previous version since 0.9.0" {
+    "Avro Schema should be backward compatible to 0.9.0" {
         checkBackwardCompatibility(TaskTagEnvelope.serializer())
     }
 })
