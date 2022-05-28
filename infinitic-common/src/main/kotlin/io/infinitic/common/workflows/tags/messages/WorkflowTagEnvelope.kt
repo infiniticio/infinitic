@@ -34,8 +34,6 @@ import kotlinx.serialization.Serializable
 
 @Serializable @AvroNamespace("io.infinitic.workflows.tag")
 data class WorkflowTagEnvelope(
-    @AvroDefault("0.9.0") // last version without this field
-    private val version: String = io.infinitic.version,
     private val name: String,
     private val type: WorkflowTagMessageType,
     @AvroDefault(Avro.NULL) private val dispatchWorkflowByCustomId: DispatchWorkflowByCustomId? = null,

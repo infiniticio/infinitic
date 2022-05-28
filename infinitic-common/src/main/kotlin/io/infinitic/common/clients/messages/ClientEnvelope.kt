@@ -25,7 +25,6 @@
 
 package io.infinitic.common.clients.messages
 
-import com.github.avrokotlin.avro4k.AvroDefault
 import io.infinitic.common.data.ClientName
 import io.infinitic.common.messages.Envelope
 import io.infinitic.common.serDe.avro.AvroSerDe
@@ -33,8 +32,6 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 data class ClientEnvelope(
-    @AvroDefault("0.9.0") // last version without this field
-    private val version: String = io.infinitic.version,
     private val clientName: ClientName,
     private val type: ClientMessageType,
     private val taskCompleted: TaskCompleted? = null,
