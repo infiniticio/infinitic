@@ -25,11 +25,11 @@
 
 package io.infinitic.common.workflows.engine.state
 
-import io.infinitic.common.SchemasUti.getAllSchemas
 import io.infinitic.common.checkBackwardCompatibility
 import io.infinitic.common.checkCurrentFileIsUpToDate
 import io.infinitic.common.createSchemaFileIfAbsent
 import io.infinitic.common.fixtures.TestFactory
+import io.infinitic.common.serDe.avro.AvroSerDe.getAllSchemas
 import io.infinitic.common.serDe.avro.AvroSerDe.getRandomBinaryWithSchemaFingerprint
 import io.kotest.assertions.throwables.shouldNotThrowAny
 import io.kotest.core.spec.style.StringSpec

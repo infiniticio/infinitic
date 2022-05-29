@@ -51,7 +51,8 @@ import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
 import io.infinitic.workflows.WorkflowOptions
 import kotlinx.serialization.Serializable
 
-@Serializable @AvroNamespace("io.infinitic.workflows.engine")
+@Serializable
+@AvroNamespace("io.infinitic.workflows.engine")
 data class WorkflowState(
     /**
      * Id of last handled message (used to ensure idempotency)
@@ -143,7 +144,7 @@ data class WorkflowState(
     val messagesBuffer: MutableList<WorkflowEngineMessage> = mutableListOf(),
 ) {
     companion object {
-        fun fromByteArray(bytes: ByteArray): WorkflowState = AvroSerDe.readBinaryWithSchemaFingerprint(bytes, serializer())
+        fun fromByteArray(bytes: ByteArray) = AvroSerDe.readBinaryWithSchemaFingerprint(bytes, serializer())
     }
 
     fun toByteArray() = AvroSerDe.writeBinaryWithSchemaFingerprint(this, serializer())

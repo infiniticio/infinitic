@@ -26,9 +26,9 @@
 package io.infinitic.common
 
 import com.github.avrokotlin.avro4k.Avro
-import io.infinitic.common.SchemasUti.SCHEMAS_FOLDER
-import io.infinitic.common.SchemasUti.getAllSchemas
-import io.infinitic.common.SchemasUti.getFilePrefix
+import io.infinitic.common.serDe.avro.AvroSerDe.SCHEMAS_FOLDER
+import io.infinitic.common.serDe.avro.AvroSerDe.getAllSchemas
+import io.infinitic.common.serDe.avro.AvroSerDe.getSchemaFilePrefix
 import io.infinitic.version
 import io.kotest.assertions.throwables.shouldNotThrowAny
 import io.kotest.matchers.ints.shouldBeGreaterThan
@@ -65,5 +65,5 @@ internal inline fun <reified T : Any> checkBackwardCompatibility(serializer: KSe
 
 internal inline fun <reified T : Any> getCurrentSchemaFile() = File(
     "${Paths.get("").toAbsolutePath()}/src/main/resources/$SCHEMAS_FOLDER/",
-    "${getFilePrefix<T>()}-$version.avsc"
+    "${getSchemaFilePrefix<T>()}-$version.avsc"
 )

@@ -49,7 +49,7 @@ class WorkflowTagEnvelopeTests : StringSpec({
                 val envelope = WorkflowTagEnvelope.from(msg)
                 val bytes: ByteArray = envelope.toByteArray()
 
-                WorkflowTagEnvelope.fromByteArray(bytes, WorkflowTagEnvelope.schema) shouldBe envelope
+                WorkflowTagEnvelope.fromByteArray(bytes, WorkflowTagEnvelope.writerSchema) shouldBe envelope
             }
         }
     }

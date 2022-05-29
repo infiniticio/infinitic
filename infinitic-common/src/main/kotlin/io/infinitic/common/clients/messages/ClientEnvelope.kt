@@ -119,9 +119,16 @@ data class ClientEnvelope(
             )
         }
 
-        fun fromByteArray(bytes: ByteArray, schema: Schema) = AvroSerDe.readBinary(bytes, serializer(), schema)
+        /**
+         * Deserialize from a byte array and an avro schema
+         */
+        fun fromByteArray(bytes: ByteArray, readerSchema: Schema) =
+            AvroSerDe.readBinary(bytes, serializer(), readerSchema)
 
-        val schema = AvroSerDe.schema(serializer())
+        /**
+         * Current avro Schema
+         */
+        val writerSchema = AvroSerDe.schema(serializer())
     }
 
     override fun message(): ClientMessage = when (type) {

@@ -26,8 +26,8 @@
 package io.infinitic.common.serDe.avro
 
 import com.github.avrokotlin.avro4k.Avro
-import io.infinitic.common.SchemasUti.getAllSchemas
 import io.infinitic.common.exceptions.thisShouldNotHappen
+import io.infinitic.versions
 import kotlinx.serialization.KSerializer
 import org.apache.avro.Schema
 import org.apache.avro.file.SeekableByteArrayInput
@@ -49,6 +49,8 @@ import java.util.concurrent.ConcurrentHashMap
  * This object provides methods to serialize/deserialize an Avro-generated class
  */
 object AvroSerDe {
+
+    const val SCHEMAS_FOLDER = "schemas"
 
     /**
      * BinaryMessageEncoder cache by class serializer
@@ -102,7 +104,7 @@ object AvroSerDe {
             Avro.default.fromRecord(serializer, record)
         } catch (e: BadHeaderException) {
             // we try to decode binary using all known schemas
-            // this is to support the case where the binary has been created without schema fingerprint (<= 0.9.7)
+            // in case binary was created without schema fingerprint (<= 0.9.7)
             run breaking@{
                 getAllSchemas<T>().forEach { (_, schema) ->
                     try {
@@ -141,6 +143,25 @@ object AvroSerDe {
         val record = datumReader.read(null, decoder)
 
         return Avro.default.fromRecord(serializer, record)
+    }
+
+    /**
+     * Get prefix of schema file in Resources
+     */
+    inline fun <reified T : Any> getSchemaFilePrefix() = T::class.simpleName!!.replaceFirstChar { it.lowercase() }
+
+    /**
+     * Get map <version, schema> for all schemas of type T
+     */
+    inline fun <reified T : Any> getAllSchemas(): Map<String, Schema> {
+        val prefix = getSchemaFilePrefix<T>()
+
+        return versions.associateWith { version ->
+            val url = "/$SCHEMAS_FOLDER/$prefix-$version.avsc"
+            val schemaTxt =
+                this::class.java.getResource(url)?.readText() ?: thisShouldNotHappen("Can't find schema file $url")
+            Schema.Parser().parse(schemaTxt)
+        }
     }
 
     @TestOnly
