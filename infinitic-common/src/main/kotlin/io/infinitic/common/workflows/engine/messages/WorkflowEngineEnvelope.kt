@@ -25,17 +25,16 @@
 
 package io.infinitic.common.workflows.engine.messages
 
-import com.github.avrokotlin.avro4k.AvroDefault
 import com.github.avrokotlin.avro4k.AvroNamespace
 import io.infinitic.common.messages.Envelope
 import io.infinitic.common.serDe.avro.AvroSerDe
 import io.infinitic.common.workflows.data.workflows.WorkflowId
 import kotlinx.serialization.Serializable
+import org.apache.avro.Schema
 
-@Serializable @AvroNamespace("io.infinitic.workflows.engine")
+@Serializable
+@AvroNamespace("io.infinitic.workflows.engine")
 data class WorkflowEngineEnvelope(
-    @AvroDefault("0.9.0") // last version without this field
-    private val version: String = io.infinitic.version,
     private val workflowId: WorkflowId,
     private val type: WorkflowEngineMessageType,
     private val dispatchWorkflow: DispatchWorkflow? = null,
@@ -176,7 +175,16 @@ data class WorkflowEngineEnvelope(
             )
         }
 
-        fun fromByteArray(bytes: ByteArray) = AvroSerDe.readBinary(bytes, serializer())
+        /**
+         * Deserialize from a byte array and an avro schema
+         */
+        fun fromByteArray(bytes: ByteArray, readerSchema: Schema) =
+            AvroSerDe.readBinary(bytes, serializer(), readerSchema)
+
+        /**
+         * Current avro Schema
+         */
+        val writerSchema = AvroSerDe.schema(serializer())
     }
 
     override fun message(): WorkflowEngineMessage = when (type) {

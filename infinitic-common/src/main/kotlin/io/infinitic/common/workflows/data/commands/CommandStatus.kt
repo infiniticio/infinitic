@@ -27,6 +27,7 @@ package io.infinitic.common.workflows.data.commands
 
 import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.annotation.JsonTypeInfo
+import com.github.avrokotlin.avro4k.Avro
 import com.github.avrokotlin.avro4k.AvroDefault
 import io.infinitic.common.data.ReturnValue
 import io.infinitic.common.tasks.executors.errors.CanceledDeferredError
@@ -79,7 +80,7 @@ sealed class CommandStatus {
         val returnIndex: Int = 0,
         val returnValue: ReturnValue,
         val completionWorkflowTaskIndex: WorkflowTaskIndex,
-        @AvroDefault("null")
+        @AvroDefault(Avro.NULL)
         val signalId: SignalId? = null
     ) : CommandStatus()
 }

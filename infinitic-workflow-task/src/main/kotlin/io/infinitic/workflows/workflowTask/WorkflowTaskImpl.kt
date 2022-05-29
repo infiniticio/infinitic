@@ -111,10 +111,10 @@ class WorkflowTaskImpl : Task(), WorkflowTask {
         val properties = workflow.getProperties()
 
         return WorkflowTaskReturnValue(
-            dispatcher.newCommands,
-            dispatcher.newStep,
-            properties,
-            methodReturnValue
+            newCommands = dispatcher.newCommands,
+            newStep = dispatcher.newStep,
+            properties = properties,
+            methodReturnValue = methodReturnValue
         )
     }
 }

@@ -25,6 +25,7 @@
 
 package io.infinitic.common.workflows.data.workflowTasks
 
+import com.github.avrokotlin.avro4k.AvroDefault
 import io.infinitic.common.data.ClientName
 import io.infinitic.common.data.methods.MethodName
 import io.infinitic.common.data.methods.MethodParameterTypes
@@ -48,6 +49,8 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 data class WorkflowTaskParameters(
+    @AvroDefault("0.9.7")
+    val version: String = io.infinitic.version,
     val taskId: TaskId,
     val workflowId: WorkflowId,
     val workflowName: WorkflowName,

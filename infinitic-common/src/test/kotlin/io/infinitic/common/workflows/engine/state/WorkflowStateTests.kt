@@ -25,11 +25,12 @@
 
 package io.infinitic.common.workflows.engine.state
 
-import com.github.avrokotlin.avro4k.Avro
 import io.infinitic.common.checkBackwardCompatibility
 import io.infinitic.common.checkCurrentFileIsUpToDate
 import io.infinitic.common.createSchemaFileIfAbsent
 import io.infinitic.common.fixtures.TestFactory
+import io.infinitic.common.serDe.avro.AvroSerDe.getAllSchemas
+import io.infinitic.common.serDe.avro.AvroSerDe.getRandomBinaryWithSchemaFingerprint
 import io.kotest.assertions.throwables.shouldNotThrowAny
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
@@ -39,22 +40,29 @@ class WorkflowStateTests : StringSpec({
     "WorkflowState should be avro-convertible" {
         shouldNotThrowAny {
             val msg = TestFactory.random<WorkflowState>()
-            val ser = WorkflowState.serializer()
-            val byteArray = Avro.default.encodeToByteArray(ser, msg)
-            val msg2 = Avro.default.decodeFromByteArray(ser, byteArray)
-            msg shouldBe msg2
+            val bytes: ByteArray = msg.toByteArray()
+
+            WorkflowState.fromByteArray(bytes) shouldBe msg
         }
     }
 
-    "Create WorkflowState schema for the current version" {
+    "Create schema for the current version" {
         createSchemaFileIfAbsent(WorkflowState.serializer())
     }
 
-    "Saved WorkflowState schema should be up-to-date with for the current version" {
+    "Existing schema file should be up-to-date with the current version" {
         checkCurrentFileIsUpToDate(WorkflowState.serializer())
     }
 
-    "We should be able to read WorkflowState from any previous version since 0.9.0" {
+    "Avro schema should be backward compatible to 0.9.0" {
         checkBackwardCompatibility(WorkflowState.serializer())
+    }
+
+    "We should be able to read binary from any previous version since 0.9.0" {
+        getAllSchemas<WorkflowState>().forEach { (version, schema) ->
+            val bytes = getRandomBinaryWithSchemaFingerprint(schema)
+
+            shouldNotThrowAny { WorkflowState.fromByteArray(bytes) }
+        }
     }
 })

@@ -25,15 +25,14 @@
 
 package io.infinitic.transport.pulsar.schemas
 
-import io.infinitic.common.serDe.avro.AvroSerDe
+import io.infinitic.common.messages.Envelope
+import io.infinitic.common.messages.writerSchema
 import org.apache.pulsar.client.api.schema.SchemaDefinition
-import kotlin.reflect.KClass
 
-fun <T : Any> schemaDefinition(klass: KClass<T>): SchemaDefinition<T> =
-    SchemaDefinition.builder<T>()
-        .withJsonDef(AvroSerDe.schema(klass).toString())
-        .withSchemaReader(KSchemaReader(klass))
-        .withSchemaWriter(KSchemaWriter(klass))
-        .withSupportSchemaVersioning(true)
-        .withJSR310ConversionEnabled(true)
-        .build()
+inline fun <reified T : Envelope<*>> schemaDefinition() = SchemaDefinition.builder<T>()
+    .withJsonDef(T::class.writerSchema().toString())
+    .withSchemaReader(KSchemaReader(T::class))
+    .withSchemaWriter(KSchemaWriter<T>())
+    .withSupportSchemaVersioning(true)
+    .withJSR310ConversionEnabled(true)
+    .build()!!

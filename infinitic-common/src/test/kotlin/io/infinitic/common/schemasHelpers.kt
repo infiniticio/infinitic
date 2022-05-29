@@ -25,39 +25,25 @@
 
 package io.infinitic.common
 
-import Ci
 import com.github.avrokotlin.avro4k.Avro
+import io.infinitic.common.serDe.avro.AvroSerDe.SCHEMAS_FOLDER
+import io.infinitic.common.serDe.avro.AvroSerDe.getAllSchemas
+import io.infinitic.common.serDe.avro.AvroSerDe.getSchemaFilePrefix
+import io.infinitic.version
 import io.kotest.assertions.throwables.shouldNotThrowAny
 import io.kotest.matchers.ints.shouldBeGreaterThan
 import io.kotest.matchers.shouldBe
 import kotlinx.serialization.KSerializer
-import org.apache.avro.Schema
 import org.apache.avro.SchemaValidatorBuilder
 import java.io.File
-import java.nio.file.Files
-import java.nio.file.Path
 import java.nio.file.Paths
-import kotlin.io.path.ExperimentalPathApi
-import kotlin.io.path.readText
-
-internal fun getSchemasResourcesPath(): Path {
-    val projectDirAbsolutePath = Paths.get("").toAbsolutePath().toString()
-
-    return Paths.get(projectDirAbsolutePath, "/src/test/resources/schemas/")
-}
 
 internal inline fun <reified T : Any> createSchemaFileIfAbsent(serializer: KSerializer<T>) {
     val schemaFile = getCurrentSchemaFile<T>()
 
     if (!schemaFile.exists()) {
-        val snapshotFile = getSnapshotSchemaFile<T>()
-        if (Ci.isRelease && snapshotFile.exists()) {
-            // if it's a release, we move the snapshot file to the release file
-            Files.move(snapshotFile.toPath(), snapshotFile.resolveSibling(schemaFile).toPath())
-        } else {
-            // write WorkflowState schema to schemaFile in resources
-            schemaFile.writeText(Avro.default.schema(serializer).toString(true))
-        }
+        // write schema to schemaFile in resources
+        schemaFile.writeText(Avro.default.schema(serializer).toString(true))
     }
 }
 
@@ -65,14 +51,8 @@ internal inline fun <reified T : Any> checkCurrentFileIsUpToDate(serializer: KSe
     getCurrentSchemaFile<T>().readText() shouldBe Avro.default.schema(serializer).toString(true)
 }
 
-@OptIn(ExperimentalPathApi::class)
 internal inline fun <reified T : Any> checkBackwardCompatibility(serializer: KSerializer<T>) {
-    val regex = ".*/${getFilePrefix<T>()}-.*\\.avsc$".toRegex()
-    val schemaList = mutableListOf<Schema>()
-    Files.walk(getSchemasResourcesPath())
-        .filter { Files.isRegularFile(it) }
-        .filter { regex.matches(it.toString()) }
-        .forEach { schemaList.add(Schema.Parser().parse(it.readText())) }
+    val schemaList = getAllSchemas<T>().values
 
     // checking that we did not silently break something
     schemaList.size shouldBeGreaterThan 1
@@ -83,15 +63,7 @@ internal inline fun <reified T : Any> checkBackwardCompatibility(serializer: KSe
     shouldNotThrowAny { validator.validate(newSchema, schemaList) }
 }
 
-@OptIn(ExperimentalStdlibApi::class)
-internal inline fun <reified T : Any> getFilePrefix() = T::class.simpleName!!.replaceFirstChar { it.lowercase() }
-
-internal inline fun <reified T : Any> getCurrentSchemaFile() = File(getSchemasResourcesPath().toString(), "${getFilePrefix<T>()}-${Ci.version}.avsc")
-
-internal inline fun <reified T : Any> getSnapshotSchemaFile() = File(
-    getSchemasResourcesPath().toString(),
-    when (Ci.isRelease) {
-        true -> "${getFilePrefix<T>()}-${Ci.version}-SNAPSHOT.avsc"
-        false -> "${getFilePrefix<T>()}-${Ci.version}.avsc"
-    }
+internal inline fun <reified T : Any> getCurrentSchemaFile() = File(
+    "${Paths.get("").toAbsolutePath()}/src/main/resources/$SCHEMAS_FOLDER/",
+    "${getSchemaFilePrefix<T>()}-$version.avsc"
 )

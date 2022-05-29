@@ -25,7 +25,6 @@
 
 package io.infinitic.common.clients.messages
 
-import com.github.avrokotlin.avro4k.Avro
 import io.infinitic.common.checkBackwardCompatibility
 import io.infinitic.common.checkCurrentFileIsUpToDate
 import io.infinitic.common.createSchemaFileIfAbsent
@@ -38,26 +37,25 @@ class ClientEnvelopeTests : StringSpec({
     ClientMessage::class.sealedSubclasses.map {
         val msg = TestFactory.random(it)
 
-        "ClientMessage(${msg::class.simpleName}) should be avro-convertible" {
+        "ClientEnvelope(${msg::class.simpleName}) should be avro-convertible" {
             shouldNotThrowAny {
                 val envelope = ClientEnvelope.from(msg)
-                val ser = ClientEnvelope.serializer()
-                val byteArray = Avro.default.encodeToByteArray(ser, envelope)
-                val envelope2 = Avro.default.decodeFromByteArray(ser, byteArray)
-                envelope shouldBe envelope2
+                val byteArray = envelope.toByteArray()
+
+                ClientEnvelope.fromByteArray(byteArray, ClientEnvelope.writerSchema) shouldBe envelope
             }
         }
     }
 
-    "Create ClientEnvelope schema file for the current version" {
+    "Create schema file for the current version if it does not exist yet" {
         createSchemaFileIfAbsent(ClientEnvelope.serializer())
     }
 
-    "Saved ClientEnvelope schema should be up-to-date with for the current version" {
+    "Existing schema file should be up-to-date with the current version" {
         checkCurrentFileIsUpToDate(ClientEnvelope.serializer())
     }
 
-    "We should be able to read ClientEnvelope from any previous version since 0.9.0" {
+    "Avro Schema should be backward compatible to 0.9.0" {
         checkBackwardCompatibility(ClientEnvelope.serializer())
     }
 })

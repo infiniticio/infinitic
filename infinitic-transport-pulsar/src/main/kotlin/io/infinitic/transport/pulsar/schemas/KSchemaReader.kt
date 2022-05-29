@@ -25,16 +25,48 @@
 
 package io.infinitic.transport.pulsar.schemas
 
-import io.infinitic.common.serDe.avro.AvroSerDe
-import io.infinitic.common.serDe.kserializer.kserializer
+import io.infinitic.common.exceptions.thisShouldNotHappen
+import io.infinitic.common.messages.Envelope
+import io.infinitic.common.messages.fromByteArray
+import org.apache.avro.Schema
+import org.apache.pulsar.client.api.schema.SchemaInfoProvider
 import org.apache.pulsar.client.api.schema.SchemaReader
 import java.io.InputStream
+import java.util.concurrent.ConcurrentHashMap
 import kotlin.reflect.KClass
 
-class KSchemaReader<T : Any>(private val klass: KClass<T>) : SchemaReader<T> {
+class KSchemaReader<T : Envelope<*>>(private val klass: KClass<T>) : SchemaReader<T> {
+    companion object {
+        private val schemasCache = ConcurrentHashMap<ByteArray, Schema>()
+    }
+
+    private lateinit var schemaInfoProvider: SchemaInfoProvider
+
     override fun read(bytes: ByteArray, offset: Int, length: Int) =
-        read(bytes.inputStream(offset, length))
+        thisShouldNotHappen("KSchemaReader should not be without schemaVersion")
 
     override fun read(inputStream: InputStream) =
-        AvroSerDe.readBinary(inputStream.readBytes(), kserializer(klass))
+        thisShouldNotHappen("KSchemaReader should not be without schemaVersion")
+
+    override fun read(bytes: ByteArray, schemaVersion: ByteArray): T =
+        klass.fromByteArray(bytes, getSchemaByVersion(schemaVersion))
+
+    override fun read(inputStream: InputStream, schemaVersion: ByteArray): T {
+        return read(inputStream.readBytes(), schemaVersion)
+    }
+
+    // For our convenience, Pulsar will inject here an instance of
+    // org.apache.pulsar.client.impl.schema.generic.MultiVersionSchemaInfoProvider
+    override fun setSchemaInfoProvider(schemaInfoProvider: SchemaInfoProvider) {
+        this.schemaInfoProvider = schemaInfoProvider
+    }
+
+    // Retrieve the Avro Schema from schemaVersion
+    private fun getSchemaByVersion(schemaVersion: ByteArray): Schema = schemasCache.getOrPut(schemaVersion) {
+        // retrieve Pulsar SchemaInfo from the schemaVersion
+        val schemaInfo = schemaInfoProvider.getSchemaByVersion(schemaVersion).get()
+        // parse Avro Schema from the SchemaInfo schema definition
+        // we use a new parser instance each time, as the same schema name can have different versions
+        Schema.Parser().apply { validateDefaults = false }.parse(schemaInfo.schemaDefinition)
+    }
 }

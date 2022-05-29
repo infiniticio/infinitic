@@ -25,16 +25,15 @@
 
 package io.infinitic.common.tasks.tags.messages
 
-import com.github.avrokotlin.avro4k.AvroDefault
 import com.github.avrokotlin.avro4k.AvroNamespace
 import io.infinitic.common.messages.Envelope
 import io.infinitic.common.serDe.avro.AvroSerDe
 import kotlinx.serialization.Serializable
+import org.apache.avro.Schema
 
-@Serializable @AvroNamespace("io.infinitic.tasks.tag")
+@Serializable
+@AvroNamespace("io.infinitic.tasks.tag")
 data class TaskTagEnvelope(
-    @AvroDefault("0.9.0") // last version without this field
-    private val version: String = io.infinitic.version,
     private val name: String,
     private val type: TaskTagMessageType,
     private val addTagToTask: AddTagToTask? = null,
@@ -86,7 +85,16 @@ data class TaskTagEnvelope(
             )
         }
 
-        fun fromByteArray(bytes: ByteArray) = AvroSerDe.readBinary(bytes, serializer())
+        /**
+         * Deserialize from a byte array and an avro schema
+         */
+        fun fromByteArray(bytes: ByteArray, readerSchema: Schema) =
+            AvroSerDe.readBinary(bytes, serializer(), readerSchema)
+
+        /**
+         * Current avro Schema
+         */
+        val writerSchema = AvroSerDe.schema(serializer())
     }
 
     override fun message() = when (type) {

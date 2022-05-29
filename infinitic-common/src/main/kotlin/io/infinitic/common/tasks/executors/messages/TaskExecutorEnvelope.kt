@@ -25,17 +25,16 @@
 
 package io.infinitic.common.tasks.executors.messages
 
-import com.github.avrokotlin.avro4k.AvroDefault
 import com.github.avrokotlin.avro4k.AvroNamespace
 import io.infinitic.common.messages.Envelope
 import io.infinitic.common.serDe.avro.AvroSerDe
 import io.infinitic.common.tasks.data.TaskName
 import kotlinx.serialization.Serializable
+import org.apache.avro.Schema
 
-@Serializable @AvroNamespace("io.infinitic.tasks.executor")
+@Serializable
+@AvroNamespace("io.infinitic.tasks.executor")
 data class TaskExecutorEnvelope(
-    @AvroDefault("0.9.0") // last version without this field
-    private val version: String = io.infinitic.version,
     private val taskName: TaskName,
     private val type: TaskExecutorMessageType,
     private val executeTask: ExecuteTask? = null
@@ -59,7 +58,16 @@ data class TaskExecutorEnvelope(
             )
         }
 
-        fun fromByteArray(bytes: ByteArray) = AvroSerDe.readBinary(bytes, serializer())
+        /**
+         * Deserialize from a byte array and an avro schema
+         */
+        fun fromByteArray(bytes: ByteArray, readerSchema: Schema) =
+            AvroSerDe.readBinary(bytes, serializer(), readerSchema)
+
+        /**
+         * Current avro Schema
+         */
+        val writerSchema = AvroSerDe.schema(serializer())
     }
 
     override fun message(): TaskExecutorMessage = when (type) {

@@ -184,7 +184,7 @@ internal class PulsarConsumer(val client: PulsarClient) {
     ): Consumer<out Envelope<T>> {
         logger.debug { "Creating Consumer consumerName='$consumerName' subscriptionName='$subscriptionName' subscriptionType='$subscriptionType' topic='$topic'" }
 
-        val schema: Schema<out Envelope<out T>> = Schema.AVRO(schemaDefinition(S::class))
+        val schema = Schema.AVRO(schemaDefinition<S>())
 
         return client.newConsumer(schema)
             .topic(topic)
