@@ -27,6 +27,7 @@ package io.infinitic.common.serDe.avro
 
 import com.github.avrokotlin.avro4k.Avro
 import io.infinitic.common.SchemasUti.getAllSchemas
+import io.infinitic.common.exceptions.thisShouldNotHappen
 import kotlinx.serialization.KSerializer
 import org.apache.avro.Schema
 import org.apache.avro.file.SeekableByteArrayInput
@@ -36,6 +37,7 @@ import org.apache.avro.generic.GenericDatumWriter
 import org.apache.avro.generic.GenericRecord
 import org.apache.avro.io.DecoderFactory
 import org.apache.avro.io.EncoderFactory
+import org.apache.avro.message.BadHeaderException
 import org.apache.avro.message.BinaryMessageDecoder
 import org.apache.avro.message.BinaryMessageEncoder
 import org.apache.avro.util.RandomData
@@ -94,7 +96,25 @@ object AvroSerDe {
             }
         }
 
-        return Avro.default.fromRecord(serializer, decoder.decode(SeekableByteArrayInput(bytes), null))
+        return try {
+            val record = decoder.decode(SeekableByteArrayInput(bytes), null)
+
+            Avro.default.fromRecord(serializer, record)
+        } catch (e: BadHeaderException) {
+            // we try to decode binary using all known schemas
+            // this is to support the case where the binary has been created without schema fingerprint (<= 0.9.7)
+            run breaking@{
+                getAllSchemas<T>().forEach { (_, schema) ->
+                    try {
+                        // let's try to decode with this schema
+                        return@breaking readBinary(bytes, serializer, schema)
+                    } catch (e: Exception) {
+                        // go to next schema
+                    }
+                }
+                thisShouldNotHappen("No adhoc schema found for $serializer")
+            }
+        }
     }
 
     /**

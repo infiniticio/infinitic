@@ -41,8 +41,6 @@ class KSchemaReader<T : Envelope<*>>(private val klass: KClass<T>) : SchemaReade
         private val schemasCache = ConcurrentHashMap<String, Schema>()
     }
 
-    private val schemaParser = Schema.Parser().apply { validateDefaults = false }
-
     private lateinit var schemaInfoProvider: SchemaInfoProvider
 
     override fun read(bytes: ByteArray, offset: Int, length: Int) =
@@ -71,7 +69,8 @@ class KSchemaReader<T : Envelope<*>>(private val klass: KClass<T>) : SchemaReade
         schemaInfoProvider.getSchemaByVersion(schemaVersion).get()
 
     // retrieve the Avro Schema from our cache or parse it from the SchemaInfo schema definition
+    // As we have multiple times the same schema, we use a differetn parser instance
     private fun parseAvroSchema(schemaInfo: SchemaInfo?): Schema = schemaInfo?.schemaDefinition!!.let {
-        schemasCache.getOrPut(it) { schemaParser.parse(it) }
+        schemasCache.getOrPut(it) { Schema.Parser().apply { validateDefaults = false }.parse(it) }
     }
 }
