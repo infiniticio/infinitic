@@ -38,7 +38,8 @@ data class Redis(
     var user: String? = null,
     var password: Secret? = null,
     var database: Int = Protocol.DEFAULT_DATABASE,
-    var ssl: Boolean = false
+    var ssl: Boolean = false,
+    var poolConfig: PoolConfig = PoolConfig()
 ) {
     companion object {
         val pools = ConcurrentHashMap<Redis, JedisPool>()
@@ -50,13 +51,32 @@ data class Redis(
     }
 
     fun getPool(
-        jedisPoolConfig: JedisPoolConfig = JedisPoolConfig()
+        jedisPoolConfig: JedisPoolConfig = JedisPoolConfig().also {
+            it.maxIdle = this.poolConfig.maxIdle
+            it.maxTotal = this.poolConfig.maxTotal
+            it.minIdle = this.poolConfig.minIdle
+        }
     ) = pools.computeIfAbsent(this) {
         when (it.password?.value.isNullOrEmpty()) {
             true -> JedisPool(jedisPoolConfig, it.host, it.port, it.database)
-            false -> JedisPool(jedisPoolConfig, it.host, it.port, it.timeout, it.user, it.password?.value, it.database, it.ssl)
+            false -> JedisPool(
+                jedisPoolConfig,
+                it.host,
+                it.port,
+                it.timeout,
+                it.user,
+                it.password?.value,
+                it.database,
+                it.ssl
+            )
         }.also { pool ->
             Runtime.getRuntime().addShutdownHook(Thread { pool.close() })
         }
     }
 }
+
+data class PoolConfig(
+    var maxTotal: Int = JedisPoolConfig.DEFAULT_MAX_TOTAL,
+    var maxIdle: Int = JedisPoolConfig.DEFAULT_MAX_IDLE,
+    var minIdle: Int = JedisPoolConfig.DEFAULT_MIN_IDLE,
+)
