@@ -59,7 +59,7 @@ class WorkflowStateTests : StringSpec({
     }
 
     "We should be able to read binary from any previous version since 0.9.0" {
-        getAllSchemas<WorkflowState>().forEach { (version, schema) ->
+        getAllSchemas<WorkflowState>().forEach { (_, schema) ->
             val bytes = getRandomBinaryWithSchemaFingerprint(schema)
 
             shouldNotThrowAny { WorkflowState.fromByteArray(bytes) }
