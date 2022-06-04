@@ -52,9 +52,9 @@ data class Redis(
 
     fun getPool(
         jedisPoolConfig: JedisPoolConfig = JedisPoolConfig().also {
-            it.maxIdle = this.poolConfig.maxIdle
-            it.maxTotal = this.poolConfig.maxTotal
-            it.minIdle = this.poolConfig.minIdle
+            it.maxTotal = poolConfig.maxTotal
+            it.maxIdle = poolConfig.maxIdle
+            it.minIdle = poolConfig.minIdle
         }
     ) = pools.computeIfAbsent(this) {
         when (it.password?.value.isNullOrEmpty()) {
@@ -76,7 +76,7 @@ data class Redis(
 }
 
 data class PoolConfig(
-    var maxTotal: Int = JedisPoolConfig.DEFAULT_MAX_TOTAL,
-    var maxIdle: Int = JedisPoolConfig.DEFAULT_MAX_IDLE,
-    var minIdle: Int = JedisPoolConfig.DEFAULT_MIN_IDLE,
+    var maxTotal: Int = -1,
+    var maxIdle: Int = 8,
+    var minIdle: Int = 0,
 )
