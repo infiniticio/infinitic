@@ -58,7 +58,12 @@ data class Redis(
         }
     ) = pools.computeIfAbsent(this) {
         when (it.password?.value.isNullOrEmpty()) {
-            true -> JedisPool(jedisPoolConfig, it.host, it.port, it.database)
+            true -> JedisPool(
+                jedisPoolConfig,
+                it.host,
+                it.port,
+                it.database
+            )
             false -> JedisPool(
                 jedisPoolConfig,
                 it.host,
