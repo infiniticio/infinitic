@@ -43,9 +43,10 @@ object Json {
     private val mapper = jsonMapper {
         addMixIn(SpecificRecordBase::class.java, AvroMixIn::class.java)
         addMixIn(Exception::class.java, ExceptionMixIn::class.java)
-        configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false)
         addModule(JavaTimeModule())
         addModule(KotlinModule.Builder().configure(KotlinFeature.NullIsSameAsDefault, true).build())
+        configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false)
+        configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false)
         configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
     }
 
@@ -61,8 +62,11 @@ object Json {
      * a circular reference when cause = this
      */
     private abstract class ExceptionMixIn {
-        @JsonIgnore abstract fun getCause(): Throwable
-        @JsonIgnore abstract fun getMessage(): String
+        @JsonIgnore
+        abstract fun getCause(): Throwable
+
+        @JsonIgnore
+        abstract fun getMessage(): String
     }
 
     /**
@@ -72,8 +76,11 @@ object Json {
      * IMPORTANT: properties of generated Avro classes MUST have public visibility
      */
     private abstract class AvroMixIn {
-        @JsonIgnore abstract fun getSchema(): org.apache.avro.Schema
-        @JsonIgnore abstract fun getSpecificData(): org.apache.avro.specific.SpecificData
+        @JsonIgnore
+        abstract fun getSchema(): org.apache.avro.Schema
+
+        @JsonIgnore
+        abstract fun getSpecificData(): org.apache.avro.specific.SpecificData
 
         @JsonSerialize(using = AvroListStringSerializer::class)
         abstract fun getListOfString(): List<String>
@@ -84,7 +91,9 @@ object Json {
         @Throws(IOException::class)
         override fun serialize(value: List<String>, gen: JsonGenerator, serializers: SerializerProvider) {
             gen.writeStartArray()
-            for (o in value) { gen.writeString(o) }
+            for (o in value) {
+                gen.writeString(o)
+            }
             gen.writeEndArray()
         }
     }

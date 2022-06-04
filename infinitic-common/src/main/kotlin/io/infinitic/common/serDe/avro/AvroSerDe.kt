@@ -156,7 +156,7 @@ object AvroSerDe {
     inline fun <reified T : Any> getAllSchemas(): Map<String, Schema> {
         val prefix = getSchemaFilePrefix<T>()
 
-        return versions.associateWith { version ->
+        return versions.filter { it.isNotEmpty() }.associateWith { version ->
             val url = "/$SCHEMAS_FOLDER/$prefix-$version.avsc"
             val schemaTxt =
                 this::class.java.getResource(url)?.readText() ?: thisShouldNotHappen("Can't find schema file $url")
