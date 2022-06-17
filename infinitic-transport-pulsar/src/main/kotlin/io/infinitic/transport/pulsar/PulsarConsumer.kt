@@ -41,6 +41,7 @@ import org.apache.pulsar.client.api.PulsarClient
 import org.apache.pulsar.client.api.Schema
 import org.apache.pulsar.client.api.SubscriptionInitialPosition
 import org.apache.pulsar.client.api.SubscriptionType
+import java.util.concurrent.CancellationException
 import java.util.concurrent.TimeUnit
 import org.apache.pulsar.client.api.Message as PulsarMessage
 
@@ -77,6 +78,10 @@ internal class PulsarConsumer(val client: PulsarClient) {
                         // await() ensures this coroutine exits in case of throwable not caught
                         val pulsarMessage = try {
                             consumer.receiveAsync().await()
+                        } catch (e: CancellationException) {
+                            // Not sur it's the right way to handle this exception
+                            negativeAcknowledge(consumer, consumer.lastMessageId)
+                            break
                         } catch (e: Throwable) {
                             logger.error(e) { "Error when receiving message" }
                             throw e
@@ -127,7 +132,16 @@ internal class PulsarConsumer(val client: PulsarClient) {
                 launch {
                     while (isActive) {
                         // await() ensures this coroutine exits in case of throwable not caught
-                        channel.send(consumer.receiveAsync().await())
+                        try {
+                            channel.send(consumer.receiveAsync().await())
+                        } catch (e: CancellationException) {
+                            // Not sur it's the right way to handle this exception
+                            negativeAcknowledge(consumer, consumer.lastMessageId)
+                            break
+                        } catch (e: Throwable) {
+                            logger.error(e) { "Error when receiving message" }
+                            throw e
+                        }
                     }
                 }
 
