@@ -75,20 +75,14 @@ internal class PulsarConsumer(val client: PulsarClient) {
                         } catch (e: CancellationException) {
                             // if coroutine is canceled, we just exit the while loop
                             break
-                        } catch (e: Throwable) {
-                            logger.error(e) { "Error when receiving message" }
-                            throw e
                         }
 
                         val message = try {
                             pulsarMessage.value.message()
                         } catch (e: Exception) {
-                            logger.error(e) { "${pulsarMessage.messageId}: Exception when deserializing $pulsarMessage" }
+                            logger.warn(e) { "${pulsarMessage.messageId}: Exception when deserializing $pulsarMessage" }
                             negativeAcknowledge(consumer, pulsarMessage.messageId)
                             continue
-                        } catch (e: Throwable) {
-                            logger.error(e) { "${pulsarMessage.messageId}: Throwable when deserializing $pulsarMessage" }
-                            throw e
                         }
 
                         logger.debug { "Receiving consumerName='$consumerName-$it' messageId='${pulsarMessage.messageId}' key='${pulsarMessage.key}' message='$message'" }
@@ -97,12 +91,9 @@ internal class PulsarConsumer(val client: PulsarClient) {
                             executor(message)
                             consumer.acknowledge(pulsarMessage.messageId)
                         } catch (e: Exception) {
-                            logger.error(e) { "${pulsarMessage.messageId}: Exception when handling $message" }
+                            logger.warn(e) { "${pulsarMessage.messageId}: Exception when handling $message" }
                             negativeAcknowledge(consumer, pulsarMessage.messageId)
                             continue
-                        } catch (e: Throwable) {
-                            logger.error(e) { "${pulsarMessage.messageId}: Throwable when handling $message" }
-                            throw e
                         }
                     }
                 }
@@ -130,9 +121,6 @@ internal class PulsarConsumer(val client: PulsarClient) {
                         } catch (e: CancellationException) {
                             // if coroutine is canceled, we just exit the while loop
                             break
-                        } catch (e: Throwable) {
-                            logger.error(e) { "Error when receiving message" }
-                            throw e
                         }
                     }
                 }
@@ -143,24 +131,18 @@ internal class PulsarConsumer(val client: PulsarClient) {
                             val message = try {
                                 pulsarMessage.value.message()
                             } catch (e: Exception) {
-                                logger.error(e) { "${pulsarMessage.messageId}: Exception when deserializing $pulsarMessage" }
+                                logger.warn(e) { "${pulsarMessage.messageId}: Exception when deserializing $pulsarMessage" }
                                 negativeAcknowledge(consumer, pulsarMessage.messageId)
                                 continue
-                            } catch (e: Throwable) {
-                                logger.error(e) { "${pulsarMessage.messageId}: Throwable when deserializing $pulsarMessage" }
-                                throw e
                             }
 
                             try {
                                 executor(message)
                                 consumer.acknowledge(pulsarMessage.messageId)
                             } catch (e: Exception) {
-                                logger.error(e) { "${pulsarMessage.messageId}: Exception when handling $message" }
+                                logger.warn(e) { "${pulsarMessage.messageId}: Exception when handling $message" }
                                 negativeAcknowledge(consumer, pulsarMessage.messageId)
                                 continue
-                            } catch (e: Throwable) {
-                                logger.error(e) { "${pulsarMessage.messageId}: Throwable when handling $message" }
-                                throw e
                             }
                         }
                     }
