@@ -71,13 +71,15 @@ object AvroSerDe {
      * Get schema from the serializer
      */
     fun <T> schema(serializer: KSerializer<T>): Schema =
-        schemas.getOrPut(serializer) { Avro.default.schema(serializer) }
+        schemas.getOrPut(serializer) {
+            Avro.default.schema(serializer)
+        }
 
     /**
      * Object -> Avro binary with schema fingerprint
      */
     fun <T : Any> writeBinaryWithSchemaFingerprint(t: T, serializer: KSerializer<T>): ByteArray {
-        val record: GenericRecord = Avro.default.toRecord(serializer, t)
+        val record: GenericRecord = Avro.default.toRecord(serializer, schema(serializer), t)
 
         val encoder = binaryMessageEncoders.getOrPut(serializer) {
             BinaryMessageEncoder<GenericRecord>(GenericData.get(), schema(serializer))
@@ -123,7 +125,7 @@ object AvroSerDe {
      * Object -> Avro binary
      */
     fun <T : Any> writeBinary(t: T, serializer: KSerializer<T>): ByteArray {
-        val record: GenericRecord = Avro.default.toRecord(serializer, t)
+        val record: GenericRecord = Avro.default.toRecord(serializer, schema(serializer), t)
 
         val datumWriter = GenericDatumWriter<GenericRecord>(schema(serializer))
         val out = ByteArrayOutputStream()

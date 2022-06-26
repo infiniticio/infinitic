@@ -31,13 +31,14 @@ import io.infinitic.common.messages.fromByteArray
 import org.apache.avro.Schema
 import org.apache.pulsar.client.api.schema.SchemaInfoProvider
 import org.apache.pulsar.client.api.schema.SchemaReader
+import org.apache.pulsar.common.protocol.schema.BytesSchemaVersion
 import java.io.InputStream
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.reflect.KClass
 
 class KSchemaReader<T : Envelope<*>>(private val klass: KClass<T>) : SchemaReader<T> {
     companion object {
-        private val schemasCache = ConcurrentHashMap<ByteArray, Schema>()
+        private val schemasCache = ConcurrentHashMap<BytesSchemaVersion, Schema>()
     }
 
     private lateinit var schemaInfoProvider: SchemaInfoProvider
@@ -62,7 +63,7 @@ class KSchemaReader<T : Envelope<*>>(private val klass: KClass<T>) : SchemaReade
     }
 
     // Retrieve the Avro Schema from schemaVersion
-    private fun getSchemaByVersion(schemaVersion: ByteArray): Schema = schemasCache.getOrPut(schemaVersion) {
+    private fun getSchemaByVersion(schemaVersion: ByteArray): Schema = schemasCache.getOrPut(BytesSchemaVersion.of(schemaVersion)) {
         // retrieve Pulsar SchemaInfo from the schemaVersion
         val schemaInfo = schemaInfoProvider.getSchemaByVersion(schemaVersion).get()
         // parse Avro Schema from the SchemaInfo schema definition
