@@ -34,7 +34,13 @@ import kotlinx.coroutines.future.await
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import mu.KotlinLogging
-import org.apache.pulsar.client.api.*
+import org.apache.pulsar.client.api.Consumer
+import org.apache.pulsar.client.api.DeadLetterPolicy
+import org.apache.pulsar.client.api.MessageId
+import org.apache.pulsar.client.api.PulsarClient
+import org.apache.pulsar.client.api.Schema
+import org.apache.pulsar.client.api.SubscriptionInitialPosition
+import org.apache.pulsar.client.api.SubscriptionType
 import java.util.concurrent.CancellationException
 import java.util.concurrent.TimeUnit
 import org.apache.pulsar.client.api.Message as PulsarMessage
