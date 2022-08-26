@@ -45,6 +45,7 @@ import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
 import io.mockk.CapturingSlot
 import io.mockk.Runs
+import io.mockk.clearAllMocks
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.coVerifySequence
@@ -66,7 +67,9 @@ private lateinit var tagStateStorage: TaskTagStorage
 private lateinit var sendToClient: SendToClient
 
 internal class TaskTagEngineTests : StringSpec({
-
+    beforeEach {
+        clearAllMocks()
+    }
     "should not handle known messageId" {
         // given
         val msgIn = random<AddTagToTask>()
