@@ -50,7 +50,7 @@ object Libs {
     }
 
     object Jackson {
-        private const val version = "2.13.2"
+        private const val version = "2.13.4"
         const val core = "com.fasterxml.jackson.core:jackson-core:$version"
         const val databind = "com.fasterxml.jackson.core:jackson-databind:$version"
         const val kotlin = "com.fasterxml.jackson.module:jackson-module-kotlin:$version"
@@ -64,7 +64,7 @@ object Libs {
     }
 
     object Mockk {
-        const val mockk = "io.mockk:mockk:1.12.3"
+        const val mockk = "io.mockk:mockk:1.12.7"
     }
 
     object Avro4k {
@@ -72,13 +72,13 @@ object Libs {
     }
 
     object Hoplite {
-        private const val version = "2.1.2"
+        private const val version = "2.6.2"
         const val core = "com.sksamuel.hoplite:hoplite-core:$version"
         const val yaml = "com.sksamuel.hoplite:hoplite-yaml:$version"
     }
 
     object Pulsar {
-        private const val version = "2.10.0"
+        private const val version = "2.10.1"
         const val client = "org.apache.pulsar:pulsar-client:$version"
         const val clientAdmin = "org.apache.pulsar:pulsar-client-admin:$version"
         const val functions = "org.apache.pulsar:pulsar-functions-api:$version"
@@ -101,6 +101,6 @@ object Libs {
     }
 
     object Logging {
-        const val api = "io.github.microutils:kotlin-logging:2.1.21"
+        const val api = "io.github.microutils:kotlin-logging:2.1.23"
     }
 }

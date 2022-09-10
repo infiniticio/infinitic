@@ -38,7 +38,7 @@ object Plugins {
 
     object Ktlint {
         const val id = "org.jlleitschuh.gradle.ktlint"
-        const val version = "10.2.1"
+        const val version = "10.3.0"
     }
 
     object TestLogger {
