@@ -38,11 +38,11 @@ object Libs {
     }
 
     object Caffeine {
-        const val caffeine = "com.github.ben-manes.caffeine:caffeine:3.0.6"
+        const val caffeine = "com.github.ben-manes.caffeine:caffeine:3.1.1"
     }
 
     object Serialization {
-        const val json = "org.jetbrains.kotlinx:kotlinx-serialization-json:1.3.2"
+        const val json = "org.jetbrains.kotlinx:kotlinx-serialization-json:1.4.0"
     }
 
     object JsonPath {
