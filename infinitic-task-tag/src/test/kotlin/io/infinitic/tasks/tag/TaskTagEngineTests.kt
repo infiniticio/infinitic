@@ -34,7 +34,6 @@ import io.infinitic.common.fixtures.TestFactory
 import io.infinitic.common.tasks.data.TaskId
 import io.infinitic.common.tasks.data.TaskName
 import io.infinitic.common.tasks.data.TaskTag
-import io.infinitic.common.tasks.executors.SendToTaskExecutor
 import io.infinitic.common.tasks.executors.messages.TaskExecutorMessage
 import io.infinitic.common.tasks.tags.messages.AddTagToTask
 import io.infinitic.common.tasks.tags.messages.GetTaskIdsByTag
@@ -46,9 +45,7 @@ import io.kotest.matchers.types.shouldBeInstanceOf
 import io.mockk.CapturingSlot
 import io.mockk.Runs
 import io.mockk.coEvery
-import io.mockk.coVerify
 import io.mockk.coVerifySequence
-import io.mockk.confirmVerified
 import io.mockk.just
 import io.mockk.mockk
 import io.mockk.slot
@@ -67,27 +64,7 @@ private lateinit var sendToClient: SendToClient
 
 internal class TaskTagEngineTests : StringSpec({
 
-    "should not handle known messageId" {
-        // given
-        val msgIn = random<AddTagToTask>()
-        // when
-        getEngine(msgIn.taskTag, msgIn.taskName, msgIn.messageId).handle(msgIn)
-        // then
-        verifyAll()
-    }
-
-    "should store last messageId" {
-        // given
-        val msgIn = random<AddTagToTask>()
-        // when
-        getEngine(msgIn.taskTag, msgIn.taskName).handle(msgIn)
-        // then
-        coVerify {
-            tagStateStorage.setLastMessageId(msgIn.taskTag, msgIn.taskName, msgIn.messageId)
-        }
-    }
-
-    "addTaskTag should complete id" {
+    "addTaskTag should add id" {
         // given
         val msgIn = random<AddTagToTask>()
         // when
@@ -97,7 +74,6 @@ internal class TaskTagEngineTests : StringSpec({
             tagStateStorage.addTaskId(msgIn.taskTag, msgIn.taskName, msgIn.taskId)
             tagStateStorage.setLastMessageId(msgIn.taskTag, msgIn.taskName, msgIn.messageId)
         }
-        verifyAll()
     }
 
     "removeTaskTag should remove id" {
@@ -110,7 +86,6 @@ internal class TaskTagEngineTests : StringSpec({
             tagStateStorage.removeTaskId(msgIn.taskTag, msgIn.taskName, msgIn.taskId)
             tagStateStorage.setLastMessageId(msgIn.taskTag, msgIn.taskName, msgIn.messageId)
         }
-        verifyAll()
     }
 
     "getTaskIdsPerTag should return set of ids" {
@@ -126,7 +101,6 @@ internal class TaskTagEngineTests : StringSpec({
             sendToClient(ofType<TaskIdsByTag>())
             tagStateStorage.setLastMessageId(msgIn.taskTag, msgIn.taskName, msgIn.messageId)
         }
-        verifyAll()
 
         captured(clientMessage).shouldBeInstanceOf<TaskIdsByTag>()
         (captured(clientMessage) as TaskIdsByTag).taskIds shouldBe setOf(taskId1, taskId2)
@@ -142,13 +116,12 @@ private fun mockSendToClient(slot: CapturingSlot<ClientMessage>): SendToClient {
     return mock
 }
 
-private fun mockSendToTaskExecutor(slots: CapturingSlot<TaskExecutorMessage>): SendToTaskExecutor {
-    val mock = mockk<SendToTaskExecutor>()
-    coEvery { mock(capture(slots)) } just Runs
-    return mock
-}
-
-private fun mockTagStateStorage(tag: TaskTag, name: TaskName, messageId: MessageId?, taskIds: Set<TaskId>): TaskTagStorage {
+private fun mockTagStateStorage(
+    tag: TaskTag,
+    name: TaskName,
+    messageId: MessageId?,
+    taskIds: Set<TaskId>
+): TaskTagStorage {
     val tagStateStorage = mockk<TaskTagStorage>()
     coEvery { tagStateStorage.getLastMessageId(tag, name) } returns messageId
     coEvery { tagStateStorage.setLastMessageId(tag, name, MessageId(capture(stateMessageId))) } just Runs
@@ -175,5 +148,3 @@ private fun getEngine(
 
     return TaskTagEngine(clientName, tagStateStorage, sendToClient)
 }
-
-private fun verifyAll() = confirmVerified()

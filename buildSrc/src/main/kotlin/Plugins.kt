@@ -23,7 +23,7 @@
  * Licensor: infinitic.io
  */
 
-const val kotlinVersion = "1.6.21"
+const val kotlinVersion = "1.7.10"
 
 object Plugins {
     object Kotlin {
@@ -38,7 +38,7 @@ object Plugins {
 
     object Ktlint {
         const val id = "org.jlleitschuh.gradle.ktlint"
-        const val version = "10.2.1"
+        const val version = "10.3.0"
     }
 
     object TestLogger {
