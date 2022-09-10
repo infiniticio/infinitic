@@ -71,6 +71,13 @@ interface ClientDispatcher : ProxyDispatcher {
         workflowTag: WorkflowTag?
     ): CompletableFuture<Unit>
 
+    fun completeTimerAsync(
+        workflowName: WorkflowName,
+        workflowId: WorkflowId?,
+        workflowTag: WorkflowTag?,
+        methodRunId: MethodRunId? = null
+    ): CompletableFuture<Unit>
+
     fun retryTaskAsync(
         workflowName: WorkflowName,
         workflowId: WorkflowId?,

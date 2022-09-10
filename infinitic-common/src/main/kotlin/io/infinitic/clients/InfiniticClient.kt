@@ -72,7 +72,7 @@ interface InfiniticClient : Closeable {
         klass: Class<out T>,
         tags: Set<String>? = null,
         options: WorkflowOptions? = null,
-        meta: Map<String, ByteArray>?,
+        meta: Map<String, ByteArray>?
     ): T
 
     /**
@@ -629,12 +629,34 @@ interface InfiniticClient : Closeable {
     ): Unit = cancelAsync(stub).join()
 
     /**
+     * Complete ongoing timers (without waiting for the message to be sent)
+     *
+     * @property stub should be a workflow stub obtained by [getWorkflowById] or [getWorkflowByTag]
+     * @id of the targeted method run - main one if null
+     */
+    fun completeTimerAsync(
+        stub: Any,
+        id: String? = null
+    ): CompletableFuture<Unit>
+
+    /**
+     * Complete ongoing timers
+     *
+     * @property stub should be a workflow stub obtained by [getWorkflowById] or [getWorkflowByTag]
+     * @id of the method run - main one if null
+     */
+    fun completeTimer(
+        stub: Any,
+        id: String? = null
+    ): Unit = completeTimerAsync(stub, id).join()
+
+    /**
      * Retry the workflow task (without waiting for the message to be sent)
      *
      * @property stub should be a workflow stub obtained by [getWorkflowById] or [getWorkflowByTag]
      */
     fun retryWorkflowTaskAsync(
-        stub: Any,
+        stub: Any
     ): CompletableFuture<Unit>
 
     /**
@@ -643,7 +665,7 @@ interface InfiniticClient : Closeable {
      * @property stub should be a workflow stub obtained by [getWorkflowById] or [getWorkflowByTag]
      */
     fun retryWorkflowTask(
-        stub: Any,
+        stub: Any
     ): Unit = retryWorkflowTaskAsync(stub).join()
 
     /**
@@ -654,7 +676,7 @@ interface InfiniticClient : Closeable {
      */
     fun retryTasksAsync(
         stub: Any,
-        taskId: String,
+        taskId: String
     ): CompletableFuture<Unit>
 
     /**
@@ -665,7 +687,7 @@ interface InfiniticClient : Closeable {
      */
     fun retryTasks(
         stub: Any,
-        taskId: String,
+        taskId: String
     ): Unit = retryTasksAsync(stub, taskId).join()
 
     /**
@@ -680,7 +702,7 @@ interface InfiniticClient : Closeable {
     fun retryTasksAsync(
         stub: Any,
         taskStatus: DeferredStatus? = null,
-        taskClass: Class<*>? = null,
+        taskClass: Class<*>? = null
     ): CompletableFuture<Unit>
 
     /**
@@ -695,7 +717,7 @@ interface InfiniticClient : Closeable {
     fun retryTasks(
         stub: Any,
         taskStatus: DeferredStatus? = null,
-        taskClass: Class<*>? = null,
+        taskClass: Class<*>? = null
     ): Unit = retryTasksAsync(stub, taskStatus, taskClass).join()
 
     /**

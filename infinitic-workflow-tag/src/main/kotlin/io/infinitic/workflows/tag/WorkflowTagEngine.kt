@@ -32,6 +32,7 @@ import io.infinitic.common.exceptions.thisShouldNotHappen
 import io.infinitic.common.workflows.data.methodRuns.MethodRunId
 import io.infinitic.common.workflows.engine.SendToWorkflowEngine
 import io.infinitic.common.workflows.engine.messages.CancelWorkflow
+import io.infinitic.common.workflows.engine.messages.CompleteTimer
 import io.infinitic.common.workflows.engine.messages.DispatchMethod
 import io.infinitic.common.workflows.engine.messages.DispatchWorkflow
 import io.infinitic.common.workflows.engine.messages.RetryTasks
@@ -41,6 +42,7 @@ import io.infinitic.common.workflows.engine.messages.WaitWorkflow
 import io.infinitic.common.workflows.tags.SendToWorkflowTag
 import io.infinitic.common.workflows.tags.messages.AddTagToWorkflow
 import io.infinitic.common.workflows.tags.messages.CancelWorkflowByTag
+import io.infinitic.common.workflows.tags.messages.CompleteTimerByTag
 import io.infinitic.common.workflows.tags.messages.DispatchMethodByTag
 import io.infinitic.common.workflows.tags.messages.DispatchWorkflowByCustomId
 import io.infinitic.common.workflows.tags.messages.GetWorkflowIdsByTag
@@ -79,6 +81,7 @@ class WorkflowTagEngine(
             is CancelWorkflowByTag -> cancelWorkflowByTag(message)
             is RetryWorkflowTaskByTag -> retryWorkflowTaskByTag(message)
             is RetryTasksByTag -> retryTaskByTag(message)
+            is CompleteTimerByTag -> completeTimerByTag(message)
             is GetWorkflowIdsByTag -> getWorkflowIds(message)
         }
     }
@@ -133,7 +136,7 @@ class WorkflowTagEngine(
                             workflowName = message.workflowName,
                             workflowId = ids.first(),
                             methodRunId = MethodRunId.from(ids.first()),
-                            emitterName = message.emitterName,
+                            emitterName = message.emitterName
                         )
 
                         launch { sendToWorkflowEngine(waitWorkflow) }
@@ -158,6 +161,7 @@ class WorkflowTagEngine(
                 true -> {
                     discardTagWithoutIds(message)
                 }
+
                 false -> ids.forEach {
                     // parent workflow already applied method to self
                     if (it != message.parentWorkflowId) {
@@ -190,6 +194,7 @@ class WorkflowTagEngine(
                 true -> {
                     discardTagWithoutIds(message)
                 }
+
                 false -> ids.forEach {
                     val retryWorkflowTask = RetryWorkflowTask(
                         workflowName = message.workflowName,
@@ -211,6 +216,7 @@ class WorkflowTagEngine(
                 true -> {
                     discardTagWithoutIds(message)
                 }
+
                 false -> ids.forEach {
                     val retryTasks = RetryTasks(
                         workflowName = message.workflowName,
@@ -226,6 +232,29 @@ class WorkflowTagEngine(
         }
     }
 
+    private suspend fun completeTimerByTag(message: CompleteTimerByTag) {
+        val ids = storage.getWorkflowIds(message.workflowTag, message.workflowName)
+
+        // with coroutineScope, we send messages in parallel and wait for all of them to be processed
+        coroutineScope {
+            when (ids.isEmpty()) {
+                true -> {
+                    discardTagWithoutIds(message)
+                }
+
+                false -> ids.forEach {
+                    val completeTimer = CompleteTimer(
+                        workflowName = message.workflowName,
+                        workflowId = it,
+                        methodRunId = message.methodRunId,
+                        emitterName = clientName
+                    )
+                    launch { sendToWorkflowEngine(completeTimer) }
+                }
+            }
+        }
+    }
+
     private suspend fun cancelWorkflowByTag(message: CancelWorkflowByTag) {
         val ids = storage.getWorkflowIds(message.workflowTag, message.workflowName)
 
@@ -235,6 +264,7 @@ class WorkflowTagEngine(
                 true -> {
                     discardTagWithoutIds(message)
                 }
+
                 false -> ids.forEach {
                     // parent workflow already applied method to self
                     if (it != message.emitterWorkflowId) {

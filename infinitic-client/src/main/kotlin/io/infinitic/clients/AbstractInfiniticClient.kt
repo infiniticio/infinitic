@@ -186,11 +186,14 @@ abstract class AbstractInfiniticClient : InfiniticClient {
                     null,
                     false
                 )
+
             handler.workflowTag != null ->
                 TODO("Not implemented as tag can target multiple workflows")
+
             else ->
                 thisShouldNotHappen()
         }
+
         else -> throw InvalidStubException("$stub")
     }
 
@@ -212,11 +215,14 @@ abstract class AbstractInfiniticClient : InfiniticClient {
                     MethodRunId(methodRunId),
                     false
                 )
+
             handler.workflowTag != null ->
                 throw InvalidStubException("$stub")
+
             else ->
                 thisShouldNotHappen()
         }
+
         else -> throw InvalidStubException("$stub")
     }
 
@@ -229,6 +235,7 @@ abstract class AbstractInfiniticClient : InfiniticClient {
     ): CompletableFuture<Unit> = when (val handler = getProxyHandler(stub)) {
         is ExistingWorkflowProxyHandler ->
             dispatcher.cancelWorkflowAsync(handler.workflowName, handler.workflowId, null, handler.workflowTag)
+
         else ->
             throw InvalidStubException("$stub")
     }
@@ -242,6 +249,7 @@ abstract class AbstractInfiniticClient : InfiniticClient {
     ): CompletableFuture<Unit> = when (val handler = getProxyHandler(stub)) {
         is ExistingWorkflowProxyHandler ->
             dispatcher.retryWorkflowTaskAsync(handler.workflowName, handler.workflowId, handler.workflowTag)
+
         else ->
             throw InvalidStubException("$stub")
     }
@@ -264,6 +272,26 @@ abstract class AbstractInfiniticClient : InfiniticClient {
     ) = retryTasksAsync(stub, taskStatus, taskClass, null)
 
     /**
+     * Complete timer within workflow(s)
+     */
+    override fun completeTimerAsync(
+        stub: Any,
+        id: String?,
+    ): CompletableFuture<Unit> = when (val handler = getProxyHandler(stub)) {
+        is ExistingWorkflowProxyHandler -> {
+            dispatcher.completeTimerAsync(
+                workflowName = handler.workflowName,
+                workflowId = handler.workflowId,
+                workflowTag = handler.workflowTag,
+                methodRunId = id?.let { MethodRunId(id) }
+            )
+        }
+
+        else ->
+            throw InvalidStubException("$stub")
+    }
+
+    /**
      * get ids of a stub, associated to a specific tag
      */
     @Suppress("UNCHECKED_CAST")
@@ -272,6 +300,7 @@ abstract class AbstractInfiniticClient : InfiniticClient {
     ): Set<String> = when (val handler = getProxyHandler(stub)) {
         is ExistingWorkflowProxyHandler ->
             dispatcher.getWorkflowIdsByTag(handler.workflowName, handler.workflowId, handler.workflowTag)
+
         else ->
             throw InvalidStubException("$stub")
     }
@@ -327,6 +356,7 @@ abstract class AbstractInfiniticClient : InfiniticClient {
                 taskId = taskId?.let { TaskId(it) }
             )
         }
+
         else ->
             throw InvalidStubException("$stub")
     }

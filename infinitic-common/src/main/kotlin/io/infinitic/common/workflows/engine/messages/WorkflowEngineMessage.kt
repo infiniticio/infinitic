@@ -83,7 +83,8 @@ sealed class WorkflowEngineMessage : Message {
     fun isWorkflowTaskEvent() = (this is TaskEvent) && this.taskName() == TaskName(WorkflowTask::class.java.name)
 }
 
-@Serializable @AvroNamespace("io.infinitic.workflows.engine")
+@Serializable
+@AvroNamespace("io.infinitic.workflows.engine")
 data class DispatchWorkflow(
     override val workflowName: WorkflowName,
     override val workflowId: WorkflowId,
@@ -100,14 +101,16 @@ data class DispatchWorkflow(
     override val emitterName: ClientName
 ) : WorkflowEngineMessage()
 
-@Serializable @AvroNamespace("io.infinitic.workflows.engine")
+@Serializable
+@AvroNamespace("io.infinitic.workflows.engine")
 data class RetryWorkflowTask(
     override val workflowName: WorkflowName,
     override val workflowId: WorkflowId,
     override val emitterName: ClientName
 ) : WorkflowEngineMessage()
 
-@Serializable @AvroNamespace("io.infinitic.workflows.engine")
+@Serializable
+@AvroNamespace("io.infinitic.workflows.engine")
 data class RetryTasks(
     override val workflowName: WorkflowName,
     override val workflowId: WorkflowId,
@@ -117,15 +120,26 @@ data class RetryTasks(
     override val emitterName: ClientName
 ) : WorkflowEngineMessage()
 
-@Serializable @AvroNamespace("io.infinitic.workflows.engine")
+@Serializable
+@AvroNamespace("io.infinitic.workflows.engine")
+data class CompleteTimer(
+    override val workflowName: WorkflowName,
+    override val workflowId: WorkflowId,
+    val methodRunId: MethodRunId?,
+    override val emitterName: ClientName
+) : WorkflowEngineMessage()
+
+@Serializable
+@AvroNamespace("io.infinitic.workflows.engine")
 data class WaitWorkflow(
     override val workflowName: WorkflowName,
     override val workflowId: WorkflowId,
     val methodRunId: MethodRunId,
-    override val emitterName: ClientName,
+    override val emitterName: ClientName
 ) : WorkflowEngineMessage()
 
-@Serializable @AvroNamespace("io.infinitic.workflows.engine")
+@Serializable
+@AvroNamespace("io.infinitic.workflows.engine")
 data class DispatchMethod(
     override val workflowName: WorkflowName,
     override val workflowId: WorkflowId,
@@ -137,10 +151,11 @@ data class DispatchMethod(
     var parentWorkflowName: WorkflowName?,
     var parentMethodRunId: MethodRunId?,
     val clientWaiting: Boolean,
-    override val emitterName: ClientName,
+    override val emitterName: ClientName
 ) : WorkflowEngineMessage(), WorkflowEvent
 
-@Serializable @AvroNamespace("io.infinitic.workflows.engine")
+@Serializable
+@AvroNamespace("io.infinitic.workflows.engine")
 data class CancelWorkflow(
     override val workflowName: WorkflowName,
     override val workflowId: WorkflowId,
@@ -149,7 +164,8 @@ data class CancelWorkflow(
     override val emitterName: ClientName
 ) : WorkflowEngineMessage(), WorkflowEvent
 
-@Serializable @AvroNamespace("io.infinitic.workflows.engine")
+@Serializable
+@AvroNamespace("io.infinitic.workflows.engine")
 data class CompleteWorkflow(
     override val workflowName: WorkflowName,
     override val workflowId: WorkflowId,
@@ -157,7 +173,8 @@ data class CompleteWorkflow(
     override val emitterName: ClientName
 ) : WorkflowEngineMessage(), WorkflowEvent
 
-@Serializable @AvroNamespace("io.infinitic.workflows.engine")
+@Serializable
+@AvroNamespace("io.infinitic.workflows.engine")
 data class SendSignal(
     override val workflowName: WorkflowName,
     override val workflowId: WorkflowId,
@@ -171,7 +188,8 @@ data class SendSignal(
     override val emitterName: ClientName
 ) : WorkflowEngineMessage(), WorkflowEvent
 
-@Serializable @AvroNamespace("io.infinitic.workflows.engine")
+@Serializable
+@AvroNamespace("io.infinitic.workflows.engine")
 data class TimerCompleted(
     override val workflowName: WorkflowName,
     override val workflowId: WorkflowId,
@@ -180,7 +198,8 @@ data class TimerCompleted(
     override val emitterName: ClientName
 ) : WorkflowEngineMessage(), MethodEvent
 
-@Serializable @AvroNamespace("io.infinitic.workflows.engine")
+@Serializable
+@AvroNamespace("io.infinitic.workflows.engine")
 data class ChildMethodUnknown(
     override val workflowName: WorkflowName,
     override val workflowId: WorkflowId,
@@ -189,7 +208,8 @@ data class ChildMethodUnknown(
     override val emitterName: ClientName
 ) : WorkflowEngineMessage(), MethodEvent
 
-@Serializable @AvroNamespace("io.infinitic.workflows.engine")
+@Serializable
+@AvroNamespace("io.infinitic.workflows.engine")
 data class ChildMethodCanceled(
     override val workflowName: WorkflowName,
     override val workflowId: WorkflowId,
@@ -198,7 +218,8 @@ data class ChildMethodCanceled(
     override val emitterName: ClientName
 ) : WorkflowEngineMessage(), MethodEvent
 
-@Serializable @AvroNamespace("io.infinitic.workflows.engine")
+@Serializable
+@AvroNamespace("io.infinitic.workflows.engine")
 data class ChildMethodFailed(
     override val workflowName: WorkflowName,
     override val workflowId: WorkflowId,
@@ -207,7 +228,8 @@ data class ChildMethodFailed(
     override val emitterName: ClientName
 ) : WorkflowEngineMessage(), MethodEvent
 
-@Serializable @AvroNamespace("io.infinitic.workflows.engine")
+@Serializable
+@AvroNamespace("io.infinitic.workflows.engine")
 data class ChildMethodCompleted(
     override val workflowName: WorkflowName,
     override val workflowId: WorkflowId,
@@ -216,7 +238,8 @@ data class ChildMethodCompleted(
     override val emitterName: ClientName
 ) : WorkflowEngineMessage(), MethodEvent
 
-@Serializable @AvroNamespace("io.infinitic.workflows.engine")
+@Serializable
+@AvroNamespace("io.infinitic.workflows.engine")
 data class TaskCanceled(
     override val workflowName: WorkflowName,
     override val workflowId: WorkflowId,
@@ -228,7 +251,8 @@ data class TaskCanceled(
     override fun taskName() = canceledTaskError.taskName
 }
 
-@Serializable @AvroNamespace("io.infinitic.workflows.engine")
+@Serializable
+@AvroNamespace("io.infinitic.workflows.engine")
 data class TaskFailed(
     override val workflowName: WorkflowName,
     override val workflowId: WorkflowId,
@@ -241,7 +265,8 @@ data class TaskFailed(
     override fun taskName() = failedTaskError.taskName
 }
 
-@Serializable @AvroNamespace("io.infinitic.workflows.engine")
+@Serializable
+@AvroNamespace("io.infinitic.workflows.engine")
 data class TaskCompleted(
     override val workflowName: WorkflowName,
     override val workflowId: WorkflowId,

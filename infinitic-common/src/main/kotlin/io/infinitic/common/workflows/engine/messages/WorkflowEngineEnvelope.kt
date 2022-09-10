@@ -25,6 +25,8 @@
 
 package io.infinitic.common.workflows.engine.messages
 
+import com.github.avrokotlin.avro4k.Avro
+import com.github.avrokotlin.avro4k.AvroDefault
 import com.github.avrokotlin.avro4k.AvroNamespace
 import io.infinitic.common.messages.Envelope
 import io.infinitic.common.serDe.avro.AvroSerDe
@@ -43,6 +45,8 @@ data class WorkflowEngineEnvelope(
     private val cancelWorkflow: CancelWorkflow? = null,
     private val retryWorkflowTask: RetryWorkflowTask? = null,
     private val retryTasks: RetryTasks? = null,
+    @AvroDefault(Avro.NULL)
+    private val completeTimer: CompleteTimer? = null,
     private val completeWorkflow: CompleteWorkflow? = null,
     private val sendSignal: SendSignal? = null,
     private val timerCompleted: TimerCompleted? = null,
@@ -62,6 +66,7 @@ data class WorkflowEngineEnvelope(
             cancelWorkflow,
             retryWorkflowTask,
             retryTasks,
+            completeTimer,
             completeWorkflow,
             sendSignal,
             timerCompleted,
@@ -98,76 +103,97 @@ data class WorkflowEngineEnvelope(
                 type = WorkflowEngineMessageType.DISPATCH_WORKFLOW,
                 dispatchWorkflow = msg
             )
+
             is DispatchMethod -> WorkflowEngineEnvelope(
                 workflowId = msg.workflowId,
                 type = WorkflowEngineMessageType.DISPATCH_METHOD,
                 dispatchMethod = msg
             )
+
             is WaitWorkflow -> WorkflowEngineEnvelope(
                 workflowId = msg.workflowId,
                 type = WorkflowEngineMessageType.WAIT_WORKFLOW,
                 waitWorkflow = msg
             )
+
             is CancelWorkflow -> WorkflowEngineEnvelope(
                 workflowId = msg.workflowId,
                 type = WorkflowEngineMessageType.CANCEL_WORKFLOW,
                 cancelWorkflow = msg
             )
+
             is RetryWorkflowTask -> WorkflowEngineEnvelope(
                 workflowId = msg.workflowId,
                 type = WorkflowEngineMessageType.RETRY_WORKFLOW_TASK,
                 retryWorkflowTask = msg
             )
+
             is RetryTasks -> WorkflowEngineEnvelope(
                 workflowId = msg.workflowId,
                 type = WorkflowEngineMessageType.RETRY_TASKS,
                 retryTasks = msg
             )
+
+            is CompleteTimer -> WorkflowEngineEnvelope(
+                workflowId = msg.workflowId,
+                type = WorkflowEngineMessageType.COMPLETE_TIMER,
+                completeTimer = msg
+            )
+
             is CompleteWorkflow -> WorkflowEngineEnvelope(
                 workflowId = msg.workflowId,
                 type = WorkflowEngineMessageType.COMPLETE_WORKFLOW,
                 completeWorkflow = msg
             )
+
             is SendSignal -> WorkflowEngineEnvelope(
                 workflowId = msg.workflowId,
                 type = WorkflowEngineMessageType.SEND_SIGNAL,
                 sendSignal = msg
             )
+
             is TimerCompleted -> WorkflowEngineEnvelope(
                 workflowId = msg.workflowId,
                 type = WorkflowEngineMessageType.TIMER_COMPLETED,
                 timerCompleted = msg
             )
+
             is ChildMethodUnknown -> WorkflowEngineEnvelope(
                 workflowId = msg.workflowId,
                 type = WorkflowEngineMessageType.CHILD_WORKFLOW_UNKNOWN,
                 childMethodUnknown = msg
             )
+
             is ChildMethodCanceled -> WorkflowEngineEnvelope(
                 workflowId = msg.workflowId,
                 type = WorkflowEngineMessageType.CHILD_WORKFLOW_CANCELED,
                 childMethodCanceled = msg
             )
+
             is ChildMethodFailed -> WorkflowEngineEnvelope(
                 workflowId = msg.workflowId,
                 type = WorkflowEngineMessageType.CHILD_WORKFLOW_FAILED,
                 childMethodFailed = msg
             )
+
             is ChildMethodCompleted -> WorkflowEngineEnvelope(
                 workflowId = msg.workflowId,
                 type = WorkflowEngineMessageType.CHILD_WORKFLOW_COMPLETED,
                 childMethodCompleted = msg
             )
+
             is TaskCanceled -> WorkflowEngineEnvelope(
                 workflowId = msg.workflowId,
                 type = WorkflowEngineMessageType.TASK_CANCELED,
                 taskCanceled = msg
             )
+
             is TaskFailed -> WorkflowEngineEnvelope(
                 workflowId = msg.workflowId,
                 type = WorkflowEngineMessageType.TASK_FAILED,
                 taskFailed = msg
             )
+
             is TaskCompleted -> WorkflowEngineEnvelope(
                 workflowId = msg.workflowId,
                 type = WorkflowEngineMessageType.TASK_COMPLETED,
@@ -194,6 +220,7 @@ data class WorkflowEngineEnvelope(
         WorkflowEngineMessageType.CANCEL_WORKFLOW -> cancelWorkflow!!
         WorkflowEngineMessageType.RETRY_WORKFLOW_TASK -> retryWorkflowTask!!
         WorkflowEngineMessageType.RETRY_TASKS -> retryTasks!!
+        WorkflowEngineMessageType.COMPLETE_TIMER -> completeTimer!!
         WorkflowEngineMessageType.COMPLETE_WORKFLOW -> completeWorkflow!!
         WorkflowEngineMessageType.SEND_SIGNAL -> sendSignal!!
         WorkflowEngineMessageType.TIMER_COMPLETED -> timerCompleted!!

@@ -27,8 +27,10 @@ package io.infinitic.common.workflows.data.methodRuns
 
 import kotlinx.serialization.Serializable
 
-@JvmInline @Serializable
-value class MethodRunPosition(private val index: Int = -1) {
+@JvmInline
+@Serializable
+value class MethodRunPosition(private val index: Int = -1) : Comparable<MethodRunPosition> {
+    override fun compareTo(other: MethodRunPosition) = index - other.index
 
     override fun toString() = "$index"
 

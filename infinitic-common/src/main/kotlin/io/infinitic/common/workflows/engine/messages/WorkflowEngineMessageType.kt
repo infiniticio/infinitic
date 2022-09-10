@@ -28,12 +28,14 @@ package io.infinitic.common.workflows.engine.messages
 import com.github.avrokotlin.avro4k.AvroNamespace
 import kotlinx.serialization.Serializable
 
-@Serializable @AvroNamespace("io.infinitic.workflows.engine")
+@Serializable
+@AvroNamespace("io.infinitic.workflows.engine")
 enum class WorkflowEngineMessageType {
     WAIT_WORKFLOW,
     CANCEL_WORKFLOW,
     RETRY_WORKFLOW_TASK,
     RETRY_TASKS,
+    COMPLETE_TIMER,
     COMPLETE_WORKFLOW,
     SEND_SIGNAL,
     DISPATCH_WORKFLOW,

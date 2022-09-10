@@ -49,7 +49,8 @@ import io.infinitic.workflows.DeferredStatus
 import io.infinitic.workflows.WorkflowOptions
 import kotlinx.serialization.Serializable
 
-@Serializable @AvroNamespace("io.infinitic.workflows.tag")
+@Serializable
+@AvroNamespace("io.infinitic.workflows.tag")
 sealed class WorkflowTagMessage : Message {
     val messageId = MessageId()
     abstract val emitterName: ClientName
@@ -59,7 +60,8 @@ sealed class WorkflowTagMessage : Message {
     override fun envelope() = WorkflowTagEnvelope.from(this)
 }
 
-@Serializable @AvroNamespace("io.infinitic.workflows.tag")
+@Serializable
+@AvroNamespace("io.infinitic.workflows.tag")
 data class DispatchWorkflowByCustomId(
     override val workflowName: WorkflowName,
     override val workflowTag: WorkflowTag,
@@ -81,7 +83,8 @@ data class DispatchWorkflowByCustomId(
     }
 }
 
-@Serializable @AvroNamespace("io.infinitic.workflows.tag")
+@Serializable
+@AvroNamespace("io.infinitic.workflows.tag")
 data class SendSignalByTag(
     override val workflowName: WorkflowName,
     override val workflowTag: WorkflowTag,
@@ -96,7 +99,8 @@ data class SendSignalByTag(
     override val emitterName: ClientName
 ) : WorkflowTagMessage()
 
-@Serializable @AvroNamespace("io.infinitic.workflows.tag")
+@Serializable
+@AvroNamespace("io.infinitic.workflows.tag")
 data class CancelWorkflowByTag(
     override val workflowName: WorkflowName,
     override val workflowTag: WorkflowTag,
@@ -105,47 +109,62 @@ data class CancelWorkflowByTag(
     override val emitterName: ClientName
 ) : WorkflowTagMessage()
 
-@Serializable @AvroNamespace("io.infinitic.workflows.tag")
+@Serializable
+@AvroNamespace("io.infinitic.workflows.tag")
 data class RetryWorkflowTaskByTag(
     override val workflowName: WorkflowName,
     override val workflowTag: WorkflowTag,
-    override val emitterName: ClientName,
+    override val emitterName: ClientName
 ) : WorkflowTagMessage()
 
-@Serializable @AvroNamespace("io.infinitic.workflows.tag")
+@Serializable
+@AvroNamespace("io.infinitic.workflows.tag")
 data class RetryTasksByTag(
     override val workflowName: WorkflowName,
     override val workflowTag: WorkflowTag,
     val taskId: TaskId?,
     val taskStatus: DeferredStatus?,
     val taskName: TaskName?,
-    override val emitterName: ClientName,
+    override val emitterName: ClientName
 ) : WorkflowTagMessage()
 
-@Serializable @AvroNamespace("io.infinitic.workflows.tag")
+@Serializable
+@AvroNamespace("io.infinitic.workflows.tag")
+data class CompleteTimerByTag(
+    override val workflowName: WorkflowName,
+    override val workflowTag: WorkflowTag,
+    val methodRunId: MethodRunId?,
+    override val emitterName: ClientName
+) : WorkflowTagMessage()
+
+@Serializable
+@AvroNamespace("io.infinitic.workflows.tag")
 data class AddTagToWorkflow(
     override val workflowName: WorkflowName,
     override val workflowTag: WorkflowTag,
     val workflowId: WorkflowId,
-    override val emitterName: ClientName,
+    override val emitterName: ClientName
 ) : WorkflowTagMessage()
 
-@Serializable @AvroNamespace("io.infinitic.workflows.tag")
+@Serializable
+@AvroNamespace("io.infinitic.workflows.tag")
 data class RemoveTagFromWorkflow(
     override val workflowName: WorkflowName,
     override val workflowTag: WorkflowTag,
     val workflowId: WorkflowId,
-    override val emitterName: ClientName,
+    override val emitterName: ClientName
 ) : WorkflowTagMessage()
 
-@Serializable @AvroNamespace("io.infinitic.workflows.tag")
+@Serializable
+@AvroNamespace("io.infinitic.workflows.tag")
 data class GetWorkflowIdsByTag(
     override val workflowName: WorkflowName,
     override val workflowTag: WorkflowTag,
-    override val emitterName: ClientName,
+    override val emitterName: ClientName
 ) : WorkflowTagMessage()
 
-@Serializable @AvroNamespace("io.infinitic.workflows.tag")
+@Serializable
+@AvroNamespace("io.infinitic.workflows.tag")
 data class DispatchMethodByTag(
     override val workflowName: WorkflowName,
     override val workflowTag: WorkflowTag,
@@ -157,5 +176,5 @@ data class DispatchMethodByTag(
     val methodParameterTypes: MethodParameterTypes?,
     val methodParameters: MethodParameters,
     val clientWaiting: Boolean,
-    override val emitterName: ClientName,
+    override val emitterName: ClientName
 ) : WorkflowTagMessage()

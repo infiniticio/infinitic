@@ -42,6 +42,7 @@ import io.infinitic.common.workflows.engine.messages.ChildMethodCanceled
 import io.infinitic.common.workflows.engine.messages.ChildMethodCompleted
 import io.infinitic.common.workflows.engine.messages.ChildMethodFailed
 import io.infinitic.common.workflows.engine.messages.ChildMethodUnknown
+import io.infinitic.common.workflows.engine.messages.CompleteTimer
 import io.infinitic.common.workflows.engine.messages.CompleteWorkflow
 import io.infinitic.common.workflows.engine.messages.DispatchMethod
 import io.infinitic.common.workflows.engine.messages.DispatchWorkflow
@@ -61,6 +62,7 @@ import io.infinitic.common.workflows.engine.state.WorkflowState
 import io.infinitic.common.workflows.engine.storage.WorkflowStateStorage
 import io.infinitic.common.workflows.tags.SendToWorkflowTag
 import io.infinitic.workflows.engine.handlers.cancelWorkflow
+import io.infinitic.workflows.engine.handlers.completeTimer
 import io.infinitic.workflows.engine.handlers.dispatchMethodRun
 import io.infinitic.workflows.engine.handlers.dispatchWorkflow
 import io.infinitic.workflows.engine.handlers.retryTasks
@@ -144,14 +146,37 @@ class WorkflowEngine(
         }
     }
 
-    private suspend fun process(state: WorkflowState?, message: WorkflowEngineMessage): WorkflowState? = coroutineScope {
-
-        // if no state (new or terminated workflow)
-        if (state == null) {
-            if (message is DispatchWorkflow) {
-                return@coroutineScope dispatchWorkflow(output, message)
-            } else if (message is DispatchMethod) {
-                if (message.clientWaiting) {
+    private suspend fun process(state: WorkflowState?, message: WorkflowEngineMessage): WorkflowState? =
+        coroutineScope {
+            // if no state (new or terminated workflow)
+            if (state == null) {
+                if (message is DispatchWorkflow) {
+                    return@coroutineScope dispatchWorkflow(output, message)
+                } else if (message is DispatchMethod) {
+                    if (message.clientWaiting) {
+                        val methodRunUnknown = MethodRunUnknown(
+                            recipientName = message.emitterName,
+                            message.workflowId,
+                            message.methodRunId,
+                            emitterName = clientName
+                        )
+                        launch { output.sendEventsToClient(methodRunUnknown) }
+                    }
+                    if (message.parentWorkflowId != null && message.parentWorkflowId != message.workflowId) {
+                        val childMethodFailed = ChildMethodUnknown(
+                            workflowId = message.parentWorkflowId!!,
+                            workflowName = message.parentWorkflowName ?: thisShouldNotHappen(),
+                            methodRunId = message.parentMethodRunId ?: thisShouldNotHappen(),
+                            childUnknownWorkflowError = UnknownWorkflowError(
+                                workflowName = message.workflowName,
+                                workflowId = message.workflowId,
+                                methodRunId = message.methodRunId
+                            ),
+                            emitterName = clientName
+                        )
+                        launch { output.sendToWorkflowEngine(childMethodFailed) }
+                    }
+                } else if (message is WaitWorkflow) {
                     val methodRunUnknown = MethodRunUnknown(
                         recipientName = message.emitterName,
                         message.workflowId,
@@ -160,89 +185,66 @@ class WorkflowEngine(
                     )
                     launch { output.sendEventsToClient(methodRunUnknown) }
                 }
-                if (message.parentWorkflowId != null && message.parentWorkflowId != message.workflowId) {
-                    val childMethodFailed = ChildMethodUnknown(
-                        workflowId = message.parentWorkflowId!!,
-                        workflowName = message.parentWorkflowName ?: thisShouldNotHappen(),
-                        methodRunId = message.parentMethodRunId ?: thisShouldNotHappen(),
-                        childUnknownWorkflowError = UnknownWorkflowError(
-                            workflowName = message.workflowName,
-                            workflowId = message.workflowId,
-                            methodRunId = message.methodRunId
-                        ),
-                        emitterName = clientName
-                    )
-                    launch { output.sendToWorkflowEngine(childMethodFailed) }
-                }
-            } else if (message is WaitWorkflow) {
-                val methodRunUnknown = MethodRunUnknown(
-                    recipientName = message.emitterName,
-                    message.workflowId,
-                    message.methodRunId,
-                    emitterName = clientName
-                )
-                launch { output.sendEventsToClient(methodRunUnknown) }
+
+                // discard all other messages if workflow is already terminated
+                logDiscardingMessage(message, NO_STATE_DISCARDING_REASON)
+
+                return@coroutineScope null
             }
 
-            // discard all other messages if workflow is already terminated
-            logDiscardingMessage(message, NO_STATE_DISCARDING_REASON)
+            // Idempotency: do not relaunch if this workflow has already been launched
+            if (message is DispatchWorkflow) {
+                logDiscardingMessage(message, "as workflow has already been launched")
 
-            return@coroutineScope null
-        }
+                return@coroutineScope null
+            }
 
-        // Idempotency: do not relaunch if this workflow has already been launched
-        if (message is DispatchWorkflow) {
-            logDiscardingMessage(message, "as workflow has already been launched")
+            // Idempotency: do not relaunch if this method has already been launched
+            if (message is DispatchMethod && state.getMethodRun(message.methodRunId) != null) {
+                logDiscardingMessage(message, "as this method has already been launched")
 
-            return@coroutineScope null
-        }
+                return@coroutineScope null
+            }
 
-        // Idempotency: do not relaunch if this method has already been launched
-        if (message is DispatchMethod && state.getMethodRun(message.methodRunId) != null) {
-            logDiscardingMessage(message, "as this method has already been launched")
+            // Idempotency: do not relaunch if this signal has already been received
+            if (message is SendSignal && state.hasSignalAlreadyBeenReceived(message.signalId)) {
+                logDiscardingMessage(message, "as this signal has already been received")
 
-            return@coroutineScope null
-        }
+                return@coroutineScope null
+            }
 
-        // Idempotency: do not relaunch if this signal has already been received
-        if (message is SendSignal && state.hasSignalAlreadyBeenReceived(message.signalId)) {
-            logDiscardingMessage(message, "as this signal has already been received")
+            // Idempotency: discard if this workflowTask is not the current one
+            if (message.isWorkflowTaskEvent() && (message as TaskEvent).taskId() != state.runningWorkflowTaskId) {
+                logDiscardingMessage(message, "as workflowTask is not the right one")
 
-            return@coroutineScope null
-        }
+                return@coroutineScope null
+            }
 
-        // Idempotency: discard if this workflowTask is not the current one
-        if (message.isWorkflowTaskEvent() && (message as TaskEvent).taskId() != state.runningWorkflowTaskId) {
-            logDiscardingMessage(message, "as workflowTask is not the right one")
+            // if a workflow task is ongoing then buffer all WorkflowEvent message,
+            // - except for TaskCompleted/TaskFailed/TaskCanceled associated to a WorkflowTask
+            if (state.runningWorkflowTaskId != null && message is WorkflowEvent && !message.isWorkflowTaskEvent()) {
+                // buffer this message
+                logger.debug { "workflowId ${state.workflowId} - buffering $message" }
+                state.messagesBuffer.add(message)
 
-            return@coroutineScope null
-        }
+                return@coroutineScope state
+            }
 
-        // if a workflow task is ongoing then buffer all WorkflowEvent message,
-        // - except for TaskCompleted/TaskFailed/TaskCanceled associated to a WorkflowTask
-        if (state.runningWorkflowTaskId != null && message is WorkflowEvent && ! message.isWorkflowTaskEvent()) {
-            // buffer this message
-            logger.debug { "workflowId ${state.workflowId} - buffering $message" }
-            state.messagesBuffer.add(message)
+            // process this message
+            processMessage(state, message)
+
+            // process all buffered messages
+            while (
+                state.runningWorkflowTaskId == null && // if a workflowTask is not ongoing
+                state.messagesBuffer.size > 0 // if there is some buffered message
+            ) {
+                val bufferedMsg = state.messagesBuffer.removeAt(0)
+                logger.debug { "workflowId ${bufferedMsg.workflowId} - processing buffered message $bufferedMsg" }
+                processMessage(state, bufferedMsg)
+            }
 
             return@coroutineScope state
         }
-
-        // process this message
-        processMessage(state, message)
-
-        // process all buffered messages
-        while (
-            state.runningWorkflowTaskId == null && // if a workflowTask is not ongoing
-            state.messagesBuffer.size > 0 // if there is some buffered message
-        ) {
-            val bufferedMsg = state.messagesBuffer.removeAt(0)
-            logger.debug { "workflowId ${bufferedMsg.workflowId} - processing buffered message $bufferedMsg" }
-            processMessage(state, bufferedMsg)
-        }
-
-        return@coroutineScope state
-    }
 
     private fun logDiscardingMessage(message: WorkflowEngineMessage, cause: String) {
         logger.warn { "workflowId ${message.workflowId} - discarding $cause: $message" }
@@ -266,6 +268,7 @@ class WorkflowEngine(
             is CancelWorkflow -> cancelWorkflow(output, state, message)
             is SendSignal -> sendSignal(output, state, message)
             is WaitWorkflow -> waitWorkflow(output, state, message)
+            is CompleteTimer -> completeTimer(state, message)
             is CompleteWorkflow -> TODO()
             is RetryWorkflowTask -> retryWorkflowTask(output, state)
             is RetryTasks -> retryTasks(output, state, message)
@@ -279,6 +282,7 @@ class WorkflowEngine(
                     completionWorkflowTaskIndex = state.workflowTaskIndex
                 )
             )
+
             is ChildMethodUnknown -> commandTerminated(
                 output,
                 state,
@@ -289,6 +293,7 @@ class WorkflowEngine(
                     state.workflowTaskIndex
                 )
             )
+
             is ChildMethodCanceled -> commandTerminated(
                 output,
                 state,
@@ -299,6 +304,7 @@ class WorkflowEngine(
                     state.workflowTaskIndex
                 )
             )
+
             is ChildMethodFailed -> commandTerminated(
                 output,
                 state,
@@ -309,6 +315,7 @@ class WorkflowEngine(
                     state.workflowTaskIndex
                 )
             )
+
             is ChildMethodCompleted -> commandTerminated(
                 output,
                 state,
@@ -319,10 +326,12 @@ class WorkflowEngine(
                     completionWorkflowTaskIndex = state.workflowTaskIndex
                 )
             )
+
             is TaskCanceled -> when (message.isWorkflowTaskEvent()) {
                 true -> {
                     TODO()
                 }
+
                 false -> commandTerminated(
                     output,
                     state,
@@ -334,12 +343,14 @@ class WorkflowEngine(
                     )
                 )
             }
+
             is TaskFailed -> when (message.isWorkflowTaskEvent()) {
                 true -> {
                     val msg = workflowTaskFailed(output, state, message)
                     // add fake message at the top of the messagesBuffer list
                     state.messagesBuffer.addAll(0, msg); Unit
                 }
+
                 false -> {
                     commandTerminated(
                         output,
@@ -353,13 +364,14 @@ class WorkflowEngine(
                     )
                 }
             }
+
             is TaskCompleted -> when (message.isWorkflowTaskEvent()) {
                 true -> {
-
                     val messages = workflowTaskCompleted(output, state, message)
                     // add fake messages at the top of the messagesBuffer list
                     state.messagesBuffer.addAll(0, messages); Unit
                 }
+
                 false -> commandTerminated(
                     output,
                     state,
