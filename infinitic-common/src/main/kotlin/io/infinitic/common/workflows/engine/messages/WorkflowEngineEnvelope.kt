@@ -46,7 +46,7 @@ data class WorkflowEngineEnvelope(
     private val retryWorkflowTask: RetryWorkflowTask? = null,
     private val retryTasks: RetryTasks? = null,
     @AvroDefault(Avro.NULL)
-    private val completeTimer: CompleteTimer? = null,
+    private val completeTimers: CompleteTimers? = null,
     private val completeWorkflow: CompleteWorkflow? = null,
     private val sendSignal: SendSignal? = null,
     private val timerCompleted: TimerCompleted? = null,
@@ -66,7 +66,7 @@ data class WorkflowEngineEnvelope(
             cancelWorkflow,
             retryWorkflowTask,
             retryTasks,
-            completeTimer,
+            completeTimers,
             completeWorkflow,
             sendSignal,
             timerCompleted,
@@ -134,10 +134,10 @@ data class WorkflowEngineEnvelope(
                 retryTasks = msg
             )
 
-            is CompleteTimer -> WorkflowEngineEnvelope(
+            is CompleteTimers -> WorkflowEngineEnvelope(
                 workflowId = msg.workflowId,
-                type = WorkflowEngineMessageType.COMPLETE_TIMER,
-                completeTimer = msg
+                type = WorkflowEngineMessageType.COMPLETE_TIMERS,
+                completeTimers = msg
             )
 
             is CompleteWorkflow -> WorkflowEngineEnvelope(
@@ -220,7 +220,7 @@ data class WorkflowEngineEnvelope(
         WorkflowEngineMessageType.CANCEL_WORKFLOW -> cancelWorkflow!!
         WorkflowEngineMessageType.RETRY_WORKFLOW_TASK -> retryWorkflowTask!!
         WorkflowEngineMessageType.RETRY_TASKS -> retryTasks!!
-        WorkflowEngineMessageType.COMPLETE_TIMER -> completeTimer!!
+        WorkflowEngineMessageType.COMPLETE_TIMERS -> completeTimers!!
         WorkflowEngineMessageType.COMPLETE_WORKFLOW -> completeWorkflow!!
         WorkflowEngineMessageType.SEND_SIGNAL -> sendSignal!!
         WorkflowEngineMessageType.TIMER_COMPLETED -> timerCompleted!!

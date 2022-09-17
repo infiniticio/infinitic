@@ -32,7 +32,7 @@ import io.infinitic.common.exceptions.thisShouldNotHappen
 import io.infinitic.common.workflows.data.methodRuns.MethodRunId
 import io.infinitic.common.workflows.engine.SendToWorkflowEngine
 import io.infinitic.common.workflows.engine.messages.CancelWorkflow
-import io.infinitic.common.workflows.engine.messages.CompleteTimer
+import io.infinitic.common.workflows.engine.messages.CompleteTimers
 import io.infinitic.common.workflows.engine.messages.DispatchMethod
 import io.infinitic.common.workflows.engine.messages.DispatchWorkflow
 import io.infinitic.common.workflows.engine.messages.RetryTasks
@@ -42,7 +42,7 @@ import io.infinitic.common.workflows.engine.messages.WaitWorkflow
 import io.infinitic.common.workflows.tags.SendToWorkflowTag
 import io.infinitic.common.workflows.tags.messages.AddTagToWorkflow
 import io.infinitic.common.workflows.tags.messages.CancelWorkflowByTag
-import io.infinitic.common.workflows.tags.messages.CompleteTimerByTag
+import io.infinitic.common.workflows.tags.messages.CompleteTimersByTag
 import io.infinitic.common.workflows.tags.messages.DispatchMethodByTag
 import io.infinitic.common.workflows.tags.messages.DispatchWorkflowByCustomId
 import io.infinitic.common.workflows.tags.messages.GetWorkflowIdsByTag
@@ -81,7 +81,7 @@ class WorkflowTagEngine(
             is CancelWorkflowByTag -> cancelWorkflowByTag(message)
             is RetryWorkflowTaskByTag -> retryWorkflowTaskByTag(message)
             is RetryTasksByTag -> retryTaskByTag(message)
-            is CompleteTimerByTag -> completeTimerByTag(message)
+            is CompleteTimersByTag -> completeTimerByTag(message)
             is GetWorkflowIdsByTag -> getWorkflowIds(message)
         }
     }
@@ -232,7 +232,7 @@ class WorkflowTagEngine(
         }
     }
 
-    private suspend fun completeTimerByTag(message: CompleteTimerByTag) {
+    private suspend fun completeTimerByTag(message: CompleteTimersByTag) {
         val ids = storage.getWorkflowIds(message.workflowTag, message.workflowName)
 
         // with coroutineScope, we send messages in parallel and wait for all of them to be processed
@@ -243,13 +243,13 @@ class WorkflowTagEngine(
                 }
 
                 false -> ids.forEach {
-                    val completeTimer = CompleteTimer(
+                    val completeTimers = CompleteTimers(
                         workflowName = message.workflowName,
                         workflowId = it,
                         methodRunId = message.methodRunId,
                         emitterName = clientName
                     )
-                    launch { sendToWorkflowEngine(completeTimer) }
+                    launch { sendToWorkflowEngine(completeTimers) }
                 }
             }
         }

@@ -57,7 +57,7 @@ import io.infinitic.common.workflows.data.workflows.WorkflowName
 import io.infinitic.common.workflows.data.workflows.WorkflowTag
 import io.infinitic.common.workflows.engine.SendToWorkflowEngine
 import io.infinitic.common.workflows.engine.messages.CancelWorkflow
-import io.infinitic.common.workflows.engine.messages.CompleteTimer
+import io.infinitic.common.workflows.engine.messages.CompleteTimers
 import io.infinitic.common.workflows.engine.messages.DispatchMethod
 import io.infinitic.common.workflows.engine.messages.DispatchWorkflow
 import io.infinitic.common.workflows.engine.messages.RetryWorkflowTask
@@ -66,7 +66,7 @@ import io.infinitic.common.workflows.engine.messages.WaitWorkflow
 import io.infinitic.common.workflows.tags.SendToWorkflowTag
 import io.infinitic.common.workflows.tags.messages.AddTagToWorkflow
 import io.infinitic.common.workflows.tags.messages.CancelWorkflowByTag
-import io.infinitic.common.workflows.tags.messages.CompleteTimerByTag
+import io.infinitic.common.workflows.tags.messages.CompleteTimersByTag
 import io.infinitic.common.workflows.tags.messages.DispatchMethodByTag
 import io.infinitic.common.workflows.tags.messages.DispatchWorkflowByCustomId
 import io.infinitic.common.workflows.tags.messages.GetWorkflowIdsByTag
@@ -260,7 +260,7 @@ internal class ClientDispatcherImpl(
         }
     }
 
-    override fun completeTimerAsync(
+    override fun completeTimersAsync(
         workflowName: WorkflowName,
         workflowId: WorkflowId?,
         workflowTag: WorkflowTag?,
@@ -268,7 +268,7 @@ internal class ClientDispatcherImpl(
     ): CompletableFuture<Unit> = scope.future {
         when {
             workflowId != null -> {
-                val msg = CompleteTimer(
+                val msg = CompleteTimers(
                     workflowName = workflowName,
                     workflowId = workflowId,
                     emitterName = clientName,
@@ -278,7 +278,7 @@ internal class ClientDispatcherImpl(
             }
 
             workflowTag != null -> {
-                val msg = CompleteTimerByTag(
+                val msg = CompleteTimersByTag(
                     workflowName = workflowName,
                     workflowTag = workflowTag,
                     emitterName = clientName,

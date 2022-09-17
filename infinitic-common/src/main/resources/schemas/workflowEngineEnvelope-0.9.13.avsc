@@ -10,7 +10,7 @@
     "type" : {
       "type" : "enum",
       "name" : "WorkflowEngineMessageType",
-      "symbols" : [ "WAIT_WORKFLOW", "CANCEL_WORKFLOW", "RETRY_WORKFLOW_TASK", "RETRY_TASKS", "COMPLETE_TIMER", "COMPLETE_WORKFLOW", "SEND_SIGNAL", "DISPATCH_WORKFLOW", "DISPATCH_METHOD", "TIMER_COMPLETED", "CHILD_WORKFLOW_UNKNOWN", "CHILD_WORKFLOW_CANCELED", "CHILD_WORKFLOW_FAILED", "CHILD_WORKFLOW_COMPLETED", "TASK_CANCELED", "TASK_FAILED", "TASK_COMPLETED" ]
+      "symbols" : [ "WAIT_WORKFLOW", "CANCEL_WORKFLOW", "RETRY_WORKFLOW_TASK", "RETRY_TASKS", "COMPLETE_TIMERS", "COMPLETE_WORKFLOW", "SEND_SIGNAL", "DISPATCH_WORKFLOW", "DISPATCH_METHOD", "TIMER_COMPLETED", "CHILD_WORKFLOW_UNKNOWN", "CHILD_WORKFLOW_CANCELED", "CHILD_WORKFLOW_FAILED", "CHILD_WORKFLOW_COMPLETED", "TASK_CANCELED", "TASK_FAILED", "TASK_COMPLETED" ]
     }
   }, {
     "name" : "dispatchWorkflow",
@@ -260,10 +260,10 @@
       } ]
     } ]
   }, {
-    "name" : "completeTimer",
+    "name" : "completeTimers",
     "type" : [ "null", {
       "type" : "record",
-      "name" : "CompleteTimer",
+      "name" : "CompleteTimers",
       "fields" : [ {
         "name" : "messageId",
         "type" : "string"

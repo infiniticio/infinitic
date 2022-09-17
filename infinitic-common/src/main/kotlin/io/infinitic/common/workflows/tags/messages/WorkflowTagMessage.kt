@@ -130,7 +130,7 @@ data class RetryTasksByTag(
 
 @Serializable
 @AvroNamespace("io.infinitic.workflows.tag")
-data class CompleteTimerByTag(
+data class CompleteTimersByTag(
     override val workflowName: WorkflowName,
     override val workflowTag: WorkflowTag,
     val methodRunId: MethodRunId?,

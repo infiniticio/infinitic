@@ -634,7 +634,7 @@ interface InfiniticClient : Closeable {
      * @property stub should be a workflow stub obtained by [getWorkflowById] or [getWorkflowByTag]
      * @id of the targeted method run - main one if null
      */
-    fun completeTimerAsync(
+    fun completeTimersAsync(
         stub: Any,
         id: String? = null
     ): CompletableFuture<Unit>
@@ -645,10 +645,10 @@ interface InfiniticClient : Closeable {
      * @property stub should be a workflow stub obtained by [getWorkflowById] or [getWorkflowByTag]
      * @id of the method run - main one if null
      */
-    fun completeTimer(
+    fun completeTimers(
         stub: Any,
         id: String? = null
-    ): Unit = completeTimerAsync(stub, id).join()
+    ): Unit = completeTimersAsync(stub, id).join()
 
     /**
      * Retry the workflow task (without waiting for the message to be sent)

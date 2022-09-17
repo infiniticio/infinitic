@@ -48,7 +48,7 @@ data class WorkflowTagEnvelope(
     private val retryWorkflowTaskByTag: RetryWorkflowTaskByTag? = null,
     private val retryTasksByTag: RetryTasksByTag? = null,
     @AvroDefault(Avro.NULL)
-    private val completeTimerByTag: CompleteTimerByTag? = null,
+    private val completeTimersByTag: CompleteTimersByTag? = null,
     private val getWorkflowIdsByTag: GetWorkflowIdsByTag? = null
 ) : Envelope<WorkflowTagMessage> {
 
@@ -61,7 +61,7 @@ data class WorkflowTagEnvelope(
             cancelWorkflowByTag,
             retryWorkflowTaskByTag,
             retryTasksByTag,
-            completeTimerByTag,
+            completeTimersByTag,
             dispatchMethodByTag,
             getWorkflowIdsByTag
         )
@@ -115,10 +115,10 @@ data class WorkflowTagEnvelope(
                 retryTasksByTag = msg
             )
 
-            is CompleteTimerByTag -> WorkflowTagEnvelope(
+            is CompleteTimersByTag -> WorkflowTagEnvelope(
                 name = "${msg.workflowName}",
                 type = WorkflowTagMessageType.COMPLETE_TIMER_BY_TAG,
-                completeTimerByTag = msg
+                completeTimersByTag = msg
             )
 
             is DispatchMethodByTag -> WorkflowTagEnvelope(
@@ -154,7 +154,7 @@ data class WorkflowTagEnvelope(
         WorkflowTagMessageType.CANCEL_WORKFLOW_BY_TAG -> cancelWorkflowByTag
         WorkflowTagMessageType.RETRY_WORKFLOW_TASK_BY_TAG -> retryWorkflowTaskByTag
         WorkflowTagMessageType.RETRY_TASKS_BY_TAG -> retryTasksByTag
-        WorkflowTagMessageType.COMPLETE_TIMER_BY_TAG -> completeTimerByTag
+        WorkflowTagMessageType.COMPLETE_TIMER_BY_TAG -> completeTimersByTag
         WorkflowTagMessageType.DISPATCH_METHOD_BY_TAG -> dispatchMethodByTag
         WorkflowTagMessageType.GET_WORKFLOW_IDS_BY_TAG -> getWorkflowIdsByTag
     }!!

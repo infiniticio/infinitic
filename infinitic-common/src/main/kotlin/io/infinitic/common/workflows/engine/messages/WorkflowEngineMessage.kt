@@ -122,7 +122,7 @@ data class RetryTasks(
 
 @Serializable
 @AvroNamespace("io.infinitic.workflows.engine")
-data class CompleteTimer(
+data class CompleteTimers(
     override val workflowName: WorkflowName,
     override val workflowId: WorkflowId,
     val methodRunId: MethodRunId?,

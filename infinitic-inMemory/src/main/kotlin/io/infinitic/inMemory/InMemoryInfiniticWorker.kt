@@ -52,13 +52,11 @@ class InMemoryInfiniticWorker(
 
     override val name = workerConfig.name ?: "inMemory"
 
-    override fun start(): Unit = startAsync().join()
-
     override fun startAsync(): CompletableFuture<Unit> =
         if (this::client.isInitialized) {
             scope.future { startWorker().join() }
         } else {
-            logger.info { "Should not start ${this::class} outside of an in-memory client: closing" }
+            logger.info { "Closing ${this::class} that can not be run outside of an in-memory client" }
             CompletableFuture.completedFuture(null)
         }
 

@@ -51,7 +51,9 @@ import io.infinitic.common.workflows.data.workflows.WorkflowMeta
 import io.infinitic.common.workflows.data.workflows.WorkflowName
 import io.infinitic.common.workflows.data.workflows.WorkflowTag
 import io.infinitic.common.workflows.engine.messages.CancelWorkflow
+import io.infinitic.common.workflows.engine.messages.CompleteTimers
 import io.infinitic.common.workflows.engine.messages.DispatchWorkflow
+import io.infinitic.common.workflows.engine.messages.RetryTasks
 import io.infinitic.common.workflows.engine.messages.SendSignal
 import io.infinitic.common.workflows.engine.messages.WaitWorkflow
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
@@ -81,8 +83,18 @@ private val clientNameTest = ClientName("clientTest")
 class ClientWorkflow : AbstractInfiniticClient() {
     override val clientName = clientNameTest
     override val clientStarter = mockk<ClientStarter> {
-        every { sendToWorkflowTag } returns mockSendToWorkflowTagEngine(this@ClientWorkflow, workflowTagSlots, clientName, sendingScope)
-        every { sendToWorkflowEngine } returns mockSendToWorkflowEngine(this@ClientWorkflow, workflowSlot, clientName, sendingScope)
+        every { sendToWorkflowTag } returns mockSendToWorkflowTagEngine(
+            this@ClientWorkflow,
+            workflowTagSlots,
+            clientName,
+            sendingScope
+        )
+        every { sendToWorkflowEngine } returns mockSendToWorkflowEngine(
+            this@ClientWorkflow,
+            workflowSlot,
+            clientName,
+            sendingScope
+        )
     }
 }
 
@@ -256,7 +268,7 @@ class ClientWorkflowTests : StringSpec({
                 workflowName = WorkflowName(FakeWorkflow::class.java.name),
                 workflowTag = WorkflowTag(it),
                 workflowId = WorkflowId(deferred.id),
-                emitterName = clientNameTest,
+                emitterName = clientNameTest
             )
         }.toSet()
         workflowSlot.captured shouldBe DispatchWorkflow(
@@ -485,6 +497,70 @@ class ClientWorkflowTests : StringSpec({
                 ChannelType.from(FakeTask::class.java),
                 ChannelType.from(FakeTaskParent::class.java)
             ),
+            emitterName = clientNameTest
+        )
+    }
+
+    "Should be able to retry tasks of a workflow targeted by id (sync)" {
+        // when
+        val id = UUID.randomUUID().toString()
+        val workflow = client.getWorkflowById(FakeWorkflow::class.java, id)
+        client.retryTasks(workflow)
+        // then
+        workflowTagSlots.size shouldBe 0
+        workflowSlot.captured shouldBe RetryTasks(
+            workflowName = WorkflowName(FakeWorkflow::class.java.name),
+            workflowId = WorkflowId(id),
+            taskId = null,
+            taskStatus = null,
+            taskName = null,
+            emitterName = clientNameTest
+        )
+    }
+
+    "Should be able to retry tasks of a workflow targeted by id (async)" {
+        // when
+        val id = UUID.randomUUID().toString()
+        val workflow = client.getWorkflowById(FakeWorkflow::class.java, id)
+        client.retryTasksAsync(workflow).join()
+        // then
+        workflowTagSlots.size shouldBe 0
+        workflowSlot.captured shouldBe RetryTasks(
+            workflowName = WorkflowName(FakeWorkflow::class.java.name),
+            workflowId = WorkflowId(id),
+            taskId = null,
+            taskStatus = null,
+            taskName = null,
+            emitterName = clientNameTest
+        )
+    }
+
+    "Should be able to complete timer of a workflow targeted by id (sync)" {
+        // when
+        val id = UUID.randomUUID().toString()
+        val workflow = client.getWorkflowById(FakeWorkflow::class.java, id)
+        client.completeTimers(workflow)
+        // then
+        workflowTagSlots.size shouldBe 0
+        workflowSlot.captured shouldBe CompleteTimers(
+            workflowName = WorkflowName(FakeWorkflow::class.java.name),
+            workflowId = WorkflowId(id),
+            methodRunId = null,
+            emitterName = clientNameTest
+        )
+    }
+
+    "Should be able to complete timer of a workflow targeted by id (async)" {
+        // when
+        val id = UUID.randomUUID().toString()
+        val workflow = client.getWorkflowById(FakeWorkflow::class.java, id)
+        client.completeTimersAsync(workflow).join()
+        // then
+        workflowTagSlots.size shouldBe 0
+        workflowSlot.captured shouldBe CompleteTimers(
+            workflowName = WorkflowName(FakeWorkflow::class.java.name),
+            workflowId = WorkflowId(id),
+            methodRunId = null,
             emitterName = clientNameTest
         )
     }

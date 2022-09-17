@@ -24,7 +24,7 @@
 services:
   # Pulsar settings
   pulsar:
-    image: apachepulsar/pulsar:2.9.1
+    image: apachepulsar/pulsar:2.10.1
     environment:
       - BOOKIE_MEM=" -Xms512m -Xmx512m -XX:MaxDirectMemorySize=1g"
     command: >
@@ -42,7 +42,7 @@ services:
 
   # Pulsar Manager
   dashboard:
-    image: apachepulsar/pulsar-manager:v0.2.0
+    image: apachepulsar/pulsar-manager:v0.3.0
     ports:
       - "9527:9527"
       - "7750:7750"

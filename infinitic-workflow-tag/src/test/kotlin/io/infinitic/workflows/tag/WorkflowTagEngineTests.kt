@@ -35,12 +35,14 @@ import io.infinitic.common.workflows.data.workflows.WorkflowName
 import io.infinitic.common.workflows.data.workflows.WorkflowTag
 import io.infinitic.common.workflows.engine.SendToWorkflowEngine
 import io.infinitic.common.workflows.engine.messages.CancelWorkflow
+import io.infinitic.common.workflows.engine.messages.CompleteTimers
 import io.infinitic.common.workflows.engine.messages.RetryTasks
 import io.infinitic.common.workflows.engine.messages.RetryWorkflowTask
 import io.infinitic.common.workflows.engine.messages.SendSignal
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
 import io.infinitic.common.workflows.tags.SendToWorkflowTag
 import io.infinitic.common.workflows.tags.messages.CancelWorkflowByTag
+import io.infinitic.common.workflows.tags.messages.CompleteTimersByTag
 import io.infinitic.common.workflows.tags.messages.GetWorkflowIdsByTag
 import io.infinitic.common.workflows.tags.messages.RetryTasksByTag
 import io.infinitic.common.workflows.tags.messages.RetryWorkflowTaskByTag
@@ -140,6 +142,27 @@ internal class WorkflowTagEngineTests : StringSpec({
         }
     }
 
+    "CompleteTimerByTag should complete timer" {
+        // given
+        val workflowIds = setOf(WorkflowId(), WorkflowId())
+        val msgIn = random<CompleteTimersByTag>()
+        // when
+        getEngine(msgIn.workflowTag, msgIn.workflowName, workflowIds = workflowIds).handle(msgIn)
+        // then
+        coVerifySequence {
+            workflowTagStorage.getWorkflowIds(msgIn.workflowTag, msgIn.workflowName)
+            sendToWorkflowEngine(ofType<CompleteTimers>())
+            sendToWorkflowEngine(ofType<CompleteTimers>())
+        }
+        verifyAll()
+        // checking last message
+        with(captured(workflowEngineMessage)!! as CompleteTimers) {
+            workflowId shouldBe workflowIds.last()
+            workflowName shouldBe msgIn.workflowName
+            methodRunId shouldBe msgIn.methodRunId
+        }
+    }
+
     "sendToChannelPerTag should send to channel" {
         // given
         val workflowIds = setOf(WorkflowId(), WorkflowId())
@@ -215,7 +238,13 @@ private fun mockWorkflowTagStorage(
     val tagStateStorage = mockk<WorkflowTagStorage>()
     coEvery { tagStateStorage.getWorkflowIds(workflowTag, workflowName) } returns workflowIds
     coEvery { tagStateStorage.addWorkflowId(workflowTag, workflowName, WorkflowId(capture(stateWorkflowId))) } just Runs
-    coEvery { tagStateStorage.removeWorkflowId(workflowTag, workflowName, WorkflowId(capture(stateWorkflowId))) } just Runs
+    coEvery {
+        tagStateStorage.removeWorkflowId(
+            workflowTag,
+            workflowName,
+            WorkflowId(capture(stateWorkflowId))
+        )
+    } just Runs
 
     return tagStateStorage
 }

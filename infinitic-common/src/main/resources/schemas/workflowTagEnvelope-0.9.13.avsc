@@ -323,10 +323,10 @@
       } ]
     } ]
   }, {
-    "name" : "completeTimerByTag",
+    "name" : "completeTimersByTag",
     "type" : [ "null", {
       "type" : "record",
-      "name" : "CompleteTimerByTag",
+      "name" : "CompleteTimersByTag",
       "fields" : [ {
         "name" : "messageId",
         "type" : "string"

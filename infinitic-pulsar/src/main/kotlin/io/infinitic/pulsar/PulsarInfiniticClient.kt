@@ -28,6 +28,7 @@ package io.infinitic.pulsar
 import io.infinitic.clients.AbstractInfiniticClient
 import io.infinitic.clients.InfiniticClient
 import io.infinitic.common.data.ClientName
+import io.infinitic.exceptions.clients.ExceptionAtInitialization
 import io.infinitic.pulsar.config.ClientConfig
 import io.infinitic.transport.pulsar.PulsarStarter
 import io.infinitic.transport.pulsar.topics.ClientTopics
@@ -36,7 +37,6 @@ import kotlinx.coroutines.future.future
 import org.apache.pulsar.client.admin.PulsarAdmin
 import org.apache.pulsar.client.admin.PulsarAdminException
 import org.apache.pulsar.client.api.PulsarClient
-import org.apache.pulsar.client.api.PulsarClientException
 
 @Suppress("unused", "MemberVisibilityCanBePrivate")
 class PulsarInfiniticClient @JvmOverloads constructor(
@@ -75,6 +75,10 @@ class PulsarInfiniticClient @JvmOverloads constructor(
             logger.warn { "Not allowed to create topic $topicClient: ${e.message}" }
         } catch (e: PulsarAdminException.NotAuthorizedException) {
             logger.warn { "Not authorized to create topic $topicClient: ${e.message}" }
+        } catch (e: Exception) {
+            logger.warn(e) {}
+            close()
+            throw ExceptionAtInitialization
         }
 
         with(clientStarter) {
@@ -92,14 +96,21 @@ class PulsarInfiniticClient @JvmOverloads constructor(
         try {
             logger.debug { "Deleting topic $topicClient" }
             pulsarAdmin.topics().delete(topicClient, true)
-        } catch (e: PulsarClientException.TopicDoesNotExistException) {
-            // ignore
-        } catch (e: PulsarAdminException) {
-            logger.warn { "Error while deleting topic $topicClient: ${e.message}" }
+        } catch (e: Exception) {
+            logger.warn { "Error while deleting topic $topicClient: $e" }
         }
 
-        pulsarClient.close()
-        pulsarAdmin.close()
+        try {
+            pulsarClient.close()
+        } catch (e: Exception) {
+            logger.warn { "Error while closing Pulsar client: $e" }
+        }
+
+        try {
+            pulsarAdmin.close()
+        } catch (e: Exception) {
+            logger.warn { "Error while closing Pulsar admin: $e" }
+        }
     }
 
     companion object {
@@ -107,13 +118,14 @@ class PulsarInfiniticClient @JvmOverloads constructor(
          * Create PulsarInfiniticClient from a custom PulsarClient and a ClientConfig instance
          */
         @JvmStatic
-        fun from(pulsarClient: PulsarClient, pulsarAdmin: PulsarAdmin, clientConfig: ClientConfig) = PulsarInfiniticClient(
-            pulsarClient,
-            pulsarAdmin,
-            clientConfig.pulsar!!.tenant,
-            clientConfig.pulsar.namespace,
-            clientConfig.name
-        )
+        fun from(pulsarClient: PulsarClient, pulsarAdmin: PulsarAdmin, clientConfig: ClientConfig) =
+            PulsarInfiniticClient(
+                pulsarClient,
+                pulsarAdmin,
+                clientConfig.pulsar!!.tenant,
+                clientConfig.pulsar.namespace,
+                clientConfig.name
+            )
 
         /**
          * Create PulsarInfiniticClient from a ClientConfig instance

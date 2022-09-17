@@ -1027,7 +1027,7 @@
         } ]
       }, {
         "type" : "record",
-        "name" : "CompleteTimer",
+        "name" : "CompleteTimers",
         "fields" : [ {
           "name" : "messageId",
           "type" : "string"

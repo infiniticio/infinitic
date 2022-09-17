@@ -137,7 +137,7 @@ abstract class AbstractInfiniticClient : InfiniticClient {
         klass: Class<out T>,
         tags: Set<String>?,
         options: WorkflowOptions?,
-        meta: Map<String, ByteArray>?,
+        meta: Map<String, ByteArray>?
     ): T = NewWorkflowProxyHandler(
         klass = klass,
         workflowTags = tags?.map { WorkflowTag(it) }?.toSet() ?: setOf(),
@@ -172,7 +172,6 @@ abstract class AbstractInfiniticClient : InfiniticClient {
     /**
      * Await a workflow targeted by its id
      */
-    @Suppress("UNCHECKED_CAST")
     override fun await(
         stub: Any
     ): Any? = when (val handler = getProxyHandler(stub)) {
@@ -200,7 +199,6 @@ abstract class AbstractInfiniticClient : InfiniticClient {
     /**
      * Await a method from a running workflow targeted by its id and the methodRunId
      */
-    @Suppress("UNCHECKED_CAST")
     override fun await(
         stub: Any,
         methodRunId: String
@@ -229,7 +227,6 @@ abstract class AbstractInfiniticClient : InfiniticClient {
     /**
      * Cancel a workflow
      */
-    @Suppress("UNCHECKED_CAST")
     override fun cancelAsync(
         stub: Any
     ): CompletableFuture<Unit> = when (val handler = getProxyHandler(stub)) {
@@ -243,9 +240,8 @@ abstract class AbstractInfiniticClient : InfiniticClient {
     /**
      * Retry a workflow task
      */
-    @Suppress("UNCHECKED_CAST")
     override fun retryWorkflowTaskAsync(
-        stub: Any,
+        stub: Any
     ): CompletableFuture<Unit> = when (val handler = getProxyHandler(stub)) {
         is ExistingWorkflowProxyHandler ->
             dispatcher.retryWorkflowTaskAsync(handler.workflowName, handler.workflowId, handler.workflowTag)
@@ -259,7 +255,7 @@ abstract class AbstractInfiniticClient : InfiniticClient {
      */
     override fun retryTasksAsync(
         stub: Any,
-        taskId: String,
+        taskId: String
     ) = retryTasksAsync(stub, null, null, taskId)
 
     /**
@@ -268,18 +264,18 @@ abstract class AbstractInfiniticClient : InfiniticClient {
     override fun retryTasksAsync(
         stub: Any,
         taskStatus: DeferredStatus?,
-        taskClass: Class<*>?,
+        taskClass: Class<*>?
     ) = retryTasksAsync(stub, taskStatus, taskClass, null)
 
     /**
      * Complete timer within workflow(s)
      */
-    override fun completeTimerAsync(
+    override fun completeTimersAsync(
         stub: Any,
-        id: String?,
+        id: String?
     ): CompletableFuture<Unit> = when (val handler = getProxyHandler(stub)) {
         is ExistingWorkflowProxyHandler -> {
-            dispatcher.completeTimerAsync(
+            dispatcher.completeTimersAsync(
                 workflowName = handler.workflowName,
                 workflowId = handler.workflowId,
                 workflowTag = handler.workflowTag,
@@ -294,7 +290,6 @@ abstract class AbstractInfiniticClient : InfiniticClient {
     /**
      * get ids of a stub, associated to a specific tag
      */
-    @Suppress("UNCHECKED_CAST")
     override fun <T : Any> getIds(
         stub: T
     ): Set<String> = when (val handler = getProxyHandler(stub)) {
@@ -339,7 +334,7 @@ abstract class AbstractInfiniticClient : InfiniticClient {
         stub: Any,
         taskStatus: DeferredStatus?,
         taskClass: Class<*>?,
-        taskId: String?,
+        taskId: String?
     ): CompletableFuture<Unit> = when (val handler = getProxyHandler(stub)) {
         is ExistingWorkflowProxyHandler -> {
             val taskName = taskClass?.let {

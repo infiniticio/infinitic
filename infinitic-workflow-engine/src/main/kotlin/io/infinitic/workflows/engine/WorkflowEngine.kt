@@ -42,7 +42,7 @@ import io.infinitic.common.workflows.engine.messages.ChildMethodCanceled
 import io.infinitic.common.workflows.engine.messages.ChildMethodCompleted
 import io.infinitic.common.workflows.engine.messages.ChildMethodFailed
 import io.infinitic.common.workflows.engine.messages.ChildMethodUnknown
-import io.infinitic.common.workflows.engine.messages.CompleteTimer
+import io.infinitic.common.workflows.engine.messages.CompleteTimers
 import io.infinitic.common.workflows.engine.messages.CompleteWorkflow
 import io.infinitic.common.workflows.engine.messages.DispatchMethod
 import io.infinitic.common.workflows.engine.messages.DispatchWorkflow
@@ -268,7 +268,7 @@ class WorkflowEngine(
             is CancelWorkflow -> cancelWorkflow(output, state, message)
             is SendSignal -> sendSignal(output, state, message)
             is WaitWorkflow -> waitWorkflow(output, state, message)
-            is CompleteTimer -> completeTimer(state, message)
+            is CompleteTimers -> completeTimer(state, message)
             is CompleteWorkflow -> TODO()
             is RetryWorkflowTask -> retryWorkflowTask(output, state)
             is RetryTasks -> retryTasks(output, state, message)

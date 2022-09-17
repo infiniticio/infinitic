@@ -31,6 +31,7 @@ data class Policies(
     val retentionTimeInMinutes: Int = 60 * 24 * 7,
     val retentionSizeInMB: Int = 1024,
     val messageTTLInSeconds: Int = 3600 * 24 * 14,
+    val delayedTTLInSeconds: Int = 3600 * 24 * 366,
     val maxMessageSize: Int? = null,
     val delayedDeliveryTickTimeMillis: Long = 1000
 )

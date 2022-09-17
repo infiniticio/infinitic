@@ -66,7 +66,7 @@ abstract class InfiniticWorker(open val workerConfig: WorkerConfig) : Closeable 
     /**
      * Start worker synchronously
      */
-    abstract fun start()
+    fun start(): Unit = startAsync().join()
 
     /**
      * Start worker asynchronously

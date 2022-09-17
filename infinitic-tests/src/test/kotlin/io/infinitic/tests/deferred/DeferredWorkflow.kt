@@ -53,12 +53,17 @@ interface DeferredWorkflow {
 @Suppress("unused")
 class DeferredWorkflowImpl : Workflow(), DeferredWorkflow {
 
-    @Ignore private val self by lazy { getWorkflowById(DeferredWorkflow::class.java, context.id) }
+    @Ignore
+    private val self by lazy { getWorkflowById(DeferredWorkflow::class.java, context.id) }
 
     lateinit var deferred: Deferred<String>
 
-    private val utilTask = newTask(UtilTask::class.java, tags = setOf("foo", "bar"), meta = mapOf("foo" to "bar".toByteArray()))
-    private val workflowdeferred = newWorkflow(DeferredWorkflow::class.java)
+    private val utilTask = newTask(
+        klass = UtilTask::class.java,
+        tags = setOf("foo", "bar"),
+        meta = mapOf("foo" to "bar".toByteArray())
+    )
+    private val workflowDeferred = newWorkflow(DeferredWorkflow::class.java)
 
     private var p1 = ""
 
@@ -152,7 +157,6 @@ class DeferredWorkflowImpl : Workflow(), DeferredWorkflow {
     }
 
     override fun and2(): List<String> {
-
         val list: MutableList<Deferred<String>> = mutableListOf()
         list.add(dispatch(utilTask::reverse, "ab"))
         list.add(dispatch(utilTask::reverse, "cd"))
@@ -162,7 +166,6 @@ class DeferredWorkflowImpl : Workflow(), DeferredWorkflow {
     }
 
     override fun and3(): List<String> {
-
         val list: MutableList<Deferred<String>> = mutableListOf()
         for (i in 1..20) {
             list.add(dispatch(utilTask::reverse, "ab"))

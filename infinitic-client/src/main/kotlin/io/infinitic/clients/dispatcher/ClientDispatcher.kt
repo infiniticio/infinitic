@@ -71,7 +71,7 @@ interface ClientDispatcher : ProxyDispatcher {
         workflowTag: WorkflowTag?
     ): CompletableFuture<Unit>
 
-    fun completeTimerAsync(
+    fun completeTimersAsync(
         workflowName: WorkflowName,
         workflowId: WorkflowId?,
         workflowTag: WorkflowTag?,

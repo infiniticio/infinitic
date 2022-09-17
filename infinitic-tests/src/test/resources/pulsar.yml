@@ -90,4 +90,6 @@ workflows:
   - name: io.infinitic.tests.syntax.SyntaxWorkflow
     class: io.infinitic.tests.syntax.SyntaxWorkflowImpl
     concurrency: 5
-
+  - name: io.infinitic.tests.timers.TimerWorkflow
+    class: io.infinitic.tests.timers.TimerWorkflowImpl
+    concurrency: 5

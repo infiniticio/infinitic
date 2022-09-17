@@ -30,14 +30,14 @@ import io.infinitic.common.workflows.data.commands.StartDurationTimerPastCommand
 import io.infinitic.common.workflows.data.commands.StartInstantTimerPastCommand
 import io.infinitic.common.workflows.data.methodRuns.MethodRunId
 import io.infinitic.common.workflows.data.timers.TimerId
-import io.infinitic.common.workflows.engine.messages.CompleteTimer
+import io.infinitic.common.workflows.engine.messages.CompleteTimers
 import io.infinitic.common.workflows.engine.messages.TimerCompleted
 import io.infinitic.common.workflows.engine.state.WorkflowState
 import kotlinx.coroutines.CoroutineScope
 
 internal fun CoroutineScope.completeTimer(
     state: WorkflowState,
-    message: CompleteTimer
+    message: CompleteTimers
 ) {
     // get provided methodRunId or main per default
     val methodRunId = message.methodRunId ?: MethodRunId.from(message.workflowId)

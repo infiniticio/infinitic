@@ -30,7 +30,7 @@ import io.infinitic.workflows.SendChannel
 
 sealed class ClientUserException(
     msg: String,
-    help: String,
+    help: String
 ) : UserException("$msg.\n$help")
 
 class InvalidStubException(
@@ -63,7 +63,12 @@ object MultipleCustomIdException : ClientUserException(
     help = ""
 )
 
-class InvalidChannelUsageException() : ClientUserException(
+class InvalidChannelUsageException : ClientUserException(
     msg = "send method of channels can not be used directly",
     help = "Make sure to use the send(workflow, id) function"
+)
+
+object ExceptionAtInitialization : ClientUserException(
+    msg = "",
+    help = ""
 )
