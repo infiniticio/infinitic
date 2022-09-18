@@ -25,10 +25,10 @@
 
 package io.infinitic.storage
 
-import io.infinitic.common.storage.keySet.KeySetStorage
-import io.infinitic.common.storage.keyValue.KeyValueStorage
 import io.infinitic.storage.inMemory.InMemoryKeySetStorage
 import io.infinitic.storage.inMemory.InMemoryKeyValueStorage
+import io.infinitic.storage.keySet.KeySetStorage
+import io.infinitic.storage.keyValue.KeyValueStorage
 import io.infinitic.storage.mysql.MySQL
 import io.infinitic.storage.mysql.MySQLKeySetStorage
 import io.infinitic.storage.mysql.MySQLKeyValueStorage
@@ -36,7 +36,7 @@ import io.infinitic.storage.redis.Redis
 import io.infinitic.storage.redis.RedisKeySetStorage
 import io.infinitic.storage.redis.RedisKeyValueStorage
 
-@Suppress("EnumEntryName")
+@Suppress("EnumEntryName", "unused")
 enum class StateStorage : KeySet, KeyValue {
     inMemory {
         override fun keySet(config: StorageConfig) = InMemoryKeySetStorage()

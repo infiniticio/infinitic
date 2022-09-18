@@ -23,24 +23,33 @@
  * Licensor: infinitic.io
  */
 
-dependencies {
-    implementation(kotlin("reflect"))
-    implementation(Libs.Coroutines.core)
-    implementation(Libs.Coroutines.jdk8)
+package io.infinitic.storage.redis
 
-    implementation(project(":infinitic-client"))
-    implementation(project(":infinitic-common"))
-    implementation(project(":infinitic-storage"))
-    implementation(project(":infinitic-cache"))
-    implementation(project(":infinitic-transport"))
-    implementation(project(":infinitic-task-executor"))
-    implementation(project(":infinitic-task-tag"))
-    implementation(project(":infinitic-workflow-tag"))
-    implementation(project(":infinitic-workflow-engine"))
-    implementation(project(":infinitic-workflow-task"))
+import io.infinitic.storage.keySet.KeySetStorage
+import org.jetbrains.annotations.TestOnly
+import redis.clients.jedis.JedisPool
 
-    testImplementation(Libs.Hoplite.core)
-    testImplementation(Libs.Hoplite.yaml)
+class RedisKeySetStorage(
+    private val pool: JedisPool
+) : KeySetStorage {
+
+    companion object {
+        fun of(config: Redis) = RedisKeySetStorage(config.getPool())
+    }
+
+    override suspend fun get(key: String): Set<ByteArray> =
+        pool.resource.use { it.smembers(key.toByteArray()) }
+
+    override suspend fun add(key: String, value: ByteArray) {
+        pool.resource.use { it.sadd(key.toByteArray(), value) }
+    }
+
+    override suspend fun remove(key: String, value: ByteArray) {
+        pool.resource.use { it.srem(key.toByteArray(), value) }
+    }
+
+    @TestOnly
+    override fun flush() {
+        pool.resource.use { it.flushDB() }
+    }
 }
-
-apply("../publish.gradle.kts")

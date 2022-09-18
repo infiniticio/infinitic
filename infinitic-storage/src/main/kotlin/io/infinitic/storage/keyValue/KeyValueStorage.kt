@@ -23,24 +23,12 @@
  * Licensor: infinitic.io
  */
 
-dependencies {
-    implementation(kotlin("reflect"))
-    implementation(Libs.Coroutines.core)
-    implementation(Libs.Coroutines.jdk8)
+package io.infinitic.storage.keyValue
 
-    implementation(project(":infinitic-client"))
-    implementation(project(":infinitic-common"))
-    implementation(project(":infinitic-storage"))
-    implementation(project(":infinitic-cache"))
-    implementation(project(":infinitic-transport"))
-    implementation(project(":infinitic-task-executor"))
-    implementation(project(":infinitic-task-tag"))
-    implementation(project(":infinitic-workflow-tag"))
-    implementation(project(":infinitic-workflow-engine"))
-    implementation(project(":infinitic-workflow-task"))
+import io.infinitic.common.storage.Flushable
 
-    testImplementation(Libs.Hoplite.core)
-    testImplementation(Libs.Hoplite.yaml)
+interface KeyValueStorage : Flushable {
+    suspend fun get(key: String): ByteArray?
+    suspend fun put(key: String, value: ByteArray)
+    suspend fun del(key: String)
 }
-
-apply("../publish.gradle.kts")

@@ -25,11 +25,11 @@
 
 package io.infinitic.workflows.engine.storage
 
-import io.infinitic.common.storage.keyValue.KeyValueStorage
-import io.infinitic.common.storage.keyValue.WrappedKeyValueStorage
 import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.engine.state.WorkflowState
 import io.infinitic.common.workflows.engine.storage.WorkflowStateStorage
+import io.infinitic.storage.keyValue.KeyValueStorage
+import io.infinitic.storage.keyValue.WrappedKeyValueStorage
 import org.jetbrains.annotations.TestOnly
 
 /**
@@ -40,7 +40,7 @@ import org.jetbrains.annotations.TestOnly
  * Any exception thrown by the storage is wrapped into KeyValueStorageException
  */
 class BinaryWorkflowStateStorage(
-    storage: KeyValueStorage,
+    storage: KeyValueStorage
 ) : WorkflowStateStorage {
 
     // wrap any exception into KeyValueStorageException

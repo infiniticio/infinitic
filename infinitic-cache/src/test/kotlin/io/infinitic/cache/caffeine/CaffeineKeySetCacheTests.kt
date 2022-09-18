@@ -30,7 +30,7 @@ import io.kotest.matchers.shouldBe
 
 class CaffeineKeySetCacheTests : StringSpec({
 
-    val storage = CaffeineKeySetCache(Caffeine())
+    val storage = CaffeineCachedKeySet(Caffeine())
 
     beforeTest {
         storage.set("key", setOf("foo".toByteArray(), "bar".toByteArray()))

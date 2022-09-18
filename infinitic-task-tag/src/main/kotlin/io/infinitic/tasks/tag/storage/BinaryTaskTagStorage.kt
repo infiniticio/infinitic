@@ -26,14 +26,14 @@
 package io.infinitic.tasks.tag.storage
 
 import io.infinitic.common.data.MessageId
-import io.infinitic.common.storage.keySet.KeySetStorage
-import io.infinitic.common.storage.keySet.WrappedKeySetStorage
-import io.infinitic.common.storage.keyValue.KeyValueStorage
-import io.infinitic.common.storage.keyValue.WrappedKeyValueStorage
 import io.infinitic.common.tasks.data.TaskId
 import io.infinitic.common.tasks.data.TaskName
 import io.infinitic.common.tasks.data.TaskTag
 import io.infinitic.common.tasks.tags.storage.TaskTagStorage
+import io.infinitic.storage.keySet.KeySetStorage
+import io.infinitic.storage.keySet.WrappedKeySetStorage
+import io.infinitic.storage.keyValue.KeyValueStorage
+import io.infinitic.storage.keyValue.WrappedKeyValueStorage
 import org.jetbrains.annotations.TestOnly
 
 /**

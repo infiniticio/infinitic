@@ -23,24 +23,29 @@
  * Licensor: infinitic.io
  */
 
-dependencies {
-    implementation(kotlin("reflect"))
-    implementation(Libs.Coroutines.core)
-    implementation(Libs.Coroutines.jdk8)
+package io.infinitic.cache.caffeine
 
-    implementation(project(":infinitic-client"))
-    implementation(project(":infinitic-common"))
-    implementation(project(":infinitic-storage"))
-    implementation(project(":infinitic-cache"))
-    implementation(project(":infinitic-transport"))
-    implementation(project(":infinitic-task-executor"))
-    implementation(project(":infinitic-task-tag"))
-    implementation(project(":infinitic-workflow-tag"))
-    implementation(project(":infinitic-workflow-engine"))
-    implementation(project(":infinitic-workflow-task"))
+import com.github.benmanes.caffeine.cache.Cache
+import com.github.benmanes.caffeine.cache.Caffeine
+import io.infinitic.cache.Flushable
+import io.infinitic.cache.keyValue.CachedKeyValue
+import io.infinitic.cache.caffeine.Caffeine as CaffeineConfig
 
-    testImplementation(Libs.Hoplite.core)
-    testImplementation(Libs.Hoplite.yaml)
+class CaffeineCachedKeyValue<S>(config: CaffeineConfig) : CachedKeyValue<S>, Flushable {
+    private var caffeine: Cache<String, S> =
+        Caffeine.newBuilder().setup(config).build()
+
+    override fun delValue(key: String) {
+        caffeine.invalidate(key)
+    }
+
+    override fun putValue(key: String, value: S) {
+        caffeine.put(key, value!!)
+    }
+
+    override fun getValue(key: String): S? = caffeine.getIfPresent(key)
+
+    override fun flush() {
+        caffeine.invalidateAll()
+    }
 }
-
-apply("../publish.gradle.kts")

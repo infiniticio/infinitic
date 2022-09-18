@@ -23,24 +23,39 @@
  * Licensor: infinitic.io
  */
 
-dependencies {
-    implementation(kotlin("reflect"))
-    implementation(Libs.Coroutines.core)
-    implementation(Libs.Coroutines.jdk8)
+package io.infinitic.storage.inMemory
 
-    implementation(project(":infinitic-client"))
-    implementation(project(":infinitic-common"))
-    implementation(project(":infinitic-storage"))
-    implementation(project(":infinitic-cache"))
-    implementation(project(":infinitic-transport"))
-    implementation(project(":infinitic-task-executor"))
-    implementation(project(":infinitic-task-tag"))
-    implementation(project(":infinitic-workflow-tag"))
-    implementation(project(":infinitic-workflow-engine"))
-    implementation(project(":infinitic-workflow-task"))
+import io.infinitic.common.data.Bytes
+import io.infinitic.storage.keySet.KeySetStorage
 
-    testImplementation(Libs.Hoplite.core)
-    testImplementation(Libs.Hoplite.yaml)
+class InMemoryKeySetStorage : KeySetStorage {
+    val storage = mutableMapOf<String, MutableSet<Bytes>>()
+
+    override suspend fun get(key: String): Set<ByteArray> {
+        return getBytesPerKey(key).map { it.content }.toSet()
+    }
+
+    override suspend fun add(key: String, value: ByteArray) {
+        getBytesPerKey(key).add(Bytes(value))
+    }
+
+    override suspend fun remove(key: String, value: ByteArray) {
+        getBytesPerKey(key).remove(Bytes(value))
+
+        // clean key if now empty
+        if (getBytesPerKey(key).isEmpty()) storage.remove(key)
+    }
+
+    override fun flush() {
+        storage.clear()
+    }
+
+    private fun getBytesPerKey(key: String): MutableSet<Bytes> {
+        return storage[key]
+            ?: run {
+                val set = mutableSetOf<Bytes>()
+                storage[key] = set
+                set
+            }
+    }
 }
-
-apply("../publish.gradle.kts")

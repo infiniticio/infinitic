@@ -23,24 +23,36 @@
  * Licensor: infinitic.io
  */
 
-dependencies {
-    implementation(kotlin("reflect"))
-    implementation(Libs.Coroutines.core)
-    implementation(Libs.Coroutines.jdk8)
+package io.infinitic.storage.keySet
 
-    implementation(project(":infinitic-client"))
-    implementation(project(":infinitic-common"))
-    implementation(project(":infinitic-storage"))
-    implementation(project(":infinitic-cache"))
-    implementation(project(":infinitic-transport"))
-    implementation(project(":infinitic-task-executor"))
-    implementation(project(":infinitic-task-tag"))
-    implementation(project(":infinitic-workflow-tag"))
-    implementation(project(":infinitic-workflow-engine"))
-    implementation(project(":infinitic-workflow-task"))
+import org.jetbrains.annotations.TestOnly
 
-    testImplementation(Libs.Hoplite.core)
-    testImplementation(Libs.Hoplite.yaml)
+class WrappedKeySetStorage(
+    val storage: KeySetStorage
+) : KeySetStorage {
+
+    override suspend fun get(key: String) = try {
+        storage.get(key)
+    } catch (e: Throwable) {
+        throw KeySetStorageException(e)
+    }
+
+    override suspend fun add(key: String, value: ByteArray) = try {
+        storage.add(key, value)
+    } catch (e: Throwable) {
+        throw KeySetStorageException(e)
+    }
+
+    override suspend fun remove(key: String, value: ByteArray) = try {
+        storage.remove(key, value)
+    } catch (e: Throwable) {
+        throw KeySetStorageException(e)
+    }
+
+    @TestOnly
+    override fun flush() = try {
+        storage.flush()
+    } catch (e: Throwable) {
+        throw KeySetStorageException(e)
+    }
 }
-
-apply("../publish.gradle.kts")

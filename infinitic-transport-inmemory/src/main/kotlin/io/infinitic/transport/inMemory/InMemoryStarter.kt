@@ -80,7 +80,11 @@ class InMemoryStarter(private val scope: CoroutineScope, name: String) : ClientS
     private val workflowEngineChannels = ConcurrentHashMap<WorkflowName, Channel<WorkflowEngineMessage>>()
     private val workflowTaskExecutorChannels = ConcurrentHashMap<WorkflowName, Channel<TaskExecutorMessage>>()
 
-    override fun CoroutineScope.startWorkflowTag(workflowName: WorkflowName, workflowTagStorage: WorkflowTagStorage, concurrency: Int) {
+    override fun CoroutineScope.startWorkflowTag(
+        workflowName: WorkflowName,
+        workflowTagStorage: WorkflowTagStorage,
+        concurrency: Int
+    ) {
         val workflowTagEngine = WorkflowTagEngine(
             clientName,
             workflowTagStorage,

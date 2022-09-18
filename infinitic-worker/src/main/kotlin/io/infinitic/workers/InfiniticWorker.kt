@@ -26,8 +26,6 @@
 package io.infinitic.workers
 
 import io.infinitic.common.clients.ClientFactory
-import io.infinitic.common.storage.keySet.CachedKeySetStorage
-import io.infinitic.common.storage.keyValue.CachedKeyValueStorage
 import io.infinitic.common.tasks.data.TaskName
 import io.infinitic.common.tasks.tags.storage.TaskTagStorage
 import io.infinitic.common.workers.WorkerStarter
@@ -38,6 +36,8 @@ import io.infinitic.common.workflows.tags.storage.WorkflowTagStorage
 import io.infinitic.tasks.executor.register.WorkerRegisterImpl
 import io.infinitic.tasks.tag.storage.BinaryTaskTagStorage
 import io.infinitic.workers.config.WorkerConfig
+import io.infinitic.workers.storage.CachedKeySetStorage
+import io.infinitic.workers.storage.CachedKeyValueStorage
 import io.infinitic.workflows.engine.storage.BinaryWorkflowStateStorage
 import io.infinitic.workflows.tag.storage.BinaryWorkflowTagStorage
 import io.infinitic.workflows.workflowTask.WorkflowTaskImpl
@@ -142,7 +142,7 @@ abstract class InfiniticWorker(open val workerConfig: WorkerConfig) : Closeable 
             }
         }
     }
-    
+
     /**
      * Start worker asynchronously on provided scope
      */

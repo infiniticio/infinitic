@@ -23,24 +23,30 @@
  * Licensor: infinitic.io
  */
 
-dependencies {
-    implementation(kotlin("reflect"))
-    implementation(Libs.Coroutines.core)
-    implementation(Libs.Coroutines.jdk8)
+package io.infinitic.storage.inMemory
 
-    implementation(project(":infinitic-client"))
-    implementation(project(":infinitic-common"))
-    implementation(project(":infinitic-storage"))
-    implementation(project(":infinitic-cache"))
-    implementation(project(":infinitic-transport"))
-    implementation(project(":infinitic-task-executor"))
-    implementation(project(":infinitic-task-tag"))
-    implementation(project(":infinitic-workflow-tag"))
-    implementation(project(":infinitic-workflow-engine"))
-    implementation(project(":infinitic-workflow-task"))
+import io.infinitic.common.storage.Flushable
+import io.infinitic.storage.keyValue.KeyValueStorage
+import org.jetbrains.annotations.TestOnly
+import java.util.concurrent.ConcurrentHashMap
 
-    testImplementation(Libs.Hoplite.core)
-    testImplementation(Libs.Hoplite.yaml)
+class InMemoryKeyValueStorage : KeyValueStorage, Flushable {
+    private val stateStorage = ConcurrentHashMap<String, ByteArray>()
+
+    override suspend fun get(key: String): ByteArray? {
+        return stateStorage[key]
+    }
+
+    override suspend fun put(key: String, value: ByteArray) {
+        stateStorage[key] = value
+    }
+
+    override suspend fun del(key: String) {
+        stateStorage.remove(key)
+    }
+
+    @TestOnly
+    override fun flush() {
+        stateStorage.clear()
+    }
 }
-
-apply("../publish.gradle.kts")

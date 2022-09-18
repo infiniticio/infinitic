@@ -23,24 +23,31 @@
  * Licensor: infinitic.io
  */
 
-dependencies {
-    implementation(kotlin("reflect"))
-    implementation(Libs.Coroutines.core)
-    implementation(Libs.Coroutines.jdk8)
+package io.infinitic.cache.none
 
-    implementation(project(":infinitic-client"))
-    implementation(project(":infinitic-common"))
-    implementation(project(":infinitic-storage"))
-    implementation(project(":infinitic-cache"))
-    implementation(project(":infinitic-transport"))
-    implementation(project(":infinitic-task-executor"))
-    implementation(project(":infinitic-task-tag"))
-    implementation(project(":infinitic-workflow-tag"))
-    implementation(project(":infinitic-workflow-engine"))
-    implementation(project(":infinitic-workflow-task"))
+import io.infinitic.cache.keySet.CachedKeySet
+import org.jetbrains.annotations.TestOnly
 
-    testImplementation(Libs.Hoplite.core)
-    testImplementation(Libs.Hoplite.yaml)
+class NoCachedKeySet<T> : CachedKeySet<T> {
+
+    override fun get(key: String): Set<T>? {
+        return null
+    }
+
+    override fun set(key: String, value: Set<T>) {
+        // nothing
+    }
+
+    override fun add(key: String, value: T) {
+        // nothing
+    }
+
+    override fun remove(key: String, value: T) {
+        // nothing
+    }
+
+    @TestOnly
+    override fun flush() {
+        // nothing
+    }
 }
-
-apply("../publish.gradle.kts")

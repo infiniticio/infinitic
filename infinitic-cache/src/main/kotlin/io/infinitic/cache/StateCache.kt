@@ -26,22 +26,22 @@
 package io.infinitic.cache
 
 import io.infinitic.cache.caffeine.Caffeine
-import io.infinitic.cache.caffeine.CaffeineKeySetCache
-import io.infinitic.cache.caffeine.CaffeineKeyValueCache
-import io.infinitic.cache.none.NoKeySetCache
-import io.infinitic.cache.none.NoKeyValueCache
-import io.infinitic.common.storage.keySet.KeySetCache
-import io.infinitic.common.storage.keyValue.KeyValueCache
+import io.infinitic.cache.caffeine.CaffeineCachedKeySet
+import io.infinitic.cache.caffeine.CaffeineCachedKeyValue
+import io.infinitic.cache.keySet.CachedKeySet
+import io.infinitic.cache.keyValue.CachedKeyValue
+import io.infinitic.cache.none.NoCachedKeySet
+import io.infinitic.cache.none.NoCachedKeyValue
 
 @Suppress("EnumEntryName")
 enum class StateCache : KeySet, KeyValue {
     none {
-        override fun keySet(config: CacheConfig) = NoKeySetCache<ByteArray>()
-        override fun keyValue(config: CacheConfig) = NoKeyValueCache<ByteArray>()
+        override fun keySet(config: CacheConfig) = NoCachedKeySet<ByteArray>()
+        override fun keyValue(config: CacheConfig) = NoCachedKeyValue<ByteArray>()
     },
     caffeine {
-        override fun keySet(config: CacheConfig) = CaffeineKeySetCache(caffeineConfig(config))
-        override fun keyValue(config: CacheConfig) = CaffeineKeyValueCache<ByteArray>(caffeineConfig(config))
+        override fun keySet(config: CacheConfig) = CaffeineCachedKeySet(caffeineConfig(config))
+        override fun keyValue(config: CacheConfig) = CaffeineCachedKeyValue<ByteArray>(caffeineConfig(config))
 
         /**
          * Default Caffeine configuration
@@ -54,9 +54,9 @@ enum class StateCache : KeySet, KeyValue {
 }
 
 private interface KeySet {
-    fun keySet(config: CacheConfig): KeySetCache<ByteArray>
+    fun keySet(config: CacheConfig): CachedKeySet<ByteArray>
 }
 
 private interface KeyValue {
-    fun keyValue(config: CacheConfig): KeyValueCache<ByteArray>
+    fun keyValue(config: CacheConfig): CachedKeyValue<ByteArray>
 }

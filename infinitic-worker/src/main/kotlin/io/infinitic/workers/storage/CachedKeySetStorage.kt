@@ -23,24 +23,39 @@
  * Licensor: infinitic.io
  */
 
-dependencies {
-    implementation(kotlin("reflect"))
-    implementation(Libs.Coroutines.core)
-    implementation(Libs.Coroutines.jdk8)
+package io.infinitic.workers.storage
 
-    implementation(project(":infinitic-client"))
-    implementation(project(":infinitic-common"))
-    implementation(project(":infinitic-storage"))
-    implementation(project(":infinitic-cache"))
-    implementation(project(":infinitic-transport"))
-    implementation(project(":infinitic-task-executor"))
-    implementation(project(":infinitic-task-tag"))
-    implementation(project(":infinitic-workflow-tag"))
-    implementation(project(":infinitic-workflow-engine"))
-    implementation(project(":infinitic-workflow-task"))
+import io.infinitic.cache.keySet.CachedKeySet
+import io.infinitic.storage.keySet.KeySetStorage
+import mu.KotlinLogging
+import org.jetbrains.annotations.TestOnly
 
-    testImplementation(Libs.Hoplite.core)
-    testImplementation(Libs.Hoplite.yaml)
+class CachedKeySetStorage(
+    private val cache: CachedKeySet<ByteArray>,
+    private val storage: KeySetStorage
+) : KeySetStorage {
+
+    private val logger = KotlinLogging.logger {}
+
+    override suspend fun get(key: String): Set<ByteArray> = cache.get(key)
+        ?: run {
+            logger.debug { "key $key - getSet - absent from cache, get from storage" }
+            storage.get(key).also { cache.set(key, it) }
+        }
+
+    override suspend fun add(key: String, value: ByteArray) {
+        storage.add(key, value)
+        cache.add(key, value)
+    }
+
+    override suspend fun remove(key: String, value: ByteArray) {
+        cache.remove(key, value)
+        storage.remove(key, value)
+    }
+
+    @TestOnly
+    override fun flush() {
+        storage.flush()
+        cache.flush()
+    }
 }
-
-apply("../publish.gradle.kts")

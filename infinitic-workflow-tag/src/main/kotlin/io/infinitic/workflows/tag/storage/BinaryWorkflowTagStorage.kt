@@ -25,14 +25,14 @@
 
 package io.infinitic.workflows.tag.storage
 
-import io.infinitic.common.storage.keySet.KeySetStorage
-import io.infinitic.common.storage.keySet.WrappedKeySetStorage
-import io.infinitic.common.storage.keyValue.KeyValueStorage
-import io.infinitic.common.storage.keyValue.WrappedKeyValueStorage
 import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.data.workflows.WorkflowName
 import io.infinitic.common.workflows.data.workflows.WorkflowTag
 import io.infinitic.common.workflows.tags.storage.WorkflowTagStorage
+import io.infinitic.storage.keySet.KeySetStorage
+import io.infinitic.storage.keySet.WrappedKeySetStorage
+import io.infinitic.storage.keyValue.KeyValueStorage
+import io.infinitic.storage.keyValue.WrappedKeyValueStorage
 import org.jetbrains.annotations.TestOnly
 
 /**
@@ -45,7 +45,7 @@ import org.jetbrains.annotations.TestOnly
  */
 class BinaryWorkflowTagStorage(
     keyValueStorage: KeyValueStorage,
-    keySetStorage: KeySetStorage,
+    keySetStorage: KeySetStorage
 ) : WorkflowTagStorage {
 
     private val keyValueStorage = WrappedKeyValueStorage(keyValueStorage)
