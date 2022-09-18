@@ -36,14 +36,34 @@ typealias WorkflowFactory = () -> Workflow
 interface WorkerRegister {
 
     /**
-     * Register a task factory
+     * Get set of task names
+     */
+    fun getTaskNames(): Set<String>
+
+    /**
+     * Get set of workflow names
+     */
+    fun getWorkflowNames(): Set<String>
+
+    /**
+     * Register task
      */
     fun registerTask(name: String, factory: TaskFactory)
 
     /**
-     * Register a workflow factory
+     * Register task tag engine
+     */
+//    fun registerTaskTag(name: String, instances: Int, storage: TaskTagStorage)
+
+    /**
+     * Register workflow
      */
     fun registerWorkflow(name: String, factory: WorkflowFactory)
+
+    /**
+     * Register workflow tag engine
+     */
+//    fun registerWorkflowTag(name: String, instances: Int, storage: StateStorage, cache: StateCache)
 
     /**
      * Unregister a given name

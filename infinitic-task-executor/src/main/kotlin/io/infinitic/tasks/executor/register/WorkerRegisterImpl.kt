@@ -35,31 +35,36 @@ import org.jetbrains.annotations.TestOnly
 
 class WorkerRegisterImpl : WorkerRegister {
     // map task name <> task factory
-    private val registeredTasks = mutableMapOf<String, TaskFactory>()
+    private val tasks = mutableMapOf<String, TaskFactory>()
+
     // map workflow name <> workflow factory
-    private val registeredWorkflows = mutableMapOf<String, WorkflowFactory>()
+    private val workflows = mutableMapOf<String, WorkflowFactory>()
+
+    override fun getTaskNames() = tasks.keys
+
+    override fun getWorkflowNames() = workflows.keys
 
     override fun registerTask(name: String, factory: () -> Task) {
-        registeredTasks[name] = factory
+        tasks[name] = factory
     }
 
     override fun registerWorkflow(name: String, factory: () -> Workflow) {
-        registeredWorkflows[name] = factory
+        workflows[name] = factory
     }
 
     @TestOnly
     override fun unregisterTask(name: String) {
-        registeredTasks.remove(name)
+        tasks.remove(name)
     }
 
     @TestOnly
     override fun unregisterWorkflow(name: String) {
-        registeredWorkflows.remove(name)
+        workflows.remove(name)
     }
 
     override fun getTaskInstance(name: String): Task =
-        registeredTasks[name]?.let { it() } ?: throw ClassNotFoundException(name)
+        tasks[name]?.let { it() } ?: throw ClassNotFoundException(name)
 
     override fun getWorkflowInstance(name: String): Workflow =
-        registeredWorkflows[name]?.let { it() } ?: throw ClassNotFoundException(name)
+        workflows[name]?.let { it() } ?: throw ClassNotFoundException(name)
 }

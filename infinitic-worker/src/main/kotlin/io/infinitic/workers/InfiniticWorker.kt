@@ -83,6 +83,66 @@ abstract class InfiniticWorker(open val workerConfig: WorkerConfig) : Closeable 
         workflowTagStorages.forEach { it.value.flush() }
     }
 
+    fun registerFromConfig(workerConfig: WorkerConfig) {
+        // register WorkflowTasks
+        workerRegister.registerTask(WorkflowTask::class.java.name) { WorkflowTaskImpl() }
+
+        for (workflow in workerConfig.workflows) {
+            val workflowName = WorkflowName(workflow.name)
+
+            // starting task executors running workflows tasks
+            workflow.`class`?.let {
+                workerRegister.registerWorkflow(workflow.name) { workflow.instance }
+            }
+
+            workflow.workflowTag?.let {
+                workflowTagStorages[workflowName] = BinaryWorkflowTagStorage(
+                    CachedKeyValueStorage(
+                        it.stateCache!!.keyValue(workerConfig),
+                        it.stateStorage!!.keyValue(workerConfig)
+                    ),
+                    CachedKeySetStorage(
+                        it.stateCache!!.keySet(workerConfig),
+                        it.stateStorage!!.keySet(workerConfig)
+                    )
+                )
+            }
+
+            // workflow
+            workflow.workflowEngine?.let {
+                workflowStateStorages[workflowName] = BinaryWorkflowStateStorage(
+                    CachedKeyValueStorage(
+                        it.stateCache!!.keyValue(workerConfig),
+                        it.stateStorage!!.keyValue(workerConfig)
+                    )
+                )
+            }
+        }
+
+        for (task in workerConfig.tasks) {
+            val taskName = TaskName(task.name)
+
+            // starting task executors running tasks
+            task.`class`?.let {
+                workerRegister.registerTask(task.name) { task.instance }
+            }
+
+            // starting engines managing tags of taskws
+            task.taskTag?.let {
+                taskTagStorages[taskName] = BinaryTaskTagStorage(
+                    CachedKeyValueStorage(
+                        it.stateCache!!.keyValue(workerConfig),
+                        it.stateStorage!!.keyValue(workerConfig)
+                    ),
+                    CachedKeySetStorage(
+                        it.stateCache!!.keySet(workerConfig),
+                        it.stateStorage!!.keySet(workerConfig)
+                    )
+                )
+            }
+        }
+    }
+    
     /**
      * Start worker asynchronously on provided scope
      */

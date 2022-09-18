@@ -26,32 +26,22 @@
 package io.infinitic.cache
 
 import io.infinitic.cache.caffeine.Caffeine
-import io.infinitic.cache.caffeine.CaffeineKeyCounterCache
-import io.infinitic.cache.caffeine.CaffeineKeyMapCache
 import io.infinitic.cache.caffeine.CaffeineKeySetCache
 import io.infinitic.cache.caffeine.CaffeineKeyValueCache
-import io.infinitic.cache.none.NoKeyCounterCache
-import io.infinitic.cache.none.NoKeyMapCache
 import io.infinitic.cache.none.NoKeySetCache
 import io.infinitic.cache.none.NoKeyValueCache
-import io.infinitic.common.storage.keyCounter.KeyCounterCache
-import io.infinitic.common.storage.keyMap.KeyMapCache
 import io.infinitic.common.storage.keySet.KeySetCache
 import io.infinitic.common.storage.keyValue.KeyValueCache
 
 @Suppress("EnumEntryName")
-enum class StateCache : KeyCounter, KeySet, KeyValue, KeyMap {
+enum class StateCache : KeySet, KeyValue {
     none {
-        override fun keyCounter(config: CacheConfig) = NoKeyCounterCache<Long>()
         override fun keySet(config: CacheConfig) = NoKeySetCache<ByteArray>()
         override fun keyValue(config: CacheConfig) = NoKeyValueCache<ByteArray>()
-        override fun keyMap(config: CacheConfig) = NoKeyMapCache<ByteArray>()
     },
     caffeine {
-        override fun keyCounter(config: CacheConfig) = CaffeineKeyCounterCache(caffeineConfig(config))
         override fun keySet(config: CacheConfig) = CaffeineKeySetCache(caffeineConfig(config))
         override fun keyValue(config: CacheConfig) = CaffeineKeyValueCache<ByteArray>(caffeineConfig(config))
-        override fun keyMap(config: CacheConfig) = CaffeineKeyMapCache(caffeineConfig(config))
 
         /**
          * Default Caffeine configuration
@@ -63,18 +53,10 @@ enum class StateCache : KeyCounter, KeySet, KeyValue, KeyMap {
     }
 }
 
-private interface KeyCounter {
-    fun keyCounter(config: CacheConfig): KeyCounterCache
-}
-
 private interface KeySet {
     fun keySet(config: CacheConfig): KeySetCache<ByteArray>
 }
 
 private interface KeyValue {
     fun keyValue(config: CacheConfig): KeyValueCache<ByteArray>
-}
-
-private interface KeyMap {
-    fun keyMap(config: CacheConfig): KeyMapCache<ByteArray>
 }

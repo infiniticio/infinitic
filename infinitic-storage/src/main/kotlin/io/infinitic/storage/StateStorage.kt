@@ -25,46 +25,35 @@
 
 package io.infinitic.storage
 
-import io.infinitic.common.storage.keyCounter.KeyCounterStorage
 import io.infinitic.common.storage.keySet.KeySetStorage
 import io.infinitic.common.storage.keyValue.KeyValueStorage
-import io.infinitic.storage.inMemory.InMemoryKeyCounterStorage
 import io.infinitic.storage.inMemory.InMemoryKeySetStorage
 import io.infinitic.storage.inMemory.InMemoryKeyValueStorage
 import io.infinitic.storage.mysql.MySQL
-import io.infinitic.storage.mysql.MySQLKeyCounterStorage
 import io.infinitic.storage.mysql.MySQLKeySetStorage
 import io.infinitic.storage.mysql.MySQLKeyValueStorage
 import io.infinitic.storage.redis.Redis
-import io.infinitic.storage.redis.RedisKeyCounterStorage
 import io.infinitic.storage.redis.RedisKeySetStorage
 import io.infinitic.storage.redis.RedisKeyValueStorage
 
 @Suppress("EnumEntryName")
-enum class StateStorage : KeyCounter, KeySet, KeyValue {
+enum class StateStorage : KeySet, KeyValue {
     inMemory {
-        override fun keyCounter(config: StorageConfig) = InMemoryKeyCounterStorage()
         override fun keySet(config: StorageConfig) = InMemoryKeySetStorage()
         override fun keyValue(config: StorageConfig) = InMemoryKeyValueStorage()
     },
     redis {
-        override fun keyCounter(config: StorageConfig) = RedisKeyCounterStorage.of(redisConfig(config))
         override fun keySet(config: StorageConfig) = RedisKeySetStorage.of(redisConfig(config))
         override fun keyValue(config: StorageConfig) = RedisKeyValueStorage.of(redisConfig(config))
 
         private fun redisConfig(config: StorageConfig) = config.redis ?: Redis()
     },
     mysql {
-        override fun keyCounter(config: StorageConfig) = MySQLKeyCounterStorage.of(mysqlConfig(config))
         override fun keySet(config: StorageConfig) = MySQLKeySetStorage.of(mysqlConfig(config))
         override fun keyValue(config: StorageConfig) = MySQLKeyValueStorage.of(mysqlConfig(config))
 
         private fun mysqlConfig(config: StorageConfig) = config.mysql ?: MySQL()
     }
-}
-
-private interface KeyCounter {
-    fun keyCounter(config: StorageConfig): KeyCounterStorage
 }
 
 private interface KeySet {
