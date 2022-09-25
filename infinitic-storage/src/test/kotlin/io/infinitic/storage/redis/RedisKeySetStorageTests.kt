@@ -25,6 +25,7 @@
 
 package io.infinitic.storage.redis
 
+import io.infinitic.storage.Bytes
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
 import redis.embedded.RedisServer
@@ -48,8 +49,7 @@ class RedisKeySetStorageTests : StringSpec({
     }
 
     fun equalsTo(set1: Set<ByteArray>, set2: Set<ByteArray>) =
-        (set1.size == set2.size) &&
-            set1.mapIndexed { index, bytes -> bytes.contentEquals(set2.elementAt(index)) }.all { it }
+        set1.map { Bytes(it) }.toSet() == set2.map { Bytes(it) }.toSet()
 
     "get should return an empty set on unknown key" {
         storage.get("unknown") shouldBe setOf<ByteArray>()
