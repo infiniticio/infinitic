@@ -53,30 +53,34 @@ internal class TimerWorkflowTests : StringSpec({
     }
 
     "Wait for a duration timer" {
+        val start = Instant.now().toEpochMilli()
+
         val deferred = client.dispatch(timerWorkflow::await, 200L)
 
-        val start = Instant.now().toEpochMilli()
         (deferred.await().toEpochMilli() - start) shouldBeLessThan (2000L)
     }
 
     "Wait for a long duration timer" {
+        val start = Instant.now().toEpochMilli()
+
         val deferred = client.dispatch(timerWorkflow::await, 2000L)
 
-        val start = Instant.now().toEpochMilli()
         (deferred.await().toEpochMilli() - start) shouldBeGreaterThan (2000L)
     }
 
     "Wait for a instant timer" {
+        val start = Instant.now().toEpochMilli()
+
         val deferred = client.dispatch(timerWorkflow::await, Instant.now().plusMillis(200))
 
-        val start = Instant.now().toEpochMilli()
         (deferred.await().toEpochMilli() - start) shouldBeLessThan (2000L)
     }
 
     "Wait for a long instant timer" {
+        val start = Instant.now().toEpochMilli()
+
         val deferred = client.dispatch(timerWorkflow::await, Instant.now().plusMillis(2000))
 
-        val start = Instant.now().toEpochMilli()
         (deferred.await().toEpochMilli() - start) shouldBeGreaterThan (2000L)
     }
 
