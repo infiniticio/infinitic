@@ -27,9 +27,9 @@ package io.infinitic.cache.caffeine
 
 import com.github.benmanes.caffeine.cache.Cache
 import com.github.benmanes.caffeine.cache.Caffeine
+import io.infinitic.cache.Bytes
 import io.infinitic.cache.Flushable
 import io.infinitic.cache.keySet.CachedKeySet
-import io.infinitic.common.data.Bytes
 import org.jetbrains.annotations.TestOnly
 import io.infinitic.cache.caffeine.Caffeine as CaffeineConfig
 

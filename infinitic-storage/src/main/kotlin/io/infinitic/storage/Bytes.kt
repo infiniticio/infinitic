@@ -23,7 +23,7 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.common.data
+package io.infinitic.storage
 
 class Bytes(val content: ByteArray) {
     override fun equals(other: Any?): Boolean {

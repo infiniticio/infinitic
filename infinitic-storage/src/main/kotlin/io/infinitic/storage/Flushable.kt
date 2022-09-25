@@ -23,8 +23,11 @@
  * Licensor: infinitic.io
  */
 
-dependencies {
-    implementation(Libs.Caffeine.caffeine)
-}
+package io.infinitic.storage
 
-apply("../publish.gradle.kts")
+import org.jetbrains.annotations.TestOnly
+
+interface Flushable {
+    @TestOnly
+    fun flush()
+}

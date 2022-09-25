@@ -23,8 +23,21 @@
  * Licensor: infinitic.io
  */
 
-dependencies {
-    implementation(Libs.Caffeine.caffeine)
-}
+package io.infinitic.cache
 
-apply("../publish.gradle.kts")
+class Bytes(val content: ByteArray) {
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (javaClass != other?.javaClass) return false
+
+        other as Bytes
+
+        if (!content.contentEquals(other.content)) return false
+
+        return true
+    }
+
+    override fun hashCode(): Int {
+        return content.contentHashCode()
+    }
+}

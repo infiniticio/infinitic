@@ -25,7 +25,7 @@
 
 package io.infinitic.storage.inMemory
 
-import io.infinitic.common.storage.Flushable
+import io.infinitic.storage.Flushable
 import io.infinitic.storage.keyValue.KeyValueStorage
 import org.jetbrains.annotations.TestOnly
 import java.util.concurrent.ConcurrentHashMap

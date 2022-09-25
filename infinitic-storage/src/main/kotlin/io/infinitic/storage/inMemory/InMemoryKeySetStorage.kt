@@ -25,8 +25,9 @@
 
 package io.infinitic.storage.inMemory
 
-import io.infinitic.common.data.Bytes
+import io.infinitic.storage.Bytes
 import io.infinitic.storage.keySet.KeySetStorage
+import org.jetbrains.annotations.TestOnly
 
 class InMemoryKeySetStorage : KeySetStorage {
     val storage = mutableMapOf<String, MutableSet<Bytes>>()
@@ -46,6 +47,7 @@ class InMemoryKeySetStorage : KeySetStorage {
         if (getBytesPerKey(key).isEmpty()) storage.remove(key)
     }
 
+    @TestOnly
     override fun flush() {
         storage.clear()
     }

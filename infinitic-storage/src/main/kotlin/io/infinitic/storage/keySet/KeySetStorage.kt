@@ -25,7 +25,7 @@
 
 package io.infinitic.storage.keySet
 
-import io.infinitic.common.storage.Flushable
+import io.infinitic.storage.Flushable
 
 interface KeySetStorage : Flushable {
     suspend fun get(key: String): Set<ByteArray>
