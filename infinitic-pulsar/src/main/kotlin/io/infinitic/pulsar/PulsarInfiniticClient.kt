@@ -25,8 +25,7 @@
 
 package io.infinitic.pulsar
 
-import io.infinitic.clients.AbstractInfiniticClient
-import io.infinitic.clients.InfiniticClient
+import io.infinitic.clients.InfiniticClientAbstract
 import io.infinitic.common.data.ClientName
 import io.infinitic.exceptions.clients.ExceptionAtInitialization
 import io.infinitic.pulsar.config.ClientConfig
@@ -45,7 +44,7 @@ class PulsarInfiniticClient @JvmOverloads constructor(
     pulsarTenant: String,
     pulsarNamespace: String,
     name: String? = null
-) : AbstractInfiniticClient() {
+) : InfiniticClientAbstract() {
 
     private val topics = PerNameTopics(pulsarTenant, pulsarNamespace)
 
@@ -131,7 +130,7 @@ class PulsarInfiniticClient @JvmOverloads constructor(
          * Create PulsarInfiniticClient from a ClientConfig instance
          */
         @JvmStatic
-        fun fromConfig(clientConfig: ClientConfig): InfiniticClient =
+        fun fromConfig(clientConfig: ClientConfig) =
             from(clientConfig.pulsar!!.client, clientConfig.pulsar.admin, clientConfig)
 
         /**

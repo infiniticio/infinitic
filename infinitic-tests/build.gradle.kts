@@ -29,9 +29,10 @@ dependencies {
     testImplementation(Libs.Hoplite.core)
     testImplementation(Libs.Hoplite.yaml)
 
+    testImplementation(project(":infinitic-client"))
+    testImplementation(project(":infinitic-worker"))
     testImplementation(project(":infinitic-workflow-engine"))
     testImplementation(project(":infinitic-task-executor"))
-    testImplementation(project(":infinitic-factory"))
     testImplementation(project(":infinitic-inMemory"))
     testImplementation(project(":infinitic-transport"))
     testImplementation(project(":infinitic-pulsar"))

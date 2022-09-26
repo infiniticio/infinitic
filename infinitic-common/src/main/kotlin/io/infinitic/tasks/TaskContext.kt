@@ -25,14 +25,14 @@
 
 package io.infinitic.tasks
 
-import io.infinitic.clients.InfiniticClient
+import io.infinitic.clients.InfiniticClientInterface
 import io.infinitic.common.tasks.executors.errors.WorkerError
-import io.infinitic.common.workers.WorkerRegister
+import io.infinitic.common.workers.registry.WorkerRegistry
 
 interface TaskContext {
-    val client: InfiniticClient
+    val client: InfiniticClientInterface
     val workerName: String
-    val workerRegister: WorkerRegister
+    val workerRegistry: WorkerRegistry
     val id: String
     val name: String
     val workflowId: String?

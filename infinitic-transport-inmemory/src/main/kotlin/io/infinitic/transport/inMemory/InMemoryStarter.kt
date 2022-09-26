@@ -25,7 +25,7 @@
 
 package io.infinitic.transport.inMemory
 
-import io.infinitic.clients.InfiniticClient
+import io.infinitic.clients.InfiniticClientInterface
 import io.infinitic.common.clients.ClientFactory
 import io.infinitic.common.clients.ClientStarter
 import io.infinitic.common.clients.SendToClient
@@ -40,8 +40,8 @@ import io.infinitic.common.tasks.executors.messages.TaskExecutorMessage
 import io.infinitic.common.tasks.tags.SendToTaskTag
 import io.infinitic.common.tasks.tags.messages.TaskTagMessage
 import io.infinitic.common.tasks.tags.storage.TaskTagStorage
-import io.infinitic.common.workers.WorkerRegister
 import io.infinitic.common.workers.WorkerStarter
+import io.infinitic.common.workers.registry.WorkerRegistry
 import io.infinitic.common.workflows.data.workflows.WorkflowName
 import io.infinitic.common.workflows.engine.SendToWorkflowEngine
 import io.infinitic.common.workflows.engine.SendToWorkflowEngineAfter
@@ -142,12 +142,12 @@ class InMemoryStarter(private val scope: CoroutineScope, name: String) : ClientS
     override fun CoroutineScope.startTaskExecutor(
         taskName: TaskName,
         concurrency: Int,
-        workerRegister: WorkerRegister,
+        workerRegistry: WorkerRegistry,
         clientFactory: ClientFactory
     ) {
         val taskExecutor = TaskExecutor(
             clientName,
-            workerRegister,
+            workerRegistry,
             sendToTaskExecutorAfter,
             sendToTaskTag,
             sendToWorkflowEngineAsync,
@@ -166,12 +166,12 @@ class InMemoryStarter(private val scope: CoroutineScope, name: String) : ClientS
     override fun CoroutineScope.startWorkflowTaskExecutor(
         workflowName: WorkflowName,
         concurrency: Int,
-        workerRegister: WorkerRegister,
+        workerRegistry: WorkerRegistry,
         clientFactory: ClientFactory
     ) {
         val taskExecutor = TaskExecutor(
             clientName,
-            workerRegister,
+            workerRegistry,
             sendToWorkflowTaskExecutorAfterAsync(workflowName),
             {}, // workflow tasks do not have tags
             sendToWorkflowEngineAsync,
@@ -188,7 +188,7 @@ class InMemoryStarter(private val scope: CoroutineScope, name: String) : ClientS
         }
     }
 
-    override fun CoroutineScope.startClientResponse(client: InfiniticClient) {
+    override fun CoroutineScope.startClientResponse(client: InfiniticClientInterface) {
         startAsync(
             { message: ClientMessage -> client.handle(message) },
             clientChannel

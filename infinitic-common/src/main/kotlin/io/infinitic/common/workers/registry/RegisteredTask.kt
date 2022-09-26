@@ -23,30 +23,11 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.factory
+package io.infinitic.common.workers.registry
 
-import io.infinitic.inMemory.InMemoryInfiniticWorker
-import io.infinitic.pulsar.PulsarInfiniticWorker
-import io.infinitic.transport.config.Transport
-import io.infinitic.workers.InfiniticWorker
-import io.infinitic.workers.config.WorkerConfig
+import io.infinitic.common.workers.TaskFactory
 
-@Suppress("unused")
-object InfiniticWorkerFactory {
-    /**
-     * Create InfiniticWorker with config from resources directory
-     */
-    @JvmStatic
-    fun fromConfigResource(vararg resources: String): InfiniticWorker = fromConfig(WorkerConfig.fromResource(*resources))
-
-    /**
-     * Create InfiniticWorker with config from system file
-     */
-    @JvmStatic
-    fun fromConfigFile(vararg files: String): InfiniticWorker = fromConfig(WorkerConfig.fromFile(*files))
-
-    private fun fromConfig(workerConfig: WorkerConfig) = when (workerConfig.transport) {
-        Transport.pulsar -> PulsarInfiniticWorker.fromConfig(workerConfig)
-        Transport.inMemory -> InMemoryInfiniticWorker(workerConfig)
-    }
-}
+data class RegisteredTask(
+    val concurrency: Int,
+    val factory: TaskFactory
+)

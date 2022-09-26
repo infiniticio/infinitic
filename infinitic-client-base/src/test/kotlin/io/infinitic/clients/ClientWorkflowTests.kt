@@ -80,7 +80,7 @@ private val taskSlot = slot<TaskExecutorMessage>()
 private val workflowSlot = slot<WorkflowEngineMessage>()
 private val clientNameTest = ClientName("clientTest")
 
-class ClientWorkflow : AbstractInfiniticClient() {
+class ClientWorkflow : InfiniticClientAbstract() {
     override val clientName = clientNameTest
     override val clientStarter = mockk<ClientStarter> {
         every { sendToWorkflowTag } returns mockSendToWorkflowTagEngine(

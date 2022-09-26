@@ -24,14 +24,19 @@
  */
 
 dependencies {
-    implementation(project(":infinitic-cache"))
-    implementation(project(":infinitic-storage"))
-    implementation(project(":infinitic-transport"))
+    implementation(kotlin("reflect"))
+    implementation(Libs.Coroutines.core)
+    implementation(Libs.Coroutines.jdk8)
 
-    api(project(":infinitic-inMemory"))
-    api(project(":infinitic-pulsar"))
-    api(project(":infinitic-worker"))
-    api(project(":infinitic-client"))
+    implementation(project(":infinitic-common"))
+    implementation(project(":infinitic-storage"))
+    implementation(project(":infinitic-cache"))
+    implementation(project(":infinitic-task-tag"))
+    implementation(project(":infinitic-workflow-tag"))
+    implementation(project(":infinitic-workflow-engine"))
+
+    testImplementation(Libs.Hoplite.core)
+    testImplementation(Libs.Hoplite.yaml)
 }
 
 apply("../publish.gradle.kts")

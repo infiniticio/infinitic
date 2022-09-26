@@ -28,6 +28,7 @@ package io.infinitic.common.workers
 import io.infinitic.common.clients.ClientFactory
 import io.infinitic.common.tasks.data.TaskName
 import io.infinitic.common.tasks.tags.storage.TaskTagStorage
+import io.infinitic.common.workers.registry.WorkerRegistry
 import io.infinitic.common.workflows.data.workflows.WorkflowName
 import io.infinitic.common.workflows.engine.storage.WorkflowStateStorage
 import io.infinitic.common.workflows.tags.storage.WorkflowTagStorage
@@ -53,14 +54,14 @@ interface WorkerStarter {
     fun CoroutineScope.startTaskExecutor(
         taskName: TaskName,
         concurrency: Int,
-        workerRegister: WorkerRegister,
+        workerRegistry: WorkerRegistry,
         clientFactory: ClientFactory
     )
 
     fun CoroutineScope.startWorkflowTaskExecutor(
         workflowName: WorkflowName,
         concurrency: Int,
-        workerRegister: WorkerRegister,
+        workerRegistry: WorkerRegistry,
         clientFactory: ClientFactory
     )
 }

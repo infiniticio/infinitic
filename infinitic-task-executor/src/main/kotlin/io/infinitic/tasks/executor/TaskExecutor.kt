@@ -34,6 +34,7 @@ import io.infinitic.common.data.methods.MethodParameters
 import io.infinitic.common.exceptions.thisShouldNotHappen
 import io.infinitic.common.parser.getMethodPerNameAndParameters
 import io.infinitic.common.tasks.data.TaskMeta
+import io.infinitic.common.tasks.data.TaskName
 import io.infinitic.common.tasks.data.TaskReturnValue
 import io.infinitic.common.tasks.executors.SendToTaskExecutorAfter
 import io.infinitic.common.tasks.executors.errors.DeferredError
@@ -43,7 +44,8 @@ import io.infinitic.common.tasks.executors.messages.ExecuteTask
 import io.infinitic.common.tasks.executors.messages.TaskExecutorMessage
 import io.infinitic.common.tasks.tags.SendToTaskTag
 import io.infinitic.common.tasks.tags.messages.RemoveTagFromTask
-import io.infinitic.common.workers.WorkerRegister
+import io.infinitic.common.workers.registry.WorkerRegistry
+import io.infinitic.common.workflows.data.workflowTasks.WorkflowTask
 import io.infinitic.common.workflows.engine.SendToWorkflowEngine
 import io.infinitic.exceptions.DeferredException
 import io.infinitic.exceptions.tasks.MaxRunDurationException
@@ -52,6 +54,7 @@ import io.infinitic.tasks.executor.task.DurationBeforeRetryFailed
 import io.infinitic.tasks.executor.task.DurationBeforeRetryRetrieved
 import io.infinitic.tasks.executor.task.TaskCommand
 import io.infinitic.tasks.executor.task.TaskContextImpl
+import io.infinitic.workflows.workflowTask.WorkflowTaskImpl
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
@@ -66,13 +69,13 @@ import io.infinitic.common.workflows.engine.messages.TaskFailed as TaskFailedWor
 
 class TaskExecutor(
     private val clientName: ClientName,
-    private val workerRegister: WorkerRegister,
+    private val workerRegistry: WorkerRegistry,
     private val sendToTaskExecutorAfter: SendToTaskExecutorAfter,
     private val sendToTaskTag: SendToTaskTag,
     private val sendToWorkflowEngine: SendToWorkflowEngine,
     private val sendToClient: SendToClient,
     private val clientFactory: ClientFactory
-) : WorkerRegister by workerRegister {
+) {
 
     private val logger = KotlinLogging.logger {}
 
@@ -85,10 +88,9 @@ class TaskExecutor(
     }
 
     private suspend fun executeTask(message: ExecuteTask) = coroutineScope {
-
         val taskContext = TaskContextImpl(
             workerName = "$clientName",
-            workerRegister = this@TaskExecutor,
+            workerRegistry = workerRegistry,
             id = message.taskId.toString(),
             name = message.taskName.toString(),
             workflowId = message.workflowId?.toString(),
@@ -162,6 +164,7 @@ class TaskExecutor(
                     else -> retryTask(msg, cause, MillisDuration(delay.value.toMillis()), getMeta(task))
                 }
             }
+
             is DurationBeforeRetryFailed -> {
                 // no retry
                 sendTaskFailed(msg, delay.error)
@@ -170,7 +173,10 @@ class TaskExecutor(
     }
 
     private fun parse(msg: ExecuteTask): TaskCommand {
-        val task = getTaskInstance("${msg.taskName}")
+        val task = when (msg.taskName) {
+            TaskName(WorkflowTask::class.java.name) -> WorkflowTaskImpl()
+            else -> workerRegistry.getTaskInstance(msg.taskName)
+        }
 
         val parameterTypes = msg.methodParameterTypes
 
@@ -222,7 +228,7 @@ class TaskExecutor(
                 recipientName = message.emitterName,
                 taskId = message.taskId,
                 cause = workerError,
-                emitterName = clientName,
+                emitterName = clientName
             )
             launch { sendToClient(taskFailed) }
         }
@@ -236,10 +242,10 @@ class TaskExecutor(
                     taskName = message.taskName,
                     taskId = message.taskId,
                     methodName = message.methodName,
-                    cause = workerError,
+                    cause = workerError
                 ),
                 deferredError = getDeferredError(throwable),
-                emitterName = clientName,
+                emitterName = clientName
             )
             launch { sendToWorkflowEngine(taskFailed) }
         }
@@ -262,7 +268,7 @@ class TaskExecutor(
                 taskId = message.taskId,
                 taskReturnValue = returnValue,
                 taskMeta = taskMeta,
-                emitterName = clientName,
+                emitterName = clientName
             )
 
             launch { sendToClient(taskCompleted) }
@@ -277,9 +283,9 @@ class TaskExecutor(
                     taskName = message.taskName,
                     taskId = message.taskId,
                     taskMeta = taskMeta,
-                    returnValue = returnValue,
+                    returnValue = returnValue
                 ),
-                emitterName = clientName,
+                emitterName = clientName
             )
 
             launch { sendToWorkflowEngine(taskCompleted) }
@@ -294,7 +300,7 @@ class TaskExecutor(
                 taskTag = it,
                 taskName = message.taskName,
                 taskId = message.taskId,
-                emitterName = clientName,
+                emitterName = clientName
             )
             launch { sendToTaskTag(removeTagFromTask) }
         }

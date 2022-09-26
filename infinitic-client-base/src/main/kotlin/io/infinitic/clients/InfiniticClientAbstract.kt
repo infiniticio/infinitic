@@ -58,7 +58,7 @@ import java.util.concurrent.CompletableFuture
 import java.util.concurrent.Executors
 
 @Suppress("MemberVisibilityCanBePrivate", "unused")
-abstract class AbstractInfiniticClient : InfiniticClient {
+abstract class InfiniticClientAbstract : InfiniticClientInterface {
     /**
      * Client's name (must be unique)
      */

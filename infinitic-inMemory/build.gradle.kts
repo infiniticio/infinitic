@@ -29,13 +29,13 @@ dependencies {
 
     api(project(":infinitic-common"))
     api(project(":infinitic-transport"))
-    api(project(":infinitic-client"))
+    api(project(":infinitic-client-base"))
     api(project(":infinitic-storage"))
     implementation(project(":infinitic-cache"))
     implementation(project(":infinitic-workflow-tag"))
     implementation(project(":infinitic-workflow-engine"))
     implementation(project(":infinitic-task-executor"))
-    implementation(project(":infinitic-worker"))
+    implementation(project(":infinitic-worker-base"))
 }
 
 apply("../publish.gradle.kts")

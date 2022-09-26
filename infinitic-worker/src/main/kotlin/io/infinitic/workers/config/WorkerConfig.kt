@@ -57,7 +57,7 @@ data class WorkerConfig(
     /**
      * Default state storage
      */
-    override var stateStorage: StateStorage? = null,
+    override var stateStorage: StateStorage = StateStorage.inMemory,
 
     /**
      * Redis configuration
@@ -87,7 +87,7 @@ data class WorkerConfig(
     /**
      * Workflows configuration
      */
-    val workflows: List<Workflow> = listOf(),
+    val workflows: List<Workflow> = listOf()
 
 ) : CacheConfig, StorageConfig, TransportConfig {
 
@@ -106,8 +106,6 @@ data class WorkerConfig(
     }
 
     init {
-        require(stateStorage != null) { "`stateStorage` can not be null for $name" }
-
         if (transport == Transport.pulsar) {
             require(pulsar != null) { "`${Transport.pulsar}` is used but not configured" }
         }

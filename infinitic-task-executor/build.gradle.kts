@@ -27,8 +27,9 @@ dependencies {
     implementation(kotlin("reflect"))
     implementation(Libs.Coroutines.core)
 
-    implementation(project(":infinitic-client"))
+    implementation(project(":infinitic-client-base"))
     implementation(project(":infinitic-common"))
+    implementation(project(":infinitic-workflow-task"))
 }
 
 apply("../publish.gradle.kts")

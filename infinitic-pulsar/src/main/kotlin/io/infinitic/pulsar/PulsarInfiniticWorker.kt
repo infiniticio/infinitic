@@ -25,8 +25,6 @@
 
 package io.infinitic.pulsar
 
-import io.infinitic.common.tasks.data.TaskName
-import io.infinitic.common.workflows.data.workflows.WorkflowName
 import io.infinitic.transport.pulsar.PulsarStarter
 import io.infinitic.transport.pulsar.config.Pulsar
 import io.infinitic.transport.pulsar.topics.GlobalTopics
@@ -35,8 +33,8 @@ import io.infinitic.transport.pulsar.topics.TaskTopics
 import io.infinitic.transport.pulsar.topics.TopicNames
 import io.infinitic.transport.pulsar.topics.WorkflowTaskTopics
 import io.infinitic.transport.pulsar.topics.WorkflowTopics
-import io.infinitic.workers.InfiniticWorker
-import io.infinitic.workers.config.WorkerConfig
+import io.infinitic.workers.WorkerAbstract
+import io.infinitic.workers.register.WorkerRegister
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.asCoroutineDispatcher
@@ -53,46 +51,17 @@ import java.util.concurrent.CompletableFuture
 import java.util.concurrent.Executors
 
 @Suppress("MemberVisibilityCanBePrivate", "unused")
-class PulsarInfiniticWorker private constructor(
+class PulsarInfiniticWorker(
+    workerRegister: WorkerRegister,
     val pulsarClient: PulsarClient,
     val pulsarAdmin: PulsarAdmin,
-    override val workerConfig: WorkerConfig
-) : InfiniticWorker(workerConfig) {
+    val pulsar: Pulsar
+) : WorkerAbstract(workerRegister) {
 
     private val pulsarNamespaces: Namespaces = pulsarAdmin.namespaces()
     private val pulsarTenants: Tenants = pulsarAdmin.tenants()
     private val pulsarTopics: Topics = pulsarAdmin.topics()
     private val pulsarTopicPolicies: TopicPolicies = pulsarAdmin.topicPolicies()
-
-    companion object {
-        /**
-         * Create [PulsarInfiniticWorker] from custom PulsarClient and PulsarAdmin and a WorkerConfig instance
-         */
-        @JvmStatic
-        fun from(pulsarClient: PulsarClient, pulsarAdmin: PulsarAdmin, workerConfig: WorkerConfig) =
-            PulsarInfiniticWorker(pulsarClient, pulsarAdmin, workerConfig)
-
-        /**
-         * Create [PulsarInfiniticWorker] from a WorkerConfig instance
-         */
-        @JvmStatic
-        fun fromConfig(workerConfig: WorkerConfig): PulsarInfiniticWorker =
-            PulsarInfiniticWorker(workerConfig.pulsar!!.client, workerConfig.pulsar!!.admin, workerConfig)
-
-        /**
-         * Create [PulsarInfiniticWorker] from a config in resources directory
-         */
-        @JvmStatic
-        fun fromConfigResource(vararg resources: String) =
-            fromConfig(WorkerConfig.fromResource(*resources))
-
-        /**
-         * Create [PulsarInfiniticWorker] from a config in system file
-         */
-        @JvmStatic
-        fun fromConfigFile(vararg files: String) =
-            fromConfig(WorkerConfig.fromFile(*files))
-    }
 
     /**
      * We use a thread pool that creates new threads as needed,
@@ -104,11 +73,6 @@ class PulsarInfiniticWorker private constructor(
      * Coroutine scope used to run workers
      */
     private val scope = CoroutineScope(threadPool.asCoroutineDispatcher() + Job())
-
-    /**
-     * [Pulsar] configuration
-     */
-    val pulsar: Pulsar = workerConfig.pulsar!!
 
     /**
      * [PulsarInfiniticAdmin] instance: used to create tenant, namespace, topics, etc.
@@ -123,8 +87,8 @@ class PulsarInfiniticWorker private constructor(
     /**
      * Worker unique name: from workerConfig or generated through Pulsar
      */
-    override val name by lazy {
-        getProducerName(pulsarClient, topicNames, workerConfig.name)
+    override val workerName by lazy {
+        getProducerName(pulsarClient, topicNames, workerRegistry.name)
     }
 
     /**
@@ -133,7 +97,7 @@ class PulsarInfiniticWorker private constructor(
     private val fullNamespace = "${pulsar.tenant}/${pulsar.namespace}"
 
     override val workerStarter by lazy {
-        PulsarStarter(pulsarClient, topicNames, name)
+        PulsarStarter(pulsarClient, topicNames, workerName)
     }
 
     override val clientFactory = {
@@ -168,13 +132,13 @@ class PulsarInfiniticWorker private constructor(
         try {
             pulsarClient.close()
         } catch (e: Exception) {
-            logger.warn { "Error while closing Pulsar client: $e" }
+            logger.warn(e) { "Error while closing Pulsar client" }
         }
 
         try {
             pulsarAdmin.close()
         } catch (e: Exception) {
-            logger.warn { "Error while closing Pulsar admin: $e" }
+            logger.warn(e) { "Error while closing Pulsar admin" }
         }
     }
 
@@ -185,7 +149,7 @@ class PulsarInfiniticWorker private constructor(
         if (isDelayed && (!existing || pulsar.policies.forceUpdate)) try {
             pulsarTopicPolicies.setMessageTTL(topic, pulsar.policies.delayedTTLInSeconds)
         } catch (e: PulsarAdminException) {
-            logger.warn { "Exception when setting messageTTLInSeconds=${pulsar.policies.delayedTTLInSeconds} for topic $topic: $e" }
+            logger.warn(e) { "Exception when setting messageTTLInSeconds=${pulsar.policies.delayedTTLInSeconds} for topic $topic" }
         }
     }
 
@@ -194,25 +158,22 @@ class PulsarInfiniticWorker private constructor(
             checkOrCreateTopic(topicNames.topic(it), it.isPartitioned, it.isDelayed)
         }
 
-        for (task in workerConfig.tasks) {
-            val taskName = TaskName(task.name)
+        for (task in workerRegistry.tasks) {
             TaskTopics.values().forEach {
-                checkOrCreateTopic(topicNames.topic(it, taskName), it.isPartitioned, it.isDelayed)
-                checkOrCreateTopic(topicNames.topicDLQ(it, taskName), it.isPartitioned, it.isDelayed)
+                checkOrCreateTopic(topicNames.topic(it, task.key), it.isPartitioned, it.isDelayed)
+                checkOrCreateTopic(topicNames.topicDLQ(it, task.key), it.isPartitioned, it.isDelayed)
             }
         }
 
-        for (workflow in workerConfig.workflows) {
-            val workflowName = WorkflowName(workflow.name)
-
+        for (workflow in workerRegistry.workflows) {
             WorkflowTopics.values().forEach {
-                checkOrCreateTopic(topicNames.topic(it, workflowName), it.isPartitioned, it.isDelayed)
-                checkOrCreateTopic(topicNames.topicDLQ(it, workflowName), it.isPartitioned, it.isDelayed)
+                checkOrCreateTopic(topicNames.topic(it, workflow.key), it.isPartitioned, it.isDelayed)
+                checkOrCreateTopic(topicNames.topicDLQ(it, workflow.key), it.isPartitioned, it.isDelayed)
             }
 
             WorkflowTaskTopics.values().forEach {
-                checkOrCreateTopic(topicNames.topic(it, workflowName), it.isPartitioned, it.isDelayed)
-                checkOrCreateTopic(topicNames.topicDLQ(it, workflowName), it.isPartitioned, it.isDelayed)
+                checkOrCreateTopic(topicNames.topic(it, workflow.key), it.isPartitioned, it.isDelayed)
+                checkOrCreateTopic(topicNames.topicDLQ(it, workflow.key), it.isPartitioned, it.isDelayed)
             }
         }
     }

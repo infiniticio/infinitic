@@ -26,8 +26,8 @@
 package io.infinitic.inMemory
 
 import io.infinitic.transport.inMemory.InMemoryStarter
-import io.infinitic.workers.InfiniticWorker
-import io.infinitic.workers.config.WorkerConfig
+import io.infinitic.workers.WorkerAbstract
+import io.infinitic.workers.register.WorkerRegister
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -37,20 +37,20 @@ import java.util.concurrent.CompletableFuture
 
 @Suppress("MemberVisibilityCanBePrivate")
 class InMemoryInfiniticWorker(
-    workerConfig: WorkerConfig
-) : InfiniticWorker(workerConfig) {
+    workerRegister: WorkerRegister
+) : WorkerAbstract(workerRegister) {
 
     lateinit var client: InMemoryInfiniticClient
 
     private val scope = CoroutineScope(Dispatchers.IO + Job())
 
     public override val workerStarter by lazy {
-        InMemoryStarter(scope, name)
+        InMemoryStarter(scope, workerName)
     }
 
     override val clientFactory = { client }
 
-    override val name = workerConfig.name ?: "inMemory"
+    override val workerName = workerRegistry.name ?: "inMemory"
 
     override fun startAsync(): CompletableFuture<Unit> =
         if (this::client.isInitialized) {

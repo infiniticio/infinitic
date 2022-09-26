@@ -32,7 +32,7 @@ interface StorageConfig {
     /**
      * Default state storage
      */
-    var stateStorage: StateStorage?
+    var stateStorage: StateStorage
 
     /**
      * Redis configuration

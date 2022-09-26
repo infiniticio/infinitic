@@ -39,8 +39,8 @@ dependencies {
     api(Libs.Pulsar.authAthenz)
     api(Libs.Pulsar.authSasl)
     api(project(":infinitic-common"))
-    api(project(":infinitic-client"))
-    api(project(":infinitic-worker"))
+    api(project(":infinitic-client-base"))
+    api(project(":infinitic-worker-base"))
     api(project(":infinitic-task-executor"))
     api(project(":infinitic-transport"))
 

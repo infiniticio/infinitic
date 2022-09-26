@@ -27,14 +27,13 @@ package io.infinitic.workers.config
 
 import io.infinitic.tasks.tag.config.TaskTag
 import java.lang.reflect.Constructor
-import java.lang.reflect.InvocationTargetException
 import io.infinitic.tasks.Task as TaskInstance
 
 data class Task(
     val name: String,
     val `class`: String? = null,
     val concurrency: Int = 1,
-    var taskTag: TaskTag? = TaskTag().apply { default = true },
+    var taskTag: TaskTag? = null
 ) {
     private lateinit var _constructor: Constructor<out Any>
 
@@ -44,37 +43,52 @@ data class Task(
     init {
         require(name.isNotEmpty()) { "name can not be empty" }
 
-        `class`?.let {
-            require(`class`.isNotEmpty()) { "class empty for task $name" }
-
-            val klass = try {
-                Class.forName(`class`)
-            } catch (e: ClassNotFoundException) {
-                throw IllegalArgumentException("class \"$it\" is unknown (task $name)")
-            } catch (e: ExceptionInInitializerError) {
-                throw e.cause ?: e
+        when (`class`) {
+            null -> {
+                require(taskTag != null) { "class and taskTag null for task $name" }
             }
 
-            _constructor = try {
-                klass.getDeclaredConstructor()
-            } catch (e: NoSuchMethodException) {
-                throw IllegalArgumentException("class \"$it\" must have an empty constructor (task $name)")
-            }
+            else -> {
+                require(`class`.isNotEmpty()) { "class empty for task $name" }
 
-            val instance = try {
-                _constructor.newInstance()
-            } catch (e: ExceptionInInitializerError) {
-                throw e.cause ?: e
-            } catch (e: InvocationTargetException) {
-                throw e.cause ?: e
-            }
+                val klass = try {
+                    Class.forName(`class`)
+                } catch (e: ClassNotFoundException) {
+                    throw IllegalArgumentException("class \"$`class`\" is unknown for task $name")
+                } catch (e: Exception) {
+                    throw IllegalArgumentException(
+                        "Error when trying to get class of name \"$`class`\" for task $name",
+                        e
+                    )
+                }
 
-            require(instance is TaskInstance) {
-                "class \"$it\" must extend ${TaskInstance::class.java.name} to be used as a task (task $name)"
-            }
+                _constructor = try {
+                    klass.getDeclaredConstructor()
+                } catch (e: NoSuchMethodException) {
+                    throw IllegalArgumentException("class \"$`class`\" must have an empty constructor for task $name")
+                } catch (e: Exception) {
+                    throw IllegalArgumentException(
+                        "Error when trying to get constructor of class \"$`class`\" for task $name",
+                        e
+                    )
+                }
 
-            require(concurrency >= 0) {
-                "concurrency must be positive (task $name)"
+                val instance = try {
+                    _constructor.newInstance()
+                } catch (e: Exception) {
+                    throw IllegalArgumentException(
+                        "Error when trying to instantiate class \"$`class`\" for task $name",
+                        e
+                    )
+                }
+
+                require(instance is TaskInstance) {
+                    "class \"$`class`\" must extend ${TaskInstance::class.java.name} to be used for task $name"
+                }
+
+                require(concurrency >= 0) {
+                    "concurrency must be positive for task $name"
+                }
             }
         }
     }

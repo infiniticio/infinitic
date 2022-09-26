@@ -25,9 +25,9 @@
 
 package io.infinitic.tests.deferred
 
-import io.infinitic.factory.InfiniticClientFactory
-import io.infinitic.factory.InfiniticWorkerFactory
+import io.infinitic.clients.InfiniticClient
 import io.infinitic.tests.utils.UtilWorkflow
+import io.infinitic.workers.InfiniticWorker
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.collections.shouldBeIn
 import io.kotest.matchers.shouldBe
@@ -37,8 +37,8 @@ internal class DeferredWorkflowTests : StringSpec({
     // each test should not be longer than 10s
     timeout = 10000
 
-    val worker = autoClose(InfiniticWorkerFactory.fromConfigResource("/pulsar.yml"))
-    val client = autoClose(InfiniticClientFactory.fromConfigResource("/pulsar.yml"))
+    val worker = autoClose(InfiniticWorker.fromConfigResource("/pulsar.yml"))
+    val client = autoClose(InfiniticClient.fromConfigResource("/pulsar.yml"))
 
     val deferredWorkflow = client.newWorkflow(DeferredWorkflow::class.java, tags = setOf("foo", "bar"))
     val utilWorkflow = client.newWorkflow(UtilWorkflow::class.java)
@@ -48,7 +48,7 @@ internal class DeferredWorkflowTests : StringSpec({
     }
 
     beforeTest {
-        worker.storageFlush()
+        worker.registry.flush()
     }
 
     "Simple Sequential Workflow" {

@@ -25,11 +25,11 @@
 
 package io.infinitic.tests.inline
 
+import io.infinitic.clients.InfiniticClient
 import io.infinitic.exceptions.FailedWorkflowException
 import io.infinitic.exceptions.FailedWorkflowTaskException
 import io.infinitic.exceptions.workflows.InvalidInlineException
-import io.infinitic.factory.InfiniticClientFactory
-import io.infinitic.factory.InfiniticWorkerFactory
+import io.infinitic.workers.InfiniticWorker
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
@@ -39,8 +39,8 @@ internal class InlineWorkflowTests : StringSpec({
     // each test should not be longer than 10s
     timeout = 10000
 
-    val worker = autoClose(InfiniticWorkerFactory.fromConfigResource("/pulsar.yml"))
-    val client = autoClose(InfiniticClientFactory.fromConfigResource("/pulsar.yml"))
+    val worker = autoClose(InfiniticWorker.fromConfigResource("/pulsar.yml"))
+    val client = autoClose(InfiniticClient.fromConfigResource("/pulsar.yml"))
 
     val inlineWorkflow = client.newWorkflow(InlineWorkflow::class.java)
 
@@ -49,7 +49,7 @@ internal class InlineWorkflowTests : StringSpec({
     }
 
     beforeTest {
-        worker.storageFlush()
+        worker.registry.flush()
     }
 
     "Inline task" {

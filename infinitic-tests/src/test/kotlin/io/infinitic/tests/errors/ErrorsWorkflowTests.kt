@@ -25,16 +25,16 @@
 
 package io.infinitic.tests.errors
 
+import io.infinitic.clients.InfiniticClient
 import io.infinitic.common.fixtures.later
 import io.infinitic.exceptions.CanceledWorkflowException
 import io.infinitic.exceptions.FailedTaskException
 import io.infinitic.exceptions.FailedWorkflowException
 import io.infinitic.exceptions.UnknownWorkflowException
-import io.infinitic.factory.InfiniticClientFactory
-import io.infinitic.factory.InfiniticWorkerFactory
 import io.infinitic.tests.channels.ChannelsWorkflow
 import io.infinitic.tests.utils.UtilTask
 import io.infinitic.tests.utils.UtilWorkflow
+import io.infinitic.workers.InfiniticWorker
 import io.infinitic.workflows.DeferredStatus
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.StringSpec
@@ -46,8 +46,8 @@ internal class ErrorsWorkflowTests : StringSpec({
     // each test should not be longer than 10s
     timeout = 10000
 
-    val worker = autoClose(InfiniticWorkerFactory.fromConfigResource("/pulsar.yml"))
-    val client = autoClose(InfiniticClientFactory.fromConfigResource("/pulsar.yml"))
+    val worker = autoClose(InfiniticWorker.fromConfigResource("/pulsar.yml"))
+    val client = autoClose(InfiniticClient.fromConfigResource("/pulsar.yml"))
 
     val errorsWorkflow = client.newWorkflow(ErrorsWorkflow::class.java, tags = setOf("foo", "bar"))
     val utilWorkflow = client.newWorkflow(UtilWorkflow::class.java)
@@ -57,7 +57,7 @@ internal class ErrorsWorkflowTests : StringSpec({
     }
 
     beforeTest {
-        worker.storageFlush()
+        worker.registry.flush()
     }
 
     "Cancelling workflow" {

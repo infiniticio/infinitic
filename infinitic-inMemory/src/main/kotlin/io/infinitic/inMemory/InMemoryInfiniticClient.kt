@@ -25,25 +25,24 @@
 
 package io.infinitic.inMemory
 
-import io.infinitic.clients.AbstractInfiniticClient
+import io.infinitic.clients.InfiniticClientAbstract
 import io.infinitic.common.data.ClientName
-import io.infinitic.workers.config.WorkerConfig
+import io.infinitic.workers.register.WorkerRegister
 
 @Suppress("MemberVisibilityCanBePrivate")
 class InMemoryInfiniticClient(
-    workerConfig: WorkerConfig,
-    name: String? = null
-) : AbstractInfiniticClient() {
+    workerRegister: WorkerRegister
+) : InfiniticClientAbstract() {
 
     private val worker by lazy {
-        InMemoryInfiniticWorker(workerConfig).apply {
+        InMemoryInfiniticWorker(workerRegister).apply {
             client = this@InMemoryInfiniticClient
         }
     }
 
     override val clientStarter by lazy { worker.workerStarter }
 
-    override val clientName: ClientName = ClientName(name ?: "inMemory")
+    override val clientName: ClientName = ClientName(workerRegister.registry.name ?: "inMemory")
 
     init {
         // start client response

@@ -41,7 +41,7 @@ import io.infinitic.workflows.WorkflowOptions
 import java.io.Closeable
 import java.util.concurrent.CompletableFuture
 
-interface InfiniticClient : Closeable {
+interface InfiniticClientInterface : Closeable {
     /**
      * Client's name
      * This name must be unique
