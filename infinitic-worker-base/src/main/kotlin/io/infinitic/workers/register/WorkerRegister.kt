@@ -43,8 +43,14 @@ interface WorkerRegister {
         name: String,
         concurrency: Int,
         factory: TaskFactory,
-        tag: TaskTag? = null
+        tagEngine: TaskTag?
     )
+
+    fun registerTask(
+        name: String,
+        concurrency: Int,
+        factory: TaskFactory
+    ) = registerTask(name, concurrency, factory, null)
 
     /**
      * Register workflow
@@ -53,7 +59,27 @@ interface WorkerRegister {
         name: String,
         concurrency: Int,
         factory: WorkflowFactory,
-        tag: WorkflowTag? = null,
-        engine: WorkflowEngine? = null
+        engine: WorkflowEngine?,
+        tagEngine: WorkflowTag?
     )
+
+    fun registerWorkflow(
+        name: String,
+        concurrency: Int,
+        factory: WorkflowFactory
+    ) = registerWorkflow(name, concurrency, factory, null, null)
+
+    fun registerWorkflow(
+        name: String,
+        concurrency: Int,
+        factory: WorkflowFactory,
+        engine: WorkflowEngine
+    ) = registerWorkflow(name, concurrency, factory, engine, null)
+
+    fun registerWorkflow(
+        name: String,
+        concurrency: Int,
+        factory: WorkflowFactory,
+        tagEngine: WorkflowTag
+    ) = registerWorkflow(name, concurrency, factory, null, tagEngine)
 }

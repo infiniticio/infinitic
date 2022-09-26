@@ -54,9 +54,6 @@ class WorkerRegisterImpl(private val workerConfig: WorkerConfig) : WorkerRegiste
     override val registry = WorkerRegistry(workerConfig.name)
 
     init {
-        // register WorkflowTasks
-//        workerRegister.registerTask(WorkflowTask::class.java.name) { WorkflowTaskImpl() }
-
         for (w in workerConfig.workflows) {
             logger.info { "Workflow ${w.name}:" }
 
@@ -70,7 +67,7 @@ class WorkerRegisterImpl(private val workerConfig: WorkerConfig) : WorkerRegiste
                     }
                 }
 
-                else -> registerWorkflow(w.name, w.concurrency, { w.instance }, w.workflowTag, w.workflowEngine)
+                else -> registerWorkflow(w.name, w.concurrency, { w.instance }, w.workflowEngine, w.workflowTag)
             }
         }
 
@@ -90,7 +87,12 @@ class WorkerRegisterImpl(private val workerConfig: WorkerConfig) : WorkerRegiste
     /**
      * Register task
      */
-    override fun registerTask(name: String, concurrency: Int, factory: TaskFactory, tag: TaskTag?) {
+    override fun registerTask(
+        name: String,
+        concurrency: Int,
+        factory: TaskFactory,
+        tagEngine: TaskTag?
+    ) {
         logger.info {
             "* task executor".padEnd(25) + ": (instances: $concurrency, class:${factory()::class.java.name})"
         }
@@ -98,9 +100,9 @@ class WorkerRegisterImpl(private val workerConfig: WorkerConfig) : WorkerRegiste
         val taskName = TaskName(name)
         registry.tasks[taskName] = RegisteredTask(concurrency, factory)
 
-        when (tag) {
+        when (tagEngine) {
             null -> registerTaskTag(taskName, concurrency, workerConfig.stateStorage, workerConfig.stateCache)
-            else -> registerTaskTag(taskName, tag.concurrency, tag.stateStorage, tag.stateCache)
+            else -> registerTaskTag(taskName, tagEngine.concurrency, tagEngine.stateStorage, tagEngine.stateCache)
         }
     }
 
@@ -111,8 +113,8 @@ class WorkerRegisterImpl(private val workerConfig: WorkerConfig) : WorkerRegiste
         name: String,
         concurrency: Int,
         factory: WorkflowFactory,
-        tag: WorkflowTag?,
-        engine: WorkflowEngine?
+        engine: WorkflowEngine?,
+        tagEngine: WorkflowTag?
     ) {
         logger.info {
             "* workflow executor".padEnd(25) + ": (instances: $concurrency, class:${factory()::class.java.name})"
@@ -121,9 +123,14 @@ class WorkerRegisterImpl(private val workerConfig: WorkerConfig) : WorkerRegiste
         val workflowName = WorkflowName(name)
         registry.workflows[workflowName] = RegisteredWorkflow(concurrency, factory)
 
-        when (tag) {
+        when (tagEngine) {
             null -> registerWorkflowTag(workflowName, concurrency, workerConfig.stateStorage, workerConfig.stateCache)
-            else -> registerWorkflowTag(workflowName, tag.concurrency, tag.stateStorage, tag.stateCache)
+            else -> registerWorkflowTag(
+                workflowName,
+                tagEngine.concurrency,
+                tagEngine.stateStorage,
+                tagEngine.stateCache
+            )
         }
 
         when (engine) {

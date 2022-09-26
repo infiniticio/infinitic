@@ -31,7 +31,7 @@ import io.infinitic.storage.StateStorage
 data class TaskTag(
     var concurrency: Int = 1,
     var stateStorage: StateStorage? = null,
-    var stateCache: StateCache? = null,
+    var stateCache: StateCache? = null
 ) {
     var default: Boolean = false
 
