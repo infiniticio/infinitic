@@ -28,49 +28,25 @@ package io.infinitic.clients.deferred
 import io.infinitic.clients.Deferred
 import io.infinitic.clients.dispatcher.ClientDispatcher
 import io.infinitic.common.data.methods.MethodName
-import io.infinitic.common.exceptions.thisShouldNotHappen
-import io.infinitic.common.workflows.data.methodRuns.MethodRunId
 import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.data.workflows.WorkflowName
-import io.infinitic.common.workflows.data.workflows.WorkflowTag
 
-class DeferredMethod<R> (
+class DeferredWorkflow<R>(
     internal val returnClass: Class<R>,
     internal val workflowName: WorkflowName,
     internal val methodName: MethodName,
-    internal val workflowId: WorkflowId?,
-    internal val methodRunId: MethodRunId?,
-    internal val workflowTag: WorkflowTag?,
-    private val dispatcher: ClientDispatcher,
+    internal val workflowId: WorkflowId,
+    private val dispatcher: ClientDispatcher
 ) : Deferred<R> {
 
-    override fun cancelAsync() = when {
-        workflowId != null ->
-            dispatcher.cancelWorkflowAsync(workflowName, workflowId, methodRunId, null)
-        workflowTag != null ->
-            dispatcher.cancelWorkflowAsync(workflowName, null, null, workflowTag)
-        else ->
-            thisShouldNotHappen()
-    }
+    override fun cancelAsync() =
+        dispatcher.cancelWorkflowAsync(workflowName, workflowId, null, null)
 
-    // this method retries workflowTask (unique for a workflow instance)
-    override fun retryAsync() = dispatcher.retryWorkflowTaskAsync(workflowName, workflowId, workflowTag)
+    override fun retryAsync() =
+        dispatcher.retryWorkflowTaskAsync(workflowName, workflowId, null)
 
-    @Suppress("UNCHECKED_CAST")
-    override fun await(): R = when {
-        workflowId != null ->
-            dispatcher.awaitWorkflow(returnClass, workflowName, methodName, workflowId, methodRunId!!, true)
-        workflowTag != null ->
-            TODO()
-        else ->
-            thisShouldNotHappen()
-    }
+    override fun await(): R =
+        dispatcher.awaitWorkflow(returnClass, workflowName, methodName, workflowId, null, true)
 
-    override val id: String by lazy {
-        when {
-            workflowId != null -> methodRunId!!.toString()
-            workflowTag != null -> TODO()
-            else -> thisShouldNotHappen()
-        }
-    }
+    override val id: String = workflowId.toString()
 }

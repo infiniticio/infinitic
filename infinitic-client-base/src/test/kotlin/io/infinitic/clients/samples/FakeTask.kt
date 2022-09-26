@@ -47,12 +47,13 @@ internal interface FakeTask : FakeTaskParent {
 
 @Name("foo")
 internal interface FooTask : FakeTaskParent {
+    @Suppress("unused")
     @Name("bar")
     fun m()
 }
 
 internal class FakeTaskImpl : FakeTask {
-    override fun m0() { }
+    override fun m0() {}
 
     override fun m0String(): String = "Not needed"
 
@@ -66,7 +67,7 @@ internal class FakeTaskImpl : FakeTask {
 
     override fun m5(): Boolean = true
 
-    override suspend fun suspendedMethod() { }
+    override suspend fun suspendedMethod() {}
 
     override fun parent() = "Not needed"
 
