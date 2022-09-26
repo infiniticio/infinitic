@@ -48,11 +48,11 @@ import mu.KotlinLogging
 import org.apache.pulsar.client.admin.PulsarAdmin
 
 @Suppress("MemberVisibilityCanBePrivate", "CanBeParameter")
-class DashboardServer(
+class InfiniticDashboard(
     val pulsarAdmin: PulsarAdmin,
     val pulsar: Pulsar,
     val port: Int,
-    val debug: Boolean,
+    val debug: Boolean
 ) {
     init {
         Infinitic.admin = PulsarInfiniticAdmin(pulsarAdmin, pulsar)
@@ -68,7 +68,7 @@ class DashboardServer(
          * Create Dashboard from a custom PulsarAdmin and a DashboardConfig instance
          */
         @JvmStatic
-        fun from(pulsarAdmin: PulsarAdmin, dashboardConfig: DashboardConfig) = DashboardServer(
+        fun from(pulsarAdmin: PulsarAdmin, dashboardConfig: DashboardConfig) = InfiniticDashboard(
             pulsarAdmin,
             dashboardConfig.pulsar,
             dashboardConfig.port,
@@ -79,7 +79,7 @@ class DashboardServer(
          * Create Dashboard from a DashboardConfig
          */
         @JvmStatic
-        fun fromConfig(dashboardConfig: DashboardConfig): DashboardServer =
+        fun fromConfig(dashboardConfig: DashboardConfig): InfiniticDashboard =
             from(dashboardConfig.pulsar.admin, dashboardConfig)
 
         /**

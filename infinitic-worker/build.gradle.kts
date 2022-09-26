@@ -28,6 +28,8 @@ dependencies {
     implementation(Libs.Coroutines.core)
     implementation(Libs.Coroutines.jdk8)
 
+    api(project(":infinitic-worker-base"))
+
     implementation(project(":infinitic-client-base"))
     implementation(project(":infinitic-common"))
     implementation(project(":infinitic-storage"))
@@ -40,7 +42,6 @@ dependencies {
     implementation(project(":infinitic-workflow-task"))
     implementation(project(":infinitic-pulsar"))
     implementation(project(":infinitic-inMemory"))
-    implementation(project(":infinitic-worker-base"))
 
     testImplementation(Libs.Hoplite.core)
     testImplementation(Libs.Hoplite.yaml)

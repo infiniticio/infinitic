@@ -29,6 +29,7 @@ dependencies {
 
     api(project(":infinitic-common"))
     api(project(":infinitic-transport"))
+    api(project(":infinitic-transport-inmemory"))
     api(project(":infinitic-client-base"))
     api(project(":infinitic-storage"))
     implementation(project(":infinitic-cache"))
