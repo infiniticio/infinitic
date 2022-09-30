@@ -419,9 +419,12 @@ internal class WorkflowDispatcherImpl(
         .find { it.commandPosition == methodRunPosition }
 
     private fun throwWorkflowUpdatedException(pastCommand: PastCommand?, newCommand: PastCommand?): Nothing {
-        logger.error { "pastCommand = ${pastCommand?.command}" }
-        logger.error { "newCommand  = ${newCommand?.command}" }
-        logger.error { "workflowChangeCheckMode = ${workflowTaskParameters.workflowOptions.workflowChangeCheckMode}" }
+        logger.error {
+            """Workflow past and new commands are different
+            |pastCommand = ${pastCommand?.command}
+            |newCommand  = ${newCommand?.command}
+            |workflowChangeCheckMode = ${workflowTaskParameters.workflowOptions.workflowChangeCheckMode}""".trimMargin()
+        }
         throw WorkflowUpdatedException(
             workflowTaskParameters.workflowName.name,
             "${workflowTaskParameters.methodRun.methodName}",
@@ -451,8 +454,11 @@ internal class WorkflowDispatcherImpl(
 
         // if it exists, check it has not changed
         if (pastStep != null && !pastStep.isSameThan(newStep)) {
-            logger.error { "pastStep = $pastStep" }
-            logger.error { "newStep = $newStep" }
+            logger.error {
+                """Workflow past and new step are different
+                |pastStep = $pastStep
+                |newStep = $newStep""".trimMargin()
+            }
             throw WorkflowUpdatedException(
                 workflowTaskParameters.workflowName.name,
                 "${workflowTaskParameters.methodRun.methodName}",
