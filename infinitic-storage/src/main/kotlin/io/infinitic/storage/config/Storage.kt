@@ -51,24 +51,30 @@ data class Storage(
         }
     }
 
-    val type = when {
-        inMemory != null -> "inMemory"
-        redis != null -> "redis"
-        mysql != null -> "mysql"
-        else -> throw RuntimeException("This should not happen")
+    val type by lazy {
+        when {
+            inMemory != null -> "inMemory"
+            redis != null -> "redis"
+            mysql != null -> "mysql"
+            else -> throw RuntimeException("This should not happen")
+        }
     }
 
-    val keySet: KeySetStorage = when {
-        inMemory != null -> InMemoryKeySetStorage()
-        redis != null -> RedisKeySetStorage.of(redis)
-        mysql != null -> MySQLKeySetStorage.of(mysql)
-        else -> throw RuntimeException("This should not happen")
+    val keySet: KeySetStorage by lazy {
+        when {
+            inMemory != null -> InMemoryKeySetStorage()
+            redis != null -> RedisKeySetStorage.of(redis)
+            mysql != null -> MySQLKeySetStorage.of(mysql)
+            else -> throw RuntimeException("This should not happen")
+        }
     }
 
-    val keyValue: KeyValueStorage = when {
-        inMemory != null -> InMemoryKeyValueStorage()
-        redis != null -> RedisKeyValueStorage.of(redis)
-        mysql != null -> MySQLKeyValueStorage.of(mysql)
-        else -> throw RuntimeException("This should not happen")
+    val keyValue: KeyValueStorage by lazy {
+        when {
+            inMemory != null -> InMemoryKeyValueStorage()
+            redis != null -> RedisKeyValueStorage.of(redis)
+            mysql != null -> MySQLKeyValueStorage.of(mysql)
+            else -> throw RuntimeException("This should not happen")
+        }
     }
 }
