@@ -49,21 +49,27 @@ data class Cache(
         }
     }
 
-    val type = when {
-        none != null -> "none"
-        caffeine != null -> "caffeine"
-        else -> throw RuntimeException("This should not happen")
+    val type: String by lazy {
+        when {
+            none != null -> "none"
+            caffeine != null -> "caffeine"
+            else -> throw RuntimeException("This should not happen")
+        }
     }
 
-    val keySet: CachedKeySet<ByteArray> = when {
-        none != null -> NoCachedKeySet()
-        caffeine != null -> CaffeineCachedKeySet(caffeine!!)
-        else -> throw RuntimeException("This should not happen")
+    val keySet: CachedKeySet<ByteArray> by lazy {
+        when {
+            none != null -> NoCachedKeySet()
+            caffeine != null -> CaffeineCachedKeySet(caffeine!!)
+            else -> throw RuntimeException("This should not happen")
+        }
     }
 
-    val keyValue: CachedKeyValue<ByteArray> = when {
-        none != null -> NoCachedKeyValue()
-        caffeine != null -> CaffeineCachedKeyValue(caffeine!!)
-        else -> throw RuntimeException("This should not happen")
+    val keyValue: CachedKeyValue<ByteArray> by lazy {
+        when {
+            none != null -> NoCachedKeyValue()
+            caffeine != null -> CaffeineCachedKeyValue(caffeine!!)
+            else -> throw RuntimeException("This should not happen")
+        }
     }
 }
