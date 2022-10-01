@@ -42,6 +42,7 @@ data class Cache(
         val nonNul = listOfNotNull(none, caffeine)
 
         if (nonNul.isEmpty()) {
+            // default cache is Caffeine
             caffeine = Caffeine.default()
         } else {
             require(nonNul.count() == 1) { "Multiple definitions for cache" }

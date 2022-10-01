@@ -44,13 +44,27 @@ class StorageConfigTests : StringSpec({
     "default storage should be inMemory" {
         val config = loadConfigFromYaml<StorageConfigImpl>("nothing:")
 
-        config shouldBe StorageConfigImpl(storage = Storage(inMemory = InMemory))
+        config shouldBe StorageConfigImpl(storage = Storage(inMemory = InMemory()))
     }
 
     "storage without type should be inMemory" {
         val config = loadConfigFromYaml<StorageConfigImpl>("storage:")
 
-        config shouldBe StorageConfigImpl(storage = Storage(inMemory = InMemory))
+        config shouldBe StorageConfigImpl(storage = Storage(inMemory = InMemory()))
+        config.storage.type shouldBe "inMemory"
+        config.storage.keyValue::class shouldBe InMemoryKeyValueStorage::class
+        config.storage.keySet::class shouldBe InMemoryKeySetStorage::class
+    }
+
+    "can choose inMemory storage" {
+        val config = loadConfigFromYaml<StorageConfigImpl>(
+            """
+storage:
+  inMemory:
+     """
+        )
+
+        config shouldBe StorageConfigImpl(storage = Storage(inMemory = InMemory()))
         config.storage.type shouldBe "inMemory"
         config.storage.keyValue::class shouldBe InMemoryKeyValueStorage::class
         config.storage.keySet::class shouldBe InMemoryKeySetStorage::class

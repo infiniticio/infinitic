@@ -44,7 +44,8 @@ data class Storage(
         val nonNul = listOfNotNull(inMemory, redis, mysql)
 
         if (nonNul.isEmpty()) {
-            inMemory = InMemory
+            // default storage is inMemory
+            inMemory = InMemory()
         } else {
             require(nonNul.count() == 1) { "Multiple definitions for storage" }
         }

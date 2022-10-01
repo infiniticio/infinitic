@@ -25,4 +25,4 @@
 
 package io.infinitic.storage.config
 
-object InMemory
+data class InMemory(val type: String = "unused")
