@@ -25,6 +25,7 @@
 
 package io.infinitic.storage.inMemory
 
+import io.infinitic.storage.config.inMemory.InMemoryKeyValueStorage
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
 

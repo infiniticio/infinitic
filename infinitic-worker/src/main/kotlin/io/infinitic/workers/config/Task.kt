@@ -33,7 +33,8 @@ data class Task(
     val name: String,
     val `class`: String? = null,
     val concurrency: Int = 1,
-    var taskTag: TaskTag? = null
+    var tagEngine: TaskTag? = null,
+    var retryPolicy: RetryPolicy? = null
 ) {
     private lateinit var _constructor: Constructor<out Any>
 
@@ -45,7 +46,7 @@ data class Task(
 
         when (`class`) {
             null -> {
-                require(taskTag != null) { "class and taskTag null for task $name" }
+                require(tagEngine != null) { "class and taskTag null for task $name" }
             }
 
             else -> {

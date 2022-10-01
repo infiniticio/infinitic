@@ -23,18 +23,11 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.cache
+package io.infinitic.cache.config
 
-import io.infinitic.cache.caffeine.Caffeine
-
+/**
+ * Cache configuration
+ */
 interface CacheConfig {
-    /*
-    Default state cache
-     */
-    var stateCache: StateCache
-
-    /*
-    Caffeine configuration
-     */
-    val caffeine: Caffeine?
+    val cache: Cache
 }

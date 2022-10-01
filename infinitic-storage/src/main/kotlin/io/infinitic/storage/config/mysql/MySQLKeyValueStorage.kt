@@ -23,9 +23,10 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.storage.mysql
+package io.infinitic.storage.config.mysql
 
 import com.zaxxer.hikari.HikariDataSource
+import io.infinitic.storage.config.MySQL
 import io.infinitic.storage.keyValue.KeyValueStorage
 import org.jetbrains.annotations.TestOnly
 

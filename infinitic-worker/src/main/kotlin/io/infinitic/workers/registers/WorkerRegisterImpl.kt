@@ -25,7 +25,7 @@
 
 package io.infinitic.workers.registers
 
-import io.infinitic.cache.StateCache
+import io.infinitic.cache.config.Cache
 import io.infinitic.common.config.logger
 import io.infinitic.common.tasks.data.TaskName
 import io.infinitic.common.workers.TaskFactory
@@ -37,7 +37,7 @@ import io.infinitic.common.workers.registry.RegisteredWorkflowEngine
 import io.infinitic.common.workers.registry.RegisteredWorkflowTag
 import io.infinitic.common.workers.registry.WorkerRegistry
 import io.infinitic.common.workflows.data.workflows.WorkflowName
-import io.infinitic.storage.StateStorage
+import io.infinitic.storage.config.Storage
 import io.infinitic.tasks.tag.config.TaskTag
 import io.infinitic.tasks.tag.storage.BinaryTaskTagStorage
 import io.infinitic.workers.config.WorkerConfig
@@ -59,15 +59,15 @@ class WorkerRegisterImpl(private val workerConfig: WorkerConfig) : WorkerRegiste
 
             when (w.`class`) {
                 null -> {
-                    w.workflowTag?.let {
-                        registerWorkflowTag(WorkflowName(w.name), it.concurrency, it.stateStorage, it.stateCache)
+                    w.tagEngine?.let {
+                        registerWorkflowTag(WorkflowName(w.name), it.concurrency, it.storage, it.cache)
                     }
                     w.workflowEngine?.let {
-                        registerWorkflowEngine(WorkflowName(w.name), it.concurrency, it.stateStorage, it.stateCache)
+                        registerWorkflowEngine(WorkflowName(w.name), it.concurrency, it.storage, it.cache)
                     }
                 }
 
-                else -> registerWorkflow(w.name, w.concurrency, { w.instance }, w.workflowEngine, w.workflowTag)
+                else -> registerWorkflow(w.name, w.concurrency, { w.instance }, w.workflowEngine, w.tagEngine)
             }
         }
 
@@ -75,11 +75,11 @@ class WorkerRegisterImpl(private val workerConfig: WorkerConfig) : WorkerRegiste
             logger.info { "Task ${t.name}:" }
 
             when (t.`class`) {
-                null -> t.taskTag?.let {
-                    registerTaskTag(TaskName(t.name), it.concurrency, it.stateStorage, it.stateCache)
+                null -> t.tagEngine?.let {
+                    registerTaskTag(TaskName(t.name), it.concurrency, it.storage, it.cache)
                 }
 
-                else -> registerTask(t.name, t.concurrency, { t.instance }, t.taskTag)
+                else -> registerTask(t.name, t.concurrency, { t.instance }, t.tagEngine)
             }
         }
     }
@@ -101,8 +101,8 @@ class WorkerRegisterImpl(private val workerConfig: WorkerConfig) : WorkerRegiste
         registry.tasks[taskName] = RegisteredTask(concurrency, factory)
 
         when (tagEngine) {
-            null -> registerTaskTag(taskName, concurrency, workerConfig.stateStorage, workerConfig.stateCache)
-            else -> registerTaskTag(taskName, tagEngine.concurrency, tagEngine.stateStorage, tagEngine.stateCache)
+            null -> registerTaskTag(taskName, concurrency, workerConfig.storage, workerConfig.cache)
+            else -> registerTaskTag(taskName, tagEngine.concurrency, tagEngine.storage, tagEngine.cache)
         }
     }
 
@@ -124,12 +124,12 @@ class WorkerRegisterImpl(private val workerConfig: WorkerConfig) : WorkerRegiste
         registry.workflows[workflowName] = RegisteredWorkflow(concurrency, factory)
 
         when (tagEngine) {
-            null -> registerWorkflowTag(workflowName, concurrency, workerConfig.stateStorage, workerConfig.stateCache)
+            null -> registerWorkflowTag(workflowName, concurrency, workerConfig.storage, workerConfig.cache)
             else -> registerWorkflowTag(
                 workflowName,
                 tagEngine.concurrency,
-                tagEngine.stateStorage,
-                tagEngine.stateCache
+                tagEngine.storage,
+                tagEngine.cache
             )
         }
 
@@ -137,31 +137,31 @@ class WorkerRegisterImpl(private val workerConfig: WorkerConfig) : WorkerRegiste
             null -> registerWorkflowEngine(
                 workflowName,
                 concurrency,
-                workerConfig.stateStorage,
-                workerConfig.stateCache
+                workerConfig.storage,
+                workerConfig.cache
             )
 
-            else -> registerWorkflowEngine(workflowName, engine.concurrency, engine.stateStorage, engine.stateCache)
+            else -> registerWorkflowEngine(workflowName, engine.concurrency, engine.storage, engine.cache)
         }
     }
 
     private fun registerWorkflowEngine(
         workflowName: WorkflowName,
         concurrency: Int,
-        storage: StateStorage?,
-        cache: StateCache?
+        storage: Storage?,
+        cache: Cache?
     ) {
-        val c = cache ?: workerConfig.stateCache
-        val s = storage ?: workerConfig.stateStorage
+        val c = cache ?: workerConfig.cache
+        val s = storage ?: workerConfig.storage
 
         logger.info {
-            "* workflow engine".padEnd(25) + ": (storage: $s, cache: $c, instances: $concurrency)"
+            "* workflow engine".padEnd(25) + ": (storage: ${s.type}, cache: ${c.type}, instances: $concurrency)"
         }
 
         registry.workflowEngines[workflowName] = RegisteredWorkflowEngine(
             concurrency,
             BinaryWorkflowStateStorage(
-                CachedKeyValueStorage(c.keyValue(workerConfig), s.keyValue(workerConfig))
+                CachedKeyValueStorage(c.keyValue, s.keyValue)
             )
         )
     }
@@ -169,21 +169,21 @@ class WorkerRegisterImpl(private val workerConfig: WorkerConfig) : WorkerRegiste
     private fun registerTaskTag(
         taskName: TaskName,
         concurrency: Int,
-        storage: StateStorage?,
-        cache: StateCache?
+        storage: Storage?,
+        cache: Cache?
     ) {
-        val c = cache ?: workerConfig.stateCache
-        val s = storage ?: workerConfig.stateStorage
+        val c = cache ?: workerConfig.cache
+        val s = storage ?: workerConfig.storage
 
         logger.info {
-            "* task tag ".padEnd(25) + ": (storage: $s, cache: $c, instances: $concurrency)"
+            "* task tag ".padEnd(25) + ": (storage: ${s.type}, cache: ${c.type}, instances: $concurrency)"
         }
 
         registry.taskTags[taskName] = RegisteredTaskTag(
             concurrency,
             BinaryTaskTagStorage(
-                CachedKeyValueStorage(c.keyValue(workerConfig), s.keyValue(workerConfig)),
-                CachedKeySetStorage(c.keySet(workerConfig), s.keySet(workerConfig))
+                CachedKeyValueStorage(c.keyValue, s.keyValue),
+                CachedKeySetStorage(c.keySet, s.keySet)
             )
         )
     }
@@ -191,21 +191,21 @@ class WorkerRegisterImpl(private val workerConfig: WorkerConfig) : WorkerRegiste
     private fun registerWorkflowTag(
         workflowName: WorkflowName,
         concurrency: Int,
-        storage: StateStorage?,
-        cache: StateCache?
+        storage: Storage?,
+        cache: Cache?
     ) {
-        val c = cache ?: workerConfig.stateCache
-        val s = storage ?: workerConfig.stateStorage
+        val c = cache ?: workerConfig.cache
+        val s = storage ?: workerConfig.storage
 
         logger.info {
-            "* workflow tag ".padEnd(25) + ": (storage: $s, cache: $c, instances: $concurrency)"
+            "* workflow tag ".padEnd(25) + ": (storage: ${s.type}, cache: ${c.type}, instances: $concurrency)"
         }
 
         registry.workflowTags[workflowName] = RegisteredWorkflowTag(
             concurrency,
             BinaryWorkflowTagStorage(
-                CachedKeyValueStorage(c.keyValue(workerConfig), s.keyValue(workerConfig)),
-                CachedKeySetStorage(c.keySet(workerConfig), s.keySet(workerConfig))
+                CachedKeyValueStorage(c.keyValue, s.keyValue),
+                CachedKeySetStorage(c.keySet, s.keySet)
             )
         )
     }

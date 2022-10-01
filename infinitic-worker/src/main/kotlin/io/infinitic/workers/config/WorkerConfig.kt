@@ -25,15 +25,12 @@
 
 package io.infinitic.workers.config
 
-import io.infinitic.cache.CacheConfig
-import io.infinitic.cache.StateCache
-import io.infinitic.cache.caffeine.Caffeine
+import io.infinitic.cache.config.Cache
+import io.infinitic.cache.config.CacheConfig
 import io.infinitic.common.config.loadConfigFromFile
 import io.infinitic.common.config.loadConfigFromResource
-import io.infinitic.storage.StateStorage
-import io.infinitic.storage.StorageConfig
-import io.infinitic.storage.mysql.MySQL
-import io.infinitic.storage.redis.Redis
+import io.infinitic.storage.config.Storage
+import io.infinitic.storage.config.StorageConfig
 import io.infinitic.transport.config.Transport
 import io.infinitic.transport.config.TransportConfig
 import io.infinitic.transport.pulsar.config.Pulsar
@@ -55,34 +52,24 @@ data class WorkerConfig(
     override val pulsar: Pulsar?,
 
     /**
-     * Default state storage
+     * Default storage
      */
-    override var stateStorage: StateStorage = StateStorage.inMemory,
+    override val storage: Storage = Storage(),
 
     /**
-     * Redis configuration
+     * Default cache
      */
-    override val redis: Redis? = null,
+    override var cache: Cache = Cache(),
 
     /**
-     * MySQL configuration
-     */
-    override val mysql: MySQL? = null,
-
-    /**
-     * Default state cache
-     */
-    override var stateCache: StateCache = StateCache.caffeine,
-
-    /**
-     * Caffeine configuration
-     */
-    override val caffeine: Caffeine? = null,
-
-    /**
-     Tasks configuration
+     * Tasks configuration
      */
     val tasks: List<Task> = listOf(),
+
+    /**
+     * Default task retry policy
+     */
+    val retryPolicy: RetryPolicy = RetryExponentialBackoff(),
 
     /**
      * Workflows configuration
@@ -107,36 +94,35 @@ data class WorkerConfig(
 
     init {
         if (transport == Transport.pulsar) {
-            require(pulsar != null) { "`${Transport.pulsar}` is used but not configured" }
+            require(pulsar != null) { "No `pulsar` configuration provided" }
         }
+
+        // check default retry Policy
+        retryPolicy.check()
 
         // apply default, if not set
         tasks.map { task ->
-            task.taskTag?.let {
-                it.stateStorage = it.stateStorage ?: stateStorage
-                checkStateStorage(it.stateStorage, "tasks.${task.name}.tagEngine.stateStorage")
-                it.stateCache = it.stateCache ?: stateCache
+            task.retryPolicy = task.retryPolicy?.also { it.check() } ?: retryPolicy
+
+            task.tagEngine?.let {
+                it.storage = it.storage ?: storage
+                it.cache = it.cache ?: cache
                 if (it.default) it.concurrency = task.concurrency
             }
         }
 
+        // apply default, if not set
         workflows.map { workflow ->
-            workflow.workflowTag?.let {
-                it.stateStorage = it.stateStorage ?: stateStorage
-                checkStateStorage(it.stateStorage, "workflows.${workflow.name}.tagEngine.stateStorage")
-                it.stateCache = it.stateCache ?: stateCache
+            workflow.tagEngine?.let {
+                it.storage = it.storage ?: storage
+                it.cache = it.cache ?: cache
                 if (it.default) it.concurrency = workflow.concurrency
             }
             workflow.workflowEngine?.let {
-                it.stateStorage = it.stateStorage ?: stateStorage
-                checkStateStorage(it.stateStorage, "workflows.${workflow.name}.workflowEngine.stateStorage")
-                it.stateCache = it.stateCache ?: stateCache
+                it.storage = it.storage ?: storage
+                it.cache = it.cache ?: cache
                 if (it.default) it.concurrency = workflow.concurrency
             }
         }
-    }
-
-    private fun checkStateStorage(stateStorage: StateStorage?, name: String) {
-        require(stateStorage != null) { "`stateStorage` can not be null for $name" }
     }
 }

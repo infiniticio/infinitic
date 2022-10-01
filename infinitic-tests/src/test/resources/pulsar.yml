@@ -24,16 +24,7 @@
 # Comment the line below to perform tests on a local Pulsar cluster
 transport: inMemory
 
-stateStorage: inMemory
-
-stateCache: caffeine
-
-redis:
-  host: localhost
-  port: 6379
-  user:
-  password:
-  database: 0
+cache: caffeine
 
 pulsar:
   tenant: infinitic

@@ -23,24 +23,30 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.storage
+package io.infinitic.storage.config.inMemory
 
-import io.infinitic.storage.mysql.MySQL
-import io.infinitic.storage.redis.Redis
+import io.infinitic.storage.Flushable
+import io.infinitic.storage.keyValue.KeyValueStorage
+import org.jetbrains.annotations.TestOnly
+import java.util.concurrent.ConcurrentHashMap
 
-interface StorageConfig {
-    /**
-     * Default state storage
-     */
-    var stateStorage: StateStorage
+class InMemoryKeyValueStorage : KeyValueStorage, Flushable {
+    private val stateStorage = ConcurrentHashMap<String, ByteArray>()
 
-    /**
-     * Redis configuration
-     */
-    val redis: Redis?
+    override suspend fun get(key: String): ByteArray? {
+        return stateStorage[key]
+    }
 
-    /**
-     * MySQL configuration
-     */
-    val mysql: MySQL?
+    override suspend fun put(key: String, value: ByteArray) {
+        stateStorage[key] = value
+    }
+
+    override suspend fun del(key: String) {
+        stateStorage.remove(key)
+    }
+
+    @TestOnly
+    override fun flush() {
+        stateStorage.clear()
+    }
 }

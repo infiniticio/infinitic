@@ -23,31 +23,27 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.storage.redis
+package io.infinitic.cache.config.none
 
-import io.infinitic.storage.keyValue.KeyValueStorage
+import io.infinitic.cache.keyValue.CachedKeyValue
 import org.jetbrains.annotations.TestOnly
-import redis.clients.jedis.JedisPool
 
-class RedisKeyValueStorage(
-    private val pool: JedisPool
-) : KeyValueStorage {
+class NoCachedKeyValue<T> : CachedKeyValue<T> {
 
-    companion object {
-        fun of(config: Redis) = RedisKeyValueStorage(config.getPool())
+    override fun getValue(key: String): T? {
+        return null
     }
 
-    override suspend fun get(key: String): ByteArray? =
-        pool.resource.use { it.get(key.toByteArray()) }
+    override fun putValue(key: String, value: T) {
+        // nothing
+    }
 
-    override suspend fun put(key: String, value: ByteArray) =
-        pool.resource.use { it.set(key.toByteArray(), value); Unit }
-
-    override suspend fun del(key: String) =
-        pool.resource.use { it.del(key.toByteArray()); Unit }
+    override fun delValue(key: String) {
+        // nothing
+    }
 
     @TestOnly
     override fun flush() {
-        pool.resource.use { it.flushDB() }
+        // nothing
     }
 }

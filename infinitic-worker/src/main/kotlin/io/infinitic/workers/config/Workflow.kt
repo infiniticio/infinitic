@@ -34,8 +34,9 @@ data class Workflow(
     val name: String,
     val `class`: String? = null,
     val concurrency: Int = 1,
-    var workflowTag: WorkflowTag? = null,
-    var workflowEngine: WorkflowEngine? = null
+    var tagEngine: WorkflowTag? = null,
+    var workflowEngine: WorkflowEngine? = null,
+    val retryPolicy: RetryPolicy = RetryExponentialBackoff(maximumAttempts = 0)
 ) {
     private lateinit var _constructor: Constructor<out Any>
 
@@ -47,7 +48,7 @@ data class Workflow(
 
         when (`class`) {
             null -> {
-                require(workflowTag != null || workflowEngine != null) { "class, workflowTag and workflowEngine are null for workflow $name" }
+                require(tagEngine != null || workflowEngine != null) { "class, workflowTag and workflowEngine are null for workflow $name" }
             }
 
             else -> {

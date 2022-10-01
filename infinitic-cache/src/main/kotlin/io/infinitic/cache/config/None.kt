@@ -23,30 +23,6 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.storage.inMemory
+package io.infinitic.cache.config
 
-import io.infinitic.storage.Flushable
-import io.infinitic.storage.keyValue.KeyValueStorage
-import org.jetbrains.annotations.TestOnly
-import java.util.concurrent.ConcurrentHashMap
-
-class InMemoryKeyValueStorage : KeyValueStorage, Flushable {
-    private val stateStorage = ConcurrentHashMap<String, ByteArray>()
-
-    override suspend fun get(key: String): ByteArray? {
-        return stateStorage[key]
-    }
-
-    override suspend fun put(key: String, value: ByteArray) {
-        stateStorage[key] = value
-    }
-
-    override suspend fun del(key: String) {
-        stateStorage.remove(key)
-    }
-
-    @TestOnly
-    override fun flush() {
-        stateStorage.clear()
-    }
-}
+data class None(val type: String = "unused")

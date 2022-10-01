@@ -26,6 +26,8 @@
 package io.infinitic.storage.redis
 
 import io.infinitic.storage.Bytes
+import io.infinitic.storage.config.Redis
+import io.infinitic.storage.config.redis.RedisKeySetStorage
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
 import redis.embedded.RedisServer

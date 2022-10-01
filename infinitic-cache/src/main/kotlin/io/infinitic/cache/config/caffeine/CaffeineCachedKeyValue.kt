@@ -23,19 +23,29 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.tasks.tag.config
+package io.infinitic.cache.config.caffeine
 
-import io.infinitic.cache.config.Cache
-import io.infinitic.storage.config.Storage
+import com.github.benmanes.caffeine.cache.Cache
+import com.github.benmanes.caffeine.cache.Caffeine
+import io.infinitic.cache.Flushable
+import io.infinitic.cache.keyValue.CachedKeyValue
+import io.infinitic.cache.config.caffeine.Caffeine as CaffeineConfig
 
-data class TaskTag(
-    var concurrency: Int = 1,
-    var storage: Storage? = null,
-    var cache: Cache? = null
-) {
-    var default: Boolean = false
+class CaffeineCachedKeyValue<S>(config: CaffeineConfig) : CachedKeyValue<S>, Flushable {
+    private var caffeine: Cache<String, S> =
+        Caffeine.newBuilder().setup(config).build()
 
-    init {
-        require(concurrency >= 0) { "concurrency must be positive" }
+    override fun delValue(key: String) {
+        caffeine.invalidate(key)
+    }
+
+    override fun putValue(key: String, value: S) {
+        caffeine.put(key, value!!)
+    }
+
+    override fun getValue(key: String): S? = caffeine.getIfPresent(key)
+
+    override fun flush() {
+        caffeine.invalidateAll()
     }
 }

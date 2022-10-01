@@ -23,7 +23,7 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.cache.caffeine
+package io.infinitic.cache.config.caffeine
 
 import com.github.benmanes.caffeine.cache.RemovalCause
 import mu.KotlinLogging
@@ -38,9 +38,13 @@ data class Caffeine(
     @JvmField val expireAfterWrite: Int? = null
 ) {
     init {
-        maximumSize?. let { require(it > 0) { "maximumSize MUST be >0" } }
-        expireAfterAccess?. let { require(it > 0) { "expireAfterAccess MUST be >0" } }
-        expireAfterWrite?. let { require(it > 0) { "expireAfterWrite MUST be >0" } }
+        maximumSize?.let { require(it > 0) { "maximumSize MUST be >0" } }
+        expireAfterAccess?.let { require(it > 0) { "expireAfterAccess MUST be >0" } }
+        expireAfterWrite?.let { require(it > 0) { "expireAfterWrite MUST be >0" } }
+    }
+
+    companion object {
+        fun default() = Caffeine(expireAfterAccess = 3600, maximumSize = 10000)
     }
 }
 

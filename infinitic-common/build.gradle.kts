@@ -33,6 +33,7 @@ dependencies {
     api(Libs.Serialization.json)
     api(Libs.JsonPath.jayway)
     implementation(Libs.Hoplite.core)
+    implementation(Libs.Hoplite.yaml)
     implementation(Libs.Jackson.databind)
     implementation(Libs.Jackson.kotlin)
     implementation(Libs.Jackson.jsr310)

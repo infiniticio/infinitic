@@ -23,7 +23,7 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.storage.mysql
+package io.infinitic.storage.config
 
 import com.sksamuel.hoplite.Secret
 import com.zaxxer.hikari.HikariConfig

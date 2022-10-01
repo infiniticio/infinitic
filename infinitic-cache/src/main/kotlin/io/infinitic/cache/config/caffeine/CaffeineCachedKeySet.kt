@@ -23,7 +23,7 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.cache.caffeine
+package io.infinitic.cache.config.caffeine
 
 import com.github.benmanes.caffeine.cache.Cache
 import com.github.benmanes.caffeine.cache.Caffeine
@@ -31,7 +31,7 @@ import io.infinitic.cache.Bytes
 import io.infinitic.cache.Flushable
 import io.infinitic.cache.keySet.CachedKeySet
 import org.jetbrains.annotations.TestOnly
-import io.infinitic.cache.caffeine.Caffeine as CaffeineConfig
+import io.infinitic.cache.config.caffeine.Caffeine as CaffeineConfig
 
 class CaffeineCachedKeySet(config: CaffeineConfig) : CachedKeySet<ByteArray>, Flushable {
 

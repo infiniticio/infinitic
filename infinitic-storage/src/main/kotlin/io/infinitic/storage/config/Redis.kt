@@ -23,7 +23,7 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.storage.redis
+package io.infinitic.storage.config
 
 import com.sksamuel.hoplite.Secret
 import redis.clients.jedis.JedisPool

@@ -23,29 +23,34 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.cache.caffeine
+package io.infinitic.storage.config.redis
 
-import com.github.benmanes.caffeine.cache.Cache
-import com.github.benmanes.caffeine.cache.Caffeine
-import io.infinitic.cache.Flushable
-import io.infinitic.cache.keyValue.CachedKeyValue
-import io.infinitic.cache.caffeine.Caffeine as CaffeineConfig
+import io.infinitic.storage.config.Redis
+import io.infinitic.storage.keySet.KeySetStorage
+import org.jetbrains.annotations.TestOnly
+import redis.clients.jedis.JedisPool
 
-class CaffeineCachedKeyValue<S>(config: CaffeineConfig) : CachedKeyValue<S>, Flushable {
-    private var caffeine: Cache<String, S> =
-        Caffeine.newBuilder().setup(config).build()
+class RedisKeySetStorage(
+    private val pool: JedisPool
+) : KeySetStorage {
 
-    override fun delValue(key: String) {
-        caffeine.invalidate(key)
+    companion object {
+        fun of(config: Redis) = RedisKeySetStorage(config.getPool())
     }
 
-    override fun putValue(key: String, value: S) {
-        caffeine.put(key, value!!)
+    override suspend fun get(key: String): Set<ByteArray> =
+        pool.resource.use { it.smembers(key.toByteArray()) }
+
+    override suspend fun add(key: String, value: ByteArray) {
+        pool.resource.use { it.sadd(key.toByteArray(), value) }
     }
 
-    override fun getValue(key: String): S? = caffeine.getIfPresent(key)
+    override suspend fun remove(key: String, value: ByteArray) {
+        pool.resource.use { it.srem(key.toByteArray(), value) }
+    }
 
+    @TestOnly
     override fun flush() {
-        caffeine.invalidateAll()
+        pool.resource.use { it.flushDB() }
     }
 }

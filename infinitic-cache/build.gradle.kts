@@ -25,6 +25,8 @@
 
 dependencies {
     implementation(Libs.Caffeine.caffeine)
+
+    testImplementation(Libs.Hoplite.yaml)
 }
 
 apply("../publish.gradle.kts")

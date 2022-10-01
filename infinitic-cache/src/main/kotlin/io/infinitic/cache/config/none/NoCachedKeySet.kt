@@ -23,41 +23,31 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.storage.inMemory
+package io.infinitic.cache.config.none
 
-import io.infinitic.storage.Bytes
-import io.infinitic.storage.keySet.KeySetStorage
+import io.infinitic.cache.keySet.CachedKeySet
 import org.jetbrains.annotations.TestOnly
 
-class InMemoryKeySetStorage : KeySetStorage {
-    val storage = mutableMapOf<String, MutableSet<Bytes>>()
+class NoCachedKeySet<T> : CachedKeySet<T> {
 
-    override suspend fun get(key: String): Set<ByteArray> {
-        return getBytesPerKey(key).map { it.content }.toSet()
+    override fun get(key: String): Set<T>? {
+        return null
     }
 
-    override suspend fun add(key: String, value: ByteArray) {
-        getBytesPerKey(key).add(Bytes(value))
+    override fun set(key: String, value: Set<T>) {
+        // nothing
     }
 
-    override suspend fun remove(key: String, value: ByteArray) {
-        getBytesPerKey(key).remove(Bytes(value))
+    override fun add(key: String, value: T) {
+        // nothing
+    }
 
-        // clean key if now empty
-        if (getBytesPerKey(key).isEmpty()) storage.remove(key)
+    override fun remove(key: String, value: T) {
+        // nothing
     }
 
     @TestOnly
     override fun flush() {
-        storage.clear()
-    }
-
-    private fun getBytesPerKey(key: String): MutableSet<Bytes> {
-        return storage[key]
-            ?: run {
-                val set = mutableSetOf<Bytes>()
-                storage[key] = set
-                set
-            }
+        // nothing
     }
 }

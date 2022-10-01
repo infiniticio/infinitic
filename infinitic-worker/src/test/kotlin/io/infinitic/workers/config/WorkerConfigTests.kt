@@ -30,6 +30,7 @@ import io.infinitic.workers.samples.TaskA
 import io.infinitic.workers.samples.WorkflowA
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.StringSpec
+import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import io.kotest.matchers.string.shouldContain
 
@@ -102,5 +103,11 @@ class WorkerConfigTests : StringSpec({
             WorkerConfig.fromResource("/config/workflows/notAWorkflow.yml")
         }
         e.message!! shouldContain "class \"io.infinitic.workers.samples.NotAWorkflow\" must extend io.infinitic.workflows.Workflow"
+    }
+
+    "default retry policy should be RetryExponentialBackoff" {
+        val config = WorkerConfig.fromResource("/config/tasks/instance.yml")
+
+        config.retryPolicy shouldBe RetryExponentialBackoff()
     }
 })

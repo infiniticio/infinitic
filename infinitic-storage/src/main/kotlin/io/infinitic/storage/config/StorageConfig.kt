@@ -23,27 +23,11 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.cache.none
+package io.infinitic.storage.config
 
-import io.infinitic.cache.keyValue.CachedKeyValue
-import org.jetbrains.annotations.TestOnly
-
-class NoCachedKeyValue<T> : CachedKeyValue<T> {
-
-    override fun getValue(key: String): T? {
-        return null
-    }
-
-    override fun putValue(key: String, value: T) {
-        // nothing
-    }
-
-    override fun delValue(key: String) {
-        // nothing
-    }
-
-    @TestOnly
-    override fun flush() {
-        // nothing
-    }
+/**
+ * Storage configuration
+ */
+interface StorageConfig {
+    val storage: Storage
 }

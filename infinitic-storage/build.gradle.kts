@@ -33,6 +33,8 @@ dependencies {
     implementation("com.zaxxer:HikariCP:5.0.1")
     implementation("mysql:mysql-connector-java:8.0.30")
     testImplementation("org.testcontainers:mysql:1.17.3")
+
+    testImplementation(Libs.Hoplite.yaml)
 }
 
 apply("../publish.gradle.kts")

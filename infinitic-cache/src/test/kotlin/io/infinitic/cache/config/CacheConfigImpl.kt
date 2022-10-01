@@ -23,19 +23,8 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.tasks.tag.config
+package io.infinitic.cache.config
 
-import io.infinitic.cache.config.Cache
-import io.infinitic.storage.config.Storage
-
-data class TaskTag(
-    var concurrency: Int = 1,
-    var storage: Storage? = null,
-    var cache: Cache? = null
-) {
-    var default: Boolean = false
-
-    init {
-        require(concurrency >= 0) { "concurrency must be positive" }
-    }
-}
+data class CacheConfigImpl(
+    override val cache: Cache = Cache()
+) : CacheConfig
