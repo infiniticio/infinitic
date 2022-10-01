@@ -95,12 +95,12 @@ object Libs {
     }
 
     object Slf4j {
-        private const val version = "1.7.36"
+        private const val version = "2.0.3"
         const val simple = "org.slf4j:slf4j-simple:$version"
         const val api = "org.slf4j:slf4j-api:$version"
     }
 
     object Logging {
-        const val api = "io.github.microutils:kotlin-logging:2.1.23"
+        const val api = "io.github.microutils:kotlin-logging:3.0.0"
     }
 }
