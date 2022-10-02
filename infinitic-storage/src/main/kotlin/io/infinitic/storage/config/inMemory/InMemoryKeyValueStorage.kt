@@ -26,27 +26,31 @@
 package io.infinitic.storage.config.inMemory
 
 import io.infinitic.storage.Flushable
+import io.infinitic.storage.config.InMemory
 import io.infinitic.storage.keyValue.KeyValueStorage
 import org.jetbrains.annotations.TestOnly
 import java.util.concurrent.ConcurrentHashMap
 
-class InMemoryKeyValueStorage : KeyValueStorage, Flushable {
-    private val stateStorage = ConcurrentHashMap<String, ByteArray>()
+class InMemoryKeyValueStorage(internal val storage: ConcurrentHashMap<String, ByteArray>) : KeyValueStorage, Flushable {
+
+    companion object {
+        fun of(config: InMemory) = InMemoryKeyValueStorage(config.getPool().keyValue)
+    }
 
     override suspend fun get(key: String): ByteArray? {
-        return stateStorage[key]
+        return storage[key]
     }
 
     override suspend fun put(key: String, value: ByteArray) {
-        stateStorage[key] = value
+        storage[key] = value
     }
 
     override suspend fun del(key: String) {
-        stateStorage.remove(key)
+        storage.remove(key)
     }
 
     @TestOnly
     override fun flush() {
-        stateStorage.clear()
+        storage.clear()
     }
 }

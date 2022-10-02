@@ -31,7 +31,7 @@ import org.jetbrains.annotations.TestOnly
 import redis.clients.jedis.JedisPool
 
 class RedisKeyValueStorage(
-    private val pool: JedisPool
+    internal val pool: JedisPool
 ) : KeyValueStorage {
 
     companion object {

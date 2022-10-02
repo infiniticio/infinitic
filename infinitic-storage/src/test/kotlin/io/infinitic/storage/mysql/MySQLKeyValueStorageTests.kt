@@ -26,6 +26,7 @@
 package io.infinitic.storage.mysql
 
 import com.sksamuel.hoplite.Secret
+import io.infinitic.storage.DockerOnly
 import io.infinitic.storage.config.MySQL
 import io.infinitic.storage.config.mysql.MySQLKeyValueStorage
 import io.kotest.core.annotation.EnabledIf
@@ -45,18 +46,18 @@ class MySQLKeyValueStorageTests : StringSpec({
         }
         .let { it.start(); it }
 
-    val storage = MySQLKeyValueStorage.of(
-        MySQL(
-            host = mysqlServer.host,
-            port = mysqlServer.firstMappedPort,
-            user = mysqlServer.username,
-            password = Secret(mysqlServer.password),
-            database = mysqlServer.databaseName
-        )
+    val config = MySQL(
+        host = mysqlServer.host,
+        port = mysqlServer.firstMappedPort,
+        user = mysqlServer.username,
+        password = Secret(mysqlServer.password),
+        database = mysqlServer.databaseName
     )
 
+    val storage = MySQLKeyValueStorage.of(config)
+
     afterSpec {
-        MySQL.close()
+        config.close()
         mysqlServer.stop()
     }
 

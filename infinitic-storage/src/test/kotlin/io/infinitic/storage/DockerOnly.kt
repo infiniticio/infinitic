@@ -23,7 +23,7 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.storage.mysql
+package io.infinitic.storage
 
 import io.kotest.core.annotation.EnabledCondition
 import io.kotest.core.spec.Spec

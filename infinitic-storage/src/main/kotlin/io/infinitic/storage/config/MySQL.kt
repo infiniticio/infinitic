@@ -41,17 +41,21 @@ data class MySQL(
         val pools = ConcurrentHashMap<MySQL, HikariDataSource>()
 
         fun close() {
-            pools.values.forEach { it.close() }
-            pools.clear()
+            pools.keys.forEach { it.close() }
         }
+    }
+
+    fun close() {
+        pools[this]?.close()
+        pools.remove(this)
     }
 
     fun getPool() = pools.computeIfAbsent(this) {
         HikariDataSource(
             // Default values set according to https://github.com/brettwooldridge/HikariCP/wiki/MySQL-Configuration
             HikariConfig().apply {
-                jdbcUrl = "jdbc:mariadb://$host:$port/$database"
-                driverClassName = "org.mariadb.jdbc.Driver"
+                jdbcUrl = "jdbc:mysql://$host:$port/$database"
+                driverClassName = "com.mysql.cj.jdbc.Driver"
                 username = user
                 password = this@MySQL.password?.value
             }

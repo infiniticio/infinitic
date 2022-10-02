@@ -25,13 +25,15 @@
 
 package io.infinitic.storage.inMemory
 
+import io.infinitic.storage.config.InMemory
 import io.infinitic.storage.config.inMemory.InMemoryKeyValueStorage
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
 
 class InMemoryKeyValueStorageTests : StringSpec({
 
-    val storage = InMemoryKeyValueStorage()
+    val config = InMemory("test")
+    val storage = InMemoryKeyValueStorage.of(config)
 
     beforeTest {
         storage.put("foo", "bar".toByteArray())

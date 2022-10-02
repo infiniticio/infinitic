@@ -25,4 +25,39 @@
 
 package io.infinitic.storage.config
 
-data class InMemory(val type: String = "unused")
+import io.infinitic.storage.Bytes
+import java.util.concurrent.ConcurrentHashMap
+
+data class InMemory(val type: String = "default") {
+    companion object {
+        val pools = ConcurrentHashMap<InMemory, InMemoryPool>()
+
+        fun close() {
+            pools.keys.forEach { it.close() }
+        }
+    }
+
+    fun getPool() = pools.computeIfAbsent(this) {
+        InMemoryPool()
+    }
+
+    fun close() {
+        pools[this]?.close()
+        pools.remove(this)
+    }
+}
+
+class InMemoryPool {
+    private val _keySet = mutableMapOf<String, MutableSet<Bytes>>()
+
+    private val _keyValue = ConcurrentHashMap<String, ByteArray>()
+
+    internal val keySet get() = _keySet
+
+    internal val keyValue get() = _keyValue
+
+    fun close() {
+        _keyValue.clear()
+        _keySet.clear()
+    }
+}

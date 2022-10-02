@@ -45,9 +45,13 @@ data class Redis(
         val pools = ConcurrentHashMap<Redis, JedisPool>()
 
         fun close() {
-            pools.values.forEach { it.close() }
-            pools.clear()
+            pools.keys.forEach { it.close() }
         }
+    }
+
+    fun close() {
+        pools[this]?.close()
+        pools.remove(this)
     }
 
     fun getPool(

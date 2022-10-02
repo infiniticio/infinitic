@@ -39,7 +39,6 @@ data class Storage(
     val redis: Redis? = null,
     val mysql: MySQL? = null
 ) {
-
     init {
         val nonNul = listOfNotNull(inMemory, redis, mysql)
 
@@ -48,6 +47,15 @@ data class Storage(
             inMemory = InMemory()
         } else {
             require(nonNul.count() == 1) { "Multiple definitions for storage" }
+        }
+    }
+
+    fun close() {
+        when {
+            inMemory != null -> inMemory!!.close()
+            redis != null -> redis.close()
+            mysql != null -> mysql.close()
+            else -> throw RuntimeException("This should not happen")
         }
     }
 
@@ -62,7 +70,7 @@ data class Storage(
 
     val keySet: KeySetStorage by lazy {
         when {
-            inMemory != null -> InMemoryKeySetStorage()
+            inMemory != null -> InMemoryKeySetStorage.of(inMemory!!)
             redis != null -> RedisKeySetStorage.of(redis)
             mysql != null -> MySQLKeySetStorage.of(mysql)
             else -> throw RuntimeException("This should not happen")
@@ -71,7 +79,7 @@ data class Storage(
 
     val keyValue: KeyValueStorage by lazy {
         when {
-            inMemory != null -> InMemoryKeyValueStorage()
+            inMemory != null -> InMemoryKeyValueStorage.of(inMemory!!)
             redis != null -> RedisKeyValueStorage.of(redis)
             mysql != null -> MySQLKeyValueStorage.of(mysql)
             else -> throw RuntimeException("This should not happen")

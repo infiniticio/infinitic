@@ -26,11 +26,15 @@
 package io.infinitic.storage.config.inMemory
 
 import io.infinitic.storage.Bytes
+import io.infinitic.storage.config.InMemory
 import io.infinitic.storage.keySet.KeySetStorage
 import org.jetbrains.annotations.TestOnly
 
-class InMemoryKeySetStorage : KeySetStorage {
-    val storage = mutableMapOf<String, MutableSet<Bytes>>()
+class InMemoryKeySetStorage(internal val storage: MutableMap<String, MutableSet<Bytes>>) : KeySetStorage {
+
+    companion object {
+        fun of(config: InMemory) = InMemoryKeySetStorage(config.getPool().keySet)
+    }
 
     override suspend fun get(key: String): Set<ByteArray> {
         return getBytesPerKey(key).map { it.content }.toSet()

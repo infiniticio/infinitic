@@ -33,7 +33,7 @@ import org.jetbrains.annotations.TestOnly
 private const val MYSQL_TABLE = "key_value_storage"
 
 class MySQLKeyValueStorage(
-    private val pool: HikariDataSource
+    internal val pool: HikariDataSource
 ) : KeyValueStorage {
 
     companion object {
