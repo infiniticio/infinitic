@@ -48,7 +48,7 @@ class WorkflowTaskImpl : Task(), WorkflowTask {
 
     override fun handle(workflowTaskParameters: WorkflowTaskParameters): WorkflowTaskReturnValue {
         // get  instance workflow by name
-        val workflow = context.workerRegister.getWorkflowInstance("${workflowTaskParameters.workflowName}")
+        val workflow = context.workerRegistry.getWorkflowInstance(workflowTaskParameters.workflowName)
 
         // get method
         val methodRun = workflowTaskParameters.methodRun
@@ -96,7 +96,7 @@ class WorkflowTaskImpl : Task(), WorkflowTask {
                 is WorkflowTaskException -> null
                 // the errors below will be caught by the task executor
                 is DeferredException -> throw cause
-                // Send back other exception
+                // Send back other exceptions
                 is Exception -> throw FailedWorkflowTaskException(
                     workflowName = workflowTaskParameters.workflowName.toString(),
                     workflowId = workflowTaskParameters.workflowId.toString(),

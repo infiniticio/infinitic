@@ -34,8 +34,12 @@ import io.infinitic.transport.pulsar.topics.TaskTopics
 import io.infinitic.transport.pulsar.topics.WorkflowTaskTopics
 import io.infinitic.transport.pulsar.topics.WorkflowTopics
 import mu.KotlinLogging
+import org.apache.pulsar.client.admin.Clusters
+import org.apache.pulsar.client.admin.Namespaces
 import org.apache.pulsar.client.admin.PulsarAdmin
 import org.apache.pulsar.client.admin.PulsarAdminException
+import org.apache.pulsar.client.admin.Tenants
+import org.apache.pulsar.client.admin.Topics
 import org.apache.pulsar.common.policies.data.Policies
 import org.apache.pulsar.common.policies.data.RetentionPolicies
 import org.apache.pulsar.common.policies.data.SchemaCompatibilityStrategy
@@ -46,11 +50,15 @@ import org.apache.pulsar.common.policies.data.impl.DelayedDeliveryPoliciesImpl
 import java.io.Closeable
 
 @Suppress("unused", "MemberVisibilityCanBePrivate")
-
 class PulsarInfiniticAdmin constructor(
     val pulsarAdmin: PulsarAdmin,
     val pulsar: Pulsar
 ) : Closeable {
+
+    private val pulsarClusters: Clusters = pulsarAdmin.clusters()
+    private val pulsarTopics: Topics = pulsarAdmin.topics()
+    private val pulsarTenants: Tenants = pulsarAdmin.tenants()
+    private val pulsarNamespaces: Namespaces = pulsarAdmin.namespaces()
 
     val topicName = PerNameTopics(pulsar.tenant, pulsar.namespace)
 
@@ -70,9 +78,9 @@ class PulsarInfiniticAdmin constructor(
             is_allow_auto_update_schema = true
             // Changes allowed: add optional fields, delete fields
             schema_compatibility_strategy = SchemaCompatibilityStrategy.BACKWARD_TRANSITIVE
-
             // default topic policies
             deduplicationEnabled = pulsar.policies.deduplicationEnabled
+            // retention policies
             retention_policies = RetentionPolicies(
                 pulsar.policies.retentionTimeInMinutes,
                 pulsar.policies.retentionSizeInMB
@@ -89,7 +97,7 @@ class PulsarInfiniticAdmin constructor(
         TenantInfo.builder()
             .allowedClusters(
                 when (pulsar.allowedClusters) {
-                    null -> pulsarAdmin.clusters().clusters.toSet()
+                    null -> pulsarClusters.clusters.toSet()
                     else -> pulsar.allowedClusters
                 }
             )
@@ -137,7 +145,7 @@ class PulsarInfiniticAdmin constructor(
      * Set of topics for current tenant and namespace
      */
     val topics: Set<String> by lazy {
-        pulsarAdmin.topics().getPartitionedTopicList(fullNamespace).toSet()
+        pulsarTopics.getPartitionedTopicList(fullNamespace).toSet()
     }
 
     /**
@@ -165,90 +173,115 @@ class PulsarInfiniticAdmin constructor(
     /**
      * Create Pulsar tenant
      *
-     * Returns true if the tenant was created, false if already existing
+     * Returns true if the tenant already existed
      */
-    fun createTenant(): Boolean = with(pulsarAdmin.tenants()) {
-        try {
-            logger.debug { "Checking if tenant ${pulsar.tenant} already exists by requesting its info" }
-            getTenantInfo(pulsar.tenant)
-
-            false
-        } catch (e: PulsarAdminException.NotFoundException) {
-            logger.info { "Creating tenant ${pulsar.tenant}" }
-            pulsarAdmin.tenants().createTenant(pulsar.tenant, tenantInfo)
-
-            true
-        }
+    fun createTenant(): Boolean = try {
+        logger.info { "Creating tenant '${pulsar.tenant}'" }
+        pulsarTenants.createTenant(pulsar.tenant, tenantInfo)
+        false
+    } catch (e: PulsarAdminException.ConflictException) {
+        logger.debug { "Already existing tenant '${pulsar.tenant}'" }
+        true
+    } catch (e: PulsarAdminException.NotAuthorizedException) {
+        logger.warn { "Not authorized - make sure by yourself that tenant '${pulsar.tenant}' exists - with the right info" }
+        false
+    } catch (e: PulsarAdminException.NotAllowedException) {
+        logger.warn { "Not allowed - make sure by yourself that tenant '${pulsar.tenant}' exists - with the right info" }
+        false
     }
 
     /**
      * Create Pulsar namespace
      *
-     * Returns true if the namespace was created, false if already existing
+     * Returns true if the namespace already existed
      */
-    fun createNamespace(): Boolean = with(pulsarAdmin.namespaces()) {
-        try {
-            logger.debug { "Checking if namespace $fullNamespace already exists by requesting its policies" }
-            getPolicies(fullNamespace)
+    fun createNamespace(): Boolean = try {
+        logger.debug { "Creating namespace $fullNamespace" }
+        pulsarNamespaces.createNamespace(fullNamespace, policies)
+        false
+    } catch (e: PulsarAdminException.ConflictException) {
+        logger.debug { "Already existing namespace '$fullNamespace'" }
+        true
+    } catch (e: PulsarAdminException.NotAuthorizedException) {
+        logger.warn { "Not authorized - make sure by yourself that namespace '$fullNamespace' exists - with the right policies" }
+        false
+    } catch (e: PulsarAdminException.NotAllowedException) {
+        logger.warn { "Not allowed - make sure by yourself that namespace '$fullNamespace' exists - with the right policies" }
+        false
+    }
 
-            false
-        } catch (e: PulsarAdminException.NotFoundException) {
-            logger.info { "Creating namespace $fullNamespace" }
-            pulsarAdmin.namespaces().createNamespace(fullNamespace, policies)
-
-            true
+    /**
+     * Create Pulsar topic
+     *
+     * Returns true if the topic already existed
+     */
+    fun createTopic(topic: String, isPartitioned: Boolean): Boolean = try {
+        logger.debug { "Creating topic $topic" }
+        when (isPartitioned) {
+            true -> pulsarTopics.createPartitionedTopic(topic, 3)
+            false -> pulsarTopics.createNonPartitionedTopic(topic)
         }
+        false
+    } catch (e: PulsarAdminException.ConflictException) {
+        logger.debug { "Already existing topic '$topic'" }
+        true
+    } catch (e: PulsarAdminException.NotAllowedException) {
+        logger.warn { "Not allowed - make sure by yourself that topic '$topic' exists - with the right policies" }
+        false
+    } catch (e: PulsarAdminException.NotAuthorizedException) {
+        logger.warn { "Not authorized - make sure by yourself that topic '$topic' exists - with the right policies" }
+        false
     }
 
     /**
      * Update policies for namespace
      */
-    fun updatePolicies() {
-        with(pulsarAdmin.namespaces()) {
+    fun updateNamespacePolicies() {
+        with(pulsarNamespaces) {
             try {
-                logger.debug { "Updating policy AutoTopicCreation to ${policies.autoTopicCreationOverride}" }
+                logger.info { "Updating policy AutoTopicCreation to ${policies.autoTopicCreationOverride}" }
                 setAutoTopicCreation(fullNamespace, policies.autoTopicCreationOverride)
             } catch (e: PulsarAdminException) {
                 logger.warn { "Failing to update autoTopicCreationOverride policy: ${e.message}" }
             }
             try {
-                logger.debug { "Updating policy SchemaValidationEnforced to ${policies.schema_validation_enforced}" }
+                logger.info { "Updating policy SchemaValidationEnforced to ${policies.schema_validation_enforced}" }
                 setSchemaValidationEnforced(fullNamespace, policies.schema_validation_enforced)
             } catch (e: PulsarAdminException) {
                 logger.warn { "Failing to update schema_validation_enforced policy: ${e.message}" }
             }
             try {
-                logger.debug { "Updating policy IsAllowAutoUpdateSchema to ${policies.is_allow_auto_update_schema}" }
+                logger.info { "Updating policy IsAllowAutoUpdateSchema to ${policies.is_allow_auto_update_schema}" }
                 setIsAllowAutoUpdateSchema(fullNamespace, policies.is_allow_auto_update_schema)
             } catch (e: PulsarAdminException) {
                 logger.warn { "Failing to update is_allow_auto_update_schema policy: ${e.message}" }
             }
             try {
-                logger.debug { "Updating policy SchemaCompatibilityStrategy to ${policies.schema_compatibility_strategy}" }
+                logger.info { "Updating policy SchemaCompatibilityStrategy to ${policies.schema_compatibility_strategy}" }
                 setSchemaCompatibilityStrategy(fullNamespace, policies.schema_compatibility_strategy)
             } catch (e: PulsarAdminException) {
                 logger.warn { "Failing to update schema_compatibility_strategy policy: ${e.message}" }
             }
             try {
-                logger.debug { "Updating policy DeduplicationStatus to ${policies.deduplicationEnabled}" }
+                logger.info { "Updating policy DeduplicationStatus to ${policies.deduplicationEnabled}" }
                 setDeduplicationStatus(fullNamespace, policies.deduplicationEnabled)
             } catch (e: PulsarAdminException) {
                 logger.warn { "Failing to update deduplicationEnabled policy: ${e.message}" }
             }
             try {
-                logger.debug { "Updating policy Retention to ${policies.retention_policies}" }
+                logger.info { "Updating policy Retention to ${policies.retention_policies}" }
                 setRetention(fullNamespace, policies.retention_policies)
             } catch (e: PulsarAdminException) {
                 logger.warn { "Failing to update namespace's retention_policies: ${e.message}" }
             }
             try {
-                logger.debug { "Updating policy NamespaceMessageTTL to ${policies.message_ttl_in_seconds}" }
+                logger.info { "Updating policy NamespaceMessageTTL to ${policies.message_ttl_in_seconds}" }
                 setNamespaceMessageTTL(fullNamespace, policies.message_ttl_in_seconds)
             } catch (e: PulsarAdminException) {
                 logger.warn { "Failing to update namespace's message_ttl_in_seconds policy: ${e.message}" }
             }
             try {
-                logger.debug { "Updating policy DelayedDeliveryMessages to ${policies.delayed_delivery_policies}" }
+                logger.info { "Updating policy DelayedDeliveryMessages to ${policies.delayed_delivery_policies}" }
                 setDelayedDeliveryMessages(fullNamespace, policies.delayed_delivery_policies)
             } catch (e: PulsarAdminException) {
                 logger.warn { "Failing to update namespace's delayed_delivery_policies policy: ${e.message}" }
@@ -312,7 +345,7 @@ class PulsarInfiniticAdmin constructor(
     }
 
     private fun displayStatsTopic(topic: String) {
-        val stats = pulsarAdmin.topics().getPartitionedStats(topic, true, true, true)
+        val stats = pulsarTopics.getPartitionedStats(topic, true, true, true)
 
         val format = "| %-42s | %11d | %10d | %10f |%n"
 
@@ -322,7 +355,7 @@ class PulsarInfiniticAdmin constructor(
                 it.key,
                 it.value.consumers.size,
                 it.value.msgBacklog,
-                it.value.msgRateOut,
+                it.value.msgRateOut
             )
         }
     }

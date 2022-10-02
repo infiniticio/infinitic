@@ -25,7 +25,7 @@
 
 package io.infinitic.dashboard.panels.infrastructure.task
 
-import io.infinitic.dashboard.DashboardServer
+import io.infinitic.dashboard.InfiniticDashboard
 import io.infinitic.dashboard.Panel
 import io.infinitic.dashboard.menus.InfraMenu
 import io.infinitic.dashboard.panels.infrastructure.AllJobsPanel
@@ -90,8 +90,8 @@ class TaskPanel private constructor(private val taskName: String) : Panel() {
     }
 
     override fun onEnter() {
-        if (! this::job.isInitialized || job.isCancelled) {
-            job = DashboardServer.scope.launch {
+        if (!this::job.isInitialized || job.isCancelled) {
+            job = InfiniticDashboard.scope.launch {
                 // update of task names every 30 seconds
                 update(state)
             }

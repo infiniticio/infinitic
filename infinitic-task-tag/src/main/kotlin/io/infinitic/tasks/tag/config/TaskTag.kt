@@ -25,13 +25,13 @@
 
 package io.infinitic.tasks.tag.config
 
-import io.infinitic.cache.StateCache
-import io.infinitic.storage.StateStorage
+import io.infinitic.cache.config.Cache
+import io.infinitic.storage.config.Storage
 
 data class TaskTag(
     var concurrency: Int = 1,
-    var stateStorage: StateStorage? = null,
-    var stateCache: StateCache? = null,
+    var storage: Storage? = null,
+    var cache: Cache? = null
 ) {
     var default: Boolean = false
 

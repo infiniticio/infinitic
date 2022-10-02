@@ -26,10 +26,18 @@
 dependencies {
     implementation(Libs.Hoplite.core)
 
-    implementation(project(":infinitic-common"))
-    api(project(":infinitic-storage-redis"))
-    api(project(":infinitic-storage-inmemory"))
-    api(project(":infinitic-storage-mysql"))
+    // Redis
+    implementation("redis.clients:jedis:4.2.3")
+    testImplementation("com.github.kstyrc:embedded-redis:0.6")
+
+    // MySql
+    //   For connection pooling
+    implementation("com.zaxxer:HikariCP:5.0.1")
+    implementation("mysql:mysql-connector-java:8.0.30")
+    //   For integration tests
+    testImplementation("org.testcontainers:mysql:1.17.3")
+
+    testImplementation(Libs.Hoplite.yaml)
 }
 
 apply("../publish.gradle.kts")

@@ -26,6 +26,7 @@ package io.infinitic.common.config
 
 import com.sksamuel.hoplite.ConfigLoaderBuilder
 import com.sksamuel.hoplite.PropertySource
+import com.sksamuel.hoplite.yaml.YamlPropertySource
 import mu.KotlinLogging
 import java.io.File
 
@@ -49,6 +50,17 @@ inline fun <reified T : Any> loadConfigFromFile(files: List<String>): T {
         .build()
         .loadConfigOrThrow<T>()
     logger.info { "Config loaded from file: $config" }
+
+    return config
+}
+
+inline fun <reified T : Any> loadConfigFromYaml(yaml: String): T {
+    val config = ConfigLoaderBuilder
+        .default()
+        .also { builder -> builder.addSource(YamlPropertySource(yaml)) }
+        .build()
+        .loadConfigOrThrow<T>()
+    logger.info { "Config loaded from yaml: $config" }
 
     return config
 }

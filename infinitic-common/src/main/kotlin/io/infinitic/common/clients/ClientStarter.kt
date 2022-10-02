@@ -25,13 +25,13 @@
 
 package io.infinitic.common.clients
 
-import io.infinitic.clients.InfiniticClient
+import io.infinitic.clients.InfiniticClientInterface
 import io.infinitic.common.workflows.engine.SendToWorkflowEngine
 import io.infinitic.common.workflows.tags.SendToWorkflowTag
 import kotlinx.coroutines.CoroutineScope
 
 interface ClientStarter {
-    fun CoroutineScope.startClientResponse(client: InfiniticClient)
+    fun CoroutineScope.startClientResponse(client: InfiniticClientInterface)
 
     val sendToWorkflowTag: SendToWorkflowTag
 

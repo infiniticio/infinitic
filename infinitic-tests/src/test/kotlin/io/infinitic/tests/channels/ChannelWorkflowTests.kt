@@ -25,14 +25,14 @@
 
 package io.infinitic.tests.channels
 
+import io.infinitic.clients.InfiniticClient
 import io.infinitic.common.fixtures.later
 import io.infinitic.exceptions.FailedWorkflowException
 import io.infinitic.exceptions.FailedWorkflowTaskException
 import io.infinitic.exceptions.workflows.OutOfBoundAwaitException
-import io.infinitic.factory.InfiniticClientFactory
-import io.infinitic.factory.InfiniticWorkerFactory
 import io.infinitic.tests.utils.Obj1
 import io.infinitic.tests.utils.Obj2
+import io.infinitic.workers.InfiniticWorker
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
@@ -44,8 +44,8 @@ internal class ChannelWorkflowTests : StringSpec({
     // each test should not be longer than 10s
     timeout = 10000
 
-    val worker = autoClose(InfiniticWorkerFactory.fromConfigResource("/pulsar.yml"))
-    val client = autoClose(InfiniticClientFactory.fromConfigResource("/pulsar.yml"))
+    val worker = autoClose(InfiniticWorker.fromConfigResource("/pulsar.yml"))
+    val client = autoClose(InfiniticClient.fromConfigResource("/pulsar.yml"))
 
     val channelsWorkflow = client.newWorkflow(ChannelsWorkflow::class.java, tags = setOf("foo", "bar"))
 
@@ -54,7 +54,7 @@ internal class ChannelWorkflowTests : StringSpec({
     }
 
     beforeTest {
-        worker.storageFlush()
+        worker.registry.flush()
     }
 
     "Waiting for event, sent after dispatched" {

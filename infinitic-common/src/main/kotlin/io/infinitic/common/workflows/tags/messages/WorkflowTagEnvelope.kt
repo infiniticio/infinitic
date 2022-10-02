@@ -38,7 +38,8 @@ import org.apache.avro.Schema
 data class WorkflowTagEnvelope(
     private val name: String,
     private val type: WorkflowTagMessageType,
-    @AvroDefault(Avro.NULL) private val dispatchWorkflowByCustomId: DispatchWorkflowByCustomId? = null,
+    @AvroDefault(Avro.NULL)
+    private val dispatchWorkflowByCustomId: DispatchWorkflowByCustomId? = null,
     private val dispatchMethodByTag: DispatchMethodByTag? = null,
     private val addTagToWorkflow: AddTagToWorkflow? = null,
     private val removeTagFromWorkflow: RemoveTagFromWorkflow? = null,
@@ -46,7 +47,9 @@ data class WorkflowTagEnvelope(
     private val cancelWorkflowByTag: CancelWorkflowByTag? = null,
     private val retryWorkflowTaskByTag: RetryWorkflowTaskByTag? = null,
     private val retryTasksByTag: RetryTasksByTag? = null,
-    private val getWorkflowIdsByTag: GetWorkflowIdsByTag? = null,
+    @AvroDefault(Avro.NULL)
+    private val completeTimersByTag: CompleteTimersByTag? = null,
+    private val getWorkflowIdsByTag: GetWorkflowIdsByTag? = null
 ) : Envelope<WorkflowTagMessage> {
 
     init {
@@ -58,6 +61,7 @@ data class WorkflowTagEnvelope(
             cancelWorkflowByTag,
             retryWorkflowTaskByTag,
             retryTasksByTag,
+            completeTimersByTag,
             dispatchMethodByTag,
             getWorkflowIdsByTag
         )
@@ -74,41 +78,55 @@ data class WorkflowTagEnvelope(
                 type = WorkflowTagMessageType.DISPATCH_WORKFLOW_BY_CUSTOM_ID,
                 dispatchWorkflowByCustomId = msg
             )
+
             is AddTagToWorkflow -> WorkflowTagEnvelope(
                 name = "${msg.workflowName}",
                 type = WorkflowTagMessageType.ADD_TAG_TO_WORKFLOW,
                 addTagToWorkflow = msg
             )
+
             is RemoveTagFromWorkflow -> WorkflowTagEnvelope(
                 name = "${msg.workflowName}",
                 type = WorkflowTagMessageType.REMOVE_TAG_FROM_WORKFLOW,
                 removeTagFromWorkflow = msg
             )
+
             is SendSignalByTag -> WorkflowTagEnvelope(
                 name = "${msg.workflowName}",
                 type = WorkflowTagMessageType.SEND_SIGNAL_BY_TAG,
                 sendSignalByTag = msg
             )
+
             is CancelWorkflowByTag -> WorkflowTagEnvelope(
                 name = "${msg.workflowName}",
                 type = WorkflowTagMessageType.CANCEL_WORKFLOW_BY_TAG,
                 cancelWorkflowByTag = msg
             )
+
             is RetryWorkflowTaskByTag -> WorkflowTagEnvelope(
                 name = "${msg.workflowName}",
                 type = WorkflowTagMessageType.RETRY_WORKFLOW_TASK_BY_TAG,
                 retryWorkflowTaskByTag = msg
             )
+
             is RetryTasksByTag -> WorkflowTagEnvelope(
                 name = "${msg.workflowName}",
                 type = WorkflowTagMessageType.RETRY_TASKS_BY_TAG,
                 retryTasksByTag = msg
             )
+
+            is CompleteTimersByTag -> WorkflowTagEnvelope(
+                name = "${msg.workflowName}",
+                type = WorkflowTagMessageType.COMPLETE_TIMER_BY_TAG,
+                completeTimersByTag = msg
+            )
+
             is DispatchMethodByTag -> WorkflowTagEnvelope(
                 name = "${msg.workflowName}",
                 type = WorkflowTagMessageType.DISPATCH_METHOD_BY_TAG,
                 dispatchMethodByTag = msg
             )
+
             is GetWorkflowIdsByTag -> WorkflowTagEnvelope(
                 name = "${msg.workflowName}",
                 type = WorkflowTagMessageType.GET_WORKFLOW_IDS_BY_TAG,
@@ -136,6 +154,7 @@ data class WorkflowTagEnvelope(
         WorkflowTagMessageType.CANCEL_WORKFLOW_BY_TAG -> cancelWorkflowByTag
         WorkflowTagMessageType.RETRY_WORKFLOW_TASK_BY_TAG -> retryWorkflowTaskByTag
         WorkflowTagMessageType.RETRY_TASKS_BY_TAG -> retryTasksByTag
+        WorkflowTagMessageType.COMPLETE_TIMER_BY_TAG -> completeTimersByTag
         WorkflowTagMessageType.DISPATCH_METHOD_BY_TAG -> dispatchMethodByTag
         WorkflowTagMessageType.GET_WORKFLOW_IDS_BY_TAG -> getWorkflowIdsByTag
     }!!

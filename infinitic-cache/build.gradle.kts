@@ -26,7 +26,7 @@
 dependencies {
     implementation(Libs.Caffeine.caffeine)
 
-    implementation(project(":infinitic-common"))
+    testImplementation(Libs.Hoplite.yaml)
 }
 
 apply("../publish.gradle.kts")

@@ -25,7 +25,7 @@
 
 package io.infinitic.dashboard.modals
 
-import io.infinitic.dashboard.DashboardServer
+import io.infinitic.dashboard.InfiniticDashboard
 import io.infinitic.dashboard.svgs.icons.iconClose
 import io.infinitic.dashboard.svgs.icons.iconWarning
 import kotlinx.coroutines.delay
@@ -50,7 +50,7 @@ object Modal {
     }
 
     private fun close() {
-        DashboardServer.scope.launch {
+        InfiniticDashboard.scope.launch {
             showModal.value = false
             delay(1000)
             display.value = false
@@ -99,9 +99,10 @@ object Modal {
                                 }
                         }
                         div().classes("sm:flex sm:items-start").new {
-                            div().classes("mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-red-100 sm:mx-0 sm:h-10 sm:w-10").new {
-                                iconWarning().addClasses("text-red-600")
-                            }
+                            div().classes("mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-red-100 sm:mx-0 sm:h-10 sm:w-10")
+                                .new {
+                                    iconWarning().addClasses("text-red-600")
+                                }
                             div().classes("mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left").new {
                                 element("h3")
                                     .classes("text-lg leading-6 font-medium text-gray-900")
