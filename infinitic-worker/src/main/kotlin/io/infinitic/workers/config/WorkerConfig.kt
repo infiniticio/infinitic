@@ -69,7 +69,7 @@ data class WorkerConfig(
     /**
      * Default task retry policy
      */
-    val retryPolicy: RetryPolicy = RetryExponentialBackoff(),
+    // val retryPolicy: RetryPolicy = RetryExponentialBackoff(),
 
     /**
      * Workflows configuration
@@ -98,11 +98,11 @@ data class WorkerConfig(
         }
 
         // check default retry Policy
-        retryPolicy.check()
+        // retryPolicy.check()
 
         // apply default, if not set
         tasks.map { task ->
-            task.retryPolicy = task.retryPolicy?.also { it.check() } ?: retryPolicy
+            // task.retryPolicy = task.retryPolicy?.also { it.check() } ?: retryPolicy
 
             task.tagEngine?.let {
                 it.storage = it.storage ?: storage

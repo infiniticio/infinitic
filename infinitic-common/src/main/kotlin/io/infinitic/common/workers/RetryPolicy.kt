@@ -23,7 +23,7 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.workers.config
+package io.infinitic.common.workers
 
 import io.infinitic.common.exceptions.thisShouldNotHappen
 import kotlin.math.min

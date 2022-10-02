@@ -35,8 +35,8 @@ data class Workflow(
     val `class`: String? = null,
     val concurrency: Int = 1,
     var tagEngine: WorkflowTag? = null,
-    var workflowEngine: WorkflowEngine? = null,
-    val retryPolicy: RetryPolicy = RetryExponentialBackoff(maximumAttempts = 0)
+    var workflowEngine: WorkflowEngine? = null
+    // val retryPolicy: RetryPolicy = RetryExponentialBackoff(maximumAttempts = 0)
 ) {
     private lateinit var _constructor: Constructor<out Any>
 

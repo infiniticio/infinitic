@@ -96,7 +96,7 @@ class WorkflowTaskImpl : Task(), WorkflowTask {
                 is WorkflowTaskException -> null
                 // the errors below will be caught by the task executor
                 is DeferredException -> throw cause
-                // Send back other exception
+                // Send back other exceptions
                 is Exception -> throw FailedWorkflowTaskException(
                     workflowName = workflowTaskParameters.workflowName.toString(),
                     workflowId = workflowTaskParameters.workflowId.toString(),

@@ -33,8 +33,8 @@ data class Task(
     val name: String,
     val `class`: String? = null,
     val concurrency: Int = 1,
-    var tagEngine: TaskTag? = null,
-    var retryPolicy: RetryPolicy? = null
+    var tagEngine: TaskTag? = null
+    // var retryPolicy: RetryPolicy? = null
 ) {
     private lateinit var _constructor: Constructor<out Any>
 

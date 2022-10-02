@@ -133,7 +133,7 @@ class TaskExecutor(
                 // simple exception
                 is Exception -> failTaskWithRetry(task, message, cause)
                 // Throwable are not caught
-                else -> throw cause!!
+                else -> throw cause ?: e
             }
         } catch (e: TimeoutCancellationException) {
             val cause = MaxRunDurationException(task.javaClass.name, options.maxRunDuration!!)
@@ -194,7 +194,7 @@ class TaskExecutor(
         DurationBeforeRetryRetrieved(task.getDurationBeforeRetry(cause))
     } catch (e: Exception) {
         logger.info(cause) { "Exception in class '${task::class.java.name}' (${task.context.id})" }
-        logger.info(e) { "error when executing getDurationBeforeRetry method" }
+        logger.error(e) { "error when executing getDurationBeforeRetry method" }
         DurationBeforeRetryFailed(e)
     }
 
