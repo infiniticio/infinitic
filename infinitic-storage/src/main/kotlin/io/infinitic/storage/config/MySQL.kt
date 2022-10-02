@@ -25,7 +25,6 @@
 
 package io.infinitic.storage.config
 
-import com.mysql.cj.jdbc.Driver
 import com.sksamuel.hoplite.Secret
 import com.zaxxer.hikari.HikariConfig
 import com.zaxxer.hikari.HikariDataSource
@@ -51,8 +50,8 @@ data class MySQL(
         HikariDataSource(
             // Default values set according to https://github.com/brettwooldridge/HikariCP/wiki/MySQL-Configuration
             HikariConfig().apply {
-                jdbcUrl = "jdbc:mysql://$host:$port/$database"
-                driverClassName = Driver::class.java.name
+                jdbcUrl = "jdbc:mariadb://$host:$port/$database"
+                driverClassName = "org.mariadb.jdbc.Driver"
                 username = user
                 password = this@MySQL.password?.value
             }
