@@ -25,11 +25,10 @@
 
 package io.infinitic.dashboard
 
-import io.infinitic.common.exceptions.thisShouldNotHappen
-
 fun main(args: Array<String>) {
     // get name of config file
-    val file = args.getOrNull(0) ?: thisShouldNotHappen("Please provide a DashboardConfig configuration file")
+    val file = args.getOrNull(0)
+        ?: "/infinitic.yml" // thisShouldNotHappen("Please provide a DashboardConfig configuration file")
     // start server
-    InfiniticDashboard.fromConfigFile(file).start()
+    InfiniticDashboard.fromConfigResource(file).start()
 }

@@ -26,3 +26,5 @@ pulsar:
   webServiceUrl: http://localhost:8080
   tenant: infinitic
   namespace: dev
+
+port: 9800
