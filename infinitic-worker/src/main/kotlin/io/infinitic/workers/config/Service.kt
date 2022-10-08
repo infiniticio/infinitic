@@ -27,9 +27,9 @@ package io.infinitic.workers.config
 
 import io.infinitic.tasks.tag.config.TaskTag
 import java.lang.reflect.Constructor
-import io.infinitic.tasks.Task as TaskInstance
+import io.infinitic.services.Service as TaskInstance
 
-data class Task(
+data class Service(
     val name: String,
     val `class`: String? = null,
     val concurrency: Int = 1,

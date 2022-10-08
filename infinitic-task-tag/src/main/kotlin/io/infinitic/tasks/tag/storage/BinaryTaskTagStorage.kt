@@ -26,8 +26,8 @@
 package io.infinitic.tasks.tag.storage
 
 import io.infinitic.common.data.MessageId
+import io.infinitic.common.tasks.data.ServiceName
 import io.infinitic.common.tasks.data.TaskId
-import io.infinitic.common.tasks.data.TaskName
 import io.infinitic.common.tasks.data.TaskTag
 import io.infinitic.common.tasks.tags.storage.TaskTagStorage
 import io.infinitic.storage.keySet.KeySetStorage
@@ -52,38 +52,38 @@ class BinaryTaskTagStorage(
     private val keyValueStorage = WrappedKeyValueStorage(keyValueStorage)
     private val keySetStorage = WrappedKeySetStorage(keySetStorage)
 
-    override suspend fun getLastMessageId(tag: TaskTag, taskName: TaskName): MessageId? {
-        val key = getTagMessageIdKey(tag, taskName)
+    override suspend fun getLastMessageId(tag: TaskTag, serviceName: ServiceName): MessageId? {
+        val key = getTagMessageIdKey(tag, serviceName)
 
         return keyValueStorage.get(key)?.let { MessageId.fromByteArray(it) }
     }
 
-    override suspend fun setLastMessageId(tag: TaskTag, taskName: TaskName, messageId: MessageId) {
-        val key = getTagMessageIdKey(tag, taskName)
+    override suspend fun setLastMessageId(tag: TaskTag, serviceName: ServiceName, messageId: MessageId) {
+        val key = getTagMessageIdKey(tag, serviceName)
         keyValueStorage.put(key, messageId.toByteArray())
     }
 
-    override suspend fun getTaskIds(tag: TaskTag, taskName: TaskName): Set<TaskId> {
-        val key = getTagSetIdsKey(tag, taskName)
+    override suspend fun getTaskIds(tag: TaskTag, serviceName: ServiceName): Set<TaskId> {
+        val key = getTagSetIdsKey(tag, serviceName)
         return keySetStorage
             .get(key)
             .map { TaskId(String(it)) }
             .toSet()
     }
 
-    override suspend fun addTaskId(tag: TaskTag, taskName: TaskName, taskId: TaskId) {
-        val key = getTagSetIdsKey(tag, taskName)
+    override suspend fun addTaskId(tag: TaskTag, serviceName: ServiceName, taskId: TaskId) {
+        val key = getTagSetIdsKey(tag, serviceName)
         keySetStorage.add(key, taskId.toString().toByteArray())
     }
 
-    override suspend fun removeTaskId(tag: TaskTag, taskName: TaskName, taskId: TaskId) {
-        val key = getTagSetIdsKey(tag, taskName)
+    override suspend fun removeTaskId(tag: TaskTag, serviceName: ServiceName, taskId: TaskId) {
+        val key = getTagSetIdsKey(tag, serviceName)
         keySetStorage.remove(key, taskId.toString().toByteArray())
     }
 
-    private fun getTagMessageIdKey(tag: TaskTag, taskName: TaskName) = "task:$taskName|tag:$tag|messageId"
+    private fun getTagMessageIdKey(tag: TaskTag, serviceName: ServiceName) = "task:$serviceName|tag:$tag|messageId"
 
-    private fun getTagSetIdsKey(tag: TaskTag, taskName: TaskName) = "task:$taskName|tag:$tag|setIds"
+    private fun getTagSetIdsKey(tag: TaskTag, serviceName: ServiceName) = "task:$serviceName|tag:$tag|setIds"
 
     @TestOnly
     override fun flush() {

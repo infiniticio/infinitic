@@ -26,7 +26,7 @@
 package io.infinitic.tests.utils
 
 import io.infinitic.common.tasks.data.TaskMeta
-import io.infinitic.tasks.Task
+import io.infinitic.services.Service
 import io.infinitic.workflows.DeferredStatus
 import java.time.Duration
 
@@ -34,7 +34,7 @@ interface ParentInterface {
     fun parent(): String
 }
 
-interface UtilTask : ParentInterface {
+interface UtilService : ParentInterface {
     fun concat(str1: String, str2: String): String
     fun reverse(str: String): String
     fun await(delay: Long): Long
@@ -49,12 +49,15 @@ interface UtilTask : ParentInterface {
     fun meta(): TaskMeta
 }
 
-class UtilTaskImpl : Task(), UtilTask {
+@Suppress("unused")
+class UtilServiceImpl : Service(), UtilService {
     override fun concat(str1: String, str2: String): String = str1 + str2
 
     override fun reverse(str: String) = str.reversed()
 
-    override fun await(delay: Long): Long { Thread.sleep(delay); return delay }
+    override fun await(delay: Long): Long {
+        Thread.sleep(delay); return delay
+    }
 
     override fun workflowId() = context.workflowId
 

@@ -25,7 +25,7 @@
 
 @file:Suppress("unused")
 
-package io.infinitic.tasks.executor
+package io.infinitic.services.executor
 
 import io.infinitic.clients.InfiniticClientInterface
 import io.infinitic.common.clients.SendToClient
@@ -36,9 +36,9 @@ import io.infinitic.common.data.ReturnValue
 import io.infinitic.common.data.methods.MethodName
 import io.infinitic.common.data.methods.MethodParameterTypes
 import io.infinitic.common.data.methods.MethodParameters
+import io.infinitic.common.tasks.data.ServiceName
 import io.infinitic.common.tasks.data.TaskId
 import io.infinitic.common.tasks.data.TaskMeta
-import io.infinitic.common.tasks.data.TaskName
 import io.infinitic.common.tasks.data.TaskRetryIndex
 import io.infinitic.common.tasks.data.TaskRetrySequence
 import io.infinitic.common.tasks.data.TaskReturnValue
@@ -61,12 +61,13 @@ import io.infinitic.exceptions.tasks.MaxRunDurationException
 import io.infinitic.exceptions.tasks.NoMethodFoundWithParameterCountException
 import io.infinitic.exceptions.tasks.NoMethodFoundWithParameterTypesException
 import io.infinitic.exceptions.tasks.TooManyMethodsFoundWithParameterCountException
-import io.infinitic.tasks.TaskOptions
-import io.infinitic.tasks.executor.samples.SampleTaskImpl
-import io.infinitic.tasks.executor.samples.SampleTaskWithBuggyRetry
-import io.infinitic.tasks.executor.samples.SampleTaskWithContext
-import io.infinitic.tasks.executor.samples.SampleTaskWithRetry
-import io.infinitic.tasks.executor.samples.SampleTaskWithTimeout
+import io.infinitic.services.TaskOptions
+import io.infinitic.services.executor.samples.SampleServiceImpl
+import io.infinitic.services.executor.samples.SampleServiceWithBuggyRetry
+import io.infinitic.services.executor.samples.SampleServiceWithContext
+import io.infinitic.services.executor.samples.SampleServiceWithRetry
+import io.infinitic.services.executor.samples.SampleServiceWithTimeout
+import io.infinitic.tasks.executor.TaskExecutor
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
 import io.mockk.CapturingSlot
@@ -117,7 +118,7 @@ class TaskExecutorTests : StringSpec({
     }
 
     "Task executed without waiting client neither workflow should not send message" {
-        every { workerRegistry.getTaskInstance(TaskName("task")) } returns SampleTaskImpl()
+        every { workerRegistry.getTaskInstance(ServiceName("task")) } returns SampleServiceImpl()
         val input = arrayOf(3, 3)
         val types = listOf(Int::class.java.name, Int::class.java.name)
         // with
@@ -134,7 +135,7 @@ class TaskExecutorTests : StringSpec({
     }
 
     "Task executed with waiting client should send message to it" {
-        every { workerRegistry.getTaskInstance(TaskName("task")) } returns SampleTaskImpl()
+        every { workerRegistry.getTaskInstance(ServiceName("task")) } returns SampleServiceImpl()
         val input = arrayOf(3, 3)
         val types = listOf(Int::class.java.name, Int::class.java.name)
         // with
@@ -152,7 +153,7 @@ class TaskExecutorTests : StringSpec({
     }
 
     "Task executed with workflow should send message to it" {
-        every { workerRegistry.getTaskInstance(TaskName("task")) } returns SampleTaskImpl()
+        every { workerRegistry.getTaskInstance(ServiceName("task")) } returns SampleServiceImpl()
         val input = arrayOf(3, 3)
         val types = listOf(Int::class.java.name, Int::class.java.name)
         // with
@@ -169,7 +170,7 @@ class TaskExecutorTests : StringSpec({
     }
 
     "Task executed with waiting client and workflow should send message to them" {
-        every { workerRegistry.getTaskInstance(TaskName("task")) } returns SampleTaskImpl()
+        every { workerRegistry.getTaskInstance(ServiceName("task")) } returns SampleServiceImpl()
         val input = arrayOf(3, 3)
         val types = listOf(Int::class.java.name, Int::class.java.name)
         // with
@@ -186,7 +187,7 @@ class TaskExecutorTests : StringSpec({
     }
 
     "Should be able to run an explicit method with 2 parameters" {
-        every { workerRegistry.getTaskInstance(TaskName("task")) } returns SampleTaskImpl()
+        every { workerRegistry.getTaskInstance(ServiceName("task")) } returns SampleServiceImpl()
         val input = arrayOf(3, "3")
         val types = listOf(Int::class.java.name, String::class.java.name)
         // with
@@ -203,7 +204,7 @@ class TaskExecutorTests : StringSpec({
     }
 
     "Should be able to run an explicit method with 2 parameters without parameterTypes" {
-        every { workerRegistry.getTaskInstance(TaskName("task")) } returns SampleTaskImpl()
+        every { workerRegistry.getTaskInstance(ServiceName("task")) } returns SampleServiceImpl()
         val input = arrayOf(4, "3")
         val types = null
         val msg = getExecuteTask("other", input, types)
@@ -219,7 +220,7 @@ class TaskExecutorTests : StringSpec({
     }
 
     "Should throw ClassNotFoundException when trying to process an unknown task" {
-        every { workerRegistry.getTaskInstance(TaskName("task")) } throws ClassNotFoundException("task")
+        every { workerRegistry.getTaskInstance(ServiceName("task")) } throws ClassNotFoundException("task")
         val input = arrayOf(2, "3")
         val types = listOf(Int::class.java.name, String::class.java.name)
         val msg = getExecuteTask("unknown", input, types)
@@ -235,7 +236,7 @@ class TaskExecutorTests : StringSpec({
     }
 
     "Should throw NoMethodFoundWithParameterTypes when trying to process an unknown method" {
-        every { workerRegistry.getTaskInstance(TaskName("task")) } returns SampleTaskImpl()
+        every { workerRegistry.getTaskInstance(ServiceName("task")) } returns SampleServiceImpl()
         val input = arrayOf(2, "3")
         val types = listOf(Int::class.java.name, String::class.java.name)
         // with
@@ -252,7 +253,7 @@ class TaskExecutorTests : StringSpec({
     }
 
     "Should throw NoMethodFoundWithParameterCount when trying to process an unknown method without parameterTypes" {
-        every { workerRegistry.getTaskInstance(TaskName("task")) } returns SampleTaskImpl()
+        every { workerRegistry.getTaskInstance(ServiceName("task")) } returns SampleServiceImpl()
         val input = arrayOf(2, "3")
         // with
         val msg = getExecuteTask("unknown", input, null)
@@ -268,7 +269,7 @@ class TaskExecutorTests : StringSpec({
     }
 
     "Should throw TooManyMethodsFoundWithParameterCount when trying to process an unknown method without parameterTypes" {
-        every { workerRegistry.getTaskInstance(TaskName("task")) } returns SampleTaskImpl()
+        every { workerRegistry.getTaskInstance(ServiceName("task")) } returns SampleServiceImpl()
         val input = arrayOf(2, "3")
         // with
         val msg = getExecuteTask("handle", input, null)
@@ -284,7 +285,7 @@ class TaskExecutorTests : StringSpec({
     }
 
     "Should retry with correct exception" {
-        every { workerRegistry.getTaskInstance(TaskName("task")) } returns SampleTaskWithRetry()
+        every { workerRegistry.getTaskInstance(ServiceName("task")) } returns SampleServiceWithRetry()
         val input = arrayOf(2, "3")
         // with
         val msg = getExecuteTask("handle", input, null)
@@ -304,7 +305,7 @@ class TaskExecutorTests : StringSpec({
     }
 
     "Should throw when getRetryDelay throw an exception" {
-        every { workerRegistry.getTaskInstance(TaskName("task")) } returns SampleTaskWithBuggyRetry()
+        every { workerRegistry.getTaskInstance(ServiceName("task")) } returns SampleServiceWithBuggyRetry()
         val input = arrayOf(2, "3")
         // with
         val msg = getExecuteTask("handle", input, null)
@@ -320,7 +321,7 @@ class TaskExecutorTests : StringSpec({
     }
 
     "Should be able to access context from task" {
-        every { workerRegistry.getTaskInstance(TaskName("task")) } returns SampleTaskWithContext()
+        every { workerRegistry.getTaskInstance(ServiceName("task")) } returns SampleServiceWithContext()
         val input = arrayOf(2, "3")
         // with
         val msg = getExecuteTask("handle", input, null)
@@ -336,7 +337,7 @@ class TaskExecutorTests : StringSpec({
     }
 
     "Should throw ProcessingTimeout if processing time is too long" {
-        every { workerRegistry.getTaskInstance(TaskName("task")) } returns SampleTaskWithTimeout()
+        every { workerRegistry.getTaskInstance(ServiceName("task")) } returns SampleServiceWithTimeout()
         val input = arrayOf(2, "3")
         val types = listOf(Int::class.java.name, String::class.java.name)
         // with
@@ -396,13 +397,13 @@ private fun getTaskCompletedWorkflow(msg: ExecuteTask, returnValue: Any?) = Task
     workflowName = msg.workflowName!!,
     workflowId = msg.workflowId!!,
     methodRunId = msg.methodRunId!!,
-    taskReturnValue = TaskReturnValue(msg.taskId, msg.taskName, msg.taskMeta, ReturnValue.from(returnValue)),
+    taskReturnValue = TaskReturnValue(msg.taskId, msg.serviceName, msg.taskMeta, ReturnValue.from(returnValue)),
     emitterName = clientName
 )
 
 private fun getExecuteTask(method: String, input: Array<out Any?>, types: List<String>?) = ExecuteTask(
     clientWaiting = true,
-    taskName = TaskName("task"),
+    serviceName = ServiceName("task"),
     taskId = TaskId(),
     workflowId = WorkflowId(),
     workflowName = WorkflowName("workflowName"),
@@ -445,7 +446,7 @@ private fun checkWorkflowException(
         workflowName shouldBe msg.workflowName
         methodRunId shouldBe msg.methodRunId
         with(failedTaskError) {
-            taskName shouldBe msg.taskName
+            serviceName shouldBe msg.serviceName
             taskId shouldBe msg.taskId
             methodName shouldBe msg.methodName
             with(cause) {
@@ -458,7 +459,7 @@ private fun checkWorkflowException(
 
 private fun getRemoveTag(message: ExecuteTask, tag: String) = RemoveTagFromTask(
     taskId = message.taskId,
-    taskName = message.taskName,
+    serviceName = message.serviceName,
     taskTag = TaskTag(tag),
     emitterName = clientName
 )

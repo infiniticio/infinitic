@@ -30,7 +30,7 @@ pulsar:
   tenant: infinitic
   namespace: dev
 
-tasks:
-  - name: io.infinitic.workers.samples.TaskA
-    class: io.infinitic.workers.samples.TaskAImpl
+services:
+  - name: io.infinitic.workers.samples.ServiceA
+    class: io.infinitic.workers.samples.ServiceAImpl
 

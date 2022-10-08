@@ -98,7 +98,7 @@ retryPolicy:
             loadConfigFromYaml<WorkerConfig>(
                 """
 transport: inMemory
-tasks:
+services:
     - name: io.infinitic.workers.samples.TaskA
       class: io.infinitic.workers.samples.TaskAImpl
       retryPolicy:
@@ -129,7 +129,7 @@ retryPolicy:
             loadConfigFromYaml<WorkerConfig>(
                 """
 transport: inMemory
-tasks:
+services:
     - name: io.infinitic.workers.samples.TaskA
       class: io.infinitic.workers.samples.TaskAImpl
       retryPolicy:

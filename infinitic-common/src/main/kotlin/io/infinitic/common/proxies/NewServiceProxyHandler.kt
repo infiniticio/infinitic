@@ -23,14 +23,20 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.tasks
+package io.infinitic.common.proxies
 
-import io.infinitic.common.serDe.kserializer.DurationSerializer
-import kotlinx.serialization.Serializable
-import java.time.Duration
+import io.infinitic.common.tasks.data.ServiceName
+import io.infinitic.common.tasks.data.TaskMeta
+import io.infinitic.common.tasks.data.TaskTag
+import io.infinitic.services.TaskOptions
 
-@Serializable
-data class TaskOptions(
-    @Serializable(with = DurationSerializer::class)
-    val maxRunDuration: Duration? = null
-)
+class NewServiceProxyHandler<K : Any>(
+    override val klass: Class<K>,
+    val taskTags: Set<TaskTag>,
+    val taskOptions: TaskOptions,
+    val taskMeta: TaskMeta,
+    override val dispatcherFn: () -> ProxyDispatcher
+) : ProxyHandler<K>(klass, dispatcherFn) {
+
+    val serviceName = ServiceName(name)
+}

@@ -36,15 +36,15 @@ pulsar:
 #    privateKey:
 #    audience:
 
-tasks:
-  - name: annotatedTask
-    class: io.infinitic.tests.utils.AnnotatedTaskImpl
+services:
+  - name: annotatedService
+    class: io.infinitic.tests.utils.AnnotatedServiceImpl
     concurrency: 5
-  - name: io.infinitic.tests.utils.UtilTask
-    class: io.infinitic.tests.utils.UtilTaskImpl
+  - name: io.infinitic.tests.utils.UtilService
+    class: io.infinitic.tests.utils.UtilServiceImpl
     concurrency: 5
-  - name: io.infinitic.tests.utils.TestTask
-    class: io.infinitic.tests.utils.TestTaskImpl
+  - name: io.infinitic.tests.utils.TestService
+    class: io.infinitic.tests.utils.TestServiceImpl
     concurrency: 5
 
 workflows:

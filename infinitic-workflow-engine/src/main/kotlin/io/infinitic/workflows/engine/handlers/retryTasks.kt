@@ -49,7 +49,7 @@ internal fun CoroutineScope.retryTasks(
         DeferredStatus.COMPLETED -> CommandStatus.Completed::class
         null -> null
     }
-    val taskName = message.taskName
+    val serviceName = message.serviceName
 
     // for all method runs
     state.methodRuns.forEach { methodRun ->
@@ -58,7 +58,7 @@ internal fun CoroutineScope.retryTasks(
             .filter {
                 (taskId == null || it.commandId == taskId) &&
                     (taskStatus == null || it.commandStatus::class == taskStatus) &&
-                    (taskName == null || it.command.taskName == taskName)
+                    (serviceName == null || it.command.serviceName == serviceName)
             }
             // dispatch a new sequence of those task
             .forEach { dispatchTaskPastCommand ->

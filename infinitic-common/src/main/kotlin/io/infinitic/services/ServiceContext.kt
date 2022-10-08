@@ -23,22 +23,24 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.common.tasks.data
+package io.infinitic.services
 
-import io.infinitic.common.data.Name
-import kotlinx.serialization.KSerializer
-import kotlinx.serialization.Serializable
-import kotlinx.serialization.descriptors.PrimitiveKind
-import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
-import kotlinx.serialization.descriptors.SerialDescriptor
-import kotlinx.serialization.encoding.Decoder
-import kotlinx.serialization.encoding.Encoder
+import io.infinitic.clients.InfiniticClientInterface
+import io.infinitic.common.tasks.executors.errors.WorkerError
+import io.infinitic.common.workers.registry.WorkerRegistry
 
-@Serializable(with = TaskNameSerializer::class)
-data class TaskName(override val name: String) : Name(name)
-
-object TaskNameSerializer : KSerializer<TaskName> {
-    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("TaskName", PrimitiveKind.STRING)
-    override fun serialize(encoder: Encoder, value: TaskName) { encoder.encodeString(value.name) }
-    override fun deserialize(decoder: Decoder) = TaskName(decoder.decodeString())
+interface ServiceContext {
+    val client: InfiniticClientInterface
+    val workerName: String
+    val workerRegistry: WorkerRegistry
+    val taskId: String
+    val serviceName: String
+    val workflowId: String?
+    val workflowName: String?
+    val retrySequence: Int
+    val retryIndex: Int
+    val lastError: WorkerError?
+    val tags: Set<String>
+    val meta: MutableMap<String, ByteArray>
+    val options: TaskOptions
 }

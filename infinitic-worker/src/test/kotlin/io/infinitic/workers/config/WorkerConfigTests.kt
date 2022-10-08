@@ -26,7 +26,7 @@
 package io.infinitic.workers.config
 
 import com.sksamuel.hoplite.ConfigException
-import io.infinitic.workers.samples.TaskA
+import io.infinitic.workers.samples.ServiceA
 import io.infinitic.workers.samples.WorkflowA
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.StringSpec
@@ -35,9 +35,9 @@ import io.kotest.matchers.string.shouldContain
 
 class WorkerConfigTests : StringSpec({
     "task instance should not be reused" {
-        val config = WorkerConfig.fromResource("/config/tasks/instance.yml")
+        val config = WorkerConfig.fromResource("/config/services/instance.yml")
 
-        val task = config.tasks.first { it.name == TaskA::class.java.name }
+        val task = config.services.first { it.name == ServiceA::class.java.name }
         task.instance shouldNotBe task.instance
     }
 
@@ -50,9 +50,9 @@ class WorkerConfigTests : StringSpec({
 
     "task with InvocationTargetException should throw cause" {
         val e = shouldThrow<ConfigException> {
-            WorkerConfig.fromResource("/config/tasks/invocationTargetException.yml")
+            WorkerConfig.fromResource("/config/services/invocationTargetException.yml")
         }
-        e.message!! shouldContain "Error when trying to instantiate class \"io.infinitic.workers.samples.TaskWithInvocationTargetException\""
+        e.message!! shouldContain "Error when trying to instantiate class \"io.infinitic.workers.samples.ServiceWithInvocationTargetException\""
     }
 
     "workflow with InvocationTargetException should throw cause" {
@@ -64,7 +64,7 @@ class WorkerConfigTests : StringSpec({
 
     "task with ExceptionInInitializerError should throw cause" {
         val e = shouldThrow<ConfigException> {
-            WorkerConfig.fromResource("/config/tasks/exceptionInInitializerError.yml")
+            WorkerConfig.fromResource("/config/services/exceptionInInitializerError.yml")
         }
         e.message!! shouldContain "Underlying error was java.lang.ExceptionInInitializerError"
     }
@@ -76,11 +76,11 @@ class WorkerConfigTests : StringSpec({
         e.message!! shouldContain "Underlying error was java.lang.ExceptionInInitializerError"
     }
 
-    "task Unknown" {
+    "service Unknown" {
         val e = shouldThrow<ConfigException> {
-            WorkerConfig.fromResource("/config/tasks/unknown.yml")
+            WorkerConfig.fromResource("/config/services/unknown.yml")
         }
-        e.message!! shouldContain "class \"io.infinitic.workers.samples.UnknownTask\" is unknown"
+        e.message!! shouldContain "class \"io.infinitic.workers.samples.UnknownService\" is unknown"
     }
 
     "workflow Unknown" {
@@ -90,11 +90,12 @@ class WorkerConfigTests : StringSpec({
         e.message!! shouldContain "class \"io.infinitic.workers.samples.UnknownWorkflow\" unknown"
     }
 
-    "not a task" {
+    "not a service" {
         val e = shouldThrow<ConfigException> {
-            WorkerConfig.fromResource("/config/tasks/notATask.yml")
+            WorkerConfig.fromResource("/config/services/notAService.yml")
         }
-        e.message!! shouldContain "class \"io.infinitic.workers.samples.NotATask\" must extend io.infinitic.tasks.Task"
+        println(e)
+        e.message!! shouldContain "class \"io.infinitic.workers.samples.NotAService\" must extend io.infinitic.services.Service"
     }
 
     "not a workflow" {
@@ -105,7 +106,7 @@ class WorkerConfigTests : StringSpec({
     }
 
     "default retry policy should be RetryExponentialBackoff" {
-        val config = WorkerConfig.fromResource("/config/tasks/instance.yml")
+        val config = WorkerConfig.fromResource("/config/services/instance.yml")
 
         // config.retryPolicy shouldBe RetryExponentialBackoff()
     }

@@ -25,7 +25,7 @@
 
 package io.infinitic.dashboard.panels.infrastructure.task
 
-import io.infinitic.common.tasks.data.TaskName
+import io.infinitic.common.tasks.data.ServiceName
 import io.infinitic.dashboard.Infinitic.topicName
 import io.infinitic.dashboard.panels.infrastructure.jobs.JobState
 import io.infinitic.dashboard.panels.infrastructure.jobs.TopicsStats
@@ -42,5 +42,5 @@ data class TaskState(
     override fun create(name: String, topicsStats: TopicsStats<TaskTopics>) =
         TaskState(name = name, topicsStats = topicsStats)
 
-    override fun getTopic(type: TaskTopics) = topicName.topic(type, TaskName(name))
+    override fun getTopic(type: TaskTopics) = topicName.topic(type, ServiceName(name))
 }

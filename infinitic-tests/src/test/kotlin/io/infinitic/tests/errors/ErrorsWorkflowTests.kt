@@ -32,7 +32,7 @@ import io.infinitic.exceptions.FailedTaskException
 import io.infinitic.exceptions.FailedWorkflowException
 import io.infinitic.exceptions.UnknownWorkflowException
 import io.infinitic.tests.channels.ChannelsWorkflow
-import io.infinitic.tests.utils.UtilTask
+import io.infinitic.tests.utils.UtilService
 import io.infinitic.tests.utils.UtilWorkflow
 import io.infinitic.workers.InfiniticWorker
 import io.infinitic.workflows.DeferredStatus
@@ -79,7 +79,7 @@ internal class ErrorsWorkflowTests : StringSpec({
         val error = shouldThrow<FailedWorkflowException> { errorsWorkflow.failing2() }
 
         val taskException = error.deferredException as FailedTaskException
-        taskException.taskName shouldBe UtilTask::class.java.name
+        taskException.serviceName shouldBe UtilService::class.java.name
         taskException.workerException.name shouldBe Exception::class.java.name
     }
 
@@ -126,7 +126,7 @@ internal class ErrorsWorkflowTests : StringSpec({
         cause1.workflowName shouldBe ErrorsWorkflow::class.java.name
 
         val cause2 = cause1.deferredException as FailedTaskException
-        cause2.taskName shouldBe UtilTask::class.java.name
+        cause2.serviceName shouldBe UtilService::class.java.name
     }
 
     "Failure in child workflow not on main path should not throw" {
@@ -141,7 +141,7 @@ internal class ErrorsWorkflowTests : StringSpec({
         cause1.methodName shouldBe "failing2"
 
         val cause2 = cause1.deferredException as FailedTaskException
-        cause2.taskName shouldBe UtilTask::class.java.name
+        cause2.serviceName shouldBe UtilService::class.java.name
     }
 
     "Failure in child workflow on main path can be caught" {
@@ -154,7 +154,7 @@ internal class ErrorsWorkflowTests : StringSpec({
         val deferred = client.lastDeferred!!
 
         val cause = error.deferredException as FailedTaskException
-        cause.taskName shouldBe UtilTask::class.java.name
+        cause.serviceName shouldBe UtilService::class.java.name
 
         later {
             val w = client.getWorkflowById(ErrorsWorkflow::class.java, deferred.id)
@@ -169,7 +169,7 @@ internal class ErrorsWorkflowTests : StringSpec({
         val deferred = client.lastDeferred!!
 
         val cause = error.deferredException as FailedTaskException
-        cause.taskName shouldBe UtilTask::class.java.name
+        cause.serviceName shouldBe UtilService::class.java.name
 
         later {
             val w = client.getWorkflowById(ErrorsWorkflow::class.java, deferred.id)
@@ -184,11 +184,11 @@ internal class ErrorsWorkflowTests : StringSpec({
         val deferred = client.lastDeferred!!
 
         val cause = error.deferredException as FailedTaskException
-        cause.taskName shouldBe UtilTask::class.java.name
+        cause.serviceName shouldBe UtilService::class.java.name
 
         later {
             val w = client.getWorkflowById(ErrorsWorkflow::class.java, deferred.id)
-            client.retryTasks(w, taskClass = UtilTask::class.java)
+            client.retryTasks(w, taskClass = UtilService::class.java)
         }
 
         deferred.await() shouldBe "ok"

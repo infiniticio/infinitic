@@ -33,7 +33,7 @@ import io.infinitic.common.clients.messages.ClientMessage
 import io.infinitic.common.data.ClientName
 import io.infinitic.common.data.MillisDuration
 import io.infinitic.common.messages.Message
-import io.infinitic.common.tasks.data.TaskName
+import io.infinitic.common.tasks.data.ServiceName
 import io.infinitic.common.tasks.executors.SendToTaskExecutor
 import io.infinitic.common.tasks.executors.SendToTaskExecutorAfter
 import io.infinitic.common.tasks.executors.messages.TaskExecutorMessage
@@ -72,8 +72,8 @@ class InMemoryStarter(private val scope: CoroutineScope, name: String) : ClientS
     private val clientChannel = Channel<ClientMessage>()
 
     // Task channels
-    private val taskTagChannels = ConcurrentHashMap<TaskName, Channel<TaskTagMessage>>()
-    private val taskExecutorChannels = ConcurrentHashMap<TaskName, Channel<TaskExecutorMessage>>()
+    private val taskTagChannels = ConcurrentHashMap<ServiceName, Channel<TaskTagMessage>>()
+    private val taskExecutorChannels = ConcurrentHashMap<ServiceName, Channel<TaskExecutorMessage>>()
 
     // Workflow channels
     private val workflowTagChannels = ConcurrentHashMap<WorkflowName, Channel<WorkflowTagMessage>>()
@@ -126,7 +126,11 @@ class InMemoryStarter(private val scope: CoroutineScope, name: String) : ClientS
         // not needed
     }
 
-    override fun CoroutineScope.startTaskTag(taskName: TaskName, taskTagStorage: TaskTagStorage, concurrency: Int) {
+    override fun CoroutineScope.startTaskTag(
+        serviceName: ServiceName,
+        taskTagStorage: TaskTagStorage,
+        concurrency: Int
+    ) {
         val taskTagEngine = TaskTagEngine(
             clientName,
             taskTagStorage,
@@ -135,12 +139,12 @@ class InMemoryStarter(private val scope: CoroutineScope, name: String) : ClientS
 
         startAsync(
             { message: TaskTagMessage -> taskTagEngine.handle(message) },
-            getTaskTagChannel(taskName)
+            getTaskTagChannel(serviceName)
         )
     }
 
     override fun CoroutineScope.startTaskExecutor(
-        taskName: TaskName,
+        serviceName: ServiceName,
         concurrency: Int,
         workerRegistry: WorkerRegistry,
         clientFactory: ClientFactory
@@ -158,7 +162,7 @@ class InMemoryStarter(private val scope: CoroutineScope, name: String) : ClientS
         repeat(concurrency) {
             startAsync(
                 { message: TaskExecutorMessage -> taskExecutor.handle(message) },
-                getTaskExecutorChannel(taskName)
+                getTaskExecutorChannel(serviceName)
             )
         }
     }
@@ -204,15 +208,15 @@ class InMemoryStarter(private val scope: CoroutineScope, name: String) : ClientS
     }
 
     private val sendToTaskTag: SendToTaskTag = { message: TaskTagMessage ->
-        scope.sendAsync(message, getTaskTagChannel(message.taskName)).join()
+        scope.sendAsync(message, getTaskTagChannel(message.serviceName)).join()
     }
 
     private val sendToTaskExecutor: SendToTaskExecutor = { message: TaskExecutorMessage ->
-        scope.sendAsync(message, getTaskExecutorChannel(message.taskName)).join()
+        scope.sendAsync(message, getTaskExecutorChannel(message.serviceName)).join()
     }
 
     private val sendToTaskTagAsync: SendToTaskTag = { message: TaskTagMessage ->
-        scope.sendAsync(message, getTaskTagChannel(message.taskName))
+        scope.sendAsync(message, getTaskTagChannel(message.serviceName))
     }
 
     private val sendToWorkflowTagAsync: SendToWorkflowTag = { message: WorkflowTagMessage ->
@@ -229,7 +233,7 @@ class InMemoryStarter(private val scope: CoroutineScope, name: String) : ClientS
 
     private val sendToTaskExecutorAfter: SendToTaskExecutorAfter =
         { message: TaskExecutorMessage, after: MillisDuration ->
-            scope.sendAsync(message, getTaskExecutorChannel(message.taskName), after).join()
+            scope.sendAsync(message, getTaskExecutorChannel(message.serviceName), after).join()
         }
 
     private val sendToWorkflowEngineAfterAsync: SendToWorkflowEngineAfter =
@@ -249,17 +253,17 @@ class InMemoryStarter(private val scope: CoroutineScope, name: String) : ClientS
         return { message: TaskExecutorMessage, after: MillisDuration -> scope.sendAsync(message, channel, after) }
     }
 
-    private fun getTaskTagChannel(taskName: TaskName) =
-        taskTagChannels[taskName] ?: run {
+    private fun getTaskTagChannel(serviceName: ServiceName) =
+        taskTagChannels[serviceName] ?: run {
             val channel = Channel<TaskTagMessage>()
-            taskTagChannels[taskName] = channel
+            taskTagChannels[serviceName] = channel
             channel
         }
 
-    private fun getTaskExecutorChannel(taskName: TaskName) =
-        taskExecutorChannels[taskName] ?: run {
+    private fun getTaskExecutorChannel(serviceName: ServiceName) =
+        taskExecutorChannels[serviceName] ?: run {
             val channel = Channel<TaskExecutorMessage>()
-            taskExecutorChannels[taskName] = channel
+            taskExecutorChannels[serviceName] = channel
             channel
         }
 

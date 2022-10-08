@@ -27,7 +27,7 @@ package io.infinitic.workers.registers
 
 import io.infinitic.cache.config.Cache
 import io.infinitic.common.config.logger
-import io.infinitic.common.tasks.data.TaskName
+import io.infinitic.common.tasks.data.ServiceName
 import io.infinitic.common.workers.TaskFactory
 import io.infinitic.common.workers.WorkflowFactory
 import io.infinitic.common.workers.registry.RegisteredTask
@@ -71,12 +71,12 @@ class WorkerRegisterImpl(private val workerConfig: WorkerConfig) : WorkerRegiste
             }
         }
 
-        for (t in workerConfig.tasks) {
+        for (t in workerConfig.services) {
             logger.info { "Task ${t.name}:" }
 
             when (t.`class`) {
                 null -> t.tagEngine?.let {
-                    registerTaskTag(TaskName(t.name), it.concurrency, it.storage, it.cache)
+                    registerTaskTag(ServiceName(t.name), it.concurrency, it.storage, it.cache)
                 }
 
                 else -> registerTask(t.name, t.concurrency, { t.instance }, t.tagEngine)
@@ -97,12 +97,12 @@ class WorkerRegisterImpl(private val workerConfig: WorkerConfig) : WorkerRegiste
             "* task executor".padEnd(25) + ": (instances: $concurrency, class:${factory()::class.java.name})"
         }
 
-        val taskName = TaskName(name)
-        registry.tasks[taskName] = RegisteredTask(concurrency, factory)
+        val serviceName = ServiceName(name)
+        registry.tasks[serviceName] = RegisteredTask(concurrency, factory)
 
         when (tagEngine) {
-            null -> registerTaskTag(taskName, concurrency, workerConfig.storage, workerConfig.cache)
-            else -> registerTaskTag(taskName, tagEngine.concurrency, tagEngine.storage, tagEngine.cache)
+            null -> registerTaskTag(serviceName, concurrency, workerConfig.storage, workerConfig.cache)
+            else -> registerTaskTag(serviceName, tagEngine.concurrency, tagEngine.storage, tagEngine.cache)
         }
     }
 
@@ -167,7 +167,7 @@ class WorkerRegisterImpl(private val workerConfig: WorkerConfig) : WorkerRegiste
     }
 
     private fun registerTaskTag(
-        taskName: TaskName,
+        serviceName: ServiceName,
         concurrency: Int,
         storage: Storage?,
         cache: Cache?
@@ -179,7 +179,7 @@ class WorkerRegisterImpl(private val workerConfig: WorkerConfig) : WorkerRegiste
             "* task tag ".padEnd(25) + ": (storage: ${s.type}, cache: ${c.type}, instances: $concurrency)"
         }
 
-        registry.taskTags[taskName] = RegisteredTaskTag(
+        registry.taskTags[serviceName] = RegisteredTaskTag(
             concurrency,
             BinaryTaskTagStorage(
                 CachedKeyValueStorage(c.keyValue, s.keyValue),

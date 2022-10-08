@@ -33,8 +33,8 @@ import io.infinitic.common.data.ReturnValue
 import io.infinitic.common.data.methods.MethodParameters
 import io.infinitic.common.exceptions.thisShouldNotHappen
 import io.infinitic.common.parser.getMethodPerNameAndParameters
+import io.infinitic.common.tasks.data.ServiceName
 import io.infinitic.common.tasks.data.TaskMeta
-import io.infinitic.common.tasks.data.TaskName
 import io.infinitic.common.tasks.data.TaskReturnValue
 import io.infinitic.common.tasks.executors.SendToTaskExecutorAfter
 import io.infinitic.common.tasks.executors.errors.DeferredError
@@ -49,11 +49,11 @@ import io.infinitic.common.workflows.data.workflowTasks.WorkflowTask
 import io.infinitic.common.workflows.engine.SendToWorkflowEngine
 import io.infinitic.exceptions.DeferredException
 import io.infinitic.exceptions.tasks.MaxRunDurationException
-import io.infinitic.tasks.Task
+import io.infinitic.services.Service
 import io.infinitic.tasks.executor.task.DurationBeforeRetryFailed
 import io.infinitic.tasks.executor.task.DurationBeforeRetryRetrieved
+import io.infinitic.tasks.executor.task.ServiceContextImpl
 import io.infinitic.tasks.executor.task.TaskCommand
-import io.infinitic.tasks.executor.task.TaskContextImpl
 import io.infinitic.workflows.workflowTask.WorkflowTaskImpl
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.coroutineScope
@@ -88,11 +88,11 @@ class TaskExecutor(
     }
 
     private suspend fun executeTask(message: ExecuteTask) = coroutineScope {
-        val taskContext = TaskContextImpl(
+        val taskContext = ServiceContextImpl(
             workerName = "$clientName",
             workerRegistry = workerRegistry,
-            id = message.taskId.toString(),
-            name = message.taskName.toString(),
+            taskId = message.taskId.toString(),
+            serviceName = message.serviceName.toString(),
             workflowId = message.workflowId?.toString(),
             workflowName = message.workflowName?.name,
             retrySequence = message.taskRetrySequence.int,
@@ -145,7 +145,7 @@ class TaskExecutor(
         }
     }
 
-    private fun getMeta(task: Task) = TaskMeta(task.context.meta)
+    private fun getMeta(service: Service) = TaskMeta(service.context.meta)
 
     private suspend fun runTask(method: Method, task: Any, methodParameters: MethodParameters): Any? = coroutineScope {
         val parameter = methodParameters.map { it.deserialize() }.toTypedArray()
@@ -153,15 +153,15 @@ class TaskExecutor(
     }
 
     private suspend fun failTaskWithRetry(
-        task: Task,
+        service: Service,
         msg: ExecuteTask,
         cause: Exception
     ) {
-        when (val delay = getDurationBeforeRetry(task, cause)) {
+        when (val delay = getDurationBeforeRetry(service, cause)) {
             is DurationBeforeRetryRetrieved -> {
                 when (delay.value) {
                     null -> sendTaskFailed(msg, cause)
-                    else -> retryTask(msg, cause, MillisDuration(delay.value.toMillis()), getMeta(task))
+                    else -> retryTask(msg, cause, MillisDuration(delay.value.toMillis()), getMeta(service))
                 }
             }
 
@@ -173,9 +173,9 @@ class TaskExecutor(
     }
 
     private fun parse(msg: ExecuteTask): TaskCommand {
-        val task = when (msg.taskName) {
-            TaskName(WorkflowTask::class.java.name) -> WorkflowTaskImpl()
-            else -> workerRegistry.getTaskInstance(msg.taskName)
+        val task = when (msg.serviceName) {
+            ServiceName(WorkflowTask::class.java.name) -> WorkflowTaskImpl()
+            else -> workerRegistry.getTaskInstance(msg.serviceName)
         }
 
         val parameterTypes = msg.methodParameterTypes
@@ -190,10 +190,10 @@ class TaskExecutor(
         return TaskCommand(task, method, msg.methodParameters, msg.taskOptions)
     }
 
-    private fun getDurationBeforeRetry(task: Task, cause: Exception) = try {
-        DurationBeforeRetryRetrieved(task.getDurationBeforeRetry(cause))
+    private fun getDurationBeforeRetry(service: Service, cause: Exception) = try {
+        DurationBeforeRetryRetrieved(service.getDurationBeforeRetry(cause))
     } catch (e: Exception) {
-        logger.info(cause) { "Exception in class '${task::class.java.name}' (${task.context.id})" }
+        logger.info(cause) { "Exception in class '${service::class.java.name}' (${service.context.taskId})" }
         logger.error(e) { "error when executing getDurationBeforeRetry method" }
         DurationBeforeRetryFailed(e)
     }
@@ -204,7 +204,7 @@ class TaskExecutor(
         delay: MillisDuration,
         taskMeta: TaskMeta
     ) {
-        logger.info(exception) { "Retrying task '${message.taskName}' (${message.taskId}) after $delay ms" }
+        logger.info(exception) { "Retrying task '${message.serviceName}' (${message.taskId}) after $delay ms" }
 
         val executeTask = message.copy(
             taskRetryIndex = message.taskRetryIndex + 1,
@@ -219,7 +219,7 @@ class TaskExecutor(
         message: ExecuteTask,
         throwable: Throwable
     ) = coroutineScope {
-        logger.info(throwable) { "Task failed '${message.taskName}' (${message.taskId})" }
+        logger.info(throwable) { "Task failed '${message.serviceName}' (${message.taskId})" }
 
         val workerError = getWorkerError(throwable)
 
@@ -239,7 +239,7 @@ class TaskExecutor(
                 workflowId = message.workflowId ?: thisShouldNotHappen(),
                 methodRunId = message.methodRunId ?: thisShouldNotHappen(),
                 failedTaskError = FailedTaskError(
-                    taskName = message.taskName,
+                    serviceName = message.serviceName,
                     taskId = message.taskId,
                     methodName = message.methodName,
                     cause = workerError
@@ -258,7 +258,7 @@ class TaskExecutor(
         value: Any?,
         taskMeta: TaskMeta
     ) = coroutineScope {
-        logger.debug { "Task completed '${message.taskName}' (${message.taskId})" }
+        logger.debug { "Task completed '${message.serviceName}' (${message.taskId})" }
 
         val returnValue = ReturnValue.from(value)
 
@@ -280,7 +280,7 @@ class TaskExecutor(
                 workflowId = message.workflowId ?: thisShouldNotHappen(),
                 methodRunId = message.methodRunId ?: thisShouldNotHappen(),
                 taskReturnValue = TaskReturnValue(
-                    taskName = message.taskName,
+                    serviceName = message.serviceName,
                     taskId = message.taskId,
                     taskMeta = taskMeta,
                     returnValue = returnValue
@@ -298,7 +298,7 @@ class TaskExecutor(
         message.taskTags.map {
             val removeTagFromTask = RemoveTagFromTask(
                 taskTag = it,
-                taskName = message.taskName,
+                serviceName = message.serviceName,
                 taskId = message.taskId,
                 emitterName = clientName
             )

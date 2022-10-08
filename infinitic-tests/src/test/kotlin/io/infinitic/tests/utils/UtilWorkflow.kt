@@ -43,17 +43,19 @@ interface UtilWorkflow {
     fun cancelChild2bis(deferred: Deferred<String>): String
 }
 
+@Suppress("unused")
 class UtilWorkflowImpl : Workflow(), UtilWorkflow {
     override val channelA = channel<String>()
     override var log = ""
-    private val utilTask = newTask(UtilTask::class.java)
+    private val utilService = newService(UtilService::class.java)
     private val utilWorkflow = newWorkflow(UtilWorkflow::class.java)
     private val channelsWorkflow = newWorkflow(ChannelsWorkflow::class.java)
-    @Ignore private val self by lazy { getWorkflowById(UtilWorkflow::class.java, context.id) }
+
+    @Ignore
+    private val self by lazy { getWorkflowById(UtilWorkflow::class.java, context.id) }
 
     override fun concat(input: String): String {
-
-        log = utilTask.concat(log, input)
+        log = utilService.concat(log, input)
 
         return log
     }
@@ -69,7 +71,6 @@ class UtilWorkflowImpl : Workflow(), UtilWorkflow {
     }
 
     override fun add(str: String): String {
-
         log += str
 
         return log
@@ -78,24 +79,26 @@ class UtilWorkflowImpl : Workflow(), UtilWorkflow {
     override fun cancelChild1(): Long {
         val deferred = dispatch(channelsWorkflow::channel1)
 
-        utilTask.cancelWorkflow(ChannelsWorkflow::class.java.name, deferred.id!!)
+        utilService.cancelWorkflow(ChannelsWorkflow::class.java.name, deferred.id!!)
 
         deferred.await()
 
-        return utilTask.await(200)
+        return utilService.await(200)
     }
 
     override fun cancelChild2(): Long {
         val deferred = dispatch(channelsWorkflow::channel1)
 
-        utilTask.cancelWorkflow(ChannelsWorkflow::class.java.name, deferred.id!!)
+        utilService.cancelWorkflow(ChannelsWorkflow::class.java.name, deferred.id!!)
 
         dispatch(self::cancelChild2bis, deferred)
 
-        return utilTask.await(200)
+        return utilService.await(200)
     }
 
-    override fun cancelChild2bis(deferred: Deferred<String>): String { return deferred.await() }
+    override fun cancelChild2bis(deferred: Deferred<String>): String {
+        return deferred.await()
+    }
 
     override fun factorial(n: Long) = when {
         n > 1 -> n * utilWorkflow.factorial(n - 1)

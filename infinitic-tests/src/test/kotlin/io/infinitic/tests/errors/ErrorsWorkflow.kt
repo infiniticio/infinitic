@@ -30,7 +30,7 @@ import io.infinitic.exceptions.FailedDeferredException
 import io.infinitic.exceptions.FailedTaskException
 import io.infinitic.exceptions.FailedWorkflowException
 import io.infinitic.exceptions.UnknownWorkflowException
-import io.infinitic.tests.utils.UtilTask
+import io.infinitic.tests.utils.UtilService
 import io.infinitic.workflows.Deferred
 import io.infinitic.workflows.Workflow
 import java.time.Duration
@@ -44,7 +44,8 @@ interface ErrorsWorkflow {
     fun failing3bis()
     fun failing3bException()
     fun failing3b(): Long
-//    fun failing4(): Long
+
+    //    fun failing4(): Long
 //    fun failing5(): Long
     fun failing5bis(deferred: Deferred<Long>): Long
     fun failing6()
@@ -63,11 +64,13 @@ interface ErrorsWorkflow {
 @Suppress("unused")
 class ErrorsWorkflowImpl : Workflow(), ErrorsWorkflow {
 
-    @Ignore private val self by lazy { getWorkflowById(ErrorsWorkflow::class.java, context.id) }
+    @Ignore
+    private val self by lazy { getWorkflowById(ErrorsWorkflow::class.java, context.id) }
 
     lateinit var deferred: Deferred<String>
 
-    private val utilTask = newTask(UtilTask::class.java, tags = setOf("foo", "bar"), meta = mapOf("foo" to "bar".toByteArray()))
+    private val utilService =
+        newService(UtilService::class.java, tags = setOf("foo", "bar"), meta = mapOf("foo" to "bar".toByteArray()))
     private val errorsWorkflow = newWorkflow(ErrorsWorkflow::class.java, tags = setOf("foo", "bar"))
 
     private var p1 = ""
@@ -79,35 +82,39 @@ class ErrorsWorkflowImpl : Workflow(), ErrorsWorkflow {
     }
 
     override fun failing1() = try {
-        utilTask.failing()
+        utilService.failing()
         "ok"
     } catch (e: FailedTaskException) {
-        utilTask.reverse("ok")
+        utilService.reverse("ok")
     }
 
-    override fun failing2() = utilTask.failing()
+    override fun failing2() = utilService.failing()
 
     override fun failing2a(): Long {
-        dispatch(utilTask::failing)
+        dispatch(utilService::failing)
 
-        return utilTask.await(100)
+        return utilService.await(100)
     }
 
     override fun failing3(): Long {
         dispatch(self::failing3bis)
 
-        return utilTask.await(100)
+        return utilService.await(100)
     }
 
-    override fun failing3bis() { utilTask.failing() }
+    override fun failing3bis() {
+        utilService.failing()
+    }
 
     override fun failing3b(): Long {
         dispatch(self::failing3bException)
 
-        return utilTask.await(100)
+        return utilService.await(100)
     }
 
-    override fun failing3bException() { throw Exception() }
+    override fun failing3bException() {
+        throw Exception()
+    }
 
 //    override fun failing4(): Long {
 //        val deferred = dispatch(taskA::await, 1000)
@@ -127,32 +134,36 @@ class ErrorsWorkflowImpl : Workflow(), ErrorsWorkflow {
 //        return taskA.await(100)
 //    }
 
-    override fun failing5bis(deferred: Deferred<Long>): Long { return deferred.await() }
+    override fun failing5bis(deferred: Deferred<Long>): Long {
+        return deferred.await()
+    }
 
     override fun failing6() = errorsWorkflow.failing2()
 
     override fun failing7(): Long {
         dispatch(self::failing7bis)
 
-        return utilTask.await(100)
+        return utilService.await(100)
     }
 
-    override fun failing7bis() { errorsWorkflow.failing2() }
+    override fun failing7bis() {
+        errorsWorkflow.failing2()
+    }
 
     override fun failing7ter(): String = try {
         errorsWorkflow.failing2()
         "ok"
     } catch (e: FailedWorkflowException) {
         val deferredException = e.deferredException as FailedTaskException
-        utilTask.await(100)
+        utilService.await(100)
         deferredException.workerException.name
     }
 
-    override fun failing8() = utilTask.successAtRetry()
+    override fun failing8() = utilService.successAtRetry()
 
     override fun failing9(): Boolean {
         // this method will success only after retry
-        val deferred = dispatch(utilTask::successAtRetry)
+        val deferred = dispatch(utilService::successAtRetry)
 
         val result = try {
             deferred.await()
@@ -161,7 +172,7 @@ class ErrorsWorkflowImpl : Workflow(), ErrorsWorkflow {
         }
 
         // trigger the retry of the previous task
-        utilTask.retryFailedTasks(ErrorsWorkflow::class.java.name, context.id)
+        utilService.retryFailedTasks(ErrorsWorkflow::class.java.name, context.id)
 
         return deferred.await() == "ok" && result == "caught"
     }
@@ -169,7 +180,7 @@ class ErrorsWorkflowImpl : Workflow(), ErrorsWorkflow {
     override fun failing10(): String {
         p1 = "o"
 
-        val deferred = dispatch(utilTask::successAtRetry)
+        val deferred = dispatch(utilService::successAtRetry)
 
         dispatch(self::failing10bis)
 
@@ -182,7 +193,9 @@ class ErrorsWorkflowImpl : Workflow(), ErrorsWorkflow {
         return p1 // should be "ok"
     }
 
-    override fun failing10bis() { p1 += "k" }
+    override fun failing10bis() {
+        p1 += "k"
+    }
 
     override fun failing11() {
         getWorkflowById(ErrorsWorkflow::class.java, "unknown").waiting()
@@ -192,7 +205,7 @@ class ErrorsWorkflowImpl : Workflow(), ErrorsWorkflow {
         return try {
             getWorkflowById(ErrorsWorkflow::class.java, "unknown").waiting()
         } catch (e: UnknownWorkflowException) {
-            utilTask.reverse("caught".reversed())
+            utilService.reverse("caught".reversed())
         }
     }
 

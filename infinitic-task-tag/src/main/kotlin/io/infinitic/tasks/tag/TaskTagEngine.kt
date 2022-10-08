@@ -57,7 +57,7 @@ class TaskTagEngine(
 
         process(message)
 
-        storage.setLastMessageId(message.taskTag, message.taskName, message.messageId)
+        storage.setLastMessageId(message.taskTag, message.serviceName, message.messageId)
     }
 
     // coroutineScope let send messages in parallel
@@ -75,22 +75,23 @@ class TaskTagEngine(
     }
 
     private suspend fun addTagToTask(message: AddTagToTask) {
-        storage.addTaskId(message.taskTag, message.taskName, message.taskId)
+        storage.addTaskId(message.taskTag, message.serviceName, message.taskId)
     }
 
     private suspend fun removeTagFromTask(message: RemoveTagFromTask) {
-        storage.removeTaskId(message.taskTag, message.taskName, message.taskId)
+        storage.removeTaskId(message.taskTag, message.serviceName, message.taskId)
     }
 
     private suspend fun retryTaskByTag(message: RetryTaskByTag) {
         // is not an idempotent action
         if (hasMessageAlreadyBeenHandled(message)) return
 
-        val taskIds = storage.getTaskIds(message.taskTag, message.taskName)
+        val taskIds = storage.getTaskIds(message.taskTag, message.serviceName)
         when (taskIds.isEmpty()) {
             true -> {
                 discardTagWithoutIds(message)
             }
+
             false -> taskIds.forEach {
                 TODO()
             }
@@ -101,11 +102,12 @@ class TaskTagEngine(
         // is not an idempotent action
         if (hasMessageAlreadyBeenHandled(message)) return
 
-        val ids = storage.getTaskIds(message.taskTag, message.taskName)
+        val ids = storage.getTaskIds(message.taskTag, message.serviceName)
         when (ids.isEmpty()) {
             true -> {
                 discardTagWithoutIds(message)
             }
+
             false -> ids.forEach {
                 TODO()
             }
@@ -113,11 +115,11 @@ class TaskTagEngine(
     }
 
     private suspend fun getTaskIds(message: GetTaskIdsByTag) {
-        val taskIds = storage.getTaskIds(message.taskTag, message.taskName)
+        val taskIds = storage.getTaskIds(message.taskTag, message.serviceName)
 
         val taskIdsByTag = TaskIdsByTag(
             recipientName = message.emitterName,
-            message.taskName,
+            message.serviceName,
             message.taskTag,
             taskIds,
             emitterName = clientName
@@ -127,11 +129,12 @@ class TaskTagEngine(
     }
 
     private suspend fun hasMessageAlreadyBeenHandled(message: TaskTagMessage) =
-        when (storage.getLastMessageId(message.taskTag, message.taskName)) {
+        when (storage.getLastMessageId(message.taskTag, message.serviceName)) {
             message.messageId -> {
                 logger.info { "discarding as state already contains this messageId: $message" }
                 true
             }
+
             else -> false
         }
 

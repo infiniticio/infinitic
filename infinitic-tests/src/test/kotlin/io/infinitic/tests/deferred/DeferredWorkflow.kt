@@ -26,7 +26,7 @@
 package io.infinitic.tests.deferred
 
 import io.infinitic.annotations.Ignore
-import io.infinitic.tests.utils.UtilTask
+import io.infinitic.tests.utils.UtilService
 import io.infinitic.workflows.Deferred
 import io.infinitic.workflows.DeferredStatus
 import io.infinitic.workflows.Workflow
@@ -58,8 +58,8 @@ class DeferredWorkflowImpl : Workflow(), DeferredWorkflow {
 
     lateinit var deferred: Deferred<String>
 
-    private val utilTask = newTask(
-        klass = UtilTask::class.java,
+    private val utilService = newService(
+        klass = UtilService::class.java,
         tags = setOf("foo", "bar"),
         meta = mapOf("foo" to "bar".toByteArray())
     )
@@ -67,30 +67,30 @@ class DeferredWorkflowImpl : Workflow(), DeferredWorkflow {
 
     private var p1 = ""
 
-    override fun await(duration: Long) = utilTask.await(duration)
+    override fun await(duration: Long) = utilService.await(duration)
 
     override fun seq1(): String {
         var str = ""
-        str = utilTask.concat(str, "1")
-        str = utilTask.concat(str, "2")
-        str = utilTask.concat(str, "3")
+        str = utilService.concat(str, "1")
+        str = utilService.concat(str, "2")
+        str = utilService.concat(str, "3")
 
         return str // should be "123"
     }
 
     override fun seq2(): String {
         var str = ""
-        val d = dispatch(utilTask::reverse, "ab")
-        str = utilTask.concat(str, "2")
-        str = utilTask.concat(str, "3")
+        val d = dispatch(utilService::reverse, "ab")
+        str = utilService.concat(str, "2")
+        str = utilService.concat(str, "3")
 
         return str + d.await() // should be "23ba"
     }
 
     override fun seq5(): Long {
         var l = 0L
-        val d1 = dispatch(utilTask::await, 500)
-        val d2 = dispatch(utilTask::await, 100)
+        val d1 = dispatch(utilService::await, 500)
+        val d2 = dispatch(utilService::await, 100)
         l += d1.await()
         l += d2.await()
 
@@ -99,68 +99,68 @@ class DeferredWorkflowImpl : Workflow(), DeferredWorkflow {
 
     override fun seq6(): Long {
         var l = 0L
-        val d1 = dispatch(utilTask::await, 500)
-        val d2 = dispatch(utilTask::await, 100)
+        val d1 = dispatch(utilService::await, 500)
+        val d2 = dispatch(utilService::await, 100)
         l += d1.await()
         l += d2.await()
 
         // a new step triggers an additional workflowTask
-        utilTask.workflowId()
+        utilService.workflowId()
 
         return l // should be 600
     }
 
     override fun or1(): String {
-        val d1 = dispatch(utilTask::reverse, "ab")
-        val d2 = dispatch(utilTask::reverse, "cd")
-        val d3 = dispatch(utilTask::reverse, "ef")
+        val d1 = dispatch(utilService::reverse, "ab")
+        val d2 = dispatch(utilService::reverse, "cd")
+        val d3 = dispatch(utilService::reverse, "ef")
 
         return (d1 or d2 or d3).await() // should be "ba" or "dc" or "fe"
     }
 
     override fun or2(): Any {
-        val d1 = dispatch(utilTask::reverse, "ab")
-        val d2 = dispatch(utilTask::reverse, "cd")
-        val d3 = dispatch(utilTask::reverse, "ef")
+        val d1 = dispatch(utilService::reverse, "ab")
+        val d2 = dispatch(utilService::reverse, "cd")
+        val d3 = dispatch(utilService::reverse, "ef")
 
         return ((d1 and d2) or d3).await() // should be listOf("ba","dc") or "fe"
     }
 
     override fun or3(): String {
         val list: MutableList<Deferred<String>> = mutableListOf()
-        list.add(dispatch(utilTask::reverse, "ab"))
-        list.add(dispatch(utilTask::reverse, "cd"))
-        list.add(dispatch(utilTask::reverse, "ef"))
+        list.add(dispatch(utilService::reverse, "ab"))
+        list.add(dispatch(utilService::reverse, "cd"))
+        list.add(dispatch(utilService::reverse, "ef"))
 
         return list.or().await() // should be "ba" or "dc" or "fe"
     }
 
     override fun or4(): String {
-        var s3 = utilTask.concat("1", "2")
+        var s3 = utilService.concat("1", "2")
 
-        val d1 = dispatch(utilTask::reverse, "ab")
+        val d1 = dispatch(utilService::reverse, "ab")
         val d2 = timer(Duration.ofMillis(2000))
         val d: Deferred<Any> = (d1 or d2)
         if (d.status() != DeferredStatus.COMPLETED) {
-            s3 = utilTask.reverse("ab")
+            s3 = utilService.reverse("ab")
         }
 
         return (d.await() as String) + s3 // should be "baba"
     }
 
     override fun and1(): List<String> {
-        val d1 = dispatch(utilTask::reverse, "ab")
-        val d2 = dispatch(utilTask::reverse, "cd")
-        val d3 = dispatch(utilTask::reverse, "ef")
+        val d1 = dispatch(utilService::reverse, "ab")
+        val d2 = dispatch(utilService::reverse, "cd")
+        val d3 = dispatch(utilService::reverse, "ef")
 
         return (d1 and d2 and d3).await() // should be listOf("ba","dc","fe")
     }
 
     override fun and2(): List<String> {
         val list: MutableList<Deferred<String>> = mutableListOf()
-        list.add(dispatch(utilTask::reverse, "ab"))
-        list.add(dispatch(utilTask::reverse, "cd"))
-        list.add(dispatch(utilTask::reverse, "ef"))
+        list.add(dispatch(utilService::reverse, "ab"))
+        list.add(dispatch(utilService::reverse, "cd"))
+        list.add(dispatch(utilService::reverse, "ef"))
 
         return list.and().await() // should be listOf("ba","dc","fe")
     }
@@ -168,7 +168,7 @@ class DeferredWorkflowImpl : Workflow(), DeferredWorkflow {
     override fun and3(): List<String> {
         val list: MutableList<Deferred<String>> = mutableListOf()
         for (i in 1..20) {
-            list.add(dispatch(utilTask::reverse, "ab"))
+            list.add(dispatch(utilService::reverse, "ab"))
         }
         return list.and().await() // should be listOf("ba","dc","fe")
     }

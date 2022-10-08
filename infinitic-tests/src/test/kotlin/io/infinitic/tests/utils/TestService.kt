@@ -25,17 +25,18 @@
 
 package io.infinitic.tests.utils
 
-import io.infinitic.tasks.Task
+import io.infinitic.services.Service
 import java.time.Duration
 
-interface TestTask {
+interface TestService {
     fun log(): String
     fun await(delay: Long): Long
 }
 
 class ExpectedException(log: String? = null) : Exception(log)
 
-class TestTaskImpl : Task(), TestTask {
+@Suppress("unused")
+class TestServiceImpl : Service(), TestService {
     companion object {
         lateinit var behavior: (index: Int, retry: Int) -> Status
     }

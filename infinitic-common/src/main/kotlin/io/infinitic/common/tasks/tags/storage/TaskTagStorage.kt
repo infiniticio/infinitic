@@ -27,8 +27,8 @@ package io.infinitic.common.tasks.tags.storage
 
 import io.infinitic.common.data.MessageId
 import io.infinitic.common.storage.Flushable
+import io.infinitic.common.tasks.data.ServiceName
 import io.infinitic.common.tasks.data.TaskId
-import io.infinitic.common.tasks.data.TaskName
 import io.infinitic.common.tasks.data.TaskTag
 
 /**
@@ -38,13 +38,13 @@ import io.infinitic.common.tasks.data.TaskTag
  * transformed before being stored. These details are left to the implementation.
  */
 interface TaskTagStorage : Flushable {
-    suspend fun getLastMessageId(tag: TaskTag, taskName: TaskName): MessageId?
+    suspend fun getLastMessageId(tag: TaskTag, serviceName: ServiceName): MessageId?
 
-    suspend fun setLastMessageId(tag: TaskTag, taskName: TaskName, messageId: MessageId)
+    suspend fun setLastMessageId(tag: TaskTag, serviceName: ServiceName, messageId: MessageId)
 
-    suspend fun getTaskIds(tag: TaskTag, taskName: TaskName): Set<TaskId>
+    suspend fun getTaskIds(tag: TaskTag, serviceName: ServiceName): Set<TaskId>
 
-    suspend fun addTaskId(tag: TaskTag, taskName: TaskName, taskId: TaskId)
+    suspend fun addTaskId(tag: TaskTag, serviceName: ServiceName, taskId: TaskId)
 
-    suspend fun removeTaskId(tag: TaskTag, taskName: TaskName, taskId: TaskId)
+    suspend fun removeTaskId(tag: TaskTag, serviceName: ServiceName, taskId: TaskId)
 }

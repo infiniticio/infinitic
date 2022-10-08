@@ -23,25 +23,22 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.workers.samples
+package io.infinitic.tests.utils
 
-import io.infinitic.tasks.Task
+import io.infinitic.annotations.Name
+import io.infinitic.services.Service
+import java.time.Duration
 
-interface TaskA
-
-class TaskAImpl : Task(), TaskA
-
-class TaskWithInvocationTargetException : Task(), TaskA {
-    init {
-        throw Exception("InvocationTargetException")
-    }
+@Name("annotatedService")
+interface AnnotatedService {
+    @Name("bar")
+    fun foo(str1: String, str2: String): String
 }
 
-class TaskWithExceptionInInitializerError : Task(), TaskA {
-    companion object {
-        @JvmStatic
-        val e: Nothing = throw Exception("ExceptionInInitializerError")
-    }
-}
+@Suppress("unused")
+class AnnotatedServiceImpl : Service(), AnnotatedService {
 
-class NotATask : TaskA
+    override fun foo(str1: String, str2: String) = str1 + str2
+
+    override fun getDurationBeforeRetry(e: Exception): Duration? = null
+}

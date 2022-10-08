@@ -28,7 +28,7 @@ package io.infinitic.tests.context
 import io.infinitic.annotations.Ignore
 import io.infinitic.common.tasks.data.TaskMeta
 import io.infinitic.common.workflows.data.workflows.WorkflowMeta
-import io.infinitic.tests.utils.UtilTask
+import io.infinitic.tests.utils.UtilService
 import io.infinitic.workflows.Workflow
 
 interface ContextWorkflow {
@@ -44,9 +44,11 @@ interface ContextWorkflow {
 @Suppress("unused")
 class ContextWorkflowImpl : Workflow(), ContextWorkflow {
 
-    @Ignore private val self by lazy { getWorkflowById(ContextWorkflow::class.java, context.id) }
+    @Ignore
+    private val self by lazy { getWorkflowById(ContextWorkflow::class.java, context.id) }
 
-    private val utilTask = newTask(UtilTask::class.java, tags = setOf("foo", "bar"), meta = mapOf("foo" to "bar".toByteArray()))
+    private val utilService =
+        newService(UtilService::class.java, tags = setOf("foo", "bar"), meta = mapOf("foo" to "bar".toByteArray()))
 
     override fun context1(): String = context.id
 
@@ -54,11 +56,11 @@ class ContextWorkflowImpl : Workflow(), ContextWorkflow {
 
     override fun context3() = WorkflowMeta(context.meta)
 
-    override fun context4() = utilTask.workflowId()
+    override fun context4() = utilService.workflowId()
 
-    override fun context5() = utilTask.workflowName()
+    override fun context5() = utilService.workflowName()
 
-    override fun context6() = utilTask.tags()
+    override fun context6() = utilService.tags()
 
-    override fun context7() = utilTask.meta()
+    override fun context7() = utilService.meta()
 }

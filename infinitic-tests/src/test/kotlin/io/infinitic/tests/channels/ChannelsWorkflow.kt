@@ -30,7 +30,7 @@ import io.infinitic.annotations.Ignore
 import io.infinitic.tests.utils.Obj
 import io.infinitic.tests.utils.Obj1
 import io.infinitic.tests.utils.Obj2
-import io.infinitic.tests.utils.UtilTask
+import io.infinitic.tests.utils.UtilService
 import io.infinitic.workflows.Deferred
 import io.infinitic.workflows.SendChannel
 import io.infinitic.workflows.Workflow
@@ -61,7 +61,8 @@ interface ChannelsWorkflow {
 @Suppress("unused")
 class ChannelsWorkflowImpl : Workflow(), ChannelsWorkflow {
 
-    @Ignore private val self by lazy { getWorkflowById(ChannelsWorkflow::class.java, context.id) }
+    @Ignore
+    private val self by lazy { getWorkflowById(ChannelsWorkflow::class.java, context.id) }
 
     lateinit var deferred: Deferred<String>
 
@@ -69,7 +70,8 @@ class ChannelsWorkflowImpl : Workflow(), ChannelsWorkflow {
     override val channelA = channel<String>()
     override val channelB = channel<String>()
 
-    private val utilTask = newTask(UtilTask::class.java, tags = setOf("foo", "bar"), meta = mapOf("foo" to "bar".toByteArray()))
+    private val utilService =
+        newService(UtilService::class.java, tags = setOf("foo", "bar"), meta = mapOf("foo" to "bar".toByteArray()))
     private val workflowA = newWorkflow(ChannelsWorkflow::class.java)
 
     private var p1 = ""
@@ -127,7 +129,8 @@ class ChannelsWorkflowImpl : Workflow(), ChannelsWorkflow {
     }
 
     override fun channel5ter(): Obj1 {
-        val deferred: Deferred<Obj1> = channelObj.receive(Obj1::class.java, jsonPath = "[?]", criteria = where("foo").eq("foo"))
+        val deferred: Deferred<Obj1> =
+            channelObj.receive(Obj1::class.java, jsonPath = "[?]", criteria = where("foo").eq("foo"))
 
         return deferred.await()
     }
@@ -151,8 +154,10 @@ class ChannelsWorkflowImpl : Workflow(), ChannelsWorkflow {
     }
 
     override fun channel6ter(): String {
-        val deferred1: Deferred<Obj1> = channelObj.receive(Obj1::class.java, jsonPath = "[?]", criteria = where("foo").eq("foo"))
-        val deferred2: Deferred<Obj2> = channelObj.receive(Obj2::class.java, jsonPath = "[?]", criteria = where("foo").eq("foo"))
+        val deferred1: Deferred<Obj1> =
+            channelObj.receive(Obj1::class.java, jsonPath = "[?]", criteria = where("foo").eq("foo"))
+        val deferred2: Deferred<Obj2> =
+            channelObj.receive(Obj2::class.java, jsonPath = "[?]", criteria = where("foo").eq("foo"))
         val obj1 = deferred1.await()
         val obj2 = deferred2.await()
 
@@ -167,7 +172,7 @@ class ChannelsWorkflowImpl : Workflow(), ChannelsWorkflow {
         repeat(count) {
             signal += deferred.await()
 
-            utilTask.await(50)
+            utilService.await(50)
         }
 
         return signal

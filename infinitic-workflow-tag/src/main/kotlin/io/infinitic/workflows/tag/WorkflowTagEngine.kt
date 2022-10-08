@@ -222,7 +222,7 @@ class WorkflowTagEngine(
                         workflowName = message.workflowName,
                         workflowId = it,
                         taskId = message.taskId,
-                        taskName = message.taskName,
+                        serviceName = message.serviceName,
                         taskStatus = message.taskStatus,
                         emitterName = clientName
                     )

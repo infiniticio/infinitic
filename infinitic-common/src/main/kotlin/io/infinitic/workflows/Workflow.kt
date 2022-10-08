@@ -27,7 +27,7 @@ package io.infinitic.workflows
 
 import io.infinitic.annotations.Name
 import io.infinitic.common.proxies.ExistingWorkflowProxyHandler
-import io.infinitic.common.proxies.NewTaskProxyHandler
+import io.infinitic.common.proxies.NewServiceProxyHandler
 import io.infinitic.common.proxies.NewWorkflowProxyHandler
 import io.infinitic.common.proxies.ProxyHandler
 import io.infinitic.common.tasks.data.TaskMeta
@@ -38,7 +38,7 @@ import io.infinitic.common.workflows.data.workflows.WorkflowTag
 import io.infinitic.exceptions.clients.InvalidStubException
 import io.infinitic.exceptions.workflows.MultipleGettersForSameChannelException
 import io.infinitic.exceptions.workflows.NonIdempotentChannelGetterException
-import io.infinitic.tasks.TaskOptions
+import io.infinitic.services.TaskOptions
 import java.time.Duration
 import java.time.Instant
 
@@ -51,12 +51,12 @@ abstract class Workflow {
      *  Create a stub for a task
      */
     @JvmOverloads
-    protected fun <T : Any> newTask(
+    protected fun <T : Any> newService(
         klass: Class<out T>,
         tags: Set<String>? = null,
         options: TaskOptions? = null,
         meta: Map<String, ByteArray>? = null
-    ): T = NewTaskProxyHandler(
+    ): T = NewServiceProxyHandler(
         klass = klass,
         taskTags = tags?.map { TaskTag(it) }?.toSet() ?: setOf(),
         taskOptions = options ?: TaskOptions(),

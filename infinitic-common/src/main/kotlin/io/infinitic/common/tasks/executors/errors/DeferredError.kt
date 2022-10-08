@@ -27,8 +27,8 @@ package io.infinitic.common.tasks.executors.errors
 
 import com.github.avrokotlin.avro4k.AvroNamespace
 import io.infinitic.common.data.methods.MethodName
+import io.infinitic.common.tasks.data.ServiceName
 import io.infinitic.common.tasks.data.TaskId
-import io.infinitic.common.tasks.data.TaskName
 import io.infinitic.common.workflows.data.methodRuns.MethodRunId
 import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.data.workflows.WorkflowName
@@ -49,7 +49,8 @@ import io.infinitic.exceptions.UnknownWorkflowException
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
-@Serializable @AvroNamespace("io.infinitic.tasks.executor")
+@Serializable
+@AvroNamespace("io.infinitic.tasks.executor")
 sealed class DeferredError {
     companion object {
         fun from(exception: DeferredException) = when (exception) {
@@ -105,12 +106,13 @@ sealed class UnknownDeferredError : DeferredError() {
 /**
  * Error occurring when waiting for an unknown task
  */
-@Serializable @SerialName("UnknownTaskError")
+@Serializable
+@SerialName("UnknownTaskError")
 data class UnknownTaskError(
     /**
      * Name of the unknown task
      */
-    val taskName: TaskName,
+    @SerialName("taskName") val serviceName: ServiceName,
 
     /**
      * Id of the unknown task
@@ -119,7 +121,7 @@ data class UnknownTaskError(
 ) : UnknownDeferredError() {
     companion object {
         fun from(exception: UnknownTaskException) = UnknownTaskError(
-            taskName = TaskName(exception.taskName),
+            serviceName = ServiceName(exception.serviceName),
             taskId = TaskId(exception.taskId)
         )
     }
@@ -128,7 +130,8 @@ data class UnknownTaskError(
 /**
  * Error occurring when waiting for an unknown workflow
  */
-@Serializable @SerialName("UnknownWorkflowError")
+@Serializable
+@SerialName("UnknownWorkflowError")
 data class UnknownWorkflowError(
     /**
      * Name of the unknown workflow
@@ -157,12 +160,13 @@ data class UnknownWorkflowError(
 /**
  * Error occurring when waiting a timed-out task
  */
-@Serializable @SerialName("TimedOutTaskError")
+@Serializable
+@SerialName("TimedOutTaskError")
 data class TimedOutTaskError(
     /**
      * Name of the timed-out task
      */
-    val taskName: TaskName,
+    @SerialName("taskName") val serviceName: ServiceName,
 
     /**
      * Id of the timed-out task
@@ -177,7 +181,7 @@ data class TimedOutTaskError(
 ) : TimedOutDeferredError() {
     companion object {
         fun from(exception: TimedOutTaskException) = TimedOutTaskError(
-            taskName = TaskName(exception.taskName),
+            serviceName = ServiceName(exception.serviceName),
             taskId = TaskId(exception.taskId),
             methodName = MethodName(exception.methodName)
         )
@@ -187,7 +191,8 @@ data class TimedOutTaskError(
 /**
  * Error occurring when waiting a timed-out child workflow
  */
-@Serializable @SerialName("TimedOutWorkflowError")
+@Serializable
+@SerialName("TimedOutWorkflowError")
 data class TimedOutWorkflowError(
     /**
      * Name of timed-out child workflow
@@ -222,12 +227,13 @@ data class TimedOutWorkflowError(
 /**
  * Error occurring when waiting a canceled task
  */
-@Serializable @SerialName("CanceledTaskError")
+@Serializable
+@SerialName("CanceledTaskError")
 data class CanceledTaskError(
     /**
      * Name of canceled task
      */
-    val taskName: TaskName,
+    @SerialName("taskName") val serviceName: ServiceName,
 
     /**
      * Id of canceled task
@@ -237,12 +243,12 @@ data class CanceledTaskError(
     /**
      * Method of canceled task
      */
-    val methodName: MethodName,
+    val methodName: MethodName
 
 ) : CanceledDeferredError() {
     companion object {
         fun from(exception: CanceledTaskException) = CanceledTaskError(
-            taskName = TaskName(exception.taskName),
+            serviceName = ServiceName(exception.serviceName),
             taskId = TaskId(exception.taskId),
             methodName = MethodName(exception.methodName)
         )
@@ -252,7 +258,8 @@ data class CanceledTaskError(
 /**
  * Error occurring when waiting a failed child workflow
  */
-@Serializable @SerialName("CanceledWorkflowError")
+@Serializable
+@SerialName("CanceledWorkflowError")
 data class CanceledWorkflowError(
     /**
      * Name of canceled child workflow
@@ -281,12 +288,13 @@ data class CanceledWorkflowError(
 /**
  * Error occurring when waiting a failed task
  */
-@Serializable @SerialName("FailedTaskError")
+@Serializable
+@SerialName("FailedTaskError")
 data class FailedTaskError(
     /**
      * Name of failed task
      */
-    val taskName: TaskName,
+    @SerialName("taskName") val serviceName: ServiceName,
 
     /**
      * Id of failed task
@@ -305,7 +313,7 @@ data class FailedTaskError(
 ) : FailedDeferredError() {
     companion object {
         fun from(exception: FailedTaskException) = FailedTaskError(
-            taskName = TaskName(exception.taskName),
+            serviceName = ServiceName(exception.serviceName),
             taskId = TaskId(exception.taskId),
             methodName = MethodName(exception.methodName),
             cause = WorkerError.from(exception.workerException)
@@ -316,7 +324,8 @@ data class FailedTaskError(
 /**
  * Error occurring when waiting a failed workflow
  */
-@Serializable @SerialName("FailedWorkflowError")
+@Serializable
+@SerialName("FailedWorkflowError")
 data class FailedWorkflowError(
     /**
      * Name of failed child workflow
@@ -357,7 +366,8 @@ data class FailedWorkflowError(
 /**
  * Error occurring when waiting a failed workflow
  */
-@Serializable @SerialName("FailedWorkflowTaskError")
+@Serializable
+@SerialName("FailedWorkflowTaskError")
 data class FailedWorkflowTaskError(
     /**
      * Name of failed workflow

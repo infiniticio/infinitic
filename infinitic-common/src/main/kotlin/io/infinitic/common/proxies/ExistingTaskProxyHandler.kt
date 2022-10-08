@@ -26,8 +26,8 @@
 package io.infinitic.common.proxies
 
 import io.infinitic.common.exceptions.thisShouldNotHappen
+import io.infinitic.common.tasks.data.ServiceName
 import io.infinitic.common.tasks.data.TaskId
-import io.infinitic.common.tasks.data.TaskName
 import io.infinitic.common.tasks.data.TaskTag
 
 class ExistingTaskProxyHandler<K : Any>(
@@ -43,5 +43,5 @@ class ExistingTaskProxyHandler<K : Any>(
         }
     }
 
-    val taskName = TaskName(name)
+    val serviceName = ServiceName(name)
 }

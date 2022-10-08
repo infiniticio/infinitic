@@ -513,7 +513,7 @@ class ClientWorkflowTests : StringSpec({
             workflowId = WorkflowId(id),
             taskId = null,
             taskStatus = null,
-            taskName = null,
+            serviceName = null,
             emitterName = clientNameTest
         )
     }
@@ -530,7 +530,7 @@ class ClientWorkflowTests : StringSpec({
             workflowId = WorkflowId(id),
             taskId = null,
             taskStatus = null,
-            taskName = null,
+            serviceName = null,
             emitterName = clientNameTest
         )
     }

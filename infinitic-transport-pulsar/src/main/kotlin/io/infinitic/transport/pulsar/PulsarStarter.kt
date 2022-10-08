@@ -35,7 +35,7 @@ import io.infinitic.common.data.ClientName
 import io.infinitic.common.data.MillisDuration
 import io.infinitic.common.messages.Envelope
 import io.infinitic.common.messages.Message
-import io.infinitic.common.tasks.data.TaskName
+import io.infinitic.common.tasks.data.ServiceName
 import io.infinitic.common.tasks.executors.SendToTaskExecutor
 import io.infinitic.common.tasks.executors.SendToTaskExecutorAfter
 import io.infinitic.common.tasks.executors.messages.TaskExecutorEnvelope
@@ -138,7 +138,11 @@ class PulsarStarter(
         )
     }
 
-    override fun CoroutineScope.startTaskTag(taskName: TaskName, taskTagStorage: TaskTagStorage, concurrency: Int) {
+    override fun CoroutineScope.startTaskTag(
+        serviceName: ServiceName,
+        taskTagStorage: TaskTagStorage,
+        concurrency: Int
+    ) {
         val tagEngine = TaskTagEngine(
             clientName,
             taskTagStorage,
@@ -149,12 +153,12 @@ class PulsarStarter(
             executor = { message: TaskTagMessage -> tagEngine.handle(message) },
             topicType = TaskTopics.TAG,
             concurrency = concurrency,
-            name = "$taskName"
+            name = "$serviceName"
         )
     }
 
     override fun CoroutineScope.startTaskExecutor(
-        taskName: TaskName,
+        serviceName: ServiceName,
         concurrency: Int,
         workerRegistry: WorkerRegistry,
         clientFactory: ClientFactory
@@ -173,7 +177,7 @@ class PulsarStarter(
             executor = { message: TaskExecutorMessage -> taskExecutor.handle(message) },
             topicType = TaskTopics.EXECUTOR,
             concurrency = concurrency,
-            name = "$taskName"
+            name = "$serviceName"
         )
     }
 
@@ -231,7 +235,7 @@ class PulsarStarter(
         val producerName = topicNames.producerName(workerName, topicType)
 
         return@run { message: TaskTagMessage ->
-            val topic = topicNames.topic(topicType, message.taskName)
+            val topic = topicNames.topic(topicType, message.serviceName)
             pulsarProducer.send<TaskTagMessage, TaskTagEnvelope>(
                 message,
                 zero,
@@ -247,7 +251,7 @@ class PulsarStarter(
         val producerName = topicNames.producerName(workerName, topicType)
 
         return@run { message: TaskExecutorMessage ->
-            val topic = topicNames.topic(topicType, message.taskName)
+            val topic = topicNames.topic(topicType, message.serviceName)
             pulsarProducer.send<TaskExecutorMessage, TaskExecutorEnvelope>(
                 message,
                 zero,
@@ -293,7 +297,7 @@ class PulsarStarter(
         val producerName = topicNames.producerName(workerName, topicType)
 
         return@run { message: TaskExecutorMessage, after: MillisDuration ->
-            val topic = topicNames.topic(topicType, message.taskName)
+            val topic = topicNames.topic(topicType, message.serviceName)
             pulsarProducer.send<TaskExecutorMessage, TaskExecutorEnvelope>(
                 message,
                 after,

@@ -62,9 +62,9 @@ data class WorkerConfig(
     override var cache: Cache = Cache(),
 
     /**
-     * Tasks configuration
+     * Services configuration
      */
-    val tasks: List<Task> = listOf(),
+    val services: List<Service> = listOf(),
 
     /**
      * Default task retry policy
@@ -101,7 +101,7 @@ data class WorkerConfig(
         // retryPolicy.check()
 
         // apply default, if not set
-        tasks.map { task ->
+        services.map { task ->
             // task.retryPolicy = task.retryPolicy?.also { it.check() } ?: retryPolicy
 
             task.tagEngine?.let {

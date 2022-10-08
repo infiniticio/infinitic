@@ -34,8 +34,8 @@ import io.infinitic.common.data.methods.MethodName
 import io.infinitic.common.data.methods.MethodParameterTypes
 import io.infinitic.common.data.methods.MethodParameters
 import io.infinitic.common.messages.Message
+import io.infinitic.common.tasks.data.ServiceName
 import io.infinitic.common.tasks.data.TaskId
-import io.infinitic.common.tasks.data.TaskName
 import io.infinitic.common.tasks.data.TaskReturnValue
 import io.infinitic.common.tasks.executors.errors.CanceledTaskError
 import io.infinitic.common.tasks.executors.errors.CanceledWorkflowError
@@ -58,6 +58,7 @@ import io.infinitic.common.workflows.data.workflows.WorkflowReturnValue
 import io.infinitic.common.workflows.data.workflows.WorkflowTag
 import io.infinitic.workflows.DeferredStatus
 import io.infinitic.workflows.WorkflowOptions
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 interface WorkflowEvent
@@ -68,7 +69,7 @@ interface MethodEvent : WorkflowEvent {
 
 interface TaskEvent : MethodEvent {
     fun taskId(): TaskId
-    fun taskName(): TaskName
+    fun serviceName(): ServiceName
 }
 
 @Serializable
@@ -80,7 +81,7 @@ sealed class WorkflowEngineMessage : Message {
 
     override fun envelope() = WorkflowEngineEnvelope.from(this)
 
-    fun isWorkflowTaskEvent() = (this is TaskEvent) && this.taskName() == TaskName(WorkflowTask::class.java.name)
+    fun isWorkflowTaskEvent() = (this is TaskEvent) && this.serviceName() == ServiceName(WorkflowTask::class.java.name)
 }
 
 @Serializable
@@ -116,7 +117,7 @@ data class RetryTasks(
     override val workflowId: WorkflowId,
     val taskId: TaskId?,
     val taskStatus: DeferredStatus?,
-    val taskName: TaskName?,
+    @SerialName("taskName") val serviceName: ServiceName?,
     override val emitterName: ClientName
 ) : WorkflowEngineMessage()
 
@@ -248,7 +249,7 @@ data class TaskCanceled(
     override val emitterName: ClientName
 ) : WorkflowEngineMessage(), TaskEvent {
     override fun taskId() = canceledTaskError.taskId
-    override fun taskName() = canceledTaskError.taskName
+    override fun serviceName() = canceledTaskError.serviceName
 }
 
 @Serializable
@@ -262,7 +263,7 @@ data class TaskFailed(
     override val emitterName: ClientName
 ) : WorkflowEngineMessage(), TaskEvent {
     override fun taskId() = failedTaskError.taskId
-    override fun taskName() = failedTaskError.taskName
+    override fun serviceName() = failedTaskError.serviceName
 }
 
 @Serializable
@@ -275,5 +276,5 @@ data class TaskCompleted(
     override val emitterName: ClientName
 ) : WorkflowEngineMessage(), TaskEvent {
     override fun taskId() = taskReturnValue.taskId
-    override fun taskName() = taskReturnValue.taskName
+    override fun serviceName() = taskReturnValue.serviceName
 }

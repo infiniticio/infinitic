@@ -32,8 +32,9 @@ interface WorkflowB {
     fun factorial(n: Long): Long
 }
 
+@Suppress("unused")
 class WorkflowBImpl() : Workflow(), WorkflowB {
-    private val task = newTask(TaskA::class.java)
+    private val task = newService(TaskA::class.java)
     private val workflow = newWorkflow(WorkflowB::class.java)
 
     override fun concat(input: String): String {

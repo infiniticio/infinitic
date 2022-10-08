@@ -33,7 +33,7 @@ import io.infinitic.common.exceptions.thisShouldNotHappen
 import io.infinitic.common.proxies.ChannelProxyHandler
 import io.infinitic.common.proxies.ExistingTaskProxyHandler
 import io.infinitic.common.proxies.ExistingWorkflowProxyHandler
-import io.infinitic.common.proxies.NewTaskProxyHandler
+import io.infinitic.common.proxies.NewServiceProxyHandler
 import io.infinitic.common.proxies.NewWorkflowProxyHandler
 import io.infinitic.common.proxies.ProxyHandler
 import io.infinitic.common.workflows.data.channels.ChannelFilter
@@ -113,7 +113,7 @@ internal class WorkflowDispatcherImpl(
 
     // asynchronous call: dispatch(stub::method)(*args)
     override fun <R : Any?> dispatch(handler: ProxyHandler<*>, clientWaiting: Boolean): Deferred<R> = when (handler) {
-        is NewTaskProxyHandler -> dispatchTask(handler)
+        is NewServiceProxyHandler -> dispatchTask(handler)
         is NewWorkflowProxyHandler -> dispatchWorkflow(handler)
         is ExistingTaskProxyHandler -> throw InvalidRunningTaskException("${handler.stub()}")
         is ExistingWorkflowProxyHandler -> dispatchMethod(handler)
@@ -322,9 +322,9 @@ internal class WorkflowDispatcherImpl(
     /**
      * Task dispatching
      */
-    private fun <R : Any?> dispatchTask(handler: NewTaskProxyHandler<*>): Deferred<R> = dispatchCommand(
+    private fun <R : Any?> dispatchTask(handler: NewServiceProxyHandler<*>): Deferred<R> = dispatchCommand(
         DispatchTaskCommand(
-            taskName = handler.taskName,
+            serviceName = handler.serviceName,
             methodParameters = handler.methodParameters,
             methodParameterTypes = handler.methodParameterTypes,
             methodName = handler.methodName,

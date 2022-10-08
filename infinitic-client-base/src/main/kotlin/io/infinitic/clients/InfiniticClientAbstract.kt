@@ -32,7 +32,7 @@ import io.infinitic.common.clients.messages.ClientMessage
 import io.infinitic.common.data.ClientName
 import io.infinitic.common.exceptions.thisShouldNotHappen
 import io.infinitic.common.proxies.ExistingWorkflowProxyHandler
-import io.infinitic.common.proxies.NewTaskProxyHandler
+import io.infinitic.common.proxies.NewServiceProxyHandler
 import io.infinitic.common.proxies.NewWorkflowProxyHandler
 import io.infinitic.common.proxies.ProxyHandler
 import io.infinitic.common.tasks.data.TaskId
@@ -42,7 +42,7 @@ import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.data.workflows.WorkflowMeta
 import io.infinitic.common.workflows.data.workflows.WorkflowTag
 import io.infinitic.exceptions.clients.InvalidStubException
-import io.infinitic.tasks.TaskOptions
+import io.infinitic.services.TaskOptions
 import io.infinitic.workflows.DeferredStatus
 import io.infinitic.workflows.WorkflowOptions
 import kotlinx.coroutines.CoroutineScope
@@ -339,14 +339,14 @@ abstract class InfiniticClientAbstract : InfiniticClientInterface {
         is ExistingWorkflowProxyHandler -> {
             val taskName = taskClass?.let {
                 // Use NewTaskProxyHandler in case of use of @Name annotation
-                NewTaskProxyHandler(it, setOf(), TaskOptions(), TaskMeta()) { dispatcher }.taskName
+                NewServiceProxyHandler(it, setOf(), TaskOptions(), TaskMeta()) { dispatcher }.serviceName
             }
 
             dispatcher.retryTaskAsync(
                 workflowName = handler.workflowName,
                 workflowId = handler.workflowId,
                 workflowTag = handler.workflowTag,
-                taskName = taskName,
+                serviceName = taskName,
                 taskStatus = taskStatus,
                 taskId = taskId?.let { TaskId(it) }
             )

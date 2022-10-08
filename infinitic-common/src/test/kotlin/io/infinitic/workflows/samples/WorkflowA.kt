@@ -31,9 +31,13 @@ import io.infinitic.workflows.Workflow
 import kotlinx.serialization.Serializable
 
 sealed class Obj
+
 @Serializable
+@Suppress("unused")
 data class Obj1(val foo: String, val bar: Int) : Obj()
+
 @Serializable
+@Suppress("unused")
 data class Obj2(val foo: String, val bar: Int) : Obj()
 
 interface WorkflowA {
@@ -52,8 +56,10 @@ class WorkflowAImpl : Workflow(), WorkflowA {
     val self: WorkflowA = getWorkflowById(WorkflowA::class.java, "id")
     override val channelObj = channel<Obj>()
     override val channelString = channel<String>()
-    private val taskA = newTask(TaskA::class.java, tags = setOf("foo", "bar"), meta = mapOf("foo" to "bar".toByteArray()))
-    private val workflowA = newWorkflow(WorkflowA::class.java, tags = setOf("foo", "bar"), meta = mapOf("foo" to "bar".toByteArray()))
+    private val taskA =
+        newService(TaskA::class.java, tags = setOf("foo", "bar"), meta = mapOf("foo" to "bar".toByteArray()))
+    private val workflowA =
+        newWorkflow(WorkflowA::class.java, tags = setOf("foo", "bar"), meta = mapOf("foo" to "bar".toByteArray()))
 
     override fun empty() = "void"
     override fun syncTask(duration: Long) = taskA.await(duration)

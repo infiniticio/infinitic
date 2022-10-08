@@ -68,7 +68,7 @@ fun mockSendToTaskTagEngine(
             if (it is GetTaskIdsByTag) {
                 val taskIdsByTag = TaskIdsByTag(
                     recipientName = clientName,
-                    taskName = it.taskName,
+                    serviceName = it.serviceName,
                     taskTag = it.taskTag,
                     taskIds = setOf(TaskId(), TaskId()),
                     emitterName = ClientName("mockk")

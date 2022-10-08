@@ -23,24 +23,21 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.tasks
+package io.infinitic.services
 
-import io.infinitic.clients.InfiniticClientInterface
-import io.infinitic.common.tasks.executors.errors.WorkerError
-import io.infinitic.common.workers.registry.WorkerRegistry
+import java.time.Duration
+import kotlin.math.pow
 
-interface TaskContext {
-    val client: InfiniticClientInterface
-    val workerName: String
-    val workerRegistry: WorkerRegistry
-    val id: String
-    val name: String
-    val workflowId: String?
-    val workflowName: String?
-    val retrySequence: Int
-    val retryIndex: Int
-    val lastError: WorkerError?
-    val tags: Set<String>
-    val meta: MutableMap<String, ByteArray>
-    val options: TaskOptions
+@Suppress("unused")
+abstract class Service {
+    lateinit var context: ServiceContext
+
+    // Exponential backoff retry strategy up to 12 attempts
+    open fun getDurationBeforeRetry(e: Exception): Duration? {
+        val n = context.retryIndex
+        return when {
+            n < 12 -> Duration.ofSeconds((5 * Math.random() * 2.0.pow(n)).toLong())
+            else -> null
+        }
+    }
 }

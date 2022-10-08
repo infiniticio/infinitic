@@ -43,7 +43,7 @@ internal fun CoroutineScope.dispatchTask(
     // send task to task executor
     val executeTask = with(dispatchTaskPastCommand.command) {
         ExecuteTask(
-            taskName = taskName,
+            serviceName = serviceName,
             taskId = io.infinitic.common.tasks.data.TaskId.from(dispatchTaskPastCommand.commandId),
             taskOptions = taskOptions,
             clientWaiting = false,
@@ -67,8 +67,9 @@ internal fun CoroutineScope.dispatchTask(
     // add provided tags
     executeTask.taskTags.forEach {
         val addTagToTask = AddTagToTask(
-            taskName = executeTask.taskName,
-            taskTag = it, taskId = executeTask.taskId,
+            serviceName = executeTask.serviceName,
+            taskTag = it,
+            taskId = executeTask.taskId,
             emitterName = output.clientName
         )
         launch { output.sendToTaskTag(addTagToTask) }

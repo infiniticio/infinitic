@@ -30,9 +30,9 @@ import io.infinitic.common.data.ClientName
 import io.infinitic.common.data.methods.MethodName
 import io.infinitic.common.data.methods.MethodParameterTypes
 import io.infinitic.common.data.methods.MethodParameters
+import io.infinitic.common.tasks.data.ServiceName
 import io.infinitic.common.tasks.data.TaskId
 import io.infinitic.common.tasks.data.TaskMeta
-import io.infinitic.common.tasks.data.TaskName
 import io.infinitic.common.tasks.data.TaskRetryIndex
 import io.infinitic.common.tasks.data.TaskRetrySequence
 import io.infinitic.common.tasks.executors.messages.ExecuteTask
@@ -43,7 +43,7 @@ import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.data.workflows.WorkflowMeta
 import io.infinitic.common.workflows.data.workflows.WorkflowName
 import io.infinitic.common.workflows.data.workflows.WorkflowTag
-import io.infinitic.tasks.TaskOptions
+import io.infinitic.services.TaskOptions
 import io.infinitic.workflows.WorkflowOptions
 import kotlinx.serialization.Serializable
 
@@ -63,7 +63,7 @@ data class WorkflowTaskParameters(
     val emitterName: ClientName
 ) {
     fun toExecuteTaskMessage() = ExecuteTask(
-        taskName = TaskName(WorkflowTask::class.java.name),
+        serviceName = ServiceName(WorkflowTask::class.java.name),
         taskId = taskId,
         taskOptions = TaskOptions(),
         clientWaiting = false,

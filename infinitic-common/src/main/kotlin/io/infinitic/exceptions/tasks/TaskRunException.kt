@@ -26,7 +26,7 @@
 package io.infinitic.exceptions.tasks
 
 import io.infinitic.exceptions.RunException
-import io.infinitic.tasks.TaskOptions
+import io.infinitic.services.TaskOptions
 import java.time.Duration
 
 sealed class TaskRunException(

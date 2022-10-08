@@ -23,29 +23,25 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.tasks.executor.task
+package io.infinitic.workers.samples
 
-import io.infinitic.clients.InfiniticClientInterface
-import io.infinitic.common.clients.ClientFactory
-import io.infinitic.common.tasks.executors.errors.WorkerError
-import io.infinitic.common.workers.registry.WorkerRegistry
-import io.infinitic.tasks.TaskContext
-import io.infinitic.tasks.TaskOptions
+import io.infinitic.services.Service
 
-data class TaskContextImpl(
-    override val workerName: String,
-    override val workerRegistry: WorkerRegistry,
-    override val id: String,
-    override val name: String,
-    override val workflowId: String?,
-    override val workflowName: String?,
-    override val retrySequence: Int,
-    override val retryIndex: Int,
-    override val lastError: WorkerError?,
-    override val tags: Set<String>,
-    override val meta: MutableMap<String, ByteArray>,
-    override val options: TaskOptions,
-    private val clientFactory: ClientFactory
-) : TaskContext {
-    override val client: InfiniticClientInterface by lazy { clientFactory() }
+interface ServiceA
+
+class ServiceAImpl : Service(), ServiceA
+
+class ServiceWithInvocationTargetException : Service(), ServiceA {
+    init {
+        throw Exception("InvocationTargetException")
+    }
 }
+
+class ServiceWithExceptionInInitializerError : Service(), ServiceA {
+    companion object {
+        @JvmStatic
+        val e: Nothing = throw Exception("ExceptionInInitializerError")
+    }
+}
+
+class NotAService : ServiceA
