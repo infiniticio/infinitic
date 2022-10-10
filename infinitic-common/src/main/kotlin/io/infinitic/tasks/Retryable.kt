@@ -23,12 +23,13 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.tasks.executor.task
+package io.infinitic.tasks
 
-import java.time.Duration
+import kotlin.math.pow
 
-internal sealed class RetryDelay
-
-internal data class DurationBeforeRetryRetrieved(val value: Duration?) : RetryDelay()
-
-internal data class DurationBeforeRetryFailed(val error: Throwable) : RetryDelay()
+interface Retryable {
+    fun getSecondsBeforeRetry(attempt: Int, exception: Exception): Double? = when {
+        attempt < 12 -> 3.0 * 2.0.pow(attempt) * Math.random()
+        else -> null
+    }
+}

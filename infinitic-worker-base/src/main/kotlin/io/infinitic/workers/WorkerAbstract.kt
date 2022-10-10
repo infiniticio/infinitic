@@ -74,11 +74,11 @@ abstract class WorkerAbstract(
                 startWorkflowDelay(it.key, it.value.concurrency)
             }
 
-            workerRegistry.tasks.forEach {
+            workerRegistry.services.forEach {
                 startTaskExecutor(it.key, it.value.concurrency, workerRegistry, clientFactory)
             }
 
-            workerRegistry.taskTags.forEach {
+            workerRegistry.serviceTags.forEach {
                 startTaskTag(it.key, it.value.storage, it.value.concurrency)
             }
         }

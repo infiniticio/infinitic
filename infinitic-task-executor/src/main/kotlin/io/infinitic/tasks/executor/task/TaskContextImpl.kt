@@ -25,38 +25,30 @@
 
 package io.infinitic.tasks.executor.task
 
+import io.infinitic.clients.InfiniticClientInterface
+import io.infinitic.common.clients.ClientFactory
+import io.infinitic.common.tasks.executors.errors.ExecutionError
+import io.infinitic.common.workers.registry.WorkerRegistry
 import io.infinitic.tasks.Retryable
+import io.infinitic.tasks.TaskContext
 import io.infinitic.tasks.TaskOptions
-import java.lang.reflect.Method
 
-internal data class TaskCommand(
-    val service: Any,
-    val method: Method,
-    val parameters: Array<Any?>,
-    val options: TaskOptions,
-    val retryable: Retryable?
-) {
-    override fun equals(other: Any?): Boolean {
-        if (this === other) return true
-        if (javaClass != other?.javaClass) return false
-
-        other as TaskCommand
-
-        if (service != other.service) return false
-        if (method != other.method) return false
-        if (!parameters.contentEquals(other.parameters)) return false
-        if (options != other.options) return false
-        if (retryable != other.retryable) return false
-
-        return true
-    }
-
-    override fun hashCode(): Int {
-        var result = service.hashCode()
-        result = 31 * result + method.hashCode()
-        result = 31 * result + parameters.contentHashCode()
-        result = 31 * result + options.hashCode()
-        result = 31 * result + retryable.hashCode()
-        return result
-    }
+data class TaskContextImpl(
+    override val workerName: String,
+    override val workerRegistry: WorkerRegistry,
+    override val serviceName: String,
+    override val taskId: String,
+    override val taskName: String,
+    override val workflowId: String?,
+    override val workflowName: String?,
+    override val retrySequence: Int,
+    override val retryIndex: Int,
+    override val lastError: ExecutionError?,
+    override val tags: Set<String>,
+    override val meta: MutableMap<String, ByteArray>,
+    override val options: TaskOptions,
+    override val retryable: Retryable?,
+    private val clientFactory: ClientFactory
+) : TaskContext {
+    override val client: InfiniticClientInterface by lazy { clientFactory() }
 }

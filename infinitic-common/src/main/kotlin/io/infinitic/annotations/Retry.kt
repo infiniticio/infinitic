@@ -23,22 +23,15 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.common.data
+package io.infinitic.annotations
 
-import java.nio.ByteBuffer
-import java.util.UUID
+import kotlin.reflect.KClass
+import io.infinitic.tasks.Retryable as RetryableInterface
 
-object UUIDConversion {
-    fun UUID.toByteArray(): ByteArray {
-        val byteBuffer = ByteBuffer.wrap(ByteArray(16))
-        byteBuffer.putLong(this.mostSignificantBits)
-        byteBuffer.putLong(this.leastSignificantBits)
-        return byteBuffer.array()
-    }
-    fun ByteArray.toUUID(): UUID {
-        val byteBuffer = ByteBuffer.wrap(this)
-        val mostSignificantBits = byteBuffer.long
-        val leastSignificantBits = byteBuffer.long
-        return UUID(mostSignificantBits, leastSignificantBits)
-    }
-}
+/**
+ * This annotation lets user defines a custom retry policy programmatically
+ */
+@Target(AnnotationTarget.CLASS, AnnotationTarget.FUNCTION)
+annotation class Retry(
+    val with: KClass<out RetryableInterface>
+)

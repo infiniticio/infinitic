@@ -23,24 +23,11 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.services
+package io.infinitic.common.workers.registry
 
-import io.infinitic.clients.InfiniticClientInterface
-import io.infinitic.common.tasks.executors.errors.WorkerError
-import io.infinitic.common.workers.registry.WorkerRegistry
+import io.infinitic.common.tasks.tags.storage.TaskTagStorage
 
-interface ServiceContext {
-    val client: InfiniticClientInterface
-    val workerName: String
-    val workerRegistry: WorkerRegistry
-    val taskId: String
-    val serviceName: String
-    val workflowId: String?
-    val workflowName: String?
-    val retrySequence: Int
-    val retryIndex: Int
-    val lastError: WorkerError?
-    val tags: Set<String>
-    val meta: MutableMap<String, ByteArray>
-    val options: TaskOptions
-}
+data class RegisteredServiceTag(
+    val concurrency: Int,
+    val storage: TaskTagStorage
+)

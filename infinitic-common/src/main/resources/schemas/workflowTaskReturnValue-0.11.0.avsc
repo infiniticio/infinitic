@@ -335,7 +335,7 @@
               "type" : {
                 "type" : "record",
                 "name" : "TaskOptions",
-                "namespace" : "io.infinitic.services",
+                "namespace" : "io.infinitic.tasks",
                 "fields" : [ {
                   "name" : "maxRunDuration",
                   "type" : [ "null", "long" ]

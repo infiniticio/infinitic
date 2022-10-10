@@ -37,11 +37,11 @@ import io.infinitic.common.tasks.data.TaskMeta
 import io.infinitic.common.tasks.data.TaskRetryIndex
 import io.infinitic.common.tasks.data.TaskRetrySequence
 import io.infinitic.common.tasks.data.TaskTag
-import io.infinitic.common.tasks.executors.errors.WorkerError
+import io.infinitic.common.tasks.executors.errors.ExecutionError
 import io.infinitic.common.workflows.data.methodRuns.MethodRunId
 import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.data.workflows.WorkflowName
-import io.infinitic.services.TaskOptions
+import io.infinitic.tasks.TaskOptions
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
@@ -66,7 +66,7 @@ data class ExecuteTask(
     val methodParameters: MethodParameters,
     val taskRetrySequence: TaskRetrySequence,
     val taskRetryIndex: TaskRetryIndex,
-    val lastError: WorkerError?,
+    val lastError: ExecutionError?,
     val workflowId: WorkflowId?,
     val workflowName: WorkflowName?,
     val methodRunId: MethodRunId?,

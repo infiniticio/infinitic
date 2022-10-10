@@ -23,56 +23,58 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.services.executor.samples
+@file:Suppress("unused")
 
+package io.infinitic.tasks.executor.samples
+
+import io.infinitic.annotations.Retry
 import io.infinitic.exceptions.tasks.MaxRunDurationException
-import io.infinitic.services.Service
-import java.time.Duration
+import io.infinitic.tasks.Retryable
+import io.infinitic.tasks.Task
 
-interface SampleTask {
+interface SimpleService {
     fun handle(i: Int, j: String): String
     fun handle(i: Int, j: Int): Int
     fun other(i: Int, j: String): String
 }
 
-class SampleServiceImpl() : Service(), SampleTask {
+class ServiceImplService : SimpleService {
     override fun handle(i: Int, j: String) = (i * j.toInt()).toString()
     override fun handle(i: Int, j: Int) = (i * j)
     override fun other(i: Int, j: String) = (i * j.toInt()).toString()
 }
 
-internal class SampleServiceWithContext : Service() {
-    fun handle(i: Int, j: String) = (i * j.toInt() * context.retrySequence).toString()
+internal class SimpleServiceWithContext {
+    fun handle(i: Int, j: String) = (i * j.toInt() * Task.retrySequence).toString()
 }
 
-internal class SampleServiceWithRetry : Service() {
+internal class SimpleServiceWithRetry {
+    @Retry(RetryImpl::class)
     fun handle(i: Int, j: String): String = if (i < 0) (i * j.toInt()).toString() else throw IllegalStateException()
-
-    override fun getDurationBeforeRetry(e: Exception): Duration? =
-        if (e is IllegalStateException) Duration.ofSeconds(3L) else null
 }
 
-internal class SampleServiceWithBadTypeRetry : Service() {
+@Retry(BuggyRetryImpl::class)
+internal class SimpleServiceWithBuggyRetry {
     fun handle(i: Int, j: String): String = if (i < 0) (i * j.toInt()).toString() else throw IllegalStateException()
-
-    override fun getDurationBeforeRetry(e: Exception): Duration? =
-        Duration.ofSeconds(3L)
 }
 
-internal class SampleServiceWithBuggyRetry : Service() {
-    fun handle(i: Int, j: String): String = if (i < 0) (i * j.toInt()).toString() else throw IllegalStateException()
-
-    override fun getDurationBeforeRetry(e: Exception): Duration? =
-        if (e is IllegalStateException) throw IllegalArgumentException() else Duration.ofSeconds(3L)
-}
-
-internal class SampleServiceWithTimeout() : Service() {
+internal class SimpleServiceWithTimeout : Retryable {
     fun handle(i: Int, j: String): String {
         Thread.sleep(400)
 
-        return (i * j.toInt() * context.retrySequence).toString()
+        return (i * j.toInt() * Task.retrySequence).toString()
     }
 
-    override fun getDurationBeforeRetry(e: Exception): Duration? =
-        if (e is MaxRunDurationException) null else Duration.ofSeconds(3L)
+    override fun getSecondsBeforeRetry(attempt: Int, exception: Exception) =
+        if (exception is MaxRunDurationException) null else 3.0
+}
+
+internal class RetryImpl : Retryable {
+    override fun getSecondsBeforeRetry(attempt: Int, exception: Exception) =
+        if (exception is IllegalStateException) 3.0 else null
+}
+
+internal class BuggyRetryImpl : Retryable {
+    override fun getSecondsBeforeRetry(attempt: Int, exception: Exception) =
+        if (exception is IllegalStateException) throw IllegalArgumentException() else 3.0
 }

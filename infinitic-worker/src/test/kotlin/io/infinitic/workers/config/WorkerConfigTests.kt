@@ -52,7 +52,8 @@ class WorkerConfigTests : StringSpec({
         val e = shouldThrow<ConfigException> {
             WorkerConfig.fromResource("/config/services/invocationTargetException.yml")
         }
-        e.message!! shouldContain "Error when trying to instantiate class \"io.infinitic.workers.samples.ServiceWithInvocationTargetException\""
+        println(e)
+        e.message!! shouldContain "Error during instantiation of class \"io.infinitic.workers.samples.ServiceWithInvocationTargetException\""
     }
 
     "workflow with InvocationTargetException should throw cause" {
@@ -88,14 +89,6 @@ class WorkerConfigTests : StringSpec({
             WorkerConfig.fromResource("/config/workflows/unknown.yml")
         }
         e.message!! shouldContain "class \"io.infinitic.workers.samples.UnknownWorkflow\" unknown"
-    }
-
-    "not a service" {
-        val e = shouldThrow<ConfigException> {
-            WorkerConfig.fromResource("/config/services/notAService.yml")
-        }
-        println(e)
-        e.message!! shouldContain "class \"io.infinitic.workers.samples.NotAService\" must extend io.infinitic.services.Service"
     }
 
     "not a workflow" {

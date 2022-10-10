@@ -31,7 +31,7 @@ import io.infinitic.common.data.MillisInstant
 import io.infinitic.common.data.ReturnValue
 import io.infinitic.common.exceptions.thisShouldNotHappen
 import io.infinitic.common.proxies.ChannelProxyHandler
-import io.infinitic.common.proxies.ExistingTaskProxyHandler
+import io.infinitic.common.proxies.ExistingServiceProxyHandler
 import io.infinitic.common.proxies.ExistingWorkflowProxyHandler
 import io.infinitic.common.proxies.NewServiceProxyHandler
 import io.infinitic.common.proxies.NewWorkflowProxyHandler
@@ -115,7 +115,7 @@ internal class WorkflowDispatcherImpl(
     override fun <R : Any?> dispatch(handler: ProxyHandler<*>, clientWaiting: Boolean): Deferred<R> = when (handler) {
         is NewServiceProxyHandler -> dispatchTask(handler)
         is NewWorkflowProxyHandler -> dispatchWorkflow(handler)
-        is ExistingTaskProxyHandler -> throw InvalidRunningTaskException("${handler.stub()}")
+        is ExistingServiceProxyHandler -> throw InvalidRunningTaskException("${handler.stub()}")
         is ExistingWorkflowProxyHandler -> dispatchMethod(handler)
         is ChannelProxyHandler -> dispatchSignal(handler)
     }

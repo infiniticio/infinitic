@@ -25,8 +25,8 @@
 
 package io.infinitic.tests.utils
 
-import io.infinitic.services.Service
-import java.time.Duration
+import io.infinitic.tasks.Retryable
+import io.infinitic.tasks.Task
 
 interface TestService {
     fun log(): String
@@ -36,7 +36,7 @@ interface TestService {
 class ExpectedException(log: String? = null) : Exception(log)
 
 @Suppress("unused")
-class TestServiceImpl : Service(), TestService {
+class TestServiceImpl : TestService, Retryable {
     companion object {
         lateinit var behavior: (index: Int, retry: Int) -> Status
     }
@@ -46,14 +46,14 @@ class TestServiceImpl : Service(), TestService {
     override fun log(): String {
         Thread.sleep(50)
 
-        val status = behavior(context.retrySequence, context.retryIndex)
+        val status = behavior(Task.retrySequence, Task.retryIndex)
 
-        log = context.meta["log"]?.let { String(it) } ?: ""
+        log = Task.meta["log"]?.let { String(it) } ?: ""
         log += when (status) {
             Status.SUCCESS -> "1"
             else -> "0"
         }
-        context.meta["log"] = log.encodeToByteArray()
+        Task.meta["log"] = log.encodeToByteArray()
 
         when (status) {
             Status.TIMEOUT_WITH_RETRY, Status.TIMEOUT_WITHOUT_RETRY -> Thread.sleep(1000)
@@ -70,15 +70,11 @@ class TestServiceImpl : Service(), TestService {
         return delay
     }
 
-    override fun getDurationBeforeRetry(e: Exception): Duration? {
-        print("context = ")
-        println(context)
-        val o = when (behavior(context.retrySequence, context.retryIndex)) {
-            Status.FAILED_WITH_RETRY, Status.TIMEOUT_WITH_RETRY -> Duration.ofMillis(10L)
+    override fun getSecondsBeforeRetry(attempt: Int, exception: Exception): Double? =
+        when (behavior(Task.retrySequence, Task.retryIndex)) {
+            Status.FAILED_WITH_RETRY, Status.TIMEOUT_WITH_RETRY -> 10.0
             else -> null
         }
-        return o
-    }
 }
 
 enum class Status {

@@ -25,9 +25,11 @@
 
 package io.infinitic.workers.config
 
+import io.infinitic.common.utils.getClass
+import io.infinitic.common.utils.getEmptyConstructor
+import io.infinitic.common.utils.getInstance
 import io.infinitic.tasks.tag.config.TaskTag
 import java.lang.reflect.Constructor
-import io.infinitic.services.Service as TaskInstance
 
 data class Service(
     val name: String,
@@ -38,8 +40,8 @@ data class Service(
 ) {
     private lateinit var _constructor: Constructor<out Any>
 
-    val instance
-        get() = _constructor.newInstance() as TaskInstance
+    val instance: Any
+        get() = _constructor.getInstance()
 
     init {
         require(name.isNotEmpty()) { "name can not be empty" }
@@ -52,40 +54,17 @@ data class Service(
             else -> {
                 require(`class`.isNotEmpty()) { "class empty for task $name" }
 
-                val klass = try {
-                    Class.forName(`class`)
-                } catch (e: ClassNotFoundException) {
-                    throw IllegalArgumentException("class \"$`class`\" is unknown for task $name")
-                } catch (e: Exception) {
-                    throw IllegalArgumentException(
-                        "Error when trying to get class of name \"$`class`\" for task $name",
-                        e
-                    )
-                }
+                _constructor = `class`.getClass(
+                    classNotFound = "class \"$`class`\" is unknown (service $name)",
+                    errorClass = "Error when trying to get class of name \"$`class`\" (service $name)"
+                ).getEmptyConstructor(
+                    noEmptyConstructor = "class \"$`class`\" must have an empty constructor (service $name)",
+                    constructorError = "Can not access constructor of class \"$`class`\" (service $name)"
+                )
 
-                _constructor = try {
-                    klass.getDeclaredConstructor()
-                } catch (e: NoSuchMethodException) {
-                    throw IllegalArgumentException("class \"$`class`\" must have an empty constructor for task $name")
-                } catch (e: Exception) {
-                    throw IllegalArgumentException(
-                        "Error when trying to get constructor of class \"$`class`\" for task $name",
-                        e
-                    )
-                }
-
-                val instance = try {
-                    _constructor.newInstance()
-                } catch (e: Exception) {
-                    throw IllegalArgumentException(
-                        "Error when trying to instantiate class \"$`class`\" for task $name",
-                        e
-                    )
-                }
-
-                require(instance is TaskInstance) {
-                    "class \"$`class`\" must extend ${TaskInstance::class.java.name} to be used for task $name"
-                }
+                _constructor.getInstance(
+                    instanceError = "Error during instantiation of class \"$`class`\" (service $name)"
+                )
 
                 require(concurrency >= 0) {
                     "concurrency must be positive for task $name"

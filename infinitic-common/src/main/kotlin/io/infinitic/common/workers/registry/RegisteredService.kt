@@ -25,9 +25,9 @@
 
 package io.infinitic.common.workers.registry
 
-import io.infinitic.common.tasks.tags.storage.TaskTagStorage
+import io.infinitic.common.workers.ServiceFactory
 
-data class RegisteredTaskTag(
+data class RegisteredService(
     val concurrency: Int,
-    val storage: TaskTagStorage
+    val factory: ServiceFactory
 )

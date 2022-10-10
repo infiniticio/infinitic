@@ -25,6 +25,7 @@
 
 package io.infinitic.common.tasks.executors.errors
 
+import com.github.avrokotlin.avro4k.AvroName
 import com.github.avrokotlin.avro4k.AvroNamespace
 import io.infinitic.common.data.ClientName
 import io.infinitic.exceptions.WorkerException
@@ -33,8 +34,10 @@ import kotlinx.serialization.Serializable
 /**
  * Data class representing an error
  */
-@Serializable @AvroNamespace("io.infinitic.tasks.executor")
-data class WorkerError(
+@Serializable
+@AvroNamespace("io.infinitic.tasks.executor")
+@AvroName("WorkerError")
+data class ExecutionError(
     /**
      * Name of the worker
      */
@@ -58,10 +61,10 @@ data class WorkerError(
     /**
      * cause of the error
      */
-    val cause: WorkerError?
+    val cause: ExecutionError?
 ) {
     companion object {
-        fun from(exception: WorkerException): WorkerError = WorkerError(
+        fun from(exception: WorkerException): ExecutionError = ExecutionError(
             workerName = ClientName(exception.workerName),
             name = exception.name,
             message = exception.message,
@@ -69,7 +72,7 @@ data class WorkerError(
             cause = exception.cause?.let { from(it) }
         )
 
-        fun from(workerName: ClientName, throwable: Throwable): WorkerError = WorkerError(
+        fun from(workerName: ClientName, throwable: Throwable): ExecutionError = ExecutionError(
             workerName = workerName,
             name = throwable::class.java.name,
             message = throwable.message,

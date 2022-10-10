@@ -43,7 +43,7 @@ import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.data.workflows.WorkflowMeta
 import io.infinitic.common.workflows.data.workflows.WorkflowName
 import io.infinitic.common.workflows.data.workflows.WorkflowTag
-import io.infinitic.services.TaskOptions
+import io.infinitic.tasks.TaskOptions
 import io.infinitic.workflows.WorkflowOptions
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable

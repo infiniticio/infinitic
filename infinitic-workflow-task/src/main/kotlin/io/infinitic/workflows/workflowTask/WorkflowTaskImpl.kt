@@ -36,19 +36,16 @@ import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskReturnValue
 import io.infinitic.exceptions.DeferredException
 import io.infinitic.exceptions.FailedWorkflowTaskException
 import io.infinitic.exceptions.WorkerException
-import io.infinitic.services.Service
+import io.infinitic.tasks.Task
 import io.infinitic.workflows.Deferred
 import io.infinitic.workflows.setChannelNames
 import java.lang.reflect.InvocationTargetException
-import java.time.Duration
 
-class WorkflowTaskImpl : Service(), WorkflowTask {
-
-    override fun getDurationBeforeRetry(e: Exception): Duration? = null
+class WorkflowTaskImpl : WorkflowTask {
 
     override fun handle(workflowTaskParameters: WorkflowTaskParameters): WorkflowTaskReturnValue {
         // get  instance workflow by name
-        val workflow = context.workerRegistry.getWorkflowInstance(workflowTaskParameters.workflowName)
+        val workflow = Task.registry.getWorkflowInstance(workflowTaskParameters.workflowName)
 
         // get method
         val methodRun = workflowTaskParameters.methodRun
@@ -100,8 +97,8 @@ class WorkflowTaskImpl : Service(), WorkflowTask {
                 is Exception -> throw FailedWorkflowTaskException(
                     workflowName = workflowTaskParameters.workflowName.toString(),
                     workflowId = workflowTaskParameters.workflowId.toString(),
-                    workflowTaskId = context.taskId,
-                    workerException = WorkerException.from(ClientName(context.workerName), cause)
+                    workflowTaskId = Task.taskId,
+                    workerException = WorkerException.from(ClientName(Task.workerName), cause)
                 )
                 // Throwable are not caught
                 else -> throw cause!!

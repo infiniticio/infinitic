@@ -158,7 +158,7 @@ class PulsarInfiniticWorker(
             checkOrCreateTopic(topicNames.topic(it), it.isPartitioned, it.isDelayed)
         }
 
-        for (task in workerRegistry.tasks) {
+        for (task in workerRegistry.services) {
             TaskTopics.values().forEach {
                 checkOrCreateTopic(topicNames.topic(it, task.key), it.isPartitioned, it.isDelayed)
                 checkOrCreateTopic(topicNames.topicDLQ(it, task.key), it.isPartitioned, it.isDelayed)

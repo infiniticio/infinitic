@@ -23,25 +23,23 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.workers.samples
+@file:Suppress("unused")
 
-import io.infinitic.services.Service
+package io.infinitic.workers.samples
 
 interface ServiceA
 
-class ServiceAImpl : Service(), ServiceA
+class ServiceAImpl : ServiceA
 
-class ServiceWithInvocationTargetException : Service(), ServiceA {
+class ServiceWithInvocationTargetException : ServiceA {
     init {
         throw Exception("InvocationTargetException")
     }
 }
 
-class ServiceWithExceptionInInitializerError : Service(), ServiceA {
+class ServiceWithExceptionInInitializerError : ServiceA {
     companion object {
         @JvmStatic
         val e: Nothing = throw Exception("ExceptionInInitializerError")
     }
 }
-
-class NotAService : ServiceA

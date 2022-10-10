@@ -41,7 +41,7 @@ import io.infinitic.common.data.ClientName
 import io.infinitic.common.data.methods.MethodName
 import io.infinitic.common.exceptions.thisShouldNotHappen
 import io.infinitic.common.proxies.ChannelProxyHandler
-import io.infinitic.common.proxies.ExistingTaskProxyHandler
+import io.infinitic.common.proxies.ExistingServiceProxyHandler
 import io.infinitic.common.proxies.ExistingWorkflowProxyHandler
 import io.infinitic.common.proxies.NewServiceProxyHandler
 import io.infinitic.common.proxies.NewWorkflowProxyHandler
@@ -119,7 +119,7 @@ internal class ClientDispatcherImpl(
         is ExistingWorkflowProxyHandler -> dispatchMethodAsync(handler)
         is ChannelProxyHandler -> dispatchSignalAsync(handler)
         is NewServiceProxyHandler -> thisShouldNotHappen()
-        is ExistingTaskProxyHandler -> thisShouldNotHappen()
+        is ExistingServiceProxyHandler -> thisShouldNotHappen()
     }
 
     // synchronous call: stub.method(*args)
@@ -127,7 +127,7 @@ internal class ClientDispatcherImpl(
         is NewWorkflowProxyHandler -> dispatchWorkflowAndWait(handler)
         is ExistingWorkflowProxyHandler -> dispatchMethodAndWait(handler)
         is ChannelProxyHandler -> dispatchSignalAndWait(handler)
-        is ExistingTaskProxyHandler -> thisShouldNotHappen()
+        is ExistingServiceProxyHandler -> thisShouldNotHappen()
         is NewServiceProxyHandler -> thisShouldNotHappen()
     }
 

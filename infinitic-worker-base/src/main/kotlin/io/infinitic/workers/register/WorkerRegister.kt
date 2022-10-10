@@ -25,7 +25,7 @@
 
 package io.infinitic.workers.register
 
-import io.infinitic.common.workers.TaskFactory
+import io.infinitic.common.workers.ServiceFactory
 import io.infinitic.common.workers.WorkflowFactory
 import io.infinitic.common.workers.registry.WorkerRegistry
 import io.infinitic.tasks.tag.config.TaskTag
@@ -39,18 +39,18 @@ interface WorkerRegister {
     /**
      * Register task
      */
-    fun registerTask(
+    fun registerService(
         name: String,
         concurrency: Int,
-        factory: TaskFactory,
+        factory: ServiceFactory,
         tagEngine: TaskTag?
     )
 
-    fun registerTask(
+    fun registerService(
         name: String,
         concurrency: Int,
-        factory: TaskFactory
-    ) = registerTask(name, concurrency, factory, null)
+        factory: ServiceFactory
+    ) = registerService(name, concurrency, factory, null)
 
     /**
      * Register workflow

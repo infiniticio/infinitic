@@ -23,21 +23,14 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.services
+package io.infinitic.tasks
 
+import io.infinitic.common.serDe.kserializer.DurationSerializer
+import kotlinx.serialization.Serializable
 import java.time.Duration
-import kotlin.math.pow
 
-@Suppress("unused")
-abstract class Service {
-    lateinit var context: ServiceContext
-
-    // Exponential backoff retry strategy up to 12 attempts
-    open fun getDurationBeforeRetry(e: Exception): Duration? {
-        val n = context.retryIndex
-        return when {
-            n < 12 -> Duration.ofSeconds((5 * Math.random() * 2.0.pow(n)).toLong())
-            else -> null
-        }
-    }
-}
+@Serializable
+data class TaskOptions(
+    @Serializable(with = DurationSerializer::class)
+    val maxRunDuration: Duration? = null
+)

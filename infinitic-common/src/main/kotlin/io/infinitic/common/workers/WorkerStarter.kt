@@ -32,11 +32,10 @@ import io.infinitic.common.workers.registry.WorkerRegistry
 import io.infinitic.common.workflows.data.workflows.WorkflowName
 import io.infinitic.common.workflows.engine.storage.WorkflowStateStorage
 import io.infinitic.common.workflows.tags.storage.WorkflowTagStorage
-import io.infinitic.services.Service
 import io.infinitic.workflows.Workflow
 import kotlinx.coroutines.CoroutineScope
 
-typealias TaskFactory = () -> Service
+typealias ServiceFactory = () -> Any
 
 typealias WorkflowFactory = () -> Workflow
 

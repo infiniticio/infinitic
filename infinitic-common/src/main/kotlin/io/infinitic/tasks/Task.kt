@@ -23,25 +23,36 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.common.proxies
+package io.infinitic.tasks
 
-import io.infinitic.common.exceptions.thisShouldNotHappen
-import io.infinitic.common.tasks.data.ServiceName
-import io.infinitic.common.tasks.data.TaskId
-import io.infinitic.common.tasks.data.TaskTag
+object Task {
+    @JvmStatic
+    val context: ThreadLocal<TaskContext> = ThreadLocal.withInitial { null }
 
-class ExistingTaskProxyHandler<K : Any>(
-    override val klass: Class<K>,
-    val taskId: TaskId?,
-    val taskTag: TaskTag?,
-    override val dispatcherFn: () -> ProxyDispatcher
-) : ProxyHandler<K>(klass, dispatcherFn) {
+    val workerName
+        get() = context.get().workerName
+    val taskId
+        get() = context.get().taskId
 
-    init {
-        require((taskId == null && taskTag != null) || (taskId != null && taskTag == null)) {
-            thisShouldNotHappen()
-        }
-    }
+    val workflowId
+        get() = context.get().workflowId
 
-    val serviceName = ServiceName(name)
+    val workflowName
+        get() = context.get().workflowName
+    val retryIndex
+        get() = context.get().retryIndex
+
+    val retrySequence
+        get() = context.get().retrySequence
+
+    val tags
+        get() = context.get().tags
+
+    val meta
+        get() = context.get().meta
+    val registry
+        get() = context.get().workerRegistry
+
+    val client
+        get() = context.get().client
 }

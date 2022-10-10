@@ -38,7 +38,7 @@ import io.infinitic.common.workflows.data.workflows.WorkflowTag
 import io.infinitic.exceptions.clients.InvalidStubException
 import io.infinitic.exceptions.workflows.MultipleGettersForSameChannelException
 import io.infinitic.exceptions.workflows.NonIdempotentChannelGetterException
-import io.infinitic.services.TaskOptions
+import io.infinitic.tasks.TaskOptions
 import java.time.Duration
 import java.time.Instant
 

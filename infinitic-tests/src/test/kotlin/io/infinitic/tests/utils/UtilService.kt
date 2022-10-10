@@ -26,9 +26,8 @@
 package io.infinitic.tests.utils
 
 import io.infinitic.common.tasks.data.TaskMeta
-import io.infinitic.services.Service
+import io.infinitic.tasks.Task
 import io.infinitic.workflows.DeferredStatus
-import java.time.Duration
 
 interface ParentInterface {
     fun parent(): String
@@ -50,7 +49,7 @@ interface UtilService : ParentInterface {
 }
 
 @Suppress("unused")
-class UtilServiceImpl : Service(), UtilService {
+class UtilServiceImpl : UtilService {
     override fun concat(str1: String, str2: String): String = str1 + str2
 
     override fun reverse(str: String) = str.reversed()
@@ -59,34 +58,32 @@ class UtilServiceImpl : Service(), UtilService {
         Thread.sleep(delay); return delay
     }
 
-    override fun workflowId() = context.workflowId
+    override fun workflowId() = Task.workflowId
 
-    override fun workflowName() = context.workflowName
+    override fun workflowName() = Task.workflowName
 
     override fun retryFailedTasks(workflowName: String, id: String) {
         Thread.sleep(50)
-        val w = context.client.getWorkflowById(Class.forName(workflowName), id)
-        context.client.retryTasks(w, taskStatus = DeferredStatus.FAILED)
+        val w = Task.client.getWorkflowById(Class.forName(workflowName), id)
+        Task.client.retryTasks(w, taskStatus = DeferredStatus.FAILED)
     }
 
     override fun cancelWorkflow(workflowName: String, id: String) {
         Thread.sleep(50)
-        val w = context.client.getWorkflowById(Class.forName(workflowName), id)
-        context.client.cancel(w)
+        val w = Task.client.getWorkflowById(Class.forName(workflowName), id)
+        Task.client.cancel(w)
     }
 
     override fun failing() = throw Exception("sorry")
 
-    override fun successAtRetry() = when (context.retrySequence) {
+    override fun successAtRetry() = when (Task.retrySequence) {
         0 -> throw ExpectedException()
         else -> "ok"
     }
 
     override fun parent() = "ok"
 
-    override fun tags() = context.tags
+    override fun tags() = Task.tags
 
-    override fun meta() = TaskMeta(context.meta)
-
-    override fun getDurationBeforeRetry(e: Exception): Duration? = null
+    override fun meta() = TaskMeta(Task.meta)
 }

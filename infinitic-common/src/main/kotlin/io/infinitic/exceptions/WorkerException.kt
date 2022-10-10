@@ -26,7 +26,7 @@
 package io.infinitic.exceptions
 
 import io.infinitic.common.data.ClientName
-import io.infinitic.common.tasks.executors.errors.WorkerError
+import io.infinitic.common.tasks.executors.errors.ExecutionError
 import kotlinx.serialization.Serializable
 
 @Serializable
@@ -58,7 +58,7 @@ data class WorkerException(
 
 ) : kotlin.RuntimeException() {
     companion object {
-        fun from(error: WorkerError): WorkerException = WorkerException(
+        fun from(error: ExecutionError): WorkerException = WorkerException(
             workerName = error.workerName.toString(),
             name = error.name,
             message = error.message,

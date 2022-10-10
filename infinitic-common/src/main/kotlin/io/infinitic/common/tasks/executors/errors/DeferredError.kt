@@ -309,14 +309,14 @@ data class FailedTaskError(
     /**
      * cause of the error
      */
-    val cause: WorkerError
+    val cause: ExecutionError
 ) : FailedDeferredError() {
     companion object {
         fun from(exception: FailedTaskException) = FailedTaskError(
             serviceName = ServiceName(exception.serviceName),
             taskId = TaskId(exception.taskId),
             methodName = MethodName(exception.methodName),
-            cause = WorkerError.from(exception.workerException)
+            cause = ExecutionError.from(exception.workerException)
         )
     }
 }
@@ -387,14 +387,14 @@ data class FailedWorkflowTaskError(
     /**
      * cause of the error
      */
-    val cause: WorkerError
+    val cause: ExecutionError
 ) : FailedDeferredError() {
     companion object {
         fun from(exception: FailedWorkflowTaskException): FailedWorkflowTaskError = FailedWorkflowTaskError(
             workflowName = WorkflowName(exception.workflowName),
             workflowId = WorkflowId(exception.workflowId),
             workflowTaskId = TaskId(exception.workflowTaskId),
-            cause = WorkerError.from(exception.workerException)
+            cause = ExecutionError.from(exception.workerException)
         )
     }
 }

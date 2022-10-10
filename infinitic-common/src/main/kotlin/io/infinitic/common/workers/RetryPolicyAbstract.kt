@@ -26,14 +26,15 @@
 package io.infinitic.common.workers
 
 import io.infinitic.common.exceptions.thisShouldNotHappen
+import io.infinitic.tasks.Retryable
 import kotlin.math.min
 import kotlin.math.pow
 import kotlin.random.Random
 
-sealed class RetryPolicy(
+sealed class RetryPolicyAbstract(
     open val maximumAttempts: Int,
     open val nonRetryableExceptions: List<String>
-) {
+) : Retryable {
 
     val nonRetryableClasses: List<Class<*>> by lazy {
         nonRetryableExceptions.map { klass ->
@@ -58,7 +59,7 @@ sealed class RetryPolicy(
      * Do not retry if return null
      */
     @Suppress("unused")
-    fun getSecondsBeforeRetry(attempt: Int, exception: Exception): Double? {
+    override fun getSecondsBeforeRetry(attempt: Int, exception: Exception): Double? {
         // check that attempt is >= 1
         if (attempt < 1) thisShouldNotHappen()
         // check if we reached the maximal number of attempts
@@ -80,7 +81,7 @@ data class RetryExponentialBackoff(
     val maximumSeconds: Double = 100 * initialIntervalSeconds,
     override val maximumAttempts: Int = Int.MAX_VALUE,
     override val nonRetryableExceptions: List<String> = listOf()
-) : RetryPolicy(maximumAttempts, nonRetryableExceptions) {
+) : RetryPolicyAbstract(maximumAttempts, nonRetryableExceptions) {
 
     // checks can not be in init {} as throwing exception in constructor prevents sealed class recognition by Hoplite
     override fun check() {

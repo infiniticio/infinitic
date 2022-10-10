@@ -26,8 +26,6 @@
 package io.infinitic.tests.utils
 
 import io.infinitic.annotations.Name
-import io.infinitic.services.Service
-import java.time.Duration
 
 @Name("annotatedService")
 interface AnnotatedService {
@@ -36,9 +34,6 @@ interface AnnotatedService {
 }
 
 @Suppress("unused")
-class AnnotatedServiceImpl : Service(), AnnotatedService {
-
+class AnnotatedServiceImpl : AnnotatedService {
     override fun foo(str1: String, str2: String) = str1 + str2
-
-    override fun getDurationBeforeRetry(e: Exception): Duration? = null
 }
