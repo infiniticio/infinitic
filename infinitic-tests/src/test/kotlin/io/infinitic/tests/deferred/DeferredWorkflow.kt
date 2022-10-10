@@ -54,7 +54,7 @@ interface DeferredWorkflow {
 class DeferredWorkflowImpl : Workflow(), DeferredWorkflow {
 
     @Ignore
-    private val self by lazy { getWorkflowById(DeferredWorkflow::class.java, context.id) }
+    private val self by lazy { getWorkflowById(DeferredWorkflow::class.java, workflowId) }
 
     lateinit var deferred: Deferred<String>
 

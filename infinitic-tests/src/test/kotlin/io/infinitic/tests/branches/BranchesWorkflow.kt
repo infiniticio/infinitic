@@ -43,7 +43,7 @@ interface BranchesWorkflow {
 class BranchesWorkflowImpl : Workflow(), BranchesWorkflow {
 
     @Ignore
-    private val self by lazy { getWorkflowById(BranchesWorkflow::class.java, context.id) }
+    private val self by lazy { getWorkflowById(BranchesWorkflow::class.java, workflowId) }
 
     lateinit var deferred: Deferred<String>
 

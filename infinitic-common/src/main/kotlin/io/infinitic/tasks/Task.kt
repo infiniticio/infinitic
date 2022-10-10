@@ -26,33 +26,47 @@
 package io.infinitic.tasks
 
 object Task {
-    @JvmStatic
     val context: ThreadLocal<TaskContext> = ThreadLocal.withInitial { null }
 
-    val workerName
-        get() = context.get().workerName
-    val taskId
-        get() = context.get().taskId
+    @JvmStatic
+    val workerName get() = context.get().workerName
 
-    val workflowId
-        get() = context.get().workflowId
+    @JvmStatic
+    val serviceName get() = context.get().serviceName
 
-    val workflowName
-        get() = context.get().workflowName
-    val retryIndex
-        get() = context.get().retryIndex
+    @JvmStatic
+    val taskId get() = context.get().taskId
 
-    val retrySequence
-        get() = context.get().retrySequence
+    @JvmStatic
+    val taskName get() = context.get().taskName
 
-    val tags
-        get() = context.get().tags
+    @JvmStatic
+    val workflowId get() = context.get().workflowId
 
-    val meta
-        get() = context.get().meta
-    val registry
-        get() = context.get().workerRegistry
+    @JvmStatic
+    val workflowName get() = context.get().workflowName
 
-    val client
-        get() = context.get().client
+    @JvmStatic
+    val retrySequence get() = context.get().retrySequence
+
+    @JvmStatic
+    val lastError get() = context.get().lastError
+
+    @JvmStatic
+    val retryIndex get() = context.get().retryIndex
+
+    @JvmStatic
+    val tags get() = context.get().tags
+
+    @JvmStatic
+    val meta get() = context.get().meta
+
+    @JvmStatic
+    val options get() = context.get().options
+
+    @JvmStatic
+    val registry get() = context.get().workerRegistry
+
+    @JvmStatic
+    val client get() = context.get().client
 }

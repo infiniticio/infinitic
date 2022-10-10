@@ -25,6 +25,7 @@
 
 package io.infinitic.workflows
 
+import io.infinitic.annotations.Ignore
 import io.infinitic.annotations.Name
 import io.infinitic.common.proxies.ExistingWorkflowProxyHandler
 import io.infinitic.common.proxies.NewServiceProxyHandler
@@ -44,7 +45,28 @@ import java.time.Instant
 
 @Suppress("unused")
 abstract class Workflow {
-    lateinit var context: WorkflowContext
+    @Ignore
+    lateinit var workflowName: String
+
+    @Ignore
+    lateinit var workflowId: String
+
+    @Ignore
+    lateinit var methodName: String
+
+    @Ignore
+    lateinit var methodId: String
+
+    @Ignore
+    lateinit var tags: Set<String>
+
+    @Ignore
+    lateinit var meta: Map<String, ByteArray>
+
+    @Ignore
+    lateinit var options: WorkflowOptions
+
+    @Ignore
     lateinit var dispatcher: WorkflowDispatcher
 
     /**
@@ -67,7 +89,7 @@ abstract class Workflow {
      *  Create a stub for a workflow
      */
     @JvmOverloads
-    protected fun <T : Any> newWorkflow(
+    protected fun <T> newWorkflow(
         klass: Class<out T>,
         tags: Set<String>? = null,
         options: WorkflowOptions? = null,
@@ -376,13 +398,16 @@ abstract class Workflow {
 
     // from klass for the given workflow name
     private fun findClassPerWorkflowName() = try {
-        Class.forName(context.name)
+        Class.forName(workflowName)
     } catch (e: ClassNotFoundException) {
-        findClassPerAnnotationName(this::class.java, context.name)
+        findClassPerAnnotationName()
     }
 
     // from klass, search for a given @Name annotation
-    private fun findClassPerAnnotationName(klass: Class<*>, name: String): Class<*>? {
+    private fun findClassPerAnnotationName(
+        klass: Class<*> = this::class.java,
+        name: String = this.workflowName
+    ): Class<*>? {
         var clazz = klass
 
         do {

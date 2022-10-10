@@ -57,8 +57,16 @@ class WorkflowTaskImpl : WorkflowTask {
         )
 
         // set context
+        with(workflowTaskParameters) {
+            workflow.workflowName = workflowName.toString()
+            workflow.workflowId = workflowId.toString()
+            workflow.methodName = methodRun.methodName.toString()
+            workflow.methodId = methodRun.methodRunId.toString()
+            workflow.tags = workflowTags.map { it.tag }.toSet()
+            workflow.meta = workflowMeta.map
+            workflow.options = workflowOptions
+        }
         val dispatcher = WorkflowDispatcherImpl(workflowTaskParameters)
-        workflow.context = WorkflowContextImpl(workflowTaskParameters)
         workflow.dispatcher = dispatcher
 
         // define setProperties function

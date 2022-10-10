@@ -54,7 +54,7 @@ interface PropertiesWorkflow {
 class PropertiesWorkflowImpl : Workflow(), PropertiesWorkflow {
 
     @Ignore
-    private val self by lazy { getWorkflowById(PropertiesWorkflow::class.java, context.id) }
+    private val self by lazy { getWorkflowById(PropertiesWorkflow::class.java, workflowId) }
 
     lateinit var deferred: Deferred<String>
 

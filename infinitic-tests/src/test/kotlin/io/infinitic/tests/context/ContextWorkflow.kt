@@ -45,16 +45,16 @@ interface ContextWorkflow {
 class ContextWorkflowImpl : Workflow(), ContextWorkflow {
 
     @Ignore
-    private val self by lazy { getWorkflowById(ContextWorkflow::class.java, context.id) }
+    private val self by lazy { getWorkflowById(ContextWorkflow::class.java, workflowId) }
 
     private val utilService =
         newService(UtilService::class.java, tags = setOf("foo", "bar"), meta = mapOf("foo" to "bar".toByteArray()))
 
-    override fun context1(): String = context.id
+    override fun context1(): String = workflowId
 
-    override fun context2(): Set<String> = context.tags
+    override fun context2(): Set<String> = tags
 
-    override fun context3() = WorkflowMeta(context.meta)
+    override fun context3() = WorkflowMeta(meta)
 
     override fun context4() = utilService.workflowId()
 

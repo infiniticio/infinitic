@@ -52,7 +52,7 @@ class UtilWorkflowImpl : Workflow(), UtilWorkflow {
     private val channelsWorkflow = newWorkflow(ChannelsWorkflow::class.java)
 
     @Ignore
-    private val self by lazy { getWorkflowById(UtilWorkflow::class.java, context.id) }
+    private val self by lazy { getWorkflowById(UtilWorkflow::class.java, workflowId) }
 
     override fun concat(input: String): String {
         log = utilService.concat(log, input)

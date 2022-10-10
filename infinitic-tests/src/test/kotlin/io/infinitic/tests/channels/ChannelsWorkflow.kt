@@ -62,7 +62,7 @@ interface ChannelsWorkflow {
 class ChannelsWorkflowImpl : Workflow(), ChannelsWorkflow {
 
     @Ignore
-    private val self by lazy { getWorkflowById(ChannelsWorkflow::class.java, context.id) }
+    private val self by lazy { getWorkflowById(ChannelsWorkflow::class.java, workflowId) }
 
     lateinit var deferred: Deferred<String>
 

@@ -65,7 +65,7 @@ interface ErrorsWorkflow {
 class ErrorsWorkflowImpl : Workflow(), ErrorsWorkflow {
 
     @Ignore
-    private val self by lazy { getWorkflowById(ErrorsWorkflow::class.java, context.id) }
+    private val self by lazy { getWorkflowById(ErrorsWorkflow::class.java, workflowId) }
 
     lateinit var deferred: Deferred<String>
 
@@ -172,7 +172,7 @@ class ErrorsWorkflowImpl : Workflow(), ErrorsWorkflow {
         }
 
         // trigger the retry of the previous task
-        utilService.retryFailedTasks(ErrorsWorkflow::class.java.name, context.id)
+        utilService.retryFailedTasks(ErrorsWorkflow::class.java.name, workflowId)
 
         return deferred.await() == "ok" && result == "caught"
     }
@@ -210,6 +210,6 @@ class ErrorsWorkflowImpl : Workflow(), ErrorsWorkflow {
     }
 
     override fun failing13() {
-        newWorkflow(ErrorsWorkflow::class.java, tags = context.tags).waiting()
+        newWorkflow(ErrorsWorkflow::class.java, tags = tags).waiting()
     }
 }
