@@ -65,8 +65,5 @@ object Task {
     val options get() = context.get().options
 
     @JvmStatic
-    val registry get() = context.get().workerRegistry
-
-    @JvmStatic
     val client get() = context.get().client
 }

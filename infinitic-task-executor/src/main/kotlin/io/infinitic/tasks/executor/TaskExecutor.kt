@@ -153,7 +153,7 @@ class TaskExecutor(
         parameters: Array<Any?>,
         taskContext: TaskContext
     ): Any? = coroutineScope {
-        // context is stored in execution's thread
+        // context is stored in execution's thread (in case used in method)
         Task.context.set(taskContext)
         // execution
         method.invoke(service, *parameters)
@@ -165,6 +165,9 @@ class TaskExecutor(
         msg: ExecuteTask
     ) {
         val delay = try {
+            // context is stored in execution's thread (in case used in retryable)
+            Task.context.set(taskContext)
+            // get seconds before retry
             taskContext.retryable?.getSecondsBeforeRetry(taskContext.retryIndex, cause)
         } catch (e: Exception) {
             logger.error(e) { "Error in ${Retryable::class.java.simpleName} ${taskContext.retryable!!::class.java.name}" }
