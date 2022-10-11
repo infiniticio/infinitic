@@ -29,6 +29,7 @@ import io.infinitic.cache.config.Cache
 import io.infinitic.cache.config.CacheConfig
 import io.infinitic.common.config.loadConfigFromFile
 import io.infinitic.common.config.loadConfigFromResource
+import io.infinitic.common.workers.config.RetryPolicy
 import io.infinitic.storage.config.Storage
 import io.infinitic.storage.config.StorageConfig
 import io.infinitic.transport.config.Transport
@@ -69,7 +70,7 @@ data class WorkerConfig(
     /**
      * Default task retry policy
      */
-    // val retryPolicy: RetryPolicy = RetryExponentialBackoff(),
+    val retry: RetryPolicy? = null,
 
     /**
      * Workflows configuration
@@ -98,21 +99,23 @@ data class WorkerConfig(
         }
 
         // check default retry Policy
-        // retryPolicy.check()
+        retry?.check()
 
         // apply default, if not set
-        services.map { task ->
-            // task.retryPolicy = task.retryPolicy?.also { it.check() } ?: retryPolicy
+        services.map { service ->
+            service.retry = service.retry?.also { it.check() } ?: retry
 
-            task.tagEngine?.let {
+            service.tagEngine?.let {
                 it.storage = it.storage ?: storage
                 it.cache = it.cache ?: cache
-                if (it.default) it.concurrency = task.concurrency
+                if (it.default) it.concurrency = service.concurrency
             }
         }
 
         // apply default, if not set
         workflows.map { workflow ->
+            workflow.retry?.also { it.check() }
+
             workflow.tagEngine?.let {
                 it.storage = it.storage ?: storage
                 it.cache = it.cache ?: cache

@@ -28,6 +28,7 @@ package io.infinitic.workers.config
 import io.infinitic.common.utils.getClass
 import io.infinitic.common.utils.getEmptyConstructor
 import io.infinitic.common.utils.getInstance
+import io.infinitic.common.workers.config.RetryPolicy
 import io.infinitic.tasks.tag.config.TaskTag
 import java.lang.reflect.Constructor
 
@@ -35,13 +36,12 @@ data class Service(
     val name: String,
     val `class`: String? = null,
     val concurrency: Int = 1,
-    var tagEngine: TaskTag? = null
-    // var retryPolicy: RetryPolicy? = null
+    var tagEngine: TaskTag? = null,
+    var retry: RetryPolicy? = null
 ) {
     private lateinit var _constructor: Constructor<out Any>
 
-    val instance: Any
-        get() = _constructor.getInstance()
+    fun getInstance(): Any = _constructor.getInstance()
 
     init {
         require(name.isNotEmpty()) { "name can not be empty" }

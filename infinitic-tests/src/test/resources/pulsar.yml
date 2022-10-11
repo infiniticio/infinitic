@@ -43,6 +43,8 @@ services:
   - name: io.infinitic.tests.utils.UtilService
     class: io.infinitic.tests.utils.UtilServiceImpl
     concurrency: 5
+    retry:
+      maximumRetries: 1
   - name: io.infinitic.tests.utils.TestService
     class: io.infinitic.tests.utils.TestServiceImpl
     concurrency: 5

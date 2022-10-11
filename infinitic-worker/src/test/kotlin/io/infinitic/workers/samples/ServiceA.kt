@@ -27,9 +27,11 @@
 
 package io.infinitic.workers.samples
 
+import io.infinitic.tasks.Retryable
+
 interface ServiceA
 
-class ServiceAImpl : ServiceA
+class ServiceAImpl : ServiceA, Retryable
 
 class ServiceWithInvocationTargetException : ServiceA {
     init {

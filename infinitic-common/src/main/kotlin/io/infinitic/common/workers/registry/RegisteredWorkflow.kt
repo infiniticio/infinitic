@@ -26,8 +26,10 @@
 package io.infinitic.common.workers.registry
 
 import io.infinitic.common.workers.WorkflowFactory
+import io.infinitic.tasks.Retryable
 
 data class RegisteredWorkflow(
     val concurrency: Int,
+    val retry: Retryable?,
     val factory: WorkflowFactory
 )

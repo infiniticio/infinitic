@@ -27,6 +27,7 @@ package io.infinitic.workers.register
 
 import io.infinitic.common.workers.ServiceFactory
 import io.infinitic.common.workers.WorkflowFactory
+import io.infinitic.common.workers.config.RetryPolicy
 import io.infinitic.common.workers.registry.WorkerRegistry
 import io.infinitic.tasks.tag.config.TaskTag
 import io.infinitic.workflows.engine.config.WorkflowEngine
@@ -42,6 +43,7 @@ interface WorkerRegister {
     fun registerService(
         name: String,
         concurrency: Int,
+        retry: RetryPolicy?,
         factory: ServiceFactory,
         tagEngine: TaskTag?
     )
@@ -49,8 +51,9 @@ interface WorkerRegister {
     fun registerService(
         name: String,
         concurrency: Int,
+        retry: RetryPolicy?,
         factory: ServiceFactory
-    ) = registerService(name, concurrency, factory, null)
+    ) = registerService(name, concurrency, retry, factory, null)
 
     /**
      * Register workflow
@@ -58,6 +61,7 @@ interface WorkerRegister {
     fun registerWorkflow(
         name: String,
         concurrency: Int,
+        retry: RetryPolicy?,
         factory: WorkflowFactory,
         engine: WorkflowEngine?,
         tagEngine: WorkflowTag?
@@ -66,20 +70,23 @@ interface WorkerRegister {
     fun registerWorkflow(
         name: String,
         concurrency: Int,
+        retry: RetryPolicy?,
         factory: WorkflowFactory
-    ) = registerWorkflow(name, concurrency, factory, null, null)
+    ) = registerWorkflow(name, concurrency, retry, factory, null, null)
 
     fun registerWorkflow(
         name: String,
         concurrency: Int,
+        retry: RetryPolicy?,
         factory: WorkflowFactory,
         engine: WorkflowEngine
-    ) = registerWorkflow(name, concurrency, factory, engine, null)
+    ) = registerWorkflow(name, concurrency, retry, factory, engine, null)
 
     fun registerWorkflow(
         name: String,
         concurrency: Int,
+        retry: RetryPolicy?,
         factory: WorkflowFactory,
         tagEngine: WorkflowTag
-    ) = registerWorkflow(name, concurrency, factory, null, tagEngine)
+    ) = registerWorkflow(name, concurrency, retry, factory, null, tagEngine)
 }

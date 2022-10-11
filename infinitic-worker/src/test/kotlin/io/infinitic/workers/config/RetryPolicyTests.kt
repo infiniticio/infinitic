@@ -27,13 +27,13 @@ package io.infinitic.workers.config
 
 import com.sksamuel.hoplite.ConfigException
 import io.infinitic.common.config.loadConfigFromYaml
-import io.infinitic.common.workers.RetryExponentialBackoff
+import io.infinitic.common.workers.config.RetryExponentialBackoff
 import io.kotest.assertions.throwables.shouldThrow
-import io.kotest.core.annotation.Ignored
 import io.kotest.core.spec.style.StringSpec
+import io.kotest.matchers.shouldBe
+import io.kotest.matchers.shouldNotBe
 import io.kotest.matchers.string.shouldContain
 
-@Ignored
 class RetryPolicyTests : StringSpec({
 
     "initialIntervalSeconds must be > 0" {
@@ -74,9 +74,9 @@ class RetryPolicyTests : StringSpec({
 
     "maximumAttempts can not be >= 0" {
         val f = shouldThrow<IllegalArgumentException> {
-            RetryExponentialBackoff(maximumAttempts = -1).check()
+            RetryExponentialBackoff(maximumRetries = -1).check()
         }
-        f.message!! shouldContain "maximumAttempts"
+        f.message!! shouldContain "maximumRetries"
     }
 
     "Unknown class in nonRetryableExceptions should throw" {
@@ -84,10 +84,10 @@ class RetryPolicyTests : StringSpec({
             loadConfigFromYaml<WorkerConfig>(
                 """
 transport: inMemory
-retryPolicy:
+retry:
     nonRetryableExceptions:
         - foobar
-     """
+"""
             )
         }
         e.message!! shouldContain "Unknown class \"foobar\""
@@ -99,12 +99,12 @@ retryPolicy:
                 """
 transport: inMemory
 services:
-    - name: io.infinitic.workers.samples.TaskA
-      class: io.infinitic.workers.samples.TaskAImpl
-      retryPolicy:
+    - name: io.infinitic.workers.samples.ServiceA
+      class: io.infinitic.workers.samples.ServiceAImpl
+      retry:
         nonRetryableExceptions:
           - foobar
-     """
+"""
             )
         }
         e.message!! shouldContain "Unknown class \"foobar\""
@@ -115,10 +115,10 @@ services:
             loadConfigFromYaml<WorkerConfig>(
                 """
 transport: inMemory
-retryPolicy:
+retry:
     nonRetryableExceptions:
         - io.infinitic.workers.InfiniticWorker
-     """
+"""
             )
         }
         e.message!! shouldContain "\"io.infinitic.workers.InfiniticWorker\" in nonRetryableExceptions must be an Exception"
@@ -130,55 +130,58 @@ retryPolicy:
                 """
 transport: inMemory
 services:
-    - name: io.infinitic.workers.samples.TaskA
-      class: io.infinitic.workers.samples.TaskAImpl
-      retryPolicy:
+    - name: io.infinitic.workers.samples.ServiceA
+      class: io.infinitic.workers.samples.ServiceAImpl
+      retry:
         nonRetryableExceptions:
           - io.infinitic.workers.InfiniticWorker
-     """
+"""
             )
         }
         e.message!! shouldContain "\"io.infinitic.workers.InfiniticWorker\" in nonRetryableExceptions must be an Exception"
     }
 
-    "do not retry if maximumAttempts = 0" {
+    "do not retry if maximumRetries = 0" {
         val workerConfig = loadConfigFromYaml<WorkerConfig>(
             """
 transport: inMemory
-retryPolicy:
-    maximumAttempts: 0
-        """
+retry:
+    maximumRetries: 0
+"""
         )
 
-        // workerConfig.retryPolicy.getSecondsBeforeRetry(1, Exception()) shouldBe null
+        workerConfig.retry shouldNotBe null
+        workerConfig.retry!!.getSecondsBeforeRetry(0, Exception()) shouldBe null
     }
 
-    "do not retry once reach maximumAttempts" {
+    "do not retry once reach maximumRetries" {
         val workerConfig = loadConfigFromYaml<WorkerConfig>(
             """
 transport: inMemory
-retryPolicy:
-    maximumAttempts: 10
-        """
+retry:
+    maximumRetries: 10
+"""
         )
 
-        // workerConfig.retryPolicy.getSecondsBeforeRetry(10, Exception()) shouldNotBe null
-        // workerConfig.retryPolicy.getSecondsBeforeRetry(11, Exception()) shouldBe null
+        workerConfig.retry shouldNotBe null
+        workerConfig.retry!!.getSecondsBeforeRetry(9, Exception()) shouldNotBe null
+        workerConfig.retry!!.getSecondsBeforeRetry(10, Exception()) shouldBe null
     }
 
     "do not retry for non retryable exception" {
         val workerConfig = loadConfigFromYaml<WorkerConfig>(
             """
 transport: inMemory
-retryPolicy:
+retry:
     nonRetryableExceptions:
         - io.infinitic.workers.config.TestException
-        """
+"""
         )
 
-        // workerConfig.retryPolicy.getSecondsBeforeRetry(1, Exception()) shouldNotBe null
-        // workerConfig.retryPolicy.getSecondsBeforeRetry(1, TestException()) shouldBe null
-        // workerConfig.retryPolicy.getSecondsBeforeRetry(1, ChildTestException()) shouldBe null
+        workerConfig.retry shouldNotBe null
+        workerConfig.retry!!.getSecondsBeforeRetry(1, Exception()) shouldNotBe null
+        workerConfig.retry!!.getSecondsBeforeRetry(1, TestException()) shouldBe null
+        workerConfig.retry!!.getSecondsBeforeRetry(1, ChildTestException()) shouldBe null
     }
 })
 

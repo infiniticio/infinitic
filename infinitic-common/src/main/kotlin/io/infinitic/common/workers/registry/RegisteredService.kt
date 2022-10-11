@@ -26,8 +26,10 @@
 package io.infinitic.common.workers.registry
 
 import io.infinitic.common.workers.ServiceFactory
+import io.infinitic.tasks.Retryable
 
 data class RegisteredService(
     val concurrency: Int,
+    val retry: Retryable?,
     val factory: ServiceFactory
 )

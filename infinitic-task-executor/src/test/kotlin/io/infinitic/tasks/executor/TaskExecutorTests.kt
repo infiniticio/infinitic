@@ -109,6 +109,7 @@ class TaskExecutorTests : StringSpec({
     // ensure slots are emptied between each test
     beforeTest {
         clearMocks(workerRegistry)
+        every { workerRegistry.getServiceRetryable(ServiceName("task")) } returns null
         after.clear()
         taskExecutorMessage.clear()
         taskTagMessages.clear()

@@ -30,6 +30,7 @@ import io.infinitic.common.config.logger
 import io.infinitic.common.tasks.data.ServiceName
 import io.infinitic.common.workers.ServiceFactory
 import io.infinitic.common.workers.WorkflowFactory
+import io.infinitic.common.workers.config.RetryPolicy
 import io.infinitic.common.workers.registry.RegisteredService
 import io.infinitic.common.workers.registry.RegisteredServiceTag
 import io.infinitic.common.workers.registry.RegisteredWorkflow
@@ -67,19 +68,26 @@ class WorkerRegisterImpl(private val workerConfig: WorkerConfig) : WorkerRegiste
                     }
                 }
 
-                else -> registerWorkflow(w.name, w.concurrency, { w.instance }, w.workflowEngine, w.tagEngine)
+                else -> registerWorkflow(
+                    w.name,
+                    w.concurrency,
+                    w.retry,
+                    { w.getInstance() },
+                    w.workflowEngine,
+                    w.tagEngine
+                )
             }
         }
 
-        for (t in workerConfig.services) {
-            logger.info { "Task ${t.name}:" }
+        for (s in workerConfig.services) {
+            logger.info { "Service ${s.name}:" }
 
-            when (t.`class`) {
-                null -> t.tagEngine?.let {
-                    registerTaskTag(ServiceName(t.name), it.concurrency, it.storage, it.cache)
+            when (s.`class`) {
+                null -> s.tagEngine?.let {
+                    registerTaskTag(ServiceName(s.name), it.concurrency, it.storage, it.cache)
                 }
 
-                else -> registerService(t.name, t.concurrency, { t.instance }, t.tagEngine)
+                else -> registerService(s.name, s.concurrency, s.retry, { s.getInstance() }, s.tagEngine)
             }
         }
     }
@@ -90,6 +98,7 @@ class WorkerRegisterImpl(private val workerConfig: WorkerConfig) : WorkerRegiste
     override fun registerService(
         name: String,
         concurrency: Int,
+        retry: RetryPolicy?,
         factory: ServiceFactory,
         tagEngine: TaskTag?
     ) {
@@ -98,7 +107,7 @@ class WorkerRegisterImpl(private val workerConfig: WorkerConfig) : WorkerRegiste
         }
 
         val serviceName = ServiceName(name)
-        registry.services[serviceName] = RegisteredService(concurrency, factory)
+        registry.services[serviceName] = RegisteredService(concurrency, retry, factory)
 
         when (tagEngine) {
             null -> registerTaskTag(serviceName, concurrency, workerConfig.storage, workerConfig.cache)
@@ -112,6 +121,7 @@ class WorkerRegisterImpl(private val workerConfig: WorkerConfig) : WorkerRegiste
     override fun registerWorkflow(
         name: String,
         concurrency: Int,
+        retry: RetryPolicy?,
         factory: WorkflowFactory,
         engine: WorkflowEngine?,
         tagEngine: WorkflowTag?
@@ -121,7 +131,7 @@ class WorkerRegisterImpl(private val workerConfig: WorkerConfig) : WorkerRegiste
         }
 
         val workflowName = WorkflowName(name)
-        registry.workflows[workflowName] = RegisteredWorkflow(concurrency, factory)
+        registry.workflows[workflowName] = RegisteredWorkflow(concurrency, retry, factory)
 
         when (tagEngine) {
             null -> registerWorkflowTag(workflowName, concurrency, workerConfig.storage, workerConfig.cache)

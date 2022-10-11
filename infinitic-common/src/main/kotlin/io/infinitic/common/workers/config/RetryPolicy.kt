@@ -23,28 +23,26 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.common.workers
+package io.infinitic.common.workers.config
 
 import io.infinitic.common.exceptions.thisShouldNotHappen
+import io.infinitic.common.utils.getClass
 import io.infinitic.tasks.Retryable
 import kotlin.math.min
 import kotlin.math.pow
 import kotlin.random.Random
 
-sealed class RetryPolicyAbstract(
-    open val maximumAttempts: Int,
+sealed class RetryPolicy(
+    open val maximumRetries: Int,
     open val nonRetryableExceptions: List<String>
 ) : Retryable {
 
     val nonRetryableClasses: List<Class<*>> by lazy {
         nonRetryableExceptions.map { klass ->
-            try {
-                Class.forName(klass)
-            } catch (e: ClassNotFoundException) {
-                throw IllegalArgumentException("Unknown class \"$klass\" in ${::nonRetryableExceptions.name}")
-            } catch (e: Exception) {
-                throw IllegalArgumentException("Error with class \"$klass\" in ${::nonRetryableExceptions.name}", e)
-            }.also {
+            klass.getClass(
+                classNotFound = "Unknown class \"$klass\" in ${::nonRetryableExceptions.name}",
+                errorClass = "Error with class \"$klass\" in ${::nonRetryableExceptions.name}"
+            ).also {
                 require(Exception::class.java.isAssignableFrom(it)) {
                     "Class \"$klass\" in ${::nonRetryableExceptions.name} must be an Exception"
                 }
@@ -54,46 +52,50 @@ sealed class RetryPolicyAbstract(
 
     /**
      * Return how many seconds to wait before retrying
-     * - attempt: current attempt (first = 1)
+     * - attempt: current attempt (first = 0)
      * - exception: current Exception
      * Do not retry if return null
      */
     @Suppress("unused")
-    override fun getSecondsBeforeRetry(attempt: Int, exception: Exception): Double? {
+    override fun getSecondsBeforeRetry(retry: Int, exception: Exception): Double? {
         // check that attempt is >= 1
-        if (attempt < 1) thisShouldNotHappen()
+        if (retry < 0) thisShouldNotHappen()
         // check if we reached the maximal number of attempts
-        if (attempt > maximumAttempts) return null
+        if (retry >= maximumRetries) return null
         // check if the exception is of a non retryable type
         if (nonRetryableClasses.any { it.isAssignableFrom(exception::class.java) }) return null
 
-        return getSecondsBeforeRetryAttempt(attempt)
+        return getSecondsBeforeRetry(retry)
     }
 
     abstract fun check()
 
-    protected abstract fun getSecondsBeforeRetryAttempt(attempt: Int): Double?
+    protected abstract fun getSecondsBeforeRetry(attempt: Int): Double?
 }
 
 data class RetryExponentialBackoff(
     val initialIntervalSeconds: Double = 1.0,
     val backoffCoefficient: Double = 2.0,
     val maximumSeconds: Double = 100 * initialIntervalSeconds,
-    override val maximumAttempts: Int = Int.MAX_VALUE,
+    val randomized: Boolean = true,
+    override val maximumRetries: Int = Int.MAX_VALUE,
     override val nonRetryableExceptions: List<String> = listOf()
-) : RetryPolicyAbstract(maximumAttempts, nonRetryableExceptions) {
+) : RetryPolicy(maximumRetries, nonRetryableExceptions) {
 
     // checks can not be in init {} as throwing exception in constructor prevents sealed class recognition by Hoplite
     override fun check() {
         require(initialIntervalSeconds > 0) { "${::initialIntervalSeconds.name} MUST be > 0" }
         require(backoffCoefficient > 0) { "${::backoffCoefficient.name} MUST be > 0" }
         require(maximumSeconds > 0) { "${::maximumSeconds.name} MUST be > 0" }
-        require(maximumAttempts >= 0) { "${::maximumAttempts.name} MUST be >= 0" }
+        require(maximumRetries >= 0) { "${::maximumRetries.name} MUST be >= 0" }
 
         // trigger checking of nonRetryableExceptions
         nonRetryableClasses
     }
 
-    override fun getSecondsBeforeRetryAttempt(attempt: Int): Double =
-        min(maximumSeconds, initialIntervalSeconds * (backoffCoefficient.pow(attempt - 1))) * Random.nextDouble()
+    override fun getSecondsBeforeRetry(attempt: Int): Double =
+        min(maximumSeconds, initialIntervalSeconds * (backoffCoefficient.pow(attempt))) * when (randomized) {
+            true -> Random.nextDouble()
+            false -> 1.0
+        }
 }

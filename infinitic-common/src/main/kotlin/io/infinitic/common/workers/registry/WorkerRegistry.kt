@@ -28,6 +28,7 @@ package io.infinitic.common.workers.registry
 import io.infinitic.common.exceptions.thisShouldNotHappen
 import io.infinitic.common.tasks.data.ServiceName
 import io.infinitic.common.workflows.data.workflows.WorkflowName
+import io.infinitic.tasks.Retryable
 import io.infinitic.workflows.Workflow
 import org.jetbrains.annotations.TestOnly
 
@@ -42,8 +43,14 @@ class WorkerRegistry(val name: String?) {
     fun getServiceInstance(serviceName: ServiceName): Any =
         (services[serviceName] ?: thisShouldNotHappen()).factory()
 
+    fun getServiceRetryable(serviceName: ServiceName): Retryable? =
+        (services[serviceName] ?: thisShouldNotHappen()).retry
+
     fun getWorkflowInstance(workflowName: WorkflowName): Workflow =
         (workflows[workflowName] ?: thisShouldNotHappen()).factory()
+
+    fun getWorkflowRetryable(workflowName: WorkflowName): Retryable? =
+        (workflows[workflowName] ?: thisShouldNotHappen()).retry
 
     @TestOnly
     fun flush() {

@@ -65,16 +65,16 @@ internal class SimpleServiceWithTimeout : Retryable {
         return (i * j.toInt() * Task.retrySequence).toString()
     }
 
-    override fun getSecondsBeforeRetry(attempt: Int, exception: Exception) =
+    override fun getSecondsBeforeRetry(retry: Int, exception: Exception) =
         if (exception is MaxRunDurationException) null else 3.0
 }
 
 internal class RetryImpl : Retryable {
-    override fun getSecondsBeforeRetry(attempt: Int, exception: Exception) =
+    override fun getSecondsBeforeRetry(retry: Int, exception: Exception) =
         if (exception is IllegalStateException) 3.0 else null
 }
 
 internal class BuggyRetryImpl : Retryable {
-    override fun getSecondsBeforeRetry(attempt: Int, exception: Exception) =
+    override fun getSecondsBeforeRetry(retry: Int, exception: Exception) =
         if (exception is IllegalStateException) throw IllegalArgumentException() else 3.0
 }

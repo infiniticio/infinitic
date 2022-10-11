@@ -25,6 +25,7 @@
 
 package io.infinitic.workers.config
 
+import io.infinitic.common.workers.config.RetryPolicy
 import io.infinitic.workflows.engine.config.WorkflowEngine
 import io.infinitic.workflows.tag.config.WorkflowTag
 import java.lang.reflect.Constructor
@@ -35,13 +36,12 @@ data class Workflow(
     val `class`: String? = null,
     val concurrency: Int = 1,
     var tagEngine: WorkflowTag? = null,
-    var workflowEngine: WorkflowEngine? = null
-    // val retryPolicy: RetryPolicy = RetryExponentialBackoff(maximumAttempts = 0)
+    var workflowEngine: WorkflowEngine? = null,
+    val retry: RetryPolicy? = null
 ) {
     private lateinit var _constructor: Constructor<out Any>
 
-    val instance
-        get() = _constructor.newInstance() as WorkflowInstance
+    fun getInstance() = _constructor.newInstance() as WorkflowInstance
 
     init {
         require(name.isNotEmpty()) { "name can not be empty" }

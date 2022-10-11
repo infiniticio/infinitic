@@ -25,6 +25,7 @@
 
 package io.infinitic.tasks.executor
 
+import io.infinitic.annotations.getInstance
 import io.infinitic.common.clients.ClientFactory
 import io.infinitic.common.clients.SendToClient
 import io.infinitic.common.data.ClientName
@@ -32,7 +33,6 @@ import io.infinitic.common.data.MillisDuration
 import io.infinitic.common.data.ReturnValue
 import io.infinitic.common.exceptions.thisShouldNotHappen
 import io.infinitic.common.parser.getMethodPerNameAndParameters
-import io.infinitic.common.tasks.data.ServiceName
 import io.infinitic.common.tasks.data.TaskMeta
 import io.infinitic.common.tasks.data.TaskReturnValue
 import io.infinitic.common.tasks.executors.SendToTaskExecutorAfter
@@ -43,10 +43,7 @@ import io.infinitic.common.tasks.executors.messages.ExecuteTask
 import io.infinitic.common.tasks.executors.messages.TaskExecutorMessage
 import io.infinitic.common.tasks.tags.SendToTaskTag
 import io.infinitic.common.tasks.tags.messages.RemoveTagFromTask
-import io.infinitic.common.utils.getEmptyConstructor
-import io.infinitic.common.utils.getInstance
 import io.infinitic.common.workers.registry.WorkerRegistry
-import io.infinitic.common.workflows.data.workflowTasks.WorkflowTask
 import io.infinitic.common.workflows.engine.SendToWorkflowEngine
 import io.infinitic.exceptions.DeferredException
 import io.infinitic.exceptions.tasks.MaxRunDurationException
@@ -184,9 +181,9 @@ class TaskExecutor(
     }
 
     private fun parse(msg: ExecuteTask): TaskCommand {
-        val service = when (msg.serviceName) {
-            ServiceName(WorkflowTask::class.java.name) -> WorkflowTaskImpl()
-            else -> workerRegistry.getServiceInstance(msg.serviceName)
+        val service = when (msg.isWorkflowTask()) {
+            true -> WorkflowTaskImpl()
+            false -> workerRegistry.getServiceInstance(msg.serviceName)
         }
 
         val method = getMethodPerNameAndParameters(
@@ -196,16 +193,19 @@ class TaskExecutor(
             msg.methodParameters.size
         )
 
-        val retryable = (
-            method.getAnnotation(RetryableAnnotation::class.java)
-                ?: service::class.java.getAnnotation(RetryableAnnotation::class.java)
-            )
-            ?.with?.java?.getEmptyConstructor()?.getInstance()
-            ?: if (service is Retryable) {
-                service
-            } else {
-                null
-            }
+        val retryable = // use retryable from registry, if it exists
+            when (msg.isWorkflowTask()) {
+                true -> workerRegistry.getWorkflowRetryable(msg.workflowName ?: thisShouldNotHappen())
+                false -> workerRegistry.getServiceRetryable(msg.serviceName)
+            } // else use retryable from method
+                ?: method.getAnnotation(RetryableAnnotation::class.java)?.getInstance()
+                // else use retryable from service
+                ?: service::class.java.getAnnotation(RetryableAnnotation::class.java)?.getInstance()
+                // else use service if Retryable
+                ?: when (service) {
+                    is Retryable -> service
+                    else -> null
+                }
 
         val parameter = msg.methodParameters.map { it.deserialize() }.toTypedArray()
 

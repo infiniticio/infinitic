@@ -25,13 +25,17 @@
 
 package io.infinitic.annotations
 
+import io.infinitic.common.utils.getEmptyConstructor
+import io.infinitic.common.utils.getInstance
+import io.infinitic.tasks.Retryable
 import kotlin.reflect.KClass
-import io.infinitic.tasks.Retryable as RetryableInterface
 
 /**
  * This annotation lets user defines a custom retry policy programmatically
  */
 @Target(AnnotationTarget.CLASS, AnnotationTarget.FUNCTION)
 annotation class Retry(
-    val with: KClass<out RetryableInterface>
+    val with: KClass<out Retryable>
 )
+
+fun Retry.getInstance() = with.java.getEmptyConstructor().getInstance()

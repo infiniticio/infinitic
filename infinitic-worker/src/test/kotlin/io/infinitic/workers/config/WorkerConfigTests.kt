@@ -30,6 +30,7 @@ import io.infinitic.workers.samples.ServiceA
 import io.infinitic.workers.samples.WorkflowA
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.StringSpec
+import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import io.kotest.matchers.string.shouldContain
 
@@ -38,14 +39,14 @@ class WorkerConfigTests : StringSpec({
         val config = WorkerConfig.fromResource("/config/services/instance.yml")
 
         val task = config.services.first { it.name == ServiceA::class.java.name }
-        task.instance shouldNotBe task.instance
+        task.getInstance() shouldNotBe task.getInstance()
     }
 
     "workflow instance should not be reused" {
         val config = WorkerConfig.fromResource("/config/workflows/instance.yml")
 
         val workflow = config.workflows.first { it.name == WorkflowA::class.java.name }
-        workflow.instance shouldNotBe workflow.instance
+        workflow.getInstance() shouldNotBe workflow.getInstance()
     }
 
     "task with InvocationTargetException should throw cause" {
@@ -98,9 +99,11 @@ class WorkerConfigTests : StringSpec({
         e.message!! shouldContain "class \"io.infinitic.workers.samples.NotAWorkflow\" must extend io.infinitic.workflows.Workflow"
     }
 
-    "default retry policy should be RetryExponentialBackoff" {
+    "default retry policy should be null" {
         val config = WorkerConfig.fromResource("/config/services/instance.yml")
 
-        // config.retryPolicy shouldBe RetryExponentialBackoff()
+        config.retry shouldBe null
+        config.services.size shouldBe 1
+        config.services[0].retry shouldBe null
     }
 })

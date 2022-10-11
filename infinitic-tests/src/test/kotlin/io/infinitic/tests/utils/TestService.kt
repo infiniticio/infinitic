@@ -70,7 +70,7 @@ class TestServiceImpl : TestService, Retryable {
         return delay
     }
 
-    override fun getSecondsBeforeRetry(attempt: Int, exception: Exception): Double? =
+    override fun getSecondsBeforeRetry(retry: Int, exception: Exception): Double? =
         when (behavior(Task.retrySequence, Task.retryIndex)) {
             Status.FAILED_WITH_RETRY, Status.TIMEOUT_WITH_RETRY -> 10.0
             else -> null
