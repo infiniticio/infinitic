@@ -30,6 +30,7 @@ import io.infinitic.tasks.Retryable
 
 data class RegisteredService(
     val concurrency: Int,
-    val retry: Retryable?,
-    val factory: ServiceFactory
+    val factory: ServiceFactory,
+    val timeoutMillis: Long?,
+    val retry: Retryable?
 )

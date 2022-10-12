@@ -42,7 +42,6 @@ import io.infinitic.common.workflows.data.methodRuns.MethodRunId
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTask
 import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.data.workflows.WorkflowName
-import io.infinitic.tasks.TaskOptions
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
@@ -73,7 +72,6 @@ data class ExecuteTask(
     val workflowId: WorkflowId?,
     val workflowName: WorkflowName?,
     val methodRunId: MethodRunId?,
-    val taskOptions: TaskOptions,
     val taskTags: Set<TaskTag>,
     val taskMeta: TaskMeta
 ) : TaskExecutorMessage()

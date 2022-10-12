@@ -26,14 +26,13 @@
 package io.infinitic.tasks.executor.task
 
 import io.infinitic.tasks.Retryable
-import io.infinitic.tasks.TaskOptions
 import java.lang.reflect.Method
 
 internal data class TaskCommand(
     val service: Any,
     val method: Method,
     val parameters: Array<Any?>,
-    val options: TaskOptions,
+    val timeoutSeconds: Long?,
     val retryable: Retryable?
 ) {
     override fun equals(other: Any?): Boolean {
@@ -45,7 +44,7 @@ internal data class TaskCommand(
         if (service != other.service) return false
         if (method != other.method) return false
         if (!parameters.contentEquals(other.parameters)) return false
-        if (options != other.options) return false
+        if (timeoutSeconds != other.timeoutSeconds) return false
         if (retryable != other.retryable) return false
 
         return true
@@ -55,8 +54,8 @@ internal data class TaskCommand(
         var result = service.hashCode()
         result = 31 * result + method.hashCode()
         result = 31 * result + parameters.contentHashCode()
-        result = 31 * result + options.hashCode()
-        result = 31 * result + retryable.hashCode()
+        result = 31 * result + timeoutSeconds.hashCode()
+        result = 31 * result + (retryable?.hashCode() ?: 0)
         return result
     }
 }

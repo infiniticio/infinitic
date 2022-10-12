@@ -26,7 +26,7 @@
 package io.infinitic.annotations
 
 /**
- * This annotation lets user define which property should be ignored when storing state of a workflow
+ * Use this annotation to flag properties that should be ignored when storing the state of a workflow
  */
 @Target(AnnotationTarget.PROPERTY)
-annotation class Ignore()
+annotation class Ignore

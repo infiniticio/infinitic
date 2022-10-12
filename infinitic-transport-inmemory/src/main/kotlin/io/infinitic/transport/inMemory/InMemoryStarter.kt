@@ -115,7 +115,6 @@ class InMemoryStarter(private val scope: CoroutineScope, name: String) : ClientS
             sendToWorkflowEngineAsync,
             sendToWorkflowEngineAfterAsync
         )
-
         startAsync(
             { message: WorkflowEngineMessage -> workflowEngine.handle(message) },
             getWorkflowEngineChannel(workflowName)

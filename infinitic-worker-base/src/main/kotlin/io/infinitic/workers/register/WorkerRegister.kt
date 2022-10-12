@@ -27,6 +27,7 @@ package io.infinitic.workers.register
 
 import io.infinitic.common.workers.ServiceFactory
 import io.infinitic.common.workers.WorkflowFactory
+import io.infinitic.common.workers.config.RetryExponentialBackoff
 import io.infinitic.common.workers.config.RetryPolicy
 import io.infinitic.common.workers.registry.WorkerRegistry
 import io.infinitic.tasks.tag.config.TaskTag
@@ -37,56 +38,39 @@ interface WorkerRegister {
 
     val registry: WorkerRegistry
 
+    companion object {
+        const val DEFAULT_CONCURRENCY = 1
+        const val DEFAULT_WORKFLOW_TIMEOUT = 30.0
+        val DEFAULT_TASK_TIMEOUT = null
+        val DEFAULT_TASK_RETRY_POLICY = RetryExponentialBackoff().apply { isDefault = true }
+        val DEFAULT_WORKFLOW_RETRY_POLICY = null
+        val DEFAULT_TASK_TAG = TaskTag().apply { isDefault = true }
+        val DEFAULT_WORKFLOW_ENGINE = WorkflowEngine().apply { isDefault = true }
+        val DEFAULT_WORKFLOW_TAG = WorkflowTag().apply { isDefault = true }
+    }
+
     /**
      * Register task
      */
     fun registerService(
         name: String,
-        concurrency: Int,
-        retry: RetryPolicy?,
         factory: ServiceFactory,
-        tagEngine: TaskTag?
-    )
-
-    fun registerService(
-        name: String,
         concurrency: Int,
-        retry: RetryPolicy?,
-        factory: ServiceFactory
-    ) = registerService(name, concurrency, retry, factory, null)
+        timeoutSeconds: Double? = DEFAULT_TASK_TIMEOUT,
+        retry: RetryPolicy? = DEFAULT_TASK_RETRY_POLICY,
+        tagEngine: TaskTag? = DEFAULT_TASK_TAG
+    )
 
     /**
      * Register workflow
      */
     fun registerWorkflow(
         name: String,
-        concurrency: Int,
-        retry: RetryPolicy?,
         factory: WorkflowFactory,
-        engine: WorkflowEngine?,
-        tagEngine: WorkflowTag?
+        concurrency: Int,
+        timeoutSeconds: Double? = DEFAULT_WORKFLOW_TIMEOUT,
+        retry: RetryPolicy? = DEFAULT_WORKFLOW_RETRY_POLICY,
+        engine: WorkflowEngine? = DEFAULT_WORKFLOW_ENGINE,
+        tagEngine: WorkflowTag? = DEFAULT_WORKFLOW_TAG
     )
-
-    fun registerWorkflow(
-        name: String,
-        concurrency: Int,
-        retry: RetryPolicy?,
-        factory: WorkflowFactory
-    ) = registerWorkflow(name, concurrency, retry, factory, null, null)
-
-    fun registerWorkflow(
-        name: String,
-        concurrency: Int,
-        retry: RetryPolicy?,
-        factory: WorkflowFactory,
-        engine: WorkflowEngine
-    ) = registerWorkflow(name, concurrency, retry, factory, engine, null)
-
-    fun registerWorkflow(
-        name: String,
-        concurrency: Int,
-        retry: RetryPolicy?,
-        factory: WorkflowFactory,
-        tagEngine: WorkflowTag
-    ) = registerWorkflow(name, concurrency, retry, factory, null, tagEngine)
 }

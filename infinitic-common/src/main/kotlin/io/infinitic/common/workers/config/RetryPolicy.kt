@@ -37,6 +37,8 @@ sealed class RetryPolicy(
     open val nonRetryableExceptions: List<String>
 ) : Retryable {
 
+    var isDefault = false
+
     val nonRetryableClasses: List<Class<*>> by lazy {
         nonRetryableExceptions.map { klass ->
             klass.getClass(

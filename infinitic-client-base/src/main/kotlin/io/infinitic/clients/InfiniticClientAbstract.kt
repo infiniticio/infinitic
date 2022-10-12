@@ -42,7 +42,6 @@ import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.data.workflows.WorkflowMeta
 import io.infinitic.common.workflows.data.workflows.WorkflowTag
 import io.infinitic.exceptions.clients.InvalidStubException
-import io.infinitic.tasks.TaskOptions
 import io.infinitic.workflows.DeferredStatus
 import io.infinitic.workflows.WorkflowOptions
 import kotlinx.coroutines.CoroutineScope
@@ -68,9 +67,6 @@ abstract class InfiniticClientAbstract : InfiniticClientInterface {
 
     abstract val clientStarter: ClientStarter
 
-    private val sendToWorkflowTag by lazy { clientStarter.sendToWorkflowTag }
-    private val sendToWorkflowEngine by lazy { clientStarter.sendToWorkflowEngine }
-
     protected val logger = KotlinLogging.logger {}
 
     /**
@@ -91,12 +87,12 @@ abstract class InfiniticClientAbstract : InfiniticClientInterface {
      */
     protected val listeningScope = CoroutineScope(Dispatchers.IO + Job())
 
-    protected val dispatcher: ClientDispatcher by lazy {
+    private val dispatcher: ClientDispatcher by lazy {
         ClientDispatcherImpl(
             sendingScope,
             clientName,
-            sendToWorkflowEngine,
-            sendToWorkflowTag
+            clientStarter.sendToWorkflowEngine,
+            clientStarter.sendToWorkflowTag
         )
     }
 
@@ -339,7 +335,7 @@ abstract class InfiniticClientAbstract : InfiniticClientInterface {
         is ExistingWorkflowProxyHandler -> {
             val taskName = taskClass?.let {
                 // Use NewTaskProxyHandler in case of use of @Name annotation
-                NewServiceProxyHandler(it, setOf(), TaskOptions(), TaskMeta()) { dispatcher }.serviceName
+                NewServiceProxyHandler(it, setOf(), TaskMeta()) { dispatcher }.serviceName
             }
 
             dispatcher.retryTaskAsync(

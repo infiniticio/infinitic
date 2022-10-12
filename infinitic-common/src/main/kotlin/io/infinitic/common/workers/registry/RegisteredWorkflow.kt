@@ -30,6 +30,7 @@ import io.infinitic.tasks.Retryable
 
 data class RegisteredWorkflow(
     val concurrency: Int,
-    val retry: Retryable?,
-    val factory: WorkflowFactory
+    val factory: WorkflowFactory,
+    val timeoutMillis: Long?,
+    val retry: Retryable?
 )

@@ -330,17 +330,6 @@
                 "type" : "map",
                 "values" : "bytes"
               }
-            }, {
-              "name" : "taskOptions",
-              "type" : {
-                "type" : "record",
-                "name" : "TaskOptions",
-                "namespace" : "io.infinitic.tasks",
-                "fields" : [ {
-                  "name" : "maxRunDuration",
-                  "type" : [ "null", "long" ]
-                } ]
-              }
             } ]
           }
         }, {

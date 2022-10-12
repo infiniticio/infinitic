@@ -26,6 +26,7 @@
 package io.infinitic.workers.config
 
 import io.infinitic.common.workers.config.RetryPolicy
+import io.infinitic.workers.register.WorkerRegister
 import io.infinitic.workflows.engine.config.WorkflowEngine
 import io.infinitic.workflows.tag.config.WorkflowTag
 import java.lang.reflect.Constructor
@@ -34,10 +35,11 @@ import io.infinitic.workflows.Workflow as WorkflowInstance
 data class Workflow(
     val name: String,
     val `class`: String? = null,
-    val concurrency: Int = 1,
-    var tagEngine: WorkflowTag? = null,
-    var workflowEngine: WorkflowEngine? = null,
-    val retry: RetryPolicy? = null
+    val concurrency: Int = WorkerRegister.DEFAULT_CONCURRENCY,
+    val timeoutSeconds: Double? = WorkerRegister.DEFAULT_WORKFLOW_TIMEOUT,
+    val retry: RetryPolicy? = WorkerRegister.DEFAULT_WORKFLOW_RETRY_POLICY,
+    var tagEngine: WorkflowTag? = WorkerRegister.DEFAULT_WORKFLOW_TAG,
+    var workflowEngine: WorkflowEngine? = WorkerRegister.DEFAULT_WORKFLOW_ENGINE
 ) {
     private lateinit var _constructor: Constructor<out Any>
 
@@ -90,6 +92,10 @@ data class Workflow(
                 }
 
                 require(concurrency >= 0) { "concurrency must be positive (workflow $name)" }
+
+                if (timeoutSeconds != null) {
+                    require(timeoutSeconds > 0) { "timeoutSeconds must be positive (workflow $name)" }
+                }
             }
         }
     }

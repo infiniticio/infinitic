@@ -23,11 +23,20 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.exceptions
+package io.infinitic.exceptions.tasks
 
-import io.infinitic.common.tasks.executors.errors.DeferredError
-
-open class RunException(
-    message: String,
-    val causeError: DeferredError? = null
+sealed class TaskException(
+    message: String
 ) : kotlin.RuntimeException(message)
+
+class TimeoutTaskException(
+    klass: String,
+    timeoutMillis: Long
+) : TaskException(
+    message = "The processing of task \"$klass\" took more than ${
+    String.format(
+        "%.3f",
+        timeoutMillis / 1000.0
+    )
+    } seconds"
+)

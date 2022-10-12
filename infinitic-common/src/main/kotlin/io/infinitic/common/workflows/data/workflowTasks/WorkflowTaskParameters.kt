@@ -43,7 +43,6 @@ import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.data.workflows.WorkflowMeta
 import io.infinitic.common.workflows.data.workflows.WorkflowName
 import io.infinitic.common.workflows.data.workflows.WorkflowTag
-import io.infinitic.tasks.TaskOptions
 import io.infinitic.workflows.WorkflowOptions
 import kotlinx.serialization.Serializable
 
@@ -65,7 +64,6 @@ data class WorkflowTaskParameters(
     fun toExecuteTaskMessage() = ExecuteTask(
         serviceName = ServiceName(WorkflowTask::class.java.name),
         taskId = taskId,
-        taskOptions = TaskOptions(),
         clientWaiting = false,
         methodName = MethodName(WorkflowTask::handle.name),
         methodParameterTypes = MethodParameterTypes(listOf(WorkflowTaskParameters::class.java.name)),

@@ -26,7 +26,7 @@
 package io.infinitic.annotations
 
 /**
- * This annotation lets user define its own name for task or workflow
+ * Use this annotation to define a custom name
  */
 @Target(AnnotationTarget.CLASS, AnnotationTarget.FUNCTION)
 annotation class Name(val name: String)

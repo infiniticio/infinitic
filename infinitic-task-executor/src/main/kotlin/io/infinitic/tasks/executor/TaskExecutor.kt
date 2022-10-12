@@ -25,7 +25,9 @@
 
 package io.infinitic.tasks.executor
 
+import io.infinitic.annotations.Timeout
 import io.infinitic.annotations.getInstance
+import io.infinitic.annotations.getMillis
 import io.infinitic.common.clients.ClientFactory
 import io.infinitic.common.clients.SendToClient
 import io.infinitic.common.data.ClientName
@@ -46,7 +48,7 @@ import io.infinitic.common.tasks.tags.messages.RemoveTagFromTask
 import io.infinitic.common.workers.registry.WorkerRegistry
 import io.infinitic.common.workflows.engine.SendToWorkflowEngine
 import io.infinitic.exceptions.DeferredException
-import io.infinitic.exceptions.tasks.MaxRunDurationException
+import io.infinitic.exceptions.tasks.TimeoutTaskException
 import io.infinitic.tasks.Retryable
 import io.infinitic.tasks.Task
 import io.infinitic.tasks.TaskContext
@@ -88,7 +90,7 @@ class TaskExecutor(
 
     private suspend fun executeTask(message: ExecuteTask) = coroutineScope {
         // trying to instantiate the task
-        val (service, method, parameters, options, retryable) = try {
+        val (service, method, parameters, timeoutMillis, retryable) = try {
             parse(message)
         } catch (e: Exception) {
             // returning the exception (no retry)
@@ -110,14 +112,14 @@ class TaskExecutor(
             lastError = message.lastError,
             tags = message.taskTags.map { it.tag }.toSet(),
             meta = message.taskMeta.map.toMutableMap(),
-            options = message.taskOptions,
+            timeoutMillis = timeoutMillis,
             retryable = retryable,
             clientFactory = clientFactory
         )
 
         try {
-            val output = if (options.maxRunDuration != null && options.maxRunDuration!!.toMillis() > 0) {
-                withTimeout(options.maxRunDuration!!.toMillis()) {
+            val output = if (timeoutMillis != null && timeoutMillis > 0) {
+                withTimeout(timeoutMillis) {
                     runTask(service, method, parameters, taskContext)
                 }
             } else {
@@ -135,7 +137,7 @@ class TaskExecutor(
                 else -> throw cause ?: e
             }
         } catch (e: TimeoutCancellationException) {
-            val cause = MaxRunDurationException(service.javaClass.name, options.maxRunDuration!!)
+            val cause = TimeoutTaskException(service.javaClass.name, timeoutMillis!!)
             // returning a timeout
             failTaskWithRetry(taskContext, cause, message)
         } catch (e: Exception) {
@@ -183,7 +185,7 @@ class TaskExecutor(
     private fun parse(msg: ExecuteTask): TaskCommand {
         val service = when (msg.isWorkflowTask()) {
             true -> WorkflowTaskImpl()
-            false -> workerRegistry.getServiceInstance(msg.serviceName)
+            false -> workerRegistry.getRegisteredService(msg.serviceName).factory()
         }
 
         val method = getMethodPerNameAndParameters(
@@ -193,13 +195,26 @@ class TaskExecutor(
             msg.methodParameters.size
         )
 
-        val retryable = // use retryable from registry, if it exists
+        val parameters = msg.methodParameters.map { it.deserialize() }.toTypedArray()
+
+        val timeoutMillis =
+            // use timeout from registry, if it exists
             when (msg.isWorkflowTask()) {
-                true -> workerRegistry.getWorkflowRetryable(msg.workflowName ?: thisShouldNotHappen())
-                false -> workerRegistry.getServiceRetryable(msg.serviceName)
+                true -> workerRegistry.getRegisteredWorkflow(msg.workflowName!!).timeoutMillis
+                false -> workerRegistry.getRegisteredService(msg.serviceName).timeoutMillis
+            } // else use timeout from method
+                ?: method.getAnnotation(Timeout::class.java)?.getMillis()
+                // else use timeout from class
+                ?: service::class.java.getAnnotation(Timeout::class.java)?.getMillis()
+
+        val retryable =
+            // use retryable from registry, if it exists
+            when (msg.isWorkflowTask()) {
+                true -> workerRegistry.getRegisteredWorkflow(msg.workflowName!!).retry
+                false -> workerRegistry.getRegisteredService(msg.serviceName).retry
             } // else use retryable from method
                 ?: method.getAnnotation(RetryableAnnotation::class.java)?.getInstance()
-                // else use retryable from service
+                // else use retryable from class
                 ?: service::class.java.getAnnotation(RetryableAnnotation::class.java)?.getInstance()
                 // else use service if Retryable
                 ?: when (service) {
@@ -207,9 +222,7 @@ class TaskExecutor(
                     else -> null
                 }
 
-        val parameter = msg.methodParameters.map { it.deserialize() }.toTypedArray()
-
-        return TaskCommand(service, method, parameter, msg.taskOptions, retryable)
+        return TaskCommand(service, method, parameters, timeoutMillis, retryable)
     }
 
     private fun retryTask(

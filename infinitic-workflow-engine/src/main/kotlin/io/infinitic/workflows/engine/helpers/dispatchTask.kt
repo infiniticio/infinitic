@@ -45,7 +45,6 @@ internal fun CoroutineScope.dispatchTask(
         ExecuteTask(
             serviceName = serviceName,
             taskId = io.infinitic.common.tasks.data.TaskId.from(dispatchTaskPastCommand.commandId),
-            taskOptions = taskOptions,
             clientWaiting = false,
             methodName = methodName,
             methodParameterTypes = methodParameterTypes,

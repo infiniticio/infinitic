@@ -28,9 +28,10 @@
 package io.infinitic.tasks.executor.samples
 
 import io.infinitic.annotations.Retry
-import io.infinitic.exceptions.tasks.MaxRunDurationException
+import io.infinitic.annotations.Timeout
 import io.infinitic.tasks.Retryable
 import io.infinitic.tasks.Task
+import java.util.concurrent.TimeUnit
 
 interface SimpleService {
     fun handle(i: Int, j: String): String
@@ -58,15 +59,30 @@ internal class SimpleServiceWithBuggyRetry {
     fun handle(i: Int, j: String): String = if (i < 0) (i * j.toInt()).toString() else throw IllegalStateException()
 }
 
-internal class SimpleServiceWithTimeout : Retryable {
+internal class SimpleServiceWithTimeoutOnMethod {
+    @Timeout(100, TimeUnit.MILLISECONDS)
     fun handle(i: Int, j: String): String {
         Thread.sleep(400)
 
         return (i * j.toInt() * Task.retrySequence).toString()
     }
+}
 
-    override fun getSecondsBeforeRetry(retry: Int, exception: Exception) =
-        if (exception is MaxRunDurationException) null else 3.0
+@Timeout(100, TimeUnit.MILLISECONDS)
+internal class SimpleServiceWithTimeoutOnClass {
+    fun handle(i: Int, j: String): String {
+        Thread.sleep(400)
+
+        return (i * j.toInt() * Task.retrySequence).toString()
+    }
+}
+
+internal class SimpleServiceWithTimeoutOnRegistry {
+    fun handle(i: Int, j: String): String {
+        Thread.sleep(400)
+
+        return (i * j.toInt() * Task.retrySequence).toString()
+    }
 }
 
 internal class RetryImpl : Retryable {

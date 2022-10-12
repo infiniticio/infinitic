@@ -103,17 +103,6 @@
         "name" : "methodRunId",
         "type" : [ "null", "string" ]
       }, {
-        "name" : "taskOptions",
-        "type" : {
-          "type" : "record",
-          "name" : "TaskOptions",
-          "namespace" : "io.infinitic.tasks",
-          "fields" : [ {
-            "name" : "maxRunDuration",
-            "type" : [ "null", "long" ]
-          } ]
-        }
-      }, {
         "name" : "taskTags",
         "type" : {
           "type" : "array",

@@ -31,7 +31,6 @@ import io.infinitic.common.tasks.executors.errors.ExecutionError
 import io.infinitic.common.workers.registry.WorkerRegistry
 import io.infinitic.tasks.Retryable
 import io.infinitic.tasks.TaskContext
-import io.infinitic.tasks.TaskOptions
 
 data class TaskContextImpl(
     override val workerName: String,
@@ -46,7 +45,7 @@ data class TaskContextImpl(
     override val lastError: ExecutionError?,
     override val tags: Set<String>,
     override val meta: MutableMap<String, ByteArray>,
-    override val options: TaskOptions,
+    override val timeoutMillis: Long?,
     override val retryable: Retryable?,
     private val clientFactory: ClientFactory
 ) : TaskContext {

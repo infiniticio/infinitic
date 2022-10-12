@@ -30,14 +30,16 @@ import io.infinitic.common.utils.getEmptyConstructor
 import io.infinitic.common.utils.getInstance
 import io.infinitic.common.workers.config.RetryPolicy
 import io.infinitic.tasks.tag.config.TaskTag
+import io.infinitic.workers.register.WorkerRegister
 import java.lang.reflect.Constructor
 
 data class Service(
     val name: String,
     val `class`: String? = null,
-    val concurrency: Int = 1,
-    var tagEngine: TaskTag? = null,
-    var retry: RetryPolicy? = null
+    val concurrency: Int = WorkerRegister.DEFAULT_CONCURRENCY,
+    val timeoutSeconds: Double? = WorkerRegister.DEFAULT_TASK_TIMEOUT,
+    var retry: RetryPolicy? = WorkerRegister.DEFAULT_TASK_RETRY_POLICY,
+    var tagEngine: TaskTag? = WorkerRegister.DEFAULT_TASK_TAG
 ) {
     private lateinit var _constructor: Constructor<out Any>
 
@@ -68,6 +70,10 @@ data class Service(
 
                 require(concurrency >= 0) {
                     "concurrency must be positive for task $name"
+                }
+
+                if (timeoutSeconds != null) {
+                    require(timeoutSeconds > 0) { "timeoutSeconds must be positive (service $name)" }
                 }
             }
         }

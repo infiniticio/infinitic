@@ -50,6 +50,7 @@ import io.infinitic.common.tasks.executors.messages.TaskExecutorMessage
 import io.infinitic.common.tasks.tags.SendToTaskTag
 import io.infinitic.common.tasks.tags.messages.RemoveTagFromTask
 import io.infinitic.common.tasks.tags.messages.TaskTagMessage
+import io.infinitic.common.workers.registry.RegisteredService
 import io.infinitic.common.workers.registry.WorkerRegistry
 import io.infinitic.common.workflows.data.methodRuns.MethodRunId
 import io.infinitic.common.workflows.data.workflows.WorkflowId
@@ -57,16 +58,17 @@ import io.infinitic.common.workflows.data.workflows.WorkflowName
 import io.infinitic.common.workflows.engine.SendToWorkflowEngine
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
 import io.infinitic.exceptions.tasks.ClassNotFoundException
-import io.infinitic.exceptions.tasks.MaxRunDurationException
 import io.infinitic.exceptions.tasks.NoMethodFoundWithParameterCountException
 import io.infinitic.exceptions.tasks.NoMethodFoundWithParameterTypesException
+import io.infinitic.exceptions.tasks.TimeoutTaskException
 import io.infinitic.exceptions.tasks.TooManyMethodsFoundWithParameterCountException
-import io.infinitic.tasks.TaskOptions
 import io.infinitic.tasks.executor.samples.ServiceImplService
 import io.infinitic.tasks.executor.samples.SimpleServiceWithBuggyRetry
 import io.infinitic.tasks.executor.samples.SimpleServiceWithContext
 import io.infinitic.tasks.executor.samples.SimpleServiceWithRetry
-import io.infinitic.tasks.executor.samples.SimpleServiceWithTimeout
+import io.infinitic.tasks.executor.samples.SimpleServiceWithTimeoutOnClass
+import io.infinitic.tasks.executor.samples.SimpleServiceWithTimeoutOnMethod
+import io.infinitic.tasks.executor.samples.SimpleServiceWithTimeoutOnRegistry
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
 import io.mockk.CapturingSlot
@@ -78,7 +80,6 @@ import io.mockk.just
 import io.mockk.mockk
 import io.mockk.slot
 import kotlinx.coroutines.coroutineScope
-import java.time.Duration
 import java.util.concurrent.CopyOnWriteArrayList
 import kotlin.reflect.KClass
 import io.infinitic.common.clients.messages.TaskCompleted as TaskCompletedClient
@@ -105,11 +106,11 @@ class TaskExecutorTests : StringSpec({
         mockSendToClient(clientMessage),
         mockClientFactory
     )
+    val service = RegisteredService(1, { ServiceImplService() }, null, null)
 
     // ensure slots are emptied between each test
     beforeTest {
         clearMocks(workerRegistry)
-        every { workerRegistry.getServiceRetryable(ServiceName("task")) } returns null
         after.clear()
         taskExecutorMessage.clear()
         taskTagMessages.clear()
@@ -118,7 +119,7 @@ class TaskExecutorTests : StringSpec({
     }
 
     "Task executed without waiting client neither workflow should not send message" {
-        every { workerRegistry.getServiceInstance(ServiceName("task")) } returns ServiceImplService()
+        every { workerRegistry.getRegisteredService(ServiceName("task")) } returns service
         val input = arrayOf(3, 3)
         val types = listOf(Int::class.java.name, Int::class.java.name)
         // with
@@ -135,7 +136,7 @@ class TaskExecutorTests : StringSpec({
     }
 
     "Task executed with waiting client should send message to it" {
-        every { workerRegistry.getServiceInstance(ServiceName("task")) } returns ServiceImplService()
+        every { workerRegistry.getRegisteredService(ServiceName("task")) } returns service
         val input = arrayOf(3, 3)
         val types = listOf(Int::class.java.name, Int::class.java.name)
         // with
@@ -153,7 +154,7 @@ class TaskExecutorTests : StringSpec({
     }
 
     "Task executed with workflow should send message to it" {
-        every { workerRegistry.getServiceInstance(ServiceName("task")) } returns ServiceImplService()
+        every { workerRegistry.getRegisteredService(ServiceName("task")) } returns service
         val input = arrayOf(3, 3)
         val types = listOf(Int::class.java.name, Int::class.java.name)
         // with
@@ -170,7 +171,7 @@ class TaskExecutorTests : StringSpec({
     }
 
     "Task executed with waiting client and workflow should send message to them" {
-        every { workerRegistry.getServiceInstance(ServiceName("task")) } returns ServiceImplService()
+        every { workerRegistry.getRegisteredService(ServiceName("task")) } returns service
         val input = arrayOf(3, 3)
         val types = listOf(Int::class.java.name, Int::class.java.name)
         // with
@@ -187,7 +188,7 @@ class TaskExecutorTests : StringSpec({
     }
 
     "Should be able to run an explicit method with 2 parameters" {
-        every { workerRegistry.getServiceInstance(ServiceName("task")) } returns ServiceImplService()
+        every { workerRegistry.getRegisteredService(ServiceName("task")) } returns service
         val input = arrayOf(3, "3")
         val types = listOf(Int::class.java.name, String::class.java.name)
         // with
@@ -204,7 +205,7 @@ class TaskExecutorTests : StringSpec({
     }
 
     "Should be able to run an explicit method with 2 parameters without parameterTypes" {
-        every { workerRegistry.getServiceInstance(ServiceName("task")) } returns ServiceImplService()
+        every { workerRegistry.getRegisteredService(ServiceName("task")) } returns service
         val input = arrayOf(4, "3")
         val types = null
         val msg = getExecuteTask("other", input, types)
@@ -220,7 +221,7 @@ class TaskExecutorTests : StringSpec({
     }
 
     "Should throw ClassNotFoundException when trying to process an unknown task" {
-        every { workerRegistry.getServiceInstance(ServiceName("task")) } throws ClassNotFoundException("task")
+        every { workerRegistry.getRegisteredService(ServiceName("task")) } throws ClassNotFoundException("task")
         val input = arrayOf(2, "3")
         val types = listOf(Int::class.java.name, String::class.java.name)
         val msg = getExecuteTask("unknown", input, types)
@@ -236,7 +237,7 @@ class TaskExecutorTests : StringSpec({
     }
 
     "Should throw NoMethodFoundWithParameterTypes when trying to process an unknown method" {
-        every { workerRegistry.getServiceInstance(ServiceName("task")) } returns ServiceImplService()
+        every { workerRegistry.getRegisteredService(ServiceName("task")) } returns service
         val input = arrayOf(2, "3")
         val types = listOf(Int::class.java.name, String::class.java.name)
         // with
@@ -253,7 +254,7 @@ class TaskExecutorTests : StringSpec({
     }
 
     "Should throw NoMethodFoundWithParameterCount when trying to process an unknown method without parameterTypes" {
-        every { workerRegistry.getServiceInstance(ServiceName("task")) } returns ServiceImplService()
+        every { workerRegistry.getRegisteredService(ServiceName("task")) } returns service
         val input = arrayOf(2, "3")
         // with
         val msg = getExecuteTask("unknown", input, null)
@@ -269,7 +270,7 @@ class TaskExecutorTests : StringSpec({
     }
 
     "Should throw TooManyMethodsFoundWithParameterCount when trying to process an unknown method without parameterTypes" {
-        every { workerRegistry.getServiceInstance(ServiceName("task")) } returns ServiceImplService()
+        every { workerRegistry.getRegisteredService(ServiceName("task")) } returns service
         val input = arrayOf(2, "3")
         // with
         val msg = getExecuteTask("handle", input, null)
@@ -285,7 +286,7 @@ class TaskExecutorTests : StringSpec({
     }
 
     "Should retry with correct exception" {
-        every { workerRegistry.getServiceInstance(ServiceName("task")) } returns SimpleServiceWithRetry()
+        every { workerRegistry.getRegisteredService(ServiceName("task")) } returns service.copy(factory = { SimpleServiceWithRetry() })
         val input = arrayOf(2, "3")
         // with
         val msg = getExecuteTask("handle", input, null)
@@ -305,7 +306,7 @@ class TaskExecutorTests : StringSpec({
     }
 
     "Should throw when getRetryDelay throw an exception" {
-        every { workerRegistry.getServiceInstance(ServiceName("task")) } returns SimpleServiceWithBuggyRetry()
+        every { workerRegistry.getRegisteredService(ServiceName("task")) } returns service.copy(factory = { SimpleServiceWithBuggyRetry() })
         val input = arrayOf(2, "3")
         // with
         val msg = getExecuteTask("handle", input, null)
@@ -321,7 +322,7 @@ class TaskExecutorTests : StringSpec({
     }
 
     "Should be able to access context from task" {
-        every { workerRegistry.getServiceInstance(ServiceName("task")) } returns SimpleServiceWithContext()
+        every { workerRegistry.getRegisteredService(ServiceName("task")) } returns service.copy(factory = { SimpleServiceWithContext() })
         val input = arrayOf(2, "3")
         // with
         val msg = getExecuteTask("handle", input, null)
@@ -336,8 +337,11 @@ class TaskExecutorTests : StringSpec({
         taskTagMessages[1] shouldBe getRemoveTag(msg, "bar")
     }
 
-    "Should throw ProcessingTimeout if processing time is too long" {
-        every { workerRegistry.getServiceInstance(ServiceName("task")) } returns SimpleServiceWithTimeout()
+    "Should throw TimeoutTaskException with timeout from Registry" {
+        every { workerRegistry.getRegisteredService(ServiceName("task")) } returns service.copy(
+            factory = { SimpleServiceWithTimeoutOnRegistry() },
+            timeoutMillis = 100
+        )
         val input = arrayOf(2, "3")
         val types = listOf(Int::class.java.name, String::class.java.name)
         // with
@@ -346,8 +350,46 @@ class TaskExecutorTests : StringSpec({
         coroutineScope { taskExecutor.handle(msg) }
         // then
         taskExecutorMessage.isCaptured shouldBe false
-        checkClientException(clientMessage, msg, MaxRunDurationException::class)
-        checkWorkflowException(workflowEngineMessage, msg, MaxRunDurationException::class)
+        checkClientException(clientMessage, msg, TimeoutTaskException::class)
+        checkWorkflowException(workflowEngineMessage, msg, TimeoutTaskException::class)
+        taskTagMessages.size shouldBe 2
+        taskTagMessages[0] shouldBe getRemoveTag(msg, "foo")
+        taskTagMessages[1] shouldBe getRemoveTag(msg, "bar")
+    }
+
+    "Should throw TimeoutTaskException with timeout from method Annotation" {
+        every { workerRegistry.getRegisteredService(ServiceName("task")) } returns service.copy(
+            factory = { SimpleServiceWithTimeoutOnMethod() }
+        )
+        val input = arrayOf(2, "3")
+        val types = listOf(Int::class.java.name, String::class.java.name)
+        // with
+        val msg = getExecuteTask("handle", input, types)
+        // when
+        coroutineScope { taskExecutor.handle(msg) }
+        // then
+        taskExecutorMessage.isCaptured shouldBe false
+        checkClientException(clientMessage, msg, TimeoutTaskException::class)
+        checkWorkflowException(workflowEngineMessage, msg, TimeoutTaskException::class)
+        taskTagMessages.size shouldBe 2
+        taskTagMessages[0] shouldBe getRemoveTag(msg, "foo")
+        taskTagMessages[1] shouldBe getRemoveTag(msg, "bar")
+    }
+
+    "Should throw TimeoutTaskException with timeout from class Annotation" {
+        every { workerRegistry.getRegisteredService(ServiceName("task")) } returns service.copy(
+            factory = { SimpleServiceWithTimeoutOnClass() }
+        )
+        val input = arrayOf(2, "3")
+        val types = listOf(Int::class.java.name, String::class.java.name)
+        // with
+        val msg = getExecuteTask("handle", input, types)
+        // when
+        coroutineScope { taskExecutor.handle(msg) }
+        // then
+        taskExecutorMessage.isCaptured shouldBe false
+        checkClientException(clientMessage, msg, TimeoutTaskException::class)
+        checkWorkflowException(workflowEngineMessage, msg, TimeoutTaskException::class)
         taskTagMessages.size shouldBe 2
         taskTagMessages[0] shouldBe getRemoveTag(msg, "foo")
         taskTagMessages[1] shouldBe getRemoveTag(msg, "bar")
@@ -414,7 +456,6 @@ private fun getExecuteTask(method: String, input: Array<out Any?>, types: List<S
     methodName = MethodName(method),
     methodParameterTypes = types?.let { MethodParameterTypes(it) },
     methodParameters = MethodParameters.from(*input),
-    taskOptions = TaskOptions(maxRunDuration = Duration.ofMillis(200)),
     taskTags = setOf(TaskTag("foo"), TaskTag("bar")),
     taskMeta = TaskMeta(),
     emitterName = clientName

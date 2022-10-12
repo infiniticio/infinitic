@@ -108,7 +108,7 @@ data class WorkerConfig(
             service.tagEngine?.let {
                 it.storage = it.storage ?: storage
                 it.cache = it.cache ?: cache
-                if (it.default) it.concurrency = service.concurrency
+                if (it.isDefault) it.concurrency = service.concurrency
             }
         }
 
@@ -119,12 +119,12 @@ data class WorkerConfig(
             workflow.tagEngine?.let {
                 it.storage = it.storage ?: storage
                 it.cache = it.cache ?: cache
-                if (it.default) it.concurrency = workflow.concurrency
+                if (it.isDefault) it.concurrency = workflow.concurrency
             }
             workflow.workflowEngine?.let {
                 it.storage = it.storage ?: storage
                 it.cache = it.cache ?: cache
-                if (it.default) it.concurrency = workflow.concurrency
+                if (it.isDefault) it.concurrency = workflow.concurrency
             }
         }
     }

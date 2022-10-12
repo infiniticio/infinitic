@@ -43,7 +43,6 @@ import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.data.workflows.WorkflowMeta
 import io.infinitic.common.workflows.data.workflows.WorkflowName
 import io.infinitic.common.workflows.data.workflows.WorkflowTag
-import io.infinitic.tasks.TaskOptions
 import io.infinitic.workflows.WorkflowOptions
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -65,8 +64,7 @@ data class DispatchTaskCommand(
     val methodParameterTypes: MethodParameterTypes,
     val methodParameters: MethodParameters,
     val taskTags: Set<TaskTag>,
-    val taskMeta: TaskMeta,
-    val taskOptions: TaskOptions
+    val taskMeta: TaskMeta
 ) : Command() {
     override fun isSameThan(other: Command): Boolean {
         if (this === other) return true

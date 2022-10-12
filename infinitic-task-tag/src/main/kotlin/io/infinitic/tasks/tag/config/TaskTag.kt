@@ -33,7 +33,7 @@ data class TaskTag(
     var storage: Storage? = null,
     var cache: Cache? = null
 ) {
-    var default: Boolean = false
+    var isDefault: Boolean = false
 
     init {
         require(concurrency >= 0) { "concurrency must be positive" }

@@ -23,21 +23,11 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.exceptions.tasks
+package io.infinitic.workflows
 
-import io.infinitic.exceptions.RunException
-import io.infinitic.tasks.TaskOptions
-import java.time.Duration
+import kotlinx.serialization.Serializable
 
-sealed class TaskRunException(
-    msg: String,
-    help: String
-) : RunException("$msg.\n$help")
-
-class MaxRunDurationException(
-    klass: String,
-    duration: Duration
-) : TaskRunException(
-    msg = "The processing of task \"$klass\" took more than ${duration.toMillis()} milliseconds",
-    help = "You can increase this constraint in the task options ${TaskOptions::maxRunDuration}"
+@Serializable
+data class DeferredOptions(
+    val timeoutSeconds: Double? = null
 )

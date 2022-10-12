@@ -329,7 +329,6 @@ internal class WorkflowDispatcherImpl(
             methodParameterTypes = handler.methodParameterTypes,
             methodName = handler.methodName,
             taskTags = handler.taskTags,
-            taskOptions = handler.taskOptions,
             taskMeta = handler.taskMeta
         ),
         CommandSimpleName(handler.simpleName)

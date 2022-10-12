@@ -62,8 +62,5 @@ object Task {
     val meta get() = context.get().meta
 
     @JvmStatic
-    val options get() = context.get().options
-
-    @JvmStatic
     val client get() = context.get().client
 }

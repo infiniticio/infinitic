@@ -28,12 +28,10 @@ package io.infinitic.common.proxies
 import io.infinitic.common.tasks.data.ServiceName
 import io.infinitic.common.tasks.data.TaskMeta
 import io.infinitic.common.tasks.data.TaskTag
-import io.infinitic.tasks.TaskOptions
 
 class NewServiceProxyHandler<K : Any>(
     override val klass: Class<K>,
     val taskTags: Set<TaskTag>,
-    val taskOptions: TaskOptions,
     val taskMeta: TaskMeta,
     override val dispatcherFn: () -> ProxyDispatcher
 ) : ProxyHandler<K>(klass, dispatcherFn) {

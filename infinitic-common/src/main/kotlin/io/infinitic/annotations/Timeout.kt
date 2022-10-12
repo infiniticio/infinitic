@@ -23,14 +23,17 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.tasks
+package io.infinitic.annotations
 
-import io.infinitic.common.serDe.kserializer.DurationSerializer
-import kotlinx.serialization.Serializable
-import java.time.Duration
+import java.util.concurrent.TimeUnit
 
-@Serializable
-data class TaskOptions(
-    @Serializable(with = DurationSerializer::class)
-    val maxRunDuration: Duration? = null
-)
+/**
+ * Use this annotation to define a timeout duration for tasks
+ */
+@Target(AnnotationTarget.CLASS, AnnotationTarget.FUNCTION)
+annotation class Timeout(val of: Long, val unit: TimeUnit)
+
+/**
+ * Get seconds
+ */
+fun Timeout.getMillis() = TimeUnit.MILLISECONDS.convert(of, unit)
