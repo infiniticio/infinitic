@@ -57,7 +57,6 @@ import io.infinitic.common.workflows.data.workflows.WorkflowName
 import io.infinitic.common.workflows.data.workflows.WorkflowReturnValue
 import io.infinitic.common.workflows.data.workflows.WorkflowTag
 import io.infinitic.workflows.DeferredStatus
-import io.infinitic.workflows.WorkflowOptions
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
@@ -92,7 +91,6 @@ data class DispatchWorkflow(
     val methodName: MethodName,
     val methodParameters: MethodParameters,
     val methodParameterTypes: MethodParameterTypes?,
-    val workflowOptions: WorkflowOptions,
     val workflowTags: Set<WorkflowTag>,
     val workflowMeta: WorkflowMeta,
     var parentWorkflowName: WorkflowName?,

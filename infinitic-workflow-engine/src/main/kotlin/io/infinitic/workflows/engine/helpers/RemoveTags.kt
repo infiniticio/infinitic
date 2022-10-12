@@ -23,31 +23,22 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.workflows.engine.handlers
+package io.infinitic.workflows.engine.helpers
 
-import io.infinitic.common.clients.messages.MethodRunUnknown
-import io.infinitic.common.workflows.engine.messages.WaitWorkflow
 import io.infinitic.common.workflows.engine.state.WorkflowState
+import io.infinitic.common.workflows.tags.messages.RemoveTagFromWorkflow
 import io.infinitic.workflows.engine.output.WorkflowEngineOutput
-import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 
-internal fun CoroutineScope.waitWorkflow(
-    output: WorkflowEngineOutput,
-    state: WorkflowState,
-    message: WaitWorkflow
-) {
-
-    when (val methodRun = state.getMethodRun(message.methodRunId)) {
-        null -> {
-            val methodRunUnknown = MethodRunUnknown(
-                message.emitterName,
-                message.workflowId,
-                message.methodRunId,
-                output.clientName
-            )
-            launch { output.sendEventsToClient(methodRunUnknown) }
-        }
-        else -> methodRun.waitingClients.add(message.emitterName)
+internal suspend fun removeTags(output: WorkflowEngineOutput, state: WorkflowState) = coroutineScope {
+    state.workflowTags.map {
+        val removeTagFromWorkflow = RemoveTagFromWorkflow(
+            workflowName = state.workflowName,
+            workflowTag = it,
+            workflowId = state.workflowId,
+            emitterName = output.clientName
+        )
+        launch { output.sendToWorkflowTag(removeTagFromWorkflow) }
     }
 }

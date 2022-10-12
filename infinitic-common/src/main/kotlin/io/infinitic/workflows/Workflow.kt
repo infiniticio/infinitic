@@ -63,9 +63,6 @@ abstract class Workflow {
     lateinit var meta: Map<String, ByteArray>
 
     @Ignore
-    lateinit var options: WorkflowOptions
-
-    @Ignore
     lateinit var dispatcher: WorkflowDispatcher
 
     /**
@@ -89,12 +86,10 @@ abstract class Workflow {
     protected fun <T> newWorkflow(
         klass: Class<out T>,
         tags: Set<String>? = null,
-        options: WorkflowOptions? = null,
         meta: Map<String, ByteArray>? = null
     ): T = NewWorkflowProxyHandler(
         klass = klass,
         workflowTags = tags?.map { WorkflowTag(it) }?.toSet() ?: setOf(),
-        workflowOptions = options ?: WorkflowOptions(),
         workflowMeta = WorkflowMeta(meta ?: mapOf())
     ) { dispatcher }.stub()
 

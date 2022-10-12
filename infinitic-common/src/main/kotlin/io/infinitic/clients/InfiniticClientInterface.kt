@@ -37,7 +37,6 @@ import io.infinitic.workflows.Consumer7
 import io.infinitic.workflows.Consumer8
 import io.infinitic.workflows.Consumer9
 import io.infinitic.workflows.DeferredStatus
-import io.infinitic.workflows.WorkflowOptions
 import java.io.Closeable
 import java.util.concurrent.CompletableFuture
 
@@ -65,28 +64,13 @@ interface InfiniticClientInterface : Closeable {
      *
      *  @property klass the interface of a workflow
      *  @property tags the workflow's tags
-     *  @property options the workflow's options
      *  @property meta the workflow's meta
      */
     fun <T : Any> newWorkflow(
         klass: Class<out T>,
         tags: Set<String>? = null,
-        options: WorkflowOptions? = null,
         meta: Map<String, ByteArray>?
     ): T
-
-    /**
-     *  Create a stub for a new workflow
-     *
-     *  @property klass the interface of a workflow
-     *  @property tags the workflow's tags
-     *  @property options the workflow's options
-     */
-    fun <T : Any> newWorkflow(
-        klass: Class<out T>,
-        tags: Set<String>? = null,
-        options: WorkflowOptions? = null
-    ): T = newWorkflow(klass, tags, options, null)
 
     /**
      *  Create a stub for a new workflow
@@ -97,7 +81,7 @@ interface InfiniticClientInterface : Closeable {
     fun <T : Any> newWorkflow(
         klass: Class<out T>,
         tags: Set<String>? = null
-    ): T = newWorkflow(klass, tags, null, null)
+    ): T = newWorkflow(klass, tags, null)
 
     /**
      *  Create a stub for a new workflow
@@ -106,7 +90,7 @@ interface InfiniticClientInterface : Closeable {
      */
     fun <T : Any> newWorkflow(
         klass: Class<out T>
-    ): T = newWorkflow(klass, null, null, null)
+    ): T = newWorkflow(klass, null, null)
 
     /**
      *  Create a stub for an existing workflow (targeted by id)

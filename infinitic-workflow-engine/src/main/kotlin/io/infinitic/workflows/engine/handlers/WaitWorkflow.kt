@@ -23,16 +23,31 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.workflows
+package io.infinitic.workflows.engine.handlers
 
-import kotlinx.serialization.Serializable
+import io.infinitic.common.clients.messages.MethodRunUnknown
+import io.infinitic.common.workflows.engine.messages.WaitWorkflow
+import io.infinitic.common.workflows.engine.state.WorkflowState
+import io.infinitic.workflows.engine.output.WorkflowEngineOutput
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.launch
 
-@Serializable
-data class WorkflowOptions(
-    val workflowChangeCheckMode: WorkflowChangeCheckMode = WorkflowChangeCheckMode.STRICT
-)
+internal fun CoroutineScope.waitWorkflow(
+    output: WorkflowEngineOutput,
+    state: WorkflowState,
+    message: WaitWorkflow
+) {
+    when (val methodRun = state.getMethodRun(message.methodRunId)) {
+        null -> {
+            val methodRunUnknown = MethodRunUnknown(
+                message.emitterName,
+                message.workflowId,
+                message.methodRunId,
+                output.clientName
+            )
+            launch { output.sendEventsToClient(methodRunUnknown) }
+        }
 
-@Serializable
-enum class WorkflowChangeCheckMode {
-    NONE, SIMPLE, STRICT
+        else -> methodRun.waitingClients.add(message.emitterName)
+    }
 }

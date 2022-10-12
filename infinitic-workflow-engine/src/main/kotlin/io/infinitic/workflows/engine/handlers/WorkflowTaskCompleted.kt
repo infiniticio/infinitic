@@ -165,7 +165,7 @@ internal fun CoroutineScope.workflowTaskCompleted(
                 childWorkflowReturnValue = WorkflowReturnValue(
                     workflowId = state.workflowId,
                     methodRunId = methodRun.methodRunId,
-                    returnValue = workflowTaskOutput.methodReturnValue!!,
+                    returnValue = workflowTaskOutput.methodReturnValue!!
                 ),
                 emitterName = output.clientName
             )
@@ -269,7 +269,6 @@ private fun CoroutineScope.dispatchWorkflow(
                 methodName = command.methodName,
                 methodParameters = command.methodParameters,
                 methodParameterTypes = command.methodParameterTypes,
-                workflowOptions = command.workflowOptions,
                 workflowTags = command.workflowTags,
                 workflowMeta = command.workflowMeta,
                 parentWorkflowName = state.workflowName,
@@ -291,6 +290,7 @@ private fun CoroutineScope.dispatchWorkflow(
                 launch { output.sendToWorkflowTag(addTagToWorkflow) }
             }
         }
+
         1 -> {
             // dispatch workflow message with customId tag
             val dispatchWorkflowByCustomId = DispatchWorkflowByCustomId(
@@ -300,7 +300,6 @@ private fun CoroutineScope.dispatchWorkflow(
                 methodName = command.methodName,
                 methodParameters = command.methodParameters,
                 methodParameterTypes = command.methodParameterTypes,
-                workflowOptions = command.workflowOptions,
                 workflowTags = command.workflowTags,
                 workflowMeta = command.workflowMeta,
                 parentWorkflowName = state.workflowName,
@@ -353,11 +352,13 @@ private fun CoroutineScope.dispatchMethod(
                 state.workflowId ->
                     // dispatch method on this workflow
                     bufferedMessages.add(dispatchMethodRun)
+
                 else ->
                     // dispatch method on another workflow
                     launch { output.sendToWorkflowEngine(dispatchMethodRun) }
             }
         }
+
         command.workflowTag != null -> {
             if (state.workflowTags.contains(command.workflowTag!!)) {
                 // dispatch method on this workflow
@@ -380,6 +381,7 @@ private fun CoroutineScope.dispatchMethod(
             // tag engine must ignore this message if parentWorkflowId has the provided tag
             launch { output.sendToWorkflowTag(dispatchMethodByTag) }
         }
+
         else -> thisShouldNotHappen()
     }
 }
@@ -414,11 +416,13 @@ private fun CoroutineScope.sendSignal(
                 state.workflowId ->
                     // dispatch signal on current workflow
                     bufferedMessages.add(sendToChannel)
+
                 else ->
                     // dispatch signal on another workflow
                     launch { output.sendToWorkflowEngine(sendToChannel) }
             }
         }
+
         command.workflowTag != null -> {
             if (state.workflowTags.contains(command.workflowTag!!)) {
                 val sendToChannel = getSendSignal(output.clientName, newCommand.commandId, command)
@@ -437,6 +441,7 @@ private fun CoroutineScope.sendSignal(
             )
             launch { output.sendToWorkflowTag(sendSignalByTag) }
         }
+
         else -> thisShouldNotHappen()
     }
 }

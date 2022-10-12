@@ -43,7 +43,6 @@ import io.infinitic.common.workflows.data.workflows.WorkflowMeta
 import io.infinitic.common.workflows.data.workflows.WorkflowTag
 import io.infinitic.exceptions.clients.InvalidStubException
 import io.infinitic.workflows.DeferredStatus
-import io.infinitic.workflows.WorkflowOptions
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -132,12 +131,10 @@ abstract class InfiniticClientAbstract : InfiniticClientInterface {
     override fun <T : Any> newWorkflow(
         klass: Class<out T>,
         tags: Set<String>?,
-        options: WorkflowOptions?,
         meta: Map<String, ByteArray>?
     ): T = NewWorkflowProxyHandler(
         klass = klass,
         workflowTags = tags?.map { WorkflowTag(it) }?.toSet() ?: setOf(),
-        workflowOptions = options ?: WorkflowOptions(),
         workflowMeta = WorkflowMeta(meta ?: mapOf())
     ) { dispatcher }.stub()
 

@@ -43,7 +43,6 @@ import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.data.workflows.WorkflowMeta
 import io.infinitic.common.workflows.data.workflows.WorkflowName
 import io.infinitic.common.workflows.data.workflows.WorkflowTag
-import io.infinitic.workflows.WorkflowOptions
 import kotlinx.serialization.Serializable
 
 @Serializable
@@ -53,7 +52,6 @@ data class WorkflowTaskParameters(
     val taskId: TaskId,
     val workflowId: WorkflowId,
     val workflowName: WorkflowName,
-    val workflowOptions: WorkflowOptions,
     val workflowTags: Set<WorkflowTag>,
     val workflowMeta: WorkflowMeta,
     val workflowPropertiesHashValue: Map<PropertyHash, PropertyValue>,

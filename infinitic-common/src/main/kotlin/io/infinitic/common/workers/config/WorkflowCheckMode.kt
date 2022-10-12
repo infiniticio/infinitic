@@ -23,22 +23,9 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.workflows.engine.helpers
+package io.infinitic.common.workers.config
 
-import io.infinitic.common.workflows.engine.state.WorkflowState
-import io.infinitic.common.workflows.tags.messages.RemoveTagFromWorkflow
-import io.infinitic.workflows.engine.output.WorkflowEngineOutput
-import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.launch
-
-internal suspend fun removeTags(output: WorkflowEngineOutput, state: WorkflowState) = coroutineScope {
-    state.workflowTags.map {
-        val removeTagFromWorkflow = RemoveTagFromWorkflow(
-            workflowName = state.workflowName,
-            workflowTag = it,
-            workflowId = state.workflowId,
-            emitterName = output.clientName,
-        )
-        launch { output.sendToWorkflowTag(removeTagFromWorkflow) }
-    }
+@Suppress("EnumEntryName")
+enum class WorkflowCheckMode {
+    none, simple, strict
 }

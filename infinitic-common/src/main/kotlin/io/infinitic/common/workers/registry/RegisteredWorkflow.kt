@@ -26,6 +26,7 @@
 package io.infinitic.common.workers.registry
 
 import io.infinitic.common.workers.WorkflowFactory
+import io.infinitic.common.workers.config.WorkflowCheckMode
 import io.infinitic.tasks.WithRetry
 import io.infinitic.tasks.WithTimeout
 
@@ -33,5 +34,6 @@ data class RegisteredWorkflow(
     val concurrency: Int,
     val factory: WorkflowFactory,
     val withTimeout: WithTimeout?,
-    val withRetry: WithRetry?
+    val withRetry: WithRetry?,
+    val checkMode: WorkflowCheckMode
 )

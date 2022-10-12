@@ -28,6 +28,7 @@ package io.infinitic.workers.register
 import io.infinitic.common.workers.ServiceFactory
 import io.infinitic.common.workers.WorkflowFactory
 import io.infinitic.common.workers.config.RetryExponentialBackoff
+import io.infinitic.common.workers.config.WorkflowCheckMode
 import io.infinitic.common.workers.registry.WorkerRegistry
 import io.infinitic.tasks.WithRetry
 import io.infinitic.tasks.WithTimeout
@@ -45,6 +46,7 @@ interface WorkerRegister {
         val DEFAULT_TASK_TIMEOUT = null
         val DEFAULT_TASK_RETRY_POLICY = RetryExponentialBackoff().apply { isDefault = true }
         val DEFAULT_WORKFLOW_TASK_RETRY_POLICY = null
+        val DEFAULT_WORKFLOW_CHECK_MODE = WorkflowCheckMode.simple
         val DEFAULT_TASK_TAG = TaskTag().apply { isDefault = true }
         val DEFAULT_WORKFLOW_ENGINE = WorkflowEngine().apply { isDefault = true }
         val DEFAULT_WORKFLOW_TAG = WorkflowTag().apply { isDefault = true }
@@ -71,6 +73,7 @@ interface WorkerRegister {
         concurrency: Int = DEFAULT_CONCURRENCY,
         timeout: WithTimeout? = DEFAULT_WORKFLOW_TIMEOUT,
         retry: WithRetry? = DEFAULT_WORKFLOW_TASK_RETRY_POLICY,
+        checkMode: WorkflowCheckMode = DEFAULT_WORKFLOW_CHECK_MODE,
         engine: WorkflowEngine? = DEFAULT_WORKFLOW_ENGINE,
         tagEngine: WorkflowTag? = DEFAULT_WORKFLOW_TAG
     )

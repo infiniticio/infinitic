@@ -183,7 +183,7 @@ class TaskExecutor(
 
     private fun parse(msg: ExecuteTask): TaskCommand {
         val service = when (msg.isWorkflowTask()) {
-            true -> WorkflowTaskImpl()
+            true -> WorkflowTaskImpl(workerRegistry.getRegisteredWorkflow(msg.workflowName!!).checkMode)
             false -> workerRegistry.getRegisteredService(msg.serviceName).factory()
         }
 

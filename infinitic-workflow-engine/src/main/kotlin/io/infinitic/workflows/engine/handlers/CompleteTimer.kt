@@ -33,9 +33,8 @@ import io.infinitic.common.workflows.data.timers.TimerId
 import io.infinitic.common.workflows.engine.messages.CompleteTimers
 import io.infinitic.common.workflows.engine.messages.TimerCompleted
 import io.infinitic.common.workflows.engine.state.WorkflowState
-import kotlinx.coroutines.CoroutineScope
 
-internal fun CoroutineScope.completeTimer(
+internal fun completeTimer(
     state: WorkflowState,
     message: CompleteTimers
 ) {
@@ -57,7 +56,7 @@ internal fun CoroutineScope.completeTimer(
                     emitterName = message.emitterName
                 )
                 // add fake message at the top of the messagesBuffer list
-                state.messagesBuffer.add(0, msg); Unit
+                state.messagesBuffer.add(0, msg)
             }
     }
 }

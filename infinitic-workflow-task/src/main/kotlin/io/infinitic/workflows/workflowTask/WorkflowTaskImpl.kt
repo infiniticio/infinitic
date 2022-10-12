@@ -28,6 +28,7 @@ package io.infinitic.workflows.workflowTask
 import io.infinitic.common.data.ClientName
 import io.infinitic.common.data.ReturnValue
 import io.infinitic.common.parser.getMethodPerNameAndParameters
+import io.infinitic.common.workers.config.WorkflowCheckMode
 import io.infinitic.common.workflows.data.properties.PropertyHash
 import io.infinitic.common.workflows.data.properties.PropertyName
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTask
@@ -41,7 +42,7 @@ import io.infinitic.workflows.Deferred
 import io.infinitic.workflows.setChannelNames
 import java.lang.reflect.InvocationTargetException
 
-class WorkflowTaskImpl : WorkflowTask {
+class WorkflowTaskImpl(private val checkMode: WorkflowCheckMode) : WorkflowTask {
 
     override fun handle(workflowTaskParameters: WorkflowTaskParameters): WorkflowTaskReturnValue {
         // get  instance workflow by name
@@ -65,9 +66,8 @@ class WorkflowTaskImpl : WorkflowTask {
             workflow.methodId = methodRun.methodRunId.toString()
             workflow.tags = workflowTags.map { it.tag }.toSet()
             workflow.meta = workflowMeta.map
-            workflow.options = workflowOptions
         }
-        val dispatcher = WorkflowDispatcherImpl(workflowTaskParameters)
+        val dispatcher = WorkflowDispatcherImpl(checkMode, workflowTaskParameters)
         workflow.dispatcher = dispatcher
 
         // define setProperties function

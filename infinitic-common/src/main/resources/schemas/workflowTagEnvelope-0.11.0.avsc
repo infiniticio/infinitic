@@ -66,21 +66,6 @@
           "items" : "string"
         } ]
       }, {
-        "name" : "workflowOptions",
-        "type" : {
-          "type" : "record",
-          "name" : "WorkflowOptions",
-          "namespace" : "io.infinitic.workflows",
-          "fields" : [ {
-            "name" : "workflowChangeCheckMode",
-            "type" : {
-              "type" : "enum",
-              "name" : "WorkflowChangeCheckMode",
-              "symbols" : [ "NONE", "SIMPLE", "STRICT" ]
-            }
-          } ]
-        }
-      }, {
         "name" : "workflowTags",
         "type" : {
           "type" : "array",

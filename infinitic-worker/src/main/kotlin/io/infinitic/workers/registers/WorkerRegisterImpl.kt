@@ -30,6 +30,7 @@ import io.infinitic.common.config.logger
 import io.infinitic.common.tasks.data.ServiceName
 import io.infinitic.common.workers.ServiceFactory
 import io.infinitic.common.workers.WorkflowFactory
+import io.infinitic.common.workers.config.WorkflowCheckMode
 import io.infinitic.common.workers.registry.RegisteredService
 import io.infinitic.common.workers.registry.RegisteredServiceTag
 import io.infinitic.common.workers.registry.RegisteredWorkflow
@@ -75,6 +76,7 @@ class WorkerRegisterImpl(private val workerConfig: WorkerConfig) : WorkerRegiste
                     w.concurrency,
                     w.timeoutInSeconds?.let { { it } },
                     w.retry,
+                    w.checkMode,
                     w.workflowEngine,
                     w.tagEngine
                 )
@@ -138,6 +140,7 @@ class WorkerRegisterImpl(private val workerConfig: WorkerConfig) : WorkerRegiste
         concurrency: Int,
         timeout: WithTimeout?,
         retry: WithRetry?,
+        checkMode: WorkflowCheckMode,
         engine: WorkflowEngine?,
         tagEngine: WorkflowTag?
     ) {
@@ -146,7 +149,7 @@ class WorkerRegisterImpl(private val workerConfig: WorkerConfig) : WorkerRegiste
         }
 
         val workflowName = WorkflowName(name)
-        registry.workflows[workflowName] = RegisteredWorkflow(concurrency, factory, timeout, retry)
+        registry.workflows[workflowName] = RegisteredWorkflow(concurrency, factory, timeout, retry, checkMode)
 
         when {
             // explicit null => do nothing

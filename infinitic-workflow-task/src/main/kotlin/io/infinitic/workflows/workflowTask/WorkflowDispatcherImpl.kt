@@ -36,6 +36,7 @@ import io.infinitic.common.proxies.ExistingWorkflowProxyHandler
 import io.infinitic.common.proxies.NewServiceProxyHandler
 import io.infinitic.common.proxies.NewWorkflowProxyHandler
 import io.infinitic.common.proxies.ProxyHandler
+import io.infinitic.common.workers.config.WorkflowCheckMode
 import io.infinitic.common.workflows.data.channels.ChannelFilter
 import io.infinitic.common.workflows.data.channels.ChannelName
 import io.infinitic.common.workflows.data.channels.ChannelType
@@ -72,7 +73,7 @@ import io.infinitic.exceptions.UnknownDeferredException
 import io.infinitic.exceptions.clients.InvalidChannelUsageException
 import io.infinitic.exceptions.clients.InvalidRunningTaskException
 import io.infinitic.exceptions.workflows.MultipleCustomIdException
-import io.infinitic.exceptions.workflows.WorkflowUpdatedException
+import io.infinitic.exceptions.workflows.WorkflowChangedException
 import io.infinitic.workflows.Channel
 import io.infinitic.workflows.Deferred
 import io.infinitic.workflows.DeferredStatus
@@ -83,6 +84,7 @@ import java.time.Duration as JavaDuration
 import java.time.Instant as JavaInstant
 
 internal class WorkflowDispatcherImpl(
+    private val workflowCheckMode: WorkflowCheckMode,
     private val workflowTaskParameters: WorkflowTaskParameters
 ) : WorkflowDispatcher {
 
@@ -156,7 +158,7 @@ internal class WorkflowDispatcherImpl(
                     else -> thisShouldNotHappen()
                 }
 
-                else -> throwCommandsUpdatedException(pastCommand, null)
+                else -> throwCommandsChangedException(pastCommand, null)
             }
         }
     }
@@ -353,7 +355,6 @@ internal class WorkflowDispatcherImpl(
                         methodParameterTypes = handler.methodParameterTypes,
                         methodParameters = handler.methodParameters,
                         workflowTags = handler.workflowTags,
-                        workflowOptions = handler.workflowOptions,
                         workflowMeta = handler.workflowMeta
                     ),
                     CommandSimpleName(handler.simpleName)
@@ -429,8 +430,8 @@ internal class WorkflowDispatcherImpl(
     private fun getPastCommandAtCurrentPosition(): PastCommand? = workflowTaskParameters.methodRun.pastCommands
         .find { it.commandPosition == methodRunPosition }
 
-    private fun throwCommandsUpdatedException(pastCommand: PastCommand?, newCommand: PastCommand?): Nothing {
-        val e = WorkflowUpdatedException(
+    private fun throwCommandsChangedException(pastCommand: PastCommand?, newCommand: PastCommand?): Nothing {
+        val e = WorkflowChangedException(
             "${workflowTaskParameters.workflowName}",
             "${workflowTaskParameters.methodRun.methodName}",
             "$methodRunPosition"
@@ -439,7 +440,7 @@ internal class WorkflowDispatcherImpl(
             """Workflow ${workflowTaskParameters.workflowId}:past and new commands are different
             |pastCommand = ${pastCommand?.command}
             |newCommand  = ${newCommand?.command}
-            |workflowChangeCheckMode = ${workflowTaskParameters.workflowOptions.workflowChangeCheckMode}
+            |workflowCheckMode = $workflowCheckMode
             """.trimMargin()
         }
         throw e
@@ -449,12 +450,8 @@ internal class WorkflowDispatcherImpl(
         // find pastCommand in current position
         val pastCommand = getPastCommandAtCurrentPosition()
         // if it exists, check it has not changed
-        if (pastCommand != null && !pastCommand.isSameThan(
-                newCommand,
-                workflowTaskParameters.workflowOptions.workflowChangeCheckMode
-            )
-        ) {
-            throwCommandsUpdatedException(pastCommand, newCommand)
+        if (pastCommand != null && !pastCommand.isSameThan(newCommand, workflowCheckMode)) {
+            throwCommandsChangedException(pastCommand, newCommand)
         }
 
         return pastCommand
@@ -471,7 +468,7 @@ internal class WorkflowDispatcherImpl(
 
         // if it exists, check it has not changed
         if (pastStep != null && !pastStep.isSameThan(newStep)) {
-            val e = WorkflowUpdatedException(
+            val e = WorkflowChangedException(
                 workflowTaskParameters.workflowName.name,
                 "${workflowTaskParameters.methodRun.methodName}",
                 "$methodRunPosition"

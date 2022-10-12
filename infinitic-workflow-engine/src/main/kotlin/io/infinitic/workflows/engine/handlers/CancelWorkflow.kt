@@ -56,8 +56,9 @@ internal fun CoroutineScope.cancelWorkflow(
             // clean state
             state.removeMethodRuns()
         }
+
         else -> {
-            state.getMethodRun(message.methodRunId!!)?. let { methodRun ->
+            state.getMethodRun(message.methodRunId!!)?.let { methodRun ->
                 cancelMethodRun(output, state, methodRun, message.reason)
 
                 // clean state
@@ -71,7 +72,7 @@ private fun CoroutineScope.cancelMethodRun(
     output: WorkflowEngineOutput,
     state: WorkflowState,
     methodRun: MethodRun,
-    reason: WorkflowCancellationReason,
+    reason: WorkflowCancellationReason
 ) {
     // inform waiting clients of cancellation
     methodRun.waitingClients.forEach {
@@ -94,7 +95,7 @@ private fun CoroutineScope.cancelMethodRun(
             childCanceledWorkflowError = CanceledWorkflowError(
                 workflowName = state.workflowName,
                 workflowId = state.workflowId,
-                methodRunId = methodRun.methodRunId,
+                methodRunId = methodRun.methodRunId
             ),
             emitterName = output.clientName
         )
@@ -116,6 +117,7 @@ private fun CoroutineScope.cancelMethodRun(
                         )
                         launch { output.sendToWorkflowEngine(cancelWorkflow) }
                     }
+
                     command.workflowTag != null -> {
                         val cancelWorkflowByTag = CancelWorkflowByTag(
                             workflowTag = command.workflowTag!!,
@@ -126,9 +128,11 @@ private fun CoroutineScope.cancelMethodRun(
                         )
                         launch { output.sendToWorkflowTag(cancelWorkflowByTag) }
                     }
+
                     else -> thisShouldNotHappen()
                 }
             }
+
             is DispatchWorkflowCommand -> {
                 val cancelWorkflow = CancelWorkflow(
                     workflowId = WorkflowId.from(it.commandId),
@@ -139,6 +143,7 @@ private fun CoroutineScope.cancelMethodRun(
                 )
                 launch { output.sendToWorkflowEngine(cancelWorkflow) }
             }
+
             else -> {
                 // TODO check this
                 // thisShouldNotHappen()

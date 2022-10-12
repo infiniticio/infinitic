@@ -48,7 +48,6 @@ internal fun CoroutineScope.dispatchWorkflowTask(
         taskId = TaskId(),
         workflowId = state.workflowId,
         workflowName = state.workflowName,
-        workflowOptions = state.workflowOptions,
         workflowTags = state.workflowTags,
         workflowMeta = state.workflowMeta,
         workflowPropertiesHashValue = state.propertiesHashValue, // TODO filterStore(state.propertyStore, listOf(methodRun))

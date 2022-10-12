@@ -26,6 +26,7 @@
 package io.infinitic.workers.config
 
 import io.infinitic.common.workers.config.RetryPolicy
+import io.infinitic.common.workers.config.WorkflowCheckMode
 import io.infinitic.workers.register.WorkerRegister
 import io.infinitic.workflows.engine.config.WorkflowEngine
 import io.infinitic.workflows.tag.config.WorkflowTag
@@ -38,6 +39,7 @@ data class Workflow(
     val concurrency: Int = WorkerRegister.DEFAULT_CONCURRENCY,
     val timeoutInSeconds: Double? = WorkerRegister.DEFAULT_WORKFLOW_TIMEOUT.getTimeoutInSeconds(),
     val retry: RetryPolicy? = WorkerRegister.DEFAULT_WORKFLOW_TASK_RETRY_POLICY,
+    val checkMode: WorkflowCheckMode = WorkerRegister.DEFAULT_WORKFLOW_CHECK_MODE,
     var tagEngine: WorkflowTag? = WorkerRegister.DEFAULT_WORKFLOW_TAG,
     var workflowEngine: WorkflowEngine? = WorkerRegister.DEFAULT_WORKFLOW_ENGINE
 ) {
