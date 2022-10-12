@@ -50,6 +50,7 @@ import io.infinitic.common.tasks.executors.messages.TaskExecutorMessage
 import io.infinitic.common.tasks.tags.SendToTaskTag
 import io.infinitic.common.tasks.tags.messages.RemoveTagFromTask
 import io.infinitic.common.tasks.tags.messages.TaskTagMessage
+import io.infinitic.common.workers.config.ExponentialBackoffRetry
 import io.infinitic.common.workers.registry.RegisteredService
 import io.infinitic.common.workers.registry.WorkerRegistry
 import io.infinitic.common.workflows.data.methodRuns.MethodRunId
@@ -379,7 +380,8 @@ class TaskExecutorTests : StringSpec({
     "Should throw TimeoutTaskException with timeout from Registry" {
         every { workerRegistry.getRegisteredService(ServiceName("task")) } returns service.copy(
             factory = { ServiceWithRegisteredTimeout() },
-            withTimeout = { 0.1 }
+            withTimeout = { 0.1 },
+            withRetry = ExponentialBackoffRetry(maximumRetries = 0)
         )
         val types = listOf(Int::class.java.name, String::class.java.name)
         // with
@@ -397,7 +399,8 @@ class TaskExecutorTests : StringSpec({
 
     "Should throw TimeoutTaskException with timeout from method Annotation" {
         every { workerRegistry.getRegisteredService(ServiceName("task")) } returns service.copy(
-            factory = { ServiceWithTimeoutOnMethod() }
+            factory = { ServiceWithTimeoutOnMethod() },
+            withRetry = ExponentialBackoffRetry(maximumRetries = 0)
         )
         val input = arrayOf(2, "3")
         val types = listOf(Int::class.java.name, String::class.java.name)
@@ -416,7 +419,8 @@ class TaskExecutorTests : StringSpec({
 
     "Should throw TimeoutTaskException with timeout from class Annotation" {
         every { workerRegistry.getRegisteredService(ServiceName("task")) } returns service.copy(
-            factory = { ServiceWithTimeoutOnClass() }
+            factory = { ServiceWithTimeoutOnClass() },
+            withRetry = ExponentialBackoffRetry(maximumRetries = 0)
         )
         val input = arrayOf(2, "3")
         val types = listOf(Int::class.java.name, String::class.java.name)

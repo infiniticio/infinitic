@@ -25,16 +25,12 @@
 
 package io.infinitic.tasks.executor.task
 
-import io.infinitic.tasks.WithRetry
-import io.infinitic.tasks.WithTimeout
 import java.lang.reflect.Method
 
 internal data class TaskCommand(
     val service: Any,
     val method: Method,
-    val parameters: Array<Any?>,
-    val withTimeout: WithTimeout?,
-    val withRetry: WithRetry?
+    val parameters: Array<Any?>
 ) {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
@@ -45,8 +41,6 @@ internal data class TaskCommand(
         if (service != other.service) return false
         if (method != other.method) return false
         if (!parameters.contentEquals(other.parameters)) return false
-        if (withTimeout != other.withTimeout) return false
-        if (withRetry != other.withRetry) return false
 
         return true
     }
@@ -55,8 +49,6 @@ internal data class TaskCommand(
         var result = service.hashCode()
         result = 31 * result + method.hashCode()
         result = 31 * result + parameters.contentHashCode()
-        result = 31 * result + (withTimeout?.hashCode() ?: 0)
-        result = 31 * result + (withRetry?.hashCode() ?: 0)
         return result
     }
 }

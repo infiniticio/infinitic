@@ -26,7 +26,7 @@
 package io.infinitic.workers.config
 
 import com.sksamuel.hoplite.ConfigException
-import io.infinitic.common.workers.config.RetryExponentialBackoff
+import io.infinitic.workers.register.WorkerRegister.Companion.DEFAULT_CONCURRENCY
 import io.infinitic.workers.samples.ServiceA
 import io.infinitic.workers.samples.WorkflowA
 import io.kotest.assertions.throwables.shouldThrow
@@ -100,19 +100,24 @@ class WorkerConfigTests : StringSpec({
         e.message!! shouldContain "class \"io.infinitic.workers.samples.NotAWorkflow\" must extend io.infinitic.workflows.Workflow"
     }
 
-    "default service retry policy should be default RetryExponentialBackoff" {
+    "checking default service config" {
         val config = WorkerConfig.fromResource("/config/services/instance.yml")
 
         config.retry shouldBe null
         config.services.size shouldBe 1
-        config.services[0].retry shouldBe RetryExponentialBackoff()
+        config.services[0].retry shouldBe null
+        config.services[0].timeoutInSeconds shouldBe null
+        config.services[0].concurrency shouldBe DEFAULT_CONCURRENCY
     }
 
-    "default workflow retry policy should be null" {
+    "checking default workflow config" {
         val config = WorkerConfig.fromResource("/config/workflows/instance.yml")
 
         config.retry shouldBe null
         config.workflows.size shouldBe 1
         config.workflows[0].retry shouldBe null
+        config.workflows[0].timeoutInSeconds shouldBe null
+        config.workflows[0].checkMode shouldBe null
+        config.workflows[0].concurrency shouldBe DEFAULT_CONCURRENCY
     }
 })

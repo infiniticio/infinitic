@@ -28,9 +28,9 @@ package io.infinitic.tests.context
 import io.infinitic.clients.InfiniticClient
 import io.infinitic.common.tasks.data.TaskMeta
 import io.infinitic.common.workflows.data.workflows.WorkflowMeta
+import io.infinitic.tasks.executor.TaskExecutor.Companion.DEFAULT_TASK_RETRY_POLICY
+import io.infinitic.tasks.executor.TaskExecutor.Companion.DEFAULT_TASK_TIMEOUT
 import io.infinitic.workers.InfiniticWorker
-import io.infinitic.workers.register.WorkerRegister.Companion.DEFAULT_TASK_RETRY_POLICY
-import io.infinitic.workers.register.WorkerRegister.Companion.DEFAULT_TASK_TIMEOUT
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
 

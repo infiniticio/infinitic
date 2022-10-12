@@ -42,7 +42,9 @@ import io.infinitic.workflows.Deferred
 import io.infinitic.workflows.setChannelNames
 import java.lang.reflect.InvocationTargetException
 
-class WorkflowTaskImpl(private val checkMode: WorkflowCheckMode) : WorkflowTask {
+class WorkflowTaskImpl : WorkflowTask {
+
+    lateinit var checkMode: WorkflowCheckMode
 
     override fun handle(workflowTaskParameters: WorkflowTaskParameters): WorkflowTaskReturnValue {
         // get  instance workflow by name

@@ -37,8 +37,8 @@ data class Service(
     val name: String,
     val `class`: String? = null,
     val concurrency: Int = WorkerRegister.DEFAULT_CONCURRENCY,
-    val timeoutInSeconds: Double? = WorkerRegister.DEFAULT_TASK_TIMEOUT,
-    var retry: RetryPolicy? = WorkerRegister.DEFAULT_TASK_RETRY_POLICY,
+    var timeoutInSeconds: Double? = null,
+    var retry: RetryPolicy? = null,
     var tagEngine: TaskTag? = WorkerRegister.DEFAULT_TASK_TAG
 ) {
     private lateinit var _constructor: Constructor<out Any>
@@ -73,7 +73,7 @@ data class Service(
                 }
 
                 if (timeoutInSeconds != null) {
-                    require(timeoutInSeconds > 0) { "${::timeoutInSeconds.name} must be positive (service $name)" }
+                    require(timeoutInSeconds!! > 0) { "${::timeoutInSeconds.name} must be positive (service $name)" }
                 }
             }
         }

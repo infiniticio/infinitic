@@ -63,6 +63,11 @@ data class WorkerConfig(
     override var cache: Cache = Cache(),
 
     /**
+     * Workflows configuration
+     */
+    val workflows: List<Workflow> = listOf(),
+
+    /**
      * Services configuration
      */
     val services: List<Service> = listOf(),
@@ -73,9 +78,9 @@ data class WorkerConfig(
     val retry: RetryPolicy? = null,
 
     /**
-     * Workflows configuration
+     * Default task timeout in seconds
      */
-    val workflows: List<Workflow> = listOf()
+    val timeoutInSeconds: Double? = null
 
 ) : CacheConfig, StorageConfig, TransportConfig {
 
@@ -104,6 +109,7 @@ data class WorkerConfig(
         // apply default, if not set
         services.map { service ->
             service.retry = service.retry?.also { it.check() } ?: retry
+            service.timeoutInSeconds = service.timeoutInSeconds ?: timeoutInSeconds
 
             service.tagEngine?.let {
                 it.storage = it.storage ?: storage

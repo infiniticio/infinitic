@@ -140,7 +140,7 @@ class WorkerRegisterImpl(private val workerConfig: WorkerConfig) : WorkerRegiste
         concurrency: Int,
         timeout: WithTimeout?,
         retry: WithRetry?,
-        checkMode: WorkflowCheckMode,
+        checkMode: WorkflowCheckMode?,
         engine: WorkflowEngine?,
         tagEngine: WorkflowTag?
     ) {

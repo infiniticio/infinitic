@@ -27,9 +27,7 @@ package io.infinitic.workers.config
 
 import com.sksamuel.hoplite.ConfigException
 import io.infinitic.common.config.loadConfigFromYaml
-import io.infinitic.common.workers.config.RetryExponentialBackoff
-import io.infinitic.workers.register.WorkerRegister.Companion.DEFAULT_TASK_TIMEOUT
-import io.infinitic.workers.register.WorkerRegister.Companion.DEFAULT_WORKFLOW_TIMEOUT
+import io.infinitic.common.workers.config.ExponentialBackoffRetry
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
@@ -40,45 +38,45 @@ class RetryPolicyTests : StringSpec({
 
     "initialDelayInSeconds must be > 0" {
         val e = shouldThrow<IllegalArgumentException> {
-            RetryExponentialBackoff(initialDelayInSeconds = 0.0).check()
+            ExponentialBackoffRetry(initialDelayInSeconds = 0.0).check()
         }
-        e.message!! shouldContain RetryExponentialBackoff::initialDelayInSeconds.name
+        e.message!! shouldContain ExponentialBackoffRetry::initialDelayInSeconds.name
 
         val f = shouldThrow<IllegalArgumentException> {
-            RetryExponentialBackoff(initialDelayInSeconds = -1.0).check()
+            ExponentialBackoffRetry(initialDelayInSeconds = -1.0).check()
         }
-        f.message!! shouldContain RetryExponentialBackoff::initialDelayInSeconds.name
+        f.message!! shouldContain ExponentialBackoffRetry::initialDelayInSeconds.name
     }
 
     "backoffCoefficient can not be > 0" {
         val e = shouldThrow<IllegalArgumentException> {
-            RetryExponentialBackoff(backoffCoefficient = 0.0).check()
+            ExponentialBackoffRetry(backoffCoefficient = 0.0).check()
         }
-        e.message!! shouldContain RetryExponentialBackoff::backoffCoefficient.name
+        e.message!! shouldContain ExponentialBackoffRetry::backoffCoefficient.name
 
         val f = shouldThrow<IllegalArgumentException> {
-            RetryExponentialBackoff(backoffCoefficient = -1.0).check()
+            ExponentialBackoffRetry(backoffCoefficient = -1.0).check()
         }
-        f.message!! shouldContain RetryExponentialBackoff::backoffCoefficient.name
+        f.message!! shouldContain ExponentialBackoffRetry::backoffCoefficient.name
     }
 
     "maximumSeconds can not be > 0" {
         val e = shouldThrow<IllegalArgumentException> {
-            RetryExponentialBackoff(maximumSeconds = 0.0).check()
+            ExponentialBackoffRetry(maximumSeconds = 0.0).check()
         }
-        e.message!! shouldContain RetryExponentialBackoff::maximumSeconds.name
+        e.message!! shouldContain ExponentialBackoffRetry::maximumSeconds.name
 
         val f = shouldThrow<IllegalArgumentException> {
-            RetryExponentialBackoff(maximumSeconds = -1.0).check()
+            ExponentialBackoffRetry(maximumSeconds = -1.0).check()
         }
-        f.message!! shouldContain RetryExponentialBackoff::maximumSeconds.name
+        f.message!! shouldContain ExponentialBackoffRetry::maximumSeconds.name
     }
 
     "maximumAttempts can not be >= 0" {
         val f = shouldThrow<IllegalArgumentException> {
-            RetryExponentialBackoff(maximumRetries = -1).check()
+            ExponentialBackoffRetry(maximumRetries = -1).check()
         }
-        f.message!! shouldContain RetryExponentialBackoff::maximumRetries.name
+        f.message!! shouldContain ExponentialBackoffRetry::maximumRetries.name
     }
 
     "Unknown class in nonRetryableExceptions should throw" {
@@ -158,7 +156,7 @@ services:
         e.message!! shouldContain "timeoutInSeconds"
     }
 
-    "no timeout in service should be default" {
+    "checking default for service" {
         val config = loadConfigFromYaml<WorkerConfig>(
             """
 transport: inMemory
@@ -168,7 +166,9 @@ services:
 """
         )
         config.services.size shouldBe 1
-        config.services[0].timeoutInSeconds shouldBe DEFAULT_TASK_TIMEOUT
+        config.services[0].timeoutInSeconds shouldBe null
+        config.services[0].retry shouldBe null
+        config.services[0].concurrency shouldBe 1
     }
 
     "null timeout in service should not be default" {
@@ -185,31 +185,78 @@ services:
         config.services[0].timeoutInSeconds shouldBe null
     }
 
-    "no timeout in workflow should be default" {
+    "get timeout in service from default" {
         val config = loadConfigFromYaml<WorkerConfig>(
             """
 transport: inMemory
-workflows:
-    - name: io.infinitic.workers.samples.WorkflowA
-      class: io.infinitic.workers.samples.WorkflowAImpl
+timeoutInSeconds: 1
+services:
+    - name: io.infinitic.workers.samples.ServiceA
+      class: io.infinitic.workers.samples.ServiceAImpl
 """
         )
-        config.workflows.size shouldBe 1
-        config.workflows[0].timeoutInSeconds shouldBe DEFAULT_WORKFLOW_TIMEOUT.getTimeoutInSeconds()
+        config.services.size shouldBe 1
+        config.services[0].timeoutInSeconds shouldBe 1
     }
 
-    "null timeout in workflow should be null" {
+    "get retry in service from default" {
+        val config = loadConfigFromYaml<WorkerConfig>(
+            """
+transport: inMemory
+retry:
+  maximumRetries: 42
+services:
+    - name: io.infinitic.workers.samples.ServiceA
+      class: io.infinitic.workers.samples.ServiceAImpl
+"""
+        )
+        config.services.size shouldBe 1
+        config.services[0].retry?.maximumRetries shouldBe 42
+    }
+
+    "checking default in workflow" {
         val config = loadConfigFromYaml<WorkerConfig>(
             """
 transport: inMemory
 workflows:
     - name: io.infinitic.workers.samples.WorkflowA
       class: io.infinitic.workers.samples.WorkflowAImpl
-      timeoutInSeconds: null
 """
         )
         config.workflows.size shouldBe 1
         config.workflows[0].timeoutInSeconds shouldBe null
+        config.workflows[0].retry shouldBe null
+        config.workflows[0].concurrency shouldBe 1
+        config.workflows[0].checkMode shouldBe null
+    }
+
+    "default timeout does not apply to workflow task" {
+        val config = loadConfigFromYaml<WorkerConfig>(
+            """
+transport: inMemory
+timeoutInSeconds: 1
+workflows:
+    - name: io.infinitic.workers.samples.WorkflowA
+      class: io.infinitic.workers.samples.WorkflowAImpl
+"""
+        )
+        config.workflows.size shouldBe 1
+        config.workflows[0].timeoutInSeconds shouldBe null
+    }
+
+    "default retry does not apply to workflow task" {
+        val config = loadConfigFromYaml<WorkerConfig>(
+            """
+transport: inMemory
+retry:
+  maximumRetries: 42
+workflows:
+    - name: io.infinitic.workers.samples.WorkflowA
+      class: io.infinitic.workers.samples.WorkflowAImpl
+"""
+        )
+        config.workflows.size shouldBe 1
+        config.workflows[0].retry shouldBe null
     }
 
     "do not retry if maximumRetries = 0" {
@@ -220,7 +267,6 @@ retry:
     maximumRetries: 0
 """
         )
-
         workerConfig.retry shouldNotBe null
         workerConfig.retry!!.getSecondsBeforeRetry(0, Exception()) shouldBe null
     }
@@ -233,7 +279,6 @@ retry:
     maximumRetries: 10
 """
         )
-
         workerConfig.retry shouldNotBe null
         workerConfig.retry!!.getSecondsBeforeRetry(9, Exception()) shouldNotBe null
         workerConfig.retry!!.getSecondsBeforeRetry(10, Exception()) shouldBe null
@@ -248,7 +293,6 @@ retry:
         - io.infinitic.workers.config.TestException
 """
         )
-
         workerConfig.retry shouldNotBe null
         workerConfig.retry!!.getSecondsBeforeRetry(1, Exception()) shouldNotBe null
         workerConfig.retry!!.getSecondsBeforeRetry(1, TestException()) shouldBe null

@@ -37,9 +37,9 @@ data class Workflow(
     val name: String,
     val `class`: String? = null,
     val concurrency: Int = WorkerRegister.DEFAULT_CONCURRENCY,
-    val timeoutInSeconds: Double? = WorkerRegister.DEFAULT_WORKFLOW_TIMEOUT.getTimeoutInSeconds(),
-    val retry: RetryPolicy? = WorkerRegister.DEFAULT_WORKFLOW_TASK_RETRY_POLICY,
-    val checkMode: WorkflowCheckMode = WorkerRegister.DEFAULT_WORKFLOW_CHECK_MODE,
+    val timeoutInSeconds: Double? = null,
+    val retry: RetryPolicy? = null,
+    val checkMode: WorkflowCheckMode? = null,
     var tagEngine: WorkflowTag? = WorkerRegister.DEFAULT_WORKFLOW_TAG,
     var workflowEngine: WorkflowEngine? = WorkerRegister.DEFAULT_WORKFLOW_ENGINE
 ) {

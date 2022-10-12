@@ -37,8 +37,6 @@ sealed class RetryPolicy(
     open val nonRetryableExceptions: List<String>
 ) : WithRetry {
 
-    var isDefault = false
-
     val nonRetryableClasses: List<Class<*>> by lazy {
         nonRetryableExceptions.map { klass ->
             klass.getClass(
@@ -75,8 +73,8 @@ sealed class RetryPolicy(
     protected abstract fun getSecondsBeforeRetry(attempt: Int): Double?
 }
 
-data class RetryExponentialBackoff(
-    val initialDelayInSeconds: Double = 1.0,
+data class ExponentialBackoffRetry(
+    val initialDelayInSeconds: Double = 5.0,
     val backoffCoefficient: Double = 2.0,
     val maximumSeconds: Double = 100 * initialDelayInSeconds,
     val randomized: Boolean = true,
