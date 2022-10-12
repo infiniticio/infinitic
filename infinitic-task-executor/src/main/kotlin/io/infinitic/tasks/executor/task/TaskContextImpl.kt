@@ -29,8 +29,9 @@ import io.infinitic.clients.InfiniticClientInterface
 import io.infinitic.common.clients.ClientFactory
 import io.infinitic.common.tasks.executors.errors.ExecutionError
 import io.infinitic.common.workers.registry.WorkerRegistry
-import io.infinitic.tasks.Retryable
 import io.infinitic.tasks.TaskContext
+import io.infinitic.tasks.WithRetry
+import io.infinitic.tasks.WithTimeout
 
 data class TaskContextImpl(
     override val workerName: String,
@@ -45,8 +46,8 @@ data class TaskContextImpl(
     override val lastError: ExecutionError?,
     override val tags: Set<String>,
     override val meta: MutableMap<String, ByteArray>,
-    override val timeoutMillis: Long?,
-    override val retryable: Retryable?,
+    override val withTimeout: WithTimeout?,
+    override val withRetry: WithRetry?,
     private val clientFactory: ClientFactory
 ) : TaskContext {
     override val client: InfiniticClientInterface by lazy { clientFactory() }

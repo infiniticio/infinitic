@@ -28,7 +28,8 @@ package io.infinitic.tests.context
 import io.infinitic.annotations.Ignore
 import io.infinitic.common.tasks.data.TaskMeta
 import io.infinitic.common.workflows.data.workflows.WorkflowMeta
-import io.infinitic.tasks.Retryable
+import io.infinitic.tasks.WithRetry
+import io.infinitic.tasks.WithTimeout
 import io.infinitic.tests.utils.UtilService
 import io.infinitic.workflows.Workflow
 
@@ -40,8 +41,8 @@ interface ContextWorkflow {
     fun context5(): String?
     fun context6(): Set<String>
     fun context7(): TaskMeta
-
-    fun context8(): Retryable?
+    fun context8(): WithRetry?
+    fun context9(): WithTimeout?
 }
 
 @Suppress("unused")
@@ -70,5 +71,7 @@ class ContextWorkflowImpl : Workflow(), ContextWorkflow {
 
     override fun context7() = utilService.meta()
 
-    override fun context8(): Retryable? = utilService.retryable()
+    override fun context8(): WithRetry? = utilService.withRetry()
+
+    override fun context9(): WithTimeout? = utilService.withTimeout()
 }

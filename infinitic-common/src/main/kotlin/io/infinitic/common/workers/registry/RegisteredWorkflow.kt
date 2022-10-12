@@ -26,11 +26,12 @@
 package io.infinitic.common.workers.registry
 
 import io.infinitic.common.workers.WorkflowFactory
-import io.infinitic.tasks.Retryable
+import io.infinitic.tasks.WithRetry
+import io.infinitic.tasks.WithTimeout
 
 data class RegisteredWorkflow(
     val concurrency: Int,
     val factory: WorkflowFactory,
-    val timeoutMillis: Long?,
-    val retry: Retryable?
+    val withTimeout: WithTimeout?,
+    val withRetry: WithRetry?
 )

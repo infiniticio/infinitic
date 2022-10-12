@@ -25,8 +25,8 @@
 
 package io.infinitic.tests.utils
 
-import io.infinitic.tasks.Retryable
 import io.infinitic.tasks.Task
+import io.infinitic.tasks.WithRetry
 
 interface TestService {
     fun log(): String
@@ -36,7 +36,7 @@ interface TestService {
 class ExpectedException(log: String? = null) : Exception(log)
 
 @Suppress("unused")
-class TestServiceImpl : TestService, Retryable {
+class TestServiceImpl : TestService, WithRetry {
     companion object {
         lateinit var behavior: (index: Int, retry: Int) -> Status
     }

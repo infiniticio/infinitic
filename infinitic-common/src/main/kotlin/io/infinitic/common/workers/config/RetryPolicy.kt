@@ -27,7 +27,7 @@ package io.infinitic.common.workers.config
 
 import io.infinitic.common.exceptions.thisShouldNotHappen
 import io.infinitic.common.utils.getClass
-import io.infinitic.tasks.Retryable
+import io.infinitic.tasks.WithRetry
 import kotlin.math.min
 import kotlin.math.pow
 import kotlin.random.Random
@@ -35,7 +35,7 @@ import kotlin.random.Random
 sealed class RetryPolicy(
     open val maximumRetries: Int,
     open val nonRetryableExceptions: List<String>
-) : Retryable {
+) : WithRetry {
 
     var isDefault = false
 
@@ -76,9 +76,9 @@ sealed class RetryPolicy(
 }
 
 data class RetryExponentialBackoff(
-    val initialIntervalSeconds: Double = 1.0,
+    val initialDelayInSeconds: Double = 1.0,
     val backoffCoefficient: Double = 2.0,
-    val maximumSeconds: Double = 100 * initialIntervalSeconds,
+    val maximumSeconds: Double = 100 * initialDelayInSeconds,
     val randomized: Boolean = true,
     override val maximumRetries: Int = Int.MAX_VALUE,
     override val nonRetryableExceptions: List<String> = listOf()
@@ -86,7 +86,7 @@ data class RetryExponentialBackoff(
 
     // checks can not be in init {} as throwing exception in constructor prevents sealed class recognition by Hoplite
     override fun check() {
-        require(initialIntervalSeconds > 0) { "${::initialIntervalSeconds.name} MUST be > 0" }
+        require(initialDelayInSeconds > 0) { "${::initialDelayInSeconds.name} MUST be > 0" }
         require(backoffCoefficient > 0) { "${::backoffCoefficient.name} MUST be > 0" }
         require(maximumSeconds > 0) { "${::maximumSeconds.name} MUST be > 0" }
         require(maximumRetries >= 0) { "${::maximumRetries.name} MUST be >= 0" }
@@ -96,7 +96,7 @@ data class RetryExponentialBackoff(
     }
 
     override fun getSecondsBeforeRetry(attempt: Int): Double =
-        min(maximumSeconds, initialIntervalSeconds * (backoffCoefficient.pow(attempt))) * when (randomized) {
+        min(maximumSeconds, initialDelayInSeconds * (backoffCoefficient.pow(attempt))) * when (randomized) {
             true -> Random.nextDouble()
             false -> 1.0
         }

@@ -62,13 +62,16 @@ import io.infinitic.exceptions.tasks.NoMethodFoundWithParameterCountException
 import io.infinitic.exceptions.tasks.NoMethodFoundWithParameterTypesException
 import io.infinitic.exceptions.tasks.TimeoutTaskException
 import io.infinitic.exceptions.tasks.TooManyMethodsFoundWithParameterCountException
+import io.infinitic.tasks.executor.samples.RetryImpl
 import io.infinitic.tasks.executor.samples.ServiceImplService
-import io.infinitic.tasks.executor.samples.SimpleServiceWithBuggyRetry
-import io.infinitic.tasks.executor.samples.SimpleServiceWithContext
+import io.infinitic.tasks.executor.samples.ServiceWithBuggyRetryInClass
+import io.infinitic.tasks.executor.samples.ServiceWithContext
+import io.infinitic.tasks.executor.samples.ServiceWithRegisteredTimeout
+import io.infinitic.tasks.executor.samples.ServiceWithRetryInClass
+import io.infinitic.tasks.executor.samples.ServiceWithRetryInMethod
+import io.infinitic.tasks.executor.samples.ServiceWithTimeoutOnClass
+import io.infinitic.tasks.executor.samples.ServiceWithTimeoutOnMethod
 import io.infinitic.tasks.executor.samples.SimpleServiceWithRetry
-import io.infinitic.tasks.executor.samples.SimpleServiceWithTimeoutOnClass
-import io.infinitic.tasks.executor.samples.SimpleServiceWithTimeoutOnMethod
-import io.infinitic.tasks.executor.samples.SimpleServiceWithTimeoutOnRegistry
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
 import io.mockk.CapturingSlot
@@ -285,15 +288,14 @@ class TaskExecutorTests : StringSpec({
         taskTagMessages[1] shouldBe getRemoveTag(msg, "bar")
     }
 
-    "Should retry with correct exception" {
+    "Should retry with correct exception with Retry intrface" {
         every { workerRegistry.getRegisteredService(ServiceName("task")) } returns service.copy(factory = { SimpleServiceWithRetry() })
-        val input = arrayOf(2, "3")
         // with
-        val msg = getExecuteTask("handle", input, null)
+        val msg = getExecuteTask("handle", arrayOf(2, "3"), null)
         // when
         coroutineScope { taskExecutor.handle(msg) }
         // then
-        after.captured shouldBe MillisDuration(3000)
+        after.captured shouldBe MillisDuration((SimpleServiceWithRetry.DELAY * 1000).toLong())
         val executeTask = taskExecutorMessage.captured as ExecuteTask
         executeTask shouldBe msg.copy(
             taskRetryIndex = msg.taskRetryIndex + 1,
@@ -305,11 +307,48 @@ class TaskExecutorTests : StringSpec({
         taskTagMessages.size shouldBe 0
     }
 
-    "Should throw when getRetryDelay throw an exception" {
-        every { workerRegistry.getRegisteredService(ServiceName("task")) } returns service.copy(factory = { SimpleServiceWithBuggyRetry() })
-        val input = arrayOf(2, "3")
+    "Should retry with correct exception with Retry annotation on method" {
+        every { workerRegistry.getRegisteredService(ServiceName("task")) } returns service.copy(factory = { ServiceWithRetryInMethod() })
         // with
-        val msg = getExecuteTask("handle", input, null)
+        val msg = getExecuteTask("handle", arrayOf(2, "3"), null)
+        // when
+        coroutineScope { taskExecutor.handle(msg) }
+        // then
+        after.captured shouldBe MillisDuration((RetryImpl.DELAY * 1000).toLong())
+        val executeTask = taskExecutorMessage.captured as ExecuteTask
+        executeTask shouldBe msg.copy(
+            taskRetryIndex = msg.taskRetryIndex + 1,
+            lastError = ExecutionError.from(clientName, IllegalStateException())
+                .copy(stackTraceToString = executeTask.lastError!!.stackTraceToString)
+        )
+        clientMessage.isCaptured shouldBe false
+        workflowEngineMessage.isCaptured shouldBe false
+        taskTagMessages.size shouldBe 0
+    }
+
+    "Should retry with correct exception with Retry annotation on class" {
+        every { workerRegistry.getRegisteredService(ServiceName("task")) } returns service.copy(factory = { ServiceWithRetryInClass() })
+        // with
+        val msg = getExecuteTask("handle", arrayOf(2, "3"), null)
+        // when
+        coroutineScope { taskExecutor.handle(msg) }
+        // then
+        after.captured shouldBe MillisDuration((RetryImpl.DELAY * 1000).toLong())
+        val executeTask = taskExecutorMessage.captured as ExecuteTask
+        executeTask shouldBe msg.copy(
+            taskRetryIndex = msg.taskRetryIndex + 1,
+            lastError = ExecutionError.from(clientName, IllegalStateException())
+                .copy(stackTraceToString = executeTask.lastError!!.stackTraceToString)
+        )
+        clientMessage.isCaptured shouldBe false
+        workflowEngineMessage.isCaptured shouldBe false
+        taskTagMessages.size shouldBe 0
+    }
+
+    "Should throw when getSecondsBeforeRetry throw an exception" {
+        every { workerRegistry.getRegisteredService(ServiceName("task")) } returns service.copy(factory = { ServiceWithBuggyRetryInClass() })
+        // with
+        val msg = getExecuteTask("handle", arrayOf(2, "3"), null)
         // when
         coroutineScope { taskExecutor.handle(msg) }
         // then
@@ -322,7 +361,7 @@ class TaskExecutorTests : StringSpec({
     }
 
     "Should be able to access context from task" {
-        every { workerRegistry.getRegisteredService(ServiceName("task")) } returns service.copy(factory = { SimpleServiceWithContext() })
+        every { workerRegistry.getRegisteredService(ServiceName("task")) } returns service.copy(factory = { ServiceWithContext() })
         val input = arrayOf(2, "3")
         // with
         val msg = getExecuteTask("handle", input, null)
@@ -339,13 +378,12 @@ class TaskExecutorTests : StringSpec({
 
     "Should throw TimeoutTaskException with timeout from Registry" {
         every { workerRegistry.getRegisteredService(ServiceName("task")) } returns service.copy(
-            factory = { SimpleServiceWithTimeoutOnRegistry() },
-            timeoutMillis = 100
+            factory = { ServiceWithRegisteredTimeout() },
+            withTimeout = { 0.1 }
         )
-        val input = arrayOf(2, "3")
         val types = listOf(Int::class.java.name, String::class.java.name)
         // with
-        val msg = getExecuteTask("handle", input, types)
+        val msg = getExecuteTask("handle", arrayOf(2, "3"), types)
         // when
         coroutineScope { taskExecutor.handle(msg) }
         // then
@@ -359,7 +397,7 @@ class TaskExecutorTests : StringSpec({
 
     "Should throw TimeoutTaskException with timeout from method Annotation" {
         every { workerRegistry.getRegisteredService(ServiceName("task")) } returns service.copy(
-            factory = { SimpleServiceWithTimeoutOnMethod() }
+            factory = { ServiceWithTimeoutOnMethod() }
         )
         val input = arrayOf(2, "3")
         val types = listOf(Int::class.java.name, String::class.java.name)
@@ -378,7 +416,7 @@ class TaskExecutorTests : StringSpec({
 
     "Should throw TimeoutTaskException with timeout from class Annotation" {
         every { workerRegistry.getRegisteredService(ServiceName("task")) } returns service.copy(
-            factory = { SimpleServiceWithTimeoutOnClass() }
+            factory = { ServiceWithTimeoutOnClass() }
         )
         val input = arrayOf(2, "3")
         val types = listOf(Int::class.java.name, String::class.java.name)

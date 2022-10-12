@@ -25,15 +25,18 @@
 
 package io.infinitic.annotations
 
-import java.util.concurrent.TimeUnit
+import io.infinitic.common.utils.getEmptyConstructor
+import io.infinitic.common.utils.getInstance
+import io.infinitic.tasks.WithTimeout
+import kotlin.reflect.KClass
 
 /**
  * Use this annotation to define a timeout duration for tasks
  */
 @Target(AnnotationTarget.CLASS, AnnotationTarget.FUNCTION)
-annotation class Timeout(val of: Long, val unit: TimeUnit)
+annotation class Timeout(val with: KClass<out WithTimeout>)
 
 /**
- * Get seconds
+ * Get instance of the underlying [WithTimeout]
  */
-fun Timeout.getMillis() = TimeUnit.MILLISECONDS.convert(of, unit)
+fun Timeout.getInstance() = with.java.getEmptyConstructor().getInstance()

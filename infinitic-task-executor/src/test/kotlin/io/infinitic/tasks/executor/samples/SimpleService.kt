@@ -29,9 +29,9 @@ package io.infinitic.tasks.executor.samples
 
 import io.infinitic.annotations.Retry
 import io.infinitic.annotations.Timeout
-import io.infinitic.tasks.Retryable
 import io.infinitic.tasks.Task
-import java.util.concurrent.TimeUnit
+import io.infinitic.tasks.WithRetry
+import io.infinitic.tasks.WithTimeout
 
 interface SimpleService {
     fun handle(i: Int, j: String): String
@@ -45,22 +45,50 @@ class ServiceImplService : SimpleService {
     override fun other(i: Int, j: String) = (i * j.toInt()).toString()
 }
 
-internal class SimpleServiceWithContext {
+internal class ServiceWithContext {
     fun handle(i: Int, j: String) = (i * j.toInt() * Task.retrySequence).toString()
 }
 
-internal class SimpleServiceWithRetry {
-    @Retry(RetryImpl::class)
+internal class SimpleServiceWithRetry : WithRetry {
+    companion object {
+        const val DELAY = 3.0
+    }
+
+    fun handle(i: Int, j: String): String = if (i < 0) (i * j.toInt()).toString() else throw IllegalStateException()
+    override fun getSecondsBeforeRetry(retry: Int, exception: Exception) = DELAY
+}
+
+@Retry(RetryImpl::class)
+internal class ServiceWithRetryInClass {
     fun handle(i: Int, j: String): String = if (i < 0) (i * j.toInt()).toString() else throw IllegalStateException()
 }
 
 @Retry(BuggyRetryImpl::class)
-internal class SimpleServiceWithBuggyRetry {
+internal class ServiceWithBuggyRetryInClass {
     fun handle(i: Int, j: String): String = if (i < 0) (i * j.toInt()).toString() else throw IllegalStateException()
 }
 
-internal class SimpleServiceWithTimeoutOnMethod {
-    @Timeout(100, TimeUnit.MILLISECONDS)
+internal class ServiceWithRetryInMethod {
+    @Retry(RetryImpl::class)
+    fun handle(i: Int, j: String): String = if (i < 0) (i * j.toInt()).toString() else throw IllegalStateException()
+}
+
+internal class ServiceWithTimeout : WithTimeout {
+    companion object {
+        const val TIMEOUT = 0.1
+    }
+
+    fun handle(i: Int, j: String): String {
+        Thread.sleep(400)
+
+        return (i * j.toInt() * Task.retrySequence).toString()
+    }
+
+    override fun getTimeoutInSeconds(): Double = TIMEOUT
+}
+
+@Timeout(TimeoutImpl::class)
+internal class ServiceWithTimeoutOnClass {
     fun handle(i: Int, j: String): String {
         Thread.sleep(400)
 
@@ -68,8 +96,8 @@ internal class SimpleServiceWithTimeoutOnMethod {
     }
 }
 
-@Timeout(100, TimeUnit.MILLISECONDS)
-internal class SimpleServiceWithTimeoutOnClass {
+internal class ServiceWithTimeoutOnMethod {
+    @Timeout(TimeoutImpl::class)
     fun handle(i: Int, j: String): String {
         Thread.sleep(400)
 
@@ -77,7 +105,7 @@ internal class SimpleServiceWithTimeoutOnClass {
     }
 }
 
-internal class SimpleServiceWithTimeoutOnRegistry {
+internal class ServiceWithRegisteredTimeout {
     fun handle(i: Int, j: String): String {
         Thread.sleep(400)
 
@@ -85,12 +113,32 @@ internal class SimpleServiceWithTimeoutOnRegistry {
     }
 }
 
-internal class RetryImpl : Retryable {
+internal class RetryImpl : WithRetry {
+    companion object {
+        const val DELAY = 3.0
+    }
+
     override fun getSecondsBeforeRetry(retry: Int, exception: Exception) =
-        if (exception is IllegalStateException) 3.0 else null
+        if (exception is IllegalStateException) DELAY else null
 }
 
-internal class BuggyRetryImpl : Retryable {
+internal class BuggyRetryImpl : WithRetry {
+    companion object {
+        const val DELAY = 3.0
+    }
+
     override fun getSecondsBeforeRetry(retry: Int, exception: Exception) =
-        if (exception is IllegalStateException) throw IllegalArgumentException() else 3.0
+        if (exception is IllegalStateException) throw IllegalArgumentException() else DELAY
+}
+
+internal class TimeoutImpl : WithTimeout {
+    companion object {
+        const val TIMEOUT = 0.1
+    }
+
+    override fun getTimeoutInSeconds() = TIMEOUT
+}
+
+internal class BuggyTimeoutImpl : WithTimeout {
+    override fun getTimeoutInSeconds(): Double = throw IllegalArgumentException()
 }

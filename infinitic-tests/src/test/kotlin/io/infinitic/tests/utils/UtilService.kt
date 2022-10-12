@@ -26,8 +26,9 @@
 package io.infinitic.tests.utils
 
 import io.infinitic.common.tasks.data.TaskMeta
-import io.infinitic.tasks.Retryable
 import io.infinitic.tasks.Task
+import io.infinitic.tasks.WithRetry
+import io.infinitic.tasks.WithTimeout
 import io.infinitic.workflows.DeferredStatus
 
 interface ParentInterface {
@@ -48,11 +49,13 @@ interface UtilService : ParentInterface {
     fun tags(): Set<String>
     fun meta(): TaskMeta
 
-    fun retryable(): Retryable?
+    fun withRetry(): WithRetry?
+
+    fun withTimeout(): WithTimeout?
 }
 
 @Suppress("unused")
-class UtilServiceImpl : UtilService, Retryable {
+class UtilServiceImpl : UtilService {
     override fun concat(str1: String, str2: String): String = str1 + str2
 
     override fun reverse(str: String) = str.reversed()
@@ -90,5 +93,7 @@ class UtilServiceImpl : UtilService, Retryable {
 
     override fun meta() = TaskMeta(Task.meta)
 
-    override fun retryable(): Retryable? = Task.context.get().retryable
+    override fun withRetry(): WithRetry? = Task.context.get().withRetry
+
+    override fun withTimeout(): WithTimeout? = Task.context.get().withTimeout
 }

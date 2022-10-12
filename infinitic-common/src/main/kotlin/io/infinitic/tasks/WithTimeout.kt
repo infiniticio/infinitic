@@ -25,11 +25,8 @@
 
 package io.infinitic.tasks
 
-import kotlin.math.pow
-
-interface Retryable {
-    fun getSecondsBeforeRetry(retry: Int, exception: Exception): Double? = when {
-        retry < 12 -> 2.0.pow(retry) * Math.random()
-        else -> null
-    }
+fun interface WithTimeout {
+    fun getTimeoutInSeconds(): Double?
 }
+
+fun WithTimeout.getTimeoutInMillis() = getTimeoutInSeconds()?.let { (it * 1000).toLong() }

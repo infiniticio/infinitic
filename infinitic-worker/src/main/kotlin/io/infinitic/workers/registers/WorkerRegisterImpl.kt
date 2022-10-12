@@ -30,7 +30,6 @@ import io.infinitic.common.config.logger
 import io.infinitic.common.tasks.data.ServiceName
 import io.infinitic.common.workers.ServiceFactory
 import io.infinitic.common.workers.WorkflowFactory
-import io.infinitic.common.workers.config.RetryPolicy
 import io.infinitic.common.workers.registry.RegisteredService
 import io.infinitic.common.workers.registry.RegisteredServiceTag
 import io.infinitic.common.workers.registry.RegisteredWorkflow
@@ -39,6 +38,8 @@ import io.infinitic.common.workers.registry.RegisteredWorkflowTag
 import io.infinitic.common.workers.registry.WorkerRegistry
 import io.infinitic.common.workflows.data.workflows.WorkflowName
 import io.infinitic.storage.config.Storage
+import io.infinitic.tasks.WithRetry
+import io.infinitic.tasks.WithTimeout
 import io.infinitic.tasks.tag.config.TaskTag
 import io.infinitic.tasks.tag.storage.BinaryTaskTagStorage
 import io.infinitic.workers.config.WorkerConfig
@@ -72,7 +73,7 @@ class WorkerRegisterImpl(private val workerConfig: WorkerConfig) : WorkerRegiste
                     w.name,
                     { w.getInstance() },
                     w.concurrency,
-                    w.timeoutSeconds,
+                    w.timeoutInSeconds?.let { { it } },
                     w.retry,
                     w.workflowEngine,
                     w.tagEngine
@@ -92,7 +93,7 @@ class WorkerRegisterImpl(private val workerConfig: WorkerConfig) : WorkerRegiste
                     s.name,
                     { s.getInstance() },
                     s.concurrency,
-                    s.timeoutSeconds,
+                    s.timeoutInSeconds?.let { { it } },
                     s.retry,
                     s.tagEngine
                 )
@@ -107,8 +108,8 @@ class WorkerRegisterImpl(private val workerConfig: WorkerConfig) : WorkerRegiste
         name: String,
         factory: ServiceFactory,
         concurrency: Int,
-        timeoutSeconds: Double?,
-        retry: RetryPolicy?,
+        timeout: WithTimeout?,
+        retry: WithRetry?,
         tagEngine: TaskTag?
     ) {
         logger.info {
@@ -116,12 +117,7 @@ class WorkerRegisterImpl(private val workerConfig: WorkerConfig) : WorkerRegiste
         }
 
         val serviceName = ServiceName(name)
-        registry.services[serviceName] = RegisteredService(
-            concurrency,
-            factory,
-            timeoutSeconds?.let { (timeoutSeconds * 1000).toLong() },
-            retry
-        )
+        registry.services[serviceName] = RegisteredService(concurrency, factory, timeout, retry)
 
         when {
             // explicit null => do nothing
@@ -140,8 +136,8 @@ class WorkerRegisterImpl(private val workerConfig: WorkerConfig) : WorkerRegiste
         name: String,
         factory: WorkflowFactory,
         concurrency: Int,
-        timeoutSeconds: Double?,
-        retry: RetryPolicy?,
+        timeout: WithTimeout?,
+        retry: WithRetry?,
         engine: WorkflowEngine?,
         tagEngine: WorkflowTag?
     ) {
@@ -150,12 +146,7 @@ class WorkerRegisterImpl(private val workerConfig: WorkerConfig) : WorkerRegiste
         }
 
         val workflowName = WorkflowName(name)
-        registry.workflows[workflowName] = RegisteredWorkflow(
-            concurrency,
-            factory,
-            timeoutSeconds?.let { (timeoutSeconds * 1000).toLong() },
-            retry
-        )
+        registry.workflows[workflowName] = RegisteredWorkflow(concurrency, factory, timeout, retry)
 
         when {
             // explicit null => do nothing

@@ -31,12 +31,12 @@ sealed class TaskException(
 
 class TimeoutTaskException(
     klass: String,
-    timeoutMillis: Long
+    timeoutSeconds: Double
 ) : TaskException(
     message = "The processing of task \"$klass\" took more than ${
     String.format(
         "%.3f",
-        timeoutMillis / 1000.0
+        timeoutSeconds
     )
     } seconds"
 )

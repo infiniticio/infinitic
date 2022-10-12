@@ -43,6 +43,6 @@ interface TaskContext {
     val lastError: ExecutionError?
     val tags: Set<String>
     val meta: MutableMap<String, ByteArray>
-    val timeoutMillis: Long?
-    val retryable: Retryable?
+    val withTimeout: WithTimeout?
+    val withRetry: WithRetry?
 }

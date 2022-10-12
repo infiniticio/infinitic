@@ -26,11 +26,12 @@
 package io.infinitic.common.workers.registry
 
 import io.infinitic.common.workers.ServiceFactory
-import io.infinitic.tasks.Retryable
+import io.infinitic.tasks.WithRetry
+import io.infinitic.tasks.WithTimeout
 
 data class RegisteredService(
     val concurrency: Int,
     val factory: ServiceFactory,
-    val timeoutMillis: Long?,
-    val retry: Retryable?
+    val withTimeout: WithTimeout?,
+    val withRetry: WithRetry?
 )

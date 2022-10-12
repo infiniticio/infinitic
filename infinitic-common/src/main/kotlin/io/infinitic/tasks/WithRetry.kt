@@ -23,23 +23,8 @@
  * Licensor: infinitic.io
  */
 
-@file:Suppress("unused")
+package io.infinitic.tasks
 
-package io.infinitic.workers.samples
-
-interface ServiceA
-
-class ServiceAImpl : ServiceA
-
-class ServiceWithInvocationTargetException : ServiceA {
-    init {
-        throw Exception("InvocationTargetException")
-    }
-}
-
-class ServiceWithExceptionInInitializerError : ServiceA {
-    companion object {
-        @JvmStatic
-        val e: Nothing = throw Exception("ExceptionInInitializerError")
-    }
+fun interface WithRetry {
+    fun getSecondsBeforeRetry(retry: Int, exception: Exception): Double?
 }

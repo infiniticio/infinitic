@@ -36,8 +36,8 @@ data class Workflow(
     val name: String,
     val `class`: String? = null,
     val concurrency: Int = WorkerRegister.DEFAULT_CONCURRENCY,
-    val timeoutSeconds: Double? = WorkerRegister.DEFAULT_WORKFLOW_TIMEOUT,
-    val retry: RetryPolicy? = WorkerRegister.DEFAULT_WORKFLOW_RETRY_POLICY,
+    val timeoutInSeconds: Double? = WorkerRegister.DEFAULT_WORKFLOW_TIMEOUT.getTimeoutInSeconds(),
+    val retry: RetryPolicy? = WorkerRegister.DEFAULT_WORKFLOW_TASK_RETRY_POLICY,
     var tagEngine: WorkflowTag? = WorkerRegister.DEFAULT_WORKFLOW_TAG,
     var workflowEngine: WorkflowEngine? = WorkerRegister.DEFAULT_WORKFLOW_ENGINE
 ) {
@@ -93,8 +93,8 @@ data class Workflow(
 
                 require(concurrency >= 0) { "concurrency must be positive (workflow $name)" }
 
-                if (timeoutSeconds != null) {
-                    require(timeoutSeconds > 0) { "timeoutSeconds must be positive (workflow $name)" }
+                if (timeoutInSeconds != null) {
+                    require(timeoutInSeconds > 0) { "timeoutSeconds must be positive (workflow $name)" }
                 }
             }
         }
