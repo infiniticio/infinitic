@@ -26,6 +26,7 @@
 package io.infinitic.tasks.executor
 
 import io.infinitic.annotations.CheckMode
+import io.infinitic.annotations.Retry
 import io.infinitic.annotations.Timeout
 import io.infinitic.annotations.getInstance
 import io.infinitic.common.clients.ClientFactory
@@ -45,12 +46,13 @@ import io.infinitic.common.tasks.executors.messages.ExecuteTask
 import io.infinitic.common.tasks.executors.messages.TaskExecutorMessage
 import io.infinitic.common.tasks.tags.SendToTaskTag
 import io.infinitic.common.tasks.tags.messages.RemoveTagFromTask
-import io.infinitic.common.workers.config.ExponentialBackoffRetry
+import io.infinitic.common.workers.config.RetryPolicy
 import io.infinitic.common.workers.config.WorkflowCheckMode
 import io.infinitic.common.workers.registry.WorkerRegistry
+import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskParameters
 import io.infinitic.common.workflows.engine.SendToWorkflowEngine
 import io.infinitic.exceptions.DeferredException
-import io.infinitic.exceptions.tasks.TimeoutTaskException
+import io.infinitic.exceptions.tasks.TimeoutException
 import io.infinitic.tasks.Task
 import io.infinitic.tasks.TaskContext
 import io.infinitic.tasks.WithRetry
@@ -66,7 +68,6 @@ import kotlinx.coroutines.withTimeout
 import mu.KotlinLogging
 import java.lang.reflect.InvocationTargetException
 import java.lang.reflect.Method
-import io.infinitic.annotations.Retry as RetryableAnnotation
 import io.infinitic.common.clients.messages.TaskCompleted as TaskCompletedClient
 import io.infinitic.common.clients.messages.TaskFailed as TaskFailedClient
 import io.infinitic.common.workflows.engine.messages.TaskCompleted as TaskCompletedWorkflow
@@ -84,12 +85,13 @@ class TaskExecutor(
     companion object {
         val DEFAULT_WORKFLOW_TASK_TIMEOUT = WithTimeout { 60.0 }
         val DEFAULT_TASK_TIMEOUT = null
-        val DEFAULT_TASK_RETRY_POLICY = ExponentialBackoffRetry()
-        val DEFAULT_WORKFLOW_TASK_RETRY_POLICY = null
+        val DEFAULT_TASK_RETRY = RetryPolicy.DEFAULT
+        val DEFAULT_WORKFLOW_TASK_RETRY = null
         val DEFAULT_WORKFLOW_CHECK_MODE = WorkflowCheckMode.simple
     }
 
     private var withRetry: WithRetry? = null
+
     private var withTimeout: WithTimeout? = null
 
     private val logger = KotlinLogging.logger {}
@@ -150,7 +152,7 @@ class TaskExecutor(
                 else -> throw cause ?: e
             }
         } catch (e: TimeoutCancellationException) {
-            val cause = TimeoutTaskException(service.javaClass.name, withTimeout!!.getTimeoutInSeconds()!!)
+            val cause = TimeoutException(service.javaClass.name, withTimeout!!.getTimeoutInSeconds()!!)
             // returning a timeout
             failTaskWithRetry(taskContext, cause, message)
         } catch (e: Exception) {
@@ -201,7 +203,7 @@ class TaskExecutor(
             false -> workerRegistry.getRegisteredService(msg.serviceName).factory()
         }
 
-        val method = getMethodPerNameAndParameters(
+        val taskMethod = getMethodPerNameAndParameters(
             service::class.java,
             "${msg.methodName}",
             msg.methodParameterTypes?.types,
@@ -210,53 +212,97 @@ class TaskExecutor(
 
         val parameters = msg.methodParameters.map { it.deserialize() }.toTypedArray()
 
-        this.withTimeout =
-            // use timeout from registry, if it exists
-            when (msg.isWorkflowTask()) {
-                true -> workerRegistry.getRegisteredWorkflow(msg.workflowName!!).withTimeout
-                false -> workerRegistry.getRegisteredService(msg.serviceName).withTimeout
-            } // else use timeout from method
-                ?: method.getAnnotation(Timeout::class.java)?.getInstance()
-                // else use timeout from class
-                ?: service::class.java.getAnnotation(Timeout::class.java)?.getInstance()
-                // else use default value
-                ?: when (msg.isWorkflowTask()) {
-                    true -> DEFAULT_WORKFLOW_TASK_TIMEOUT
-                    false -> DEFAULT_TASK_TIMEOUT
+        when (msg.isWorkflowTask()) {
+            true -> {
+                val registered = workerRegistry.getRegisteredWorkflow(msg.workflowName!!)
+                val workflow = registered.factory()
+                val workflowMethod = with(parameters.first() as WorkflowTaskParameters) {
+                    // method instance
+                    getMethodPerNameAndParameters(
+                        workflow::class.java,
+                        "${methodRun.methodName}",
+                        methodRun.methodParameterTypes?.types,
+                        methodRun.methodParameters.size
+                    )
                 }
+                this.withTimeout =
+                    // use timeout from registry, if it exists
+                    registered.withTimeout
+                        // else use withTimeout from method annotation
+                        ?: workflowMethod.getAnnotation(Timeout::class.java)?.getInstance()
+                        // else use withRetry from class annotation
+                        ?: workflow::class.java.getAnnotation(Timeout::class.java)?.getInstance()
+                        // else use workflow if WithTimeout
+                        ?: when (workflow) {
+                            is WithTimeout -> workflow
+                            else -> null
+                        }
+                        // else use default value
+                        ?: DEFAULT_WORKFLOW_TASK_TIMEOUT
 
-        this.withRetry =
-            // use withRetry from registry, if it exists
-            when (msg.isWorkflowTask()) {
-                true -> workerRegistry.getRegisteredWorkflow(msg.workflowName!!).withRetry
-                false -> workerRegistry.getRegisteredService(msg.serviceName).withRetry
-            } // else use withRetry from method annotation
-                ?: method.getAnnotation(RetryableAnnotation::class.java)?.getInstance()
-                // else use withRetry from class annotation
-                ?: service::class.java.getAnnotation(RetryableAnnotation::class.java)?.getInstance()
-                // else use service if Retryable
-                ?: when (service) {
-                    is WithRetry -> service
-                    else -> null
-                }
-                // else use default value
-                ?: when (msg.isWorkflowTask()) {
-                    true -> DEFAULT_WORKFLOW_TASK_RETRY_POLICY
-                    false -> DEFAULT_TASK_RETRY_POLICY
-                }
+                this.withRetry = // use timeout from registry, if it exists
+                    registered.withRetry
+                        // else use withTimeout from method annotation
+                        ?: workflowMethod.getAnnotation(Retry::class.java)?.getInstance()
+                        // else use withRetry from class annotation
+                        ?: workflow::class.java.getAnnotation(Retry::class.java)?.getInstance()
+                        // else use workflow if WithTimeout
+                        ?: when (workflow) {
+                            is WithRetry -> workflow
+                            else -> null
+                        }
+                        // else use default value
+                        ?: DEFAULT_WORKFLOW_TASK_RETRY
 
-        if (msg.isWorkflowTask()) {
-            val checkMode = // get checkMode from registry
-                workerRegistry.getRegisteredWorkflow(msg.workflowName!!).checkMode
-                    // else get mode from class annotation
-                    ?: service::class.java.getAnnotation(CheckMode::class.java)?.mode
-                    // else use default value
-                    ?: DEFAULT_WORKFLOW_CHECK_MODE
+                val checkMode =
+                    // get checkMode from registry
+                    registered.checkMode
+                        // else get mode from method annotation
+                        ?: workflowMethod.getAnnotation(CheckMode::class.java)?.mode
+                        // else get mode from class annotation
+                        ?: workflow::class.java.getAnnotation(CheckMode::class.java)?.mode
+                        // else use default value
+                        ?: DEFAULT_WORKFLOW_CHECK_MODE
 
-            (service as WorkflowTaskImpl).checkMode = checkMode
+                (service as WorkflowTaskImpl).checkMode = checkMode
+            }
+
+            false -> {
+                val registered = workerRegistry.getRegisteredService(msg.serviceName)
+
+                this.withTimeout =
+                    // use withTimeout from registry, if it exists
+                    registered.withTimeout
+                        // else use withTimeout from method annotation
+                        ?: taskMethod.getAnnotation(Timeout::class.java)?.getInstance()
+                        // else use withTimeout from class annotation
+                        ?: service::class.java.getAnnotation(Timeout::class.java)?.getInstance()
+                        // else use service if WithRetry
+                        ?: when (service) {
+                            is WithTimeout -> service
+                            else -> null
+                        }
+                        // else use default value
+                        ?: DEFAULT_TASK_TIMEOUT
+
+                this.withRetry =
+                    // use withRetry from registry, if it exists
+                    registered.withRetry
+                        // else use withRetry from method annotation
+                        ?: taskMethod.getAnnotation(Retry::class.java)?.getInstance()
+                        // else use withRetry from class annotation
+                        ?: service::class.java.getAnnotation(Retry::class.java)?.getInstance()
+                        // else use service if WithRetry
+                        ?: when (service) {
+                            is WithRetry -> service
+                            else -> null
+                        }
+                        // else use default value
+                        ?: DEFAULT_TASK_RETRY
+            }
         }
 
-        return TaskCommand(service, method, parameters)
+        return TaskCommand(service, taskMethod, parameters)
     }
 
     private fun retryTask(

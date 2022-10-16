@@ -103,7 +103,7 @@ class WorkerConfigTests : StringSpec({
     "checking default service config" {
         val config = WorkerConfig.fromResource("/config/services/instance.yml")
 
-        config.retry shouldBe null
+        config.service shouldBe ServiceDefault()
         config.services.size shouldBe 1
         config.services[0].retry shouldBe null
         config.services[0].timeoutInSeconds shouldBe null
@@ -113,7 +113,7 @@ class WorkerConfigTests : StringSpec({
     "checking default workflow config" {
         val config = WorkerConfig.fromResource("/config/workflows/instance.yml")
 
-        config.retry shouldBe null
+        config.workflow shouldBe WorkflowDefault()
         config.workflows.size shouldBe 1
         config.workflows[0].retry shouldBe null
         config.workflows[0].timeoutInSeconds shouldBe null

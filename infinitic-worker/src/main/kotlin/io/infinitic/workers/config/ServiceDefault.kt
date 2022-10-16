@@ -23,12 +23,23 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.annotations
+package io.infinitic.workers.config
 
-import io.infinitic.common.workers.config.WorkflowCheckMode
+import io.infinitic.common.workers.config.RetryPolicy
+import io.infinitic.workers.register.WorkerRegister
 
-/**
- * Use this annotation to define a timeout duration for tasks
- */
-@Target(AnnotationTarget.CLASS, AnnotationTarget.FUNCTION)
-annotation class CheckMode(val mode: WorkflowCheckMode)
+data class ServiceDefault(
+    val concurrency: Int = WorkerRegister.DEFAULT_CONCURRENCY,
+    var timeoutInSeconds: Double? = null,
+    var retry: RetryPolicy? = null
+) {
+    init {
+        require(concurrency >= 0) {
+            "concurrency must be positive for default service"
+        }
+
+        if (timeoutInSeconds != null) {
+            require(timeoutInSeconds!! > 0) { "${::timeoutInSeconds.name} must be positive for default service" }
+        }
+    }
+}

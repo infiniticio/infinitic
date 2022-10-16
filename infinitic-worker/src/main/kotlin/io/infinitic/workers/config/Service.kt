@@ -36,7 +36,7 @@ import java.lang.reflect.Constructor
 data class Service(
     val name: String,
     val `class`: String? = null,
-    val concurrency: Int = WorkerRegister.DEFAULT_CONCURRENCY,
+    var concurrency: Int? = null,
     var timeoutInSeconds: Double? = null,
     var retry: RetryPolicy? = null,
     var tagEngine: TaskTag? = WorkerRegister.DEFAULT_TASK_TAG
@@ -68,8 +68,8 @@ data class Service(
                     instanceError = "Error during instantiation of class \"$`class`\" (service $name)"
                 )
 
-                require(concurrency >= 0) {
-                    "concurrency must be positive for task $name"
+                if (concurrency != null) {
+                    require(concurrency!! >= 0) { "concurrency must be positive (service $name)" }
                 }
 
                 if (timeoutInSeconds != null) {

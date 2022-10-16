@@ -29,7 +29,6 @@ import io.infinitic.cache.config.Cache
 import io.infinitic.cache.config.CacheConfig
 import io.infinitic.common.config.loadConfigFromFile
 import io.infinitic.common.config.loadConfigFromResource
-import io.infinitic.common.workers.config.RetryPolicy
 import io.infinitic.storage.config.Storage
 import io.infinitic.storage.config.StorageConfig
 import io.infinitic.transport.config.Transport
@@ -73,14 +72,14 @@ data class WorkerConfig(
     val services: List<Service> = listOf(),
 
     /**
-     * Default task retry policy
+     * Default service configuration
      */
-    val retry: RetryPolicy? = null,
+    val service: ServiceDefault = ServiceDefault(),
 
     /**
-     * Default task timeout in seconds
+     * Default workflow configuration
      */
-    val timeoutInSeconds: Double? = null
+    val workflow: WorkflowDefault = WorkflowDefault()
 
 ) : CacheConfig, StorageConfig, TransportConfig {
 
@@ -103,34 +102,41 @@ data class WorkerConfig(
             require(pulsar != null) { "No `pulsar` configuration provided" }
         }
 
-        // check default retry Policy
-        retry?.check()
+        // check default service retry Policy
+        service.retry?.check()
 
         // apply default, if not set
-        services.map { service ->
-            service.retry = service.retry?.also { it.check() } ?: retry
-            service.timeoutInSeconds = service.timeoutInSeconds ?: timeoutInSeconds
+        services.map { it ->
+            it.concurrency = it.concurrency ?: service.concurrency
+            it.retry = it.retry?.also { retry -> retry.check() } ?: service.retry
+            it.timeoutInSeconds = it.timeoutInSeconds ?: service.timeoutInSeconds
 
-            service.tagEngine?.let {
+            it.tagEngine?.let {
                 it.storage = it.storage ?: storage
                 it.cache = it.cache ?: cache
-                if (it.isDefault) it.concurrency = service.concurrency
+                if (it.isDefault) it.concurrency = it.concurrency
             }
         }
 
-        // apply default, if not set
-        workflows.map { workflow ->
-            workflow.retry?.also { it.check() }
+        // check default service retry Policy
+        workflow.retry?.check()
 
-            workflow.tagEngine?.let {
+        // apply default, if not set
+        workflows.map { it ->
+            it.concurrency = it.concurrency ?: workflow.concurrency
+            it.retry = it.retry?.also { retry -> retry.check() } ?: workflow.retry
+            it.timeoutInSeconds = it.timeoutInSeconds ?: workflow.timeoutInSeconds
+            it.checkMode = it.checkMode ?: workflow.checkMode
+
+            it.tagEngine?.let {
                 it.storage = it.storage ?: storage
                 it.cache = it.cache ?: cache
-                if (it.isDefault) it.concurrency = workflow.concurrency
+                if (it.isDefault) it.concurrency = it.concurrency
             }
-            workflow.workflowEngine?.let {
+            it.workflowEngine?.let {
                 it.storage = it.storage ?: storage
                 it.cache = it.cache ?: cache
-                if (it.isDefault) it.concurrency = workflow.concurrency
+                if (it.isDefault) it.concurrency = it.concurrency
             }
         }
     }

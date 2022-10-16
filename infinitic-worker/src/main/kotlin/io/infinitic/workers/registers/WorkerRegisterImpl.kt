@@ -73,7 +73,7 @@ class WorkerRegisterImpl(private val workerConfig: WorkerConfig) : WorkerRegiste
                 else -> registerWorkflow(
                     w.name,
                     { w.getInstance() },
-                    w.concurrency,
+                    w.concurrency!!,
                     w.timeoutInSeconds?.let { { it } },
                     w.retry,
                     w.checkMode,
@@ -94,7 +94,7 @@ class WorkerRegisterImpl(private val workerConfig: WorkerConfig) : WorkerRegiste
                 else -> registerService(
                     s.name,
                     { s.getInstance() },
-                    s.concurrency,
+                    s.concurrency!!,
                     s.timeoutInSeconds?.let { { it } },
                     s.retry,
                     s.tagEngine

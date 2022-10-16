@@ -47,7 +47,7 @@ interface WorkerRegister {
     }
 
     /**
-     * Register task
+     * Register service
      */
     fun registerService(
         name: String,
@@ -57,6 +57,32 @@ interface WorkerRegister {
         retry: WithRetry? = null,
         tagEngine: TaskTag? = DEFAULT_TASK_TAG
     )
+
+    fun registerService(
+        name: String,
+        factory: ServiceFactory,
+        concurrency: Int,
+        timeout: WithTimeout?,
+        retry: WithRetry?
+    ) = registerService(name, factory, concurrency, timeout, retry, DEFAULT_TASK_TAG)
+
+    fun registerService(
+        name: String,
+        factory: ServiceFactory,
+        concurrency: Int,
+        timeout: WithTimeout?
+    ) = registerService(name, factory, concurrency, timeout, null, DEFAULT_TASK_TAG)
+
+    fun registerService(
+        name: String,
+        factory: ServiceFactory,
+        concurrency: Int
+    ) = registerService(name, factory, concurrency, null, null, DEFAULT_TASK_TAG)
+
+    fun registerService(
+        name: String,
+        factory: ServiceFactory
+    ) = registerService(name, factory, DEFAULT_CONCURRENCY, null, null, DEFAULT_TASK_TAG)
 
     /**
      * Register workflow
@@ -70,5 +96,104 @@ interface WorkerRegister {
         checkMode: WorkflowCheckMode? = null,
         engine: WorkflowEngine? = DEFAULT_WORKFLOW_ENGINE,
         tagEngine: WorkflowTag? = DEFAULT_WORKFLOW_TAG
+    )
+
+    fun registerWorkflow(
+        name: String,
+        factory: WorkflowFactory,
+        concurrency: Int,
+        timeout: WithTimeout?,
+        retry: WithRetry?,
+        checkMode: WorkflowCheckMode?,
+        engine: WorkflowEngine?
+    ) = registerWorkflow(
+        name,
+        factory,
+        concurrency,
+        timeout,
+        retry,
+        checkMode,
+        engine,
+        DEFAULT_WORKFLOW_TAG
+    )
+
+    fun registerWorkflow(
+        name: String,
+        factory: WorkflowFactory,
+        concurrency: Int,
+        timeout: WithTimeout?,
+        retry: WithRetry?,
+        checkMode: WorkflowCheckMode?
+    ) = registerWorkflow(
+        name,
+        factory,
+        concurrency,
+        timeout,
+        retry,
+        checkMode,
+        DEFAULT_WORKFLOW_ENGINE,
+        DEFAULT_WORKFLOW_TAG
+    )
+
+    fun registerWorkflow(
+        name: String,
+        factory: WorkflowFactory,
+        concurrency: Int,
+        timeout: WithTimeout?,
+        retry: WithRetry?
+    ) = registerWorkflow(
+        name,
+        factory,
+        concurrency,
+        timeout,
+        retry,
+        null,
+        DEFAULT_WORKFLOW_ENGINE,
+        DEFAULT_WORKFLOW_TAG
+    )
+
+    fun registerWorkflow(
+        name: String,
+        factory: WorkflowFactory,
+        concurrency: Int,
+        timeout: WithTimeout?
+    ) = registerWorkflow(
+        name,
+        factory,
+        concurrency,
+        timeout,
+        null,
+        null,
+        DEFAULT_WORKFLOW_ENGINE,
+        DEFAULT_WORKFLOW_TAG
+    )
+
+    fun registerWorkflow(
+        name: String,
+        factory: WorkflowFactory,
+        concurrency: Int
+    ) = registerWorkflow(
+        name,
+        factory,
+        concurrency,
+        null,
+        null,
+        null,
+        DEFAULT_WORKFLOW_ENGINE,
+        DEFAULT_WORKFLOW_TAG
+    )
+
+    fun registerWorkflow(
+        name: String,
+        factory: WorkflowFactory
+    ) = registerWorkflow(
+        name,
+        factory,
+        DEFAULT_CONCURRENCY,
+        null,
+        null,
+        null,
+        DEFAULT_WORKFLOW_ENGINE,
+        DEFAULT_WORKFLOW_TAG
     )
 }

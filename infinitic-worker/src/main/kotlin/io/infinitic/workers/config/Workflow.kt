@@ -36,10 +36,10 @@ import io.infinitic.workflows.Workflow as WorkflowInstance
 data class Workflow(
     val name: String,
     val `class`: String? = null,
-    val concurrency: Int = WorkerRegister.DEFAULT_CONCURRENCY,
-    val timeoutInSeconds: Double? = null,
-    val retry: RetryPolicy? = null,
-    val checkMode: WorkflowCheckMode? = null,
+    var concurrency: Int? = null,
+    var timeoutInSeconds: Double? = null,
+    var retry: RetryPolicy? = null,
+    var checkMode: WorkflowCheckMode? = null,
     var tagEngine: WorkflowTag? = WorkerRegister.DEFAULT_WORKFLOW_TAG,
     var workflowEngine: WorkflowEngine? = WorkerRegister.DEFAULT_WORKFLOW_ENGINE
 ) {
@@ -93,10 +93,12 @@ data class Workflow(
                     "class \"$`class`\" must extend ${WorkflowInstance::class.java.name} to be used as a workflow"
                 }
 
-                require(concurrency >= 0) { "concurrency must be positive (workflow $name)" }
+                if (concurrency != null) {
+                    require(concurrency!! >= 0) { "concurrency must be positive (workflow $name)" }
+                }
 
                 if (timeoutInSeconds != null) {
-                    require(timeoutInSeconds > 0) { "timeoutSeconds must be positive (workflow $name)" }
+                    require(timeoutInSeconds!! > 0) { "timeoutSeconds must be positive (workflow $name)" }
                 }
             }
         }

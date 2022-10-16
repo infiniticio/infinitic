@@ -29,7 +29,7 @@ sealed class TaskException(
     message: String
 ) : kotlin.RuntimeException(message)
 
-class TimeoutTaskException(
+class TimeoutException(
     klass: String,
     timeoutSeconds: Double
 ) : TaskException(

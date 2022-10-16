@@ -50,7 +50,7 @@ import io.infinitic.common.tasks.executors.messages.TaskExecutorMessage
 import io.infinitic.common.tasks.tags.SendToTaskTag
 import io.infinitic.common.tasks.tags.messages.RemoveTagFromTask
 import io.infinitic.common.tasks.tags.messages.TaskTagMessage
-import io.infinitic.common.workers.config.ExponentialBackoffRetry
+import io.infinitic.common.workers.config.ExponentialBackoffRetryPolicy
 import io.infinitic.common.workers.registry.RegisteredService
 import io.infinitic.common.workers.registry.WorkerRegistry
 import io.infinitic.common.workflows.data.methodRuns.MethodRunId
@@ -61,7 +61,7 @@ import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
 import io.infinitic.exceptions.tasks.ClassNotFoundException
 import io.infinitic.exceptions.tasks.NoMethodFoundWithParameterCountException
 import io.infinitic.exceptions.tasks.NoMethodFoundWithParameterTypesException
-import io.infinitic.exceptions.tasks.TimeoutTaskException
+import io.infinitic.exceptions.tasks.TimeoutException
 import io.infinitic.exceptions.tasks.TooManyMethodsFoundWithParameterCountException
 import io.infinitic.tasks.executor.samples.RetryImpl
 import io.infinitic.tasks.executor.samples.ServiceImplService
@@ -289,7 +289,7 @@ class TaskExecutorTests : StringSpec({
         taskTagMessages[1] shouldBe getRemoveTag(msg, "bar")
     }
 
-    "Should retry with correct exception with Retry intrface" {
+    "Should retry with correct exception with Retry interface" {
         every { workerRegistry.getRegisteredService(ServiceName("task")) } returns service.copy(factory = { SimpleServiceWithRetry() })
         // with
         val msg = getExecuteTask("handle", arrayOf(2, "3"), null)
@@ -381,7 +381,7 @@ class TaskExecutorTests : StringSpec({
         every { workerRegistry.getRegisteredService(ServiceName("task")) } returns service.copy(
             factory = { ServiceWithRegisteredTimeout() },
             withTimeout = { 0.1 },
-            withRetry = ExponentialBackoffRetry(maximumRetries = 0)
+            withRetry = ExponentialBackoffRetryPolicy(maximumRetries = 0)
         )
         val types = listOf(Int::class.java.name, String::class.java.name)
         // with
@@ -390,8 +390,8 @@ class TaskExecutorTests : StringSpec({
         coroutineScope { taskExecutor.handle(msg) }
         // then
         taskExecutorMessage.isCaptured shouldBe false
-        checkClientException(clientMessage, msg, TimeoutTaskException::class)
-        checkWorkflowException(workflowEngineMessage, msg, TimeoutTaskException::class)
+        checkClientException(clientMessage, msg, TimeoutException::class)
+        checkWorkflowException(workflowEngineMessage, msg, TimeoutException::class)
         taskTagMessages.size shouldBe 2
         taskTagMessages[0] shouldBe getRemoveTag(msg, "foo")
         taskTagMessages[1] shouldBe getRemoveTag(msg, "bar")
@@ -400,7 +400,7 @@ class TaskExecutorTests : StringSpec({
     "Should throw TimeoutTaskException with timeout from method Annotation" {
         every { workerRegistry.getRegisteredService(ServiceName("task")) } returns service.copy(
             factory = { ServiceWithTimeoutOnMethod() },
-            withRetry = ExponentialBackoffRetry(maximumRetries = 0)
+            withRetry = ExponentialBackoffRetryPolicy(maximumRetries = 0)
         )
         val input = arrayOf(2, "3")
         val types = listOf(Int::class.java.name, String::class.java.name)
@@ -410,8 +410,8 @@ class TaskExecutorTests : StringSpec({
         coroutineScope { taskExecutor.handle(msg) }
         // then
         taskExecutorMessage.isCaptured shouldBe false
-        checkClientException(clientMessage, msg, TimeoutTaskException::class)
-        checkWorkflowException(workflowEngineMessage, msg, TimeoutTaskException::class)
+        checkClientException(clientMessage, msg, TimeoutException::class)
+        checkWorkflowException(workflowEngineMessage, msg, TimeoutException::class)
         taskTagMessages.size shouldBe 2
         taskTagMessages[0] shouldBe getRemoveTag(msg, "foo")
         taskTagMessages[1] shouldBe getRemoveTag(msg, "bar")
@@ -420,7 +420,7 @@ class TaskExecutorTests : StringSpec({
     "Should throw TimeoutTaskException with timeout from class Annotation" {
         every { workerRegistry.getRegisteredService(ServiceName("task")) } returns service.copy(
             factory = { ServiceWithTimeoutOnClass() },
-            withRetry = ExponentialBackoffRetry(maximumRetries = 0)
+            withRetry = ExponentialBackoffRetryPolicy(maximumRetries = 0)
         )
         val input = arrayOf(2, "3")
         val types = listOf(Int::class.java.name, String::class.java.name)
@@ -430,8 +430,8 @@ class TaskExecutorTests : StringSpec({
         coroutineScope { taskExecutor.handle(msg) }
         // then
         taskExecutorMessage.isCaptured shouldBe false
-        checkClientException(clientMessage, msg, TimeoutTaskException::class)
-        checkWorkflowException(workflowEngineMessage, msg, TimeoutTaskException::class)
+        checkClientException(clientMessage, msg, TimeoutException::class)
+        checkWorkflowException(workflowEngineMessage, msg, TimeoutException::class)
         taskTagMessages.size shouldBe 2
         taskTagMessages[0] shouldBe getRemoveTag(msg, "foo")
         taskTagMessages[1] shouldBe getRemoveTag(msg, "bar")
