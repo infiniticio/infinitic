@@ -31,31 +31,35 @@ import io.infinitic.common.data.methods.MethodName
 import io.infinitic.common.data.methods.MethodParameterTypes
 import io.infinitic.common.data.methods.MethodParameters
 import io.infinitic.common.messages.Message
+import io.infinitic.common.tasks.data.ServiceName
 import io.infinitic.common.tasks.data.TaskId
 import io.infinitic.common.tasks.data.TaskMeta
-import io.infinitic.common.tasks.data.TaskName
 import io.infinitic.common.tasks.data.TaskRetryIndex
 import io.infinitic.common.tasks.data.TaskRetrySequence
 import io.infinitic.common.tasks.data.TaskTag
-import io.infinitic.common.tasks.executors.errors.WorkerError
+import io.infinitic.common.tasks.executors.errors.ExecutionError
 import io.infinitic.common.workflows.data.methodRuns.MethodRunId
+import io.infinitic.common.workflows.data.workflowTasks.WorkflowTask
 import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.data.workflows.WorkflowName
-import io.infinitic.tasks.TaskOptions
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 @Serializable
 sealed class TaskExecutorMessage : Message {
     abstract val taskId: TaskId
-    abstract val taskName: TaskName
+    abstract val serviceName: ServiceName
     abstract val emitterName: ClientName
 
     override fun envelope() = TaskExecutorEnvelope.from(this)
+
+    fun isWorkflowTask() = serviceName == ServiceName(WorkflowTask::class.java.name)
 }
 
-@Serializable @AvroNamespace("io.infinitic.tasks.executor")
+@Serializable
+@AvroNamespace("io.infinitic.tasks.executor")
 data class ExecuteTask(
-    override val taskName: TaskName,
+    @SerialName("taskName") override val serviceName: ServiceName,
     override val taskId: TaskId,
     override val emitterName: ClientName,
     val clientWaiting: Boolean,
@@ -64,11 +68,10 @@ data class ExecuteTask(
     val methodParameters: MethodParameters,
     val taskRetrySequence: TaskRetrySequence,
     val taskRetryIndex: TaskRetryIndex,
-    val lastError: WorkerError?,
+    val lastError: ExecutionError?,
     val workflowId: WorkflowId?,
     val workflowName: WorkflowName?,
     val methodRunId: MethodRunId?,
-    val taskOptions: TaskOptions,
     val taskTags: Set<TaskTag>,
     val taskMeta: TaskMeta
 ) : TaskExecutorMessage()

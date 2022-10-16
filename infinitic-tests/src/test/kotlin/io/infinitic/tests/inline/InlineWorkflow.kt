@@ -25,7 +25,7 @@
 
 package io.infinitic.tests.inline
 
-import io.infinitic.tests.utils.UtilTask
+import io.infinitic.tests.utils.UtilService
 import io.infinitic.workflows.Workflow
 
 interface InlineWorkflow {
@@ -37,27 +37,27 @@ interface InlineWorkflow {
 @Suppress("unused")
 class InlineWorkflowImpl : Workflow(), InlineWorkflow {
 
-    private val utilTask = newTask(UtilTask::class.java)
+    private val utilService = newService(UtilService::class.java)
 
     override fun inline1(i: Int): String {
         val result = inline { 2 * i }
-        return utilTask.concat("2 * $i = ", "$result")
+        return utilService.concat("2 * $i = ", "$result")
     }
 
     override fun inline2(i: Int): String {
         val result = inline {
-            dispatch(utilTask::reverse, "ab")
+            dispatch(utilService::reverse, "ab")
             2 * i
         }
 
-        return utilTask.concat("2 * $i = ", "$result")
+        return utilService.concat("2 * $i = ", "$result")
     }
 
     override fun inline3(i: Int): String {
         val result = inline {
-            utilTask.concat("1", "2")
+            utilService.concat("1", "2")
             2 * i
         }
-        return utilTask.concat("2 * $i = ", "$result") // should throw
+        return utilService.concat("2 * $i = ", "$result") // should throw
     }
 }

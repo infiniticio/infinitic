@@ -138,7 +138,7 @@ internal class WorkflowTagEngineTests : StringSpec({
             workflowName shouldBe msgIn.workflowName
             taskId shouldBe msgIn.taskId
             taskStatus shouldBe msgIn.taskStatus
-            taskName shouldBe msgIn.taskName
+            serviceName shouldBe msgIn.serviceName
         }
     }
 

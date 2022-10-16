@@ -25,6 +25,9 @@
 
 package io.infinitic.workers.config
 
+import io.infinitic.common.workers.config.RetryPolicy
+import io.infinitic.common.workers.config.WorkflowCheckMode
+import io.infinitic.workers.register.WorkerRegister
 import io.infinitic.workflows.engine.config.WorkflowEngine
 import io.infinitic.workflows.tag.config.WorkflowTag
 import java.lang.reflect.Constructor
@@ -33,15 +36,16 @@ import io.infinitic.workflows.Workflow as WorkflowInstance
 data class Workflow(
     val name: String,
     val `class`: String? = null,
-    val concurrency: Int = 1,
-    var tagEngine: WorkflowTag? = null,
-    var workflowEngine: WorkflowEngine? = null
-    // val retryPolicy: RetryPolicy = RetryExponentialBackoff(maximumAttempts = 0)
+    var concurrency: Int? = null,
+    var timeoutInSeconds: Double? = null,
+    var retry: RetryPolicy? = null,
+    var checkMode: WorkflowCheckMode? = null,
+    var tagEngine: WorkflowTag? = WorkerRegister.DEFAULT_WORKFLOW_TAG,
+    var workflowEngine: WorkflowEngine? = WorkerRegister.DEFAULT_WORKFLOW_ENGINE
 ) {
     private lateinit var _constructor: Constructor<out Any>
 
-    val instance
-        get() = _constructor.newInstance() as WorkflowInstance
+    fun getInstance() = _constructor.newInstance() as WorkflowInstance
 
     init {
         require(name.isNotEmpty()) { "name can not be empty" }
@@ -89,7 +93,13 @@ data class Workflow(
                     "class \"$`class`\" must extend ${WorkflowInstance::class.java.name} to be used as a workflow"
                 }
 
-                require(concurrency >= 0) { "concurrency must be positive (workflow $name)" }
+                if (concurrency != null) {
+                    require(concurrency!! >= 0) { "concurrency must be positive (workflow $name)" }
+                }
+
+                if (timeoutInSeconds != null) {
+                    require(timeoutInSeconds!! > 0) { "timeoutSeconds must be positive (workflow $name)" }
+                }
             }
         }
     }

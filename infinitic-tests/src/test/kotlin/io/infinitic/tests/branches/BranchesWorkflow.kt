@@ -26,7 +26,7 @@
 package io.infinitic.tests.branches
 
 import io.infinitic.annotations.Ignore
-import io.infinitic.tests.utils.UtilTask
+import io.infinitic.tests.utils.UtilService
 import io.infinitic.workflows.Deferred
 import io.infinitic.workflows.Workflow
 
@@ -42,36 +42,40 @@ interface BranchesWorkflow {
 @Suppress("unused")
 class BranchesWorkflowImpl : Workflow(), BranchesWorkflow {
 
-    @Ignore private val self by lazy { getWorkflowById(BranchesWorkflow::class.java, context.id) }
+    @Ignore
+    private val self by lazy { getWorkflowById(BranchesWorkflow::class.java, workflowId) }
 
     lateinit var deferred: Deferred<String>
 
-    private val utilTask = newTask(UtilTask::class.java, tags = setOf("foo", "bar"), meta = mapOf("foo" to "bar".toByteArray()))
+    private val utilService =
+        newService(UtilService::class.java, tags = setOf("foo", "bar"), meta = mapOf("foo" to "bar".toByteArray()))
     private val branchesWorkflow = newWorkflow(BranchesWorkflow::class.java)
 
     override fun seq3(): String {
         var str = ""
         val d = dispatch(self::seq3bis)
-        str = utilTask.concat(str, "2")
-        str = utilTask.concat(str, "3")
+        str = utilService.concat(str, "2")
+        str = utilService.concat(str, "3")
 
         return str + d.await() // should be "23ba"
     }
 
-    override fun seq3bis(): String { return utilTask.reverse("ab") }
+    override fun seq3bis(): String {
+        return utilService.reverse("ab")
+    }
 
     override fun seq4(): String {
         var str = ""
         val d = dispatch(self::seq4bis)
-        str = utilTask.concat(str, "2")
-        str = utilTask.concat(str, "3")
+        str = utilService.concat(str, "2")
+        str = utilService.concat(str, "3")
 
         return str + d.await() // should be "23bac"
     }
 
     override fun seq4bis(): String {
-        val s = utilTask.reverse("ab")
-        return utilTask.concat(s, "c")
+        val s = utilService.reverse("ab")
+        return utilService.concat(s, "c")
     }
 
     override fun deferred1(): String {
@@ -86,5 +90,7 @@ class BranchesWorkflowImpl : Workflow(), BranchesWorkflow {
         return str // should be "truefalsefalsetrue"
     }
 
-    override fun deferred1bis(): String { return utilTask.reverse("X") }
+    override fun deferred1bis(): String {
+        return utilService.reverse("X")
+    }
 }

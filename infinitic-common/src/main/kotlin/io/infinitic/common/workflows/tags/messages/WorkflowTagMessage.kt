@@ -33,8 +33,8 @@ import io.infinitic.common.data.methods.MethodName
 import io.infinitic.common.data.methods.MethodParameterTypes
 import io.infinitic.common.data.methods.MethodParameters
 import io.infinitic.common.messages.Message
+import io.infinitic.common.tasks.data.ServiceName
 import io.infinitic.common.tasks.data.TaskId
-import io.infinitic.common.tasks.data.TaskName
 import io.infinitic.common.workflows.data.channels.ChannelName
 import io.infinitic.common.workflows.data.channels.ChannelType
 import io.infinitic.common.workflows.data.channels.SignalData
@@ -46,7 +46,7 @@ import io.infinitic.common.workflows.data.workflows.WorkflowMeta
 import io.infinitic.common.workflows.data.workflows.WorkflowName
 import io.infinitic.common.workflows.data.workflows.WorkflowTag
 import io.infinitic.workflows.DeferredStatus
-import io.infinitic.workflows.WorkflowOptions
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 @Serializable
@@ -69,7 +69,6 @@ data class DispatchWorkflowByCustomId(
     val methodName: MethodName,
     val methodParameters: MethodParameters,
     val methodParameterTypes: MethodParameterTypes?,
-    val workflowOptions: WorkflowOptions,
     val workflowTags: Set<WorkflowTag>,
     val workflowMeta: WorkflowMeta,
     var parentWorkflowName: WorkflowName?,
@@ -124,7 +123,7 @@ data class RetryTasksByTag(
     override val workflowTag: WorkflowTag,
     val taskId: TaskId?,
     val taskStatus: DeferredStatus?,
-    val taskName: TaskName?,
+    @SerialName("taskName") val serviceName: ServiceName?,
     override val emitterName: ClientName
 ) : WorkflowTagMessage()
 

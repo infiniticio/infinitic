@@ -27,24 +27,27 @@ package io.infinitic.tasks.executor.task
 
 import io.infinitic.clients.InfiniticClientInterface
 import io.infinitic.common.clients.ClientFactory
-import io.infinitic.common.tasks.executors.errors.WorkerError
+import io.infinitic.common.tasks.executors.errors.ExecutionError
 import io.infinitic.common.workers.registry.WorkerRegistry
 import io.infinitic.tasks.TaskContext
-import io.infinitic.tasks.TaskOptions
+import io.infinitic.tasks.WithRetry
+import io.infinitic.tasks.WithTimeout
 
 data class TaskContextImpl(
     override val workerName: String,
     override val workerRegistry: WorkerRegistry,
-    override val id: String,
-    override val name: String,
+    override val serviceName: String,
+    override val taskId: String,
+    override val taskName: String,
     override val workflowId: String?,
     override val workflowName: String?,
     override val retrySequence: Int,
     override val retryIndex: Int,
-    override val lastError: WorkerError?,
+    override val lastError: ExecutionError?,
     override val tags: Set<String>,
     override val meta: MutableMap<String, ByteArray>,
-    override val options: TaskOptions,
+    override val withTimeout: WithTimeout?,
+    override val withRetry: WithRetry?,
     private val clientFactory: ClientFactory
 ) : TaskContext {
     override val client: InfiniticClientInterface by lazy { clientFactory() }

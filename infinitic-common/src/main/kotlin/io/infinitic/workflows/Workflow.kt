@@ -25,9 +25,10 @@
 
 package io.infinitic.workflows
 
+import io.infinitic.annotations.Ignore
 import io.infinitic.annotations.Name
 import io.infinitic.common.proxies.ExistingWorkflowProxyHandler
-import io.infinitic.common.proxies.NewTaskProxyHandler
+import io.infinitic.common.proxies.NewServiceProxyHandler
 import io.infinitic.common.proxies.NewWorkflowProxyHandler
 import io.infinitic.common.proxies.ProxyHandler
 import io.infinitic.common.tasks.data.TaskMeta
@@ -38,28 +39,43 @@ import io.infinitic.common.workflows.data.workflows.WorkflowTag
 import io.infinitic.exceptions.clients.InvalidStubException
 import io.infinitic.exceptions.workflows.MultipleGettersForSameChannelException
 import io.infinitic.exceptions.workflows.NonIdempotentChannelGetterException
-import io.infinitic.tasks.TaskOptions
 import java.time.Duration
 import java.time.Instant
 
 @Suppress("unused")
 abstract class Workflow {
-    lateinit var context: WorkflowContext
+    @Ignore
+    lateinit var workflowName: String
+
+    @Ignore
+    lateinit var workflowId: String
+
+    @Ignore
+    lateinit var methodName: String
+
+    @Ignore
+    lateinit var methodId: String
+
+    @Ignore
+    lateinit var tags: Set<String>
+
+    @Ignore
+    lateinit var meta: Map<String, ByteArray>
+
+    @Ignore
     lateinit var dispatcher: WorkflowDispatcher
 
     /**
      *  Create a stub for a task
      */
     @JvmOverloads
-    protected fun <T : Any> newTask(
+    protected fun <T : Any> newService(
         klass: Class<out T>,
         tags: Set<String>? = null,
-        options: TaskOptions? = null,
         meta: Map<String, ByteArray>? = null
-    ): T = NewTaskProxyHandler(
+    ): T = NewServiceProxyHandler(
         klass = klass,
         taskTags = tags?.map { TaskTag(it) }?.toSet() ?: setOf(),
-        taskOptions = options ?: TaskOptions(),
         taskMeta = TaskMeta(meta ?: mapOf())
     ) { dispatcher }.stub()
 
@@ -67,15 +83,13 @@ abstract class Workflow {
      *  Create a stub for a workflow
      */
     @JvmOverloads
-    protected fun <T : Any> newWorkflow(
+    protected fun <T> newWorkflow(
         klass: Class<out T>,
         tags: Set<String>? = null,
-        options: WorkflowOptions? = null,
         meta: Map<String, ByteArray>? = null
     ): T = NewWorkflowProxyHandler(
         klass = klass,
         workflowTags = tags?.map { WorkflowTag(it) }?.toSet() ?: setOf(),
-        workflowOptions = options ?: WorkflowOptions(),
         workflowMeta = WorkflowMeta(meta ?: mapOf())
     ) { dispatcher }.stub()
 
@@ -376,13 +390,16 @@ abstract class Workflow {
 
     // from klass for the given workflow name
     private fun findClassPerWorkflowName() = try {
-        Class.forName(context.name)
+        Class.forName(workflowName)
     } catch (e: ClassNotFoundException) {
-        findClassPerAnnotationName(this::class.java, context.name)
+        findClassPerAnnotationName()
     }
 
     // from klass, search for a given @Name annotation
-    private fun findClassPerAnnotationName(klass: Class<*>, name: String): Class<*>? {
+    private fun findClassPerAnnotationName(
+        klass: Class<*> = this::class.java,
+        name: String = this.workflowName
+    ): Class<*>? {
         var clazz = klass
 
         do {

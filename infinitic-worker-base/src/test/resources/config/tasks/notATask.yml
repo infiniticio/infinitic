@@ -24,7 +24,7 @@
 # Uncomment the line below to perform test on a local Pulsar cluster
 
 transport: inMemory
-stateStorage: inMemory
+storage: inMemory
 
 pulsar:
   brokerServiceUrl: pulsar://localhost:6650
@@ -32,7 +32,7 @@ pulsar:
   tenant: infinitic
   namespace: dev
 
-tasks:
+services:
   - name: io.infinitic.workers.samples.TaskA
     class: io.infinitic.workers.samples.NotATask
 

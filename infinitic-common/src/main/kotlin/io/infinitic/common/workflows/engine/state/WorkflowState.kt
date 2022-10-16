@@ -48,7 +48,6 @@ import io.infinitic.common.workflows.data.workflows.WorkflowMeta
 import io.infinitic.common.workflows.data.workflows.WorkflowName
 import io.infinitic.common.workflows.data.workflows.WorkflowTag
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
-import io.infinitic.workflows.WorkflowOptions
 import kotlinx.serialization.Serializable
 
 @Serializable
@@ -73,11 +72,6 @@ data class WorkflowState(
      * Instance's tags defined when dispatched
      */
     val workflowTags: Set<WorkflowTag>,
-
-    /**
-     * Instance's options defined when dispatched
-     */
-    val workflowOptions: WorkflowOptions,
 
     /**
      * Instance's meta defined when dispatched
@@ -141,7 +135,7 @@ data class WorkflowState(
      * Messages received while a WorkflowTask is still running.
      * They can not be handled immediately, so we store them in this buffer
      */
-    val messagesBuffer: MutableList<WorkflowEngineMessage> = mutableListOf(),
+    val messagesBuffer: MutableList<WorkflowEngineMessage> = mutableListOf()
 ) {
     companion object {
         fun fromByteArray(bytes: ByteArray) = AvroSerDe.readBinaryWithSchemaFingerprint(bytes, serializer())

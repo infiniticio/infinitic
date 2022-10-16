@@ -32,21 +32,19 @@ import io.infinitic.common.data.methods.MethodParameterTypes
 import io.infinitic.common.data.methods.MethodParameters
 import io.infinitic.common.fixtures.TestFactory
 import io.infinitic.common.serDe.SerializedData
+import io.infinitic.common.tasks.data.ServiceName
 import io.infinitic.common.tasks.data.TaskAttemptId
 import io.infinitic.common.tasks.data.TaskId
 import io.infinitic.common.tasks.data.TaskMeta
-import io.infinitic.common.tasks.data.TaskName
 import io.infinitic.common.tasks.data.TaskRetryIndex
 import io.infinitic.common.tasks.data.TaskRetrySequence
 import io.infinitic.common.tasks.data.TaskTag
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
-import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 
-@OptIn(ExperimentalSerializationApi::class)
 class DataTests : StringSpec({
     "TaskId should be json-serializable" {
         val id = TestFactory.random<String>()
@@ -145,9 +143,9 @@ class DataTests : StringSpec({
 
     "TaskName should be serialized as String" {
         val id = TestFactory.random<String>()
-        val m = TaskName(id)
+        val m = ServiceName(id)
         val json = Json.encodeToString(m)
-        val m2 = Json.decodeFromString<TaskName>(json)
+        val m2 = Json.decodeFromString<ServiceName>(json)
 
         json shouldBe Json.encodeToString(id)
         m2 shouldBe m

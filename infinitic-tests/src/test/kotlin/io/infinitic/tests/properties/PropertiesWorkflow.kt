@@ -26,7 +26,7 @@
 package io.infinitic.tests.properties
 
 import io.infinitic.annotations.Ignore
-import io.infinitic.tests.utils.UtilTask
+import io.infinitic.tests.utils.UtilService
 import io.infinitic.workflows.Deferred
 import io.infinitic.workflows.Workflow
 
@@ -53,11 +53,13 @@ interface PropertiesWorkflow {
 @Suppress("unused")
 class PropertiesWorkflowImpl : Workflow(), PropertiesWorkflow {
 
-    @Ignore private val self by lazy { getWorkflowById(PropertiesWorkflow::class.java, context.id) }
+    @Ignore
+    private val self by lazy { getWorkflowById(PropertiesWorkflow::class.java, workflowId) }
 
     lateinit var deferred: Deferred<String>
 
-    private val utilTask = newTask(UtilTask::class.java, tags = setOf("foo", "bar"), meta = mapOf("foo" to "bar".toByteArray()))
+    private val utilService =
+        newService(UtilService::class.java, tags = setOf("foo", "bar"), meta = mapOf("foo" to "bar".toByteArray()))
 
     private var p1 = ""
 
@@ -69,59 +71,72 @@ class PropertiesWorkflowImpl : Workflow(), PropertiesWorkflow {
         return p1 // should be "ac"
     }
 
-    override fun prop1bis() { p1 += "b" }
+    override fun prop1bis() {
+        p1 += "b"
+    }
 
     override fun prop2(): String {
         p1 = "a"
         dispatch(self::prop2bis)
         p1 += "c"
-        utilTask.await(100)
+        utilService.await(100)
         p1 += "d"
 
         return p1 // should be "acbd"
     }
 
-    override fun prop2bis() { p1 += "b" }
+    override fun prop2bis() {
+        p1 += "b"
+    }
 
     override fun prop3(): String {
         p1 = "a"
         dispatch(self::prop3bis)
         p1 += "c"
-        utilTask.await(2000)
+        utilService.await(2000)
         p1 += "d"
 
         return p1 // should be "acbd"
     }
 
-    override fun prop3bis() { utilTask.await(50); p1 += "b" }
+    override fun prop3bis() {
+        utilService.await(50); p1 += "b"
+    }
 
     override fun prop4(): String {
         p1 = "a"
         dispatch(self::prop4bis)
         p1 += "c"
-        utilTask.await(100)
+        utilService.await(100)
         p1 += "d"
 
         return p1 // should be "acd"
     }
 
-    override fun prop4bis() { utilTask.await(200); p1 += "b" }
+    override fun prop4bis() {
+        utilService.await(200); p1 += "b"
+    }
 
     override fun prop5(): String {
         p1 = "a"
         dispatch(self::prop5bis)
         dispatch(self::prop5ter)
         p1 += "d"
-        utilTask.await(100)
+        utilService.await(100)
 
         return p1 // should be "adbc"
     }
 
-    override fun prop5bis() { p1 += "b" }
-    override fun prop5ter() { p1 += "c" }
+    override fun prop5bis() {
+        p1 += "b"
+    }
+
+    override fun prop5ter() {
+        p1 += "c"
+    }
 
     override fun prop6(): String {
-        val d1 = dispatch(utilTask::reverse, "12")
+        val d1 = dispatch(utilService::reverse, "12")
         val d2 = dispatch(self::prop6bis, d1)
         d1.await()
         p1 += "a"
@@ -133,10 +148,12 @@ class PropertiesWorkflowImpl : Workflow(), PropertiesWorkflow {
         return p1 // should be "abab"
     }
 
-    override fun prop6bis(deferred: Deferred<String>): String { deferred.await(); p1 += "b"; return p1 }
+    override fun prop6bis(deferred: Deferred<String>): String {
+        deferred.await(); p1 += "b"; return p1
+    }
 
     override fun prop7(): String {
-        deferred = dispatch(utilTask::reverse, "12")
+        deferred = dispatch(utilService::reverse, "12")
         val d2 = dispatch(self::prop7bis)
         deferred.await()
         p1 += "a"
@@ -148,17 +165,21 @@ class PropertiesWorkflowImpl : Workflow(), PropertiesWorkflow {
         return p1 // should be "abab"
     }
 
-    override fun prop7bis(): String { deferred.await(); p1 += "b"; return p1 }
+    override fun prop7bis(): String {
+        deferred.await(); p1 += "b"; return p1
+    }
 
     override fun prop8(): String {
-        p1 = utilTask.reverse("a")
+        p1 = utilService.reverse("a")
         dispatch(self::prop8bis)
         p1 += "c"
-        utilTask.await(200)
+        utilService.await(200)
         p1 += "d"
 
         return p1 // should be "acbd"
     }
 
-    override fun prop8bis() { p1 += utilTask.reverse("b") }
+    override fun prop8bis() {
+        p1 += utilService.reverse("b")
+    }
 }

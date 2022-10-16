@@ -26,17 +26,16 @@
 package io.infinitic.common.workers
 
 import io.infinitic.common.clients.ClientFactory
-import io.infinitic.common.tasks.data.TaskName
+import io.infinitic.common.tasks.data.ServiceName
 import io.infinitic.common.tasks.tags.storage.TaskTagStorage
 import io.infinitic.common.workers.registry.WorkerRegistry
 import io.infinitic.common.workflows.data.workflows.WorkflowName
 import io.infinitic.common.workflows.engine.storage.WorkflowStateStorage
 import io.infinitic.common.workflows.tags.storage.WorkflowTagStorage
-import io.infinitic.tasks.Task
 import io.infinitic.workflows.Workflow
 import kotlinx.coroutines.CoroutineScope
 
-typealias TaskFactory = () -> Task
+typealias ServiceFactory = () -> Any
 
 typealias WorkflowFactory = () -> Workflow
 
@@ -55,10 +54,10 @@ interface WorkerStarter {
 
     fun CoroutineScope.startWorkflowDelay(workflowName: WorkflowName, concurrency: Int)
 
-    fun CoroutineScope.startTaskTag(taskName: TaskName, taskTagStorage: TaskTagStorage, concurrency: Int)
+    fun CoroutineScope.startTaskTag(serviceName: ServiceName, taskTagStorage: TaskTagStorage, concurrency: Int)
 
     fun CoroutineScope.startTaskExecutor(
-        taskName: TaskName,
+        serviceName: ServiceName,
         concurrency: Int,
         workerRegistry: WorkerRegistry,
         clientFactory: ClientFactory

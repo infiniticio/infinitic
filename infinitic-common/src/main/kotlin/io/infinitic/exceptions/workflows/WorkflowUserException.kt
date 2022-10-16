@@ -70,7 +70,7 @@ object ChannelWithoutGetterException : WorkflowUserException(
     help = "Make sure to add a getter of this channel to the workflow interface"
 )
 
-class WorkflowUpdatedException(
+class WorkflowChangedException(
     workflow: String,
     method: String,
     position: String

@@ -64,7 +64,6 @@ import io.infinitic.common.workflows.tags.messages.SendSignalByTag
 import io.infinitic.common.workflows.tags.messages.WorkflowTagMessage
 import io.infinitic.exceptions.clients.InvalidChannelUsageException
 import io.infinitic.exceptions.clients.InvalidStubException
-import io.infinitic.workflows.WorkflowOptions
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
@@ -101,7 +100,6 @@ class ClientWorkflow : InfiniticClientAbstract() {
 class ClientWorkflowTests : StringSpec({
     val client = ClientWorkflow()
 
-    val options = TestFactory.random<WorkflowOptions>()
     val meta: Map<String, ByteArray> = mapOf(
         "foo" to TestFactory.random(),
         "bar" to TestFactory.random()
@@ -111,7 +109,7 @@ class ClientWorkflowTests : StringSpec({
     val fakeWorkflow = client.newWorkflow(FakeWorkflow::class.java)
     val fooWorkflow = client.newWorkflow(FooWorkflow::class.java)
 
-    val fakeWorkflowWithOptions = client.newWorkflow(FakeWorkflow::class.java, options = options)
+    val fakeWorkflowWithOptions = client.newWorkflow(FakeWorkflow::class.java)
     val fakeWorkflowWithMeta = client.newWorkflow(FakeWorkflow::class.java, meta = meta)
     val fakeWorkflowWithTags = client.newWorkflow(FakeWorkflow::class.java, tags = tags)
 
@@ -137,7 +135,6 @@ class ClientWorkflowTests : StringSpec({
             methodName = MethodName("m0"),
             methodParameters = MethodParameters(),
             methodParameterTypes = MethodParameterTypes(listOf()),
-            workflowOptions = WorkflowOptions(),
             workflowTags = setOf(),
             workflowMeta = WorkflowMeta(),
             parentWorkflowName = null,
@@ -159,7 +156,6 @@ class ClientWorkflowTests : StringSpec({
             methodName = MethodName("bar"),
             methodParameters = MethodParameters(),
             methodParameterTypes = MethodParameterTypes(listOf()),
-            workflowOptions = WorkflowOptions(),
             workflowTags = setOf(),
             workflowMeta = WorkflowMeta(),
             parentWorkflowName = null,
@@ -181,7 +177,6 @@ class ClientWorkflowTests : StringSpec({
             methodName = MethodName("bar"),
             methodParameters = MethodParameters(),
             methodParameterTypes = MethodParameterTypes(listOf()),
-            workflowOptions = WorkflowOptions(),
             workflowTags = setOf(),
             workflowMeta = WorkflowMeta(),
             parentWorkflowName = null,
@@ -203,7 +198,6 @@ class ClientWorkflowTests : StringSpec({
             methodName = MethodName("parent"),
             methodParameters = MethodParameters(),
             methodParameterTypes = MethodParameterTypes(listOf()),
-            workflowOptions = WorkflowOptions(),
             workflowTags = setOf(),
             workflowMeta = WorkflowMeta(),
             parentWorkflowName = null,
@@ -225,7 +219,6 @@ class ClientWorkflowTests : StringSpec({
             methodName = MethodName("m0"),
             methodParameters = MethodParameters(),
             methodParameterTypes = MethodParameterTypes(listOf()),
-            workflowOptions = options,
             workflowTags = setOf(),
             workflowMeta = WorkflowMeta(),
             parentWorkflowName = null,
@@ -247,7 +240,6 @@ class ClientWorkflowTests : StringSpec({
             methodName = MethodName("m0"),
             methodParameters = MethodParameters(),
             methodParameterTypes = MethodParameterTypes(listOf()),
-            workflowOptions = WorkflowOptions(),
             workflowTags = setOf(),
             workflowMeta = WorkflowMeta(meta),
             parentWorkflowName = null,
@@ -277,7 +269,6 @@ class ClientWorkflowTests : StringSpec({
             methodName = MethodName("m0"),
             methodParameters = MethodParameters(),
             methodParameterTypes = MethodParameterTypes(listOf()),
-            workflowOptions = WorkflowOptions(),
             workflowTags = tags.map { WorkflowTag(it) }.toSet(),
             workflowMeta = WorkflowMeta(),
             parentWorkflowName = null,
@@ -300,7 +291,6 @@ class ClientWorkflowTests : StringSpec({
             methodName = MethodName("m1"),
             methodParameters = MethodParameters.from(0),
             methodParameterTypes = MethodParameterTypes(listOf(Integer::class.java.name)),
-            workflowOptions = WorkflowOptions(),
             workflowTags = setOf(),
             workflowMeta = WorkflowMeta(),
             parentWorkflowName = null,
@@ -323,7 +313,6 @@ class ClientWorkflowTests : StringSpec({
             methodName = MethodName("m3"),
             methodParameters = MethodParameters.from(0, "a"),
             methodParameterTypes = MethodParameterTypes(listOf(Int::class.java.name, String::class.java.name)),
-            workflowOptions = WorkflowOptions(),
             workflowTags = setOf(),
             workflowMeta = WorkflowMeta(),
             parentWorkflowName = null,
@@ -348,7 +337,6 @@ class ClientWorkflowTests : StringSpec({
             methodName = MethodName("m4"),
             methodParameters = MethodParameters.from(klass),
             methodParameterTypes = MethodParameterTypes(listOf(FakeInterface::class.java.name)),
-            workflowOptions = WorkflowOptions(),
             workflowTags = setOf(),
             workflowMeta = WorkflowMeta(),
             parentWorkflowName = null,
@@ -513,7 +501,7 @@ class ClientWorkflowTests : StringSpec({
             workflowId = WorkflowId(id),
             taskId = null,
             taskStatus = null,
-            taskName = null,
+            serviceName = null,
             emitterName = clientNameTest
         )
     }
@@ -530,7 +518,7 @@ class ClientWorkflowTests : StringSpec({
             workflowId = WorkflowId(id),
             taskId = null,
             taskStatus = null,
-            taskName = null,
+            serviceName = null,
             emitterName = clientNameTest
         )
     }

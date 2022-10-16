@@ -28,12 +28,10 @@ package io.infinitic.common.proxies
 import io.infinitic.common.workflows.data.workflows.WorkflowMeta
 import io.infinitic.common.workflows.data.workflows.WorkflowName
 import io.infinitic.common.workflows.data.workflows.WorkflowTag
-import io.infinitic.workflows.WorkflowOptions
 
 class NewWorkflowProxyHandler<K : Any>(
     override val klass: Class<K>,
     val workflowTags: Set<WorkflowTag>,
-    val workflowOptions: WorkflowOptions,
     val workflowMeta: WorkflowMeta,
     override val dispatcherFn: () -> ProxyDispatcher
 ) : ProxyHandler<K>(klass, dispatcherFn) {

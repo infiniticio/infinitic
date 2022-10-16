@@ -26,8 +26,8 @@
 package io.infinitic.tasks.tag.storage
 
 import io.infinitic.common.data.MessageId
+import io.infinitic.common.tasks.data.ServiceName
 import io.infinitic.common.tasks.data.TaskId
-import io.infinitic.common.tasks.data.TaskName
 import io.infinitic.common.tasks.data.TaskTag
 import io.infinitic.common.tasks.tags.storage.TaskTagStorage
 import mu.KotlinLogging
@@ -39,33 +39,33 @@ class LoggedTaskTagStorage(
 
     private val logger = KotlinLogging.logger {}
 
-    override suspend fun getLastMessageId(tag: TaskTag, taskName: TaskName): MessageId? {
-        val messageId = storage.getLastMessageId(tag, taskName)
-        logger.debug { "tag $tag - name $taskName - getLastMessageId $messageId" }
+    override suspend fun getLastMessageId(tag: TaskTag, serviceName: ServiceName): MessageId? {
+        val messageId = storage.getLastMessageId(tag, serviceName)
+        logger.debug { "tag $tag - name $serviceName - getLastMessageId $messageId" }
 
         return messageId
     }
 
-    override suspend fun setLastMessageId(tag: TaskTag, taskName: TaskName, messageId: MessageId) {
-        logger.debug { "tag $tag - name $taskName - setLastMessageId $messageId" }
-        storage.setLastMessageId(tag, taskName, messageId)
+    override suspend fun setLastMessageId(tag: TaskTag, serviceName: ServiceName, messageId: MessageId) {
+        logger.debug { "tag $tag - name $serviceName - setLastMessageId $messageId" }
+        storage.setLastMessageId(tag, serviceName, messageId)
     }
 
-    override suspend fun getTaskIds(tag: TaskTag, taskName: TaskName): Set<TaskId> {
-        val taskIds = storage.getTaskIds(tag, taskName)
-        logger.debug { "tag $tag - taskName $taskName - getTaskIds $taskIds" }
+    override suspend fun getTaskIds(tag: TaskTag, serviceName: ServiceName): Set<TaskId> {
+        val taskIds = storage.getTaskIds(tag, serviceName)
+        logger.debug { "tag $tag - taskName $serviceName - getTaskIds $taskIds" }
 
         return taskIds
     }
 
-    override suspend fun addTaskId(tag: TaskTag, taskName: TaskName, taskId: TaskId) {
-        logger.debug { "tag $tag - name $taskName - addTaskId $taskId" }
-        storage.addTaskId(tag, taskName, taskId)
+    override suspend fun addTaskId(tag: TaskTag, serviceName: ServiceName, taskId: TaskId) {
+        logger.debug { "tag $tag - name $serviceName - addTaskId $taskId" }
+        storage.addTaskId(tag, serviceName, taskId)
     }
 
-    override suspend fun removeTaskId(tag: TaskTag, taskName: TaskName, taskId: TaskId) {
-        logger.debug { "tag $tag - name $taskName - removeTaskId $taskId" }
-        storage.removeTaskId(tag, taskName, taskId)
+    override suspend fun removeTaskId(tag: TaskTag, serviceName: ServiceName, taskId: TaskId) {
+        logger.debug { "tag $tag - name $serviceName - removeTaskId $taskId" }
+        storage.removeTaskId(tag, serviceName, taskId)
     }
 
     @TestOnly

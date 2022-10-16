@@ -25,7 +25,7 @@
 
 package io.infinitic.tests.children
 
-import io.infinitic.tests.utils.UtilTask
+import io.infinitic.tests.utils.UtilService
 import io.infinitic.tests.utils.UtilWorkflow
 import io.infinitic.workflows.Workflow
 import java.time.Duration
@@ -46,28 +46,31 @@ interface ChildrenWorkflow {
 @Suppress("unused")
 class ChildrenWorkflowImpl : Workflow(), ChildrenWorkflow {
 
-    private val utilTask = newTask(UtilTask::class.java, tags = setOf("foo", "bar"), meta = mapOf("foo" to "bar".toByteArray()))
+    private val utilService =
+        newService(UtilService::class.java, tags = setOf("foo", "bar"), meta = mapOf("foo" to "bar".toByteArray()))
     private val childrenWorkflow = newWorkflow(ChildrenWorkflow::class.java, tags = setOf("foo", "bar"))
     private val utilWorkflow = newWorkflow(UtilWorkflow::class.java)
 
-    override fun await() { timer(Duration.ofSeconds(60)).await() }
+    override fun await() {
+        timer(Duration.ofSeconds(60)).await()
+    }
 
-    override fun parent() = utilTask.parent()
+    override fun parent() = utilService.parent()
 
     override fun wparent(): String = childrenWorkflow.parent()
 
     override fun child1(): String {
         var str: String = utilWorkflow.concat("a")
-        str = utilTask.concat(str, "b")
+        str = utilService.concat(str, "b")
 
         return str // should be "ab"
     }
 
     override fun child2(): String {
-        val str = utilTask.reverse("ab")
+        val str = utilService.reverse("ab")
         val deferred = dispatch(utilWorkflow::concat, str)
 
-        return utilTask.concat(deferred.await(), str) // should be "baba"
+        return utilService.concat(deferred.await(), str) // should be "baba"
     }
 
     override fun factorial(n: Long) = when {

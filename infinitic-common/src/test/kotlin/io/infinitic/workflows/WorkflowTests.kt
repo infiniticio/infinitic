@@ -25,10 +25,10 @@
 
 package io.infinitic.workflows
 
-import io.infinitic.common.proxies.NewTaskProxyHandler
+import io.infinitic.common.proxies.NewServiceProxyHandler
 import io.infinitic.common.proxies.NewWorkflowProxyHandler
+import io.infinitic.common.tasks.data.ServiceName
 import io.infinitic.common.tasks.data.TaskMeta
-import io.infinitic.common.tasks.data.TaskName
 import io.infinitic.common.tasks.data.TaskTag
 import io.infinitic.common.workflows.data.workflows.WorkflowMeta
 import io.infinitic.common.workflows.data.workflows.WorkflowName
@@ -44,7 +44,7 @@ import io.mockk.slot
 
 class WorkflowTests : StringSpec({
     val dispatcher = mockk<WorkflowDispatcher>()
-    val newTaskSlot = slot<NewTaskProxyHandler<*>>()
+    val newTaskSlot = slot<NewServiceProxyHandler<*>>()
     val newWorkflowSlot = slot<NewWorkflowProxyHandler<*>>()
     every { dispatcher.dispatchAndWait<Long>(capture(newTaskSlot)) } returns 100L
     every { dispatcher.dispatch<Long>(capture(newTaskSlot), false) } returns mockk()
@@ -57,7 +57,7 @@ class WorkflowTests : StringSpec({
         w.syncTask(100)
 
         with(newTaskSlot.captured) {
-            taskName shouldBe TaskName(TaskA::class.java.name)
+            serviceName shouldBe ServiceName(TaskA::class.java.name)
             methodName.toString() shouldBe TaskA::await.name
             methodArgs.toList() shouldBe listOf(100)
             taskTags shouldBe setOf(TaskTag("foo"), TaskTag("bar"))
@@ -71,7 +71,7 @@ class WorkflowTests : StringSpec({
         w.asyncTask(100)
 
         with(newTaskSlot.captured) {
-            taskName shouldBe TaskName(TaskA::class.java.name)
+            serviceName shouldBe ServiceName(TaskA::class.java.name)
             methodName.toString() shouldBe TaskA::await.name
             methodArgs.toList() shouldBe listOf(100)
             taskTags shouldBe setOf(TaskTag("foo"), TaskTag("bar"))

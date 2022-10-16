@@ -25,14 +25,30 @@
 
 package io.infinitic.tasks.executor.task
 
-import io.infinitic.common.data.methods.MethodParameters
-import io.infinitic.tasks.Task
-import io.infinitic.tasks.TaskOptions
 import java.lang.reflect.Method
 
 internal data class TaskCommand(
-    val task: Task,
+    val service: Any,
     val method: Method,
-    val parameters: MethodParameters,
-    val options: TaskOptions
-)
+    val parameters: Array<Any?>
+) {
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (javaClass != other?.javaClass) return false
+
+        other as TaskCommand
+
+        if (service != other.service) return false
+        if (method != other.method) return false
+        if (!parameters.contentEquals(other.parameters)) return false
+
+        return true
+    }
+
+    override fun hashCode(): Int {
+        var result = service.hashCode()
+        result = 31 * result + method.hashCode()
+        result = 31 * result + parameters.contentHashCode()
+        return result
+    }
+}

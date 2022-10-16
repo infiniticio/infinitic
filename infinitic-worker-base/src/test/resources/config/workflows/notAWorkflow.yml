@@ -24,7 +24,7 @@
 # Uncomment the line below to perform test on a local Pulsar cluster
 
 transport: inMemory
-stateStorage: inMemory
+storage: inMemory
 
 pulsar:
   brokerServiceUrl: pulsar://localhost:6650

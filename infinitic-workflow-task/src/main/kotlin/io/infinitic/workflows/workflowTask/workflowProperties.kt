@@ -34,15 +34,12 @@ import io.infinitic.common.workflows.executors.getPropertiesFromObject
 import io.infinitic.common.workflows.executors.setPropertiesToObject
 import io.infinitic.workflows.Channel
 import io.infinitic.workflows.Workflow
-import io.infinitic.workflows.WorkflowContext
-import io.infinitic.workflows.WorkflowDispatcher
 import org.slf4j.Logger
 import java.lang.reflect.Proxy
 import kotlin.reflect.full.createType
 import kotlin.reflect.full.hasAnnotation
 import kotlin.reflect.full.isSubtypeOf
 import kotlin.reflect.full.starProjectedType
-import kotlin.reflect.jvm.javaType
 
 internal fun Workflow.setProperties(
     propertiesHashValue: Map<PropertyHash, PropertyValue>,
@@ -57,14 +54,10 @@ internal fun Workflow.setProperties(
 
 // TODO: manage Deferred in properties
 internal fun Workflow.getProperties() = getPropertiesFromObject(this) {
-    // excludes context
-    it.first.returnType.javaType.typeName != WorkflowContext::class.java.name &&
-        // excludes dispatcher
-        it.first.returnType.javaType.typeName != WorkflowDispatcher::class.java.name &&
-        // excludes Channels
-        !it.first.returnType.isSubtypeOf(Channel::class.starProjectedType) &&
+    // excludes Channels
+    !it.first.returnType.isSubtypeOf(Channel::class.starProjectedType) &&
         // excludes Proxies (tasks and workflows) and null
-        !(it.second?. let { Proxy.isProxyClass(it::class.java) } ?: true) &&
+        !(it.second?.let { Proxy.isProxyClass(it::class.java) } ?: true) &&
         // exclude SLF4J loggers
         !it.first.returnType.isSubtypeOf(Logger::class.createType()) &&
         // exclude Ignore annotation

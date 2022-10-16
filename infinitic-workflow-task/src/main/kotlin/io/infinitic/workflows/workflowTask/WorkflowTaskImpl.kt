@@ -28,6 +28,7 @@ package io.infinitic.workflows.workflowTask
 import io.infinitic.common.data.ClientName
 import io.infinitic.common.data.ReturnValue
 import io.infinitic.common.parser.getMethodPerNameAndParameters
+import io.infinitic.common.workers.config.WorkflowCheckMode
 import io.infinitic.common.workflows.data.properties.PropertyHash
 import io.infinitic.common.workflows.data.properties.PropertyName
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTask
@@ -40,15 +41,15 @@ import io.infinitic.tasks.Task
 import io.infinitic.workflows.Deferred
 import io.infinitic.workflows.setChannelNames
 import java.lang.reflect.InvocationTargetException
-import java.time.Duration
 
-class WorkflowTaskImpl : Task(), WorkflowTask {
+class WorkflowTaskImpl : WorkflowTask {
 
-    override fun getDurationBeforeRetry(e: Exception): Duration? = null
+    lateinit var checkMode: WorkflowCheckMode
 
     override fun handle(workflowTaskParameters: WorkflowTaskParameters): WorkflowTaskReturnValue {
         // get  instance workflow by name
-        val workflow = context.workerRegistry.getWorkflowInstance(workflowTaskParameters.workflowName)
+        val workflow =
+            Task.context.get().workerRegistry.getRegisteredWorkflow(workflowTaskParameters.workflowName).factory()
 
         // get method
         val methodRun = workflowTaskParameters.methodRun
@@ -60,8 +61,15 @@ class WorkflowTaskImpl : Task(), WorkflowTask {
         )
 
         // set context
-        val dispatcher = WorkflowDispatcherImpl(workflowTaskParameters)
-        workflow.context = WorkflowContextImpl(workflowTaskParameters)
+        with(workflowTaskParameters) {
+            workflow.workflowName = workflowName.toString()
+            workflow.workflowId = workflowId.toString()
+            workflow.methodName = methodRun.methodName.toString()
+            workflow.methodId = methodRun.methodRunId.toString()
+            workflow.tags = workflowTags.map { it.tag }.toSet()
+            workflow.meta = workflowMeta.map
+        }
+        val dispatcher = WorkflowDispatcherImpl(checkMode, workflowTaskParameters)
         workflow.dispatcher = dispatcher
 
         // define setProperties function
@@ -100,8 +108,8 @@ class WorkflowTaskImpl : Task(), WorkflowTask {
                 is Exception -> throw FailedWorkflowTaskException(
                     workflowName = workflowTaskParameters.workflowName.toString(),
                     workflowId = workflowTaskParameters.workflowId.toString(),
-                    workflowTaskId = context.id,
-                    workerException = WorkerException.from(ClientName(context.workerName), cause)
+                    workflowTaskId = Task.taskId,
+                    workerException = WorkerException.from(ClientName(Task.workerName), cause)
                 )
                 // Throwable are not caught
                 else -> throw cause!!

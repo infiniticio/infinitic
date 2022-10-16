@@ -39,6 +39,7 @@ import io.infinitic.common.tasks.executors.errors.TimedOutWorkflowError
 import io.infinitic.common.tasks.executors.errors.UnknownDeferredError
 import io.infinitic.common.tasks.executors.errors.UnknownTaskError
 import io.infinitic.common.tasks.executors.errors.UnknownWorkflowError
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 @Serializable
@@ -102,16 +103,16 @@ data class UnknownTaskException(
     /**
      * Name of the canceled task
      */
-    val taskName: String,
+    @SerialName("taskName") val serviceName: String,
 
     /**
      * Id of the canceled task
      */
-    val taskId: String,
+    val taskId: String
 ) : UnknownDeferredException() {
     companion object {
         fun from(error: UnknownTaskError) = UnknownTaskException(
-            taskName = error.taskName.toString(),
+            serviceName = error.serviceName.toString(),
             taskId = error.taskId.toString()
         )
     }
@@ -154,7 +155,7 @@ data class TimedOutTaskException(
     /**
      * Name of the canceled task
      */
-    val taskName: String,
+    @SerialName("taskName") val serviceName: String,
 
     /**
      * Id of the canceled task
@@ -164,12 +165,12 @@ data class TimedOutTaskException(
     /**
      * Method called
      */
-    val methodName: String,
+    val methodName: String
 
 ) : TimedOutDeferredException() {
     companion object {
         fun from(error: TimedOutTaskError) = TimedOutTaskException(
-            taskName = error.taskName.toString(),
+            serviceName = error.serviceName.toString(),
             taskId = error.taskId.toString(),
             methodName = error.methodName.toString()
         )
@@ -206,7 +207,7 @@ data class TimedOutWorkflowException(
             workflowName = error.workflowName.toString(),
             workflowId = error.workflowId.toString(),
             methodName = error.methodName.toString(),
-            methodRunId = error.methodRunId?.toString(),
+            methodRunId = error.methodRunId?.toString()
         )
     }
 }
@@ -219,7 +220,7 @@ data class CanceledTaskException(
     /**
      * Name of the canceled task
      */
-    val taskName: String,
+    @SerialName("taskName") val serviceName: String,
 
     /**
      * Id of the canceled task
@@ -229,12 +230,12 @@ data class CanceledTaskException(
     /**
      * Method called
      */
-    val methodName: String,
+    val methodName: String
 
 ) : CanceledDeferredException() {
     companion object {
         fun from(error: CanceledTaskError) = CanceledTaskException(
-            taskName = error.taskName.toString(),
+            serviceName = error.serviceName.toString(),
             taskId = error.taskId.toString(),
             methodName = error.methodName.toString()
         )
@@ -265,7 +266,7 @@ data class CanceledWorkflowException(
         fun from(error: CanceledWorkflowError) = CanceledWorkflowException(
             workflowName = error.workflowName.toString(),
             workflowId = error.workflowId.toString(),
-            methodRunId = error.methodRunId?.toString(),
+            methodRunId = error.methodRunId?.toString()
         )
     }
 }
@@ -278,7 +279,7 @@ data class FailedTaskException(
     /**
      * Name of the task where the error occurred
      */
-    val taskName: String,
+    @SerialName("taskName") val serviceName: String,
 
     /**
      * Id of the task where the error occurred
@@ -297,7 +298,7 @@ data class FailedTaskException(
 ) : FailedDeferredException() {
     companion object {
         fun from(error: FailedTaskError) = FailedTaskException(
-            taskName = error.taskName.toString(),
+            serviceName = error.serviceName.toString(),
             taskId = error.taskId.toString(),
             methodName = error.methodName.toString(),
             workerException = WorkerException.from(error.cause)

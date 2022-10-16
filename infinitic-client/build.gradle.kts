@@ -26,8 +26,8 @@
 dependencies {
     api(project(":infinitic-inMemory"))
     api(project(":infinitic-pulsar"))
-    api(project(":infinitic-worker-base"))
     api(project(":infinitic-client-base"))
+    api(project(":infinitic-worker-base"))
     api(project(":infinitic-worker"))
 }
 

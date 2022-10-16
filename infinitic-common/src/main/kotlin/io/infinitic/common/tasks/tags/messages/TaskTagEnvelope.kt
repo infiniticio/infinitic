@@ -53,33 +53,37 @@ data class TaskTagEnvelope(
 
         require(noNull.size == 1)
         require(noNull.first() == message())
-        require("${noNull.first().taskName}" == name)
+        require("${noNull.first().serviceName}" == name)
     }
 
     companion object {
         fun from(msg: TaskTagMessage) = when (msg) {
             is AddTagToTask -> TaskTagEnvelope(
-                name = "${msg.taskName}",
+                name = "${msg.serviceName}",
                 type = TaskTagMessageType.ADD_TAG_TO_TASK,
                 addTagToTask = msg
             )
+
             is RemoveTagFromTask -> TaskTagEnvelope(
-                name = "${msg.taskName}",
+                name = "${msg.serviceName}",
                 type = TaskTagMessageType.REMOVE_TAG_FROM_TASK,
                 removeTagFromTask = msg
             )
+
             is CancelTaskByTag -> TaskTagEnvelope(
-                name = "${msg.taskName}",
+                name = "${msg.serviceName}",
                 type = TaskTagMessageType.CANCEL_TASK_BY_TAG,
                 cancelTaskByTag = msg
             )
+
             is RetryTaskByTag -> TaskTagEnvelope(
-                name = "${msg.taskName}",
+                name = "${msg.serviceName}",
                 type = TaskTagMessageType.RETRY_TASK_BY_TAG,
                 retryTaskByTag = msg
             )
+
             is GetTaskIdsByTag -> TaskTagEnvelope(
-                name = "${msg.taskName}",
+                name = "${msg.serviceName}",
                 type = TaskTagMessageType.GET_TASK_IDS_BY_TAG,
                 getTaskIdsByTag = msg
             )

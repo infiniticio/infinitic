@@ -26,7 +26,7 @@
 package io.infinitic.tests.syntax
 
 import io.infinitic.tests.utils.ParentInterface
-import io.infinitic.tests.utils.UtilTask
+import io.infinitic.tests.utils.UtilService
 import io.infinitic.workflows.Workflow
 
 interface SyntaxWorkflow : ParentInterface {
@@ -38,16 +38,17 @@ interface SyntaxWorkflow : ParentInterface {
 @Suppress("unused")
 class SyntaxWorkflowImpl : Workflow(), SyntaxWorkflow {
 
-    private val utilTask = newTask(UtilTask::class.java, tags = setOf("foo", "bar"), meta = mapOf("foo" to "bar".toByteArray()))
+    private val utilService =
+        newService(UtilService::class.java, tags = setOf("foo", "bar"), meta = mapOf("foo" to "bar".toByteArray()))
     private val syntaxWorkflow = newWorkflow(SyntaxWorkflow::class.java)
 
     private var p1 = ""
 
     override fun empty() = "void"
 
-    override fun await(duration: Long) = utilTask.await(duration)
+    override fun await(duration: Long) = utilService.await(duration)
 
-    override fun parent() = utilTask.parent()
+    override fun parent() = utilService.parent()
 
     override fun wparent(): String = syntaxWorkflow.parent()
 }

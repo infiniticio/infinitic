@@ -25,7 +25,7 @@
 
 package io.infinitic.tests.timers
 
-import io.infinitic.tests.utils.UtilTask
+import io.infinitic.tests.utils.UtilService
 import io.infinitic.workflows.SendChannel
 import io.infinitic.workflows.Workflow
 import io.infinitic.workflows.or
@@ -48,8 +48,8 @@ class TimerWorkflowImpl : Workflow(), TimerWorkflow {
 
     override val channel = channel<String>()
 
-    private val utilTask = newTask(
-        UtilTask::class.java,
+    private val utilService = newService(
+        UtilService::class.java,
         tags = setOf("foo", "bar"),
         meta = mapOf("foo" to "bar".toByteArray())
     )

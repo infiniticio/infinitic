@@ -115,7 +115,6 @@ class WorkflowTagEngine(
                         methodName = message.methodName,
                         methodParameters = message.methodParameters,
                         methodParameterTypes = message.methodParameterTypes,
-                        workflowOptions = message.workflowOptions,
                         workflowTags = message.workflowTags,
                         workflowMeta = message.workflowMeta,
                         parentWorkflowName = message.parentWorkflowName,
@@ -222,7 +221,7 @@ class WorkflowTagEngine(
                         workflowName = message.workflowName,
                         workflowId = it,
                         taskId = message.taskId,
-                        taskName = message.taskName,
+                        serviceName = message.serviceName,
                         taskStatus = message.taskStatus,
                         emitterName = clientName
                     )

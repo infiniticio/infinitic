@@ -26,7 +26,7 @@
 package io.infinitic.transport.pulsar.topics
 
 import io.infinitic.common.data.ClientName
-import io.infinitic.common.tasks.data.TaskName
+import io.infinitic.common.tasks.data.ServiceName
 import io.infinitic.common.workflows.data.workflows.WorkflowName
 
 class PerNameTopics(override val tenant: String, override val namespace: String) : TopicNames {
@@ -44,16 +44,19 @@ class PerNameTopics(override val tenant: String, override val namespace: String)
 
     override fun topic(type: WorkflowTopics, workflowName: WorkflowName) =
         fullName("${type.subscriptionPrefix}:$workflowName")
+
     override fun topicDLQ(type: WorkflowTopics, workflowName: WorkflowName) =
         fullName("${type.subscriptionPrefix}-dlq:$workflowName")
 
     override fun topic(type: WorkflowTaskTopics, workflowName: WorkflowName) =
         fullName("${type.subscriptionPrefix}:$workflowName")
+
     override fun topicDLQ(type: WorkflowTaskTopics, workflowName: WorkflowName) =
         fullName("${type.subscriptionPrefix}-dlq:$workflowName")
 
-    override fun topic(type: TaskTopics, taskName: TaskName) =
-        fullName("${type.subscriptionPrefix}:$taskName")
-    override fun topicDLQ(type: TaskTopics, taskName: TaskName) =
-        fullName("${type.subscriptionPrefix}-dlq:$taskName")
+    override fun topic(type: TaskTopics, serviceName: ServiceName) =
+        fullName("${type.subscriptionPrefix}:$serviceName")
+
+    override fun topicDLQ(type: TaskTopics, serviceName: ServiceName) =
+        fullName("${type.subscriptionPrefix}-dlq:$serviceName")
 }

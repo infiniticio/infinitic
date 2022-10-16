@@ -25,19 +25,42 @@
 
 package io.infinitic.tasks
 
-import java.time.Duration
-import kotlin.math.pow
+object Task {
+    val context: ThreadLocal<TaskContext> = ThreadLocal.withInitial { null }
 
-@Suppress("unused")
-abstract class Task {
-    lateinit var context: TaskContext
+    @JvmStatic
+    val workerName get() = context.get().workerName
 
-    // Exponential backoff retry strategy up to 12 attempts
-    open fun getDurationBeforeRetry(e: Exception): Duration? {
-        val n = context.retryIndex
-        return when {
-            n < 12 -> Duration.ofSeconds((5 * Math.random() * 2.0.pow(n)).toLong())
-            else -> null
-        }
-    }
+    @JvmStatic
+    val serviceName get() = context.get().serviceName
+
+    @JvmStatic
+    val taskId get() = context.get().taskId
+
+    @JvmStatic
+    val taskName get() = context.get().taskName
+
+    @JvmStatic
+    val workflowId get() = context.get().workflowId
+
+    @JvmStatic
+    val workflowName get() = context.get().workflowName
+
+    @JvmStatic
+    val retrySequence get() = context.get().retrySequence
+
+    @JvmStatic
+    val lastError get() = context.get().lastError
+
+    @JvmStatic
+    val retryIndex get() = context.get().retryIndex
+
+    @JvmStatic
+    val tags get() = context.get().tags
+
+    @JvmStatic
+    val meta get() = context.get().meta
+
+    @JvmStatic
+    val client get() = context.get().client
 }

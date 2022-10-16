@@ -28,7 +28,7 @@ package io.infinitic.common.fixtures
 import io.infinitic.common.data.methods.MethodParameters
 import io.infinitic.common.serDe.SerializedData
 import io.infinitic.common.tasks.executors.errors.DeferredError
-import io.infinitic.common.tasks.executors.errors.WorkerError
+import io.infinitic.common.tasks.executors.errors.ExecutionError
 import io.infinitic.common.workflows.data.commands.CommandId
 import io.infinitic.common.workflows.data.steps.NewStep
 import io.infinitic.common.workflows.data.steps.Step
@@ -44,12 +44,6 @@ import kotlin.reflect.KClass
 
 object TestFactory {
     private var seed = 0L
-
-    fun seed(seed: Long): TestFactory {
-        TestFactory.seed = seed
-
-        return this
-    }
 
     inline fun <reified T : Any> random(values: Map<String, Any?>? = null) = random(T::class, values)
 
@@ -68,7 +62,7 @@ object TestFactory {
             .randomize(NewStep::class.java) { NewStep(step = random(), stepPosition = random()) }
             .randomize(ByteArray::class.java) { Random(seed).nextBytes(10) }
             .randomize(ByteBuffer::class.java) { ByteBuffer.wrap(random()) }
-            .randomize(WorkerError::class.java) { WorkerError(random(), random(), random(), random(), null) }
+            .randomize(ExecutionError::class.java) { ExecutionError(random(), random(), random(), random(), null) }
             .randomize(SerializedData::class.java) { SerializedData.from(random<String>()) }
             .randomize(MethodParameters::class.java) { MethodParameters.from(random<ByteArray>(), random<String>()) }
             .randomize(WorkflowEngineEnvelope::class.java) {

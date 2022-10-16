@@ -26,7 +26,7 @@
 package io.infinitic.transport.pulsar.topics
 
 import io.infinitic.common.data.ClientName
-import io.infinitic.common.tasks.data.TaskName
+import io.infinitic.common.tasks.data.ServiceName
 import io.infinitic.common.workflows.data.workflows.WorkflowName
 
 interface TopicNames {
@@ -46,8 +46,8 @@ interface TopicNames {
     fun topic(type: WorkflowTopics, workflowName: WorkflowName): String
     fun topicDLQ(type: WorkflowTopics, workflowName: WorkflowName): String
 
-    fun topic(type: TaskTopics, taskName: TaskName): String
-    fun topicDLQ(type: TaskTopics, taskName: TaskName): String
+    fun topic(type: TaskTopics, serviceName: ServiceName): String
+    fun topicDLQ(type: TaskTopics, serviceName: ServiceName): String
 
     fun topic(type: WorkflowTaskTopics, workflowName: WorkflowName): String
     fun topicDLQ(type: WorkflowTaskTopics, workflowName: WorkflowName): String
@@ -56,13 +56,13 @@ interface TopicNames {
         is ClientTopics -> topic(type, ClientName(name))
         is GlobalTopics -> topic(type)
         is WorkflowTopics -> topic(type, WorkflowName(name))
-        is TaskTopics -> topic(type, TaskName(name))
+        is TaskTopics -> topic(type, ServiceName(name))
         is WorkflowTaskTopics -> topic(type, WorkflowName(name))
     }
 
     fun topicDLQ(type: TopicType, name: String) = when (type) {
         is WorkflowTopics -> topicDLQ(type, WorkflowName(name))
-        is TaskTopics -> topicDLQ(type, TaskName(name))
+        is TaskTopics -> topicDLQ(type, ServiceName(name))
         is WorkflowTaskTopics -> topicDLQ(type, WorkflowName(name))
         else -> null
     }

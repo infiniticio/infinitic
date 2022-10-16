@@ -30,8 +30,8 @@ import io.infinitic.common.clients.messages.ClientMessage
 import io.infinitic.common.data.methods.MethodName
 import io.infinitic.common.proxies.ProxyDispatcher
 import io.infinitic.common.proxies.ProxyHandler
+import io.infinitic.common.tasks.data.ServiceName
 import io.infinitic.common.tasks.data.TaskId
-import io.infinitic.common.tasks.data.TaskName
 import io.infinitic.common.workflows.data.methodRuns.MethodRunId
 import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.data.workflows.WorkflowName
@@ -84,7 +84,7 @@ interface ClientDispatcher : ProxyDispatcher {
         workflowTag: WorkflowTag?,
         taskId: TaskId? = null,
         taskStatus: DeferredStatus? = null,
-        taskName: TaskName? = null
+        serviceName: ServiceName? = null
     ): CompletableFuture<Unit>
 
     fun getWorkflowIdsByTag(

@@ -41,13 +41,13 @@ import io.infinitic.common.data.ClientName
 import io.infinitic.common.data.methods.MethodName
 import io.infinitic.common.exceptions.thisShouldNotHappen
 import io.infinitic.common.proxies.ChannelProxyHandler
-import io.infinitic.common.proxies.ExistingTaskProxyHandler
+import io.infinitic.common.proxies.ExistingServiceProxyHandler
 import io.infinitic.common.proxies.ExistingWorkflowProxyHandler
-import io.infinitic.common.proxies.NewTaskProxyHandler
+import io.infinitic.common.proxies.NewServiceProxyHandler
 import io.infinitic.common.proxies.NewWorkflowProxyHandler
 import io.infinitic.common.proxies.ProxyHandler
+import io.infinitic.common.tasks.data.ServiceName
 import io.infinitic.common.tasks.data.TaskId
-import io.infinitic.common.tasks.data.TaskName
 import io.infinitic.common.tasks.executors.errors.FailedWorkflowError
 import io.infinitic.common.workflows.data.channels.SignalId
 import io.infinitic.common.workflows.data.methodRuns.MethodRunId
@@ -118,8 +118,8 @@ internal class ClientDispatcherImpl(
         is NewWorkflowProxyHandler -> dispatchWorkflowAsync(handler)
         is ExistingWorkflowProxyHandler -> dispatchMethodAsync(handler)
         is ChannelProxyHandler -> dispatchSignalAsync(handler)
-        is NewTaskProxyHandler -> thisShouldNotHappen()
-        is ExistingTaskProxyHandler -> thisShouldNotHappen()
+        is NewServiceProxyHandler -> thisShouldNotHappen()
+        is ExistingServiceProxyHandler -> thisShouldNotHappen()
     }
 
     // synchronous call: stub.method(*args)
@@ -127,8 +127,8 @@ internal class ClientDispatcherImpl(
         is NewWorkflowProxyHandler -> dispatchWorkflowAndWait(handler)
         is ExistingWorkflowProxyHandler -> dispatchMethodAndWait(handler)
         is ChannelProxyHandler -> dispatchSignalAndWait(handler)
-        is ExistingTaskProxyHandler -> thisShouldNotHappen()
-        is NewTaskProxyHandler -> thisShouldNotHappen()
+        is ExistingServiceProxyHandler -> thisShouldNotHappen()
+        is NewServiceProxyHandler -> thisShouldNotHappen()
     }
 
     override fun <T> awaitWorkflow(
@@ -297,7 +297,7 @@ internal class ClientDispatcherImpl(
         workflowTag: WorkflowTag?,
         taskId: TaskId?,
         taskStatus: DeferredStatus?,
-        taskName: TaskName?
+        serviceName: ServiceName?
     ): CompletableFuture<Unit> = scope.future {
         when {
             workflowId != null -> {
@@ -307,7 +307,7 @@ internal class ClientDispatcherImpl(
                     emitterName = clientName,
                     taskId = taskId,
                     taskStatus = taskStatus,
-                    taskName = taskName
+                    serviceName = serviceName
                 )
                 sendToWorkflowEngine(msg)
             }
@@ -319,7 +319,7 @@ internal class ClientDispatcherImpl(
                     emitterName = clientName,
                     taskId = taskId,
                     taskStatus = taskStatus,
-                    taskName = taskName
+                    serviceName = serviceName
                 )
                 sendToWorkflowTag(msg)
             }
@@ -443,7 +443,6 @@ internal class ClientDispatcherImpl(
                     methodName = handler.methodName,
                     methodParameters = handler.methodParameters,
                     methodParameterTypes = handler.methodParameterTypes,
-                    workflowOptions = handler.workflowOptions,
                     workflowTags = handler.workflowTags,
                     workflowMeta = handler.workflowMeta,
                     parentWorkflowName = null,
@@ -476,7 +475,6 @@ internal class ClientDispatcherImpl(
                     methodName = deferred.methodName,
                     methodParameters = handler.methodParameters,
                     methodParameterTypes = handler.methodParameterTypes,
-                    workflowOptions = handler.workflowOptions,
                     workflowTags = handler.workflowTags,
                     workflowMeta = handler.workflowMeta,
                     parentWorkflowName = null,

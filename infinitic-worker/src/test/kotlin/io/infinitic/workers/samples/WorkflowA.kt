@@ -31,6 +31,8 @@ interface WorkflowA
 
 class WorkflowAImpl : Workflow(), WorkflowA
 
+class NotAWorkflow : WorkflowA
+
 class WorkflowWithInvocationTargetException : Workflow(), WorkflowA {
     init {
         throw Exception("InvocationTargetException")
@@ -43,5 +45,3 @@ class WorkflowWithExceptionInInitializerError : Workflow(), WorkflowA {
         val e: Nothing = throw Exception("ExceptionInInitializerError")
     }
 }
-
-class NotAWorkflow : WorkflowA

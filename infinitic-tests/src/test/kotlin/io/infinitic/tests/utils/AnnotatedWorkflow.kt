@@ -34,15 +34,16 @@ interface AnnotatedWorkflow {
     fun concatABC(input: String): String
 }
 
+@Suppress("unused")
 class AnnotatedWorkflowImpl : Workflow(), AnnotatedWorkflow {
-    private val task = newTask(AnnotatedTask::class.java)
+    private val service = newService(AnnotatedService::class.java)
 
     override fun concatABC(input: String): String {
         var str = input
 
-        str = task.foo(str, "a")
-        str = task.foo(str, "b")
-        str = task.foo(str, "c")
+        str = service.foo(str, "a")
+        str = service.foo(str, "b")
+        str = service.foo(str, "c")
 
         return str // should be "${input}abc"
     }
