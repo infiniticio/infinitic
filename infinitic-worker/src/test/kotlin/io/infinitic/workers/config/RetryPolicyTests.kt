@@ -28,7 +28,7 @@ package io.infinitic.workers.config
 import com.sksamuel.hoplite.ConfigException
 import io.infinitic.common.config.loadConfigFromYaml
 import io.infinitic.common.workers.config.ExponentialBackoffRetryPolicy
-import io.infinitic.common.workers.config.WorkflowCheckMode
+import io.infinitic.workflows.WorkflowCheckMode
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe

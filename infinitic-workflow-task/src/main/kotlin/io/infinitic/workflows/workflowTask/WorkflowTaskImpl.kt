@@ -28,7 +28,6 @@ package io.infinitic.workflows.workflowTask
 import io.infinitic.common.data.ClientName
 import io.infinitic.common.data.ReturnValue
 import io.infinitic.common.parser.getMethodPerNameAndParameters
-import io.infinitic.common.workers.config.WorkflowCheckMode
 import io.infinitic.common.workflows.data.properties.PropertyHash
 import io.infinitic.common.workflows.data.properties.PropertyName
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTask
@@ -39,6 +38,7 @@ import io.infinitic.exceptions.FailedWorkflowTaskException
 import io.infinitic.exceptions.WorkerException
 import io.infinitic.tasks.Task
 import io.infinitic.workflows.Deferred
+import io.infinitic.workflows.WorkflowCheckMode
 import io.infinitic.workflows.setChannelNames
 import java.lang.reflect.InvocationTargetException
 

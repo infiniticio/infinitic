@@ -25,7 +25,7 @@
 
 package io.infinitic.annotations
 
-import io.infinitic.common.workers.config.WorkflowCheckMode
+import io.infinitic.workflows.WorkflowCheckMode
 
 /**
  * Use this annotation to define a timeout duration for tasks

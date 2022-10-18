@@ -30,7 +30,6 @@ import io.infinitic.common.config.logger
 import io.infinitic.common.tasks.data.ServiceName
 import io.infinitic.common.workers.ServiceFactory
 import io.infinitic.common.workers.WorkflowFactory
-import io.infinitic.common.workers.config.WorkflowCheckMode
 import io.infinitic.common.workers.registry.RegisteredService
 import io.infinitic.common.workers.registry.RegisteredServiceTag
 import io.infinitic.common.workers.registry.RegisteredWorkflow
@@ -47,6 +46,7 @@ import io.infinitic.workers.config.WorkerConfig
 import io.infinitic.workers.register.WorkerRegister
 import io.infinitic.workers.storage.CachedKeySetStorage
 import io.infinitic.workers.storage.CachedKeyValueStorage
+import io.infinitic.workflows.WorkflowCheckMode
 import io.infinitic.workflows.engine.config.WorkflowEngine
 import io.infinitic.workflows.engine.storage.BinaryWorkflowStateStorage
 import io.infinitic.workflows.tag.config.WorkflowTag

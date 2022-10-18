@@ -23,7 +23,7 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.common.workers.config
+package io.infinitic.workflows
 
 @Suppress("EnumEntryName")
 enum class WorkflowCheckMode {
