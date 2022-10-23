@@ -26,11 +26,12 @@
 package io.infinitic.workers.register
 
 import io.infinitic.common.workers.ServiceFactory
-import io.infinitic.common.workers.WorkflowFactory
 import io.infinitic.common.workers.registry.WorkerRegistry
+import io.infinitic.common.workers.registry.WorkflowClassList
 import io.infinitic.tasks.WithRetry
 import io.infinitic.tasks.WithTimeout
 import io.infinitic.tasks.tag.config.TaskTag
+import io.infinitic.workflows.Workflow
 import io.infinitic.workflows.WorkflowCheckMode
 import io.infinitic.workflows.engine.config.WorkflowEngine
 import io.infinitic.workflows.tag.config.WorkflowTag
@@ -89,7 +90,7 @@ interface WorkerRegister {
      */
     fun registerWorkflow(
         name: String,
-        factory: WorkflowFactory,
+        classes: WorkflowClassList,
         concurrency: Int = DEFAULT_CONCURRENCY,
         timeout: WithTimeout? = null,
         retry: WithRetry? = null,
@@ -100,7 +101,7 @@ interface WorkerRegister {
 
     fun registerWorkflow(
         name: String,
-        factory: WorkflowFactory,
+        classes: WorkflowClassList,
         concurrency: Int,
         timeout: WithTimeout?,
         retry: WithRetry?,
@@ -108,7 +109,7 @@ interface WorkerRegister {
         engine: WorkflowEngine?
     ) = registerWorkflow(
         name,
-        factory,
+        classes,
         concurrency,
         timeout,
         retry,
@@ -119,14 +120,32 @@ interface WorkerRegister {
 
     fun registerWorkflow(
         name: String,
-        factory: WorkflowFactory,
+        `class`: Class<out Workflow>,
+        concurrency: Int,
+        timeout: WithTimeout?,
+        retry: WithRetry?,
+        checkMode: WorkflowCheckMode?,
+        engine: WorkflowEngine?
+    ) = registerWorkflow(
+        name,
+        listOf(`class`),
+        concurrency,
+        timeout,
+        retry,
+        checkMode,
+        engine
+    )
+
+    fun registerWorkflow(
+        name: String,
+        classes: WorkflowClassList,
         concurrency: Int,
         timeout: WithTimeout?,
         retry: WithRetry?,
         checkMode: WorkflowCheckMode?
     ) = registerWorkflow(
         name,
-        factory,
+        classes,
         concurrency,
         timeout,
         retry,
@@ -137,13 +156,29 @@ interface WorkerRegister {
 
     fun registerWorkflow(
         name: String,
-        factory: WorkflowFactory,
+        `class`: Class<out Workflow>,
+        concurrency: Int,
+        timeout: WithTimeout?,
+        retry: WithRetry?,
+        checkMode: WorkflowCheckMode?
+    ) = registerWorkflow(
+        name,
+        listOf(`class`),
+        concurrency,
+        timeout,
+        retry,
+        checkMode
+    )
+
+    fun registerWorkflow(
+        name: String,
+        classes: WorkflowClassList,
         concurrency: Int,
         timeout: WithTimeout?,
         retry: WithRetry?
     ) = registerWorkflow(
         name,
-        factory,
+        classes,
         concurrency,
         timeout,
         retry,
@@ -154,12 +189,26 @@ interface WorkerRegister {
 
     fun registerWorkflow(
         name: String,
-        factory: WorkflowFactory,
+        `class`: Class<out Workflow>,
+        concurrency: Int,
+        timeout: WithTimeout?,
+        retry: WithRetry?
+    ) = registerWorkflow(
+        name,
+        listOf(`class`),
+        concurrency,
+        timeout,
+        retry
+    )
+
+    fun registerWorkflow(
+        name: String,
+        classes: WorkflowClassList,
         concurrency: Int,
         timeout: WithTimeout?
     ) = registerWorkflow(
         name,
-        factory,
+        classes,
         concurrency,
         timeout,
         null,
@@ -170,11 +219,23 @@ interface WorkerRegister {
 
     fun registerWorkflow(
         name: String,
-        factory: WorkflowFactory,
+        `class`: Class<out Workflow>,
+        concurrency: Int,
+        timeout: WithTimeout?
+    ) = registerWorkflow(
+        name,
+        listOf(`class`),
+        concurrency,
+        timeout
+    )
+
+    fun registerWorkflow(
+        name: String,
+        classes: WorkflowClassList,
         concurrency: Int
     ) = registerWorkflow(
         name,
-        factory,
+        classes,
         concurrency,
         null,
         null,
@@ -185,15 +246,33 @@ interface WorkerRegister {
 
     fun registerWorkflow(
         name: String,
-        factory: WorkflowFactory
+        `class`: Class<out Workflow>,
+        concurrency: Int
     ) = registerWorkflow(
         name,
-        factory,
+        listOf(`class`),
+        concurrency
+    )
+
+    fun registerWorkflow(
+        name: String,
+        classes: WorkflowClassList
+    ) = registerWorkflow(
+        name,
+        classes,
         DEFAULT_CONCURRENCY,
         null,
         null,
         null,
         DEFAULT_WORKFLOW_ENGINE,
         DEFAULT_WORKFLOW_TAG
+    )
+
+    fun registerWorkflow(
+        name: String,
+        `class`: Class<out Workflow>
+    ) = registerWorkflow(
+        name,
+        listOf(`class`)
     )
 }

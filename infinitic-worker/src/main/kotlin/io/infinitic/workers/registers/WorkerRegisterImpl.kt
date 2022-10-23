@@ -29,13 +29,13 @@ import io.infinitic.cache.config.Cache
 import io.infinitic.common.config.logger
 import io.infinitic.common.tasks.data.ServiceName
 import io.infinitic.common.workers.ServiceFactory
-import io.infinitic.common.workers.WorkflowFactory
 import io.infinitic.common.workers.registry.RegisteredService
 import io.infinitic.common.workers.registry.RegisteredServiceTag
 import io.infinitic.common.workers.registry.RegisteredWorkflow
 import io.infinitic.common.workers.registry.RegisteredWorkflowEngine
 import io.infinitic.common.workers.registry.RegisteredWorkflowTag
 import io.infinitic.common.workers.registry.WorkerRegistry
+import io.infinitic.common.workers.registry.WorkflowClassList
 import io.infinitic.common.workflows.data.workflows.WorkflowName
 import io.infinitic.storage.config.Storage
 import io.infinitic.tasks.WithRetry
@@ -60,8 +60,8 @@ class WorkerRegisterImpl(private val workerConfig: WorkerConfig) : WorkerRegiste
         for (w in workerConfig.workflows) {
             logger.info { "Workflow ${w.name}:" }
 
-            when (w.`class`) {
-                null -> {
+            when (w.allClasses.isEmpty()) {
+                true -> {
                     w.tagEngine?.let {
                         registerWorkflowTag(WorkflowName(w.name), it.concurrency, it.storage, it.cache)
                     }
@@ -70,9 +70,9 @@ class WorkerRegisterImpl(private val workerConfig: WorkerConfig) : WorkerRegiste
                     }
                 }
 
-                else -> registerWorkflow(
+                false -> registerWorkflow(
                     w.name,
-                    { w.getInstance() },
+                    w.allClasses,
                     w.concurrency!!,
                     w.timeoutInSeconds?.let { { it } },
                     w.retry,
@@ -136,7 +136,7 @@ class WorkerRegisterImpl(private val workerConfig: WorkerConfig) : WorkerRegiste
      */
     override fun registerWorkflow(
         name: String,
-        factory: WorkflowFactory,
+        classes: WorkflowClassList,
         concurrency: Int,
         timeout: WithTimeout?,
         retry: WithRetry?,
@@ -145,11 +145,12 @@ class WorkerRegisterImpl(private val workerConfig: WorkerConfig) : WorkerRegiste
         tagEngine: WorkflowTag?
     ) {
         logger.info {
-            "* workflow executor".padEnd(25) + ": (instances: $concurrency, class:${factory()::class.java.name})"
+//            "* workflow executor".padEnd(25) + ": (instances: $concurrency, class:${factory()::class.java.name})"
         }
 
         val workflowName = WorkflowName(name)
-        registry.workflows[workflowName] = RegisteredWorkflow(concurrency, factory, timeout, retry, checkMode)
+        registry.workflows[workflowName] =
+            RegisteredWorkflow(workflowName, classes.distinct(), concurrency, timeout, retry, checkMode)
 
         when {
             // explicit null => do nothing

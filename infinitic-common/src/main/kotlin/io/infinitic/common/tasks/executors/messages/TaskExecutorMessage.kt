@@ -25,6 +25,8 @@
 
 package io.infinitic.common.tasks.executors.messages
 
+import com.github.avrokotlin.avro4k.Avro
+import com.github.avrokotlin.avro4k.AvroDefault
 import com.github.avrokotlin.avro4k.AvroNamespace
 import io.infinitic.common.data.ClientName
 import io.infinitic.common.data.methods.MethodName
@@ -38,6 +40,7 @@ import io.infinitic.common.tasks.data.TaskRetryIndex
 import io.infinitic.common.tasks.data.TaskRetrySequence
 import io.infinitic.common.tasks.data.TaskTag
 import io.infinitic.common.tasks.executors.errors.ExecutionError
+import io.infinitic.common.workers.config.WorkflowVersion
 import io.infinitic.common.workflows.data.methodRuns.MethodRunId
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTask
 import io.infinitic.common.workflows.data.workflows.WorkflowId
@@ -71,6 +74,8 @@ data class ExecuteTask(
     val lastError: ExecutionError?,
     val workflowId: WorkflowId?,
     val workflowName: WorkflowName?,
+    @AvroDefault(Avro.NULL)
+    val workflowVersion: WorkflowVersion?,
     val methodRunId: MethodRunId?,
     val taskTags: Set<TaskTag>,
     val taskMeta: TaskMeta

@@ -51,6 +51,7 @@ import io.infinitic.common.tasks.tags.SendToTaskTag
 import io.infinitic.common.tasks.tags.messages.RemoveTagFromTask
 import io.infinitic.common.tasks.tags.messages.TaskTagMessage
 import io.infinitic.common.workers.config.ExponentialBackoffRetryPolicy
+import io.infinitic.common.workers.config.WorkflowVersion
 import io.infinitic.common.workers.registry.RegisteredService
 import io.infinitic.common.workers.registry.WorkerRegistry
 import io.infinitic.common.workflows.data.methodRuns.MethodRunId
@@ -491,6 +492,7 @@ private fun getExecuteTask(method: String, input: Array<out Any?>, types: List<S
     taskId = TaskId(),
     workflowId = WorkflowId(),
     workflowName = WorkflowName("workflowName"),
+    workflowVersion = WorkflowVersion(42),
     methodRunId = MethodRunId(),
     taskRetrySequence = TaskRetrySequence(12),
     taskRetryIndex = TaskRetryIndex(7),

@@ -26,20 +26,29 @@
 package io.infinitic.tasks
 
 import io.infinitic.clients.InfiniticClientInterface
+import io.infinitic.common.data.methods.MethodName
+import io.infinitic.common.tasks.data.ServiceName
+import io.infinitic.common.tasks.data.TaskId
+import io.infinitic.common.tasks.data.TaskRetryIndex
+import io.infinitic.common.tasks.data.TaskRetrySequence
 import io.infinitic.common.tasks.executors.errors.ExecutionError
+import io.infinitic.common.workers.config.WorkflowVersion
 import io.infinitic.common.workers.registry.WorkerRegistry
+import io.infinitic.common.workflows.data.workflows.WorkflowId
+import io.infinitic.common.workflows.data.workflows.WorkflowName
 
 interface TaskContext {
     val client: InfiniticClientInterface
     val workerName: String
     val workerRegistry: WorkerRegistry
-    val serviceName: String
-    val taskId: String
-    val taskName: String
-    val workflowId: String?
-    val workflowName: String?
-    val retrySequence: Int
-    val retryIndex: Int
+    val serviceName: ServiceName
+    val taskId: TaskId
+    val taskName: MethodName
+    val workflowId: WorkflowId?
+    val workflowName: WorkflowName?
+    val workflowVersion: WorkflowVersion?
+    val retrySequence: TaskRetrySequence
+    val retryIndex: TaskRetryIndex
     val lastError: ExecutionError?
     val tags: Set<String>
     val meta: MutableMap<String, ByteArray>

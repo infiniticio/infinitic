@@ -25,6 +25,7 @@
 
 package io.infinitic.common.workflows.data.workflowTasks
 
+import com.github.avrokotlin.avro4k.Avro
 import com.github.avrokotlin.avro4k.AvroDefault
 import io.infinitic.common.data.ClientName
 import io.infinitic.common.data.methods.MethodName
@@ -36,6 +37,7 @@ import io.infinitic.common.tasks.data.TaskMeta
 import io.infinitic.common.tasks.data.TaskRetryIndex
 import io.infinitic.common.tasks.data.TaskRetrySequence
 import io.infinitic.common.tasks.executors.messages.ExecuteTask
+import io.infinitic.common.workers.config.WorkflowVersion
 import io.infinitic.common.workflows.data.methodRuns.MethodRun
 import io.infinitic.common.workflows.data.properties.PropertyHash
 import io.infinitic.common.workflows.data.properties.PropertyValue
@@ -52,6 +54,8 @@ data class WorkflowTaskParameters(
     val taskId: TaskId,
     val workflowId: WorkflowId,
     val workflowName: WorkflowName,
+    @AvroDefault(Avro.NULL)
+    val workflowVersion: WorkflowVersion?,
     val workflowTags: Set<WorkflowTag>,
     val workflowMeta: WorkflowMeta,
     val workflowPropertiesHashValue: Map<PropertyHash, PropertyValue>,
@@ -68,6 +72,7 @@ data class WorkflowTaskParameters(
         methodParameters = MethodParameters.from(this),
         workflowId = workflowId,
         workflowName = workflowName,
+        workflowVersion = workflowVersion,
         methodRunId = methodRun.methodRunId,
         lastError = null,
         taskRetryIndex = TaskRetryIndex(0),

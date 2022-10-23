@@ -23,25 +23,24 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.common.workflows.data.workflowTasks
+package io.infinitic.common.workers.config
 
-import com.github.avrokotlin.avro4k.AvroDefault
-import io.infinitic.common.data.ReturnValue
-import io.infinitic.common.workers.config.WorkflowVersion
-import io.infinitic.common.workflows.data.commands.PastCommand
-import io.infinitic.common.workflows.data.properties.PropertyName
-import io.infinitic.common.workflows.data.properties.PropertyValue
-import io.infinitic.common.workflows.data.steps.NewStep
+import io.infinitic.workflows.Workflow
 import kotlinx.serialization.Serializable
 
+@JvmInline
 @Serializable
-data class WorkflowTaskReturnValue(
-    @AvroDefault("0.9.7")
-    val version: String = io.infinitic.version,
-    val newCommands: List<PastCommand>,
-    val newStep: NewStep?,
-    val properties: Map<PropertyName, PropertyValue>,
-    val methodReturnValue: ReturnValue?,
-    @AvroDefault("0")
-    val workflowVersion: WorkflowVersion
-)
+value class WorkflowVersion(private val v: Int) : Comparable<WorkflowVersion> {
+    override fun compareTo(other: WorkflowVersion): Int = v.compareTo(other.v)
+
+    override fun toString() = "$v"
+
+    fun toInt() = v
+
+    companion object {
+        fun from(klass: Class<out Workflow>) = WorkflowVersion(
+            if (!Regex(".+_[0-9]+\$").matches(klass.simpleName)) 0
+            else klass.simpleName.split("_").last().toInt()
+        )
+    }
+}

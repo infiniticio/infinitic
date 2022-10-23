@@ -59,6 +59,7 @@ internal fun CoroutineScope.dispatchWorkflow(
         lastMessageId = message.messageId,
         workflowId = message.workflowId,
         workflowName = message.workflowName,
+        workflowVersion = null,
         workflowTags = message.workflowTags,
         workflowMeta = message.workflowMeta,
         methodRuns = mutableListOf(methodRun)
