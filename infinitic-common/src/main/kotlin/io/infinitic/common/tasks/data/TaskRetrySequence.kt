@@ -34,8 +34,10 @@ import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
 
 @Serializable(with = TaskRetrySequenceSerializer::class)
-data class TaskRetrySequence(val int: Int = 0) : Comparable<TaskRetrySequence> {
+data class TaskRetrySequence(private val int: Int = 0) : Comparable<TaskRetrySequence> {
     override fun toString() = "$int"
+
+    fun toInt() = int
 
     override operator fun compareTo(other: TaskRetrySequence): Int = this.int.compareTo(other.int)
 
@@ -44,6 +46,9 @@ data class TaskRetrySequence(val int: Int = 0) : Comparable<TaskRetrySequence> {
 
 object TaskRetrySequenceSerializer : KSerializer<TaskRetrySequence> {
     override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("TaskRetrySequence", PrimitiveKind.INT)
-    override fun serialize(encoder: Encoder, value: TaskRetrySequence) { encoder.encodeInt(value.int) }
+    override fun serialize(encoder: Encoder, value: TaskRetrySequence) {
+        encoder.encodeInt(value.toInt())
+    }
+
     override fun deserialize(decoder: Decoder) = TaskRetrySequence(decoder.decodeInt())
 }

@@ -25,6 +25,8 @@
 
 package io.infinitic.exceptions.workflows
 
+import io.infinitic.common.workers.config.WorkflowVersion
+import io.infinitic.common.workflows.data.workflows.WorkflowName
 import io.infinitic.exceptions.UserException
 import io.infinitic.workflows.Channel
 
@@ -77,4 +79,12 @@ class WorkflowChangedException(
 ) : WorkflowUserException(
     msg = "Workflow \"$workflow\" has been updated since its launch (detected at position $position in $method)",
     help = "You can either kill this instance or restore the workflow definition to be able to resume it"
+)
+
+class UnknownWorkflowVersionException(
+    workflowName: WorkflowName,
+    workflowVersion: WorkflowVersion?
+) : WorkflowUserException(
+    msg = "Unknown version \"$workflowVersion\" for Workflow \"$workflowName\"",
+    help = ""
 )

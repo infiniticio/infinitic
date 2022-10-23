@@ -25,12 +25,15 @@
 
 package io.infinitic.common.workflows.engine.state
 
+import com.github.avrokotlin.avro4k.Avro
+import com.github.avrokotlin.avro4k.AvroDefault
 import com.github.avrokotlin.avro4k.AvroNamespace
 import io.infinitic.common.data.MessageId
 import io.infinitic.common.data.MillisInstant
 import io.infinitic.common.exceptions.thisShouldNotHappen
 import io.infinitic.common.serDe.avro.AvroSerDe
 import io.infinitic.common.tasks.data.TaskId
+import io.infinitic.common.workers.config.WorkflowVersion
 import io.infinitic.common.workflows.data.channels.ReceivingChannel
 import io.infinitic.common.workflows.data.channels.SignalId
 import io.infinitic.common.workflows.data.commands.CommandId
@@ -67,6 +70,12 @@ data class WorkflowState(
      * Workflow's name (used wy worker to instantiate)
      */
     val workflowName: WorkflowName,
+
+    /**
+     * Workflow's version
+     */
+    @AvroDefault(Avro.NULL)
+    var workflowVersion: WorkflowVersion?,
 
     /**
      * Instance's tags defined when dispatched

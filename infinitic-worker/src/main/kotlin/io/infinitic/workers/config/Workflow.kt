@@ -26,16 +26,17 @@
 package io.infinitic.workers.config
 
 import io.infinitic.common.workers.config.RetryPolicy
-import io.infinitic.common.workers.config.WorkflowCheckMode
 import io.infinitic.workers.register.WorkerRegister
+import io.infinitic.workflows.Workflow
+import io.infinitic.workflows.WorkflowCheckMode
 import io.infinitic.workflows.engine.config.WorkflowEngine
 import io.infinitic.workflows.tag.config.WorkflowTag
-import java.lang.reflect.Constructor
-import io.infinitic.workflows.Workflow as WorkflowInstance
+import io.infinitic.workflows.Workflow as WorkflowBase
 
 data class Workflow(
     val name: String,
     val `class`: String? = null,
+    val classes: List<String>? = null,
     var concurrency: Int? = null,
     var timeoutInSeconds: Double? = null,
     var retry: RetryPolicy? = null,
@@ -43,55 +44,26 @@ data class Workflow(
     var tagEngine: WorkflowTag? = WorkerRegister.DEFAULT_WORKFLOW_TAG,
     var workflowEngine: WorkflowEngine? = WorkerRegister.DEFAULT_WORKFLOW_ENGINE
 ) {
-    private lateinit var _constructor: Constructor<out Any>
-
-    fun getInstance() = _constructor.newInstance() as WorkflowInstance
+    val allClasses = mutableListOf<Class<out WorkflowBase>>()
 
     init {
         require(name.isNotEmpty()) { "name can not be empty" }
 
-        when (`class`) {
-            null -> {
-                require(tagEngine != null || workflowEngine != null) { "class, workflowTag and workflowEngine are null for workflow $name" }
+        when {
+            (`class` == null) && (classes == null) -> {
+                require(tagEngine != null || workflowEngine != null) { "class, classes, workflowTag and workflowEngine are null for workflow $name" }
             }
 
             else -> {
-                require(`class`.isNotEmpty()) { "class empty for workflow $name" }
-
-                val klass = try {
-                    Class.forName(`class`)
-                } catch (e: ClassNotFoundException) {
-                    throw IllegalArgumentException("class \"$`class`\" unknown for workflow $name")
-                } catch (e: Exception) {
-                    throw IllegalArgumentException(
-                        "Error when trying to get class of name \"$`class`\" for workflow $name",
-                        e
-                    )
+                if (`class` != null) {
+                    require(`class`.isNotEmpty()) { "class empty for workflow $name" }
+                }
+                classes?.forEachIndexed { index, s ->
+                    require(s.isNotEmpty()) { "classes[$index] empty for workflow $name" }
                 }
 
-                _constructor = try {
-                    klass.getDeclaredConstructor()
-                } catch (e: NoSuchMethodException) {
-                    throw IllegalArgumentException("class \"$`class`\" must have an empty constructor for workflow $name")
-                } catch (e: Exception) {
-                    throw IllegalArgumentException(
-                        "Error when trying to get constructor of class \"$`class`\" for workflow $name",
-                        e
-                    )
-                }
-
-                val instance = try {
-                    _constructor.newInstance()
-                } catch (e: Exception) {
-                    throw IllegalArgumentException(
-                        "Error when trying to instantiate class \"$`class`\" for workflow $name",
-                        e
-                    )
-                }
-
-                require(instance is WorkflowInstance) {
-                    "class \"$`class`\" must extend ${WorkflowInstance::class.java.name} to be used as a workflow"
-                }
+                `class`?.also { allClasses.add(getWorkflowClass(it)) }
+                classes?.forEach { allClasses.add(getWorkflowClass(it)) }
 
                 if (concurrency != null) {
                     require(concurrency!! >= 0) { "concurrency must be positive (workflow $name)" }
@@ -102,5 +74,45 @@ data class Workflow(
                 }
             }
         }
+    }
+
+    private fun getWorkflowClass(className: String): Class<out Workflow> {
+        val klass = try {
+            Class.forName(className)
+        } catch (e: ClassNotFoundException) {
+            throw IllegalArgumentException("class \"$className\" unknown for workflow $name")
+        } catch (e: Exception) {
+            throw IllegalArgumentException(
+                "Error when trying to get class of name \"$className\" for workflow $name",
+                e
+            )
+        }
+
+        val constructor = try {
+            klass.getDeclaredConstructor()
+        } catch (e: NoSuchMethodException) {
+            throw IllegalArgumentException("class \"$className\" must have an empty constructor to be used as workflow $name")
+        } catch (e: Exception) {
+            throw IllegalArgumentException(
+                "Error when trying to get constructor of class \"$className\" for workflow $name",
+                e
+            )
+        }
+
+        val instance = try {
+            constructor.newInstance()
+        } catch (e: Exception) {
+            throw IllegalArgumentException(
+                "Error when trying to instantiate class \"$className\" for workflow $name",
+                e
+            )
+        }
+
+        require(instance is WorkflowBase) {
+            "class \"$className\" must extend ${WorkflowBase::class.java.name} to be used as workflow $name"
+        }
+
+        @Suppress("UNCHECKED_CAST")
+        return klass as Class<out WorkflowBase>
     }
 }

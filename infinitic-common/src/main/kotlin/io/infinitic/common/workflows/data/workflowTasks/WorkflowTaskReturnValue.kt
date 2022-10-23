@@ -27,6 +27,7 @@ package io.infinitic.common.workflows.data.workflowTasks
 
 import com.github.avrokotlin.avro4k.AvroDefault
 import io.infinitic.common.data.ReturnValue
+import io.infinitic.common.workers.config.WorkflowVersion
 import io.infinitic.common.workflows.data.commands.PastCommand
 import io.infinitic.common.workflows.data.properties.PropertyName
 import io.infinitic.common.workflows.data.properties.PropertyValue
@@ -40,5 +41,7 @@ data class WorkflowTaskReturnValue(
     val newCommands: List<PastCommand>,
     val newStep: NewStep?,
     val properties: Map<PropertyName, PropertyValue>,
-    val methodReturnValue: ReturnValue?
+    val methodReturnValue: ReturnValue?,
+    @AvroDefault("0")
+    val workflowVersion: WorkflowVersion
 )

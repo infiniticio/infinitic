@@ -51,6 +51,7 @@ internal fun CoroutineScope.dispatchTask(
             methodParameters = methodParameters,
             workflowId = state.workflowId,
             workflowName = state.workflowName,
+            workflowVersion = state.workflowVersion,
             methodRunId = state.runningMethodRunId ?: thisShouldNotHappen(),
             lastError = null,
             taskRetryIndex = TaskRetryIndex(0),

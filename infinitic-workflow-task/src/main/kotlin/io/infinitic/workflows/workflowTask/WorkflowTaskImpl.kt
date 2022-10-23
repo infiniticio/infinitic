@@ -27,8 +27,7 @@ package io.infinitic.workflows.workflowTask
 
 import io.infinitic.common.data.ClientName
 import io.infinitic.common.data.ReturnValue
-import io.infinitic.common.parser.getMethodPerNameAndParameters
-import io.infinitic.common.workers.config.WorkflowCheckMode
+import io.infinitic.common.workers.config.WorkflowVersion
 import io.infinitic.common.workflows.data.properties.PropertyHash
 import io.infinitic.common.workflows.data.properties.PropertyName
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTask
@@ -39,44 +38,39 @@ import io.infinitic.exceptions.FailedWorkflowTaskException
 import io.infinitic.exceptions.WorkerException
 import io.infinitic.tasks.Task
 import io.infinitic.workflows.Deferred
+import io.infinitic.workflows.Workflow
+import io.infinitic.workflows.WorkflowCheckMode
 import io.infinitic.workflows.setChannelNames
 import java.lang.reflect.InvocationTargetException
+import java.lang.reflect.Method
 
 class WorkflowTaskImpl : WorkflowTask {
 
     lateinit var checkMode: WorkflowCheckMode
+    lateinit var instance: Workflow
+    lateinit var method: Method
 
     override fun handle(workflowTaskParameters: WorkflowTaskParameters): WorkflowTaskReturnValue {
-        // get  instance workflow by name
-        val workflow =
-            Task.context.get().workerRegistry.getRegisteredWorkflow(workflowTaskParameters.workflowName).factory()
-
         // get method
         val methodRun = workflowTaskParameters.methodRun
-        val method = getMethodPerNameAndParameters(
-            workflow::class.java,
-            "${methodRun.methodName}",
-            methodRun.methodParameterTypes?.types,
-            methodRun.methodParameters.size
-        )
 
         // set context
         with(workflowTaskParameters) {
-            workflow.workflowName = workflowName.toString()
-            workflow.workflowId = workflowId.toString()
-            workflow.methodName = methodRun.methodName.toString()
-            workflow.methodId = methodRun.methodRunId.toString()
-            workflow.tags = workflowTags.map { it.tag }.toSet()
-            workflow.meta = workflowMeta.map
+            instance.workflowName = workflowName.toString()
+            instance.workflowId = workflowId.toString()
+            instance.methodName = methodRun.methodName.toString()
+            instance.methodId = methodRun.methodRunId.toString()
+            instance.tags = workflowTags.map { it.tag }.toSet()
+            instance.meta = workflowMeta.map
         }
         val dispatcher = WorkflowDispatcherImpl(checkMode, workflowTaskParameters)
-        workflow.dispatcher = dispatcher
+        instance.dispatcher = dispatcher
 
         // define setProperties function
         val setProperties = { nameHashes: Map<PropertyName, PropertyHash> ->
             // in case properties contain some Deferred
             Deferred.setWorkflowDispatcher(dispatcher)
-            workflow.setProperties(workflowTaskParameters.workflowPropertiesHashValue, nameHashes)
+            instance.setProperties(workflowTaskParameters.workflowPropertiesHashValue, nameHashes)
             Deferred.delWorkflowDispatcher()
         }
 
@@ -87,7 +81,7 @@ class WorkflowTaskImpl : WorkflowTask {
         setProperties(methodRun.propertiesNameHashAtStart)
 
         // initialize name of channels for this workflow, based on the methods that provide them
-        workflow.setChannelNames()
+        instance.setChannelNames()
 
         // get method parameters
         // in case parameters contain some Deferred
@@ -97,7 +91,7 @@ class WorkflowTaskImpl : WorkflowTask {
 
         // run method and get return value (null if end not reached)
         val methodReturnValue = try {
-            ReturnValue.from(method.invoke(workflow, *parameters))
+            ReturnValue.from(method.invoke(instance, *parameters))
         } catch (e: InvocationTargetException) {
             when (val cause = e.cause) {
                 // we reach an uncompleted step
@@ -116,13 +110,12 @@ class WorkflowTaskImpl : WorkflowTask {
             }
         }
 
-        val properties = workflow.getProperties()
-
         return WorkflowTaskReturnValue(
             newCommands = dispatcher.newCommands,
             newStep = dispatcher.newStep,
-            properties = properties,
-            methodReturnValue = methodReturnValue
+            properties = instance.getProperties(),
+            methodReturnValue = methodReturnValue,
+            workflowVersion = WorkflowVersion.from(instance::class.java)
         )
     }
 }

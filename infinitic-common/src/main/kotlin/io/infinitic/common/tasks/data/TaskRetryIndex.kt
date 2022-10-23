@@ -34,9 +34,10 @@ import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
 
 @Serializable(with = TaskRetryIndexSerializer::class)
-data class TaskRetryIndex(val int: Int = 0) : Comparable<TaskRetryIndex> {
+data class TaskRetryIndex(private val int: Int = 0) : Comparable<TaskRetryIndex> {
     override fun toString() = "$int"
 
+    fun toInt() = int
     override operator fun compareTo(other: TaskRetryIndex): Int = this.int.compareTo(other.int)
 
     operator fun plus(increment: Int) = TaskRetryIndex(this.int + increment)
@@ -44,6 +45,9 @@ data class TaskRetryIndex(val int: Int = 0) : Comparable<TaskRetryIndex> {
 
 object TaskRetryIndexSerializer : KSerializer<TaskRetryIndex> {
     override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("TaskRetryIndex", PrimitiveKind.INT)
-    override fun serialize(encoder: Encoder, value: TaskRetryIndex) { encoder.encodeInt(value.int) }
+    override fun serialize(encoder: Encoder, value: TaskRetryIndex) {
+        encoder.encodeInt(value.toInt())
+    }
+
     override fun deserialize(decoder: Decoder) = TaskRetryIndex(decoder.decodeInt())
 }

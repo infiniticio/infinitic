@@ -79,6 +79,12 @@ internal fun CoroutineScope.workflowTaskCompleted(
     message: TaskCompleted
 ): MutableList<WorkflowEngineMessage> {
     val workflowTaskOutput = message.taskReturnValue.returnValue.value() as WorkflowTaskReturnValue
+
+    // set workflowVersion the first time
+    if (state.workflowVersion == null) {
+        state.workflowVersion = workflowTaskOutput.workflowVersion
+    }
+
     // retrieve current methodRun
     val methodRun = state.getRunningMethodRun()
 

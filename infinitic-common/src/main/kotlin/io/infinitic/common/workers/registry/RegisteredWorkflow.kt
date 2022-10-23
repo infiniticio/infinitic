@@ -25,15 +25,45 @@
 
 package io.infinitic.common.workers.registry
 
-import io.infinitic.common.workers.WorkflowFactory
-import io.infinitic.common.workers.config.WorkflowCheckMode
+import io.infinitic.common.exceptions.thisShouldNotHappen
+import io.infinitic.common.workers.config.WorkflowVersion
+import io.infinitic.common.workflows.data.workflows.WorkflowName
+import io.infinitic.exceptions.workflows.UnknownWorkflowVersionException
 import io.infinitic.tasks.WithRetry
 import io.infinitic.tasks.WithTimeout
+import io.infinitic.workflows.Workflow
+import io.infinitic.workflows.WorkflowCheckMode
+
+typealias WorkflowClassList = List<Class<out Workflow>>
 
 data class RegisteredWorkflow(
+    val workflowName: WorkflowName,
+    val classes: WorkflowClassList,
     val concurrency: Int,
-    val factory: WorkflowFactory,
     val withTimeout: WithTimeout?,
     val withRetry: WithRetry?,
     val checkMode: WorkflowCheckMode?
-)
+) {
+    init {
+        require(classes.isNotEmpty()) { "List of classes must not be empty for workflow $workflowName" }
+
+        // throw IllegalArgumentException if some classes have the same version
+        with(classes.associateWith { WorkflowVersion.from(it) }) {
+            values.groupingBy { it }.eachCount().filter { it.value > 1 }.keys.forEach { version ->
+                val list = filter { version == it.value }.keys.map { it.name }.joinToString()
+
+                throw IllegalArgumentException("$list have same version $version for workflow $workflowName")
+            }
+        }
+    }
+
+    private val classByVersion by lazy { classes.associateBy { WorkflowVersion.from(it) } }
+
+    private val lastVersion by lazy { classByVersion.keys.maxOrNull() ?: thisShouldNotHappen() }
+    fun getInstance(workflowVersion: WorkflowVersion?): Workflow =
+        getClass(workflowVersion).getDeclaredConstructor().newInstance()
+
+    private fun getClass(workflowVersion: WorkflowVersion?) = (workflowVersion ?: lastVersion).run {
+        classByVersion[this] ?: throw UnknownWorkflowVersionException(workflowName, this)
+    }
+}

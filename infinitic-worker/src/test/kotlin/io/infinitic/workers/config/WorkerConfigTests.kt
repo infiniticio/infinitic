@@ -28,7 +28,6 @@ package io.infinitic.workers.config
 import com.sksamuel.hoplite.ConfigException
 import io.infinitic.workers.register.WorkerRegister.Companion.DEFAULT_CONCURRENCY
 import io.infinitic.workers.samples.ServiceA
-import io.infinitic.workers.samples.WorkflowA
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
@@ -41,13 +40,6 @@ class WorkerConfigTests : StringSpec({
 
         val task = config.services.first { it.name == ServiceA::class.java.name }
         task.getInstance() shouldNotBe task.getInstance()
-    }
-
-    "workflow instance should not be reused" {
-        val config = WorkerConfig.fromResource("/config/workflows/instance.yml")
-
-        val workflow = config.workflows.first { it.name == WorkflowA::class.java.name }
-        workflow.getInstance() shouldNotBe workflow.getInstance()
     }
 
     "task with InvocationTargetException should throw cause" {

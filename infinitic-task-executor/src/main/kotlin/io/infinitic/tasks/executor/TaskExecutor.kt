@@ -47,7 +47,6 @@ import io.infinitic.common.tasks.executors.messages.TaskExecutorMessage
 import io.infinitic.common.tasks.tags.SendToTaskTag
 import io.infinitic.common.tasks.tags.messages.RemoveTagFromTask
 import io.infinitic.common.workers.config.RetryPolicy
-import io.infinitic.common.workers.config.WorkflowCheckMode
 import io.infinitic.common.workers.registry.WorkerRegistry
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskParameters
 import io.infinitic.common.workflows.engine.SendToWorkflowEngine
@@ -60,6 +59,7 @@ import io.infinitic.tasks.WithTimeout
 import io.infinitic.tasks.executor.task.TaskCommand
 import io.infinitic.tasks.executor.task.TaskContextImpl
 import io.infinitic.tasks.getTimeoutInMillis
+import io.infinitic.workflows.WorkflowCheckMode
 import io.infinitic.workflows.workflowTask.WorkflowTaskImpl
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.coroutineScope
@@ -118,13 +118,14 @@ class TaskExecutor(
         val taskContext = TaskContextImpl(
             workerName = "$clientName",
             workerRegistry = workerRegistry,
-            serviceName = message.serviceName.toString(),
-            taskId = message.taskId.toString(),
-            taskName = message.methodName.toString(),
-            workflowId = message.workflowId?.toString(),
-            workflowName = message.workflowName?.name,
-            retrySequence = message.taskRetrySequence.int,
-            retryIndex = message.taskRetryIndex.int,
+            serviceName = message.serviceName,
+            taskId = message.taskId,
+            taskName = message.methodName,
+            workflowId = message.workflowId,
+            workflowName = message.workflowName,
+            workflowVersion = message.workflowVersion,
+            retrySequence = message.taskRetrySequence,
+            retryIndex = message.taskRetryIndex,
             lastError = message.lastError,
             tags = message.taskTags.map { it.tag }.toSet(),
             meta = message.taskMeta.map.toMutableMap(),
@@ -182,7 +183,7 @@ class TaskExecutor(
             // context is stored in execution's thread (in case used in retryable)
             Task.context.set(taskContext)
             // get seconds before retry
-            withRetry?.getSecondsBeforeRetry(taskContext.retryIndex, cause)
+            withRetry?.getSecondsBeforeRetry(taskContext.retryIndex.toInt(), cause)
         } catch (e: Exception) {
             logger.error(e) { "Error in ${WithRetry::class.java.simpleName} ${withRetry!!::class.java.name}" }
             // no retry
@@ -214,9 +215,10 @@ class TaskExecutor(
 
         when (msg.isWorkflowTask()) {
             true -> {
+                val workflowTaskParameters = parameters.first() as WorkflowTaskParameters
                 val registered = workerRegistry.getRegisteredWorkflow(msg.workflowName!!)
-                val workflow = registered.factory()
-                val workflowMethod = with(parameters.first() as WorkflowTaskParameters) {
+                val workflow = registered.getInstance(workflowTaskParameters.workflowVersion)
+                val workflowMethod = with(workflowTaskParameters) {
                     // method instance
                     getMethodPerNameAndParameters(
                         workflow::class.java,
@@ -264,7 +266,11 @@ class TaskExecutor(
                         // else use default value
                         ?: DEFAULT_WORKFLOW_CHECK_MODE
 
-                (service as WorkflowTaskImpl).checkMode = checkMode
+                with(service as WorkflowTaskImpl) {
+                    this.checkMode = checkMode
+                    this.instance = workflow
+                    this.method = workflowMethod
+                }
             }
 
             false -> {

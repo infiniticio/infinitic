@@ -25,6 +25,9 @@
 
 package io.infinitic.tasks
 
+import io.infinitic.clients.InfiniticClientInterface
+import io.infinitic.common.tasks.executors.errors.ExecutionError
+
 object Task {
     val context: ThreadLocal<TaskContext> = ThreadLocal.withInitial { null }
 
@@ -32,35 +35,38 @@ object Task {
     val workerName get() = context.get().workerName
 
     @JvmStatic
-    val serviceName get() = context.get().serviceName
+    val serviceName: String get() = context.get().serviceName.toString()
 
     @JvmStatic
-    val taskId get() = context.get().taskId
+    val taskId: String get() = context.get().taskId.toString()
 
     @JvmStatic
-    val taskName get() = context.get().taskName
+    val taskName: String get() = context.get().taskName.toString()
 
     @JvmStatic
-    val workflowId get() = context.get().workflowId
+    val workflowId: String? get() = context.get().workflowId?.toString()
 
     @JvmStatic
-    val workflowName get() = context.get().workflowName
+    val workflowName: String? get() = context.get().workflowName?.toString()
 
     @JvmStatic
-    val retrySequence get() = context.get().retrySequence
+    val workflowVersion: Int? get() = context.get().workflowVersion?.toInt()
 
     @JvmStatic
-    val lastError get() = context.get().lastError
+    val lastError: ExecutionError? get() = context.get().lastError
 
     @JvmStatic
-    val retryIndex get() = context.get().retryIndex
+    val retrySequence: Int get() = context.get().retrySequence.toInt()
 
     @JvmStatic
-    val tags get() = context.get().tags
+    val retryIndex: Int get() = context.get().retryIndex.toInt()
 
     @JvmStatic
-    val meta get() = context.get().meta
+    val tags: Set<String> get() = context.get().tags
 
     @JvmStatic
-    val client get() = context.get().client
+    val meta: MutableMap<String, ByteArray> get() = context.get().meta
+
+    @JvmStatic
+    val client: InfiniticClientInterface get() = context.get().client
 }

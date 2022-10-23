@@ -31,6 +31,7 @@ import io.infinitic.common.clients.messages.TaskIdsByTag
 import io.infinitic.common.data.ClientName
 import io.infinitic.common.data.MessageId
 import io.infinitic.common.fixtures.TestFactory
+import io.infinitic.common.fixtures.mockSendToClient
 import io.infinitic.common.tasks.data.ServiceName
 import io.infinitic.common.tasks.data.TaskId
 import io.infinitic.common.tasks.data.TaskTag
@@ -110,12 +111,6 @@ internal class TaskTagEngineTests : StringSpec({
 
 private inline fun <reified T : Any> random(values: Map<String, Any?>? = null) =
     TestFactory.random<T>(values)
-
-private fun mockSendToClient(slot: CapturingSlot<ClientMessage>): SendToClient {
-    val mock = mockk<SendToClient>()
-    coEvery { mock(capture(slot)) } just Runs
-    return mock
-}
 
 private fun mockTagStateStorage(
     tag: TaskTag,

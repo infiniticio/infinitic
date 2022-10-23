@@ -261,8 +261,7 @@ class WorkflowEngine(
             return
         }
 
-        @Suppress("UNUSED_VARIABLE")
-        val m = when (message) {
+        when (message) {
             is DispatchWorkflow -> thisShouldNotHappen()
             is DispatchMethod -> dispatchMethodRun(output, state, message)
             is CancelWorkflow -> cancelWorkflow(output, state, message)
