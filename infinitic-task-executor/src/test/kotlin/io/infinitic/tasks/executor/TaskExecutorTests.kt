@@ -28,7 +28,6 @@
 package io.infinitic.tasks.executor
 
 import io.infinitic.clients.InfiniticClientInterface
-import io.infinitic.common.clients.SendToClient
 import io.infinitic.common.clients.messages.ClientMessage
 import io.infinitic.common.data.ClientName
 import io.infinitic.common.data.MillisDuration
@@ -36,6 +35,10 @@ import io.infinitic.common.data.ReturnValue
 import io.infinitic.common.data.methods.MethodName
 import io.infinitic.common.data.methods.MethodParameterTypes
 import io.infinitic.common.data.methods.MethodParameters
+import io.infinitic.common.fixtures.mockSendToClient
+import io.infinitic.common.fixtures.mockSendToTaskExecutorAfter
+import io.infinitic.common.fixtures.mockSendToTaskTag
+import io.infinitic.common.fixtures.mockSendToWorkflowEngine
 import io.infinitic.common.tasks.data.ServiceName
 import io.infinitic.common.tasks.data.TaskId
 import io.infinitic.common.tasks.data.TaskMeta
@@ -43,11 +46,9 @@ import io.infinitic.common.tasks.data.TaskRetryIndex
 import io.infinitic.common.tasks.data.TaskRetrySequence
 import io.infinitic.common.tasks.data.TaskReturnValue
 import io.infinitic.common.tasks.data.TaskTag
-import io.infinitic.common.tasks.executors.SendToTaskExecutorAfter
 import io.infinitic.common.tasks.executors.errors.ExecutionError
 import io.infinitic.common.tasks.executors.messages.ExecuteTask
 import io.infinitic.common.tasks.executors.messages.TaskExecutorMessage
-import io.infinitic.common.tasks.tags.SendToTaskTag
 import io.infinitic.common.tasks.tags.messages.RemoveTagFromTask
 import io.infinitic.common.tasks.tags.messages.TaskTagMessage
 import io.infinitic.common.workers.config.ExponentialBackoffRetryPolicy
@@ -57,7 +58,6 @@ import io.infinitic.common.workers.registry.WorkerRegistry
 import io.infinitic.common.workflows.data.methodRuns.MethodRunId
 import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.data.workflows.WorkflowName
-import io.infinitic.common.workflows.engine.SendToWorkflowEngine
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
 import io.infinitic.exceptions.tasks.ClassNotFoundException
 import io.infinitic.exceptions.tasks.NoMethodFoundWithParameterCountException
@@ -77,11 +77,8 @@ import io.infinitic.tasks.executor.samples.SimpleServiceWithRetry
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
 import io.mockk.CapturingSlot
-import io.mockk.Runs
 import io.mockk.clearMocks
-import io.mockk.coEvery
 import io.mockk.every
-import io.mockk.just
 import io.mockk.mockk
 import io.mockk.slot
 import kotlinx.coroutines.coroutineScope
@@ -102,15 +99,17 @@ class TaskExecutorTests : StringSpec({
     val workflowEngineMessage = slot<WorkflowEngineMessage>()
     val workerRegistry = mockk<WorkerRegistry>()
     val mockClientFactory = mockk<() -> InfiniticClientInterface>()
+
     val taskExecutor = TaskExecutor(
         clientName,
         workerRegistry,
-        mockSendToTaskExecutor(taskExecutorMessage, after),
+        mockSendToTaskExecutorAfter(taskExecutorMessage, after),
         mockSendToTaskTag(taskTagMessages),
         mockSendToWorkflowEngine(workflowEngineMessage),
         mockSendToClient(clientMessage),
         mockClientFactory
     )
+
     val service = RegisteredService(1, { ServiceImplService() }, null, null)
 
     // ensure slots are emptied between each test
@@ -438,37 +437,6 @@ class TaskExecutorTests : StringSpec({
         taskTagMessages[1] shouldBe getRemoveTag(msg, "bar")
     }
 })
-
-private fun mockSendToTaskExecutor(
-    message: CapturingSlot<TaskExecutorMessage>,
-    delay: CapturingSlot<MillisDuration>
-): SendToTaskExecutorAfter {
-    val sendToTaskExecutorAfter = mockk<SendToTaskExecutorAfter>()
-    coEvery { sendToTaskExecutorAfter(capture(message), capture(delay)) } just Runs
-
-    return sendToTaskExecutorAfter
-}
-
-private fun mockSendToTaskTag(message: CopyOnWriteArrayList<TaskTagMessage>): SendToTaskTag {
-    val sendToTaskTag = mockk<SendToTaskTag>()
-    coEvery { sendToTaskTag(capture(message)) } just Runs
-
-    return sendToTaskTag
-}
-
-private fun mockSendToClient(message: CapturingSlot<ClientMessage>): SendToClient {
-    val sendToClient = mockk<SendToClient>()
-    coEvery { sendToClient(capture(message)) } just Runs
-
-    return sendToClient
-}
-
-private fun mockSendToWorkflowEngine(message: CapturingSlot<WorkflowEngineMessage>): SendToWorkflowEngine {
-    val sendToWorkflowEngine = mockk<SendToWorkflowEngine>()
-    coEvery { sendToWorkflowEngine(capture(message)) } just Runs
-
-    return sendToWorkflowEngine
-}
 
 private fun getTaskCompletedClient(msg: ExecuteTask, returnValue: Any?) = TaskCompletedClient(
     recipientName = msg.emitterName,

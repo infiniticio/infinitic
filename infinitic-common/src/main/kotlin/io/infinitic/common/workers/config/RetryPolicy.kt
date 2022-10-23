@@ -89,7 +89,7 @@ data class ExponentialBackoffRetryPolicy(
     // checks can not be in init {} as throwing exception in constructor prevents sealed class recognition by Hoplite
     override fun check() {
         require(minimumSeconds > 0) { "${::minimumSeconds.name} MUST be > 0" }
-        require(maximumSeconds > 0) { "${::maximumSeconds.name} MUST be > 0" }
+        require(maximumSeconds >= 0) { "${::maximumSeconds.name} MUST be > 0" }
         require(maximumSeconds > minimumSeconds) { "${::maximumSeconds.name} MUST be > ${::minimumSeconds.name}" }
         require(backoffCoefficient >= 1) { "${::backoffCoefficient.name} MUST be >= 1" }
         require(maximumRetries >= 0) { "${::maximumRetries.name} MUST be >= 0" }
