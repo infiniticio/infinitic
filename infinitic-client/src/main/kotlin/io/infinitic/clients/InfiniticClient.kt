@@ -42,6 +42,20 @@ class InfiniticClient private constructor(
          * Create InfiniticClient with config from resources directory
          */
         @JvmStatic
+        @JvmOverloads
+        fun fromConfig(clientConfig: ClientConfig, workerConfig: WorkerConfig? = null): InfiniticClient {
+            return InfiniticClient(
+                when (clientConfig.transport) {
+                    Transport.pulsar -> PulsarInfiniticClient.fromConfig(clientConfig)
+                    Transport.inMemory -> InMemoryInfiniticClient(WorkerRegisterImpl(workerConfig!!))
+                }
+            )
+        }
+
+        /**
+         * Create InfiniticClient with config from resources directory
+         */
+        @JvmStatic
         fun fromConfigResource(vararg resources: String): InfiniticClient {
             val clientConfig = ClientConfig.fromResource(*resources)
 

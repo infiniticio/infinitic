@@ -34,8 +34,6 @@ import io.infinitic.common.workflows.engine.storage.WorkflowStateStorage
 import io.infinitic.common.workflows.tags.storage.WorkflowTagStorage
 import kotlinx.coroutines.CoroutineScope
 
-typealias ServiceFactory = () -> Any
-
 interface WorkerStarter {
     fun CoroutineScope.startWorkflowTag(
         workflowName: WorkflowName,

@@ -46,8 +46,8 @@ interface TopicNames {
     fun topic(type: WorkflowTopics, workflowName: WorkflowName): String
     fun topicDLQ(type: WorkflowTopics, workflowName: WorkflowName): String
 
-    fun topic(type: TaskTopics, serviceName: ServiceName): String
-    fun topicDLQ(type: TaskTopics, serviceName: ServiceName): String
+    fun topic(type: ServiceTopics, serviceName: ServiceName): String
+    fun topicDLQ(type: ServiceTopics, serviceName: ServiceName): String
 
     fun topic(type: WorkflowTaskTopics, workflowName: WorkflowName): String
     fun topicDLQ(type: WorkflowTaskTopics, workflowName: WorkflowName): String
@@ -56,13 +56,13 @@ interface TopicNames {
         is ClientTopics -> topic(type, ClientName(name))
         is GlobalTopics -> topic(type)
         is WorkflowTopics -> topic(type, WorkflowName(name))
-        is TaskTopics -> topic(type, ServiceName(name))
+        is ServiceTopics -> topic(type, ServiceName(name))
         is WorkflowTaskTopics -> topic(type, WorkflowName(name))
     }
 
     fun topicDLQ(type: TopicType, name: String) = when (type) {
         is WorkflowTopics -> topicDLQ(type, WorkflowName(name))
-        is TaskTopics -> topicDLQ(type, ServiceName(name))
+        is ServiceTopics -> topicDLQ(type, ServiceName(name))
         is WorkflowTaskTopics -> topicDLQ(type, WorkflowName(name))
         else -> null
     }

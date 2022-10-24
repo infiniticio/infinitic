@@ -91,7 +91,7 @@ enum class WorkflowTaskTopics(
     EXECUTOR("workflow-task-executor", SubscriptionType.Shared, true, false)
 }
 
-enum class TaskTopics(
+enum class ServiceTopics(
     override val subscriptionPrefix: String,
     override val subscriptionType: SubscriptionType,
     override val isPartitioned: Boolean,

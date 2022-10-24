@@ -39,8 +39,12 @@ value class WorkflowVersion(private val v: Int) : Comparable<WorkflowVersion> {
 
     companion object {
         fun from(klass: Class<out Workflow>) = WorkflowVersion(
-            if (!Regex(".+_[0-9]+\$").matches(klass.simpleName)) 0
-            else klass.simpleName.split("_").last().toInt()
+            with(klass.simpleName) {
+                when (Regex(".+_[0-9]+\$").matches(this)) {
+                    true -> split("_").last().toInt()
+                    false -> 0
+                }
+            }
         )
     }
 }

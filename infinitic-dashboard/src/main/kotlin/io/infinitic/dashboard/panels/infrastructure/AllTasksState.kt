@@ -28,7 +28,7 @@ package io.infinitic.dashboard.panels.infrastructure
 import io.infinitic.common.tasks.data.ServiceName
 import io.infinitic.dashboard.Infinitic
 import io.infinitic.dashboard.panels.infrastructure.requests.Loading
-import io.infinitic.transport.pulsar.topics.TaskTopics
+import io.infinitic.transport.pulsar.topics.ServiceTopics
 import org.apache.pulsar.common.policies.data.PartitionedTopicStats
 import java.time.Instant
 
@@ -45,7 +45,7 @@ data class AllTasksState(
     override fun getNames() = Infinitic.admin.tasks
 
     override fun getPartitionedStats(name: String): PartitionedTopicStats {
-        val topic = Infinitic.topicName.topic(TaskTopics.EXECUTOR, ServiceName(name))
+        val topic = Infinitic.topicName.topic(ServiceTopics.EXECUTOR, ServiceName(name))
 
         return Infinitic.topics.getPartitionedStats(topic, true, true, true)
     }

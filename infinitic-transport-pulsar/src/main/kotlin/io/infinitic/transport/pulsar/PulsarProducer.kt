@@ -28,6 +28,7 @@ package io.infinitic.transport.pulsar
 import io.infinitic.common.data.MillisDuration
 import io.infinitic.common.messages.Envelope
 import io.infinitic.common.messages.Message
+import io.infinitic.transport.pulsar.config.topics.ProducerConfig
 import io.infinitic.transport.pulsar.schemas.schemaDefinition
 import mu.KotlinLogging
 import org.apache.pulsar.client.api.BatcherBuilder
@@ -38,8 +39,10 @@ import org.apache.pulsar.client.api.Schema
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.TimeUnit
 
-internal class PulsarProducer(val client: PulsarClient) {
-
+internal class PulsarProducer(
+    val client: PulsarClient,
+    val config: ProducerConfig
+) {
     val logger = KotlinLogging.logger {}
 
     inline fun <T : Message, reified S : Envelope<T>> send(
@@ -49,7 +52,6 @@ internal class PulsarProducer(val client: PulsarClient) {
         producerName: String,
         key: String? = null
     ) {
-        @Suppress("UNCHECKED_CAST")
         val producer = getProducer<T, S>(topic, producerName, key)
 
         logger.debug { "Sending producerName='$producerName' after=$after key='$key' message='$message'" }
@@ -83,13 +85,85 @@ internal class PulsarProducer(val client: PulsarClient) {
                 .newProducer(schema)
                 .topic(topic)
                 .producerName(producerName)
-                .also {
-                    if (key != null) {
-                        it.batcherBuilder(BatcherBuilder.KEY_BASED)
+                .accessMode(ProducerAccessMode.Shared)
+                .also { p ->
+                    key?.let { p.batcherBuilder(BatcherBuilder.KEY_BASED) }
+                    config.autoUpdatePartitions?.also {
+                        logger.info { "producer $producerName: autoUpdatePartitions=$it" }
+                        p.autoUpdatePartitions(it)
+                    }
+                    config.autoUpdatePartitionsIntervalSeconds?.also {
+                        logger.info { "producer $producerName: autoUpdatePartitionsInterval=$it" }
+                        p.autoUpdatePartitionsInterval((it * 1000).toInt(), TimeUnit.MILLISECONDS)
+                    }
+                    config.batchingMaxBytes?.also {
+                        logger.info { "producer $producerName: batchingMaxBytes=$it" }
+                        p.batchingMaxBytes(it)
+                    }
+                    config.batchingMaxMessages?.also {
+                        logger.info { "producer $producerName: batchingMaxMessages=$it" }
+                        p.batchingMaxMessages(it)
+                    }
+                    config.batchingMaxPublishDelaySeconds?.also {
+                        logger.info { "producer $producerName: batchingMaxPublishDelay=$it" }
+                        p.batchingMaxPublishDelay((it * 1000).toLong(), TimeUnit.MILLISECONDS)
+                    }
+                    config.compressionType?.also {
+                        logger.info { "producer $producerName: compressionType=$it" }
+                        p.compressionType(it)
+                    }
+                    config.cryptoFailureAction?.also {
+                        logger.info { "producer $producerName: cryptoFailureAction=$it" }
+                        p.cryptoFailureAction(it)
+                    }
+                    config.defaultCryptoKeyReader?.also {
+                        logger.info { "producer $producerName: defaultCryptoKeyReader=$it" }
+                        p.defaultCryptoKeyReader(it)
+                    }
+                    config.encryptionKey?.also {
+                        logger.info { "producer $producerName: addEncryptionKey=$it" }
+                        p.addEncryptionKey(it)
+                    }
+                    config.enableBatching?.also {
+                        logger.info { "producer $producerName: enableBatching=$it" }
+                        p.enableBatching(it)
+                    }
+                    config.enableChunking?.also {
+                        logger.info { "producer $producerName: enableChunking=$it" }
+                        p.enableChunking(it)
+                    }
+                    config.enableLazyStartPartitionedProducers?.also {
+                        logger.info { "producer $producerName: enableLazyStartPartitionedProducers=$it" }
+                        p.enableLazyStartPartitionedProducers(it)
+                    }
+                    config.enableMultiSchema?.also {
+                        logger.info { "producer $producerName: enableMultiSchema=$it" }
+                        p.enableMultiSchema(it)
+                    }
+                    config.hashingScheme?.also {
+                        logger.info { "producer $producerName: hashingScheme=$it" }
+                        p.hashingScheme(it)
+                    }
+                    config.messageRoutingMode?.also {
+                        logger.info { "producer $producerName: messageRoutingMode=$it" }
+                        p.messageRoutingMode(it)
+                    }
+                    config.properties?.also {
+                        logger.info { "producer $producerName: properties=$it" }
+                        p.properties(it)
+                    }
+                    config.roundRobinRouterBatchingPartitionSwitchFrequency?.also {
+                        logger.info { "producer $producerName: roundRobinRouterBatchingPartitionSwitchFrequency=$it" }
+                        p.roundRobinRouterBatchingPartitionSwitchFrequency(it)
+                    }
+                    config.sendTimeoutSeconds?.also {
+                        logger.info { "producer $producerName: sendTimeout=$it" }
+                        p.sendTimeout((it * 1000).toInt(), TimeUnit.MILLISECONDS)
                     }
                 }
-                .accessMode(ProducerAccessMode.Shared)
-                .blockIfQueueFull(true)
+                .blockIfQueueFull(config.blockIfQueueFull).also {
+                    logger.info { "producer $producerName: blockIfQueueFull=${config.blockIfQueueFull}" }
+                }
                 .create()
         } as Producer<Envelope<out Message>>
 

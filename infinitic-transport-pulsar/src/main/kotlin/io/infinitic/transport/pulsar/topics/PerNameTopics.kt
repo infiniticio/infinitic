@@ -54,9 +54,9 @@ class PerNameTopics(override val tenant: String, override val namespace: String)
     override fun topicDLQ(type: WorkflowTaskTopics, workflowName: WorkflowName) =
         fullName("${type.subscriptionPrefix}-dlq:$workflowName")
 
-    override fun topic(type: TaskTopics, serviceName: ServiceName) =
+    override fun topic(type: ServiceTopics, serviceName: ServiceName) =
         fullName("${type.subscriptionPrefix}:$serviceName")
 
-    override fun topicDLQ(type: TaskTopics, serviceName: ServiceName) =
+    override fun topicDLQ(type: ServiceTopics, serviceName: ServiceName) =
         fullName("${type.subscriptionPrefix}-dlq:$serviceName")
 }

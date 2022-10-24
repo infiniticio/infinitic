@@ -30,7 +30,7 @@ import io.infinitic.common.workflows.data.workflows.WorkflowName
 import io.infinitic.pulsar.config.AdminConfig
 import io.infinitic.transport.pulsar.config.Pulsar
 import io.infinitic.transport.pulsar.topics.PerNameTopics
-import io.infinitic.transport.pulsar.topics.TaskTopics
+import io.infinitic.transport.pulsar.topics.ServiceTopics
 import io.infinitic.transport.pulsar.topics.WorkflowTaskTopics
 import io.infinitic.transport.pulsar.topics.WorkflowTopics
 import mu.KotlinLogging
@@ -153,7 +153,7 @@ class PulsarInfiniticAdmin constructor(
      */
     val tasks: Set<String> by lazy {
         val tasks = mutableSetOf<String>()
-        val prefix = topicName.topic(TaskTopics.EXECUTOR, ServiceName(""))
+        val prefix = topicName.topic(ServiceTopics.EXECUTOR, ServiceName(""))
         topics.map { if (it.startsWith(prefix)) tasks.add(it.removePrefix(prefix)) }
 
         tasks
@@ -335,7 +335,7 @@ class PulsarInfiniticAdmin constructor(
             System.out.format(title)
             System.out.format(line)
 
-            TaskTopics.values().forEach {
+            ServiceTopics.values().forEach {
                 displayStatsTopic(topicName.topic(it, ServiceName(task)))
             }
 

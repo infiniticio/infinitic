@@ -29,7 +29,7 @@ import io.infinitic.transport.pulsar.PulsarStarter
 import io.infinitic.transport.pulsar.config.Pulsar
 import io.infinitic.transport.pulsar.topics.GlobalTopics
 import io.infinitic.transport.pulsar.topics.PerNameTopics
-import io.infinitic.transport.pulsar.topics.TaskTopics
+import io.infinitic.transport.pulsar.topics.ServiceTopics
 import io.infinitic.transport.pulsar.topics.TopicNames
 import io.infinitic.transport.pulsar.topics.WorkflowTaskTopics
 import io.infinitic.transport.pulsar.topics.WorkflowTopics
@@ -97,11 +97,18 @@ class PulsarInfiniticWorker(
     private val fullNamespace = "${pulsar.tenant}/${pulsar.namespace}"
 
     override val workerStarter by lazy {
-        PulsarStarter(pulsarClient, topicNames, workerName)
+        PulsarStarter(pulsarClient, topicNames, workerName, pulsar.producer, pulsar.consumer)
     }
 
     override val clientFactory = {
-        PulsarInfiniticClient(pulsarClient, pulsarAdmin, pulsar.tenant, pulsar.namespace)
+        PulsarInfiniticClient(
+            pulsarClient,
+            pulsarAdmin,
+            pulsar.tenant,
+            pulsar.namespace,
+            pulsar.producer,
+            pulsar.consumer
+        )
     }
 
     /**
@@ -159,7 +166,7 @@ class PulsarInfiniticWorker(
         }
 
         for (service in workerRegistry.services) {
-            TaskTopics.values().forEach {
+            ServiceTopics.values().forEach {
                 checkOrCreateTopic(topicNames.topic(it, service.key), it.isPartitioned, it.isDelayed)
                 checkOrCreateTopic(topicNames.topicDLQ(it, service.key), it.isPartitioned, it.isDelayed)
             }

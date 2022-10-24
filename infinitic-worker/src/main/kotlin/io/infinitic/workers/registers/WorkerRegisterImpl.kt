@@ -28,12 +28,12 @@ package io.infinitic.workers.registers
 import io.infinitic.cache.config.Cache
 import io.infinitic.common.config.logger
 import io.infinitic.common.tasks.data.ServiceName
-import io.infinitic.common.workers.ServiceFactory
 import io.infinitic.common.workers.registry.RegisteredService
 import io.infinitic.common.workers.registry.RegisteredServiceTag
 import io.infinitic.common.workers.registry.RegisteredWorkflow
 import io.infinitic.common.workers.registry.RegisteredWorkflowEngine
 import io.infinitic.common.workers.registry.RegisteredWorkflowTag
+import io.infinitic.common.workers.registry.ServiceFactory
 import io.infinitic.common.workers.registry.WorkerRegistry
 import io.infinitic.common.workers.registry.WorkflowClassList
 import io.infinitic.common.workflows.data.workflows.WorkflowName
