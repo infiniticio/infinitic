@@ -25,9 +25,10 @@
 
 package io.infinitic.common.workers.registry
 
-import io.infinitic.common.workers.ServiceFactory
 import io.infinitic.tasks.WithRetry
 import io.infinitic.tasks.WithTimeout
+
+typealias ServiceFactory = () -> Any
 
 data class RegisteredService(
     val concurrency: Int,

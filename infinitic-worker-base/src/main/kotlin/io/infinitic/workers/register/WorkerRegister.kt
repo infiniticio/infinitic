@@ -25,7 +25,7 @@
 
 package io.infinitic.workers.register
 
-import io.infinitic.common.workers.ServiceFactory
+import io.infinitic.common.workers.registry.ServiceFactory
 import io.infinitic.common.workers.registry.WorkerRegistry
 import io.infinitic.common.workers.registry.WorkflowClassList
 import io.infinitic.tasks.WithRetry
