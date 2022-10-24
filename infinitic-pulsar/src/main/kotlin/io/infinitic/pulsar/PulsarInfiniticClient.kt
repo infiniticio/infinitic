@@ -30,6 +30,8 @@ import io.infinitic.common.data.ClientName
 import io.infinitic.exceptions.clients.ExceptionAtInitialization
 import io.infinitic.pulsar.config.ClientConfig
 import io.infinitic.transport.pulsar.PulsarStarter
+import io.infinitic.transport.pulsar.config.topics.ConsumerConfig
+import io.infinitic.transport.pulsar.config.topics.ProducerConfig
 import io.infinitic.transport.pulsar.topics.ClientTopics
 import io.infinitic.transport.pulsar.topics.PerNameTopics
 import kotlinx.coroutines.future.future
@@ -43,6 +45,8 @@ class PulsarInfiniticClient @JvmOverloads constructor(
     val pulsarAdmin: PulsarAdmin,
     pulsarTenant: String,
     pulsarNamespace: String,
+    val producerConfig: ProducerConfig,
+    val consumerConfig: ConsumerConfig,
     name: String? = null
 ) : InfiniticClientAbstract() {
 
@@ -61,7 +65,15 @@ class PulsarInfiniticClient @JvmOverloads constructor(
      */
     private val topicClient by lazy { topics.topic(ClientTopics.RESPONSE, clientName) }
 
-    override val clientStarter by lazy { PulsarStarter(pulsarClient, topics, uniqueName) }
+    override val clientStarter by lazy {
+        PulsarStarter(
+            pulsarClient,
+            topics,
+            uniqueName,
+            producerConfig,
+            consumerConfig
+        )
+    }
 
     init {
         // create client's topic
@@ -123,6 +135,8 @@ class PulsarInfiniticClient @JvmOverloads constructor(
                 pulsarAdmin,
                 clientConfig.pulsar!!.tenant,
                 clientConfig.pulsar.namespace,
+                clientConfig.pulsar.producer,
+                clientConfig.pulsar.consumer,
                 clientConfig.name
             )
 

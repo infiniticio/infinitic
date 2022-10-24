@@ -33,6 +33,8 @@ import io.infinitic.transport.pulsar.config.auth.AuthenticationSasl
 import io.infinitic.transport.pulsar.config.auth.AuthenticationToken
 import io.infinitic.transport.pulsar.config.auth.ClientAuthentication
 import io.infinitic.transport.pulsar.config.policies.Policies
+import io.infinitic.transport.pulsar.config.topics.ConsumerConfig
+import io.infinitic.transport.pulsar.config.topics.ProducerConfig
 import org.apache.pulsar.client.admin.PulsarAdmin
 import org.apache.pulsar.client.api.AuthenticationFactory
 import org.apache.pulsar.client.api.PulsarClient
@@ -53,7 +55,9 @@ data class Pulsar(
     val tlsTrustStorePath: String? = null,
     val tlsTrustStorePassword: Secret? = null,
     val authentication: ClientAuthentication? = null,
-    val policies: Policies = Policies()
+    val policies: Policies = Policies(),
+    val producer: ProducerConfig = ProducerConfig(),
+    val consumer: ConsumerConfig = ConsumerConfig()
 ) {
     init {
         require(
@@ -98,18 +102,21 @@ data class Pulsar(
                     is AuthenticationToken -> it.authentication(
                         AuthenticationFactory.token(authentication.token.value)
                     )
+
                     is AuthenticationAthenz -> it.authentication(
                         AuthenticationFactory.create(
                             org.apache.pulsar.client.impl.auth.AuthenticationAthenz::class.java.name,
                             Json.stringify(authentication)
                         )
                     )
+
                     is AuthenticationSasl -> it.authentication(
                         AuthenticationFactory.create(
                             org.apache.pulsar.client.impl.auth.AuthenticationSasl::class.java.name,
                             Json.stringify(authentication)
                         )
                     )
+
                     is AuthenticationOAuth2 -> it.authentication(
                         AuthenticationFactoryOAuth2.clientCredentials(
                             authentication.issuerUrl,
@@ -117,6 +124,7 @@ data class Pulsar(
                             authentication.audience
                         )
                     )
+
                     null -> Unit
                 }
             }
@@ -143,18 +151,21 @@ data class Pulsar(
                     is AuthenticationToken -> it.authentication(
                         AuthenticationFactory.token(authentication.token.value)
                     )
+
                     is AuthenticationAthenz -> it.authentication(
                         AuthenticationFactory.create(
                             org.apache.pulsar.client.impl.auth.AuthenticationAthenz::class.java.name,
                             Json.stringify(authentication)
                         )
                     )
+
                     is AuthenticationSasl -> it.authentication(
                         AuthenticationFactory.create(
                             org.apache.pulsar.client.impl.auth.AuthenticationSasl::class.java.name,
                             Json.stringify(authentication)
                         )
                     )
+
                     is AuthenticationOAuth2 -> it.authentication(
                         AuthenticationFactoryOAuth2.clientCredentials(
                             authentication.issuerUrl,
@@ -162,6 +173,7 @@ data class Pulsar(
                             authentication.audience
                         )
                     )
+
                     null -> Unit
                 }
             }

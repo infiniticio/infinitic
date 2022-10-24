@@ -58,8 +58,10 @@ import io.infinitic.common.workflows.tags.messages.WorkflowTagMessage
 import io.infinitic.common.workflows.tags.storage.WorkflowTagStorage
 import io.infinitic.tasks.executor.TaskExecutor
 import io.infinitic.tasks.tag.TaskTagEngine
+import io.infinitic.transport.pulsar.config.topics.ConsumerConfig
+import io.infinitic.transport.pulsar.config.topics.ProducerConfig
 import io.infinitic.transport.pulsar.topics.ClientTopics
-import io.infinitic.transport.pulsar.topics.TaskTopics
+import io.infinitic.transport.pulsar.topics.ServiceTopics
 import io.infinitic.transport.pulsar.topics.TopicNames
 import io.infinitic.transport.pulsar.topics.TopicType
 import io.infinitic.transport.pulsar.topics.WorkflowTaskTopics
@@ -74,14 +76,16 @@ import org.apache.pulsar.client.api.PulsarClient
 class PulsarStarter(
     client: PulsarClient,
     private val topicNames: TopicNames,
-    private val workerName: String
+    private val workerName: String,
+    producerConfig: ProducerConfig,
+    consumerConfig: ConsumerConfig
 ) : ClientStarter, WorkerStarter {
     private val logger = KotlinLogging.logger {}
 
     private val zero = MillisDuration.ZERO
     private val clientName = ClientName(workerName)
-    private val pulsarProducer = PulsarProducer(client)
-    private val pulsarConsumer = PulsarConsumer(client)
+    private val pulsarProducer = PulsarProducer(client, producerConfig)
+    private val pulsarConsumer = PulsarConsumer(client, consumerConfig)
 
     override fun CoroutineScope.startWorkflowTag(
         workflowName: WorkflowName,
@@ -151,7 +155,7 @@ class PulsarStarter(
 
         start<TaskTagMessage, TaskTagEnvelope>(
             executor = { message: TaskTagMessage -> tagEngine.handle(message) },
-            topicType = TaskTopics.TAG,
+            topicType = ServiceTopics.TAG,
             concurrency = concurrency,
             name = "$serviceName"
         )
@@ -175,7 +179,7 @@ class PulsarStarter(
 
         start<TaskExecutorMessage, TaskExecutorEnvelope>(
             executor = { message: TaskExecutorMessage -> taskExecutor.handle(message) },
-            topicType = TaskTopics.EXECUTOR,
+            topicType = ServiceTopics.EXECUTOR,
             concurrency = concurrency,
             name = "$serviceName"
         )
@@ -231,7 +235,7 @@ class PulsarStarter(
     }
 
     private val sendToTaskTag: SendToTaskTag = run {
-        val topicType = TaskTopics.TAG
+        val topicType = ServiceTopics.TAG
         val producerName = topicNames.producerName(workerName, topicType)
 
         return@run { message: TaskTagMessage ->
@@ -247,7 +251,7 @@ class PulsarStarter(
     }
 
     private val sendToTaskExecutor: SendToTaskExecutor = run {
-        val topicType = TaskTopics.EXECUTOR
+        val topicType = ServiceTopics.EXECUTOR
         val producerName = topicNames.producerName(workerName, topicType)
 
         return@run { message: TaskExecutorMessage ->
@@ -293,7 +297,7 @@ class PulsarStarter(
     }
 
     private val sendToTaskExecutorAfter: SendToTaskExecutorAfter = run {
-        val topicType = TaskTopics.EXECUTOR
+        val topicType = ServiceTopics.EXECUTOR
         val producerName = topicNames.producerName(workerName, topicType)
 
         return@run { message: TaskExecutorMessage, after: MillisDuration ->
