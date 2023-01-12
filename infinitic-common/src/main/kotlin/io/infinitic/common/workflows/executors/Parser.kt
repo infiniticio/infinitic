@@ -41,7 +41,10 @@ fun <T : Any> setPropertiesToObject(obj: T, values: Map<PropertyName, PropertyVa
     }
 }
 
-fun <T : Any> getPropertiesFromObject(obj: T, filter: (p: Pair<KProperty1<out T, *>, Any?>) -> Boolean = { true }): Map<PropertyName, PropertyValue> =
+fun <T : Any> getPropertiesFromObject(
+    obj: T,
+    filter: (p: Pair<KProperty1<out T, *>, Any?>) -> Boolean = { true }
+): Map<PropertyName, PropertyValue> =
     obj::class.memberProperties
         .map { p: KProperty1<out T, *> -> Pair(p, getProperty(obj, p)) }
         .filter { filter(it) }
@@ -79,7 +82,7 @@ private fun <T : Any> setProperty(obj: T, kProperty: KProperty1<out T, *>, value
         } catch (e: IllegalAccessException) {
             throw RuntimeException("$errorMsg can not be set (is final)")
         } catch (e: IllegalArgumentException) {
-            throw RuntimeException("$errorMsg can not be set (wrong ${value?.let { it::class.java.name}} type)")
+            throw RuntimeException("$errorMsg can not be set (wrong ${value?.let { it::class.java.name }} type)")
         } catch (e: Exception) {
             throw RuntimeException("$errorMsg ($e)")
         }

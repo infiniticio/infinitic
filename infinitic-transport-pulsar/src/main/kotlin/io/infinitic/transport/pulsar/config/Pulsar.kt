@@ -35,6 +35,7 @@ import io.infinitic.transport.pulsar.config.auth.ClientAuthentication
 import io.infinitic.transport.pulsar.config.policies.Policies
 import io.infinitic.transport.pulsar.config.topics.ConsumerConfig
 import io.infinitic.transport.pulsar.config.topics.ProducerConfig
+import mu.KotlinLogging
 import org.apache.pulsar.client.admin.PulsarAdmin
 import org.apache.pulsar.client.api.AuthenticationFactory
 import org.apache.pulsar.client.api.PulsarClient
@@ -59,6 +60,10 @@ data class Pulsar(
     val producer: ProducerConfig = ProducerConfig(),
     val consumer: ConsumerConfig = ConsumerConfig()
 ) {
+    companion object {
+        private val logger = KotlinLogging.logger {}
+    }
+
     init {
         require(
             brokerServiceUrl.startsWith("pulsar://") ||
@@ -81,13 +86,22 @@ data class Pulsar(
     }
 
     val admin: PulsarAdmin by lazy {
+        val log = mutableMapOf<String, Any>()
         PulsarAdmin
             .builder()
-            .serviceHttpUrl(webServiceUrl)
-            .allowTlsInsecureConnection(tlsAllowInsecureConnection)
-            .enableTlsHostnameVerification(tlsEnableHostnameVerification)
+            .serviceHttpUrl(webServiceUrl).also {
+                log["serviceHttpUrl"] = webServiceUrl
+            }
+            .allowTlsInsecureConnection(tlsAllowInsecureConnection).also {
+                log["allowTlsInsecureConnection"] = tlsAllowInsecureConnection
+            }
+            .enableTlsHostnameVerification(tlsEnableHostnameVerification).also {
+                log["enableTlsHostnameVerification"] = tlsEnableHostnameVerification
+            }
             .also {
-                if (tlsTrustCertsFilePath != null) it.tlsTrustCertsFilePath(tlsTrustCertsFilePath)
+                if (tlsTrustCertsFilePath != null) it.tlsTrustCertsFilePath(tlsTrustCertsFilePath).also {
+                    log["tlsTrustCertsFilePath"] = tlsTrustCertsFilePath
+                }
             }
             .also {
                 if (useKeyStoreTls) with(it) {
@@ -95,26 +109,36 @@ data class Pulsar(
                     tlsTrustStoreType(tlsTrustStoreType.toString())
                     tlsTrustStorePath(tlsTrustStorePath!!)
                     tlsTrustStorePassword(tlsTrustStorePassword!!.value)
+                    log["useKeyStoreTls"] = true
+                    log["tlsTrustStoreType"] = tlsTrustStoreType
+                    log["tlsTrustStorePath"] = tlsTrustStorePath
+                    log["tlsTrustStorePassword"] = tlsTrustStorePassword
                 }
             }
             .also {
                 when (authentication) {
                     is AuthenticationToken -> it.authentication(
-                        AuthenticationFactory.token(authentication.token.value)
+                        AuthenticationFactory.token(authentication.token.value).also {
+                            log["AuthenticationFactory.token"] = authentication.token
+                        }
                     )
 
                     is AuthenticationAthenz -> it.authentication(
                         AuthenticationFactory.create(
                             org.apache.pulsar.client.impl.auth.AuthenticationAthenz::class.java.name,
                             Json.stringify(authentication)
-                        )
+                        ).also {
+                            log["AuthenticationFactory.AuthenticationAthenz"] = "****************"
+                        }
                     )
 
                     is AuthenticationSasl -> it.authentication(
                         AuthenticationFactory.create(
                             org.apache.pulsar.client.impl.auth.AuthenticationSasl::class.java.name,
                             Json.stringify(authentication)
-                        )
+                        ).also {
+                            log["AuthenticationFactory.AuthenticationSasl"] = "****************"
+                        }
                     )
 
                     is AuthenticationOAuth2 -> it.authentication(
@@ -122,48 +146,76 @@ data class Pulsar(
                             authentication.issuerUrl,
                             authentication.privateKey,
                             authentication.audience
-                        )
+                        ).also {
+                            log["AuthenticationFactoryOAuth2.issuerUrl"] = authentication.issuerUrl
+                            log["AuthenticationFactoryOAuth2.privateKey"] = authentication.privateKey
+                            log["AuthenticationFactoryOAuth2.audience"] = authentication.audience
+                        }
                     )
 
                     null -> Unit
                 }
             }
             .build()
+            .also {
+                logger.info { "Created PulsarAdmin with config: ${log.map { "${it.key}=${it.value}" }.joinToString()}" }
+            }
     }
 
     val client: PulsarClient by lazy {
+        val log = mutableMapOf<String, Any>()
         PulsarClient
             .builder()
-            .serviceUrl(brokerServiceUrl)
-            .allowTlsInsecureConnection(tlsAllowInsecureConnection)
-            .enableTlsHostnameVerification(tlsEnableHostnameVerification)
-            .also { if (tlsTrustCertsFilePath != null) it.tlsTrustCertsFilePath(tlsTrustCertsFilePath) }
+            .serviceUrl(brokerServiceUrl).also {
+                log["serviceUrl"] = brokerServiceUrl
+            }
+            .allowTlsInsecureConnection(tlsAllowInsecureConnection).also {
+                log["allowTlsInsecureConnection"] = tlsAllowInsecureConnection
+            }
+            .enableTlsHostnameVerification(tlsEnableHostnameVerification).also {
+                log["enableTlsHostnameVerification"] = tlsEnableHostnameVerification
+            }
+            .also {
+                if (tlsTrustCertsFilePath != null) it.tlsTrustCertsFilePath(tlsTrustCertsFilePath).also {
+                    log["tlsTrustCertsFilePath"] = tlsTrustCertsFilePath
+                }
+            }
             .also {
                 if (useKeyStoreTls) with(it) {
                     useKeyStoreTls(true)
                     tlsTrustStoreType(tlsTrustStoreType.toString())
                     tlsTrustStorePath(tlsTrustStorePath!!)
                     tlsTrustStorePassword(tlsTrustStorePassword!!.value)
+                    log["useKeyStoreTls"] = true
+                    log["tlsTrustStoreType"] = tlsTrustStoreType
+                    log["tlsTrustStorePath"] = tlsTrustStorePath
+                    log["tlsTrustStorePassword"] = tlsTrustStorePassword
                 }
             }
             .also {
                 when (authentication) {
                     is AuthenticationToken -> it.authentication(
-                        AuthenticationFactory.token(authentication.token.value)
+                        AuthenticationFactory.token(authentication.token.value).also {
+                            log["AuthenticationFactory.token"] = authentication.token
+                        }
                     )
 
                     is AuthenticationAthenz -> it.authentication(
                         AuthenticationFactory.create(
                             org.apache.pulsar.client.impl.auth.AuthenticationAthenz::class.java.name,
                             Json.stringify(authentication)
-                        )
+                        ).also {
+                            log["AuthenticationFactory.AuthenticationAthenz"] = "****************"
+                        }
                     )
 
                     is AuthenticationSasl -> it.authentication(
                         AuthenticationFactory.create(
                             org.apache.pulsar.client.impl.auth.AuthenticationSasl::class.java.name,
                             Json.stringify(authentication)
-                        )
+                        ).also {
+                            log["AuthenticationFactory.AuthenticationSasl"] = "****************"
+                        }
                     )
 
                     is AuthenticationOAuth2 -> it.authentication(
@@ -171,12 +223,20 @@ data class Pulsar(
                             authentication.issuerUrl,
                             authentication.privateKey,
                             authentication.audience
-                        )
+                        ).also {
+                            log["AuthenticationFactoryOAuth2.issuerUrl"] = authentication.issuerUrl
+                            log["AuthenticationFactoryOAuth2.privateKey"] = authentication.privateKey
+                            log["AuthenticationFactoryOAuth2.audience"] = authentication.audience
+                        }
                     )
 
                     null -> Unit
                 }
             }
-            .build()
+            .build().also {
+                logger.info {
+                    "Created PulsarClient with config: ${log.map { "${it.key}=${it.value}" }.joinToString()}"
+                }
+            }
     }
 }
