@@ -35,6 +35,7 @@ import io.infinitic.workers.InfiniticWorker
 import io.infinitic.workers.config.WorkerConfig
 import io.infinitic.workers.registers.WorkerRegisterImpl
 import io.kotest.matchers.shouldBe
+import kotlinx.coroutines.delay
 
 object WorkflowTests {
   private val workerConfig = WorkerConfig.fromResource("/pulsar.yml")
@@ -64,6 +65,10 @@ object WorkflowTests {
       name: String = client.lastDeferred!!.name,
       id: String = client.lastDeferred!!.id
   ) {
+    // note: storage is updated after having send messages
+    // that's why we are waiting here a bit before checking its value
+    delay(100)
+
     workerRegister.registry.workflowEngines[WorkflowName(name)]!!
         .storage
         .getState(WorkflowId(id)) shouldBe null
