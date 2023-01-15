@@ -22,7 +22,6 @@
  */
 package io.infinitic.tests.context
 
-import io.infinitic.annotations.Ignore
 import io.infinitic.common.tasks.data.TaskMeta
 import io.infinitic.common.workflows.data.workflows.WorkflowMeta
 import io.infinitic.tasks.WithRetry
@@ -44,8 +43,6 @@ interface ContextWorkflow {
 
 @Suppress("unused")
 class ContextWorkflowImpl : Workflow(), ContextWorkflow {
-
-  @Ignore private val self by lazy { getWorkflowById(ContextWorkflow::class.java, workflowId) }
 
   private val utilService =
       newService(

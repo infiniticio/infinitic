@@ -6,13 +6,8 @@ insert_final_newline = true
 trim_trailing_whitespace = true
 charset = utf-8
 
-# This .editorconfig section approximates ktfmt's formatting rules. You can include it in an
-# existing .editorconfig file or use it standalone by copying it to <project root>/.editorconfig
-# and making sure your editor is set to read settings from .editorconfig files.
-#
-# It includes editor-specific config options for IntelliJ IDEA.
-#
-# If any option is wrong, PR are welcome
+# This .editorconfig section approximates ktfmt's formatting rules.
+# https://github.com/facebook/ktfmt/blob/main/docs/editorconfig/.editorconfig-defaultwelcome
 
 [{*.kt,*.kts}]
 indent_style = space

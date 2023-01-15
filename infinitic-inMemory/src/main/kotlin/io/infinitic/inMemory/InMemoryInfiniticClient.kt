@@ -35,7 +35,7 @@ class InMemoryInfiniticClient(workerRegister: WorkerRegister) : InfiniticClientA
 
   override val clientStarter by lazy { worker.workerStarter }
 
-  override val clientName: ClientName = ClientName(workerRegister.registry.name ?: "inMemory")
+  override val clientName = ClientName(workerRegister.registry.name ?: "inMemory")
 
   init {
     // start client response

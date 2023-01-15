@@ -23,7 +23,6 @@
 package io.infinitic.tests.channels
 
 import com.jayway.jsonpath.Criteria.where
-import io.infinitic.annotations.Ignore
 import io.infinitic.tests.utils.Obj
 import io.infinitic.tests.utils.Obj1
 import io.infinitic.tests.utils.Obj2
@@ -57,8 +56,6 @@ interface ChannelsWorkflow {
 
 @Suppress("unused")
 class ChannelsWorkflowImpl : Workflow(), ChannelsWorkflow {
-
-  @Ignore private val self by lazy { getWorkflowById(ChannelsWorkflow::class.java, workflowId) }
 
   lateinit var deferred: Deferred<String>
 
