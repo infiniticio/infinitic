@@ -1,20 +1,18 @@
 /**
  * "Commons Clause" License Condition v1.0
  *
- * The Software is provided to you by the Licensor under the License, as defined
- * below, subject to the following condition.
+ * The Software is provided to you by the Licensor under the License, as defined below, subject to
+ * the following condition.
  *
- * Without limiting other conditions in the License, the grant of rights under the
- * License will not include, and the License does not grant to you, the right to
- * Sell the Software.
+ * Without limiting other conditions in the License, the grant of rights under the License will not
+ * include, and the License does not grant to you, the right to Sell the Software.
  *
- * For purposes of the foregoing, “Sell” means practicing any or all of the rights
- * granted to you under the License to provide to third parties, for a fee or
- * other consideration (including without limitation fees for hosting or
- * consulting/ support services related to the Software), a product or service
- * whose value derives, entirely or substantially, from the functionality of the
- * Software. Any license notice or attribution required by the License must also
- * include this Commons Clause License Condition notice.
+ * For purposes of the foregoing, “Sell” means practicing any or all of the rights granted to you
+ * under the License to provide to third parties, for a fee or other consideration (including
+ * without limitation fees for hosting or consulting/ support services related to the Software), a
+ * product or service whose value derives, entirely or substantially, from the functionality of the
+ * Software. Any license notice or attribution required by the License must also include this
+ * Commons Clause License Condition notice.
  *
  * Software: Infinitic
  *
@@ -22,7 +20,6 @@
  *
  * Licensor: infinitic.io
  */
-
 package io.infinitic.common.workflows.data.workflowTasks
 
 import com.github.avrokotlin.avro4k.Avro
@@ -49,13 +46,11 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 data class WorkflowTaskParameters(
-    @AvroDefault("0.9.7")
-    val version: String = io.infinitic.version,
+    @AvroDefault("0.9.7") val version: String = io.infinitic.version,
     val taskId: TaskId,
     val workflowId: WorkflowId,
     val workflowName: WorkflowName,
-    @AvroDefault(Avro.NULL)
-    val workflowVersion: WorkflowVersion?,
+    @AvroDefault(Avro.NULL) val workflowVersion: WorkflowVersion?,
     val workflowTags: Set<WorkflowTag>,
     val workflowMeta: WorkflowMeta,
     val workflowPropertiesHashValue: Map<PropertyHash, PropertyValue>,
@@ -63,22 +58,23 @@ data class WorkflowTaskParameters(
     val methodRun: MethodRun,
     val emitterName: ClientName
 ) {
-    fun toExecuteTaskMessage() = ExecuteTask(
-        serviceName = ServiceName(WorkflowTask::class.java.name),
-        taskId = taskId,
-        clientWaiting = false,
-        methodName = MethodName(WorkflowTask::handle.name),
-        methodParameterTypes = MethodParameterTypes(listOf(WorkflowTaskParameters::class.java.name)),
-        methodParameters = MethodParameters.from(this),
-        workflowId = workflowId,
-        workflowName = workflowName,
-        workflowVersion = workflowVersion,
-        methodRunId = methodRun.methodRunId,
-        lastError = null,
-        taskRetryIndex = TaskRetryIndex(0),
-        taskRetrySequence = TaskRetrySequence(0),
-        taskTags = setOf(),
-        taskMeta = TaskMeta(),
-        emitterName = emitterName
-    )
+  fun toExecuteTaskMessage() =
+      ExecuteTask(
+          serviceName = ServiceName(WorkflowTask::class.java.name),
+          taskId = taskId,
+          clientWaiting = false,
+          methodName = MethodName(WorkflowTask::handle.name),
+          methodParameterTypes =
+              MethodParameterTypes(listOf(WorkflowTaskParameters::class.java.name)),
+          methodParameters = MethodParameters.from(this),
+          workflowId = workflowId,
+          workflowName = workflowName,
+          workflowVersion = workflowVersion,
+          methodRunId = methodRun.methodRunId,
+          lastError = null,
+          taskRetryIndex = TaskRetryIndex(0),
+          taskRetrySequence = TaskRetrySequence(0),
+          taskTags = setOf(),
+          taskMeta = TaskMeta(),
+          emitterName = emitterName)
 }

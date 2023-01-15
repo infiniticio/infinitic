@@ -1,20 +1,18 @@
 /**
  * "Commons Clause" License Condition v1.0
  *
- * The Software is provided to you by the Licensor under the License, as defined
- * below, subject to the following condition.
+ * The Software is provided to you by the Licensor under the License, as defined below, subject to
+ * the following condition.
  *
- * Without limiting other conditions in the License, the grant of rights under the
- * License will not include, and the License does not grant to you, the right to
- * Sell the Software.
+ * Without limiting other conditions in the License, the grant of rights under the License will not
+ * include, and the License does not grant to you, the right to Sell the Software.
  *
- * For purposes of the foregoing, “Sell” means practicing any or all of the rights
- * granted to you under the License to provide to third parties, for a fee or
- * other consideration (including without limitation fees for hosting or
- * consulting/ support services related to the Software), a product or service
- * whose value derives, entirely or substantially, from the functionality of the
- * Software. Any license notice or attribution required by the License must also
- * include this Commons Clause License Condition notice.
+ * For purposes of the foregoing, “Sell” means practicing any or all of the rights granted to you
+ * under the License to provide to third parties, for a fee or other consideration (including
+ * without limitation fees for hosting or consulting/ support services related to the Software), a
+ * product or service whose value derives, entirely or substantially, from the functionality of the
+ * Software. Any license notice or attribution required by the License must also include this
+ * Commons Clause License Condition notice.
  *
  * Software: Infinitic
  *
@@ -22,7 +20,6 @@
  *
  * Licensor: infinitic.io
  */
-
 package io.infinitic.workflows
 
 import io.infinitic.common.fixtures.TestFactory
@@ -35,23 +32,24 @@ import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 
-class DataTests : StringSpec({
-    "Deferred should be serDe with SerializedData" {
+class DataTests :
+    StringSpec({
+      "Deferred should be serDe with SerializedData" {
         val step = TestFactory.random<Step>()
-        val m1 = Deferred<String>(step).apply { this.workflowDispatcher = mockk(); }
+        val m1 = Deferred<String>(step).apply { this.workflowDispatcher = mockk() }
 
         val data = SerializedData.from(m1)
         val m2 = data.deserialize()
 
         m2 shouldBe m1
-    }
+      }
 
-    "Deferred should be json-serializable by kotlinx.serialization" {
+      "Deferred should be json-serializable by kotlinx.serialization" {
         val step = TestFactory.random<Step>()
         val m1 = Deferred<String>(step).apply { this.workflowDispatcher = mockk() }
         val json = Json.encodeToString(m1)
         val m2 = Json.decodeFromString<Deferred<String>>(json)
 
         m2 shouldBe m1
-    }
-})
+      }
+    })

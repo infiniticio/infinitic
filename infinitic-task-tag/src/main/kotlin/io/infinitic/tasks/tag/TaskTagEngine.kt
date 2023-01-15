@@ -1,20 +1,18 @@
 /**
  * "Commons Clause" License Condition v1.0
  *
- * The Software is provided to you by the Licensor under the License, as defined
- * below, subject to the following condition.
+ * The Software is provided to you by the Licensor under the License, as defined below, subject to
+ * the following condition.
  *
- * Without limiting other conditions in the License, the grant of rights under the
- * License will not include, and the License does not grant to you, the right to
- * Sell the Software.
+ * Without limiting other conditions in the License, the grant of rights under the License will not
+ * include, and the License does not grant to you, the right to Sell the Software.
  *
- * For purposes of the foregoing, “Sell” means practicing any or all of the rights
- * granted to you under the License to provide to third parties, for a fee or
- * other consideration (including without limitation fees for hosting or
- * consulting/ support services related to the Software), a product or service
- * whose value derives, entirely or substantially, from the functionality of the
- * Software. Any license notice or attribution required by the License must also
- * include this Commons Clause License Condition notice.
+ * For purposes of the foregoing, “Sell” means practicing any or all of the rights granted to you
+ * under the License to provide to third parties, for a fee or other consideration (including
+ * without limitation fees for hosting or consulting/ support services related to the Software), a
+ * product or service whose value derives, entirely or substantially, from the functionality of the
+ * Software. Any license notice or attribution required by the License must also include this
+ * Commons Clause License Condition notice.
  *
  * Software: Infinitic
  *
@@ -22,7 +20,6 @@
  *
  * Licensor: infinitic.io
  */
-
 package io.infinitic.tasks.tag
 
 import io.infinitic.common.clients.SendToClient
@@ -46,99 +43,92 @@ class TaskTagEngine(
     storage: TaskTagStorage,
     private val sendToClient: SendToClient
 ) {
-    private lateinit var scope: CoroutineScope
+  private lateinit var scope: CoroutineScope
 
-    private val storage = LoggedTaskTagStorage(storage)
+  private val storage = LoggedTaskTagStorage(storage)
 
-    private val logger = KotlinLogging.logger {}
+  private val logger = KotlinLogging.logger {}
 
-    suspend fun handle(message: TaskTagMessage) {
-        logger.debug { "receiving $message" }
+  suspend fun handle(message: TaskTagMessage) {
+    logger.debug { "receiving $message" }
 
-        process(message)
+    process(message)
 
-        storage.setLastMessageId(message.taskTag, message.serviceName, message.messageId)
+    storage.setLastMessageId(message.taskTag, message.serviceName, message.messageId)
+  }
+
+  // coroutineScope let send messages in parallel
+  // it's important as we can have a lot of them
+  private suspend fun process(message: TaskTagMessage) = coroutineScope {
+    scope = this
+
+    when (message) {
+      is AddTagToTask -> addTagToTask(message)
+      is RemoveTagFromTask -> removeTagFromTask(message)
+      is CancelTaskByTag -> cancelTaskByTag(message)
+      is RetryTaskByTag -> retryTaskByTag(message)
+      is GetTaskIdsByTag -> getTaskIds(message)
     }
+  }
 
-    // coroutineScope let send messages in parallel
-    // it's important as we can have a lot of them
-    private suspend fun process(message: TaskTagMessage) = coroutineScope {
-        scope = this
+  private suspend fun addTagToTask(message: AddTagToTask) {
+    storage.addTaskId(message.taskTag, message.serviceName, message.taskId)
+  }
 
-        when (message) {
-            is AddTagToTask -> addTagToTask(message)
-            is RemoveTagFromTask -> removeTagFromTask(message)
-            is CancelTaskByTag -> cancelTaskByTag(message)
-            is RetryTaskByTag -> retryTaskByTag(message)
-            is GetTaskIdsByTag -> getTaskIds(message)
-        }
+  private suspend fun removeTagFromTask(message: RemoveTagFromTask) {
+    storage.removeTaskId(message.taskTag, message.serviceName, message.taskId)
+  }
+
+  private suspend fun retryTaskByTag(message: RetryTaskByTag) {
+    // is not an idempotent action
+    if (hasMessageAlreadyBeenHandled(message)) return
+
+    val taskIds = storage.getTaskIds(message.taskTag, message.serviceName)
+    when (taskIds.isEmpty()) {
+      true -> {
+        discardTagWithoutIds(message)
+      }
+      false -> taskIds.forEach { TODO() }
     }
+  }
 
-    private suspend fun addTagToTask(message: AddTagToTask) {
-        storage.addTaskId(message.taskTag, message.serviceName, message.taskId)
+  private suspend fun cancelTaskByTag(message: CancelTaskByTag) {
+    // is not an idempotent action
+    if (hasMessageAlreadyBeenHandled(message)) return
+
+    val ids = storage.getTaskIds(message.taskTag, message.serviceName)
+    when (ids.isEmpty()) {
+      true -> {
+        discardTagWithoutIds(message)
+      }
+      false -> ids.forEach { TODO() }
     }
+  }
 
-    private suspend fun removeTagFromTask(message: RemoveTagFromTask) {
-        storage.removeTaskId(message.taskTag, message.serviceName, message.taskId)
-    }
+  private suspend fun getTaskIds(message: GetTaskIdsByTag) {
+    val taskIds = storage.getTaskIds(message.taskTag, message.serviceName)
 
-    private suspend fun retryTaskByTag(message: RetryTaskByTag) {
-        // is not an idempotent action
-        if (hasMessageAlreadyBeenHandled(message)) return
-
-        val taskIds = storage.getTaskIds(message.taskTag, message.serviceName)
-        when (taskIds.isEmpty()) {
-            true -> {
-                discardTagWithoutIds(message)
-            }
-
-            false -> taskIds.forEach {
-                TODO()
-            }
-        }
-    }
-
-    private suspend fun cancelTaskByTag(message: CancelTaskByTag) {
-        // is not an idempotent action
-        if (hasMessageAlreadyBeenHandled(message)) return
-
-        val ids = storage.getTaskIds(message.taskTag, message.serviceName)
-        when (ids.isEmpty()) {
-            true -> {
-                discardTagWithoutIds(message)
-            }
-
-            false -> ids.forEach {
-                TODO()
-            }
-        }
-    }
-
-    private suspend fun getTaskIds(message: GetTaskIdsByTag) {
-        val taskIds = storage.getTaskIds(message.taskTag, message.serviceName)
-
-        val taskIdsByTag = TaskIdsByTag(
+    val taskIdsByTag =
+        TaskIdsByTag(
             recipientName = message.emitterName,
             message.serviceName,
             message.taskTag,
             taskIds,
-            emitterName = clientName
-        )
+            emitterName = clientName)
 
-        scope.launch { sendToClient(taskIdsByTag) }
-    }
+    scope.launch { sendToClient(taskIdsByTag) }
+  }
 
-    private suspend fun hasMessageAlreadyBeenHandled(message: TaskTagMessage) =
-        when (storage.getLastMessageId(message.taskTag, message.serviceName)) {
-            message.messageId -> {
-                logger.info { "discarding as state already contains this messageId: $message" }
-                true
-            }
-
-            else -> false
+  private suspend fun hasMessageAlreadyBeenHandled(message: TaskTagMessage) =
+      when (storage.getLastMessageId(message.taskTag, message.serviceName)) {
+        message.messageId -> {
+          logger.info { "discarding as state already contains this messageId: $message" }
+          true
         }
+        else -> false
+      }
 
-    private fun discardTagWithoutIds(message: TaskTagMessage) {
-        logger.debug { "discarding as no id found for the provided tag: $message" }
-    }
+  private fun discardTagWithoutIds(message: TaskTagMessage) {
+    logger.debug { "discarding as no id found for the provided tag: $message" }
+  }
 }

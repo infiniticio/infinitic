@@ -1,20 +1,18 @@
 /**
  * "Commons Clause" License Condition v1.0
  *
- * The Software is provided to you by the Licensor under the License, as defined
- * below, subject to the following condition.
+ * The Software is provided to you by the Licensor under the License, as defined below, subject to
+ * the following condition.
  *
- * Without limiting other conditions in the License, the grant of rights under the
- * License will not include, and the License does not grant to you, the right to
- * Sell the Software.
+ * Without limiting other conditions in the License, the grant of rights under the License will not
+ * include, and the License does not grant to you, the right to Sell the Software.
  *
- * For purposes of the foregoing, “Sell” means practicing any or all of the rights
- * granted to you under the License to provide to third parties, for a fee or
- * other consideration (including without limitation fees for hosting or
- * consulting/ support services related to the Software), a product or service
- * whose value derives, entirely or substantially, from the functionality of the
- * Software. Any license notice or attribution required by the License must also
- * include this Commons Clause License Condition notice.
+ * For purposes of the foregoing, “Sell” means practicing any or all of the rights granted to you
+ * under the License to provide to third parties, for a fee or other consideration (including
+ * without limitation fees for hosting or consulting/ support services related to the Software), a
+ * product or service whose value derives, entirely or substantially, from the functionality of the
+ * Software. Any license notice or attribution required by the License must also include this
+ * Commons Clause License Condition notice.
  *
  * Software: Infinitic
  *
@@ -22,27 +20,26 @@
  *
  * Licensor: infinitic.io
  */
-
 const val kotlinVersion = "1.7.10"
 
 object Plugins {
-    object Kotlin {
-        const val id = "org.jetbrains.kotlin.jvm"
-        const val version = kotlinVersion
-    }
+  object Kotlin {
+    const val id = "org.jetbrains.kotlin.jvm"
+    const val version = kotlinVersion
+  }
 
-    object Serialization {
-        const val id = "org.jetbrains.kotlin.plugin.serialization"
-        const val version = kotlinVersion
-    }
+  object Serialization {
+    const val id = "org.jetbrains.kotlin.plugin.serialization"
+    const val version = kotlinVersion
+  }
 
-    object Ktlint {
-        const val id = "org.jlleitschuh.gradle.ktlint"
-        const val version = "10.3.0"
-    }
+  object Ktfmt {
+    const val id = "com.ncorti.ktfmt.gradle"
+    const val version = "0.11.0"
+  }
 
-    object TestLogger {
-        const val id = "com.adarshr.test-logger"
-        const val version = "3.2.0"
-    }
+  object TestLogger {
+    const val id = "com.adarshr.test-logger"
+    const val version = "3.2.0"
+  }
 }

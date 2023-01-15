@@ -1,20 +1,18 @@
 /**
  * "Commons Clause" License Condition v1.0
  *
- * The Software is provided to you by the Licensor under the License, as defined
- * below, subject to the following condition.
+ * The Software is provided to you by the Licensor under the License, as defined below, subject to
+ * the following condition.
  *
- * Without limiting other conditions in the License, the grant of rights under the
- * License will not include, and the License does not grant to you, the right to
- * Sell the Software.
+ * Without limiting other conditions in the License, the grant of rights under the License will not
+ * include, and the License does not grant to you, the right to Sell the Software.
  *
- * For purposes of the foregoing, “Sell” means practicing any or all of the rights
- * granted to you under the License to provide to third parties, for a fee or
- * other consideration (including without limitation fees for hosting or
- * consulting/ support services related to the Software), a product or service
- * whose value derives, entirely or substantially, from the functionality of the
- * Software. Any license notice or attribution required by the License must also
- * include this Commons Clause License Condition notice.
+ * For purposes of the foregoing, “Sell” means practicing any or all of the rights granted to you
+ * under the License to provide to third parties, for a fee or other consideration (including
+ * without limitation fees for hosting or consulting/ support services related to the Software), a
+ * product or service whose value derives, entirely or substantially, from the functionality of the
+ * Software. Any license notice or attribution required by the License must also include this
+ * Commons Clause License Condition notice.
  *
  * Software: Infinitic
  *
@@ -22,7 +20,6 @@
  *
  * Licensor: infinitic.io
  */
-
 package io.infinitic.tests.children
 
 import io.infinitic.clients.InfiniticClient
@@ -32,46 +29,34 @@ import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.delay
 
-internal class ChildrenWorkflowTests : StringSpec({
+internal class ChildrenWorkflowTests :
+    StringSpec({
 
-    // each test should not be longer than 10s
-    timeout = 10000
+      // each test should not be longer than 10s
+      timeout = 10000
 
-    val worker = autoClose(InfiniticWorker.fromConfigResource("/pulsar.yml"))
-    val client = autoClose(InfiniticClient.fromConfigResource("/pulsar.yml"))
+      val worker = autoClose(InfiniticWorker.fromConfigResource("/pulsar.yml"))
+      val client = autoClose(InfiniticClient.fromConfigResource("/pulsar.yml"))
 
-    val childrenWorkflow = client.newWorkflow(ChildrenWorkflow::class.java, tags = setOf("foo", "bar"))
-    val utilWorkflow = client.newWorkflow(UtilWorkflow::class.java)
+      val childrenWorkflow =
+          client.newWorkflow(ChildrenWorkflow::class.java, tags = setOf("foo", "bar"))
+      val utilWorkflow = client.newWorkflow(UtilWorkflow::class.java)
 
-    beforeSpec {
-        worker.startAsync()
-    }
+      beforeSpec { worker.startAsync() }
 
-    beforeTest {
-        worker.registry.flush()
-    }
+      beforeTest { worker.registry.flush() }
 
-    "run task from parent interface" {
-        childrenWorkflow.parent() shouldBe "ok"
-    }
+      "run task from parent interface" { childrenWorkflow.parent() shouldBe "ok" }
 
-    "run childWorkflow from parent interface" {
-        childrenWorkflow.wparent() shouldBe "ok"
-    }
+      "run childWorkflow from parent interface" { childrenWorkflow.wparent() shouldBe "ok" }
 
-    "Sequential Child Workflow" {
-        childrenWorkflow.child1() shouldBe "ab"
-    }
+      "Sequential Child Workflow" { childrenWorkflow.child1() shouldBe "ab" }
 
-    "Asynchronous Child Workflow" {
-        childrenWorkflow.child2() shouldBe "baba"
-    }
+      "Asynchronous Child Workflow" { childrenWorkflow.child2() shouldBe "baba" }
 
-    "Nested Child Workflow" {
-        utilWorkflow.factorial(14) shouldBe 87178291200
-    }
+      "Nested Child Workflow" { utilWorkflow.factorial(14) shouldBe 87178291200 }
 
-    "Child workflow is canceled when parent workflow is canceled - tag are also added and deleted" {
+      "Child workflow is canceled when parent workflow is canceled - tag are also added and deleted" {
         client.dispatch(childrenWorkflow::cancel)
 
         delay(1000)
@@ -82,5 +67,5 @@ internal class ChildrenWorkflowTests : StringSpec({
 
         delay(1000)
         client.getIds(w).size shouldBe size - 2
-    }
-})
+      }
+    })

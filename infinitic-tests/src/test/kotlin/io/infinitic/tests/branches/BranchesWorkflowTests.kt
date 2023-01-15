@@ -1,20 +1,18 @@
 /**
  * "Commons Clause" License Condition v1.0
  *
- * The Software is provided to you by the Licensor under the License, as defined
- * below, subject to the following condition.
+ * The Software is provided to you by the Licensor under the License, as defined below, subject to
+ * the following condition.
  *
- * Without limiting other conditions in the License, the grant of rights under the
- * License will not include, and the License does not grant to you, the right to
- * Sell the Software.
+ * Without limiting other conditions in the License, the grant of rights under the License will not
+ * include, and the License does not grant to you, the right to Sell the Software.
  *
- * For purposes of the foregoing, “Sell” means practicing any or all of the rights
- * granted to you under the License to provide to third parties, for a fee or
- * other consideration (including without limitation fees for hosting or
- * consulting/ support services related to the Software), a product or service
- * whose value derives, entirely or substantially, from the functionality of the
- * Software. Any license notice or attribution required by the License must also
- * include this Commons Clause License Condition notice.
+ * For purposes of the foregoing, “Sell” means practicing any or all of the rights granted to you
+ * under the License to provide to third parties, for a fee or other consideration (including
+ * without limitation fees for hosting or consulting/ support services related to the Software), a
+ * product or service whose value derives, entirely or substantially, from the functionality of the
+ * Software. Any license notice or attribution required by the License must also include this
+ * Commons Clause License Condition notice.
  *
  * Software: Infinitic
  *
@@ -22,7 +20,6 @@
  *
  * Licensor: infinitic.io
  */
-
 package io.infinitic.tests.branches
 
 import io.infinitic.clients.InfiniticClient
@@ -32,38 +29,31 @@ import io.infinitic.workers.InfiniticWorker
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
 
-internal class BranchesWorkflowTests : StringSpec({
+internal class BranchesWorkflowTests :
+    StringSpec({
 
-    // each test should not be longer than 10s
-    timeout = 10000
+      // each test should not be longer than 10s
+      timeout = 10000
 
-    val worker = autoClose(InfiniticWorker.fromConfigResource("/pulsar.yml"))
-    val client = autoClose(InfiniticClient.fromConfigResource("/pulsar.yml"))
+      val worker = autoClose(InfiniticWorker.fromConfigResource("/pulsar.yml"))
+      val client = autoClose(InfiniticClient.fromConfigResource("/pulsar.yml"))
 
-    val branchesWorkflow = client.newWorkflow(BranchesWorkflow::class.java)
-    val utilWorkflow = client.newWorkflow(UtilWorkflow::class.java)
+      val branchesWorkflow = client.newWorkflow(BranchesWorkflow::class.java)
+      val utilWorkflow = client.newWorkflow(UtilWorkflow::class.java)
 
-    beforeSpec {
-        worker.startAsync()
-    }
+      beforeSpec { worker.startAsync() }
 
-    beforeTest {
-        worker.registry.flush()
-    }
+      beforeTest { worker.registry.flush() }
 
-    "Sequential Workflow with an async branch" {
-        branchesWorkflow.seq3() shouldBe "23ba"
-    }
+      "Sequential Workflow with an async branch" { branchesWorkflow.seq3() shouldBe "23ba" }
 
-    "Sequential Workflow with an async branch with 2 tasks" {
+      "Sequential Workflow with an async branch with 2 tasks" {
         branchesWorkflow.seq4() shouldBe "23bac"
-    }
+      }
 
-    "Test Deferred methods" {
-        branchesWorkflow.deferred1() shouldBe "truefalsefalsetrue"
-    }
+      "Test Deferred methods" { branchesWorkflow.deferred1() shouldBe "truefalsefalsetrue" }
 
-    "Check runBranch" {
+      "Check runBranch" {
         val deferred = client.dispatch(utilWorkflow::receive, "a")
 
         val uw = client.getWorkflowById(UtilWorkflow::class.java, deferred.id)
@@ -73,9 +63,9 @@ internal class BranchesWorkflowTests : StringSpec({
         later { uw.channelA.send("c") }
 
         deferred.await() shouldBe "abc"
-    }
+      }
 
-    "Check multiple runBranch" {
+      "Check multiple runBranch" {
         val deferred1 = client.dispatch(utilWorkflow::receive, "a")
         val w = client.getWorkflowById(UtilWorkflow::class.java, deferred1.id)
 
@@ -86,18 +76,16 @@ internal class BranchesWorkflowTests : StringSpec({
         later { w.channelA.send("e") }
 
         deferred1.await() shouldBe "abcde"
-    }
+      }
 
-    "Check numerous runBranch" {
+      "Check numerous runBranch" {
         val deferred1 = client.dispatch(utilWorkflow::receive, "a")
         val w = client.getWorkflowById(UtilWorkflow::class.java, deferred1.id)
 
-        repeat(100) {
-            client.dispatch(w::add, "b")
-        }
+        repeat(100) { client.dispatch(w::add, "b") }
 
         later { w.channelA.send("c") }
 
         deferred1.await() shouldBe "a" + "b".repeat(100) + "c"
-    }
-})
+      }
+    })

@@ -1,20 +1,18 @@
 /**
-* "Commons Clause" License Condition v1.0
+ * "Commons Clause" License Condition v1.0
  *
- * The Software is provided to you by the Licensor under the License, as defined
- * below, subject to the following condition.
+ * The Software is provided to you by the Licensor under the License, as defined below, subject to
+ * the following condition.
  *
- * Without limiting other conditions in the License, the grant of rights under the
- * License will not include, and the License does not grant to you, the right to
- * Sell the Software.
+ * Without limiting other conditions in the License, the grant of rights under the License will not
+ * include, and the License does not grant to you, the right to Sell the Software.
  *
- * For purposes of the foregoing, “Sell” means practicing any or all of the rights
- * granted to you under the License to provide to third parties, for a fee or
- * other consideration (including without limitation fees for hosting or
- * consulting/ support services related to the Software), a product or service
- * whose value derives, entirely or substantially, from the functionality of the
- * Software. Any license notice or attribution required by the License must also
- * include this Commons Clause License Condition notice.
+ * For purposes of the foregoing, “Sell” means practicing any or all of the rights granted to you
+ * under the License to provide to third parties, for a fee or other consideration (including
+ * without limitation fees for hosting or consulting/ support services related to the Software), a
+ * product or service whose value derives, entirely or substantially, from the functionality of the
+ * Software. Any license notice or attribution required by the License must also include this
+ * Commons Clause License Condition notice.
  *
  * Software: Infinitic
  *
@@ -22,7 +20,6 @@
  *
  * Licensor: infinitic.io
  */
-
 package io.infinitic.common.workflows.data.channels
 
 import io.infinitic.common.data.Name
@@ -36,14 +33,17 @@ import kotlinx.serialization.encoding.Encoder
 
 @Serializable(with = ChannelTypeSerializer::class)
 data class ChannelType(override val name: String) : Name(name) {
-    companion object {
-        fun <T> from(klass: Class<T>) = ChannelType(klass.name)
-        fun <T> allFrom(klass: Class<T>) = getAllExtendedOrImplementedTypes(klass)
-    }
+  companion object {
+    fun <T> from(klass: Class<T>) = ChannelType(klass.name)
+    fun <T> allFrom(klass: Class<T>) = getAllExtendedOrImplementedTypes(klass)
+  }
 }
 
 object ChannelTypeSerializer : KSerializer<ChannelType> {
-    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ChannelType", PrimitiveKind.STRING)
-    override fun serialize(encoder: Encoder, value: ChannelType) { encoder.encodeString(value.name) }
-    override fun deserialize(decoder: Decoder) = ChannelType(decoder.decodeString())
+  override val descriptor: SerialDescriptor =
+      PrimitiveSerialDescriptor("ChannelType", PrimitiveKind.STRING)
+  override fun serialize(encoder: Encoder, value: ChannelType) {
+    encoder.encodeString(value.name)
+  }
+  override fun deserialize(decoder: Decoder) = ChannelType(decoder.decodeString())
 }

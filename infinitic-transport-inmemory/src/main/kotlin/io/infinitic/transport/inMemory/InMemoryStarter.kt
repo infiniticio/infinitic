@@ -1,20 +1,18 @@
 /**
  * "Commons Clause" License Condition v1.0
  *
- * The Software is provided to you by the Licensor under the License, as defined
- * below, subject to the following condition.
+ * The Software is provided to you by the Licensor under the License, as defined below, subject to
+ * the following condition.
  *
- * Without limiting other conditions in the License, the grant of rights under the
- * License will not include, and the License does not grant to you, the right to
- * Sell the Software.
+ * Without limiting other conditions in the License, the grant of rights under the License will not
+ * include, and the License does not grant to you, the right to Sell the Software.
  *
- * For purposes of the foregoing, “Sell” means practicing any or all of the rights
- * granted to you under the License to provide to third parties, for a fee or
- * other consideration (including without limitation fees for hosting or
- * consulting/ support services related to the Software), a product or service
- * whose value derives, entirely or substantially, from the functionality of the
- * Software. Any license notice or attribution required by the License must also
- * include this Commons Clause License Condition notice.
+ * For purposes of the foregoing, “Sell” means practicing any or all of the rights granted to you
+ * under the License to provide to third parties, for a fee or other consideration (including
+ * without limitation fees for hosting or consulting/ support services related to the Software), a
+ * product or service whose value derives, entirely or substantially, from the functionality of the
+ * Software. Any license notice or attribution required by the License must also include this
+ * Commons Clause License Condition notice.
  *
  * Software: Infinitic
  *
@@ -22,7 +20,6 @@
  *
  * Licensor: infinitic.io
  */
-
 package io.infinitic.transport.inMemory
 
 import io.infinitic.clients.InfiniticClientInterface
@@ -54,57 +51,60 @@ import io.infinitic.tasks.executor.TaskExecutor
 import io.infinitic.tasks.tag.TaskTagEngine
 import io.infinitic.workflows.engine.WorkflowEngine
 import io.infinitic.workflows.tag.WorkflowTagEngine
+import java.util.concurrent.CompletableFuture
+import java.util.concurrent.ConcurrentHashMap
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.future.future
 import mu.KotlinLogging
-import java.util.concurrent.CompletableFuture
-import java.util.concurrent.ConcurrentHashMap
 
-class InMemoryStarter(private val scope: CoroutineScope, name: String) : ClientStarter, WorkerStarter {
+class InMemoryStarter(private val scope: CoroutineScope, name: String) :
+    ClientStarter, WorkerStarter {
 
-    private val logger = KotlinLogging.logger {}
+  private val logger = KotlinLogging.logger {}
 
-    private val clientName = ClientName(name)
+  private val clientName = ClientName(name)
 
-    // Client channel
-    private val clientChannel = Channel<ClientMessage>()
+  // Client channel
+  private val clientChannel = Channel<ClientMessage>()
 
-    // Task channels
-    private val taskTagChannels = ConcurrentHashMap<ServiceName, Channel<TaskTagMessage>>()
-    private val taskExecutorChannels = ConcurrentHashMap<ServiceName, Channel<TaskExecutorMessage>>()
+  // Task channels
+  private val taskTagChannels = ConcurrentHashMap<ServiceName, Channel<TaskTagMessage>>()
+  private val taskExecutorChannels = ConcurrentHashMap<ServiceName, Channel<TaskExecutorMessage>>()
 
-    // Workflow channels
-    private val workflowTagChannels = ConcurrentHashMap<WorkflowName, Channel<WorkflowTagMessage>>()
-    private val workflowEngineChannels = ConcurrentHashMap<WorkflowName, Channel<WorkflowEngineMessage>>()
-    private val workflowTaskExecutorChannels = ConcurrentHashMap<WorkflowName, Channel<TaskExecutorMessage>>()
+  // Workflow channels
+  private val workflowTagChannels = ConcurrentHashMap<WorkflowName, Channel<WorkflowTagMessage>>()
+  private val workflowEngineChannels =
+      ConcurrentHashMap<WorkflowName, Channel<WorkflowEngineMessage>>()
+  private val workflowTaskExecutorChannels =
+      ConcurrentHashMap<WorkflowName, Channel<TaskExecutorMessage>>()
 
-    override fun CoroutineScope.startWorkflowTag(
-        workflowName: WorkflowName,
-        workflowTagStorage: WorkflowTagStorage,
-        concurrency: Int
-    ) {
-        val workflowTagEngine = WorkflowTagEngine(
+  override fun CoroutineScope.startWorkflowTag(
+      workflowName: WorkflowName,
+      workflowTagStorage: WorkflowTagStorage,
+      concurrency: Int
+  ) {
+    val workflowTagEngine =
+        WorkflowTagEngine(
             clientName,
             workflowTagStorage,
             sendToWorkflowTagAsync,
             sendToWorkflowEngine,
-            sendToClientAsync
-        )
+            sendToClientAsync)
 
-        startAsync(
-            { message: WorkflowTagMessage -> workflowTagEngine.handle(message) },
-            getWorkflowTagChannel(workflowName)
-        )
-    }
+    startAsync(
+        { message: WorkflowTagMessage -> workflowTagEngine.handle(message) },
+        getWorkflowTagChannel(workflowName))
+  }
 
-    override fun CoroutineScope.startWorkflowEngine(
-        workflowName: WorkflowName,
-        workflowStateStorage: WorkflowStateStorage,
-        concurrency: Int
-    ) {
-        val workflowEngine = WorkflowEngine(
+  override fun CoroutineScope.startWorkflowEngine(
+      workflowName: WorkflowName,
+      workflowStateStorage: WorkflowStateStorage,
+      concurrency: Int
+  ) {
+    val workflowEngine =
+        WorkflowEngine(
             clientName,
             workflowStateStorage,
             sendToClientAsync,
@@ -113,204 +113,199 @@ class InMemoryStarter(private val scope: CoroutineScope, name: String) : ClientS
             sendToWorkflowTaskExecutor(workflowName),
             sendToWorkflowTagAsync,
             sendToWorkflowEngineAsync,
-            sendToWorkflowEngineAfterAsync
-        )
-        startAsync(
-            { message: WorkflowEngineMessage -> workflowEngine.handle(message) },
-            getWorkflowEngineChannel(workflowName)
-        )
-    }
+            sendToWorkflowEngineAfterAsync)
+    startAsync(
+        { message: WorkflowEngineMessage -> workflowEngine.handle(message) },
+        getWorkflowEngineChannel(workflowName))
+  }
 
-    override fun CoroutineScope.startWorkflowDelay(workflowName: WorkflowName, concurrency: Int) {
-        // not needed
-    }
+  override fun CoroutineScope.startWorkflowDelay(workflowName: WorkflowName, concurrency: Int) {
+    // not needed
+  }
 
-    override fun CoroutineScope.startTaskTag(
-        serviceName: ServiceName,
-        taskTagStorage: TaskTagStorage,
-        concurrency: Int
-    ) {
-        val taskTagEngine = TaskTagEngine(
-            clientName,
-            taskTagStorage,
-            sendToClientAsync
-        )
+  override fun CoroutineScope.startTaskTag(
+      serviceName: ServiceName,
+      taskTagStorage: TaskTagStorage,
+      concurrency: Int
+  ) {
+    val taskTagEngine = TaskTagEngine(clientName, taskTagStorage, sendToClientAsync)
 
-        startAsync(
-            { message: TaskTagMessage -> taskTagEngine.handle(message) },
-            getTaskTagChannel(serviceName)
-        )
-    }
+    startAsync(
+        { message: TaskTagMessage -> taskTagEngine.handle(message) },
+        getTaskTagChannel(serviceName))
+  }
 
-    override fun CoroutineScope.startTaskExecutor(
-        serviceName: ServiceName,
-        concurrency: Int,
-        workerRegistry: WorkerRegistry,
-        clientFactory: ClientFactory
-    ) {
-        val taskExecutor = TaskExecutor(
+  override fun CoroutineScope.startTaskExecutor(
+      serviceName: ServiceName,
+      concurrency: Int,
+      workerRegistry: WorkerRegistry,
+      clientFactory: ClientFactory
+  ) {
+    val taskExecutor =
+        TaskExecutor(
             clientName,
             workerRegistry,
             sendToTaskExecutorAfter,
             sendToTaskTag,
             sendToWorkflowEngineAsync,
             sendToClientAsync,
-            clientFactory
-        )
+            clientFactory)
 
-        repeat(concurrency) {
-            startAsync(
-                { message: TaskExecutorMessage -> taskExecutor.handle(message) },
-                getTaskExecutorChannel(serviceName)
-            )
-        }
+    repeat(concurrency) {
+      startAsync(
+          { message: TaskExecutorMessage -> taskExecutor.handle(message) },
+          getTaskExecutorChannel(serviceName))
     }
+  }
 
-    override fun CoroutineScope.startWorkflowTaskExecutor(
-        workflowName: WorkflowName,
-        concurrency: Int,
-        workerRegistry: WorkerRegistry,
-        clientFactory: ClientFactory
-    ) {
-        val taskExecutor = TaskExecutor(
+  override fun CoroutineScope.startWorkflowTaskExecutor(
+      workflowName: WorkflowName,
+      concurrency: Int,
+      workerRegistry: WorkerRegistry,
+      clientFactory: ClientFactory
+  ) {
+    val taskExecutor =
+        TaskExecutor(
             clientName,
             workerRegistry,
             sendToWorkflowTaskExecutorAfterAsync(workflowName),
             {}, // workflow tasks do not have tags
             sendToWorkflowEngineAsync,
             sendToClientAsync,
-            clientFactory
-        )
-        val channel = getWorkflowTaskExecutorChannel(workflowName)
+            clientFactory)
+    val channel = getWorkflowTaskExecutorChannel(workflowName)
 
-        repeat(concurrency) {
-            startAsync(
-                { message: TaskExecutorMessage -> taskExecutor.handle(message) },
-                channel
-            )
-        }
+    repeat(concurrency) {
+      startAsync({ message: TaskExecutorMessage -> taskExecutor.handle(message) }, channel)
     }
+  }
 
-    override fun CoroutineScope.startClientResponse(client: InfiniticClientInterface) {
-        startAsync(
-            { message: ClientMessage -> client.handle(message) },
-            clientChannel
-        )
+  override fun CoroutineScope.startClientResponse(client: InfiniticClientInterface) {
+    startAsync({ message: ClientMessage -> client.handle(message) }, clientChannel)
+  }
+
+  override val sendToWorkflowEngine: SendToWorkflowEngine = { message: WorkflowEngineMessage ->
+    scope.sendAsync(message, getWorkflowEngineChannel(message.workflowName)).join()
+  }
+
+  override val sendToWorkflowTag: SendToWorkflowTag = { message: WorkflowTagMessage ->
+    scope.sendAsync(message, getWorkflowTagChannel(message.workflowName)).join()
+  }
+
+  private val sendToTaskTag: SendToTaskTag = { message: TaskTagMessage ->
+    scope.sendAsync(message, getTaskTagChannel(message.serviceName)).join()
+  }
+
+  private val sendToTaskExecutor: SendToTaskExecutor = { message: TaskExecutorMessage ->
+    scope.sendAsync(message, getTaskExecutorChannel(message.serviceName)).join()
+  }
+
+  private val sendToTaskTagAsync: SendToTaskTag = { message: TaskTagMessage ->
+    scope.sendAsync(message, getTaskTagChannel(message.serviceName))
+  }
+
+  private val sendToWorkflowTagAsync: SendToWorkflowTag = { message: WorkflowTagMessage ->
+    scope.sendAsync(message, getWorkflowTagChannel(message.workflowName))
+  }
+
+  private val sendToWorkflowEngineAsync: SendToWorkflowEngine = { message: WorkflowEngineMessage ->
+    scope.sendAsync(message, getWorkflowEngineChannel(message.workflowName))
+  }
+
+  private val sendToClientAsync: SendToClient = { message: ClientMessage ->
+    scope.sendAsync(message, clientChannel)
+  }
+
+  private val sendToTaskExecutorAfter: SendToTaskExecutorAfter =
+      { message: TaskExecutorMessage, after: MillisDuration ->
+        scope.sendAsync(message, getTaskExecutorChannel(message.serviceName), after).join()
+      }
+
+  private val sendToWorkflowEngineAfterAsync: SendToWorkflowEngineAfter =
+      { message: WorkflowEngineMessage, after: MillisDuration ->
+        scope.sendAsync(message, getWorkflowEngineChannel(message.workflowName), after)
+      }
+
+  private fun sendToWorkflowTaskExecutor(workflowName: WorkflowName): SendToTaskExecutor {
+    val channel = getWorkflowTaskExecutorChannel(workflowName)
+
+    return { message: TaskExecutorMessage -> scope.sendAsync(message, channel).join() }
+  }
+
+  private fun sendToWorkflowTaskExecutorAfterAsync(
+      workflowName: WorkflowName
+  ): SendToTaskExecutorAfter {
+    val channel = getWorkflowTaskExecutorChannel(workflowName)
+
+    return { message: TaskExecutorMessage, after: MillisDuration ->
+      scope.sendAsync(message, channel, after)
     }
+  }
 
-    override val sendToWorkflowEngine: SendToWorkflowEngine = { message: WorkflowEngineMessage ->
-        scope.sendAsync(message, getWorkflowEngineChannel(message.workflowName)).join()
-    }
-
-    override val sendToWorkflowTag: SendToWorkflowTag = { message: WorkflowTagMessage ->
-        scope.sendAsync(message, getWorkflowTagChannel(message.workflowName)).join()
-    }
-
-    private val sendToTaskTag: SendToTaskTag = { message: TaskTagMessage ->
-        scope.sendAsync(message, getTaskTagChannel(message.serviceName)).join()
-    }
-
-    private val sendToTaskExecutor: SendToTaskExecutor = { message: TaskExecutorMessage ->
-        scope.sendAsync(message, getTaskExecutorChannel(message.serviceName)).join()
-    }
-
-    private val sendToTaskTagAsync: SendToTaskTag = { message: TaskTagMessage ->
-        scope.sendAsync(message, getTaskTagChannel(message.serviceName))
-    }
-
-    private val sendToWorkflowTagAsync: SendToWorkflowTag = { message: WorkflowTagMessage ->
-        scope.sendAsync(message, getWorkflowTagChannel(message.workflowName))
-    }
-
-    private val sendToWorkflowEngineAsync: SendToWorkflowEngine = { message: WorkflowEngineMessage ->
-        scope.sendAsync(message, getWorkflowEngineChannel(message.workflowName))
-    }
-
-    private val sendToClientAsync: SendToClient = { message: ClientMessage ->
-        scope.sendAsync(message, clientChannel)
-    }
-
-    private val sendToTaskExecutorAfter: SendToTaskExecutorAfter =
-        { message: TaskExecutorMessage, after: MillisDuration ->
-            scope.sendAsync(message, getTaskExecutorChannel(message.serviceName), after).join()
-        }
-
-    private val sendToWorkflowEngineAfterAsync: SendToWorkflowEngineAfter =
-        { message: WorkflowEngineMessage, after: MillisDuration ->
-            scope.sendAsync(message, getWorkflowEngineChannel(message.workflowName), after)
-        }
-
-    private fun sendToWorkflowTaskExecutor(workflowName: WorkflowName): SendToTaskExecutor {
-        val channel = getWorkflowTaskExecutorChannel(workflowName)
-
-        return { message: TaskExecutorMessage -> scope.sendAsync(message, channel).join() }
-    }
-
-    private fun sendToWorkflowTaskExecutorAfterAsync(workflowName: WorkflowName): SendToTaskExecutorAfter {
-        val channel = getWorkflowTaskExecutorChannel(workflowName)
-
-        return { message: TaskExecutorMessage, after: MillisDuration -> scope.sendAsync(message, channel, after) }
-    }
-
-    private fun getTaskTagChannel(serviceName: ServiceName) =
-        taskTagChannels[serviceName] ?: run {
+  private fun getTaskTagChannel(serviceName: ServiceName) =
+      taskTagChannels[serviceName]
+          ?: run {
             val channel = Channel<TaskTagMessage>()
             taskTagChannels[serviceName] = channel
             channel
-        }
+          }
 
-    private fun getTaskExecutorChannel(serviceName: ServiceName) =
-        taskExecutorChannels[serviceName] ?: run {
+  private fun getTaskExecutorChannel(serviceName: ServiceName) =
+      taskExecutorChannels[serviceName]
+          ?: run {
             val channel = Channel<TaskExecutorMessage>()
             taskExecutorChannels[serviceName] = channel
             channel
-        }
+          }
 
-    private fun getWorkflowTagChannel(workflowName: WorkflowName) =
-        workflowTagChannels[workflowName] ?: run {
+  private fun getWorkflowTagChannel(workflowName: WorkflowName) =
+      workflowTagChannels[workflowName]
+          ?: run {
             val channel = Channel<WorkflowTagMessage>()
             workflowTagChannels[workflowName] = channel
             channel
-        }
+          }
 
-    private fun getWorkflowEngineChannel(workflowName: WorkflowName) =
-        workflowEngineChannels[workflowName] ?: run {
+  private fun getWorkflowEngineChannel(workflowName: WorkflowName) =
+      workflowEngineChannels[workflowName]
+          ?: run {
             val channel = Channel<WorkflowEngineMessage>()
             workflowEngineChannels[workflowName] = channel
             channel
-        }
+          }
 
-    private fun getWorkflowTaskExecutorChannel(workflowName: WorkflowName) =
-        workflowTaskExecutorChannels[workflowName] ?: run {
+  private fun getWorkflowTaskExecutorChannel(workflowName: WorkflowName) =
+      workflowTaskExecutorChannels[workflowName]
+          ?: run {
             val channel = Channel<TaskExecutorMessage>()
             workflowTaskExecutorChannels[workflowName] = channel
             channel
-        }
+          }
 
-    private fun <T : Message> CoroutineScope.sendAsync(
-        message: T,
-        channel: Channel<T>,
-        after: MillisDuration = MillisDuration.ZERO
-    ): CompletableFuture<Unit> = future {
-        logger.debug {
-            val prefix = if (after > 0) "after $after ms, " else ""
-            "${prefix}sending $message"
-        }
-        if (after > 0) delay(after.long)
-        channel.send(message)
-        logger.debug { "sent" }
+  private fun <T : Message> CoroutineScope.sendAsync(
+      message: T,
+      channel: Channel<T>,
+      after: MillisDuration = MillisDuration.ZERO
+  ): CompletableFuture<Unit> = future {
+    logger.debug {
+      val prefix = if (after > 0) "after $after ms, " else ""
+      "${prefix}sending $message"
     }
+    if (after > 0) delay(after.long)
+    channel.send(message)
+    logger.debug { "sent" }
+  }
 
-    private fun <T : Message> CoroutineScope.startAsync(
-        executor: suspend (T) -> Unit,
-        channel: Channel<T>
-    ): CompletableFuture<Unit> = future {
-        for (message in channel) {
-            try {
-                executor(message)
-            } catch (e: Throwable) {
-                logger.error(e) { "Error while processing message $message" }
-            }
-        }
+  private fun <T : Message> CoroutineScope.startAsync(
+      executor: suspend (T) -> Unit,
+      channel: Channel<T>
+  ): CompletableFuture<Unit> = future {
+    for (message in channel) {
+      try {
+        executor(message)
+      } catch (e: Throwable) {
+        logger.error(e) { "Error while processing message $message" }
+      }
     }
+  }
 }

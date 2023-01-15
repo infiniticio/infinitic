@@ -1,20 +1,18 @@
 /**
  * "Commons Clause" License Condition v1.0
  *
- * The Software is provided to you by the Licensor under the License, as defined
- * below, subject to the following condition.
+ * The Software is provided to you by the Licensor under the License, as defined below, subject to
+ * the following condition.
  *
- * Without limiting other conditions in the License, the grant of rights under the
- * License will not include, and the License does not grant to you, the right to
- * Sell the Software.
+ * Without limiting other conditions in the License, the grant of rights under the License will not
+ * include, and the License does not grant to you, the right to Sell the Software.
  *
- * For purposes of the foregoing, “Sell” means practicing any or all of the rights
- * granted to you under the License to provide to third parties, for a fee or
- * other consideration (including without limitation fees for hosting or
- * consulting/ support services related to the Software), a product or service
- * whose value derives, entirely or substantially, from the functionality of the
- * Software. Any license notice or attribution required by the License must also
- * include this Commons Clause License Condition notice.
+ * For purposes of the foregoing, “Sell” means practicing any or all of the rights granted to you
+ * under the License to provide to third parties, for a fee or other consideration (including
+ * without limitation fees for hosting or consulting/ support services related to the Software), a
+ * product or service whose value derives, entirely or substantially, from the functionality of the
+ * Software. Any license notice or attribution required by the License must also include this
+ * Commons Clause License Condition notice.
  *
  * Software: Infinitic
  *
@@ -22,33 +20,28 @@
  *
  * Licensor: infinitic.io
  */
-
 package io.infinitic.tasks.executor.task
 
 import java.lang.reflect.Method
 
-internal data class TaskCommand(
-    val service: Any,
-    val method: Method,
-    val parameters: Array<Any?>
-) {
-    override fun equals(other: Any?): Boolean {
-        if (this === other) return true
-        if (javaClass != other?.javaClass) return false
+internal data class TaskCommand(val service: Any, val method: Method, val parameters: Array<Any?>) {
+  override fun equals(other: Any?): Boolean {
+    if (this === other) return true
+    if (javaClass != other?.javaClass) return false
 
-        other as TaskCommand
+    other as TaskCommand
 
-        if (service != other.service) return false
-        if (method != other.method) return false
-        if (!parameters.contentEquals(other.parameters)) return false
+    if (service != other.service) return false
+    if (method != other.method) return false
+    if (!parameters.contentEquals(other.parameters)) return false
 
-        return true
-    }
+    return true
+  }
 
-    override fun hashCode(): Int {
-        var result = service.hashCode()
-        result = 31 * result + method.hashCode()
-        result = 31 * result + parameters.contentHashCode()
-        return result
-    }
+  override fun hashCode(): Int {
+    var result = service.hashCode()
+    result = 31 * result + method.hashCode()
+    result = 31 * result + parameters.contentHashCode()
+    return result
+  }
 }
