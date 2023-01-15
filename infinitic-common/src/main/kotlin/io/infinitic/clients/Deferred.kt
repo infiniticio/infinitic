@@ -25,6 +25,8 @@ package io.infinitic.clients
 import java.util.concurrent.CompletableFuture
 
 interface Deferred<R> {
+  val name: String
+
   val id: String
 
   fun await(): R

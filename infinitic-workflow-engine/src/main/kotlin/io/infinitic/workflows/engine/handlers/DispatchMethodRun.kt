@@ -30,7 +30,7 @@ import io.infinitic.workflows.engine.helpers.dispatchWorkflowTask
 import io.infinitic.workflows.engine.output.WorkflowEngineOutput
 import kotlinx.coroutines.CoroutineScope
 
-internal fun CoroutineScope.dispatchMethodRun(
+internal fun CoroutineScope.dispatchMethod(
     workflowEngineOutput: WorkflowEngineOutput,
     state: WorkflowState,
     message: DispatchMethod

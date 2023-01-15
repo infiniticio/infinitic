@@ -30,7 +30,7 @@ import io.infinitic.workers.config.WorkerConfig
 import io.infinitic.workers.registers.WorkerRegisterImpl
 
 @Suppress("unused")
-class InfiniticClient private constructor(private val client: InfiniticClientAbstract) :
+class InfiniticClient constructor(private val client: InfiniticClientAbstract) :
     InfiniticClientInterface by client {
 
   companion object {

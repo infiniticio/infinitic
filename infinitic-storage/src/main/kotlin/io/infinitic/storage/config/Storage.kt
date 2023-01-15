@@ -52,7 +52,7 @@ data class Storage(
       inMemory != null -> inMemory!!.close()
       redis != null -> redis.close()
       mysql != null -> mysql.close()
-      else -> throw RuntimeException("This should not happen")
+      else -> thisShouldNotHappen()
     }
   }
 
@@ -61,7 +61,7 @@ data class Storage(
       inMemory != null -> "inMemory"
       redis != null -> "redis"
       mysql != null -> "mysql"
-      else -> throw RuntimeException("This should not happen")
+      else -> thisShouldNotHappen()
     }
   }
 
@@ -70,7 +70,7 @@ data class Storage(
       inMemory != null -> InMemoryKeySetStorage.of(inMemory!!)
       redis != null -> RedisKeySetStorage.of(redis)
       mysql != null -> MySQLKeySetStorage.of(mysql)
-      else -> throw RuntimeException("This should not happen")
+      else -> thisShouldNotHappen()
     }
   }
 
@@ -79,7 +79,11 @@ data class Storage(
       inMemory != null -> InMemoryKeyValueStorage.of(inMemory!!)
       redis != null -> RedisKeyValueStorage.of(redis)
       mysql != null -> MySQLKeyValueStorage.of(mysql)
-      else -> throw RuntimeException("This should not happen")
+      else -> thisShouldNotHappen()
     }
+  }
+
+  private fun thisShouldNotHappen(): Nothing {
+    throw RuntimeException("This should not happen")
   }
 }

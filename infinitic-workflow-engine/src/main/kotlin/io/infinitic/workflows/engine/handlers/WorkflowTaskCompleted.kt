@@ -75,11 +75,12 @@ internal fun CoroutineScope.workflowTaskCompleted(
     state: WorkflowState,
     message: TaskCompleted
 ): MutableList<WorkflowEngineMessage> {
-  val workflowTaskOutput = message.taskReturnValue.returnValue.value() as WorkflowTaskReturnValue
+  val workflowTaskReturnValue =
+      message.taskReturnValue.returnValue.value() as WorkflowTaskReturnValue
 
   // set workflowVersion the first time
   if (state.workflowVersion == null) {
-    state.workflowVersion = workflowTaskOutput.workflowVersion
+    state.workflowVersion = workflowTaskReturnValue.workflowVersion
   }
 
   // retrieve current methodRun
@@ -98,7 +99,7 @@ internal fun CoroutineScope.workflowTaskCompleted(
   }
 
   // properties updates
-  workflowTaskOutput.properties.map {
+  workflowTaskReturnValue.properties.map {
     val hash = it.value.hash()
     if (it.key !in state.currentPropertiesNameHash.keys ||
         hash != state.currentPropertiesNameHash[it.key]) {
@@ -113,7 +114,7 @@ internal fun CoroutineScope.workflowTaskCompleted(
   val bufferedMessages = mutableListOf<WorkflowEngineMessage>()
 
   // add new commands to past commands
-  workflowTaskOutput.newCommands.forEach {
+  workflowTaskReturnValue.newCommands.forEach {
     @Suppress("UNUSED_VARIABLE")
     val o =
         when (it) {
@@ -130,7 +131,7 @@ internal fun CoroutineScope.workflowTaskCompleted(
   }
 
   // add new step to past steps
-  workflowTaskOutput.newStep?.let {
+  workflowTaskReturnValue.newStep?.let {
     // checking that current step is empty
     if (methodRun.currentStep != null) thisShouldNotHappen("non null current step")
     // set new step
@@ -144,9 +145,9 @@ internal fun CoroutineScope.workflowTaskCompleted(
   }
 
   // if method is completed for the first time
-  if (workflowTaskOutput.methodReturnValue != null && methodRun.methodReturnValue == null) {
+  if (workflowTaskReturnValue.methodReturnValue != null && methodRun.methodReturnValue == null) {
     // set methodOutput in state
-    methodRun.methodReturnValue = workflowTaskOutput.methodReturnValue
+    methodRun.methodReturnValue = workflowTaskReturnValue.methodReturnValue
 
     // send output back to waiting clients
     methodRun.waitingClients.forEach {
@@ -172,7 +173,7 @@ internal fun CoroutineScope.workflowTaskCompleted(
                   WorkflowReturnValue(
                       workflowId = state.workflowId,
                       methodRunId = methodRun.methodRunId,
-                      returnValue = workflowTaskOutput.methodReturnValue!!),
+                      returnValue = workflowTaskReturnValue.methodReturnValue!!),
               emitterName = output.clientName)
       if (it == state.workflowId) {
         // case of method dispatched within same workflow

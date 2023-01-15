@@ -44,4 +44,6 @@ class DeferredWorkflow<R>(
       dispatcher.awaitWorkflow(returnClass, workflowName, methodName, workflowId, null, true)
 
   override val id: String = workflowId.toString()
+
+  override val name: String = workflowName.toString()
 }

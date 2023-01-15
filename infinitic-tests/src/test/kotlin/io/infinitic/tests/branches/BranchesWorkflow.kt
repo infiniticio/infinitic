@@ -26,6 +26,7 @@ import io.infinitic.annotations.Ignore
 import io.infinitic.tests.utils.UtilService
 import io.infinitic.workflows.Deferred
 import io.infinitic.workflows.Workflow
+import java.time.Duration
 
 interface BranchesWorkflow {
   fun seq3(): String
@@ -34,6 +35,8 @@ interface BranchesWorkflow {
   fun seq4bis(): String
   fun deferred1(): String
   fun deferred1bis(): String
+  fun async1()
+  fun async1bis()
 }
 
 @Suppress("unused")
@@ -91,5 +94,13 @@ class BranchesWorkflowImpl : Workflow(), BranchesWorkflow {
 
   override fun deferred1bis(): String {
     return utilService.reverse("X")
+  }
+
+  override fun async1() {
+    dispatch(self::async1bis)
+  }
+
+  override fun async1bis() {
+    timer(Duration.ofMillis(200)).await()
   }
 }

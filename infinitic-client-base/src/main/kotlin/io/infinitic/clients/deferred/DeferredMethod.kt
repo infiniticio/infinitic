@@ -62,11 +62,13 @@ class DeferredMethod<R>(
         else -> thisShouldNotHappen()
       }
 
-  override val id: String by lazy {
+  override val id by lazy {
     when {
       workflowId != null -> methodRunId!!.toString()
       workflowTag != null -> TODO()
       else -> thisShouldNotHappen()
     }
   }
+
+  override val name = workflowName.toString()
 }

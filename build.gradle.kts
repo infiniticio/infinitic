@@ -32,7 +32,7 @@ buildscript {
 plugins {
   id(Plugins.Kotlin.id) version Plugins.Kotlin.version
   id(Plugins.Serialization.id) version Plugins.Serialization.version apply false
-  id(Plugins.Ktfmt.id) version Plugins.Ktfmt.version apply false
+  id(Plugins.Ktfmt.id) version Plugins.Ktfmt.version apply true
   id(Plugins.TestLogger.id) version Plugins.TestLogger.version apply true
 }
 

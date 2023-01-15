@@ -44,4 +44,9 @@ internal class DeferredSend<R : Any?>(internal val signalId: SignalId) : Deferre
   @Suppress("UNCHECKED_CAST") override fun await(): R = Unit as R
 
   override val id: String = signalId.toString()
+
+  override val name: String
+    get() {
+      thisShouldNotHappen()
+    }
 }

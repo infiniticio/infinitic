@@ -58,13 +58,17 @@ internal fun CoroutineScope.commandTerminated(
     if (pastCommand is ReceiveSignalPastCommand) {
       // if a step is completed right away, we remove this status from state
       pastCommand.commandStatuses.remove(commandStatus)
-      // this command can not complete another step, because only one step can be associated with a
-      // signal
+      // this command can not complete another step,
+      // because only one step can be associated with a signal
     } else {
       // keep this command as we could have another pastStep solved by it
       state.runningTerminatedCommands.add(0, commandId)
     }
   }
+
+  // if this method run was already completed, but we were waiting for this command to complete,
+  // we may be able to delete it now
+  if (methodRun.isTerminated()) state.removeMethodRun(methodRun)
 }
 
 // search the first step completed by this command

@@ -43,4 +43,9 @@ internal class DeferredChannel<R : SendChannel<*>>(private val channel: R) : Def
     get() {
       thisShouldNotHappen()
     }
+
+  override val name: String
+    get() {
+      thisShouldNotHappen()
+    }
 }

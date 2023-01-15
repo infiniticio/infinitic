@@ -60,7 +60,7 @@ import io.infinitic.common.workflows.engine.storage.WorkflowStateStorage
 import io.infinitic.common.workflows.tags.SendToWorkflowTag
 import io.infinitic.workflows.engine.handlers.cancelWorkflow
 import io.infinitic.workflows.engine.handlers.completeTimer
-import io.infinitic.workflows.engine.handlers.dispatchMethodRun
+import io.infinitic.workflows.engine.handlers.dispatchMethod
 import io.infinitic.workflows.engine.handlers.dispatchWorkflow
 import io.infinitic.workflows.engine.handlers.retryTasks
 import io.infinitic.workflows.engine.handlers.retryWorkflowTask
@@ -266,7 +266,7 @@ class WorkflowEngine(
 
     when (message) {
       is DispatchWorkflow -> thisShouldNotHappen()
-      is DispatchMethod -> dispatchMethodRun(output, state, message)
+      is DispatchMethod -> dispatchMethod(output, state, message)
       is CancelWorkflow -> cancelWorkflow(output, state, message)
       is SendSignal -> sendSignal(output, state, message)
       is WaitWorkflow -> waitWorkflow(output, state, message)
@@ -334,7 +334,6 @@ class WorkflowEngine(
               val msg = workflowTaskFailed(output, state, message)
               // add fake message at the top of the messagesBuffer list
               state.messagesBuffer.addAll(0, msg)
-              Unit
             }
             false -> {
               commandTerminated(
@@ -351,7 +350,6 @@ class WorkflowEngine(
               val messages = workflowTaskCompleted(output, state, message)
               // add fake messages at the top of the messagesBuffer list
               state.messagesBuffer.addAll(0, messages)
-              Unit
             }
             false ->
                 commandTerminated(
