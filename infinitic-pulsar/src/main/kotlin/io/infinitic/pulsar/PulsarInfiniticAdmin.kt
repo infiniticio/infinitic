@@ -330,7 +330,7 @@ class PulsarInfiniticAdmin constructor(val pulsarAdmin: PulsarAdmin, val pulsar:
   }
 
   private fun displayStatsTopic(topic: String) {
-    val stats = pulsarTopics.getPartitionedStats(topic, true, true, true)
+    val stats = pulsarTopics.getPartitionedStats(topic, true)
 
     val format = "| %-42s | %11d | %10d | %10f |%n"
 

@@ -71,7 +71,7 @@ internal fun <S : TopicType, T : JobState<S>> CoroutineScope.update(kvar: KVar<T
       val topicsStats = mutableMapOf<S, Request<PartitionedTopicStats>>()
       value.topicsStats.forEach {
         try {
-          val stats = topics.getPartitionedStats(value.getTopic(it.key), true, true, true)
+          val stats = topics.getPartitionedStats(value.getTopic(it.key), true)
           topicsStats[it.key] = Completed(stats)
         } catch (e: Exception) {
           topicsStats[it.key] = Failed(e)
