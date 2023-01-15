@@ -1,20 +1,18 @@
 /**
  * "Commons Clause" License Condition v1.0
  *
- * The Software is provided to you by the Licensor under the License, as defined
- * below, subject to the following condition.
+ * The Software is provided to you by the Licensor under the License, as defined below, subject to
+ * the following condition.
  *
- * Without limiting other conditions in the License, the grant of rights under the
- * License will not include, and the License does not grant to you, the right to
- * Sell the Software.
+ * Without limiting other conditions in the License, the grant of rights under the License will not
+ * include, and the License does not grant to you, the right to Sell the Software.
  *
- * For purposes of the foregoing, “Sell” means practicing any or all of the rights
- * granted to you under the License to provide to third parties, for a fee or
- * other consideration (including without limitation fees for hosting or
- * consulting/ support services related to the Software), a product or service
- * whose value derives, entirely or substantially, from the functionality of the
- * Software. Any license notice or attribution required by the License must also
- * include this Commons Clause License Condition notice.
+ * For purposes of the foregoing, “Sell” means practicing any or all of the rights granted to you
+ * under the License to provide to third parties, for a fee or other consideration (including
+ * without limitation fees for hosting or consulting/ support services related to the Software), a
+ * product or service whose value derives, entirely or substantially, from the functionality of the
+ * Software. Any license notice or attribution required by the License must also include this
+ * Commons Clause License Condition notice.
  *
  * Software: Infinitic
  *
@@ -22,7 +20,6 @@
  *
  * Licensor: infinitic.io
  */
-
 package io.infinitic.workflows.engine
 
 import io.infinitic.common.clients.messages.ClientMessage
@@ -58,37 +55,37 @@ import io.mockk.coEvery
 import io.mockk.just
 import io.mockk.mockk
 import io.mockk.slot
-import kotlinx.coroutines.coroutineScope
 import java.util.concurrent.CopyOnWriteArrayList
+import kotlinx.coroutines.coroutineScope
 
-class WorkflowEngineTests : StringSpec({
+class WorkflowEngineTests :
+    StringSpec({
+      val storage = mockk<WorkflowStateStorage>()
+      val state = slot<WorkflowState>()
+      val workflowId = slot<WorkflowId>()
 
-    val storage = mockk<WorkflowStateStorage>()
-    val state = slot<WorkflowState>()
-    val workflowId = slot<WorkflowId>()
+      val clientMessage = slot<ClientMessage>()
+      val taskTagMessages = CopyOnWriteArrayList<TaskTagMessage>()
+      val taskExecutorMessage = slot<TaskExecutorMessage>()
+      val workflowTaskExecutorMessage = slot<TaskExecutorMessage>()
+      val workflowTagMessages = CopyOnWriteArrayList<WorkflowTagMessage>()
+      val workflowEngineMessage = slot<WorkflowEngineMessage>()
+      val after = slot<MillisDuration>()
 
-    val clientMessage = slot<ClientMessage>()
-    val taskTagMessages = CopyOnWriteArrayList<TaskTagMessage>()
-    val taskExecutorMessage = slot<TaskExecutorMessage>()
-    val workflowTaskExecutorMessage = slot<TaskExecutorMessage>()
-    val workflowTagMessages = CopyOnWriteArrayList<WorkflowTagMessage>()
-    val workflowEngineMessage = slot<WorkflowEngineMessage>()
-    val after = slot<MillisDuration>()
+      val engine =
+          WorkflowEngine(
+              ClientName("test"),
+              storage,
+              mockSendToClient(clientMessage),
+              mockSendToTaskTag(taskTagMessages),
+              mockSendToTaskExecutor(taskExecutorMessage),
+              mockSendToWorkflowTaskExecutor(workflowTaskExecutorMessage),
+              mockSendToWorkflowTag(workflowTagMessages),
+              mockSendToWorkflowEngine(workflowEngineMessage),
+              mockSendToWorkflowEngineAfter(workflowEngineMessage, after))
 
-    val engine = WorkflowEngine(
-        ClientName("test"),
-        storage,
-        mockSendToClient(clientMessage),
-        mockSendToTaskTag(taskTagMessages),
-        mockSendToTaskExecutor(taskExecutorMessage),
-        mockSendToWorkflowTaskExecutor(workflowTaskExecutorMessage),
-        mockSendToWorkflowTag(workflowTagMessages),
-        mockSendToWorkflowEngine(workflowEngineMessage),
-        mockSendToWorkflowEngineAfter(workflowEngineMessage, after)
-    )
-
-    // ensure slots are emptied between each test
-    beforeTest {
+      // ensure slots are emptied between each test
+      beforeTest {
         clearMocks(storage)
         coEvery { storage.putState(capture(workflowId), capture(state)) } just Runs
 
@@ -99,9 +96,9 @@ class WorkflowEngineTests : StringSpec({
         workflowTagMessages.clear()
         workflowEngineMessage.clear()
         after.clear()
-    }
+      }
 
-    "Dispatch Workflow" {
+      "Dispatch Workflow" {
         val msg = TestFactory.random(DispatchWorkflow::class)
         coEvery { storage.getState(msg.workflowId) } returns null
 
@@ -111,27 +108,26 @@ class WorkflowEngineTests : StringSpec({
         workflowTask.workflowVersion shouldBe null
         state.captured.workflowVersion shouldBe null
 
-        val returnValue = WorkflowTaskReturnValue(
-            newCommands = listOf(),
-            newStep = null,
-            properties = mapOf(),
-            methodReturnValue = null,
-            workflowVersion = WorkflowVersion(42)
-        )
-        val taskCompleted = TaskCompleted(
-            state.captured.workflowName,
-            state.captured.workflowId,
-            state.captured.runningMethodRunId!!,
-            TaskReturnValue(
-                workflowTask.taskId,
-                workflowTask.serviceName,
-                workflowTask.taskMeta,
-                ReturnValue.from(returnValue)
-            ),
-            ClientName("worker")
-        )
+        val returnValue =
+            WorkflowTaskReturnValue(
+                newCommands = listOf(),
+                newStep = null,
+                properties = mapOf(),
+                methodReturnValue = null,
+                workflowVersion = WorkflowVersion(42))
+        val taskCompleted =
+            TaskCompleted(
+                state.captured.workflowName,
+                state.captured.workflowId,
+                state.captured.runningMethodRunId!!,
+                TaskReturnValue(
+                    workflowTask.taskId,
+                    workflowTask.serviceName,
+                    workflowTask.taskMeta,
+                    ReturnValue.from(returnValue)),
+                ClientName("worker"))
 
         coroutineScope { engine.handle(taskCompleted) }
         // todo
-    }
-})
+      }
+    })

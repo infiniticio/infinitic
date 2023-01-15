@@ -1,20 +1,18 @@
 /**
  * "Commons Clause" License Condition v1.0
  *
- * The Software is provided to you by the Licensor under the License, as defined
- * below, subject to the following condition.
+ * The Software is provided to you by the Licensor under the License, as defined below, subject to
+ * the following condition.
  *
- * Without limiting other conditions in the License, the grant of rights under the
- * License will not include, and the License does not grant to you, the right to
- * Sell the Software.
+ * Without limiting other conditions in the License, the grant of rights under the License will not
+ * include, and the License does not grant to you, the right to Sell the Software.
  *
- * For purposes of the foregoing, “Sell” means practicing any or all of the rights
- * granted to you under the License to provide to third parties, for a fee or
- * other consideration (including without limitation fees for hosting or
- * consulting/ support services related to the Software), a product or service
- * whose value derives, entirely or substantially, from the functionality of the
- * Software. Any license notice or attribution required by the License must also
- * include this Commons Clause License Condition notice.
+ * For purposes of the foregoing, “Sell” means practicing any or all of the rights granted to you
+ * under the License to provide to third parties, for a fee or other consideration (including
+ * without limitation fees for hosting or consulting/ support services related to the Software), a
+ * product or service whose value derives, entirely or substantially, from the functionality of the
+ * Software. Any license notice or attribution required by the License must also include this
+ * Commons Clause License Condition notice.
  *
  * Software: Infinitic
  *
@@ -22,7 +20,6 @@
  *
  * Licensor: infinitic.io
  */
-
 package io.infinitic.common.workflows
 
 import io.infinitic.common.data.ReturnValue
@@ -56,8 +53,9 @@ import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 
 @OptIn(ExperimentalSerializationApi::class)
-class DataTests : StringSpec({
-    "WorkflowId should be serialized as String and reversible in json" {
+class DataTests :
+    StringSpec({
+      "WorkflowId should be serialized as String and reversible in json" {
         val id = TestFactory.random<String>()
         val m = WorkflowId(id)
         val json = Json.encodeToString(m)
@@ -65,9 +63,9 @@ class DataTests : StringSpec({
 
         json shouldBe Json.encodeToString(id)
         m2 shouldBe m
-    }
+      }
 
-    "CommandHash should be serialized as String and reversible in json" {
+      "CommandHash should be serialized as String and reversible in json" {
         val id = TestFactory.random<String>()
         val m = CommandHash(id)
 
@@ -76,9 +74,9 @@ class DataTests : StringSpec({
 
         json shouldBe Json.encodeToString(id)
         m2 shouldBe m
-    }
+      }
 
-    "CommandId should be serialized as String" {
+      "CommandId should be serialized as String" {
         val id = TestFactory.random<String>()
         val m = CommandId(id)
         val json = Json.encodeToString(m)
@@ -86,9 +84,9 @@ class DataTests : StringSpec({
 
         json shouldBe Json.encodeToString(id)
         m2 shouldBe m
-    }
+      }
 
-    "CommandOutput should be serialized as SerializedData and reversible in json" {
+      "CommandOutput should be serialized as SerializedData and reversible in json" {
         val id = TestFactory.random<String>()
         val m = ReturnValue.from(id)
         val json = Json.encodeToString(m)
@@ -96,9 +94,9 @@ class DataTests : StringSpec({
 
         json shouldBe Json.encodeToString(SerializedData.from(id))
         m2 shouldBe m
-    }
+      }
 
-    "CommandSimpleName should be serialized as String and reversible in json" {
+      "CommandSimpleName should be serialized as String and reversible in json" {
         val id = TestFactory.random<String>()
         val m = CommandSimpleName(id)
         val json = Json.encodeToString(m)
@@ -106,9 +104,9 @@ class DataTests : StringSpec({
 
         json shouldBe Json.encodeToString(id)
         m2 shouldBe m
-    }
+      }
 
-    "ChannelSignal should be serialized as SerializedData and reversible in json" {
+      "ChannelSignal should be serialized as SerializedData and reversible in json" {
         val id = TestFactory.random<String>()
         val m = SignalData(SerializedData.from(id))
         val json = Json.encodeToString(m)
@@ -116,9 +114,9 @@ class DataTests : StringSpec({
 
         json shouldBe Json.encodeToString(SerializedData.from(id))
         m2 shouldBe m
-    }
+      }
 
-    "ChannelSignalId should be serialized as String and reversible in json" {
+      "ChannelSignalId should be serialized as String and reversible in json" {
         val id = TestFactory.random<String>()
         val m = SignalId(id)
         val json = Json.encodeToString(m)
@@ -126,9 +124,9 @@ class DataTests : StringSpec({
 
         json shouldBe Json.encodeToString(id)
         m2 shouldBe m
-    }
+      }
 
-    "ChannelSignalType should be serialized as String and reversible in json" {
+      "ChannelSignalType should be serialized as String and reversible in json" {
         val id = TestFactory.random<String>()
         val m = ChannelType(id)
         val json = Json.encodeToString(m)
@@ -136,9 +134,9 @@ class DataTests : StringSpec({
 
         json shouldBe Json.encodeToString(id)
         m2 shouldBe m
-    }
+      }
 
-    "ChannelName should be serialized as String and reversible in json" {
+      "ChannelName should be serialized as String and reversible in json" {
         val id = TestFactory.random<String>()
         val m = ChannelName(id)
         val json = Json.encodeToString(m)
@@ -146,9 +144,9 @@ class DataTests : StringSpec({
 
         json shouldBe Json.encodeToString(id)
         m2 shouldBe m
-    }
+      }
 
-    "MethodRunId should be serialized as String and reversible in json" {
+      "MethodRunId should be serialized as String and reversible in json" {
         val id = TestFactory.random<String>()
         val m = MethodRunId(id)
         val json = Json.encodeToString(m)
@@ -156,18 +154,18 @@ class DataTests : StringSpec({
 
         json shouldBe Json.encodeToString(id)
         m2 shouldBe m
-    }
+      }
 
-    "MethodRunPosition should be serialized as String and reversible in json" {
+      "MethodRunPosition should be serialized as String and reversible in json" {
         val m = MethodRunPosition()
         val json = Json.encodeToString(m)
         val m2 = Json.decodeFromString<MethodRunPosition>(json)
 
         json shouldBe Json.encodeToString(-1)
         m2 shouldBe m
-    }
+      }
 
-    "PropertyHash should be serialized as String and reversible in json" {
+      "PropertyHash should be serialized as String and reversible in json" {
         val id = TestFactory.random<String>()
         val m = PropertyHash(id)
         val json = Json.encodeToString(m)
@@ -175,9 +173,9 @@ class DataTests : StringSpec({
 
         json shouldBe Json.encodeToString(id)
         m2 shouldBe m
-    }
+      }
 
-    "PropertyName should be serialized as String and reversible in json" {
+      "PropertyName should be serialized as String and reversible in json" {
         val id = TestFactory.random<String>()
         val m = PropertyName(id)
         val json = Json.encodeToString(m)
@@ -185,9 +183,9 @@ class DataTests : StringSpec({
 
         json shouldBe Json.encodeToString(id)
         m2 shouldBe m
-    }
+      }
 
-    "PropertyValue should be serialized as SerializedData and reversible in json" {
+      "PropertyValue should be serialized as SerializedData and reversible in json" {
         val id = TestFactory.random<String>()
         val m = PropertyValue.from(id)
         val json = Json.encodeToString(m)
@@ -195,9 +193,9 @@ class DataTests : StringSpec({
 
         json shouldBe Json.encodeToString(SerializedData.from(id))
         m2 shouldBe m
-    }
+      }
 
-    "StepHash should be serialized as String and reversible in json" {
+      "StepHash should be serialized as String and reversible in json" {
         val id = TestFactory.random<String>()
         val m = StepHash(id)
         val json = Json.encodeToString(m)
@@ -205,9 +203,9 @@ class DataTests : StringSpec({
 
         json shouldBe Json.encodeToString(id)
         m2 shouldBe m
-    }
+      }
 
-    "StepId should be serialized as String and reversible in json" {
+      "StepId should be serialized as String and reversible in json" {
         val id = TestFactory.random<String>()
         val m = StepId(id)
         val json = Json.encodeToString(m)
@@ -215,9 +213,9 @@ class DataTests : StringSpec({
 
         json shouldBe Json.encodeToString(id)
         m2 shouldBe m
-    }
+      }
 
-    "StepOutput should be serialized as SerializedData and reversible in json" {
+      "StepOutput should be serialized as SerializedData and reversible in json" {
         val id = TestFactory.random<String>()
         val m = ReturnValue.from(id)
         val json = Json.encodeToString(m)
@@ -225,18 +223,18 @@ class DataTests : StringSpec({
 
         json shouldBe Json.encodeToString(SerializedData.from(id))
         m2 shouldBe m
-    }
+      }
 
-    "WorkflowMeta should be serializable and reversible in json" {
+      "WorkflowMeta should be serializable and reversible in json" {
         val id = TestFactory.random<String>()
         val m = WorkflowMeta(mapOf("a" to id.toByteArray()))
         val json = Json.encodeToString(m)
         val m2 = Json.decodeFromString<WorkflowMeta>(json)
 
         m2 shouldBe m
-    }
+      }
 
-    "WorkflowName should be serialized as String and reversible in json" {
+      "WorkflowName should be serialized as String and reversible in json" {
         val id = TestFactory.random<String>()
         val m = WorkflowName(id)
         val json = Json.encodeToString(m)
@@ -244,28 +242,28 @@ class DataTests : StringSpec({
 
         json shouldBe Json.encodeToString(id)
         m2 shouldBe m
-    }
+      }
 
-    "WorkflowTaskIndex should be serialized as Int and reversible in json" {
+      "WorkflowTaskIndex should be serialized as Int and reversible in json" {
         val m = WorkflowTaskIndex(42)
         val json = Json.encodeToString(m)
         val m2 = Json.decodeFromString<WorkflowTaskIndex>(json)
 
         json shouldBe "42"
         m2 shouldBe m
-    }
+      }
 
-    "DispatchWorkflowPastCommand should reversible in json" {
+      "DispatchWorkflowPastCommand should reversible in json" {
         val m = TestFactory.random<DispatchWorkflowPastCommand>()
         val json = Json.encodeToString(m)
         val m2 = Json.decodeFromString<DispatchWorkflowPastCommand>(json)
 
         m2 shouldBe m
-    }
+      }
 
-    "WorkflowTag should be stringify as string" {
+      "WorkflowTag should be stringify as string" {
         val workflowTag = TestFactory.random<WorkflowTag>()
 
         "$workflowTag" shouldBe workflowTag.tag
-    }
-})
+      }
+    })

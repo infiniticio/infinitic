@@ -1,20 +1,18 @@
 /**
  * "Commons Clause" License Condition v1.0
  *
- * The Software is provided to you by the Licensor under the License, as defined
- * below, subject to the following condition.
+ * The Software is provided to you by the Licensor under the License, as defined below, subject to
+ * the following condition.
  *
- * Without limiting other conditions in the License, the grant of rights under the
- * License will not include, and the License does not grant to you, the right to
- * Sell the Software.
+ * Without limiting other conditions in the License, the grant of rights under the License will not
+ * include, and the License does not grant to you, the right to Sell the Software.
  *
- * For purposes of the foregoing, “Sell” means practicing any or all of the rights
- * granted to you under the License to provide to third parties, for a fee or
- * other consideration (including without limitation fees for hosting or
- * consulting/ support services related to the Software), a product or service
- * whose value derives, entirely or substantially, from the functionality of the
- * Software. Any license notice or attribution required by the License must also
- * include this Commons Clause License Condition notice.
+ * For purposes of the foregoing, “Sell” means practicing any or all of the rights granted to you
+ * under the License to provide to third parties, for a fee or other consideration (including
+ * without limitation fees for hosting or consulting/ support services related to the Software), a
+ * product or service whose value derives, entirely or substantially, from the functionality of the
+ * Software. Any license notice or attribution required by the License must also include this
+ * Commons Clause License Condition notice.
  *
  * Software: Infinitic
  *
@@ -22,7 +20,6 @@
  *
  * Licensor: infinitic.io
  */
-
 package io.infinitic.clients.dispatcher
 
 import io.infinitic.clients.Deferred
@@ -41,55 +38,53 @@ import java.util.concurrent.CompletableFuture
 
 interface ClientDispatcher : ProxyDispatcher {
 
-    suspend fun handle(message: ClientMessage)
+  suspend fun handle(message: ClientMessage)
 
-    fun getLastDeferred(): Deferred<*>?
+  fun getLastDeferred(): Deferred<*>?
 
-    fun <R> dispatchAsync(
-        handler: ProxyHandler<*>
-    ): CompletableFuture<Deferred<R>>
+  fun <R> dispatchAsync(handler: ProxyHandler<*>): CompletableFuture<Deferred<R>>
 
-    fun <T> awaitWorkflow(
-        returnClass: Class<T>,
-        workflowName: WorkflowName,
-        methodName: MethodName,
-        workflowId: WorkflowId,
-        methodRunId: MethodRunId?,
-        clientWaiting: Boolean
-    ): T
+  fun <T> awaitWorkflow(
+      returnClass: Class<T>,
+      workflowName: WorkflowName,
+      methodName: MethodName,
+      workflowId: WorkflowId,
+      methodRunId: MethodRunId?,
+      clientWaiting: Boolean
+  ): T
 
-    fun cancelWorkflowAsync(
-        workflowName: WorkflowName,
-        workflowId: WorkflowId?,
-        methodRunId: MethodRunId?,
-        workflowTag: WorkflowTag?
-    ): CompletableFuture<Unit>
+  fun cancelWorkflowAsync(
+      workflowName: WorkflowName,
+      workflowId: WorkflowId?,
+      methodRunId: MethodRunId?,
+      workflowTag: WorkflowTag?
+  ): CompletableFuture<Unit>
 
-    fun retryWorkflowTaskAsync(
-        workflowName: WorkflowName,
-        workflowId: WorkflowId?,
-        workflowTag: WorkflowTag?
-    ): CompletableFuture<Unit>
+  fun retryWorkflowTaskAsync(
+      workflowName: WorkflowName,
+      workflowId: WorkflowId?,
+      workflowTag: WorkflowTag?
+  ): CompletableFuture<Unit>
 
-    fun completeTimersAsync(
-        workflowName: WorkflowName,
-        workflowId: WorkflowId?,
-        workflowTag: WorkflowTag?,
-        methodRunId: MethodRunId? = null
-    ): CompletableFuture<Unit>
+  fun completeTimersAsync(
+      workflowName: WorkflowName,
+      workflowId: WorkflowId?,
+      workflowTag: WorkflowTag?,
+      methodRunId: MethodRunId? = null
+  ): CompletableFuture<Unit>
 
-    fun retryTaskAsync(
-        workflowName: WorkflowName,
-        workflowId: WorkflowId?,
-        workflowTag: WorkflowTag?,
-        taskId: TaskId? = null,
-        taskStatus: DeferredStatus? = null,
-        serviceName: ServiceName? = null
-    ): CompletableFuture<Unit>
+  fun retryTaskAsync(
+      workflowName: WorkflowName,
+      workflowId: WorkflowId?,
+      workflowTag: WorkflowTag?,
+      taskId: TaskId? = null,
+      taskStatus: DeferredStatus? = null,
+      serviceName: ServiceName? = null
+  ): CompletableFuture<Unit>
 
-    fun getWorkflowIdsByTag(
-        workflowName: WorkflowName,
-        workflowId: WorkflowId?,
-        workflowTag: WorkflowTag?
-    ): Set<String>
+  fun getWorkflowIdsByTag(
+      workflowName: WorkflowName,
+      workflowId: WorkflowId?,
+      workflowTag: WorkflowTag?
+  ): Set<String>
 }

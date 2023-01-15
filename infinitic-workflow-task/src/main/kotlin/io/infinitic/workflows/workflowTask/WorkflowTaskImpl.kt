@@ -1,20 +1,18 @@
 /**
  * "Commons Clause" License Condition v1.0
  *
- * The Software is provided to you by the Licensor under the License, as defined
- * below, subject to the following condition.
+ * The Software is provided to you by the Licensor under the License, as defined below, subject to
+ * the following condition.
  *
- * Without limiting other conditions in the License, the grant of rights under the
- * License will not include, and the License does not grant to you, the right to
- * Sell the Software.
+ * Without limiting other conditions in the License, the grant of rights under the License will not
+ * include, and the License does not grant to you, the right to Sell the Software.
  *
- * For purposes of the foregoing, “Sell” means practicing any or all of the rights
- * granted to you under the License to provide to third parties, for a fee or
- * other consideration (including without limitation fees for hosting or
- * consulting/ support services related to the Software), a product or service
- * whose value derives, entirely or substantially, from the functionality of the
- * Software. Any license notice or attribution required by the License must also
- * include this Commons Clause License Condition notice.
+ * For purposes of the foregoing, “Sell” means practicing any or all of the rights granted to you
+ * under the License to provide to third parties, for a fee or other consideration (including
+ * without limitation fees for hosting or consulting/ support services related to the Software), a
+ * product or service whose value derives, entirely or substantially, from the functionality of the
+ * Software. Any license notice or attribution required by the License must also include this
+ * Commons Clause License Condition notice.
  *
  * Software: Infinitic
  *
@@ -22,7 +20,6 @@
  *
  * Licensor: infinitic.io
  */
-
 package io.infinitic.workflows.workflowTask
 
 import io.infinitic.common.data.ClientName
@@ -46,76 +43,76 @@ import java.lang.reflect.Method
 
 class WorkflowTaskImpl : WorkflowTask {
 
-    lateinit var checkMode: WorkflowCheckMode
-    lateinit var instance: Workflow
-    lateinit var method: Method
+  lateinit var checkMode: WorkflowCheckMode
+  lateinit var instance: Workflow
+  lateinit var method: Method
 
-    override fun handle(workflowTaskParameters: WorkflowTaskParameters): WorkflowTaskReturnValue {
-        // get method
-        val methodRun = workflowTaskParameters.methodRun
+  override fun handle(workflowTaskParameters: WorkflowTaskParameters): WorkflowTaskReturnValue {
+    // get method
+    val methodRun = workflowTaskParameters.methodRun
 
-        // set context
-        with(workflowTaskParameters) {
-            instance.workflowName = workflowName.toString()
-            instance.workflowId = workflowId.toString()
-            instance.methodName = methodRun.methodName.toString()
-            instance.methodId = methodRun.methodRunId.toString()
-            instance.tags = workflowTags.map { it.tag }.toSet()
-            instance.meta = workflowMeta.map
-        }
-        val dispatcher = WorkflowDispatcherImpl(checkMode, workflowTaskParameters)
-        instance.dispatcher = dispatcher
+    // set context
+    with(workflowTaskParameters) {
+      instance.workflowName = workflowName.toString()
+      instance.workflowId = workflowId.toString()
+      instance.methodName = methodRun.methodName.toString()
+      instance.methodId = methodRun.methodRunId.toString()
+      instance.tags = workflowTags.map { it.tag }.toSet()
+      instance.meta = workflowMeta.map
+    }
+    val dispatcher = WorkflowDispatcherImpl(checkMode, workflowTaskParameters)
+    instance.dispatcher = dispatcher
 
-        // define setProperties function
-        val setProperties = { nameHashes: Map<PropertyName, PropertyHash> ->
-            // in case properties contain some Deferred
-            Deferred.setWorkflowDispatcher(dispatcher)
-            instance.setProperties(workflowTaskParameters.workflowPropertiesHashValue, nameHashes)
-            Deferred.delWorkflowDispatcher()
-        }
+    // define setProperties function
+    val setProperties = { nameHashes: Map<PropertyName, PropertyHash> ->
+      // in case properties contain some Deferred
+      Deferred.setWorkflowDispatcher(dispatcher)
+      instance.setProperties(workflowTaskParameters.workflowPropertiesHashValue, nameHashes)
+      Deferred.delWorkflowDispatcher()
+    }
 
-        // give it to dispatcher
-        dispatcher.setProperties = setProperties
+    // give it to dispatcher
+    dispatcher.setProperties = setProperties
 
-        // set workflow's initial properties
-        setProperties(methodRun.propertiesNameHashAtStart)
+    // set workflow's initial properties
+    setProperties(methodRun.propertiesNameHashAtStart)
 
-        // initialize name of channels for this workflow, based on the methods that provide them
-        instance.setChannelNames()
+    // initialize name of channels for this workflow, based on the methods that provide them
+    instance.setChannelNames()
 
-        // get method parameters
-        // in case parameters contain some Deferred
-        Deferred.setWorkflowDispatcher(dispatcher)
-        val parameters = methodRun.methodParameters.map { it.deserialize() }.toTypedArray()
-        Deferred.delWorkflowDispatcher()
+    // get method parameters
+    // in case parameters contain some Deferred
+    Deferred.setWorkflowDispatcher(dispatcher)
+    val parameters = methodRun.methodParameters.map { it.deserialize() }.toTypedArray()
+    Deferred.delWorkflowDispatcher()
 
-        // run method and get return value (null if end not reached)
-        val methodReturnValue = try {
-            ReturnValue.from(method.invoke(instance, *parameters))
+    // run method and get return value (null if end not reached)
+    val methodReturnValue =
+        try {
+          ReturnValue.from(method.invoke(instance, *parameters))
         } catch (e: InvocationTargetException) {
-            when (val cause = e.cause) {
-                // we reach an uncompleted step
-                is WorkflowTaskException -> null
-                // the errors below will be caught by the task executor
-                is DeferredException -> throw cause
-                // Send back other exceptions
-                is Exception -> throw FailedWorkflowTaskException(
+          when (val cause = e.cause) {
+            // we reach an uncompleted step
+            is WorkflowTaskException -> null
+            // the errors below will be caught by the task executor
+            is DeferredException -> throw cause
+            // Send back other exceptions
+            is Exception ->
+                throw FailedWorkflowTaskException(
                     workflowName = workflowTaskParameters.workflowName.toString(),
                     workflowId = workflowTaskParameters.workflowId.toString(),
                     workflowTaskId = Task.taskId,
-                    workerException = WorkerException.from(ClientName(Task.workerName), cause)
-                )
-                // Throwable are not caught
-                else -> throw cause!!
-            }
+                    workerException = WorkerException.from(ClientName(Task.workerName), cause))
+            // Throwable are not caught
+            else -> throw cause!!
+          }
         }
 
-        return WorkflowTaskReturnValue(
-            newCommands = dispatcher.newCommands,
-            newStep = dispatcher.newStep,
-            properties = instance.getProperties(),
-            methodReturnValue = methodReturnValue,
-            workflowVersion = WorkflowVersion.from(instance::class.java)
-        )
-    }
+    return WorkflowTaskReturnValue(
+        newCommands = dispatcher.newCommands,
+        newStep = dispatcher.newStep,
+        properties = instance.getProperties(),
+        methodReturnValue = methodReturnValue,
+        workflowVersion = WorkflowVersion.from(instance::class.java))
+  }
 }

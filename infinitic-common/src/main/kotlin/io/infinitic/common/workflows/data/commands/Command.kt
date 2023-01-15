@@ -1,20 +1,18 @@
 /**
  * "Commons Clause" License Condition v1.0
  *
- * The Software is provided to you by the Licensor under the License, as defined
- * below, subject to the following condition.
+ * The Software is provided to you by the Licensor under the License, as defined below, subject to
+ * the following condition.
  *
- * Without limiting other conditions in the License, the grant of rights under the
- * License will not include, and the License does not grant to you, the right to
- * Sell the Software.
+ * Without limiting other conditions in the License, the grant of rights under the License will not
+ * include, and the License does not grant to you, the right to Sell the Software.
  *
- * For purposes of the foregoing, “Sell” means practicing any or all of the rights
- * granted to you under the License to provide to third parties, for a fee or
- * other consideration (including without limitation fees for hosting or
- * consulting/ support services related to the Software), a product or service
- * whose value derives, entirely or substantially, from the functionality of the
- * Software. Any license notice or attribution required by the License must also
- * include this Commons Clause License Condition notice.
+ * For purposes of the foregoing, “Sell” means practicing any or all of the rights granted to you
+ * under the License to provide to third parties, for a fee or other consideration (including
+ * without limitation fees for hosting or consulting/ support services related to the Software), a
+ * product or service whose value derives, entirely or substantially, from the functionality of the
+ * Software. Any license notice or attribution required by the License must also include this
+ * Commons Clause License Condition notice.
  *
  * Software: Infinitic
  *
@@ -22,7 +20,6 @@
  *
  * Licensor: infinitic.io
  */
-
 package io.infinitic.common.workflows.data.commands
 
 import com.github.avrokotlin.avro4k.AvroDefault
@@ -48,13 +45,10 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 sealed class Command {
-    abstract fun isSameThan(other: Command): Boolean
+  abstract fun isSameThan(other: Command): Boolean
 }
 
-/**
- * Commands are asynchronously processed
- */
-
+/** Commands are asynchronously processed */
 @Serializable
 @SerialName("Command.DispatchTask")
 data class DispatchTaskCommand(
@@ -65,16 +59,16 @@ data class DispatchTaskCommand(
     val taskTags: Set<TaskTag>,
     val taskMeta: TaskMeta
 ) : Command() {
-    override fun isSameThan(other: Command): Boolean {
-        if (this === other) return true
-        if (javaClass != other.javaClass) return false
-        other as DispatchTaskCommand
+  override fun isSameThan(other: Command): Boolean {
+    if (this === other) return true
+    if (javaClass != other.javaClass) return false
+    other as DispatchTaskCommand
 
-        return serviceName == other.serviceName &&
-            methodName == other.methodName &&
-            methodParameterTypes == other.methodParameterTypes &&
-            methodParameters == other.methodParameters
-    }
+    return serviceName == other.serviceName &&
+        methodName == other.methodName &&
+        methodParameterTypes == other.methodParameterTypes &&
+        methodParameters == other.methodParameters
+  }
 }
 
 @Serializable
@@ -87,16 +81,16 @@ data class DispatchWorkflowCommand(
     val workflowTags: Set<WorkflowTag>,
     val workflowMeta: WorkflowMeta
 ) : Command() {
-    override fun isSameThan(other: Command): Boolean {
-        if (this === other) return true
-        if (javaClass != other.javaClass) return false
-        other as DispatchWorkflowCommand
+  override fun isSameThan(other: Command): Boolean {
+    if (this === other) return true
+    if (javaClass != other.javaClass) return false
+    other as DispatchWorkflowCommand
 
-        return workflowName == other.workflowName &&
-            methodName == other.methodName &&
-            methodParameterTypes == other.methodParameterTypes &&
-            methodParameters == other.methodParameters
-    }
+    return workflowName == other.workflowName &&
+        methodName == other.methodName &&
+        methodParameterTypes == other.methodParameterTypes &&
+        methodParameters == other.methodParameters
+  }
 }
 
 @Serializable
@@ -109,18 +103,18 @@ data class DispatchMethodCommand(
     val methodParameterTypes: MethodParameterTypes,
     val methodParameters: MethodParameters
 ) : Command() {
-    override fun isSameThan(other: Command): Boolean {
-        if (this === other) return true
-        if (javaClass != other.javaClass) return false
-        other as DispatchMethodCommand
+  override fun isSameThan(other: Command): Boolean {
+    if (this === other) return true
+    if (javaClass != other.javaClass) return false
+    other as DispatchMethodCommand
 
-        return workflowName == other.workflowName &&
-            workflowId == other.workflowId &&
-            workflowTag == other.workflowTag &&
-            methodName == other.methodName &&
-            methodParameterTypes == other.methodParameterTypes &&
-            methodParameters == other.methodParameters
-    }
+    return workflowName == other.workflowName &&
+        workflowId == other.workflowId &&
+        workflowTag == other.workflowTag &&
+        methodName == other.methodName &&
+        methodParameterTypes == other.methodParameterTypes &&
+        methodParameters == other.methodParameters
+  }
 }
 
 @Serializable
@@ -130,72 +124,61 @@ data class SendSignalCommand(
     val workflowId: WorkflowId?,
     val workflowTag: WorkflowTag?,
     val channelName: ChannelName,
-    @AvroName("channelSignal")
-    val signalData: SignalData,
-    @AvroName("channelSignalTypes")
-    val channelTypes: Set<ChannelType>
+    @AvroName("channelSignal") val signalData: SignalData,
+    @AvroName("channelSignalTypes") val channelTypes: Set<ChannelType>
 ) : Command() {
-    companion object {
-        fun simpleName() = CommandSimpleName("SEND_SIGNAL")
-    }
+  companion object {
+    fun simpleName() = CommandSimpleName("SEND_SIGNAL")
+  }
 
-    override fun isSameThan(other: Command) = other == this
+  override fun isSameThan(other: Command) = other == this
 }
 
 @Serializable
 @SerialName("Command.ReceiveSignal")
 data class ReceiveSignalCommand(
     val channelName: ChannelName,
-    @AvroName("channelSignalType")
-    val channelType: ChannelType?,
-    @AvroName("channelEventFilter")
-    val channelFilter: ChannelFilter?,
-    @AvroDefault("1")
-    val receivedSignalLimit: Int?
+    @AvroName("channelSignalType") val channelType: ChannelType?,
+    @AvroName("channelEventFilter") val channelFilter: ChannelFilter?,
+    @AvroDefault("1") val receivedSignalLimit: Int?
 ) : Command() {
-    companion object {
-        fun simpleName() = CommandSimpleName("RECEIVE_SIGNAL")
-    }
+  companion object {
+    fun simpleName() = CommandSimpleName("RECEIVE_SIGNAL")
+  }
 
-    override fun isSameThan(other: Command) = other == this
+  override fun isSameThan(other: Command) = other == this
 }
 
 @Serializable
 @SerialName("Command.InlineTask")
-data class InlineTaskCommand(
-    val task: String = "inline"
-) : Command() {
-    companion object {
-        fun simpleName() = CommandSimpleName("INLINE_TASK")
-    }
+data class InlineTaskCommand(val task: String = "inline") : Command() {
+  companion object {
+    fun simpleName() = CommandSimpleName("INLINE_TASK")
+  }
 
-    override fun hashCode() = task.hashCode()
+  override fun hashCode() = task.hashCode()
 
-    override fun equals(other: Any?) = other is InlineTaskCommand
+  override fun equals(other: Any?) = other is InlineTaskCommand
 
-    override fun isSameThan(other: Command) = other == this
+  override fun isSameThan(other: Command) = other == this
 }
 
 @Serializable
 @SerialName("Command.StartDurationTimer")
-data class StartDurationTimerCommand(
-    val duration: MillisDuration
-) : Command() {
-    companion object {
-        fun simpleName() = CommandSimpleName("START_DURATION_TIMER")
-    }
+data class StartDurationTimerCommand(val duration: MillisDuration) : Command() {
+  companion object {
+    fun simpleName() = CommandSimpleName("START_DURATION_TIMER")
+  }
 
-    override fun isSameThan(other: Command) = other == this
+  override fun isSameThan(other: Command) = other == this
 }
 
 @Serializable
 @SerialName("Command.StartInstantTimer")
-data class StartInstantTimerCommand(
-    val instant: MillisInstant
-) : Command() {
-    companion object {
-        fun simpleName() = CommandSimpleName("START_INSTANT_TIMER")
-    }
+data class StartInstantTimerCommand(val instant: MillisInstant) : Command() {
+  companion object {
+    fun simpleName() = CommandSimpleName("START_INSTANT_TIMER")
+  }
 
-    override fun isSameThan(other: Command) = other == this
+  override fun isSameThan(other: Command) = other == this
 }

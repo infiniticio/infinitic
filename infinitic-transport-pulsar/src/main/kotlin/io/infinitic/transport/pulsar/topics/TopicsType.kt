@@ -1,20 +1,18 @@
 /**
  * "Commons Clause" License Condition v1.0
  *
- * The Software is provided to you by the Licensor under the License, as defined
- * below, subject to the following condition.
+ * The Software is provided to you by the Licensor under the License, as defined below, subject to
+ * the following condition.
  *
- * Without limiting other conditions in the License, the grant of rights under the
- * License will not include, and the License does not grant to you, the right to
- * Sell the Software.
+ * Without limiting other conditions in the License, the grant of rights under the License will not
+ * include, and the License does not grant to you, the right to Sell the Software.
  *
- * For purposes of the foregoing, “Sell” means practicing any or all of the rights
- * granted to you under the License to provide to third parties, for a fee or
- * other consideration (including without limitation fees for hosting or
- * consulting/ support services related to the Software), a product or service
- * whose value derives, entirely or substantially, from the functionality of the
- * Software. Any license notice or attribution required by the License must also
- * include this Commons Clause License Condition notice.
+ * For purposes of the foregoing, “Sell” means practicing any or all of the rights granted to you
+ * under the License to provide to third parties, for a fee or other consideration (including
+ * without limitation fees for hosting or consulting/ support services related to the Software), a
+ * product or service whose value derives, entirely or substantially, from the functionality of the
+ * Software. Any license notice or attribution required by the License must also include this
+ * Commons Clause License Condition notice.
  *
  * Software: Infinitic
  *
@@ -22,35 +20,32 @@
  *
  * Licensor: infinitic.io
  */
-
 package io.infinitic.transport.pulsar.topics
 
 import org.apache.pulsar.client.api.SubscriptionType
 
-/**
- * must NOT be changed
- * (would change the name of the subscriptions of delayed messages)
- */
+/** must NOT be changed (would change the name of the subscriptions of delayed messages) */
 const val TOPIC_WITH_DELAY = "delay"
 
 sealed interface TopicType {
-    /**
-     * The subscriptionPrefix must NOT be changed
-     * (if subscription name is changed, all messages will appear as not acknowledged to a new worker)
-     */
-    val subscriptionPrefix: String
+  /**
+   * The subscriptionPrefix must NOT be changed (if subscription name is changed, all messages will
+   * appear as not acknowledged to a new worker)
+   */
+  val subscriptionPrefix: String
 
-    /**
-     * The subscriptionName must NOT be changed
-     * (if subscription name is changed, all messages will appear as not acknowledged to a new worker)
-     */
-    val subscriptionName: String get() = "$subscriptionPrefix-subscription"
+  /**
+   * The subscriptionName must NOT be changed (if subscription name is changed, all messages will
+   * appear as not acknowledged to a new worker)
+   */
+  val subscriptionName: String
+    get() = "$subscriptionPrefix-subscription"
 
-    val subscriptionType: SubscriptionType
+  val subscriptionType: SubscriptionType
 
-    val isPartitioned: Boolean
+  val isPartitioned: Boolean
 
-    val isDelayed: Boolean
+  val isDelayed: Boolean
 }
 
 enum class ClientTopics(
@@ -59,7 +54,7 @@ enum class ClientTopics(
     override val isPartitioned: Boolean,
     override val isDelayed: Boolean
 ) : TopicType {
-    RESPONSE("response", SubscriptionType.Exclusive, false, false)
+  RESPONSE("response", SubscriptionType.Exclusive, false, false)
 }
 
 enum class GlobalTopics(
@@ -68,7 +63,7 @@ enum class GlobalTopics(
     override val isPartitioned: Boolean,
     override val isDelayed: Boolean
 ) : TopicType {
-    NAMER("namer", SubscriptionType.Shared, false, false)
+  NAMER("namer", SubscriptionType.Shared, false, false)
 }
 
 enum class WorkflowTopics(
@@ -77,9 +72,9 @@ enum class WorkflowTopics(
     override val isPartitioned: Boolean,
     override val isDelayed: Boolean
 ) : TopicType {
-    TAG("workflow-tag", SubscriptionType.Key_Shared, true, false),
-    ENGINE("workflow-engine", SubscriptionType.Key_Shared, true, false),
-    DELAY("workflow-$TOPIC_WITH_DELAY", SubscriptionType.Shared, true, true)
+  TAG("workflow-tag", SubscriptionType.Key_Shared, true, false),
+  ENGINE("workflow-engine", SubscriptionType.Key_Shared, true, false),
+  DELAY("workflow-$TOPIC_WITH_DELAY", SubscriptionType.Shared, true, true)
 }
 
 enum class WorkflowTaskTopics(
@@ -88,7 +83,7 @@ enum class WorkflowTaskTopics(
     override val isPartitioned: Boolean,
     override val isDelayed: Boolean
 ) : TopicType {
-    EXECUTOR("workflow-task-executor", SubscriptionType.Shared, true, false)
+  EXECUTOR("workflow-task-executor", SubscriptionType.Shared, true, false)
 }
 
 enum class ServiceTopics(
@@ -97,6 +92,6 @@ enum class ServiceTopics(
     override val isPartitioned: Boolean,
     override val isDelayed: Boolean
 ) : TopicType {
-    TAG("task-tag", SubscriptionType.Key_Shared, true, false),
-    EXECUTOR("task-executor", SubscriptionType.Shared, true, false)
+  TAG("task-tag", SubscriptionType.Key_Shared, true, false),
+  EXECUTOR("task-executor", SubscriptionType.Shared, true, false)
 }

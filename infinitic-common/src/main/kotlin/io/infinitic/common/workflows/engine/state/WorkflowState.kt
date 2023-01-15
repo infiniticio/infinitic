@@ -1,20 +1,18 @@
 /**
  * "Commons Clause" License Condition v1.0
  *
- * The Software is provided to you by the Licensor under the License, as defined
- * below, subject to the following condition.
+ * The Software is provided to you by the Licensor under the License, as defined below, subject to
+ * the following condition.
  *
- * Without limiting other conditions in the License, the grant of rights under the
- * License will not include, and the License does not grant to you, the right to
- * Sell the Software.
+ * Without limiting other conditions in the License, the grant of rights under the License will not
+ * include, and the License does not grant to you, the right to Sell the Software.
  *
- * For purposes of the foregoing, “Sell” means practicing any or all of the rights
- * granted to you under the License to provide to third parties, for a fee or
- * other consideration (including without limitation fees for hosting or
- * consulting/ support services related to the Software), a product or service
- * whose value derives, entirely or substantially, from the functionality of the
- * Software. Any license notice or attribution required by the License must also
- * include this Commons Clause License Condition notice.
+ * For purposes of the foregoing, “Sell” means practicing any or all of the rights granted to you
+ * under the License to provide to third parties, for a fee or other consideration (including
+ * without limitation fees for hosting or consulting/ support services related to the Software), a
+ * product or service whose value derives, entirely or substantially, from the functionality of the
+ * Software. Any license notice or attribution required by the License must also include this
+ * Commons Clause License Condition notice.
  *
  * Software: Infinitic
  *
@@ -22,7 +20,6 @@
  *
  * Licensor: infinitic.io
  */
-
 package io.infinitic.common.workflows.engine.state
 
 import com.github.avrokotlin.avro4k.Avro
@@ -56,157 +53,132 @@ import kotlinx.serialization.Serializable
 @Serializable
 @AvroNamespace("io.infinitic.workflows.engine")
 data class WorkflowState(
-    /**
-     * Id of last handled message (used to ensure idempotency)
-     */
+    /** Id of last handled message (used to ensure idempotency) */
     var lastMessageId: MessageId,
 
-    /**
-     * Id of this workflow instance
-     */
+    /** Id of this workflow instance */
     val workflowId: WorkflowId,
 
-    /**
-     * Workflow's name (used wy worker to instantiate)
-     */
+    /** Workflow's name (used wy worker to instantiate) */
     val workflowName: WorkflowName,
 
-    /**
-     * Workflow's version
-     */
-    @AvroDefault(Avro.NULL)
-    var workflowVersion: WorkflowVersion?,
+    /** Workflow's version */
+    @AvroDefault(Avro.NULL) var workflowVersion: WorkflowVersion?,
 
-    /**
-     * Instance's tags defined when dispatched
-     */
+    /** Instance's tags defined when dispatched */
     val workflowTags: Set<WorkflowTag>,
 
-    /**
-     * Instance's meta defined when dispatched
-     */
+    /** Instance's meta defined when dispatched */
     val workflowMeta: WorkflowMeta,
 
-    /**
-     * Id of WorkflowTask currently running
-     */
+    /** Id of WorkflowTask currently running */
     var runningWorkflowTaskId: TaskId? = null,
 
-    /**
-     * MethodRunId of WorkflowTask currently running
-     */
+    /** MethodRunId of WorkflowTask currently running */
     var runningMethodRunId: MethodRunId? = null,
 
-    /**
-     * Position of the step that triggered WorkflowTask currently running
-     */
+    /** Position of the step that triggered WorkflowTask currently running */
     var runningMethodRunPosition: MethodRunPosition? = null,
 
     /**
-     * In some situations, we know that multiples branches must be processed.
-     * As WorkflowTask handles branch one by one, we orderly buffer these branches here
-     * (it happens when a terminated command completes currentStep on multiple MethodRuns)
+     * In some situations, we know that multiples branches must be processed. As WorkflowTask
+     * handles branch one by one, we orderly buffer these branches here (it happens when a
+     * terminated command completes currentStep on multiple MethodRuns)
      */
     val runningTerminatedCommands: MutableList<CommandId> = mutableListOf(),
 
-    /**
-     * Instant when WorkflowTask currently running was triggered
-     */
+    /** Instant when WorkflowTask currently running was triggered */
     var runningWorkflowTaskInstant: MillisInstant? = null,
 
-    /**
-     * Incremental index counting WorkflowTasks (used as an index for instance's state)
-     */
+    /** Incremental index counting WorkflowTasks (used as an index for instance's state) */
     var workflowTaskIndex: WorkflowTaskIndex = WorkflowTaskIndex(0),
 
-    /**
-     * Methods currently running. Once completed this data can be deleted to limit memory usage
-     */
+    /** Methods currently running. Once completed this data can be deleted to limit memory usage */
     val methodRuns: MutableList<MethodRun>,
 
-    /**
-     * Ordered list of channels currently receiving
-     */
+    /** Ordered list of channels currently receiving */
     val receivingChannels: MutableList<ReceivingChannel> = mutableListOf(),
 
-    /**
-     * Current (last) hash of instance's properties. hash is used as an index to actual value
-     */
+    /** Current (last) hash of instance's properties. hash is used as an index to actual value */
     val currentPropertiesNameHash: MutableMap<PropertyName, PropertyHash> = mutableMapOf(),
 
     /**
-     * Store containing values of past and current values of properties
-     * (past values are useful when replaying WorkflowTask)
+     * Store containing values of past and current values of properties (past values are useful when
+     * replaying WorkflowTask)
      */
     var propertiesHashValue: MutableMap<PropertyHash, PropertyValue> = mutableMapOf(),
 
     /**
-     * Messages received while a WorkflowTask is still running.
-     * They can not be handled immediately, so we store them in this buffer
+     * Messages received while a WorkflowTask is still running. They can not be handled immediately,
+     * so we store them in this buffer
      */
     val messagesBuffer: MutableList<WorkflowEngineMessage> = mutableListOf()
 ) {
-    companion object {
-        fun fromByteArray(bytes: ByteArray) = AvroSerDe.readBinaryWithSchemaFingerprint(bytes, serializer())
-    }
+  companion object {
+    fun fromByteArray(bytes: ByteArray) =
+        AvroSerDe.readBinaryWithSchemaFingerprint(bytes, serializer())
+  }
 
-    fun toByteArray() = AvroSerDe.writeBinaryWithSchemaFingerprint(this, serializer())
+  fun toByteArray() = AvroSerDe.writeBinaryWithSchemaFingerprint(this, serializer())
 
-    fun hasSignalAlreadyBeenReceived(signalId: SignalId) = methodRuns.any { methodRun ->
+  fun hasSignalAlreadyBeenReceived(signalId: SignalId) =
+      methodRuns.any { methodRun ->
         methodRun.pastCommands.any {
-            it.commandStatus is CommandStatus.Completed && (it.commandStatus as CommandStatus.Completed).signalId == signalId
+          it.commandStatus is CommandStatus.Completed &&
+              (it.commandStatus as CommandStatus.Completed).signalId == signalId
         }
+      }
+
+  fun getRunningMethodRun(): MethodRun = methodRuns.first { it.methodRunId == runningMethodRunId }
+
+  fun getMethodRun(methodRunId: MethodRunId) =
+      methodRuns.firstOrNull { it.methodRunId == methodRunId }
+
+  fun getPastCommand(commandId: CommandId, methodRun: MethodRun): PastCommand =
+      methodRun.getPastCommand(commandId)
+      // if we do not find in this methodRun, then search within others
+      ?: methodRuns.map { it.getPastCommand(commandId) }.firstOrNull { it != null }
+          // methodRun should not be deleted if a step is still running
+          ?: thisShouldNotHappen()
+
+  fun removeMethodRun(methodRun: MethodRun) {
+    methodRuns.remove(methodRun)
+
+    // clean receivingChannels once deleted
+    receivingChannels.removeAll { it.methodRunId == methodRun.methodRunId }
+
+    // clean properties
+    removeUnusedPropertyHash()
+  }
+
+  fun removeMethodRuns() {
+    methodRuns.clear()
+
+    // clean receivingChannels once deleted
+    receivingChannels.clear()
+
+    // clean properties
+    removeUnusedPropertyHash()
+  }
+
+  /**
+   * After completion or cancellation of methodRuns, we can clean up the properties not used anymore
+   */
+  private fun removeUnusedPropertyHash() {
+    // set of all hashes still in use
+    val propertyHashes = mutableSetOf<PropertyHash>()
+
+    methodRuns.forEach { methodRun ->
+      methodRun.pastSteps.forEach { pastStep ->
+        pastStep.propertiesNameHashAtTermination?.forEach { propertyHashes.add(it.value) }
+      }
+      methodRun.propertiesNameHashAtStart.forEach { propertyHashes.add(it.value) }
     }
+    currentPropertiesNameHash.forEach { propertyHashes.add(it.value) }
 
-    fun getRunningMethodRun(): MethodRun = methodRuns.first { it.methodRunId == runningMethodRunId }
-
-    fun getMethodRun(methodRunId: MethodRunId) = methodRuns.firstOrNull { it.methodRunId == methodRunId }
-
-    fun getPastCommand(commandId: CommandId, methodRun: MethodRun): PastCommand =
-        methodRun.getPastCommand(commandId)
-            // if we do not find in this methodRun, then search within others
-            ?: methodRuns.map { it.getPastCommand(commandId) }.firstOrNull { it != null }
-            // methodRun should not be deleted if a step is still running
-            ?: thisShouldNotHappen()
-
-    fun removeMethodRun(methodRun: MethodRun) {
-        methodRuns.remove(methodRun)
-
-        // clean receivingChannels once deleted
-        receivingChannels.removeAll { it.methodRunId == methodRun.methodRunId }
-
-        // clean properties
-        removeUnusedPropertyHash()
-    }
-
-    fun removeMethodRuns() {
-        methodRuns.clear()
-
-        // clean receivingChannels once deleted
-        receivingChannels.clear()
-
-        // clean properties
-        removeUnusedPropertyHash()
-    }
-
-    /**
-     * After completion or cancellation of methodRuns, we can clean up the properties not used anymore
-     */
-    private fun removeUnusedPropertyHash() {
-        // set of all hashes still in use
-        val propertyHashes = mutableSetOf<PropertyHash>()
-
-        methodRuns.forEach { methodRun ->
-            methodRun.pastSteps.forEach { pastStep ->
-                pastStep.propertiesNameHashAtTermination?.forEach { propertyHashes.add(it.value) }
-            }
-            methodRun.propertiesNameHashAtStart.forEach { propertyHashes.add(it.value) }
-        }
-        currentPropertiesNameHash.forEach { propertyHashes.add(it.value) }
-
-        // remove all propertyHashValue not in use anymore
-        propertiesHashValue.keys
-            .filter { it !in propertyHashes }
-            .forEach { propertiesHashValue.remove(it) }
-    }
+    // remove all propertyHashValue not in use anymore
+    propertiesHashValue.keys
+        .filter { it !in propertyHashes }
+        .forEach { propertiesHashValue.remove(it) }
+  }
 }

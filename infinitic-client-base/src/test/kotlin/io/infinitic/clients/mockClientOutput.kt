@@ -1,20 +1,18 @@
 /**
  * "Commons Clause" License Condition v1.0
  *
- * The Software is provided to you by the Licensor under the License, as defined
- * below, subject to the following condition.
+ * The Software is provided to you by the Licensor under the License, as defined below, subject to
+ * the following condition.
  *
- * Without limiting other conditions in the License, the grant of rights under the
- * License will not include, and the License does not grant to you, the right to
- * Sell the Software.
+ * Without limiting other conditions in the License, the grant of rights under the License will not
+ * include, and the License does not grant to you, the right to Sell the Software.
  *
- * For purposes of the foregoing, “Sell” means practicing any or all of the rights
- * granted to you under the License to provide to third parties, for a fee or
- * other consideration (including without limitation fees for hosting or
- * consulting/ support services related to the Software), a product or service
- * whose value derives, entirely or substantially, from the functionality of the
- * Software. Any license notice or attribution required by the License must also
- * include this Commons Clause License Condition notice.
+ * For purposes of the foregoing, “Sell” means practicing any or all of the rights granted to you
+ * under the License to provide to third parties, for a fee or other consideration (including
+ * without limitation fees for hosting or consulting/ support services related to the Software), a
+ * product or service whose value derives, entirely or substantially, from the functionality of the
+ * Software. Any license notice or attribution required by the License must also include this
+ * Commons Clause License Condition notice.
  *
  * Software: Infinitic
  *
@@ -22,7 +20,6 @@
  *
  * Licensor: infinitic.io
  */
-
 package io.infinitic.clients
 
 import io.infinitic.common.clients.messages.MethodCompleted
@@ -51,10 +48,10 @@ import io.infinitic.common.workflows.tags.messages.WorkflowTagMessage
 import io.mockk.CapturingSlot
 import io.mockk.every
 import io.mockk.mockk
+import java.util.concurrent.CopyOnWriteArrayList
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.future.future
-import java.util.concurrent.CopyOnWriteArrayList
 
 fun mockSendToTaskTagEngine(
     client: InfiniticClientInterface,
@@ -62,25 +59,26 @@ fun mockSendToTaskTagEngine(
     clientName: ClientName,
     sendingScope: CoroutineScope
 ): SendToTaskTag {
-    val sendToTaskTag = mockk<SendToTaskTag>()
-    every { sendToTaskTag(capture(taskTagSlots)) } answers {
+  val sendToTaskTag = mockk<SendToTaskTag>()
+  every { sendToTaskTag(capture(taskTagSlots)) } answers
+      {
         taskTagSlots.forEach {
-            if (it is GetTaskIdsByTag) {
-                val taskIdsByTag = TaskIdsByTag(
+          if (it is GetTaskIdsByTag) {
+            val taskIdsByTag =
+                TaskIdsByTag(
                     recipientName = clientName,
                     serviceName = it.serviceName,
                     taskTag = it.taskTag,
                     taskIds = setOf(TaskId(), TaskId()),
-                    emitterName = ClientName("mockk")
-                )
-                sendingScope.future {
-                    delay(100)
-                    client.handle(taskIdsByTag)
-                }
+                    emitterName = ClientName("mockk"))
+            sendingScope.future {
+              delay(100)
+              client.handle(taskIdsByTag)
             }
+          }
         }
-    }
-    return sendToTaskTag
+      }
+  return sendToTaskTag
 }
 
 fun mockSendToWorkflowTagEngine(
@@ -89,25 +87,26 @@ fun mockSendToWorkflowTagEngine(
     clientName: ClientName,
     sendingScope: CoroutineScope
 ): SendToWorkflowTag {
-    val sendToWorkflowTagEngine = mockk<SendToWorkflowTag>()
-    every { sendToWorkflowTagEngine(capture(workflowTagSlots)) } answers {
+  val sendToWorkflowTagEngine = mockk<SendToWorkflowTag>()
+  every { sendToWorkflowTagEngine(capture(workflowTagSlots)) } answers
+      {
         workflowTagSlots.forEach {
-            if (it is GetWorkflowIdsByTag) {
-                val workflowIdsByTag = WorkflowIdsByTag(
+          if (it is GetWorkflowIdsByTag) {
+            val workflowIdsByTag =
+                WorkflowIdsByTag(
                     recipientName = clientName,
                     workflowName = it.workflowName,
                     workflowTag = it.workflowTag,
                     workflowIds = setOf(WorkflowId(), WorkflowId()),
-                    emitterName = ClientName("mockk")
-                )
-                sendingScope.future {
-                    delay(100)
-                    client.handle(workflowIdsByTag)
-                }
+                    emitterName = ClientName("mockk"))
+            sendingScope.future {
+              delay(100)
+              client.handle(workflowIdsByTag)
             }
+          }
         }
-    }
-    return sendToWorkflowTagEngine
+      }
+  return sendToWorkflowTagEngine
 }
 
 fun mockSendToTaskExecutor(
@@ -116,25 +115,26 @@ fun mockSendToTaskExecutor(
     clientName: ClientName,
     sendingScope: CoroutineScope
 ): SendToTaskExecutor {
-    val sendToTaskExecutor = mockk<SendToTaskExecutor>()
-    every { sendToTaskExecutor(capture(message)) } answers {
+  val sendToTaskExecutor = mockk<SendToTaskExecutor>()
+  every { sendToTaskExecutor(capture(message)) } answers
+      {
         val msg = message.captured
         if (msg is ExecuteTask && msg.clientWaiting) {
-            val taskCompleted = TaskCompleted(
-                recipientName = clientName,
-                emitterName = ClientName("mockk"),
-                taskId = msg.taskId,
-                taskReturnValue = ReturnValue.from("success"),
-                taskMeta = TaskMeta()
-            )
-            sendingScope.future {
-                delay(100)
-                client.handle(taskCompleted)
-            }
+          val taskCompleted =
+              TaskCompleted(
+                  recipientName = clientName,
+                  emitterName = ClientName("mockk"),
+                  taskId = msg.taskId,
+                  taskReturnValue = ReturnValue.from("success"),
+                  taskMeta = TaskMeta())
+          sendingScope.future {
+            delay(100)
+            client.handle(taskCompleted)
+          }
         }
-    }
+      }
 
-    return sendToTaskExecutor
+  return sendToTaskExecutor
 }
 
 fun mockSendToWorkflowEngine(
@@ -143,23 +143,24 @@ fun mockSendToWorkflowEngine(
     clientName: ClientName,
     sendingScope: CoroutineScope
 ): SendToWorkflowEngine {
-    val sendToWorkflowEngine = mockk<SendToWorkflowEngine>()
-    every { sendToWorkflowEngine(capture(message)) } answers {
+  val sendToWorkflowEngine = mockk<SendToWorkflowEngine>()
+  every { sendToWorkflowEngine(capture(message)) } answers
+      {
         val msg: WorkflowEngineMessage = message.captured
         if (msg is DispatchWorkflow && msg.clientWaiting || msg is WaitWorkflow) {
-            val workflowCompleted = MethodCompleted(
-                recipientName = clientName,
-                workflowId = msg.workflowId,
-                methodRunId = MethodRunId.from(msg.workflowId),
-                methodReturnValue = ReturnValue.from("success"),
-                emitterName = ClientName("mockk")
-            )
-            sendingScope.future {
-                delay(100)
-                client.handle(workflowCompleted)
-            }
+          val workflowCompleted =
+              MethodCompleted(
+                  recipientName = clientName,
+                  workflowId = msg.workflowId,
+                  methodRunId = MethodRunId.from(msg.workflowId),
+                  methodReturnValue = ReturnValue.from("success"),
+                  emitterName = ClientName("mockk"))
+          sendingScope.future {
+            delay(100)
+            client.handle(workflowCompleted)
+          }
         }
-    }
+      }
 
-    return sendToWorkflowEngine
+  return sendToWorkflowEngine
 }
