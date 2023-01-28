@@ -1,3 +1,5 @@
+![scarf pixel](https://static.scarf.sh/a.png?x-pxid=b7a9c0b3-ae8b-4e19-838b-36a40ee1cf96)
+
 # Infinitic
 
 Infinitic is still in active development. Subscribe [here](https://infinitic.substack.com) to follow the progress.
