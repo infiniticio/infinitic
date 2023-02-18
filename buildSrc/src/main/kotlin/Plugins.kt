@@ -20,7 +20,7 @@
  *
  * Licensor: infinitic.io
  */
-const val kotlinVersion = "1.7.10"
+const val kotlinVersion = "1.8.10"
 
 object Plugins {
   object Kotlin {

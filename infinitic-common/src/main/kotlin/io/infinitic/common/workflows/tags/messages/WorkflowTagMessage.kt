@@ -97,7 +97,7 @@ data class SendSignalByTag(
 data class CancelWorkflowByTag(
     override val workflowName: WorkflowName,
     override val workflowTag: WorkflowTag,
-    val reason: WorkflowCancellationReason,
+    @AvroNamespace("io.infinitic.workflows.data") val reason: WorkflowCancellationReason,
     var emitterWorkflowId: WorkflowId?,
     override val emitterName: ClientName
 ) : WorkflowTagMessage()

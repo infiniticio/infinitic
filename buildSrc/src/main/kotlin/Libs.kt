@@ -39,7 +39,7 @@ object Libs {
   }
 
   object Serialization {
-    const val json = "org.jetbrains.kotlinx:kotlinx-serialization-json:1.4.1"
+    const val json = "org.jetbrains.kotlinx:kotlinx-serialization-json:1.5.0-RC"
   }
 
   object JsonPath {
