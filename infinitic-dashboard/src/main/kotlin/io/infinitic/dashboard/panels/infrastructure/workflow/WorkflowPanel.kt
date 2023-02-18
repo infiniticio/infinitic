@@ -134,7 +134,7 @@ class WorkflowPanel private constructor(private val workflowName: String) : Pane
                       div().classes("flex items-center").new {
                         with(a()) {
                           classes("text-sm font-medium text-gray-500 hover:text-gray-700")
-                          setAttribute("aria-current", InfraMenu.title)
+                          set("aria-current", InfraMenu.title)
                           text(InfraMenu.title)
                           href = AllJobsPanel.url
                         }
