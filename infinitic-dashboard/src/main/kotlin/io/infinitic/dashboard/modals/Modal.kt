@@ -59,9 +59,9 @@ object Modal {
         div()
             .classes(
                 display.map { "fixed z-10 inset-0 overflow-y-auto " + if (it) "" else "hidden" })
-            .setAttribute("aria-labelledby", "modal-title")
-            .setAttribute("role", "dialog")
-            .setAttribute("aria-modal", "true")
+            .set("aria-labelledby", "modal-title")
+            .set("role", "dialog")
+            .set("aria-modal", "true")
             .new {
               div()
                   .classes(
@@ -73,11 +73,11 @@ object Modal {
                   .new {
                     div()
                         .classes("fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity")
-                        .setAttribute("aria-hidden", "true")
+                        .set("aria-hidden", "true")
                     // This element is to trick the browser into centering the modal contents.
                     span()
                         .classes("hidden sm:inline-block sm:align-middle sm:h-screen")
-                        .setAttribute("aria-hidden", "true")
+                        .set("aria-hidden", "true")
                     div()
                         .classes(
                             showModal.map {
@@ -95,7 +95,7 @@ object Modal {
                             button()
                                 .classes(
                                     "bg-white rounded-md text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500")
-                                .setAttribute("type", "button")
+                                .set("type", "button")
                                 .new {
                                   span().classes("sr-only").text("Close")
                                   iconClose()
@@ -109,7 +109,7 @@ object Modal {
                             div().classes("mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left").new {
                               element("h3")
                                   .classes("text-lg leading-6 font-medium text-gray-900")
-                                  .setAttribute("idd", "modal-title")
+                                  .set("idd", "modal-title")
                                   .text("Deactivate account")
                               div().classes("mt-2").new {
                                 p().classes("text-sm text-gray-500")
@@ -121,12 +121,12 @@ object Modal {
                           // buttons
                           div().classes("mt-5 sm:mt-4 sm:flex sm:flex-row-reverse").new {
                             button()
-                                .setAttribute("type", "button")
+                                .set("type", "button")
                                 .classes(
                                     "w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-red-600 text-base font-medium text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 sm:ml-3 sm:w-auto sm:text-sm")
                                 .text("Deactivate")
                             button()
-                                .setAttribute("type", "button")
+                                .set("type", "button")
                                 .classes(
                                     "mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:w-auto sm:text-sm")
                                 .text("Cancel")

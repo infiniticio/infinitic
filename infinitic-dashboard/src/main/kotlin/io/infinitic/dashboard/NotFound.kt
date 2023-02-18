@@ -48,8 +48,8 @@ object NotFound {
                       span().classes("sr-only").text("Infinitic")
                       img()
                           .classes("h-12 w-auto")
-                          .setAttribute("src", "https://docs.infinitic.io/logo-light.svg")
-                          .setAttribute("alt", "Infinitic")
+                          .set("src", "https://docs.infinitic.io/logo-light.svg")
+                          .set("alt", "Infinitic")
                     }
                   }
                 }
@@ -69,7 +69,7 @@ object NotFound {
                         classes("text-base font-medium text-indigo-600 hover:text-indigo-500")
                         new {
                           span().text("Go back home")
-                          span().text("→").setAttribute("aria-hidden", "true")
+                          span().text("→").set("aria-hidden", "true")
                         }
                       }
                     }

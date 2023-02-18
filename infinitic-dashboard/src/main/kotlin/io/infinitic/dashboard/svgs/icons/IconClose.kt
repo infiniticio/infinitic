@@ -31,15 +31,15 @@ import kweb.new
 fun ElementCreator<Element>.iconClose(): Element {
   val svg = svg()
   svg.setClasses("h-6 w-6")
-      .setAttribute("fill", "none")
-      .setAttribute("viewBox", "0 0 24 24")
-      .setAttribute("stroke", "currentColor")
+      .set("fill", "none")
+      .set("viewBox", "0 0 24 24")
+      .set("stroke", "currentColor")
       .new {
         path()
-            .setAttribute("stroke-linecap", "round")
-            .setAttribute("stroke-linejoin", "round")
-            .setAttribute("stroke-width", "2")
-            .setAttribute("d", "M6 18L18 6M6 6l12 12")
+            .set("stroke-linecap", "round")
+            .set("stroke-linejoin", "round")
+            .set("stroke-width", "2")
+            .set("d", "M6 18L18 6M6 6l12 12")
       }
 
   return svg

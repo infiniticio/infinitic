@@ -128,8 +128,8 @@ class WorkflowPanel private constructor(private val workflowName: String) : Pane
             div().classes("lg:flex lg:items-center lg:justify-between").new {
               div().classes("flex-1 min-w-0").new {
                 // breadcrumbs
-                nav().classes("flex").setAttribute("aria-label", "Breadcrumb").new {
-                  ol().classes("flex items-center space-x-4").setAttribute("role", "list").new {
+                nav().classes("flex").set("aria-label", "Breadcrumb").new {
+                  ol().classes("flex items-center space-x-4").set("role", "list").new {
                     li {
                       div().classes("flex items-center").new {
                         with(a()) {

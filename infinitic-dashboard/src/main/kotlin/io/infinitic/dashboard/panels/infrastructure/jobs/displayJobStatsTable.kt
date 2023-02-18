@@ -65,27 +65,27 @@ internal fun ElementCreator<Element>.displayJobStatsTable(
                         th()
                             .classes(
                                 "px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider")
-                            .setAttribute("scope", "col")
+                            .set("scope", "col")
                             .text("Topic's type")
                         th()
                             .classes(
                                 "px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider")
-                            .setAttribute("scope", "col")
+                            .set("scope", "col")
                             .text("# Consumers")
                         th()
                             .classes(
                                 "px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider")
-                            .setAttribute("scope", "col")
+                            .set("scope", "col")
                             .text("Msg Backlog")
                         th()
                             .classes(
                                 "px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider")
-                            .setAttribute("scope", "col")
+                            .set("scope", "col")
                             .text("Msg Rate Out")
                         th()
                             .classes(
                                 "px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider")
-                            .setAttribute("scope", "col")
+                            .set("scope", "col")
                             .text("Topic's name")
                       }
                     }
@@ -114,25 +114,25 @@ internal fun ElementCreator<Element>.displayJobStatsTable(
                                     .text(type.subscriptionPrefix)
                                 td()
                                     .classes("px-6 py-4 text-sm text-gray-500 text-center italic")
-                                    .setAttribute("colspan", 3)
+                                    .set("colspan", 3)
                                     .text(request.title)
                                 td().classes("px-6 py-4 text-sm text-gray-500").text(topic)
                               }
                           is Completed ->
-                              request.result.subscriptions.map {
+                              request.result.subscriptions.map { entry ->
                                 row.classes("bg-white cursor-pointer hover:bg-gray-50").new {
                                   td()
                                       .classes("px-6 py-4 text-sm font-medium text-gray-900")
                                       .text(type.subscriptionPrefix)
                                   td()
                                       .classes("px-6 py-4 text-sm text-gray-500")
-                                      .text(it.value.consumers.size.toString())
+                                      .text(entry.value.consumers.size.toString())
                                   td()
                                       .classes("px-6 py-4 text-sm text-gray-500")
-                                      .text(it.value.msgBacklog.toString())
+                                      .text(entry.value.msgBacklog.toString())
                                   td()
                                       .classes("px-6 py-4 text-sm text-gray-500")
-                                      .text("%.2f".format(it.value.msgRateOut) + " msg/s")
+                                      .text("%.2f".format(entry.value.msgRateOut) + " msg/s")
                                   td().classes("px-6 py-4 text-sm text-gray-500").text(topic)
                                 }
                               }

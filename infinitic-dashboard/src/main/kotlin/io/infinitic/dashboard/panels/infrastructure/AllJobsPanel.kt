@@ -72,15 +72,15 @@ object AllJobsPanel : Panel() {
   private val selectionNames: KVar<Request<Set<String>>> = KVar(Loading())
 
   private val slideover =
-      Slideover(selectionTitle, selectionNames) {
-        p().classes("text-sm font-medium text-gray-900").text(lastUpdated(it.value.lastUpdated))
+      Slideover(selectionTitle, selectionNames) { kvar ->
+        p().classes("text-sm font-medium text-gray-900").text(lastUpdated(kvar.value.lastUpdated))
         p().classes("mt-7 text-sm text-gray-500").new {
           element("pre")
               .text(
-                  when (val request = it.value) {
-                    is Loading -> "Loading..."
-                    is Failed -> request.error.stackTraceToString()
-                    is Completed -> request.result.joinToString()
+                  when (val request = kvar.value) {
+                    is Loading<Set<String>> -> "Loading..."
+                    is Failed<Set<String>> -> request.error.stackTraceToString()
+                    is Completed<Set<String>> -> request.result.joinToString()
                   })
         }
       }
@@ -190,22 +190,22 @@ object AllJobsPanel : Panel() {
                                           th()
                                               .classes(
                                                   "px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider")
-                                              .setAttribute("scope", "col")
+                                              .set("scope", "col")
                                               .text("Name")
                                           th()
                                               .classes(
                                                   "px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider")
-                                              .setAttribute("scope", "col")
+                                              .set("scope", "col")
                                               .text("# Executors")
                                           th()
                                               .classes(
                                                   "px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider")
-                                              .setAttribute("scope", "col")
+                                              .set("scope", "col")
                                               .text("Executors Backlog")
                                           th()
                                               .classes(
                                                   "px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider")
-                                              .setAttribute("scope", "col")
+                                              .set("scope", "col")
                                               .text("Executors Msg Rate Out")
                                         }
                                       }
@@ -275,22 +275,22 @@ object AllJobsPanel : Panel() {
                                           th()
                                               .classes(
                                                   "px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider")
-                                              .setAttribute("scope", "col")
+                                              .set("scope", "col")
                                               .text("Name")
                                           th()
                                               .classes(
                                                   "px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider")
-                                              .setAttribute("scope", "col")
+                                              .set("scope", "col")
                                               .text("# Executors")
                                           th()
                                               .classes(
                                                   "px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider")
-                                              .setAttribute("scope", "col")
+                                              .set("scope", "col")
                                               .text("Executors Backlog")
                                           th()
                                               .classes(
                                                   "px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider")
-                                              .setAttribute("scope", "col")
+                                              .set("scope", "col")
                                               .text("Executors Msg Rate Out")
                                         }
                                       }
@@ -330,7 +330,7 @@ object AllJobsPanel : Panel() {
   private fun ElementCreator<Element>.displayNamesLoading() {
     tr().classes("bg-white").new {
       td()
-          .setAttribute("colspan", "4")
+          .set("colspan", "4")
           .classes("px-6 py-4 text-sm font-medium text-gray-900")
           .text("Loading...")
     }
@@ -342,10 +342,7 @@ object AllJobsPanel : Panel() {
   ) {
     val row = tr()
     row.classes("bg-white cursor-pointer hover:bg-gray-50").new {
-      td()
-          .setAttribute("colspan", "4")
-          .classes("px-6 py-4 text-sm font-medium text-gray-900")
-          .text("Error!")
+      td().set("colspan", "4").classes("px-6 py-4 text-sm font-medium text-gray-900").text("Error!")
     }
     row.on.click {
       selectionType = type
@@ -392,15 +389,15 @@ object AllJobsPanel : Panel() {
       stats: PartitionedTopicStats,
       type: JobType
   ) {
-    stats.subscriptions.map {
+    stats.subscriptions.map { entry ->
       val row = tr()
       row.classes("bg-white cursor-pointer hover:bg-gray-50").new {
         td().classes("px-6 py-4 text-sm font-medium text-gray-900").text(name)
-        td().classes("px-6 py-4 text-sm text-gray-500").text(it.value.consumers.size.toString())
-        td().classes("px-6 py-4 text-sm text-gray-500").text(it.value.msgBacklog.toString())
+        td().classes("px-6 py-4 text-sm text-gray-500").text(entry.value.consumers.size.toString())
+        td().classes("px-6 py-4 text-sm text-gray-500").text(entry.value.msgBacklog.toString())
         td()
             .classes("px-6 py-4 text-sm text-gray-500")
-            .text("%.2f".format(it.value.msgRateOut) + " msg/s")
+            .text("%.2f".format(entry.value.msgRateOut) + " msg/s")
       }
       row.on.click {
         when (type) {

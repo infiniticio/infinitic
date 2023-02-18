@@ -111,13 +111,13 @@ class TaskPanel private constructor(private val taskName: String) : Panel() {
             div().classes("lg:flex lg:items-center lg:justify-between").new {
               div().classes("flex-1 min-w-0").new {
                 // breadcrumbs
-                nav().classes("flex").setAttribute("aria-label", "Breadcrumb").new {
-                  ol().classes("flex items-center space-x-4").setAttribute("role", "list").new {
+                nav().classes("flex").set("aria-label", "Breadcrumb").new {
+                  ol().classes("flex items-center space-x-4").set("role", "list").new {
                     li {
                       div().classes("flex items-center").new {
                         with(a()) {
                           classes("text-sm font-medium text-gray-500 hover:text-gray-700")
-                          setAttribute("aria-current", InfraMenu.title)
+                          set("aria-current", InfraMenu.title)
                           text(InfraMenu.title)
                           href = AllJobsPanel.url
                         }

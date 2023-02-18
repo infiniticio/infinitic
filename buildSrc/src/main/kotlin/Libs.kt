@@ -35,7 +35,7 @@ object Libs {
   }
 
   object Caffeine {
-    const val caffeine = "com.github.ben-manes.caffeine:caffeine:3.1.2"
+    const val caffeine = "com.github.ben-manes.caffeine:caffeine:3.1.3"
   }
 
   object Serialization {
@@ -47,7 +47,7 @@ object Libs {
   }
 
   object Jackson {
-    private const val version = "2.14.1"
+    private const val version = "2.14.2"
     const val core = "com.fasterxml.jackson.core:jackson-core:$version"
     const val databind = "com.fasterxml.jackson.core:jackson-databind:$version"
     const val kotlin = "com.fasterxml.jackson.module:jackson-module-kotlin:$version"
@@ -55,13 +55,13 @@ object Libs {
   }
 
   object Kotest {
-    private const val version = "5.5.4"
+    private const val version = "5.5.5"
     const val property = "io.kotest:kotest-property-jvm:$version"
     const val junit5 = "io.kotest:kotest-runner-junit5-jvm:$version"
   }
 
   object Mockk {
-    const val mockk = "io.mockk:mockk:1.13.3"
+    const val mockk = "io.mockk:mockk:1.13.4"
   }
 
   object Avro4k {
@@ -69,7 +69,7 @@ object Libs {
   }
 
   object Hoplite {
-    private const val version = "2.7.0"
+    private const val version = "2.7.1"
     const val core = "com.sksamuel.hoplite:hoplite-core:$version"
     const val yaml = "com.sksamuel.hoplite:hoplite-yaml:$version"
   }
@@ -84,7 +84,7 @@ object Libs {
   }
 
   object Kweb {
-    const val core = "com.github.kwebio:kweb-core:0.12.5"
+    const val core = "io.kweb:kweb-core:1.3.7"
   }
 
   object EasyRandom {

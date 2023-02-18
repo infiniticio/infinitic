@@ -55,7 +55,7 @@ fun ElementCreator<Element>.offCanvasMenuCloseButton(isMobileMenuVisible: KVar<B
 
 fun ElementCreator<Element>.offCanvasMenuOverlay(isMobileMenuVisible: KVar<Boolean>) {
   div()
-      .setAttribute("aria-hidden", "true")
+      .set("aria-hidden", "true")
       .classes(
           isMobileMenuVisible.map {
             "fixed inset-0 bg-gray-600 bg-opacity-75 transition-opacity ease-linear duration-300 " +

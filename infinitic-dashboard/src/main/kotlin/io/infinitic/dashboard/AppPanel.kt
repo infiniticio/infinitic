@@ -55,8 +55,8 @@ object AppPanel {
                     "fixed inset-0 flex z-40 md:hidden transition ease-in-out duration-300 transform " +
                         if (it) "translate-x-0" else "-translate-x-full"
                   })
-              .setAttribute("role", "Dialog")
-              .setAttribute("aria-modal", "true")
+              .set("role", "Dialog")
+              .set("aria-modal", "true")
               .new {
                 // Off-canvas menu overlay, show/hide based on off-canvas menu state.
                 offCanvasMenuOverlay(showMobileMenu)
@@ -78,7 +78,7 @@ object AppPanel {
                   }
                 }
                 // Force sidebar to shrink to fit close icon
-                div().classes("flex-shrink-0 w-14").setAttribute("aria-hidden", "true")
+                div().classes("flex-shrink-0 w-14").set("aria-hidden", "true")
               }
           // static sidebar for desktop
           div().classes("hidden md:flex md:flex-shrink-0").new {
