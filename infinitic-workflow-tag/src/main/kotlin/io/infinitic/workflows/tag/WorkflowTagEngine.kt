@@ -128,6 +128,7 @@ class WorkflowTagEngine(
             "A workflow '${message.workflowName}(${ids.first()})' already exists with tag '${message.workflowTag}'"
           }
 
+          // if needed, we inform workflowEngine that a client is waiting for its result
           if (message.clientWaiting) {
             val waitWorkflow =
                 WaitWorkflow(

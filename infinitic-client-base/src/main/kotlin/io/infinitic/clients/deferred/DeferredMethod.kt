@@ -25,48 +25,38 @@ package io.infinitic.clients.deferred
 import io.infinitic.clients.Deferred
 import io.infinitic.clients.dispatcher.ClientDispatcher
 import io.infinitic.common.data.methods.MethodName
-import io.infinitic.common.exceptions.thisShouldNotHappen
+import io.infinitic.common.proxies.RequestBy
+import io.infinitic.common.proxies.RequestByWorkflowId
+import io.infinitic.common.proxies.RequestByWorkflowTag
 import io.infinitic.common.workflows.data.methodRuns.MethodRunId
-import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.data.workflows.WorkflowName
-import io.infinitic.common.workflows.data.workflows.WorkflowTag
 
 class DeferredMethod<R>(
     internal val returnClass: Class<R>,
     internal val workflowName: WorkflowName,
     internal val methodName: MethodName,
-    internal val workflowId: WorkflowId?,
+    internal val requestBy: RequestBy,
     internal val methodRunId: MethodRunId?,
-    internal val workflowTag: WorkflowTag?,
     private val dispatcher: ClientDispatcher
 ) : Deferred<R> {
 
-  override fun cancelAsync() =
-      when {
-        workflowId != null ->
-            dispatcher.cancelWorkflowAsync(workflowName, workflowId, methodRunId, null)
-        workflowTag != null -> dispatcher.cancelWorkflowAsync(workflowName, null, null, workflowTag)
-        else -> thisShouldNotHappen()
-      }
+  override fun cancelAsync() = dispatcher.cancelWorkflowAsync(workflowName, requestBy, methodRunId)
 
   // this method retries workflowTask (unique for a workflow instance)
-  override fun retryAsync() =
-      dispatcher.retryWorkflowTaskAsync(workflowName, workflowId, workflowTag)
+  override fun retryAsync() = dispatcher.retryWorkflowTaskAsync(workflowName, requestBy)
 
   override fun await(): R =
-      when {
-        workflowId != null ->
+      when (requestBy) {
+        is RequestByWorkflowId ->
             dispatcher.awaitWorkflow(
-                returnClass, workflowName, methodName, workflowId, methodRunId!!, true)
-        workflowTag != null -> TODO()
-        else -> thisShouldNotHappen()
+                returnClass, workflowName, methodName, requestBy.workflowId, methodRunId!!, true)
+        is RequestByWorkflowTag -> TODO()
       }
 
   override val id by lazy {
-    when {
-      workflowId != null -> methodRunId!!.toString()
-      workflowTag != null -> TODO()
-      else -> thisShouldNotHappen()
+    when (requestBy) {
+      is RequestByWorkflowId -> methodRunId!!.toString()
+      is RequestByWorkflowTag -> TODO()
     }
   }
 

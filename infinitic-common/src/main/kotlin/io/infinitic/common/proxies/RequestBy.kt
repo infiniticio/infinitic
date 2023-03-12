@@ -22,25 +22,22 @@
  */
 package io.infinitic.common.proxies
 
-import io.infinitic.common.workflows.data.channels.ChannelName
-import io.infinitic.common.workflows.data.channels.ChannelType
-import io.infinitic.common.workflows.data.channels.SignalData
-import io.infinitic.exceptions.clients.InvalidChannelGetterException
-import io.infinitic.workflows.SendChannel
+import io.infinitic.common.workflows.data.workflows.WorkflowId
+import io.infinitic.common.workflows.data.workflows.WorkflowTag
 
-@Suppress("UNCHECKED_CAST")
-class ChannelProxyHandler<K : SendChannel<*>>(
-    handler: ExistingWorkflowProxyHandler<*>,
-) : ProxyHandler<K>(handler.method.returnType as Class<out K>, handler.dispatcherFn) {
-  init {
-    if (handler.method.returnType != SendChannel::class.java)
-        throw InvalidChannelGetterException(handler.method.returnType.name)
+sealed class RequestBy {
+  open val workflowId: WorkflowId? = null
+  open val workflowTag: WorkflowTag? = null
+}
+
+data class RequestByWorkflowId(override val workflowId: WorkflowId) : RequestBy() {
+  companion object {
+    fun by(id: String) = RequestByWorkflowId(WorkflowId(id))
   }
+}
 
-  val workflowName = handler.workflowName
-  val channelName = ChannelName.from(handler.methodName)
-  val requestBy = handler.requestBy
-
-  val channelTypes by lazy { ChannelType.allFrom(methodArgs.first()::class.java) }
-  val signalData by lazy { SignalData.from(methodArgs.first()) }
+data class RequestByWorkflowTag(override val workflowTag: WorkflowTag) : RequestBy() {
+  companion object {
+    fun by(id: String) = RequestByWorkflowTag(WorkflowTag(id))
+  }
 }

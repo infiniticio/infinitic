@@ -342,8 +342,8 @@ internal class WorkflowDispatcherImpl(
             dispatchCommand(
                 DispatchMethodCommand(
                     workflowName = handler.workflowName,
-                    workflowId = handler.workflowId,
-                    workflowTag = handler.workflowTag,
+                    workflowId = handler.requestBy.workflowId,
+                    workflowTag = handler.requestBy.workflowTag,
                     methodName = handler.methodName,
                     methodParameterTypes = handler.methodParameterTypes,
                     methodParameters = handler.methodParameters),
@@ -357,8 +357,8 @@ internal class WorkflowDispatcherImpl(
     return dispatchCommand(
         SendSignalCommand(
             workflowName = handler.workflowName,
-            workflowId = handler.workflowId,
-            workflowTag = handler.workflowTag,
+            workflowId = handler.requestBy.workflowId,
+            workflowTag = handler.requestBy.workflowTag,
             channelName = handler.channelName,
             channelTypes = handler.channelTypes,
             signalData = handler.signalData),

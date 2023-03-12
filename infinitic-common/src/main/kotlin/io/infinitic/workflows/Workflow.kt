@@ -28,9 +28,10 @@ import io.infinitic.common.proxies.ExistingWorkflowProxyHandler
 import io.infinitic.common.proxies.NewServiceProxyHandler
 import io.infinitic.common.proxies.NewWorkflowProxyHandler
 import io.infinitic.common.proxies.ProxyHandler
+import io.infinitic.common.proxies.RequestByWorkflowId
+import io.infinitic.common.proxies.RequestByWorkflowTag
 import io.infinitic.common.tasks.data.TaskMeta
 import io.infinitic.common.tasks.data.TaskTag
-import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.data.workflows.WorkflowMeta
 import io.infinitic.common.workflows.data.workflows.WorkflowTag
 import io.infinitic.exceptions.clients.InvalidStubException
@@ -87,11 +88,11 @@ abstract class Workflow {
 
   /** Create a stub for an existing workflow targeted by id */
   protected fun <T : Any> getWorkflowById(klass: Class<out T>, id: String): T =
-      ExistingWorkflowProxyHandler(klass = klass, WorkflowId(id), null) { dispatcher }.stub()
+      ExistingWorkflowProxyHandler(klass, RequestByWorkflowId.by(id)) { dispatcher }.stub()
 
   /** Create a stub for existing workflow targeted by tag */
   protected fun <T : Any> getWorkflowByTag(klass: Class<out T>, tag: String): T =
-      ExistingWorkflowProxyHandler(klass = klass, null, WorkflowTag(tag)) { dispatcher }.stub()
+      ExistingWorkflowProxyHandler(klass, RequestByWorkflowTag.by(tag)) { dispatcher }.stub()
 
   /** Dispatch without parameter a task or workflow returning an object */
   protected fun <R : Any?> dispatch(method: () -> R): Deferred<R> = start { method.invoke() }
