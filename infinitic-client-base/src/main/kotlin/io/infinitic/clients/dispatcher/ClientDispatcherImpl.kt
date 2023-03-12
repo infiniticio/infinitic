@@ -549,7 +549,7 @@ internal class ClientDispatcherImpl(
       handler: ExistingWorkflowProxyHandler<*>
   ) =
       when {
-        deferred.requestBy is RequestByWorkflowId && deferred.methodRunId != null -> {
+        deferred.requestBy is RequestByWorkflowId -> {
           val dispatchMethod =
               DispatchMethod(
                   workflowName = deferred.workflowName,
@@ -573,7 +573,7 @@ internal class ClientDispatcherImpl(
                   parentWorkflowId = null,
                   parentWorkflowName = null,
                   parentMethodRunId = null,
-                  methodRunId = MethodRunId(),
+                  methodRunId = deferred.methodRunId,
                   methodName = handler.methodName,
                   methodParameterTypes = handler.methodParameterTypes,
                   methodParameters = handler.methodParameters,

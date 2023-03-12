@@ -36,7 +36,7 @@ class DeferredMethod<R>(
     internal val workflowName: WorkflowName,
     internal val methodName: MethodName,
     internal val requestBy: RequestBy,
-    internal val methodRunId: MethodRunId?,
+    internal val methodRunId: MethodRunId,
     private val dispatcher: ClientDispatcher
 ) : Deferred<R> {
 
@@ -49,13 +49,13 @@ class DeferredMethod<R>(
       when (requestBy) {
         is RequestByWorkflowId ->
             dispatcher.awaitWorkflow(
-                returnClass, workflowName, methodName, requestBy.workflowId, methodRunId!!, true)
+                returnClass, workflowName, methodName, requestBy.workflowId, methodRunId, true)
         is RequestByWorkflowTag -> TODO()
       }
 
   override val id by lazy {
     when (requestBy) {
-      is RequestByWorkflowId -> methodRunId!!.toString()
+      is RequestByWorkflowId -> methodRunId.toString()
       is RequestByWorkflowTag -> TODO()
     }
   }
