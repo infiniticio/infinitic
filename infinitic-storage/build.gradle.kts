@@ -33,9 +33,9 @@ dependencies {
     // MySql
     //   For connection pooling
     implementation("com.zaxxer:HikariCP:5.0.1")
-    implementation("mysql:mysql-connector-java:8.0.30")
+    implementation("mysql:mysql-connector-java:8.0.32")
     //   For integration tests
-    testImplementation("org.testcontainers:mysql:1.17.3")
+    testImplementation("org.testcontainers:mysql:1.17.6")
 
     testImplementation(Libs.Hoplite.yaml)
 }
