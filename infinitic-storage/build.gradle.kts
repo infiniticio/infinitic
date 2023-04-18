@@ -27,7 +27,7 @@ dependencies {
     implementation(Libs.Hoplite.core)
 
     // Redis
-    implementation("redis.clients:jedis:4.2.3")
+    implementation("redis.clients:jedis:4.3.2")
     testImplementation("com.github.kstyrc:embedded-redis:0.6")
 
     // MySql
