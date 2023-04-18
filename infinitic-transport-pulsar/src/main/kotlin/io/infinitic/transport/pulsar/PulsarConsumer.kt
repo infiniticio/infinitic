@@ -43,7 +43,7 @@ import org.apache.pulsar.client.api.Schema
 import org.apache.pulsar.client.api.SubscriptionInitialPosition
 import org.apache.pulsar.client.api.SubscriptionType
 
-internal class PulsarConsumer(val client: PulsarClient, val config: ConsumerConfig) {
+internal class PulsarConsumer(val client: PulsarClient, val consumerConfig: ConsumerConfig) {
   val logger = KotlinLogging.logger {}
 
   internal inline fun <T : Message, reified S : Envelope<out T>> CoroutineScope.startConsumer(
@@ -65,13 +65,12 @@ internal class PulsarConsumer(val client: PulsarClient, val config: ConsumerConf
               val consumer =
                   createConsumer<T, S>(
                       topic = topic,
-                      subscriptionName =
-                          subscriptionName, // subscriptionName MUST be the same for all concurrent
-                      // instances!
+                      // subscriptionName MUST be the same for all concurrent instances!
+                      subscriptionName = subscriptionName,
                       subscriptionType = subscriptionType,
                       consumerName = "$consumerName-$it",
                       topicDLQ = topicDLQ,
-                      config)
+                      consumerConfig)
                       as Consumer<S>
 
               while (isActive) {
@@ -119,7 +118,7 @@ internal class PulsarConsumer(val client: PulsarClient, val config: ConsumerConf
                 subscriptionType = subscriptionType,
                 consumerName = consumerName,
                 topicDLQ = topicDLQ,
-                config)
+                consumerConfig)
 
         val channel = Channel<PulsarMessage<out Envelope<T>>>()
 
@@ -136,7 +135,7 @@ internal class PulsarConsumer(val client: PulsarClient, val config: ConsumerConf
             }
           }
         }
-
+        // start executor coroutines
         repeat(concurrency) {
           launch {
             for (pulsarMessage in channel) {
@@ -166,6 +165,7 @@ internal class PulsarConsumer(val client: PulsarClient, val config: ConsumerConf
     }
   }
 
+  // Negative acknowledge a message. This will cause the message to be redelivered or send to DLQ
   private fun negativeAcknowledge(consumer: Consumer<*>, messageId: MessageId) {
     try {
       consumer.negativeAcknowledge(messageId)
@@ -182,7 +182,7 @@ internal class PulsarConsumer(val client: PulsarClient, val config: ConsumerConf
       subscriptionType: SubscriptionType,
       consumerName: String,
       topicDLQ: String?,
-      config: ConsumerConfig
+      consumerConfig: ConsumerConfig
   ): Consumer<out Envelope<T>> {
     logger.debug {
       "Creating Consumer consumerName='$consumerName' subscriptionName='$subscriptionName' subscriptionType='$subscriptionType' topic='$topic'"
@@ -198,112 +198,119 @@ internal class PulsarConsumer(val client: PulsarClient, val config: ConsumerConf
         .consumerName(consumerName)
         .subscriptionInitialPosition(SubscriptionInitialPosition.Earliest)
         .also { c ->
-          config.loadConf?.also {
-            logger.info { "subscription $subscriptionName: loadConf=$it" }
-            c.loadConf(it)
-          }
-          config.subscriptionProperties?.also {
-            logger.info { "subscription $subscriptionName: subscriptionProperties=$it" }
-            c.subscriptionProperties(it)
-          }
-          config.ackTimeoutSeconds?.also {
-            logger.info { "subscription $subscriptionName: ackTimeout=$it" }
-            c.ackTimeout((it * 1000).toLong(), TimeUnit.MILLISECONDS)
-          }
-          config.isAckReceiptEnabled?.also {
-            logger.info { "subscription $subscriptionName: isAckReceiptEnabled=$it" }
-            c.isAckReceiptEnabled(it)
-          }
-          config.ackTimeoutTickTimeSeconds?.also {
-            logger.info { "subscription $subscriptionName: ackTimeoutTickTime=$it" }
-            c.ackTimeoutTickTime((it * 1000).toLong(), TimeUnit.MILLISECONDS)
-          }
-          config.negativeAckRedeliveryDelaySeconds?.also {
-            logger.info { "subscription $subscriptionName: negativeAckRedeliveryDelay=$it" }
-            c.negativeAckRedeliveryDelay((it * 1000).toLong(), TimeUnit.MILLISECONDS)
-          }
-          config.defaultCryptoKeyReader?.also {
-            logger.info { "subscription $subscriptionName: defaultCryptoKeyReader=$it" }
-            c.defaultCryptoKeyReader(it)
-          }
-          config.cryptoFailureAction?.also {
-            logger.info { "subscription $subscriptionName: cryptoFailureAction=$it" }
-            c.cryptoFailureAction(it)
-          }
-          config.receiverQueueSize?.also {
-            logger.info { "subscription $subscriptionName: receiverQueueSize=$it" }
-            c.receiverQueueSize(it)
-          }
-          config.acknowledgmentGroupTimeSeconds?.also {
-            logger.info { "subscription $subscriptionName: acknowledgmentGroupTime=$it" }
-            c.acknowledgmentGroupTime((it * 1000).toLong(), TimeUnit.MILLISECONDS)
-          }
-          config.replicateSubscriptionState?.also {
-            logger.info { "subscription $subscriptionName: replicateSubscriptionState=$it" }
-            c.replicateSubscriptionState(it)
-          }
-          config.maxTotalReceiverQueueSizeAcrossPartitions?.also {
-            logger.info {
-              "subscription $subscriptionName: maxTotalReceiverQueueSizeAcrossPartitions=$it"
-            }
-            c.maxTotalReceiverQueueSizeAcrossPartitions(it)
-          }
-          config.priorityLevel?.also {
-            logger.info { "subscription $subscriptionName: priorityLevel=$it" }
-            c.priorityLevel(it)
-          }
-          config.properties?.also {
-            logger.info { "subscription $subscriptionName: properties=$it" }
-            c.properties(it)
-          }
-          config.autoUpdatePartitions?.also {
-            logger.info { "subscription $subscriptionName: autoUpdatePartitions=$it" }
-            c.autoUpdatePartitions(it)
-          }
-          config.autoUpdatePartitionsIntervalSeconds?.also {
-            logger.info { "subscription $subscriptionName: autoUpdatePartitionsInterval=$it" }
-            c.autoUpdatePartitionsInterval((it * 1000).toInt(), TimeUnit.MILLISECONDS)
-          }
-          config.enableBatchIndexAcknowledgment?.also {
-            logger.info { "subscription $subscriptionName: enableBatchIndexAcknowledgment=$it" }
-            c.enableBatchIndexAcknowledgment(it)
-          }
-          config.maxPendingChunkedMessage?.also {
-            logger.info { "subscription $subscriptionName: maxPendingChunkedMessage=$it" }
-            c.maxPendingChunkedMessage(it)
-          }
-          config.autoAckOldestChunkedMessageOnQueueFull?.also {
-            logger.info {
-              "subscription $subscriptionName: autoAckOldestChunkedMessageOnQueueFull=$it"
-            }
-            c.autoAckOldestChunkedMessageOnQueueFull(it)
-          }
-          config.expireTimeOfIncompleteChunkedMessageSeconds?.also {
-            logger.info {
-              "subscription $subscriptionName: expireTimeOfIncompleteChunkedMessage=$it"
-            }
-            c.expireTimeOfIncompleteChunkedMessage((it * 1000).toLong(), TimeUnit.MILLISECONDS)
-          }
-          config.startPaused?.also {
-            logger.info { "subscription $subscriptionName: startPaused=$it" }
-            c.startPaused(it)
-          }
           // Dead Letter Queue
           topicDLQ?.also {
             when (subscriptionType) {
               SubscriptionType.Key_Shared,
               SubscriptionType.Shared -> {
                 logger.info {
-                  "subscription $subscriptionName: maxRedeliverCount=${config.maxRedeliverCount}"
+                  "subscription $subscriptionName: maxRedeliverCount=${consumerConfig.maxRedeliverCount}"
                 }
                 c.deadLetterPolicy(
                     DeadLetterPolicy.builder()
-                        .maxRedeliverCount(config.maxRedeliverCount)
+                        .maxRedeliverCount(consumerConfig.maxRedeliverCount)
                         .deadLetterTopic(it)
+                        .initialSubscriptionName("$subscriptionName-dlq")
                         .build())
+                // remove default ackTimeout set by the deadLetterPolicy
+                // https://github.com/apache/pulsar/issues/8484
+                c.ackTimeout(0, TimeUnit.MILLISECONDS)
               }
               else -> Unit
             }
+          }
+          // must be set after deadLetterPolicy
+          consumerConfig.ackTimeoutSeconds?.also {
+            logger.info {
+              "subscription $subscriptionName: ackTimeout=${consumerConfig.ackTimeoutSeconds}"
+            }
+            c.ackTimeout((consumerConfig.ackTimeoutSeconds * 1000).toLong(), TimeUnit.MILLISECONDS)
+          }
+          consumerConfig.loadConf?.also {
+            logger.info { "subscription $subscriptionName: loadConf=$it" }
+            c.loadConf(it)
+          }
+          consumerConfig.subscriptionProperties?.also {
+            logger.info { "subscription $subscriptionName: subscriptionProperties=$it" }
+            c.subscriptionProperties(it)
+          }
+          consumerConfig.isAckReceiptEnabled?.also {
+            logger.info { "subscription $subscriptionName: isAckReceiptEnabled=$it" }
+            c.isAckReceiptEnabled(it)
+          }
+          consumerConfig.ackTimeoutTickTimeSeconds?.also {
+            logger.info { "subscription $subscriptionName: ackTimeoutTickTime=$it" }
+            c.ackTimeoutTickTime((it * 1000).toLong(), TimeUnit.MILLISECONDS)
+          }
+          consumerConfig.negativeAckRedeliveryDelaySeconds?.also {
+            logger.info { "subscription $subscriptionName: negativeAckRedeliveryDelay=$it" }
+            c.negativeAckRedeliveryDelay((it * 1000).toLong(), TimeUnit.MILLISECONDS)
+          }
+          consumerConfig.defaultCryptoKeyReader?.also {
+            logger.info { "subscription $subscriptionName: defaultCryptoKeyReader=$it" }
+            c.defaultCryptoKeyReader(it)
+          }
+          consumerConfig.cryptoFailureAction?.also {
+            logger.info { "subscription $subscriptionName: cryptoFailureAction=$it" }
+            c.cryptoFailureAction(it)
+          }
+          consumerConfig.receiverQueueSize?.also {
+            logger.info { "subscription $subscriptionName: receiverQueueSize=$it" }
+            c.receiverQueueSize(it)
+          }
+          consumerConfig.acknowledgmentGroupTimeSeconds?.also {
+            logger.info { "subscription $subscriptionName: acknowledgmentGroupTime=$it" }
+            c.acknowledgmentGroupTime((it * 1000).toLong(), TimeUnit.MILLISECONDS)
+          }
+          consumerConfig.replicateSubscriptionState?.also {
+            logger.info { "subscription $subscriptionName: replicateSubscriptionState=$it" }
+            c.replicateSubscriptionState(it)
+          }
+          consumerConfig.maxTotalReceiverQueueSizeAcrossPartitions?.also {
+            logger.info {
+              "subscription $subscriptionName: maxTotalReceiverQueueSizeAcrossPartitions=$it"
+            }
+            c.maxTotalReceiverQueueSizeAcrossPartitions(it)
+          }
+          consumerConfig.priorityLevel?.also {
+            logger.info { "subscription $subscriptionName: priorityLevel=$it" }
+            c.priorityLevel(it)
+          }
+          consumerConfig.properties?.also {
+            logger.info { "subscription $subscriptionName: properties=$it" }
+            c.properties(it)
+          }
+          consumerConfig.autoUpdatePartitions?.also {
+            logger.info { "subscription $subscriptionName: autoUpdatePartitions=$it" }
+            c.autoUpdatePartitions(it)
+          }
+          consumerConfig.autoUpdatePartitionsIntervalSeconds?.also {
+            logger.info { "subscription $subscriptionName: autoUpdatePartitionsInterval=$it" }
+            c.autoUpdatePartitionsInterval((it * 1000).toInt(), TimeUnit.MILLISECONDS)
+          }
+          consumerConfig.enableBatchIndexAcknowledgment?.also {
+            logger.info { "subscription $subscriptionName: enableBatchIndexAcknowledgment=$it" }
+            c.enableBatchIndexAcknowledgment(it)
+          }
+          consumerConfig.maxPendingChunkedMessage?.also {
+            logger.info { "subscription $subscriptionName: maxPendingChunkedMessage=$it" }
+            c.maxPendingChunkedMessage(it)
+          }
+          consumerConfig.autoAckOldestChunkedMessageOnQueueFull?.also {
+            logger.info {
+              "subscription $subscriptionName: autoAckOldestChunkedMessageOnQueueFull=$it"
+            }
+            c.autoAckOldestChunkedMessageOnQueueFull(it)
+          }
+          consumerConfig.expireTimeOfIncompleteChunkedMessageSeconds?.also {
+            logger.info {
+              "subscription $subscriptionName: expireTimeOfIncompleteChunkedMessage=$it"
+            }
+            c.expireTimeOfIncompleteChunkedMessage((it * 1000).toLong(), TimeUnit.MILLISECONDS)
+          }
+          consumerConfig.startPaused?.also {
+            logger.info { "subscription $subscriptionName: startPaused=$it" }
+            c.startPaused(it)
           }
         }
         .subscribe() as Consumer<out Envelope<T>>
