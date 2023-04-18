@@ -28,7 +28,7 @@ import kweb.ElementCreator
 const val SVG_NAMESPACE = "http://www.w3.org/2000/svg"
 
 internal fun ElementCreator<Element>.svg(): Element =
-    element("svg", namespace = SVG_NAMESPACE).setAttribute("xmlns", SVG_NAMESPACE)
+    element("svg", namespace = SVG_NAMESPACE).set("xmlns", SVG_NAMESPACE)
 
 internal fun ElementCreator<Element>.path(): Element = element("path", namespace = SVG_NAMESPACE)
 

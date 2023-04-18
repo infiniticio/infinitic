@@ -34,7 +34,7 @@ import org.apache.avro.Schema
 @AvroNamespace("io.infinitic.workflows.tag")
 data class WorkflowTagEnvelope(
     private val name: String,
-    private val type: WorkflowTagMessageType,
+    @AvroNamespace("io.infinitic.workflows.tag") private val type: WorkflowTagMessageType,
     @AvroDefault(Avro.NULL)
     private val dispatchWorkflowByCustomId: DispatchWorkflowByCustomId? = null,
     private val dispatchMethodByTag: DispatchMethodByTag? = null,

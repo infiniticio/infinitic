@@ -45,7 +45,7 @@ internal inline fun <reified T : Any> createSchemaFileIfAbsent(serializer: KSeri
 }
 
 internal inline fun <reified T : Any> checkCurrentFileIsUpToDate(serializer: KSerializer<T>) {
-  getCurrentSchemaFile<T>().readText() shouldBe Avro.default.schema(serializer).toString(true)
+  Avro.default.schema(serializer).toString(true) shouldBe getCurrentSchemaFile<T>().readText()
 }
 
 internal inline fun <reified T : Any> checkBackwardCompatibility(serializer: KSerializer<T>) {

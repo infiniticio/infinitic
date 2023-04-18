@@ -32,7 +32,7 @@ import org.apache.avro.Schema
 @AvroNamespace("io.infinitic.tasks.tag")
 data class TaskTagEnvelope(
     private val name: String,
-    private val type: TaskTagMessageType,
+    @AvroNamespace("io.infinitic.tasks.tag") private val type: TaskTagMessageType,
     private val addTagToTask: AddTagToTask? = null,
     private val removeTagFromTask: RemoveTagFromTask? = null,
     private val cancelTaskByTag: CancelTaskByTag? = null,

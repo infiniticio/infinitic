@@ -27,12 +27,12 @@ import io.infinitic.common.clients.messages.ClientMessage
 import io.infinitic.common.data.methods.MethodName
 import io.infinitic.common.proxies.ProxyDispatcher
 import io.infinitic.common.proxies.ProxyHandler
+import io.infinitic.common.proxies.RequestBy
 import io.infinitic.common.tasks.data.ServiceName
 import io.infinitic.common.tasks.data.TaskId
 import io.infinitic.common.workflows.data.methodRuns.MethodRunId
 import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.data.workflows.WorkflowName
-import io.infinitic.common.workflows.data.workflows.WorkflowTag
 import io.infinitic.workflows.DeferredStatus
 import java.util.concurrent.CompletableFuture
 
@@ -55,36 +55,28 @@ interface ClientDispatcher : ProxyDispatcher {
 
   fun cancelWorkflowAsync(
       workflowName: WorkflowName,
-      workflowId: WorkflowId?,
+      requestBy: RequestBy,
       methodRunId: MethodRunId?,
-      workflowTag: WorkflowTag?
   ): CompletableFuture<Unit>
 
   fun retryWorkflowTaskAsync(
       workflowName: WorkflowName,
-      workflowId: WorkflowId?,
-      workflowTag: WorkflowTag?
+      requestBy: RequestBy
   ): CompletableFuture<Unit>
 
   fun completeTimersAsync(
       workflowName: WorkflowName,
-      workflowId: WorkflowId?,
-      workflowTag: WorkflowTag?,
+      requestBy: RequestBy,
       methodRunId: MethodRunId? = null
   ): CompletableFuture<Unit>
 
   fun retryTaskAsync(
       workflowName: WorkflowName,
-      workflowId: WorkflowId?,
-      workflowTag: WorkflowTag?,
+      requestBy: RequestBy,
       taskId: TaskId? = null,
       taskStatus: DeferredStatus? = null,
       serviceName: ServiceName? = null
   ): CompletableFuture<Unit>
 
-  fun getWorkflowIdsByTag(
-      workflowName: WorkflowName,
-      workflowId: WorkflowId?,
-      workflowTag: WorkflowTag?
-  ): Set<String>
+  fun getWorkflowIdsByTag(workflowName: WorkflowName, requestBy: RequestBy): Set<String>
 }

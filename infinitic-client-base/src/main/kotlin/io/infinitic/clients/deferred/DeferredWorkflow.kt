@@ -25,6 +25,7 @@ package io.infinitic.clients.deferred
 import io.infinitic.clients.Deferred
 import io.infinitic.clients.dispatcher.ClientDispatcher
 import io.infinitic.common.data.methods.MethodName
+import io.infinitic.common.proxies.RequestByWorkflowId
 import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.data.workflows.WorkflowName
 
@@ -36,9 +37,11 @@ class DeferredWorkflow<R>(
     private val dispatcher: ClientDispatcher
 ) : Deferred<R> {
 
-  override fun cancelAsync() = dispatcher.cancelWorkflowAsync(workflowName, workflowId, null, null)
+  override fun cancelAsync() =
+      dispatcher.cancelWorkflowAsync(workflowName, RequestByWorkflowId(workflowId), null)
 
-  override fun retryAsync() = dispatcher.retryWorkflowTaskAsync(workflowName, workflowId, null)
+  override fun retryAsync() =
+      dispatcher.retryWorkflowTaskAsync(workflowName, RequestByWorkflowId(workflowId))
 
   override fun await(): R =
       dispatcher.awaitWorkflow(returnClass, workflowName, methodName, workflowId, null, true)

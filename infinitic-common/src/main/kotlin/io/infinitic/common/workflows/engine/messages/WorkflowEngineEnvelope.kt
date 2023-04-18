@@ -35,7 +35,7 @@ import org.apache.avro.Schema
 @AvroNamespace("io.infinitic.workflows.engine")
 data class WorkflowEngineEnvelope(
     private val workflowId: WorkflowId,
-    private val type: WorkflowEngineMessageType,
+    @AvroNamespace("io.infinitic.workflows.engine") private val type: WorkflowEngineMessageType,
     private val dispatchWorkflow: DispatchWorkflow? = null,
     private val dispatchMethod: DispatchMethod? = null,
     private val waitWorkflow: WaitWorkflow? = null,

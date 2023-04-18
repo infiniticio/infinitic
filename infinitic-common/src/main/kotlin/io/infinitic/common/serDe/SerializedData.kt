@@ -42,7 +42,7 @@ import kotlinx.serialization.serializerOrNull
 @AvroNamespace("io.infinitic.data")
 data class SerializedData(
     var bytes: ByteArray,
-    var type: SerializedDataType,
+    @AvroNamespace("io.infinitic.data") var type: SerializedDataType,
     val meta: Map<String, ByteArray> = mapOf()
 ) {
   companion object {

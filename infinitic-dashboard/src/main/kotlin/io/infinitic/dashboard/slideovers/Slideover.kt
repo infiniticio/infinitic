@@ -56,13 +56,13 @@ class Slideover<T>(
       with(creator) {
         div()
             .classes("fixed overflow-hidden")
-            .setAttribute("aria-labelledby", "slide-over-title")
-            .setAttribute("role", "dialog")
-            .setAttribute("aria-modal", "true")
+            .set("aria-labelledby", "slide-over-title")
+            .set("role", "dialog")
+            .set("aria-modal", "true")
             .new {
               div().classes("absolute inset-0 overflow-hidden").new {
                 // Background overlay, show/hide based on slide-over state.
-                div().classes("absolute inset-0").setAttribute("aria-hidden", "true")
+                div().classes("absolute inset-0").set("aria-hidden", "true")
 
                 div()
                     .classes(

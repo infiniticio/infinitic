@@ -157,7 +157,7 @@ data class CancelWorkflow(
     override val workflowName: WorkflowName,
     override val workflowId: WorkflowId,
     val methodRunId: MethodRunId?,
-    val reason: WorkflowCancellationReason,
+    @AvroNamespace("io.infinitic.workflows.data") val reason: WorkflowCancellationReason,
     override val emitterName: ClientName
 ) : WorkflowEngineMessage(), WorkflowEvent
 

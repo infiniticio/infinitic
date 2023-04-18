@@ -22,6 +22,7 @@
  */
 package io.infinitic.clients
 
+import io.infinitic.clients.deferred.DeferredMethod
 import io.infinitic.clients.samples.FakeClass
 import io.infinitic.clients.samples.FakeInterface
 import io.infinitic.clients.samples.FakeTask
@@ -49,6 +50,7 @@ import io.infinitic.common.workflows.data.workflows.WorkflowName
 import io.infinitic.common.workflows.data.workflows.WorkflowTag
 import io.infinitic.common.workflows.engine.messages.CancelWorkflow
 import io.infinitic.common.workflows.engine.messages.CompleteTimers
+import io.infinitic.common.workflows.engine.messages.DispatchMethod
 import io.infinitic.common.workflows.engine.messages.DispatchWorkflow
 import io.infinitic.common.workflows.engine.messages.RetryTasks
 import io.infinitic.common.workflows.engine.messages.SendSignal
@@ -56,6 +58,7 @@ import io.infinitic.common.workflows.engine.messages.WaitWorkflow
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
 import io.infinitic.common.workflows.tags.messages.AddTagToWorkflow
 import io.infinitic.common.workflows.tags.messages.CancelWorkflowByTag
+import io.infinitic.common.workflows.tags.messages.DispatchMethodByTag
 import io.infinitic.common.workflows.tags.messages.GetWorkflowIdsByTag
 import io.infinitic.common.workflows.tags.messages.SendSignalByTag
 import io.infinitic.common.workflows.tags.messages.WorkflowTagMessage
@@ -99,7 +102,6 @@ class ClientWorkflowTests :
       val fakeWorkflow = client.newWorkflow(FakeWorkflow::class.java)
       val fooWorkflow = client.newWorkflow(FooWorkflow::class.java)
 
-      val fakeWorkflowWithOptions = client.newWorkflow(FakeWorkflow::class.java)
       val fakeWorkflowWithMeta = client.newWorkflow(FakeWorkflow::class.java, meta = meta)
       val fakeWorkflowWithTags = client.newWorkflow(FakeWorkflow::class.java, tags = tags)
 
@@ -185,27 +187,6 @@ class ClientWorkflowTests :
                 workflowName = WorkflowName(FakeWorkflow::class.java.name),
                 workflowId = WorkflowId(deferred.id),
                 methodName = MethodName("parent"),
-                methodParameters = MethodParameters(),
-                methodParameterTypes = MethodParameterTypes(listOf()),
-                workflowTags = setOf(),
-                workflowMeta = WorkflowMeta(),
-                parentWorkflowName = null,
-                parentWorkflowId = null,
-                parentMethodRunId = null,
-                clientWaiting = false,
-                emitterName = clientNameTest)
-      }
-
-      "Should be able to dispatch a workflow with options" {
-        // when
-        val deferred = client.dispatch(fakeWorkflowWithOptions::m0)
-        // then
-        workflowTagSlots.size shouldBe 0
-        workflowSlot.captured shouldBe
-            DispatchWorkflow(
-                workflowName = WorkflowName(FakeWorkflow::class.java.name),
-                workflowId = WorkflowId(deferred.id),
-                methodName = MethodName("m0"),
                 methodParameters = MethodParameters(),
                 methodParameterTypes = MethodParameterTypes(listOf()),
                 workflowTags = setOf(),
@@ -542,6 +523,52 @@ class ClientWorkflowTests :
                 emitterName = clientNameTest)
       }
 
+      "Should be able to dispatch a method on a workflow per id (async)" {
+        // when
+        val id = UUID.randomUUID().toString()
+        val workflow = client.getWorkflowById(FakeWorkflow::class.java, id)
+        val deferred = client.dispatch(workflow::m0)
+        // then
+        workflowSlot.isCaptured shouldBe true
+        val msg = workflowSlot.captured
+        msg shouldBe
+            DispatchMethod(
+                workflowName = WorkflowName(FakeWorkflow::class.java.name),
+                workflowId = WorkflowId(id),
+                methodRunId = MethodRunId(deferred.id),
+                methodName = MethodName("m0"),
+                methodParameters = MethodParameters(),
+                methodParameterTypes = MethodParameterTypes(listOf()),
+                parentWorkflowName = null,
+                parentWorkflowId = null,
+                parentMethodRunId = null,
+                clientWaiting = false,
+                emitterName = clientNameTest)
+      }
+
+      "Should be able to dispatch a method on a workflow per Tag (async)" {
+        // when
+        val workflow = client.getWorkflowByTag(FakeWorkflow::class.java, "foo")
+        val deferred = client.dispatch(workflow::m0)
+        println(deferred)
+        // then
+        workflowSlot.isCaptured shouldBe false
+        workflowTagSlots.size shouldBe 1
+        workflowTagSlots[0] shouldBe
+            DispatchMethodByTag(
+                workflowName = WorkflowName(FakeWorkflow::class.java.name),
+                workflowTag = WorkflowTag("foo"),
+                methodRunId = (deferred as DeferredMethod).methodRunId,
+                methodName = MethodName("m0"),
+                methodParameters = MethodParameters(),
+                methodParameterTypes = MethodParameterTypes(listOf()),
+                parentWorkflowName = null,
+                parentWorkflowId = null,
+                parentMethodRunId = null,
+                clientWaiting = false,
+                emitterName = clientNameTest)
+      }
+
       "Should be able to cancel workflow per id (sync)" {
         // when
         val id = UUID.randomUUID().toString()
@@ -623,7 +650,7 @@ class ClientWorkflowTests :
                 emitterName = clientNameTest)
       }
 
-      "Get task ids par name and workflow" {
+      "Get workflow ids per tag" {
         val tag = "foo"
         val workflow = client.getWorkflowByTag(FakeWorkflow::class.java, tag)
         val workflowIds = client.getIds(workflow)

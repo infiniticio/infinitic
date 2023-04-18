@@ -32,10 +32,11 @@ import io.infinitic.common.proxies.ExistingWorkflowProxyHandler
 import io.infinitic.common.proxies.NewServiceProxyHandler
 import io.infinitic.common.proxies.NewWorkflowProxyHandler
 import io.infinitic.common.proxies.ProxyHandler
+import io.infinitic.common.proxies.RequestByWorkflowId
+import io.infinitic.common.proxies.RequestByWorkflowTag
 import io.infinitic.common.tasks.data.TaskId
 import io.infinitic.common.tasks.data.TaskMeta
 import io.infinitic.common.workflows.data.methodRuns.MethodRunId
-import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.data.workflows.WorkflowMeta
 import io.infinitic.common.workflows.data.workflows.WorkflowTag
 import io.infinitic.exceptions.clients.InvalidStubException
@@ -129,26 +130,26 @@ abstract class InfiniticClientAbstract : InfiniticClientInterface {
 
   /** Create a stub for an existing workflow targeted by id */
   override fun <T : Any> getWorkflowById(klass: Class<out T>, id: String): T =
-      ExistingWorkflowProxyHandler(klass = klass, WorkflowId(id), null) { dispatcher }.stub()
+      ExistingWorkflowProxyHandler(klass, RequestByWorkflowId.by(id)) { dispatcher }.stub()
 
   /** Create a stub for existing workflow targeted by tag */
   override fun <T : Any> getWorkflowByTag(klass: Class<out T>, tag: String): T =
-      ExistingWorkflowProxyHandler(klass = klass, null, WorkflowTag(tag)) { dispatcher }.stub()
+      ExistingWorkflowProxyHandler(klass, RequestByWorkflowTag.by(tag)) { dispatcher }.stub()
 
   /** Await a workflow targeted by its id */
   override fun await(stub: Any): Any? =
       when (val handler = getProxyHandler(stub)) {
         is ExistingWorkflowProxyHandler ->
-            when {
-              handler.workflowId != null ->
+            when (handler.requestBy) {
+              is RequestByWorkflowId ->
                   dispatcher.awaitWorkflow(
                       handler.returnType,
                       handler.workflowName,
                       handler.methodName,
-                      handler.workflowId!!,
+                      (handler.requestBy as RequestByWorkflowId).workflowId,
                       null,
                       false)
-              handler.workflowTag != null ->
+              is RequestByWorkflowTag ->
                   TODO("Not implemented as tag can target multiple workflows")
               else -> thisShouldNotHappen()
             }
@@ -159,16 +160,16 @@ abstract class InfiniticClientAbstract : InfiniticClientInterface {
   override fun await(stub: Any, methodRunId: String): Any? =
       when (val handler = getProxyHandler(stub)) {
         is ExistingWorkflowProxyHandler ->
-            when {
-              handler.workflowId != null ->
+            when (handler.requestBy) {
+              is RequestByWorkflowId ->
                   dispatcher.awaitWorkflow(
                       handler.returnType,
                       handler.workflowName,
                       handler.methodName,
-                      handler.workflowId!!,
+                      (handler.requestBy as RequestByWorkflowId).workflowId,
                       MethodRunId(methodRunId),
                       false)
-              handler.workflowTag != null -> throw InvalidStubException("$stub")
+              is RequestByWorkflowTag -> throw InvalidStubException("$stub")
               else -> thisShouldNotHappen()
             }
         else -> throw InvalidStubException("$stub")
@@ -178,8 +179,7 @@ abstract class InfiniticClientAbstract : InfiniticClientInterface {
   override fun cancelAsync(stub: Any): CompletableFuture<Unit> =
       when (val handler = getProxyHandler(stub)) {
         is ExistingWorkflowProxyHandler ->
-            dispatcher.cancelWorkflowAsync(
-                handler.workflowName, handler.workflowId, null, handler.workflowTag)
+            dispatcher.cancelWorkflowAsync(handler.workflowName, handler.requestBy, null)
         else -> throw InvalidStubException("$stub")
       }
 
@@ -187,8 +187,7 @@ abstract class InfiniticClientAbstract : InfiniticClientInterface {
   override fun retryWorkflowTaskAsync(stub: Any): CompletableFuture<Unit> =
       when (val handler = getProxyHandler(stub)) {
         is ExistingWorkflowProxyHandler ->
-            dispatcher.retryWorkflowTaskAsync(
-                handler.workflowName, handler.workflowId, handler.workflowTag)
+            dispatcher.retryWorkflowTaskAsync(handler.workflowName, handler.requestBy)
         else -> throw InvalidStubException("$stub")
       }
 
@@ -206,8 +205,7 @@ abstract class InfiniticClientAbstract : InfiniticClientInterface {
         is ExistingWorkflowProxyHandler -> {
           dispatcher.completeTimersAsync(
               workflowName = handler.workflowName,
-              workflowId = handler.workflowId,
-              workflowTag = handler.workflowTag,
+              requestBy = handler.requestBy,
               methodRunId = id?.let { MethodRunId(id) })
         }
         else -> throw InvalidStubException("$stub")
@@ -217,8 +215,7 @@ abstract class InfiniticClientAbstract : InfiniticClientInterface {
   override fun <T : Any> getIds(stub: T): Set<String> =
       when (val handler = getProxyHandler(stub)) {
         is ExistingWorkflowProxyHandler ->
-            dispatcher.getWorkflowIdsByTag(
-                handler.workflowName, handler.workflowId, handler.workflowTag)
+            dispatcher.getWorkflowIdsByTag(handler.workflowName, handler.requestBy)
         else -> throw InvalidStubException("$stub")
       }
 
@@ -265,8 +262,7 @@ abstract class InfiniticClientAbstract : InfiniticClientInterface {
 
           dispatcher.retryTaskAsync(
               workflowName = handler.workflowName,
-              workflowId = handler.workflowId,
-              workflowTag = handler.workflowTag,
+              requestBy = handler.requestBy,
               serviceName = taskName,
               taskStatus = taskStatus,
               taskId = taskId?.let { TaskId(it) })

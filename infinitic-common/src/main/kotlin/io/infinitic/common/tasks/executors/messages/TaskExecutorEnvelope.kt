@@ -34,7 +34,7 @@ import org.apache.avro.Schema
 @AvroNamespace("io.infinitic.tasks.executor")
 data class TaskExecutorEnvelope(
     @SerialName("taskName") private val serviceName: ServiceName,
-    private val type: TaskExecutorMessageType,
+    @AvroNamespace("io.infinitic.tasks.executor") private val type: TaskExecutorMessageType,
     private val executeTask: ExecuteTask? = null
 ) : Envelope<TaskExecutorMessage> {
   init {

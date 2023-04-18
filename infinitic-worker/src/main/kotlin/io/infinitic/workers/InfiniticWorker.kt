@@ -32,7 +32,7 @@ import org.apache.pulsar.client.admin.PulsarAdmin
 import org.apache.pulsar.client.api.PulsarClient
 
 @Suppress("unused")
-class InfiniticWorker constructor(private val worker: WorkerAbstract) :
+class InfiniticWorker(private val worker: WorkerAbstract) :
     WorkerInterface by worker, WorkerRegister by worker {
 
   companion object {

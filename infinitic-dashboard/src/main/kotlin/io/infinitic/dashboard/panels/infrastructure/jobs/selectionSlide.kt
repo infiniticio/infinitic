@@ -45,21 +45,21 @@ internal fun selectionSlide(
         selectionType.map {
           "${it.subscriptionPrefix} stats".replaceFirstChar { c -> c.uppercase() }
         },
-        selectionStats) {
+        selectionStats) { kvar ->
           p().classes("text-sm font-medium text-gray-900").new {
-            span().text(lastUpdated(it.value.lastUpdated) + " (cf.")
+            span().text(lastUpdated(kvar.value.lastUpdated) + " (cf.")
             a().classes("underline")
-                .setAttribute(
+                .set(
                     "href",
                     "https://pulsar.apache.org/docs/en/next/administration-stats/#partitioned-topics")
-                .setAttribute("target", "_blank")
+                .set("target", "_blank")
                 .text("documentation")
             span().text(")")
           }
           p().classes("mt-7 text-sm text-gray-500").new {
             element("pre")
                 .text(
-                    when (val request = it.value) {
+                    when (val request = kvar.value) {
                       is Loading -> "Loading..."
                       is Failed -> request.error.stackTraceToString()
                       is Completed -> Json.stringify(request.result, true)
