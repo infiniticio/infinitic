@@ -45,7 +45,7 @@ class MySQLKeySetStorage(internal val pool: HikariDataSource) : KeySetStorage {
                   "`key` VARCHAR(255) NOT NULL," +
                   "`value` VARCHAR(255) NOT NULL," +
                   "KEY(`key`)" + // Non unique index creation for faster search
-                  "KEY `loyalty_key_set_storage_key_value` (`key`,`value`)" +
+                  "KEY `key_value_idx` (`key`,`value`)" +
                   ") ENGINE=InnoDB DEFAULT CHARSET=utf8")
           .use { it.executeUpdate() }
     }

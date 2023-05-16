@@ -45,7 +45,7 @@ class MySQLKeyValueStorage(internal val pool: HikariDataSource) : KeyValueStorag
                   "`key` VARCHAR(255) NOT NULL UNIQUE," +
                   "`value` LONGBLOB NOT NULL" +
                   "`last_update` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP," +
-                  "`value_size_stored` BIGINT(20) GENERATED ALWAYS AS ((length(`value`) / 1024)) STORED," +
+                  "`value_size_in_ko` BIGINT(20) GENERATED ALWAYS AS ((length(`value`) / 1024)) STORED," +
                   "KEY `value_size_index` (`value_size_stored`)" +
                   ") ENGINE=InnoDB DEFAULT CHARSET=utf8")
           .use { it.executeUpdate() }
