@@ -41,10 +41,11 @@ class MySQLKeySetStorage(internal val pool: HikariDataSource) : KeySetStorage {
       connection
           .prepareStatement(
               "CREATE TABLE IF NOT EXISTS $MYSQL_TABLE ( " +
-                  "`id` INT AUTO_INCREMENT PRIMARY KEY," +
+                  "`id` BIGINT(20) AUTO_INCREMENT PRIMARY KEY," +
                   "`key` VARCHAR(255) NOT NULL," +
-                  "`value` BLOB NOT NULL," +
+                  "`value` LONGBLOB NOT NULL," +
                   "KEY(`key`)" + // Non unique index creation for faster search
+                  "KEY `loyalty_key_set_storage_key_value` (`key`,`value`(36))" +
                   ") ENGINE=InnoDB DEFAULT CHARSET=utf8")
           .use { it.executeUpdate() }
     }
