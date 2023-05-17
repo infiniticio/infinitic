@@ -44,7 +44,7 @@ class MySQLKeySetStorage(internal val pool: HikariDataSource) : KeySetStorage {
                   "`id` BIGINT(20) AUTO_INCREMENT PRIMARY KEY," +
                   "`key` VARCHAR(255) NOT NULL," +
                   "`value` VARCHAR(255) NOT NULL," +
-                  "KEY(`key`)" + // Non unique index creation for faster search
+                  "KEY(`key`)," + // Non unique index creation for faster search
                   "KEY `key_value_idx` (`key`,`value`)" +
                   ") ENGINE=InnoDB DEFAULT CHARSET=utf8")
           .use { it.executeUpdate() }
