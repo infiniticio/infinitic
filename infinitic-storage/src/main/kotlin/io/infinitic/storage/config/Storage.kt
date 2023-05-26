@@ -34,7 +34,9 @@ import io.infinitic.storage.keyValue.KeyValueStorage
 data class Storage(
     var inMemory: InMemory? = null,
     val redis: Redis? = null,
-    val mysql: MySQL? = null
+    val mysql: MySQL? = null,
+    val stateValueCompression: Boolean =
+        false // this will force compression/decompression in GZIP state store in whatever database
 ) {
   init {
     val nonNul = listOfNotNull(inMemory, redis, mysql)

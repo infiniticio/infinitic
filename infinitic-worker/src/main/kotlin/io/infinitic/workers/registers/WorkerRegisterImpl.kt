@@ -188,7 +188,9 @@ class WorkerRegisterImpl(private val workerConfig: WorkerConfig) : WorkerRegiste
 
     registry.workflowEngines[workflowName] =
         RegisteredWorkflowEngine(
-            concurrency, BinaryWorkflowStateStorage(CachedKeyValueStorage(c.keyValue, s.keyValue)))
+            concurrency,
+            BinaryWorkflowStateStorage(
+                CachedKeyValueStorage(c.keyValue, s.keyValue), s.stateValueCompression))
   }
 
   private fun registerTaskTag(

@@ -27,6 +27,7 @@ import io.infinitic.common.workflows.engine.state.WorkflowState
 import io.infinitic.common.workflows.engine.storage.WorkflowStateStorage
 import io.infinitic.storage.keyValue.KeyValueStorage
 import io.infinitic.storage.keyValue.WrappedKeyValueStorage
+import mu.KotlinLogging
 import org.jetbrains.annotations.TestOnly
 
 /**
@@ -36,20 +37,34 @@ import org.jetbrains.annotations.TestOnly
  *
  * Any exception thrown by the storage is wrapped into KeyValueStorageException
  */
-class BinaryWorkflowStateStorage(storage: KeyValueStorage) : WorkflowStateStorage {
+class BinaryWorkflowStateStorage(storage: KeyValueStorage, private val stateCompression: Boolean?) :
+    CustomByteArrayCompression, WorkflowStateStorage {
 
   // wrap any exception into KeyValueStorageException
   private val storage = WrappedKeyValueStorage(storage)
+  val logger = KotlinLogging.logger(BinaryWorkflowStateStorage::javaClass.name)
 
   override suspend fun getState(workflowId: WorkflowId): WorkflowState? {
     val key = getWorkflowStateKey(workflowId)
-
-    return storage.get(key)?.let { WorkflowState.fromByteArray(it) }
+    return storage.get(key)?.let { source ->
+      stateCompression?.let {
+        WorkflowState.fromByteArray(source.gzipDecompress()) // decompression
+      }
+          ?: WorkflowState.fromByteArray( // or else normal behavior
+              source,
+          )
+    }
   }
 
   override suspend fun putState(workflowId: WorkflowId, workflowState: WorkflowState) {
     val key = getWorkflowStateKey(workflowId)
-    storage.put(key, workflowState.toByteArray())
+    storage.put(
+        key,
+        stateCompression?.let {
+          workflowState.toByteArray().gzipCompress() // compression
+        }
+            ?: workflowState.toByteArray(), // or else normal behavior
+    )
   }
 
   override suspend fun delState(workflowId: WorkflowId) {
