@@ -27,7 +27,6 @@ import io.infinitic.common.workflows.engine.state.WorkflowState
 import io.infinitic.common.workflows.engine.storage.WorkflowStateStorage
 import io.infinitic.storage.keyValue.KeyValueStorage
 import io.infinitic.storage.keyValue.WrappedKeyValueStorage
-import mu.KotlinLogging
 import org.jetbrains.annotations.TestOnly
 
 /**
@@ -42,7 +41,6 @@ class BinaryWorkflowStateStorage(storage: KeyValueStorage, private val stateComp
 
   // wrap any exception into KeyValueStorageException
   private val storage = WrappedKeyValueStorage(storage)
-  val logger = KotlinLogging.logger(BinaryWorkflowStateStorage::javaClass.name)
 
   override suspend fun getState(workflowId: WorkflowId): WorkflowState? {
     val key = getWorkflowStateKey(workflowId)
