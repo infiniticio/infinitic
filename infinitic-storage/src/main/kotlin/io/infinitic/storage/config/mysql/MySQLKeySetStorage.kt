@@ -37,14 +37,17 @@ class MySQLKeySetStorage(internal val pool: HikariDataSource) : KeySetStorage {
 
   init {
     // Create MySQL table at init, for first time usage
+    // Here key is typically a tag
+    // And value is typically a workflowId
     pool.connection.use { connection ->
       connection
           .prepareStatement(
               "CREATE TABLE IF NOT EXISTS $MYSQL_TABLE ( " +
-                  "`id` INT AUTO_INCREMENT PRIMARY KEY," +
+                  "`id` BIGINT(20) AUTO_INCREMENT PRIMARY KEY," +
                   "`key` VARCHAR(255) NOT NULL," +
-                  "`value` BLOB NOT NULL," +
-                  "KEY(`key`)" + // Non unique index creation for faster search
+                  "`value` VARCHAR(255) NOT NULL," +
+                  "KEY(`key`)," + // Non unique index creation for faster search
+                  "KEY `key_value_idx` (`key`,`value`)" +
                   ") ENGINE=InnoDB DEFAULT CHARSET=utf8")
           .use { it.executeUpdate() }
     }

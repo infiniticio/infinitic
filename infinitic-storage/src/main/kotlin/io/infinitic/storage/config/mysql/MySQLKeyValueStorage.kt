@@ -37,13 +37,18 @@ class MySQLKeyValueStorage(internal val pool: HikariDataSource) : KeyValueStorag
 
   init {
     // Create MySQL table at init, for first time usage
+    // Here key is typically a workflowId
+    // And value is typically a serialized workflow state
     pool.connection.use { connection ->
       connection
           .prepareStatement(
               "CREATE TABLE IF NOT EXISTS $MYSQL_TABLE (" +
-                  "`id` INT AUTO_INCREMENT PRIMARY KEY," +
+                  "`id` BIGINT(20) AUTO_INCREMENT PRIMARY KEY," +
                   "`key` VARCHAR(255) NOT NULL UNIQUE," +
-                  "`value` BLOB NOT NULL" +
+                  "`value` LONGBLOB NOT NULL," +
+                  "`last_update` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP," +
+                  "`value_size_in_KiB` BIGINT(20) GENERATED ALWAYS AS ((length(`value`) / 1024)) STORED," +
+                  "KEY `value_size_index` (`value_size_in_KiB`)" +
                   ") ENGINE=InnoDB DEFAULT CHARSET=utf8")
           .use { it.executeUpdate() }
     }
