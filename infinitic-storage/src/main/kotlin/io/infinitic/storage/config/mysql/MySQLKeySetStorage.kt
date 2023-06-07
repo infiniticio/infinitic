@@ -37,6 +37,8 @@ class MySQLKeySetStorage(internal val pool: HikariDataSource) : KeySetStorage {
 
   init {
     // Create MySQL table at init, for first time usage
+    // Here key is typically a tag
+    // And value is typically a workflowId
     pool.connection.use { connection ->
       connection
           .prepareStatement(
