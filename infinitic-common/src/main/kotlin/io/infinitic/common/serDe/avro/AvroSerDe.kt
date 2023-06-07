@@ -39,6 +39,8 @@ import org.apache.avro.io.EncoderFactory
 import org.apache.avro.message.BadHeaderException
 import org.apache.avro.message.BinaryMessageDecoder
 import org.apache.avro.message.BinaryMessageEncoder
+import org.apache.avro.message.MessageDecoder
+import org.apache.avro.message.MessageEncoder
 import org.apache.avro.util.RandomData
 import org.jetbrains.annotations.TestOnly
 
@@ -47,13 +49,11 @@ object AvroSerDe {
 
   const val SCHEMAS_FOLDER = "schemas"
 
-  /** BinaryMessageEncoder cache by class serializer */
-  private val binaryMessageEncoders =
-      ConcurrentHashMap<KSerializer<*>, BinaryMessageEncoder<GenericRecord>>()
+  /** MessageEncoder cache by class serializer */
+  private val messageEncoders = ConcurrentHashMap<KSerializer<*>, MessageEncoder<GenericRecord>>()
 
-  /** BinaryMessageDecoder cache by class serializer */
-  val binaryMessageDecoders =
-      ConcurrentHashMap<KSerializer<*>, BinaryMessageDecoder<GenericRecord>>()
+  /** MessageDecoder cache by class serializer */
+  val messageDecoders = ConcurrentHashMap<KSerializer<*>, MessageDecoder<GenericRecord>>()
 
   /** Schema cache by class serializer */
   private val schemas = ConcurrentHashMap<KSerializer<*>, Schema>()
@@ -62,14 +62,26 @@ object AvroSerDe {
   fun <T> schema(serializer: KSerializer<T>): Schema =
       schemas.getOrPut(serializer) { Avro.default.schema(serializer) }
 
+  /** Get message encoder from the serializer */
+  private fun <T> messageEncoder(serializer: KSerializer<T>): MessageEncoder<GenericRecord> =
+      messageEncoders.getOrPut(serializer) {
+        BinaryMessageEncoder(GenericData.get(), schema(serializer))
+      }
+
+  /** Get message decoder from the serializer */
+  inline fun <reified T : Any> messageDecoder(
+      serializer: KSerializer<T>
+  ): MessageDecoder<GenericRecord> =
+      messageDecoders.getOrPut(serializer) {
+        BinaryMessageDecoder<GenericRecord>(GenericData.get(), schema(serializer)).also { decoder ->
+          getAllSchemas<T>().values.forEach { schema -> decoder.addSchema(schema) }
+        }
+      }
+
   /** Object -> Avro binary with schema fingerprint */
   fun <T : Any> writeBinaryWithSchemaFingerprint(t: T, serializer: KSerializer<T>): ByteArray {
     val record: GenericRecord = Avro.default.toRecord(serializer, schema(serializer), t)
-
-    val encoder =
-        binaryMessageEncoders.getOrPut(serializer) {
-          BinaryMessageEncoder<GenericRecord>(GenericData.get(), schema(serializer))
-        }
+    val encoder = messageEncoder(serializer)
     val out = ByteArrayOutputStream()
     encoder.encode(record, out)
 
@@ -81,17 +93,10 @@ object AvroSerDe {
       bytes: ByteArray,
       serializer: KSerializer<T>
   ): T {
-    val decoder =
-        binaryMessageDecoders.getOrPut(serializer) {
-          BinaryMessageDecoder<GenericRecord>(GenericData.get(), schema(serializer)).also { decoder
-            ->
-            getAllSchemas<T>().also { it.values.forEach { schema -> decoder.addSchema(schema) } }
-          }
-        }
+    val decoder = messageDecoder(serializer)
 
     return try {
       val record = decoder.decode(SeekableByteArrayInput(bytes), null)
-
       Avro.default.fromRecord(serializer, record)
     } catch (e: BadHeaderException) {
       // we try to decode binary using all known schemas
