@@ -36,33 +36,19 @@ import org.jetbrains.annotations.TestOnly
  *
  * Any exception thrown by the storage is wrapped into KeyValueStorageException
  */
-class BinaryWorkflowStateStorage(storage: KeyValueStorage, private val stateCompression: Boolean?) :
-    CustomByteArrayCompression, WorkflowStateStorage {
+class BinaryWorkflowStateStorage(storage: KeyValueStorage) : WorkflowStateStorage {
 
   // wrap any exception into KeyValueStorageException
   private val storage = WrappedKeyValueStorage(storage)
 
   override suspend fun getState(workflowId: WorkflowId): WorkflowState? {
     val key = getWorkflowStateKey(workflowId)
-    return storage.get(key)?.let { source ->
-      stateCompression?.let {
-        WorkflowState.fromByteArray(source.gzipDecompress()) // decompression
-      }
-          ?: WorkflowState.fromByteArray( // or else normal behavior
-              source,
-          )
-    }
+    return storage.get(key)?.let { WorkflowState.fromByteArray(it) }
   }
 
   override suspend fun putState(workflowId: WorkflowId, workflowState: WorkflowState) {
     val key = getWorkflowStateKey(workflowId)
-    storage.put(
-        key,
-        stateCompression?.let {
-          workflowState.toByteArray().gzipCompress() // compression
-        }
-            ?: workflowState.toByteArray(), // or else normal behavior
-    )
+    storage.put(key, workflowState.toByteArray())
   }
 
   override suspend fun delState(workflowId: WorkflowId) {
