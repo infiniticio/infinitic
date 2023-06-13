@@ -20,7 +20,6 @@
  *
  * Licensor: infinitic.io
  */
-
 package io.infinitic.storage.compressor
 
 import java.io.ByteArrayOutputStream
