@@ -35,7 +35,7 @@ object Plugins {
 
   object Ktfmt {
     const val id = "com.ncorti.ktfmt.gradle"
-    const val version = "0.11.0"
+    const val version = "0.12.0"
   }
 
   object TestLogger {

@@ -260,8 +260,8 @@ class TaskExecutor(
                 ?: DEFAULT_WORKFLOW_TASK_RETRY
 
         val checkMode =
-        // get checkMode from registry
-        registered.checkMode
+            // get checkMode from registry
+            registered.checkMode
             // else get mode from method annotation
             ?: workflowMethod.getAnnotation(CheckMode::class.java)?.mode
                 // else get mode from class annotation
