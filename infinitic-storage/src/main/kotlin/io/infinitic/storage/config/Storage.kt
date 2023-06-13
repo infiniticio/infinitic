@@ -22,6 +22,7 @@
  */
 package io.infinitic.storage.config
 
+import io.infinitic.storage.compressor.Compressor
 import io.infinitic.storage.config.inMemory.InMemoryKeySetStorage
 import io.infinitic.storage.config.inMemory.InMemoryKeyValueStorage
 import io.infinitic.storage.config.mysql.MySQLKeySetStorage
@@ -29,14 +30,14 @@ import io.infinitic.storage.config.mysql.MySQLKeyValueStorage
 import io.infinitic.storage.config.redis.RedisKeySetStorage
 import io.infinitic.storage.config.redis.RedisKeyValueStorage
 import io.infinitic.storage.keySet.KeySetStorage
+import io.infinitic.storage.keyValue.CompressedKeyValueStorage
 import io.infinitic.storage.keyValue.KeyValueStorage
 
 data class Storage(
     var inMemory: InMemory? = null,
     val redis: Redis? = null,
     val mysql: MySQL? = null,
-    val stateValueCompression: Boolean =
-        false // this will force compression/decompression in GZIP state store in whatever database
+    val compression: Compressor? = null
 ) {
   init {
     val nonNul = listOfNotNull(inMemory, redis, mysql)
@@ -82,7 +83,7 @@ data class Storage(
       redis != null -> RedisKeyValueStorage.of(redis)
       mysql != null -> MySQLKeyValueStorage.of(mysql)
       else -> thisShouldNotHappen()
-    }
+    }.let { CompressedKeyValueStorage(compression, it) }
   }
 
   private fun thisShouldNotHappen(): Nothing {
