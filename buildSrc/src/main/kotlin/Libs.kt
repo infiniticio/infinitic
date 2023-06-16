@@ -100,4 +100,8 @@ object Libs {
   object Logging {
     const val api = "io.github.microutils:kotlin-logging:3.0.5"
   }
+
+  object Compress {
+    const val commons = "org.apache.commons:commons-compress:1.23.0"
+  }
 }

@@ -43,7 +43,6 @@ class BinaryWorkflowStateStorage(storage: KeyValueStorage) : WorkflowStateStorag
 
   override suspend fun getState(workflowId: WorkflowId): WorkflowState? {
     val key = getWorkflowStateKey(workflowId)
-
     return storage.get(key)?.let { WorkflowState.fromByteArray(it) }
   }
 

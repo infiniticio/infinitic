@@ -38,10 +38,17 @@ class StorageConfigTests :
         config shouldBe StorageConfigImpl(storage = Storage(inMemory = InMemory()))
       }
 
-      "storage without type should be inMemory" {
-        val config = loadConfigFromYaml<StorageConfigImpl>("storage:")
+      "default storage should not be compressed" {
+        val config = loadConfigFromYaml<StorageConfigImpl>("nothing:")
 
-        config shouldBe StorageConfigImpl(storage = Storage(inMemory = InMemory()))
+        config shouldBe StorageConfigImpl(storage = Storage(compression = null))
+      }
+
+      "storage without type should default" {
+        val default1 = loadConfigFromYaml<StorageConfigImpl>("nothing:")
+        val default2 = loadConfigFromYaml<StorageConfigImpl>("storage:")
+
+        default1 shouldBe default2
       }
 
       "can choose inMemory storage" {

@@ -71,7 +71,7 @@ sealed class StepStatus {
    * CurrentlyFailed is a transient status given when the failure of a task triggers the failure of
    * a step
    * - if next workflowTask related to this branch run correctly (error caught in workflow code),
-   * status will eventually be Failed
+   *   status will eventually be Failed
    * - if not, task can be retried and status can transition to Completed
    */
   @Serializable
