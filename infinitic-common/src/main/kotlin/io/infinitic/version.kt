@@ -28,5 +28,4 @@ import io.infinitic.common.serDe.avro.AvroSerDe
 val version: String = AvroSerDe::class.java.getResource("/version")!!.readText()
 
 /** List of all versions used for schema backward compatibility */
-val versions: List<String> =
-    AvroSerDe::class.java.getResource("/versions")!!.readText().split(System.lineSeparator())
+val versions: List<String> = AvroSerDe::class.java.getResource("/versions")!!.readText().split("\n")

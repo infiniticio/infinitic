@@ -56,7 +56,7 @@ tasks.withType<KotlinCompile> {
         val file = File(project.projectDir.absolutePath, "/src/main/resources/versions")
         // append current version
         if (!file.useLines { lines -> lines.any { it == Ci.base } }) {
-            file.appendText(Ci.base + System.lineSeparator())
+            file.appendText(Ci.base + "\n")
         }
 
         // current version
