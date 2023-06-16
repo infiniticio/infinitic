@@ -49,7 +49,7 @@ tasks.withType<KotlinCompile> {
     doFirst {
         // all versions
         val file = File(project.projectDir.absolutePath, "/src/main/resources/versions")
-        // append current version
+        // append current version if not yet present
         if (!file.useLines { lines -> lines.any { it == Ci.base } }) {
             file.appendText(Ci.base + "\n")
         }
@@ -57,9 +57,6 @@ tasks.withType<KotlinCompile> {
         // current version
         File(project.projectDir.absolutePath, "/src/main/resources/version").writeText(Ci.base)
     }
-
-    // current version
-    File(project.projectDir.absolutePath, "/src/main/resources/version").writeText(Ci.base)
   }
 
 apply("../publish.gradle.kts")
