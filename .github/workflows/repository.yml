@@ -53,5 +53,5 @@ jobs:
           java-version: 17
 
       - name: Check lint with Gradle Spotless
-        run: ./gradlew spotlessCheck # <= -d used to debug if needed
+        run: ./gradlew spotlessCheck --no-daemon --parallel --max-workers=8 # <= -d used to debug if needed
         timeout-minutes: 5 # max time allocated (useful if some tests hang)

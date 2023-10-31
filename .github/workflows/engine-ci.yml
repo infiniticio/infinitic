@@ -44,7 +44,7 @@ jobs:
           java-version: 17
 
       - name: Build with Gradle
-        run: ./gradlew build -x test -x spotlessCheck # <= -d used to debug if needed
+        run: ./gradlew build --no-daemon -x test -x spotlessCheck --parallel --max-workers=8 # <= -d used to debug if needed
         timeout-minutes: 5 # max time allocated (useful if some tests hang)
 
   test:
@@ -60,5 +60,5 @@ jobs:
           java-version: 17
 
       - name: Test with Gradle
-        run: ./gradlew test # <= -d used to debug if needed
+        run: ./gradlew test --no-daemon --parallel --max-workers=8  # <= -d used to debug if needed
         timeout-minutes: 20 # max time allocated (useful if some tests hang)
