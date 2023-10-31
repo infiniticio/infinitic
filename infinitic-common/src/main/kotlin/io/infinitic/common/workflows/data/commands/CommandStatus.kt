@@ -45,6 +45,7 @@ sealed class CommandStatus {
   @SerialName("CommandStatus.Ongoing")
   object Ongoing : CommandStatus() {
     override fun equals(other: Any?) = javaClass == other?.javaClass
+
     override fun toString(): String = Ongoing::class.java.name
   }
 

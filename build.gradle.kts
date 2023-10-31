@@ -32,8 +32,19 @@ buildscript {
 plugins {
   id(Plugins.Kotlin.id) version Plugins.Kotlin.version
   id(Plugins.Serialization.id) version Plugins.Serialization.version apply false
-  id(Plugins.Ktfmt.id) version Plugins.Ktfmt.version apply true
   id(Plugins.TestLogger.id) version Plugins.TestLogger.version apply true
+  id(Plugins.Spotless.id) version Plugins.Spotless.version apply true
+}
+
+// code quality
+spotless {
+  kotlin { ktfmt() }
+  kotlinGradle { ktfmt() }
+}
+
+kotlin {
+  // For example:
+  jvmToolchain(17)
 }
 
 repositories { mavenCentral() }
@@ -41,7 +52,7 @@ repositories { mavenCentral() }
 subprojects {
   apply(plugin = Plugins.Kotlin.id)
   apply(plugin = Plugins.Serialization.id)
-  apply(plugin = Plugins.Ktfmt.id)
+  apply(plugin = Plugins.Spotless.id)
   apply(plugin = Plugins.TestLogger.id)
 
   group = Libs.org
@@ -70,15 +81,6 @@ subprojects {
   }
 
   tasks.withType<KotlinCompile> {
-    kotlinOptions {
-      freeCompilerArgs = freeCompilerArgs + "-opt-in=kotlin.RequiresOptIn"
-      jvmTarget = JavaVersion.VERSION_11.toString()
-    }
-  }
-
-  // Keep this to tell compatibility to applications
-  tasks.withType<JavaCompile> {
-    sourceCompatibility = JavaVersion.VERSION_11.toString()
-    targetCompatibility = JavaVersion.VERSION_11.toString()
+    kotlinOptions { freeCompilerArgs = freeCompilerArgs + "-opt-in=kotlin.RequiresOptIn" }
   }
 }

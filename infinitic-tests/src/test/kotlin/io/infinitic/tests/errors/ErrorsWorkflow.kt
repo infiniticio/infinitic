@@ -34,27 +34,45 @@ import java.time.Duration
 
 interface ErrorsWorkflow {
   fun waiting(): String
+
   fun failing1(): String
+
   fun failing2()
+
   fun failing2a(): Long
+
   fun failing3(): Long
+
   fun failing3bis()
+
   fun failing3bException()
+
   fun failing3b(): Long
 
   //    fun failing4(): Long
   //    fun failing5(): Long
   fun failing5bis(deferred: Deferred<Long>): Long
+
   fun failing6()
+
   fun failing7(): Long
+
   fun failing7bis()
+
   fun failing7ter(): String
+
   fun failing8(): String
+
   fun failing9(): Boolean
+
   fun failing10(): String
+
   fun failing10bis()
+
   fun failing11()
+
   fun failing12(): String
+
   fun failing13()
 }
 

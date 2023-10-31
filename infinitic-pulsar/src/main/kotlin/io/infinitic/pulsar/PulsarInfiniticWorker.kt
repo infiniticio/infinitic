@@ -32,8 +32,6 @@ import io.infinitic.transport.pulsar.topics.WorkflowTaskTopics
 import io.infinitic.transport.pulsar.topics.WorkflowTopics
 import io.infinitic.workers.WorkerAbstract
 import io.infinitic.workers.register.WorkerRegister
-import java.util.concurrent.CompletableFuture
-import java.util.concurrent.Executors
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.asCoroutineDispatcher
@@ -46,6 +44,8 @@ import org.apache.pulsar.client.admin.Tenants
 import org.apache.pulsar.client.admin.TopicPolicies
 import org.apache.pulsar.client.admin.Topics
 import org.apache.pulsar.client.api.PulsarClient
+import java.util.concurrent.CompletableFuture
+import java.util.concurrent.Executors
 
 @Suppress("MemberVisibilityCanBePrivate", "unused")
 class PulsarInfiniticWorker(

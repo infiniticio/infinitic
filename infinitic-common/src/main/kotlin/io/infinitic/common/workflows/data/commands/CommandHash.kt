@@ -37,8 +37,10 @@ data class CommandHash(override val hash: String) : Hash(hash)
 object CommandHashSerializer : KSerializer<CommandHash> {
   override val descriptor: SerialDescriptor =
       PrimitiveSerialDescriptor("CommandHash", PrimitiveKind.STRING)
+
   override fun serialize(encoder: Encoder, value: CommandHash) {
     encoder.encodeString(value.hash)
   }
+
   override fun deserialize(decoder: Decoder) = CommandHash(decoder.decodeString())
 }

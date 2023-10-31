@@ -37,8 +37,10 @@ data class PropertyHash(override val hash: String) : Hash(hash)
 object PropertyHashSerializer : KSerializer<PropertyHash> {
   override val descriptor: SerialDescriptor =
       PrimitiveSerialDescriptor("PropertyHash", PrimitiveKind.STRING)
+
   override fun serialize(encoder: Encoder, value: PropertyHash) {
     encoder.encodeString(value.hash)
   }
+
   override fun deserialize(decoder: Decoder) = PropertyHash(decoder.decodeString())
 }

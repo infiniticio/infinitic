@@ -40,9 +40,11 @@ data class SignalData(val serializedData: SerializedData) {
 
 object ChannelSignalSerializer : KSerializer<SignalData> {
   override val descriptor: SerialDescriptor = SerializedData.serializer().descriptor
+
   override fun serialize(encoder: Encoder, value: SignalData) {
     SerializedData.serializer().serialize(encoder, value.serializedData)
   }
+
   override fun deserialize(decoder: Decoder) =
       SignalData(SerializedData.serializer().deserialize(decoder))
 }

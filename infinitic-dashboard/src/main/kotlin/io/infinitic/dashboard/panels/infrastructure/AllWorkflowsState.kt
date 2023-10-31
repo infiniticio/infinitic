@@ -26,8 +26,8 @@ import io.infinitic.common.workflows.data.workflows.WorkflowName
 import io.infinitic.dashboard.Infinitic
 import io.infinitic.dashboard.panels.infrastructure.requests.Loading
 import io.infinitic.transport.pulsar.topics.WorkflowTaskTopics
-import java.time.Instant
 import org.apache.pulsar.common.policies.data.PartitionedTopicStats
+import java.time.Instant
 
 data class AllWorkflowsState(
     override val names: JobNames = Loading(),

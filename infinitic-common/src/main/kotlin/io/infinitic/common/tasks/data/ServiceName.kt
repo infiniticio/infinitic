@@ -37,6 +37,7 @@ data class ServiceName(override val name: String) : Name(name)
 object ServiceNameSerializer : KSerializer<ServiceName> {
   override val descriptor: SerialDescriptor =
       PrimitiveSerialDescriptor("ServiceName", PrimitiveKind.STRING)
+
   override fun serialize(encoder: Encoder, value: ServiceName) {
     encoder.encodeString(value.name)
   }

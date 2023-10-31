@@ -30,12 +30,19 @@ import java.time.Duration
 
 interface BranchesWorkflow {
   fun seq3(): String
+
   fun seq3bis(): String
+
   fun seq4(): String
+
   fun seq4bis(): String
+
   fun deferred1(): String
+
   fun deferred1bis(): String
+
   fun async1()
+
   fun async1bis()
 }
 

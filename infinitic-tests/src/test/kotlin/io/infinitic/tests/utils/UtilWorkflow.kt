@@ -31,12 +31,19 @@ import io.infinitic.workflows.Workflow
 interface UtilWorkflow {
   val log: String
   val channelA: SendChannel<String>
+
   fun concat(input: String): String
+
   fun receive(str: String): String
+
   fun add(str: String): String
+
   fun factorial(n: Long): Long
+
   fun cancelChild1(): Long
+
   fun cancelChild2(): Long
+
   fun cancelChild2bis(deferred: Deferred<String>): String
 }
 

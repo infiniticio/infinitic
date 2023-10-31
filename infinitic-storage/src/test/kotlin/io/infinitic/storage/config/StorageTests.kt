@@ -91,44 +91,45 @@ class StorageTests :
             .pool shouldBe RedisKeyValueStorage.of(Redis()).pool
       }
 
-      "properties of MySQL".config(enabledIf = { DockerOnly.shouldRun }) {
-        val mysqlServer =
-            MySQLContainer<Nothing>("mysql:5.7")
-                .apply {
-                  startupAttempts = 1
-                  withUsername("test")
-                  withPassword("password")
-                  withDatabaseName("infinitic")
-                }
-                .let {
-                  it.start()
-                  it
-                }
+      "properties of MySQL"
+          .config(enabledIf = { DockerOnly.shouldRun }) {
+            val mysqlServer =
+                MySQLContainer<Nothing>("mysql:5.7")
+                    .apply {
+                      startupAttempts = 1
+                      withUsername("test")
+                      withPassword("password")
+                      withDatabaseName("infinitic")
+                    }
+                    .let {
+                      it.start()
+                      it
+                    }
 
-        val mysql =
-            MySQL(
-                host = mysqlServer.host,
-                port = mysqlServer.firstMappedPort,
-                user = mysqlServer.username,
-                password = Secret(mysqlServer.password),
-                database = mysqlServer.databaseName)
+            val mysql =
+                MySQL(
+                    host = mysqlServer.host,
+                    port = mysqlServer.firstMappedPort,
+                    user = mysqlServer.username,
+                    password = Secret(mysqlServer.password),
+                    database = mysqlServer.databaseName)
 
-        val config = Storage(mysql = mysql, compression = null)
+            val config = Storage(mysql = mysql, compression = null)
 
-        config.type shouldBe "mysql"
+            config.type shouldBe "mysql"
 
-        // config.keySet should be MySQLKeySetStorage(pool)
-        config.keySet::class shouldBe MySQLKeySetStorage::class
-        (config.keySet as MySQLKeySetStorage).pool shouldBe MySQLKeySetStorage.of(mysql).pool
+            // config.keySet should be MySQLKeySetStorage(pool)
+            config.keySet::class shouldBe MySQLKeySetStorage::class
+            (config.keySet as MySQLKeySetStorage).pool shouldBe MySQLKeySetStorage.of(mysql).pool
 
-        // config.keyValue should be CompressedKeyValueStorage(MySQLKeyValueStorage(pool))
-        config.keyValue::class shouldBe CompressedKeyValueStorage::class
-        (config.keyValue as CompressedKeyValueStorage).storage::class shouldBe
-            MySQLKeyValueStorage::class
-        (((config.keyValue as CompressedKeyValueStorage)).storage as MySQLKeyValueStorage)
-            .pool shouldBe MySQLKeyValueStorage.of(mysql).pool
+            // config.keyValue should be CompressedKeyValueStorage(MySQLKeyValueStorage(pool))
+            config.keyValue::class shouldBe CompressedKeyValueStorage::class
+            (config.keyValue as CompressedKeyValueStorage).storage::class shouldBe
+                MySQLKeyValueStorage::class
+            (((config.keyValue as CompressedKeyValueStorage)).storage as MySQLKeyValueStorage)
+                .pool shouldBe MySQLKeyValueStorage.of(mysql).pool
 
-        mysql.close()
-        mysqlServer.close()
-      }
+            mysql.close()
+            mysqlServer.close()
+          }
     })

@@ -30,7 +30,6 @@ import io.infinitic.transport.pulsar.topics.PerNameTopics
 import io.infinitic.transport.pulsar.topics.ServiceTopics
 import io.infinitic.transport.pulsar.topics.WorkflowTaskTopics
 import io.infinitic.transport.pulsar.topics.WorkflowTopics
-import java.io.Closeable
 import mu.KotlinLogging
 import org.apache.pulsar.client.admin.Clusters
 import org.apache.pulsar.client.admin.Namespaces
@@ -45,6 +44,7 @@ import org.apache.pulsar.common.policies.data.TenantInfo
 import org.apache.pulsar.common.policies.data.TopicType
 import org.apache.pulsar.common.policies.data.impl.AutoTopicCreationOverrideImpl
 import org.apache.pulsar.common.policies.data.impl.DelayedDeliveryPoliciesImpl
+import java.io.Closeable
 
 @Suppress("unused", "MemberVisibilityCanBePrivate")
 class PulsarInfiniticAdmin constructor(val pulsarAdmin: PulsarAdmin, val pulsar: Pulsar) :
@@ -75,7 +75,8 @@ class PulsarInfiniticAdmin constructor(val pulsarAdmin: PulsarAdmin, val pulsar:
       // retention policies
       retention_policies =
           RetentionPolicies(
-              pulsar.policies.retentionTimeInMinutes, pulsar.policies.retentionSizeInMB)
+              pulsar.policies.retentionTimeInMinutes, pulsar.policies.retentionSizeInMB.toLong()
+          )
       message_ttl_in_seconds = pulsar.policies.messageTTLInSeconds
       delayed_delivery_policies =
           DelayedDeliveryPoliciesImpl(pulsar.policies.delayedDeliveryTickTimeMillis, true)

@@ -51,8 +51,10 @@ data class WorkflowMeta(val map: Map<String, ByteArray> = mapOf()) : Map<String,
 object WorkflowMetaSerializer : KSerializer<WorkflowMeta> {
   val ser = MapSerializer(String.serializer(), ByteArraySerializer())
   override val descriptor: SerialDescriptor = ser.descriptor
+
   override fun serialize(encoder: Encoder, value: WorkflowMeta) {
     ser.serialize(encoder, value.map)
   }
+
   override fun deserialize(decoder: Decoder) = WorkflowMeta(ser.deserialize(decoder))
 }

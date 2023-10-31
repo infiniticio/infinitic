@@ -30,26 +30,47 @@ import java.time.LocalDateTime
 
 interface WorkflowA {
   fun empty(): String
+
   fun seq1(): String
+
   fun seq2(): String
+
   fun seq3(): String
+
   fun seq4(): String
+
   fun or1(): String
+
   fun or2(): Any
+
   fun or3(): String
+
   fun and1(): List<String>
+
   fun and2(): List<String>
+
   fun and3(): List<String>
+
   fun inline(): String
+
   fun inline2(): String
+
   fun inline3(): String
+
   fun child1(): String
+
   fun child2(): String
+
   fun prop1(): String
+
   fun prop2(): String
+
   fun prop3(): String
+
   fun prop4(): String
+
   fun prop5(): String
+
   fun prop6(): String
 }
 

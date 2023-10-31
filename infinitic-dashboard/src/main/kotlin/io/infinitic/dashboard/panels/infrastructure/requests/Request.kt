@@ -22,17 +22,19 @@
  */
 package io.infinitic.dashboard.panels.infrastructure.requests
 
-import java.time.Instant
 import org.apache.pulsar.client.admin.PulsarAdminException
+import java.time.Instant
 
 sealed class Request<T> {
   abstract val isLoading: Boolean
   abstract val lastUpdated: Instant
+
   abstract fun copyLoading(): Request<T>
 }
 
 data class Loading<T>(override val lastUpdated: Instant = Instant.now()) : Request<T>() {
   override val isLoading = true
+
   override fun copyLoading() = copy()
 }
 

@@ -28,7 +28,9 @@ import io.infinitic.workflows.Workflow
 
 interface SyntaxWorkflow : ParentInterface {
   fun empty(): String
+
   fun await(duration: Long): Long
+
   fun wparent(): String
 }
 

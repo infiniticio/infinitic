@@ -26,14 +26,14 @@
 const defaultTheme = require('tailwindcss/defaultTheme')
 
 module.exports = {
-  content: [
-    './src/**/*.kt'
-  ],
-  theme: {
-    extend: {
-        fontFamily: {
-            sans: ['Inter var', ...defaultTheme.fontFamily.sans],
+    content: [
+        './src/**/*.kt'
+    ],
+    theme: {
+        extend: {
+            fontFamily: {
+                sans: ['Inter var', ...defaultTheme.fontFamily.sans],
+            },
         },
-    },
-  }
+    }
 }

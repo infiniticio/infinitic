@@ -51,13 +51,13 @@ import io.infinitic.tasks.executor.TaskExecutor
 import io.infinitic.tasks.tag.TaskTagEngine
 import io.infinitic.workflows.engine.WorkflowEngine
 import io.infinitic.workflows.tag.WorkflowTagEngine
-import java.util.concurrent.CompletableFuture
-import java.util.concurrent.ConcurrentHashMap
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.future.future
 import mu.KotlinLogging
+import java.util.concurrent.CompletableFuture
+import java.util.concurrent.ConcurrentHashMap
 
 class InMemoryStarter(private val scope: CoroutineScope, name: String) :
     ClientStarter, WorkerStarter {

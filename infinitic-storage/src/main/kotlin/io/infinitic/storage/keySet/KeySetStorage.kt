@@ -26,6 +26,8 @@ import io.infinitic.storage.Flushable
 
 interface KeySetStorage : Flushable {
   suspend fun get(key: String): Set<ByteArray>
+
   suspend fun add(key: String, value: ByteArray)
+
   suspend fun remove(key: String, value: ByteArray)
 }

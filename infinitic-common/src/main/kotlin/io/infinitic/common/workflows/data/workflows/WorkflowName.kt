@@ -42,8 +42,10 @@ data class WorkflowName(override val name: String) : Name(name) {
 object WorkflowNameSerializer : KSerializer<WorkflowName> {
   override val descriptor: SerialDescriptor =
       PrimitiveSerialDescriptor("WorkflowName", PrimitiveKind.STRING)
+
   override fun serialize(encoder: Encoder, value: WorkflowName) {
     encoder.encodeString(value.name)
   }
+
   override fun deserialize(decoder: Decoder) = WorkflowName(decoder.decodeString())
 }

@@ -37,8 +37,10 @@ data class StepHash(override val hash: String) : Hash(hash)
 object StepHashSerializer : KSerializer<StepHash> {
   override val descriptor: SerialDescriptor =
       PrimitiveSerialDescriptor("StepHash", PrimitiveKind.STRING)
+
   override fun serialize(encoder: Encoder, value: StepHash) {
     encoder.encodeString(value.hash)
   }
+
   override fun deserialize(decoder: Decoder) = StepHash(decoder.decodeString())
 }

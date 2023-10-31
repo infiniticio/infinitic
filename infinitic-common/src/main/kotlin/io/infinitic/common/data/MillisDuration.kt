@@ -50,8 +50,10 @@ data class MillisDuration(val long: Long) : Comparable<Long> {
 object MillisDurationSerializer : KSerializer<MillisDuration> {
   override val descriptor: SerialDescriptor =
       PrimitiveSerialDescriptor("MillisDuration", PrimitiveKind.LONG)
+
   override fun serialize(encoder: Encoder, value: MillisDuration) {
     encoder.encodeLong(value.long)
   }
+
   override fun deserialize(decoder: Decoder) = MillisDuration(decoder.decodeLong())
 }

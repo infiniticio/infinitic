@@ -39,18 +39,31 @@ interface ChannelsWorkflow {
   val channelB: SendChannel<String>
 
   fun channel1(): String
+
   fun channel2(): Any
+
   fun channel3(): Any
+
   fun channel4(): Obj
+
   fun channel4bis(): Obj
+
   fun channel4ter(): Obj
+
   fun channel5(): Obj1
+
   fun channel5bis(): Obj1
+
   fun channel5ter(): Obj1
+
   fun channel6(): String
+
   fun channel6bis(): String
+
   fun channel6ter(): String
+
   fun channel7(count: Int, max: Int? = null): String
+
   fun channel8(): String
 }
 

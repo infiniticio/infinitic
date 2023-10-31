@@ -26,8 +26,8 @@ import io.infinitic.common.tasks.data.ServiceName
 import io.infinitic.dashboard.Infinitic
 import io.infinitic.dashboard.panels.infrastructure.requests.Loading
 import io.infinitic.transport.pulsar.topics.ServiceTopics
-import java.time.Instant
 import org.apache.pulsar.common.policies.data.PartitionedTopicStats
+import java.time.Instant
 
 data class AllTasksState(
     override val names: JobNames = Loading(),
