@@ -3,10 +3,11 @@
 ## Run Standalone Pulsar
 
 > Create those directories, if you don't have them yet:
-/engine/build/libs
-/engine/build/schemas
+> /engine/build/libs
+> /engine/build/schemas
 
 In the same directory than `docker-compose.yaml`, do:
+
 ```bash
 docker-compose up
 ```
@@ -18,26 +19,31 @@ docker exec -it pulsar_pulsar_1 /bin/bash
 ```
 
 To clean everything
+
 ```bash
 docker-compose down --volumes
 ```
 
 To install Infinitic:
+
 ```bash
 gradle install
 ```
 
 To remove Infinitic
+
 ```bash
 gradle delete
 ```
 
 To update Infinitic
+
 ```bash
 gradle update
 ```
 
 ## Pulsar Manager
+
 Once Docker run, you can access it at `http://localhost:9527`
 
 Create an admin user with:
@@ -59,5 +65,6 @@ To obtain the service url of Pulsar *from the Pulsar Manager container*, do:
 ```bash
 docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' pulsar-pulsar-1
 ```
+
 you should obtain something like `172.18.0.3`.
 Then the service url to use for adding an environment is `http://172.18.0.3:8080`

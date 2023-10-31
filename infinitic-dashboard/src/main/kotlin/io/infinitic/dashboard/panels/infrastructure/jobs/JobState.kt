@@ -27,7 +27,6 @@ import io.infinitic.dashboard.panels.infrastructure.requests.Completed
 import io.infinitic.dashboard.panels.infrastructure.requests.Failed
 import io.infinitic.dashboard.panels.infrastructure.requests.Request
 import io.infinitic.transport.pulsar.topics.TopicType
-import java.time.Instant
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
@@ -35,6 +34,7 @@ import kotlinx.coroutines.launch
 import kweb.state.KVar
 import mu.KotlinLogging
 import org.apache.pulsar.common.policies.data.PartitionedTopicStats
+import java.time.Instant
 
 private const val UPDATE_DELAY = 5000L
 
@@ -50,6 +50,7 @@ abstract class JobState<T : TopicType>(
 
   companion object {
     fun <T> isLoading(topicsStats: TopicsStats<T>): Boolean = topicsStats.any { it.value.isLoading }
+
     fun <T> lastUpdatedAt(topicsStats: TopicsStats<T>): Instant =
         topicsStats.maxOfOrNull { it.value.lastUpdated } ?: Instant.now()
   }

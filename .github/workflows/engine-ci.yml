@@ -38,11 +38,27 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v2
 
-      - name: Setup Java 11
+      - name: Setup Java 17
         uses: actions/setup-java@v1
         with:
-          java-version: 11
+          java-version: 17
 
       - name: Build with Gradle
-        run: ./gradlew build # <= -d used to debug if needed
-        timeout-minutes: 15 # max time allocated (useful if some tests hang)
+        run: ./gradlew build --no-daemon -x test -x spotlessCheck --parallel --max-workers=8 # <= -d used to debug if needed
+        timeout-minutes: 5 # max time allocated (useful if some tests hang)
+
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v2
+
+      - name: Setup Java 17
+        uses: actions/setup-java@v1
+        with:
+          java-version: 17
+
+      - name: Test with Gradle
+        run: ./gradlew test --no-daemon --parallel --max-workers=8  # <= -d used to debug if needed
+        timeout-minutes: 20 # max time allocated (useful if some tests hang)

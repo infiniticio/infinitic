@@ -28,6 +28,8 @@ import io.infinitic.common.workflows.engine.state.WorkflowState
 
 interface WorkflowStateStorage : Flushable {
   suspend fun getState(workflowId: WorkflowId): WorkflowState?
+
   suspend fun putState(workflowId: WorkflowId, workflowState: WorkflowState)
+
   suspend fun delState(workflowId: WorkflowId)
 }

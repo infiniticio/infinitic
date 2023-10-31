@@ -24,7 +24,6 @@ package io.infinitic.dashboard.panels.infrastructure.jobs
 
 import io.infinitic.dashboard.panels.infrastructure.lastUpdated
 import io.infinitic.dashboard.svgs.icons.iconRefresh
-import java.time.Instant
 import kweb.Element
 import kweb.ElementCreator
 import kweb.div
@@ -32,6 +31,7 @@ import kweb.h3
 import kweb.new
 import kweb.span
 import kweb.state.KVar
+import java.time.Instant
 
 internal fun ElementCreator<Element>.displayJobSectionHeader(
     title: String,

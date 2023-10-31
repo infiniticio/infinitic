@@ -47,8 +47,10 @@ data class TaskMeta(val map: Map<String, ByteArray> = mapOf()) : Map<String, Byt
 object TaskMetaSerializer : KSerializer<TaskMeta> {
   val ser = MapSerializer(String.serializer(), ByteArraySerializer())
   override val descriptor: SerialDescriptor = ser.descriptor
+
   override fun serialize(encoder: Encoder, value: TaskMeta) {
     ser.serialize(encoder, value.map)
   }
+
   override fun deserialize(decoder: Decoder) = TaskMeta(ser.deserialize(decoder))
 }

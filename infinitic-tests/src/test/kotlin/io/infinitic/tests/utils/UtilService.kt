@@ -34,16 +34,25 @@ interface ParentInterface {
 
 interface UtilService : ParentInterface {
   fun concat(str1: String, str2: String): String
+
   fun reverse(str: String): String
+
   fun await(delay: Long): Long
+
   fun workflowId(): String?
+
   fun workflowName(): String?
+
   fun retryFailedTasks(workflowName: String, id: String)
+
   fun cancelWorkflow(workflowName: String, id: String)
+
   fun failing()
+
   fun successAtRetry(): String
 
   fun tags(): Set<String>
+
   fun meta(): TaskMeta
 
   fun withRetry(): WithRetry?

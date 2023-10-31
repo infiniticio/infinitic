@@ -44,6 +44,7 @@ data class TaskRetrySequence(private val int: Int = 0) : Comparable<TaskRetrySeq
 object TaskRetrySequenceSerializer : KSerializer<TaskRetrySequence> {
   override val descriptor: SerialDescriptor =
       PrimitiveSerialDescriptor("TaskRetrySequence", PrimitiveKind.INT)
+
   override fun serialize(encoder: Encoder, value: TaskRetrySequence) {
     encoder.encodeInt(value.toInt())
   }

@@ -33,6 +33,7 @@ import kotlinx.serialization.encoding.Encoder
 object DurationSerializer : KSerializer<Duration> {
   override val descriptor: SerialDescriptor =
       PrimitiveSerialDescriptor("DurationLong", PrimitiveKind.LONG)
+
   override fun serialize(encoder: Encoder, value: Duration) {
     encoder.encodeLong(value.toMillis())
   }

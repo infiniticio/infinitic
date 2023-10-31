@@ -31,6 +31,7 @@ import kotlinx.serialization.Serializable
 value class ChannelName(private val name: String) {
   companion object {
     fun from(method: Method) = ChannelName(method.name)
+
     fun from(methodName: MethodName) = ChannelName(methodName.toString())
   }
 

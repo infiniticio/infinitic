@@ -27,7 +27,9 @@ import io.infinitic.workflows.Workflow
 
 interface InlineWorkflow {
   fun inline1(i: Int): String
+
   fun inline2(i: Int): String
+
   fun inline3(i: Int): String
 }
 

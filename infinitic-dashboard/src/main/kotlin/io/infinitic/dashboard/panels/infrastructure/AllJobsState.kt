@@ -26,7 +26,6 @@ import io.infinitic.dashboard.panels.infrastructure.requests.Completed
 import io.infinitic.dashboard.panels.infrastructure.requests.Failed
 import io.infinitic.dashboard.panels.infrastructure.requests.Loading
 import io.infinitic.dashboard.panels.infrastructure.requests.Request
-import java.time.Instant
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
@@ -34,6 +33,7 @@ import kotlinx.coroutines.launch
 import kweb.state.KVar
 import mu.KotlinLogging
 import org.apache.pulsar.common.policies.data.PartitionedTopicStats
+import java.time.Instant
 
 private val logger = KotlinLogging.logger {}
 
@@ -68,11 +68,13 @@ abstract class AllJobsState(
   }
 
   fun namesLoading() = create(names = names.copyLoading())
+
   fun statsLoading() = create(stats = stats.mapValues { it.value.copyLoading() })
 
   abstract fun create(names: JobNames = this.names, stats: JobStats = this.stats): AllJobsState
 
   abstract fun getNames(): Set<String>
+
   abstract fun getPartitionedStats(name: String): PartitionedTopicStats
 }
 

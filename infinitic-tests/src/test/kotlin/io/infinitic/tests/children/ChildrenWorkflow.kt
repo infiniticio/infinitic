@@ -31,10 +31,13 @@ interface ChildrenWorkflow {
   fun await()
 
   fun parent(): String
+
   fun wparent(): String
 
   fun child1(): String
+
   fun child2(): String
+
   fun factorial(n: Long): Long
 
   fun cancel()

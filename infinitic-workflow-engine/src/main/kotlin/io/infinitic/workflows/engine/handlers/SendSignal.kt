@@ -62,6 +62,5 @@ internal fun CoroutineScope.sendSignal(
                 returnValue = ReturnValue(message.signalData.serializedData),
                 completionWorkflowTaskIndex = state.workflowTaskIndex,
                 signalId = message.signalId))
-      }
-      ?: logger.debug { "discarding non-waited signal $message" }
+      } ?: logger.debug { "discarding non-waited signal $message" }
 }

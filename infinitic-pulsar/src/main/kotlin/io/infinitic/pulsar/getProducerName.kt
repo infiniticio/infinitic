@@ -24,9 +24,9 @@ package io.infinitic.pulsar
 
 import io.infinitic.transport.pulsar.topics.GlobalTopics
 import io.infinitic.transport.pulsar.topics.TopicNames
-import kotlin.system.exitProcess
 import org.apache.pulsar.client.api.PulsarClient
 import org.apache.pulsar.client.api.PulsarClientException
+import kotlin.system.exitProcess
 
 /** Useful to check the uniqueness of a connected producer's name or to provide a unique name */
 internal fun getProducerName(

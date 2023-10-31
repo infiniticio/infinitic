@@ -29,17 +29,17 @@ object Libs {
   }
 
   object Coroutines {
-    private const val version = "1.7.1"
+    private const val version = "1.7.3"
     const val core = "org.jetbrains.kotlinx:kotlinx-coroutines-core:$version"
     const val jdk8 = "org.jetbrains.kotlinx:kotlinx-coroutines-jdk8:$version"
   }
 
   object Caffeine {
-    const val caffeine = "com.github.ben-manes.caffeine:caffeine:3.1.6"
+    const val caffeine = "com.github.ben-manes.caffeine:caffeine:3.1.8"
   }
 
   object Serialization {
-    const val json = "org.jetbrains.kotlinx:kotlinx-serialization-json:1.5.1"
+    const val json = "org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.0"
   }
 
   object JsonPath {
@@ -47,7 +47,7 @@ object Libs {
   }
 
   object Jackson {
-    private const val version = "2.15.2"
+    private const val version = "2.15.3"
     const val core = "com.fasterxml.jackson.core:jackson-core:$version"
     const val databind = "com.fasterxml.jackson.core:jackson-databind:$version"
     const val kotlin = "com.fasterxml.jackson.module:jackson-module-kotlin:$version"
@@ -55,27 +55,27 @@ object Libs {
   }
 
   object Kotest {
-    private const val version = "5.6.2"
+    private const val version = "5.7.2"
     const val property = "io.kotest:kotest-property-jvm:$version"
     const val junit5 = "io.kotest:kotest-runner-junit5-jvm:$version"
   }
 
   object Mockk {
-    const val mockk = "io.mockk:mockk:1.13.5"
+    const val mockk = "io.mockk:mockk:1.13.8"
   }
 
   object Avro4k {
-    const val core = "com.github.avro-kotlin.avro4k:avro4k-core:1.7.0"
+    const val core = "com.github.avro-kotlin.avro4k:avro4k-core:1.10.0"
   }
 
   object Hoplite {
-    private const val version = "2.7.4"
+    private const val version = "2.7.5"
     const val core = "com.sksamuel.hoplite:hoplite-core:$version"
     const val yaml = "com.sksamuel.hoplite:hoplite-yaml:$version"
   }
 
   object Pulsar {
-    private const val version = "2.11.1"
+    private const val version = "3.1.0"
     const val client = "org.apache.pulsar:pulsar-client:$version"
     const val clientAdmin = "org.apache.pulsar:pulsar-client-admin:$version"
     const val functions = "org.apache.pulsar:pulsar-functions-api:$version"
@@ -84,7 +84,7 @@ object Libs {
   }
 
   object Kweb {
-    const val core = "io.kweb:kweb-core:1.4.0"
+    const val core = "io.kweb:kweb-core:1.4.8"
   }
 
   object EasyRandom {
@@ -92,7 +92,7 @@ object Libs {
   }
 
   object Slf4j {
-    private const val version = "2.0.7"
+    private const val version = "2.0.9"
     const val simple = "org.slf4j:slf4j-simple:$version"
     const val api = "org.slf4j:slf4j-api:$version"
   }
@@ -102,6 +102,6 @@ object Libs {
   }
 
   object Compress {
-    const val commons = "org.apache.commons:commons-compress:1.23.0"
+    const val commons = "org.apache.commons:commons-compress:1.24.0"
   }
 }

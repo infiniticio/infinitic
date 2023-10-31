@@ -24,11 +24,11 @@ package io.infinitic.workers.config
 
 import io.infinitic.common.workers.config.RetryPolicy
 import io.infinitic.workers.register.WorkerRegister
-import io.infinitic.workflows.Workflow as WorkflowBase
 import io.infinitic.workflows.Workflow
 import io.infinitic.workflows.WorkflowCheckMode
 import io.infinitic.workflows.engine.config.WorkflowEngine
 import io.infinitic.workflows.tag.config.WorkflowTag
+import io.infinitic.workflows.Workflow as WorkflowBase
 
 data class Workflow(
     val name: String,

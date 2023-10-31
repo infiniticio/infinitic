@@ -38,8 +38,10 @@ data class TaskTag(val tag: String) {
 object TaskTagSerializer : KSerializer<TaskTag> {
   override val descriptor: SerialDescriptor =
       PrimitiveSerialDescriptor("TaskTag", PrimitiveKind.STRING)
+
   override fun serialize(encoder: Encoder, value: TaskTag) {
     encoder.encodeString(value.tag)
   }
+
   override fun deserialize(decoder: Decoder) = TaskTag(decoder.decodeString())
 }

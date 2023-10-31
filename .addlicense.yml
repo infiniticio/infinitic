@@ -10,66 +10,66 @@ hasLicensePatterns:
 
 # File extension commenting format configuration
 fileExtensions:
-  - extensions: [".c", ".h"]
+  - extensions: [ ".c", ".h" ]
     top: "/*"
     mid: " * "
     bot: "*/"
-  - extensions: [".js", ".mjs", ".cjs", ".jsx", ".tsx", ".css", ".tf", ".ts", ".java", ".kt", ".kts"]
+  - extensions: [ ".js", ".mjs", ".cjs", ".jsx", ".tsx", ".css", ".tf", ".ts", ".java", ".kt", ".kts" ]
     top: "/**"
     mid: " * "
     bot: " */"
   - extensions:
       [
-          ".cc",
-          ".cpp",
-          ".cs",
-          ".go",
-          ".hh",
-          ".hpp",
-          ".m",
-          ".mm",
-          ".proto",
-          ".rs",
-          ".scala",
-          ".swift",
-          ".dart",
-          ".groovy",
-          ".php",
+        ".cc",
+        ".cpp",
+        ".cs",
+        ".go",
+        ".hh",
+        ".hpp",
+        ".m",
+        ".mm",
+        ".proto",
+        ".rs",
+        ".scala",
+        ".swift",
+        ".dart",
+        ".groovy",
+        ".php",
       ]
     top: ""
     mid: "// "
     bot: ""
   - extensions:
       [
-          ".py",
-          ".sh",
-          ".yaml",
-          ".yml",
-          ".dockerfile",
-          "dockerfile",
-          ".rb",
-          "gemfile",
+        ".py",
+        ".sh",
+        ".yaml",
+        ".yml",
+        ".dockerfile",
+        "dockerfile",
+        ".rb",
+        "gemfile",
       ]
     top: ""
     mid: "# "
     bot: ""
-  - extensions: [".el", ".lisp"]
+  - extensions: [ ".el", ".lisp" ]
     top: ""
     mid: ";; "
     bot: ""
-  - extensions: [".erl"]
+  - extensions: [ ".erl" ]
     top: ""
     mid: "% "
     bot: ""
-  - extensions: [".hs", ".sql"]
+  - extensions: [ ".hs", ".sql" ]
     top: ""
     mid: "-- "
     bot: ""
-  - extensions: [".html", ".xml", ".vue"]
+  - extensions: [ ".html", ".xml", ".vue" ]
     top: "<!--"
     mid: " "
     bot: "-->"
-  - extensions: [".ml", ".mli", ".mll", ".mly"]
+  - extensions: [ ".ml", ".mli", ".mll", ".mly" ]
     top: "(**"
     mid: "   "
     bot: "*)"

@@ -34,8 +34,11 @@ import kotlinx.serialization.Serializable
 value class CommandId(private val id: String = UUID.randomUUID().toString()) {
   companion object {
     fun from(taskId: TaskId) = CommandId(taskId.toString())
+
     fun from(workflowId: WorkflowId) = CommandId(workflowId.toString())
+
     fun from(methodRunId: MethodRunId) = CommandId(methodRunId.toString())
+
     fun from(timerId: TimerId) = CommandId(timerId.toString())
   }
 

@@ -37,14 +37,14 @@ fun getMethodPerNameAndParameters(
     parametersCount: Int
 ): Method =
     when (parameterTypes) {
-      null -> getMethodPerAnnotationAndParametersCount(klass, name, parametersCount)
+      null ->
+          getMethodPerAnnotationAndParametersCount(klass, name, parametersCount)
               ?: getMethodPerNameAndParameterCount(klass, name, parametersCount)
-                  ?: throw NoMethodFoundWithParameterCountException(
-                  klass.name, name, parametersCount)
-      else -> getMethodPerAnnotationAndParameterTypes(klass, name, parameterTypes)
+              ?: throw NoMethodFoundWithParameterCountException(klass.name, name, parametersCount)
+      else ->
+          getMethodPerAnnotationAndParameterTypes(klass, name, parameterTypes)
               ?: getMethodPerNameAndParameterTypes(klass, name, parameterTypes)
-                  ?: throw NoMethodFoundWithParameterTypesException(
-                  klass.name, name, parameterTypes)
+              ?: throw NoMethodFoundWithParameterTypesException(klass.name, name, parameterTypes)
     }
 
 fun classForName(name: String): Class<out Any> =

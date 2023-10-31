@@ -44,9 +44,11 @@ data class PropertyValue(val serializedData: SerializedData) {
 
 object PropertyValueSerializer : KSerializer<PropertyValue> {
   override val descriptor: SerialDescriptor = SerializedData.serializer().descriptor
+
   override fun serialize(encoder: Encoder, value: PropertyValue) {
     SerializedData.serializer().serialize(encoder, value.serializedData)
   }
+
   override fun deserialize(decoder: Decoder) =
       PropertyValue(SerializedData.serializer().deserialize(decoder))
 }

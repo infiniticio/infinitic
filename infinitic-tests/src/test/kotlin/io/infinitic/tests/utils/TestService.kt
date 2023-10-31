@@ -27,6 +27,7 @@ import io.infinitic.tasks.WithRetry
 
 interface TestService {
   fun log(): String
+
   fun await(delay: Long): Long
 }
 
