@@ -27,8 +27,9 @@ dependencies {
   implementation(Libs.Compress.commons)
 
   // Redis
-  implementation("redis.clients:jedis:4.3.2")
-  testImplementation("com.github.kstyrc:embedded-redis:0.6")
+  implementation("redis.clients:jedis:5.0.2")
+  //   For integration tests
+  testImplementation("org.testcontainers:testcontainers:1.19.1")
 
   // MySql
   //   For connection pooling
