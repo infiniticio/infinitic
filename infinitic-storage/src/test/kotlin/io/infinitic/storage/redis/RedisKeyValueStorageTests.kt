@@ -22,19 +22,27 @@
  */
 package io.infinitic.storage.redis
 
+import io.infinitic.storage.DockerOnly
 import io.infinitic.storage.config.Redis
 import io.infinitic.storage.config.redis.RedisKeyValueStorage
+import io.kotest.core.annotation.EnabledIf
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
-import redis.embedded.RedisServer
+import org.testcontainers.containers.GenericContainer
+import org.testcontainers.utility.DockerImageName
 
+@EnabledIf(DockerOnly::class)
 class RedisKeyValueStorageTests :
     StringSpec({
-      val redisServer = RedisServer(6380).also { it.start() }
-      val storage = RedisKeyValueStorage.of(Redis("localhost", 6380))
+      val redisServer =
+          GenericContainer(DockerImageName.parse("redis:7.2.3")).withExposedPorts(6379).also {
+            it.start()
+          }
+      val config = Redis(host = redisServer.host, port = redisServer.firstMappedPort)
+      val storage = RedisKeyValueStorage.of(config)
 
       afterSpec {
-        Redis.close()
+        config.close()
         redisServer.stop()
       }
 

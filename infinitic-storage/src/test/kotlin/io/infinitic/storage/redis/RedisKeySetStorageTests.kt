@@ -23,67 +23,79 @@
 package io.infinitic.storage.redis
 
 import io.infinitic.storage.Bytes
+import io.infinitic.storage.DockerOnly
 import io.infinitic.storage.config.Redis
 import io.infinitic.storage.config.redis.RedisKeySetStorage
+import io.kotest.core.annotation.EnabledIf
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
-import redis.embedded.RedisServer
+import org.testcontainers.containers.GenericContainer
+import org.testcontainers.utility.DockerImageName
 
+@EnabledIf(DockerOnly::class)
 class RedisKeySetStorageTests :
-    StringSpec({
-      val redisServer = RedisServer(6380).also { it.start() }
-      val config = Redis("localhost", 6380)
-      val storage = RedisKeySetStorage.of(config)
+    StringSpec(
+        {
+          val redisServer =
+              GenericContainer(DockerImageName.parse("redis:7.2.3")).withExposedPorts(6379).also {
+                it.start()
+              }
+          val config = Redis(host = redisServer.host, port = redisServer.firstMappedPort)
+          val storage = RedisKeySetStorage.of(config)
 
-      afterSpec {
-        config.close()
-        redisServer.stop()
-      }
+          afterSpec {
+            config.close()
+            redisServer.stop()
+          }
 
-      beforeTest { storage.add("foo", "bar".toByteArray()) }
+          beforeTest { storage.add("foo", "bar".toByteArray()) }
 
-      afterTest { storage.flush() }
+          afterTest { storage.flush() }
 
-      fun equalsTo(set1: Set<ByteArray>, set2: Set<ByteArray>) =
-          set1.map { Bytes(it) }.toSet() == set2.map { Bytes(it) }.toSet()
+          fun equalsTo(set1: Set<ByteArray>, set2: Set<ByteArray>) =
+              set1.map { Bytes(it) }.toSet() == set2.map { Bytes(it) }.toSet()
 
-      "get should return an empty set on unknown key" {
-        storage.get("unknown") shouldBe setOf<ByteArray>()
-      }
+          "get should return an empty set on unknown key" {
+            storage.get("unknown") shouldBe setOf()
+          }
 
-      "get should return the set on known key" {
-        equalsTo(storage.get("foo"), setOf("bar".toByteArray())) shouldBe true
-      }
+          "get should return the set on known key" {
+            equalsTo(storage.get("foo"), setOf("bar".toByteArray())) shouldBe true
+          }
 
-      "add on unknown key should create a new set" {
-        storage.add("unknown", "42".toByteArray())
+          "add on unknown key should create a new set" {
+            storage.add("unknown", "42".toByteArray())
 
-        equalsTo(storage.get("unknown"), setOf("42".toByteArray())) shouldBe true
-      }
+            equalsTo(storage.get("unknown"), setOf("42".toByteArray())) shouldBe true
+          }
 
-      "add on known key should add to set" {
-        storage.add("foo", "42".toByteArray())
+          "add on known key should add to set" {
+            storage.add("foo", "42".toByteArray())
 
-        equalsTo(storage.get("foo"), setOf("42".toByteArray(), "bar".toByteArray())) shouldBe true
-      }
+            equalsTo(storage.get("foo"), setOf("42".toByteArray(), "bar".toByteArray())) shouldBe
+                true
+          }
 
-      "add known value on known key should do nothing" {
-        storage.add("foo", "bar".toByteArray())
+          "add known value on known key should do nothing" {
+            storage.add("foo", "bar".toByteArray())
 
-        equalsTo(storage.get("foo"), setOf("bar".toByteArray())) shouldBe true
-      }
+            equalsTo(storage.get("foo"), setOf("bar".toByteArray())) shouldBe true
+          }
 
-      "remove on unknown key should do nothing" { storage.remove("unknown", "42".toByteArray()) }
+          "remove on unknown key should do nothing" {
+            storage.remove("unknown", "42".toByteArray())
+          }
 
-      "remove unknown value on known key should do nothing" {
-        storage.remove("foo", "42".toByteArray())
+          "remove unknown value on known key should do nothing" {
+            storage.remove("foo", "42".toByteArray())
 
-        equalsTo(storage.get("foo"), setOf("bar".toByteArray())) shouldBe true
-      }
+            equalsTo(storage.get("foo"), setOf("bar".toByteArray())) shouldBe true
+          }
 
-      "remove known value on known key should remove from set" {
-        storage.remove("foo", "bar".toByteArray())
+          "remove known value on known key should remove from set" {
+            storage.remove("foo", "bar".toByteArray())
 
-        equalsTo(storage.get("foo"), setOf()) shouldBe true
-      }
-    })
+            equalsTo(storage.get("foo"), setOf()) shouldBe true
+          }
+        },
+    )
