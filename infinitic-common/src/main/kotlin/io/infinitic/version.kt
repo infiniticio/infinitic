@@ -25,7 +25,7 @@ package io.infinitic
 import io.infinitic.common.serDe.avro.AvroSerDe
 
 /** Current version */
-val version: String = AvroSerDe::class.java.getResource("/version")!!.readText()
+val version: String = AvroSerDe::class.java.getResource("/version")!!.readText().trimEnd('\n')
 
 /** List of all versions used for schema backward compatibility */
-val versions: List<String> = AvroSerDe::class.java.getResource("/versions")!!.readText().split("\n")
+val versions: List<String> = AvroSerDe::class.java.getResource("/versions")!!.readText().split("\n").filter { it.isNotEmpty() }
