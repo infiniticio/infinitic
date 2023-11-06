@@ -42,9 +42,7 @@ spotless {
   kotlinGradle { ktfmt() }
 }
 
-kotlin {
-  jvmToolchain(17)
-}
+kotlin { jvmToolchain(17) }
 
 repositories { mavenCentral() }
 
