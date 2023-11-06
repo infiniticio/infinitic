@@ -42,9 +42,11 @@ data class ReturnValue(val serializedData: SerializedData) {
 
 object ReturnValueSerializer : KSerializer<ReturnValue> {
   override val descriptor: SerialDescriptor = SerializedData.serializer().descriptor
+
   override fun serialize(encoder: Encoder, value: ReturnValue) {
     SerializedData.serializer().serialize(encoder, value.serializedData)
   }
+
   override fun deserialize(decoder: Decoder) =
       ReturnValue(SerializedData.serializer().deserialize(decoder))
 }

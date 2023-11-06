@@ -42,8 +42,10 @@ data class WorkflowTaskIndex(val int: Int = 0) : Comparable<WorkflowTaskIndex> {
 object WorkflowTaskIndexSerializer : KSerializer<WorkflowTaskIndex> {
   override val descriptor: SerialDescriptor =
       PrimitiveSerialDescriptor("WorkflowTaskIndex", PrimitiveKind.INT)
+
   override fun serialize(encoder: Encoder, value: WorkflowTaskIndex) {
     encoder.encodeInt(value.int)
   }
+
   override fun deserialize(decoder: Decoder) = WorkflowTaskIndex(decoder.decodeInt())
 }

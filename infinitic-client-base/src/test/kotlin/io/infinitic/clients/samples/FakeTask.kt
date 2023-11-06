@@ -32,12 +32,19 @@ internal interface FakeTaskParent {
 
 internal interface FakeTask : FakeTaskParent {
   fun m0()
+
   fun m0String(): String
+
   fun m1(i: Int): String
+
   fun m2(str: String?): Any?
+
   fun m3(p1: Int, p2: String): String
+
   fun m4(id: FakeInterface): FooTask
+
   fun m5(): Boolean
+
   suspend fun suspendedMethod()
 }
 

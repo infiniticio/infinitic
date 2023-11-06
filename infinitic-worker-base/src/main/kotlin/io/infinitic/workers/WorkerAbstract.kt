@@ -25,11 +25,11 @@ package io.infinitic.workers
 import io.infinitic.common.clients.ClientFactory
 import io.infinitic.common.workers.WorkerStarter
 import io.infinitic.workers.register.WorkerRegister
-import java.util.concurrent.CompletableFuture
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.job
 import mu.KotlinLogging
+import java.util.concurrent.CompletableFuture
 
 @Suppress("MemberVisibilityCanBePrivate", "unused")
 abstract class WorkerAbstract(val workerRegister: WorkerRegister) :

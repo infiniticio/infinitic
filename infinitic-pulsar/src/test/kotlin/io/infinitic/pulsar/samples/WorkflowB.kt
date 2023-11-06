@@ -26,6 +26,7 @@ import io.infinitic.workflows.Workflow
 
 interface WorkflowB {
   fun concat(input: String): String
+
   fun factorial(n: Long): Long
 }
 

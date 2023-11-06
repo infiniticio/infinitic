@@ -38,10 +38,15 @@ interface WorkflowA {
   val channelString: SendChannel<String>
 
   fun empty(): String
+
   fun syncTask(duration: Long): Long
+
   fun asyncTask(duration: Long): Deferred<Long>
+
   fun syncWorkflow(duration: Long): Long
+
   fun asyncWorkflow(duration: Long): Deferred<Long>
+
   fun dispatchSelf(): Deferred<String>
 }
 
@@ -59,9 +64,13 @@ class WorkflowAImpl : Workflow(), WorkflowA {
           meta = mapOf("foo" to "bar".toByteArray()))
 
   override fun empty() = "void"
+
   override fun syncTask(duration: Long) = taskA.await(duration)
+
   override fun asyncTask(duration: Long) = dispatch(taskA::await, duration)
+
   override fun syncWorkflow(duration: Long) = workflowA.syncTask(duration)
+
   override fun asyncWorkflow(duration: Long) = dispatch(workflowA::syncTask, duration)
 
   override fun dispatchSelf(): Deferred<String> = dispatch(self::empty)

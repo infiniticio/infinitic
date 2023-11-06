@@ -37,8 +37,10 @@ data class PropertyName(override val name: String) : Name(name)
 object PropertyNameSerializer : KSerializer<PropertyName> {
   override val descriptor: SerialDescriptor =
       PrimitiveSerialDescriptor("PropertyName", PrimitiveKind.STRING)
+
   override fun serialize(encoder: Encoder, value: PropertyName) {
     encoder.encodeString(value.name)
   }
+
   override fun deserialize(decoder: Decoder) = PropertyName(decoder.decodeString())
 }

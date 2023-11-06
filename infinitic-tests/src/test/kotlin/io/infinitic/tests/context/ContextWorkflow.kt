@@ -31,13 +31,21 @@ import io.infinitic.workflows.Workflow
 
 interface ContextWorkflow {
   fun context1(): String
+
   fun context2(): Set<String>
+
   fun context3(): WorkflowMeta
+
   fun context4(): String?
+
   fun context5(): String?
+
   fun context6(): Set<String>
+
   fun context7(): TaskMeta
+
   fun context8(): WithRetry?
+
   fun context9(): WithTimeout?
 }
 

@@ -136,8 +136,8 @@ data class WorkflowState(
 
   fun getPastCommand(commandId: CommandId, methodRun: MethodRun): PastCommand =
       methodRun.getPastCommand(commandId)
-      // if we do not find in this methodRun, then search within others
-      ?: methodRuns.map { it.getPastCommand(commandId) }.firstOrNull { it != null }
+          // if we do not find in this methodRun, then search within others
+          ?: methodRuns.map { it.getPastCommand(commandId) }.firstOrNull { it != null }
           // methodRun should not be deleted if a step is still running
           ?: thisShouldNotHappen()
 

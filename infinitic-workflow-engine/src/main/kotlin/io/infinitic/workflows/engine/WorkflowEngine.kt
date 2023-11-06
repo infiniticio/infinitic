@@ -237,7 +237,7 @@ class WorkflowEngine(
 
     // process all buffered messages
     while (state.runningWorkflowTaskId == null && // if a workflowTask is not ongoing
-    state.messagesBuffer.size > 0 // if there is some buffered message
+        state.messagesBuffer.size > 0 // if there is some buffered message
     ) {
       val bufferedMsg = state.messagesBuffer.removeAt(0)
       logger.debug {

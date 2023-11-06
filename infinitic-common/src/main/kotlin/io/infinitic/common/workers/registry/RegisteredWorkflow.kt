@@ -63,6 +63,7 @@ data class RegisteredWorkflow(
   private val classByVersion by lazy { classes.associateBy { WorkflowVersion.from(it) } }
 
   private val lastVersion by lazy { classByVersion.keys.maxOrNull() ?: thisShouldNotHappen() }
+
   fun getInstance(workflowVersion: WorkflowVersion?): Workflow =
       getClass(workflowVersion).getDeclaredConstructor().newInstance()
 

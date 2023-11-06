@@ -20,7 +20,7 @@
  *
  * Licensor: infinitic.io
  */
-const val kotlinVersion = "1.8.10"
+const val kotlinVersion = "1.9.20"
 
 object Plugins {
   object Kotlin {
@@ -33,13 +33,13 @@ object Plugins {
     const val version = kotlinVersion
   }
 
-  object Ktfmt {
-    const val id = "com.ncorti.ktfmt.gradle"
-    const val version = "0.12.0"
-  }
-
   object TestLogger {
     const val id = "com.adarshr.test-logger"
-    const val version = "3.2.0"
+    const val version = "4.0.0"
+  }
+
+  object Spotless {
+    const val id = "com.diffplug.spotless"
+    const val version = "6.22.0"
   }
 }

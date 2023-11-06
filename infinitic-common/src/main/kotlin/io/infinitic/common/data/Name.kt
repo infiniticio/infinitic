@@ -53,8 +53,10 @@ open class Name(open val name: String) : CharSequence by name, Comparable<String
 object NameSerializer : KSerializer<Name> {
   override val descriptor: SerialDescriptor =
       PrimitiveSerialDescriptor("Name", PrimitiveKind.STRING)
+
   override fun serialize(encoder: Encoder, value: Name) {
     encoder.encodeString(value.name)
   }
+
   override fun deserialize(decoder: Decoder) = Name(decoder.decodeString())
 }

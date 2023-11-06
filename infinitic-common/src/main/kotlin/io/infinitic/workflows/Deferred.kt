@@ -84,9 +84,11 @@ data class Deferred<T>(val step: Step) {
 
 object DeferredSerializer : KSerializer<Deferred<*>> {
   override val descriptor: SerialDescriptor = Step.serializer().descriptor
+
   override fun serialize(encoder: Encoder, value: Deferred<*>) {
     encoder.encodeSerializableValue(Step.serializer(), value.step)
   }
+
   override fun deserialize(decoder: Decoder): Deferred<*> =
       Deferred<Any>(decoder.decodeSerializableValue(Step.serializer()))
 }

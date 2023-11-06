@@ -29,21 +29,37 @@ import io.infinitic.workflows.Workflow
 
 interface PropertiesWorkflow {
   fun prop1(): String
+
   fun prop1bis()
+
   fun prop2(): String
+
   fun prop2bis()
+
   fun prop3(): String
+
   fun prop3bis()
+
   fun prop4(): String
+
   fun prop4bis()
+
   fun prop5(): String
+
   fun prop5bis()
+
   fun prop5ter()
+
   fun prop6(): String
+
   fun prop6bis(deferred: Deferred<String>): String
+
   fun prop7(): String
+
   fun prop7bis(): String
+
   fun prop8(): String
+
   fun prop8bis()
 }
 

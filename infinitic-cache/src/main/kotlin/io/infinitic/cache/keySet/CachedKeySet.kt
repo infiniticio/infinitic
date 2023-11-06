@@ -26,7 +26,10 @@ import io.infinitic.cache.Flushable
 
 interface CachedKeySet<T> : Flushable {
   fun get(key: String): Set<T>?
+
   fun set(key: String, value: Set<T>)
+
   fun add(key: String, value: T)
+
   fun remove(key: String, value: T)
 }

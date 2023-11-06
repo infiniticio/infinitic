@@ -35,7 +35,6 @@ import io.infinitic.dashboard.panels.infrastructure.requests.Request
 import io.infinitic.dashboard.svgs.icons.iconChevron
 import io.infinitic.transport.pulsar.topics.ServiceTopics
 import io.infinitic.transport.pulsar.topics.TopicType
-import java.util.concurrent.ConcurrentHashMap
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import kweb.Element
@@ -52,6 +51,7 @@ import kweb.span
 import kweb.state.KVar
 import kweb.state.property
 import org.apache.pulsar.common.policies.data.PartitionedTopicStats
+import java.util.concurrent.ConcurrentHashMap
 
 class TaskPanel private constructor(private val taskName: String) : Panel() {
 

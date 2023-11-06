@@ -51,7 +51,9 @@ data class ChannelFilter(val jsonPath: String, val filter: String? = null) {
       Configuration.setDefaults(
           object : Configuration.Defaults {
             override fun jsonProvider() = JacksonJsonProvider()
+
             override fun mappingProvider() = JacksonMappingProvider()
+
             override fun options() = setOf(Option.ALWAYS_RETURN_LIST)
           })
     }

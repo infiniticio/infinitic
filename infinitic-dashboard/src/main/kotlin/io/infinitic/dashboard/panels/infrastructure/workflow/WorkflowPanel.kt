@@ -37,8 +37,6 @@ import io.infinitic.dashboard.svgs.icons.iconChevron
 import io.infinitic.transport.pulsar.topics.TopicType
 import io.infinitic.transport.pulsar.topics.WorkflowTaskTopics
 import io.infinitic.transport.pulsar.topics.WorkflowTopics
-import java.time.Instant
-import java.util.concurrent.ConcurrentHashMap
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -56,6 +54,8 @@ import kweb.span
 import kweb.state.KVar
 import kweb.state.property
 import org.apache.pulsar.common.policies.data.PartitionedTopicStats
+import java.time.Instant
+import java.util.concurrent.ConcurrentHashMap
 
 class WorkflowPanel private constructor(private val workflowName: String) : Panel() {
   companion object {

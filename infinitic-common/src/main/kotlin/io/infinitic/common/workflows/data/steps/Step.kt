@@ -122,6 +122,7 @@ sealed class Step {
         throw OutOfBoundAwaitException
       }
     }
+
     override fun nextAwaitIndex() {
       awaitIndex++
 
@@ -237,6 +238,7 @@ sealed class Step {
     override fun checkAwaitIndex() {
       steps.map { it.checkAwaitIndex() }
     }
+
     override fun nextAwaitIndex() {
       steps.map { it.nextAwaitIndex() }
     }
@@ -290,8 +292,7 @@ sealed class Step {
                       else ->
                           commandStatuses.firstOrNull {
                             it is Completed && it.returnIndex == awaitIndex
-                          }
-                              ?: thisShouldNotHappen()
+                          } ?: thisShouldNotHappen()
                     }
           }
       is And -> steps = steps.map { it.updateWith(commandId, commandStatus, commandStatuses) }

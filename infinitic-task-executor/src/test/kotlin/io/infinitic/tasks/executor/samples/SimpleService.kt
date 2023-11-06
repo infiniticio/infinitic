@@ -32,13 +32,17 @@ import io.infinitic.tasks.WithTimeout
 
 interface SimpleService {
   fun handle(i: Int, j: String): String
+
   fun handle(i: Int, j: Int): Int
+
   fun other(i: Int, j: String): String
 }
 
 class ServiceImplService : SimpleService {
   override fun handle(i: Int, j: String) = (i * j.toInt()).toString()
+
   override fun handle(i: Int, j: Int) = (i * j)
+
   override fun other(i: Int, j: String) = (i * j.toInt()).toString()
 }
 
@@ -53,6 +57,7 @@ internal class SimpleServiceWithRetry : WithRetry {
 
   fun handle(i: Int, j: String): String =
       if (i < 0) (i * j.toInt()).toString() else throw IllegalStateException()
+
   override fun getSecondsBeforeRetry(retry: Int, exception: Exception) = DELAY
 }
 

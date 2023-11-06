@@ -28,6 +28,8 @@ interface ParentInterface {
 
 interface TaskA : ParentInterface {
   fun concat(str1: String, str2: String): String
+
   fun reverse(str: String): String
+
   fun await(delay: Long): Long
 }

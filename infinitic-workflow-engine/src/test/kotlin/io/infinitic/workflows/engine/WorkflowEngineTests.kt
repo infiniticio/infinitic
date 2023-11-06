@@ -55,8 +55,8 @@ import io.mockk.coEvery
 import io.mockk.just
 import io.mockk.mockk
 import io.mockk.slot
-import java.util.concurrent.CopyOnWriteArrayList
 import kotlinx.coroutines.coroutineScope
+import java.util.concurrent.CopyOnWriteArrayList
 
 class WorkflowEngineTests :
     StringSpec({

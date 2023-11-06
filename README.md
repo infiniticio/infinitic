@@ -6,11 +6,15 @@ Infinitic is still in active development. Subscribe [here](https://infinitic.sub
 
 ## What is it?
 
-Infinitic is a framework based on [Apache Pulsar](https://pulsar.apache.org/) that considerably eases building asynchronous distributed apps.
+Infinitic is a framework based on [Apache Pulsar](https://pulsar.apache.org/) that considerably eases building
+asynchronous distributed apps.
 
-Many issues arise when we build and scale a distributed system - issues we don’t have in a single-process one. Infinitic provides simple but powerful libraries that let developers build distributed applications as if they were run on an infallible single-process system. It does this on top of Pulsar to benefit from its scalability and reliability.
+Many issues arise when we build and scale a distributed system - issues we don’t have in a single-process one. Infinitic
+provides simple but powerful libraries that let developers build distributed applications as if they were run on an
+infallible single-process system. It does this on top of Pulsar to benefit from its scalability and reliability.
 
-Infinitic is very good at orchestrating workflows, ie. at managing the execution of tasks on distributed servers according to any complex scenario. Moreover, Infinitic ensures that a failure somewhere will never break your workflows.
+Infinitic is very good at orchestrating workflows, ie. at managing the execution of tasks on distributed servers
+according to any complex scenario. Moreover, Infinitic ensures that a failure somewhere will never break your workflows.
 
 At last, Infinitic lets us monitor everything occurring inside your app through dashboards.
 

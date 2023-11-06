@@ -33,8 +33,8 @@ import io.infinitic.workers.InfiniticWorker
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
-import java.time.Instant
 import kotlinx.coroutines.delay
+import java.time.Instant
 
 internal class ChannelWorkflowTests :
     StringSpec({

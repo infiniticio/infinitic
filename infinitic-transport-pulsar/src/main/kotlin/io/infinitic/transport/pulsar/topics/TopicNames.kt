@@ -41,12 +41,15 @@ interface TopicNames {
   fun topic(type: ClientTopics, clientName: ClientName): String
 
   fun topic(type: WorkflowTopics, workflowName: WorkflowName): String
+
   fun topicDLQ(type: WorkflowTopics, workflowName: WorkflowName): String
 
   fun topic(type: ServiceTopics, serviceName: ServiceName): String
+
   fun topicDLQ(type: ServiceTopics, serviceName: ServiceName): String
 
   fun topic(type: WorkflowTaskTopics, workflowName: WorkflowName): String
+
   fun topicDLQ(type: WorkflowTaskTopics, workflowName: WorkflowName): String
 
   fun topic(type: TopicType, name: String) =

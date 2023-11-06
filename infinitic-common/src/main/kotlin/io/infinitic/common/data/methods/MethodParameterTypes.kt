@@ -40,9 +40,11 @@ data class MethodParameterTypes(val types: List<String>) {
 
 object MethodParameterTypesSerializer : KSerializer<MethodParameterTypes> {
   override val descriptor: SerialDescriptor = ListSerializer(String.serializer()).descriptor
+
   override fun serialize(encoder: Encoder, value: MethodParameterTypes) {
     ListSerializer(String.serializer()).serialize(encoder, value.types)
   }
+
   override fun deserialize(decoder: Decoder) =
       MethodParameterTypes(ListSerializer(String.serializer()).deserialize(decoder))
 }

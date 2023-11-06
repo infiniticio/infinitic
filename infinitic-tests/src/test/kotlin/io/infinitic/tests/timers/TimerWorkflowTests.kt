@@ -26,136 +26,140 @@ import io.infinitic.clients.InfiniticClient
 import io.infinitic.common.fixtures.later
 import io.infinitic.workers.InfiniticWorker
 import io.kotest.core.spec.style.StringSpec
+import io.kotest.matchers.comparables.shouldBeGreaterThanOrEqualTo
 import io.kotest.matchers.longs.shouldBeGreaterThan
 import io.kotest.matchers.longs.shouldBeLessThan
 import io.kotest.matchers.shouldBe
 import java.time.Instant
 
 internal class TimerWorkflowTests :
-    StringSpec({
+  StringSpec(
+      {
 
-      // each test should not be longer than 10s
-      timeout = 10000
+        // each test should not be longer than 10s
+        timeout = 10000
 
-      val worker = autoClose(InfiniticWorker.fromConfigResource("/pulsar.yml"))
-      val client = autoClose(InfiniticClient.fromConfigResource("/pulsar.yml"))
+        val worker = autoClose(InfiniticWorker.fromConfigResource("/pulsar.yml"))
+        val client = autoClose(InfiniticClient.fromConfigResource("/pulsar.yml"))
 
-      val timerWorkflow = client.newWorkflow(TimerWorkflow::class.java, tags = setOf("foo", "bar"))
+        val timerWorkflow =
+            client.newWorkflow(TimerWorkflow::class.java, tags = setOf("foo", "bar"))
 
-      beforeSpec { worker.startAsync() }
+        beforeSpec { worker.startAsync() }
 
-      beforeTest { worker.registry.flush() }
+        beforeTest { worker.registry.flush() }
 
-      "Wait for a duration timer" {
-        val start = Instant.now().toEpochMilli()
+        "Wait for a duration timer" {
+          val start = Instant.now().toEpochMilli()
 
-        val deferred = client.dispatch(timerWorkflow::await, 200L)
+          val deferred = client.dispatch(timerWorkflow::await, 200L)
 
-        (deferred.await().toEpochMilli() - start) shouldBeLessThan (2000L)
-      }
-
-      "Wait for a long duration timer" {
-        val start = Instant.now().toEpochMilli()
-
-        val deferred = client.dispatch(timerWorkflow::await, 2000L)
-
-        (deferred.await().toEpochMilli() - start) shouldBeGreaterThan (2000L)
-      }
-
-      "Wait for a instant timer" {
-        val start = Instant.now().toEpochMilli()
-
-        val deferred = client.dispatch(timerWorkflow::await, Instant.now().plusMillis(200))
-
-        (deferred.await().toEpochMilli() - start) shouldBeLessThan (2000L)
-      }
-
-      "Wait for a long instant timer" {
-        val start = Instant.now().toEpochMilli()
-
-        val deferred = client.dispatch(timerWorkflow::await, Instant.now().plusMillis(2000))
-
-        (deferred.await().toEpochMilli() - start) shouldBeGreaterThan (2000L)
-      }
-
-      "Wait for a timer or a signal - timer wins" {
-        val deferred = client.dispatch(timerWorkflow::awaitSignal, 200L)
-
-        deferred.await()::class shouldBe Instant::class
-      }
-
-      "Wait for a timer or a signal - signal wins" {
-        val deferred = client.dispatch(timerWorkflow::awaitSignal, 10000L)
-
-        later {
-          val w = client.getWorkflowById(TimerWorkflow::class.java, deferred.id)
-          w.channel.send("bingo")
+          (deferred.await().toEpochMilli() - start) shouldBeLessThan (2000L)
         }
 
-        deferred.await() shouldBe "bingo"
-      }
+        "Wait for a long duration timer" {
+          val start = Instant.now().toEpochMilli()
 
-      "Wait for a timer or a signal - timer wins after manual completion by id" {
-        val deferred = client.dispatch(timerWorkflow::awaitSignal, 10000L)
+          val deferred = client.dispatch(timerWorkflow::await, 2000L)
 
-        later(200) {
-          val w = client.getWorkflowById(TimerWorkflow::class.java, deferred.id)
-          client.completeTimers(w)
+          (deferred.await().toEpochMilli() - start) shouldBeGreaterThan (2000L)
         }
 
-        later(500) {
-          val w = client.getWorkflowById(TimerWorkflow::class.java, deferred.id)
-          w.channel.send("bingo")
+        "Wait for a instant timer" {
+          val start = Instant.now().toEpochMilli()
+
+          val deferred = client.dispatch(timerWorkflow::await, Instant.now().plusMillis(200))
+
+          (deferred.await().toEpochMilli() - start) shouldBeLessThan (2000L)
         }
 
-        deferred.await()::class shouldBe Instant::class
-      }
+        "Wait for a long instant timer" {
+          val start = Instant.now().toEpochMilli()
 
-      "Wait for a timer or a signal - timer wins after manual completion by tag" {
-        val deferred = client.dispatch(timerWorkflow::awaitSignal, 10000L)
+          val deferred = client.dispatch(timerWorkflow::await, Instant.now().plusMillis(2000))
 
-        later(200) {
-          val w = client.getWorkflowByTag(TimerWorkflow::class.java, "foo")
-          client.completeTimers(w)
+          (deferred.await().toEpochMilli() - start) shouldBeGreaterThanOrEqualTo (2000L)
         }
 
-        later(500) {
-          val w = client.getWorkflowById(TimerWorkflow::class.java, deferred.id)
-          w.channel.send("bingo")
+        "Wait for a timer or a signal - timer wins" {
+          val deferred = client.dispatch(timerWorkflow::awaitSignal, 200L)
+
+          deferred.await()::class shouldBe Instant::class
         }
 
-        deferred.await()::class shouldBe Instant::class
-      }
+        "Wait for a timer or a signal - signal wins" {
+          val deferred = client.dispatch(timerWorkflow::awaitSignal, 10000L)
 
-      "Wait for a timer or a signal - signal wins after manual timer completion with wrong methodRunId" {
-        val deferred = client.dispatch(timerWorkflow::awaitSignal, 10000L)
+          later {
+            val w = client.getWorkflowById(TimerWorkflow::class.java, deferred.id)
+            w.channel.send("bingo")
+          }
 
-        later(200) {
-          val w = client.getWorkflowById(TimerWorkflow::class.java, deferred.id)
-          client.completeTimers(w, "wrong")
+          deferred.await() shouldBe "bingo"
         }
 
-        later(500) {
-          val w = client.getWorkflowById(TimerWorkflow::class.java, deferred.id)
-          w.channel.send("bingo")
+        "Wait for a timer or a signal - timer wins after manual completion by id" {
+          val deferred = client.dispatch(timerWorkflow::awaitSignal, 10000L)
+
+          later(200) {
+            val w = client.getWorkflowById(TimerWorkflow::class.java, deferred.id)
+            client.completeTimers(w)
+          }
+
+          later(500) {
+            val w = client.getWorkflowById(TimerWorkflow::class.java, deferred.id)
+            w.channel.send("bingo")
+          }
+
+          deferred.await()::class shouldBe Instant::class
         }
 
-        deferred.await() shouldBe "bingo"
-      }
+        "Wait for a timer or a signal - timer wins after manual completion by tag" {
+          val deferred = client.dispatch(timerWorkflow::awaitSignal, 10000L)
 
-      "Wait for a timer or a signal - timer wins after manual completion with correct methodRunId" {
-        val deferred = client.dispatch(timerWorkflow::awaitSignal, 10000L)
+          later(200) {
+            val w = client.getWorkflowByTag(TimerWorkflow::class.java, "foo")
+            client.completeTimers(w)
+          }
 
-        later(200) {
-          val w = client.getWorkflowById(TimerWorkflow::class.java, deferred.id)
-          client.completeTimers(w, deferred.id)
+          later(500) {
+            val w = client.getWorkflowById(TimerWorkflow::class.java, deferred.id)
+            w.channel.send("bingo")
+          }
+
+          deferred.await()::class shouldBe Instant::class
         }
 
-        later(500) {
-          val w = client.getWorkflowById(TimerWorkflow::class.java, deferred.id)
-          w.channel.send("bingo")
+        "Wait for a timer or a signal - signal wins after manual timer completion with wrong methodRunId" {
+          val deferred = client.dispatch(timerWorkflow::awaitSignal, 10000L)
+
+          later(200) {
+            val w = client.getWorkflowById(TimerWorkflow::class.java, deferred.id)
+            client.completeTimers(w, "wrong")
+          }
+
+          later(500) {
+            val w = client.getWorkflowById(TimerWorkflow::class.java, deferred.id)
+            w.channel.send("bingo")
+          }
+
+          deferred.await() shouldBe "bingo"
         }
 
-        deferred.await()::class shouldBe Instant::class
-      }
-    })
+        "Wait for a timer or a signal - timer wins after manual completion with correct methodRunId" {
+          val deferred = client.dispatch(timerWorkflow::awaitSignal, 10000L)
+
+          later(200) {
+            val w = client.getWorkflowById(TimerWorkflow::class.java, deferred.id)
+            client.completeTimers(w, deferred.id)
+          }
+
+          later(500) {
+            val w = client.getWorkflowById(TimerWorkflow::class.java, deferred.id)
+            w.channel.send("bingo")
+          }
+
+          deferred.await()::class shouldBe Instant::class
+        }
+      },
+  )

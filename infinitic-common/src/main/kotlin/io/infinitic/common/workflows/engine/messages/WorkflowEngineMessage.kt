@@ -65,6 +65,7 @@ interface MethodEvent : WorkflowEvent {
 
 interface TaskEvent : MethodEvent {
   fun taskId(): TaskId
+
   fun serviceName(): ServiceName
 }
 
@@ -242,6 +243,7 @@ data class TaskCanceled(
     override val emitterName: ClientName
 ) : WorkflowEngineMessage(), TaskEvent {
   override fun taskId() = canceledTaskError.taskId
+
   override fun serviceName() = canceledTaskError.serviceName
 }
 
@@ -256,6 +258,7 @@ data class TaskFailed(
     override val emitterName: ClientName
 ) : WorkflowEngineMessage(), TaskEvent {
   override fun taskId() = failedTaskError.taskId
+
   override fun serviceName() = failedTaskError.serviceName
 }
 
@@ -269,5 +272,6 @@ data class TaskCompleted(
     override val emitterName: ClientName
 ) : WorkflowEngineMessage(), TaskEvent {
   override fun taskId() = taskReturnValue.taskId
+
   override fun serviceName() = taskReturnValue.serviceName
 }

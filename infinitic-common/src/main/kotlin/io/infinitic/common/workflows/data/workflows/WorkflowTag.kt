@@ -44,8 +44,10 @@ data class WorkflowTag(val tag: String) {
 object WorkflowTagSerializer : KSerializer<WorkflowTag> {
   override val descriptor: SerialDescriptor =
       PrimitiveSerialDescriptor("WorkflowTag", PrimitiveKind.STRING)
+
   override fun serialize(encoder: Encoder, value: WorkflowTag) {
     encoder.encodeString(value.tag)
   }
+
   override fun deserialize(decoder: Decoder) = WorkflowTag(decoder.decodeString())
 }

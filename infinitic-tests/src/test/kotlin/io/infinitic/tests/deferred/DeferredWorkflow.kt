@@ -33,16 +33,27 @@ import java.time.Duration
 interface DeferredWorkflow {
 
   fun await(duration: Long): Long
+
   fun seq1(): String
+
   fun seq2(): String
+
   fun seq5(): Long
+
   fun seq6(): Long
+
   fun or1(): String
+
   fun or2(): Any
+
   fun or3(): String
+
   fun or4(): String
+
   fun and1(): List<String>
+
   fun and2(): List<String>
+
   fun and3(): List<String>
 }
 
