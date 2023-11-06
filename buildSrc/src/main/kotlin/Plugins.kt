@@ -20,7 +20,7 @@
  *
  * Licensor: infinitic.io
  */
-const val kotlinVersion = "1.9.10"
+const val kotlinVersion = "1.9.20"
 
 object Plugins {
   object Kotlin {
@@ -31,11 +31,6 @@ object Plugins {
   object Serialization {
     const val id = "org.jetbrains.kotlin.plugin.serialization"
     const val version = kotlinVersion
-  }
-
-  object Ktfmt {
-    const val id = "com.ncorti.ktfmt.gradle"
-    const val version = "0.15.0"
   }
 
   object TestLogger {

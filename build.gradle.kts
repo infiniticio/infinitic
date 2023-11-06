@@ -43,7 +43,6 @@ spotless {
 }
 
 kotlin {
-  // For example:
   jvmToolchain(17)
 }
 
@@ -81,6 +80,15 @@ subprojects {
   }
 
   tasks.withType<KotlinCompile> {
-    kotlinOptions { freeCompilerArgs = freeCompilerArgs + "-opt-in=kotlin.RequiresOptIn" }
+    kotlinOptions {
+      freeCompilerArgs = freeCompilerArgs + "-opt-in=kotlin.RequiresOptIn"
+      jvmTarget = JavaVersion.VERSION_11.toString()
+    }
+  }
+
+  // Keep this to tell compatibility to applications
+  tasks.withType<JavaCompile> {
+    sourceCompatibility = JavaVersion.VERSION_11.toString()
+    targetCompatibility = JavaVersion.VERSION_11.toString()
   }
 }
