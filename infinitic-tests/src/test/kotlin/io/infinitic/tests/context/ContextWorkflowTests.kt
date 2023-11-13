@@ -37,8 +37,8 @@ internal class ContextWorkflowTests :
         timeout = 5000
 
         val tests = WorkflowTests()
-        val worker = autoClose(tests.worker)
-        val client = autoClose(tests.client)
+        val worker = tests.worker
+        val client = tests.client
 
         val contextWorkflow =
             client.newWorkflow(
@@ -48,6 +48,11 @@ internal class ContextWorkflowTests :
             )
 
         beforeSpec { worker.startAsync() }
+
+        afterSpec {
+          worker.close()
+          client.close()
+        }
 
         beforeTest { worker.registry.flush() }
 

@@ -42,13 +42,18 @@ internal class ChannelWorkflowTests :
         timeout = 5000
 
         val tests = WorkflowTests()
-        val worker = autoClose(tests.worker)
-        val client = autoClose(tests.client)
+        val worker = tests.worker
+        val client = tests.client
 
         val channelsWorkflow =
             client.newWorkflow(ChannelsWorkflow::class.java, tags = setOf("foo", "bar"))
 
         beforeSpec { worker.startAsync() }
+
+        afterSpec {
+          worker.close()
+          client.close()
+        }
 
         beforeTest { worker.registry.flush() }
 

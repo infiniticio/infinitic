@@ -35,14 +35,19 @@ internal class ChildrenWorkflowTests :
         timeout = 5000
 
         val tests = WorkflowTests()
-        val worker = autoClose(tests.worker)
-        val client = autoClose(tests.client)
+        val worker = tests.worker
+        val client = tests.client
 
         val childrenWorkflow =
             client.newWorkflow(ChildrenWorkflow::class.java, tags = setOf("foo", "bar"))
         val utilWorkflow = client.newWorkflow(UtilWorkflow::class.java)
 
         beforeSpec { worker.startAsync() }
+
+        afterSpec {
+          worker.close()
+          client.close()
+        }
 
         beforeTest { worker.registry.flush() }
 

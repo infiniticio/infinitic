@@ -33,12 +33,17 @@ internal class VersionedWorkflowTests :
         timeout = 5000
 
         val tests = WorkflowTests()
-        val worker = autoClose(tests.worker)
-        val client = autoClose(tests.client)
+        val worker = tests.worker
+        val client = tests.client
 
         val versionedWorkflow = client.newWorkflow(VersionedWorkflow::class.java)
 
         beforeSpec { worker.startAsync() }
+
+        afterSpec {
+          worker.close()
+          client.close()
+        }
 
         beforeTest { worker.registry.flush() }
 

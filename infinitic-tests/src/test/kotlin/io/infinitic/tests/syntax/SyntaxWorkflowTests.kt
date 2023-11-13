@@ -34,13 +34,18 @@ internal class SyntaxWorkflowTests :
         timeout = 5000
 
         val tests = WorkflowTests()
-        val worker = autoClose(tests.worker)
-        val client = autoClose(tests.client)
+        val worker = tests.worker
+        val client = tests.client
 
         val syntaxWorkflow = client.newWorkflow(SyntaxWorkflow::class.java)
         val annotatedWorkflow = client.newWorkflow(AnnotatedWorkflow::class.java)
 
         beforeSpec { worker.startAsync() }
+
+        afterSpec {
+          worker.close()
+          client.close()
+        }
 
         beforeTest { worker.registry.flush() }
 

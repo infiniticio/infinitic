@@ -31,7 +31,6 @@ import io.infinitic.clients.samples.FakeTaskParent
 import io.infinitic.clients.samples.FakeWorkflow
 import io.infinitic.clients.samples.FakeWorkflowImpl
 import io.infinitic.clients.samples.FooWorkflow
-import io.infinitic.common.clients.messages.ClientMessage
 import io.infinitic.common.clients.messages.MethodCompleted
 import io.infinitic.common.clients.messages.WorkflowIdsByTag
 import io.infinitic.common.data.ClientName
@@ -92,7 +91,6 @@ private val workflowTagSlots = CopyOnWriteArrayList<WorkflowTagMessage>() // mul
 private val taskSlot = slot<TaskExecutorMessage>()
 private val workflowEngineSlot = slot<WorkflowEngineMessage>()
 private val clientNameTest = ClientName("clientTest")
-private val handlerSlot = slot<suspend (ClientMessage) -> Unit>()
 
 fun tagResponse(): CompletableFuture<Unit> {
   workflowTagSlots.forEach {
