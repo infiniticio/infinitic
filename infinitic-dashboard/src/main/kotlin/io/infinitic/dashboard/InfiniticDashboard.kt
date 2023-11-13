@@ -33,7 +33,7 @@ import io.infinitic.dashboard.panels.workflows.WorkflowsPanel
 import io.infinitic.dashboard.plugins.images.imagesPlugin
 import io.infinitic.dashboard.plugins.tailwind.tailwindPlugin
 import io.infinitic.pulsar.PulsarInfiniticAdmin
-import io.infinitic.transport.pulsar.config.Pulsar
+import io.infinitic.pulsar.config.Pulsar
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -46,10 +46,10 @@ import org.apache.pulsar.client.admin.PulsarAdmin
 
 @Suppress("MemberVisibilityCanBePrivate", "CanBeParameter")
 class InfiniticDashboard(
-    val pulsarAdmin: PulsarAdmin,
-    val pulsar: Pulsar,
-    val port: Int,
-    val debug: Boolean
+  val pulsarAdmin: PulsarAdmin,
+  val pulsar: Pulsar,
+  val port: Int,
+  val debug: Boolean
 ) {
   init {
     Infinitic.admin = PulsarInfiniticAdmin(pulsarAdmin, pulsar)
@@ -65,7 +65,8 @@ class InfiniticDashboard(
     @JvmStatic
     fun from(pulsarAdmin: PulsarAdmin, dashboardConfig: DashboardConfig) =
         InfiniticDashboard(
-            pulsarAdmin, dashboardConfig.pulsar, dashboardConfig.port, dashboardConfig.debug)
+                pulsarAdmin, dashboardConfig.pulsar, dashboardConfig.port, dashboardConfig.debug,
+        )
 
     /** Create Dashboard from a DashboardConfig */
     @JvmStatic

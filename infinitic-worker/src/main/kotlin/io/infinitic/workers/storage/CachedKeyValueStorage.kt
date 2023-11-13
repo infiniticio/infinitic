@@ -20,36 +20,41 @@
  *
  * Licensor: infinitic.io
  */
-package io.infinitic.pulsar.config
+package io.infinitic.workers.storage
 
-import io.infinitic.common.config.loadConfigFromFile
-import io.infinitic.common.config.loadConfigFromResource
-import io.infinitic.transport.config.Transport
-import io.infinitic.transport.pulsar.config.Pulsar
+import io.infinitic.cache.keyValue.CachedKeyValue
+import io.infinitic.storage.keyValue.KeyValueStorage
+import mu.KotlinLogging
+import org.jetbrains.annotations.TestOnly
 
-data class ClientConfig(
-    /** Client name */
-    val name: String? = null,
+open class CachedKeyValueStorage(
+    private val cache: CachedKeyValue<ByteArray>,
+    private val storage: KeyValueStorage
+) : KeyValueStorage {
 
-    /** Transport configuration */
-    val transport: Transport = Transport.pulsar,
+  private val logger = KotlinLogging.logger {}
 
-    /** Pulsar configuration */
-    val pulsar: Pulsar? = null
-) {
-  init {
-    if (transport == Transport.pulsar) {
-      require(pulsar != null) { "Missing Pulsar configuration" }
-    }
+  override suspend fun get(key: String): ByteArray? {
+    return cache.getValue(key)
+        ?: run {
+          logger.debug { "key $key - getValue - absent from cache, get from storage" }
+          storage.get(key)?.also { cache.putValue(key, it) }
+        }
   }
 
-  companion object {
-    /** Create ClientConfig from file in file system */
-    @JvmStatic fun fromFile(vararg files: String): ClientConfig = loadConfigFromFile(files.toList())
+  override suspend fun put(key: String, value: ByteArray) {
+    storage.put(key, value)
+    cache.putValue(key, value)
+  }
 
-    /** Create ClientConfig from file in resources directory */
-    @JvmStatic
-    fun fromResource(vararg resources: String): ClientConfig =
-        loadConfigFromResource(resources.toList())
+  override suspend fun del(key: String) {
+    storage.del(key)
+    cache.delValue(key)
+  }
+
+  @TestOnly
+  override fun flush() {
+    cache.flush()
+    storage.flush()
   }
 }

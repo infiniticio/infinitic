@@ -26,7 +26,7 @@ import io.infinitic.dashboard.Infinitic.topics
 import io.infinitic.dashboard.panels.infrastructure.requests.Completed
 import io.infinitic.dashboard.panels.infrastructure.requests.Failed
 import io.infinitic.dashboard.panels.infrastructure.requests.Request
-import io.infinitic.transport.pulsar.topics.TopicType
+import io.infinitic.pulsar.topics.TopicType
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
@@ -43,8 +43,8 @@ private val logger = KotlinLogging.logger {}
 typealias TopicsStats<T> = Map<T, Request<PartitionedTopicStats>>
 
 abstract class JobState<T : TopicType>(
-    open val name: String,
-    open val topicsStats: TopicsStats<T>,
+  open val name: String,
+  open val topicsStats: TopicsStats<T>,
 ) {
   abstract fun create(name: String = this.name, topicsStats: TopicsStats<T>): JobState<T>
 

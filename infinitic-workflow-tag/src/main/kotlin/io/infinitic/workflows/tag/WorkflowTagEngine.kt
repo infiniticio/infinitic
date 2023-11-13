@@ -22,12 +22,11 @@
  */
 package io.infinitic.workflows.tag
 
-import io.infinitic.common.clients.SendToClient
 import io.infinitic.common.clients.messages.WorkflowIdsByTag
 import io.infinitic.common.data.ClientName
 import io.infinitic.common.exceptions.thisShouldNotHappen
+import io.infinitic.common.transport.InfiniticProducer
 import io.infinitic.common.workflows.data.methodRuns.MethodRunId
-import io.infinitic.common.workflows.engine.SendToWorkflowEngine
 import io.infinitic.common.workflows.engine.messages.CancelWorkflow
 import io.infinitic.common.workflows.engine.messages.CompleteTimers
 import io.infinitic.common.workflows.engine.messages.DispatchMethod
@@ -36,7 +35,6 @@ import io.infinitic.common.workflows.engine.messages.RetryTasks
 import io.infinitic.common.workflows.engine.messages.RetryWorkflowTask
 import io.infinitic.common.workflows.engine.messages.SendSignal
 import io.infinitic.common.workflows.engine.messages.WaitWorkflow
-import io.infinitic.common.workflows.tags.SendToWorkflowTag
 import io.infinitic.common.workflows.tags.messages.AddTagToWorkflow
 import io.infinitic.common.workflows.tags.messages.CancelWorkflowByTag
 import io.infinitic.common.workflows.tags.messages.CompleteTimersByTag
@@ -55,15 +53,14 @@ import kotlinx.coroutines.launch
 import mu.KotlinLogging
 
 class WorkflowTagEngine(
-    private val clientName: ClientName,
-    storage: WorkflowTagStorage,
-    val sendToWorkflowTag: SendToWorkflowTag,
-    val sendToWorkflowEngine: SendToWorkflowEngine,
-    val sendToClient: SendToClient
+  storage: WorkflowTagStorage,
+  private val producer: InfiniticProducer
 ) {
   private val storage = LoggedWorkflowTagStorage(storage)
 
   private val logger = KotlinLogging.logger {}
+
+  private val clientName by lazy { ClientName(producer.name) }
 
   suspend fun handle(message: WorkflowTagMessage) {
     logger.debug { "receiving $message" }
@@ -97,11 +94,12 @@ class WorkflowTagEngine(
                     workflowName = message.workflowName,
                     workflowTag = it,
                     workflowId = message.workflowId,
-                    emitterName = clientName)
+                    emitterName = clientName,
+                )
 
             when (it) {
               message.workflowTag -> addWorkflowTag(addTagToWorkflow)
-              else -> launch { sendToWorkflowTag(addTagToWorkflow) }
+              else -> launch { producer.send(addTagToWorkflow) }
             }
           }
           // dispatch workflow message
@@ -118,9 +116,10 @@ class WorkflowTagEngine(
                   parentWorkflowId = message.parentWorkflowId,
                   parentMethodRunId = message.parentMethodRunId,
                   clientWaiting = message.clientWaiting,
-                  emitterName = message.emitterName)
+                  emitterName = message.emitterName,
+              )
 
-          launch { sendToWorkflowEngine(dispatchWorkflow) }
+          launch { producer.send(dispatchWorkflow) }
         }
         // Another running workflow instance exist with same custom id
         1 -> {
@@ -135,17 +134,19 @@ class WorkflowTagEngine(
                     workflowName = message.workflowName,
                     workflowId = ids.first(),
                     methodRunId = MethodRunId.from(ids.first()),
-                    emitterName = message.emitterName)
+                    emitterName = message.emitterName,
+                )
 
-            launch { sendToWorkflowEngine(waitWorkflow) }
+            launch { producer.send(waitWorkflow) }
           }
 
           Unit
         }
         // multiple running workflow instance exist with same custom id
         else ->
-            thisShouldNotHappen(
-                "Workflow '${message.workflowName}' with customId '${message.workflowTag}' has multiple ids: ${ids.joinToString()}")
+          thisShouldNotHappen(
+              "Workflow '${message.workflowName}' with customId '${message.workflowTag}' has multiple ids: ${ids.joinToString()}",
+          )
       }
     }
   }
@@ -159,26 +160,28 @@ class WorkflowTagEngine(
         true -> {
           discardTagWithoutIds(message)
         }
+
         false ->
-            ids.forEach {
-              // parent workflow already applied method to self
-              if (it != message.parentWorkflowId) {
-                val dispatchMethod =
-                    DispatchMethod(
-                        workflowName = message.workflowName,
-                        workflowId = it,
-                        methodRunId = message.methodRunId,
-                        methodName = message.methodName,
-                        methodParameters = message.methodParameters,
-                        methodParameterTypes = message.methodParameterTypes,
-                        parentWorkflowId = message.parentWorkflowId,
-                        parentWorkflowName = message.parentWorkflowName,
-                        parentMethodRunId = message.parentMethodRunId,
-                        clientWaiting = false,
-                        emitterName = clientName)
-                launch { sendToWorkflowEngine(dispatchMethod) }
-              }
+          ids.forEach {
+            // parent workflow already applied method to self
+            if (it != message.parentWorkflowId) {
+              val dispatchMethod =
+                  DispatchMethod(
+                      workflowName = message.workflowName,
+                      workflowId = it,
+                      methodRunId = message.methodRunId,
+                      methodName = message.methodName,
+                      methodParameters = message.methodParameters,
+                      methodParameterTypes = message.methodParameterTypes,
+                      parentWorkflowId = message.parentWorkflowId,
+                      parentWorkflowName = message.parentWorkflowName,
+                      parentMethodRunId = message.parentMethodRunId,
+                      clientWaiting = false,
+                      emitterName = clientName,
+                  )
+              launch { producer.send(dispatchMethod) }
             }
+          }
       }
     }
   }
@@ -192,15 +195,17 @@ class WorkflowTagEngine(
         true -> {
           discardTagWithoutIds(message)
         }
+
         false ->
-            ids.forEach {
-              val retryWorkflowTask =
-                  RetryWorkflowTask(
-                      workflowName = message.workflowName,
-                      workflowId = it,
-                      emitterName = clientName)
-              launch { sendToWorkflowEngine(retryWorkflowTask) }
-            }
+          ids.forEach {
+            val retryWorkflowTask =
+                RetryWorkflowTask(
+                    workflowName = message.workflowName,
+                    workflowId = it,
+                    emitterName = clientName,
+                )
+            launch { producer.send(retryWorkflowTask) }
+          }
       }
     }
   }
@@ -214,18 +219,20 @@ class WorkflowTagEngine(
         true -> {
           discardTagWithoutIds(message)
         }
+
         false ->
-            ids.forEach {
-              val retryTasks =
-                  RetryTasks(
-                      workflowName = message.workflowName,
-                      workflowId = it,
-                      taskId = message.taskId,
-                      serviceName = message.serviceName,
-                      taskStatus = message.taskStatus,
-                      emitterName = clientName)
-              launch { sendToWorkflowEngine(retryTasks) }
-            }
+          ids.forEach {
+            val retryTasks =
+                RetryTasks(
+                    workflowName = message.workflowName,
+                    workflowId = it,
+                    taskId = message.taskId,
+                    serviceName = message.serviceName,
+                    taskStatus = message.taskStatus,
+                    emitterName = clientName,
+                )
+            launch { producer.send(retryTasks) }
+          }
       }
     }
   }
@@ -239,16 +246,18 @@ class WorkflowTagEngine(
         true -> {
           discardTagWithoutIds(message)
         }
+
         false ->
-            ids.forEach {
-              val completeTimers =
-                  CompleteTimers(
-                      workflowName = message.workflowName,
-                      workflowId = it,
-                      methodRunId = message.methodRunId,
-                      emitterName = clientName)
-              launch { sendToWorkflowEngine(completeTimers) }
-            }
+          ids.forEach {
+            val completeTimers =
+                CompleteTimers(
+                    workflowName = message.workflowName,
+                    workflowId = it,
+                    methodRunId = message.methodRunId,
+                    emitterName = clientName,
+                )
+            launch { producer.send(completeTimers) }
+          }
       }
     }
   }
@@ -262,20 +271,22 @@ class WorkflowTagEngine(
         true -> {
           discardTagWithoutIds(message)
         }
+
         false ->
-            ids.forEach {
-              // parent workflow already applied method to self
-              if (it != message.emitterWorkflowId) {
-                val cancelWorkflow =
-                    CancelWorkflow(
-                        workflowName = message.workflowName,
-                        workflowId = it,
-                        methodRunId = MethodRunId.from(it),
-                        reason = message.reason,
-                        emitterName = clientName)
-                launch { sendToWorkflowEngine(cancelWorkflow) }
-              }
+          ids.forEach {
+            // parent workflow already applied method to self
+            if (it != message.emitterWorkflowId) {
+              val cancelWorkflow =
+                  CancelWorkflow(
+                      workflowName = message.workflowName,
+                      workflowId = it,
+                      methodRunId = MethodRunId.from(it),
+                      reason = message.reason,
+                      emitterName = clientName,
+                  )
+              launch { producer.send(cancelWorkflow) }
             }
+          }
       }
     }
   }
@@ -288,21 +299,22 @@ class WorkflowTagEngine(
       when (ids.isEmpty()) {
         true -> discardTagWithoutIds(message)
         false ->
-            ids.forEach {
-              // parent workflow already applied method to self
-              if (it != message.emitterWorkflowId) {
-                val sendSignal =
-                    SendSignal(
-                        workflowName = message.workflowName,
-                        workflowId = it,
-                        channelName = message.channelName,
-                        signalId = message.signalId,
-                        signalData = message.signalData,
-                        channelTypes = message.channelTypes,
-                        emitterName = clientName)
-                launch { sendToWorkflowEngine(sendSignal) }
-              }
+          ids.forEach {
+            // parent workflow already applied method to self
+            if (it != message.emitterWorkflowId) {
+              val sendSignal =
+                  SendSignal(
+                      workflowName = message.workflowName,
+                      workflowId = it,
+                      channelName = message.channelName,
+                      signalId = message.signalId,
+                      signalData = message.signalData,
+                      channelTypes = message.channelTypes,
+                      emitterName = clientName,
+                  )
+              launch { producer.send(sendSignal) }
             }
+          }
       }
     }
   }
@@ -324,8 +336,9 @@ class WorkflowTagEngine(
             message.workflowName,
             message.workflowTag,
             workflowIds,
-            emitterName = clientName)
-    sendToClient(workflowIdsByTag)
+            emitterName = clientName,
+        )
+    producer.send(workflowIdsByTag)
   }
 
   private fun discardTagWithoutIds(message: WorkflowTagMessage) {

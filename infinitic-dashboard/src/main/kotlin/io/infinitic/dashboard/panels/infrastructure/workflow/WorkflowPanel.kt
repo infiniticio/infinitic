@@ -34,9 +34,9 @@ import io.infinitic.dashboard.panels.infrastructure.jobs.update
 import io.infinitic.dashboard.panels.infrastructure.requests.Loading
 import io.infinitic.dashboard.panels.infrastructure.requests.Request
 import io.infinitic.dashboard.svgs.icons.iconChevron
-import io.infinitic.transport.pulsar.topics.TopicType
-import io.infinitic.transport.pulsar.topics.WorkflowTaskTopics
-import io.infinitic.transport.pulsar.topics.WorkflowTopics
+import io.infinitic.pulsar.topics.TopicType
+import io.infinitic.pulsar.topics.WorkflowTaskTopics
+import io.infinitic.pulsar.topics.WorkflowTopics
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -151,7 +151,8 @@ class WorkflowPanel private constructor(private val workflowName: String) : Pane
                 // title
                 h2()
                     .classes(
-                        "mt-2 text-2xl font-bold leading-7 text-gray-900 sm:text-3xl sm:truncate")
+                        "mt-2 text-2xl font-bold leading-7 text-gray-900 sm:text-3xl sm:truncate",
+                    )
                     .text(workflowName)
               }
             }
@@ -164,7 +165,8 @@ class WorkflowPanel private constructor(private val workflowName: String) : Pane
             "Here are the topics used by the workflow engine for this workflow.",
             workflowIsLoading,
             workflowLastUpdated,
-            workflowState)
+            workflowState,
+        )
 
         // WORKFLOW TASK
         displayTopicSet(
@@ -172,18 +174,19 @@ class WorkflowPanel private constructor(private val workflowName: String) : Pane
             "Here are the topics used by the task engine for this workflowTask.",
             workflowTaskIsLoading,
             workflowTaskLastUpdated,
-            workflowTaskState)
+            workflowTaskState,
+        )
 
         // SELECTION SLIDE
         selectionSlide.render(this)
       }
 
   private fun ElementCreator<Element>.displayTopicSet(
-      title: String,
-      text: String,
-      isLoading: KVar<Boolean>,
-      lastUpdated: KVar<Instant>,
-      state: KVar<out JobState<out TopicType>>
+    title: String,
+    text: String,
+    isLoading: KVar<Boolean>,
+    lastUpdated: KVar<Instant>,
+    state: KVar<out JobState<out TopicType>>
   ) {
     div().classes("pt-8 pb-8").new {
       div().classes("max-w-7xl mx-auto sm:px-6 md:px-8").new {
@@ -192,7 +195,8 @@ class WorkflowPanel private constructor(private val workflowName: String) : Pane
           span().text(text).addText(" Click on a row to get more details on its real-time stats.")
         }
         displayJobStatsTable(
-            workflowName, state, selectionSlide, selectionTopicType, selectionTopicStats)
+            workflowName, state, selectionSlide, selectionTopicType, selectionTopicStats,
+        )
       }
     }
   }

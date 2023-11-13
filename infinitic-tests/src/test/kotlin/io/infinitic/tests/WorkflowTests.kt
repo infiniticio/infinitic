@@ -28,42 +28,46 @@ import io.infinitic.common.workflows.data.workflows.WorkflowName
 import io.infinitic.inMemory.InMemoryInfiniticClient
 import io.infinitic.inMemory.InMemoryInfiniticWorker
 import io.infinitic.pulsar.PulsarInfiniticClient
-import io.infinitic.pulsar.PulsarInfiniticWorker
+import io.infinitic.pulsar.PulsarInfiniticService
 import io.infinitic.pulsar.config.ClientConfig
 import io.infinitic.transport.config.Transport
 import io.infinitic.workers.InfiniticWorker
 import io.infinitic.workers.config.WorkerConfig
-import io.infinitic.workers.registers.WorkerRegisterImpl
+import io.infinitic.workers.register.InfiniticRegisterImpl
 import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.delay
 
 object WorkflowTests {
   private val workerConfig = WorkerConfig.fromResource("/pulsar.yml")
-  private val workerRegister = WorkerRegisterImpl(workerConfig)
+  private val workerRegister = InfiniticRegisterImpl(workerConfig)
   private val clientConfig = ClientConfig.fromResource("/pulsar.yml")
 
   val worker =
       InfiniticWorker(
           when (workerConfig.transport) {
             Transport.pulsar ->
-                PulsarInfiniticWorker(
-                    workerRegister,
-                    workerConfig.pulsar!!.client,
-                    workerConfig.pulsar!!.admin,
-                    workerConfig.pulsar!!)
+              PulsarInfiniticService(
+                  workerRegister,
+                  workerConfig.pulsar!!.client,
+                  workerConfig.pulsar!!.admin,
+                  workerConfig.pulsar!!,
+              )
+
             Transport.inMemory -> InMemoryInfiniticWorker(workerRegister)
-          })
+          },
+      )
 
   val client =
       InfiniticClient(
           when (clientConfig.transport) {
             Transport.pulsar -> PulsarInfiniticClient.fromConfig(clientConfig)
             Transport.inMemory -> InMemoryInfiniticClient(workerRegister)
-          })
+          },
+      )
 
   suspend fun testWorkflowStateEmpty(
-      name: String = client.lastDeferred!!.name,
-      id: String = client.lastDeferred!!.id
+    name: String = client.lastDeferred!!.name,
+    id: String = client.lastDeferred!!.id
   ) {
     // note: storage is updated after having send messages
     // that's why we are waiting here a bit before checking its value

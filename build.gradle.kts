@@ -79,7 +79,8 @@ subprojects {
 
   tasks.withType<KotlinCompile> {
     kotlinOptions {
-      freeCompilerArgs = freeCompilerArgs + "-opt-in=kotlin.RequiresOptIn"
+      freeCompilerArgs += "-opt-in=kotlin.RequiresOptIn"
+      freeCompilerArgs += "-Xjvm-default=all"
       jvmTarget = JavaVersion.VERSION_11.toString()
     }
   }

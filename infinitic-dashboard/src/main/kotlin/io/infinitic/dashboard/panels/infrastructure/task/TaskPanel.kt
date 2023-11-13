@@ -33,8 +33,8 @@ import io.infinitic.dashboard.panels.infrastructure.jobs.update
 import io.infinitic.dashboard.panels.infrastructure.requests.Loading
 import io.infinitic.dashboard.panels.infrastructure.requests.Request
 import io.infinitic.dashboard.svgs.icons.iconChevron
-import io.infinitic.transport.pulsar.topics.ServiceTopics
-import io.infinitic.transport.pulsar.topics.TopicType
+import io.infinitic.pulsar.topics.ServiceTopics
+import io.infinitic.pulsar.topics.TopicType
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import kweb.Element
@@ -134,7 +134,8 @@ class TaskPanel private constructor(private val taskName: String) : Panel() {
                 // title
                 h2()
                     .classes(
-                        "mt-2 text-2xl font-bold leading-7 text-gray-900 sm:text-3xl sm:truncate")
+                        "mt-2 text-2xl font-bold leading-7 text-gray-900 sm:text-3xl sm:truncate",
+                    )
                     .text(taskName)
               }
             }
@@ -150,7 +151,8 @@ class TaskPanel private constructor(private val taskName: String) : Panel() {
                   .addText(" Click on a row to get more details on its real-time stats.")
             }
             displayJobStatsTable(
-                taskName, state, selectionSlide, selectionTopicType, selectionTopicStats)
+                taskName, state, selectionSlide, selectionTopicType, selectionTopicStats,
+            )
           }
         }
 

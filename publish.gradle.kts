@@ -20,6 +20,9 @@
  *
  * Licensor: infinitic.io
  */
+
+// https://proandroiddev.com/publishing-a-maven-artifact-3-3-step-by-step-instructions-to-mavencentral-publishing-bd661081645d
+
 apply(plugin = "java")
 
 apply(plugin = "java-library")

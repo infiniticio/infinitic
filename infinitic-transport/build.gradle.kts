@@ -20,6 +20,11 @@
  *
  * Licensor: infinitic.io
  */
-dependencies { api(project(":infinitic-transport-pulsar")) }
+
+dependencies {
+  implementation(project(":infinitic-common"))
+  api(project(":infinitic-pulsar"))
+  api(project(":infinitic-inMemory"))
+}
 
 apply("../publish.gradle.kts")

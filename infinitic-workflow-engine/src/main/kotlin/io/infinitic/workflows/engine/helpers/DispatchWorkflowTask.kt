@@ -22,23 +22,24 @@
  */
 package io.infinitic.workflows.engine.helpers
 
+import io.infinitic.common.data.ClientName
 import io.infinitic.common.data.MillisInstant
 import io.infinitic.common.tasks.data.TaskId
+import io.infinitic.common.transport.InfiniticProducer
 import io.infinitic.common.workflows.data.methodRuns.MethodRun
 import io.infinitic.common.workflows.data.methodRuns.MethodRunPosition
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskParameters
 import io.infinitic.common.workflows.engine.state.WorkflowState
-import io.infinitic.workflows.engine.output.WorkflowEngineOutput
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
 internal fun CoroutineScope.dispatchWorkflowTask(
-    output: WorkflowEngineOutput,
-    state: WorkflowState,
-    methodRun: MethodRun,
-    methodRunPosition: MethodRunPosition
+  producer: InfiniticProducer,
+  state: WorkflowState,
+  methodRun: MethodRun,
+  methodRunPosition: MethodRunPosition
 ) {
-  state.workflowTaskIndex = state.workflowTaskIndex + 1
+  state.workflowTaskIndex += 1
 
   // defines workflow task input
   val workflowTaskParameters =
@@ -50,21 +51,22 @@ internal fun CoroutineScope.dispatchWorkflowTask(
           workflowTags = state.workflowTags,
           workflowMeta = state.workflowMeta,
           workflowPropertiesHashValue =
-              state.propertiesHashValue, // TODO filterStore(state.propertyStore, listOf(methodRun))
+          state.propertiesHashValue, // TODO filterStore(state.propertyStore, listOf(methodRun))
           workflowTaskIndex = state.workflowTaskIndex,
           methodRun = methodRun,
-          emitterName = output.clientName)
+          emitterName = ClientName(producer.name),
+      )
 
   val dispatchTaskMessage = workflowTaskParameters.toExecuteTaskMessage()
 
   // dispatch workflow task
-  launch { output.sendToWorkflowTaskExecutor(dispatchTaskMessage) }
+  launch { producer.send(dispatchTaskMessage) }
 
   with(state) {
     runningWorkflowTaskId = workflowTaskParameters.taskId
     // do not update runningWorkflowTaskInstant if it is a retry
     if (runningMethodRunId != methodRun.methodRunId ||
-        runningMethodRunPosition != methodRunPosition) {
+      runningMethodRunPosition != methodRunPosition) {
       runningWorkflowTaskInstant = MillisInstant.now()
       runningMethodRunId = methodRun.methodRunId
       runningMethodRunPosition = methodRunPosition

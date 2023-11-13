@@ -31,38 +31,41 @@ import io.infinitic.common.workflows.engine.storage.WorkflowStateStorage
 import io.infinitic.common.workflows.tags.storage.WorkflowTagStorage
 import kotlinx.coroutines.CoroutineScope
 
-interface WorkerStarter {
+interface InfiniticWorkerInterface {
+
+  val name: String
+
   fun CoroutineScope.startWorkflowTag(
-      workflowName: WorkflowName,
-      workflowTagStorage: WorkflowTagStorage,
-      concurrency: Int
+    workflowName: WorkflowName,
+    workflowTagStorage: WorkflowTagStorage,
+    concurrency: Int
   )
 
   fun CoroutineScope.startWorkflowEngine(
-      workflowName: WorkflowName,
-      workflowStateStorage: WorkflowStateStorage,
-      concurrency: Int
+    workflowName: WorkflowName,
+    workflowStateStorage: WorkflowStateStorage,
+    concurrency: Int
   )
 
   fun CoroutineScope.startWorkflowDelay(workflowName: WorkflowName, concurrency: Int)
 
   fun CoroutineScope.startTaskTag(
-      serviceName: ServiceName,
-      taskTagStorage: TaskTagStorage,
-      concurrency: Int
+    serviceName: ServiceName,
+    taskTagStorage: TaskTagStorage,
+    concurrency: Int
   )
 
   fun CoroutineScope.startTaskExecutor(
-      serviceName: ServiceName,
-      concurrency: Int,
-      workerRegistry: WorkerRegistry,
-      clientFactory: ClientFactory
+    serviceName: ServiceName,
+    concurrency: Int,
+    workerRegistry: WorkerRegistry,
+    clientFactory: ClientFactory
   )
 
   fun CoroutineScope.startWorkflowTaskExecutor(
-      workflowName: WorkflowName,
-      concurrency: Int,
-      workerRegistry: WorkerRegistry,
-      clientFactory: ClientFactory
+    workflowName: WorkflowName,
+    concurrency: Int,
+    workerRegistry: WorkerRegistry,
+    clientFactory: ClientFactory
   )
 }

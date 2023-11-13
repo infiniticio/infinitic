@@ -23,20 +23,20 @@
 package io.infinitic.workflows.engine.handlers
 
 import io.infinitic.common.data.ReturnValue
+import io.infinitic.common.transport.InfiniticProducer
 import io.infinitic.common.workflows.data.commands.CommandStatus.Completed
 import io.infinitic.common.workflows.engine.messages.SendSignal
 import io.infinitic.common.workflows.engine.state.WorkflowState
 import io.infinitic.workflows.engine.helpers.commandTerminated
-import io.infinitic.workflows.engine.output.WorkflowEngineOutput
 import kotlinx.coroutines.CoroutineScope
 import mu.KotlinLogging
 
 private val logger = KotlinLogging.logger {}
 
 internal fun CoroutineScope.sendSignal(
-    workflowEngineOutput: WorkflowEngineOutput,
-    state: WorkflowState,
-    message: SendSignal
+  producer: InfiniticProducer,
+  state: WorkflowState,
+  message: SendSignal
 ) {
   state.receivingChannels
       .firstOrNull {
@@ -53,7 +53,7 @@ internal fun CoroutineScope.sendSignal(
         }
 
         commandTerminated(
-            workflowEngineOutput,
+            producer,
             state,
             it.methodRunId,
             it.commandId,
@@ -61,6 +61,8 @@ internal fun CoroutineScope.sendSignal(
                 returnIndex = it.receivedSignalCount - 1,
                 returnValue = ReturnValue(message.signalData.serializedData),
                 completionWorkflowTaskIndex = state.workflowTaskIndex,
-                signalId = message.signalId))
+                signalId = message.signalId,
+            ),
+        )
       } ?: logger.debug { "discarding non-waited signal $message" }
 }

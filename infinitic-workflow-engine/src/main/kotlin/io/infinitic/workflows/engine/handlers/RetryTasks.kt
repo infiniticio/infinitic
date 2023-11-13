@@ -22,6 +22,7 @@
  */
 package io.infinitic.workflows.engine.handlers
 
+import io.infinitic.common.transport.InfiniticProducer
 import io.infinitic.common.workflows.data.commands.CommandId
 import io.infinitic.common.workflows.data.commands.CommandStatus
 import io.infinitic.common.workflows.data.commands.DispatchTaskPastCommand
@@ -29,13 +30,12 @@ import io.infinitic.common.workflows.engine.messages.RetryTasks
 import io.infinitic.common.workflows.engine.state.WorkflowState
 import io.infinitic.workflows.DeferredStatus
 import io.infinitic.workflows.engine.helpers.dispatchTask
-import io.infinitic.workflows.engine.output.WorkflowEngineOutput
 import kotlinx.coroutines.CoroutineScope
 
 internal fun CoroutineScope.retryTasks(
-    output: WorkflowEngineOutput,
-    state: WorkflowState,
-    message: RetryTasks
+  producer: InfiniticProducer,
+  state: WorkflowState,
+  message: RetryTasks
 ) {
   val taskId = message.taskId?.run { CommandId.from(this) }
   val taskStatus =
@@ -61,9 +61,9 @@ internal fun CoroutineScope.retryTasks(
         }
         // dispatch a new sequence of those task
         .forEach { dispatchTaskPastCommand ->
-          dispatchTaskPastCommand.taskRetrySequence = dispatchTaskPastCommand.taskRetrySequence + 1
+          dispatchTaskPastCommand.taskRetrySequence += 1
 
-          dispatchTask(output, state, dispatchTaskPastCommand)
+          dispatchTask(producer, state, dispatchTaskPastCommand)
 
           dispatchTaskPastCommand.commandStatus = CommandStatus.Ongoing
         }

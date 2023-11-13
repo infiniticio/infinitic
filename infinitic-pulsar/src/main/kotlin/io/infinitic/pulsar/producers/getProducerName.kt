@@ -20,37 +20,34 @@
  *
  * Licensor: infinitic.io
  */
-package io.infinitic.pulsar
+package io.infinitic.pulsar.producers
 
-import io.infinitic.transport.pulsar.topics.GlobalTopics
-import io.infinitic.transport.pulsar.topics.TopicNames
+import io.infinitic.exceptions.clients.ExceptionAtInitialization
 import org.apache.pulsar.client.api.PulsarClient
 import org.apache.pulsar.client.api.PulsarClientException
-import kotlin.system.exitProcess
 
 /** Useful to check the uniqueness of a connected producer's name or to provide a unique name */
 internal fun getProducerName(
-    pulsarClient: PulsarClient,
-    topicNames: TopicNames,
-    name: String?
+  pulsarClient: PulsarClient,
+  topic: String,
+  name: String?
 ): String {
-  val producer =
-      try {
-        pulsarClient
-            .newProducer()
-            .topic(topicNames.topic(GlobalTopics.NAMER))
-            .also {
-              if (name != null) {
-                it.producerName(name)
-              }
-            }
-            .create()
-      } catch (e: PulsarClientException.ProducerBusyException) {
-        pulsarClient.close()
-        System.err.print(
-            "Another producer with name \"$name\" is already connected. Make sure to use a unique name.")
-        exitProcess(1)
-      }
+  val producer = try {
+    pulsarClient
+        .newProducer()
+        .topic(topic)
+        .also {
+          if (name != null) {
+            it.producerName(name)
+          }
+        }
+        .create()
+  } catch (e: PulsarClientException.ProducerBusyException) {
+    System.err.print(
+        "Another producer with name \"$name\" is already connected. Make sure to use a unique name.",
+    )
+    throw ExceptionAtInitialization(e)
+  }
   producer.close()
 
   return producer.producerName

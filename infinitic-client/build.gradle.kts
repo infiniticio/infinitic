@@ -21,11 +21,10 @@
  * Licensor: infinitic.io
  */
 dependencies {
-  api(project(":infinitic-inMemory"))
-  api(project(":infinitic-pulsar"))
-  api(project(":infinitic-client-base"))
-  api(project(":infinitic-worker-base"))
-  api(project(":infinitic-worker"))
+  implementation(Libs.Coroutines.core)
+  implementation(Libs.Coroutines.jdk8)
+  
+  api(project(":infinitic-transport"))
 }
 
 apply("../publish.gradle.kts")

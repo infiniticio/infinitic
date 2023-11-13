@@ -20,23 +20,17 @@
  *
  * Licensor: infinitic.io
  */
-package io.infinitic.workers.config
+package io.infinitic.pulsar.schemas
 
-import io.infinitic.common.workers.config.RetryPolicy
-import io.infinitic.workers.register.WorkerRegister
-import io.infinitic.workflows.WorkflowCheckMode
+import io.infinitic.common.messages.Envelope
+import io.infinitic.common.messages.writerSchema
+import org.apache.pulsar.client.api.schema.SchemaDefinition
 
-data class WorkflowDefault(
-    val concurrency: Int = WorkerRegister.DEFAULT_CONCURRENCY,
-    val timeoutInSeconds: Double? = null,
-    val retry: RetryPolicy? = null,
-    val checkMode: WorkflowCheckMode? = null
-) {
-  init {
-    require(concurrency >= 0) { "default workflow concurrency must be positive" }
-
-    if (timeoutInSeconds != null) {
-      require(timeoutInSeconds > 0) { "default workflow timeoutSeconds must be positive" }
-    }
-  }
-}
+inline fun <reified T : Envelope<*>> schemaDefinition() =
+    SchemaDefinition.builder<T>()
+        .withJsonDef(T::class.writerSchema().toString())
+        .withSchemaReader(KSchemaReader(T::class))
+        .withSchemaWriter(KSchemaWriter<T>())
+        .withSupportSchemaVersioning(true)
+        .withJSR310ConversionEnabled(true)
+        .build()!!

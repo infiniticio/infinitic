@@ -23,24 +23,30 @@
 package io.infinitic.workflows.engine.handlers
 
 import io.infinitic.common.clients.messages.MethodRunUnknown
+import io.infinitic.common.data.ClientName
+import io.infinitic.common.transport.InfiniticProducer
 import io.infinitic.common.workflows.engine.messages.WaitWorkflow
 import io.infinitic.common.workflows.engine.state.WorkflowState
-import io.infinitic.workflows.engine.output.WorkflowEngineOutput
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
 internal fun CoroutineScope.waitWorkflow(
-    output: WorkflowEngineOutput,
-    state: WorkflowState,
-    message: WaitWorkflow
+  producer: InfiniticProducer,
+  state: WorkflowState,
+  message: WaitWorkflow
 ) {
   when (val methodRun = state.getMethodRun(message.methodRunId)) {
     null -> {
       val methodRunUnknown =
           MethodRunUnknown(
-              message.emitterName, message.workflowId, message.methodRunId, output.clientName)
-      launch { output.sendEventsToClient(methodRunUnknown) }
+              message.emitterName,
+              message.workflowId,
+              message.methodRunId,
+              ClientName(producer.name),
+          )
+      launch { producer.send(methodRunUnknown) }
     }
+
     else -> methodRun.waitingClients.add(message.emitterName)
   }
 }

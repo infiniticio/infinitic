@@ -22,7 +22,14 @@
  */
 package io.infinitic.transport.config
 
-import io.infinitic.transport.pulsar.config.Pulsar
+import io.infinitic.common.transport.InfiniticConsumer
+import io.infinitic.common.transport.InfiniticProducer
+import io.infinitic.inMemory.InMemoryChannels
+import io.infinitic.inMemory.InMemoryInfiniticConsumer
+import io.infinitic.inMemory.InMemoryInfiniticProducer
+import io.infinitic.pulsar.PulsarInfiniticConsumer
+import io.infinitic.pulsar.PulsarInfiniticProducer
+import io.infinitic.pulsar.config.Pulsar
 
 interface TransportConfig {
   /** Transport configuration */
@@ -30,4 +37,21 @@ interface TransportConfig {
 
   /** Pulsar configuration */
   val pulsar: Pulsar?
+
+  // we provide consumer and producer together,
+  // as they must share the same configuration (e.g. InMemoryChannels instance)
+  fun getConsumerAndProducer(): Pair<InfiniticConsumer, InfiniticProducer> =
+      when (transport) {
+        Transport.pulsar -> Pair(
+            PulsarInfiniticConsumer.from(pulsar!!),
+            PulsarInfiniticProducer.from(pulsar!!),
+        )
+
+        Transport.inMemory -> with(InMemoryChannels()) {
+          Pair(
+              InMemoryInfiniticConsumer(this),
+              InMemoryInfiniticProducer(this),
+          )
+        }
+      }
 }

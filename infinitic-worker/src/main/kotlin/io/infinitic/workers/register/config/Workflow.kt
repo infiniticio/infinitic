@@ -20,10 +20,10 @@
  *
  * Licensor: infinitic.io
  */
-package io.infinitic.workers.config
+package io.infinitic.workers.register.config
 
 import io.infinitic.common.workers.config.RetryPolicy
-import io.infinitic.workers.register.WorkerRegister
+import io.infinitic.workers.register.InfiniticRegister
 import io.infinitic.workflows.Workflow
 import io.infinitic.workflows.WorkflowCheckMode
 import io.infinitic.workflows.engine.config.WorkflowEngine
@@ -31,15 +31,15 @@ import io.infinitic.workflows.tag.config.WorkflowTag
 import io.infinitic.workflows.Workflow as WorkflowBase
 
 data class Workflow(
-    val name: String,
-    val `class`: String? = null,
-    val classes: List<String>? = null,
-    var concurrency: Int? = null,
-    var timeoutInSeconds: Double? = null,
-    var retry: RetryPolicy? = null,
-    var checkMode: WorkflowCheckMode? = null,
-    var tagEngine: WorkflowTag? = WorkerRegister.DEFAULT_WORKFLOW_TAG,
-    var workflowEngine: WorkflowEngine? = WorkerRegister.DEFAULT_WORKFLOW_ENGINE
+  val name: String,
+  val `class`: String? = null,
+  val classes: List<String>? = null,
+  var concurrency: Int? = null,
+  var timeoutInSeconds: Double? = null,
+  var retry: RetryPolicy? = null,
+  var checkMode: WorkflowCheckMode? = null,
+  var tagEngine: WorkflowTag? = InfiniticRegister.DEFAULT_WORKFLOW_TAG,
+  var workflowEngine: WorkflowEngine? = InfiniticRegister.DEFAULT_WORKFLOW_ENGINE
 ) {
   val allClasses = mutableListOf<Class<out WorkflowBase>>()
 
@@ -52,6 +52,7 @@ data class Workflow(
           "class, classes, workflowTag and workflowEngine are null for workflow $name"
         }
       }
+
       else -> {
         if (`class` != null) {
           require(`class`.isNotEmpty()) { "class empty for workflow $name" }
@@ -82,7 +83,8 @@ data class Workflow(
           throw IllegalArgumentException("class \"$className\" unknown for workflow $name")
         } catch (e: Exception) {
           throw IllegalArgumentException(
-              "Error when trying to get class of name \"$className\" for workflow $name", e)
+              "Error when trying to get class of name \"$className\" for workflow $name", e,
+          )
         }
 
     val constructor =
@@ -90,10 +92,12 @@ data class Workflow(
           klass.getDeclaredConstructor()
         } catch (e: NoSuchMethodException) {
           throw IllegalArgumentException(
-              "class \"$className\" must have an empty constructor to be used as workflow $name")
+              "class \"$className\" must have an empty constructor to be used as workflow $name",
+          )
         } catch (e: Exception) {
           throw IllegalArgumentException(
-              "Error when trying to get constructor of class \"$className\" for workflow $name", e)
+              "Error when trying to get constructor of class \"$className\" for workflow $name", e,
+          )
         }
 
     val instance =
@@ -101,7 +105,8 @@ data class Workflow(
           constructor.newInstance()
         } catch (e: Exception) {
           throw IllegalArgumentException(
-              "Error when trying to instantiate class \"$className\" for workflow $name", e)
+              "Error when trying to instantiate class \"$className\" for workflow $name", e,
+          )
         }
 
     require(instance is WorkflowBase) {

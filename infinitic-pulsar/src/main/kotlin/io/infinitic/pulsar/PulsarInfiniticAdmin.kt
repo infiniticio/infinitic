@@ -25,11 +25,11 @@ package io.infinitic.pulsar
 import io.infinitic.common.tasks.data.ServiceName
 import io.infinitic.common.workflows.data.workflows.WorkflowName
 import io.infinitic.pulsar.config.AdminConfig
-import io.infinitic.transport.pulsar.config.Pulsar
-import io.infinitic.transport.pulsar.topics.PerNameTopics
-import io.infinitic.transport.pulsar.topics.ServiceTopics
-import io.infinitic.transport.pulsar.topics.WorkflowTaskTopics
-import io.infinitic.transport.pulsar.topics.WorkflowTopics
+import io.infinitic.pulsar.config.Pulsar
+import io.infinitic.pulsar.topics.ServiceTopics
+import io.infinitic.pulsar.topics.TopicNamesDefault
+import io.infinitic.pulsar.topics.WorkflowTaskTopics
+import io.infinitic.pulsar.topics.WorkflowTopics
 import mu.KotlinLogging
 import org.apache.pulsar.client.admin.Clusters
 import org.apache.pulsar.client.admin.Namespaces
@@ -47,15 +47,14 @@ import org.apache.pulsar.common.policies.data.impl.DelayedDeliveryPoliciesImpl
 import java.io.Closeable
 
 @Suppress("unused", "MemberVisibilityCanBePrivate")
-class PulsarInfiniticAdmin constructor(val pulsarAdmin: PulsarAdmin, val pulsar: Pulsar) :
-    Closeable {
+class PulsarInfiniticAdmin(val pulsarAdmin: PulsarAdmin, val pulsar: Pulsar) : Closeable {
 
   private val pulsarClusters: Clusters = pulsarAdmin.clusters()
   private val pulsarTopics: Topics = pulsarAdmin.topics()
   private val pulsarTenants: Tenants = pulsarAdmin.tenants()
   private val pulsarNamespaces: Namespaces = pulsarAdmin.namespaces()
 
-  val topicName = PerNameTopics(pulsar.tenant, pulsar.namespace)
+  val topicName = TopicNamesDefault(pulsar.tenant, pulsar.namespace)
 
   private val fullNamespace = "${pulsar.tenant}/${pulsar.namespace}"
 
@@ -66,7 +65,7 @@ class PulsarInfiniticAdmin constructor(val pulsarAdmin: PulsarAdmin, val pulsar:
           AutoTopicCreationOverrideImpl(false, TopicType.PARTITIONED.toString(), 1)
       // schema are mandatory for producers/consumers
       schema_validation_enforced = true
-      // this allow topic auto creation for task / workflows
+      // this allows topic auto creation for task / workflows
       is_allow_auto_update_schema = true
       // Changes allowed: add optional fields, delete fields
       schema_compatibility_strategy = SchemaCompatibilityStrategy.BACKWARD_TRANSITIVE
@@ -75,7 +74,7 @@ class PulsarInfiniticAdmin constructor(val pulsarAdmin: PulsarAdmin, val pulsar:
       // retention policies
       retention_policies =
           RetentionPolicies(
-              pulsar.policies.retentionTimeInMinutes, pulsar.policies.retentionSizeInMB.toLong()
+              pulsar.policies.retentionTimeInMinutes, pulsar.policies.retentionSizeInMB.toLong(),
           )
       message_ttl_in_seconds = pulsar.policies.messageTTLInSeconds
       delayed_delivery_policies =
@@ -89,7 +88,8 @@ class PulsarInfiniticAdmin constructor(val pulsarAdmin: PulsarAdmin, val pulsar:
             when (pulsar.allowedClusters) {
               null -> pulsarClusters.clusters.toSet()
               else -> pulsar.allowedClusters
-            })
+            },
+        )
         .also { if (pulsar.adminRoles != null) it.adminRoles(pulsar.adminRoles) }
         .build()
   }
@@ -113,7 +113,8 @@ class PulsarInfiniticAdmin constructor(val pulsarAdmin: PulsarAdmin, val pulsar:
         fromConfig(AdminConfig.fromResource(*resources))
 
     /** Create InfiniticAdmin from file in system file */
-    @JvmStatic fun fromConfigFile(vararg files: String) = fromConfig(AdminConfig.fromFile(*files))
+    @JvmStatic
+    fun fromConfigFile(vararg files: String) = fromConfig(AdminConfig.fromFile(*files))
   }
 
   /** Set of topics for current tenant and namespace */
@@ -300,11 +301,11 @@ class PulsarInfiniticAdmin constructor(val pulsarAdmin: PulsarAdmin, val pulsar:
       System.out.format(title)
       System.out.format(line)
 
-      WorkflowTopics.values().forEach {
+      WorkflowTopics.entries.forEach {
         displayStatsTopic(topicName.topic(it, WorkflowName(workflow)))
       }
 
-      WorkflowTaskTopics.values().forEach {
+      WorkflowTaskTopics.entries.forEach {
         displayStatsTopic(topicName.topic(it, WorkflowName(workflow)))
       }
 
@@ -323,7 +324,7 @@ class PulsarInfiniticAdmin constructor(val pulsarAdmin: PulsarAdmin, val pulsar:
       System.out.format(title)
       System.out.format(line)
 
-      ServiceTopics.values().forEach { displayStatsTopic(topicName.topic(it, ServiceName(task))) }
+      ServiceTopics.entries.forEach { displayStatsTopic(topicName.topic(it, ServiceName(task))) }
 
       System.out.format(line)
       println()
@@ -337,7 +338,8 @@ class PulsarInfiniticAdmin constructor(val pulsarAdmin: PulsarAdmin, val pulsar:
 
     stats.subscriptions.map {
       System.out.format(
-          format, it.key, it.value.consumers.size, it.value.msgBacklog, it.value.msgRateOut)
+          format, it.key, it.value.consumers.size, it.value.msgBacklog, it.value.msgRateOut,
+      )
     }
   }
 }

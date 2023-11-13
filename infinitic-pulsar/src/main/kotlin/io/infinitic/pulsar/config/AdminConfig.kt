@@ -24,15 +24,15 @@ package io.infinitic.pulsar.config
 
 import io.infinitic.common.config.loadConfigFromFile
 import io.infinitic.common.config.loadConfigFromResource
-import io.infinitic.transport.pulsar.config.Pulsar
 
 data class AdminConfig(
-    /** Pulsar configuration */
-    val pulsar: Pulsar
+  /** Pulsar configuration */
+  val pulsar: Pulsar
 ) {
   companion object {
     /** Create AdminConfig from file in file system */
-    @JvmStatic fun fromFile(vararg files: String): AdminConfig = loadConfigFromFile(files.toList())
+    @JvmStatic
+    fun fromFile(vararg files: String): AdminConfig = loadConfigFromFile(files.toList())
 
     /** Create AdminConfig from file in resources directory */
     @JvmStatic

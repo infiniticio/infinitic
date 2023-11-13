@@ -25,7 +25,6 @@ dependencies {
   implementation(Libs.Coroutines.jdk8)
 
   api(project(":infinitic-common"))
-  api(project(":infinitic-client-base"))
   api(project(":infinitic-storage"))
   implementation(project(":infinitic-cache"))
   implementation(project(":infinitic-workflow-tag"))

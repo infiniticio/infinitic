@@ -20,23 +20,13 @@
  *
  * Licensor: infinitic.io
  */
-package io.infinitic.workers.config
+package io.infinitic.workers
 
-import io.infinitic.common.workers.config.RetryPolicy
-import io.infinitic.workers.register.WorkerRegister
+import java.io.Closeable
+import java.util.concurrent.CompletableFuture
 
-data class ServiceDefault(
-    val concurrency: Int = WorkerRegister.DEFAULT_CONCURRENCY,
-    var timeoutInSeconds: Double? = null,
-    var retry: RetryPolicy? = null
-) {
-  init {
-    require(concurrency >= 0) { "concurrency must be positive for default service" }
+interface WorkerInterface : Closeable {
+  fun start(): Unit = startAsync().join()
 
-    if (timeoutInSeconds != null) {
-      require(timeoutInSeconds!! > 0) {
-        "${::timeoutInSeconds.name} must be positive for default service"
-      }
-    }
-  }
+  fun startAsync(): CompletableFuture<Unit>
 }

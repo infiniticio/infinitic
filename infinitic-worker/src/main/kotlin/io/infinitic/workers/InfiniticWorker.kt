@@ -22,56 +22,170 @@
  */
 package io.infinitic.workers
 
-import io.infinitic.inMemory.InMemoryInfiniticWorker
-import io.infinitic.pulsar.PulsarInfiniticWorker
-import io.infinitic.transport.config.Transport
+import io.infinitic.clients.InfiniticClient
+import io.infinitic.common.clients.ClientFactory
+import io.infinitic.common.tasks.executors.messages.TaskExecutorMessage
+import io.infinitic.common.tasks.tags.messages.TaskTagMessage
+import io.infinitic.common.transport.InfiniticConsumer
+import io.infinitic.common.transport.InfiniticProducer
+import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
+import io.infinitic.common.workflows.tags.messages.WorkflowTagMessage
+import io.infinitic.tasks.executor.TaskExecutor
+import io.infinitic.tasks.tag.TaskTagEngine
 import io.infinitic.workers.config.WorkerConfig
-import io.infinitic.workers.register.WorkerRegister
-import io.infinitic.workers.registers.WorkerRegisterImpl
-import org.apache.pulsar.client.admin.PulsarAdmin
-import org.apache.pulsar.client.api.PulsarClient
+import io.infinitic.workers.register.InfiniticRegister
+import io.infinitic.workflows.engine.WorkflowEngine
+import io.infinitic.workflows.tag.WorkflowTagEngine
+import mu.KotlinLogging
+import java.io.Closeable
+import java.util.concurrent.CompletableFuture
 
 @Suppress("unused")
-class InfiniticWorker(private val worker: WorkerAbstract) :
-    WorkerInterface by worker, WorkerRegister by worker {
+class InfiniticWorker(
+  private val register: InfiniticRegister,
+  private val consumer: InfiniticConsumer,
+  private val producer: InfiniticProducer,
+  private val client: InfiniticClient
+) : Closeable, InfiniticRegister by register {
+
+  private val logger = KotlinLogging.logger {}
+
+  private val workerRegistry = register.registry
+
+  private val clientFactory: ClientFactory = { client }
+
+  override fun close() {
+    consumer.close()
+  }
+
+  /**
+   * Start worker synchronously
+   * (blocks the current thread)
+   */
+  fun start(): Void = startAsync().join()
+
+  /**
+   * Start worker asynchronously
+   */
+  fun startAsync(): CompletableFuture<Void> {
+    val futures = mutableListOf<CompletableFuture<Unit>>()
+
+    // start workflow tags
+    workerRegistry.workflowTags.forEach {
+      val tagEngine = WorkflowTagEngine(it.value.storage, producer)
+
+      val handler: (suspend (WorkflowTagMessage) -> Unit) =
+          { message: WorkflowTagMessage -> tagEngine.handle(message) }
+
+      futures.add(
+          consumer.startWorkflowTagConsumerAsync(
+              handler = handler,
+              workflowName = it.key,
+              concurrency = it.value.concurrency,
+          ),
+      )
+    }
+
+    workerRegistry.workflowEngines.forEach {
+      // start workflow engines
+      val workflowEngine = WorkflowEngine(it.value.storage, producer)
+
+      var handler: (suspend (WorkflowEngineMessage) -> Unit) =
+          { message: WorkflowEngineMessage -> workflowEngine.handle(message) }
+
+      futures.add(
+          consumer.startWorkflowEngineConsumerAsync(
+              handler = handler,
+              workflowName = it.key,
+              concurrency = it.value.concurrency,
+          ),
+      )
+
+      // start workflow delays
+      handler = { message: WorkflowEngineMessage -> producer.send(message) } // send to engine
+
+      futures.add(
+          consumer.startWorkflowDelayConsumerAsync(
+              handler = handler,
+              workflowName = it.key,
+              concurrency = it.value.concurrency,
+          ),
+      )
+    }
+
+    // start workflow task executors
+    workerRegistry.workflows.forEach {
+      val taskExecutor = TaskExecutor(workerRegistry, clientFactory, producer)
+
+      val handler: (suspend (TaskExecutorMessage) -> Unit) =
+          { message: TaskExecutorMessage -> taskExecutor.handle(message) }
+
+      futures.add(
+          consumer.startWorkflowTaskConsumerAsync(
+              handler = handler,
+              workflowName = it.key,
+              concurrency = it.value.concurrency,
+          ),
+      )
+    }
+
+    // start task executors
+    workerRegistry.services.forEach {
+      val taskExecutor = TaskExecutor(workerRegistry, clientFactory, producer)
+
+      val handler: (suspend (TaskExecutorMessage) -> Unit) =
+          { message: TaskExecutorMessage -> taskExecutor.handle(message) }
+
+      futures.add(
+          consumer.startTaskExecutorConsumerAsync(
+              handler = handler,
+              serviceName = it.key,
+              concurrency = it.value.concurrency,
+          ),
+      )
+    }
+
+    // start task tags
+    workerRegistry.serviceTags.forEach {
+      val tagEngine = TaskTagEngine(it.value.storage, producer)
+
+      val handler: (suspend (TaskTagMessage) -> Unit) =
+          { message: TaskTagMessage -> tagEngine.handle(message) }
+
+      futures.add(
+          consumer.startTaskTagConsumerAsync(
+              handler = handler,
+              serviceName = it.key,
+              concurrency = it.value.concurrency,
+          ),
+      )
+    }
+
+    logger.info { "Worker \"${producer.name}\" ready" }
+
+    return CompletableFuture.allOf(*futures.toTypedArray())
+  }
 
   companion object {
-    /** Create [InfiniticWorker] with config from resources directory */
+    /** Create [InfiniticWorker] from config in resources */
     @JvmStatic
     fun fromConfigResource(vararg resources: String) =
         fromConfig(WorkerConfig.fromResource(*resources))
 
-    /** Create [InfiniticWorker] with config from system file */
-    @JvmStatic fun fromConfigFile(vararg files: String) = fromConfig(WorkerConfig.fromFile(*files))
-
-    /** Create [InfiniticWorker] with [WorkerConfig] */
+    /** Create [InfiniticWorker] from config in system file */
     @JvmStatic
-    fun fromConfig(workerConfig: WorkerConfig): InfiniticWorker {
-      val register = WorkerRegisterImpl(workerConfig)
+    fun fromConfigFile(vararg files: String) = fromConfig(WorkerConfig.fromFile(*files))
 
-      return InfiniticWorker(
-          when (workerConfig.transport) {
-            Transport.pulsar ->
-                PulsarInfiniticWorker(
-                    register,
-                    workerConfig.pulsar!!.client,
-                    workerConfig.pulsar.admin,
-                    workerConfig.pulsar)
-            Transport.inMemory -> InMemoryInfiniticWorker(register)
-          })
-    }
-
-    /** Create [InfiniticWorker] with [WorkerConfig] and PulsarClient, PulsarAmin */
+    /** Create [InfiniticWorker] from [WorkerConfig] */
     @JvmStatic
-    fun fromConfig(
-        pulsarClient: PulsarClient,
-        pulsarAdmin: PulsarAdmin,
-        workerConfig: WorkerConfig
-    ): InfiniticWorker {
-      val register = WorkerRegisterImpl(workerConfig)
-
-      return InfiniticWorker(
-          PulsarInfiniticWorker(register, pulsarClient, pulsarAdmin, workerConfig.pulsar!!))
+    fun fromConfig(workerConfig: WorkerConfig) {
+      val (consumer, producer) = workerConfig.getConsumerAndProducer()
+      InfiniticWorker(
+          workerConfig.register,
+          consumer,
+          producer,
+          workerConfig.client,
+      )
     }
   }
 }
