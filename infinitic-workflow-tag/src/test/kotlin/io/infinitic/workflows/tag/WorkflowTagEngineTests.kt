@@ -22,29 +22,26 @@
  */
 package io.infinitic.workflows.tag
 
-import io.infinitic.common.clients.SendToClient
 import io.infinitic.common.clients.messages.ClientMessage
 import io.infinitic.common.clients.messages.WorkflowIdsByTag
-import io.infinitic.common.data.ClientName
+import io.infinitic.common.data.MillisDuration
 import io.infinitic.common.fixtures.TestFactory
+import io.infinitic.common.transport.InfiniticProducer
 import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.data.workflows.WorkflowName
 import io.infinitic.common.workflows.data.workflows.WorkflowTag
-import io.infinitic.common.workflows.engine.SendToWorkflowEngine
 import io.infinitic.common.workflows.engine.messages.CancelWorkflow
 import io.infinitic.common.workflows.engine.messages.CompleteTimers
 import io.infinitic.common.workflows.engine.messages.RetryTasks
 import io.infinitic.common.workflows.engine.messages.RetryWorkflowTask
 import io.infinitic.common.workflows.engine.messages.SendSignal
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
-import io.infinitic.common.workflows.tags.SendToWorkflowTag
 import io.infinitic.common.workflows.tags.messages.CancelWorkflowByTag
 import io.infinitic.common.workflows.tags.messages.CompleteTimersByTag
 import io.infinitic.common.workflows.tags.messages.GetWorkflowIdsByTag
 import io.infinitic.common.workflows.tags.messages.RetryTasksByTag
 import io.infinitic.common.workflows.tags.messages.RetryWorkflowTaskByTag
 import io.infinitic.common.workflows.tags.messages.SendSignalByTag
-import io.infinitic.common.workflows.tags.messages.WorkflowTagMessage
 import io.infinitic.common.workflows.tags.storage.WorkflowTagStorage
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
@@ -54,189 +51,175 @@ import io.mockk.Runs
 import io.mockk.coEvery
 import io.mockk.coVerifySequence
 import io.mockk.confirmVerified
+import io.mockk.every
 import io.mockk.just
 import io.mockk.mockk
 import io.mockk.slot
+import java.util.concurrent.CompletableFuture
 
 private fun <T : Any> captured(slot: CapturingSlot<T>) =
     if (slot.isCaptured) slot.captured else null
 
-private val clientName = ClientName("clientWorkflowTagEngineTests")
+private val stateWorkflowId = slot<String>()
+private val workflowEngineSlot = slot<WorkflowEngineMessage>()
+private val clientSlot = slot<ClientMessage>()
+private val afterSlot = slot<MillisDuration>()
 
-private lateinit var stateMessageId: CapturingSlot<String>
-private lateinit var stateWorkflowId: CapturingSlot<String>
-private lateinit var workflowEngineMessage: CapturingSlot<WorkflowEngineMessage>
-private lateinit var workflowTagMessage: CapturingSlot<WorkflowTagMessage>
-private lateinit var clientMessage: CapturingSlot<ClientMessage>
-
-private lateinit var workflowTagStorage: WorkflowTagStorage
-private lateinit var sendToWorkflowEngine: SendToWorkflowEngine
-private lateinit var sendToWorkflowTag: SendToWorkflowTag
-private lateinit var sendToClient: SendToClient
+lateinit var producer: InfiniticProducer
+lateinit var workflowTagStorage: WorkflowTagStorage
 
 internal class WorkflowTagEngineTests :
-    StringSpec({
-      "cancelWorkflowPerTag should cancel workflow" {
-        // given
-        val workflowIds = setOf(WorkflowId(), WorkflowId())
-        val msgIn = random<CancelWorkflowByTag>()
-        // when
-        getEngine(msgIn.workflowTag, msgIn.workflowName, workflowIds = workflowIds).handle(msgIn)
-        // then
-        coVerifySequence {
-          workflowTagStorage.getWorkflowIds(msgIn.workflowTag, msgIn.workflowName)
-          sendToWorkflowEngine(ofType<CancelWorkflow>())
-          sendToWorkflowEngine(ofType<CancelWorkflow>())
-        }
-        verifyAll()
-        // checking last message
-        val cancelWorkflow = captured(workflowEngineMessage)!! as CancelWorkflow
+  StringSpec(
+      {
+        "cancelWorkflowPerTag should cancel workflow" {
+          // given
+          val workflowIds = setOf(WorkflowId(), WorkflowId())
+          val msgIn = random<CancelWorkflowByTag>()
+          // when
+          getEngine(msgIn.workflowTag, msgIn.workflowName, workflowIds = workflowIds).handle(msgIn)
+          // then
+          coVerifySequence {
+            workflowTagStorage.getWorkflowIds(msgIn.workflowTag, msgIn.workflowName)
+            producer.name
+            producer.send(ofType<CancelWorkflow>())
+            producer.send(ofType<CancelWorkflow>())
+          }
+          confirmVerified()
+          // checking last message
+          val cancelWorkflow = captured(workflowEngineSlot)!! as CancelWorkflow
 
-        with(cancelWorkflow) { workflowId shouldBe workflowIds.last() }
-      }
+          with(cancelWorkflow) { workflowId shouldBe workflowIds.last() }
+        }
 
-      "RetryWorkflowTaskByTag should retry workflow task" {
-        // given
-        val workflowIds = setOf(WorkflowId(), WorkflowId())
-        val msgIn = random<RetryWorkflowTaskByTag>()
-        // when
-        getEngine(msgIn.workflowTag, msgIn.workflowName, workflowIds = workflowIds).handle(msgIn)
-        // then
-        coVerifySequence {
-          workflowTagStorage.getWorkflowIds(msgIn.workflowTag, msgIn.workflowName)
-          sendToWorkflowEngine(ofType<RetryWorkflowTask>())
-          sendToWorkflowEngine(ofType<RetryWorkflowTask>())
+        "RetryWorkflowTaskByTag should retry workflow task" {
+          // given
+          val workflowIds = setOf(WorkflowId(), WorkflowId())
+          val msgIn = random<RetryWorkflowTaskByTag>()
+          // when
+          getEngine(msgIn.workflowTag, msgIn.workflowName, workflowIds = workflowIds).handle(msgIn)
+          // then
+          coVerifySequence {
+            workflowTagStorage.getWorkflowIds(msgIn.workflowTag, msgIn.workflowName)
+            producer.name
+            producer.send(ofType<RetryWorkflowTask>())
+            producer.send(ofType<RetryWorkflowTask>())
+          }
+          confirmVerified()
+          // checking last message
+          with(captured(workflowEngineSlot)!! as RetryWorkflowTask) {
+            workflowId shouldBe workflowIds.last()
+            workflowName shouldBe msgIn.workflowName
+          }
         }
-        verifyAll()
-        // checking last message
-        with(captured(workflowEngineMessage)!! as RetryWorkflowTask) {
-          workflowId shouldBe workflowIds.last()
-          workflowName shouldBe msgIn.workflowName
-        }
-      }
 
-      "RetryTasksByTag should retry tasks" {
-        // given
-        val workflowIds = setOf(WorkflowId(), WorkflowId())
-        val msgIn = random<RetryTasksByTag>()
-        // when
-        getEngine(msgIn.workflowTag, msgIn.workflowName, workflowIds = workflowIds).handle(msgIn)
-        // then
-        coVerifySequence {
-          workflowTagStorage.getWorkflowIds(msgIn.workflowTag, msgIn.workflowName)
-          sendToWorkflowEngine(ofType<RetryTasks>())
-          sendToWorkflowEngine(ofType<RetryTasks>())
+        "RetryTasksByTag should retry tasks" {
+          // given
+          val workflowIds = setOf(WorkflowId(), WorkflowId())
+          val msgIn = random<RetryTasksByTag>()
+          // when
+          getEngine(msgIn.workflowTag, msgIn.workflowName, workflowIds = workflowIds).handle(msgIn)
+          // then
+          coVerifySequence {
+            workflowTagStorage.getWorkflowIds(msgIn.workflowTag, msgIn.workflowName)
+            producer.name
+            producer.send(ofType<RetryTasks>())
+            producer.send(ofType<RetryTasks>())
+          }
+          confirmVerified()
+          // checking last message
+          with(captured(workflowEngineSlot)!! as RetryTasks) {
+            workflowId shouldBe workflowIds.last()
+            workflowName shouldBe msgIn.workflowName
+            taskId shouldBe msgIn.taskId
+            taskStatus shouldBe msgIn.taskStatus
+            serviceName shouldBe msgIn.serviceName
+          }
         }
-        verifyAll()
-        // checking last message
-        with(captured(workflowEngineMessage)!! as RetryTasks) {
-          workflowId shouldBe workflowIds.last()
-          workflowName shouldBe msgIn.workflowName
-          taskId shouldBe msgIn.taskId
-          taskStatus shouldBe msgIn.taskStatus
-          serviceName shouldBe msgIn.serviceName
-        }
-      }
 
-      "CompleteTimerByTag should complete timer" {
-        // given
-        val workflowIds = setOf(WorkflowId(), WorkflowId())
-        val msgIn = random<CompleteTimersByTag>()
-        // when
-        getEngine(msgIn.workflowTag, msgIn.workflowName, workflowIds = workflowIds).handle(msgIn)
-        // then
-        coVerifySequence {
-          workflowTagStorage.getWorkflowIds(msgIn.workflowTag, msgIn.workflowName)
-          sendToWorkflowEngine(ofType<CompleteTimers>())
-          sendToWorkflowEngine(ofType<CompleteTimers>())
+        "CompleteTimerByTag should complete timer" {
+          // given
+          val workflowIds = setOf(WorkflowId(), WorkflowId())
+          val msgIn = random<CompleteTimersByTag>()
+          // when
+          getEngine(msgIn.workflowTag, msgIn.workflowName, workflowIds = workflowIds).handle(msgIn)
+          // then
+          coVerifySequence {
+            workflowTagStorage.getWorkflowIds(msgIn.workflowTag, msgIn.workflowName)
+            producer.name
+            producer.send(ofType<CompleteTimers>())
+            producer.send(ofType<CompleteTimers>())
+          }
+          confirmVerified()
+          // checking last message
+          with(captured(workflowEngineSlot)!! as CompleteTimers) {
+            workflowId shouldBe workflowIds.last()
+            workflowName shouldBe msgIn.workflowName
+            methodRunId shouldBe msgIn.methodRunId
+          }
         }
-        verifyAll()
-        // checking last message
-        with(captured(workflowEngineMessage)!! as CompleteTimers) {
-          workflowId shouldBe workflowIds.last()
-          workflowName shouldBe msgIn.workflowName
-          methodRunId shouldBe msgIn.methodRunId
-        }
-      }
 
-      "sendToChannelPerTag should send to channel" {
-        // given
-        val workflowIds = setOf(WorkflowId(), WorkflowId())
-        val msgIn = random<SendSignalByTag>()
-        // when
-        getEngine(msgIn.workflowTag, msgIn.workflowName, workflowIds = workflowIds).handle(msgIn)
-        // then
-        coVerifySequence {
-          workflowTagStorage.getWorkflowIds(msgIn.workflowTag, msgIn.workflowName)
-          sendToWorkflowEngine(ofType<SendSignal>())
-          sendToWorkflowEngine(ofType<SendSignal>())
-        }
-        verifyAll()
-        // checking last message
-        val sendSignal = captured(workflowEngineMessage)!! as SendSignal
+        "sendToChannelPerTag should send to channel" {
+          // given
+          val workflowIds = setOf(WorkflowId(), WorkflowId())
+          val msgIn = random<SendSignalByTag>()
+          // when
+          getEngine(msgIn.workflowTag, msgIn.workflowName, workflowIds = workflowIds).handle(msgIn)
+          // then
+          coVerifySequence {
+            workflowTagStorage.getWorkflowIds(msgIn.workflowTag, msgIn.workflowName)
+            producer.name
+            producer.send(ofType<SendSignal>())
+            producer.send(ofType<SendSignal>())
+          }
+          confirmVerified()
+          // checking last message
+          val sendSignal = captured(workflowEngineSlot)!! as SendSignal
 
-        with(sendSignal) {
-          workflowId shouldBe workflowIds.last()
-          workflowName shouldBe msgIn.workflowName
-          signalData shouldBe msgIn.signalData
-          signalId shouldBe msgIn.signalId
-          signalData shouldBe msgIn.signalData
-          channelTypes shouldBe msgIn.channelTypes
-          channelName shouldBe msgIn.channelName
+          with(sendSignal) {
+            workflowId shouldBe workflowIds.last()
+            workflowName shouldBe msgIn.workflowName
+            signalData shouldBe msgIn.signalData
+            signalId shouldBe msgIn.signalId
+            signalData shouldBe msgIn.signalData
+            channelTypes shouldBe msgIn.channelTypes
+            channelName shouldBe msgIn.channelName
+          }
         }
-      }
 
-      "getWorkflowIdsPerTag should return set of ids" {
-        // given
-        val msgIn = random<GetWorkflowIdsByTag>()
-        val workflowId1 = WorkflowId()
-        val workflowId2 = WorkflowId()
-        // when
-        getEngine(
-                msgIn.workflowTag,
-                msgIn.workflowName,
-                workflowIds = setOf(workflowId1, workflowId2))
-            .handle(msgIn)
-        // then
-        coVerifySequence {
-          workflowTagStorage.getWorkflowIds(msgIn.workflowTag, msgIn.workflowName)
-          sendToClient(ofType<WorkflowIdsByTag>())
+        "getWorkflowIdsPerTag should return set of ids" {
+          // given
+          val msgIn = random<GetWorkflowIdsByTag>()
+          val workflowId1 = WorkflowId()
+          val workflowId2 = WorkflowId()
+          // when
+          getEngine(
+              msgIn.workflowTag,
+              msgIn.workflowName,
+              workflowIds = setOf(workflowId1, workflowId2),
+          )
+              .handle(msgIn)
+          // then
+          coVerifySequence {
+            workflowTagStorage.getWorkflowIds(msgIn.workflowTag, msgIn.workflowName)
+            producer.name
+            producer.send(ofType<WorkflowIdsByTag>())
+          }
+          confirmVerified()
+
+          captured(clientSlot).shouldBeInstanceOf<WorkflowIdsByTag>()
+          (captured(clientSlot) as WorkflowIdsByTag).workflowIds shouldBe
+              setOf(workflowId1, workflowId2)
         }
-        verifyAll()
-
-        captured(clientMessage).shouldBeInstanceOf<WorkflowIdsByTag>()
-        (captured(clientMessage) as WorkflowIdsByTag).workflowIds shouldBe
-            setOf(workflowId1, workflowId2)
-      }
-    })
+      },
+  )
 
 private inline fun <reified T : Any> random(values: Map<String, Any?>? = null) =
     TestFactory.random<T>(values)
 
-private fun mockSendToClient(slot: CapturingSlot<ClientMessage>): SendToClient {
-  val mock = mockk<SendToClient>()
-  coEvery { mock(capture(slot)) } just Runs
-  return mock
-}
-
-private fun mockSendToWorkflowEngine(
-    slot: CapturingSlot<WorkflowEngineMessage>
-): SendToWorkflowEngine {
-  val mock = mockk<SendToWorkflowEngine>()
-  coEvery { mock(capture(slot)) } just Runs
-  return mock
-}
-
-private fun mockSendToWorkflowTag(slot: CapturingSlot<WorkflowTagMessage>): SendToWorkflowTag {
-  val mock = mockk<SendToWorkflowTag>()
-  coEvery { mock(capture(slot)) } just Runs
-  return mock
-}
-
 private fun mockWorkflowTagStorage(
-    workflowTag: WorkflowTag,
-    workflowName: WorkflowName,
-    workflowIds: Set<WorkflowId>
+  workflowTag: WorkflowTag,
+  workflowName: WorkflowName,
+  workflowIds: Set<WorkflowId>
 ): WorkflowTagStorage {
   val tagStateStorage = mockk<WorkflowTagStorage>()
   coEvery { tagStateStorage.getWorkflowIds(workflowTag, workflowName) } returns workflowIds
@@ -245,30 +228,30 @@ private fun mockWorkflowTagStorage(
   } just Runs
   coEvery {
     tagStateStorage.removeWorkflowId(
-        workflowTag, workflowName, WorkflowId(capture(stateWorkflowId)))
+        workflowTag, workflowName, WorkflowId(capture(stateWorkflowId)),
+    )
   } just Runs
 
   return tagStateStorage
 }
 
+
 private fun getEngine(
-    workflowTag: WorkflowTag,
-    workflowName: WorkflowName,
-    workflowIds: Set<WorkflowId> = setOf(WorkflowId())
+  workflowTag: WorkflowTag,
+  workflowName: WorkflowName,
+  workflowIds: Set<WorkflowId> = setOf(WorkflowId())
 ): WorkflowTagEngine {
-  stateMessageId = slot()
-  stateWorkflowId = slot()
-  clientMessage = slot()
-  workflowEngineMessage = slot()
-  workflowTagMessage = slot()
-
   workflowTagStorage = mockWorkflowTagStorage(workflowTag, workflowName, workflowIds)
-  sendToWorkflowEngine = mockSendToWorkflowEngine(workflowEngineMessage)
-  sendToWorkflowTag = mockSendToWorkflowTag(workflowTagMessage)
-  sendToClient = mockSendToClient(clientMessage)
 
-  return WorkflowTagEngine(
-      clientName, workflowTagStorage, sendToWorkflowTag, sendToWorkflowEngine, sendToClient)
+  fun completed() = CompletableFuture.completedFuture(Unit)
+
+  producer = mockk<InfiniticProducer> {
+    every { name } returns "clientWorkflowTagEngineName"
+    every { sendAsync(capture(clientSlot)) } returns completed()
+    every { sendAsync(capture(workflowEngineSlot)) } returns completed()
+    coEvery { send(capture(clientSlot)) } answers { }
+    coEvery { send(capture(workflowEngineSlot), capture(afterSlot)) } answers { }
+  }
+
+  return WorkflowTagEngine(workflowTagStorage, producer)
 }
-
-private fun verifyAll() = confirmVerified(sendToWorkflowEngine)

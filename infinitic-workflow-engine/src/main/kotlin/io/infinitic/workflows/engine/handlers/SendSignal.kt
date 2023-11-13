@@ -45,7 +45,7 @@ internal fun CoroutineScope.sendSignal(
             (it.channelFilter == null || it.channelFilter!!.check(message.signalData))
       }
       ?.also {
-        it.receivedSignalCount = it.receivedSignalCount + 1
+        it.receivedSignalCount += 1
 
         // remove this ReceivingChannel from state.receivingChannels if this signal is the last one
         if (it.receivedSignalCount == it.receivedSignalLimit) {

@@ -22,43 +22,44 @@
  */
 package io.infinitic.tests.inline
 
-import io.infinitic.clients.InfiniticClient
 import io.infinitic.exceptions.FailedWorkflowException
 import io.infinitic.exceptions.FailedWorkflowTaskException
 import io.infinitic.exceptions.workflows.InvalidInlineException
-import io.infinitic.workers.InfiniticWorker
+import io.infinitic.tests.WorkflowTests
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
 
 internal class InlineWorkflowTests :
-    StringSpec({
+  StringSpec(
+      {
+        // each test should not be longer than 5s
+        timeout = 5000
 
-      // each test should not be longer than 10s
-      timeout = 10000
+        val tests = WorkflowTests()
+        val worker = autoClose(tests.worker)
+        val client = autoClose(tests.client)
 
-      val worker = autoClose(InfiniticWorker.fromConfigResource("/pulsar.yml"))
-      val client = autoClose(InfiniticClient.fromConfigResource("/pulsar.yml"))
+        val inlineWorkflow = client.newWorkflow(InlineWorkflow::class.java)
 
-      val inlineWorkflow = client.newWorkflow(InlineWorkflow::class.java)
+        beforeSpec { worker.startAsync() }
 
-      beforeSpec { worker.startAsync() }
+        beforeTest { worker.registry.flush() }
 
-      beforeTest { worker.registry.flush() }
+        "Inline task" { inlineWorkflow.inline1(7) shouldBe "2 * 7 = 14" }
 
-      "Inline task" { inlineWorkflow.inline1(7) shouldBe "2 * 7 = 14" }
+        "Inline task with asynchronous task inside" {
+          val error = shouldThrow<FailedWorkflowException> { inlineWorkflow.inline2(21) }
 
-      "Inline task with asynchronous task inside" {
-        val error = shouldThrow<FailedWorkflowException> { inlineWorkflow.inline2(21) }
+          val deferredException = error.deferredException as FailedWorkflowTaskException
+          deferredException.workerException.name shouldBe InvalidInlineException::class.java.name
+        }
 
-        val deferredException = error.deferredException as FailedWorkflowTaskException
-        deferredException.workerException.name shouldBe InvalidInlineException::class.java.name
-      }
+        "Inline task with synchronous task inside" {
+          val error = shouldThrow<FailedWorkflowException> { inlineWorkflow.inline3(14) }
 
-      "Inline task with synchronous task inside" {
-        val error = shouldThrow<FailedWorkflowException> { inlineWorkflow.inline3(14) }
-
-        val deferredException = error.deferredException as FailedWorkflowTaskException
-        deferredException.workerException.name shouldBe InvalidInlineException::class.java.name
-      }
-    })
+          val deferredException = error.deferredException as FailedWorkflowTaskException
+          deferredException.workerException.name shouldBe InvalidInlineException::class.java.name
+        }
+      },
+  )

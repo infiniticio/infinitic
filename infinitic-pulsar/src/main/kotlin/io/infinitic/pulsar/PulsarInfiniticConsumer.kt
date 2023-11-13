@@ -149,7 +149,7 @@ class PulsarInfiniticConsumer(
   )
 
   // Start consumers of delayed messages to workflow engine
-  override fun startWorkflowDelayConsumerAsync(
+  override fun startDelayedWorkflowEngineConsumerAsync(
     handler: suspend (WorkflowEngineMessage) -> Unit,
     workflowName: WorkflowName,
     concurrency: Int
@@ -184,6 +184,15 @@ class PulsarInfiniticConsumer(
       name = "$serviceName",
   )
 
+  override fun startDelayedTaskExecutorConsumerAsync(
+    handler: suspend (TaskExecutorMessage) -> Unit,
+    serviceName: ServiceName,
+    concurrency: Int
+  ): CompletableFuture<Unit> {
+    // Nothing to do
+    return CompletableFuture.completedFuture(Unit)
+  }
+
   // Start consumers of messages to workflow task executor
   override fun startWorkflowTaskConsumerAsync(
     handler: suspend (TaskExecutorMessage) -> Unit,
@@ -195,6 +204,15 @@ class PulsarInfiniticConsumer(
       concurrency = concurrency,
       name = "$workflowName",
   )
+
+  override fun startDelayedWorkflowTaskConsumerAsync(
+    handler: suspend (TaskExecutorMessage) -> Unit,
+    workflowName: WorkflowName,
+    concurrency: Int
+  ): CompletableFuture<Unit> {
+    // Nothing to do
+    return CompletableFuture.completedFuture(Unit)
+  }
 
   // Start a consumer on a topic, with concurrent executors
   private inline fun <T : Message, reified S : Envelope<T>> startAsync(

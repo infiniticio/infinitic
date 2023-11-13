@@ -90,7 +90,7 @@ class InfiniticWorker(
       // start workflow engines
       val workflowEngine = WorkflowEngine(it.value.storage, producer)
 
-      var handler: (suspend (WorkflowEngineMessage) -> Unit) =
+      val handler: (suspend (WorkflowEngineMessage) -> Unit) =
           { message: WorkflowEngineMessage -> workflowEngine.handle(message) }
 
       futures.add(
@@ -101,12 +101,10 @@ class InfiniticWorker(
           ),
       )
 
-      // start workflow delays
-      handler = { message: WorkflowEngineMessage -> producer.send(message) } // send to engine
-
+      // start consumer for delayed WorkflowEngineMessage
       futures.add(
-          consumer.startWorkflowDelayConsumerAsync(
-              handler = handler,
+          consumer.startDelayedWorkflowEngineConsumerAsync(
+              handler = { message: WorkflowEngineMessage -> producer.send(message) },
               workflowName = it.key,
               concurrency = it.value.concurrency,
           ),
@@ -127,6 +125,15 @@ class InfiniticWorker(
               concurrency = it.value.concurrency,
           ),
       )
+
+      // start consumer for delayed (Workflow)TaskExecutorMessage
+      futures.add(
+          consumer.startDelayedWorkflowTaskConsumerAsync(
+              handler = { message: TaskExecutorMessage -> producer.send(message) },
+              workflowName = it.key,
+              concurrency = it.value.concurrency,
+          ),
+      )
     }
 
     // start task executors
@@ -139,6 +146,15 @@ class InfiniticWorker(
       futures.add(
           consumer.startTaskExecutorConsumerAsync(
               handler = handler,
+              serviceName = it.key,
+              concurrency = it.value.concurrency,
+          ),
+      )
+
+      // start consumer for delayed TaskExecutorMessage
+      futures.add(
+          consumer.startDelayedTaskExecutorConsumerAsync(
+              handler = { message: TaskExecutorMessage -> producer.send(message) },
               serviceName = it.key,
               concurrency = it.value.concurrency,
           ),
@@ -178,9 +194,9 @@ class InfiniticWorker(
 
     /** Create [InfiniticWorker] from [WorkerConfig] */
     @JvmStatic
-    fun fromConfig(workerConfig: WorkerConfig) {
+    fun fromConfig(workerConfig: WorkerConfig): InfiniticWorker {
       val (consumer, producer) = workerConfig.getConsumerAndProducer()
-      InfiniticWorker(
+      return InfiniticWorker(
           workerConfig.register,
           consumer,
           producer,

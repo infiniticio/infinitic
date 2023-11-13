@@ -23,49 +23,27 @@
 package io.infinitic.tests
 
 import io.infinitic.clients.InfiniticClient
+import io.infinitic.common.transport.InfiniticConsumer
+import io.infinitic.common.transport.InfiniticProducer
 import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.data.workflows.WorkflowName
-import io.infinitic.inMemory.InMemoryInfiniticClient
-import io.infinitic.inMemory.InMemoryInfiniticWorker
-import io.infinitic.pulsar.PulsarInfiniticClient
-import io.infinitic.pulsar.PulsarInfiniticService
-import io.infinitic.pulsar.config.ClientConfig
-import io.infinitic.transport.config.Transport
 import io.infinitic.workers.InfiniticWorker
 import io.infinitic.workers.config.WorkerConfig
 import io.infinitic.workers.register.InfiniticRegisterImpl
 import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.delay
 
-object WorkflowTests {
+class WorkflowTests {
   private val workerConfig = WorkerConfig.fromResource("/pulsar.yml")
   private val workerRegister = InfiniticRegisterImpl(workerConfig)
-  private val clientConfig = ClientConfig.fromResource("/pulsar.yml")
 
-  val worker =
-      InfiniticWorker(
-          when (workerConfig.transport) {
-            Transport.pulsar ->
-              PulsarInfiniticService(
-                  workerRegister,
-                  workerConfig.pulsar!!.client,
-                  workerConfig.pulsar!!.admin,
-                  workerConfig.pulsar!!,
-              )
+  // we provide consumer and producer together
+  // to ensure they share the same configuration (e.g. inMemoryChannels)
+  private val cp: Pair<InfiniticConsumer, InfiniticProducer> = workerConfig.getConsumerAndProducer()
+  val client = InfiniticClient(cp.first, cp.second)
+  val worker = InfiniticWorker(workerConfig.register, cp.first, cp.second, client)
 
-            Transport.inMemory -> InMemoryInfiniticWorker(workerRegister)
-          },
-      )
-
-  val client =
-      InfiniticClient(
-          when (clientConfig.transport) {
-            Transport.pulsar -> PulsarInfiniticClient.fromConfig(clientConfig)
-            Transport.inMemory -> InMemoryInfiniticClient(workerRegister)
-          },
-      )
-
-  suspend fun testWorkflowStateEmpty(
+  suspend fun workflowStateShouldBeEmpty(
     name: String = client.lastDeferred!!.name,
     id: String = client.lastDeferred!!.id
   ) {

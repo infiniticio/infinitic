@@ -129,7 +129,6 @@ class ClientDispatcher(
   // a message received by the client is sent to responseFlow
   internal suspend fun handle(message: ClientMessage) {
     logger.debug { "Client ${producer.name}: Receiving $message" }
-    println("Client ${producer.name}: Receiving $message")
     responseFlow.emit(message)
   }
 
@@ -189,7 +188,6 @@ class ClientDispatcher(
     // wait for the message of method completion
     val workflowResult = waitingScope.future {
       responseFlow.first {
-        println("responseFlow: $it")
         it is MethodMessage && it.workflowId == workflowId && it.methodRunId == runId
       }
     }.join()

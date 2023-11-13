@@ -24,7 +24,6 @@ package io.infinitic.inMemory
 
 import io.infinitic.common.clients.messages.ClientMessage
 import io.infinitic.common.data.MillisDuration
-import io.infinitic.common.messages.Message
 import io.infinitic.common.tasks.executors.messages.ExecuteTask
 import io.infinitic.common.tasks.executors.messages.TaskExecutorMessage
 import io.infinitic.common.tasks.tags.messages.TaskTagMessage
@@ -34,7 +33,6 @@ import io.infinitic.common.workflows.tags.messages.WorkflowTagMessage
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.future.future
 import mu.KotlinLogging
 import java.util.concurrent.CompletableFuture
@@ -45,6 +43,8 @@ class InMemoryInfiniticProducer(private val channels: InMemoryChannels) : Infini
 
   // Coroutine scope used to receive messages
   private val producingScope = CoroutineScope(Dispatchers.IO)
+
+  private val delayScope = CoroutineScope(Dispatchers.IO)
 
   override var name = DEFAULT_NAME
 
@@ -61,11 +61,17 @@ class InMemoryInfiniticProducer(private val channels: InMemoryChannels) : Infini
   override fun sendAsync(
     message: WorkflowEngineMessage,
     after: MillisDuration
-  ) = sendAsync(
-      message,
-      channels.forWorkflowEngine(message.workflowName),
-      after,
-  )
+  ) = when {
+    after > 0 -> sendAsync(
+        DelayedMessage(message, after),
+        channels.forDelayedWorkflowEngine(message.workflowName),
+    )
+
+    else -> sendAsync(
+        message,
+        channels.forWorkflowEngine(message.workflowName),
+    )
+  }
 
   override fun sendAsync(message: TaskTagMessage) = sendAsync(
       message,
@@ -77,35 +83,43 @@ class InMemoryInfiniticProducer(private val channels: InMemoryChannels) : Infini
     after: MillisDuration
   ) = when {
     message.isWorkflowTask() -> when (message) {
-      is ExecuteTask -> sendAsync(
+      is ExecuteTask -> when {
+        after > 0 -> sendAsync(
+            DelayedMessage(message, after),
+            channels.forDelayedWorkflowTaskExecutor(message.workflowName!!),
+        )
+
+        else -> sendAsync(
+            message,
+            channels.forWorkflowTaskExecutor(message.workflowName!!),
+        )
+      }
+    }
+
+    else -> when {
+      after > 0 -> sendAsync(
+          DelayedMessage(message, after),
+          channels.forDelayedTaskExecutor(message.serviceName),
+      )
+
+      else -> sendAsync(
           message,
-          channels.forWorkflowTaskExecutor(message.workflowName!!),
-          after,
+          channels.forTaskExecutor(message.serviceName),
       )
     }
-
-    else -> sendAsync(
-        message,
-        channels.forTaskExecutor(message.serviceName),
-        after,
-    )
   }
 
-  private fun <T : Message> sendAsync(
+  private fun <T : Any> sendAsync(
     message: T,
     channel: Channel<T>,
-    after: MillisDuration = MillisDuration.ZERO
   ): CompletableFuture<Unit> = producingScope.future {
-    logger.debug {
-      val prefix = if (after > 0) "after $after ms, " else ""
-      "${prefix}sending $message"
-    }
-    if (after > 0) delay(after.long)
+    logger.debug { "Channel ${channel.id}: sending $message" }
     channel.send(message)
-    logger.debug { "sent" }
+    logger.debug { "Channel ${channel.id}: sent" }
   }
 
   companion object {
     private const val DEFAULT_NAME = "inMemory"
   }
 }
+

@@ -24,7 +24,6 @@ package io.infinitic.workflows.engine.handlers
 
 import io.infinitic.common.clients.messages.MethodCompleted
 import io.infinitic.common.data.ClientName
-import io.infinitic.common.data.MillisDuration
 import io.infinitic.common.data.MillisInstant
 import io.infinitic.common.exceptions.thisShouldNotHappen
 import io.infinitic.common.transport.InfiniticProducer
@@ -211,18 +210,17 @@ private fun CoroutineScope.startDurationTimer(
 ) {
   val command: StartDurationTimerCommand = newCommand.command
 
-  val msg =
-      TimerCompleted(
-          workflowName = state.workflowName,
-          workflowId = state.workflowId,
-          methodRunId = state.runningMethodRunId ?: thisShouldNotHappen(),
-          timerId = TimerId.from(newCommand.commandId),
-          emitterName = ClientName(producer.name),
-      )
+  val msg = TimerCompleted(
+      workflowName = state.workflowName,
+      workflowId = state.workflowId,
+      methodRunId = state.runningMethodRunId ?: thisShouldNotHappen(),
+      timerId = TimerId.from(newCommand.commandId),
+      emitterName = ClientName(producer.name),
+  )
+  // The duration is offset by the time spent in the workflow task
+  val diff = state.runningWorkflowTaskInstant!! - MillisInstant.now()
 
-  val diff: MillisDuration = state.runningWorkflowTaskInstant!! - MillisInstant.now()
-
-  launch { producer.send(msg, command.duration - diff) }
+  launch { producer.send(msg, command.duration + diff) }
 }
 
 private fun CoroutineScope.startInstantTimer(

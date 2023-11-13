@@ -22,39 +22,40 @@
  */
 package io.infinitic.tests.properties
 
-import io.infinitic.clients.InfiniticClient
-import io.infinitic.workers.InfiniticWorker
+import io.infinitic.tests.WorkflowTests
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
 
 internal class PropertiesWorkflowTests :
-    StringSpec({
+  StringSpec(
+      {
+        // each test should not be longer than 5s
+        timeout = 5000
 
-      // each test should not be longer than 10s
-      timeout = 10000
+        val tests = WorkflowTests()
+        val worker = autoClose(tests.worker)
+        val client = autoClose(tests.client)
 
-      val worker = autoClose(InfiniticWorker.fromConfigResource("/pulsar.yml"))
-      val client = autoClose(InfiniticClient.fromConfigResource("/pulsar.yml"))
+        val propertiesWorkflow = client.newWorkflow(PropertiesWorkflow::class.java)
 
-      val propertiesWorkflow = client.newWorkflow(PropertiesWorkflow::class.java)
+        beforeSpec { worker.startAsync() }
 
-      beforeSpec { worker.startAsync() }
+        beforeTest { worker.registry.flush() }
 
-      beforeTest { worker.registry.flush() }
+        "Check prop1" { propertiesWorkflow.prop1() shouldBe "ac" }
 
-      "Check prop1" { propertiesWorkflow.prop1() shouldBe "ac" }
+        "Check prop2" { propertiesWorkflow.prop2() shouldBe "acbd" }
 
-      "Check prop2" { propertiesWorkflow.prop2() shouldBe "acbd" }
+        "Check prop3" { propertiesWorkflow.prop3() shouldBe "acbd" }
 
-      "Check prop3" { propertiesWorkflow.prop3() shouldBe "acbd" }
+        "Check prop4" { propertiesWorkflow.prop4() shouldBe "acd" }
 
-      "Check prop4" { propertiesWorkflow.prop4() shouldBe "acd" }
+        "Check prop5" { propertiesWorkflow.prop5() shouldBe "adbc" }
 
-      "Check prop5" { propertiesWorkflow.prop5() shouldBe "adbc" }
+        "Check prop6" { propertiesWorkflow.prop6() shouldBe "abab" }
 
-      "Check prop6" { propertiesWorkflow.prop6() shouldBe "abab" }
+        "Check prop7" { propertiesWorkflow.prop7() shouldBe "abab" }
 
-      "Check prop7" { propertiesWorkflow.prop7() shouldBe "abab" }
-
-      "Check prop8" { propertiesWorkflow.prop8() shouldBe "acbd" }
-    })
+        "Check prop8" { propertiesWorkflow.prop8() shouldBe "acbd" }
+      },
+  )

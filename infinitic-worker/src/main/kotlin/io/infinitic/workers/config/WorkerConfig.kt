@@ -46,6 +46,7 @@ interface WorkerConfig : RegisterConfig, CacheConfig, StorageConfig, ClientConfi
   val client: InfiniticClient
     get() = InfiniticClient.fromConfig(this)
 
+
   companion object {
     /** Create ClientConfig from file in file system */
     @JvmStatic

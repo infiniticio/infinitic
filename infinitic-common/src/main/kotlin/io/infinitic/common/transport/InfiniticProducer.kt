@@ -70,8 +70,7 @@ interface InfiniticProducer {
   suspend fun send(
     message: WorkflowEngineMessage,
     after: MillisDuration = MillisDuration.ZERO
-  ): Unit =
-      sendAsync(message).await()
+  ): Unit = sendAsync(message, after).await()
 
   // Synchronously send a message to a task tag
   suspend fun send(message: TaskTagMessage): Unit = sendAsync(message).await()
@@ -80,6 +79,5 @@ interface InfiniticProducer {
   suspend fun send(
     message: TaskExecutorMessage,
     after: MillisDuration = MillisDuration.ZERO
-  ): Unit =
-      sendAsync(message).await()
+  ): Unit = sendAsync(message, after).await()
 }
