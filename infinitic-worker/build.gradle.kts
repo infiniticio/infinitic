@@ -29,6 +29,7 @@ dependencies {
   api(project(":infinitic-task-tag"))
   api(project(":infinitic-storage"))
   api(project(":infinitic-cache"))
+  api(project(":infinitic-transport"))
 
   implementation(project(":infinitic-common"))
   implementation(project(":infinitic-client"))
@@ -36,8 +37,6 @@ dependencies {
   implementation(project(":infinitic-task-executor"))
   implementation(project(":infinitic-workflow-engine"))
   implementation(project(":infinitic-workflow-task"))
-  implementation(project(":infinitic-pulsar"))
-  implementation(project(":infinitic-inMemory"))
 
   testImplementation(Libs.Hoplite.core)
   testImplementation(Libs.Hoplite.yaml)

@@ -26,7 +26,7 @@ import io.infinitic.annotations.CheckMode
 import io.infinitic.annotations.Retry
 import io.infinitic.annotations.Timeout
 import io.infinitic.annotations.getInstance
-import io.infinitic.common.clients.ClientFactory
+import io.infinitic.clients.InfiniticClientInterface
 import io.infinitic.common.data.ClientName
 import io.infinitic.common.data.MillisDuration
 import io.infinitic.common.data.ReturnValue
@@ -69,8 +69,8 @@ import io.infinitic.common.workflows.engine.messages.TaskFailed as TaskFailedWor
 
 class TaskExecutor(
   private val workerRegistry: WorkerRegistry,
-  private val clientFactory: ClientFactory,
-  private val producer: InfiniticProducer
+  private val producer: InfiniticProducer,
+  private val client: InfiniticClientInterface
 ) {
   companion object {
     val DEFAULT_WORKFLOW_TASK_TIMEOUT = WithTimeout { 60.0 }
@@ -125,7 +125,7 @@ class TaskExecutor(
             meta = message.taskMeta.map.toMutableMap(),
             withRetry = withRetry,
             withTimeout = withTimeout,
-            clientFactory = clientFactory,
+            client = client,
         )
 
     try {

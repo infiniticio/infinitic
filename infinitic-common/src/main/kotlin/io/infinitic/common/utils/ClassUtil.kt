@@ -25,9 +25,9 @@ package io.infinitic.common.utils
 import java.lang.reflect.Constructor
 
 fun String.getClass(
-    classNotFound: String = "Class \"$this\" not found",
-    errorClass: String = "Can not access class \"$this\""
-) =
+  classNotFound: String = "Class \"$this\" not found",
+  errorClass: String = "Can not access class \"$this\""
+): Class<*> =
     try {
       Class.forName(this)
     } catch (e: ClassNotFoundException) {
@@ -37,8 +37,8 @@ fun String.getClass(
     }
 
 fun <T : Any> Class<T>.getEmptyConstructor(
-    noEmptyConstructor: String = "Class \"$name\" must have an empty constructor",
-    constructorError: String = "Can not access constructor of class \"$name\""
+  noEmptyConstructor: String = "Class \"$name\" must have an empty constructor",
+  constructorError: String = "Can not access constructor of class \"$name\""
 ): Constructor<T> =
     try {
       getDeclaredConstructor()
@@ -49,7 +49,7 @@ fun <T : Any> Class<T>.getEmptyConstructor(
     }
 
 fun <T : Any> Constructor<T>.getInstance(
-    instanceError: String = "Error during instantiation of class \"$name\""
+  instanceError: String = "Error during instantiation of class \"$name\""
 ): T =
     try {
       newInstance()

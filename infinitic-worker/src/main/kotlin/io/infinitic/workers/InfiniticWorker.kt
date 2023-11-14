@@ -22,8 +22,7 @@
  */
 package io.infinitic.workers
 
-import io.infinitic.clients.InfiniticClient
-import io.infinitic.common.clients.ClientFactory
+import io.infinitic.clients.InfiniticClientInterface
 import io.infinitic.common.tasks.executors.messages.TaskExecutorMessage
 import io.infinitic.common.tasks.tags.messages.TaskTagMessage
 import io.infinitic.common.transport.InfiniticConsumer
@@ -45,14 +44,12 @@ class InfiniticWorker(
   private val register: InfiniticRegister,
   private val consumer: InfiniticConsumer,
   private val producer: InfiniticProducer,
-  private val client: InfiniticClient
+  private val client: InfiniticClientInterface
 ) : Closeable, InfiniticRegister by register {
 
   private val logger = KotlinLogging.logger {}
 
   private val workerRegistry = register.registry
-
-  private val clientFactory: ClientFactory = { client }
 
   override fun close() {
     consumer.close()
@@ -113,7 +110,7 @@ class InfiniticWorker(
 
     // start workflow task executors
     workerRegistry.workflows.forEach {
-      val taskExecutor = TaskExecutor(workerRegistry, clientFactory, producer)
+      val taskExecutor = TaskExecutor(workerRegistry, producer, client)
 
       val handler: (suspend (TaskExecutorMessage) -> Unit) =
           { message: TaskExecutorMessage -> taskExecutor.handle(message) }
@@ -138,7 +135,7 @@ class InfiniticWorker(
 
     // start task executors
     workerRegistry.services.forEach {
-      val taskExecutor = TaskExecutor(workerRegistry, clientFactory, producer)
+      val taskExecutor = TaskExecutor(workerRegistry, producer, client)
 
       val handler: (suspend (TaskExecutorMessage) -> Unit) =
           { message: TaskExecutorMessage -> taskExecutor.handle(message) }

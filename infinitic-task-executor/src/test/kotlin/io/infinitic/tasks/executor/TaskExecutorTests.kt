@@ -100,7 +100,7 @@ class TaskExecutorTests :
         // mocks
         fun completed() = CompletableFuture.completedFuture(Unit)
         val workerRegistry = mockk<WorkerRegistry>()
-        val clientFactory = mockk<() -> InfiniticClientInterface>()
+        val client = mockk<InfiniticClientInterface>()
         val producer = mockk<InfiniticProducer> {
           every { name } returns "$clientName"
           every { sendAsync(capture(clientSlot)) } returns completed()
@@ -113,7 +113,7 @@ class TaskExecutorTests :
           coEvery { send(capture(workflowEngineSlot), capture(afterSlot)) } answers { }
         }
 
-        val taskExecutor = TaskExecutor(workerRegistry, clientFactory, producer)
+        val taskExecutor = TaskExecutor(workerRegistry, producer, client)
 
         val service = RegisteredService(1, { ServiceImplService() }, null, null)
 
