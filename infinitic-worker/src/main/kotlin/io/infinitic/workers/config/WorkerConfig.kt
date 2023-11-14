@@ -23,29 +23,24 @@
 package io.infinitic.workers.config
 
 import io.infinitic.cache.config.CacheConfig
-import io.infinitic.clients.InfiniticClient
 import io.infinitic.clients.config.ClientConfig
 import io.infinitic.common.config.loadConfigFromFile
 import io.infinitic.common.config.loadConfigFromResource
 import io.infinitic.storage.config.StorageConfig
+import io.infinitic.workers.InfiniticWorker
 import io.infinitic.workers.register.InfiniticRegister
 import io.infinitic.workers.register.InfiniticRegisterImpl
 import io.infinitic.workers.register.config.RegisterConfig
 
 interface WorkerConfig : RegisterConfig, CacheConfig, StorageConfig, ClientConfig {
 
-  /**
-   * Worker Register associated to this configuration file
-   */
+  /** Infinitic Register */
   val register: InfiniticRegister
     get() = InfiniticRegisterImpl(this)
 
-  /**
-   * Infinitic Client associated to this configuration file
-   */
-  val client: InfiniticClient
-    get() = InfiniticClient.fromConfig(this)
-
+  /** Infinitic Worker */
+  val worker: InfiniticWorker
+    get() = InfiniticWorker(register, consumer, producer, client)
 
   companion object {
     /** Create ClientConfig from file in file system */

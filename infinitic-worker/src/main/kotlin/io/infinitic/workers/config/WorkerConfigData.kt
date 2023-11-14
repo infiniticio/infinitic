@@ -23,6 +23,7 @@
 package io.infinitic.workers.config
 
 import io.infinitic.cache.config.Cache
+import io.infinitic.clients.config.ClientConfigData
 import io.infinitic.pulsar.config.Pulsar
 import io.infinitic.storage.config.Storage
 import io.infinitic.transport.config.Transport
@@ -39,7 +40,7 @@ data class WorkerConfigData(
   override val transport: Transport = Transport.pulsar,
 
   /** Pulsar configuration */
-  override val pulsar: Pulsar?,
+  override val pulsar: Pulsar? = null,
 
   /** Default storage */
   override val storage: Storage = Storage(),
@@ -61,11 +62,15 @@ data class WorkerConfigData(
 
 ) : WorkerConfig {
 
-  init {
-    if (transport == Transport.pulsar) {
-      require(pulsar != null) { "No `pulsar` configuration provided" }
-    }
+  private val clientConfig = ClientConfigData(name, transport, pulsar)
 
+  override val consumer = clientConfig.consumer
+
+  override val producer = clientConfig.producer
+
+  override val client = clientConfig.client
+  
+  init {
     // check default service retry Policy
     service.retry?.check()
 

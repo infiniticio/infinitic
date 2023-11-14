@@ -22,13 +22,10 @@
  */
 package io.infinitic.transport.config
 
+import io.infinitic.common.config.loadConfigFromFile
+import io.infinitic.common.config.loadConfigFromResource
 import io.infinitic.common.transport.InfiniticConsumer
 import io.infinitic.common.transport.InfiniticProducer
-import io.infinitic.inMemory.InMemoryChannels
-import io.infinitic.inMemory.InMemoryInfiniticConsumer
-import io.infinitic.inMemory.InMemoryInfiniticProducer
-import io.infinitic.pulsar.PulsarInfiniticConsumer
-import io.infinitic.pulsar.PulsarInfiniticProducer
 import io.infinitic.pulsar.config.Pulsar
 
 interface TransportConfig {
@@ -38,20 +35,21 @@ interface TransportConfig {
   /** Pulsar configuration */
   val pulsar: Pulsar?
 
-  // we provide consumer and producer together,
-  // as they must share the same configuration (e.g. InMemoryChannels instance)
-  fun getConsumerAndProducer(): Pair<InfiniticConsumer, InfiniticProducer> =
-      when (transport) {
-        Transport.pulsar -> Pair(
-            PulsarInfiniticConsumer.from(pulsar!!),
-            PulsarInfiniticProducer.from(pulsar!!),
-        )
+  /** Infinitic Consumer */
+  val consumer: InfiniticConsumer
 
-        Transport.inMemory -> with(InMemoryChannels()) {
-          Pair(
-              InMemoryInfiniticConsumer(this),
-              InMemoryInfiniticProducer(this),
-          )
-        }
-      }
+  /** Infinitic Producer */
+  val producer: InfiniticProducer
+
+  companion object {
+    /** Create TransportConfig from file in file system */
+    @JvmStatic
+    fun fromFile(vararg files: String): TransportConfig =
+        loadConfigFromFile<TransportConfigData>(files.toList())
+
+    /** Create TransportConfig from file in resources directory */
+    @JvmStatic
+    fun fromResource(vararg resources: String): TransportConfig =
+        loadConfigFromResource<TransportConfigData>(resources.toList())
+  }
 }

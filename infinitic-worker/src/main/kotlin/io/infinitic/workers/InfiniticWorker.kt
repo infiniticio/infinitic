@@ -186,22 +186,11 @@ class InfiniticWorker(
     /** Create [InfiniticWorker] from config in resources */
     @JvmStatic
     fun fromConfigResource(vararg resources: String) =
-        fromConfig(WorkerConfig.fromResource(*resources))
+        WorkerConfig.fromResource(*resources).worker
 
     /** Create [InfiniticWorker] from config in system file */
     @JvmStatic
-    fun fromConfigFile(vararg files: String) = fromConfig(WorkerConfig.fromFile(*files))
+    fun fromConfigFile(vararg files: String) = WorkerConfig.fromFile(*files).worker
 
-    /** Create [InfiniticWorker] from [WorkerConfig] */
-    @JvmStatic
-    fun fromConfig(workerConfig: WorkerConfig): InfiniticWorker {
-      val (consumer, producer) = workerConfig.getConsumerAndProducer()
-      return InfiniticWorker(
-          workerConfig.register,
-          consumer,
-          producer,
-          workerConfig.client,
-      )
-    }
   }
 }

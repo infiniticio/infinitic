@@ -22,26 +22,18 @@
  */
 package io.infinitic.tests
 
-import io.infinitic.clients.InfiniticClient
-import io.infinitic.common.transport.InfiniticConsumer
-import io.infinitic.common.transport.InfiniticProducer
 import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.data.workflows.WorkflowName
-import io.infinitic.workers.InfiniticWorker
 import io.infinitic.workers.config.WorkerConfig
-import io.infinitic.workers.register.InfiniticRegisterImpl
 import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.delay
 
 class WorkflowTests {
   private val workerConfig = WorkerConfig.fromResource("/pulsar.yml")
-  private val workerRegister = InfiniticRegisterImpl(workerConfig)
+  private val register = workerConfig.register
 
-  // we provide consumer and producer together
-  // to ensure they share the same configuration (e.g. inMemoryChannels)
-  private val cp: Pair<InfiniticConsumer, InfiniticProducer> = workerConfig.getConsumerAndProducer()
-  val client = InfiniticClient(cp.first, cp.second)
-  val worker = InfiniticWorker(workerConfig.register, cp.first, cp.second, client)
+  val client = workerConfig.client
+  val worker = workerConfig.worker
 
   suspend fun workflowStateShouldBeEmpty(
     name: String = client.lastDeferred!!.name,
@@ -51,7 +43,7 @@ class WorkflowTests {
     // that's why we are waiting here a bit before checking its value
     delay(100)
 
-    workerRegister.registry.workflowEngines[WorkflowName(name)]!!
+    register.registry.workflowEngines[WorkflowName(name)]!!
         .storage
         .getState(WorkflowId(id)) shouldBe null
   }

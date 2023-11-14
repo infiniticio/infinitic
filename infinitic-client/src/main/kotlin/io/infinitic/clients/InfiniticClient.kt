@@ -241,21 +241,13 @@ class InfiniticClient(
   companion object {
     /** Create InfiniticClient with config from resources directory */
     @JvmStatic
-    fun fromConfig(clientConfig: ClientConfig): InfiniticClient {
-      // get consumer and producer from client configuration
-      val (consumer, producer) = clientConfig.getConsumerAndProducer()
-      return InfiniticClient(consumer, producer)
-    }
-
-    /** Create InfiniticClient with config from resources directory */
-    @JvmStatic
     fun fromConfigResource(vararg resources: String) =
-        fromConfig(ClientConfig.fromResource(*resources))
+        ClientConfig.fromResource(*resources).client
 
 
     /** Create InfiniticClient with config from system file */
     @JvmStatic
     fun fromConfigFile(vararg files: String) =
-        fromConfig(ClientConfig.fromFile(*files))
+        ClientConfig.fromFile(*files).client
   }
 }

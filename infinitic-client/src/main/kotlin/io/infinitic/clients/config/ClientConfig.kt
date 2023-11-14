@@ -22,21 +22,18 @@
  */
 package io.infinitic.clients.config
 
+import io.infinitic.clients.InfiniticClient
 import io.infinitic.common.config.loadConfigFromFile
 import io.infinitic.common.config.loadConfigFromResource
-import io.infinitic.common.transport.InfiniticConsumer
-import io.infinitic.common.transport.InfiniticProducer
 import io.infinitic.transport.config.TransportConfig
 
 interface ClientConfig : TransportConfig {
+
   /** Client name */
   val name: String?
 
-  override fun getConsumerAndProducer(): Pair<InfiniticConsumer, InfiniticProducer> =
-      super.getConsumerAndProducer().also { (_, producer) ->
-        // apply name if it exists
-        name?.let { producer.name = it }
-      }
+  /** Infinitic Client */
+  val client: InfiniticClient
 
   companion object {
     /** Create ClientConfig from file in file system */

@@ -20,35 +20,51 @@
  *
  * Licensor: infinitic.io
  */
-package io.infinitic.clients.config
+package io.infinitic.transport.config
 
-import io.infinitic.clients.InfiniticClient
+import io.infinitic.common.transport.InfiniticConsumer
+import io.infinitic.common.transport.InfiniticProducer
+import io.infinitic.inMemory.InMemoryChannels
+import io.infinitic.inMemory.InMemoryInfiniticConsumer
+import io.infinitic.inMemory.InMemoryInfiniticProducer
+import io.infinitic.pulsar.PulsarInfiniticConsumer
+import io.infinitic.pulsar.PulsarInfiniticProducer
 import io.infinitic.pulsar.config.Pulsar
-import io.infinitic.transport.config.Transport
-import io.infinitic.transport.config.TransportConfigData
 
-data class ClientConfigData(
-  /** Client name */
-  override val name: String? = null,
-
+data class TransportConfigData(
   /** Transport configuration */
   override val transport: Transport = Transport.pulsar,
 
   /** Pulsar configuration */
   override val pulsar: Pulsar? = null
-) : ClientConfig {
+) : TransportConfig {
 
-  private val transportConfig = TransportConfigData(transport, pulsar)
-
-  /** Infinitic Consumer */
-  override val consumer = transportConfig.consumer
-
-  /** Infinitic  Producer */
-  override val producer = transportConfig.producer.also {
-    // apply name if it exists
-    if (name != null) it.name = name
+  init {
+    if (transport == Transport.pulsar) {
+      require(pulsar != null) { "Missing Pulsar configuration" }
+    }
   }
 
-  /** Infinitic Client */
-  override val client = InfiniticClient(consumer, producer)
+  // we provide consumer and producer together,
+  // as they must share the same configuration (e.g. InMemoryChannels instance)
+  private val cp: Pair<InfiniticConsumer, InfiniticProducer> =
+      when (transport) {
+        Transport.pulsar -> Pair(
+            PulsarInfiniticConsumer.from(pulsar!!),
+            PulsarInfiniticProducer.from(pulsar),
+        )
+
+        Transport.inMemory -> with(InMemoryChannels()) {
+          Pair(
+              InMemoryInfiniticConsumer(this),
+              InMemoryInfiniticProducer(this),
+          )
+        }
+      }
+
+  /** Infinitic Consumer */
+  override val consumer = cp.first
+
+  /** Infinitic Producer */
+  override val producer = cp.second
 }
