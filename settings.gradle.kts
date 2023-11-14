@@ -44,7 +44,7 @@ include("infinitic-dashboard")
 
 include("infinitic-worker")
 
-include("infinitic-inMemory")
+include("infinitic-transport-inMemory")
 
 include("infinitic-pulsar")
 

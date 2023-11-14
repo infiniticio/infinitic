@@ -24,7 +24,7 @@
 dependencies {
   implementation(project(":infinitic-common"))
   api(project(":infinitic-pulsar"))
-  api(project(":infinitic-inMemory"))
+  api(project(":infinitic-transport-inMemory"))
 }
 
 apply("../publish.gradle.kts")
