@@ -37,7 +37,7 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.future.future
-import mu.KotlinLogging
+import io.github.oshai.kotlinlogging.KotlinLogging
 import java.util.concurrent.CompletableFuture
 
 class InMemoryInfiniticConsumer(private val channels: InMemoryChannels) : InfiniticConsumer {
