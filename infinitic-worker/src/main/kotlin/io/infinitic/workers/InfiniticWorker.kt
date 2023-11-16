@@ -22,6 +22,7 @@
  */
 package io.infinitic.workers
 
+import io.github.oshai.kotlinlogging.KotlinLogging
 import io.infinitic.clients.InfiniticClientInterface
 import io.infinitic.common.tasks.executors.messages.TaskExecutorMessage
 import io.infinitic.common.tasks.tags.messages.TaskTagMessage
@@ -35,7 +36,6 @@ import io.infinitic.workers.config.WorkerConfig
 import io.infinitic.workers.register.InfiniticRegister
 import io.infinitic.workflows.engine.WorkflowEngine
 import io.infinitic.workflows.tag.WorkflowTagEngine
-import mu.KotlinLogging
 import java.io.Closeable
 import java.util.concurrent.CompletableFuture
 

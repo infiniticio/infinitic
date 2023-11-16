@@ -26,7 +26,7 @@ import com.sksamuel.hoplite.ConfigLoaderBuilder
 import com.sksamuel.hoplite.PropertySource
 import com.sksamuel.hoplite.yaml.YamlPropertySource
 import java.io.File
-import mu.KotlinLogging
+import io.github.oshai.kotlinlogging.KotlinLogging
 
 val logger = KotlinLogging.logger("io.infinitic.common.config.loaders")
 

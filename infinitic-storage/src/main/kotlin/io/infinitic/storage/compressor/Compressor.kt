@@ -23,7 +23,7 @@
 package io.infinitic.storage.compressor
 
 import java.io.ByteArrayOutputStream
-import mu.KotlinLogging
+import io.github.oshai.kotlinlogging.KotlinLogging
 import org.apache.commons.compress.compressors.CompressorException
 import org.apache.commons.compress.compressors.CompressorStreamFactory
 

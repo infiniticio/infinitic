@@ -27,7 +27,7 @@ import io.infinitic.pulsar.config.Pulsar
 import io.infinitic.transport.config.Transport
 import io.infinitic.transport.config.TransportConfigData
 
-data class ClientConfigData(
+data class ClientConfigData @JvmOverloads constructor(
   /** Client name */
   override val name: String? = null,
 

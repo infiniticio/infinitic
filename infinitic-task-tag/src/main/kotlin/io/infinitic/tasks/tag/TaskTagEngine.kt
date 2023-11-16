@@ -36,7 +36,7 @@ import io.infinitic.tasks.tag.storage.LoggedTaskTagStorage
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
-import mu.KotlinLogging
+import io.github.oshai.kotlinlogging.KotlinLogging
 
 class TaskTagEngine(
   storage: TaskTagStorage,

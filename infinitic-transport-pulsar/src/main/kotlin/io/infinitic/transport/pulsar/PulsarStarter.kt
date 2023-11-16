@@ -67,7 +67,7 @@ import io.infinitic.workflows.engine.WorkflowEngine
 import io.infinitic.workflows.tag.WorkflowTagEngine
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.isActive
-import mu.KotlinLogging
+import io.github.oshai.kotlinlogging.KotlinLogging
 import org.apache.pulsar.client.api.PulsarClient
 
 class PulsarStarter(

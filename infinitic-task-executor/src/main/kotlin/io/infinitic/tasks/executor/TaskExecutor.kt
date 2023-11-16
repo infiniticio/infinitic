@@ -59,7 +59,7 @@ import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeout
-import mu.KotlinLogging
+import io.github.oshai.kotlinlogging.KotlinLogging
 import java.lang.reflect.InvocationTargetException
 import java.lang.reflect.Method
 import io.infinitic.common.clients.messages.TaskCompleted as TaskCompletedClient

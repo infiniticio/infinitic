@@ -59,7 +59,7 @@ subprojects {
 
   dependencies {
     implementation(platform("org.jetbrains.kotlin:kotlin-bom"))
-    implementation(Libs.Logging.api)
+    implementation(Libs.Logging.jvm)
 
     testImplementation(Libs.Slf4j.simple)
     testImplementation(Libs.Kotest.junit5)

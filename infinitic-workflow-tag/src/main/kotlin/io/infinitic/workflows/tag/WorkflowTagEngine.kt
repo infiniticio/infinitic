@@ -50,7 +50,7 @@ import io.infinitic.common.workflows.tags.storage.WorkflowTagStorage
 import io.infinitic.workflows.tag.storage.LoggedWorkflowTagStorage
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
-import mu.KotlinLogging
+import io.github.oshai.kotlinlogging.KotlinLogging
 
 class WorkflowTagEngine(
   storage: WorkflowTagStorage,

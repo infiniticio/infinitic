@@ -25,7 +25,7 @@ package io.infinitic.pulsar.consumers
 
 import org.apache.pulsar.client.api.ConsumerCryptoFailureAction
 
-data class ConsumerConfig(
+data class ConsumerConfig @JvmOverloads constructor(
   val loadConf: Map<String, String>? = null,
   val subscriptionProperties: Map<String, String>? = null,
   val ackTimeoutSeconds: Double? = null,

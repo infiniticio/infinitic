@@ -29,7 +29,7 @@ import io.infinitic.transport.pulsar.config.topics.ProducerConfig
 import io.infinitic.transport.pulsar.schemas.schemaDefinition
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.TimeUnit
-import mu.KotlinLogging
+import io.github.oshai.kotlinlogging.KotlinLogging
 import org.apache.pulsar.client.api.BatcherBuilder
 import org.apache.pulsar.client.api.Producer
 import org.apache.pulsar.client.api.ProducerAccessMode

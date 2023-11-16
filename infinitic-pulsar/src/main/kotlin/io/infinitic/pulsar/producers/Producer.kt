@@ -27,7 +27,7 @@ import io.infinitic.common.messages.Envelope
 import io.infinitic.common.messages.Message
 import io.infinitic.exceptions.clients.ExceptionAtInitialization
 import io.infinitic.pulsar.schemas.schemaDefinition
-import mu.KotlinLogging
+import io.github.oshai.kotlinlogging.KotlinLogging
 import org.apache.pulsar.client.api.BatcherBuilder
 import org.apache.pulsar.client.api.Producer
 import org.apache.pulsar.client.api.ProducerAccessMode

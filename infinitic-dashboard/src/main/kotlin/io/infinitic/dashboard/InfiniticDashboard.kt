@@ -41,7 +41,7 @@ import kweb.ElementCreator
 import kweb.Kweb
 import kweb.WebBrowser
 import kweb.route
-import mu.KotlinLogging
+import io.github.oshai.kotlinlogging.KotlinLogging
 import org.apache.pulsar.client.admin.PulsarAdmin
 
 @Suppress("MemberVisibilityCanBePrivate", "CanBeParameter")

@@ -22,6 +22,7 @@
  */
 package io.infinitic.pulsar
 
+import io.github.oshai.kotlinlogging.KotlinLogging
 import io.infinitic.common.tasks.data.ServiceName
 import io.infinitic.common.workflows.data.workflows.WorkflowName
 import io.infinitic.pulsar.config.AdminConfig
@@ -30,7 +31,6 @@ import io.infinitic.pulsar.topics.ServiceTopics
 import io.infinitic.pulsar.topics.TopicNamesDefault
 import io.infinitic.pulsar.topics.WorkflowTaskTopics
 import io.infinitic.pulsar.topics.WorkflowTopics
-import mu.KotlinLogging
 import org.apache.pulsar.client.admin.Clusters
 import org.apache.pulsar.client.admin.Namespaces
 import org.apache.pulsar.client.admin.PulsarAdmin
@@ -74,7 +74,8 @@ class PulsarInfiniticAdmin(val pulsarAdmin: PulsarAdmin, val pulsar: Pulsar) : C
       // retention policies
       retention_policies =
           RetentionPolicies(
-              pulsar.policies.retentionTimeInMinutes, pulsar.policies.retentionSizeInMB.toLong(),
+              pulsar.policies.retentionTimeInMinutes,
+              pulsar.policies.retentionSizeInMB,
           )
       message_ttl_in_seconds = pulsar.policies.messageTTLInSeconds
       delayed_delivery_policies =

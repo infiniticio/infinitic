@@ -32,7 +32,7 @@ import io.infinitic.workers.register.config.ServiceDefault
 import io.infinitic.workers.register.config.Workflow
 import io.infinitic.workers.register.config.WorkflowDefault
 
-data class WorkerConfigData(
+data class WorkerConfigData @JvmOverloads constructor(
   /** Worker name */
   override val name: String? = null,
 
@@ -69,7 +69,7 @@ data class WorkerConfigData(
   override val producer = clientConfig.producer
 
   override val client = clientConfig.client
-  
+
   init {
     // check default service retry Policy
     service.retry?.check()

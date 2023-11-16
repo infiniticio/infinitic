@@ -75,7 +75,7 @@ object Libs {
   }
 
   object Pulsar {
-    private const val version = "3.1.0"
+    private const val version = "2.11.1"
     const val client = "org.apache.pulsar:pulsar-client:$version"
     const val clientAdmin = "org.apache.pulsar:pulsar-client-admin:$version"
     const val functions = "org.apache.pulsar:pulsar-functions-api:$version"
@@ -98,7 +98,7 @@ object Libs {
   }
 
   object Logging {
-    const val api = "io.github.microutils:kotlin-logging:3.0.5"
+    const val jvm = "io.github.oshai:kotlin-logging-jvm:5.1.0"
   }
 
   object Compress {

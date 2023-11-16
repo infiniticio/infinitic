@@ -23,6 +23,7 @@
 package io.infinitic.pulsar.config
 
 import com.sksamuel.hoplite.Secret
+import io.github.oshai.kotlinlogging.KotlinLogging
 import io.infinitic.common.serDe.json.Json
 import io.infinitic.pulsar.config.auth.AuthenticationAthenz
 import io.infinitic.pulsar.config.auth.AuthenticationOAuth2
@@ -32,7 +33,6 @@ import io.infinitic.pulsar.config.auth.ClientAuthentication
 import io.infinitic.pulsar.config.policies.Policies
 import io.infinitic.pulsar.consumers.ConsumerConfig
 import io.infinitic.pulsar.producers.ProducerConfig
-import mu.KotlinLogging
 import org.apache.pulsar.client.admin.PulsarAdmin
 import org.apache.pulsar.client.api.AuthenticationFactory
 import org.apache.pulsar.client.api.PulsarClient
@@ -40,7 +40,7 @@ import org.apache.pulsar.client.impl.auth.oauth2.AuthenticationFactoryOAuth2
 import org.apache.pulsar.client.impl.auth.AuthenticationAthenz as PulsarAuthenticationAthenz
 import org.apache.pulsar.client.impl.auth.AuthenticationSasl as PulsarAuthenticationSasl
 
-data class Pulsar(
+data class Pulsar @JvmOverloads constructor(
   val tenant: String,
   val namespace: String,
   val brokerServiceUrl: String = "pulsar://localhost:6650/",

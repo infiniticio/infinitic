@@ -28,7 +28,7 @@ import org.apache.pulsar.client.api.HashingScheme
 import org.apache.pulsar.client.api.MessageRoutingMode
 import org.apache.pulsar.client.api.ProducerCryptoFailureAction
 
-data class ProducerConfig(
+data class ProducerConfig @JvmOverloads constructor(
   val autoUpdatePartitions: Boolean? = null,
   val autoUpdatePartitionsIntervalSeconds: Double? = null,
   val batchingMaxBytes: Int? = null,

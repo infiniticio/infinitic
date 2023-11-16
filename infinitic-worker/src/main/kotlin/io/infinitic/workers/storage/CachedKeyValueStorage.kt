@@ -24,7 +24,7 @@ package io.infinitic.workers.storage
 
 import io.infinitic.cache.keyValue.CachedKeyValue
 import io.infinitic.storage.keyValue.KeyValueStorage
-import mu.KotlinLogging
+import io.github.oshai.kotlinlogging.KotlinLogging
 import org.jetbrains.annotations.TestOnly
 
 open class CachedKeyValueStorage(

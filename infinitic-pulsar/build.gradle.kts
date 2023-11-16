@@ -26,9 +26,9 @@ dependencies {
   implementation(Libs.Coroutines.core)
   implementation(Libs.Coroutines.jdk8)
   implementation(Libs.Pulsar.functions)
-  implementation(Libs.Hoplite.core)
   implementation(Libs.Hoplite.yaml)
 
+  api(Libs.Hoplite.core)
   api(Libs.Pulsar.client)
   api(Libs.Pulsar.clientAdmin)
   api(Libs.Pulsar.authAthenz)

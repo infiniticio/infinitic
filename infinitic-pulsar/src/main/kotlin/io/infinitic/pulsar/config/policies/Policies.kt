@@ -22,7 +22,7 @@
  */
 package io.infinitic.pulsar.config.policies
 
-data class Policies(
+data class Policies @JvmOverloads constructor(
   val forceUpdate: Boolean = false,
   val deduplicationEnabled: Boolean = true,
   val retentionTimeInMinutes: Int = 60 * 24 * 7,

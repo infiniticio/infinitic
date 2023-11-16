@@ -30,7 +30,7 @@ dependencies {
   implementation(Libs.Kweb.core)
 
   api(project(":infinitic-pulsar"))
-  implementation(project(":infinitic-transport"))
+  api(project(":infinitic-transport"))
 }
 
 apply("../publish.gradle.kts")
