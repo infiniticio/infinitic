@@ -22,15 +22,16 @@
  */
 package io.infinitic.pulsar.consumers
 
+import io.github.oshai.kotlinlogging.KotlinLogging
 import io.infinitic.common.messages.Envelope
 import io.infinitic.common.messages.Message
+import io.infinitic.pulsar.namer.Namer
 import io.infinitic.pulsar.schemas.schemaDefinition
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.future.await
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
-import io.github.oshai.kotlinlogging.KotlinLogging
 import org.apache.pulsar.client.api.Consumer
 import org.apache.pulsar.client.api.DeadLetterPolicy
 import org.apache.pulsar.client.api.MessageId
@@ -42,7 +43,11 @@ import java.util.concurrent.CancellationException
 import java.util.concurrent.TimeUnit
 import org.apache.pulsar.client.api.Message as PulsarMessage
 
-internal class Consumer(val client: PulsarClient, private val consumerConfig: ConsumerConfig) {
+class Consumer(
+  override val pulsarClient: PulsarClient,
+  private val consumerConfig: ConsumerConfig
+) : Namer(pulsarClient) {
+
   val logger = KotlinLogging.logger {}
 
   internal inline fun <T : Message, reified S : Envelope<out T>> CoroutineScope.startConsumer(
@@ -191,7 +196,7 @@ internal class Consumer(val client: PulsarClient, private val consumerConfig: Co
 
     val schema = Schema.AVRO(schemaDefinition<S>())
 
-    return client
+    return pulsarClient
         .newConsumer(schema)
         .topic(topic)
         .subscriptionType(subscriptionType)

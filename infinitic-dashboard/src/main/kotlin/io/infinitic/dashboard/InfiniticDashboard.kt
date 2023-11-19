@@ -22,6 +22,7 @@
  */
 package io.infinitic.dashboard
 
+import io.github.oshai.kotlinlogging.KotlinLogging
 import io.infinitic.dashboard.config.DashboardConfig
 import io.infinitic.dashboard.modals.Modal
 import io.infinitic.dashboard.panels.infrastructure.AllJobsPanel
@@ -32,8 +33,8 @@ import io.infinitic.dashboard.panels.tasks.TasksPanel
 import io.infinitic.dashboard.panels.workflows.WorkflowsPanel
 import io.infinitic.dashboard.plugins.images.imagesPlugin
 import io.infinitic.dashboard.plugins.tailwind.tailwindPlugin
-import io.infinitic.pulsar.PulsarInfiniticAdmin
 import io.infinitic.pulsar.config.Pulsar
+import io.infinitic.pulsar.topics.TopicManager
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -41,18 +42,16 @@ import kweb.ElementCreator
 import kweb.Kweb
 import kweb.WebBrowser
 import kweb.route
-import io.github.oshai.kotlinlogging.KotlinLogging
-import org.apache.pulsar.client.admin.PulsarAdmin
 
 @Suppress("MemberVisibilityCanBePrivate", "CanBeParameter")
 class InfiniticDashboard(
-  val pulsarAdmin: PulsarAdmin,
+  val topicManager: TopicManager,
   val pulsar: Pulsar,
   val port: Int,
   val debug: Boolean
 ) {
   init {
-    Infinitic.admin = PulsarInfiniticAdmin(pulsarAdmin, pulsar)
+    Infinitic.topicManager = topicManager
   }
 
   private val logger = KotlinLogging.logger {}
@@ -61,17 +60,15 @@ class InfiniticDashboard(
 
     internal val scope = CoroutineScope(Dispatchers.IO + Job())
 
-    /** Create Dashboard from a custom PulsarAdmin and a DashboardConfig instance */
-    @JvmStatic
-    fun from(pulsarAdmin: PulsarAdmin, dashboardConfig: DashboardConfig) =
-        InfiniticDashboard(
-                pulsarAdmin, dashboardConfig.pulsar, dashboardConfig.port, dashboardConfig.debug,
-        )
-
     /** Create Dashboard from a DashboardConfig */
     @JvmStatic
-    fun fromConfig(dashboardConfig: DashboardConfig): InfiniticDashboard =
-        from(dashboardConfig.pulsar.admin, dashboardConfig)
+    fun fromConfig(dashboardConfig: DashboardConfig) =
+        InfiniticDashboard(
+            TopicManager.from(dashboardConfig.pulsar),
+            dashboardConfig.pulsar,
+            dashboardConfig.port,
+            dashboardConfig.debug,
+        )
 
     /** Create InfiniticWorker from file in resources directory */
     @JvmStatic
@@ -119,7 +116,6 @@ internal fun WebBrowser.routeTo(to: Panel) {
 }
 
 internal object Infinitic {
-  lateinit var admin: PulsarInfiniticAdmin
-  val topicName by lazy { admin.topicName }
-  val topics by lazy { admin.pulsarAdmin.topics() }
+  lateinit var topicManager: TopicManager
+  val topics by lazy { topicManager.admin.pulsarAdmin.topics() }
 }

@@ -39,10 +39,10 @@ data class AllTasksState(
   override fun create(names: JobNames, stats: JobStats) =
       AllTasksState(names = names, stats = stats)
 
-  override fun getNames() = Infinitic.admin.tasks
+  override fun getNames() = Infinitic.topicManager.taskSet
 
   override fun getPartitionedStats(name: String): PartitionedTopicStats {
-    val topic = Infinitic.topicName.topic(ServiceTopics.EXECUTOR, ServiceName(name))
+    val topic = Infinitic.topicManager.getTopicName(ServiceTopics.EXECUTOR, ServiceName(name))
 
     return Infinitic.topics.getPartitionedStats(topic, true)
   }

@@ -20,25 +20,13 @@
  *
  * Licensor: infinitic.io
  */
-package io.infinitic.dashboard.panels.infrastructure.task
+package io.infinitic.pulsar.admin
 
-import io.infinitic.common.tasks.data.ServiceName
-import io.infinitic.dashboard.Infinitic.topicManager
-import io.infinitic.dashboard.panels.infrastructure.jobs.JobState
-import io.infinitic.dashboard.panels.infrastructure.jobs.TopicsStats
-import io.infinitic.dashboard.panels.infrastructure.requests.Loading
-import io.infinitic.pulsar.topics.ServiceTopics
-import java.time.Instant
+import io.infinitic.common.config.loadConfigFromFile
+import io.infinitic.common.config.loadConfigFromResource
+import io.infinitic.pulsar.config.Pulsar
 
-data class TaskState(
-  override val name: String,
-  override val topicsStats: TopicsStats<ServiceTopics> =
-      ServiceTopics.values().associateWith { Loading() },
-  val isLoading: Boolean = isLoading(topicsStats),
-  val lastUpdatedAt: Instant = lastUpdatedAt(topicsStats)
-) : JobState<ServiceTopics>(name, topicsStats) {
-  override fun create(name: String, topicsStats: TopicsStats<ServiceTopics>) =
-      TaskState(name = name, topicsStats = topicsStats)
-
-  override fun getTopic(type: ServiceTopics) = topicManager.getTopicName(type, ServiceName(name))
-}
+data class AdminConfigData(
+  /** Pulsar configuration */
+  override val pulsar: Pulsar
+) : AdminConfig

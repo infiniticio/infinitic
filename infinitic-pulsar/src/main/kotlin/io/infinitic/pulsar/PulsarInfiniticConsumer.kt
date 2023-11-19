@@ -38,15 +38,10 @@ import io.infinitic.common.workflows.engine.messages.WorkflowEngineEnvelope
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
 import io.infinitic.common.workflows.tags.messages.WorkflowTagEnvelope
 import io.infinitic.common.workflows.tags.messages.WorkflowTagMessage
-import io.infinitic.pulsar.config.Pulsar
 import io.infinitic.pulsar.consumers.Consumer
-import io.infinitic.pulsar.consumers.ConsumerConfig
-import io.infinitic.pulsar.producers.getProducerName
 import io.infinitic.pulsar.topics.ClientTopics
-import io.infinitic.pulsar.topics.GlobalTopics
 import io.infinitic.pulsar.topics.ServiceTopics
-import io.infinitic.pulsar.topics.TopicNames
-import io.infinitic.pulsar.topics.TopicNamesDefault
+import io.infinitic.pulsar.topics.TopicManager
 import io.infinitic.pulsar.topics.TopicType
 import io.infinitic.pulsar.topics.WorkflowTaskTopics
 import io.infinitic.pulsar.topics.WorkflowTopics
@@ -54,22 +49,15 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.future.future
-import org.apache.pulsar.client.admin.PulsarAdmin
-import org.apache.pulsar.client.admin.PulsarAdminException
-import org.apache.pulsar.client.api.PulsarClient
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.ConcurrentHashMap
 
 class PulsarInfiniticConsumer(
-  private val pulsarClient: PulsarClient,
-  private val pulsarAdmin: PulsarAdmin,
-  private val consumerConfig: ConsumerConfig,
-  private val topicNames: TopicNames
+  private val consumer: Consumer,
+  private val topicManager: TopicManager
 ) : InfiniticConsumer {
 
   private val logger = KotlinLogging.logger {}
-
-  private val consumer = Consumer(pulsarClient, consumerConfig)
 
   /** Set of client topics created */
   private val clientTopics: MutableSet<String> = ConcurrentHashMap.newKeySet()
@@ -80,47 +68,28 @@ class PulsarInfiniticConsumer(
 
   override fun close() {
     consumingScope.cancel()
+    // Delete all client topics
     clientTopics.forEach { topic: String ->
-      try {
-        logger.debug { "Deleting client topic $topic" }
-        pulsarAdmin.topics().delete(topic, true)
-      } catch (e: Exception) {
-        logger.warn { "Error while deleting client topic $topic: $e" }
-      }
-    }
-  }
-
-  private fun createClientTopic(topic: String) {
-    try {
-      logger.debug { "Creating of client topic $topic" }
-      pulsarAdmin.topics().createNonPartitionedTopic(topic)
-      clientTopics.add(topic)
-    } catch (e: PulsarAdminException.ConflictException) {
-      logger.debug { "Client topic already exists: $topic: ${e.message}" }
-    } catch (e: PulsarAdminException.NotAllowedException) {
-      logger.warn { "Not allowed to create client topic $topic: ${e.message}" }
-    } catch (e: PulsarAdminException.NotAuthorizedException) {
-      logger.warn { "Not authorized to create client topic $topic: ${e.message}" }
-    } catch (e: Exception) {
-      logger.warn(e) {}
+      logger.debug { "Deleting client topic $topic" }
+      topicManager.deleteTopic(topic)
     }
   }
 
   // Start consumers of messages to client
   override fun startClientConsumerAsync(
     handler: suspend (ClientMessage) -> Unit,
-    name: String?
+    clientName: String?
   ): CompletableFuture<Unit> {
-    // Check name uniqueness if provided or create one
-    val clientName = getProducerName(pulsarClient, topicNames.topic(GlobalTopics.NAMER), name)
-    // Manage client topic
-    createClientTopic(topicNames.topic(ClientTopics.RESPONSE, clientName))
+    // Create unique client name, or check its uniqueness if provided
+    val name = consumer.getName(topicManager.getNamerTopic(), clientName).getOrThrow()
+    // Add client topic to the list of client topics to be deleted when closing
+    clientTopics.add(topicManager.getTopicName(ClientTopics.RESPONSE, name))
 
     return startAsync<ClientMessage, ClientEnvelope>(
         handler = handler,
         topicType = ClientTopics.RESPONSE,
         concurrency = 1,
-        name = clientName,
+        name = name,
     )
   }
 
@@ -217,29 +186,24 @@ class PulsarInfiniticConsumer(
   // Start a consumer on a topic, with concurrent executors
   private inline fun <T : Message, reified S : Envelope<T>> startAsync(
     noinline handler: suspend (T) -> Unit, topicType: TopicType, concurrency: Int, name: String
-  ): CompletableFuture<Unit> = with(consumer) {
-    consumingScope.future {
-      startConsumer<T, S>(
-          handler = handler,
-          topic = topicNames.topic(topicType, name),
-          subscriptionName = topicType.subscriptionName,
-          subscriptionType = topicType.subscriptionType,
-          consumerName = topicNames.consumerName(name, topicType),
-          concurrency = concurrency,
-          topicDLQ = topicNames.topicDLQ(topicType, name),
-      )
-    }
-  }
+  ): CompletableFuture<Unit> {
+    // create topic if not exists
+    val topic = topicManager.initTopic(topicType, name).getOrThrow()
+    // create DLQ topic if not exists
+    val dlq = topicManager.initDLQTopic(topicType, name).getOrThrow()
 
-  companion object {
-    /** Create PulsarInfiniticListener from the configuration file */
-    @JvmStatic
-    fun from(pulsar: Pulsar) =
-        PulsarInfiniticConsumer(
-            pulsar.client,
-            pulsar.admin,
-            pulsar.consumer,
-            TopicNamesDefault(pulsar.tenant, pulsar.namespace),
+    return with(consumer) {
+      consumingScope.future {
+        startConsumer<T, S>(
+            handler = handler,
+            topic = topic,
+            subscriptionName = topicType.subscriptionName,
+            subscriptionType = topicType.subscriptionType,
+            consumerName = topicManager.getConsumerName(name, topicType),
+            concurrency = concurrency,
+            topicDLQ = dlq,
         )
+      }
+    }
   }
 }

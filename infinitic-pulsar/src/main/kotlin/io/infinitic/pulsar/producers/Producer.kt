@@ -22,23 +22,26 @@
  */
 package io.infinitic.pulsar.producers
 
+import io.github.oshai.kotlinlogging.KotlinLogging
 import io.infinitic.common.data.MillisDuration
 import io.infinitic.common.messages.Envelope
 import io.infinitic.common.messages.Message
-import io.infinitic.exceptions.clients.ExceptionAtInitialization
+import io.infinitic.pulsar.namer.Namer
 import io.infinitic.pulsar.schemas.schemaDefinition
-import io.github.oshai.kotlinlogging.KotlinLogging
 import org.apache.pulsar.client.api.BatcherBuilder
 import org.apache.pulsar.client.api.Producer
 import org.apache.pulsar.client.api.ProducerAccessMode
 import org.apache.pulsar.client.api.PulsarClient
-import org.apache.pulsar.client.api.PulsarClientException
 import org.apache.pulsar.client.api.Schema
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.TimeUnit
 
-internal class Producer(val client: PulsarClient, val config: ProducerConfig) {
+class Producer(
+  override val pulsarClient: PulsarClient,
+  val producerConfig: ProducerConfig
+) : Namer(pulsarClient) {
+
   val logger = KotlinLogging.logger {}
 
   inline fun <T : Message, reified S : Envelope<T>> sendAsync(
@@ -81,120 +84,94 @@ internal class Producer(val client: PulsarClient, val config: ProducerConfig) {
 
         val schema = Schema.AVRO(schemaDefinition<S>())
 
-        client
+        pulsarClient
             .newProducer(schema)
             .topic(topic)
             .producerName(producerName)
             .accessMode(ProducerAccessMode.Shared)
             .also { p ->
               key?.let { p.batcherBuilder(BatcherBuilder.KEY_BASED) }
-              config.autoUpdatePartitions?.also {
+              producerConfig.autoUpdatePartitions?.also {
                 logger.info { "producer $producerName: autoUpdatePartitions=$it" }
                 p.autoUpdatePartitions(it)
               }
-              config.autoUpdatePartitionsIntervalSeconds?.also {
+              producerConfig.autoUpdatePartitionsIntervalSeconds?.also {
                 logger.info { "producer $producerName: autoUpdatePartitionsInterval=$it" }
                 p.autoUpdatePartitionsInterval((it * 1000).toInt(), TimeUnit.MILLISECONDS)
               }
-              config.batchingMaxBytes?.also {
+              producerConfig.batchingMaxBytes?.also {
                 logger.info { "producer $producerName: batchingMaxBytes=$it" }
                 p.batchingMaxBytes(it)
               }
-              config.batchingMaxMessages?.also {
+              producerConfig.batchingMaxMessages?.also {
                 logger.info { "producer $producerName: batchingMaxMessages=$it" }
                 p.batchingMaxMessages(it)
               }
-              config.batchingMaxPublishDelaySeconds?.also {
+              producerConfig.batchingMaxPublishDelaySeconds?.also {
                 logger.info { "producer $producerName: batchingMaxPublishDelay=$it" }
                 p.batchingMaxPublishDelay((it * 1000).toLong(), TimeUnit.MILLISECONDS)
               }
-              config.compressionType?.also {
+              producerConfig.compressionType?.also {
                 logger.info { "producer $producerName: compressionType=$it" }
                 p.compressionType(it)
               }
-              config.cryptoFailureAction?.also {
+              producerConfig.cryptoFailureAction?.also {
                 logger.info { "producer $producerName: cryptoFailureAction=$it" }
                 p.cryptoFailureAction(it)
               }
-              config.defaultCryptoKeyReader?.also {
+              producerConfig.defaultCryptoKeyReader?.also {
                 logger.info { "producer $producerName: defaultCryptoKeyReader=$it" }
                 p.defaultCryptoKeyReader(it)
               }
-              config.encryptionKey?.also {
+              producerConfig.encryptionKey?.also {
                 logger.info { "producer $producerName: addEncryptionKey=$it" }
                 p.addEncryptionKey(it)
               }
-              config.enableBatching?.also {
+              producerConfig.enableBatching?.also {
                 logger.info { "producer $producerName: enableBatching=$it" }
                 p.enableBatching(it)
               }
-              config.enableChunking?.also {
+              producerConfig.enableChunking?.also {
                 logger.info { "producer $producerName: enableChunking=$it" }
                 p.enableChunking(it)
               }
-              config.enableLazyStartPartitionedProducers?.also {
+              producerConfig.enableLazyStartPartitionedProducers?.also {
                 logger.info { "producer $producerName: enableLazyStartPartitionedProducers=$it" }
                 p.enableLazyStartPartitionedProducers(it)
               }
-              config.enableMultiSchema?.also {
+              producerConfig.enableMultiSchema?.also {
                 logger.info { "producer $producerName: enableMultiSchema=$it" }
                 p.enableMultiSchema(it)
               }
-              config.hashingScheme?.also {
+              producerConfig.hashingScheme?.also {
                 logger.info { "producer $producerName: hashingScheme=$it" }
                 p.hashingScheme(it)
               }
-              config.messageRoutingMode?.also {
+              producerConfig.messageRoutingMode?.also {
                 logger.info { "producer $producerName: messageRoutingMode=$it" }
                 p.messageRoutingMode(it)
               }
-              config.properties?.also {
+              producerConfig.properties?.also {
                 logger.info { "producer $producerName: properties=$it" }
                 p.properties(it)
               }
-              config.roundRobinRouterBatchingPartitionSwitchFrequency?.also {
+              producerConfig.roundRobinRouterBatchingPartitionSwitchFrequency?.also {
                 logger.info {
                   "producer $producerName: roundRobinRouterBatchingPartitionSwitchFrequency=$it"
                 }
                 p.roundRobinRouterBatchingPartitionSwitchFrequency(it)
               }
-              config.sendTimeoutSeconds?.also {
+              producerConfig.sendTimeoutSeconds?.also {
                 logger.info { "producer $producerName: sendTimeout=$it" }
                 p.sendTimeout((it * 1000).toInt(), TimeUnit.MILLISECONDS)
               }
             }
-            .blockIfQueueFull(config.blockIfQueueFull)
+            .blockIfQueueFull(producerConfig.blockIfQueueFull)
             .also {
-              logger.info { "producer $producerName: blockIfQueueFull=${config.blockIfQueueFull}" }
+              logger.info { "producer $producerName: blockIfQueueFull=${producerConfig.blockIfQueueFull}" }
             }
             .create()
       } as Producer<Envelope<out Message>>
-
-  internal fun getProducerName(
-    topic: String,
-    givenName: String?
-  ): String {
-    val producer = try {
-      client
-          .newProducer()
-          .topic(topic)
-          .also {
-            if (givenName != null) {
-              it.producerName(givenName)
-            }
-          }
-          .create()
-    } catch (e: PulsarClientException.ProducerBusyException) {
-      System.err.print(
-          "Another producer with name \"$givenName\" is already connected. Make sure to use a unique name.",
-      )
-      throw ExceptionAtInitialization(e)
-    }
-    producer.close()
-
-    return producer.producerName
-  }
-
 
   companion object {
     val producers = ConcurrentHashMap<String, Producer<out Envelope<out Message>>>()

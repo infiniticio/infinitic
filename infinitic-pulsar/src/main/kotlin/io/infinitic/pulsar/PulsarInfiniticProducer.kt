@@ -35,28 +35,18 @@ import io.infinitic.common.workflows.engine.messages.WorkflowEngineEnvelope
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
 import io.infinitic.common.workflows.tags.messages.WorkflowTagEnvelope
 import io.infinitic.common.workflows.tags.messages.WorkflowTagMessage
-import io.infinitic.pulsar.config.Pulsar
 import io.infinitic.pulsar.producers.Producer
-import io.infinitic.pulsar.producers.ProducerConfig
 import io.infinitic.pulsar.topics.ClientTopics
-import io.infinitic.pulsar.topics.GlobalTopics
 import io.infinitic.pulsar.topics.ServiceTopics
-import io.infinitic.pulsar.topics.TopicNames
-import io.infinitic.pulsar.topics.TopicNamesDefault
+import io.infinitic.pulsar.topics.TopicManager
 import io.infinitic.pulsar.topics.WorkflowTaskTopics
 import io.infinitic.pulsar.topics.WorkflowTopics
-import org.apache.pulsar.client.api.PulsarClient
 import java.util.concurrent.CompletableFuture
 
 class PulsarInfiniticProducer(
-  pulsarClient: PulsarClient,
-  producerConfig: ProducerConfig,
-  private val topicNames: TopicNames
+  private val producer: Producer,
+  private val topicManager: TopicManager
 ) : InfiniticProducer {
-
-  private val zero = MillisDuration.ZERO
-
-  private val producer = Producer(pulsarClient, producerConfig)
 
   private var suggestedName: String? = null
 
@@ -75,7 +65,7 @@ class PulsarInfiniticProducer(
    * If [suggestedName] is not provided, Pulsar will provide a unique name
    */
   private val uniqueName: String by lazy {
-    producer.getProducerName(topicNames.topic(GlobalTopics.NAMER), suggestedName)
+    producer.getName(topicManager.getNamerTopic(), suggestedName).getOrThrow()
   }
 
   /**
@@ -84,33 +74,34 @@ class PulsarInfiniticProducer(
 
   // Name of producers sending messages to workflow tag
   private val clientProducerName by lazy {
-    topicNames.producerName(name, ClientTopics.RESPONSE)
+    topicManager.getProducerName(name, ClientTopics.RESPONSE)
   }
 
   // Name of producers sending messages to workflow tag
   private val workflowTagProducerName by lazy {
-    topicNames.producerName(name, WorkflowTopics.TAG)
+    topicManager.getProducerName(name, WorkflowTopics.TAG)
   }
 
   // Name of producers sending messages to workflow engine
   private val workflowEngineProducerName by lazy {
-    topicNames.producerName(name, WorkflowTopics.ENGINE)
+    topicManager.getProducerName(name, WorkflowTopics.ENGINE)
   }
 
   // Name of producers sending messages to task tag
   private val taskTagProducerName by lazy {
-    topicNames.producerName(name, ServiceTopics.TAG)
+    topicManager.getProducerName(name, ServiceTopics.TAG)
   }
 
   // Name of producers sending messages to task executor
   private val taskExecutorProducerName by lazy {
-    topicNames.producerName(name, ServiceTopics.EXECUTOR)
+    topicManager.getProducerName(name, ServiceTopics.EXECUTOR)
   }
 
 
   // Asynchronously send message to client
   override fun sendAsync(message: ClientMessage): CompletableFuture<Unit> {
-    val topic = topicNames.topic(ClientTopics.RESPONSE, message.recipientName)
+    val topic =
+        topicManager.initTopic(ClientTopics.RESPONSE, "${message.recipientName}").getOrThrow()
 
     return producer.sendAsync<ClientMessage, ClientEnvelope>(
         message, zero, topic, clientProducerName,
@@ -119,7 +110,8 @@ class PulsarInfiniticProducer(
 
   // Asynchronously send message to Workflow Tag
   override fun sendAsync(message: WorkflowTagMessage): CompletableFuture<Unit> {
-    val topic = topicNames.topic(WorkflowTopics.TAG, message.workflowName)
+    val topic =
+        topicManager.initTopic(WorkflowTopics.TAG, "${message.workflowName}").getOrThrow()
 
     return producer.sendAsync<WorkflowTagMessage, WorkflowTagEnvelope>(
         message, zero, topic, workflowTagProducerName, key = "${message.workflowTag}",
@@ -132,10 +124,10 @@ class PulsarInfiniticProducer(
     after: MillisDuration
   ): CompletableFuture<Unit> {
     val topic = if (after > 0) {
-      topicNames.topic(WorkflowTopics.DELAY, message.workflowName)
+      topicManager.initTopic(WorkflowTopics.DELAY, "${message.workflowName}")
     } else {
-      topicNames.topic(WorkflowTopics.ENGINE, message.workflowName)
-    }
+      topicManager.initTopic(WorkflowTopics.ENGINE, "${message.workflowName}")
+    }.getOrThrow()
 
     return producer.sendAsync<WorkflowEngineMessage, WorkflowEngineEnvelope>(
         message, after, topic, workflowEngineProducerName, key = "${message.workflowId}",
@@ -144,7 +136,8 @@ class PulsarInfiniticProducer(
 
   // Asynchronously send message to Task Tag
   override fun sendAsync(message: TaskTagMessage): CompletableFuture<Unit> {
-    val topic = topicNames.topic(ServiceTopics.TAG, message.serviceName)
+    val topic =
+        topicManager.initTopic(ServiceTopics.TAG, "${message.serviceName}").getOrThrow()
 
     return producer.sendAsync<TaskTagMessage, TaskTagEnvelope>(
         message, zero, topic, taskTagProducerName, key = "${message.taskTag}",
@@ -158,11 +151,14 @@ class PulsarInfiniticProducer(
   ): CompletableFuture<Unit> {
     val topic = if (message.isWorkflowTask()) {
       when (message) {
-        is ExecuteTask -> topicNames.topic(WorkflowTaskTopics.EXECUTOR, message.workflowName!!)
+        is ExecuteTask -> topicManager.initTopic(
+            WorkflowTaskTopics.EXECUTOR,
+            "${message.workflowName!!}",
+        )
       }
     } else {
-      topicNames.topic(ServiceTopics.EXECUTOR, message.serviceName)
-    }
+      topicManager.initTopic(ServiceTopics.EXECUTOR, "${message.serviceName}")
+    }.getOrThrow()
 
     return producer.sendAsync<TaskExecutorMessage, TaskExecutorEnvelope>(
         message, after, topic, taskExecutorProducerName,
@@ -170,13 +166,6 @@ class PulsarInfiniticProducer(
   }
 
   companion object {
-    /** Create PulsarInfiniticListener from the configuration object */
-    @JvmStatic
-    fun from(pulsar: Pulsar) =
-        PulsarInfiniticProducer(
-            pulsar.client,
-            pulsar.producer,
-            TopicNamesDefault(pulsar.tenant, pulsar.namespace),
-        )
+    private val zero = MillisDuration.ZERO
   }
 }

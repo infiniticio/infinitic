@@ -22,6 +22,7 @@
  */
 package io.infinitic.dashboard.panels.infrastructure
 
+import io.github.oshai.kotlinlogging.KotlinLogging
 import io.infinitic.dashboard.panels.infrastructure.requests.Completed
 import io.infinitic.dashboard.panels.infrastructure.requests.Failed
 import io.infinitic.dashboard.panels.infrastructure.requests.Loading
@@ -31,7 +32,6 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kweb.state.KVar
-import io.github.oshai.kotlinlogging.KotlinLogging
 import org.apache.pulsar.common.policies.data.PartitionedTopicStats
 import java.time.Instant
 
@@ -45,8 +45,8 @@ typealias JobStats = Map<String, Request<PartitionedTopicStats>>
 typealias JobNames = Request<Set<String>>
 
 abstract class AllJobsState(
-    open val names: JobNames,
-    open val stats: JobStats,
+  open val names: JobNames,
+  open val stats: JobStats,
 ) {
   companion object {
     fun isLoading(names: JobNames, stats: JobStats): Boolean =
@@ -59,10 +59,10 @@ abstract class AllJobsState(
       return when (statsLastUpdated) {
         null -> namesLastUpdated
         else ->
-            when (statsLastUpdated.isAfter(namesLastUpdated)) {
-              true -> statsLastUpdated
-              false -> namesLastUpdated
-            }
+          when (statsLastUpdated.isAfter(namesLastUpdated)) {
+            true -> statsLastUpdated
+            false -> namesLastUpdated
+          }
       }
     }
   }
@@ -91,40 +91,39 @@ fun <T : AllJobsState> CoroutineScope.update(kvar: KVar<T>) = launch {
         value = value.namesLoading() as T
         // request Pulsar
         val names = value.getNames()
-        value =
-            value.create(
-                names = Completed(names),
-                stats = names.associateWith { value.stats.getOrDefault(it, Loading()) }) as T
+        value = value.create(
+            names = Completed(names),
+            stats = names.associateWith { value.stats.getOrDefault(it, Loading()) },
+        ) as T
       } catch (e: Exception) {
-        value =
-            value.create(
-                names = Failed(e),
-                stats = mapOf(),
-            ) as T
+        value = value.create(
+            names = Failed(e),
+            stats = mapOf(),
+        ) as T
       }
 
       // update task stats every STATS_UPDATE_DELAY millis
       when (val names = value.names) {
-        is Completed ->
-            while (namesDelay.isActive) {
-              val delayStats = launch { delay(STATS_DELAY) }
-              // loading indicator
-              value = value.statsLoading() as T
-              // update stats
-              val stats = mutableMapOf<String, Request<PartitionedTopicStats>>()
-              names.result.map {
-                logger.debug { "Updating executor stats for $it" }
-                try {
-                  stats[it] = Completed(value.getPartitionedStats(it))
-                } catch (e: Exception) {
-                  stats[it] = Failed(e)
-                }
-              }
-              // update array of stats
-              value = value.create(stats = stats) as T
-              // wait at least delayStats
-              delayStats.join()
+        is Completed -> while (namesDelay.isActive) {
+          val delayStats = launch { delay(STATS_DELAY) }
+          // loading indicator
+          value = value.statsLoading() as T
+          // update stats
+          val stats = mutableMapOf<String, Request<PartitionedTopicStats>>()
+          names.result.map {
+            logger.debug { "Updating executor stats for $it" }
+            try {
+              stats[it] = Completed(value.getPartitionedStats(it))
+            } catch (e: Exception) {
+              stats[it] = Failed(e)
             }
+          }
+          // update array of stats
+          value = value.create(stats = stats) as T
+          // wait at least delayStats
+          delayStats.join()
+        }
+
         else -> {
           namesDelay.cancel()
           delay(STATS_DELAY)

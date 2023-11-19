@@ -22,13 +22,27 @@
  */
 package io.infinitic.pulsar.config.policies
 
+import org.apache.pulsar.common.policies.data.SchemaCompatibilityStrategy
+
 data class Policies @JvmOverloads constructor(
-  val forceUpdate: Boolean = false,
-  val deduplicationEnabled: Boolean = true,
+    // Retain messages for 7 days
   val retentionTimeInMinutes: Int = 60 * 24 * 7,
+    // Retain messages up to 1GB
   val retentionSizeInMB: Int = 1024,
+    // Expire messages after 14 days
   val messageTTLInSeconds: Int = 3600 * 24 * 14,
+    // Expire delayed messages after 1 year
   val delayedTTLInSeconds: Int = 3600 * 24 * 366,
-  val maxMessageSize: Int? = null,
-  val delayedDeliveryTickTimeMillis: Long = 1000
+    // Delayed delivery tick time = 1 second
+  val delayedDeliveryTickTimeMillis: Long = 1000,
+    // Changes allowed: add optional fields, delete fields
+  val schemaCompatibilityStrategy: SchemaCompatibilityStrategy = SchemaCompatibilityStrategy.BACKWARD_TRANSITIVE,
+    // Disallow auto topic creation
+  val allowAutoTopicCreation: Boolean = false,
+    // Enforce schema validation
+  val schemaValidationEnforced: Boolean = true,
+    // Allow auto update schema
+  val isAllowAutoUpdateSchema: Boolean = true,
+    // Enable message deduplication
+  val deduplicationEnabled: Boolean = true,
 )

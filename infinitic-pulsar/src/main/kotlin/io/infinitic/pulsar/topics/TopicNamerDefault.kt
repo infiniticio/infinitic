@@ -27,34 +27,34 @@ import io.infinitic.common.data.ClientName
 import io.infinitic.common.tasks.data.ServiceName
 import io.infinitic.common.workflows.data.workflows.WorkflowName
 
-class TopicNamesDefault(override val tenant: String, override val namespace: String) : TopicNames {
+class TopicNamerDefault(override val tenant: String, override val namespace: String) : TopicNamer {
 
-  override fun producerName(workerName: String, type: TopicType) =
+  override fun getProducerName(workerName: String, type: TopicType) =
       "$workerName>>${type.subscriptionPrefix}"
 
-  override fun consumerName(workerName: String, type: TopicType) =
+  override fun getConsumerName(workerName: String, type: TopicType) =
       "$workerName<<${type.subscriptionPrefix}"
 
-  override fun topic(type: ClientTopics, clientName: ClientName) =
+  override fun getTopicName(type: ClientTopics, clientName: ClientName) =
       fullName("${type.subscriptionPrefix}:$clientName")
 
-  override fun topic(type: GlobalTopics) = fullName(type.subscriptionPrefix)
+  override fun getTopicName(type: GlobalTopics) = fullName(type.subscriptionPrefix)
 
-  override fun topic(type: WorkflowTopics, workflowName: WorkflowName) =
+  override fun getTopicName(type: WorkflowTopics, workflowName: WorkflowName) =
       fullName("${type.subscriptionPrefix}:$workflowName")
 
-  override fun topicDLQ(type: WorkflowTopics, workflowName: WorkflowName) =
+  override fun getTopicDLQName(type: WorkflowTopics, workflowName: WorkflowName) =
       fullName("${type.subscriptionPrefix}-dlq:$workflowName")
 
-  override fun topic(type: WorkflowTaskTopics, workflowName: WorkflowName) =
+  override fun getTopicName(type: WorkflowTaskTopics, workflowName: WorkflowName) =
       fullName("${type.subscriptionPrefix}:$workflowName")
 
-  override fun topicDLQ(type: WorkflowTaskTopics, workflowName: WorkflowName) =
+  override fun getTopicDLQName(type: WorkflowTaskTopics, workflowName: WorkflowName) =
       fullName("${type.subscriptionPrefix}-dlq:$workflowName")
 
-  override fun topic(type: ServiceTopics, serviceName: ServiceName) =
+  override fun getTopicName(type: ServiceTopics, serviceName: ServiceName) =
       fullName("${type.subscriptionPrefix}:$serviceName")
 
-  override fun topicDLQ(type: ServiceTopics, serviceName: ServiceName) =
+  override fun getTopicDLQName(type: ServiceTopics, serviceName: ServiceName) =
       fullName("${type.subscriptionPrefix}-dlq:$serviceName")
 }

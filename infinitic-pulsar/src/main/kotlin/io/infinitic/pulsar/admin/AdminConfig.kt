@@ -20,23 +20,25 @@
  *
  * Licensor: infinitic.io
  */
-package io.infinitic.pulsar.config
+package io.infinitic.pulsar.admin
 
 import io.infinitic.common.config.loadConfigFromFile
 import io.infinitic.common.config.loadConfigFromResource
+import io.infinitic.pulsar.config.Pulsar
 
-data class AdminConfig(
+interface AdminConfig {
   /** Pulsar configuration */
   val pulsar: Pulsar
-) {
+
   companion object {
     /** Create AdminConfig from file in file system */
     @JvmStatic
-    fun fromFile(vararg files: String): AdminConfig = loadConfigFromFile(files.toList())
+    fun fromFile(vararg files: String): AdminConfig =
+        loadConfigFromFile<AdminConfigData>(files.toList())
 
     /** Create AdminConfig from file in resources directory */
     @JvmStatic
     fun fromResource(vararg resources: String): AdminConfig =
-        loadConfigFromResource(resources.toList())
+        loadConfigFromResource<AdminConfigData>(resources.toList())
   }
 }

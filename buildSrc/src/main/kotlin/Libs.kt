@@ -20,6 +20,7 @@
  *
  * Licensor: infinitic.io
  */
+@Suppress("ConstPropertyName")
 object Libs {
 
   const val org = "io.infinitic"

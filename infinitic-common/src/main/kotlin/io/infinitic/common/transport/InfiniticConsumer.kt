@@ -37,7 +37,7 @@ interface InfiniticConsumer : Closeable {
   // Asynchronously start consumers of messages to client
   fun startClientConsumerAsync(
     handler: suspend (ClientMessage) -> Unit,
-    name: String? = null
+    clientName: String? = null
   ): CompletableFuture<Unit>
 
   // Asynchronously start consumers of messages to task tags

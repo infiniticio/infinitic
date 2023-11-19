@@ -22,6 +22,7 @@
  */
 const val kotlinVersion = "1.9.20"
 
+@Suppress("ConstPropertyName")
 object Plugins {
   object Kotlin {
     const val id = "org.jetbrains.kotlin.jvm"
