@@ -41,7 +41,7 @@ data class AllTasksState(
   override fun getNames() = Infinitic.resourceManager.serviceSet
 
   override fun getPartitionedStats(name: String): PartitionedTopicStats {
-    val topic = Infinitic.resourceManager.getTopicName(ServiceType.EXECUTOR, name)
+    val topic = Infinitic.resourceManager.getTopicName(name, ServiceType.EXECUTOR)
 
     return Infinitic.topics.getPartitionedStats(topic, true)
   }

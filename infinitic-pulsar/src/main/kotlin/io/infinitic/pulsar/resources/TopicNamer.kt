@@ -33,21 +33,16 @@ interface TopicNamer {
 
   fun fullName(topic: String) = "persistent://$tenant/$namespace/$topic"
 
-  fun getProducerName(type: TopicType, name: String): String
+  fun getProducerName(name: String, type: TopicType): String
 
-  fun getConsumerName(type: TopicType, name: String): String
+  fun getConsumerName(name: String, type: TopicType): String
 
-  fun getTopicName(type: TopicType, name: String): String
+  fun getTopicName(name: String, type: TopicType): String
 
-  fun getTopicDLQName(type: TopicType, name: String): String?
+  fun getTopicDLQName(name: String, type: TopicType): String?
 
   fun getServiceName(topic: String): String?
 
   fun getWorkflowName(topic: String): String?
-
-  /**
-   * Topic used to create unique name for clients and worker
-   */
-  fun getNamerTopic(): String = getTopicName(GlobalType.NAMER, "global")
 }
 

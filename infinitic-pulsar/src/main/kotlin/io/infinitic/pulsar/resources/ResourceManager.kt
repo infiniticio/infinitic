@@ -51,12 +51,18 @@ class ResourceManager(
     get() = topicSet.mapNotNull { topicNamer.getWorkflowName(it) }.toSet()
 
   /**
+   * Check if the namer topic exists, and create it if not
+   */
+  fun initNamer(): Result<String> =
+      initTopic(topicNamer.getTopicName("global", GlobalType.NAMER), GlobalType.NAMER)
+
+  /**
    * Check if a topic exists, and create it if not
    * We skip this if the topic has already been initialized successfully
    */
   fun initTopic(name: String, topicType: TopicType): Result<String> =
       initTopic(
-          topicNamer.getTopicName(topicType, name),
+          topicNamer.getTopicName(name, topicType),
           topicType.isPartitioned,
           topicType.isDelayed,
       )
@@ -66,7 +72,7 @@ class ResourceManager(
    * We skip this if the topic has already been initialized successfully
    */
   fun initDLQTopic(name: String, topicType: TopicType): Result<String?> =
-      topicNamer.getTopicDLQName(topicType, name)
+      topicNamer.getTopicDLQName(name, topicType)
           ?.let { initTopic(it, topicType.isPartitioned, topicType.isDelayed) }
         ?: Result.success(null)
 

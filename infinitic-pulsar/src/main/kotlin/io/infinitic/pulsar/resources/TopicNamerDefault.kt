@@ -26,19 +26,19 @@ package io.infinitic.pulsar.resources
 open class TopicNamerDefault(override val tenant: String, override val namespace: String) :
   TopicNamer {
 
-  override fun getProducerName(type: TopicType, name: String) =
+  override fun getProducerName(name: String, type: TopicType) =
       "$name>>${type.subscriptionPrefix}"
 
-  override fun getConsumerName(type: TopicType, name: String) =
+  override fun getConsumerName(name: String, type: TopicType) =
       "$name<<${type.subscriptionPrefix}"
 
-  override fun getTopicName(type: TopicType, name: String): String =
+  override fun getTopicName(name: String, type: TopicType): String =
       when (type) {
         is GlobalType -> fullName(type.subscriptionPrefix)
         else -> fullName("${type.subscriptionPrefix}:$name")
       }
 
-  override fun getTopicDLQName(type: TopicType, name: String): String? =
+  override fun getTopicDLQName(name: String, type: TopicType): String? =
       when (type) {
         is WorkflowType, is WorkflowTaskType, is ServiceType -> fullName("${type.subscriptionPrefix}-dlq:$name")
         else -> null
@@ -46,10 +46,10 @@ open class TopicNamerDefault(override val tenant: String, override val namespace
 
   override fun getServiceName(topic: String): String? {
     for (type in ServiceType.entries) {
-      var prefix = getTopicName(type, "")
+      var prefix = getTopicName("", type)
       if (topic.startsWith(prefix)) return topic.removePrefix(prefix)
 
-      prefix = getTopicDLQName(type, "")!!
+      prefix = getTopicDLQName("", type)!!
       if (topic.startsWith(prefix)) return topic.removePrefix(prefix)
     }
 
@@ -60,10 +60,10 @@ open class TopicNamerDefault(override val tenant: String, override val namespace
     val workflowTypes: List<TopicType> =
         WorkflowType.entries.toList() + WorkflowTaskType.entries.toList()
     for (type in workflowTypes) {
-      var prefix = getTopicName(type, "")
+      var prefix = getTopicName("", type)
       if (topic.startsWith(prefix)) return topic.removePrefix(prefix)
 
-      prefix = getTopicDLQName(type, "")!!
+      prefix = getTopicDLQName("", type)!!
       if (topic.startsWith(prefix)) return topic.removePrefix(prefix)
     }
 

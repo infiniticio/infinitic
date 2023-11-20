@@ -39,5 +39,5 @@ data class TaskState(
   override fun create(name: String, topicsStats: TopicsStats<ServiceType>) =
       TaskState(name = name, topicsStats = topicsStats)
 
-  override fun getTopic(type: ServiceType) = resourceManager.getTopicName(type, name)
+  override fun getTopic(type: ServiceType) = resourceManager.getTopicName(name, type)
 }

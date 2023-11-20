@@ -98,7 +98,7 @@ internal fun ElementCreator<Element>.displayJobStatsTable(
                       state.topicsStats.forEach {
                         val type = it.key
                         val request = it.value
-                        val topic = Infinitic.resourceManager.getTopicName(type, name)
+                        val topic = Infinitic.resourceManager.getTopicName(name, type)
                         val row = tr()
 
                         when (request) {

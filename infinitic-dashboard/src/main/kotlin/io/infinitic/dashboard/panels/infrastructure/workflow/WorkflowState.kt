@@ -39,5 +39,5 @@ data class WorkflowState(
   override fun create(name: String, topicsStats: TopicsStats<WorkflowType>) =
       WorkflowState(name = name, topicsStats = topicsStats)
 
-  override fun getTopic(type: WorkflowType) = resourceManager.getTopicName(type, name)
+  override fun getTopic(type: WorkflowType) = resourceManager.getTopicName(name, type)
 }

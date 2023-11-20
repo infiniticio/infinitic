@@ -65,7 +65,10 @@ class PulsarInfiniticProducer(
    * If [suggestedName] is not provided, Pulsar will provide a unique name
    */
   private val uniqueName: String by lazy {
-    producer.getName(resourceManager.getNamerTopic(), suggestedName).getOrThrow()
+    // Create namer topic if not exists
+    val namerTopic = resourceManager.initNamer().getOrThrow()
+    // Get unique name
+    producer.getName(namerTopic, suggestedName).getOrThrow()
   }
 
   /**
@@ -74,27 +77,27 @@ class PulsarInfiniticProducer(
 
   // Name of producers sending messages to workflow tag
   private val clientProducerName by lazy {
-    resourceManager.getProducerName(ClientType.RESPONSE, name)
+    resourceManager.getProducerName(name, ClientType.RESPONSE)
   }
 
   // Name of producers sending messages to workflow tag
   private val workflowTagProducerName by lazy {
-    resourceManager.getProducerName(WorkflowType.TAG, name)
+    resourceManager.getProducerName(name, WorkflowType.TAG)
   }
 
   // Name of producers sending messages to workflow engine
   private val workflowEngineProducerName by lazy {
-    resourceManager.getProducerName(WorkflowType.ENGINE, name)
+    resourceManager.getProducerName(name, WorkflowType.ENGINE)
   }
 
   // Name of producers sending messages to task tag
   private val taskTagProducerName by lazy {
-    resourceManager.getProducerName(ServiceType.TAG, name)
+    resourceManager.getProducerName(name, ServiceType.TAG)
   }
 
   // Name of producers sending messages to task executor
   private val taskExecutorProducerName by lazy {
-    resourceManager.getProducerName(ServiceType.EXECUTOR, name)
+    resourceManager.getProducerName(name, ServiceType.EXECUTOR)
   }
 
 

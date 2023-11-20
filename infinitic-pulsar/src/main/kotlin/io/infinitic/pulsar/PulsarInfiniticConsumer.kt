@@ -80,10 +80,12 @@ class PulsarInfiniticConsumer(
     handler: suspend (ClientMessage) -> Unit,
     clientName: String?
   ): CompletableFuture<Unit> {
+    // Create namer topic if not exists
+    val namerTopic = resourceManager.initNamer().getOrThrow()
     // Create unique client name, or check its uniqueness if provided
-    val name = consumer.getName(resourceManager.getNamerTopic(), clientName).getOrThrow()
+    val name = consumer.getName(namerTopic, clientName).getOrThrow()
     // Add client topic to the list of client topics to be deleted when closing
-    clientTopics.add(resourceManager.getTopicName(ClientType.RESPONSE, name))
+    clientTopics.add(resourceManager.getTopicName(name, ClientType.RESPONSE))
 
     return startAsync<ClientMessage, ClientEnvelope>(
         handler = handler,
@@ -199,7 +201,7 @@ class PulsarInfiniticConsumer(
             topic = topic,
             subscriptionName = topicType.subscriptionName,
             subscriptionType = topicType.subscriptionType,
-            consumerName = resourceManager.getConsumerName(topicType, name),
+            consumerName = resourceManager.getConsumerName(name, topicType),
             concurrency = concurrency,
             topicDLQ = dlq,
         )
