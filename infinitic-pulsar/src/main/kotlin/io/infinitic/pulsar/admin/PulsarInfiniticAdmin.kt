@@ -205,8 +205,12 @@ class PulsarInfiniticAdmin(
   fun getTopicsSet(fullNamespace: String): Result<Set<String>> =
       try {
         val topicSet = with(topics) {
-          (getPartitionedTopicList(fullNamespace) + getList(fullNamespace)).toSet()
+          (getPartitionedTopicList(fullNamespace) + getList(fullNamespace).filter {
+            // filter out non-partitioned topic whose name ends like -partition-<number>
+            !it.matches(Regex(".+-partition-[0-9]+$"))
+          }).toSet()
         }
+
         Result.success(topicSet)
       } catch (e: PulsarAdminException) {
         logger.warn(e) { "Unable to get topics for namespace '$fullNamespace'" }

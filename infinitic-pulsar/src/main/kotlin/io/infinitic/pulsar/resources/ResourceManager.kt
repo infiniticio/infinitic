@@ -52,6 +52,8 @@ class ResourceManager(
 
   /**
    * Check if the namer topic exists, and create it if not
+   * We skip this if the topic has already been initialized successfully
+   *
    */
   fun initNamer(): Result<String> =
       initTopic(topicNamer.getTopicName("global", GlobalType.NAMER), GlobalType.NAMER)
