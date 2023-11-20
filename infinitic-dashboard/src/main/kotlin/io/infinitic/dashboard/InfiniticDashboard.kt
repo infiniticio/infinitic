@@ -34,7 +34,7 @@ import io.infinitic.dashboard.panels.workflows.WorkflowsPanel
 import io.infinitic.dashboard.plugins.images.imagesPlugin
 import io.infinitic.dashboard.plugins.tailwind.tailwindPlugin
 import io.infinitic.pulsar.config.Pulsar
-import io.infinitic.pulsar.topics.TopicManager
+import io.infinitic.pulsar.resources.ResourceManager
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -45,13 +45,13 @@ import kweb.route
 
 @Suppress("MemberVisibilityCanBePrivate", "CanBeParameter")
 class InfiniticDashboard(
-  val topicManager: TopicManager,
+  val resourceManager: ResourceManager,
   val pulsar: Pulsar,
   val port: Int,
   val debug: Boolean
 ) {
   init {
-    Infinitic.topicManager = topicManager
+    Infinitic.resourceManager = resourceManager
   }
 
   private val logger = KotlinLogging.logger {}
@@ -64,7 +64,7 @@ class InfiniticDashboard(
     @JvmStatic
     fun fromConfig(dashboardConfig: DashboardConfig) =
         InfiniticDashboard(
-            TopicManager.from(dashboardConfig.pulsar),
+            ResourceManager.from(dashboardConfig.pulsar),
             dashboardConfig.pulsar,
             dashboardConfig.port,
             dashboardConfig.debug,
@@ -116,6 +116,6 @@ internal fun WebBrowser.routeTo(to: Panel) {
 }
 
 internal object Infinitic {
-  lateinit var topicManager: TopicManager
-  val topics by lazy { topicManager.admin.pulsarAdmin.topics() }
+  lateinit var resourceManager: ResourceManager
+  val topics by lazy { resourceManager.admin.pulsarAdmin.topics() }
 }

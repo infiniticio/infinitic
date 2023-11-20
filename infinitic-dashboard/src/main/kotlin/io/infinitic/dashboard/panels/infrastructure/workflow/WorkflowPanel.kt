@@ -34,9 +34,9 @@ import io.infinitic.dashboard.panels.infrastructure.jobs.update
 import io.infinitic.dashboard.panels.infrastructure.requests.Loading
 import io.infinitic.dashboard.panels.infrastructure.requests.Request
 import io.infinitic.dashboard.svgs.icons.iconChevron
-import io.infinitic.pulsar.topics.TopicType
-import io.infinitic.pulsar.topics.WorkflowTaskType
-import io.infinitic.pulsar.topics.WorkflowType
+import io.infinitic.pulsar.resources.TopicType
+import io.infinitic.pulsar.resources.WorkflowTaskType
+import io.infinitic.pulsar.resources.WorkflowType
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch

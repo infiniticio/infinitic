@@ -29,12 +29,10 @@ import io.infinitic.inMemory.InMemoryInfiniticConsumer
 import io.infinitic.inMemory.InMemoryInfiniticProducer
 import io.infinitic.pulsar.PulsarInfiniticConsumer
 import io.infinitic.pulsar.PulsarInfiniticProducer
-import io.infinitic.pulsar.admin.PulsarInfiniticAdmin
 import io.infinitic.pulsar.config.Pulsar
 import io.infinitic.pulsar.consumers.Consumer
 import io.infinitic.pulsar.producers.Producer
-import io.infinitic.pulsar.topics.TopicManager
-import io.infinitic.pulsar.topics.TopicNamerDefault
+import io.infinitic.pulsar.resources.ResourceManager
 
 data class TransportConfigData(
   /** Transport configuration */
@@ -54,12 +52,7 @@ data class TransportConfigData(
   // as they must share the same configuration (e.g. InMemoryChannels instance)
   private val cp: Pair<InfiniticConsumer, InfiniticProducer> =
       when (transport) {
-        Transport.pulsar -> with(
-            TopicManager(
-                PulsarInfiniticAdmin(pulsar!!.admin, pulsar),
-                TopicNamerDefault(pulsar.tenant, pulsar.namespace),
-            ),
-        ) {
+        Transport.pulsar -> with(ResourceManager.from(pulsar!!)) {
           Pair(
               PulsarInfiniticConsumer(Consumer(pulsar.client, pulsar.consumer), this),
               PulsarInfiniticProducer(Producer(pulsar.client, pulsar.producer), this),

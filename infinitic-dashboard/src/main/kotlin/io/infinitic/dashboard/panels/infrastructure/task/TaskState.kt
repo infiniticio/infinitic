@@ -22,11 +22,11 @@
  */
 package io.infinitic.dashboard.panels.infrastructure.task
 
-import io.infinitic.dashboard.Infinitic.topicManager
+import io.infinitic.dashboard.Infinitic.resourceManager
 import io.infinitic.dashboard.panels.infrastructure.jobs.JobState
 import io.infinitic.dashboard.panels.infrastructure.jobs.TopicsStats
 import io.infinitic.dashboard.panels.infrastructure.requests.Loading
-import io.infinitic.pulsar.topics.ServiceType
+import io.infinitic.pulsar.resources.ServiceType
 import java.time.Instant
 
 data class TaskState(
@@ -39,5 +39,5 @@ data class TaskState(
   override fun create(name: String, topicsStats: TopicsStats<ServiceType>) =
       TaskState(name = name, topicsStats = topicsStats)
 
-  override fun getTopic(type: ServiceType) = topicManager.getTopicName(type, name)
+  override fun getTopic(type: ServiceType) = resourceManager.getTopicName(type, name)
 }

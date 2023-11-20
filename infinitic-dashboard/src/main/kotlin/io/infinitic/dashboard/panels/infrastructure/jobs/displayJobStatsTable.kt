@@ -28,7 +28,7 @@ import io.infinitic.dashboard.panels.infrastructure.requests.Failed
 import io.infinitic.dashboard.panels.infrastructure.requests.Loading
 import io.infinitic.dashboard.panels.infrastructure.requests.Request
 import io.infinitic.dashboard.slideovers.Slideover
-import io.infinitic.pulsar.topics.TopicType
+import io.infinitic.pulsar.resources.TopicType
 import kweb.Element
 import kweb.ElementCreator
 import kweb.div
@@ -98,7 +98,7 @@ internal fun ElementCreator<Element>.displayJobStatsTable(
                       state.topicsStats.forEach {
                         val type = it.key
                         val request = it.value
-                        val topic = Infinitic.topicManager.getTopicName(type, name)
+                        val topic = Infinitic.resourceManager.getTopicName(type, name)
                         val row = tr()
 
                         when (request) {

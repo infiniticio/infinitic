@@ -22,11 +22,11 @@
  */
 package io.infinitic.dashboard.panels.infrastructure.workflow
 
-import io.infinitic.dashboard.Infinitic.topicManager
+import io.infinitic.dashboard.Infinitic.resourceManager
 import io.infinitic.dashboard.panels.infrastructure.jobs.JobState
 import io.infinitic.dashboard.panels.infrastructure.jobs.TopicsStats
 import io.infinitic.dashboard.panels.infrastructure.requests.Loading
-import io.infinitic.pulsar.topics.WorkflowType
+import io.infinitic.pulsar.resources.WorkflowType
 import java.time.Instant
 
 data class WorkflowState(
@@ -39,5 +39,5 @@ data class WorkflowState(
   override fun create(name: String, topicsStats: TopicsStats<WorkflowType>) =
       WorkflowState(name = name, topicsStats = topicsStats)
 
-  override fun getTopic(type: WorkflowType) = topicManager.getTopicName(type, name)
+  override fun getTopic(type: WorkflowType) = resourceManager.getTopicName(type, name)
 }

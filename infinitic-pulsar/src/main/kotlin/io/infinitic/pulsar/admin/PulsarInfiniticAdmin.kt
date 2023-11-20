@@ -23,79 +23,25 @@
 package io.infinitic.pulsar.admin
 
 import io.github.oshai.kotlinlogging.KotlinLogging
-import io.infinitic.pulsar.config.Pulsar
+import io.infinitic.pulsar.config.policies.Policies
 import org.apache.pulsar.client.admin.PulsarAdmin
 import org.apache.pulsar.client.admin.PulsarAdminException
 import org.apache.pulsar.common.policies.data.PartitionedTopicStats
-import org.apache.pulsar.common.policies.data.Policies
 import org.apache.pulsar.common.policies.data.RetentionPolicies
 import org.apache.pulsar.common.policies.data.TenantInfo
 import org.apache.pulsar.common.policies.data.TopicStats
 import org.apache.pulsar.common.policies.data.impl.AutoTopicCreationOverrideImpl
 import org.apache.pulsar.common.policies.data.impl.DelayedDeliveryPoliciesImpl
+import org.apache.pulsar.common.policies.data.Policies as PulsarPolicies
 import org.apache.pulsar.common.policies.data.TopicType as PulsarTopicType
 
 class PulsarInfiniticAdmin(
-  val pulsarAdmin: PulsarAdmin,
-  val pulsar: Pulsar,
+  val pulsarAdmin: PulsarAdmin
 ) {
-  private val clusters = pulsarAdmin.clusters()
   private val topics = pulsarAdmin.topics()
   private val topicPolicies = pulsarAdmin.topicPolicies()
   private val tenants = pulsarAdmin.tenants()
   private val namespaces = pulsarAdmin.namespaces()
-
-  private val fullNamespace = "${pulsar.tenant}/${pulsar.namespace}"
-
-  private val expectedPolicies by lazy {
-    Policies().apply {
-      retention_policies =
-          RetentionPolicies(
-              pulsar.policies.retentionTimeInMinutes,
-              pulsar.policies.retentionSizeInMB,
-          )
-      message_ttl_in_seconds = pulsar.policies.messageTTLInSeconds
-      delayed_delivery_policies =
-          DelayedDeliveryPoliciesImpl(pulsar.policies.delayedDeliveryTickTimeMillis, true)
-      schema_compatibility_strategy = pulsar.policies.schemaCompatibilityStrategy
-      autoTopicCreationOverride =
-          AutoTopicCreationOverrideImpl(
-              pulsar.policies.allowAutoTopicCreation,
-              PulsarTopicType.PARTITIONED.toString(),
-              3,
-          )
-      schema_validation_enforced = pulsar.policies.schemaValidationEnforced
-      is_allow_auto_update_schema = pulsar.policies.isAllowAutoUpdateSchema
-      deduplicationEnabled = pulsar.policies.deduplicationEnabled
-    }
-  }
-
-  private val tenantInfo by lazy {
-    TenantInfo.builder()
-        .allowedClusters(
-            when (pulsar.allowedClusters) {
-              // all cluster by default
-              null -> clusters.clusters.toSet()
-              else -> pulsar.allowedClusters
-            },
-        )
-        .also { if (pulsar.adminRoles != null) it.adminRoles(pulsar.adminRoles) }
-        .build()
-  }
-
-  /**
-   * Ensure tenant and namespace exists.
-   *
-   * Returns:
-   *  - Result.success(Unit) if tenant and namespace exist or has been created
-   *  - Result.failure(e) in case of error
-   */
-  fun initTenantAndNamespace(): Result<Unit> {
-    initTenant().getOrElse { return Result.failure(it) }
-    initNamespace().getOrElse { return Result.failure(it) }
-
-    return Result.success(Unit)
-  }
 
   /**
    * Ensure tenant exists.
@@ -104,9 +50,23 @@ class PulsarInfiniticAdmin(
    *  - Result.success(TenantInfo) if tenant exists or has been created
    *  - Result.failure(e) in case of error
    **/
-  fun initTenant(): Result<TenantInfo> {
-    val info = getTenantInfo().getOrElse { return Result.failure(it) }
-      ?: createTenant().getOrElse { return Result.failure(it) }
+  fun initTenant(
+    tenant: String,
+    allowedClusters: Set<String>?,
+    adminRoles: Set<String>?
+  ): Result<TenantInfo> {
+    val info = getTenantInfo(tenant).getOrElse { return Result.failure(it) }
+        ?.also {
+          if (allowedClusters != null && allowedClusters != it.allowedClusters) logger.warn {
+            "For tenant $tenant, allowedClusters policy is different from expected value: " +
+                "${it.allowedClusters} != $allowedClusters"
+          }
+          if (adminRoles != null && adminRoles != it.adminRoles) logger.warn {
+            "For tenant $tenant, adminRoles policy is different from expected value: " +
+                "${it.adminRoles} != $adminRoles"
+          }
+        }
+      ?: createTenant(tenant, allowedClusters, adminRoles).getOrElse { return Result.failure(it) }
 
     return Result.success(info)
   }
@@ -119,17 +79,17 @@ class PulsarInfiniticAdmin(
    *  - Result.success(null) if tenant does not exist
    *  - Result.failure(e) in case of error
    **/
-  fun getTenantInfo(): Result<TenantInfo?> =
+  fun getTenantInfo(tenant: String): Result<TenantInfo?> =
       try {
-        val info = tenants.getTenantInfo(pulsar.tenant)
+        val info = tenants.getTenantInfo(tenant)
         Result.success(info)
       } catch (e: PulsarAdminException.NotAuthorizedException) {
-        logger.warn { "Not authorized to admin tenant '${pulsar.tenant}'" }
+        logger.warn { "Not authorized to admin tenant '$tenant'" }
         Result.failure(e)
       } catch (e: PulsarAdminException.NotFoundException) {
         Result.success(null)
       } catch (e: PulsarAdminException) {
-        logger.warn(e) { "Unable to get info for tenant '${pulsar.tenant}'" }
+        logger.warn(e) { "Unable to get info for tenant '$tenant'" }
         Result.failure(e)
       }
 
@@ -140,22 +100,30 @@ class PulsarInfiniticAdmin(
    * - Result.success(TenantInfo) in case of success or already existing tenant
    * - Result.failure(e) in case of error
    */
-  fun createTenant(): Result<TenantInfo> =
+  fun createTenant(
+    tenant: String,
+    allowedClusters: Set<String>?,
+    adminRoles: Set<String>?
+  ): Result<TenantInfo> =
       try {
-        logger.info { "Creating tenant '${pulsar.tenant}'" }
-        tenants.createTenant(pulsar.tenant, tenantInfo)
+        logger.info { "Creating tenant '$tenant'" }
+        val tenantInfo = TenantInfo.builder().also {
+          allowedClusters?.let { clusters -> it.allowedClusters(clusters) }
+          adminRoles?.let { roles -> it.adminRoles(roles) }
+        }.build()
+        tenants.createTenant(tenant, tenantInfo)
         Result.success(tenantInfo)
       } catch (e: PulsarAdminException.NotAuthorizedException) {
-        logger.warn { "Not authorized to admin namespace '$fullNamespace'" }
+        logger.warn { "Not authorized to create tenant" }
         Result.failure(e)
       } catch (e: PulsarAdminException.ConflictException) {
-        logger.warn { "Tenant '${pulsar.tenant}' already exists" }
+        logger.warn { "Tenant '$tenant' already exists" }
         Result.failure(e)
       } catch (e: PulsarAdminException.PreconditionFailedException) {
-        logger.warn { "Unable to create tenant: '${pulsar.tenant}' is an invalid tenant name'" }
+        logger.warn { "Unable to create tenant: '$tenant' is an invalid tenant name'" }
         Result.failure(e)
       } catch (e: PulsarAdminException) {
-        logger.warn(e) { "Unable to create tenant '${pulsar.tenant}'" }
+        logger.warn(e) { "Unable to create tenant '$tenant'" }
         Result.failure(e)
       }
 
@@ -166,14 +134,13 @@ class PulsarInfiniticAdmin(
    *  - Result.success(Policies) if tenant exists or has been created
    *  - Result.failure(e) in case of error
    **/
-  fun initNamespace(): Result<Policies> {
+  fun initNamespace(fullNamespace: String, config: Policies): Result<PulsarPolicies> {
 
-    val policies =
-        getNamespacePolicies().getOrElse { return Result.failure(it) }
-            ?.also { checkNamespacePolicies(it) }
-          ?: createNamespace().getOrElse { return Result.failure(it) }
+    val pulsarPolicies = getNamespacePolicies(fullNamespace).getOrElse { return Result.failure(it) }
+        ?.also { checkNamespacePolicies(it, config) }
+      ?: createNamespace(fullNamespace, config).getOrElse { return Result.failure(it) }
 
-    return Result.success(policies)
+    return Result.success(pulsarPolicies)
   }
 
 
@@ -185,10 +152,10 @@ class PulsarInfiniticAdmin(
    *  - Result.success(null) if namespace does not exist
    *  - Result.failure(e) in case of error
    **/
-  fun getNamespacePolicies(): Result<Policies?> =
+  fun getNamespacePolicies(fullNamespace: String): Result<PulsarPolicies?> =
       try {
-        val policies = namespaces.getPolicies(fullNamespace)
-        Result.success(policies)
+        val pulsarPolicies = namespaces.getPolicies(fullNamespace)
+        Result.success(pulsarPolicies)
       } catch (e: PulsarAdminException.NotAuthorizedException) {
         logger.warn { "Not authorized to admin namespace '$fullNamespace'" }
         Result.failure(e)
@@ -206,17 +173,18 @@ class PulsarInfiniticAdmin(
    * - Result.success(Policies) in case of success or already existing namespace
    * - Result.failure(e) in case of error
    */
-  fun createNamespace(): Result<Policies> =
+  fun createNamespace(fullNamespace: String, config: Policies): Result<PulsarPolicies> =
       try {
         logger.info { "Creating namespace $fullNamespace" }
-        namespaces.createNamespace(fullNamespace, expectedPolicies)
-        Result.success(expectedPolicies)
+        val pulsarPolicies = config.getPulsarPolicies()
+        namespaces.createNamespace(fullNamespace, pulsarPolicies)
+        Result.success(pulsarPolicies)
       } catch (e: PulsarAdminException.NotAuthorizedException) {
         logger.warn { "Not authorized to create a namespace" }
         Result.failure(e)
       } catch (e: PulsarAdminException.NotFoundException) {
         logger.warn {
-          "Unable to create namespace '$fullNamespace' as tenant '${pulsar.tenant}' does not exist"
+          "Unable to create namespace '$fullNamespace' as tenant does not exist"
         }
         Result.failure(e)
       } catch (e: PulsarAdminException.ConflictException) {
@@ -234,7 +202,7 @@ class PulsarInfiniticAdmin(
    *  - Result.success(Set<String>)
    *  - Result.failure(e) in case of error
    **/
-  fun getTopicsSet(): Result<Set<String>> =
+  fun getTopicsSet(fullNamespace: String): Result<Set<String>> =
       try {
         val topicSet = with(topics) {
           (getPartitionedTopicList(fullNamespace) + getList(fullNamespace)).toSet()
@@ -252,10 +220,20 @@ class PulsarInfiniticAdmin(
    *  - Result.success(Unit) if topic exists or has been created
    *  - Result.failure(e) in case of error
    **/
-  fun initTopic(topic: String, isPartitioned: Boolean, isDelayed: Boolean): Result<Unit> {
+  fun initTopic(
+    topic: String,
+    isPartitioned: Boolean,
+    messageTTLPolicy: Int
+  ): Result<Unit> {
     getMessageTTL(topic).getOrElse { return Result.failure(it) }
-        ?.also { checkMessageTTL(topic, it, isDelayed) }
-      ?: createTopic(topic, isPartitioned, isDelayed).getOrElse { return Result.failure(it) }
+        ?.also {
+          // check message TTL policy
+          if (it != messageTTLPolicy) logger.warn {
+            "For topic $topic, messageTTLInSeconds policy is different from expected value: " +
+                "$messageTTLPolicy != $it"
+          }
+        }
+      ?: createTopic(topic, isPartitioned, messageTTLPolicy).getOrElse { return Result.failure(it) }
 
     return Result.success(Unit)
   }
@@ -326,18 +304,20 @@ class PulsarInfiniticAdmin(
    * - Result.success(Unit) in case of success or already existing topic
    * - Result.failure(e) in case of error
    */
-  fun createTopic(topic: String, isPartitioned: Boolean, isDelayed: Boolean): Result<Unit> =
+  fun createTopic(topic: String, isPartitioned: Boolean, messageTTLPolicy: Int): Result<Unit> =
       try {
         logger.info { "Creating topic $topic" }
         when (isPartitioned) {
           true -> topics.createPartitionedTopic(topic, 3)
           false -> topics.createNonPartitionedTopic(topic)
         }
-        if (isDelayed) setTopicTTL(topic, pulsar.policies.delayedTTLInSeconds)
-        else Result.success(Unit)
+        // set message TTL
+        setTopicTTL(topic, messageTTLPolicy)
+        // creation is a success even if we can not set message TTL
+        Result.success(Unit)
       } catch (e: PulsarAdminException.ConflictException) {
         logger.warn { "Already existing topic '$topic'" }
-        Result.success(Unit)
+        Result.failure(e)
       } catch (e: PulsarAdminException) {
         logger.warn(e) { "Unable to create topic '$topic'" }
         Result.failure(e)
@@ -362,34 +342,16 @@ class PulsarInfiniticAdmin(
     Result.failure(e)
   }
 
-  private fun setTopicTTL(topic: String, ttl: Int): Result<Unit> = try {
-    topicPolicies.setMessageTTL(topic, ttl)
+  private fun setTopicTTL(topic: String, messageTTLInSecond: Int): Result<Unit> = try {
+    topicPolicies.setMessageTTL(topic, messageTTLInSecond)
     Result.success(Unit)
   } catch (e: PulsarAdminException) {
     logger.warn(e) { "Unable to set message TTL for topic '$topic'" }
     Result.failure(e)
   }
 
-  private fun checkMessageTTL(topic: String, ttl: Int, isDelayed: Boolean) {
-    when (isDelayed) {
-      true -> if (ttl != pulsar.policies.delayedTTLInSeconds) {
-        logger.warn {
-          "For topic $topic, messageTTLInSeconds policy is different from expected value: " +
-              "$ttl != ${pulsar.policies.delayedTTLInSeconds}"
-        }
-      }
-
-      false ->
-        if (ttl != pulsar.policies.messageTTLInSeconds) {
-          logger.warn {
-            "For topic $topic, messageTTLInSeconds policy is different from expected value: " +
-                "$ttl != ${pulsar.policies.messageTTLInSeconds}"
-          }
-        }
-    }
-  }
-
-  private fun checkNamespacePolicies(policies: Policies) {
+  private fun checkNamespacePolicies(policies: PulsarPolicies, config: Policies) {
+    val expectedPolicies = config.getPulsarPolicies()
     // check that policies are the same
     if (policies.schema_compatibility_strategy != expectedPolicies.schema_compatibility_strategy) {
       logger.warn {
@@ -441,21 +403,24 @@ class PulsarInfiniticAdmin(
     }
   }
 
+  private fun Policies.getPulsarPolicies() = PulsarPolicies().also {
+    it.retention_policies = RetentionPolicies(retentionTimeInMinutes, retentionSizeInMB)
+    it.message_ttl_in_seconds = messageTTLInSeconds
+    it.delayed_delivery_policies =
+        DelayedDeliveryPoliciesImpl(delayedDeliveryTickTimeMillis, true)
+    it.schema_compatibility_strategy = schemaCompatibilityStrategy
+    it.autoTopicCreationOverride =
+        AutoTopicCreationOverrideImpl(
+            allowAutoTopicCreation,
+            PulsarTopicType.PARTITIONED.toString(),
+            3,
+        )
+    it.schema_validation_enforced = schemaValidationEnforced
+    it.is_allow_auto_update_schema = isAllowAutoUpdateSchema
+    it.deduplicationEnabled = deduplicationEnabled
+  }
+
   companion object {
     internal val logger = KotlinLogging.logger {}
-
-    /** Create InfiniticAdmin from file in resources directory */
-    @JvmStatic
-    fun fromResource(vararg resources: String): PulsarInfiniticAdmin {
-      val config = AdminConfig.fromResource(*resources)
-      return PulsarInfiniticAdmin(config.pulsar.admin, config.pulsar)
-    }
-
-    /** Create InfiniticAdmin from file in system file */
-    @JvmStatic
-    fun fromFile(vararg files: String): PulsarInfiniticAdmin {
-      val config = AdminConfig.fromFile(*files)
-      return PulsarInfiniticAdmin(config.pulsar.admin, config.pulsar)
-    }
   }
 }

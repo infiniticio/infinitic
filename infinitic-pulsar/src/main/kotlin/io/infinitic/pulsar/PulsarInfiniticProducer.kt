@@ -36,16 +36,16 @@ import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
 import io.infinitic.common.workflows.tags.messages.WorkflowTagEnvelope
 import io.infinitic.common.workflows.tags.messages.WorkflowTagMessage
 import io.infinitic.pulsar.producers.Producer
-import io.infinitic.pulsar.topics.ClientType
-import io.infinitic.pulsar.topics.ServiceType
-import io.infinitic.pulsar.topics.TopicManager
-import io.infinitic.pulsar.topics.WorkflowTaskType
-import io.infinitic.pulsar.topics.WorkflowType
+import io.infinitic.pulsar.resources.ClientType
+import io.infinitic.pulsar.resources.ResourceManager
+import io.infinitic.pulsar.resources.ServiceType
+import io.infinitic.pulsar.resources.WorkflowTaskType
+import io.infinitic.pulsar.resources.WorkflowType
 import java.util.concurrent.CompletableFuture
 
 class PulsarInfiniticProducer(
   private val producer: Producer,
-  private val topicManager: TopicManager
+  private val resourceManager: ResourceManager
 ) : InfiniticProducer {
 
   private var suggestedName: String? = null
@@ -65,7 +65,7 @@ class PulsarInfiniticProducer(
    * If [suggestedName] is not provided, Pulsar will provide a unique name
    */
   private val uniqueName: String by lazy {
-    producer.getName(topicManager.getNamerTopic(), suggestedName).getOrThrow()
+    producer.getName(resourceManager.getNamerTopic(), suggestedName).getOrThrow()
   }
 
   /**
@@ -74,34 +74,34 @@ class PulsarInfiniticProducer(
 
   // Name of producers sending messages to workflow tag
   private val clientProducerName by lazy {
-    topicManager.getProducerName(ClientType.RESPONSE, name)
+    resourceManager.getProducerName(ClientType.RESPONSE, name)
   }
 
   // Name of producers sending messages to workflow tag
   private val workflowTagProducerName by lazy {
-    topicManager.getProducerName(WorkflowType.TAG, name)
+    resourceManager.getProducerName(WorkflowType.TAG, name)
   }
 
   // Name of producers sending messages to workflow engine
   private val workflowEngineProducerName by lazy {
-    topicManager.getProducerName(WorkflowType.ENGINE, name)
+    resourceManager.getProducerName(WorkflowType.ENGINE, name)
   }
 
   // Name of producers sending messages to task tag
   private val taskTagProducerName by lazy {
-    topicManager.getProducerName(ServiceType.TAG, name)
+    resourceManager.getProducerName(ServiceType.TAG, name)
   }
 
   // Name of producers sending messages to task executor
   private val taskExecutorProducerName by lazy {
-    topicManager.getProducerName(ServiceType.EXECUTOR, name)
+    resourceManager.getProducerName(ServiceType.EXECUTOR, name)
   }
 
 
   // Asynchronously send message to client
   override fun sendAsync(message: ClientMessage): CompletableFuture<Unit> {
     val topic =
-        topicManager.initTopic(ClientType.RESPONSE, "${message.recipientName}").getOrThrow()
+        resourceManager.initTopic("${message.recipientName}", ClientType.RESPONSE).getOrThrow()
 
     return producer.sendAsync<ClientMessage, ClientEnvelope>(
         message, zero, topic, clientProducerName,
@@ -111,7 +111,7 @@ class PulsarInfiniticProducer(
   // Asynchronously send message to Workflow Tag
   override fun sendAsync(message: WorkflowTagMessage): CompletableFuture<Unit> {
     val topic =
-        topicManager.initTopic(WorkflowType.TAG, "${message.workflowName}").getOrThrow()
+        resourceManager.initTopic("${message.workflowName}", WorkflowType.TAG).getOrThrow()
 
     return producer.sendAsync<WorkflowTagMessage, WorkflowTagEnvelope>(
         message, zero, topic, workflowTagProducerName, key = "${message.workflowTag}",
@@ -124,9 +124,9 @@ class PulsarInfiniticProducer(
     after: MillisDuration
   ): CompletableFuture<Unit> {
     val topic = if (after > 0) {
-      topicManager.initTopic(WorkflowType.DELAY, "${message.workflowName}")
+      resourceManager.initTopic("${message.workflowName}", WorkflowType.DELAY)
     } else {
-      topicManager.initTopic(WorkflowType.ENGINE, "${message.workflowName}")
+      resourceManager.initTopic("${message.workflowName}", WorkflowType.ENGINE)
     }.getOrThrow()
 
     return producer.sendAsync<WorkflowEngineMessage, WorkflowEngineEnvelope>(
@@ -137,7 +137,7 @@ class PulsarInfiniticProducer(
   // Asynchronously send message to Task Tag
   override fun sendAsync(message: TaskTagMessage): CompletableFuture<Unit> {
     val topic =
-        topicManager.initTopic(ServiceType.TAG, "${message.serviceName}").getOrThrow()
+        resourceManager.initTopic("${message.serviceName}", ServiceType.TAG).getOrThrow()
 
     return producer.sendAsync<TaskTagMessage, TaskTagEnvelope>(
         message, zero, topic, taskTagProducerName, key = "${message.taskTag}",
@@ -149,14 +149,14 @@ class PulsarInfiniticProducer(
     message: TaskExecutorMessage,
     after: MillisDuration
   ): CompletableFuture<Unit> {
-    val topic = if (message.isWorkflowTask()) {
-      when (message) {
-        is ExecuteTask -> topicManager.initTopic(
-            WorkflowTaskType.EXECUTOR, "${message.workflowName!!}",
+    val topic = when (message.isWorkflowTask()) {
+      true -> when (message) {
+        is ExecuteTask -> resourceManager.initTopic(
+            "${message.workflowName!!}", WorkflowTaskType.EXECUTOR,
         )
       }
-    } else {
-      topicManager.initTopic(ServiceType.EXECUTOR, "${message.serviceName}")
+
+      false -> resourceManager.initTopic("${message.serviceName}", ServiceType.EXECUTOR)
     }.getOrThrow()
 
     return producer.sendAsync<TaskExecutorMessage, TaskExecutorEnvelope>(

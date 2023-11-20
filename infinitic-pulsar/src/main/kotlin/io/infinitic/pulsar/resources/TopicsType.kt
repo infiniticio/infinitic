@@ -20,7 +20,7 @@
  *
  * Licensor: infinitic.io
  */
-package io.infinitic.pulsar.topics
+package io.infinitic.pulsar.resources
 
 import org.apache.pulsar.client.api.SubscriptionType
 

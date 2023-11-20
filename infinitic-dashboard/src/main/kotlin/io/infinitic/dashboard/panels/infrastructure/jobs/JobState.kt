@@ -22,17 +22,17 @@
  */
 package io.infinitic.dashboard.panels.infrastructure.jobs
 
+import io.github.oshai.kotlinlogging.KotlinLogging
 import io.infinitic.dashboard.Infinitic.topics
 import io.infinitic.dashboard.panels.infrastructure.requests.Completed
 import io.infinitic.dashboard.panels.infrastructure.requests.Failed
 import io.infinitic.dashboard.panels.infrastructure.requests.Request
-import io.infinitic.pulsar.topics.TopicType
+import io.infinitic.pulsar.resources.TopicType
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kweb.state.KVar
-import io.github.oshai.kotlinlogging.KotlinLogging
 import org.apache.pulsar.common.policies.data.PartitionedTopicStats
 import java.time.Instant
 

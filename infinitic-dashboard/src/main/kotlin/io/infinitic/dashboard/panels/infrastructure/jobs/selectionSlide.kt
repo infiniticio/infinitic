@@ -29,7 +29,7 @@ import io.infinitic.dashboard.panels.infrastructure.requests.Failed
 import io.infinitic.dashboard.panels.infrastructure.requests.Loading
 import io.infinitic.dashboard.panels.infrastructure.requests.Request
 import io.infinitic.dashboard.slideovers.Slideover
-import io.infinitic.pulsar.topics.TopicType
+import io.infinitic.pulsar.resources.TopicType
 import kweb.a
 import kweb.new
 import kweb.p

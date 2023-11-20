@@ -21,7 +21,7 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.pulsar.topics
+package io.infinitic.pulsar.resources
 
 open class TopicNamerDefault(override val tenant: String, override val namespace: String) :
   TopicNamer {

@@ -21,12 +21,15 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.pulsar.topics
+package io.infinitic.pulsar.resources
 
 interface TopicNamer {
   val tenant: String
 
   val namespace: String
+
+  val fullNameSpace
+    get() = "$tenant/$namespace"
 
   fun fullName(topic: String) = "persistent://$tenant/$namespace/$topic"
 
