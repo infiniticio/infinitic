@@ -23,38 +23,50 @@
 
 package io.infinitic.pulsar.topics
 
-import io.infinitic.common.data.ClientName
-import io.infinitic.common.tasks.data.ServiceName
-import io.infinitic.common.workflows.data.workflows.WorkflowName
+open class TopicNamerDefault(override val tenant: String, override val namespace: String) :
+  TopicNamer {
 
-class TopicNamerDefault(override val tenant: String, override val namespace: String) : TopicNamer {
+  override fun getProducerName(type: TopicType, name: String) =
+      "$name>>${type.subscriptionPrefix}"
 
-  override fun getProducerName(workerName: String, type: TopicType) =
-      "$workerName>>${type.subscriptionPrefix}"
+  override fun getConsumerName(type: TopicType, name: String) =
+      "$name<<${type.subscriptionPrefix}"
 
-  override fun getConsumerName(workerName: String, type: TopicType) =
-      "$workerName<<${type.subscriptionPrefix}"
+  override fun getTopicName(type: TopicType, name: String): String =
+      when (type) {
+        is GlobalType -> fullName(type.subscriptionPrefix)
+        else -> fullName("${type.subscriptionPrefix}:$name")
+      }
 
-  override fun getTopicName(type: ClientTopics, clientName: ClientName) =
-      fullName("${type.subscriptionPrefix}:$clientName")
+  override fun getTopicDLQName(type: TopicType, name: String): String? =
+      when (type) {
+        is WorkflowType, is WorkflowTaskType, is ServiceType -> fullName("${type.subscriptionPrefix}-dlq:$name")
+        else -> null
+      }
 
-  override fun getTopicName(type: GlobalTopics) = fullName(type.subscriptionPrefix)
+  override fun getServiceName(topic: String): String? {
+    for (type in ServiceType.entries) {
+      var prefix = getTopicName(type, "")
+      if (topic.startsWith(prefix)) return topic.removePrefix(prefix)
 
-  override fun getTopicName(type: WorkflowTopics, workflowName: WorkflowName) =
-      fullName("${type.subscriptionPrefix}:$workflowName")
+      prefix = getTopicDLQName(type, "")!!
+      if (topic.startsWith(prefix)) return topic.removePrefix(prefix)
+    }
 
-  override fun getTopicDLQName(type: WorkflowTopics, workflowName: WorkflowName) =
-      fullName("${type.subscriptionPrefix}-dlq:$workflowName")
+    return null
+  }
 
-  override fun getTopicName(type: WorkflowTaskTopics, workflowName: WorkflowName) =
-      fullName("${type.subscriptionPrefix}:$workflowName")
+  override fun getWorkflowName(topic: String): String? {
+    val workflowTypes: List<TopicType> =
+        WorkflowType.entries.toList() + WorkflowTaskType.entries.toList()
+    for (type in workflowTypes) {
+      var prefix = getTopicName(type, "")
+      if (topic.startsWith(prefix)) return topic.removePrefix(prefix)
 
-  override fun getTopicDLQName(type: WorkflowTaskTopics, workflowName: WorkflowName) =
-      fullName("${type.subscriptionPrefix}-dlq:$workflowName")
+      prefix = getTopicDLQName(type, "")!!
+      if (topic.startsWith(prefix)) return topic.removePrefix(prefix)
+    }
 
-  override fun getTopicName(type: ServiceTopics, serviceName: ServiceName) =
-      fullName("${type.subscriptionPrefix}:$serviceName")
-
-  override fun getTopicDLQName(type: ServiceTopics, serviceName: ServiceName) =
-      fullName("${type.subscriptionPrefix}-dlq:$serviceName")
+    return null
+  }
 }

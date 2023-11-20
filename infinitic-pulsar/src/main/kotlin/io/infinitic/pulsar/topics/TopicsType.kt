@@ -28,7 +28,7 @@ import org.apache.pulsar.client.api.SubscriptionType
 const val TOPIC_WITH_DELAY = "delay"
 
 sealed interface TopicType {
-  
+
   /**
    * The subscriptionPrefix must NOT be changed (if subscription name is changed, all messages will
    * appear as not acknowledged to a new worker)
@@ -49,7 +49,7 @@ sealed interface TopicType {
   val isDelayed: Boolean
 }
 
-enum class ClientTopics(
+enum class ClientType(
   override val subscriptionPrefix: String,
   override val subscriptionType: SubscriptionType,
   override val isPartitioned: Boolean,
@@ -58,7 +58,7 @@ enum class ClientTopics(
   RESPONSE("response", SubscriptionType.Exclusive, false, false)
 }
 
-enum class GlobalTopics(
+enum class GlobalType(
   override val subscriptionPrefix: String,
   override val subscriptionType: SubscriptionType,
   override val isPartitioned: Boolean,
@@ -67,7 +67,7 @@ enum class GlobalTopics(
   NAMER("namer", SubscriptionType.Shared, false, false)
 }
 
-enum class WorkflowTopics(
+enum class WorkflowType(
   override val subscriptionPrefix: String,
   override val subscriptionType: SubscriptionType,
   override val isPartitioned: Boolean,
@@ -78,7 +78,7 @@ enum class WorkflowTopics(
   DELAY("workflow-$TOPIC_WITH_DELAY", SubscriptionType.Shared, true, true)
 }
 
-enum class WorkflowTaskTopics(
+enum class WorkflowTaskType(
   override val subscriptionPrefix: String,
   override val subscriptionType: SubscriptionType,
   override val isPartitioned: Boolean,
@@ -87,7 +87,7 @@ enum class WorkflowTaskTopics(
   EXECUTOR("workflow-task-executor", SubscriptionType.Shared, true, false)
 }
 
-enum class ServiceTopics(
+enum class ServiceType(
   override val subscriptionPrefix: String,
   override val subscriptionType: SubscriptionType,
   override val isPartitioned: Boolean,

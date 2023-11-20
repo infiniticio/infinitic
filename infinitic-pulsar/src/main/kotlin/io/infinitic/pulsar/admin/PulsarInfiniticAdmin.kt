@@ -228,7 +228,7 @@ class PulsarInfiniticAdmin(
       }
 
   /**
-   * Get set of partitioned topics' name for current namespace
+   * Get set of topics' name for current namespace
    *
    * Returns:
    *  - Result.success(Set<String>)
@@ -236,8 +236,10 @@ class PulsarInfiniticAdmin(
    **/
   fun getTopicsSet(): Result<Set<String>> =
       try {
-        val topics = topics.getPartitionedTopicList(fullNamespace).toSet()
-        Result.success(topics)
+        val topicSet = with(topics) {
+          (getPartitionedTopicList(fullNamespace) + getList(fullNamespace)).toSet()
+        }
+        Result.success(topicSet)
       } catch (e: PulsarAdminException) {
         logger.warn(e) { "Unable to get topics for namespace '$fullNamespace'" }
         Result.failure(e)

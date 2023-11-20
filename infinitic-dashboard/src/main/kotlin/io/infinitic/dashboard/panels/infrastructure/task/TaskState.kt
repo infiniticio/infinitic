@@ -22,23 +22,22 @@
  */
 package io.infinitic.dashboard.panels.infrastructure.task
 
-import io.infinitic.common.tasks.data.ServiceName
 import io.infinitic.dashboard.Infinitic.topicManager
 import io.infinitic.dashboard.panels.infrastructure.jobs.JobState
 import io.infinitic.dashboard.panels.infrastructure.jobs.TopicsStats
 import io.infinitic.dashboard.panels.infrastructure.requests.Loading
-import io.infinitic.pulsar.topics.ServiceTopics
+import io.infinitic.pulsar.topics.ServiceType
 import java.time.Instant
 
 data class TaskState(
   override val name: String,
-  override val topicsStats: TopicsStats<ServiceTopics> =
-      ServiceTopics.values().associateWith { Loading() },
+  override val topicsStats: TopicsStats<ServiceType> =
+      ServiceType.entries.associateWith { Loading() },
   val isLoading: Boolean = isLoading(topicsStats),
   val lastUpdatedAt: Instant = lastUpdatedAt(topicsStats)
-) : JobState<ServiceTopics>(name, topicsStats) {
-  override fun create(name: String, topicsStats: TopicsStats<ServiceTopics>) =
+) : JobState<ServiceType>(name, topicsStats) {
+  override fun create(name: String, topicsStats: TopicsStats<ServiceType>) =
       TaskState(name = name, topicsStats = topicsStats)
 
-  override fun getTopic(type: ServiceTopics) = topicManager.getTopicName(type, ServiceName(name))
+  override fun getTopic(type: ServiceType) = topicManager.getTopicName(type, name)
 }

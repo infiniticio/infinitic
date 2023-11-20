@@ -23,10 +23,6 @@
 
 package io.infinitic.pulsar.topics
 
-import io.infinitic.common.data.ClientName
-import io.infinitic.common.tasks.data.ServiceName
-import io.infinitic.common.workflows.data.workflows.WorkflowName
-
 interface TopicNamer {
   val tenant: String
 
@@ -34,46 +30,21 @@ interface TopicNamer {
 
   fun fullName(topic: String) = "persistent://$tenant/$namespace/$topic"
 
-  fun getProducerName(workerName: String, type: TopicType): String
+  fun getProducerName(type: TopicType, name: String): String
 
-  fun getConsumerName(workerName: String, type: TopicType): String
+  fun getConsumerName(type: TopicType, name: String): String
 
-  fun getTopicName(type: GlobalTopics): String
+  fun getTopicName(type: TopicType, name: String): String
 
-  fun getTopicName(type: ClientTopics, clientName: ClientName): String
+  fun getTopicDLQName(type: TopicType, name: String): String?
 
-  fun getTopicName(type: WorkflowTopics, workflowName: WorkflowName): String
+  fun getServiceName(topic: String): String?
 
-  fun getTopicDLQName(type: WorkflowTopics, workflowName: WorkflowName): String
-
-  fun getTopicName(type: ServiceTopics, serviceName: ServiceName): String
-
-  fun getTopicDLQName(type: ServiceTopics, serviceName: ServiceName): String
-
-  fun getTopicName(type: WorkflowTaskTopics, workflowName: WorkflowName): String
-
-  fun getTopicDLQName(type: WorkflowTaskTopics, workflowName: WorkflowName): String
-
-  fun getTopicName(type: TopicType, name: String): String =
-      when (type) {
-        is ClientTopics -> getTopicName(type, ClientName(name))
-        is GlobalTopics -> getTopicName(type)
-        is WorkflowTopics -> getTopicName(type, WorkflowName(name))
-        is WorkflowTaskTopics -> getTopicName(type, WorkflowName(name))
-        is ServiceTopics -> getTopicName(type, ServiceName(name))
-      }
-
-  fun getTopicDLQName(type: TopicType, name: String): String? =
-      when (type) {
-        is WorkflowTopics -> getTopicDLQName(type, WorkflowName(name))
-        is ServiceTopics -> getTopicDLQName(type, ServiceName(name))
-        is WorkflowTaskTopics -> getTopicDLQName(type, WorkflowName(name))
-        else -> null
-      }
+  fun getWorkflowName(topic: String): String?
 
   /**
-   * Get the name of the topic used to uniquely name clients and worker
+   * Topic used to create unique name for clients and worker
    */
-  fun getNamerTopic(): String = getTopicName(GlobalTopics.NAMER)
+  fun getNamerTopic(): String = getTopicName(GlobalType.NAMER, "global")
 }
 

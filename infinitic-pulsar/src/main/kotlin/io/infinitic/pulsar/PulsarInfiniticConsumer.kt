@@ -39,12 +39,12 @@ import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
 import io.infinitic.common.workflows.tags.messages.WorkflowTagEnvelope
 import io.infinitic.common.workflows.tags.messages.WorkflowTagMessage
 import io.infinitic.pulsar.consumers.Consumer
-import io.infinitic.pulsar.topics.ClientTopics
-import io.infinitic.pulsar.topics.ServiceTopics
+import io.infinitic.pulsar.topics.ClientType
+import io.infinitic.pulsar.topics.ServiceType
 import io.infinitic.pulsar.topics.TopicManager
 import io.infinitic.pulsar.topics.TopicType
-import io.infinitic.pulsar.topics.WorkflowTaskTopics
-import io.infinitic.pulsar.topics.WorkflowTopics
+import io.infinitic.pulsar.topics.WorkflowTaskType
+import io.infinitic.pulsar.topics.WorkflowType
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
@@ -83,11 +83,11 @@ class PulsarInfiniticConsumer(
     // Create unique client name, or check its uniqueness if provided
     val name = consumer.getName(topicManager.getNamerTopic(), clientName).getOrThrow()
     // Add client topic to the list of client topics to be deleted when closing
-    clientTopics.add(topicManager.getTopicName(ClientTopics.RESPONSE, name))
+    clientTopics.add(topicManager.getTopicName(ClientType.RESPONSE, name))
 
     return startAsync<ClientMessage, ClientEnvelope>(
         handler = handler,
-        topicType = ClientTopics.RESPONSE,
+        topicType = ClientType.RESPONSE,
         concurrency = 1,
         name = name,
     )
@@ -100,7 +100,7 @@ class PulsarInfiniticConsumer(
     concurrency: Int
   ) = startAsync<WorkflowTagMessage, WorkflowTagEnvelope>(
       handler = handler,
-      topicType = WorkflowTopics.TAG,
+      topicType = WorkflowType.TAG,
       concurrency = concurrency,
       name = "$workflowName",
   )
@@ -112,7 +112,7 @@ class PulsarInfiniticConsumer(
     concurrency: Int
   ) = startAsync<WorkflowEngineMessage, WorkflowEngineEnvelope>(
       handler = handler,
-      topicType = WorkflowTopics.ENGINE,
+      topicType = WorkflowType.ENGINE,
       concurrency = concurrency,
       name = "$workflowName",
   )
@@ -124,7 +124,7 @@ class PulsarInfiniticConsumer(
     concurrency: Int
   ) = startAsync<WorkflowEngineMessage, WorkflowEngineEnvelope>(
       handler = handler,
-      topicType = WorkflowTopics.DELAY,
+      topicType = WorkflowType.DELAY,
       concurrency = concurrency,
       name = "$workflowName",
   )
@@ -136,7 +136,7 @@ class PulsarInfiniticConsumer(
     concurrency: Int
   ) = startAsync<TaskTagMessage, TaskTagEnvelope>(
       handler = handler,
-      topicType = ServiceTopics.TAG,
+      topicType = ServiceType.TAG,
       concurrency = concurrency,
       name = "$serviceName",
   )
@@ -148,7 +148,7 @@ class PulsarInfiniticConsumer(
     concurrency: Int
   ) = startAsync<TaskExecutorMessage, TaskExecutorEnvelope>(
       handler = handler,
-      topicType = ServiceTopics.EXECUTOR,
+      topicType = ServiceType.EXECUTOR,
       concurrency = concurrency,
       name = "$serviceName",
   )
@@ -169,7 +169,7 @@ class PulsarInfiniticConsumer(
     concurrency: Int
   ) = startAsync<TaskExecutorMessage, TaskExecutorEnvelope>(
       handler = handler,
-      topicType = WorkflowTaskTopics.EXECUTOR,
+      topicType = WorkflowTaskType.EXECUTOR,
       concurrency = concurrency,
       name = "$workflowName",
   )
@@ -199,7 +199,7 @@ class PulsarInfiniticConsumer(
             topic = topic,
             subscriptionName = topicType.subscriptionName,
             subscriptionType = topicType.subscriptionType,
-            consumerName = topicManager.getConsumerName(name, topicType),
+            consumerName = topicManager.getConsumerName(topicType, name),
             concurrency = concurrency,
             topicDLQ = dlq,
         )

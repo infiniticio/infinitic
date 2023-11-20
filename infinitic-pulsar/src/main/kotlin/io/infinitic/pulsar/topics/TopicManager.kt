@@ -22,13 +22,10 @@
  */
 package io.infinitic.pulsar.topics
 
-import io.infinitic.common.tasks.data.ServiceName
-import io.infinitic.common.workflows.data.workflows.WorkflowName
 import io.infinitic.pulsar.admin.PulsarInfiniticAdmin
 import io.infinitic.pulsar.config.Pulsar
 import java.util.concurrent.ConcurrentHashMap
 
-@Suppress("MemberVisibilityCanBePrivate", "unused")
 class TopicManager(
   val admin: PulsarInfiniticAdmin,
   val topicNamer: TopicNamer
@@ -38,25 +35,13 @@ class TopicManager(
   val topicSet: Set<String>
     get() = admin.getTopicsSet().getOrThrow()
 
-  /** Set of task's names for current tenant and namespace */
-  val taskSet: Set<String>
-    get() {
-      val tasks = mutableSetOf<String>()
-      val prefix = topicNamer.getTopicName(ServiceTopics.EXECUTOR, ServiceName(""))
-      topicSet.map { if (it.startsWith(prefix)) tasks.add(it.removePrefix(prefix)) }
-
-      return tasks
-    }
+  /** Set of service's names for current tenant and namespace */
+  val serviceSet: Set<String>
+    get() = topicSet.mapNotNull { topicNamer.getServiceName(it) }.toSet()
 
   /** Set of workflow's names for current tenant and namespace */
   val workflowSet: Set<String>
-    get() {
-      val workflows = mutableSetOf<String>()
-      val prefix = topicNamer.getTopicName(WorkflowTopics.ENGINE, WorkflowName(""))
-      topicSet.map { if (it.startsWith(prefix)) workflows.add(it.removePrefix(prefix)) }
-
-      return workflows
-    }
+    get() = topicSet.mapNotNull { topicNamer.getWorkflowName(it) }.toSet()
 
   /**
    * Check if a topic exists, and create it if not
