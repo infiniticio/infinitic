@@ -23,7 +23,9 @@
 dependencies {
   implementation(Libs.Coroutines.core)
   implementation(Libs.Coroutines.jdk8)
-  
+
+  implementation(project(":infinitic-autoclose"))
+
   api(project(":infinitic-transport"))
 }
 

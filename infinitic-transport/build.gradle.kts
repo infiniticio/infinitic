@@ -23,6 +23,8 @@
 
 dependencies {
   implementation(project(":infinitic-common"))
+  implementation(project(":infinitic-autoclose"))
+  
   api(project(":infinitic-pulsar"))
   api(project(":infinitic-transport-inMemory"))
 }

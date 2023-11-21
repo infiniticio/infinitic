@@ -22,6 +22,7 @@
  */
 package io.infinitic.clients.config
 
+import io.infinitic.autoclose.addAutoCloseResource
 import io.infinitic.clients.InfiniticClient
 import io.infinitic.pulsar.config.Pulsar
 import io.infinitic.transport.config.Transport
@@ -50,5 +51,8 @@ data class ClientConfigData @JvmOverloads constructor(
   }
 
   /** Infinitic Client */
-  override val client = InfiniticClient(consumer, producer)
+  override val client = InfiniticClient(consumer, producer).also {
+    // close consumer with the client
+    it.addAutoCloseResource(consumer)
+  }
 }

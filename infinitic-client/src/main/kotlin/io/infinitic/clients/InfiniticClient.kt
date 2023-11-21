@@ -22,6 +22,7 @@
  */
 package io.infinitic.clients
 
+import io.infinitic.autoclose.autoClose
 import io.infinitic.clients.config.ClientConfig
 import io.infinitic.clients.dispatcher.ClientDispatcher
 import io.infinitic.common.clients.messages.ClientMessage
@@ -59,8 +60,8 @@ class InfiniticClient(
   override val lastDeferred get() = dispatcher.getLastDeferred()
 
   override fun close() {
-    consumer.close()
     dispatcher.close()
+    autoClose()
   }
 
   /** Create a stub for a new workflow */

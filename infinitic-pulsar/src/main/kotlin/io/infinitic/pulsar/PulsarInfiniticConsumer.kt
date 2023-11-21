@@ -23,6 +23,7 @@
 package io.infinitic.pulsar
 
 import io.github.oshai.kotlinlogging.KotlinLogging
+import io.infinitic.autoclose.autoClose
 import io.infinitic.common.clients.messages.ClientEnvelope
 import io.infinitic.common.clients.messages.ClientMessage
 import io.infinitic.common.messages.Envelope
@@ -73,6 +74,7 @@ class PulsarInfiniticConsumer(
       logger.debug { "Deleting client topic $topic" }
       resourceManager.deleteTopic(topic)
     }
+    autoClose()
   }
 
   // Start consumers of messages to client

@@ -22,6 +22,7 @@
  */
 package io.infinitic.transport.config
 
+import io.infinitic.autoclose.addAutoCloseResource
 import io.infinitic.common.transport.InfiniticConsumer
 import io.infinitic.common.transport.InfiniticProducer
 import io.infinitic.inMemory.InMemoryChannels
@@ -49,14 +50,17 @@ data class TransportConfigData(
   }
 
   // we provide consumer and producer together,
-  // as they must share the same configuration (e.g. InMemoryChannels instance)
+  // as they must share the same configuration (InMemoryChannels instance)
   private val cp: Pair<InfiniticConsumer, InfiniticProducer> =
       when (transport) {
         Transport.pulsar -> with(ResourceManager.from(pulsar!!)) {
-          Pair(
-              PulsarInfiniticConsumer(Consumer(pulsar.client, pulsar.consumer), this),
-              PulsarInfiniticProducer(Producer(pulsar.client, pulsar.producer), this),
-          )
+          val consumer = PulsarInfiniticConsumer(Consumer(pulsar.client, pulsar.consumer), this)
+          val producer = PulsarInfiniticProducer(Producer(pulsar.client, pulsar.producer), this)
+
+          consumer.addAutoCloseResource(pulsar.client)
+          consumer.addAutoCloseResource(pulsar.admin)
+
+          Pair(consumer, producer)
         }
 
         Transport.inMemory -> with(InMemoryChannels()) {

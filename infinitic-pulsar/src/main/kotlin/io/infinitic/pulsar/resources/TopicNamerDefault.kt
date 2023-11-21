@@ -34,13 +34,13 @@ open class TopicNamerDefault(override val tenant: String, override val namespace
 
   override fun getTopicName(name: String, type: TopicType): String =
       when (type) {
-        is GlobalType -> fullName(type.subscriptionPrefix)
-        else -> fullName("${type.subscriptionPrefix}:$name")
+        is GlobalType -> fullNameTopic(type.subscriptionPrefix)
+        else -> fullNameTopic("${type.subscriptionPrefix}:$name")
       }
 
   override fun getTopicDLQName(name: String, type: TopicType): String? =
       when (type) {
-        is WorkflowType, is WorkflowTaskType, is ServiceType -> fullName("${type.subscriptionPrefix}-dlq:$name")
+        is WorkflowType, is WorkflowTaskType, is ServiceType -> fullNameTopic("${type.subscriptionPrefix}-dlq:$name")
         else -> null
       }
 

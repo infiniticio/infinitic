@@ -29,10 +29,9 @@ import io.infinitic.common.tasks.tags.messages.TaskTagMessage
 import io.infinitic.common.workflows.data.workflows.WorkflowName
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
 import io.infinitic.common.workflows.tags.messages.WorkflowTagMessage
-import java.io.Closeable
 import java.util.concurrent.CompletableFuture
 
-interface InfiniticConsumer : Closeable {
+interface InfiniticConsumer : AutoCloseable {
 
   // Asynchronously start consumers of messages to client
   fun startClientConsumerAsync(

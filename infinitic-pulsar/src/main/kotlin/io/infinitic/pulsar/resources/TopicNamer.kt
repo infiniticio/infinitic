@@ -24,25 +24,57 @@
 package io.infinitic.pulsar.resources
 
 interface TopicNamer {
+  /**
+   * Current Pulsar tenant
+   */
   val tenant: String
 
+  /**
+   * Current Pulsar namespace
+   */
   val namespace: String
 
+  /**
+   * Full name of the current Pulsar namespace
+   */
   val fullNameSpace
     get() = "$tenant/$namespace"
 
-  fun fullName(topic: String) = "persistent://$tenant/$namespace/$topic"
+  /**
+   * Full name of a topic
+   */
+  fun fullNameTopic(topic: String) = "persistent://$fullNameSpace/$topic"
 
+  /**
+   * Return the producer name associated to the type [type] with name [name]
+   */
   fun getProducerName(name: String, type: TopicType): String
 
+  /**
+   * Return the consumer name associated to the type [type] with name [name]
+   */
   fun getConsumerName(name: String, type: TopicType): String
 
+  /**
+   * Return the full name of the topic associated to the type [type] with name [name]
+   */
   fun getTopicName(name: String, type: TopicType): String
 
+  /**
+   * Return the full name of the DLQ topic associated to the type [type] with name [name]
+   */
   fun getTopicDLQName(name: String, type: TopicType): String?
 
+  /**
+   * Return the service name associated to a topic
+   * Return null if the topic is not a service topic
+   */
   fun getServiceName(topic: String): String?
 
+  /**
+   * Return the workflow name associated to a topic
+   * Return null if the topic is not a workflow topic
+   */
   fun getWorkflowName(topic: String): String?
 }
 
