@@ -74,7 +74,7 @@ We can now open the `build.gradle.kts` file of our new project to add the requir
 implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.3.+")
 
 // Required
-implementation(project(":infinitic-pulsar"))
+implementation(project(":infinitic-transport-pulsar"))
 
 // Add this if you intend to deploy the worker as a standalone JVM application
 implementation("org.apache.pulsar:pulsar-client:2.6.+")
