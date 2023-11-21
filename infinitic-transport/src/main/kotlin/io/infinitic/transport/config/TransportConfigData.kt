@@ -63,11 +63,14 @@ data class TransportConfigData(
           Pair(consumer, producer)
         }
 
-        Transport.inMemory -> with(InMemoryChannels()) {
-          Pair(
-              InMemoryInfiniticConsumer(this),
-              InMemoryInfiniticProducer(this),
-          )
+        Transport.inMemory -> {
+          val channels = InMemoryChannels()
+          val consumer = InMemoryInfiniticConsumer(channels)
+          val producer = InMemoryInfiniticProducer(channels)
+
+          consumer.addAutoCloseResource(channels)
+
+          Pair(consumer, producer)
         }
       }
 

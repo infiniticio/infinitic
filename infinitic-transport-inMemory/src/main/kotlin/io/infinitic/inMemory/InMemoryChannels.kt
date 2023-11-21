@@ -34,7 +34,19 @@ import io.infinitic.common.workflows.tags.messages.WorkflowTagMessage
 import kotlinx.coroutines.channels.Channel
 import java.util.concurrent.ConcurrentHashMap
 
-class InMemoryChannels {
+class InMemoryChannels : AutoCloseable {
+
+  override fun close() {
+    clientChannel.close()
+    taskTagChannels.values.forEach { it.close() }
+    workflowTagChannels.values.forEach { it.close() }
+    taskExecutorChannels.values.forEach { it.close() }
+    delayedTaskExecutorChannels.values.forEach { it.close() }
+    workflowEngineChannels.values.forEach { it.close() }
+    delayedWorkflowEngineChannels.values.forEach { it.close() }
+    workflowTaskExecutorChannels.values.forEach { it.close() }
+    delayedWorkflowTaskExecutorChannels.values.forEach { it.close() }
+  }
 
   // Client channel
   private val clientChannel = Channel<ClientMessage>()
@@ -96,6 +108,7 @@ class InMemoryChannels {
 
   fun forDelayedWorkflowTaskExecutor(workflowName: WorkflowName): Channel<DelayedMessage<TaskExecutorMessage>> =
       delayedWorkflowTaskExecutorChannels.getOrPut(workflowName) { Channel(Channel.UNLIMITED) }
+
 }
 
 internal val Channel<*>.id

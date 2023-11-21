@@ -26,21 +26,33 @@ package io.infinitic.autoclose
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.CopyOnWriteArraySet
 
-object ClosableResources {
-  // Global thread safe map of closeable resources
-  private val resources = ConcurrentHashMap<Any, CopyOnWriteArraySet<AutoCloseable>>()
+/**
+ * Each class in Infinitic is in charge of closing the resources it creates.
+ * But sometimes, a resource is created by a class and used by another receiver one.
+ * We use this to keep track of all resources needing to be closed when the receiver class is closed.
+ */
+object AutoClose {
+  // Global thread safe map of set of closeable resources
+  private val resources = ConcurrentHashMap<AutoCloseable, CopyOnWriteArraySet<AutoCloseable>>()
 
-  fun add(obj: Any, resource: AutoCloseable) {
+  fun add(obj: AutoCloseable, resource: AutoCloseable) {
     resources.getOrPut(obj) { CopyOnWriteArraySet() }.add(resource)
   }
 
-  fun close(obj: Any) {
+  fun close(obj: AutoCloseable) {
     resources[obj]?.forEach { resource -> resource.close() }
     resources.remove(obj)
   }
 }
 
+/**
+ * Add a resource to close when the receiver object is closed
+ */
 fun AutoCloseable.addAutoCloseResource(resource: AutoCloseable) =
-    ClosableResources.add(this, resource)
+    AutoClose.add(this, resource)
 
-fun AutoCloseable.autoClose() = ClosableResources.close(this)
+/**
+ * Close resources added to the receiver object
+ * This method must be called from the close() method of the receiver object
+ */
+fun AutoCloseable.autoClose() = AutoClose.close(this)
