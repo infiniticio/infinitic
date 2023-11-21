@@ -38,10 +38,26 @@ import org.apache.pulsar.common.policies.data.TopicType as PulsarTopicType
 class PulsarInfiniticAdmin(
   val pulsarAdmin: PulsarAdmin
 ) {
+  private val clusters = pulsarAdmin.clusters()
   private val topics = pulsarAdmin.topics()
   private val topicPolicies = pulsarAdmin.topicPolicies()
   private val tenants = pulsarAdmin.tenants()
   private val namespaces = pulsarAdmin.namespaces()
+
+  /**
+   * Get set of clusters' name
+   *
+   * Returns:
+   * - Result.success(Set<String>)
+   * - Result.failure(e) in case of error
+   */
+  fun getClusters(): Result<Set<String>> = try {
+    val clusters = clusters.clusters.toSet()
+    Result.success(clusters)
+  } catch (e: PulsarAdminException) {
+    logger.warn(e) { "Unable to get clusters" }
+    Result.failure(e)
+  }
 
   /**
    * Ensure tenant exists.
@@ -107,10 +123,13 @@ class PulsarInfiniticAdmin(
   ): Result<TenantInfo> =
       try {
         logger.info { "Creating tenant '$tenant'" }
-        val tenantInfo = TenantInfo.builder().also {
-          allowedClusters?.let { clusters -> it.allowedClusters(clusters) }
-          adminRoles?.let { roles -> it.adminRoles(roles) }
-        }.build()
+        val tenantInfo = TenantInfo.builder()
+            .allowedClusters(
+                // if allowedClusters is null, we use all the current ones
+                allowedClusters ?: getClusters().getOrElse { return Result.failure(it) },
+            )
+            .adminRoles(adminRoles)
+            .build()
         tenants.createTenant(tenant, tenantInfo)
         Result.success(tenantInfo)
       } catch (e: PulsarAdminException.NotAuthorizedException) {
