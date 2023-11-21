@@ -30,6 +30,10 @@ include("infinitic-storage")
 
 include("infinitic-transport")
 
+include("infinitic-transport-inMemory")
+
+include("infinitic-transport-pulsar")
+
 include("infinitic-client")
 
 include("infinitic-task-tag")
@@ -45,9 +49,5 @@ include("infinitic-workflow-task")
 include("infinitic-dashboard")
 
 include("infinitic-worker")
-
-include("infinitic-transport-inMemory")
-
-include("infinitic-pulsar")
 
 include("infinitic-tests")

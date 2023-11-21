@@ -29,7 +29,7 @@ application { mainClass.set("io.infinitic.dashboard.MainKt") }
 dependencies {
   implementation(Libs.Kweb.core)
 
-  api(project(":infinitic-pulsar"))
+  api(project(":infinitic-transport-pulsar"))
   api(project(":infinitic-transport"))
 }
 

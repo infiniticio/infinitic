@@ -20,20 +20,27 @@
  *
  * Licensor: infinitic.io
  */
+plugins { `java-library` }
+
 dependencies {
   implementation(Libs.Coroutines.core)
-  implementation(Libs.Hoplite.core)
-  implementation(Libs.Pulsar.client)
-  implementation(Libs.Pulsar.clientAdmin)
-  implementation(Libs.Pulsar.authAthenz)
-  implementation(Libs.Pulsar.authSasl)
+  implementation(Libs.Coroutines.jdk8)
   implementation(Libs.Pulsar.functions)
+  implementation(Libs.Hoplite.yaml)
 
-  implementation(project(":infinitic-common"))
-  implementation(project(":infinitic-workflow-engine"))
+  api(Libs.Hoplite.core)
+  api(Libs.Pulsar.client)
+  api(Libs.Pulsar.clientAdmin)
+  api(Libs.Pulsar.authAthenz)
+  api(Libs.Pulsar.authSasl)
+  api(project(":infinitic-common"))
+  api(project(":infinitic-task-executor"))
+
+  implementation(project(":infinitic-autoclose"))
   implementation(project(":infinitic-workflow-tag"))
-  implementation(project(":infinitic-task-tag"))
-  implementation(project(":infinitic-task-executor"))
+  implementation(project(":infinitic-workflow-engine"))
+
+  testImplementation(Libs.Kotlin.reflect)
 }
 
 apply("../publish.gradle.kts")
