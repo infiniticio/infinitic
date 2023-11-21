@@ -23,6 +23,6 @@
 package io.infinitic.dashboard.panels.infrastructure
 
 enum class JobType {
-  TASK,
+  SERVICE,
   WORKFLOW,
 }

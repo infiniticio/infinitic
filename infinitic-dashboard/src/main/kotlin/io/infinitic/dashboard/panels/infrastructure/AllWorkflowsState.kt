@@ -40,9 +40,9 @@ data class AllWorkflowsState(
 
   override fun getNames() = Infinitic.resourceManager.workflowSet
 
-  override fun getPartitionedStats(name: String): PartitionedTopicStats {
+  override fun getPartitionedStats(name: String): Result<PartitionedTopicStats?> {
     val topic = Infinitic.resourceManager.getTopicName(name, WorkflowTaskType.EXECUTOR)
 
-    return Infinitic.topics.getPartitionedStats(topic, true)
+    return Infinitic.resourceManager.admin.getPartitionedTopicStats(topic)
   }
 }

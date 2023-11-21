@@ -20,7 +20,7 @@
  *
  * Licensor: infinitic.io
  */
-package io.infinitic.dashboard.panels.infrastructure.task
+package io.infinitic.dashboard.panels.infrastructure.service
 
 import io.infinitic.dashboard.InfiniticDashboard
 import io.infinitic.dashboard.Panel
@@ -53,24 +53,24 @@ import kweb.state.property
 import org.apache.pulsar.common.policies.data.PartitionedTopicStats
 import java.util.concurrent.ConcurrentHashMap
 
-class TaskPanel private constructor(private val taskName: String) : Panel() {
+class ServicePanel private constructor(private val taskName: String) : Panel() {
 
   companion object {
-    const val template = "/infra/t/{name}"
+    const val template = "/infra/services/{name}"
 
-    private val instances: ConcurrentHashMap<String, TaskPanel> = ConcurrentHashMap()
+    private val instances: ConcurrentHashMap<String, ServicePanel> = ConcurrentHashMap()
 
-    fun from(taskName: String) = instances.computeIfAbsent(taskName) { TaskPanel(taskName) }
+    fun from(taskName: String) = instances.computeIfAbsent(taskName) { ServicePanel(taskName) }
   }
 
   override val menu = InfraMenu
 
-  override val url = "/infra/t/$taskName"
+  override val url = "/infra/services/$taskName"
 
-  private val state = KVar(TaskState(taskName))
+  private val state = KVar(ServiceState(taskName))
 
-  private val lastUpdated = state.property(TaskState::lastUpdatedAt)
-  private val isLoading = state.property(TaskState::isLoading)
+  private val lastUpdated = state.property(ServiceState::lastUpdatedAt)
+  private val isLoading = state.property(ServiceState::isLoading)
 
   private val selectionTopicType: KVar<TopicType> = KVar(ServiceType.EXECUTOR)
   private val selectionTopicStats: KVar<Request<PartitionedTopicStats>> = KVar(Loading())

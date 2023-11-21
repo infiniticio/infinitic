@@ -28,7 +28,7 @@ import io.infinitic.pulsar.resources.ServiceType
 import org.apache.pulsar.common.policies.data.PartitionedTopicStats
 import java.time.Instant
 
-data class AllTasksState(
+data class AllServicesState(
   override val names: JobNames = Loading(),
   override val stats: JobStats = mapOf(),
   val isLoading: Boolean = isLoading(names, stats),
@@ -36,13 +36,13 @@ data class AllTasksState(
 ) : AllJobsState(names, stats) {
 
   override fun create(names: JobNames, stats: JobStats) =
-      AllTasksState(names = names, stats = stats)
+      AllServicesState(names = names, stats = stats)
 
   override fun getNames() = Infinitic.resourceManager.serviceSet
 
-  override fun getPartitionedStats(name: String): PartitionedTopicStats {
+  override fun getPartitionedStats(name: String): Result<PartitionedTopicStats?> {
     val topic = Infinitic.resourceManager.getTopicName(name, ServiceType.EXECUTOR)
 
-    return Infinitic.topics.getPartitionedStats(topic, true)
+    return Infinitic.resourceManager.admin.getPartitionedTopicStats(topic)
   }
 }

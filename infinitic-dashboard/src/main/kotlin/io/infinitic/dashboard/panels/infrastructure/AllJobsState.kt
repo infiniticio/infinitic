@@ -75,7 +75,7 @@ abstract class AllJobsState(
 
   abstract fun getNames(): Set<String>
 
-  abstract fun getPartitionedStats(name: String): PartitionedTopicStats
+  abstract fun getPartitionedStats(name: String): Result<PartitionedTopicStats?>
 }
 
 @Suppress("UNCHECKED_CAST")
@@ -109,17 +109,19 @@ fun <T : AllJobsState> CoroutineScope.update(kvar: KVar<T>) = launch {
           // loading indicator
           value = value.statsLoading() as T
           // update stats
-          val stats = mutableMapOf<String, Request<PartitionedTopicStats>>()
-          names.result.map {
-            logger.debug { "Updating executor stats for $it" }
-            try {
-              stats[it] = Completed(value.getPartitionedStats(it))
-            } catch (e: Exception) {
-              stats[it] = Failed(e)
+          val statMap = mutableMapOf<String, Request<PartitionedTopicStats>>()
+          names.result.map { name ->
+            logger.debug { "Updating executor stats for $name" }
+            val result = value.getPartitionedStats(name)
+            statMap[name] = when {
+              result.isSuccess -> result.getOrNull()?.let { Completed(it) }
+                ?: Failed(Exception("Topic not found for task $name"))
+
+              else -> Failed(result.exceptionOrNull()!!)
             }
           }
           // update array of stats
-          value = value.create(stats = stats) as T
+          value = value.create(stats = statMap) as T
           // wait at least delayStats
           delayStats.join()
         }

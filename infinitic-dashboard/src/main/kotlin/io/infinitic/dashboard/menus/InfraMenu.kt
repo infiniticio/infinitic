@@ -26,6 +26,6 @@ import io.infinitic.dashboard.Panel
 import io.infinitic.dashboard.panels.infrastructure.AllJobsPanel
 import io.infinitic.dashboard.svgs.icons.iconPulsar
 
-object InfraMenu : MenuItem("Workers & Topics", { iconPulsar() }) {
+object InfraMenu : MenuItem("Workers", { iconPulsar() }) {
   override var current: Panel = AllJobsPanel
 }

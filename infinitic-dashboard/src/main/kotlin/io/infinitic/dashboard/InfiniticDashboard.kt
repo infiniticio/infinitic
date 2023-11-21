@@ -23,17 +23,17 @@
 package io.infinitic.dashboard
 
 import io.github.oshai.kotlinlogging.KotlinLogging
+import io.infinitic.autoclose.autoClose
 import io.infinitic.dashboard.config.DashboardConfig
 import io.infinitic.dashboard.modals.Modal
 import io.infinitic.dashboard.panels.infrastructure.AllJobsPanel
-import io.infinitic.dashboard.panels.infrastructure.task.TaskPanel
+import io.infinitic.dashboard.panels.infrastructure.service.ServicePanel
 import io.infinitic.dashboard.panels.infrastructure.workflow.WorkflowPanel
+import io.infinitic.dashboard.panels.services.ServicesPanel
 import io.infinitic.dashboard.panels.settings.SettingsPanel
-import io.infinitic.dashboard.panels.tasks.TasksPanel
 import io.infinitic.dashboard.panels.workflows.WorkflowsPanel
 import io.infinitic.dashboard.plugins.images.imagesPlugin
 import io.infinitic.dashboard.plugins.tailwind.tailwindPlugin
-import io.infinitic.pulsar.config.Pulsar
 import io.infinitic.pulsar.resources.ResourceManager
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -46,38 +46,17 @@ import kweb.route
 @Suppress("MemberVisibilityCanBePrivate", "CanBeParameter")
 class InfiniticDashboard(
   val resourceManager: ResourceManager,
-  val pulsar: Pulsar,
   val port: Int,
   val debug: Boolean
-) {
+) : AutoCloseable {
   init {
     Infinitic.resourceManager = resourceManager
   }
 
   private val logger = KotlinLogging.logger {}
 
-  companion object {
-
-    internal val scope = CoroutineScope(Dispatchers.IO + Job())
-
-    /** Create Dashboard from a DashboardConfig */
-    @JvmStatic
-    fun fromConfig(dashboardConfig: DashboardConfig) =
-        InfiniticDashboard(
-            ResourceManager.from(dashboardConfig.pulsar),
-            dashboardConfig.pulsar,
-            dashboardConfig.port,
-            dashboardConfig.debug,
-        )
-
-    /** Create InfiniticWorker from file in resources directory */
-    @JvmStatic
-    fun fromConfigResource(vararg resources: String) =
-        fromConfig(DashboardConfig.fromResource(*resources))
-
-    /** Create InfiniticWorker from file in system file */
-    @JvmStatic
-    fun fromConfigFile(vararg files: String) = fromConfig(DashboardConfig.fromFile(*files))
+  override fun close() {
+    autoClose()
   }
 
   /** Start dashboard server */
@@ -88,10 +67,10 @@ class InfiniticDashboard(
       doc.body {
         route {
           path(WorkflowsPanel.url) { display(WorkflowsPanel) }
-          path(TasksPanel.url) { display(TasksPanel) }
+          path(ServicesPanel.url) { display(ServicesPanel) }
           path(AllJobsPanel.url) { display(AllJobsPanel) }
-          path("/infra/t/{name}") { display(TaskPanel.from(it.getValue("name").value)) }
-          path("/infra/w/{name}") { display(WorkflowPanel.from(it.getValue("name").value)) }
+          path("/infra/services/{name}") { display(ServicePanel.from(it.getValue("name").value)) }
+          path("/infra/workflows/{name}") { display(WorkflowPanel.from(it.getValue("name").value)) }
           path(SettingsPanel.url) { display(SettingsPanel) }
           path("/") { url.value = AllJobsPanel.url }
           notFound { NotFound.render(this) }
@@ -108,14 +87,39 @@ class InfiniticDashboard(
 
     Modal.render(this)
   }
+
+  companion object {
+
+    internal val scope = CoroutineScope(Dispatchers.IO + Job())
+
+    /** Create Dashboard from a DashboardConfig */
+    @JvmStatic
+    fun fromConfig(dashboardConfig: DashboardConfig) = InfiniticDashboard(
+        ResourceManager.from(dashboardConfig.pulsar),
+        dashboardConfig.port,
+        dashboardConfig.debug,
+    ).also {
+      // should close PulsarAdmin when closing dashboard
+      // but Kweb does not provide a way to be used as resource
+      // it.addAutoCloseResource(dashboardConfig.pulsar.admin)
+    }
+
+    /** Create InfiniticDashboard from file in resources directory */
+    @JvmStatic
+    fun fromConfigResource(vararg resources: String) =
+        fromConfig(DashboardConfig.fromResource(*resources))
+
+    /** Create InfiniticDashboard from file in system file */
+    @JvmStatic
+    fun fromConfigFile(vararg files: String) = fromConfig(DashboardConfig.fromFile(*files))
+  }
 }
 
+// update current url
 internal fun WebBrowser.routeTo(to: Panel) {
-  // update current url
   url.value = to.url
 }
 
 internal object Infinitic {
   lateinit var resourceManager: ResourceManager
-  val topics by lazy { resourceManager.admin.pulsarAdmin.topics() }
 }

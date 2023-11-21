@@ -23,7 +23,7 @@
 package io.infinitic.dashboard.panels.infrastructure.jobs
 
 import io.github.oshai.kotlinlogging.KotlinLogging
-import io.infinitic.dashboard.Infinitic.topics
+import io.infinitic.dashboard.Infinitic
 import io.infinitic.dashboard.panels.infrastructure.requests.Completed
 import io.infinitic.dashboard.panels.infrastructure.requests.Failed
 import io.infinitic.dashboard.panels.infrastructure.requests.Request
@@ -71,11 +71,13 @@ internal fun <S : TopicType, T : JobState<S>> CoroutineScope.update(kvar: KVar<T
       // request stats one by one
       val topicsStats = mutableMapOf<S, Request<PartitionedTopicStats>>()
       value.topicsStats.forEach {
-        try {
-          val stats = topics.getPartitionedStats(value.getTopic(it.key), true)
-          topicsStats[it.key] = Completed(stats)
-        } catch (e: Exception) {
-          topicsStats[it.key] = Failed(e)
+        val name = value.getTopic(it.key)
+        val result = Infinitic.resourceManager.admin.getPartitionedTopicStats(name)
+        topicsStats[it.key] = when {
+          result.isSuccess -> result.getOrNull()?.let { Completed(it) }
+            ?: Failed(Exception("Topic not found for workflow $name"))
+
+          else -> Failed(result.exceptionOrNull()!!)
         }
       }
       // set value

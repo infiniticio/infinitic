@@ -20,31 +20,24 @@
  *
  * Licensor: infinitic.io
  */
-package io.infinitic.dashboard.panels.tasks
+package io.infinitic.dashboard.panels.infrastructure.service
 
-import io.infinitic.dashboard.Panel
-import io.infinitic.dashboard.menus.TaskMenu
-import kweb.Element
-import kweb.ElementCreator
-import kweb.div
-import kweb.h1
-import kweb.new
+import io.infinitic.dashboard.Infinitic.resourceManager
+import io.infinitic.dashboard.panels.infrastructure.jobs.JobState
+import io.infinitic.dashboard.panels.infrastructure.jobs.TopicsStats
+import io.infinitic.dashboard.panels.infrastructure.requests.Loading
+import io.infinitic.pulsar.resources.ServiceType
+import java.time.Instant
 
-object TasksPanel : Panel() {
-  override val menu = TaskMenu
-  override val url = "/tasks"
+data class ServiceState(
+  override val name: String,
+  override val topicsStats: TopicsStats<ServiceType> =
+      ServiceType.entries.associateWith { Loading() },
+  val isLoading: Boolean = isLoading(topicsStats),
+  val lastUpdatedAt: Instant = lastUpdatedAt(topicsStats)
+) : JobState<ServiceType>(name, topicsStats) {
+  override fun create(name: String, topicsStats: TopicsStats<ServiceType>) =
+      ServiceState(name = name, topicsStats = topicsStats)
 
-  override fun render(creator: ElementCreator<Element>): Unit =
-      with(creator) {
-        div().classes("py-6").new {
-          div().classes("max-w-7xl mx-auto px-4 sm:px-6 md:px-8").new {
-            h1().classes("text-2xl font-semibold text-gray-900").text("Tasks")
-          }
-          div().classes("max-w-7xl mx-auto px-4 sm:px-6 md:px-8").new {
-            div().classes("py-4").new {
-              div().classes("border-4 border-dashed border-gray-200 rounded-lg h-96")
-            }
-          }
-        }
-      }
+  override fun getTopic(type: ServiceType) = resourceManager.getTopicName(name, type)
 }

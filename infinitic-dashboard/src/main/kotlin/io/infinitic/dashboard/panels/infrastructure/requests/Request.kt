@@ -39,27 +39,27 @@ data class Loading<T>(override val lastUpdated: Instant = Instant.now()) : Reque
 }
 
 data class Completed<T>(
-    val result: T,
-    override val isLoading: Boolean = false,
-    override val lastUpdated: Instant = Instant.now()
+  val result: T,
+  override val isLoading: Boolean = false,
+  override val lastUpdated: Instant = Instant.now()
 ) : Request<T>() {
   override fun copyLoading() = copy(isLoading = true)
 }
 
 data class Failed<T>(
-    val error: Exception,
-    override val isLoading: Boolean = false,
-    override val lastUpdated: Instant = Instant.now()
+  val error: Throwable,
+  override val isLoading: Boolean = false,
+  override val lastUpdated: Instant = Instant.now()
 ) : Request<T>() {
   override fun copyLoading() = copy(isLoading = true)
 
   val title: String
     get() =
-        when (error) {
-          is PulsarAdminException.NotFoundException -> "not found!"
-          is PulsarAdminException.NotAllowedException -> "not allowed!"
-          is PulsarAdminException.NotAuthorizedException -> "not authorized!"
-          is PulsarAdminException.TimeoutException -> "timed out!"
-          else -> "error!"
-        }
+      when (error) {
+        is PulsarAdminException.NotFoundException -> "not found!"
+        is PulsarAdminException.NotAllowedException -> "not allowed!"
+        is PulsarAdminException.NotAuthorizedException -> "not authorized!"
+        is PulsarAdminException.TimeoutException -> "timed out!"
+        else -> "error!"
+      }
 }

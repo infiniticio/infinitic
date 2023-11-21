@@ -67,7 +67,7 @@ class WorkflowPanel private constructor(private val workflowName: String) : Pane
 
   override val menu = InfraMenu
 
-  override val url = "/infra/w/$workflowName"
+  override val url = "/infra/workflows/$workflowName"
 
   private val workflowState = KVar(WorkflowState(workflowName))
   private val workflowIsLoading = workflowState.property(WorkflowState::isLoading)

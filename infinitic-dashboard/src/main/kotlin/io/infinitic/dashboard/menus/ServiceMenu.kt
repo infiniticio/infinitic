@@ -23,9 +23,9 @@
 package io.infinitic.dashboard.menus
 
 import io.infinitic.dashboard.Panel
-import io.infinitic.dashboard.panels.tasks.TasksPanel
-import io.infinitic.dashboard.svgs.icons.iconTask
+import io.infinitic.dashboard.panels.services.ServicesPanel
+import io.infinitic.dashboard.svgs.icons.iconService
 
-object TaskMenu : MenuItem("Tasks", { iconTask() }) {
-  override var current: Panel = TasksPanel
+object ServiceMenu : MenuItem("Services", { iconService() }) {
+  override var current: Panel = ServicesPanel
 }
