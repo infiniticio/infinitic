@@ -22,12 +22,12 @@
  */
 package io.infinitic.tasks.tag.storage
 
+import io.github.oshai.kotlinlogging.KotlinLogging
 import io.infinitic.common.data.MessageId
 import io.infinitic.common.tasks.data.ServiceName
 import io.infinitic.common.tasks.data.TaskId
 import io.infinitic.common.tasks.data.TaskTag
 import io.infinitic.common.tasks.tags.storage.TaskTagStorage
-import io.github.oshai.kotlinlogging.KotlinLogging
 import org.jetbrains.annotations.TestOnly
 
 class LoggedTaskTagStorage(private val storage: TaskTagStorage) : TaskTagStorage {
@@ -42,9 +42,9 @@ class LoggedTaskTagStorage(private val storage: TaskTagStorage) : TaskTagStorage
   }
 
   override suspend fun setLastMessageId(
-      tag: TaskTag,
-      serviceName: ServiceName,
-      messageId: MessageId
+    tag: TaskTag,
+    serviceName: ServiceName,
+    messageId: MessageId
   ) {
     logger.debug { "tag $tag - name $serviceName - setLastMessageId $messageId" }
     storage.setLastMessageId(tag, serviceName, messageId)
@@ -69,7 +69,7 @@ class LoggedTaskTagStorage(private val storage: TaskTagStorage) : TaskTagStorage
 
   @TestOnly
   override fun flush() {
-    logger.warn("flushing taskTagStorage")
+    logger.warn { "flushing taskTagStorage" }
     storage.flush()
   }
 }

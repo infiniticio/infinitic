@@ -22,14 +22,14 @@
  */
 package io.infinitic.workflows.engine.storage
 
+import io.github.oshai.kotlinlogging.KotlinLogging
 import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.engine.state.WorkflowState
 import io.infinitic.common.workflows.engine.storage.WorkflowStateStorage
-import io.github.oshai.kotlinlogging.KotlinLogging
 import org.jetbrains.annotations.TestOnly
 
 class LoggedWorkflowStateStorage(
-    private val storage: WorkflowStateStorage,
+  private val storage: WorkflowStateStorage,
 ) : WorkflowStateStorage {
 
   private val logger = KotlinLogging.logger {}
@@ -53,7 +53,7 @@ class LoggedWorkflowStateStorage(
 
   @TestOnly
   override fun flush() {
-    logger.debug("flushing workflowStateStorage")
+    logger.debug { "flushing workflowStateStorage" }
     storage.flush()
   }
 }
