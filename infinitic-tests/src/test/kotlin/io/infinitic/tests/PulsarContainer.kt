@@ -18,16 +18,18 @@ class PulsarContainer(dockerImageName: DockerImageName) :
     setWaitStrategy(waitAllStrategy)
   }
 
-  protected override fun configure() {
+  override fun configure() {
     super.configure()
     setupCommandAndEnv()
   }
 
+  @Suppress("unused")
   fun withFunctionsWorker(): PulsarContainer {
     functionsWorkerEnabled = true
     return this
   }
 
+  @Suppress("unused")
   fun withTransactions(): PulsarContainer {
     transactionsEnabled = true
     return this

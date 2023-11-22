@@ -52,7 +52,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.future.future
 import java.util.concurrent.CompletableFuture
-import java.util.concurrent.ConcurrentHashMap
 
 class PulsarInfiniticConsumer(
   private val consumer: Consumer,
@@ -60,9 +59,6 @@ class PulsarInfiniticConsumer(
 ) : InfiniticConsumer {
 
   private val logger = KotlinLogging.logger {}
-
-  /** Set of client topics created */
-  private val clientTopics: MutableSet<String> = ConcurrentHashMap.newKeySet()
 
   /** Coroutine scope used to receive messages */
   private val consumingScope = CoroutineScope(Dispatchers.IO)
