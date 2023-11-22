@@ -22,27 +22,19 @@
  */
 package io.infinitic.tests.versioning
 
-import io.infinitic.clients.InfiniticClient
-import io.infinitic.workers.InfiniticWorker
+import io.infinitic.tests.Test
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
 
 internal class VersionedWorkflowTests :
-    StringSpec({
+  StringSpec(
+      {
+        val client = Test.client
 
-      // each test should not be longer than 10s
-      timeout = 10000
+        val versionedWorkflow = client.newWorkflow(VersionedWorkflow::class.java)
 
-      val worker = autoClose(InfiniticWorker.fromConfigResource("/pulsar.yml"))
-      val client = autoClose(InfiniticClient.fromConfigResource("/pulsar.yml"))
-
-      val versionedWorkflow = client.newWorkflow(VersionedWorkflow::class.java)
-
-      beforeSpec { worker.startAsync() }
-
-      beforeTest { worker.registry.flush() }
-
-      "Dispatch workflow should use last version" {
-        versionedWorkflow.name() shouldBe VersionedWorkflowImpl_1::class.java.name
-      }
-    })
+        "Dispatch workflow should use last version" {
+          versionedWorkflow.name() shouldBe VersionedWorkflowImpl_1::class.java.name
+        }
+      },
+  )

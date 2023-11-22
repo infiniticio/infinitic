@@ -78,7 +78,7 @@ import io.infinitic.workflows.WorkflowCheckMode
 import io.infinitic.workflows.WorkflowDispatcher
 import java.time.Duration as JavaDuration
 import java.time.Instant as JavaInstant
-import mu.KotlinLogging
+import io.github.oshai.kotlinlogging.KotlinLogging
 
 internal class WorkflowDispatcherImpl(
     private val workflowCheckMode: WorkflowCheckMode,

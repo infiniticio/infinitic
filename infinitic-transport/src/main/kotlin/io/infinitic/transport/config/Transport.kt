@@ -25,5 +25,5 @@ package io.infinitic.transport.config
 @Suppress("EnumEntryName")
 enum class Transport {
   pulsar,
-  inMemory,
+  inMemory
 }

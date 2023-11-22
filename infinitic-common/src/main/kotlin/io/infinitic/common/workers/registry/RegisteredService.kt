@@ -28,8 +28,8 @@ import io.infinitic.tasks.WithTimeout
 typealias ServiceFactory = () -> Any
 
 data class RegisteredService(
-    val concurrency: Int,
-    val factory: ServiceFactory,
-    val withTimeout: WithTimeout?,
-    val withRetry: WithRetry?
+  val concurrency: Int,
+  val factory: ServiceFactory,
+  val withTimeout: WithTimeout?,
+  val withRetry: WithRetry?
 )

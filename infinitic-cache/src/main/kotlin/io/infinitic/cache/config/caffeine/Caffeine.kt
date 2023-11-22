@@ -22,17 +22,17 @@
  */
 package io.infinitic.cache.config.caffeine
 
-import com.github.benmanes.caffeine.cache.Caffeine as CaffeineCache
 import com.github.benmanes.caffeine.cache.RemovalCause
+import io.github.oshai.kotlinlogging.KotlinLogging
 import java.util.concurrent.TimeUnit
-import mu.KotlinLogging
+import com.github.benmanes.caffeine.cache.Caffeine as CaffeineCache
 
 internal val logger = KotlinLogging.logger {}
 
 data class Caffeine(
-    @JvmField val maximumSize: Int? = null,
-    @JvmField val expireAfterAccess: Int? = null,
-    @JvmField val expireAfterWrite: Int? = null
+  @JvmField val maximumSize: Int? = null,
+  @JvmField val expireAfterAccess: Int? = null,
+  @JvmField val expireAfterWrite: Int? = null
 ) {
   init {
     maximumSize?.let { require(it > 0) { "maximumSize MUST be >0" } }

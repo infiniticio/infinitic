@@ -22,28 +22,27 @@
  */
 package io.infinitic.dashboard.panels.infrastructure
 
-import io.infinitic.common.workflows.data.workflows.WorkflowName
 import io.infinitic.dashboard.Infinitic
 import io.infinitic.dashboard.panels.infrastructure.requests.Loading
-import io.infinitic.transport.pulsar.topics.WorkflowTaskTopics
+import io.infinitic.pulsar.resources.WorkflowTaskType
 import org.apache.pulsar.common.policies.data.PartitionedTopicStats
 import java.time.Instant
 
 data class AllWorkflowsState(
-    override val names: JobNames = Loading(),
-    override val stats: JobStats = mapOf(),
-    val isLoading: Boolean = isLoading(names, stats),
-    val lastUpdatedAt: Instant = lastUpdatedAt(names, stats)
+  override val names: JobNames = Loading(),
+  override val stats: JobStats = mapOf(),
+  val isLoading: Boolean = isLoading(names, stats),
+  val lastUpdatedAt: Instant = lastUpdatedAt(names, stats)
 ) : AllJobsState(names, stats) {
 
   override fun create(names: JobNames, stats: JobStats) =
       AllWorkflowsState(names = names, stats = stats)
 
-  override fun getNames() = Infinitic.admin.workflows
+  override fun getNames() = Infinitic.resourceManager.workflowSet
 
-  override fun getPartitionedStats(name: String): PartitionedTopicStats {
-    val topic = Infinitic.topicName.topic(WorkflowTaskTopics.EXECUTOR, WorkflowName(name))
+  override fun getPartitionedStats(name: String): Result<PartitionedTopicStats?> {
+    val topic = Infinitic.resourceManager.getTopicName(name, WorkflowTaskType.EXECUTOR)
 
-    return Infinitic.topics.getPartitionedStats(topic, true)
+    return Infinitic.resourceManager.admin.getPartitionedTopicStats(topic)
   }
 }

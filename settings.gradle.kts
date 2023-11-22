@@ -20,6 +20,8 @@
  *
  * Licensor: infinitic.io
  */
+include("infinitic-autoclose")
+
 include("infinitic-common")
 
 include("infinitic-cache")
@@ -28,13 +30,11 @@ include("infinitic-storage")
 
 include("infinitic-transport")
 
-include("infinitic-transport-inmemory")
+include("infinitic-transport-inMemory")
 
 include("infinitic-transport-pulsar")
 
 include("infinitic-client")
-
-include("infinitic-client-base")
 
 include("infinitic-task-tag")
 
@@ -48,12 +48,6 @@ include("infinitic-workflow-task")
 
 include("infinitic-dashboard")
 
-include("infinitic-worker-base")
-
 include("infinitic-worker")
-
-include("infinitic-inMemory")
-
-include("infinitic-pulsar")
 
 include("infinitic-tests")

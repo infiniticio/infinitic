@@ -22,17 +22,17 @@
  */
 package io.infinitic.dashboard.panels.infrastructure.jobs
 
-import io.infinitic.dashboard.Infinitic.topics
+import io.github.oshai.kotlinlogging.KotlinLogging
+import io.infinitic.dashboard.Infinitic
 import io.infinitic.dashboard.panels.infrastructure.requests.Completed
 import io.infinitic.dashboard.panels.infrastructure.requests.Failed
 import io.infinitic.dashboard.panels.infrastructure.requests.Request
-import io.infinitic.transport.pulsar.topics.TopicType
+import io.infinitic.pulsar.resources.TopicType
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kweb.state.KVar
-import mu.KotlinLogging
 import org.apache.pulsar.common.policies.data.PartitionedTopicStats
 import java.time.Instant
 
@@ -43,8 +43,8 @@ private val logger = KotlinLogging.logger {}
 typealias TopicsStats<T> = Map<T, Request<PartitionedTopicStats>>
 
 abstract class JobState<T : TopicType>(
-    open val name: String,
-    open val topicsStats: TopicsStats<T>,
+  open val name: String,
+  open val topicsStats: TopicsStats<T>,
 ) {
   abstract fun create(name: String = this.name, topicsStats: TopicsStats<T>): JobState<T>
 
@@ -71,11 +71,13 @@ internal fun <S : TopicType, T : JobState<S>> CoroutineScope.update(kvar: KVar<T
       // request stats one by one
       val topicsStats = mutableMapOf<S, Request<PartitionedTopicStats>>()
       value.topicsStats.forEach {
-        try {
-          val stats = topics.getPartitionedStats(value.getTopic(it.key), true)
-          topicsStats[it.key] = Completed(stats)
-        } catch (e: Exception) {
-          topicsStats[it.key] = Failed(e)
+        val name = value.getTopic(it.key)
+        val result = Infinitic.resourceManager.admin.getPartitionedTopicStats(name)
+        topicsStats[it.key] = when {
+          result.isSuccess -> result.getOrNull()?.let { Completed(it) }
+            ?: Failed(Exception("Topic not found for workflow $name"))
+
+          else -> Failed(result.exceptionOrNull()!!)
         }
       }
       // set value

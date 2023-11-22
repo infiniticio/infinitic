@@ -28,31 +28,36 @@ import io.infinitic.workflows.SendChannel
 sealed class ClientUserException(msg: String, help: String) : UserException("$msg.\n$help")
 
 class InvalidStubException(klass: String? = null) :
-    ClientUserException(
-        msg =
-            when (klass) {
-              null -> "Instance used"
-              else -> "$klass is not the stub of a class or of a workflow"
-            },
-        help = "Make sure to use a stub returned by taskStub(Class<*>) or workflowStub(Class<*>)")
+  ClientUserException(
+      msg =
+      when (klass) {
+        null -> "Instance used"
+        else -> "$klass is not the stub of a class or of a workflow"
+      },
+      help = "Make sure to use a stub returned by taskStub(Class<*>) or workflowStub(Class<*>)",
+  )
 
 class InvalidChannelGetterException(klass: String) :
-    ClientUserException(
-        msg = "Invalid channel getter",
-        help =
-            "When defining getters of channels in your workflow interface, " +
-                "make sure to have ${SendChannel::class.java.name} as return type, not $klass")
+  ClientUserException(
+      msg = "Invalid channel getter",
+      help =
+      "When defining getters of channels in your workflow interface, " +
+          "make sure to have ${SendChannel::class.java.name} as return type, not $klass",
+  )
 
 class InvalidRunningTaskException(klass: String) :
-    ClientUserException(
-        msg = "$klass is not the stub of a running task",
-        help = "Make sure to use a stub returned by workflowStub(Class<*>)")
+  ClientUserException(
+      msg = "$klass is not the stub of a running task",
+      help = "Make sure to use a stub returned by workflowStub(Class<*>)",
+  )
 
 object MultipleCustomIdException : ClientUserException(msg = "", help = "")
 
 class InvalidChannelUsageException :
-    ClientUserException(
-        msg = "send method of channels can not be used directly",
-        help = "Make sure to use the send(workflow, id) function")
+  ClientUserException(
+      msg = "send method of channels can not be used directly",
+      help = "Make sure to use the send(workflow, id) function",
+  )
 
-object ExceptionAtInitialization : ClientUserException(msg = "", help = "")
+class ExceptionAtInitialization(e: Exception) :
+  ClientUserException(msg = e.message ?: "", help = "")

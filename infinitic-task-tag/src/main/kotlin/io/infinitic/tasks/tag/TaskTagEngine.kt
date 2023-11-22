@@ -22,7 +22,6 @@
  */
 package io.infinitic.tasks.tag
 
-import io.infinitic.common.clients.SendToClient
 import io.infinitic.common.clients.messages.TaskIdsByTag
 import io.infinitic.common.data.ClientName
 import io.infinitic.common.tasks.tags.messages.AddTagToTask
@@ -32,16 +31,16 @@ import io.infinitic.common.tasks.tags.messages.RemoveTagFromTask
 import io.infinitic.common.tasks.tags.messages.RetryTaskByTag
 import io.infinitic.common.tasks.tags.messages.TaskTagMessage
 import io.infinitic.common.tasks.tags.storage.TaskTagStorage
+import io.infinitic.common.transport.InfiniticProducer
 import io.infinitic.tasks.tag.storage.LoggedTaskTagStorage
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
-import mu.KotlinLogging
+import io.github.oshai.kotlinlogging.KotlinLogging
 
 class TaskTagEngine(
-    private val clientName: ClientName,
-    storage: TaskTagStorage,
-    private val sendToClient: SendToClient
+  storage: TaskTagStorage,
+  private val producer: InfiniticProducer
 ) {
   private lateinit var scope: CoroutineScope
 
@@ -88,6 +87,7 @@ class TaskTagEngine(
       true -> {
         discardTagWithoutIds(message)
       }
+
       false -> taskIds.forEach { TODO() }
     }
   }
@@ -101,6 +101,7 @@ class TaskTagEngine(
       true -> {
         discardTagWithoutIds(message)
       }
+
       false -> ids.forEach { TODO() }
     }
   }
@@ -114,9 +115,10 @@ class TaskTagEngine(
             message.serviceName,
             message.taskTag,
             taskIds,
-            emitterName = clientName)
+            emitterName = ClientName(producer.name),
+        )
 
-    scope.launch { sendToClient(taskIdsByTag) }
+    scope.launch { producer.send(taskIdsByTag) }
   }
 
   private suspend fun hasMessageAlreadyBeenHandled(message: TaskTagMessage) =
@@ -125,6 +127,7 @@ class TaskTagEngine(
           logger.info { "discarding as state already contains this messageId: $message" }
           true
         }
+
         else -> false
       }
 

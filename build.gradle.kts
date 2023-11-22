@@ -59,7 +59,7 @@ subprojects {
 
   dependencies {
     implementation(platform("org.jetbrains.kotlin:kotlin-bom"))
-    implementation(Libs.Logging.api)
+    implementation(Libs.Logging.jvm)
 
     testImplementation(Libs.Slf4j.simple)
     testImplementation(Libs.Kotest.junit5)
@@ -79,7 +79,8 @@ subprojects {
 
   tasks.withType<KotlinCompile> {
     kotlinOptions {
-      freeCompilerArgs = freeCompilerArgs + "-opt-in=kotlin.RequiresOptIn"
+      freeCompilerArgs += "-opt-in=kotlin.RequiresOptIn"
+      freeCompilerArgs += "-Xjvm-default=all"
       jvmTarget = JavaVersion.VERSION_11.toString()
     }
   }

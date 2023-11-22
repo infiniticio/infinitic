@@ -22,16 +22,21 @@
  */
 package io.infinitic.workflows.engine.handlers
 
+import io.infinitic.common.transport.InfiniticProducer
 import io.infinitic.common.workflows.engine.state.WorkflowState
 import io.infinitic.workflows.engine.helpers.dispatchWorkflowTask
-import io.infinitic.workflows.engine.output.WorkflowEngineOutput
 import kotlinx.coroutines.CoroutineScope
 
-internal fun CoroutineScope.retryWorkflowTask(output: WorkflowEngineOutput, state: WorkflowState) {
+internal fun CoroutineScope.retryWorkflowTask(producer: InfiniticProducer, state: WorkflowState) {
   // we do not check if a workflow task is already running:
   // this command will update state.runningWorkflowTaskId
   // so that another workflow task coming back later will be ignored
 
   // retry last workflowTask
-  dispatchWorkflowTask(output, state, state.getRunningMethodRun(), state.runningMethodRunPosition!!)
+  dispatchWorkflowTask(
+      producer,
+      state,
+      state.getRunningMethodRun(),
+      state.runningMethodRunPosition!!,
+  )
 }

@@ -23,45 +23,37 @@
 package io.infinitic.tests.branches
 
 import io.infinitic.common.fixtures.later
-import io.infinitic.tests.WorkflowTests
-import io.infinitic.tests.WorkflowTests.testWorkflowStateEmpty
+import io.infinitic.tests.Test
+import io.infinitic.tests.getWorkflowState
 import io.infinitic.tests.utils.UtilWorkflow
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.delay
 
-internal class BranchesWorkflowTests :
-    StringSpec({
-
-      // each test should not be longer than 10s
-      timeout = 10000
-
-      val worker = autoClose(WorkflowTests.worker)
-      val client = autoClose(WorkflowTests.client)
+internal class BranchesWorkflowTests : StringSpec(
+    {
+      val client = Test.client
+      val worker = Test.worker
 
       val branchesWorkflow = client.newWorkflow(BranchesWorkflow::class.java)
       val utilWorkflow = client.newWorkflow(UtilWorkflow::class.java)
 
-      beforeSpec { worker.startAsync() }
-
-      beforeTest { worker.registry.flush() }
-
       "Sequential Workflow with an async branch" {
         branchesWorkflow.seq3() shouldBe "23ba"
 
-        testWorkflowStateEmpty()
+        worker.getWorkflowState() shouldBe null
       }
 
       "Sequential Workflow with an async branch with 2 tasks" {
         branchesWorkflow.seq4() shouldBe "23bac"
 
-        testWorkflowStateEmpty()
+        worker.getWorkflowState() shouldBe null
       }
 
       "Test Deferred methods" {
         branchesWorkflow.deferred1() shouldBe "truefalsefalsetrue"
 
-        testWorkflowStateEmpty()
+        worker.getWorkflowState() shouldBe null
       }
 
       "Check runBranch" {
@@ -75,7 +67,7 @@ internal class BranchesWorkflowTests :
 
         deferred.await() shouldBe "abc"
 
-        testWorkflowStateEmpty(UtilWorkflow::class.java.name, deferred.id)
+        worker.getWorkflowState(UtilWorkflow::class.java.name, deferred.id) shouldBe null
       }
 
       "Check multiple runBranch" {
@@ -90,7 +82,7 @@ internal class BranchesWorkflowTests :
 
         deferred.await() shouldBe "abcde"
 
-        testWorkflowStateEmpty(UtilWorkflow::class.java.name, deferred.id)
+        worker.getWorkflowState(UtilWorkflow::class.java.name, deferred.id) shouldBe null
       }
 
       "Check numerous runBranch" {
@@ -103,7 +95,7 @@ internal class BranchesWorkflowTests :
 
         deferred.await() shouldBe "a" + "b".repeat(100) + "c"
 
-        testWorkflowStateEmpty(UtilWorkflow::class.java.name, deferred.id)
+        worker.getWorkflowState(UtilWorkflow::class.java.name, deferred.id) shouldBe null
       }
 
       "Check that state is cleaned after async processing of a branch" {
@@ -112,6 +104,7 @@ internal class BranchesWorkflowTests :
         // wait completion of the async branch
         delay(1000)
 
-        testWorkflowStateEmpty()
+        worker.getWorkflowState() shouldBe null
       }
-    })
+    },
+)

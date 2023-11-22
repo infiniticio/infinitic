@@ -22,39 +22,31 @@
  */
 package io.infinitic.tests.properties
 
-import io.infinitic.clients.InfiniticClient
-import io.infinitic.workers.InfiniticWorker
+import io.infinitic.tests.Test
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
 
 internal class PropertiesWorkflowTests :
-    StringSpec({
+  StringSpec(
+      {
+        val client = Test.client
 
-      // each test should not be longer than 10s
-      timeout = 10000
+        val propertiesWorkflow = client.newWorkflow(PropertiesWorkflow::class.java)
 
-      val worker = autoClose(InfiniticWorker.fromConfigResource("/pulsar.yml"))
-      val client = autoClose(InfiniticClient.fromConfigResource("/pulsar.yml"))
+        "Check prop1" { propertiesWorkflow.prop1() shouldBe "ac" }
 
-      val propertiesWorkflow = client.newWorkflow(PropertiesWorkflow::class.java)
+        "Check prop2" { propertiesWorkflow.prop2() shouldBe "acbd" }
 
-      beforeSpec { worker.startAsync() }
+        "Check prop3" { propertiesWorkflow.prop3() shouldBe "acbd" }
 
-      beforeTest { worker.registry.flush() }
+        "Check prop4" { propertiesWorkflow.prop4() shouldBe "acd" }
 
-      "Check prop1" { propertiesWorkflow.prop1() shouldBe "ac" }
+        "Check prop5" { propertiesWorkflow.prop5() shouldBe "adbc" }
 
-      "Check prop2" { propertiesWorkflow.prop2() shouldBe "acbd" }
+        "Check prop6" { propertiesWorkflow.prop6() shouldBe "abab" }
 
-      "Check prop3" { propertiesWorkflow.prop3() shouldBe "acbd" }
+        "Check prop7" { propertiesWorkflow.prop7() shouldBe "abab" }
 
-      "Check prop4" { propertiesWorkflow.prop4() shouldBe "acd" }
-
-      "Check prop5" { propertiesWorkflow.prop5() shouldBe "adbc" }
-
-      "Check prop6" { propertiesWorkflow.prop6() shouldBe "abab" }
-
-      "Check prop7" { propertiesWorkflow.prop7() shouldBe "abab" }
-
-      "Check prop8" { propertiesWorkflow.prop8() shouldBe "acbd" }
-    })
+        "Check prop8" { propertiesWorkflow.prop8() shouldBe "acbd" }
+      },
+  )

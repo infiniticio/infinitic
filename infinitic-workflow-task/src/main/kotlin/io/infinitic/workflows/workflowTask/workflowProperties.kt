@@ -22,6 +22,7 @@
  */
 package io.infinitic.workflows.workflowTask
 
+import io.github.oshai.kotlinlogging.KLogger
 import io.infinitic.annotations.Ignore
 import io.infinitic.common.exceptions.thisShouldNotHappen
 import io.infinitic.common.workflows.data.properties.PropertyHash
@@ -31,21 +32,21 @@ import io.infinitic.common.workflows.executors.getPropertiesFromObject
 import io.infinitic.common.workflows.executors.setPropertiesToObject
 import io.infinitic.workflows.Channel
 import io.infinitic.workflows.Workflow
+import org.slf4j.Logger
 import java.lang.reflect.Proxy
 import kotlin.reflect.full.createType
 import kotlin.reflect.full.hasAnnotation
 import kotlin.reflect.full.isSubtypeOf
 import kotlin.reflect.full.starProjectedType
-import org.slf4j.Logger
 
 internal fun Workflow.setProperties(
-    propertiesHashValue: Map<PropertyHash, PropertyValue>,
-    propertiesNameHash: Map<PropertyName, PropertyHash>
+  propertiesHashValue: Map<PropertyHash, PropertyValue>,
+  propertiesNameHash: Map<PropertyName, PropertyHash>
 ) {
   val properties =
       propertiesNameHash.mapValues {
         propertiesHashValue[it.value]
-            ?: thisShouldNotHappen("unknown hash ${it.value} in $propertiesHashValue")
+          ?: thisShouldNotHappen("unknown hash ${it.value} in $propertiesHashValue")
       }
 
   setPropertiesToObject(this, properties)
@@ -60,6 +61,8 @@ internal fun Workflow.getProperties() =
           !(it.second?.let { Proxy.isProxyClass(it::class.java) } ?: true) &&
           // exclude SLF4J loggers
           !it.first.returnType.isSubtypeOf(Logger::class.createType()) &&
+          // exclude KotlinLogging loggers
+          !it.first.returnType.isSubtypeOf(KLogger::class.createType()) &&
           // exclude Ignore annotation
           !it.first.hasAnnotation<Ignore>()
     }

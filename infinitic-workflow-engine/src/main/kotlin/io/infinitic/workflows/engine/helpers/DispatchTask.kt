@@ -22,20 +22,21 @@
  */
 package io.infinitic.workflows.engine.helpers
 
+import io.infinitic.common.data.ClientName
 import io.infinitic.common.exceptions.thisShouldNotHappen
 import io.infinitic.common.tasks.data.TaskRetryIndex
 import io.infinitic.common.tasks.executors.messages.ExecuteTask
 import io.infinitic.common.tasks.tags.messages.AddTagToTask
+import io.infinitic.common.transport.InfiniticProducer
 import io.infinitic.common.workflows.data.commands.DispatchTaskPastCommand
 import io.infinitic.common.workflows.engine.state.WorkflowState
-import io.infinitic.workflows.engine.output.WorkflowEngineOutput
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
 internal fun CoroutineScope.dispatchTask(
-    output: WorkflowEngineOutput,
-    state: WorkflowState,
-    dispatchTaskPastCommand: DispatchTaskPastCommand
+  producer: InfiniticProducer,
+  state: WorkflowState,
+  dispatchTaskPastCommand: DispatchTaskPastCommand
 ) {
   // send task to task executor
   val executeTask =
@@ -56,10 +57,11 @@ internal fun CoroutineScope.dispatchTask(
             taskRetrySequence = dispatchTaskPastCommand.taskRetrySequence,
             taskTags = taskTags,
             taskMeta = taskMeta,
-            emitterName = output.clientName)
+            emitterName = ClientName(producer.name),
+        )
       }
 
-  launch { output.sendToTaskExecutor(executeTask) }
+  launch { producer.send(executeTask) }
 
   // add provided tags
   executeTask.taskTags.forEach {
@@ -68,7 +70,8 @@ internal fun CoroutineScope.dispatchTask(
             serviceName = executeTask.serviceName,
             taskTag = it,
             taskId = executeTask.taskId,
-            emitterName = output.clientName)
-    launch { output.sendToTaskTag(addTagToTask) }
+            emitterName = ClientName(producer.name),
+        )
+    launch { producer.send(addTagToTask) }
   }
 }

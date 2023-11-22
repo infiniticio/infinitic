@@ -29,15 +29,17 @@ import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
 
 internal class PropertiesTests :
-    StringSpec({
-      "Make sure to ignore channels, tasks, workflows, logger and property with @Ignore annotation" {
-        // given
-        val w = WorkflowAImpl()
-        // when
-        val p: Map<PropertyName, PropertyValue> = w.getProperties()
-        // then
-        p.size shouldBe 1
-        p.keys.first() shouldBe PropertyName("key2")
-        p.values.first() shouldBe PropertyValue.from(42)
-      }
-    })
+  StringSpec(
+      {
+        "Make sure to ignore channels, tasks, workflows, logger and property with @Ignore annotation" {
+          // given
+          val w = WorkflowAImpl()
+          // when
+          val p: Map<PropertyName, PropertyValue> = w.getProperties()
+          // then
+          p.size shouldBe 1
+          p.keys.first() shouldBe PropertyName("key2")
+          p.values.first() shouldBe PropertyValue.from(42)
+        }
+      },
+  )

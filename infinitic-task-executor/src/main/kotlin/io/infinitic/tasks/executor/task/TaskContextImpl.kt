@@ -23,7 +23,6 @@
 package io.infinitic.tasks.executor.task
 
 import io.infinitic.clients.InfiniticClientInterface
-import io.infinitic.common.clients.ClientFactory
 import io.infinitic.common.data.methods.MethodName
 import io.infinitic.common.tasks.data.ServiceName
 import io.infinitic.common.tasks.data.TaskId
@@ -39,22 +38,20 @@ import io.infinitic.tasks.WithRetry
 import io.infinitic.tasks.WithTimeout
 
 data class TaskContextImpl(
-    override val workerName: String,
-    override val workerRegistry: WorkerRegistry,
-    override val serviceName: ServiceName,
-    override val taskId: TaskId,
-    override val taskName: MethodName,
-    override val workflowId: WorkflowId?,
-    override val workflowName: WorkflowName?,
-    override val workflowVersion: WorkflowVersion?,
-    override val retrySequence: TaskRetrySequence,
-    override val retryIndex: TaskRetryIndex,
-    override val lastError: ExecutionError?,
-    override val tags: Set<String>,
-    override val meta: MutableMap<String, ByteArray>,
-    override val withTimeout: WithTimeout?,
-    override val withRetry: WithRetry?,
-    private val clientFactory: ClientFactory
-) : TaskContext {
-  override val client: InfiniticClientInterface by lazy { clientFactory() }
-}
+  override val workerName: String,
+  override val workerRegistry: WorkerRegistry,
+  override val serviceName: ServiceName,
+  override val taskId: TaskId,
+  override val taskName: MethodName,
+  override val workflowId: WorkflowId?,
+  override val workflowName: WorkflowName?,
+  override val workflowVersion: WorkflowVersion?,
+  override val retrySequence: TaskRetrySequence,
+  override val retryIndex: TaskRetryIndex,
+  override val lastError: ExecutionError?,
+  override val tags: Set<String>,
+  override val meta: MutableMap<String, ByteArray>,
+  override val withTimeout: WithTimeout?,
+  override val withRetry: WithRetry?,
+  override val client: InfiniticClientInterface
+) : TaskContext

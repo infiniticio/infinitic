@@ -22,20 +22,24 @@
  */
 package io.infinitic.workflows.workflowTask.workflows
 
+import io.github.oshai.kotlinlogging.KotlinLogging
 import io.infinitic.annotations.Ignore
 import io.infinitic.workflows.SendChannel
 import io.infinitic.workflows.Workflow
 import io.infinitic.workflows.workflowTask.tasks.TaskA
 import kotlinx.serialization.Serializable
-import mu.KotlinLogging
 import org.slf4j.LoggerFactory
 import java.util.*
 
 sealed class Obj
 
-@Serializable @Suppress("unused") data class Obj1(val foo: String, val bar: Int) : Obj()
+@Serializable
+@Suppress("unused")
+data class Obj1(val foo: String, val bar: Int) : Obj()
 
-@Serializable @Suppress("unused") data class Obj2(val foo: String, val bar: Int) : Obj()
+@Serializable
+@Suppress("unused")
+data class Obj2(val foo: String, val bar: Int) : Obj()
 
 interface WorkflowA {
   val channelObj: SendChannel<Obj>
@@ -65,7 +69,8 @@ class WorkflowAImpl : Workflow(), WorkflowA {
   private val logger2 = KotlinLogging.logger {}
 
   // this property should be ignored
-  @Ignore private var key1 = "42"
+  @Ignore
+  private var key1 = "42"
 
   // this property should be kept
   private var key2 = 42

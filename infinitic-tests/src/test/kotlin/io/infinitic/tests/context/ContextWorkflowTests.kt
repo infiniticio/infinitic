@@ -22,59 +22,52 @@
  */
 package io.infinitic.tests.context
 
-import io.infinitic.clients.InfiniticClient
 import io.infinitic.common.tasks.data.TaskMeta
 import io.infinitic.common.workflows.data.workflows.WorkflowMeta
 import io.infinitic.tasks.executor.TaskExecutor.Companion.DEFAULT_TASK_RETRY
 import io.infinitic.tasks.executor.TaskExecutor.Companion.DEFAULT_TASK_TIMEOUT
-import io.infinitic.workers.InfiniticWorker
+import io.infinitic.tests.Test
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
 
 internal class ContextWorkflowTests :
-    StringSpec({
+  StringSpec(
+      {
+        val client = Test.client
 
-      // each test should not be longer than 10s
-      timeout = 10000
+        val contextWorkflow =
+            client.newWorkflow(
+                ContextWorkflow::class.java,
+                meta = mapOf("foo" to "bar".toByteArray()),
+                tags = setOf("foo", "bar"),
+            )
 
-      val worker = autoClose(InfiniticWorker.fromConfigResource("/pulsar.yml"))
-      val client = autoClose(InfiniticClient.fromConfigResource("/pulsar.yml"))
+        "get id from context" { contextWorkflow.context1() shouldBe client.lastDeferred!!.id }
 
-      val contextWorkflow =
-          client.newWorkflow(
-              ContextWorkflow::class.java,
-              meta = mapOf("foo" to "bar".toByteArray()),
-              tags = setOf("foo", "bar"))
+        "get tags from context" { contextWorkflow.context2() shouldBe setOf("foo", "bar") }
 
-      beforeSpec { worker.startAsync() }
+        "get meta from context" {
+          contextWorkflow.context3() shouldBe WorkflowMeta(mapOf("foo" to "bar".toByteArray()))
+        }
 
-      beforeTest { worker.registry.flush() }
+        "get workflow id from Task" { contextWorkflow.context4() shouldBe client.lastDeferred!!.id }
 
-      "get id from context" { contextWorkflow.context1() shouldBe client.lastDeferred!!.id }
+        "get workflow name from Task" {
+          contextWorkflow.context5() shouldBe ContextWorkflow::class.java.name
+        }
 
-      "get tags from context" { contextWorkflow.context2() shouldBe setOf("foo", "bar") }
+        "get task tags from Task" { contextWorkflow.context6() shouldBe setOf("foo", "bar") }
 
-      "get meta from context" {
-        contextWorkflow.context3() shouldBe WorkflowMeta(mapOf("foo" to "bar".toByteArray()))
-      }
+        "get task meta from Task" {
+          contextWorkflow.context7() shouldBe TaskMeta(mapOf("foo" to "bar".toByteArray()))
+        }
 
-      "get workflow id from Task" { contextWorkflow.context4() shouldBe client.lastDeferred!!.id }
+        "get task retry from config file" {
+          contextWorkflow.context8() shouldBe DEFAULT_TASK_RETRY.copy(maximumRetries = 1)
+        }
 
-      "get workflow name from Task" {
-        contextWorkflow.context5() shouldBe ContextWorkflow::class.java.name
-      }
-
-      "get task tags from Task" { contextWorkflow.context6() shouldBe setOf("foo", "bar") }
-
-      "get task meta from Task" {
-        contextWorkflow.context7() shouldBe TaskMeta(mapOf("foo" to "bar".toByteArray()))
-      }
-
-      "get task retry from config file" {
-        contextWorkflow.context8() shouldBe DEFAULT_TASK_RETRY.copy(maximumRetries = 1)
-      }
-
-      "get task timeout from config file" {
-        contextWorkflow.context9() shouldBe DEFAULT_TASK_TIMEOUT
-      }
-    })
+        "get task timeout from config file" {
+          contextWorkflow.context9() shouldBe DEFAULT_TASK_TIMEOUT
+        }
+      },
+  )

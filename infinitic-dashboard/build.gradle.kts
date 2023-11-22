@@ -29,8 +29,10 @@ application { mainClass.set("io.infinitic.dashboard.MainKt") }
 dependencies {
   implementation(Libs.Kweb.core)
 
-  implementation(project(":infinitic-pulsar"))
-  implementation(project(":infinitic-transport"))
+  implementation(project(":infinitic-autoclose"))
+
+  api(project(":infinitic-transport-pulsar"))
+  api(project(":infinitic-transport"))
 }
 
 apply("../publish.gradle.kts")

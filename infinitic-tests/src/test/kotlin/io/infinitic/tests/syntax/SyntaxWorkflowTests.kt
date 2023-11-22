@@ -22,52 +22,44 @@
  */
 package io.infinitic.tests.syntax
 
-import io.infinitic.clients.InfiniticClient
+import io.infinitic.tests.Test
 import io.infinitic.tests.utils.AnnotatedWorkflow
-import io.infinitic.workers.InfiniticWorker
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
 
 internal class SyntaxWorkflowTests :
-    StringSpec({
+  StringSpec(
+      {
+        val client = Test.client
 
-      // each test should not be longer than 10s
-      timeout = 10000
+        val syntaxWorkflow = client.newWorkflow(SyntaxWorkflow::class.java)
+        val annotatedWorkflow = client.newWorkflow(AnnotatedWorkflow::class.java)
 
-      val worker = autoClose(InfiniticWorker.fromConfigResource("/pulsar.yml"))
-      val client = autoClose(InfiniticClient.fromConfigResource("/pulsar.yml"))
+        "empty Workflow" { syntaxWorkflow.empty() shouldBe "void" }
 
-      val syntaxWorkflow = client.newWorkflow(SyntaxWorkflow::class.java)
-      val annotatedWorkflow = client.newWorkflow(AnnotatedWorkflow::class.java)
+        "run task from parent interface" { syntaxWorkflow.parent() shouldBe "ok" }
 
-      beforeSpec { worker.startAsync() }
+        "run childWorkflow from parent interface" { syntaxWorkflow.wparent() shouldBe "ok" }
 
-      beforeTest { worker.registry.flush() }
+        //    "Tag should be added then deleted after completion" {
+        //        val deferred = client.dispatch(workflowATagged::channel1)
+        //
+        //        val w = client.getWorkflowByTag(WorkflowA::class.java, "foo")
+        //        client.getIds(w).contains(deferred.id) shouldBe true
+        //
+        //        // complete workflow
+        //        w.channelA.send("")
+        //
+        //        // delay is necessary to be sure that tag engine has processed
+        //        delay(500)
+        //
+        //        client.getIds(w).contains(deferred.id) shouldBe false
+        //    }
 
-      "empty Workflow" { syntaxWorkflow.empty() shouldBe "void" }
+        "Annotated Workflow" {
+          val result = annotatedWorkflow.concatABC("")
 
-      "run task from parent interface" { syntaxWorkflow.parent() shouldBe "ok" }
-
-      "run childWorkflow from parent interface" { syntaxWorkflow.wparent() shouldBe "ok" }
-
-      //    "Tag should be added then deleted after completion" {
-      //        val deferred = client.dispatch(workflowATagged::channel1)
-      //
-      //        val w = client.getWorkflowByTag(WorkflowA::class.java, "foo")
-      //        client.getIds(w).contains(deferred.id) shouldBe true
-      //
-      //        // complete workflow
-      //        w.channelA.send("")
-      //
-      //        // delay is necessary to be sure that tag engine has processed
-      //        delay(500)
-      //
-      //        client.getIds(w).contains(deferred.id) shouldBe false
-      //    }
-
-      "Annotated Workflow" {
-        val result = annotatedWorkflow.concatABC("")
-
-        result shouldBe "abc"
-      }
-    })
+          result shouldBe "abc"
+        }
+      },
+  )

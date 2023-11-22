@@ -51,14 +51,14 @@ fun main() {
 }
 
 private fun <T> CoroutineScope.startEngine(
-    executor: suspend (T) -> Unit,
-    channel: Channel<T>
+  executor: suspend (T) -> Unit,
+  channel: Channel<T>
 ): Job = launch {
   for (message in channel) {
     try {
       executor(message)
     } catch (e: Throwable) {
-      println("Error while processing message $message")
+      println("Error while processing message $message: \n$e")
     }
   }
 }

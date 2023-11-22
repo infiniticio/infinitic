@@ -23,13 +23,13 @@
 package io.infinitic.workflows.engine.helpers
 
 import io.infinitic.common.exceptions.thisShouldNotHappen
+import io.infinitic.common.transport.InfiniticProducer
 import io.infinitic.common.workflows.data.commands.CommandId
 import io.infinitic.common.workflows.data.commands.CommandStatus
 import io.infinitic.common.workflows.data.commands.PastCommand
 import io.infinitic.common.workflows.data.commands.ReceiveSignalPastCommand
 import io.infinitic.common.workflows.data.methodRuns.MethodRunId
 import io.infinitic.common.workflows.engine.state.WorkflowState
-import io.infinitic.workflows.engine.output.WorkflowEngineOutput
 import kotlinx.coroutines.CoroutineScope
 
 /** Return true if this command terminates a step */
@@ -38,11 +38,11 @@ import kotlinx.coroutines.CoroutineScope
 // note: pastSteps is ordered per workflowTaskIndex (time) => the first completed step is the
 // earliest
 internal fun CoroutineScope.commandTerminated(
-    output: WorkflowEngineOutput,
-    state: WorkflowState,
-    methodRunId: MethodRunId,
-    commandId: CommandId,
-    commandStatus: CommandStatus
+  producer: InfiniticProducer,
+  state: WorkflowState,
+  methodRunId: MethodRunId,
+  commandId: CommandId,
+  commandStatus: CommandStatus
 ) {
   val methodRun = state.getMethodRun(methodRunId) ?: thisShouldNotHappen()
   val pastCommand = state.getPastCommand(commandId, methodRun)
@@ -54,7 +54,7 @@ internal fun CoroutineScope.commandTerminated(
   // update command status
   pastCommand.setTerminatedStatus(commandStatus)
 
-  if (stepTerminated(output, state, pastCommand)) {
+  if (stepTerminated(producer, state, pastCommand)) {
     if (pastCommand is ReceiveSignalPastCommand) {
       // if a step is completed right away, we remove this status from state
       pastCommand.commandStatuses.remove(commandStatus)
@@ -73,9 +73,9 @@ internal fun CoroutineScope.commandTerminated(
 
 // search the first step completed by this command
 internal fun CoroutineScope.stepTerminated(
-    output: WorkflowEngineOutput,
-    state: WorkflowState,
-    pastCommand: PastCommand
+  producer: InfiniticProducer,
+  state: WorkflowState,
+  pastCommand: PastCommand
 ): Boolean {
   // get all methodRuns terminated by this command
   val methodRuns = state.methodRuns.filter { it.currentStep?.isTerminatedBy(pastCommand) == true }
@@ -98,7 +98,7 @@ internal fun CoroutineScope.stepTerminated(
         }
 
         // dispatch a new workflowTask
-        dispatchWorkflowTask(output, state, it, pastStep.stepPosition)
+        dispatchWorkflowTask(producer, state, it, pastStep.stepPosition)
 
         // if more than 1 methodRun is completed by this command, we need to keep it
         return methodRuns.size > 1

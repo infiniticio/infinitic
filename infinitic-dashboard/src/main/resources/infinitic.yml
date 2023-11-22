@@ -24,7 +24,7 @@
 pulsar:
   brokerServiceUrl: pulsar://localhost:6650
   webServiceUrl: http://localhost:8080
-  tenant: infinitic
-  namespace: dev
+  tenant: public
+  namespace: default
 
 port: 9800

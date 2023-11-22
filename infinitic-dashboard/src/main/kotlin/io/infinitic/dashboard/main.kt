@@ -24,10 +24,7 @@ package io.infinitic.dashboard
 
 fun main(args: Array<String>) {
   // get name of config file
-  val file =
-      args.getOrNull(0)
-          ?: "/infinitic.yml" // thisShouldNotHappen("Please provide a DashboardConfig configuration
-  // file")
+  val file = args.getOrNull(0) ?: "/infinitic.yml"
   // start server
   InfiniticDashboard.fromConfigResource(file).start()
 }

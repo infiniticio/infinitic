@@ -20,6 +20,7 @@
  *
  * Licensor: infinitic.io
  */
+@Suppress("ConstPropertyName")
 object Libs {
 
   const val org = "io.infinitic"
@@ -55,9 +56,16 @@ object Libs {
   }
 
   object Kotest {
-    private const val version = "5.7.2"
+    private const val version = "5.8.0"
     const val property = "io.kotest:kotest-property-jvm:$version"
     const val junit5 = "io.kotest:kotest-runner-junit5-jvm:$version"
+    const val datatest = "io.kotest:kotest-framework-datatest:$version"
+  }
+
+  object TestContainers {
+    private const val version = "1.19.3"
+    const val testcontainers = "org.testcontainers:testcontainers:$version"
+    const val mysql = "org.testcontainers:mysql:$version"
   }
 
   object Mockk {
@@ -75,7 +83,7 @@ object Libs {
   }
 
   object Pulsar {
-    private const val version = "3.1.0"
+    private const val version = "2.11.1"
     const val client = "org.apache.pulsar:pulsar-client:$version"
     const val clientAdmin = "org.apache.pulsar:pulsar-client-admin:$version"
     const val functions = "org.apache.pulsar:pulsar-functions-api:$version"
@@ -98,7 +106,7 @@ object Libs {
   }
 
   object Logging {
-    const val api = "io.github.microutils:kotlin-logging:3.0.5"
+    const val jvm = "io.github.oshai:kotlin-logging-jvm:5.1.0"
   }
 
   object Compress {

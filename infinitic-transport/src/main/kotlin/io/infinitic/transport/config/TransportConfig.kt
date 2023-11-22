@@ -22,7 +22,11 @@
  */
 package io.infinitic.transport.config
 
-import io.infinitic.transport.pulsar.config.Pulsar
+import io.infinitic.common.config.loadConfigFromFile
+import io.infinitic.common.config.loadConfigFromResource
+import io.infinitic.common.transport.InfiniticConsumer
+import io.infinitic.common.transport.InfiniticProducer
+import io.infinitic.pulsar.config.Pulsar
 
 interface TransportConfig {
   /** Transport configuration */
@@ -30,4 +34,22 @@ interface TransportConfig {
 
   /** Pulsar configuration */
   val pulsar: Pulsar?
+
+  /** Infinitic Consumer */
+  val consumer: InfiniticConsumer
+
+  /** Infinitic Producer */
+  val producer: InfiniticProducer
+
+  companion object {
+    /** Create TransportConfig from file in file system */
+    @JvmStatic
+    fun fromFile(vararg files: String): TransportConfig =
+        loadConfigFromFile<TransportConfigData>(files.toList())
+
+    /** Create TransportConfig from file in resources directory */
+    @JvmStatic
+    fun fromResource(vararg resources: String): TransportConfig =
+        loadConfigFromResource<TransportConfigData>(resources.toList())
+  }
 }

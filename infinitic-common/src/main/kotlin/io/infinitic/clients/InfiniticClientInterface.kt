@@ -22,7 +22,6 @@
  */
 package io.infinitic.clients
 
-import io.infinitic.common.clients.messages.ClientMessage
 import io.infinitic.workflows.Consumer0
 import io.infinitic.workflows.Consumer1
 import io.infinitic.workflows.Consumer2
@@ -38,16 +37,11 @@ import java.io.Closeable
 import java.util.concurrent.CompletableFuture
 
 interface InfiniticClientInterface : Closeable {
-  /** Client's name This name must be unique */
+  /** Client's name - this name must be unique through all connected clients */
   val name: String
 
   /** Get last Deferred created by the call of a stub */
   val lastDeferred: Deferred<*>?
-
-  /** Wait for all messages to be sent */
-  fun join()
-
-  suspend fun handle(message: ClientMessage)
 
   /**
    * Create a stub for a new workflow
@@ -57,9 +51,9 @@ interface InfiniticClientInterface : Closeable {
    * @property meta the workflow's meta
    */
   fun <T : Any> newWorkflow(
-      klass: Class<out T>,
-      tags: Set<String>? = null,
-      meta: Map<String, ByteArray>?
+    klass: Class<out T>,
+    tags: Set<String>? = null,
+    meta: Map<String, ByteArray>?
   ): T
 
   /**
@@ -107,86 +101,86 @@ interface InfiniticClientInterface : Closeable {
 
   /** Dispatch with 2 parameters a task or workflow returning an object */
   fun <P1, P2, R : Any?> dispatchAsync(
-      method: (p1: P1, p2: P2) -> R,
-      p1: P1,
-      p2: P2
+    method: (p1: P1, p2: P2) -> R,
+    p1: P1,
+    p2: P2
   ): CompletableFuture<Deferred<R>> = startAsync { method.invoke(p1, p2) }
 
   /** Dispatch with 3 parameters a task or workflow returning an object */
   fun <P1, P2, P3, R : Any?> dispatchAsync(
-      method: (p1: P1, p2: P2, p3: P3) -> R,
-      p1: P1,
-      p2: P2,
-      p3: P3
+    method: (p1: P1, p2: P2, p3: P3) -> R,
+    p1: P1,
+    p2: P2,
+    p3: P3
   ): CompletableFuture<Deferred<R>> = startAsync { method.invoke(p1, p2, p3) }
 
   /** Dispatch with 4 parameters a task or workflow returning an object */
   fun <P1, P2, P3, P4, R : Any?> dispatchAsync(
-      method: (p1: P1, p2: P2, p3: P3, p4: P4) -> R,
-      p1: P1,
-      p2: P2,
-      p3: P3,
-      p4: P4
+    method: (p1: P1, p2: P2, p3: P3, p4: P4) -> R,
+    p1: P1,
+    p2: P2,
+    p3: P3,
+    p4: P4
   ): CompletableFuture<Deferred<R>> = startAsync { method.invoke(p1, p2, p3, p4) }
 
   /** Dispatch with 5 parameters a task or workflow returning an object */
   fun <P1, P2, P3, P4, P5, R : Any?> dispatchAsync(
-      method: (p1: P1, p2: P2, p3: P3, p4: P4, p5: P5) -> R,
-      p1: P1,
-      p2: P2,
-      p3: P3,
-      p4: P4,
-      p5: P5
+    method: (p1: P1, p2: P2, p3: P3, p4: P4, p5: P5) -> R,
+    p1: P1,
+    p2: P2,
+    p3: P3,
+    p4: P4,
+    p5: P5
   ): CompletableFuture<Deferred<R>> = startAsync { method.invoke(p1, p2, p3, p4, p5) }
 
   /** Dispatch with 6 parameters a task or workflow returning an object */
   fun <P1, P2, P3, P4, P5, P6, R : Any?> dispatchAsync(
-      method: (p1: P1, p2: P2, p3: P3, p4: P4, p5: P5, p6: P6) -> R,
-      p1: P1,
-      p2: P2,
-      p3: P3,
-      p4: P4,
-      p5: P5,
-      p6: P6
+    method: (p1: P1, p2: P2, p3: P3, p4: P4, p5: P5, p6: P6) -> R,
+    p1: P1,
+    p2: P2,
+    p3: P3,
+    p4: P4,
+    p5: P5,
+    p6: P6
   ): CompletableFuture<Deferred<R>> = startAsync { method.invoke(p1, p2, p3, p4, p5, p6) }
 
   /** Dispatch with 7 parameters a task or workflow returning an object */
   fun <P1, P2, P3, P4, P5, P6, P7, R : Any?> dispatchAsync(
-      method: (p1: P1, p2: P2, p3: P3, p4: P4, p5: P5, p6: P6, p7: P7) -> R,
-      p1: P1,
-      p2: P2,
-      p3: P3,
-      p4: P4,
-      p5: P5,
-      p6: P6,
-      p7: P7
+    method: (p1: P1, p2: P2, p3: P3, p4: P4, p5: P5, p6: P6, p7: P7) -> R,
+    p1: P1,
+    p2: P2,
+    p3: P3,
+    p4: P4,
+    p5: P5,
+    p6: P6,
+    p7: P7
   ): CompletableFuture<Deferred<R>> = startAsync { method.invoke(p1, p2, p3, p4, p5, p6, p7) }
 
   /** Dispatch with 8 parameters a task or workflow returning an object */
   fun <P1, P2, P3, P4, P5, P6, P7, P8, R : Any?> dispatchAsync(
-      method: (p1: P1, p2: P2, p3: P3, p4: P4, p5: P5, p6: P6, p7: P7, p8: P8) -> R,
-      p1: P1,
-      p2: P2,
-      p3: P3,
-      p4: P4,
-      p5: P5,
-      p6: P6,
-      p7: P7,
-      p8: P8
+    method: (p1: P1, p2: P2, p3: P3, p4: P4, p5: P5, p6: P6, p7: P7, p8: P8) -> R,
+    p1: P1,
+    p2: P2,
+    p3: P3,
+    p4: P4,
+    p5: P5,
+    p6: P6,
+    p7: P7,
+    p8: P8
   ): CompletableFuture<Deferred<R>> = startAsync { method.invoke(p1, p2, p3, p4, p5, p6, p7, p8) }
 
   /** Dispatch with 9 parameters a task or workflow returning an object */
   fun <P1, P2, P3, P4, P5, P6, P7, P8, P9, R : Any?> dispatchAsync(
-      method: (p1: P1, p2: P2, p3: P3, p4: P4, p5: P5, p6: P6, p7: P7, p8: P8, p9: P9) -> R,
-      p1: P1,
-      p2: P2,
-      p3: P3,
-      p4: P4,
-      p5: P5,
-      p6: P6,
-      p7: P7,
-      p8: P8,
-      p9: P9
+    method: (p1: P1, p2: P2, p3: P3, p4: P4, p5: P5, p6: P6, p7: P7, p8: P8, p9: P9) -> R,
+    p1: P1,
+    p2: P2,
+    p3: P3,
+    p4: P4,
+    p5: P5,
+    p6: P6,
+    p7: P7,
+    p8: P8,
+    p9: P9
   ): CompletableFuture<Deferred<R>> = startAsync {
     method.invoke(p1, p2, p3, p4, p5, p6, p7, p8, p9)
   }
@@ -204,79 +198,79 @@ interface InfiniticClientInterface : Closeable {
 
   /** Dispatch with 3 parameters a task or workflow returning an object */
   fun <P1, P2, P3, R : Any?> dispatch(
-      method: (p1: P1, p2: P2, p3: P3) -> R,
-      p1: P1,
-      p2: P2,
-      p3: P3
+    method: (p1: P1, p2: P2, p3: P3) -> R,
+    p1: P1,
+    p2: P2,
+    p3: P3
   ): Deferred<R> = dispatchAsync(method, p1, p2, p3).join()
 
   /** Dispatch with 4 parameters a task or workflow returning an object */
   fun <P1, P2, P3, P4, R : Any?> dispatch(
-      method: (p1: P1, p2: P2, p3: P3, p4: P4) -> R,
-      p1: P1,
-      p2: P2,
-      p3: P3,
-      p4: P4
+    method: (p1: P1, p2: P2, p3: P3, p4: P4) -> R,
+    p1: P1,
+    p2: P2,
+    p3: P3,
+    p4: P4
   ): Deferred<R> = dispatchAsync(method, p1, p2, p3, p4).join()
 
   /** Dispatch with 5 parameters a task or workflow returning an object */
   fun <P1, P2, P3, P4, P5, R : Any?> dispatch(
-      method: (p1: P1, p2: P2, p3: P3, p4: P4, p5: P5) -> R,
-      p1: P1,
-      p2: P2,
-      p3: P3,
-      p4: P4,
-      p5: P5
+    method: (p1: P1, p2: P2, p3: P3, p4: P4, p5: P5) -> R,
+    p1: P1,
+    p2: P2,
+    p3: P3,
+    p4: P4,
+    p5: P5
   ): Deferred<R> = dispatchAsync(method, p1, p2, p3, p4, p5).join()
 
   /** Dispatch with 6 parameters a task or workflow returning an object */
   fun <P1, P2, P3, P4, P5, P6, R : Any?> dispatch(
-      method: (p1: P1, p2: P2, p3: P3, p4: P4, p5: P5, p6: P6) -> R,
-      p1: P1,
-      p2: P2,
-      p3: P3,
-      p4: P4,
-      p5: P5,
-      p6: P6
+    method: (p1: P1, p2: P2, p3: P3, p4: P4, p5: P5, p6: P6) -> R,
+    p1: P1,
+    p2: P2,
+    p3: P3,
+    p4: P4,
+    p5: P5,
+    p6: P6
   ): Deferred<R> = dispatchAsync(method, p1, p2, p3, p4, p5, p6).join()
 
   /** Dispatch with 7 parameters a task or workflow returning an object */
   fun <P1, P2, P3, P4, P5, P6, P7, R : Any?> dispatch(
-      method: (p1: P1, p2: P2, p3: P3, p4: P4, p5: P5, p6: P6, p7: P7) -> R,
-      p1: P1,
-      p2: P2,
-      p3: P3,
-      p4: P4,
-      p5: P5,
-      p6: P6,
-      p7: P7
+    method: (p1: P1, p2: P2, p3: P3, p4: P4, p5: P5, p6: P6, p7: P7) -> R,
+    p1: P1,
+    p2: P2,
+    p3: P3,
+    p4: P4,
+    p5: P5,
+    p6: P6,
+    p7: P7
   ): Deferred<R> = dispatchAsync(method, p1, p2, p3, p4, p5, p6, p7).join()
 
   /** Dispatch with 8 parameters a task or workflow returning an object */
   fun <P1, P2, P3, P4, P5, P6, P7, P8, R : Any?> dispatch(
-      method: (p1: P1, p2: P2, p3: P3, p4: P4, p5: P5, p6: P6, p7: P7, p8: P8) -> R,
-      p1: P1,
-      p2: P2,
-      p3: P3,
-      p4: P4,
-      p5: P5,
-      p6: P6,
-      p7: P7,
-      p8: P8
+    method: (p1: P1, p2: P2, p3: P3, p4: P4, p5: P5, p6: P6, p7: P7, p8: P8) -> R,
+    p1: P1,
+    p2: P2,
+    p3: P3,
+    p4: P4,
+    p5: P5,
+    p6: P6,
+    p7: P7,
+    p8: P8
   ): Deferred<R> = dispatchAsync(method, p1, p2, p3, p4, p5, p6, p7, p8).join()
 
   /** Dispatch with 9 parameters a task or workflow returning an object */
   fun <P1, P2, P3, P4, P5, P6, P7, P8, P9, R : Any?> dispatch(
-      method: (p1: P1, p2: P2, p3: P3, p4: P4, p5: P5, p6: P6, p7: P7, p8: P8, p9: P9) -> R,
-      p1: P1,
-      p2: P2,
-      p3: P3,
-      p4: P4,
-      p5: P5,
-      p6: P6,
-      p7: P7,
-      p8: P8,
-      p9: P9
+    method: (p1: P1, p2: P2, p3: P3, p4: P4, p5: P5, p6: P6, p7: P7, p8: P8, p9: P9) -> R,
+    p1: P1,
+    p2: P2,
+    p3: P3,
+    p4: P4,
+    p5: P5,
+    p6: P6,
+    p7: P7,
+    p8: P8,
+    p9: P9
   ): Deferred<R> = dispatchAsync(method, p1, p2, p3, p4, p5, p6, p7, p8, p9).join()
 
   /** Dispatch without parameter a task or workflow returning void */
@@ -292,88 +286,88 @@ interface InfiniticClientInterface : Closeable {
 
   /** Dispatch with 2 parameters a task or workflow returning void */
   fun <P1, P2> dispatchVoidAsync(
-      method: Consumer2<P1, P2>,
-      p1: P1,
-      p2: P2
+    method: Consumer2<P1, P2>,
+    p1: P1,
+    p2: P2
   ): CompletableFuture<Deferred<Void>> = startVoidAsync { method.apply(p1, p2) }
 
   /** Dispatch with 3 parameters a task or workflow returning void */
   fun <P1, P2, P3> dispatchVoidAsync(
-      method: Consumer3<P1, P2, P3>,
-      p1: P1,
-      p2: P2,
-      p3: P3
+    method: Consumer3<P1, P2, P3>,
+    p1: P1,
+    p2: P2,
+    p3: P3
   ): CompletableFuture<Deferred<Void>> = startVoidAsync { method.apply(p1, p2, p3) }
 
   /** Dispatch with 4 parameters a task or workflow returning void */
   fun <P1, P2, P3, P4> dispatchVoidAsync(
-      method: Consumer4<P1, P2, P3, P4>,
-      p1: P1,
-      p2: P2,
-      p3: P3,
-      p4: P4
+    method: Consumer4<P1, P2, P3, P4>,
+    p1: P1,
+    p2: P2,
+    p3: P3,
+    p4: P4
   ): CompletableFuture<Deferred<Void>> = startVoidAsync { method.apply(p1, p2, p3, p4) }
 
   /** Dispatch with 5 parameters a task or workflow returning void */
   fun <P1, P2, P3, P4, P5> dispatchVoidAsync(
-      method: Consumer5<P1, P2, P3, P4, P5>,
-      p1: P1,
-      p2: P2,
-      p3: P3,
-      p4: P4,
-      p5: P5
+    method: Consumer5<P1, P2, P3, P4, P5>,
+    p1: P1,
+    p2: P2,
+    p3: P3,
+    p4: P4,
+    p5: P5
   ): CompletableFuture<Deferred<Void>> = startVoidAsync { method.apply(p1, p2, p3, p4, p5) }
 
   /** Dispatch with 6 parameters a task or workflow returning void */
   fun <P1, P2, P3, P4, P5, P6> dispatchVoidAsync(
-      method: Consumer6<P1, P2, P3, P4, P5, P6>,
-      p1: P1,
-      p2: P2,
-      p3: P3,
-      p4: P4,
-      p5: P5,
-      p6: P6
+    method: Consumer6<P1, P2, P3, P4, P5, P6>,
+    p1: P1,
+    p2: P2,
+    p3: P3,
+    p4: P4,
+    p5: P5,
+    p6: P6
   ): CompletableFuture<Deferred<Void>> = startVoidAsync { method.apply(p1, p2, p3, p4, p5, p6) }
 
   /** Dispatch with 7 parameters a task or workflow returning void */
   fun <P1, P2, P3, P4, P5, P6, P7> dispatchVoidAsync(
-      method: Consumer7<P1, P2, P3, P4, P5, P6, P7>,
-      p1: P1,
-      p2: P2,
-      p3: P3,
-      p4: P4,
-      p5: P5,
-      p6: P6,
-      p7: P7
+    method: Consumer7<P1, P2, P3, P4, P5, P6, P7>,
+    p1: P1,
+    p2: P2,
+    p3: P3,
+    p4: P4,
+    p5: P5,
+    p6: P6,
+    p7: P7
   ): CompletableFuture<Deferred<Void>> = startVoidAsync { method.apply(p1, p2, p3, p4, p5, p6, p7) }
 
   /** Dispatch with 8 parameters a task or workflow returning void */
   fun <P1, P2, P3, P4, P5, P6, P7, P8> dispatchVoidAsync(
-      method: Consumer8<P1, P2, P3, P4, P5, P6, P7, P8>,
-      p1: P1,
-      p2: P2,
-      p3: P3,
-      p4: P4,
-      p5: P5,
-      p6: P6,
-      p7: P7,
-      p8: P8
+    method: Consumer8<P1, P2, P3, P4, P5, P6, P7, P8>,
+    p1: P1,
+    p2: P2,
+    p3: P3,
+    p4: P4,
+    p5: P5,
+    p6: P6,
+    p7: P7,
+    p8: P8
   ): CompletableFuture<Deferred<Void>> = startVoidAsync {
     method.apply(p1, p2, p3, p4, p5, p6, p7, p8)
   }
 
   /** Dispatch with 9 parameters a task or workflow returning void */
   fun <P1, P2, P3, P4, P5, P6, P7, P8, P9> dispatchVoidAsync(
-      method: Consumer9<P1, P2, P3, P4, P5, P6, P7, P8, P9>,
-      p1: P1,
-      p2: P2,
-      p3: P3,
-      p4: P4,
-      p5: P5,
-      p6: P6,
-      p7: P7,
-      p8: P8,
-      p9: P9
+    method: Consumer9<P1, P2, P3, P4, P5, P6, P7, P8, P9>,
+    p1: P1,
+    p2: P2,
+    p3: P3,
+    p4: P4,
+    p5: P5,
+    p6: P6,
+    p7: P7,
+    p8: P8,
+    p9: P9
   ): CompletableFuture<Deferred<Void>> = startVoidAsync {
     method.apply(p1, p2, p3, p4, p5, p6, p7, p8, p9)
   }
@@ -391,79 +385,79 @@ interface InfiniticClientInterface : Closeable {
 
   /** Dispatch with 3 parameters a task or workflow returning void */
   fun <P1, P2, P3> dispatchVoid(
-      method: Consumer3<P1, P2, P3>,
-      p1: P1,
-      p2: P2,
-      p3: P3
+    method: Consumer3<P1, P2, P3>,
+    p1: P1,
+    p2: P2,
+    p3: P3
   ): Deferred<Void> = dispatchVoidAsync(method, p1, p2, p3).join()
 
   /** Dispatch with 4 parameters a task or workflow returning void */
   fun <P1, P2, P3, P4> dispatchVoid(
-      method: Consumer4<P1, P2, P3, P4>,
-      p1: P1,
-      p2: P2,
-      p3: P3,
-      p4: P4
+    method: Consumer4<P1, P2, P3, P4>,
+    p1: P1,
+    p2: P2,
+    p3: P3,
+    p4: P4
   ): Deferred<Void> = dispatchVoidAsync(method, p1, p2, p3, p4).join()
 
   /** Dispatch with 5 parameters a task or workflow returning void */
   fun <P1, P2, P3, P4, P5> dispatchVoid(
-      method: Consumer5<P1, P2, P3, P4, P5>,
-      p1: P1,
-      p2: P2,
-      p3: P3,
-      p4: P4,
-      p5: P5
+    method: Consumer5<P1, P2, P3, P4, P5>,
+    p1: P1,
+    p2: P2,
+    p3: P3,
+    p4: P4,
+    p5: P5
   ): Deferred<Void> = dispatchVoidAsync(method, p1, p2, p3, p4, p5).join()
 
   /** Dispatch with 6 parameters a task or workflow returning void */
   fun <P1, P2, P3, P4, P5, P6> dispatchVoid(
-      method: Consumer6<P1, P2, P3, P4, P5, P6>,
-      p1: P1,
-      p2: P2,
-      p3: P3,
-      p4: P4,
-      p5: P5,
-      p6: P6
+    method: Consumer6<P1, P2, P3, P4, P5, P6>,
+    p1: P1,
+    p2: P2,
+    p3: P3,
+    p4: P4,
+    p5: P5,
+    p6: P6
   ): Deferred<Void> = dispatchVoidAsync(method, p1, p2, p3, p4, p5, p6).join()
 
   /** Dispatch with 7 parameters a task or workflow returning void */
   fun <P1, P2, P3, P4, P5, P6, P7> dispatchVoid(
-      method: Consumer7<P1, P2, P3, P4, P5, P6, P7>,
-      p1: P1,
-      p2: P2,
-      p3: P3,
-      p4: P4,
-      p5: P5,
-      p6: P6,
-      p7: P7
+    method: Consumer7<P1, P2, P3, P4, P5, P6, P7>,
+    p1: P1,
+    p2: P2,
+    p3: P3,
+    p4: P4,
+    p5: P5,
+    p6: P6,
+    p7: P7
   ): Deferred<Void> = dispatchVoidAsync(method, p1, p2, p3, p4, p5, p6, p7).join()
 
   /** Dispatch with 8 parameters a task or workflow returning void */
   fun <P1, P2, P3, P4, P5, P6, P7, P8> dispatchVoid(
-      method: Consumer8<P1, P2, P3, P4, P5, P6, P7, P8>,
-      p1: P1,
-      p2: P2,
-      p3: P3,
-      p4: P4,
-      p5: P5,
-      p6: P6,
-      p7: P7,
-      p8: P8
+    method: Consumer8<P1, P2, P3, P4, P5, P6, P7, P8>,
+    p1: P1,
+    p2: P2,
+    p3: P3,
+    p4: P4,
+    p5: P5,
+    p6: P6,
+    p7: P7,
+    p8: P8
   ): Deferred<Void> = dispatchVoidAsync(method, p1, p2, p3, p4, p5, p6, p7, p8).join()
 
   /** Dispatch with 9 parameters a task or workflow returning void */
   fun <P1, P2, P3, P4, P5, P6, P7, P8, P9> dispatchVoid(
-      method: Consumer9<P1, P2, P3, P4, P5, P6, P7, P8, P9>,
-      p1: P1,
-      p2: P2,
-      p3: P3,
-      p4: P4,
-      p5: P5,
-      p6: P6,
-      p7: P7,
-      p8: P8,
-      p9: P9
+    method: Consumer9<P1, P2, P3, P4, P5, P6, P7, P8, P9>,
+    p1: P1,
+    p2: P2,
+    p3: P3,
+    p4: P4,
+    p5: P5,
+    p6: P6,
+    p7: P7,
+    p8: P8,
+    p9: P9
   ): Deferred<Void> = dispatchVoidAsync(method, p1, p2, p3, p4, p5, p6, p7, p8, p9).join()
 
   /**
@@ -551,9 +545,9 @@ interface InfiniticClientInterface : Closeable {
    * [taskStatus] and [taskClass] can be combined, eg. to target failed tasks of a specific class.
    */
   fun retryTasksAsync(
-      stub: Any,
-      taskStatus: DeferredStatus? = null,
-      taskClass: Class<*>? = null
+    stub: Any,
+    taskStatus: DeferredStatus? = null,
+    taskClass: Class<*>? = null
   ): CompletableFuture<Unit>
 
   /**

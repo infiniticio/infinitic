@@ -30,7 +30,7 @@ import io.infinitic.dashboard.panels.infrastructure.requests.Completed
 import io.infinitic.dashboard.panels.infrastructure.requests.Failed
 import io.infinitic.dashboard.panels.infrastructure.requests.Loading
 import io.infinitic.dashboard.panels.infrastructure.requests.Request
-import io.infinitic.dashboard.panels.infrastructure.task.TaskPanel
+import io.infinitic.dashboard.panels.infrastructure.service.ServicePanel
 import io.infinitic.dashboard.panels.infrastructure.workflow.WorkflowPanel
 import io.infinitic.dashboard.routeTo
 import io.infinitic.dashboard.slideovers.Slideover
@@ -64,10 +64,10 @@ object AllJobsPanel : Panel() {
 
   lateinit var job: Job
 
-  private val infraTasksState = KVar(AllTasksState())
+  private val infraServicesState = KVar(AllServicesState())
   private val infraWorkflowsState = KVar(AllWorkflowsState())
 
-  private var selectionType = JobType.TASK
+  private var selectionType = JobType.SERVICE
   private val selectionTitle = KVal("Error!")
   private val selectionNames: KVar<Request<Set<String>>> = KVar(Loading())
 
@@ -81,14 +81,15 @@ object AllJobsPanel : Panel() {
                     is Loading<Set<String>> -> "Loading..."
                     is Failed<Set<String>> -> request.error.stackTraceToString()
                     is Completed<Set<String>> -> request.result.joinToString()
-                  })
+                  },
+              )
         }
       }
 
   init {
     // this listener ensures that the slideover appear/disappear with right content
-    infraTasksState.addListener { old, new ->
-      if (selectionType == JobType.TASK) {
+    infraServicesState.addListener { old, new ->
+      if (selectionType == JobType.SERVICE) {
         when (new.names) {
           is Failed -> {
             selectionNames.value = new.names
@@ -96,6 +97,7 @@ object AllJobsPanel : Panel() {
               slideover.open()
             }
           }
+
           else -> slideover.close()
         }
       }
@@ -111,6 +113,7 @@ object AllJobsPanel : Panel() {
               slideover.open()
             }
           }
+
           else -> slideover.close()
         }
       }
@@ -122,7 +125,7 @@ object AllJobsPanel : Panel() {
       job =
           InfiniticDashboard.scope.launch {
             // update of task names every 30 seconds
-            update(infraTasksState)
+            update(infraServicesState)
             // shift the updates
             delay(2000)
             // update of workflow names every 30 seconds
@@ -148,7 +151,8 @@ object AllJobsPanel : Panel() {
                 // title
                 h2()
                     .classes(
-                        "mt-2 text-2xl font-bold leading-7 text-gray-900 sm:text-3xl sm:truncate")
+                        "mt-2 text-2xl font-bold leading-7 text-gray-900 sm:text-3xl sm:truncate",
+                    )
                     .text(InfraMenu.title)
               }
             }
@@ -169,7 +173,8 @@ object AllJobsPanel : Panel() {
                     """
                         Here is the list of your workflows, based on existing topics found in your Pulsar cluster.
                         Click on a row for a complete view of the topics used during the execution of a workflow.
-                    """)
+                    """,
+                )
             // Workflows table
             div().classes("pt-5").new {
               div().classes("max-w-none mx-auto").new {
@@ -181,7 +186,8 @@ object AllJobsPanel : Panel() {
                           .new {
                             div()
                                 .classes(
-                                    "shadow overflow-hidden border-b border-gray-200 sm:rounded-lg")
+                                    "shadow overflow-hidden border-b border-gray-200 sm:rounded-lg",
+                                )
                                 .new {
                                   render(infraWorkflowsState) { state ->
                                     table().classes("min-w-full divide-y divide-gray-200").new {
@@ -189,22 +195,26 @@ object AllJobsPanel : Panel() {
                                         tr().new {
                                           th()
                                               .classes(
-                                                  "px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider")
+                                                  "px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider",
+                                              )
                                               .set("scope", "col")
                                               .text("Name")
                                           th()
                                               .classes(
-                                                  "px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider")
+                                                  "px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider",
+                                              )
                                               .set("scope", "col")
                                               .text("# Executors")
                                           th()
                                               .classes(
-                                                  "px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider")
+                                                  "px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider",
+                                              )
                                               .set("scope", "col")
                                               .text("Executors Backlog")
                                           th()
                                               .classes(
-                                                  "px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider")
+                                                  "px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider",
+                                              )
                                               .set("scope", "col")
                                               .text("Executors Msg Rate Out")
                                         }
@@ -213,19 +223,23 @@ object AllJobsPanel : Panel() {
                                         when (val names = state.names) {
                                           is Loading -> displayNamesLoading()
                                           is Failed ->
-                                              displayNamesError(state.names, JobType.WORKFLOW)
+                                            displayNamesError(state.names, JobType.WORKFLOW)
+
                                           is Completed ->
-                                              names.result.forEach {
-                                                when (val request = state.stats[it]!!) {
-                                                  is Loading ->
-                                                      displayExecutorLoading(it, JobType.WORKFLOW)
-                                                  is Failed ->
-                                                      displayExecutorError(it, JobType.WORKFLOW)
-                                                  is Completed ->
-                                                      displayExecutorStats(
-                                                          it, request.result, JobType.WORKFLOW)
-                                                }
+                                            names.result.forEach {
+                                              when (val request = state.stats[it]!!) {
+                                                is Loading ->
+                                                  displayExecutorLoading(it, JobType.WORKFLOW)
+
+                                                is Failed ->
+                                                  displayExecutorError(it, JobType.WORKFLOW)
+
+                                                is Completed ->
+                                                  displayExecutorStats(
+                                                      it, request.result, JobType.WORKFLOW,
+                                                  )
                                               }
+                                            }
                                         }
                                       }
                                     }
@@ -241,20 +255,21 @@ object AllJobsPanel : Panel() {
         }
 
         // TASKS
-        val tasksLastUpdated = infraTasksState.property(AllTasksState::lastUpdatedAt)
-        val tasksIsLoading = infraTasksState.property(AllTasksState::isLoading)
+        val servicesLastUpdated = infraServicesState.property(AllServicesState::lastUpdatedAt)
+        val servicesIsLoading = infraServicesState.property(AllServicesState::isLoading)
 
         div().classes("pt-8 pb-8").new {
           div().classes("max-w-7xl mx-auto sm:px-6 md:px-8").new {
             // Tasks header
-            displayJobSectionHeader("Tasks", tasksIsLoading, tasksLastUpdated)
+            displayJobSectionHeader("Services", servicesIsLoading, servicesLastUpdated)
 
             p().classes("mt-7 text-sm text-gray-500")
                 .text(
                     """
-                        Here is the list of your tasks, based on existing topics found in your Pulsar cluster.
+                        Here is the list of your services, based on existing topics found in your Pulsar cluster.
                         Click on a row for a complete view of the topics used during the execution of a task.
-                """)
+                """,
+                )
             // Tasks table
             div().classes("pt-5").new {
               div().classes("max-w-none mx-auto").new {
@@ -266,30 +281,35 @@ object AllJobsPanel : Panel() {
                           .new {
                             div()
                                 .classes(
-                                    "shadow overflow-hidden border-b border-gray-200 sm:rounded-lg")
+                                    "shadow overflow-hidden border-b border-gray-200 sm:rounded-lg",
+                                )
                                 .new {
-                                  render(infraTasksState) { state ->
+                                  render(infraServicesState) { state ->
                                     table().classes("min-w-full divide-y divide-gray-200").new {
                                       thead().classes("bg-gray-50").new {
                                         tr().new {
                                           th()
                                               .classes(
-                                                  "px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider")
+                                                  "px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider",
+                                              )
                                               .set("scope", "col")
                                               .text("Name")
                                           th()
                                               .classes(
-                                                  "px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider")
+                                                  "px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider",
+                                              )
                                               .set("scope", "col")
                                               .text("# Executors")
                                           th()
                                               .classes(
-                                                  "px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider")
+                                                  "px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider",
+                                              )
                                               .set("scope", "col")
                                               .text("Executors Backlog")
                                           th()
                                               .classes(
-                                                  "px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider")
+                                                  "px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider",
+                                              )
                                               .set("scope", "col")
                                               .text("Executors Msg Rate Out")
                                         }
@@ -297,19 +317,26 @@ object AllJobsPanel : Panel() {
                                       tbody().new {
                                         when (val request = state.names) {
                                           is Loading -> displayNamesLoading()
-                                          is Failed -> displayNamesError(state.names, JobType.TASK)
+                                          is Failed -> displayNamesError(
+                                              state.names,
+                                              JobType.SERVICE,
+                                          )
+
                                           is Completed ->
-                                              request.result.forEach {
-                                                when (val stats = state.stats[it]!!) {
-                                                  is Loading ->
-                                                      displayExecutorLoading(it, JobType.TASK)
-                                                  is Failed ->
-                                                      displayExecutorError(it, JobType.TASK)
-                                                  is Completed ->
-                                                      displayExecutorStats(
-                                                          it, stats.result, JobType.TASK)
-                                                }
+                                            request.result.forEach {
+                                              when (val stats = state.stats[it]!!) {
+                                                is Loading ->
+                                                  displayExecutorLoading(it, JobType.SERVICE)
+
+                                                is Failed ->
+                                                  displayExecutorError(it, JobType.SERVICE)
+
+                                                is Completed ->
+                                                  displayExecutorStats(
+                                                      it, stats.result, JobType.SERVICE,
+                                                  )
                                               }
+                                            }
                                         }
                                       }
                                     }
@@ -337,8 +364,8 @@ object AllJobsPanel : Panel() {
   }
 
   private fun ElementCreator<Element>.displayNamesError(
-      names: Request<Set<String>>,
-      type: JobType
+    names: Request<Set<String>>,
+    type: JobType
   ) {
     val row = tr()
     row.classes("bg-white cursor-pointer hover:bg-gray-50").new {
@@ -362,7 +389,7 @@ object AllJobsPanel : Panel() {
     }
     row.on.click {
       when (type) {
-        JobType.TASK -> browser.routeTo(TaskPanel.from(name))
+        JobType.SERVICE -> browser.routeTo(ServicePanel.from(name))
         JobType.WORKFLOW -> browser.routeTo(WorkflowPanel.from(name))
       }
     }
@@ -378,16 +405,16 @@ object AllJobsPanel : Panel() {
     }
     row.on.click {
       when (type) {
-        JobType.TASK -> browser.routeTo(TaskPanel.from(name))
+        JobType.SERVICE -> browser.routeTo(ServicePanel.from(name))
         JobType.WORKFLOW -> browser.routeTo(WorkflowPanel.from(name))
       }
     }
   }
 
   private fun ElementCreator<Element>.displayExecutorStats(
-      name: String,
-      stats: PartitionedTopicStats,
-      type: JobType
+    name: String,
+    stats: PartitionedTopicStats,
+    type: JobType
   ) {
     stats.subscriptions.map { entry ->
       val row = tr()
@@ -401,7 +428,7 @@ object AllJobsPanel : Panel() {
       }
       row.on.click {
         when (type) {
-          JobType.TASK -> browser.routeTo(TaskPanel.from(name))
+          JobType.SERVICE -> browser.routeTo(ServicePanel.from(name))
           JobType.WORKFLOW -> browser.routeTo(WorkflowPanel.from(name))
         }
       }

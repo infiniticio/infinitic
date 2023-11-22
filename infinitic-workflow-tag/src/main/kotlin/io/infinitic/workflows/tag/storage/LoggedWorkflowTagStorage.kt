@@ -22,11 +22,11 @@
  */
 package io.infinitic.workflows.tag.storage
 
+import io.github.oshai.kotlinlogging.KotlinLogging
 import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.data.workflows.WorkflowName
 import io.infinitic.common.workflows.data.workflows.WorkflowTag
 import io.infinitic.common.workflows.tags.storage.WorkflowTagStorage
-import mu.KotlinLogging
 import org.jetbrains.annotations.TestOnly
 
 class LoggedWorkflowTagStorage(private val storage: WorkflowTagStorage) : WorkflowTagStorage {
@@ -34,8 +34,8 @@ class LoggedWorkflowTagStorage(private val storage: WorkflowTagStorage) : Workfl
   private val logger = KotlinLogging.logger {}
 
   override suspend fun getWorkflowIds(
-      tag: WorkflowTag,
-      workflowName: WorkflowName
+    tag: WorkflowTag,
+    workflowName: WorkflowName
   ): Set<WorkflowId> {
     val workflowIds = storage.getWorkflowIds(tag, workflowName)
     logger.debug {
@@ -46,18 +46,18 @@ class LoggedWorkflowTagStorage(private val storage: WorkflowTagStorage) : Workfl
   }
 
   override suspend fun addWorkflowId(
-      tag: WorkflowTag,
-      workflowName: WorkflowName,
-      workflowId: WorkflowId
+    tag: WorkflowTag,
+    workflowName: WorkflowName,
+    workflowId: WorkflowId
   ) {
     logger.debug { "tag $tag - name $workflowName - addWorkflowId $workflowId" }
     storage.addWorkflowId(tag, workflowName, workflowId)
   }
 
   override suspend fun removeWorkflowId(
-      tag: WorkflowTag,
-      workflowName: WorkflowName,
-      workflowId: WorkflowId
+    tag: WorkflowTag,
+    workflowName: WorkflowName,
+    workflowId: WorkflowId
   ) {
     logger.debug { "tag $tag - name $workflowName - removeWorkflowId $workflowId" }
     storage.removeWorkflowId(tag, workflowName, workflowId)
@@ -65,7 +65,7 @@ class LoggedWorkflowTagStorage(private val storage: WorkflowTagStorage) : Workfl
 
   @TestOnly
   override fun flush() {
-    logger.warn("flushing workflowTagStorage")
+    logger.warn { "flushing workflowTagStorage" }
     storage.flush()
   }
 }

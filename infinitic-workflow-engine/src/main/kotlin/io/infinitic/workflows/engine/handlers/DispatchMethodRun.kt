@@ -22,27 +22,27 @@
  */
 package io.infinitic.workflows.engine.handlers
 
+import io.infinitic.common.transport.InfiniticProducer
 import io.infinitic.common.workflows.data.methodRuns.MethodRun
 import io.infinitic.common.workflows.data.methodRuns.MethodRunPosition
 import io.infinitic.common.workflows.engine.messages.DispatchMethod
 import io.infinitic.common.workflows.engine.state.WorkflowState
 import io.infinitic.workflows.engine.helpers.dispatchWorkflowTask
-import io.infinitic.workflows.engine.output.WorkflowEngineOutput
 import kotlinx.coroutines.CoroutineScope
 
 internal fun CoroutineScope.dispatchMethod(
-    workflowEngineOutput: WorkflowEngineOutput,
-    state: WorkflowState,
-    message: DispatchMethod
+  producer: InfiniticProducer,
+  state: WorkflowState,
+  message: DispatchMethod
 ) {
   val methodRun =
       MethodRun(
           methodRunId = message.methodRunId,
           waitingClients =
-              when (message.clientWaiting) {
-                true -> mutableSetOf(message.emitterName)
-                false -> mutableSetOf()
-              },
+          when (message.clientWaiting) {
+            true -> mutableSetOf(message.emitterName)
+            false -> mutableSetOf()
+          },
           parentWorkflowId = message.parentWorkflowId,
           parentWorkflowName = message.parentWorkflowName,
           parentMethodRunId = message.parentMethodRunId,
@@ -50,9 +50,10 @@ internal fun CoroutineScope.dispatchMethod(
           methodParameterTypes = message.methodParameterTypes,
           methodParameters = message.methodParameters,
           workflowTaskIndexAtStart = state.workflowTaskIndex,
-          propertiesNameHashAtStart = state.currentPropertiesNameHash.toMap())
+          propertiesNameHashAtStart = state.currentPropertiesNameHash.toMap(),
+      )
 
   state.methodRuns.add(methodRun)
 
-  dispatchWorkflowTask(workflowEngineOutput, state, methodRun, MethodRunPosition())
+  dispatchWorkflowTask(producer, state, methodRun, MethodRunPosition())
 }

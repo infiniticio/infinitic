@@ -22,13 +22,12 @@
  */
 package io.infinitic.services.tag
 
-import io.infinitic.common.clients.SendToClient
 import io.infinitic.common.clients.messages.ClientMessage
 import io.infinitic.common.clients.messages.TaskIdsByTag
 import io.infinitic.common.data.ClientName
 import io.infinitic.common.data.MessageId
+import io.infinitic.common.data.MillisDuration
 import io.infinitic.common.fixtures.TestFactory
-import io.infinitic.common.fixtures.mockSendToClient
 import io.infinitic.common.tasks.data.ServiceName
 import io.infinitic.common.tasks.data.TaskId
 import io.infinitic.common.tasks.data.TaskTag
@@ -37,6 +36,7 @@ import io.infinitic.common.tasks.tags.messages.AddTagToTask
 import io.infinitic.common.tasks.tags.messages.GetTaskIdsByTag
 import io.infinitic.common.tasks.tags.messages.RemoveTagFromTask
 import io.infinitic.common.tasks.tags.storage.TaskTagStorage
+import io.infinitic.common.transport.InfiniticProducer
 import io.infinitic.tasks.tag.TaskTagEngine
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
@@ -45,76 +45,43 @@ import io.mockk.CapturingSlot
 import io.mockk.Runs
 import io.mockk.coEvery
 import io.mockk.coVerifySequence
+import io.mockk.every
 import io.mockk.just
 import io.mockk.mockk
 import io.mockk.slot
+import java.util.concurrent.CompletableFuture
 
 private fun <T : Any> captured(slot: CapturingSlot<T>) =
     if (slot.isCaptured) slot.captured else null
 
 private val clientName = ClientName("clientTaskTagEngineTests")
 
-private lateinit var stateMessageId: CapturingSlot<String>
-private lateinit var stateTaskId: CapturingSlot<String>
-private lateinit var clientMessage: CapturingSlot<ClientMessage>
-private lateinit var taskExecutorMessage: CapturingSlot<TaskExecutorMessage>
+private var stateMessageId = slot<String>()
+private var stateTaskId = slot<String>()
+private var clientSlot = slot<ClientMessage>()
+private var taskExecutorSlot = slot<TaskExecutorMessage>()
+private var delaySlot = slot<MillisDuration>()
+
 
 private lateinit var tagStateStorage: TaskTagStorage
-private lateinit var sendToClient: SendToClient
 
-internal class TaskTagEngineTests :
-    StringSpec({
-      "addTaskTag should add id" {
-        // given
-        val msgIn = random<AddTagToTask>()
-        // when
-        getEngine(msgIn.taskTag, msgIn.serviceName).handle(msgIn)
-        // then
-        coVerifySequence {
-          tagStateStorage.addTaskId(msgIn.taskTag, msgIn.serviceName, msgIn.taskId)
-          tagStateStorage.setLastMessageId(msgIn.taskTag, msgIn.serviceName, msgIn.messageId)
-        }
-      }
-
-      "removeTaskTag should remove id" {
-        // given
-        val msgIn = random<RemoveTagFromTask>()
-        // when
-        getEngine(msgIn.taskTag, msgIn.serviceName, taskIds = setOf(msgIn.taskId)).handle(msgIn)
-        // then
-        coVerifySequence {
-          tagStateStorage.removeTaskId(msgIn.taskTag, msgIn.serviceName, msgIn.taskId)
-          tagStateStorage.setLastMessageId(msgIn.taskTag, msgIn.serviceName, msgIn.messageId)
-        }
-      }
-
-      "getTaskIdsPerTag should return set of ids" {
-        // given
-        val msgIn = random<GetTaskIdsByTag>()
-        val taskId1 = TaskId()
-        val taskId2 = TaskId()
-        // when
-        getEngine(msgIn.taskTag, msgIn.serviceName, taskIds = setOf(taskId1, taskId2)).handle(msgIn)
-        // then
-        coVerifySequence {
-          tagStateStorage.getTaskIds(msgIn.taskTag, msgIn.serviceName)
-          sendToClient(ofType<TaskIdsByTag>())
-          tagStateStorage.setLastMessageId(msgIn.taskTag, msgIn.serviceName, msgIn.messageId)
-        }
-
-        captured(clientMessage).shouldBeInstanceOf<TaskIdsByTag>()
-        (captured(clientMessage) as TaskIdsByTag).taskIds shouldBe setOf(taskId1, taskId2)
-      }
-    })
+private fun completed() = CompletableFuture.completedFuture(Unit)
+val producerMock = mockk<InfiniticProducer> {
+  every { name } returns "$clientName"
+  every { sendAsync(capture(clientSlot)) } returns completed()
+  every { sendAsync(capture(taskExecutorSlot), capture(delaySlot)) } returns completed()
+  coEvery { send(capture(clientSlot)) } answers { }
+  coEvery { send(capture(taskExecutorSlot), capture(delaySlot)) } answers { }
+}
 
 private inline fun <reified T : Any> random(values: Map<String, Any?>? = null) =
     TestFactory.random<T>(values)
 
 private fun mockTagStateStorage(
-    tag: TaskTag,
-    name: ServiceName,
-    messageId: MessageId?,
-    taskIds: Set<TaskId>
+  tag: TaskTag,
+  name: ServiceName,
+  messageId: MessageId?,
+  taskIds: Set<TaskId>
 ): TaskTagStorage {
   val tagStateStorage = mockk<TaskTagStorage>()
   coEvery { tagStateStorage.getLastMessageId(tag, name) } returns messageId
@@ -128,18 +95,71 @@ private fun mockTagStateStorage(
 }
 
 private fun getEngine(
-    taskTag: TaskTag,
-    serviceName: ServiceName,
-    messageId: MessageId? = MessageId(),
-    taskIds: Set<TaskId> = setOf(TaskId())
+  taskTag: TaskTag,
+  serviceName: ServiceName,
+  messageId: MessageId? = MessageId(),
+  taskIds: Set<TaskId> = setOf(TaskId())
 ): TaskTagEngine {
-  stateMessageId = slot()
-  stateTaskId = slot()
-  clientMessage = slot()
-  taskExecutorMessage = slot()
-
   tagStateStorage = mockTagStateStorage(taskTag, serviceName, messageId, taskIds)
-  sendToClient = mockSendToClient(clientMessage)
 
-  return TaskTagEngine(clientName, tagStateStorage, sendToClient)
+  return TaskTagEngine(tagStateStorage, producerMock)
 }
+
+internal class TaskTagEngineTests :
+  StringSpec(
+
+      {
+        // ensure slots are emptied between each test
+        beforeTest {
+          stateMessageId.clear()
+          clientSlot.clear()
+          taskExecutorSlot.clear()
+          delaySlot.clear()
+        }
+
+        "addTaskTag should add id" {
+          // given
+          val msgIn = random<AddTagToTask>()
+          // when
+          getEngine(msgIn.taskTag, msgIn.serviceName).handle(msgIn)
+          // then
+          coVerifySequence {
+            tagStateStorage.addTaskId(msgIn.taskTag, msgIn.serviceName, msgIn.taskId)
+            tagStateStorage.setLastMessageId(msgIn.taskTag, msgIn.serviceName, msgIn.messageId)
+          }
+        }
+
+        "removeTaskTag should remove id" {
+          // given
+          val msgIn = random<RemoveTagFromTask>()
+          // when
+          getEngine(msgIn.taskTag, msgIn.serviceName, taskIds = setOf(msgIn.taskId)).handle(msgIn)
+          // then
+          coVerifySequence {
+            tagStateStorage.removeTaskId(msgIn.taskTag, msgIn.serviceName, msgIn.taskId)
+            tagStateStorage.setLastMessageId(msgIn.taskTag, msgIn.serviceName, msgIn.messageId)
+          }
+        }
+
+        "getTaskIdsPerTag should return set of ids" {
+          // given
+          val msgIn = random<GetTaskIdsByTag>()
+          val taskId1 = TaskId()
+          val taskId2 = TaskId()
+          // when
+          getEngine(msgIn.taskTag, msgIn.serviceName, taskIds = setOf(taskId1, taskId2)).handle(
+              msgIn,
+          )
+          // then
+          coVerifySequence {
+            tagStateStorage.getTaskIds(msgIn.taskTag, msgIn.serviceName)
+            producerMock.name
+            producerMock.send(ofType<TaskIdsByTag>())
+            tagStateStorage.setLastMessageId(msgIn.taskTag, msgIn.serviceName, msgIn.messageId)
+          }
+
+          captured(clientSlot).shouldBeInstanceOf<TaskIdsByTag>()
+          (captured(clientSlot) as TaskIdsByTag).taskIds shouldBe setOf(taskId1, taskId2)
+        }
+      },
+  )

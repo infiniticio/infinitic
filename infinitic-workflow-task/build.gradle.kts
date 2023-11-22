@@ -24,9 +24,9 @@ dependencies {
   implementation(kotlin("reflect"))
   implementation(Libs.Coroutines.core)
   implementation(Libs.JsonPath.jayway)
+  implementation(Libs.Slf4j.api)
 
   implementation(project(":infinitic-common"))
-  implementation(project(":infinitic-client-base"))
 }
 
 apply("../publish.gradle.kts")

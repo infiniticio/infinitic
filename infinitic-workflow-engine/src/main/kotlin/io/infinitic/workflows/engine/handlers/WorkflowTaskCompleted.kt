@@ -24,9 +24,9 @@ package io.infinitic.workflows.engine.handlers
 
 import io.infinitic.common.clients.messages.MethodCompleted
 import io.infinitic.common.data.ClientName
-import io.infinitic.common.data.MillisDuration
 import io.infinitic.common.data.MillisInstant
 import io.infinitic.common.exceptions.thisShouldNotHappen
+import io.infinitic.common.transport.InfiniticProducer
 import io.infinitic.common.workflows.data.channels.ReceivingChannel
 import io.infinitic.common.workflows.data.channels.SignalId
 import io.infinitic.common.workflows.data.commands.CommandId
@@ -66,14 +66,13 @@ import io.infinitic.common.workflows.tags.messages.DispatchWorkflowByCustomId
 import io.infinitic.common.workflows.tags.messages.SendSignalByTag
 import io.infinitic.workflows.engine.helpers.dispatchTask
 import io.infinitic.workflows.engine.helpers.stepTerminated
-import io.infinitic.workflows.engine.output.WorkflowEngineOutput
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
 internal fun CoroutineScope.workflowTaskCompleted(
-    output: WorkflowEngineOutput,
-    state: WorkflowState,
-    message: TaskCompleted
+  producer: InfiniticProducer,
+  state: WorkflowState,
+  message: TaskCompleted
 ): MutableList<WorkflowEngineMessage> {
   val workflowTaskReturnValue =
       message.taskReturnValue.returnValue.value() as WorkflowTaskReturnValue
@@ -102,7 +101,7 @@ internal fun CoroutineScope.workflowTaskCompleted(
   workflowTaskReturnValue.properties.map {
     val hash = it.value.hash()
     if (it.key !in state.currentPropertiesNameHash.keys ||
-        hash != state.currentPropertiesNameHash[it.key]) {
+      hash != state.currentPropertiesNameHash[it.key]) {
       // new or updated property
       state.currentPropertiesNameHash[it.key] = hash
     }
@@ -118,13 +117,13 @@ internal fun CoroutineScope.workflowTaskCompleted(
     @Suppress("UNUSED_VARIABLE")
     val o =
         when (it) {
-          is DispatchTaskPastCommand -> dispatchTask(output, state, it)
-          is DispatchWorkflowPastCommand -> dispatchWorkflow(output, it, state)
-          is DispatchMethodPastCommand -> dispatchMethod(output, it, state, bufferedMessages)
-          is SendSignalPastCommand -> sendSignal(output, it, state, bufferedMessages)
+          is DispatchTaskPastCommand -> dispatchTask(producer, state, it)
+          is DispatchWorkflowPastCommand -> dispatchWorkflow(producer, it, state)
+          is DispatchMethodPastCommand -> dispatchMethod(producer, it, state, bufferedMessages)
+          is SendSignalPastCommand -> sendSignal(producer, it, state, bufferedMessages)
           is InlineTaskPastCommand -> Unit // Nothing to do
-          is StartDurationTimerPastCommand -> startDurationTimer(output, it, state)
-          is StartInstantTimerPastCommand -> startInstantTimer(output, it, state)
+          is StartDurationTimerPastCommand -> startDurationTimer(producer, it, state)
+          is StartInstantTimerPastCommand -> startInstantTimer(producer, it, state)
           is ReceiveSignalPastCommand -> receiveFromChannel(it, state)
         }
     methodRun.pastCommands.add(it)
@@ -141,7 +140,8 @@ internal fun CoroutineScope.workflowTaskCompleted(
             step = it.step,
             stepHash = it.stepHash,
             stepStatus = it.step.status(),
-            workflowTaskIndexAtStart = state.workflowTaskIndex)
+            workflowTaskIndexAtStart = state.workflowTaskIndex,
+        )
   }
 
   // if method is completed for the first time
@@ -157,8 +157,9 @@ internal fun CoroutineScope.workflowTaskCompleted(
               workflowId = state.workflowId,
               methodRunId = methodRun.methodRunId,
               methodReturnValue = methodRun.methodReturnValue!!,
-              emitterName = output.clientName)
-      launch { output.sendEventsToClient(workflowCompleted) }
+              emitterName = ClientName(producer.name),
+          )
+      launch { producer.send(workflowCompleted) }
     }
     methodRun.waitingClients.clear()
 
@@ -170,16 +171,18 @@ internal fun CoroutineScope.workflowTaskCompleted(
               workflowId = it,
               methodRunId = methodRun.parentMethodRunId ?: thisShouldNotHappen(),
               childWorkflowReturnValue =
-                  WorkflowReturnValue(
-                      workflowId = state.workflowId,
-                      methodRunId = methodRun.methodRunId,
-                      returnValue = workflowTaskReturnValue.methodReturnValue!!),
-              emitterName = output.clientName)
+              WorkflowReturnValue(
+                  workflowId = state.workflowId,
+                  methodRunId = methodRun.methodRunId,
+                  returnValue = workflowTaskReturnValue.methodReturnValue!!,
+              ),
+              emitterName = ClientName(producer.name),
+          )
       if (it == state.workflowId) {
         // case of method dispatched within same workflow
         bufferedMessages.add(childMethodCompleted)
       } else {
-        launch { output.sendToWorkflowEngine(childMethodCompleted) }
+        launch { producer.send(childMethodCompleted) }
       }
     }
   }
@@ -189,7 +192,7 @@ internal fun CoroutineScope.workflowTaskCompleted(
     val commandId = state.runningTerminatedCommands.first()
     val pastCommand = state.getPastCommand(commandId, methodRun)
 
-    if (!stepTerminated(output, state, pastCommand)) {
+    if (!stepTerminated(producer, state, pastCommand)) {
       // if no additional step can be completed, we can remove this command
       state.runningTerminatedCommands.removeFirst()
     }
@@ -201,29 +204,29 @@ internal fun CoroutineScope.workflowTaskCompleted(
 }
 
 private fun CoroutineScope.startDurationTimer(
-    output: WorkflowEngineOutput,
-    newCommand: StartDurationTimerPastCommand,
-    state: WorkflowState
+  producer: InfiniticProducer,
+  newCommand: StartDurationTimerPastCommand,
+  state: WorkflowState
 ) {
   val command: StartDurationTimerCommand = newCommand.command
 
-  val msg =
-      TimerCompleted(
-          workflowName = state.workflowName,
-          workflowId = state.workflowId,
-          methodRunId = state.runningMethodRunId ?: thisShouldNotHappen(),
-          timerId = TimerId.from(newCommand.commandId),
-          emitterName = output.clientName)
+  val msg = TimerCompleted(
+      workflowName = state.workflowName,
+      workflowId = state.workflowId,
+      methodRunId = state.runningMethodRunId ?: thisShouldNotHappen(),
+      timerId = TimerId.from(newCommand.commandId),
+      emitterName = ClientName(producer.name),
+  )
+  // The duration is offset by the time spent in the workflow task
+  val diff = state.runningWorkflowTaskInstant!! - MillisInstant.now()
 
-  val diff: MillisDuration = state.runningWorkflowTaskInstant!! - MillisInstant.now()
-
-  launch { output.sendToWorkflowEngineAfter(msg, command.duration - diff) }
+  launch { producer.send(msg, command.duration + diff) }
 }
 
 private fun CoroutineScope.startInstantTimer(
-    output: WorkflowEngineOutput,
-    newCommand: StartInstantTimerPastCommand,
-    state: WorkflowState
+  producer: InfiniticProducer,
+  newCommand: StartInstantTimerPastCommand,
+  state: WorkflowState
 ) {
   val command: StartInstantTimerCommand = newCommand.command
 
@@ -233,9 +236,10 @@ private fun CoroutineScope.startInstantTimer(
           workflowId = state.workflowId,
           methodRunId = state.runningMethodRunId ?: thisShouldNotHappen(),
           timerId = TimerId.from(newCommand.commandId),
-          emitterName = output.clientName)
+          emitterName = ClientName(producer.name),
+      )
 
-  launch { output.sendToWorkflowEngineAfter(msg, command.instant - MillisInstant.now()) }
+  launch { producer.send(msg, command.instant - MillisInstant.now()) }
 }
 
 private fun receiveFromChannel(newCommand: ReceiveSignalPastCommand, state: WorkflowState) {
@@ -248,13 +252,15 @@ private fun receiveFromChannel(newCommand: ReceiveSignalPastCommand, state: Work
           channelFilter = command.channelFilter,
           methodRunId = state.runningMethodRunId!!,
           commandId = newCommand.commandId,
-          receivedSignalLimit = command.receivedSignalLimit))
+          receivedSignalLimit = command.receivedSignalLimit,
+      ),
+  )
 }
 
 private fun CoroutineScope.dispatchWorkflow(
-    output: WorkflowEngineOutput,
-    newCommand: DispatchWorkflowPastCommand,
-    state: WorkflowState
+  producer: InfiniticProducer,
+  newCommand: DispatchWorkflowPastCommand,
+  state: WorkflowState
 ) {
   val command: DispatchWorkflowCommand = newCommand.command
 
@@ -277,8 +283,9 @@ private fun CoroutineScope.dispatchWorkflow(
               parentWorkflowId = state.workflowId,
               parentMethodRunId = state.runningMethodRunId,
               clientWaiting = false,
-              emitterName = output.clientName)
-      launch { output.sendToWorkflowEngine(dispatchWorkflow) }
+              emitterName = ClientName(producer.name),
+          )
+      launch { producer.send(dispatchWorkflow) }
 
       // add provided tags
       dispatchWorkflow.workflowTags.forEach {
@@ -287,10 +294,12 @@ private fun CoroutineScope.dispatchWorkflow(
                 workflowName = dispatchWorkflow.workflowName,
                 workflowTag = it,
                 workflowId = dispatchWorkflow.workflowId,
-                emitterName = output.clientName)
-        launch { output.sendToWorkflowTag(addTagToWorkflow) }
+                emitterName = ClientName(producer.name),
+            )
+        launch { producer.send(addTagToWorkflow) }
       }
     }
+
     1 -> {
       // dispatch workflow message with customId tag
       val dispatchWorkflowByCustomId =
@@ -307,9 +316,10 @@ private fun CoroutineScope.dispatchWorkflow(
               parentWorkflowId = state.workflowId,
               parentMethodRunId = state.runningMethodRunId,
               clientWaiting = false,
-              emitterName = output.clientName)
+              emitterName = ClientName(producer.name),
+          )
 
-      launch { output.sendToWorkflowTag(dispatchWorkflowByCustomId) }
+      launch { producer.send(dispatchWorkflowByCustomId) }
     }
     // this must be excluded from workflow task
     else -> thisShouldNotHappen()
@@ -317,10 +327,10 @@ private fun CoroutineScope.dispatchWorkflow(
 }
 
 private fun getDispatchMethod(
-    emitterName: ClientName,
-    commandId: CommandId,
-    command: DispatchMethodCommand,
-    state: WorkflowState
+  emitterName: ClientName,
+  commandId: CommandId,
+  command: DispatchMethodCommand,
+  state: WorkflowState
 ) =
     DispatchMethod(
         workflowName = command.workflowName,
@@ -333,35 +343,39 @@ private fun getDispatchMethod(
         parentWorkflowName = state.workflowName,
         parentMethodRunId = state.runningMethodRunId,
         clientWaiting = false,
-        emitterName = emitterName)
+        emitterName = emitterName,
+    )
 
 private fun CoroutineScope.dispatchMethod(
-    output: WorkflowEngineOutput,
-    newCommand: DispatchMethodPastCommand,
-    state: WorkflowState,
-    bufferedMessages: MutableList<WorkflowEngineMessage>
+  producer: InfiniticProducer,
+  newCommand: DispatchMethodPastCommand,
+  state: WorkflowState,
+  bufferedMessages: MutableList<WorkflowEngineMessage>
 ) {
   val command: DispatchMethodCommand = newCommand.command
 
   when {
     command.workflowId != null -> {
       val dispatchMethodRun =
-          getDispatchMethod(output.clientName, newCommand.commandId, command, state)
+          getDispatchMethod(ClientName(producer.name), newCommand.commandId, command, state)
 
       when (command.workflowId) {
         state.workflowId ->
-            // dispatch method on this workflow
-            bufferedMessages.add(dispatchMethodRun)
+          // dispatch method on this workflow
+          bufferedMessages.add(dispatchMethodRun)
+
         else ->
-            // dispatch method on another workflow
-            launch { output.sendToWorkflowEngine(dispatchMethodRun) }
+          // dispatch method on another workflow
+          launch { producer.send(dispatchMethodRun) }
       }
     }
+
     command.workflowTag != null -> {
       if (state.workflowTags.contains(command.workflowTag!!)) {
         // dispatch method on this workflow
         bufferedMessages.add(
-            getDispatchMethod(output.clientName, newCommand.commandId, command, state))
+            getDispatchMethod(ClientName(producer.name), newCommand.commandId, command, state),
+        )
       }
 
       val dispatchMethodByTag =
@@ -376,18 +390,20 @@ private fun CoroutineScope.dispatchMethod(
               methodParameterTypes = command.methodParameterTypes,
               methodParameters = command.methodParameters,
               clientWaiting = false,
-              emitterName = output.clientName)
+              emitterName = ClientName(producer.name),
+          )
       // tag engine must ignore this message if parentWorkflowId has the provided tag
-      launch { output.sendToWorkflowTag(dispatchMethodByTag) }
+      launch { producer.send(dispatchMethodByTag) }
     }
+
     else -> thisShouldNotHappen()
   }
 }
 
 private fun getSendSignal(
-    emitterName: ClientName,
-    commandId: CommandId,
-    command: SendSignalCommand
+  emitterName: ClientName,
+  commandId: CommandId,
+  command: SendSignalCommand
 ) =
     SendSignal(
         workflowName = command.workflowName,
@@ -396,32 +412,35 @@ private fun getSendSignal(
         signalId = SignalId.from(commandId),
         signalData = command.signalData,
         channelTypes = command.channelTypes,
-        emitterName = emitterName)
+        emitterName = emitterName,
+    )
 
 private fun CoroutineScope.sendSignal(
-    output: WorkflowEngineOutput,
-    newCommand: SendSignalPastCommand,
-    state: WorkflowState,
-    bufferedMessages: MutableList<WorkflowEngineMessage>
+  producer: InfiniticProducer,
+  newCommand: SendSignalPastCommand,
+  state: WorkflowState,
+  bufferedMessages: MutableList<WorkflowEngineMessage>
 ) {
   val command: SendSignalCommand = newCommand.command
 
   when {
     command.workflowId != null -> {
-      val sendToChannel = getSendSignal(output.clientName, newCommand.commandId, command)
+      val sendToChannel = getSendSignal(ClientName(producer.name), newCommand.commandId, command)
 
       when (command.workflowId) {
         state.workflowId ->
-            // dispatch signal on current workflow
-            bufferedMessages.add(sendToChannel)
+          // dispatch signal on current workflow
+          bufferedMessages.add(sendToChannel)
+
         else ->
-            // dispatch signal on another workflow
-            launch { output.sendToWorkflowEngine(sendToChannel) }
+          // dispatch signal on another workflow
+          launch { producer.send(sendToChannel) }
       }
     }
+
     command.workflowTag != null -> {
       if (state.workflowTags.contains(command.workflowTag!!)) {
-        val sendToChannel = getSendSignal(output.clientName, newCommand.commandId, command)
+        val sendToChannel = getSendSignal(ClientName(producer.name), newCommand.commandId, command)
         bufferedMessages.add(sendToChannel)
       }
       // dispatch signal per tag
@@ -434,9 +453,11 @@ private fun CoroutineScope.sendSignal(
               signalData = command.signalData,
               channelTypes = command.channelTypes,
               emitterWorkflowId = state.workflowId,
-              emitterName = output.clientName)
-      launch { output.sendToWorkflowTag(sendSignalByTag) }
+              emitterName = ClientName(producer.name),
+          )
+      launch { producer.send(sendSignalByTag) }
     }
+
     else -> thisShouldNotHappen()
   }
 }

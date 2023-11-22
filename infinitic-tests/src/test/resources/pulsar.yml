@@ -25,8 +25,8 @@
 transport: inMemory
 
 pulsar:
-  tenant: infinitic
-  namespace: dev
+  tenant: public
+  namespace: default
 #  brokerServiceUrl:
 #  webServiceUrl:
 #  authentication:
@@ -50,42 +50,42 @@ services:
 workflows:
   - name: annotatedWorkflow
     class: io.infinitic.tests.utils.AnnotatedWorkflowImpl
-    concurrency: 5
+    concurrency: 2
   - name: io.infinitic.tests.utils.UtilWorkflow
     class: io.infinitic.tests.utils.UtilWorkflowImpl
-    concurrency: 5
+    concurrency: 2
   - name: io.infinitic.tests.branches.BranchesWorkflow
     class: io.infinitic.tests.branches.BranchesWorkflowImpl
-    concurrency: 5
+    concurrency: 2
   - name: io.infinitic.tests.channels.ChannelsWorkflow
     class: io.infinitic.tests.channels.ChannelsWorkflowImpl
-    concurrency: 5
+    concurrency: 2
   - name: io.infinitic.tests.children.ChildrenWorkflow
     class: io.infinitic.tests.children.ChildrenWorkflowImpl
-    concurrency: 5
+    concurrency: 2
   - name: io.infinitic.tests.context.ContextWorkflow
     class: io.infinitic.tests.context.ContextWorkflowImpl
-    concurrency: 5
+    concurrency: 2
   - name: io.infinitic.tests.deferred.DeferredWorkflow
     class: io.infinitic.tests.deferred.DeferredWorkflowImpl
-    concurrency: 5
+    concurrency: 2
   - name: io.infinitic.tests.errors.ErrorsWorkflow
     class: io.infinitic.tests.errors.ErrorsWorkflowImpl
-    concurrency: 5
+    concurrency: 2
   - name: io.infinitic.tests.inline.InlineWorkflow
     class: io.infinitic.tests.inline.InlineWorkflowImpl
-    concurrency: 5
+    concurrency: 2
   - name: io.infinitic.tests.properties.PropertiesWorkflow
     class: io.infinitic.tests.properties.PropertiesWorkflowImpl
-    concurrency: 5
+    concurrency: 2
   - name: io.infinitic.tests.syntax.SyntaxWorkflow
     class: io.infinitic.tests.syntax.SyntaxWorkflowImpl
-    concurrency: 5
+    concurrency: 2
   - name: io.infinitic.tests.timers.TimerWorkflow
     class: io.infinitic.tests.timers.TimerWorkflowImpl
-    concurrency: 5
+    concurrency: 2
   - name: io.infinitic.tests.versioning.VersionedWorkflow
     classes:
       - io.infinitic.tests.versioning.VersionedWorkflowImpl
       - io.infinitic.tests.versioning.VersionedWorkflowImpl_1
-    concurrency: 5
+    concurrency: 2

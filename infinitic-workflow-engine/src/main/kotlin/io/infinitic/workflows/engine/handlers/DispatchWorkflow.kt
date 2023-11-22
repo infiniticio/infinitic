@@ -22,6 +22,7 @@
  */
 package io.infinitic.workflows.engine.handlers
 
+import io.infinitic.common.transport.InfiniticProducer
 import io.infinitic.common.workflows.data.methodRuns.MethodRun
 import io.infinitic.common.workflows.data.methodRuns.MethodRunId
 import io.infinitic.common.workflows.data.methodRuns.MethodRunPosition
@@ -29,21 +30,20 @@ import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskIndex
 import io.infinitic.common.workflows.engine.messages.DispatchWorkflow
 import io.infinitic.common.workflows.engine.state.WorkflowState
 import io.infinitic.workflows.engine.helpers.dispatchWorkflowTask
-import io.infinitic.workflows.engine.output.WorkflowEngineOutput
 import kotlinx.coroutines.CoroutineScope
 
 internal fun CoroutineScope.dispatchWorkflow(
-    workflowEngineOutput: WorkflowEngineOutput,
-    message: DispatchWorkflow
+  producer: InfiniticProducer,
+  message: DispatchWorkflow
 ): WorkflowState {
   val methodRun =
       MethodRun(
           methodRunId = MethodRunId.from(message.workflowId),
           waitingClients =
-              when (message.clientWaiting) {
-                true -> mutableSetOf(message.emitterName)
-                false -> mutableSetOf()
-              },
+          when (message.clientWaiting) {
+            true -> mutableSetOf(message.emitterName)
+            false -> mutableSetOf()
+          },
           parentWorkflowId = message.parentWorkflowId,
           parentWorkflowName = message.parentWorkflowName,
           parentMethodRunId = message.parentMethodRunId,
@@ -51,7 +51,8 @@ internal fun CoroutineScope.dispatchWorkflow(
           methodParameterTypes = message.methodParameterTypes,
           methodParameters = message.methodParameters,
           workflowTaskIndexAtStart = WorkflowTaskIndex(0),
-          propertiesNameHashAtStart = mapOf())
+          propertiesNameHashAtStart = mapOf(),
+      )
 
   val state =
       WorkflowState(
@@ -61,9 +62,10 @@ internal fun CoroutineScope.dispatchWorkflow(
           workflowVersion = null,
           workflowTags = message.workflowTags,
           workflowMeta = message.workflowMeta,
-          methodRuns = mutableListOf(methodRun))
+          methodRuns = mutableListOf(methodRun),
+      )
 
-  dispatchWorkflowTask(workflowEngineOutput, state, methodRun, MethodRunPosition())
+  dispatchWorkflowTask(producer, state, methodRun, MethodRunPosition())
 
   return state
 }
