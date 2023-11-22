@@ -22,7 +22,7 @@
  */
 package io.infinitic.tests.syntax
 
-import io.infinitic.tests.WorkflowTests
+import io.infinitic.tests.Test
 import io.infinitic.tests.utils.AnnotatedWorkflow
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
@@ -30,24 +30,10 @@ import io.kotest.matchers.shouldBe
 internal class SyntaxWorkflowTests :
   StringSpec(
       {
-        // each test should not be longer than 5s
-        timeout = 5000
-
-        val tests = WorkflowTests()
-        val worker = tests.worker
-        val client = tests.client
+        val client = Test.client
 
         val syntaxWorkflow = client.newWorkflow(SyntaxWorkflow::class.java)
         val annotatedWorkflow = client.newWorkflow(AnnotatedWorkflow::class.java)
-
-        beforeSpec { worker.startAsync() }
-
-        afterSpec {
-          worker.close()
-          client.close()
-        }
-
-        beforeTest { worker.registry.flush() }
 
         "empty Workflow" { syntaxWorkflow.empty() shouldBe "void" }
 

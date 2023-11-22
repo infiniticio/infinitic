@@ -80,7 +80,8 @@ class ChannelsWorkflowImpl : Workflow(), ChannelsWorkflow {
       newService(
           UtilService::class.java,
           tags = setOf("foo", "bar"),
-          meta = mapOf("foo" to "bar".toByteArray()))
+          meta = mapOf("foo" to "bar".toByteArray()),
+      )
   private val workflowA = newWorkflow(ChannelsWorkflow::class.java)
 
   private var p1 = ""
@@ -196,7 +197,7 @@ class ChannelsWorkflowImpl : Workflow(), ChannelsWorkflow {
 
     var out = deferred.isCompleted().toString()
 
-    timer(Duration.ofMillis(200)).await()
+    timer(Duration.ofMillis(300)).await()
 
     out += deferred.isCompleted().toString()
 

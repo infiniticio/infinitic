@@ -53,9 +53,7 @@ class Producer(
   ): CompletableFuture<Unit> {
     val producer = getProducer<T, S>(topic, producerName, key)
 
-    logger.debug {
-      "Sending producerName='$producerName' after=$after key='$key' message='$message'"
-    }
+    logger.debug { "Sending to topic $topic after=$after with key='$key': message='$message'" }
 
     return producer
         .newMessage()
@@ -80,7 +78,7 @@ class Producer(
     key: String?
   ) =
       producers.computeIfAbsent(topic) {
-        logger.debug { "Creating Producer with producerName='$producerName' topic='$topic'" }
+        logger.debug { "Creating Producer on topic='$topic', producerName='$producerName', key='$key'" }
 
         val schema = Schema.AVRO(schemaDefinition<S>())
 

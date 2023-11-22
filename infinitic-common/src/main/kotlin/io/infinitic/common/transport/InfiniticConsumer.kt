@@ -23,6 +23,7 @@
 package io.infinitic.common.transport
 
 import io.infinitic.common.clients.messages.ClientMessage
+import io.infinitic.common.data.ClientName
 import io.infinitic.common.tasks.data.ServiceName
 import io.infinitic.common.tasks.executors.messages.TaskExecutorMessage
 import io.infinitic.common.tasks.tags.messages.TaskTagMessage
@@ -36,7 +37,7 @@ interface InfiniticConsumer : AutoCloseable {
   // Asynchronously start consumers of messages to client
   fun startClientConsumerAsync(
     handler: suspend (ClientMessage) -> Unit,
-    clientName: String? = null
+    clientName: ClientName
   ): CompletableFuture<Unit>
 
   // Asynchronously start consumers of messages to task tags

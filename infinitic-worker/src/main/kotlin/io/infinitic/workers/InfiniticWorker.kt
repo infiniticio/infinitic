@@ -23,6 +23,7 @@
 package io.infinitic.workers
 
 import io.github.oshai.kotlinlogging.KotlinLogging
+import io.infinitic.autoclose.autoClose
 import io.infinitic.clients.InfiniticClientInterface
 import io.infinitic.common.tasks.executors.messages.TaskExecutorMessage
 import io.infinitic.common.tasks.tags.messages.TaskTagMessage
@@ -36,7 +37,6 @@ import io.infinitic.workers.config.WorkerConfig
 import io.infinitic.workers.register.InfiniticRegister
 import io.infinitic.workflows.engine.WorkflowEngine
 import io.infinitic.workflows.tag.WorkflowTagEngine
-import java.io.Closeable
 import java.util.concurrent.CompletableFuture
 
 @Suppress("unused")
@@ -44,15 +44,15 @@ class InfiniticWorker(
   private val register: InfiniticRegister,
   private val consumer: InfiniticConsumer,
   private val producer: InfiniticProducer,
-  private val client: InfiniticClientInterface
-) : Closeable, InfiniticRegister by register {
+  val client: InfiniticClientInterface
+) : AutoCloseable, InfiniticRegister by register {
 
   private val logger = KotlinLogging.logger {}
 
   private val workerRegistry = register.registry
 
   override fun close() {
-    consumer.close()
+    autoClose()
   }
 
   /**

@@ -23,7 +23,7 @@
 package io.infinitic.tests.timers
 
 import io.infinitic.common.fixtures.later
-import io.infinitic.tests.WorkflowTests
+import io.infinitic.tests.Test
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.comparables.shouldBeGreaterThanOrEqualTo
 import io.kotest.matchers.longs.shouldBeGreaterThan
@@ -34,37 +34,24 @@ import java.time.Instant
 internal class TimerWorkflowTests :
   StringSpec(
       {
-        // each test should not be longer than 5s
-        timeout = 5000
-
-        val tests = WorkflowTests()
-        val worker = tests.worker
-        val client = tests.client
+        val client = Test.client
 
         val timerWorkflow =
             client.newWorkflow(TimerWorkflow::class.java, tags = setOf("foo", "bar"))
 
-        beforeSpec { worker.startAsync() }
-
-        afterSpec {
-          worker.close()
-          client.close()
-        }
-
-        beforeTest { worker.registry.flush() }
-
         "Wait for a duration timer" {
           val start = Instant.now().toEpochMilli()
 
-          val deferred = client.dispatch(timerWorkflow::await, 200L)
+          val deferred = client.dispatch(timerWorkflow::await, 100L)
 
-          (deferred.await().toEpochMilli() - start) shouldBeLessThan (1000L)
+          (deferred.await().toEpochMilli() - start) shouldBeLessThan (500L)
         }
 
         "Wait for a long duration timer" {
           val start = Instant.now().toEpochMilli()
 
-          val deferred = client.dispatch(timerWorkflow::await, 1000L)
+          // as default tick duration is 1s, we wait 1.3s to be sure that the timer is fired
+          val deferred = client.dispatch(timerWorkflow::await, 1300L)
 
           (deferred.await().toEpochMilli() - start) shouldBeGreaterThan (1000L)
         }
@@ -100,7 +87,6 @@ internal class TimerWorkflowTests :
           }
 
           deferred.await() shouldBe "bingo"
-          println("stopped")
         }
 
         "Wait for a timer or a signal - timer wins after manual completion by id" {

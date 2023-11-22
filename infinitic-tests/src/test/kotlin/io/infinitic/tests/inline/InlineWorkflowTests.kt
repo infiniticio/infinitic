@@ -25,7 +25,7 @@ package io.infinitic.tests.inline
 import io.infinitic.exceptions.FailedWorkflowException
 import io.infinitic.exceptions.FailedWorkflowTaskException
 import io.infinitic.exceptions.workflows.InvalidInlineException
-import io.infinitic.tests.WorkflowTests
+import io.infinitic.tests.Test
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
@@ -33,23 +33,9 @@ import io.kotest.matchers.shouldBe
 internal class InlineWorkflowTests :
   StringSpec(
       {
-        // each test should not be longer than 5s
-        timeout = 5000
-
-        val tests = WorkflowTests()
-        val worker = tests.worker
-        val client = tests.client
+        val client = Test.client
 
         val inlineWorkflow = client.newWorkflow(InlineWorkflow::class.java)
-
-        beforeSpec { worker.startAsync() }
-
-        afterSpec {
-          worker.close()
-          client.close()
-        }
-
-        beforeTest { worker.registry.flush() }
 
         "Inline task" { inlineWorkflow.inline1(7) shouldBe "2 * 7 = 14" }
 

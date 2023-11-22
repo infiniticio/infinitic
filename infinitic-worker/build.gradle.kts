@@ -31,6 +31,7 @@ dependencies {
   api(project(":infinitic-cache"))
   api(project(":infinitic-transport"))
 
+  implementation(project(":infinitic-autoclose"))
   implementation(project(":infinitic-common"))
   implementation(project(":infinitic-client"))
   implementation(project(":infinitic-transport"))

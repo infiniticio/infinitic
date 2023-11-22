@@ -24,6 +24,7 @@ package io.infinitic.inMemory
 
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.infinitic.common.clients.messages.ClientMessage
+import io.infinitic.common.data.ClientName
 import io.infinitic.common.messages.Message
 import io.infinitic.common.tasks.data.ServiceName
 import io.infinitic.common.tasks.executors.messages.TaskExecutorMessage
@@ -53,7 +54,7 @@ class InMemoryInfiniticConsumer(private val channels: InMemoryChannels) : Infini
 
   override fun startClientConsumerAsync(
     handler: suspend (ClientMessage) -> Unit,
-    clientName: String?
+    clientName: ClientName
   ): CompletableFuture<Unit> {
     val channel = channels.forClient()
     logger.info { "Channel ${channel.id}: Starting Client consumer for $clientName with concurrency = 1" }

@@ -57,7 +57,9 @@ data class TransportConfigData(
           val consumer = PulsarInfiniticConsumer(Consumer(pulsar.client, pulsar.consumer), this)
           val producer = PulsarInfiniticProducer(Producer(pulsar.client, pulsar.producer), this)
 
+          // Pulsar client will be closed with consumer
           consumer.addAutoCloseResource(pulsar.client)
+          // Pulsar admin will be closed with consumer
           consumer.addAutoCloseResource(pulsar.admin)
 
           Pair(consumer, producer)
@@ -68,6 +70,7 @@ data class TransportConfigData(
           val consumer = InMemoryInfiniticConsumer(channels)
           val producer = InMemoryInfiniticProducer(channels)
 
+          // channels will be closed with consumer
           consumer.addAutoCloseResource(channels)
 
           Pair(consumer, producer)

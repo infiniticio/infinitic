@@ -68,7 +68,7 @@ class PulsarInfiniticProducer(
     // Create namer topic if not exists
     val namerTopic = resourceManager.initNamer().getOrThrow()
     // Get unique name
-    producer.getName(namerTopic, suggestedName).getOrThrow()
+    producer.getUniqueName(namerTopic, suggestedName).getOrThrow()
   }
 
   /**

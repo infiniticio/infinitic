@@ -25,6 +25,8 @@ dependencies {
   testImplementation(Libs.Coroutines.jdk8)
   testImplementation(Libs.Hoplite.core)
   testImplementation(Libs.Hoplite.yaml)
+  testImplementation(Libs.Kotest.datatest)
+  testImplementation(Libs.TestContainers.testcontainers)
 
   testImplementation(project(":infinitic-client"))
   testImplementation(project(":infinitic-worker"))
@@ -33,4 +35,5 @@ dependencies {
   testImplementation(project(":infinitic-transport-inMemory"))
   testImplementation(project(":infinitic-transport"))
   testImplementation(project(":infinitic-transport-pulsar"))
+
 }

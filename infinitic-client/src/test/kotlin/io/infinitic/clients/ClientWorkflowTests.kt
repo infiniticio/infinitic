@@ -147,7 +147,9 @@ val producer: InfiniticProducer = mockk<InfiniticProducer> {
 }
 
 val consumer: InfiniticConsumer = mockk<InfiniticConsumer> {
-  every { startClientConsumerAsync(any()) } returns CompletableFuture.completedFuture(null)
+  every {
+    startClientConsumerAsync(any(), clientNameTest)
+  } returns CompletableFuture.completedFuture(null)
 }
 
 val client = InfiniticClient(consumer, producer)
@@ -193,7 +195,7 @@ class ClientWorkflowTests : StringSpec(
             )
 
         // when asynchronously dispatching a workflow, the consumer should not be started
-        verify { consumer.startClientConsumerAsync(any()) wasNot called }
+        verify { consumer.startClientConsumerAsync(any(), any()) wasNot called }
       }
 
       "Should be able to dispatch a workflow with annotation" {
@@ -409,13 +411,13 @@ class ClientWorkflowTests : StringSpec(
             )
 
         // when waiting for a workflow, the consumer should be started
-        verify { consumer.startClientConsumerAsync(any()) }
+        verify { consumer.startClientConsumerAsync(any(), clientNameTest) }
 
         // restart a workflow
         client.dispatch(fakeWorkflow::m3, 0, "a").await()
 
         // the consumer should be started only once
-        verify { consumer.startClientConsumerAsync(any()) wasNot called }
+        verify { consumer.startClientConsumerAsync(any(), any()) wasNot called }
       }
 
       "Should throw when calling a channel from a new workflow" {

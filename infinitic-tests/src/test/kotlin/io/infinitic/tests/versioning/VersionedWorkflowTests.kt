@@ -22,30 +22,16 @@
  */
 package io.infinitic.tests.versioning
 
-import io.infinitic.tests.WorkflowTests
+import io.infinitic.tests.Test
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
 
 internal class VersionedWorkflowTests :
   StringSpec(
       {
-        // each test should not be longer than 5s
-        timeout = 5000
-
-        val tests = WorkflowTests()
-        val worker = tests.worker
-        val client = tests.client
+        val client = Test.client
 
         val versionedWorkflow = client.newWorkflow(VersionedWorkflow::class.java)
-
-        beforeSpec { worker.startAsync() }
-
-        afterSpec {
-          worker.close()
-          client.close()
-        }
-
-        beforeTest { worker.registry.flush() }
 
         "Dispatch workflow should use last version" {
           versionedWorkflow.name() shouldBe VersionedWorkflowImpl_1::class.java.name

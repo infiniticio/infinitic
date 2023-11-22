@@ -59,6 +59,8 @@ class Consumer(
     concurrency: Int,
     topicDLQ: String?
   ) {
+    logger.debug { "Starting $concurrency consumers on topic $topic with subscription $subscriptionName" }
+
     when (subscriptionType) {
       SubscriptionType.Key_Shared ->
         repeat(concurrency) {
@@ -99,7 +101,7 @@ class Consumer(
                   }
 
               logger.debug {
-                "Receiving consumerName='$consumerName-$it' messageId='${pulsarMessage.messageId}' key='${pulsarMessage.key}' message='$message'"
+                "Receiving topic=$topic messageId='${pulsarMessage.messageId}' key='${pulsarMessage.key}' message='$message'"
               }
 
               try {
@@ -191,7 +193,7 @@ class Consumer(
     consumerConfig: ConsumerConfig
   ): Consumer<out Envelope<T>> {
     logger.debug {
-      "Creating Consumer consumerName='$consumerName' subscriptionName='$subscriptionName' subscriptionType='$subscriptionType' topic='$topic'"
+      "Creating Consumer on topic='$topic', consumerName='$consumerName', subscriptionName='$subscriptionName', subscriptionType='$subscriptionType'"
     }
 
     val schema = Schema.AVRO(schemaDefinition<S>())

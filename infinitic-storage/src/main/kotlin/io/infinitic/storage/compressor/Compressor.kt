@@ -22,10 +22,10 @@
  */
 package io.infinitic.storage.compressor
 
-import java.io.ByteArrayOutputStream
 import io.github.oshai.kotlinlogging.KotlinLogging
 import org.apache.commons.compress.compressors.CompressorException
 import org.apache.commons.compress.compressors.CompressorStreamFactory
+import java.io.ByteArrayOutputStream
 
 @Suppress("EnumEntryName")
 enum class Compressor {
@@ -73,9 +73,8 @@ enum class Compressor {
         }
       } catch (e: Exception) {
         // see comment above
-        logger.warn {
-          "Error when decompressing data with '$type' algorithm, fallback to not decompressing\n" +
-              e.message
+        logger.info(e) {
+          "Error when decompressing data with '$type' algorithm, fallback to not decompressing"
         }
         return data.also { out.close() }
       }

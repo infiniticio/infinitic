@@ -22,19 +22,26 @@
  */
 package io.infinitic.pulsar.namer
 
+import io.infinitic.common.exceptions.thisShouldNotHappen
+import org.apache.pulsar.client.api.Producer
 import org.apache.pulsar.client.api.PulsarClient
 import org.apache.pulsar.client.api.PulsarClientException
 
 open class Namer(open val pulsarClient: PulsarClient) {
+
+  lateinit var producer: Producer<*>
+
   /** Useful to check the uniqueness of a connected producer's name or to provide a unique name */
-  fun getName(
-    topic: String,
-    proposedName: String?
-  ): Result<String> {
-    val producer = try {
+  fun getUniqueName(namerTopic: String, proposedName: String?): Result<String> {
+    if (::producer.isInitialized) {
+      thisShouldNotHappen("Namer producer already initialized")
+    }
+
+    // create a producer - it must stay active until client is closed
+    producer = try {
       pulsarClient
           .newProducer()
-          .topic(topic)
+          .topic(namerTopic)
           .also {
             if (proposedName != null) {
               it.producerName(proposedName)
@@ -46,7 +53,6 @@ open class Namer(open val pulsarClient: PulsarClient) {
       // the exception will be PulsarClientException.ProducerBusyException
       return Result.failure(e)
     }
-    producer.close()
 
     return Result.success(producer.producerName)
   }

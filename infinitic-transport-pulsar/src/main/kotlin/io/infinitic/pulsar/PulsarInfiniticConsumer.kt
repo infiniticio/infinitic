@@ -26,6 +26,7 @@ import io.github.oshai.kotlinlogging.KotlinLogging
 import io.infinitic.autoclose.autoClose
 import io.infinitic.common.clients.messages.ClientEnvelope
 import io.infinitic.common.clients.messages.ClientMessage
+import io.infinitic.common.data.ClientName
 import io.infinitic.common.messages.Envelope
 import io.infinitic.common.messages.Message
 import io.infinitic.common.tasks.data.ServiceName
@@ -66,12 +67,14 @@ class PulsarInfiniticConsumer(
   /** Coroutine scope used to receive messages */
   private val consumingScope = CoroutineScope(Dispatchers.IO)
 
+  private lateinit var clientName: String
 
   override fun close() {
     consumingScope.cancel()
-    // Delete all client topics
-    clientTopics.forEach { topic: String ->
-      logger.debug { "Deleting client topic $topic" }
+    // Delete client topic
+    if (::clientName.isInitialized) {
+      val topic = resourceManager.getTopicName(clientName, ClientType.RESPONSE)
+      logger.info { "Deleting response topic $topic of client $clientName" }
       resourceManager.deleteTopic(topic)
     }
     autoClose()
@@ -80,22 +83,13 @@ class PulsarInfiniticConsumer(
   // Start consumers of messages to client
   override fun startClientConsumerAsync(
     handler: suspend (ClientMessage) -> Unit,
-    clientName: String?
-  ): CompletableFuture<Unit> {
-    // Create namer topic if not exists
-    val namerTopic = resourceManager.initNamer().getOrThrow()
-    // Create unique client name, or check its uniqueness if provided
-    val name = consumer.getName(namerTopic, clientName).getOrThrow()
-    // Add client topic to the list of client topics to be deleted when closing
-    clientTopics.add(resourceManager.getTopicName(name, ClientType.RESPONSE))
-
-    return startAsync<ClientMessage, ClientEnvelope>(
-        handler = handler,
-        topicType = ClientType.RESPONSE,
-        concurrency = 1,
-        name = name,
-    )
-  }
+    clientName: ClientName
+  ): CompletableFuture<Unit> = startAsync<ClientMessage, ClientEnvelope>(
+      handler = handler,
+      topicType = ClientType.RESPONSE,
+      concurrency = 1,
+      name = "$clientName",
+  ).also { this.clientName = "$clientName" }
 
   // Start consumers of messages to workflow tag
   override fun startWorkflowTagConsumerAsync(

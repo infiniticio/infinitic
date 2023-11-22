@@ -27,7 +27,7 @@ import io.infinitic.exceptions.CanceledWorkflowException
 import io.infinitic.exceptions.FailedTaskException
 import io.infinitic.exceptions.FailedWorkflowException
 import io.infinitic.exceptions.UnknownWorkflowException
-import io.infinitic.tests.WorkflowTests
+import io.infinitic.tests.Test
 import io.infinitic.tests.channels.ChannelsWorkflow
 import io.infinitic.tests.utils.UtilService
 import io.infinitic.tests.utils.UtilWorkflow
@@ -40,25 +40,11 @@ import kotlinx.coroutines.delay
 internal class ErrorsWorkflowTests :
   StringSpec(
       {
-        // each test should not be longer than 5s
-        timeout = 5000
-
-        val tests = WorkflowTests()
-        val worker = tests.worker
-        val client = tests.client
+        val client = Test.client
 
         val errorsWorkflow =
             client.newWorkflow(ErrorsWorkflow::class.java, tags = setOf("foo", "bar"))
         val utilWorkflow = client.newWorkflow(UtilWorkflow::class.java)
-
-        beforeSpec { worker.startAsync() }
-
-        afterSpec {
-          worker.close()
-          client.close()
-        }
-
-        beforeTest { worker.registry.flush() }
 
         "Cancelling workflow" {
           val deferred = client.dispatch(errorsWorkflow::waiting)
@@ -108,9 +94,6 @@ internal class ErrorsWorkflowTests :
 
         "Cancelling child workflow on main path should throw" {
           val error = shouldThrow<FailedWorkflowException> { utilWorkflow.cancelChild1() }
-
-          println(error)
-          println(error.deferredException)
           val cause = error.deferredException as CanceledWorkflowException
           cause.workflowName shouldBe ChannelsWorkflow::class.java.name
         }

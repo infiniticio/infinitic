@@ -22,7 +22,7 @@
  */
 package io.infinitic.tests.children
 
-import io.infinitic.tests.WorkflowTests
+import io.infinitic.tests.Test
 import io.infinitic.tests.utils.UtilWorkflow
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
@@ -31,25 +31,11 @@ import kotlinx.coroutines.delay
 internal class ChildrenWorkflowTests :
   StringSpec(
       {
-        // each test should not be longer than 5s
-        timeout = 5000
-
-        val tests = WorkflowTests()
-        val worker = tests.worker
-        val client = tests.client
+        val client = Test.client
 
         val childrenWorkflow =
             client.newWorkflow(ChildrenWorkflow::class.java, tags = setOf("foo", "bar"))
         val utilWorkflow = client.newWorkflow(UtilWorkflow::class.java)
-
-        beforeSpec { worker.startAsync() }
-
-        afterSpec {
-          worker.close()
-          client.close()
-        }
-
-        beforeTest { worker.registry.flush() }
 
         "run task from parent interface" { childrenWorkflow.parent() shouldBe "ok" }
 

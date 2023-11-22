@@ -23,101 +23,88 @@
 package io.infinitic.tests.branches
 
 import io.infinitic.common.fixtures.later
-import io.infinitic.tests.WorkflowTests
+import io.infinitic.tests.Test
+import io.infinitic.tests.getWorkflowState
 import io.infinitic.tests.utils.UtilWorkflow
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.delay
 
-internal class BranchesWorkflowTests :
-  StringSpec(
-      {
-        // each test should not be longer than 5s
-        timeout = 5000
+internal class BranchesWorkflowTests : StringSpec(
+    {
+      val client = Test.client
+      val worker = Test.worker
 
-        val tests = WorkflowTests()
-        val worker = tests.worker
-        val client = tests.client
+      val branchesWorkflow = client.newWorkflow(BranchesWorkflow::class.java)
+      val utilWorkflow = client.newWorkflow(UtilWorkflow::class.java)
 
-        val branchesWorkflow = client.newWorkflow(BranchesWorkflow::class.java)
-        val utilWorkflow = client.newWorkflow(UtilWorkflow::class.java)
+      "Sequential Workflow with an async branch" {
+        branchesWorkflow.seq3() shouldBe "23ba"
 
-        beforeSpec { worker.startAsync() }
+        worker.getWorkflowState() shouldBe null
+      }
 
-        afterSpec {
-          worker.close()
-          client.close()
-        }
+      "Sequential Workflow with an async branch with 2 tasks" {
+        branchesWorkflow.seq4() shouldBe "23bac"
 
-        beforeTest { worker.registry.flush() }
+        worker.getWorkflowState() shouldBe null
+      }
 
-        "Sequential Workflow with an async branch" {
-          branchesWorkflow.seq3() shouldBe "23ba"
+      "Test Deferred methods" {
+        branchesWorkflow.deferred1() shouldBe "truefalsefalsetrue"
 
-          tests.workflowStateShouldBeEmpty()
-        }
+        worker.getWorkflowState() shouldBe null
+      }
 
-        "Sequential Workflow with an async branch with 2 tasks" {
-          branchesWorkflow.seq4() shouldBe "23bac"
+      "Check runBranch" {
+        val deferred = client.dispatch(utilWorkflow::receive, "a")
 
-          tests.workflowStateShouldBeEmpty()
-        }
+        val uw = client.getWorkflowById(UtilWorkflow::class.java, deferred.id)
 
-        "Test Deferred methods" {
-          branchesWorkflow.deferred1() shouldBe "truefalsefalsetrue"
+        uw.concat("b") shouldBe "ab"
 
-          tests.workflowStateShouldBeEmpty()
-        }
+        later { uw.channelA.send("c") }
 
-        "Check runBranch" {
-          val deferred = client.dispatch(utilWorkflow::receive, "a")
+        deferred.await() shouldBe "abc"
 
-          val uw = client.getWorkflowById(UtilWorkflow::class.java, deferred.id)
+        worker.getWorkflowState(UtilWorkflow::class.java.name, deferred.id) shouldBe null
+      }
 
-          uw.concat("b") shouldBe "ab"
+      "Check multiple runBranch" {
+        val deferred = client.dispatch(utilWorkflow::receive, "a")
+        val w = client.getWorkflowById(UtilWorkflow::class.java, deferred.id)
 
-          later { uw.channelA.send("c") }
+        client.dispatch(w::add, "b")
+        client.dispatch(w::add, "c")
+        client.dispatch(w::add, "d")
 
-          deferred.await() shouldBe "abc"
+        later { w.channelA.send("e") }
 
-          tests.workflowStateShouldBeEmpty(UtilWorkflow::class.java.name, deferred.id)
-        }
+        deferred.await() shouldBe "abcde"
 
-        "Check multiple runBranch" {
-          val deferred = client.dispatch(utilWorkflow::receive, "a")
-          val w = client.getWorkflowById(UtilWorkflow::class.java, deferred.id)
+        worker.getWorkflowState(UtilWorkflow::class.java.name, deferred.id) shouldBe null
+      }
 
-          client.dispatch(w::add, "b")
-          client.dispatch(w::add, "c")
-          client.dispatch(w::add, "d")
+      "Check numerous runBranch" {
+        val deferred = client.dispatch(utilWorkflow::receive, "a")
+        val w = client.getWorkflowById(UtilWorkflow::class.java, deferred.id)
 
-          later { w.channelA.send("e") }
+        repeat(100) { client.dispatch(w::add, "b") }
 
-          deferred.await() shouldBe "abcde"
+        later { w.channelA.send("c") }
 
-          tests.workflowStateShouldBeEmpty(UtilWorkflow::class.java.name, deferred.id)
-        }
+        deferred.await() shouldBe "a" + "b".repeat(100) + "c"
 
-        "Check numerous runBranch" {
-          val deferred = client.dispatch(utilWorkflow::receive, "a")
-          val w = client.getWorkflowById(UtilWorkflow::class.java, deferred.id)
+        worker.getWorkflowState(UtilWorkflow::class.java.name, deferred.id) shouldBe null
+      }
 
-          repeat(100) { client.dispatch(w::add, "b") }
+      "Check that state is cleaned after async processing of a branch" {
+        branchesWorkflow.async1()
 
-          later { w.channelA.send("c") }
+        // wait completion of the async branch
+        delay(1000)
 
-          deferred.await() shouldBe "a" + "b".repeat(100) + "c"
-
-          tests.workflowStateShouldBeEmpty(UtilWorkflow::class.java.name, deferred.id)
-        }
-
-        "Check that state is cleaned after async processing of a branch" {
-          branchesWorkflow.async1()
-
-          // wait completion of the async branch
-          delay(1000)
-
-          tests.workflowStateShouldBeEmpty()
-        }
-      },
-  )
+        worker.getWorkflowState() shouldBe null
+      }
+    },
+)

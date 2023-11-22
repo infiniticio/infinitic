@@ -26,7 +26,7 @@ import io.infinitic.common.fixtures.later
 import io.infinitic.exceptions.FailedWorkflowException
 import io.infinitic.exceptions.FailedWorkflowTaskException
 import io.infinitic.exceptions.workflows.OutOfBoundAwaitException
-import io.infinitic.tests.WorkflowTests
+import io.infinitic.tests.Test
 import io.infinitic.tests.utils.Obj1
 import io.infinitic.tests.utils.Obj2
 import io.kotest.assertions.throwables.shouldThrow
@@ -38,24 +38,10 @@ import java.time.Instant
 internal class ChannelWorkflowTests :
   StringSpec(
       {
-        // each test should not be longer than 5s
-        timeout = 5000
-
-        val tests = WorkflowTests()
-        val worker = tests.worker
-        val client = tests.client
+        val client = Test.client
 
         val channelsWorkflow =
             client.newWorkflow(ChannelsWorkflow::class.java, tags = setOf("foo", "bar"))
-
-        beforeSpec { worker.startAsync() }
-
-        afterSpec {
-          worker.close()
-          client.close()
-        }
-
-        beforeTest { worker.registry.flush() }
 
         "Waiting for event, sent after dispatched" {
           val deferred = client.dispatch(channelsWorkflow::channel1)
@@ -93,7 +79,7 @@ internal class ChannelWorkflowTests :
         "Waiting for event, sent to the right channel" {
           val deferred = client.dispatch(channelsWorkflow::channel2)
 
-          later {
+          later(0) {
             client.getWorkflowById(ChannelsWorkflow::class.java, deferred.id).channelA.send("test")
           }
 
@@ -308,7 +294,7 @@ internal class ChannelWorkflowTests :
         "testing isCompleted" {
           val deferred = client.dispatch(channelsWorkflow::channel8)
 
-          later {
+          later(0) {
             client.getWorkflowById(ChannelsWorkflow::class.java, deferred.id).channelA.send("test")
           }
 

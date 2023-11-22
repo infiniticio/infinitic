@@ -26,19 +26,14 @@ import io.infinitic.common.tasks.data.TaskMeta
 import io.infinitic.common.workflows.data.workflows.WorkflowMeta
 import io.infinitic.tasks.executor.TaskExecutor.Companion.DEFAULT_TASK_RETRY
 import io.infinitic.tasks.executor.TaskExecutor.Companion.DEFAULT_TASK_TIMEOUT
-import io.infinitic.tests.WorkflowTests
+import io.infinitic.tests.Test
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
 
 internal class ContextWorkflowTests :
   StringSpec(
       {
-        // each test should not be longer than 5s
-        timeout = 5000
-
-        val tests = WorkflowTests()
-        val worker = tests.worker
-        val client = tests.client
+        val client = Test.client
 
         val contextWorkflow =
             client.newWorkflow(
@@ -46,15 +41,6 @@ internal class ContextWorkflowTests :
                 meta = mapOf("foo" to "bar".toByteArray()),
                 tags = setOf("foo", "bar"),
             )
-
-        beforeSpec { worker.startAsync() }
-
-        afterSpec {
-          worker.close()
-          client.close()
-        }
-
-        beforeTest { worker.registry.flush() }
 
         "get id from context" { contextWorkflow.context1() shouldBe client.lastDeferred!!.id }
 

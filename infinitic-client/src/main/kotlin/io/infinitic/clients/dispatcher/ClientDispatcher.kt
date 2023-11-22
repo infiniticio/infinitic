@@ -22,6 +22,7 @@
  */
 package io.infinitic.clients.dispatcher
 
+import io.github.oshai.kotlinlogging.KotlinLogging
 import io.infinitic.clients.Deferred
 import io.infinitic.clients.deferred.DeferredChannel
 import io.infinitic.clients.deferred.DeferredMethod
@@ -89,7 +90,6 @@ import kotlinx.coroutines.future.future
 import kotlinx.coroutines.job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
-import io.github.oshai.kotlinlogging.KotlinLogging
 import java.io.Closeable
 import java.util.concurrent.CompletableFuture
 import io.infinitic.common.workflows.engine.messages.RetryTasks as RetryTaskInWorkflow
@@ -107,10 +107,10 @@ class ClientDispatcher(
   // Scope used to send messages
   private val sendingScope = CoroutineScope(Dispatchers.IO)
 
-  // flags is the client consumer loop is initialized
+  // flag telling if the client consumer loop is initialized
   private var isClientConsumerInitialized = false
 
-  // Scope used to wait for messages
+  // Scope used to consuming messages
   private val waitingScope = CoroutineScope(Dispatchers.IO)
 
   // Flow used to receive messages
@@ -167,7 +167,7 @@ class ClientDispatcher(
 
     // lazily starts client consumer if not already started
     if (!isClientConsumerInitialized) {
-      consumer.startClientConsumerAsync(::handle)
+      consumer.startClientConsumerAsync(::handle, clientName)
       isClientConsumerInitialized = true
     }
 

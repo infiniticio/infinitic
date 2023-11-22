@@ -56,9 +56,16 @@ object Libs {
   }
 
   object Kotest {
-    private const val version = "5.7.2"
+    private const val version = "5.8.0"
     const val property = "io.kotest:kotest-property-jvm:$version"
     const val junit5 = "io.kotest:kotest-runner-junit5-jvm:$version"
+    const val datatest = "io.kotest:kotest-framework-datatest:$version"
+  }
+
+  object TestContainers {
+    private const val version = "1.19.3"
+    const val testcontainers = "org.testcontainers:testcontainers:$version"
+    const val mysql = "org.testcontainers:mysql:$version"
   }
 
   object Mockk {
