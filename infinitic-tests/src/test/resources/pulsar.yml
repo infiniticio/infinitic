@@ -27,6 +27,8 @@ transport: inMemory
 pulsar:
   tenant: public
   namespace: default
+  consumer:
+    negativeAckRedeliveryDelaySeconds: 0.3
 #  brokerServiceUrl:
 #  webServiceUrl:
 #  authentication:

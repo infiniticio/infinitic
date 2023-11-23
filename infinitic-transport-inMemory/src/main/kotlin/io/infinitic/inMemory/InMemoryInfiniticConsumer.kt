@@ -54,121 +54,172 @@ class InMemoryInfiniticConsumer(private val channels: InMemoryChannels) : Infini
 
   override fun startClientConsumerAsync(
     handler: suspend (ClientMessage) -> Unit,
+    beforeDlq: (suspend (ClientMessage, Throwable) -> Unit)?,
     clientName: ClientName
   ): CompletableFuture<Unit> {
     val channel = channels.forClient()
     logger.info { "Channel ${channel.id}: Starting Client consumer for $clientName with concurrency = 1" }
-    return startAsync(handler, channel)
+    return startAsync(handler, beforeDlq, channel)
   }
 
   override fun startTaskTagConsumerAsync(
     handler: suspend (TaskTagMessage) -> Unit,
+    beforeDlq: (suspend (TaskTagMessage, Throwable) -> Unit)?,
     serviceName: ServiceName,
     concurrency: Int
   ): CompletableFuture<Unit> {
     val channel = channels.forTaskTag(serviceName)
     logger.info { "Channel ${channel.id}: Starting TaskTag consumer for $serviceName with concurrency = 1" }
-    return startAsync(handler, channel, 1)
+    return startAsync(handler, beforeDlq, channel, 1)
   }
 
   override fun startWorkflowTagConsumerAsync(
     handler: suspend (WorkflowTagMessage) -> Unit,
+    beforeDlq: (suspend (WorkflowTagMessage, Throwable) -> Unit)?,
     workflowName: WorkflowName,
     concurrency: Int
   ): CompletableFuture<Unit> {
     val channel = channels.forWorkflowTag(workflowName)
     logger.info { "Channel ${channel.id}: Starting WorkflowTag consumer for $workflowName with concurrency = 1" }
-    return startAsync(handler, channel, 1)
+    return startAsync(handler, beforeDlq, channel, 1)
   }
 
   override fun startWorkflowEngineConsumerAsync(
     handler: suspend (WorkflowEngineMessage) -> Unit,
+    beforeDlq: (suspend (WorkflowEngineMessage, Throwable) -> Unit)?,
     workflowName: WorkflowName,
     concurrency: Int
   ): CompletableFuture<Unit> {
     val channel = channels.forWorkflowEngine(workflowName)
     logger.info { "Channel ${channel.id}: Starting WorkflowEngine consumer for $workflowName with concurrency = 1" }
-    return startAsync(handler, channel, 1)
+    return startAsync(handler, beforeDlq, channel, 1)
   }
 
   override fun startDelayedWorkflowEngineConsumerAsync(
     handler: suspend (WorkflowEngineMessage) -> Unit,
+    beforeDlq: (suspend (WorkflowEngineMessage, Throwable) -> Unit)?,
     workflowName: WorkflowName,
     concurrency: Int
   ): CompletableFuture<Unit> {
     val channel = channels.forDelayedWorkflowEngine(workflowName)
     logger.info { "Channel ${channel.id}: Starting delayed WorkflowEngine consumer for $workflowName with concurrency = $concurrency" }
-    return startAsync(getDelayedHandler(handler), channel, concurrency)
+    return startDelayedAsync(handler, beforeDlq, channel, concurrency)
   }
 
   override fun startTaskExecutorConsumerAsync(
     handler: suspend (TaskExecutorMessage) -> Unit,
+    beforeDlq: (suspend (TaskExecutorMessage, Throwable) -> Unit)?,
     serviceName: ServiceName,
     concurrency: Int
   ): CompletableFuture<Unit> {
     val channel = channels.forTaskExecutor(serviceName)
     logger.info { "Channel ${channel.id}: Starting TaskExecutor consumer for $serviceName with concurrency = $concurrency" }
-    return startAsync(handler, channel, concurrency)
+    return startAsync(handler, beforeDlq, channel, concurrency)
   }
 
   override fun startDelayedTaskExecutorConsumerAsync(
     handler: suspend (TaskExecutorMessage) -> Unit,
+    beforeDlq: (suspend (TaskExecutorMessage, Throwable) -> Unit)?,
     serviceName: ServiceName,
     concurrency: Int
   ): CompletableFuture<Unit> {
     val channel = channels.forDelayedTaskExecutor(serviceName)
     logger.info { "Channel ${channel.id}: Starting delayed TaskExecutor consumer for $serviceName with concurrency = $concurrency" }
-    return startAsync(getDelayedHandler(handler), channel, concurrency)
+    return startDelayedAsync(handler, beforeDlq, channel, concurrency)
   }
 
   override fun startWorkflowTaskConsumerAsync(
     handler: suspend (TaskExecutorMessage) -> Unit,
+    beforeDlq: (suspend (TaskExecutorMessage, Throwable) -> Unit)?,
     workflowName: WorkflowName,
     concurrency: Int
   ): CompletableFuture<Unit> {
     val channel = channels.forWorkflowTaskExecutor(workflowName)
-    logger.info { "Channel ${channel.id}: Starting WorkflowTask consumer for $workflowName with concurrency = $1" }
-    return startAsync(handler, channel, 1)
+    logger.info { "Channel ${channel.id}: Starting WorkflowTask consumer for $workflowName with concurrency = 1" }
+    return startAsync(handler, beforeDlq, channel, 1)
   }
 
   override fun startDelayedWorkflowTaskConsumerAsync(
     handler: suspend (TaskExecutorMessage) -> Unit,
+    beforeDlq: (suspend (TaskExecutorMessage, Throwable) -> Unit)?,
     workflowName: WorkflowName,
     concurrency: Int
   ): CompletableFuture<Unit> {
     val channel = channels.forDelayedWorkflowTaskExecutor(workflowName)
     logger.info { "Channel ${channel.id}: Starting delayed WorkflowTask consumer for $workflowName with concurrency = $concurrency" }
-    return startAsync(getDelayedHandler(handler), channel, concurrency)
+    return startDelayedAsync(handler, beforeDlq, channel, concurrency)
   }
 
-  private fun <T : Message> getDelayedHandler(handler: suspend (T) -> Unit): suspend (DelayedMessage<T>) -> Unit =
-      { delayedMessage: DelayedMessage<T> ->
-        run {
-          delay(delayedMessage.after.long)
-          handler(delayedMessage.message)
-        }
-      }
-
-  private fun <T : Any> startAsync(
+  // start concurrent executors on a channel containing messages
+  private fun <T : Message> startAsync(
     handler: suspend (T) -> Unit,
+    beforeDlq: (suspend (T, Throwable) -> Unit)?,
     channel: Channel<T>,
     concurrency: Int
-  ): CompletableFuture<Unit> = (1..concurrency).map { startAsync(handler, channel) }.let {
-    CompletableFuture.allOf(*it.toTypedArray()).thenApply { }
-  }
+  ): CompletableFuture<Unit> = List(concurrency) {
+    startAsync(handler, beforeDlq, channel)
+  }.let { CompletableFuture.allOf(*it.toTypedArray()).thenApply { } }
 
-  private fun <T : Any> startAsync(
-    executor: suspend (T) -> Unit,
+  // start an executor on a channel containing messages
+  private fun <T : Message> startAsync(
+    handler: suspend (T) -> Unit,
+    beforeDlq: (suspend (T, Throwable) -> Unit)?,
     channel: Channel<T>
   ): CompletableFuture<Unit> = consumingScope.future {
     for (message in channel) {
       try {
-        logger.debug { "Channel ${channel.id}: receiving $message" }
-        executor(message)
-        logger.debug { "Channel ${channel.id}: processed ${message::class}" }
+        logger.trace { "Channel ${channel.id}: Receiving $message" }
+        handler(message)
       } catch (e: Throwable) {
-        logger.error(e) { "Error while processing message $message" }
+        logger.warn { "Channel ${channel.id}: Error while processing message $message" }
+        sendToDlq(beforeDlq, channel, message, e)
+      }
+    }
+  }
+
+  // start concurrent executors on a channel containing delayed messages
+  private fun <T : Message> startDelayedAsync(
+    handler: suspend (T) -> Unit,
+    beforeDlq: (suspend (T, Throwable) -> Unit)?,
+    channel: Channel<DelayedMessage<T>>,
+    concurrency: Int
+  ) = List(concurrency) {
+    startDelayedAsync(handler, beforeDlq, channel)
+  }.let { CompletableFuture.allOf(*it.toTypedArray()).thenApply { } }
+
+  // start an executor on a channel containing delayed messages
+  private fun <T : Message> startDelayedAsync(
+    handler: suspend (T) -> Unit,
+    beforeDlq: (suspend (T, Throwable) -> Unit)?,
+    channel: Channel<DelayedMessage<T>>
+  ) = consumingScope.future {
+    for (delayedMessage in channel) {
+      try {
+        delay(delayedMessage.after.long)
+        logger.trace { "Channel ${channel.id}: Receiving ${delayedMessage.message}" }
+        handler(delayedMessage.message)
+      } catch (e: Throwable) {
+        logger.warn { "Channel ${channel.id}: Error while processing message ${delayedMessage.message}" }
+        sendToDlq(beforeDlq, channel, delayedMessage.message, e)
+      }
+    }
+  }
+
+  // emulate sending to DLQ
+  private suspend fun <T : Message> sendToDlq(
+    beforeDlq: (suspend (T, Throwable) -> Unit)?,
+    channel: Channel<*>,
+    message: T,
+    e: Throwable
+  ) {
+    beforeDlq?.let {
+      try {
+        logger.trace { "Channel ${channel.id}: Telling about message sent to DLQ $message}" }
+        it(message, e)
+      } catch (e: Exception) {
+        logger.error(e) { "Channel ${channel.id}: Unable to tell about message sent to DLQ $message" }
       }
     }
   }
 }
+

@@ -52,12 +52,13 @@ class Consumer(
 
   internal inline fun <T : Message, reified S : Envelope<out T>> CoroutineScope.startConsumer(
     crossinline handler: suspend (T) -> Unit,
+    noinline beforeDlq: (suspend (T, Throwable) -> Unit)?,
     topic: String,
+    topicDlq: String?,
     subscriptionName: String,
     subscriptionType: SubscriptionType,
     consumerName: String,
-    concurrency: Int,
-    topicDLQ: String?
+    concurrency: Int
   ) {
     logger.debug { "Starting $concurrency consumers on topic $topic with subscription $subscriptionName" }
 
@@ -66,50 +67,52 @@ class Consumer(
         repeat(concurrency) {
           // For Key_Shared subscription, we must create a new consumer for each executor coroutine
           launch {
-            @Suppress("UNCHECKED_CAST")
-            val consumer =
-                createConsumer<T, S>(
-                    topic = topic,
-                    // subscriptionName MUST be the same for all concurrent instances!
-                    subscriptionName = subscriptionName,
-                    subscriptionType = subscriptionType,
-                    consumerName = "$consumerName-$it",
-                    topicDLQ = topicDLQ,
-                    consumerConfig,
-                )
-                    as Consumer<S>
+            val consumer = createConsumer<T, S>(
+                topic = topic,
+                // subscriptionName MUST be the same for all concurrent instances!
+                subscriptionName = subscriptionName,
+                subscriptionType = subscriptionType,
+                consumerName = "$consumerName-$it",
+                topicDlq = topicDlq,
+                consumerConfig,
+            )
 
             while (isActive) {
               // await() ensures this coroutine exits in case of throwable not caught
-              val pulsarMessage =
-                  try {
-                    consumer.receiveAsync().await()
-                  } catch (e: CancellationException) {
-                    // exit while loop when coroutine is canceled
-                    break
-                  }
+              val pulsarMessage: PulsarMessage<S> = try {
+                consumer.receiveAsync().await()
+              } catch (e: CancellationException) {
+                // exit while loop when coroutine is canceled
+                break
+              }
 
-              val message =
-                  try {
-                    pulsarMessage.value.message()
-                  } catch (e: Exception) {
-                    logger.warn(e) {
-                      "${pulsarMessage.messageId}: Exception when deserializing $pulsarMessage"
-                    }
-                    negativeAcknowledge(consumer, pulsarMessage.messageId)
-                    continue
-                  }
+              val messageId = pulsarMessage.messageId
 
-              logger.debug {
-                "Receiving topic=$topic messageId='${pulsarMessage.messageId}' key='${pulsarMessage.key}' message='$message'"
+              val message = try {
+                trace(topic, messageId, "Deserializing received $pulsarMessage")
+                pulsarMessage.value.message()
+              } catch (e: Exception) {
+                warn(e, topic, messageId, "Exception deserializing $pulsarMessage")
+                negativeAcknowledge(consumer, pulsarMessage, beforeDlq, null, e)
+                // continue while loop
+                continue
               }
 
               try {
+                trace(topic, messageId, "Handling deserialized $message")
                 handler(message)
-                consumer.acknowledge(pulsarMessage.messageId)
+              } catch (e: Throwable) {
+                warn(e, topic, messageId, "Exception when handling $message")
+                negativeAcknowledge(consumer, pulsarMessage, beforeDlq, message, e)
+                continue
+              }
+
+              try {
+                trace(topic, messageId, "Acknowledging $message")
+                consumer.acknowledge(messageId)
               } catch (e: Exception) {
-                logger.warn(e) { "${pulsarMessage.messageId}: Exception when handling $message" }
-                negativeAcknowledge(consumer, pulsarMessage.messageId)
+                warn(e, topic, messageId, "Exception when acknowledging $message")
+                // the message will eventually time out and be redelivered
                 continue
               }
             }
@@ -118,20 +121,19 @@ class Consumer(
 
       else -> {
         // For other subscription, we can use the same consumer for all executor coroutines
-        val consumer =
-            createConsumer<T, S>(
-                topic = topic,
-                subscriptionName = subscriptionName,
-                subscriptionType = subscriptionType,
-                consumerName = consumerName,
-                topicDLQ = topicDLQ,
-                consumerConfig,
-            )
+        val consumer = createConsumer<T, S>(
+            topic = topic,
+            subscriptionName = subscriptionName,
+            subscriptionType = subscriptionType,
+            consumerName = consumerName,
+            topicDlq = topicDlq,
+            consumerConfig,
+        )
 
-        val channel = Channel<PulsarMessage<out Envelope<T>>>()
+        val channel = Channel<PulsarMessage<S>>()
 
-        // Channel is backpressure aware, so we can use it to send messages to the executor
-        // coroutines
+        // Channel is backpressure aware
+        // we can use it to send messages to the executor coroutines
         launch {
           while (isActive) {
             // await() ensures this coroutine exits in case of throwable not caught
@@ -146,24 +148,33 @@ class Consumer(
         // start executor coroutines
         repeat(concurrency) {
           launch {
-            for (pulsarMessage in channel) {
-              val message =
-                  try {
-                    pulsarMessage.value.message()
-                  } catch (e: Exception) {
-                    logger.warn(e) {
-                      "${pulsarMessage.messageId}: Exception when deserializing $pulsarMessage"
-                    }
-                    negativeAcknowledge(consumer, pulsarMessage.messageId)
-                    continue
-                  }
+            for (pulsarMessage: PulsarMessage<S> in channel) {
+              val messageId = pulsarMessage.messageId
+
+              val message = try {
+                trace(topic, messageId, "Deserializing received message $pulsarMessage")
+                pulsarMessage.value.message()
+              } catch (e: Exception) {
+                warn(e, topic, messageId, "Exception when deserializing $pulsarMessage")
+                negativeAcknowledge(consumer, pulsarMessage, beforeDlq, null, e)
+                continue
+              }
 
               try {
+                trace(topic, messageId, "Handling deserialized $message")
                 handler(message)
-                consumer.acknowledge(pulsarMessage.messageId)
+              } catch (e: Throwable) {
+                warn(e, topic, messageId, "Exception when handling $message")
+                negativeAcknowledge(consumer, pulsarMessage, beforeDlq, message, e)
+                continue
+              }
+
+              try {
+                trace(topic, messageId, "Acknowledging $message")
+                consumer.acknowledge(messageId)
               } catch (e: Exception) {
-                logger.warn(e) { "${pulsarMessage.messageId}: Exception when handling $message" }
-                negativeAcknowledge(consumer, pulsarMessage.messageId)
+                warn(e, topic, messageId, "Exception when acknowledging $message")
+                // the message will eventually time out and be redelivered
                 continue
               }
             }
@@ -173,25 +184,46 @@ class Consumer(
     }
   }
 
-  // Negative acknowledge a message. This will cause the message to be redelivered or send to DLQ
-  private fun negativeAcknowledge(consumer: Consumer<*>, messageId: MessageId) {
+  // if message has been redelivered too many times, send it to DLQ and tell Workflow Engine about that
+  private suspend inline fun <T : Message, S : Envelope<out T>> negativeAcknowledge(
+    consumer: Consumer<S>,
+    pulsarMessage: PulsarMessage<out S>,
+    noinline beforeDlq: (suspend (T, Throwable) -> Unit)?,
+    message: T?,
+    cause: Throwable
+  ) {
+    val messageId = pulsarMessage.messageId
+    val topic = consumer.topic
+
+    // before sending to DLQ, we tell Workflow Engine about that
+    if (pulsarMessage.redeliveryCount == consumerConfig.maxRedeliverCount && beforeDlq != null) {
+      when (message) {
+        null -> error(cause, topic, messageId, "Unable to tell that a message is sent to DLQ")
+
+        else -> try {
+          trace(topic, messageId, "Telling that a message is sent to DLQ $message}")
+          beforeDlq(message, cause)
+        } catch (e: Exception) {
+          error(e, topic, messageId, "Unable to tell that a message is sent to DLQ $message}")
+        }
+      }
+    }
+
     try {
-      consumer.negativeAcknowledge(messageId)
+      consumer.negativeAcknowledge(pulsarMessage.messageId)
     } catch (e: Exception) {
-      logger.error(e) { "Exception when negativeAcknowledging $messageId" }
-      // message will be timeout and be redelivered
+      error(e, topic, messageId, "Exception when negativeAcknowledging ${message ?: ""}")
     }
   }
 
-  @Suppress("UNCHECKED_CAST")
   private inline fun <T : Message, reified S : Envelope<out T>> createConsumer(
     topic: String,
     subscriptionName: String,
     subscriptionType: SubscriptionType,
     consumerName: String,
-    topicDLQ: String?,
+    topicDlq: String?,
     consumerConfig: ConsumerConfig
-  ): Consumer<out Envelope<T>> {
+  ): Consumer<S> {
     logger.debug {
       "Creating Consumer on topic='$topic', consumerName='$consumerName', subscriptionName='$subscriptionName', subscriptionType='$subscriptionType'"
     }
@@ -207,7 +239,7 @@ class Consumer(
         .subscriptionInitialPosition(SubscriptionInitialPosition.Earliest)
         .also { c ->
           // Dead Letter Queue
-          topicDLQ?.also {
+          topicDlq?.also {
             when (subscriptionType) {
               SubscriptionType.Key_Shared,
               SubscriptionType.Shared -> {
@@ -326,6 +358,18 @@ class Consumer(
             c.startPaused(it)
           }
         }
-        .subscribe() as Consumer<out Envelope<T>>
+        .subscribe() as Consumer<S>
+  }
+
+  private fun trace(topic: String, messageId: MessageId, message: String) {
+    logger.trace { "Topic: $topic ($messageId) - $message" }
+  }
+
+  private fun warn(e: Throwable, topic: String, messageId: MessageId, message: String) {
+    logger.warn(e) { "Topic: $topic ($messageId) - $message" }
+  }
+
+  private fun error(e: Throwable, topic: String, messageId: MessageId, message: String) {
+    logger.error(e) { "Topic: $topic ($messageId) - $message" }
   }
 }

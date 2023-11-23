@@ -47,7 +47,9 @@ interface UtilService : ParentInterface {
 
   fun cancelWorkflow(workflowName: String, id: String)
 
-  fun failing()
+  fun failingWithException()
+
+  fun failingWithThrowable()
 
   fun successAtRetry(): String
 
@@ -87,7 +89,9 @@ class UtilServiceImpl : UtilService {
     Task.client.cancel(w)
   }
 
-  override fun failing() = throw Exception("sorry")
+  override fun failingWithException() = throw Exception("sorry")
+
+  override fun failingWithThrowable() = throw Throwable("really sorry")
 
   override fun successAtRetry() =
       when (Task.retrySequence) {

@@ -79,9 +79,11 @@ class PulsarInfiniticConsumer(
   // Start consumers of messages to client
   override fun startClientConsumerAsync(
     handler: suspend (ClientMessage) -> Unit,
+    beforeDlq: (suspend (ClientMessage, Throwable) -> Unit)?,
     clientName: ClientName
   ): CompletableFuture<Unit> = startAsync<ClientMessage, ClientEnvelope>(
       handler = handler,
+      beforeDlq = beforeDlq,
       topicType = ClientType.RESPONSE,
       concurrency = 1,
       name = "$clientName",
@@ -90,10 +92,12 @@ class PulsarInfiniticConsumer(
   // Start consumers of messages to workflow tag
   override fun startWorkflowTagConsumerAsync(
     handler: suspend (WorkflowTagMessage) -> Unit,
+    beforeDlq: (suspend (WorkflowTagMessage, Throwable) -> Unit)?,
     workflowName: WorkflowName,
     concurrency: Int
   ) = startAsync<WorkflowTagMessage, WorkflowTagEnvelope>(
       handler = handler,
+      beforeDlq = beforeDlq,
       topicType = WorkflowType.TAG,
       concurrency = concurrency,
       name = "$workflowName",
@@ -102,10 +106,12 @@ class PulsarInfiniticConsumer(
   // Start consumers of messages to workflow engine
   override fun startWorkflowEngineConsumerAsync(
     handler: suspend (WorkflowEngineMessage) -> Unit,
+    beforeDlq: (suspend (WorkflowEngineMessage, Throwable) -> Unit)?,
     workflowName: WorkflowName,
     concurrency: Int
   ) = startAsync<WorkflowEngineMessage, WorkflowEngineEnvelope>(
       handler = handler,
+      beforeDlq = beforeDlq,
       topicType = WorkflowType.ENGINE,
       concurrency = concurrency,
       name = "$workflowName",
@@ -114,10 +120,12 @@ class PulsarInfiniticConsumer(
   // Start consumers of delayed messages to workflow engine
   override fun startDelayedWorkflowEngineConsumerAsync(
     handler: suspend (WorkflowEngineMessage) -> Unit,
+    beforeDlq: (suspend (WorkflowEngineMessage, Throwable) -> Unit)?,
     workflowName: WorkflowName,
     concurrency: Int
   ) = startAsync<WorkflowEngineMessage, WorkflowEngineEnvelope>(
       handler = handler,
+      beforeDlq = beforeDlq,
       topicType = WorkflowType.DELAY,
       concurrency = concurrency,
       name = "$workflowName",
@@ -126,10 +134,12 @@ class PulsarInfiniticConsumer(
   // Start consumers of messages to task tags
   override fun startTaskTagConsumerAsync(
     handler: suspend (TaskTagMessage) -> Unit,
+    beforeDlq: (suspend (TaskTagMessage, Throwable) -> Unit)?,
     serviceName: ServiceName,
     concurrency: Int
   ) = startAsync<TaskTagMessage, TaskTagEnvelope>(
       handler = handler,
+      beforeDlq = beforeDlq,
       topicType = ServiceType.TAG,
       concurrency = concurrency,
       name = "$serviceName",
@@ -138,10 +148,12 @@ class PulsarInfiniticConsumer(
   // Start consumers of messages to task executor
   override fun startTaskExecutorConsumerAsync(
     handler: suspend (TaskExecutorMessage) -> Unit,
+    beforeDlq: (suspend (TaskExecutorMessage, Throwable) -> Unit)?,
     serviceName: ServiceName,
     concurrency: Int
   ) = startAsync<TaskExecutorMessage, TaskExecutorEnvelope>(
       handler = handler,
+      beforeDlq = beforeDlq,
       topicType = ServiceType.EXECUTOR,
       concurrency = concurrency,
       name = "$serviceName",
@@ -149,6 +161,7 @@ class PulsarInfiniticConsumer(
 
   override fun startDelayedTaskExecutorConsumerAsync(
     handler: suspend (TaskExecutorMessage) -> Unit,
+    beforeDlq: (suspend (TaskExecutorMessage, Throwable) -> Unit)?,
     serviceName: ServiceName,
     concurrency: Int
   ): CompletableFuture<Unit> {
@@ -159,10 +172,12 @@ class PulsarInfiniticConsumer(
   // Start consumers of messages to workflow task executor
   override fun startWorkflowTaskConsumerAsync(
     handler: suspend (TaskExecutorMessage) -> Unit,
+    beforeDlq: (suspend (TaskExecutorMessage, Throwable) -> Unit)?,
     workflowName: WorkflowName,
     concurrency: Int
   ) = startAsync<TaskExecutorMessage, TaskExecutorEnvelope>(
       handler = handler,
+      beforeDlq = beforeDlq,
       topicType = WorkflowTaskType.EXECUTOR,
       concurrency = concurrency,
       name = "$workflowName",
@@ -170,6 +185,7 @@ class PulsarInfiniticConsumer(
 
   override fun startDelayedWorkflowTaskConsumerAsync(
     handler: suspend (TaskExecutorMessage) -> Unit,
+    beforeDlq: (suspend (TaskExecutorMessage, Throwable) -> Unit)?,
     workflowName: WorkflowName,
     concurrency: Int
   ): CompletableFuture<Unit> {
@@ -179,23 +195,28 @@ class PulsarInfiniticConsumer(
 
   // Start a consumer on a topic, with concurrent executors
   private inline fun <T : Message, reified S : Envelope<T>> startAsync(
-    noinline handler: suspend (T) -> Unit, topicType: TopicType, concurrency: Int, name: String
+    noinline handler: suspend (T) -> Unit,
+    noinline beforeDlq: (suspend (T, Throwable) -> Unit)?,
+    topicType: TopicType,
+    concurrency: Int,
+    name: String
   ): CompletableFuture<Unit> {
     // create topic if not exists
     val topic = resourceManager.initTopic(name, topicType).getOrThrow()
     // create DLQ topic if not exists
-    val dlq = resourceManager.initDLQTopic(name, topicType).getOrThrow()
+    val topicDlq = resourceManager.initDlqTopic(name, topicType).getOrThrow()
 
     return with(consumer) {
       consumingScope.future {
         startConsumer<T, S>(
             handler = handler,
+            beforeDlq = beforeDlq,
             topic = topic,
+            topicDlq = topicDlq,
             subscriptionName = topicType.subscriptionName,
             subscriptionType = topicType.subscriptionType,
             consumerName = resourceManager.getConsumerName(name, topicType),
             concurrency = concurrency,
-            topicDLQ = dlq,
         )
       }
     }

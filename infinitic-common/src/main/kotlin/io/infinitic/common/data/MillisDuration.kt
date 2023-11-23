@@ -32,7 +32,7 @@ import kotlinx.serialization.encoding.Encoder
 
 @Serializable(with = MillisDurationSerializer::class)
 data class MillisDuration(val long: Long) : Comparable<Long> {
-  override fun toString() = "$long"
+  override fun toString() = "$long ms"
 
   override operator fun compareTo(other: Long): Int = this.long.compareTo(other)
 
