@@ -51,6 +51,8 @@ class InfiniticWorker(
 
   private val workerRegistry = register.registry
 
+  private val sendingDlqMessage = "Unable to process message, sending to Dead Letter Queue"
+
   override fun close() {
     autoClose()
   }
@@ -74,9 +76,13 @@ class InfiniticWorker(
       val handler: (suspend (WorkflowTagMessage) -> Unit) =
           { message: WorkflowTagMessage -> tagEngine.handle(message) }
 
+      // do nothing before sending message on dead letter queue
+      val beforeDlq = null
+
       futures.add(
           consumer.startWorkflowTagConsumerAsync(
               handler = handler,
+              beforeDlq = beforeDlq,
               workflowName = it.key,
               concurrency = it.value.concurrency,
           ),
@@ -90,9 +96,13 @@ class InfiniticWorker(
       val handler: (suspend (WorkflowEngineMessage) -> Unit) =
           { message: WorkflowEngineMessage -> workflowEngine.handle(message) }
 
+      // do nothing before sending message on dead letter queue
+      val beforeDlq = null
+
       futures.add(
           consumer.startWorkflowEngineConsumerAsync(
               handler = handler,
+              beforeDlq = beforeDlq,
               workflowName = it.key,
               concurrency = it.value.concurrency,
           ),
@@ -102,6 +112,7 @@ class InfiniticWorker(
       futures.add(
           consumer.startDelayedWorkflowEngineConsumerAsync(
               handler = { message: WorkflowEngineMessage -> producer.send(message) },
+              beforeDlq = beforeDlq,
               workflowName = it.key,
               concurrency = it.value.concurrency,
           ),
@@ -115,9 +126,16 @@ class InfiniticWorker(
       val handler: (suspend (TaskExecutorMessage) -> Unit) =
           { message: TaskExecutorMessage -> taskExecutor.handle(message) }
 
+      // tell clients and/or workflow engine about that failure
+      val beforeDlq: (suspend (TaskExecutorMessage, Throwable) -> Unit) =
+          { message: TaskExecutorMessage, cause: Throwable ->
+            taskExecutor.sendTaskFailed(message, cause, sendingDlqMessage)
+          }
+
       futures.add(
           consumer.startWorkflowTaskConsumerAsync(
               handler = handler,
+              beforeDlq = beforeDlq,
               workflowName = it.key,
               concurrency = it.value.concurrency,
           ),
@@ -127,6 +145,7 @@ class InfiniticWorker(
       futures.add(
           consumer.startDelayedWorkflowTaskConsumerAsync(
               handler = { message: TaskExecutorMessage -> producer.send(message) },
+              beforeDlq = beforeDlq,
               workflowName = it.key,
               concurrency = it.value.concurrency,
           ),
@@ -140,9 +159,16 @@ class InfiniticWorker(
       val handler: (suspend (TaskExecutorMessage) -> Unit) =
           { message: TaskExecutorMessage -> taskExecutor.handle(message) }
 
+      // tell clients and/or workflow engine about that failure
+      val beforeDlq: (suspend (TaskExecutorMessage, Throwable) -> Unit) =
+          { message: TaskExecutorMessage, cause: Throwable ->
+            taskExecutor.sendTaskFailed(message, cause, sendingDlqMessage)
+          }
+
       futures.add(
           consumer.startTaskExecutorConsumerAsync(
               handler = handler,
+              beforeDlq = beforeDlq,
               serviceName = it.key,
               concurrency = it.value.concurrency,
           ),
@@ -152,6 +178,7 @@ class InfiniticWorker(
       futures.add(
           consumer.startDelayedTaskExecutorConsumerAsync(
               handler = { message: TaskExecutorMessage -> producer.send(message) },
+              beforeDlq = beforeDlq,
               serviceName = it.key,
               concurrency = it.value.concurrency,
           ),
@@ -165,9 +192,13 @@ class InfiniticWorker(
       val handler: (suspend (TaskTagMessage) -> Unit) =
           { message: TaskTagMessage -> tagEngine.handle(message) }
 
+      // do nothing before sending message on dead letter queue
+      val beforeDlq = null
+
       futures.add(
           consumer.startTaskTagConsumerAsync(
               handler = handler,
+              beforeDlq = beforeDlq,
               serviceName = it.key,
               concurrency = it.value.concurrency,
           ),

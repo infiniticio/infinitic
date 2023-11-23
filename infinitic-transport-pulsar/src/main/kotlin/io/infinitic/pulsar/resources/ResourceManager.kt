@@ -73,7 +73,7 @@ class ResourceManager(
    * Check if a Dead Letter Queue topic exists, and create it if not
    * We skip this if the topic has already been initialized successfully
    */
-  fun initDLQTopic(name: String, topicType: TopicType): Result<String?> =
+  fun initDlqTopic(name: String, topicType: TopicType): Result<String?> =
       topicNamer.getTopicDLQName(name, topicType)
           ?.let { initTopic(it, topicType.isPartitioned, topicType.isDelayed) }
         ?: Result.success(null)

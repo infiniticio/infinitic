@@ -36,6 +36,8 @@ interface SimpleService {
   fun handle(i: Int, j: Int): Int
 
   fun other(i: Int, j: String): String
+
+  fun withThrowable(): String
 }
 
 class ServiceImplService : SimpleService {
@@ -44,6 +46,8 @@ class ServiceImplService : SimpleService {
   override fun handle(i: Int, j: Int) = (i * j)
 
   override fun other(i: Int, j: String) = (i * j.toInt()).toString()
+
+  override fun withThrowable(): String = throw Throwable("throwable")
 }
 
 internal class ServiceWithContext {

@@ -37,7 +37,9 @@ interface ErrorsWorkflow {
 
   fun failing1(): String
 
-  fun failing2()
+  fun failingWithException()
+
+  fun failingWithThrowable()
 
   fun failing2a(): Long
 
@@ -79,7 +81,8 @@ interface ErrorsWorkflow {
 @Suppress("unused")
 class ErrorsWorkflowImpl : Workflow(), ErrorsWorkflow {
 
-  @Ignore private val self by lazy { getWorkflowById(ErrorsWorkflow::class.java, workflowId) }
+  @Ignore
+  private val self by lazy { getWorkflowById(ErrorsWorkflow::class.java, workflowId) }
 
   lateinit var deferred: Deferred<String>
 
@@ -87,7 +90,8 @@ class ErrorsWorkflowImpl : Workflow(), ErrorsWorkflow {
       newService(
           UtilService::class.java,
           tags = setOf("foo", "bar"),
-          meta = mapOf("foo" to "bar".toByteArray()))
+          meta = mapOf("foo" to "bar".toByteArray()),
+      )
   private val errorsWorkflow = newWorkflow(ErrorsWorkflow::class.java, tags = setOf("foo", "bar"))
 
   private var p1 = ""
@@ -100,16 +104,18 @@ class ErrorsWorkflowImpl : Workflow(), ErrorsWorkflow {
 
   override fun failing1() =
       try {
-        utilService.failing()
+        utilService.failingWithException()
         "ok"
       } catch (e: FailedTaskException) {
         utilService.reverse("ok")
       }
 
-  override fun failing2() = utilService.failing()
+  override fun failingWithException() = utilService.failingWithException()
+
+  override fun failingWithThrowable() = utilService.failingWithThrowable()
 
   override fun failing2a(): Long {
-    dispatch(utilService::failing)
+    dispatch(utilService::failingWithException)
 
     return utilService.await(100)
   }
@@ -121,7 +127,7 @@ class ErrorsWorkflowImpl : Workflow(), ErrorsWorkflow {
   }
 
   override fun failing3bis() {
-    utilService.failing()
+    utilService.failingWithException()
   }
 
   override fun failing3b(): Long {
@@ -156,7 +162,7 @@ class ErrorsWorkflowImpl : Workflow(), ErrorsWorkflow {
     return deferred.await()
   }
 
-  override fun failing6() = errorsWorkflow.failing2()
+  override fun failing6() = errorsWorkflow.failingWithException()
 
   override fun failing7(): Long {
     dispatch(self::failing7bis)
@@ -165,12 +171,12 @@ class ErrorsWorkflowImpl : Workflow(), ErrorsWorkflow {
   }
 
   override fun failing7bis() {
-    errorsWorkflow.failing2()
+    errorsWorkflow.failingWithException()
   }
 
   override fun failing7ter(): String =
       try {
-        errorsWorkflow.failing2()
+        errorsWorkflow.failingWithException()
         "ok"
       } catch (e: FailedWorkflowException) {
         val deferredException = e.deferredException as FailedTaskException

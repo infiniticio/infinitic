@@ -167,7 +167,7 @@ class ClientDispatcher(
 
     // lazily starts client consumer if not already started
     if (!isClientConsumerInitialized) {
-      consumer.startClientConsumerAsync(::handle, clientName)
+      consumer.startClientConsumerAsync(::handle, null, clientName)
       isClientConsumerInitialized = true
     }
 

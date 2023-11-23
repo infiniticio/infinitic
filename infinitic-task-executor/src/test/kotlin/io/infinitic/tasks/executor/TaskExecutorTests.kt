@@ -68,6 +68,7 @@ import io.infinitic.tasks.executor.samples.ServiceWithRetryInMethod
 import io.infinitic.tasks.executor.samples.ServiceWithTimeoutOnClass
 import io.infinitic.tasks.executor.samples.ServiceWithTimeoutOnMethod
 import io.infinitic.tasks.executor.samples.SimpleServiceWithRetry
+import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
 import io.mockk.CapturingSlot
@@ -230,6 +231,20 @@ class TaskExecutorTests :
           taskTagSlots[1] shouldBe getRemoveTag(msg, "bar")
         }
 
+        "Throwable should not be caught on task" {
+          every { workerRegistry.getRegisteredService(ServiceName("task")) } returns service
+          val input = arrayOf<Any>()
+          val types = listOf<String>()
+          val msg = getExecuteTask("withThrowable", input, types)
+          // when
+          val throwable = shouldThrow<Throwable> { coroutineScope { taskExecutor.handle(msg) } }
+          // then
+          taskExecutorSlot.isCaptured shouldBe false
+          workflowEngineSlot.isCaptured shouldBe false
+          taskTagSlots.size shouldBe 0
+          throwable.message shouldBe "throwable"
+        }
+
         "Should throw ClassNotFoundException when trying to process an unknown task" {
           every { workerRegistry.getRegisteredService(ServiceName("task")) } throws
               ClassNotFoundException("task")
@@ -242,9 +257,7 @@ class TaskExecutorTests :
           taskExecutorSlot.isCaptured shouldBe false
           checkClientException(clientSlot, msg, ClassNotFoundException::class)
           checkWorkflowException(workflowEngineSlot, msg, ClassNotFoundException::class)
-          taskTagSlots.size shouldBe 2
-          taskTagSlots[0] shouldBe getRemoveTag(msg, "foo")
-          taskTagSlots[1] shouldBe getRemoveTag(msg, "bar")
+          taskTagSlots.size shouldBe 0
         }
 
         "Should throw NoMethodFoundWithParameterTypes when trying to process an unknown method" {
@@ -261,9 +274,7 @@ class TaskExecutorTests :
           checkWorkflowException(
               workflowEngineSlot, msg, NoMethodFoundWithParameterTypesException::class,
           )
-          taskTagSlots.size shouldBe 2
-          taskTagSlots[0] shouldBe getRemoveTag(msg, "foo")
-          taskTagSlots[1] shouldBe getRemoveTag(msg, "bar")
+          taskTagSlots.size shouldBe 0
         }
 
         "Should throw NoMethodFoundWithParameterCount when trying to process an unknown method without parameterTypes" {
@@ -279,9 +290,7 @@ class TaskExecutorTests :
           checkWorkflowException(
               workflowEngineSlot, msg, NoMethodFoundWithParameterCountException::class,
           )
-          taskTagSlots.size shouldBe 2
-          taskTagSlots[0] shouldBe getRemoveTag(msg, "foo")
-          taskTagSlots[1] shouldBe getRemoveTag(msg, "bar")
+          taskTagSlots.size shouldBe 0
         }
 
         "Should throw TooManyMethodsFoundWithParameterCount when trying to process an unknown method without parameterTypes" {
@@ -299,9 +308,7 @@ class TaskExecutorTests :
           checkWorkflowException(
               workflowEngineSlot, msg, TooManyMethodsFoundWithParameterCountException::class,
           )
-          taskTagSlots.size shouldBe 2
-          taskTagSlots[0] shouldBe getRemoveTag(msg, "foo")
-          taskTagSlots[1] shouldBe getRemoveTag(msg, "bar")
+          taskTagSlots.size shouldBe 0
         }
 
         "Should retry with correct exception with Retry interface" {
@@ -381,9 +388,7 @@ class TaskExecutorTests :
           taskExecutorSlot.isCaptured shouldBe false
           checkClientException(clientSlot, msg, IllegalArgumentException::class)
           checkWorkflowException(workflowEngineSlot, msg, IllegalArgumentException::class)
-          taskTagSlots.size shouldBe 2
-          taskTagSlots[0] shouldBe getRemoveTag(msg, "foo")
-          taskTagSlots[1] shouldBe getRemoveTag(msg, "bar")
+          taskTagSlots.size shouldBe 0
         }
 
         "Should be able to access context from task" {
@@ -419,9 +424,7 @@ class TaskExecutorTests :
           taskExecutorSlot.isCaptured shouldBe false
           checkClientException(clientSlot, msg, TimeoutException::class)
           checkWorkflowException(workflowEngineSlot, msg, TimeoutException::class)
-          taskTagSlots.size shouldBe 2
-          taskTagSlots[0] shouldBe getRemoveTag(msg, "foo")
-          taskTagSlots[1] shouldBe getRemoveTag(msg, "bar")
+          taskTagSlots.size shouldBe 0
         }
 
         "Should throw TimeoutTaskException with timeout from method Annotation" {
@@ -440,9 +443,7 @@ class TaskExecutorTests :
           taskExecutorSlot.isCaptured shouldBe false
           checkClientException(clientSlot, msg, TimeoutException::class)
           checkWorkflowException(workflowEngineSlot, msg, TimeoutException::class)
-          taskTagSlots.size shouldBe 2
-          taskTagSlots[0] shouldBe getRemoveTag(msg, "foo")
-          taskTagSlots[1] shouldBe getRemoveTag(msg, "bar")
+          taskTagSlots.size shouldBe 0
         }
 
         "Should throw TimeoutTaskException with timeout from class Annotation" {
@@ -461,9 +462,7 @@ class TaskExecutorTests :
           taskExecutorSlot.isCaptured shouldBe false
           checkClientException(clientSlot, msg, TimeoutException::class)
           checkWorkflowException(workflowEngineSlot, msg, TimeoutException::class)
-          taskTagSlots.size shouldBe 2
-          taskTagSlots[0] shouldBe getRemoveTag(msg, "foo")
-          taskTagSlots[1] shouldBe getRemoveTag(msg, "bar")
+          taskTagSlots.size shouldBe 0
         }
       },
   )

@@ -61,12 +61,22 @@ internal class ErrorsWorkflowTests :
           errorsWorkflow.failing1() shouldBe "ko"
         }
 
-        "failing task on main path should throw" {
-          val error = shouldThrow<FailedWorkflowException> { errorsWorkflow.failing2() }
+        "failing task with Exception on main path should throw" {
+          val error = shouldThrow<FailedWorkflowException> { errorsWorkflow.failingWithException() }
 
           val taskException = error.deferredException as FailedTaskException
           taskException.serviceName shouldBe UtilService::class.java.name
           taskException.workerException.name shouldBe Exception::class.java.name
+        }
+
+        // This test checks that a throwable triggering a message sent to DLQ is correctly handle by the engine
+        "failing task with Throwable on main path should throw" {
+          val error = shouldThrow<FailedWorkflowException> { errorsWorkflow.failingWithThrowable() }
+
+          val taskException = error.deferredException as FailedTaskException
+          taskException.serviceName shouldBe UtilService::class.java.name
+          taskException.workerException.name shouldBe Throwable::class.java.name
+          println(taskException.workerException)
         }
 
         "failing async task on main path should not throw" {
@@ -121,7 +131,7 @@ internal class ErrorsWorkflowTests :
 
           val cause1 = error.deferredException as FailedWorkflowException
           cause1.workflowName shouldBe ErrorsWorkflow::class.java.name
-          cause1.methodName shouldBe "failing2"
+          cause1.methodName shouldBe "failingWithException"
 
           val cause2 = cause1.deferredException as FailedTaskException
           cause2.serviceName shouldBe UtilService::class.java.name
