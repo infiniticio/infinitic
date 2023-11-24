@@ -28,20 +28,20 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 data class WorkerException(
-    /** Name of the worker */
-    val workerName: String,
+  /** Name of the worker */
+  val workerName: String,
 
-    /** Name of the error */
-    val name: String,
+  /** Name of the error */
+  val name: String,
 
-    /** Message of the error */
-    override val message: String?,
+  /** Message of the error */
+  override val message: String?,
 
-    /** String version of the stack trace */
-    val stackTraceToString: String,
+  /** String version of the stack trace */
+  val stackTraceToString: String,
 
-    /** cause of the error */
-    override val cause: WorkerException?
+  /** cause of the error */
+  override val cause: WorkerException?
 ) : kotlin.RuntimeException() {
   companion object {
     fun from(error: ExecutionError): WorkerException =
@@ -50,7 +50,8 @@ data class WorkerException(
             name = error.name,
             message = error.message,
             stackTraceToString = error.stackTraceToString,
-            cause = error.cause?.let { from(it) })
+            cause = error.cause?.let { from(it) },
+        )
 
     fun from(workerName: ClientName, throwable: Throwable): WorkerException =
         WorkerException(
@@ -58,11 +59,11 @@ data class WorkerException(
             name = throwable::class.java.name,
             message = throwable.message,
             stackTraceToString = throwable.stackTraceToString(),
-            cause =
-                when (val cause = throwable.cause) {
-                  null,
-                  throwable -> null
-                  else -> from(workerName, cause)
-                })
+            cause = when (val cause = throwable.cause) {
+              null, throwable -> null
+
+              else -> from(workerName, cause)
+            },
+        )
   }
 }

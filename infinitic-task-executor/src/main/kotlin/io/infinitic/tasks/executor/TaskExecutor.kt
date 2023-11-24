@@ -46,7 +46,7 @@ import io.infinitic.common.workers.config.RetryPolicy
 import io.infinitic.common.workers.registry.WorkerRegistry
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskParameters
 import io.infinitic.exceptions.DeferredException
-import io.infinitic.exceptions.tasks.TimeoutException
+import io.infinitic.exceptions.tasks.TimeoutTaskException
 import io.infinitic.tasks.Task
 import io.infinitic.tasks.TaskContext
 import io.infinitic.tasks.WithRetry
@@ -72,70 +72,59 @@ class TaskExecutor(
   private val producer: InfiniticProducer,
   private val client: InfiniticClientInterface
 ) {
-  companion object {
-    val DEFAULT_WORKFLOW_TASK_TIMEOUT = WithTimeout { 60.0 }
-    val DEFAULT_TASK_TIMEOUT = null
-    val DEFAULT_TASK_RETRY = RetryPolicy.DEFAULT
-    val DEFAULT_WORKFLOW_TASK_RETRY = null
-    val DEFAULT_WORKFLOW_CHECK_MODE = WorkflowCheckMode.simple
-  }
 
   private val logger = KotlinLogging.logger {}
-
   private var withRetry: WithRetry? = null
-
   private var withTimeout: WithTimeout? = null
-
   private val clientName = ClientName(producer.name)
 
-  suspend fun handle(message: TaskExecutorMessage) {
+  suspend fun handle(msg: TaskExecutorMessage) {
 
-    return when (message) {
+    return when (msg) {
       is ExecuteTask -> {
-        logTrace(message, "received $message")
-        executeTask(message)
+        msg.logTrace("received $msg")
+        executeTask(msg)
       }
     }
   }
 
-  private suspend fun executeTask(message: ExecuteTask) = coroutineScope {
+  private suspend fun executeTask(msg: ExecuteTask) = coroutineScope {
     // trying to instantiate the task
     val (service, method, parameters) =
         try {
-          parse(message)
+          parse(msg)
         } catch (e: Exception) {
           // returning the exception (no retry)
-          sendTaskFailed(message, e, "Unable to parse message $message")
+          sendTaskFailed(msg, e, "Unable to parse message $msg")
           // stop here
           return@coroutineScope
         }
 
-    val taskContext =
-        TaskContextImpl(
-            workerName = producer.name,
-            workerRegistry = workerRegistry,
-            serviceName = message.serviceName,
-            taskId = message.taskId,
-            taskName = message.methodName,
-            workflowId = message.workflowId,
-            workflowName = message.workflowName,
-            workflowVersion = message.workflowVersion,
-            retrySequence = message.taskRetrySequence,
-            retryIndex = message.taskRetryIndex,
-            lastError = message.lastError,
-            tags = message.taskTags.map { it.tag }.toSet(),
-            meta = message.taskMeta.map.toMutableMap(),
-            withRetry = withRetry,
-            withTimeout = withTimeout,
-            client = client,
-        )
+    val taskContext = TaskContextImpl(
+        workerName = producer.name,
+        workerRegistry = workerRegistry,
+        serviceName = msg.serviceName,
+        taskId = msg.taskId,
+        taskName = msg.methodName,
+        workflowId = msg.workflowId,
+        workflowName = msg.workflowName,
+        workflowVersion = msg.workflowVersion,
+        retrySequence = msg.taskRetrySequence,
+        retryIndex = msg.taskRetryIndex,
+        lastError = msg.lastError,
+        tags = msg.taskTags.map { it.tag }.toSet(),
+        meta = msg.taskMeta.map.toMutableMap(),
+        withRetry = withRetry,
+        withTimeout = withTimeout,
+        client = client,
+    )
 
     // get timeout for this task if any
     val millis = try {
       withTimeout?.getTimeoutInMillis()
     } catch (e: Exception) {
       // returning the exception (no retry)
-      sendTaskFailed(message, e, "Unable to get task timeout")
+      sendTaskFailed(msg, e, "Error in ${withTimeout!!::class.java.simpleName} method")
       // stop here
       return@coroutineScope
     }
@@ -143,38 +132,37 @@ class TaskExecutor(
     // task execution
     val output = try {
       if (millis != null && millis > 0) {
-        withTimeout(millis) { runTask(service, method, parameters, taskContext) }
+        withTimeout(millis) { processTask(service, method, parameters, taskContext) }
       } else {
-        runTask(service, method, parameters, taskContext)
+        processTask(service, method, parameters, taskContext)
       }
+    } catch (e: TimeoutCancellationException) {
+      failTaskWithRetry(msg, taskContext, TimeoutTaskException(), "Timeout after $millis ms")
+      // stop here
+      return@coroutineScope
     } catch (e: InvocationTargetException) {
       // exception in method execution
       when (val cause = e.cause) {
         // do not retry failed workflow task due to failed/canceled task/workflow
-        is DeferredException -> sendTaskFailed(message, cause, null)
+        is DeferredException -> sendTaskFailed(msg, cause, null)
         // exception during task execution
-        is Exception -> failTaskWithRetry(taskContext, cause, message, "Error when processing task")
+        is Exception -> failTaskWithRetry(msg, taskContext, cause, "Error when processing task")
         // Throwable are not caught
         else -> throw cause ?: e
       }
       // stop here
       return@coroutineScope
-    } catch (e: TimeoutCancellationException) {
-      val cause = TimeoutException(service.javaClass.name, (millis!! * 1000).toDouble())
-      failTaskWithRetry(taskContext, cause, message, "Execution timeout")
-      // stop here
-      return@coroutineScope
     } catch (e: Exception) {
       // just in case, this should not happen
-      sendTaskFailed(message, e, "Unexpected error")
+      sendTaskFailed(msg, e, "Unexpected error")
       // stop here
       return@coroutineScope
     }
 
-    sendTaskCompleted(message, output, taskContext.meta)
+    sendTaskCompleted(msg, output, taskContext.meta)
   }
 
-  private suspend fun runTask(
+  private suspend fun processTask(
     service: Any,
     method: Method,
     parameters: Array<Any?>,
@@ -186,87 +174,163 @@ class TaskExecutor(
     method.invoke(service, *parameters)
   }
 
-  suspend fun sendTaskFailed(
-    message: TaskExecutorMessage,
-    cause: Throwable,
-    description: String?
-  ): Unit = coroutineScope {
-    val workerError = getExecutionError(cause)
-
-    when (message) {
-      is ExecuteTask -> {
-        description?.let { logError(message, cause, it) }
-
-        if (message.clientWaiting) {
-          logTrace(message, "sending TaskFailed to client")
-
-          val taskFailed =
-              TaskFailedClient(
-                  recipientName = message.emitterName,
-                  taskId = message.taskId,
-                  cause = workerError,
-                  emitterName = clientName,
-              )
-          launch { producer.sendAsync(taskFailed) }
-        }
-
-        if (message.workflowId != null) {
-          logTrace(message, "sending TaskFailed to workflow engine")
-
-          val taskFailed =
-              TaskFailedWorkflow(
-                  workflowName = message.workflowName ?: thisShouldNotHappen(),
-                  workflowId = message.workflowId ?: thisShouldNotHappen(),
-                  methodRunId = message.methodRunId ?: thisShouldNotHappen(),
-                  failedTaskError =
-                  FailedTaskError(
-                      serviceName = message.serviceName,
-                      taskId = message.taskId,
-                      methodName = message.methodName,
-                      cause = workerError,
-                  ),
-                  deferredError = getDeferredError(cause),
-                  emitterName = clientName,
-              )
-          launch { producer.send(taskFailed) }
-        }
-
-        // TODO check this
-        //launch { removeTags(message) }
-
-        Unit
-      }
-    }
-  }
-
   private suspend fun failTaskWithRetry(
+    msg: ExecuteTask,
     taskContext: TaskContext,
     cause: Exception,
-    msg: ExecuteTask,
     description: String
   ) {
+    // Retrieving delay before retry
     val delay = try {
-      // context is stored in execution's thread (in case used in retryable)
+      msg.logTrace("retrieving delay before retry")
+      // We set the localThread context here as it may be used in withRetry
       Task.context.set(taskContext)
       // get seconds before retry
       withRetry?.getSecondsBeforeRetry(taskContext.retryIndex.toInt(), cause)
     } catch (e: Exception) {
-      // no retry
+      // We chose here to not obfuscate the initial cause of the failure
       sendTaskFailed(
-          msg, e,
-          "$description - But unable to get delay before retry from ${withRetry!!::class.java.name}",
+          msg, cause,
+          "$description - unable to retry due to an " +
+              "${e::class.simpleName} exception in ${withRetry?.javaClass?.simpleName} method",
       )
-
       return
     }
 
-    when (delay) {
-      null -> sendTaskFailed(msg, cause, description)
+    when {
+      delay == null || delay <= 0 -> sendTaskFailed(msg, cause, description)
 
       else -> {
-        logWarn(msg, cause, "$description - Retrying in $delay seconds")
-        retryTask(msg, cause, MillisDuration((delay * 1000).toLong()), taskContext.meta)
+        sendRetryTask(
+            msg,
+            cause,
+            description,
+            MillisDuration((delay * 1000).toLong()),
+            taskContext.meta,
+        )
       }
+    }
+  }
+
+  suspend fun sendTaskFailed(
+    msg: TaskExecutorMessage,
+    cause: Exception,
+    description: String?
+  ): Unit = coroutineScope {
+    val workerError = cause.getExecutionError()
+
+    when (msg) {
+      is ExecuteTask -> {
+        description?.let { msg.logError(cause, it) }
+
+        if (msg.clientWaiting) {
+          msg.logTrace("sending TaskFailed to client")
+
+          val taskFailed = TaskFailedClient(
+              recipientName = msg.emitterName,
+              taskId = msg.taskId,
+              cause = workerError,
+              emitterName = clientName,
+          )
+          launch { producer.sendAsync(taskFailed) }
+        }
+
+        if (msg.workflowId != null) {
+          msg.logTrace("sending TaskFailed to workflow engine")
+
+          val taskFailed = TaskFailedWorkflow(
+              workflowName = msg.workflowName ?: thisShouldNotHappen(),
+              workflowId = msg.workflowId ?: thisShouldNotHappen(),
+              methodRunId = msg.methodRunId ?: thisShouldNotHappen(),
+              failedTaskError = FailedTaskError(
+                  serviceName = msg.serviceName,
+                  taskId = msg.taskId,
+                  methodName = msg.methodName,
+                  cause = workerError,
+              ),
+              deferredError = getDeferredError(cause),
+              emitterName = clientName,
+          )
+          launch { producer.send(taskFailed) }
+        }
+      }
+    }
+  }
+
+  private fun sendRetryTask(
+    msg: ExecuteTask,
+    cause: Exception,
+    description: String,
+    delay: MillisDuration,
+    meta: Map<String, ByteArray>
+  ) {
+    msg.logWarn(cause, "$description - Retrying in $delay seconds")
+
+    val executeTask = msg.copy(
+        taskRetryIndex = msg.taskRetryIndex + 1,
+        lastError = cause.getExecutionError(),
+        taskMeta = TaskMeta(meta),
+    )
+
+    producer.sendAsync(executeTask, delay).join()
+  }
+
+  private suspend fun sendTaskCompleted(
+    msg: ExecuteTask,
+    value: Any?,
+    meta: Map<String, ByteArray>
+  ) = coroutineScope {
+    val taskMeta = TaskMeta(meta)
+    val returnValue = ReturnValue.from(value)
+
+    if (msg.clientWaiting) {
+      msg.logTrace("sending TaskCompleted to client")
+
+      val taskCompleted = TaskCompletedClient(
+          recipientName = msg.emitterName,
+          taskId = msg.taskId,
+          taskReturnValue = returnValue,
+          taskMeta = taskMeta,
+          emitterName = clientName,
+      )
+
+      launch { producer.send(taskCompleted) }
+    }
+
+    if (msg.workflowId != null) {
+      msg.logTrace("sending TaskCompleted to workflow engine")
+
+      val taskCompleted = TaskCompletedWorkflow(
+          workflowName = msg.workflowName ?: thisShouldNotHappen(),
+          workflowId = msg.workflowId ?: thisShouldNotHappen(),
+          methodRunId = msg.methodRunId ?: thisShouldNotHappen(),
+          taskReturnValue =
+          TaskReturnValue(
+              serviceName = msg.serviceName,
+              taskId = msg.taskId,
+              taskMeta = taskMeta,
+              returnValue = returnValue,
+          ),
+          emitterName = clientName,
+      )
+
+      launch { producer.send(taskCompleted) }
+    }
+
+    launch { sendRemoveTags(msg) }
+  }
+
+  private suspend fun sendRemoveTags(msg: ExecuteTask) = coroutineScope {
+    msg.logTrace("sending removeTagFromTask to task tags")
+
+    msg.taskTags.map {
+      val removeTagFromTask = RemoveTagFromTask(
+          taskTag = it,
+          serviceName = msg.serviceName,
+          taskId = msg.taskId,
+          emitterName = clientName,
+      )
+      launch { producer.send(removeTagFromTask) }
     }
   }
 
@@ -290,54 +354,50 @@ class TaskExecutor(
         val workflowTaskParameters = parameters.first() as WorkflowTaskParameters
         val registered = workerRegistry.getRegisteredWorkflow(msg.workflowName!!)
         val workflow = registered.getInstance(workflowTaskParameters.workflowVersion)
-        val workflowMethod =
-            with(workflowTaskParameters) {
-              // method instance
-              getMethodPerNameAndParameters(
-                  workflow::class.java,
-                  "${methodRun.methodName}",
-                  methodRun.methodParameterTypes?.types,
-                  methodRun.methodParameters.size,
-              )
-            }
-        this.withTimeout =
-            // use timeout from registry, if it exists
-            // else use withTimeout from method annotation
-            registered.withTimeout
-              ?: workflowMethod.getAnnotation(Timeout::class.java)?.getInstance()
-                  // else use withRetry from class annotation
-                  ?: workflow::class.java.getAnnotation(Timeout::class.java)?.getInstance()
-                  // else use workflow if WithTimeout
-                  ?: when (workflow) {
-                is WithTimeout -> workflow
-                else -> null
-              }
-                  // else use default value
-                  ?: DEFAULT_WORKFLOW_TASK_TIMEOUT
+        val workflowMethod = with(workflowTaskParameters) {
+          // method instance
+          getMethodPerNameAndParameters(
+              workflow::class.java,
+              "${methodRun.methodName}",
+              methodRun.methodParameterTypes?.types,
+              methodRun.methodParameters.size,
+          )
+        }
 
-        this.withRetry = // use timeout from registry, if it exists
-            // else use withTimeout from method annotation
-            registered.withRetry
-              ?: workflowMethod.getAnnotation(Retry::class.java)?.getInstance()
-                  // else use withRetry from class annotation
-                  ?: workflow::class.java.getAnnotation(Retry::class.java)?.getInstance()
-                  // else use workflow if WithTimeout
-                  ?: when (workflow) {
-                is WithRetry -> workflow
-                else -> null
-              }
-                  // else use default value
-                  ?: DEFAULT_WORKFLOW_TASK_RETRY
+        // use timeout from registry, if it exists
+        // else use withTimeout from method annotation
+        this.withTimeout = registered.withTimeout
+          ?: workflowMethod.getAnnotation(Timeout::class.java)?.getInstance()
+              // else use withRetry from class annotation
+              ?: workflow::class.java.getAnnotation(Timeout::class.java)?.getInstance()
+              // else use workflow if WithTimeout
+              ?: when (workflow) {
+            is WithTimeout -> workflow
+            else -> null
+          } // else use default value
+              ?: DEFAULT_WORKFLOW_TASK_TIMEOUT
 
-        val checkMode =
+        // use timeout from registry, if it exists
+        // else use withTimeout from method annotation
+        this.withRetry = registered.withRetry
+          ?: workflowMethod.getAnnotation(Retry::class.java)?.getInstance()
+              // else use withRetry from class annotation
+              ?: workflow::class.java.getAnnotation(Retry::class.java)?.getInstance()
+              // else use workflow if WithTimeout
+              ?: when (workflow) {
+            is WithRetry -> workflow
+            else -> null
+          } // else use default value
+              ?: DEFAULT_WORKFLOW_TASK_RETRY
+
         // get checkMode from registry
-            // else get mode from method annotation
-            registered.checkMode
-              ?: workflowMethod.getAnnotation(CheckMode::class.java)?.mode
-              // else get mode from class annotation
-              ?: workflow::class.java.getAnnotation(CheckMode::class.java)?.mode
-              // else use default value
-              ?: DEFAULT_WORKFLOW_CHECK_MODE
+        // else get mode from method annotation
+        val checkMode = registered.checkMode
+          ?: workflowMethod.getAnnotation(CheckMode::class.java)?.mode
+          // else get mode from class annotation
+          ?: workflow::class.java.getAnnotation(CheckMode::class.java)?.mode
+          // else use default value
+          ?: DEFAULT_WORKFLOW_CHECK_MODE
 
         with(service as WorkflowTaskImpl) {
           this.checkMode = checkMode
@@ -349,144 +409,68 @@ class TaskExecutor(
       false -> {
         val registered = workerRegistry.getRegisteredService(msg.serviceName)
 
-        this.withTimeout =
-            // use withTimeout from registry, if it exists
-            // else use withTimeout from method annotation
-            registered.withTimeout
-              ?: taskMethod.getAnnotation(Timeout::class.java)?.getInstance()
-                  // else use withTimeout from class annotation
-                  ?: service::class.java.getAnnotation(Timeout::class.java)?.getInstance()
-                  // else use service if WithRetry
-                  ?: when (service) {
-                is WithTimeout -> service
-                else -> null
-              }
-                  // else use default value
-                  ?: DEFAULT_TASK_TIMEOUT
+        // use withTimeout from registry, if it exists
+        // else use withTimeout from method annotation
+        this.withTimeout = registered.withTimeout
+          ?: taskMethod.getAnnotation(Timeout::class.java)?.getInstance()
+              // else use withTimeout from class annotation
+              ?: service::class.java.getAnnotation(Timeout::class.java)?.getInstance()
+              // else use service if WithRetry
+              ?: when (service) {
+            is WithTimeout -> service
+            else -> null
+          } // else use default value
+              ?: DEFAULT_TASK_TIMEOUT
 
-        this.withRetry =
-            // use withRetry from registry, if it exists
-            // else use withRetry from method annotation
-            registered.withRetry
-              ?: taskMethod.getAnnotation(Retry::class.java)?.getInstance()
-                  // else use withRetry from class annotation
-                  ?: service::class.java.getAnnotation(Retry::class.java)?.getInstance()
-                  // else use service if WithRetry
-                  ?: when (service) {
-                is WithRetry -> service
-                else -> null
-              }
-                  // else use default value
-                  ?: DEFAULT_TASK_RETRY
+        // use withRetry from registry, if it exists
+        // else use withRetry from method annotation
+        this.withRetry = registered.withRetry
+          ?: taskMethod.getAnnotation(Retry::class.java)?.getInstance()
+              // else use withRetry from class annotation
+              ?: service::class.java.getAnnotation(Retry::class.java)?.getInstance()
+              // else use service if WithRetry
+              ?: when (service) {
+            is WithRetry -> service
+            else -> null
+          } // else use default value
+              ?: DEFAULT_TASK_RETRY
       }
     }
 
     return TaskCommand(service, taskMethod, parameters)
   }
 
-  private fun retryTask(
-    message: ExecuteTask,
-    exception: Exception,
-    delay: MillisDuration,
-    meta: Map<String, ByteArray>
-  ) {
-    logTrace(message, "retrying after $delay ms")
-
-    val executeTask =
-        message.copy(
-            taskRetryIndex = message.taskRetryIndex + 1,
-            lastError = getExecutionError(exception),
-            taskMeta = TaskMeta(meta),
-        )
-
-    producer.sendAsync(executeTask, delay).join()
-  }
-
-  private suspend fun sendTaskCompleted(
-    message: ExecuteTask,
-    value: Any?,
-    meta: Map<String, ByteArray>
-  ) = coroutineScope {
-    val taskMeta = TaskMeta(meta)
-    val returnValue = ReturnValue.from(value)
-
-    if (message.clientWaiting) {
-      logTrace(message, "sending TaskCompleted to client")
-
-      val taskCompleted =
-          TaskCompletedClient(
-              recipientName = message.emitterName,
-              taskId = message.taskId,
-              taskReturnValue = returnValue,
-              taskMeta = taskMeta,
-              emitterName = clientName,
-          )
-
-      launch { producer.send(taskCompleted) }
-    }
-
-    if (message.workflowId != null) {
-      logTrace(message, "sending TaskCompleted to workflow engine")
-
-      val taskCompleted =
-          TaskCompletedWorkflow(
-              workflowName = message.workflowName ?: thisShouldNotHappen(),
-              workflowId = message.workflowId ?: thisShouldNotHappen(),
-              methodRunId = message.methodRunId ?: thisShouldNotHappen(),
-              taskReturnValue =
-              TaskReturnValue(
-                  serviceName = message.serviceName,
-                  taskId = message.taskId,
-                  taskMeta = taskMeta,
-                  returnValue = returnValue,
-              ),
-              emitterName = clientName,
-          )
-
-      launch { producer.send(taskCompleted) }
-    }
-
-    launch { removeTags(message) }
-  }
-
-  private suspend fun removeTags(message: ExecuteTask) = coroutineScope {
-    logTrace(message, "sending removeTagFromTask to task tags")
-
-    message.taskTags.map {
-      val removeTagFromTask =
-          RemoveTagFromTask(
-              taskTag = it,
-              serviceName = message.serviceName,
-              taskId = message.taskId,
-              emitterName = clientName,
-          )
-      launch { producer.send(removeTagFromTask) }
-    }
-  }
-
-  private fun getDeferredError(throwable: Throwable) =
-      when (throwable is DeferredException) {
-        true -> DeferredError.from(throwable)
+  private fun getDeferredError(e: Exception) =
+      when (e is DeferredException) {
+        true -> DeferredError.from(e)
         false -> null
       }
 
-  private fun getExecutionError(throwable: Throwable) = ExecutionError.from(clientName, throwable)
+  private fun Exception.getExecutionError() = ExecutionError.from(clientName, this)
 
-  private fun logError(message: ExecuteTask, throwable: Throwable, description: String) {
-    logger.error(throwable) {
-      "${message.serviceName}::${message.methodName} (${message.taskId}): $description"
+  private fun ExecuteTask.logError(e: Throwable, description: String) {
+    logger.error(e) {
+      "${serviceName}::${methodName} (${taskId}): $description"
     }
   }
 
-  private fun logWarn(message: ExecuteTask, throwable: Throwable, description: String) {
-    logger.warn(throwable) {
-      "${message.serviceName}::${message.methodName} (${message.taskId}): $description"
+  private fun ExecuteTask.logWarn(e: Exception, description: String) {
+    logger.warn(e) {
+      "${serviceName}::${methodName} (${taskId}): $description"
     }
   }
 
-  private fun logTrace(message: ExecuteTask, description: String) {
+  private fun ExecuteTask.logTrace(description: String) {
     logger.trace {
-      "${message.serviceName}::${message.methodName} (${message.taskId}): $description"
+      "${serviceName}::${methodName} (${taskId}): $description"
     }
+  }
+
+  companion object {
+    val DEFAULT_WORKFLOW_TASK_TIMEOUT = WithTimeout { 60.0 }
+    val DEFAULT_TASK_TIMEOUT = null
+    val DEFAULT_TASK_RETRY = RetryPolicy.DEFAULT
+    val DEFAULT_WORKFLOW_TASK_RETRY = null
+    val DEFAULT_WORKFLOW_CHECK_MODE = WorkflowCheckMode.simple
   }
 }

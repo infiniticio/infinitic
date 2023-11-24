@@ -22,14 +22,7 @@
  */
 package io.infinitic.exceptions.tasks
 
-sealed class TaskException(message: String) : kotlin.RuntimeException(message)
+sealed class TaskException(message: String? = null, cause: Throwable? = null) :
+  kotlin.RuntimeException(message, cause)
 
-class TimeoutException(klass: String, timeoutSeconds: Double) :
-    TaskException(
-        message =
-            "The processing of task \"$klass\" took more than ${
-    String.format(
-        "%.3f",
-        timeoutSeconds
-    )
-    } seconds")
+class TimeoutTaskException : TaskException()

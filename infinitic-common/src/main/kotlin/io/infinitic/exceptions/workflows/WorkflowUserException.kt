@@ -29,44 +29,55 @@ import io.infinitic.workflows.Channel
 
 sealed class WorkflowUserException(msg: String, help: String) : UserException("$msg.\n$help")
 
-object InvalidInlineException :
-    WorkflowUserException(
-        msg = "Task or workflow must not be used inside an inline function", help = "")
+data object InvalidInlineException : WorkflowUserException(
+    msg = "Task or workflow must not be used inside an inline function", help = "",
+) {
+  private fun readResolve(): Any = InvalidInlineException
+}
 
-object MultipleCustomIdException : WorkflowUserException(msg = "", help = "")
+data object MultipleCustomIdException : WorkflowUserException(msg = "", help = "") {
+  private fun readResolve(): Any = MultipleCustomIdException
+}
 
-object OutOfBoundAwaitException : WorkflowUserException(msg = "", help = "")
+data object OutOfBoundAwaitException : WorkflowUserException(msg = "", help = "") {
+  private fun readResolve(): Any = OutOfBoundAwaitException
+}
 
-class NonIdempotentChannelGetterException(workflow: String, method: String) :
-    WorkflowUserException(
-        msg =
-            "in workflow $workflow, method $method should return the same object when called multiple times",
-        help = "")
+class NonIdempotentChannelGetterException(workflow: String, method: String) : WorkflowUserException(
+    msg =
+    "in workflow $workflow, method $method should return the same object when called multiple times",
+    help = "",
+)
 
 class MultipleGettersForSameChannelException(
-    workflow: String,
-    method: String,
-    otherMethod: String
+  workflow: String,
+  method: String,
+  otherMethod: String
 ) :
-    WorkflowUserException(
-        msg = "in workflow $workflow, getter $method and $otherMethod return the same channel",
-        help = "Make sure to not have multiple getters returning the same channel")
+  WorkflowUserException(
+      msg = "in workflow $workflow, getter $method and $otherMethod return the same channel",
+      help = "Make sure to not have multiple getters returning the same channel",
+  )
 
-object ChannelWithoutGetterException :
-    WorkflowUserException(
-        msg = "A ${Channel::class.simpleName} is used without getter",
-        help = "Make sure to add a getter of this channel to the workflow interface")
+data object ChannelWithoutGetterException : WorkflowUserException(
+    msg = "A ${Channel::class.simpleName} is used without getter",
+    help = "Make sure to add a getter of this channel to the workflow interface",
+) {
+  private fun readResolve(): Any = ChannelWithoutGetterException
+}
 
 class WorkflowChangedException(workflow: String, method: String, position: String) :
-    WorkflowUserException(
-        msg =
-            "Workflow \"$workflow\" has been updated since its launch (detected at position $position in $method)",
-        help =
-            "You can either kill this instance or restore the workflow definition to be able to resume it")
+  WorkflowUserException(
+      msg =
+      "Workflow \"$workflow\" has been updated since its launch (detected at position $position in $method)",
+      help =
+      "You can either kill this instance or restore the workflow definition to be able to resume it",
+  )
 
 class UnknownWorkflowVersionException(
-    workflowName: WorkflowName,
-    workflowVersion: WorkflowVersion?
+  workflowName: WorkflowName,
+  workflowVersion: WorkflowVersion?
 ) :
-    WorkflowUserException(
-        msg = "Unknown version \"$workflowVersion\" for Workflow \"$workflowName\"", help = "")
+  WorkflowUserException(
+      msg = "Unknown version \"$workflowVersion\" for Workflow \"$workflowName\"", help = "",
+  )

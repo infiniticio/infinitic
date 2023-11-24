@@ -24,4 +24,4 @@ package io.infinitic.storage.keyValue
 
 import io.infinitic.storage.StorageException
 
-class KeyValueStorageException(e: Throwable) : StorageException(e)
+class KeyValueStorageException(e: Exception) : StorageException(e)

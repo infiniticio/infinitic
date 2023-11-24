@@ -98,11 +98,12 @@ class WorkflowTaskImpl : WorkflowTask {
             is DeferredException -> throw cause
             // Send back other exceptions
             is Exception ->
-                throw FailedWorkflowTaskException(
-                    workflowName = workflowTaskParameters.workflowName.toString(),
-                    workflowId = workflowTaskParameters.workflowId.toString(),
-                    workflowTaskId = Task.taskId,
-                    workerException = WorkerException.from(ClientName(Task.workerName), cause))
+              throw FailedWorkflowTaskException(
+                  workflowName = workflowTaskParameters.workflowName.toString(),
+                  workflowId = workflowTaskParameters.workflowId.toString(),
+                  workflowTaskId = Task.taskId,
+                  workerException = WorkerException.from(ClientName(Task.workerName), cause),
+              )
             // Throwable are not caught
             else -> throw cause!!
           }
@@ -113,6 +114,7 @@ class WorkflowTaskImpl : WorkflowTask {
         newStep = dispatcher.newStep,
         properties = instance.getProperties(),
         methodReturnValue = methodReturnValue,
-        workflowVersion = WorkflowVersion.from(instance::class.java))
+        workflowVersion = WorkflowVersion.from(instance::class.java),
+    )
   }
 }

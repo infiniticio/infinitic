@@ -26,34 +26,31 @@ import io.infinitic.storage.compressor.Compressor
 import org.jetbrains.annotations.TestOnly
 
 class CompressedKeyValueStorage(private val compressor: Compressor?, val storage: KeyValueStorage) :
-    KeyValueStorage {
+  KeyValueStorage {
 
   override suspend fun get(key: String): ByteArray? =
-      // As the compression method can change over time,
-      // we always detect if the state is compressed or not
+  // As the compression method can change over time,
+  // we always detect if the state is compressed or not
       // independently of the provided compressor
       storage.get(key)?.let { Compressor.decompress(it) }
 
-  override suspend fun put(key: String, value: ByteArray) =
-      try {
-        // apply the provided compression method, if any
-        storage.put(key, compressor?.compress(value) ?: value)
-      } catch (e: Throwable) {
-        throw KeyValueStorageException(e)
-      }
+  override suspend fun put(key: String, value: ByteArray) = try {
+    // apply the provided compression method, if any
+    storage.put(key, compressor?.compress(value) ?: value)
+  } catch (e: Exception) {
+    throw KeyValueStorageException(e)
+  }
 
-  override suspend fun del(key: String) =
-      try {
-        storage.del(key)
-      } catch (e: Throwable) {
-        throw KeyValueStorageException(e)
-      }
+  override suspend fun del(key: String) = try {
+    storage.del(key)
+  } catch (e: Exception) {
+    throw KeyValueStorageException(e)
+  }
 
   @TestOnly
-  override fun flush() =
-      try {
-        storage.flush()
-      } catch (e: Throwable) {
-        throw KeyValueStorageException(e)
-      }
+  override fun flush() = try {
+    storage.flush()
+  } catch (e: Exception) {
+    throw KeyValueStorageException(e)
+  }
 }

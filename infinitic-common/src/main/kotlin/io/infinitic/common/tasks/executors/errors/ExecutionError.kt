@@ -33,20 +33,20 @@ import kotlinx.serialization.Serializable
 @AvroNamespace("io.infinitic.tasks.executor")
 @AvroName("WorkerError")
 data class ExecutionError(
-    /** Name of the worker */
-    val workerName: ClientName,
+  /** Name of the worker */
+  val workerName: ClientName,
 
-    /** Name of the error */
-    val name: String,
+  /** Name of the error */
+  val name: String,
 
-    /** Message of the error */
-    val message: String?,
+  /** Message of the error */
+  val message: String?,
 
-    /** String version of the stack trace */
-    val stackTraceToString: String,
+  /** String version of the stack trace */
+  val stackTraceToString: String,
 
-    /** cause of the error */
-    val cause: ExecutionError?
+  /** cause of the error */
+  val cause: ExecutionError?
 ) {
   companion object {
     fun from(exception: WorkerException): ExecutionError =
@@ -55,7 +55,8 @@ data class ExecutionError(
             name = exception.name,
             message = exception.message,
             stackTraceToString = exception.stackTraceToString,
-            cause = exception.cause?.let { from(it) })
+            cause = exception.cause?.let { from(it) },
+        )
 
     fun from(workerName: ClientName, throwable: Throwable): ExecutionError =
         ExecutionError(
@@ -64,19 +65,16 @@ data class ExecutionError(
             message = throwable.message,
             stackTraceToString = throwable.stackTraceToString(),
             cause =
-                when (val cause = throwable.cause) {
-                  null,
-                  throwable -> null
-                  else -> from(workerName, cause)
-                })
+            when (val cause = throwable.cause) {
+              null, throwable -> null
+              else -> from(workerName, cause)
+            },
+        )
   }
 
   // removing stackTraceToString of the output to preserve logs
-  override fun toString(): String =
-      this::class.java.simpleName +
-          "(" +
-          listOf("name" to name, "message" to message, "cause" to cause).joinToString {
-            "${it.first}=${it.second}"
-          } +
-          ")"
+  override fun toString(): String = this::class.java.simpleName + "(" +
+      listOf("name" to name, "message" to message, "cause" to cause).joinToString {
+        "${it.first}=${it.second}"
+      } + ")"
 }

@@ -79,7 +79,7 @@ class PulsarInfiniticConsumer(
   // Start consumers of messages to client
   override fun startClientConsumerAsync(
     handler: suspend (ClientMessage) -> Unit,
-    beforeDlq: (suspend (ClientMessage, Throwable) -> Unit)?,
+    beforeDlq: (suspend (ClientMessage, Exception) -> Unit)?,
     clientName: ClientName
   ): CompletableFuture<Unit> = startAsync<ClientMessage, ClientEnvelope>(
       handler = handler,
@@ -92,7 +92,7 @@ class PulsarInfiniticConsumer(
   // Start consumers of messages to workflow tag
   override fun startWorkflowTagConsumerAsync(
     handler: suspend (WorkflowTagMessage) -> Unit,
-    beforeDlq: (suspend (WorkflowTagMessage, Throwable) -> Unit)?,
+    beforeDlq: (suspend (WorkflowTagMessage, Exception) -> Unit)?,
     workflowName: WorkflowName,
     concurrency: Int
   ) = startAsync<WorkflowTagMessage, WorkflowTagEnvelope>(
@@ -106,7 +106,7 @@ class PulsarInfiniticConsumer(
   // Start consumers of messages to workflow engine
   override fun startWorkflowEngineConsumerAsync(
     handler: suspend (WorkflowEngineMessage) -> Unit,
-    beforeDlq: (suspend (WorkflowEngineMessage, Throwable) -> Unit)?,
+    beforeDlq: (suspend (WorkflowEngineMessage, Exception) -> Unit)?,
     workflowName: WorkflowName,
     concurrency: Int
   ) = startAsync<WorkflowEngineMessage, WorkflowEngineEnvelope>(
@@ -120,7 +120,7 @@ class PulsarInfiniticConsumer(
   // Start consumers of delayed messages to workflow engine
   override fun startDelayedWorkflowEngineConsumerAsync(
     handler: suspend (WorkflowEngineMessage) -> Unit,
-    beforeDlq: (suspend (WorkflowEngineMessage, Throwable) -> Unit)?,
+    beforeDlq: (suspend (WorkflowEngineMessage, Exception) -> Unit)?,
     workflowName: WorkflowName,
     concurrency: Int
   ) = startAsync<WorkflowEngineMessage, WorkflowEngineEnvelope>(
@@ -134,7 +134,7 @@ class PulsarInfiniticConsumer(
   // Start consumers of messages to task tags
   override fun startTaskTagConsumerAsync(
     handler: suspend (TaskTagMessage) -> Unit,
-    beforeDlq: (suspend (TaskTagMessage, Throwable) -> Unit)?,
+    beforeDlq: (suspend (TaskTagMessage, Exception) -> Unit)?,
     serviceName: ServiceName,
     concurrency: Int
   ) = startAsync<TaskTagMessage, TaskTagEnvelope>(
@@ -148,7 +148,7 @@ class PulsarInfiniticConsumer(
   // Start consumers of messages to task executor
   override fun startTaskExecutorConsumerAsync(
     handler: suspend (TaskExecutorMessage) -> Unit,
-    beforeDlq: (suspend (TaskExecutorMessage, Throwable) -> Unit)?,
+    beforeDlq: (suspend (TaskExecutorMessage, Exception) -> Unit)?,
     serviceName: ServiceName,
     concurrency: Int
   ) = startAsync<TaskExecutorMessage, TaskExecutorEnvelope>(
@@ -161,7 +161,7 @@ class PulsarInfiniticConsumer(
 
   override fun startDelayedTaskExecutorConsumerAsync(
     handler: suspend (TaskExecutorMessage) -> Unit,
-    beforeDlq: (suspend (TaskExecutorMessage, Throwable) -> Unit)?,
+    beforeDlq: (suspend (TaskExecutorMessage, Exception) -> Unit)?,
     serviceName: ServiceName,
     concurrency: Int
   ): CompletableFuture<Unit> {
@@ -172,7 +172,7 @@ class PulsarInfiniticConsumer(
   // Start consumers of messages to workflow task executor
   override fun startWorkflowTaskConsumerAsync(
     handler: suspend (TaskExecutorMessage) -> Unit,
-    beforeDlq: (suspend (TaskExecutorMessage, Throwable) -> Unit)?,
+    beforeDlq: (suspend (TaskExecutorMessage, Exception) -> Unit)?,
     workflowName: WorkflowName,
     concurrency: Int
   ) = startAsync<TaskExecutorMessage, TaskExecutorEnvelope>(
@@ -185,7 +185,7 @@ class PulsarInfiniticConsumer(
 
   override fun startDelayedWorkflowTaskConsumerAsync(
     handler: suspend (TaskExecutorMessage) -> Unit,
-    beforeDlq: (suspend (TaskExecutorMessage, Throwable) -> Unit)?,
+    beforeDlq: (suspend (TaskExecutorMessage, Exception) -> Unit)?,
     workflowName: WorkflowName,
     concurrency: Int
   ): CompletableFuture<Unit> {
@@ -196,7 +196,7 @@ class PulsarInfiniticConsumer(
   // Start a consumer on a topic, with concurrent executors
   private inline fun <T : Message, reified S : Envelope<T>> startAsync(
     noinline handler: suspend (T) -> Unit,
-    noinline beforeDlq: (suspend (T, Throwable) -> Unit)?,
+    noinline beforeDlq: (suspend (T, Exception) -> Unit)?,
     topicType: TopicType,
     concurrency: Int,
     name: String

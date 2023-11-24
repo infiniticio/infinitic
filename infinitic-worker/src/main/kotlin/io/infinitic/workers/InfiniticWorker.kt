@@ -127,8 +127,8 @@ class InfiniticWorker(
           { message: TaskExecutorMessage -> taskExecutor.handle(message) }
 
       // tell clients and/or workflow engine about that failure
-      val beforeDlq: (suspend (TaskExecutorMessage, Throwable) -> Unit) =
-          { message: TaskExecutorMessage, cause: Throwable ->
+      val beforeDlq: (suspend (TaskExecutorMessage, Exception) -> Unit) =
+          { message: TaskExecutorMessage, cause: Exception ->
             taskExecutor.sendTaskFailed(message, cause, sendingDlqMessage)
           }
 
@@ -160,8 +160,8 @@ class InfiniticWorker(
           { message: TaskExecutorMessage -> taskExecutor.handle(message) }
 
       // tell clients and/or workflow engine about that failure
-      val beforeDlq: (suspend (TaskExecutorMessage, Throwable) -> Unit) =
-          { message: TaskExecutorMessage, cause: Throwable ->
+      val beforeDlq: (suspend (TaskExecutorMessage, Exception) -> Unit) =
+          { message: TaskExecutorMessage, cause: Exception ->
             taskExecutor.sendTaskFailed(message, cause, sendingDlqMessage)
           }
 
