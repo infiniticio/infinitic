@@ -22,4 +22,4 @@
  */
 package io.infinitic.storage
 
-abstract class StorageException(e: Throwable) : RuntimeException(e)
+abstract class StorageException(e: Exception) : RuntimeException(e)

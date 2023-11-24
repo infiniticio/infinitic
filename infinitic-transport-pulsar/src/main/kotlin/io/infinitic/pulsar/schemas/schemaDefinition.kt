@@ -26,7 +26,7 @@ import io.infinitic.common.messages.Envelope
 import io.infinitic.common.messages.writerSchema
 import org.apache.pulsar.client.api.schema.SchemaDefinition
 
-inline fun <reified T : Envelope<*>> schemaDefinition() =
+inline fun <reified T : Envelope<*>> schemaDefinition(): SchemaDefinition<T> =
     SchemaDefinition.builder<T>()
         .withJsonDef(T::class.writerSchema().toString())
         .withSchemaReader(KSchemaReader(T::class))

@@ -37,14 +37,14 @@ interface InfiniticConsumer : AutoCloseable {
   // Asynchronously start consumers of messages to client
   fun startClientConsumerAsync(
     handler: suspend (ClientMessage) -> Unit,
-    beforeDlq: (suspend (ClientMessage, Throwable) -> Unit)?,
+    beforeDlq: (suspend (ClientMessage, Exception) -> Unit)?,
     clientName: ClientName
   ): CompletableFuture<Unit>
 
   // Asynchronously start consumers of messages to task tags
   fun startTaskTagConsumerAsync(
     handler: suspend (TaskTagMessage) -> Unit,
-    beforeDlq: (suspend (TaskTagMessage, Throwable) -> Unit)?,
+    beforeDlq: (suspend (TaskTagMessage, Exception) -> Unit)?,
     serviceName: ServiceName,
     concurrency: Int
   ): CompletableFuture<Unit>
@@ -52,7 +52,7 @@ interface InfiniticConsumer : AutoCloseable {
   // Asynchronously start consumers of messages to workflow tag
   fun startWorkflowTagConsumerAsync(
     handler: suspend (WorkflowTagMessage) -> Unit,
-    beforeDlq: (suspend (WorkflowTagMessage, Throwable) -> Unit)?,
+    beforeDlq: (suspend (WorkflowTagMessage, Exception) -> Unit)?,
     workflowName: WorkflowName,
     concurrency: Int
   ): CompletableFuture<Unit>
@@ -60,7 +60,7 @@ interface InfiniticConsumer : AutoCloseable {
   // Asynchronously start consumers of messages to workflow engine
   fun startWorkflowEngineConsumerAsync(
     handler: suspend (WorkflowEngineMessage) -> Unit,
-    beforeDlq: (suspend (WorkflowEngineMessage, Throwable) -> Unit)?,
+    beforeDlq: (suspend (WorkflowEngineMessage, Exception) -> Unit)?,
     workflowName: WorkflowName,
     concurrency: Int
   ): CompletableFuture<Unit>
@@ -68,7 +68,7 @@ interface InfiniticConsumer : AutoCloseable {
   // Asynchronously start consumers of delayed messages to workflow engine
   fun startDelayedWorkflowEngineConsumerAsync(
     handler: suspend (WorkflowEngineMessage) -> Unit,
-    beforeDlq: (suspend (WorkflowEngineMessage, Throwable) -> Unit)?,
+    beforeDlq: (suspend (WorkflowEngineMessage, Exception) -> Unit)?,
     workflowName: WorkflowName,
     concurrency: Int
   ): CompletableFuture<Unit>
@@ -76,7 +76,7 @@ interface InfiniticConsumer : AutoCloseable {
   // Asynchronously start consumers of messages to task executor
   fun startTaskExecutorConsumerAsync(
     handler: suspend (TaskExecutorMessage) -> Unit,
-    beforeDlq: (suspend (TaskExecutorMessage, Throwable) -> Unit)?,
+    beforeDlq: (suspend (TaskExecutorMessage, Exception) -> Unit)?,
     serviceName: ServiceName,
     concurrency: Int
   ): CompletableFuture<Unit>
@@ -84,7 +84,7 @@ interface InfiniticConsumer : AutoCloseable {
   // Asynchronously start consumers of delayed messages to task executor
   fun startDelayedTaskExecutorConsumerAsync(
     handler: suspend (TaskExecutorMessage) -> Unit,
-    beforeDlq: (suspend (TaskExecutorMessage, Throwable) -> Unit)?,
+    beforeDlq: (suspend (TaskExecutorMessage, Exception) -> Unit)?,
     serviceName: ServiceName,
     concurrency: Int
   ): CompletableFuture<Unit>
@@ -92,7 +92,7 @@ interface InfiniticConsumer : AutoCloseable {
   // Asynchronously start consumers of messages to workflow task executor
   fun startWorkflowTaskConsumerAsync(
     handler: suspend (TaskExecutorMessage) -> Unit,
-    beforeDlq: (suspend (TaskExecutorMessage, Throwable) -> Unit)?,
+    beforeDlq: (suspend (TaskExecutorMessage, Exception) -> Unit)?,
     workflowName: WorkflowName,
     concurrency: Int
   ): CompletableFuture<Unit>
@@ -100,7 +100,7 @@ interface InfiniticConsumer : AutoCloseable {
   // Asynchronously start consumers of delayed messages to workflow task executor
   fun startDelayedWorkflowTaskConsumerAsync(
     handler: suspend (TaskExecutorMessage) -> Unit,
-    beforeDlq: (suspend (TaskExecutorMessage, Throwable) -> Unit)?,
+    beforeDlq: (suspend (TaskExecutorMessage, Exception) -> Unit)?,
     workflowName: WorkflowName,
     concurrency: Int
   ): CompletableFuture<Unit>
