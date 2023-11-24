@@ -56,6 +56,7 @@ class Consumer(
     topic: String,
     topicDlq: String?,
     subscriptionName: String,
+    subscriptionNameDlq: String,
     subscriptionType: SubscriptionType,
     consumerName: String,
     concurrency: Int
@@ -69,9 +70,9 @@ class Consumer(
           launch {
             val consumer = createConsumer<T, S>(
                 topic = topic,
-                // subscriptionName MUST be the same for all concurrent instances!
                 topicDlq = topicDlq,
-                subscriptionName = subscriptionName,
+                subscriptionName = subscriptionName, //  MUST be the same for all instances!
+                subscriptionNameDlq = subscriptionNameDlq, //  MUST be the same for all instances!
                 subscriptionType = subscriptionType,
                 consumerName = "$consumerName-$it",
             )
@@ -124,6 +125,7 @@ class Consumer(
             topic = topic,
             topicDlq = topicDlq,
             subscriptionName = subscriptionName,
+            subscriptionNameDlq = subscriptionNameDlq,
             subscriptionType = subscriptionType,
             consumerName = consumerName,
         )
@@ -221,6 +223,7 @@ class Consumer(
     topic: String,
     topicDlq: String?,
     subscriptionName: String,
+    subscriptionNameDlq: String,
     subscriptionType: SubscriptionType,
     consumerName: String
   ): Consumer<S> {
@@ -251,9 +254,20 @@ class Consumer(
                     DeadLetterPolicy.builder()
                         .maxRedeliverCount(consumerConfig.maxRedeliverCount)
                         .deadLetterTopic(it)
-                        .initialSubscriptionName("$subscriptionName-dlq")
                         .build(),
                 )
+                // to avoid deletion of messages in DLQ, we create a subscription
+                pulsarClient
+                    .newConsumer(schema)
+                    .topic(topicDlq)
+                    .subscriptionType(SubscriptionType.Failover)
+                    .subscriptionName(subscriptionNameDlq)
+                    .consumerName("$consumerName-dlq")
+                    .subscriptionInitialPosition(SubscriptionInitialPosition.Earliest)
+                    .subscribe()
+                    // close the consumer immediately as we do not need it
+                    .close()
+
                 // remove default ackTimeout set by the deadLetterPolicy
                 // https://github.com/apache/pulsar/issues/8484
                 c.ackTimeout(0, TimeUnit.MILLISECONDS)

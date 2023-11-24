@@ -55,10 +55,8 @@ internal object Test {
       true -> it.copy(
           transport = Transport.pulsar,
           pulsar = it.pulsar!!.copy(
-              tenant = "infinitic",
-              namespace = "test",
-              brokerServiceUrl = pulsarServer!!.pulsarBrokerUrl,
-              webServiceUrl = pulsarServer.httpServiceUrl,
+              brokerServiceUrl = pulsarServer!!.pulsarBrokerUrl, // "pulsar://localhost:6650/"
+              webServiceUrl = pulsarServer.httpServiceUrl, // "http://localhost:8080/"
           ),
       )
 

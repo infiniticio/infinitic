@@ -172,6 +172,7 @@ class ConsumerTests :
           val randomTopic = TestFactory.random<String>()
           val randomTopicDlq = TestFactory.random<String>()
           val randomSubscriptionName = TestFactory.random<String>()
+          val randomSubscriptionNameDlq = TestFactory.random<String>()
           val randomSubscriptionType = TestFactory.random<SubscriptionType>()
           val randomConsumerName = TestFactory.random<String>()
 
@@ -182,6 +183,7 @@ class ConsumerTests :
               topic = randomTopic,
               topicDlq = randomTopicDlq,
               subscriptionName = randomSubscriptionName,
+              subscriptionNameDlq = randomSubscriptionNameDlq,
               subscriptionType = randomSubscriptionType,
               consumerName = randomConsumerName,
           )
