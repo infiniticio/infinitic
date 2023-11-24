@@ -56,7 +56,7 @@ import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
 import io.infinitic.exceptions.tasks.ClassNotFoundException
 import io.infinitic.exceptions.tasks.NoMethodFoundWithParameterCountException
 import io.infinitic.exceptions.tasks.NoMethodFoundWithParameterTypesException
-import io.infinitic.exceptions.tasks.TimeoutException
+import io.infinitic.exceptions.tasks.TimeoutTaskException
 import io.infinitic.exceptions.tasks.TooManyMethodsFoundWithParameterCountException
 import io.infinitic.tasks.executor.samples.RetryImpl
 import io.infinitic.tasks.executor.samples.ServiceImplService
@@ -386,8 +386,8 @@ class TaskExecutorTests :
           coroutineScope { taskExecutor.handle(msg) }
           // then
           taskExecutorSlot.isCaptured shouldBe false
-          checkClientException(clientSlot, msg, IllegalArgumentException::class)
-          checkWorkflowException(workflowEngineSlot, msg, IllegalArgumentException::class)
+          checkClientException(clientSlot, msg, IllegalStateException::class)
+          checkWorkflowException(workflowEngineSlot, msg, IllegalStateException::class)
           taskTagSlots.size shouldBe 0
         }
 
@@ -422,8 +422,8 @@ class TaskExecutorTests :
           coroutineScope { taskExecutor.handle(msg) }
           // then
           taskExecutorSlot.isCaptured shouldBe false
-          checkClientException(clientSlot, msg, TimeoutException::class)
-          checkWorkflowException(workflowEngineSlot, msg, TimeoutException::class)
+          checkClientException(clientSlot, msg, TimeoutTaskException::class)
+          checkWorkflowException(workflowEngineSlot, msg, TimeoutTaskException::class)
           taskTagSlots.size shouldBe 0
         }
 
@@ -441,8 +441,8 @@ class TaskExecutorTests :
           coroutineScope { taskExecutor.handle(msg) }
           // then
           taskExecutorSlot.isCaptured shouldBe false
-          checkClientException(clientSlot, msg, TimeoutException::class)
-          checkWorkflowException(workflowEngineSlot, msg, TimeoutException::class)
+          checkClientException(clientSlot, msg, TimeoutTaskException::class)
+          checkWorkflowException(workflowEngineSlot, msg, TimeoutTaskException::class)
           taskTagSlots.size shouldBe 0
         }
 
@@ -460,8 +460,8 @@ class TaskExecutorTests :
           coroutineScope { taskExecutor.handle(msg) }
           // then
           taskExecutorSlot.isCaptured shouldBe false
-          checkClientException(clientSlot, msg, TimeoutException::class)
-          checkWorkflowException(workflowEngineSlot, msg, TimeoutException::class)
+          checkClientException(clientSlot, msg, TimeoutTaskException::class)
+          checkWorkflowException(workflowEngineSlot, msg, TimeoutTaskException::class)
           taskTagSlots.size shouldBe 0
         }
       },

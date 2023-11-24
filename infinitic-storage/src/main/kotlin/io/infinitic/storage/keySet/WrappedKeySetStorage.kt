@@ -29,21 +29,21 @@ class WrappedKeySetStorage(val storage: KeySetStorage) : KeySetStorage {
   override suspend fun get(key: String) =
       try {
         storage.get(key)
-      } catch (e: Throwable) {
+      } catch (e: Exception) {
         throw KeySetStorageException(e)
       }
 
   override suspend fun add(key: String, value: ByteArray) =
       try {
         storage.add(key, value)
-      } catch (e: Throwable) {
+      } catch (e: Exception) {
         throw KeySetStorageException(e)
       }
 
   override suspend fun remove(key: String, value: ByteArray) =
       try {
         storage.remove(key, value)
-      } catch (e: Throwable) {
+      } catch (e: Exception) {
         throw KeySetStorageException(e)
       }
 
@@ -51,7 +51,7 @@ class WrappedKeySetStorage(val storage: KeySetStorage) : KeySetStorage {
   override fun flush() =
       try {
         storage.flush()
-      } catch (e: Throwable) {
+      } catch (e: Exception) {
         throw KeySetStorageException(e)
       }
 }

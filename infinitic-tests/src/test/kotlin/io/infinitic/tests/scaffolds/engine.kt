@@ -44,7 +44,7 @@ fun main() {
   scope.launch {
     try {
       coroutineScope { startEngine() }
-    } catch (e: Throwable) {
+    } catch (e: Exception) {
       threadPool.shutdown()
     }
   }
@@ -57,7 +57,7 @@ private fun <T> CoroutineScope.startEngine(
   for (message in channel) {
     try {
       executor(message)
-    } catch (e: Throwable) {
+    } catch (e: Exception) {
       println("Error while processing message $message: \n$e")
     }
   }
