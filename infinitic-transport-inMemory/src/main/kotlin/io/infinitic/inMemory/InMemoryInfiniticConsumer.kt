@@ -54,7 +54,7 @@ class InMemoryInfiniticConsumer(private val channels: InMemoryChannels) : Infini
 
   override fun startClientConsumerAsync(
     handler: suspend (ClientMessage) -> Unit,
-    beforeDlq: (suspend (ClientMessage, Throwable) -> Unit)?,
+    beforeDlq: (suspend (ClientMessage, Exception) -> Unit)?,
     clientName: ClientName
   ): CompletableFuture<Unit> {
     val channel = channels.forClient()
@@ -64,7 +64,7 @@ class InMemoryInfiniticConsumer(private val channels: InMemoryChannels) : Infini
 
   override fun startTaskTagConsumerAsync(
     handler: suspend (TaskTagMessage) -> Unit,
-    beforeDlq: (suspend (TaskTagMessage, Throwable) -> Unit)?,
+    beforeDlq: (suspend (TaskTagMessage, Exception) -> Unit)?,
     serviceName: ServiceName,
     concurrency: Int
   ): CompletableFuture<Unit> {
@@ -75,7 +75,7 @@ class InMemoryInfiniticConsumer(private val channels: InMemoryChannels) : Infini
 
   override fun startWorkflowTagConsumerAsync(
     handler: suspend (WorkflowTagMessage) -> Unit,
-    beforeDlq: (suspend (WorkflowTagMessage, Throwable) -> Unit)?,
+    beforeDlq: (suspend (WorkflowTagMessage, Exception) -> Unit)?,
     workflowName: WorkflowName,
     concurrency: Int
   ): CompletableFuture<Unit> {
@@ -86,7 +86,7 @@ class InMemoryInfiniticConsumer(private val channels: InMemoryChannels) : Infini
 
   override fun startWorkflowEngineConsumerAsync(
     handler: suspend (WorkflowEngineMessage) -> Unit,
-    beforeDlq: (suspend (WorkflowEngineMessage, Throwable) -> Unit)?,
+    beforeDlq: (suspend (WorkflowEngineMessage, Exception) -> Unit)?,
     workflowName: WorkflowName,
     concurrency: Int
   ): CompletableFuture<Unit> {
@@ -97,7 +97,7 @@ class InMemoryInfiniticConsumer(private val channels: InMemoryChannels) : Infini
 
   override fun startDelayedWorkflowEngineConsumerAsync(
     handler: suspend (WorkflowEngineMessage) -> Unit,
-    beforeDlq: (suspend (WorkflowEngineMessage, Throwable) -> Unit)?,
+    beforeDlq: (suspend (WorkflowEngineMessage, Exception) -> Unit)?,
     workflowName: WorkflowName,
     concurrency: Int
   ): CompletableFuture<Unit> {
@@ -108,7 +108,7 @@ class InMemoryInfiniticConsumer(private val channels: InMemoryChannels) : Infini
 
   override fun startTaskExecutorConsumerAsync(
     handler: suspend (TaskExecutorMessage) -> Unit,
-    beforeDlq: (suspend (TaskExecutorMessage, Throwable) -> Unit)?,
+    beforeDlq: (suspend (TaskExecutorMessage, Exception) -> Unit)?,
     serviceName: ServiceName,
     concurrency: Int
   ): CompletableFuture<Unit> {
@@ -119,7 +119,7 @@ class InMemoryInfiniticConsumer(private val channels: InMemoryChannels) : Infini
 
   override fun startDelayedTaskExecutorConsumerAsync(
     handler: suspend (TaskExecutorMessage) -> Unit,
-    beforeDlq: (suspend (TaskExecutorMessage, Throwable) -> Unit)?,
+    beforeDlq: (suspend (TaskExecutorMessage, Exception) -> Unit)?,
     serviceName: ServiceName,
     concurrency: Int
   ): CompletableFuture<Unit> {
@@ -130,7 +130,7 @@ class InMemoryInfiniticConsumer(private val channels: InMemoryChannels) : Infini
 
   override fun startWorkflowTaskConsumerAsync(
     handler: suspend (TaskExecutorMessage) -> Unit,
-    beforeDlq: (suspend (TaskExecutorMessage, Throwable) -> Unit)?,
+    beforeDlq: (suspend (TaskExecutorMessage, Exception) -> Unit)?,
     workflowName: WorkflowName,
     concurrency: Int
   ): CompletableFuture<Unit> {
@@ -141,7 +141,7 @@ class InMemoryInfiniticConsumer(private val channels: InMemoryChannels) : Infini
 
   override fun startDelayedWorkflowTaskConsumerAsync(
     handler: suspend (TaskExecutorMessage) -> Unit,
-    beforeDlq: (suspend (TaskExecutorMessage, Throwable) -> Unit)?,
+    beforeDlq: (suspend (TaskExecutorMessage, Exception) -> Unit)?,
     workflowName: WorkflowName,
     concurrency: Int
   ): CompletableFuture<Unit> {
@@ -153,7 +153,7 @@ class InMemoryInfiniticConsumer(private val channels: InMemoryChannels) : Infini
   // start concurrent executors on a channel containing messages
   private fun <T : Message> startAsync(
     handler: suspend (T) -> Unit,
-    beforeDlq: (suspend (T, Throwable) -> Unit)?,
+    beforeDlq: (suspend (T, Exception) -> Unit)?,
     channel: Channel<T>,
     concurrency: Int
   ): CompletableFuture<Unit> = List(concurrency) {
@@ -163,14 +163,14 @@ class InMemoryInfiniticConsumer(private val channels: InMemoryChannels) : Infini
   // start an executor on a channel containing messages
   private fun <T : Message> startAsync(
     handler: suspend (T) -> Unit,
-    beforeDlq: (suspend (T, Throwable) -> Unit)?,
+    beforeDlq: (suspend (T, Exception) -> Unit)?,
     channel: Channel<T>
   ): CompletableFuture<Unit> = consumingScope.future {
     for (message in channel) {
       try {
         logger.trace { "Channel ${channel.id}: Receiving $message" }
         handler(message)
-      } catch (e: Throwable) {
+      } catch (e: Exception) {
         logger.warn { "Channel ${channel.id}: Error while processing message $message" }
         sendToDlq(beforeDlq, channel, message, e)
       }
@@ -180,7 +180,7 @@ class InMemoryInfiniticConsumer(private val channels: InMemoryChannels) : Infini
   // start concurrent executors on a channel containing delayed messages
   private fun <T : Message> startDelayedAsync(
     handler: suspend (T) -> Unit,
-    beforeDlq: (suspend (T, Throwable) -> Unit)?,
+    beforeDlq: (suspend (T, Exception) -> Unit)?,
     channel: Channel<DelayedMessage<T>>,
     concurrency: Int
   ) = List(concurrency) {
@@ -190,7 +190,7 @@ class InMemoryInfiniticConsumer(private val channels: InMemoryChannels) : Infini
   // start an executor on a channel containing delayed messages
   private fun <T : Message> startDelayedAsync(
     handler: suspend (T) -> Unit,
-    beforeDlq: (suspend (T, Throwable) -> Unit)?,
+    beforeDlq: (suspend (T, Exception) -> Unit)?,
     channel: Channel<DelayedMessage<T>>
   ) = consumingScope.future {
     for (delayedMessage in channel) {
@@ -198,7 +198,7 @@ class InMemoryInfiniticConsumer(private val channels: InMemoryChannels) : Infini
         delay(delayedMessage.after.long)
         logger.trace { "Channel ${channel.id}: Receiving ${delayedMessage.message}" }
         handler(delayedMessage.message)
-      } catch (e: Throwable) {
+      } catch (e: Exception) {
         logger.warn { "Channel ${channel.id}: Error while processing message ${delayedMessage.message}" }
         sendToDlq(beforeDlq, channel, delayedMessage.message, e)
       }
@@ -207,10 +207,10 @@ class InMemoryInfiniticConsumer(private val channels: InMemoryChannels) : Infini
 
   // emulate sending to DLQ
   private suspend fun <T : Message> sendToDlq(
-    beforeDlq: (suspend (T, Throwable) -> Unit)?,
+    beforeDlq: (suspend (T, Exception) -> Unit)?,
     channel: Channel<*>,
     message: T,
-    e: Throwable
+    e: Exception
   ) {
     beforeDlq?.let {
       try {
