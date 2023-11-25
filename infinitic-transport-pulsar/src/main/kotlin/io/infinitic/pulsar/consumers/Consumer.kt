@@ -25,28 +25,22 @@ package io.infinitic.pulsar.consumers
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.infinitic.common.messages.Envelope
 import io.infinitic.common.messages.Message
-import io.infinitic.pulsar.namer.Namer
-import io.infinitic.pulsar.schemas.schemaDefinition
+import io.infinitic.pulsar.client.PulsarInfiniticClient
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.future.await
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import org.apache.pulsar.client.api.Consumer
-import org.apache.pulsar.client.api.DeadLetterPolicy
 import org.apache.pulsar.client.api.MessageId
-import org.apache.pulsar.client.api.PulsarClient
-import org.apache.pulsar.client.api.Schema
-import org.apache.pulsar.client.api.SubscriptionInitialPosition
 import org.apache.pulsar.client.api.SubscriptionType
 import java.util.concurrent.CancellationException
-import java.util.concurrent.TimeUnit
 import org.apache.pulsar.client.api.Message as PulsarMessage
 
 class Consumer(
-  override val pulsarClient: PulsarClient,
+  val client: PulsarInfiniticClient,
   val consumerConfig: ConsumerConfig
-) : Namer(pulsarClient) {
+) {
 
   val logger = KotlinLogging.logger {}
 
@@ -56,6 +50,7 @@ class Consumer(
     topic: String,
     topicDlq: String?,
     subscriptionName: String,
+    subscriptionNameDlq: String,
     subscriptionType: SubscriptionType,
     consumerName: String,
     concurrency: Int
@@ -66,16 +61,16 @@ class Consumer(
       SubscriptionType.Key_Shared ->
         repeat(concurrency) {
           // For Key_Shared subscription, we must create a new consumer for each executor coroutine
-          launch {
-            val consumer = createConsumer<T, S>(
-                topic = topic,
-                // subscriptionName MUST be the same for all concurrent instances!
-                topicDlq = topicDlq,
-                subscriptionName = subscriptionName,
-                subscriptionType = subscriptionType,
-                consumerName = "$consumerName-$it",
-            )
+          val consumer = getConsumer<S>(
+              topic = topic,
+              topicDlq = topicDlq,
+              subscriptionName = subscriptionName,
+              subscriptionNameDlq = subscriptionNameDlq,
+              subscriptionType = subscriptionType,
+              consumerName = "$consumerName-$it",
+          ).getOrThrow()
 
+          launch {
             while (isActive) {
               // await() ensures this coroutine exits in case of throwable not caught
               val pulsarMessage: PulsarMessage<S> = try {
@@ -120,13 +115,14 @@ class Consumer(
 
       else -> {
         // For other subscription, we can use the same consumer for all executor coroutines
-        val consumer = createConsumer<T, S>(
+        val consumer = getConsumer<S>(
             topic = topic,
             topicDlq = topicDlq,
             subscriptionName = subscriptionName,
+            subscriptionNameDlq = subscriptionNameDlq,
             subscriptionType = subscriptionType,
             consumerName = consumerName,
-        )
+        ).getOrThrow()
 
         val channel = Channel<PulsarMessage<S>>()
 
@@ -182,6 +178,34 @@ class Consumer(
     }
   }
 
+  private inline fun <reified S : Envelope<*>> getConsumer(
+    topic: String,
+    topicDlq: String?,
+    subscriptionName: String,
+    subscriptionNameDlq: String,
+    subscriptionType: SubscriptionType,
+    consumerName: String,
+  ): Result<Consumer<S>> {
+    val consumerDef = PulsarInfiniticClient.ConsumerDef(
+        topic = topic,
+        subscriptionName = subscriptionName, //  MUST be the same for all instances!
+        subscriptionType = subscriptionType,
+        consumerName = consumerName,
+        consumerConfig = consumerConfig,
+    )
+    val consumerDefDlq = topicDlq?.let {
+      PulsarInfiniticClient.ConsumerDef(
+          topic = it,
+          subscriptionName = subscriptionNameDlq, //  MUST be the same for all instances!
+          subscriptionType = SubscriptionType.Shared,
+          consumerName = "$consumerName-dlq",
+          consumerConfig = consumerConfig,
+      )
+    }
+
+    return client.newConsumer(S::class, consumerDef, consumerDefDlq)
+  }
+
   // if message has been redelivered too many times, send it to DLQ and tell Workflow Engine about that
   private suspend inline fun <T : Message, S : Envelope<out T>> negativeAcknowledge(
     consumer: Consumer<S>,
@@ -189,7 +213,7 @@ class Consumer(
     noinline beforeDlq: (suspend (T, Exception) -> Unit)?,
     message: T?,
     cause: Exception
-  ) {
+  ): Result<Unit> {
     val messageId = pulsarMessage.messageId
     val topic = consumer.topic
 
@@ -207,159 +231,13 @@ class Consumer(
       }
     }
 
-    try {
+    return try {
       consumer.negativeAcknowledge(pulsarMessage.messageId)
+      Result.success(Unit)
     } catch (e: Exception) {
       logError(e, topic, messageId, "Exception when negativeAcknowledging ${message ?: ""}")
+      Result.failure(e)
     }
-  }
-
-  inline fun <reified S : Envelope<out Message>> getSchema(): Schema<S> =
-      Schema.AVRO(schemaDefinition<S>())
-
-  inline fun <T : Message, reified S : Envelope<out T>> createConsumer(
-    topic: String,
-    topicDlq: String?,
-    subscriptionName: String,
-    subscriptionType: SubscriptionType,
-    consumerName: String
-  ): Consumer<S> {
-    logger.debug {
-      "Creating Consumer on topic='$topic', consumerName='$consumerName', subscriptionName='$subscriptionName', subscriptionType='$subscriptionType'"
-    }
-
-    // Get schema from envelope
-    val schema: Schema<S> = getSchema<S>()
-
-    return pulsarClient
-        .newConsumer(schema)
-        .topic(topic)
-        .subscriptionType(subscriptionType)
-        .subscriptionName(subscriptionName)
-        .consumerName(consumerName)
-        .subscriptionInitialPosition(SubscriptionInitialPosition.Earliest)
-        .also { c ->
-          // Dead Letter Queue
-          topicDlq?.also {
-            when (subscriptionType) {
-              SubscriptionType.Key_Shared,
-              SubscriptionType.Shared -> {
-                logger.info {
-                  "subscription $subscriptionName: maxRedeliverCount=${consumerConfig.maxRedeliverCount}"
-                }
-                c.deadLetterPolicy(
-                    DeadLetterPolicy.builder()
-                        .maxRedeliverCount(consumerConfig.maxRedeliverCount)
-                        .deadLetterTopic(it)
-                        .initialSubscriptionName("$subscriptionName-dlq")
-                        .build(),
-                )
-                // remove default ackTimeout set by the deadLetterPolicy
-                // https://github.com/apache/pulsar/issues/8484
-                c.ackTimeout(0, TimeUnit.MILLISECONDS)
-              }
-
-              else -> Unit
-            }
-          }
-          // must be set after deadLetterPolicy
-          consumerConfig.ackTimeoutSeconds?.also {
-            logger.info {
-              "subscription $subscriptionName: ackTimeout=${consumerConfig.ackTimeoutSeconds}"
-            }
-            c.ackTimeout(
-                (consumerConfig.ackTimeoutSeconds * 1000).toLong(),
-                TimeUnit.MILLISECONDS,
-            )
-          }
-          consumerConfig.loadConf?.also {
-            logger.info { "subscription $subscriptionName: loadConf=$it" }
-            c.loadConf(it)
-          }
-          consumerConfig.subscriptionProperties?.also {
-            logger.info { "subscription $subscriptionName: subscriptionProperties=$it" }
-            c.subscriptionProperties(it)
-          }
-          consumerConfig.isAckReceiptEnabled?.also {
-            logger.info { "subscription $subscriptionName: isAckReceiptEnabled=$it" }
-            c.isAckReceiptEnabled(it)
-          }
-          consumerConfig.ackTimeoutTickTimeSeconds?.also {
-            logger.info { "subscription $subscriptionName: ackTimeoutTickTime=$it" }
-            c.ackTimeoutTickTime((it * 1000).toLong(), TimeUnit.MILLISECONDS)
-          }
-          consumerConfig.negativeAckRedeliveryDelaySeconds?.also {
-            logger.info { "subscription $subscriptionName: negativeAckRedeliveryDelay=$it" }
-            c.negativeAckRedeliveryDelay((it * 1000).toLong(), TimeUnit.MILLISECONDS)
-          }
-          consumerConfig.defaultCryptoKeyReader?.also {
-            logger.info { "subscription $subscriptionName: defaultCryptoKeyReader=$it" }
-            c.defaultCryptoKeyReader(it)
-          }
-          consumerConfig.cryptoFailureAction?.also {
-            logger.info { "subscription $subscriptionName: cryptoFailureAction=$it" }
-            c.cryptoFailureAction(it)
-          }
-          consumerConfig.receiverQueueSize?.also {
-            logger.info { "subscription $subscriptionName: receiverQueueSize=$it" }
-            c.receiverQueueSize(it)
-          }
-          consumerConfig.acknowledgmentGroupTimeSeconds?.also {
-            logger.info { "subscription $subscriptionName: acknowledgmentGroupTime=$it" }
-            c.acknowledgmentGroupTime((it * 1000).toLong(), TimeUnit.MILLISECONDS)
-          }
-          consumerConfig.replicateSubscriptionState?.also {
-            logger.info { "subscription $subscriptionName: replicateSubscriptionState=$it" }
-            c.replicateSubscriptionState(it)
-          }
-          consumerConfig.maxTotalReceiverQueueSizeAcrossPartitions?.also {
-            logger.info {
-              "subscription $subscriptionName: maxTotalReceiverQueueSizeAcrossPartitions=$it"
-            }
-            c.maxTotalReceiverQueueSizeAcrossPartitions(it)
-          }
-          consumerConfig.priorityLevel?.also {
-            logger.info { "subscription $subscriptionName: priorityLevel=$it" }
-            c.priorityLevel(it)
-          }
-          consumerConfig.properties?.also {
-            logger.info { "subscription $subscriptionName: properties=$it" }
-            c.properties(it)
-          }
-          consumerConfig.autoUpdatePartitions?.also {
-            logger.info { "subscription $subscriptionName: autoUpdatePartitions=$it" }
-            c.autoUpdatePartitions(it)
-          }
-          consumerConfig.autoUpdatePartitionsIntervalSeconds?.also {
-            logger.info { "subscription $subscriptionName: autoUpdatePartitionsInterval=$it" }
-            c.autoUpdatePartitionsInterval((it * 1000).toInt(), TimeUnit.MILLISECONDS)
-          }
-          consumerConfig.enableBatchIndexAcknowledgment?.also {
-            logger.info { "subscription $subscriptionName: enableBatchIndexAcknowledgment=$it" }
-            c.enableBatchIndexAcknowledgment(it)
-          }
-          consumerConfig.maxPendingChunkedMessage?.also {
-            logger.info { "subscription $subscriptionName: maxPendingChunkedMessage=$it" }
-            c.maxPendingChunkedMessage(it)
-          }
-          consumerConfig.autoAckOldestChunkedMessageOnQueueFull?.also {
-            logger.info {
-              "subscription $subscriptionName: autoAckOldestChunkedMessageOnQueueFull=$it"
-            }
-            c.autoAckOldestChunkedMessageOnQueueFull(it)
-          }
-          consumerConfig.expireTimeOfIncompleteChunkedMessageSeconds?.also {
-            logger.info {
-              "subscription $subscriptionName: expireTimeOfIncompleteChunkedMessage=$it"
-            }
-            c.expireTimeOfIncompleteChunkedMessage((it * 1000).toLong(), TimeUnit.MILLISECONDS)
-          }
-          consumerConfig.startPaused?.also {
-            logger.info { "subscription $subscriptionName: startPaused=$it" }
-            c.startPaused(it)
-          }
-        }
-        .subscribe() as Consumer<S>
   }
 
   private fun logTrace(topic: String, messageId: MessageId, message: String) {

@@ -30,6 +30,7 @@ import io.infinitic.inMemory.InMemoryInfiniticConsumer
 import io.infinitic.inMemory.InMemoryInfiniticProducer
 import io.infinitic.pulsar.PulsarInfiniticConsumer
 import io.infinitic.pulsar.PulsarInfiniticProducer
+import io.infinitic.pulsar.client.PulsarInfiniticClient
 import io.infinitic.pulsar.config.Pulsar
 import io.infinitic.pulsar.consumers.Consumer
 import io.infinitic.pulsar.producers.Producer
@@ -54,8 +55,9 @@ data class TransportConfigData(
   private val cp: Pair<InfiniticConsumer, InfiniticProducer> =
       when (transport) {
         Transport.pulsar -> with(ResourceManager.from(pulsar!!)) {
-          val consumer = PulsarInfiniticConsumer(Consumer(pulsar.client, pulsar.consumer), this)
-          val producer = PulsarInfiniticProducer(Producer(pulsar.client, pulsar.producer), this)
+          val client = PulsarInfiniticClient(pulsar.client)
+          val consumer = PulsarInfiniticConsumer(Consumer(client, pulsar.consumer), this)
+          val producer = PulsarInfiniticProducer(Producer(client, pulsar.producer), this)
 
           // Pulsar client will be closed with consumer
           consumer.addAutoCloseResource(pulsar.client)

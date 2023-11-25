@@ -42,6 +42,13 @@ sealed interface TopicType {
   val subscriptionName: String
     get() = "$subscriptionPrefix-subscription"
 
+  /**
+   * The subscriptionNameDlq must NOT be changed (if subscription name is changed, all messages will
+   * appear as not acknowledged to a new worker)
+   */
+  val subscriptionNameDlq: String
+    get() = "$subscriptionName-dlq"
+
   val subscriptionType: SubscriptionType
 
   val isPartitioned: Boolean

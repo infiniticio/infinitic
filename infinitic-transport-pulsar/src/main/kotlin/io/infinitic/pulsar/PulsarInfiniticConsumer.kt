@@ -214,6 +214,7 @@ class PulsarInfiniticConsumer(
             topic = topic,
             topicDlq = topicDlq,
             subscriptionName = topicType.subscriptionName,
+            subscriptionNameDlq = topicType.subscriptionNameDlq,
             subscriptionType = topicType.subscriptionType,
             consumerName = resourceManager.getConsumerName(name, topicType),
             concurrency = concurrency,

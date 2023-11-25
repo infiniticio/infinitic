@@ -35,12 +35,11 @@ internal class ContextWorkflowTests :
       {
         val client = Test.client
 
-        val contextWorkflow =
-            client.newWorkflow(
-                ContextWorkflow::class.java,
-                meta = mapOf("foo" to "bar".toByteArray()),
-                tags = setOf("foo", "bar"),
-            )
+        val contextWorkflow = client.newWorkflow(
+            ContextWorkflow::class.java,
+            meta = mapOf("foo" to "bar".toByteArray()),
+            tags = setOf("foo", "bar"),
+        )
 
         "get id from context" { contextWorkflow.context1() shouldBe client.lastDeferred!!.id }
 
