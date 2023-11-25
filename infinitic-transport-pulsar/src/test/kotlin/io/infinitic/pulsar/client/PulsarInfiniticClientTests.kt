@@ -21,11 +21,11 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.pulsar.consumers
+package io.infinitic.pulsar.client
 
 import io.infinitic.common.fixtures.TestFactory
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineEnvelope
-import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
+import io.infinitic.pulsar.consumers.ConsumerConfig
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
 import io.mockk.every
@@ -44,7 +44,7 @@ import java.util.concurrent.TimeUnit
 import org.apache.pulsar.client.api.Consumer as PulsarConsumer
 import org.apache.pulsar.client.api.Message as PulsarMessage
 
-class ConsumerTests :
+class PulsarInfiniticClientTests :
   StringSpec(
       {
         // consumer properties slots
@@ -162,46 +162,103 @@ class ConsumerTests :
           every { startPaused(capture(startPaused)) } returns this
         }
 
-
-        val client = mockk<PulsarClient> {
+        val pulsarClient = mockk<PulsarClient> {
           every { newConsumer(any<Schema<WorkflowEngineEnvelope>>()) } returns getConsumerBuilder()
         }
 
-        "Configuration given should be applied to consumer" {
+        val client = PulsarInfiniticClient(pulsarClient)
+
+        "Configuration given should be applied to consumer (no DLQ)" {
           val randomConfig = TestFactory.random<ConsumerConfig>()
           val randomTopic = TestFactory.random<String>()
-          val randomTopicDlq = TestFactory.random<String>()
           val randomSubscriptionName = TestFactory.random<String>()
-          val randomSubscriptionNameDlq = TestFactory.random<String>()
           val randomSubscriptionType = TestFactory.random<SubscriptionType>()
           val randomConsumerName = TestFactory.random<String>()
 
-          val consumer = Consumer(client, randomConfig)
           // when
-
-          consumer.createConsumer<WorkflowEngineMessage, WorkflowEngineEnvelope>(
+          val consumerDef = PulsarInfiniticClient.ConsumerDef(
               topic = randomTopic,
-              topicDlq = randomTopicDlq,
-              subscriptionName = randomSubscriptionName,
-              subscriptionNameDlq = randomSubscriptionNameDlq,
+              subscriptionName = randomSubscriptionName, //  MUST be the same for all instances!
               subscriptionType = randomSubscriptionType,
               consumerName = randomConsumerName,
+              consumerConfig = randomConfig,
           )
+
+          client.newConsumer(WorkflowEngineEnvelope::class, consumerDef, null)
+
           // then
           topic.captured shouldBe randomTopic
           subscriptionName.captured shouldBe randomSubscriptionName
           subscriptionType.captured shouldBe randomSubscriptionType
-          when (subscriptionType.captured) {
-            SubscriptionType.Key_Shared, SubscriptionType.Shared -> {
-              deadLetterPolicy.captured shouldBe DeadLetterPolicy.builder()
-                  .maxRedeliverCount(randomConfig.maxRedeliverCount)
-                  .deadLetterTopic(randomTopicDlq)
-                  .initialSubscriptionName("$randomSubscriptionName-dlq")
-                  .build()
-            }
 
-            else -> Unit
-          }
+          deadLetterPolicy.isCaptured shouldBe false
+
+          consumerName.captured shouldBe randomConsumerName
+          subscriptionInitialPosition.captured shouldBe SubscriptionInitialPosition.Earliest
+          ackTimeout.captured shouldBe (randomConfig.ackTimeoutSeconds!! * 1000).toLong()
+          ackTimeoutUnit.captured shouldBe TimeUnit.MILLISECONDS
+          loadConf.captured shouldBe randomConfig.loadConf
+          subscriptionProperties.captured shouldBe randomConfig.subscriptionProperties
+          isAckReceiptEnabled.captured shouldBe randomConfig.isAckReceiptEnabled
+          ackTimeoutTickTime.captured shouldBe (randomConfig.ackTimeoutTickTimeSeconds!! * 1000).toLong()
+          ackTimeoutTickTimeUnit.captured shouldBe TimeUnit.MILLISECONDS
+          negativeAckRedeliveryDelay.captured shouldBe (randomConfig.negativeAckRedeliveryDelaySeconds!! * 1000).toLong()
+          negativeAckRedeliveryDelayUnit.captured shouldBe TimeUnit.MILLISECONDS
+          defaultCryptoKeyReader.captured shouldBe randomConfig.defaultCryptoKeyReader
+          cryptoFailureAction.captured shouldBe randomConfig.cryptoFailureAction
+          receiverQueueSize.captured shouldBe randomConfig.receiverQueueSize
+          acknowledgmentGroupTime.captured shouldBe (randomConfig.acknowledgmentGroupTimeSeconds!! * 1000).toLong()
+          acknowledgmentGroupTimeUnit.captured shouldBe TimeUnit.MILLISECONDS
+          replicateSubscriptionState.captured shouldBe randomConfig.replicateSubscriptionState
+          maxTotalReceiverQueueSizeAcrossPartitions.captured shouldBe randomConfig.maxTotalReceiverQueueSizeAcrossPartitions
+          priorityLevel.captured shouldBe randomConfig.priorityLevel
+          properties.captured shouldBe randomConfig.properties
+          autoUpdatePartitions.captured shouldBe randomConfig.autoUpdatePartitions
+          autoUpdatePartitionsInterval.captured shouldBe (randomConfig.autoUpdatePartitionsIntervalSeconds!! * 1000).toInt()
+          autoUpdatePartitionsIntervalUnit.captured shouldBe TimeUnit.MILLISECONDS
+          enableBatchIndexAcknowledgment.captured shouldBe randomConfig.enableBatchIndexAcknowledgment
+          maxPendingChunkedMessage.captured shouldBe randomConfig.maxPendingChunkedMessage
+          autoAckOldestChunkedMessageOnQueueFull.captured shouldBe randomConfig.autoAckOldestChunkedMessageOnQueueFull
+          expireTimeOfIncompleteChunkedMessage.captured shouldBe (randomConfig.expireTimeOfIncompleteChunkedMessageSeconds!! * 1000).toLong()
+          expireTimeOfIncompleteChunkedMessageUnit.captured shouldBe TimeUnit.MILLISECONDS
+          startPaused.captured shouldBe randomConfig.startPaused
+        }
+
+        "Configuration given should be applied to consumer (with DLQ)" {
+          val randomConfig = TestFactory.random<ConsumerConfig>()
+          val randomTopic = TestFactory.random<String>()
+          val randomSubscriptionName = TestFactory.random<String>()
+          val randomSubscriptionType = TestFactory.random<SubscriptionType>()
+          val randomConsumerName = TestFactory.random<String>()
+
+          // when
+          val consumerDef = PulsarInfiniticClient.ConsumerDef(
+              topic = "topic",
+              subscriptionName = "subscriptionName",
+              subscriptionType = SubscriptionType.Shared,
+              consumerName = "consumerName",
+              consumerConfig = randomConfig,
+          )
+          val consumerDefDlq = PulsarInfiniticClient.ConsumerDef(
+              topic = randomTopic,
+              subscriptionName = randomSubscriptionName,
+              subscriptionType = randomSubscriptionType,
+              consumerName = randomConsumerName,
+              consumerConfig = randomConfig,
+          )
+
+          client.newConsumer(WorkflowEngineEnvelope::class, consumerDef, consumerDefDlq)
+
+          // then
+          topic.captured shouldBe randomTopic
+          subscriptionName.captured shouldBe randomSubscriptionName
+          subscriptionType.captured shouldBe randomSubscriptionType
+
+          deadLetterPolicy.captured shouldBe DeadLetterPolicy.builder()
+              .maxRedeliverCount(randomConfig.maxRedeliverCount)
+              .deadLetterTopic(randomTopic)
+              .build()
+
           consumerName.captured shouldBe randomConsumerName
           subscriptionInitialPosition.captured shouldBe SubscriptionInitialPosition.Earliest
           ackTimeout.captured shouldBe (randomConfig.ackTimeoutSeconds!! * 1000).toLong()

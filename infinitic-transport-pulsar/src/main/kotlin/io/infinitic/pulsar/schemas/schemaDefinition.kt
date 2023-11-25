@@ -25,11 +25,12 @@ package io.infinitic.pulsar.schemas
 import io.infinitic.common.messages.Envelope
 import io.infinitic.common.messages.writerSchema
 import org.apache.pulsar.client.api.schema.SchemaDefinition
+import kotlin.reflect.KClass
 
-inline fun <reified T : Envelope<*>> schemaDefinition(): SchemaDefinition<T> =
+fun <T : Envelope<*>> schemaDefinition(klass: KClass<T>): SchemaDefinition<T> =
     SchemaDefinition.builder<T>()
-        .withJsonDef(T::class.writerSchema().toString())
-        .withSchemaReader(KSchemaReader(T::class))
+        .withJsonDef(klass.writerSchema().toString())
+        .withSchemaReader(KSchemaReader(klass))
         .withSchemaWriter(KSchemaWriter<T>())
         .withSupportSchemaVersioning(true)
         .withJSR310ConversionEnabled(true)
