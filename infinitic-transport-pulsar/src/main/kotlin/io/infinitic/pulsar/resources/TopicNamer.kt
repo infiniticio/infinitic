@@ -63,7 +63,7 @@ interface TopicNamer {
   /**
    * Return the full name of the DLQ topic associated to the type [topicDescription] with name [name]
    */
-  fun getTopicDLQName(name: String, topicDescription: TopicDescription): String?
+  fun getDlqTopicName(name: String, topicDescription: TopicDescription): String?
 
   /**
    * Return the service name associated to a topic

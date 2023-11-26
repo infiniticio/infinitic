@@ -38,7 +38,7 @@ open class TopicNamerDefault(override val tenant: String, override val namespace
         else -> fullNameTopic("${topicDescription.subscriptionPrefix}:$name")
       }
 
-  override fun getTopicDLQName(name: String, topicDescription: TopicDescription): String? =
+  override fun getDlqTopicName(name: String, topicDescription: TopicDescription): String? =
       when (topicDescription.hasDeadLetter) {
         true -> fullNameTopic("${topicDescription.subscriptionPrefix}-dlq:$name")
         false -> null
@@ -49,7 +49,7 @@ open class TopicNamerDefault(override val tenant: String, override val namespace
       var prefix = getTopicName("", type)
       if (topic.startsWith(prefix)) return topic.removePrefix(prefix)
 
-      prefix = getTopicDLQName("", type)!!
+      prefix = getDlqTopicName("", type)!!
       if (topic.startsWith(prefix)) return topic.removePrefix(prefix)
     }
 
@@ -62,7 +62,7 @@ open class TopicNamerDefault(override val tenant: String, override val namespace
       var prefix = getTopicName("", type)
       if (topic.startsWith(prefix)) return topic.removePrefix(prefix)
 
-      prefix = getTopicDLQName("", type)!!
+      prefix = getDlqTopicName("", type)!!
       if (topic.startsWith(prefix)) return topic.removePrefix(prefix)
     }
 

@@ -77,7 +77,7 @@ class ResourceManager(
    * We skip this if the topic has already been initialized successfully
    */
   fun initDlqTopic(name: String, topicDescription: TopicDescription): Result<String?> =
-      topicNamer.getTopicDLQName(name, topicDescription)
+      topicNamer.getDlqTopicName(name, topicDescription)
           ?.let {
             initTopic(
                 it,

@@ -58,96 +58,71 @@ sealed interface TopicDescription {
   val hasDeadLetter: Boolean
 }
 
-enum class ClientTopicDescription(
-  override val subscriptionPrefix: String,
-  override val subscriptionType: SubscriptionType,
-  override val isPartitioned: Boolean,
-  override val isDelayed: Boolean,
-  override val hasDeadLetter: Boolean
-) : TopicDescription {
-  RESPONSE(
-      subscriptionPrefix = "response",
-      subscriptionType = SubscriptionType.Exclusive,
-      isPartitioned = false,
-      isDelayed = false,
-      hasDeadLetter = false,
-  ),
+enum class ClientTopicDescription : TopicDescription {
+  RESPONSE {
+    override val subscriptionPrefix = "response"
+    override val subscriptionType = SubscriptionType.Exclusive
+    override val isPartitioned = false
+    override val isDelayed = false
+    override val hasDeadLetter = false
+  }
 }
 
-enum class GlobalTopicDescription(
-  override val subscriptionPrefix: String,
-  override val subscriptionType: SubscriptionType,
-  override val isPartitioned: Boolean,
-  override val isDelayed: Boolean,
-  override val hasDeadLetter: Boolean
-) : TopicDescription {
-  NAMER(
-      subscriptionPrefix = "namer",
-      subscriptionType = SubscriptionType.Shared,
-      isPartitioned = false,
-      isDelayed = false,
-      hasDeadLetter = false,
-  )
+enum class GlobalTopicDescription : TopicDescription {
+  NAMER {
+    override val subscriptionPrefix = "namer"
+    override val subscriptionType = SubscriptionType.Shared
+    override val isPartitioned = false
+    override val isDelayed = false
+    override val hasDeadLetter = false
+  }
 }
 
-enum class WorkflowTopicDescription(
-  override val subscriptionPrefix: String,
-  override val subscriptionType: SubscriptionType,
-  override val isPartitioned: Boolean,
-  override val isDelayed: Boolean,
-  override val hasDeadLetter: Boolean
-) : TopicDescription {
-  TAG(
-      subscriptionPrefix = "workflow-tag",
-      subscriptionType = SubscriptionType.Key_Shared,
-      isPartitioned = true,
-      isDelayed = false,
-      hasDeadLetter = true,
-  ),
-  ENGINE(
-      subscriptionPrefix = "workflow-engine",
-      subscriptionType = SubscriptionType.Key_Shared,
-      isPartitioned = true,
-      isDelayed = false,
-      hasDeadLetter = true,
-  ),
-  ENGINE_DELAYED(
-      subscriptionPrefix = "workflow-$TOPIC_WITH_DELAY",
-      subscriptionType = SubscriptionType.Shared,
-      isPartitioned = true,
-      isDelayed = true,
-      hasDeadLetter = true,
-  ),
-  EXECUTOR(
-      subscriptionPrefix = "workflow-task-executor",
-      subscriptionType = SubscriptionType.Shared,
-      isPartitioned = true,
-      isDelayed = false,
-      hasDeadLetter = true,
-  )
+enum class WorkflowTopicDescription : TopicDescription {
+  TAG {
+    override val subscriptionPrefix = "workflow-tag"
+    override val subscriptionType = SubscriptionType.Key_Shared
+    override val isPartitioned = true
+    override val isDelayed = false
+    override val hasDeadLetter = true
+  },
+  ENGINE {
+    override val subscriptionPrefix = "workflow-engine"
+    override val subscriptionType = SubscriptionType.Key_Shared
+    override val isPartitioned = true
+    override val isDelayed = false
+    override val hasDeadLetter = true
+  },
+  ENGINE_DELAYED {
+    override val subscriptionPrefix = "workflow-$TOPIC_WITH_DELAY"
+    override val subscriptionType = SubscriptionType.Shared
+    override val isPartitioned = true
+    override val isDelayed = true
+    override val hasDeadLetter = true
+  },
+  EXECUTOR {
+    override val subscriptionPrefix = "workflow-task-executor"
+    override val subscriptionType = SubscriptionType.Shared
+    override val isPartitioned = true
+    override val isDelayed = false
+    override val hasDeadLetter = true
+  }
 }
 
-enum class ServiceTopicDescription(
-  override val subscriptionPrefix: String,
-  override val subscriptionType: SubscriptionType,
-  override val isPartitioned: Boolean,
-  override val isDelayed: Boolean,
-  override val hasDeadLetter: Boolean
-
-) : TopicDescription {
-  TAG(
-      subscriptionPrefix = "task-tag",
-      subscriptionType = SubscriptionType.Key_Shared,
-      isPartitioned = true,
-      isDelayed = false,
-      hasDeadLetter = true,
-  ),
-  EXECUTOR(
-      subscriptionPrefix = "task-executor",
-      subscriptionType = SubscriptionType.Shared,
-      isPartitioned = true,
-      isDelayed = false,
-      hasDeadLetter = true,
-  )
+enum class ServiceTopicDescription : TopicDescription {
+  TAG {
+    override val subscriptionPrefix = "task-tag"
+    override val subscriptionType = SubscriptionType.Key_Shared
+    override val isPartitioned = true
+    override val isDelayed = false
+    override val hasDeadLetter = true
+  },
+  EXECUTOR {
+    override val subscriptionPrefix = "task-executor"
+    override val subscriptionType = SubscriptionType.Shared
+    override val isPartitioned = true
+    override val isDelayed = false
+    override val hasDeadLetter = true
+  }
 }
 
