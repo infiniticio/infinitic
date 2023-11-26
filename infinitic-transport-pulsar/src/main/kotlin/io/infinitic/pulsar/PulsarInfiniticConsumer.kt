@@ -41,12 +41,11 @@ import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
 import io.infinitic.common.workflows.tags.messages.WorkflowTagEnvelope
 import io.infinitic.common.workflows.tags.messages.WorkflowTagMessage
 import io.infinitic.pulsar.consumers.Consumer
-import io.infinitic.pulsar.resources.ClientType
+import io.infinitic.pulsar.resources.ClientTopicDescription
 import io.infinitic.pulsar.resources.ResourceManager
-import io.infinitic.pulsar.resources.ServiceType
-import io.infinitic.pulsar.resources.TopicType
-import io.infinitic.pulsar.resources.WorkflowTaskType
-import io.infinitic.pulsar.resources.WorkflowType
+import io.infinitic.pulsar.resources.ServiceTopicDescription
+import io.infinitic.pulsar.resources.TopicDescription
+import io.infinitic.pulsar.resources.WorkflowTopicDescription
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
@@ -69,7 +68,7 @@ class PulsarInfiniticConsumer(
     consumingScope.cancel()
     // Delete client topic
     if (::clientName.isInitialized) {
-      val topic = resourceManager.getTopicName(clientName, ClientType.RESPONSE)
+      val topic = resourceManager.getTopicName(clientName, ClientTopicDescription.RESPONSE)
       logger.info { "Deleting response topic $topic of client $clientName" }
       resourceManager.deleteTopic(topic)
     }
@@ -84,7 +83,7 @@ class PulsarInfiniticConsumer(
   ): CompletableFuture<Unit> = startAsync<ClientMessage, ClientEnvelope>(
       handler = handler,
       beforeDlq = beforeDlq,
-      topicType = ClientType.RESPONSE,
+      topicType = ClientTopicDescription.RESPONSE,
       concurrency = 1,
       name = "$clientName",
   ).also { this.clientName = "$clientName" }
@@ -98,7 +97,7 @@ class PulsarInfiniticConsumer(
   ) = startAsync<WorkflowTagMessage, WorkflowTagEnvelope>(
       handler = handler,
       beforeDlq = beforeDlq,
-      topicType = WorkflowType.TAG,
+      topicType = WorkflowTopicDescription.TAG,
       concurrency = concurrency,
       name = "$workflowName",
   )
@@ -112,7 +111,7 @@ class PulsarInfiniticConsumer(
   ) = startAsync<WorkflowEngineMessage, WorkflowEngineEnvelope>(
       handler = handler,
       beforeDlq = beforeDlq,
-      topicType = WorkflowType.ENGINE,
+      topicType = WorkflowTopicDescription.ENGINE,
       concurrency = concurrency,
       name = "$workflowName",
   )
@@ -126,7 +125,7 @@ class PulsarInfiniticConsumer(
   ) = startAsync<WorkflowEngineMessage, WorkflowEngineEnvelope>(
       handler = handler,
       beforeDlq = beforeDlq,
-      topicType = WorkflowType.DELAY,
+      topicType = WorkflowTopicDescription.ENGINE_DELAYED,
       concurrency = concurrency,
       name = "$workflowName",
   )
@@ -140,7 +139,7 @@ class PulsarInfiniticConsumer(
   ) = startAsync<TaskTagMessage, TaskTagEnvelope>(
       handler = handler,
       beforeDlq = beforeDlq,
-      topicType = ServiceType.TAG,
+      topicType = ServiceTopicDescription.TAG,
       concurrency = concurrency,
       name = "$serviceName",
   )
@@ -154,7 +153,7 @@ class PulsarInfiniticConsumer(
   ) = startAsync<TaskExecutorMessage, TaskExecutorEnvelope>(
       handler = handler,
       beforeDlq = beforeDlq,
-      topicType = ServiceType.EXECUTOR,
+      topicType = ServiceTopicDescription.EXECUTOR,
       concurrency = concurrency,
       name = "$serviceName",
   )
@@ -178,7 +177,7 @@ class PulsarInfiniticConsumer(
   ) = startAsync<TaskExecutorMessage, TaskExecutorEnvelope>(
       handler = handler,
       beforeDlq = beforeDlq,
-      topicType = WorkflowTaskType.EXECUTOR,
+      topicType = WorkflowTopicDescription.EXECUTOR,
       concurrency = concurrency,
       name = "$workflowName",
   )
@@ -197,7 +196,7 @@ class PulsarInfiniticConsumer(
   private inline fun <T : Message, reified S : Envelope<T>> startAsync(
     noinline handler: suspend (T) -> Unit,
     noinline beforeDlq: (suspend (T, Exception) -> Unit)?,
-    topicType: TopicType,
+    topicType: TopicDescription,
     concurrency: Int,
     name: String
   ): CompletableFuture<Unit> {

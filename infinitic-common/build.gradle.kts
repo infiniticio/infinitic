@@ -27,6 +27,7 @@ plugins { id("java-test-fixtures") }
 dependencies {
   api(Libs.Serialization.json)
   api(Libs.JsonPath.jayway)
+  
   implementation(Libs.Hoplite.core)
   implementation(Libs.Hoplite.yaml)
   implementation(Libs.Jackson.databind)
@@ -39,7 +40,6 @@ dependencies {
   testFixturesImplementation(Libs.Kotlin.reflect)
   testFixturesImplementation(Libs.EasyRandom.core)
   testFixturesImplementation(Libs.Coroutines.core)
-
   testFixturesImplementation(Libs.Kotest.junit5)
   testFixturesImplementation(Libs.Kotest.property)
   testFixturesImplementation(Libs.Mockk.mockk)

@@ -33,8 +33,8 @@ import io.infinitic.dashboard.panels.infrastructure.jobs.update
 import io.infinitic.dashboard.panels.infrastructure.requests.Loading
 import io.infinitic.dashboard.panels.infrastructure.requests.Request
 import io.infinitic.dashboard.svgs.icons.iconChevron
-import io.infinitic.pulsar.resources.ServiceType
-import io.infinitic.pulsar.resources.TopicType
+import io.infinitic.pulsar.resources.ServiceTopicDescription
+import io.infinitic.pulsar.resources.TopicDescription
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import kweb.Element
@@ -72,17 +72,18 @@ class ServicePanel private constructor(private val taskName: String) : Panel() {
   private val lastUpdated = state.property(ServiceState::lastUpdatedAt)
   private val isLoading = state.property(ServiceState::isLoading)
 
-  private val selectionTopicType: KVar<TopicType> = KVar(ServiceType.EXECUTOR)
+  private val selectionTopicDescription: KVar<TopicDescription> =
+      KVar(ServiceTopicDescription.EXECUTOR)
   private val selectionTopicStats: KVar<Request<PartitionedTopicStats>> = KVar(Loading())
 
-  private val selectionSlide = selectionSlide(selectionTopicType, selectionTopicStats)
+  private val selectionSlide = selectionSlide(selectionTopicDescription, selectionTopicStats)
 
   lateinit var job: Job
 
   init {
     // making sure slideover content is updated
     state.addListener { _, new ->
-      selectionTopicStats.value = new.topicsStats[selectionTopicType.value]!!
+      selectionTopicStats.value = new.topicsStats[selectionTopicDescription.value]!!
     }
   }
 
@@ -151,7 +152,7 @@ class ServicePanel private constructor(private val taskName: String) : Panel() {
                   .addText(" Click on a row to get more details on its real-time stats.")
             }
             displayJobStatsTable(
-                taskName, state, selectionSlide, selectionTopicType, selectionTopicStats,
+                taskName, state, selectionSlide, selectionTopicDescription, selectionTopicStats,
             )
           }
         }

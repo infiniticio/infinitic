@@ -27,7 +27,7 @@ import org.apache.pulsar.client.api.SubscriptionType
 /** must NOT be changed (would change the name of the subscriptions of delayed messages) */
 const val TOPIC_WITH_DELAY = "delay"
 
-sealed interface TopicType {
+sealed interface TopicDescription {
 
   /**
    * The subscriptionPrefix must NOT be changed (if subscription name is changed, all messages will
@@ -54,52 +54,100 @@ sealed interface TopicType {
   val isPartitioned: Boolean
 
   val isDelayed: Boolean
+
+  val hasDeadLetter: Boolean
 }
 
-enum class ClientType(
+enum class ClientTopicDescription(
   override val subscriptionPrefix: String,
   override val subscriptionType: SubscriptionType,
   override val isPartitioned: Boolean,
-  override val isDelayed: Boolean
-) : TopicType {
-  RESPONSE("response", SubscriptionType.Exclusive, false, false)
+  override val isDelayed: Boolean,
+  override val hasDeadLetter: Boolean
+) : TopicDescription {
+  RESPONSE(
+      subscriptionPrefix = "response",
+      subscriptionType = SubscriptionType.Exclusive,
+      isPartitioned = false,
+      isDelayed = false,
+      hasDeadLetter = false,
+  ),
 }
 
-enum class GlobalType(
+enum class GlobalTopicDescription(
   override val subscriptionPrefix: String,
   override val subscriptionType: SubscriptionType,
   override val isPartitioned: Boolean,
-  override val isDelayed: Boolean
-) : TopicType {
-  NAMER("namer", SubscriptionType.Shared, false, false)
+  override val isDelayed: Boolean,
+  override val hasDeadLetter: Boolean
+) : TopicDescription {
+  NAMER(
+      subscriptionPrefix = "namer",
+      subscriptionType = SubscriptionType.Shared,
+      isPartitioned = false,
+      isDelayed = false,
+      hasDeadLetter = false,
+  )
 }
 
-enum class WorkflowType(
+enum class WorkflowTopicDescription(
   override val subscriptionPrefix: String,
   override val subscriptionType: SubscriptionType,
   override val isPartitioned: Boolean,
-  override val isDelayed: Boolean
-) : TopicType {
-  TAG("workflow-tag", SubscriptionType.Key_Shared, true, false),
-  ENGINE("workflow-engine", SubscriptionType.Key_Shared, true, false),
-  DELAY("workflow-$TOPIC_WITH_DELAY", SubscriptionType.Shared, true, true)
+  override val isDelayed: Boolean,
+  override val hasDeadLetter: Boolean
+) : TopicDescription {
+  TAG(
+      subscriptionPrefix = "workflow-tag",
+      subscriptionType = SubscriptionType.Key_Shared,
+      isPartitioned = true,
+      isDelayed = false,
+      hasDeadLetter = true,
+  ),
+  ENGINE(
+      subscriptionPrefix = "workflow-engine",
+      subscriptionType = SubscriptionType.Key_Shared,
+      isPartitioned = true,
+      isDelayed = false,
+      hasDeadLetter = true,
+  ),
+  ENGINE_DELAYED(
+      subscriptionPrefix = "workflow-$TOPIC_WITH_DELAY",
+      subscriptionType = SubscriptionType.Shared,
+      isPartitioned = true,
+      isDelayed = true,
+      hasDeadLetter = true,
+  ),
+  EXECUTOR(
+      subscriptionPrefix = "workflow-task-executor",
+      subscriptionType = SubscriptionType.Shared,
+      isPartitioned = true,
+      isDelayed = false,
+      hasDeadLetter = true,
+  )
 }
 
-enum class WorkflowTaskType(
+enum class ServiceTopicDescription(
   override val subscriptionPrefix: String,
   override val subscriptionType: SubscriptionType,
   override val isPartitioned: Boolean,
-  override val isDelayed: Boolean
-) : TopicType {
-  EXECUTOR("workflow-task-executor", SubscriptionType.Shared, true, false)
+  override val isDelayed: Boolean,
+  override val hasDeadLetter: Boolean
+
+) : TopicDescription {
+  TAG(
+      subscriptionPrefix = "task-tag",
+      subscriptionType = SubscriptionType.Key_Shared,
+      isPartitioned = true,
+      isDelayed = false,
+      hasDeadLetter = true,
+  ),
+  EXECUTOR(
+      subscriptionPrefix = "task-executor",
+      subscriptionType = SubscriptionType.Shared,
+      isPartitioned = true,
+      isDelayed = false,
+      hasDeadLetter = true,
+  )
 }
 
-enum class ServiceType(
-  override val subscriptionPrefix: String,
-  override val subscriptionType: SubscriptionType,
-  override val isPartitioned: Boolean,
-  override val isDelayed: Boolean
-) : TopicType {
-  TAG("task-tag", SubscriptionType.Key_Shared, true, false),
-  EXECUTOR("task-executor", SubscriptionType.Shared, true, false)
-}
