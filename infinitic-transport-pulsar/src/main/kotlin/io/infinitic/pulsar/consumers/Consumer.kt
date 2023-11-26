@@ -35,6 +35,7 @@ import org.apache.pulsar.client.api.Consumer
 import org.apache.pulsar.client.api.MessageId
 import org.apache.pulsar.client.api.SubscriptionType
 import java.util.concurrent.CancellationException
+import kotlin.reflect.KClass
 import org.apache.pulsar.client.api.Message as PulsarMessage
 
 class Consumer(
@@ -44,9 +45,10 @@ class Consumer(
 
   val logger = KotlinLogging.logger {}
 
-  internal inline fun <T : Message, reified S : Envelope<out T>> CoroutineScope.startConsumer(
-    crossinline handler: suspend (T) -> Unit,
-    noinline beforeDlq: (suspend (T, Exception) -> Unit)?,
+  internal fun <T : Message, S : Envelope<out T>> CoroutineScope.startConsumer(
+    handler: suspend (T) -> Unit,
+    beforeDlq: (suspend (T, Exception) -> Unit)?,
+    schemaClass: KClass<S>,
     topic: String,
     topicDlq: String?,
     subscriptionName: String,
@@ -61,7 +63,8 @@ class Consumer(
       SubscriptionType.Key_Shared ->
         repeat(concurrency) {
           // For Key_Shared subscription, we must create a new consumer for each executor coroutine
-          val consumer = getConsumer<S>(
+          val consumer = getConsumer(
+              schemaClass = schemaClass,
               topic = topic,
               topicDlq = topicDlq,
               subscriptionName = subscriptionName,
@@ -115,7 +118,8 @@ class Consumer(
 
       else -> {
         // For other subscription, we can use the same consumer for all executor coroutines
-        val consumer = getConsumer<S>(
+        val consumer = getConsumer(
+            schemaClass = schemaClass,
             topic = topic,
             topicDlq = topicDlq,
             subscriptionName = subscriptionName,
@@ -178,7 +182,8 @@ class Consumer(
     }
   }
 
-  private inline fun <reified S : Envelope<*>> getConsumer(
+  private fun <S : Envelope<*>> getConsumer(
+    schemaClass: KClass<S>,
     topic: String,
     topicDlq: String?,
     subscriptionName: String,
@@ -203,14 +208,14 @@ class Consumer(
       )
     }
 
-    return client.newConsumer(S::class, consumerDef, consumerDefDlq)
+    return client.newConsumer(schemaClass, consumerDef, consumerDefDlq)
   }
 
   // if message has been redelivered too many times, send it to DLQ and tell Workflow Engine about that
-  private suspend inline fun <T : Message, S : Envelope<out T>> negativeAcknowledge(
+  private suspend fun <T : Message, S : Envelope<out T>> negativeAcknowledge(
     consumer: Consumer<S>,
     pulsarMessage: PulsarMessage<out S>,
-    noinline beforeDlq: (suspend (T, Exception) -> Unit)?,
+    beforeDlq: (suspend (T, Exception) -> Unit)?,
     message: T?,
     cause: Exception
   ): Result<Unit> {

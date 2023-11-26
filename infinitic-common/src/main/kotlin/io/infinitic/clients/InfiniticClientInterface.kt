@@ -557,7 +557,7 @@ interface InfiniticClientInterface : Closeable {
    * @property taskStatus should be the status of the task(s) to retry (null if all)
    * @property taskClass should be the interface of the task(s) to retry (null if all)
    *
-   * [taskStatus] and [taskClass] can be combined, eg. to target failed tasks of a specific class.
+   * [taskStatus] and [taskClass] can be combined, e.g. to target failed tasks of a specific class.
    */
   fun retryTasks(stub: Any, taskStatus: DeferredStatus? = null, taskClass: Class<*>? = null): Unit =
       retryTasksAsync(stub, taskStatus, taskClass).join()

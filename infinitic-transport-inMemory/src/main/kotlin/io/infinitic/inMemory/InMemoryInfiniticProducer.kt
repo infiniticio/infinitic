@@ -22,6 +22,7 @@
  */
 package io.infinitic.inMemory
 
+import io.github.oshai.kotlinlogging.KotlinLogging
 import io.infinitic.common.clients.messages.ClientMessage
 import io.infinitic.common.data.MillisDuration
 import io.infinitic.common.tasks.executors.messages.ExecuteTask
@@ -34,7 +35,6 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.future.future
-import io.github.oshai.kotlinlogging.KotlinLogging
 import java.util.concurrent.CompletableFuture
 
 class InMemoryInfiniticProducer(private val channels: InMemoryChannels) : InfiniticProducer {
@@ -47,7 +47,7 @@ class InMemoryInfiniticProducer(private val channels: InMemoryChannels) : Infini
   private val delayScope = CoroutineScope(Dispatchers.IO)
 
   override var name = DEFAULT_NAME
-
+  
   override fun sendAsync(message: ClientMessage) = sendAsync(
       message,
       channels.forClient(),

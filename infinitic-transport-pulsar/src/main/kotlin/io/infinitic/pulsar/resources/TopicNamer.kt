@@ -46,24 +46,24 @@ interface TopicNamer {
   fun fullNameTopic(topic: String) = "persistent://$fullNameSpace/$topic"
 
   /**
-   * Return the producer name associated to the type [type] with name [name]
+   * Return the producer name associated to the type [topicDescription] with name [name]
    */
-  fun getProducerName(name: String, type: TopicType): String
+  fun getProducerName(name: String, topicDescription: TopicDescription): String
 
   /**
-   * Return the consumer name associated to the type [type] with name [name]
+   * Return the consumer name associated to the type [topicDescription] with name [name]
    */
-  fun getConsumerName(name: String, type: TopicType): String
+  fun getConsumerName(name: String, topicDescription: TopicDescription): String
 
   /**
-   * Return the full name of the topic associated to the type [type] with name [name]
+   * Return the full name of the topic associated to the type [topicDescription] with name [name]
    */
-  fun getTopicName(name: String, type: TopicType): String
+  fun getTopicName(name: String, topicDescription: TopicDescription): String
 
   /**
-   * Return the full name of the DLQ topic associated to the type [type] with name [name]
+   * Return the full name of the DLQ topic associated to the type [topicDescription] with name [name]
    */
-  fun getTopicDLQName(name: String, type: TopicType): String?
+  fun getDlqTopicName(name: String, topicDescription: TopicDescription): String?
 
   /**
    * Return the service name associated to a topic

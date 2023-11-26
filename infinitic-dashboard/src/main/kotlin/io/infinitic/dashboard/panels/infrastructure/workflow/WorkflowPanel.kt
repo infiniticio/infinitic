@@ -34,9 +34,8 @@ import io.infinitic.dashboard.panels.infrastructure.jobs.update
 import io.infinitic.dashboard.panels.infrastructure.requests.Loading
 import io.infinitic.dashboard.panels.infrastructure.requests.Request
 import io.infinitic.dashboard.svgs.icons.iconChevron
-import io.infinitic.pulsar.resources.TopicType
-import io.infinitic.pulsar.resources.WorkflowTaskType
-import io.infinitic.pulsar.resources.WorkflowType
+import io.infinitic.pulsar.resources.TopicDescription
+import io.infinitic.pulsar.resources.WorkflowTopicDescription
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -73,29 +72,19 @@ class WorkflowPanel private constructor(private val workflowName: String) : Pane
   private val workflowIsLoading = workflowState.property(WorkflowState::isLoading)
   private val workflowLastUpdated = workflowState.property(WorkflowState::lastUpdatedAt)
 
-  private val workflowTaskState = KVar(WorkflowTaskState(workflowName))
-  private val workflowTaskIsLoading = workflowTaskState.property(WorkflowTaskState::isLoading)
-  private val workflowTaskLastUpdated = workflowTaskState.property(WorkflowTaskState::lastUpdatedAt)
-
-  private val selectionTopicType: KVar<TopicType> = KVar(WorkflowType.ENGINE)
+  private val selectionTopicDescription: KVar<TopicDescription> =
+      KVar(WorkflowTopicDescription.ENGINE)
   private val selectionTopicStats: KVar<Request<PartitionedTopicStats>> = KVar(Loading())
 
-  private val selectionSlide = selectionSlide(selectionTopicType, selectionTopicStats)
+  private val selectionSlide = selectionSlide(selectionTopicDescription, selectionTopicStats)
 
   lateinit var job: Job
 
   init {
     // this listener ensures that the slideover appear/disappear with right content
     workflowState.addListener { _, new ->
-      if (selectionTopicType.value is WorkflowType) {
-        selectionTopicStats.value = new.topicsStats[selectionTopicType.value]!!
-      }
-    }
-
-    // this listener ensures that the slideover appear/disappear with right content
-    workflowTaskState.addListener { _, new ->
-      if (selectionTopicType.value is WorkflowTaskType) {
-        selectionTopicStats.value = new.topicsStats[selectionTopicType.value]!!
+      if (selectionTopicDescription.value is WorkflowTopicDescription) {
+        selectionTopicStats.value = new.topicsStats[selectionTopicDescription.value]!!
       }
     }
   }
@@ -104,12 +93,10 @@ class WorkflowPanel private constructor(private val workflowName: String) : Pane
     if (!this::job.isInitialized || job.isCancelled) {
       job =
           InfiniticDashboard.scope.launch {
-            // update of workflow task's topics every 30 seconds
+            // update of workflow's topics every 30 seconds
             update(workflowState)
             // shift the updates
             delay(2000)
-            // update of workflow's topics every 30 seconds
-            update(workflowTaskState)
           }
     }
   }
@@ -168,15 +155,6 @@ class WorkflowPanel private constructor(private val workflowName: String) : Pane
             workflowState,
         )
 
-        // WORKFLOW TASK
-        displayTopicSet(
-            "WorkflowTask's topics",
-            "Here are the topics used by the task engine for this workflowTask.",
-            workflowTaskIsLoading,
-            workflowTaskLastUpdated,
-            workflowTaskState,
-        )
-
         // SELECTION SLIDE
         selectionSlide.render(this)
       }
@@ -186,7 +164,7 @@ class WorkflowPanel private constructor(private val workflowName: String) : Pane
     text: String,
     isLoading: KVar<Boolean>,
     lastUpdated: KVar<Instant>,
-    state: KVar<out JobState<out TopicType>>
+    state: KVar<out JobState<out TopicDescription>>
   ) {
     div().classes("pt-8 pb-8").new {
       div().classes("max-w-7xl mx-auto sm:px-6 md:px-8").new {
@@ -195,7 +173,7 @@ class WorkflowPanel private constructor(private val workflowName: String) : Pane
           span().text(text).addText(" Click on a row to get more details on its real-time stats.")
         }
         displayJobStatsTable(
-            workflowName, state, selectionSlide, selectionTopicType, selectionTopicStats,
+            workflowName, state, selectionSlide, selectionTopicDescription, selectionTopicStats,
         )
       }
     }

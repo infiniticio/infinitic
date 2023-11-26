@@ -56,26 +56,35 @@ class ResourceManager(
    *
    */
   fun initNamer(): Result<String> =
-      initTopic(topicNamer.getTopicName("global", GlobalType.NAMER), GlobalType.NAMER)
+      initTopic(
+          topicNamer.getTopicName("global", GlobalTopicDescription.NAMER),
+          GlobalTopicDescription.NAMER,
+      )
 
   /**
    * Check if a topic exists, and create it if not
    * We skip this if the topic has already been initialized successfully
    */
-  fun initTopic(name: String, topicType: TopicType): Result<String> =
-      initTopic(
-          topicNamer.getTopicName(name, topicType),
-          topicType.isPartitioned,
-          topicType.isDelayed,
-      )
+  fun initTopic(name: String, topicDescription: TopicDescription): Result<String> = initTopic(
+      topicNamer.getTopicName(name, topicDescription),
+      topicDescription.isPartitioned,
+      topicDescription.isDelayed,
+  )
+
 
   /**
    * Check if a Dead Letter Queue topic exists, and create it if not
    * We skip this if the topic has already been initialized successfully
    */
-  fun initDlqTopic(name: String, topicType: TopicType): Result<String?> =
-      topicNamer.getTopicDLQName(name, topicType)
-          ?.let { initTopic(it, topicType.isPartitioned, topicType.isDelayed) }
+  fun initDlqTopic(name: String, topicDescription: TopicDescription): Result<String?> =
+      topicNamer.getDlqTopicName(name, topicDescription)
+          ?.let {
+            initTopic(
+                it,
+                topicDescription.isPartitioned,
+                topicDescription.isDelayed,
+            )
+          }
         ?: Result.success(null)
 
   /**
@@ -87,7 +96,8 @@ class ResourceManager(
       when (isInitialized(topic)) {
         true -> Result.success(topic)
         false -> admin.initTopic(
-            topic, isPartitioned,
+            topic,
+            isPartitioned,
             when (isDelayed) {
               true -> policies.delayedTTLInSeconds
               false -> policies.messageTTLInSeconds

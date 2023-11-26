@@ -41,17 +41,17 @@ import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
 import io.infinitic.common.workflows.tags.messages.WorkflowTagEnvelope
 import io.infinitic.common.workflows.tags.messages.WorkflowTagMessage
 import io.infinitic.pulsar.consumers.Consumer
-import io.infinitic.pulsar.resources.ClientType
+import io.infinitic.pulsar.resources.ClientTopicDescription
 import io.infinitic.pulsar.resources.ResourceManager
-import io.infinitic.pulsar.resources.ServiceType
-import io.infinitic.pulsar.resources.TopicType
-import io.infinitic.pulsar.resources.WorkflowTaskType
-import io.infinitic.pulsar.resources.WorkflowType
+import io.infinitic.pulsar.resources.ServiceTopicDescription
+import io.infinitic.pulsar.resources.TopicDescription
+import io.infinitic.pulsar.resources.WorkflowTopicDescription
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.future.future
 import java.util.concurrent.CompletableFuture
+import kotlin.reflect.KClass
 
 class PulsarInfiniticConsumer(
   private val consumer: Consumer,
@@ -69,7 +69,7 @@ class PulsarInfiniticConsumer(
     consumingScope.cancel()
     // Delete client topic
     if (::clientName.isInitialized) {
-      val topic = resourceManager.getTopicName(clientName, ClientType.RESPONSE)
+      val topic = resourceManager.getTopicName(clientName, ClientTopicDescription.RESPONSE)
       logger.info { "Deleting response topic $topic of client $clientName" }
       resourceManager.deleteTopic(topic)
     }
@@ -81,10 +81,11 @@ class PulsarInfiniticConsumer(
     handler: suspend (ClientMessage) -> Unit,
     beforeDlq: (suspend (ClientMessage, Exception) -> Unit)?,
     clientName: ClientName
-  ): CompletableFuture<Unit> = startAsync<ClientMessage, ClientEnvelope>(
+  ): CompletableFuture<Unit> = startAsync(
       handler = handler,
       beforeDlq = beforeDlq,
-      topicType = ClientType.RESPONSE,
+      schemaClass = ClientEnvelope::class,
+      topicDescription = ClientTopicDescription.RESPONSE,
       concurrency = 1,
       name = "$clientName",
   ).also { this.clientName = "$clientName" }
@@ -95,10 +96,11 @@ class PulsarInfiniticConsumer(
     beforeDlq: (suspend (WorkflowTagMessage, Exception) -> Unit)?,
     workflowName: WorkflowName,
     concurrency: Int
-  ) = startAsync<WorkflowTagMessage, WorkflowTagEnvelope>(
+  ) = startAsync(
       handler = handler,
       beforeDlq = beforeDlq,
-      topicType = WorkflowType.TAG,
+      schemaClass = WorkflowTagEnvelope::class,
+      topicDescription = WorkflowTopicDescription.TAG,
       concurrency = concurrency,
       name = "$workflowName",
   )
@@ -109,10 +111,11 @@ class PulsarInfiniticConsumer(
     beforeDlq: (suspend (WorkflowEngineMessage, Exception) -> Unit)?,
     workflowName: WorkflowName,
     concurrency: Int
-  ) = startAsync<WorkflowEngineMessage, WorkflowEngineEnvelope>(
+  ) = startAsync(
       handler = handler,
       beforeDlq = beforeDlq,
-      topicType = WorkflowType.ENGINE,
+      schemaClass = WorkflowEngineEnvelope::class,
+      topicDescription = WorkflowTopicDescription.ENGINE,
       concurrency = concurrency,
       name = "$workflowName",
   )
@@ -123,10 +126,11 @@ class PulsarInfiniticConsumer(
     beforeDlq: (suspend (WorkflowEngineMessage, Exception) -> Unit)?,
     workflowName: WorkflowName,
     concurrency: Int
-  ) = startAsync<WorkflowEngineMessage, WorkflowEngineEnvelope>(
+  ) = startAsync(
       handler = handler,
       beforeDlq = beforeDlq,
-      topicType = WorkflowType.DELAY,
+      schemaClass = WorkflowEngineEnvelope::class,
+      topicDescription = WorkflowTopicDescription.ENGINE_DELAYED,
       concurrency = concurrency,
       name = "$workflowName",
   )
@@ -137,10 +141,11 @@ class PulsarInfiniticConsumer(
     beforeDlq: (suspend (TaskTagMessage, Exception) -> Unit)?,
     serviceName: ServiceName,
     concurrency: Int
-  ) = startAsync<TaskTagMessage, TaskTagEnvelope>(
+  ) = startAsync(
       handler = handler,
       beforeDlq = beforeDlq,
-      topicType = ServiceType.TAG,
+      schemaClass = TaskTagEnvelope::class,
+      topicDescription = ServiceTopicDescription.TAG,
       concurrency = concurrency,
       name = "$serviceName",
   )
@@ -151,10 +156,11 @@ class PulsarInfiniticConsumer(
     beforeDlq: (suspend (TaskExecutorMessage, Exception) -> Unit)?,
     serviceName: ServiceName,
     concurrency: Int
-  ) = startAsync<TaskExecutorMessage, TaskExecutorEnvelope>(
+  ) = startAsync(
       handler = handler,
       beforeDlq = beforeDlq,
-      topicType = ServiceType.EXECUTOR,
+      schemaClass = TaskExecutorEnvelope::class,
+      topicDescription = ServiceTopicDescription.EXECUTOR,
       concurrency = concurrency,
       name = "$serviceName",
   )
@@ -175,10 +181,11 @@ class PulsarInfiniticConsumer(
     beforeDlq: (suspend (TaskExecutorMessage, Exception) -> Unit)?,
     workflowName: WorkflowName,
     concurrency: Int
-  ) = startAsync<TaskExecutorMessage, TaskExecutorEnvelope>(
+  ) = startAsync(
       handler = handler,
       beforeDlq = beforeDlq,
-      topicType = WorkflowTaskType.EXECUTOR,
+      schemaClass = TaskExecutorEnvelope::class,
+      topicDescription = WorkflowTopicDescription.EXECUTOR,
       concurrency = concurrency,
       name = "$workflowName",
   )
@@ -194,29 +201,31 @@ class PulsarInfiniticConsumer(
   }
 
   // Start a consumer on a topic, with concurrent executors
-  private inline fun <T : Message, reified S : Envelope<T>> startAsync(
-    noinline handler: suspend (T) -> Unit,
-    noinline beforeDlq: (suspend (T, Exception) -> Unit)?,
-    topicType: TopicType,
+  private fun <T : Message, S : Envelope<out T>> startAsync(
+    handler: suspend (T) -> Unit,
+    beforeDlq: (suspend (T, Exception) -> Unit)?,
+    schemaClass: KClass<S>,
+    topicDescription: TopicDescription,
     concurrency: Int,
     name: String
   ): CompletableFuture<Unit> {
     // create topic if not exists
-    val topic = resourceManager.initTopic(name, topicType).getOrThrow()
+    val topic = resourceManager.initTopic(name, topicDescription).getOrThrow()
     // create DLQ topic if not exists
-    val topicDlq = resourceManager.initDlqTopic(name, topicType).getOrThrow()
+    val topicDlq = resourceManager.initDlqTopic(name, topicDescription).getOrThrow()
 
     return with(consumer) {
       consumingScope.future {
-        startConsumer<T, S>(
+        startConsumer(
             handler = handler,
             beforeDlq = beforeDlq,
+            schemaClass = schemaClass,
             topic = topic,
             topicDlq = topicDlq,
-            subscriptionName = topicType.subscriptionName,
-            subscriptionNameDlq = topicType.subscriptionNameDlq,
-            subscriptionType = topicType.subscriptionType,
-            consumerName = resourceManager.getConsumerName(name, topicType),
+            subscriptionName = topicDescription.subscriptionName,
+            subscriptionNameDlq = topicDescription.subscriptionNameDlq,
+            subscriptionType = topicDescription.subscriptionType,
+            consumerName = resourceManager.getConsumerName(name, topicDescription),
             concurrency = concurrency,
         )
       }
