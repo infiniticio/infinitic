@@ -56,8 +56,6 @@ import java.util.concurrent.ConcurrentHashMap
 class ServicePanel private constructor(private val taskName: String) : Panel() {
 
   companion object {
-    const val template = "/infra/services/{name}"
-
     private val instances: ConcurrentHashMap<String, ServicePanel> = ConcurrentHashMap()
 
     fun from(taskName: String) = instances.computeIfAbsent(taskName) { ServicePanel(taskName) }
