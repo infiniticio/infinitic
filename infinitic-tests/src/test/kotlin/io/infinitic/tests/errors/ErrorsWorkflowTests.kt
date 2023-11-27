@@ -23,10 +23,11 @@
 package io.infinitic.tests.errors
 
 import io.infinitic.common.fixtures.later
-import io.infinitic.exceptions.CanceledWorkflowException
-import io.infinitic.exceptions.FailedTaskException
-import io.infinitic.exceptions.FailedWorkflowException
+import io.infinitic.exceptions.TaskFailedException
 import io.infinitic.exceptions.UnknownWorkflowException
+import io.infinitic.exceptions.WorkflowCanceledException
+import io.infinitic.exceptions.WorkflowFailedException
+import io.infinitic.exceptions.WorkflowTimedOutException
 import io.infinitic.tests.Test
 import io.infinitic.tests.channels.ChannelsWorkflow
 import io.infinitic.tests.utils.UtilService
@@ -54,7 +55,7 @@ internal class ErrorsWorkflowTests :
             client.cancel(w)
           }
 
-          shouldThrow<CanceledWorkflowException> { deferred.await() }
+          shouldThrow<WorkflowCanceledException> { deferred.await() }
         }
 
         "try/catch a failing task" {
@@ -62,9 +63,9 @@ internal class ErrorsWorkflowTests :
         }
 
         "failing task with Exception on main path should throw" {
-          val error = shouldThrow<FailedWorkflowException> { errorsWorkflow.failingWithException() }
+          val error = shouldThrow<WorkflowFailedException> { errorsWorkflow.failingWithException() }
 
-          val taskException = error.deferredException as FailedTaskException
+          val taskException = error.deferredException as TaskFailedException
           taskException.serviceName shouldBe UtilService::class.java.name
           taskException.workerException.name shouldBe Exception::class.java.name
         }
@@ -103,8 +104,8 @@ internal class ErrorsWorkflowTests :
 //            }
 
         "Cancelling child workflow on main path should throw" {
-          val error = shouldThrow<FailedWorkflowException> { utilWorkflow.cancelChild1() }
-          val cause = error.deferredException as CanceledWorkflowException
+          val error = shouldThrow<WorkflowFailedException> { utilWorkflow.cancelChild1() }
+          val cause = error.deferredException as WorkflowCanceledException
           cause.workflowName shouldBe ChannelsWorkflow::class.java.name
         }
 
@@ -113,12 +114,12 @@ internal class ErrorsWorkflowTests :
         }
 
         "Failure in child workflow on main path should throw exception" {
-          val error = shouldThrow<FailedWorkflowException> { errorsWorkflow.failing6() }
+          val error = shouldThrow<WorkflowFailedException> { errorsWorkflow.failing6() }
 
-          val cause1 = error.deferredException as FailedWorkflowException
+          val cause1 = error.deferredException as WorkflowFailedException
           cause1.workflowName shouldBe ErrorsWorkflow::class.java.name
 
-          val cause2 = cause1.deferredException as FailedTaskException
+          val cause2 = cause1.deferredException as TaskFailedException
           cause2.serviceName shouldBe UtilService::class.java.name
         }
 
@@ -127,13 +128,13 @@ internal class ErrorsWorkflowTests :
         }
 
         "Failure in child workflow on main path should throw" {
-          val error = shouldThrow<FailedWorkflowException> { errorsWorkflow.failing7bis() }
+          val error = shouldThrow<WorkflowFailedException> { errorsWorkflow.failing7bis() }
 
-          val cause1 = error.deferredException as FailedWorkflowException
+          val cause1 = error.deferredException as WorkflowFailedException
           cause1.workflowName shouldBe ErrorsWorkflow::class.java.name
           cause1.methodName shouldBe "failingWithException"
 
-          val cause2 = cause1.deferredException as FailedTaskException
+          val cause2 = cause1.deferredException as TaskFailedException
           cause2.serviceName shouldBe UtilService::class.java.name
         }
 
@@ -142,11 +143,11 @@ internal class ErrorsWorkflowTests :
         }
 
         "Retry all failed tasks should restart a workflow" {
-          val error = shouldThrow<FailedWorkflowException> { errorsWorkflow.failing8() }
+          val error = shouldThrow<WorkflowFailedException> { errorsWorkflow.failing8() }
 
           val deferred = client.lastDeferred!!
 
-          val cause = error.deferredException as FailedTaskException
+          val cause = error.deferredException as TaskFailedException
           cause.serviceName shouldBe UtilService::class.java.name
 
           later {
@@ -158,10 +159,10 @@ internal class ErrorsWorkflowTests :
         }
 
         "Retry a failed task by id should restart a workflow" {
-          val error = shouldThrow<FailedWorkflowException> { errorsWorkflow.failing8() }
+          val error = shouldThrow<WorkflowFailedException> { errorsWorkflow.failing8() }
           val deferred = client.lastDeferred!!
 
-          val cause = error.deferredException as FailedTaskException
+          val cause = error.deferredException as TaskFailedException
           cause.serviceName shouldBe UtilService::class.java.name
 
           later {
@@ -173,10 +174,10 @@ internal class ErrorsWorkflowTests :
         }
 
         "Retry a failed task by class should restart a workflow" {
-          val error = shouldThrow<FailedWorkflowException> { errorsWorkflow.failing8() }
+          val error = shouldThrow<WorkflowFailedException> { errorsWorkflow.failing8() }
           val deferred = client.lastDeferred!!
 
-          val cause = error.deferredException as FailedTaskException
+          val cause = error.deferredException as TaskFailedException
           cause.serviceName shouldBe UtilService::class.java.name
 
           later {
@@ -196,7 +197,7 @@ internal class ErrorsWorkflowTests :
         }
 
         "Synchronous call of unknown workflow should throw" {
-          val error = shouldThrow<FailedWorkflowException> { errorsWorkflow.failing11() }
+          val error = shouldThrow<WorkflowFailedException> { errorsWorkflow.failing11() }
 
           val cause = error.deferredException as UnknownWorkflowException
           cause.workflowName shouldBe ErrorsWorkflow::class.java.name
@@ -242,6 +243,14 @@ internal class ErrorsWorkflowTests :
 
           // clean up
           client.cancel(w)
+        }
+
+        "Synchronous call of a workflow running for more that its timeout should throw" {
+          shouldThrow<WorkflowTimedOutException> { errorsWorkflow.timeout(1000) }
+        }
+
+        "Synchronous call of a workflow running for less that its timeout should NOT throw" {
+          errorsWorkflow.timeout(10) shouldBe 10
         }
       },
   )

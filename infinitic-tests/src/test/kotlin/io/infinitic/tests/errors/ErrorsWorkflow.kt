@@ -23,10 +23,11 @@
 package io.infinitic.tests.errors
 
 import io.infinitic.annotations.Ignore
+import io.infinitic.annotations.Timeout
 import io.infinitic.exceptions.FailedDeferredException
-import io.infinitic.exceptions.FailedTaskException
-import io.infinitic.exceptions.FailedWorkflowException
+import io.infinitic.exceptions.TaskFailedException
 import io.infinitic.exceptions.UnknownWorkflowException
+import io.infinitic.exceptions.WorkflowFailedException
 import io.infinitic.tests.utils.UtilService
 import io.infinitic.workflows.Deferred
 import io.infinitic.workflows.Workflow
@@ -76,6 +77,9 @@ interface ErrorsWorkflow {
   fun failing12(): String
 
   fun failing13()
+
+  @Timeout(After500MilliSeconds::class)
+  fun timeout(duration: Long): Long
 }
 
 @Suppress("unused")
@@ -106,7 +110,7 @@ class ErrorsWorkflowImpl : Workflow(), ErrorsWorkflow {
       try {
         utilService.failingWithException()
         "ok"
-      } catch (e: FailedTaskException) {
+      } catch (e: TaskFailedException) {
         utilService.reverse("ok")
       }
 
@@ -178,8 +182,8 @@ class ErrorsWorkflowImpl : Workflow(), ErrorsWorkflow {
       try {
         errorsWorkflow.failingWithException()
         "ok"
-      } catch (e: FailedWorkflowException) {
-        val deferredException = e.deferredException as FailedTaskException
+      } catch (e: WorkflowFailedException) {
+        val deferredException = e.deferredException as TaskFailedException
         utilService.await(100)
         deferredException.workerException.name
       }
@@ -238,4 +242,6 @@ class ErrorsWorkflowImpl : Workflow(), ErrorsWorkflow {
   override fun failing13() {
     newWorkflow(ErrorsWorkflow::class.java, tags = tags).waiting()
   }
+
+  override fun timeout(duration: Long) = utilService.await(duration)
 }

@@ -25,7 +25,7 @@ package io.infinitic.workflows.engine.handlers
 import io.infinitic.common.clients.messages.MethodFailed
 import io.infinitic.common.data.ClientName
 import io.infinitic.common.exceptions.thisShouldNotHappen
-import io.infinitic.common.tasks.executors.errors.FailedWorkflowError
+import io.infinitic.common.tasks.executors.errors.WorkflowFailedError
 import io.infinitic.common.transport.InfiniticProducer
 import io.infinitic.common.workflows.data.methodRuns.MethodRun
 import io.infinitic.common.workflows.engine.messages.ChildMethodFailed
@@ -44,7 +44,7 @@ internal fun CoroutineScope.workflowTaskFailed(
 
   val deferredError =
       when (val deferredError = message.deferredError) {
-        null -> message.failedTaskError
+        null -> message.taskFailedError
         else -> deferredError
       }
 
@@ -71,8 +71,8 @@ internal fun CoroutineScope.workflowTaskFailed(
             workflowId = it,
             workflowName = methodRun.parentWorkflowName ?: thisShouldNotHappen(),
             methodRunId = methodRun.parentMethodRunId ?: thisShouldNotHappen(),
-            childFailedWorkflowError =
-            FailedWorkflowError(
+            childWorkflowFailedError =
+            WorkflowFailedError(
                 workflowName = state.workflowName,
                 workflowId = state.workflowId,
                 methodName = methodRun.methodName,

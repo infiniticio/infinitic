@@ -533,7 +533,7 @@ private fun checkWorkflowException(
       workflowId shouldBe msg.workflowId
       workflowName shouldBe msg.workflowName
       methodRunId shouldBe msg.methodRunId
-      with(failedTaskError) {
+      with(taskFailedError) {
         serviceName shouldBe msg.serviceName
         taskId shouldBe msg.taskId
         methodName shouldBe msg.methodName

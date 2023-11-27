@@ -37,7 +37,7 @@ import io.infinitic.common.tasks.data.TaskMeta
 import io.infinitic.common.tasks.data.TaskReturnValue
 import io.infinitic.common.tasks.executors.errors.DeferredError
 import io.infinitic.common.tasks.executors.errors.ExecutionError
-import io.infinitic.common.tasks.executors.errors.FailedTaskError
+import io.infinitic.common.tasks.executors.errors.TaskFailedError
 import io.infinitic.common.tasks.executors.messages.ExecuteTask
 import io.infinitic.common.tasks.executors.messages.TaskExecutorMessage
 import io.infinitic.common.tasks.tags.messages.RemoveTagFromTask
@@ -242,7 +242,7 @@ class TaskExecutor(
               workflowName = msg.workflowName ?: thisShouldNotHappen(),
               workflowId = msg.workflowId ?: thisShouldNotHappen(),
               methodRunId = msg.methodRunId ?: thisShouldNotHappen(),
-              failedTaskError = FailedTaskError(
+              taskFailedError = TaskFailedError(
                   serviceName = msg.serviceName,
                   taskId = msg.taskId,
                   methodName = msg.methodName,
@@ -364,26 +364,26 @@ class TaskExecutor(
           )
         }
 
-        // use timeout from registry, if it exists
-        // else use withTimeout from method annotation
+        // use withTimeout from registry, if it exists
         this.withTimeout = registered.withTimeout
+            // else use Timeout method annotation
           ?: workflowMethod.getAnnotation(Timeout::class.java)?.getInstance()
-              // else use withRetry from class annotation
+              // else use Timeout class annotation
               ?: workflow::class.java.getAnnotation(Timeout::class.java)?.getInstance()
-              // else use workflow if WithTimeout
+              // else use WithTimeout interface
               ?: when (workflow) {
             is WithTimeout -> workflow
             else -> null
           } // else use default value
               ?: DEFAULT_WORKFLOW_TASK_TIMEOUT
 
-        // use timeout from registry, if it exists
-        // else use withTimeout from method annotation
+        // use withRetry from registry, if it exists
         this.withRetry = registered.withRetry
+            // else use Retry method annotation
           ?: workflowMethod.getAnnotation(Retry::class.java)?.getInstance()
-              // else use withRetry from class annotation
+              // else use Retry class annotation
               ?: workflow::class.java.getAnnotation(Retry::class.java)?.getInstance()
-              // else use workflow if WithTimeout
+              // else use WithRetry interface
               ?: when (workflow) {
             is WithRetry -> workflow
             else -> null
@@ -391,10 +391,10 @@ class TaskExecutor(
               ?: DEFAULT_WORKFLOW_TASK_RETRY
 
         // get checkMode from registry
-        // else get mode from method annotation
         val checkMode = registered.checkMode
+        // else use CheckMode method annotation
           ?: workflowMethod.getAnnotation(CheckMode::class.java)?.mode
-          // else get mode from class annotation
+          // else use CheckMode class annotation
           ?: workflow::class.java.getAnnotation(CheckMode::class.java)?.mode
           // else use default value
           ?: DEFAULT_WORKFLOW_CHECK_MODE
@@ -410,12 +410,12 @@ class TaskExecutor(
         val registered = workerRegistry.getRegisteredService(msg.serviceName)
 
         // use withTimeout from registry, if it exists
-        // else use withTimeout from method annotation
         this.withTimeout = registered.withTimeout
+            // else use Timeout method annotation
           ?: taskMethod.getAnnotation(Timeout::class.java)?.getInstance()
-              // else use withTimeout from class annotation
+              // else use Timeout class annotation
               ?: service::class.java.getAnnotation(Timeout::class.java)?.getInstance()
-              // else use service if WithRetry
+              // else use WithTimeout interface
               ?: when (service) {
             is WithTimeout -> service
             else -> null
@@ -423,12 +423,12 @@ class TaskExecutor(
               ?: DEFAULT_TASK_TIMEOUT
 
         // use withRetry from registry, if it exists
-        // else use withRetry from method annotation
         this.withRetry = registered.withRetry
+            // else use Retry method annotation
           ?: taskMethod.getAnnotation(Retry::class.java)?.getInstance()
-              // else use withRetry from class annotation
+              // else use Retry class annotation
               ?: service::class.java.getAnnotation(Retry::class.java)?.getInstance()
-              // else use service if WithRetry
+              // else use WithRetry interface
               ?: when (service) {
             is WithRetry -> service
             else -> null

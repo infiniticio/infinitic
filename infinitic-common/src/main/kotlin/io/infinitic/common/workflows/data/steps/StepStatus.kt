@@ -23,9 +23,9 @@
 package io.infinitic.common.workflows.data.steps
 
 import io.infinitic.common.data.ReturnValue
-import io.infinitic.common.tasks.executors.errors.CanceledDeferredError
-import io.infinitic.common.tasks.executors.errors.FailedDeferredError
-import io.infinitic.common.tasks.executors.errors.UnknownDeferredError
+import io.infinitic.common.tasks.executors.errors.DeferredCanceledError
+import io.infinitic.common.tasks.executors.errors.DeferredFailedError
+import io.infinitic.common.tasks.executors.errors.DeferredUnknownError
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskIndex
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -42,29 +42,32 @@ sealed class StepStatus {
   @Serializable
   @SerialName("StepStatus.Unknown")
   data class Unknown(
-      val unknownDeferredError: UnknownDeferredError,
-      val unknowingWorkflowTaskIndex: WorkflowTaskIndex
+    @SerialName("unknownDeferredError")
+    val deferredUnknownError: DeferredUnknownError,
+    val unknowingWorkflowTaskIndex: WorkflowTaskIndex
   ) : StepStatus()
 
   @Serializable
   @SerialName("StepStatus.Canceled")
   data class Canceled(
-      val canceledDeferredError: CanceledDeferredError,
-      val cancellationWorkflowTaskIndex: WorkflowTaskIndex
+    @SerialName("canceledDeferredError")
+    val deferredCanceledError: DeferredCanceledError,
+    val cancellationWorkflowTaskIndex: WorkflowTaskIndex
   ) : StepStatus()
 
   @Serializable
   @SerialName("StepStatus.Failed")
   data class Failed(
-      val failedDeferredError: FailedDeferredError,
-      val failureWorkflowTaskIndex: WorkflowTaskIndex
+    @SerialName("failedDeferredError")
+    val deferredFailedError: DeferredFailedError,
+    val failureWorkflowTaskIndex: WorkflowTaskIndex
   ) : StepStatus()
 
   @Serializable
   @SerialName("StepStatus.Completed")
   data class Completed(
-      val returnValue: ReturnValue,
-      val completionWorkflowTaskIndex: WorkflowTaskIndex
+    val returnValue: ReturnValue,
+    val completionWorkflowTaskIndex: WorkflowTaskIndex
   ) : StepStatus()
 
   /**
@@ -77,7 +80,8 @@ sealed class StepStatus {
   @Serializable
   @SerialName("StepStatus.CurrentlyFailed")
   data class CurrentlyFailed(
-      val failedDeferredError: FailedDeferredError,
-      val failureWorkflowTaskIndex: WorkflowTaskIndex
+    @SerialName("failedDeferredError")
+    val deferredFailedError: DeferredFailedError,
+    val failureWorkflowTaskIndex: WorkflowTaskIndex
   ) : StepStatus()
 }

@@ -22,12 +22,12 @@
  */
 package io.infinitic.clients
 
-import io.infinitic.clients.deferred.DeferredMethod
+import io.infinitic.clients.deferred.ExistingDeferredWorkflow
 import io.infinitic.clients.samples.FakeClass
 import io.infinitic.clients.samples.FakeInterface
-import io.infinitic.clients.samples.FakeTask
-import io.infinitic.clients.samples.FakeTaskImpl
-import io.infinitic.clients.samples.FakeTaskParent
+import io.infinitic.clients.samples.FakeService
+import io.infinitic.clients.samples.FakeServiceImpl
+import io.infinitic.clients.samples.FakeServiceParent
 import io.infinitic.clients.samples.FakeWorkflow
 import io.infinitic.clients.samples.FakeWorkflowImpl
 import io.infinitic.clients.samples.FooWorkflow
@@ -67,6 +67,7 @@ import io.infinitic.common.workflows.tags.messages.DispatchMethodByTag
 import io.infinitic.common.workflows.tags.messages.GetWorkflowIdsByTag
 import io.infinitic.common.workflows.tags.messages.SendSignalByTag
 import io.infinitic.common.workflows.tags.messages.WorkflowTagMessage
+import io.infinitic.exceptions.WorkflowTimedOutException
 import io.infinitic.exceptions.clients.InvalidChannelUsageException
 import io.infinitic.exceptions.clients.InvalidStubException
 import io.kotest.assertions.throwables.shouldThrow
@@ -420,6 +421,18 @@ class ClientWorkflowTests : StringSpec(
         verify { consumer.startClientConsumerAsync(any(), any(), any()) wasNot called }
       }
 
+      "Should throw a WorkflowTimedOutException when waiting for a workflow more than timeout" {
+        // when triggered asynchronously
+        shouldThrow<WorkflowTimedOutException> {
+          client.dispatch(fakeWorkflow::timeout).await()
+        }
+
+        // when triggered synchronously
+        shouldThrow<WorkflowTimedOutException> {
+          fakeWorkflow.timeout()
+        }
+      }
+
       "Should throw when calling a channel from a new workflow" {
         // when
         shouldThrow<InvalidChannelUsageException> { fakeWorkflow.channelString.send("a") }
@@ -506,7 +519,7 @@ class ClientWorkflowTests : StringSpec(
       "Should be able to send a complex Object to a channel" {
         // when
         val id = UUID.randomUUID().toString()
-        val signal = FakeTaskImpl()
+        val signal = FakeServiceImpl()
         client.getWorkflowById(FakeWorkflow::class.java, id).channelFakeTask.send(signal)
         // then
         workflowTagSlots.size shouldBe 0
@@ -520,9 +533,9 @@ class ClientWorkflowTests : StringSpec(
                 signalData = SignalData.from(signal),
                 channelTypes =
                 setOf(
-                    ChannelType.from(FakeTaskImpl::class.java),
-                    ChannelType.from(FakeTask::class.java),
-                    ChannelType.from(FakeTaskParent::class.java),
+                    ChannelType.from(FakeServiceImpl::class.java),
+                    ChannelType.from(FakeService::class.java),
+                    ChannelType.from(FakeServiceParent::class.java),
                 ),
                 emitterName = clientNameTest,
             )
@@ -531,8 +544,8 @@ class ClientWorkflowTests : StringSpec(
       "Should be able to send a complex Object to a channel targeting a parent type" {
         // when
         val id = UUID.randomUUID().toString()
-        val signal = FakeTaskImpl()
-        client.getWorkflowById(FakeWorkflow::class.java, id).channelFakeTaskParent.send(signal)
+        val signal = FakeServiceImpl()
+        client.getWorkflowById(FakeWorkflow::class.java, id).channelFakeServiceParent.send(signal)
         // then
         workflowTagSlots.size shouldBe 0
         val msg = workflowEngineSlot.captured as SendSignal
@@ -540,14 +553,14 @@ class ClientWorkflowTests : StringSpec(
             SendSignal(
                 workflowName = WorkflowName(FakeWorkflow::class.java.name),
                 workflowId = WorkflowId(id),
-                channelName = ChannelName("getChannelFakeTaskParent"),
+                channelName = ChannelName("getChannelFakeServiceParent"),
                 signalId = msg.signalId,
                 signalData = SignalData.from(signal),
                 channelTypes =
                 setOf(
-                    ChannelType.from(FakeTaskImpl::class.java),
-                    ChannelType.from(FakeTask::class.java),
-                    ChannelType.from(FakeTaskParent::class.java),
+                    ChannelType.from(FakeServiceImpl::class.java),
+                    ChannelType.from(FakeService::class.java),
+                    ChannelType.from(FakeServiceParent::class.java),
                 ),
                 emitterName = clientNameTest,
             )
@@ -657,7 +670,7 @@ class ClientWorkflowTests : StringSpec(
             DispatchMethodByTag(
                 workflowName = WorkflowName(FakeWorkflow::class.java.name),
                 workflowTag = WorkflowTag("foo"),
-                methodRunId = (deferred as DeferredMethod).methodRunId,
+                methodRunId = (deferred as ExistingDeferredWorkflow).methodRunId,
                 methodName = MethodName("m0"),
                 methodParameters = MethodParameters(),
                 methodParameterTypes = MethodParameterTypes(listOf()),
@@ -769,32 +782,6 @@ class ClientWorkflowTests : StringSpec(
                 emitterName = clientNameTest,
             )
         workflowEngineSlot.isCaptured shouldBe false
-      }
-
-      "Wait a channel should throw" {
-        shouldThrow<InvalidChannelUsageException> { client.await(fakeWorkflow.channelString) }
-
-        val byId = client.getWorkflowById(FakeWorkflow::class.java, UUID.randomUUID().toString())
-        shouldThrow<InvalidStubException> { client.await(byId.channelString) }
-
-        val byTag = client.getWorkflowByTag(FakeWorkflow::class.java, "foo")
-        shouldThrow<InvalidStubException> { client.await(byTag.channelString) }
-      }
-
-      "Wait a channel method should throw" {
-        shouldThrow<InvalidChannelUsageException> {
-          client.await(fakeWorkflow.channelString, UUID.randomUUID().toString())
-        }
-
-        val byId = client.getWorkflowById(FakeWorkflow::class.java, UUID.randomUUID().toString())
-        shouldThrow<InvalidStubException> {
-          client.await(byId.channelString, UUID.randomUUID().toString())
-        }
-
-        val byTag = client.getWorkflowByTag(FakeWorkflow::class.java, "foo")
-        shouldThrow<InvalidStubException> {
-          client.await(byTag.channelString, UUID.randomUUID().toString())
-        }
       }
 
       "Retry a channel should throw" {

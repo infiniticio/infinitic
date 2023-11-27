@@ -25,7 +25,7 @@ package io.infinitic.workflows.engine.handlers
 import io.infinitic.common.clients.messages.MethodCanceled
 import io.infinitic.common.data.ClientName
 import io.infinitic.common.exceptions.thisShouldNotHappen
-import io.infinitic.common.tasks.executors.errors.CanceledWorkflowError
+import io.infinitic.common.tasks.executors.errors.WorkflowCanceledError
 import io.infinitic.common.transport.InfiniticProducer
 import io.infinitic.common.workflows.data.commands.DispatchMethodCommand
 import io.infinitic.common.workflows.data.commands.DispatchWorkflowCommand
@@ -91,8 +91,8 @@ private fun CoroutineScope.cancelMethodRun(
             workflowId = methodRun.parentWorkflowId!!,
             workflowName = methodRun.parentWorkflowName ?: thisShouldNotHappen(),
             methodRunId = methodRun.parentMethodRunId ?: thisShouldNotHappen(),
-            childCanceledWorkflowError =
-            CanceledWorkflowError(
+            childWorkflowCanceledError =
+            WorkflowCanceledError(
                 workflowName = state.workflowName,
                 workflowId = state.workflowId,
                 methodRunId = methodRun.methodRunId,

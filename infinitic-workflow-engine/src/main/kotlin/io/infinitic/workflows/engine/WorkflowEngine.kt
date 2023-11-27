@@ -22,11 +22,12 @@
  */
 package io.infinitic.workflows.engine
 
+import io.github.oshai.kotlinlogging.KotlinLogging
 import io.infinitic.common.clients.messages.MethodRunUnknown
 import io.infinitic.common.data.ClientName
 import io.infinitic.common.data.ReturnValue
 import io.infinitic.common.exceptions.thisShouldNotHappen
-import io.infinitic.common.tasks.executors.errors.UnknownWorkflowError
+import io.infinitic.common.tasks.executors.errors.WorkflowUnknownError
 import io.infinitic.common.transport.InfiniticProducer
 import io.infinitic.common.workflows.data.commands.CommandId
 import io.infinitic.common.workflows.data.commands.CommandStatus
@@ -69,7 +70,6 @@ import io.infinitic.workflows.engine.storage.LoggedWorkflowStateStorage
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
-import io.github.oshai.kotlinlogging.KotlinLogging
 import java.time.Instant
 
 class WorkflowEngine(
@@ -146,8 +146,8 @@ class WorkflowEngine(
                   workflowId = message.parentWorkflowId!!,
                   workflowName = message.parentWorkflowName ?: thisShouldNotHappen(),
                   methodRunId = message.parentMethodRunId ?: thisShouldNotHappen(),
-                  childUnknownWorkflowError =
-                  UnknownWorkflowError(
+                  childWorkflowUnknownError =
+                  WorkflowUnknownError(
                       workflowName = message.workflowName,
                       workflowId = message.workflowId,
                       methodRunId = message.methodRunId,
@@ -274,9 +274,9 @@ class WorkflowEngine(
             state,
             message.methodRunId,
             CommandId.from(
-                message.childUnknownWorkflowError.methodRunId ?: thisShouldNotHappen(),
+                message.childWorkflowUnknownError.methodRunId ?: thisShouldNotHappen(),
             ),
-            CommandStatus.Unknown(message.childUnknownWorkflowError, state.workflowTaskIndex),
+            CommandStatus.Unknown(message.childWorkflowUnknownError, state.workflowTaskIndex),
         )
 
       is ChildMethodCanceled ->
@@ -285,9 +285,9 @@ class WorkflowEngine(
             state,
             message.methodRunId,
             CommandId.from(
-                message.childCanceledWorkflowError.methodRunId ?: thisShouldNotHappen(),
+                message.childWorkflowCanceledError.methodRunId ?: thisShouldNotHappen(),
             ),
-            CommandStatus.Canceled(message.childCanceledWorkflowError, state.workflowTaskIndex),
+            CommandStatus.Canceled(message.childWorkflowCanceledError, state.workflowTaskIndex),
         )
 
       is ChildMethodFailed ->
@@ -295,8 +295,8 @@ class WorkflowEngine(
             producer,
             state,
             message.methodRunId,
-            CommandId.from(message.childFailedWorkflowError.methodRunId ?: thisShouldNotHappen()),
-            CommandStatus.Failed(message.childFailedWorkflowError, state.workflowTaskIndex),
+            CommandId.from(message.childWorkflowFailedError.methodRunId ?: thisShouldNotHappen()),
+            CommandStatus.Failed(message.childWorkflowFailedError, state.workflowTaskIndex),
         )
 
       is ChildMethodCompleted ->
@@ -322,8 +322,8 @@ class WorkflowEngine(
                 producer,
                 state,
                 message.methodRunId,
-                CommandId.from(message.canceledTaskError.taskId),
-                CommandStatus.Canceled(message.canceledTaskError, state.workflowTaskIndex),
+                CommandId.from(message.taskCanceledError.taskId),
+                CommandStatus.Canceled(message.taskCanceledError, state.workflowTaskIndex),
             )
         }
 
@@ -340,8 +340,8 @@ class WorkflowEngine(
                 producer,
                 state,
                 message.methodRunId,
-                CommandId.from(message.failedTaskError.taskId),
-                CommandStatus.Failed(message.failedTaskError, state.workflowTaskIndex),
+                CommandId.from(message.taskFailedError.taskId),
+                CommandStatus.Failed(message.taskFailedError, state.workflowTaskIndex),
             )
           }
         }

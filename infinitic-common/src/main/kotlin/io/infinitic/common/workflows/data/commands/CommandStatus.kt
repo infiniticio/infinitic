@@ -27,9 +27,9 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo
 import com.github.avrokotlin.avro4k.Avro
 import com.github.avrokotlin.avro4k.AvroDefault
 import io.infinitic.common.data.ReturnValue
-import io.infinitic.common.tasks.executors.errors.CanceledDeferredError
-import io.infinitic.common.tasks.executors.errors.FailedDeferredError
-import io.infinitic.common.tasks.executors.errors.UnknownDeferredError
+import io.infinitic.common.tasks.executors.errors.DeferredCanceledError
+import io.infinitic.common.tasks.executors.errors.DeferredFailedError
+import io.infinitic.common.tasks.executors.errors.DeferredUnknownError
 import io.infinitic.common.workflows.data.channels.SignalId
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskIndex
 import kotlinx.serialization.SerialName
@@ -39,7 +39,8 @@ import kotlinx.serialization.Serializable
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.PROPERTY, property = "@klass")
 sealed class CommandStatus {
   /** A command is terminated if canceled or completed, failed is a transient state */
-  @JsonIgnore fun isTerminated() = this is Completed || this is Canceled
+  @JsonIgnore
+  fun isTerminated() = this is Completed || this is Canceled
 
   @Serializable
   @SerialName("CommandStatus.Ongoing")
@@ -52,22 +53,25 @@ sealed class CommandStatus {
   @Serializable
   @SerialName("CommandStatus.Unknown")
   data class Unknown(
-      val unknownDeferredError: UnknownDeferredError,
-      val unknowingWorkflowTaskIndex: WorkflowTaskIndex
+    @SerialName("unknownDeferredError")
+    val deferredUnknownError: DeferredUnknownError,
+    val unknowingWorkflowTaskIndex: WorkflowTaskIndex
   ) : CommandStatus()
 
   @Serializable
   @SerialName("CommandStatus.Canceled")
   data class Canceled(
-      val canceledDeferredError: CanceledDeferredError,
-      val cancellationWorkflowTaskIndex: WorkflowTaskIndex
+    @SerialName("canceledDeferredError")
+    val deferredCanceledError: DeferredCanceledError,
+    val cancellationWorkflowTaskIndex: WorkflowTaskIndex
   ) : CommandStatus()
 
   @Serializable
   @SerialName("CommandStatus.Failed")
   data class Failed(
-      val failedDeferredError: FailedDeferredError,
-      val failureWorkflowTaskIndex: WorkflowTaskIndex
+    @SerialName("failedDeferredError")
+    val deferredFailedError: DeferredFailedError,
+    val failureWorkflowTaskIndex: WorkflowTaskIndex
   ) : CommandStatus()
 
   /**
@@ -77,9 +81,9 @@ sealed class CommandStatus {
   @Serializable
   @SerialName("CommandStatus.Completed")
   data class Completed(
-      @AvroDefault("0") val returnIndex: Int = 0,
-      val returnValue: ReturnValue,
-      val completionWorkflowTaskIndex: WorkflowTaskIndex,
-      @AvroDefault(Avro.NULL) val signalId: SignalId? = null
+    @AvroDefault("0") val returnIndex: Int = 0,
+    val returnValue: ReturnValue,
+    val completionWorkflowTaskIndex: WorkflowTaskIndex,
+    @AvroDefault(Avro.NULL) val signalId: SignalId? = null
   ) : CommandStatus()
 }
