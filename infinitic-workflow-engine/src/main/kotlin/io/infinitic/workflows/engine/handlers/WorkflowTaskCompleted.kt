@@ -73,7 +73,7 @@ internal fun CoroutineScope.workflowTaskCompleted(
   producer: InfiniticProducer,
   state: WorkflowState,
   message: TaskCompleted
-): MutableList<WorkflowEngineMessage> {
+) {
   val workflowTaskReturnValue =
       message.taskReturnValue.returnValue.value() as WorkflowTaskReturnValue
 
@@ -200,7 +200,8 @@ internal fun CoroutineScope.workflowTaskCompleted(
 
   if (methodRun.isTerminated()) state.removeMethodRun(methodRun)
 
-  return bufferedMessages
+  // add fake messages at the top of the messagesBuffer list
+  state.messagesBuffer.addAll(0, bufferedMessages)
 }
 
 private fun CoroutineScope.startDurationTimer(

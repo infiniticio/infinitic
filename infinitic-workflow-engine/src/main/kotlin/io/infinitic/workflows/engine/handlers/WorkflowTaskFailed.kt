@@ -39,7 +39,7 @@ internal fun CoroutineScope.workflowTaskFailed(
   producer: InfiniticProducer,
   state: WorkflowState,
   message: TaskFailed
-): MutableList<WorkflowEngineMessage> {
+) {
   val methodRun: MethodRun = state.getRunningMethodRun()
 
   val deferredError =
@@ -89,5 +89,6 @@ internal fun CoroutineScope.workflowTaskFailed(
     }
   }
 
-  return bufferedMessages
+  // add fake message at the top of the messagesBuffer list
+  state.messagesBuffer.addAll(0, bufferedMessages)
 }

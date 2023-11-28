@@ -25,12 +25,9 @@ package io.infinitic.workflows.engine
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.infinitic.common.clients.messages.MethodRunUnknown
 import io.infinitic.common.data.ClientName
-import io.infinitic.common.data.ReturnValue
 import io.infinitic.common.exceptions.thisShouldNotHappen
 import io.infinitic.common.tasks.executors.errors.WorkflowUnknownError
 import io.infinitic.common.transport.InfiniticProducer
-import io.infinitic.common.workflows.data.commands.CommandId
-import io.infinitic.common.workflows.data.commands.CommandStatus
 import io.infinitic.common.workflows.engine.messages.CancelWorkflow
 import io.infinitic.common.workflows.engine.messages.ChildMethodCanceled
 import io.infinitic.common.workflows.engine.messages.ChildMethodCompleted
@@ -55,22 +52,29 @@ import io.infinitic.common.workflows.engine.messages.WorkflowEvent
 import io.infinitic.common.workflows.engine.state.WorkflowState
 import io.infinitic.common.workflows.engine.storage.WorkflowStateStorage
 import io.infinitic.workflows.engine.handlers.cancelWorkflow
+import io.infinitic.workflows.engine.handlers.childMethodCanceled
+import io.infinitic.workflows.engine.handlers.childMethodCompleted
+import io.infinitic.workflows.engine.handlers.childMethodFailed
+import io.infinitic.workflows.engine.handlers.childMethodUnknown
 import io.infinitic.workflows.engine.handlers.completeTimer
 import io.infinitic.workflows.engine.handlers.dispatchMethod
 import io.infinitic.workflows.engine.handlers.dispatchWorkflow
 import io.infinitic.workflows.engine.handlers.retryTasks
 import io.infinitic.workflows.engine.handlers.retryWorkflowTask
 import io.infinitic.workflows.engine.handlers.sendSignal
+import io.infinitic.workflows.engine.handlers.taskCanceled
+import io.infinitic.workflows.engine.handlers.taskCompleted
+import io.infinitic.workflows.engine.handlers.taskFailed
+import io.infinitic.workflows.engine.handlers.timerCompleted
 import io.infinitic.workflows.engine.handlers.waitWorkflow
+import io.infinitic.workflows.engine.handlers.workflowTaskCanceled
 import io.infinitic.workflows.engine.handlers.workflowTaskCompleted
 import io.infinitic.workflows.engine.handlers.workflowTaskFailed
-import io.infinitic.workflows.engine.helpers.commandTerminated
 import io.infinitic.workflows.engine.helpers.removeTags
 import io.infinitic.workflows.engine.storage.LoggedWorkflowStateStorage
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
-import java.time.Instant
 
 class WorkflowEngine(
   storage: WorkflowStateStorage,
@@ -87,21 +91,24 @@ class WorkflowEngine(
   private val clientName = ClientName(producer.name)
 
   suspend fun handle(message: WorkflowEngineMessage) {
-    logger.debug { "receiving $message" }
+    logTrace(message) { "receiving $message" }
 
     // get current state
     var state = storage.getState(message.workflowId)
 
-    // we can receive a message that has already been processed
-    // if a crash happened between the state update and the message acknowledgement
-    // in this case, we discard the message
+    // if a crash happened between the state update and the message acknowledgement,
+    // it's possible to receive a message that has already been processed
+    // in this case, we discard it
     if (state?.lastMessageId == message.messageId) {
-      logDiscardingMessage(message, "as state already contains this messageId")
+      logDiscardingWarning(message) { "as state already contains this messageId" }
 
       return
     }
 
-    state = process(state, message) ?: return // null => discarded message
+    state = when (state) {
+      null -> processMessageWithoutState(message)
+      else -> processMessageWithState(message, state)
+    } ?: return // returning null means that we can stop here
 
     when (state.methodRuns.size) {
       // workflow is completed
@@ -121,25 +128,28 @@ class WorkflowEngine(
     }
   }
 
-  private suspend fun process(
-    state: WorkflowState?,
+  private suspend fun processMessageWithoutState(
     message: WorkflowEngineMessage
   ): WorkflowState? = coroutineScope {
-    // if no state (new or terminated workflow)
-    if (state == null) {
-      if (message is DispatchWorkflow) {
-        return@coroutineScope dispatchWorkflow(producer, message)
-      } else if (message is DispatchMethod) {
+    // New workflow to dispatch
+    if (message is DispatchWorkflow) {
+      return@coroutineScope dispatchWorkflow(producer, message)
+    }
+
+    // targeted workflow is not found, we tell the message emitter
+    when (message) {
+      // a client wants to dispatch a method on the missing workflow
+      is DispatchMethod -> {
         if (message.clientWaiting) {
-          val methodRunUnknown =
-              MethodRunUnknown(
-                  recipientName = message.emitterName,
-                  message.workflowId,
-                  message.methodRunId,
-                  emitterName = clientName,
-              )
+          val methodRunUnknown = MethodRunUnknown(
+              recipientName = message.emitterName,
+              message.workflowId,
+              message.methodRunId,
+              emitterName = clientName,
+          )
           launch { producer.send(methodRunUnknown) }
         }
+        // a workflow wants to dispatch a method on the missing workflow
         if (message.parentWorkflowId != null && message.parentWorkflowId != message.workflowId) {
           val childMethodFailed =
               ChildMethodUnknown(
@@ -156,98 +166,120 @@ class WorkflowEngine(
               )
           launch { producer.send(childMethodFailed) }
         }
-      } else if (message is WaitWorkflow) {
-        val methodRunUnknown =
-            MethodRunUnknown(
-                recipientName = message.emitterName,
-                message.workflowId,
-                message.methodRunId,
-                emitterName = clientName,
-            )
+      }
+
+      // a client wants to wait the missing workflow
+      is WaitWorkflow -> {
+        val methodRunUnknown = MethodRunUnknown(
+            recipientName = message.emitterName,
+            message.workflowId,
+            message.methodRunId,
+            emitterName = clientName,
+        )
         launch { producer.send(methodRunUnknown) }
       }
 
-      // discard all other messages if workflow is already terminated
-      logDiscardingMessage(message, NO_STATE_DISCARDING_REASON)
-
-      return@coroutineScope null
+      else -> Unit
     }
 
-    // Idempotency: do not relaunch if this workflow has already been launched
-    if (message is DispatchWorkflow) {
-      logDiscardingMessage(message, "as workflow has already been launched")
+    logDiscardingWarning(message) { NO_STATE_DISCARDING_REASON }
 
-      return@coroutineScope null
-    }
-
-    // Idempotency: do not relaunch if this method has already been launched
-    if (message is DispatchMethod && state.getMethodRun(message.methodRunId) != null) {
-      logDiscardingMessage(message, "as this method has already been launched")
-
-      return@coroutineScope null
-    }
-
-    // Idempotency: do not relaunch if this signal has already been received
-    if (message is SendSignal && state.hasSignalAlreadyBeenReceived(message.signalId)) {
-      logDiscardingMessage(message, "as this signal has already been received")
-
-      return@coroutineScope null
-    }
-
-    // Idempotency: discard if this workflowTask is not the current one
-    if (message.isWorkflowTaskEvent() &&
-      (message as TaskEvent).taskId() != state.runningWorkflowTaskId) {
-      logDiscardingMessage(message, "as workflowTask is not the right one")
-
-      return@coroutineScope null
-    }
-
-    // if a workflow task is ongoing then buffer all WorkflowEvent message,
-    // - except for TaskCompleted/TaskFailed/TaskCanceled associated to a WorkflowTask
-    if (state.runningWorkflowTaskId != null &&
-      message is WorkflowEvent &&
-      !message.isWorkflowTaskEvent()) {
-      // buffer this message
-      logger.debug { "workflowId ${state.workflowId} - buffering $message" }
-      state.messagesBuffer.add(message)
-
-      return@coroutineScope state
-    }
-
-    // process this message
-    processMessage(state, message)
-
-    // process all buffered messages
-    while (state.runningWorkflowTaskId == null && // if a workflowTask is not ongoing
-      state.messagesBuffer.size > 0 // if there is some buffered message
-    ) {
-      val bufferedMsg = state.messagesBuffer.removeAt(0)
-      logger.debug {
-        "workflowId ${bufferedMsg.workflowId} - processing buffered message $bufferedMsg"
-      }
-      processMessage(state, bufferedMsg)
-    }
-
-    return@coroutineScope state
+    return@coroutineScope null
   }
 
-  private fun logDiscardingMessage(message: WorkflowEngineMessage, cause: String) {
-    logger.warn { "workflowId ${message.workflowId} - discarding $cause: $message" }
+  private suspend fun processMessageWithState(
+    message: WorkflowEngineMessage,
+    state: WorkflowState
+  ): WorkflowState? {
+
+    // if a workflow task is ongoing, we buffer all messages except those associated to a workflowTask
+    when (message.isWorkflowTaskEvent()) {
+      true -> {
+        // Idempotency: discard if this workflowTask is not the current one
+        if (state.runningWorkflowTaskId != (message as TaskEvent).taskId()) {
+          logDiscardingWarning(message) { "as workflowTask is not the right one" }
+
+          return null
+        }
+      }
+
+      false -> {
+        if (message is WorkflowEvent && state.runningWorkflowTaskId != null) {
+          // if a workflow task is ongoing then buffer all WorkflowEvent message,
+          // except those associated to a WorkflowTask
+          logDebug(message) { "buffering $message" }
+          state.messagesBuffer.add(message)
+
+          return state
+        }
+      }
+    }
+
+    coroutineScope {
+      // process this message
+      processMessage(state, message)
+
+      // process all buffered messages, while there is no workflowTask ongoing
+      while (state.runningWorkflowTaskId == null && state.messagesBuffer.size > 0) {
+        val msg = state.messagesBuffer.removeAt(0)
+        logDebug(msg) { "processing buffered message $msg" }
+        processMessage(state, msg)
+      }
+    }
+
+    return state
+  }
+
+  private fun logDiscardingWarning(message: WorkflowEngineMessage, cause: () -> String) {
+    logger.warn { "${message.workflowName} (${message.workflowId}): discarding ${cause()} $message" }
+  }
+
+  private fun logDebug(message: WorkflowEngineMessage, txt: () -> String) {
+    logger.debug { "${message.workflowName} (${message.workflowId}): ${txt()}" }
+  }
+
+  private fun logTrace(message: WorkflowEngineMessage, txt: () -> String) {
+    logger.trace { "${message.workflowName} (${message.workflowId}): ${txt()}" }
   }
 
   private fun CoroutineScope.processMessage(state: WorkflowState, message: WorkflowEngineMessage) {
     // if message is related to a workflowTask, it's not running anymore
     if (message.isWorkflowTaskEvent()) state.runningWorkflowTaskId = null
 
-    // if methodRun has already been cleaned (completed), then discard the message
-    if (message is MethodEvent && state.getMethodRun(message.methodRunId) == null) {
-      logDiscardingMessage(message, "as null methodRun")
+    when (message) {
+      is DispatchMethod -> {
+        // Idempotency: do not relaunch if this method has already been launched
+        if (state.getMethodRun(message.methodRunId) != null) {
+          logDiscardingWarning(message) { "as this method has already been launched" }
 
-      return
+          return
+        }
+      }
+
+      is SendSignal -> {
+        // Idempotency: do not relaunch if this signal has already been received
+        if (state.hasSignalAlreadyBeenReceived(message.signalId)) {
+          logDiscardingWarning(message) { "as this signal has already been received" }
+
+          return
+        }
+
+      }
+
+      is MethodEvent -> {
+        // if methodRun has already been cleaned (completed), then discard the message
+        if (state.getMethodRun(message.methodRunId) == null) {
+          logDiscardingWarning(message) { "as null methodRun" }
+
+          return
+        }
+      }
+
+      else -> Unit
     }
 
     when (message) {
-      is DispatchWorkflow -> thisShouldNotHappen()
+      is DispatchWorkflow -> logDiscardingWarning(message) { "as workflow has already started" }
       is DispatchMethod -> dispatchMethod(producer, state, message)
       is CancelWorkflow -> cancelWorkflow(producer, state, message)
       is SendSignal -> sendSignal(producer, state, message)
@@ -256,116 +288,26 @@ class WorkflowEngine(
       is CompleteWorkflow -> TODO()
       is RetryWorkflowTask -> retryWorkflowTask(producer, state)
       is RetryTasks -> retryTasks(producer, state, message)
-      is TimerCompleted ->
-        commandTerminated(
-            producer,
-            state,
-            message.methodRunId,
-            CommandId.from(message.timerId),
-            CommandStatus.Completed(
-                returnValue = ReturnValue.from(Instant.now()),
-                completionWorkflowTaskIndex = state.workflowTaskIndex,
-            ),
-        )
+      is TimerCompleted -> timerCompleted(producer, state, message)
+      is ChildMethodUnknown -> childMethodUnknown(producer, state, message)
+      is ChildMethodCanceled -> childMethodCanceled(producer, state, message)
+      is ChildMethodFailed -> childMethodFailed(producer, state, message)
+      is ChildMethodCompleted -> childMethodCompleted(producer, state, message)
+      
+      is TaskCanceled -> when (message.isWorkflowTaskEvent()) {
+        true -> workflowTaskCanceled(producer, state, message)
+        false -> taskCanceled(producer, state, message)
+      }
 
-      is ChildMethodUnknown ->
-        commandTerminated(
-            producer,
-            state,
-            message.methodRunId,
-            CommandId.from(
-                message.childWorkflowUnknownError.methodRunId ?: thisShouldNotHappen(),
-            ),
-            CommandStatus.Unknown(message.childWorkflowUnknownError, state.workflowTaskIndex),
-        )
+      is TaskFailed -> when (message.isWorkflowTaskEvent()) {
+        true -> workflowTaskFailed(producer, state, message)
+        false -> taskFailed(producer, state, message)
+      }
 
-      is ChildMethodCanceled ->
-        commandTerminated(
-            producer,
-            state,
-            message.methodRunId,
-            CommandId.from(
-                message.childWorkflowCanceledError.methodRunId ?: thisShouldNotHappen(),
-            ),
-            CommandStatus.Canceled(message.childWorkflowCanceledError, state.workflowTaskIndex),
-        )
-
-      is ChildMethodFailed ->
-        commandTerminated(
-            producer,
-            state,
-            message.methodRunId,
-            CommandId.from(message.childWorkflowFailedError.methodRunId ?: thisShouldNotHappen()),
-            CommandStatus.Failed(message.childWorkflowFailedError, state.workflowTaskIndex),
-        )
-
-      is ChildMethodCompleted ->
-        commandTerminated(
-            producer,
-            state,
-            message.methodRunId,
-            CommandId.from(message.childWorkflowReturnValue.methodRunId),
-            CommandStatus.Completed(
-                returnValue = message.childWorkflowReturnValue.returnValue,
-                completionWorkflowTaskIndex = state.workflowTaskIndex,
-            ),
-        )
-
-      is TaskCanceled ->
-        when (message.isWorkflowTaskEvent()) {
-          true -> {
-            TODO()
-          }
-
-          false ->
-            commandTerminated(
-                producer,
-                state,
-                message.methodRunId,
-                CommandId.from(message.taskCanceledError.taskId),
-                CommandStatus.Canceled(message.taskCanceledError, state.workflowTaskIndex),
-            )
-        }
-
-      is TaskFailed ->
-        when (message.isWorkflowTaskEvent()) {
-          true -> {
-            val msg = workflowTaskFailed(producer, state, message)
-            // add fake message at the top of the messagesBuffer list
-            state.messagesBuffer.addAll(0, msg)
-          }
-
-          false -> {
-            commandTerminated(
-                producer,
-                state,
-                message.methodRunId,
-                CommandId.from(message.taskFailedError.taskId),
-                CommandStatus.Failed(message.taskFailedError, state.workflowTaskIndex),
-            )
-          }
-        }
-
-      is TaskCompleted ->
-        when (message.isWorkflowTaskEvent()) {
-          true -> {
-            val messages = workflowTaskCompleted(producer, state, message)
-            // add fake messages at the top of the messagesBuffer list
-            state.messagesBuffer.addAll(0, messages)
-          }
-
-          false ->
-            commandTerminated(
-                producer,
-                state,
-                message.methodRunId,
-                CommandId.from(message.taskReturnValue.taskId),
-                CommandStatus.Completed(
-                    returnValue = message.taskReturnValue.returnValue,
-                    completionWorkflowTaskIndex = state.workflowTaskIndex,
-                ),
-            )
-        }
+      is TaskCompleted -> when (message.isWorkflowTaskEvent()) {
+        true -> workflowTaskCompleted(producer, state, message)
+        false -> taskCompleted(producer, state, message)
+      }
     }
   }
 }

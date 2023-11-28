@@ -22,38 +22,23 @@
  */
 package io.infinitic.workflows.engine.handlers
 
+import io.infinitic.common.exceptions.thisShouldNotHappen
 import io.infinitic.common.transport.InfiniticProducer
-import io.infinitic.common.workflows.data.methodRuns.MethodRun
-import io.infinitic.common.workflows.data.methodRuns.MethodRunPosition
-import io.infinitic.common.workflows.engine.messages.DispatchMethod
+import io.infinitic.common.workflows.data.commands.CommandId
+import io.infinitic.common.workflows.data.commands.CommandStatus
+import io.infinitic.common.workflows.engine.messages.ChildMethodUnknown
 import io.infinitic.common.workflows.engine.state.WorkflowState
-import io.infinitic.workflows.engine.helpers.dispatchWorkflowTask
+import io.infinitic.workflows.engine.helpers.commandTerminated
 import kotlinx.coroutines.CoroutineScope
 
-internal fun CoroutineScope.dispatchMethod(
+internal fun CoroutineScope.childMethodUnknown(
   producer: InfiniticProducer,
   state: WorkflowState,
-  message: DispatchMethod
-) {
-  val methodRun =
-      MethodRun(
-          methodRunId = message.methodRunId,
-          waitingClients =
-          when (message.clientWaiting) {
-            true -> mutableSetOf(message.emitterName)
-            false -> mutableSetOf()
-          },
-          parentWorkflowId = message.parentWorkflowId,
-          parentWorkflowName = message.parentWorkflowName,
-          parentMethodRunId = message.parentMethodRunId,
-          methodName = message.methodName,
-          methodParameterTypes = message.methodParameterTypes,
-          methodParameters = message.methodParameters,
-          workflowTaskIndexAtStart = state.workflowTaskIndex,
-          propertiesNameHashAtStart = state.currentPropertiesNameHash.toMap(),
-      )
-
-  state.methodRuns.add(methodRun)
-
-  dispatchWorkflowTask(producer, state, methodRun, MethodRunPosition())
-}
+  message: ChildMethodUnknown
+) = commandTerminated(
+    producer,
+    state,
+    message.methodRunId,
+    CommandId.from(message.childWorkflowUnknownError.methodRunId ?: thisShouldNotHappen()),
+    CommandStatus.Unknown(message.childWorkflowUnknownError, state.workflowTaskIndex),
+)
