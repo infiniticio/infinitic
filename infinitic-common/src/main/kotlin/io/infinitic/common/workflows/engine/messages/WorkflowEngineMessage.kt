@@ -34,12 +34,12 @@ import io.infinitic.common.messages.Message
 import io.infinitic.common.tasks.data.ServiceName
 import io.infinitic.common.tasks.data.TaskId
 import io.infinitic.common.tasks.data.TaskReturnValue
-import io.infinitic.common.tasks.executors.errors.CanceledTaskError
-import io.infinitic.common.tasks.executors.errors.CanceledWorkflowError
 import io.infinitic.common.tasks.executors.errors.DeferredError
-import io.infinitic.common.tasks.executors.errors.FailedTaskError
-import io.infinitic.common.tasks.executors.errors.FailedWorkflowError
-import io.infinitic.common.tasks.executors.errors.UnknownWorkflowError
+import io.infinitic.common.tasks.executors.errors.TaskCanceledError
+import io.infinitic.common.tasks.executors.errors.TaskFailedError
+import io.infinitic.common.tasks.executors.errors.WorkflowCanceledError
+import io.infinitic.common.tasks.executors.errors.WorkflowFailedError
+import io.infinitic.common.tasks.executors.errors.WorkflowUnknownError
 import io.infinitic.common.workflows.data.channels.ChannelName
 import io.infinitic.common.workflows.data.channels.ChannelType
 import io.infinitic.common.workflows.data.channels.SignalData
@@ -85,191 +85,196 @@ sealed class WorkflowEngineMessage : Message {
 @Serializable
 @AvroNamespace("io.infinitic.workflows.engine")
 data class DispatchWorkflow(
-    override val workflowName: WorkflowName,
-    override val workflowId: WorkflowId,
-    val methodName: MethodName,
-    val methodParameters: MethodParameters,
-    val methodParameterTypes: MethodParameterTypes?,
-    val workflowTags: Set<WorkflowTag>,
-    val workflowMeta: WorkflowMeta,
-    var parentWorkflowName: WorkflowName?,
-    var parentWorkflowId: WorkflowId?,
-    var parentMethodRunId: MethodRunId?,
-    val clientWaiting: Boolean,
-    override val emitterName: ClientName
+  override val workflowName: WorkflowName,
+  override val workflowId: WorkflowId,
+  val methodName: MethodName,
+  val methodParameters: MethodParameters,
+  val methodParameterTypes: MethodParameterTypes?,
+  val workflowTags: Set<WorkflowTag>,
+  val workflowMeta: WorkflowMeta,
+  var parentWorkflowName: WorkflowName?,
+  var parentWorkflowId: WorkflowId?,
+  var parentMethodRunId: MethodRunId?,
+  val clientWaiting: Boolean,
+  override val emitterName: ClientName
 ) : WorkflowEngineMessage()
 
 @Serializable
 @AvroNamespace("io.infinitic.workflows.engine")
 data class RetryWorkflowTask(
-    override val workflowName: WorkflowName,
-    override val workflowId: WorkflowId,
-    override val emitterName: ClientName
+  override val workflowName: WorkflowName,
+  override val workflowId: WorkflowId,
+  override val emitterName: ClientName
 ) : WorkflowEngineMessage()
 
 @Serializable
 @AvroNamespace("io.infinitic.workflows.engine")
 data class RetryTasks(
-    override val workflowName: WorkflowName,
-    override val workflowId: WorkflowId,
-    val taskId: TaskId?,
-    val taskStatus: DeferredStatus?,
-    @SerialName("taskName") val serviceName: ServiceName?,
-    override val emitterName: ClientName
+  override val workflowName: WorkflowName,
+  override val workflowId: WorkflowId,
+  val taskId: TaskId?,
+  val taskStatus: DeferredStatus?,
+  @SerialName("taskName") val serviceName: ServiceName?,
+  override val emitterName: ClientName
 ) : WorkflowEngineMessage()
 
 @Serializable
 @AvroNamespace("io.infinitic.workflows.engine")
 data class CompleteTimers(
-    override val workflowName: WorkflowName,
-    override val workflowId: WorkflowId,
-    val methodRunId: MethodRunId?,
-    override val emitterName: ClientName
+  override val workflowName: WorkflowName,
+  override val workflowId: WorkflowId,
+  val methodRunId: MethodRunId?,
+  override val emitterName: ClientName
 ) : WorkflowEngineMessage()
 
 @Serializable
 @AvroNamespace("io.infinitic.workflows.engine")
 data class WaitWorkflow(
-    override val workflowName: WorkflowName,
-    override val workflowId: WorkflowId,
-    val methodRunId: MethodRunId,
-    override val emitterName: ClientName
+  override val workflowName: WorkflowName,
+  override val workflowId: WorkflowId,
+  val methodRunId: MethodRunId,
+  override val emitterName: ClientName
 ) : WorkflowEngineMessage()
 
 @Serializable
 @AvroNamespace("io.infinitic.workflows.engine")
 data class DispatchMethod(
-    override val workflowName: WorkflowName,
-    override val workflowId: WorkflowId,
-    val methodRunId: MethodRunId,
-    val methodName: MethodName,
-    val methodParameters: MethodParameters,
-    val methodParameterTypes: MethodParameterTypes?,
-    var parentWorkflowId: WorkflowId?,
-    var parentWorkflowName: WorkflowName?,
-    var parentMethodRunId: MethodRunId?,
-    val clientWaiting: Boolean,
-    override val emitterName: ClientName
+  override val workflowName: WorkflowName,
+  override val workflowId: WorkflowId,
+  val methodRunId: MethodRunId,
+  val methodName: MethodName,
+  val methodParameters: MethodParameters,
+  val methodParameterTypes: MethodParameterTypes?,
+  var parentWorkflowId: WorkflowId?,
+  var parentWorkflowName: WorkflowName?,
+  var parentMethodRunId: MethodRunId?,
+  val clientWaiting: Boolean,
+  override val emitterName: ClientName
 ) : WorkflowEngineMessage(), WorkflowEvent
 
 @Serializable
 @AvroNamespace("io.infinitic.workflows.engine")
 data class CancelWorkflow(
-    override val workflowName: WorkflowName,
-    override val workflowId: WorkflowId,
-    val methodRunId: MethodRunId?,
-    @AvroNamespace("io.infinitic.workflows.data") val reason: WorkflowCancellationReason,
-    override val emitterName: ClientName
+  override val workflowName: WorkflowName,
+  override val workflowId: WorkflowId,
+  val methodRunId: MethodRunId?,
+  @AvroNamespace("io.infinitic.workflows.data") val reason: WorkflowCancellationReason,
+  override val emitterName: ClientName
 ) : WorkflowEngineMessage(), WorkflowEvent
 
 @Serializable
 @AvroNamespace("io.infinitic.workflows.engine")
 data class CompleteWorkflow(
-    override val workflowName: WorkflowName,
-    override val workflowId: WorkflowId,
-    val workflowReturnValue: ReturnValue,
-    override val emitterName: ClientName
+  override val workflowName: WorkflowName,
+  override val workflowId: WorkflowId,
+  val workflowReturnValue: ReturnValue,
+  override val emitterName: ClientName
 ) : WorkflowEngineMessage(), WorkflowEvent
 
 @Serializable
 @AvroNamespace("io.infinitic.workflows.engine")
 data class SendSignal(
-    override val workflowName: WorkflowName,
-    override val workflowId: WorkflowId,
-    val channelName: ChannelName,
-    @AvroName("channelSignalId") val signalId: SignalId,
-    @AvroName("channelSignal") val signalData: SignalData,
-    @AvroName("channelSignalTypes") val channelTypes: Set<ChannelType>,
-    override val emitterName: ClientName
+  override val workflowName: WorkflowName,
+  override val workflowId: WorkflowId,
+  val channelName: ChannelName,
+  @AvroName("channelSignalId") val signalId: SignalId,
+  @AvroName("channelSignal") val signalData: SignalData,
+  @AvroName("channelSignalTypes") val channelTypes: Set<ChannelType>,
+  override val emitterName: ClientName
 ) : WorkflowEngineMessage(), WorkflowEvent
 
 @Serializable
 @AvroNamespace("io.infinitic.workflows.engine")
 data class TimerCompleted(
-    override val workflowName: WorkflowName,
-    override val workflowId: WorkflowId,
-    override val methodRunId: MethodRunId,
-    val timerId: TimerId,
-    override val emitterName: ClientName
+  override val workflowName: WorkflowName,
+  override val workflowId: WorkflowId,
+  override val methodRunId: MethodRunId,
+  val timerId: TimerId,
+  override val emitterName: ClientName
 ) : WorkflowEngineMessage(), MethodEvent
 
 @Serializable
 @AvroNamespace("io.infinitic.workflows.engine")
 data class ChildMethodUnknown(
-    override val workflowName: WorkflowName,
-    override val workflowId: WorkflowId,
-    override val methodRunId: MethodRunId,
-    val childUnknownWorkflowError: UnknownWorkflowError,
-    override val emitterName: ClientName
+  override val workflowName: WorkflowName,
+  override val workflowId: WorkflowId,
+  override val methodRunId: MethodRunId,
+  @SerialName("childUnknownWorkflowError")
+  val childWorkflowUnknownError: WorkflowUnknownError,
+  override val emitterName: ClientName
 ) : WorkflowEngineMessage(), MethodEvent
 
 @Serializable
 @AvroNamespace("io.infinitic.workflows.engine")
 data class ChildMethodCanceled(
-    override val workflowName: WorkflowName,
-    override val workflowId: WorkflowId,
-    override val methodRunId: MethodRunId,
-    val childCanceledWorkflowError: CanceledWorkflowError,
-    override val emitterName: ClientName
+  override val workflowName: WorkflowName,
+  override val workflowId: WorkflowId,
+  override val methodRunId: MethodRunId,
+  @SerialName("childCanceledWorkflowError")
+  val childWorkflowCanceledError: WorkflowCanceledError,
+  override val emitterName: ClientName
 ) : WorkflowEngineMessage(), MethodEvent
 
 @Serializable
 @AvroNamespace("io.infinitic.workflows.engine")
 data class ChildMethodFailed(
-    override val workflowName: WorkflowName,
-    override val workflowId: WorkflowId,
-    override val methodRunId: MethodRunId,
-    val childFailedWorkflowError: FailedWorkflowError,
-    override val emitterName: ClientName
+  override val workflowName: WorkflowName,
+  override val workflowId: WorkflowId,
+  override val methodRunId: MethodRunId,
+  @SerialName("childFailedWorkflowError")
+  val childWorkflowFailedError: WorkflowFailedError,
+  override val emitterName: ClientName
 ) : WorkflowEngineMessage(), MethodEvent
 
 @Serializable
 @AvroNamespace("io.infinitic.workflows.engine")
 data class ChildMethodCompleted(
-    override val workflowName: WorkflowName,
-    override val workflowId: WorkflowId,
-    override val methodRunId: MethodRunId,
-    val childWorkflowReturnValue: WorkflowReturnValue,
-    override val emitterName: ClientName
+  override val workflowName: WorkflowName,
+  override val workflowId: WorkflowId,
+  override val methodRunId: MethodRunId,
+  val childWorkflowReturnValue: WorkflowReturnValue,
+  override val emitterName: ClientName
 ) : WorkflowEngineMessage(), MethodEvent
 
 @Serializable
 @AvroNamespace("io.infinitic.workflows.engine")
 data class TaskCanceled(
-    override val workflowName: WorkflowName,
-    override val workflowId: WorkflowId,
-    override val methodRunId: MethodRunId,
-    val canceledTaskError: CanceledTaskError,
-    override val emitterName: ClientName
+  override val workflowName: WorkflowName,
+  override val workflowId: WorkflowId,
+  override val methodRunId: MethodRunId,
+  @SerialName("canceledTaskError")
+  val taskCanceledError: TaskCanceledError,
+  override val emitterName: ClientName
 ) : WorkflowEngineMessage(), TaskEvent {
-  override fun taskId() = canceledTaskError.taskId
+  override fun taskId() = taskCanceledError.taskId
 
-  override fun serviceName() = canceledTaskError.serviceName
+  override fun serviceName() = taskCanceledError.serviceName
 }
 
 @Serializable
 @AvroNamespace("io.infinitic.workflows.engine")
 data class TaskFailed(
-    override val workflowName: WorkflowName,
-    override val workflowId: WorkflowId,
-    override val methodRunId: MethodRunId,
-    val failedTaskError: FailedTaskError,
-    val deferredError: DeferredError?,
-    override val emitterName: ClientName
+  override val workflowName: WorkflowName,
+  override val workflowId: WorkflowId,
+  override val methodRunId: MethodRunId,
+  @SerialName("failedTaskError")
+  val taskFailedError: TaskFailedError,
+  val deferredError: DeferredError?,
+  override val emitterName: ClientName
 ) : WorkflowEngineMessage(), TaskEvent {
-  override fun taskId() = failedTaskError.taskId
+  override fun taskId() = taskFailedError.taskId
 
-  override fun serviceName() = failedTaskError.serviceName
+  override fun serviceName() = taskFailedError.serviceName
 }
 
 @Serializable
 @AvroNamespace("io.infinitic.workflows.engine")
 data class TaskCompleted(
-    override val workflowName: WorkflowName,
-    override val workflowId: WorkflowId,
-    override val methodRunId: MethodRunId,
-    val taskReturnValue: TaskReturnValue,
-    override val emitterName: ClientName
+  override val workflowName: WorkflowName,
+  override val workflowId: WorkflowId,
+  override val methodRunId: MethodRunId,
+  val taskReturnValue: TaskReturnValue,
+  override val emitterName: ClientName
 ) : WorkflowEngineMessage(), TaskEvent {
   override fun taskId() = taskReturnValue.taskId
 

@@ -24,18 +24,25 @@ package io.infinitic.clients.deferred
 
 import io.infinitic.clients.Deferred
 import io.infinitic.clients.dispatcher.ClientDispatcher
+import io.infinitic.common.data.MillisDuration
 import io.infinitic.common.data.methods.MethodName
 import io.infinitic.common.proxies.RequestByWorkflowId
 import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.data.workflows.WorkflowName
 
-class DeferredWorkflow<R>(
-  internal val returnClass: Class<R>,
+class NewDeferredWorkflow<R>(
   internal val workflowName: WorkflowName,
   internal val methodName: MethodName,
-  internal val workflowId: WorkflowId,
+  internal val methodReturnClass: Class<R>,
+  internal val methodTimeout: MillisDuration?,
   private val dispatcher: ClientDispatcher
 ) : Deferred<R> {
+
+  // generate a unique id for this deferred
+  val workflowId = WorkflowId()
+
+  // store time when this deferred was created
+  val dispatchTime = System.currentTimeMillis()
 
   override fun cancelAsync() =
       dispatcher.cancelWorkflowAsync(workflowName, RequestByWorkflowId(workflowId), null)
@@ -43,8 +50,7 @@ class DeferredWorkflow<R>(
   override fun retryAsync() =
       dispatcher.retryWorkflowTaskAsync(workflowName, RequestByWorkflowId(workflowId))
 
-  override fun await(): R =
-      dispatcher.awaitWorkflow(returnClass, workflowName, methodName, workflowId, null, true)
+  override fun await(): R = dispatcher.awaitNewWorkflow(this, true)
 
   override val id: String = workflowId.toString()
 

@@ -23,13 +23,15 @@
 package io.infinitic.clients.samples
 
 import io.infinitic.annotations.Name
+import io.infinitic.annotations.Timeout
 import io.infinitic.workflows.SendChannel
 import io.infinitic.workflows.Workflow
 
 internal interface FakeWorkflowParent {
   fun parent(): String
 
-  @Name("bar") fun annotated(): String
+  @Name("bar")
+  fun annotated(): String
 }
 
 internal interface FakeWorkflow : FakeWorkflowParent {
@@ -45,9 +47,12 @@ internal interface FakeWorkflow : FakeWorkflowParent {
 
   suspend fun suspendedMethod()
 
+  @Timeout(After100MilliSeconds::class)
+  fun timeout(): String
+
   val channelString: SendChannel<String>
-  val channelFakeTask: SendChannel<FakeTask>
-  val channelFakeTaskParent: SendChannel<FakeTaskParent>
+  val channelFakeTask: SendChannel<FakeService>
+  val channelFakeServiceParent: SendChannel<FakeServiceParent>
 }
 
 internal class FakeWorkflowImpl : Workflow(), FakeWorkflow {
@@ -62,10 +67,11 @@ internal class FakeWorkflowImpl : Workflow(), FakeWorkflow {
   override fun m4(id: FakeInterface): String = "$id"
 
   override suspend fun suspendedMethod() {}
+  override fun timeout(): String = "timeout"
 
   override val channelString = channel<String>()
-  override val channelFakeTask = channel<FakeTask>()
-  override val channelFakeTaskParent = channel<FakeTaskParent>()
+  override val channelFakeTask = channel<FakeService>()
+  override val channelFakeServiceParent = channel<FakeServiceParent>()
 
   override fun parent(): String = "foo"
 
@@ -73,6 +79,7 @@ internal class FakeWorkflowImpl : Workflow(), FakeWorkflow {
 }
 
 @Name(name = "foo")
-internal interface FooWorkflow : FakeTaskParent {
-  @Name(name = "bar") fun m()
+internal interface FooWorkflow : FakeServiceParent {
+  @Name(name = "bar")
+  fun m()
 }

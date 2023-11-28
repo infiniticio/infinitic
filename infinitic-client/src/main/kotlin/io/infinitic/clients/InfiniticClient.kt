@@ -26,7 +26,6 @@ import io.infinitic.autoclose.autoClose
 import io.infinitic.clients.config.ClientConfig
 import io.infinitic.clients.dispatcher.ClientDispatcher
 import io.infinitic.common.clients.messages.ClientMessage
-import io.infinitic.common.exceptions.thisShouldNotHappen
 import io.infinitic.common.proxies.ExistingWorkflowProxyHandler
 import io.infinitic.common.proxies.NewServiceProxyHandler
 import io.infinitic.common.proxies.NewWorkflowProxyHandler
@@ -84,52 +83,6 @@ class InfiniticClient(
       ExistingWorkflowProxyHandler(klass, RequestByWorkflowTag.by(tag)) { dispatcher }.stub()
 
 
-  /** Await a workflow targeted by its id */
-  override fun await(stub: Any): Any? =
-      when (val handler = getProxyHandler(stub)) {
-        is ExistingWorkflowProxyHandler ->
-          when (handler.requestBy) {
-            is RequestByWorkflowId ->
-              dispatcher.awaitWorkflow(
-                  handler.returnType,
-                  handler.workflowName,
-                  handler.methodName,
-                  (handler.requestBy as RequestByWorkflowId).workflowId,
-                  null,
-                  false,
-              )
-
-            is RequestByWorkflowTag ->
-              TODO("Not implemented as tag can target multiple workflows")
-
-            else -> thisShouldNotHappen()
-          }
-
-        else -> throw InvalidStubException("$stub")
-      }
-
-  /** Await a method from a running workflow targeted by its id and the methodRunId */
-  override fun await(stub: Any, methodRunId: String): Any? =
-      when (val handler = getProxyHandler(stub)) {
-        is ExistingWorkflowProxyHandler ->
-          when (handler.requestBy) {
-            is RequestByWorkflowId ->
-              dispatcher.awaitWorkflow(
-                  handler.returnType,
-                  handler.workflowName,
-                  handler.methodName,
-                  (handler.requestBy as RequestByWorkflowId).workflowId,
-                  MethodRunId(methodRunId),
-                  false,
-              )
-
-            is RequestByWorkflowTag -> throw InvalidStubException("$stub")
-            else -> thisShouldNotHappen()
-          }
-
-        else -> throw InvalidStubException("$stub")
-      }
-
   /** Cancel a workflow */
   override fun cancelAsync(stub: Any): CompletableFuture<Unit> =
       when (val handler = getProxyHandler(stub)) {
@@ -171,8 +124,7 @@ class InfiniticClient(
     stub: Any,
     taskStatus: DeferredStatus?,
     taskClass: Class<*>?
-  ): CompletableFuture<Unit> =
-      retryTasksAsync(stub, taskStatus, taskClass, null)
+  ): CompletableFuture<Unit> = retryTasksAsync(stub, taskStatus, taskClass, null)
 
 
   /** get ids of a stub, associated to a specific tag */

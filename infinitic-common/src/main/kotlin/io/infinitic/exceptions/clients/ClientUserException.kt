@@ -51,7 +51,9 @@ class InvalidRunningTaskException(klass: String) :
       help = "Make sure to use a stub returned by workflowStub(Class<*>)",
   )
 
-object MultipleCustomIdException : ClientUserException(msg = "", help = "")
+data object MultipleCustomIdException : ClientUserException(msg = "", help = "") {
+  private fun readResolve(): Any = MultipleCustomIdException
+}
 
 class InvalidChannelUsageException :
   ClientUserException(

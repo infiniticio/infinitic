@@ -20,15 +20,12 @@
  *
  * Licensor: infinitic.io
  */
-package io.infinitic.common.proxies
 
-import io.infinitic.common.workflows.data.workflows.WorkflowName
+package io.infinitic.clients.samples
 
-class ExistingWorkflowProxyHandler<K : Any>(
-  override val klass: Class<K>,
-  val requestBy: RequestBy,
-  override val dispatcherFn: () -> ProxyDispatcher
-) : ProxyHandler<K>(klass, dispatcherFn) {
+import io.infinitic.tasks.WithTimeout
 
-  val workflowName = WorkflowName(name)
+class After100MilliSeconds : WithTimeout {
+  override fun getTimeoutInSeconds() = 0.1
 }
+

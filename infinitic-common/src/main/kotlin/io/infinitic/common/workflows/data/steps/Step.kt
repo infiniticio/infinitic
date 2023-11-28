@@ -41,28 +41,31 @@ import io.infinitic.common.workflows.data.commands.PastCommand
 import io.infinitic.common.workflows.data.commands.ReceiveSignalPastCommand
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskIndex
 import io.infinitic.exceptions.workflows.OutOfBoundAwaitException
-import kotlin.Int.Companion.MAX_VALUE
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
+import kotlin.Int.Companion.MAX_VALUE
 
 @Serializable
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.PROPERTY, property = "@class")
 sealed class Step {
   // is this step currently terminated?
-  @JsonIgnore fun isTerminated(): Boolean = isTerminatedAt(WorkflowTaskIndex(MAX_VALUE))
+  @JsonIgnore
+  fun isTerminated(): Boolean = isTerminatedAt(WorkflowTaskIndex(MAX_VALUE))
 
   // get current status
   fun status(): StepStatus = statusAt(WorkflowTaskIndex(MAX_VALUE))
 
   // is this step terminated at provided index?
-  @JsonIgnore abstract fun isTerminatedAt(index: WorkflowTaskIndex): Boolean
+  @JsonIgnore
+  abstract fun isTerminatedAt(index: WorkflowTaskIndex): Boolean
 
   // get status at provided index
   abstract fun statusAt(index: WorkflowTaskIndex): StepStatus
 
   // increase wait index and update current status
   abstract fun nextAwaitIndex()
+
   // check wait index is valid
   abstract fun checkAwaitIndex()
 
@@ -72,18 +75,27 @@ sealed class Step {
   @Serializable
   @SerialName("Step.Id")
   data class Id(
-      val commandId: CommandId,
+    val commandId: CommandId,
       // store the # of time we have already waited this command
-      @AvroDefault("0") // before this feature was added, we consider it was the first wait
-      var awaitIndex: Int = 0
+    @AvroDefault("0") // before this feature was added, we consider it was the first wait
+    var awaitIndex: Int = 0
   ) : Step() {
     // status of first wait occurrence
-    @JsonIgnore var commandStatus: CommandStatus = Ongoing
+    @JsonIgnore
+    var commandStatus: CommandStatus = Ongoing
+
     // only used in workflow task
     // statuses of multiple wait occurrences, non-null for ReceiveSignalPastCommand only
-    @Transient @JsonIgnore @AvroDefault(Avro.NULL) var commandStatuses: List<CommandStatus>? = null
+    @Transient
+    @JsonIgnore
+    @AvroDefault(Avro.NULL)
+    var commandStatuses: List<CommandStatus>? = null
+
     // max number of result for the command
-    @Transient @JsonIgnore @AvroDefault("1") var commandStatusLimit: Int? = null
+    @Transient
+    @JsonIgnore
+    @AvroDefault("1")
+    var commandStatusLimit: Int? = null
 
     companion object {
       // only used in workflow task
@@ -98,7 +110,9 @@ sealed class Step {
           }
 
       // This is needed for Jackson deserialization
-      @JsonCreator @JvmStatic fun new(commandId: String) = Id(CommandId(commandId))
+      @JsonCreator
+      @JvmStatic
+      fun new(commandId: String) = Id(CommandId(commandId))
     }
 
     override fun hash() = StepHash(SerializedData.from(commandId).hash())
@@ -117,8 +131,8 @@ sealed class Step {
     override fun checkAwaitIndex() {
       // user is asking more than the limit, we consider it as a failure
       if (commandStatuses != null &&
-          commandStatusLimit != null &&
-          awaitIndex >= commandStatusLimit!!) {
+        commandStatusLimit != null &&
+        awaitIndex >= commandStatusLimit!!) {
         throw OutOfBoundAwaitException
       }
     }
@@ -131,7 +145,7 @@ sealed class Step {
         // update current status
         commandStatus =
             commandStatuses!!.firstOrNull { (it is Completed) && (it.returnIndex == awaitIndex) }
-                ?: Ongoing
+              ?: Ongoing
       }
     }
 
@@ -139,31 +153,40 @@ sealed class Step {
         when (val status = commandStatus) {
           is Ongoing -> StepStatus.Waiting
           is Unknown ->
-              when (index >= status.unknowingWorkflowTaskIndex) {
-                true ->
-                    StepStatus.Unknown(
-                        status.unknownDeferredError, status.unknowingWorkflowTaskIndex)
-                false -> StepStatus.Waiting
-              }
+            when (index >= status.unknowingWorkflowTaskIndex) {
+              true ->
+                StepStatus.Unknown(
+                    status.deferredUnknownError, status.unknowingWorkflowTaskIndex,
+                )
+
+              false -> StepStatus.Waiting
+            }
+
           is Canceled ->
-              when (index >= status.cancellationWorkflowTaskIndex) {
-                true ->
-                    StepStatus.Canceled(
-                        status.canceledDeferredError, status.cancellationWorkflowTaskIndex)
-                false -> StepStatus.Waiting
-              }
+            when (index >= status.cancellationWorkflowTaskIndex) {
+              true ->
+                StepStatus.Canceled(
+                    status.deferredCanceledError, status.cancellationWorkflowTaskIndex,
+                )
+
+              false -> StepStatus.Waiting
+            }
+
           is Failed ->
-              when (index >= status.failureWorkflowTaskIndex) {
-                true ->
-                    StepStatus.CurrentlyFailed(
-                        status.failedDeferredError, status.failureWorkflowTaskIndex)
-                false -> StepStatus.Waiting
-              }
+            when (index >= status.failureWorkflowTaskIndex) {
+              true ->
+                StepStatus.CurrentlyFailed(
+                    status.deferredFailedError, status.failureWorkflowTaskIndex,
+                )
+
+              false -> StepStatus.Waiting
+            }
+
           is Completed ->
-              when (index >= status.completionWorkflowTaskIndex) {
-                true -> StepStatus.Completed(status.returnValue, status.completionWorkflowTaskIndex)
-                false -> StepStatus.Waiting
-              }
+            when (index >= status.completionWorkflowTaskIndex) {
+              true -> StepStatus.Completed(status.returnValue, status.completionWorkflowTaskIndex)
+              false -> StepStatus.Waiting
+            }
         }
   }
 
@@ -276,25 +299,26 @@ sealed class Step {
 
   /** Used in engine to update a step after having cancelled or completed a command */
   fun updateWith(
-      commandId: CommandId,
-      commandStatus: CommandStatus,
-      commandStatuses: List<CommandStatus>? = null
+    commandId: CommandId,
+    commandStatus: CommandStatus,
+    commandStatuses: List<CommandStatus>? = null
   ): Step {
     when (this) {
       is Id ->
-          if (this.commandId == commandId) {
-            this.commandStatus =
-                if (commandStatuses == null) {
-                  commandStatus
-                } else
-                    when (awaitIndex) {
-                      0 -> commandStatus
-                      else ->
-                          commandStatuses.firstOrNull {
-                            it is Completed && it.returnIndex == awaitIndex
-                          } ?: thisShouldNotHappen()
-                    }
-          }
+        if (this.commandId == commandId) {
+          this.commandStatus =
+              if (commandStatuses == null) {
+                commandStatus
+              } else
+                when (awaitIndex) {
+                  0 -> commandStatus
+                  else ->
+                    commandStatuses.firstOrNull {
+                      it is Completed && it.returnIndex == awaitIndex
+                    } ?: thisShouldNotHappen()
+                }
+        }
+
       is And -> steps = steps.map { it.updateWith(commandId, commandStatus, commandStatuses) }
       is Or -> steps = steps.map { it.updateWith(commandId, commandStatus, commandStatuses) }
     }
@@ -306,11 +330,11 @@ sealed class Step {
       is Id -> Unit
       is And -> steps = steps.map { it.resolveOr() }
       is Or ->
-          steps =
-              when (isTerminated()) {
-                true -> listOf(steps.first { it.isTerminated() }.resolveOr())
-                false -> steps.map { s -> s.resolveOr() }
-              }
+        steps =
+            when (isTerminated()) {
+              true -> listOf(steps.first { it.isTerminated() }.resolveOr())
+              false -> steps.map { s -> s.resolveOr() }
+            }
     }
     return this
   }
@@ -319,45 +343,50 @@ sealed class Step {
     when (this) {
       is Id -> Unit
       is And ->
-          while (steps.any { it is And || (it is Or && it.steps.count() == 1) }) {
-            steps =
-                steps.fold(mutableListOf()) { l, s ->
-                  return@fold when (s) {
-                    is Id -> {
-                      l.add(s)
-                      l
-                    }
-                    is And -> {
-                      l.addAll(s.steps)
-                      l
-                    }
-                    is Or -> {
-                      if (s.steps.count() == 1) l.addAll(s.steps) else l.add(s)
-                      l
-                    }
+        while (steps.any { it is And || (it is Or && it.steps.count() == 1) }) {
+          steps =
+              steps.fold(mutableListOf()) { l, s ->
+                return@fold when (s) {
+                  is Id -> {
+                    l.add(s)
+                    l
+                  }
+
+                  is And -> {
+                    l.addAll(s.steps)
+                    l
+                  }
+
+                  is Or -> {
+                    if (s.steps.count() == 1) l.addAll(s.steps) else l.add(s)
+                    l
                   }
                 }
-          }
+              }
+        }
+
       is Or ->
-          while (steps.any { it is Or || (it is And && it.steps.count() == 1) }) {
-            steps =
-                steps.fold(mutableListOf()) { l, s ->
-                  return@fold when (s) {
-                    is Id -> {
-                      l.add(s)
-                      l
-                    }
-                    is And -> {
-                      if (s.steps.count() == 1) l.addAll(s.steps) else l.add(s)
-                      l
-                    }
-                    is Or -> {
-                      l.addAll(s.steps)
-                      l
-                    }
+        while (steps.any { it is Or || (it is And && it.steps.count() == 1) }) {
+          steps =
+              steps.fold(mutableListOf()) { l, s ->
+                return@fold when (s) {
+                  is Id -> {
+                    l.add(s)
+                    l
+                  }
+
+                  is And -> {
+                    if (s.steps.count() == 1) l.addAll(s.steps) else l.add(s)
+                    l
+                  }
+
+                  is Or -> {
+                    l.addAll(s.steps)
+                    l
                   }
                 }
-          }
+              }
+        }
     }
     return this
   }

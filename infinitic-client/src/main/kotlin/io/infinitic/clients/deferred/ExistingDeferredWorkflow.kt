@@ -24,6 +24,7 @@ package io.infinitic.clients.deferred
 
 import io.infinitic.clients.Deferred
 import io.infinitic.clients.dispatcher.ClientDispatcher
+import io.infinitic.common.data.MillisDuration
 import io.infinitic.common.data.methods.MethodName
 import io.infinitic.common.proxies.RequestBy
 import io.infinitic.common.proxies.RequestByWorkflowId
@@ -31,29 +32,27 @@ import io.infinitic.common.proxies.RequestByWorkflowTag
 import io.infinitic.common.workflows.data.methodRuns.MethodRunId
 import io.infinitic.common.workflows.data.workflows.WorkflowName
 
-class DeferredMethod<R>(
-  internal val returnClass: Class<R>,
+class ExistingDeferredWorkflow<R>(
   internal val workflowName: WorkflowName,
-  internal val methodName: MethodName,
   internal val requestBy: RequestBy,
-  internal val methodRunId: MethodRunId,
-  internal val dispatcher: ClientDispatcher
+  internal val methodName: MethodName,
+  internal val methodReturnClass: Class<R>,
+  internal val methodTimeout: MillisDuration?,
+  private val dispatcher: ClientDispatcher
 ) : Deferred<R> {
+
+  // generate a unique id for this deferred
+  val methodRunId = MethodRunId()
+
+  // store time when this deferred was created
+  val dispatchTime = System.currentTimeMillis()
 
   override fun cancelAsync() = dispatcher.cancelWorkflowAsync(workflowName, requestBy, methodRunId)
 
   // this method retries workflowTask (unique for a workflow instance)
   override fun retryAsync() = dispatcher.retryWorkflowTaskAsync(workflowName, requestBy)
 
-  override fun await(): R =
-      when (requestBy) {
-        is RequestByWorkflowId ->
-          dispatcher.awaitWorkflow(
-              returnClass, workflowName, methodName, requestBy.workflowId, methodRunId, true,
-          )
-
-        is RequestByWorkflowTag -> TODO()
-      }
+  override fun await(): R = dispatcher.awaitExistingWorkflow(this, true)
 
   override val id by lazy {
     when (requestBy) {

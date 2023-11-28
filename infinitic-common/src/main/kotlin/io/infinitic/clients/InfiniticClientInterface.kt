@@ -461,21 +461,6 @@ interface InfiniticClientInterface : Closeable {
   ): Deferred<Void> = dispatchVoidAsync(method, p1, p2, p3, p4, p5, p6, p7, p8, p9).join()
 
   /**
-   * Await a workflow targeted by its id
-   *
-   * @property stub should be a workflow stub obtained by [getWorkflowById]
-   */
-  fun await(stub: Any): Any?
-
-  /**
-   * Await a method from a running workflow targeted by its id and the methodRunId
-   *
-   * @property stub should be a workflow stub obtained by [getWorkflowById] or [getWorkflowByTag]
-   * @property methodRunId is the id of the method run to await
-   */
-  fun await(stub: Any, methodRunId: String): Any?
-
-  /**
    * Cancel workflow(s) (without waiting for the message to be sent)
    *
    * @property stub should be a workflow stub obtained by [getWorkflowById] or [getWorkflowByTag]

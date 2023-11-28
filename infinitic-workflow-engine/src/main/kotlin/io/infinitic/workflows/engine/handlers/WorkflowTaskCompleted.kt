@@ -91,7 +91,7 @@ internal fun CoroutineScope.workflowTaskCompleted(
   methodRun.currentStep?.let {
     val oldStatus = it.stepStatus
     if (oldStatus is CurrentlyFailed) {
-      it.stepStatus = Failed(oldStatus.failedDeferredError, oldStatus.failureWorkflowTaskIndex)
+      it.stepStatus = Failed(oldStatus.deferredFailedError, oldStatus.failureWorkflowTaskIndex)
       methodRun.pastSteps.add(it)
       methodRun.currentStep = null
     }

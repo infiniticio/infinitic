@@ -23,8 +23,8 @@
 package io.infinitic.tests.channels
 
 import io.infinitic.common.fixtures.later
-import io.infinitic.exceptions.FailedWorkflowException
-import io.infinitic.exceptions.FailedWorkflowTaskException
+import io.infinitic.exceptions.WorkflowFailedException
+import io.infinitic.exceptions.WorkflowTaskFailedException
 import io.infinitic.exceptions.workflows.OutOfBoundAwaitException
 import io.infinitic.tests.Test
 import io.infinitic.tests.utils.Obj1
@@ -267,9 +267,9 @@ internal class ChannelWorkflowTests :
           val w = client.getWorkflowById(ChannelsWorkflow::class.java, deferred.id)
           later { repeat(count) { w.channelA.send("a") } }
 
-          val error = shouldThrow<FailedWorkflowException> { deferred.await() }
+          val error = shouldThrow<WorkflowFailedException> { deferred.await() }
 
-          (error.deferredException as FailedWorkflowTaskException).workerException.name shouldBe
+          (error.deferredException as WorkflowTaskFailedException).workerException.name shouldBe
               OutOfBoundAwaitException::class.java.name
         }
 
@@ -285,9 +285,9 @@ internal class ChannelWorkflowTests :
             }
           }
 
-          val error = shouldThrow<FailedWorkflowException> { deferred.await() }
+          val error = shouldThrow<WorkflowFailedException> { deferred.await() }
 
-          (error.deferredException as FailedWorkflowTaskException).workerException.name shouldBe
+          (error.deferredException as WorkflowTaskFailedException).workerException.name shouldBe
               OutOfBoundAwaitException::class.java.name
         }
 

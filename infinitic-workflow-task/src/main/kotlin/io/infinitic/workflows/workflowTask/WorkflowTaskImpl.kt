@@ -31,8 +31,8 @@ import io.infinitic.common.workflows.data.workflowTasks.WorkflowTask
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskParameters
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskReturnValue
 import io.infinitic.exceptions.DeferredException
-import io.infinitic.exceptions.FailedWorkflowTaskException
 import io.infinitic.exceptions.WorkerException
+import io.infinitic.exceptions.WorkflowTaskFailedException
 import io.infinitic.tasks.Task
 import io.infinitic.workflows.Deferred
 import io.infinitic.workflows.Workflow
@@ -98,7 +98,7 @@ class WorkflowTaskImpl : WorkflowTask {
             is DeferredException -> throw cause
             // Send back other exceptions
             is Exception ->
-              throw FailedWorkflowTaskException(
+              throw WorkflowTaskFailedException(
                   workflowName = workflowTaskParameters.workflowName.toString(),
                   workflowId = workflowTaskParameters.workflowId.toString(),
                   workflowTaskId = Task.taskId,

@@ -24,13 +24,14 @@ package io.infinitic.clients.samples
 
 import io.infinitic.annotations.Name
 
-internal interface FakeTaskParent {
+internal interface FakeServiceParent {
   fun parent(): String
 
-  @Name("bar") fun annotated(): String
+  @Name("bar")
+  fun annotated(): String
 }
 
-internal interface FakeTask : FakeTaskParent {
+internal interface FakeService : FakeServiceParent {
   fun m0()
 
   fun m0String(): String
@@ -49,11 +50,12 @@ internal interface FakeTask : FakeTaskParent {
 }
 
 @Name("foo")
-internal interface FooTask : FakeTaskParent {
-  @Suppress("unused") @Name("bar") fun m()
+internal interface FooTask : FakeServiceParent {
+  @Name("bar")
+  fun m()
 }
 
-internal class FakeTaskImpl : FakeTask {
+internal class FakeServiceImpl : FakeService {
   override fun m0() {}
 
   override fun m0String(): String = "Not needed"
