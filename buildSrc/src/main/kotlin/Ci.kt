@@ -22,20 +22,23 @@
  */
 object Ci {
 
-  // this is the version used for building snapshots
-  // .GITHUB_RUN_NUMBER-snapshot will be appended
-  const val base = "0.11.7"
+  private const val SNAPSHOT = "-SNAPSHOT"
 
+  // base version number
+  private const val BASE = "0.11.7"
+
+  // GitHub run number
   private val githubRunNumber = System.getenv("GITHUB_RUN_NUMBER")
 
-  private val snapshotVersion =
-      when (githubRunNumber) {
-        null -> "$base-SNAPSHOT"
-        else -> "$base.$githubRunNumber-SNAPSHOT"
-      }
+  private val snapshotVersion = when (githubRunNumber) {
+    null -> "$BASE$SNAPSHOT"
+    else -> "$BASE.$githubRunNumber$SNAPSHOT"
+  }
 
-  private val releaseVersion = System.getenv("RELEASE_VERSION")
+  val isRelease = System.getenv("RELEASE") != null
 
-  val isRelease = releaseVersion != null
-  val version = releaseVersion ?: snapshotVersion
+  val version = when (isRelease) {
+    true -> BASE
+    false -> snapshotVersion
+  }
 }

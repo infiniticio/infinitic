@@ -25,8 +25,6 @@ package io.infinitic.common.serDe.avro
 import com.github.avrokotlin.avro4k.Avro
 import io.infinitic.common.exceptions.thisShouldNotHappen
 import io.infinitic.versions
-import java.io.ByteArrayOutputStream
-import java.util.concurrent.ConcurrentHashMap
 import kotlinx.serialization.KSerializer
 import org.apache.avro.Schema
 import org.apache.avro.file.SeekableByteArrayInput
@@ -43,6 +41,8 @@ import org.apache.avro.message.MessageDecoder
 import org.apache.avro.message.MessageEncoder
 import org.apache.avro.util.RandomData
 import org.jetbrains.annotations.TestOnly
+import java.io.ByteArrayOutputStream
+import java.util.concurrent.ConcurrentHashMap
 
 /** This object provides methods to serialize/deserialize an Avro-generated class */
 object AvroSerDe {
@@ -69,8 +69,8 @@ object AvroSerDe {
       }
 
   /** Get message decoder from the serializer */
-  inline fun <reified T : Any> messageDecoder(
-      serializer: KSerializer<T>
+  internal inline fun <reified T : Any> messageDecoder(
+    serializer: KSerializer<T>
   ): MessageDecoder<GenericRecord> =
       messageDecoders.getOrPut(serializer) {
         BinaryMessageDecoder<GenericRecord>(GenericData.get(), schema(serializer)).also { decoder ->
@@ -89,9 +89,9 @@ object AvroSerDe {
   }
 
   /** Avro binary with schema fingerprint -> Object */
-  inline fun <reified T : Any> readBinaryWithSchemaFingerprint(
-      bytes: ByteArray,
-      serializer: KSerializer<T>
+  internal inline fun <reified T : Any> readBinaryWithSchemaFingerprint(
+    bytes: ByteArray,
+    serializer: KSerializer<T>
   ): T {
     val decoder = messageDecoder(serializer)
 
@@ -142,7 +142,7 @@ object AvroSerDe {
       T::class.simpleName!!.replaceFirstChar { it.lowercase() }
 
   /** Get map <version, schema> for all schemas of type T */
-  inline fun <reified T : Any> getAllSchemas(): Map<String, Schema> {
+  internal inline fun <reified T : Any> getAllSchemas(): Map<String, Schema> {
     val prefix = getSchemaFilePrefix<T>()
 
     return versions
@@ -151,7 +151,7 @@ object AvroSerDe {
           val url = "/$SCHEMAS_FOLDER/$prefix-$version.avsc"
           val schemaTxt =
               this::class.java.getResource(url)?.readText()
-                  ?: thisShouldNotHappen("Can't find schema file $url")
+                ?: thisShouldNotHappen("Can't find schema file $url")
           Schema.Parser().parse(schemaTxt)
         }
   }

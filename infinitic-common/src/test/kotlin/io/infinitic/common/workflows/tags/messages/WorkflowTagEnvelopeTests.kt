@@ -23,8 +23,7 @@
 package io.infinitic.common.workflows.tags.messages
 
 import io.infinitic.common.checkBackwardCompatibility
-import io.infinitic.common.checkCurrentFileIsUpToDate
-import io.infinitic.common.createSchemaFileIfAbsent
+import io.infinitic.common.checkOrCreateCurrentFile
 import io.infinitic.common.fixtures.TestFactory
 import io.infinitic.common.workflows.data.workflows.WorkflowTag
 import io.kotest.assertions.throwables.shouldNotThrowAny
@@ -32,41 +31,43 @@ import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
 
 class WorkflowTagEnvelopeTests :
-    StringSpec({
-      WorkflowTagMessage::class.sealedSubclasses.map {
-        val msg =
-            when (it) {
-              DispatchWorkflowByCustomId::class ->
+  StringSpec(
+      {
+        WorkflowTagMessage::class.sealedSubclasses.map {
+          val msg =
+              when (it) {
+                DispatchWorkflowByCustomId::class ->
                   TestFactory.random(
                       it,
                       mapOf(
                           "workflowTag" to
                               WorkflowTag(
                                   WorkflowTag.CUSTOM_ID_PREFIX +
-                                      TestFactory.random(String::class))))
-              else -> TestFactory.random(it)
+                                      TestFactory.random(String::class),
+                              ),
+                      ),
+                  )
+
+                else -> TestFactory.random(it)
+              }
+
+          "WorkflowTagMessage(${msg::class.simpleName}) should be avro-convertible" {
+            shouldNotThrowAny {
+              val envelope = WorkflowTagEnvelope.from(msg)
+              val bytes: ByteArray = envelope.toByteArray()
+
+              WorkflowTagEnvelope.fromByteArray(bytes, WorkflowTagEnvelope.writerSchema) shouldBe
+                  envelope
             }
-
-        "WorkflowTagMessage(${msg::class.simpleName}) should be avro-convertible" {
-          shouldNotThrowAny {
-            val envelope = WorkflowTagEnvelope.from(msg)
-            val bytes: ByteArray = envelope.toByteArray()
-
-            WorkflowTagEnvelope.fromByteArray(bytes, WorkflowTagEnvelope.writerSchema) shouldBe
-                envelope
           }
         }
-      }
 
-      "Create schema file for the current version if it does not exist yet" {
-        createSchemaFileIfAbsent(WorkflowTagEnvelope.serializer())
-      }
+        "Existing schema file should be up-to-date with the current version" {
+          checkOrCreateCurrentFile(WorkflowTagEnvelope.serializer())
+        }
 
-      "Existing schema file should be up-to-date with the current version" {
-        checkCurrentFileIsUpToDate(WorkflowTagEnvelope.serializer())
-      }
-
-      "Avro Schema should be backward compatible to 0.9.0" {
-        checkBackwardCompatibility(WorkflowTagEnvelope.serializer())
-      }
-    })
+        "Avro Schema should be backward compatible to 0.9.0" {
+          checkBackwardCompatibility(WorkflowTagEnvelope.serializer())
+        }
+      },
+  )

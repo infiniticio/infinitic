@@ -33,10 +33,10 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 data class WorkflowTaskReturnValue(
-    @AvroDefault("0.9.7") val version: String = io.infinitic.version,
-    val newCommands: List<PastCommand>,
-    val newStep: NewStep?,
-    val properties: Map<PropertyName, PropertyValue>,
-    val methodReturnValue: ReturnValue?,
-    @AvroDefault("0") val workflowVersion: WorkflowVersion
+  @AvroDefault("0.9.7") val version: String = io.infinitic.current,
+  val newCommands: List<PastCommand>,
+  val newStep: NewStep?,
+  val properties: Map<PropertyName, PropertyValue>,
+  val methodReturnValue: ReturnValue?,
+  @AvroDefault("0") val workflowVersion: WorkflowVersion
 )

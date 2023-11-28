@@ -26,26 +26,32 @@ import com.github.avrokotlin.avro4k.Avro
 import io.infinitic.common.serDe.avro.AvroSerDe.SCHEMAS_FOLDER
 import io.infinitic.common.serDe.avro.AvroSerDe.getAllSchemas
 import io.infinitic.common.serDe.avro.AvroSerDe.getSchemaFilePrefix
-import io.infinitic.version
+import io.infinitic.current
+import io.infinitic.isReleaseVersion
 import io.kotest.assertions.throwables.shouldNotThrowAny
 import io.kotest.matchers.ints.shouldBeGreaterThan
 import io.kotest.matchers.shouldBe
-import java.io.File
-import java.nio.file.Paths
 import kotlinx.serialization.KSerializer
 import org.apache.avro.SchemaValidatorBuilder
+import java.io.File
+import java.nio.file.Paths
 
-internal inline fun <reified T : Any> createSchemaFileIfAbsent(serializer: KSerializer<T>) {
-  val schemaFile = getCurrentSchemaFile<T>()
+internal inline fun <reified T : Any> checkOrCreateCurrentFile(
+  serializer: KSerializer<T>
+) {
+  // Non-release version are not saved to the sources
+  if (isReleaseVersion()) {
+    val schemaFilePath = getCurrentSchemaFilePath<T>()
 
-  if (!schemaFile.exists()) {
-    // write schema to schemaFile in resources
-    schemaFile.writeText(Avro.default.schema(serializer).toString(true))
+    // Does the schema file already exist?
+    when (schemaFilePath.parentFile.exists()) {
+      true -> // check that schema file was not modified
+        Avro.default.schema(serializer).toString(true) shouldBe schemaFilePath.readText()
+
+      false ->  // create schema file for the current version
+        schemaFilePath.writeText(Avro.default.schema(serializer).toString(true))
+    }
   }
-}
-
-internal inline fun <reified T : Any> checkCurrentFileIsUpToDate(serializer: KSerializer<T>) {
-  Avro.default.schema(serializer).toString(true) shouldBe getCurrentSchemaFile<T>().readText()
 }
 
 internal inline fun <reified T : Any> checkBackwardCompatibility(serializer: KSerializer<T>) {
@@ -60,7 +66,8 @@ internal inline fun <reified T : Any> checkBackwardCompatibility(serializer: KSe
   shouldNotThrowAny { validator.validate(newSchema, schemaList) }
 }
 
-internal inline fun <reified T : Any> getCurrentSchemaFile() =
-    File(
-        "${Paths.get("").toAbsolutePath()}/src/main/resources/$SCHEMAS_FOLDER/",
-        "${getSchemaFilePrefix<T>()}-$version.avsc")
+internal inline fun <reified T : Any> getCurrentSchemaFilePath() = File(
+    "${Paths.get("").toAbsolutePath()}/src/main/resources/$SCHEMAS_FOLDER/",
+    "${getSchemaFilePrefix<T>()}-$current.avsc",
+)
+

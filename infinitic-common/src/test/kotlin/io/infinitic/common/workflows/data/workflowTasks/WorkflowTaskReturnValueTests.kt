@@ -24,34 +24,31 @@ package io.infinitic.common.workflows.data.workflowTasks
 
 import com.github.avrokotlin.avro4k.Avro
 import io.infinitic.common.checkBackwardCompatibility
-import io.infinitic.common.checkCurrentFileIsUpToDate
-import io.infinitic.common.createSchemaFileIfAbsent
+import io.infinitic.common.checkOrCreateCurrentFile
 import io.infinitic.common.fixtures.TestFactory
 import io.kotest.assertions.throwables.shouldNotThrowAny
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
 
 class WorkflowTaskReturnValueTests :
-    StringSpec({
-      "WorkflowTaskReturnValue should be avro-convertible" {
-        shouldNotThrowAny {
-          val msg = TestFactory.random<WorkflowTaskReturnValue>()
-          val ser = WorkflowTaskReturnValue.serializer()
-          val byteArray = Avro.default.encodeToByteArray(ser, msg)
-          val msg2 = Avro.default.decodeFromByteArray(ser, byteArray)
-          msg shouldBe msg2
+  StringSpec(
+      {
+        "WorkflowTaskReturnValue should be avro-convertible" {
+          shouldNotThrowAny {
+            val msg = TestFactory.random<WorkflowTaskReturnValue>()
+            val ser = WorkflowTaskReturnValue.serializer()
+            val byteArray = Avro.default.encodeToByteArray(ser, msg)
+            val msg2 = Avro.default.decodeFromByteArray(ser, byteArray)
+            msg shouldBe msg2
+          }
         }
-      }
 
-      "Create WorkflowTaskReturnValue schema for the current version" {
-        createSchemaFileIfAbsent(WorkflowTaskReturnValue.serializer())
-      }
+        "Saved WorkflowTaskReturnValue schema should be up-to-date with for the current version" {
+          checkOrCreateCurrentFile(WorkflowTaskReturnValue.serializer())
+        }
 
-      "Saved WorkflowTaskReturnValue schema should be up-to-date with for the current version" {
-        checkCurrentFileIsUpToDate(WorkflowTaskReturnValue.serializer())
-      }
-
-      "We should be able to read WorkflowTaskReturnValue from any previous version since 0.9.0" {
-        checkBackwardCompatibility(WorkflowTaskReturnValue.serializer())
-      }
-    })
+        "We should be able to read WorkflowTaskReturnValue from any previous version since 0.9.0" {
+          checkBackwardCompatibility(WorkflowTaskReturnValue.serializer())
+        }
+      },
+  )

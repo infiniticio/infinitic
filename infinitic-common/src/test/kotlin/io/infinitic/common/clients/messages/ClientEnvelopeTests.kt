@@ -23,37 +23,34 @@
 package io.infinitic.common.clients.messages
 
 import io.infinitic.common.checkBackwardCompatibility
-import io.infinitic.common.checkCurrentFileIsUpToDate
-import io.infinitic.common.createSchemaFileIfAbsent
+import io.infinitic.common.checkOrCreateCurrentFile
 import io.infinitic.common.fixtures.TestFactory
 import io.kotest.assertions.throwables.shouldNotThrowAny
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
 
 class ClientEnvelopeTests :
-    StringSpec({
-      ClientMessage::class.sealedSubclasses.map {
-        val msg = TestFactory.random(it)
+  StringSpec(
+      {
+        ClientMessage::class.sealedSubclasses.map {
+          val msg = TestFactory.random(it)
 
-        "ClientEnvelope(${msg::class.simpleName}) should be avro-convertible" {
-          shouldNotThrowAny {
-            val envelope = ClientEnvelope.from(msg)
-            val byteArray = envelope.toByteArray()
+          "ClientEnvelope(${msg::class.simpleName}) should be avro-convertible" {
+            shouldNotThrowAny {
+              val envelope = ClientEnvelope.from(msg)
+              val byteArray = envelope.toByteArray()
 
-            ClientEnvelope.fromByteArray(byteArray, ClientEnvelope.writerSchema) shouldBe envelope
+              ClientEnvelope.fromByteArray(byteArray, ClientEnvelope.writerSchema) shouldBe envelope
+            }
           }
         }
-      }
 
-      "Create schema file for the current version if it does not exist yet" {
-        createSchemaFileIfAbsent(ClientEnvelope.serializer())
-      }
+        "Existing schema file should be up-to-date with the current version" {
+          checkOrCreateCurrentFile(ClientEnvelope.serializer())
+        }
 
-      "Existing schema file should be up-to-date with the current version" {
-        checkCurrentFileIsUpToDate(ClientEnvelope.serializer())
-      }
-
-      "Avro Schema should be backward compatible to 0.9.0" {
-        checkBackwardCompatibility(ClientEnvelope.serializer())
-      }
-    })
+        "Avro Schema should be backward compatible to 0.9.0" {
+          checkBackwardCompatibility(ClientEnvelope.serializer())
+        }
+      },
+  )
