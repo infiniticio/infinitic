@@ -64,8 +64,7 @@ data class ExecutionError(
             name = throwable::class.java.name,
             message = throwable.message,
             stackTraceToString = throwable.stackTraceToString(),
-            cause =
-            when (val cause = throwable.cause) {
+            cause = when (val cause = throwable.cause) {
               null, throwable -> null
               else -> from(workerName, cause)
             },

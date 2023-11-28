@@ -23,5 +23,8 @@
 package io.infinitic.tasks
 
 fun interface WithRetry {
-  fun getSecondsBeforeRetry(retry: Int, exception: Exception): Double?
+  fun getSecondsBeforeRetry(retry: Int, e: Exception): Double?
 }
+
+fun WithRetry.getMillisBeforeRetry(retry: Int, e: Exception) =
+    getSecondsBeforeRetry(retry, e)?.let { (it * 1000).toLong() }

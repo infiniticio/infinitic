@@ -56,7 +56,6 @@ import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
 import io.infinitic.exceptions.tasks.ClassNotFoundException
 import io.infinitic.exceptions.tasks.NoMethodFoundWithParameterCountException
 import io.infinitic.exceptions.tasks.NoMethodFoundWithParameterTypesException
-import io.infinitic.exceptions.tasks.TimeoutTaskException
 import io.infinitic.exceptions.tasks.TooManyMethodsFoundWithParameterCountException
 import io.infinitic.tasks.executor.samples.RetryImpl
 import io.infinitic.tasks.executor.samples.ServiceImplService
@@ -80,6 +79,7 @@ import io.mockk.slot
 import kotlinx.coroutines.coroutineScope
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CopyOnWriteArrayList
+import java.util.concurrent.TimeoutException
 import kotlin.reflect.KClass
 import io.infinitic.common.clients.messages.TaskCompleted as TaskCompletedClient
 import io.infinitic.common.clients.messages.TaskFailed as TaskFailedClient
@@ -408,7 +408,7 @@ class TaskExecutorTests :
           taskTagSlots[1] shouldBe getRemoveTag(msg, "bar")
         }
 
-        "Should throw TimeoutTaskException with timeout from Registry" {
+        "Should throw TimeoutException with timeout from Registry" {
           every { workerRegistry.getRegisteredService(ServiceName("task")) } returns
               service.copy(
                   factory = { ServiceWithRegisteredTimeout() },
@@ -422,12 +422,12 @@ class TaskExecutorTests :
           coroutineScope { taskExecutor.handle(msg) }
           // then
           taskExecutorSlot.isCaptured shouldBe false
-          checkClientException(clientSlot, msg, TimeoutTaskException::class)
-          checkWorkflowException(workflowEngineSlot, msg, TimeoutTaskException::class)
+          checkClientException(clientSlot, msg, TimeoutException::class)
+          checkWorkflowException(workflowEngineSlot, msg, TimeoutException::class)
           taskTagSlots.size shouldBe 0
         }
 
-        "Should throw TimeoutTaskException with timeout from method Annotation" {
+        "Should throw TimeoutException with timeout from method Annotation" {
           every { workerRegistry.getRegisteredService(ServiceName("task")) } returns
               service.copy(
                   factory = { ServiceWithTimeoutOnMethod() },
@@ -441,12 +441,12 @@ class TaskExecutorTests :
           coroutineScope { taskExecutor.handle(msg) }
           // then
           taskExecutorSlot.isCaptured shouldBe false
-          checkClientException(clientSlot, msg, TimeoutTaskException::class)
-          checkWorkflowException(workflowEngineSlot, msg, TimeoutTaskException::class)
+          checkClientException(clientSlot, msg, TimeoutException::class)
+          checkWorkflowException(workflowEngineSlot, msg, TimeoutException::class)
           taskTagSlots.size shouldBe 0
         }
 
-        "Should throw TimeoutTaskException with timeout from class Annotation" {
+        "Should throw TimeoutException with timeout from class Annotation" {
           every { workerRegistry.getRegisteredService(ServiceName("task")) } returns
               service.copy(
                   factory = { ServiceWithTimeoutOnClass() },
@@ -460,8 +460,8 @@ class TaskExecutorTests :
           coroutineScope { taskExecutor.handle(msg) }
           // then
           taskExecutorSlot.isCaptured shouldBe false
-          checkClientException(clientSlot, msg, TimeoutTaskException::class)
-          checkWorkflowException(workflowEngineSlot, msg, TimeoutTaskException::class)
+          checkClientException(clientSlot, msg, TimeoutException::class)
+          checkWorkflowException(workflowEngineSlot, msg, TimeoutException::class)
           taskTagSlots.size shouldBe 0
         }
       },

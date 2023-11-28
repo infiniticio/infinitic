@@ -62,7 +62,7 @@ internal class SimpleServiceWithRetry : WithRetry {
   fun handle(i: Int, j: String): String =
       if (i < 0) (i * j.toInt()).toString() else throw IllegalStateException()
 
-  override fun getSecondsBeforeRetry(retry: Int, exception: Exception) = DELAY
+  override fun getSecondsBeforeRetry(retry: Int, e: Exception) = DELAY
 }
 
 @Retry(RetryImpl::class)
@@ -128,8 +128,8 @@ internal class RetryImpl : WithRetry {
     const val DELAY = 3.0
   }
 
-  override fun getSecondsBeforeRetry(retry: Int, exception: Exception) =
-      if (exception is IllegalStateException) DELAY else null
+  override fun getSecondsBeforeRetry(retry: Int, e: Exception) =
+      if (e is IllegalStateException) DELAY else null
 }
 
 internal class BuggyRetryImpl : WithRetry {
@@ -137,8 +137,8 @@ internal class BuggyRetryImpl : WithRetry {
     const val DELAY = 3.0
   }
 
-  override fun getSecondsBeforeRetry(retry: Int, exception: Exception) =
-      if (exception is IllegalStateException) throw IllegalArgumentException() else DELAY
+  override fun getSecondsBeforeRetry(retry: Int, e: Exception) =
+      if (e is IllegalStateException) throw IllegalArgumentException() else DELAY
 }
 
 internal class TimeoutImpl : WithTimeout {
