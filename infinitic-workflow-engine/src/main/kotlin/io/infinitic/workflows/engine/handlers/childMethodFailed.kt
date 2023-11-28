@@ -26,20 +26,19 @@ import io.infinitic.common.exceptions.thisShouldNotHappen
 import io.infinitic.common.transport.InfiniticProducer
 import io.infinitic.common.workflows.data.commands.CommandId
 import io.infinitic.common.workflows.data.commands.CommandStatus
-import io.infinitic.common.workflows.engine.messages.ChildMethodUnknown
-import io.infinitic.common.workflows.engine.messages.TaskCanceled
+import io.infinitic.common.workflows.engine.messages.ChildMethodFailed
 import io.infinitic.common.workflows.engine.state.WorkflowState
 import io.infinitic.workflows.engine.helpers.commandTerminated
 import kotlinx.coroutines.CoroutineScope
 
-internal fun CoroutineScope.taskCanceled(
+internal fun CoroutineScope.childMethodFailed(
   producer: InfiniticProducer,
   state: WorkflowState,
-  message: TaskCanceled
+  message: ChildMethodFailed
 ) = commandTerminated(
     producer,
     state,
     message.methodRunId,
-    CommandId.from(message.taskCanceledError.taskId),
-    CommandStatus.Canceled(message.taskCanceledError, state.workflowTaskIndex),
+    CommandId.from(message.childWorkflowFailedError.methodRunId ?: thisShouldNotHappen()),
+    CommandStatus.Failed(message.childWorkflowFailedError, state.workflowTaskIndex),
 )

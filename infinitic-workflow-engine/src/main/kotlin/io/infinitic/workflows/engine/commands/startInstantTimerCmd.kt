@@ -20,27 +20,37 @@
  *
  * Licensor: infinitic.io
  */
-package io.infinitic.workflows.engine.handlers
+package io.infinitic.workflows.engine.commands
 
+import io.infinitic.common.data.ClientName
+import io.infinitic.common.data.MillisInstant
 import io.infinitic.common.exceptions.thisShouldNotHappen
 import io.infinitic.common.transport.InfiniticProducer
-import io.infinitic.common.workflows.data.commands.CommandId
-import io.infinitic.common.workflows.data.commands.CommandStatus
-import io.infinitic.common.workflows.engine.messages.ChildMethodUnknown
-import io.infinitic.common.workflows.engine.messages.TaskCanceled
-import io.infinitic.common.workflows.engine.messages.TaskFailed
+import io.infinitic.common.workflows.data.commands.StartDurationTimerCommand
+import io.infinitic.common.workflows.data.commands.StartDurationTimerPastCommand
+import io.infinitic.common.workflows.data.commands.StartInstantTimerCommand
+import io.infinitic.common.workflows.data.commands.StartInstantTimerPastCommand
+import io.infinitic.common.workflows.data.timers.TimerId
+import io.infinitic.common.workflows.engine.messages.TimerCompleted
 import io.infinitic.common.workflows.engine.state.WorkflowState
-import io.infinitic.workflows.engine.helpers.commandTerminated
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.launch
 
-internal fun CoroutineScope.taskFailed(
-  producer: InfiniticProducer,
+internal fun CoroutineScope.startInstantTimerCmq(
+  newCommand: StartInstantTimerPastCommand,
   state: WorkflowState,
-  message: TaskFailed
-) = commandTerminated(
-    producer,
-    state,
-    message.methodRunId,
-    CommandId.from(message.taskFailedError.taskId),
-    CommandStatus.Failed(message.taskFailedError, state.workflowTaskIndex),
-)
+  producer: InfiniticProducer
+) {
+  val command: StartInstantTimerCommand = newCommand.command
+
+  val msg =
+      TimerCompleted(
+          workflowName = state.workflowName,
+          workflowId = state.workflowId,
+          methodRunId = state.runningMethodRunId ?: thisShouldNotHappen(),
+          timerId = TimerId.from(newCommand.commandId),
+          emitterName = ClientName(producer.name),
+      )
+
+  launch { producer.send(msg, command.instant - MillisInstant.now()) }
+}

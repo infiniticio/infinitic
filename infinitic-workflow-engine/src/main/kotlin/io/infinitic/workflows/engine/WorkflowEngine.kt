@@ -67,7 +67,6 @@ import io.infinitic.workflows.engine.handlers.taskCompleted
 import io.infinitic.workflows.engine.handlers.taskFailed
 import io.infinitic.workflows.engine.handlers.timerCompleted
 import io.infinitic.workflows.engine.handlers.waitWorkflow
-import io.infinitic.workflows.engine.handlers.workflowTaskCanceled
 import io.infinitic.workflows.engine.handlers.workflowTaskCompleted
 import io.infinitic.workflows.engine.handlers.workflowTaskFailed
 import io.infinitic.workflows.engine.helpers.removeTags
@@ -100,7 +99,7 @@ class WorkflowEngine(
     // it's possible to receive a message that has already been processed
     // in this case, we discard it
     if (state?.lastMessageId == message.messageId) {
-      logDiscardingWarning(message) { "as state already contains this messageId" }
+      logDiscarding(message) { "as state already contains this messageId" }
 
       return
     }
@@ -182,7 +181,7 @@ class WorkflowEngine(
       else -> Unit
     }
 
-    logDiscardingWarning(message) { NO_STATE_DISCARDING_REASON }
+    logDiscarding(message) { NO_STATE_DISCARDING_REASON }
 
     return@coroutineScope null
   }
@@ -197,7 +196,7 @@ class WorkflowEngine(
       true -> {
         // Idempotency: discard if this workflowTask is not the current one
         if (state.runningWorkflowTaskId != (message as TaskEvent).taskId()) {
-          logDiscardingWarning(message) { "as workflowTask is not the right one" }
+          logDiscarding(message) { "as workflowTask is not the right one" }
 
           return null
         }
@@ -230,7 +229,7 @@ class WorkflowEngine(
     return state
   }
 
-  private fun logDiscardingWarning(message: WorkflowEngineMessage, cause: () -> String) {
+  private fun logDiscarding(message: WorkflowEngineMessage, cause: () -> String) {
     logger.warn { "${message.workflowName} (${message.workflowId}): discarding ${cause()} $message" }
   }
 
@@ -250,7 +249,7 @@ class WorkflowEngine(
       is DispatchMethod -> {
         // Idempotency: do not relaunch if this method has already been launched
         if (state.getMethodRun(message.methodRunId) != null) {
-          logDiscardingWarning(message) { "as this method has already been launched" }
+          logDiscarding(message) { "as this method has already been launched" }
 
           return
         }
@@ -259,7 +258,7 @@ class WorkflowEngine(
       is SendSignal -> {
         // Idempotency: do not relaunch if this signal has already been received
         if (state.hasSignalAlreadyBeenReceived(message.signalId)) {
-          logDiscardingWarning(message) { "as this signal has already been received" }
+          logDiscarding(message) { "as this signal has already been received" }
 
           return
         }
@@ -269,7 +268,7 @@ class WorkflowEngine(
       is MethodEvent -> {
         // if methodRun has already been cleaned (completed), then discard the message
         if (state.getMethodRun(message.methodRunId) == null) {
-          logDiscardingWarning(message) { "as null methodRun" }
+          logDiscarding(message) { "as null methodRun" }
 
           return
         }
@@ -279,13 +278,13 @@ class WorkflowEngine(
     }
 
     when (message) {
-      is DispatchWorkflow -> logDiscardingWarning(message) { "as workflow has already started" }
+      is DispatchWorkflow -> logDiscarding(message) { "as workflow has already started" }
       is DispatchMethod -> dispatchMethod(producer, state, message)
       is CancelWorkflow -> cancelWorkflow(producer, state, message)
       is SendSignal -> sendSignal(producer, state, message)
       is WaitWorkflow -> waitWorkflow(producer, state, message)
       is CompleteTimers -> completeTimer(state, message)
-      is CompleteWorkflow -> TODO()
+      is CompleteWorkflow -> TODO() // completeWorkflow(producer, state, message)
       is RetryWorkflowTask -> retryWorkflowTask(producer, state)
       is RetryTasks -> retryTasks(producer, state, message)
       is TimerCompleted -> timerCompleted(producer, state, message)
@@ -293,9 +292,9 @@ class WorkflowEngine(
       is ChildMethodCanceled -> childMethodCanceled(producer, state, message)
       is ChildMethodFailed -> childMethodFailed(producer, state, message)
       is ChildMethodCompleted -> childMethodCompleted(producer, state, message)
-      
+
       is TaskCanceled -> when (message.isWorkflowTaskEvent()) {
-        true -> workflowTaskCanceled(producer, state, message)
+        true -> TODO() // workflowTaskCanceled(producer, state, message)
         false -> taskCanceled(producer, state, message)
       }
 

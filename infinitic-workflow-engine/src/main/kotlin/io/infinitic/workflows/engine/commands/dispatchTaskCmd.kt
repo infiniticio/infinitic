@@ -20,7 +20,7 @@
  *
  * Licensor: infinitic.io
  */
-package io.infinitic.workflows.engine.helpers
+package io.infinitic.workflows.engine.commands
 
 import io.infinitic.common.data.ClientName
 import io.infinitic.common.exceptions.thisShouldNotHappen
@@ -33,10 +33,10 @@ import io.infinitic.common.workflows.engine.state.WorkflowState
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
-internal fun CoroutineScope.dispatchTask(
-  producer: InfiniticProducer,
+internal fun CoroutineScope.dispatchTaskCmd(
+  dispatchTaskPastCommand: DispatchTaskPastCommand,
   state: WorkflowState,
-  dispatchTaskPastCommand: DispatchTaskPastCommand
+  producer: InfiniticProducer
 ) {
   // send task to task executor
   val executeTask =

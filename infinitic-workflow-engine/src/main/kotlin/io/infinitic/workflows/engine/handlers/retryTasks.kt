@@ -29,7 +29,7 @@ import io.infinitic.common.workflows.data.commands.DispatchTaskPastCommand
 import io.infinitic.common.workflows.engine.messages.RetryTasks
 import io.infinitic.common.workflows.engine.state.WorkflowState
 import io.infinitic.workflows.DeferredStatus
-import io.infinitic.workflows.engine.helpers.dispatchTask
+import io.infinitic.workflows.engine.commands.dispatchTaskCmd
 import kotlinx.coroutines.CoroutineScope
 
 internal fun CoroutineScope.retryTasks(
@@ -63,7 +63,7 @@ internal fun CoroutineScope.retryTasks(
         .forEach { dispatchTaskPastCommand ->
           dispatchTaskPastCommand.taskRetrySequence += 1
 
-          dispatchTask(producer, state, dispatchTaskPastCommand)
+          dispatchTaskCmd(dispatchTaskPastCommand, state, producer)
 
           dispatchTaskPastCommand.commandStatus = CommandStatus.Ongoing
         }
