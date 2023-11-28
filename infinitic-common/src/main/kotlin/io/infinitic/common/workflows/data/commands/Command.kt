@@ -22,6 +22,7 @@
  */
 package io.infinitic.common.workflows.data.commands
 
+import com.github.avrokotlin.avro4k.Avro
 import com.github.avrokotlin.avro4k.AvroDefault
 import com.github.avrokotlin.avro4k.AvroName
 import io.infinitic.common.data.MillisDuration
@@ -52,12 +53,13 @@ sealed class Command {
 @Serializable
 @SerialName("Command.DispatchTask")
 data class DispatchTaskCommand(
-    @SerialName("taskName") val serviceName: ServiceName,
-    val methodName: MethodName,
-    val methodParameterTypes: MethodParameterTypes,
-    val methodParameters: MethodParameters,
-    val taskTags: Set<TaskTag>,
-    val taskMeta: TaskMeta
+  @SerialName("taskName") val serviceName: ServiceName,
+  val methodName: MethodName,
+  val methodParameterTypes: MethodParameterTypes,
+  val methodParameters: MethodParameters,
+  @AvroDefault(Avro.NULL) val methodTimeout: MillisDuration?,
+  val taskTags: Set<TaskTag>,
+  val taskMeta: TaskMeta
 ) : Command() {
   override fun isSameThan(other: Command): Boolean {
     if (this === other) return true
@@ -74,12 +76,13 @@ data class DispatchTaskCommand(
 @Serializable
 @SerialName("Command.DispatchWorkflow")
 data class DispatchWorkflowCommand(
-    val workflowName: WorkflowName,
-    val methodName: MethodName,
-    val methodParameterTypes: MethodParameterTypes,
-    val methodParameters: MethodParameters,
-    val workflowTags: Set<WorkflowTag>,
-    val workflowMeta: WorkflowMeta
+  val workflowName: WorkflowName,
+  val methodName: MethodName,
+  val methodParameterTypes: MethodParameterTypes,
+  val methodParameters: MethodParameters,
+  @AvroDefault(Avro.NULL) val methodTimeout: MillisDuration?,
+  val workflowTags: Set<WorkflowTag>,
+  val workflowMeta: WorkflowMeta
 ) : Command() {
   override fun isSameThan(other: Command): Boolean {
     if (this === other) return true
@@ -96,12 +99,13 @@ data class DispatchWorkflowCommand(
 @Serializable
 @SerialName("Command.DispatchMethod")
 data class DispatchMethodCommand(
-    val workflowName: WorkflowName,
-    val workflowId: WorkflowId?,
-    val workflowTag: WorkflowTag?,
-    val methodName: MethodName,
-    val methodParameterTypes: MethodParameterTypes,
-    val methodParameters: MethodParameters
+  val workflowName: WorkflowName,
+  val workflowId: WorkflowId?,
+  val workflowTag: WorkflowTag?,
+  val methodName: MethodName,
+  val methodParameterTypes: MethodParameterTypes,
+  val methodParameters: MethodParameters,
+  @AvroDefault(Avro.NULL) val methodTimeout: MillisDuration?,
 ) : Command() {
   override fun isSameThan(other: Command): Boolean {
     if (this === other) return true
@@ -120,12 +124,12 @@ data class DispatchMethodCommand(
 @Serializable
 @SerialName("Command.SendSignal")
 data class SendSignalCommand(
-    val workflowName: WorkflowName,
-    val workflowId: WorkflowId?,
-    val workflowTag: WorkflowTag?,
-    val channelName: ChannelName,
-    @AvroName("channelSignal") val signalData: SignalData,
-    @AvroName("channelSignalTypes") val channelTypes: Set<ChannelType>
+  val workflowName: WorkflowName,
+  val workflowId: WorkflowId?,
+  val workflowTag: WorkflowTag?,
+  val channelName: ChannelName,
+  @AvroName("channelSignal") val signalData: SignalData,
+  @AvroName("channelSignalTypes") val channelTypes: Set<ChannelType>
 ) : Command() {
   companion object {
     fun simpleName() = CommandSimpleName("SEND_SIGNAL")
@@ -137,10 +141,10 @@ data class SendSignalCommand(
 @Serializable
 @SerialName("Command.ReceiveSignal")
 data class ReceiveSignalCommand(
-    val channelName: ChannelName,
-    @AvroName("channelSignalType") val channelType: ChannelType?,
-    @AvroName("channelEventFilter") val channelFilter: ChannelFilter?,
-    @AvroDefault("1") val receivedSignalLimit: Int?
+  val channelName: ChannelName,
+  @AvroName("channelSignalType") val channelType: ChannelType?,
+  @AvroName("channelEventFilter") val channelFilter: ChannelFilter?,
+  @AvroDefault("1") val receivedSignalLimit: Int?
 ) : Command() {
   companion object {
     fun simpleName() = CommandSimpleName("RECEIVE_SIGNAL")

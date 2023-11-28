@@ -49,6 +49,7 @@ class TaskTagEnvelopeTests :
         }
 
         "Existing schema file should be up-to-date with the current version" {
+          // An error in this test means that we need to upgrade the version
           checkOrCreateCurrentFile(TaskTagEnvelope.serializer())
         }
 

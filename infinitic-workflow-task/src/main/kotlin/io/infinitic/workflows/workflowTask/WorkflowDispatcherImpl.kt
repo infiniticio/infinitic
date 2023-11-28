@@ -323,6 +323,7 @@ internal class WorkflowDispatcherImpl(
               methodParameters = handler.methodParameters,
               methodParameterTypes = handler.methodParameterTypes,
               methodName = handler.methodName,
+              methodTimeout = handler.timeout.getOrThrow(),
               taskTags = handler.taskTags,
               taskMeta = handler.taskMeta,
           ),
@@ -333,25 +334,25 @@ internal class WorkflowDispatcherImpl(
   private fun <R : Any?> dispatchWorkflow(handler: NewWorkflowProxyHandler<*>): Deferred<R> =
       when (handler.isChannelGetter()) {
         true -> throw InvalidChannelUsageException()
-        false ->
-          run {
-            // it's not possible to have multiple customIds in tags
-            if (handler.workflowTags.count { it.isCustomId() } > 1) {
-              throw MultipleCustomIdException
-            }
-
-            dispatchCommand(
-                DispatchWorkflowCommand(
-                    workflowName = handler.workflowName,
-                    methodName = handler.methodName,
-                    methodParameterTypes = handler.methodParameterTypes,
-                    methodParameters = handler.methodParameters,
-                    workflowTags = handler.workflowTags,
-                    workflowMeta = handler.workflowMeta,
-                ),
-                CommandSimpleName(handler.simpleName),
-            )
+        false -> {
+          // it's not possible to have multiple customIds in tags
+          if (handler.workflowTags.count { it.isCustomId() } > 1) {
+            throw MultipleCustomIdException
           }
+
+          dispatchCommand(
+              DispatchWorkflowCommand(
+                  workflowName = handler.workflowName,
+                  methodName = handler.methodName,
+                  methodParameterTypes = handler.methodParameterTypes,
+                  methodParameters = handler.methodParameters,
+                  methodTimeout = handler.timeout.getOrThrow(),
+                  workflowTags = handler.workflowTags,
+                  workflowMeta = handler.workflowMeta,
+              ),
+              CommandSimpleName(handler.simpleName),
+          )
+        }
       }
 
   /** Method dispatching */
@@ -366,6 +367,7 @@ internal class WorkflowDispatcherImpl(
                 methodName = handler.methodName,
                 methodParameterTypes = handler.methodParameterTypes,
                 methodParameters = handler.methodParameters,
+                methodTimeout = handler.timeout.getOrThrow(),
             ),
             CommandSimpleName(handler.simpleName),
         )

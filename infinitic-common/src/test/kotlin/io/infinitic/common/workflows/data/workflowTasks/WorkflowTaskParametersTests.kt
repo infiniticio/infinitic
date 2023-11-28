@@ -44,6 +44,7 @@ class WorkflowTaskParametersTests :
         }
 
         "Saved WorkflowTaskParameters schema should be up-to-date with for the current version" {
+          // An error in this test means that we need to upgrade the version
           checkOrCreateCurrentFile(WorkflowTaskParameters.serializer())
         }
 
