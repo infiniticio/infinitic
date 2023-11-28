@@ -24,10 +24,10 @@ package io.infinitic.tests.errors
 
 import io.infinitic.common.fixtures.later
 import io.infinitic.exceptions.TaskFailedException
-import io.infinitic.exceptions.UnknownWorkflowException
 import io.infinitic.exceptions.WorkflowCanceledException
 import io.infinitic.exceptions.WorkflowFailedException
 import io.infinitic.exceptions.WorkflowTimedOutException
+import io.infinitic.exceptions.WorkflowUnknownException
 import io.infinitic.tests.Test
 import io.infinitic.tests.channels.ChannelsWorkflow
 import io.infinitic.tests.utils.UtilService
@@ -199,7 +199,7 @@ internal class ErrorsWorkflowTests :
         "Synchronous call of unknown workflow should throw" {
           val error = shouldThrow<WorkflowFailedException> { errorsWorkflow.failing11() }
 
-          val cause = error.deferredException as UnknownWorkflowException
+          val cause = error.deferredException as WorkflowUnknownException
           cause.workflowName shouldBe ErrorsWorkflow::class.java.name
           cause.workflowId shouldBe "unknown"
         }

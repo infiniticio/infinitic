@@ -50,13 +50,15 @@ internal fun CoroutineScope.dispatchMethodCmd(
           getDispatchMethod(ClientName(producer.name), newCommand.commandId, command, state)
 
       when (command.workflowId) {
-        state.workflowId ->
+        state.workflowId -> {
           // dispatch method on this workflow
           bufferedMessages.add(dispatchMethodRun)
+        }
 
-        else ->
+        else -> {
           // dispatch method on another workflow
           launch { producer.send(dispatchMethodRun) }
+        }
       }
     }
 
@@ -68,20 +70,19 @@ internal fun CoroutineScope.dispatchMethodCmd(
         )
       }
 
-      val dispatchMethodByTag =
-          DispatchMethodByTag(
-              workflowName = command.workflowName,
-              workflowTag = command.workflowTag!!,
-              parentWorkflowId = state.workflowId,
-              parentWorkflowName = state.workflowName,
-              parentMethodRunId = state.runningMethodRunId,
-              methodRunId = MethodRunId.from(newCommand.commandId),
-              methodName = command.methodName,
-              methodParameterTypes = command.methodParameterTypes,
-              methodParameters = command.methodParameters,
-              clientWaiting = false,
-              emitterName = ClientName(producer.name),
-          )
+      val dispatchMethodByTag = DispatchMethodByTag(
+          workflowName = command.workflowName,
+          workflowTag = command.workflowTag!!,
+          parentWorkflowId = state.workflowId,
+          parentWorkflowName = state.workflowName,
+          parentMethodRunId = state.runningMethodRunId,
+          methodRunId = MethodRunId.from(newCommand.commandId),
+          methodName = command.methodName,
+          methodParameterTypes = command.methodParameterTypes,
+          methodParameters = command.methodParameters,
+          clientWaiting = false,
+          emitterName = ClientName(producer.name),
+      )
       // tag engine must ignore this message if parentWorkflowId has the provided tag
       launch { producer.send(dispatchMethodByTag) }
     }
@@ -95,17 +96,16 @@ private fun getDispatchMethod(
   commandId: CommandId,
   command: DispatchMethodCommand,
   state: WorkflowState
-) =
-    DispatchMethod(
-        workflowName = command.workflowName,
-        workflowId = command.workflowId!!,
-        methodRunId = MethodRunId.from(commandId),
-        methodName = command.methodName,
-        methodParameters = command.methodParameters,
-        methodParameterTypes = command.methodParameterTypes,
-        parentWorkflowId = state.workflowId,
-        parentWorkflowName = state.workflowName,
-        parentMethodRunId = state.runningMethodRunId,
-        clientWaiting = false,
-        emitterName = emitterName,
-    )
+) = DispatchMethod(
+    workflowName = command.workflowName,
+    workflowId = command.workflowId!!,
+    methodRunId = MethodRunId.from(commandId),
+    methodName = command.methodName,
+    methodParameters = command.methodParameters,
+    methodParameterTypes = command.methodParameterTypes,
+    parentWorkflowId = state.workflowId,
+    parentWorkflowName = state.workflowName,
+    parentMethodRunId = state.runningMethodRunId,
+    clientWaiting = false,
+    emitterName = emitterName,
+)

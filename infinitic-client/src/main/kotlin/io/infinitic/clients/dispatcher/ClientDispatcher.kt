@@ -74,10 +74,10 @@ import io.infinitic.common.workflows.tags.messages.DispatchWorkflowByCustomId
 import io.infinitic.common.workflows.tags.messages.GetWorkflowIdsByTag
 import io.infinitic.common.workflows.tags.messages.RetryWorkflowTaskByTag
 import io.infinitic.common.workflows.tags.messages.SendSignalByTag
-import io.infinitic.exceptions.UnknownWorkflowException
 import io.infinitic.exceptions.WorkflowCanceledException
 import io.infinitic.exceptions.WorkflowFailedException
 import io.infinitic.exceptions.WorkflowTimedOutException
+import io.infinitic.exceptions.WorkflowUnknownException
 import io.infinitic.exceptions.clients.InvalidChannelUsageException
 import io.infinitic.exceptions.clients.MultipleCustomIdException
 import io.infinitic.workflows.DeferredStatus
@@ -260,7 +260,7 @@ class ClientDispatcher(
           ),
       )
 
-      is MethodRunUnknown -> throw UnknownWorkflowException(
+      is MethodRunUnknown -> throw WorkflowUnknownException(
           workflowName = workflowName.toString(),
           workflowId = workflowId.toString(),
           methodRunId = methodRunId?.toString(),

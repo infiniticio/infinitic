@@ -39,39 +39,40 @@ internal fun CoroutineScope.dispatchTaskCmd(
   producer: InfiniticProducer
 ) {
   // send task to task executor
-  val executeTask =
-      with(dispatchTaskPastCommand.command) {
-        ExecuteTask(
-            serviceName = serviceName,
-            taskId = io.infinitic.common.tasks.data.TaskId.from(dispatchTaskPastCommand.commandId),
-            clientWaiting = false,
-            methodName = methodName,
-            methodParameterTypes = methodParameterTypes,
-            methodParameters = methodParameters,
-            workflowId = state.workflowId,
-            workflowName = state.workflowName,
-            workflowVersion = state.workflowVersion,
-            methodRunId = state.runningMethodRunId ?: thisShouldNotHappen(),
-            lastError = null,
-            taskRetryIndex = TaskRetryIndex(0),
-            taskRetrySequence = dispatchTaskPastCommand.taskRetrySequence,
-            taskTags = taskTags,
-            taskMeta = taskMeta,
-            emitterName = ClientName(producer.name),
-        )
-      }
+  val executeTask = with(dispatchTaskPastCommand.command) {
+    ExecuteTask(
+        serviceName = serviceName,
+        taskId = io.infinitic.common.tasks.data.TaskId.from(dispatchTaskPastCommand.commandId),
+        clientWaiting = false,
+        methodName = methodName,
+        methodParameterTypes = methodParameterTypes,
+        methodParameters = methodParameters,
+        workflowId = state.workflowId,
+        workflowName = state.workflowName,
+        workflowVersion = state.workflowVersion,
+        methodRunId = state.runningMethodRunId ?: thisShouldNotHappen(),
+        lastError = null,
+        taskRetryIndex = TaskRetryIndex(0),
+        taskRetrySequence = dispatchTaskPastCommand.taskRetrySequence,
+        taskTags = taskTags,
+        taskMeta = taskMeta,
+        emitterName = ClientName(producer.name),
+    )
+  }
 
   launch { producer.send(executeTask) }
 
   // add provided tags
   executeTask.taskTags.forEach {
-    val addTagToTask =
-        AddTagToTask(
-            serviceName = executeTask.serviceName,
-            taskTag = it,
-            taskId = executeTask.taskId,
-            emitterName = ClientName(producer.name),
-        )
+    val addTagToTask = AddTagToTask(
+        serviceName = executeTask.serviceName,
+        taskTag = it,
+        taskId = executeTask.taskId,
+        emitterName = ClientName(producer.name),
+    )
     launch { producer.send(addTagToTask) }
   }
+
+  // send task timeout
+
 }

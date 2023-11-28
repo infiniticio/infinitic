@@ -64,9 +64,9 @@ import io.infinitic.common.workflows.data.steps.StepStatus.Failed
 import io.infinitic.common.workflows.data.steps.StepStatus.Unknown
 import io.infinitic.common.workflows.data.steps.StepStatus.Waiting
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskParameters
-import io.infinitic.exceptions.CanceledDeferredException
-import io.infinitic.exceptions.FailedDeferredException
-import io.infinitic.exceptions.UnknownDeferredException
+import io.infinitic.exceptions.DeferredCanceledException
+import io.infinitic.exceptions.DeferredFailedException
+import io.infinitic.exceptions.DeferredUnknownException
 import io.infinitic.exceptions.clients.InvalidChannelUsageException
 import io.infinitic.exceptions.clients.InvalidRunningTaskException
 import io.infinitic.exceptions.workflows.MultipleCustomIdException
@@ -491,10 +491,10 @@ internal class WorkflowDispatcherImpl(
   /** Exception when waiting a deferred */
   private fun getDeferredException(stepStatus: StepStatus) =
       when (stepStatus) {
-        is Unknown -> UnknownDeferredException.from(stepStatus.deferredUnknownError)
-        is Canceled -> CanceledDeferredException.from(stepStatus.deferredCanceledError)
-        is Failed -> FailedDeferredException.from(stepStatus.deferredFailedError)
-        is CurrentlyFailed -> FailedDeferredException.from(stepStatus.deferredFailedError)
+        is Unknown -> DeferredUnknownException.from(stepStatus.deferredUnknownError)
+        is Canceled -> DeferredCanceledException.from(stepStatus.deferredCanceledError)
+        is Failed -> DeferredFailedException.from(stepStatus.deferredFailedError)
+        is CurrentlyFailed -> DeferredFailedException.from(stepStatus.deferredFailedError)
         is Completed,
         Waiting -> thisShouldNotHappen()
       }
