@@ -23,10 +23,11 @@
 package io.infinitic.common.utils
 
 import java.lang.reflect.Constructor
+import java.lang.reflect.Method
 
 fun String.getClass(
-  classNotFound: String = "Class \"$this\" not found",
-  errorClass: String = "Can not access class \"$this\""
+  classNotFound: String = "Class '$this' not found",
+  errorClass: String = "Can not access class '$this'"
 ): Class<*> =
     try {
       Class.forName(this)
@@ -37,8 +38,8 @@ fun String.getClass(
     }
 
 fun <T : Any> Class<T>.getEmptyConstructor(
-  noEmptyConstructor: String = "Class \"$name\" must have an empty constructor",
-  constructorError: String = "Can not access constructor of class \"$name\""
+  noEmptyConstructor: String = "Class '$name' must have an empty constructor",
+  constructorError: String = "Can not access constructor of class '$name'"
 ): Constructor<T> =
     try {
       getDeclaredConstructor()
@@ -49,13 +50,73 @@ fun <T : Any> Class<T>.getEmptyConstructor(
     }
 
 fun <T : Any> Constructor<T>.getInstance(
-  instanceError: String = "Error during instantiation of class \"$name\""
+  instanceError: String = "Error during instantiation of class '$name'"
 ): T =
     try {
       newInstance()
     } catch (e: Exception) {
       throwError(instanceError, e)
     }
+
+// search for an annotation on a method, in the class, its interfaces, or its parent
+fun <T : Annotation, S : Class<out T>> Method.findAnnotation(
+  annotation: S,
+  withInterfaces: Boolean = true
+): T? {
+  var method = this
+  var clazz = declaringClass
+
+  // if not
+  do {
+    // Look for the annotation on the method
+    method.getAnnotation(annotation)?.also { return it }
+
+    // Look for the annotation on all interfaces
+    if (withInterfaces) clazz.interfaces.forEach { interfac ->
+      try {
+        interfac.getMethod(name, *parameterTypes).also { it.isAccessible = true }
+      } catch (e: Exception) {
+        null
+      }?.findAnnotation(annotation)?.also { return it }
+    }
+
+    // Look for the annotation on the superclass
+    clazz = clazz.superclass ?: break
+
+    method = try {
+      clazz.getMethod(name, *parameterTypes).also { it.isAccessible = true }
+    } catch (e: Exception) {
+      break
+    }
+
+  } while (true)
+
+  return null
+}
+
+// search for an annotation on a class, its interfaces, or its parent
+fun <T : Annotation> Class<*>.findAnnotation(
+  annotation: Class<out T>,
+  withInterfaces: Boolean = true
+): T? {
+  var clazz = this
+
+  do {
+    // Look for the annotation on the class
+    clazz.getAnnotation(annotation)?.also { return it }
+
+    // Look for the annotation on the interfaces
+    if (withInterfaces) clazz.interfaces.forEach { interfac ->
+      interfac.findAnnotation(annotation)?.also { return it }
+    }
+
+    // if not, inspect the superclass
+    clazz = clazz.superclass ?: break
+
+  } while (true)
+
+  return null
+}
 
 private fun throwError(msg: String, e: Exception? = null): Nothing {
   throw IllegalArgumentException(msg, e)
