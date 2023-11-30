@@ -22,6 +22,9 @@
  */
 package io.infinitic.common.utils
 
+import io.infinitic.annotations.Name
+import io.infinitic.annotations.Timeout
+import io.infinitic.tasks.WithTimeout
 import java.lang.reflect.Constructor
 import java.lang.reflect.Method
 
@@ -58,13 +61,61 @@ fun <T : Any> Constructor<T>.getInstance(
       throwError(instanceError, e)
     }
 
+// check if a class can be an implementation of a service or workflow by name
+// This is used as a health check when registering a service or workflow in workers
+fun Class<*>.isImplementationOf(name: String): Boolean {
+  var klass = this
+
+  do {
+    klass.interfaces.forEach {
+      if (name == it.getAnnotatedName()) return true
+    }
+
+    // Look for the name on the superclass
+    klass = klass.superclass ?: break
+
+  } while (true)
+
+  return false
+}
+
+// Return the "fullMethodName" used in workflow task to detect workflow changes
+// This must NOT change as it could trigger false positive in change detection
+fun Class<*>.getFullMethodName(method: Method): String =
+    "${findNameAnnotation() ?: simpleName}::${method.getAnnotatedName()}"
+
+// Return the name of a method, or its @Name annotation if any
+fun Method.getAnnotatedName(): String = findNameAnnotation() ?: name
+
+// Return the name of a class, or its @Name annotation if any
+fun Class<*>.getAnnotatedName(): String = findNameAnnotation() ?: name
+
+// search for a @Timeout annotation on this method or its parents' methods
+// Interfaces are EXCLUDED, as this annotation has a different meaning on interfaces
+fun Method.findTimeoutAnnotation(): Class<out WithTimeout>? =
+    findAnnotation(Timeout::class.java, false)?.with?.java
+
+// search for a @Timeout annotation on this class
+// Interfaces are EXCLUDED, as this annotation has a different meaning on interfaces
+fun Class<*>.findTimeoutAnnotation(): Class<out WithTimeout>? =
+    findAnnotation(Timeout::class.java, false)?.with?.java
+
+// search for a @Name annotation on this method,
+// Interfaces are included in the search
+internal fun Method.findNameAnnotation(): String? = findAnnotation(Name::class.java)?.name
+
+
+// search for a @Name annotation on this class,
+// Interfaces are included in the search
+internal fun Class<*>.findNameAnnotation(): String? = findAnnotation(Name::class.java)?.name
+
 // search for an annotation on a method, in the class, its interfaces, or its parent
-fun <T : Annotation, S : Class<out T>> Method.findAnnotation(
+internal fun <T : Annotation, S : Class<out T>> Method.findAnnotation(
   annotation: S,
   withInterfaces: Boolean = true
 ): T? {
   var method = this
-  var clazz = declaringClass
+  var klass = declaringClass
 
   // if not
   do {
@@ -72,7 +123,7 @@ fun <T : Annotation, S : Class<out T>> Method.findAnnotation(
     method.getAnnotation(annotation)?.also { return it }
 
     // Look for the annotation on all interfaces
-    if (withInterfaces) clazz.interfaces.forEach { interfac ->
+    if (withInterfaces) klass.interfaces.forEach { interfac ->
       try {
         interfac.getMethod(name, *parameterTypes).also { it.isAccessible = true }
       } catch (e: Exception) {
@@ -81,10 +132,10 @@ fun <T : Annotation, S : Class<out T>> Method.findAnnotation(
     }
 
     // Look for the annotation on the superclass
-    clazz = clazz.superclass ?: break
+    klass = klass.superclass ?: break
 
     method = try {
-      clazz.getMethod(name, *parameterTypes).also { it.isAccessible = true }
+      klass.getMethod(name, *parameterTypes).also { it.isAccessible = true }
     } catch (e: Exception) {
       break
     }
@@ -95,23 +146,23 @@ fun <T : Annotation, S : Class<out T>> Method.findAnnotation(
 }
 
 // search for an annotation on a class, its interfaces, or its parent
-fun <T : Annotation> Class<*>.findAnnotation(
+internal fun <T : Annotation> Class<*>.findAnnotation(
   annotation: Class<out T>,
   withInterfaces: Boolean = true
 ): T? {
-  var clazz = this
+  var klass = this
 
   do {
     // Look for the annotation on the class
-    clazz.getAnnotation(annotation)?.also { return it }
+    klass.getAnnotation(annotation)?.also { return it }
 
     // Look for the annotation on the interfaces
-    if (withInterfaces) clazz.interfaces.forEach { interfac ->
+    if (withInterfaces) klass.interfaces.forEach { interfac ->
       interfac.findAnnotation(annotation)?.also { return it }
     }
 
     // if not, inspect the superclass
-    clazz = clazz.superclass ?: break
+    klass = klass.superclass ?: break
 
   } while (true)
 

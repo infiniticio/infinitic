@@ -22,16 +22,15 @@
  */
 package io.infinitic.common.proxies
 
-import io.infinitic.annotations.Name
-import io.infinitic.annotations.Timeout
 import io.infinitic.common.data.MillisDuration
 import io.infinitic.common.data.methods.MethodName
 import io.infinitic.common.data.methods.MethodParameterTypes
 import io.infinitic.common.data.methods.MethodParameters
-import io.infinitic.common.utils.findAnnotation
+import io.infinitic.common.utils.findTimeoutAnnotation
+import io.infinitic.common.utils.getAnnotatedName
 import io.infinitic.common.utils.getEmptyConstructor
+import io.infinitic.common.utils.getFullMethodName
 import io.infinitic.exceptions.workflows.InvalidInlineException
-import io.infinitic.tasks.WithTimeout
 import io.infinitic.tasks.getTimeoutInMillis
 import io.infinitic.workflows.SendChannel
 import java.lang.reflect.InvocationHandler
@@ -99,21 +98,18 @@ sealed class ProxyHandler<T : Any>(
   /** Args of method called */
   lateinit var methodArgs: Array<out Any>
 
-  /** Name provided by @Name annotation, if any */
-  private val annotatedName: String? by lazy { klass.findNameAnnotation() }
-
   /** Class name provided by @Name annotation, or java class name by default */
-  protected val name: String by lazy { annotatedName ?: klass.name }
+  protected val name: String by lazy { klass.getAnnotatedName() }
 
   /** SimpleName provided by @Name annotation, or class name by default */
-  val simpleName: String
+  val fullMethodName: String
     // MUST be a get() as this.methodName can change when reusing instance
-    get() = "${annotatedName ?: klass.simpleName}::$methodName"
+    get() = klass.getFullMethodName(method)
 
   /** MethodName provided by @Name annotation, or java method name by default */
   val methodName: MethodName
     //  MUST be a get() as this.method changes
-    get() = MethodName(method.findNameAnnotation() ?: method.name)
+    get() = MethodName(method.getAnnotatedName())
 
   /** MethodParameterTypes from method */
   val methodParameterTypes: MethodParameterTypes
@@ -179,23 +175,4 @@ sealed class ProxyHandler<T : Any>(
         "boolean" -> false
         else -> null
       }
-
-  // search for a @Timeout annotation on this method or its parents' methods
-  // Interfaces are EXCLUDED, as this annotation has a different meaning on interfaces
-  private fun Method.findTimeoutAnnotation(): Class<out WithTimeout>? =
-      findAnnotation(Timeout::class.java, false)?.with?.java
-
-  // search for a @Timeout annotation on this class
-  // Interfaces are EXCLUDED, as this annotation has a different meaning on interfaces
-  private fun Class<*>.findTimeoutAnnotation(): Class<out WithTimeout>? =
-      findAnnotation(Timeout::class.java, false)?.with?.java
-
-  // search for a @Name annotation on this method,
-  // Interfaces are included in the search
-  private fun Method.findNameAnnotation(): String? = findAnnotation(Name::class.java)?.name
-
-
-  // search for a @Name annotation on this class,
-  // Interfaces are included in the search
-  private fun Class<*>.findNameAnnotation(): String? = findAnnotation(Name::class.java)?.name
 }

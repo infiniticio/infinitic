@@ -25,6 +25,7 @@ package io.infinitic.workers.register.config
 import io.infinitic.common.utils.getClass
 import io.infinitic.common.utils.getEmptyConstructor
 import io.infinitic.common.utils.getInstance
+import io.infinitic.common.utils.isImplementationOf
 import io.infinitic.common.workers.config.RetryPolicy
 import io.infinitic.tasks.tag.config.TaskTag
 import io.infinitic.workers.register.InfiniticRegister
@@ -38,46 +39,49 @@ data class Service(
   var retry: RetryPolicy? = null,
   var tagEngine: TaskTag? = InfiniticRegister.DEFAULT_TASK_TAG
 ) {
-  private lateinit var _constructor: Constructor<out Any>
+  private lateinit var constructor: Constructor<out Any>
 
-  fun getInstance(): Any = _constructor.getInstance()
+  fun getInstance(): Any = constructor.getInstance()
 
   init {
     require(name.isNotEmpty()) { "name can not be empty" }
 
     when (`class`) {
       null -> {
-        require(tagEngine != null) { "class and taskTag null for task $name" }
+        require(tagEngine != null) { "Service $name: class and taskTag undefined" }
       }
 
       else -> {
-        require(`class`.isNotEmpty()) { "class empty for task $name" }
+        require(`class`.isNotEmpty()) { "Service $name: class empty" }
 
-        _constructor =
-            `class`
-                .getClass(
-                    classNotFound = "class \"$`class`\" is unknown (service $name)",
-                    errorClass =
-                    "Error when trying to get class of name \"$`class`\" (service $name)",
-                )
-                .getEmptyConstructor(
-                    noEmptyConstructor =
-                    "class \"$`class`\" must have an empty constructor (service $name)",
-                    constructorError =
-                    "Can not access constructor of class \"$`class`\" (service $name)",
-                )
-
-        _constructor.getInstance(
-            instanceError = "Error during instantiation of class \"$`class`\" (service $name)",
+        val klass = `class`.getClass(
+            classNotFound = "Service $name: Class '${`class`}' unknown",
+            errorClass =
+            "Service $name: Error when trying to get class of name '${::`class`.name}'",
         )
 
+        constructor = klass.getEmptyConstructor(
+            noEmptyConstructor =
+            "Service $name: Class '${::`class`.name}' must have an empty constructor",
+            constructorError =
+            "Service $name: Can not access constructor of class '$`class`'",
+        )
+
+        constructor.getInstance(
+            instanceError = "Service $name: Error during instantiation of class '$`class`'",
+        )
+
+        require(klass.isImplementationOf(name)) {
+          "Class '$klass' is not an implementation of service '$name' - check your configuration"
+        }
+
         if (concurrency != null) {
-          require(concurrency!! >= 0) { "concurrency must be positive (service $name)" }
+          require(concurrency!! >= 0) { "Service $name: '${::concurrency.name}' must be a positive integer" }
         }
 
         if (timeoutInSeconds != null) {
           require(timeoutInSeconds!! > 0) {
-            "${::timeoutInSeconds.name} must be positive (service $name)"
+            "Service $name: '${::timeoutInSeconds.name}' must be positive"
           }
         }
       }

@@ -27,13 +27,16 @@ import io.infinitic.workers.register.InfiniticRegister.Companion.DEFAULT_CONCURR
 import io.infinitic.workers.register.config.ServiceDefault
 import io.infinitic.workers.register.config.WorkflowDefault
 import io.infinitic.workers.samples.ServiceA
+import io.infinitic.workers.samples.ServiceAImpl
+import io.infinitic.workers.samples.WorkflowAImpl
+import io.infinitic.workers.samples.WorkflowAImpl2
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import io.kotest.matchers.string.shouldContain
 
-class WorkerConfigTests :
+internal class WorkerConfigTests :
   StringSpec(
       {
         "task instance should not be reused" {
@@ -50,7 +53,7 @@ class WorkerConfigTests :
               }
           println(e)
           e.message!! shouldContain
-              "Error during instantiation of class \"io.infinitic.workers.samples.ServiceWithInvocationTargetException\""
+              "Error during instantiation of class 'io.infinitic.workers.samples.ServiceWithInvocationTargetException'"
         }
 
         "workflow with InvocationTargetException should throw cause" {
@@ -59,7 +62,7 @@ class WorkerConfigTests :
                 WorkerConfig.fromResource("/config/workflows/invocationTargetException.yml")
               }
           e.message!! shouldContain
-              "Error when trying to instantiate class \"io.infinitic.workers.samples.WorkflowWithInvocationTargetException\""
+              "Error when instantiating class 'io.infinitic.workers.samples.WorkflowWithInvocationTargetException'  "
         }
 
         "task with ExceptionInInitializerError should throw cause" {
@@ -83,7 +86,7 @@ class WorkerConfigTests :
               shouldThrow<ConfigException> {
                 WorkerConfig.fromResource("/config/services/unknown.yml")
               }
-          e.message!! shouldContain "class \"io.infinitic.workers.samples.UnknownService\" is unknown"
+          e.message!! shouldContain "Class 'io.infinitic.workers.samples.UnknownService' unknown"
         }
 
         "workflow Unknown" {
@@ -91,7 +94,7 @@ class WorkerConfigTests :
               shouldThrow<ConfigException> {
                 WorkerConfig.fromResource("/config/workflows/unknown.yml")
               }
-          e.message!! shouldContain "class \"io.infinitic.workers.samples.UnknownWorkflow\" unknown"
+          e.message!! shouldContain "Class 'io.infinitic.workers.samples.UnknownWorkflow' unknown"
         }
 
         "not a workflow" {
@@ -100,7 +103,7 @@ class WorkerConfigTests :
                 WorkerConfig.fromResource("/config/workflows/notAWorkflow.yml")
               }
           e.message!! shouldContain
-              "class \"io.infinitic.workers.samples.NotAWorkflow\" must extend io.infinitic.workflows.Workflow"
+              "Class 'io.infinitic.workers.samples.NotAWorkflow' must extend 'io.infinitic.workflows.Workflow'"
         }
 
         "checking default service config" {
@@ -122,6 +125,30 @@ class WorkerConfigTests :
           config.workflows[0].timeoutInSeconds shouldBe null
           config.workflows[0].checkMode shouldBe null
           config.workflows[0].concurrency shouldBe DEFAULT_CONCURRENCY
+        }
+
+        "checking the compatibility between name and class in services" {
+          val e = shouldThrow<ConfigException> {
+            WorkerConfig.fromResource("/config/services/incompatibleServiceName.yml")
+          }
+          e.message!! shouldContain
+              "Class '${ServiceAImpl::class.java}' is not an implementation of service 'UnknownService' - check your configuration"
+        }
+
+        "checking the compatibility between name and class in workflows" {
+          val e = shouldThrow<ConfigException> {
+            WorkerConfig.fromResource("/config/workflows/incompatibleWorkflowName.yml")
+          }
+          e.message!! shouldContain
+              "Class '${WorkflowAImpl::class.java}' is not an implementation of workflow 'UnknownWorkflow' - check your configuration"
+        }
+
+        "checking the compatibility between name and classes in workflows" {
+          val e = shouldThrow<ConfigException> {
+            WorkerConfig.fromResource("/config/workflows/incompatibleWorkflowsName.yml")
+          }
+          e.message!! shouldContain
+              "Class '${WorkflowAImpl2::class.java}' is not an implementation of workflow 'io.infinitic.workers.samples.WorkflowA' - check your configuration"
         }
       },
   )
