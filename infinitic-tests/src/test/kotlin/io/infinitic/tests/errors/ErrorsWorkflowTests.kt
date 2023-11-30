@@ -26,7 +26,6 @@ import io.infinitic.common.fixtures.later
 import io.infinitic.exceptions.TaskFailedException
 import io.infinitic.exceptions.WorkflowCanceledException
 import io.infinitic.exceptions.WorkflowFailedException
-import io.infinitic.exceptions.WorkflowTimedOutException
 import io.infinitic.exceptions.WorkflowUnknownException
 import io.infinitic.tests.Test
 import io.infinitic.tests.channels.ChannelsWorkflow
@@ -243,14 +242,6 @@ internal class ErrorsWorkflowTests :
 
           // clean up
           client.cancel(w)
-        }
-
-        "Synchronous call of a workflow running for more that its timeout should throw" {
-          shouldThrow<WorkflowTimedOutException> { errorsWorkflow.timeout(1000) }
-        }
-
-        "Synchronous call of a workflow running for less that its timeout should NOT throw" {
-          errorsWorkflow.timeout(10) shouldBe 10
         }
       },
   )

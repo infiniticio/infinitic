@@ -21,9 +21,13 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.tests.errors
+package io.infinitic.tests.utils
 
 import io.infinitic.tasks.WithTimeout
+
+class After100MilliSeconds : WithTimeout {
+  override fun getTimeoutInSeconds() = 0.1
+}
 
 class After500MilliSeconds : WithTimeout {
   override fun getTimeoutInSeconds() = 0.5

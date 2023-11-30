@@ -62,7 +62,7 @@ internal class WorkerConfigTests :
                 WorkerConfig.fromResource("/config/workflows/invocationTargetException.yml")
               }
           e.message!! shouldContain
-              "Error when instantiating class 'io.infinitic.workers.samples.WorkflowWithInvocationTargetException'  "
+              "Error when instantiating class 'io.infinitic.workers.samples.WorkflowWithInvocationTargetException'"
         }
 
         "task with ExceptionInInitializerError should throw cause" {

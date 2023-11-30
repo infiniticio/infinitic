@@ -24,11 +24,14 @@ package io.infinitic.workflows.engine.commands
 
 import io.infinitic.common.data.ClientName
 import io.infinitic.common.exceptions.thisShouldNotHappen
+import io.infinitic.common.tasks.data.TaskId
 import io.infinitic.common.tasks.data.TaskRetryIndex
+import io.infinitic.common.tasks.executors.errors.TaskTimedOutError
 import io.infinitic.common.tasks.executors.messages.ExecuteTask
 import io.infinitic.common.tasks.tags.messages.AddTagToTask
 import io.infinitic.common.transport.InfiniticProducer
 import io.infinitic.common.workflows.data.commands.DispatchTaskPastCommand
+import io.infinitic.common.workflows.engine.messages.TaskTimedOut
 import io.infinitic.common.workflows.engine.state.WorkflowState
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
@@ -42,7 +45,7 @@ internal fun CoroutineScope.dispatchTaskCmd(
   val executeTask = with(dispatchTaskPastCommand.command) {
     ExecuteTask(
         serviceName = serviceName,
-        taskId = io.infinitic.common.tasks.data.TaskId.from(dispatchTaskPastCommand.commandId),
+        taskId = TaskId.from(dispatchTaskPastCommand.commandId),
         clientWaiting = false,
         methodName = methodName,
         methodParameterTypes = methodParameterTypes,
@@ -73,6 +76,24 @@ internal fun CoroutineScope.dispatchTaskCmd(
     launch { producer.send(addTagToTask) }
   }
 
-  // send task timeout
+  // send global task timeout if any
+  val timeout = dispatchTaskPastCommand.command.methodTimeout
 
+  if (timeout != null) {
+    val taskTimedOut = with(dispatchTaskPastCommand.command) {
+      TaskTimedOut(
+          workflowName = state.workflowName,
+          workflowId = state.workflowId,
+          methodRunId = state.runningMethodRunId ?: thisShouldNotHappen(),
+          taskTimedOutError = TaskTimedOutError(
+              serviceName = serviceName,
+              taskId = executeTask.taskId,
+              methodName = methodName,
+          ),
+          deferredError = null,
+          emitterName = ClientName(producer.name),
+      )
+    }
+    launch { producer.send(taskTimedOut, timeout) }
+  }
 }

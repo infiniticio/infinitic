@@ -44,6 +44,7 @@ internal fun CoroutineScope.retryTasks(
         DeferredStatus.UNKNOWN -> CommandStatus.Unknown::class
         DeferredStatus.CANCELED -> CommandStatus.Canceled::class
         DeferredStatus.FAILED -> CommandStatus.Failed::class
+        DeferredStatus.TIMED_OUT -> CommandStatus.TimedOut::class
         DeferredStatus.COMPLETED -> CommandStatus.Completed::class
         null -> null
       }

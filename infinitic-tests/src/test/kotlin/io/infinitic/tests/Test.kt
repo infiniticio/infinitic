@@ -22,6 +22,7 @@
  */
 package io.infinitic.tests
 
+import io.infinitic.common.fixtures.DockerOnly
 import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.data.workflows.WorkflowName
 import io.infinitic.common.workflows.engine.state.WorkflowState
@@ -33,8 +34,6 @@ import io.kotest.core.config.AbstractProjectConfig
 import io.kotest.core.listeners.AfterProjectListener
 import io.kotest.core.spec.AutoScan
 import kotlinx.coroutines.delay
-import org.testcontainers.DockerClientFactory
-import org.testcontainers.utility.DockerImageName
 import kotlin.time.Duration.Companion.milliseconds
 
 /**
@@ -43,24 +42,19 @@ import kotlin.time.Duration.Companion.milliseconds
  * Docker is available on GitHub.
  */
 internal object Test {
-  private val isDockerAvailable = DockerClientFactory.instance().isDockerAvailable
-
-  private val pulsarServer = when (isDockerAvailable) {
-    true -> PulsarContainer(DockerImageName.parse("apachepulsar/pulsar:3.1.1")).also { it.start() }
-    false -> null
-  }
+  private val pulsarServer = DockerOnly().pulsarServer
 
   private val workerConfig = (WorkerConfig.fromResource("/pulsar.yml") as WorkerConfigData).let {
-    when (isDockerAvailable) {
-      true -> it.copy(
+    when (pulsarServer) {
+      null -> it.copy(transport = Transport.inMemory)
+      else -> it.copy(
           transport = Transport.pulsar,
           pulsar = it.pulsar!!.copy(
-              brokerServiceUrl = pulsarServer!!.pulsarBrokerUrl, // "pulsar://localhost:6650/"
+              brokerServiceUrl = pulsarServer.pulsarBrokerUrl, // "pulsar://localhost:6650/"
               webServiceUrl = pulsarServer.httpServiceUrl, // "http://localhost:8080/"
+              policies = it.pulsar!!.policies.copy(delayedDeliveryTickTimeMillis = 1), // useful for tests
           ),
       )
-
-      false -> it
     }
   }
 
@@ -68,8 +62,8 @@ internal object Test {
   val worker = workerConfig.worker.also { it.startAsync() }
 
   fun stop() {
-    client.close()
     worker.close()
+    client.close()
     pulsarServer?.stop()
   }
 }

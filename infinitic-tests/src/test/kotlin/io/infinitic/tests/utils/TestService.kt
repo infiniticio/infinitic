@@ -57,8 +57,10 @@ class TestServiceImpl : TestService, WithRetry {
     when (status) {
       Status.TIMEOUT_WITH_RETRY,
       Status.TIMEOUT_WITHOUT_RETRY -> Thread.sleep(1000)
+
       Status.FAILED_WITH_RETRY,
       Status.FAILED_WITHOUT_RETRY -> throw ExpectedException(log)
+
       else -> Unit
     }
 
@@ -71,10 +73,11 @@ class TestServiceImpl : TestService, WithRetry {
     return delay
   }
 
-  override fun getSecondsBeforeRetry(retry: Int, exception: Exception): Double? =
+  override fun getSecondsBeforeRetry(retry: Int, e: Exception): Double? =
       when (behavior(Task.retrySequence, Task.retryIndex)) {
         Status.FAILED_WITH_RETRY,
         Status.TIMEOUT_WITH_RETRY -> 10.0
+
         else -> null
       }
 }

@@ -60,12 +60,15 @@ import io.infinitic.common.workflows.data.steps.StepStatus
 import io.infinitic.common.workflows.data.steps.StepStatus.Canceled
 import io.infinitic.common.workflows.data.steps.StepStatus.Completed
 import io.infinitic.common.workflows.data.steps.StepStatus.CurrentlyFailed
+import io.infinitic.common.workflows.data.steps.StepStatus.CurrentlyTimedOut
 import io.infinitic.common.workflows.data.steps.StepStatus.Failed
+import io.infinitic.common.workflows.data.steps.StepStatus.TimedOut
 import io.infinitic.common.workflows.data.steps.StepStatus.Unknown
 import io.infinitic.common.workflows.data.steps.StepStatus.Waiting
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskParameters
 import io.infinitic.exceptions.DeferredCanceledException
 import io.infinitic.exceptions.DeferredFailedException
+import io.infinitic.exceptions.DeferredTimedOutException
 import io.infinitic.exceptions.DeferredUnknownException
 import io.infinitic.exceptions.clients.InvalidChannelUsageException
 import io.infinitic.exceptions.clients.InvalidRunningTaskException
@@ -186,10 +189,12 @@ internal class WorkflowDispatcherImpl(
                 throw NewStepException
               }
               // we already know the status of this step based on history
+              is Unknown,
               is Canceled,
               is Failed,
               is CurrentlyFailed,
-              is Unknown -> {
+              is TimedOut,
+              is CurrentlyTimedOut -> {
                 throw getDeferredException(stepStatus)
               }
 
@@ -242,6 +247,20 @@ internal class WorkflowDispatcherImpl(
                 throw getDeferredException(stepStatus)
               }
 
+              is CurrentlyTimedOut -> {
+                // workflowTaskIndex is now the one where this deferred was failed
+                workflowTaskIndex = stepStatus.timeoutWorkflowTaskIndex
+
+                throw getDeferredException(stepStatus)
+              }
+
+              is TimedOut -> {
+                // workflowTaskIndex is now the one where this deferred was failed
+                workflowTaskIndex = stepStatus.timeoutWorkflowTaskIndex
+
+                throw getDeferredException(stepStatus)
+              }
+
               is Completed -> {
                 // workflowTaskIndex is now the one where this deferred was completed
                 workflowTaskIndex = stepStatus.completionWorkflowTaskIndex
@@ -264,8 +283,11 @@ internal class WorkflowDispatcherImpl(
         is Unknown -> DeferredStatus.UNKNOWN
         is Completed -> DeferredStatus.COMPLETED
         is Canceled -> DeferredStatus.CANCELED
+        is CurrentlyFailed,
         is Failed -> DeferredStatus.FAILED
-        is CurrentlyFailed -> DeferredStatus.FAILED
+
+        is CurrentlyTimedOut,
+        is TimedOut -> DeferredStatus.TIMED_OUT
       }
 
   override fun timer(duration: JavaDuration): Deferred<JavaInstant> =
@@ -327,7 +349,7 @@ internal class WorkflowDispatcherImpl(
               taskTags = handler.taskTags,
               taskMeta = handler.taskMeta,
           ),
-          CommandSimpleName(handler.simpleName),
+          CommandSimpleName(handler.fullMethodName),
       )
 
   /** Workflow dispatching */
@@ -350,7 +372,7 @@ internal class WorkflowDispatcherImpl(
                   workflowTags = handler.workflowTags,
                   workflowMeta = handler.workflowMeta,
               ),
-              CommandSimpleName(handler.simpleName),
+              CommandSimpleName(handler.fullMethodName),
           )
         }
       }
@@ -369,7 +391,7 @@ internal class WorkflowDispatcherImpl(
                 methodParameters = handler.methodParameters,
                 methodTimeout = handler.timeout.getOrThrow(),
             ),
-            CommandSimpleName(handler.simpleName),
+            CommandSimpleName(handler.fullMethodName),
         )
       }
 
@@ -493,9 +515,10 @@ internal class WorkflowDispatcherImpl(
       when (stepStatus) {
         is Unknown -> DeferredUnknownException.from(stepStatus.deferredUnknownError)
         is Canceled -> DeferredCanceledException.from(stepStatus.deferredCanceledError)
-        is Failed -> DeferredFailedException.from(stepStatus.deferredFailedError)
         is CurrentlyFailed -> DeferredFailedException.from(stepStatus.deferredFailedError)
-        is Completed,
-        Waiting -> thisShouldNotHappen()
+        is Failed -> DeferredFailedException.from(stepStatus.deferredFailedError)
+        is CurrentlyTimedOut -> DeferredTimedOutException.from(stepStatus.deferredTimedOutError)
+        is TimedOut -> DeferredTimedOutException.from(stepStatus.deferredTimedOutError)
+        is Completed, Waiting -> thisShouldNotHappen()
       }
 }

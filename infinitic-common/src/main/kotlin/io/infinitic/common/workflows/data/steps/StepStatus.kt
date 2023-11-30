@@ -25,6 +25,7 @@ package io.infinitic.common.workflows.data.steps
 import io.infinitic.common.data.ReturnValue
 import io.infinitic.common.tasks.executors.errors.DeferredCanceledError
 import io.infinitic.common.tasks.executors.errors.DeferredFailedError
+import io.infinitic.common.tasks.executors.errors.DeferredTimedOutError
 import io.infinitic.common.tasks.executors.errors.DeferredUnknownError
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskIndex
 import kotlinx.serialization.SerialName
@@ -55,19 +56,24 @@ sealed class StepStatus {
     val cancellationWorkflowTaskIndex: WorkflowTaskIndex
   ) : StepStatus()
 
+  /**
+   * CurrentlyTimedOut is a transient status given when the timeout of a task triggers the failure of
+   * a step
+   * - if next workflowTask related to this branch run correctly (error caught in workflow code),
+   *   status will eventually be TimedOut
+   * - if not, task can be retried and status can transition to Completed
+   */
   @Serializable
-  @SerialName("StepStatus.Failed")
-  data class Failed(
-    @SerialName("failedDeferredError")
-    val deferredFailedError: DeferredFailedError,
-    val failureWorkflowTaskIndex: WorkflowTaskIndex
+  data class CurrentlyTimedOut(
+    val deferredTimedOutError: DeferredTimedOutError,
+    val timeoutWorkflowTaskIndex: WorkflowTaskIndex
   ) : StepStatus()
 
   @Serializable
-  @SerialName("StepStatus.Completed")
-  data class Completed(
-    val returnValue: ReturnValue,
-    val completionWorkflowTaskIndex: WorkflowTaskIndex
+  @SerialName("StepStatus.TimedOut")
+  data class TimedOut(
+    val deferredTimedOutError: DeferredTimedOutError,
+    val timeoutWorkflowTaskIndex: WorkflowTaskIndex
   ) : StepStatus()
 
   /**
@@ -84,4 +90,21 @@ sealed class StepStatus {
     val deferredFailedError: DeferredFailedError,
     val failureWorkflowTaskIndex: WorkflowTaskIndex
   ) : StepStatus()
+
+  @Serializable
+  @SerialName("StepStatus.Failed")
+  data class Failed(
+    @SerialName("failedDeferredError")
+    val deferredFailedError: DeferredFailedError,
+    val failureWorkflowTaskIndex: WorkflowTaskIndex
+  ) : StepStatus()
+
+  @Serializable
+  @SerialName("StepStatus.Completed")
+  data class Completed(
+    val returnValue: ReturnValue,
+    val completionWorkflowTaskIndex: WorkflowTaskIndex
+  ) : StepStatus()
+
+
 }

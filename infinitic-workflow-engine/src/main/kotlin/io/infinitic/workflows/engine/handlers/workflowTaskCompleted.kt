@@ -36,7 +36,9 @@ import io.infinitic.common.workflows.data.commands.StartDurationTimerPastCommand
 import io.infinitic.common.workflows.data.commands.StartInstantTimerPastCommand
 import io.infinitic.common.workflows.data.steps.PastStep
 import io.infinitic.common.workflows.data.steps.StepStatus.CurrentlyFailed
+import io.infinitic.common.workflows.data.steps.StepStatus.CurrentlyTimedOut
 import io.infinitic.common.workflows.data.steps.StepStatus.Failed
+import io.infinitic.common.workflows.data.steps.StepStatus.TimedOut
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskReturnValue
 import io.infinitic.common.workflows.data.workflows.WorkflowReturnValue
 import io.infinitic.common.workflows.engine.messages.ChildMethodCompleted
@@ -73,10 +75,16 @@ internal fun CoroutineScope.workflowTaskCompleted(
   // if current step status was CurrentlyFailed
   // convert it to a definitive StepStatus.Failed
   // as the error has been caught by the workflow
+  // idem for CurrentlyTimedOut
   methodRun.currentStep?.let {
     val oldStatus = it.stepStatus
     if (oldStatus is CurrentlyFailed) {
       it.stepStatus = Failed(oldStatus.deferredFailedError, oldStatus.failureWorkflowTaskIndex)
+      methodRun.pastSteps.add(it)
+      methodRun.currentStep = null
+    }
+    if (oldStatus is CurrentlyTimedOut) {
+      it.stepStatus = TimedOut(oldStatus.deferredTimedOutError, oldStatus.timeoutWorkflowTaskIndex)
       methodRun.pastSteps.add(it)
       methodRun.currentStep = null
     }

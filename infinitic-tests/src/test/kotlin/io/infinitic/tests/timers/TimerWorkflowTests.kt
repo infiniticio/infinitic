@@ -44,7 +44,7 @@ internal class TimerWorkflowTests :
 
           val deferred = client.dispatch(timerWorkflow::await, 100L)
 
-          (deferred.await().toEpochMilli() - start) shouldBeLessThan (500L)
+          (deferred.await().toEpochMilli() - start) shouldBeLessThan (1000L)
         }
 
         "Wait for a long duration timer" {

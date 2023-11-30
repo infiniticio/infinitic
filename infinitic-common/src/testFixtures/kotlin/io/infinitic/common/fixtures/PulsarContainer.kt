@@ -20,7 +20,7 @@
  *
  * Licensor: infinitic.io
  */
-package io.infinitic.tests
+package io.infinitic.common.fixtures
 
 import org.testcontainers.containers.GenericContainer
 import org.testcontainers.containers.wait.strategy.Wait

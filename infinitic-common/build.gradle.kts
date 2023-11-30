@@ -43,6 +43,9 @@ dependencies {
   testFixturesImplementation(Libs.Kotest.junit5)
   testFixturesImplementation(Libs.Kotest.property)
   testFixturesImplementation(Libs.Mockk.mockk)
+  testFixturesImplementation(Libs.Pulsar.client)
+  testFixturesImplementation(Libs.Pulsar.clientAdmin)
+  testFixturesApi(Libs.TestContainers.testcontainers)
 }
 
 tasks.withType<KotlinCompile> {

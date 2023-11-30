@@ -165,18 +165,6 @@ class TaskExecutor(
     sendTaskCompleted(msg, output, taskContext.meta)
   }
 
-  private suspend fun runTask(
-    taskContext: TaskContext,
-    service: Any,
-    method: java.lang.reflect.Method,
-    parameters: Array<Any?>
-  ) {
-    // context is stored in execution's thread (in case used in method)
-    Task.context.set(taskContext)
-    // execution
-    method.invoke(service, *parameters)
-  }
-
   private suspend fun retryTask(
     msg: ExecuteTask,
     taskContext: TaskContext,

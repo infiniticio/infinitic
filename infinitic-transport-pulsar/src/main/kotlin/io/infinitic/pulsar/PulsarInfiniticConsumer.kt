@@ -210,9 +210,11 @@ class PulsarInfiniticConsumer(
     name: String
   ): CompletableFuture<Unit> {
     // create topic if not exists
-    val topic = resourceManager.initTopic(name, topicDescription).getOrThrow()
+    val topic = resourceManager.initTopic(name, topicDescription)
+        .getOrElse { return CompletableFuture.failedFuture(it) }
     // create DLQ topic if not exists
-    val topicDlq = resourceManager.initDlqTopic(name, topicDescription).getOrThrow()
+    val topicDlq = resourceManager.initDlqTopic(name, topicDescription)
+        .getOrElse { return CompletableFuture.failedFuture(it) }
 
     return with(consumer) {
       consumingScope.future {

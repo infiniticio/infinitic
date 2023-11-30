@@ -25,7 +25,6 @@ package io.infinitic.pulsar.resources
 import io.infinitic.pulsar.admin.PulsarInfiniticAdmin
 import io.infinitic.pulsar.config.Pulsar
 import io.infinitic.pulsar.config.policies.Policies
-import java.util.concurrent.ConcurrentHashMap
 
 class ResourceManager(
   val admin: PulsarInfiniticAdmin,
@@ -92,44 +91,37 @@ class ResourceManager(
    */
   fun deleteTopic(topic: String): Result<Unit> = admin.deleteTopic(topic)
 
-  private fun initTopic(topic: String, isPartitioned: Boolean, isDelayed: Boolean) =
-      when (isInitialized(topic)) {
-        true -> Result.success(topic)
-        false -> admin.initTopic(
-            topic,
-            isPartitioned,
-            when (isDelayed) {
-              true -> policies.delayedTTLInSeconds
-              false -> policies.messageTTLInSeconds
-            },
-        ).map { initializedTopics.add(topic); topic }
+  private fun initTopic(
+    topic: String,
+    isPartitioned: Boolean,
+    isDelayed: Boolean
+  ): Result<String> {
+    // if topic is not initialized
+    if (!admin.isTopicInitialized(topic)) {
+      // if namespace is not initialized
+      if (!admin.isNamespaceInitialized(fullNameSpace)) {
+        // if tenant is not initialized
+        if (!admin.isTenantInitialized(tenant)) {
+          // initialize tenant
+          admin.initTenant(tenant, allowedClusters, adminRoles)
+              .onFailure { return Result.failure(it) }
+        }
+        // initialize namespace
+        admin.initNamespace(fullNameSpace, policies)
+            .onFailure { return Result.failure(it) }
       }
-
-
-  private fun isInitialized(topic: String): Boolean {
-    val tenant = topicNamer.tenant
-    if (!initializedTenants.contains(tenant)) {
-      admin.initTenant(topicNamer.tenant, allowedClusters, adminRoles)
-          .onSuccess { initializedTenants.add(tenant) }
+      // initialize topic
+      val ttl = when (isDelayed) {
+        true -> policies.delayedTTLInSeconds
+        false -> policies.messageTTLInSeconds
+      }
+      admin.initTopic(topic, isPartitioned, ttl)
+          .onFailure { return Result.failure(it) }
     }
-    val namespace = topicNamer.namespace
-    if (!initializedNamespaces.contains(Pair(tenant, namespace))) {
-      admin.initNamespace(topicNamer.fullNameSpace, policies)
-          .onSuccess { initializedNamespaces.add(Pair(tenant, namespace)) }
-    }
-    return initializedTopics.contains(topic)
+    return Result.success(topic)
   }
 
   companion object {
-    // thread-safe set of initialized topics (topic name includes tenant and namespace)
-    private val initializedTopics = ConcurrentHashMap.newKeySet<String>()
-
-    // thread-safe set of initialized tenants
-    private val initializedTenants = ConcurrentHashMap.newKeySet<String>()
-
-    // thread-safe set of initialized namespaces
-    private val initializedNamespaces = ConcurrentHashMap.newKeySet<Pair<String, String>>()
-
     /** Create TopicManager from a Pulsar configuration instance */
     fun from(pulsar: Pulsar) = ResourceManager(
         PulsarInfiniticAdmin(pulsar.admin),

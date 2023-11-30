@@ -45,6 +45,7 @@ import io.infinitic.common.workflows.engine.messages.TaskCanceled
 import io.infinitic.common.workflows.engine.messages.TaskCompleted
 import io.infinitic.common.workflows.engine.messages.TaskEvent
 import io.infinitic.common.workflows.engine.messages.TaskFailed
+import io.infinitic.common.workflows.engine.messages.TaskTimedOut
 import io.infinitic.common.workflows.engine.messages.TimerCompleted
 import io.infinitic.common.workflows.engine.messages.WaitWorkflow
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
@@ -65,6 +66,7 @@ import io.infinitic.workflows.engine.handlers.sendSignal
 import io.infinitic.workflows.engine.handlers.taskCanceled
 import io.infinitic.workflows.engine.handlers.taskCompleted
 import io.infinitic.workflows.engine.handlers.taskFailed
+import io.infinitic.workflows.engine.handlers.taskTimedOut
 import io.infinitic.workflows.engine.handlers.timerCompleted
 import io.infinitic.workflows.engine.handlers.waitWorkflow
 import io.infinitic.workflows.engine.handlers.workflowTaskCompleted
@@ -90,7 +92,7 @@ class WorkflowEngine(
   private val clientName = ClientName(producer.name)
 
   suspend fun handle(message: WorkflowEngineMessage) {
-    logTrace(message) { "receiving $message" }
+    logDebug(message) { "Receiving $message" }
 
     // get current state
     var state = storage.getState(message.workflowId)
@@ -296,6 +298,11 @@ class WorkflowEngine(
       is TaskCanceled -> when (message.isWorkflowTaskEvent()) {
         true -> TODO() // workflowTaskCanceled(producer, state, message)
         false -> taskCanceled(producer, state, message)
+      }
+
+      is TaskTimedOut -> when (message.isWorkflowTaskEvent()) {
+        true -> TODO() // workflowTaskTimedOut(producer, state, message)
+        false -> taskTimedOut(producer, state, message)
       }
 
       is TaskFailed -> when (message.isWorkflowTaskEvent()) {

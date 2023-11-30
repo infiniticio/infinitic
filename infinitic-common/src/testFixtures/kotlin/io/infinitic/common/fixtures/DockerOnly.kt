@@ -20,30 +20,28 @@
  *
  * Licensor: infinitic.io
  */
-package io.infinitic.common.workflows.engine.messages
+package io.infinitic.common.fixtures
 
-import com.github.avrokotlin.avro4k.AvroNamespace
-import kotlinx.serialization.Serializable
+import io.kotest.core.annotation.EnabledCondition
+import io.kotest.core.spec.Spec
+import org.testcontainers.DockerClientFactory
+import org.testcontainers.utility.DockerImageName
+import kotlin.reflect.KClass
 
-@Serializable
-@AvroNamespace("io.infinitic.workflows.engine")
-enum class WorkflowEngineMessageType {
-  WAIT_WORKFLOW,
-  CANCEL_WORKFLOW,
-  RETRY_WORKFLOW_TASK,
-  RETRY_TASKS,
-  COMPLETE_TIMERS,
-  COMPLETE_WORKFLOW,
-  SEND_SIGNAL,
-  DISPATCH_WORKFLOW,
-  DISPATCH_METHOD,
-  TIMER_COMPLETED,
-  CHILD_WORKFLOW_UNKNOWN,
-  CHILD_WORKFLOW_CANCELED,
-  CHILD_WORKFLOW_FAILED,
-  CHILD_WORKFLOW_COMPLETED,
-  TASK_CANCELED,
-  TASK_TIMED_OUT,
-  TASK_FAILED,
-  TASK_COMPLETED
+class DockerOnly : EnabledCondition {
+  override fun enabled(kclass: KClass<out Spec>) = shouldRun
+
+  companion object {
+    val shouldRun by lazy {
+      DockerClientFactory.instance().isDockerAvailable
+    }
+  }
+
+  val pulsarServer by lazy {
+    when (shouldRun) {
+      true -> PulsarContainer(DockerImageName.parse("apachepulsar/pulsar:3.1.1")).also { it.start() }
+      false -> null
+    }
+  }
 }
+

@@ -37,6 +37,7 @@ import io.infinitic.common.tasks.data.TaskReturnValue
 import io.infinitic.common.tasks.executors.errors.DeferredError
 import io.infinitic.common.tasks.executors.errors.TaskCanceledError
 import io.infinitic.common.tasks.executors.errors.TaskFailedError
+import io.infinitic.common.tasks.executors.errors.TaskTimedOutError
 import io.infinitic.common.tasks.executors.errors.WorkflowCanceledError
 import io.infinitic.common.tasks.executors.errors.WorkflowFailedError
 import io.infinitic.common.tasks.executors.errors.WorkflowUnknownError
@@ -265,6 +266,21 @@ data class TaskFailed(
   override fun taskId() = taskFailedError.taskId
 
   override fun serviceName() = taskFailedError.serviceName
+}
+
+@Serializable
+@AvroNamespace("io.infinitic.workflows.engine")
+data class TaskTimedOut(
+  override val workflowName: WorkflowName,
+  override val workflowId: WorkflowId,
+  override val methodRunId: MethodRunId,
+  val taskTimedOutError: TaskTimedOutError,
+  val deferredError: DeferredError?,
+  override val emitterName: ClientName
+) : WorkflowEngineMessage(), TaskEvent {
+  override fun taskId() = taskTimedOutError.taskId
+
+  override fun serviceName() = taskTimedOutError.serviceName
 }
 
 @Serializable

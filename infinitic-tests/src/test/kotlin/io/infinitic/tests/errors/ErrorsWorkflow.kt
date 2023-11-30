@@ -23,7 +23,6 @@
 package io.infinitic.tests.errors
 
 import io.infinitic.annotations.Ignore
-import io.infinitic.annotations.Timeout
 import io.infinitic.exceptions.DeferredFailedException
 import io.infinitic.exceptions.TaskFailedException
 import io.infinitic.exceptions.WorkflowFailedException
@@ -77,9 +76,6 @@ interface ErrorsWorkflow {
   fun failing12(): String
 
   fun failing13()
-
-  @Timeout(After500MilliSeconds::class)
-  fun timeout(duration: Long): Long
 }
 
 @Suppress("unused")
@@ -242,6 +238,4 @@ class ErrorsWorkflowImpl : Workflow(), ErrorsWorkflow {
   override fun failing13() {
     newWorkflow(ErrorsWorkflow::class.java, tags = tags).waiting()
   }
-
-  override fun timeout(duration: Long) = utilService.await(duration)
 }

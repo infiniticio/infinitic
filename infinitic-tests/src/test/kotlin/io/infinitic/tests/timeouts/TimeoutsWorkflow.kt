@@ -20,37 +20,29 @@
  *
  * Licensor: infinitic.io
  */
-package io.infinitic.tests.context
+package io.infinitic.tests.timeouts
 
-import io.infinitic.common.tasks.data.TaskMeta
-import io.infinitic.common.workflows.data.workflows.WorkflowMeta
-import io.infinitic.tasks.WithRetry
-import io.infinitic.tasks.WithTimeout
+import io.infinitic.annotations.Timeout
+import io.infinitic.exceptions.TaskTimedOutException
+import io.infinitic.tests.utils.After500MilliSeconds
 import io.infinitic.tests.utils.UtilService
 import io.infinitic.workflows.Workflow
 
-interface ContextWorkflow {
-  fun context1(): String
+interface TimeoutsWorkflow {
 
-  fun context2(): Set<String>
+  // the workflow method 'withMethodTimeout' has a 100ms timeout
+  @Timeout(After500MilliSeconds::class)
+  fun withMethodTimeout(duration: Long): Long
 
-  fun context3(): WorkflowMeta
+  fun withTaskTimeout(wait: Long): Long
 
-  fun context4(): String?
+  fun withCaughtTaskTimeout(wait: Long): Long
 
-  fun context5(): String?
-
-  fun context6(): Set<String>
-
-  fun context7(): TaskMeta
-
-  fun context8(): WithRetry?
-
-  fun context9(): WithTimeout?
+  fun withManualRetry(): Int
 }
 
 @Suppress("unused")
-class ContextWorkflowImpl : Workflow(), ContextWorkflow {
+class TimeoutsWorkflowImpl : Workflow(), TimeoutsWorkflow {
 
   private val utilService =
       newService(
@@ -58,22 +50,22 @@ class ContextWorkflowImpl : Workflow(), ContextWorkflow {
           tags = setOf("foo", "bar"),
           meta = mapOf("foo" to "bar".toByteArray()),
       )
+  private val timeoutsWorkflow =
+      newWorkflow(TimeoutsWorkflow::class.java, tags = setOf("foo", "bar"))
 
-  override fun context1(): String = workflowId
+  override fun withMethodTimeout(duration: Long) = utilService.await(duration)
 
-  override fun context2(): Set<String> = tags
+  // the task 'withTimeout' has a 100ms timeout
+  override fun withTaskTimeout(wait: Long): Long = utilService.withTimeout(wait)
 
-  override fun context3() = WorkflowMeta(meta)
+  // the task 'withTimeout' has a 100ms timeout
+  override fun withCaughtTaskTimeout(wait: Long): Long = try {
+    utilService.withTimeout(wait)
+  } catch (e: TaskTimedOutException) {
+    -1
+  }
 
-  override fun context4() = utilService.workflowId()
+  // the task 'tryAgain' has a 100ms timeout and wait for 10s for the first sequence
+  override fun withManualRetry(): Int = utilService.tryAgain()
 
-  override fun context5() = utilService.workflowName()
-
-  override fun context6() = utilService.tags()
-
-  override fun context7() = utilService.meta()
-
-  override fun context8(): WithRetry? = utilService.getRetry()
-
-  override fun context9(): WithTimeout? = utilService.getTimeout()
 }
