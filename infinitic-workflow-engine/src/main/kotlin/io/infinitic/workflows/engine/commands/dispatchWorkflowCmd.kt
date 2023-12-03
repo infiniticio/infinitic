@@ -24,10 +24,12 @@ package io.infinitic.workflows.engine.commands
 
 import io.infinitic.common.data.ClientName
 import io.infinitic.common.exceptions.thisShouldNotHappen
+import io.infinitic.common.tasks.executors.errors.WorkflowTimedOutError
 import io.infinitic.common.transport.InfiniticProducer
 import io.infinitic.common.workflows.data.commands.DispatchWorkflowCommand
 import io.infinitic.common.workflows.data.commands.DispatchWorkflowPastCommand
 import io.infinitic.common.workflows.data.workflows.WorkflowId
+import io.infinitic.common.workflows.engine.messages.ChildMethodTimedOut
 import io.infinitic.common.workflows.engine.messages.DispatchWorkflow
 import io.infinitic.common.workflows.engine.state.WorkflowState
 import io.infinitic.common.workflows.tags.messages.AddTagToWorkflow
@@ -42,6 +44,9 @@ internal fun CoroutineScope.dispatchWorkflowCmd(
 ) {
   val command: DispatchWorkflowCommand = newCommand.command
 
+  // id of the workflow to dispatch
+  val workflowId = WorkflowId.from(newCommand.commandId)
+
   val customIds = command.workflowTags.filter { it.isCustomId() }
 
   when (customIds.size) {
@@ -51,7 +56,7 @@ internal fun CoroutineScope.dispatchWorkflowCmd(
       val dispatchWorkflow =
           DispatchWorkflow(
               workflowName = command.workflowName,
-              workflowId = WorkflowId.from(newCommand.commandId),
+              workflowId = workflowId,
               methodName = command.methodName,
               methodParameters = command.methodParameters,
               methodParameterTypes = command.methodParameterTypes,
@@ -71,7 +76,7 @@ internal fun CoroutineScope.dispatchWorkflowCmd(
             AddTagToWorkflow(
                 workflowName = dispatchWorkflow.workflowName,
                 workflowTag = it,
-                workflowId = dispatchWorkflow.workflowId,
+                workflowId = workflowId,
                 emitterName = ClientName(producer.name),
             )
         launch { producer.send(addTagToWorkflow) }
@@ -79,12 +84,12 @@ internal fun CoroutineScope.dispatchWorkflowCmd(
     }
 
     1 -> {
-      // dispatch workflow message with customId tag
+      // send to workflow tag engine
       val dispatchWorkflowByCustomId =
           DispatchWorkflowByCustomId(
               workflowName = command.workflowName,
               workflowTag = customIds.first(),
-              workflowId = WorkflowId.from(newCommand.commandId),
+              workflowId = workflowId,
               methodName = command.methodName,
               methodParameters = command.methodParameters,
               methodParameterTypes = command.methodParameterTypes,
@@ -101,5 +106,24 @@ internal fun CoroutineScope.dispatchWorkflowCmd(
     }
     // this must be excluded from workflow task
     else -> thisShouldNotHappen()
+  }
+
+  // send global timeout if any
+  val timeout = command.methodTimeout
+
+  if (timeout != null) {
+    val childMethodTimedOut = ChildMethodTimedOut(
+        workflowName = state.workflowName,
+        workflowId = state.workflowId,
+        methodRunId = state.runningMethodRunId ?: thisShouldNotHappen(),
+        childWorkflowTimedOutError = WorkflowTimedOutError(
+            workflowName = command.workflowName,
+            workflowId = workflowId,
+            methodName = command.methodName,
+            methodRunId = null,
+        ),
+        emitterName = ClientName(producer.name),
+    )
+    launch { producer.send(childMethodTimedOut, timeout) }
   }
 }

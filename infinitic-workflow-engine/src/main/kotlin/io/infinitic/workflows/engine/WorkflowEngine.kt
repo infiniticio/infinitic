@@ -32,6 +32,7 @@ import io.infinitic.common.workflows.engine.messages.CancelWorkflow
 import io.infinitic.common.workflows.engine.messages.ChildMethodCanceled
 import io.infinitic.common.workflows.engine.messages.ChildMethodCompleted
 import io.infinitic.common.workflows.engine.messages.ChildMethodFailed
+import io.infinitic.common.workflows.engine.messages.ChildMethodTimedOut
 import io.infinitic.common.workflows.engine.messages.ChildMethodUnknown
 import io.infinitic.common.workflows.engine.messages.CompleteTimers
 import io.infinitic.common.workflows.engine.messages.CompleteWorkflow
@@ -56,6 +57,7 @@ import io.infinitic.workflows.engine.handlers.cancelWorkflow
 import io.infinitic.workflows.engine.handlers.childMethodCanceled
 import io.infinitic.workflows.engine.handlers.childMethodCompleted
 import io.infinitic.workflows.engine.handlers.childMethodFailed
+import io.infinitic.workflows.engine.handlers.childMethodTimedOut
 import io.infinitic.workflows.engine.handlers.childMethodUnknown
 import io.infinitic.workflows.engine.handlers.completeTimer
 import io.infinitic.workflows.engine.handlers.dispatchMethod
@@ -292,6 +294,7 @@ class WorkflowEngine(
       is TimerCompleted -> timerCompleted(producer, state, message)
       is ChildMethodUnknown -> childMethodUnknown(producer, state, message)
       is ChildMethodCanceled -> childMethodCanceled(producer, state, message)
+      is ChildMethodTimedOut -> childMethodTimedOut(producer, state, message)
       is ChildMethodFailed -> childMethodFailed(producer, state, message)
       is ChildMethodCompleted -> childMethodCompleted(producer, state, message)
 

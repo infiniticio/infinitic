@@ -46,6 +46,10 @@ import io.infinitic.exceptions.WorkflowUnknownException
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
+/**
+ * DeferredError are internal representation of [DeferredException] used to serialize and transport them
+ */
+
 @Serializable
 @AvroNamespace("io.infinitic.tasks.executor")
 sealed class DeferredError {

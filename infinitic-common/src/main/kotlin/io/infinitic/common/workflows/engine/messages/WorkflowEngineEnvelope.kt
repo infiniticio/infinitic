@@ -48,6 +48,7 @@ data class WorkflowEngineEnvelope(
   private val timerCompleted: TimerCompleted? = null,
   private val childMethodUnknown: ChildMethodUnknown? = null,
   private val childMethodCanceled: ChildMethodCanceled? = null,
+  @AvroDefault(Avro.NULL) private val childMethodTimedOut: ChildMethodTimedOut? = null,
   private val childMethodFailed: ChildMethodFailed? = null,
   private val childMethodCompleted: ChildMethodCompleted? = null,
   private val taskCanceled: TaskCanceled? = null,
@@ -69,6 +70,7 @@ data class WorkflowEngineEnvelope(
             sendSignal,
             timerCompleted,
             childMethodUnknown,
+            childMethodTimedOut,
             childMethodFailed,
             childMethodCanceled,
             childMethodCompleted,
@@ -182,6 +184,13 @@ data class WorkflowEngineEnvelope(
                 childMethodCanceled = msg,
             )
 
+          is ChildMethodTimedOut ->
+            WorkflowEngineEnvelope(
+                workflowId = msg.workflowId,
+                type = WorkflowEngineMessageType.CHILD_WORKFLOW_TIMED_OUT,
+                childMethodTimedOut = msg,
+            )
+
           is ChildMethodFailed ->
             WorkflowEngineEnvelope(
                 workflowId = msg.workflowId,
@@ -247,6 +256,7 @@ data class WorkflowEngineEnvelope(
         WorkflowEngineMessageType.TIMER_COMPLETED -> timerCompleted!!
         WorkflowEngineMessageType.CHILD_WORKFLOW_UNKNOWN -> childMethodUnknown!!
         WorkflowEngineMessageType.CHILD_WORKFLOW_CANCELED -> childMethodCanceled!!
+        WorkflowEngineMessageType.CHILD_WORKFLOW_TIMED_OUT -> childMethodTimedOut!!
         WorkflowEngineMessageType.CHILD_WORKFLOW_FAILED -> childMethodFailed!!
         WorkflowEngineMessageType.CHILD_WORKFLOW_COMPLETED -> childMethodCompleted!!
         WorkflowEngineMessageType.TASK_CANCELED -> taskCanceled!!

@@ -40,6 +40,7 @@ import io.infinitic.common.tasks.executors.errors.TaskFailedError
 import io.infinitic.common.tasks.executors.errors.TaskTimedOutError
 import io.infinitic.common.tasks.executors.errors.WorkflowCanceledError
 import io.infinitic.common.tasks.executors.errors.WorkflowFailedError
+import io.infinitic.common.tasks.executors.errors.WorkflowTimedOutError
 import io.infinitic.common.tasks.executors.errors.WorkflowUnknownError
 import io.infinitic.common.workflows.data.channels.ChannelName
 import io.infinitic.common.workflows.data.channels.ChannelType
@@ -229,6 +230,16 @@ data class ChildMethodFailed(
 
 @Serializable
 @AvroNamespace("io.infinitic.workflows.engine")
+data class ChildMethodTimedOut(
+  override val workflowName: WorkflowName,
+  override val workflowId: WorkflowId,
+  override val methodRunId: MethodRunId,
+  val childWorkflowTimedOutError: WorkflowTimedOutError,
+  override val emitterName: ClientName
+) : WorkflowEngineMessage(), MethodEvent
+
+@Serializable
+@AvroNamespace("io.infinitic.workflows.engine")
 data class ChildMethodCompleted(
   override val workflowName: WorkflowName,
   override val workflowId: WorkflowId,
@@ -275,7 +286,6 @@ data class TaskTimedOut(
   override val workflowId: WorkflowId,
   override val methodRunId: MethodRunId,
   val taskTimedOutError: TaskTimedOutError,
-  val deferredError: DeferredError?,
   override val emitterName: ClientName
 ) : WorkflowEngineMessage(), TaskEvent {
   override fun taskId() = taskTimedOutError.taskId

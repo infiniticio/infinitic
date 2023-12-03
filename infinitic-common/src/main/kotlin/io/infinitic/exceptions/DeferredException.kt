@@ -39,6 +39,13 @@ import io.infinitic.common.tasks.executors.errors.WorkflowUnknownError
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
+/**
+ * DeferredException are use-facing exceptions.
+ *
+ * They can be thrown when an exception occurs while synchronously waiting for a deferred.
+ */
+
+
 @Serializable
 sealed class DeferredException : kotlin.RuntimeException() {
   companion object {
