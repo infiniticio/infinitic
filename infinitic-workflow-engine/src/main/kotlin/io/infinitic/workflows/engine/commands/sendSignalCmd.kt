@@ -37,16 +37,16 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
 internal fun CoroutineScope.sendSignalCmd(
-  newCommand: SendSignalPastCommand,
+  pastCommand: SendSignalPastCommand,
   state: WorkflowState,
   producer: InfiniticProducer,
   bufferedMessages: MutableList<WorkflowEngineMessage>
 ) {
-  val command: SendSignalCommand = newCommand.command
+  val command: SendSignalCommand = pastCommand.command
 
   when {
     command.workflowId != null -> {
-      val sendToChannel = getSendSignal(ClientName(producer.name), newCommand.commandId, command)
+      val sendToChannel = getSendSignal(ClientName(producer.name), pastCommand.commandId, command)
 
       when (command.workflowId) {
         state.workflowId ->
@@ -61,7 +61,7 @@ internal fun CoroutineScope.sendSignalCmd(
 
     command.workflowTag != null -> {
       if (state.workflowTags.contains(command.workflowTag!!)) {
-        val sendToChannel = getSendSignal(ClientName(producer.name), newCommand.commandId, command)
+        val sendToChannel = getSendSignal(ClientName(producer.name), pastCommand.commandId, command)
         bufferedMessages.add(sendToChannel)
       }
       // dispatch signal per tag

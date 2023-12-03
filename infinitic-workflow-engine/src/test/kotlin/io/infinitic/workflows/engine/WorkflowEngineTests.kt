@@ -35,7 +35,7 @@ import io.infinitic.common.transport.InfiniticProducer
 import io.infinitic.common.workers.config.WorkflowVersion
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskReturnValue
 import io.infinitic.common.workflows.data.workflows.WorkflowId
-import io.infinitic.common.workflows.engine.messages.DispatchWorkflow
+import io.infinitic.common.workflows.engine.messages.DispatchNewWorkflow
 import io.infinitic.common.workflows.engine.messages.TaskCompleted
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
 import io.infinitic.common.workflows.engine.state.WorkflowState
@@ -98,7 +98,7 @@ class WorkflowEngineTests :
         }
 
         "Dispatch Workflow" {
-          val msg = TestFactory.random(DispatchWorkflow::class)
+          val msg = TestFactory.random(DispatchNewWorkflow::class)
           coEvery { storage.getState(msg.workflowId) } returns null
 
           coroutineScope { engine.handle(msg) }

@@ -37,15 +37,15 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
 internal fun CoroutineScope.dispatchTaskCmd(
-  newCommand: DispatchTaskPastCommand,
+  pastCommand: DispatchTaskPastCommand,
   state: WorkflowState,
   producer: InfiniticProducer
 ) {
   // send task to task executor
-  val executeTask: ExecuteTask = with(newCommand.command) {
+  val executeTask: ExecuteTask = with(pastCommand.command) {
     ExecuteTask(
         serviceName = serviceName,
-        taskId = TaskId.from(newCommand.commandId),
+        taskId = TaskId.from(pastCommand.commandId),
         clientWaiting = false,
         methodName = methodName,
         methodParameterTypes = methodParameterTypes,
@@ -56,7 +56,7 @@ internal fun CoroutineScope.dispatchTaskCmd(
         methodRunId = state.runningMethodRunId ?: thisShouldNotHappen(),
         lastError = null,
         taskRetryIndex = TaskRetryIndex(0),
-        taskRetrySequence = newCommand.taskRetrySequence,
+        taskRetrySequence = pastCommand.taskRetrySequence,
         taskTags = taskTags,
         taskMeta = taskMeta,
         emitterName = ClientName(producer.name),
@@ -77,10 +77,10 @@ internal fun CoroutineScope.dispatchTaskCmd(
   }
 
   // send global task timeout if any
-  val timeout = newCommand.command.methodTimeout
+  val timeout = pastCommand.command.methodTimeout
 
   if (timeout != null) {
-    val taskTimedOut = with(newCommand.command) {
+    val taskTimedOut = with(pastCommand.command) {
       TaskTimedOut(
           workflowName = state.workflowName,
           workflowId = state.workflowId,

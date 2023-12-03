@@ -26,8 +26,6 @@ import io.infinitic.common.data.ClientName
 import io.infinitic.common.data.MillisInstant
 import io.infinitic.common.exceptions.thisShouldNotHappen
 import io.infinitic.common.transport.InfiniticProducer
-import io.infinitic.common.workflows.data.commands.StartDurationTimerCommand
-import io.infinitic.common.workflows.data.commands.StartDurationTimerPastCommand
 import io.infinitic.common.workflows.data.commands.StartInstantTimerCommand
 import io.infinitic.common.workflows.data.commands.StartInstantTimerPastCommand
 import io.infinitic.common.workflows.data.timers.TimerId
@@ -37,20 +35,19 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
 internal fun CoroutineScope.startInstantTimerCmq(
-  newCommand: StartInstantTimerPastCommand,
+  pastCommand: StartInstantTimerPastCommand,
   state: WorkflowState,
   producer: InfiniticProducer
 ) {
-  val command: StartInstantTimerCommand = newCommand.command
+  val command: StartInstantTimerCommand = pastCommand.command
 
-  val msg =
-      TimerCompleted(
-          workflowName = state.workflowName,
-          workflowId = state.workflowId,
-          methodRunId = state.runningMethodRunId ?: thisShouldNotHappen(),
-          timerId = TimerId.from(newCommand.commandId),
-          emitterName = ClientName(producer.name),
-      )
+  val msg = TimerCompleted(
+      workflowName = state.workflowName,
+      workflowId = state.workflowId,
+      methodRunId = state.runningMethodRunId ?: thisShouldNotHappen(),
+      timerId = TimerId.from(pastCommand.commandId),
+      emitterName = ClientName(producer.name),
+  )
 
   launch { producer.send(msg, command.instant - MillisInstant.now()) }
 }

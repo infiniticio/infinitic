@@ -26,12 +26,14 @@ import io.github.oshai.kotlinlogging.KotlinLogging
 import io.infinitic.common.clients.messages.WorkflowIdsByTag
 import io.infinitic.common.data.ClientName
 import io.infinitic.common.exceptions.thisShouldNotHappen
+import io.infinitic.common.tasks.executors.errors.MethodTimedOutError
 import io.infinitic.common.transport.InfiniticProducer
 import io.infinitic.common.workflows.data.methodRuns.MethodRunId
 import io.infinitic.common.workflows.engine.messages.CancelWorkflow
+import io.infinitic.common.workflows.engine.messages.ChildMethodTimedOut
 import io.infinitic.common.workflows.engine.messages.CompleteTimers
-import io.infinitic.common.workflows.engine.messages.DispatchMethod
-import io.infinitic.common.workflows.engine.messages.DispatchWorkflow
+import io.infinitic.common.workflows.engine.messages.DispatchMethodOnRunningWorkflow
+import io.infinitic.common.workflows.engine.messages.DispatchNewWorkflow
 import io.infinitic.common.workflows.engine.messages.RetryTasks
 import io.infinitic.common.workflows.engine.messages.RetryWorkflowTask
 import io.infinitic.common.workflows.engine.messages.SendSignal
@@ -102,7 +104,7 @@ class WorkflowTagEngine(
             }
           }
           // dispatch workflow message
-          val dispatchWorkflow = DispatchWorkflow(
+          val dispatchWorkflow = DispatchNewWorkflow(
               workflowName = message.workflowName,
               workflowId = message.workflowId,
               methodName = message.methodName,
@@ -118,6 +120,25 @@ class WorkflowTagEngine(
           )
 
           launch { producer.send(dispatchWorkflow) }
+
+          // send global timeout if needed
+          val timeout = message.methodTimeout
+
+          if (timeout != null && message.parentWorkflowId != null) {
+            val childMethodTimedOut = ChildMethodTimedOut(
+                workflowName = message.parentWorkflowName ?: thisShouldNotHappen(),
+                workflowId = message.parentWorkflowId ?: thisShouldNotHappen(),
+                methodRunId = message.parentMethodRunId ?: thisShouldNotHappen(),
+                childMethodTimedOutError = MethodTimedOutError(
+                    workflowName = message.workflowName,
+                    workflowId = message.workflowId,
+                    methodName = message.methodName,
+                    methodRunId = null,
+                ),
+                emitterName = ClientName(producer.name),
+            )
+            launch { producer.send(childMethodTimedOut, timeout) }
+          }
         }
         // Another running workflow instance exist with same custom id
         1 -> {
@@ -158,7 +179,7 @@ class WorkflowTagEngine(
         false -> ids.forEach {
           // parent workflow already applied method to self
           if (it != message.parentWorkflowId) {
-            val dispatchMethod = DispatchMethod(
+            val dispatchMethod = DispatchMethodOnRunningWorkflow(
                 workflowName = message.workflowName,
                 workflowId = it,
                 methodRunId = message.methodRunId,
@@ -172,6 +193,24 @@ class WorkflowTagEngine(
                 emitterName = clientName,
             )
             launch { producer.send(dispatchMethod) }
+
+            // set timeout if any,
+            if (message.methodTimeout != null && message.parentWorkflowId != null) {
+              val childMethodTimedOut = ChildMethodTimedOut(
+                  workflowName = message.parentWorkflowName!!,
+                  workflowId = message.parentWorkflowId!!,
+                  methodRunId = message.parentMethodRunId!!,
+                  childMethodTimedOutError = MethodTimedOutError(
+                      workflowName = message.workflowName,
+                      workflowId = it,
+                      methodName = message.methodName,
+                      methodRunId = message.methodRunId,
+                  ),
+                  emitterName = ClientName(producer.name),
+              )
+
+              launch { producer.send(childMethodTimedOut, message.methodTimeout!!) }
+            }
           }
         }
       }

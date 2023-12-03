@@ -39,6 +39,6 @@ internal fun CoroutineScope.childMethodFailed(
     producer,
     state,
     message.methodRunId,
-    CommandId.from(message.childWorkflowFailedError.methodRunId ?: thisShouldNotHappen()),
-    CommandStatus.Failed(message.childWorkflowFailedError, state.workflowTaskIndex),
+    CommandId.from(message.childMethodFailedError.methodRunId ?: thisShouldNotHappen()),
+    CommandStatus.Failed(message.childMethodFailedError, state.workflowTaskIndex),
 )

@@ -36,8 +36,8 @@ import org.apache.avro.Schema
 data class WorkflowEngineEnvelope(
   private val workflowId: WorkflowId,
   @AvroNamespace("io.infinitic.workflows.engine") private val type: WorkflowEngineMessageType,
-  private val dispatchWorkflow: DispatchWorkflow? = null,
-  private val dispatchMethod: DispatchMethod? = null,
+  private val dispatchWorkflow: DispatchNewWorkflow? = null,
+  private val dispatchMethod: DispatchMethodOnRunningWorkflow? = null,
   private val waitWorkflow: WaitWorkflow? = null,
   private val cancelWorkflow: CancelWorkflow? = null,
   private val retryWorkflowTask: RetryWorkflowTask? = null,
@@ -100,14 +100,14 @@ data class WorkflowEngineEnvelope(
   companion object {
     fun from(msg: WorkflowEngineMessage) =
         when (msg) {
-          is DispatchWorkflow ->
+          is DispatchNewWorkflow ->
             WorkflowEngineEnvelope(
                 workflowId = msg.workflowId,
                 type = WorkflowEngineMessageType.DISPATCH_WORKFLOW,
                 dispatchWorkflow = msg,
             )
 
-          is DispatchMethod ->
+          is DispatchMethodOnRunningWorkflow ->
             WorkflowEngineEnvelope(
                 workflowId = msg.workflowId,
                 type = WorkflowEngineMessageType.DISPATCH_METHOD,

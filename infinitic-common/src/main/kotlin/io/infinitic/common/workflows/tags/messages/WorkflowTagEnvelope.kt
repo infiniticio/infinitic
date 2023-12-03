@@ -33,19 +33,18 @@ import org.apache.avro.Schema
 @Serializable
 @AvroNamespace("io.infinitic.workflows.tag")
 data class WorkflowTagEnvelope(
-    private val name: String,
-    @AvroNamespace("io.infinitic.workflows.tag") private val type: WorkflowTagMessageType,
-    @AvroDefault(Avro.NULL)
-    private val dispatchWorkflowByCustomId: DispatchWorkflowByCustomId? = null,
-    private val dispatchMethodByTag: DispatchMethodByTag? = null,
-    private val addTagToWorkflow: AddTagToWorkflow? = null,
-    private val removeTagFromWorkflow: RemoveTagFromWorkflow? = null,
-    private val sendSignalByTag: SendSignalByTag? = null,
-    private val cancelWorkflowByTag: CancelWorkflowByTag? = null,
-    private val retryWorkflowTaskByTag: RetryWorkflowTaskByTag? = null,
-    private val retryTasksByTag: RetryTasksByTag? = null,
-    @AvroDefault(Avro.NULL) private val completeTimersByTag: CompleteTimersByTag? = null,
-    private val getWorkflowIdsByTag: GetWorkflowIdsByTag? = null
+  private val name: String,
+  @AvroNamespace("io.infinitic.workflows.tag") private val type: WorkflowTagMessageType,
+  @AvroDefault(Avro.NULL) private val dispatchWorkflowByCustomId: DispatchWorkflowByCustomId? = null,
+  private val dispatchMethodByTag: DispatchMethodByTag? = null,
+  private val addTagToWorkflow: AddTagToWorkflow? = null,
+  private val removeTagFromWorkflow: RemoveTagFromWorkflow? = null,
+  private val sendSignalByTag: SendSignalByTag? = null,
+  private val cancelWorkflowByTag: CancelWorkflowByTag? = null,
+  private val retryWorkflowTaskByTag: RetryWorkflowTaskByTag? = null,
+  private val retryTasksByTag: RetryTasksByTag? = null,
+  @AvroDefault(Avro.NULL) private val completeTimersByTag: CompleteTimersByTag? = null,
+  private val getWorkflowIdsByTag: GetWorkflowIdsByTag? = null
 ) : Envelope<WorkflowTagMessage> {
 
   init {
@@ -60,7 +59,8 @@ data class WorkflowTagEnvelope(
             retryTasksByTag,
             completeTimersByTag,
             dispatchMethodByTag,
-            getWorkflowIdsByTag)
+            getWorkflowIdsByTag,
+        )
 
     require(noNull.size == 1)
     require(noNull.first() == message())
@@ -71,55 +71,74 @@ data class WorkflowTagEnvelope(
     fun from(msg: WorkflowTagMessage) =
         when (msg) {
           is DispatchWorkflowByCustomId ->
-              WorkflowTagEnvelope(
-                  name = "${msg.workflowName}",
-                  type = WorkflowTagMessageType.DISPATCH_WORKFLOW_BY_CUSTOM_ID,
-                  dispatchWorkflowByCustomId = msg)
+            WorkflowTagEnvelope(
+                name = "${msg.workflowName}",
+                type = WorkflowTagMessageType.DISPATCH_WORKFLOW_BY_CUSTOM_ID,
+                dispatchWorkflowByCustomId = msg,
+            )
+
           is AddTagToWorkflow ->
-              WorkflowTagEnvelope(
-                  name = "${msg.workflowName}",
-                  type = WorkflowTagMessageType.ADD_TAG_TO_WORKFLOW,
-                  addTagToWorkflow = msg)
+            WorkflowTagEnvelope(
+                name = "${msg.workflowName}",
+                type = WorkflowTagMessageType.ADD_TAG_TO_WORKFLOW,
+                addTagToWorkflow = msg,
+            )
+
           is RemoveTagFromWorkflow ->
-              WorkflowTagEnvelope(
-                  name = "${msg.workflowName}",
-                  type = WorkflowTagMessageType.REMOVE_TAG_FROM_WORKFLOW,
-                  removeTagFromWorkflow = msg)
+            WorkflowTagEnvelope(
+                name = "${msg.workflowName}",
+                type = WorkflowTagMessageType.REMOVE_TAG_FROM_WORKFLOW,
+                removeTagFromWorkflow = msg,
+            )
+
           is SendSignalByTag ->
-              WorkflowTagEnvelope(
-                  name = "${msg.workflowName}",
-                  type = WorkflowTagMessageType.SEND_SIGNAL_BY_TAG,
-                  sendSignalByTag = msg)
+            WorkflowTagEnvelope(
+                name = "${msg.workflowName}",
+                type = WorkflowTagMessageType.SEND_SIGNAL_BY_TAG,
+                sendSignalByTag = msg,
+            )
+
           is CancelWorkflowByTag ->
-              WorkflowTagEnvelope(
-                  name = "${msg.workflowName}",
-                  type = WorkflowTagMessageType.CANCEL_WORKFLOW_BY_TAG,
-                  cancelWorkflowByTag = msg)
+            WorkflowTagEnvelope(
+                name = "${msg.workflowName}",
+                type = WorkflowTagMessageType.CANCEL_WORKFLOW_BY_TAG,
+                cancelWorkflowByTag = msg,
+            )
+
           is RetryWorkflowTaskByTag ->
-              WorkflowTagEnvelope(
-                  name = "${msg.workflowName}",
-                  type = WorkflowTagMessageType.RETRY_WORKFLOW_TASK_BY_TAG,
-                  retryWorkflowTaskByTag = msg)
+            WorkflowTagEnvelope(
+                name = "${msg.workflowName}",
+                type = WorkflowTagMessageType.RETRY_WORKFLOW_TASK_BY_TAG,
+                retryWorkflowTaskByTag = msg,
+            )
+
           is RetryTasksByTag ->
-              WorkflowTagEnvelope(
-                  name = "${msg.workflowName}",
-                  type = WorkflowTagMessageType.RETRY_TASKS_BY_TAG,
-                  retryTasksByTag = msg)
+            WorkflowTagEnvelope(
+                name = "${msg.workflowName}",
+                type = WorkflowTagMessageType.RETRY_TASKS_BY_TAG,
+                retryTasksByTag = msg,
+            )
+
           is CompleteTimersByTag ->
-              WorkflowTagEnvelope(
-                  name = "${msg.workflowName}",
-                  type = WorkflowTagMessageType.COMPLETE_TIMER_BY_TAG,
-                  completeTimersByTag = msg)
+            WorkflowTagEnvelope(
+                name = "${msg.workflowName}",
+                type = WorkflowTagMessageType.COMPLETE_TIMER_BY_TAG,
+                completeTimersByTag = msg,
+            )
+
           is DispatchMethodByTag ->
-              WorkflowTagEnvelope(
-                  name = "${msg.workflowName}",
-                  type = WorkflowTagMessageType.DISPATCH_METHOD_BY_TAG,
-                  dispatchMethodByTag = msg)
+            WorkflowTagEnvelope(
+                name = "${msg.workflowName}",
+                type = WorkflowTagMessageType.DISPATCH_METHOD_BY_TAG,
+                dispatchMethodByTag = msg,
+            )
+
           is GetWorkflowIdsByTag ->
-              WorkflowTagEnvelope(
-                  name = "${msg.workflowName}",
-                  type = WorkflowTagMessageType.GET_WORKFLOW_IDS_BY_TAG,
-                  getWorkflowIdsByTag = msg)
+            WorkflowTagEnvelope(
+                name = "${msg.workflowName}",
+                type = WorkflowTagMessageType.GET_WORKFLOW_IDS_BY_TAG,
+                getWorkflowIdsByTag = msg,
+            )
         }
 
     /** Deserialize from a byte array and an avro schema */

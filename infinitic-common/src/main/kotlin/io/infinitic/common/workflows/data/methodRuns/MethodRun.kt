@@ -29,9 +29,9 @@ import io.infinitic.common.data.methods.MethodName
 import io.infinitic.common.data.methods.MethodParameterTypes
 import io.infinitic.common.data.methods.MethodParameters
 import io.infinitic.common.workflows.data.commands.CommandId
-import io.infinitic.common.workflows.data.commands.DispatchMethodCommand
+import io.infinitic.common.workflows.data.commands.DispatchExistingWorkflowCommand
+import io.infinitic.common.workflows.data.commands.DispatchNewWorkflowCommand
 import io.infinitic.common.workflows.data.commands.DispatchTaskCommand
-import io.infinitic.common.workflows.data.commands.DispatchWorkflowCommand
 import io.infinitic.common.workflows.data.commands.PastCommand
 import io.infinitic.common.workflows.data.properties.PropertyHash
 import io.infinitic.common.workflows.data.properties.PropertyName
@@ -44,21 +44,21 @@ import kotlinx.serialization.Serializable
 @Serializable
 @AvroNamespace("io.infinitic.workflows.data")
 data class MethodRun(
-    /** clients synchronously waiting for the returned value */
-    val waitingClients: MutableSet<ClientName>,
-    val methodRunId: MethodRunId,
-    val parentWorkflowId: WorkflowId?,
-    val parentWorkflowName: WorkflowName?,
-    val parentMethodRunId: MethodRunId?,
-    val methodName: MethodName,
-    val methodParameterTypes: MethodParameterTypes?,
-    val methodParameters: MethodParameters,
-    var methodReturnValue: ReturnValue? = null,
-    val workflowTaskIndexAtStart: WorkflowTaskIndex,
-    val propertiesNameHashAtStart: Map<PropertyName, PropertyHash>,
-    val pastCommands: MutableList<PastCommand> = mutableListOf(),
-    val pastSteps: MutableList<PastStep> = mutableListOf(),
-    var currentStep: PastStep? = null
+  /** clients synchronously waiting for the returned value */
+  val waitingClients: MutableSet<ClientName>,
+  val methodRunId: MethodRunId,
+  val parentWorkflowId: WorkflowId?,
+  val parentWorkflowName: WorkflowName?,
+  val parentMethodRunId: MethodRunId?,
+  val methodName: MethodName,
+  val methodParameterTypes: MethodParameterTypes?,
+  val methodParameters: MethodParameters,
+  var methodReturnValue: ReturnValue? = null,
+  val workflowTaskIndexAtStart: WorkflowTaskIndex,
+  val propertiesNameHashAtStart: Map<PropertyName, PropertyHash>,
+  val pastCommands: MutableList<PastCommand> = mutableListOf(),
+  val pastSteps: MutableList<PastStep> = mutableListOf(),
+  var currentStep: PastStep? = null
 ) {
   /** Retrieve step by position */
   fun getStepByPosition(position: MethodRunPosition): PastStep? =
@@ -80,9 +80,10 @@ data class MethodRun(
           pastCommands
               .filter {
                 when (it.command) {
-                  is DispatchWorkflowCommand,
-                  is DispatchMethodCommand,
+                  is DispatchNewWorkflowCommand,
+                  is DispatchExistingWorkflowCommand,
                   is DispatchTaskCommand -> true
+
                   else -> false
                 }
               }

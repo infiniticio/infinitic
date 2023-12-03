@@ -26,7 +26,7 @@ import io.github.oshai.kotlinlogging.KotlinLogging
 import io.infinitic.common.clients.messages.MethodRunUnknown
 import io.infinitic.common.data.ClientName
 import io.infinitic.common.exceptions.thisShouldNotHappen
-import io.infinitic.common.tasks.executors.errors.WorkflowUnknownError
+import io.infinitic.common.tasks.executors.errors.MethodUnknownError
 import io.infinitic.common.transport.InfiniticProducer
 import io.infinitic.common.workflows.engine.messages.CancelWorkflow
 import io.infinitic.common.workflows.engine.messages.ChildMethodCanceled
@@ -36,8 +36,8 @@ import io.infinitic.common.workflows.engine.messages.ChildMethodTimedOut
 import io.infinitic.common.workflows.engine.messages.ChildMethodUnknown
 import io.infinitic.common.workflows.engine.messages.CompleteTimers
 import io.infinitic.common.workflows.engine.messages.CompleteWorkflow
-import io.infinitic.common.workflows.engine.messages.DispatchMethod
-import io.infinitic.common.workflows.engine.messages.DispatchWorkflow
+import io.infinitic.common.workflows.engine.messages.DispatchMethodOnRunningWorkflow
+import io.infinitic.common.workflows.engine.messages.DispatchNewWorkflow
 import io.infinitic.common.workflows.engine.messages.MethodEvent
 import io.infinitic.common.workflows.engine.messages.RetryTasks
 import io.infinitic.common.workflows.engine.messages.RetryWorkflowTask
@@ -135,14 +135,14 @@ class WorkflowEngine(
     message: WorkflowEngineMessage
   ): WorkflowState? = coroutineScope {
     // New workflow to dispatch
-    if (message is DispatchWorkflow) {
+    if (message is DispatchNewWorkflow) {
       return@coroutineScope dispatchWorkflow(producer, message)
     }
 
     // targeted workflow is not found, we tell the message emitter
     when (message) {
       // a client wants to dispatch a method on the missing workflow
-      is DispatchMethod -> {
+      is DispatchMethodOnRunningWorkflow -> {
         if (message.clientWaiting) {
           val methodRunUnknown = MethodRunUnknown(
               recipientName = message.emitterName,
@@ -159,8 +159,8 @@ class WorkflowEngine(
                   workflowId = message.parentWorkflowId!!,
                   workflowName = message.parentWorkflowName ?: thisShouldNotHappen(),
                   methodRunId = message.parentMethodRunId ?: thisShouldNotHappen(),
-                  childWorkflowUnknownError =
-                  WorkflowUnknownError(
+                  childMethodUnknownError =
+                  MethodUnknownError(
                       workflowName = message.workflowName,
                       workflowId = message.workflowId,
                       methodRunId = message.methodRunId,
@@ -250,7 +250,7 @@ class WorkflowEngine(
     if (message.isWorkflowTaskEvent()) state.runningWorkflowTaskId = null
 
     when (message) {
-      is DispatchMethod -> {
+      is DispatchMethodOnRunningWorkflow -> {
         // Idempotency: do not relaunch if this method has already been launched
         if (state.getMethodRun(message.methodRunId) != null) {
           logDiscarding(message) { "as this method has already been launched" }
@@ -282,8 +282,8 @@ class WorkflowEngine(
     }
 
     when (message) {
-      is DispatchWorkflow -> logDiscarding(message) { "as workflow has already started" }
-      is DispatchMethod -> dispatchMethod(producer, state, message)
+      is DispatchNewWorkflow -> logDiscarding(message) { "as workflow has already started" }
+      is DispatchMethodOnRunningWorkflow -> dispatchMethod(producer, state, message)
       is CancelWorkflow -> cancelWorkflow(producer, state, message)
       is SendSignal -> sendSignal(producer, state, message)
       is WaitWorkflow -> waitWorkflow(producer, state, message)

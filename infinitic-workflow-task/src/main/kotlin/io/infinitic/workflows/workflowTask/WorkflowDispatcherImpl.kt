@@ -41,9 +41,9 @@ import io.infinitic.common.workflows.data.channels.SignalData
 import io.infinitic.common.workflows.data.commands.Command
 import io.infinitic.common.workflows.data.commands.CommandSimpleName
 import io.infinitic.common.workflows.data.commands.CommandStatus
-import io.infinitic.common.workflows.data.commands.DispatchMethodCommand
+import io.infinitic.common.workflows.data.commands.DispatchExistingWorkflowCommand
+import io.infinitic.common.workflows.data.commands.DispatchNewWorkflowCommand
 import io.infinitic.common.workflows.data.commands.DispatchTaskCommand
-import io.infinitic.common.workflows.data.commands.DispatchWorkflowCommand
 import io.infinitic.common.workflows.data.commands.InlineTaskCommand
 import io.infinitic.common.workflows.data.commands.PastCommand
 import io.infinitic.common.workflows.data.commands.ReceiveSignalCommand
@@ -363,7 +363,7 @@ internal class WorkflowDispatcherImpl(
           }
 
           dispatchCommand(
-              DispatchWorkflowCommand(
+              DispatchNewWorkflowCommand(
                   workflowName = handler.workflowName,
                   methodName = handler.methodName,
                   methodParameterTypes = handler.methodParameterTypes,
@@ -382,7 +382,7 @@ internal class WorkflowDispatcherImpl(
       when (handler.isChannelGetter()) {
         true -> throw InvalidChannelUsageException()
         false -> dispatchCommand(
-            DispatchMethodCommand(
+            DispatchExistingWorkflowCommand(
                 workflowName = handler.workflowName,
                 workflowId = handler.requestBy.workflowId,
                 workflowTag = handler.requestBy.workflowTag,

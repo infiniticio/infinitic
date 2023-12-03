@@ -26,9 +26,9 @@ import io.infinitic.common.clients.messages.MethodCompleted
 import io.infinitic.common.data.ClientName
 import io.infinitic.common.exceptions.thisShouldNotHappen
 import io.infinitic.common.transport.InfiniticProducer
-import io.infinitic.common.workflows.data.commands.DispatchMethodPastCommand
+import io.infinitic.common.workflows.data.commands.DispatchExistingWorkflowPastCommand
+import io.infinitic.common.workflows.data.commands.DispatchNewWorkflowPastCommand
 import io.infinitic.common.workflows.data.commands.DispatchTaskPastCommand
-import io.infinitic.common.workflows.data.commands.DispatchWorkflowPastCommand
 import io.infinitic.common.workflows.data.commands.InlineTaskPastCommand
 import io.infinitic.common.workflows.data.commands.ReceiveSignalPastCommand
 import io.infinitic.common.workflows.data.commands.SendSignalPastCommand
@@ -45,9 +45,9 @@ import io.infinitic.common.workflows.engine.messages.ChildMethodCompleted
 import io.infinitic.common.workflows.engine.messages.TaskCompleted
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
 import io.infinitic.common.workflows.engine.state.WorkflowState
-import io.infinitic.workflows.engine.commands.dispatchMethodCmd
+import io.infinitic.workflows.engine.commands.dispatchExistingWorkflowCmd
+import io.infinitic.workflows.engine.commands.dispatchNewWorkflowCmd
 import io.infinitic.workflows.engine.commands.dispatchTaskCmd
-import io.infinitic.workflows.engine.commands.dispatchWorkflowCmd
 import io.infinitic.workflows.engine.commands.receiveSignalCmd
 import io.infinitic.workflows.engine.commands.sendSignalCmd
 import io.infinitic.workflows.engine.commands.startDurationTimerCmd
@@ -109,8 +109,14 @@ internal fun CoroutineScope.workflowTaskCompleted(
     @Suppress("UNUSED_VARIABLE")
     val o = when (it) {
       is DispatchTaskPastCommand -> dispatchTaskCmd(it, state, producer)
-      is DispatchWorkflowPastCommand -> dispatchWorkflowCmd(it, state, producer)
-      is DispatchMethodPastCommand -> dispatchMethodCmd(it, state, producer, bufferedMessages)
+      is DispatchNewWorkflowPastCommand -> dispatchNewWorkflowCmd(it, state, producer)
+      is DispatchExistingWorkflowPastCommand -> dispatchExistingWorkflowCmd(
+          it,
+          state,
+          producer,
+          bufferedMessages,
+      )
+
       is SendSignalPastCommand -> sendSignalCmd(it, state, producer, bufferedMessages)
       is InlineTaskPastCommand -> Unit // Nothing to do
       is StartDurationTimerPastCommand -> startDurationTimerCmd(it, state, producer)

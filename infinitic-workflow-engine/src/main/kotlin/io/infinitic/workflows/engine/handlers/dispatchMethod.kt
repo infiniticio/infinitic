@@ -25,7 +25,7 @@ package io.infinitic.workflows.engine.handlers
 import io.infinitic.common.transport.InfiniticProducer
 import io.infinitic.common.workflows.data.methodRuns.MethodRun
 import io.infinitic.common.workflows.data.methodRuns.MethodRunPosition
-import io.infinitic.common.workflows.engine.messages.DispatchMethod
+import io.infinitic.common.workflows.engine.messages.DispatchMethodOnRunningWorkflow
 import io.infinitic.common.workflows.engine.state.WorkflowState
 import io.infinitic.workflows.engine.helpers.dispatchWorkflowTask
 import kotlinx.coroutines.CoroutineScope
@@ -33,7 +33,7 @@ import kotlinx.coroutines.CoroutineScope
 internal fun CoroutineScope.dispatchMethod(
   producer: InfiniticProducer,
   state: WorkflowState,
-  message: DispatchMethod
+  message: DispatchMethodOnRunningWorkflow
 ) {
   val methodRun = MethodRun(
       methodRunId = message.methodRunId,

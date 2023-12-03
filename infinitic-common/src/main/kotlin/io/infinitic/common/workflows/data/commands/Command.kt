@@ -75,7 +75,7 @@ data class DispatchTaskCommand(
 
 @Serializable
 @SerialName("Command.DispatchWorkflow")
-data class DispatchWorkflowCommand(
+data class DispatchNewWorkflowCommand(
   val workflowName: WorkflowName,
   val methodName: MethodName,
   val methodParameterTypes: MethodParameterTypes,
@@ -87,7 +87,7 @@ data class DispatchWorkflowCommand(
   override fun isSameThan(other: Command): Boolean {
     if (this === other) return true
     if (javaClass != other.javaClass) return false
-    other as DispatchWorkflowCommand
+    other as DispatchNewWorkflowCommand
 
     return workflowName == other.workflowName &&
         methodName == other.methodName &&
@@ -98,7 +98,7 @@ data class DispatchWorkflowCommand(
 
 @Serializable
 @SerialName("Command.DispatchMethod")
-data class DispatchMethodCommand(
+data class DispatchExistingWorkflowCommand(
   val workflowName: WorkflowName,
   val workflowId: WorkflowId?,
   val workflowTag: WorkflowTag?,
@@ -110,7 +110,7 @@ data class DispatchMethodCommand(
   override fun isSameThan(other: Command): Boolean {
     if (this === other) return true
     if (javaClass != other.javaClass) return false
-    other as DispatchMethodCommand
+    other as DispatchExistingWorkflowCommand
 
     return workflowName == other.workflowName &&
         workflowId == other.workflowId &&

@@ -39,6 +39,6 @@ internal fun CoroutineScope.childMethodUnknown(
     producer,
     state,
     message.methodRunId,
-    CommandId.from(message.childWorkflowUnknownError.methodRunId ?: thisShouldNotHappen()),
-    CommandStatus.Unknown(message.childWorkflowUnknownError, state.workflowTaskIndex),
+    CommandId.from(message.childMethodUnknownError.methodRunId ?: thisShouldNotHappen()),
+    CommandStatus.Unknown(message.childMethodUnknownError, state.workflowTaskIndex),
 )

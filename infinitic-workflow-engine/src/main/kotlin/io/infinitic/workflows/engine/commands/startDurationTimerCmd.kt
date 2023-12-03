@@ -35,17 +35,17 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
 internal fun CoroutineScope.startDurationTimerCmd(
-  newCommand: StartDurationTimerPastCommand,
+  pastCommand: StartDurationTimerPastCommand,
   state: WorkflowState,
   producer: InfiniticProducer
 ) {
-  val command: StartDurationTimerCommand = newCommand.command
+  val command: StartDurationTimerCommand = pastCommand.command
 
   val msg = TimerCompleted(
       workflowName = state.workflowName,
       workflowId = state.workflowId,
       methodRunId = state.runningMethodRunId ?: thisShouldNotHappen(),
-      timerId = TimerId.from(newCommand.commandId),
+      timerId = TimerId.from(pastCommand.commandId),
       emitterName = ClientName(producer.name),
   )
   // The duration is offset by the time spent in the workflow task

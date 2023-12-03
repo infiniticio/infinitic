@@ -22,25 +22,13 @@
  */
 package io.infinitic.workflows.engine.commands
 
-import io.infinitic.common.data.ClientName
-import io.infinitic.common.data.MillisInstant
-import io.infinitic.common.exceptions.thisShouldNotHappen
-import io.infinitic.common.transport.InfiniticProducer
 import io.infinitic.common.workflows.data.channels.ReceivingChannel
 import io.infinitic.common.workflows.data.commands.ReceiveSignalCommand
 import io.infinitic.common.workflows.data.commands.ReceiveSignalPastCommand
-import io.infinitic.common.workflows.data.commands.StartDurationTimerCommand
-import io.infinitic.common.workflows.data.commands.StartDurationTimerPastCommand
-import io.infinitic.common.workflows.data.commands.StartInstantTimerCommand
-import io.infinitic.common.workflows.data.commands.StartInstantTimerPastCommand
-import io.infinitic.common.workflows.data.timers.TimerId
-import io.infinitic.common.workflows.engine.messages.TimerCompleted
 import io.infinitic.common.workflows.engine.state.WorkflowState
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.launch
 
-internal fun receiveSignalCmd(newCommand: ReceiveSignalPastCommand, state: WorkflowState) {
-  val command: ReceiveSignalCommand = newCommand.command
+internal fun receiveSignalCmd(pastCommand: ReceiveSignalPastCommand, state: WorkflowState) {
+  val command: ReceiveSignalCommand = pastCommand.command
 
   state.receivingChannels.add(
       ReceivingChannel(
@@ -48,7 +36,7 @@ internal fun receiveSignalCmd(newCommand: ReceiveSignalPastCommand, state: Workf
           channelType = command.channelType,
           channelFilter = command.channelFilter,
           methodRunId = state.runningMethodRunId!!,
-          commandId = newCommand.commandId,
+          commandId = pastCommand.commandId,
           receivedSignalLimit = command.receivedSignalLimit,
       ),
   )
