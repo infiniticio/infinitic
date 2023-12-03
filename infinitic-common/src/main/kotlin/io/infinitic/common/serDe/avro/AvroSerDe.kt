@@ -149,9 +149,8 @@ object AvroSerDe {
         .filter { it.isNotEmpty() }
         .associateWith { version ->
           val url = "/$SCHEMAS_FOLDER/$prefix-$version.avsc"
-          val schemaTxt =
-              this::class.java.getResource(url)?.readText()
-                ?: thisShouldNotHappen("Can't find schema file $url")
+          val schemaTxt = this::class.java.getResource(url)?.readText()
+            ?: thisShouldNotHappen("Can't find schema file $url")
           Schema.Parser().parse(schemaTxt)
         }
   }

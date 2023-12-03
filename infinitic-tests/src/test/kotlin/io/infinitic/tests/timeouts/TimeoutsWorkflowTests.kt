@@ -28,7 +28,7 @@ import io.infinitic.exceptions.WorkflowTimedOutException
 import io.infinitic.tests.Test
 import io.infinitic.tests.utils.UtilService
 import io.infinitic.workflows.DeferredStatus
-import io.kotest.assertions.throwables.shouldNotThrow
+import io.kotest.assertions.throwables.shouldNotThrowAny
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
@@ -58,7 +58,7 @@ internal class TimeoutsWorkflowTests :
         }
 
         "timeout on a synchronous task should NOT throw if slower than the task" {
-          shouldNotThrow<WorkflowFailedException> { timeoutsWorkflow.withTaskTimeout(10) }
+          shouldNotThrowAny { timeoutsWorkflow.withTaskTimeout(10) }
         }
 
         "timeout triggered on a synchronous task can be caught" {

@@ -58,7 +58,7 @@ internal inline fun <reified T : Any> checkBackwardCompatibility(serializer: KSe
   val schemaList = getAllSchemas<T>().values
 
   // checking that we did not silently break something
-  schemaList.size shouldBeGreaterThan 1
+  schemaList.size shouldBeGreaterThan 20
 
   // checking that we can read T from any previous version
   val validator = SchemaValidatorBuilder().canReadStrategy().validateAll()
