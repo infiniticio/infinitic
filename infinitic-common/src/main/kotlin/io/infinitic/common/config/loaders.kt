@@ -36,7 +36,6 @@ inline fun <reified T : Any> loadConfigFromResource(resources: List<String>): T 
           .also { builder ->
             resources.map { builder.addSource(PropertySource.resource(it, false)) }
           }
-          .strict()
           .build()
           .loadConfigOrThrow<T>()
   logger.info { "Config loaded from resource: $config" }
@@ -48,7 +47,6 @@ inline fun <reified T : Any> loadConfigFromFile(files: List<String>): T {
   val config =
       ConfigLoaderBuilder.default()
           .also { builder -> files.map { builder.addSource(PropertySource.file(File(it), false)) } }
-          .strict()
           .build()
           .loadConfigOrThrow<T>()
   logger.info { "Config loaded from file: $config" }
@@ -60,7 +58,6 @@ inline fun <reified T : Any> loadConfigFromYaml(yaml: String): T {
   val config =
       ConfigLoaderBuilder.default()
           .also { builder -> builder.addSource(YamlPropertySource(yaml)) }
-          .strict()
           .build()
           .loadConfigOrThrow<T>()
   logger.info { "Config loaded from yaml: $config" }
