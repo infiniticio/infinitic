@@ -20,8 +20,11 @@
  *
  * Licensor: infinitic.io
  */
+@file:Suppress("unused")
+
 package io.infinitic.tests.utils
 
+import io.infinitic.annotations.Timeout
 import io.infinitic.common.tasks.data.TaskMeta
 import io.infinitic.tasks.Task
 import io.infinitic.tasks.WithRetry
@@ -32,6 +35,7 @@ interface ParentInterface {
   fun parent(): String
 }
 
+//@Name("UtilService")
 interface UtilService : ParentInterface {
   fun concat(str1: String, str2: String): String
 
@@ -57,12 +61,19 @@ interface UtilService : ParentInterface {
 
   fun meta(): TaskMeta
 
-  fun withRetry(): WithRetry?
+  fun getRetry(): WithRetry?
 
-  fun withTimeout(): WithTimeout?
+  fun getTimeout(): WithTimeout?
+
+  @Timeout(After100MilliSeconds::class)
+  // Timeout at Service level
+  fun withTimeout(wait: Long): Long
+
+  @Timeout(After100MilliSeconds::class)
+  // Timeout at Service level
+  fun tryAgain(): Int
 }
 
-@Suppress("unused")
 class UtilServiceImpl : UtilService {
   override fun concat(str1: String, str2: String): String = str1 + str2
 
@@ -105,7 +116,20 @@ class UtilServiceImpl : UtilService {
 
   override fun meta() = TaskMeta(Task.meta)
 
-  override fun withRetry(): WithRetry? = Task.context.get().withRetry
+  override fun getRetry(): WithRetry? = Task.context.get().withRetry
 
-  override fun withTimeout(): WithTimeout? = Task.context.get().withTimeout
+  override fun getTimeout(): WithTimeout? = Task.context.get().withTimeout
+
+  override fun withTimeout(wait: Long): Long {
+    Thread.sleep(wait)
+    return wait
+  }
+
+  override fun tryAgain(): Int {
+    if (Task.retrySequence == 0) {
+      Thread.sleep(10000)
+      return 0
+    }
+    return Task.retrySequence
+  }
 }

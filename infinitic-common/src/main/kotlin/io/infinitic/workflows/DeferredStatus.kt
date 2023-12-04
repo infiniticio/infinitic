@@ -28,4 +28,5 @@ enum class DeferredStatus {
   CANCELED,
   FAILED,
   COMPLETED,
+  TIMED_OUT,
 }

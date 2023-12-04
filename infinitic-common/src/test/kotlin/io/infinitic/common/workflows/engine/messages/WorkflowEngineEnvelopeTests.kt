@@ -23,38 +23,37 @@
 package io.infinitic.common.workflows.engine.messages
 
 import io.infinitic.common.checkBackwardCompatibility
-import io.infinitic.common.checkCurrentFileIsUpToDate
-import io.infinitic.common.createSchemaFileIfAbsent
+import io.infinitic.common.checkOrCreateCurrentFile
 import io.infinitic.common.fixtures.TestFactory
 import io.kotest.assertions.throwables.shouldNotThrowAny
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
 
 class WorkflowEngineEnvelopeTests :
-    StringSpec({
-      WorkflowEngineMessage::class.sealedSubclasses.map {
-        val msg = TestFactory.random(it)
+  StringSpec(
+      {
+        WorkflowEngineMessage::class.sealedSubclasses.map {
+          val msg = TestFactory.random(it)
 
-        "WorkflowEngineEnvelope(${msg::class.simpleName}) should be avro-convertible" {
-          shouldNotThrowAny {
-            val envelope = WorkflowEngineEnvelope.from(msg)
-            val byteArray = envelope.toByteArray()
+          "WorkflowEngineEnvelope(${msg::class.simpleName}) should be avro-convertible" {
+            shouldNotThrowAny {
+              val envelope = WorkflowEngineEnvelope.from(msg)
+              val byteArray = envelope.toByteArray()
 
-            WorkflowEngineEnvelope.fromByteArray(
-                byteArray, WorkflowEngineEnvelope.writerSchema) shouldBe envelope
+              WorkflowEngineEnvelope.fromByteArray(
+                  byteArray, WorkflowEngineEnvelope.writerSchema,
+              ) shouldBe envelope
+            }
           }
         }
-      }
 
-      "Create schema file for the current version if it does not exist yet" {
-        createSchemaFileIfAbsent(WorkflowEngineEnvelope.serializer())
-      }
+        "Existing schema file should be up-to-date with the current version" {
+          // An error in this test means that we need to upgrade the version
+          checkOrCreateCurrentFile(WorkflowEngineEnvelope.serializer())
+        }
 
-      "Existing schema file should be up-to-date with the current version" {
-        checkCurrentFileIsUpToDate(WorkflowEngineEnvelope.serializer())
-      }
-
-      "Avro Schema should be backward compatible to 0.9.0" {
-        checkBackwardCompatibility(WorkflowEngineEnvelope.serializer())
-      }
-    })
+        "Avro Schema should be backward compatible to 0.9.0" {
+          checkBackwardCompatibility(WorkflowEngineEnvelope.serializer())
+        }
+      },
+  )

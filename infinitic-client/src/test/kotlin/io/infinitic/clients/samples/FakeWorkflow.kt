@@ -47,7 +47,7 @@ internal interface FakeWorkflow : FakeWorkflowParent {
 
   suspend fun suspendedMethod()
 
-  @Timeout(After100MilliSeconds::class)
+  @Timeout(After50MilliSeconds::class)
   fun timeout(): String
 
   val channelString: SendChannel<String>

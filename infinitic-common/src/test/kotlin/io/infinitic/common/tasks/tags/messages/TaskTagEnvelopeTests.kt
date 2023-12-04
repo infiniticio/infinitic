@@ -23,37 +23,38 @@
 package io.infinitic.common.tasks.tags.messages
 
 import io.infinitic.common.checkBackwardCompatibility
-import io.infinitic.common.checkCurrentFileIsUpToDate
-import io.infinitic.common.createSchemaFileIfAbsent
+import io.infinitic.common.checkOrCreateCurrentFile
 import io.infinitic.common.fixtures.TestFactory
 import io.kotest.assertions.throwables.shouldNotThrowAny
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
 
 class TaskTagEnvelopeTests :
-    StringSpec({
-      TaskTagMessage::class.sealedSubclasses.map {
-        val msg = TestFactory.random(it)
+  StringSpec(
+      {
+        TaskTagMessage::class.sealedSubclasses.map {
+          val msg = TestFactory.random(it)
 
-        "TaskTagMessage(${msg::class.simpleName}) should be avro-convertible" {
-          shouldNotThrowAny {
-            val envelope = TaskTagEnvelope.from(msg)
-            val byteArray = envelope.toByteArray()
+          "TaskTagMessage(${msg::class.simpleName}) should be avro-convertible" {
+            shouldNotThrowAny {
+              val envelope = TaskTagEnvelope.from(msg)
+              val byteArray = envelope.toByteArray()
 
-            TaskTagEnvelope.fromByteArray(byteArray, TaskTagEnvelope.writerSchema) shouldBe envelope
+              TaskTagEnvelope.fromByteArray(
+                  byteArray,
+                  TaskTagEnvelope.writerSchema,
+              ) shouldBe envelope
+            }
           }
         }
-      }
 
-      "Create schema file for the current version if it does not exist yet" {
-        createSchemaFileIfAbsent(TaskTagEnvelope.serializer())
-      }
+        "Existing schema file should be up-to-date with the current version" {
+          // An error in this test means that we need to upgrade the version
+          checkOrCreateCurrentFile(TaskTagEnvelope.serializer())
+        }
 
-      "Existing schema file should be up-to-date with the current version" {
-        checkCurrentFileIsUpToDate(TaskTagEnvelope.serializer())
-      }
-
-      "Avro Schema should be backward compatible to 0.9.0" {
-        checkBackwardCompatibility(TaskTagEnvelope.serializer())
-      }
-    })
+        "Avro Schema should be backward compatible to 0.9.0" {
+          checkBackwardCompatibility(TaskTagEnvelope.serializer())
+        }
+      },
+  )

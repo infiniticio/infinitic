@@ -56,7 +56,8 @@ class ContextWorkflowImpl : Workflow(), ContextWorkflow {
       newService(
           UtilService::class.java,
           tags = setOf("foo", "bar"),
-          meta = mapOf("foo" to "bar".toByteArray()))
+          meta = mapOf("foo" to "bar".toByteArray()),
+      )
 
   override fun context1(): String = workflowId
 
@@ -72,7 +73,7 @@ class ContextWorkflowImpl : Workflow(), ContextWorkflow {
 
   override fun context7() = utilService.meta()
 
-  override fun context8(): WithRetry? = utilService.withRetry()
+  override fun context8(): WithRetry? = utilService.getRetry()
 
-  override fun context9(): WithTimeout? = utilService.withTimeout()
+  override fun context9(): WithTimeout? = utilService.getTimeout()
 }

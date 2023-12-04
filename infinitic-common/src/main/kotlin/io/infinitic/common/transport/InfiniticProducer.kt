@@ -32,50 +32,92 @@ import kotlinx.coroutines.future.await
 import java.util.concurrent.CompletableFuture
 
 interface InfiniticProducer {
-  // Name of the sender
+  /**
+   * Name of the sender
+   */
   var name: String
 
-  /** Asynchronous versions */
-
-  // Asynchronously send a message to a client
+  /**
+   * Asynchronously send a message to a client
+   *
+   * @param message the message to send
+   */
   fun sendAsync(message: ClientMessage): CompletableFuture<Unit>
 
-  // Asynchronously send a message to a workflow tag
+  /**
+   * Asynchronously send a message to a workflow tag engine
+   *
+   * @param message the message to send
+   */
   fun sendAsync(message: WorkflowTagMessage): CompletableFuture<Unit>
 
-  // Asynchronously send a message to a workflow engine
+  /**
+   * Asynchronously send a message to a workflow engine
+   *
+   * @param message the message to send
+   * @param after the delay before sending the message
+   */
   fun sendAsync(
     message: WorkflowEngineMessage,
     after: MillisDuration = MillisDuration.ZERO
   ): CompletableFuture<Unit>
 
-  // Asynchronously send a message to a task tag
+  /**
+   * Asynchronously send a message to a task tag engine
+   *
+   * @param message the message to send
+   */
   fun sendAsync(message: TaskTagMessage): CompletableFuture<Unit>
 
-  // Asynchronously send a message to a task executor
+  /**
+   * Asynchronously send a message to a task executor
+   *
+   * @param message the message to send
+   * @param after the delay before sending the message
+   */
   fun sendAsync(
     message: TaskExecutorMessage,
     after: MillisDuration = MillisDuration.ZERO
   ): CompletableFuture<Unit>
 
-  /** Synchronous versions */
-
-  // Synchronously send a message to a client
+  /**
+   * Synchronously send a message to a client
+   *
+   * @param message the message to send
+   */
   suspend fun send(message: ClientMessage): Unit = sendAsync(message).await()
 
-  // Synchronously send a message to a workflow tag
+  /**
+   * Synchronously send a message to a workflow tag engine
+   *
+   * @param message the message to send
+   */
   suspend fun send(message: WorkflowTagMessage): Unit = sendAsync(message).await()
 
-  // Synchronously send a message to a workflow engine
+  /**
+   * Synchronously send a message to a workflow engine
+   *
+   * @param message the message to send
+   * @param after the delay before sending the message
+   */
   suspend fun send(
     message: WorkflowEngineMessage,
     after: MillisDuration = MillisDuration.ZERO
   ): Unit = sendAsync(message, after).await()
 
-  // Synchronously send a message to a task tag
+  /**
+   * Synchronously send a message to a task tag engine
+   *
+   * @param message the message to send
+   */
   suspend fun send(message: TaskTagMessage): Unit = sendAsync(message).await()
 
-  // Synchronously send a message to a task executor
+  /**
+   * Synchronously send a message to a task executor
+   *
+   * @param message the message to send
+   * @param after the delay before sending the message
+   */
   suspend fun send(
     message: TaskExecutorMessage,
     after: MillisDuration = MillisDuration.ZERO

@@ -36,6 +36,7 @@ import io.infinitic.common.workflows.data.commands.CommandStatus.Canceled
 import io.infinitic.common.workflows.data.commands.CommandStatus.Completed
 import io.infinitic.common.workflows.data.commands.CommandStatus.Failed
 import io.infinitic.common.workflows.data.commands.CommandStatus.Ongoing
+import io.infinitic.common.workflows.data.commands.CommandStatus.TimedOut
 import io.infinitic.common.workflows.data.commands.CommandStatus.Unknown
 import io.infinitic.common.workflows.data.commands.PastCommand
 import io.infinitic.common.workflows.data.commands.ReceiveSignalPastCommand
@@ -125,6 +126,8 @@ sealed class Step {
           is StepStatus.Canceled -> true
           is StepStatus.CurrentlyFailed -> true
           is StepStatus.Failed -> thisShouldNotHappen()
+          is StepStatus.CurrentlyTimedOut -> true
+          is StepStatus.TimedOut -> thisShouldNotHappen()
           is StepStatus.Completed -> true
         }
 
@@ -167,6 +170,16 @@ sealed class Step {
               true ->
                 StepStatus.Canceled(
                     status.deferredCanceledError, status.cancellationWorkflowTaskIndex,
+                )
+
+              false -> StepStatus.Waiting
+            }
+
+          is TimedOut ->
+            when (index >= status.timeoutWorkflowTaskIndex) {
+              true ->
+                StepStatus.CurrentlyTimedOut(
+                    status.deferredTimedOutError, status.timeoutWorkflowTaskIndex,
                 )
 
               false -> StepStatus.Waiting
@@ -217,16 +230,19 @@ sealed class Step {
           statuses
               .filter {
                 it is StepStatus.CurrentlyFailed ||
+                    it is StepStatus.CurrentlyTimedOut ||
                     it is StepStatus.Canceled ||
                     it is StepStatus.Unknown
               }
               .minByOrNull {
                 when (it) {
-                  is StepStatus.CurrentlyFailed -> it.failureWorkflowTaskIndex
-                  is StepStatus.Canceled -> it.cancellationWorkflowTaskIndex
                   is StepStatus.Unknown -> it.unknowingWorkflowTaskIndex
+                  is StepStatus.Canceled -> it.cancellationWorkflowTaskIndex
+                  is StepStatus.CurrentlyFailed -> it.failureWorkflowTaskIndex
+                  is StepStatus.CurrentlyTimedOut -> it.timeoutWorkflowTaskIndex
                   is StepStatus.Completed,
                   is StepStatus.Failed,
+                  is StepStatus.TimedOut,
                   is StepStatus.Waiting -> thisShouldNotHappen()
                 }
               }
@@ -283,11 +299,13 @@ sealed class Step {
       val lastTerminated =
           statuses.maxByOrNull {
             when (it) {
-              is StepStatus.CurrentlyFailed -> it.failureWorkflowTaskIndex
               is StepStatus.Canceled -> it.cancellationWorkflowTaskIndex
               is StepStatus.Unknown -> it.unknowingWorkflowTaskIndex
+              is StepStatus.CurrentlyFailed -> it.failureWorkflowTaskIndex
+              is StepStatus.CurrentlyTimedOut -> it.timeoutWorkflowTaskIndex
               is StepStatus.Completed,
               is StepStatus.Failed,
+              is StepStatus.TimedOut,
               is StepStatus.Waiting -> thisShouldNotHappen()
             }
           }

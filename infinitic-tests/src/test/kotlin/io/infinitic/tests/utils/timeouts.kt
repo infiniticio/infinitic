@@ -20,9 +20,16 @@
  *
  * Licensor: infinitic.io
  */
-package io.infinitic.exceptions.tasks
 
-sealed class TaskException(message: String? = null, cause: Throwable? = null) :
-  kotlin.RuntimeException(message, cause)
+package io.infinitic.tests.utils
 
-class TimeoutTaskException : TaskException()
+import io.infinitic.tasks.WithTimeout
+
+class After100MilliSeconds : WithTimeout {
+  override fun getTimeoutInSeconds() = 0.1
+}
+
+class After500MilliSeconds : WithTimeout {
+  override fun getTimeoutInSeconds() = 0.5
+}
+

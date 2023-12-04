@@ -24,20 +24,23 @@ package io.infinitic.workers.samples
 
 import io.infinitic.workflows.Workflow
 
-interface WorkflowA
+internal interface WorkflowA
 
-class WorkflowAImpl : Workflow(), WorkflowA
+internal class WorkflowAImpl : Workflow(), WorkflowA
 
-class NotAWorkflow : WorkflowA
+internal class WorkflowAImpl2 : Workflow()
 
-class WorkflowWithInvocationTargetException : Workflow(), WorkflowA {
+internal class NotAWorkflow : WorkflowA
+
+internal class WorkflowWithInvocationTargetException : Workflow(), WorkflowA {
   init {
     throw Exception("InvocationTargetException")
   }
 }
 
-class WorkflowWithExceptionInInitializerError : Workflow(), WorkflowA {
+internal class WorkflowWithExceptionInInitializerError : Workflow(), WorkflowA {
   companion object {
-    @JvmStatic val e: Nothing = throw Exception("ExceptionInInitializerError")
+    @JvmStatic
+    val e: Nothing = throw Exception("ExceptionInInitializerError")
   }
 }

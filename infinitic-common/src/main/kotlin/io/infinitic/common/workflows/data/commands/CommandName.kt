@@ -32,9 +32,10 @@ value class CommandName private constructor(private val name: String) {
     fun from(command: Command) =
         when (command) {
           is DispatchTaskCommand -> CommandName("${command.serviceName}::${command.methodName}")
-          is DispatchWorkflowCommand ->
-              CommandName("${command.workflowName}::${command.methodName}")
-          is DispatchMethodCommand -> CommandName("${command.workflowName}::${command.methodName}")
+          is DispatchNewWorkflowCommand ->
+            CommandName("${command.workflowName}::${command.methodName}")
+
+          is DispatchExistingWorkflowCommand -> CommandName("${command.workflowName}::${command.methodName}")
           is SendSignalCommand -> CommandName("${command.workflowName}::${command.channelName}")
           else -> thisShouldNotHappen()
         }

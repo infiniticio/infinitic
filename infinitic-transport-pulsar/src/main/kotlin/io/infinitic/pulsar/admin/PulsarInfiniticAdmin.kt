@@ -26,23 +26,36 @@ import io.github.oshai.kotlinlogging.KotlinLogging
 import io.infinitic.pulsar.config.policies.Policies
 import org.apache.pulsar.client.admin.PulsarAdmin
 import org.apache.pulsar.client.admin.PulsarAdminException
+import org.apache.pulsar.common.partition.PartitionedTopicMetadata
 import org.apache.pulsar.common.policies.data.PartitionedTopicStats
 import org.apache.pulsar.common.policies.data.RetentionPolicies
 import org.apache.pulsar.common.policies.data.TenantInfo
-import org.apache.pulsar.common.policies.data.TopicStats
 import org.apache.pulsar.common.policies.data.impl.AutoTopicCreationOverrideImpl
 import org.apache.pulsar.common.policies.data.impl.DelayedDeliveryPoliciesImpl
+import java.util.concurrent.ConcurrentHashMap
 import org.apache.pulsar.common.policies.data.Policies as PulsarPolicies
 import org.apache.pulsar.common.policies.data.TopicType as PulsarTopicType
 
 class PulsarInfiniticAdmin(
-  val pulsarAdmin: PulsarAdmin
+  pulsarAdmin: PulsarAdmin
 ) {
+  private val logger = KotlinLogging.logger {}
+
   private val clusters = pulsarAdmin.clusters()
   private val topics = pulsarAdmin.topics()
   private val topicPolicies = pulsarAdmin.topicPolicies()
   private val tenants = pulsarAdmin.tenants()
   private val namespaces = pulsarAdmin.namespaces()
+
+  private val DEFAUT_NUM_PARTITIONS = 3
+  fun isTenantInitialized(tenant: String) =
+      initializedTenants.containsKey(tenant)
+
+  fun isNamespaceInitialized(fullNamespace: String) =
+      initializedNamespaces.containsKey(fullNamespace)
+
+  fun isTopicInitialized(topic: String) =
+      initializedTopics.containsKey(topic)
 
   /**
    * Get set of clusters' name
@@ -51,168 +64,15 @@ class PulsarInfiniticAdmin(
    * - Result.success(Set<String>)
    * - Result.failure(e) in case of error
    */
-  fun getClusters(): Result<Set<String>> = try {
+  private fun getClusters(): Result<Set<String>> = try {
+    logger.debug { "Getting list of clusters" }
     val clusters = clusters.clusters.toSet()
+    logger.info { "List of clusters got ($clusters)" }
     Result.success(clusters)
   } catch (e: PulsarAdminException) {
     logger.warn(e) { "Unable to get clusters" }
     Result.failure(e)
   }
-
-  /**
-   * Ensure tenant exists.
-   *
-   * Returns:
-   *  - Result.success(TenantInfo) if tenant exists or has been created
-   *  - Result.failure(e) in case of error
-   **/
-  fun initTenant(
-    tenant: String,
-    allowedClusters: Set<String>?,
-    adminRoles: Set<String>?
-  ): Result<TenantInfo> {
-    val info = getTenantInfo(tenant).getOrElse { return Result.failure(it) }
-        ?.also {
-          if (allowedClusters != null && allowedClusters != it.allowedClusters) logger.warn {
-            "For tenant $tenant, allowedClusters policy is different from expected value: " +
-                "${it.allowedClusters} != $allowedClusters"
-          }
-          if (adminRoles != null && adminRoles != it.adminRoles) logger.warn {
-            "For tenant $tenant, adminRoles policy is different from expected value: " +
-                "${it.adminRoles} != $adminRoles"
-          }
-        }
-      ?: createTenant(tenant, allowedClusters, adminRoles).getOrElse { return Result.failure(it) }
-
-    return Result.success(info)
-  }
-
-  /**
-   * Get Tenant Info.
-   *
-   * Returns:
-   *  - Result.success(TenantInfo) if tenant exists
-   *  - Result.success(null) if tenant does not exist
-   *  - Result.failure(e) in case of error
-   **/
-  fun getTenantInfo(tenant: String): Result<TenantInfo?> =
-      try {
-        val info = tenants.getTenantInfo(tenant)
-        Result.success(info)
-      } catch (e: PulsarAdminException.NotAuthorizedException) {
-        logger.warn { "Not authorized to admin tenant '$tenant'" }
-        Result.failure(e)
-      } catch (e: PulsarAdminException.NotFoundException) {
-        Result.success(null)
-      } catch (e: PulsarAdminException) {
-        logger.warn(e) { "Unable to get info for tenant '$tenant'" }
-        Result.failure(e)
-      }
-
-  /**
-   * Create tenant.
-   *
-   * Returns:
-   * - Result.success(TenantInfo) in case of success or already existing tenant
-   * - Result.failure(e) in case of error
-   */
-  fun createTenant(
-    tenant: String,
-    allowedClusters: Set<String>?,
-    adminRoles: Set<String>?
-  ): Result<TenantInfo> =
-      try {
-        logger.info { "Creating tenant '$tenant'" }
-        val tenantInfo = TenantInfo.builder()
-            .allowedClusters(
-                // if allowedClusters is null, we use all the current ones
-                allowedClusters ?: getClusters().getOrElse { return Result.failure(it) },
-            )
-            .adminRoles(adminRoles)
-            .build()
-        tenants.createTenant(tenant, tenantInfo)
-        Result.success(tenantInfo)
-      } catch (e: PulsarAdminException.NotAuthorizedException) {
-        logger.warn { "Not authorized to create tenant" }
-        Result.failure(e)
-      } catch (e: PulsarAdminException.ConflictException) {
-        logger.warn { "Tenant '$tenant' already exists" }
-        Result.failure(e)
-      } catch (e: PulsarAdminException.PreconditionFailedException) {
-        logger.warn { "Unable to create tenant: '$tenant' is an invalid tenant name'" }
-        Result.failure(e)
-      } catch (e: PulsarAdminException) {
-        logger.warn(e) { "Unable to create tenant '$tenant'" }
-        Result.failure(e)
-      }
-
-  /**
-   * Ensure namespace exists.
-   *
-   * Returns:
-   *  - Result.success(Policies) if tenant exists or has been created
-   *  - Result.failure(e) in case of error
-   **/
-  fun initNamespace(fullNamespace: String, config: Policies): Result<PulsarPolicies> {
-
-    val pulsarPolicies = getNamespacePolicies(fullNamespace).getOrElse { return Result.failure(it) }
-        ?.also { checkNamespacePolicies(it, config) }
-      ?: createNamespace(fullNamespace, config).getOrElse { return Result.failure(it) }
-
-    return Result.success(pulsarPolicies)
-  }
-
-
-  /**
-   * Get Policies for current namespace
-   *
-   * Returns:
-   *  - Result.success(Policies) if namespace exists
-   *  - Result.success(null) if namespace does not exist
-   *  - Result.failure(e) in case of error
-   **/
-  fun getNamespacePolicies(fullNamespace: String): Result<PulsarPolicies?> =
-      try {
-        val pulsarPolicies = namespaces.getPolicies(fullNamespace)
-        Result.success(pulsarPolicies)
-      } catch (e: PulsarAdminException.NotAuthorizedException) {
-        logger.warn { "Not authorized to admin namespace '$fullNamespace'" }
-        Result.failure(e)
-      } catch (e: PulsarAdminException.NotFoundException) {
-        Result.success(null)
-      } catch (e: PulsarAdminException) {
-        logger.warn(e) { "Unable to get policies of namespace '$fullNamespace" }
-        Result.failure(e)
-      }
-
-  /**
-   * Create namespace
-   *
-   * Returns:
-   * - Result.success(Policies) in case of success or already existing namespace
-   * - Result.failure(e) in case of error
-   */
-  fun createNamespace(fullNamespace: String, config: Policies): Result<PulsarPolicies> =
-      try {
-        logger.info { "Creating namespace $fullNamespace" }
-        val pulsarPolicies = config.getPulsarPolicies()
-        namespaces.createNamespace(fullNamespace, pulsarPolicies)
-        Result.success(pulsarPolicies)
-      } catch (e: PulsarAdminException.NotAuthorizedException) {
-        logger.warn { "Not authorized to create a namespace" }
-        Result.failure(e)
-      } catch (e: PulsarAdminException.NotFoundException) {
-        logger.warn {
-          "Unable to create namespace '$fullNamespace' as tenant does not exist"
-        }
-        Result.failure(e)
-      } catch (e: PulsarAdminException.ConflictException) {
-        logger.warn { "Namespace '$fullNamespace' already exists" }
-        Result.failure(e)
-      } catch (e: PulsarAdminException) {
-        logger.warn(e) { "Unable to create namespace '$fullNamespace'" }
-        Result.failure(e)
-      }
 
   /**
    * Get set of topics' name for current namespace
@@ -237,6 +97,53 @@ class PulsarInfiniticAdmin(
       }
 
   /**
+   * Ensure tenant exists.
+   *
+   * Returns:
+   *  - Result.success(TenantInfo) if tenant exists or has been created
+   *  - Result.failure(e) in case of error
+   **/
+  fun initTenant(
+    tenant: String,
+    allowedClusters: Set<String>?,
+    adminRoles: Set<String>?
+  ): Result<TenantInfo> = try {
+    initializedTenants.computeIfAbsent(tenant) {
+      // get tenant info or create it
+      getTenantInfo(tenant).getOrThrow()
+        ?: createTenant(tenant, allowedClusters, adminRoles).getOrThrow()
+    }.let {
+      checkTenantInfo(tenant, it, allowedClusters, adminRoles)
+      Result.success(it)
+    }
+  } catch (e: Exception) {
+    Result.failure(e)
+  }
+
+  /**
+   * Ensure namespace exists.
+   *
+   * Returns:
+   *  - Result.success(Policies) if tenant exists or has been created
+   *  - Result.failure(e) in case of error
+   **/
+  fun initNamespace(
+    fullNamespace: String,
+    config: Policies
+  ): Result<PulsarPolicies> = try {
+    initializedNamespaces.computeIfAbsent(fullNamespace) {
+      // get Namespace policies or create it
+      getNamespacePolicies(fullNamespace).getOrThrow()
+        ?: createNamespace(fullNamespace, config).getOrThrow()
+    }.let {
+      checkNamespacePolicies(it, config.getPulsarPolicies())
+      Result.success(it)
+    }
+  } catch (e: Exception) {
+    Result.failure(e)
+  }
+
+  /**
    * Ensure topic exists.
    *
    * Returns:
@@ -247,57 +154,37 @@ class PulsarInfiniticAdmin(
     topic: String,
     isPartitioned: Boolean,
     messageTTLPolicy: Int
-  ): Result<Unit> {
-    getMessageTTL(topic).getOrElse { return Result.failure(it) }
-        ?.also {
-          // check message TTL policy
-          if (it != messageTTLPolicy) logger.warn {
-            "For topic $topic, messageTTLInSeconds policy is different from expected value: " +
-                "$messageTTLPolicy != $it"
-          }
-        }
-      ?: createTopic(topic, isPartitioned, messageTTLPolicy).getOrElse { return Result.failure(it) }
-
-    return Result.success(Unit)
+  ): Result<TopicInfo> = try {
+    initializedTopics.computeIfAbsent(topic) {
+      // get Namespace policies or create it
+      getTopicInfo(topic).getOrThrow()
+        ?: createTopic(topic, isPartitioned, messageTTLPolicy).getOrThrow()
+    }.let {
+      checkTopicInfo(topic, it, TopicInfo(isPartitioned, messageTTLPolicy))
+      Result.success(it)
+    }
+  } catch (e: Exception) {
+    Result.failure(e)
   }
 
   /**
-   * Get message TTL for topic
+   * Delete topic.
    *
    * Returns:
-   *  - Result.success(Int) if topic exists
-   *  - Result.success(null) if topic does not exist
-   *  - Result.failure(e) in case of error
-   **/
-  fun getMessageTTL(topic: String): Result<Int?> =
-      try {
-        val ttl = topicPolicies.getMessageTTL(topic)
-        Result.success(ttl)
-      } catch (e: PulsarAdminException.NotFoundException) {
-        Result.success(null)
-      } catch (e: PulsarAdminException) {
-        logger.warn(e) { "Unable to get message TTL for topic '$topic'" }
-        Result.failure(e)
-      }
-
-  /**
-   * Get stats for non-partitioned topic
-   *
-   * Returns:
-   *  - Result.success(TopicStats) if topic exists
-   *  - Result.success(null) if topic does not exist
-   *  - Result.failure(e) in case of error
-   **/
-  fun getTopicStats(topic: String): Result<TopicStats?> {
-    return try {
-      val stats = topics.getStats(topic, false, false, false)
-      Result.success(stats)
-    } catch (e: PulsarAdminException.NotFoundException) {
-      Result.success(null)
-    } catch (e: PulsarAdminException) {
-      logger.warn(e) { "Unable to get stats for topic '$topic'" }
-      Result.failure(e)
-    }
+   * - Result.success(Unit) in case of success or already deleted topic
+   * - Result.failure(e) in case of error
+   */
+  fun deleteTopic(topic: String): Result<Unit> = try {
+    logger.debug { "Deleting topic $topic" }
+    topics.delete(topic, true)
+    logger.info { "Topic '$topic' deleted" }
+    Result.success(Unit)
+  } catch (e: PulsarAdminException.NotFoundException) {
+    logger.debug { "Unable to delete topic '$topic' that does not exist" }
+    Result.success(Unit)
+  } catch (e: PulsarAdminException) {
+    logger.warn(e) { "Unable to delete topic '$topic'" }
+    Result.failure(e)
   }
 
   /**
@@ -310,9 +197,12 @@ class PulsarInfiniticAdmin(
    **/
   fun getPartitionedTopicStats(topic: String): Result<PartitionedTopicStats?> {
     return try {
+      logger.debug { "Topic '$topic': getting PartitionedStats" }
       val stats = topics.getPartitionedStats(topic, false, false, false, false)
+      logger.info { "Topic '$topic': PartitionedStats retrieved ($stats)" }
       Result.success(stats)
     } catch (e: PulsarAdminException.NotFoundException) {
+      logger.debug { "Topic '$topic': Unable to get PartitionedStats as topic does not exist" }
       Result.success(null)
     } catch (e: PulsarAdminException) {
       logger.warn(e) { "Unable to get stats for topic '$topic'" }
@@ -320,109 +210,252 @@ class PulsarInfiniticAdmin(
     }
   }
 
-  /**
-   * Create topic.
-   *
-   * Returns:
-   * - Result.success(Unit) in case of success or already existing topic
-   * - Result.failure(e) in case of error
-   */
-  fun createTopic(topic: String, isPartitioned: Boolean, messageTTLPolicy: Int): Result<Unit> =
+  private fun getTenantInfo(tenant: String): Result<TenantInfo?> =
       try {
-        logger.info { "Creating topic $topic" }
-        when (isPartitioned) {
-          true -> topics.createPartitionedTopic(topic, 3)
-          false -> topics.createNonPartitionedTopic(topic)
-        }
-        // set message TTL
-        setTopicTTL(topic, messageTTLPolicy)
-        // creation is a success even if we can not set message TTL
-        Result.success(Unit)
+        logger.debug { "Tenant '$tenant': Getting info" }
+        val info = tenants.getTenantInfo(tenant)
+        logger.info { "Tenant '$tenant': info got ($info)" }
+        Result.success(info)
+      } catch (e: PulsarAdminException.NotAuthorizedException) {
+        logger.warn { "Not authorized to admin tenant '$tenant'" }
+        Result.failure(e)
+      } catch (e: PulsarAdminException.NotFoundException) {
+        logger.debug { "Tenant '$tenant': unable to get info as tenant does not exist" }
+        Result.success(null)
+      } catch (e: PulsarAdminException) {
+        logger.warn(e) { "Unable to get info for tenant '$tenant'" }
+        Result.failure(e)
+      }
+
+  private fun createTenant(
+    tenant: String,
+    allowedClusters: Set<String>?,
+    adminRoles: Set<String>?
+  ): Result<TenantInfo> =
+      try {
+        logger.debug { "Creating tenant '$tenant'" }
+        val tenantInfo = TenantInfo.builder()
+            // if allowedClusters is null, we use all the current ones
+            .allowedClusters(
+                allowedClusters ?: getClusters().getOrElse { return Result.failure(it) },
+            )
+            .adminRoles(adminRoles)
+            .build()
+        tenants.createTenant(tenant, tenantInfo)
+        logger.info { "Tenant '$tenant' created with tenantInfo=$tenantInfo" }
+        Result.success(tenantInfo)
+      } catch (e: PulsarAdminException.NotAuthorizedException) {
+        logger.warn { "Not authorized to create tenant" }
+        Result.failure(e)
       } catch (e: PulsarAdminException.ConflictException) {
-        logger.warn { "Already existing topic '$topic'" }
+        logger.warn { "Tenant '$tenant' already exists" }
+        Result.failure(e)
+      } catch (e: PulsarAdminException.PreconditionFailedException) {
+        logger.warn { "Unable to create tenant: '$tenant' is an invalid tenant name'" }
         Result.failure(e)
       } catch (e: PulsarAdminException) {
-        logger.warn(e) { "Unable to create topic '$topic'" }
+        logger.warn(e) { "Unable to create tenant '$tenant'" }
         Result.failure(e)
       }
 
-  /**
-   * Delete topic.
-   *
-   * Returns:
-   * - Result.success(Unit) in case of success or already deleted topic
-   * - Result.failure(e) in case of error
-   */
-  fun deleteTopic(topic: String): Result<Unit> = try {
-    logger.info { "Deleting topic $topic" }
-    topics.delete(topic, true)
-    Result.success(Unit)
-  } catch (e: PulsarAdminException.NotFoundException) {
-    logger.warn { "Topic '$topic' does not exist" }
-    Result.success(Unit)
+  private fun createNamespace(fullNamespace: String, config: Policies): Result<PulsarPolicies> =
+      try {
+        logger.debug { "Creating namespace '$fullNamespace'" }
+        val pulsarPolicies = config.getPulsarPolicies()
+        namespaces.createNamespace(fullNamespace, pulsarPolicies)
+        logger.info { "Namespace '$fullNamespace' created with policies $pulsarPolicies" }
+        Result.success(pulsarPolicies)
+      } catch (e: PulsarAdminException.NotAuthorizedException) {
+        logger.warn { "Not authorized to create namespace '$fullNamespace'" }
+        Result.failure(e)
+      } catch (e: PulsarAdminException.NotFoundException) {
+        logger.debug { "Unable to create namespace '$fullNamespace' as tenant does not exist" }
+        Result.failure(e)
+      } catch (e: PulsarAdminException.ConflictException) {
+        logger.warn { "Namespace '$fullNamespace' already exists" }
+        Result.failure(e)
+      } catch (e: PulsarAdminException) {
+        logger.warn(e) { "Unable to create namespace '$fullNamespace'" }
+        Result.failure(e)
+      }
+
+  private fun createTopic(
+    topic: String,
+    isPartitioned: Boolean,
+    messageTTLPolicy: Int
+  ): Result<TopicInfo> = try {
+    logger.debug { "Creating topic $topic" }
+    when (isPartitioned) {
+      true -> topics.createPartitionedTopic(topic, DEFAUT_NUM_PARTITIONS)
+      false -> topics.createNonPartitionedTopic(topic)
+    }
+    logger.info {
+      "Topic '$topic' created " +
+          if (isPartitioned) "with $DEFAUT_NUM_PARTITIONS partitions" else ""
+    }
+    // set message TTL
+    setTopicTTL(topic, messageTTLPolicy)
+    // Note: to simplify the implementation, we do not check that message TTL has been rightfully set
+    Result.success(TopicInfo(isPartitioned, messageTTLPolicy))
+  } catch (e: PulsarAdminException.ConflictException) {
+    logger.debug { "Unable to create topic '$topic' that already exists" }
+    Result.failure(e)
   } catch (e: PulsarAdminException) {
-    logger.warn(e) { "Unable to delete topic '$topic'" }
+    logger.warn(e) { "Unable to create topic '$topic'" }
     Result.failure(e)
   }
 
-  private fun setTopicTTL(topic: String, messageTTLInSecond: Int): Result<Unit> = try {
+  private fun getNamespacePolicies(fullNamespace: String): Result<PulsarPolicies?> =
+      try {
+        logger.debug { "Getting namespace policies" }
+        val pulsarPolicies = namespaces.getPolicies(fullNamespace)
+        logger.info { "Namespace policies got ($pulsarPolicies)" }
+        Result.success(pulsarPolicies)
+      } catch (e: PulsarAdminException.NotAuthorizedException) {
+        logger.warn { "Not authorized to admin namespace '$fullNamespace'" }
+        Result.failure(e)
+      } catch (e: PulsarAdminException.NotFoundException) {
+        Result.success(null)
+      } catch (e: PulsarAdminException) {
+        logger.warn(e) { "Unable to get policies of namespace '$fullNamespace" }
+        Result.failure(e)
+      }
+
+  private fun setTopicTTL(topic: String, messageTTLInSecond: Int): Result<Int> = try {
+    logger.debug { "Topic '$topic': setting messageTTLInSecond=$messageTTLInSecond" }
     topicPolicies.setMessageTTL(topic, messageTTLInSecond)
-    Result.success(Unit)
+    logger.info { "Topic '$topic': messageTTLInSecond=$messageTTLInSecond set" }
+    Result.success(messageTTLInSecond)
   } catch (e: PulsarAdminException) {
-    logger.warn(e) { "Unable to set message TTL for topic '$topic'" }
+    logger.warn(e) { "Topic '$topic': Unable to set message TTL for topic" }
     Result.failure(e)
   }
 
-  private fun checkNamespacePolicies(policies: PulsarPolicies, config: Policies) {
-    val expectedPolicies = config.getPulsarPolicies()
+  private fun getTopicInfo(topic: String): Result<TopicInfo?> {
+    val ttl = getMessageTTL(topic).getOrElse { return Result.failure(it) }
+    return when (ttl) {
+      null -> Result.success(null)
+      else -> {
+        val metadata = getPartitionedTopicMetadata(topic).getOrElse { return Result.failure(it) }
+        when (metadata) {
+          null -> Result.success(TopicInfo(false, ttl))
+          else -> Result.success(TopicInfo(true, ttl))
+        }
+      }
+    }
+  }
+
+  private fun getMessageTTL(topic: String): Result<Int?> =
+      try {
+        logger.debug { "Topic '$topic': getting MessageTTL" }
+        val ttl = topicPolicies.getMessageTTL(topic)
+        logger.info { "Topic '$topic': MessageTTL retrieved ($ttl)" }
+        Result.success(ttl)
+      } catch (e: PulsarAdminException.NotFoundException) {
+        logger.debug { "Topic '$topic': Unable to retrieve MessageTTL as topic does not exist" }
+        Result.success(null)
+      } catch (e: PulsarAdminException) {
+        logger.warn(e) { "Unable to get message TTL for topic '$topic'" }
+        Result.failure(e)
+      }
+
+  private fun getPartitionedTopicMetadata(topic: String): Result<PartitionedTopicMetadata?> {
+    return try {
+      logger.debug { "Topic '$topic': getting PartitionedTopicMetadata" }
+      val metadata = topics.getPartitionedTopicMetadata(topic)
+      logger.info { "Topic '$topic': PartitionedTopicMetadata retrieved ($metadata)" }
+      Result.success(metadata)
+    } catch (e: PulsarAdminException.NotFoundException) {
+      logger.debug { "Topic '$topic': Unable to retrieve PartitionedTopicMetadata as topic does not exist" }
+      Result.success(null)
+    } catch (e: PulsarAdminException) {
+      logger.warn(e) { "Unable to get metadata for topic '$topic'" }
+      Result.failure(e)
+    }
+  }
+
+  private fun checkTenantInfo(
+    tenant: String,
+    tenantInfo: TenantInfo,
+    allowedClusters: Set<String>?,
+    adminRoles: Set<String>?
+  ) {
+    if (allowedClusters != null && allowedClusters != tenantInfo.allowedClusters) logger.warn {
+      "Tenant '$tenant': allowedClusters policy (${tenantInfo.allowedClusters}) " +
+          "is different from expected value ($allowedClusters) "
+    }
+    if (adminRoles != null && adminRoles != tenantInfo.adminRoles) logger.warn {
+      "Tenant '$tenant': adminRoles policy (${tenantInfo.adminRoles}) " +
+          "is different from expected value ($adminRoles) "
+    }
+  }
+
+
+  private fun checkNamespacePolicies(policies: PulsarPolicies, expected: PulsarPolicies) {
     // check that policies are the same
-    if (policies.schema_compatibility_strategy != expectedPolicies.schema_compatibility_strategy) {
+    if (policies.schema_compatibility_strategy != expected.schema_compatibility_strategy) {
       logger.warn {
-        "Namespace policy 'schema_compatibility_strategy' is different from expected value: " +
-            "${policies.schema_compatibility_strategy} != ${expectedPolicies.schema_compatibility_strategy}"
+        "Namespace policy 'schema_compatibility_strategy' (${policies.schema_compatibility_strategy}) " +
+            "is different from expected value (${expected.schema_compatibility_strategy})"
       }
     }
-    if (policies.autoTopicCreationOverride != expectedPolicies.autoTopicCreationOverride) {
+    if (policies.autoTopicCreationOverride != expected.autoTopicCreationOverride) {
       logger.warn {
-        "Namespace policy 'autoTopicCreationOverride' is different from expected value: " +
-            "${policies.autoTopicCreationOverride} != ${expectedPolicies.autoTopicCreationOverride}"
+        "Namespace policy 'autoTopicCreationOverride' (${policies.autoTopicCreationOverride}) " +
+            "is different from expected value (${expected.autoTopicCreationOverride})"
       }
     }
-    if (policies.schema_validation_enforced != expectedPolicies.schema_validation_enforced) {
+    if (policies.schema_validation_enforced != expected.schema_validation_enforced) {
       logger.warn {
-        "Namespace policy 'schema_validation_enforced' is different from expected value: " +
-            "${policies.schema_validation_enforced} != ${expectedPolicies.schema_validation_enforced}"
+        "Namespace policy 'schema_validation_enforced' (${policies.schema_validation_enforced}) " +
+            "is different from expected value (${expected.schema_validation_enforced})"
       }
     }
-    if (policies.is_allow_auto_update_schema != expectedPolicies.is_allow_auto_update_schema) {
+    if (policies.is_allow_auto_update_schema != expected.is_allow_auto_update_schema) {
       logger.warn {
-        "Namespace policy 'is_allow_auto_update_schema' is different from expected value: " +
-            "${policies.is_allow_auto_update_schema} != ${expectedPolicies.is_allow_auto_update_schema}"
+        "Namespace policy 'is_allow_auto_update_schema' (${policies.is_allow_auto_update_schema}) " +
+            "is different from expected value (${expected.is_allow_auto_update_schema})"
       }
     }
-    if (policies.deduplicationEnabled != expectedPolicies.deduplicationEnabled) {
+    if (policies.deduplicationEnabled != expected.deduplicationEnabled) {
       logger.warn {
-        "Namespace policy 'deduplicationEnabled' is different from expected value: " +
-            "${policies.deduplicationEnabled} != ${expectedPolicies.deduplicationEnabled}"
+        "Namespace policy 'deduplicationEnabled' (${policies.deduplicationEnabled}) " +
+            "is different from expected value (${expected.deduplicationEnabled})"
       }
     }
-    if (policies.retention_policies != expectedPolicies.retention_policies) {
+    if (policies.retention_policies != expected.retention_policies) {
       logger.warn {
-        "Namespace policy 'retention_policies policy is different from expected value: " +
-            "${policies.retention_policies} != ${expectedPolicies.retention_policies}"
+        "Namespace policy 'retention_policies policy (${policies.retention_policies}) " +
+            "is different from expected value (${expected.retention_policies})"
       }
     }
-    if (policies.message_ttl_in_seconds != expectedPolicies.message_ttl_in_seconds) {
+    if (policies.message_ttl_in_seconds != expected.message_ttl_in_seconds) {
       logger.warn {
-        "Namespace policy 'message_ttl_in_seconds policy is different from expected value: " +
-            "${policies.message_ttl_in_seconds} != ${expectedPolicies.message_ttl_in_seconds}"
+        "Namespace policy 'message_ttl_in_seconds policy (${policies.message_ttl_in_seconds}) " +
+            "is different from expected value (${expected.message_ttl_in_seconds})"
       }
     }
-    if (policies.delayed_delivery_policies != expectedPolicies.delayed_delivery_policies) {
+    if (policies.delayed_delivery_policies != expected.delayed_delivery_policies) {
       logger.warn {
-        "Namespace policy 'delayed_delivery_policies policy is different from expected value: " +
-            "${policies.delayed_delivery_policies} != ${expectedPolicies.delayed_delivery_policies}"
+        "Namespace policy 'delayed_delivery_policies policy (${policies.delayed_delivery_policies}) " +
+            "is different from expected value (${expected.delayed_delivery_policies})"
       }
+    }
+  }
+
+  private fun checkTopicInfo(topic: String, topicInfo: TopicInfo, expected: TopicInfo) {
+
+    if (topicInfo.messageTTLPolicy != expected.messageTTLPolicy) logger.warn {
+      "Topic '$topic': messageTTLPolicy (${topicInfo.messageTTLPolicy}) " +
+          "is different from expected (${expected.messageTTLPolicy})"
+    }
+
+    if (expected.isPartitioned && !topicInfo.isPartitioned) logger.warn {
+      "Topic '$topic' is expected to be partitioned but is not"
+    }
+
+    if (!expected.isPartitioned && topicInfo.isPartitioned) logger.warn {
+      "Topic '$topic' is expected to be non-partitioned but it is"
     }
   }
 
@@ -443,7 +476,19 @@ class PulsarInfiniticAdmin(
     it.deduplicationEnabled = deduplicationEnabled
   }
 
+  data class TopicInfo(
+    val isPartitioned: Boolean,
+    val messageTTLPolicy: Int,
+  )
+
   companion object {
-    internal val logger = KotlinLogging.logger {}
+    // thread-safe set of initialized tenants
+    private val initializedTenants = ConcurrentHashMap<String, TenantInfo>()
+
+    // thread-safe set of initialized namespaces
+    private val initializedNamespaces = ConcurrentHashMap<String, PulsarPolicies>()
+
+    // thread-safe set of initialized topics (topic name includes tenant and namespace)
+    private val initializedTopics = ConcurrentHashMap<String, TopicInfo>()
   }
 }

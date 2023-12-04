@@ -20,12 +20,31 @@
  *
  * Licensor: infinitic.io
  */
+package io.infinitic.common.fixtures
 
-package io.infinitic.tests.errors
+import io.kotest.core.annotation.EnabledCondition
+import io.kotest.core.spec.Spec
+import org.testcontainers.DockerClientFactory
+import org.testcontainers.utility.DockerImageName
+import kotlin.reflect.KClass
 
-import io.infinitic.tasks.WithTimeout
+class DockerOnly : EnabledCondition {
+  override fun enabled(kclass: KClass<out Spec>) = shouldRun
 
-class After500MilliSeconds : WithTimeout {
-  override fun getTimeoutInSeconds() = 0.5
+  companion object {
+    val shouldRun by lazy {
+      DockerClientFactory.instance().isDockerAvailable
+    }
+  }
+
+  private val pulsarVersion by lazy {
+    javaClass.getResource("/pulsar")?.readText()?.trim() ?: error("Pulsar version not found")
+  }
+
+  val pulsarServer by lazy {
+    when (shouldRun) {
+      true -> PulsarContainer(DockerImageName.parse("apachepulsar/pulsar:$pulsarVersion")).also { it.start() }
+      false -> null
+    }
+  }
 }
-

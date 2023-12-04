@@ -29,25 +29,26 @@ import io.infinitic.common.workflows.engine.storage.WorkflowStateStorage
 import org.jetbrains.annotations.TestOnly
 
 class LoggedWorkflowStateStorage(
+  logName: String,
   private val storage: WorkflowStateStorage,
 ) : WorkflowStateStorage {
 
-  private val logger = KotlinLogging.logger {}
+  private val logger = KotlinLogging.logger(logName)
 
   override suspend fun getState(workflowId: WorkflowId): WorkflowState? {
     val workflowState = storage.getState(workflowId)
-    logger.debug { "workflowId $workflowId - getState $workflowState" }
+    logger.debug { "Id $workflowId - GetState $workflowState" }
 
     return workflowState
   }
 
   override suspend fun putState(workflowId: WorkflowId, workflowState: WorkflowState) {
-    logger.debug { "workflowId $workflowId - putState $workflowState" }
+    logger.debug { "Id $workflowId - PutState $workflowState" }
     storage.putState(workflowId, workflowState)
   }
 
   override suspend fun delState(workflowId: WorkflowId) {
-    logger.debug { "workflowId $workflowId - delState" }
+    logger.debug { "Id $workflowId - DelState" }
     storage.delState(workflowId)
   }
 

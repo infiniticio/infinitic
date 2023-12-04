@@ -27,7 +27,7 @@ plugins { id("java-test-fixtures") }
 dependencies {
   api(Libs.Serialization.json)
   api(Libs.JsonPath.jayway)
-  
+
   implementation(Libs.Hoplite.core)
   implementation(Libs.Hoplite.yaml)
   implementation(Libs.Jackson.databind)
@@ -43,19 +43,29 @@ dependencies {
   testFixturesImplementation(Libs.Kotest.junit5)
   testFixturesImplementation(Libs.Kotest.property)
   testFixturesImplementation(Libs.Mockk.mockk)
+  testFixturesImplementation(Libs.Pulsar.client)
+  testFixturesImplementation(Libs.Pulsar.clientAdmin)
+  testFixturesApi(Libs.TestContainers.testcontainers)
 }
 
 tasks.withType<KotlinCompile> {
   doFirst {
-    // all versions
+    // File containing the list of all released versions
     val file = File(project.projectDir.absolutePath, "/src/main/resources/versions")
-    // append current version if not yet present
-    if (!file.useLines { lines -> lines.any { it == Ci.base } }) {
-      file.appendText(Ci.base + "\n")
+
+    if (Ci.isRelease) {
+      // append current release version if not yet present
+      if (!file.useLines { lines -> lines.any { it == Ci.version } }) {
+        file.appendText(Ci.version + "\n")
+      }
     }
 
-    // current version
-    File(project.projectDir.absolutePath, "/src/main/resources/version").writeText(Ci.base)
+    // current version (snapshot or release)
+    File(project.projectDir.absolutePath, "/src/main/resources/current").writeText(Ci.version)
+
+    // Pulsar version
+    File(project.projectDir.absolutePath, "/src/testFixtures/resources/pulsar")
+        .writeText(Libs.Pulsar.version)
   }
 }
 

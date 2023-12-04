@@ -22,6 +22,7 @@
  */
 package io.infinitic.pulsar
 
+import io.github.oshai.kotlinlogging.KotlinLogging
 import io.infinitic.common.clients.messages.ClientEnvelope
 import io.infinitic.common.clients.messages.ClientMessage
 import io.infinitic.common.data.MillisDuration
@@ -48,6 +49,8 @@ class PulsarInfiniticProducer(
 ) : InfiniticProducer {
 
   private var suggestedName: String? = null
+
+  val logger = KotlinLogging.logger {}
 
   /**
    * Name of the sender
@@ -102,9 +105,11 @@ class PulsarInfiniticProducer(
 
   // Asynchronously send message to client
   override fun sendAsync(message: ClientMessage): CompletableFuture<Unit> {
-    val topic =
-        resourceManager.initTopic("${message.recipientName}", ClientTopicDescription.RESPONSE)
-            .getOrThrow()
+    val topic = resourceManager.initTopic(
+        "${message.recipientName}", ClientTopicDescription.RESPONSE,
+    ).getOrElse { return CompletableFuture.failedFuture(it) }
+
+    logger.debug { "Sending to topic '$topic': '$message'" }
 
     return producer.sendAsync<ClientMessage, ClientEnvelope>(
         message, zero, topic, clientProducerName,
@@ -114,8 +119,11 @@ class PulsarInfiniticProducer(
   // Asynchronously send message to Workflow Tag
   override fun sendAsync(message: WorkflowTagMessage): CompletableFuture<Unit> {
     val topic =
-        resourceManager.initTopic("${message.workflowName}", WorkflowTopicDescription.TAG)
-            .getOrThrow()
+        resourceManager.initTopic(
+            "${message.workflowName}", WorkflowTopicDescription.TAG,
+        ).getOrElse { return CompletableFuture.failedFuture(it) }
+
+    logger.debug { "Sending to topic '$topic': '$message'" }
 
     return producer.sendAsync<WorkflowTagMessage, WorkflowTagEnvelope>(
         message, zero, topic, workflowTagProducerName, key = "${message.workflowTag}",
@@ -131,7 +139,9 @@ class PulsarInfiniticProducer(
       resourceManager.initTopic("${message.workflowName}", WorkflowTopicDescription.ENGINE_DELAYED)
     } else {
       resourceManager.initTopic("${message.workflowName}", WorkflowTopicDescription.ENGINE)
-    }.getOrThrow()
+    }.getOrElse { return CompletableFuture.failedFuture(it) }
+
+    logger.debug { "Sending to topic '$topic' after $after: '$message'" }
 
     return producer.sendAsync<WorkflowEngineMessage, WorkflowEngineEnvelope>(
         message, after, topic, workflowEngineProducerName, key = "${message.workflowId}",
@@ -140,9 +150,10 @@ class PulsarInfiniticProducer(
 
   // Asynchronously send message to Task Tag
   override fun sendAsync(message: TaskTagMessage): CompletableFuture<Unit> {
-    val topic =
-        resourceManager.initTopic("${message.serviceName}", ServiceTopicDescription.TAG)
-            .getOrThrow()
+    val topic = resourceManager.initTopic("${message.serviceName}", ServiceTopicDescription.TAG)
+        .getOrElse { return CompletableFuture.failedFuture(it) }
+
+    logger.debug { "Sending to topic '$topic': '$message'" }
 
     return producer.sendAsync<TaskTagMessage, TaskTagEnvelope>(
         message, zero, topic, taskTagProducerName, key = "${message.taskTag}",
@@ -154,15 +165,19 @@ class PulsarInfiniticProducer(
     message: TaskExecutorMessage,
     after: MillisDuration
   ): CompletableFuture<Unit> {
-    val topic = when (message.isWorkflowTask()) {
-      true -> when (message) {
-        is ExecuteTask -> resourceManager.initTopic(
+    val topic = when (message) {
+      is ExecuteTask -> when (message.isWorkflowTask()) {
+        true -> resourceManager.initTopic(
             "${message.workflowName!!}", WorkflowTopicDescription.EXECUTOR,
         )
-      }
 
-      false -> resourceManager.initTopic("${message.serviceName}", ServiceTopicDescription.EXECUTOR)
-    }.getOrThrow()
+        false -> resourceManager.initTopic(
+            "${message.serviceName}", ServiceTopicDescription.EXECUTOR,
+        )
+      }
+    }.getOrElse { return CompletableFuture.failedFuture(it) }
+
+    logger.debug { "Sending to topic '$topic' after $after: '$message'" }
 
     return producer.sendAsync<TaskExecutorMessage, TaskExecutorEnvelope>(
         message, after, topic, taskExecutorProducerName,

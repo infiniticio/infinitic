@@ -102,7 +102,7 @@ internal class BranchesWorkflowTests : StringSpec(
         branchesWorkflow.async1()
 
         // wait completion of the async branch
-        delay(1000)
+        delay(1500)
 
         worker.getWorkflowState() shouldBe null
       }

@@ -32,7 +32,7 @@ import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import io.kotest.matchers.string.shouldContain
 
-class RetryPolicyTests :
+internal class RetryPolicyTests :
   StringSpec(
       {
         "initialDelayInSeconds must be > 0" {

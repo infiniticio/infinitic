@@ -41,9 +41,9 @@ import io.infinitic.common.workflows.data.channels.SignalData
 import io.infinitic.common.workflows.data.commands.Command
 import io.infinitic.common.workflows.data.commands.CommandSimpleName
 import io.infinitic.common.workflows.data.commands.CommandStatus
-import io.infinitic.common.workflows.data.commands.DispatchMethodCommand
+import io.infinitic.common.workflows.data.commands.DispatchExistingWorkflowCommand
+import io.infinitic.common.workflows.data.commands.DispatchNewWorkflowCommand
 import io.infinitic.common.workflows.data.commands.DispatchTaskCommand
-import io.infinitic.common.workflows.data.commands.DispatchWorkflowCommand
 import io.infinitic.common.workflows.data.commands.InlineTaskCommand
 import io.infinitic.common.workflows.data.commands.PastCommand
 import io.infinitic.common.workflows.data.commands.ReceiveSignalCommand
@@ -60,13 +60,16 @@ import io.infinitic.common.workflows.data.steps.StepStatus
 import io.infinitic.common.workflows.data.steps.StepStatus.Canceled
 import io.infinitic.common.workflows.data.steps.StepStatus.Completed
 import io.infinitic.common.workflows.data.steps.StepStatus.CurrentlyFailed
+import io.infinitic.common.workflows.data.steps.StepStatus.CurrentlyTimedOut
 import io.infinitic.common.workflows.data.steps.StepStatus.Failed
+import io.infinitic.common.workflows.data.steps.StepStatus.TimedOut
 import io.infinitic.common.workflows.data.steps.StepStatus.Unknown
 import io.infinitic.common.workflows.data.steps.StepStatus.Waiting
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskParameters
-import io.infinitic.exceptions.CanceledDeferredException
-import io.infinitic.exceptions.FailedDeferredException
-import io.infinitic.exceptions.UnknownDeferredException
+import io.infinitic.exceptions.DeferredCanceledException
+import io.infinitic.exceptions.DeferredFailedException
+import io.infinitic.exceptions.DeferredTimedOutException
+import io.infinitic.exceptions.DeferredUnknownException
 import io.infinitic.exceptions.clients.InvalidChannelUsageException
 import io.infinitic.exceptions.clients.InvalidRunningTaskException
 import io.infinitic.exceptions.workflows.MultipleCustomIdException
@@ -186,10 +189,12 @@ internal class WorkflowDispatcherImpl(
                 throw NewStepException
               }
               // we already know the status of this step based on history
+              is Unknown,
               is Canceled,
               is Failed,
               is CurrentlyFailed,
-              is Unknown -> {
+              is TimedOut,
+              is CurrentlyTimedOut -> {
                 throw getDeferredException(stepStatus)
               }
 
@@ -242,6 +247,20 @@ internal class WorkflowDispatcherImpl(
                 throw getDeferredException(stepStatus)
               }
 
+              is CurrentlyTimedOut -> {
+                // workflowTaskIndex is now the one where this deferred was failed
+                workflowTaskIndex = stepStatus.timeoutWorkflowTaskIndex
+
+                throw getDeferredException(stepStatus)
+              }
+
+              is TimedOut -> {
+                // workflowTaskIndex is now the one where this deferred was failed
+                workflowTaskIndex = stepStatus.timeoutWorkflowTaskIndex
+
+                throw getDeferredException(stepStatus)
+              }
+
               is Completed -> {
                 // workflowTaskIndex is now the one where this deferred was completed
                 workflowTaskIndex = stepStatus.completionWorkflowTaskIndex
@@ -264,8 +283,11 @@ internal class WorkflowDispatcherImpl(
         is Unknown -> DeferredStatus.UNKNOWN
         is Completed -> DeferredStatus.COMPLETED
         is Canceled -> DeferredStatus.CANCELED
+        is CurrentlyFailed,
         is Failed -> DeferredStatus.FAILED
-        is CurrentlyFailed -> DeferredStatus.FAILED
+
+        is CurrentlyTimedOut,
+        is TimedOut -> DeferredStatus.TIMED_OUT
       }
 
   override fun timer(duration: JavaDuration): Deferred<JavaInstant> =
@@ -323,35 +345,36 @@ internal class WorkflowDispatcherImpl(
               methodParameters = handler.methodParameters,
               methodParameterTypes = handler.methodParameterTypes,
               methodName = handler.methodName,
+              methodTimeout = handler.timeout.getOrThrow(),
               taskTags = handler.taskTags,
               taskMeta = handler.taskMeta,
           ),
-          CommandSimpleName(handler.simpleName),
+          CommandSimpleName(handler.fullMethodName),
       )
 
   /** Workflow dispatching */
   private fun <R : Any?> dispatchWorkflow(handler: NewWorkflowProxyHandler<*>): Deferred<R> =
       when (handler.isChannelGetter()) {
         true -> throw InvalidChannelUsageException()
-        false ->
-          run {
-            // it's not possible to have multiple customIds in tags
-            if (handler.workflowTags.count { it.isCustomId() } > 1) {
-              throw MultipleCustomIdException
-            }
-
-            dispatchCommand(
-                DispatchWorkflowCommand(
-                    workflowName = handler.workflowName,
-                    methodName = handler.methodName,
-                    methodParameterTypes = handler.methodParameterTypes,
-                    methodParameters = handler.methodParameters,
-                    workflowTags = handler.workflowTags,
-                    workflowMeta = handler.workflowMeta,
-                ),
-                CommandSimpleName(handler.simpleName),
-            )
+        false -> {
+          // it's not possible to have multiple customIds in tags
+          if (handler.workflowTags.count { it.isCustomId() } > 1) {
+            throw MultipleCustomIdException
           }
+
+          dispatchCommand(
+              DispatchNewWorkflowCommand(
+                  workflowName = handler.workflowName,
+                  methodName = handler.methodName,
+                  methodParameterTypes = handler.methodParameterTypes,
+                  methodParameters = handler.methodParameters,
+                  methodTimeout = handler.timeout.getOrThrow(),
+                  workflowTags = handler.workflowTags,
+                  workflowMeta = handler.workflowMeta,
+              ),
+              CommandSimpleName(handler.fullMethodName),
+          )
+        }
       }
 
   /** Method dispatching */
@@ -359,15 +382,16 @@ internal class WorkflowDispatcherImpl(
       when (handler.isChannelGetter()) {
         true -> throw InvalidChannelUsageException()
         false -> dispatchCommand(
-            DispatchMethodCommand(
+            DispatchExistingWorkflowCommand(
                 workflowName = handler.workflowName,
                 workflowId = handler.requestBy.workflowId,
                 workflowTag = handler.requestBy.workflowTag,
                 methodName = handler.methodName,
                 methodParameterTypes = handler.methodParameterTypes,
                 methodParameters = handler.methodParameters,
+                methodTimeout = handler.timeout.getOrThrow(),
             ),
-            CommandSimpleName(handler.simpleName),
+            CommandSimpleName(handler.fullMethodName),
         )
       }
 
@@ -489,11 +513,12 @@ internal class WorkflowDispatcherImpl(
   /** Exception when waiting a deferred */
   private fun getDeferredException(stepStatus: StepStatus) =
       when (stepStatus) {
-        is Unknown -> UnknownDeferredException.from(stepStatus.deferredUnknownError)
-        is Canceled -> CanceledDeferredException.from(stepStatus.deferredCanceledError)
-        is Failed -> FailedDeferredException.from(stepStatus.deferredFailedError)
-        is CurrentlyFailed -> FailedDeferredException.from(stepStatus.deferredFailedError)
-        is Completed,
-        Waiting -> thisShouldNotHappen()
+        is Unknown -> DeferredUnknownException.from(stepStatus.deferredUnknownError)
+        is Canceled -> DeferredCanceledException.from(stepStatus.deferredCanceledError)
+        is CurrentlyFailed -> DeferredFailedException.from(stepStatus.deferredFailedError)
+        is Failed -> DeferredFailedException.from(stepStatus.deferredFailedError)
+        is CurrentlyTimedOut -> DeferredTimedOutException.from(stepStatus.deferredTimedOutError)
+        is TimedOut -> DeferredTimedOutException.from(stepStatus.deferredTimedOutError)
+        is Completed, Waiting -> thisShouldNotHappen()
       }
 }

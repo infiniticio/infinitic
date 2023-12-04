@@ -27,71 +27,78 @@ import io.infinitic.common.tasks.executors.errors.DeferredError
 import io.infinitic.common.tasks.executors.errors.DeferredFailedError
 import io.infinitic.common.tasks.executors.errors.DeferredTimedOutError
 import io.infinitic.common.tasks.executors.errors.DeferredUnknownError
+import io.infinitic.common.tasks.executors.errors.MethodCanceledError
+import io.infinitic.common.tasks.executors.errors.MethodFailedError
+import io.infinitic.common.tasks.executors.errors.MethodTimedOutError
+import io.infinitic.common.tasks.executors.errors.MethodUnknownError
 import io.infinitic.common.tasks.executors.errors.TaskCanceledError
 import io.infinitic.common.tasks.executors.errors.TaskFailedError
 import io.infinitic.common.tasks.executors.errors.TaskTimedOutError
 import io.infinitic.common.tasks.executors.errors.TaskUnknownError
-import io.infinitic.common.tasks.executors.errors.WorkflowCanceledError
-import io.infinitic.common.tasks.executors.errors.WorkflowFailedError
 import io.infinitic.common.tasks.executors.errors.WorkflowTaskFailedError
-import io.infinitic.common.tasks.executors.errors.WorkflowTimedOutError
-import io.infinitic.common.tasks.executors.errors.WorkflowUnknownError
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+
+/**
+ * DeferredException are use-facing exceptions.
+ *
+ * They can be thrown when an exception occurs while synchronously waiting for a deferred.
+ */
+
 
 @Serializable
 sealed class DeferredException : kotlin.RuntimeException() {
   companion object {
     fun from(error: DeferredError) =
         when (error) {
-          is DeferredUnknownError -> UnknownDeferredException.from(error)
-          is DeferredTimedOutError -> TimedOutDeferredException.from(error)
-          is DeferredCanceledError -> CanceledDeferredException.from(error)
-          is DeferredFailedError -> FailedDeferredException.from(error)
+          is DeferredUnknownError -> DeferredUnknownException.from(error)
+          is DeferredTimedOutError -> DeferredTimedOutException.from(error)
+          is DeferredCanceledError -> DeferredCanceledException.from(error)
+          is DeferredFailedError -> DeferredFailedException.from(error)
         }
   }
 }
 
 @Serializable
-sealed class UnknownDeferredException : DeferredException() {
+sealed class DeferredUnknownException : DeferredException() {
   companion object {
     fun from(error: DeferredUnknownError) =
         when (error) {
-          is TaskUnknownError -> UnknownTaskException.from(error)
-          is WorkflowUnknownError -> UnknownWorkflowException.from(error)
+          is TaskUnknownError -> TaskUnknownException.from(error)
+          is MethodUnknownError -> WorkflowUnknownException.from(error)
         }
   }
 }
 
 @Serializable
-sealed class TimedOutDeferredException : DeferredException() {
+sealed class DeferredTimedOutException : DeferredException() {
   companion object {
     fun from(error: DeferredTimedOutError) =
         when (error) {
           is TaskTimedOutError -> TaskTimedOutException.from(error)
-          is WorkflowTimedOutError -> WorkflowTimedOutException.from(error)
+          is MethodTimedOutError -> WorkflowTimedOutException.from(error)
         }
   }
 }
 
 @Serializable
-sealed class CanceledDeferredException : DeferredException() {
+sealed class DeferredCanceledException : DeferredException() {
   companion object {
     fun from(error: DeferredCanceledError) =
         when (error) {
           is TaskCanceledError -> TaskCanceledException.from(error)
-          is WorkflowCanceledError -> WorkflowCanceledException.from(error)
+          is MethodCanceledError -> WorkflowCanceledException.from(error)
         }
   }
 }
 
 @Serializable
-sealed class FailedDeferredException : DeferredException() {
+sealed class DeferredFailedException : DeferredException() {
   companion object {
     fun from(error: DeferredFailedError) =
         when (error) {
           is TaskFailedError -> TaskFailedException.from(error)
-          is WorkflowFailedError -> WorkflowFailedException.from(error)
+          is MethodFailedError -> WorkflowFailedException.from(error)
           is WorkflowTaskFailedError -> WorkflowTaskFailedException.from(error)
         }
   }
@@ -99,16 +106,16 @@ sealed class FailedDeferredException : DeferredException() {
 
 /** Exception occurring when waiting for an unknown task */
 @Serializable
-data class UnknownTaskException(
+data class TaskUnknownException(
   /** Name of the canceled task */
   @SerialName("taskName") val serviceName: String,
 
   /** Id of the canceled task */
   val taskId: String
-) : UnknownDeferredException() {
+) : DeferredUnknownException() {
   companion object {
     fun from(error: TaskUnknownError) =
-        UnknownTaskException(
+        TaskUnknownException(
             serviceName = error.serviceName.toString(), taskId = error.taskId.toString(),
         )
   }
@@ -116,7 +123,7 @@ data class UnknownTaskException(
 
 /** Exception occurring when waiting for an unknown workflow */
 @Serializable
-data class UnknownWorkflowException(
+data class WorkflowUnknownException(
   /** Name of the canceled child workflow */
   val workflowName: String,
 
@@ -125,10 +132,10 @@ data class UnknownWorkflowException(
 
   /** Id of the methodRun */
   val methodRunId: String?
-) : UnknownDeferredException() {
+) : DeferredUnknownException() {
   companion object {
-    fun from(error: WorkflowUnknownError) =
-        UnknownWorkflowException(
+    fun from(error: MethodUnknownError) =
+        WorkflowUnknownException(
             workflowName = error.workflowName.toString(),
             workflowId = error.workflowId.toString(),
             methodRunId = error.methodRunId?.toString(),
@@ -147,7 +154,7 @@ data class TaskTimedOutException(
 
   /** Method called */
   val methodName: String
-) : TimedOutDeferredException() {
+) : DeferredTimedOutException() {
   companion object {
     fun from(error: TaskTimedOutError) =
         TaskTimedOutException(
@@ -172,9 +179,9 @@ data class WorkflowTimedOutException(
 
   /** Id of the methodRun */
   val methodRunId: String?
-) : TimedOutDeferredException() {
+) : DeferredTimedOutException() {
   companion object {
-    fun from(error: WorkflowTimedOutError) =
+    fun from(error: MethodTimedOutError) =
         WorkflowTimedOutException(
             workflowName = error.workflowName.toString(),
             workflowId = error.workflowId.toString(),
@@ -195,7 +202,7 @@ data class TaskCanceledException(
 
   /** Method called */
   val methodName: String
-) : CanceledDeferredException() {
+) : DeferredCanceledException() {
   companion object {
     fun from(error: TaskCanceledError) =
         TaskCanceledException(
@@ -217,9 +224,9 @@ data class WorkflowCanceledException(
 
   /** Id of the methodRun */
   val methodRunId: String?
-) : CanceledDeferredException() {
+) : DeferredCanceledException() {
   companion object {
-    fun from(error: WorkflowCanceledError) =
+    fun from(error: MethodCanceledError) =
         WorkflowCanceledException(
             workflowName = error.workflowName.toString(),
             workflowId = error.workflowId.toString(),
@@ -242,7 +249,7 @@ data class TaskFailedException(
 
   /** cause of the error */
   val workerException: WorkerException
-) : FailedDeferredException() {
+) : DeferredFailedException() {
   companion object {
     fun from(error: TaskFailedError) =
         TaskFailedException(
@@ -271,9 +278,9 @@ data class WorkflowFailedException(
 
   /** cause of the error */
   val deferredException: DeferredException
-) : FailedDeferredException() {
+) : DeferredFailedException() {
   companion object {
-    fun from(error: WorkflowFailedError): WorkflowFailedException =
+    fun from(error: MethodFailedError): WorkflowFailedException =
         WorkflowFailedException(
             workflowName = error.workflowName.toString(),
             workflowId = error.workflowId.toString(),
@@ -298,7 +305,7 @@ data class WorkflowTaskFailedException(
 
   /** cause of the error */
   val workerException: WorkerException
-) : FailedDeferredException() {
+) : DeferredFailedException() {
   companion object {
     fun from(error: WorkflowTaskFailedError) =
         WorkflowTaskFailedException(

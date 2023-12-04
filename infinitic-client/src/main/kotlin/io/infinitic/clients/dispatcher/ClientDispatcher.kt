@@ -51,7 +51,7 @@ import io.infinitic.common.proxies.RequestByWorkflowId
 import io.infinitic.common.proxies.RequestByWorkflowTag
 import io.infinitic.common.tasks.data.ServiceName
 import io.infinitic.common.tasks.data.TaskId
-import io.infinitic.common.tasks.executors.errors.WorkflowFailedError
+import io.infinitic.common.tasks.executors.errors.MethodFailedError
 import io.infinitic.common.transport.InfiniticConsumer
 import io.infinitic.common.transport.InfiniticProducer
 import io.infinitic.common.workflows.data.channels.SignalId
@@ -61,8 +61,8 @@ import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.data.workflows.WorkflowName
 import io.infinitic.common.workflows.engine.messages.CancelWorkflow
 import io.infinitic.common.workflows.engine.messages.CompleteTimers
-import io.infinitic.common.workflows.engine.messages.DispatchMethod
-import io.infinitic.common.workflows.engine.messages.DispatchWorkflow
+import io.infinitic.common.workflows.engine.messages.DispatchMethodOnRunningWorkflow
+import io.infinitic.common.workflows.engine.messages.DispatchNewWorkflow
 import io.infinitic.common.workflows.engine.messages.RetryWorkflowTask
 import io.infinitic.common.workflows.engine.messages.SendSignal
 import io.infinitic.common.workflows.engine.messages.WaitWorkflow
@@ -74,10 +74,10 @@ import io.infinitic.common.workflows.tags.messages.DispatchWorkflowByCustomId
 import io.infinitic.common.workflows.tags.messages.GetWorkflowIdsByTag
 import io.infinitic.common.workflows.tags.messages.RetryWorkflowTaskByTag
 import io.infinitic.common.workflows.tags.messages.SendSignalByTag
-import io.infinitic.exceptions.UnknownWorkflowException
 import io.infinitic.exceptions.WorkflowCanceledException
 import io.infinitic.exceptions.WorkflowFailedException
 import io.infinitic.exceptions.WorkflowTimedOutException
+import io.infinitic.exceptions.WorkflowUnknownException
 import io.infinitic.exceptions.clients.InvalidChannelUsageException
 import io.infinitic.exceptions.clients.MultipleCustomIdException
 import io.infinitic.workflows.DeferredStatus
@@ -251,7 +251,7 @@ class ClientDispatcher(
       )
 
       is MethodFailed -> throw WorkflowFailedException.from(
-          WorkflowFailedError(
+          MethodFailedError(
               workflowName = workflowName,
               methodName = methodName,
               workflowId = workflowId,
@@ -260,7 +260,7 @@ class ClientDispatcher(
           ),
       )
 
-      is MethodRunUnknown -> throw UnknownWorkflowException(
+      is MethodRunUnknown -> throw WorkflowUnknownException(
           workflowName = workflowName.toString(),
           workflowId = workflowId.toString(),
           methodRunId = methodRunId?.toString(),
@@ -484,31 +484,29 @@ class ClientDispatcher(
       // no customId tag provided
       0 -> {
         // provided tags
-        val workflowTags =
-            handler.workflowTags.map {
-              AddTagToWorkflow(
-                  workflowName = deferred.workflowName,
-                  workflowTag = it,
-                  workflowId = deferred.workflowId,
-                  emitterName = clientName,
-              )
-            }
+        val workflowTags = handler.workflowTags.map {
+          AddTagToWorkflow(
+              workflowName = deferred.workflowName,
+              workflowTag = it,
+              workflowId = deferred.workflowId,
+              emitterName = clientName,
+          )
+        }
         // dispatch workflow message
-        val dispatchWorkflow =
-            DispatchWorkflow(
-                workflowName = deferred.workflowName,
-                workflowId = deferred.workflowId,
-                methodName = handler.methodName,
-                methodParameters = handler.methodParameters,
-                methodParameterTypes = handler.methodParameterTypes,
-                workflowTags = handler.workflowTags,
-                workflowMeta = handler.workflowMeta,
-                parentWorkflowName = null,
-                parentWorkflowId = null,
-                parentMethodRunId = null,
-                clientWaiting = clientWaiting,
-                emitterName = clientName,
-            )
+        val dispatchWorkflow = DispatchNewWorkflow(
+            workflowName = deferred.workflowName,
+            workflowId = deferred.workflowId,
+            methodName = handler.methodName,
+            methodParameters = handler.methodParameters,
+            methodParameterTypes = handler.methodParameterTypes,
+            workflowTags = handler.workflowTags,
+            workflowMeta = handler.workflowMeta,
+            parentWorkflowName = null,
+            parentWorkflowId = null,
+            parentMethodRunId = null,
+            clientWaiting = clientWaiting,
+            emitterName = clientName,
+        )
 
         sendingScope.future {
 
@@ -531,6 +529,7 @@ class ClientDispatcher(
             methodName = deferred.methodName,
             methodParameters = handler.methodParameters,
             methodParameterTypes = handler.methodParameterTypes,
+            methodTimeout = deferred.methodTimeout,
             workflowTags = handler.workflowTags,
             workflowMeta = handler.workflowMeta,
             parentWorkflowName = null,
@@ -630,7 +629,7 @@ class ClientDispatcher(
   ) =
       when (deferred.requestBy) {
         is RequestByWorkflowId -> {
-          val dispatchMethod = DispatchMethod(
+          val dispatchMethod = DispatchMethodOnRunningWorkflow(
               workflowName = deferred.workflowName,
               workflowId = deferred.requestBy.workflowId,
               methodRunId = deferred.methodRunId,
@@ -657,6 +656,7 @@ class ClientDispatcher(
               methodName = handler.methodName,
               methodParameterTypes = handler.methodParameterTypes,
               methodParameters = handler.methodParameters,
+              methodTimeout = deferred.methodTimeout,
               clientWaiting = clientWaiting,
               emitterName = clientName,
           )

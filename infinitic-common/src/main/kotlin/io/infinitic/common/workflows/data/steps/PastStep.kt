@@ -32,6 +32,7 @@ import io.infinitic.common.workflows.data.properties.PropertyName
 import io.infinitic.common.workflows.data.steps.StepStatus.Canceled
 import io.infinitic.common.workflows.data.steps.StepStatus.Completed
 import io.infinitic.common.workflows.data.steps.StepStatus.CurrentlyFailed
+import io.infinitic.common.workflows.data.steps.StepStatus.CurrentlyTimedOut
 import io.infinitic.common.workflows.data.steps.StepStatus.Failed
 import io.infinitic.common.workflows.data.steps.StepStatus.Unknown
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskIndex
@@ -40,13 +41,13 @@ import kotlinx.serialization.Serializable
 @Serializable
 @AvroNamespace("io.infinitic.workflows.data")
 data class PastStep(
-    val stepPosition: MethodRunPosition,
-    val step: Step,
-    val stepHash: StepHash,
-    val workflowTaskIndexAtStart: WorkflowTaskIndex,
-    var stepStatus: StepStatus = StepStatus.Waiting,
-    var propertiesNameHashAtTermination: Map<PropertyName, PropertyHash>? = null,
-    var workflowTaskIndexAtTermination: WorkflowTaskIndex? = null
+  val stepPosition: MethodRunPosition,
+  val step: Step,
+  val stepHash: StepHash,
+  val workflowTaskIndexAtStart: WorkflowTaskIndex,
+  var stepStatus: StepStatus = StepStatus.Waiting,
+  var propertiesNameHashAtTermination: Map<PropertyName, PropertyHash>? = null,
+  var workflowTaskIndexAtTermination: WorkflowTaskIndex? = null
 ) {
   @JsonIgnore
   fun isTerminated() =
@@ -62,7 +63,8 @@ data class PastStep(
         when (pastCommand is ReceiveSignalPastCommand) {
           true -> pastCommand.commandStatuses
           false -> null
-        })
+        },
+    )
     stepStatus = step.status()
   }
 
@@ -77,7 +79,8 @@ data class PastStep(
       // apply update
       updateWith(pastCommand)
 
-      return isTerminated() || (stepStatus is CurrentlyFailed && wasWaiting)
+      return isTerminated()
+          || ((stepStatus is CurrentlyFailed || stepStatus is CurrentlyTimedOut) && wasWaiting)
     }
   }
 

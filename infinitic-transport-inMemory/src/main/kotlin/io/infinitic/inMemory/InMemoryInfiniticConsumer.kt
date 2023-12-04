@@ -171,7 +171,7 @@ class InMemoryInfiniticConsumer(private val channels: InMemoryChannels) : Infini
         logger.trace { "Channel ${channel.id}: Receiving $message" }
         handler(message)
       } catch (e: Exception) {
-        logger.warn { "Channel ${channel.id}: Error while processing message $message" }
+        logger.warn(e) { "Channel ${channel.id}: Error while processing message $message" }
         sendToDlq(beforeDlq, channel, message, e)
       }
     }
@@ -199,7 +199,7 @@ class InMemoryInfiniticConsumer(private val channels: InMemoryChannels) : Infini
         logger.trace { "Channel ${channel.id}: Receiving ${delayedMessage.message}" }
         handler(delayedMessage.message)
       } catch (e: Exception) {
-        logger.warn { "Channel ${channel.id}: Error while processing message ${delayedMessage.message}" }
+        logger.warn(e) { "Channel ${channel.id}: Error while processing delayed message ${delayedMessage.message}" }
         sendToDlq(beforeDlq, channel, delayedMessage.message, e)
       }
     }

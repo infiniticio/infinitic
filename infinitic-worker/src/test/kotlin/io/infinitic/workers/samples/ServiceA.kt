@@ -24,18 +24,19 @@
 
 package io.infinitic.workers.samples
 
-interface ServiceA
+internal interface ServiceA
 
-class ServiceAImpl : ServiceA
+internal class ServiceAImpl : ServiceA
 
-class ServiceWithInvocationTargetException : ServiceA {
+internal class ServiceWithInvocationTargetException : ServiceA {
   init {
     throw Exception("InvocationTargetException")
   }
 }
 
-class ServiceWithExceptionInInitializerError : ServiceA {
+internal class ServiceWithExceptionInInitializerError : ServiceA {
   companion object {
-    @JvmStatic val e: Nothing = throw Exception("ExceptionInInitializerError")
+    @JvmStatic
+    val e: Nothing = throw Exception("ExceptionInInitializerError")
   }
 }

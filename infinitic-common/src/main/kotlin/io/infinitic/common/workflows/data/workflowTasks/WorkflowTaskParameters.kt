@@ -46,17 +46,17 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 data class WorkflowTaskParameters(
-    @AvroDefault("0.9.7") val version: String = io.infinitic.version,
-    val taskId: TaskId,
-    val workflowId: WorkflowId,
-    val workflowName: WorkflowName,
-    @AvroDefault(Avro.NULL) val workflowVersion: WorkflowVersion?,
-    val workflowTags: Set<WorkflowTag>,
-    val workflowMeta: WorkflowMeta,
-    val workflowPropertiesHashValue: Map<PropertyHash, PropertyValue>,
-    val workflowTaskIndex: WorkflowTaskIndex,
-    val methodRun: MethodRun,
-    val emitterName: ClientName
+  @AvroDefault("0.9.7") val version: String = io.infinitic.current,
+  val taskId: TaskId,
+  val workflowId: WorkflowId,
+  val workflowName: WorkflowName,
+  @AvroDefault(Avro.NULL) val workflowVersion: WorkflowVersion?,
+  val workflowTags: Set<WorkflowTag>,
+  val workflowMeta: WorkflowMeta,
+  val workflowPropertiesHashValue: Map<PropertyHash, PropertyValue>,
+  val workflowTaskIndex: WorkflowTaskIndex,
+  val methodRun: MethodRun,
+  val emitterName: ClientName
 ) {
   fun toExecuteTaskMessage() =
       ExecuteTask(
@@ -65,7 +65,7 @@ data class WorkflowTaskParameters(
           clientWaiting = false,
           methodName = MethodName(WorkflowTask::handle.name),
           methodParameterTypes =
-              MethodParameterTypes(listOf(WorkflowTaskParameters::class.java.name)),
+          MethodParameterTypes(listOf(WorkflowTaskParameters::class.java.name)),
           methodParameters = MethodParameters.from(this),
           workflowId = workflowId,
           workflowName = workflowName,
@@ -76,5 +76,6 @@ data class WorkflowTaskParameters(
           taskRetrySequence = TaskRetrySequence(0),
           taskTags = setOf(),
           taskMeta = TaskMeta(),
-          emitterName = emitterName)
+          emitterName = emitterName,
+      )
 }

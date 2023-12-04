@@ -25,10 +25,10 @@ package io.infinitic.workflows.engine.handlers
 import io.infinitic.common.clients.messages.MethodCanceled
 import io.infinitic.common.data.ClientName
 import io.infinitic.common.exceptions.thisShouldNotHappen
-import io.infinitic.common.tasks.executors.errors.WorkflowCanceledError
+import io.infinitic.common.tasks.executors.errors.MethodCanceledError
 import io.infinitic.common.transport.InfiniticProducer
-import io.infinitic.common.workflows.data.commands.DispatchMethodCommand
-import io.infinitic.common.workflows.data.commands.DispatchWorkflowCommand
+import io.infinitic.common.workflows.data.commands.DispatchExistingWorkflowCommand
+import io.infinitic.common.workflows.data.commands.DispatchNewWorkflowCommand
 import io.infinitic.common.workflows.data.methodRuns.MethodRun
 import io.infinitic.common.workflows.data.methodRuns.MethodRunId
 import io.infinitic.common.workflows.data.workflows.WorkflowCancellationReason
@@ -91,8 +91,8 @@ private fun CoroutineScope.cancelMethodRun(
             workflowId = methodRun.parentWorkflowId!!,
             workflowName = methodRun.parentWorkflowName ?: thisShouldNotHappen(),
             methodRunId = methodRun.parentMethodRunId ?: thisShouldNotHappen(),
-            childWorkflowCanceledError =
-            WorkflowCanceledError(
+            childMethodCanceledError =
+            MethodCanceledError(
                 workflowName = state.workflowName,
                 workflowId = state.workflowId,
                 methodRunId = methodRun.methodRunId,
@@ -105,7 +105,7 @@ private fun CoroutineScope.cancelMethodRun(
   // cancel children
   methodRun.pastCommands.forEach {
     when (val command = it.command) {
-      is DispatchMethodCommand -> {
+      is DispatchExistingWorkflowCommand -> {
         when {
           command.workflowId != null -> {
             val cancelWorkflow =
@@ -135,7 +135,7 @@ private fun CoroutineScope.cancelMethodRun(
         }
       }
 
-      is DispatchWorkflowCommand -> {
+      is DispatchNewWorkflowCommand -> {
         val cancelWorkflow =
             CancelWorkflow(
                 workflowId = WorkflowId.from(it.commandId),

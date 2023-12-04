@@ -86,6 +86,9 @@ workflows:
   - name: io.infinitic.tests.timers.TimerWorkflow
     class: io.infinitic.tests.timers.TimerWorkflowImpl
     concurrency: 2
+  - name: io.infinitic.tests.timeouts.TimeoutsWorkflow
+    class: io.infinitic.tests.timeouts.TimeoutsWorkflowImpl
+    concurrency: 2
   - name: io.infinitic.tests.versioning.VersionedWorkflow
     classes:
       - io.infinitic.tests.versioning.VersionedWorkflowImpl

@@ -27,14 +27,14 @@ import io.infinitic.common.workflows.data.methodRuns.MethodRun
 import io.infinitic.common.workflows.data.methodRuns.MethodRunId
 import io.infinitic.common.workflows.data.methodRuns.MethodRunPosition
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskIndex
-import io.infinitic.common.workflows.engine.messages.DispatchWorkflow
+import io.infinitic.common.workflows.engine.messages.DispatchNewWorkflow
 import io.infinitic.common.workflows.engine.state.WorkflowState
 import io.infinitic.workflows.engine.helpers.dispatchWorkflowTask
 import kotlinx.coroutines.CoroutineScope
 
 internal fun CoroutineScope.dispatchWorkflow(
   producer: InfiniticProducer,
-  message: DispatchWorkflow
+  message: DispatchNewWorkflow
 ): WorkflowState {
   val methodRun =
       MethodRun(

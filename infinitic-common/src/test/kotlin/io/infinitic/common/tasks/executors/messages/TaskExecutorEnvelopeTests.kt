@@ -24,38 +24,36 @@ package io.infinitic.common.tasks.executors.messages
 
 import com.github.avrokotlin.avro4k.Avro
 import io.infinitic.common.checkBackwardCompatibility
-import io.infinitic.common.checkCurrentFileIsUpToDate
-import io.infinitic.common.createSchemaFileIfAbsent
+import io.infinitic.common.checkOrCreateCurrentFile
 import io.infinitic.common.fixtures.TestFactory
 import io.kotest.assertions.throwables.shouldNotThrowAny
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
 
 class TaskExecutorEnvelopeTests :
-    StringSpec({
-      TaskExecutorMessage::class.sealedSubclasses.map {
-        val msg = TestFactory.random(it)
+  StringSpec(
+      {
+        TaskExecutorMessage::class.sealedSubclasses.map {
+          val msg = TestFactory.random(it)
 
-        "TaskExecutorMessage(${msg::class.simpleName}) should be avro-convertible" {
-          shouldNotThrowAny {
-            val envelope = TaskExecutorEnvelope.from(msg)
-            val ser = TaskExecutorEnvelope.serializer()
-            val byteArray = Avro.default.encodeToByteArray(ser, envelope)
-            val envelope2 = Avro.default.decodeFromByteArray(ser, byteArray)
-            envelope shouldBe envelope2
+          "TaskExecutorMessage(${msg::class.simpleName}) should be avro-convertible" {
+            shouldNotThrowAny {
+              val envelope = TaskExecutorEnvelope.from(msg)
+              val ser = TaskExecutorEnvelope.serializer()
+              val byteArray = Avro.default.encodeToByteArray(ser, envelope)
+              val envelope2 = Avro.default.decodeFromByteArray(ser, byteArray)
+              envelope shouldBe envelope2
+            }
           }
         }
-      }
 
-      "Create TaskExecutorEnvelope schema file for the current version" {
-        createSchemaFileIfAbsent(TaskExecutorEnvelope.serializer())
-      }
+        "Saved TaskExecutorEnvelope schema should be up-to-date with for the current version" {
+          // An error in this test means that we need to upgrade the version
+          checkOrCreateCurrentFile(TaskExecutorEnvelope.serializer())
+        }
 
-      "Saved TaskExecutorEnvelope schema should be up-to-date with for the current version" {
-        checkCurrentFileIsUpToDate(TaskExecutorEnvelope.serializer())
-      }
-
-      "We should be able to read TaskExecutorEnvelope from any previous version since 0.9.0" {
-        checkBackwardCompatibility(TaskExecutorEnvelope.serializer())
-      }
-    })
+        "We should be able to read TaskExecutorEnvelope from any previous version since 0.9.0" {
+          checkBackwardCompatibility(TaskExecutorEnvelope.serializer())
+        }
+      },
+  )

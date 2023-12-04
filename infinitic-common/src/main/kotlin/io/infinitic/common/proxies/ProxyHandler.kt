@@ -22,15 +22,15 @@
  */
 package io.infinitic.common.proxies
 
-import io.infinitic.annotations.Name
-import io.infinitic.annotations.Timeout
 import io.infinitic.common.data.MillisDuration
 import io.infinitic.common.data.methods.MethodName
 import io.infinitic.common.data.methods.MethodParameterTypes
 import io.infinitic.common.data.methods.MethodParameters
+import io.infinitic.common.utils.findTimeoutAnnotation
+import io.infinitic.common.utils.getAnnotatedName
 import io.infinitic.common.utils.getEmptyConstructor
+import io.infinitic.common.utils.getFullMethodName
 import io.infinitic.exceptions.workflows.InvalidInlineException
-import io.infinitic.tasks.WithTimeout
 import io.infinitic.tasks.getTimeoutInMillis
 import io.infinitic.workflows.SendChannel
 import java.lang.reflect.InvocationHandler
@@ -85,8 +85,7 @@ sealed class ProxyHandler<T : Any>(
   /** Timeout provided by @Timeout annotation, if any */
   val timeout: Result<MillisDuration?>
     get() = try {
-      val annotation = findTimeoutAnnotationOnMethod(klass, method)
-        ?: findTimeoutAnnotationOnClass(klass)
+      val annotation = method.findTimeoutAnnotation() ?: klass.findTimeoutAnnotation()
       val timeout = annotation?.getEmptyConstructor()?.newInstance()?.getTimeoutInMillis()
       Result.success(timeout?.let { MillisDuration(it) })
     } catch (e: Exception) {
@@ -99,21 +98,18 @@ sealed class ProxyHandler<T : Any>(
   /** Args of method called */
   lateinit var methodArgs: Array<out Any>
 
-  /** Name provided by @Name annotation, if any */
-  private val annotatedName: String? by lazy { findNameAnnotationOnClass(klass) }
-
   /** Class name provided by @Name annotation, or java class name by default */
-  protected val name: String by lazy { annotatedName ?: klass.name }
+  protected val name: String by lazy { klass.getAnnotatedName() }
 
   /** SimpleName provided by @Name annotation, or class name by default */
-  val simpleName: String
+  val fullMethodName: String
     // MUST be a get() as this.methodName can change when reusing instance
-    get() = "${annotatedName ?: klass.simpleName}::$methodName"
+    get() = klass.getFullMethodName(method)
 
   /** MethodName provided by @Name annotation, or java method name by default */
   val methodName: MethodName
     //  MUST be a get() as this.method changes
-    get() = MethodName(findNameAnnotationOnMethod(klass, method) ?: method.name)
+    get() = MethodName(method.getAnnotatedName())
 
   /** MethodParameterTypes from method */
   val methodParameterTypes: MethodParameterTypes
@@ -179,83 +175,4 @@ sealed class ProxyHandler<T : Any>(
         "boolean" -> false
         else -> null
       }
-
-  // search for an annotation on this method, in the class, its interfaces, or its parent
-  private fun <T : Annotation, S : Class<out T>> findAnnotationOnMethod(
-    annotation: S,
-    klass: Class<*>,
-    method: Method
-  ): T? {
-    var clazz = klass
-
-    do {
-      // has current class a @Name annotation on the method?
-      try {
-        clazz
-            .getMethod(method.name, *method.parameterTypes).also { it.isAccessible = true }
-            .getAnnotation(annotation)?.also { return it }
-      } catch (e: Exception) {
-        // continue
-      }
-
-      // has any of the interfaces a @Name annotation on the targeted method?
-      clazz.interfaces.forEach { interfac ->
-        findAnnotationOnMethod(annotation, interfac, method)?.also { return it }
-      }
-
-      // if not, inspect the superclass
-      clazz = clazz.superclass ?: break
-
-    } while ("java.lang.Object" != clazz.canonicalName)
-
-    return null
-  }
-
-  // search for an annotation on this class, its interfaces, or its parent
-  private fun <T : Annotation, S : Class<out T>> findAnnotationOnClass(
-    annotation: S,
-    klass: Class<*>
-  ): T? {
-    var clazz = klass
-
-    do {
-      // has current class a @Name annotation?
-      clazz.getAnnotation(annotation)?.also { return it }
-
-      // has any of the interfaces a @Name annotation?
-      clazz.interfaces.forEach { interfac ->
-        findAnnotationOnClass(annotation, interfac)?.also { return it }
-      }
-
-      // if not, inspect the superclass
-      clazz = clazz.superclass ?: break
-
-    } while (Object::class.java.name != clazz.canonicalName)
-
-    return null
-  }
-
-  // search for a @Timeout annotation on this method,
-  // in the class, its interfaces, or its parent
-  private fun findTimeoutAnnotationOnMethod(
-    klass: Class<*>,
-    method: Method
-  ): Class<out WithTimeout>? =
-      findAnnotationOnMethod(Timeout::class.java, klass, method)?.with?.java
-
-  // search for a @Timeout annotation on this class,
-  // in the class, its interfaces, or its parent
-  private fun findTimeoutAnnotationOnClass(klass: Class<*>): Class<out WithTimeout>? =
-      findAnnotationOnClass(Timeout::class.java, klass)?.with?.java
-
-  // search for a @Name annotation on this method,
-  // in the class, its interfaces, or its parent
-  private fun findNameAnnotationOnMethod(klass: Class<*>, method: Method): String? =
-      findAnnotationOnMethod(Name::class.java, klass, method)?.name
-
-
-  // search for a @Name annotation on this class,
-  // its interfaces, or its parent
-  private fun findNameAnnotationOnClass(klass: Class<*>): String? =
-      findAnnotationOnClass(Name::class.java, klass)?.name
 }
