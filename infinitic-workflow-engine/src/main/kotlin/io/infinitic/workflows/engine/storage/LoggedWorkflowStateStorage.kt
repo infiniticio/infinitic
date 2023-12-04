@@ -29,7 +29,7 @@ import io.infinitic.common.workflows.engine.storage.WorkflowStateStorage
 import org.jetbrains.annotations.TestOnly
 
 class LoggedWorkflowStateStorage(
-  private val logName: String,
+  logName: String,
   private val storage: WorkflowStateStorage,
 ) : WorkflowStateStorage {
 

@@ -33,7 +33,7 @@ import io.infinitic.common.workflows.tags.messages.WorkflowTagMessage
 import java.util.concurrent.CompletableFuture
 
 class LoggedInfiniticProducer(
-  private val logName: String,
+  logName: String,
   private val producer: InfiniticProducer,
 ) : InfiniticProducer {
 
