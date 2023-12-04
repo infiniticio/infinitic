@@ -30,7 +30,7 @@ import kotlin.math.pow
 import kotlin.random.Random
 
 sealed class RetryPolicy(open val maximumRetries: Int, open val ignoredExceptions: List<String>) :
-    WithRetry {
+  WithRetry {
 
   companion object {
     val DEFAULT = ExponentialBackoffRetryPolicy()
@@ -41,7 +41,8 @@ sealed class RetryPolicy(open val maximumRetries: Int, open val ignoredException
       klass
           .getClass(
               classNotFound = "Unknown class \"$klass\" in ${::ignoredExceptions.name}",
-              errorClass = "Error with class \"$klass\" in ${::ignoredExceptions.name}")
+              errorClass = "Error with class \"$klass\" in ${::ignoredExceptions.name}",
+          )
           .also {
             require(Exception::class.java.isAssignableFrom(it)) {
               "Class \"$klass\" in ${::ignoredExceptions.name} must be an Exception"
@@ -56,13 +57,13 @@ sealed class RetryPolicy(open val maximumRetries: Int, open val ignoredException
    * - exception: current Exception Do not retry if return null
    */
   @Suppress("unused")
-  override fun getSecondsBeforeRetry(retry: Int, exception: Exception): Double? {
+  override fun getSecondsBeforeRetry(retry: Int, e: Exception): Double? {
     // check that attempt is >= 1
     if (retry < 0) thisShouldNotHappen()
     // check if we reached the maximal number of attempts
     if (retry >= maximumRetries) return null
     // check if the exception is of a non retryable type
-    if (ignoredClasses.any { it.isAssignableFrom(exception::class.java) }) return null
+    if (ignoredClasses.any { it.isAssignableFrom(e::class.java) }) return null
 
     return getSecondsBeforeRetry(retry)
   }
@@ -73,12 +74,12 @@ sealed class RetryPolicy(open val maximumRetries: Int, open val ignoredException
 }
 
 data class ExponentialBackoffRetryPolicy(
-    val minimumSeconds: Double = 1.0,
-    val maximumSeconds: Double = 1000 * minimumSeconds,
-    val backoffCoefficient: Double = 2.0,
-    val randomFactor: Double = 0.5,
-    override val maximumRetries: Int = 11,
-    override val ignoredExceptions: List<String> = listOf()
+  val minimumSeconds: Double = 1.0,
+  val maximumSeconds: Double = 1000 * minimumSeconds,
+  val backoffCoefficient: Double = 2.0,
+  val randomFactor: Double = 0.5,
+  override val maximumRetries: Int = 11,
+  override val ignoredExceptions: List<String> = listOf()
 ) : RetryPolicy(maximumRetries, ignoredExceptions) {
 
   // checks can not be in init {} as throwing exception in constructor prevents sealed class

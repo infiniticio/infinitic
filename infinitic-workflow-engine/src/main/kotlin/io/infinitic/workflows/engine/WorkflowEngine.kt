@@ -28,6 +28,7 @@ import io.infinitic.common.data.ClientName
 import io.infinitic.common.exceptions.thisShouldNotHappen
 import io.infinitic.common.tasks.executors.errors.MethodUnknownError
 import io.infinitic.common.transport.InfiniticProducer
+import io.infinitic.common.transport.LoggedInfiniticProducer
 import io.infinitic.common.workflows.engine.messages.CancelWorkflow
 import io.infinitic.common.workflows.engine.messages.ChildMethodCanceled
 import io.infinitic.common.workflows.engine.messages.ChildMethodCompleted
@@ -81,20 +82,26 @@ import kotlinx.coroutines.launch
 
 class WorkflowEngine(
   storage: WorkflowStateStorage,
-  private val producer: InfiniticProducer
+  producer: InfiniticProducer
 ) {
   companion object {
     const val NO_STATE_DISCARDING_REASON = "for having null workflow state"
   }
 
-  private val logger = KotlinLogging.logger {}
+  private val logger = KotlinLogging.logger(javaClass.name)
 
-  private val storage = LoggedWorkflowStateStorage(storage)
+  private val storage = LoggedWorkflowStateStorage(javaClass.name, storage)
+
+  private val producer = LoggedInfiniticProducer(javaClass.name, producer)
 
   private val clientName = ClientName(producer.name)
 
   suspend fun handle(message: WorkflowEngineMessage) {
     logDebug(message) { "Receiving $message" }
+
+    // set producer id for logging purpose
+    // this works as a workflow engine instance process only one message at a time
+    producer.id = message.workflowId.toString()
 
     // get current state
     var state = storage.getState(message.workflowId)
@@ -234,11 +241,16 @@ class WorkflowEngine(
   }
 
   private fun logDiscarding(message: WorkflowEngineMessage, cause: () -> String) {
-    logger.warn { "${message.workflowName} (${message.workflowId}): discarding ${cause()} $message" }
+    val txt = { "Id ${message.workflowId} - discarding ${cause()} $message" }
+    when (message) {
+      // we don't log these messages as warning as they are expected
+      is TaskTimedOut, is ChildMethodTimedOut -> logger.debug(txt)
+      else -> logger.warn(txt)
+    }
   }
 
   private fun logDebug(message: WorkflowEngineMessage, txt: () -> String) {
-    logger.debug { "${message.workflowName} (${message.workflowId}): ${txt()}" }
+    logger.debug { "Id ${message.workflowId} - ${txt()}" }
   }
 
   private fun CoroutineScope.processMessage(state: WorkflowState, message: WorkflowEngineMessage) {

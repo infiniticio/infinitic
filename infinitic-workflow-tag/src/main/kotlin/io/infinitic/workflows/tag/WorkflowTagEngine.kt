@@ -133,7 +133,7 @@ class WorkflowTagEngine(
                     workflowName = message.workflowName,
                     workflowId = message.workflowId,
                     methodName = message.methodName,
-                    methodRunId = null,
+                    methodRunId = MethodRunId.from(message.workflowId),
                 ),
                 emitterName = ClientName(producer.name),
             )

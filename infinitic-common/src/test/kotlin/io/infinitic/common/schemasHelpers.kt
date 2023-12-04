@@ -63,6 +63,7 @@ internal inline fun <reified T : Any> checkBackwardCompatibility(serializer: KSe
   // checking that we can read T from any previous version
   val validator = SchemaValidatorBuilder().canReadStrategy().validateAll()
   val newSchema = Avro.default.schema(serializer)
+  println(newSchema.toString(true))
   shouldNotThrowAny { validator.validate(newSchema, schemaList) }
 }
 

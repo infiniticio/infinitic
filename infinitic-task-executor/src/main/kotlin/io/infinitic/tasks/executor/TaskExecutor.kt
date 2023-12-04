@@ -237,7 +237,7 @@ class TaskExecutor(
     }
   }
 
-  private fun sendRetryTask(
+  private suspend fun sendRetryTask(
     msg: ExecuteTask,
     cause: Exception,
     delay: MillisDuration,
@@ -251,7 +251,7 @@ class TaskExecutor(
         taskMeta = TaskMeta(meta),
     )
 
-    producer.sendAsync(executeTask, delay).join()
+    producer.send(executeTask, delay)
   }
 
   private suspend fun sendTaskCompleted(

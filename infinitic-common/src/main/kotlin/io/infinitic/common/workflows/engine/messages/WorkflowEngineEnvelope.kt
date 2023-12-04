@@ -57,28 +57,27 @@ data class WorkflowEngineEnvelope(
   private val taskCompleted: TaskCompleted? = null
 ) : Envelope<WorkflowEngineMessage> {
   init {
-    val noNull =
-        listOfNotNull(
-            dispatchWorkflow,
-            dispatchMethod,
-            waitWorkflow,
-            cancelWorkflow,
-            retryWorkflowTask,
-            retryTasks,
-            completeTimers,
-            completeWorkflow,
-            sendSignal,
-            timerCompleted,
-            childMethodUnknown,
-            childMethodTimedOut,
-            childMethodFailed,
-            childMethodCanceled,
-            childMethodCompleted,
-            taskCanceled,
-            taskTimedOut,
-            taskFailed,
-            taskCompleted,
-        )
+    val noNull = listOfNotNull(
+        dispatchWorkflow,
+        dispatchMethod,
+        waitWorkflow,
+        cancelWorkflow,
+        retryWorkflowTask,
+        retryTasks,
+        completeTimers,
+        completeWorkflow,
+        sendSignal,
+        timerCompleted,
+        childMethodUnknown,
+        childMethodCanceled,
+        childMethodTimedOut,
+        childMethodFailed,
+        childMethodCompleted,
+        taskCanceled,
+        taskTimedOut,
+        taskFailed,
+        taskCompleted,
+    )
 
     require(noNull.size == 1) {
       if (noNull.size > 1) {
@@ -98,141 +97,121 @@ data class WorkflowEngineEnvelope(
   }
 
   companion object {
-    fun from(msg: WorkflowEngineMessage) =
-        when (msg) {
-          is DispatchNewWorkflow ->
-            WorkflowEngineEnvelope(
-                workflowId = msg.workflowId,
-                type = WorkflowEngineMessageType.DISPATCH_WORKFLOW,
-                dispatchWorkflow = msg,
-            )
+    fun from(msg: WorkflowEngineMessage) = when (msg) {
+      is DispatchNewWorkflow -> WorkflowEngineEnvelope(
+          workflowId = msg.workflowId,
+          type = WorkflowEngineMessageType.DISPATCH_WORKFLOW,
+          dispatchWorkflow = msg,
+      )
 
-          is DispatchMethodOnRunningWorkflow ->
-            WorkflowEngineEnvelope(
-                workflowId = msg.workflowId,
-                type = WorkflowEngineMessageType.DISPATCH_METHOD,
-                dispatchMethod = msg,
-            )
+      is DispatchMethodOnRunningWorkflow -> WorkflowEngineEnvelope(
+          workflowId = msg.workflowId,
+          type = WorkflowEngineMessageType.DISPATCH_METHOD,
+          dispatchMethod = msg,
+      )
 
-          is WaitWorkflow ->
-            WorkflowEngineEnvelope(
-                workflowId = msg.workflowId,
-                type = WorkflowEngineMessageType.WAIT_WORKFLOW,
-                waitWorkflow = msg,
-            )
+      is WaitWorkflow -> WorkflowEngineEnvelope(
+          workflowId = msg.workflowId,
+          type = WorkflowEngineMessageType.WAIT_WORKFLOW,
+          waitWorkflow = msg,
+      )
 
-          is CancelWorkflow ->
-            WorkflowEngineEnvelope(
-                workflowId = msg.workflowId,
-                type = WorkflowEngineMessageType.CANCEL_WORKFLOW,
-                cancelWorkflow = msg,
-            )
+      is CancelWorkflow -> WorkflowEngineEnvelope(
+          workflowId = msg.workflowId,
+          type = WorkflowEngineMessageType.CANCEL_WORKFLOW,
+          cancelWorkflow = msg,
+      )
 
-          is RetryWorkflowTask ->
-            WorkflowEngineEnvelope(
-                workflowId = msg.workflowId,
-                type = WorkflowEngineMessageType.RETRY_WORKFLOW_TASK,
-                retryWorkflowTask = msg,
-            )
+      is RetryWorkflowTask -> WorkflowEngineEnvelope(
+          workflowId = msg.workflowId,
+          type = WorkflowEngineMessageType.RETRY_WORKFLOW_TASK,
+          retryWorkflowTask = msg,
+      )
 
-          is RetryTasks ->
-            WorkflowEngineEnvelope(
-                workflowId = msg.workflowId,
-                type = WorkflowEngineMessageType.RETRY_TASKS,
-                retryTasks = msg,
-            )
+      is RetryTasks -> WorkflowEngineEnvelope(
+          workflowId = msg.workflowId,
+          type = WorkflowEngineMessageType.RETRY_TASKS,
+          retryTasks = msg,
+      )
 
-          is CompleteTimers ->
-            WorkflowEngineEnvelope(
-                workflowId = msg.workflowId,
-                type = WorkflowEngineMessageType.COMPLETE_TIMERS,
-                completeTimers = msg,
-            )
+      is CompleteTimers -> WorkflowEngineEnvelope(
+          workflowId = msg.workflowId,
+          type = WorkflowEngineMessageType.COMPLETE_TIMERS,
+          completeTimers = msg,
+      )
 
-          is CompleteWorkflow ->
-            WorkflowEngineEnvelope(
-                workflowId = msg.workflowId,
-                type = WorkflowEngineMessageType.COMPLETE_WORKFLOW,
-                completeWorkflow = msg,
-            )
+      is CompleteWorkflow -> WorkflowEngineEnvelope(
+          workflowId = msg.workflowId,
+          type = WorkflowEngineMessageType.COMPLETE_WORKFLOW,
+          completeWorkflow = msg,
+      )
 
-          is SendSignal ->
-            WorkflowEngineEnvelope(
-                workflowId = msg.workflowId,
-                type = WorkflowEngineMessageType.SEND_SIGNAL,
-                sendSignal = msg,
-            )
+      is SendSignal -> WorkflowEngineEnvelope(
+          workflowId = msg.workflowId,
+          type = WorkflowEngineMessageType.SEND_SIGNAL,
+          sendSignal = msg,
+      )
 
-          is TimerCompleted ->
-            WorkflowEngineEnvelope(
-                workflowId = msg.workflowId,
-                type = WorkflowEngineMessageType.TIMER_COMPLETED,
-                timerCompleted = msg,
-            )
+      is TimerCompleted -> WorkflowEngineEnvelope(
+          workflowId = msg.workflowId,
+          type = WorkflowEngineMessageType.TIMER_COMPLETED,
+          timerCompleted = msg,
+      )
 
-          is ChildMethodUnknown ->
-            WorkflowEngineEnvelope(
-                workflowId = msg.workflowId,
-                type = WorkflowEngineMessageType.CHILD_WORKFLOW_UNKNOWN,
-                childMethodUnknown = msg,
-            )
+      is ChildMethodUnknown -> WorkflowEngineEnvelope(
+          workflowId = msg.workflowId,
+          type = WorkflowEngineMessageType.CHILD_WORKFLOW_UNKNOWN,
+          childMethodUnknown = msg,
+      )
 
-          is ChildMethodCanceled ->
-            WorkflowEngineEnvelope(
-                workflowId = msg.workflowId,
-                type = WorkflowEngineMessageType.CHILD_WORKFLOW_CANCELED,
-                childMethodCanceled = msg,
-            )
+      is ChildMethodCanceled -> WorkflowEngineEnvelope(
+          workflowId = msg.workflowId,
+          type = WorkflowEngineMessageType.CHILD_WORKFLOW_CANCELED,
+          childMethodCanceled = msg,
+      )
 
-          is ChildMethodTimedOut ->
-            WorkflowEngineEnvelope(
-                workflowId = msg.workflowId,
-                type = WorkflowEngineMessageType.CHILD_WORKFLOW_TIMED_OUT,
-                childMethodTimedOut = msg,
-            )
+      is ChildMethodTimedOut -> WorkflowEngineEnvelope(
+          workflowId = msg.workflowId,
+          type = WorkflowEngineMessageType.CHILD_WORKFLOW_TIMED_OUT,
+          childMethodTimedOut = msg,
+      )
 
-          is ChildMethodFailed ->
-            WorkflowEngineEnvelope(
-                workflowId = msg.workflowId,
-                type = WorkflowEngineMessageType.CHILD_WORKFLOW_FAILED,
-                childMethodFailed = msg,
-            )
+      is ChildMethodFailed -> WorkflowEngineEnvelope(
+          workflowId = msg.workflowId,
+          type = WorkflowEngineMessageType.CHILD_WORKFLOW_FAILED,
+          childMethodFailed = msg,
+      )
 
-          is ChildMethodCompleted ->
-            WorkflowEngineEnvelope(
-                workflowId = msg.workflowId,
-                type = WorkflowEngineMessageType.CHILD_WORKFLOW_COMPLETED,
-                childMethodCompleted = msg,
-            )
+      is ChildMethodCompleted -> WorkflowEngineEnvelope(
+          workflowId = msg.workflowId,
+          type = WorkflowEngineMessageType.CHILD_WORKFLOW_COMPLETED,
+          childMethodCompleted = msg,
+      )
 
-          is TaskCanceled ->
-            WorkflowEngineEnvelope(
-                workflowId = msg.workflowId,
-                type = WorkflowEngineMessageType.TASK_CANCELED,
-                taskCanceled = msg,
-            )
+      is TaskCanceled -> WorkflowEngineEnvelope(
+          workflowId = msg.workflowId,
+          type = WorkflowEngineMessageType.TASK_CANCELED,
+          taskCanceled = msg,
+      )
 
-          is TaskTimedOut ->
-            WorkflowEngineEnvelope(
-                workflowId = msg.workflowId,
-                type = WorkflowEngineMessageType.TASK_TIMED_OUT,
-                taskTimedOut = msg,
-            )
+      is TaskTimedOut -> WorkflowEngineEnvelope(
+          workflowId = msg.workflowId,
+          type = WorkflowEngineMessageType.TASK_TIMED_OUT,
+          taskTimedOut = msg,
+      )
 
-          is TaskFailed ->
-            WorkflowEngineEnvelope(
-                workflowId = msg.workflowId,
-                type = WorkflowEngineMessageType.TASK_FAILED,
-                taskFailed = msg,
-            )
+      is TaskFailed -> WorkflowEngineEnvelope(
+          workflowId = msg.workflowId,
+          type = WorkflowEngineMessageType.TASK_FAILED,
+          taskFailed = msg,
+      )
 
-          is TaskCompleted ->
-            WorkflowEngineEnvelope(
-                workflowId = msg.workflowId,
-                type = WorkflowEngineMessageType.TASK_COMPLETED,
-                taskCompleted = msg,
-            )
-        }
+      is TaskCompleted -> WorkflowEngineEnvelope(
+          workflowId = msg.workflowId,
+          type = WorkflowEngineMessageType.TASK_COMPLETED,
+          taskCompleted = msg,
+      )
+    }
 
     /** Deserialize from a byte array and an avro schema */
     fun fromByteArray(bytes: ByteArray, readerSchema: Schema) =

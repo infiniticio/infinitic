@@ -28,6 +28,7 @@ import io.infinitic.common.tasks.executors.errors.MethodTimedOutError
 import io.infinitic.common.transport.InfiniticProducer
 import io.infinitic.common.workflows.data.commands.DispatchNewWorkflowCommand
 import io.infinitic.common.workflows.data.commands.DispatchNewWorkflowPastCommand
+import io.infinitic.common.workflows.data.methodRuns.MethodRunId
 import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.engine.messages.ChildMethodTimedOut
 import io.infinitic.common.workflows.engine.messages.DispatchNewWorkflow
@@ -121,7 +122,7 @@ internal fun CoroutineScope.dispatchNewWorkflowCmd(
             workflowName = workflowName,
             workflowId = workflowId,
             methodName = methodName,
-            methodRunId = null,
+            methodRunId = MethodRunId.from(workflowId),
         ),
         emitterName = ClientName(producer.name),
     )
