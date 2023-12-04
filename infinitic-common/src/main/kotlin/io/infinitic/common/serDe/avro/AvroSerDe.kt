@@ -40,6 +40,7 @@ import org.apache.avro.message.BinaryMessageDecoder
 import org.apache.avro.message.BinaryMessageEncoder
 import org.apache.avro.message.MessageDecoder
 import org.apache.avro.message.MessageEncoder
+import org.apache.avro.message.RawMessageEncoder
 import org.apache.avro.util.RandomData
 import org.jetbrains.annotations.TestOnly
 import java.io.ByteArrayOutputStream
@@ -159,8 +160,17 @@ object AvroSerDe {
   @TestOnly
   fun getRandomBinaryWithSchemaFingerprint(schema: Schema): ByteArray {
     val o = RandomData(schema, 1).first()
-
     val encoder = BinaryMessageEncoder<Any>(GenericData.get(), schema)
+    val out = ByteArrayOutputStream()
+    encoder.encode(o, out)
+
+    return out.toByteArray()
+  }
+
+  @TestOnly
+  fun getRandomBinary(schema: Schema): ByteArray {
+    val o = RandomData(schema, 1).first()
+    val encoder = RawMessageEncoder<Any>(GenericData.get(), schema)
     val out = ByteArrayOutputStream()
     encoder.encode(o, out)
 
