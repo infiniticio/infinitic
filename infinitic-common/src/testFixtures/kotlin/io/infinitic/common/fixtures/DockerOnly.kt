@@ -37,11 +37,14 @@ class DockerOnly : EnabledCondition {
     }
   }
 
+  private val pulsarVersion by lazy {
+    javaClass.getResource("/pulsar")?.readText()?.trim() ?: error("Pulsar version not found")
+  }
+
   val pulsarServer by lazy {
     when (shouldRun) {
-      true -> PulsarContainer(DockerImageName.parse("apachepulsar/pulsar:3.1.1")).also { it.start() }
+      true -> PulsarContainer(DockerImageName.parse("apachepulsar/pulsar:$pulsarVersion")).also { it.start() }
       false -> null
     }
   }
 }
-

@@ -60,9 +60,6 @@ data class MethodRun(
   val pastSteps: MutableList<PastStep> = mutableListOf(),
   var currentStep: PastStep? = null
 ) {
-  /** Retrieve step by position */
-  fun getStepByPosition(position: MethodRunPosition): PastStep? =
-      pastSteps.firstOrNull { it.stepPosition == position }
 
   /** Retrieve pastCommand per commandId. */
   fun getPastCommand(commandId: CommandId): PastCommand? =

@@ -40,6 +40,7 @@ import io.infinitic.common.data.methods.MethodName
 import io.infinitic.common.data.methods.MethodParameterTypes
 import io.infinitic.common.data.methods.MethodParameters
 import io.infinitic.common.fixtures.TestFactory
+import io.infinitic.common.fixtures.later
 import io.infinitic.common.tasks.executors.messages.TaskExecutorMessage
 import io.infinitic.common.tasks.tags.messages.TaskTagMessage
 import io.infinitic.common.transport.InfiniticConsumer
@@ -112,7 +113,7 @@ fun tagResponse(): CompletableFuture<Unit> {
   return CompletableFuture.completedFuture(null)
 }
 
-fun engineResponse(): CompletableFuture<Unit> {
+suspend fun engineResponse(): CompletableFuture<Unit> {
   val msg = workflowEngineSlot.captured
   if (msg is DispatchNewWorkflow && msg.clientWaiting || msg is WaitWorkflow) {
     val methodCompleted = MethodCompleted(
@@ -122,7 +123,7 @@ fun engineResponse(): CompletableFuture<Unit> {
         methodReturnValue = ReturnValue.from("success"),
         emitterName = ClientName("mockk"),
     )
-    CoroutineScope(Dispatchers.IO).launch {
+    later {
       delay(100)
       client.handle(methodCompleted)
     }
@@ -137,13 +138,18 @@ val producer: InfiniticProducer = mockk<InfiniticProducer> {
   every { sendAsync(capture(workflowTagSlots)) } answers { tagResponse() }
   coEvery { send(capture(workflowTagSlots)) } answers { tagResponse().join() }
 
-  every { sendAsync(capture(workflowEngineSlot), capture(delaySlot)) } answers { engineResponse() }
+  every {
+    sendAsync(
+        capture(workflowEngineSlot),
+        capture(delaySlot),
+    )
+  } coAnswers { engineResponse() }
   coEvery {
     send(
         capture(workflowEngineSlot),
         capture(delaySlot),
     )
-  } answers { engineResponse().join() }
+  } coAnswers { engineResponse().join() }
 }
 
 val consumer: InfiniticConsumer = mockk<InfiniticConsumer> {

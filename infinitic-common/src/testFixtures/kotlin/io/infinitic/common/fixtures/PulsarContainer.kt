@@ -58,9 +58,9 @@ class PulsarContainer(dockerImageName: DockerImageName) :
   }
 
   val pulsarBrokerUrl: String
-    get() = java.lang.String.format("pulsar://%s:%s", getHost(), getMappedPort(BROKER_PORT))
+    get() = java.lang.String.format("pulsar://%s:%s", host, getMappedPort(BROKER_PORT))
   val httpServiceUrl: String
-    get() = java.lang.String.format("http://%s:%s", getHost(), getMappedPort(BROKER_HTTP_PORT))
+    get() = java.lang.String.format("http://%s:%s", host, getMappedPort(BROKER_HTTP_PORT))
 
   protected fun setupCommandAndEnv() {
     var standaloneBaseCommand =
@@ -69,7 +69,7 @@ class PulsarContainer(dockerImageName: DockerImageName) :
       standaloneBaseCommand += " --no-functions-worker -nss"
     }
     withCommand("/bin/bash", "-c", standaloneBaseCommand)
-    val clusterName: String = getEnvMap().getOrDefault("PULSAR_PREFIX_clusterName", "standalone")
+    val clusterName: String = envMap.getOrDefault("PULSAR_PREFIX_clusterName", "standalone")
     val response = String.format("[\"%s\"]", clusterName)
     waitAllStrategy.withStrategy(
         Wait.forHttp(ADMIN_CLUSTERS_ENDPOINT).forPort(BROKER_HTTP_PORT)

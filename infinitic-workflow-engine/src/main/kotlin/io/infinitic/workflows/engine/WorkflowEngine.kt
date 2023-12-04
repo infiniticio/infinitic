@@ -241,10 +241,6 @@ class WorkflowEngine(
     logger.debug { "${message.workflowName} (${message.workflowId}): ${txt()}" }
   }
 
-  private fun logTrace(message: WorkflowEngineMessage, txt: () -> String) {
-    logger.trace { "${message.workflowName} (${message.workflowId}): ${txt()}" }
-  }
-
   private fun CoroutineScope.processMessage(state: WorkflowState, message: WorkflowEngineMessage) {
     // if message is related to a workflowTask, it's not running anymore
     if (message.isWorkflowTaskEvent()) state.runningWorkflowTaskId = null
