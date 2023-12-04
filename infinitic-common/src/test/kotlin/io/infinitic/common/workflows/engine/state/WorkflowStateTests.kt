@@ -43,12 +43,10 @@ class WorkflowStateTests :
           }
         }
 
-        "Existing schema file should be up-to-date with the current version" {
+        "Avro schema should be backward compatible to 0.9.0" {
           // An error in this test means that we need to upgrade the version
           checkOrCreateCurrentFile(WorkflowState.serializer())
-        }
 
-        "Avro schema should be backward compatible to 0.9.0" {
           checkBackwardCompatibility(WorkflowState.serializer())
         }
 

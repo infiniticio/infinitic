@@ -48,12 +48,10 @@ class TaskTagEnvelopeTests :
           }
         }
 
-        "Existing schema file should be up-to-date with the current version" {
+        "Avro Schema should be backward compatible to 0.9.0" {
           // An error in this test means that we need to upgrade the version
           checkOrCreateCurrentFile(TaskTagEnvelope.serializer())
-        }
 
-        "Avro Schema should be backward compatible to 0.9.0" {
           checkBackwardCompatibility(TaskTagEnvelope.serializer())
         }
       },

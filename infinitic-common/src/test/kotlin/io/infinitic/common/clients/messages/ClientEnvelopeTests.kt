@@ -45,12 +45,10 @@ class ClientEnvelopeTests :
           }
         }
 
-        "Existing schema file should be up-to-date with the current version" {
+        "Avro Schema should be backward compatible to 0.9.0" {
           // An error in this test means that we need to upgrade the version
           checkOrCreateCurrentFile(ClientEnvelope.serializer())
-        }
 
-        "Avro Schema should be backward compatible to 0.9.0" {
           checkBackwardCompatibility(ClientEnvelope.serializer())
         }
       },

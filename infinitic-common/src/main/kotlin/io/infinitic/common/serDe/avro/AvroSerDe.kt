@@ -24,6 +24,7 @@ package io.infinitic.common.serDe.avro
 
 import com.github.avrokotlin.avro4k.Avro
 import io.infinitic.common.exceptions.thisShouldNotHappen
+import io.infinitic.current
 import io.infinitic.versions
 import kotlinx.serialization.KSerializer
 import org.apache.avro.Schema
@@ -146,7 +147,7 @@ object AvroSerDe {
     val prefix = getSchemaFilePrefix<T>()
 
     return versions
-        .filter { it.isNotEmpty() }
+        .filter { it.isNotEmpty() && it != current }
         .associateWith { version ->
           val url = "/$SCHEMAS_FOLDER/$prefix-$version.avsc"
           val schemaTxt = this::class.java.getResource(url)?.readText()
