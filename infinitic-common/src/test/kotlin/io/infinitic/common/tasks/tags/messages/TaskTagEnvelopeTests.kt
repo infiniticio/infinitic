@@ -25,8 +25,11 @@ package io.infinitic.common.tasks.tags.messages
 import io.infinitic.common.checkBackwardCompatibility
 import io.infinitic.common.checkOrCreateCurrentFile
 import io.infinitic.common.fixtures.TestFactory
+import io.infinitic.common.serDe.avro.AvroSerDe
 import io.kotest.assertions.throwables.shouldNotThrowAny
+import io.kotest.assertions.throwables.shouldThrowAny
 import io.kotest.core.spec.style.StringSpec
+import io.kotest.matchers.collections.shouldBeOneOf
 import io.kotest.matchers.shouldBe
 
 class TaskTagEnvelopeTests :
@@ -48,13 +51,24 @@ class TaskTagEnvelopeTests :
           }
         }
 
-        "Existing schema file should be up-to-date with the current version" {
+        "Avro Schema should be backward compatible to 0.9.0" {
           // An error in this test means that we need to upgrade the version
           checkOrCreateCurrentFile(TaskTagEnvelope.serializer())
+
+          checkBackwardCompatibility(TaskTagEnvelope.serializer())
         }
 
-        "Avro Schema should be backward compatible to 0.9.0" {
-          checkBackwardCompatibility(TaskTagEnvelope.serializer())
+        "We should be able to read binary from any previous version since 0.9.0" {
+          AvroSerDe.getAllSchemas<TaskTagEnvelope>().forEach { (_, schema) ->
+            val bytes = AvroSerDe.getRandomBinary(schema)
+            val e = shouldThrowAny { TaskTagEnvelope.fromByteArray(bytes, schema) }
+            e::class shouldBeOneOf listOf(
+                // IllegalArgumentException is thrown because we have more than 1 message in the envelope
+                IllegalArgumentException::class,
+                // NullPointerException is thrown because message() can be null
+                NullPointerException::class,
+            )
+          }
         }
       },
   )

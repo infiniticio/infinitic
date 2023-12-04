@@ -24,6 +24,7 @@ package io.infinitic.common.serDe.avro
 
 import com.github.avrokotlin.avro4k.Avro
 import io.infinitic.common.exceptions.thisShouldNotHappen
+import io.infinitic.current
 import io.infinitic.versions
 import kotlinx.serialization.KSerializer
 import org.apache.avro.Schema
@@ -39,6 +40,7 @@ import org.apache.avro.message.BinaryMessageDecoder
 import org.apache.avro.message.BinaryMessageEncoder
 import org.apache.avro.message.MessageDecoder
 import org.apache.avro.message.MessageEncoder
+import org.apache.avro.message.RawMessageEncoder
 import org.apache.avro.util.RandomData
 import org.jetbrains.annotations.TestOnly
 import java.io.ByteArrayOutputStream
@@ -146,7 +148,7 @@ object AvroSerDe {
     val prefix = getSchemaFilePrefix<T>()
 
     return versions
-        .filter { it.isNotEmpty() }
+        .filter { it.isNotEmpty() && it != current }
         .associateWith { version ->
           val url = "/$SCHEMAS_FOLDER/$prefix-$version.avsc"
           val schemaTxt = this::class.java.getResource(url)?.readText()
@@ -158,8 +160,17 @@ object AvroSerDe {
   @TestOnly
   fun getRandomBinaryWithSchemaFingerprint(schema: Schema): ByteArray {
     val o = RandomData(schema, 1).first()
-
     val encoder = BinaryMessageEncoder<Any>(GenericData.get(), schema)
+    val out = ByteArrayOutputStream()
+    encoder.encode(o, out)
+
+    return out.toByteArray()
+  }
+
+  @TestOnly
+  fun getRandomBinary(schema: Schema): ByteArray {
+    val o = RandomData(schema, 1).first()
+    val encoder = RawMessageEncoder<Any>(GenericData.get(), schema)
     val out = ByteArrayOutputStream()
     encoder.encode(o, out)
 

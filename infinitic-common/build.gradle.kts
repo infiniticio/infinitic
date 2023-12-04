@@ -61,7 +61,8 @@ tasks.withType<KotlinCompile> {
     }
 
     // current version (snapshot or release)
-    File(project.projectDir.absolutePath, "/src/main/resources/current").writeText(Ci.version)
+    File(project.projectDir.absolutePath, "/src/main/resources/current")
+        .writeText(Ci.version)
 
     // Pulsar version
     File(project.projectDir.absolutePath, "/src/testFixtures/resources/pulsar")

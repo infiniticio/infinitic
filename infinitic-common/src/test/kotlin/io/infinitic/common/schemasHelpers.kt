@@ -34,6 +34,7 @@ import io.kotest.matchers.shouldBe
 import kotlinx.serialization.KSerializer
 import org.apache.avro.SchemaValidatorBuilder
 import java.io.File
+import java.io.FileWriter
 import java.nio.file.Paths
 
 internal inline fun <reified T : Any> checkOrCreateCurrentFile(
@@ -44,12 +45,15 @@ internal inline fun <reified T : Any> checkOrCreateCurrentFile(
     val schemaFilePath = getCurrentSchemaFilePath<T>()
 
     // Does the schema file already exist?
-    when (schemaFilePath.parentFile.exists()) {
-      true -> // check that schema file was not modified
-        Avro.default.schema(serializer).toString(true) shouldBe schemaFilePath.readText()
-
-      false ->  // create schema file for the current version
-        schemaFilePath.writeText(Avro.default.schema(serializer).toString(true))
+    when (schemaFilePath.exists()) {
+      // create schema file for the current version
+      false -> FileWriter(schemaFilePath).use {
+        it.write(
+            Avro.default.schema(serializer).toString(true),
+        )
+      }
+      // check that schema file was not modified
+      true -> Avro.default.schema(serializer).toString(true) shouldBe schemaFilePath.readText()
     }
   }
 }
@@ -63,7 +67,6 @@ internal inline fun <reified T : Any> checkBackwardCompatibility(serializer: KSe
   // checking that we can read T from any previous version
   val validator = SchemaValidatorBuilder().canReadStrategy().validateAll()
   val newSchema = Avro.default.schema(serializer)
-  println(newSchema.toString(true))
   shouldNotThrowAny { validator.validate(newSchema, schemaList) }
 }
 

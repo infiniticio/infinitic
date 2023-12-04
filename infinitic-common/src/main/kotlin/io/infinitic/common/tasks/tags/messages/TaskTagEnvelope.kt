@@ -31,18 +31,22 @@ import org.apache.avro.Schema
 @Serializable
 @AvroNamespace("io.infinitic.tasks.tag")
 data class TaskTagEnvelope(
-    private val name: String,
-    @AvroNamespace("io.infinitic.tasks.tag") private val type: TaskTagMessageType,
-    private val addTagToTask: AddTagToTask? = null,
-    private val removeTagFromTask: RemoveTagFromTask? = null,
-    private val cancelTaskByTag: CancelTaskByTag? = null,
-    private val retryTaskByTag: RetryTaskByTag? = null,
-    private val getTaskIdsByTag: GetTaskIdsByTag? = null
+  private val name: String,
+  @AvroNamespace("io.infinitic.tasks.tag") private val type: TaskTagMessageType,
+  private val addTagToTask: AddTagToTask? = null,
+  private val removeTagFromTask: RemoveTagFromTask? = null,
+  private val cancelTaskByTag: CancelTaskByTag? = null,
+  private val retryTaskByTag: RetryTaskByTag? = null,
+  private val getTaskIdsByTag: GetTaskIdsByTag? = null
 ) : Envelope<TaskTagMessage> {
   init {
-    val noNull =
-        listOfNotNull(
-            addTagToTask, removeTagFromTask, cancelTaskByTag, retryTaskByTag, getTaskIdsByTag)
+    val noNull = listOfNotNull(
+        addTagToTask,
+        removeTagFromTask,
+        cancelTaskByTag,
+        retryTaskByTag,
+        getTaskIdsByTag,
+    )
 
     require(noNull.size == 1)
     require(noNull.first() == message())
@@ -50,34 +54,37 @@ data class TaskTagEnvelope(
   }
 
   companion object {
-    fun from(msg: TaskTagMessage) =
-        when (msg) {
-          is AddTagToTask ->
-              TaskTagEnvelope(
-                  name = "${msg.serviceName}",
-                  type = TaskTagMessageType.ADD_TAG_TO_TASK,
-                  addTagToTask = msg)
-          is RemoveTagFromTask ->
-              TaskTagEnvelope(
-                  name = "${msg.serviceName}",
-                  type = TaskTagMessageType.REMOVE_TAG_FROM_TASK,
-                  removeTagFromTask = msg)
-          is CancelTaskByTag ->
-              TaskTagEnvelope(
-                  name = "${msg.serviceName}",
-                  type = TaskTagMessageType.CANCEL_TASK_BY_TAG,
-                  cancelTaskByTag = msg)
-          is RetryTaskByTag ->
-              TaskTagEnvelope(
-                  name = "${msg.serviceName}",
-                  type = TaskTagMessageType.RETRY_TASK_BY_TAG,
-                  retryTaskByTag = msg)
-          is GetTaskIdsByTag ->
-              TaskTagEnvelope(
-                  name = "${msg.serviceName}",
-                  type = TaskTagMessageType.GET_TASK_IDS_BY_TAG,
-                  getTaskIdsByTag = msg)
-        }
+    fun from(msg: TaskTagMessage) = when (msg) {
+      is AddTagToTask -> TaskTagEnvelope(
+          name = "${msg.serviceName}",
+          type = TaskTagMessageType.ADD_TAG_TO_TASK,
+          addTagToTask = msg,
+      )
+
+      is RemoveTagFromTask -> TaskTagEnvelope(
+          name = "${msg.serviceName}",
+          type = TaskTagMessageType.REMOVE_TAG_FROM_TASK,
+          removeTagFromTask = msg,
+      )
+
+      is CancelTaskByTag -> TaskTagEnvelope(
+          name = "${msg.serviceName}",
+          type = TaskTagMessageType.CANCEL_TASK_BY_TAG,
+          cancelTaskByTag = msg,
+      )
+
+      is RetryTaskByTag -> TaskTagEnvelope(
+          name = "${msg.serviceName}",
+          type = TaskTagMessageType.RETRY_TASK_BY_TAG,
+          retryTaskByTag = msg,
+      )
+
+      is GetTaskIdsByTag -> TaskTagEnvelope(
+          name = "${msg.serviceName}",
+          type = TaskTagMessageType.GET_TASK_IDS_BY_TAG,
+          getTaskIdsByTag = msg,
+      )
+    }
 
     /** Deserialize from a byte array and an avro schema */
     fun fromByteArray(bytes: ByteArray, readerSchema: Schema) =
@@ -89,12 +96,12 @@ data class TaskTagEnvelope(
 
   override fun message() =
       when (type) {
-        TaskTagMessageType.ADD_TAG_TO_TASK -> addTagToTask!!
-        TaskTagMessageType.REMOVE_TAG_FROM_TASK -> removeTagFromTask!!
-        TaskTagMessageType.CANCEL_TASK_BY_TAG -> cancelTaskByTag!!
-        TaskTagMessageType.RETRY_TASK_BY_TAG -> retryTaskByTag!!
-        TaskTagMessageType.GET_TASK_IDS_BY_TAG -> getTaskIdsByTag!!
-      }
+        TaskTagMessageType.ADD_TAG_TO_TASK -> addTagToTask
+        TaskTagMessageType.REMOVE_TAG_FROM_TASK -> removeTagFromTask
+        TaskTagMessageType.CANCEL_TASK_BY_TAG -> cancelTaskByTag
+        TaskTagMessageType.RETRY_TASK_BY_TAG -> retryTaskByTag
+        TaskTagMessageType.GET_TASK_IDS_BY_TAG -> getTaskIdsByTag
+      }!!
 
   fun toByteArray() = AvroSerDe.writeBinary(this, serializer())
 }

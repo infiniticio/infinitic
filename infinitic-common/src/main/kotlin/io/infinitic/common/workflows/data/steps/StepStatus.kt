@@ -64,6 +64,7 @@ sealed class StepStatus {
    * - if not, task can be retried and status can transition to Completed
    */
   @Serializable
+  @SerialName("StepStatus.CurrentlyTimedOut")
   data class CurrentlyTimedOut(
     val deferredTimedOutError: DeferredTimedOutError,
     val timeoutWorkflowTaskIndex: WorkflowTaskIndex

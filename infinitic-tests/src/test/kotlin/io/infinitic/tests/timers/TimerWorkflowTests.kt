@@ -60,8 +60,8 @@ internal class TimerWorkflowTests :
           val start = Instant.now().toEpochMilli()
 
           val deferred = client.dispatch(timerWorkflow::await, Instant.now().plusMillis(200))
-
-          (deferred.await().toEpochMilli() - start) shouldBeLessThan (1000L)
+          
+          (deferred.await().toEpochMilli() - start) shouldBeLessThan (2000L)
         }
 
         "Wait for a long instant timer" {

@@ -26,8 +26,11 @@ import com.github.avrokotlin.avro4k.Avro
 import io.infinitic.common.checkBackwardCompatibility
 import io.infinitic.common.checkOrCreateCurrentFile
 import io.infinitic.common.fixtures.TestFactory
+import io.infinitic.common.serDe.avro.AvroSerDe
 import io.kotest.assertions.throwables.shouldNotThrowAny
+import io.kotest.assertions.throwables.shouldThrowAny
 import io.kotest.core.spec.style.StringSpec
+import io.kotest.matchers.collections.shouldBeOneOf
 import io.kotest.matchers.shouldBe
 
 class TaskExecutorEnvelopeTests :
@@ -47,13 +50,24 @@ class TaskExecutorEnvelopeTests :
           }
         }
 
-        "Saved TaskExecutorEnvelope schema should be up-to-date with for the current version" {
+        "We should be able to read TaskExecutorEnvelope from any previous version since 0.9.0" {
           // An error in this test means that we need to upgrade the version
           checkOrCreateCurrentFile(TaskExecutorEnvelope.serializer())
+
+          checkBackwardCompatibility(TaskExecutorEnvelope.serializer())
         }
 
-        "We should be able to read TaskExecutorEnvelope from any previous version since 0.9.0" {
-          checkBackwardCompatibility(TaskExecutorEnvelope.serializer())
+        "We should be able to read binary from any previous version since 0.9.0" {
+          AvroSerDe.getAllSchemas<TaskExecutorEnvelope>().forEach { (_, schema) ->
+            val bytes = AvroSerDe.getRandomBinary(schema)
+            val e = shouldThrowAny { TaskExecutorEnvelope.fromByteArray(bytes, schema) }
+            e::class shouldBeOneOf listOf(
+                // IllegalArgumentException is thrown because we have more than 1 message in the envelope
+                IllegalArgumentException::class,
+                // NullPointerException is thrown because message() can be null
+                NullPointerException::class,
+            )
+          }
         }
       },
   )

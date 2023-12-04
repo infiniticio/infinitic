@@ -79,25 +79,14 @@ data class WorkflowEngineEnvelope(
         taskCompleted,
     )
 
-    require(noNull.size == 1) {
-      if (noNull.size > 1) {
-        "More than 1 message provided: ${noNull.joinToString()}"
-      } else {
-        "No message provided"
-      }
-    }
-
-    require(noNull.first() == message()) {
-      "Provided type $type inconsistent with message ${noNull.first()}"
-    }
-
-    require(noNull.first().workflowId == workflowId) {
-      "Provided workflowId $workflowId inconsistent with message ${noNull.first()}"
-    }
+    require(noNull.size == 1)
+    require(noNull.first() == message())
+    require(noNull.first().workflowId == workflowId)
   }
 
   companion object {
     fun from(msg: WorkflowEngineMessage) = when (msg) {
+      
       is DispatchNewWorkflow -> WorkflowEngineEnvelope(
           workflowId = msg.workflowId,
           type = WorkflowEngineMessageType.DISPATCH_WORKFLOW,
@@ -214,35 +203,34 @@ data class WorkflowEngineEnvelope(
     }
 
     /** Deserialize from a byte array and an avro schema */
-    fun fromByteArray(bytes: ByteArray, readerSchema: Schema) =
+    fun fromByteArray(bytes: ByteArray, readerSchema: Schema): WorkflowEngineEnvelope =
         AvroSerDe.readBinary(bytes, serializer(), readerSchema)
 
     /** Current avro Schema */
     val writerSchema = AvroSerDe.schema(serializer())
   }
 
-  override fun message(): WorkflowEngineMessage =
-      when (type) {
-        WorkflowEngineMessageType.DISPATCH_WORKFLOW -> dispatchWorkflow!!
-        WorkflowEngineMessageType.DISPATCH_METHOD -> dispatchMethod!!
-        WorkflowEngineMessageType.WAIT_WORKFLOW -> waitWorkflow!!
-        WorkflowEngineMessageType.CANCEL_WORKFLOW -> cancelWorkflow!!
-        WorkflowEngineMessageType.RETRY_WORKFLOW_TASK -> retryWorkflowTask!!
-        WorkflowEngineMessageType.RETRY_TASKS -> retryTasks!!
-        WorkflowEngineMessageType.COMPLETE_TIMERS -> completeTimers!!
-        WorkflowEngineMessageType.COMPLETE_WORKFLOW -> completeWorkflow!!
-        WorkflowEngineMessageType.SEND_SIGNAL -> sendSignal!!
-        WorkflowEngineMessageType.TIMER_COMPLETED -> timerCompleted!!
-        WorkflowEngineMessageType.CHILD_WORKFLOW_UNKNOWN -> childMethodUnknown!!
-        WorkflowEngineMessageType.CHILD_WORKFLOW_CANCELED -> childMethodCanceled!!
-        WorkflowEngineMessageType.CHILD_WORKFLOW_TIMED_OUT -> childMethodTimedOut!!
-        WorkflowEngineMessageType.CHILD_WORKFLOW_FAILED -> childMethodFailed!!
-        WorkflowEngineMessageType.CHILD_WORKFLOW_COMPLETED -> childMethodCompleted!!
-        WorkflowEngineMessageType.TASK_CANCELED -> taskCanceled!!
-        WorkflowEngineMessageType.TASK_TIMED_OUT -> taskTimedOut!!
-        WorkflowEngineMessageType.TASK_FAILED -> taskFailed!!
-        WorkflowEngineMessageType.TASK_COMPLETED -> taskCompleted!!
-      }
+  override fun message(): WorkflowEngineMessage = when (type) {
+    WorkflowEngineMessageType.DISPATCH_WORKFLOW -> dispatchWorkflow
+    WorkflowEngineMessageType.DISPATCH_METHOD -> dispatchMethod
+    WorkflowEngineMessageType.WAIT_WORKFLOW -> waitWorkflow
+    WorkflowEngineMessageType.CANCEL_WORKFLOW -> cancelWorkflow
+    WorkflowEngineMessageType.RETRY_WORKFLOW_TASK -> retryWorkflowTask
+    WorkflowEngineMessageType.RETRY_TASKS -> retryTasks
+    WorkflowEngineMessageType.COMPLETE_TIMERS -> completeTimers
+    WorkflowEngineMessageType.COMPLETE_WORKFLOW -> completeWorkflow
+    WorkflowEngineMessageType.SEND_SIGNAL -> sendSignal
+    WorkflowEngineMessageType.TIMER_COMPLETED -> timerCompleted
+    WorkflowEngineMessageType.CHILD_WORKFLOW_UNKNOWN -> childMethodUnknown
+    WorkflowEngineMessageType.CHILD_WORKFLOW_CANCELED -> childMethodCanceled
+    WorkflowEngineMessageType.CHILD_WORKFLOW_TIMED_OUT -> childMethodTimedOut
+    WorkflowEngineMessageType.CHILD_WORKFLOW_FAILED -> childMethodFailed
+    WorkflowEngineMessageType.CHILD_WORKFLOW_COMPLETED -> childMethodCompleted
+    WorkflowEngineMessageType.TASK_CANCELED -> taskCanceled
+    WorkflowEngineMessageType.TASK_TIMED_OUT -> taskTimedOut
+    WorkflowEngineMessageType.TASK_FAILED -> taskFailed
+    WorkflowEngineMessageType.TASK_COMPLETED -> taskCompleted
+  }!!
 
   fun toByteArray() = AvroSerDe.writeBinary(this, serializer())
 }

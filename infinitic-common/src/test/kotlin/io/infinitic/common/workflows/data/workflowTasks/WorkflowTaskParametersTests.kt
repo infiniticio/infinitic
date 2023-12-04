@@ -43,12 +43,10 @@ class WorkflowTaskParametersTests :
           }
         }
 
-        "Saved WorkflowTaskParameters schema should be up-to-date with for the current version" {
+        "We should be able to read WorkflowTaskParameters from any previous version since 0.9.0" {
           // An error in this test means that we need to upgrade the version
           checkOrCreateCurrentFile(WorkflowTaskParameters.serializer())
-        }
 
-        "We should be able to read WorkflowTaskParameters from any previous version since 0.9.0" {
           checkBackwardCompatibility(WorkflowTaskParameters.serializer())
         }
       },
