@@ -45,13 +45,13 @@ data class ClientConfigData @JvmOverloads constructor(
   override val consumer = transportConfig.consumer
 
   /** Infinitic  Producer */
-  override val producer = transportConfig.producer.also {
+  override val producerAsync = transportConfig.producerAsync.also {
     // apply name if it exists
     if (name != null) it.name = name
   }
 
   /** Infinitic Client */
-  override val client = InfiniticClient(consumer, producer).also {
+  override val client = InfiniticClient(consumer, producerAsync).also {
     // close consumer with the client
     it.addAutoCloseResource(consumer)
   }

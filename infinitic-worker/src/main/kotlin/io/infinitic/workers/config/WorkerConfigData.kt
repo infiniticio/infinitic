@@ -66,7 +66,7 @@ data class WorkerConfigData @JvmOverloads constructor(
 
   override val consumer = clientConfig.consumer
 
-  override val producer = clientConfig.producer
+  override val producerAsync = clientConfig.producerAsync
 
   override val client = clientConfig.client
 

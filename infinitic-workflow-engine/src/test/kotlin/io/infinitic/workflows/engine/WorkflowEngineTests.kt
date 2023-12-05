@@ -70,7 +70,7 @@ class WorkflowEngineTests :
         // mocks
         fun completed() = CompletableFuture.completedFuture(Unit)
         val storage = mockk<WorkflowStateStorage>()
-        val producer = mockk<InfiniticProducerAsync> {
+        val producerAsync = mockk<InfiniticProducerAsync> {
           every { name } returns "testName"
           every { sendAsync(capture(clientSlot)) } returns completed()
           every { sendAsync(capture(taskTagSlots)) } returns completed()
@@ -78,7 +78,7 @@ class WorkflowEngineTests :
           every { sendAsync(capture(workflowEngineSlot)) } returns completed()
         }
 
-        val engine = WorkflowEngine(storage, producer)
+        val engine = WorkflowEngine(storage, producerAsync)
 
         // ensure slots are emptied between each test
         beforeTest {

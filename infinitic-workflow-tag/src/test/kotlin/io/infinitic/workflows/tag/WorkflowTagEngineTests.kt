@@ -63,7 +63,7 @@ private val stateWorkflowId = slot<String>()
 private val workflowEngineSlot = slot<WorkflowEngineMessage>()
 private val clientSlot = slot<ClientMessage>()
 
-private lateinit var producer: InfiniticProducerAsync
+private lateinit var producerAsync: InfiniticProducerAsync
 private lateinit var workflowTagStorage: WorkflowTagStorage
 
 private class WorkflowTagEngineTests :
@@ -78,9 +78,9 @@ private class WorkflowTagEngineTests :
           // then
           coVerifySequence {
             workflowTagStorage.getWorkflowIds(msgIn.workflowTag, msgIn.workflowName)
-            producer.name
-            producer.sendAsync(ofType<CancelWorkflow>())
-            producer.sendAsync(ofType<CancelWorkflow>())
+            producerAsync.name
+            producerAsync.sendAsync(ofType<CancelWorkflow>())
+            producerAsync.sendAsync(ofType<CancelWorkflow>())
           }
           confirmVerified()
           // checking last message
@@ -98,9 +98,9 @@ private class WorkflowTagEngineTests :
           // then
           coVerifySequence {
             workflowTagStorage.getWorkflowIds(msgIn.workflowTag, msgIn.workflowName)
-            producer.name
-            producer.sendAsync(ofType<RetryWorkflowTask>())
-            producer.sendAsync(ofType<RetryWorkflowTask>())
+            producerAsync.name
+            producerAsync.sendAsync(ofType<RetryWorkflowTask>())
+            producerAsync.sendAsync(ofType<RetryWorkflowTask>())
           }
           confirmVerified()
           // checking last message
@@ -119,9 +119,9 @@ private class WorkflowTagEngineTests :
           // then
           coVerifySequence {
             workflowTagStorage.getWorkflowIds(msgIn.workflowTag, msgIn.workflowName)
-            producer.name
-            producer.sendAsync(ofType<RetryTasks>())
-            producer.sendAsync(ofType<RetryTasks>())
+            producerAsync.name
+            producerAsync.sendAsync(ofType<RetryTasks>())
+            producerAsync.sendAsync(ofType<RetryTasks>())
           }
           confirmVerified()
           // checking last message
@@ -143,9 +143,9 @@ private class WorkflowTagEngineTests :
           // then
           coVerifySequence {
             workflowTagStorage.getWorkflowIds(msgIn.workflowTag, msgIn.workflowName)
-            producer.name
-            producer.sendAsync(ofType<CompleteTimers>())
-            producer.sendAsync(ofType<CompleteTimers>())
+            producerAsync.name
+            producerAsync.sendAsync(ofType<CompleteTimers>())
+            producerAsync.sendAsync(ofType<CompleteTimers>())
           }
           confirmVerified()
           // checking last message
@@ -165,9 +165,9 @@ private class WorkflowTagEngineTests :
           // then
           coVerifySequence {
             workflowTagStorage.getWorkflowIds(msgIn.workflowTag, msgIn.workflowName)
-            producer.name
-            producer.sendAsync(ofType<SendSignal>())
-            producer.sendAsync(ofType<SendSignal>())
+            producerAsync.name
+            producerAsync.sendAsync(ofType<SendSignal>())
+            producerAsync.sendAsync(ofType<SendSignal>())
           }
           confirmVerified()
           // checking last message
@@ -199,8 +199,8 @@ private class WorkflowTagEngineTests :
           // then
           coVerifySequence {
             workflowTagStorage.getWorkflowIds(msgIn.workflowTag, msgIn.workflowName)
-            producer.name
-            producer.sendAsync(ofType<WorkflowIdsByTag>())
+            producerAsync.name
+            producerAsync.sendAsync(ofType<WorkflowIdsByTag>())
           }
           confirmVerified()
 
@@ -243,11 +243,11 @@ private fun getEngine(
 
   fun completed() = CompletableFuture.completedFuture(Unit)
 
-  producer = mockk<InfiniticProducerAsync> {
+  producerAsync = mockk<InfiniticProducerAsync> {
     every { name } returns "clientWorkflowTagEngineName"
     every { sendAsync(capture(clientSlot)) } returns completed()
     every { sendAsync(capture(workflowEngineSlot)) } returns completed()
   }
 
-  return WorkflowTagEngine(workflowTagStorage, producer)
+  return WorkflowTagEngine(workflowTagStorage, producerAsync)
 }

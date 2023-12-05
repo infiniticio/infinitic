@@ -39,7 +39,7 @@ interface TransportConfig {
   val consumer: InfiniticConsumer
 
   /** Infinitic Producer */
-  val producer: InfiniticProducerAsync
+  val producerAsync: InfiniticProducerAsync
 
   companion object {
     /** Create TransportConfig from file in file system */

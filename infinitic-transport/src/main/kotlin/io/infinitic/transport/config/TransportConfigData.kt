@@ -57,25 +57,25 @@ data class TransportConfigData(
         Transport.pulsar -> with(ResourceManager.from(pulsar!!)) {
           val client = PulsarInfiniticClient(pulsar.client)
           val consumer = PulsarInfiniticConsumer(Consumer(client, pulsar.consumer), this)
-          val producer = PulsarInfiniticProducerAsync(Producer(client, pulsar.producer), this)
+          val producerAsync = PulsarInfiniticProducerAsync(Producer(client, pulsar.producer), this)
 
           // Pulsar client will be closed with consumer
           consumer.addAutoCloseResource(pulsar.client)
           // Pulsar admin will be closed with consumer
           consumer.addAutoCloseResource(pulsar.admin)
 
-          Pair(consumer, producer)
+          Pair(consumer, producerAsync)
         }
 
         Transport.inMemory -> {
           val channels = InMemoryChannels()
           val consumer = InMemoryInfiniticConsumer(channels)
-          val producer = InMemoryInfiniticProducerAsync(channels)
+          val producerAsync = InMemoryInfiniticProducerAsync(channels)
 
           // channels will be closed with consumer
           consumer.addAutoCloseResource(channels)
 
-          Pair(consumer, producer)
+          Pair(consumer, producerAsync)
         }
       }
 
@@ -83,5 +83,5 @@ data class TransportConfigData(
   override val consumer = cp.first
 
   /** Infinitic Producer */
-  override val producer = cp.second
+  override val producerAsync = cp.second
 }
