@@ -86,7 +86,7 @@ data class WorkflowEngineEnvelope(
 
   companion object {
     fun from(msg: WorkflowEngineMessage) = when (msg) {
-      
+
       is DispatchNewWorkflow -> WorkflowEngineEnvelope(
           workflowId = msg.workflowId,
           type = WorkflowEngineMessageType.DISPATCH_WORKFLOW,

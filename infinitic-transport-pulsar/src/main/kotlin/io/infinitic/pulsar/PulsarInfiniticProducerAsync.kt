@@ -31,7 +31,7 @@ import io.infinitic.common.tasks.executors.messages.TaskExecutorEnvelope
 import io.infinitic.common.tasks.executors.messages.TaskExecutorMessage
 import io.infinitic.common.tasks.tags.messages.TaskTagEnvelope
 import io.infinitic.common.tasks.tags.messages.TaskTagMessage
-import io.infinitic.common.transport.InfiniticProducer
+import io.infinitic.common.transport.InfiniticProducerAsync
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineEnvelope
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
 import io.infinitic.common.workflows.tags.messages.WorkflowTagEnvelope
@@ -43,10 +43,10 @@ import io.infinitic.pulsar.resources.ServiceTopicDescription
 import io.infinitic.pulsar.resources.WorkflowTopicDescription
 import java.util.concurrent.CompletableFuture
 
-class PulsarInfiniticProducer(
+class PulsarInfiniticProducerAsync(
   private val producer: Producer,
   private val resourceManager: ResourceManager
-) : InfiniticProducer {
+) : InfiniticProducerAsync {
 
   private var suggestedName: String? = null
 

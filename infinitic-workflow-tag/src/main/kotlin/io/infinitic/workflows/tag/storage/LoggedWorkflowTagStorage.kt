@@ -29,9 +29,12 @@ import io.infinitic.common.workflows.data.workflows.WorkflowTag
 import io.infinitic.common.workflows.tags.storage.WorkflowTagStorage
 import org.jetbrains.annotations.TestOnly
 
-class LoggedWorkflowTagStorage(private val storage: WorkflowTagStorage) : WorkflowTagStorage {
+class LoggedWorkflowTagStorage(
+  logName: String,
+  private val storage: WorkflowTagStorage
+) : WorkflowTagStorage {
 
-  private val logger = KotlinLogging.logger {}
+  private val logger = KotlinLogging.logger(logName)
 
   override suspend fun getWorkflowIds(
     tag: WorkflowTag,

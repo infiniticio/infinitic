@@ -30,9 +30,12 @@ import io.infinitic.common.tasks.data.TaskTag
 import io.infinitic.common.tasks.tags.storage.TaskTagStorage
 import org.jetbrains.annotations.TestOnly
 
-class LoggedTaskTagStorage(private val storage: TaskTagStorage) : TaskTagStorage {
+class LoggedTaskTagStorage(
+  logName: String,
+  private val storage: TaskTagStorage
+) : TaskTagStorage {
 
-  private val logger = KotlinLogging.logger {}
+  private val logger = KotlinLogging.logger(logName)
 
   override suspend fun getLastMessageId(tag: TaskTag, serviceName: ServiceName): MessageId? {
     val messageId = storage.getLastMessageId(tag, serviceName)

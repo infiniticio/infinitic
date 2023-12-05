@@ -27,7 +27,7 @@ import io.infinitic.common.clients.messages.MethodRunUnknown
 import io.infinitic.common.data.ClientName
 import io.infinitic.common.exceptions.thisShouldNotHappen
 import io.infinitic.common.tasks.executors.errors.MethodUnknownError
-import io.infinitic.common.transport.InfiniticProducer
+import io.infinitic.common.transport.InfiniticProducerAsync
 import io.infinitic.common.transport.LoggedInfiniticProducer
 import io.infinitic.common.workflows.engine.messages.CancelWorkflow
 import io.infinitic.common.workflows.engine.messages.ChildMethodCanceled
@@ -82,7 +82,7 @@ import kotlinx.coroutines.launch
 
 class WorkflowEngine(
   storage: WorkflowStateStorage,
-  producer: InfiniticProducer
+  producerAsync: InfiniticProducerAsync
 ) {
   companion object {
     const val NO_STATE_DISCARDING_REASON = "for having null workflow state"
@@ -92,9 +92,9 @@ class WorkflowEngine(
 
   private val storage = LoggedWorkflowStateStorage(javaClass.name, storage)
 
-  private val producer = LoggedInfiniticProducer(javaClass.name, producer)
+  private val producer = LoggedInfiniticProducer(javaClass.name, producerAsync)
 
-  private val clientName = ClientName(producer.name)
+  private val clientName by lazy { ClientName(producer.name) }
 
   suspend fun handle(message: WorkflowEngineMessage) {
     logDebug(message) { "Receiving $message" }

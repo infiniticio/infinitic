@@ -50,14 +50,13 @@ internal fun CoroutineScope.workflowTaskFailed(
 
   // send to waiting clients
   methodRun.waitingClients.forEach {
-    val methodFailed =
-        MethodFailed(
-            recipientName = it,
-            workflowId = state.workflowId,
-            methodRunId = methodRun.methodRunId,
-            cause = deferredError,
-            emitterName = ClientName(producer.name),
-        )
+    val methodFailed = MethodFailed(
+        recipientName = it,
+        workflowId = state.workflowId,
+        methodRunId = methodRun.methodRunId,
+        cause = deferredError,
+        emitterName = ClientName(producer.name),
+    )
     launch { producer.send(methodFailed) }
   }
   methodRun.waitingClients.clear()
@@ -66,21 +65,20 @@ internal fun CoroutineScope.workflowTaskFailed(
 
   // send to parent workflow
   methodRun.parentWorkflowId?.let {
-    val childMethodFailed =
-        ChildMethodFailed(
-            workflowId = it,
-            workflowName = methodRun.parentWorkflowName ?: thisShouldNotHappen(),
-            methodRunId = methodRun.parentMethodRunId ?: thisShouldNotHappen(),
-            childMethodFailedError =
-            MethodFailedError(
-                workflowName = state.workflowName,
-                workflowId = state.workflowId,
-                methodName = methodRun.methodName,
-                methodRunId = methodRun.methodRunId,
-                deferredError = deferredError,
-            ),
-            emitterName = ClientName(producer.name),
-        )
+    val childMethodFailed = ChildMethodFailed(
+        workflowId = it,
+        workflowName = methodRun.parentWorkflowName ?: thisShouldNotHappen(),
+        methodRunId = methodRun.parentMethodRunId ?: thisShouldNotHappen(),
+        childMethodFailedError =
+        MethodFailedError(
+            workflowName = state.workflowName,
+            workflowId = state.workflowId,
+            methodName = methodRun.methodName,
+            methodRunId = methodRun.methodRunId,
+            deferredError = deferredError,
+        ),
+        emitterName = ClientName(producer.name),
+    )
     if (it == state.workflowId) {
       // case of method dispatched within same workflow
       bufferedMessages.add(childMethodFailed)

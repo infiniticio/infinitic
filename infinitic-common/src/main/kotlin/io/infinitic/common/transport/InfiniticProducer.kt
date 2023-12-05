@@ -28,8 +28,6 @@ import io.infinitic.common.tasks.executors.messages.TaskExecutorMessage
 import io.infinitic.common.tasks.tags.messages.TaskTagMessage
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
 import io.infinitic.common.workflows.tags.messages.WorkflowTagMessage
-import kotlinx.coroutines.future.await
-import java.util.concurrent.CompletableFuture
 
 interface InfiniticProducer {
   /**
@@ -38,61 +36,18 @@ interface InfiniticProducer {
   var name: String
 
   /**
-   * Asynchronously send a message to a client
-   *
-   * @param message the message to send
-   */
-  fun sendAsync(message: ClientMessage): CompletableFuture<Unit>
-
-  /**
-   * Asynchronously send a message to a workflow tag engine
-   *
-   * @param message the message to send
-   */
-  fun sendAsync(message: WorkflowTagMessage): CompletableFuture<Unit>
-
-  /**
-   * Asynchronously send a message to a workflow engine
-   *
-   * @param message the message to send
-   * @param after the delay before sending the message
-   */
-  fun sendAsync(
-    message: WorkflowEngineMessage,
-    after: MillisDuration = MillisDuration.ZERO
-  ): CompletableFuture<Unit>
-
-  /**
-   * Asynchronously send a message to a task tag engine
-   *
-   * @param message the message to send
-   */
-  fun sendAsync(message: TaskTagMessage): CompletableFuture<Unit>
-
-  /**
-   * Asynchronously send a message to a task executor
-   *
-   * @param message the message to send
-   * @param after the delay before sending the message
-   */
-  fun sendAsync(
-    message: TaskExecutorMessage,
-    after: MillisDuration = MillisDuration.ZERO
-  ): CompletableFuture<Unit>
-
-  /**
    * Synchronously send a message to a client
    *
    * @param message the message to send
    */
-  suspend fun send(message: ClientMessage): Unit = sendAsync(message).await()
+  suspend fun send(message: ClientMessage)
 
   /**
    * Synchronously send a message to a workflow tag engine
    *
    * @param message the message to send
    */
-  suspend fun send(message: WorkflowTagMessage): Unit = sendAsync(message).await()
+  suspend fun send(message: WorkflowTagMessage)
 
   /**
    * Synchronously send a message to a workflow engine
@@ -100,17 +55,14 @@ interface InfiniticProducer {
    * @param message the message to send
    * @param after the delay before sending the message
    */
-  suspend fun send(
-    message: WorkflowEngineMessage,
-    after: MillisDuration = MillisDuration.ZERO
-  ): Unit = sendAsync(message, after).await()
+  suspend fun send(message: WorkflowEngineMessage, after: MillisDuration = MillisDuration.ZERO)
 
   /**
    * Synchronously send a message to a task tag engine
    *
    * @param message the message to send
    */
-  suspend fun send(message: TaskTagMessage): Unit = sendAsync(message).await()
+  suspend fun send(message: TaskTagMessage)
 
   /**
    * Synchronously send a message to a task executor
@@ -118,8 +70,5 @@ interface InfiniticProducer {
    * @param message the message to send
    * @param after the delay before sending the message
    */
-  suspend fun send(
-    message: TaskExecutorMessage,
-    after: MillisDuration = MillisDuration.ZERO
-  ): Unit = sendAsync(message, after).await()
+  suspend fun send(message: TaskExecutorMessage, after: MillisDuration = MillisDuration.ZERO)
 }

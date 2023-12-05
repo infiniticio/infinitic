@@ -38,16 +38,15 @@ internal fun CoroutineScope.retryTasks(
   message: RetryTasks
 ) {
   val taskId = message.taskId?.run { CommandId.from(this) }
-  val taskStatus =
-      when (message.taskStatus) {
-        DeferredStatus.ONGOING -> CommandStatus.Ongoing::class
-        DeferredStatus.UNKNOWN -> CommandStatus.Unknown::class
-        DeferredStatus.CANCELED -> CommandStatus.Canceled::class
-        DeferredStatus.FAILED -> CommandStatus.Failed::class
-        DeferredStatus.TIMED_OUT -> CommandStatus.TimedOut::class
-        DeferredStatus.COMPLETED -> CommandStatus.Completed::class
-        null -> null
-      }
+  val taskStatus = when (message.taskStatus) {
+    DeferredStatus.ONGOING -> CommandStatus.Ongoing::class
+    DeferredStatus.UNKNOWN -> CommandStatus.Unknown::class
+    DeferredStatus.CANCELED -> CommandStatus.Canceled::class
+    DeferredStatus.FAILED -> CommandStatus.Failed::class
+    DeferredStatus.TIMED_OUT -> CommandStatus.TimedOut::class
+    DeferredStatus.COMPLETED -> CommandStatus.Completed::class
+    null -> null
+  }
   val serviceName = message.serviceName
 
   // for all method runs
@@ -63,9 +62,7 @@ internal fun CoroutineScope.retryTasks(
         // dispatch a new sequence of those task
         .forEach { dispatchTaskPastCommand ->
           dispatchTaskPastCommand.taskRetrySequence += 1
-
           dispatchTaskCmd(dispatchTaskPastCommand, state, producer)
-
           dispatchTaskPastCommand.commandStatus = CommandStatus.Ongoing
         }
   }

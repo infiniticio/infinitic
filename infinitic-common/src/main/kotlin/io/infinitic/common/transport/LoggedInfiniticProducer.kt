@@ -30,11 +30,11 @@ import io.infinitic.common.tasks.executors.messages.TaskExecutorMessage
 import io.infinitic.common.tasks.tags.messages.TaskTagMessage
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
 import io.infinitic.common.workflows.tags.messages.WorkflowTagMessage
-import java.util.concurrent.CompletableFuture
+import kotlinx.coroutines.future.await
 
 class LoggedInfiniticProducer(
   logName: String,
-  private val producer: InfiniticProducer,
+  private val producerAsync: InfiniticProducerAsync,
 ) : InfiniticProducer {
 
   private val logger = KotlinLogging.logger(logName)
@@ -42,43 +42,53 @@ class LoggedInfiniticProducer(
   lateinit var id: String
 
   override var name: String
-    get() = producer.name
+    get() = producerAsync.name
     set(value) {
-      producer.name = value
+      producerAsync.name = value
     }
 
-  override fun sendAsync(message: ClientMessage): CompletableFuture<Unit> {
+  override suspend fun send(message: ClientMessage) {
     logDebug(message)
-    return producer.sendAsync(message)
+    producerAsync.sendAsync(message).await()
+    logTrace(message)
   }
 
-  override fun sendAsync(message: WorkflowTagMessage): CompletableFuture<Unit> {
+  override suspend fun send(message: WorkflowTagMessage) {
     logDebug(message)
-    return producer.sendAsync(message)
+    producerAsync.sendAsync(message).await()
+    logTrace(message)
   }
 
-  override fun sendAsync(
-    message: WorkflowEngineMessage,
-    after: MillisDuration
-  ): CompletableFuture<Unit> {
+  override suspend fun send(message: WorkflowEngineMessage, after: MillisDuration) {
     logDebug(message, after)
-    return producer.sendAsync(message, after)
+    producerAsync.sendAsync(message, after).await()
+    logTrace(message)
   }
 
-  override fun sendAsync(message: TaskTagMessage): CompletableFuture<Unit> {
+  override suspend fun send(message: TaskTagMessage) {
     logDebug(message)
-    return producer.sendAsync(message)
+    producerAsync.sendAsync(message).await()
+    logTrace(message)
   }
 
-  override fun sendAsync(
-    message: TaskExecutorMessage,
-    after: MillisDuration
-  ): CompletableFuture<Unit> {
+  override suspend fun send(message: TaskExecutorMessage, after: MillisDuration) {
     logDebug(message, after)
-    return producer.sendAsync(message, after)
+    producerAsync.sendAsync(message, after).await()
+    logTrace(message)
   }
 
   private fun logDebug(message: Message, after: MillisDuration? = null) {
-    logger.debug { "Id $id - ${if (after != null && after > 0) "After $after, s" else "S"}ending $message" }
+    logger.debug {
+      val idStr = if (::id.isInitialized) "Id $id - " else ""
+      val afterStr = if (after != null && after > 0) "After $after, s" else "S"
+      "$idStr${afterStr}ending $message"
+    }
+  }
+
+  private fun logTrace(message: Message) {
+    logger.trace {
+      val idStr = if (::id.isInitialized) "Id $id - " else ""
+      "${idStr}Sent $message"
+    }
   }
 }
