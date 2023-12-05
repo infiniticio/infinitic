@@ -23,6 +23,12 @@
 
 // https://proandroiddev.com/publishing-a-maven-artifact-3-3-step-by-step-instructions-to-mavencentral-publishing-bd661081645d
 
+// To publish a new version:
+// * check the new version number CI.BASE
+// * run: RELEASE=true ./gradlew publish --rerun-tasks
+// * login to https://s01.oss.sonatype.org#stagingRepositories
+// * once the new version is uploaded in staging repositories, close it, then release it
+
 apply(plugin = "java")
 
 apply(plugin = "java-library")
