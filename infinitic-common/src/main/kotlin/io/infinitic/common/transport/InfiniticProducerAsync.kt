@@ -28,47 +28,59 @@ import io.infinitic.common.tasks.executors.messages.TaskExecutorMessage
 import io.infinitic.common.tasks.tags.messages.TaskTagMessage
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
 import io.infinitic.common.workflows.tags.messages.WorkflowTagMessage
+import java.util.concurrent.CompletableFuture
 
-interface InfiniticProducer {
+/**
+ * Interface for sending messages
+ *
+ * This interface is implemented by the implementation of Transport
+ */
+interface InfiniticProducerAsync {
   /**
    * Name of the sender
    */
   var name: String
 
   /**
-   * Synchronously send a message to a client
+   * Asynchronously send a message to a client
    *
    * @param message the message to send
    */
-  suspend fun send(message: ClientMessage)
+  fun sendAsync(message: ClientMessage): CompletableFuture<Unit>
 
   /**
-   * Synchronously send a message to a workflow tag engine
+   * Asynchronously send a message to a workflow tag engine
    *
    * @param message the message to send
    */
-  suspend fun send(message: WorkflowTagMessage)
+  fun sendAsync(message: WorkflowTagMessage): CompletableFuture<Unit>
 
   /**
-   * Synchronously send a message to a workflow engine
+   * Asynchronously send a message to a workflow engine
    *
    * @param message the message to send
    * @param after the delay before sending the message
    */
-  suspend fun send(message: WorkflowEngineMessage, after: MillisDuration = MillisDuration.ZERO)
+  fun sendAsync(
+    message: WorkflowEngineMessage,
+    after: MillisDuration = MillisDuration.ZERO
+  ): CompletableFuture<Unit>
 
   /**
-   * Synchronously send a message to a task tag engine
+   * Asynchronously send a message to a task tag engine
    *
    * @param message the message to send
    */
-  suspend fun send(message: TaskTagMessage)
+  fun sendAsync(message: TaskTagMessage): CompletableFuture<Unit>
 
   /**
-   * Synchronously send a message to a task executor
+   * Asynchronously send a message to a task executor
    *
    * @param message the message to send
    * @param after the delay before sending the message
    */
-  suspend fun send(message: TaskExecutorMessage, after: MillisDuration = MillisDuration.ZERO)
+  fun sendAsync(
+    message: TaskExecutorMessage,
+    after: MillisDuration = MillisDuration.ZERO
+  ): CompletableFuture<Unit>
 }

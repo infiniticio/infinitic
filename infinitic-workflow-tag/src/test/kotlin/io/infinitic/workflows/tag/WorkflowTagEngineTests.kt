@@ -24,9 +24,8 @@ package io.infinitic.workflows.tag
 
 import io.infinitic.common.clients.messages.ClientMessage
 import io.infinitic.common.clients.messages.WorkflowIdsByTag
-import io.infinitic.common.data.MillisDuration
 import io.infinitic.common.fixtures.TestFactory
-import io.infinitic.common.transport.InfiniticProducer
+import io.infinitic.common.transport.InfiniticProducerAsync
 import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.data.workflows.WorkflowName
 import io.infinitic.common.workflows.data.workflows.WorkflowTag
@@ -63,12 +62,11 @@ private fun <T : Any> captured(slot: CapturingSlot<T>) =
 private val stateWorkflowId = slot<String>()
 private val workflowEngineSlot = slot<WorkflowEngineMessage>()
 private val clientSlot = slot<ClientMessage>()
-private val afterSlot = slot<MillisDuration>()
 
-lateinit var producer: InfiniticProducer
-lateinit var workflowTagStorage: WorkflowTagStorage
+private lateinit var producerAsync: InfiniticProducerAsync
+private lateinit var workflowTagStorage: WorkflowTagStorage
 
-internal class WorkflowTagEngineTests :
+private class WorkflowTagEngineTests :
   StringSpec(
       {
         "cancelWorkflowPerTag should cancel workflow" {
@@ -80,9 +78,9 @@ internal class WorkflowTagEngineTests :
           // then
           coVerifySequence {
             workflowTagStorage.getWorkflowIds(msgIn.workflowTag, msgIn.workflowName)
-            producer.name
-            producer.send(ofType<CancelWorkflow>())
-            producer.send(ofType<CancelWorkflow>())
+            producerAsync.name
+            producerAsync.sendAsync(ofType<CancelWorkflow>())
+            producerAsync.sendAsync(ofType<CancelWorkflow>())
           }
           confirmVerified()
           // checking last message
@@ -100,9 +98,9 @@ internal class WorkflowTagEngineTests :
           // then
           coVerifySequence {
             workflowTagStorage.getWorkflowIds(msgIn.workflowTag, msgIn.workflowName)
-            producer.name
-            producer.send(ofType<RetryWorkflowTask>())
-            producer.send(ofType<RetryWorkflowTask>())
+            producerAsync.name
+            producerAsync.sendAsync(ofType<RetryWorkflowTask>())
+            producerAsync.sendAsync(ofType<RetryWorkflowTask>())
           }
           confirmVerified()
           // checking last message
@@ -121,9 +119,9 @@ internal class WorkflowTagEngineTests :
           // then
           coVerifySequence {
             workflowTagStorage.getWorkflowIds(msgIn.workflowTag, msgIn.workflowName)
-            producer.name
-            producer.send(ofType<RetryTasks>())
-            producer.send(ofType<RetryTasks>())
+            producerAsync.name
+            producerAsync.sendAsync(ofType<RetryTasks>())
+            producerAsync.sendAsync(ofType<RetryTasks>())
           }
           confirmVerified()
           // checking last message
@@ -145,9 +143,9 @@ internal class WorkflowTagEngineTests :
           // then
           coVerifySequence {
             workflowTagStorage.getWorkflowIds(msgIn.workflowTag, msgIn.workflowName)
-            producer.name
-            producer.send(ofType<CompleteTimers>())
-            producer.send(ofType<CompleteTimers>())
+            producerAsync.name
+            producerAsync.sendAsync(ofType<CompleteTimers>())
+            producerAsync.sendAsync(ofType<CompleteTimers>())
           }
           confirmVerified()
           // checking last message
@@ -167,9 +165,9 @@ internal class WorkflowTagEngineTests :
           // then
           coVerifySequence {
             workflowTagStorage.getWorkflowIds(msgIn.workflowTag, msgIn.workflowName)
-            producer.name
-            producer.send(ofType<SendSignal>())
-            producer.send(ofType<SendSignal>())
+            producerAsync.name
+            producerAsync.sendAsync(ofType<SendSignal>())
+            producerAsync.sendAsync(ofType<SendSignal>())
           }
           confirmVerified()
           // checking last message
@@ -201,8 +199,8 @@ internal class WorkflowTagEngineTests :
           // then
           coVerifySequence {
             workflowTagStorage.getWorkflowIds(msgIn.workflowTag, msgIn.workflowName)
-            producer.name
-            producer.send(ofType<WorkflowIdsByTag>())
+            producerAsync.name
+            producerAsync.sendAsync(ofType<WorkflowIdsByTag>())
           }
           confirmVerified()
 
@@ -245,13 +243,11 @@ private fun getEngine(
 
   fun completed() = CompletableFuture.completedFuture(Unit)
 
-  producer = mockk<InfiniticProducer> {
+  producerAsync = mockk<InfiniticProducerAsync> {
     every { name } returns "clientWorkflowTagEngineName"
     every { sendAsync(capture(clientSlot)) } returns completed()
     every { sendAsync(capture(workflowEngineSlot)) } returns completed()
-    coEvery { send(capture(clientSlot)) } answers { }
-    coEvery { send(capture(workflowEngineSlot), capture(afterSlot)) } answers { }
   }
 
-  return WorkflowTagEngine(workflowTagStorage, producer)
+  return WorkflowTagEngine(workflowTagStorage, producerAsync)
 }

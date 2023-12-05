@@ -24,26 +24,26 @@ package io.infinitic.common.serDe
 
 import com.fasterxml.jackson.core.JsonProcessingException
 import com.github.avrokotlin.avro4k.AvroNamespace
-import io.infinitic.common.serDe.json.Json as JsonJackson
 import io.infinitic.exceptions.serialization.ClassNotFoundException
 import io.infinitic.exceptions.serialization.JsonDeserializationException
 import io.infinitic.exceptions.serialization.KotlinDeserializationException
 import io.infinitic.exceptions.serialization.MissingMetaJavaClassException
 import io.infinitic.exceptions.serialization.SerializerNotFoundException
-import java.math.BigInteger
-import java.security.MessageDigest
 import kotlinx.serialization.InternalSerializationApi
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.SerializationException
 import kotlinx.serialization.serializerOrNull
+import java.math.BigInteger
+import java.security.MessageDigest
+import io.infinitic.common.serDe.json.Json as JsonJackson
 
 @Serializable
 @AvroNamespace("io.infinitic.data")
 data class SerializedData(
-    var bytes: ByteArray,
-    @AvroNamespace("io.infinitic.data") var type: SerializedDataType,
-    val meta: Map<String, ByteArray> = mapOf()
+  var bytes: ByteArray,
+  @AvroNamespace("io.infinitic.data") var type: SerializedDataType,
+  val meta: Map<String, ByteArray> = mapOf()
 ) {
   companion object {
     // meta key containing the name of the serialized java class
@@ -68,6 +68,7 @@ data class SerializedData(
           type = SerializedDataType.NULL
           meta = mapOf()
         }
+
         else -> {
           @Suppress("UNCHECKED_CAST") @OptIn(InternalSerializationApi::class)
           when (val serializer = value::class.serializerOrNull()?.let { it as KSerializer<T> }) {
@@ -75,13 +76,15 @@ data class SerializedData(
               bytes = JsonJackson.stringify(value).toByteArray()
               type = SerializedDataType.JSON_JACKSON
             }
+
             else -> {
               bytes = jsonKotlin.encodeToString(serializer, value).toByteArray()
               type = SerializedDataType.JSON_KOTLIN
             }
           }
-          meta =
-              mapOf(META_JAVA_CLASS to value::class.java.name.toByteArray(charset = Charsets.UTF_8))
+          meta = mapOf(
+              META_JAVA_CLASS to value::class.java.name.toByteArray(charset = Charsets.UTF_8),
+          )
         }
       }
       return SerializedData(bytes, type, meta)
@@ -101,6 +104,7 @@ data class SerializedData(
             throw JsonDeserializationException(klass.name, causeString = e.toString())
           }
         }
+
         SerializedDataType.JSON_KOTLIN -> {
           val klass = getClassObject()
           val serializer =

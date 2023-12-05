@@ -40,7 +40,7 @@ interface WorkerConfig : RegisterConfig, CacheConfig, StorageConfig, ClientConfi
 
   /** Infinitic Worker */
   val worker: InfiniticWorker
-    get() = InfiniticWorker(register, consumer, producer, client)
+    get() = InfiniticWorker(register, consumer, producerAsync, client)
 
   companion object {
     /** Create ClientConfig from file in file system */

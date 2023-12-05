@@ -31,7 +31,7 @@ import io.infinitic.common.tasks.data.TaskReturnValue
 import io.infinitic.common.tasks.executors.messages.ExecuteTask
 import io.infinitic.common.tasks.executors.messages.TaskExecutorMessage
 import io.infinitic.common.tasks.tags.messages.TaskTagMessage
-import io.infinitic.common.transport.InfiniticProducer
+import io.infinitic.common.transport.InfiniticProducerAsync
 import io.infinitic.common.workers.config.WorkflowVersion
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskReturnValue
 import io.infinitic.common.workflows.data.workflows.WorkflowId
@@ -70,19 +70,15 @@ class WorkflowEngineTests :
         // mocks
         fun completed() = CompletableFuture.completedFuture(Unit)
         val storage = mockk<WorkflowStateStorage>()
-        val producer = mockk<InfiniticProducer> {
+        val producerAsync = mockk<InfiniticProducerAsync> {
           every { name } returns "testName"
           every { sendAsync(capture(clientSlot)) } returns completed()
           every { sendAsync(capture(taskTagSlots)) } returns completed()
           every { sendAsync(capture(taskExecutorSlot), capture(afterSlot)) } returns completed()
           every { sendAsync(capture(workflowEngineSlot)) } returns completed()
-          coEvery { send(capture(clientSlot)) } answers { }
-          coEvery { send(capture(taskTagSlots)) } answers { }
-          coEvery { send(capture(taskExecutorSlot), capture(afterSlot)) } answers { }
-          coEvery { send(capture(workflowEngineSlot), capture(afterSlot)) } answers { }
         }
 
-        val engine = WorkflowEngine(storage, producer)
+        val engine = WorkflowEngine(storage, producerAsync)
 
         // ensure slots are emptied between each test
         beforeTest {

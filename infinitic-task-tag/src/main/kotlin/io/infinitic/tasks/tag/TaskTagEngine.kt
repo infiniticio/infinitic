@@ -22,6 +22,7 @@
  */
 package io.infinitic.tasks.tag
 
+import io.github.oshai.kotlinlogging.KotlinLogging
 import io.infinitic.common.clients.messages.TaskIdsByTag
 import io.infinitic.common.data.ClientName
 import io.infinitic.common.tasks.tags.messages.AddTagToTask
@@ -31,22 +32,24 @@ import io.infinitic.common.tasks.tags.messages.RemoveTagFromTask
 import io.infinitic.common.tasks.tags.messages.RetryTaskByTag
 import io.infinitic.common.tasks.tags.messages.TaskTagMessage
 import io.infinitic.common.tasks.tags.storage.TaskTagStorage
-import io.infinitic.common.transport.InfiniticProducer
+import io.infinitic.common.transport.InfiniticProducerAsync
+import io.infinitic.common.transport.LoggedInfiniticProducer
 import io.infinitic.tasks.tag.storage.LoggedTaskTagStorage
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
-import io.github.oshai.kotlinlogging.KotlinLogging
 
 class TaskTagEngine(
   storage: TaskTagStorage,
-  private val producer: InfiniticProducer
+  producerAsync: InfiniticProducerAsync
 ) {
   private lateinit var scope: CoroutineScope
 
-  private val storage = LoggedTaskTagStorage(storage)
+  private val storage = LoggedTaskTagStorage(javaClass.name, storage)
 
-  private val logger = KotlinLogging.logger {}
+  private val producer = LoggedInfiniticProducer(javaClass.name, producerAsync)
+
+  private val logger = KotlinLogging.logger(javaClass.name)
 
   suspend fun handle(message: TaskTagMessage) {
     logger.debug { "receiving $message" }
@@ -84,10 +87,7 @@ class TaskTagEngine(
 
     val taskIds = storage.getTaskIds(message.taskTag, message.serviceName)
     when (taskIds.isEmpty()) {
-      true -> {
-        discardTagWithoutIds(message)
-      }
-
+      true -> discardTagWithoutIds(message)
       false -> taskIds.forEach { TODO() }
     }
   }
@@ -98,10 +98,7 @@ class TaskTagEngine(
 
     val ids = storage.getTaskIds(message.taskTag, message.serviceName)
     when (ids.isEmpty()) {
-      true -> {
-        discardTagWithoutIds(message)
-      }
-
+      true -> discardTagWithoutIds(message)
       false -> ids.forEach { TODO() }
     }
   }
@@ -109,14 +106,13 @@ class TaskTagEngine(
   private suspend fun getTaskIds(message: GetTaskIdsByTag) {
     val taskIds = storage.getTaskIds(message.taskTag, message.serviceName)
 
-    val taskIdsByTag =
-        TaskIdsByTag(
-            recipientName = message.emitterName,
-            message.serviceName,
-            message.taskTag,
-            taskIds,
-            emitterName = ClientName(producer.name),
-        )
+    val taskIdsByTag = TaskIdsByTag(
+        recipientName = message.emitterName,
+        message.serviceName,
+        message.taskTag,
+        taskIds,
+        emitterName = ClientName(producer.name),
+    )
 
     scope.launch { producer.send(taskIdsByTag) }
   }

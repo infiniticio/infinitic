@@ -36,20 +36,23 @@ class LoggedWorkflowStateStorage(
   private val logger = KotlinLogging.logger(logName)
 
   override suspend fun getState(workflowId: WorkflowId): WorkflowState? {
+    logger.trace { "Id $workflowId - Getting State" }
     val workflowState = storage.getState(workflowId)
-    logger.debug { "Id $workflowId - GetState $workflowState" }
+    logger.debug { "Id $workflowId - Get state $workflowState" }
 
     return workflowState
   }
 
   override suspend fun putState(workflowId: WorkflowId, workflowState: WorkflowState) {
-    logger.debug { "Id $workflowId - PutState $workflowState" }
+    logger.trace { "Id $workflowId - Putting State" }
     storage.putState(workflowId, workflowState)
+    logger.debug { "Id $workflowId - Put state $workflowState" }
   }
 
   override suspend fun delState(workflowId: WorkflowId) {
-    logger.debug { "Id $workflowId - DelState" }
+    logger.trace { "Id $workflowId - Deleting State" }
     storage.delState(workflowId)
+    logger.debug { "Id $workflowId - Del State" }
   }
 
   @TestOnly

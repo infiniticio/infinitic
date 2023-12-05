@@ -37,22 +37,12 @@ class WorkflowTagEnvelopeTests :
   StringSpec(
       {
         WorkflowTagMessage::class.sealedSubclasses.map {
-          val msg =
-              when (it) {
-                DispatchWorkflowByCustomId::class ->
-                  TestFactory.random(
-                      it,
-                      mapOf(
-                          "workflowTag" to
-                              WorkflowTag(
-                                  WorkflowTag.CUSTOM_ID_PREFIX +
-                                      TestFactory.random(String::class),
-                              ),
-                      ),
-                  )
+          val tag = WorkflowTag(WorkflowTag.CUSTOM_ID_PREFIX + TestFactory.random(String::class))
+          val msg = when (it) {
+            DispatchWorkflowByCustomId::class -> TestFactory.random(it, mapOf("workflowTag" to tag))
 
-                else -> TestFactory.random(it)
-              }
+            else -> TestFactory.random(it)
+          }
 
           "WorkflowTagMessage(${msg::class.simpleName}) should be avro-convertible" {
             shouldNotThrowAny {

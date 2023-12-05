@@ -35,10 +35,12 @@ import io.infinitic.common.proxies.RequestByWorkflowTag
 import io.infinitic.common.tasks.data.TaskId
 import io.infinitic.common.tasks.data.TaskMeta
 import io.infinitic.common.transport.InfiniticConsumer
-import io.infinitic.common.transport.InfiniticProducer
+import io.infinitic.common.transport.InfiniticProducerAsync
+import io.infinitic.common.transport.LoggedInfiniticProducer
 import io.infinitic.common.workflows.data.methodRuns.MethodRunId
 import io.infinitic.common.workflows.data.workflows.WorkflowMeta
 import io.infinitic.common.workflows.data.workflows.WorkflowTag
+import io.infinitic.exceptions.clients.InvalidIdTagSelectionException
 import io.infinitic.exceptions.clients.InvalidStubException
 import io.infinitic.workflows.DeferredStatus
 import org.jetbrains.annotations.TestOnly
@@ -47,13 +49,15 @@ import java.util.concurrent.CompletableFuture
 
 @Suppress("unused")
 class InfiniticClient(
-  private val consumer: InfiniticConsumer,
-  private val producer: InfiniticProducer
+  consumer: InfiniticConsumer,
+  producerAsync: InfiniticProducerAsync
 ) : InfiniticClientInterface {
 
-  private val dispatcher = ClientDispatcher(consumer, producer)
+  private val producer = LoggedInfiniticProducer(javaClass.name, producerAsync)
 
-  override val name by lazy { producer.name }
+  private val dispatcher = ClientDispatcher(javaClass.name, consumer, producer)
+
+  override val name by lazy { producerAsync.name }
 
   /** Get last Deferred created by the call of a stub */
   override val lastDeferred get() = dispatcher.getLastDeferred()
@@ -130,8 +134,14 @@ class InfiniticClient(
   /** get ids of a stub, associated to a specific tag */
   override fun <T : Any> getIds(stub: T): Set<String> =
       when (val handler = getProxyHandler(stub)) {
-        is ExistingWorkflowProxyHandler ->
-          dispatcher.getWorkflowIdsByTag(handler.workflowName, handler.requestBy)
+        is ExistingWorkflowProxyHandler -> when (handler.requestBy) {
+          is RequestByWorkflowTag -> dispatcher.getWorkflowIdsByTag(
+              handler.workflowName,
+              (handler.requestBy as RequestByWorkflowTag).workflowTag,
+          )
+
+          is RequestByWorkflowId -> throw InvalidIdTagSelectionException("$stub")
+        }
 
         else -> throw InvalidStubException("$stub")
       }

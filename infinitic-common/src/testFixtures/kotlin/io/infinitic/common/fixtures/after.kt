@@ -27,8 +27,8 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
-suspend fun later(delay: Long = 100L, f: suspend CoroutineScope.() -> Unit) =
-    CoroutineScope(Dispatchers.IO).launch {
+fun later(delay: Long = 100L, f: suspend CoroutineScope.() -> Unit) = CoroutineScope(Dispatchers.IO)
+    .launch {
       delay(delay)
       f()
     }

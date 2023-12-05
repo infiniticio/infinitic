@@ -25,7 +25,6 @@ package io.infinitic.common.data.methods
 import com.fasterxml.jackson.core.JsonProcessingException
 import io.infinitic.common.serDe.SerializedData
 import io.infinitic.exceptions.serialization.ParameterSerializationException
-import java.lang.reflect.Method
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.builtins.ListSerializer
@@ -33,26 +32,27 @@ import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
 import org.jetbrains.annotations.TestOnly
+import java.lang.reflect.Method
 
 @Serializable(with = MethodParametersSerializer::class)
 data class MethodParameters(val parameters: List<SerializedData> = listOf()) :
-    Collection<SerializedData> by parameters {
+  Collection<SerializedData> by parameters {
   companion object {
     fun from(method: Method, data: Array<*>) =
         MethodParameters(
-            data
-                .mapIndexed { index, value ->
-                  try {
-                    SerializedData.from(value)
-                  } catch (e: JsonProcessingException) {
-                    throw ParameterSerializationException(
-                        method.parameters[index].name,
-                        method.parameterTypes[index].kotlin.javaObjectType.name,
-                        method.name,
-                        method.declaringClass.name)
-                  }
-                }
-                .toList())
+            data.mapIndexed { index, value ->
+              try {
+                SerializedData.from(value)
+              } catch (e: JsonProcessingException) {
+                throw ParameterSerializationException(
+                    method.parameters[index].name,
+                    method.parameterTypes[index].kotlin.javaObjectType.name,
+                    method.name,
+                    method.declaringClass.name,
+                )
+              }
+            }.toList(),
+        )
 
     @TestOnly
     fun from(vararg data: Any?) = MethodParameters(data.map { SerializedData.from(it) }.toList())

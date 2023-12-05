@@ -36,7 +36,7 @@ import io.infinitic.common.tasks.tags.messages.AddTagToTask
 import io.infinitic.common.tasks.tags.messages.GetTaskIdsByTag
 import io.infinitic.common.tasks.tags.messages.RemoveTagFromTask
 import io.infinitic.common.tasks.tags.storage.TaskTagStorage
-import io.infinitic.common.transport.InfiniticProducer
+import io.infinitic.common.transport.InfiniticProducerAsync
 import io.infinitic.tasks.tag.TaskTagEngine
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
@@ -66,12 +66,11 @@ private var delaySlot = slot<MillisDuration>()
 private lateinit var tagStateStorage: TaskTagStorage
 
 private fun completed() = CompletableFuture.completedFuture(Unit)
-val producerMock = mockk<InfiniticProducer> {
+
+val producerMock = mockk<InfiniticProducerAsync> {
   every { name } returns "$clientName"
   every { sendAsync(capture(clientSlot)) } returns completed()
   every { sendAsync(capture(taskExecutorSlot), capture(delaySlot)) } returns completed()
-  coEvery { send(capture(clientSlot)) } answers { }
-  coEvery { send(capture(taskExecutorSlot), capture(delaySlot)) } answers { }
 }
 
 private inline fun <reified T : Any> random(values: Map<String, Any?>? = null) =
@@ -154,7 +153,7 @@ internal class TaskTagEngineTests :
           coVerifySequence {
             tagStateStorage.getTaskIds(msgIn.taskTag, msgIn.serviceName)
             producerMock.name
-            producerMock.send(ofType<TaskIdsByTag>())
+            producerMock.sendAsync(ofType<TaskIdsByTag>())
             tagStateStorage.setLastMessageId(msgIn.taskTag, msgIn.serviceName, msgIn.messageId)
           }
 

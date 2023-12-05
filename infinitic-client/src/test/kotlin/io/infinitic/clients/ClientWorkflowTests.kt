@@ -44,7 +44,7 @@ import io.infinitic.common.fixtures.later
 import io.infinitic.common.tasks.executors.messages.TaskExecutorMessage
 import io.infinitic.common.tasks.tags.messages.TaskTagMessage
 import io.infinitic.common.transport.InfiniticConsumer
-import io.infinitic.common.transport.InfiniticProducer
+import io.infinitic.common.transport.InfiniticProducerAsync
 import io.infinitic.common.workflows.data.channels.ChannelName
 import io.infinitic.common.workflows.data.channels.ChannelType
 import io.infinitic.common.workflows.data.channels.SignalData
@@ -75,15 +75,10 @@ import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
 import io.mockk.called
-import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.slot
 import io.mockk.verify
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
 import java.util.*
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CopyOnWriteArrayList
@@ -92,9 +87,11 @@ private val taskTagSlots = CopyOnWriteArrayList<TaskTagMessage>() // multithread
 private val workflowTagSlots = CopyOnWriteArrayList<WorkflowTagMessage>() // multithreading update
 private val taskSlot = slot<TaskExecutorMessage>()
 private val workflowEngineSlot = slot<WorkflowEngineMessage>()
-private val clientNameTest = ClientName("clientTest")
+private val delaySlot = slot<MillisDuration>()
 
-fun tagResponse(): CompletableFuture<Unit> {
+private val clientNameTest = ClientName("clientTest")
+private fun completed() = CompletableFuture.completedFuture(Unit)
+private fun tagResponse(): CompletableFuture<Unit> {
   workflowTagSlots.forEach {
     if (it is GetWorkflowIdsByTag) {
       val workflowIdsByTag = WorkflowIdsByTag(
@@ -104,16 +101,13 @@ fun tagResponse(): CompletableFuture<Unit> {
           workflowIds = setOf(WorkflowId(), WorkflowId()),
           emitterName = ClientName("mockk"),
       )
-      CoroutineScope(Dispatchers.IO).launch {
-        delay(100)
-        client.handle(workflowIdsByTag)
-      }
+      later { client.handle(workflowIdsByTag) }
     }
   }
-  return CompletableFuture.completedFuture(null)
+  return completed()
 }
 
-suspend fun engineResponse(): CompletableFuture<Unit> {
+private fun engineResponse(): CompletableFuture<Unit> {
   val msg = workflowEngineSlot.captured
   if (msg is DispatchNewWorkflow && msg.clientWaiting || msg is WaitWorkflow) {
     val methodCompleted = MethodCompleted(
@@ -123,44 +117,24 @@ suspend fun engineResponse(): CompletableFuture<Unit> {
         methodReturnValue = ReturnValue.from("success"),
         emitterName = ClientName("mockk"),
     )
-    later {
-      delay(100)
-      client.handle(methodCompleted)
-    }
+    later { client.handle(methodCompleted) }
   }
-  return CompletableFuture.completedFuture(null)
+  return completed()
 }
 
-val delaySlot = slot<MillisDuration>()
-val producer: InfiniticProducer = mockk<InfiniticProducer> {
+private val producerAsync: InfiniticProducerAsync = mockk<InfiniticProducerAsync> {
   every { name } returns "$clientNameTest"
-
   every { sendAsync(capture(workflowTagSlots)) } answers { tagResponse() }
-  coEvery { send(capture(workflowTagSlots)) } answers { tagResponse().join() }
-
-  every {
-    sendAsync(
-        capture(workflowEngineSlot),
-        capture(delaySlot),
-    )
-  } coAnswers { engineResponse() }
-  coEvery {
-    send(
-        capture(workflowEngineSlot),
-        capture(delaySlot),
-    )
-  } coAnswers { engineResponse().join() }
+  every { sendAsync(capture(workflowEngineSlot), capture(delaySlot)) } answers { engineResponse() }
 }
 
-val consumer: InfiniticConsumer = mockk<InfiniticConsumer> {
-  every {
-    startClientConsumerAsync(any(), any(), clientNameTest)
-  } returns CompletableFuture.completedFuture(null)
+private val consumer: InfiniticConsumer = mockk<InfiniticConsumer> {
+  every { startClientConsumerAsync(any(), any(), clientNameTest) } returns completed()
 }
 
-val client = InfiniticClient(consumer, producer)
+private val client = InfiniticClient(consumer, producerAsync)
 
-class ClientWorkflowTests : StringSpec(
+private class ClientWorkflowTests : StringSpec(
     {
       val meta: Map<String, ByteArray> =
           mapOf("foo" to TestFactory.random(), "bar" to TestFactory.random())
@@ -173,6 +147,7 @@ class ClientWorkflowTests : StringSpec(
       val fakeWorkflowWithTags = client.newWorkflow(FakeWorkflow::class.java, tags = tags)
 
       beforeTest {
+        delaySlot.clear()
         taskTagSlots.clear()
         taskSlot.clear()
         workflowTagSlots.clear()

@@ -28,7 +28,7 @@ import io.infinitic.common.data.MillisDuration
 import io.infinitic.common.tasks.executors.messages.ExecuteTask
 import io.infinitic.common.tasks.executors.messages.TaskExecutorMessage
 import io.infinitic.common.tasks.tags.messages.TaskTagMessage
-import io.infinitic.common.transport.InfiniticProducer
+import io.infinitic.common.transport.InfiniticProducerAsync
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
 import io.infinitic.common.workflows.tags.messages.WorkflowTagMessage
 import kotlinx.coroutines.CoroutineScope
@@ -37,17 +37,16 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.future.future
 import java.util.concurrent.CompletableFuture
 
-class InMemoryInfiniticProducer(private val channels: InMemoryChannels) : InfiniticProducer {
+class InMemoryInfiniticProducerAsync(private val channels: InMemoryChannels) :
+  InfiniticProducerAsync {
 
   private val logger = KotlinLogging.logger {}
 
   // Coroutine scope used to receive messages
   private val producingScope = CoroutineScope(Dispatchers.IO)
-
-  private val delayScope = CoroutineScope(Dispatchers.IO)
-
-  override var name = DEFAULT_NAME
   
+  override var name = DEFAULT_NAME
+
   override fun sendAsync(message: ClientMessage) = sendAsync(
       message,
       channels.forClient(),
@@ -115,7 +114,7 @@ class InMemoryInfiniticProducer(private val channels: InMemoryChannels) : Infini
   ): CompletableFuture<Unit> = producingScope.future {
     logger.debug { "Channel ${channel.id}: sending $message" }
     channel.send(message)
-    logger.debug { "Channel ${channel.id}: sent" }
+    logger.trace { "Channel ${channel.id}: sent" }
   }
 
   companion object {

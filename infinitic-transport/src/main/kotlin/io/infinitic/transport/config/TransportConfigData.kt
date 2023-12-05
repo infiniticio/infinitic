@@ -24,12 +24,12 @@ package io.infinitic.transport.config
 
 import io.infinitic.autoclose.addAutoCloseResource
 import io.infinitic.common.transport.InfiniticConsumer
-import io.infinitic.common.transport.InfiniticProducer
+import io.infinitic.common.transport.InfiniticProducerAsync
 import io.infinitic.inMemory.InMemoryChannels
 import io.infinitic.inMemory.InMemoryInfiniticConsumer
-import io.infinitic.inMemory.InMemoryInfiniticProducer
+import io.infinitic.inMemory.InMemoryInfiniticProducerAsync
 import io.infinitic.pulsar.PulsarInfiniticConsumer
-import io.infinitic.pulsar.PulsarInfiniticProducer
+import io.infinitic.pulsar.PulsarInfiniticProducerAsync
 import io.infinitic.pulsar.client.PulsarInfiniticClient
 import io.infinitic.pulsar.config.Pulsar
 import io.infinitic.pulsar.consumers.Consumer
@@ -52,30 +52,30 @@ data class TransportConfigData(
 
   // we provide consumer and producer together,
   // as they must share the same configuration (InMemoryChannels instance)
-  private val cp: Pair<InfiniticConsumer, InfiniticProducer> =
+  private val cp: Pair<InfiniticConsumer, InfiniticProducerAsync> =
       when (transport) {
         Transport.pulsar -> with(ResourceManager.from(pulsar!!)) {
           val client = PulsarInfiniticClient(pulsar.client)
           val consumer = PulsarInfiniticConsumer(Consumer(client, pulsar.consumer), this)
-          val producer = PulsarInfiniticProducer(Producer(client, pulsar.producer), this)
+          val producerAsync = PulsarInfiniticProducerAsync(Producer(client, pulsar.producer), this)
 
           // Pulsar client will be closed with consumer
           consumer.addAutoCloseResource(pulsar.client)
           // Pulsar admin will be closed with consumer
           consumer.addAutoCloseResource(pulsar.admin)
 
-          Pair(consumer, producer)
+          Pair(consumer, producerAsync)
         }
 
         Transport.inMemory -> {
           val channels = InMemoryChannels()
           val consumer = InMemoryInfiniticConsumer(channels)
-          val producer = InMemoryInfiniticProducer(channels)
+          val producerAsync = InMemoryInfiniticProducerAsync(channels)
 
           // channels will be closed with consumer
           consumer.addAutoCloseResource(channels)
 
-          Pair(consumer, producer)
+          Pair(consumer, producerAsync)
         }
       }
 
@@ -83,5 +83,5 @@ data class TransportConfigData(
   override val consumer = cp.first
 
   /** Infinitic Producer */
-  override val producer = cp.second
+  override val producerAsync = cp.second
 }
