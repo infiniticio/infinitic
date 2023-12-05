@@ -88,7 +88,7 @@ data class TaskTagEnvelope(
 
     /** Deserialize from a byte array and an avro schema */
     fun fromByteArray(bytes: ByteArray, readerSchema: Schema) =
-        AvroSerDe.readBinary(bytes, serializer(), readerSchema)
+        AvroSerDe.readBinary(bytes, readerSchema, serializer())
 
     /** Current avro Schema */
     val writerSchema = AvroSerDe.schema(serializer())

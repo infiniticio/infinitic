@@ -29,7 +29,7 @@ internal val current: String = AvroSerDe::class.java.getResource("/current")!!.r
 
 /** List of all release versions used for schema backward compatibility */
 internal val versions: List<String> =
-    AvroSerDe::class.java.getResource("/versions")!!.readText().split("\n")
+    AvroSerDe::class.java.getResource("/versions")!!.readText().split("\n").reversed()
 
 /** If [current] is in [versions] - it's a release version */
 fun isReleaseVersion() = current in versions

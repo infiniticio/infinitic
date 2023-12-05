@@ -107,7 +107,7 @@ object AvroSerDe {
         getAllSchemas<T>().forEach { (_, schema) ->
           try {
             // let's try to decode with this schema
-            return@breaking readBinary(bytes, serializer, schema)
+            return@breaking readBinary(bytes, schema, serializer)
           } catch (e: Exception) {
             // go to next schema
           }
@@ -131,7 +131,7 @@ object AvroSerDe {
   }
 
   /** Avro binary + schema -> Object */
-  fun <T> readBinary(bytes: ByteArray, serializer: KSerializer<T>, readerSchema: Schema): T {
+  fun <T> readBinary(bytes: ByteArray, readerSchema: Schema, serializer: KSerializer<T>): T {
     val datumReader = GenericDatumReader<GenericRecord>(readerSchema)
     val decoder = DecoderFactory.get().binaryDecoder(SeekableByteArrayInput(bytes), null)
     val record = datumReader.read(null, decoder)
