@@ -246,7 +246,7 @@ class TaskExecutor(
     delay: MillisDuration,
     meta: Map<String, ByteArray>
   ) {
-    msg.logWarn(cause) { "Retrying in $delay seconds" }
+    msg.logWarn(cause) { "Retrying in $delay" }
 
     val executeTask = msg.copy(
         taskRetryIndex = msg.taskRetryIndex + 1,
