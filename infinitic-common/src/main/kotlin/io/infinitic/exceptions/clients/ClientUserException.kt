@@ -34,7 +34,17 @@ class InvalidStubException(klass: String? = null) :
         null -> "Instance used"
         else -> "$klass is not the stub of a class or of a workflow"
       },
-      help = "Make sure to use a stub returned by taskStub(Class<*>) or workflowStub(Class<*>)",
+      help = "Make sure to use a stub returned by 'newTask(Class<*>)' or 'newWorkflow(Class<*>)'",
+  )
+
+class InvalidIdTagSelectionException(klass: String? = null) :
+  ClientUserException(
+      msg =
+      when (klass) {
+        null -> "Instance used"
+        else -> "$klass is not the stub of workflows selected by tag"
+      },
+      help = "Make sure to get your stub from the 'getWorkflowByTag' method",
   )
 
 class InvalidChannelGetterException(klass: String) :
@@ -42,13 +52,13 @@ class InvalidChannelGetterException(klass: String) :
       msg = "Invalid channel getter",
       help =
       "When defining getters of channels in your workflow interface, " +
-          "make sure to have ${SendChannel::class.java.name} as return type, not $klass",
+          "make sure to have '${SendChannel::class.java.name}' as return type, not $klass",
   )
 
 class InvalidRunningTaskException(klass: String) :
   ClientUserException(
       msg = "$klass is not the stub of a running task",
-      help = "Make sure to use a stub returned by workflowStub(Class<*>)",
+      help = "Make sure to use a stub returned by 'newTask(Class<*>)'",
   )
 
 data object MultipleCustomIdException : ClientUserException(msg = "", help = "") {
@@ -58,8 +68,6 @@ data object MultipleCustomIdException : ClientUserException(msg = "", help = "")
 class InvalidChannelUsageException :
   ClientUserException(
       msg = "send method of channels can not be used directly",
-      help = "Make sure to use the send(workflow, id) function",
+      help = "Make sure to send signals from the stub channel of an existing workflow 'getWorkflowById(...).myChannel.send(...)'",
   )
 
-class ExceptionAtInitialization(e: Exception) :
-  ClientUserException(msg = e.message ?: "", help = "")

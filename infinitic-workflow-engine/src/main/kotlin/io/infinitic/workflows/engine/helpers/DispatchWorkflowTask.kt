@@ -42,20 +42,19 @@ internal fun CoroutineScope.dispatchWorkflowTask(
   state.workflowTaskIndex += 1
 
   // defines workflow task input
-  val workflowTaskParameters =
-      WorkflowTaskParameters(
-          taskId = TaskId(),
-          workflowId = state.workflowId,
-          workflowName = state.workflowName,
-          workflowVersion = state.workflowVersion,
-          workflowTags = state.workflowTags,
-          workflowMeta = state.workflowMeta,
-          workflowPropertiesHashValue =
-          state.propertiesHashValue, // TODO filterStore(state.propertyStore, listOf(methodRun))
-          workflowTaskIndex = state.workflowTaskIndex,
-          methodRun = methodRun,
-          emitterName = ClientName(producer.name),
-      )
+  val workflowTaskParameters = WorkflowTaskParameters(
+      taskId = TaskId(),
+      workflowId = state.workflowId,
+      workflowName = state.workflowName,
+      workflowVersion = state.workflowVersion,
+      workflowTags = state.workflowTags,
+      workflowMeta = state.workflowMeta,
+      workflowPropertiesHashValue =
+      state.propertiesHashValue, // TODO filterStore(state.propertyStore, listOf(methodRun))
+      workflowTaskIndex = state.workflowTaskIndex,
+      methodRun = methodRun,
+      emitterName = ClientName(producer.name),
+  )
 
   val dispatchTaskMessage = workflowTaskParameters.toExecuteTaskMessage()
 

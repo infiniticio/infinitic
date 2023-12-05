@@ -44,7 +44,7 @@ import io.infinitic.common.tasks.executors.messages.ExecuteTask
 import io.infinitic.common.tasks.executors.messages.TaskExecutorMessage
 import io.infinitic.common.tasks.tags.messages.RemoveTagFromTask
 import io.infinitic.common.tasks.tags.messages.TaskTagMessage
-import io.infinitic.common.transport.InfiniticProducer
+import io.infinitic.common.transport.InfiniticProducerAsync
 import io.infinitic.common.workers.config.ExponentialBackoffRetryPolicy
 import io.infinitic.common.workers.config.WorkflowVersion
 import io.infinitic.common.workers.registry.RegisteredService
@@ -72,7 +72,6 @@ import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
 import io.mockk.CapturingSlot
 import io.mockk.clearMocks
-import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.slot
@@ -102,16 +101,12 @@ class TaskExecutorTests :
         fun completed() = CompletableFuture.completedFuture(Unit)
         val workerRegistry = mockk<WorkerRegistry>()
         val client = mockk<InfiniticClientInterface>()
-        val producer = mockk<InfiniticProducer> {
+        val producer = mockk<InfiniticProducerAsync> {
           every { name } returns "$clientName"
           every { sendAsync(capture(clientSlot)) } returns completed()
           every { sendAsync(capture(taskTagSlots)) } returns completed()
           every { sendAsync(capture(taskExecutorSlot), capture(afterSlot)) } returns completed()
-          every { sendAsync(capture(workflowEngineSlot)) } returns completed()
-          coEvery { send(capture(clientSlot)) } answers { }
-          coEvery { send(capture(taskTagSlots)) } answers { }
-          coEvery { send(capture(taskExecutorSlot), capture(afterSlot)) } answers { }
-          coEvery { send(capture(workflowEngineSlot), capture(afterSlot)) } answers { }
+          every { sendAsync(capture(workflowEngineSlot), capture(afterSlot)) } returns completed()
         }
 
         val taskExecutor = TaskExecutor(workerRegistry, producer, client)

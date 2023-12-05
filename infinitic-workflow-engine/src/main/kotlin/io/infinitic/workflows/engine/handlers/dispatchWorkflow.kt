@@ -36,34 +36,32 @@ internal fun CoroutineScope.dispatchWorkflow(
   producer: InfiniticProducer,
   message: DispatchNewWorkflow
 ): WorkflowState {
-  val methodRun =
-      MethodRun(
-          methodRunId = MethodRunId.from(message.workflowId),
-          waitingClients =
-          when (message.clientWaiting) {
-            true -> mutableSetOf(message.emitterName)
-            false -> mutableSetOf()
-          },
-          parentWorkflowId = message.parentWorkflowId,
-          parentWorkflowName = message.parentWorkflowName,
-          parentMethodRunId = message.parentMethodRunId,
-          methodName = message.methodName,
-          methodParameterTypes = message.methodParameterTypes,
-          methodParameters = message.methodParameters,
-          workflowTaskIndexAtStart = WorkflowTaskIndex(0),
-          propertiesNameHashAtStart = mapOf(),
-      )
+  val methodRun = MethodRun(
+      methodRunId = MethodRunId.from(message.workflowId),
+      waitingClients =
+      when (message.clientWaiting) {
+        true -> mutableSetOf(message.emitterName)
+        false -> mutableSetOf()
+      },
+      parentWorkflowId = message.parentWorkflowId,
+      parentWorkflowName = message.parentWorkflowName,
+      parentMethodRunId = message.parentMethodRunId,
+      methodName = message.methodName,
+      methodParameterTypes = message.methodParameterTypes,
+      methodParameters = message.methodParameters,
+      workflowTaskIndexAtStart = WorkflowTaskIndex(0),
+      propertiesNameHashAtStart = mapOf(),
+  )
 
-  val state =
-      WorkflowState(
-          lastMessageId = message.messageId,
-          workflowId = message.workflowId,
-          workflowName = message.workflowName,
-          workflowVersion = null,
-          workflowTags = message.workflowTags,
-          workflowMeta = message.workflowMeta,
-          methodRuns = mutableListOf(methodRun),
-      )
+  val state = WorkflowState(
+      lastMessageId = message.messageId,
+      workflowId = message.workflowId,
+      workflowName = message.workflowName,
+      workflowVersion = null,
+      workflowTags = message.workflowTags,
+      workflowMeta = message.workflowMeta,
+      methodRuns = mutableListOf(methodRun),
+  )
 
   dispatchWorkflowTask(producer, state, methodRun, MethodRunPosition())
 

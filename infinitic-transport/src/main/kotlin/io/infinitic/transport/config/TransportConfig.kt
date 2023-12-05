@@ -25,7 +25,7 @@ package io.infinitic.transport.config
 import io.infinitic.common.config.loadConfigFromFile
 import io.infinitic.common.config.loadConfigFromResource
 import io.infinitic.common.transport.InfiniticConsumer
-import io.infinitic.common.transport.InfiniticProducer
+import io.infinitic.common.transport.InfiniticProducerAsync
 import io.infinitic.pulsar.config.Pulsar
 
 interface TransportConfig {
@@ -39,7 +39,7 @@ interface TransportConfig {
   val consumer: InfiniticConsumer
 
   /** Infinitic Producer */
-  val producer: InfiniticProducer
+  val producer: InfiniticProducerAsync
 
   companion object {
     /** Create TransportConfig from file in file system */

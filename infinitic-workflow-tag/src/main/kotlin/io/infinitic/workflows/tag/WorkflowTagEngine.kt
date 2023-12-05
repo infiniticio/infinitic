@@ -27,7 +27,8 @@ import io.infinitic.common.clients.messages.WorkflowIdsByTag
 import io.infinitic.common.data.ClientName
 import io.infinitic.common.exceptions.thisShouldNotHappen
 import io.infinitic.common.tasks.executors.errors.MethodTimedOutError
-import io.infinitic.common.transport.InfiniticProducer
+import io.infinitic.common.transport.InfiniticProducerAsync
+import io.infinitic.common.transport.LoggedInfiniticProducer
 import io.infinitic.common.workflows.data.methodRuns.MethodRunId
 import io.infinitic.common.workflows.engine.messages.CancelWorkflow
 import io.infinitic.common.workflows.engine.messages.ChildMethodTimedOut
@@ -56,11 +57,13 @@ import kotlinx.coroutines.launch
 
 class WorkflowTagEngine(
   storage: WorkflowTagStorage,
-  private val producer: InfiniticProducer
+  producerAsync: InfiniticProducerAsync
 ) {
-  private val storage = LoggedWorkflowTagStorage(storage)
+  private val storage = LoggedWorkflowTagStorage(javaClass.name, storage)
 
-  private val logger = KotlinLogging.logger {}
+  private val producer = LoggedInfiniticProducer(javaClass.name, producerAsync)
+
+  private val logger = KotlinLogging.logger(javaClass.name)
 
   private val clientName by lazy { ClientName(producer.name) }
 
@@ -135,7 +138,7 @@ class WorkflowTagEngine(
                     methodName = message.methodName,
                     methodRunId = MethodRunId.from(message.workflowId),
                 ),
-                emitterName = ClientName(producer.name),
+                emitterName = clientName,
             )
             launch { producer.send(childMethodTimedOut, timeout) }
           }
@@ -206,7 +209,7 @@ class WorkflowTagEngine(
                       methodName = message.methodName,
                       methodRunId = message.methodRunId,
                   ),
-                  emitterName = ClientName(producer.name),
+                  emitterName = clientName,
               )
 
               launch { producer.send(childMethodTimedOut, message.methodTimeout!!) }
