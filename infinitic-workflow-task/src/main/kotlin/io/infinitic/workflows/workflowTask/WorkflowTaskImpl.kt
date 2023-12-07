@@ -87,27 +87,26 @@ class WorkflowTaskImpl : WorkflowTask {
     Deferred.delWorkflowDispatcher()
 
     // run method and get return value (null if end not reached)
-    val methodReturnValue =
-        try {
-          ReturnValue.from(method.invoke(instance, *parameters))
-        } catch (e: InvocationTargetException) {
-          when (val cause = e.cause) {
-            // we reach an uncompleted step
-            is WorkflowTaskException -> null
-            // the errors below will be caught by the task executor
-            is DeferredException -> throw cause
-            // Send back other exceptions
-            is Exception ->
-              throw WorkflowTaskFailedException(
-                  workflowName = workflowTaskParameters.workflowName.toString(),
-                  workflowId = workflowTaskParameters.workflowId.toString(),
-                  workflowTaskId = Task.taskId,
-                  workerException = WorkerException.from(ClientName(Task.workerName), cause),
-              )
-            // Throwable are not caught
-            else -> throw cause!!
-          }
-        }
+    val methodReturnValue = try {
+      ReturnValue.from(method.invoke(instance, *parameters))
+    } catch (e: InvocationTargetException) {
+      when (val cause = e.cause) {
+        // we reach an uncompleted step
+        is WorkflowTaskException -> null
+        // the errors below will be caught by the task executor
+        is DeferredException -> throw cause
+        // Send back other exceptions
+        is Exception ->
+          throw WorkflowTaskFailedException(
+              workflowName = workflowTaskParameters.workflowName.toString(),
+              workflowId = workflowTaskParameters.workflowId.toString(),
+              workflowTaskId = Task.taskId,
+              workerException = WorkerException.from(ClientName(Task.workerName), cause),
+          )
+        // Throwable are not caught
+        else -> throw cause!!
+      }
+    }
 
     return WorkflowTaskReturnValue(
         newCommands = dispatcher.newCommands,

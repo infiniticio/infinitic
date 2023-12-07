@@ -28,6 +28,8 @@ dependencies {
   api(Libs.Serialization.json)
   api(Libs.JsonPath.jayway)
 
+  implementation(Libs.Mockk.mockk)
+
   implementation(Libs.Hoplite.core)
   implementation(Libs.Hoplite.yaml)
   implementation(Libs.Jackson.databind)
@@ -42,7 +44,7 @@ dependencies {
   testFixturesImplementation(Libs.Coroutines.core)
   testFixturesImplementation(Libs.Kotest.junit5)
   testFixturesImplementation(Libs.Kotest.property)
-  testFixturesImplementation(Libs.Mockk.mockk)
+  //testFixturesImplementation(Libs.Mockk.mockk)
   testFixturesImplementation(Libs.Pulsar.client)
   testFixturesImplementation(Libs.Pulsar.clientAdmin)
   testFixturesApi(Libs.TestContainers.testcontainers)

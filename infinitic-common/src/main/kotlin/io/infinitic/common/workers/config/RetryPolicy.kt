@@ -38,16 +38,11 @@ sealed class RetryPolicy(open val maximumRetries: Int, open val ignoredException
 
   val ignoredClasses: List<Class<*>> by lazy {
     ignoredExceptions.map { klass ->
-      klass
-          .getClass(
-              classNotFound = "Unknown class \"$klass\" in ${::ignoredExceptions.name}",
-              errorClass = "Error with class \"$klass\" in ${::ignoredExceptions.name}",
-          )
-          .also {
-            require(Exception::class.java.isAssignableFrom(it)) {
-              "Class \"$klass\" in ${::ignoredExceptions.name} must be an Exception"
-            }
-          }
+      klass.getClass().getOrThrow().also {
+        require(Exception::class.java.isAssignableFrom(it)) {
+          "Class \"$klass\" in ${::ignoredExceptions.name} must be an Exception"
+        }
+      }
     }
   }
 

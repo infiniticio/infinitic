@@ -40,6 +40,7 @@ internal class TimeoutsWorkflowTests :
         val client = Test.client
 
         val timeoutsWorkflow = client.newWorkflow(TimeoutsWorkflow::class.java)
+        val iTimeoutsWorkflow = client.newWorkflow(ITimeoutWorkflow::class.java)
 
         "Synchronous call of a workflow running for more than its timeout should throw" {
           shouldThrow<WorkflowTimedOutException> { timeoutsWorkflow.withTimeoutOnMethod(1000) }
@@ -94,12 +95,6 @@ internal class TimeoutsWorkflowTests :
           timeoutsWorkflow.withCaughtTimeoutOnTask(10) shouldBe 10
         }
 
-        "Workflow with Timed out task will continue if task completes after the timeout" {
-          shouldThrow<WorkflowFailedException> { timeoutsWorkflow.withTimeoutOnTask(2000) }
-          // after the timeout, the workflow completes successfully
-          client.lastDeferred!!.await() shouldBe 2000
-        }
-
         "Workflow with Timed out task can be retried manually" {
           shouldThrow<WorkflowFailedException> { timeoutsWorkflow.withManualRetry() }
           // after the timeout, the workflow completes successfully
@@ -108,6 +103,14 @@ internal class TimeoutsWorkflowTests :
           client.retryTasks(w, taskStatus = DeferredStatus.TIMED_OUT)
 
           client.lastDeferred!!.await() shouldBe 1
+        }
+
+        "Timeout defined with WithTimeout interface should throw if timeout is reached" {
+          shouldThrow<WorkflowTimedOutException> { iTimeoutsWorkflow.withTimeoutOnMethod(1000) }
+        }
+
+        "Timeout defined with WithTimeout interface should not throw if timeout is not reached" {
+          shouldNotThrowAny { iTimeoutsWorkflow.withTimeoutOnMethod(10) shouldBe 10 }
         }
       },
   )

@@ -22,14 +22,9 @@
  */
 package io.infinitic.annotations
 
-import io.infinitic.common.utils.getEmptyConstructor
-import io.infinitic.common.utils.getInstance
 import io.infinitic.tasks.WithRetry
 import kotlin.reflect.KClass
 
 /** Use this annotation to define a custom retry policy through a [WithRetry] */
 @Target(AnnotationTarget.CLASS, AnnotationTarget.FUNCTION)
 annotation class Retry(val with: KClass<out WithRetry>)
-
-/** Get instance of the underlying [WithRetry] */
-fun Retry.getInstance() = with.java.getEmptyConstructor().getInstance()

@@ -22,8 +22,6 @@
  */
 package io.infinitic.workers.register.config
 
-import io.infinitic.common.utils.getClass
-import io.infinitic.common.utils.getEmptyConstructor
 import io.infinitic.common.utils.getInstance
 import io.infinitic.common.utils.isImplementationOf
 import io.infinitic.common.workers.config.RetryPolicy
@@ -41,50 +39,43 @@ data class Service(
 ) {
   private lateinit var constructor: Constructor<out Any>
 
-  fun getInstance(): Any = constructor.getInstance()
+  fun getInstance(): Any = `class`!!.getInstance(
+      classNotFound = error("Class '${`class`}' unknown"),
+      errorClass = error("Can not access class '${`class`}'"),
+      noEmptyConstructor = error("Class '${::`class`.name}' must have an empty constructor"),
+      constructorError = error("Can not access class '$`class`' constructor"),
+      instanceError = error("Error during instantiation of class '$`class`'"),
+  ).getOrThrow()
 
   init {
     require(name.isNotEmpty()) { "name can not be empty" }
 
     when (`class`) {
       null -> {
-        require(tagEngine != null) { "Service $name: class and taskTag undefined" }
+        require(tagEngine != null) { error("class and taskTag undefined") }
       }
 
       else -> {
-        require(`class`.isNotEmpty()) { "Service $name: class empty" }
+        require(`class`.isNotEmpty()) { error("class empty") }
 
-        val klass = `class`.getClass(
-            classNotFound = "Service $name: Class '${`class`}' unknown",
-            errorClass =
-            "Service $name: Error when trying to get class of name '${::`class`.name}'",
-        )
+        val instance = getInstance()
 
-        constructor = klass.getEmptyConstructor(
-            noEmptyConstructor =
-            "Service $name: Class '${::`class`.name}' must have an empty constructor",
-            constructorError =
-            "Service $name: Can not access constructor of class '$`class`'",
-        )
-
-        constructor.getInstance(
-            instanceError = "Service $name: Error during instantiation of class '$`class`'",
-        )
-
-        require(klass.isImplementationOf(name)) {
-          "Class '$klass' is not an implementation of service '$name' - check your configuration"
+        require(instance::class.java.isImplementationOf(name)) {
+          error("Class '${instance::class.java.name}' is not an implementation of this service - check your configuration")
         }
 
         if (concurrency != null) {
-          require(concurrency!! >= 0) { "Service $name: '${::concurrency.name}' must be a positive integer" }
+          require(concurrency!! >= 0) { error("'${::concurrency.name}' must be a positive integer") }
         }
 
         if (timeoutInSeconds != null) {
           require(timeoutInSeconds!! > 0) {
-            "Service $name: '${::timeoutInSeconds.name}' must be positive"
+            error("'${::timeoutInSeconds.name}' must be positive")
           }
         }
       }
     }
   }
+
+  private fun error(txt: String) = "Service $name: $txt"
 }

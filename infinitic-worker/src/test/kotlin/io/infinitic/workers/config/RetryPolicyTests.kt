@@ -98,7 +98,7 @@ service:
 """,
                 )
               }
-          e.message!! shouldContain "Unknown class \"foobar\""
+          e.message!! shouldContain "Class 'foobar' not found"
         }
 
         "Unknown class in ignoredExceptions in task should throw" {
@@ -116,7 +116,7 @@ services:
 """,
                 )
               }
-          e.message!! shouldContain "Unknown class \"foobar\""
+          e.message!! shouldContain "Class 'foobar' not found"
         }
 
         "No Exception class in ignoredExceptions should throw" {

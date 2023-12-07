@@ -47,61 +47,54 @@ internal class WorkerConfigTests :
         }
 
         "task with InvocationTargetException should throw cause" {
-          val e =
-              shouldThrow<ConfigException> {
-                WorkerConfig.fromResource("/config/services/invocationTargetException.yml")
-              }
+          val e = shouldThrow<ConfigException> {
+            WorkerConfig.fromResource("/config/services/invocationTargetException.yml")
+          }
           println(e)
           e.message!! shouldContain
               "Error during instantiation of class 'io.infinitic.workers.samples.ServiceWithInvocationTargetException'"
         }
 
         "workflow with InvocationTargetException should throw cause" {
-          val e =
-              shouldThrow<ConfigException> {
-                WorkerConfig.fromResource("/config/workflows/invocationTargetException.yml")
-              }
+          val e = shouldThrow<ConfigException> {
+            WorkerConfig.fromResource("/config/workflows/invocationTargetException.yml")
+          }
           e.message!! shouldContain
-              "Error when instantiating class 'io.infinitic.workers.samples.WorkflowWithInvocationTargetException'"
+              "Error during instantiation of class 'io.infinitic.workers.samples.WorkflowWithInvocationTargetException'"
         }
 
         "task with ExceptionInInitializerError should throw cause" {
-          val e =
-              shouldThrow<ConfigException> {
-                WorkerConfig.fromResource("/config/services/exceptionInInitializerError.yml")
-              }
+          val e = shouldThrow<ConfigException> {
+            WorkerConfig.fromResource("/config/services/exceptionInInitializerError.yml")
+          }
           e.message!! shouldContain "Underlying error was java.lang.ExceptionInInitializerError"
         }
 
         "workflow with ExceptionInInitializerError should throw cause" {
-          val e =
-              shouldThrow<ConfigException> {
-                WorkerConfig.fromResource("/config/workflows/exceptionInInitializerError.yml")
-              }
+          val e = shouldThrow<ConfigException> {
+            WorkerConfig.fromResource("/config/workflows/exceptionInInitializerError.yml")
+          }
           e.message!! shouldContain "Underlying error was java.lang.ExceptionInInitializerError"
         }
 
         "service Unknown" {
-          val e =
-              shouldThrow<ConfigException> {
-                WorkerConfig.fromResource("/config/services/unknown.yml")
-              }
+          val e = shouldThrow<ConfigException> {
+            WorkerConfig.fromResource("/config/services/unknown.yml")
+          }
           e.message!! shouldContain "Class 'io.infinitic.workers.samples.UnknownService' unknown"
         }
 
         "workflow Unknown" {
-          val e =
-              shouldThrow<ConfigException> {
-                WorkerConfig.fromResource("/config/workflows/unknown.yml")
-              }
+          val e = shouldThrow<ConfigException> {
+            WorkerConfig.fromResource("/config/workflows/unknown.yml")
+          }
           e.message!! shouldContain "Class 'io.infinitic.workers.samples.UnknownWorkflow' unknown"
         }
 
         "not a workflow" {
-          val e =
-              shouldThrow<ConfigException> {
-                WorkerConfig.fromResource("/config/workflows/notAWorkflow.yml")
-              }
+          val e = shouldThrow<ConfigException> {
+            WorkerConfig.fromResource("/config/workflows/notAWorkflow.yml")
+          }
           e.message!! shouldContain
               "Class 'io.infinitic.workers.samples.NotAWorkflow' must extend 'io.infinitic.workflows.Workflow'"
         }
@@ -132,7 +125,7 @@ internal class WorkerConfigTests :
             WorkerConfig.fromResource("/config/services/incompatibleServiceName.yml")
           }
           e.message!! shouldContain
-              "Class '${ServiceAImpl::class.java}' is not an implementation of service 'UnknownService' - check your configuration"
+              "Class '${ServiceAImpl::class.java.name}' is not an implementation of this service"
         }
 
         "checking the compatibility between name and class in workflows" {
@@ -140,7 +133,7 @@ internal class WorkerConfigTests :
             WorkerConfig.fromResource("/config/workflows/incompatibleWorkflowName.yml")
           }
           e.message!! shouldContain
-              "Class '${WorkflowAImpl::class.java}' is not an implementation of workflow 'UnknownWorkflow' - check your configuration"
+              "Class '${WorkflowAImpl::class.java.name}' is not an implementation of this workflow"
         }
 
         "checking the compatibility between name and classes in workflows" {
@@ -148,7 +141,7 @@ internal class WorkerConfigTests :
             WorkerConfig.fromResource("/config/workflows/incompatibleWorkflowsName.yml")
           }
           e.message!! shouldContain
-              "Class '${WorkflowAImpl2::class.java}' is not an implementation of workflow 'io.infinitic.workers.samples.WorkflowA' - check your configuration"
+              "Class '${WorkflowAImpl2::class.java.name}' is not an implementation of this workflow"
         }
       },
   )
