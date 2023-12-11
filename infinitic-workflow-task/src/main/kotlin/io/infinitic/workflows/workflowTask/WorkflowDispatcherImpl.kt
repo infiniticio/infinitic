@@ -152,16 +152,15 @@ internal class WorkflowDispatcherImpl(
         value
       }
 
-      else ->
-        when (pastCommand.commandSimpleName == InlineTaskCommand.simpleName()) {
-          true ->
-            when (val status = pastCommand.commandStatus) {
-              is CommandStatus.Completed -> status.returnValue.value() as S
-              else -> thisShouldNotHappen()
-            }
+      else -> when (pastCommand.commandSimpleName == InlineTaskCommand.simpleName()) {
+        true ->
+          when (val status = pastCommand.commandStatus) {
+            is CommandStatus.Completed -> status.returnValue.value() as S
+            else -> thisShouldNotHappen()
+          }
 
-          else -> throwCommandsChangedException(pastCommand, null)
-        }
+        else -> throwCommandsChangedException(pastCommand, null)
+      }
     }
   }
 
@@ -176,100 +175,99 @@ internal class WorkflowDispatcherImpl(
 
     deferred.step.checkAwaitIndex()
 
-    val result =
-        when (val pastStep = getSimilarPastStep(newStep)) {
-          // this step is not found in the history
-          null -> {
-            // determine this step status based on history
-            when (val stepStatus = newStep.step.statusAt(workflowTaskIndex)) {
-              // we do not know the status of this step based on history
-              is Waiting -> {
-                this.newStep = newStep
+    val result = when (val pastStep = getSimilarPastStep(newStep)) {
+      // this step is not found in the history
+      null -> {
+        // determine this step status based on history
+        when (val stepStatus = newStep.step.statusAt(workflowTaskIndex)) {
+          // we do not know the status of this step based on history
+          is Waiting -> {
+            this.newStep = newStep
 
-                throw NewStepException
-              }
-              // we already know the status of this step based on history
-              is Unknown,
-              is Canceled,
-              is Failed,
-              is CurrentlyFailed,
-              is TimedOut,
-              is CurrentlyTimedOut -> {
-                throw getDeferredException(stepStatus)
-              }
-
-              is Completed -> {
-                stepStatus.returnValue.value() as T
-              }
-            }
+            throw NewStepException
           }
-          // this step is already in the history
-          else -> {
-            val stepStatus = pastStep.stepStatus
+          // we already know the status of this step based on history
+          is Unknown,
+          is Canceled,
+          is Failed,
+          is CurrentlyFailed,
+          is TimedOut,
+          is CurrentlyTimedOut -> {
+            throw getDeferredException(stepStatus)
+          }
 
-            // if still ongoing, we stop here
-            if (stepStatus == Waiting) throw KnownStepException
-
-            // instance properties are now as when this deferred was terminated
-            setProperties(pastStep.propertiesNameHashAtTermination ?: thisShouldNotHappen())
-
-            // return deferred value
-            when (stepStatus) {
-              is Waiting -> {
-                thisShouldNotHappen()
-              }
-
-              is Unknown -> {
-                // workflowTaskIndex is now the one where this deferred was unknowing
-                workflowTaskIndex = stepStatus.unknowingWorkflowTaskIndex
-
-                throw getDeferredException(stepStatus)
-              }
-
-              is Canceled -> {
-                // workflowTaskIndex is now the one where this deferred was canceled
-                workflowTaskIndex = stepStatus.cancellationWorkflowTaskIndex
-
-                throw getDeferredException(stepStatus)
-              }
-
-              is CurrentlyFailed -> {
-                // workflowTaskIndex is now the one where this deferred was failed
-                workflowTaskIndex = stepStatus.failureWorkflowTaskIndex
-
-                throw getDeferredException(stepStatus)
-              }
-
-              is Failed -> {
-                // workflowTaskIndex is now the one where this deferred was failed
-                workflowTaskIndex = stepStatus.failureWorkflowTaskIndex
-
-                throw getDeferredException(stepStatus)
-              }
-
-              is CurrentlyTimedOut -> {
-                // workflowTaskIndex is now the one where this deferred was failed
-                workflowTaskIndex = stepStatus.timeoutWorkflowTaskIndex
-
-                throw getDeferredException(stepStatus)
-              }
-
-              is TimedOut -> {
-                // workflowTaskIndex is now the one where this deferred was failed
-                workflowTaskIndex = stepStatus.timeoutWorkflowTaskIndex
-
-                throw getDeferredException(stepStatus)
-              }
-
-              is Completed -> {
-                // workflowTaskIndex is now the one where this deferred was completed
-                workflowTaskIndex = stepStatus.completionWorkflowTaskIndex
-
-                stepStatus.returnValue.value() as T
-              }
-            }
+          is Completed -> {
+            stepStatus.returnValue.value() as T
           }
         }
+      }
+      // this step is already in the history
+      else -> {
+        val stepStatus = pastStep.stepStatus
+
+        // if still ongoing, we stop here
+        if (stepStatus == Waiting) throw KnownStepException
+
+        // instance properties are now as when this deferred was terminated
+        setProperties(pastStep.propertiesNameHashAtTermination ?: thisShouldNotHappen())
+
+        // return deferred value
+        when (stepStatus) {
+          is Waiting -> {
+            thisShouldNotHappen()
+          }
+
+          is Unknown -> {
+            // workflowTaskIndex is now the one where this deferred was unknowing
+            workflowTaskIndex = stepStatus.unknowingWorkflowTaskIndex
+
+            throw getDeferredException(stepStatus)
+          }
+
+          is Canceled -> {
+            // workflowTaskIndex is now the one where this deferred was canceled
+            workflowTaskIndex = stepStatus.cancellationWorkflowTaskIndex
+
+            throw getDeferredException(stepStatus)
+          }
+
+          is CurrentlyFailed -> {
+            // workflowTaskIndex is now the one where this deferred was failed
+            workflowTaskIndex = stepStatus.failureWorkflowTaskIndex
+
+            throw getDeferredException(stepStatus)
+          }
+
+          is Failed -> {
+            // workflowTaskIndex is now the one where this deferred was failed
+            workflowTaskIndex = stepStatus.failureWorkflowTaskIndex
+
+            throw getDeferredException(stepStatus)
+          }
+
+          is CurrentlyTimedOut -> {
+            // workflowTaskIndex is now the one where this deferred was failed
+            workflowTaskIndex = stepStatus.timeoutWorkflowTaskIndex
+
+            throw getDeferredException(stepStatus)
+          }
+
+          is TimedOut -> {
+            // workflowTaskIndex is now the one where this deferred was failed
+            workflowTaskIndex = stepStatus.timeoutWorkflowTaskIndex
+
+            throw getDeferredException(stepStatus)
+          }
+
+          is Completed -> {
+            // workflowTaskIndex is now the one where this deferred was completed
+            workflowTaskIndex = stepStatus.completionWorkflowTaskIndex
+
+            stepStatus.returnValue.value() as T
+          }
+        }
+      }
+    }
 
     deferred.step.nextAwaitIndex()
 
@@ -345,7 +343,7 @@ internal class WorkflowDispatcherImpl(
               methodParameters = handler.methodParameters,
               methodParameterTypes = handler.methodParameterTypes,
               methodName = handler.methodName,
-              methodTimeout = handler.timeout.getOrThrow(),
+              methodTimeout = handler.timeoutInMillisDuration.getOrThrow(),
               taskTags = handler.taskTags,
               taskMeta = handler.taskMeta,
           ),
@@ -368,7 +366,7 @@ internal class WorkflowDispatcherImpl(
                   methodName = handler.methodName,
                   methodParameterTypes = handler.methodParameterTypes,
                   methodParameters = handler.methodParameters,
-                  methodTimeout = handler.timeout.getOrThrow(),
+                  methodTimeout = handler.timeoutInMillisDuration.getOrThrow(),
                   workflowTags = handler.workflowTags,
                   workflowMeta = handler.workflowMeta,
               ),
@@ -389,7 +387,7 @@ internal class WorkflowDispatcherImpl(
                 methodName = handler.methodName,
                 methodParameterTypes = handler.methodParameterTypes,
                 methodParameters = handler.methodParameters,
-                methodTimeout = handler.timeout.getOrThrow(),
+                methodTimeout = handler.timeoutInMillisDuration.getOrThrow(),
             ),
             CommandSimpleName(handler.fullMethodName),
         )

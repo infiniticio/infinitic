@@ -22,8 +22,6 @@
  */
 package io.infinitic.workers.register.config
 
-import io.infinitic.common.utils.getClass
-import io.infinitic.common.utils.getEmptyConstructor
 import io.infinitic.common.utils.getInstance
 import io.infinitic.common.utils.isImplementationOf
 import io.infinitic.common.workers.config.RetryPolicy
@@ -51,57 +49,53 @@ data class Workflow(
     require(name.isNotEmpty()) { "name can not be empty" }
 
     when {
-      (`class` == null) && (classes == null) -> {
-        require(tagEngine != null || workflowEngine != null) {
-          "Workflow $name: '${::`class`.name}', '${::classes.name}', '${::tagEngine.name}' and '${::workflowEngine.name}' can not be all null"
-        }
+      (`class` == null) && (classes == null) -> require(tagEngine != null || workflowEngine != null) {
+        error("'${::`class`.name}', '${::classes.name}', '${::tagEngine.name}' and '${::workflowEngine.name}' can not be all null")
       }
 
       else -> {
         if (`class` != null) {
-          require(`class`.isNotEmpty()) { "Workflow $name: '${::`class`.name}' empty" }
+          require(`class`.isNotEmpty()) { error("'${::`class`.name}' empty") }
         }
         classes?.forEachIndexed { index, s: String ->
-          require(s.isNotEmpty()) { "Workflow $name: '${::classes.name}[$index]' empty" }
+          require(s.isNotEmpty()) { error("'${::classes.name}[$index]' empty") }
         }
 
         `class`?.also { allClasses.add(getWorkflowClass(it)) }
         classes?.forEach { allClasses.add(getWorkflowClass(it)) }
 
         if (concurrency != null) {
-          require(concurrency!! >= 0) { "Workflow $name: '${::concurrency.name}' must be a positive integer" }
+          require(concurrency!! >= 0) { error("'${::concurrency.name}' must be a positive integer") }
         }
 
         if (timeoutInSeconds != null) {
-          require(timeoutInSeconds!! > 0) { "Workflow $name: '${::timeoutInSeconds.name}' must be a positive integer" }
+          require(timeoutInSeconds!! > 0) { error("'${::timeoutInSeconds.name}' must be a positive integer") }
         }
       }
     }
   }
 
   private fun getWorkflowClass(className: String): Class<out Workflow> {
-    val klass = className.getClass(
-        classNotFound = "Workflow $name: Class '$className' unknown",
-        errorClass = "Workflow $name: Unable to get class by name '$className'",
-    )
+    val instance = className.getInstance(
+        classNotFound = error("Class '$className' unknown"),
+        errorClass = error("Unable to get class by name '$className'"),
+        noEmptyConstructor = error("Class '$className' must have an empty constructor"),
+        constructorError = error("Can not access class '$className' constructor"),
+        instanceError = error("Error during instantiation of class '$className'"),
+    ).getOrThrow()
 
-    val constructor = klass.getEmptyConstructor(
-        noEmptyConstructor = "Workflow $name: Class '$className' must have an empty constructor",
-        constructorError = "Workflow $name: Can not access constructor of class '$className'",
-    )
-
-    val instance = constructor.getInstance(
-        instanceError = "Workflow $name: Error when instantiating class '$className'",
-    )
+    val klass = instance::class.java
 
     require(klass.isImplementationOf(name)) {
-      "Class '$klass' is not an implementation of workflow '$name' - check your configuration"
+      error("Class '${klass.name}' is not an implementation of this workflow - check your configuration")
     }
 
     require(instance is WorkflowBase) {
-      "Workflow $name: Class '$className' must extend '${WorkflowBase::class.java.name}'"
+      error("Class '${klass.name}' must extend '${WorkflowBase::class.java.name}'")
     }
 
     @Suppress("UNCHECKED_CAST") return klass as Class<out WorkflowBase>
   }
+
+  private fun error(txt: String) = "Workflow $name: $txt"
 }

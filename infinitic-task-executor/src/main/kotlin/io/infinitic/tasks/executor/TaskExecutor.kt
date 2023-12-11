@@ -23,10 +23,6 @@
 package io.infinitic.tasks.executor
 
 import io.github.oshai.kotlinlogging.KotlinLogging
-import io.infinitic.annotations.CheckMode
-import io.infinitic.annotations.Retry
-import io.infinitic.annotations.Timeout
-import io.infinitic.annotations.getInstance
 import io.infinitic.clients.InfiniticClientInterface
 import io.infinitic.common.data.ClientName
 import io.infinitic.common.data.MillisDuration
@@ -43,6 +39,9 @@ import io.infinitic.common.tasks.executors.messages.TaskExecutorMessage
 import io.infinitic.common.tasks.tags.messages.RemoveTagFromTask
 import io.infinitic.common.transport.InfiniticProducerAsync
 import io.infinitic.common.transport.LoggedInfiniticProducer
+import io.infinitic.common.utils.getCheckMode
+import io.infinitic.common.utils.getWithRetry
+import io.infinitic.common.utils.getWithTimeout
 import io.infinitic.common.workers.config.RetryPolicy
 import io.infinitic.common.workers.registry.WorkerRegistry
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskParameters
@@ -54,7 +53,7 @@ import io.infinitic.tasks.WithTimeout
 import io.infinitic.tasks.executor.task.TaskCommand
 import io.infinitic.tasks.executor.task.TaskContextImpl
 import io.infinitic.tasks.getMillisBeforeRetry
-import io.infinitic.tasks.getTimeoutInMillis
+import io.infinitic.tasks.millis
 import io.infinitic.workflows.WorkflowCheckMode
 import io.infinitic.workflows.workflowTask.WorkflowTaskImpl
 import kotlinx.coroutines.TimeoutCancellationException
@@ -123,14 +122,12 @@ class TaskExecutor(
     )
 
     // get local timeout for this task
-    val millis = try {
-      withTimeout?.getTimeoutInMillis() ?: Long.MAX_VALUE
-    } catch (e: Exception) {
+    val millis = withTimeout?.millis?.getOrElse {
       // returning the exception (no retry)
-      sendTaskFailed(msg, e) { "Error in ${withTimeout!!::class.java.simpleName} method" }
+      sendTaskFailed(msg, it) { "Error in ${withTimeout!!::class.java.simpleName} method" }
       // stop here
       return@coroutineScope
-    }
+    } ?: Long.MAX_VALUE
 
     // task execution
     val output = try {
@@ -197,7 +194,7 @@ class TaskExecutor(
 
   suspend fun sendTaskFailed(
     msg: TaskExecutorMessage,
-    cause: Exception,
+    cause: Throwable,
     description: (() -> String)?
   ): Unit = coroutineScope {
     val executionError = cause.getExecutionError()
@@ -348,36 +345,24 @@ class TaskExecutor(
 
         // use withTimeout from registry, if it exists
         this.withTimeout = registered.withTimeout
-            // else use Timeout method annotation
-          ?: workflowMethod.getAnnotation(Timeout::class.java)?.getInstance()
-              // else use Timeout class annotation
-              ?: workflow::class.java.getAnnotation(Timeout::class.java)?.getInstance()
-              // else use WithTimeout interface
-              ?: when (workflow) {
-            is WithTimeout -> workflow
-            else -> null
-          } // else use default value
-              ?: DEFAULT_WORKFLOW_TASK_TIMEOUT
+            // HERE WE ARE LOOKING FOR THE TIMEOUT OF THE WORKFLOW TASK
+            // NOT OF THE WORKFLOW ITSELF, THAT'S WHY WE DO NOT LOOK FOR
+            // THE @Timeout ANNOTATION OR THE WithTimeout INTERFACE
+            // THAT HAS A DIFFERENT MEANING IN WORKFLOWS
+            // else use default value
+          ?: DEFAULT_WORKFLOW_TASK_TIMEOUT
 
         // use withRetry from registry, if it exists
         this.withRetry = registered.withRetry
-            // else use Retry method annotation
-          ?: workflowMethod.getAnnotation(Retry::class.java)?.getInstance()
-              // else use Retry class annotation
-              ?: workflow::class.java.getAnnotation(Retry::class.java)?.getInstance()
-              // else use WithRetry interface
-              ?: when (workflow) {
-            is WithRetry -> workflow
-            else -> null
-          } // else use default value
+            // else use @Retry annotation, or WithRetry interface
+          ?: workflowMethod.getWithRetry().getOrThrow()
+              // else use default value
               ?: DEFAULT_WORKFLOW_TASK_RETRY
 
         // get checkMode from registry
         val checkMode = registered.checkMode
-        // else use CheckMode method annotation
-          ?: workflowMethod.getAnnotation(CheckMode::class.java)?.mode
-          // else use CheckMode class annotation
-          ?: workflow::class.java.getAnnotation(CheckMode::class.java)?.mode
+        // else use CheckMode method annotation on method or class
+          ?: workflowMethod.getCheckMode()
           // else use default value
           ?: DEFAULT_WORKFLOW_CHECK_MODE
 
@@ -391,30 +376,19 @@ class TaskExecutor(
       false -> {
         val registered = workerRegistry.getRegisteredService(msg.serviceName)
 
-        // use withTimeout from registry, if it exists
-        this.withTimeout = registered.withTimeout
-            // else use Timeout method annotation
-          ?: taskMethod.getAnnotation(Timeout::class.java)?.getInstance()
-              // else use Timeout class annotation
-              ?: service::class.java.getAnnotation(Timeout::class.java)?.getInstance()
-              // else use WithTimeout interface
-              ?: when (service) {
-            is WithTimeout -> service
-            else -> null
-          } // else use default value
-              ?: DEFAULT_TASK_TIMEOUT
+        this.withTimeout =
+            // use withTimeout from registry, if it exists
+            registered.withTimeout
+                // else use @Timeout annotation, or WithTimeout interface
+              ?: taskMethod.getWithTimeout().getOrThrow()
+                  // else use default value
+                  ?: DEFAULT_TASK_TIMEOUT
 
         // use withRetry from registry, if it exists
         this.withRetry = registered.withRetry
-            // else use Retry method annotation
-          ?: taskMethod.getAnnotation(Retry::class.java)?.getInstance()
-              // else use Retry class annotation
-              ?: service::class.java.getAnnotation(Retry::class.java)?.getInstance()
-              // else use WithRetry interface
-              ?: when (service) {
-            is WithRetry -> service
-            else -> null
-          } // else use default value
+            // else use @Timeout annotation, or WithTimeout interface
+          ?: taskMethod.getWithRetry().getOrThrow()
+              // else use default value
               ?: DEFAULT_TASK_RETRY
       }
     }
@@ -422,13 +396,13 @@ class TaskExecutor(
     return TaskCommand(service, taskMethod, parameters)
   }
 
-  private fun getDeferredError(e: Exception) =
+  private fun getDeferredError(e: Throwable) =
       when (e is DeferredException) {
         true -> DeferredError.from(e)
         false -> null
       }
 
-  private fun Exception.getExecutionError() = ExecutionError.from(clientName, this)
+  private fun Throwable.getExecutionError() = ExecutionError.from(clientName, this)
 
   private fun ExecuteTask.logError(e: Throwable, description: () -> String) {
     logger.error(e) {
@@ -455,7 +429,7 @@ class TaskExecutor(
   }
 
   companion object {
-    val DEFAULT_WORKFLOW_TASK_TIMEOUT = WithTimeout { 60.0 }
+    val DEFAULT_WORKFLOW_TASK_TIMEOUT = WithTimeout { 60.0 } // 1 minute
     val DEFAULT_TASK_TIMEOUT = null
     val DEFAULT_TASK_RETRY = RetryPolicy.DEFAULT
     val DEFAULT_WORKFLOW_TASK_RETRY = null

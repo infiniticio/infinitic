@@ -25,9 +25,11 @@ package io.infinitic.tests.timeouts
 import io.infinitic.annotations.Timeout
 import io.infinitic.exceptions.TaskTimedOutException
 import io.infinitic.exceptions.WorkflowTimedOutException
+import io.infinitic.tasks.WithTimeout
 import io.infinitic.tests.utils.After500MilliSeconds
 import io.infinitic.tests.utils.UtilService
 import io.infinitic.workflows.Workflow
+
 
 interface TimeoutsWorkflow {
 
@@ -47,17 +49,16 @@ interface TimeoutsWorkflow {
   fun withCaughtTimeoutOnChild(wait: Long): Long
 }
 
-@Suppress("unused")
+
 class TimeoutsWorkflowImpl : Workflow(), TimeoutsWorkflow {
 
   private val child = newWorkflow(TimeoutsWorkflow::class.java)
 
-  private val utilService =
-      newService(
-          UtilService::class.java,
-          tags = setOf("foo", "bar"),
-          meta = mapOf("foo" to "bar".toByteArray()),
-      )
+  private val utilService = newService(
+      UtilService::class.java,
+      tags = setOf("foo", "bar"),
+      meta = mapOf("foo" to "bar".toByteArray()),
+  )
   private val timeoutsWorkflow =
       newWorkflow(TimeoutsWorkflow::class.java, tags = setOf("foo", "bar"))
 
@@ -83,5 +84,19 @@ class TimeoutsWorkflowImpl : Workflow(), TimeoutsWorkflow {
   } catch (e: WorkflowTimedOutException) {
     -1
   }
+}
 
+interface ITimeoutWorkflow : WithTimeout {
+
+  // the workflow method 'withMethodTimeout' has a 100ms timeout
+  fun withTimeoutOnMethod(duration: Long): Long
+
+  override fun getTimeoutInSeconds(): Double? = 0.5
+}
+
+class ITimeoutsWorkflowImpl : Workflow(), ITimeoutWorkflow {
+
+  private val utilService = newService(UtilService::class.java)
+
+  override fun withTimeoutOnMethod(duration: Long) = utilService.await(duration)
 }

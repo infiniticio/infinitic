@@ -26,12 +26,10 @@ import io.infinitic.common.data.MillisDuration
 import io.infinitic.common.data.methods.MethodName
 import io.infinitic.common.data.methods.MethodParameterTypes
 import io.infinitic.common.data.methods.MethodParameters
-import io.infinitic.common.utils.findTimeoutAnnotation
-import io.infinitic.common.utils.getAnnotatedName
-import io.infinitic.common.utils.getEmptyConstructor
+import io.infinitic.common.utils.findName
 import io.infinitic.common.utils.getFullMethodName
+import io.infinitic.common.utils.getMillisDuration
 import io.infinitic.exceptions.workflows.InvalidInlineException
-import io.infinitic.tasks.getTimeoutInMillis
 import io.infinitic.workflows.SendChannel
 import java.lang.reflect.InvocationHandler
 import java.lang.reflect.Method
@@ -82,24 +80,18 @@ sealed class ProxyHandler<T : Any>(
     }
   }
 
-  /** Timeout provided by @Timeout annotation, if any */
-  val timeout: Result<MillisDuration?>
-    get() = try {
-      val annotation = method.findTimeoutAnnotation() ?: klass.findTimeoutAnnotation()
-      val timeout = annotation?.getEmptyConstructor()?.newInstance()?.getTimeoutInMillis()
-      Result.success(timeout?.let { MillisDuration(it) })
-    } catch (e: Exception) {
-      Result.failure(e)
-    }
-
   /** Method called */
   lateinit var method: Method
 
   /** Args of method called */
   lateinit var methodArgs: Array<out Any>
 
+  /** Timeout provided by @Timeout annotation, if any */
+  val timeoutInMillisDuration: Result<MillisDuration?>
+    get() = method.getMillisDuration(klass)
+
   /** Class name provided by @Name annotation, or java class name by default */
-  protected val name: String by lazy { klass.getAnnotatedName() }
+  protected val name: String by lazy { klass.findName() }
 
   /** SimpleName provided by @Name annotation, or class name by default */
   val fullMethodName: String
@@ -109,7 +101,7 @@ sealed class ProxyHandler<T : Any>(
   /** MethodName provided by @Name annotation, or java method name by default */
   val methodName: MethodName
     //  MUST be a get() as this.method changes
-    get() = MethodName(method.getAnnotatedName())
+    get() = MethodName(method.findName())
 
   /** MethodParameterTypes from method */
   val methodParameterTypes: MethodParameterTypes

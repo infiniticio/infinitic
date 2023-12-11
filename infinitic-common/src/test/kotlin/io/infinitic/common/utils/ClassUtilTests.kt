@@ -22,6 +22,10 @@
  */
 package io.infinitic.common.utils
 
+import io.infinitic.annotations.Name
+import io.infinitic.annotations.Timeout
+import io.infinitic.common.data.MillisDuration
+import io.infinitic.tasks.WithTimeout
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
@@ -42,57 +46,84 @@ class ClassUtilTests : StringSpec(
 
       "Find method annotation" {
         method.findAnnotation(Test1::class.java).shouldBeInstanceOf<Test1>()
-
-        method.findAnnotation(Test1::class.java, false).shouldBeInstanceOf<Test1>()
       }
 
       "Find class annotation" {
         klass.findAnnotation(Test2::class.java).shouldBeInstanceOf<Test2>()
-
-        klass.findAnnotation(Test2::class.java, false).shouldBeInstanceOf<Test2>()
       }
 
       "Find method annotation on interface" {
         method.findAnnotation(Test3::class.java).shouldBeInstanceOf<Test3>()
-
-        method.findAnnotation(Test3::class.java, false) shouldBe null
       }
 
       "Find class annotation on interface" {
         klass.findAnnotation(Test4::class.java).shouldBeInstanceOf<Test4>()
-
-        klass.findAnnotation(Test4::class.java, false) shouldBe null
       }
 
       "Find method annotation on parent" {
         method.findAnnotation(Test5::class.java).shouldBeInstanceOf<Test5>()
-
-        method.findAnnotation(Test5::class.java, false).shouldBeInstanceOf<Test5>()
       }
 
       "Find class annotation on parent" {
         klass.findAnnotation(Test6::class.java).shouldBeInstanceOf<Test6>()
-
-        klass.findAnnotation(Test6::class.java, false).shouldBeInstanceOf<Test6>()
       }
 
       "Find method annotation on parent interface" {
         method.findAnnotation(Test7::class.java).shouldBeInstanceOf<Test7>()
-
-        method.findAnnotation(Test7::class.java, false) shouldBe null
       }
 
       "Find class annotation on parent interface" {
         klass.findAnnotation(Test8::class.java).shouldBeInstanceOf<Test8>()
-
-        klass.findAnnotation(Test8::class.java, false) shouldBe null
       }
+
+      "Should be able to find name annotation on interface" {
+        method.findName() shouldBe "bar"
+      }
+
+      "Interface name with annotation should be annotation" {
+        FooParentInterface::class.java.findName() shouldBe "FooParentInterface"
+      }
+
+      "class name without annotation should be interface name with annotation" {
+        FooParent::class.java.findName() shouldBe "FooParentInterface"
+      }
+
+      "class name with annotation should be annotation name" {
+        Foo::class.java.findName() shouldBe "Foo"
+      }
+
+      "class name with annotation should be class name" {
+        BarImpl::class.java.findName() shouldBe BarImpl::class.java.name
+      }
+
+      "can read timeout from interface with default" {
+        TrueBar::getTimeoutInSeconds.javaMethod!!.getMillisDuration(TrueBar::class.java)
+            .getOrThrow() shouldBe MillisDuration(1000L)
+      }
+
+      "can not read timeout from interface without default" {
+        Bar::getTimeoutInSeconds.javaMethod!!.getMillisDuration(Bar::class.java)
+            .getOrThrow() shouldBe null
+      }
+
+      "can read timeout from object implementing WithTimeout" {
+        BarImpl::foo.javaMethod!!.getMillisDuration(BarImpl::class.java)
+            .getOrThrow() shouldBe MillisDuration(1000L)
+      }
+
+      "can read timeout from annotation" {
+        TrueBarImpl::foo.javaMethod!!.getMillisDuration(TrueBarImpl::class.java)
+            .getOrThrow() shouldBe MillisDuration(10)
+      }
+
     },
 )
 
 @Test8
+@Name("FooParentInterface")
 private interface FooParentInterface {
   @Test7
+  @Name("barMethodInterface")
   fun bar(p: String): String
 }
 
@@ -103,14 +134,17 @@ private open class FooParent : FooParentInterface {
 }
 
 @Test4
+@Name("FooInterface")
 private interface FooInterface {
   @Test3
   fun bar(p: String): String
 }
 
 @Test2
+@Name("Foo")
 private class Foo : FooParent(), FooInterface {
   @Test1
+  @Name("bar")
   override fun bar(p: String) = p
 }
 
@@ -140,3 +174,28 @@ private annotation class Test7()
 
 @Target(AnnotationTarget.CLASS, AnnotationTarget.FUNCTION)
 private annotation class Test8()
+
+private interface Bar : WithTimeout {
+  fun foo()
+}
+
+private class BarImpl : Bar {
+  override fun foo() {}
+
+  override fun getTimeoutInSeconds() = 1.0
+}
+
+private interface TrueBar : WithTimeout {
+  fun foo()
+  override fun getTimeoutInSeconds() = 1.0
+}
+
+private class TrueBarImpl : TrueBar {
+  @Timeout(with = After10MilliSeconds::class)
+  override fun foo() {
+  }
+}
+
+class After10MilliSeconds : WithTimeout {
+  override fun getTimeoutInSeconds() = 0.01
+}

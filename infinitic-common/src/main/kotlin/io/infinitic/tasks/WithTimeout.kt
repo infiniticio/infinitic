@@ -22,8 +22,15 @@
  */
 package io.infinitic.tasks
 
+import kotlin.math.max
+
 fun interface WithTimeout {
   fun getTimeoutInSeconds(): Double?
 }
 
-fun WithTimeout.getTimeoutInMillis() = getTimeoutInSeconds()?.let { (it * 1000).toLong() }
+val WithTimeout.millis: Result<Long?>
+  get() = try {
+    Result.success(getTimeoutInSeconds()?.let { max(0L, (it * 1000).toLong()) })
+  } catch (e: Exception) {
+    Result.failure(e)
+  }

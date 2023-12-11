@@ -733,9 +733,13 @@ class ClientDispatcher(
   }
 
 
-  private fun getTimeout(handler: ProxyHandler<*>): MillisDuration? = handler.timeout.getOrElse {
-    throw IllegalStateException("Unable to retrieve Timeout info when dispatching ${handler.method}")
-  }
+  private fun getTimeout(handler: ProxyHandler<*>): MillisDuration? =
+      handler.timeoutInMillisDuration.getOrElse {
+        throw IllegalStateException(
+            "Unable to retrieve Timeout info when dispatching ${handler.method}",
+            it,
+        )
+      }
 
   companion object {
     @JvmStatic
