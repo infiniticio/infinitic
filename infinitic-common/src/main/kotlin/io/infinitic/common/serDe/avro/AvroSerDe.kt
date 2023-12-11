@@ -26,7 +26,9 @@ import com.github.avrokotlin.avro4k.Avro
 import io.infinitic.common.exceptions.thisShouldNotHappen
 import io.infinitic.current
 import io.infinitic.versions
+import kotlinx.serialization.InternalSerializationApi
 import kotlinx.serialization.KSerializer
+import kotlinx.serialization.serializerOrNull
 import org.apache.avro.Schema
 import org.apache.avro.file.SeekableByteArrayInput
 import org.apache.avro.generic.GenericData
@@ -45,6 +47,7 @@ import org.apache.avro.util.RandomData
 import org.jetbrains.annotations.TestOnly
 import java.io.ByteArrayOutputStream
 import java.util.concurrent.ConcurrentHashMap
+import kotlin.reflect.KClass
 
 /** This object provides methods to serialize/deserialize an Avro-generated class */
 object AvroSerDe {
@@ -71,17 +74,21 @@ object AvroSerDe {
       }
 
   /** Get message decoder from the serializer */
-  internal inline fun <reified T : Any> messageDecoder(
+  private fun <T : Any> messageDecoder(
+    klass: KClass<T>,
     serializer: KSerializer<T>
   ): MessageDecoder<GenericRecord> =
       messageDecoders.getOrPut(serializer) {
         BinaryMessageDecoder<GenericRecord>(GenericData.get(), schema(serializer)).also { decoder ->
-          getAllSchemas<T>().values.forEach { schema -> decoder.addSchema(schema) }
+          getAllSchemas(klass).values.forEach { schema -> decoder.addSchema(schema) }
         }
       }
 
   /** Object -> Avro binary with schema fingerprint */
-  fun <T : Any> writeBinaryWithSchemaFingerprint(t: T, serializer: KSerializer<T>): ByteArray {
+  internal fun <T> writeBinaryWithSchemaFingerprint(
+    t: T,
+    serializer: KSerializer<T>
+  ): ByteArray {
     val record: GenericRecord = Avro.default.toRecord(serializer, schema(serializer), t)
     val encoder = messageEncoder(serializer)
     val out = ByteArrayOutputStream()
@@ -91,11 +98,13 @@ object AvroSerDe {
   }
 
   /** Avro binary with schema fingerprint -> Object */
-  internal inline fun <reified T : Any> readBinaryWithSchemaFingerprint(
+  internal fun <T : Any> readBinaryWithSchemaFingerprint(
     bytes: ByteArray,
-    serializer: KSerializer<T>
+    klass: KClass<T>,
   ): T {
-    val decoder = messageDecoder(serializer)
+    @OptIn(InternalSerializationApi::class)
+    val serializer: KSerializer<T> = klass.serializerOrNull() ?: thisShouldNotHappen()
+    val decoder = messageDecoder(klass, serializer)
 
     return try {
       val record = decoder.decode(SeekableByteArrayInput(bytes), null)
@@ -104,7 +113,7 @@ object AvroSerDe {
       // we try to decode binary using all known schemas
       // in case binary was created without schema fingerprint (<= 0.9.7)
       run breaking@{
-        getAllSchemas<T>().forEach { (_, schema) ->
+        getAllSchemas(klass).forEach { (_, schema) ->
           try {
             // let's try to decode with this schema
             return@breaking readBinary(bytes, schema, serializer)
@@ -140,12 +149,12 @@ object AvroSerDe {
   }
 
   /** Get prefix of schema file in Resources */
-  inline fun <reified T : Any> getSchemaFilePrefix() =
-      T::class.simpleName!!.replaceFirstChar { it.lowercase() }
+  fun <T : Any> getSchemaFilePrefix(klass: KClass<T>) =
+      klass.simpleName!!.replaceFirstChar { it.lowercase() }
 
   /** Get map <version, schema> for all schemas of type T */
-  internal inline fun <reified T : Any> getAllSchemas(): Map<String, Schema> {
-    val prefix = getSchemaFilePrefix<T>()
+  internal fun <T : Any> getAllSchemas(klass: KClass<T>): Map<String, Schema> {
+    val prefix = getSchemaFilePrefix(klass)
 
     return versions
         .filter { it.isNotEmpty() && it != current }

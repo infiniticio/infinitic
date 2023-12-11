@@ -52,13 +52,13 @@ class TaskExecutorEnvelopeTests :
 
         "We should be able to read TaskExecutorEnvelope from any previous version since 0.9.0" {
           // An error in this test means that we need to upgrade the version
-          checkOrCreateCurrentFile(TaskExecutorEnvelope.serializer())
+          checkOrCreateCurrentFile(TaskExecutorEnvelope::class, TaskExecutorEnvelope.serializer())
 
-          checkBackwardCompatibility(TaskExecutorEnvelope.serializer())
+          checkBackwardCompatibility(TaskExecutorEnvelope::class, TaskExecutorEnvelope.serializer())
         }
 
         "We should be able to read binary from any previous version since 0.9.0" {
-          AvroSerDe.getAllSchemas<TaskExecutorEnvelope>().forEach { (_, schema) ->
+          AvroSerDe.getAllSchemas(TaskExecutorEnvelope::class).forEach { (_, schema) ->
             val bytes = AvroSerDe.getRandomBinary(schema)
             val e = shouldThrowAny { TaskExecutorEnvelope.fromByteArray(bytes, schema) }
             e::class shouldBeOneOf listOf(

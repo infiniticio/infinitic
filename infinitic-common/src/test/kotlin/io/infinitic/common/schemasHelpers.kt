@@ -36,13 +36,12 @@ import org.apache.avro.SchemaValidatorBuilder
 import java.io.File
 import java.io.FileWriter
 import java.nio.file.Paths
+import kotlin.reflect.KClass
 
-internal inline fun <reified T : Any> checkOrCreateCurrentFile(
-  serializer: KSerializer<T>
-) {
+internal fun <T : Any> checkOrCreateCurrentFile(klass: KClass<T>, serializer: KSerializer<T>) {
   // Non-release version are not saved to the sources
   if (isReleaseVersion()) {
-    val schemaFilePath = getCurrentSchemaFilePath<T>()
+    val schemaFilePath = getCurrentSchemaFilePath<T>(klass)
 
     // Does the schema file already exist?
     when (schemaFilePath.exists()) {
@@ -58,8 +57,8 @@ internal inline fun <reified T : Any> checkOrCreateCurrentFile(
   }
 }
 
-internal inline fun <reified T : Any> checkBackwardCompatibility(serializer: KSerializer<T>) {
-  val schemaList = getAllSchemas<T>().values
+internal fun <T : Any> checkBackwardCompatibility(klass: KClass<T>, serializer: KSerializer<T>) {
+  val schemaList = getAllSchemas(klass).values
 
   // checking that we did not silently break something
   schemaList.size shouldBeGreaterThan 20
@@ -70,8 +69,8 @@ internal inline fun <reified T : Any> checkBackwardCompatibility(serializer: KSe
   shouldNotThrowAny { validator.validate(newSchema, schemaList) }
 }
 
-internal inline fun <reified T : Any> getCurrentSchemaFilePath() = File(
+internal fun <T : Any> getCurrentSchemaFilePath(klass: KClass<T>) = File(
     "${Paths.get("").toAbsolutePath()}/src/main/resources/$SCHEMAS_FOLDER/",
-    "${getSchemaFilePrefix<T>()}-$current.avsc",
+    "${getSchemaFilePrefix(klass)}-$current.avsc",
 )
 

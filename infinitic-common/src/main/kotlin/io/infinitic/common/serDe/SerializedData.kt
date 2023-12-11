@@ -24,7 +24,10 @@ package io.infinitic.common.serDe
 
 import com.fasterxml.jackson.core.JsonProcessingException
 import com.github.avrokotlin.avro4k.AvroNamespace
-import io.infinitic.exceptions.serialization.ClassNotFoundException
+import io.infinitic.common.exceptions.thisShouldNotHappen
+import io.infinitic.common.utils.getClass
+import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskParameters
+import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskReturnValue
 import io.infinitic.exceptions.serialization.JsonDeserializationException
 import io.infinitic.exceptions.serialization.KotlinDeserializationException
 import io.infinitic.exceptions.serialization.MissingMetaJavaClassException
@@ -46,15 +49,22 @@ data class SerializedData(
   val meta: Map<String, ByteArray> = mapOf()
 ) {
   companion object {
+    // DO NOT CHANGE THOSE VALUES
+    private const val WORKFLOW_TASK_PARAMETERS = "WorkflowTaskParameters"
+    private const val WORKFLOW_TASK_RETURN_VALUE = "WorkflowTaskReturnValue"
+
     // meta key containing the name of the serialized java class
     const val META_JAVA_CLASS = "javaClass"
 
     // use a less obvious key than "type" for polymorphic data, to avoid collusion
-    private val jsonKotlin =
-        kotlinx.serialization.json.Json {
-          classDiscriminator = "#klass"
-          ignoreUnknownKeys = true
-        }
+    private val jsonKotlin = kotlinx.serialization.json.Json {
+      classDiscriminator = "#klass"
+      ignoreUnknownKeys = true
+    }
+
+    private fun String.toBytes(): ByteArray = toByteArray(charset = Charsets.UTF_8)
+
+    private fun Any.getClassInBytes(): ByteArray = this::class.java.name.toBytes()
 
     /** @return serialized value */
     fun <T : Any> from(value: T?): SerializedData {
@@ -64,27 +74,38 @@ data class SerializedData(
 
       when (value) {
         null -> {
-          bytes = "null".toByteArray()
           type = SerializedDataType.NULL
+          bytes = "".toByteArray()
           meta = mapOf()
         }
 
+        is WorkflowTaskParameters -> {
+          type = SerializedDataType.AVRO_WITH_SCHEMA
+          bytes = value.toByteArray()
+          meta = mapOf(META_JAVA_CLASS to WORKFLOW_TASK_PARAMETERS.toBytes())
+        }
+
+        is WorkflowTaskReturnValue -> {
+          type = SerializedDataType.AVRO_WITH_SCHEMA
+          bytes = value.toByteArray()
+          meta = mapOf(META_JAVA_CLASS to WORKFLOW_TASK_RETURN_VALUE.toBytes())
+        }
+
         else -> {
-          @Suppress("UNCHECKED_CAST") @OptIn(InternalSerializationApi::class)
-          when (val serializer = value::class.serializerOrNull()?.let { it as KSerializer<T> }) {
+          @OptIn(InternalSerializationApi::class)
+          when (val serializer = value::class.serializerOrNull()) {
             null -> {
-              bytes = JsonJackson.stringify(value).toByteArray()
               type = SerializedDataType.JSON_JACKSON
+              bytes = JsonJackson.stringify(value).toByteArray()
             }
 
             else -> {
-              bytes = jsonKotlin.encodeToString(serializer, value).toByteArray()
               type = SerializedDataType.JSON_KOTLIN
+              @Suppress("UNCHECKED_CAST")
+              bytes = jsonKotlin.encodeToString(serializer as KSerializer<T>, value).toByteArray()
             }
           }
-          meta = mapOf(
-              META_JAVA_CLASS to value::class.java.name.toByteArray(charset = Charsets.UTF_8),
-          )
+          meta = mapOf(META_JAVA_CLASS to value.getClassInBytes())
         }
       }
       return SerializedData(bytes, type, meta)
@@ -92,12 +113,12 @@ data class SerializedData(
   }
 
   /** @return deserialized value */
-  @OptIn(InternalSerializationApi::class)
   fun deserialize(): Any? =
       when (type) {
         SerializedDataType.NULL -> null
+
         SerializedDataType.JSON_JACKSON -> {
-          val klass = getClassObject()
+          val klass = getDataClass()
           try {
             JsonJackson.parse(getJson(), klass)
           } catch (e: JsonProcessingException) {
@@ -106,13 +127,24 @@ data class SerializedData(
         }
 
         SerializedDataType.JSON_KOTLIN -> {
-          val klass = getClassObject()
-          val serializer =
-              klass.kotlin.serializerOrNull() ?: throw SerializerNotFoundException(klass.name)
+          val klass = getDataClass()
+
+          @OptIn(InternalSerializationApi::class)
+          val serializer = klass.kotlin.serializerOrNull()
+            ?: throw SerializerNotFoundException(klass.name)
+
           try {
             jsonKotlin.decodeFromString(serializer, getJson())
           } catch (e: SerializationException) {
             throw KotlinDeserializationException(klass.name, causeString = e.toString())
+          }
+        }
+
+        SerializedDataType.AVRO_WITH_SCHEMA -> {
+          when (getDataClassString()) {
+            WORKFLOW_TASK_PARAMETERS -> WorkflowTaskParameters.fromByteArray(bytes)
+            WORKFLOW_TASK_RETURN_VALUE -> WorkflowTaskReturnValue.fromByteArray(bytes)
+            else -> thisShouldNotHappen()
           }
         }
       }
@@ -126,9 +158,23 @@ data class SerializedData(
   }
 
   /** Readable version */
-  override fun toString() =
-      mapOf("bytes" to String(bytes), "type" to type, "meta" to meta.mapValues { String(it.value) })
-          .toString()
+  override fun toString() = mapOf(
+      "bytes" to String(bytes),
+      "type" to type,
+      "meta" to meta.mapValues { String(it.value) },
+  ).toString()
+
+  private fun getDataClass(): Class<out Any> = getDataClassName().getClass().getOrThrow()
+
+  private fun getDataClassName(): String = when (val klass = getDataClassString()) {
+    WORKFLOW_TASK_PARAMETERS -> WorkflowTaskParameters::class.java.name
+    WORKFLOW_TASK_RETURN_VALUE -> WorkflowTaskReturnValue::class.java.name
+    null -> throw MissingMetaJavaClassException
+    else -> klass
+  }
+
+  private fun getDataClassString(): String? =
+      meta[META_JAVA_CLASS]?.let { String(it, charset = Charsets.UTF_8) }
 
   override fun equals(other: Any?): Boolean {
     if (this === other) return true
@@ -146,17 +192,4 @@ data class SerializedData(
   }
 
   override fun hashCode(): Int = bytes.contentHashCode()
-
-  private fun getClassName(): String? =
-      meta[META_JAVA_CLASS]?.let { String(it, charset = Charsets.UTF_8) }
-
-  private fun getClassObject(): Class<out Any> {
-    val klassName = getClassName() ?: throw MissingMetaJavaClassException
-
-    return try {
-      Class.forName(klassName)
-    } catch (e: java.lang.ClassNotFoundException) {
-      throw ClassNotFoundException(klassName)
-    }
-  }
 }

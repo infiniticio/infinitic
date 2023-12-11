@@ -50,13 +50,13 @@ class ClientEnvelopeTests :
 
         "Avro Schema should be backward compatible to 0.9.0" {
           // An error in this test means that we need to upgrade the version
-          checkOrCreateCurrentFile(ClientEnvelope.serializer())
+          checkOrCreateCurrentFile(ClientEnvelope::class, ClientEnvelope.serializer())
 
-          checkBackwardCompatibility(ClientEnvelope.serializer())
+          checkBackwardCompatibility(ClientEnvelope::class, ClientEnvelope.serializer())
         }
 
         "We should be able to read binary from any previous version since 0.9.0" {
-          AvroSerDe.getAllSchemas<ClientEnvelope>().forEach { (_, schema) ->
+          AvroSerDe.getAllSchemas(ClientEnvelope::class).forEach { (_, schema) ->
             val bytes = AvroSerDe.getRandomBinary(schema)
             // IllegalArgumentException is thrown because we have more than 1 message in the envelope
             val e = shouldThrowAny { ClientEnvelope.fromByteArray(bytes, schema) }

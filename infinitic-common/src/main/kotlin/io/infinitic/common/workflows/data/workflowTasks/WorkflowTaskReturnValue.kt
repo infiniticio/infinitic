@@ -24,6 +24,7 @@ package io.infinitic.common.workflows.data.workflowTasks
 
 import com.github.avrokotlin.avro4k.AvroDefault
 import io.infinitic.common.data.ReturnValue
+import io.infinitic.common.serDe.avro.AvroSerDe
 import io.infinitic.common.workers.config.WorkflowVersion
 import io.infinitic.common.workflows.data.commands.PastCommand
 import io.infinitic.common.workflows.data.properties.PropertyName
@@ -38,5 +39,12 @@ data class WorkflowTaskReturnValue(
   val newStep: NewStep?,
   val properties: Map<PropertyName, PropertyValue>,
   val methodReturnValue: ReturnValue?,
-  @AvroDefault("0") val workflowVersion: WorkflowVersion
-)
+  @AvroDefault("0") val workflowVersion: WorkflowVersion = WorkflowVersion(0)
+) {
+  fun toByteArray() = AvroSerDe.writeBinaryWithSchemaFingerprint(this, serializer())
+
+  companion object {
+    fun fromByteArray(bytes: ByteArray) =
+        AvroSerDe.readBinaryWithSchemaFingerprint(bytes, WorkflowTaskReturnValue::class)
+  }
+}

@@ -57,13 +57,13 @@ class WorkflowTagEnvelopeTests :
 
         "Avro Schema should be backward compatible to 0.9.0" {
           // An error in this test means that we need to upgrade the version
-          checkOrCreateCurrentFile(WorkflowTagEnvelope.serializer())
+          checkOrCreateCurrentFile(WorkflowTagEnvelope::class, WorkflowTagEnvelope.serializer())
 
-          checkBackwardCompatibility(WorkflowTagEnvelope.serializer())
+          checkBackwardCompatibility(WorkflowTagEnvelope::class, WorkflowTagEnvelope.serializer())
         }
 
         "We should be able to read binary from any previous version since 0.9.0" {
-          AvroSerDe.getAllSchemas<WorkflowTagEnvelope>().forEach { (_, schema) ->
+          AvroSerDe.getAllSchemas(WorkflowTagEnvelope::class).forEach { (_, schema) ->
             val bytes = AvroSerDe.getRandomBinary(schema)
             val e = shouldThrowAny { WorkflowTagEnvelope.fromByteArray(bytes, schema) }
             e::class shouldBeOneOf listOf(
