@@ -201,13 +201,18 @@ class ClientDispatcher(
     clientWaiting: Boolean
   ): T {
 
-    // lazily starts client consumer if not already started
-    if (!isClientConsumerInitialized) {
-      consumer.startClientConsumerAsync(::handle, null, clientName)
-      isClientConsumerInitialized = true
-    }
-
     val runId = methodRunId ?: MethodRunId.from(workflowId)
+
+    // calculate timeout from now
+    val timeout = methodTimeout
+        ?.let { it.long - (System.currentTimeMillis() - dispatchTime) }
+        ?.let { if (it < 0) 0 else it }
+      ?: Long.MAX_VALUE
+
+    // lazily starts client consumer if not already started and waits
+    val waiting = waitForAsync(timeout) {
+      it is MethodMessage && it.workflowId == workflowId && it.methodRunId == runId
+    }
 
     // if task was not initially sync, then send WaitTask message
     if (clientWaiting) {
@@ -219,21 +224,9 @@ class ClientDispatcher(
       )
       sendingScope.future { producer.send(waitWorkflow) }.exceptionally { throw it }
     }
-    // calculate timeout from now
-    val timeout = methodTimeout
-        ?.let { it.long - (System.currentTimeMillis() - dispatchTime) }
-        ?.let { if (it < 0) 0 else it }
-      ?: Long.MAX_VALUE
 
-
-    // wait for the message of method completion
-    val workflowResult = waitingScope.future {
-      withTimeoutOrNull(timeout) {
-        responseFlow.first {
-          it is MethodMessage && it.workflowId == workflowId && it.methodRunId == runId
-        }
-      }
-    }.join()
+    // Get result
+    val workflowResult = waiting.join()
 
     @Suppress("UNCHECKED_CAST")
     return when (workflowResult) {
@@ -404,6 +397,12 @@ class ClientDispatcher(
     workflowName: WorkflowName,
     workflowTag: WorkflowTag
   ): Set<String> {
+    // lazily starts client consumer if not already started and waits
+    val waiting = waitForAsync {
+      (it is WorkflowIdsByTag) &&
+          (it.workflowName == workflowName) &&
+          (it.workflowTag == workflowTag)
+    }
 
     sendingScope.future {
       val msg = GetWorkflowIdsByTag(
@@ -414,13 +413,7 @@ class ClientDispatcher(
       launch { producer.send(msg) }
     }.exceptionally { throw it }
 
-    val workflowIdsByTag = waitingScope.future {
-      responseFlow.first {
-        (it is WorkflowIdsByTag) &&
-            (it.workflowName == workflowName) &&
-            (it.workflowTag == workflowTag)
-      } as WorkflowIdsByTag
-    }.join()
+    val workflowIdsByTag = waiting.join() as WorkflowIdsByTag
 
     return workflowIdsByTag.workflowIds.map { it.toString() }.toSet()
   }
@@ -740,6 +733,27 @@ class ClientDispatcher(
             it,
         )
       }
+
+  private fun waitForAsync(
+    timeout: Long = Long.MAX_VALUE,
+    predicate: suspend (ClientMessage) -> Boolean
+  ): CompletableFuture<ClientMessage?> {
+    // lazily starts client consumer if not already started
+    synchronized(this) {
+      if (!isClientConsumerInitialized) {
+        consumer.startClientConsumerAsync(::handle, null, clientName)
+        isClientConsumerInitialized = true
+      }
+    }
+
+    // wait for the first message that matches the predicate
+    return waitingScope.future {
+      withTimeoutOrNull(timeout) {
+        responseFlow.first { predicate(it) }
+      }
+    }
+  }
+
 
   companion object {
     @JvmStatic
