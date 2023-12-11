@@ -44,15 +44,19 @@ class InMemoryInfiniticProducerAsync(private val channels: InMemoryChannels) :
 
   // Coroutine scope used to receive messages
   private val producingScope = CoroutineScope(Dispatchers.IO)
-  
+
   override var name = DEFAULT_NAME
 
-  override fun sendAsync(message: ClientMessage) = sendAsync(
+  override fun sendAsync(
+    message: ClientMessage
+  ): CompletableFuture<Unit> = sendAsync(
       message,
-      channels.forClient(),
+      channels.forClient(message.recipientName),
   )
 
-  override fun sendAsync(message: WorkflowTagMessage) = sendAsync(
+  override fun sendAsync(
+    message: WorkflowTagMessage
+  ): CompletableFuture<Unit> = sendAsync(
       message,
       channels.forWorkflowTag(message.workflowName),
   )
@@ -60,7 +64,7 @@ class InMemoryInfiniticProducerAsync(private val channels: InMemoryChannels) :
   override fun sendAsync(
     message: WorkflowEngineMessage,
     after: MillisDuration
-  ) = when {
+  ): CompletableFuture<Unit> = when {
     after > 0 -> sendAsync(
         DelayedMessage(message, after),
         channels.forDelayedWorkflowEngine(message.workflowName),
@@ -72,7 +76,9 @@ class InMemoryInfiniticProducerAsync(private val channels: InMemoryChannels) :
     )
   }
 
-  override fun sendAsync(message: TaskTagMessage) = sendAsync(
+  override fun sendAsync(
+    message: TaskTagMessage
+  ) = sendAsync(
       message,
       channels.forTaskTag(message.serviceName),
   )
@@ -80,7 +86,7 @@ class InMemoryInfiniticProducerAsync(private val channels: InMemoryChannels) :
   override fun sendAsync(
     message: TaskExecutorMessage,
     after: MillisDuration
-  ) = when {
+  ): CompletableFuture<Unit> = when {
     message.isWorkflowTask() -> when (message) {
       is ExecuteTask -> when {
         after > 0 -> sendAsync(

@@ -23,6 +23,7 @@
 package io.infinitic.inMemory
 
 import io.infinitic.common.clients.messages.ClientMessage
+import io.infinitic.common.data.ClientName
 import io.infinitic.common.data.MillisDuration
 import io.infinitic.common.messages.Message
 import io.infinitic.common.tasks.data.ServiceName
@@ -37,7 +38,7 @@ import java.util.concurrent.ConcurrentHashMap
 class InMemoryChannels : AutoCloseable {
 
   override fun close() {
-    clientChannel.close()
+    clientChannels.values.forEach { it.close() }
     taskTagChannels.values.forEach { it.close() }
     workflowTagChannels.values.forEach { it.close() }
     taskExecutorChannels.values.forEach { it.close() }
@@ -49,7 +50,8 @@ class InMemoryChannels : AutoCloseable {
   }
 
   // Client channel
-  private val clientChannel = Channel<ClientMessage>()
+  private val clientChannels =
+      ConcurrentHashMap<ClientName, Channel<ClientMessage>>()
 
   // Channel for TaskTagMessages
   private val taskTagChannels =
@@ -83,7 +85,8 @@ class InMemoryChannels : AutoCloseable {
   private val delayedWorkflowTaskExecutorChannels =
       ConcurrentHashMap<WorkflowName, Channel<DelayedMessage<TaskExecutorMessage>>>()
 
-  fun forClient() = clientChannel
+  fun forClient(clientName: ClientName): Channel<ClientMessage> =
+      clientChannels.getOrPut(clientName) { Channel(Channel.UNLIMITED) }
 
   fun forTaskTag(serviceName: ServiceName): Channel<TaskTagMessage> =
       taskTagChannels.getOrPut(serviceName) { Channel(Channel.UNLIMITED) }
