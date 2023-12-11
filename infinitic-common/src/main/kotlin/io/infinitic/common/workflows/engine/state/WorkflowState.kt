@@ -53,70 +53,70 @@ import kotlinx.serialization.Serializable
 @Serializable
 @AvroNamespace("io.infinitic.workflows.engine")
 data class WorkflowState(
-    /** Id of last handled message (used to ensure idempotency) */
-    var lastMessageId: MessageId,
+  /** Id of last handled message (used to ensure idempotency) */
+  var lastMessageId: MessageId,
 
-    /** Id of this workflow instance */
-    val workflowId: WorkflowId,
+  /** Id of this workflow instance */
+  val workflowId: WorkflowId,
 
-    /** Workflow's name (used wy worker to instantiate) */
-    val workflowName: WorkflowName,
+  /** Workflow's name (used wy worker to instantiate) */
+  val workflowName: WorkflowName,
 
-    /** Workflow's version */
-    @AvroDefault(Avro.NULL) var workflowVersion: WorkflowVersion?,
+  /** Workflow's version */
+  @AvroDefault(Avro.NULL) var workflowVersion: WorkflowVersion?,
 
-    /** Instance's tags defined when dispatched */
-    val workflowTags: Set<WorkflowTag>,
+  /** Instance's tags defined when dispatched */
+  val workflowTags: Set<WorkflowTag>,
 
-    /** Instance's meta defined when dispatched */
-    val workflowMeta: WorkflowMeta,
+  /** Instance's meta defined when dispatched */
+  val workflowMeta: WorkflowMeta,
 
-    /** Id of WorkflowTask currently running */
-    var runningWorkflowTaskId: TaskId? = null,
+  /** Id of WorkflowTask currently running */
+  var runningWorkflowTaskId: TaskId? = null,
 
-    /** MethodRunId of WorkflowTask currently running */
-    var runningMethodRunId: MethodRunId? = null,
+  /** MethodRunId of WorkflowTask currently running */
+  var runningMethodRunId: MethodRunId? = null,
 
-    /** Position of the step that triggered WorkflowTask currently running */
-    var runningMethodRunPosition: MethodRunPosition? = null,
+  /** Position of the step that triggered WorkflowTask currently running */
+  var runningMethodRunPosition: MethodRunPosition? = null,
 
-    /**
-     * In some situations, we know that multiples branches must be processed. As WorkflowTask
-     * handles branch one by one, we orderly buffer these branches here (it happens when a
-     * terminated command completes currentStep on multiple MethodRuns)
-     */
-    val runningTerminatedCommands: MutableList<CommandId> = mutableListOf(),
+  /**
+   * In some situations, we know that multiples branches must be processed. As WorkflowTask
+   * handles branch one by one, we orderly buffer these branches here (it happens when a
+   * terminated command completes currentStep on multiple MethodRuns)
+   */
+  val runningTerminatedCommands: MutableList<CommandId> = mutableListOf(),
 
-    /** Instant when WorkflowTask currently running was triggered */
-    var runningWorkflowTaskInstant: MillisInstant? = null,
+  /** Instant when WorkflowTask currently running was triggered */
+  var runningWorkflowTaskInstant: MillisInstant? = null,
 
-    /** Incremental index counting WorkflowTasks (used as an index for instance's state) */
-    var workflowTaskIndex: WorkflowTaskIndex = WorkflowTaskIndex(0),
+  /** Incremental index counting WorkflowTasks (used as an index for instance's state) */
+  var workflowTaskIndex: WorkflowTaskIndex = WorkflowTaskIndex(0),
 
-    /** Methods currently running. Once completed this data can be deleted to limit memory usage */
-    val methodRuns: MutableList<MethodRun>,
+  /** Methods currently running. Once completed this data can be deleted to limit memory usage */
+  val methodRuns: MutableList<MethodRun>,
 
-    /** Ordered list of channels currently receiving */
-    val receivingChannels: MutableList<ReceivingChannel> = mutableListOf(),
+  /** Ordered list of channels currently receiving */
+  val receivingChannels: MutableList<ReceivingChannel> = mutableListOf(),
 
-    /** Current (last) hash of instance's properties. hash is used as an index to actual value */
-    val currentPropertiesNameHash: MutableMap<PropertyName, PropertyHash> = mutableMapOf(),
+  /** Current (last) hash of instance's properties. hash is used as an index to actual value */
+  val currentPropertiesNameHash: MutableMap<PropertyName, PropertyHash> = mutableMapOf(),
 
-    /**
-     * Store containing values of past and current values of properties (past values are useful when
-     * replaying WorkflowTask)
-     */
-    var propertiesHashValue: MutableMap<PropertyHash, PropertyValue> = mutableMapOf(),
+  /**
+   * Store containing values of past and current values of properties (past values are useful when
+   * replaying WorkflowTask)
+   */
+  var propertiesHashValue: MutableMap<PropertyHash, PropertyValue> = mutableMapOf(),
 
-    /**
-     * Messages received while a WorkflowTask is still running. They can not be handled immediately,
-     * so we store them in this buffer
-     */
-    val messagesBuffer: MutableList<WorkflowEngineMessage> = mutableListOf()
+  /**
+   * Messages received while a WorkflowTask is still running. They can not be handled immediately,
+   * so we store them in this buffer
+   */
+  val messagesBuffer: MutableList<WorkflowEngineMessage> = mutableListOf()
 ) {
   companion object {
     fun fromByteArray(bytes: ByteArray) =
-        AvroSerDe.readBinaryWithSchemaFingerprint(bytes, serializer())
+        AvroSerDe.readBinaryWithSchemaFingerprint(bytes, WorkflowState::class)
   }
 
   fun toByteArray() = AvroSerDe.writeBinaryWithSchemaFingerprint(this, serializer())
@@ -136,10 +136,10 @@ data class WorkflowState(
 
   fun getPastCommand(commandId: CommandId, methodRun: MethodRun): PastCommand =
       methodRun.getPastCommand(commandId)
-          // if we do not find in this methodRun, then search within others
-          ?: methodRuns.map { it.getPastCommand(commandId) }.firstOrNull { it != null }
-          // methodRun should not be deleted if a step is still running
-          ?: thisShouldNotHappen()
+      // if we do not find in this methodRun, then search within others
+        ?: methodRuns.map { it.getPastCommand(commandId) }.firstOrNull { it != null }
+        // methodRun should not be deleted if a step is still running
+        ?: thisShouldNotHappen()
 
   fun removeMethodRun(methodRun: MethodRun) {
     methodRuns.remove(methodRun)

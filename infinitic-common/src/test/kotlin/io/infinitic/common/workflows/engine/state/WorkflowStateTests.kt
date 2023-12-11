@@ -45,13 +45,13 @@ class WorkflowStateTests :
 
         "Avro schema should be backward compatible to 0.9.0" {
           // An error in this test means that we need to upgrade the version
-          checkOrCreateCurrentFile(WorkflowState.serializer())
+          checkOrCreateCurrentFile(WorkflowState::class, WorkflowState.serializer())
 
-          checkBackwardCompatibility(WorkflowState.serializer())
+          checkBackwardCompatibility(WorkflowState::class, WorkflowState.serializer())
         }
 
         "We should be able to read binary from any previous version since 0.9.0" {
-          getAllSchemas<WorkflowState>().forEach { (_, schema) ->
+          getAllSchemas(WorkflowState::class).forEach { (_, schema) ->
             val bytes = getRandomBinaryWithSchemaFingerprint(schema)
 
             shouldNotThrowAny { WorkflowState.fromByteArray(bytes) }

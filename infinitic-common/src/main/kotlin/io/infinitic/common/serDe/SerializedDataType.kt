@@ -30,5 +30,6 @@ import kotlinx.serialization.Serializable
 enum class SerializedDataType {
   NULL,
   JSON_JACKSON,
-  JSON_KOTLIN
+  JSON_KOTLIN,
+  AVRO_WITH_SCHEMA
 }

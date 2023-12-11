@@ -57,7 +57,7 @@ data class DispatchTaskCommand(
   val methodName: MethodName,
   val methodParameterTypes: MethodParameterTypes,
   val methodParameters: MethodParameters,
-  @AvroDefault(Avro.NULL) val methodTimeout: MillisDuration?,
+  @AvroDefault(Avro.NULL) val methodTimeout: MillisDuration? = null,
   val taskTags: Set<TaskTag>,
   val taskMeta: TaskMeta
 ) : Command() {
@@ -80,7 +80,7 @@ data class DispatchNewWorkflowCommand(
   val methodName: MethodName,
   val methodParameterTypes: MethodParameterTypes,
   val methodParameters: MethodParameters,
-  @AvroDefault(Avro.NULL) val methodTimeout: MillisDuration?,
+  @AvroDefault(Avro.NULL) val methodTimeout: MillisDuration? = null,
   val workflowTags: Set<WorkflowTag>,
   val workflowMeta: WorkflowMeta
 ) : Command() {
@@ -105,7 +105,7 @@ data class DispatchExistingWorkflowCommand(
   val methodName: MethodName,
   val methodParameterTypes: MethodParameterTypes,
   val methodParameters: MethodParameters,
-  @AvroDefault(Avro.NULL) val methodTimeout: MillisDuration?,
+  @AvroDefault(Avro.NULL) val methodTimeout: MillisDuration? = null,
 ) : Command() {
   override fun isSameThan(other: Command): Boolean {
     if (this === other) return true

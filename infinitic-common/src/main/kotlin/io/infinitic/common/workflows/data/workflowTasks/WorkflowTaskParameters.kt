@@ -28,6 +28,7 @@ import io.infinitic.common.data.ClientName
 import io.infinitic.common.data.methods.MethodName
 import io.infinitic.common.data.methods.MethodParameterTypes
 import io.infinitic.common.data.methods.MethodParameters
+import io.infinitic.common.serDe.avro.AvroSerDe
 import io.infinitic.common.tasks.data.ServiceName
 import io.infinitic.common.tasks.data.TaskId
 import io.infinitic.common.tasks.data.TaskMeta
@@ -50,7 +51,7 @@ data class WorkflowTaskParameters(
   val taskId: TaskId,
   val workflowId: WorkflowId,
   val workflowName: WorkflowName,
-  @AvroDefault(Avro.NULL) val workflowVersion: WorkflowVersion?,
+  @AvroDefault(Avro.NULL) val workflowVersion: WorkflowVersion? = null,
   val workflowTags: Set<WorkflowTag>,
   val workflowMeta: WorkflowMeta,
   val workflowPropertiesHashValue: Map<PropertyHash, PropertyValue>,
@@ -78,4 +79,12 @@ data class WorkflowTaskParameters(
           taskMeta = TaskMeta(),
           emitterName = emitterName,
       )
+
+  fun toByteArray() = AvroSerDe.writeBinaryWithSchemaFingerprint(this, serializer())
+
+  companion object {
+    fun fromByteArray(bytes: ByteArray) =
+        AvroSerDe.readBinaryWithSchemaFingerprint(bytes, WorkflowTaskParameters::class)
+  }
+
 }

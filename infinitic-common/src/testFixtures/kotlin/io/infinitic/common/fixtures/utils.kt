@@ -32,3 +32,27 @@ fun later(delay: Long = 100L, f: suspend CoroutineScope.() -> Unit) = CoroutineS
       delay(delay)
       f()
     }
+
+/**
+ * Compare two strings representing a version number
+ */
+fun String.compareVersionTo(version: String): Int {
+  val parts1 = split(".")
+  val parts2 = version.split(".")
+
+  require(parts1.size == parts2.size)
+  require(parts1.all { it.toIntOrNull() != null })
+  require(parts2.all { it.toIntOrNull() != null })
+
+  for (i in parts1.indices) {
+    val part1 = parts1[i].toInt()
+    val part2 = parts2[i].toInt()
+
+    when {
+      part1 > part2 -> return 1
+      part1 < part2 -> return -1
+    }
+  }
+
+  return 0
+}

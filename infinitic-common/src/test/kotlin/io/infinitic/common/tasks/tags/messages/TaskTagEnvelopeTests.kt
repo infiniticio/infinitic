@@ -53,13 +53,13 @@ class TaskTagEnvelopeTests :
 
         "Avro Schema should be backward compatible to 0.9.0" {
           // An error in this test means that we need to upgrade the version
-          checkOrCreateCurrentFile(TaskTagEnvelope.serializer())
+          checkOrCreateCurrentFile(TaskTagEnvelope::class, TaskTagEnvelope.serializer())
 
-          checkBackwardCompatibility(TaskTagEnvelope.serializer())
+          checkBackwardCompatibility(TaskTagEnvelope::class, TaskTagEnvelope.serializer())
         }
 
         "We should be able to read binary from any previous version since 0.9.0" {
-          AvroSerDe.getAllSchemas<TaskTagEnvelope>().forEach { (_, schema) ->
+          AvroSerDe.getAllSchemas(TaskTagEnvelope::class).forEach { (_, schema) ->
             val bytes = AvroSerDe.getRandomBinary(schema)
             val e = shouldThrowAny { TaskTagEnvelope.fromByteArray(bytes, schema) }
             e::class shouldBeOneOf listOf(

@@ -234,7 +234,7 @@ data class DispatchWorkflowByCustomId(
   val methodName: MethodName,
   val methodParameters: MethodParameters,
   val methodParameterTypes: MethodParameterTypes?,
-  @AvroDefault(Avro.NULL) val methodTimeout: MillisDuration?,
+  @AvroDefault(Avro.NULL) val methodTimeout: MillisDuration? = null,
   val workflowTags: Set<WorkflowTag>,
   val workflowMeta: WorkflowMeta,
   var parentWorkflowName: WorkflowName?,
@@ -274,7 +274,7 @@ data class DispatchMethodByTag(
   val methodName: MethodName,
   val methodParameterTypes: MethodParameterTypes?,
   val methodParameters: MethodParameters,
-  @AvroDefault(Avro.NULL) val methodTimeout: MillisDuration?,
+  @AvroDefault(Avro.NULL) val methodTimeout: MillisDuration? = null,
   val clientWaiting: Boolean,
   override val emitterName: ClientName
 ) : WorkflowTagMessage()

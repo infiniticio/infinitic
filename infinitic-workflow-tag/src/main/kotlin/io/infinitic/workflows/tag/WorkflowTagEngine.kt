@@ -354,7 +354,7 @@ class WorkflowTagEngine(
         workflowIds,
         emitterName = clientName,
     )
-    producer.send(workflowIdsByTag)
+    coroutineScope { producer.send(workflowIdsByTag) }
   }
 
   private fun discardTagWithoutIds(message: WorkflowTagMessage) {

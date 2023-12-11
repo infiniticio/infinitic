@@ -22,10 +22,12 @@
  */
 package io.infinitic.common.workflows.data.workflowTasks
 
-import com.github.avrokotlin.avro4k.Avro
 import io.infinitic.common.checkBackwardCompatibility
 import io.infinitic.common.checkOrCreateCurrentFile
 import io.infinitic.common.fixtures.TestFactory
+import io.infinitic.common.serDe.SerializedData
+import io.infinitic.common.serDe.SerializedDataType
+import io.infinitic.common.serDe.avro.AvroSerDe
 import io.kotest.assertions.throwables.shouldNotThrowAny
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
@@ -33,21 +35,41 @@ import io.kotest.matchers.shouldBe
 class WorkflowTaskParametersTests :
   StringSpec(
       {
-        "WorkflowTaskParameters should be avro-convertible" {
+        "WorkflowTaskParameters should be SerializedData-convertible" {
           shouldNotThrowAny {
             val msg = TestFactory.random<WorkflowTaskParameters>()
-            val ser = WorkflowTaskParameters.serializer()
-            val byteArray = Avro.default.encodeToByteArray(ser, msg)
-            val msg2 = Avro.default.decodeFromByteArray(ser, byteArray)
+            val msg2 = SerializedData.from(msg).deserialize()
+
             msg shouldBe msg2
           }
         }
 
+        "WorkflowTaskParameters SerializedData should use finger printed schema" {
+          val msg = TestFactory.random<WorkflowTaskParameters>()
+          val data = SerializedData.from(msg)
+          data.type shouldBe SerializedDataType.AVRO_WITH_SCHEMA
+          data.bytes.contentEquals(msg.toByteArray()) shouldBe true
+        }
+
         "We should be able to read WorkflowTaskParameters from any previous version since 0.9.0" {
           // An error in this test means that we need to upgrade the version
-          checkOrCreateCurrentFile(WorkflowTaskParameters.serializer())
+          checkOrCreateCurrentFile(
+              WorkflowTaskParameters::class,
+              WorkflowTaskParameters.serializer(),
+          )
 
-          checkBackwardCompatibility(WorkflowTaskParameters.serializer())
+          checkBackwardCompatibility(
+              WorkflowTaskParameters::class,
+              WorkflowTaskParameters.serializer(),
+          )
+        }
+
+        "We should be able to read binary from any previous version since 0.9.0" {
+          AvroSerDe.getAllSchemas(WorkflowTaskParameters::class).forEach { (_, schema) ->
+            val bytes = AvroSerDe.getRandomBinaryWithSchemaFingerprint(schema)
+
+            shouldNotThrowAny { WorkflowTaskParameters.fromByteArray(bytes) }
+          }
         }
       },
   )
