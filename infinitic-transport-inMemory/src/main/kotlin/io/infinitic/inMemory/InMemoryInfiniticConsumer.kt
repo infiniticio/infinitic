@@ -57,9 +57,9 @@ class InMemoryInfiniticConsumer(private val channels: InMemoryChannels) : Infini
     beforeDlq: (suspend (ClientMessage, Exception) -> Unit)?,
     clientName: ClientName
   ): CompletableFuture<Unit> {
-    val channel = channels.forClient()
+    val channel = channels.forClient(clientName)
     logger.info { "Channel ${channel.id}: Starting Client consumer for $clientName with concurrency = 1" }
-    return startAsync(handler, beforeDlq, channel)
+    return startAsync(handler, beforeDlq, channel, 1)
   }
 
   override fun startTaskTagConsumerAsync(
