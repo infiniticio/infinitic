@@ -20,36 +20,5 @@
  *
  * Licensor: infinitic.io
  */
-include("infinitic-autoclose")
 
-include("infinitic-common")
-
-include("infinitic-cache")
-
-include("infinitic-storage")
-
-include("infinitic-transport")
-
-include("infinitic-transport-inMemory")
-
-include("infinitic-transport-pulsar")
-
-include("infinitic-client")
-
-include("infinitic-task-tag")
-
-include("infinitic-task-executor")
-
-include("infinitic-workflow-tag")
-
-include("infinitic-workflow-engine")
-
-include("infinitic-workflow-task")
-
-include("infinitic-dashboard")
-
-include("infinitic-worker")
-
-include("infinitic-tests")
-
-include("infinitic-logs")
+apply("../publish.gradle.kts")
