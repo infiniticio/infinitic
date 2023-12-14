@@ -30,6 +30,12 @@ import java.io.File
 
 val logger = KotlinLogging.logger("io.infinitic.common.config.loaders")
 
+/**
+ * Loads a configuration object of type [T] from the given list of resource names.
+ *
+ * @param resources The list of resource names to be loaded.
+ * @return The loaded configuration object.
+ */
 inline fun <reified T : Any> loadConfigFromResource(resources: List<String>): T {
   val config =
       ConfigLoaderBuilder.default()
@@ -43,6 +49,12 @@ inline fun <reified T : Any> loadConfigFromResource(resources: List<String>): T 
   return config
 }
 
+/**
+ * Loads a configuration of type [T] from the specified list of files.
+ *
+ * @param files The list of file paths to load the configuration from.
+ * @return The loaded configuration of type [T].
+ */
 inline fun <reified T : Any> loadConfigFromFile(files: List<String>): T {
   val config =
       ConfigLoaderBuilder.default()
@@ -54,6 +66,12 @@ inline fun <reified T : Any> loadConfigFromFile(files: List<String>): T {
   return config
 }
 
+/**
+ * Loads a configuration object from a YAML string.
+ *
+ * @param yaml The YAML string to load the configuration from.
+ * @return The loaded configuration object of type T.
+ */
 inline fun <reified T : Any> loadConfigFromYaml(yaml: String): T {
   val config =
       ConfigLoaderBuilder.default()
