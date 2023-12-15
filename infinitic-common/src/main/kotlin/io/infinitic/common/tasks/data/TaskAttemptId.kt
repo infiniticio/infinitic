@@ -22,11 +22,11 @@
  */
 package io.infinitic.common.tasks.data
 
-import java.util.UUID
+import io.infinitic.common.utils.Tsid
 import kotlinx.serialization.Serializable
 
 @JvmInline
 @Serializable
-value class TaskAttemptId(private val id: String = UUID.randomUUID().toString()) {
+value class TaskAttemptId(private val id: String = Tsid.random()) {
   override fun toString() = id
 }

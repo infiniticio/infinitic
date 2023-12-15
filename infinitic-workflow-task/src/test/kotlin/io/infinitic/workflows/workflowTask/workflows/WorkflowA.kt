@@ -24,12 +24,12 @@ package io.infinitic.workflows.workflowTask.workflows
 
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.infinitic.annotations.Ignore
+import io.infinitic.common.utils.Tsid
 import io.infinitic.workflows.SendChannel
 import io.infinitic.workflows.Workflow
 import io.infinitic.workflows.workflowTask.tasks.TaskA
 import kotlinx.serialization.Serializable
 import org.slf4j.LoggerFactory
-import java.util.*
 
 sealed class Obj
 
@@ -45,6 +45,7 @@ interface WorkflowA {
   val channelObj: SendChannel<Obj>
 }
 
+@Suppress("unused")
 class WorkflowAImpl : Workflow(), WorkflowA {
 
   // a channel
@@ -54,13 +55,13 @@ class WorkflowAImpl : Workflow(), WorkflowA {
   private val newTaskA = newService(TaskA::class.java)
 
   // an existing task
-  //    private val getTaskA = getTaskById(TaskA::class.java, UUID.randomUUID().toString())
+  //    private val getTaskA = getTaskById(TaskA::class.java, Tsid.random())
 
   // a new workflow
   private val newWorkflowA = newWorkflow(WorkflowA::class.java)
 
   // an existing workflow
-  private val getWorkflowA = getWorkflowById(WorkflowA::class.java, UUID.randomUUID().toString())
+  private val getWorkflowA = getWorkflowById(WorkflowA::class.java, Tsid.random())
 
   // a logger
   private var logger1 = LoggerFactory.getLogger(WorkflowAImpl::class.qualifiedName)

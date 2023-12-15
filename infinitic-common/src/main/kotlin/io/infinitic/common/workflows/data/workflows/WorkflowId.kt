@@ -22,13 +22,13 @@
  */
 package io.infinitic.common.workflows.data.workflows
 
+import io.infinitic.common.utils.Tsid
 import io.infinitic.common.workflows.data.commands.CommandId
-import java.util.UUID
 import kotlinx.serialization.Serializable
 
 @JvmInline
 @Serializable
-value class WorkflowId(private val id: String = UUID.randomUUID().toString()) {
+value class WorkflowId(private val id: String = Tsid.random()) {
   companion object {
     fun from(commandId: CommandId) = WorkflowId(commandId.toString())
   }

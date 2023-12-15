@@ -46,6 +46,7 @@ import io.infinitic.common.tasks.executors.messages.TaskExecutorMessage
 import io.infinitic.common.tasks.tags.messages.TaskTagMessage
 import io.infinitic.common.transport.InfiniticConsumer
 import io.infinitic.common.transport.InfiniticProducerAsync
+import io.infinitic.common.utils.Tsid
 import io.infinitic.common.workflows.data.channels.ChannelName
 import io.infinitic.common.workflows.data.channels.ChannelType
 import io.infinitic.common.workflows.data.channels.SignalData
@@ -80,7 +81,6 @@ import io.mockk.every
 import io.mockk.mockk
 import io.mockk.slot
 import io.mockk.verify
-import java.util.*
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CopyOnWriteArrayList
 
@@ -409,7 +409,7 @@ private class ClientWorkflowTests : StringSpec(
 
       "Should be able to send to a channel by id (sync)" {
         // when
-        val id = UUID.randomUUID().toString()
+        val id = Tsid.random()
         client.getWorkflowById(FakeWorkflow::class.java, id).channelString.send("a")
         // then
         workflowTagSlots.size shouldBe 0
@@ -427,7 +427,7 @@ private class ClientWorkflowTests : StringSpec(
 
       "Should be able to emit to a channel by id (async)" {
         // when
-        val id = UUID.randomUUID().toString()
+        val id = Tsid.random()
         val w = client.getWorkflowById(FakeWorkflow::class.java, id)
         client.dispatchAsync(w.channelString::send, "a").join()
         // then
@@ -483,7 +483,7 @@ private class ClientWorkflowTests : StringSpec(
 
       "Should be able to send a complex Object to a channel" {
         // when
-        val id = UUID.randomUUID().toString()
+        val id = Tsid.random()
         val signal = FakeServiceImpl()
         client.getWorkflowById(FakeWorkflow::class.java, id).channelFakeTask.send(signal)
         // then
@@ -507,7 +507,7 @@ private class ClientWorkflowTests : StringSpec(
 
       "Should be able to send a complex Object to a channel targeting a parent type" {
         // when
-        val id = UUID.randomUUID().toString()
+        val id = Tsid.random()
         val signal = FakeServiceImpl()
         client.getWorkflowById(FakeWorkflow::class.java, id).channelFakeServiceParent.send(signal)
         // then
@@ -531,7 +531,7 @@ private class ClientWorkflowTests : StringSpec(
 
       "Should be able to retry tasks of a workflow targeted by id (sync)" {
         // when
-        val id = UUID.randomUUID().toString()
+        val id = Tsid.random()
         val workflow = client.getWorkflowById(FakeWorkflow::class.java, id)
         client.retryTasks(workflow)
         // then
@@ -548,7 +548,7 @@ private class ClientWorkflowTests : StringSpec(
 
       "Should be able to retry tasks of a workflow targeted by id (async)" {
         // when
-        val id = UUID.randomUUID().toString()
+        val id = Tsid.random()
         val workflow = client.getWorkflowById(FakeWorkflow::class.java, id)
         client.retryTasksAsync(workflow).join()
         // then
@@ -565,7 +565,7 @@ private class ClientWorkflowTests : StringSpec(
 
       "Should be able to complete timer of a workflow targeted by id (sync)" {
         // when
-        val id = UUID.randomUUID().toString()
+        val id = Tsid.random()
         val workflow = client.getWorkflowById(FakeWorkflow::class.java, id)
         client.completeTimers(workflow)
         // then
@@ -580,7 +580,7 @@ private class ClientWorkflowTests : StringSpec(
 
       "Should be able to complete timer of a workflow targeted by id (async)" {
         // when
-        val id = UUID.randomUUID().toString()
+        val id = Tsid.random()
         val workflow = client.getWorkflowById(FakeWorkflow::class.java, id)
         client.completeTimersAsync(workflow).join()
         // then
@@ -595,7 +595,7 @@ private class ClientWorkflowTests : StringSpec(
 
       "Should be able to dispatch a method on a workflow per id (async)" {
         // when
-        val id = UUID.randomUUID().toString()
+        val id = Tsid.random()
         val workflow = client.getWorkflowById(FakeWorkflow::class.java, id)
         val deferred = client.dispatch(workflow::m0)
         // then
@@ -642,7 +642,7 @@ private class ClientWorkflowTests : StringSpec(
 
       "Should be able to cancel workflow per id (sync)" {
         // when
-        val id = UUID.randomUUID().toString()
+        val id = Tsid.random()
         val workflow = client.getWorkflowById(FakeWorkflow::class.java, id)
         client.cancel(workflow)
         // then
@@ -658,7 +658,7 @@ private class ClientWorkflowTests : StringSpec(
 
       "Should be able to cancel workflow per id (async)" {
         // when
-        val id = UUID.randomUUID().toString()
+        val id = Tsid.random()
         val workflow = client.getWorkflowById(FakeWorkflow::class.java, id)
         client.cancelAsync(workflow).join()
         // then
@@ -741,7 +741,7 @@ private class ClientWorkflowTests : StringSpec(
           client.retryWorkflowTask(fakeWorkflow.channelString)
         }
 
-        val byId = client.getWorkflowById(FakeWorkflow::class.java, UUID.randomUUID().toString())
+        val byId = client.getWorkflowById(FakeWorkflow::class.java, Tsid.random())
         shouldThrow<InvalidStubException> { client.retryWorkflowTask(byId.channelString) }
 
         val byTag = client.getWorkflowByTag(FakeWorkflow::class.java, "foo")
@@ -751,7 +751,7 @@ private class ClientWorkflowTests : StringSpec(
       "Cancel a channel should throw" {
         shouldThrow<InvalidChannelUsageException> { client.cancel(fakeWorkflow.channelString) }
 
-        val byId = client.getWorkflowById(FakeWorkflow::class.java, UUID.randomUUID().toString())
+        val byId = client.getWorkflowById(FakeWorkflow::class.java, Tsid.random())
         shouldThrow<InvalidStubException> { client.cancel(byId.channelString) }
 
         val byTag = client.getWorkflowByTag(FakeWorkflow::class.java, "foo")
@@ -761,7 +761,7 @@ private class ClientWorkflowTests : StringSpec(
       "Get ids from channel should throw" {
         shouldThrow<InvalidChannelUsageException> { client.getIds(fakeWorkflow.channelString) }
 
-        val byId = client.getWorkflowById(FakeWorkflow::class.java, UUID.randomUUID().toString())
+        val byId = client.getWorkflowById(FakeWorkflow::class.java, Tsid.random())
         shouldThrow<InvalidStubException> { client.getIds(byId.channelString) }
 
         val byTag = client.getWorkflowByTag(FakeWorkflow::class.java, "foo")
