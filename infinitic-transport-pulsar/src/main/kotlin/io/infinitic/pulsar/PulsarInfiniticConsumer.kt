@@ -24,9 +24,9 @@ package io.infinitic.pulsar
 
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.infinitic.autoclose.autoClose
+import io.infinitic.common.clients.data.ClientName
 import io.infinitic.common.clients.messages.ClientEnvelope
 import io.infinitic.common.clients.messages.ClientMessage
-import io.infinitic.common.data.ClientName
 import io.infinitic.common.messages.Envelope
 import io.infinitic.common.messages.Message
 import io.infinitic.common.tasks.data.ServiceName

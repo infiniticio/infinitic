@@ -22,9 +22,9 @@
  */
 package io.infinitic.workflows.workflowTask
 
-import io.infinitic.common.data.ClientName
 import io.infinitic.common.data.ReturnValue
 import io.infinitic.common.workers.config.WorkflowVersion
+import io.infinitic.common.workers.data.WorkerName
 import io.infinitic.common.workflows.data.properties.PropertyHash
 import io.infinitic.common.workflows.data.properties.PropertyName
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTask
@@ -101,7 +101,7 @@ class WorkflowTaskImpl : WorkflowTask {
               workflowName = workflowTaskParameters.workflowName.toString(),
               workflowId = workflowTaskParameters.workflowId.toString(),
               workflowTaskId = Task.taskId,
-              workerException = WorkerException.from(ClientName(Task.workerName), cause),
+              workerException = WorkerException.from(WorkerName(Task.workerName), cause),
           )
         // Throwable are not caught
         else -> throw cause!!

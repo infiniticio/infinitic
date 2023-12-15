@@ -22,8 +22,8 @@
  */
 package io.infinitic.common.transport
 
+import io.infinitic.common.clients.data.ClientName
 import io.infinitic.common.clients.messages.ClientMessage
-import io.infinitic.common.data.ClientName
 import io.infinitic.common.tasks.data.ServiceName
 import io.infinitic.common.tasks.executors.messages.TaskExecutorMessage
 import io.infinitic.common.tasks.tags.messages.TaskTagMessage

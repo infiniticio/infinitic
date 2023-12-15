@@ -23,8 +23,9 @@
 package io.infinitic.tasks.tag
 
 import io.github.oshai.kotlinlogging.KotlinLogging
+import io.infinitic.common.clients.data.ClientName
 import io.infinitic.common.clients.messages.TaskIdsByTag
-import io.infinitic.common.data.ClientName
+import io.infinitic.common.emitters.EmitterName
 import io.infinitic.common.tasks.tags.messages.AddTagToTask
 import io.infinitic.common.tasks.tags.messages.CancelTaskByTag
 import io.infinitic.common.tasks.tags.messages.GetTaskIdsByTag
@@ -50,6 +51,8 @@ class TaskTagEngine(
   private val producer = LoggedInfiniticProducer(javaClass.name, producerAsync)
 
   private val logger = KotlinLogging.logger(javaClass.name)
+
+  private val emitterName by lazy { EmitterName(producer.name) }
 
   suspend fun handle(message: TaskTagMessage) {
     logger.debug { "receiving $message" }
@@ -107,11 +110,11 @@ class TaskTagEngine(
     val taskIds = storage.getTaskIds(message.taskTag, message.serviceName)
 
     val taskIdsByTag = TaskIdsByTag(
-        recipientName = message.emitterName,
-        message.serviceName,
-        message.taskTag,
-        taskIds,
-        emitterName = ClientName(producer.name),
+        recipientName = ClientName.from(message.emitterName),
+        serviceName = message.serviceName,
+        taskTag = message.taskTag,
+        taskIds = taskIds,
+        emitterName = emitterName,
     )
 
     scope.launch { producer.send(taskIdsByTag) }

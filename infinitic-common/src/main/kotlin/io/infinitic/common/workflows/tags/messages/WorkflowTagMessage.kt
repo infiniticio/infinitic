@@ -26,12 +26,12 @@ import com.github.avrokotlin.avro4k.Avro
 import com.github.avrokotlin.avro4k.AvroDefault
 import com.github.avrokotlin.avro4k.AvroName
 import com.github.avrokotlin.avro4k.AvroNamespace
-import io.infinitic.common.data.ClientName
 import io.infinitic.common.data.MessageId
 import io.infinitic.common.data.MillisDuration
 import io.infinitic.common.data.methods.MethodName
 import io.infinitic.common.data.methods.MethodParameterTypes
 import io.infinitic.common.data.methods.MethodParameters
+import io.infinitic.common.emitters.EmitterName
 import io.infinitic.common.messages.Message
 import io.infinitic.common.tasks.data.ServiceName
 import io.infinitic.common.tasks.data.TaskId
@@ -52,8 +52,7 @@ import kotlinx.serialization.Serializable
 @Serializable
 @AvroNamespace("io.infinitic.workflows.tag")
 sealed class WorkflowTagMessage : Message {
-  val messageId = MessageId()
-  abstract val emitterName: ClientName
+  override val messageId = MessageId()
   abstract val workflowTag: WorkflowTag
   abstract val workflowName: WorkflowName
 
@@ -82,7 +81,7 @@ data class SendSignalByTag(
   @AvroName("channelSignal") val signalData: SignalData,
   @AvroName("channelSignalTypes") val channelTypes: Set<ChannelType>,
   var emitterWorkflowId: WorkflowId?,
-  override val emitterName: ClientName
+  override val emitterName: EmitterName
 ) : WorkflowTagMessage()
 
 /**
@@ -101,7 +100,7 @@ data class CancelWorkflowByTag(
   override val workflowTag: WorkflowTag,
   @AvroNamespace("io.infinitic.workflows.data") val reason: WorkflowCancellationReason,
   var emitterWorkflowId: WorkflowId?,
-  override val emitterName: ClientName
+  override val emitterName: EmitterName
 ) : WorkflowTagMessage()
 
 /**
@@ -116,7 +115,7 @@ data class CancelWorkflowByTag(
 data class RetryWorkflowTaskByTag(
   override val workflowName: WorkflowName,
   override val workflowTag: WorkflowTag,
-  override val emitterName: ClientName
+  override val emitterName: EmitterName
 ) : WorkflowTagMessage()
 
 /**
@@ -137,7 +136,7 @@ data class RetryTasksByTag(
   val taskId: TaskId?,
   val taskStatus: DeferredStatus?,
   @SerialName("taskName") val serviceName: ServiceName?,
-  override val emitterName: ClientName
+  override val emitterName: EmitterName
 ) : WorkflowTagMessage()
 
 /**
@@ -154,7 +153,7 @@ data class CompleteTimersByTag(
   override val workflowName: WorkflowName,
   override val workflowTag: WorkflowTag,
   val methodRunId: MethodRunId?,
-  override val emitterName: ClientName
+  override val emitterName: EmitterName
 ) : WorkflowTagMessage()
 
 /**
@@ -171,7 +170,7 @@ data class AddTagToWorkflow(
   override val workflowName: WorkflowName,
   override val workflowTag: WorkflowTag,
   val workflowId: WorkflowId,
-  override val emitterName: ClientName
+  override val emitterName: EmitterName
 ) : WorkflowTagMessage()
 
 /**
@@ -188,7 +187,7 @@ data class RemoveTagFromWorkflow(
   override val workflowName: WorkflowName,
   override val workflowTag: WorkflowTag,
   val workflowId: WorkflowId,
-  override val emitterName: ClientName
+  override val emitterName: EmitterName
 ) : WorkflowTagMessage()
 
 /**
@@ -203,7 +202,7 @@ data class RemoveTagFromWorkflow(
 data class GetWorkflowIdsByTag(
   override val workflowName: WorkflowName,
   override val workflowTag: WorkflowTag,
-  override val emitterName: ClientName
+  override val emitterName: EmitterName
 ) : WorkflowTagMessage()
 
 /**
@@ -241,7 +240,7 @@ data class DispatchWorkflowByCustomId(
   var parentWorkflowId: WorkflowId?,
   var parentMethodRunId: MethodRunId?,
   val clientWaiting: Boolean,
-  override val emitterName: ClientName
+  override val emitterName: EmitterName
 ) : WorkflowTagMessage() {
   init {
     require(workflowTag.isCustomId()) { "workflowTag must be a custom id" }
@@ -276,5 +275,5 @@ data class DispatchMethodByTag(
   val methodParameters: MethodParameters,
   @AvroDefault(Avro.NULL) val methodTimeout: MillisDuration? = null,
   val clientWaiting: Boolean,
-  override val emitterName: ClientName
+  override val emitterName: EmitterName
 ) : WorkflowTagMessage()

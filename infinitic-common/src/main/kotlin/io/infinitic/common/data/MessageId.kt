@@ -22,8 +22,8 @@
  */
 package io.infinitic.common.data
 
-import java.util.UUID
 import kotlinx.serialization.Serializable
+import java.util.*
 
 @JvmInline
 @Serializable

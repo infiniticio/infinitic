@@ -22,8 +22,8 @@
  */
 package io.infinitic.inMemory
 
+import io.infinitic.common.clients.data.ClientName
 import io.infinitic.common.clients.messages.ClientMessage
-import io.infinitic.common.data.ClientName
 import io.infinitic.common.data.MillisDuration
 import io.infinitic.common.messages.Message
 import io.infinitic.common.tasks.data.ServiceName

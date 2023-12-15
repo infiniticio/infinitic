@@ -22,6 +22,7 @@
  */
 package io.infinitic.workflows.engine.handlers
 
+import io.infinitic.common.clients.data.ClientName
 import io.infinitic.common.transport.InfiniticProducer
 import io.infinitic.common.workflows.data.methodRuns.MethodRun
 import io.infinitic.common.workflows.data.methodRuns.MethodRunId
@@ -40,7 +41,7 @@ internal fun CoroutineScope.dispatchWorkflow(
       methodRunId = MethodRunId.from(message.workflowId),
       waitingClients =
       when (message.clientWaiting) {
-        true -> mutableSetOf(message.emitterName)
+        true -> mutableSetOf(ClientName.from(message.emitterName))
         false -> mutableSetOf()
       },
       parentWorkflowId = message.parentWorkflowId,

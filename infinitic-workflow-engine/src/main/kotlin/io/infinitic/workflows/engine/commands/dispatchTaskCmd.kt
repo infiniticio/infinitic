@@ -22,7 +22,7 @@
  */
 package io.infinitic.workflows.engine.commands
 
-import io.infinitic.common.data.ClientName
+import io.infinitic.common.emitters.EmitterName
 import io.infinitic.common.exceptions.thisShouldNotHappen
 import io.infinitic.common.tasks.data.TaskId
 import io.infinitic.common.tasks.data.TaskRetryIndex
@@ -41,6 +41,8 @@ internal fun CoroutineScope.dispatchTaskCmd(
   state: WorkflowState,
   producer: InfiniticProducer
 ) {
+  val emitterName = EmitterName(producer.name)
+
   // send task to task executor
   val executeTask: ExecuteTask = with(pastCommand.command) {
     ExecuteTask(
@@ -59,7 +61,7 @@ internal fun CoroutineScope.dispatchTaskCmd(
         taskRetrySequence = pastCommand.taskRetrySequence,
         taskTags = taskTags,
         taskMeta = taskMeta,
-        emitterName = ClientName(producer.name),
+        emitterName = emitterName,
     )
   }
 
@@ -71,7 +73,7 @@ internal fun CoroutineScope.dispatchTaskCmd(
         serviceName = executeTask.serviceName,
         taskTag = it,
         taskId = executeTask.taskId,
-        emitterName = ClientName(producer.name),
+        emitterName = emitterName,
     )
     launch { producer.send(addTagToTask) }
   }
@@ -90,7 +92,7 @@ internal fun CoroutineScope.dispatchTaskCmd(
               taskId = executeTask.taskId,
               methodName = methodName,
           ),
-          emitterName = ClientName(producer.name),
+          emitterName = emitterName,
       )
     }
     launch { producer.send(taskTimedOut, timeout) }

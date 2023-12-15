@@ -23,7 +23,7 @@
 package io.infinitic.workflows.engine.handlers
 
 import io.infinitic.common.clients.messages.MethodCompleted
-import io.infinitic.common.data.ClientName
+import io.infinitic.common.emitters.EmitterName
 import io.infinitic.common.exceptions.thisShouldNotHappen
 import io.infinitic.common.transport.InfiniticProducer
 import io.infinitic.common.workflows.data.commands.DispatchExistingWorkflowPastCommand
@@ -61,6 +61,8 @@ internal fun CoroutineScope.workflowTaskCompleted(
   state: WorkflowState,
   message: TaskCompleted
 ) {
+  val emitterName = EmitterName(producer.name)
+
   val workflowTaskReturnValue =
       message.taskReturnValue.returnValue.value() as WorkflowTaskReturnValue
 
@@ -152,7 +154,7 @@ internal fun CoroutineScope.workflowTaskCompleted(
           workflowId = state.workflowId,
           methodRunId = methodRun.methodRunId,
           methodReturnValue = methodRun.methodReturnValue!!,
-          emitterName = ClientName(producer.name),
+          emitterName = emitterName,
       )
       launch { producer.send(workflowCompleted) }
     }
@@ -170,7 +172,7 @@ internal fun CoroutineScope.workflowTaskCompleted(
               methodRunId = methodRun.methodRunId,
               returnValue = workflowTaskReturnValue.methodReturnValue!!,
           ),
-          emitterName = ClientName(producer.name),
+          emitterName = emitterName,
       )
       if (it == state.workflowId) {
         // case of method dispatched within same workflow

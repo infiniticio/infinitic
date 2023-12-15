@@ -23,7 +23,7 @@
 package io.infinitic.workflows.engine.handlers
 
 import io.infinitic.common.clients.messages.MethodFailed
-import io.infinitic.common.data.ClientName
+import io.infinitic.common.emitters.EmitterName
 import io.infinitic.common.exceptions.thisShouldNotHappen
 import io.infinitic.common.tasks.executors.errors.MethodFailedError
 import io.infinitic.common.transport.InfiniticProducer
@@ -40,6 +40,7 @@ internal fun CoroutineScope.workflowTaskFailed(
   state: WorkflowState,
   message: TaskFailed
 ) {
+  val emitterName = EmitterName(producer.name)
   val methodRun: MethodRun = state.getRunningMethodRun()
 
   val deferredError =
@@ -55,7 +56,7 @@ internal fun CoroutineScope.workflowTaskFailed(
         workflowId = state.workflowId,
         methodRunId = methodRun.methodRunId,
         cause = deferredError,
-        emitterName = ClientName(producer.name),
+        emitterName = emitterName,
     )
     launch { producer.send(methodFailed) }
   }
@@ -77,7 +78,7 @@ internal fun CoroutineScope.workflowTaskFailed(
             methodRunId = methodRun.methodRunId,
             deferredError = deferredError,
         ),
-        emitterName = ClientName(producer.name),
+        emitterName = emitterName,
     )
     if (it == state.workflowId) {
       // case of method dispatched within same workflow

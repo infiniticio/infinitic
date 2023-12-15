@@ -22,7 +22,7 @@
  */
 package io.infinitic.workflows.engine.helpers
 
-import io.infinitic.common.data.ClientName
+import io.infinitic.common.emitters.EmitterName
 import io.infinitic.common.transport.InfiniticProducer
 import io.infinitic.common.workflows.engine.state.WorkflowState
 import io.infinitic.common.workflows.tags.messages.RemoveTagFromWorkflow
@@ -32,13 +32,12 @@ import kotlinx.coroutines.launch
 internal suspend fun removeTags(producer: InfiniticProducer, state: WorkflowState) =
     coroutineScope {
       state.workflowTags.map {
-        val removeTagFromWorkflow =
-            RemoveTagFromWorkflow(
-                workflowName = state.workflowName,
-                workflowTag = it,
-                workflowId = state.workflowId,
-                emitterName = ClientName(producer.name),
-            )
+        val removeTagFromWorkflow = RemoveTagFromWorkflow(
+            workflowName = state.workflowName,
+            workflowTag = it,
+            workflowId = state.workflowId,
+            emitterName = EmitterName(producer.name),
+        )
         launch { producer.send(removeTagFromWorkflow) }
       }
     }

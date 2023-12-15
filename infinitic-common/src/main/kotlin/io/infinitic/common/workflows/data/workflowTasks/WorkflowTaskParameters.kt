@@ -24,10 +24,10 @@ package io.infinitic.common.workflows.data.workflowTasks
 
 import com.github.avrokotlin.avro4k.Avro
 import com.github.avrokotlin.avro4k.AvroDefault
-import io.infinitic.common.data.ClientName
 import io.infinitic.common.data.methods.MethodName
 import io.infinitic.common.data.methods.MethodParameterTypes
 import io.infinitic.common.data.methods.MethodParameters
+import io.infinitic.common.emitters.EmitterName
 import io.infinitic.common.serDe.avro.AvroSerDe
 import io.infinitic.common.tasks.data.ServiceName
 import io.infinitic.common.tasks.data.TaskId
@@ -57,7 +57,7 @@ data class WorkflowTaskParameters(
   val workflowPropertiesHashValue: Map<PropertyHash, PropertyValue>,
   val workflowTaskIndex: WorkflowTaskIndex,
   val methodRun: MethodRun,
-  val emitterName: ClientName
+  val emitterName: EmitterName
 ) {
   fun toExecuteTaskMessage() =
       ExecuteTask(

@@ -24,9 +24,10 @@ package io.infinitic.tasks.executor
 
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.infinitic.clients.InfiniticClientInterface
-import io.infinitic.common.data.ClientName
+import io.infinitic.common.clients.data.ClientName
 import io.infinitic.common.data.MillisDuration
 import io.infinitic.common.data.ReturnValue
+import io.infinitic.common.emitters.EmitterName
 import io.infinitic.common.exceptions.thisShouldNotHappen
 import io.infinitic.common.parser.getMethodPerNameAndParameters
 import io.infinitic.common.tasks.data.TaskMeta
@@ -43,6 +44,7 @@ import io.infinitic.common.utils.getCheckMode
 import io.infinitic.common.utils.getWithRetry
 import io.infinitic.common.utils.getWithTimeout
 import io.infinitic.common.workers.config.RetryPolicy
+import io.infinitic.common.workers.data.WorkerName
 import io.infinitic.common.workers.registry.WorkerRegistry
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskParameters
 import io.infinitic.exceptions.DeferredException
@@ -77,7 +79,7 @@ class TaskExecutor(
   val producer = LoggedInfiniticProducer(javaClass.name, producerAsync)
   private var withRetry: WithRetry? = null
   private var withTimeout: WithTimeout? = null
-  private val clientName = ClientName(producerAsync.name)
+  private val emitterName = EmitterName(producerAsync.name)
 
   suspend fun handle(msg: TaskExecutorMessage) {
 
@@ -207,10 +209,10 @@ class TaskExecutor(
           msg.logTrace { "sending TaskFailed to client" }
 
           val taskFailed = TaskFailedClient(
-              recipientName = msg.emitterName,
+              recipientName = ClientName.from(msg.emitterName),
               taskId = msg.taskId,
               cause = executionError,
-              emitterName = clientName,
+              emitterName = emitterName,
           )
           launch { producer.send(taskFailed) }
         }
@@ -229,7 +231,7 @@ class TaskExecutor(
                   cause = executionError,
               ),
               deferredError = getDeferredError(cause),
-              emitterName = clientName,
+              emitterName = emitterName,
           )
           launch { producer.send(taskFailed) }
         }
@@ -266,11 +268,11 @@ class TaskExecutor(
       msg.logTrace { "sending TaskCompleted to client" }
 
       val taskCompleted = TaskCompletedClient(
-          recipientName = msg.emitterName,
+          recipientName = ClientName.from(msg.emitterName),
           taskId = msg.taskId,
           taskReturnValue = returnValue,
           taskMeta = taskMeta,
-          emitterName = clientName,
+          emitterName = emitterName,
       )
 
       launch { producer.send(taskCompleted) }
@@ -290,7 +292,7 @@ class TaskExecutor(
               taskMeta = taskMeta,
               returnValue = returnValue,
           ),
-          emitterName = clientName,
+          emitterName = emitterName,
       )
 
       launch { producer.send(taskCompleted) }
@@ -307,7 +309,7 @@ class TaskExecutor(
           taskTag = it,
           serviceName = msg.serviceName,
           taskId = msg.taskId,
-          emitterName = clientName,
+          emitterName = emitterName,
       )
       launch { producer.send(removeTagFromTask) }
     }
@@ -402,7 +404,8 @@ class TaskExecutor(
         false -> null
       }
 
-  private fun Throwable.getExecutionError() = ExecutionError.from(clientName, this)
+  private fun Throwable.getExecutionError() =
+      ExecutionError.from(WorkerName.from(emitterName), this)
 
   private fun ExecuteTask.logError(e: Throwable, description: () -> String) {
     logger.error(e) {

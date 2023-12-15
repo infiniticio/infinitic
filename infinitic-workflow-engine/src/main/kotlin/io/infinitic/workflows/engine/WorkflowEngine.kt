@@ -23,8 +23,9 @@
 package io.infinitic.workflows.engine
 
 import io.github.oshai.kotlinlogging.KotlinLogging
+import io.infinitic.common.clients.data.ClientName
 import io.infinitic.common.clients.messages.MethodRunUnknown
-import io.infinitic.common.data.ClientName
+import io.infinitic.common.emitters.EmitterName
 import io.infinitic.common.exceptions.thisShouldNotHappen
 import io.infinitic.common.tasks.executors.errors.MethodUnknownError
 import io.infinitic.common.transport.InfiniticProducerAsync
@@ -94,7 +95,7 @@ class WorkflowEngine(
 
   private val producer = LoggedInfiniticProducer(javaClass.name, producerAsync)
 
-  private val clientName by lazy { ClientName(producer.name) }
+  private val emitterName by lazy { EmitterName(producer.name) }
 
   suspend fun handle(message: WorkflowEngineMessage) {
     logDebug(message) { "Receiving $message" }
@@ -152,10 +153,10 @@ class WorkflowEngine(
       is DispatchMethodOnRunningWorkflow -> {
         if (message.clientWaiting) {
           val methodRunUnknown = MethodRunUnknown(
-              recipientName = message.emitterName,
+              recipientName = ClientName.from(message.emitterName),
               message.workflowId,
               message.methodRunId,
-              emitterName = clientName,
+              emitterName = emitterName,
           )
           launch { producer.send(methodRunUnknown) }
         }
@@ -172,7 +173,7 @@ class WorkflowEngine(
                       workflowId = message.workflowId,
                       methodRunId = message.methodRunId,
                   ),
-                  emitterName = clientName,
+                  emitterName = emitterName,
               )
           launch { producer.send(childMethodFailed) }
         }
@@ -181,10 +182,10 @@ class WorkflowEngine(
       // a client wants to wait the missing workflow
       is WaitWorkflow -> {
         val methodRunUnknown = MethodRunUnknown(
-            recipientName = message.emitterName,
+            recipientName = ClientName.from(message.emitterName),
             message.workflowId,
             message.methodRunId,
-            emitterName = clientName,
+            emitterName = emitterName,
         )
         launch { producer.send(methodRunUnknown) }
       }

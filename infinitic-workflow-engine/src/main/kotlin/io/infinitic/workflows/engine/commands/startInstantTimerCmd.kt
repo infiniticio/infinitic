@@ -22,8 +22,8 @@
  */
 package io.infinitic.workflows.engine.commands
 
-import io.infinitic.common.data.ClientName
 import io.infinitic.common.data.MillisInstant
+import io.infinitic.common.emitters.EmitterName
 import io.infinitic.common.exceptions.thisShouldNotHappen
 import io.infinitic.common.transport.InfiniticProducer
 import io.infinitic.common.workflows.data.commands.StartInstantTimerCommand
@@ -39,6 +39,7 @@ internal fun CoroutineScope.startInstantTimerCmq(
   state: WorkflowState,
   producer: InfiniticProducer
 ) {
+  val emitterName = EmitterName(producer.name)
   val command: StartInstantTimerCommand = pastCommand.command
 
   val msg = TimerCompleted(
@@ -46,7 +47,7 @@ internal fun CoroutineScope.startInstantTimerCmq(
       workflowId = state.workflowId,
       methodRunId = state.runningMethodRunId ?: thisShouldNotHappen(),
       timerId = TimerId.from(pastCommand.commandId),
-      emitterName = ClientName(producer.name),
+      emitterName = emitterName,
   )
 
   launch { producer.send(msg, command.instant - MillisInstant.now()) }

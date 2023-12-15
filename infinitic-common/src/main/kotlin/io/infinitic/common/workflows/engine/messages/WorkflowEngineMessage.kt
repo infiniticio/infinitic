@@ -24,12 +24,12 @@ package io.infinitic.common.workflows.engine.messages
 
 import com.github.avrokotlin.avro4k.AvroName
 import com.github.avrokotlin.avro4k.AvroNamespace
-import io.infinitic.common.data.ClientName
 import io.infinitic.common.data.MessageId
 import io.infinitic.common.data.ReturnValue
 import io.infinitic.common.data.methods.MethodName
 import io.infinitic.common.data.methods.MethodParameterTypes
 import io.infinitic.common.data.methods.MethodParameters
+import io.infinitic.common.emitters.EmitterName
 import io.infinitic.common.messages.Message
 import io.infinitic.common.tasks.data.ServiceName
 import io.infinitic.common.tasks.data.TaskId
@@ -73,8 +73,7 @@ interface TaskEvent : MethodEvent {
 
 @Serializable
 sealed class WorkflowEngineMessage : Message {
-  val messageId: MessageId = MessageId()
-  abstract val emitterName: ClientName
+  override val messageId: MessageId = MessageId()
   abstract val workflowId: WorkflowId
   abstract val workflowName: WorkflowName
 
@@ -116,7 +115,7 @@ data class DispatchNewWorkflow(
   var parentWorkflowId: WorkflowId?,
   var parentMethodRunId: MethodRunId?,
   val clientWaiting: Boolean,
-  override val emitterName: ClientName
+  override val emitterName: EmitterName
 ) : WorkflowEngineMessage()
 
 /**
@@ -150,7 +149,7 @@ data class DispatchMethodOnRunningWorkflow(
   var parentWorkflowName: WorkflowName?,
   var parentMethodRunId: MethodRunId?,
   val clientWaiting: Boolean,
-  override val emitterName: ClientName
+  override val emitterName: EmitterName
 ) : WorkflowEngineMessage(), WorkflowEvent
 
 /**
@@ -165,7 +164,7 @@ data class DispatchMethodOnRunningWorkflow(
 data class RetryWorkflowTask(
   override val workflowName: WorkflowName,
   override val workflowId: WorkflowId,
-  override val emitterName: ClientName
+  override val emitterName: EmitterName
 ) : WorkflowEngineMessage()
 
 /**
@@ -187,7 +186,7 @@ data class RetryTasks(
   val taskId: TaskId?,
   val taskStatus: DeferredStatus?,
   @SerialName("taskName") val serviceName: ServiceName?,
-  override val emitterName: ClientName
+  override val emitterName: EmitterName
 ) : WorkflowEngineMessage()
 
 /**
@@ -204,7 +203,7 @@ data class CompleteTimers(
   override val workflowName: WorkflowName,
   override val workflowId: WorkflowId,
   val methodRunId: MethodRunId?,
-  override val emitterName: ClientName
+  override val emitterName: EmitterName
 ) : WorkflowEngineMessage()
 
 /**
@@ -221,7 +220,7 @@ data class WaitWorkflow(
   override val workflowName: WorkflowName,
   override val workflowId: WorkflowId,
   val methodRunId: MethodRunId,
-  override val emitterName: ClientName
+  override val emitterName: EmitterName
 ) : WorkflowEngineMessage()
 
 /**
@@ -240,7 +239,7 @@ data class CancelWorkflow(
   override val workflowId: WorkflowId,
   val methodRunId: MethodRunId?,
   @AvroNamespace("io.infinitic.workflows.data") val reason: WorkflowCancellationReason,
-  override val emitterName: ClientName
+  override val emitterName: EmitterName
 ) : WorkflowEngineMessage(), WorkflowEvent
 
 /**
@@ -257,7 +256,7 @@ data class CompleteWorkflow(
   override val workflowName: WorkflowName,
   override val workflowId: WorkflowId,
   val workflowReturnValue: ReturnValue,
-  override val emitterName: ClientName
+  override val emitterName: EmitterName
 ) : WorkflowEngineMessage(), WorkflowEvent
 
 /**
@@ -280,7 +279,7 @@ data class SendSignal(
   @AvroName("channelSignalId") val signalId: SignalId,
   @AvroName("channelSignal") val signalData: SignalData,
   @AvroName("channelSignalTypes") val channelTypes: Set<ChannelType>,
-  override val emitterName: ClientName
+  override val emitterName: EmitterName
 ) : WorkflowEngineMessage(), WorkflowEvent
 
 /**
@@ -303,7 +302,7 @@ data class ChildMethodUnknown(
   override val methodRunId: MethodRunId,
   @SerialName("childUnknownWorkflowError")
   val childMethodUnknownError: MethodUnknownError,
-  override val emitterName: ClientName
+  override val emitterName: EmitterName
 ) : WorkflowEngineMessage(), MethodEvent
 
 /**
@@ -323,7 +322,7 @@ data class ChildMethodCanceled(
   override val methodRunId: MethodRunId,
   @SerialName("childCanceledWorkflowError")
   val childMethodCanceledError: MethodCanceledError,
-  override val emitterName: ClientName
+  override val emitterName: EmitterName
 ) : WorkflowEngineMessage(), MethodEvent
 
 /**
@@ -343,7 +342,7 @@ data class ChildMethodFailed(
   override val methodRunId: MethodRunId,
   @SerialName("childFailedWorkflowError")
   val childMethodFailedError: MethodFailedError,
-  override val emitterName: ClientName
+  override val emitterName: EmitterName
 ) : WorkflowEngineMessage(), MethodEvent
 
 /**
@@ -362,7 +361,7 @@ data class ChildMethodTimedOut(
   override val workflowId: WorkflowId,
   override val methodRunId: MethodRunId,
   val childMethodTimedOutError: MethodTimedOutError,
-  override val emitterName: ClientName
+  override val emitterName: EmitterName
 ) : WorkflowEngineMessage(), MethodEvent
 
 /**
@@ -381,7 +380,7 @@ data class ChildMethodCompleted(
   override val workflowId: WorkflowId,
   override val methodRunId: MethodRunId,
   val childWorkflowReturnValue: WorkflowReturnValue,
-  override val emitterName: ClientName
+  override val emitterName: EmitterName
 ) : WorkflowEngineMessage(), MethodEvent
 
 /**
@@ -401,7 +400,7 @@ data class TaskCanceled(
   override val methodRunId: MethodRunId,
   @SerialName("canceledTaskError")
   val taskCanceledError: TaskCanceledError,
-  override val emitterName: ClientName
+  override val emitterName: EmitterName
 ) : WorkflowEngineMessage(), TaskEvent {
   override fun taskId() = taskCanceledError.taskId
 
@@ -427,7 +426,7 @@ data class TaskFailed(
   @SerialName("failedTaskError")
   val taskFailedError: TaskFailedError,
   val deferredError: DeferredError?,
-  override val emitterName: ClientName
+  override val emitterName: EmitterName
 ) : WorkflowEngineMessage(), TaskEvent {
   override fun taskId() = taskFailedError.taskId
 
@@ -450,7 +449,7 @@ data class TaskTimedOut(
   override val workflowId: WorkflowId,
   override val methodRunId: MethodRunId,
   val taskTimedOutError: TaskTimedOutError,
-  override val emitterName: ClientName
+  override val emitterName: EmitterName
 ) : WorkflowEngineMessage(), TaskEvent {
   override fun taskId() = taskTimedOutError.taskId
 
@@ -473,7 +472,7 @@ data class TaskCompleted(
   override val workflowId: WorkflowId,
   override val methodRunId: MethodRunId,
   val taskReturnValue: TaskReturnValue,
-  override val emitterName: ClientName
+  override val emitterName: EmitterName
 ) : WorkflowEngineMessage(), TaskEvent {
   override fun taskId() = taskReturnValue.taskId
 
@@ -496,5 +495,5 @@ data class TimerCompleted(
   override val workflowId: WorkflowId,
   override val methodRunId: MethodRunId,
   val timerId: TimerId,
-  override val emitterName: ClientName
+  override val emitterName: EmitterName
 ) : WorkflowEngineMessage(), MethodEvent

@@ -22,7 +22,7 @@
  */
 package io.infinitic.workflows.engine.commands
 
-import io.infinitic.common.data.ClientName
+import io.infinitic.common.emitters.EmitterName
 import io.infinitic.common.exceptions.thisShouldNotHappen
 import io.infinitic.common.tasks.executors.errors.MethodTimedOutError
 import io.infinitic.common.transport.InfiniticProducer
@@ -43,14 +43,14 @@ internal fun CoroutineScope.dispatchExistingWorkflowCmd(
   producer: InfiniticProducer,
   bufferedMessages: MutableList<WorkflowEngineMessage>
 ) {
+  val emitterName = EmitterName(producer.name)
   val command: DispatchExistingWorkflowCommand = pastCommand.command
   val methodRunId = MethodRunId.from(pastCommand.commandId)
   val timeout = command.methodTimeout
-  val clientName = ClientName(producer.name)
 
   when {
     command.workflowId != null -> {
-      val dispatchMethodRun = getDispatchMethod(clientName, methodRunId, command, state)
+      val dispatchMethodRun = getDispatchMethod(emitterName, methodRunId, command, state)
 
       when (command.workflowId) {
         // dispatch method on this workflow
@@ -72,7 +72,7 @@ internal fun CoroutineScope.dispatchExistingWorkflowCmd(
                 methodName = command.methodName,
                 methodRunId = methodRunId,
             ),
-            emitterName = clientName,
+            emitterName = emitterName,
         )
 
         launch { producer.send(childMethodTimedOut, timeout) }
@@ -83,7 +83,7 @@ internal fun CoroutineScope.dispatchExistingWorkflowCmd(
       if (state.workflowTags.contains(command.workflowTag!!)) {
         // dispatch method on this workflow
         bufferedMessages.add(
-            getDispatchMethod(ClientName(producer.name), methodRunId, command, state),
+            getDispatchMethod(emitterName, methodRunId, command, state),
         )
       }
 
@@ -99,7 +99,7 @@ internal fun CoroutineScope.dispatchExistingWorkflowCmd(
           methodParameters = command.methodParameters,
           methodTimeout = timeout,
           clientWaiting = false,
-          emitterName = clientName,
+          emitterName = emitterName,
       )
       // tag engine must ignore this message if parentWorkflowId has the provided tag
       launch { producer.send(dispatchMethodByTag) }
@@ -110,7 +110,7 @@ internal fun CoroutineScope.dispatchExistingWorkflowCmd(
 }
 
 private fun getDispatchMethod(
-  emitterName: ClientName,
+  emitterName: EmitterName,
   methodRunId: MethodRunId,
   command: DispatchExistingWorkflowCommand,
   state: WorkflowState

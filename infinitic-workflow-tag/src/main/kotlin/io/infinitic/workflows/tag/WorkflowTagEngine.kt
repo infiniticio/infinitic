@@ -23,8 +23,9 @@
 package io.infinitic.workflows.tag
 
 import io.github.oshai.kotlinlogging.KotlinLogging
+import io.infinitic.common.clients.data.ClientName
 import io.infinitic.common.clients.messages.WorkflowIdsByTag
-import io.infinitic.common.data.ClientName
+import io.infinitic.common.emitters.EmitterName
 import io.infinitic.common.exceptions.thisShouldNotHappen
 import io.infinitic.common.tasks.executors.errors.MethodTimedOutError
 import io.infinitic.common.transport.InfiniticProducerAsync
@@ -65,7 +66,7 @@ class WorkflowTagEngine(
 
   private val logger = KotlinLogging.logger(javaClass.name)
 
-  private val clientName by lazy { ClientName(producer.name) }
+  private val emitterName by lazy { EmitterName(producer.name) }
 
   suspend fun handle(message: WorkflowTagMessage) {
     logger.debug { "receiving $message" }
@@ -98,7 +99,7 @@ class WorkflowTagEngine(
                 workflowName = message.workflowName,
                 workflowTag = it,
                 workflowId = message.workflowId,
-                emitterName = clientName,
+                emitterName = emitterName,
             )
 
             when (it) {
@@ -138,7 +139,7 @@ class WorkflowTagEngine(
                     methodName = message.methodName,
                     methodRunId = MethodRunId.from(message.workflowId),
                 ),
-                emitterName = clientName,
+                emitterName = emitterName,
             )
             launch { producer.send(childMethodTimedOut, timeout) }
           }
@@ -193,7 +194,7 @@ class WorkflowTagEngine(
                 parentWorkflowName = message.parentWorkflowName,
                 parentMethodRunId = message.parentMethodRunId,
                 clientWaiting = false,
-                emitterName = clientName,
+                emitterName = emitterName,
             )
             launch { producer.send(dispatchMethod) }
 
@@ -209,7 +210,7 @@ class WorkflowTagEngine(
                       methodName = message.methodName,
                       methodRunId = message.methodRunId,
                   ),
-                  emitterName = clientName,
+                  emitterName = emitterName,
               )
 
               launch { producer.send(childMethodTimedOut, message.methodTimeout!!) }
@@ -232,7 +233,7 @@ class WorkflowTagEngine(
           val retryWorkflowTask = RetryWorkflowTask(
               workflowName = message.workflowName,
               workflowId = it,
-              emitterName = clientName,
+              emitterName = emitterName,
           )
           launch { producer.send(retryWorkflowTask) }
         }
@@ -255,7 +256,7 @@ class WorkflowTagEngine(
               taskId = message.taskId,
               serviceName = message.serviceName,
               taskStatus = message.taskStatus,
-              emitterName = clientName,
+              emitterName = emitterName,
           )
           launch { producer.send(retryTasks) }
         }
@@ -276,7 +277,7 @@ class WorkflowTagEngine(
               workflowName = message.workflowName,
               workflowId = it,
               methodRunId = message.methodRunId,
-              emitterName = clientName,
+              emitterName = emitterName,
           )
           launch { producer.send(completeTimers) }
         }
@@ -300,7 +301,7 @@ class WorkflowTagEngine(
                 workflowId = it,
                 methodRunId = MethodRunId.from(it),
                 reason = message.reason,
-                emitterName = clientName,
+                emitterName = emitterName,
             )
             launch { producer.send(cancelWorkflow) }
           }
@@ -327,7 +328,7 @@ class WorkflowTagEngine(
                 signalId = message.signalId,
                 signalData = message.signalData,
                 channelTypes = message.channelTypes,
-                emitterName = clientName,
+                emitterName = emitterName,
             )
             launch { producer.send(sendSignal) }
           }
@@ -348,11 +349,11 @@ class WorkflowTagEngine(
     val workflowIds = storage.getWorkflowIds(message.workflowTag, message.workflowName)
 
     val workflowIdsByTag = WorkflowIdsByTag(
-        recipientName = message.emitterName,
+        recipientName = ClientName.from(message.emitterName),
         message.workflowName,
         message.workflowTag,
         workflowIds,
-        emitterName = clientName,
+        emitterName = emitterName,
     )
     coroutineScope { producer.send(workflowIdsByTag) }
   }

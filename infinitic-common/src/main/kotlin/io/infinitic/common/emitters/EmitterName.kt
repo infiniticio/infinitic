@@ -20,17 +20,20 @@
  *
  * Licensor: infinitic.io
  */
-package io.infinitic.common.data
+package io.infinitic.common.emitters
 
-import java.lang.reflect.Method
+import io.infinitic.common.clients.data.ClientName
+import io.infinitic.common.workers.data.WorkerName
 import kotlinx.serialization.Serializable
+
 
 @JvmInline
 @Serializable
-value class ClientName(private val name: String) {
-  companion object {
-    fun from(method: Method) = ClientName(method.declaringClass.name)
-  }
-
+value class EmitterName(private val name: String) {
   override fun toString() = name
+
+  companion object {
+    fun from(clientName: ClientName) = EmitterName(clientName.toString())
+    fun from(workerName: WorkerName) = EmitterName(workerName.toString())
+  }
 }

@@ -23,7 +23,7 @@
 package io.infinitic.workflows.engine.handlers
 
 import io.infinitic.common.clients.messages.MethodCanceled
-import io.infinitic.common.data.ClientName
+import io.infinitic.common.emitters.EmitterName
 import io.infinitic.common.exceptions.thisShouldNotHappen
 import io.infinitic.common.tasks.executors.errors.MethodCanceledError
 import io.infinitic.common.transport.InfiniticProducer
@@ -70,13 +70,15 @@ private fun CoroutineScope.cancelMethodRun(
   methodRun: MethodRun,
   reason: WorkflowCancellationReason
 ) {
+  val emitterName = EmitterName(producer.name)
+
   // inform waiting clients of cancellation
   methodRun.waitingClients.forEach {
     val workflowCanceled = MethodCanceled(
         recipientName = it,
         workflowId = state.workflowId,
         methodRunId = methodRun.methodRunId,
-        emitterName = ClientName(producer.name),
+        emitterName = emitterName,
     )
     launch { producer.send(workflowCanceled) }
   }
@@ -95,7 +97,7 @@ private fun CoroutineScope.cancelMethodRun(
             workflowId = state.workflowId,
             methodRunId = methodRun.methodRunId,
         ),
-        emitterName = ClientName(producer.name),
+        emitterName = emitterName,
     )
     launch { producer.send(childMethodCanceled) }
   }
@@ -111,7 +113,7 @@ private fun CoroutineScope.cancelMethodRun(
                 workflowName = command.workflowName,
                 methodRunId = MethodRunId.from(it.commandId),
                 reason = WorkflowCancellationReason.CANCELED_BY_PARENT,
-                emitterName = ClientName(producer.name),
+                emitterName = emitterName,
             )
             launch { producer.send(cancelWorkflow) }
           }
@@ -122,7 +124,7 @@ private fun CoroutineScope.cancelMethodRun(
                 workflowName = command.workflowName,
                 reason = WorkflowCancellationReason.CANCELED_BY_PARENT,
                 emitterWorkflowId = state.workflowId,
-                emitterName = ClientName(producer.name),
+                emitterName = emitterName,
             )
             launch { producer.send(cancelWorkflowByTag) }
           }
@@ -137,7 +139,7 @@ private fun CoroutineScope.cancelMethodRun(
             workflowName = command.workflowName,
             methodRunId = null,
             reason = WorkflowCancellationReason.CANCELED_BY_PARENT,
-            emitterName = ClientName(producer.name),
+            emitterName = emitterName,
         )
         launch { producer.send(cancelWorkflow) }
       }

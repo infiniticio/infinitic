@@ -24,7 +24,6 @@ package io.infinitic.services.tag
 
 import io.infinitic.common.clients.messages.ClientMessage
 import io.infinitic.common.clients.messages.TaskIdsByTag
-import io.infinitic.common.data.ClientName
 import io.infinitic.common.data.MessageId
 import io.infinitic.common.data.MillisDuration
 import io.infinitic.common.fixtures.TestFactory
@@ -37,6 +36,7 @@ import io.infinitic.common.tasks.tags.messages.GetTaskIdsByTag
 import io.infinitic.common.tasks.tags.messages.RemoveTagFromTask
 import io.infinitic.common.tasks.tags.storage.TaskTagStorage
 import io.infinitic.common.transport.InfiniticProducerAsync
+import io.infinitic.common.workers.data.WorkerName
 import io.infinitic.tasks.tag.TaskTagEngine
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
@@ -54,7 +54,7 @@ import java.util.concurrent.CompletableFuture
 private fun <T : Any> captured(slot: CapturingSlot<T>) =
     if (slot.isCaptured) slot.captured else null
 
-private val clientName = ClientName("clientTaskTagEngineTests")
+private val workername = WorkerName("clientTaskTagEngineTests")
 
 private var stateMessageId = slot<String>()
 private var stateTaskId = slot<String>()
@@ -68,7 +68,7 @@ private lateinit var tagStateStorage: TaskTagStorage
 private fun completed() = CompletableFuture.completedFuture(Unit)
 
 val producerMock = mockk<InfiniticProducerAsync> {
-  every { name } returns "$clientName"
+  every { name } returns "$workername"
   every { sendAsync(capture(clientSlot)) } returns completed()
   every { sendAsync(capture(taskExecutorSlot), capture(delaySlot)) } returns completed()
 }

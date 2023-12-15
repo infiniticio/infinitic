@@ -28,6 +28,7 @@ import io.infinitic.clients.deferred.DeferredChannel
 import io.infinitic.clients.deferred.DeferredSend
 import io.infinitic.clients.deferred.ExistingDeferredWorkflow
 import io.infinitic.clients.deferred.NewDeferredWorkflow
+import io.infinitic.common.clients.data.ClientName
 import io.infinitic.common.clients.messages.ClientMessage
 import io.infinitic.common.clients.messages.MethodCanceled
 import io.infinitic.common.clients.messages.MethodCompleted
@@ -35,9 +36,9 @@ import io.infinitic.common.clients.messages.MethodFailed
 import io.infinitic.common.clients.messages.MethodRunUnknown
 import io.infinitic.common.clients.messages.WorkflowIdsByTag
 import io.infinitic.common.clients.messages.interfaces.MethodMessage
-import io.infinitic.common.data.ClientName
 import io.infinitic.common.data.MillisDuration
 import io.infinitic.common.data.methods.MethodName
+import io.infinitic.common.emitters.EmitterName
 import io.infinitic.common.exceptions.thisShouldNotHappen
 import io.infinitic.common.proxies.ChannelProxyHandler
 import io.infinitic.common.proxies.ExistingServiceProxyHandler
@@ -107,7 +108,7 @@ class ClientDispatcher(
   private val logger = KotlinLogging.logger(logName)
 
   // Name of the client
-  private val clientName by lazy { ClientName(producer.name) }
+  private val emitterName by lazy { EmitterName(producer.name) }
 
   // Scope used to send messages
   private val sendingScope = CoroutineScope(Dispatchers.IO)
@@ -220,7 +221,7 @@ class ClientDispatcher(
           workflowName = workflowName,
           workflowId = workflowId,
           methodRunId = runId,
-          emitterName = clientName,
+          emitterName = emitterName,
       )
       sendingScope.future { producer.send(waitWorkflow) }.exceptionally { throw it }
     }
@@ -277,7 +278,7 @@ class ClientDispatcher(
             workflowId = requestBy.workflowId,
             methodRunId = methodRunId,
             reason = WorkflowCancellationReason.CANCELED_BY_CLIENT,
-            emitterName = clientName,
+            emitterName = emitterName,
         )
         launch { producer.send(msg) }
       }
@@ -288,7 +289,7 @@ class ClientDispatcher(
             workflowTag = requestBy.workflowTag,
             reason = WorkflowCancellationReason.CANCELED_BY_CLIENT,
             emitterWorkflowId = null,
-            emitterName = clientName,
+            emitterName = emitterName,
         )
         launch { producer.send(msg) }
       }
@@ -307,7 +308,7 @@ class ClientDispatcher(
             val msg = RetryWorkflowTask(
                 workflowName = workflowName,
                 workflowId = requestBy.workflowId,
-                emitterName = clientName,
+                emitterName = emitterName,
             )
             launch { producer.send(msg) }
           }
@@ -316,7 +317,7 @@ class ClientDispatcher(
             val msg = RetryWorkflowTaskByTag(
                 workflowName = workflowName,
                 workflowTag = requestBy.workflowTag,
-                emitterName = clientName,
+                emitterName = emitterName,
             )
             launch { producer.send(msg) }
           }
@@ -336,7 +337,7 @@ class ClientDispatcher(
             val msg = CompleteTimers(
                 workflowName = workflowName,
                 workflowId = requestBy.workflowId,
-                emitterName = clientName,
+                emitterName = emitterName,
                 methodRunId = methodRunId,
             )
             launch { producer.send(msg) }
@@ -346,7 +347,7 @@ class ClientDispatcher(
             val msg = CompleteTimersByTag(
                 workflowName = workflowName,
                 workflowTag = requestBy.workflowTag,
-                emitterName = clientName,
+                emitterName = emitterName,
                 methodRunId = methodRunId,
             )
             launch { producer.send(msg) }
@@ -369,7 +370,7 @@ class ClientDispatcher(
             val msg = RetryTaskInWorkflow(
                 workflowName = workflowName,
                 workflowId = requestBy.workflowId,
-                emitterName = clientName,
+                emitterName = emitterName,
                 taskId = taskId,
                 taskStatus = taskStatus,
                 serviceName = serviceName,
@@ -381,7 +382,7 @@ class ClientDispatcher(
             val msg = RetryTaskInWorkflowByTag(
                 workflowName = workflowName,
                 workflowTag = requestBy.workflowTag,
-                emitterName = clientName,
+                emitterName = emitterName,
                 taskId = taskId,
                 taskStatus = taskStatus,
                 serviceName = serviceName,
@@ -408,7 +409,7 @@ class ClientDispatcher(
       val msg = GetWorkflowIdsByTag(
           workflowName = workflowName,
           workflowTag = workflowTag,
-          emitterName = clientName,
+          emitterName = emitterName,
       )
       launch { producer.send(msg) }
     }.exceptionally { throw it }
@@ -484,7 +485,7 @@ class ClientDispatcher(
               workflowName = deferred.workflowName,
               workflowTag = it,
               workflowId = deferred.workflowId,
-              emitterName = clientName,
+              emitterName = emitterName,
           )
         }
         // dispatch workflow message
@@ -500,7 +501,7 @@ class ClientDispatcher(
             parentWorkflowId = null,
             parentMethodRunId = null,
             clientWaiting = clientWaiting,
-            emitterName = clientName,
+            emitterName = emitterName,
         )
 
         sendingScope.future {
@@ -531,7 +532,7 @@ class ClientDispatcher(
             parentWorkflowId = null,
             parentMethodRunId = null,
             clientWaiting = clientWaiting,
-            emitterName = clientName,
+            emitterName = emitterName,
         )
 
         sendingScope.future {
@@ -634,7 +635,7 @@ class ClientDispatcher(
           parentWorkflowName = null,
           parentMethodRunId = null,
           clientWaiting = clientWaiting,
-          emitterName = clientName,
+          emitterName = emitterName,
       )
       sendingScope.future { producer.send(dispatchMethod) }.join()
     }
@@ -652,7 +653,7 @@ class ClientDispatcher(
           methodParameters = handler.methodParameters,
           methodTimeout = deferred.methodTimeout,
           clientWaiting = clientWaiting,
-          emitterName = clientName,
+          emitterName = emitterName,
       )
       sendingScope.future { producer.send(dispatchMethodByTag) }.join()
     }
@@ -693,7 +694,7 @@ class ClientDispatcher(
             signalId = deferredSend.signalId,
             signalData = handler.signalData,
             channelTypes = handler.channelTypes,
-            emitterName = clientName,
+            emitterName = emitterName,
         )
         sendingScope.future { producer.send(sendSignal) }.join()
       }
@@ -707,7 +708,7 @@ class ClientDispatcher(
             signalData = handler.signalData,
             channelTypes = handler.channelTypes,
             emitterWorkflowId = null,
-            emitterName = clientName,
+            emitterName = emitterName,
         )
         sendingScope.future { producer.send(sendSignalByTag) }.join()
       }
@@ -741,7 +742,7 @@ class ClientDispatcher(
     // lazily starts client consumer if not already started
     synchronized(this) {
       if (!isClientConsumerInitialized) {
-        consumer.startClientConsumerAsync(::handle, null, clientName)
+        consumer.startClientConsumerAsync(::handle, null, ClientName.from(emitterName))
         isClientConsumerInitialized = true
       }
     }

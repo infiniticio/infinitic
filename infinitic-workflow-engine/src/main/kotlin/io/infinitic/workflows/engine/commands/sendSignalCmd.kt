@@ -22,7 +22,7 @@
  */
 package io.infinitic.workflows.engine.commands
 
-import io.infinitic.common.data.ClientName
+import io.infinitic.common.emitters.EmitterName
 import io.infinitic.common.exceptions.thisShouldNotHappen
 import io.infinitic.common.transport.InfiniticProducer
 import io.infinitic.common.workflows.data.channels.SignalId
@@ -42,11 +42,12 @@ internal fun CoroutineScope.sendSignalCmd(
   producer: InfiniticProducer,
   bufferedMessages: MutableList<WorkflowEngineMessage>
 ) {
+  val emitterName = EmitterName(producer.name)
   val command: SendSignalCommand = pastCommand.command
 
   when {
     command.workflowId != null -> {
-      val sendToChannel = getSendSignal(ClientName(producer.name), pastCommand.commandId, command)
+      val sendToChannel = getSendSignal(emitterName, pastCommand.commandId, command)
 
       when (command.workflowId) {
         state.workflowId ->
@@ -61,7 +62,7 @@ internal fun CoroutineScope.sendSignalCmd(
 
     command.workflowTag != null -> {
       if (state.workflowTags.contains(command.workflowTag!!)) {
-        val sendToChannel = getSendSignal(ClientName(producer.name), pastCommand.commandId, command)
+        val sendToChannel = getSendSignal(emitterName, pastCommand.commandId, command)
         bufferedMessages.add(sendToChannel)
       }
       // dispatch signal per tag
@@ -74,7 +75,7 @@ internal fun CoroutineScope.sendSignalCmd(
               signalData = command.signalData,
               channelTypes = command.channelTypes,
               emitterWorkflowId = state.workflowId,
-              emitterName = ClientName(producer.name),
+              emitterName = emitterName,
           )
       launch { producer.send(sendSignalByTag) }
     }
@@ -84,7 +85,7 @@ internal fun CoroutineScope.sendSignalCmd(
 }
 
 private fun getSendSignal(
-  emitterName: ClientName,
+  emitterName: EmitterName,
   commandId: CommandId,
   command: SendSignalCommand
 ) =

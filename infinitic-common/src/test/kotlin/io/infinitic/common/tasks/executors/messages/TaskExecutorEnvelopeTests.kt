@@ -58,9 +58,10 @@ class TaskExecutorEnvelopeTests :
         }
 
         "We should be able to read binary from any previous version since 0.9.0" {
-          AvroSerDe.getAllSchemas(TaskExecutorEnvelope::class).forEach { (_, schema) ->
+          AvroSerDe.getAllSchemas(TaskExecutorEnvelope::class).forEach { (version, schema) ->
             val bytes = AvroSerDe.getRandomBinary(schema)
             val e = shouldThrowAny { TaskExecutorEnvelope.fromByteArray(bytes, schema) }
+            println("$version - $e")
             e::class shouldBeOneOf listOf(
                 // IllegalArgumentException is thrown because we have more than 1 message in the envelope
                 IllegalArgumentException::class,

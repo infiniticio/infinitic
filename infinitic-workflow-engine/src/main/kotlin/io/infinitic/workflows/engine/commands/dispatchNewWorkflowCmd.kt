@@ -22,7 +22,7 @@
  */
 package io.infinitic.workflows.engine.commands
 
-import io.infinitic.common.data.ClientName
+import io.infinitic.common.emitters.EmitterName
 import io.infinitic.common.exceptions.thisShouldNotHappen
 import io.infinitic.common.tasks.executors.errors.MethodTimedOutError
 import io.infinitic.common.transport.InfiniticProducer
@@ -43,9 +43,8 @@ internal fun CoroutineScope.dispatchNewWorkflowCmd(
   state: WorkflowState,
   producer: InfiniticProducer
 ) {
+  val emitterName = EmitterName(producer.name)
   val command: DispatchNewWorkflowCommand = pastCommand.command
-
-  // id of the workflow to dispatch
   val workflowId = WorkflowId.from(pastCommand.commandId)
   val workflowName = command.workflowName
   val methodName = command.methodName
@@ -68,7 +67,7 @@ internal fun CoroutineScope.dispatchNewWorkflowCmd(
           parentWorkflowId = state.workflowId,
           parentMethodRunId = state.runningMethodRunId,
           clientWaiting = false,
-          emitterName = ClientName(producer.name),
+          emitterName = emitterName,
       )
       launch { producer.send(dispatchWorkflow) }
 
@@ -79,7 +78,7 @@ internal fun CoroutineScope.dispatchNewWorkflowCmd(
                 workflowName = dispatchWorkflow.workflowName,
                 workflowTag = it,
                 workflowId = workflowId,
-                emitterName = ClientName(producer.name),
+                emitterName = emitterName,
             )
         launch { producer.send(addTagToWorkflow) }
       }
@@ -101,7 +100,7 @@ internal fun CoroutineScope.dispatchNewWorkflowCmd(
           parentWorkflowId = state.workflowId,
           parentMethodRunId = state.runningMethodRunId,
           clientWaiting = false,
-          emitterName = ClientName(producer.name),
+          emitterName = emitterName,
       )
 
       launch { producer.send(dispatchWorkflowByCustomId) }
@@ -124,7 +123,7 @@ internal fun CoroutineScope.dispatchNewWorkflowCmd(
             methodName = methodName,
             methodRunId = MethodRunId.from(workflowId),
         ),
-        emitterName = ClientName(producer.name),
+        emitterName = emitterName,
     )
     launch { producer.send(childMethodTimedOut, timeout) }
   }

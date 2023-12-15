@@ -25,13 +25,14 @@
 package io.infinitic.tasks.executor
 
 import io.infinitic.clients.InfiniticClientInterface
+import io.infinitic.common.clients.data.ClientName
 import io.infinitic.common.clients.messages.ClientMessage
-import io.infinitic.common.data.ClientName
 import io.infinitic.common.data.MillisDuration
 import io.infinitic.common.data.ReturnValue
 import io.infinitic.common.data.methods.MethodName
 import io.infinitic.common.data.methods.MethodParameterTypes
 import io.infinitic.common.data.methods.MethodParameters
+import io.infinitic.common.emitters.EmitterName
 import io.infinitic.common.tasks.data.ServiceName
 import io.infinitic.common.tasks.data.TaskId
 import io.infinitic.common.tasks.data.TaskMeta
@@ -47,6 +48,7 @@ import io.infinitic.common.tasks.tags.messages.TaskTagMessage
 import io.infinitic.common.transport.InfiniticProducerAsync
 import io.infinitic.common.workers.config.ExponentialBackoffRetryPolicy
 import io.infinitic.common.workers.config.WorkflowVersion
+import io.infinitic.common.workers.data.WorkerName
 import io.infinitic.common.workers.registry.RegisteredService
 import io.infinitic.common.workers.registry.WorkerRegistry
 import io.infinitic.common.workflows.data.methodRuns.MethodRunId
@@ -85,7 +87,8 @@ import io.infinitic.common.clients.messages.TaskFailed as TaskFailedClient
 import io.infinitic.common.workflows.engine.messages.TaskCompleted as TaskCompletedWorkflow
 import io.infinitic.common.workflows.engine.messages.TaskFailed as TaskFailedWorkflow
 
-private val clientName = ClientName("clientTaskExecutorTests")
+private val testEmitterName = EmitterName("clientTaskExecutorTests")
+private val testWorkerName = WorkerName.from(testEmitterName)
 
 class TaskExecutorTests :
   StringSpec(
@@ -102,7 +105,7 @@ class TaskExecutorTests :
         val workerRegistry = mockk<WorkerRegistry>()
         val client = mockk<InfiniticClientInterface>()
         val producerAsync = mockk<InfiniticProducerAsync> {
-          every { name } returns "$clientName"
+          every { name } returns "$testWorkerName"
           every { sendAsync(capture(clientSlot)) } returns completed()
           every { sendAsync(capture(taskTagSlots)) } returns completed()
           every { sendAsync(capture(taskExecutorSlot), capture(afterSlot)) } returns completed()
@@ -320,7 +323,7 @@ class TaskExecutorTests :
               msg.copy(
                   taskRetryIndex = msg.taskRetryIndex + 1,
                   lastError =
-                  ExecutionError.from(clientName, IllegalStateException())
+                  ExecutionError.from(testWorkerName, IllegalStateException())
                       .copy(stackTraceToString = executeTask.lastError!!.stackTraceToString),
               )
           clientSlot.isCaptured shouldBe false
@@ -342,7 +345,7 @@ class TaskExecutorTests :
               msg.copy(
                   taskRetryIndex = msg.taskRetryIndex + 1,
                   lastError =
-                  ExecutionError.from(clientName, IllegalStateException())
+                  ExecutionError.from(testWorkerName, IllegalStateException())
                       .copy(stackTraceToString = executeTask.lastError!!.stackTraceToString),
               )
           clientSlot.isCaptured shouldBe false
@@ -364,7 +367,7 @@ class TaskExecutorTests :
               msg.copy(
                   taskRetryIndex = msg.taskRetryIndex + 1,
                   lastError =
-                  ExecutionError.from(clientName, IllegalStateException())
+                  ExecutionError.from(testWorkerName, IllegalStateException())
                       .copy(stackTraceToString = executeTask.lastError!!.stackTraceToString),
               )
           clientSlot.isCaptured shouldBe false
@@ -464,11 +467,11 @@ class TaskExecutorTests :
 
 private fun getTaskCompletedClient(msg: ExecuteTask, returnValue: Any?) =
     TaskCompletedClient(
-        recipientName = msg.emitterName,
+        recipientName = ClientName.from(msg.emitterName),
         taskId = msg.taskId,
         taskReturnValue = ReturnValue.from(returnValue),
         taskMeta = msg.taskMeta,
-        emitterName = clientName,
+        emitterName = testEmitterName,
     )
 
 private fun getTaskCompletedWorkflow(msg: ExecuteTask, returnValue: Any?) =
@@ -480,7 +483,7 @@ private fun getTaskCompletedWorkflow(msg: ExecuteTask, returnValue: Any?) =
         TaskReturnValue(
             msg.taskId, msg.serviceName, msg.taskMeta, ReturnValue.from(returnValue),
         ),
-        emitterName = clientName,
+        emitterName = testEmitterName,
     )
 
 private fun getExecuteTask(method: String, input: Array<out Any?>, types: List<String>?) =
@@ -500,7 +503,7 @@ private fun getExecuteTask(method: String, input: Array<out Any?>, types: List<S
         methodParameters = MethodParameters.from(*input),
         taskTags = setOf(TaskTag("foo"), TaskTag("bar")),
         taskMeta = TaskMeta(),
-        emitterName = clientName,
+        emitterName = testEmitterName,
     )
 
 private fun checkClientException(
@@ -509,11 +512,11 @@ private fun checkClientException(
   exception: KClass<out Exception>
 ) =
     with(clientMessage.captured as TaskFailedClient) {
-      recipientName shouldBe msg.emitterName
-      emitterName shouldBe clientName
+      recipientName shouldBe ClientName.from(msg.emitterName)
+      emitterName shouldBe testEmitterName
       taskId shouldBe msg.taskId
       with(cause) {
-        workerName shouldBe clientName
+        workerName shouldBe testWorkerName
         name shouldBe exception.java.name
       }
     }
@@ -524,7 +527,7 @@ private fun checkWorkflowException(
   exception: KClass<out Exception>
 ) =
     with(workflowMessage.captured as TaskFailedWorkflow) {
-      emitterName shouldBe clientName
+      emitterName shouldBe testEmitterName
       workflowId shouldBe msg.workflowId
       workflowName shouldBe msg.workflowName
       methodRunId shouldBe msg.methodRunId
@@ -533,7 +536,7 @@ private fun checkWorkflowException(
         taskId shouldBe msg.taskId
         methodName shouldBe msg.methodName
         with(cause) {
-          workerName shouldBe clientName
+          workerName shouldBe testWorkerName
           name shouldBe exception.java.name
         }
       }
@@ -545,5 +548,5 @@ private fun getRemoveTag(message: ExecuteTask, tag: String) =
         taskId = message.taskId,
         serviceName = message.serviceName,
         taskTag = TaskTag(tag),
-        emitterName = clientName,
+        emitterName = testEmitterName,
     )

@@ -20,14 +20,19 @@
  *
  * Licensor: infinitic.io
  */
-package io.infinitic.common.messages
+package io.infinitic.common.clients.data
 
-import io.infinitic.common.data.MessageId
 import io.infinitic.common.emitters.EmitterName
+import kotlinx.serialization.Serializable
+import java.lang.reflect.Method
 
-interface Message {
-  val messageId: MessageId?
-  val emitterName: EmitterName
+@JvmInline
+@Serializable
+value class ClientName(private val name: String) {
+  companion object {
+    fun from(method: Method) = ClientName(method.declaringClass.name)
+    fun from(emitterName: EmitterName) = ClientName(emitterName.toString())
+  }
 
-  fun envelope(): Envelope<out Message>
+  override fun toString() = name
 }

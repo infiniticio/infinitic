@@ -25,10 +25,11 @@ package io.infinitic.common.tasks.executors.messages
 import com.github.avrokotlin.avro4k.Avro
 import com.github.avrokotlin.avro4k.AvroDefault
 import com.github.avrokotlin.avro4k.AvroNamespace
-import io.infinitic.common.data.ClientName
+import io.infinitic.common.data.MessageId
 import io.infinitic.common.data.methods.MethodName
 import io.infinitic.common.data.methods.MethodParameterTypes
 import io.infinitic.common.data.methods.MethodParameters
+import io.infinitic.common.emitters.EmitterName
 import io.infinitic.common.messages.Message
 import io.infinitic.common.tasks.data.ServiceName
 import io.infinitic.common.tasks.data.TaskId
@@ -49,7 +50,6 @@ import kotlinx.serialization.Serializable
 sealed class TaskExecutorMessage : Message {
   abstract val taskId: TaskId
   abstract val serviceName: ServiceName
-  abstract val emitterName: ClientName
 
   override fun envelope() = TaskExecutorEnvelope.from(this)
 
@@ -59,20 +59,21 @@ sealed class TaskExecutorMessage : Message {
 @Serializable
 @AvroNamespace("io.infinitic.tasks.executor")
 data class ExecuteTask(
-    @SerialName("taskName") override val serviceName: ServiceName,
-    override val taskId: TaskId,
-    override val emitterName: ClientName,
-    val clientWaiting: Boolean,
-    val methodName: MethodName,
-    val methodParameterTypes: MethodParameterTypes?,
-    val methodParameters: MethodParameters,
-    val taskRetrySequence: TaskRetrySequence,
-    val taskRetryIndex: TaskRetryIndex,
-    val lastError: ExecutionError?,
-    val workflowId: WorkflowId?,
-    val workflowName: WorkflowName?,
-    @AvroDefault(Avro.NULL) val workflowVersion: WorkflowVersion?,
-    val methodRunId: MethodRunId?,
-    val taskTags: Set<TaskTag>,
-    val taskMeta: TaskMeta
+  @AvroDefault(Avro.NULL) override val messageId: MessageId? = MessageId(),
+  @SerialName("taskName") override val serviceName: ServiceName,
+  override val taskId: TaskId,
+  override val emitterName: EmitterName,
+  val clientWaiting: Boolean,
+  val methodName: MethodName,
+  val methodParameterTypes: MethodParameterTypes?,
+  val methodParameters: MethodParameters,
+  val taskRetrySequence: TaskRetrySequence,
+  val taskRetryIndex: TaskRetryIndex,
+  val lastError: ExecutionError?,
+  val workflowId: WorkflowId?,
+  val workflowName: WorkflowName?,
+  @AvroDefault(Avro.NULL) val workflowVersion: WorkflowVersion?,
+  val methodRunId: MethodRunId?,
+  val taskTags: Set<TaskTag>,
+  val taskMeta: TaskMeta
 ) : TaskExecutorMessage()
