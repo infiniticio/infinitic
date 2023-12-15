@@ -21,14 +21,8 @@
  * Licensor: infinitic.io
  */
 
-dependencies {
+package io.infinitic.logs
 
-  implementation(project(":infinitic-common"))
-
-  testImplementation(Libs.Kotlin.reflect)
-  testImplementation(Libs.Avro4k.core)
+object Logs {
 
 }
-
-apply("../publish.gradle.kts")
-

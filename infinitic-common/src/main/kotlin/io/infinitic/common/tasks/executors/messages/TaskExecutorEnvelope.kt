@@ -59,7 +59,7 @@ data class TaskExecutorEnvelope(
         AvroSerDe.readBinary(bytes, readerSchema, serializer())
 
     /** Current avro Schema */
-    val writerSchema = AvroSerDe.schema(serializer())
+    val writerSchema = AvroSerDe.currentSchema(serializer())
   }
 
   override fun message(): TaskExecutorMessage =
