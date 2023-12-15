@@ -43,6 +43,10 @@ object Libs {
     const val json = "org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.0"
   }
 
+  object Hypersistence {
+    const val tsid = "io.hypersistence:hypersistence-tsid:2.1.1"
+  }
+
   object JsonPath {
     const val jayway = "com.jayway.jsonpath:json-path:2.8.0"
   }

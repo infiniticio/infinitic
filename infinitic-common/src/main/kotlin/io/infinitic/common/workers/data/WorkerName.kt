@@ -20,23 +20,17 @@
  *
  * Licensor: infinitic.io
  */
-package io.infinitic.common.serDe.kserializer
+package io.infinitic.common.workers.data
 
-import java.util.UUID
-import kotlinx.serialization.KSerializer
-import kotlinx.serialization.descriptors.PrimitiveKind
-import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
-import kotlinx.serialization.descriptors.SerialDescriptor
-import kotlinx.serialization.encoding.Decoder
-import kotlinx.serialization.encoding.Encoder
+import io.infinitic.common.emitters.EmitterName
+import kotlinx.serialization.Serializable
 
-object UUIDSerializer : KSerializer<UUID> {
-  override val descriptor: SerialDescriptor =
-      PrimitiveSerialDescriptor("UUID", PrimitiveKind.STRING)
+@JvmInline
+@Serializable
+value class WorkerName(private val name: String) {
+  override fun toString() = name
 
-  override fun serialize(encoder: Encoder, value: UUID) {
-    encoder.encodeString(value.toString())
+  companion object {
+    fun from(emitterName: EmitterName) = WorkerName(emitterName.toString())
   }
-
-  override fun deserialize(decoder: Decoder) = UUID.fromString(decoder.decodeString())
 }

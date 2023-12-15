@@ -22,12 +22,12 @@
  */
 package io.infinitic.common.data
 
+import io.infinitic.common.utils.Tsid
 import kotlinx.serialization.Serializable
-import java.util.*
 
 @JvmInline
 @Serializable
-value class MessageId(private val id: String = UUID.randomUUID().toString()) {
+value class MessageId(private val id: String = Tsid.random()) {
   companion object {
     fun fromByteArray(bytes: ByteArray) = MessageId(bytes.decodeToString())
   }
