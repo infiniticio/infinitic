@@ -20,34 +20,18 @@
  *
  * Licensor: infinitic.io
  */
-include("infinitic-autoclose")
 
-include("infinitic-common")
+dependencies {
 
-include("infinitic-cache")
+  implementation(Libs.CloudEvents.core)
+  implementation(Libs.CloudEvents.api)
+  implementation(Libs.Avro4k.core)
 
-include("infinitic-storage")
+  implementation(project(":infinitic-common"))
 
-include("infinitic-transport")
+  testImplementation(Libs.Kotlin.reflect)
 
-include("infinitic-transport-inMemory")
+}
 
-include("infinitic-transport-pulsar")
+apply("../publish.gradle.kts")
 
-include("infinitic-client")
-
-include("infinitic-task-tag")
-
-include("infinitic-task-executor")
-
-include("infinitic-workflow-tag")
-
-include("infinitic-workflow-engine")
-
-include("infinitic-workflow-task")
-
-include("infinitic-dashboard")
-
-include("infinitic-worker")
-
-include("infinitic-tests")

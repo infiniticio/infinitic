@@ -47,6 +47,12 @@ object Libs {
     const val tsid = "io.hypersistence:hypersistence-tsid:2.1.1"
   }
 
+  object CloudEvents {
+    private const val version = "2.5.0"
+    const val core = "io.cloudevents:cloudevents-core:$version"
+    const val api = "io.cloudevents:cloudevents-api:$version"
+  }
+
   object JsonPath {
     const val jayway = "com.jayway.jsonpath:json-path:2.8.0"
   }

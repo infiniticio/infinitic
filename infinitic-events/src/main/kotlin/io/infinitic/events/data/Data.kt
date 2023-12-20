@@ -20,34 +20,10 @@
  *
  * Licensor: infinitic.io
  */
-include("infinitic-autoclose")
 
-include("infinitic-common")
+package io.infinitic.events.data
 
-include("infinitic-cache")
+import kotlinx.serialization.Serializable
 
-include("infinitic-storage")
-
-include("infinitic-transport")
-
-include("infinitic-transport-inMemory")
-
-include("infinitic-transport-pulsar")
-
-include("infinitic-client")
-
-include("infinitic-task-tag")
-
-include("infinitic-task-executor")
-
-include("infinitic-workflow-tag")
-
-include("infinitic-workflow-engine")
-
-include("infinitic-workflow-task")
-
-include("infinitic-dashboard")
-
-include("infinitic-worker")
-
-include("infinitic-tests")
+@Serializable
+sealed interface Data

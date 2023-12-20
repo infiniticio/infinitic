@@ -24,9 +24,12 @@ package io.infinitic.common.serDe.avro
 
 import com.github.avrokotlin.avro4k.Avro
 import io.infinitic.common.exceptions.thisShouldNotHappen
+import io.infinitic.current
+import io.infinitic.isReleaseVersion
 import io.infinitic.versions
 import kotlinx.serialization.InternalSerializationApi
 import kotlinx.serialization.KSerializer
+import kotlinx.serialization.serializer
 import kotlinx.serialization.serializerOrNull
 import org.apache.avro.Schema
 import org.apache.avro.file.SeekableByteArrayInput
@@ -49,6 +52,7 @@ import java.util.concurrent.ConcurrentHashMap
 import kotlin.reflect.KClass
 
 /** This object provides methods to serialize/deserialize an Avro-generated class */
+@OptIn(InternalSerializationApi::class)
 object AvroSerDe {
 
   const val SCHEMAS_FOLDER = "schemas"
@@ -89,7 +93,7 @@ object AvroSerDe {
   }
 
   /** Object -> Avro binary with schema fingerprint */
-  fun <T> writeBinaryWithSchemaFingerprint(
+  fun <T : Any> writeBinaryWithSchemaFingerprint(
     t: T,
     serializer: KSerializer<T>
   ): ByteArray {
@@ -106,7 +110,6 @@ object AvroSerDe {
     bytes: ByteArray,
     klass: KClass<T>,
   ): T {
-    @OptIn(InternalSerializationApi::class)
     val serializer: KSerializer<T> = klass.serializerOrNull() ?: thisShouldNotHappen()
     val decoder = messageDecoder(klass, serializer)
 
@@ -132,8 +135,7 @@ object AvroSerDe {
 
   /** Object -> Avro binary */
   fun <T : Any> writeBinary(t: T, serializer: KSerializer<T>): ByteArray {
-    val record: GenericRecord = Avro.default.toRecord(serializer, currentSchema(serializer), t)
-
+    val record = Avro.default.toRecord(serializer, currentSchema(serializer), t)
     val datumWriter = GenericDatumWriter<GenericRecord>(currentSchema(serializer))
     val out = ByteArrayOutputStream()
     val encoder = EncoderFactory.get().binaryEncoder(out, null)
@@ -165,10 +167,18 @@ object AvroSerDe {
       this::class.java.getResource(url)?.readText()
     }
 
-    return versions.zip(schemas)
+    val released = versions.zip(schemas)
         .filter { (_, schema) -> schema != null }
         .toMap()
         .mapValues { (_, schema) -> Schema.Parser().parse(schema) }
+        as MutableMap
+
+    // add current version if not already there
+    if (!isReleaseVersion) {
+      released[current] = currentSchema(klass.serializer())
+    }
+
+    return released
   }
 
   @TestOnly

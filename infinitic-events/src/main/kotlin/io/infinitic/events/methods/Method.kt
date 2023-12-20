@@ -21,5 +21,13 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.logs.messages
+package io.infinitic.events.methods
 
+import io.infinitic.common.data.methods.MethodName
+import kotlinx.serialization.Serializable
+
+@Serializable
+data class Method(
+  val methodName: MethodName,
+  val methodArgs: MethodArgs,
+)

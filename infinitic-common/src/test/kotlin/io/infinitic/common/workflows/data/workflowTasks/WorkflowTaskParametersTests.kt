@@ -22,8 +22,8 @@
  */
 package io.infinitic.common.workflows.data.workflowTasks
 
-import io.infinitic.common.checkBackwardCompatibility
-import io.infinitic.common.checkOrCreateCurrentFile
+import io.infinitic.common.fixtures.checkBackwardCompatibility
+import io.infinitic.common.fixtures.checkOrCreateCurrentFile
 import io.infinitic.common.fixtures.TestFactory
 import io.infinitic.common.serDe.SerializedData
 import io.infinitic.common.serDe.SerializedDataType

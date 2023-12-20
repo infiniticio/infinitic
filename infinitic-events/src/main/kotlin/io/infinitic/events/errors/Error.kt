@@ -21,5 +21,13 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.logs.messages
+package io.infinitic.events.errors
 
+import kotlinx.serialization.Serializable
+
+@Serializable
+data class Error(
+  val errorName: String,
+  val errorMessage: String,
+  val errorStackTrace: String
+)

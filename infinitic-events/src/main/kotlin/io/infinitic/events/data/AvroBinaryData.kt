@@ -21,8 +21,36 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.logs
+package io.infinitic.events.data
 
-object Logs {
+import kotlinx.serialization.Serializable
 
+/**
+ * Represents a serialized object in Avro format, **including a schema fingerprint**
+ *
+ * @property `class` The class of the serialized object.
+ * @property avro The Avro binary data.
+ */
+@Serializable
+data class AvroBinaryData(
+  val `class`: String,
+  val avro: ByteArray,
+) : Data {
+  override fun equals(other: Any?): Boolean {
+    if (this === other) return true
+    if (javaClass != other?.javaClass) return false
+
+    other as AvroBinaryData
+
+    if (`class` != other.`class`) return false
+    if (!avro.contentEquals(other.avro)) return false
+
+    return true
+  }
+
+  override fun hashCode(): Int {
+    var result = `class`.hashCode()
+    result = 31 * result + avro.contentHashCode()
+    return result
+  }
 }

@@ -25,11 +25,11 @@ package io.infinitic
 import io.infinitic.common.serDe.avro.AvroSerDe
 
 /** Current version (release or snapshot) */
-internal val current: String = AvroSerDe::class.java.getResource("/current")!!.readText()
+val current: String = AvroSerDe::class.java.getResource("/current")!!.readText()
 
 /** List of all release versions used for schema backward compatibility */
-internal val versions: List<String> =
+val versions: List<String> =
     AvroSerDe::class.java.getResource("/versions")!!.readText().split("\n").reversed()
 
 /** If [current] is in [versions] - it's a release version */
-fun isReleaseVersion() = current in versions
+val isReleaseVersion = current in versions

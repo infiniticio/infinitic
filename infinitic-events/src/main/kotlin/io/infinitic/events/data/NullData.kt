@@ -21,5 +21,14 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.logs.messages
+package io.infinitic.events.data
 
+import kotlinx.serialization.Serializable
+
+/**
+ * Represents a type of data that has a `null` value.
+ */
+@Serializable
+data class NullData(
+  val `class`: String,
+) : Data

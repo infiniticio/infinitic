@@ -21,14 +21,25 @@
  * Licensor: infinitic.io
  */
 
-dependencies {
+package io.infinitic.events
 
-  implementation(project(":infinitic-common"))
+private const val TYPE_DOMAIN = "io.infinitic"
+private const val TYPE_TASK = "$TYPE_DOMAIN.task"
 
-  testImplementation(Libs.Kotlin.reflect)
-  testImplementation(Libs.Avro4k.core)
-
+enum class InfiniticEventType(val type: String) {
+  TASK_DISPATCHED(
+      type = "$TYPE_TASK.dispatched",
+  ),
+  TASK_STARTED(
+      type = "$TYPE_TASK.started",
+  ),
+  TASK_COMPLETED(
+      type = "$TYPE_TASK.completed",
+  ),
+  TASK_FAILED(
+      type = "$TYPE_TASK.failed",
+  ),
+  TASK_RETRIED(
+      type = "$TYPE_TASK.retried",
+  );
 }
-
-apply("../publish.gradle.kts")
-

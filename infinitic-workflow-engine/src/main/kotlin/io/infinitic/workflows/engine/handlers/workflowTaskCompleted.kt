@@ -74,7 +74,7 @@ internal fun CoroutineScope.workflowTaskCompleted(
   // retrieve current methodRun
   val methodRun = state.getRunningMethodRun()
 
-  // if current step status was CurrentlyFailed
+  // if current step status was CurrentlyFailed / CurrentlyTimedOut
   // convert it to a definitive StepStatus.Failed
   // as the error has been caught by the workflow
   // idem for CurrentlyTimedOut
