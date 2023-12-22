@@ -187,7 +187,7 @@ internal class ErrorsWorkflowTests :
           deferred.await() shouldBe "ok"
         }
 
-        "retry a caught failed task should not throw and influence workflow" {
+        "retry a caught failed task should not throw and task status can change after retry" {
           errorsWorkflow.failing9() shouldBe true
         }
 
