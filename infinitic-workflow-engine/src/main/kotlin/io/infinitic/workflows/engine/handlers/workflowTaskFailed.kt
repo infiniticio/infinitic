@@ -58,7 +58,7 @@ internal fun CoroutineScope.workflowTaskFailed(
         cause = deferredError,
         emitterName = emitterName,
     )
-    launch { producer.send(methodFailed) }
+    launch { producer.sendToClient(methodFailed) }
   }
   methodRun.waitingClients.clear()
 
@@ -67,9 +67,6 @@ internal fun CoroutineScope.workflowTaskFailed(
   // send to parent workflow
   methodRun.parentWorkflowId?.let {
     val childMethodFailed = ChildMethodFailed(
-        workflowId = it,
-        workflowName = methodRun.parentWorkflowName ?: thisShouldNotHappen(),
-        methodRunId = methodRun.parentMethodRunId ?: thisShouldNotHappen(),
         childMethodFailedError =
         MethodFailedError(
             workflowName = state.workflowName,
@@ -78,13 +75,16 @@ internal fun CoroutineScope.workflowTaskFailed(
             methodRunId = methodRun.methodRunId,
             deferredError = deferredError,
         ),
+        workflowName = methodRun.parentWorkflowName ?: thisShouldNotHappen(),
+        workflowId = it,
+        methodRunId = methodRun.parentMethodRunId ?: thisShouldNotHappen(),
         emitterName = emitterName,
     )
     if (it == state.workflowId) {
       // case of method dispatched within same workflow
       bufferedMessages.add(childMethodFailed)
     } else {
-      launch { producer.send(childMethodFailed) }
+      launch { producer.sendToWorkflowEngineLater(childMethodFailed) }
     }
   }
 

@@ -44,11 +44,12 @@ internal fun completeTimer(state: WorkflowState, message: CompleteTimers) {
         .forEach {
           val msg =
               TimerCompleted(
+                  TimerId.from(it.commandId),
                   message.workflowName,
                   message.workflowId,
                   methodRunId,
-                  TimerId.from(it.commandId),
-                  emitterName = message.emitterName)
+                  emitterName = message.emitterName,
+              )
           // add fake message at the top of the messagesBuffer list
           state.messagesBuffer.add(0, msg)
         }

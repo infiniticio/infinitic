@@ -46,14 +46,21 @@ interface InfiniticProducerAsync {
    *
    * @param message the message to send
    */
-  fun sendAsync(message: ClientMessage): CompletableFuture<Unit>
+  fun sendToClientAsync(message: ClientMessage): CompletableFuture<Unit>
 
   /**
    * Asynchronously send a message to a workflow tag engine
    *
    * @param message the message to send
    */
-  fun sendAsync(message: WorkflowTagMessage): CompletableFuture<Unit>
+  fun sendToWorkflowTagAsync(message: WorkflowTagMessage): CompletableFuture<Unit>
+
+  /**
+   * Asynchronously send a message to workflow start
+   *
+   * @param message the message to send
+   */
+  fun sendToWorkflowCmdAsync(message: WorkflowEngineMessage): CompletableFuture<Unit>
 
   /**
    * Asynchronously send a message to a workflow engine
@@ -61,7 +68,7 @@ interface InfiniticProducerAsync {
    * @param message the message to send
    * @param after the delay before sending the message
    */
-  fun sendAsync(
+  fun sendToWorkflowEngineAsync(
     message: WorkflowEngineMessage,
     after: MillisDuration = MillisDuration.ZERO
   ): CompletableFuture<Unit>
@@ -71,7 +78,7 @@ interface InfiniticProducerAsync {
    *
    * @param message the message to send
    */
-  fun sendAsync(message: TaskTagMessage): CompletableFuture<Unit>
+  fun sendToTaskTagAsync(message: TaskTagMessage): CompletableFuture<Unit>
 
   /**
    * Asynchronously send a message to a task executor
@@ -79,7 +86,7 @@ interface InfiniticProducerAsync {
    * @param message the message to send
    * @param after the delay before sending the message
    */
-  fun sendAsync(
+  fun sendToTaskExecutorAsync(
     message: TaskExecutorMessage,
     after: MillisDuration = MillisDuration.ZERO
   ): CompletableFuture<Unit>

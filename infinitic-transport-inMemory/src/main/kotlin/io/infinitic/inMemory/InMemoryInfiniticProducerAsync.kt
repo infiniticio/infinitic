@@ -47,21 +47,28 @@ class InMemoryInfiniticProducerAsync(private val channels: InMemoryChannels) :
 
   override var name = DEFAULT_NAME
 
-  override fun sendAsync(
+  override fun sendToClientAsync(
     message: ClientMessage
   ): CompletableFuture<Unit> = sendAsync(
       message,
       channels.forClient(message.recipientName),
   )
 
-  override fun sendAsync(
+  override fun sendToWorkflowTagAsync(
     message: WorkflowTagMessage
   ): CompletableFuture<Unit> = sendAsync(
       message,
       channels.forWorkflowTag(message.workflowName),
   )
 
-  override fun sendAsync(
+  override fun sendToWorkflowCmdAsync(
+    message: WorkflowEngineMessage
+  ): CompletableFuture<Unit> = sendAsync(
+      message,
+      channels.forWorkflowCmd(message.workflowName),
+  )
+
+  override fun sendToWorkflowEngineAsync(
     message: WorkflowEngineMessage,
     after: MillisDuration
   ): CompletableFuture<Unit> = when {
@@ -76,14 +83,14 @@ class InMemoryInfiniticProducerAsync(private val channels: InMemoryChannels) :
     )
   }
 
-  override fun sendAsync(
+  override fun sendToTaskTagAsync(
     message: TaskTagMessage
   ) = sendAsync(
       message,
       channels.forTaskTag(message.serviceName),
   )
 
-  override fun sendAsync(
+  override fun sendToTaskExecutorAsync(
     message: TaskExecutorMessage,
     after: MillisDuration
   ): CompletableFuture<Unit> = when {

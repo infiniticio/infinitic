@@ -159,7 +159,7 @@ data class SerializedData(
 
   /** Readable version */
   override fun toString() = mapOf(
-      "bytes" to getJson(),
+      "bytes" to getJson().replace("\n", ""),
       "type" to type,
       "meta" to meta.mapValues { String(it.value) },
   ).toString()

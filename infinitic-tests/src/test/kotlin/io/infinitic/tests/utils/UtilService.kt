@@ -24,6 +24,7 @@
 
 package io.infinitic.tests.utils
 
+import io.infinitic.annotations.Retry
 import io.infinitic.annotations.Timeout
 import io.infinitic.common.tasks.data.TaskMeta
 import io.infinitic.tasks.Task
@@ -74,6 +75,7 @@ interface UtilService : ParentInterface {
   fun tryAgain(): Int
 }
 
+@Retry(Only1Retry::class)
 class UtilServiceImpl : UtilService {
   override fun concat(str1: String, str2: String): String = str1 + str2
 
@@ -104,11 +106,11 @@ class UtilServiceImpl : UtilService {
 
   override fun failingWithThrowable() = throw Throwable("really sorry")
 
-  override fun successAtRetry() =
-      when (Task.retrySequence) {
-        0 -> throw ExpectedException()
-        else -> "ok"
-      }
+  @Retry(NoRetry::class)
+  override fun successAtRetry() = when (Task.retrySequence) {
+    0 -> throw ExpectedException("expected exception")
+    else -> "ok"
+  }
 
   override fun parent() = "ok"
 

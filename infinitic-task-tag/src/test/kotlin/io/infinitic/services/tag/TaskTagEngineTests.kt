@@ -69,8 +69,8 @@ private fun completed() = CompletableFuture.completedFuture(Unit)
 
 val producerMock = mockk<InfiniticProducerAsync> {
   every { name } returns "$workername"
-  every { sendAsync(capture(clientSlot)) } returns completed()
-  every { sendAsync(capture(taskExecutorSlot), capture(delaySlot)) } returns completed()
+  every { sendToClientAsync(capture(clientSlot)) } returns completed()
+  every { sendToTaskExecutorAsync(capture(taskExecutorSlot), capture(delaySlot)) } returns completed()
 }
 
 private inline fun <reified T : Any> random(values: Map<String, Any?>? = null) =
@@ -153,7 +153,7 @@ internal class TaskTagEngineTests :
           coVerifySequence {
             tagStateStorage.getTaskIds(msgIn.taskTag, msgIn.serviceName)
             producerMock.name
-            producerMock.sendAsync(ofType<TaskIdsByTag>())
+            producerMock.sendToClientAsync(ofType<TaskIdsByTag>())
             tagStateStorage.setLastMessageId(msgIn.taskTag, msgIn.serviceName, msgIn.messageId)
           }
 

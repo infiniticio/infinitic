@@ -47,7 +47,7 @@ internal fun CoroutineScope.waitWorkflow(
           methodRunId = message.methodRunId,
           emitterName = emitterName,
       )
-      launch { producer.send(methodRunUnknown) }
+      launch { producer.sendToClient(methodRunUnknown) }
     }
 
     else -> methodRun.waitingClients.add(clientName)

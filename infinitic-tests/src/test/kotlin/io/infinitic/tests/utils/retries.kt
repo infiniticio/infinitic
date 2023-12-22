@@ -20,24 +20,18 @@
  *
  * Licensor: infinitic.io
  */
-package io.infinitic.workflows.engine.helpers
 
-import io.infinitic.common.emitters.EmitterName
-import io.infinitic.common.transport.InfiniticProducer
-import io.infinitic.common.workflows.engine.state.WorkflowState
-import io.infinitic.common.workflows.tags.messages.RemoveTagFromWorkflow
-import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.launch
+package io.infinitic.tests.utils
 
-internal suspend fun removeTags(producer: InfiniticProducer, state: WorkflowState) =
-    coroutineScope {
-      state.workflowTags.map {
-        val removeTagFromWorkflow = RemoveTagFromWorkflow(
-            workflowName = state.workflowName,
-            workflowTag = it,
-            workflowId = state.workflowId,
-            emitterName = EmitterName(producer.name),
-        )
-        launch { producer.sendToWorkflowTag(removeTagFromWorkflow) }
-      }
-    }
+import io.infinitic.tasks.WithRetry
+
+class NoRetry : WithRetry {
+  override fun getSecondsBeforeRetry(retry: Int, e: Exception) = null
+}
+
+class Only1Retry : WithRetry {
+  override fun getSecondsBeforeRetry(retry: Int, e: Exception) = when (retry) {
+    0 -> 1.0
+    else -> null
+  }
+}

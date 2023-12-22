@@ -87,6 +87,11 @@ class PulsarInfiniticProducerAsync(
     resourceManager.getProducerName(name, WorkflowTopicDescription.TAG)
   }
 
+  // Name of producers sending messages to workflow start
+  private val workflowCmdProducerName by lazy {
+    resourceManager.getProducerName(name, WorkflowTopicDescription.CMD)
+  }
+
   // Name of producers sending messages to workflow engine
   private val workflowEngineProducerName by lazy {
     resourceManager.getProducerName(name, WorkflowTopicDescription.ENGINE)
@@ -104,7 +109,7 @@ class PulsarInfiniticProducerAsync(
 
 
   // Asynchronously send message to client
-  override fun sendAsync(message: ClientMessage): CompletableFuture<Unit> {
+  override fun sendToClientAsync(message: ClientMessage): CompletableFuture<Unit> {
     val topic = resourceManager.initTopic(
         "${message.recipientName}", ClientTopicDescription.RESPONSE,
     ).getOrElse { return CompletableFuture.failedFuture(it) }
@@ -117,11 +122,10 @@ class PulsarInfiniticProducerAsync(
   }
 
   // Asynchronously send message to Workflow Tag
-  override fun sendAsync(message: WorkflowTagMessage): CompletableFuture<Unit> {
-    val topic =
-        resourceManager.initTopic(
-            "${message.workflowName}", WorkflowTopicDescription.TAG,
-        ).getOrElse { return CompletableFuture.failedFuture(it) }
+  override fun sendToWorkflowTagAsync(message: WorkflowTagMessage): CompletableFuture<Unit> {
+    val topic = resourceManager
+        .initTopic("${message.workflowName}", WorkflowTopicDescription.TAG)
+        .getOrElse { return CompletableFuture.failedFuture(it) }
 
     logger.debug { "Sending to topic '$topic': '$message'" }
 
@@ -130,8 +134,20 @@ class PulsarInfiniticProducerAsync(
     )
   }
 
+  override fun sendToWorkflowCmdAsync(message: WorkflowEngineMessage): CompletableFuture<Unit> {
+    val topic = resourceManager
+        .initTopic("${message.workflowName}", WorkflowTopicDescription.CMD)
+        .getOrElse { return CompletableFuture.failedFuture(it) }
+
+    logger.debug { "Sending to topic '$topic': '$message'" }
+
+    return producer.sendAsync<WorkflowEngineMessage, WorkflowEngineEnvelope>(
+        message, zero, topic, workflowCmdProducerName, key = "${message.workflowId}",
+    )
+  }
+
   // Asynchronously send message to Workflow Engine
-  override fun sendAsync(
+  override fun sendToWorkflowEngineAsync(
     message: WorkflowEngineMessage,
     after: MillisDuration
   ): CompletableFuture<Unit> {
@@ -149,7 +165,7 @@ class PulsarInfiniticProducerAsync(
   }
 
   // Asynchronously send message to Task Tag
-  override fun sendAsync(message: TaskTagMessage): CompletableFuture<Unit> {
+  override fun sendToTaskTagAsync(message: TaskTagMessage): CompletableFuture<Unit> {
     val topic = resourceManager.initTopic("${message.serviceName}", ServiceTopicDescription.TAG)
         .getOrElse { return CompletableFuture.failedFuture(it) }
 
@@ -161,7 +177,7 @@ class PulsarInfiniticProducerAsync(
   }
 
   // Asynchronously send message to Task Executor
-  override fun sendAsync(
+  override fun sendToTaskExecutorAsync(
     message: TaskExecutorMessage,
     after: MillisDuration
   ): CompletableFuture<Unit> {

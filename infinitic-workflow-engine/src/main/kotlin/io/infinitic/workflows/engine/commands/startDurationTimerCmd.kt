@@ -43,14 +43,14 @@ internal fun CoroutineScope.startDurationTimerCmd(
   val command: StartDurationTimerCommand = pastCommand.command
 
   val msg = TimerCompleted(
+      timerId = TimerId.from(pastCommand.commandId),
       workflowName = state.workflowName,
       workflowId = state.workflowId,
       methodRunId = state.runningMethodRunId ?: thisShouldNotHappen(),
-      timerId = TimerId.from(pastCommand.commandId),
       emitterName = emitterName,
   )
   // The duration is offset by the time spent in the workflow task
   val diff = state.runningWorkflowTaskInstant!! - MillisInstant.now()
 
-  launch { producer.send(msg, command.duration + diff) }
+  launch { producer.sendToWorkflowEngineLater(msg, command.duration + diff) }
 }

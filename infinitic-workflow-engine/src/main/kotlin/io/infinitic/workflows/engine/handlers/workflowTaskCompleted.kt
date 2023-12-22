@@ -156,29 +156,29 @@ internal fun CoroutineScope.workflowTaskCompleted(
           methodReturnValue = methodRun.methodReturnValue!!,
           emitterName = emitterName,
       )
-      launch { producer.send(workflowCompleted) }
+      launch { producer.sendToClient(workflowCompleted) }
     }
     methodRun.waitingClients.clear()
 
     // tell parent workflow if any
     methodRun.parentWorkflowId?.let {
       val childMethodCompleted = ChildMethodCompleted(
-          workflowName = methodRun.parentWorkflowName ?: thisShouldNotHappen(),
-          workflowId = it,
-          methodRunId = methodRun.parentMethodRunId ?: thisShouldNotHappen(),
           childWorkflowReturnValue =
           WorkflowReturnValue(
               workflowId = state.workflowId,
               methodRunId = methodRun.methodRunId,
               returnValue = workflowTaskReturnValue.methodReturnValue!!,
           ),
+          workflowName = methodRun.parentWorkflowName ?: thisShouldNotHappen(),
+          workflowId = it,
+          methodRunId = methodRun.parentMethodRunId ?: thisShouldNotHappen(),
           emitterName = emitterName,
       )
       if (it == state.workflowId) {
         // case of method dispatched within same workflow
         bufferedMessages.add(childMethodCompleted)
       } else {
-        launch { producer.send(childMethodCompleted) }
+        launch { producer.sendToWorkflowEngineLater(childMethodCompleted) }
       }
     }
   }

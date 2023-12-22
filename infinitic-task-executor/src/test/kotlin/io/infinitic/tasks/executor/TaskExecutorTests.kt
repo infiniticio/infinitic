@@ -106,10 +106,10 @@ class TaskExecutorTests :
         val client = mockk<InfiniticClientInterface>()
         val producerAsync = mockk<InfiniticProducerAsync> {
           every { name } returns "$testWorkerName"
-          every { sendAsync(capture(clientSlot)) } returns completed()
-          every { sendAsync(capture(taskTagSlots)) } returns completed()
-          every { sendAsync(capture(taskExecutorSlot), capture(afterSlot)) } returns completed()
-          every { sendAsync(capture(workflowEngineSlot), capture(afterSlot)) } returns completed()
+          every { sendToClientAsync(capture(clientSlot)) } returns completed()
+          every { sendToTaskTagAsync(capture(taskTagSlots)) } returns completed()
+          every { sendToTaskExecutorAsync(capture(taskExecutorSlot), capture(afterSlot)) } returns completed()
+          every { sendToWorkflowEngineAsync(capture(workflowEngineSlot), capture(afterSlot)) } returns completed()
         }
 
         val taskExecutor = TaskExecutor(workerRegistry, producerAsync, client)

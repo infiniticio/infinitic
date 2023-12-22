@@ -86,6 +86,13 @@ enum class WorkflowTopicDescription : TopicDescription {
     override val isDelayed = false
     override val hasDeadLetter = true
   },
+  CMD {
+    override val subscriptionPrefix = "workflow-cmd"
+    override val subscriptionType = SubscriptionType.Key_Shared
+    override val isPartitioned = true
+    override val isDelayed = false
+    override val hasDeadLetter = true
+  },
   ENGINE {
     override val subscriptionPrefix = "workflow-engine"
     override val subscriptionType = SubscriptionType.Key_Shared

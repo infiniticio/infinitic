@@ -218,12 +218,12 @@ class ClientDispatcher(
     // if task was not initially sync, then send WaitTask message
     if (clientWaiting) {
       val waitWorkflow = WaitWorkflow(
+          methodRunId = runId,
           workflowName = workflowName,
           workflowId = workflowId,
-          methodRunId = runId,
           emitterName = emitterName,
       )
-      sendingScope.future { producer.send(waitWorkflow) }.exceptionally { throw it }
+      sendingScope.future { producer.sendToWorkflowCmd(waitWorkflow) }.exceptionally { throw it }
     }
 
     // Get result
@@ -274,13 +274,13 @@ class ClientDispatcher(
     when (requestBy) {
       is RequestByWorkflowId -> {
         val msg = CancelWorkflow(
+            reason = WorkflowCancellationReason.CANCELED_BY_CLIENT,
+            methodRunId = methodRunId,
             workflowName = workflowName,
             workflowId = requestBy.workflowId,
-            methodRunId = methodRunId,
-            reason = WorkflowCancellationReason.CANCELED_BY_CLIENT,
             emitterName = emitterName,
         )
-        launch { producer.send(msg) }
+        launch { producer.sendToWorkflowCmd(msg) }
       }
 
       is RequestByWorkflowTag -> {
@@ -291,7 +291,7 @@ class ClientDispatcher(
             emitterWorkflowId = null,
             emitterName = emitterName,
         )
-        launch { producer.send(msg) }
+        launch { producer.sendToWorkflowTag(msg) }
       }
 
       else -> thisShouldNotHappen()
@@ -310,7 +310,7 @@ class ClientDispatcher(
                 workflowId = requestBy.workflowId,
                 emitterName = emitterName,
             )
-            launch { producer.send(msg) }
+            launch { producer.sendToWorkflowCmd(msg) }
           }
 
           is RequestByWorkflowTag -> {
@@ -319,7 +319,7 @@ class ClientDispatcher(
                 workflowTag = requestBy.workflowTag,
                 emitterName = emitterName,
             )
-            launch { producer.send(msg) }
+            launch { producer.sendToWorkflowTag(msg) }
           }
 
           else -> thisShouldNotHappen()
@@ -335,12 +335,12 @@ class ClientDispatcher(
         when (requestBy) {
           is RequestByWorkflowId -> {
             val msg = CompleteTimers(
+                methodRunId = methodRunId,
                 workflowName = workflowName,
                 workflowId = requestBy.workflowId,
                 emitterName = emitterName,
-                methodRunId = methodRunId,
             )
-            launch { producer.send(msg) }
+            launch { producer.sendToWorkflowCmd(msg) }
           }
 
           is RequestByWorkflowTag -> {
@@ -350,7 +350,7 @@ class ClientDispatcher(
                 emitterName = emitterName,
                 methodRunId = methodRunId,
             )
-            launch { producer.send(msg) }
+            launch { producer.sendToWorkflowTag(msg) }
           }
 
           else -> thisShouldNotHappen()
@@ -375,7 +375,7 @@ class ClientDispatcher(
                 taskStatus = taskStatus,
                 serviceName = serviceName,
             )
-            launch { producer.send(msg) }
+            launch { producer.sendToWorkflowCmd(msg) }
           }
 
           is RequestByWorkflowTag -> {
@@ -387,7 +387,7 @@ class ClientDispatcher(
                 taskStatus = taskStatus,
                 serviceName = serviceName,
             )
-            launch { producer.send(msg) }
+            launch { producer.sendToWorkflowTag(msg) }
           }
 
           else -> thisShouldNotHappen()
@@ -411,7 +411,7 @@ class ClientDispatcher(
           workflowTag = workflowTag,
           emitterName = emitterName,
       )
-      launch { producer.send(msg) }
+      launch { producer.sendToWorkflowTag(msg) }
     }.exceptionally { throw it }
 
     val workflowIdsByTag = waiting.join() as WorkflowIdsByTag
@@ -507,10 +507,10 @@ class ClientDispatcher(
         sendingScope.future {
 
           // first, we send all tags in parallel
-          coroutineScope { workflowTags.forEach { launch { producer.send(it) } } }
+          coroutineScope { workflowTags.forEach { launch { producer.sendToWorkflowTag(it) } } }
           // workflow message is dispatched after tags
           // to avoid a potential race condition if the engine remove tags
-          producer.send(dispatchWorkflow)
+          producer.sendToWorkflowCmd(dispatchWorkflow)
 
           deferred
         }
@@ -536,7 +536,7 @@ class ClientDispatcher(
         )
 
         sendingScope.future {
-          producer.send(dispatchWorkflowByCustomId)
+          producer.sendToWorkflowTag(dispatchWorkflowByCustomId)
 
           deferred
         }
@@ -637,7 +637,7 @@ class ClientDispatcher(
           clientWaiting = clientWaiting,
           emitterName = emitterName,
       )
-      sendingScope.future { producer.send(dispatchMethod) }.join()
+      sendingScope.future { producer.sendToWorkflowCmd(dispatchMethod) }.join()
     }
 
     is RequestByWorkflowTag -> {
@@ -655,7 +655,7 @@ class ClientDispatcher(
           clientWaiting = clientWaiting,
           emitterName = emitterName,
       )
-      sendingScope.future { producer.send(dispatchMethodByTag) }.join()
+      sendingScope.future { producer.sendToWorkflowTag(dispatchMethodByTag) }.join()
     }
   }
 
@@ -688,15 +688,15 @@ class ClientDispatcher(
     when {
       handler.requestBy is RequestByWorkflowId -> {
         val sendSignal = SendSignal(
-            workflowName = handler.workflowName,
-            workflowId = (handler.requestBy as RequestByWorkflowId).workflowId,
             channelName = handler.channelName,
             signalId = deferredSend.signalId,
             signalData = handler.signalData,
             channelTypes = handler.channelTypes,
+            workflowName = handler.workflowName,
+            workflowId = (handler.requestBy as RequestByWorkflowId).workflowId,
             emitterName = emitterName,
         )
-        sendingScope.future { producer.send(sendSignal) }.join()
+        sendingScope.future { producer.sendToWorkflowCmd(sendSignal) }.join()
       }
 
       handler.requestBy is RequestByWorkflowTag -> {
@@ -710,7 +710,7 @@ class ClientDispatcher(
             emitterWorkflowId = null,
             emitterName = emitterName,
         )
-        sendingScope.future { producer.send(sendSignalByTag) }.join()
+        sendingScope.future { producer.sendToWorkflowTag(sendSignalByTag) }.join()
       }
 
       else -> thisShouldNotHappen()

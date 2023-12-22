@@ -57,25 +57,25 @@ internal fun CoroutineScope.dispatchExistingWorkflowCmd(
         state.workflowId -> bufferedMessages.add(dispatchMethodRun)
 
         // dispatch method on another workflow
-        else -> launch { producer.send(dispatchMethodRun) }
+        else -> launch { producer.sendToWorkflowEngineLater(dispatchMethodRun) }
       }
 
       // set timeout if any
       if (timeout != null) {
         val childMethodTimedOut = ChildMethodTimedOut(
-            workflowName = state.workflowName,
-            workflowId = state.workflowId,
-            methodRunId = state.runningMethodRunId ?: thisShouldNotHappen(),
             childMethodTimedOutError = MethodTimedOutError(
                 workflowName = command.workflowName,
                 workflowId = command.workflowId!!,
                 methodName = command.methodName,
                 methodRunId = methodRunId,
             ),
+            workflowName = state.workflowName,
+            workflowId = state.workflowId,
+            methodRunId = state.runningMethodRunId ?: thisShouldNotHappen(),
             emitterName = emitterName,
         )
 
-        launch { producer.send(childMethodTimedOut, timeout) }
+        launch { producer.sendToWorkflowEngineLater(childMethodTimedOut, timeout) }
       }
     }
 
@@ -102,7 +102,7 @@ internal fun CoroutineScope.dispatchExistingWorkflowCmd(
           emitterName = emitterName,
       )
       // tag engine must ignore this message if parentWorkflowId has the provided tag
-      launch { producer.send(dispatchMethodByTag) }
+      launch { producer.sendToWorkflowTag(dispatchMethodByTag) }
     }
 
     else -> thisShouldNotHappen()

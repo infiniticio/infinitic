@@ -158,24 +158,24 @@ class WorkflowEngine(
               message.methodRunId,
               emitterName = emitterName,
           )
-          launch { producer.send(methodRunUnknown) }
+          launch { producer.sendToClient(methodRunUnknown) }
         }
         // a workflow wants to dispatch a method on the missing workflow
         if (message.parentWorkflowId != null && message.parentWorkflowId != message.workflowId) {
           val childMethodFailed =
               ChildMethodUnknown(
-                  workflowId = message.parentWorkflowId!!,
-                  workflowName = message.parentWorkflowName ?: thisShouldNotHappen(),
-                  methodRunId = message.parentMethodRunId ?: thisShouldNotHappen(),
                   childMethodUnknownError =
                   MethodUnknownError(
                       workflowName = message.workflowName,
                       workflowId = message.workflowId,
                       methodRunId = message.methodRunId,
                   ),
+                  workflowName = message.parentWorkflowName ?: thisShouldNotHappen(),
+                  workflowId = message.parentWorkflowId!!,
+                  methodRunId = message.parentMethodRunId ?: thisShouldNotHappen(),
                   emitterName = emitterName,
               )
-          launch { producer.send(childMethodFailed) }
+          launch { producer.sendToWorkflowEngineLater(childMethodFailed) }
         }
       }
 
@@ -187,7 +187,7 @@ class WorkflowEngine(
             message.methodRunId,
             emitterName = emitterName,
         )
-        launch { producer.send(methodRunUnknown) }
+        launch { producer.sendToClient(methodRunUnknown) }
       }
 
       else -> Unit

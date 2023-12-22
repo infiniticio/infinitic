@@ -214,7 +214,7 @@ class TaskExecutor(
               cause = executionError,
               emitterName = emitterName,
           )
-          launch { producer.send(taskFailed) }
+          launch { producer.sendToClient(taskFailed) }
         }
 
         if (msg.workflowId != null) {
@@ -226,14 +226,14 @@ class TaskExecutor(
               methodRunId = msg.methodRunId ?: thisShouldNotHappen(),
               taskFailedError = TaskFailedError(
                   serviceName = msg.serviceName,
-                  taskId = msg.taskId,
                   methodName = msg.methodName,
+                  taskId = msg.taskId,
                   cause = executionError,
               ),
               deferredError = getDeferredError(cause),
               emitterName = emitterName,
           )
-          launch { producer.send(taskFailed) }
+          launch { producer.sendToWorkflowEngineLater(taskFailed) }
         }
       }
     }
@@ -253,7 +253,7 @@ class TaskExecutor(
         taskMeta = TaskMeta(meta),
     )
 
-    producer.send(executeTask, delay)
+    producer.sendToTaskExecutor(executeTask, delay)
   }
 
   private suspend fun sendTaskCompleted(
@@ -275,7 +275,7 @@ class TaskExecutor(
           emitterName = emitterName,
       )
 
-      launch { producer.send(taskCompleted) }
+      launch { producer.sendToClient(taskCompleted) }
     }
 
     if (msg.workflowId != null) {
@@ -295,7 +295,7 @@ class TaskExecutor(
           emitterName = emitterName,
       )
 
-      launch { producer.send(taskCompleted) }
+      launch { producer.sendToWorkflowEngineLater(taskCompleted) }
     }
 
     launch { sendRemoveTags(msg) }
@@ -311,7 +311,7 @@ class TaskExecutor(
           taskId = msg.taskId,
           emitterName = emitterName,
       )
-      launch { producer.send(removeTagFromTask) }
+      launch { producer.sendToTaskTag(removeTagFromTask) }
     }
   }
 

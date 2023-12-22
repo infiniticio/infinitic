@@ -117,7 +117,7 @@ class TaskTagEngine(
         emitterName = emitterName,
     )
 
-    scope.launch { producer.send(taskIdsByTag) }
+    scope.launch { producer.sendToClient(taskIdsByTag) }
   }
 
   private suspend fun hasMessageAlreadyBeenHandled(message: TaskTagMessage) =

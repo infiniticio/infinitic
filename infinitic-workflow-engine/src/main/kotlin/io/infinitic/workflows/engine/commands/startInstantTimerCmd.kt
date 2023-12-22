@@ -43,12 +43,12 @@ internal fun CoroutineScope.startInstantTimerCmq(
   val command: StartInstantTimerCommand = pastCommand.command
 
   val msg = TimerCompleted(
+      timerId = TimerId.from(pastCommand.commandId),
       workflowName = state.workflowName,
       workflowId = state.workflowId,
       methodRunId = state.runningMethodRunId ?: thisShouldNotHappen(),
-      timerId = TimerId.from(pastCommand.commandId),
       emitterName = emitterName,
   )
 
-  launch { producer.send(msg, command.instant - MillisInstant.now()) }
+  launch { producer.sendToWorkflowEngineLater(msg, command.instant - MillisInstant.now()) }
 }

@@ -60,7 +60,7 @@ internal fun CoroutineScope.dispatchWorkflowTask(
   val dispatchTaskMessage = workflowTaskParameters.toExecuteTaskMessage()
 
   // dispatch workflow task
-  launch { producer.send(dispatchTaskMessage) }
+  launch { producer.sendToTaskExecutor(dispatchTaskMessage) }
 
   with(state) {
     runningWorkflowTaskId = workflowTaskParameters.taskId

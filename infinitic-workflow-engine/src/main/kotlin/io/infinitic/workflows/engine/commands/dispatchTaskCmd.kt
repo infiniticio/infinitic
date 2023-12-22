@@ -65,7 +65,7 @@ internal fun CoroutineScope.dispatchTaskCmd(
     )
   }
 
-  launch { producer.send(executeTask) }
+  launch { producer.sendToTaskExecutor(executeTask) }
 
   // add provided tags
   executeTask.taskTags.forEach {
@@ -75,7 +75,7 @@ internal fun CoroutineScope.dispatchTaskCmd(
         taskId = executeTask.taskId,
         emitterName = emitterName,
     )
-    launch { producer.send(addTagToTask) }
+    launch { producer.sendToTaskTag(addTagToTask) }
   }
 
   // send global task timeout if any
@@ -84,17 +84,17 @@ internal fun CoroutineScope.dispatchTaskCmd(
   if (timeout != null) {
     val taskTimedOut = with(pastCommand.command) {
       TaskTimedOut(
-          workflowName = state.workflowName,
-          workflowId = state.workflowId,
-          methodRunId = state.runningMethodRunId ?: thisShouldNotHappen(),
           taskTimedOutError = TaskTimedOutError(
               serviceName = serviceName,
               taskId = executeTask.taskId,
               methodName = methodName,
           ),
+          workflowName = state.workflowName,
+          workflowId = state.workflowId,
+          methodRunId = state.runningMethodRunId ?: thisShouldNotHappen(),
           emitterName = emitterName,
       )
     }
-    launch { producer.send(taskTimedOut, timeout) }
+    launch { producer.sendToWorkflowEngineLater(taskTimedOut, timeout) }
   }
 }

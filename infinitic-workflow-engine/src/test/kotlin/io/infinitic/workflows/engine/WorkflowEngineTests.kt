@@ -72,10 +72,15 @@ class WorkflowEngineTests :
         val storage = mockk<WorkflowStateStorage>()
         val producerAsync = mockk<InfiniticProducerAsync> {
           every { name } returns "testName"
-          every { sendAsync(capture(clientSlot)) } returns completed()
-          every { sendAsync(capture(taskTagSlots)) } returns completed()
-          every { sendAsync(capture(taskExecutorSlot), capture(afterSlot)) } returns completed()
-          every { sendAsync(capture(workflowEngineSlot)) } returns completed()
+          every { sendToClientAsync(capture(clientSlot)) } returns completed()
+          every { sendToTaskTagAsync(capture(taskTagSlots)) } returns completed()
+          every {
+            sendToTaskExecutorAsync(
+                capture(taskExecutorSlot),
+                capture(afterSlot),
+            )
+          } returns completed()
+          every { sendToWorkflowEngineAsync(capture(workflowEngineSlot)) } returns completed()
         }
 
         val engine = WorkflowEngine(storage, producerAsync)
@@ -113,15 +118,15 @@ class WorkflowEngineTests :
               )
           val taskCompleted =
               TaskCompleted(
-                  stateSlot.captured.workflowName,
-                  stateSlot.captured.workflowId,
-                  stateSlot.captured.runningMethodRunId!!,
                   TaskReturnValue(
                       workflowTask.taskId,
                       workflowTask.serviceName,
                       workflowTask.taskMeta,
                       ReturnValue.from(returnValue),
                   ),
+                  stateSlot.captured.workflowName,
+                  stateSlot.captured.workflowId,
+                  stateSlot.captured.runningMethodRunId!!,
                   EmitterName("worker"),
               )
 

@@ -43,6 +43,7 @@ class InMemoryChannels : AutoCloseable {
     workflowTagChannels.values.forEach { it.close() }
     taskExecutorChannels.values.forEach { it.close() }
     delayedTaskExecutorChannels.values.forEach { it.close() }
+    workflowCmdChannels.values.forEach { it.close() }
     workflowEngineChannels.values.forEach { it.close() }
     delayedWorkflowEngineChannels.values.forEach { it.close() }
     workflowTaskExecutorChannels.values.forEach { it.close() }
@@ -68,6 +69,10 @@ class InMemoryChannels : AutoCloseable {
   // Channel for delayed TaskExecutorMessages
   private val delayedTaskExecutorChannels =
       ConcurrentHashMap<ServiceName, Channel<DelayedMessage<TaskExecutorMessage>>>()
+
+  // Channel for WorkflowStart
+  private val workflowCmdChannels =
+      ConcurrentHashMap<WorkflowName, Channel<WorkflowEngineMessage>>()
 
   // Channel for WorkflowEngineMessages
   private val workflowEngineChannels =
@@ -99,6 +104,9 @@ class InMemoryChannels : AutoCloseable {
 
   fun forDelayedTaskExecutor(serviceName: ServiceName): Channel<DelayedMessage<TaskExecutorMessage>> =
       delayedTaskExecutorChannels.getOrPut(serviceName) { Channel(Channel.UNLIMITED) }
+
+  fun forWorkflowCmd(workflowName: WorkflowName): Channel<WorkflowEngineMessage> =
+      workflowCmdChannels.getOrPut(workflowName) { Channel(Channel.UNLIMITED) }
 
   fun forWorkflowEngine(workflowName: WorkflowName): Channel<WorkflowEngineMessage> =
       workflowEngineChannels.getOrPut(workflowName) { Channel(Channel.UNLIMITED) }

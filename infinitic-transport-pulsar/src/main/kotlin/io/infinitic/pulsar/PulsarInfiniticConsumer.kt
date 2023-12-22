@@ -105,6 +105,20 @@ class PulsarInfiniticConsumer(
       name = "$workflowName",
   )
 
+  override fun startWorkflowCmdConsumerAsync(
+    handler: suspend (WorkflowEngineMessage) -> Unit,
+    beforeDlq: (suspend (WorkflowEngineMessage, Exception) -> Unit)?,
+    workflowName: WorkflowName,
+    concurrency: Int
+  ) = startAsync(
+      handler = handler,
+      beforeDlq = beforeDlq,
+      schemaClass = WorkflowEngineEnvelope::class,
+      topicDescription = WorkflowTopicDescription.CMD,
+      concurrency = concurrency,
+      name = "$workflowName",
+  )
+
   // Start consumers of messages to workflow engine
   override fun startWorkflowEngineConsumerAsync(
     handler: suspend (WorkflowEngineMessage) -> Unit,

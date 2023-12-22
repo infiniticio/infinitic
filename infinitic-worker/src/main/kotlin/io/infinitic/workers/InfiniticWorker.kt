@@ -30,6 +30,7 @@ import io.infinitic.common.tasks.tags.messages.TaskTagMessage
 import io.infinitic.common.transport.InfiniticConsumer
 import io.infinitic.common.transport.InfiniticProducerAsync
 import io.infinitic.common.transport.LoggedInfiniticProducer
+import io.infinitic.common.workflows.engine.messages.DispatchNewWorkflow
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
 import io.infinitic.common.workflows.tags.messages.WorkflowTagMessage
 import io.infinitic.tasks.executor.TaskExecutor
@@ -51,9 +52,13 @@ class InfiniticWorker(
   private val logger = KotlinLogging.logger {}
 
   private val taskExecutorDelayedProducer =
-      LoggedInfiniticProducer(TaskExecutor::javaClass.name + "Delay", producerAsync)
+      LoggedInfiniticProducer(TaskExecutor::class.java.name + "Delay", producerAsync)
+
+  private val workflowStartProducer =
+      LoggedInfiniticProducer(WorkflowEngine::class.java.name + "Start", producerAsync)
+
   private val workflowEngineDelayedProducer =
-      LoggedInfiniticProducer(WorkflowEngine::javaClass.name + "Delay", producerAsync)
+      LoggedInfiniticProducer(WorkflowEngine::class.java.name + "Delay", producerAsync)
 
   private val workerRegistry = register.registry
 
@@ -96,33 +101,57 @@ class InfiniticWorker(
     }
 
     workerRegistry.workflowEngines.forEach {
-      // start workflow engines
-      val workflowEngine = WorkflowEngine(it.value.storage, producerAsync)
+      // WORKFLOW-START
+      val workflowStartHandler: (suspend (WorkflowEngineMessage) -> Unit) =
+          { message: WorkflowEngineMessage ->
+            when (message) {
+              is DispatchNewWorkflow -> workflowStartProducer.sendToWorkflowEngineLater(message)
+              else -> workflowStartProducer.sendToWorkflowEngineLater(message)
+            }
+          }
 
-      val handler: (suspend (WorkflowEngineMessage) -> Unit) =
-          { message: WorkflowEngineMessage -> workflowEngine.handle(message) }
-
-      // do nothing before sending message on dead letter queue
-      val beforeDlq = null
+      val workflowStartBeforeDlq = null
 
       futures.add(
-          consumer.startWorkflowEngineConsumerAsync(
-              handler = handler,
-              beforeDlq = beforeDlq,
+          consumer.startWorkflowCmdConsumerAsync(
+              handler = workflowStartHandler,
+              beforeDlq = workflowStartBeforeDlq,
               workflowName = it.key,
               concurrency = it.value.concurrency,
           ),
       )
 
-      // start consumer for delayed WorkflowEngineMessage
+      // WORKFLOW-ENGINE
+      val workflowEngine = WorkflowEngine(it.value.storage, producerAsync)
+
+      val workflowEngineHandler: (suspend (WorkflowEngineMessage) -> Unit) =
+          { message: WorkflowEngineMessage -> workflowEngine.handle(message) }
+
+      val workflowEngineBeforeDlq = null
+
+      futures.add(
+          consumer.startWorkflowEngineConsumerAsync(
+              handler = workflowEngineHandler,
+              beforeDlq = workflowEngineBeforeDlq,
+              workflowName = it.key,
+              concurrency = it.value.concurrency,
+          ),
+      )
+
+      // WORKFLOW-DELAY
+      val delayedWorkflowEngineHandler: (suspend (WorkflowEngineMessage) -> Unit) =
+          { message: WorkflowEngineMessage ->
+            workflowEngineDelayedProducer.sendToWorkflowEngineLater(
+                message,
+            )
+          }
+
+      val delayedWorkflowEngineBeforeDlq = null
+
       futures.add(
           consumer.startDelayedWorkflowEngineConsumerAsync(
-              handler = { message: WorkflowEngineMessage ->
-                workflowEngineDelayedProducer.send(
-                    message,
-                )
-              },
-              beforeDlq = beforeDlq,
+              handler = delayedWorkflowEngineHandler,
+              beforeDlq = delayedWorkflowEngineBeforeDlq,
               workflowName = it.key,
               concurrency = it.value.concurrency,
           ),
@@ -154,7 +183,11 @@ class InfiniticWorker(
       // start consumer for delayed (Workflow)TaskExecutorMessage
       futures.add(
           consumer.startDelayedWorkflowTaskConsumerAsync(
-              handler = { message: TaskExecutorMessage -> taskExecutorDelayedProducer.send(message) },
+              handler = { message: TaskExecutorMessage ->
+                taskExecutorDelayedProducer.sendToTaskExecutor(
+                    message,
+                )
+              },
               beforeDlq = beforeDlq,
               workflowName = it.key,
               concurrency = it.value.concurrency,
@@ -187,7 +220,11 @@ class InfiniticWorker(
       // start consumer for delayed TaskExecutorMessage
       futures.add(
           consumer.startDelayedTaskExecutorConsumerAsync(
-              handler = { message: TaskExecutorMessage -> taskExecutorDelayedProducer.send(message) },
+              handler = { message: TaskExecutorMessage ->
+                taskExecutorDelayedProducer.sendToTaskExecutor(
+                    message,
+                )
+              },
               beforeDlq = beforeDlq,
               serviceName = it.key,
               concurrency = it.value.concurrency,

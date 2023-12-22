@@ -57,6 +57,14 @@ interface InfiniticConsumer : AutoCloseable {
     concurrency: Int
   ): CompletableFuture<Unit>
 
+  // Asynchronously start consumers of messages to workflow-cmd
+  fun startWorkflowCmdConsumerAsync(
+    handler: suspend (WorkflowEngineMessage) -> Unit,
+    beforeDlq: (suspend (WorkflowEngineMessage, Exception) -> Unit)?,
+    workflowName: WorkflowName,
+    concurrency: Int
+  ): CompletableFuture<Unit>
+
   // Asynchronously start consumers of messages to workflow engine
   fun startWorkflowEngineConsumerAsync(
     handler: suspend (WorkflowEngineMessage) -> Unit,

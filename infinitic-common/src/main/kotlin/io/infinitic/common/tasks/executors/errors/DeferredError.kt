@@ -255,11 +255,11 @@ data class TaskFailedError(
   /** Name of failed task */
   @SerialName("taskName") val serviceName: ServiceName,
 
-  /** Id of failed task */
-  val taskId: TaskId,
-
   /** Method of failed task */
   val methodName: MethodName,
+
+  /** Id of failed task */
+  val taskId: TaskId,
 
   /** cause of the error */
   val cause: ExecutionError
@@ -268,8 +268,8 @@ data class TaskFailedError(
     fun from(exception: TaskFailedException) =
         TaskFailedError(
             serviceName = ServiceName(exception.serviceName),
-            taskId = TaskId(exception.taskId),
             methodName = MethodName(exception.methodName),
+            taskId = TaskId(exception.taskId),
             cause = ExecutionError.from(exception.workerException),
         )
   }

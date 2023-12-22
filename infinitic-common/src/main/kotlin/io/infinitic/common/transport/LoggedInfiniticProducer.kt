@@ -47,33 +47,42 @@ class LoggedInfiniticProducer(
       producerAsync.name = value
     }
 
-  override suspend fun send(message: ClientMessage) {
+  override suspend fun sendToClient(message: ClientMessage) {
     logDebug(message)
-    producerAsync.sendAsync(message).await()
+    producerAsync.sendToClientAsync(message).await()
     logTrace(message)
   }
 
-  override suspend fun send(message: WorkflowTagMessage) {
+  override suspend fun sendToWorkflowTag(message: WorkflowTagMessage) {
     logDebug(message)
-    producerAsync.sendAsync(message).await()
+    producerAsync.sendToWorkflowTagAsync(message).await()
     logTrace(message)
   }
 
-  override suspend fun send(message: WorkflowEngineMessage, after: MillisDuration) {
+  override suspend fun sendToWorkflowCmd(message: WorkflowEngineMessage) {
+    logDebug(message)
+    producerAsync.sendToWorkflowCmdAsync(message).await()
+    logTrace(message)
+  }
+
+  override suspend fun sendToWorkflowEngineLater(
+    message: WorkflowEngineMessage,
+    after: MillisDuration
+  ) {
     logDebug(message, after)
-    producerAsync.sendAsync(message, after).await()
+    producerAsync.sendToWorkflowEngineAsync(message, after).await()
     logTrace(message)
   }
 
-  override suspend fun send(message: TaskTagMessage) {
+  override suspend fun sendToTaskTag(message: TaskTagMessage) {
     logDebug(message)
-    producerAsync.sendAsync(message).await()
+    producerAsync.sendToTaskTagAsync(message).await()
     logTrace(message)
   }
 
-  override suspend fun send(message: TaskExecutorMessage, after: MillisDuration) {
+  override suspend fun sendToTaskExecutor(message: TaskExecutorMessage, after: MillisDuration) {
     logDebug(message, after)
-    producerAsync.sendAsync(message, after).await()
+    producerAsync.sendToTaskExecutorAsync(message, after).await()
     logTrace(message)
   }
 

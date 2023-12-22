@@ -56,7 +56,7 @@ internal fun CoroutineScope.sendSignalCmd(
 
         else ->
           // dispatch signal on another workflow
-          launch { producer.send(sendToChannel) }
+          launch { producer.sendToWorkflowEngineLater(sendToChannel) }
       }
     }
 
@@ -77,7 +77,7 @@ internal fun CoroutineScope.sendSignalCmd(
               emitterWorkflowId = state.workflowId,
               emitterName = emitterName,
           )
-      launch { producer.send(sendSignalByTag) }
+      launch { producer.sendToWorkflowTag(sendSignalByTag) }
     }
 
     else -> thisShouldNotHappen()
@@ -90,11 +90,11 @@ private fun getSendSignal(
   command: SendSignalCommand
 ) =
     SendSignal(
-        workflowName = command.workflowName,
-        workflowId = command.workflowId!!,
         channelName = command.channelName,
         signalId = SignalId.from(commandId),
         signalData = command.signalData,
         channelTypes = command.channelTypes,
+        workflowName = command.workflowName,
+        workflowId = command.workflowId!!,
         emitterName = emitterName,
     )

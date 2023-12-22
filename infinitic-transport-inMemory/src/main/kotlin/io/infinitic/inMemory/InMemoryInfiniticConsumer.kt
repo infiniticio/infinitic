@@ -84,6 +84,17 @@ class InMemoryInfiniticConsumer(private val channels: InMemoryChannels) : Infini
     return startAsync(handler, beforeDlq, channel, 1)
   }
 
+  override fun startWorkflowCmdConsumerAsync(
+    handler: suspend (WorkflowEngineMessage) -> Unit,
+    beforeDlq: (suspend (WorkflowEngineMessage, Exception) -> Unit)?,
+    workflowName: WorkflowName,
+    concurrency: Int
+  ): CompletableFuture<Unit> {
+    val channel = channels.forWorkflowCmd(workflowName)
+    logger.info { "Channel ${channel.id}: Starting WorkflowStart consumer for $workflowName with concurrency = $concurrency" }
+    return startAsync(handler, beforeDlq, channel, concurrency)
+  }
+
   override fun startWorkflowEngineConsumerAsync(
     handler: suspend (WorkflowEngineMessage) -> Unit,
     beforeDlq: (suspend (WorkflowEngineMessage, Exception) -> Unit)?,
