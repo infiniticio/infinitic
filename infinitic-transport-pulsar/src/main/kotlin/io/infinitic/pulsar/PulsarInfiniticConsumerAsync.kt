@@ -34,7 +34,7 @@ import io.infinitic.common.tasks.executors.messages.TaskExecutorEnvelope
 import io.infinitic.common.tasks.executors.messages.TaskExecutorMessage
 import io.infinitic.common.tasks.tags.messages.TaskTagEnvelope
 import io.infinitic.common.tasks.tags.messages.TaskTagMessage
-import io.infinitic.common.transport.InfiniticConsumer
+import io.infinitic.common.transport.InfiniticConsumerAsync
 import io.infinitic.common.workflows.data.workflows.WorkflowName
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineEnvelope
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
@@ -53,10 +53,10 @@ import kotlinx.coroutines.future.future
 import java.util.concurrent.CompletableFuture
 import kotlin.reflect.KClass
 
-class PulsarInfiniticConsumer(
+class PulsarInfiniticConsumerAsync(
   private val consumer: Consumer,
   private val resourceManager: ResourceManager
-) : InfiniticConsumer {
+) : InfiniticConsumerAsync {
 
   private val logger = KotlinLogging.logger {}
 

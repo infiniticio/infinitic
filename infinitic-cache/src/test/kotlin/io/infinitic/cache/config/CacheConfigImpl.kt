@@ -22,4 +22,4 @@
  */
 package io.infinitic.cache.config
 
-data class CacheConfigImpl(override val cache: Cache = Cache()) : CacheConfig
+data class CacheConfigImpl(override val cache: Cache = Cache()) : CacheConfigInterface

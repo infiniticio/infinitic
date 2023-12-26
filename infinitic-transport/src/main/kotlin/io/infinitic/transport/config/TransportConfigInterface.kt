@@ -20,18 +20,14 @@
  *
  * Licensor: infinitic.io
  */
-package io.infinitic.workers.register.config
+package io.infinitic.transport.config
 
-interface RegisterConfig {
-  /** Workflows configuration */
-  val workflows: List<Workflow>
+import io.infinitic.pulsar.config.Pulsar
 
-  /** Services configuration */
-  val services: List<Service>
+interface TransportConfigInterface {
+  /** Transport configuration */
+  val transport: Transport
 
-  /** Default service configuration */
-  val service: ServiceDefault
-
-  /** Default workflow configuration */
-  val workflow: WorkflowDefault
+  /** Pulsar configuration */
+  val pulsar: Pulsar?
 }

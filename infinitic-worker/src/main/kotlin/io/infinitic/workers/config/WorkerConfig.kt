@@ -22,35 +22,96 @@
  */
 package io.infinitic.workers.config
 
-import io.infinitic.cache.config.CacheConfig
-import io.infinitic.clients.config.ClientConfig
+import io.infinitic.cache.config.Cache
 import io.infinitic.common.config.loadConfigFromFile
 import io.infinitic.common.config.loadConfigFromResource
-import io.infinitic.storage.config.StorageConfig
-import io.infinitic.workers.InfiniticWorker
-import io.infinitic.workers.register.InfiniticRegister
-import io.infinitic.workers.register.InfiniticRegisterImpl
-import io.infinitic.workers.register.config.RegisterConfig
+import io.infinitic.pulsar.config.Pulsar
+import io.infinitic.storage.config.Storage
+import io.infinitic.transport.config.Transport
+import io.infinitic.workers.register.config.Service
+import io.infinitic.workers.register.config.ServiceDefault
+import io.infinitic.workers.register.config.Workflow
+import io.infinitic.workers.register.config.WorkflowDefault
 
-interface WorkerConfig : RegisterConfig, CacheConfig, StorageConfig, ClientConfig {
+data class WorkerConfig @JvmOverloads constructor(
+  /** Worker name */
+  override val name: String? = null,
 
-  /** Infinitic Register */
-  val register: InfiniticRegister
-    get() = InfiniticRegisterImpl(this)
+  /** Transport configuration */
+  override val transport: Transport = Transport.pulsar,
 
-  /** Infinitic Worker */
-  val worker: InfiniticWorker
-    get() = InfiniticWorker(register, consumer, producerAsync, client)
+  /** Pulsar configuration */
+  override val pulsar: Pulsar? = null,
+
+  /** Default storage */
+  override val storage: Storage = Storage(),
+
+  /** Default cache */
+  override var cache: Cache = Cache(),
+
+  /** Workflows configuration */
+  override val workflows: List<Workflow> = listOf(),
+
+  /** Services configuration */
+  override val services: List<Service> = listOf(),
+
+  /** Default service configuration */
+  override val service: ServiceDefault = ServiceDefault(),
+
+  /** Default workflow configuration */
+  override val workflow: WorkflowDefault = WorkflowDefault()
+
+) : WorkerConfigInterface {
+
+  init {
+    // check default service retry Policy
+    service.retry?.check()
+
+    // apply default, if not set
+    services.map { it ->
+      it.concurrency = it.concurrency ?: service.concurrency
+      it.retry = it.retry?.also { retry -> retry.check() } ?: service.retry
+      it.timeoutInSeconds = it.timeoutInSeconds ?: service.timeoutInSeconds
+
+      it.tagEngine?.let {
+        it.storage = it.storage ?: storage
+        it.cache = it.cache ?: cache
+        if (it.isDefault) it.concurrency = it.concurrency
+      }
+    }
+
+    // check default service retry Policy
+    workflow.retry?.check()
+
+    // apply default, if not set
+    workflows.map { it ->
+      it.concurrency = it.concurrency ?: workflow.concurrency
+      it.retry = it.retry?.also { retry -> retry.check() } ?: workflow.retry
+      it.timeoutInSeconds = it.timeoutInSeconds ?: workflow.timeoutInSeconds
+      it.checkMode = it.checkMode ?: workflow.checkMode
+
+      it.tagEngine?.let {
+        it.storage = it.storage ?: storage
+        it.cache = it.cache ?: cache
+        if (it.isDefault) it.concurrency = it.concurrency
+      }
+      it.workflowEngine?.let {
+        it.storage = it.storage ?: storage
+        it.cache = it.cache ?: cache
+        if (it.isDefault) it.concurrency = it.concurrency
+      }
+    }
+  }
 
   companion object {
     /** Create ClientConfig from file in file system */
     @JvmStatic
     fun fromFile(vararg files: String): WorkerConfig =
-        loadConfigFromFile<WorkerConfigData>(files.toList())
+        loadConfigFromFile(files.toList())
 
     /** Create ClientConfig from file in resources directory */
     @JvmStatic
     fun fromResource(vararg resources: String): WorkerConfig =
-        loadConfigFromResource<WorkerConfigData>(resources.toList())
+        loadConfigFromResource(resources.toList())
   }
 }

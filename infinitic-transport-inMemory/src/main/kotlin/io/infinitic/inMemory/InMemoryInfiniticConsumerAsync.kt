@@ -29,7 +29,7 @@ import io.infinitic.common.messages.Message
 import io.infinitic.common.tasks.data.ServiceName
 import io.infinitic.common.tasks.executors.messages.TaskExecutorMessage
 import io.infinitic.common.tasks.tags.messages.TaskTagMessage
-import io.infinitic.common.transport.InfiniticConsumer
+import io.infinitic.common.transport.InfiniticConsumerAsync
 import io.infinitic.common.workflows.data.workflows.WorkflowName
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
 import io.infinitic.common.workflows.tags.messages.WorkflowTagMessage
@@ -41,7 +41,8 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.future.future
 import java.util.concurrent.CompletableFuture
 
-class InMemoryInfiniticConsumer(private val channels: InMemoryChannels) : InfiniticConsumer {
+class InMemoryInfiniticConsumerAsync(private val channels: InMemoryChannels) :
+  InfiniticConsumerAsync {
 
   private val logger = KotlinLogging.logger {}
 

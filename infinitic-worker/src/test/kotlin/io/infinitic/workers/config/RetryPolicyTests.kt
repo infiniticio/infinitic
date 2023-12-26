@@ -88,7 +88,7 @@ internal class RetryPolicyTests :
         "Unknown class in ignoredExceptions should throw" {
           val e =
               shouldThrow<ConfigException> {
-                loadConfigFromYaml<WorkerConfigData>(
+                loadConfigFromYaml<WorkerConfig>(
                     """
 transport: inMemory
 service:
@@ -104,7 +104,7 @@ service:
         "Unknown class in ignoredExceptions in task should throw" {
           val e =
               shouldThrow<ConfigException> {
-                loadConfigFromYaml<WorkerConfigData>(
+                loadConfigFromYaml<WorkerConfig>(
                     """
 transport: inMemory
 services:
@@ -122,7 +122,7 @@ services:
         "No Exception class in ignoredExceptions should throw" {
           val e =
               shouldThrow<ConfigException> {
-                loadConfigFromYaml<WorkerConfigData>(
+                loadConfigFromYaml<WorkerConfig>(
                     """
 transport: inMemory
 service:
@@ -139,7 +139,7 @@ service:
         "No Exception class in ignoredExceptions in task should throw" {
           val e =
               shouldThrow<ConfigException> {
-                loadConfigFromYaml<WorkerConfigData>(
+                loadConfigFromYaml<WorkerConfig>(
                     """
 transport: inMemory
 services:
@@ -158,7 +158,7 @@ services:
         "timeout in task should be positive" {
           val e =
               shouldThrow<ConfigException> {
-                loadConfigFromYaml<WorkerConfigData>(
+                loadConfigFromYaml<WorkerConfig>(
                     """
 transport: inMemory
 services:
@@ -173,7 +173,7 @@ services:
 
         "checking default for service" {
           val config =
-              loadConfigFromYaml<WorkerConfigData>(
+              loadConfigFromYaml<WorkerConfig>(
                   """
 transport: inMemory
 services:
@@ -189,7 +189,7 @@ services:
 
         "null timeout in service should not be default" {
           val config =
-              loadConfigFromYaml<WorkerConfigData>(
+              loadConfigFromYaml<WorkerConfig>(
                   """
 transport: inMemory
 services:
@@ -204,7 +204,7 @@ services:
 
         "get timeout in service from default" {
           val config =
-              loadConfigFromYaml<WorkerConfigData>(
+              loadConfigFromYaml<WorkerConfig>(
                   """
 transport: inMemory
 service:
@@ -220,7 +220,7 @@ services:
 
         "get retry in service from default" {
           val config =
-              loadConfigFromYaml<WorkerConfigData>(
+              loadConfigFromYaml<WorkerConfig>(
                   """
 transport: inMemory
 service:
@@ -237,7 +237,7 @@ services:
 
         "checking default in workflow" {
           val config =
-              loadConfigFromYaml<WorkerConfigData>(
+              loadConfigFromYaml<WorkerConfig>(
                   """
 transport: inMemory
 workflows:
@@ -254,7 +254,7 @@ workflows:
 
         "get workflow timeout from default" {
           val config =
-              loadConfigFromYaml<WorkerConfigData>(
+              loadConfigFromYaml<WorkerConfig>(
                   """
 transport: inMemory
 workflow:
@@ -270,7 +270,7 @@ workflows:
 
         "get workflow retry from default" {
           val config =
-              loadConfigFromYaml<WorkerConfigData>(
+              loadConfigFromYaml<WorkerConfig>(
                   """
 transport: inMemory
 workflow:
@@ -287,7 +287,7 @@ workflows:
 
         "get workflow checkmode from default" {
           val config =
-              loadConfigFromYaml<WorkerConfigData>(
+              loadConfigFromYaml<WorkerConfig>(
                   """
 transport: inMemory
 workflow:
@@ -303,7 +303,7 @@ workflows:
 
         "do not retry if maximumRetries = 0" {
           val workerConfig =
-              loadConfigFromYaml<WorkerConfigData>(
+              loadConfigFromYaml<WorkerConfig>(
                   """
 transport: inMemory
 service:
@@ -317,7 +317,7 @@ service:
 
         "do not retry once reach maximumRetries" {
           val workerConfig =
-              loadConfigFromYaml<WorkerConfigData>(
+              loadConfigFromYaml<WorkerConfig>(
                   """
 transport: inMemory
 service:
@@ -332,7 +332,7 @@ service:
 
         "do not retry for non retryable exception" {
           val workerConfig =
-              loadConfigFromYaml<WorkerConfigData>(
+              loadConfigFromYaml<WorkerConfig>(
                   """
 transport: inMemory
 service:
