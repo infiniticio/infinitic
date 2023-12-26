@@ -25,6 +25,7 @@ package io.infinitic.inMemory
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.infinitic.common.clients.messages.ClientMessage
 import io.infinitic.common.data.MillisDuration
+import io.infinitic.common.exceptions.thisShouldNotHappen
 import io.infinitic.common.tasks.executors.messages.ExecuteTask
 import io.infinitic.common.tasks.executors.messages.TaskExecutorMessage
 import io.infinitic.common.tasks.tags.messages.TaskTagMessage
@@ -106,6 +107,8 @@ class InMemoryInfiniticProducerAsync(private val channels: InMemoryChannels) :
             channels.forWorkflowTaskExecutor(message.workflowName!!),
         )
       }
+
+      else -> thisShouldNotHappen()
     }
 
     else -> when {
@@ -119,6 +122,18 @@ class InMemoryInfiniticProducerAsync(private val channels: InMemoryChannels) :
           channels.forTaskExecutor(message.serviceName),
       )
     }
+  }
+
+  override fun sendToTaskEventsAsync(message: TaskExecutorMessage): CompletableFuture<Unit> = when {
+    message.isWorkflowTask() -> sendAsync(
+        message,
+        channels.forWorkflowTaskEvents(message.workflowName!!),
+    )
+
+    else -> sendAsync(
+        message,
+        channels.forTaskEvents(message.serviceName),
+    )
   }
 
   private fun <T : Any> sendAsync(

@@ -56,7 +56,7 @@ internal fun CoroutineScope.sendSignalCmd(
 
         else ->
           // dispatch signal on another workflow
-          launch { producer.sendToWorkflowEngineLater(sendToChannel) }
+          launch { producer.sendLaterToWorkflowEngine(sendToChannel) }
       }
     }
 

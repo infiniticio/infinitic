@@ -57,7 +57,7 @@ internal fun CoroutineScope.dispatchExistingWorkflowCmd(
         state.workflowId -> bufferedMessages.add(dispatchMethodRun)
 
         // dispatch method on another workflow
-        else -> launch { producer.sendToWorkflowEngineLater(dispatchMethodRun) }
+        else -> launch { producer.sendLaterToWorkflowEngine(dispatchMethodRun) }
       }
 
       // set timeout if any
@@ -75,7 +75,7 @@ internal fun CoroutineScope.dispatchExistingWorkflowCmd(
             emitterName = emitterName,
         )
 
-        launch { producer.sendToWorkflowEngineLater(childMethodTimedOut, timeout) }
+        launch { producer.sendLaterToWorkflowEngine(childMethodTimedOut, timeout) }
       }
     }
 

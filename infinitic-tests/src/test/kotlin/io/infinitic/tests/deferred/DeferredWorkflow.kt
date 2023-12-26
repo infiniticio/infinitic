@@ -66,7 +66,7 @@ class DeferredWorkflowImpl : Workflow(), DeferredWorkflow {
       newService(
           klass = UtilService::class.java,
           tags = setOf("foo", "bar"),
-          meta = mapOf("foo" to "bar".toByteArray()))
+          meta = mutableMapOf("foo" to "bar".toByteArray()))
   private val workflowDeferred = newWorkflow(DeferredWorkflow::class.java)
 
   private var p1 = ""

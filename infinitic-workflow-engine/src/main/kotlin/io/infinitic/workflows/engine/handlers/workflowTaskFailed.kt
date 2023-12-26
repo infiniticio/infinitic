@@ -84,7 +84,7 @@ internal fun CoroutineScope.workflowTaskFailed(
       // case of method dispatched within same workflow
       bufferedMessages.add(childMethodFailed)
     } else {
-      launch { producer.sendToWorkflowEngineLater(childMethodFailed) }
+      launch { producer.sendLaterToWorkflowEngine(childMethodFailed) }
     }
   }
 

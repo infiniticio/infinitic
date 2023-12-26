@@ -62,7 +62,7 @@ interface InfiniticProducer {
    * @param message the message to send
    * @param after the delay before sending the message
    */
-  suspend fun sendToWorkflowEngineLater(
+  suspend fun sendLaterToWorkflowEngine(
     message: WorkflowEngineMessage,
     after: MillisDuration = MillisDuration.ZERO
   )
@@ -83,5 +83,14 @@ interface InfiniticProducer {
   suspend fun sendToTaskExecutor(
     message: TaskExecutorMessage,
     after: MillisDuration = MillisDuration.ZERO
+  )
+
+  /**
+   * Synchronously send a message to task-events
+   *
+   * @param message the message to send to the task result handler.
+   */
+  suspend fun sendToTaskEvents(
+    message: TaskExecutorMessage
   )
 }

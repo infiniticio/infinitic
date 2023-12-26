@@ -42,11 +42,13 @@ class InMemoryChannels : AutoCloseable {
     taskTagChannels.values.forEach { it.close() }
     workflowTagChannels.values.forEach { it.close() }
     taskExecutorChannels.values.forEach { it.close() }
+    taskEventsChannels.values.forEach { it.close() }
     delayedTaskExecutorChannels.values.forEach { it.close() }
     workflowCmdChannels.values.forEach { it.close() }
     workflowEngineChannels.values.forEach { it.close() }
     delayedWorkflowEngineChannels.values.forEach { it.close() }
     workflowTaskExecutorChannels.values.forEach { it.close() }
+    workflowTaskEventsChannels.values.forEach { it.close() }
     delayedWorkflowTaskExecutorChannels.values.forEach { it.close() }
   }
 
@@ -64,6 +66,10 @@ class InMemoryChannels : AutoCloseable {
 
   // Channel for TaskExecutorMessages
   private val taskExecutorChannels =
+      ConcurrentHashMap<ServiceName, Channel<TaskExecutorMessage>>()
+
+  // Channel for TaskEventsMessages
+  private val taskEventsChannels =
       ConcurrentHashMap<ServiceName, Channel<TaskExecutorMessage>>()
 
   // Channel for delayed TaskExecutorMessages
@@ -86,6 +92,10 @@ class InMemoryChannels : AutoCloseable {
   private val workflowTaskExecutorChannels =
       ConcurrentHashMap<WorkflowName, Channel<TaskExecutorMessage>>()
 
+  // Channel for WorkflowTaskMessages
+  private val workflowTaskEventsChannels =
+      ConcurrentHashMap<WorkflowName, Channel<TaskExecutorMessage>>()
+
   // Channel for delayed WorkflowTaskMessages
   private val delayedWorkflowTaskExecutorChannels =
       ConcurrentHashMap<WorkflowName, Channel<DelayedMessage<TaskExecutorMessage>>>()
@@ -102,6 +112,9 @@ class InMemoryChannels : AutoCloseable {
   fun forTaskExecutor(serviceName: ServiceName): Channel<TaskExecutorMessage> =
       taskExecutorChannels.getOrPut(serviceName) { Channel(Channel.UNLIMITED) }
 
+  fun forTaskEvents(serviceName: ServiceName): Channel<TaskExecutorMessage> =
+      taskEventsChannels.getOrPut(serviceName) { Channel(Channel.UNLIMITED) }
+
   fun forDelayedTaskExecutor(serviceName: ServiceName): Channel<DelayedMessage<TaskExecutorMessage>> =
       delayedTaskExecutorChannels.getOrPut(serviceName) { Channel(Channel.UNLIMITED) }
 
@@ -116,6 +129,9 @@ class InMemoryChannels : AutoCloseable {
 
   fun forWorkflowTaskExecutor(workflowName: WorkflowName): Channel<TaskExecutorMessage> =
       workflowTaskExecutorChannels.getOrPut(workflowName) { Channel(Channel.UNLIMITED) }
+
+  fun forWorkflowTaskEvents(workflowName: WorkflowName): Channel<TaskExecutorMessage> =
+      workflowTaskEventsChannels.getOrPut(workflowName) { Channel(Channel.UNLIMITED) }
 
   fun forDelayedWorkflowTaskExecutor(workflowName: WorkflowName): Channel<DelayedMessage<TaskExecutorMessage>> =
       delayedWorkflowTaskExecutorChannels.getOrPut(workflowName) { Channel(Channel.UNLIMITED) }

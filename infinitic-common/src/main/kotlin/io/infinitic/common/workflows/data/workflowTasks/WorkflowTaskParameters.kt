@@ -63,21 +63,21 @@ data class WorkflowTaskParameters(
       ExecuteTask(
           serviceName = ServiceName(WorkflowTask::class.java.name),
           taskId = taskId,
+          emitterName = emitterName,
+          taskRetrySequence = TaskRetrySequence(0),
+          taskRetryIndex = TaskRetryIndex(0),
+          workflowName = workflowName,
+          workflowId = workflowId,
+          methodRunId = methodRun.methodRunId,
+          taskTags = setOf(),
+          taskMeta = TaskMeta(),
           clientWaiting = false,
           methodName = MethodName(WorkflowTask::handle.name),
           methodParameterTypes =
           MethodParameterTypes(listOf(WorkflowTaskParameters::class.java.name)),
           methodParameters = MethodParameters.from(this),
-          workflowId = workflowId,
-          workflowName = workflowName,
-          workflowVersion = workflowVersion,
-          methodRunId = methodRun.methodRunId,
           lastError = null,
-          taskRetryIndex = TaskRetryIndex(0),
-          taskRetrySequence = TaskRetrySequence(0),
-          taskTags = setOf(),
-          taskMeta = TaskMeta(),
-          emitterName = emitterName,
+          workflowVersion = workflowVersion,
       )
 
   fun toByteArray() = AvroSerDe.writeBinaryWithSchemaFingerprint(this, serializer())

@@ -22,6 +22,8 @@
  */
 package io.infinitic.common.tasks.executors.messages
 
+import com.github.avrokotlin.avro4k.Avro
+import com.github.avrokotlin.avro4k.AvroDefault
 import com.github.avrokotlin.avro4k.AvroNamespace
 import io.infinitic.common.messages.Envelope
 import io.infinitic.common.serDe.avro.AvroSerDe
@@ -35,10 +37,20 @@ import org.apache.avro.Schema
 data class TaskExecutorEnvelope(
   @SerialName("taskName") private val serviceName: ServiceName,
   @AvroNamespace("io.infinitic.tasks.executor") private val type: TaskExecutorMessageType,
-  private val executeTask: ExecuteTask? = null
+  private val executeTask: ExecuteTask? = null,
+  @AvroDefault(Avro.NULL) private val taskStarted: TaskStarted? = null,
+  @AvroDefault(Avro.NULL) private val taskRetried: TaskRetried? = null,
+  @AvroDefault(Avro.NULL) private val taskFailed: TaskFailed? = null,
+  @AvroDefault(Avro.NULL) private val taskCompleted: TaskCompleted? = null,
 ) : Envelope<TaskExecutorMessage> {
   init {
-    val noNull = listOfNotNull(executeTask)
+    val noNull = listOfNotNull(
+        executeTask,
+        taskStarted,
+        taskRetried,
+        taskFailed,
+        taskCompleted,
+    )
 
     require(noNull.size == 1)
     require(noNull.first() == message())
@@ -51,6 +63,30 @@ data class TaskExecutorEnvelope(
           serviceName = msg.serviceName,
           type = TaskExecutorMessageType.EXECUTE_TASK,
           executeTask = msg,
+      )
+
+      is TaskStarted -> TaskExecutorEnvelope(
+          serviceName = msg.serviceName,
+          type = TaskExecutorMessageType.TASK_STARTED,
+          taskStarted = msg,
+      )
+
+      is TaskRetried -> TaskExecutorEnvelope(
+          serviceName = msg.serviceName,
+          type = TaskExecutorMessageType.TASK_RETRIED,
+          taskRetried = msg,
+      )
+
+      is TaskFailed -> TaskExecutorEnvelope(
+          serviceName = msg.serviceName,
+          type = TaskExecutorMessageType.TASK_FAILED,
+          taskFailed = msg,
+      )
+
+      is TaskCompleted -> TaskExecutorEnvelope(
+          serviceName = msg.serviceName,
+          type = TaskExecutorMessageType.TASK_COMPLETED,
+          taskCompleted = msg,
       )
     }
 
@@ -65,6 +101,10 @@ data class TaskExecutorEnvelope(
   override fun message(): TaskExecutorMessage =
       when (type) {
         TaskExecutorMessageType.EXECUTE_TASK -> executeTask
+        TaskExecutorMessageType.TASK_STARTED -> taskStarted
+        TaskExecutorMessageType.TASK_RETRIED -> taskRetried
+        TaskExecutorMessageType.TASK_FAILED -> taskFailed
+        TaskExecutorMessageType.TASK_COMPLETED -> taskCompleted
       }!!
 
   fun toByteArray() = AvroSerDe.writeBinary(this, serializer())

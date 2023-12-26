@@ -69,7 +69,7 @@ internal fun CoroutineScope.dispatchNewWorkflowCmd(
           clientWaiting = false,
           emitterName = emitterName,
       )
-      launch { producer.sendToWorkflowEngineLater(dispatchWorkflow) }
+      launch { producer.sendLaterToWorkflowEngine(dispatchWorkflow) }
 
       // add provided tags
       dispatchWorkflow.workflowTags.forEach {
@@ -125,6 +125,6 @@ internal fun CoroutineScope.dispatchNewWorkflowCmd(
         methodRunId = state.runningMethodRunId ?: thisShouldNotHappen(),
         emitterName = emitterName,
     )
-    launch { producer.sendToWorkflowEngineLater(childMethodTimedOut, timeout) }
+    launch { producer.sendLaterToWorkflowEngine(childMethodTimedOut, timeout) }
   }
 }

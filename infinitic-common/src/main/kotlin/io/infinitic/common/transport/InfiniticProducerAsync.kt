@@ -90,4 +90,14 @@ interface InfiniticProducerAsync {
     message: TaskExecutorMessage,
     after: MillisDuration = MillisDuration.ZERO
   ): CompletableFuture<Unit>
+
+  /**
+   * Sends a [TaskExecutorMessage] to a task event handler asynchronously.
+   *
+   * @param message the [TaskExecutorMessage] to send
+   * @return a [CompletableFuture] that completes when the message has been sent
+   */
+  fun sendToTaskEventsAsync(
+    message: TaskExecutorMessage
+  ): CompletableFuture<Unit>
 }

@@ -141,7 +141,7 @@ class WorkflowTagEngine(
                 methodRunId = message.parentMethodRunId ?: thisShouldNotHappen(),
                 emitterName = emitterName,
             )
-            launch { producer.sendToWorkflowEngineLater(childMethodTimedOut, timeout) }
+            launch { producer.sendLaterToWorkflowEngine(childMethodTimedOut, timeout) }
           }
         }
         // Another running workflow instance exist with same custom id
@@ -214,7 +214,7 @@ class WorkflowTagEngine(
               )
 
               launch {
-                producer.sendToWorkflowEngineLater(
+                producer.sendLaterToWorkflowEngine(
                     childMethodTimedOut,
                     message.methodTimeout!!,
                 )

@@ -179,6 +179,20 @@ class PulsarInfiniticConsumer(
       name = "$serviceName",
   )
 
+  override fun startTaskEventsConsumerAsync(
+    handler: suspend (TaskExecutorMessage) -> Unit,
+    beforeDlq: (suspend (TaskExecutorMessage, Exception) -> Unit)?,
+    serviceName: ServiceName,
+    concurrency: Int
+  ) = startAsync(
+      handler = handler,
+      beforeDlq = beforeDlq,
+      schemaClass = TaskExecutorEnvelope::class,
+      topicDescription = ServiceTopicDescription.EVENTS,
+      concurrency = concurrency,
+      name = "$serviceName",
+  )
+
   override fun startDelayedTaskExecutorConsumerAsync(
     handler: suspend (TaskExecutorMessage) -> Unit,
     beforeDlq: (suspend (TaskExecutorMessage, Exception) -> Unit)?,
@@ -200,6 +214,20 @@ class PulsarInfiniticConsumer(
       beforeDlq = beforeDlq,
       schemaClass = TaskExecutorEnvelope::class,
       topicDescription = WorkflowTopicDescription.EXECUTOR,
+      concurrency = concurrency,
+      name = "$workflowName",
+  )
+
+  override fun startWorkflowTaskEventsConsumerAsync(
+    handler: suspend (TaskExecutorMessage) -> Unit,
+    beforeDlq: (suspend (TaskExecutorMessage, Exception) -> Unit)?,
+    workflowName: WorkflowName,
+    concurrency: Int
+  ) = startAsync(
+      handler = handler,
+      beforeDlq = beforeDlq,
+      schemaClass = TaskExecutorEnvelope::class,
+      topicDescription = WorkflowTopicDescription.EVENTS,
       concurrency = concurrency,
       name = "$workflowName",
   )

@@ -32,7 +32,8 @@ import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
 
 @Serializable(with = TaskMetaSerializer::class)
-data class TaskMeta(val map: Map<String, ByteArray> = mapOf()) : Map<String, ByteArray> by map {
+data class TaskMeta(val map: MutableMap<String, ByteArray> = mutableMapOf()) :
+  MutableMap<String, ByteArray> by map {
   override fun equals(other: Any?): Boolean {
     if (this === other) return true
     if (javaClass != other?.javaClass) return false
@@ -42,15 +43,17 @@ data class TaskMeta(val map: Map<String, ByteArray> = mapOf()) : Map<String, Byt
 
     return true
   }
+
+  override fun hashCode() = map.hashCode()
 }
 
 object TaskMetaSerializer : KSerializer<TaskMeta> {
-  val ser = MapSerializer(String.serializer(), ByteArraySerializer())
+  private val ser = MapSerializer(String.serializer(), ByteArraySerializer())
   override val descriptor: SerialDescriptor = ser.descriptor
 
   override fun serialize(encoder: Encoder, value: TaskMeta) {
     ser.serialize(encoder, value.map)
   }
 
-  override fun deserialize(decoder: Decoder) = TaskMeta(ser.deserialize(decoder))
+  override fun deserialize(decoder: Decoder) = TaskMeta(ser.deserialize(decoder).toMutableMap())
 }

@@ -25,14 +25,11 @@ package io.infinitic.workers
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.infinitic.autoclose.autoClose
 import io.infinitic.clients.InfiniticClientInterface
-import io.infinitic.common.tasks.executors.messages.TaskExecutorMessage
-import io.infinitic.common.tasks.tags.messages.TaskTagMessage
 import io.infinitic.common.transport.InfiniticConsumer
 import io.infinitic.common.transport.InfiniticProducerAsync
 import io.infinitic.common.transport.LoggedInfiniticProducer
-import io.infinitic.common.workflows.engine.messages.DispatchNewWorkflow
-import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
-import io.infinitic.common.workflows.tags.messages.WorkflowTagMessage
+import io.infinitic.tasks.Task
+import io.infinitic.tasks.executor.TaskEventHandler
 import io.infinitic.tasks.executor.TaskExecutor
 import io.infinitic.tasks.tag.TaskTagEngine
 import io.infinitic.workers.config.WorkerConfig
@@ -51,14 +48,11 @@ class InfiniticWorker(
 
   private val logger = KotlinLogging.logger {}
 
-  private val taskExecutorDelayedProducer =
-      LoggedInfiniticProducer(TaskExecutor::class.java.name + "Delay", producerAsync)
+  private val taskProducer =
+      LoggedInfiniticProducer(TaskExecutor::class.java.name, producerAsync)
 
-  private val workflowStartProducer =
-      LoggedInfiniticProducer(WorkflowEngine::class.java.name + "Start", producerAsync)
-
-  private val workflowEngineDelayedProducer =
-      LoggedInfiniticProducer(WorkflowEngine::class.java.name + "Delay", producerAsync)
+  private val workflowProducer =
+      LoggedInfiniticProducer(WorkflowEngine::class.java.name, producerAsync)
 
   private val workerRegistry = register.registry
 
@@ -84,16 +78,10 @@ class InfiniticWorker(
     workerRegistry.workflowTags.forEach {
       val tagEngine = WorkflowTagEngine(it.value.storage, producerAsync)
 
-      val handler: (suspend (WorkflowTagMessage) -> Unit) =
-          { message: WorkflowTagMessage -> tagEngine.handle(message) }
-
-      // do nothing before sending message on dead letter queue
-      val beforeDlq = null
-
       futures.add(
           consumer.startWorkflowTagConsumerAsync(
-              handler = handler,
-              beforeDlq = beforeDlq,
+              handler = tagEngine::handle,
+              beforeDlq = null,
               workflowName = it.key,
               concurrency = it.value.concurrency,
           ),
@@ -101,21 +89,11 @@ class InfiniticWorker(
     }
 
     workerRegistry.workflowEngines.forEach {
-      // WORKFLOW-START
-      val workflowStartHandler: (suspend (WorkflowEngineMessage) -> Unit) =
-          { message: WorkflowEngineMessage ->
-            when (message) {
-              is DispatchNewWorkflow -> workflowStartProducer.sendToWorkflowEngineLater(message)
-              else -> workflowStartProducer.sendToWorkflowEngineLater(message)
-            }
-          }
-
-      val workflowStartBeforeDlq = null
 
       futures.add(
           consumer.startWorkflowCmdConsumerAsync(
-              handler = workflowStartHandler,
-              beforeDlq = workflowStartBeforeDlq,
+              handler = workflowProducer::sendLaterToWorkflowEngine,
+              beforeDlq = null,
               workflowName = it.key,
               concurrency = it.value.concurrency,
           ),
@@ -124,128 +102,111 @@ class InfiniticWorker(
       // WORKFLOW-ENGINE
       val workflowEngine = WorkflowEngine(it.value.storage, producerAsync)
 
-      val workflowEngineHandler: (suspend (WorkflowEngineMessage) -> Unit) =
-          { message: WorkflowEngineMessage -> workflowEngine.handle(message) }
-
-      val workflowEngineBeforeDlq = null
-
       futures.add(
           consumer.startWorkflowEngineConsumerAsync(
-              handler = workflowEngineHandler,
-              beforeDlq = workflowEngineBeforeDlq,
+              handler = workflowEngine::handle,
+              beforeDlq = null,
               workflowName = it.key,
               concurrency = it.value.concurrency,
           ),
       )
 
       // WORKFLOW-DELAY
-      val delayedWorkflowEngineHandler: (suspend (WorkflowEngineMessage) -> Unit) =
-          { message: WorkflowEngineMessage ->
-            workflowEngineDelayedProducer.sendToWorkflowEngineLater(
-                message,
-            )
-          }
-
-      val delayedWorkflowEngineBeforeDlq = null
-
       futures.add(
           consumer.startDelayedWorkflowEngineConsumerAsync(
-              handler = delayedWorkflowEngineHandler,
-              beforeDlq = delayedWorkflowEngineBeforeDlq,
+              handler = workflowProducer::sendLaterToWorkflowEngine,
+              beforeDlq = null,
               workflowName = it.key,
               concurrency = it.value.concurrency,
           ),
       )
     }
 
-    // start workflow task executors
     workerRegistry.workflows.forEach {
+      // start consumer for workflow-task-executor
       val taskExecutor = TaskExecutor(workerRegistry, producerAsync, client)
-
-      val handler: (suspend (TaskExecutorMessage) -> Unit) =
-          { message: TaskExecutorMessage -> taskExecutor.handle(message) }
-
-      // tell clients and/or workflow engine about that failure
-      val beforeDlq: (suspend (TaskExecutorMessage, Exception) -> Unit) =
-          { message: TaskExecutorMessage, cause: Exception ->
-            taskExecutor.sendTaskFailed(message, cause, sendingDlqMessage)
-          }
 
       futures.add(
           consumer.startWorkflowTaskConsumerAsync(
-              handler = handler,
-              beforeDlq = beforeDlq,
+              handler = taskExecutor::handle,
+              beforeDlq = { message, cause ->
+                taskExecutor.sendTaskFailed(message, cause, Task.meta, sendingDlqMessage)
+              },
               workflowName = it.key,
               concurrency = it.value.concurrency,
           ),
       )
 
-      // start consumer for delayed (Workflow)TaskExecutorMessage
+      // start consumer for workflow-task-executor-delayed
       futures.add(
           consumer.startDelayedWorkflowTaskConsumerAsync(
-              handler = { message: TaskExecutorMessage ->
-                taskExecutorDelayedProducer.sendToTaskExecutor(
-                    message,
-                )
-              },
-              beforeDlq = beforeDlq,
+              handler = taskProducer::sendToTaskExecutor,
+              beforeDlq = null,
+              workflowName = it.key,
+              concurrency = it.value.concurrency,
+          ),
+      )
+
+      // start consumer for workflow-task-events
+      val taskEventHandler = TaskEventHandler(producerAsync)
+
+      futures.add(
+          consumer.startWorkflowTaskEventsConsumerAsync(
+              handler = taskEventHandler::handle,
+              beforeDlq = null,
               workflowName = it.key,
               concurrency = it.value.concurrency,
           ),
       )
     }
 
-    // start task executors
+    // start consumer for task-executor
     workerRegistry.services.forEach {
+      // start consumer for task-executor
       val taskExecutor = TaskExecutor(workerRegistry, producerAsync, client)
-
-      val handler: (suspend (TaskExecutorMessage) -> Unit) =
-          { message: TaskExecutorMessage -> taskExecutor.handle(message) }
-
-      // tell clients and/or workflow engine about that failure
-      val beforeDlq: (suspend (TaskExecutorMessage, Exception) -> Unit) =
-          { message: TaskExecutorMessage, cause: Exception ->
-            taskExecutor.sendTaskFailed(message, cause, sendingDlqMessage)
-          }
 
       futures.add(
           consumer.startTaskExecutorConsumerAsync(
-              handler = handler,
-              beforeDlq = beforeDlq,
+              handler = taskExecutor::handle,
+              beforeDlq = { message, cause ->
+                taskExecutor.sendTaskFailed(message, cause, Task.meta, sendingDlqMessage)
+              },
               serviceName = it.key,
               concurrency = it.value.concurrency,
           ),
       )
 
-      // start consumer for delayed TaskExecutorMessage
+      // start consumer for task-executor-delayed
       futures.add(
           consumer.startDelayedTaskExecutorConsumerAsync(
-              handler = { message: TaskExecutorMessage ->
-                taskExecutorDelayedProducer.sendToTaskExecutor(
-                    message,
-                )
-              },
-              beforeDlq = beforeDlq,
+              handler = taskProducer::sendToTaskExecutor,
+              beforeDlq = null,
+              serviceName = it.key,
+              concurrency = it.value.concurrency,
+          ),
+      )
+
+      // start consumer for task-events
+      val taskEventHandler = TaskEventHandler(producerAsync)
+
+      futures.add(
+          consumer.startTaskEventsConsumerAsync(
+              handler = taskEventHandler::handle,
+              beforeDlq = null,
               serviceName = it.key,
               concurrency = it.value.concurrency,
           ),
       )
     }
 
-    // start task tags
+    // start consumer for task-tags
     workerRegistry.serviceTags.forEach {
       val tagEngine = TaskTagEngine(it.value.storage, producerAsync)
 
-      val handler: (suspend (TaskTagMessage) -> Unit) =
-          { message: TaskTagMessage -> tagEngine.handle(message) }
-
-      // do nothing before sending message on dead letter queue
-      val beforeDlq = null
-
       futures.add(
           consumer.startTaskTagConsumerAsync(
-              handler = handler,
-              beforeDlq = beforeDlq,
+              handler = tagEngine::handle,
+              beforeDlq = null,
               serviceName = it.key,
               concurrency = it.value.concurrency,
           ),

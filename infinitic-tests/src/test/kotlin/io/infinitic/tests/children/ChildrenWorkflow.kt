@@ -50,7 +50,8 @@ class ChildrenWorkflowImpl : Workflow(), ChildrenWorkflow {
       newService(
           UtilService::class.java,
           tags = setOf("foo", "bar"),
-          meta = mapOf("foo" to "bar".toByteArray()))
+          meta = mutableMapOf("foo" to "bar".toByteArray()),
+      )
   private val childrenWorkflow =
       newWorkflow(ChildrenWorkflow::class.java, tags = setOf("foo", "bar"))
   private val utilWorkflow = newWorkflow(UtilWorkflow::class.java)

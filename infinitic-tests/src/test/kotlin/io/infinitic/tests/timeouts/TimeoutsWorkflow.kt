@@ -57,7 +57,7 @@ class TimeoutsWorkflowImpl : Workflow(), TimeoutsWorkflow {
   private val utilService = newService(
       UtilService::class.java,
       tags = setOf("foo", "bar"),
-      meta = mapOf("foo" to "bar".toByteArray()),
+      meta = mutableMapOf("foo" to "bar".toByteArray()),
   )
   private val timeoutsWorkflow =
       newWorkflow(TimeoutsWorkflow::class.java, tags = setOf("foo", "bar"))

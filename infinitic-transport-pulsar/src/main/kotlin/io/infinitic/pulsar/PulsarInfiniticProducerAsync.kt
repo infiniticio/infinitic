@@ -26,6 +26,7 @@ import io.github.oshai.kotlinlogging.KotlinLogging
 import io.infinitic.common.clients.messages.ClientEnvelope
 import io.infinitic.common.clients.messages.ClientMessage
 import io.infinitic.common.data.MillisDuration
+import io.infinitic.common.exceptions.thisShouldNotHappen
 import io.infinitic.common.tasks.executors.messages.ExecuteTask
 import io.infinitic.common.tasks.executors.messages.TaskExecutorEnvelope
 import io.infinitic.common.tasks.executors.messages.TaskExecutorMessage
@@ -114,8 +115,6 @@ class PulsarInfiniticProducerAsync(
         "${message.recipientName}", ClientTopicDescription.RESPONSE,
     ).getOrElse { return CompletableFuture.failedFuture(it) }
 
-    logger.debug { "Sending to topic '$topic': '$message'" }
-
     return producer.sendAsync<ClientMessage, ClientEnvelope>(
         message, zero, topic, clientProducerName,
     )
@@ -127,8 +126,6 @@ class PulsarInfiniticProducerAsync(
         .initTopic("${message.workflowName}", WorkflowTopicDescription.TAG)
         .getOrElse { return CompletableFuture.failedFuture(it) }
 
-    logger.debug { "Sending to topic '$topic': '$message'" }
-
     return producer.sendAsync<WorkflowTagMessage, WorkflowTagEnvelope>(
         message, zero, topic, workflowTagProducerName, key = "${message.workflowTag}",
     )
@@ -138,8 +135,6 @@ class PulsarInfiniticProducerAsync(
     val topic = resourceManager
         .initTopic("${message.workflowName}", WorkflowTopicDescription.CMD)
         .getOrElse { return CompletableFuture.failedFuture(it) }
-
-    logger.debug { "Sending to topic '$topic': '$message'" }
 
     return producer.sendAsync<WorkflowEngineMessage, WorkflowEngineEnvelope>(
         message, zero, topic, workflowCmdProducerName, key = "${message.workflowId}",
@@ -157,8 +152,6 @@ class PulsarInfiniticProducerAsync(
       resourceManager.initTopic("${message.workflowName}", WorkflowTopicDescription.ENGINE)
     }.getOrElse { return CompletableFuture.failedFuture(it) }
 
-    logger.debug { "Sending to topic '$topic' after $after: '$message'" }
-
     return producer.sendAsync<WorkflowEngineMessage, WorkflowEngineEnvelope>(
         message, after, topic, workflowEngineProducerName, key = "${message.workflowId}",
     )
@@ -168,8 +161,6 @@ class PulsarInfiniticProducerAsync(
   override fun sendToTaskTagAsync(message: TaskTagMessage): CompletableFuture<Unit> {
     val topic = resourceManager.initTopic("${message.serviceName}", ServiceTopicDescription.TAG)
         .getOrElse { return CompletableFuture.failedFuture(it) }
-
-    logger.debug { "Sending to topic '$topic': '$message'" }
 
     return producer.sendAsync<TaskTagMessage, TaskTagEnvelope>(
         message, zero, topic, taskTagProducerName, key = "${message.taskTag}",
@@ -181,22 +172,44 @@ class PulsarInfiniticProducerAsync(
     message: TaskExecutorMessage,
     after: MillisDuration
   ): CompletableFuture<Unit> {
-    val topic = when (message) {
-      is ExecuteTask -> when (message.isWorkflowTask()) {
-        true -> resourceManager.initTopic(
-            "${message.workflowName!!}", WorkflowTopicDescription.EXECUTOR,
-        )
+    when (message) {
+      is ExecuteTask -> Unit
+      else -> thisShouldNotHappen()
+    }
 
-        false -> resourceManager.initTopic(
-            "${message.serviceName}", ServiceTopicDescription.EXECUTOR,
-        )
-      }
+    val topic = when (message.isWorkflowTask()) {
+      true -> resourceManager.initTopic(
+          "${message.workflowName!!}", WorkflowTopicDescription.EXECUTOR,
+      )
+
+      false -> resourceManager.initTopic(
+          "${message.serviceName}", ServiceTopicDescription.EXECUTOR,
+      )
     }.getOrElse { return CompletableFuture.failedFuture(it) }
-
-    logger.debug { "Sending to topic '$topic' after $after: '$message'" }
 
     return producer.sendAsync<TaskExecutorMessage, TaskExecutorEnvelope>(
         message, after, topic, taskExecutorProducerName,
+    )
+  }
+
+  override fun sendToTaskEventsAsync(message: TaskExecutorMessage): CompletableFuture<Unit> {
+    when (message) {
+      is ExecuteTask -> thisShouldNotHappen()
+      else -> Unit
+    }
+
+    val topic = when (message.isWorkflowTask()) {
+      true -> resourceManager.initTopic(
+          "${message.workflowName!!}", WorkflowTopicDescription.EVENTS,
+      )
+
+      false -> resourceManager.initTopic(
+          "${message.serviceName}", ServiceTopicDescription.EVENTS,
+      )
+    }.getOrElse { return CompletableFuture.failedFuture(it) }
+
+    return producer.sendAsync<TaskExecutorMessage, TaskExecutorEnvelope>(
+        message, zero, topic, taskExecutorProducerName,
     )
   }
 

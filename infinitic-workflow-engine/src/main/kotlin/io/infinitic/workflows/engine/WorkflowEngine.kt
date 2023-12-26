@@ -175,7 +175,7 @@ class WorkflowEngine(
                   methodRunId = message.parentMethodRunId ?: thisShouldNotHappen(),
                   emitterName = emitterName,
               )
-          launch { producer.sendToWorkflowEngineLater(childMethodFailed) }
+          launch { producer.sendLaterToWorkflowEngine(childMethodFailed) }
         }
       }
 

@@ -22,7 +22,6 @@
  */
 package io.infinitic.common.tasks.executors.messages
 
-import com.github.avrokotlin.avro4k.Avro
 import io.infinitic.common.fixtures.TestFactory
 import io.infinitic.common.fixtures.checkBackwardCompatibility
 import io.infinitic.common.fixtures.checkOrCreateCurrentFile
@@ -42,26 +41,34 @@ class TaskExecutorEnvelopeTests :
           "TaskExecutorMessage(${msg::class.simpleName}) should be avro-convertible" {
             shouldNotThrowAny {
               val envelope = TaskExecutorEnvelope.from(msg)
-              val ser = TaskExecutorEnvelope.serializer()
-              val byteArray = Avro.default.encodeToByteArray(ser, envelope)
-              val envelope2 = Avro.default.decodeFromByteArray(ser, byteArray)
-              envelope shouldBe envelope2
+              val byteArray = envelope.toByteArray()
+
+              TaskExecutorEnvelope.fromByteArray(
+                  byteArray,
+                  TaskExecutorEnvelope.writerSchema,
+              ) shouldBe envelope
             }
           }
         }
 
-        "We should be able to read TaskExecutorEnvelope from any previous version since 0.9.0" {
+        "Avro Schema should be backward compatible" {
           // An error in this test means that we need to upgrade the version
-          checkOrCreateCurrentFile(TaskExecutorEnvelope::class, TaskExecutorEnvelope.serializer())
+          checkOrCreateCurrentFile(
+              TaskExecutorEnvelope::class,
+              TaskExecutorEnvelope.serializer(),
+          )
 
-          checkBackwardCompatibility(TaskExecutorEnvelope::class, TaskExecutorEnvelope.serializer())
+          checkBackwardCompatibility(
+              TaskExecutorEnvelope::class,
+              TaskExecutorEnvelope.serializer(),
+          )
         }
 
-        "We should be able to read binary from any previous version since 0.9.0" {
-          AvroSerDe.getAllSchemas(TaskExecutorEnvelope::class).forEach { (version, schema) ->
+
+        AvroSerDe.getAllSchemas(TaskExecutorEnvelope::class).forEach { (version, schema) ->
+          "We should be able to read binary from previous version $version" {
             val bytes = AvroSerDe.getRandomBinary(schema)
             val e = shouldThrowAny { TaskExecutorEnvelope.fromByteArray(bytes, schema) }
-            println("$version - $e")
             e::class shouldBeOneOf listOf(
                 // IllegalArgumentException is thrown because we have more than 1 message in the envelope
                 IllegalArgumentException::class,

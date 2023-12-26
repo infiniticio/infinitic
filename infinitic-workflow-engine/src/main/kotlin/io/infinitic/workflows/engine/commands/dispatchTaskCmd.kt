@@ -48,20 +48,20 @@ internal fun CoroutineScope.dispatchTaskCmd(
     ExecuteTask(
         serviceName = serviceName,
         taskId = TaskId.from(pastCommand.commandId),
+        emitterName = emitterName,
+        taskRetrySequence = pastCommand.taskRetrySequence,
+        taskRetryIndex = TaskRetryIndex(0),
+        workflowName = state.workflowName,
+        workflowId = state.workflowId,
+        methodRunId = state.runningMethodRunId ?: thisShouldNotHappen(),
+        taskTags = taskTags,
+        taskMeta = taskMeta,
         clientWaiting = false,
         methodName = methodName,
         methodParameterTypes = methodParameterTypes,
         methodParameters = methodParameters,
-        workflowId = state.workflowId,
-        workflowName = state.workflowName,
-        workflowVersion = state.workflowVersion,
-        methodRunId = state.runningMethodRunId ?: thisShouldNotHappen(),
         lastError = null,
-        taskRetryIndex = TaskRetryIndex(0),
-        taskRetrySequence = pastCommand.taskRetrySequence,
-        taskTags = taskTags,
-        taskMeta = taskMeta,
-        emitterName = emitterName,
+        workflowVersion = state.workflowVersion,
     )
   }
 
@@ -95,6 +95,6 @@ internal fun CoroutineScope.dispatchTaskCmd(
           emitterName = emitterName,
       )
     }
-    launch { producer.sendToWorkflowEngineLater(taskTimedOut, timeout) }
+    launch { producer.sendLaterToWorkflowEngine(taskTimedOut, timeout) }
   }
 }

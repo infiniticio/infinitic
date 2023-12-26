@@ -49,7 +49,8 @@ interface BranchesWorkflow {
 @Suppress("unused")
 class BranchesWorkflowImpl : Workflow(), BranchesWorkflow {
 
-  @Ignore private val self by lazy { getWorkflowById(BranchesWorkflow::class.java, workflowId) }
+  @Ignore
+  private val self by lazy { getWorkflowById(BranchesWorkflow::class.java, workflowId) }
 
   lateinit var deferred: Deferred<String>
 
@@ -57,7 +58,8 @@ class BranchesWorkflowImpl : Workflow(), BranchesWorkflow {
       newService(
           UtilService::class.java,
           tags = setOf("foo", "bar"),
-          meta = mapOf("foo" to "bar".toByteArray()))
+          meta = mutableMapOf("foo" to "bar".toByteArray()),
+      )
   private val branchesWorkflow = newWorkflow(BranchesWorkflow::class.java)
 
   override fun seq3(): String {

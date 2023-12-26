@@ -178,7 +178,7 @@ internal fun CoroutineScope.workflowTaskCompleted(
         // case of method dispatched within same workflow
         bufferedMessages.add(childMethodCompleted)
       } else {
-        launch { producer.sendToWorkflowEngineLater(childMethodCompleted) }
+        launch { producer.sendLaterToWorkflowEngine(childMethodCompleted) }
       }
     }
   }

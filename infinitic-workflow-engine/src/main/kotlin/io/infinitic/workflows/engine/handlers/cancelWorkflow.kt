@@ -99,7 +99,7 @@ private fun CoroutineScope.cancelMethodRun(
         methodRunId = methodRun.parentMethodRunId ?: thisShouldNotHappen(),
         emitterName = emitterName,
     )
-    launch { producer.sendToWorkflowEngineLater(childMethodCanceled) }
+    launch { producer.sendLaterToWorkflowEngine(childMethodCanceled) }
   }
 
   // cancel children
@@ -115,7 +115,7 @@ private fun CoroutineScope.cancelMethodRun(
                 workflowId = command.workflowId!!,
                 emitterName = emitterName,
             )
-            launch { producer.sendToWorkflowEngineLater(cancelWorkflow) }
+            launch { producer.sendLaterToWorkflowEngine(cancelWorkflow) }
           }
 
           command.workflowTag != null -> {
@@ -141,7 +141,7 @@ private fun CoroutineScope.cancelMethodRun(
             workflowId = WorkflowId.from(it.commandId),
             emitterName = emitterName,
         )
-        launch { producer.sendToWorkflowEngineLater(cancelWorkflow) }
+        launch { producer.sendLaterToWorkflowEngine(cancelWorkflow) }
       }
 
       else -> {

@@ -41,14 +41,6 @@ interface InfiniticConsumer : AutoCloseable {
     clientName: ClientName
   ): CompletableFuture<Unit>
 
-  // Asynchronously start consumers of messages to task tags
-  fun startTaskTagConsumerAsync(
-    handler: suspend (TaskTagMessage) -> Unit,
-    beforeDlq: (suspend (TaskTagMessage, Exception) -> Unit)?,
-    serviceName: ServiceName,
-    concurrency: Int
-  ): CompletableFuture<Unit>
-
   // Asynchronously start consumers of messages to workflow tag
   fun startWorkflowTagConsumerAsync(
     handler: suspend (WorkflowTagMessage) -> Unit,
@@ -81,8 +73,25 @@ interface InfiniticConsumer : AutoCloseable {
     concurrency: Int
   ): CompletableFuture<Unit>
 
+  // Asynchronously start consumers of messages to task tags
+  fun startTaskTagConsumerAsync(
+    handler: suspend (TaskTagMessage) -> Unit,
+    beforeDlq: (suspend (TaskTagMessage, Exception) -> Unit)?,
+    serviceName: ServiceName,
+    concurrency: Int
+  ): CompletableFuture<Unit>
+
   // Asynchronously start consumers of messages to task executor
   fun startTaskExecutorConsumerAsync(
+    handler: suspend (TaskExecutorMessage) -> Unit,
+    beforeDlq: (suspend (TaskExecutorMessage, Exception) -> Unit)?,
+    serviceName: ServiceName,
+    concurrency: Int
+  ): CompletableFuture<Unit>
+
+
+  // Asynchronously start consumers of messages to task events
+  fun startTaskEventsConsumerAsync(
     handler: suspend (TaskExecutorMessage) -> Unit,
     beforeDlq: (suspend (TaskExecutorMessage, Exception) -> Unit)?,
     serviceName: ServiceName,
@@ -99,6 +108,14 @@ interface InfiniticConsumer : AutoCloseable {
 
   // Asynchronously start consumers of messages to workflow task executor
   fun startWorkflowTaskConsumerAsync(
+    handler: suspend (TaskExecutorMessage) -> Unit,
+    beforeDlq: (suspend (TaskExecutorMessage, Exception) -> Unit)?,
+    workflowName: WorkflowName,
+    concurrency: Int
+  ): CompletableFuture<Unit>
+
+  // Asynchronously start consumers of messages to task events
+  fun startWorkflowTaskEventsConsumerAsync(
     handler: suspend (TaskExecutorMessage) -> Unit,
     beforeDlq: (suspend (TaskExecutorMessage, Exception) -> Unit)?,
     workflowName: WorkflowName,

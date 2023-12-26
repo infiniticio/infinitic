@@ -65,7 +65,7 @@ class LoggedInfiniticProducer(
     logTrace(message)
   }
 
-  override suspend fun sendToWorkflowEngineLater(
+  override suspend fun sendLaterToWorkflowEngine(
     message: WorkflowEngineMessage,
     after: MillisDuration
   ) {
@@ -83,6 +83,12 @@ class LoggedInfiniticProducer(
   override suspend fun sendToTaskExecutor(message: TaskExecutorMessage, after: MillisDuration) {
     logDebug(message, after)
     producerAsync.sendToTaskExecutorAsync(message, after).await()
+    logTrace(message)
+  }
+
+  override suspend fun sendToTaskEvents(message: TaskExecutorMessage) {
+    logDebug(message)
+    producerAsync.sendToTaskEventsAsync(message).await()
     logTrace(message)
   }
 
