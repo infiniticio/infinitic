@@ -31,9 +31,9 @@ dependencies {
   api(project(":infinitic-cache"))
   api(project(":infinitic-transport"))
   api(project(":infinitic-client"))
+  api(project(":infinitic-common"))
 
   implementation(project(":infinitic-autoclose"))
-  implementation(project(":infinitic-common"))
   implementation(project(":infinitic-transport"))
   implementation(project(":infinitic-task-executor"))
   implementation(project(":infinitic-workflow-engine"))

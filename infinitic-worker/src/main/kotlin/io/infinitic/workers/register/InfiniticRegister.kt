@@ -22,8 +22,8 @@
  */
 package io.infinitic.workers.register
 
+import io.github.oshai.kotlinlogging.KotlinLogging
 import io.infinitic.cache.config.Cache
-import io.infinitic.common.config.logger
 import io.infinitic.common.tasks.data.ServiceName
 import io.infinitic.common.workers.registry.RegisteredService
 import io.infinitic.common.workers.registry.RegisteredServiceTag
@@ -48,8 +48,12 @@ import io.infinitic.workflows.engine.storage.BinaryWorkflowStateStorage
 import io.infinitic.workflows.tag.config.WorkflowTag
 import io.infinitic.workflows.tag.storage.BinaryWorkflowTagStorage
 
-class InfiniticRegister(private val workerConfig: WorkerConfigInterface) :
-  InfiniticRegisterInterface {
+class InfiniticRegister(
+  logName: String,
+  private val workerConfig: WorkerConfigInterface
+) : InfiniticRegisterInterface {
+
+  private val logger = KotlinLogging.logger(logName)
 
   override val registry = WorkerRegistry(workerConfig.name)
 
@@ -144,8 +148,7 @@ class InfiniticRegister(private val workerConfig: WorkerConfigInterface) :
     tagEngine: WorkflowTag?
   ) {
     logger.info {
-      //            "* workflow executor".padEnd(25) + ": (instances: $concurrency,
-      // class:${factory()::class.java.name})"
+      "* workflow executor".padEnd(25) + ": (instances: $concurrency, class:${classes.joinToString { it.name }})"
     }
 
     val workflowName = WorkflowName(name)
@@ -189,7 +192,7 @@ class InfiniticRegister(private val workerConfig: WorkerConfigInterface) :
 
     logger.info {
       "* workflow engine".padEnd(25) +
-          ": (storage: ${s.type}, cache: ${c.type}, instances: $concurrency)"
+          ": (instances: $concurrency, storage: ${s.type}, cache: ${c.type})"
     }
 
     registry.workflowEngines[workflowName] =
@@ -208,7 +211,7 @@ class InfiniticRegister(private val workerConfig: WorkerConfigInterface) :
     val s = storage ?: workerConfig.storage
 
     logger.info {
-      "* task tag ".padEnd(25) + ": (storage: ${s.type}, cache: ${c.type}, instances: $concurrency)"
+      "* task tag ".padEnd(25) + ": (instances: $concurrency, storage: ${s.type}, cache: ${c.type})"
     }
 
     registry.serviceTags[serviceName] =
@@ -232,7 +235,7 @@ class InfiniticRegister(private val workerConfig: WorkerConfigInterface) :
 
     logger.info {
       "* workflow tag ".padEnd(25) +
-          ": (storage: ${s.type}, cache: ${c.type}, instances: $concurrency)"
+          ": (instances: $concurrency, storage: ${s.type}, cache: ${c.type})"
     }
 
     registry.workflowTags[workflowName] =

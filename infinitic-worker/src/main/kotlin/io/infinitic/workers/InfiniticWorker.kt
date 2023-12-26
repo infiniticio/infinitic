@@ -244,7 +244,7 @@ class InfiniticWorker(
       val client = InfiniticClient(consumerAsync, producerAsync)
 
       /** Infinitic Register */
-      val register = InfiniticRegister(this)
+      val register = InfiniticRegister(InfiniticWorker::class.java.name, this)
 
       /** Infinitic Worker */
       InfiniticWorker(register, consumerAsync, producerAsync, client).also {
