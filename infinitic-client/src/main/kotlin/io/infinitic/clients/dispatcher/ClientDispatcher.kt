@@ -99,7 +99,7 @@ import java.util.concurrent.CompletableFuture
 import io.infinitic.common.workflows.engine.messages.RetryTasks as RetryTaskInWorkflow
 import io.infinitic.common.workflows.tags.messages.RetryTasksByTag as RetryTaskInWorkflowByTag
 
-class ClientDispatcher(
+internal class ClientDispatcher(
   logName: String,
   private val consumerAsync: InfiniticConsumerAsync,
   private val producer: InfiniticProducer
