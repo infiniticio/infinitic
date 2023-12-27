@@ -26,6 +26,7 @@ dependencies {
 
   implementation(project(":infinitic-autoclose"))
 
+  api(project(":infinitic-common"))
   api(project(":infinitic-transport"))
 }
 

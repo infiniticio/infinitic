@@ -32,7 +32,7 @@ import io.infinitic.common.proxies.RequestByWorkflowTag
 import io.infinitic.common.workflows.data.methodRuns.MethodRunId
 import io.infinitic.common.workflows.data.workflows.WorkflowName
 
-class ExistingDeferredWorkflow<R>(
+class ExistingDeferredWorkflow<R> internal constructor(
   internal val workflowName: WorkflowName,
   internal val requestBy: RequestBy,
   internal val methodName: MethodName,

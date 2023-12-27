@@ -30,7 +30,7 @@ import io.infinitic.common.proxies.RequestByWorkflowId
 import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.data.workflows.WorkflowName
 
-class NewDeferredWorkflow<R>(
+class NewDeferredWorkflow<R> internal constructor(
   internal val workflowName: WorkflowName,
   internal val methodName: MethodName,
   internal val methodReturnClass: Class<R>,

@@ -22,21 +22,16 @@
  */
 package io.infinitic.workers.register.config
 
-import io.infinitic.common.workers.config.RetryPolicy
-import io.infinitic.workers.register.InfiniticRegisterInterface
+interface RegisterConfigInterface {
+  /** Workflows configuration */
+  val workflows: List<Workflow>
 
-data class ServiceDefault(
-  val concurrency: Int = InfiniticRegisterInterface.DEFAULT_CONCURRENCY,
-  var timeoutInSeconds: Double? = null,
-  var retry: RetryPolicy? = null
-) {
-  init {
-    require(concurrency >= 0) { "concurrency must be positive for default service" }
+  /** Services configuration */
+  val services: List<Service>
 
-    if (timeoutInSeconds != null) {
-      require(timeoutInSeconds!! > 0) {
-        "${::timeoutInSeconds.name} must be positive for default service"
-      }
-    }
-  }
+  /** Default service configuration */
+  val service: ServiceDefault
+
+  /** Default workflow configuration */
+  val workflow: WorkflowDefault
 }

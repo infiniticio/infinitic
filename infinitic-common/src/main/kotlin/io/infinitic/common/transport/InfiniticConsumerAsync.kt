@@ -32,7 +32,7 @@ import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
 import io.infinitic.common.workflows.tags.messages.WorkflowTagMessage
 import java.util.concurrent.CompletableFuture
 
-interface InfiniticConsumer : AutoCloseable {
+interface InfiniticConsumerAsync : AutoCloseable {
 
   // Asynchronously start consumers of messages to client
   fun startClientConsumerAsync(

@@ -53,7 +53,7 @@ import io.infinitic.common.proxies.RequestByWorkflowTag
 import io.infinitic.common.tasks.data.ServiceName
 import io.infinitic.common.tasks.data.TaskId
 import io.infinitic.common.tasks.executors.errors.MethodFailedError
-import io.infinitic.common.transport.InfiniticConsumer
+import io.infinitic.common.transport.InfiniticConsumerAsync
 import io.infinitic.common.transport.InfiniticProducer
 import io.infinitic.common.workflows.data.channels.SignalId
 import io.infinitic.common.workflows.data.methodRuns.MethodRunId
@@ -100,9 +100,9 @@ import java.util.concurrent.CompletableFuture
 import io.infinitic.common.workflows.engine.messages.RetryTasks as RetryTaskInWorkflow
 import io.infinitic.common.workflows.tags.messages.RetryTasksByTag as RetryTaskInWorkflowByTag
 
-class ClientDispatcher(
+internal class ClientDispatcher(
   logName: String,
-  private val consumer: InfiniticConsumer,
+  private val consumerAsync: InfiniticConsumerAsync,
   private val producer: InfiniticProducer
 ) : ProxyDispatcher, Closeable {
   private val logger = KotlinLogging.logger(logName)
@@ -742,7 +742,7 @@ class ClientDispatcher(
     // lazily starts client consumer if not already started
     synchronized(this) {
       if (!isClientConsumerInitialized) {
-        consumer.startClientConsumerAsync(::handle, null, ClientName.from(emitterName))
+        consumerAsync.startClientConsumerAsync(::handle, null, ClientName.from(emitterName))
         isClientConsumerInitialized = true
       }
     }

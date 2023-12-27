@@ -27,7 +27,9 @@ import io.infinitic.common.exceptions.thisShouldNotHappen
 import io.infinitic.common.workflows.data.channels.SignalId
 import java.util.concurrent.CompletableFuture
 
-internal class DeferredSend<R : Any?>(internal val signalId: SignalId) : Deferred<R> {
+class DeferredSend<R : Any?> internal constructor(
+  internal val signalId: SignalId
+) : Deferred<R> {
 
   override fun cancelAsync(): CompletableFuture<Unit> {
     thisShouldNotHappen()
@@ -41,7 +43,8 @@ internal class DeferredSend<R : Any?>(internal val signalId: SignalId) : Deferre
   // also we do not apply the join method
   // in order to send asynchronously the message
   // despite the synchronous syntax: workflow.channel
-  @Suppress("UNCHECKED_CAST") override fun await(): R = Unit as R
+  @Suppress("UNCHECKED_CAST")
+  override fun await(): R = Unit as R
 
   override val id: String = signalId.toString()
 

@@ -23,28 +23,33 @@
 package io.infinitic.workers
 
 import io.github.oshai.kotlinlogging.KotlinLogging
+import io.infinitic.autoclose.addAutoCloseResource
 import io.infinitic.autoclose.autoClose
+import io.infinitic.clients.InfiniticClient
 import io.infinitic.clients.InfiniticClientInterface
-import io.infinitic.common.transport.InfiniticConsumer
+import io.infinitic.common.transport.InfiniticConsumerAsync
 import io.infinitic.common.transport.InfiniticProducerAsync
 import io.infinitic.common.transport.LoggedInfiniticProducer
 import io.infinitic.tasks.Task
 import io.infinitic.tasks.executor.TaskEventHandler
 import io.infinitic.tasks.executor.TaskExecutor
 import io.infinitic.tasks.tag.TaskTagEngine
+import io.infinitic.transport.config.TransportConfig
 import io.infinitic.workers.config.WorkerConfig
+import io.infinitic.workers.config.WorkerConfigInterface
 import io.infinitic.workers.register.InfiniticRegister
+import io.infinitic.workers.register.InfiniticRegisterInterface
 import io.infinitic.workflows.engine.WorkflowEngine
 import io.infinitic.workflows.tag.WorkflowTagEngine
 import java.util.concurrent.CompletableFuture
 
 @Suppress("unused")
 class InfiniticWorker(
-  private val register: InfiniticRegister,
-  private val consumer: InfiniticConsumer,
+  private val register: InfiniticRegisterInterface,
+  private val consumerAsync: InfiniticConsumerAsync,
   private val producerAsync: InfiniticProducerAsync,
   val client: InfiniticClientInterface
-) : AutoCloseable, InfiniticRegister by register {
+) : AutoCloseable, InfiniticRegisterInterface by register {
 
   private val logger = KotlinLogging.logger {}
 
@@ -76,11 +81,11 @@ class InfiniticWorker(
 
     // start workflow tags
     workerRegistry.workflowTags.forEach {
-      val tagEngine = WorkflowTagEngine(it.value.storage, producerAsync)
+      val workflowTagEngine = WorkflowTagEngine(it.value.storage, producerAsync)
 
       futures.add(
-          consumer.startWorkflowTagConsumerAsync(
-              handler = tagEngine::handle,
+          consumerAsync.startWorkflowTagConsumerAsync(
+              handler = workflowTagEngine::handle,
               beforeDlq = null,
               workflowName = it.key,
               concurrency = it.value.concurrency,
@@ -89,9 +94,8 @@ class InfiniticWorker(
     }
 
     workerRegistry.workflowEngines.forEach {
-
       futures.add(
-          consumer.startWorkflowCmdConsumerAsync(
+          consumerAsync.startWorkflowCmdConsumerAsync(
               handler = workflowProducer::sendLaterToWorkflowEngine,
               beforeDlq = null,
               workflowName = it.key,
@@ -103,7 +107,7 @@ class InfiniticWorker(
       val workflowEngine = WorkflowEngine(it.value.storage, producerAsync)
 
       futures.add(
-          consumer.startWorkflowEngineConsumerAsync(
+          consumerAsync.startWorkflowEngineConsumerAsync(
               handler = workflowEngine::handle,
               beforeDlq = null,
               workflowName = it.key,
@@ -113,7 +117,7 @@ class InfiniticWorker(
 
       // WORKFLOW-DELAY
       futures.add(
-          consumer.startDelayedWorkflowEngineConsumerAsync(
+          consumerAsync.startDelayedWorkflowEngineConsumerAsync(
               handler = workflowProducer::sendLaterToWorkflowEngine,
               beforeDlq = null,
               workflowName = it.key,
@@ -124,13 +128,13 @@ class InfiniticWorker(
 
     workerRegistry.workflows.forEach {
       // start consumer for workflow-task-executor
-      val taskExecutor = TaskExecutor(workerRegistry, producerAsync, client)
+      val workflowTaskExecutor = TaskExecutor(workerRegistry, producerAsync, client)
 
       futures.add(
-          consumer.startWorkflowTaskConsumerAsync(
-              handler = taskExecutor::handle,
+          consumerAsync.startWorkflowTaskConsumerAsync(
+              handler = workflowTaskExecutor::handle,
               beforeDlq = { message, cause ->
-                taskExecutor.sendTaskFailed(message, cause, Task.meta, sendingDlqMessage)
+                workflowTaskExecutor.sendTaskFailed(message, cause, Task.meta, sendingDlqMessage)
               },
               workflowName = it.key,
               concurrency = it.value.concurrency,
@@ -139,7 +143,7 @@ class InfiniticWorker(
 
       // start consumer for workflow-task-executor-delayed
       futures.add(
-          consumer.startDelayedWorkflowTaskConsumerAsync(
+          consumerAsync.startDelayedWorkflowTaskConsumerAsync(
               handler = taskProducer::sendToTaskExecutor,
               beforeDlq = null,
               workflowName = it.key,
@@ -148,11 +152,11 @@ class InfiniticWorker(
       )
 
       // start consumer for workflow-task-events
-      val taskEventHandler = TaskEventHandler(producerAsync)
+      val workflowTaskEventHandler = TaskEventHandler(producerAsync)
 
       futures.add(
-          consumer.startWorkflowTaskEventsConsumerAsync(
-              handler = taskEventHandler::handle,
+          consumerAsync.startWorkflowTaskEventsConsumerAsync(
+              handler = workflowTaskEventHandler::handle,
               beforeDlq = null,
               workflowName = it.key,
               concurrency = it.value.concurrency,
@@ -166,7 +170,7 @@ class InfiniticWorker(
       val taskExecutor = TaskExecutor(workerRegistry, producerAsync, client)
 
       futures.add(
-          consumer.startTaskExecutorConsumerAsync(
+          consumerAsync.startTaskExecutorConsumerAsync(
               handler = taskExecutor::handle,
               beforeDlq = { message, cause ->
                 taskExecutor.sendTaskFailed(message, cause, Task.meta, sendingDlqMessage)
@@ -178,7 +182,7 @@ class InfiniticWorker(
 
       // start consumer for task-executor-delayed
       futures.add(
-          consumer.startDelayedTaskExecutorConsumerAsync(
+          consumerAsync.startDelayedTaskExecutorConsumerAsync(
               handler = taskProducer::sendToTaskExecutor,
               beforeDlq = null,
               serviceName = it.key,
@@ -190,7 +194,7 @@ class InfiniticWorker(
       val taskEventHandler = TaskEventHandler(producerAsync)
 
       futures.add(
-          consumer.startTaskEventsConsumerAsync(
+          consumerAsync.startTaskEventsConsumerAsync(
               handler = taskEventHandler::handle,
               beforeDlq = null,
               serviceName = it.key,
@@ -204,7 +208,7 @@ class InfiniticWorker(
       val tagEngine = TaskTagEngine(it.value.storage, producerAsync)
 
       futures.add(
-          consumer.startTaskTagConsumerAsync(
+          consumerAsync.startTaskTagConsumerAsync(
               handler = tagEngine::handle,
               beforeDlq = null,
               serviceName = it.key,
@@ -219,14 +223,44 @@ class InfiniticWorker(
   }
 
   companion object {
+    /** Create [InfiniticWorker] from config */
+    @JvmStatic
+    fun fromConfig(workerConfig: WorkerConfigInterface): InfiniticWorker = with(workerConfig) {
+      val transportConfig = TransportConfig(transport, pulsar)
+
+      /** Infinitic Consumer */
+      val consumerAsync = transportConfig.consumerAsync
+
+      /** Infinitic  Producer */
+      val producerAsync = transportConfig.producerAsync
+
+      // apply name if it exists
+      name?.let { producerAsync.name = it }
+
+      /** Infinitic Client */
+      val client = InfiniticClient(consumerAsync, producerAsync)
+
+      /** Infinitic Register */
+      val register = InfiniticRegister(InfiniticWorker::class.java.name, this)
+
+      /** Infinitic Worker */
+      InfiniticWorker(register, consumerAsync, producerAsync, client).also {
+        // close client with the worker
+        it.addAutoCloseResource(client)
+        // close consumer with the worker
+        it.addAutoCloseResource(consumerAsync)
+      }
+    }
+
     /** Create [InfiniticWorker] from config in resources */
     @JvmStatic
-    fun fromConfigResource(vararg resources: String) =
-        WorkerConfig.fromResource(*resources).worker
+    fun fromConfigResource(vararg resources: String): InfiniticWorker =
+        fromConfig(WorkerConfig.fromResource(*resources))
 
     /** Create [InfiniticWorker] from config in system file */
     @JvmStatic
-    fun fromConfigFile(vararg files: String) = WorkerConfig.fromFile(*files).worker
+    fun fromConfigFile(vararg files: String): InfiniticWorker =
+        fromConfig(WorkerConfig.fromFile(*files))
 
   }
 }

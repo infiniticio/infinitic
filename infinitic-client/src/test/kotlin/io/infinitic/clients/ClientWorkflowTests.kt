@@ -44,7 +44,7 @@ import io.infinitic.common.fixtures.TestFactory
 import io.infinitic.common.fixtures.later
 import io.infinitic.common.tasks.executors.messages.TaskExecutorMessage
 import io.infinitic.common.tasks.tags.messages.TaskTagMessage
-import io.infinitic.common.transport.InfiniticConsumer
+import io.infinitic.common.transport.InfiniticConsumerAsync
 import io.infinitic.common.transport.InfiniticProducerAsync
 import io.infinitic.common.utils.Tsid
 import io.infinitic.common.workflows.data.channels.ChannelName
@@ -135,11 +135,11 @@ private val producerAsync: InfiniticProducerAsync = mockk<InfiniticProducerAsync
   } answers { engineResponse() }
 }
 
-private val consumer: InfiniticConsumer = mockk<InfiniticConsumer> {
+private val consumerAsync: InfiniticConsumerAsync = mockk<InfiniticConsumerAsync> {
   every { startClientConsumerAsync(any(), any(), clientNameTest) } returns completed()
 }
 
-private val client = InfiniticClient(consumer, producerAsync)
+private val client = InfiniticClient(consumerAsync, producerAsync)
 
 private class ClientWorkflowTests : StringSpec(
     {
@@ -182,7 +182,7 @@ private class ClientWorkflowTests : StringSpec(
         )
 
         // when asynchronously dispatching a workflow, the consumer should not be started
-        verify { consumer.startClientConsumerAsync(any(), any(), any()) wasNot called }
+        verify { consumerAsync.startClientConsumerAsync(any(), any(), any()) wasNot called }
       }
 
       "Should be able to dispatch a workflow with annotation" {
@@ -386,13 +386,13 @@ private class ClientWorkflowTests : StringSpec(
         )
 
         // when waiting for a workflow, the consumer should be started
-        verify { consumer.startClientConsumerAsync(any(), any(), clientNameTest) }
+        verify { consumerAsync.startClientConsumerAsync(any(), any(), clientNameTest) }
 
         // restart a workflow
         client.dispatch(fakeWorkflow::m3, 0, "a").await()
 
         // the consumer should be started only once
-        verify { consumer.startClientConsumerAsync(any(), any(), any()) wasNot called }
+        verify { consumerAsync.startClientConsumerAsync(any(), any(), any()) wasNot called }
       }
 
       "Should throw a WorkflowTimedOutException when waiting for a workflow more than timeout" {

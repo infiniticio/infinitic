@@ -22,28 +22,32 @@
  */
 package io.infinitic.clients.config
 
-import io.infinitic.clients.InfiniticClient
 import io.infinitic.common.config.loadConfigFromFile
 import io.infinitic.common.config.loadConfigFromResource
-import io.infinitic.transport.config.TransportConfig
+import io.infinitic.pulsar.config.Pulsar
+import io.infinitic.transport.config.Transport
 
-interface ClientConfig : TransportConfig {
-
+data class ClientConfig @JvmOverloads constructor(
   /** Client name */
-  val name: String?
+  override val name: String? = null,
 
-  /** Infinitic Client */
-  val client: InfiniticClient
+  /** Transport configuration */
+  override val transport: Transport = Transport.pulsar,
+
+  /** Pulsar configuration */
+  override val pulsar: Pulsar? = null
+
+) : ClientConfigInterface {
 
   companion object {
     /** Create ClientConfig from file in file system */
     @JvmStatic
     fun fromFile(vararg files: String): ClientConfig =
-        loadConfigFromFile<ClientConfigData>(files.toList())
+        loadConfigFromFile<ClientConfig>(files.toList())
 
     /** Create ClientConfig from file in resources directory */
     @JvmStatic
     fun fromResource(vararg resources: String): ClientConfig =
-        loadConfigFromResource<ClientConfigData>(resources.toList())
+        loadConfigFromResource<ClientConfig>(resources.toList())
   }
 }
