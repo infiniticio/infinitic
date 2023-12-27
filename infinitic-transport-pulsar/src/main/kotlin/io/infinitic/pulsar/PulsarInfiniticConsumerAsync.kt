@@ -209,12 +209,21 @@ class PulsarInfiniticConsumerAsync(
     concurrency: Int,
     name: String
   ): CompletableFuture<Unit> {
-    // create topic if not exists
-    val topic = resourceManager.initTopic(name, topicDescription)
-        .getOrElse { return CompletableFuture.failedFuture(it) }
-    // create DLQ topic if not exists
-    val topicDlq = resourceManager.initDlqTopic(name, topicDescription)
-        .getOrElse { return CompletableFuture.failedFuture(it) }
+    val topic = resourceManager.getTopicName(name, topicDescription)
+    // create topic if needed
+    resourceManager.initTopicOnce(
+        topic = topic,
+        isPartitioned = topicDescription.isPartitioned,
+        isDelayed = topicDescription.isDelayed,
+    )
+
+    val topicDlq = resourceManager.getDlqTopicName(name, topicDescription)
+    // create DLQ topic if needed
+    resourceManager.initDlqTopicOnce(
+        topic = topicDlq,
+        isPartitioned = topicDescription.isPartitioned,
+        isDelayed = topicDescription.isDelayed,
+    )
 
     return with(consumer) {
       consumingScope.future {

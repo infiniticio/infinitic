@@ -38,8 +38,10 @@ import io.infinitic.common.workflows.tags.messages.WorkflowTagEnvelope
 import io.infinitic.common.workflows.tags.messages.WorkflowTagMessage
 import io.infinitic.pulsar.producers.Producer
 import io.infinitic.pulsar.resources.ClientTopicDescription
+import io.infinitic.pulsar.resources.GlobalTopicDescription
 import io.infinitic.pulsar.resources.ResourceManager
 import io.infinitic.pulsar.resources.ServiceTopicDescription
+import io.infinitic.pulsar.resources.TopicDescription
 import io.infinitic.pulsar.resources.WorkflowTopicDescription
 import java.util.concurrent.CompletableFuture
 
@@ -67,8 +69,7 @@ class PulsarInfiniticProducerAsync(
    * If [suggestedName] is not provided, Pulsar will provide a unique name
    */
   private val uniqueName: String by lazy {
-    // Create namer topic if not exists
-    val namerTopic = resourceManager.initNamer().getOrThrow()
+    val namerTopic = getTopicName("global", GlobalTopicDescription.NAMER)
     // Get unique name
     producer.getUniqueName(namerTopic, suggestedName).getOrThrow()
   }
@@ -105,10 +106,10 @@ class PulsarInfiniticProducerAsync(
 
   // Asynchronously send message to client
   override fun sendAsync(message: ClientMessage): CompletableFuture<Unit> {
-    val topic = resourceManager.initTopic(
-        "${message.recipientName}", ClientTopicDescription.RESPONSE,
-    ).getOrElse { return CompletableFuture.failedFuture(it) }
+    val name = "${message.recipientName}"
+    val desc = ClientTopicDescription.RESPONSE
 
+    val topic = getTopicName(name, desc)
     logger.debug { "Sending to topic '$topic': '$message'" }
 
     return producer.sendAsync<ClientMessage, ClientEnvelope>(
@@ -118,11 +119,10 @@ class PulsarInfiniticProducerAsync(
 
   // Asynchronously send message to Workflow Tag
   override fun sendAsync(message: WorkflowTagMessage): CompletableFuture<Unit> {
-    val topic =
-        resourceManager.initTopic(
-            "${message.workflowName}", WorkflowTopicDescription.TAG,
-        ).getOrElse { return CompletableFuture.failedFuture(it) }
+    val name = "${message.workflowName}"
+    val desc = WorkflowTopicDescription.TAG
 
+    val topic = getTopicName(name, desc)
     logger.debug { "Sending to topic '$topic': '$message'" }
 
     return producer.sendAsync<WorkflowTagMessage, WorkflowTagEnvelope>(
@@ -135,12 +135,13 @@ class PulsarInfiniticProducerAsync(
     message: WorkflowEngineMessage,
     after: MillisDuration
   ): CompletableFuture<Unit> {
-    val topic = if (after > 0) {
-      resourceManager.initTopic("${message.workflowName}", WorkflowTopicDescription.ENGINE_DELAYED)
-    } else {
-      resourceManager.initTopic("${message.workflowName}", WorkflowTopicDescription.ENGINE)
-    }.getOrElse { return CompletableFuture.failedFuture(it) }
+    val name = "${message.workflowName}"
+    val desc = when (after > 0) {
+      true -> WorkflowTopicDescription.ENGINE_DELAYED
+      false -> WorkflowTopicDescription.ENGINE
+    }
 
+    val topic = getTopicName(name, desc)
     logger.debug { "Sending to topic '$topic' after $after: '$message'" }
 
     return producer.sendAsync<WorkflowEngineMessage, WorkflowEngineEnvelope>(
@@ -150,9 +151,10 @@ class PulsarInfiniticProducerAsync(
 
   // Asynchronously send message to Task Tag
   override fun sendAsync(message: TaskTagMessage): CompletableFuture<Unit> {
-    val topic = resourceManager.initTopic("${message.serviceName}", ServiceTopicDescription.TAG)
-        .getOrElse { return CompletableFuture.failedFuture(it) }
+    val name = "${message.serviceName}"
+    val desc = ServiceTopicDescription.TAG
 
+    val topic = getTopicName(name, desc)
     logger.debug { "Sending to topic '$topic': '$message'" }
 
     return producer.sendAsync<TaskTagMessage, TaskTagEnvelope>(
@@ -165,24 +167,39 @@ class PulsarInfiniticProducerAsync(
     message: TaskExecutorMessage,
     after: MillisDuration
   ): CompletableFuture<Unit> {
-    val topic = when (message) {
+    val name: String
+    val desc: TopicDescription
+    when (message) {
       is ExecuteTask -> when (message.isWorkflowTask()) {
-        true -> resourceManager.initTopic(
-            "${message.workflowName!!}", WorkflowTopicDescription.EXECUTOR,
-        )
+        true -> {
+          name = "${message.workflowName!!}"
+          desc = WorkflowTopicDescription.EXECUTOR
+        }
 
-        false -> resourceManager.initTopic(
-            "${message.serviceName}", ServiceTopicDescription.EXECUTOR,
-        )
+        false -> {
+          name = "${message.serviceName}"
+          desc = ServiceTopicDescription.EXECUTOR
+        }
       }
-    }.getOrElse { return CompletableFuture.failedFuture(it) }
+    }
 
+    val topic = getTopicName(name, desc)
     logger.debug { "Sending to topic '$topic' after $after: '$message'" }
 
     return producer.sendAsync<TaskExecutorMessage, TaskExecutorEnvelope>(
         message, after, topic, taskExecutorProducerName,
     )
   }
+
+  private fun getTopicName(name: String, desc: TopicDescription) =
+      resourceManager.getTopicName(name, desc).also {
+        // create topic if needed
+        resourceManager.initTopicOnce(
+            topic = it,
+            isPartitioned = desc.isPartitioned,
+            isDelayed = desc.isDelayed,
+        )
+      }
 
   companion object {
     private val zero = MillisDuration.ZERO

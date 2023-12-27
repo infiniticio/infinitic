@@ -31,7 +31,7 @@ open class TopicNamerDefault(override val tenant: String, override val namespace
 
   override fun getConsumerName(name: String, topicDescription: TopicDescription) =
       "$name<<${topicDescription.subscriptionPrefix}"
-
+  
   override fun getTopicName(name: String, topicDescription: TopicDescription): String =
       when (topicDescription) {
         is GlobalTopicDescription -> fullNameTopic(topicDescription.subscriptionPrefix)

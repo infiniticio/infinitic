@@ -50,75 +50,41 @@ class ResourceManager(
     get() = topicSet.mapNotNull { topicNamer.getWorkflowName(it) }.toSet()
 
   /**
-   * Check if the namer topic exists, and create it if not
-   * We skip this if the topic has already been initialized successfully
-   *
-   */
-  fun initNamer(): Result<String> =
-      initTopic(
-          topicNamer.getTopicName("global", GlobalTopicDescription.NAMER),
-          GlobalTopicDescription.NAMER,
-      )
-
-  /**
-   * Check if a topic exists, and create it if not
-   * We skip this if the topic has already been initialized successfully
-   */
-  fun initTopic(name: String, topicDescription: TopicDescription): Result<String> = initTopic(
-      topicNamer.getTopicName(name, topicDescription),
-      topicDescription.isPartitioned,
-      topicDescription.isDelayed,
-  )
-
-
-  /**
    * Check if a Dead Letter Queue topic exists, and create it if not
-   * We skip this if the topic has already been initialized successfully
+   * We skip this if the topic has already been initialized
    */
-  fun initDlqTopic(name: String, topicDescription: TopicDescription): Result<String?> =
-      topicNamer.getDlqTopicName(name, topicDescription)
-          ?.let {
-            initTopic(
-                it,
-                topicDescription.isPartitioned,
-                topicDescription.isDelayed,
-            )
-          }
-        ?: Result.success(null)
+  fun initDlqTopicOnce(
+    topic: String?,
+    isPartitioned: Boolean,
+    isDelayed: Boolean
+  ): Result<Unit?> = topic?.let { initTopicOnce(it, isPartitioned, isDelayed) }
+    ?: Result.success(null)
 
   /**
    * Delete a topic by name
    */
   fun deleteTopic(topic: String): Result<Unit> = admin.deleteTopic(topic)
 
-  private fun initTopic(
+  /**
+   * Check if a topic exists, and create it if not
+   * We skip this if the topic has already been initialized
+   */
+  fun initTopicOnce(
     topic: String,
     isPartitioned: Boolean,
     isDelayed: Boolean
-  ): Result<String> {
-    // if topic is not initialized
-    if (!admin.isTopicInitialized(topic)) {
-      // if namespace is not initialized
-      if (!admin.isNamespaceInitialized(fullNameSpace)) {
-        // if tenant is not initialized
-        if (!admin.isTenantInitialized(tenant)) {
-          // initialize tenant
-          admin.initTenant(tenant, allowedClusters, adminRoles)
-              .onFailure { return Result.failure(it) }
-        }
-        // initialize namespace
-        admin.initNamespace(fullNameSpace, policies)
-            .onFailure { return Result.failure(it) }
-      }
-      // initialize topic
-      val ttl = when (isDelayed) {
-        true -> policies.delayedTTLInSeconds
-        false -> policies.messageTTLInSeconds
-      }
-      admin.initTopic(topic, isPartitioned, ttl)
-          .onFailure { return Result.failure(it) }
+  ): Result<Unit> {
+    // initialize tenant once (do nothing on error)
+    admin.initTenantOnce(tenant, allowedClusters, adminRoles)
+    // initialize namespace once (do nothing on error)
+    admin.initNamespaceOnce(fullNameSpace, policies)
+    // initialize topic once  (do nothing on error)
+    val ttl = when (isDelayed) {
+      true -> policies.delayedTTLInSeconds
+      false -> policies.messageTTLInSeconds
     }
-    return Result.success(topic)
+
+    return admin.initTopicOnce(topic, isPartitioned, ttl).map { }
   }
 
   companion object {

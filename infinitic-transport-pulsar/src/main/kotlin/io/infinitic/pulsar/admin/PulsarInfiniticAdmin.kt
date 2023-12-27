@@ -48,14 +48,6 @@ class PulsarInfiniticAdmin(
   private val namespaces = pulsarAdmin.namespaces()
 
   private val DEFAUT_NUM_PARTITIONS = 3
-  fun isTenantInitialized(tenant: String) =
-      initializedTenants.containsKey(tenant)
-
-  fun isNamespaceInitialized(fullNamespace: String) =
-      initializedNamespaces.containsKey(fullNamespace)
-
-  fun isTopicInitialized(topic: String) =
-      initializedTopics.containsKey(topic)
 
   /**
    * Get set of clusters' name
@@ -97,75 +89,79 @@ class PulsarInfiniticAdmin(
       }
 
   /**
-   * Ensure tenant exists.
+   * Ensure once that tenant exists.
    *
    * Returns:
    *  - Result.success(TenantInfo) if tenant exists or has been created
    *  - Result.failure(e) in case of error
    **/
-  fun initTenant(
+  fun initTenantOnce(
     tenant: String,
     allowedClusters: Set<String>?,
     adminRoles: Set<String>?
-  ): Result<TenantInfo> = try {
-    initializedTenants.computeIfAbsent(tenant) {
+  ): Result<TenantInfo> = initializedTenants.computeIfAbsent(tenant) {
+    try {
       // get tenant info or create it
-      getTenantInfo(tenant).getOrThrow()
+      val tenantInfo = getTenantInfo(tenant).getOrThrow()
         ?: createTenant(tenant, allowedClusters, adminRoles).getOrThrow()
-    }.let {
-      checkTenantInfo(tenant, it, allowedClusters, adminRoles)
-      Result.success(it)
+
+      checkTenantInfo(tenant, tenantInfo, allowedClusters, adminRoles)
+      Result.success(tenantInfo)
+    } catch (e: Exception) {
+      logger.warn(e) { "Unable to check/create tenant '$tenant'" }
+      Result.failure(e)
     }
-  } catch (e: Exception) {
-    Result.failure(e)
   }
 
   /**
-   * Ensure namespace exists.
+   * Ensure once that namespace exists.
    *
    * Returns:
    *  - Result.success(Policies) if tenant exists or has been created
    *  - Result.failure(e) in case of error
    **/
-  fun initNamespace(
+  fun initNamespaceOnce(
     fullNamespace: String,
     config: Policies
-  ): Result<PulsarPolicies> = try {
-    initializedNamespaces.computeIfAbsent(fullNamespace) {
+  ): Result<PulsarPolicies> = initializedNamespaces.computeIfAbsent(fullNamespace) {
+    try {
       // get Namespace policies or create it
-      getNamespacePolicies(fullNamespace).getOrThrow()
+      val policies = getNamespacePolicies(fullNamespace).getOrThrow()
         ?: createNamespace(fullNamespace, config).getOrThrow()
-    }.let {
-      checkNamespacePolicies(it, config.getPulsarPolicies())
-      Result.success(it)
+
+      checkNamespacePolicies(policies, config.getPulsarPolicies())
+      Result.success(policies)
+    } catch (e: Exception) {
+      logger.warn(e) { "Unable to check/create namespace '$fullNamespace'" }
+      Result.failure(e)
     }
-  } catch (e: Exception) {
-    Result.failure(e)
   }
 
   /**
-   * Ensure topic exists.
+   * Ensure once that topic exists.
    *
    * Returns:
    *  - Result.success(Unit) if topic exists or has been created
    *  - Result.failure(e) in case of error
    **/
-  fun initTopic(
+  fun initTopicOnce(
     topic: String,
     isPartitioned: Boolean,
     messageTTLPolicy: Int
-  ): Result<TopicInfo> = try {
-    initializedTopics.computeIfAbsent(topic) {
+  ): Result<TopicInfo> = initializedTopics.computeIfAbsent(topic) {
+    try {
       // get Namespace policies or create it
-      getTopicInfo(topic).getOrThrow()
+      val topicInfo = getTopicInfo(topic).getOrThrow()
         ?: createTopic(topic, isPartitioned, messageTTLPolicy).getOrThrow()
-    }.let {
-      checkTopicInfo(topic, it, TopicInfo(isPartitioned, messageTTLPolicy))
-      Result.success(it)
+
+      checkTopicInfo(topic, topicInfo, TopicInfo(isPartitioned, messageTTLPolicy))
+      Result.success(topicInfo)
+    } catch (e: Exception) {
+      logger.warn(e) { "Unable to check/create topic '$topic'" }
+      Result.failure(e)
     }
-  } catch (e: Exception) {
-    Result.failure(e)
   }
+
 
   /**
    * Delete topic.
@@ -483,12 +479,12 @@ class PulsarInfiniticAdmin(
 
   companion object {
     // thread-safe set of initialized tenants
-    private val initializedTenants = ConcurrentHashMap<String, TenantInfo>()
+    private val initializedTenants = ConcurrentHashMap<String, Result<TenantInfo>>()
 
     // thread-safe set of initialized namespaces
-    private val initializedNamespaces = ConcurrentHashMap<String, PulsarPolicies>()
+    private val initializedNamespaces = ConcurrentHashMap<String, Result<PulsarPolicies>>()
 
     // thread-safe set of initialized topics (topic name includes tenant and namespace)
-    private val initializedTopics = ConcurrentHashMap<String, TopicInfo>()
+    private val initializedTopics = ConcurrentHashMap<String, Result<TopicInfo>>()
   }
 }
