@@ -108,7 +108,7 @@ class PulsarInfiniticAdmin(
       checkTenantInfo(tenant, tenantInfo, allowedClusters, adminRoles)
       Result.success(tenantInfo)
     } catch (e: Exception) {
-      logger.warn(e) { "Unable to check/create tenant '$tenant'" }
+      logger.info(e) { "Unable to check/create tenant '$tenant'" }
       Result.failure(e)
     }
   }
@@ -132,7 +132,7 @@ class PulsarInfiniticAdmin(
       checkNamespacePolicies(policies, config.getPulsarPolicies())
       Result.success(policies)
     } catch (e: Exception) {
-      logger.warn(e) { "Unable to check/create namespace '$fullNamespace'" }
+      logger.info(e) { "Unable to check/create namespace '$fullNamespace'" }
       Result.failure(e)
     }
   }
