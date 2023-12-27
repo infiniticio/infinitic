@@ -25,7 +25,7 @@ package io.infinitic.workers.register.config
 import io.infinitic.common.utils.getInstance
 import io.infinitic.common.utils.isImplementationOf
 import io.infinitic.common.workers.config.RetryPolicy
-import io.infinitic.workers.register.InfiniticRegister
+import io.infinitic.workers.register.InfiniticRegisterInterface
 import io.infinitic.workflows.Workflow
 import io.infinitic.workflows.WorkflowCheckMode
 import io.infinitic.workflows.engine.config.WorkflowEngine
@@ -40,8 +40,8 @@ data class Workflow(
   var timeoutInSeconds: Double? = null,
   var retry: RetryPolicy? = null,
   var checkMode: WorkflowCheckMode? = null,
-  var tagEngine: WorkflowTag? = InfiniticRegister.DEFAULT_WORKFLOW_TAG,
-  var workflowEngine: WorkflowEngine? = InfiniticRegister.DEFAULT_WORKFLOW_ENGINE
+  var tagEngine: WorkflowTag? = InfiniticRegisterInterface.DEFAULT_WORKFLOW_TAG,
+  var workflowEngine: WorkflowEngine? = InfiniticRegisterInterface.DEFAULT_WORKFLOW_ENGINE
 ) {
   val allClasses = mutableListOf<Class<out WorkflowBase>>()
 

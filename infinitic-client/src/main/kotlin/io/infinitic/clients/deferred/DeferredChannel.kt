@@ -27,7 +27,9 @@ import io.infinitic.common.exceptions.thisShouldNotHappen
 import io.infinitic.workflows.SendChannel
 import java.util.concurrent.CompletableFuture
 
-internal class DeferredChannel<R : SendChannel<*>>(private val channel: R) : Deferred<R> {
+class DeferredChannel<R : SendChannel<*>> internal constructor(
+  private val channel: R
+) : Deferred<R> {
 
   override fun cancelAsync(): CompletableFuture<Unit> {
     thisShouldNotHappen()

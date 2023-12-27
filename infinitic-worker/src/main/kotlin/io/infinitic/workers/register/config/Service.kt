@@ -26,8 +26,7 @@ import io.infinitic.common.utils.getInstance
 import io.infinitic.common.utils.isImplementationOf
 import io.infinitic.common.workers.config.RetryPolicy
 import io.infinitic.tasks.tag.config.TaskTag
-import io.infinitic.workers.register.InfiniticRegister
-import java.lang.reflect.Constructor
+import io.infinitic.workers.register.InfiniticRegisterInterface
 
 data class Service(
   val name: String,
@@ -35,10 +34,8 @@ data class Service(
   var concurrency: Int? = null,
   var timeoutInSeconds: Double? = null,
   var retry: RetryPolicy? = null,
-  var tagEngine: TaskTag? = InfiniticRegister.DEFAULT_TASK_TAG
+  var tagEngine: TaskTag? = InfiniticRegisterInterface.DEFAULT_TASK_TAG
 ) {
-  private lateinit var constructor: Constructor<out Any>
-
   fun getInstance(): Any = `class`!!.getInstance(
       classNotFound = error("Class '${`class`}' unknown"),
       errorClass = error("Can not access class '${`class`}'"),

@@ -22,34 +22,81 @@
  */
 package io.infinitic.transport.config
 
+import io.infinitic.autoclose.addAutoCloseResource
 import io.infinitic.common.config.loadConfigFromFile
 import io.infinitic.common.config.loadConfigFromResource
-import io.infinitic.common.transport.InfiniticConsumer
+import io.infinitic.common.transport.InfiniticConsumerAsync
 import io.infinitic.common.transport.InfiniticProducerAsync
+import io.infinitic.inMemory.InMemoryChannels
+import io.infinitic.inMemory.InMemoryInfiniticConsumerAsync
+import io.infinitic.inMemory.InMemoryInfiniticProducerAsync
+import io.infinitic.pulsar.PulsarInfiniticConsumerAsync
+import io.infinitic.pulsar.PulsarInfiniticProducerAsync
+import io.infinitic.pulsar.client.PulsarInfiniticClient
 import io.infinitic.pulsar.config.Pulsar
+import io.infinitic.pulsar.consumers.Consumer
+import io.infinitic.pulsar.producers.Producer
+import io.infinitic.pulsar.resources.ResourceManager
 
-interface TransportConfig {
+data class TransportConfig(
   /** Transport configuration */
-  val transport: Transport
+  override val transport: Transport = Transport.pulsar,
 
   /** Pulsar configuration */
-  val pulsar: Pulsar?
+  override val pulsar: Pulsar? = null
+) : TransportConfigInterface {
+
+  init {
+    if (transport == Transport.pulsar) {
+      require(pulsar != null) { "Missing Pulsar configuration" }
+    }
+  }
+
+  // we provide consumer and producer together,
+  // as they must share the same configuration
+  private val cp: Pair<InfiniticConsumerAsync, InfiniticProducerAsync> =
+      when (transport) {
+        Transport.pulsar -> with(ResourceManager.from(pulsar!!)) {
+          val client = PulsarInfiniticClient(pulsar.client)
+          val consumerAsync = PulsarInfiniticConsumerAsync(Consumer(client, pulsar.consumer), this)
+          val producerAsync = PulsarInfiniticProducerAsync(Producer(client, pulsar.producer), this)
+
+          // Pulsar client will be closed with consumer
+          consumerAsync.addAutoCloseResource(pulsar.client)
+          // Pulsar admin will be closed with consumer
+          consumerAsync.addAutoCloseResource(pulsar.admin)
+
+          Pair(consumerAsync, producerAsync)
+        }
+
+        Transport.inMemory -> {
+          val channels = InMemoryChannels()
+          val consumerAsync = InMemoryInfiniticConsumerAsync(channels)
+          val producerAsync = InMemoryInfiniticProducerAsync(channels)
+
+          // channels will be closed with consumer
+          consumerAsync.addAutoCloseResource(channels)
+
+          Pair(consumerAsync, producerAsync)
+        }
+      }
 
   /** Infinitic Consumer */
-  val consumer: InfiniticConsumer
+  val consumerAsync: InfiniticConsumerAsync = cp.first
 
   /** Infinitic Producer */
-  val producerAsync: InfiniticProducerAsync
+  val producerAsync: InfiniticProducerAsync = cp.second
 
   companion object {
     /** Create TransportConfig from file in file system */
     @JvmStatic
     fun fromFile(vararg files: String): TransportConfig =
-        loadConfigFromFile<TransportConfigData>(files.toList())
+        loadConfigFromFile(files.toList())
 
-    /** Create TransportConfig from file in resources directory */
+    /** Create TransportConfig from file in resources */
     @JvmStatic
     fun fromResource(vararg resources: String): TransportConfig =
-        loadConfigFromResource<TransportConfigData>(resources.toList())
+        loadConfigFromResource(resources.toList())
   }
 }
+

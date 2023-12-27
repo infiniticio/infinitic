@@ -23,11 +23,11 @@
 package io.infinitic.workers.register.config
 
 import io.infinitic.common.workers.config.RetryPolicy
-import io.infinitic.workers.register.InfiniticRegister
+import io.infinitic.workers.register.InfiniticRegisterInterface
 import io.infinitic.workflows.WorkflowCheckMode
 
 data class WorkflowDefault(
-  val concurrency: Int = InfiniticRegister.DEFAULT_CONCURRENCY,
+  val concurrency: Int = InfiniticRegisterInterface.DEFAULT_CONCURRENCY,
   val timeoutInSeconds: Double? = null,
   val retry: RetryPolicy? = null,
   val checkMode: WorkflowCheckMode? = null

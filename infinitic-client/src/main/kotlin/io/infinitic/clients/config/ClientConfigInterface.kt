@@ -22,37 +22,9 @@
  */
 package io.infinitic.clients.config
 
-import io.infinitic.autoclose.addAutoCloseResource
-import io.infinitic.clients.InfiniticClient
-import io.infinitic.pulsar.config.Pulsar
-import io.infinitic.transport.config.Transport
-import io.infinitic.transport.config.TransportConfigData
+import io.infinitic.transport.config.TransportConfigInterface
 
-data class ClientConfigData @JvmOverloads constructor(
+interface ClientConfigInterface : TransportConfigInterface {
   /** Client name */
-  override val name: String? = null,
-
-  /** Transport configuration */
-  override val transport: Transport = Transport.pulsar,
-
-  /** Pulsar configuration */
-  override val pulsar: Pulsar? = null
-) : ClientConfig {
-
-  private val transportConfig = TransportConfigData(transport, pulsar)
-
-  /** Infinitic Consumer */
-  override val consumer = transportConfig.consumer
-
-  /** Infinitic  Producer */
-  override val producerAsync = transportConfig.producerAsync.also {
-    // apply name if it exists
-    if (name != null) it.name = name
-  }
-
-  /** Infinitic Client */
-  override val client = InfiniticClient(consumer, producerAsync).also {
-    // close consumer with the client
-    it.addAutoCloseResource(consumer)
-  }
+  val name: String?
 }

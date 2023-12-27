@@ -20,23 +20,9 @@
  *
  * Licensor: infinitic.io
  */
-package io.infinitic.workers.register.config
+package io.infinitic.cache.config
 
-import io.infinitic.common.workers.config.RetryPolicy
-import io.infinitic.workers.register.InfiniticRegisterInterface
-
-data class ServiceDefault(
-  val concurrency: Int = InfiniticRegisterInterface.DEFAULT_CONCURRENCY,
-  var timeoutInSeconds: Double? = null,
-  var retry: RetryPolicy? = null
-) {
-  init {
-    require(concurrency >= 0) { "concurrency must be positive for default service" }
-
-    if (timeoutInSeconds != null) {
-      require(timeoutInSeconds!! > 0) {
-        "${::timeoutInSeconds.name} must be positive for default service"
-      }
-    }
-  }
+/** Cache configuration */
+interface CacheConfigInterface {
+  val cache: Cache
 }

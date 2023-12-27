@@ -22,8 +22,10 @@
  */
 package io.infinitic.clients
 
+import io.infinitic.autoclose.addAutoCloseResource
 import io.infinitic.autoclose.autoClose
 import io.infinitic.clients.config.ClientConfig
+import io.infinitic.clients.config.ClientConfigInterface
 import io.infinitic.clients.dispatcher.ClientDispatcher
 import io.infinitic.common.clients.messages.ClientMessage
 import io.infinitic.common.proxies.ExistingWorkflowProxyHandler
@@ -34,7 +36,7 @@ import io.infinitic.common.proxies.RequestByWorkflowId
 import io.infinitic.common.proxies.RequestByWorkflowTag
 import io.infinitic.common.tasks.data.TaskId
 import io.infinitic.common.tasks.data.TaskMeta
-import io.infinitic.common.transport.InfiniticConsumer
+import io.infinitic.common.transport.InfiniticConsumerAsync
 import io.infinitic.common.transport.InfiniticProducerAsync
 import io.infinitic.common.transport.LoggedInfiniticProducer
 import io.infinitic.common.workflows.data.methodRuns.MethodRunId
@@ -42,6 +44,7 @@ import io.infinitic.common.workflows.data.workflows.WorkflowMeta
 import io.infinitic.common.workflows.data.workflows.WorkflowTag
 import io.infinitic.exceptions.clients.InvalidIdTagSelectionException
 import io.infinitic.exceptions.clients.InvalidStubException
+import io.infinitic.transport.config.TransportConfig
 import io.infinitic.workflows.DeferredStatus
 import org.jetbrains.annotations.TestOnly
 import java.lang.reflect.Proxy
@@ -49,13 +52,13 @@ import java.util.concurrent.CompletableFuture
 
 @Suppress("unused")
 class InfiniticClient(
-  consumer: InfiniticConsumer,
+  consumerAsync: InfiniticConsumerAsync,
   producerAsync: InfiniticProducerAsync
 ) : InfiniticClientInterface {
 
   private val producer = LoggedInfiniticProducer(javaClass.name, producerAsync)
 
-  private val dispatcher = ClientDispatcher(javaClass.name, consumer, producer)
+  private val dispatcher = ClientDispatcher(javaClass.name, consumerAsync, producer)
 
   override val name by lazy { producerAsync.name }
 
@@ -202,15 +205,37 @@ class InfiniticClient(
       }
 
   companion object {
+    /** Create InfiniticClient from config */
+    @JvmStatic
+    fun fromConfig(config: ClientConfigInterface): InfiniticClient = with(config) {
+      val transportConfig = TransportConfig(transport, pulsar)
+
+      /** Infinitic Consumer */
+      val consumerAsync = transportConfig.consumerAsync
+
+      /** Infinitic  Producer */
+      val producerAsync = transportConfig.producerAsync
+
+      // apply name if it exists
+      name?.let { producerAsync.name = it }
+
+      /** Infinitic Client */
+      InfiniticClient(consumerAsync, producerAsync).also {
+        // close consumer with the client
+        it.addAutoCloseResource(consumerAsync)
+      }
+    }
+
+
     /** Create InfiniticClient with config from resources directory */
     @JvmStatic
-    fun fromConfigResource(vararg resources: String) =
-        ClientConfig.fromResource(*resources).client
+    fun fromConfigResource(vararg resources: String): InfiniticClient =
+        fromConfig(ClientConfig.fromResource(*resources))
 
 
     /** Create InfiniticClient with config from system file */
     @JvmStatic
-    fun fromConfigFile(vararg files: String) =
-        ClientConfig.fromFile(*files).client
+    fun fromConfigFile(vararg files: String): InfiniticClient =
+        fromConfig(ClientConfig.fromFile(*files))
   }
 }

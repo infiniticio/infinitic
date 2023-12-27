@@ -29,7 +29,6 @@ import io.infinitic.common.workflows.engine.state.WorkflowState
 import io.infinitic.transport.config.Transport
 import io.infinitic.workers.InfiniticWorker
 import io.infinitic.workers.config.WorkerConfig
-import io.infinitic.workers.config.WorkerConfigData
 import io.kotest.core.config.AbstractProjectConfig
 import io.kotest.core.listeners.AfterProjectListener
 import io.kotest.core.spec.AutoScan
@@ -44,22 +43,23 @@ import kotlin.time.Duration.Companion.milliseconds
 internal object Test {
   private val pulsarServer = DockerOnly().pulsarServer
 
-  private val workerConfig = (WorkerConfig.fromResource("/pulsar.yml") as WorkerConfigData).let {
-    when (pulsarServer) {
-      null -> it.copy(transport = Transport.inMemory)
-      else -> it.copy(
-          transport = Transport.pulsar,
-          pulsar = it.pulsar!!.copy(
-              brokerServiceUrl = pulsarServer.pulsarBrokerUrl, // "pulsar://localhost:6650/"
-              webServiceUrl = pulsarServer.httpServiceUrl, // "http://localhost:8080/"
-              policies = it.pulsar!!.policies.copy(delayedDeliveryTickTimeMillis = 1), // useful for tests
-          ),
-      )
-    }
-  }
+  private val workerConfig =
+      WorkerConfig.fromResource("/pulsar.yml").let {
+        when (pulsarServer) {
+          null -> it.copy(transport = Transport.inMemory)
+          else -> it.copy(
+              transport = Transport.pulsar,
+              pulsar = it.pulsar!!.copy(
+                  brokerServiceUrl = pulsarServer.pulsarBrokerUrl, // "pulsar://localhost:6650/"
+                  webServiceUrl = pulsarServer.httpServiceUrl, // "http://localhost:8080/"
+                  policies = it.pulsar!!.policies.copy(delayedDeliveryTickTimeMillis = 1), // useful for tests
+              ),
+          )
+        }
+      }
 
-  val client = workerConfig.client
-  val worker = workerConfig.worker.also { it.startAsync() }
+  val worker = InfiniticWorker.fromConfig(workerConfig).also { it.startAsync() }
+  val client = worker.client
 
   fun stop() {
     worker.close()
