@@ -28,11 +28,12 @@ import com.zaxxer.hikari.HikariDataSource
 import java.util.concurrent.ConcurrentHashMap
 
 data class MySQL(
-    val host: String = "127.0.0.1",
-    val port: Int = 3306,
-    val user: String = "root",
-    val password: Secret? = null,
-    val database: String = "infinitic"
+  val host: String = "127.0.0.1",
+  val port: Int = 3306,
+  val user: String = "root",
+  val password: Secret? = null,
+  val database: String = "infinitic",
+  val maxPoolSize: Int = -1
 ) {
   companion object {
     val pools = ConcurrentHashMap<MySQL, HikariDataSource>()
@@ -50,14 +51,16 @@ data class MySQL(
   fun getPool() =
       pools.computeIfAbsent(this) {
         HikariDataSource(
-                // Default values set according to
-                // https://github.com/brettwooldridge/HikariCP/wiki/MySQL-Configuration
-                HikariConfig().apply {
-                  jdbcUrl = "jdbc:mysql://$host:$port/$database"
-                  driverClassName = "com.mysql.cj.jdbc.Driver"
-                  username = user
-                  password = this@MySQL.password?.value
-                })
+            // Default values set according to
+            // https://github.com/brettwooldridge/HikariCP/wiki/MySQL-Configuration
+            HikariConfig().apply {
+              jdbcUrl = "jdbc:mysql://$host:$port/$database"
+              driverClassName = "com.mysql.cj.jdbc.Driver"
+              username = user
+              password = this@MySQL.password?.value
+              maximumPoolSize = maxPoolSize
+            },
+        )
             .also { Runtime.getRuntime().addShutdownHook(Thread { it.close() }) }
       }
 }
