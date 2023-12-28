@@ -24,6 +24,7 @@ package io.infinitic.pulsar.client
 
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.infinitic.common.messages.Envelope
+import io.infinitic.common.messages.Message
 import io.infinitic.pulsar.consumers.ConsumerConfig
 import io.infinitic.pulsar.producers.ProducerConfig
 import io.infinitic.pulsar.schemas.schemaDefinition
@@ -81,7 +82,7 @@ class PulsarInfiniticClient(private val pulsarClient: PulsarClient) {
    * - Result.failure(e) in case of error
    */
   @Suppress("UNCHECKED_CAST")
-  fun <S : Envelope<*>> getProducer(
+  fun <T : Message, S : Envelope<out T>> getProducer(
     schemaClass: KClass<S>,
     topic: String,
     producerName: String,

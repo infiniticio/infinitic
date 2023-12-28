@@ -38,6 +38,10 @@ interface InfiniticRegisterInterface {
   val registry: WorkerRegistry
 
   companion object {
+    /**
+     * Note: Final default values for withRetry, withTimeout and workflow check mode
+     * are in TaskExecutors as they can be defined through annotations as well
+     */
     const val DEFAULT_CONCURRENCY = 1
     val DEFAULT_TASK_TAG = TaskTag().apply { isDefault = true }
     val DEFAULT_WORKFLOW_ENGINE = WorkflowEngine().apply { isDefault = true }

@@ -91,7 +91,7 @@ internal class RetryPolicyTests :
                 loadConfigFromYaml<WorkerConfig>(
                     """
 transport: inMemory
-service:
+serviceDefault:
     retry:
         ignoredExceptions:
             - foobar
@@ -125,7 +125,7 @@ services:
                 loadConfigFromYaml<WorkerConfig>(
                     """
 transport: inMemory
-service:
+serviceDefault:
   retry:
     ignoredExceptions:
       - io.infinitic.workers.InfiniticWorker
@@ -207,7 +207,7 @@ services:
               loadConfigFromYaml<WorkerConfig>(
                   """
 transport: inMemory
-service:
+serviceDefault:
   timeoutInSeconds: 1
 services:
     - name: io.infinitic.workers.samples.ServiceA
@@ -223,7 +223,7 @@ services:
               loadConfigFromYaml<WorkerConfig>(
                   """
 transport: inMemory
-service:
+serviceDefault:
   retry:
     maximumRetries: 42
 services:
@@ -257,7 +257,7 @@ workflows:
               loadConfigFromYaml<WorkerConfig>(
                   """
 transport: inMemory
-workflow:
+workflowDefault:
   timeoutInSeconds: 1
 workflows:
     - name: io.infinitic.workers.samples.WorkflowA
@@ -273,7 +273,7 @@ workflows:
               loadConfigFromYaml<WorkerConfig>(
                   """
 transport: inMemory
-workflow:
+workflowDefault:
   retry:
     maximumRetries: 42
 workflows:
@@ -290,7 +290,7 @@ workflows:
               loadConfigFromYaml<WorkerConfig>(
                   """
 transport: inMemory
-workflow:
+workflowDefault:
   checkMode: strict
 workflows:
     - name: io.infinitic.workers.samples.WorkflowA
@@ -306,13 +306,13 @@ workflows:
               loadConfigFromYaml<WorkerConfig>(
                   """
 transport: inMemory
-service:
+serviceDefault:
   retry:
     maximumRetries: 0
 """,
               )
-          workerConfig.service.retry shouldNotBe null
-          workerConfig.service.retry!!.getSecondsBeforeRetry(0, Exception()) shouldBe null
+          workerConfig.serviceDefault.retry shouldNotBe null
+          workerConfig.serviceDefault.retry!!.getSecondsBeforeRetry(0, Exception()) shouldBe null
         }
 
         "do not retry once reach maximumRetries" {
@@ -320,14 +320,14 @@ service:
               loadConfigFromYaml<WorkerConfig>(
                   """
 transport: inMemory
-service:
+serviceDefault:
   retry:
     maximumRetries: 10
 """,
               )
-          workerConfig.service.retry shouldNotBe null
-          workerConfig.service.retry!!.getSecondsBeforeRetry(9, Exception()) shouldNotBe null
-          workerConfig.service.retry!!.getSecondsBeforeRetry(10, Exception()) shouldBe null
+          workerConfig.serviceDefault.retry shouldNotBe null
+          workerConfig.serviceDefault.retry!!.getSecondsBeforeRetry(9, Exception()) shouldNotBe null
+          workerConfig.serviceDefault.retry!!.getSecondsBeforeRetry(10, Exception()) shouldBe null
         }
 
         "do not retry for non retryable exception" {
@@ -335,16 +335,22 @@ service:
               loadConfigFromYaml<WorkerConfig>(
                   """
 transport: inMemory
-service:
+serviceDefault:
   retry:
     ignoredExceptions:
         - io.infinitic.workers.config.TestException
 """,
               )
-          workerConfig.service.retry shouldNotBe null
-          workerConfig.service.retry!!.getSecondsBeforeRetry(1, Exception()) shouldNotBe null
-          workerConfig.service.retry!!.getSecondsBeforeRetry(1, TestException()) shouldBe null
-          workerConfig.service.retry!!.getSecondsBeforeRetry(1, ChildTestException()) shouldBe null
+          workerConfig.serviceDefault.retry shouldNotBe null
+          workerConfig.serviceDefault.retry!!.getSecondsBeforeRetry(1, Exception()) shouldNotBe null
+          workerConfig.serviceDefault.retry!!.getSecondsBeforeRetry(
+              1,
+              TestException(),
+          ) shouldBe null
+          workerConfig.serviceDefault.retry!!.getSecondsBeforeRetry(
+              1,
+              ChildTestException(),
+          ) shouldBe null
         }
       },
   )

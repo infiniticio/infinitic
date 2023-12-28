@@ -28,6 +28,10 @@
 // * run: RELEASE=true ./gradlew publish --rerun-tasks
 // * login to https://s01.oss.sonatype.org#stagingRepositories
 // * once the new version is uploaded in staging repositories, close it, then release it
+//
+// To deploy a snapshot, run: ./gradlew publish --rerun-tasks
+// and add: maven(url = "https://s01.oss.sonatype.org/content/repositories/snapshots/")
+// in the repositories section of the gradle.build file
 
 apply(plugin = "java")
 

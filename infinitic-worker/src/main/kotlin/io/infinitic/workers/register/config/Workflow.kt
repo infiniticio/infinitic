@@ -55,21 +55,21 @@ data class Workflow(
 
       else -> {
         if (`class` != null) {
-          require(`class`.isNotEmpty()) { error("'${::`class`.name}' empty") }
+          require(`class`.isNotEmpty()) { error("'${::`class`.name}' can not be empty") }
         }
         classes?.forEachIndexed { index, s: String ->
-          require(s.isNotEmpty()) { error("'${::classes.name}[$index]' empty") }
+          require(s.isNotEmpty()) { error("'${::classes.name}[$index]' can not be empty") }
         }
 
         `class`?.also { allClasses.add(getWorkflowClass(it)) }
         classes?.forEach { allClasses.add(getWorkflowClass(it)) }
 
         if (concurrency != null) {
-          require(concurrency!! >= 0) { error("'${::concurrency.name}' must be a positive integer") }
+          require(concurrency!! >= 0) { error("'${::concurrency.name}' must be an integer >= 0") }
         }
 
         if (timeoutInSeconds != null) {
-          require(timeoutInSeconds!! > 0) { error("'${::timeoutInSeconds.name}' must be a positive integer") }
+          require(timeoutInSeconds!! > 0) { error("'${::timeoutInSeconds.name}' must be an integer > 0") }
         }
       }
     }

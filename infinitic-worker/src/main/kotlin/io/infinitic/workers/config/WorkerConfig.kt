@@ -28,6 +28,7 @@ import io.infinitic.common.config.loadConfigFromResource
 import io.infinitic.pulsar.config.Pulsar
 import io.infinitic.storage.config.Storage
 import io.infinitic.transport.config.Transport
+import io.infinitic.workers.register.InfiniticRegisterInterface.Companion.DEFAULT_CONCURRENCY
 import io.infinitic.workers.register.config.Service
 import io.infinitic.workers.register.config.ServiceDefault
 import io.infinitic.workers.register.config.Workflow
@@ -56,49 +57,93 @@ data class WorkerConfig @JvmOverloads constructor(
   override val services: List<Service> = listOf(),
 
   /** Default service configuration */
-  override val service: ServiceDefault = ServiceDefault(),
+  override val serviceDefault: ServiceDefault = ServiceDefault(),
 
   /** Default workflow configuration */
-  override val workflow: WorkflowDefault = WorkflowDefault()
+  override val workflowDefault: WorkflowDefault = WorkflowDefault()
 
 ) : WorkerConfigInterface {
 
   init {
     // check default service retry Policy
-    service.retry?.check()
+    serviceDefault.retry?.check()
 
     // apply default, if not set
-    services.map { it ->
-      it.concurrency = it.concurrency ?: service.concurrency
-      it.retry = it.retry?.also { retry -> retry.check() } ?: service.retry
-      it.timeoutInSeconds = it.timeoutInSeconds ?: service.timeoutInSeconds
+    services.map { s ->
+      s.concurrency =
+          s.concurrency ?: serviceDefault.concurrency ?: DEFAULT_CONCURRENCY
+      s.retry =
+          (s.retry ?: serviceDefault.retry)?.also { it.check() }
+      s.timeoutInSeconds =
+          s.timeoutInSeconds ?: serviceDefault.timeoutInSeconds
 
-      it.tagEngine?.let {
-        it.storage = it.storage ?: storage
-        it.cache = it.cache ?: cache
-        if (it.isDefault) it.concurrency = it.concurrency
+      // tagEngine default is superseded by service default if any
+      if (s.tagEngine != null && s.tagEngine!!.isDefault) {
+        serviceDefault.tagEngine?.let {
+          s.tagEngine = it.apply {
+            concurrency = concurrency ?: s.concurrency
+          }
+        }
+      }
+
+      s.tagEngine?.let {
+        it.storage =
+            it.storage ?: serviceDefault.tagEngine?.storage ?: storage
+        it.cache =
+            it.cache ?: serviceDefault.tagEngine?.cache ?: cache
+        it.concurrency =
+            it.concurrency ?: serviceDefault.tagEngine?.concurrency ?: DEFAULT_CONCURRENCY
       }
     }
 
     // check default service retry Policy
-    workflow.retry?.check()
+    workflowDefault.retry?.check()
 
     // apply default, if not set
-    workflows.map { it ->
-      it.concurrency = it.concurrency ?: workflow.concurrency
-      it.retry = it.retry?.also { retry -> retry.check() } ?: workflow.retry
-      it.timeoutInSeconds = it.timeoutInSeconds ?: workflow.timeoutInSeconds
-      it.checkMode = it.checkMode ?: workflow.checkMode
+    workflows.map { w ->
+      w.concurrency =
+          w.concurrency ?: workflowDefault.concurrency ?: DEFAULT_CONCURRENCY
+      w.retry =
+          (w.retry ?: workflowDefault.retry)?.also { it.check() }
+      w.timeoutInSeconds =
+          w.timeoutInSeconds ?: workflowDefault.timeoutInSeconds
+      w.checkMode =
+          w.checkMode ?: workflowDefault.checkMode
 
-      it.tagEngine?.let {
-        it.storage = it.storage ?: storage
-        it.cache = it.cache ?: cache
-        if (it.isDefault) it.concurrency = it.concurrency
+      // tagEngine default is superseded by workflow default if any
+      if (w.tagEngine != null && w.tagEngine!!.isDefault) {
+        workflowDefault.tagEngine?.let {
+          w.tagEngine = it.apply {
+            concurrency = concurrency ?: w.concurrency
+          }
+        }
       }
-      it.workflowEngine?.let {
-        it.storage = it.storage ?: storage
-        it.cache = it.cache ?: cache
-        if (it.isDefault) it.concurrency = it.concurrency
+
+      w.tagEngine?.let {
+        it.storage =
+            it.storage ?: workflowDefault.tagEngine?.storage ?: storage
+        it.cache =
+            it.cache ?: workflowDefault.tagEngine?.cache ?: cache
+        it.concurrency =
+            it.concurrency ?: workflowDefault.tagEngine?.concurrency ?: DEFAULT_CONCURRENCY
+      }
+
+      // workflowEngine default is superseded by workflow default if any
+      if (w.workflowEngine != null && w.workflowEngine!!.isDefault) {
+        workflowDefault.workflowEngine?.let {
+          w.workflowEngine = it.apply {
+            concurrency?.let { concurrency = w.concurrency }
+          }
+        }
+      }
+
+      w.workflowEngine?.let {
+        it.storage =
+            it.storage ?: workflowDefault.workflowEngine?.storage ?: storage
+        it.cache =
+            it.cache ?: workflowDefault.workflowEngine?.cache ?: cache
+        it.concurrency =
+            it.concurrency ?: workflowDefault.workflowEngine?.concurrency ?: DEFAULT_CONCURRENCY
       }
     }
   }

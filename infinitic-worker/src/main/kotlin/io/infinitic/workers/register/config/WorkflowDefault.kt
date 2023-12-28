@@ -23,20 +23,25 @@
 package io.infinitic.workers.register.config
 
 import io.infinitic.common.workers.config.RetryPolicy
-import io.infinitic.workers.register.InfiniticRegisterInterface
 import io.infinitic.workflows.WorkflowCheckMode
+import io.infinitic.workflows.engine.config.WorkflowEngine
+import io.infinitic.workflows.tag.config.WorkflowTag
 
 data class WorkflowDefault(
-  val concurrency: Int = InfiniticRegisterInterface.DEFAULT_CONCURRENCY,
+  val concurrency: Int? = null,
   val timeoutInSeconds: Double? = null,
   val retry: RetryPolicy? = null,
+  val tagEngine: WorkflowTag? = null,
+  var workflowEngine: WorkflowEngine? = null,
   val checkMode: WorkflowCheckMode? = null
 ) {
   init {
-    require(concurrency >= 0) { "default workflow concurrency must be positive" }
+    concurrency?.let {
+      require(it >= 0) { "default workflow ${::concurrency.name} must be positive" }
+    }
 
-    if (timeoutInSeconds != null) {
-      require(timeoutInSeconds > 0) { "default workflow timeoutSeconds must be positive" }
+    timeoutInSeconds?.let {
+      require(it > 0) { "default workflow ${::timeoutInSeconds.name} must be strictly positive" }
     }
   }
 }
