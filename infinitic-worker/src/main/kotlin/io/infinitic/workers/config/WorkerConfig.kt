@@ -29,7 +29,6 @@ import io.infinitic.pulsar.config.Pulsar
 import io.infinitic.storage.config.Storage
 import io.infinitic.transport.config.Transport
 import io.infinitic.workers.register.InfiniticRegisterInterface.Companion.DEFAULT_CONCURRENCY
-import io.infinitic.workers.register.InfiniticRegisterInterface.Companion.DEFAULT_SERVICE_TIMEOUT
 import io.infinitic.workers.register.config.Service
 import io.infinitic.workers.register.config.ServiceDefault
 import io.infinitic.workers.register.config.Workflow
@@ -58,29 +57,29 @@ data class WorkerConfig @JvmOverloads constructor(
   override val services: List<Service> = listOf(),
 
   /** Default service configuration */
-  override val service: ServiceDefault = ServiceDefault(),
+  override val serviceDefault: ServiceDefault = ServiceDefault(),
 
   /** Default workflow configuration */
-  override val workflow: WorkflowDefault = WorkflowDefault()
+  override val workflowDefault: WorkflowDefault = WorkflowDefault()
 
 ) : WorkerConfigInterface {
 
   init {
     // check default service retry Policy
-    service.retry?.check()
+    serviceDefault.retry?.check()
 
     // apply default, if not set
     services.map { s ->
       s.concurrency =
-          s.concurrency ?: service.concurrency ?: DEFAULT_CONCURRENCY
+          s.concurrency ?: serviceDefault.concurrency ?: DEFAULT_CONCURRENCY
       s.retry =
-          (s.retry ?: service.retry)?.also { retry -> retry.check() }
+          (s.retry ?: serviceDefault.retry)?.also { it.check() }
       s.timeoutInSeconds =
-          s.timeoutInSeconds ?: service.timeoutInSeconds ?: DEFAULT_SERVICE_TIMEOUT
+          s.timeoutInSeconds ?: serviceDefault.timeoutInSeconds
 
       // tagEngine default is superseded by service default if any
       if (s.tagEngine != null && s.tagEngine!!.isDefault) {
-        service.tagEngine?.let {
+        serviceDefault.tagEngine?.let {
           s.tagEngine = it.apply {
             concurrency = concurrency ?: s.concurrency
           }
@@ -89,31 +88,31 @@ data class WorkerConfig @JvmOverloads constructor(
 
       s.tagEngine?.let {
         it.storage =
-            it.storage ?: service.tagEngine?.storage ?: storage
+            it.storage ?: serviceDefault.tagEngine?.storage ?: storage
         it.cache =
-            it.cache ?: service.tagEngine?.cache ?: cache
+            it.cache ?: serviceDefault.tagEngine?.cache ?: cache
         it.concurrency =
-            it.concurrency ?: service.tagEngine?.concurrency ?: DEFAULT_CONCURRENCY
+            it.concurrency ?: serviceDefault.tagEngine?.concurrency ?: DEFAULT_CONCURRENCY
       }
     }
 
     // check default service retry Policy
-    workflow.retry?.check()
+    workflowDefault.retry?.check()
 
     // apply default, if not set
     workflows.map { w ->
       w.concurrency =
-          w.concurrency ?: workflow.concurrency ?: DEFAULT_CONCURRENCY
+          w.concurrency ?: workflowDefault.concurrency ?: DEFAULT_CONCURRENCY
       w.retry =
-          (w.retry ?: workflow.retry)?.also { retry -> retry.check() }
+          (w.retry ?: workflowDefault.retry)?.also { it.check() }
       w.timeoutInSeconds =
-          w.timeoutInSeconds ?: workflow.timeoutInSeconds
+          w.timeoutInSeconds ?: workflowDefault.timeoutInSeconds
       w.checkMode =
-          w.checkMode ?: workflow.checkMode
+          w.checkMode ?: workflowDefault.checkMode
 
       // tagEngine default is superseded by workflow default if any
       if (w.tagEngine != null && w.tagEngine!!.isDefault) {
-        workflow.tagEngine?.let {
+        workflowDefault.tagEngine?.let {
           w.tagEngine = it.apply {
             concurrency = concurrency ?: w.concurrency
           }
@@ -122,16 +121,16 @@ data class WorkerConfig @JvmOverloads constructor(
 
       w.tagEngine?.let {
         it.storage =
-            it.storage ?: workflow.tagEngine?.storage ?: storage
+            it.storage ?: workflowDefault.tagEngine?.storage ?: storage
         it.cache =
-            it.cache ?: workflow.tagEngine?.cache ?: cache
+            it.cache ?: workflowDefault.tagEngine?.cache ?: cache
         it.concurrency =
-            it.concurrency ?: workflow.tagEngine?.concurrency ?: DEFAULT_CONCURRENCY
+            it.concurrency ?: workflowDefault.tagEngine?.concurrency ?: DEFAULT_CONCURRENCY
       }
 
       // workflowEngine default is superseded by workflow default if any
       if (w.workflowEngine != null && w.workflowEngine!!.isDefault) {
-        workflow.workflowEngine?.let {
+        workflowDefault.workflowEngine?.let {
           w.workflowEngine = it.apply {
             concurrency?.let { concurrency = w.concurrency }
           }
@@ -140,11 +139,11 @@ data class WorkerConfig @JvmOverloads constructor(
 
       w.workflowEngine?.let {
         it.storage =
-            it.storage ?: workflow.workflowEngine?.storage ?: storage
+            it.storage ?: workflowDefault.workflowEngine?.storage ?: storage
         it.cache =
-            it.cache ?: workflow.workflowEngine?.cache ?: cache
+            it.cache ?: workflowDefault.workflowEngine?.cache ?: cache
         it.concurrency =
-            it.concurrency ?: workflow.workflowEngine?.concurrency ?: DEFAULT_CONCURRENCY
+            it.concurrency ?: workflowDefault.workflowEngine?.concurrency ?: DEFAULT_CONCURRENCY
       }
     }
   }
