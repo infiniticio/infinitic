@@ -112,8 +112,8 @@ class PulsarInfiniticProducerAsync(
     val topic = getTopicName(name, desc)
     logger.debug { "Sending to topic '$topic': '$message'" }
 
-    return producer.sendAsync<ClientMessage, ClientEnvelope>(
-        message, zero, topic, clientProducerName,
+    return producer.sendAsync(
+        ClientEnvelope::class, message, zero, topic, clientProducerName,
     )
   }
 
@@ -125,8 +125,13 @@ class PulsarInfiniticProducerAsync(
     val topic = getTopicName(name, desc)
     logger.debug { "Sending to topic '$topic': '$message'" }
 
-    return producer.sendAsync<WorkflowTagMessage, WorkflowTagEnvelope>(
-        message, zero, topic, workflowTagProducerName, key = "${message.workflowTag}",
+    return producer.sendAsync(
+        WorkflowTagEnvelope::class,
+        message,
+        zero,
+        topic,
+        workflowTagProducerName,
+        key = "${message.workflowTag}",
     )
   }
 
@@ -144,8 +149,13 @@ class PulsarInfiniticProducerAsync(
     val topic = getTopicName(name, desc)
     logger.debug { "Sending to topic '$topic' after $after: '$message'" }
 
-    return producer.sendAsync<WorkflowEngineMessage, WorkflowEngineEnvelope>(
-        message, after, topic, workflowEngineProducerName, key = "${message.workflowId}",
+    return producer.sendAsync(
+        WorkflowEngineEnvelope::class,
+        message,
+        after,
+        topic,
+        workflowEngineProducerName,
+        key = "${message.workflowId}",
     )
   }
 
@@ -157,8 +167,13 @@ class PulsarInfiniticProducerAsync(
     val topic = getTopicName(name, desc)
     logger.debug { "Sending to topic '$topic': '$message'" }
 
-    return producer.sendAsync<TaskTagMessage, TaskTagEnvelope>(
-        message, zero, topic, taskTagProducerName, key = "${message.taskTag}",
+    return producer.sendAsync(
+        TaskTagEnvelope::class,
+        message,
+        zero,
+        topic,
+        taskTagProducerName,
+        key = "${message.taskTag}",
     )
   }
 
@@ -186,8 +201,8 @@ class PulsarInfiniticProducerAsync(
     val topic = getTopicName(name, desc)
     logger.debug { "Sending to topic '$topic' after $after: '$message'" }
 
-    return producer.sendAsync<TaskExecutorMessage, TaskExecutorEnvelope>(
-        message, after, topic, taskExecutorProducerName,
+    return producer.sendAsync(
+        TaskExecutorEnvelope::class, message, after, topic, taskExecutorProducerName,
     )
   }
 

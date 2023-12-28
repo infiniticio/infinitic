@@ -50,17 +50,6 @@ class ResourceManager(
     get() = topicSet.mapNotNull { topicNamer.getWorkflowName(it) }.toSet()
 
   /**
-   * Check if a Dead Letter Queue topic exists, and create it if not
-   * We skip this if the topic has already been initialized
-   */
-  fun initDlqTopicOnce(
-    topic: String?,
-    isPartitioned: Boolean,
-    isDelayed: Boolean
-  ): Result<Unit?> = topic?.let { initTopicOnce(it, isPartitioned, isDelayed) }
-    ?: Result.success(null)
-
-  /**
    * Delete a topic by name
    */
   fun deleteTopic(topic: String): Result<Unit> = admin.deleteTopic(topic)
@@ -87,6 +76,17 @@ class ResourceManager(
     return admin.initTopicOnce(topic, isPartitioned, ttl).map { }
   }
 
+  /**
+   * Check if a Dead Letter Queue topic exists, and create it if not
+   * We skip this if the topic has already been initialized
+   */
+  fun initDlqTopicOnce(
+    topic: String?,
+    isPartitioned: Boolean,
+    isDelayed: Boolean
+  ): Result<Unit?> = topic?.let { initTopicOnce(it, isPartitioned, isDelayed) }
+    ?: Result.success(null)
+  
   companion object {
     /** Create TopicManager from a Pulsar configuration instance */
     fun from(pulsar: Pulsar) = ResourceManager(
