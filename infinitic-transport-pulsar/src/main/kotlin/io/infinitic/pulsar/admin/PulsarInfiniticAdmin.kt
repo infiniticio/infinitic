@@ -47,8 +47,6 @@ class PulsarInfiniticAdmin(
   private val tenants = pulsarAdmin.tenants()
   private val namespaces = pulsarAdmin.namespaces()
 
-  private val DEFAUT_NUM_PARTITIONS = 3
-
   /**
    * Get set of clusters' name
    *
@@ -478,6 +476,8 @@ class PulsarInfiniticAdmin(
   )
 
   companion object {
+    private const val DEFAUT_NUM_PARTITIONS = 3
+
     // thread-safe set of initialized tenants
     private val initializedTenants = ConcurrentHashMap<String, Result<TenantInfo>>()
 

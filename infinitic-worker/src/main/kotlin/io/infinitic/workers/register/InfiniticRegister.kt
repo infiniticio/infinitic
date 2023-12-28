@@ -64,10 +64,10 @@ class InfiniticRegister(
       when (w.allClasses.isEmpty()) {
         true -> {
           w.tagEngine?.let {
-            registerWorkflowTag(WorkflowName(w.name), it.concurrency, it.storage, it.cache)
+            registerWorkflowTag(WorkflowName(w.name), it.concurrency!!, it.storage, it.cache)
           }
           w.workflowEngine?.let {
-            registerWorkflowEngine(WorkflowName(w.name), it.concurrency, it.storage, it.cache)
+            registerWorkflowEngine(WorkflowName(w.name), it.concurrency!!, it.storage, it.cache)
           }
         }
 
@@ -91,7 +91,7 @@ class InfiniticRegister(
       when (s.`class`) {
         null ->
           s.tagEngine?.let {
-            registerTaskTag(ServiceName(s.name), it.concurrency, it.storage, it.cache)
+            registerTaskTag(ServiceName(s.name), it.concurrency!!, it.storage, it.cache)
           }
 
         else ->
@@ -118,7 +118,7 @@ class InfiniticRegister(
   ) {
     logger.info {
       "* task executor".padEnd(25) +
-          ": (instances: $concurrency, class:${factory()::class.java.name})"
+          ": (concurrency: $concurrency, class: ${factory()::class.java.name})"
     }
 
     val serviceName = ServiceName(name)
@@ -132,7 +132,7 @@ class InfiniticRegister(
         registerTaskTag(serviceName, concurrency, workerConfig.storage, workerConfig.cache)
       // explicit tagEngine => register it
       else ->
-        registerTaskTag(serviceName, tagEngine.concurrency, tagEngine.storage, tagEngine.cache)
+        registerTaskTag(serviceName, tagEngine.concurrency!!, tagEngine.storage, tagEngine.cache)
     }
   }
 
@@ -148,7 +148,7 @@ class InfiniticRegister(
     tagEngine: WorkflowTag?
   ) {
     logger.info {
-      "* workflow executor".padEnd(25) + ": (instances: $concurrency, class:${classes.joinToString { it.name }})"
+      "* workflow executor".padEnd(25) + ": (concurrency: $concurrency, class: ${classes.joinToString { it.name }})"
     }
 
     val workflowName = WorkflowName(name)
@@ -164,7 +164,12 @@ class InfiniticRegister(
             workflowName, concurrency, workerConfig.storage, workerConfig.cache,
         )
       // explicit engine => register it
-      else -> registerWorkflowEngine(workflowName, engine.concurrency, engine.storage, engine.cache)
+      else -> registerWorkflowEngine(
+          workflowName,
+          engine.concurrency!!,
+          engine.storage,
+          engine.cache,
+      )
     }
 
     when {
@@ -176,7 +181,7 @@ class InfiniticRegister(
       // explicit engine => register it
       else ->
         registerWorkflowTag(
-            workflowName, tagEngine.concurrency, tagEngine.storage, tagEngine.cache,
+            workflowName, tagEngine.concurrency!!, tagEngine.storage, tagEngine.cache,
         )
     }
   }
@@ -192,7 +197,7 @@ class InfiniticRegister(
 
     logger.info {
       "* workflow engine".padEnd(25) +
-          ": (instances: $concurrency, storage: ${s.type}, cache: ${c.type})"
+          ": (concurrency: $concurrency, storage: ${s.type}, cache: ${c.type})"
     }
 
     registry.workflowEngines[workflowName] =
@@ -211,7 +216,7 @@ class InfiniticRegister(
     val s = storage ?: workerConfig.storage
 
     logger.info {
-      "* task tag ".padEnd(25) + ": (instances: $concurrency, storage: ${s.type}, cache: ${c.type})"
+      "* task tag ".padEnd(25) + ": (concurrency: $concurrency, storage: ${s.type}, cache: ${c.type})"
     }
 
     registry.serviceTags[serviceName] =
@@ -235,7 +240,7 @@ class InfiniticRegister(
 
     logger.info {
       "* workflow tag ".padEnd(25) +
-          ": (instances: $concurrency, storage: ${s.type}, cache: ${c.type})"
+          ": (concurrency: $concurrency, storage: ${s.type}, cache: ${c.type})"
     }
 
     registry.workflowTags[workflowName] =

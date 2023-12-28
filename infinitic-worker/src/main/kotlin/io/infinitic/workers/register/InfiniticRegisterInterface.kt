@@ -40,6 +40,8 @@ interface InfiniticRegisterInterface {
   companion object {
     const val DEFAULT_CONCURRENCY = 1
     val DEFAULT_TASK_TAG = TaskTag().apply { isDefault = true }
+    val DEFAULT_SERVICE_TIMEOUT = null
+
     val DEFAULT_WORKFLOW_ENGINE = WorkflowEngine().apply { isDefault = true }
     val DEFAULT_WORKFLOW_TAG = WorkflowTag().apply { isDefault = true }
   }
