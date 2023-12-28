@@ -33,8 +33,14 @@ data class MySQL(
   val user: String = "root",
   val password: Secret? = null,
   val database: String = "infinitic",
-  val maxPoolSize: Int = -1
+  val maxPoolSize: Int? = null
 ) {
+  init {
+    maxPoolSize?.let {
+      require(it > 0) { "maxPoolSize must by strictly positive" }
+    }
+  }
+
   companion object {
     val pools = ConcurrentHashMap<MySQL, HikariDataSource>()
 
@@ -58,9 +64,8 @@ data class MySQL(
               driverClassName = "com.mysql.cj.jdbc.Driver"
               username = user
               password = this@MySQL.password?.value
-              maximumPoolSize = maxPoolSize
+              maxPoolSize?.let { maximumPoolSize = it }
             },
-        )
-            .also { Runtime.getRuntime().addShutdownHook(Thread { it.close() }) }
+        ).also { Runtime.getRuntime().addShutdownHook(Thread { it.close() }) }
       }
 }

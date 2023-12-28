@@ -31,65 +31,75 @@ import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
 
 class StorageConfigTests :
-    StringSpec({
-      "default storage should be inMemory" {
-        val config = loadConfigFromYaml<StorageConfigImpl>("nothing:")
+  StringSpec(
+      {
+        "default storage should be inMemory" {
+          val config = loadConfigFromYaml<StorageConfigImpl>("nothing:")
 
-        config shouldBe StorageConfigImpl(storage = Storage(inMemory = InMemory()))
-      }
+          config shouldBe StorageConfigImpl(storage = Storage(inMemory = InMemory()))
+        }
 
-      "default storage should not be compressed" {
-        val config = loadConfigFromYaml<StorageConfigImpl>("nothing:")
+        "default storage should not be compressed" {
+          val config = loadConfigFromYaml<StorageConfigImpl>("nothing:")
 
-        config shouldBe StorageConfigImpl(storage = Storage(compression = null))
-      }
+          config shouldBe StorageConfigImpl(storage = Storage(compression = null))
+        }
 
-      "storage without type should default" {
-        val default1 = loadConfigFromYaml<StorageConfigImpl>("nothing:")
-        val default2 = loadConfigFromYaml<StorageConfigImpl>("storage:")
+        "storage without type should default" {
+          val default1 = loadConfigFromYaml<StorageConfigImpl>("nothing:")
+          val default2 = loadConfigFromYaml<StorageConfigImpl>("storage:")
 
-        default1 shouldBe default2
-      }
+          default1 shouldBe default2
+        }
 
-      "can choose inMemory storage" {
-        val config = loadConfigFromYaml<StorageConfigImpl>("""
+        "can choose inMemory storage" {
+          val config = loadConfigFromYaml<StorageConfigImpl>(
+              """
 storage:
   inMemory:
-     """)
+     """,
+          )
 
-        config shouldBe StorageConfigImpl(storage = Storage(inMemory = InMemory()))
-      }
+          config shouldBe StorageConfigImpl(storage = Storage(inMemory = InMemory()))
+        }
 
-      "can choose Redis storage" {
-        val config = loadConfigFromYaml<StorageConfigImpl>("""
+        "can choose Redis storage" {
+          val config = loadConfigFromYaml<StorageConfigImpl>(
+              """
 storage:
   redis:
-     """)
+     """,
+          )
 
-        config shouldBe StorageConfigImpl(storage = Storage(redis = Redis()))
-      }
+          config shouldBe StorageConfigImpl(storage = Storage(redis = Redis()))
+        }
 
-      "can choose MySQL storage" {
-        val config = loadConfigFromYaml<StorageConfigImpl>("""
+        "can choose MySQL storage" {
+          val config = loadConfigFromYaml<StorageConfigImpl>(
+              """
 storage:
   mysql:
-     """)
+     """,
+          )
 
-        config shouldBe StorageConfigImpl(storage = Storage(mysql = MySQL()))
-      }
+          config shouldBe StorageConfigImpl(storage = Storage(mysql = MySQL()))
+        }
 
-      "can not have multiple definition in storage" {
-        val e =
-            shouldThrow<ConfigException> {
-              loadConfigFromYaml<StorageConfigImpl>("""
+        "can not have multiple definition in storage" {
+          val e =
+              shouldThrow<ConfigException> {
+                loadConfigFromYaml<StorageConfigImpl>(
+                    """
 storage:
   redis:
   mysql:
-     """)
-            }
-        e.message shouldContain ("Multiple definitions for storage")
-      }
-    })
+     """,
+                )
+              }
+          e.message shouldContain ("Multiple definitions for storage")
+        }
+      },
+  )
 
 private inline fun <reified T : Any> loadConfigFromYaml(yaml: String): T =
     ConfigLoaderBuilder.default()
