@@ -54,12 +54,12 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 sealed class TaskExecutorMessage : Message {
-  abstract val taskId: TaskId
   abstract val serviceName: ServiceName
+  abstract val taskId: TaskId
   abstract val taskRetrySequence: TaskRetrySequence
   abstract val taskRetryIndex: TaskRetryIndex
-  abstract val workflowId: WorkflowId?
   abstract val workflowName: WorkflowName?
+  abstract val workflowId: WorkflowId?
   abstract val methodRunId: MethodRunId?
   abstract val taskTags: Set<TaskTag>
   abstract val taskMeta: TaskMeta
@@ -67,6 +67,16 @@ sealed class TaskExecutorMessage : Message {
   override fun envelope() = TaskExecutorEnvelope.from(this)
 
   fun isWorkflowTask() = serviceName == ServiceName(WorkflowTask::class.java.name)
+}
+
+sealed interface TaskEvent {
+  val serviceName: ServiceName
+  val taskId: TaskId
+  val workflowName: WorkflowName?
+  val workflowId: WorkflowId?
+  val methodRunId: MethodRunId?
+  val clientName: ClientName?
+  val clientWaiting: Boolean?
 }
 
 @Serializable
@@ -129,11 +139,12 @@ data class TaskStarted(
   override val workflowName: WorkflowName?,
   override val workflowId: WorkflowId?,
   override val methodRunId: MethodRunId?,
+  override val clientName: ClientName?,
+  override val clientWaiting: Boolean?,
   override val taskTags: Set<TaskTag>,
   override val taskMeta: TaskMeta,
-  val workflowVersion: WorkflowVersion?,
-  val clientName: ClientName?
-) : TaskExecutorMessage() {
+  val workflowVersion: WorkflowVersion?
+) : TaskExecutorMessage(), TaskEvent {
   companion object {
     fun from(msg: ExecuteTask, emitterName: EmitterName) = TaskStarted(
         serviceName = msg.serviceName,
@@ -144,10 +155,11 @@ data class TaskStarted(
         workflowName = msg.workflowName,
         workflowId = msg.workflowId,
         methodRunId = msg.methodRunId,
-        workflowVersion = msg.workflowVersion,
         clientName = msg.clientName,
-        taskMeta = msg.taskMeta,
+        clientWaiting = msg.clientWaiting,
         taskTags = msg.taskTags,
+        taskMeta = msg.taskMeta,
+        workflowVersion = msg.workflowVersion,
     )
   }
 }
@@ -164,15 +176,15 @@ data class TaskFailed(
   override val workflowName: WorkflowName?,
   override val workflowId: WorkflowId?,
   override val methodRunId: MethodRunId?,
+  override val clientName: ClientName?,
+  override val clientWaiting: Boolean?,
   override val taskTags: Set<TaskTag>,
   override val taskMeta: TaskMeta,
   val executionError: ExecutionError,
   val deferredError: DeferredError?,
   val methodName: MethodName,
   val workflowVersion: WorkflowVersion?,
-  val clientName: ClientName?,
-  val clientWaiting: Boolean?,
-) : TaskExecutorMessage() {
+) : TaskExecutorMessage(), TaskEvent {
   companion object {
     fun from(
       msg: ExecuteTask,
@@ -188,14 +200,14 @@ data class TaskFailed(
         workflowName = msg.workflowName,
         workflowId = msg.workflowId,
         methodRunId = msg.methodRunId,
+        clientName = msg.clientName,
+        clientWaiting = msg.clientWaiting,
+        taskTags = msg.taskTags,
+        taskMeta = TaskMeta(meta),
+        executionError = cause.getExecutionError(emitterName),
         deferredError = cause.deferredError,
         methodName = msg.methodName,
         workflowVersion = msg.workflowVersion,
-        clientName = msg.clientName,
-        clientWaiting = msg.clientWaiting,
-        executionError = cause.getExecutionError(emitterName),
-        taskTags = msg.taskTags,
-        taskMeta = TaskMeta(meta),
     )
   }
 }
@@ -212,11 +224,13 @@ data class TaskRetried(
   override val workflowName: WorkflowName?,
   override val workflowId: WorkflowId?,
   override val methodRunId: MethodRunId?,
+  override val clientName: ClientName?,
+  override val clientWaiting: Boolean?,
   override val taskTags: Set<TaskTag>,
   override val taskMeta: TaskMeta,
   val taskRetryDelay: MillisDuration,
   val lastError: ExecutionError?,
-) : TaskExecutorMessage() {
+) : TaskExecutorMessage(), TaskEvent {
 
   companion object {
     fun from(
@@ -230,14 +244,16 @@ data class TaskRetried(
         taskId = msg.taskId,
         emitterName = emitterName,
         taskRetrySequence = msg.taskRetrySequence,
-        taskRetryDelay = delay,
+        taskRetryIndex = msg.taskRetryIndex + 1,
         workflowName = msg.workflowName,
         workflowId = msg.workflowId,
         methodRunId = msg.methodRunId,
-        taskRetryIndex = msg.taskRetryIndex + 1,
-        lastError = cause.getExecutionError(emitterName),
+        clientName = msg.clientName,
+        clientWaiting = msg.clientWaiting,
         taskTags = msg.taskTags,
         taskMeta = TaskMeta(meta),
+        taskRetryDelay = delay,
+        lastError = cause.getExecutionError(emitterName),
     )
   }
 }
@@ -254,13 +270,13 @@ data class TaskCompleted(
   override val workflowName: WorkflowName?,
   override val workflowId: WorkflowId?,
   override val methodRunId: MethodRunId?,
+  override val clientName: ClientName?,
+  override val clientWaiting: Boolean?,
   override val taskTags: Set<TaskTag>,
   override val taskMeta: TaskMeta,
   val returnValue: ReturnValue,
   val workflowVersion: WorkflowVersion?,
-  val clientName: ClientName?,
-  val clientWaiting: Boolean?,
-) : TaskExecutorMessage() {
+) : TaskExecutorMessage(), TaskEvent {
   companion object {
     fun from(
       msg: ExecuteTask,
@@ -276,12 +292,12 @@ data class TaskCompleted(
         workflowName = msg.workflowName,
         workflowId = msg.workflowId,
         methodRunId = msg.methodRunId,
-        workflowVersion = msg.workflowVersion,
         clientName = msg.clientName,
         clientWaiting = msg.clientWaiting,
         taskTags = msg.taskTags,
-        returnValue = ReturnValue.from(value),
         taskMeta = TaskMeta(meta),
+        returnValue = ReturnValue.from(value),
+        workflowVersion = msg.workflowVersion,
     )
   }
 }

@@ -24,6 +24,7 @@ package io.infinitic.common.workflows.engine.messages
 
 import com.github.avrokotlin.avro4k.AvroName
 import com.github.avrokotlin.avro4k.AvroNamespace
+import io.infinitic.common.clients.data.ClientName
 import io.infinitic.common.data.MessageId
 import io.infinitic.common.data.ReturnValue
 import io.infinitic.common.data.methods.MethodName
@@ -81,6 +82,16 @@ sealed class WorkflowEngineMessage : Message {
 
   fun isWorkflowTaskEvent() =
       (this is TaskEvent) && this.serviceName() == ServiceName(WorkflowTask::class.java.name)
+}
+
+sealed interface WorkflowMethodEvent {
+  val workflowName: WorkflowName
+  val workflowId: WorkflowId
+  val methodRunId: MethodRunId
+  val parentWorkflowName: WorkflowName?
+  val parentWorkflowId: WorkflowId?
+  val parentMethodRunId: MethodRunId?
+  val waitingClients: Set<ClientName>
 }
 
 /**

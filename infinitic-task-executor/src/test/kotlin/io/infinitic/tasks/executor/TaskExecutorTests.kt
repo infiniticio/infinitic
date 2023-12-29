@@ -559,10 +559,11 @@ private fun getTaskStarted(msg: ExecuteTask, messageId: MessageId) = TaskStarted
     workflowName = msg.workflowName,
     workflowId = msg.workflowId,
     methodRunId = msg.methodRunId,
-    workflowVersion = msg.workflowVersion,
     clientName = msg.clientName,
-    taskMeta = msg.taskMeta,
+    clientWaiting = msg.clientWaiting,
     taskTags = msg.taskTags,
+    taskMeta = msg.taskMeta,
+    workflowVersion = msg.workflowVersion,
 )
 
 private fun getTaskCompleted(
@@ -580,12 +581,12 @@ private fun getTaskCompleted(
     workflowName = msg.workflowName,
     workflowId = msg.workflowId,
     methodRunId = msg.methodRunId,
-    workflowVersion = msg.workflowVersion,
     clientName = msg.clientName,
     clientWaiting = msg.clientWaiting,
     taskTags = msg.taskTags,
-    returnValue = ReturnValue.from(value),
     taskMeta = TaskMeta(meta),
+    returnValue = ReturnValue.from(value),
+    workflowVersion = msg.workflowVersion,
 )
 
 internal fun getRemoveTag(message: TaskExecutorMessage, tag: String) = RemoveTagFromTask(

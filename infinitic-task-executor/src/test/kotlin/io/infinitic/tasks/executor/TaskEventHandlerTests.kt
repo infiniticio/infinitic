@@ -219,6 +219,8 @@ private fun getTaskRetried() = TaskRetried(
     workflowName = null,
     workflowId = null,
     methodRunId = null,
+    clientName = null,
+    clientWaiting = null,
     lastError = TestFactory.random(),
     taskMeta = TestFactory.random(),
     taskTags = TestFactory.random(),
@@ -235,9 +237,10 @@ private fun getTaskStarted() = TaskStarted(
     workflowId = null,
     methodRunId = null,
     clientName = null,
-    workflowVersion = WorkflowVersion(42),
-    taskMeta = TestFactory.random(),
+    clientWaiting = null,
     taskTags = TestFactory.random(),
+    taskMeta = TestFactory.random(),
+    workflowVersion = WorkflowVersion(42),
 )
 
 private fun getTaskCompleted() = TaskCompleted(
@@ -249,12 +252,12 @@ private fun getTaskCompleted() = TaskCompleted(
     workflowName = null,
     workflowId = null,
     methodRunId = null,
-    returnValue = ReturnValue.from("42"),
     clientName = null,
     clientWaiting = null,
-    workflowVersion = WorkflowVersion(42),
     taskTags = setOf(),
     taskMeta = TestFactory.random(),
+    returnValue = ReturnValue.from("42"),
+    workflowVersion = WorkflowVersion(42),
 )
 
 private fun getTaskCompletedClient(msg: TaskCompleted) =
@@ -291,12 +294,12 @@ private fun getTaskFailed() = TaskFailed(
     methodRunId = null,
     clientName = null,
     clientWaiting = null,
-    workflowVersion = WorkflowVersion(42),
     taskTags = TestFactory.random(),
     taskMeta = TestFactory.random(),
-    deferredError = TestFactory.random(),
     executionError = TestFactory.random(),
+    deferredError = TestFactory.random(),
     methodName = TestFactory.random(),
+    workflowVersion = WorkflowVersion(42),
 )
 
 private fun getTaskFailedClient(msg: TaskFailed) =
