@@ -73,11 +73,7 @@ class PulsarContainer(dockerImageName: DockerImageName) :
     val response = String.format("[\"%s\"]", clusterName)
     waitAllStrategy.withStrategy(
         Wait.forHttp(ADMIN_CLUSTERS_ENDPOINT).forPort(BROKER_HTTP_PORT)
-            .forResponsePredicate { anObject: String? ->
-              response.equals(
-                  anObject,
-              )
-            },
+            .forResponsePredicate { anObject: String? -> response == anObject },
     )
     if (transactionsEnabled) {
       withEnv("PULSAR_PREFIX_transactionCoordinatorEnabled", "true")

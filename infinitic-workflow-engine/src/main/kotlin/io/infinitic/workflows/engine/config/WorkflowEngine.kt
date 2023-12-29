@@ -26,13 +26,15 @@ import io.infinitic.cache.config.Cache
 import io.infinitic.storage.config.Storage
 
 data class WorkflowEngine(
-    var concurrency: Int = 1,
-    var storage: Storage? = null,
-    var cache: Cache? = null
+  var concurrency: Int? = null,
+  var storage: Storage? = null,
+  var cache: Cache? = null
 ) {
   var isDefault: Boolean = false
 
   init {
-    require(concurrency >= 0) { "concurrency must be positive" }
+    concurrency?.let {
+      require(it >= 0) { "concurrency must be positive" }
+    }
   }
 }

@@ -45,15 +45,17 @@ data class Service(
   ).getOrThrow()
 
   init {
-    require(name.isNotEmpty()) { "name can not be empty" }
+    require(name.isNotEmpty()) { "'${::name.name}' can not be empty" }
 
     when (`class`) {
       null -> {
-        require(tagEngine != null) { error("class and taskTag undefined") }
+        require(tagEngine != null) {
+          error("'${::`class`.name}' and '${::tagEngine.name}' can not be both undefined")
+        }
       }
 
       else -> {
-        require(`class`.isNotEmpty()) { error("class empty") }
+        require(`class`.isNotEmpty()) { error("'class' empty") }
 
         val instance = getInstance()
 
@@ -62,12 +64,14 @@ data class Service(
         }
 
         if (concurrency != null) {
-          require(concurrency!! >= 0) { error("'${::concurrency.name}' must be a positive integer") }
+          require(concurrency!! >= 0) {
+            error("'${::concurrency.name}' must be an integer >= 0")
+          }
         }
 
         if (timeoutInSeconds != null) {
           require(timeoutInSeconds!! > 0) {
-            error("'${::timeoutInSeconds.name}' must be positive")
+            error("'${::timeoutInSeconds.name}' must be an integer > 0")
           }
         }
       }

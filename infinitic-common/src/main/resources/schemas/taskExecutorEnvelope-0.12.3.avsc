@@ -1,0 +1,124 @@
+{
+  "type" : "record",
+  "name" : "TaskExecutorEnvelope",
+  "namespace" : "io.infinitic.tasks.executor",
+  "fields" : [ {
+    "name" : "taskName",
+    "type" : "string"
+  }, {
+    "name" : "type",
+    "type" : {
+      "type" : "enum",
+      "name" : "TaskExecutorMessageType",
+      "symbols" : [ "EXECUTE_TASK" ]
+    }
+  }, {
+    "name" : "executeTask",
+    "type" : [ "null", {
+      "type" : "record",
+      "name" : "ExecuteTask",
+      "fields" : [ {
+        "name" : "taskName",
+        "type" : "string"
+      }, {
+        "name" : "taskId",
+        "type" : "string"
+      }, {
+        "name" : "emitterName",
+        "type" : "string"
+      }, {
+        "name" : "clientWaiting",
+        "type" : "boolean"
+      }, {
+        "name" : "methodName",
+        "type" : "string"
+      }, {
+        "name" : "methodParameterTypes",
+        "type" : [ "null", {
+          "type" : "array",
+          "items" : "string"
+        } ]
+      }, {
+        "name" : "methodParameters",
+        "type" : {
+          "type" : "array",
+          "items" : {
+            "type" : "record",
+            "name" : "SerializedData",
+            "namespace" : "io.infinitic.data",
+            "fields" : [ {
+              "name" : "bytes",
+              "type" : "bytes"
+            }, {
+              "name" : "type",
+              "type" : {
+                "type" : "enum",
+                "name" : "SerializedDataType",
+                "symbols" : [ "NULL", "JSON_JACKSON", "JSON_KOTLIN", "AVRO_WITH_SCHEMA" ]
+              }
+            }, {
+              "name" : "meta",
+              "type" : {
+                "type" : "map",
+                "values" : "bytes"
+              }
+            } ]
+          }
+        }
+      }, {
+        "name" : "taskRetrySequence",
+        "type" : "int"
+      }, {
+        "name" : "taskRetryIndex",
+        "type" : "int"
+      }, {
+        "name" : "lastError",
+        "type" : [ "null", {
+          "type" : "record",
+          "name" : "WorkerError",
+          "fields" : [ {
+            "name" : "workerName",
+            "type" : "string"
+          }, {
+            "name" : "name",
+            "type" : "string"
+          }, {
+            "name" : "message",
+            "type" : [ "null", "string" ]
+          }, {
+            "name" : "stackTraceToString",
+            "type" : "string"
+          }, {
+            "name" : "cause",
+            "type" : [ "null", "WorkerError" ]
+          } ]
+        } ]
+      }, {
+        "name" : "workflowId",
+        "type" : [ "null", "string" ]
+      }, {
+        "name" : "workflowName",
+        "type" : [ "null", "string" ]
+      }, {
+        "name" : "workflowVersion",
+        "type" : [ "null", "int" ],
+        "default" : null
+      }, {
+        "name" : "methodRunId",
+        "type" : [ "null", "string" ]
+      }, {
+        "name" : "taskTags",
+        "type" : {
+          "type" : "array",
+          "items" : "string"
+        }
+      }, {
+        "name" : "taskMeta",
+        "type" : {
+          "type" : "map",
+          "values" : "bytes"
+        }
+      } ]
+    } ]
+  } ]
+}

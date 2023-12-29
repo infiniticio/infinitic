@@ -354,9 +354,10 @@ class TaskExecutor(
   }
 
   companion object {
-    val DEFAULT_WORKFLOW_TASK_TIMEOUT = WithTimeout { 60.0 } // 1 minute
     val DEFAULT_TASK_TIMEOUT = null
     val DEFAULT_TASK_RETRY = RetryPolicy.DEFAULT
+
+    val DEFAULT_WORKFLOW_TASK_TIMEOUT = WithTimeout { 60.0 }
     val DEFAULT_WORKFLOW_TASK_RETRY = null
     val DEFAULT_WORKFLOW_CHECK_MODE = WorkflowCheckMode.simple
   }
