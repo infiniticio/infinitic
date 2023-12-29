@@ -24,6 +24,7 @@ package io.infinitic.common.tasks.executors.messages
 
 import com.github.avrokotlin.avro4k.Avro
 import com.github.avrokotlin.avro4k.AvroDefault
+import com.github.avrokotlin.avro4k.AvroName
 import com.github.avrokotlin.avro4k.AvroNamespace
 import io.infinitic.common.clients.data.ClientName
 import io.infinitic.common.data.MessageId
@@ -44,7 +45,7 @@ import io.infinitic.common.tasks.executors.errors.DeferredError
 import io.infinitic.common.tasks.executors.errors.ExecutionError
 import io.infinitic.common.workers.config.WorkflowVersion
 import io.infinitic.common.workers.data.WorkerName
-import io.infinitic.common.workflows.data.methodRuns.MethodRunId
+import io.infinitic.common.workflows.data.methodRuns.WorkflowMethodId
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTask
 import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.data.workflows.WorkflowName
@@ -60,7 +61,7 @@ sealed class TaskExecutorMessage : Message {
   abstract val taskRetryIndex: TaskRetryIndex
   abstract val workflowName: WorkflowName?
   abstract val workflowId: WorkflowId?
-  abstract val methodRunId: MethodRunId?
+  abstract val workflowMethodId: WorkflowMethodId?
   abstract val taskTags: Set<TaskTag>
   abstract val taskMeta: TaskMeta
 
@@ -74,7 +75,7 @@ sealed interface TaskEvent {
   val taskId: TaskId
   val workflowName: WorkflowName?
   val workflowId: WorkflowId?
-  val methodRunId: MethodRunId?
+  val workflowMethodId: WorkflowMethodId?
   val clientName: ClientName?
   val clientWaiting: Boolean?
 }
@@ -90,7 +91,8 @@ data class ExecuteTask(
   override val taskRetryIndex: TaskRetryIndex,
   override val workflowName: WorkflowName?,
   override val workflowId: WorkflowId?,
-  override val methodRunId: MethodRunId?,
+  @AvroName("methodRunId")
+  override val workflowMethodId: WorkflowMethodId?,
   override val taskTags: Set<TaskTag>,
   override val taskMeta: TaskMeta,
   val clientWaiting: Boolean,
@@ -114,7 +116,7 @@ data class ExecuteTask(
         taskRetryIndex = msg.taskRetryIndex + 1,
         workflowName = msg.workflowName,
         workflowId = msg.workflowId,
-        methodRunId = msg.methodRunId,
+        workflowMethodId = msg.workflowMethodId,
         taskTags = msg.taskTags,
         taskMeta = TaskMeta(meta),
         clientWaiting = msg.clientWaiting,
@@ -138,7 +140,7 @@ data class TaskStarted(
   override val taskRetryIndex: TaskRetryIndex,
   override val workflowName: WorkflowName?,
   override val workflowId: WorkflowId?,
-  override val methodRunId: MethodRunId?,
+  override val workflowMethodId: WorkflowMethodId?,
   override val clientName: ClientName?,
   override val clientWaiting: Boolean?,
   override val taskTags: Set<TaskTag>,
@@ -154,7 +156,7 @@ data class TaskStarted(
         taskRetryIndex = msg.taskRetryIndex,
         workflowName = msg.workflowName,
         workflowId = msg.workflowId,
-        methodRunId = msg.methodRunId,
+        workflowMethodId = msg.workflowMethodId,
         clientName = msg.clientName,
         clientWaiting = msg.clientWaiting,
         taskTags = msg.taskTags,
@@ -175,7 +177,7 @@ data class TaskFailed(
   override val taskRetryIndex: TaskRetryIndex,
   override val workflowName: WorkflowName?,
   override val workflowId: WorkflowId?,
-  override val methodRunId: MethodRunId?,
+  override val workflowMethodId: WorkflowMethodId?,
   override val clientName: ClientName?,
   override val clientWaiting: Boolean?,
   override val taskTags: Set<TaskTag>,
@@ -199,7 +201,7 @@ data class TaskFailed(
         taskRetryIndex = msg.taskRetryIndex,
         workflowName = msg.workflowName,
         workflowId = msg.workflowId,
-        methodRunId = msg.methodRunId,
+        workflowMethodId = msg.workflowMethodId,
         clientName = msg.clientName,
         clientWaiting = msg.clientWaiting,
         taskTags = msg.taskTags,
@@ -223,7 +225,7 @@ data class TaskRetried(
   override val taskRetryIndex: TaskRetryIndex,
   override val workflowName: WorkflowName?,
   override val workflowId: WorkflowId?,
-  override val methodRunId: MethodRunId?,
+  override val workflowMethodId: WorkflowMethodId?,
   override val clientName: ClientName?,
   override val clientWaiting: Boolean?,
   override val taskTags: Set<TaskTag>,
@@ -247,7 +249,7 @@ data class TaskRetried(
         taskRetryIndex = msg.taskRetryIndex + 1,
         workflowName = msg.workflowName,
         workflowId = msg.workflowId,
-        methodRunId = msg.methodRunId,
+        workflowMethodId = msg.workflowMethodId,
         clientName = msg.clientName,
         clientWaiting = msg.clientWaiting,
         taskTags = msg.taskTags,
@@ -269,7 +271,7 @@ data class TaskCompleted(
   override val taskRetryIndex: TaskRetryIndex,
   override val workflowName: WorkflowName?,
   override val workflowId: WorkflowId?,
-  override val methodRunId: MethodRunId?,
+  override val workflowMethodId: WorkflowMethodId?,
   override val clientName: ClientName?,
   override val clientWaiting: Boolean?,
   override val taskTags: Set<TaskTag>,
@@ -291,7 +293,7 @@ data class TaskCompleted(
         taskRetryIndex = msg.taskRetryIndex,
         workflowName = msg.workflowName,
         workflowId = msg.workflowId,
-        methodRunId = msg.methodRunId,
+        workflowMethodId = msg.workflowMethodId,
         clientName = msg.clientName,
         clientWaiting = msg.clientWaiting,
         taskTags = msg.taskTags,

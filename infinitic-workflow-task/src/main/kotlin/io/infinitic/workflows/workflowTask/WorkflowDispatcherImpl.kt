@@ -50,7 +50,7 @@ import io.infinitic.common.workflows.data.commands.ReceiveSignalCommand
 import io.infinitic.common.workflows.data.commands.SendSignalCommand
 import io.infinitic.common.workflows.data.commands.StartDurationTimerCommand
 import io.infinitic.common.workflows.data.commands.StartInstantTimerCommand
-import io.infinitic.common.workflows.data.methodRuns.MethodRunPosition
+import io.infinitic.common.workflows.data.methodRuns.PositionInMethod
 import io.infinitic.common.workflows.data.properties.PropertyHash
 import io.infinitic.common.workflows.data.properties.PropertyName
 import io.infinitic.common.workflows.data.steps.NewStep
@@ -100,7 +100,7 @@ internal class WorkflowDispatcherImpl(
   var newStep: NewStep? = null
 
   // position in the current method processing
-  private var methodRunPosition = MethodRunPosition()
+  private var positionInMethod = PositionInMethod()
 
   // current workflowTaskIndex (useful to retrieve status of Deferred)
   private var workflowTaskIndex = workflowTaskParameters.methodRun.workflowTaskIndexAtStart
@@ -139,7 +139,7 @@ internal class WorkflowDispatcherImpl(
         newCommands.add(
             PastCommand.from(
                 command = command,
-                commandPosition = methodRunPosition,
+                commandPosition = positionInMethod,
                 commandSimpleName = InlineTaskCommand.simpleName(),
                 commandStatus =
                 CommandStatus.Completed(
@@ -171,7 +171,7 @@ internal class WorkflowDispatcherImpl(
     nextPosition()
 
     // create a new step
-    val newStep = NewStep(step = deferred.step, stepPosition = methodRunPosition)
+    val newStep = NewStep(step = deferred.step, stepPosition = positionInMethod)
 
     deferred.step.checkAwaitIndex()
 
@@ -332,7 +332,7 @@ internal class WorkflowDispatcherImpl(
 
   /** Go to next position within the same branch */
   private fun nextPosition() {
-    methodRunPosition = methodRunPosition.next()
+    positionInMethod = positionInMethod.next()
   }
 
   /** Task dispatching */
@@ -421,7 +421,7 @@ internal class WorkflowDispatcherImpl(
     // if it does not already exist in the history
     val newCommand = PastCommand.from(
         command = command,
-        commandPosition = methodRunPosition,
+        commandPosition = positionInMethod,
         commandSimpleName = commandSimpleName,
         commandStatus = CommandStatus.Ongoing,
     )
@@ -445,7 +445,7 @@ internal class WorkflowDispatcherImpl(
   }
 
   private fun getPastCommandAtCurrentPosition(): PastCommand? =
-      workflowTaskParameters.methodRun.pastCommands.find { it.commandPosition == methodRunPosition }
+      workflowTaskParameters.methodRun.pastCommands.find { it.commandPosition == positionInMethod }
 
   private fun throwCommandsChangedException(
     pastCommand: PastCommand?,
@@ -454,7 +454,7 @@ internal class WorkflowDispatcherImpl(
     val e = WorkflowChangedException(
         "${workflowTaskParameters.workflowName}",
         "${workflowTaskParameters.methodRun.methodName}",
-        "$methodRunPosition",
+        "$positionInMethod",
     )
     logger.error(e) {
       """Workflow ${workflowTaskParameters.workflowId}:past and new commands are different
@@ -482,10 +482,10 @@ internal class WorkflowDispatcherImpl(
     // Do we already know a step in this position ?
     val currentStep = workflowTaskParameters.methodRun.currentStep
     val pastStep =
-        if (currentStep?.stepPosition == methodRunPosition) {
+        if (currentStep?.stepPosition == positionInMethod) {
           currentStep
         } else {
-          workflowTaskParameters.methodRun.pastSteps.find { it.stepPosition == methodRunPosition }
+          workflowTaskParameters.methodRun.pastSteps.find { it.stepPosition == positionInMethod }
         }
 
     // if it exists, check it has not changed
@@ -493,7 +493,7 @@ internal class WorkflowDispatcherImpl(
       val e = WorkflowChangedException(
           workflowTaskParameters.workflowName.name,
           "${workflowTaskParameters.methodRun.methodName}",
-          "$methodRunPosition",
+          "$positionInMethod",
       )
       logger.error(e) {
         """Workflow ${workflowTaskParameters.workflowId}: past and new steps are different

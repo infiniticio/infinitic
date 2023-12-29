@@ -475,7 +475,7 @@ fun ExecuteTask.check(
   workflowName shouldBe msg.workflowName
   workflowId shouldBe msg.workflowId
   workflowVersion shouldBe msg.workflowVersion
-  methodRunId shouldBe msg.methodRunId
+  workflowMethodId shouldBe msg.workflowMethodId
   clientName shouldBe msg.clientName
   clientWaiting shouldBe msg.clientWaiting
   methodName shouldBe msg.methodName
@@ -498,7 +498,7 @@ fun TaskFailed.check(
   workflowName shouldBe msg.workflowName
   workflowId shouldBe msg.workflowId
   workflowVersion shouldBe msg.workflowVersion
-  methodRunId shouldBe msg.methodRunId
+  workflowMethodId shouldBe msg.workflowMethodId
   clientName shouldBe msg.clientName
   clientWaiting shouldBe msg.clientWaiting
   executionError.name shouldBe errorName
@@ -521,7 +521,7 @@ fun TaskRetried.check(
   taskRetryIndex shouldBe msg.taskRetryIndex + 1
   workflowName shouldBe msg.workflowName
   workflowId shouldBe msg.workflowId
-  methodRunId shouldBe msg.methodRunId
+  workflowMethodId shouldBe msg.workflowMethodId
   taskTags shouldBe msg.taskTags
   taskMeta shouldBe TaskMeta(meta)
   taskRetryDelay shouldBe delay
@@ -538,7 +538,7 @@ internal fun getExecuteTask(method: String, input: Array<out Any?>, types: List<
         taskRetryIndex = TaskRetryIndex(7),
         workflowName = null,
         workflowId = null,
-        methodRunId = null,
+        workflowMethodId = null,
         taskTags = TestFactory.random(),
         taskMeta = TestFactory.random(),
         clientWaiting = false,
@@ -558,7 +558,7 @@ private fun getTaskStarted(msg: ExecuteTask, messageId: MessageId) = TaskStarted
     taskRetryIndex = msg.taskRetryIndex,
     workflowName = msg.workflowName,
     workflowId = msg.workflowId,
-    methodRunId = msg.methodRunId,
+    workflowMethodId = msg.workflowMethodId,
     clientName = msg.clientName,
     clientWaiting = msg.clientWaiting,
     taskTags = msg.taskTags,
@@ -580,7 +580,7 @@ private fun getTaskCompleted(
     taskRetryIndex = msg.taskRetryIndex,
     workflowName = msg.workflowName,
     workflowId = msg.workflowId,
-    methodRunId = msg.methodRunId,
+    workflowMethodId = msg.workflowMethodId,
     clientName = msg.clientName,
     clientWaiting = msg.clientWaiting,
     taskTags = msg.taskTags,

@@ -24,7 +24,7 @@ package io.infinitic.common.workflows.data.commands
 
 import io.infinitic.common.tasks.data.TaskId
 import io.infinitic.common.utils.Tsid
-import io.infinitic.common.workflows.data.methodRuns.MethodRunId
+import io.infinitic.common.workflows.data.methodRuns.WorkflowMethodId
 import io.infinitic.common.workflows.data.timers.TimerId
 import io.infinitic.common.workflows.data.workflows.WorkflowId
 import kotlinx.serialization.Serializable
@@ -37,7 +37,7 @@ value class CommandId(private val id: String = Tsid.random()) {
 
     fun from(workflowId: WorkflowId) = CommandId(workflowId.toString())
 
-    fun from(methodRunId: MethodRunId) = CommandId(methodRunId.toString())
+    fun from(methodRunId: WorkflowMethodId) = CommandId(methodRunId.toString())
 
     fun from(timerId: TimerId) = CommandId(timerId.toString())
   }

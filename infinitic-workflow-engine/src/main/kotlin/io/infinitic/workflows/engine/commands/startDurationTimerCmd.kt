@@ -46,7 +46,7 @@ internal fun CoroutineScope.startDurationTimerCmd(
       timerId = TimerId.from(pastCommand.commandId),
       workflowName = state.workflowName,
       workflowId = state.workflowId,
-      methodRunId = state.runningMethodRunId ?: thisShouldNotHappen(),
+      workflowMethodId = state.runningWorkflowMethodId ?: thisShouldNotHappen(),
       emitterName = emitterName,
   )
   // The duration is offset by the time spent in the workflow task

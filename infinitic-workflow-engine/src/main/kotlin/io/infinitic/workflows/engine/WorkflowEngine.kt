@@ -155,7 +155,7 @@ class WorkflowEngine(
           val methodRunUnknown = MethodRunUnknown(
               recipientName = ClientName.from(message.emitterName),
               message.workflowId,
-              message.methodRunId,
+              message.workflowMethodId,
               emitterName = emitterName,
           )
           launch { producer.sendToClient(methodRunUnknown) }
@@ -168,11 +168,11 @@ class WorkflowEngine(
                   MethodUnknownError(
                       workflowName = message.workflowName,
                       workflowId = message.workflowId,
-                      methodRunId = message.methodRunId,
+                      workflowMethodId = message.workflowMethodId,
                   ),
                   workflowName = message.parentWorkflowName ?: thisShouldNotHappen(),
                   workflowId = message.parentWorkflowId!!,
-                  methodRunId = message.parentMethodRunId ?: thisShouldNotHappen(),
+                  workflowMethodId = message.parentWorkflowMethodId ?: thisShouldNotHappen(),
                   emitterName = emitterName,
               )
           launch { producer.sendLaterToWorkflowEngine(childMethodFailed) }
@@ -184,7 +184,7 @@ class WorkflowEngine(
         val methodRunUnknown = MethodRunUnknown(
             recipientName = ClientName.from(message.emitterName),
             message.workflowId,
-            message.methodRunId,
+            message.workflowMethodId,
             emitterName = emitterName,
         )
         launch { producer.sendToClient(methodRunUnknown) }
@@ -261,7 +261,7 @@ class WorkflowEngine(
     when (message) {
       is DispatchMethodOnRunningWorkflow -> {
         // Idempotency: do not relaunch if this method has already been launched
-        if (state.getMethodRun(message.methodRunId) != null) {
+        if (state.getMethodRun(message.workflowMethodId) != null) {
           logDiscarding(message) { "as this method has already been launched" }
 
           return
@@ -280,7 +280,7 @@ class WorkflowEngine(
 
       is MethodEvent -> {
         // if methodRun has already been cleaned (completed), then discard the message
-        if (state.getMethodRun(message.methodRunId) == null) {
+        if (state.getMethodRun(message.workflowMethodId) == null) {
           logDiscarding(message) { "as null methodRun" }
 
           return

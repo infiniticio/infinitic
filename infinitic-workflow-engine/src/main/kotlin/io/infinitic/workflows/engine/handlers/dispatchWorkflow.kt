@@ -25,8 +25,8 @@ package io.infinitic.workflows.engine.handlers
 import io.infinitic.common.clients.data.ClientName
 import io.infinitic.common.transport.InfiniticProducer
 import io.infinitic.common.workflows.data.methodRuns.MethodRun
-import io.infinitic.common.workflows.data.methodRuns.MethodRunId
-import io.infinitic.common.workflows.data.methodRuns.MethodRunPosition
+import io.infinitic.common.workflows.data.methodRuns.PositionInMethod
+import io.infinitic.common.workflows.data.methodRuns.WorkflowMethodId
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskIndex
 import io.infinitic.common.workflows.engine.messages.DispatchNewWorkflow
 import io.infinitic.common.workflows.engine.state.WorkflowState
@@ -38,7 +38,7 @@ internal fun CoroutineScope.dispatchWorkflow(
   message: DispatchNewWorkflow
 ): WorkflowState {
   val methodRun = MethodRun(
-      methodRunId = MethodRunId.from(message.workflowId),
+      workflowMethodId = WorkflowMethodId.from(message.workflowId),
       waitingClients =
       when (message.clientWaiting) {
         true -> mutableSetOf(ClientName.from(message.emitterName))
@@ -46,7 +46,7 @@ internal fun CoroutineScope.dispatchWorkflow(
       },
       parentWorkflowId = message.parentWorkflowId,
       parentWorkflowName = message.parentWorkflowName,
-      parentMethodRunId = message.parentMethodRunId,
+      parentWorkflowMethodId = message.parentWorkflowMethodId,
       methodName = message.methodName,
       methodParameterTypes = message.methodParameterTypes,
       methodParameters = message.methodParameters,
@@ -64,7 +64,7 @@ internal fun CoroutineScope.dispatchWorkflow(
       methodRuns = mutableListOf(methodRun),
   )
 
-  dispatchWorkflowTask(producer, state, methodRun, MethodRunPosition())
+  dispatchWorkflowTask(producer, state, methodRun, PositionInMethod())
 
   return state
 }

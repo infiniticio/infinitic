@@ -22,15 +22,16 @@
  */
 package io.infinitic.common.workflows.data.workflows
 
+import com.github.avrokotlin.avro4k.AvroName
 import com.github.avrokotlin.avro4k.AvroNamespace
 import io.infinitic.common.data.ReturnValue
-import io.infinitic.common.workflows.data.methodRuns.MethodRunId
+import io.infinitic.common.workflows.data.methodRuns.WorkflowMethodId
 import kotlinx.serialization.Serializable
 
 @Serializable
 @AvroNamespace("io.infinitic.workflows.data")
 data class WorkflowReturnValue(
-    val workflowId: WorkflowId,
-    val methodRunId: MethodRunId,
-    val returnValue: ReturnValue
+  val workflowId: WorkflowId,
+  @AvroName("methodRunId") val workflowMethodId: WorkflowMethodId,
+  val returnValue: ReturnValue
 )

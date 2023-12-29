@@ -28,7 +28,7 @@ import io.infinitic.common.workflows.data.commands.CommandId
 import io.infinitic.common.workflows.data.commands.CommandStatus
 import io.infinitic.common.workflows.data.commands.PastCommand
 import io.infinitic.common.workflows.data.commands.ReceiveSignalPastCommand
-import io.infinitic.common.workflows.data.methodRuns.MethodRunId
+import io.infinitic.common.workflows.data.methodRuns.WorkflowMethodId
 import io.infinitic.common.workflows.engine.state.WorkflowState
 import kotlinx.coroutines.CoroutineScope
 
@@ -40,11 +40,11 @@ import kotlinx.coroutines.CoroutineScope
 internal fun CoroutineScope.commandTerminated(
   producer: InfiniticProducer,
   state: WorkflowState,
-  methodRunId: MethodRunId,
+  workflowMethodId: WorkflowMethodId,
   commandId: CommandId,
   commandStatus: CommandStatus
 ) {
-  val methodRun = state.getMethodRun(methodRunId) ?: thisShouldNotHappen()
+  val methodRun = state.getMethodRun(workflowMethodId) ?: thisShouldNotHappen()
   val pastCommand = state.getPastCommand(commandId, methodRun)
 
   // Idempotency: do nothing if this command is already terminated

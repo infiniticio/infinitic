@@ -24,7 +24,7 @@ package io.infinitic.common.workflows.data.commands
 
 import com.github.avrokotlin.avro4k.AvroDefault
 import io.infinitic.common.tasks.data.TaskRetrySequence
-import io.infinitic.common.workflows.data.methodRuns.MethodRunPosition
+import io.infinitic.common.workflows.data.methodRuns.PositionInMethod
 import io.infinitic.workflows.WorkflowCheckMode
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -32,7 +32,7 @@ import kotlinx.serialization.Serializable
 @Serializable
 sealed class PastCommand {
   abstract val commandId: CommandId
-  abstract val commandPosition: MethodRunPosition
+  abstract val commandPosition: PositionInMethod
   abstract val commandSimpleName: CommandSimpleName
   abstract var commandStatus: CommandStatus
   abstract val command: Command
@@ -40,7 +40,7 @@ sealed class PastCommand {
   companion object {
     fun from(
       command: Command,
-      commandPosition: MethodRunPosition,
+      commandPosition: PositionInMethod,
       commandSimpleName: CommandSimpleName,
       commandStatus: CommandStatus
     ) =
@@ -113,7 +113,7 @@ sealed class PastCommand {
 @SerialName("PastCommand.DispatchTask")
 data class DispatchTaskPastCommand(
   override val command: DispatchTaskCommand,
-  override val commandPosition: MethodRunPosition,
+  override val commandPosition: PositionInMethod,
   override val commandSimpleName: CommandSimpleName,
   override var commandStatus: CommandStatus,
   var taskRetrySequence: TaskRetrySequence = TaskRetrySequence(0),
@@ -124,7 +124,7 @@ data class DispatchTaskPastCommand(
 @SerialName("PastCommand.DispatchWorkflow")
 data class DispatchNewWorkflowPastCommand(
   override val command: DispatchNewWorkflowCommand,
-  override val commandPosition: MethodRunPosition,
+  override val commandPosition: PositionInMethod,
   override val commandSimpleName: CommandSimpleName,
   override var commandStatus: CommandStatus,
   override val commandId: CommandId = CommandId()
@@ -134,7 +134,7 @@ data class DispatchNewWorkflowPastCommand(
 @SerialName("PastCommand.DispatchMethod")
 data class DispatchExistingWorkflowPastCommand(
   override val command: DispatchExistingWorkflowCommand,
-  override val commandPosition: MethodRunPosition,
+  override val commandPosition: PositionInMethod,
   override val commandSimpleName: CommandSimpleName,
   override var commandStatus: CommandStatus,
   override val commandId: CommandId = CommandId()
@@ -144,7 +144,7 @@ data class DispatchExistingWorkflowPastCommand(
 @SerialName("PastCommand.InlineTask")
 data class InlineTaskPastCommand(
   override val command: InlineTaskCommand,
-  override val commandPosition: MethodRunPosition,
+  override val commandPosition: PositionInMethod,
   override val commandSimpleName: CommandSimpleName,
   override var commandStatus: CommandStatus,
   override val commandId: CommandId = CommandId()
@@ -154,7 +154,7 @@ data class InlineTaskPastCommand(
 @SerialName("PastCommand.ReceiveSignal")
 data class ReceiveSignalPastCommand(
   override val command: ReceiveSignalCommand,
-  override val commandPosition: MethodRunPosition,
+  override val commandPosition: PositionInMethod,
   override val commandSimpleName: CommandSimpleName,
   override var commandStatus: CommandStatus,
   override val commandId: CommandId = CommandId(),
@@ -180,7 +180,7 @@ data class ReceiveSignalPastCommand(
 @SerialName("PastCommand.SendSignal")
 data class SendSignalPastCommand(
   override val command: SendSignalCommand,
-  override val commandPosition: MethodRunPosition,
+  override val commandPosition: PositionInMethod,
   override val commandSimpleName: CommandSimpleName,
   override var commandStatus: CommandStatus,
   override val commandId: CommandId = CommandId()
@@ -190,7 +190,7 @@ data class SendSignalPastCommand(
 @SerialName("PastCommand.StartDurationTimer")
 data class StartDurationTimerPastCommand(
   override val command: StartDurationTimerCommand,
-  override val commandPosition: MethodRunPosition,
+  override val commandPosition: PositionInMethod,
   override val commandSimpleName: CommandSimpleName,
   override var commandStatus: CommandStatus,
   override val commandId: CommandId = CommandId()
@@ -200,7 +200,7 @@ data class StartDurationTimerPastCommand(
 @SerialName("PastCommand.StartInstantTimer")
 data class StartInstantTimerPastCommand(
   override val command: StartInstantTimerCommand,
-  override val commandPosition: MethodRunPosition,
+  override val commandPosition: PositionInMethod,
   override val commandSimpleName: CommandSimpleName,
   override var commandStatus: CommandStatus,
   override val commandId: CommandId = CommandId()

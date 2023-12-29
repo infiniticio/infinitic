@@ -42,7 +42,7 @@ import io.infinitic.common.tasks.executors.messages.TaskStarted
 import io.infinitic.common.tasks.tags.messages.TaskTagMessage
 import io.infinitic.common.transport.InfiniticProducerAsync
 import io.infinitic.common.workers.config.WorkflowVersion
-import io.infinitic.common.workflows.data.methodRuns.MethodRunId
+import io.infinitic.common.workflows.data.methodRuns.WorkflowMethodId
 import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.data.workflows.WorkflowName
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
@@ -61,7 +61,7 @@ private val clientName = ClientName("testClient")
 private val taskTags = setOf(TaskTag("foo"), TaskTag("bar"))
 private val workflowName = WorkflowName("testWorkflow")
 private val workflowId = WorkflowId()
-private val methodRunId = MethodRunId()
+private val methodRunId = WorkflowMethodId()
 private val testEmitterName = EmitterName("emitterTest")
 
 class TaskEventHandlerTests :
@@ -127,7 +127,7 @@ class TaskEventHandlerTests :
           val msg = getTaskCompleted().copy(
               workflowName = workflowName,
               workflowId = workflowId,
-              methodRunId = methodRunId,
+              workflowMethodId = methodRunId,
           )          // when
           coroutineScope { taskEventHandler.handle(msg) }
 
@@ -173,7 +173,7 @@ class TaskEventHandlerTests :
           val msg = getTaskFailed().copy(
               workflowName = workflowName,
               workflowId = workflowId,
-              methodRunId = methodRunId,
+              workflowMethodId = methodRunId,
           )          // when
           coroutineScope { taskEventHandler.handle(msg) }
 
@@ -218,7 +218,7 @@ private fun getTaskRetried() = TaskRetried(
     taskRetryIndex = TaskRetryIndex(7),
     workflowName = null,
     workflowId = null,
-    methodRunId = null,
+    workflowMethodId = null,
     clientName = null,
     clientWaiting = null,
     lastError = TestFactory.random(),
@@ -235,7 +235,7 @@ private fun getTaskStarted() = TaskStarted(
     taskRetryIndex = TaskRetryIndex(7),
     workflowName = null,
     workflowId = null,
-    methodRunId = null,
+    workflowMethodId = null,
     clientName = null,
     clientWaiting = null,
     taskTags = TestFactory.random(),
@@ -251,7 +251,7 @@ private fun getTaskCompleted() = TaskCompleted(
     taskRetryIndex = TaskRetryIndex(7),
     workflowName = null,
     workflowId = null,
-    methodRunId = null,
+    workflowMethodId = null,
     clientName = null,
     clientWaiting = null,
     taskTags = setOf(),
@@ -273,7 +273,7 @@ private fun getTaskCompletedWorkflow(msg: TaskCompleted) =
     io.infinitic.common.workflows.engine.messages.TaskCompleted(
         workflowName = msg.workflowName!!,
         workflowId = msg.workflowId!!,
-        methodRunId = msg.methodRunId!!,
+        workflowMethodId = msg.workflowMethodId!!,
         taskReturnValue = TaskReturnValue(
             msg.taskId,
             msg.serviceName,
@@ -291,7 +291,7 @@ private fun getTaskFailed() = TaskFailed(
     taskRetryIndex = TaskRetryIndex(7),
     workflowName = null,
     workflowId = null,
-    methodRunId = null,
+    workflowMethodId = null,
     clientName = null,
     clientWaiting = null,
     taskTags = TestFactory.random(),
@@ -314,7 +314,7 @@ private fun getTaskFailedWorkflow(msg: TaskFailed) =
     io.infinitic.common.workflows.engine.messages.TaskFailed(
         workflowName = msg.workflowName!!,
         workflowId = msg.workflowId!!,
-        methodRunId = msg.methodRunId!!,
+        workflowMethodId = msg.workflowMethodId!!,
         emitterName = testEmitterName,
         taskFailedError = TaskFailedError(
             serviceName = msg.serviceName,

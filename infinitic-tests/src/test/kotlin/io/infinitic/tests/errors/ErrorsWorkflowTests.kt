@@ -131,7 +131,7 @@ internal class ErrorsWorkflowTests :
 
           val cause1 = error.deferredException as WorkflowFailedException
           cause1.workflowName shouldBe ErrorsWorkflow::class.java.name
-          cause1.methodName shouldBe "failingWithException"
+          cause1.workflowMethodName shouldBe "failingWithException"
 
           val cause2 = cause1.deferredException as TaskFailedException
           cause2.serviceName shouldBe UtilService::class.java.name

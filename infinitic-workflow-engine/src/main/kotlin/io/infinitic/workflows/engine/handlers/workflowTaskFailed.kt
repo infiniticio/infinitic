@@ -54,7 +54,7 @@ internal fun CoroutineScope.workflowTaskFailed(
     val methodFailed = MethodFailed(
         recipientName = it,
         workflowId = state.workflowId,
-        methodRunId = methodRun.methodRunId,
+        workflowMethodId = methodRun.workflowMethodId,
         cause = deferredError,
         emitterName = emitterName,
     )
@@ -71,13 +71,13 @@ internal fun CoroutineScope.workflowTaskFailed(
         MethodFailedError(
             workflowName = state.workflowName,
             workflowId = state.workflowId,
-            methodName = methodRun.methodName,
-            methodRunId = methodRun.methodRunId,
+            workflowMethodName = methodRun.methodName,
+            workflowMethodId = methodRun.workflowMethodId,
             deferredError = deferredError,
         ),
         workflowName = methodRun.parentWorkflowName ?: thisShouldNotHappen(),
         workflowId = it,
-        methodRunId = methodRun.parentMethodRunId ?: thisShouldNotHappen(),
+        workflowMethodId = methodRun.parentWorkflowMethodId ?: thisShouldNotHappen(),
         emitterName = emitterName,
     )
     if (it == state.workflowId) {

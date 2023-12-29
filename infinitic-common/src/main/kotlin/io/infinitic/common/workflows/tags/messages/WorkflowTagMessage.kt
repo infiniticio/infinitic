@@ -39,7 +39,7 @@ import io.infinitic.common.workflows.data.channels.ChannelName
 import io.infinitic.common.workflows.data.channels.ChannelType
 import io.infinitic.common.workflows.data.channels.SignalData
 import io.infinitic.common.workflows.data.channels.SignalId
-import io.infinitic.common.workflows.data.methodRuns.MethodRunId
+import io.infinitic.common.workflows.data.methodRuns.WorkflowMethodId
 import io.infinitic.common.workflows.data.workflows.WorkflowCancellationReason
 import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.data.workflows.WorkflowMeta
@@ -144,7 +144,7 @@ data class RetryTasksByTag(
  *
  * @param workflowName the name of the workflow instances to complete the timers of
  * @param workflowTag the tag of the workflow instances to complete the timers of
- * @param methodRunId the id of the method run to complete the timers of
+ * @param workflowMethodId the id of the method run to complete the timers of
  * @param emitterName the name of the client that emitted this command
  */
 @Serializable
@@ -152,7 +152,8 @@ data class RetryTasksByTag(
 data class CompleteTimersByTag(
   override val workflowName: WorkflowName,
   override val workflowTag: WorkflowTag,
-  val methodRunId: MethodRunId?,
+  @AvroName("methodRunId")
+  val workflowMethodId: WorkflowMethodId?,
   override val emitterName: EmitterName
 ) : WorkflowTagMessage()
 
@@ -220,7 +221,7 @@ data class GetWorkflowIdsByTag(
  * @param workflowMeta the meta of the workflow to dispatch
  * @param parentWorkflowName the name of the parent workflow that triggered this command
  * @param parentWorkflowId the id of the parent workflow that triggered this command
- * @param parentMethodRunId the id of the parent method run that triggered this command
+ * @param parentWorkflowMethodId the id of the parent method run that triggered this command
  * @param clientWaiting whether the client is waiting for the result of the workflow
  * @param emitterName the name of the client that emitted this command
  */
@@ -238,7 +239,7 @@ data class DispatchWorkflowByCustomId(
   val workflowMeta: WorkflowMeta,
   var parentWorkflowName: WorkflowName?,
   var parentWorkflowId: WorkflowId?,
-  var parentMethodRunId: MethodRunId?,
+  @AvroName("parentMethodRunId") var parentWorkflowMethodId: WorkflowMethodId?,
   val clientWaiting: Boolean,
   override val emitterName: EmitterName
 ) : WorkflowTagMessage() {
@@ -252,7 +253,7 @@ data class DispatchWorkflowByCustomId(
  *
  * @param workflowName the name of the targeted running workflow instances
  * @param workflowTag the tag of the targeted running workflow instances
- * @param methodRunId the Id of the method to dispatch
+ * @param workflowMethodId the Id of the method to dispatch
  * @param methodName the name of the method to dispatch
  * @param methodParameters the parameters of the method to dispatch
  * @param methodParameterTypes the types of the parameters of the method to dispatch
@@ -268,8 +269,9 @@ data class DispatchMethodByTag(
   override val workflowTag: WorkflowTag,
   var parentWorkflowId: WorkflowId?,
   var parentWorkflowName: WorkflowName?,
-  var parentMethodRunId: MethodRunId?,
-  val methodRunId: MethodRunId,
+  @AvroName("parentMethodRunId") var parentWorkflowMethodId: WorkflowMethodId?,
+  @AvroName("methodRunId")
+  val workflowMethodId: WorkflowMethodId,
   val methodName: MethodName,
   val methodParameterTypes: MethodParameterTypes?,
   val methodParameters: MethodParameters,

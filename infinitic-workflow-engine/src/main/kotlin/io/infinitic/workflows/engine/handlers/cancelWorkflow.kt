@@ -30,7 +30,7 @@ import io.infinitic.common.transport.InfiniticProducer
 import io.infinitic.common.workflows.data.commands.DispatchExistingWorkflowCommand
 import io.infinitic.common.workflows.data.commands.DispatchNewWorkflowCommand
 import io.infinitic.common.workflows.data.methodRuns.MethodRun
-import io.infinitic.common.workflows.data.methodRuns.MethodRunId
+import io.infinitic.common.workflows.data.methodRuns.WorkflowMethodId
 import io.infinitic.common.workflows.data.workflows.WorkflowCancellationReason
 import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.engine.messages.CancelWorkflow
@@ -45,7 +45,7 @@ internal fun CoroutineScope.cancelWorkflow(
   state: WorkflowState,
   message: CancelWorkflow
 ) {
-  when (message.methodRunId) {
+  when (message.workflowMethodId) {
     null -> {
       state.methodRuns.forEach { cancelMethodRun(producer, state, it, message.reason) }
 
@@ -54,7 +54,7 @@ internal fun CoroutineScope.cancelWorkflow(
     }
 
     else -> {
-      state.getMethodRun(message.methodRunId!!)?.let { methodRun ->
+      state.getMethodRun(message.workflowMethodId!!)?.let { methodRun ->
         cancelMethodRun(producer, state, methodRun, message.reason)
 
         // clean state
@@ -77,7 +77,7 @@ private fun CoroutineScope.cancelMethodRun(
     val workflowCanceled = MethodCanceled(
         recipientName = it,
         workflowId = state.workflowId,
-        methodRunId = methodRun.methodRunId,
+        workflowMethodId = methodRun.workflowMethodId,
         emitterName = emitterName,
     )
     launch { producer.sendToClient(workflowCanceled) }
@@ -92,11 +92,11 @@ private fun CoroutineScope.cancelMethodRun(
         MethodCanceledError(
             workflowName = state.workflowName,
             workflowId = state.workflowId,
-            methodRunId = methodRun.methodRunId,
+            workflowMethodId = methodRun.workflowMethodId,
         ),
         workflowName = methodRun.parentWorkflowName ?: thisShouldNotHappen(),
         workflowId = methodRun.parentWorkflowId!!,
-        methodRunId = methodRun.parentMethodRunId ?: thisShouldNotHappen(),
+        workflowMethodId = methodRun.parentWorkflowMethodId ?: thisShouldNotHappen(),
         emitterName = emitterName,
     )
     launch { producer.sendLaterToWorkflowEngine(childMethodCanceled) }
@@ -110,7 +110,7 @@ private fun CoroutineScope.cancelMethodRun(
           command.workflowId != null -> {
             val cancelWorkflow = CancelWorkflow(
                 reason = WorkflowCancellationReason.CANCELED_BY_PARENT,
-                methodRunId = MethodRunId.from(it.commandId),
+                workflowMethodId = WorkflowMethodId.from(it.commandId),
                 workflowName = command.workflowName,
                 workflowId = command.workflowId!!,
                 emitterName = emitterName,
@@ -136,7 +136,7 @@ private fun CoroutineScope.cancelMethodRun(
       is DispatchNewWorkflowCommand -> {
         val cancelWorkflow = CancelWorkflow(
             reason = WorkflowCancellationReason.CANCELED_BY_PARENT,
-            methodRunId = null,
+            workflowMethodId = null,
             workflowName = command.workflowName,
             workflowId = WorkflowId.from(it.commandId),
             emitterName = emitterName,

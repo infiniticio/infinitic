@@ -152,7 +152,7 @@ private class WorkflowTagEngineTests :
           with(captured(workflowEngineSlot)!! as CompleteTimers) {
             workflowId shouldBe workflowIds.last()
             workflowName shouldBe msgIn.workflowName
-            methodRunId shouldBe msgIn.methodRunId
+            workflowMethodId shouldBe msgIn.workflowMethodId
           }
         }
 

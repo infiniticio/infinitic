@@ -28,7 +28,7 @@ import io.infinitic.common.tasks.executors.errors.MethodTimedOutError
 import io.infinitic.common.transport.InfiniticProducer
 import io.infinitic.common.workflows.data.commands.DispatchExistingWorkflowCommand
 import io.infinitic.common.workflows.data.commands.DispatchExistingWorkflowPastCommand
-import io.infinitic.common.workflows.data.methodRuns.MethodRunId
+import io.infinitic.common.workflows.data.methodRuns.WorkflowMethodId
 import io.infinitic.common.workflows.engine.messages.ChildMethodTimedOut
 import io.infinitic.common.workflows.engine.messages.DispatchMethodOnRunningWorkflow
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
@@ -45,7 +45,7 @@ internal fun CoroutineScope.dispatchExistingWorkflowCmd(
 ) {
   val emitterName = EmitterName(producer.name)
   val command: DispatchExistingWorkflowCommand = pastCommand.command
-  val methodRunId = MethodRunId.from(pastCommand.commandId)
+  val methodRunId = WorkflowMethodId.from(pastCommand.commandId)
   val timeout = command.methodTimeout
 
   when {
@@ -67,11 +67,11 @@ internal fun CoroutineScope.dispatchExistingWorkflowCmd(
                 workflowName = command.workflowName,
                 workflowId = command.workflowId!!,
                 methodName = command.methodName,
-                methodRunId = methodRunId,
+                workflowMethodId = methodRunId,
             ),
             workflowName = state.workflowName,
             workflowId = state.workflowId,
-            methodRunId = state.runningMethodRunId ?: thisShouldNotHappen(),
+            workflowMethodId = state.runningWorkflowMethodId ?: thisShouldNotHappen(),
             emitterName = emitterName,
         )
 
@@ -92,8 +92,8 @@ internal fun CoroutineScope.dispatchExistingWorkflowCmd(
           workflowTag = command.workflowTag!!,
           parentWorkflowId = state.workflowId,
           parentWorkflowName = state.workflowName,
-          parentMethodRunId = state.runningMethodRunId,
-          methodRunId = methodRunId,
+          parentWorkflowMethodId = state.runningWorkflowMethodId,
+          workflowMethodId = methodRunId,
           methodName = command.methodName,
           methodParameterTypes = command.methodParameterTypes,
           methodParameters = command.methodParameters,
@@ -111,19 +111,19 @@ internal fun CoroutineScope.dispatchExistingWorkflowCmd(
 
 private fun getDispatchMethod(
   emitterName: EmitterName,
-  methodRunId: MethodRunId,
+  workflowMethodId: WorkflowMethodId,
   command: DispatchExistingWorkflowCommand,
   state: WorkflowState
 ) = DispatchMethodOnRunningWorkflow(
     workflowName = command.workflowName,
     workflowId = command.workflowId!!,
-    methodRunId = methodRunId,
+    workflowMethodId = workflowMethodId,
     methodName = command.methodName,
     methodParameters = command.methodParameters,
     methodParameterTypes = command.methodParameterTypes,
     parentWorkflowId = state.workflowId,
     parentWorkflowName = state.workflowName,
-    parentMethodRunId = state.runningMethodRunId,
+    parentWorkflowMethodId = state.runningWorkflowMethodId,
     clientWaiting = false,
     emitterName = emitterName,
 )

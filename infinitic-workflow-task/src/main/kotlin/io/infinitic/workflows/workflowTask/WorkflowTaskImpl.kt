@@ -56,7 +56,7 @@ class WorkflowTaskImpl : WorkflowTask {
       instance.workflowName = workflowName.toString()
       instance.workflowId = workflowId.toString()
       instance.methodName = methodRun.methodName.toString()
-      instance.methodId = methodRun.methodRunId.toString()
+      instance.methodId = methodRun.workflowMethodId.toString()
       instance.tags = workflowTags.map { it.tag }.toSet()
       instance.meta = workflowMeta.map
     }

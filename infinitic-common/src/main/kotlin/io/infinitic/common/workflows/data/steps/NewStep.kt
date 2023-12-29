@@ -23,15 +23,15 @@
 package io.infinitic.common.workflows.data.steps
 
 import com.github.avrokotlin.avro4k.AvroNamespace
-import io.infinitic.common.workflows.data.methodRuns.MethodRunPosition
+import io.infinitic.common.workflows.data.methodRuns.PositionInMethod
 import kotlinx.serialization.Serializable
 
 @Serializable
 @AvroNamespace("io.infinitic.workflows.data")
 data class NewStep(
-    val stepId: StepId = StepId(),
-    val step: Step,
-    val stepPosition: MethodRunPosition
+  val stepId: StepId = StepId(),
+  val step: Step,
+  val stepPosition: PositionInMethod
 ) {
   // https://github.com/Kotlin/kotlinx.serialization/issues/133
   val stepHash: StepHash by lazy { step.hash() }

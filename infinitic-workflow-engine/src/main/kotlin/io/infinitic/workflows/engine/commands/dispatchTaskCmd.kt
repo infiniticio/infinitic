@@ -53,7 +53,7 @@ internal fun CoroutineScope.dispatchTaskCmd(
         taskRetryIndex = TaskRetryIndex(0),
         workflowName = state.workflowName,
         workflowId = state.workflowId,
-        methodRunId = state.runningMethodRunId ?: thisShouldNotHappen(),
+        workflowMethodId = state.runningWorkflowMethodId ?: thisShouldNotHappen(),
         taskTags = taskTags,
         taskMeta = taskMeta,
         clientWaiting = false,
@@ -91,7 +91,7 @@ internal fun CoroutineScope.dispatchTaskCmd(
           ),
           workflowName = state.workflowName,
           workflowId = state.workflowId,
-          methodRunId = state.runningMethodRunId ?: thisShouldNotHappen(),
+          workflowMethodId = state.runningWorkflowMethodId ?: thisShouldNotHappen(),
           emitterName = emitterName,
       )
     }

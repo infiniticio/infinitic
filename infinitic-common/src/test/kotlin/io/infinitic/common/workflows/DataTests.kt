@@ -33,8 +33,8 @@ import io.infinitic.common.workflows.data.commands.CommandHash
 import io.infinitic.common.workflows.data.commands.CommandId
 import io.infinitic.common.workflows.data.commands.CommandSimpleName
 import io.infinitic.common.workflows.data.commands.DispatchNewWorkflowPastCommand
-import io.infinitic.common.workflows.data.methodRuns.MethodRunId
-import io.infinitic.common.workflows.data.methodRuns.MethodRunPosition
+import io.infinitic.common.workflows.data.methodRuns.PositionInMethod
+import io.infinitic.common.workflows.data.methodRuns.WorkflowMethodId
 import io.infinitic.common.workflows.data.properties.PropertyHash
 import io.infinitic.common.workflows.data.properties.PropertyName
 import io.infinitic.common.workflows.data.properties.PropertyValue
@@ -148,18 +148,18 @@ class DataTests :
 
         "MethodRunId should be serialized as String and reversible in json" {
           val id = TestFactory.random<String>()
-          val m = MethodRunId(id)
+          val m = WorkflowMethodId(id)
           val json = Json.encodeToString(m)
-          val m2 = Json.decodeFromString<MethodRunId>(json)
+          val m2 = Json.decodeFromString<WorkflowMethodId>(json)
 
           json shouldBe Json.encodeToString(id)
           m2 shouldBe m
         }
 
         "MethodRunPosition should be serialized as String and reversible in json" {
-          val m = MethodRunPosition()
+          val m = PositionInMethod()
           val json = Json.encodeToString(m)
-          val m2 = Json.decodeFromString<MethodRunPosition>(json)
+          val m2 = Json.decodeFromString<PositionInMethod>(json)
 
           json shouldBe Json.encodeToString(-1)
           m2 shouldBe m

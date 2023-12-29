@@ -35,7 +35,7 @@ internal fun receiveSignalCmd(pastCommand: ReceiveSignalPastCommand, state: Work
           channelName = command.channelName,
           channelType = command.channelType,
           channelFilter = command.channelFilter,
-          methodRunId = state.runningMethodRunId!!,
+          workflowMethodId = state.runningWorkflowMethodId!!,
           commandId = pastCommand.commandId,
           receivedSignalLimit = command.receivedSignalLimit,
       ),

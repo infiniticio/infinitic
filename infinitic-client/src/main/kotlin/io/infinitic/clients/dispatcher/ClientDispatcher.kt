@@ -56,7 +56,7 @@ import io.infinitic.common.tasks.executors.errors.MethodFailedError
 import io.infinitic.common.transport.InfiniticConsumerAsync
 import io.infinitic.common.transport.InfiniticProducer
 import io.infinitic.common.workflows.data.channels.SignalId
-import io.infinitic.common.workflows.data.methodRuns.MethodRunId
+import io.infinitic.common.workflows.data.methodRuns.WorkflowMethodId
 import io.infinitic.common.workflows.data.workflows.WorkflowCancellationReason
 import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.data.workflows.WorkflowName
@@ -182,7 +182,7 @@ internal class ClientDispatcher(
         deferred.workflowName,
         deferred.requestBy.workflowId,
         deferred.methodName,
-        deferred.methodRunId,
+        deferred.workflowMethodId,
         deferred.methodTimeout,
         deferred.dispatchTime,
         clientWaiting,
@@ -195,14 +195,14 @@ internal class ClientDispatcher(
   private fun <T> awaitWorkflow(
     workflowName: WorkflowName,
     workflowId: WorkflowId,
-    methodName: MethodName,
-    methodRunId: MethodRunId?,
+    workflowMethodName: MethodName,
+    workflowMethodId: WorkflowMethodId?,
     methodTimeout: MillisDuration?,
     dispatchTime: Long,
     clientWaiting: Boolean
   ): T {
 
-    val runId = methodRunId ?: MethodRunId.from(workflowId)
+    val runId = workflowMethodId ?: WorkflowMethodId.from(workflowId)
 
     // calculate timeout from now
     val timeout = methodTimeout
@@ -212,13 +212,13 @@ internal class ClientDispatcher(
 
     // lazily starts client consumer if not already started and waits
     val waiting = waitForAsync(timeout) {
-      it is MethodMessage && it.workflowId == workflowId && it.methodRunId == runId
+      it is MethodMessage && it.workflowId == workflowId && it.workflowMethodId == runId
     }
 
     // if task was not initially sync, then send WaitTask message
     if (clientWaiting) {
       val waitWorkflow = WaitWorkflow(
-          methodRunId = runId,
+          workflowMethodId = runId,
           workflowName = workflowName,
           workflowId = workflowId,
           emitterName = emitterName,
@@ -234,8 +234,8 @@ internal class ClientDispatcher(
       null -> throw WorkflowTimedOutException(
           workflowName = workflowName.toString(),
           workflowId = workflowId.toString(),
-          methodName = methodName.toString(),
-          methodRunId = methodRunId?.toString(),
+          methodName = workflowMethodName.toString(),
+          workflowMethodId = workflowMethodId?.toString(),
       )
 
       is MethodCompleted -> workflowResult.methodReturnValue.value() as T
@@ -243,15 +243,15 @@ internal class ClientDispatcher(
       is MethodCanceled -> throw WorkflowCanceledException(
           workflowName = workflowName.toString(),
           workflowId = workflowId.toString(),
-          methodRunId = methodRunId?.toString(),
+          workflowMethodId = workflowMethodId?.toString(),
       )
 
       is MethodFailed -> throw WorkflowFailedException.from(
           MethodFailedError(
               workflowName = workflowName,
-              methodName = methodName,
+              workflowMethodName = workflowMethodName,
               workflowId = workflowId,
-              methodRunId = methodRunId,
+              workflowMethodId = workflowMethodId,
               deferredError = workflowResult.cause,
           ),
       )
@@ -259,7 +259,7 @@ internal class ClientDispatcher(
       is MethodRunUnknown -> throw WorkflowUnknownException(
           workflowName = workflowName.toString(),
           workflowId = workflowId.toString(),
-          methodRunId = methodRunId?.toString(),
+          workflowMethodId = workflowMethodId?.toString(),
       )
 
       else -> thisShouldNotHappen("Unexpected ${workflowResult::class}")
@@ -269,13 +269,13 @@ internal class ClientDispatcher(
   fun cancelWorkflowAsync(
     workflowName: WorkflowName,
     requestBy: RequestBy,
-    methodRunId: MethodRunId?,
+    workflowMethodId: WorkflowMethodId?,
   ): CompletableFuture<Unit> = sendingScope.future {
     when (requestBy) {
       is RequestByWorkflowId -> {
         val msg = CancelWorkflow(
             reason = WorkflowCancellationReason.CANCELED_BY_CLIENT,
-            methodRunId = methodRunId,
+            workflowMethodId = workflowMethodId,
             workflowName = workflowName,
             workflowId = requestBy.workflowId,
             emitterName = emitterName,
@@ -329,13 +329,13 @@ internal class ClientDispatcher(
   fun completeTimersAsync(
     workflowName: WorkflowName,
     requestBy: RequestBy,
-    methodRunId: MethodRunId?
+    workflowMethodId: WorkflowMethodId?
   ): CompletableFuture<Unit> =
       sendingScope.future {
         when (requestBy) {
           is RequestByWorkflowId -> {
             val msg = CompleteTimers(
-                methodRunId = methodRunId,
+                workflowMethodId = workflowMethodId,
                 workflowName = workflowName,
                 workflowId = requestBy.workflowId,
                 emitterName = emitterName,
@@ -348,7 +348,7 @@ internal class ClientDispatcher(
                 workflowName = workflowName,
                 workflowTag = requestBy.workflowTag,
                 emitterName = emitterName,
-                methodRunId = methodRunId,
+                workflowMethodId = workflowMethodId,
             )
             launch { producer.sendToWorkflowTag(msg) }
           }
@@ -499,7 +499,7 @@ internal class ClientDispatcher(
             workflowMeta = handler.workflowMeta,
             parentWorkflowName = null,
             parentWorkflowId = null,
-            parentMethodRunId = null,
+            parentWorkflowMethodId = null,
             clientWaiting = clientWaiting,
             emitterName = emitterName,
         )
@@ -530,7 +530,7 @@ internal class ClientDispatcher(
             workflowMeta = handler.workflowMeta,
             parentWorkflowName = null,
             parentWorkflowId = null,
-            parentMethodRunId = null,
+            parentWorkflowMethodId = null,
             clientWaiting = clientWaiting,
             emitterName = emitterName,
         )
@@ -627,13 +627,13 @@ internal class ClientDispatcher(
       val dispatchMethod = DispatchMethodOnRunningWorkflow(
           workflowName = deferred.workflowName,
           workflowId = deferred.requestBy.workflowId,
-          methodRunId = deferred.methodRunId,
+          workflowMethodId = deferred.workflowMethodId,
           methodName = handler.methodName,
           methodParameters = handler.methodParameters,
           methodParameterTypes = handler.methodParameterTypes,
           parentWorkflowId = null,
           parentWorkflowName = null,
-          parentMethodRunId = null,
+          parentWorkflowMethodId = null,
           clientWaiting = clientWaiting,
           emitterName = emitterName,
       )
@@ -646,8 +646,8 @@ internal class ClientDispatcher(
           workflowTag = deferred.requestBy.workflowTag,
           parentWorkflowId = null,
           parentWorkflowName = null,
-          parentMethodRunId = null,
-          methodRunId = deferred.methodRunId,
+          parentWorkflowMethodId = null,
+          workflowMethodId = deferred.workflowMethodId,
           methodName = handler.methodName,
           methodParameterTypes = handler.methodParameterTypes,
           methodParameters = handler.methodParameters,

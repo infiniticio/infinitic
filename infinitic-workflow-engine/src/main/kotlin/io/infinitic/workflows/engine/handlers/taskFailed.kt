@@ -37,7 +37,7 @@ internal fun CoroutineScope.taskFailed(
 ) = commandTerminated(
     producer,
     state,
-    message.methodRunId,
+    message.workflowMethodId,
     CommandId.from(message.taskFailedError.taskId),
     CommandStatus.Failed(message.taskFailedError, state.workflowTaskIndex),
 )

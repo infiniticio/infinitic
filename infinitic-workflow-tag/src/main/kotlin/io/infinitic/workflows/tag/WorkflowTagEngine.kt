@@ -30,7 +30,7 @@ import io.infinitic.common.exceptions.thisShouldNotHappen
 import io.infinitic.common.tasks.executors.errors.MethodTimedOutError
 import io.infinitic.common.transport.InfiniticProducerAsync
 import io.infinitic.common.transport.LoggedInfiniticProducer
-import io.infinitic.common.workflows.data.methodRuns.MethodRunId
+import io.infinitic.common.workflows.data.methodRuns.WorkflowMethodId
 import io.infinitic.common.workflows.engine.messages.CancelWorkflow
 import io.infinitic.common.workflows.engine.messages.ChildMethodTimedOut
 import io.infinitic.common.workflows.engine.messages.CompleteTimers
@@ -118,7 +118,7 @@ class WorkflowTagEngine(
               workflowMeta = message.workflowMeta,
               parentWorkflowName = message.parentWorkflowName,
               parentWorkflowId = message.parentWorkflowId,
-              parentMethodRunId = message.parentMethodRunId,
+              parentWorkflowMethodId = message.parentWorkflowMethodId,
               clientWaiting = message.clientWaiting,
               emitterName = message.emitterName,
           )
@@ -134,11 +134,11 @@ class WorkflowTagEngine(
                     workflowName = message.workflowName,
                     workflowId = message.workflowId,
                     methodName = message.methodName,
-                    methodRunId = MethodRunId.from(message.workflowId),
+                    workflowMethodId = WorkflowMethodId.from(message.workflowId),
                 ),
                 workflowName = message.parentWorkflowName ?: thisShouldNotHappen(),
                 workflowId = message.parentWorkflowId ?: thisShouldNotHappen(),
-                methodRunId = message.parentMethodRunId ?: thisShouldNotHappen(),
+                workflowMethodId = message.parentWorkflowMethodId ?: thisShouldNotHappen(),
                 emitterName = emitterName,
             )
             launch { producer.sendLaterToWorkflowEngine(childMethodTimedOut, timeout) }
@@ -153,7 +153,7 @@ class WorkflowTagEngine(
           // if needed, we inform workflowEngine that a client is waiting for its result
           if (message.clientWaiting) {
             val waitWorkflow = WaitWorkflow(
-                methodRunId = MethodRunId.from(ids.first()),
+                workflowMethodId = WorkflowMethodId.from(ids.first()),
                 workflowName = message.workflowName,
                 workflowId = ids.first(),
                 emitterName = message.emitterName,
@@ -186,13 +186,13 @@ class WorkflowTagEngine(
             val dispatchMethod = DispatchMethodOnRunningWorkflow(
                 workflowName = message.workflowName,
                 workflowId = it,
-                methodRunId = message.methodRunId,
+                workflowMethodId = message.workflowMethodId,
                 methodName = message.methodName,
                 methodParameters = message.methodParameters,
                 methodParameterTypes = message.methodParameterTypes,
                 parentWorkflowId = message.parentWorkflowId,
                 parentWorkflowName = message.parentWorkflowName,
-                parentMethodRunId = message.parentMethodRunId,
+                parentWorkflowMethodId = message.parentWorkflowMethodId,
                 clientWaiting = false,
                 emitterName = emitterName,
             )
@@ -205,11 +205,11 @@ class WorkflowTagEngine(
                       workflowName = message.workflowName,
                       workflowId = it,
                       methodName = message.methodName,
-                      methodRunId = message.methodRunId,
+                      workflowMethodId = message.workflowMethodId,
                   ),
                   workflowName = message.parentWorkflowName!!,
                   workflowId = message.parentWorkflowId!!,
-                  methodRunId = message.parentMethodRunId!!,
+                  workflowMethodId = message.parentWorkflowMethodId!!,
                   emitterName = emitterName,
               )
 
@@ -279,7 +279,7 @@ class WorkflowTagEngine(
 
         false -> ids.forEach {
           val completeTimers = CompleteTimers(
-              methodRunId = message.methodRunId,
+              workflowMethodId = message.workflowMethodId,
               workflowName = message.workflowName,
               workflowId = it,
               emitterName = emitterName,
@@ -303,7 +303,7 @@ class WorkflowTagEngine(
           if (it != message.emitterWorkflowId) {
             val cancelWorkflow = CancelWorkflow(
                 reason = message.reason,
-                methodRunId = MethodRunId.from(it),
+                workflowMethodId = WorkflowMethodId.from(it),
                 workflowName = message.workflowName,
                 workflowId = it,
                 emitterName = emitterName,

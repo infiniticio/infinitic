@@ -35,7 +35,7 @@ import io.infinitic.common.tasks.data.TaskMeta
 import io.infinitic.common.tasks.data.TaskTag
 import io.infinitic.common.tasks.executors.errors.DeferredError
 import io.infinitic.common.tasks.executors.errors.ExecutionError
-import io.infinitic.common.workflows.data.methodRuns.MethodRunId
+import io.infinitic.common.workflows.data.methodRuns.WorkflowMethodId
 import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.data.workflows.WorkflowName
 import io.infinitic.common.workflows.data.workflows.WorkflowTag
@@ -88,7 +88,7 @@ data class TaskIdsByTag(
 data class MethodCompleted(
   override val recipientName: ClientName,
   override val workflowId: WorkflowId,
-  override val methodRunId: MethodRunId,
+  @SerialName("methodRunId") override val workflowMethodId: WorkflowMethodId,
   val methodReturnValue: ReturnValue,
   override val emitterName: EmitterName
 ) : ClientMessage(), MethodMessage
@@ -97,7 +97,7 @@ data class MethodCompleted(
 data class MethodFailed(
   override val recipientName: ClientName,
   override val workflowId: WorkflowId,
-  override val methodRunId: MethodRunId,
+  @SerialName("methodRunId") override val workflowMethodId: WorkflowMethodId,
   val cause: DeferredError,
   override val emitterName: EmitterName
 ) : ClientMessage(), MethodMessage
@@ -106,7 +106,7 @@ data class MethodFailed(
 data class MethodCanceled(
   override val recipientName: ClientName,
   override val workflowId: WorkflowId,
-  override val methodRunId: MethodRunId,
+  @SerialName("methodRunId") override val workflowMethodId: WorkflowMethodId,
   override val emitterName: EmitterName
 ) : ClientMessage(), MethodMessage
 
@@ -114,7 +114,7 @@ data class MethodCanceled(
 data class MethodRunUnknown(
   override val recipientName: ClientName,
   override val workflowId: WorkflowId,
-  override val methodRunId: MethodRunId,
+  @SerialName("methodRunId") override val workflowMethodId: WorkflowMethodId,
   override val emitterName: EmitterName
 ) : ClientMessage(), MethodMessage
 
@@ -122,7 +122,7 @@ data class MethodRunUnknown(
 data class MethodAlreadyCompleted(
   override val recipientName: ClientName,
   override val workflowId: WorkflowId,
-  override val methodRunId: MethodRunId,
+  @SerialName("methodRunId") override val workflowMethodId: WorkflowMethodId,
   override val emitterName: EmitterName
 ) : ClientMessage(), MethodMessage
 

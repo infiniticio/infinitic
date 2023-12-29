@@ -37,8 +37,8 @@ internal fun CoroutineScope.childMethodCompleted(
 ) = commandTerminated(
     producer,
     state,
-    message.methodRunId,
-    CommandId.from(message.childWorkflowReturnValue.methodRunId),
+    message.workflowMethodId,
+    CommandId.from(message.childWorkflowReturnValue.workflowMethodId),
     CommandStatus.Completed(
         returnValue = message.childWorkflowReturnValue.returnValue,
         completionWorkflowTaskIndex = state.workflowTaskIndex,

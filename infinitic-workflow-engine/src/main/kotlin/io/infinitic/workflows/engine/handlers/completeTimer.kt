@@ -25,7 +25,7 @@ package io.infinitic.workflows.engine.handlers
 import io.infinitic.common.workflows.data.commands.CommandStatus
 import io.infinitic.common.workflows.data.commands.StartDurationTimerPastCommand
 import io.infinitic.common.workflows.data.commands.StartInstantTimerPastCommand
-import io.infinitic.common.workflows.data.methodRuns.MethodRunId
+import io.infinitic.common.workflows.data.methodRuns.WorkflowMethodId
 import io.infinitic.common.workflows.data.timers.TimerId
 import io.infinitic.common.workflows.engine.messages.CompleteTimers
 import io.infinitic.common.workflows.engine.messages.TimerCompleted
@@ -33,7 +33,7 @@ import io.infinitic.common.workflows.engine.state.WorkflowState
 
 internal fun completeTimer(state: WorkflowState, message: CompleteTimers) {
   // get provided methodRunId or main per default
-  val methodRunId = message.methodRunId ?: MethodRunId.from(message.workflowId)
+  val methodRunId = message.workflowMethodId ?: WorkflowMethodId.from(message.workflowId)
 
   // trigger a timer completed for all ongoing timer on this method
   state.getMethodRun(methodRunId)?.let { methodRun ->

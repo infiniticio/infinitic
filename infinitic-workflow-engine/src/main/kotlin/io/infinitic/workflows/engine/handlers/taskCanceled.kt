@@ -37,7 +37,7 @@ internal fun CoroutineScope.taskCanceled(
 ) = commandTerminated(
     producer,
     state,
-    message.methodRunId,
+    message.workflowMethodId,
     CommandId.from(message.taskCanceledError.taskId),
     CommandStatus.Canceled(message.taskCanceledError, state.workflowTaskIndex),
 )

@@ -68,7 +68,7 @@ data class WorkflowTaskParameters(
           taskRetryIndex = TaskRetryIndex(0),
           workflowName = workflowName,
           workflowId = workflowId,
-          methodRunId = methodRun.methodRunId,
+          workflowMethodId = methodRun.workflowMethodId,
           taskTags = setOf(),
           taskMeta = TaskMeta(),
           clientWaiting = false,

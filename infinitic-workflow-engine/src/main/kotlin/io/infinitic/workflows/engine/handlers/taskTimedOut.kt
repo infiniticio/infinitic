@@ -37,7 +37,7 @@ internal fun CoroutineScope.taskTimedOut(
 ) = commandTerminated(
     producer,
     state,
-    message.methodRunId,
+    message.workflowMethodId,
     CommandId.from(message.taskTimedOutError.taskId),
     CommandStatus.TimedOut(message.taskTimedOutError, state.workflowTaskIndex),
 )

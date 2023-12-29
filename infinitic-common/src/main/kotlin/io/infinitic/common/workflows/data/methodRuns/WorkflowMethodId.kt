@@ -22,14 +22,21 @@
  */
 package io.infinitic.common.workflows.data.methodRuns
 
+import com.github.avrokotlin.avro4k.AvroName
+import io.infinitic.common.utils.Tsid
+import io.infinitic.common.workflows.data.commands.CommandId
+import io.infinitic.common.workflows.data.workflows.WorkflowId
 import kotlinx.serialization.Serializable
 
 @JvmInline
 @Serializable
-value class MethodRunPosition(private val index: Int = -1) : Comparable<MethodRunPosition> {
-  override fun compareTo(other: MethodRunPosition) = index - other.index
+@AvroName("MethodRunId")
+value class WorkflowMethodId(private val id: String = Tsid.random()) {
+  companion object {
+    fun from(workflowId: WorkflowId) = WorkflowMethodId(workflowId.toString())
 
-  override fun toString() = "$index"
+    fun from(commandId: CommandId) = WorkflowMethodId(commandId.toString())
+  }
 
-  fun next() = MethodRunPosition(index + 1)
+  override fun toString() = id
 }

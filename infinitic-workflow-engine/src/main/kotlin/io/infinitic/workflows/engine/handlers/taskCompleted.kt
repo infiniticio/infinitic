@@ -37,7 +37,7 @@ internal fun CoroutineScope.taskCompleted(
 ) = commandTerminated(
     producer,
     state,
-    message.methodRunId,
+    message.workflowMethodId,
     CommandId.from(message.taskReturnValue.taskId),
     CommandStatus.Completed(
         returnValue = message.taskReturnValue.returnValue,

@@ -55,7 +55,7 @@ internal fun CoroutineScope.sendSignal(
         commandTerminated(
             producer,
             state,
-            it.methodRunId,
+            it.workflowMethodId,
             it.commandId,
             Completed(
                 returnIndex = it.receivedSignalCount - 1,

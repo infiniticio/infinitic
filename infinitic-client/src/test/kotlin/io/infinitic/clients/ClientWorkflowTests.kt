@@ -50,7 +50,7 @@ import io.infinitic.common.utils.Tsid
 import io.infinitic.common.workflows.data.channels.ChannelName
 import io.infinitic.common.workflows.data.channels.ChannelType
 import io.infinitic.common.workflows.data.channels.SignalData
-import io.infinitic.common.workflows.data.methodRuns.MethodRunId
+import io.infinitic.common.workflows.data.methodRuns.WorkflowMethodId
 import io.infinitic.common.workflows.data.workflows.WorkflowCancellationReason
 import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.data.workflows.WorkflowMeta
@@ -115,7 +115,7 @@ private fun engineResponse(): CompletableFuture<Unit> {
     val methodCompleted = MethodCompleted(
         recipientName = ClientName(client.name),
         workflowId = msg.workflowId,
-        methodRunId = MethodRunId.from(msg.workflowId),
+        workflowMethodId = WorkflowMethodId.from(msg.workflowId),
         methodReturnValue = ReturnValue.from("success"),
         emitterName = EmitterName("mockk"),
     )
@@ -176,7 +176,7 @@ private class ClientWorkflowTests : StringSpec(
             workflowMeta = WorkflowMeta(),
             parentWorkflowName = null,
             parentWorkflowId = null,
-            parentMethodRunId = null,
+            parentWorkflowMethodId = null,
             clientWaiting = false,
             emitterName = emitterNameTest,
         )
@@ -200,7 +200,7 @@ private class ClientWorkflowTests : StringSpec(
             workflowMeta = WorkflowMeta(),
             parentWorkflowName = null,
             parentWorkflowId = null,
-            parentMethodRunId = null,
+            parentWorkflowMethodId = null,
             clientWaiting = false,
             emitterName = emitterNameTest,
         )
@@ -221,7 +221,7 @@ private class ClientWorkflowTests : StringSpec(
             workflowMeta = WorkflowMeta(),
             parentWorkflowName = null,
             parentWorkflowId = null,
-            parentMethodRunId = null,
+            parentWorkflowMethodId = null,
             clientWaiting = false,
             emitterName = emitterNameTest,
         )
@@ -242,7 +242,7 @@ private class ClientWorkflowTests : StringSpec(
             workflowMeta = WorkflowMeta(),
             parentWorkflowName = null,
             parentWorkflowId = null,
-            parentMethodRunId = null,
+            parentWorkflowMethodId = null,
             clientWaiting = false,
             emitterName = emitterNameTest,
         )
@@ -263,7 +263,7 @@ private class ClientWorkflowTests : StringSpec(
             workflowMeta = WorkflowMeta(meta),
             parentWorkflowName = null,
             parentWorkflowId = null,
-            parentMethodRunId = null,
+            parentWorkflowMethodId = null,
             clientWaiting = false,
             emitterName = emitterNameTest,
         )
@@ -293,7 +293,7 @@ private class ClientWorkflowTests : StringSpec(
             workflowMeta = WorkflowMeta(),
             parentWorkflowName = null,
             parentWorkflowId = null,
-            parentMethodRunId = null,
+            parentWorkflowMethodId = null,
             clientWaiting = false,
             emitterName = emitterNameTest,
         )
@@ -315,7 +315,7 @@ private class ClientWorkflowTests : StringSpec(
             workflowMeta = WorkflowMeta(),
             parentWorkflowName = null,
             parentWorkflowId = null,
-            parentMethodRunId = null,
+            parentWorkflowMethodId = null,
             clientWaiting = false,
             emitterName = emitterNameTest,
         )
@@ -338,7 +338,7 @@ private class ClientWorkflowTests : StringSpec(
             workflowMeta = WorkflowMeta(),
             parentWorkflowName = null,
             parentWorkflowId = null,
-            parentMethodRunId = null,
+            parentWorkflowMethodId = null,
             clientWaiting = false,
             emitterName = emitterNameTest,
         )
@@ -362,7 +362,7 @@ private class ClientWorkflowTests : StringSpec(
             workflowMeta = WorkflowMeta(),
             parentWorkflowName = null,
             parentWorkflowId = null,
-            parentMethodRunId = null,
+            parentWorkflowMethodId = null,
             clientWaiting = false,
             emitterName = emitterNameTest,
         )
@@ -379,7 +379,7 @@ private class ClientWorkflowTests : StringSpec(
 
         val msg = workflowEngineSlot.captured
         msg shouldBe WaitWorkflow(
-            methodRunId = MethodRunId.from(msg.workflowId),
+            workflowMethodId = WorkflowMethodId.from(msg.workflowId),
             workflowName = WorkflowName(FakeWorkflow::class.java.name),
             workflowId = msg.workflowId,
             emitterName = emitterNameTest,
@@ -576,7 +576,7 @@ private class ClientWorkflowTests : StringSpec(
         // then
         workflowTagSlots.size shouldBe 0
         workflowEngineSlot.captured shouldBe CompleteTimers(
-            methodRunId = null,
+            workflowMethodId = null,
             workflowName = WorkflowName(FakeWorkflow::class.java.name),
             workflowId = WorkflowId(id),
             emitterName = emitterNameTest,
@@ -591,7 +591,7 @@ private class ClientWorkflowTests : StringSpec(
         // then
         workflowTagSlots.size shouldBe 0
         workflowEngineSlot.captured shouldBe CompleteTimers(
-            methodRunId = null,
+            workflowMethodId = null,
             workflowName = WorkflowName(FakeWorkflow::class.java.name),
             workflowId = WorkflowId(id),
             emitterName = emitterNameTest,
@@ -609,13 +609,13 @@ private class ClientWorkflowTests : StringSpec(
         msg shouldBe DispatchMethodOnRunningWorkflow(
             workflowName = WorkflowName(FakeWorkflow::class.java.name),
             workflowId = WorkflowId(id),
-            methodRunId = MethodRunId(deferred.id),
+            workflowMethodId = WorkflowMethodId(deferred.id),
             methodName = MethodName("m0"),
             methodParameters = MethodParameters(),
             methodParameterTypes = MethodParameterTypes(listOf()),
             parentWorkflowName = null,
             parentWorkflowId = null,
-            parentMethodRunId = null,
+            parentWorkflowMethodId = null,
             clientWaiting = false,
             emitterName = emitterNameTest,
         )
@@ -632,14 +632,14 @@ private class ClientWorkflowTests : StringSpec(
         workflowTagSlots[0] shouldBe DispatchMethodByTag(
             workflowName = WorkflowName(FakeWorkflow::class.java.name),
             workflowTag = WorkflowTag("foo"),
-            methodRunId = (deferred as ExistingDeferredWorkflow).methodRunId,
+            workflowMethodId = (deferred as ExistingDeferredWorkflow).workflowMethodId,
             methodName = MethodName("m0"),
             methodParameters = MethodParameters(),
             methodParameterTypes = MethodParameterTypes(listOf()),
             methodTimeout = null,
             parentWorkflowName = null,
             parentWorkflowId = null,
-            parentMethodRunId = null,
+            parentWorkflowMethodId = null,
             clientWaiting = false,
             emitterName = emitterNameTest,
         )
@@ -654,7 +654,7 @@ private class ClientWorkflowTests : StringSpec(
         workflowTagSlots.size shouldBe 0
         workflowEngineSlot.captured shouldBe CancelWorkflow(
             reason = WorkflowCancellationReason.CANCELED_BY_CLIENT,
-            methodRunId = null,
+            workflowMethodId = null,
             workflowName = WorkflowName(FakeWorkflow::class.java.name),
             workflowId = WorkflowId(id),
             emitterName = emitterNameTest,
@@ -670,7 +670,7 @@ private class ClientWorkflowTests : StringSpec(
         workflowTagSlots.size shouldBe 0
         workflowEngineSlot.captured shouldBe CancelWorkflow(
             reason = WorkflowCancellationReason.CANCELED_BY_CLIENT,
-            methodRunId = null,
+            workflowMethodId = null,
             workflowName = WorkflowName(FakeWorkflow::class.java.name),
             workflowId = WorkflowId(id),
             emitterName = emitterNameTest,
@@ -719,7 +719,7 @@ private class ClientWorkflowTests : StringSpec(
         workflowTagSlots.size shouldBe 0
         workflowEngineSlot.captured shouldBe CancelWorkflow(
             reason = WorkflowCancellationReason.CANCELED_BY_CLIENT,
-            methodRunId = null,
+            workflowMethodId = null,
             workflowName = WorkflowName(FakeWorkflow::class.java.name),
             workflowId = WorkflowId(deferred.id),
             emitterName = emitterNameTest,

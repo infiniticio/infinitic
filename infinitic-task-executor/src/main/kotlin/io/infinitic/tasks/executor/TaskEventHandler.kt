@@ -79,7 +79,7 @@ class TaskEventHandler(producerAsync: InfiniticProducerAsync) {
       val taskFailed = TaskFailedWorkflow(
           workflowName = msg.workflowName ?: thisShouldNotHappen(),
           workflowId = msg.workflowId ?: thisShouldNotHappen(),
-          methodRunId = msg.methodRunId ?: thisShouldNotHappen(),
+          workflowMethodId = msg.workflowMethodId ?: thisShouldNotHappen(),
           taskFailedError = TaskFailedError(
               serviceName = msg.serviceName,
               methodName = msg.methodName,
@@ -111,7 +111,7 @@ class TaskEventHandler(producerAsync: InfiniticProducerAsync) {
       val taskCompleted = TaskCompletedWorkflow(
           workflowName = msg.workflowName ?: thisShouldNotHappen(),
           workflowId = msg.workflowId ?: thisShouldNotHappen(),
-          methodRunId = msg.methodRunId ?: thisShouldNotHappen(),
+          workflowMethodId = msg.workflowMethodId ?: thisShouldNotHappen(),
           taskReturnValue =
           TaskReturnValue(
               serviceName = msg.serviceName,

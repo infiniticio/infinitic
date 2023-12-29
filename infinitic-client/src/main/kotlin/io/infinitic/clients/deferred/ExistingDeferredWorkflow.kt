@@ -29,7 +29,7 @@ import io.infinitic.common.data.methods.MethodName
 import io.infinitic.common.proxies.RequestBy
 import io.infinitic.common.proxies.RequestByWorkflowId
 import io.infinitic.common.proxies.RequestByWorkflowTag
-import io.infinitic.common.workflows.data.methodRuns.MethodRunId
+import io.infinitic.common.workflows.data.methodRuns.WorkflowMethodId
 import io.infinitic.common.workflows.data.workflows.WorkflowName
 
 class ExistingDeferredWorkflow<R> internal constructor(
@@ -42,12 +42,13 @@ class ExistingDeferredWorkflow<R> internal constructor(
 ) : Deferred<R> {
 
   // generate a unique id for this deferred
-  val methodRunId = MethodRunId()
+  val workflowMethodId = WorkflowMethodId()
 
   // store time when this deferred was created
   val dispatchTime = System.currentTimeMillis()
 
-  override fun cancelAsync() = dispatcher.cancelWorkflowAsync(workflowName, requestBy, methodRunId)
+  override fun cancelAsync() =
+      dispatcher.cancelWorkflowAsync(workflowName, requestBy, workflowMethodId)
 
   // this method retries workflowTask (unique for a workflow instance)
   override fun retryAsync() = dispatcher.retryWorkflowTaskAsync(workflowName, requestBy)
@@ -56,7 +57,7 @@ class ExistingDeferredWorkflow<R> internal constructor(
 
   override val id by lazy {
     when (requestBy) {
-      is RequestByWorkflowId -> methodRunId.toString()
+      is RequestByWorkflowId -> workflowMethodId.toString()
       is RequestByWorkflowTag -> TODO()
     }
   }

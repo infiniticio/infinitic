@@ -39,7 +39,7 @@ internal fun CoroutineScope.timerCompleted(
 ) = commandTerminated(
     producer,
     state,
-    message.methodRunId,
+    message.workflowMethodId,
     CommandId.from(message.timerId),
     CommandStatus.Completed(
         returnValue = ReturnValue.from(Instant.now()),

@@ -28,7 +28,7 @@ import io.infinitic.common.tasks.executors.errors.MethodTimedOutError
 import io.infinitic.common.transport.InfiniticProducer
 import io.infinitic.common.workflows.data.commands.DispatchNewWorkflowCommand
 import io.infinitic.common.workflows.data.commands.DispatchNewWorkflowPastCommand
-import io.infinitic.common.workflows.data.methodRuns.MethodRunId
+import io.infinitic.common.workflows.data.methodRuns.WorkflowMethodId
 import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.engine.messages.ChildMethodTimedOut
 import io.infinitic.common.workflows.engine.messages.DispatchNewWorkflow
@@ -65,7 +65,7 @@ internal fun CoroutineScope.dispatchNewWorkflowCmd(
           workflowMeta = command.workflowMeta,
           parentWorkflowName = state.workflowName,
           parentWorkflowId = state.workflowId,
-          parentMethodRunId = state.runningMethodRunId,
+          parentWorkflowMethodId = state.runningWorkflowMethodId,
           clientWaiting = false,
           emitterName = emitterName,
       )
@@ -98,7 +98,7 @@ internal fun CoroutineScope.dispatchNewWorkflowCmd(
           workflowMeta = command.workflowMeta,
           parentWorkflowName = state.workflowName,
           parentWorkflowId = state.workflowId,
-          parentMethodRunId = state.runningMethodRunId,
+          parentWorkflowMethodId = state.runningWorkflowMethodId,
           clientWaiting = false,
           emitterName = emitterName,
       )
@@ -118,11 +118,11 @@ internal fun CoroutineScope.dispatchNewWorkflowCmd(
             workflowName = workflowName,
             workflowId = workflowId,
             methodName = methodName,
-            methodRunId = MethodRunId.from(workflowId),
+            workflowMethodId = WorkflowMethodId.from(workflowId),
         ),
         workflowName = state.workflowName,
         workflowId = state.workflowId,
-        methodRunId = state.runningMethodRunId ?: thisShouldNotHappen(),
+        workflowMethodId = state.runningWorkflowMethodId ?: thisShouldNotHappen(),
         emitterName = emitterName,
     )
     launch { producer.sendLaterToWorkflowEngine(childMethodTimedOut, timeout) }

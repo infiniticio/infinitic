@@ -27,7 +27,7 @@ import io.infinitic.common.emitters.EmitterName
 import io.infinitic.common.tasks.data.TaskId
 import io.infinitic.common.transport.InfiniticProducer
 import io.infinitic.common.workflows.data.methodRuns.MethodRun
-import io.infinitic.common.workflows.data.methodRuns.MethodRunPosition
+import io.infinitic.common.workflows.data.methodRuns.PositionInMethod
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskParameters
 import io.infinitic.common.workflows.engine.state.WorkflowState
 import kotlinx.coroutines.CoroutineScope
@@ -37,7 +37,7 @@ internal fun CoroutineScope.dispatchWorkflowTask(
   producer: InfiniticProducer,
   state: WorkflowState,
   methodRun: MethodRun,
-  methodRunPosition: MethodRunPosition
+  workflowMethodPosition: PositionInMethod
 ) {
   val emitterName = EmitterName(producer.name)
   state.workflowTaskIndex += 1
@@ -65,11 +65,11 @@ internal fun CoroutineScope.dispatchWorkflowTask(
   with(state) {
     runningWorkflowTaskId = workflowTaskParameters.taskId
     // do not update runningWorkflowTaskInstant if it is a retry
-    if (runningMethodRunId != methodRun.methodRunId ||
-      runningMethodRunPosition != methodRunPosition) {
+    if (runningWorkflowMethodId != methodRun.workflowMethodId ||
+      positionInRunningWorkflowMethod != workflowMethodPosition) {
       runningWorkflowTaskInstant = MillisInstant.now()
-      runningMethodRunId = methodRun.methodRunId
-      runningMethodRunPosition = methodRunPosition
+      runningWorkflowMethodId = methodRun.workflowMethodId
+      positionInRunningWorkflowMethod = workflowMethodPosition
     }
   }
 }

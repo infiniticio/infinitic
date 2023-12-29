@@ -24,6 +24,7 @@ package io.infinitic.common.workflows.engine.state
 
 import com.github.avrokotlin.avro4k.Avro
 import com.github.avrokotlin.avro4k.AvroDefault
+import com.github.avrokotlin.avro4k.AvroName
 import com.github.avrokotlin.avro4k.AvroNamespace
 import io.infinitic.common.data.MessageId
 import io.infinitic.common.data.MillisInstant
@@ -37,8 +38,8 @@ import io.infinitic.common.workflows.data.commands.CommandId
 import io.infinitic.common.workflows.data.commands.CommandStatus
 import io.infinitic.common.workflows.data.commands.PastCommand
 import io.infinitic.common.workflows.data.methodRuns.MethodRun
-import io.infinitic.common.workflows.data.methodRuns.MethodRunId
-import io.infinitic.common.workflows.data.methodRuns.MethodRunPosition
+import io.infinitic.common.workflows.data.methodRuns.PositionInMethod
+import io.infinitic.common.workflows.data.methodRuns.WorkflowMethodId
 import io.infinitic.common.workflows.data.properties.PropertyHash
 import io.infinitic.common.workflows.data.properties.PropertyName
 import io.infinitic.common.workflows.data.properties.PropertyValue
@@ -75,10 +76,10 @@ data class WorkflowState(
   var runningWorkflowTaskId: TaskId? = null,
 
   /** MethodRunId of WorkflowTask currently running */
-  var runningMethodRunId: MethodRunId? = null,
+  @AvroName("runningMethodRunId") var runningWorkflowMethodId: WorkflowMethodId? = null,
 
   /** Position of the step that triggered WorkflowTask currently running */
-  var runningMethodRunPosition: MethodRunPosition? = null,
+  @AvroName("runningMethodRunPosition") var positionInRunningWorkflowMethod: PositionInMethod? = null,
 
   /**
    * In some situations, we know that multiples branches must be processed. As WorkflowTask
@@ -129,10 +130,11 @@ data class WorkflowState(
         }
       }
 
-  fun getRunningMethodRun(): MethodRun = methodRuns.first { it.methodRunId == runningMethodRunId }
+  fun getRunningMethodRun(): MethodRun =
+      methodRuns.first { it.workflowMethodId == runningWorkflowMethodId }
 
-  fun getMethodRun(methodRunId: MethodRunId) =
-      methodRuns.firstOrNull { it.methodRunId == methodRunId }
+  fun getMethodRun(workflowMethodId: WorkflowMethodId) =
+      methodRuns.firstOrNull { it.workflowMethodId == workflowMethodId }
 
   fun getPastCommand(commandId: CommandId, methodRun: MethodRun): PastCommand =
       methodRun.getPastCommand(commandId)
@@ -145,7 +147,7 @@ data class WorkflowState(
     methodRuns.remove(methodRun)
 
     // clean receivingChannels once deleted
-    receivingChannels.removeAll { it.methodRunId == methodRun.methodRunId }
+    receivingChannels.removeAll { it.workflowMethodId == methodRun.workflowMethodId }
 
     // clean properties
     removeUnusedPropertyHash()

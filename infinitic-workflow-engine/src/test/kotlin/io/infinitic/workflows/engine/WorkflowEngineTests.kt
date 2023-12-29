@@ -126,7 +126,7 @@ class WorkflowEngineTests :
                   ),
                   stateSlot.captured.workflowName,
                   stateSlot.captured.workflowId,
-                  stateSlot.captured.runningMethodRunId!!,
+                  stateSlot.captured.runningWorkflowMethodId!!,
                   EmitterName("worker"),
               )
 

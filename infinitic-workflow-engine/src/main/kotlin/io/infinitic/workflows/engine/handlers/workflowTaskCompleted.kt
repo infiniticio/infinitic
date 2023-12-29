@@ -152,7 +152,7 @@ internal fun CoroutineScope.workflowTaskCompleted(
       val workflowCompleted = MethodCompleted(
           recipientName = it,
           workflowId = state.workflowId,
-          methodRunId = methodRun.methodRunId,
+          workflowMethodId = methodRun.workflowMethodId,
           methodReturnValue = methodRun.methodReturnValue!!,
           emitterName = emitterName,
       )
@@ -166,12 +166,12 @@ internal fun CoroutineScope.workflowTaskCompleted(
           childWorkflowReturnValue =
           WorkflowReturnValue(
               workflowId = state.workflowId,
-              methodRunId = methodRun.methodRunId,
+              workflowMethodId = methodRun.workflowMethodId,
               returnValue = workflowTaskReturnValue.methodReturnValue!!,
           ),
           workflowName = methodRun.parentWorkflowName ?: thisShouldNotHappen(),
           workflowId = it,
-          methodRunId = methodRun.parentMethodRunId ?: thisShouldNotHappen(),
+          workflowMethodId = methodRun.parentWorkflowMethodId ?: thisShouldNotHappen(),
           emitterName = emitterName,
       )
       if (it == state.workflowId) {

@@ -22,6 +22,7 @@
  */
 package io.infinitic.common.workflows.data.methodRuns
 
+import com.github.avrokotlin.avro4k.AvroName
 import com.github.avrokotlin.avro4k.AvroNamespace
 import io.infinitic.common.clients.data.ClientName
 import io.infinitic.common.data.ReturnValue
@@ -46,10 +47,10 @@ import kotlinx.serialization.Serializable
 data class MethodRun(
   /** clients synchronously waiting for the returned value */
   val waitingClients: MutableSet<ClientName>,
-  val methodRunId: MethodRunId,
+  @AvroName("methodRunId") val workflowMethodId: WorkflowMethodId,
   val parentWorkflowId: WorkflowId?,
   val parentWorkflowName: WorkflowName?,
-  val parentMethodRunId: MethodRunId?,
+  @AvroName("parentMethodRunId") val parentWorkflowMethodId: WorkflowMethodId?,
   val methodName: MethodName,
   val methodParameterTypes: MethodParameterTypes?,
   val methodParameters: MethodParameters,
