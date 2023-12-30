@@ -26,8 +26,8 @@ import io.github.oshai.kotlinlogging.KotlinLogging
 import io.infinitic.common.clients.messages.ClientEnvelope
 import io.infinitic.common.clients.messages.ClientMessage
 import io.infinitic.common.data.MillisDuration
-import io.infinitic.common.exceptions.thisShouldNotHappen
-import io.infinitic.common.tasks.executors.messages.ExecuteTask
+import io.infinitic.common.tasks.executors.events.TaskEventEnvelope
+import io.infinitic.common.tasks.executors.events.TaskEventMessage
 import io.infinitic.common.tasks.executors.messages.TaskExecutorEnvelope
 import io.infinitic.common.tasks.executors.messages.TaskExecutorMessage
 import io.infinitic.common.tasks.tags.messages.TaskTagEnvelope
@@ -153,7 +153,7 @@ class PulsarInfiniticProducerAsync(
     val topic = getTopicName(name, desc)
     logger.debug { "Sending to topic '$topic': '$message'" }
 
-    return producer.sendAsync<WorkflowEngineMessage, WorkflowEngineEnvelope>(
+    return producer.sendAsync(
         WorkflowEngineEnvelope::class,
         message,
         zero,
@@ -210,11 +210,6 @@ class PulsarInfiniticProducerAsync(
     message: TaskExecutorMessage,
     after: MillisDuration
   ): CompletableFuture<Unit> {
-    when (message) {
-      is ExecuteTask -> Unit
-      else -> thisShouldNotHappen()
-    }
-
     val name: String
     val desc: TopicDescription
 
@@ -242,12 +237,7 @@ class PulsarInfiniticProducerAsync(
     )
   }
 
-  override fun sendToTaskEventsAsync(message: TaskExecutorMessage): CompletableFuture<Unit> {
-    when (message) {
-      is ExecuteTask -> thisShouldNotHappen()
-      else -> Unit
-    }
-
+  override fun sendToTaskEventsAsync(message: TaskEventMessage): CompletableFuture<Unit> {
     val name: String
     val desc: TopicDescription
 
@@ -267,7 +257,7 @@ class PulsarInfiniticProducerAsync(
     logger.debug { "Sending to topic '$topic': '$message'" }
 
     return producer.sendAsync(
-        TaskExecutorEnvelope::class,
+        TaskEventEnvelope::class,
         message,
         zero,
         topic,

@@ -22,6 +22,7 @@
  */
 package io.infinitic.common.clients.messages
 
+import com.github.avrokotlin.avro4k.AvroName
 import io.infinitic.common.clients.data.ClientName
 import io.infinitic.common.clients.messages.interfaces.MethodMessage
 import io.infinitic.common.clients.messages.interfaces.TaskMessage
@@ -111,7 +112,8 @@ data class MethodCanceled(
 ) : ClientMessage(), MethodMessage
 
 @Serializable
-data class MethodRunUnknown(
+@AvroName("MethodRunUnknown")
+data class MethodUnknown(
   override val recipientName: ClientName,
   override val workflowId: WorkflowId,
   @SerialName("methodRunId") override val workflowMethodId: WorkflowMethodId,

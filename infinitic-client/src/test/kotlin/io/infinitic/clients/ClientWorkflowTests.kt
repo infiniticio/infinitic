@@ -58,7 +58,7 @@ import io.infinitic.common.workflows.data.workflows.WorkflowName
 import io.infinitic.common.workflows.data.workflows.WorkflowTag
 import io.infinitic.common.workflows.engine.messages.CancelWorkflow
 import io.infinitic.common.workflows.engine.messages.CompleteTimers
-import io.infinitic.common.workflows.engine.messages.DispatchMethodOnRunningWorkflow
+import io.infinitic.common.workflows.engine.messages.DispatchMethodWorkflow
 import io.infinitic.common.workflows.engine.messages.DispatchNewWorkflow
 import io.infinitic.common.workflows.engine.messages.RetryTasks
 import io.infinitic.common.workflows.engine.messages.SendSignal
@@ -606,7 +606,7 @@ private class ClientWorkflowTests : StringSpec(
         // then
         workflowEngineSlot.isCaptured shouldBe true
         val msg = workflowEngineSlot.captured
-        msg shouldBe DispatchMethodOnRunningWorkflow(
+        msg shouldBe DispatchMethodWorkflow(
             workflowName = WorkflowName(FakeWorkflow::class.java.name),
             workflowId = WorkflowId(id),
             workflowMethodId = WorkflowMethodId(deferred.id),

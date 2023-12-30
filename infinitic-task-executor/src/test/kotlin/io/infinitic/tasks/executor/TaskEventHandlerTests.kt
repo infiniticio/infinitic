@@ -35,10 +35,10 @@ import io.infinitic.common.tasks.data.TaskRetrySequence
 import io.infinitic.common.tasks.data.TaskReturnValue
 import io.infinitic.common.tasks.data.TaskTag
 import io.infinitic.common.tasks.executors.errors.TaskFailedError
-import io.infinitic.common.tasks.executors.messages.TaskCompleted
-import io.infinitic.common.tasks.executors.messages.TaskFailed
-import io.infinitic.common.tasks.executors.messages.TaskRetried
-import io.infinitic.common.tasks.executors.messages.TaskStarted
+import io.infinitic.common.tasks.executors.events.TaskCompleted
+import io.infinitic.common.tasks.executors.events.TaskFailed
+import io.infinitic.common.tasks.executors.events.TaskRetried
+import io.infinitic.common.tasks.executors.events.TaskStarted
 import io.infinitic.common.tasks.tags.messages.TaskTagMessage
 import io.infinitic.common.transport.InfiniticProducerAsync
 import io.infinitic.common.workers.config.WorkflowVersion
@@ -46,7 +46,6 @@ import io.infinitic.common.workflows.data.methodRuns.WorkflowMethodId
 import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.data.workflows.WorkflowName
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
-import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
 import io.mockk.every
@@ -92,14 +91,6 @@ class TaskEventHandlerTests :
           taskTagSlots.clear()
           workflowEngineSlot.clear()
           clientSlot.clear()
-        }
-
-        "ExecuteTask should not be processed by the event handler" {
-          val input = arrayOf(3, 3)
-          val types = listOf(Int::class.java.name, Int::class.java.name)
-          val msg = getExecuteTask("handle", input, types)
-
-          coroutineScope { shouldThrow<RuntimeException> { taskEventHandler.handle(msg) } }
         }
 
         "on TaskStarted, should do nothing" {

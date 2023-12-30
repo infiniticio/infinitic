@@ -33,7 +33,7 @@ import io.infinitic.common.clients.messages.ClientMessage
 import io.infinitic.common.clients.messages.MethodCanceled
 import io.infinitic.common.clients.messages.MethodCompleted
 import io.infinitic.common.clients.messages.MethodFailed
-import io.infinitic.common.clients.messages.MethodRunUnknown
+import io.infinitic.common.clients.messages.MethodUnknown
 import io.infinitic.common.clients.messages.WorkflowIdsByTag
 import io.infinitic.common.clients.messages.interfaces.MethodMessage
 import io.infinitic.common.data.MillisDuration
@@ -63,7 +63,7 @@ import io.infinitic.common.workflows.data.workflows.WorkflowName
 import io.infinitic.common.workflows.data.workflows.WorkflowTag
 import io.infinitic.common.workflows.engine.messages.CancelWorkflow
 import io.infinitic.common.workflows.engine.messages.CompleteTimers
-import io.infinitic.common.workflows.engine.messages.DispatchMethodOnRunningWorkflow
+import io.infinitic.common.workflows.engine.messages.DispatchMethodWorkflow
 import io.infinitic.common.workflows.engine.messages.DispatchNewWorkflow
 import io.infinitic.common.workflows.engine.messages.RetryWorkflowTask
 import io.infinitic.common.workflows.engine.messages.SendSignal
@@ -256,7 +256,7 @@ internal class ClientDispatcher(
           ),
       )
 
-      is MethodRunUnknown -> throw WorkflowUnknownException(
+      is MethodUnknown -> throw WorkflowUnknownException(
           workflowName = workflowName.toString(),
           workflowId = workflowId.toString(),
           workflowMethodId = workflowMethodId?.toString(),
@@ -624,7 +624,7 @@ internal class ClientDispatcher(
     handler: ExistingWorkflowProxyHandler<*>
   ) = when (deferred.requestBy) {
     is RequestByWorkflowId -> {
-      val dispatchMethod = DispatchMethodOnRunningWorkflow(
+      val dispatchMethod = DispatchMethodWorkflow(
           workflowName = deferred.workflowName,
           workflowId = deferred.requestBy.workflowId,
           workflowMethodId = deferred.workflowMethodId,

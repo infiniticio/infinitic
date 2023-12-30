@@ -24,9 +24,9 @@ package io.infinitic.workflows.engine.handlers
 
 import io.infinitic.common.clients.data.ClientName
 import io.infinitic.common.transport.InfiniticProducer
-import io.infinitic.common.workflows.data.methodRuns.MethodRun
 import io.infinitic.common.workflows.data.methodRuns.PositionInMethod
-import io.infinitic.common.workflows.engine.messages.DispatchMethodOnRunningWorkflow
+import io.infinitic.common.workflows.data.methodRuns.WorkflowMethod
+import io.infinitic.common.workflows.engine.messages.DispatchMethodWorkflow
 import io.infinitic.common.workflows.engine.state.WorkflowState
 import io.infinitic.workflows.engine.helpers.dispatchWorkflowTask
 import kotlinx.coroutines.CoroutineScope
@@ -34,9 +34,9 @@ import kotlinx.coroutines.CoroutineScope
 internal fun CoroutineScope.dispatchMethod(
   producer: InfiniticProducer,
   state: WorkflowState,
-  message: DispatchMethodOnRunningWorkflow
+  message: DispatchMethodWorkflow
 ) {
-  val methodRun = MethodRun(
+  val workflowMethod = WorkflowMethod(
       workflowMethodId = message.workflowMethodId,
       waitingClients =
       when (message.clientWaiting) {
@@ -53,7 +53,7 @@ internal fun CoroutineScope.dispatchMethod(
       propertiesNameHashAtStart = state.currentPropertiesNameHash.toMap(),
   )
 
-  state.methodRuns.add(methodRun)
+  state.workflowMethods.add(workflowMethod)
 
-  dispatchWorkflowTask(producer, state, methodRun, PositionInMethod())
+  dispatchWorkflowTask(producer, state, workflowMethod, PositionInMethod())
 }

@@ -24,6 +24,7 @@ package io.infinitic.common.transport
 
 import io.infinitic.common.clients.messages.ClientMessage
 import io.infinitic.common.data.MillisDuration
+import io.infinitic.common.tasks.executors.events.TaskEventMessage
 import io.infinitic.common.tasks.executors.messages.TaskExecutorMessage
 import io.infinitic.common.tasks.tags.messages.TaskTagMessage
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
@@ -98,6 +99,6 @@ interface InfiniticProducerAsync {
    * @return a [CompletableFuture] that completes when the message has been sent
    */
   fun sendToTaskEventsAsync(
-    message: TaskExecutorMessage
+    message: TaskEventMessage
   ): CompletableFuture<Unit>
 }

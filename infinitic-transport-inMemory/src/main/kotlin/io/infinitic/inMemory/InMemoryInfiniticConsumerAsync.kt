@@ -27,6 +27,7 @@ import io.infinitic.common.clients.data.ClientName
 import io.infinitic.common.clients.messages.ClientMessage
 import io.infinitic.common.messages.Message
 import io.infinitic.common.tasks.data.ServiceName
+import io.infinitic.common.tasks.executors.events.TaskEventMessage
 import io.infinitic.common.tasks.executors.messages.TaskExecutorMessage
 import io.infinitic.common.tasks.tags.messages.TaskTagMessage
 import io.infinitic.common.transport.InfiniticConsumerAsync
@@ -130,8 +131,8 @@ class InMemoryInfiniticConsumerAsync(private val channels: InMemoryChannels) :
   }
 
   override fun startTaskEventsConsumerAsync(
-    handler: suspend (TaskExecutorMessage) -> Unit,
-    beforeDlq: (suspend (TaskExecutorMessage, Exception) -> Unit)?,
+    handler: suspend (TaskEventMessage) -> Unit,
+    beforeDlq: (suspend (TaskEventMessage, Exception) -> Unit)?,
     serviceName: ServiceName,
     concurrency: Int
   ): CompletableFuture<Unit> {
@@ -163,8 +164,8 @@ class InMemoryInfiniticConsumerAsync(private val channels: InMemoryChannels) :
   }
 
   override fun startWorkflowTaskEventsConsumerAsync(
-    handler: suspend (TaskExecutorMessage) -> Unit,
-    beforeDlq: (suspend (TaskExecutorMessage, Exception) -> Unit)?,
+    handler: suspend (TaskEventMessage) -> Unit,
+    beforeDlq: (suspend (TaskEventMessage, Exception) -> Unit)?,
     workflowName: WorkflowName,
     concurrency: Int
   ): CompletableFuture<Unit> {

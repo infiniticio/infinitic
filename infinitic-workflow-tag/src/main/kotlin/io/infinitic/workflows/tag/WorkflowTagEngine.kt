@@ -34,7 +34,7 @@ import io.infinitic.common.workflows.data.methodRuns.WorkflowMethodId
 import io.infinitic.common.workflows.engine.messages.CancelWorkflow
 import io.infinitic.common.workflows.engine.messages.ChildMethodTimedOut
 import io.infinitic.common.workflows.engine.messages.CompleteTimers
-import io.infinitic.common.workflows.engine.messages.DispatchMethodOnRunningWorkflow
+import io.infinitic.common.workflows.engine.messages.DispatchMethodWorkflow
 import io.infinitic.common.workflows.engine.messages.DispatchNewWorkflow
 import io.infinitic.common.workflows.engine.messages.RetryTasks
 import io.infinitic.common.workflows.engine.messages.RetryWorkflowTask
@@ -183,7 +183,7 @@ class WorkflowTagEngine(
         false -> ids.forEach {
           // parent workflow already applied method to self
           if (it != message.parentWorkflowId) {
-            val dispatchMethod = DispatchMethodOnRunningWorkflow(
+            val dispatchMethod = DispatchMethodWorkflow(
                 workflowName = message.workflowName,
                 workflowId = it,
                 workflowMethodId = message.workflowMethodId,

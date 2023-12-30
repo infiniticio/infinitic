@@ -26,6 +26,7 @@ import io.github.oshai.kotlinlogging.KotlinLogging
 import io.infinitic.common.clients.messages.ClientMessage
 import io.infinitic.common.data.MillisDuration
 import io.infinitic.common.messages.Message
+import io.infinitic.common.tasks.executors.events.TaskEventMessage
 import io.infinitic.common.tasks.executors.messages.TaskExecutorMessage
 import io.infinitic.common.tasks.tags.messages.TaskTagMessage
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
@@ -86,7 +87,7 @@ class LoggedInfiniticProducer(
     logTrace(message)
   }
 
-  override suspend fun sendToTaskEvents(message: TaskExecutorMessage) {
+  override suspend fun sendToTaskEvents(message: TaskEventMessage) {
     logDebug(message)
     producerAsync.sendToTaskEventsAsync(message).await()
     logTrace(message)

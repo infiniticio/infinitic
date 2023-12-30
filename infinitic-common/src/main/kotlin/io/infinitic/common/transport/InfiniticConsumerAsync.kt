@@ -25,6 +25,7 @@ package io.infinitic.common.transport
 import io.infinitic.common.clients.data.ClientName
 import io.infinitic.common.clients.messages.ClientMessage
 import io.infinitic.common.tasks.data.ServiceName
+import io.infinitic.common.tasks.executors.events.TaskEventMessage
 import io.infinitic.common.tasks.executors.messages.TaskExecutorMessage
 import io.infinitic.common.tasks.tags.messages.TaskTagMessage
 import io.infinitic.common.workflows.data.workflows.WorkflowName
@@ -92,8 +93,8 @@ interface InfiniticConsumerAsync : AutoCloseable {
 
   // Asynchronously start consumers of messages to task events
   fun startTaskEventsConsumerAsync(
-    handler: suspend (TaskExecutorMessage) -> Unit,
-    beforeDlq: (suspend (TaskExecutorMessage, Exception) -> Unit)?,
+    handler: suspend (TaskEventMessage) -> Unit,
+    beforeDlq: (suspend (TaskEventMessage, Exception) -> Unit)?,
     serviceName: ServiceName,
     concurrency: Int
   ): CompletableFuture<Unit>
@@ -116,8 +117,8 @@ interface InfiniticConsumerAsync : AutoCloseable {
 
   // Asynchronously start consumers of messages to task events
   fun startWorkflowTaskEventsConsumerAsync(
-    handler: suspend (TaskExecutorMessage) -> Unit,
-    beforeDlq: (suspend (TaskExecutorMessage, Exception) -> Unit)?,
+    handler: suspend (TaskEventMessage) -> Unit,
+    beforeDlq: (suspend (TaskEventMessage, Exception) -> Unit)?,
     workflowName: WorkflowName,
     concurrency: Int
   ): CompletableFuture<Unit>

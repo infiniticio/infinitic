@@ -26,8 +26,8 @@ import io.infinitic.common.data.MillisInstant
 import io.infinitic.common.emitters.EmitterName
 import io.infinitic.common.tasks.data.TaskId
 import io.infinitic.common.transport.InfiniticProducer
-import io.infinitic.common.workflows.data.methodRuns.MethodRun
 import io.infinitic.common.workflows.data.methodRuns.PositionInMethod
+import io.infinitic.common.workflows.data.methodRuns.WorkflowMethod
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskParameters
 import io.infinitic.common.workflows.engine.state.WorkflowState
 import kotlinx.coroutines.CoroutineScope
@@ -36,7 +36,7 @@ import kotlinx.coroutines.launch
 internal fun CoroutineScope.dispatchWorkflowTask(
   producer: InfiniticProducer,
   state: WorkflowState,
-  methodRun: MethodRun,
+  methodRun: WorkflowMethod,
   workflowMethodPosition: PositionInMethod
 ) {
   val emitterName = EmitterName(producer.name)

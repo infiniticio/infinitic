@@ -27,6 +27,7 @@ import io.infinitic.common.clients.messages.ClientMessage
 import io.infinitic.common.data.MillisDuration
 import io.infinitic.common.messages.Message
 import io.infinitic.common.tasks.data.ServiceName
+import io.infinitic.common.tasks.executors.events.TaskEventMessage
 import io.infinitic.common.tasks.executors.messages.TaskExecutorMessage
 import io.infinitic.common.tasks.tags.messages.TaskTagMessage
 import io.infinitic.common.workflows.data.workflows.WorkflowName
@@ -70,7 +71,7 @@ class InMemoryChannels : AutoCloseable {
 
   // Channel for TaskEventsMessages
   private val taskEventsChannels =
-      ConcurrentHashMap<ServiceName, Channel<TaskExecutorMessage>>()
+      ConcurrentHashMap<ServiceName, Channel<TaskEventMessage>>()
 
   // Channel for delayed TaskExecutorMessages
   private val delayedTaskExecutorChannels =
@@ -94,7 +95,7 @@ class InMemoryChannels : AutoCloseable {
 
   // Channel for WorkflowTaskMessages
   private val workflowTaskEventsChannels =
-      ConcurrentHashMap<WorkflowName, Channel<TaskExecutorMessage>>()
+      ConcurrentHashMap<WorkflowName, Channel<TaskEventMessage>>()
 
   // Channel for delayed WorkflowTaskMessages
   private val delayedWorkflowTaskExecutorChannels =
@@ -112,7 +113,7 @@ class InMemoryChannels : AutoCloseable {
   fun forTaskExecutor(serviceName: ServiceName): Channel<TaskExecutorMessage> =
       taskExecutorChannels.getOrPut(serviceName) { Channel(Channel.UNLIMITED) }
 
-  fun forTaskEvents(serviceName: ServiceName): Channel<TaskExecutorMessage> =
+  fun forTaskEvents(serviceName: ServiceName): Channel<TaskEventMessage> =
       taskEventsChannels.getOrPut(serviceName) { Channel(Channel.UNLIMITED) }
 
   fun forDelayedTaskExecutor(serviceName: ServiceName): Channel<DelayedMessage<TaskExecutorMessage>> =
@@ -130,7 +131,7 @@ class InMemoryChannels : AutoCloseable {
   fun forWorkflowTaskExecutor(workflowName: WorkflowName): Channel<TaskExecutorMessage> =
       workflowTaskExecutorChannels.getOrPut(workflowName) { Channel(Channel.UNLIMITED) }
 
-  fun forWorkflowTaskEvents(workflowName: WorkflowName): Channel<TaskExecutorMessage> =
+  fun forWorkflowTaskEvents(workflowName: WorkflowName): Channel<TaskEventMessage> =
       workflowTaskEventsChannels.getOrPut(workflowName) { Channel(Channel.UNLIMITED) }
 
   fun forDelayedWorkflowTaskExecutor(workflowName: WorkflowName): Channel<DelayedMessage<TaskExecutorMessage>> =

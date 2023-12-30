@@ -24,12 +24,14 @@ package io.infinitic.common.messages
 
 import io.infinitic.common.clients.messages.ClientEnvelope
 import io.infinitic.common.exceptions.thisShouldNotHappen
+import io.infinitic.common.tasks.executors.events.TaskEventEnvelope
 import io.infinitic.common.tasks.executors.messages.TaskExecutorEnvelope
 import io.infinitic.common.tasks.tags.messages.TaskTagEnvelope
+import io.infinitic.common.workflows.engine.events.WorkflowEventEnvelope
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineEnvelope
 import io.infinitic.common.workflows.tags.messages.WorkflowTagEnvelope
-import kotlin.reflect.KClass
 import org.apache.avro.Schema
+import kotlin.reflect.KClass
 
 interface Envelope<T> {
   fun message(): T
@@ -41,7 +43,9 @@ fun <T : Envelope<*>> KClass<T>.fromByteArray(bytes: ByteArray, schema: Schema) 
       ClientEnvelope::class -> ClientEnvelope.fromByteArray(bytes, schema)
       TaskTagEnvelope::class -> TaskTagEnvelope.fromByteArray(bytes, schema)
       TaskExecutorEnvelope::class -> TaskExecutorEnvelope.fromByteArray(bytes, schema)
+      TaskEventEnvelope::class -> TaskEventEnvelope.fromByteArray(bytes, schema)
       WorkflowEngineEnvelope::class -> WorkflowEngineEnvelope.fromByteArray(bytes, schema)
+      WorkflowEventEnvelope::class -> WorkflowEventEnvelope.fromByteArray(bytes, schema)
       WorkflowTagEnvelope::class -> WorkflowTagEnvelope.fromByteArray(bytes, schema)
       else -> thisShouldNotHappen("applying fromByteArray() on $qualifiedName")
     }
@@ -52,7 +56,9 @@ fun <T : Envelope<*>> KClass<T>.writerSchema() =
       ClientEnvelope::class -> ClientEnvelope.writerSchema
       TaskTagEnvelope::class -> TaskTagEnvelope.writerSchema
       TaskExecutorEnvelope::class -> TaskExecutorEnvelope.writerSchema
+      TaskEventEnvelope::class -> TaskEventEnvelope.writerSchema
       WorkflowEngineEnvelope::class -> WorkflowEngineEnvelope.writerSchema
+      WorkflowEventEnvelope::class -> WorkflowEventEnvelope.writerSchema
       WorkflowTagEnvelope::class -> WorkflowTagEnvelope.writerSchema
       else -> thisShouldNotHappen("applying schema() on $qualifiedName")
     }
@@ -62,7 +68,9 @@ fun <T : Envelope<*>> T.toByteArray() =
       is ClientEnvelope -> this.toByteArray()
       is TaskTagEnvelope -> this.toByteArray()
       is TaskExecutorEnvelope -> this.toByteArray()
+      is TaskEventEnvelope -> this.toByteArray()
       is WorkflowEngineEnvelope -> this.toByteArray()
+      is WorkflowEventEnvelope -> this.toByteArray()
       is WorkflowTagEnvelope -> this.toByteArray()
       else -> thisShouldNotHappen("applying toByteArray() on $this")
     }

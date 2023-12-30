@@ -28,9 +28,5 @@ import kotlinx.serialization.Serializable
 @Serializable
 @AvroNamespace("io.infinitic.tasks.executor")
 enum class TaskExecutorMessageType {
-  EXECUTE_TASK,
-  TASK_STARTED,
-  TASK_RETRIED,
-  TASK_FAILED,
-  TASK_COMPLETED
+  EXECUTE_TASK
 }

@@ -27,12 +27,11 @@ import io.infinitic.common.emitters.EmitterName
 import io.infinitic.common.exceptions.thisShouldNotHappen
 import io.infinitic.common.tasks.data.TaskReturnValue
 import io.infinitic.common.tasks.executors.errors.TaskFailedError
-import io.infinitic.common.tasks.executors.messages.ExecuteTask
-import io.infinitic.common.tasks.executors.messages.TaskCompleted
-import io.infinitic.common.tasks.executors.messages.TaskExecutorMessage
-import io.infinitic.common.tasks.executors.messages.TaskFailed
-import io.infinitic.common.tasks.executors.messages.TaskRetried
-import io.infinitic.common.tasks.executors.messages.TaskStarted
+import io.infinitic.common.tasks.executors.events.TaskCompleted
+import io.infinitic.common.tasks.executors.events.TaskEventMessage
+import io.infinitic.common.tasks.executors.events.TaskFailed
+import io.infinitic.common.tasks.executors.events.TaskRetried
+import io.infinitic.common.tasks.executors.events.TaskStarted
 import io.infinitic.common.tasks.tags.messages.RemoveTagFromTask
 import io.infinitic.common.transport.InfiniticProducerAsync
 import io.infinitic.common.transport.LoggedInfiniticProducer
@@ -49,11 +48,10 @@ class TaskEventHandler(producerAsync: InfiniticProducerAsync) {
   val producer = LoggedInfiniticProducer(javaClass.name, producerAsync)
   private val emitterName by lazy { EmitterName(producerAsync.name) }
 
-  suspend fun handle(msg: TaskExecutorMessage) {
+  suspend fun handle(msg: TaskEventMessage) {
     msg.logDebug { "received $msg" }
 
     when (msg) {
-      is ExecuteTask -> thisShouldNotHappen()
       is TaskCompleted -> sendTaskCompleted(msg)
       is TaskFailed -> sendTaskFailed(msg)
       is TaskRetried,
@@ -137,11 +135,11 @@ class TaskEventHandler(producerAsync: InfiniticProducerAsync) {
     }
   }
 
-  private fun TaskExecutorMessage.logDebug(description: () -> String) {
+  private fun TaskEventMessage.logDebug(description: () -> String) {
     logger.debug { "$serviceName (${taskId}): ${description()}" }
   }
 
-  private fun TaskExecutorMessage.logTrace(description: () -> String) {
+  private fun TaskEventMessage.logTrace(description: () -> String) {
     logger.trace { "$serviceName (${taskId}): ${description()}" }
   }
 }

@@ -194,7 +194,7 @@ internal fun CoroutineScope.workflowTaskCompleted(
     }
   }
 
-  if (methodRun.isTerminated()) state.removeMethodRun(methodRun)
+  if (methodRun.isTerminated()) state.removeWorkflowMethod(methodRun)
 
   // add fake messages at the top of the messagesBuffer list
   state.messagesBuffer.addAll(0, bufferedMessages)

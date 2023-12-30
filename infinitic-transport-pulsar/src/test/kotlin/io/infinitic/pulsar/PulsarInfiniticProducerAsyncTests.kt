@@ -29,8 +29,8 @@ import io.infinitic.common.fixtures.TestFactory
 import io.infinitic.common.messages.Envelope
 import io.infinitic.common.messages.Message
 import io.infinitic.common.tasks.data.ServiceName
+import io.infinitic.common.tasks.executors.events.TaskCompleted
 import io.infinitic.common.tasks.executors.messages.ExecuteTask
-import io.infinitic.common.tasks.executors.messages.TaskCompleted
 import io.infinitic.common.tasks.tags.messages.TaskTagMessage
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTask
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage

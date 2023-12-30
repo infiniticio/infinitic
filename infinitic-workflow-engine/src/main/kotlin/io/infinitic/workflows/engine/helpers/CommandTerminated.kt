@@ -68,7 +68,7 @@ internal fun CoroutineScope.commandTerminated(
 
   // if this method run was already completed, but we were waiting for this command to complete,
   // we may be able to delete it now
-  if (methodRun.isTerminated()) state.removeMethodRun(methodRun)
+  if (methodRun.isTerminated()) state.removeWorkflowMethod(methodRun)
 }
 
 // search the first step completed by this command
@@ -78,7 +78,8 @@ internal fun CoroutineScope.stepTerminated(
   pastCommand: PastCommand
 ): Boolean {
   // get all methodRuns terminated by this command
-  val methodRuns = state.methodRuns.filter { it.currentStep?.isTerminatedBy(pastCommand) == true }
+  val methodRuns =
+      state.workflowMethods.filter { it.currentStep?.isTerminatedBy(pastCommand) == true }
 
   // get step with lowest workflowTaskIndexAtStart
   methodRuns

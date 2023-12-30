@@ -30,7 +30,7 @@ import io.infinitic.common.workflows.data.commands.DispatchExistingWorkflowComma
 import io.infinitic.common.workflows.data.commands.DispatchExistingWorkflowPastCommand
 import io.infinitic.common.workflows.data.methodRuns.WorkflowMethodId
 import io.infinitic.common.workflows.engine.messages.ChildMethodTimedOut
-import io.infinitic.common.workflows.engine.messages.DispatchMethodOnRunningWorkflow
+import io.infinitic.common.workflows.engine.messages.DispatchMethodWorkflow
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
 import io.infinitic.common.workflows.engine.state.WorkflowState
 import io.infinitic.common.workflows.tags.messages.DispatchMethodByTag
@@ -114,7 +114,7 @@ private fun getDispatchMethod(
   workflowMethodId: WorkflowMethodId,
   command: DispatchExistingWorkflowCommand,
   state: WorkflowState
-) = DispatchMethodOnRunningWorkflow(
+) = DispatchMethodWorkflow(
     workflowName = command.workflowName,
     workflowId = command.workflowId!!,
     workflowMethodId = workflowMethodId,
