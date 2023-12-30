@@ -28,8 +28,6 @@ import com.github.avrokotlin.avro4k.AvroName
 import com.github.avrokotlin.avro4k.AvroNamespace
 import io.infinitic.common.clients.data.ClientName
 import io.infinitic.common.data.MessageId
-import io.infinitic.common.data.MillisDuration
-import io.infinitic.common.data.ReturnValue
 import io.infinitic.common.data.methods.MethodName
 import io.infinitic.common.data.methods.MethodParameterTypes
 import io.infinitic.common.data.methods.MethodParameters
@@ -62,22 +60,11 @@ sealed class TaskExecutorMessage : Message {
   abstract val workflowName: WorkflowName?
   abstract val workflowId: WorkflowId?
   abstract val workflowMethodId: WorkflowMethodId?
-  abstract val taskTags: Set<TaskTag>
-  abstract val taskMeta: TaskMeta
+
 
   override fun envelope() = TaskExecutorEnvelope.from(this)
 
   fun isWorkflowTask() = serviceName == ServiceName(WorkflowTask::class.java.name)
-}
-
-sealed interface TaskEvent {
-  val serviceName: ServiceName
-  val taskId: TaskId
-  val workflowName: WorkflowName?
-  val workflowId: WorkflowId?
-  val workflowMethodId: WorkflowMethodId?
-  val clientName: ClientName?
-  val clientWaiting: Boolean?
 }
 
 @Serializable
@@ -91,10 +78,9 @@ data class ExecuteTask(
   override val taskRetryIndex: TaskRetryIndex,
   override val workflowName: WorkflowName?,
   override val workflowId: WorkflowId?,
-  @AvroName("methodRunId")
-  override val workflowMethodId: WorkflowMethodId?,
-  override val taskTags: Set<TaskTag>,
-  override val taskMeta: TaskMeta,
+  @AvroName("methodRunId") override val workflowMethodId: WorkflowMethodId?,
+  val taskTags: Set<TaskTag>,
+  val taskMeta: TaskMeta,
   val clientWaiting: Boolean,
   val methodName: MethodName,
   val methodParameterTypes: MethodParameterTypes?,
@@ -124,181 +110,6 @@ data class ExecuteTask(
         methodParameterTypes = msg.methodParameterTypes,
         methodParameters = msg.methodParameters,
         lastError = cause.getExecutionError(emitterName),
-        workflowVersion = msg.workflowVersion,
-    )
-  }
-}
-
-@Serializable
-@AvroNamespace("io.infinitic.tasks.executor")
-data class TaskStarted(
-  override val messageId: MessageId = MessageId(),
-  override val serviceName: ServiceName,
-  override val taskId: TaskId,
-  override val emitterName: EmitterName,
-  override val taskRetrySequence: TaskRetrySequence,
-  override val taskRetryIndex: TaskRetryIndex,
-  override val workflowName: WorkflowName?,
-  override val workflowId: WorkflowId?,
-  override val workflowMethodId: WorkflowMethodId?,
-  override val clientName: ClientName?,
-  override val clientWaiting: Boolean?,
-  override val taskTags: Set<TaskTag>,
-  override val taskMeta: TaskMeta,
-  val workflowVersion: WorkflowVersion?
-) : TaskExecutorMessage(), TaskEvent {
-  companion object {
-    fun from(msg: ExecuteTask, emitterName: EmitterName) = TaskStarted(
-        serviceName = msg.serviceName,
-        taskId = msg.taskId,
-        emitterName = emitterName,
-        taskRetrySequence = msg.taskRetrySequence,
-        taskRetryIndex = msg.taskRetryIndex,
-        workflowName = msg.workflowName,
-        workflowId = msg.workflowId,
-        workflowMethodId = msg.workflowMethodId,
-        clientName = msg.clientName,
-        clientWaiting = msg.clientWaiting,
-        taskTags = msg.taskTags,
-        taskMeta = msg.taskMeta,
-        workflowVersion = msg.workflowVersion,
-    )
-  }
-}
-
-@Serializable
-@AvroNamespace("io.infinitic.tasks.executor")
-data class TaskFailed(
-  override val messageId: MessageId = MessageId(),
-  override val serviceName: ServiceName,
-  override val taskId: TaskId,
-  override val emitterName: EmitterName,
-  override val taskRetrySequence: TaskRetrySequence,
-  override val taskRetryIndex: TaskRetryIndex,
-  override val workflowName: WorkflowName?,
-  override val workflowId: WorkflowId?,
-  override val workflowMethodId: WorkflowMethodId?,
-  override val clientName: ClientName?,
-  override val clientWaiting: Boolean?,
-  override val taskTags: Set<TaskTag>,
-  override val taskMeta: TaskMeta,
-  val executionError: ExecutionError,
-  val deferredError: DeferredError?,
-  val methodName: MethodName,
-  val workflowVersion: WorkflowVersion?,
-) : TaskExecutorMessage(), TaskEvent {
-  companion object {
-    fun from(
-      msg: ExecuteTask,
-      emitterName: EmitterName,
-      cause: Throwable,
-      meta: MutableMap<String, ByteArray>
-    ) = TaskFailed(
-        serviceName = msg.serviceName,
-        taskId = msg.taskId,
-        emitterName = emitterName,
-        taskRetrySequence = msg.taskRetrySequence,
-        taskRetryIndex = msg.taskRetryIndex,
-        workflowName = msg.workflowName,
-        workflowId = msg.workflowId,
-        workflowMethodId = msg.workflowMethodId,
-        clientName = msg.clientName,
-        clientWaiting = msg.clientWaiting,
-        taskTags = msg.taskTags,
-        taskMeta = TaskMeta(meta),
-        executionError = cause.getExecutionError(emitterName),
-        deferredError = cause.deferredError,
-        methodName = msg.methodName,
-        workflowVersion = msg.workflowVersion,
-    )
-  }
-}
-
-@Serializable
-@AvroNamespace("io.infinitic.tasks.executor")
-data class TaskRetried(
-  override val messageId: MessageId = MessageId(),
-  override val serviceName: ServiceName,
-  override val taskId: TaskId,
-  override val emitterName: EmitterName,
-  override val taskRetrySequence: TaskRetrySequence,
-  override val taskRetryIndex: TaskRetryIndex,
-  override val workflowName: WorkflowName?,
-  override val workflowId: WorkflowId?,
-  override val workflowMethodId: WorkflowMethodId?,
-  override val clientName: ClientName?,
-  override val clientWaiting: Boolean?,
-  override val taskTags: Set<TaskTag>,
-  override val taskMeta: TaskMeta,
-  val taskRetryDelay: MillisDuration,
-  val lastError: ExecutionError?,
-) : TaskExecutorMessage(), TaskEvent {
-
-  companion object {
-    fun from(
-      msg: ExecuteTask,
-      emitterName: EmitterName,
-      cause: Throwable,
-      delay: MillisDuration,
-      meta: MutableMap<String, ByteArray>
-    ) = TaskRetried(
-        serviceName = msg.serviceName,
-        taskId = msg.taskId,
-        emitterName = emitterName,
-        taskRetrySequence = msg.taskRetrySequence,
-        taskRetryIndex = msg.taskRetryIndex + 1,
-        workflowName = msg.workflowName,
-        workflowId = msg.workflowId,
-        workflowMethodId = msg.workflowMethodId,
-        clientName = msg.clientName,
-        clientWaiting = msg.clientWaiting,
-        taskTags = msg.taskTags,
-        taskMeta = TaskMeta(meta),
-        taskRetryDelay = delay,
-        lastError = cause.getExecutionError(emitterName),
-    )
-  }
-}
-
-@Serializable
-@AvroNamespace("io.infinitic.tasks.executor")
-data class TaskCompleted(
-  override val messageId: MessageId = MessageId(),
-  override val serviceName: ServiceName,
-  override val taskId: TaskId,
-  override val emitterName: EmitterName,
-  override val taskRetrySequence: TaskRetrySequence,
-  override val taskRetryIndex: TaskRetryIndex,
-  override val workflowName: WorkflowName?,
-  override val workflowId: WorkflowId?,
-  override val workflowMethodId: WorkflowMethodId?,
-  override val clientName: ClientName?,
-  override val clientWaiting: Boolean?,
-  override val taskTags: Set<TaskTag>,
-  override val taskMeta: TaskMeta,
-  val returnValue: ReturnValue,
-  val workflowVersion: WorkflowVersion?,
-) : TaskExecutorMessage(), TaskEvent {
-  companion object {
-    fun from(
-      msg: ExecuteTask,
-      emitterName: EmitterName,
-      value: Any?,
-      meta: MutableMap<String, ByteArray>
-    ) = TaskCompleted(
-        serviceName = msg.serviceName,
-        taskId = msg.taskId,
-        emitterName = emitterName,
-        taskRetrySequence = msg.taskRetrySequence,
-        taskRetryIndex = msg.taskRetryIndex,
-        workflowName = msg.workflowName,
-        workflowId = msg.workflowId,
-        workflowMethodId = msg.workflowMethodId,
-        clientName = msg.clientName,
-        clientWaiting = msg.clientWaiting,
-        taskTags = msg.taskTags,
-        taskMeta = TaskMeta(meta),
-        returnValue = ReturnValue.from(value),
         workflowVersion = msg.workflowVersion,
     )
   }

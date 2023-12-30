@@ -60,9 +60,9 @@ import io.infinitic.workflows.DeferredStatus
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
-interface WorkflowEvent
+interface WorkflowInternalEvent
 
-interface MethodEvent : WorkflowEvent {
+interface MethodEvent : WorkflowInternalEvent {
   val workflowMethodId: WorkflowMethodId
 }
 
@@ -84,13 +84,19 @@ sealed class WorkflowEngineMessage : Message {
       (this is TaskEvent) && this.serviceName() == ServiceName(WorkflowTask::class.java.name)
 }
 
-sealed interface WorkflowMethodEvent {
+sealed interface WorkflowEvent {
   val workflowName: WorkflowName
   val workflowId: WorkflowId
+  val workflowTags: Set<WorkflowTag>
+  val workflowMeta: WorkflowMeta
+}
+
+sealed interface WorkflowMethodEvent : WorkflowEvent {
   val workflowMethodId: WorkflowMethodId
   val parentWorkflowName: WorkflowName?
   val parentWorkflowId: WorkflowId?
   val parentWorkflowMethodId: WorkflowMethodId?
+  val parentClientName: ClientName?
   val waitingClients: Set<ClientName>
 }
 
@@ -149,7 +155,7 @@ data class DispatchNewWorkflow(
 @Serializable
 @AvroNamespace("io.infinitic.workflows.engine")
 @AvroName("DispatchMethod")
-data class DispatchMethodOnRunningWorkflow(
+data class DispatchMethodWorkflow(
   override val workflowName: WorkflowName,
   override val workflowId: WorkflowId,
   @AvroName("methodRunId") val workflowMethodId: WorkflowMethodId,
@@ -161,7 +167,7 @@ data class DispatchMethodOnRunningWorkflow(
   @AvroName("parentMethodRunId") var parentWorkflowMethodId: WorkflowMethodId?,
   val clientWaiting: Boolean,
   override val emitterName: EmitterName
-) : WorkflowEngineMessage(), WorkflowEvent
+) : WorkflowEngineMessage(), WorkflowInternalEvent
 
 /**
  * This message is a command to retry the workflow task of a running workflow.
@@ -251,7 +257,7 @@ data class CancelWorkflow(
   override val workflowName: WorkflowName,
   override val workflowId: WorkflowId,
   override val emitterName: EmitterName
-) : WorkflowEngineMessage(), WorkflowEvent
+) : WorkflowEngineMessage(), WorkflowInternalEvent
 
 /**
  * This message is a command to manually complete a running workflow
@@ -268,7 +274,7 @@ data class CompleteWorkflow(
   override val workflowName: WorkflowName,
   override val workflowId: WorkflowId,
   override val emitterName: EmitterName
-) : WorkflowEngineMessage(), WorkflowEvent
+) : WorkflowEngineMessage(), WorkflowInternalEvent
 
 /**
  * This message is a command to send a signal to a running workflow
@@ -291,7 +297,7 @@ data class SendSignal(
   override val workflowName: WorkflowName,
   override val workflowId: WorkflowId,
   override val emitterName: EmitterName
-) : WorkflowEngineMessage(), WorkflowEvent
+) : WorkflowEngineMessage(), WorkflowInternalEvent
 
 /**
  * This message is an event telling a running workflow that another workflow's method is unknown.
@@ -445,7 +451,7 @@ data class TaskFailed(
 }
 
 /**
- * This message is an event telling a workflow that a task has timed out.
+ * This message is an event telling a workflow that a task has (global) timed out.
  *
  * @param workflowName Name of the workflow receiving the event
  * @param workflowId Id of the workflow receiving the event

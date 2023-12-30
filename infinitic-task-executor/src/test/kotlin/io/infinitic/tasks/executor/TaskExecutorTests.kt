@@ -39,12 +39,13 @@ import io.infinitic.common.tasks.data.TaskMeta
 import io.infinitic.common.tasks.data.TaskRetryIndex
 import io.infinitic.common.tasks.data.TaskRetrySequence
 import io.infinitic.common.tasks.data.TaskTag
+import io.infinitic.common.tasks.executors.events.TaskCompleted
+import io.infinitic.common.tasks.executors.events.TaskEventMessage
+import io.infinitic.common.tasks.executors.events.TaskFailed
+import io.infinitic.common.tasks.executors.events.TaskRetried
+import io.infinitic.common.tasks.executors.events.TaskStarted
 import io.infinitic.common.tasks.executors.messages.ExecuteTask
-import io.infinitic.common.tasks.executors.messages.TaskCompleted
 import io.infinitic.common.tasks.executors.messages.TaskExecutorMessage
-import io.infinitic.common.tasks.executors.messages.TaskFailed
-import io.infinitic.common.tasks.executors.messages.TaskRetried
-import io.infinitic.common.tasks.executors.messages.TaskStarted
 import io.infinitic.common.tasks.executors.messages.clientName
 import io.infinitic.common.tasks.tags.messages.RemoveTagFromTask
 import io.infinitic.common.transport.InfiniticProducerAsync
@@ -91,7 +92,7 @@ class TaskExecutorTests :
         // slots
         val afterSlot = slot<MillisDuration>()
         val taskExecutorSlot = slot<TaskExecutorMessage>()
-        val taskEventSlot = CopyOnWriteArrayList<TaskExecutorMessage>()
+        val taskEventSlot = CopyOnWriteArrayList<TaskEventMessage>()
 
         // mocks
         fun completed() = CompletableFuture.completedFuture(Unit)
@@ -589,7 +590,7 @@ private fun getTaskCompleted(
     workflowVersion = msg.workflowVersion,
 )
 
-internal fun getRemoveTag(message: TaskExecutorMessage, tag: String) = RemoveTagFromTask(
+internal fun getRemoveTag(message: TaskEventMessage, tag: String) = RemoveTagFromTask(
     taskId = message.taskId,
     serviceName = message.serviceName,
     taskTag = TaskTag(tag),

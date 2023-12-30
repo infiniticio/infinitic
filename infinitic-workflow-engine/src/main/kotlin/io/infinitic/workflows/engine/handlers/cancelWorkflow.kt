@@ -29,7 +29,7 @@ import io.infinitic.common.tasks.executors.errors.MethodCanceledError
 import io.infinitic.common.transport.InfiniticProducer
 import io.infinitic.common.workflows.data.commands.DispatchExistingWorkflowCommand
 import io.infinitic.common.workflows.data.commands.DispatchNewWorkflowCommand
-import io.infinitic.common.workflows.data.methodRuns.MethodRun
+import io.infinitic.common.workflows.data.methodRuns.WorkflowMethod
 import io.infinitic.common.workflows.data.methodRuns.WorkflowMethodId
 import io.infinitic.common.workflows.data.workflows.WorkflowCancellationReason
 import io.infinitic.common.workflows.data.workflows.WorkflowId
@@ -47,27 +47,27 @@ internal fun CoroutineScope.cancelWorkflow(
 ) {
   when (message.workflowMethodId) {
     null -> {
-      state.methodRuns.forEach { cancelMethodRun(producer, state, it, message.reason) }
+      state.workflowMethods.forEach { cancelWorkflowMethod(producer, state, it, message.reason) }
 
       // clean state
-      state.removeMethodRuns()
+      state.removeWorkflowMethods()
     }
 
     else -> {
       state.getMethodRun(message.workflowMethodId!!)?.let { methodRun ->
-        cancelMethodRun(producer, state, methodRun, message.reason)
+        cancelWorkflowMethod(producer, state, methodRun, message.reason)
 
         // clean state
-        state.removeMethodRun(methodRun)
+        state.removeWorkflowMethod(methodRun)
       }
     }
   }
 }
 
-private fun CoroutineScope.cancelMethodRun(
+private fun CoroutineScope.cancelWorkflowMethod(
   producer: InfiniticProducer,
   state: WorkflowState,
-  methodRun: MethodRun,
+  methodRun: WorkflowMethod,
   reason: WorkflowCancellationReason
 ) {
   val emitterName = EmitterName(producer.name)

@@ -44,7 +44,8 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 @AvroNamespace("io.infinitic.workflows.data")
-data class MethodRun(
+@AvroName("MethodRun")
+data class WorkflowMethod(
   /** clients synchronously waiting for the returned value */
   val waitingClients: MutableSet<ClientName>,
   @AvroName("methodRunId") val workflowMethodId: WorkflowMethodId,

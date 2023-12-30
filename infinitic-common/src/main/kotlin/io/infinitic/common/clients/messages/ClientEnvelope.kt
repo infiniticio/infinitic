@@ -39,7 +39,7 @@ data class ClientEnvelope(
   private val workflowCompleted: MethodCompleted? = null,
   private val workflowCanceled: MethodCanceled? = null,
   private val workflowFailed: MethodFailed? = null,
-  private val unknownWorkflow: MethodRunUnknown? = null,
+  private val unknownWorkflow: MethodUnknown? = null,
   private val methodAlreadyCompleted: MethodAlreadyCompleted? = null,
   private val workflowIdsByTag: WorkflowIdsByTag? = null
 ) : Envelope<ClientMessage> {
@@ -106,7 +106,7 @@ data class ClientEnvelope(
           workflowFailed = msg,
       )
 
-      is MethodRunUnknown -> ClientEnvelope(
+      is MethodUnknown -> ClientEnvelope(
           clientName = msg.recipientName,
           type = ClientMessageType.UNKNOWN_WORKFLOW,
           unknownWorkflow = msg,

@@ -23,7 +23,7 @@
 package io.infinitic.workflows.engine.handlers
 
 import io.infinitic.common.clients.data.ClientName
-import io.infinitic.common.clients.messages.MethodRunUnknown
+import io.infinitic.common.clients.messages.MethodUnknown
 import io.infinitic.common.emitters.EmitterName
 import io.infinitic.common.transport.InfiniticProducer
 import io.infinitic.common.workflows.engine.messages.WaitWorkflow
@@ -41,7 +41,7 @@ internal fun CoroutineScope.waitWorkflow(
 
   when (val methodRun = state.getMethodRun(message.workflowMethodId)) {
     null -> {
-      val methodRunUnknown = MethodRunUnknown(
+      val methodRunUnknown = MethodUnknown(
           recipientName = clientName,
           workflowId = message.workflowId,
           workflowMethodId = message.workflowMethodId,

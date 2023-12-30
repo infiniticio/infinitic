@@ -36,7 +36,7 @@ import io.infinitic.common.tasks.data.TaskRetryIndex
 import io.infinitic.common.tasks.data.TaskRetrySequence
 import io.infinitic.common.tasks.executors.messages.ExecuteTask
 import io.infinitic.common.workers.config.WorkflowVersion
-import io.infinitic.common.workflows.data.methodRuns.MethodRun
+import io.infinitic.common.workflows.data.methodRuns.WorkflowMethod
 import io.infinitic.common.workflows.data.properties.PropertyHash
 import io.infinitic.common.workflows.data.properties.PropertyValue
 import io.infinitic.common.workflows.data.workflows.WorkflowId
@@ -56,7 +56,7 @@ data class WorkflowTaskParameters(
   val workflowMeta: WorkflowMeta,
   val workflowPropertiesHashValue: Map<PropertyHash, PropertyValue>,
   val workflowTaskIndex: WorkflowTaskIndex,
-  val methodRun: MethodRun,
+  val methodRun: WorkflowMethod,
   val emitterName: EmitterName
 ) {
   fun toExecuteTaskMessage() =

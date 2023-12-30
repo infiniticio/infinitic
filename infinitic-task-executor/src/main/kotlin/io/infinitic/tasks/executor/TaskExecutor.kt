@@ -28,12 +28,12 @@ import io.infinitic.common.data.MillisDuration
 import io.infinitic.common.emitters.EmitterName
 import io.infinitic.common.exceptions.thisShouldNotHappen
 import io.infinitic.common.parser.getMethodPerNameAndParameters
+import io.infinitic.common.tasks.executors.events.TaskCompleted
+import io.infinitic.common.tasks.executors.events.TaskFailed
+import io.infinitic.common.tasks.executors.events.TaskRetried
+import io.infinitic.common.tasks.executors.events.TaskStarted
 import io.infinitic.common.tasks.executors.messages.ExecuteTask
-import io.infinitic.common.tasks.executors.messages.TaskCompleted
 import io.infinitic.common.tasks.executors.messages.TaskExecutorMessage
-import io.infinitic.common.tasks.executors.messages.TaskFailed
-import io.infinitic.common.tasks.executors.messages.TaskRetried
-import io.infinitic.common.tasks.executors.messages.TaskStarted
 import io.infinitic.common.transport.InfiniticProducerAsync
 import io.infinitic.common.transport.LoggedInfiniticProducer
 import io.infinitic.common.utils.getCheckMode
@@ -79,8 +79,6 @@ class TaskExecutor(
         executeTask(msg)
         msg.logTrace { "processed" }
       }
-
-      else -> thisShouldNotHappen()
     }
   }
 

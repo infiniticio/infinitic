@@ -30,6 +30,8 @@ import io.infinitic.common.clients.messages.ClientMessage
 import io.infinitic.common.messages.Envelope
 import io.infinitic.common.messages.Message
 import io.infinitic.common.tasks.data.ServiceName
+import io.infinitic.common.tasks.executors.events.TaskEventEnvelope
+import io.infinitic.common.tasks.executors.events.TaskEventMessage
 import io.infinitic.common.tasks.executors.messages.TaskExecutorEnvelope
 import io.infinitic.common.tasks.executors.messages.TaskExecutorMessage
 import io.infinitic.common.tasks.tags.messages.TaskTagEnvelope
@@ -180,14 +182,14 @@ class PulsarInfiniticConsumerAsync(
   )
 
   override fun startTaskEventsConsumerAsync(
-    handler: suspend (TaskExecutorMessage) -> Unit,
-    beforeDlq: (suspend (TaskExecutorMessage, Exception) -> Unit)?,
+    handler: suspend (TaskEventMessage) -> Unit,
+    beforeDlq: (suspend (TaskEventMessage, Exception) -> Unit)?,
     serviceName: ServiceName,
     concurrency: Int
   ) = startAsync(
       handler = handler,
       beforeDlq = beforeDlq,
-      schemaClass = TaskExecutorEnvelope::class,
+      schemaClass = TaskEventEnvelope::class,
       topicDescription = ServiceTopicDescription.EVENTS,
       concurrency = concurrency,
       name = "$serviceName",
@@ -219,14 +221,14 @@ class PulsarInfiniticConsumerAsync(
   )
 
   override fun startWorkflowTaskEventsConsumerAsync(
-    handler: suspend (TaskExecutorMessage) -> Unit,
-    beforeDlq: (suspend (TaskExecutorMessage, Exception) -> Unit)?,
+    handler: suspend (TaskEventMessage) -> Unit,
+    beforeDlq: (suspend (TaskEventMessage, Exception) -> Unit)?,
     workflowName: WorkflowName,
     concurrency: Int
   ) = startAsync(
       handler = handler,
       beforeDlq = beforeDlq,
-      schemaClass = TaskExecutorEnvelope::class,
+      schemaClass = TaskEventEnvelope::class,
       topicDescription = WorkflowTopicDescription.EVENTS,
       concurrency = concurrency,
       name = "$workflowName",

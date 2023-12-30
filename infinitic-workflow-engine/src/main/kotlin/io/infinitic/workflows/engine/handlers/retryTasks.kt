@@ -50,7 +50,7 @@ internal fun CoroutineScope.retryTasks(
   val serviceName = message.serviceName
 
   // for all method runs
-  state.methodRuns.forEach { methodRun ->
+  state.workflowMethods.forEach { methodRun ->
     // for all past tasks
     methodRun.pastCommands
         .filterIsInstance<DispatchTaskPastCommand>()

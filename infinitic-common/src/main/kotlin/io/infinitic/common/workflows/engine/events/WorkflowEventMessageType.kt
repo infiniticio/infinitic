@@ -20,22 +20,20 @@
  *
  * Licensor: infinitic.io
  */
-package io.infinitic.common.workflows.data.methodRuns
+package io.infinitic.common.workflows.engine.events
 
+import com.github.avrokotlin.avro4k.AvroNamespace
 import kotlinx.serialization.Serializable
 
-/**
- * Represents the position of a command within a method.
- * The position is incremented at each command
- *
- * @property index The index of the command within the method.
- */
-@JvmInline
 @Serializable
-value class PositionInMethod(private val index: Int = -1) : Comparable<PositionInMethod> {
-  override fun compareTo(other: PositionInMethod) = index - other.index
-
-  override fun toString() = "$index"
-
-  fun next() = PositionInMethod(index + 1)
+@AvroNamespace("io.infinitic.workflows.events")
+enum class WorkflowEventMessageType {
+  WORKFLOW_STARTED,
+  WORKFLOW_COMPLETED,
+  WORKFLOW_CANCELED,
+  WORKFLOW_METHOD_STARTED,
+  WORKFLOW_METHOD_COMPLETED,
+  WORKFLOW_METHOD_FAILED,
+  WORKFLOW_METHOD_CANCELED,
+  WORKFLOW_METHOD_TIMED_OUT,
 }

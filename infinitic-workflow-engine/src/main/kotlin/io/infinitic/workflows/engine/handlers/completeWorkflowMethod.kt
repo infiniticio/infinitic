@@ -27,7 +27,7 @@ import io.infinitic.common.workflows.engine.messages.CompleteWorkflow
 import io.infinitic.common.workflows.engine.state.WorkflowState
 import kotlinx.coroutines.CoroutineScope
 
-internal fun CoroutineScope.completeWorkflow(
+internal fun CoroutineScope.completeWorkflowMethod(
   producer: InfiniticProducer,
   state: WorkflowState,
   message: CompleteWorkflow

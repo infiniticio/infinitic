@@ -24,6 +24,7 @@ package io.infinitic.common.transport
 
 import io.infinitic.common.clients.messages.ClientMessage
 import io.infinitic.common.data.MillisDuration
+import io.infinitic.common.tasks.executors.events.TaskEventMessage
 import io.infinitic.common.tasks.executors.messages.TaskExecutorMessage
 import io.infinitic.common.tasks.tags.messages.TaskTagMessage
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
@@ -85,12 +86,13 @@ interface InfiniticProducer {
     after: MillisDuration = MillisDuration.ZERO
   )
 
+
   /**
    * Synchronously send a message to task-events
    *
    * @param message the message to send to the task result handler.
    */
   suspend fun sendToTaskEvents(
-    message: TaskExecutorMessage
+    message: TaskEventMessage
   )
 }

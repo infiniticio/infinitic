@@ -37,8 +37,8 @@ import io.infinitic.common.workflows.data.channels.SignalId
 import io.infinitic.common.workflows.data.commands.CommandId
 import io.infinitic.common.workflows.data.commands.CommandStatus
 import io.infinitic.common.workflows.data.commands.PastCommand
-import io.infinitic.common.workflows.data.methodRuns.MethodRun
 import io.infinitic.common.workflows.data.methodRuns.PositionInMethod
+import io.infinitic.common.workflows.data.methodRuns.WorkflowMethod
 import io.infinitic.common.workflows.data.methodRuns.WorkflowMethodId
 import io.infinitic.common.workflows.data.properties.PropertyHash
 import io.infinitic.common.workflows.data.properties.PropertyName
@@ -95,7 +95,7 @@ data class WorkflowState(
   var workflowTaskIndex: WorkflowTaskIndex = WorkflowTaskIndex(0),
 
   /** Methods currently running. Once completed this data can be deleted to limit memory usage */
-  val methodRuns: MutableList<MethodRun>,
+  @AvroName("methodRuns") val workflowMethods: MutableList<WorkflowMethod>,
 
   /** Ordered list of channels currently receiving */
   val receivingChannels: MutableList<ReceivingChannel> = mutableListOf(),
@@ -123,38 +123,38 @@ data class WorkflowState(
   fun toByteArray() = AvroSerDe.writeBinaryWithSchemaFingerprint(this, serializer())
 
   fun hasSignalAlreadyBeenReceived(signalId: SignalId) =
-      methodRuns.any { methodRun ->
+      workflowMethods.any { methodRun ->
         methodRun.pastCommands.any {
           it.commandStatus is CommandStatus.Completed &&
               (it.commandStatus as CommandStatus.Completed).signalId == signalId
         }
       }
 
-  fun getRunningMethodRun(): MethodRun =
-      methodRuns.first { it.workflowMethodId == runningWorkflowMethodId }
+  fun getRunningMethodRun(): WorkflowMethod =
+      workflowMethods.first { it.workflowMethodId == runningWorkflowMethodId }
 
   fun getMethodRun(workflowMethodId: WorkflowMethodId) =
-      methodRuns.firstOrNull { it.workflowMethodId == workflowMethodId }
+      workflowMethods.firstOrNull { it.workflowMethodId == workflowMethodId }
 
-  fun getPastCommand(commandId: CommandId, methodRun: MethodRun): PastCommand =
-      methodRun.getPastCommand(commandId)
+  fun getPastCommand(commandId: CommandId, workflowMethod: WorkflowMethod): PastCommand =
+      workflowMethod.getPastCommand(commandId)
       // if we do not find in this methodRun, then search within others
-        ?: methodRuns.map { it.getPastCommand(commandId) }.firstOrNull { it != null }
+        ?: workflowMethods.map { it.getPastCommand(commandId) }.firstOrNull { it != null }
         // methodRun should not be deleted if a step is still running
         ?: thisShouldNotHappen()
 
-  fun removeMethodRun(methodRun: MethodRun) {
-    methodRuns.remove(methodRun)
+  fun removeWorkflowMethod(workflowMethod: WorkflowMethod) {
+    workflowMethods.remove(workflowMethod)
 
     // clean receivingChannels once deleted
-    receivingChannels.removeAll { it.workflowMethodId == methodRun.workflowMethodId }
+    receivingChannels.removeAll { it.workflowMethodId == workflowMethod.workflowMethodId }
 
     // clean properties
     removeUnusedPropertyHash()
   }
 
-  fun removeMethodRuns() {
-    methodRuns.clear()
+  fun removeWorkflowMethods() {
+    workflowMethods.clear()
 
     // clean receivingChannels once deleted
     receivingChannels.clear()
@@ -170,11 +170,11 @@ data class WorkflowState(
     // set of all hashes still in use
     val propertyHashes = mutableSetOf<PropertyHash>()
 
-    methodRuns.forEach { methodRun ->
-      methodRun.pastSteps.forEach { pastStep ->
+    workflowMethods.forEach { workflowMethod ->
+      workflowMethod.pastSteps.forEach { pastStep ->
         pastStep.propertiesNameHashAtTermination?.forEach { propertyHashes.add(it.value) }
       }
-      methodRun.propertiesNameHashAtStart.forEach { propertyHashes.add(it.value) }
+      workflowMethod.propertiesNameHashAtStart.forEach { propertyHashes.add(it.value) }
     }
     currentPropertiesNameHash.forEach { propertyHashes.add(it.value) }
 
