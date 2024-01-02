@@ -31,6 +31,7 @@ import io.infinitic.common.tasks.executors.events.TaskEventMessage
 import io.infinitic.common.tasks.executors.messages.TaskExecutorMessage
 import io.infinitic.common.tasks.tags.messages.TaskTagMessage
 import io.infinitic.common.workflows.data.workflows.WorkflowName
+import io.infinitic.common.workflows.engine.events.WorkflowEventMessage
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
 import io.infinitic.common.workflows.tags.messages.WorkflowTagMessage
 import kotlinx.coroutines.channels.Channel
@@ -48,6 +49,7 @@ class InMemoryChannels : AutoCloseable {
     workflowCmdChannels.values.forEach { it.close() }
     workflowEngineChannels.values.forEach { it.close() }
     delayedWorkflowEngineChannels.values.forEach { it.close() }
+    workflowEventChannels.values.forEach { it.close() }
     workflowTaskExecutorChannels.values.forEach { it.close() }
     workflowTaskEventsChannels.values.forEach { it.close() }
     delayedWorkflowTaskExecutorChannels.values.forEach { it.close() }
@@ -89,6 +91,10 @@ class InMemoryChannels : AutoCloseable {
   private val delayedWorkflowEngineChannels =
       ConcurrentHashMap<WorkflowName, Channel<DelayedMessage<WorkflowEngineMessage>>>()
 
+  // Channel for WorkflowEventMessages
+  private val workflowEventChannels =
+      ConcurrentHashMap<WorkflowName, Channel<WorkflowEventMessage>>()
+
   // Channel for WorkflowTaskMessages
   private val workflowTaskExecutorChannels =
       ConcurrentHashMap<WorkflowName, Channel<TaskExecutorMessage>>()
@@ -127,6 +133,9 @@ class InMemoryChannels : AutoCloseable {
 
   fun forDelayedWorkflowEngine(workflowName: WorkflowName): Channel<DelayedMessage<WorkflowEngineMessage>> =
       delayedWorkflowEngineChannels.getOrPut(workflowName) { Channel(Channel.UNLIMITED) }
+
+  fun forWorkflowEvent(workflowName: WorkflowName): Channel<WorkflowEventMessage> =
+      workflowEventChannels.getOrPut(workflowName) { Channel(Channel.UNLIMITED) }
 
   fun forWorkflowTaskExecutor(workflowName: WorkflowName): Channel<TaskExecutorMessage> =
       workflowTaskExecutorChannels.getOrPut(workflowName) { Channel(Channel.UNLIMITED) }

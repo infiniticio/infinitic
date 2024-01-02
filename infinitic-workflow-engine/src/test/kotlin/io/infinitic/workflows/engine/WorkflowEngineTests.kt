@@ -35,6 +35,7 @@ import io.infinitic.common.transport.InfiniticProducerAsync
 import io.infinitic.common.workers.config.WorkflowVersion
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskReturnValue
 import io.infinitic.common.workflows.data.workflows.WorkflowId
+import io.infinitic.common.workflows.engine.events.WorkflowEventMessage
 import io.infinitic.common.workflows.engine.messages.DispatchNewWorkflow
 import io.infinitic.common.workflows.engine.messages.TaskCompleted
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
@@ -54,84 +55,86 @@ import kotlinx.coroutines.coroutineScope
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CopyOnWriteArrayList
 
-class WorkflowEngineTests :
-  StringSpec(
-      {
-        // slots
-        val stateSlot = slot<WorkflowState>()
-        val workflowIdSlot = slot<WorkflowId>()
-        val clientSlot = slot<ClientMessage>()
-        val taskTagSlots = CopyOnWriteArrayList<TaskTagMessage>()
-        val taskExecutorSlot = slot<TaskExecutorMessage>()
-        val workflowTagSlots = CopyOnWriteArrayList<WorkflowTagMessage>()
-        val workflowEngineSlot = slot<WorkflowEngineMessage>()
-        val afterSlot = slot<MillisDuration>()
+class WorkflowEngineTests : StringSpec(
+    {
+      // slots
+      val stateSlot = slot<WorkflowState>()
+      val workflowIdSlot = slot<WorkflowId>()
+      val clientSlot = slot<ClientMessage>()
+      val eventSlot = slot<WorkflowEventMessage>()
+      val taskTagSlots = CopyOnWriteArrayList<TaskTagMessage>()
+      val taskExecutorSlot = slot<TaskExecutorMessage>()
+      val workflowTagSlots = CopyOnWriteArrayList<WorkflowTagMessage>()
+      val workflowEngineSlot = slot<WorkflowEngineMessage>()
+      val afterSlot = slot<MillisDuration>()
 
-        // mocks
-        fun completed() = CompletableFuture.completedFuture(Unit)
-        val storage = mockk<WorkflowStateStorage>()
-        val producerAsync = mockk<InfiniticProducerAsync> {
-          every { name } returns "testName"
-          every { sendToClientAsync(capture(clientSlot)) } returns completed()
-          every { sendToTaskTagAsync(capture(taskTagSlots)) } returns completed()
-          every {
-            sendToTaskExecutorAsync(
-                capture(taskExecutorSlot),
-                capture(afterSlot),
-            )
-          } returns completed()
-          every { sendToWorkflowEngineAsync(capture(workflowEngineSlot)) } returns completed()
-        }
+      // mocks
+      fun completed() = CompletableFuture.completedFuture(Unit)
+      val storage = mockk<WorkflowStateStorage>()
+      val producerAsync = mockk<InfiniticProducerAsync> {
+        every { name } returns "testName"
+        every { sendToClientAsync(capture(clientSlot)) } returns completed()
+        every { sendToTaskTagAsync(capture(taskTagSlots)) } returns completed()
+        every { sendToWorkflowEventsAsync(capture(eventSlot)) } returns completed()
 
-        val engine = WorkflowEngine(storage, producerAsync)
+        every {
+          sendToTaskExecutorAsync(
+              capture(taskExecutorSlot),
+              capture(afterSlot),
+          )
+        } returns completed()
+        every { sendToWorkflowEngineAsync(capture(workflowEngineSlot)) } returns completed()
+      }
 
-        // ensure slots are emptied between each test
-        beforeTest {
-          clearMocks(storage)
-          coEvery { storage.putState(capture(workflowIdSlot), capture(stateSlot)) } just Runs
+      val engine = WorkflowEngine(storage, producerAsync)
 
-          clientSlot.clear()
-          taskTagSlots.clear()
-          taskExecutorSlot.clear()
-          workflowTagSlots.clear()
-          workflowEngineSlot.clear()
-          afterSlot.clear()
-        }
+      // ensure slots are emptied between each test
+      beforeTest {
+        clearMocks(storage)
+        coEvery { storage.putState(capture(workflowIdSlot), capture(stateSlot)) } just Runs
 
-        "Dispatch Workflow" {
-          val msg = TestFactory.random(DispatchNewWorkflow::class)
-          coEvery { storage.getState(msg.workflowId) } returns null
+        clientSlot.clear()
+        taskTagSlots.clear()
+        taskExecutorSlot.clear()
+        workflowTagSlots.clear()
+        workflowEngineSlot.clear()
+        afterSlot.clear()
+      }
 
-          coroutineScope { engine.handle(msg) }
+      "Dispatch Workflow" {
+        val msg = TestFactory.random(DispatchNewWorkflow::class, mapOf("parentWorkflowId" to null))
 
-          val workflowTask = (taskExecutorSlot.captured as ExecuteTask)
-          workflowTask.workflowVersion shouldBe null
-          stateSlot.captured.workflowVersion shouldBe null
+        coEvery { storage.getState(msg.workflowId) } returns null
 
-          val returnValue =
-              WorkflowTaskReturnValue(
-                  newCommands = listOf(),
-                  newStep = null,
-                  properties = mapOf(),
-                  methodReturnValue = null,
-                  workflowVersion = WorkflowVersion(42),
-              )
-          val taskCompleted =
-              TaskCompleted(
-                  TaskReturnValue(
-                      workflowTask.taskId,
-                      workflowTask.serviceName,
-                      workflowTask.taskMeta,
-                      ReturnValue.from(returnValue),
-                  ),
-                  stateSlot.captured.workflowName,
-                  stateSlot.captured.workflowId,
-                  stateSlot.captured.runningWorkflowMethodId!!,
-                  EmitterName("worker"),
-              )
+        coroutineScope { engine.handle(msg) }
 
-          coroutineScope { engine.handle(taskCompleted) }
-          // todo
-        }
-      },
-  )
+        val workflowTask = (taskExecutorSlot.captured as ExecuteTask)
+        workflowTask.workflowVersion shouldBe null
+        stateSlot.captured.workflowVersion shouldBe null
+
+        val returnValue = WorkflowTaskReturnValue(
+            newCommands = listOf(),
+            newStep = null,
+            properties = mapOf(),
+            methodReturnValue = null,
+            workflowVersion = WorkflowVersion(42),
+        )
+
+        val taskCompleted = TaskCompleted(
+            TaskReturnValue(
+                workflowTask.taskId,
+                workflowTask.serviceName,
+                workflowTask.taskMeta,
+                ReturnValue.from(returnValue),
+            ),
+            stateSlot.captured.workflowName,
+            stateSlot.captured.workflowId,
+            stateSlot.captured.runningWorkflowMethodId!!,
+            EmitterName("worker"),
+        )
+
+        coroutineScope { engine.handle(taskCompleted) }
+        // todo
+      }
+    },
+)

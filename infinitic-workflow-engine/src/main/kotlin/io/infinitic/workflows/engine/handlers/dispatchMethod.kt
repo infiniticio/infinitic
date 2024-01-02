@@ -23,19 +23,42 @@
 package io.infinitic.workflows.engine.handlers
 
 import io.infinitic.common.clients.data.ClientName
+import io.infinitic.common.emitters.EmitterName
 import io.infinitic.common.transport.InfiniticProducer
 import io.infinitic.common.workflows.data.methodRuns.PositionInMethod
 import io.infinitic.common.workflows.data.methodRuns.WorkflowMethod
+import io.infinitic.common.workflows.data.methodRuns.WorkflowMethodId
+import io.infinitic.common.workflows.engine.events.WorkflowMethodStartedEvent
 import io.infinitic.common.workflows.engine.messages.DispatchMethodWorkflow
+import io.infinitic.common.workflows.engine.messages.parentClientName
 import io.infinitic.common.workflows.engine.state.WorkflowState
 import io.infinitic.workflows.engine.helpers.dispatchWorkflowTask
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.launch
 
 internal fun CoroutineScope.dispatchMethod(
   producer: InfiniticProducer,
   state: WorkflowState,
   message: DispatchMethodWorkflow
 ) {
+  launch {
+    val workflowMethodStartedEvent = WorkflowMethodStartedEvent(
+        workflowName = message.workflowName,
+        workflowId = message.workflowId,
+        emitterName = EmitterName(producer.name),
+        workflowTags = state.workflowTags,
+        workflowMeta = state.workflowMeta,
+        workflowMethodId = WorkflowMethodId.from(message.workflowId),
+        parentWorkflowName = null,
+        parentWorkflowId = null,
+        parentWorkflowMethodId = null,
+        parentClientName = message.parentClientName,
+        waitingClients = if (message.clientWaiting) setOf(message.parentClientName!!) else setOf(),
+    )
+
+    producer.sendToWorkflowEvents(workflowMethodStartedEvent)
+  }
+
   val workflowMethod = WorkflowMethod(
       workflowMethodId = message.workflowMethodId,
       waitingClients =
@@ -46,6 +69,7 @@ internal fun CoroutineScope.dispatchMethod(
       parentWorkflowId = message.parentWorkflowId,
       parentWorkflowName = message.parentWorkflowName,
       parentWorkflowMethodId = message.parentWorkflowMethodId,
+      parentClientName = message.parentClientName,
       methodName = message.methodName,
       methodParameterTypes = message.methodParameterTypes,
       methodParameters = message.methodParameters,

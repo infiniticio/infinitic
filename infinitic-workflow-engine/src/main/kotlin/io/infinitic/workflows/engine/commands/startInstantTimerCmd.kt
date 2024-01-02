@@ -50,5 +50,5 @@ internal fun CoroutineScope.startInstantTimerCmq(
       emitterName = emitterName,
   )
 
-  launch { producer.sendLaterToWorkflowEngine(msg, command.instant - MillisInstant.now()) }
+  launch { producer.sendToWorkflowEngine(msg, command.instant - MillisInstant.now()) }
 }

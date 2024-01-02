@@ -96,7 +96,7 @@ class InfiniticWorker(
     workerRegistry.workflowEngines.forEach {
       futures.add(
           consumerAsync.startWorkflowCmdConsumerAsync(
-              handler = workflowProducer::sendLaterToWorkflowEngine,
+              handler = workflowProducer::sendToWorkflowEngine,
               beforeDlq = null,
               workflowName = it.key,
               concurrency = it.value.concurrency,
@@ -118,7 +118,7 @@ class InfiniticWorker(
       // WORKFLOW-DELAY
       futures.add(
           consumerAsync.startDelayedWorkflowEngineConsumerAsync(
-              handler = workflowProducer::sendLaterToWorkflowEngine,
+              handler = workflowProducer::sendToWorkflowEngine,
               beforeDlq = null,
               workflowName = it.key,
               concurrency = it.value.concurrency,

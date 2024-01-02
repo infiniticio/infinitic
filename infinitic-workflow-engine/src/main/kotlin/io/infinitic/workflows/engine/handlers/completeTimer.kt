@@ -36,7 +36,7 @@ internal fun completeTimer(state: WorkflowState, message: CompleteTimers) {
   val methodRunId = message.workflowMethodId ?: WorkflowMethodId.from(message.workflowId)
 
   // trigger a timer completed for all ongoing timer on this method
-  state.getMethodRun(methodRunId)?.let { methodRun ->
+  state.getWorkflowMethod(methodRunId)?.let { methodRun ->
     methodRun.pastCommands
         .filter { it is StartDurationTimerPastCommand || it is StartInstantTimerPastCommand }
         .filter { it.commandStatus is CommandStatus.Ongoing }

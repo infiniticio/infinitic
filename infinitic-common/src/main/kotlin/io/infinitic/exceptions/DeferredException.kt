@@ -29,12 +29,12 @@ import io.infinitic.common.tasks.executors.errors.DeferredTimedOutError
 import io.infinitic.common.tasks.executors.errors.DeferredUnknownError
 import io.infinitic.common.tasks.executors.errors.MethodCanceledError
 import io.infinitic.common.tasks.executors.errors.MethodFailedError
-import io.infinitic.common.tasks.executors.errors.MethodTimedOutError
 import io.infinitic.common.tasks.executors.errors.MethodUnknownError
 import io.infinitic.common.tasks.executors.errors.TaskCanceledError
 import io.infinitic.common.tasks.executors.errors.TaskFailedError
 import io.infinitic.common.tasks.executors.errors.TaskTimedOutError
 import io.infinitic.common.tasks.executors.errors.TaskUnknownError
+import io.infinitic.common.tasks.executors.errors.WorkflowMethodTimedOutError
 import io.infinitic.common.tasks.executors.errors.WorkflowTaskFailedError
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -76,7 +76,7 @@ sealed class DeferredTimedOutException : DeferredException() {
     fun from(error: DeferredTimedOutError) =
         when (error) {
           is TaskTimedOutError -> TaskTimedOutException.from(error)
-          is MethodTimedOutError -> WorkflowTimedOutException.from(error)
+          is WorkflowMethodTimedOutError -> WorkflowTimedOutException.from(error)
         }
   }
 }
@@ -181,7 +181,7 @@ data class WorkflowTimedOutException(
   val workflowMethodId: String?
 ) : DeferredTimedOutException() {
   companion object {
-    fun from(error: MethodTimedOutError) =
+    fun from(error: WorkflowMethodTimedOutError) =
         WorkflowTimedOutException(
             workflowName = error.workflowName.toString(),
             workflowId = error.workflowId.toString(),

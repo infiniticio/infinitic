@@ -83,8 +83,8 @@ class PulsarInfiniticClient(private val pulsarClient: PulsarClient) {
    */
   @Suppress("UNCHECKED_CAST")
   fun <T : Message, S : Envelope<out T>> getProducer(
-    schemaClass: KClass<S>,
     topic: String,
+    schemaClass: KClass<S>,
     producerName: String,
     producerConfig: ProducerConfig,
     key: String? = null,
@@ -93,7 +93,7 @@ class PulsarInfiniticClient(private val pulsarClient: PulsarClient) {
     // get producer if it already exists
     val producer = producers.computeIfAbsent(topic) {
       // otherwise create it
-      logger.info { "Creating Producer on topic '$topic' with name '$producerName' and key='$key'" }
+      logger.info { "Creating Producer '$producerName' on topic '$topic' ${key?.let { "with key='$key'" } ?: "without key"}" }
 
       val schema = Schema.AVRO(schemaDefinition(schemaClass))
 

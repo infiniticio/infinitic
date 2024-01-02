@@ -29,6 +29,7 @@ import io.infinitic.common.messages.Message
 import io.infinitic.common.tasks.executors.events.TaskEventMessage
 import io.infinitic.common.tasks.executors.messages.TaskExecutorMessage
 import io.infinitic.common.tasks.tags.messages.TaskTagMessage
+import io.infinitic.common.workflows.engine.events.WorkflowEventMessage
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
 import io.infinitic.common.workflows.tags.messages.WorkflowTagMessage
 import kotlinx.coroutines.future.await
@@ -66,12 +67,18 @@ class LoggedInfiniticProducer(
     logTrace(message)
   }
 
-  override suspend fun sendLaterToWorkflowEngine(
+  override suspend fun sendToWorkflowEngine(
     message: WorkflowEngineMessage,
     after: MillisDuration
   ) {
     logDebug(message, after)
     producerAsync.sendToWorkflowEngineAsync(message, after).await()
+    logTrace(message)
+  }
+
+  override suspend fun sendToWorkflowEvents(message: WorkflowEventMessage) {
+    logDebug(message)
+    producerAsync.sendToWorkflowEventsAsync(message).await()
     logTrace(message)
   }
 

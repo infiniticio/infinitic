@@ -34,25 +34,25 @@ import org.apache.avro.Schema
 data class WorkflowEventEnvelope(
   private val workflowId: WorkflowId,
   private val type: WorkflowEventMessageType,
-  private val workflowStarted: WorkflowStarted? = null,
-  private val workflowCompleted: WorkflowCompleted? = null,
-  private val workflowCanceled: WorkflowCanceled? = null,
-  private val workflowMethodStarted: WorkflowMethodStarted? = null,
-  private val workflowMethodCompleted: WorkflowMethodCompleted? = null,
-  private val workflowMethodFailed: WorkflowMethodFailed? = null,
-  private val workflowMethodCanceled: WorkflowMethodCanceled? = null,
-  private val workflowMethodTimedOut: WorkflowMethodTimedOut? = null
+  private val workflowStartedEvent: WorkflowStartedEvent? = null,
+  private val workflowCompletedEvent: WorkflowCompletedEvent? = null,
+  private val workflowCanceledEvent: WorkflowCanceledEvent? = null,
+  private val workflowMethodStartedEvent: WorkflowMethodStartedEvent? = null,
+  private val workflowMethodCompletedEvent: WorkflowMethodCompletedEvent? = null,
+  private val workflowMethodFailedEvent: WorkflowMethodFailedEvent? = null,
+  private val workflowMethodCanceledEvent: WorkflowMethodCanceledEvent? = null,
+  private val workflowMethodTimedOutEvent: WorkflowMethodTimedOutEvent? = null
 ) : Envelope<WorkflowEventMessage> {
   init {
     val noNull = listOfNotNull(
-        workflowStarted,
-        workflowCompleted,
-        workflowCanceled,
-        workflowMethodStarted,
-        workflowMethodCompleted,
-        workflowMethodFailed,
-        workflowMethodCanceled,
-        workflowMethodTimedOut,
+        workflowStartedEvent,
+        workflowCompletedEvent,
+        workflowCanceledEvent,
+        workflowMethodStartedEvent,
+        workflowMethodCompletedEvent,
+        workflowMethodFailedEvent,
+        workflowMethodCanceledEvent,
+        workflowMethodTimedOutEvent,
     )
 
     require(noNull.size == 1)
@@ -63,52 +63,52 @@ data class WorkflowEventEnvelope(
   companion object {
     fun from(msg: WorkflowEventMessage) = when (msg) {
 
-      is WorkflowStarted -> WorkflowEventEnvelope(
+      is WorkflowStartedEvent -> WorkflowEventEnvelope(
           workflowId = msg.workflowId,
           type = WorkflowEventMessageType.WORKFLOW_STARTED,
-          workflowStarted = msg,
+          workflowStartedEvent = msg,
       )
 
-      is WorkflowCompleted -> WorkflowEventEnvelope(
+      is WorkflowCompletedEvent -> WorkflowEventEnvelope(
           workflowId = msg.workflowId,
           type = WorkflowEventMessageType.WORKFLOW_COMPLETED,
-          workflowCompleted = msg,
+          workflowCompletedEvent = msg,
       )
 
-      is WorkflowCanceled -> WorkflowEventEnvelope(
+      is WorkflowCanceledEvent -> WorkflowEventEnvelope(
           workflowId = msg.workflowId,
           type = WorkflowEventMessageType.WORKFLOW_CANCELED,
-          workflowCanceled = msg,
+          workflowCanceledEvent = msg,
       )
 
-      is WorkflowMethodStarted -> WorkflowEventEnvelope(
+      is WorkflowMethodStartedEvent -> WorkflowEventEnvelope(
           workflowId = msg.workflowId,
           type = WorkflowEventMessageType.WORKFLOW_METHOD_STARTED,
-          workflowMethodStarted = msg,
+          workflowMethodStartedEvent = msg,
       )
 
-      is WorkflowMethodCompleted -> WorkflowEventEnvelope(
+      is WorkflowMethodCompletedEvent -> WorkflowEventEnvelope(
           workflowId = msg.workflowId,
           type = WorkflowEventMessageType.WORKFLOW_METHOD_COMPLETED,
-          workflowMethodCompleted = msg,
+          workflowMethodCompletedEvent = msg,
       )
 
-      is WorkflowMethodFailed -> WorkflowEventEnvelope(
+      is WorkflowMethodFailedEvent -> WorkflowEventEnvelope(
           workflowId = msg.workflowId,
           type = WorkflowEventMessageType.WORKFLOW_METHOD_FAILED,
-          workflowMethodFailed = msg,
+          workflowMethodFailedEvent = msg,
       )
 
-      is WorkflowMethodCanceled -> WorkflowEventEnvelope(
+      is WorkflowMethodCanceledEvent -> WorkflowEventEnvelope(
           workflowId = msg.workflowId,
           type = WorkflowEventMessageType.WORKFLOW_METHOD_CANCELED,
-          workflowMethodCanceled = msg,
+          workflowMethodCanceledEvent = msg,
       )
 
-      is WorkflowMethodTimedOut -> WorkflowEventEnvelope(
+      is WorkflowMethodTimedOutEvent -> WorkflowEventEnvelope(
           workflowId = msg.workflowId,
           type = WorkflowEventMessageType.WORKFLOW_METHOD_TIMED_OUT,
-          workflowMethodTimedOut = msg,
+          workflowMethodTimedOutEvent = msg,
       )
     }
 
@@ -121,14 +121,14 @@ data class WorkflowEventEnvelope(
   }
 
   override fun message(): WorkflowEventMessage = when (type) {
-    WorkflowEventMessageType.WORKFLOW_STARTED -> workflowStarted
-    WorkflowEventMessageType.WORKFLOW_COMPLETED -> workflowCompleted
-    WorkflowEventMessageType.WORKFLOW_CANCELED -> workflowCanceled
-    WorkflowEventMessageType.WORKFLOW_METHOD_STARTED -> workflowMethodStarted
-    WorkflowEventMessageType.WORKFLOW_METHOD_COMPLETED -> workflowMethodCompleted
-    WorkflowEventMessageType.WORKFLOW_METHOD_FAILED -> workflowMethodFailed
-    WorkflowEventMessageType.WORKFLOW_METHOD_CANCELED -> workflowMethodCanceled
-    WorkflowEventMessageType.WORKFLOW_METHOD_TIMED_OUT -> workflowMethodTimedOut
+    WorkflowEventMessageType.WORKFLOW_STARTED -> workflowStartedEvent
+    WorkflowEventMessageType.WORKFLOW_COMPLETED -> workflowCompletedEvent
+    WorkflowEventMessageType.WORKFLOW_CANCELED -> workflowCanceledEvent
+    WorkflowEventMessageType.WORKFLOW_METHOD_STARTED -> workflowMethodStartedEvent
+    WorkflowEventMessageType.WORKFLOW_METHOD_COMPLETED -> workflowMethodCompletedEvent
+    WorkflowEventMessageType.WORKFLOW_METHOD_FAILED -> workflowMethodFailedEvent
+    WorkflowEventMessageType.WORKFLOW_METHOD_CANCELED -> workflowMethodCanceledEvent
+    WorkflowEventMessageType.WORKFLOW_METHOD_TIMED_OUT -> workflowMethodTimedOutEvent
   }!!
 
   fun toByteArray() = AvroSerDe.writeBinary(this, serializer())

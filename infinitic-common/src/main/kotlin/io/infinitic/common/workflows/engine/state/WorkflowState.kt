@@ -130,10 +130,10 @@ data class WorkflowState(
         }
       }
 
-  fun getRunningMethodRun(): WorkflowMethod =
+  fun getRunningWorkflowMethod(): WorkflowMethod =
       workflowMethods.first { it.workflowMethodId == runningWorkflowMethodId }
 
-  fun getMethodRun(workflowMethodId: WorkflowMethodId) =
+  fun getWorkflowMethod(workflowMethodId: WorkflowMethodId) =
       workflowMethods.firstOrNull { it.workflowMethodId == workflowMethodId }
 
   fun getPastCommand(commandId: CommandId, workflowMethod: WorkflowMethod): PastCommand =

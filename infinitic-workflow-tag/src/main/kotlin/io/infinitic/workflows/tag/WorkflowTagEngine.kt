@@ -27,7 +27,7 @@ import io.infinitic.common.clients.data.ClientName
 import io.infinitic.common.clients.messages.WorkflowIdsByTag
 import io.infinitic.common.emitters.EmitterName
 import io.infinitic.common.exceptions.thisShouldNotHappen
-import io.infinitic.common.tasks.executors.errors.MethodTimedOutError
+import io.infinitic.common.tasks.executors.errors.WorkflowMethodTimedOutError
 import io.infinitic.common.transport.InfiniticProducerAsync
 import io.infinitic.common.transport.LoggedInfiniticProducer
 import io.infinitic.common.workflows.data.methodRuns.WorkflowMethodId
@@ -130,7 +130,7 @@ class WorkflowTagEngine(
 
           if (timeout != null && message.parentWorkflowId != null) {
             val childMethodTimedOut = ChildMethodTimedOut(
-                childMethodTimedOutError = MethodTimedOutError(
+                childMethodTimedOutError = WorkflowMethodTimedOutError(
                     workflowName = message.workflowName,
                     workflowId = message.workflowId,
                     methodName = message.methodName,
@@ -141,7 +141,7 @@ class WorkflowTagEngine(
                 workflowMethodId = message.parentWorkflowMethodId ?: thisShouldNotHappen(),
                 emitterName = emitterName,
             )
-            launch { producer.sendLaterToWorkflowEngine(childMethodTimedOut, timeout) }
+            launch { producer.sendToWorkflowEngine(childMethodTimedOut, timeout) }
           }
         }
         // Another running workflow instance exist with same custom id
@@ -201,7 +201,7 @@ class WorkflowTagEngine(
             // set timeout if any,
             if (message.methodTimeout != null && message.parentWorkflowId != null) {
               val childMethodTimedOut = ChildMethodTimedOut(
-                  childMethodTimedOutError = MethodTimedOutError(
+                  childMethodTimedOutError = WorkflowMethodTimedOutError(
                       workflowName = message.workflowName,
                       workflowId = it,
                       methodName = message.methodName,
@@ -214,7 +214,7 @@ class WorkflowTagEngine(
               )
 
               launch {
-                producer.sendLaterToWorkflowEngine(
+                producer.sendToWorkflowEngine(
                     childMethodTimedOut,
                     message.methodTimeout!!,
                 )
@@ -302,7 +302,7 @@ class WorkflowTagEngine(
           // parent workflow already applied method to self
           if (it != message.emitterWorkflowId) {
             val cancelWorkflow = CancelWorkflow(
-                reason = message.reason,
+                cancellationReason = message.reason,
                 workflowMethodId = WorkflowMethodId.from(it),
                 workflowName = message.workflowName,
                 workflowId = it,

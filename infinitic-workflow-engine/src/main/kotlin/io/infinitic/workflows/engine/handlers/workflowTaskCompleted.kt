@@ -41,6 +41,7 @@ import io.infinitic.common.workflows.data.steps.StepStatus.Failed
 import io.infinitic.common.workflows.data.steps.StepStatus.TimedOut
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskReturnValue
 import io.infinitic.common.workflows.data.workflows.WorkflowReturnValue
+import io.infinitic.common.workflows.engine.events.WorkflowMethodCompletedEvent
 import io.infinitic.common.workflows.engine.messages.ChildMethodCompleted
 import io.infinitic.common.workflows.engine.messages.TaskCompleted
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
@@ -66,29 +67,30 @@ internal fun CoroutineScope.workflowTaskCompleted(
   val workflowTaskReturnValue =
       message.taskReturnValue.returnValue.value() as WorkflowTaskReturnValue
 
-  // set workflowVersion the first time
-  if (state.workflowVersion == null) {
-    state.workflowVersion = workflowTaskReturnValue.workflowVersion
+  // set workflowVersion
+  when (state.workflowVersion) {
+    null -> state.workflowVersion = workflowTaskReturnValue.workflowVersion
+    workflowTaskReturnValue.workflowVersion -> Unit
+    else -> thisShouldNotHappen()
   }
 
   // retrieve current methodRun
-  val methodRun = state.getRunningMethodRun()
+  val workflowMethod = state.getRunningWorkflowMethod()
 
   // if current step status was CurrentlyFailed / CurrentlyTimedOut
-  // convert it to a definitive StepStatus.Failed
+  // convert it to a definitive StepStatus.Failed / StepStatus.TimedOut
   // as the error has been caught by the workflow
-  // idem for CurrentlyTimedOut
-  methodRun.currentStep?.let {
+  workflowMethod.currentStep?.let {
     val oldStatus = it.stepStatus
     if (oldStatus is CurrentlyFailed) {
       it.stepStatus = Failed(oldStatus.deferredFailedError, oldStatus.failureWorkflowTaskIndex)
-      methodRun.pastSteps.add(it)
-      methodRun.currentStep = null
+      workflowMethod.pastSteps.add(it)
+      workflowMethod.currentStep = null
     }
     if (oldStatus is CurrentlyTimedOut) {
       it.stepStatus = TimedOut(oldStatus.deferredTimedOutError, oldStatus.timeoutWorkflowTaskIndex)
-      methodRun.pastSteps.add(it)
-      methodRun.currentStep = null
+      workflowMethod.pastSteps.add(it)
+      workflowMethod.currentStep = null
     }
   }
 
@@ -125,15 +127,15 @@ internal fun CoroutineScope.workflowTaskCompleted(
       is StartInstantTimerPastCommand -> startInstantTimerCmq(it, state, producer)
       is ReceiveSignalPastCommand -> receiveSignalCmd(it, state)
     }
-    methodRun.pastCommands.add(it)
+    workflowMethod.pastCommands.add(it)
   }
 
   // add new step to past steps
   workflowTaskReturnValue.newStep?.let {
     // checking that current step is empty
-    if (methodRun.currentStep != null) thisShouldNotHappen("non null current step")
+    if (workflowMethod.currentStep != null) thisShouldNotHappen("non null current step")
     // set new step
-    methodRun.currentStep = PastStep(
+    workflowMethod.currentStep = PastStep(
         stepPosition = it.stepPosition,
         step = it.step,
         stepHash = it.stepHash,
@@ -143,42 +145,59 @@ internal fun CoroutineScope.workflowTaskCompleted(
   }
 
   // if method is completed for the first time
-  if (workflowTaskReturnValue.methodReturnValue != null && methodRun.methodReturnValue == null) {
+  if (workflowTaskReturnValue.methodReturnValue != null && workflowMethod.methodReturnValue == null) {
     // set methodOutput in state
-    methodRun.methodReturnValue = workflowTaskReturnValue.methodReturnValue
+    workflowMethod.methodReturnValue = workflowTaskReturnValue.methodReturnValue
+
+    val workflowMethodCompletedEvent = WorkflowMethodCompletedEvent(
+        workflowName = state.workflowName,
+        workflowId = state.workflowId,
+        workflowTags = state.workflowTags,
+        workflowMeta = state.workflowMeta,
+        waitingClients = workflowMethod.waitingClients,
+        workflowMethodId = workflowMethod.workflowMethodId,
+        parentWorkflowId = workflowMethod.parentWorkflowId,
+        parentWorkflowName = workflowMethod.parentWorkflowName,
+        parentWorkflowMethodId = workflowMethod.parentWorkflowMethodId,
+        parentClientName = workflowMethod.parentClientName,
+        returnValue = workflowMethod.methodReturnValue!!,
+        emitterName = emitterName,
+    )
+
+    launch { producer.sendToWorkflowEvents(workflowMethodCompletedEvent) }
 
     // send output back to waiting clients
-    methodRun.waitingClients.forEach {
+    workflowMethod.waitingClients.forEach {
       val workflowCompleted = MethodCompleted(
           recipientName = it,
           workflowId = state.workflowId,
-          workflowMethodId = methodRun.workflowMethodId,
-          methodReturnValue = methodRun.methodReturnValue!!,
+          workflowMethodId = workflowMethod.workflowMethodId,
+          methodReturnValue = workflowMethod.methodReturnValue!!,
           emitterName = emitterName,
       )
       launch { producer.sendToClient(workflowCompleted) }
     }
-    methodRun.waitingClients.clear()
+    workflowMethod.waitingClients.clear()
 
     // tell parent workflow if any
-    methodRun.parentWorkflowId?.let {
+    workflowMethod.parentWorkflowId?.let {
       val childMethodCompleted = ChildMethodCompleted(
           childWorkflowReturnValue =
           WorkflowReturnValue(
               workflowId = state.workflowId,
-              workflowMethodId = methodRun.workflowMethodId,
+              workflowMethodId = workflowMethod.workflowMethodId,
               returnValue = workflowTaskReturnValue.methodReturnValue!!,
           ),
-          workflowName = methodRun.parentWorkflowName ?: thisShouldNotHappen(),
+          workflowName = workflowMethod.parentWorkflowName ?: thisShouldNotHappen(),
           workflowId = it,
-          workflowMethodId = methodRun.parentWorkflowMethodId ?: thisShouldNotHappen(),
+          workflowMethodId = workflowMethod.parentWorkflowMethodId ?: thisShouldNotHappen(),
           emitterName = emitterName,
       )
       if (it == state.workflowId) {
         // case of method dispatched within same workflow
         bufferedMessages.add(childMethodCompleted)
       } else {
-        launch { producer.sendLaterToWorkflowEngine(childMethodCompleted) }
+        launch { producer.sendToWorkflowEngine(childMethodCompleted) }
       }
     }
   }
@@ -186,7 +205,7 @@ internal fun CoroutineScope.workflowTaskCompleted(
   // does previous commands trigger another workflowTask?
   while (state.runningTerminatedCommands.isNotEmpty() && state.runningWorkflowTaskId == null) {
     val commandId = state.runningTerminatedCommands.first()
-    val pastCommand = state.getPastCommand(commandId, methodRun)
+    val pastCommand = state.getPastCommand(commandId, workflowMethod)
 
     if (!stepTerminated(producer, state, pastCommand)) {
       // if no additional step can be completed, we can remove this command
@@ -194,7 +213,7 @@ internal fun CoroutineScope.workflowTaskCompleted(
     }
   }
 
-  if (methodRun.isTerminated()) state.removeWorkflowMethod(methodRun)
+  if (workflowMethod.isTerminated()) state.removeWorkflowMethod(workflowMethod)
 
   // add fake messages at the top of the messagesBuffer list
   state.messagesBuffer.addAll(0, bufferedMessages)

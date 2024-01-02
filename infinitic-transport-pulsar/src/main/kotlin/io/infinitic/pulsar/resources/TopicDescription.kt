@@ -78,7 +78,7 @@ enum class GlobalTopicDescription : TopicDescription {
   }
 }
 
-enum class WorkflowTopicDescription : TopicDescription {
+enum class WorkflowTopicsDescription : TopicDescription {
   TAG {
     override val subscriptionPrefix = "workflow-tag"
     override val subscriptionType = SubscriptionType.Key_Shared
@@ -107,6 +107,13 @@ enum class WorkflowTopicDescription : TopicDescription {
     override val isDelayed = true
     override val hasDeadLetter = true
   },
+  EVENTS {
+    override val subscriptionPrefix = "workflow-events"
+    override val subscriptionType = SubscriptionType.Shared
+    override val isPartitioned = true
+    override val isDelayed = false
+    override val hasDeadLetter = true
+  },
   EXECUTOR {
     override val subscriptionPrefix = "workflow-task-executor"
     override val subscriptionType = SubscriptionType.Shared
@@ -114,16 +121,16 @@ enum class WorkflowTopicDescription : TopicDescription {
     override val isDelayed = false
     override val hasDeadLetter = true
   },
-  EVENTS {
+  EXECUTOR_EVENTS {
     override val subscriptionPrefix = "workflow-task-events"
     override val subscriptionType = SubscriptionType.Shared
     override val isPartitioned = true
     override val isDelayed = false
     override val hasDeadLetter = true
-  }
+  },
 }
 
-enum class ServiceTopicDescription : TopicDescription {
+enum class ServiceTopicsDescription : TopicDescription {
   TAG {
     override val subscriptionPrefix = "task-tag"
     override val subscriptionType = SubscriptionType.Key_Shared

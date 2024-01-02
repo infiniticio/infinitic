@@ -39,7 +39,7 @@ internal fun CoroutineScope.retryWorkflowTask(
   dispatchWorkflowTask(
       producer,
       state,
-      state.getRunningMethodRun(),
+      state.getRunningWorkflowMethod(),
       state.positionInRunningWorkflowMethod!!,
   )
 }

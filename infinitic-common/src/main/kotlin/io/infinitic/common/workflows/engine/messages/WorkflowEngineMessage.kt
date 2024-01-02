@@ -38,11 +38,11 @@ import io.infinitic.common.tasks.data.TaskReturnValue
 import io.infinitic.common.tasks.executors.errors.DeferredError
 import io.infinitic.common.tasks.executors.errors.MethodCanceledError
 import io.infinitic.common.tasks.executors.errors.MethodFailedError
-import io.infinitic.common.tasks.executors.errors.MethodTimedOutError
 import io.infinitic.common.tasks.executors.errors.MethodUnknownError
 import io.infinitic.common.tasks.executors.errors.TaskCanceledError
 import io.infinitic.common.tasks.executors.errors.TaskFailedError
 import io.infinitic.common.tasks.executors.errors.TaskTimedOutError
+import io.infinitic.common.tasks.executors.errors.WorkflowMethodTimedOutError
 import io.infinitic.common.workflows.data.channels.ChannelName
 import io.infinitic.common.workflows.data.channels.ChannelType
 import io.infinitic.common.workflows.data.channels.SignalData
@@ -84,22 +84,6 @@ sealed class WorkflowEngineMessage : Message {
       (this is TaskEvent) && this.serviceName() == ServiceName(WorkflowTask::class.java.name)
 }
 
-sealed interface WorkflowEvent {
-  val workflowName: WorkflowName
-  val workflowId: WorkflowId
-  val workflowTags: Set<WorkflowTag>
-  val workflowMeta: WorkflowMeta
-}
-
-sealed interface WorkflowMethodEvent : WorkflowEvent {
-  val workflowMethodId: WorkflowMethodId
-  val parentWorkflowName: WorkflowName?
-  val parentWorkflowId: WorkflowId?
-  val parentWorkflowMethodId: WorkflowMethodId?
-  val parentClientName: ClientName?
-  val waitingClients: Set<ClientName>
-}
-
 /**
  * This message is a command for dispatching a new workflow.
  *
@@ -135,6 +119,12 @@ data class DispatchNewWorkflow(
   override val emitterName: EmitterName
 ) : WorkflowEngineMessage()
 
+val DispatchNewWorkflow.parentClientName
+  get() = when (parentWorkflowId) {
+    null -> ClientName.from(emitterName)
+    else -> null
+  }
+
 /**
  * This message is a command to dispatch a new method for a running workflow.
  * If this request was triggered from another workflow, then
@@ -168,6 +158,12 @@ data class DispatchMethodWorkflow(
   val clientWaiting: Boolean,
   override val emitterName: EmitterName
 ) : WorkflowEngineMessage(), WorkflowInternalEvent
+
+val DispatchMethodWorkflow.parentClientName
+  get() = when (parentWorkflowId) {
+    null -> ClientName.from(emitterName)
+    else -> null
+  }
 
 /**
  * This message is a command to retry the workflow task of a running workflow.
@@ -246,13 +242,14 @@ data class WaitWorkflow(
  * @param workflowName Name of the workflow to cancel
  * @param workflowId Id of the workflow to cancel
  * @param workflowMethodId Id of the method to cancel (if any)
- * @param reason Reason of the cancellation
+ * @param cancellationReason Reason of the cancellation
  * @param emitterName Name of the emitter
  */
 @Serializable
 @AvroNamespace("io.infinitic.workflows.engine")
 data class CancelWorkflow(
-  @AvroNamespace("io.infinitic.workflows.data") val reason: WorkflowCancellationReason,
+  @AvroNamespace("io.infinitic.workflows.data")
+  @AvroName("reason") val cancellationReason: WorkflowCancellationReason,
   @AvroName("methodRunId") val workflowMethodId: WorkflowMethodId?,
   override val workflowName: WorkflowName,
   override val workflowId: WorkflowId,
@@ -374,7 +371,7 @@ data class ChildMethodFailed(
 @Serializable
 @AvroNamespace("io.infinitic.workflows.engine")
 data class ChildMethodTimedOut(
-  val childMethodTimedOutError: MethodTimedOutError,
+  val childMethodTimedOutError: WorkflowMethodTimedOutError,
   override val workflowName: WorkflowName,
   override val workflowId: WorkflowId,
   @AvroName("methodRunId") override val workflowMethodId: WorkflowMethodId,

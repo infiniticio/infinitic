@@ -30,9 +30,9 @@ import io.infinitic.common.workflows.data.workflows.WorkflowName
 import io.infinitic.pulsar.consumers.Consumer
 import io.infinitic.pulsar.resources.ClientTopicDescription
 import io.infinitic.pulsar.resources.ResourceManager
-import io.infinitic.pulsar.resources.ServiceTopicDescription
+import io.infinitic.pulsar.resources.ServiceTopicsDescription
 import io.infinitic.pulsar.resources.TopicDescription
-import io.infinitic.pulsar.resources.WorkflowTopicDescription
+import io.infinitic.pulsar.resources.WorkflowTopicsDescription
 import io.kotest.core.spec.style.StringSpec
 import io.mockk.every
 import io.mockk.mockk
@@ -122,7 +122,7 @@ class PulsarInfiniticConsumerAsyncTests : StringSpec(
         )
 
         val name = "$workflowName"
-        val desc = WorkflowTopicDescription.TAG
+        val desc = WorkflowTopicsDescription.TAG
 
         verify {
           resourceManager.getTopicName(name, desc)
@@ -136,7 +136,7 @@ class PulsarInfiniticConsumerAsyncTests : StringSpec(
         )
 
         val name = "$workflowName"
-        val desc = WorkflowTopicDescription.ENGINE
+        val desc = WorkflowTopicsDescription.ENGINE
 
         verify {
           resourceManager.getTopicName(name, desc)
@@ -150,7 +150,7 @@ class PulsarInfiniticConsumerAsyncTests : StringSpec(
         )
 
         val name = "$workflowName"
-        val desc = WorkflowTopicDescription.ENGINE_DELAYED
+        val desc = WorkflowTopicsDescription.ENGINE_DELAYED
 
         verify {
           resourceManager.getTopicName(name, desc)
@@ -164,7 +164,7 @@ class PulsarInfiniticConsumerAsyncTests : StringSpec(
         )
 
         val name = "$workflowName"
-        val desc = WorkflowTopicDescription.EXECUTOR
+        val desc = WorkflowTopicsDescription.EXECUTOR
 
         verify {
           resourceManager.getTopicName(name, desc)
@@ -178,7 +178,7 @@ class PulsarInfiniticConsumerAsyncTests : StringSpec(
         )
 
         val name = "$serviceName"
-        val desc = ServiceTopicDescription.TAG
+        val desc = ServiceTopicsDescription.TAG
 
         verify {
           resourceManager.getTopicName(name, desc)
@@ -192,7 +192,7 @@ class PulsarInfiniticConsumerAsyncTests : StringSpec(
         )
 
         val name = "$serviceName"
-        val desc = ServiceTopicDescription.EXECUTOR
+        val desc = ServiceTopicsDescription.EXECUTOR
 
         verify {
           resourceManager.getTopicName(name, desc)

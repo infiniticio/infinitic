@@ -50,8 +50,9 @@ class Producer(
     key: String? = null
   ): CompletableFuture<Unit> {
 
-    val producer = client.getProducer(schemaClass, topic, producerName, producerConfig, key)
+    val producer = client.getProducer(topic, schemaClass, producerName, producerConfig, key)
         .getOrElse { return CompletableFuture.failedFuture(it) }
+
 
     logger.trace { "Sending after $after to topic '$topic' with key '$key': '$message'" }
 

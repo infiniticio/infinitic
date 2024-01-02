@@ -34,17 +34,17 @@ import org.apache.avro.Schema
 data class TaskEventEnvelope(
   private val serviceName: ServiceName,
   private val type: TaskEventMessageType,
-  private val taskStarted: TaskStarted? = null,
-  private val taskRetried: TaskRetried? = null,
-  private val taskFailed: TaskFailed? = null,
-  private val taskCompleted: TaskCompleted? = null,
+  private val taskStartedEvent: TaskStartedEvent? = null,
+  private val taskRetried: TaskRetriedEvent? = null,
+  private val taskFailedEvent: TaskFailedEvent? = null,
+  private val taskCompletedEvent: TaskCompletedEvent? = null,
 ) : Envelope<TaskEventMessage> {
   init {
     val noNull = listOfNotNull(
-        taskStarted,
+        taskStartedEvent,
         taskRetried,
-        taskFailed,
-        taskCompleted,
+        taskFailedEvent,
+        taskCompletedEvent,
     )
 
     require(noNull.size == 1)
@@ -54,28 +54,28 @@ data class TaskEventEnvelope(
 
   companion object {
     fun from(msg: TaskEventMessage) = when (msg) {
-      is TaskStarted -> TaskEventEnvelope(
+      is TaskStartedEvent -> TaskEventEnvelope(
           serviceName = msg.serviceName,
           type = TaskEventMessageType.TASK_STARTED,
-          taskStarted = msg,
+          taskStartedEvent = msg,
       )
 
-      is TaskRetried -> TaskEventEnvelope(
+      is TaskRetriedEvent -> TaskEventEnvelope(
           serviceName = msg.serviceName,
           type = TaskEventMessageType.TASK_RETRIED,
           taskRetried = msg,
       )
 
-      is TaskFailed -> TaskEventEnvelope(
+      is TaskFailedEvent -> TaskEventEnvelope(
           serviceName = msg.serviceName,
           type = TaskEventMessageType.TASK_FAILED,
-          taskFailed = msg,
+          taskFailedEvent = msg,
       )
 
-      is TaskCompleted -> TaskEventEnvelope(
+      is TaskCompletedEvent -> TaskEventEnvelope(
           serviceName = msg.serviceName,
           type = TaskEventMessageType.TASK_COMPLETED,
-          taskCompleted = msg,
+          taskCompletedEvent = msg,
       )
     }
 
@@ -89,10 +89,10 @@ data class TaskEventEnvelope(
 
   override fun message(): TaskEventMessage =
       when (type) {
-        TaskEventMessageType.TASK_STARTED -> taskStarted
+        TaskEventMessageType.TASK_STARTED -> taskStartedEvent
         TaskEventMessageType.TASK_RETRIED -> taskRetried
-        TaskEventMessageType.TASK_FAILED -> taskFailed
-        TaskEventMessageType.TASK_COMPLETED -> taskCompleted
+        TaskEventMessageType.TASK_FAILED -> taskFailedEvent
+        TaskEventMessageType.TASK_COMPLETED -> taskCompletedEvent
       }!!
 
   fun toByteArray() = AvroSerDe.writeBinary(this, serializer())

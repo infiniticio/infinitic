@@ -45,9 +45,9 @@ import io.infinitic.common.workflows.tags.messages.WorkflowTagMessage
 import io.infinitic.pulsar.consumers.Consumer
 import io.infinitic.pulsar.resources.ClientTopicDescription
 import io.infinitic.pulsar.resources.ResourceManager
-import io.infinitic.pulsar.resources.ServiceTopicDescription
+import io.infinitic.pulsar.resources.ServiceTopicsDescription
 import io.infinitic.pulsar.resources.TopicDescription
-import io.infinitic.pulsar.resources.WorkflowTopicDescription
+import io.infinitic.pulsar.resources.WorkflowTopicsDescription
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
@@ -102,7 +102,7 @@ class PulsarInfiniticConsumerAsync(
       handler = handler,
       beforeDlq = beforeDlq,
       schemaClass = WorkflowTagEnvelope::class,
-      topicDescription = WorkflowTopicDescription.TAG,
+      topicDescription = WorkflowTopicsDescription.TAG,
       concurrency = concurrency,
       name = "$workflowName",
   )
@@ -116,7 +116,7 @@ class PulsarInfiniticConsumerAsync(
       handler = handler,
       beforeDlq = beforeDlq,
       schemaClass = WorkflowEngineEnvelope::class,
-      topicDescription = WorkflowTopicDescription.CMD,
+      topicDescription = WorkflowTopicsDescription.CMD,
       concurrency = concurrency,
       name = "$workflowName",
   )
@@ -131,7 +131,7 @@ class PulsarInfiniticConsumerAsync(
       handler = handler,
       beforeDlq = beforeDlq,
       schemaClass = WorkflowEngineEnvelope::class,
-      topicDescription = WorkflowTopicDescription.ENGINE,
+      topicDescription = WorkflowTopicsDescription.ENGINE,
       concurrency = concurrency,
       name = "$workflowName",
   )
@@ -146,7 +146,7 @@ class PulsarInfiniticConsumerAsync(
       handler = handler,
       beforeDlq = beforeDlq,
       schemaClass = WorkflowEngineEnvelope::class,
-      topicDescription = WorkflowTopicDescription.ENGINE_DELAYED,
+      topicDescription = WorkflowTopicsDescription.ENGINE_DELAYED,
       concurrency = concurrency,
       name = "$workflowName",
   )
@@ -161,7 +161,7 @@ class PulsarInfiniticConsumerAsync(
       handler = handler,
       beforeDlq = beforeDlq,
       schemaClass = TaskTagEnvelope::class,
-      topicDescription = ServiceTopicDescription.TAG,
+      topicDescription = ServiceTopicsDescription.TAG,
       concurrency = concurrency,
       name = "$serviceName",
   )
@@ -176,7 +176,7 @@ class PulsarInfiniticConsumerAsync(
       handler = handler,
       beforeDlq = beforeDlq,
       schemaClass = TaskExecutorEnvelope::class,
-      topicDescription = ServiceTopicDescription.EXECUTOR,
+      topicDescription = ServiceTopicsDescription.EXECUTOR,
       concurrency = concurrency,
       name = "$serviceName",
   )
@@ -190,7 +190,7 @@ class PulsarInfiniticConsumerAsync(
       handler = handler,
       beforeDlq = beforeDlq,
       schemaClass = TaskEventEnvelope::class,
-      topicDescription = ServiceTopicDescription.EVENTS,
+      topicDescription = ServiceTopicsDescription.EVENTS,
       concurrency = concurrency,
       name = "$serviceName",
   )
@@ -215,7 +215,7 @@ class PulsarInfiniticConsumerAsync(
       handler = handler,
       beforeDlq = beforeDlq,
       schemaClass = TaskExecutorEnvelope::class,
-      topicDescription = WorkflowTopicDescription.EXECUTOR,
+      topicDescription = WorkflowTopicsDescription.EXECUTOR,
       concurrency = concurrency,
       name = "$workflowName",
   )
@@ -229,7 +229,7 @@ class PulsarInfiniticConsumerAsync(
       handler = handler,
       beforeDlq = beforeDlq,
       schemaClass = TaskEventEnvelope::class,
-      topicDescription = WorkflowTopicDescription.EVENTS,
+      topicDescription = WorkflowTopicsDescription.EXECUTOR_EVENTS,
       concurrency = concurrency,
       name = "$workflowName",
   )

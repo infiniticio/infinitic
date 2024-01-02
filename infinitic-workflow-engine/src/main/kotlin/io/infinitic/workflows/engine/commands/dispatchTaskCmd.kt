@@ -95,6 +95,6 @@ internal fun CoroutineScope.dispatchTaskCmd(
           emitterName = emitterName,
       )
     }
-    launch { producer.sendLaterToWorkflowEngine(taskTimedOut, timeout) }
+    launch { producer.sendToWorkflowEngine(taskTimedOut, timeout) }
   }
 }

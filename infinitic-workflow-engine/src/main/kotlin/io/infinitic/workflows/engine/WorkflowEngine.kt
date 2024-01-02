@@ -30,6 +30,7 @@ import io.infinitic.common.exceptions.thisShouldNotHappen
 import io.infinitic.common.tasks.executors.errors.MethodUnknownError
 import io.infinitic.common.transport.InfiniticProducerAsync
 import io.infinitic.common.transport.LoggedInfiniticProducer
+import io.infinitic.common.workflows.engine.events.WorkflowCompletedEvent
 import io.infinitic.common.workflows.engine.messages.CancelWorkflow
 import io.infinitic.common.workflows.engine.messages.ChildMethodCanceled
 import io.infinitic.common.workflows.engine.messages.ChildMethodCompleted
@@ -111,7 +112,7 @@ class WorkflowEngine(
     // it's possible to receive a message that has already been processed
     // in this case, we discard it
     if (state?.lastMessageId == message.messageId) {
-      logDiscarding(message) { "as state already contains this messageId" }
+      logDiscarding(message) { "as state already contains messageId ${message.messageId}" }
 
       return
     }
@@ -124,6 +125,8 @@ class WorkflowEngine(
     when (state.workflowMethods.size) {
       // workflow is completed
       0 -> {
+        // send workflowCompleted event
+        sendWorkflowCompletedEvent(state)
         // remove reference to this workflow in tags
         removeTags(producer, state)
         // delete state
@@ -139,29 +142,38 @@ class WorkflowEngine(
     }
   }
 
+  private suspend fun sendWorkflowCompletedEvent(state: WorkflowState) {
+    val workflowCompletedEvent = WorkflowCompletedEvent(
+        workflowName = state.workflowName,
+        workflowId = state.workflowId,
+        workflowMeta = state.workflowMeta,
+        workflowTags = state.workflowTags,
+        emitterName = emitterName,
+    )
+    producer.sendToWorkflowEvents(workflowCompletedEvent)
+  }
+
   private suspend fun processMessageWithoutState(
     message: WorkflowEngineMessage
   ): WorkflowState? = coroutineScope {
-    // New workflow to dispatch
-    if (message is DispatchNewWorkflow) {
-      return@coroutineScope dispatchWorkflow(producer, message)
-    }
-
     // targeted workflow is not found, we tell the message emitter
     when (message) {
-      // a client wants to dispatch a method on the missing workflow
+      // New workflow to dispatch
+      is DispatchNewWorkflow -> return@coroutineScope dispatchWorkflow(producer, message)
+
+      // a client wants to dispatch a method on an unknown workflow
       is DispatchMethodWorkflow -> {
-        if (message.clientWaiting) {
+        if (message.clientWaiting) launch {
           val methodUnknown = MethodUnknown(
               recipientName = ClientName.from(message.emitterName),
               message.workflowId,
               message.workflowMethodId,
               emitterName = emitterName,
           )
-          launch { producer.sendToClient(methodUnknown) }
+          producer.sendToClient(methodUnknown)
         }
-        // a workflow wants to dispatch a method on the missing workflow
-        if (message.parentWorkflowId != null && message.parentWorkflowId != message.workflowId) {
+        // a workflow wants to dispatch a method on an unknown workflow
+        if (message.parentWorkflowId != null && message.parentWorkflowId != message.workflowId) launch {
           val childMethodFailed =
               ChildMethodUnknown(
                   childMethodUnknownError =
@@ -175,20 +187,22 @@ class WorkflowEngine(
                   workflowMethodId = message.parentWorkflowMethodId ?: thisShouldNotHappen(),
                   emitterName = emitterName,
               )
-          launch { producer.sendLaterToWorkflowEngine(childMethodFailed) }
+
+          producer.sendToWorkflowEngine(childMethodFailed)
         }
       }
 
       // a client wants to wait the missing workflow
-      is WaitWorkflow -> {
+      is WaitWorkflow -> launch {
         val methodUnknown = MethodUnknown(
             recipientName = ClientName.from(message.emitterName),
             message.workflowId,
             message.workflowMethodId,
             emitterName = emitterName,
         )
-        launch { producer.sendToClient(methodUnknown) }
+        producer.sendToClient(methodUnknown)
       }
+
 
       else -> Unit
     }
@@ -261,7 +275,7 @@ class WorkflowEngine(
     when (message) {
       is DispatchMethodWorkflow -> {
         // Idempotency: do not relaunch if this method has already been launched
-        if (state.getMethodRun(message.workflowMethodId) != null) {
+        if (state.getWorkflowMethod(message.workflowMethodId) != null) {
           logDiscarding(message) { "as this method has already been launched" }
 
           return
@@ -280,7 +294,7 @@ class WorkflowEngine(
 
       is MethodEvent -> {
         // if methodRun has already been cleaned (completed), then discard the message
-        if (state.getMethodRun(message.workflowMethodId) == null) {
+        if (state.getWorkflowMethod(message.workflowMethodId) == null) {
           logDiscarding(message) { "as null methodRun" }
 
           return

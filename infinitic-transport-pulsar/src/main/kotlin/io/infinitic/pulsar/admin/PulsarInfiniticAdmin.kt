@@ -285,7 +285,7 @@ class PulsarInfiniticAdmin(
     }
     logger.info {
       "Topic '$topic' created " +
-          if (isPartitioned) "with $DEFAUT_NUM_PARTITIONS partitions." else ""
+          if (isPartitioned) "with $DEFAUT_NUM_PARTITIONS partitions." else "without partition."
     }
     // set message TTL
     setTopicTTL(topic, messageTTLPolicy)

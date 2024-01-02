@@ -27,6 +27,7 @@ import io.infinitic.common.data.MillisDuration
 import io.infinitic.common.tasks.executors.events.TaskEventMessage
 import io.infinitic.common.tasks.executors.messages.TaskExecutorMessage
 import io.infinitic.common.tasks.tags.messages.TaskTagMessage
+import io.infinitic.common.workflows.engine.events.WorkflowEventMessage
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
 import io.infinitic.common.workflows.tags.messages.WorkflowTagMessage
 
@@ -63,10 +64,17 @@ interface InfiniticProducer {
    * @param message the message to send
    * @param after the delay before sending the message
    */
-  suspend fun sendLaterToWorkflowEngine(
+  suspend fun sendToWorkflowEngine(
     message: WorkflowEngineMessage,
     after: MillisDuration = MillisDuration.ZERO
   )
+
+  /**
+   * Synchronously send a message to workflow-events
+   *
+   * @param message the message to send
+   */
+  suspend fun sendToWorkflowEvents(message: WorkflowEventMessage)
 
   /**
    * Synchronously send a message to a task-tag

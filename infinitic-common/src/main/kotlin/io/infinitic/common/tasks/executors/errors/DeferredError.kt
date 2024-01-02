@@ -94,7 +94,7 @@ sealed class DeferredTimedOutError : DeferredError() {
     fun from(exception: DeferredTimedOutException) =
         when (exception) {
           is TaskTimedOutException -> TaskTimedOutError.from(exception)
-          is WorkflowTimedOutException -> MethodTimedOutError.from(exception)
+          is WorkflowTimedOutException -> WorkflowMethodTimedOutError.from(exception)
         }
   }
 }
@@ -180,7 +180,7 @@ data class TaskTimedOutError(
 /** Error occurring when waiting a timed-out child workflow */
 @Serializable
 @SerialName("TimedOutWorkflowError")
-data class MethodTimedOutError(
+data class WorkflowMethodTimedOutError(
   /** Name of timed-out child workflow */
   val workflowName: WorkflowName,
 
@@ -196,7 +196,7 @@ data class MethodTimedOutError(
 ) : DeferredTimedOutError() {
   companion object {
     fun from(exception: WorkflowTimedOutException) =
-        MethodTimedOutError(
+        WorkflowMethodTimedOutError(
             workflowName = WorkflowName(exception.workflowName),
             workflowId = WorkflowId(exception.workflowId),
             methodName = MethodName(exception.methodName),

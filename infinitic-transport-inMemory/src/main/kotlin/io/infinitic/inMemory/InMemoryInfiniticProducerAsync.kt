@@ -31,6 +31,7 @@ import io.infinitic.common.tasks.executors.messages.ExecuteTask
 import io.infinitic.common.tasks.executors.messages.TaskExecutorMessage
 import io.infinitic.common.tasks.tags.messages.TaskTagMessage
 import io.infinitic.common.transport.InfiniticProducerAsync
+import io.infinitic.common.workflows.engine.events.WorkflowEventMessage
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
 import io.infinitic.common.workflows.tags.messages.WorkflowTagMessage
 import kotlinx.coroutines.CoroutineScope
@@ -84,6 +85,13 @@ class InMemoryInfiniticProducerAsync(private val channels: InMemoryChannels) :
         channels.forWorkflowEngine(message.workflowName),
     )
   }
+
+  override fun sendToWorkflowEventsAsync(
+    message: WorkflowEventMessage
+  ): CompletableFuture<Unit> = sendAsync(
+      message,
+      channels.forWorkflowEvent(message.workflowName),
+  )
 
   override fun sendToTaskTagAsync(
     message: TaskTagMessage

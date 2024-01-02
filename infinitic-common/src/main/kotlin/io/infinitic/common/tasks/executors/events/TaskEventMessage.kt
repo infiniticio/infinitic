@@ -77,7 +77,7 @@ sealed interface TaskEvent {
 
 @Serializable
 @AvroNamespace("io.infinitic.tasks.executor")
-data class TaskStarted(
+data class TaskStartedEvent(
   override val messageId: MessageId = MessageId(),
   override val serviceName: ServiceName,
   override val taskId: TaskId,
@@ -94,7 +94,7 @@ data class TaskStarted(
   val workflowVersion: WorkflowVersion?
 ) : TaskEventMessage(), TaskEvent {
   companion object {
-    fun from(msg: ExecuteTask, emitterName: EmitterName) = TaskStarted(
+    fun from(msg: ExecuteTask, emitterName: EmitterName) = TaskStartedEvent(
         serviceName = msg.serviceName,
         taskId = msg.taskId,
         emitterName = emitterName,
@@ -114,7 +114,7 @@ data class TaskStarted(
 
 @Serializable
 @AvroNamespace("io.infinitic.tasks.executor")
-data class TaskFailed(
+data class TaskFailedEvent(
   override val messageId: MessageId = MessageId(),
   override val serviceName: ServiceName,
   override val taskId: TaskId,
@@ -139,7 +139,7 @@ data class TaskFailed(
       emitterName: EmitterName,
       cause: Throwable,
       meta: MutableMap<String, ByteArray>
-    ) = TaskFailed(
+    ) = TaskFailedEvent(
         serviceName = msg.serviceName,
         taskId = msg.taskId,
         emitterName = emitterName,
@@ -162,7 +162,7 @@ data class TaskFailed(
 
 @Serializable
 @AvroNamespace("io.infinitic.tasks.executor")
-data class TaskRetried(
+data class TaskRetriedEvent(
   override val messageId: MessageId = MessageId(),
   override val serviceName: ServiceName,
   override val taskId: TaskId,
@@ -187,7 +187,7 @@ data class TaskRetried(
       cause: Throwable,
       delay: MillisDuration,
       meta: MutableMap<String, ByteArray>
-    ) = TaskRetried(
+    ) = TaskRetriedEvent(
         serviceName = msg.serviceName,
         taskId = msg.taskId,
         emitterName = emitterName,
@@ -208,7 +208,7 @@ data class TaskRetried(
 
 @Serializable
 @AvroNamespace("io.infinitic.tasks.executor")
-data class TaskCompleted(
+data class TaskCompletedEvent(
   override val messageId: MessageId = MessageId(),
   override val serviceName: ServiceName,
   override val taskId: TaskId,
@@ -231,7 +231,7 @@ data class TaskCompleted(
       emitterName: EmitterName,
       value: Any?,
       meta: MutableMap<String, ByteArray>
-    ) = TaskCompleted(
+    ) = TaskCompletedEvent(
         serviceName = msg.serviceName,
         taskId = msg.taskId,
         emitterName = emitterName,

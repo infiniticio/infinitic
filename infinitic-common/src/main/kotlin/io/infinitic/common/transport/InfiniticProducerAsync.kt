@@ -27,6 +27,7 @@ import io.infinitic.common.data.MillisDuration
 import io.infinitic.common.tasks.executors.events.TaskEventMessage
 import io.infinitic.common.tasks.executors.messages.TaskExecutorMessage
 import io.infinitic.common.tasks.tags.messages.TaskTagMessage
+import io.infinitic.common.workflows.engine.events.WorkflowEventMessage
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
 import io.infinitic.common.workflows.tags.messages.WorkflowTagMessage
 import java.util.concurrent.CompletableFuture
@@ -73,6 +74,13 @@ interface InfiniticProducerAsync {
     message: WorkflowEngineMessage,
     after: MillisDuration = MillisDuration.ZERO
   ): CompletableFuture<Unit>
+
+  /**
+   * Asynchronously send a message to a workflow-events
+   *
+   * @param message the message to send
+   */
+  fun sendToWorkflowEventsAsync(message: WorkflowEventMessage): CompletableFuture<Unit>
 
   /**
    * Asynchronously send a message to a task tag engine

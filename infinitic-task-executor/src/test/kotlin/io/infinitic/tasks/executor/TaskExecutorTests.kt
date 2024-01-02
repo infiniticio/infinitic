@@ -39,11 +39,11 @@ import io.infinitic.common.tasks.data.TaskMeta
 import io.infinitic.common.tasks.data.TaskRetryIndex
 import io.infinitic.common.tasks.data.TaskRetrySequence
 import io.infinitic.common.tasks.data.TaskTag
-import io.infinitic.common.tasks.executors.events.TaskCompleted
+import io.infinitic.common.tasks.executors.events.TaskCompletedEvent
 import io.infinitic.common.tasks.executors.events.TaskEventMessage
-import io.infinitic.common.tasks.executors.events.TaskFailed
-import io.infinitic.common.tasks.executors.events.TaskRetried
-import io.infinitic.common.tasks.executors.events.TaskStarted
+import io.infinitic.common.tasks.executors.events.TaskFailedEvent
+import io.infinitic.common.tasks.executors.events.TaskRetriedEvent
+import io.infinitic.common.tasks.executors.events.TaskStartedEvent
 import io.infinitic.common.tasks.executors.messages.ExecuteTask
 import io.infinitic.common.tasks.executors.messages.TaskExecutorMessage
 import io.infinitic.common.tasks.executors.messages.clientName
@@ -209,8 +209,8 @@ class TaskExecutorTests :
           taskExecutorSlot.isCaptured shouldBe false
           taskEventSlot.size shouldBe 2
           taskEventSlot[0] shouldBe getTaskStarted(msg, taskEventSlot[0].messageId!!)
-          taskEventSlot[1].shouldBeInstanceOf<TaskFailed>()
-          (taskEventSlot[1] as TaskFailed).check(
+          taskEventSlot[1].shouldBeInstanceOf<TaskFailedEvent>()
+          (taskEventSlot[1] as TaskFailedEvent).check(
               msg,
               ClassNotFoundException::class.java.name,
               msg.taskMeta,
@@ -229,8 +229,8 @@ class TaskExecutorTests :
           taskExecutorSlot.isCaptured shouldBe false
           taskEventSlot.size shouldBe 2
           taskEventSlot[0] shouldBe getTaskStarted(msg, taskEventSlot[0].messageId!!)
-          taskEventSlot[1].shouldBeInstanceOf<TaskFailed>()
-          (taskEventSlot[1] as TaskFailed).check(
+          taskEventSlot[1].shouldBeInstanceOf<TaskFailedEvent>()
+          (taskEventSlot[1] as TaskFailedEvent).check(
               msg,
               NoMethodFoundWithParameterTypesException::class.java.name,
               msg.taskMeta,
@@ -248,8 +248,8 @@ class TaskExecutorTests :
           taskExecutorSlot.isCaptured shouldBe false
           taskEventSlot.size shouldBe 2
           taskEventSlot[0] shouldBe getTaskStarted(msg, taskEventSlot[0].messageId!!)
-          taskEventSlot[1].shouldBeInstanceOf<TaskFailed>()
-          (taskEventSlot[1] as TaskFailed).check(
+          taskEventSlot[1].shouldBeInstanceOf<TaskFailedEvent>()
+          (taskEventSlot[1] as TaskFailedEvent).check(
               msg,
               NoMethodFoundWithParameterCountException::class.java.name,
               msg.taskMeta,
@@ -267,8 +267,8 @@ class TaskExecutorTests :
           taskExecutorSlot.isCaptured shouldBe false
           taskEventSlot.size shouldBe 2
           taskEventSlot[0] shouldBe getTaskStarted(msg, taskEventSlot[0].messageId!!)
-          taskEventSlot[1].shouldBeInstanceOf<TaskFailed>()
-          (taskEventSlot[1] as TaskFailed).check(
+          taskEventSlot[1].shouldBeInstanceOf<TaskFailedEvent>()
+          (taskEventSlot[1] as TaskFailedEvent).check(
               msg,
               TooManyMethodsFoundWithParameterCountException::class.java.name,
               msg.taskMeta,
@@ -290,8 +290,8 @@ class TaskExecutorTests :
 
           taskEventSlot.size shouldBe 2
           taskEventSlot[0] shouldBe getTaskStarted(msg, taskEventSlot[0].messageId!!)
-          taskEventSlot[1].shouldBeInstanceOf<TaskRetried>()
-          (taskEventSlot[1] as TaskRetried).check(
+          taskEventSlot[1].shouldBeInstanceOf<TaskRetriedEvent>()
+          (taskEventSlot[1] as TaskRetriedEvent).check(
               msg,
               afterSlot.captured,
               IllegalStateException::class.java.name,
@@ -315,8 +315,8 @@ class TaskExecutorTests :
 
           taskEventSlot.size shouldBe 2
           taskEventSlot[0] shouldBe getTaskStarted(msg, taskEventSlot[0].messageId!!)
-          taskEventSlot[1].shouldBeInstanceOf<TaskRetried>()
-          (taskEventSlot[1] as TaskRetried).check(
+          taskEventSlot[1].shouldBeInstanceOf<TaskRetriedEvent>()
+          (taskEventSlot[1] as TaskRetriedEvent).check(
               msg,
               afterSlot.captured,
               IllegalStateException::class.java.name,
@@ -340,8 +340,8 @@ class TaskExecutorTests :
 
           taskEventSlot.size shouldBe 2
           taskEventSlot[0] shouldBe getTaskStarted(msg, taskEventSlot[0].messageId!!)
-          taskEventSlot[1].shouldBeInstanceOf<TaskRetried>()
-          (taskEventSlot[1] as TaskRetried).check(
+          taskEventSlot[1].shouldBeInstanceOf<TaskRetriedEvent>()
+          (taskEventSlot[1] as TaskRetriedEvent).check(
               msg,
               afterSlot.captured,
               IllegalStateException::class.java.name,
@@ -361,8 +361,8 @@ class TaskExecutorTests :
           taskExecutorSlot.isCaptured shouldBe false
           taskEventSlot.size shouldBe 2
           taskEventSlot[0] shouldBe getTaskStarted(msg, taskEventSlot[0].messageId!!)
-          taskEventSlot[1].shouldBeInstanceOf<TaskFailed>()
-          (taskEventSlot[1] as TaskFailed).check(
+          taskEventSlot[1].shouldBeInstanceOf<TaskFailedEvent>()
+          (taskEventSlot[1] as TaskFailedEvent).check(
               msg,
               IllegalStateException::class.java.name,
               Task.meta,
@@ -405,8 +405,8 @@ class TaskExecutorTests :
           taskExecutorSlot.isCaptured shouldBe false
           taskEventSlot.size shouldBe 2
           taskEventSlot[0] shouldBe getTaskStarted(msg, taskEventSlot[0].messageId!!)
-          taskEventSlot[1].shouldBeInstanceOf<TaskFailed>()
-          (taskEventSlot[1] as TaskFailed).check(
+          taskEventSlot[1].shouldBeInstanceOf<TaskFailedEvent>()
+          (taskEventSlot[1] as TaskFailedEvent).check(
               msg,
               TimeoutException::class.java.name,
               msg.taskMeta,
@@ -429,8 +429,8 @@ class TaskExecutorTests :
           taskExecutorSlot.isCaptured shouldBe false
           taskEventSlot.size shouldBe 2
           taskEventSlot[0] shouldBe getTaskStarted(msg, taskEventSlot[0].messageId!!)
-          taskEventSlot[1].shouldBeInstanceOf<TaskFailed>()
-          (taskEventSlot[1] as TaskFailed).check(
+          taskEventSlot[1].shouldBeInstanceOf<TaskFailedEvent>()
+          (taskEventSlot[1] as TaskFailedEvent).check(
               msg,
               TimeoutException::class.java.name,
               msg.taskMeta,
@@ -453,8 +453,8 @@ class TaskExecutorTests :
           taskExecutorSlot.isCaptured shouldBe false
           taskEventSlot.size shouldBe 2
           taskEventSlot[0] shouldBe getTaskStarted(msg, taskEventSlot[0].messageId!!)
-          taskEventSlot[1].shouldBeInstanceOf<TaskFailed>()
-          (taskEventSlot[1] as TaskFailed).check(
+          taskEventSlot[1].shouldBeInstanceOf<TaskFailedEvent>()
+          (taskEventSlot[1] as TaskFailedEvent).check(
               msg,
               TimeoutException::class.java.name,
               msg.taskMeta,
@@ -486,7 +486,7 @@ fun ExecuteTask.check(
   lastError!!.workerName shouldBe WorkerName.from(msg.emitterName)
 }
 
-fun TaskFailed.check(
+fun TaskFailedEvent.check(
   msg: ExecuteTask,
   errorName: String,
   meta: MutableMap<String, ByteArray>
@@ -509,7 +509,7 @@ fun TaskFailed.check(
   taskId shouldBe msg.taskId
 }
 
-fun TaskRetried.check(
+fun TaskRetriedEvent.check(
   msg: ExecuteTask,
   delay: MillisDuration,
   errorName: String,
@@ -550,7 +550,7 @@ internal fun getExecuteTask(method: String, input: Array<out Any?>, types: List<
         workflowVersion = WorkflowVersion(42),
     )
 
-private fun getTaskStarted(msg: ExecuteTask, messageId: MessageId) = TaskStarted(
+private fun getTaskStarted(msg: ExecuteTask, messageId: MessageId) = TaskStartedEvent(
     messageId = messageId,
     serviceName = msg.serviceName,
     taskId = msg.taskId,
@@ -572,7 +572,7 @@ private fun getTaskCompleted(
   messageId: MessageId,
   value: Any?,
   meta: MutableMap<String, ByteArray>
-) = TaskCompleted(
+) = TaskCompletedEvent(
     messageId = messageId,
     serviceName = msg.serviceName,
     taskId = msg.taskId,

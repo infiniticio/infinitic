@@ -24,7 +24,7 @@ package io.infinitic.workflows.engine.commands
 
 import io.infinitic.common.emitters.EmitterName
 import io.infinitic.common.exceptions.thisShouldNotHappen
-import io.infinitic.common.tasks.executors.errors.MethodTimedOutError
+import io.infinitic.common.tasks.executors.errors.WorkflowMethodTimedOutError
 import io.infinitic.common.transport.InfiniticProducer
 import io.infinitic.common.workflows.data.commands.DispatchNewWorkflowCommand
 import io.infinitic.common.workflows.data.commands.DispatchNewWorkflowPastCommand
@@ -69,7 +69,7 @@ internal fun CoroutineScope.dispatchNewWorkflowCmd(
           clientWaiting = false,
           emitterName = emitterName,
       )
-      launch { producer.sendLaterToWorkflowEngine(dispatchWorkflow) }
+      launch { producer.sendToWorkflowEngine(dispatchWorkflow) }
 
       // add provided tags
       dispatchWorkflow.workflowTags.forEach {
@@ -114,7 +114,7 @@ internal fun CoroutineScope.dispatchNewWorkflowCmd(
 
   if (timeout != null) {
     val childMethodTimedOut = ChildMethodTimedOut(
-        childMethodTimedOutError = MethodTimedOutError(
+        childMethodTimedOutError = WorkflowMethodTimedOutError(
             workflowName = workflowName,
             workflowId = workflowId,
             methodName = methodName,
@@ -125,6 +125,6 @@ internal fun CoroutineScope.dispatchNewWorkflowCmd(
         workflowMethodId = state.runningWorkflowMethodId ?: thisShouldNotHappen(),
         emitterName = emitterName,
     )
-    launch { producer.sendLaterToWorkflowEngine(childMethodTimedOut, timeout) }
+    launch { producer.sendToWorkflowEngine(childMethodTimedOut, timeout) }
   }
 }

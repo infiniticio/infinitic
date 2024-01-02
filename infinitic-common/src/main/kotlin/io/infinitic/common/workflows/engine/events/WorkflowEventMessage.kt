@@ -28,27 +28,14 @@ import io.infinitic.common.data.MessageId
 import io.infinitic.common.data.ReturnValue
 import io.infinitic.common.emitters.EmitterName
 import io.infinitic.common.messages.Message
-import io.infinitic.common.tasks.data.ServiceName
-import io.infinitic.common.tasks.data.TaskId
 import io.infinitic.common.tasks.executors.errors.DeferredError
 import io.infinitic.common.workflows.data.methodRuns.WorkflowMethodId
+import io.infinitic.common.workflows.data.workflows.WorkflowCancellationReason
 import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.data.workflows.WorkflowMeta
 import io.infinitic.common.workflows.data.workflows.WorkflowName
 import io.infinitic.common.workflows.data.workflows.WorkflowTag
 import kotlinx.serialization.Serializable
-
-interface WorkflowInternalEvent
-
-interface MethodEvent : WorkflowInternalEvent {
-  val workflowMethodId: WorkflowMethodId
-}
-
-interface TaskEvent : MethodEvent {
-  fun taskId(): TaskId
-
-  fun serviceName(): ServiceName
-}
 
 @Serializable
 sealed class WorkflowEventMessage : Message {
@@ -74,7 +61,7 @@ sealed interface WorkflowMethodEvent {
 
 @Serializable
 @AvroNamespace("io.infinitic.workflows.events")
-data class WorkflowStarted(
+data class WorkflowStartedEvent(
   override val workflowName: WorkflowName,
   override val workflowId: WorkflowId,
   override val emitterName: EmitterName,
@@ -84,7 +71,7 @@ data class WorkflowStarted(
 
 @Serializable
 @AvroNamespace("io.infinitic.workflows.events")
-data class WorkflowCompleted(
+data class WorkflowCompletedEvent(
   override val workflowName: WorkflowName,
   override val workflowId: WorkflowId,
   override val emitterName: EmitterName,
@@ -94,23 +81,24 @@ data class WorkflowCompleted(
 
 @Serializable
 @AvroNamespace("io.infinitic.workflows.events")
-data class WorkflowCanceled(
+data class WorkflowCanceledEvent(
   override val workflowName: WorkflowName,
   override val workflowId: WorkflowId,
   override val emitterName: EmitterName,
   override val workflowTags: Set<WorkflowTag>,
   override val workflowMeta: WorkflowMeta,
+  val cancellationReason: WorkflowCancellationReason,
 ) : WorkflowEventMessage()
 
 @Serializable
 @AvroNamespace("io.infinitic.workflows.events")
-data class WorkflowMethodStarted(
+data class WorkflowMethodStartedEvent(
   override val workflowName: WorkflowName,
   override val workflowId: WorkflowId,
   override val workflowMethodId: WorkflowMethodId,
-  override var parentWorkflowName: WorkflowName?,
-  override var parentWorkflowId: WorkflowId?,
-  override var parentWorkflowMethodId: WorkflowMethodId?,
+  override val parentWorkflowName: WorkflowName?,
+  override val parentWorkflowId: WorkflowId?,
+  override val parentWorkflowMethodId: WorkflowMethodId?,
   override val parentClientName: ClientName?,
   override val waitingClients: Set<ClientName>,
   override val emitterName: EmitterName,
@@ -120,13 +108,13 @@ data class WorkflowMethodStarted(
 
 @Serializable
 @AvroNamespace("io.infinitic.workflows.events")
-data class WorkflowMethodCompleted(
+data class WorkflowMethodCompletedEvent(
   override val workflowName: WorkflowName,
   override val workflowId: WorkflowId,
   override val workflowMethodId: WorkflowMethodId,
-  override var parentWorkflowName: WorkflowName?,
-  override var parentWorkflowId: WorkflowId?,
-  override var parentWorkflowMethodId: WorkflowMethodId?,
+  override val parentWorkflowName: WorkflowName?,
+  override val parentWorkflowId: WorkflowId?,
+  override val parentWorkflowMethodId: WorkflowMethodId?,
   override val parentClientName: ClientName?,
   override val waitingClients: Set<ClientName>,
   override val emitterName: EmitterName,
@@ -137,13 +125,13 @@ data class WorkflowMethodCompleted(
 
 @Serializable
 @AvroNamespace("io.infinitic.workflows.events")
-data class WorkflowMethodFailed(
+data class WorkflowMethodFailedEvent(
   override val workflowName: WorkflowName,
   override val workflowId: WorkflowId,
   override val workflowMethodId: WorkflowMethodId,
-  override var parentWorkflowName: WorkflowName?,
-  override var parentWorkflowId: WorkflowId?,
-  override var parentWorkflowMethodId: WorkflowMethodId?,
+  override val parentWorkflowName: WorkflowName?,
+  override val parentWorkflowId: WorkflowId?,
+  override val parentWorkflowMethodId: WorkflowMethodId?,
   override val parentClientName: ClientName?,
   override val waitingClients: Set<ClientName>,
   override val emitterName: EmitterName,
@@ -154,29 +142,30 @@ data class WorkflowMethodFailed(
 
 @Serializable
 @AvroNamespace("io.infinitic.workflows.events")
-data class WorkflowMethodCanceled(
+data class WorkflowMethodCanceledEvent(
   override val workflowName: WorkflowName,
   override val workflowId: WorkflowId,
   override val workflowMethodId: WorkflowMethodId,
-  override var parentWorkflowName: WorkflowName?,
-  override var parentWorkflowId: WorkflowId?,
-  override var parentWorkflowMethodId: WorkflowMethodId?,
+  override val parentWorkflowName: WorkflowName?,
+  override val parentWorkflowId: WorkflowId?,
+  override val parentWorkflowMethodId: WorkflowMethodId?,
   override val parentClientName: ClientName?,
   override val waitingClients: Set<ClientName>,
   override val emitterName: EmitterName,
   override val workflowTags: Set<WorkflowTag>,
   override val workflowMeta: WorkflowMeta,
+  val cancellationReason: WorkflowCancellationReason,
 ) : WorkflowEventMessage(), WorkflowMethodEvent
 
 @Serializable
 @AvroNamespace("io.infinitic.workflows.events")
-data class WorkflowMethodTimedOut(
+data class WorkflowMethodTimedOutEvent(
   override val workflowName: WorkflowName,
   override val workflowId: WorkflowId,
   override val workflowMethodId: WorkflowMethodId,
-  override var parentWorkflowName: WorkflowName?,
-  override var parentWorkflowId: WorkflowId?,
-  override var parentWorkflowMethodId: WorkflowMethodId?,
+  override val parentWorkflowName: WorkflowName?,
+  override val parentWorkflowId: WorkflowId?,
+  override val parentWorkflowMethodId: WorkflowMethodId?,
   override val parentClientName: ClientName?,
   override val waitingClients: Set<ClientName>,
   override val emitterName: EmitterName,

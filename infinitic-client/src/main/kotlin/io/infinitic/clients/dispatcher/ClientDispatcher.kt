@@ -274,7 +274,7 @@ internal class ClientDispatcher(
     when (requestBy) {
       is RequestByWorkflowId -> {
         val msg = CancelWorkflow(
-            reason = WorkflowCancellationReason.CANCELED_BY_CLIENT,
+            cancellationReason = WorkflowCancellationReason.CANCELED_BY_CLIENT,
             workflowMethodId = workflowMethodId,
             workflowName = workflowName,
             workflowId = requestBy.workflowId,

@@ -27,11 +27,11 @@ import io.infinitic.common.emitters.EmitterName
 import io.infinitic.common.exceptions.thisShouldNotHappen
 import io.infinitic.common.tasks.data.TaskReturnValue
 import io.infinitic.common.tasks.executors.errors.TaskFailedError
-import io.infinitic.common.tasks.executors.events.TaskCompleted
+import io.infinitic.common.tasks.executors.events.TaskCompletedEvent
 import io.infinitic.common.tasks.executors.events.TaskEventMessage
-import io.infinitic.common.tasks.executors.events.TaskFailed
-import io.infinitic.common.tasks.executors.events.TaskRetried
-import io.infinitic.common.tasks.executors.events.TaskStarted
+import io.infinitic.common.tasks.executors.events.TaskFailedEvent
+import io.infinitic.common.tasks.executors.events.TaskRetriedEvent
+import io.infinitic.common.tasks.executors.events.TaskStartedEvent
 import io.infinitic.common.tasks.tags.messages.RemoveTagFromTask
 import io.infinitic.common.transport.InfiniticProducerAsync
 import io.infinitic.common.transport.LoggedInfiniticProducer
@@ -52,16 +52,16 @@ class TaskEventHandler(producerAsync: InfiniticProducerAsync) {
     msg.logDebug { "received $msg" }
 
     when (msg) {
-      is TaskCompleted -> sendTaskCompleted(msg)
-      is TaskFailed -> sendTaskFailed(msg)
-      is TaskRetried,
-      is TaskStarted -> Unit
+      is TaskCompletedEvent -> sendTaskCompleted(msg)
+      is TaskFailedEvent -> sendTaskFailed(msg)
+      is TaskRetriedEvent,
+      is TaskStartedEvent -> Unit
     }
 
     msg.logTrace { "processed" }
   }
 
-  private suspend fun sendTaskFailed(msg: TaskFailed): Unit = coroutineScope {
+  private suspend fun sendTaskFailed(msg: TaskFailedEvent): Unit = coroutineScope {
 
     if (msg.clientName != null) {
       val taskFailed = TaskFailedClient(
@@ -88,11 +88,11 @@ class TaskEventHandler(producerAsync: InfiniticProducerAsync) {
           emitterName = emitterName,
       )
 
-      launch { producer.sendLaterToWorkflowEngine(taskFailed) }
+      launch { producer.sendToWorkflowEngine(taskFailed) }
     }
   }
 
-  private suspend fun sendTaskCompleted(msg: TaskCompleted) = coroutineScope {
+  private suspend fun sendTaskCompleted(msg: TaskCompletedEvent) = coroutineScope {
     if (msg.clientName != null) {
       val taskCompleted = TaskCompletedClient(
           recipientName = msg.clientName!!,
@@ -120,7 +120,7 @@ class TaskEventHandler(producerAsync: InfiniticProducerAsync) {
           emitterName = emitterName,
       )
 
-      launch { producer.sendLaterToWorkflowEngine(taskCompleted) }
+      launch { producer.sendToWorkflowEngine(taskCompleted) }
     }
 
     // remove tags

@@ -43,7 +43,7 @@ import kotlin.time.Duration.Companion.milliseconds
 internal object Test {
   private val pulsarServer = DockerOnly().pulsarServer
 
-  private val workerConfig =
+  val workerConfig =
       WorkerConfig.fromResource("/pulsar.yml").let {
         when (pulsarServer) {
           null -> it.copy(transport = Transport.inMemory)

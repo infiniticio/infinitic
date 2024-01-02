@@ -22,15 +22,20 @@
  */
 package io.infinitic.workflows.engine.helpers
 
+import io.infinitic.common.emitters.EmitterName
 import io.infinitic.common.exceptions.thisShouldNotHappen
+import io.infinitic.common.tasks.executors.errors.TaskTimedOutError
+import io.infinitic.common.tasks.executors.errors.WorkflowMethodTimedOutError
 import io.infinitic.common.transport.InfiniticProducer
 import io.infinitic.common.workflows.data.commands.CommandId
 import io.infinitic.common.workflows.data.commands.CommandStatus
 import io.infinitic.common.workflows.data.commands.PastCommand
 import io.infinitic.common.workflows.data.commands.ReceiveSignalPastCommand
 import io.infinitic.common.workflows.data.methodRuns.WorkflowMethodId
+import io.infinitic.common.workflows.engine.events.WorkflowMethodTimedOutEvent
 import io.infinitic.common.workflows.engine.state.WorkflowState
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.launch
 
 /** Return true if this command terminates a step */
 
@@ -44,8 +49,8 @@ internal fun CoroutineScope.commandTerminated(
   commandId: CommandId,
   commandStatus: CommandStatus
 ) {
-  val methodRun = state.getMethodRun(workflowMethodId) ?: thisShouldNotHappen()
-  val pastCommand = state.getPastCommand(commandId, methodRun)
+  val workflowMethod = state.getWorkflowMethod(workflowMethodId) ?: thisShouldNotHappen()
+  val pastCommand = state.getPastCommand(commandId, workflowMethod)
 
   // Idempotency: do nothing if this command is already terminated
   // (i.e. canceled or completed, not failed as it's a transient status)
@@ -66,9 +71,33 @@ internal fun CoroutineScope.commandTerminated(
     }
   }
 
-  // if this method run was already completed, but we were waiting for this command to complete,
+  //
+  if (commandStatus is CommandStatus.TimedOut) {
+    when (commandStatus.deferredTimedOutError) {
+      is TaskTimedOutError -> Unit
+      is WorkflowMethodTimedOutError -> launch {
+        val workflowMethodTimedOutEvent = WorkflowMethodTimedOutEvent(
+            workflowName = state.workflowName,
+            workflowId = state.workflowId,
+            workflowMethodId = workflowMethod.workflowMethodId,
+            parentWorkflowId = workflowMethod.parentWorkflowId,
+            parentWorkflowName = workflowMethod.parentWorkflowName,
+            parentWorkflowMethodId = workflowMethod.parentWorkflowMethodId,
+            parentClientName = workflowMethod.parentClientName,
+            waitingClients = workflowMethod.waitingClients,
+            workflowTags = state.workflowTags,
+            workflowMeta = state.workflowMeta,
+            emitterName = EmitterName(producer.name),
+        )
+
+        producer.sendToWorkflowEvents(workflowMethodTimedOutEvent)
+      }
+    }
+  }
+
+  // if this workflow method was already completed, but we were waiting for this command to complete,
   // we may be able to delete it now
-  if (methodRun.isTerminated()) state.removeWorkflowMethod(methodRun)
+  if (workflowMethod.isTerminated()) state.removeWorkflowMethod(workflowMethod)
 }
 
 // search the first step completed by this command

@@ -28,10 +28,10 @@ import io.infinitic.common.data.MillisDuration
 import io.infinitic.common.emitters.EmitterName
 import io.infinitic.common.exceptions.thisShouldNotHappen
 import io.infinitic.common.parser.getMethodPerNameAndParameters
-import io.infinitic.common.tasks.executors.events.TaskCompleted
-import io.infinitic.common.tasks.executors.events.TaskFailed
-import io.infinitic.common.tasks.executors.events.TaskRetried
-import io.infinitic.common.tasks.executors.events.TaskStarted
+import io.infinitic.common.tasks.executors.events.TaskCompletedEvent
+import io.infinitic.common.tasks.executors.events.TaskFailedEvent
+import io.infinitic.common.tasks.executors.events.TaskRetriedEvent
+import io.infinitic.common.tasks.executors.events.TaskStartedEvent
 import io.infinitic.common.tasks.executors.messages.ExecuteTask
 import io.infinitic.common.tasks.executors.messages.TaskExecutorMessage
 import io.infinitic.common.transport.InfiniticProducerAsync
@@ -66,7 +66,7 @@ class TaskExecutor(
 ) {
 
   private val logger = KotlinLogging.logger(this::class.java.name)
-  val producer = LoggedInfiniticProducer(this::class.java.name, producerAsync)
+  private val producer = LoggedInfiniticProducer(this::class.java.name, producerAsync)
   private var withRetry: WithRetry? = null
   private var withTimeout: WithTimeout? = null
   private val emitterName by lazy { EmitterName(producerAsync.name) }
@@ -193,9 +193,9 @@ class TaskExecutor(
   }
 
   private suspend fun sendTaskStarted(msg: ExecuteTask) {
-    val taskStarted = TaskStarted.from(msg, emitterName)
+    val event = TaskStartedEvent.from(msg, emitterName)
 
-    producer.sendToTaskEvents(taskStarted)
+    producer.sendToTaskEvents(event)
   }
 
   suspend fun sendTaskFailed(
@@ -211,9 +211,9 @@ class TaskExecutor(
 
     description?.let { msg.logError(cause, it) }
 
-    val taskFailed = TaskFailed.from(msg, emitterName, cause, meta)
+    val event = TaskFailedEvent.from(msg, emitterName, cause, meta)
 
-    producer.sendToTaskEvents(taskFailed)
+    producer.sendToTaskEvents(event)
   }
 
   private suspend fun sendRetryTask(
@@ -229,9 +229,9 @@ class TaskExecutor(
     producer.sendToTaskExecutor(executeTask, delay)
 
     // once sent, we publish the event
-    val taskRetried = TaskRetried.from(msg, emitterName, cause, delay, meta)
+    val event = TaskRetriedEvent.from(msg, emitterName, cause, delay, meta)
 
-    producer.sendToTaskEvents(taskRetried)
+    producer.sendToTaskEvents(event)
   }
 
   private suspend fun sendTaskCompleted(
@@ -239,9 +239,9 @@ class TaskExecutor(
     value: Any?,
     meta: MutableMap<String, ByteArray>
   ) {
-    val taskCompleted = TaskCompleted.from(msg, emitterName, value, meta)
+    val event = TaskCompletedEvent.from(msg, emitterName, value, meta)
 
-    producer.sendToTaskEvents(taskCompleted)
+    producer.sendToTaskEvents(event)
   }
 
   private fun parse(msg: ExecuteTask): TaskCommand {

@@ -653,7 +653,7 @@ private class ClientWorkflowTests : StringSpec(
         // then
         workflowTagSlots.size shouldBe 0
         workflowEngineSlot.captured shouldBe CancelWorkflow(
-            reason = WorkflowCancellationReason.CANCELED_BY_CLIENT,
+            cancellationReason = WorkflowCancellationReason.CANCELED_BY_CLIENT,
             workflowMethodId = null,
             workflowName = WorkflowName(FakeWorkflow::class.java.name),
             workflowId = WorkflowId(id),
@@ -669,7 +669,7 @@ private class ClientWorkflowTests : StringSpec(
         // then
         workflowTagSlots.size shouldBe 0
         workflowEngineSlot.captured shouldBe CancelWorkflow(
-            reason = WorkflowCancellationReason.CANCELED_BY_CLIENT,
+            cancellationReason = WorkflowCancellationReason.CANCELED_BY_CLIENT,
             workflowMethodId = null,
             workflowName = WorkflowName(FakeWorkflow::class.java.name),
             workflowId = WorkflowId(id),
@@ -718,7 +718,7 @@ private class ClientWorkflowTests : StringSpec(
         // then
         workflowTagSlots.size shouldBe 0
         workflowEngineSlot.captured shouldBe CancelWorkflow(
-            reason = WorkflowCancellationReason.CANCELED_BY_CLIENT,
+            cancellationReason = WorkflowCancellationReason.CANCELED_BY_CLIENT,
             workflowMethodId = null,
             workflowName = WorkflowName(FakeWorkflow::class.java.name),
             workflowId = WorkflowId(deferred.id),

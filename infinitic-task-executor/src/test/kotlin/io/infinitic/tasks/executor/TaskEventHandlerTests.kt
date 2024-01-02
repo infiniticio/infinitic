@@ -35,10 +35,10 @@ import io.infinitic.common.tasks.data.TaskRetrySequence
 import io.infinitic.common.tasks.data.TaskReturnValue
 import io.infinitic.common.tasks.data.TaskTag
 import io.infinitic.common.tasks.executors.errors.TaskFailedError
-import io.infinitic.common.tasks.executors.events.TaskCompleted
-import io.infinitic.common.tasks.executors.events.TaskFailed
-import io.infinitic.common.tasks.executors.events.TaskRetried
-import io.infinitic.common.tasks.executors.events.TaskStarted
+import io.infinitic.common.tasks.executors.events.TaskCompletedEvent
+import io.infinitic.common.tasks.executors.events.TaskFailedEvent
+import io.infinitic.common.tasks.executors.events.TaskRetriedEvent
+import io.infinitic.common.tasks.executors.events.TaskStartedEvent
 import io.infinitic.common.tasks.tags.messages.TaskTagMessage
 import io.infinitic.common.transport.InfiniticProducerAsync
 import io.infinitic.common.workers.config.WorkflowVersion
@@ -201,7 +201,7 @@ class TaskEventHandlerTests :
       },
   )
 
-private fun getTaskRetried() = TaskRetried(
+private fun getTaskRetried() = TaskRetriedEvent(
     serviceName = testServiceName,
     taskId = TaskId(),
     emitterName = EmitterName("previousEmitter"),
@@ -218,7 +218,7 @@ private fun getTaskRetried() = TaskRetried(
     taskRetryDelay = TestFactory.random(),
 )
 
-private fun getTaskStarted() = TaskStarted(
+private fun getTaskStarted() = TaskStartedEvent(
     serviceName = testServiceName,
     taskId = TaskId(),
     emitterName = EmitterName("previousEmitter"),
@@ -234,7 +234,7 @@ private fun getTaskStarted() = TaskStarted(
     workflowVersion = WorkflowVersion(42),
 )
 
-private fun getTaskCompleted() = TaskCompleted(
+private fun getTaskCompleted() = TaskCompletedEvent(
     serviceName = testServiceName,
     taskId = TaskId(),
     emitterName = EmitterName("previousEmitter"),
@@ -251,7 +251,7 @@ private fun getTaskCompleted() = TaskCompleted(
     workflowVersion = WorkflowVersion(42),
 )
 
-private fun getTaskCompletedClient(msg: TaskCompleted) =
+private fun getTaskCompletedClient(msg: TaskCompletedEvent) =
     io.infinitic.common.clients.messages.TaskCompleted(
         recipientName = msg.clientName!!,
         taskId = msg.taskId,
@@ -260,7 +260,7 @@ private fun getTaskCompletedClient(msg: TaskCompleted) =
         emitterName = testEmitterName,
     )
 
-private fun getTaskCompletedWorkflow(msg: TaskCompleted) =
+private fun getTaskCompletedWorkflow(msg: TaskCompletedEvent) =
     io.infinitic.common.workflows.engine.messages.TaskCompleted(
         workflowName = msg.workflowName!!,
         workflowId = msg.workflowId!!,
@@ -274,7 +274,7 @@ private fun getTaskCompletedWorkflow(msg: TaskCompleted) =
         emitterName = testEmitterName,
     )
 
-private fun getTaskFailed() = TaskFailed(
+private fun getTaskFailed() = TaskFailedEvent(
     serviceName = testServiceName,
     taskId = TaskId(),
     emitterName = EmitterName("previousEmitter"),
@@ -293,7 +293,7 @@ private fun getTaskFailed() = TaskFailed(
     workflowVersion = WorkflowVersion(42),
 )
 
-private fun getTaskFailedClient(msg: TaskFailed) =
+private fun getTaskFailedClient(msg: TaskFailedEvent) =
     io.infinitic.common.clients.messages.TaskFailed(
         recipientName = msg.clientName!!,
         taskId = msg.taskId,
@@ -301,7 +301,7 @@ private fun getTaskFailedClient(msg: TaskFailed) =
         emitterName = testEmitterName,
     )
 
-private fun getTaskFailedWorkflow(msg: TaskFailed) =
+private fun getTaskFailedWorkflow(msg: TaskFailedEvent) =
     io.infinitic.common.workflows.engine.messages.TaskFailed(
         workflowName = msg.workflowName!!,
         workflowId = msg.workflowId!!,
