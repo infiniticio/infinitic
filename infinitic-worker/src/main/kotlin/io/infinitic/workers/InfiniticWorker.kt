@@ -39,7 +39,8 @@ import io.infinitic.workers.config.WorkerConfig
 import io.infinitic.workers.config.WorkerConfigInterface
 import io.infinitic.workers.register.InfiniticRegister
 import io.infinitic.workers.register.InfiniticRegisterInterface
-import io.infinitic.workflows.engine.WorkflowEngine
+import io.infinitic.workflows.engine.WorkflowCmdHandler
+import io.infinitic.workflows.engine.WorkflowEngineHandler
 import io.infinitic.workflows.engine.WorkflowEventHandler
 import io.infinitic.workflows.tag.WorkflowTagEngine
 import java.util.concurrent.CompletableFuture
@@ -58,7 +59,7 @@ class InfiniticWorker(
       LoggedInfiniticProducer(TaskExecutor::class.java.name, producerAsync)
 
   private val workflowProducer =
-      LoggedInfiniticProducer(WorkflowEngine::class.java.name, producerAsync)
+      LoggedInfiniticProducer(WorkflowEngineHandler::class.java.name, producerAsync)
 
   private val workerRegistry = register.registry
 
@@ -80,8 +81,8 @@ class InfiniticWorker(
   fun startAsync(): CompletableFuture<Void> {
     val futures = mutableListOf<CompletableFuture<Unit>>()
 
-    // start workflow tags
     workerRegistry.workflowTags.forEach {
+      // WORKFLOW-TAG
       val workflowTagEngine = WorkflowTagEngine(it.value.storage, producerAsync)
 
       futures.add(
@@ -95,9 +96,12 @@ class InfiniticWorker(
     }
 
     workerRegistry.workflowEngines.forEach {
+      // WORKFLOW-CMD
+      val workflowCmdHandler = WorkflowCmdHandler(producerAsync)
+
       futures.add(
           consumerAsync.startWorkflowCmdConsumerAsync(
-              handler = workflowProducer::sendToWorkflowEngine,
+              handler = workflowCmdHandler::handle,
               beforeDlq = null,
               workflowName = it.key,
               concurrency = it.value.concurrency,
@@ -105,11 +109,11 @@ class InfiniticWorker(
       )
 
       // WORKFLOW-ENGINE
-      val workflowEngine = WorkflowEngine(it.value.storage, producerAsync)
+      val workflowEngineHandler = WorkflowEngineHandler(it.value.storage, producerAsync)
 
       futures.add(
           consumerAsync.startWorkflowEngineConsumerAsync(
-              handler = workflowEngine::handle,
+              handler = workflowEngineHandler::handle,
               beforeDlq = null,
               workflowName = it.key,
               concurrency = it.value.concurrency,
@@ -140,7 +144,7 @@ class InfiniticWorker(
     }
 
     workerRegistry.workflows.forEach {
-      // start consumer for workflow-task-executor
+      // WORKFLOW-TASK_EXECUTOR
       val workflowTaskExecutor = TaskExecutor(workerRegistry, producerAsync, client)
 
       futures.add(
@@ -154,7 +158,7 @@ class InfiniticWorker(
           ),
       )
 
-      // start consumer for workflow-task-executor-delayed
+      // WORKFLOW-TASK_EXECUTOR-DELAY
       futures.add(
           consumerAsync.startDelayedWorkflowTaskConsumerAsync(
               handler = taskProducer::sendToTaskExecutor,
@@ -164,7 +168,7 @@ class InfiniticWorker(
           ),
       )
 
-      // start consumer for workflow-task-events
+      // WORKFLOW-TASK-EVENT
       val workflowTaskEventHandler = TaskEventHandler(producerAsync)
 
       futures.add(
@@ -177,9 +181,22 @@ class InfiniticWorker(
       )
     }
 
-    // start consumer for task-executor
+    workerRegistry.serviceTags.forEach {
+      // TASK-TAG
+      val tagEngine = TaskTagEngine(it.value.storage, producerAsync)
+
+      futures.add(
+          consumerAsync.startTaskTagConsumerAsync(
+              handler = tagEngine::handle,
+              beforeDlq = null,
+              serviceName = it.key,
+              concurrency = it.value.concurrency,
+          ),
+      )
+    }
+
     workerRegistry.services.forEach {
-      // start consumer for task-executor
+      // TASK-EXECUTOR
       val taskExecutor = TaskExecutor(workerRegistry, producerAsync, client)
 
       futures.add(
@@ -193,7 +210,7 @@ class InfiniticWorker(
           ),
       )
 
-      // start consumer for task-executor-delayed
+      // TASK-EXECUTOR-DELAY
       futures.add(
           consumerAsync.startDelayedTaskExecutorConsumerAsync(
               handler = taskProducer::sendToTaskExecutor,
@@ -203,26 +220,12 @@ class InfiniticWorker(
           ),
       )
 
-      // start consumer for task-events
+      // TASK-EVENTS
       val taskEventHandler = TaskEventHandler(producerAsync)
 
       futures.add(
           consumerAsync.startTaskEventsConsumerAsync(
               handler = taskEventHandler::handle,
-              beforeDlq = null,
-              serviceName = it.key,
-              concurrency = it.value.concurrency,
-          ),
-      )
-    }
-
-    // start consumer for task-tags
-    workerRegistry.serviceTags.forEach {
-      val tagEngine = TaskTagEngine(it.value.storage, producerAsync)
-
-      futures.add(
-          consumerAsync.startTaskTagConsumerAsync(
-              handler = tagEngine::handle,
               beforeDlq = null,
               serviceName = it.key,
               concurrency = it.value.concurrency,

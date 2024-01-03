@@ -103,7 +103,7 @@ internal class WorkflowDispatcherImpl(
   private var positionInMethod = PositionInMethod()
 
   // current workflowTaskIndex (useful to retrieve status of Deferred)
-  private var workflowTaskIndex = workflowTaskParameters.methodRun.workflowTaskIndexAtStart
+  private var workflowTaskIndex = workflowTaskParameters.workflowMethod.workflowTaskIndexAtStart
 
   // synchronous call: stub.method(*args)
   @Suppress("UNCHECKED_CAST")
@@ -445,7 +445,7 @@ internal class WorkflowDispatcherImpl(
   }
 
   private fun getPastCommandAtCurrentPosition(): PastCommand? =
-      workflowTaskParameters.methodRun.pastCommands.find { it.commandPosition == positionInMethod }
+      workflowTaskParameters.workflowMethod.pastCommands.find { it.commandPosition == positionInMethod }
 
   private fun throwCommandsChangedException(
     pastCommand: PastCommand?,
@@ -453,7 +453,7 @@ internal class WorkflowDispatcherImpl(
   ): Nothing {
     val e = WorkflowChangedException(
         "${workflowTaskParameters.workflowName}",
-        "${workflowTaskParameters.methodRun.methodName}",
+        "${workflowTaskParameters.workflowMethod.methodName}",
         "$positionInMethod",
     )
     logger.error(e) {
@@ -480,19 +480,19 @@ internal class WorkflowDispatcherImpl(
 
   private fun getSimilarPastStep(newStep: NewStep): PastStep? {
     // Do we already know a step in this position ?
-    val currentStep = workflowTaskParameters.methodRun.currentStep
+    val currentStep = workflowTaskParameters.workflowMethod.currentStep
     val pastStep =
         if (currentStep?.stepPosition == positionInMethod) {
           currentStep
         } else {
-          workflowTaskParameters.methodRun.pastSteps.find { it.stepPosition == positionInMethod }
+          workflowTaskParameters.workflowMethod.pastSteps.find { it.stepPosition == positionInMethod }
         }
 
     // if it exists, check it has not changed
     if (pastStep != null && !pastStep.isSameThan(newStep)) {
       val e = WorkflowChangedException(
           workflowTaskParameters.workflowName.name,
-          "${workflowTaskParameters.methodRun.methodName}",
+          "${workflowTaskParameters.workflowMethod.methodName}",
           "$positionInMethod",
       )
       logger.error(e) {

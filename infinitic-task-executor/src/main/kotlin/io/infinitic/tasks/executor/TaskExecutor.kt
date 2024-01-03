@@ -204,10 +204,7 @@ class TaskExecutor(
     meta: MutableMap<String, ByteArray>,
     description: (() -> String)?
   ) {
-    when (msg) {
-      is ExecuteTask -> Unit
-      else -> thisShouldNotHappen()
-    }
+    if (msg !is ExecuteTask) thisShouldNotHappen()
 
     description?.let { msg.logError(cause, it) }
 
@@ -268,9 +265,9 @@ class TaskExecutor(
           // method instance
           getMethodPerNameAndParameters(
               workflow::class.java,
-              "${methodRun.methodName}",
-              methodRun.methodParameterTypes?.types,
-              methodRun.methodParameters.size,
+              "${workflowMethod.methodName}",
+              workflowMethod.methodParameterTypes?.types,
+              workflowMethod.methodParameters.size,
           )
         }
 

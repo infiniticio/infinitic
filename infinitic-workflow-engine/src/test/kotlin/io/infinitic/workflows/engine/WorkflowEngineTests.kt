@@ -86,7 +86,7 @@ class WorkflowEngineTests : StringSpec(
         every { sendToWorkflowEngineAsync(capture(workflowEngineSlot)) } returns completed()
       }
 
-      val engine = WorkflowEngine(storage, producerAsync)
+      val engine = WorkflowEngineHandler(storage, producerAsync)
 
       // ensure slots are emptied between each test
       beforeTest {

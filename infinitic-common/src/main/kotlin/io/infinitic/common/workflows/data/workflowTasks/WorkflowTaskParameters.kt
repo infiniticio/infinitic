@@ -24,6 +24,7 @@ package io.infinitic.common.workflows.data.workflowTasks
 
 import com.github.avrokotlin.avro4k.Avro
 import com.github.avrokotlin.avro4k.AvroDefault
+import com.github.avrokotlin.avro4k.AvroName
 import io.infinitic.common.data.methods.MethodName
 import io.infinitic.common.data.methods.MethodParameterTypes
 import io.infinitic.common.data.methods.MethodParameters
@@ -57,7 +58,7 @@ data class WorkflowTaskParameters(
   val workflowMeta: WorkflowMeta,
   val workflowPropertiesHashValue: Map<PropertyHash, PropertyValue>,
   val workflowTaskIndex: WorkflowTaskIndex,
-  val methodRun: WorkflowMethod,
+  @AvroName("methodRun") val workflowMethod: WorkflowMethod,
   val emitterName: EmitterName
 ) {
   fun toExecuteTaskMessage() = ExecuteTask(
@@ -68,7 +69,7 @@ data class WorkflowTaskParameters(
       taskRetryIndex = TaskRetryIndex(0),
       workflowName = workflowName,
       workflowId = workflowId,
-      workflowMethodId = methodRun.workflowMethodId,
+      workflowMethodId = workflowMethod.workflowMethodId,
       taskTags = setOf(),
       taskMeta = TaskMeta(),
       clientWaiting = false,

@@ -49,7 +49,7 @@ class WorkflowTaskImpl : WorkflowTask {
 
   override fun handle(workflowTaskParameters: WorkflowTaskParameters): WorkflowTaskReturnValue {
     // get method
-    val methodRun = workflowTaskParameters.methodRun
+    val methodRun = workflowTaskParameters.workflowMethod
 
     // set context
     with(workflowTaskParameters) {

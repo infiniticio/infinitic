@@ -82,7 +82,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 
-class WorkflowEngine(
+class WorkflowEngineHandler(
   storage: WorkflowStateStorage,
   producerAsync: InfiniticProducerAsync
 ) {
@@ -221,6 +221,15 @@ class WorkflowEngine(
         // Idempotency: discard if this workflowTask is not the current one
         if (state.runningWorkflowTaskId != (message as TaskEvent).taskId()) {
           logDiscarding(message) { "as workflowTask is not the right one" }
+
+          return null
+        }
+
+        // messages had a null version before 0.13
+        // we retry workflow task, as commands are not executed anymore
+        // inside the engine for version >= 0.13
+        if (message.version == null) {
+          coroutineScope { retryWorkflowTask(producer, state) }
 
           return null
         }

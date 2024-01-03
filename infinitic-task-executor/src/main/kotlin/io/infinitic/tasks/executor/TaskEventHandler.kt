@@ -107,8 +107,8 @@ class TaskEventHandler(producerAsync: InfiniticProducerAsync) {
 
     if (msg.workflowId != null) {
       val taskCompleted = TaskCompletedWorkflow(
+          workflowId = msg.workflowId!!,
           workflowName = msg.workflowName ?: thisShouldNotHappen(),
-          workflowId = msg.workflowId ?: thisShouldNotHappen(),
           workflowMethodId = msg.workflowMethodId ?: thisShouldNotHappen(),
           taskReturnValue =
           TaskReturnValue(

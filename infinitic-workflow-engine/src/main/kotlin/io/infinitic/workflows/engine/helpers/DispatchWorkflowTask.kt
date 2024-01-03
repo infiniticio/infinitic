@@ -36,8 +36,8 @@ import kotlinx.coroutines.launch
 internal fun CoroutineScope.dispatchWorkflowTask(
   producer: InfiniticProducer,
   state: WorkflowState,
-  methodRun: WorkflowMethod,
-  workflowMethodPosition: PositionInMethod
+  workflowMethod: WorkflowMethod,
+  positionInMethod: PositionInMethod
 ) {
   val emitterName = EmitterName(producer.name)
   state.workflowTaskIndex += 1
@@ -53,7 +53,7 @@ internal fun CoroutineScope.dispatchWorkflowTask(
       workflowPropertiesHashValue =
       state.propertiesHashValue, // TODO filterStore(state.propertyStore, listOf(methodRun))
       workflowTaskIndex = state.workflowTaskIndex,
-      methodRun = methodRun,
+      workflowMethod = workflowMethod,
       emitterName = emitterName,
   )
 
@@ -64,12 +64,11 @@ internal fun CoroutineScope.dispatchWorkflowTask(
 
   with(state) {
     runningWorkflowTaskId = workflowTaskParameters.taskId
-    // do not update runningWorkflowTaskInstant if it is a retry
-    if (runningWorkflowMethodId != methodRun.workflowMethodId ||
-      positionInRunningWorkflowMethod != workflowMethodPosition) {
+    // if it's NOT a retry, do update runningWorkflowTaskInstant
+    if (runningWorkflowMethodId != workflowMethod.workflowMethodId || positionInRunningWorkflowMethod != positionInMethod) {
       runningWorkflowTaskInstant = MillisInstant.now()
-      runningWorkflowMethodId = methodRun.workflowMethodId
-      positionInRunningWorkflowMethod = workflowMethodPosition
+      runningWorkflowMethodId = workflowMethod.workflowMethodId
+      positionInRunningWorkflowMethod = positionInMethod
     }
   }
 }
