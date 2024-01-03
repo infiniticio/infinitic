@@ -28,6 +28,7 @@ import com.github.avrokotlin.avro4k.AvroName
 import com.github.avrokotlin.avro4k.AvroNamespace
 import io.infinitic.common.clients.data.ClientName
 import io.infinitic.common.data.MessageId
+import io.infinitic.common.data.Version
 import io.infinitic.common.data.methods.MethodName
 import io.infinitic.common.data.methods.MethodParameterTypes
 import io.infinitic.common.data.methods.MethodParameters
@@ -47,12 +48,16 @@ import io.infinitic.common.workflows.data.methodRuns.WorkflowMethodId
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTask
 import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.data.workflows.WorkflowName
+import io.infinitic.currentVersion
 import io.infinitic.exceptions.DeferredException
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 @Serializable
 sealed class TaskExecutorMessage : Message {
+  @Suppress("RedundantNullableReturnType")
+  @AvroDefault(Avro.NULL)
+  val version: Version? = Version(currentVersion)
   abstract val serviceName: ServiceName
   abstract val taskId: TaskId
   abstract val taskRetrySequence: TaskRetrySequence

@@ -22,6 +22,7 @@
  */
 package io.infinitic.common.fixtures
 
+import io.infinitic.common.data.Version
 import io.infinitic.common.data.methods.MethodParameters
 import io.infinitic.common.serDe.SerializedData
 import io.infinitic.common.tasks.executors.errors.DeferredError
@@ -67,6 +68,7 @@ object TestFactory {
             .randomize(ExecutionError::class.java) {
               ExecutionError(random(), random(), random(), random(), null)
             }
+            .randomize(Version::class.java) { Version(random<String>()) }
             .randomize(SerializedData::class.java) { SerializedData.from(random<String>()) }
             .randomize(MethodParameters::class.java) {
               MethodParameters.from(random<ByteArray>(), random<String>())

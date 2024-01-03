@@ -43,11 +43,12 @@ import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.data.workflows.WorkflowMeta
 import io.infinitic.common.workflows.data.workflows.WorkflowName
 import io.infinitic.common.workflows.data.workflows.WorkflowTag
+import io.infinitic.currentVersion
 import kotlinx.serialization.Serializable
 
 @Serializable
 data class WorkflowTaskParameters(
-  @AvroDefault("0.9.7") val version: String = io.infinitic.current,
+  @AvroDefault("0.9.7") val version: String = currentVersion,
   val taskId: TaskId,
   val workflowId: WorkflowId,
   val workflowName: WorkflowName,
@@ -59,26 +60,25 @@ data class WorkflowTaskParameters(
   val methodRun: WorkflowMethod,
   val emitterName: EmitterName
 ) {
-  fun toExecuteTaskMessage() =
-      ExecuteTask(
-          serviceName = ServiceName(WorkflowTask::class.java.name),
-          taskId = taskId,
-          emitterName = emitterName,
-          taskRetrySequence = TaskRetrySequence(0),
-          taskRetryIndex = TaskRetryIndex(0),
-          workflowName = workflowName,
-          workflowId = workflowId,
-          workflowMethodId = methodRun.workflowMethodId,
-          taskTags = setOf(),
-          taskMeta = TaskMeta(),
-          clientWaiting = false,
-          methodName = MethodName(WorkflowTask::handle.name),
-          methodParameterTypes =
-          MethodParameterTypes(listOf(WorkflowTaskParameters::class.java.name)),
-          methodParameters = MethodParameters.from(this),
-          lastError = null,
-          workflowVersion = workflowVersion,
-      )
+  fun toExecuteTaskMessage() = ExecuteTask(
+      serviceName = ServiceName(WorkflowTask::class.java.name),
+      taskId = taskId,
+      emitterName = emitterName,
+      taskRetrySequence = TaskRetrySequence(0),
+      taskRetryIndex = TaskRetryIndex(0),
+      workflowName = workflowName,
+      workflowId = workflowId,
+      workflowMethodId = methodRun.workflowMethodId,
+      taskTags = setOf(),
+      taskMeta = TaskMeta(),
+      clientWaiting = false,
+      methodName = MethodName(WorkflowTask::handle.name),
+      methodParameterTypes =
+      MethodParameterTypes(listOf(WorkflowTaskParameters::class.java.name)),
+      methodParameters = MethodParameters.from(this),
+      lastError = null,
+      workflowVersion = workflowVersion,
+  )
 
   fun toByteArray() = AvroSerDe.writeBinaryWithSchemaFingerprint(this, serializer())
 

@@ -26,7 +26,7 @@ import io.infinitic.common.serDe.avro.AvroSerDe
 import io.infinitic.common.serDe.avro.AvroSerDe.SCHEMAS_FOLDER
 import io.infinitic.common.serDe.avro.AvroSerDe.getAllSchemas
 import io.infinitic.common.serDe.avro.AvroSerDe.getSchemaFilePrefix
-import io.infinitic.current
+import io.infinitic.currentVersion
 import io.infinitic.isReleaseVersion
 import io.kotest.assertions.throwables.shouldNotThrowAny
 import io.kotest.matchers.ints.shouldBeGreaterThan
@@ -42,7 +42,7 @@ fun <T : Any> checkOrCreateCurrentFile(klass: KClass<T>, serializer: KSerializer
   if (isReleaseVersion) {
     val schemaFilePath = File(
         "/src/main/resources/$SCHEMAS_FOLDER/",
-        "${getSchemaFilePrefix(klass)}-$current.avsc",
+        "${getSchemaFilePrefix(klass)}-$currentVersion.avsc",
     )
 
     // Does the schema file already exist?

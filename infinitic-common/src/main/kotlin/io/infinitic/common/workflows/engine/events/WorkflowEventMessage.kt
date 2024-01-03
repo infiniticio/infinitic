@@ -22,6 +22,8 @@
  */
 package io.infinitic.common.workflows.engine.events
 
+import com.github.avrokotlin.avro4k.Avro
+import com.github.avrokotlin.avro4k.AvroDefault
 import com.github.avrokotlin.avro4k.AvroNamespace
 import io.infinitic.common.clients.data.ClientName
 import io.infinitic.common.clients.messages.MethodCanceled
@@ -30,6 +32,7 @@ import io.infinitic.common.clients.messages.MethodFailed
 import io.infinitic.common.clients.messages.MethodTimedOut
 import io.infinitic.common.data.MessageId
 import io.infinitic.common.data.ReturnValue
+import io.infinitic.common.data.Version
 import io.infinitic.common.data.methods.MethodName
 import io.infinitic.common.emitters.EmitterName
 import io.infinitic.common.exceptions.thisShouldNotHappen
@@ -49,10 +52,14 @@ import io.infinitic.common.workflows.engine.messages.ChildMethodCanceled
 import io.infinitic.common.workflows.engine.messages.ChildMethodCompleted
 import io.infinitic.common.workflows.engine.messages.ChildMethodFailed
 import io.infinitic.common.workflows.engine.messages.ChildMethodTimedOut
+import io.infinitic.currentVersion
 import kotlinx.serialization.Serializable
 
 @Serializable
 sealed class WorkflowEventMessage : Message {
+  @Suppress("RedundantNullableReturnType")
+  @AvroDefault(Avro.NULL)
+  val version: Version? = Version(currentVersion)
   override val messageId: MessageId = MessageId()
   abstract val workflowId: WorkflowId
   abstract val workflowName: WorkflowName

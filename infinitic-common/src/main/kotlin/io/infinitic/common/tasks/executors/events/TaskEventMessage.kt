@@ -22,11 +22,14 @@
  */
 package io.infinitic.common.tasks.executors.events
 
+import com.github.avrokotlin.avro4k.Avro
+import com.github.avrokotlin.avro4k.AvroDefault
 import com.github.avrokotlin.avro4k.AvroNamespace
 import io.infinitic.common.clients.data.ClientName
 import io.infinitic.common.data.MessageId
 import io.infinitic.common.data.MillisDuration
 import io.infinitic.common.data.ReturnValue
+import io.infinitic.common.data.Version
 import io.infinitic.common.data.methods.MethodName
 import io.infinitic.common.emitters.EmitterName
 import io.infinitic.common.messages.Message
@@ -45,11 +48,15 @@ import io.infinitic.common.workflows.data.methodRuns.WorkflowMethodId
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTask
 import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.data.workflows.WorkflowName
+import io.infinitic.currentVersion
 import io.infinitic.exceptions.DeferredException
 import kotlinx.serialization.Serializable
 
 @Serializable
 sealed class TaskEventMessage : Message {
+  @Suppress("RedundantNullableReturnType")
+  @AvroDefault(Avro.NULL)
+  val version: Version? = Version(currentVersion)
   abstract val serviceName: ServiceName
   abstract val taskId: TaskId
   abstract val taskRetrySequence: TaskRetrySequence
