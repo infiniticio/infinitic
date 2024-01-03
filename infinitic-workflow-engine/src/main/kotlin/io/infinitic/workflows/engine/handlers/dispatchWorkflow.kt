@@ -42,35 +42,6 @@ internal fun CoroutineScope.dispatchWorkflow(
   message: DispatchNewWorkflow
 ): WorkflowState {
 
-  launch {
-    val workflowStartedEvent = WorkflowStartedEvent(
-        workflowName = message.workflowName,
-        workflowId = message.workflowId,
-        emitterName = EmitterName(producer.name),
-        workflowTags = message.workflowTags,
-        workflowMeta = message.workflowMeta,
-    )
-
-    val workflowMethodStartedEvent = WorkflowMethodStartedEvent(
-        workflowName = message.workflowName,
-        workflowId = message.workflowId,
-        emitterName = EmitterName(producer.name),
-        workflowTags = message.workflowTags,
-        workflowMeta = message.workflowMeta,
-        workflowMethodId = WorkflowMethodId.from(message.workflowId),
-        parentWorkflowName = null,
-        parentWorkflowId = null,
-        parentWorkflowMethodId = null,
-        parentClientName = message.parentClientName,
-        waitingClients = if (message.clientWaiting) setOf(message.parentClientName!!) else setOf(),
-    )
-
-    // the 2 events are sent sequentially, to ensure they have consistent timestamps
-    // (workflowStarted before workflowMethodStarted)
-    producer.sendToWorkflowEvents(workflowStartedEvent)
-    producer.sendToWorkflowEvents(workflowMethodStartedEvent)
-  }
-
   val workflowMethod = WorkflowMethod(
       workflowMethodId = WorkflowMethodId.from(message.workflowId),
       waitingClients =
@@ -100,6 +71,37 @@ internal fun CoroutineScope.dispatchWorkflow(
   )
 
   dispatchWorkflowTask(producer, state, workflowMethod, PositionInMethod())
+
+  launch {
+    val emitterName = EmitterName(producer.name)
+
+    val workflowStartedEvent = WorkflowStartedEvent(
+        workflowName = message.workflowName,
+        workflowId = message.workflowId,
+        emitterName = emitterName,
+        workflowTags = message.workflowTags,
+        workflowMeta = message.workflowMeta,
+    )
+
+    val workflowMethodStartedEvent = WorkflowMethodStartedEvent(
+        workflowName = state.workflowName,
+        workflowId = state.workflowId,
+        emitterName = emitterName,
+        workflowTags = state.workflowTags,
+        workflowMeta = state.workflowMeta,
+        workflowMethodId = workflowMethod.workflowMethodId,
+        parentWorkflowName = workflowMethod.parentWorkflowName,
+        parentWorkflowId = workflowMethod.parentWorkflowId,
+        parentWorkflowMethodId = workflowMethod.parentWorkflowMethodId,
+        parentClientName = message.parentClientName,
+        waitingClients = if (message.clientWaiting) setOf(message.parentClientName!!) else setOf(),
+    )
+
+    // the 2 events are sent sequentially, to ensure they have consistent timestamps
+    // (workflowStarted before workflowMethodStarted)
+    producer.sendToWorkflowEvents(workflowStartedEvent)
+    producer.sendToWorkflowEvents(workflowMethodStartedEvent)
+  }
 
   return state
 }

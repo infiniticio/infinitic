@@ -40,6 +40,7 @@ import io.infinitic.workers.config.WorkerConfigInterface
 import io.infinitic.workers.register.InfiniticRegister
 import io.infinitic.workers.register.InfiniticRegisterInterface
 import io.infinitic.workflows.engine.WorkflowEngine
+import io.infinitic.workflows.engine.WorkflowEventHandler
 import io.infinitic.workflows.tag.WorkflowTagEngine
 import java.util.concurrent.CompletableFuture
 
@@ -119,6 +120,18 @@ class InfiniticWorker(
       futures.add(
           consumerAsync.startDelayedWorkflowEngineConsumerAsync(
               handler = workflowProducer::sendToWorkflowEngine,
+              beforeDlq = null,
+              workflowName = it.key,
+              concurrency = it.value.concurrency,
+          ),
+      )
+
+      // WORKFLOW-EVENTS
+      val workflowEvent = WorkflowEventHandler(producerAsync)
+
+      futures.add(
+          consumerAsync.startWorkflowEventsConsumerAsync(
+              handler = workflowEvent::handle,
               beforeDlq = null,
               workflowName = it.key,
               concurrency = it.value.concurrency,

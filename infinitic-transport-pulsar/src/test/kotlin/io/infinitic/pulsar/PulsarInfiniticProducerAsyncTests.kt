@@ -33,6 +33,7 @@ import io.infinitic.common.tasks.executors.events.TaskCompletedEvent
 import io.infinitic.common.tasks.executors.messages.ExecuteTask
 import io.infinitic.common.tasks.tags.messages.TaskTagMessage
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTask
+import io.infinitic.common.workflows.engine.events.WorkflowEventMessage
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
 import io.infinitic.common.workflows.tags.messages.WorkflowTagMessage
 import io.infinitic.pulsar.producers.Producer
@@ -165,6 +166,19 @@ class PulsarInfiniticProducerAsyncTests : StringSpec(
         }
       }
 
+      "should init workflow-events topic before sending a message to it" {
+        val message = TestFactory.random<WorkflowEventMessage>()
+        infiniticProducerAsync.sendToWorkflowEventsAsync(message)
+
+        val name = message.workflowName.toString()
+        val desc = WorkflowTopicsDescription.EVENTS
+
+        verify {
+          resourceManager.getTopicName(name, desc)
+          resourceManager.initTopicOnce(topicName(name, desc), true, false)
+        }
+      }
+
       "should init workflow-task-executor topic before sending a message to it" {
         val message = TestFactory.random<ExecuteTask>(
             mapOf("serviceName" to ServiceName(WorkflowTask::class.java.name)),
@@ -172,7 +186,7 @@ class PulsarInfiniticProducerAsyncTests : StringSpec(
         infiniticProducerAsync.sendToTaskExecutorAsync(message)
 
         val name = message.workflowName.toString()
-        val desc = WorkflowTopicsDescription.EXECUTOR
+        val desc = WorkflowTopicsDescription.TASK_EXECUTOR
 
         verify {
           resourceManager.getTopicName(name, desc)
@@ -187,7 +201,7 @@ class PulsarInfiniticProducerAsyncTests : StringSpec(
         infiniticProducerAsync.sendToTaskEventsAsync(message)
 
         val name = message.workflowName.toString()
-        val desc = WorkflowTopicsDescription.EXECUTOR_EVENTS
+        val desc = WorkflowTopicsDescription.TASK_EVENTS
 
         verify {
           resourceManager.getTopicName(name, desc)

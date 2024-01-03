@@ -125,8 +125,6 @@ class WorkflowEngine(
     when (state.workflowMethods.size) {
       // workflow is completed
       0 -> {
-        // send workflowCompleted event
-        sendWorkflowCompletedEvent(state)
         // remove reference to this workflow in tags
         removeTags(producer, state)
         // delete state
@@ -250,6 +248,12 @@ class WorkflowEngine(
         logDebug(msg) { "processing buffered message $msg" }
         processMessage(state, msg)
       }
+    }
+
+    // if we just handled a workflow task, and that there is no other workflow task ongoing,
+    if (message.isWorkflowTaskEvent() && state.runningWorkflowTaskId == null) {
+      // if no method left, then the workflow is completed
+      if (state.workflowMethods.isEmpty()) sendWorkflowCompletedEvent(state)
     }
 
     return state

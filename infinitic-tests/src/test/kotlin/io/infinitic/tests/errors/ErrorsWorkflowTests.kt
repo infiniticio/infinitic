@@ -42,8 +42,9 @@ internal class ErrorsWorkflowTests :
       {
         val client = Test.client
 
-        val errorsWorkflow =
-            client.newWorkflow(ErrorsWorkflow::class.java, tags = setOf("foo", "bar"))
+        val errorsWorkflow = client.newWorkflow(
+            ErrorsWorkflow::class.java, tags = setOf("foo", "bar"),
+        )
         val utilWorkflow = client.newWorkflow(UtilWorkflow::class.java)
 
         "Cancelling workflow" {

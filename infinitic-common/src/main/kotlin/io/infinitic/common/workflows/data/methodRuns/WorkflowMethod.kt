@@ -76,18 +76,17 @@ data class WorkflowMethod(
    * - child workflows should be canceled if the workflow itself is canceled
    * - other methods could use reference to deferred owned by current method
    */
-  fun isTerminated() =
-      methodReturnValue != null &&
-          pastSteps.all { it.isTerminated() } &&
-          pastCommands
-              .filter {
-                when (it.command) {
-                  is DispatchNewWorkflowCommand,
-                  is DispatchMethodOnRunningWorkflowCommand,
-                  is DispatchTaskCommand -> true
+  fun isTerminated() = methodReturnValue != null &&
+      pastSteps.all { it.isTerminated() } &&
+      pastCommands
+          .filter {
+            when (it.command) {
+              is DispatchNewWorkflowCommand,
+              is DispatchMethodOnRunningWorkflowCommand,
+              is DispatchTaskCommand -> true
 
-                  else -> false
-                }
-              }
-              .all { it.isTerminated() }
+              else -> false
+            }
+          }
+          .all { it.isTerminated() }
 }

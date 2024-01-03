@@ -29,7 +29,6 @@ class After100MilliSeconds : WithTimeout {
   override fun getTimeoutInSeconds() = 0.1
 }
 
-class After500MilliSeconds : WithTimeout {
-  override fun getTimeoutInSeconds() = 0.5
+class After1Second : WithTimeout {
+  override fun getTimeoutInSeconds() = 1.0
 }
-

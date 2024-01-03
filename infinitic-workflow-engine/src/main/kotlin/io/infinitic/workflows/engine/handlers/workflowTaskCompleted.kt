@@ -22,11 +22,10 @@
  */
 package io.infinitic.workflows.engine.handlers
 
-import io.infinitic.common.clients.messages.MethodCompleted
 import io.infinitic.common.emitters.EmitterName
 import io.infinitic.common.exceptions.thisShouldNotHappen
 import io.infinitic.common.transport.InfiniticProducer
-import io.infinitic.common.workflows.data.commands.DispatchExistingWorkflowPastCommand
+import io.infinitic.common.workflows.data.commands.DispatchMethodOnRunningWorkflowPastCommand
 import io.infinitic.common.workflows.data.commands.DispatchNewWorkflowPastCommand
 import io.infinitic.common.workflows.data.commands.DispatchTaskPastCommand
 import io.infinitic.common.workflows.data.commands.InlineTaskPastCommand
@@ -40,13 +39,11 @@ import io.infinitic.common.workflows.data.steps.StepStatus.CurrentlyTimedOut
 import io.infinitic.common.workflows.data.steps.StepStatus.Failed
 import io.infinitic.common.workflows.data.steps.StepStatus.TimedOut
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskReturnValue
-import io.infinitic.common.workflows.data.workflows.WorkflowReturnValue
 import io.infinitic.common.workflows.engine.events.WorkflowMethodCompletedEvent
-import io.infinitic.common.workflows.engine.messages.ChildMethodCompleted
 import io.infinitic.common.workflows.engine.messages.TaskCompleted
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
 import io.infinitic.common.workflows.engine.state.WorkflowState
-import io.infinitic.workflows.engine.commands.dispatchExistingWorkflowCmd
+import io.infinitic.workflows.engine.commands.dispatchMethodOnRunningWorkflowCmd
 import io.infinitic.workflows.engine.commands.dispatchNewWorkflowCmd
 import io.infinitic.workflows.engine.commands.dispatchTaskCmd
 import io.infinitic.workflows.engine.commands.receiveSignalCmd
@@ -110,11 +107,10 @@ internal fun CoroutineScope.workflowTaskCompleted(
 
   // add new commands to past commands
   workflowTaskReturnValue.newCommands.forEach {
-    @Suppress("UNUSED_VARIABLE")
-    val o = when (it) {
+    when (it) {
       is DispatchTaskPastCommand -> dispatchTaskCmd(it, state, producer)
       is DispatchNewWorkflowPastCommand -> dispatchNewWorkflowCmd(it, state, producer)
-      is DispatchExistingWorkflowPastCommand -> dispatchExistingWorkflowCmd(
+      is DispatchMethodOnRunningWorkflowPastCommand -> dispatchMethodOnRunningWorkflowCmd(
           it,
           state,
           producer,
@@ -166,39 +162,10 @@ internal fun CoroutineScope.workflowTaskCompleted(
 
     launch { producer.sendToWorkflowEvents(workflowMethodCompletedEvent) }
 
-    // send output back to waiting clients
-    workflowMethod.waitingClients.forEach {
-      val workflowCompleted = MethodCompleted(
-          recipientName = it,
-          workflowId = state.workflowId,
-          workflowMethodId = workflowMethod.workflowMethodId,
-          methodReturnValue = workflowMethod.methodReturnValue!!,
-          emitterName = emitterName,
-      )
-      launch { producer.sendToClient(workflowCompleted) }
-    }
-    workflowMethod.waitingClients.clear()
 
-    // tell parent workflow if any
-    workflowMethod.parentWorkflowId?.let {
-      val childMethodCompleted = ChildMethodCompleted(
-          childWorkflowReturnValue =
-          WorkflowReturnValue(
-              workflowId = state.workflowId,
-              workflowMethodId = workflowMethod.workflowMethodId,
-              returnValue = workflowTaskReturnValue.methodReturnValue!!,
-          ),
-          workflowName = workflowMethod.parentWorkflowName ?: thisShouldNotHappen(),
-          workflowId = it,
-          workflowMethodId = workflowMethod.parentWorkflowMethodId ?: thisShouldNotHappen(),
-          emitterName = emitterName,
-      )
-      if (it == state.workflowId) {
-        // case of method dispatched within same workflow
-        bufferedMessages.add(childMethodCompleted)
-      } else {
-        launch { producer.sendToWorkflowEngine(childMethodCompleted) }
-      }
+    // tell itself if needed
+    if (workflowMethodCompletedEvent.isItsOwnParent()) {
+      bufferedMessages.add(workflowMethodCompletedEvent.getEventForParentWorkflow()!!)
     }
   }
 

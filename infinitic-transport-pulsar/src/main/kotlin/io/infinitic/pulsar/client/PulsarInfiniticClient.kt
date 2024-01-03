@@ -197,7 +197,7 @@ class PulsarInfiniticClient(private val pulsarClient: PulsarClient) {
    * - Result.success(Consumer)
    * - Result.failure(e) in case of error
    */
-  fun <S : Envelope<*>> newConsumer(
+  internal fun <S : Envelope<*>> newConsumer(
     schemaClass: KClass<S>,
     consumerDef: ConsumerDef,
     consumerDefDlq: ConsumerDef? = null,
@@ -353,7 +353,7 @@ class PulsarInfiniticClient(private val pulsarClient: PulsarClient) {
   }
 
   // Convenience class to create a consumer
-  data class ConsumerDef(
+  internal data class ConsumerDef(
     val topic: String,
     val subscriptionName: String,
     val subscriptionType: SubscriptionType,

@@ -29,6 +29,7 @@ import io.infinitic.common.tasks.executors.events.TaskEventMessage
 import io.infinitic.common.tasks.executors.messages.TaskExecutorMessage
 import io.infinitic.common.tasks.tags.messages.TaskTagMessage
 import io.infinitic.common.workflows.data.workflows.WorkflowName
+import io.infinitic.common.workflows.engine.events.WorkflowEventMessage
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
 import io.infinitic.common.workflows.tags.messages.WorkflowTagMessage
 import java.util.concurrent.CompletableFuture
@@ -70,6 +71,14 @@ interface InfiniticConsumerAsync : AutoCloseable {
   fun startDelayedWorkflowEngineConsumerAsync(
     handler: suspend (WorkflowEngineMessage) -> Unit,
     beforeDlq: (suspend (WorkflowEngineMessage, Exception) -> Unit)?,
+    workflowName: WorkflowName,
+    concurrency: Int
+  ): CompletableFuture<Unit>
+
+  // Asynchronously start consumers of delayed messages to workflow engine
+  fun startWorkflowEventsConsumerAsync(
+    handler: suspend (WorkflowEventMessage) -> Unit,
+    beforeDlq: (suspend (WorkflowEventMessage, Exception) -> Unit)?,
     workflowName: WorkflowName,
     concurrency: Int
   ): CompletableFuture<Unit>

@@ -22,6 +22,9 @@
  */
 package io.infinitic.common.clients.messages
 
+import com.github.avrokotlin.avro4k.Avro
+import com.github.avrokotlin.avro4k.AvroDefault
+import com.github.avrokotlin.avro4k.AvroName
 import io.infinitic.common.clients.data.ClientName
 import io.infinitic.common.messages.Envelope
 import io.infinitic.common.serDe.avro.AvroSerDe
@@ -39,7 +42,8 @@ data class ClientEnvelope(
   private val workflowCompleted: MethodCompleted? = null,
   private val workflowCanceled: MethodCanceled? = null,
   private val workflowFailed: MethodFailed? = null,
-  private val unknownWorkflow: MethodUnknown? = null,
+  @AvroDefault(Avro.NULL) private val workflowTimedOut: MethodTimedOut? = null,
+  @AvroName("unknownWorkflow") private val workflowUnknown: MethodUnknown? = null,
   private val methodAlreadyCompleted: MethodAlreadyCompleted? = null,
   private val workflowIdsByTag: WorkflowIdsByTag? = null
 ) : Envelope<ClientMessage> {
@@ -52,7 +56,8 @@ data class ClientEnvelope(
         workflowCompleted,
         workflowCanceled,
         workflowFailed,
-        unknownWorkflow,
+        workflowTimedOut,
+        workflowUnknown,
         methodAlreadyCompleted,
         workflowIdsByTag,
     )
@@ -106,10 +111,16 @@ data class ClientEnvelope(
           workflowFailed = msg,
       )
 
+      is MethodTimedOut -> ClientEnvelope(
+          clientName = msg.recipientName,
+          type = ClientMessageType.WORKFLOW_TIMED_OUT,
+          workflowTimedOut = msg,
+      )
+
       is MethodUnknown -> ClientEnvelope(
           clientName = msg.recipientName,
           type = ClientMessageType.UNKNOWN_WORKFLOW,
-          unknownWorkflow = msg,
+          workflowUnknown = msg,
       )
 
       is MethodAlreadyCompleted -> ClientEnvelope(
@@ -142,7 +153,8 @@ data class ClientEnvelope(
         ClientMessageType.WORKFLOW_COMPLETED -> workflowCompleted
         ClientMessageType.WORKFLOW_CANCELED -> workflowCanceled
         ClientMessageType.WORKFLOW_FAILED -> workflowFailed
-        ClientMessageType.UNKNOWN_WORKFLOW -> unknownWorkflow
+        ClientMessageType.WORKFLOW_TIMED_OUT -> workflowTimedOut
+        ClientMessageType.UNKNOWN_WORKFLOW -> workflowUnknown
         ClientMessageType.WORKFLOW_ALREADY_COMPLETED -> methodAlreadyCompleted
         ClientMessageType.WORKFLOW_IDS_PER_TAG -> workflowIdsByTag
       }!!

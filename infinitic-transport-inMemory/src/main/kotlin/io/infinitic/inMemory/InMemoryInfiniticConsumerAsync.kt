@@ -32,6 +32,7 @@ import io.infinitic.common.tasks.executors.messages.TaskExecutorMessage
 import io.infinitic.common.tasks.tags.messages.TaskTagMessage
 import io.infinitic.common.transport.InfiniticConsumerAsync
 import io.infinitic.common.workflows.data.workflows.WorkflowName
+import io.infinitic.common.workflows.engine.events.WorkflowEventMessage
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
 import io.infinitic.common.workflows.tags.messages.WorkflowTagMessage
 import kotlinx.coroutines.CoroutineScope
@@ -60,7 +61,7 @@ class InMemoryInfiniticConsumerAsync(private val channels: InMemoryChannels) :
     clientName: ClientName
   ): CompletableFuture<Unit> {
     val channel = channels.forClient(clientName)
-    logger.info { "Channel ${channel.id}: Starting Client consumer for $clientName with concurrency = 1" }
+    logger.info { "Channel ${channel.id}: Starting client-response consumer for $clientName with concurrency = 1" }
     return startAsync(handler, beforeDlq, channel, 1)
   }
 
@@ -71,7 +72,7 @@ class InMemoryInfiniticConsumerAsync(private val channels: InMemoryChannels) :
     concurrency: Int
   ): CompletableFuture<Unit> {
     val channel = channels.forTaskTag(serviceName)
-    logger.info { "Channel ${channel.id}: Starting TaskTag consumer for $serviceName with concurrency = 1" }
+    logger.info { "Channel ${channel.id}: Starting task-tag consumer for $serviceName with concurrency = 1" }
     return startAsync(handler, beforeDlq, channel, 1)
   }
 
@@ -82,7 +83,7 @@ class InMemoryInfiniticConsumerAsync(private val channels: InMemoryChannels) :
     concurrency: Int
   ): CompletableFuture<Unit> {
     val channel = channels.forWorkflowTag(workflowName)
-    logger.info { "Channel ${channel.id}: Starting WorkflowTag consumer for $workflowName with concurrency = 1" }
+    logger.info { "Channel ${channel.id}: Starting workflow-tag consumer for $workflowName with concurrency = 1" }
     return startAsync(handler, beforeDlq, channel, 1)
   }
 
@@ -93,7 +94,7 @@ class InMemoryInfiniticConsumerAsync(private val channels: InMemoryChannels) :
     concurrency: Int
   ): CompletableFuture<Unit> {
     val channel = channels.forWorkflowCmd(workflowName)
-    logger.info { "Channel ${channel.id}: Starting WorkflowStart consumer for $workflowName with concurrency = $concurrency" }
+    logger.info { "Channel ${channel.id}: Starting workflow-cmd consumer for $workflowName with concurrency = $concurrency" }
     return startAsync(handler, beforeDlq, channel, concurrency)
   }
 
@@ -104,7 +105,7 @@ class InMemoryInfiniticConsumerAsync(private val channels: InMemoryChannels) :
     concurrency: Int
   ): CompletableFuture<Unit> {
     val channel = channels.forWorkflowEngine(workflowName)
-    logger.info { "Channel ${channel.id}: Starting WorkflowEngine consumer for $workflowName with concurrency = 1" }
+    logger.info { "Channel ${channel.id}: Starting workflow-engine consumer for $workflowName with concurrency = 1" }
     return startAsync(handler, beforeDlq, channel, 1)
   }
 
@@ -115,8 +116,19 @@ class InMemoryInfiniticConsumerAsync(private val channels: InMemoryChannels) :
     concurrency: Int
   ): CompletableFuture<Unit> {
     val channel = channels.forDelayedWorkflowEngine(workflowName)
-    logger.info { "Channel ${channel.id}: Starting delayed WorkflowEngine consumer for $workflowName with concurrency = $concurrency" }
+    logger.info { "Channel ${channel.id}: Starting workflow-engine-delay consumer for $workflowName with concurrency = $concurrency" }
     return startDelayedAsync(handler, beforeDlq, channel, concurrency)
+  }
+
+  override fun startWorkflowEventsConsumerAsync(
+    handler: suspend (WorkflowEventMessage) -> Unit,
+    beforeDlq: (suspend (WorkflowEventMessage, Exception) -> Unit)?,
+    workflowName: WorkflowName,
+    concurrency: Int
+  ): CompletableFuture<Unit> {
+    val channel = channels.forWorkflowEvent(workflowName)
+    logger.info { "Channel ${channel.id}: Starting workflow-events consumer for $workflowName with concurrency = $concurrency" }
+    return startAsync(handler, beforeDlq, channel, concurrency)
   }
 
   override fun startTaskExecutorConsumerAsync(
@@ -126,7 +138,7 @@ class InMemoryInfiniticConsumerAsync(private val channels: InMemoryChannels) :
     concurrency: Int
   ): CompletableFuture<Unit> {
     val channel = channels.forTaskExecutor(serviceName)
-    logger.info { "Channel ${channel.id}: Starting TaskExecutor consumer for $serviceName with concurrency = $concurrency" }
+    logger.info { "Channel ${channel.id}: Starting task-executor consumer for $serviceName with concurrency = $concurrency" }
     return startAsync(handler, beforeDlq, channel, concurrency)
   }
 
@@ -137,7 +149,7 @@ class InMemoryInfiniticConsumerAsync(private val channels: InMemoryChannels) :
     concurrency: Int
   ): CompletableFuture<Unit> {
     val channel = channels.forTaskEvents(serviceName)
-    logger.info { "Channel ${channel.id}: Starting TaskEvents consumer for $serviceName with concurrency = $concurrency" }
+    logger.info { "Channel ${channel.id}: Starting task-events consumer for $serviceName with concurrency = $concurrency" }
     return startAsync(handler, beforeDlq, channel, concurrency)
   }
 
@@ -148,7 +160,7 @@ class InMemoryInfiniticConsumerAsync(private val channels: InMemoryChannels) :
     concurrency: Int
   ): CompletableFuture<Unit> {
     val channel = channels.forDelayedTaskExecutor(serviceName)
-    logger.info { "Channel ${channel.id}: Starting delayed TaskExecutor consumer for $serviceName with concurrency = $concurrency" }
+    logger.info { "Channel ${channel.id}: Starting task-executor-delay consumer for $serviceName with concurrency = $concurrency" }
     return startDelayedAsync(handler, beforeDlq, channel, concurrency)
   }
 
@@ -159,7 +171,7 @@ class InMemoryInfiniticConsumerAsync(private val channels: InMemoryChannels) :
     concurrency: Int
   ): CompletableFuture<Unit> {
     val channel = channels.forWorkflowTaskExecutor(workflowName)
-    logger.info { "Channel ${channel.id}: Starting WorkflowTaskExecutor consumer for $workflowName with concurrency = 1" }
+    logger.info { "Channel ${channel.id}: Starting workflow-task-executor consumer for $workflowName with concurrency = 1" }
     return startAsync(handler, beforeDlq, channel, 1)
   }
 
@@ -170,7 +182,7 @@ class InMemoryInfiniticConsumerAsync(private val channels: InMemoryChannels) :
     concurrency: Int
   ): CompletableFuture<Unit> {
     val channel = channels.forWorkflowTaskEvents(workflowName)
-    logger.info { "Channel ${channel.id}: Starting WorkflowTaskEvents consumer for $workflowName with concurrency = $concurrency" }
+    logger.info { "Channel ${channel.id}: Starting workflow-task-events consumer for $workflowName with concurrency = $concurrency" }
     return startAsync(handler, beforeDlq, channel, concurrency)
   }
 
@@ -181,7 +193,7 @@ class InMemoryInfiniticConsumerAsync(private val channels: InMemoryChannels) :
     concurrency: Int
   ): CompletableFuture<Unit> {
     val channel = channels.forDelayedWorkflowTaskExecutor(workflowName)
-    logger.info { "Channel ${channel.id}: Starting delayed WorkflowTask consumer for $workflowName with concurrency = $concurrency" }
+    logger.info { "Channel ${channel.id}: Starting workflow-task-delay consumer for $workflowName with concurrency = $concurrency" }
     return startDelayedAsync(handler, beforeDlq, channel, concurrency)
   }
 

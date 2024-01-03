@@ -112,6 +112,14 @@ data class MethodCanceled(
 ) : ClientMessage(), MethodMessage
 
 @Serializable
+data class MethodTimedOut(
+  override val recipientName: ClientName,
+  override val workflowId: WorkflowId,
+  @SerialName("methodRunId") override val workflowMethodId: WorkflowMethodId,
+  override val emitterName: EmitterName
+) : ClientMessage(), MethodMessage
+
+@Serializable
 @AvroName("MethodRunUnknown")
 data class MethodUnknown(
   override val recipientName: ClientName,

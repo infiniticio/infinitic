@@ -38,6 +38,8 @@ import io.infinitic.common.tasks.tags.messages.TaskTagEnvelope
 import io.infinitic.common.tasks.tags.messages.TaskTagMessage
 import io.infinitic.common.transport.InfiniticConsumerAsync
 import io.infinitic.common.workflows.data.workflows.WorkflowName
+import io.infinitic.common.workflows.engine.events.WorkflowEventEnvelope
+import io.infinitic.common.workflows.engine.events.WorkflowEventMessage
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineEnvelope
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
 import io.infinitic.common.workflows.tags.messages.WorkflowTagEnvelope
@@ -151,6 +153,20 @@ class PulsarInfiniticConsumerAsync(
       name = "$workflowName",
   )
 
+  override fun startWorkflowEventsConsumerAsync(
+    handler: suspend (WorkflowEventMessage) -> Unit,
+    beforeDlq: (suspend (WorkflowEventMessage, Exception) -> Unit)?,
+    workflowName: WorkflowName,
+    concurrency: Int
+  ) = startAsync(
+      handler = handler,
+      beforeDlq = beforeDlq,
+      schemaClass = WorkflowEventEnvelope::class,
+      topicDescription = WorkflowTopicsDescription.EVENTS,
+      concurrency = concurrency,
+      name = "$workflowName",
+  )
+
   // Start consumers of messages to task tags
   override fun startTaskTagConsumerAsync(
     handler: suspend (TaskTagMessage) -> Unit,
@@ -215,7 +231,7 @@ class PulsarInfiniticConsumerAsync(
       handler = handler,
       beforeDlq = beforeDlq,
       schemaClass = TaskExecutorEnvelope::class,
-      topicDescription = WorkflowTopicsDescription.EXECUTOR,
+      topicDescription = WorkflowTopicsDescription.TASK_EXECUTOR,
       concurrency = concurrency,
       name = "$workflowName",
   )
@@ -229,7 +245,7 @@ class PulsarInfiniticConsumerAsync(
       handler = handler,
       beforeDlq = beforeDlq,
       schemaClass = TaskEventEnvelope::class,
-      topicDescription = WorkflowTopicsDescription.EXECUTOR_EVENTS,
+      topicDescription = WorkflowTopicsDescription.TASK_EVENTS,
       concurrency = concurrency,
       name = "$workflowName",
   )

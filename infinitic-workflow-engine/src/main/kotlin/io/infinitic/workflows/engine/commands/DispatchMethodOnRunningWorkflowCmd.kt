@@ -26,8 +26,8 @@ import io.infinitic.common.emitters.EmitterName
 import io.infinitic.common.exceptions.thisShouldNotHappen
 import io.infinitic.common.tasks.executors.errors.WorkflowMethodTimedOutError
 import io.infinitic.common.transport.InfiniticProducer
-import io.infinitic.common.workflows.data.commands.DispatchExistingWorkflowPastCommand
 import io.infinitic.common.workflows.data.commands.DispatchMethodOnRunningWorkflowCommand
+import io.infinitic.common.workflows.data.commands.DispatchMethodOnRunningWorkflowPastCommand
 import io.infinitic.common.workflows.data.methodRuns.WorkflowMethodId
 import io.infinitic.common.workflows.engine.messages.ChildMethodTimedOut
 import io.infinitic.common.workflows.engine.messages.DispatchMethodWorkflow
@@ -37,27 +37,27 @@ import io.infinitic.common.workflows.tags.messages.DispatchMethodByTag
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
-internal fun CoroutineScope.dispatchExistingWorkflowCmd(
-  pastCommand: DispatchExistingWorkflowPastCommand,
+internal fun CoroutineScope.dispatchMethodOnRunningWorkflowCmd(
+  pastCommand: DispatchMethodOnRunningWorkflowPastCommand,
   state: WorkflowState,
   producer: InfiniticProducer,
   bufferedMessages: MutableList<WorkflowEngineMessage>
 ) {
   val emitterName = EmitterName(producer.name)
   val command: DispatchMethodOnRunningWorkflowCommand = pastCommand.command
-  val methodRunId = WorkflowMethodId.from(pastCommand.commandId)
+  val workflowMethodId = WorkflowMethodId.from(pastCommand.commandId)
   val timeout = command.methodTimeout
 
   when {
     command.workflowId != null -> {
-      val dispatchMethodRun = getDispatchMethod(emitterName, methodRunId, command, state)
+      val dispatchMethodWorkflow = getDispatchMethod(emitterName, workflowMethodId, command, state)
 
       when (command.workflowId) {
         // dispatch method on this workflow
-        state.workflowId -> bufferedMessages.add(dispatchMethodRun)
+        state.workflowId -> bufferedMessages.add(dispatchMethodWorkflow)
 
         // dispatch method on another workflow
-        else -> launch { producer.sendToWorkflowEngine(dispatchMethodRun) }
+        else -> launch { producer.sendToWorkflowEngine(dispatchMethodWorkflow) }
       }
 
       // set timeout if any
@@ -67,7 +67,7 @@ internal fun CoroutineScope.dispatchExistingWorkflowCmd(
                 workflowName = command.workflowName,
                 workflowId = command.workflowId!!,
                 methodName = command.methodName,
-                workflowMethodId = methodRunId,
+                workflowMethodId = workflowMethodId,
             ),
             workflowName = state.workflowName,
             workflowId = state.workflowId,
@@ -83,7 +83,7 @@ internal fun CoroutineScope.dispatchExistingWorkflowCmd(
       if (state.workflowTags.contains(command.workflowTag!!)) {
         // dispatch method on this workflow
         bufferedMessages.add(
-            getDispatchMethod(emitterName, methodRunId, command, state),
+            getDispatchMethod(emitterName, workflowMethodId, command, state),
         )
       }
 
@@ -93,7 +93,7 @@ internal fun CoroutineScope.dispatchExistingWorkflowCmd(
           parentWorkflowId = state.workflowId,
           parentWorkflowName = state.workflowName,
           parentWorkflowMethodId = state.runningWorkflowMethodId,
-          workflowMethodId = methodRunId,
+          workflowMethodId = workflowMethodId,
           methodName = command.methodName,
           methodParameterTypes = command.methodParameterTypes,
           methodParameters = command.methodParameters,

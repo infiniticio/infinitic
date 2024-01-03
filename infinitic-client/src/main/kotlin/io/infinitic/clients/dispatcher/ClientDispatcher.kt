@@ -33,6 +33,7 @@ import io.infinitic.common.clients.messages.ClientMessage
 import io.infinitic.common.clients.messages.MethodCanceled
 import io.infinitic.common.clients.messages.MethodCompleted
 import io.infinitic.common.clients.messages.MethodFailed
+import io.infinitic.common.clients.messages.MethodTimedOut
 import io.infinitic.common.clients.messages.MethodUnknown
 import io.infinitic.common.clients.messages.WorkflowIdsByTag
 import io.infinitic.common.clients.messages.interfaces.MethodMessage
@@ -231,12 +232,14 @@ internal class ClientDispatcher(
 
     @Suppress("UNCHECKED_CAST")
     return when (workflowResult) {
-      null -> throw WorkflowTimedOutException(
-          workflowName = workflowName.toString(),
-          workflowId = workflowId.toString(),
-          methodName = workflowMethodName.toString(),
-          workflowMethodId = workflowMethodId?.toString(),
-      )
+      is MethodTimedOut, null -> {
+        throw WorkflowTimedOutException(
+            workflowName = workflowName.toString(),
+            workflowId = workflowId.toString(),
+            methodName = workflowMethodName.toString(),
+            workflowMethodId = workflowMethodId?.toString(),
+        )
+      }
 
       is MethodCompleted -> workflowResult.methodReturnValue.value() as T
 

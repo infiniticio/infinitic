@@ -22,20 +22,15 @@
  */
 package io.infinitic.workflows.engine.helpers
 
-import io.infinitic.common.emitters.EmitterName
 import io.infinitic.common.exceptions.thisShouldNotHappen
-import io.infinitic.common.tasks.executors.errors.TaskTimedOutError
-import io.infinitic.common.tasks.executors.errors.WorkflowMethodTimedOutError
 import io.infinitic.common.transport.InfiniticProducer
 import io.infinitic.common.workflows.data.commands.CommandId
 import io.infinitic.common.workflows.data.commands.CommandStatus
 import io.infinitic.common.workflows.data.commands.PastCommand
 import io.infinitic.common.workflows.data.commands.ReceiveSignalPastCommand
 import io.infinitic.common.workflows.data.methodRuns.WorkflowMethodId
-import io.infinitic.common.workflows.engine.events.WorkflowMethodTimedOutEvent
 import io.infinitic.common.workflows.engine.state.WorkflowState
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.launch
 
 /** Return true if this command terminates a step */
 
@@ -68,30 +63,6 @@ internal fun CoroutineScope.commandTerminated(
     } else {
       // keep this command as we could have another pastStep solved by it
       state.runningTerminatedCommands.add(0, commandId)
-    }
-  }
-
-  //
-  if (commandStatus is CommandStatus.TimedOut) {
-    when (commandStatus.deferredTimedOutError) {
-      is TaskTimedOutError -> Unit
-      is WorkflowMethodTimedOutError -> launch {
-        val workflowMethodTimedOutEvent = WorkflowMethodTimedOutEvent(
-            workflowName = state.workflowName,
-            workflowId = state.workflowId,
-            workflowMethodId = workflowMethod.workflowMethodId,
-            parentWorkflowId = workflowMethod.parentWorkflowId,
-            parentWorkflowName = workflowMethod.parentWorkflowName,
-            parentWorkflowMethodId = workflowMethod.parentWorkflowMethodId,
-            parentClientName = workflowMethod.parentClientName,
-            waitingClients = workflowMethod.waitingClients,
-            workflowTags = state.workflowTags,
-            workflowMeta = state.workflowMeta,
-            emitterName = EmitterName(producer.name),
-        )
-
-        producer.sendToWorkflowEvents(workflowMethodTimedOutEvent)
-      }
     }
   }
 

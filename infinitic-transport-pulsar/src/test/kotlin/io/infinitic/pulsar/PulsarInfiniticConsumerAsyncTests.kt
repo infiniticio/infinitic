@@ -164,7 +164,7 @@ class PulsarInfiniticConsumerAsyncTests : StringSpec(
         )
 
         val name = "$workflowName"
-        val desc = WorkflowTopicsDescription.EXECUTOR
+        val desc = WorkflowTopicsDescription.TASK_EXECUTOR
 
         verify {
           resourceManager.getTopicName(name, desc)

@@ -22,13 +22,9 @@
  */
 package io.infinitic.workflows.engine.handlers
 
-import io.infinitic.common.clients.messages.MethodFailed
 import io.infinitic.common.emitters.EmitterName
-import io.infinitic.common.exceptions.thisShouldNotHappen
-import io.infinitic.common.tasks.executors.errors.MethodFailedError
 import io.infinitic.common.transport.InfiniticProducer
 import io.infinitic.common.workflows.engine.events.WorkflowMethodFailedEvent
-import io.infinitic.common.workflows.engine.messages.ChildMethodFailed
 import io.infinitic.common.workflows.engine.messages.TaskFailed
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
 import io.infinitic.common.workflows.engine.state.WorkflowState
@@ -49,64 +45,29 @@ internal fun CoroutineScope.workflowTaskFailed(
         else -> deferredError
       }
 
-  launch {
-    val workflowMethodFailedEvent = WorkflowMethodFailedEvent(
-        workflowName = state.workflowName,
-        workflowId = state.workflowId,
-        workflowMethodId = workflowMethod.workflowMethodId,
-        parentWorkflowId = workflowMethod.parentWorkflowId,
-        parentWorkflowName = workflowMethod.parentWorkflowName,
-        parentWorkflowMethodId = workflowMethod.parentWorkflowMethodId,
-        parentClientName = workflowMethod.parentClientName,
-        waitingClients = workflowMethod.waitingClients,
-        workflowMeta = state.workflowMeta,
-        workflowTags = state.workflowTags,
-        emitterName = emitterName,
-        deferredError = deferredError,
-    )
+  val workflowMethodFailedEvent = WorkflowMethodFailedEvent(
+      workflowName = state.workflowName,
+      workflowId = state.workflowId,
+      workflowMethodId = workflowMethod.workflowMethodId,
+      workflowMethodName = workflowMethod.methodName,
+      parentWorkflowId = workflowMethod.parentWorkflowId,
+      parentWorkflowName = workflowMethod.parentWorkflowName,
+      parentWorkflowMethodId = workflowMethod.parentWorkflowMethodId,
+      parentClientName = workflowMethod.parentClientName,
+      waitingClients = workflowMethod.waitingClients,
+      workflowMeta = state.workflowMeta,
+      workflowTags = state.workflowTags,
+      emitterName = emitterName,
+      deferredError = deferredError,
+  )
 
-    producer.sendToWorkflowEvents(workflowMethodFailedEvent)
-  }
-
-  // send to waiting clients
-  workflowMethod.waitingClients.forEach {
-    launch {
-      val methodFailed = MethodFailed(
-          recipientName = it,
-          workflowId = state.workflowId,
-          workflowMethodId = workflowMethod.workflowMethodId,
-          cause = deferredError,
-          emitterName = emitterName,
-      )
-      producer.sendToClient(methodFailed)
-    }
-  }
-  workflowMethod.waitingClients.clear()
+  launch { producer.sendToWorkflowEvents(workflowMethodFailedEvent) }
 
   val bufferedMessages = mutableListOf<WorkflowEngineMessage>()
 
-  // send to parent workflow
-  workflowMethod.parentWorkflowId?.let {
-    val childMethodFailed = ChildMethodFailed(
-        childMethodFailedError =
-        MethodFailedError(
-            workflowName = state.workflowName,
-            workflowId = state.workflowId,
-            workflowMethodName = workflowMethod.methodName,
-            workflowMethodId = workflowMethod.workflowMethodId,
-            deferredError = deferredError,
-        ),
-        workflowName = workflowMethod.parentWorkflowName ?: thisShouldNotHappen(),
-        workflowId = it,
-        workflowMethodId = workflowMethod.parentWorkflowMethodId ?: thisShouldNotHappen(),
-        emitterName = emitterName,
-    )
-    if (it == state.workflowId) {
-      // case of method dispatched within same workflow
-      bufferedMessages.add(childMethodFailed)
-    } else {
-      launch { producer.sendToWorkflowEngine(childMethodFailed) }
-    }
+  // send info to itself if relevant
+  if (workflowMethodFailedEvent.isItsOwnParent()) {
+    bufferedMessages.add(workflowMethodFailedEvent.getEventForParentWorkflow()!!)
   }
 
   // add fake message at the top of the messagesBuffer list

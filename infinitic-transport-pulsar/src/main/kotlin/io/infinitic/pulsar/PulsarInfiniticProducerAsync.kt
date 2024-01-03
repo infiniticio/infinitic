@@ -108,12 +108,12 @@ class PulsarInfiniticProducerAsync(
 
   // Name of producers sending messages to task executor
   private val workflowTaskExecutorProducerName by lazy {
-    resourceManager.getProducerName(name, WorkflowTopicsDescription.EXECUTOR)
+    resourceManager.getProducerName(name, WorkflowTopicsDescription.TASK_EXECUTOR)
   }
 
   // Name of producers sending messages to task executor
   private val workflowTaskEventProducerName by lazy {
-    resourceManager.getProducerName(name, WorkflowTopicsDescription.EXECUTOR_EVENTS)
+    resourceManager.getProducerName(name, WorkflowTopicsDescription.TASK_EVENTS)
   }
 
   // Name of producers sending messages to task tag
@@ -250,7 +250,7 @@ class PulsarInfiniticProducerAsync(
     when (message.isWorkflowTask()) {
       true -> {
         name = "${message.workflowName!!}"
-        desc = WorkflowTopicsDescription.EXECUTOR
+        desc = WorkflowTopicsDescription.TASK_EXECUTOR
         producerName = workflowTaskExecutorProducerName
       }
 
@@ -281,7 +281,7 @@ class PulsarInfiniticProducerAsync(
     when (message.isWorkflowTask()) {
       true -> {
         name = "${message.workflowName!!}"
-        desc = WorkflowTopicsDescription.EXECUTOR_EVENTS
+        desc = WorkflowTopicsDescription.TASK_EVENTS
         producerName = workflowTaskEventProducerName
       }
 

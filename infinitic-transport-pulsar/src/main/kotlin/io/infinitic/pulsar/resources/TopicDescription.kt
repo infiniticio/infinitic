@@ -114,14 +114,14 @@ enum class WorkflowTopicsDescription : TopicDescription {
     override val isDelayed = false
     override val hasDeadLetter = true
   },
-  EXECUTOR {
+  TASK_EXECUTOR {
     override val subscriptionPrefix = "workflow-task-executor"
     override val subscriptionType = SubscriptionType.Shared
     override val isPartitioned = true
     override val isDelayed = false
     override val hasDeadLetter = true
   },
-  EXECUTOR_EVENTS {
+  TASK_EVENTS {
     override val subscriptionPrefix = "workflow-task-events"
     override val subscriptionType = SubscriptionType.Shared
     override val isPartitioned = true

@@ -73,13 +73,12 @@ internal fun CoroutineScope.dispatchNewWorkflowCmd(
 
       // add provided tags
       dispatchWorkflow.workflowTags.forEach {
-        val addTagToWorkflow =
-            AddTagToWorkflow(
-                workflowName = dispatchWorkflow.workflowName,
-                workflowTag = it,
-                workflowId = workflowId,
-                emitterName = emitterName,
-            )
+        val addTagToWorkflow = AddTagToWorkflow(
+            workflowName = dispatchWorkflow.workflowName,
+            workflowTag = it,
+            workflowId = workflowId,
+            emitterName = emitterName,
+        )
         launch { producer.sendToWorkflowTag(addTagToWorkflow) }
       }
     }
@@ -102,7 +101,6 @@ internal fun CoroutineScope.dispatchNewWorkflowCmd(
           clientWaiting = false,
           emitterName = emitterName,
       )
-
       launch { producer.sendToWorkflowTag(dispatchWorkflowByCustomId) }
     }
     // this must be excluded from workflow task
@@ -114,16 +112,16 @@ internal fun CoroutineScope.dispatchNewWorkflowCmd(
 
   if (timeout != null) {
     val childMethodTimedOut = ChildMethodTimedOut(
+        workflowId = state.workflowId,
+        workflowName = state.workflowName,
+        workflowMethodId = state.runningWorkflowMethodId ?: thisShouldNotHappen(),
+        emitterName = emitterName,
         childMethodTimedOutError = WorkflowMethodTimedOutError(
             workflowName = workflowName,
             workflowId = workflowId,
             methodName = methodName,
             workflowMethodId = WorkflowMethodId.from(workflowId),
         ),
-        workflowName = state.workflowName,
-        workflowId = state.workflowId,
-        workflowMethodId = state.runningWorkflowMethodId ?: thisShouldNotHappen(),
-        emitterName = emitterName,
     )
     launch { producer.sendToWorkflowEngine(childMethodTimedOut, timeout) }
   }
