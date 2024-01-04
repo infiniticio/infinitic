@@ -25,6 +25,7 @@ package io.infinitic.tasks.executor
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.infinitic.clients.InfiniticClientInterface
 import io.infinitic.common.data.MillisDuration
+import io.infinitic.common.data.MillisInstant
 import io.infinitic.common.emitters.EmitterName
 import io.infinitic.common.exceptions.thisShouldNotHappen
 import io.infinitic.common.parser.getMethodPerNameAndParameters
@@ -71,7 +72,8 @@ class TaskExecutor(
   private var withTimeout: WithTimeout? = null
   private val emitterName by lazy { EmitterName(producerAsync.name) }
 
-  suspend fun handle(msg: TaskExecutorMessage) {
+  @Suppress("UNUSED_PARAMETER")
+  suspend fun handle(msg: TaskExecutorMessage, publishTime: MillisInstant) {
 
     return when (msg) {
       is ExecuteTask -> {

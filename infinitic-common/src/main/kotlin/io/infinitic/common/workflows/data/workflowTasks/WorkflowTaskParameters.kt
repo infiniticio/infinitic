@@ -45,6 +45,7 @@ import io.infinitic.common.workflows.data.workflows.WorkflowMeta
 import io.infinitic.common.workflows.data.workflows.WorkflowName
 import io.infinitic.common.workflows.data.workflows.WorkflowTag
 import io.infinitic.currentVersion
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 @Serializable
@@ -58,7 +59,8 @@ data class WorkflowTaskParameters(
   val workflowMeta: WorkflowMeta,
   val workflowPropertiesHashValue: Map<PropertyHash, PropertyValue>,
   val workflowTaskIndex: WorkflowTaskIndex,
-  @AvroName("methodRun") val workflowMethod: WorkflowMethod,
+    // Since 0.12.1 WorkflowTaskParameters is serialized using Avro, before that it was in JSON-Kotlin
+  @AvroName("methodRun") @SerialName("methodRun") val workflowMethod: WorkflowMethod,
   val emitterName: EmitterName
 ) {
   fun toExecuteTaskMessage() = ExecuteTask(

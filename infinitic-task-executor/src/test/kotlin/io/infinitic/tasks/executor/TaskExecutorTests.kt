@@ -27,6 +27,7 @@ package io.infinitic.tasks.executor
 import io.infinitic.clients.InfiniticClientInterface
 import io.infinitic.common.data.MessageId
 import io.infinitic.common.data.MillisDuration
+import io.infinitic.common.data.MillisInstant
 import io.infinitic.common.data.ReturnValue
 import io.infinitic.common.data.methods.MethodName
 import io.infinitic.common.data.methods.MethodParameterTypes
@@ -131,7 +132,7 @@ class TaskExecutorTests :
               workflowId = null,
           )
           // when
-          coroutineScope { taskExecutor.handle(msg) }
+          coroutineScope { taskExecutor.handle(msg, MillisInstant.now()) }
           // then
           taskExecutorSlot.isCaptured shouldBe false
           taskEventSlot.size shouldBe 2
@@ -151,7 +152,7 @@ class TaskExecutorTests :
           // with
           val msg = getExecuteTask("other", input, types)
           // when
-          coroutineScope { taskExecutor.handle(msg) }
+          coroutineScope { taskExecutor.handle(msg, MillisInstant.now()) }
           // then
           taskExecutorSlot.isCaptured shouldBe false
           taskEventSlot.size shouldBe 2
@@ -170,7 +171,7 @@ class TaskExecutorTests :
           val types = null
           val msg = getExecuteTask("other", input, types)
           // when
-          coroutineScope { taskExecutor.handle(msg) }
+          coroutineScope { taskExecutor.handle(msg, MillisInstant.now()) }
           // then
           taskExecutorSlot.isCaptured shouldBe false
           taskEventSlot.size shouldBe 2
@@ -189,7 +190,14 @@ class TaskExecutorTests :
           val types = listOf<String>()
           val msg = getExecuteTask("withThrowable", input, types)
           // when
-          val throwable = shouldThrow<Throwable> { coroutineScope { taskExecutor.handle(msg) } }
+          val throwable = shouldThrow<Throwable> {
+            coroutineScope {
+              taskExecutor.handle(
+                  msg,
+                  MillisInstant.now(),
+              )
+            }
+          }
           // then
           taskExecutorSlot.isCaptured shouldBe false
           taskEventSlot.size shouldBe 1
@@ -204,7 +212,7 @@ class TaskExecutorTests :
           val types = listOf(Int::class.java.name, String::class.java.name)
           val msg = getExecuteTask("unknown", input, types)
           // when
-          coroutineScope { taskExecutor.handle(msg) }
+          coroutineScope { taskExecutor.handle(msg, MillisInstant.now()) }
           // then
           taskExecutorSlot.isCaptured shouldBe false
           taskEventSlot.size shouldBe 2
@@ -224,7 +232,7 @@ class TaskExecutorTests :
           // with
           val msg = getExecuteTask("unknown", input, types)
           // when
-          coroutineScope { taskExecutor.handle(msg) }
+          coroutineScope { taskExecutor.handle(msg, MillisInstant.now()) }
           // then
           taskExecutorSlot.isCaptured shouldBe false
           taskEventSlot.size shouldBe 2
@@ -243,7 +251,7 @@ class TaskExecutorTests :
           // with
           val msg = getExecuteTask("unknown", input, null)
           // when
-          coroutineScope { taskExecutor.handle(msg) }
+          coroutineScope { taskExecutor.handle(msg, MillisInstant.now()) }
           // then
           taskExecutorSlot.isCaptured shouldBe false
           taskEventSlot.size shouldBe 2
@@ -262,7 +270,7 @@ class TaskExecutorTests :
           // with
           val msg = getExecuteTask("handle", input, null)
           // when
-          coroutineScope { taskExecutor.handle(msg) }
+          coroutineScope { taskExecutor.handle(msg, MillisInstant.now()) }
           // then
           taskExecutorSlot.isCaptured shouldBe false
           taskEventSlot.size shouldBe 2
@@ -281,7 +289,7 @@ class TaskExecutorTests :
           // with
           val msg = getExecuteTask("handle", arrayOf(2, "3"), null)
           // when
-          coroutineScope { taskExecutor.handle(msg) }
+          coroutineScope { taskExecutor.handle(msg, MillisInstant.now()) }
           // then
           afterSlot.captured shouldBe MillisDuration((SimpleServiceWithRetry.DELAY * 1000).toLong())
           (taskExecutorSlot.captured).shouldBeInstanceOf<ExecuteTask>()
@@ -305,7 +313,7 @@ class TaskExecutorTests :
           // with
           val msg = getExecuteTask("handle", arrayOf(2, "3"), null)
           // when
-          coroutineScope { taskExecutor.handle(msg) }
+          coroutineScope { taskExecutor.handle(msg, MillisInstant.now()) }
           // then
           afterSlot.captured shouldBe MillisDuration((RetryImpl.DELAY * 1000).toLong())
 
@@ -330,7 +338,7 @@ class TaskExecutorTests :
           // with
           val msg = getExecuteTask("handle", arrayOf(2, "3"), null)
           // when
-          coroutineScope { taskExecutor.handle(msg) }
+          coroutineScope { taskExecutor.handle(msg, MillisInstant.now()) }
           // then
           afterSlot.captured shouldBe MillisDuration((RetryImpl.DELAY * 1000).toLong())
 
@@ -356,7 +364,7 @@ class TaskExecutorTests :
           // with
           val msg = getExecuteTask("handle", arrayOf(2, "3"), null)
           // when
-          coroutineScope { taskExecutor.handle(msg) }
+          coroutineScope { taskExecutor.handle(msg, MillisInstant.now()) }
           // then
           taskExecutorSlot.isCaptured shouldBe false
           taskEventSlot.size shouldBe 2
@@ -376,7 +384,7 @@ class TaskExecutorTests :
           // with
           val msg = getExecuteTask("handle", input, null)
           // when
-          coroutineScope { taskExecutor.handle(msg) }
+          coroutineScope { taskExecutor.handle(msg, MillisInstant.now()) }
           // then
           taskExecutorSlot.isCaptured shouldBe false
           taskEventSlot.size shouldBe 2
@@ -400,7 +408,7 @@ class TaskExecutorTests :
           // with
           val msg = getExecuteTask("handle", arrayOf(2, "3"), types)
           // when
-          coroutineScope { taskExecutor.handle(msg) }
+          coroutineScope { taskExecutor.handle(msg, MillisInstant.now()) }
           // then
           taskExecutorSlot.isCaptured shouldBe false
           taskEventSlot.size shouldBe 2
@@ -424,7 +432,7 @@ class TaskExecutorTests :
           // with
           val msg = getExecuteTask("handle", input, types)
           // when
-          coroutineScope { taskExecutor.handle(msg) }
+          coroutineScope { taskExecutor.handle(msg, MillisInstant.now()) }
           // then
           taskExecutorSlot.isCaptured shouldBe false
           taskEventSlot.size shouldBe 2
@@ -448,7 +456,7 @@ class TaskExecutorTests :
           // with
           val msg = getExecuteTask("handle", input, types)
           // when
-          coroutineScope { taskExecutor.handle(msg) }
+          coroutineScope { taskExecutor.handle(msg, MillisInstant.now()) }
           // then
           taskExecutorSlot.isCaptured shouldBe false
           taskEventSlot.size shouldBe 2

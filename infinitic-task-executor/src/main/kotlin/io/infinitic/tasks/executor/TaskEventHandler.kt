@@ -23,6 +23,7 @@
 package io.infinitic.tasks.executor
 
 import io.github.oshai.kotlinlogging.KotlinLogging
+import io.infinitic.common.data.MillisInstant
 import io.infinitic.common.emitters.EmitterName
 import io.infinitic.common.exceptions.thisShouldNotHappen
 import io.infinitic.common.tasks.data.TaskReturnValue
@@ -48,7 +49,8 @@ class TaskEventHandler(producerAsync: InfiniticProducerAsync) {
   val producer = LoggedInfiniticProducer(javaClass.name, producerAsync)
   private val emitterName by lazy { EmitterName(producerAsync.name) }
 
-  suspend fun handle(msg: TaskEventMessage) {
+  @Suppress("UNUSED_PARAMETER")
+  suspend fun handle(msg: TaskEventMessage, publishTime: MillisInstant) {
     msg.logDebug { "received $msg" }
 
     when (msg) {

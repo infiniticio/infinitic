@@ -25,6 +25,7 @@ package io.infinitic.workflows.tag
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.infinitic.common.clients.data.ClientName
 import io.infinitic.common.clients.messages.WorkflowIdsByTag
+import io.infinitic.common.data.MillisInstant
 import io.infinitic.common.emitters.EmitterName
 import io.infinitic.common.exceptions.thisShouldNotHappen
 import io.infinitic.common.tasks.executors.errors.WorkflowMethodTimedOutError
@@ -68,7 +69,8 @@ class WorkflowTagEngine(
 
   private val emitterName by lazy { EmitterName(producer.name) }
 
-  suspend fun handle(message: WorkflowTagMessage) {
+  @Suppress("UNUSED_PARAMETER")
+  suspend fun handle(message: WorkflowTagMessage, publishTime: MillisInstant) {
     logger.debug { "receiving $message" }
 
     when (message) {

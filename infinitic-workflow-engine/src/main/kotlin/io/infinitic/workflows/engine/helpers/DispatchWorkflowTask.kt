@@ -37,14 +37,15 @@ internal fun CoroutineScope.dispatchWorkflowTask(
   producer: InfiniticProducer,
   state: WorkflowState,
   workflowMethod: WorkflowMethod,
-  positionInMethod: PositionInMethod
+  positionInMethod: PositionInMethod,
+  workflowTaskId: TaskId = TaskId()
 ) {
   val emitterName = EmitterName(producer.name)
   state.workflowTaskIndex += 1
 
   // defines workflow task input
   val workflowTaskParameters = WorkflowTaskParameters(
-      taskId = TaskId(),
+      taskId = workflowTaskId,
       workflowId = state.workflowId,
       workflowName = state.workflowName,
       workflowVersion = state.workflowVersion,

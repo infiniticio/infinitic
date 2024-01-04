@@ -25,6 +25,7 @@ package io.infinitic.workflows.engine
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.infinitic.common.clients.data.ClientName
 import io.infinitic.common.clients.messages.MethodUnknown
+import io.infinitic.common.data.MillisInstant
 import io.infinitic.common.emitters.EmitterName
 import io.infinitic.common.exceptions.thisShouldNotHappen
 import io.infinitic.common.tasks.executors.errors.MethodUnknownError
@@ -82,7 +83,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 
-class WorkflowEngineHandler(
+class WorkflowEngine(
   storage: WorkflowStateStorage,
   producerAsync: InfiniticProducerAsync
 ) {
@@ -98,7 +99,8 @@ class WorkflowEngineHandler(
 
   private val emitterName by lazy { EmitterName(producer.name) }
 
-  suspend fun handle(message: WorkflowEngineMessage) {
+  @Suppress("UNUSED_PARAMETER")
+  suspend fun handle(message: WorkflowEngineMessage, publishTime: MillisInstant) {
     logDebug(message) { "Receiving $message" }
 
     // set producer id for logging purpose
@@ -157,7 +159,17 @@ class WorkflowEngineHandler(
     // targeted workflow is not found, we tell the message emitter
     when (message) {
       // New workflow to dispatch
-      is DispatchNewWorkflow -> return@coroutineScope dispatchWorkflow(producer, message)
+      is DispatchNewWorkflow -> {
+        // Before 0.13, all messages had a null version
+        // Since 0.13, the workflow-task is dispatched in workflowCmdHandler
+        @Deprecated("This should be removed after v0.13.0")
+        if (message.version == null) {
+          return@coroutineScope dispatchWorkflow(producer, message)
+        }
+
+        // all actions are now done in WorkflowCmdHandler::dispatchNewWorkflow
+        return@coroutineScope message.state()
+      }
 
       // a client wants to dispatch a method on an unknown workflow
       is DispatchMethodWorkflow -> {
@@ -218,18 +230,20 @@ class WorkflowEngineHandler(
     // if a workflow task is ongoing, we buffer all messages except those associated to a workflowTask
     when (message.isWorkflowTaskEvent()) {
       true -> {
-        // Idempotency: discard if this workflowTask is not the current one
-        if (state.runningWorkflowTaskId != (message as TaskEvent).taskId()) {
-          logDiscarding(message) { "as workflowTask is not the right one" }
-
-          return null
-        }
-
         // messages had a null version before 0.13
         // we retry workflow task, as commands are not executed anymore
         // inside the engine for version >= 0.13
+        @Deprecated("This should be removed after v0.13.0")
         if (message.version == null) {
+          logDiscarding(message) { "workflowTask that has a null version - retrying it" }
           coroutineScope { retryWorkflowTask(producer, state) }
+
+          return state
+        }
+
+        // Idempotency: discard if this workflowTask is not the current one
+        if (state.runningWorkflowTaskId != (message as TaskEvent).taskId()) {
+          logDiscarding(message) { "as workflowTask ${message.taskId()} is different than ${state.runningWorkflowTaskId} in state" }
 
           return null
         }
@@ -269,7 +283,7 @@ class WorkflowEngineHandler(
   }
 
   private fun logDiscarding(message: WorkflowEngineMessage, cause: () -> String) {
-    val txt = { "Id ${message.workflowId} - discarding ${cause()} $message" }
+    val txt = { "Id ${message.workflowId} - discarding ${cause()}: $message" }
     when (message) {
       // we don't log these messages as warning as they are expected
       is TaskTimedOut, is ChildMethodTimedOut -> logger.debug(txt)

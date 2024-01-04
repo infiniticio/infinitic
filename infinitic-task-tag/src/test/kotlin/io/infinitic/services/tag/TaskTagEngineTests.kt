@@ -26,6 +26,7 @@ import io.infinitic.common.clients.messages.ClientMessage
 import io.infinitic.common.clients.messages.TaskIdsByTag
 import io.infinitic.common.data.MessageId
 import io.infinitic.common.data.MillisDuration
+import io.infinitic.common.data.MillisInstant
 import io.infinitic.common.fixtures.TestFactory
 import io.infinitic.common.tasks.data.ServiceName
 import io.infinitic.common.tasks.data.TaskId
@@ -70,7 +71,12 @@ private fun completed() = CompletableFuture.completedFuture(Unit)
 val producerMock = mockk<InfiniticProducerAsync> {
   every { name } returns "$workername"
   every { sendToClientAsync(capture(clientSlot)) } returns completed()
-  every { sendToTaskExecutorAsync(capture(taskExecutorSlot), capture(delaySlot)) } returns completed()
+  every {
+    sendToTaskExecutorAsync(
+        capture(taskExecutorSlot),
+        capture(delaySlot),
+    )
+  } returns completed()
 }
 
 private inline fun <reified T : Any> random(values: Map<String, Any?>? = null) =
@@ -120,7 +126,7 @@ internal class TaskTagEngineTests :
           // given
           val msgIn = random<AddTagToTask>()
           // when
-          getEngine(msgIn.taskTag, msgIn.serviceName).handle(msgIn)
+          getEngine(msgIn.taskTag, msgIn.serviceName).handle(msgIn, MillisInstant.now())
           // then
           coVerifySequence {
             tagStateStorage.addTaskId(msgIn.taskTag, msgIn.serviceName, msgIn.taskId)
@@ -132,7 +138,10 @@ internal class TaskTagEngineTests :
           // given
           val msgIn = random<RemoveTagFromTask>()
           // when
-          getEngine(msgIn.taskTag, msgIn.serviceName, taskIds = setOf(msgIn.taskId)).handle(msgIn)
+          getEngine(msgIn.taskTag, msgIn.serviceName, taskIds = setOf(msgIn.taskId)).handle(
+              msgIn,
+              MillisInstant.now(),
+          )
           // then
           coVerifySequence {
             tagStateStorage.removeTaskId(msgIn.taskTag, msgIn.serviceName, msgIn.taskId)
@@ -148,6 +157,7 @@ internal class TaskTagEngineTests :
           // when
           getEngine(msgIn.taskTag, msgIn.serviceName, taskIds = setOf(taskId1, taskId2)).handle(
               msgIn,
+              MillisInstant.now(),
           )
           // then
           coVerifySequence {

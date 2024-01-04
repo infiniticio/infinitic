@@ -28,12 +28,14 @@ import com.github.avrokotlin.avro4k.AvroName
 import com.github.avrokotlin.avro4k.AvroNamespace
 import io.infinitic.common.clients.data.ClientName
 import io.infinitic.common.data.MessageId
+import io.infinitic.common.data.MillisInstant
 import io.infinitic.common.data.ReturnValue
 import io.infinitic.common.data.Version
 import io.infinitic.common.data.methods.MethodName
 import io.infinitic.common.data.methods.MethodParameterTypes
 import io.infinitic.common.data.methods.MethodParameters
 import io.infinitic.common.emitters.EmitterName
+import io.infinitic.common.exceptions.thisShouldNotHappen
 import io.infinitic.common.messages.Message
 import io.infinitic.common.tasks.data.ServiceName
 import io.infinitic.common.tasks.data.TaskId
@@ -50,15 +52,21 @@ import io.infinitic.common.workflows.data.channels.ChannelName
 import io.infinitic.common.workflows.data.channels.ChannelType
 import io.infinitic.common.workflows.data.channels.SignalData
 import io.infinitic.common.workflows.data.channels.SignalId
+import io.infinitic.common.workflows.data.methodRuns.PositionInMethod
+import io.infinitic.common.workflows.data.methodRuns.WorkflowMethod
 import io.infinitic.common.workflows.data.methodRuns.WorkflowMethodId
 import io.infinitic.common.workflows.data.timers.TimerId
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTask
+import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskIndex
 import io.infinitic.common.workflows.data.workflows.WorkflowCancellationReason
 import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.data.workflows.WorkflowMeta
 import io.infinitic.common.workflows.data.workflows.WorkflowName
 import io.infinitic.common.workflows.data.workflows.WorkflowReturnValue
 import io.infinitic.common.workflows.data.workflows.WorkflowTag
+import io.infinitic.common.workflows.engine.events.WorkflowMethodStartedEvent
+import io.infinitic.common.workflows.engine.events.WorkflowStartedEvent
+import io.infinitic.common.workflows.engine.state.WorkflowState
 import io.infinitic.currentVersion
 import io.infinitic.workflows.DeferredStatus
 import kotlinx.serialization.SerialName
@@ -119,18 +127,78 @@ data class DispatchNewWorkflow(
   val methodParameterTypes: MethodParameterTypes?,
   val workflowTags: Set<WorkflowTag>,
   val workflowMeta: WorkflowMeta,
-  var parentWorkflowName: WorkflowName?,
-  var parentWorkflowId: WorkflowId?,
+  val parentWorkflowName: WorkflowName?,
+  val parentWorkflowId: WorkflowId?,
   @AvroName("parentMethodRunId") var parentWorkflowMethodId: WorkflowMethodId?,
+  @AvroDefault(Avro.NULL) val workflowTaskId: TaskId? = null,
+  @AvroDefault(Avro.NULL) val startAt: MillisInstant? = null,
   val clientWaiting: Boolean,
   override val emitterName: EmitterName
-) : WorkflowEngineMessage()
+) : WorkflowEngineMessage() {
 
-val DispatchNewWorkflow.parentClientName
-  get() = when (parentWorkflowId) {
+  fun workflowMethod() = WorkflowMethod(
+      workflowMethodId = WorkflowMethodId.from(workflowId),
+      waitingClients = waitingClients(),
+      parentWorkflowId = parentWorkflowId,
+      parentWorkflowName = parentWorkflowName,
+      parentWorkflowMethodId = parentWorkflowMethodId,
+      parentClientName = parentClientName(),
+      methodName = methodName,
+      methodParameterTypes = methodParameterTypes,
+      methodParameters = methodParameters,
+      workflowTaskIndexAtStart = WorkflowTaskIndex(0),
+      propertiesNameHashAtStart = mapOf(),
+  )
+
+
+  fun state() = WorkflowState(
+      lastMessageId = messageId,
+      workflowId = workflowId,
+      workflowName = workflowName,
+      workflowVersion = null,
+      workflowTags = workflowTags,
+      workflowMeta = workflowMeta,
+      workflowMethods = mutableListOf(workflowMethod()),
+      workflowTaskIndex = WorkflowTaskIndex(1),
+      runningWorkflowTaskId = workflowTaskId ?: thisShouldNotHappen(),
+      runningWorkflowTaskInstant = startAt ?: thisShouldNotHappen(),
+      runningWorkflowMethodId = WorkflowMethodId.from(workflowId),
+      positionInRunningWorkflowMethod = PositionInMethod(),
+  )
+
+  fun workflowStartedEvent(emitterName: EmitterName) = WorkflowStartedEvent(
+      workflowName = workflowName,
+      workflowId = workflowId,
+      emitterName = emitterName,
+      workflowTags = workflowTags,
+      workflowMeta = workflowMeta,
+  )
+
+  fun workflowMethodStartedEvent(emitterName: EmitterName) = WorkflowMethodStartedEvent(
+      workflowName = workflowName,
+      workflowId = workflowId,
+      emitterName = emitterName,
+      workflowTags = workflowTags,
+      workflowMeta = workflowMeta,
+      workflowMethodId = WorkflowMethodId.from(workflowId),
+      parentWorkflowName = parentWorkflowName,
+      parentWorkflowId = parentWorkflowId,
+      parentWorkflowMethodId = parentWorkflowMethodId,
+      parentClientName = parentClientName(),
+      waitingClients = if (clientWaiting) setOf(parentClientName()!!) else setOf(),
+  )
+
+  fun parentClientName(): ClientName? = when (parentWorkflowId) {
     null -> ClientName.from(emitterName)
     else -> null
   }
+
+  fun waitingClients() = when (clientWaiting) {
+    true -> mutableSetOf(parentClientName()!!)
+    false -> mutableSetOf()
+  }
+}
+
 
 /**
  * This message is a command to dispatch a new method for a running workflow.

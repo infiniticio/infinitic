@@ -69,7 +69,7 @@ internal fun CoroutineScope.dispatchNewWorkflowCmd(
           clientWaiting = false,
           emitterName = emitterName,
       )
-      launch { producer.sendToWorkflowEngine(dispatchWorkflow) }
+      launch { producer.sendToWorkflowCmd(dispatchWorkflow) }
 
       // add provided tags
       dispatchWorkflow.workflowTags.forEach {

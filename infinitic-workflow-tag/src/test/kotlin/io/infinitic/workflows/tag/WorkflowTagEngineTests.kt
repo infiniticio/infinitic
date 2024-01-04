@@ -24,6 +24,7 @@ package io.infinitic.workflows.tag
 
 import io.infinitic.common.clients.messages.ClientMessage
 import io.infinitic.common.clients.messages.WorkflowIdsByTag
+import io.infinitic.common.data.MillisInstant
 import io.infinitic.common.fixtures.TestFactory
 import io.infinitic.common.transport.InfiniticProducerAsync
 import io.infinitic.common.workflows.data.workflows.WorkflowId
@@ -74,7 +75,10 @@ private class WorkflowTagEngineTests :
           val workflowIds = setOf(WorkflowId(), WorkflowId())
           val msgIn = random<CancelWorkflowByTag>()
           // when
-          getEngine(msgIn.workflowTag, msgIn.workflowName, workflowIds = workflowIds).handle(msgIn)
+          getEngine(msgIn.workflowTag, msgIn.workflowName, workflowIds = workflowIds).handle(
+              msgIn,
+              MillisInstant.now(),
+          )
           // then
           coVerifySequence {
             workflowTagStorage.getWorkflowIds(msgIn.workflowTag, msgIn.workflowName)
@@ -94,7 +98,10 @@ private class WorkflowTagEngineTests :
           val workflowIds = setOf(WorkflowId(), WorkflowId())
           val msgIn = random<RetryWorkflowTaskByTag>()
           // when
-          getEngine(msgIn.workflowTag, msgIn.workflowName, workflowIds = workflowIds).handle(msgIn)
+          getEngine(msgIn.workflowTag, msgIn.workflowName, workflowIds = workflowIds).handle(
+              msgIn,
+              MillisInstant.now(),
+          )
           // then
           coVerifySequence {
             workflowTagStorage.getWorkflowIds(msgIn.workflowTag, msgIn.workflowName)
@@ -115,7 +122,10 @@ private class WorkflowTagEngineTests :
           val workflowIds = setOf(WorkflowId(), WorkflowId())
           val msgIn = random<RetryTasksByTag>()
           // when
-          getEngine(msgIn.workflowTag, msgIn.workflowName, workflowIds = workflowIds).handle(msgIn)
+          getEngine(msgIn.workflowTag, msgIn.workflowName, workflowIds = workflowIds).handle(
+              msgIn,
+              MillisInstant.now(),
+          )
           // then
           coVerifySequence {
             workflowTagStorage.getWorkflowIds(msgIn.workflowTag, msgIn.workflowName)
@@ -139,7 +149,10 @@ private class WorkflowTagEngineTests :
           val workflowIds = setOf(WorkflowId(), WorkflowId())
           val msgIn = random<CompleteTimersByTag>()
           // when
-          getEngine(msgIn.workflowTag, msgIn.workflowName, workflowIds = workflowIds).handle(msgIn)
+          getEngine(msgIn.workflowTag, msgIn.workflowName, workflowIds = workflowIds).handle(
+              msgIn,
+              MillisInstant.now(),
+          )
           // then
           coVerifySequence {
             workflowTagStorage.getWorkflowIds(msgIn.workflowTag, msgIn.workflowName)
@@ -161,7 +174,10 @@ private class WorkflowTagEngineTests :
           val workflowIds = setOf(WorkflowId(), WorkflowId())
           val msgIn = random<SendSignalByTag>()
           // when
-          getEngine(msgIn.workflowTag, msgIn.workflowName, workflowIds = workflowIds).handle(msgIn)
+          getEngine(msgIn.workflowTag, msgIn.workflowName, workflowIds = workflowIds).handle(
+              msgIn,
+              MillisInstant.now(),
+          )
           // then
           coVerifySequence {
             workflowTagStorage.getWorkflowIds(msgIn.workflowTag, msgIn.workflowName)
@@ -195,7 +211,7 @@ private class WorkflowTagEngineTests :
               msgIn.workflowName,
               workflowIds = setOf(workflowId1, workflowId2),
           )
-              .handle(msgIn)
+              .handle(msgIn, MillisInstant.now())
           // then
           coVerifySequence {
             workflowTagStorage.getWorkflowIds(msgIn.workflowTag, msgIn.workflowName)

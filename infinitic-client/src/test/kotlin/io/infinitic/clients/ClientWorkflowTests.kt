@@ -35,6 +35,7 @@ import io.infinitic.common.clients.data.ClientName
 import io.infinitic.common.clients.messages.MethodCompleted
 import io.infinitic.common.clients.messages.WorkflowIdsByTag
 import io.infinitic.common.data.MillisDuration
+import io.infinitic.common.data.MillisInstant
 import io.infinitic.common.data.ReturnValue
 import io.infinitic.common.data.methods.MethodName
 import io.infinitic.common.data.methods.MethodParameterTypes
@@ -103,7 +104,7 @@ private fun tagResponse(): CompletableFuture<Unit> {
           workflowIds = setOf(WorkflowId(), WorkflowId()),
           emitterName = EmitterName("mockk"),
       )
-      later { client.handle(workflowIdsByTag) }
+      later { client.handle(workflowIdsByTag, MillisInstant.now()) }
     }
   }
   return completed()
@@ -119,7 +120,7 @@ private fun engineResponse(): CompletableFuture<Unit> {
         methodReturnValue = ReturnValue.from("success"),
         emitterName = EmitterName("mockk"),
     )
-    later { client.handle(methodCompleted) }
+    later { client.handle(methodCompleted, MillisInstant.now()) }
   }
   return completed()
 }
@@ -128,10 +129,7 @@ private val producerAsync: InfiniticProducerAsync = mockk<InfiniticProducerAsync
   every { name } returns "$clientNameTest"
   every { sendToWorkflowTagAsync(capture(workflowTagSlots)) } answers { tagResponse() }
   every {
-    sendToWorkflowEngineAsync(
-        capture(workflowEngineSlot),
-        capture(delaySlot),
-    )
+    sendToWorkflowEngineAsync(capture(workflowEngineSlot), capture(delaySlot))
   } answers { engineResponse() }
 }
 

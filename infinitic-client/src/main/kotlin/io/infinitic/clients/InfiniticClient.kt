@@ -28,6 +28,7 @@ import io.infinitic.clients.config.ClientConfig
 import io.infinitic.clients.config.ClientConfigInterface
 import io.infinitic.clients.dispatcher.ClientDispatcher
 import io.infinitic.common.clients.messages.ClientMessage
+import io.infinitic.common.data.MillisInstant
 import io.infinitic.common.proxies.ExistingWorkflowProxyHandler
 import io.infinitic.common.proxies.NewServiceProxyHandler
 import io.infinitic.common.proxies.NewWorkflowProxyHandler
@@ -162,7 +163,9 @@ class InfiniticClient(
   }
 
   @TestOnly
-  internal suspend fun handle(message: ClientMessage) = dispatcher.handle(message)
+  internal suspend fun handle(message: ClientMessage, publishTime: MillisInstant) =
+      dispatcher.handle(message, publishTime)
+
   private fun getProxyHandler(stub: Any): ProxyHandler<*> {
     val exception by lazy { InvalidStubException("$stub") }
 

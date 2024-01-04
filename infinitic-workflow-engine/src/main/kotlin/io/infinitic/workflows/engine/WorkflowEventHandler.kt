@@ -23,6 +23,7 @@
 package io.infinitic.workflows.engine
 
 import io.github.oshai.kotlinlogging.KotlinLogging
+import io.infinitic.common.data.MillisInstant
 import io.infinitic.common.transport.InfiniticProducerAsync
 import io.infinitic.common.transport.LoggedInfiniticProducer
 import io.infinitic.common.workflows.engine.events.WorkflowCanceledEvent
@@ -42,7 +43,8 @@ class WorkflowEventHandler(producerAsync: InfiniticProducerAsync) {
   private val logger = KotlinLogging.logger(javaClass.name)
   val producer = LoggedInfiniticProducer(javaClass.name, producerAsync)
 
-  suspend fun handle(msg: WorkflowEventMessage) {
+  @Suppress("UNUSED_PARAMETER")
+  suspend fun handle(msg: WorkflowEventMessage, publishTime: MillisInstant) {
     msg.logDebug { "received $msg" }
 
     when (msg) {

@@ -31,12 +31,12 @@ import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskIndex
 import io.infinitic.common.workflows.engine.events.WorkflowMethodStartedEvent
 import io.infinitic.common.workflows.engine.events.WorkflowStartedEvent
 import io.infinitic.common.workflows.engine.messages.DispatchNewWorkflow
-import io.infinitic.common.workflows.engine.messages.parentClientName
 import io.infinitic.common.workflows.engine.state.WorkflowState
 import io.infinitic.workflows.engine.helpers.dispatchWorkflowTask
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
+@Deprecated("This should be removed after v0.13.0")
 internal fun CoroutineScope.dispatchWorkflow(
   producer: InfiniticProducer,
   message: DispatchNewWorkflow
@@ -44,15 +44,11 @@ internal fun CoroutineScope.dispatchWorkflow(
 
   val workflowMethod = WorkflowMethod(
       workflowMethodId = WorkflowMethodId.from(message.workflowId),
-      waitingClients =
-      when (message.clientWaiting) {
-        true -> mutableSetOf(message.parentClientName!!)
-        false -> mutableSetOf()
-      },
+      waitingClients = message.waitingClients(),
       parentWorkflowId = message.parentWorkflowId,
       parentWorkflowName = message.parentWorkflowName,
       parentWorkflowMethodId = message.parentWorkflowMethodId,
-      parentClientName = message.parentClientName,
+      parentClientName = message.parentClientName(),
       methodName = message.methodName,
       methodParameterTypes = message.methodParameterTypes,
       methodParameters = message.methodParameters,
@@ -93,8 +89,8 @@ internal fun CoroutineScope.dispatchWorkflow(
         parentWorkflowName = workflowMethod.parentWorkflowName,
         parentWorkflowId = workflowMethod.parentWorkflowId,
         parentWorkflowMethodId = workflowMethod.parentWorkflowMethodId,
-        parentClientName = message.parentClientName,
-        waitingClients = if (message.clientWaiting) setOf(message.parentClientName!!) else setOf(),
+        parentClientName = message.parentClientName(),
+        waitingClients = message.waitingClients(),
     )
 
     // the 2 events are sent sequentially, to ensure they have consistent timestamps

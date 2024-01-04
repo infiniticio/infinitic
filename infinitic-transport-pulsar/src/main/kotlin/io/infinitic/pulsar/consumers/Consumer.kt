@@ -23,6 +23,7 @@
 package io.infinitic.pulsar.consumers
 
 import io.github.oshai.kotlinlogging.KotlinLogging
+import io.infinitic.common.data.MillisInstant
 import io.infinitic.common.messages.Envelope
 import io.infinitic.common.messages.Message
 import io.infinitic.pulsar.client.PulsarInfiniticClient
@@ -46,7 +47,7 @@ class Consumer(
   val logger = KotlinLogging.logger {}
 
   internal fun <T : Message, S : Envelope<out T>> CoroutineScope.startConsumer(
-    handler: suspend (T) -> Unit,
+    handler: suspend (T, MillisInstant) -> Unit,
     beforeDlq: (suspend (T, Exception) -> Unit)?,
     schemaClass: KClass<S>,
     topic: String,
@@ -84,6 +85,7 @@ class Consumer(
               }
 
               val messageId = pulsarMessage.messageId
+              val publishTime = MillisInstant(pulsarMessage.publishTime)
 
               val message = try {
                 logTrace(topic, messageId) { "Deserializing received $pulsarMessage" }
@@ -99,7 +101,7 @@ class Consumer(
 
               try {
                 logTrace(topic, messageId) { "Running deserialized $message" }
-                handler(message)
+                handler(message, publishTime)
               } catch (e: Exception) {
                 logWarn(e, topic, messageId) { "Exception when running $message" }
                 negativeAcknowledge(consumer, pulsarMessage, beforeDlq, message, e)
@@ -150,6 +152,7 @@ class Consumer(
           launch {
             for (pulsarMessage: PulsarMessage<S> in channel) {
               val messageId = pulsarMessage.messageId
+              val publishTime = MillisInstant(pulsarMessage.publishTime)
 
               val message = try {
                 logTrace(topic, messageId) { "Deserializing received message $pulsarMessage" }
@@ -162,7 +165,7 @@ class Consumer(
 
               try {
                 logTrace(topic, messageId) { "Running deserialized $message" }
-                handler(message)
+                handler(message, publishTime)
               } catch (e: Exception) {
                 logWarn(e, topic, messageId) { "Exception when running $message" }
                 negativeAcknowledge(consumer, pulsarMessage, beforeDlq, message, e)

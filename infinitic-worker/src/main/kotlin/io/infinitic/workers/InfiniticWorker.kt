@@ -27,9 +27,12 @@ import io.infinitic.autoclose.addAutoCloseResource
 import io.infinitic.autoclose.autoClose
 import io.infinitic.clients.InfiniticClient
 import io.infinitic.clients.InfiniticClientInterface
+import io.infinitic.common.data.MillisInstant
+import io.infinitic.common.tasks.executors.messages.TaskExecutorMessage
 import io.infinitic.common.transport.InfiniticConsumerAsync
 import io.infinitic.common.transport.InfiniticProducerAsync
 import io.infinitic.common.transport.LoggedInfiniticProducer
+import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
 import io.infinitic.tasks.Task
 import io.infinitic.tasks.executor.TaskEventHandler
 import io.infinitic.tasks.executor.TaskExecutor
@@ -40,7 +43,7 @@ import io.infinitic.workers.config.WorkerConfigInterface
 import io.infinitic.workers.register.InfiniticRegister
 import io.infinitic.workers.register.InfiniticRegisterInterface
 import io.infinitic.workflows.engine.WorkflowCmdHandler
-import io.infinitic.workflows.engine.WorkflowEngineHandler
+import io.infinitic.workflows.engine.WorkflowEngine
 import io.infinitic.workflows.engine.WorkflowEventHandler
 import io.infinitic.workflows.tag.WorkflowTagEngine
 import java.util.concurrent.CompletableFuture
@@ -59,7 +62,7 @@ class InfiniticWorker(
       LoggedInfiniticProducer(TaskExecutor::class.java.name, producerAsync)
 
   private val workflowProducer =
-      LoggedInfiniticProducer(WorkflowEngineHandler::class.java.name, producerAsync)
+      LoggedInfiniticProducer(WorkflowEngine::class.java.name, producerAsync)
 
   private val workerRegistry = register.registry
 
@@ -109,11 +112,11 @@ class InfiniticWorker(
       )
 
       // WORKFLOW-ENGINE
-      val workflowEngineHandler = WorkflowEngineHandler(it.value.storage, producerAsync)
+      val workflowEngine = WorkflowEngine(it.value.storage, producerAsync)
 
       futures.add(
           consumerAsync.startWorkflowEngineConsumerAsync(
-              handler = workflowEngineHandler::handle,
+              handler = workflowEngine::handle,
               beforeDlq = null,
               workflowName = it.key,
               concurrency = it.value.concurrency,
@@ -121,9 +124,12 @@ class InfiniticWorker(
       )
 
       // WORKFLOW-DELAY
+      val handler: suspend (WorkflowEngineMessage, MillisInstant) -> Unit =
+          { msg, _ -> workflowProducer.sendToWorkflowEngine(msg) }
+
       futures.add(
           consumerAsync.startDelayedWorkflowEngineConsumerAsync(
-              handler = workflowProducer::sendToWorkflowEngine,
+              handler = handler,
               beforeDlq = null,
               workflowName = it.key,
               concurrency = it.value.concurrency,
@@ -159,9 +165,12 @@ class InfiniticWorker(
       )
 
       // WORKFLOW-TASK_EXECUTOR-DELAY
+      val handler: suspend (TaskExecutorMessage, MillisInstant) -> Unit =
+          { msg, _ -> taskProducer.sendToTaskExecutor(msg) }
+
       futures.add(
           consumerAsync.startDelayedWorkflowTaskConsumerAsync(
-              handler = taskProducer::sendToTaskExecutor,
+              handler = handler,
               beforeDlq = null,
               workflowName = it.key,
               concurrency = it.value.concurrency,
@@ -211,9 +220,12 @@ class InfiniticWorker(
       )
 
       // TASK-EXECUTOR-DELAY
+      val handler: suspend (TaskExecutorMessage, MillisInstant) -> Unit =
+          { msg, _ -> taskProducer.sendToTaskExecutor(msg) }
+
       futures.add(
           consumerAsync.startDelayedTaskExecutorConsumerAsync(
-              handler = taskProducer::sendToTaskExecutor,
+              handler = handler,
               beforeDlq = null,
               serviceName = it.key,
               concurrency = it.value.concurrency,

@@ -38,6 +38,7 @@ import io.infinitic.common.clients.messages.MethodUnknown
 import io.infinitic.common.clients.messages.WorkflowIdsByTag
 import io.infinitic.common.clients.messages.interfaces.MethodMessage
 import io.infinitic.common.data.MillisDuration
+import io.infinitic.common.data.MillisInstant
 import io.infinitic.common.data.methods.MethodName
 import io.infinitic.common.emitters.EmitterName
 import io.infinitic.common.exceptions.thisShouldNotHappen
@@ -134,7 +135,8 @@ internal class ClientDispatcher(
   }
 
   // a message received by the client is sent to responseFlow
-  internal suspend fun handle(message: ClientMessage) {
+  @Suppress("UNUSED_PARAMETER")
+  internal suspend fun handle(message: ClientMessage, publishTime: MillisInstant) {
     logger.debug { "Client ${producer.name}: Receiving $message" }
     responseFlow.emit(message)
   }

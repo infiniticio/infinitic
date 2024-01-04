@@ -25,6 +25,7 @@ package io.infinitic.tasks.tag
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.infinitic.common.clients.data.ClientName
 import io.infinitic.common.clients.messages.TaskIdsByTag
+import io.infinitic.common.data.MillisInstant
 import io.infinitic.common.emitters.EmitterName
 import io.infinitic.common.tasks.tags.messages.AddTagToTask
 import io.infinitic.common.tasks.tags.messages.CancelTaskByTag
@@ -54,7 +55,8 @@ class TaskTagEngine(
 
   private val emitterName by lazy { EmitterName(producer.name) }
 
-  suspend fun handle(message: TaskTagMessage) {
+  @Suppress("UNUSED_PARAMETER")
+  suspend fun handle(message: TaskTagMessage, publishTime: MillisInstant) {
     logger.debug { "receiving $message" }
 
     process(message)

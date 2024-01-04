@@ -36,6 +36,7 @@ import java.util.concurrent.ConcurrentHashMap
 import org.apache.pulsar.common.policies.data.Policies as PulsarPolicies
 import org.apache.pulsar.common.policies.data.TopicType as PulsarTopicType
 
+@Suppress("MemberVisibilityCanBePrivate")
 class PulsarInfiniticAdmin(
   pulsarAdmin: PulsarAdmin
 ) {
@@ -54,7 +55,7 @@ class PulsarInfiniticAdmin(
    * - Result.success(Set<String>)
    * - Result.failure(e) in case of error
    */
-  private fun getClusters(): Result<Set<String>> = try {
+  fun getClusters(): Result<Set<String>> = try {
     logger.debug { "Getting list of clusters." }
     val clusters = clusters.clusters.toSet()
     logger.info { "List of clusters got ($clusters)." }
@@ -204,7 +205,7 @@ class PulsarInfiniticAdmin(
     }
   }
 
-  private fun getTenantInfo(tenant: String): Result<TenantInfo?> =
+  fun getTenantInfo(tenant: String): Result<TenantInfo?> =
       try {
         logger.debug { "Tenant '$tenant': Getting info." }
         val info = tenants.getTenantInfo(tenant)
@@ -252,7 +253,7 @@ class PulsarInfiniticAdmin(
         Result.failure(e)
       }
 
-  private fun createNamespace(fullNamespace: String, config: Policies): Result<PulsarPolicies> =
+  fun createNamespace(fullNamespace: String, config: Policies): Result<PulsarPolicies> =
       try {
         logger.debug { "Creating namespace '$fullNamespace'." }
         val pulsarPolicies = config.getPulsarPolicies()
@@ -273,7 +274,7 @@ class PulsarInfiniticAdmin(
         Result.failure(e)
       }
 
-  private fun createTopic(
+  fun createTopic(
     topic: String,
     isPartitioned: Boolean,
     messageTTLPolicy: Int
@@ -299,7 +300,7 @@ class PulsarInfiniticAdmin(
     Result.failure(e)
   }
 
-  private fun getNamespacePolicies(fullNamespace: String): Result<PulsarPolicies?> =
+  fun getNamespacePolicies(fullNamespace: String): Result<PulsarPolicies?> =
       try {
         logger.debug { "Getting namespace policies." }
         val pulsarPolicies = namespaces.getPolicies(fullNamespace)
@@ -315,7 +316,7 @@ class PulsarInfiniticAdmin(
         Result.failure(e)
       }
 
-  private fun setTopicTTL(topic: String, messageTTLInSecond: Int): Result<Int> = try {
+  fun setTopicTTL(topic: String, messageTTLInSecond: Int): Result<Int> = try {
     logger.debug { "Topic '$topic': setting messageTTLInSecond=$messageTTLInSecond." }
     topicPolicies.setMessageTTL(topic, messageTTLInSecond)
     logger.info { "Topic '$topic': messageTTLInSecond=$messageTTLInSecond set." }
@@ -339,10 +340,10 @@ class PulsarInfiniticAdmin(
     }
   }
 
-  private fun getMessageTTL(topic: String): Result<Int?> =
+  fun getMessageTTL(topic: String): Result<Int?> =
       try {
         logger.debug { "Topic '$topic': getting MessageTTL." }
-        val ttl = topicPolicies.getMessageTTL(topic)
+        val ttl = topicPolicies.getMessageTTL(topic, true)
         logger.info { "Topic '$topic': MessageTTL retrieved ($ttl)." }
         Result.success(ttl)
       } catch (e: PulsarAdminException.NotFoundException) {
@@ -353,7 +354,7 @@ class PulsarInfiniticAdmin(
         Result.failure(e)
       }
 
-  private fun getPartitionedTopicMetadata(topic: String): Result<PartitionedTopicMetadata?> {
+  fun getPartitionedTopicMetadata(topic: String): Result<PartitionedTopicMetadata?> {
     return try {
       logger.debug { "Topic '$topic': getting PartitionedTopicMetadata." }
       val metadata = topics.getPartitionedTopicMetadata(topic)
@@ -368,7 +369,7 @@ class PulsarInfiniticAdmin(
     }
   }
 
-  private fun checkTenantInfo(
+  fun checkTenantInfo(
     tenant: String,
     tenantInfo: TenantInfo,
     allowedClusters: Set<String>?,

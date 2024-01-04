@@ -42,19 +42,20 @@ import io.infinitic.common.workflows.data.steps.PastStep
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskIndex
 import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.data.workflows.WorkflowName
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 @Serializable
 @AvroNamespace("io.infinitic.workflows.data")
 @AvroName("MethodRun")
+// Since 0.12.1 WorkflowTaskParameters is serialized using Avro, before that it was in JSON-Kotlin
 data class WorkflowMethod(
-  /** clients synchronously waiting for the returned value */
   val waitingClients: MutableSet<ClientName>,
-  @AvroName("methodRunId") val workflowMethodId: WorkflowMethodId,
+  @AvroName("methodRunId") @SerialName("methodRunId") val workflowMethodId: WorkflowMethodId,
   val parentWorkflowId: WorkflowId?,
   val parentWorkflowName: WorkflowName?,
-  @AvroName("parentMethodRunId") val parentWorkflowMethodId: WorkflowMethodId?,
-  @AvroDefault(Avro.NULL) val parentClientName: ClientName?,
+  @AvroName("parentMethodRunId") @SerialName("parentMethodRunId") val parentWorkflowMethodId: WorkflowMethodId?,
+  @AvroDefault(Avro.NULL) val parentClientName: ClientName? = null,
   val methodName: MethodName,
   val methodParameterTypes: MethodParameterTypes?,
   val methodParameters: MethodParameters,
