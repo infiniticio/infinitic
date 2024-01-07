@@ -42,7 +42,7 @@ interface InfiniticProducerAsync {
    * Name of the sender
    */
   var name: String
-
+  
   /**
    * Asynchronously send a message to a client
    *

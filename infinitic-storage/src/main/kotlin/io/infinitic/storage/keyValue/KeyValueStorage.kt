@@ -24,7 +24,7 @@ package io.infinitic.storage.keyValue
 
 import io.infinitic.storage.Flushable
 
-interface KeyValueStorage : Flushable {
+interface KeyValueStorage : Flushable, AutoCloseable {
   suspend fun get(key: String): ByteArray?
 
   suspend fun put(key: String, value: ByteArray)

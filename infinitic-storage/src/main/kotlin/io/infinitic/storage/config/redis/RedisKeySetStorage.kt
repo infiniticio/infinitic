@@ -30,7 +30,7 @@ import redis.clients.jedis.JedisPool
 class RedisKeySetStorage(internal val pool: JedisPool) : KeySetStorage {
 
   companion object {
-    fun of(config: Redis) = RedisKeySetStorage(config.getPool())
+    fun from(config: Redis) = RedisKeySetStorage(config.getPool())
   }
 
   override suspend fun get(key: String): Set<ByteArray> =
@@ -44,6 +44,10 @@ class RedisKeySetStorage(internal val pool: JedisPool) : KeySetStorage {
     pool.resource.use { it.srem(key.toByteArray(), value) }
   }
 
+  override fun close() {
+    pool.close()
+  }
+  
   @TestOnly
   override fun flush() {
     pool.resource.use { it.flushDB() }

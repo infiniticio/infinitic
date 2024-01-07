@@ -55,8 +55,9 @@ class TaskTagEngine(
 
   private val emitterName by lazy { EmitterName(producer.name) }
 
+
   @Suppress("UNUSED_PARAMETER")
-  suspend fun handle(message: TaskTagMessage, publishTime: MillisInstant) {
+  fun handle(message: TaskTagMessage, publishTime: MillisInstant): Unit = producer.run {
     logger.debug { "receiving $message" }
 
     process(message)

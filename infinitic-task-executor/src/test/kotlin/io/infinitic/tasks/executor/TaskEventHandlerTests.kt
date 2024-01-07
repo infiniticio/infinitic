@@ -152,8 +152,10 @@ class TaskEventHandlerTests :
           coroutineScope { taskEventHandler.handle(msg, MillisInstant.now()) }
 
           taskTagSlots.size shouldBe 2
-          taskTagSlots[0] shouldBe getRemoveTag(msg, "foo")
-          taskTagSlots[1] shouldBe getRemoveTag(msg, "bar")
+          setOf(taskTagSlots[0], taskTagSlots[1]) shouldBe setOf(
+              getRemoveTag(msg, "foo"),
+              getRemoveTag(msg, "bar"),
+          )
         }
 
         "on TaskFailed, should send message back to parent workflow" {

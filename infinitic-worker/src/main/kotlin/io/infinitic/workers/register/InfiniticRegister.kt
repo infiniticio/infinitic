@@ -55,7 +55,10 @@ class InfiniticRegister(
 
   private val logger = KotlinLogging.logger(logName)
 
+  private val storages = mutableSetOf<Storage>()
+
   override val registry = WorkerRegistry(workerConfig.name)
+
 
   init {
     for (w in workerConfig.workflows) {
@@ -186,6 +189,23 @@ class InfiniticRegister(
     }
   }
 
+  override fun close() {
+    storages.forEach {
+      try {
+        logger.info { "Closing KeyValueStorage $it" }
+        it.keyValue.close()
+      } catch (e: Exception) {
+        logger.warn(e) { "Unable to close KeyValueStorage $it" }
+      }
+      try {
+        logger.info { "Closing KeySetStorage $it" }
+        it.keySet.close()
+      } catch (e: Exception) {
+        logger.warn(e) { "Unable to close KeySetStorage $it" }
+      }
+    }
+  }
+
   private fun registerWorkflowEngine(
     workflowName: WorkflowName,
     concurrency: Int,
@@ -193,7 +213,7 @@ class InfiniticRegister(
     cache: Cache?
   ) {
     val c = cache ?: workerConfig.cache
-    val s = storage ?: workerConfig.storage
+    val s = storage ?: workerConfig.storage.also { storages.add(it) }
 
     logger.info {
       "* workflow engine".padEnd(25) +
@@ -213,7 +233,7 @@ class InfiniticRegister(
     cache: Cache?
   ) {
     val c = cache ?: workerConfig.cache
-    val s = storage ?: workerConfig.storage
+    val s = storage ?: workerConfig.storage.also { storages.add(it) }
 
     logger.info {
       "* task tag ".padEnd(25) + ": (concurrency: $concurrency, storage: ${s.type}, cache: ${c.type})"
@@ -236,7 +256,7 @@ class InfiniticRegister(
     cache: Cache?
   ) {
     val c = cache ?: workerConfig.cache
-    val s = storage ?: workerConfig.storage
+    val s = storage ?: workerConfig.storage.also { storages.add(it) }
 
     logger.info {
       "* workflow tag ".padEnd(25) +

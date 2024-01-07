@@ -100,7 +100,7 @@ class WorkflowEngine(
   private val emitterName by lazy { EmitterName(producer.name) }
 
   @Suppress("UNUSED_PARAMETER")
-  suspend fun handle(message: WorkflowEngineMessage, publishTime: MillisInstant) {
+  fun handle(message: WorkflowEngineMessage, publishTime: MillisInstant) = producer.run {
     logDebug(message) { "Receiving $message" }
 
     // set producer id for logging purpose
@@ -116,13 +116,13 @@ class WorkflowEngine(
     if (state?.lastMessageId == message.messageId) {
       logDiscarding(message) { "as state already contains messageId ${message.messageId}" }
 
-      return
+      return@run
     }
 
     state = when (state) {
       null -> processMessageWithoutState(message)
       else -> processMessageWithState(message, state)
-    } ?: return // returning null means that we can stop here
+    } ?: return@run // returning null means that we can stop here
 
     when (state.workflowMethods.size) {
       // workflow is completed

@@ -48,8 +48,8 @@ class PulsarInfiniticConsumerAsyncTests : StringSpec(
       val workflowName = WorkflowName("workflowTest")
       val serviceName = ServiceName("serviceTest")
 
-      val handler = slot<suspend (Message, MillisInstant) -> Unit>()
-      val handlerDlq = slot<(suspend (Message, Exception) -> Unit)>()
+      val handler = slot<(Message, MillisInstant) -> Unit>()
+      val handlerDlq = slot<((Message, Exception) -> Unit)>()
       val nameSlot = slot<String>()
       val descSlot = slot<TopicDescription>()
       val topic = "topicTest"
@@ -101,7 +101,7 @@ class PulsarInfiniticConsumerAsyncTests : StringSpec(
         } returns Unit
       }
 
-      val infiniticConsumerAsync = PulsarInfiniticConsumerAsync(consumer, resourceManager)
+      val infiniticConsumerAsync = PulsarInfiniticConsumerAsync(consumer, resourceManager, 20.0)
 
       "should init client-response topic before consuming it" {
         infiniticConsumerAsync.startClientConsumerAsync(

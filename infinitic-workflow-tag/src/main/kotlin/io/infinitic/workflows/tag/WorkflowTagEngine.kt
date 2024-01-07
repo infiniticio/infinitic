@@ -69,8 +69,9 @@ class WorkflowTagEngine(
 
   private val emitterName by lazy { EmitterName(producer.name) }
 
+
   @Suppress("UNUSED_PARAMETER")
-  suspend fun handle(message: WorkflowTagMessage, publishTime: MillisInstant) {
+  fun handle(message: WorkflowTagMessage, publishTime: MillisInstant) = producer.run {
     logger.debug { "receiving $message" }
 
     when (message) {

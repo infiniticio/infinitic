@@ -32,12 +32,21 @@ import io.infinitic.common.tasks.tags.messages.TaskTagMessage
 import io.infinitic.common.workflows.engine.events.WorkflowEventMessage
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
 import io.infinitic.common.workflows.tags.messages.WorkflowTagMessage
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.future.await
+import kotlinx.coroutines.future.future
+import kotlinx.coroutines.job
+import kotlinx.coroutines.runBlocking
 
 class LoggedInfiniticProducer(
   logName: String,
   private val producerAsync: InfiniticProducerAsync,
 ) : InfiniticProducer {
+
+  /** Coroutine scope used to send messages */
+  private val producingScope = CoroutineScope(Job() + Dispatchers.IO)
 
   private val logger = KotlinLogging.logger(logName)
 
@@ -48,6 +57,14 @@ class LoggedInfiniticProducer(
     set(value) {
       producerAsync.name = value
     }
+
+  // Wait for all messages to be sent
+  override fun join() = runBlocking {
+    producingScope.coroutineContext.job.children.forEach { it.join() }
+  }
+
+  override fun <T> run(func: suspend InfiniticProducer.() -> T): T =
+      producingScope.future { func() }.join()
 
   override suspend fun sendToClient(message: ClientMessage) {
     logDebug(message)

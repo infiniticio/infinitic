@@ -44,7 +44,7 @@ class WorkflowEventHandler(producerAsync: InfiniticProducerAsync) {
   val producer = LoggedInfiniticProducer(javaClass.name, producerAsync)
 
   @Suppress("UNUSED_PARAMETER")
-  suspend fun handle(msg: WorkflowEventMessage, publishTime: MillisInstant) {
+  fun handle(msg: WorkflowEventMessage, publishTime: MillisInstant) = producer.run {
     msg.logDebug { "received $msg" }
 
     when (msg) {

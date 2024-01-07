@@ -34,27 +34,47 @@ import io.infinitic.common.workflows.data.workflows.WorkflowName
 import io.infinitic.common.workflows.engine.events.WorkflowEventMessage
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
 import io.infinitic.common.workflows.tags.messages.WorkflowTagMessage
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.future.future
+import kotlinx.coroutines.job
+import kotlinx.coroutines.runBlocking
 import java.util.concurrent.ConcurrentHashMap
 
 class InMemoryChannels : AutoCloseable {
 
-  override fun close() {
-    clientChannels.values.forEach { it.close() }
-    taskTagChannels.values.forEach { it.close() }
-    workflowTagChannels.values.forEach { it.close() }
-    taskExecutorChannels.values.forEach { it.close() }
-    taskEventsChannels.values.forEach { it.close() }
-    delayedTaskExecutorChannels.values.forEach { it.close() }
-    workflowCmdChannels.values.forEach { it.close() }
-    workflowEngineChannels.values.forEach { it.close() }
-    delayedWorkflowEngineChannels.values.forEach { it.close() }
-    workflowEventChannels.values.forEach { it.close() }
-    workflowTaskExecutorChannels.values.forEach { it.close() }
-    workflowTaskEventsChannels.values.forEach { it.close() }
-    delayedWorkflowTaskExecutorChannels.values.forEach { it.close() }
-  }
+  // Coroutine scope used to receive messages
+  private val producingScope = CoroutineScope(Dispatchers.IO)
+  private val consumingScope = CoroutineScope(Dispatchers.IO)
 
+  fun <T> Channel<T>.sendAsync(msg: T) = producingScope.future { send(msg) }
+
+  fun <T> runAsync(func: suspend () -> T) = consumingScope.future { func() }
+
+
+  override fun close() {
+    consumingScope.cancel()
+    runBlocking { consumingScope.coroutineContext.job.children.forEach { it.join() } }
+    runBlocking { producingScope.coroutineContext.job.children.forEach { it.join() } }
+    producingScope.cancel()
+
+//    clientChannels.values.forEach { it.close() }
+//    taskTagChannels.values.forEach { it.close() }
+//    workflowTagChannels.values.forEach { it.close() }
+//    taskExecutorChannels.values.forEach { it.close() }
+//    taskEventsChannels.values.forEach { it.close() }
+//    delayedTaskExecutorChannels.values.forEach { it.close() }
+//    workflowCmdChannels.values.forEach { it.close() }
+//    workflowEngineChannels.values.forEach { it.close() }
+//    delayedWorkflowEngineChannels.values.forEach { it.close() }
+//    workflowEventChannels.values.forEach { it.close() }
+//    workflowTaskExecutorChannels.values.forEach { it.close() }
+//    workflowTaskEventsChannels.values.forEach { it.close() }
+//    delayedWorkflowTaskExecutorChannels.values.forEach { it.close() }
+  }
+ 
   // Client channel
   private val clientChannels =
       ConcurrentHashMap<ClientName, Channel<ClientMessage>>()

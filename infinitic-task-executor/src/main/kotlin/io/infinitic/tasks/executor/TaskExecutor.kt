@@ -54,8 +54,10 @@ import io.infinitic.tasks.getMillisBeforeRetry
 import io.infinitic.tasks.millis
 import io.infinitic.workflows.WorkflowCheckMode
 import io.infinitic.workflows.workflowTask.WorkflowTaskImpl
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout
 import java.lang.reflect.InvocationTargetException
 import java.util.concurrent.TimeoutException
@@ -72,10 +74,12 @@ class TaskExecutor(
   private var withTimeout: WithTimeout? = null
   private val emitterName by lazy { EmitterName(producerAsync.name) }
 
-  @Suppress("UNUSED_PARAMETER")
-  suspend fun handle(msg: TaskExecutorMessage, publishTime: MillisInstant) {
+  // this is used to use sendTaskFailed with the producer context, from Infinitic worker
+  fun <T> run(func: suspend TaskExecutor.() -> T): T = producer.run { this@TaskExecutor.func() }
 
-    return when (msg) {
+  @Suppress("UNUSED_PARAMETER")
+  fun handle(msg: TaskExecutorMessage, publishTime: MillisInstant) = producer.run {
+    when (msg) {
       is ExecuteTask -> {
         msg.logDebug { "received $msg" }
         executeTask(msg)
@@ -130,12 +134,14 @@ class TaskExecutor(
 
     // task execution
     val output = try {
-      withTimeout(timeout) {
-        coroutineScope {
-          // context is stored in execution's thread (in case used in method)
-          Task.context.set(taskContext)
-          // method execution
-          method.invoke(service, *parameters)
+      withContext(Dispatchers.Default) {
+        withTimeout(timeout) {
+          coroutineScope {
+            // Put context in execution's thread (it may be used in the following method)
+            Task.context.set(taskContext)
+            // method execution
+            method.invoke(service, *parameters)
+          }
         }
       }
     } catch (e: TimeoutCancellationException) {

@@ -27,12 +27,10 @@ import io.infinitic.autoclose.addAutoCloseResource
 import io.infinitic.autoclose.autoClose
 import io.infinitic.clients.InfiniticClient
 import io.infinitic.clients.InfiniticClientInterface
-import io.infinitic.common.data.MillisInstant
-import io.infinitic.common.tasks.executors.messages.TaskExecutorMessage
 import io.infinitic.common.transport.InfiniticConsumerAsync
 import io.infinitic.common.transport.InfiniticProducerAsync
 import io.infinitic.common.transport.LoggedInfiniticProducer
-import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
+import io.infinitic.pulsar.PulsarInfiniticConsumerAsync
 import io.infinitic.tasks.Task
 import io.infinitic.tasks.executor.TaskEventHandler
 import io.infinitic.tasks.executor.TaskExecutor
@@ -47,6 +45,7 @@ import io.infinitic.workflows.engine.WorkflowEngine
 import io.infinitic.workflows.engine.WorkflowEventHandler
 import io.infinitic.workflows.tag.WorkflowTagEngine
 import java.util.concurrent.CompletableFuture
+import java.util.concurrent.CompletionException
 
 @Suppress("unused")
 class InfiniticWorker(
@@ -58,10 +57,23 @@ class InfiniticWorker(
 
   private val logger = KotlinLogging.logger {}
 
-  private val taskProducer =
+  init {
+    // Aggregate logs from consumerAsync with InfiniticWorker's
+    consumerAsync.logName = this::class.java.name
+
+    Runtime.getRuntime().addShutdownHook(
+        Thread {
+          logger.info { "Interruption! Closing worker ${producerAsync.name}!" }
+          close()
+          logger.info { "Worker ${producerAsync.name} closed" }
+        },
+    )
+  }
+
+  private val delayedTaskProducer =
       LoggedInfiniticProducer(TaskExecutor::class.java.name, producerAsync)
 
-  private val workflowProducer =
+  private val delayedWorkflowProducer =
       LoggedInfiniticProducer(WorkflowEngine::class.java.name, producerAsync)
 
   private val workerRegistry = register.registry
@@ -72,16 +84,21 @@ class InfiniticWorker(
     autoClose()
   }
 
+
   /**
    * Start worker synchronously
    * (blocks the current thread)
    */
-  fun start(): Void = startAsync().join()
+  fun start(): Unit = try {
+    startAsync().join()
+  } catch (e: CompletionException) {
+    // Do nothing
+  }
 
   /**
    * Start worker asynchronously
    */
-  fun startAsync(): CompletableFuture<Void> {
+  fun startAsync(): CompletableFuture<Unit> {
     val futures = mutableListOf<CompletableFuture<Unit>>()
 
     workerRegistry.workflowTags.forEach {
@@ -124,12 +141,9 @@ class InfiniticWorker(
       )
 
       // WORKFLOW-DELAY
-      val handler: suspend (WorkflowEngineMessage, MillisInstant) -> Unit =
-          { msg, _ -> workflowProducer.sendToWorkflowEngine(msg) }
-
       futures.add(
           consumerAsync.startDelayedWorkflowEngineConsumerAsync(
-              handler = handler,
+              handler = { msg, _ -> delayedWorkflowProducer.run { sendToWorkflowEngine(msg) } },
               beforeDlq = null,
               workflowName = it.key,
               concurrency = it.value.concurrency,
@@ -157,7 +171,14 @@ class InfiniticWorker(
           consumerAsync.startWorkflowTaskConsumerAsync(
               handler = workflowTaskExecutor::handle,
               beforeDlq = { message, cause ->
-                workflowTaskExecutor.sendTaskFailed(message, cause, Task.meta, sendingDlqMessage)
+                workflowTaskExecutor.run {
+                  sendTaskFailed(
+                      message,
+                      cause,
+                      Task.meta,
+                      sendingDlqMessage,
+                  )
+                }
               },
               workflowName = it.key,
               concurrency = it.value.concurrency,
@@ -165,12 +186,9 @@ class InfiniticWorker(
       )
 
       // WORKFLOW-TASK_EXECUTOR-DELAY
-      val handler: suspend (TaskExecutorMessage, MillisInstant) -> Unit =
-          { msg, _ -> taskProducer.sendToTaskExecutor(msg) }
-
       futures.add(
           consumerAsync.startDelayedWorkflowTaskConsumerAsync(
-              handler = handler,
+              handler = { msg, _ -> delayedTaskProducer.run { sendToTaskExecutor(msg) } },
               beforeDlq = null,
               workflowName = it.key,
               concurrency = it.value.concurrency,
@@ -212,7 +230,7 @@ class InfiniticWorker(
           consumerAsync.startTaskExecutorConsumerAsync(
               handler = taskExecutor::handle,
               beforeDlq = { message, cause ->
-                taskExecutor.sendTaskFailed(message, cause, Task.meta, sendingDlqMessage)
+                taskExecutor.run { sendTaskFailed(message, cause, Task.meta, sendingDlqMessage) }
               },
               serviceName = it.key,
               concurrency = it.value.concurrency,
@@ -220,12 +238,9 @@ class InfiniticWorker(
       )
 
       // TASK-EXECUTOR-DELAY
-      val handler: suspend (TaskExecutorMessage, MillisInstant) -> Unit =
-          { msg, _ -> taskProducer.sendToTaskExecutor(msg) }
-
       futures.add(
           consumerAsync.startDelayedTaskExecutorConsumerAsync(
-              handler = handler,
+              handler = { msg, _ -> delayedTaskProducer.run { sendToTaskExecutor(msg) } },
               beforeDlq = null,
               serviceName = it.key,
               concurrency = it.value.concurrency,
@@ -245,16 +260,21 @@ class InfiniticWorker(
       )
     }
 
-    logger.info { "Worker \"${producerAsync.name}\" ready" }
+    logger.info {
+      "Worker \"${producerAsync.name}\" ready" + when (consumerAsync is PulsarInfiniticConsumerAsync) {
+        true -> " (shutdownGracePeriodInSeconds= ${consumerAsync.shutdownGracePeriodInSeconds})"
+        false -> ""
+      }
+    }
 
-    return CompletableFuture.allOf(*futures.toTypedArray())
+    return CompletableFuture.allOf(*futures.toTypedArray()).thenApply { }
   }
 
   companion object {
     /** Create [InfiniticWorker] from config */
     @JvmStatic
     fun fromConfig(workerConfig: WorkerConfigInterface): InfiniticWorker = with(workerConfig) {
-      val transportConfig = TransportConfig(transport, pulsar)
+      val transportConfig = TransportConfig(transport, pulsar, shutdownGracePeriodInSeconds)
 
       /** Infinitic Consumer */
       val consumerAsync = transportConfig.consumerAsync
@@ -277,6 +297,8 @@ class InfiniticWorker(
         it.addAutoCloseResource(client)
         // close consumer with the worker
         it.addAutoCloseResource(consumerAsync)
+        // close storages with the worker
+        it.addAutoCloseResource(register)
       }
     }
 

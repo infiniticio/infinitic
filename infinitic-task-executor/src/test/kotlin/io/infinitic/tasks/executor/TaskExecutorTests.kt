@@ -59,7 +59,6 @@ import io.infinitic.exceptions.tasks.ClassNotFoundException
 import io.infinitic.exceptions.tasks.NoMethodFoundWithParameterCountException
 import io.infinitic.exceptions.tasks.NoMethodFoundWithParameterTypesException
 import io.infinitic.exceptions.tasks.TooManyMethodsFoundWithParameterCountException
-import io.infinitic.tasks.Task
 import io.infinitic.tasks.executor.samples.RetryImpl
 import io.infinitic.tasks.executor.samples.ServiceImplService
 import io.infinitic.tasks.executor.samples.ServiceWithBuggyRetryInClass
@@ -78,7 +77,6 @@ import io.mockk.clearMocks
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.slot
-import kotlinx.coroutines.coroutineScope
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.TimeoutException
@@ -102,15 +100,12 @@ class TaskExecutorTests :
         val producerAsync = mockk<InfiniticProducerAsync> {
           every { name } returns "$testWorkerName"
           every {
-            sendToTaskExecutorAsync(
-                capture(taskExecutorSlot),
-                capture(afterSlot),
-            )
+            sendToTaskExecutorAsync(capture(taskExecutorSlot), capture(afterSlot))
           } returns completed()
           every { sendToTaskEventsAsync(capture(taskEventSlot)) } returns completed()
         }
 
-        val taskExecutor = TaskExecutor(workerRegistry, producerAsync, client)
+        var taskExecutor = TaskExecutor(workerRegistry, producerAsync, client)
 
         val service = RegisteredService(1, { ServiceImplService() }, null, null)
 
@@ -132,7 +127,7 @@ class TaskExecutorTests :
               workflowId = null,
           )
           // when
-          coroutineScope { taskExecutor.handle(msg, MillisInstant.now()) }
+          taskExecutor.handle(msg, MillisInstant.now())
           // then
           taskExecutorSlot.isCaptured shouldBe false
           taskEventSlot.size shouldBe 2
@@ -152,7 +147,7 @@ class TaskExecutorTests :
           // with
           val msg = getExecuteTask("other", input, types)
           // when
-          coroutineScope { taskExecutor.handle(msg, MillisInstant.now()) }
+          taskExecutor.handle(msg, MillisInstant.now())
           // then
           taskExecutorSlot.isCaptured shouldBe false
           taskEventSlot.size shouldBe 2
@@ -171,7 +166,7 @@ class TaskExecutorTests :
           val types = null
           val msg = getExecuteTask("other", input, types)
           // when
-          coroutineScope { taskExecutor.handle(msg, MillisInstant.now()) }
+          taskExecutor.handle(msg, MillisInstant.now())
           // then
           taskExecutorSlot.isCaptured shouldBe false
           taskEventSlot.size shouldBe 2
@@ -191,18 +186,18 @@ class TaskExecutorTests :
           val msg = getExecuteTask("withThrowable", input, types)
           // when
           val throwable = shouldThrow<Throwable> {
-            coroutineScope {
-              taskExecutor.handle(
-                  msg,
-                  MillisInstant.now(),
-              )
-            }
+            taskExecutor.handle(msg, MillisInstant.now())
           }
           // then
           taskExecutorSlot.isCaptured shouldBe false
           taskEventSlot.size shouldBe 1
           taskEventSlot[0] shouldBe getTaskStarted(msg, taskEventSlot[0].messageId!!)
-          throwable.message shouldBe "throwable"
+          throwable.message shouldBe "java.lang.Throwable: test throwable"
+
+          // Note that the Throwable sent (and not caught) during the test has the side effect
+          // to cancel the coroutineScope of producerAsync, that's why we recreate it after the test
+          // in a real case, the Throwable would kill the worker
+          taskExecutor = TaskExecutor(workerRegistry, producerAsync, client)
         }
 
         "Should throw ClassNotFoundException when trying to process an unknown task" {
@@ -212,7 +207,7 @@ class TaskExecutorTests :
           val types = listOf(Int::class.java.name, String::class.java.name)
           val msg = getExecuteTask("unknown", input, types)
           // when
-          coroutineScope { taskExecutor.handle(msg, MillisInstant.now()) }
+          taskExecutor.handle(msg, MillisInstant.now())
           // then
           taskExecutorSlot.isCaptured shouldBe false
           taskEventSlot.size shouldBe 2
@@ -232,7 +227,7 @@ class TaskExecutorTests :
           // with
           val msg = getExecuteTask("unknown", input, types)
           // when
-          coroutineScope { taskExecutor.handle(msg, MillisInstant.now()) }
+          taskExecutor.handle(msg, MillisInstant.now())
           // then
           taskExecutorSlot.isCaptured shouldBe false
           taskEventSlot.size shouldBe 2
@@ -251,7 +246,7 @@ class TaskExecutorTests :
           // with
           val msg = getExecuteTask("unknown", input, null)
           // when
-          coroutineScope { taskExecutor.handle(msg, MillisInstant.now()) }
+          taskExecutor.handle(msg, MillisInstant.now())
           // then
           taskExecutorSlot.isCaptured shouldBe false
           taskEventSlot.size shouldBe 2
@@ -270,7 +265,7 @@ class TaskExecutorTests :
           // with
           val msg = getExecuteTask("handle", input, null)
           // when
-          coroutineScope { taskExecutor.handle(msg, MillisInstant.now()) }
+          taskExecutor.handle(msg, MillisInstant.now())
           // then
           taskExecutorSlot.isCaptured shouldBe false
           taskEventSlot.size shouldBe 2
@@ -289,7 +284,7 @@ class TaskExecutorTests :
           // with
           val msg = getExecuteTask("handle", arrayOf(2, "3"), null)
           // when
-          coroutineScope { taskExecutor.handle(msg, MillisInstant.now()) }
+          taskExecutor.handle(msg, MillisInstant.now())
           // then
           afterSlot.captured shouldBe MillisDuration((SimpleServiceWithRetry.DELAY * 1000).toLong())
           (taskExecutorSlot.captured).shouldBeInstanceOf<ExecuteTask>()
@@ -303,7 +298,7 @@ class TaskExecutorTests :
               msg,
               afterSlot.captured,
               IllegalStateException::class.java.name,
-              Task.meta,
+              msg.taskMeta,
           )
         }
 
@@ -313,13 +308,13 @@ class TaskExecutorTests :
           // with
           val msg = getExecuteTask("handle", arrayOf(2, "3"), null)
           // when
-          coroutineScope { taskExecutor.handle(msg, MillisInstant.now()) }
+          taskExecutor.handle(msg, MillisInstant.now())
           // then
           afterSlot.captured shouldBe MillisDuration((RetryImpl.DELAY * 1000).toLong())
 
           (taskExecutorSlot.captured).shouldBeInstanceOf<ExecuteTask>()
           val executeTask = taskExecutorSlot.captured as ExecuteTask
-          executeTask.check(msg, IllegalStateException::class.java.name, Task.meta)
+          executeTask.check(msg, IllegalStateException::class.java.name, msg.taskMeta.map)
 
           taskEventSlot.size shouldBe 2
           taskEventSlot[0] shouldBe getTaskStarted(msg, taskEventSlot[0].messageId!!)
@@ -328,7 +323,7 @@ class TaskExecutorTests :
               msg,
               afterSlot.captured,
               IllegalStateException::class.java.name,
-              Task.meta,
+              msg.taskMeta.map,
           )
         }
 
@@ -338,13 +333,13 @@ class TaskExecutorTests :
           // with
           val msg = getExecuteTask("handle", arrayOf(2, "3"), null)
           // when
-          coroutineScope { taskExecutor.handle(msg, MillisInstant.now()) }
+          taskExecutor.handle(msg, MillisInstant.now())
           // then
           afterSlot.captured shouldBe MillisDuration((RetryImpl.DELAY * 1000).toLong())
 
           (taskExecutorSlot.captured).shouldBeInstanceOf<ExecuteTask>()
           val executeTask = taskExecutorSlot.captured as ExecuteTask
-          executeTask.check(msg, IllegalStateException::class.java.name, Task.meta)
+          executeTask.check(msg, IllegalStateException::class.java.name, msg.taskMeta.map)
 
           taskEventSlot.size shouldBe 2
           taskEventSlot[0] shouldBe getTaskStarted(msg, taskEventSlot[0].messageId!!)
@@ -353,7 +348,7 @@ class TaskExecutorTests :
               msg,
               afterSlot.captured,
               IllegalStateException::class.java.name,
-              Task.meta,
+              msg.taskMeta.map,
           )
         }
 
@@ -364,7 +359,7 @@ class TaskExecutorTests :
           // with
           val msg = getExecuteTask("handle", arrayOf(2, "3"), null)
           // when
-          coroutineScope { taskExecutor.handle(msg, MillisInstant.now()) }
+          taskExecutor.handle(msg, MillisInstant.now())
           // then
           taskExecutorSlot.isCaptured shouldBe false
           taskEventSlot.size shouldBe 2
@@ -373,7 +368,7 @@ class TaskExecutorTests :
           (taskEventSlot[1] as TaskFailedEvent).check(
               msg,
               IllegalStateException::class.java.name,
-              Task.meta,
+              msg.taskMeta.map,
           )
         }
 
@@ -384,7 +379,7 @@ class TaskExecutorTests :
           // with
           val msg = getExecuteTask("handle", input, null)
           // when
-          coroutineScope { taskExecutor.handle(msg, MillisInstant.now()) }
+          taskExecutor.handle(msg, MillisInstant.now())
           // then
           taskExecutorSlot.isCaptured shouldBe false
           taskEventSlot.size shouldBe 2
@@ -392,7 +387,7 @@ class TaskExecutorTests :
           taskEventSlot[1] shouldBe getTaskCompleted(
               msg,
               taskEventSlot[1].messageId!!,
-              ServiceWithContext().handle(2, "3"),
+              (6 * msg.taskRetrySequence.toInt()).toString(),
               msg.taskMeta.map,
           )
         }
@@ -408,7 +403,7 @@ class TaskExecutorTests :
           // with
           val msg = getExecuteTask("handle", arrayOf(2, "3"), types)
           // when
-          coroutineScope { taskExecutor.handle(msg, MillisInstant.now()) }
+          taskExecutor.handle(msg, MillisInstant.now())
           // then
           taskExecutorSlot.isCaptured shouldBe false
           taskEventSlot.size shouldBe 2
@@ -417,7 +412,7 @@ class TaskExecutorTests :
           (taskEventSlot[1] as TaskFailedEvent).check(
               msg,
               TimeoutException::class.java.name,
-              msg.taskMeta,
+              msg.taskMeta.map,
           )
         }
 
@@ -432,7 +427,7 @@ class TaskExecutorTests :
           // with
           val msg = getExecuteTask("handle", input, types)
           // when
-          coroutineScope { taskExecutor.handle(msg, MillisInstant.now()) }
+          taskExecutor.handle(msg, MillisInstant.now())
           // then
           taskExecutorSlot.isCaptured shouldBe false
           taskEventSlot.size shouldBe 2
@@ -456,7 +451,7 @@ class TaskExecutorTests :
           // with
           val msg = getExecuteTask("handle", input, types)
           // when
-          coroutineScope { taskExecutor.handle(msg, MillisInstant.now()) }
+          taskExecutor.handle(msg, MillisInstant.now())
           // then
           taskExecutorSlot.isCaptured shouldBe false
           taskEventSlot.size shouldBe 2

@@ -22,7 +22,6 @@
  */
 package io.infinitic.pulsar
 
-import io.github.oshai.kotlinlogging.KotlinLogging
 import io.infinitic.common.clients.messages.ClientEnvelope
 import io.infinitic.common.clients.messages.ClientMessage
 import io.infinitic.common.data.MillisDuration
@@ -55,22 +54,17 @@ class PulsarInfiniticProducerAsync(
 
   private var suggestedName: String? = null
 
-  val logger = KotlinLogging.logger {}
-
-  /**
-   * Name of the sender
-   * (If set, this must be done before the first message is sent to be taking into account)
-   */
+  // Name of the sender
+  // (If set, this must be done before the first message is sent to be taking into account)
   override var name: String
     get() = uniqueName
     set(value) {
       suggestedName = value
     }
 
-  /**
-   * If [suggestedName] is provided, we check that no other is connected with it
-   * If [suggestedName] is not provided, Pulsar will provide a unique name
-   */
+
+  // If [suggestedName] is provided, we check that no other is connected with it
+  // If [suggestedName] is not provided, Pulsar will provide a unique name
   private val uniqueName: String by lazy {
     val namerTopic = getTopicName("global", GlobalTopicDescription.NAMER)
     // Get unique name
@@ -138,7 +132,6 @@ class PulsarInfiniticProducerAsync(
     val desc = ClientTopicDescription.RESPONSE
 
     val topic = getTopicName(name, desc)
-    logger.debug { "Sending to topic '$topic': '$message'" }
 
     return producer.sendAsync(
         ClientEnvelope::class, message, zero, topic, clientProducerName,
@@ -151,7 +144,6 @@ class PulsarInfiniticProducerAsync(
     val desc = WorkflowTopicsDescription.TAG
 
     val topic = getTopicName(name, desc)
-    logger.debug { "Sending to topic '$topic': '$message'" }
 
     return producer.sendAsync(
         WorkflowTagEnvelope::class,
@@ -168,7 +160,6 @@ class PulsarInfiniticProducerAsync(
     val desc = WorkflowTopicsDescription.CMD
 
     val topic = getTopicName(name, desc)
-    logger.debug { "Sending to topic '$topic': '$message'" }
 
     return producer.sendAsync(
         WorkflowEngineEnvelope::class,
@@ -192,7 +183,6 @@ class PulsarInfiniticProducerAsync(
     }
 
     val topic = getTopicName(name, desc)
-    logger.debug { "Sending to topic '$topic' after $after: '$message'" }
 
     return producer.sendAsync(
         WorkflowEngineEnvelope::class,
@@ -209,7 +199,6 @@ class PulsarInfiniticProducerAsync(
     val desc = WorkflowTopicsDescription.EVENTS
 
     val topic = getTopicName(name, desc)
-    logger.debug { "Sending to topic '$topic': '$message'" }
 
     return producer.sendAsync(
         WorkflowEventEnvelope::class,
@@ -226,7 +215,6 @@ class PulsarInfiniticProducerAsync(
     val desc = ServiceTopicsDescription.TAG
 
     val topic = getTopicName(name, desc)
-    logger.debug { "Sending to topic '$topic': '$message'" }
 
     return producer.sendAsync(
         TaskTagEnvelope::class,
@@ -262,7 +250,6 @@ class PulsarInfiniticProducerAsync(
     }
 
     val topic = getTopicName(name, desc)
-    logger.debug { "Sending to topic '$topic' after $after: '$message'" }
 
     return producer.sendAsync(
         TaskExecutorEnvelope::class,
@@ -293,7 +280,6 @@ class PulsarInfiniticProducerAsync(
     }
 
     val topic = getTopicName(name, desc)
-    logger.debug { "Sending to topic '$topic': '$message'" }
 
     return producer.sendAsync(
         TaskEventEnvelope::class,

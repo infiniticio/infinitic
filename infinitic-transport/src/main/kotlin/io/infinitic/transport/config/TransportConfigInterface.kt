@@ -30,4 +30,7 @@ interface TransportConfigInterface {
 
   /** Pulsar configuration */
   val pulsar: Pulsar?
+
+  /** Shutdown Grace Period */
+  val shutdownGracePeriodInSeconds: Double
 }

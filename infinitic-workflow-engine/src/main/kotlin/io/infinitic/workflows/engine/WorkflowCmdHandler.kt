@@ -41,7 +41,7 @@ class WorkflowCmdHandler(producerAsync: InfiniticProducerAsync) {
   val producer = LoggedInfiniticProducer(javaClass.name, producerAsync)
   val emitterName by lazy { EmitterName(producer.name) }
 
-  suspend fun handle(msg: WorkflowEngineMessage, publishTime: MillisInstant) {
+  fun handle(msg: WorkflowEngineMessage, publishTime: MillisInstant) = producer.run {
     msg.logDebug { "received $msg" }
 
     when (msg) {

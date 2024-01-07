@@ -35,8 +35,10 @@ data class ClientConfig @JvmOverloads constructor(
   override val transport: Transport = Transport.pulsar,
 
   /** Pulsar configuration */
-  override val pulsar: Pulsar? = null
+  override val pulsar: Pulsar? = null,
 
+  /** Shutdown Grace Period */
+  override val shutdownGracePeriodInSeconds: Double = 2.0
 ) : ClientConfigInterface {
 
   companion object {

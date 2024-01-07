@@ -33,46 +33,48 @@ import org.testcontainers.utility.DockerImageName
 
 @EnabledIf(DockerOnly::class)
 class RedisKeyValueStorageTests :
-    StringSpec({
-      val redisServer =
-          GenericContainer(DockerImageName.parse("redis:7.2.3")).withExposedPorts(6379).also {
-            it.start()
-          }
-      val config = Redis(host = redisServer.host, port = redisServer.firstMappedPort)
-      val storage = RedisKeyValueStorage.of(config)
+  StringSpec(
+      {
+        val redisServer =
+            GenericContainer(DockerImageName.parse("redis:7.2.3")).withExposedPorts(6379).also {
+              it.start()
+            }
+        val config = Redis(host = redisServer.host, port = redisServer.firstMappedPort)
+        val storage = RedisKeyValueStorage.from(config)
 
-      afterSpec {
-        config.close()
-        redisServer.stop()
-      }
+        afterSpec {
+          config.close()
+          redisServer.stop()
+        }
 
-      beforeTest { storage.put("foo", "bar".toByteArray()) }
+        beforeTest { storage.put("foo", "bar".toByteArray()) }
 
-      afterTest { storage.flush() }
+        afterTest { storage.flush() }
 
-      "getValue should return null on unknown key" { storage.get("unknown") shouldBe null }
+        "getValue should return null on unknown key" { storage.get("unknown") shouldBe null }
 
-      "getValue should return value" {
-        storage.get("foo").contentEquals("bar".toByteArray()) shouldBe true
-      }
+        "getValue should return value" {
+          storage.get("foo").contentEquals("bar".toByteArray()) shouldBe true
+        }
 
-      "putValue on new key should create value" {
-        storage.put("foo2", "bar2".toByteArray())
+        "putValue on new key should create value" {
+          storage.put("foo2", "bar2".toByteArray())
 
-        storage.get("foo2").contentEquals("bar2".toByteArray()) shouldBe true
-      }
+          storage.get("foo2").contentEquals("bar2".toByteArray()) shouldBe true
+        }
 
-      "putValue on existing key should update value" {
-        storage.put("foo", "bar2".toByteArray())
+        "putValue on existing key should update value" {
+          storage.put("foo", "bar2".toByteArray())
 
-        storage.get("foo").contentEquals("bar2".toByteArray()) shouldBe true
-      }
+          storage.get("foo").contentEquals("bar2".toByteArray()) shouldBe true
+        }
 
-      "delValue on unknown key does nothing" { storage.del("unknown") }
+        "delValue on unknown key does nothing" { storage.del("unknown") }
 
-      "delValue should delete value" {
-        storage.del("foo")
+        "delValue should delete value" {
+          storage.del("foo")
 
-        storage.get("foo") shouldBe null
-      }
-    })
+          storage.get("foo") shouldBe null
+        }
+      },
+  )

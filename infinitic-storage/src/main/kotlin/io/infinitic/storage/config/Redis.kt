@@ -23,20 +23,20 @@
 package io.infinitic.storage.config
 
 import com.sksamuel.hoplite.Secret
-import java.util.concurrent.ConcurrentHashMap
 import redis.clients.jedis.JedisPool
 import redis.clients.jedis.JedisPoolConfig
 import redis.clients.jedis.Protocol
+import java.util.concurrent.ConcurrentHashMap
 
 data class Redis(
-    val host: String = Protocol.DEFAULT_HOST,
-    var port: Int = Protocol.DEFAULT_PORT,
-    var timeout: Int = Protocol.DEFAULT_TIMEOUT,
-    var user: String? = null,
-    var password: Secret? = null,
-    var database: Int = Protocol.DEFAULT_DATABASE,
-    var ssl: Boolean = false,
-    var poolConfig: PoolConfig = PoolConfig()
+  val host: String = Protocol.DEFAULT_HOST,
+  var port: Int = Protocol.DEFAULT_PORT,
+  var timeout: Int = Protocol.DEFAULT_TIMEOUT,
+  var user: String? = null,
+  var password: Secret? = null,
+  var database: Int = Protocol.DEFAULT_DATABASE,
+  var ssl: Boolean = false,
+  var poolConfig: PoolConfig = PoolConfig()
 ) {
   companion object {
     val pools = ConcurrentHashMap<Redis, JedisPool>()
@@ -52,28 +52,28 @@ data class Redis(
   }
 
   fun getPool(
-      jedisPoolConfig: JedisPoolConfig =
-          JedisPoolConfig().also {
-            it.maxTotal = poolConfig.maxTotal
-            it.maxIdle = poolConfig.maxIdle
-            it.minIdle = poolConfig.minIdle
-          }
-  ) =
-      pools.computeIfAbsent(this) {
-        when (it.password?.value.isNullOrEmpty()) {
-          true -> JedisPool(jedisPoolConfig, it.host, it.port, it.database)
-          false ->
-              JedisPool(
-                  jedisPoolConfig,
-                  it.host,
-                  it.port,
-                  it.timeout,
-                  it.user,
-                  it.password?.value,
-                  it.database,
-                  it.ssl)
-        }.also { pool -> Runtime.getRuntime().addShutdownHook(Thread { pool.close() }) }
-      }
+    jedisPoolConfig: JedisPoolConfig =
+        JedisPoolConfig().also {
+          it.maxTotal = poolConfig.maxTotal
+          it.maxIdle = poolConfig.maxIdle
+          it.minIdle = poolConfig.minIdle
+        }
+  ) = pools.computeIfAbsent(this) {
+    when (it.password?.value.isNullOrEmpty()) {
+      true -> JedisPool(jedisPoolConfig, it.host, it.port, it.database)
+      false ->
+        JedisPool(
+            jedisPoolConfig,
+            it.host,
+            it.port,
+            it.timeout,
+            it.user,
+            it.password?.value,
+            it.database,
+            it.ssl,
+        )
+    }
+  }
 }
 
 data class PoolConfig(var maxTotal: Int = -1, var maxIdle: Int = 8, var minIdle: Int = 0)

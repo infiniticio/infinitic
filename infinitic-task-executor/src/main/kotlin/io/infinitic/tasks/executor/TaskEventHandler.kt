@@ -50,7 +50,7 @@ class TaskEventHandler(producerAsync: InfiniticProducerAsync) {
   private val emitterName by lazy { EmitterName(producerAsync.name) }
 
   @Suppress("UNUSED_PARAMETER")
-  suspend fun handle(msg: TaskEventMessage, publishTime: MillisInstant) {
+  fun handle(msg: TaskEventMessage, publishTime: MillisInstant) = producer.run {
     msg.logDebug { "received $msg" }
 
     when (msg) {

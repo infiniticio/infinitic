@@ -32,3 +32,4 @@ interface WorkerConfigInterface :
   CacheConfigInterface,
   StorageConfigInterface,
   ClientConfigInterface
+

@@ -33,62 +33,65 @@ import org.testcontainers.containers.MySQLContainer
 
 @EnabledIf(DockerOnly::class)
 class MySQLKeyValueStorageTests :
-    StringSpec({
-      val mysqlServer =
-          MySQLContainer<Nothing>("mysql:5.7")
-              .apply {
-                startupAttempts = 1
-                withUsername("test")
-                withPassword("password")
-                withDatabaseName("infinitic")
-              }
-              .let {
-                it.start()
-                it
-              }
+  StringSpec(
+      {
+        val mysqlServer =
+            MySQLContainer<Nothing>("mysql:5.7")
+                .apply {
+                  startupAttempts = 1
+                  withUsername("test")
+                  withPassword("password")
+                  withDatabaseName("infinitic")
+                }
+                .let {
+                  it.start()
+                  it
+                }
 
-      val config =
-          MySQL(
-              host = mysqlServer.host,
-              port = mysqlServer.firstMappedPort,
-              user = mysqlServer.username,
-              password = Secret(mysqlServer.password),
-              database = mysqlServer.databaseName)
+        val config =
+            MySQL(
+                host = mysqlServer.host,
+                port = mysqlServer.firstMappedPort,
+                user = mysqlServer.username,
+                password = Secret(mysqlServer.password),
+                database = mysqlServer.databaseName,
+            )
 
-      val storage = MySQLKeyValueStorage.of(config)
+        val storage = MySQLKeyValueStorage.from(config)
 
-      afterSpec {
-        config.close()
-        mysqlServer.stop()
-      }
+        afterSpec {
+          config.close()
+          mysqlServer.stop()
+        }
 
-      beforeTest { storage.put("foo", "bar".toByteArray()) }
+        beforeTest { storage.put("foo", "bar".toByteArray()) }
 
-      afterTest { storage.flush() }
+        afterTest { storage.flush() }
 
-      "getValue should return null on unknown key" { storage.get("unknown") shouldBe null }
+        "getValue should return null on unknown key" { storage.get("unknown") shouldBe null }
 
-      "getValue should return value" {
-        storage.get("foo").contentEquals("bar".toByteArray()) shouldBe true
-      }
+        "getValue should return value" {
+          storage.get("foo").contentEquals("bar".toByteArray()) shouldBe true
+        }
 
-      "putValue on new key should create value" {
-        storage.put("foo2", "bar2".toByteArray())
+        "putValue on new key should create value" {
+          storage.put("foo2", "bar2".toByteArray())
 
-        storage.get("foo2").contentEquals("bar2".toByteArray()) shouldBe true
-      }
+          storage.get("foo2").contentEquals("bar2".toByteArray()) shouldBe true
+        }
 
-      "putValue on existing key should update value" {
-        storage.put("foo", "bar2".toByteArray())
+        "putValue on existing key should update value" {
+          storage.put("foo", "bar2".toByteArray())
 
-        storage.get("foo").contentEquals("bar2".toByteArray()) shouldBe true
-      }
+          storage.get("foo").contentEquals("bar2".toByteArray()) shouldBe true
+        }
 
-      "delValue on unknown key does nothing" { storage.del("unknown") }
+        "delValue on unknown key does nothing" { storage.del("unknown") }
 
-      "delValue should delete value" {
-        storage.del("foo")
+        "delValue should delete value" {
+          storage.del("foo")
 
-        storage.get("foo") shouldBe null
-      }
-    })
+          storage.get("foo") shouldBe null
+        }
+      },
+  )

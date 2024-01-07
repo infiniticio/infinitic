@@ -75,6 +75,21 @@ class PulsarInfiniticClient(private val pulsarClient: PulsarClient) {
   }
 
   /**
+   * Closes a consumer and removes it from the list of consumers.
+   *
+   * @param consumer The consumer to close.
+   * @return Result of the close operation.
+   *         - Result.success(Unit) if the consumer was closed successfully.
+   *         - Result.failure(e) if an error occurred during the close operation.
+   */
+  fun closeConsumer(consumer: Consumer<*>): Result<Unit> = try {
+    consumer.close()
+    Result.success(Unit)
+  } catch (e: PulsarClientException) {
+    Result.failure(e)
+  }
+
+  /**
    * Create a new producer
    *
    * Returns:
@@ -184,7 +199,6 @@ class PulsarInfiniticClient(private val pulsarClient: PulsarClient) {
 
       builder.create()
     } as Producer<S>
-
     Result.success(producer)
   } catch (e: PulsarClientException) {
     logger.error(e) { "Unable to create producer $producerName on topic $topic" }
@@ -345,7 +359,8 @@ class PulsarInfiniticClient(private val pulsarClient: PulsarClient) {
     }
 
     return try {
-      Result.success(builder.subscribe())
+      val consumer = builder.subscribe()
+      Result.success(consumer)
     } catch (e: PulsarClientException) {
       logger.error(e) { "Unable to create consumer $consumerName on topic $topic" }
       Result.failure(e)

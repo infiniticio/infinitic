@@ -88,7 +88,7 @@ import java.util.concurrent.CopyOnWriteArrayList
 private val taskTagSlots = CopyOnWriteArrayList<TaskTagMessage>() // multithreading update
 private val workflowTagSlots = CopyOnWriteArrayList<WorkflowTagMessage>() // multithreading update
 private val taskSlot = slot<TaskExecutorMessage>()
-private val workflowEngineSlot = slot<WorkflowEngineMessage>()
+private val workflowCmdSlot = slot<WorkflowEngineMessage>()
 private val delaySlot = slot<MillisDuration>()
 
 private val clientNameTest = ClientName("clientTest")
@@ -111,7 +111,7 @@ private fun tagResponse(): CompletableFuture<Unit> {
 }
 
 private fun engineResponse(): CompletableFuture<Unit> {
-  val msg = workflowEngineSlot.captured
+  val msg = workflowCmdSlot.captured
   if (msg is DispatchNewWorkflow && msg.clientWaiting || msg is WaitWorkflow) {
     val methodCompleted = MethodCompleted(
         recipientName = ClientName(client.name),
@@ -125,24 +125,24 @@ private fun engineResponse(): CompletableFuture<Unit> {
   return completed()
 }
 
-private val producerAsync: InfiniticProducerAsync = mockk<InfiniticProducerAsync> {
+private val producerAsync = mockk<InfiniticProducerAsync> {
   every { name } returns "$clientNameTest"
   every { sendToWorkflowTagAsync(capture(workflowTagSlots)) } answers { tagResponse() }
-  every {
-    sendToWorkflowEngineAsync(capture(workflowEngineSlot), capture(delaySlot))
-  } answers { engineResponse() }
+  every { sendToWorkflowCmdAsync(capture(workflowCmdSlot)) } answers { engineResponse() }
 }
 
-private val consumerAsync: InfiniticConsumerAsync = mockk<InfiniticConsumerAsync> {
+private val consumerAsync = mockk<InfiniticConsumerAsync> {
   every { startClientConsumerAsync(any(), any(), clientNameTest) } returns completed()
 }
 
 private val client = InfiniticClient(consumerAsync, producerAsync)
 
-private class ClientWorkflowTests : StringSpec(
+internal class InfiniticClientTests : StringSpec(
     {
-      val meta: Map<String, ByteArray> =
-          mapOf("foo" to TestFactory.random(), "bar" to TestFactory.random())
+      val meta: Map<String, ByteArray> = mapOf(
+          "foo" to TestFactory.random(),
+          "bar" to TestFactory.random(),
+      )
       val tags = setOf("foo", "bar")
 
       val fakeWorkflow = client.newWorkflow(FakeWorkflow::class.java)
@@ -156,7 +156,7 @@ private class ClientWorkflowTests : StringSpec(
         taskTagSlots.clear()
         taskSlot.clear()
         workflowTagSlots.clear()
-        workflowEngineSlot.clear()
+        workflowCmdSlot.clear()
       }
 
       "Should be able to dispatch a workflow" {
@@ -164,7 +164,7 @@ private class ClientWorkflowTests : StringSpec(
         val deferred = client.dispatch(fakeWorkflow::m0)
         // then
         workflowTagSlots.size shouldBe 0
-        workflowEngineSlot.captured shouldBe DispatchNewWorkflow(
+        workflowCmdSlot.captured shouldBe DispatchNewWorkflow(
             workflowName = WorkflowName(FakeWorkflow::class.java.name),
             workflowId = WorkflowId(deferred.id),
             methodName = MethodName("m0"),
@@ -188,7 +188,7 @@ private class ClientWorkflowTests : StringSpec(
         val deferred = client.dispatch(fooWorkflow::m)
         // then
         workflowTagSlots.size shouldBe 0
-        workflowEngineSlot.captured shouldBe DispatchNewWorkflow(
+        workflowCmdSlot.captured shouldBe DispatchNewWorkflow(
             workflowName = WorkflowName("foo"),
             workflowId = WorkflowId(deferred.id),
             methodName = MethodName("bar"),
@@ -209,7 +209,7 @@ private class ClientWorkflowTests : StringSpec(
         val deferred = client.dispatch(fooWorkflow::annotated)
         // then
         workflowTagSlots.size shouldBe 0
-        workflowEngineSlot.captured shouldBe DispatchNewWorkflow(
+        workflowCmdSlot.captured shouldBe DispatchNewWorkflow(
             workflowName = WorkflowName("foo"),
             workflowId = WorkflowId(deferred.id),
             methodName = MethodName("bar"),
@@ -230,7 +230,7 @@ private class ClientWorkflowTests : StringSpec(
         val deferred = client.dispatch(fakeWorkflow::parent)
         // then
         workflowTagSlots.size shouldBe 0
-        workflowEngineSlot.captured shouldBe DispatchNewWorkflow(
+        workflowCmdSlot.captured shouldBe DispatchNewWorkflow(
             workflowName = WorkflowName(FakeWorkflow::class.java.name),
             workflowId = WorkflowId(deferred.id),
             methodName = MethodName("parent"),
@@ -251,7 +251,7 @@ private class ClientWorkflowTests : StringSpec(
         val deferred = client.dispatch(fakeWorkflowWithMeta::m0)
         // then
         workflowTagSlots.size shouldBe 0
-        workflowEngineSlot.captured shouldBe DispatchNewWorkflow(
+        workflowCmdSlot.captured shouldBe DispatchNewWorkflow(
             workflowName = WorkflowName(FakeWorkflow::class.java.name),
             workflowId = WorkflowId(deferred.id),
             methodName = MethodName("m0"),
@@ -281,7 +281,7 @@ private class ClientWorkflowTests : StringSpec(
           )
         }.toSet()
 
-        workflowEngineSlot.captured shouldBe DispatchNewWorkflow(
+        workflowCmdSlot.captured shouldBe DispatchNewWorkflow(
             workflowName = WorkflowName(FakeWorkflow::class.java.name),
             workflowId = WorkflowId(deferred.id),
             methodName = MethodName("m0"),
@@ -301,8 +301,8 @@ private class ClientWorkflowTests : StringSpec(
         // when
         val deferred = client.dispatch(fakeWorkflow::m1, 0)
         // then
-        workflowEngineSlot.isCaptured shouldBe true
-        val msg = workflowEngineSlot.captured
+        workflowCmdSlot.isCaptured shouldBe true
+        val msg = workflowCmdSlot.captured
         msg shouldBe DispatchNewWorkflow(
             workflowName = WorkflowName(FakeWorkflow::class.java.name),
             workflowId = WorkflowId(deferred.id),
@@ -323,8 +323,8 @@ private class ClientWorkflowTests : StringSpec(
         // when
         val deferred = client.dispatch(fakeWorkflow::m3, 0, "a")
         // then
-        workflowEngineSlot.isCaptured shouldBe true
-        val msg = workflowEngineSlot.captured
+        workflowCmdSlot.isCaptured shouldBe true
+        val msg = workflowCmdSlot.captured
         msg shouldBe DispatchNewWorkflow(
             workflowName = WorkflowName(FakeWorkflow::class.java.name),
             workflowId = WorkflowId(deferred.id),
@@ -347,8 +347,8 @@ private class ClientWorkflowTests : StringSpec(
         val klass = FakeClass()
         val deferred = client.dispatch(fakeWorkflow::m4, klass)
         // then
-        workflowEngineSlot.isCaptured shouldBe true
-        val msg = workflowEngineSlot.captured
+        workflowCmdSlot.isCaptured shouldBe true
+        val msg = workflowCmdSlot.captured
 
         msg shouldBe DispatchNewWorkflow(
             workflowName = WorkflowName(FakeWorkflow::class.java.name),
@@ -375,7 +375,7 @@ private class ClientWorkflowTests : StringSpec(
         // then
         result shouldBe success
 
-        val msg = workflowEngineSlot.captured
+        val msg = workflowCmdSlot.captured
         msg shouldBe WaitWorkflow(
             workflowMethodId = WorkflowMethodId.from(msg.workflowId),
             workflowName = WorkflowName(FakeWorkflow::class.java.name),
@@ -416,7 +416,7 @@ private class ClientWorkflowTests : StringSpec(
         client.getWorkflowById(FakeWorkflow::class.java, id).channelString.send("a")
         // then
         workflowTagSlots.size shouldBe 0
-        val msg = workflowEngineSlot.captured as SendSignal
+        val msg = workflowCmdSlot.captured as SendSignal
         msg shouldBe SendSignal(
             channelName = ChannelName("getChannelString"),
             signalId = msg.signalId,
@@ -428,14 +428,14 @@ private class ClientWorkflowTests : StringSpec(
         )
       }
 
-      "Should be able to emit to a channel by id (async)" {
+      "Should be able to send to a channel by id (async)" {
         // when
         val id = Tsid.random()
         val w = client.getWorkflowById(FakeWorkflow::class.java, id)
         client.dispatchAsync(w.channelString::send, "a").join()
         // then
         workflowTagSlots.size shouldBe 0
-        val msg = workflowEngineSlot.captured as SendSignal
+        val msg = workflowCmdSlot.captured as SendSignal
         msg shouldBe SendSignal(
             channelName = ChannelName("getChannelString"),
             signalId = msg.signalId,
@@ -491,7 +491,7 @@ private class ClientWorkflowTests : StringSpec(
         client.getWorkflowById(FakeWorkflow::class.java, id).channelFakeTask.send(signal)
         // then
         workflowTagSlots.size shouldBe 0
-        val msg = workflowEngineSlot.captured as SendSignal
+        val msg = workflowCmdSlot.captured as SendSignal
         msg shouldBe SendSignal(
             channelName = ChannelName("getChannelFakeTask"),
             signalId = msg.signalId,
@@ -515,7 +515,7 @@ private class ClientWorkflowTests : StringSpec(
         client.getWorkflowById(FakeWorkflow::class.java, id).channelFakeServiceParent.send(signal)
         // then
         workflowTagSlots.size shouldBe 0
-        val msg = workflowEngineSlot.captured as SendSignal
+        val msg = workflowCmdSlot.captured as SendSignal
         msg shouldBe SendSignal(
             channelName = ChannelName("getChannelFakeServiceParent"),
             signalId = msg.signalId,
@@ -539,7 +539,7 @@ private class ClientWorkflowTests : StringSpec(
         client.retryTasks(workflow)
         // then
         workflowTagSlots.size shouldBe 0
-        workflowEngineSlot.captured shouldBe RetryTasks(
+        workflowCmdSlot.captured shouldBe RetryTasks(
             taskId = null,
             taskStatus = null,
             serviceName = null,
@@ -556,7 +556,7 @@ private class ClientWorkflowTests : StringSpec(
         client.retryTasksAsync(workflow).join()
         // then
         workflowTagSlots.size shouldBe 0
-        workflowEngineSlot.captured shouldBe RetryTasks(
+        workflowCmdSlot.captured shouldBe RetryTasks(
             taskId = null,
             taskStatus = null,
             serviceName = null,
@@ -573,7 +573,7 @@ private class ClientWorkflowTests : StringSpec(
         client.completeTimers(workflow)
         // then
         workflowTagSlots.size shouldBe 0
-        workflowEngineSlot.captured shouldBe CompleteTimers(
+        workflowCmdSlot.captured shouldBe CompleteTimers(
             workflowMethodId = null,
             workflowName = WorkflowName(FakeWorkflow::class.java.name),
             workflowId = WorkflowId(id),
@@ -588,7 +588,7 @@ private class ClientWorkflowTests : StringSpec(
         client.completeTimersAsync(workflow).join()
         // then
         workflowTagSlots.size shouldBe 0
-        workflowEngineSlot.captured shouldBe CompleteTimers(
+        workflowCmdSlot.captured shouldBe CompleteTimers(
             workflowMethodId = null,
             workflowName = WorkflowName(FakeWorkflow::class.java.name),
             workflowId = WorkflowId(id),
@@ -602,8 +602,8 @@ private class ClientWorkflowTests : StringSpec(
         val workflow = client.getWorkflowById(FakeWorkflow::class.java, id)
         val deferred = client.dispatch(workflow::m0)
         // then
-        workflowEngineSlot.isCaptured shouldBe true
-        val msg = workflowEngineSlot.captured
+        workflowCmdSlot.isCaptured shouldBe true
+        val msg = workflowCmdSlot.captured
         msg shouldBe DispatchMethodWorkflow(
             workflowName = WorkflowName(FakeWorkflow::class.java.name),
             workflowId = WorkflowId(id),
@@ -625,7 +625,7 @@ private class ClientWorkflowTests : StringSpec(
         val deferred = client.dispatch(workflow::m0)
         println(deferred)
         // then
-        workflowEngineSlot.isCaptured shouldBe false
+        workflowCmdSlot.isCaptured shouldBe false
         workflowTagSlots.size shouldBe 1
         workflowTagSlots[0] shouldBe DispatchMethodByTag(
             workflowName = WorkflowName(FakeWorkflow::class.java.name),
@@ -650,7 +650,7 @@ private class ClientWorkflowTests : StringSpec(
         client.cancel(workflow)
         // then
         workflowTagSlots.size shouldBe 0
-        workflowEngineSlot.captured shouldBe CancelWorkflow(
+        workflowCmdSlot.captured shouldBe CancelWorkflow(
             cancellationReason = WorkflowCancellationReason.CANCELED_BY_CLIENT,
             workflowMethodId = null,
             workflowName = WorkflowName(FakeWorkflow::class.java.name),
@@ -666,7 +666,7 @@ private class ClientWorkflowTests : StringSpec(
         client.cancelAsync(workflow).join()
         // then
         workflowTagSlots.size shouldBe 0
-        workflowEngineSlot.captured shouldBe CancelWorkflow(
+        workflowCmdSlot.captured shouldBe CancelWorkflow(
             cancellationReason = WorkflowCancellationReason.CANCELED_BY_CLIENT,
             workflowMethodId = null,
             workflowName = WorkflowName(FakeWorkflow::class.java.name),
@@ -689,7 +689,7 @@ private class ClientWorkflowTests : StringSpec(
             emitterWorkflowId = null,
             emitterName = emitterNameTest,
         )
-        workflowEngineSlot.isCaptured shouldBe false
+        workflowCmdSlot.isCaptured shouldBe false
       }
 
       "Should be able to cancel workflow per tag (async)" {
@@ -706,7 +706,7 @@ private class ClientWorkflowTests : StringSpec(
             emitterWorkflowId = null,
             emitterName = emitterNameTest,
         )
-        workflowEngineSlot.isCaptured shouldBe false
+        workflowCmdSlot.isCaptured shouldBe false
       }
 
       "Should be able to cancel workflow just dispatched" {
@@ -715,7 +715,7 @@ private class ClientWorkflowTests : StringSpec(
         deferred.cancel()
         // then
         workflowTagSlots.size shouldBe 0
-        workflowEngineSlot.captured shouldBe CancelWorkflow(
+        workflowCmdSlot.captured shouldBe CancelWorkflow(
             cancellationReason = WorkflowCancellationReason.CANCELED_BY_CLIENT,
             workflowMethodId = null,
             workflowName = WorkflowName(FakeWorkflow::class.java.name),
@@ -736,7 +736,7 @@ private class ClientWorkflowTests : StringSpec(
             workflowTag = WorkflowTag("foo"),
             emitterName = emitterNameTest,
         )
-        workflowEngineSlot.isCaptured shouldBe false
+        workflowCmdSlot.isCaptured shouldBe false
       }
 
       "Retry a channel should throw" {

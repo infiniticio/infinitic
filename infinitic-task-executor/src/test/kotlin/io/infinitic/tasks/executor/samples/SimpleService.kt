@@ -47,7 +47,7 @@ class ServiceImplService : SimpleService {
 
   override fun other(i: Int, j: String) = (i * j.toInt()).toString()
 
-  override fun withThrowable(): String = throw Throwable("throwable")
+  override fun withThrowable(): String = throw Throwable("test throwable")
 }
 
 internal class ServiceWithContext {

@@ -30,21 +30,21 @@ class WrappedKeySetStorage(val storage: KeySetStorage) : KeySetStorage {
       try {
         storage.get(key)
       } catch (e: Exception) {
-        throw KeySetStorageException(e)
+        throwWrappedException(e)
       }
 
   override suspend fun add(key: String, value: ByteArray) =
       try {
         storage.add(key, value)
       } catch (e: Exception) {
-        throw KeySetStorageException(e)
+        throwWrappedException(e)
       }
 
   override suspend fun remove(key: String, value: ByteArray) =
       try {
         storage.remove(key, value)
       } catch (e: Exception) {
-        throw KeySetStorageException(e)
+        throwWrappedException(e)
       }
 
   @TestOnly
@@ -52,6 +52,17 @@ class WrappedKeySetStorage(val storage: KeySetStorage) : KeySetStorage {
       try {
         storage.flush()
       } catch (e: Exception) {
-        throw KeySetStorageException(e)
+        throwWrappedException(e)
       }
+
+  override fun close() {
+    try {
+      storage.close()
+    } catch (e: Exception) {
+      throwWrappedException(e)
+    }
+  }
+
+  private fun throwWrappedException(e: Exception): Nothing = throw KeySetStorageException(e)
 }
+

@@ -33,7 +33,7 @@ import kotlin.reflect.KClass
 
 class Producer(
   val client: PulsarInfiniticClient,
-  val producerConfig: ProducerConfig
+  private val producerConfig: ProducerConfig
 ) {
 
   val logger = KotlinLogging.logger {}
@@ -50,9 +50,9 @@ class Producer(
     key: String? = null
   ): CompletableFuture<Unit> {
 
-    val producer = client.getProducer(topic, schemaClass, producerName, producerConfig, key)
+    val producer = client
+        .getProducer(topic, schemaClass, producerName, producerConfig, key)
         .getOrElse { return CompletableFuture.failedFuture(it) }
-
 
     logger.trace { "Sending after $after to topic '$topic' with key '$key': '$message'" }
 
@@ -70,6 +70,6 @@ class Producer(
         }
         .sendAsync()
         // remove MessageId from the completed CompletableFuture
-        .thenApplyAsync { }
+        .thenApply { }
   }
 }

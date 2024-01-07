@@ -34,19 +34,13 @@ import io.infinitic.common.transport.InfiniticProducerAsync
 import io.infinitic.common.workflows.engine.events.WorkflowEventMessage
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
 import io.infinitic.common.workflows.tags.messages.WorkflowTagMessage
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.future.future
 import java.util.concurrent.CompletableFuture
 
 class InMemoryInfiniticProducerAsync(private val channels: InMemoryChannels) :
   InfiniticProducerAsync {
 
   private val logger = KotlinLogging.logger {}
-
-  // Coroutine scope used to receive messages
-  private val producingScope = CoroutineScope(Dispatchers.IO)
 
   override var name = DEFAULT_NAME
 
@@ -148,10 +142,13 @@ class InMemoryInfiniticProducerAsync(private val channels: InMemoryChannels) :
   private fun <T : Any> sendAsync(
     message: T,
     channel: Channel<T>,
-  ): CompletableFuture<Unit> = producingScope.future {
+  ): CompletableFuture<Unit> {
     logger.debug { "Channel ${channel.id}: sending $message" }
-    channel.send(message)
+    val future = with(channels) { channel.sendAsync(message) }
     logger.trace { "Channel ${channel.id}: sent" }
+
+    return future
+
   }
 
   companion object {
