@@ -45,7 +45,7 @@ import io.infinitic.workflows.engine.WorkflowEngine
 import io.infinitic.workflows.engine.WorkflowEventHandler
 import io.infinitic.workflows.tag.WorkflowTagEngine
 import java.util.concurrent.CompletableFuture
-import java.util.concurrent.CompletionException
+import kotlin.system.exitProcess
 
 @Suppress("unused")
 class InfiniticWorker(
@@ -90,9 +90,11 @@ class InfiniticWorker(
    * (blocks the current thread)
    */
   fun start(): Unit = try {
-    startAsync().join()
-  } catch (e: CompletionException) {
-    // Do nothing
+    startAsync().get()
+  } catch (e: Throwable) {
+    // exiting if any of startAsyncs is failing
+    close()
+    exitProcess(1)
   }
 
   /**
@@ -105,7 +107,7 @@ class InfiniticWorker(
       // WORKFLOW-TAG
       val workflowTagEngine = WorkflowTagEngine(it.value.storage, producerAsync)
 
-      futures.add(
+      futures.addIfNotDone(
           consumerAsync.startWorkflowTagConsumerAsync(
               handler = workflowTagEngine::handle,
               beforeDlq = null,
@@ -119,7 +121,7 @@ class InfiniticWorker(
       // WORKFLOW-CMD
       val workflowCmdHandler = WorkflowCmdHandler(producerAsync)
 
-      futures.add(
+      futures.addIfNotDone(
           consumerAsync.startWorkflowCmdConsumerAsync(
               handler = workflowCmdHandler::handle,
               beforeDlq = null,
@@ -131,7 +133,7 @@ class InfiniticWorker(
       // WORKFLOW-ENGINE
       val workflowEngine = WorkflowEngine(it.value.storage, producerAsync)
 
-      futures.add(
+      futures.addIfNotDone(
           consumerAsync.startWorkflowEngineConsumerAsync(
               handler = workflowEngine::handle,
               beforeDlq = null,
@@ -141,7 +143,7 @@ class InfiniticWorker(
       )
 
       // WORKFLOW-DELAY
-      futures.add(
+      futures.addIfNotDone(
           consumerAsync.startDelayedWorkflowEngineConsumerAsync(
               handler = { msg, _ -> delayedWorkflowProducer.run { sendToWorkflowEngine(msg) } },
               beforeDlq = null,
@@ -153,7 +155,7 @@ class InfiniticWorker(
       // WORKFLOW-EVENTS
       val workflowEvent = WorkflowEventHandler(producerAsync)
 
-      futures.add(
+      futures.addIfNotDone(
           consumerAsync.startWorkflowEventsConsumerAsync(
               handler = workflowEvent::handle,
               beforeDlq = null,
@@ -167,17 +169,12 @@ class InfiniticWorker(
       // WORKFLOW-TASK_EXECUTOR
       val workflowTaskExecutor = TaskExecutor(workerRegistry, producerAsync, client)
 
-      futures.add(
+      futures.addIfNotDone(
           consumerAsync.startWorkflowTaskConsumerAsync(
               handler = workflowTaskExecutor::handle,
               beforeDlq = { message, cause ->
                 workflowTaskExecutor.run {
-                  sendTaskFailed(
-                      message,
-                      cause,
-                      Task.meta,
-                      sendingDlqMessage,
-                  )
+                  sendTaskFailed(message, cause, Task.meta, sendingDlqMessage)
                 }
               },
               workflowName = it.key,
@@ -186,7 +183,7 @@ class InfiniticWorker(
       )
 
       // WORKFLOW-TASK_EXECUTOR-DELAY
-      futures.add(
+      futures.addIfNotDone(
           consumerAsync.startDelayedWorkflowTaskConsumerAsync(
               handler = { msg, _ -> delayedTaskProducer.run { sendToTaskExecutor(msg) } },
               beforeDlq = null,
@@ -198,7 +195,7 @@ class InfiniticWorker(
       // WORKFLOW-TASK-EVENT
       val workflowTaskEventHandler = TaskEventHandler(producerAsync)
 
-      futures.add(
+      futures.addIfNotDone(
           consumerAsync.startWorkflowTaskEventsConsumerAsync(
               handler = workflowTaskEventHandler::handle,
               beforeDlq = null,
@@ -212,7 +209,7 @@ class InfiniticWorker(
       // TASK-TAG
       val tagEngine = TaskTagEngine(it.value.storage, producerAsync)
 
-      futures.add(
+      futures.addIfNotDone(
           consumerAsync.startTaskTagConsumerAsync(
               handler = tagEngine::handle,
               beforeDlq = null,
@@ -226,7 +223,7 @@ class InfiniticWorker(
       // TASK-EXECUTOR
       val taskExecutor = TaskExecutor(workerRegistry, producerAsync, client)
 
-      futures.add(
+      futures.addIfNotDone(
           consumerAsync.startTaskExecutorConsumerAsync(
               handler = taskExecutor::handle,
               beforeDlq = { message, cause ->
@@ -238,7 +235,7 @@ class InfiniticWorker(
       )
 
       // TASK-EXECUTOR-DELAY
-      futures.add(
+      futures.addIfNotDone(
           consumerAsync.startDelayedTaskExecutorConsumerAsync(
               handler = { msg, _ -> delayedTaskProducer.run { sendToTaskExecutor(msg) } },
               beforeDlq = null,
@@ -250,7 +247,7 @@ class InfiniticWorker(
       // TASK-EVENTS
       val taskEventHandler = TaskEventHandler(producerAsync)
 
-      futures.add(
+      futures.addIfNotDone(
           consumerAsync.startTaskEventsConsumerAsync(
               handler = taskEventHandler::handle,
               beforeDlq = null,
@@ -262,12 +259,16 @@ class InfiniticWorker(
 
     logger.info {
       "Worker \"${producerAsync.name}\" ready" + when (consumerAsync is PulsarInfiniticConsumerAsync) {
-        true -> " (shutdownGracePeriodInSeconds= ${consumerAsync.shutdownGracePeriodInSeconds})"
+        true -> " (shutdownGracePeriodInSeconds=${consumerAsync.shutdownGracePeriodInSeconds}s)"
         false -> ""
       }
     }
 
-    return CompletableFuture.allOf(*futures.toTypedArray()).thenApply { }
+    return CompletableFuture.anyOf(*futures.toTypedArray()).thenApply {}
+  }
+
+  private fun MutableList<CompletableFuture<Unit>>.addIfNotDone(future: CompletableFuture<Unit>) {
+    if (!future.isDone) add(future)
   }
 
   companion object {
@@ -311,6 +312,5 @@ class InfiniticWorker(
     @JvmStatic
     fun fromConfigFile(vararg files: String): InfiniticWorker =
         fromConfig(WorkerConfig.fromFile(*files))
-
   }
 }

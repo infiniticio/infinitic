@@ -54,10 +54,8 @@ import io.infinitic.tasks.getMillisBeforeRetry
 import io.infinitic.tasks.millis
 import io.infinitic.workflows.WorkflowCheckMode
 import io.infinitic.workflows.workflowTask.WorkflowTaskImpl
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout
 import java.lang.reflect.InvocationTargetException
 import java.util.concurrent.TimeoutException
@@ -134,16 +132,16 @@ class TaskExecutor(
 
     // task execution
     val output = try {
-      withContext(Dispatchers.Default) {
-        withTimeout(timeout) {
-          coroutineScope {
-            // Put context in execution's thread (it may be used in the following method)
-            Task.context.set(taskContext)
-            // method execution
-            method.invoke(service, *parameters)
-          }
+      //withContext(Dispatchers.Default) {
+      withTimeout(timeout) {
+        coroutineScope {
+          // Put context in execution's thread (it may be used in the following method)
+          Task.context.set(taskContext)
+          // method execution
+          method.invoke(service, *parameters)
         }
       }
+      //}
     } catch (e: TimeoutCancellationException) {
       retryTask(msg, taskContext, TimeoutException("Local timeout after $timeout ms"))
       // stop here

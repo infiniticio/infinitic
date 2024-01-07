@@ -43,6 +43,7 @@ import io.kotest.matchers.ints.shouldBeExactly
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.future.future
 import kotlinx.coroutines.job
 import org.apache.pulsar.client.api.PulsarClient
 import org.apache.pulsar.client.api.SubscriptionType
@@ -93,18 +94,20 @@ class ConsumerTests : StringSpec(
         withKey: Boolean = false
       ) {
         with(consumer) {
-          startConsumer(
-              handler = handler,
-              beforeDlq = null,
-              schemaClass = TaskExecutorEnvelope::class,
-              topic = topic,
-              topicDlq = null,
-              subscriptionName = topic + "Consumer",
-              subscriptionNameDlq = "",
-              subscriptionType = if (withKey) SubscriptionType.Key_Shared else SubscriptionType.Shared,
-              consumerName = "consumerTest",
-              concurrency = concurrency,
-          )
+          future {
+            runConsumer(
+                handler = handler,
+                beforeDlq = null,
+                schemaClass = TaskExecutorEnvelope::class,
+                topic = topic,
+                topicDlq = null,
+                subscriptionName = topic + "Consumer",
+                subscriptionNameDlq = "",
+                subscriptionType = if (withKey) SubscriptionType.Key_Shared else SubscriptionType.Shared,
+                consumerName = "consumerTest",
+                concurrency = concurrency,
+            )
+          }
         }
       }
 
@@ -113,7 +116,7 @@ class ConsumerTests : StringSpec(
       }
 
       "consuming 1000 messages (1ms) without concurrency should take less than 5 ms in average" {
-        val topic = "testConsuming1"
+        val topic = TestFactory.random<String>()
         val consumingScope = CoroutineScope(Dispatchers.IO)
         var averageMillisToConsume = 100.0
         val total = 1000
@@ -147,7 +150,7 @@ class ConsumerTests : StringSpec(
       }
 
       "consuming 1000 messages (100ms) with 100 concurrency (shared) should take less than 5 ms in average" {
-        val topic = "testConsuming2-shared"
+        val topic = TestFactory.random<String>()
         val consumingScope = CoroutineScope(Dispatchers.IO)
         var averageMillisToConsume = 100.0
         val total = 1000
@@ -181,13 +184,13 @@ class ConsumerTests : StringSpec(
       }
 
       "consuming 1000 messages (100ms) with 100 concurrency (key-shared) should take less than 5 ms in average" {
-        val topic = "testConsuming2-key-shared"
+        val topic = TestFactory.random<String>()
         val consumingScope = CoroutineScope(Dispatchers.IO)
         var averageMillisToConsume = 100.0
         val total = 1000
         val counter = AtomicInteger(0)
         lateinit var start: Instant
-
+        
         val handler: ((TaskExecutorMessage, MillisInstant) -> Unit) = { _, _ ->
           if (counter.get() == 0) start = Instant.now()
           // emulate a 100ms task
@@ -196,7 +199,7 @@ class ConsumerTests : StringSpec(
           counter.incrementAndGet().let {
             if (it == total) {
               averageMillisToConsume = (start.fromNow() / total)
-              println("Average time to consume a message: $averageMillisToConsume ms")
+              //println("Average time to consume a message: $averageMillisToConsume ms")
               consumingScope.cancel()
             }
           }
@@ -215,7 +218,7 @@ class ConsumerTests : StringSpec(
       }
 
       "graceful shutdown with Shared" {
-        val topic = "shutdown-shared"
+        val topic = TestFactory.random<String>()
         val consumingScope = CoroutineScope(Dispatchers.IO)
         val counter = AtomicInteger(0)
         val messageOpen = CopyOnWriteArrayList<Int>()
@@ -258,7 +261,7 @@ class ConsumerTests : StringSpec(
       }
 
       "graceful shutdown with Key-Shared" {
-        val topic = "shutdown-key-shared"
+        val topic = TestFactory.random<String>()
         val consumingScope = CoroutineScope(Dispatchers.IO)
         val counter = AtomicInteger(0)
         val messageOpen = CopyOnWriteArrayList<Int>()

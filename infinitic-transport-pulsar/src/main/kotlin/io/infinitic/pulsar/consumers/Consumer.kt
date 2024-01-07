@@ -27,9 +27,9 @@ import io.infinitic.common.data.MillisInstant
 import io.infinitic.common.messages.Envelope
 import io.infinitic.common.messages.Message
 import io.infinitic.pulsar.client.PulsarInfiniticClient
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.future.await
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.joinAll
@@ -49,7 +49,7 @@ class Consumer(
 
   val logger = KotlinLogging.logger {}
 
-  internal fun <T : Message, S : Envelope<out T>> CoroutineScope.startConsumer(
+  internal suspend fun <T : Message, S : Envelope<out T>> runConsumer(
     handler: (T, MillisInstant) -> Unit,
     beforeDlq: ((T, Exception) -> Unit)?,
     schemaClass: KClass<S>,
@@ -60,36 +60,35 @@ class Consumer(
     subscriptionType: SubscriptionType,
     consumerName: String,
     concurrency: Int
-  ) {
+  ) = coroutineScope {
     logger.debug { "Starting $concurrency consumers on topic $topic with subscription $subscriptionName" }
 
     when (subscriptionType) {
       SubscriptionType.Key_Shared ->
         repeat(concurrency) {
-          val consumerNameIt = "$consumerName-$it"
-          // For Key_Shared subscription, we must create a new consumer for each executor coroutine
-          val consumer = getConsumer(
-              schemaClass = schemaClass,
-              topic = topic,
-              topicDlq = topicDlq,
-              subscriptionName = subscriptionName,
-              subscriptionNameDlq = subscriptionNameDlq,
-              subscriptionType = subscriptionType,
-              consumerName = consumerNameIt,
-          ).getOrThrow()
-
           launch {
+            val consumerNameIt = "$consumerName-$it"
+            // For Key_Shared subscription, we must create a new consumer for each executor coroutine
+            val consumer = getConsumer(
+                schemaClass = schemaClass,
+                topic = topic,
+                topicDlq = topicDlq,
+                subscriptionName = subscriptionName,
+                subscriptionNameDlq = subscriptionNameDlq,
+                subscriptionType = subscriptionType,
+                consumerName = consumerNameIt,
+            ).getOrThrow()
+
             while (isActive) {
               // await() ensures this coroutine exits in case of throwable not caught
-              val pulsarMessage = try {
-                consumer.receiveAsync().await()
+              try {
+                val pulsarMessage = consumer.receiveAsync().await()
+                // process pulsar message
+                processPulsarMessage(consumer, handler, beforeDlq, topic, pulsarMessage!!)
               } catch (e: CancellationException) {
                 // exit while loop when coroutine is canceled
                 break
               }
-
-              // process pulsar message
-              processPulsarMessage(consumer, handler, beforeDlq, topic, pulsarMessage!!)
             }
             logger.debug { "Closing consumer $consumerNameIt after cancellation" }
             client.closeConsumer(consumer)
@@ -126,22 +125,20 @@ class Consumer(
           }
         }
         // start message receiver
-        launch {
-          while (isActive) {
-            // await() ensures this coroutine exits in case of throwable not caught
-            try {
-              val pulsarMessage = consumer.receiveAsync().await()
-              channel.send(pulsarMessage)
-            } catch (e: CancellationException) {
-              // if coroutine is canceled, we just exit the while loop
-              break
-            }
+        while (isActive) {
+          // await() ensures this coroutine exits in case of throwable not caught
+          try {
+            val pulsarMessage = consumer.receiveAsync().await()
+            channel.send(pulsarMessage)
+          } catch (e: CancellationException) {
+            // if coroutine is canceled, we just exit the while loop
+            break
           }
-          logger.debug { "Closing consumer $consumerName after cancellation" }
-          withContext(NonCancellable) { jobs.joinAll() }
-          client.closeConsumer(consumer)
-          logger.info { "Closed consumer $consumerName after cancellation" }
         }
+        logger.debug { "Closing consumer $consumerName after cancellation" }
+        withContext(NonCancellable) { jobs.joinAll() }
+        client.closeConsumer(consumer)
+        logger.info { "Closed consumer $consumerName after cancellation" }
       }
     }
   }
@@ -171,6 +168,9 @@ class Consumer(
       logTrace(topic, messageId) { "Processing $message" }
       handler(message, publishTime)
       logDebug(topic, messageId) { "Processed $message" }
+    } catch (e: CancellationException) {
+      // this means that the producing coroutine is down, we must exit
+      throw e.cause ?: e
     } catch (e: Exception) {
       logWarn(e, topic, messageId) { "Exception when processing $message" }
       negativeAcknowledge(consumer, pulsarMessage, beforeDlq, message, e)

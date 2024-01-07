@@ -113,7 +113,7 @@ class PulsarInfiniticConsumerAsync(
   private fun deleteClientTopic() {
     if (::clientName.isInitialized) {
       val clientTopic = resourceManager.getTopicName(clientName, ClientTopicDescription.RESPONSE)
-      logger.info { "Deleting client topic: $clientTopic" }
+      logger.info { "Deleting client topic: '$clientTopic'" }
       resourceManager.deleteTopic(clientTopic)
           .onFailure { logger.warn(it) { "Unable to delete client topic: '$clientTopic'." } }
           .onSuccess { logger.info { "Client topic deleted: '$clientTopic'." } }
@@ -327,7 +327,7 @@ class PulsarInfiniticConsumerAsync(
 
     return with(consumer) {
       consumingScope.future {
-        startConsumer(
+        runConsumer(
             handler = handler,
             beforeDlq = beforeDlq,
             schemaClass = schemaClass,

@@ -35,11 +35,11 @@ import io.infinitic.pulsar.resources.ServiceTopicsDescription
 import io.infinitic.pulsar.resources.TopicDescription
 import io.infinitic.pulsar.resources.WorkflowTopicsDescription
 import io.kotest.core.spec.style.StringSpec
+import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.slot
 import io.mockk.verify
-import kotlinx.coroutines.CoroutineScope
 import org.apache.pulsar.client.api.SubscriptionType
 
 class PulsarInfiniticConsumerAsyncTests : StringSpec(
@@ -85,8 +85,8 @@ class PulsarInfiniticConsumerAsyncTests : StringSpec(
 
 
       val consumer = mockk<Consumer> {
-        every {
-          any<CoroutineScope>().startConsumer(
+        coEvery {
+          runConsumer(
               capture(handler),
               capture(handlerDlq),
               any(),
