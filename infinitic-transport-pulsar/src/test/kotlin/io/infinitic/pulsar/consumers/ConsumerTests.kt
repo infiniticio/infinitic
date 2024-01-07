@@ -32,6 +32,7 @@ import io.infinitic.common.fixtures.later
 import io.infinitic.common.tasks.executors.messages.ExecuteTask
 import io.infinitic.common.tasks.executors.messages.TaskExecutorEnvelope
 import io.infinitic.common.tasks.executors.messages.TaskExecutorMessage
+import io.infinitic.common.utils.Tsid
 import io.infinitic.pulsar.client.PulsarInfiniticClient
 import io.infinitic.pulsar.producers.Producer
 import io.infinitic.pulsar.producers.ProducerConfig
@@ -112,11 +113,12 @@ class ConsumerTests : StringSpec(
       }
 
       "producing 10000 message in bulk should take less than 1 ms in average" {
-        sendMessage("testProducing", 10000).shouldBeLessThan(1.0)
+        val topic = Tsid.random()
+        sendMessage(topic, 10000).shouldBeLessThan(1.0)
       }
 
       "consuming 1000 messages (1ms) without concurrency should take less than 5 ms in average" {
-        val topic = TestFactory.random<String>()
+        val topic = Tsid.random()
         val consumingScope = CoroutineScope(Dispatchers.IO)
         var averageMillisToConsume = 100.0
         val total = 1000
@@ -150,7 +152,7 @@ class ConsumerTests : StringSpec(
       }
 
       "consuming 1000 messages (100ms) with 100 concurrency (shared) should take less than 5 ms in average" {
-        val topic = TestFactory.random<String>()
+        val topic = Tsid.random()
         val consumingScope = CoroutineScope(Dispatchers.IO)
         var averageMillisToConsume = 100.0
         val total = 1000
@@ -184,13 +186,13 @@ class ConsumerTests : StringSpec(
       }
 
       "consuming 1000 messages (100ms) with 100 concurrency (key-shared) should take less than 5 ms in average" {
-        val topic = TestFactory.random<String>()
+        val topic = Tsid.random()
         val consumingScope = CoroutineScope(Dispatchers.IO)
         var averageMillisToConsume = 100.0
         val total = 1000
         val counter = AtomicInteger(0)
         lateinit var start: Instant
-        
+
         val handler: ((TaskExecutorMessage, MillisInstant) -> Unit) = { _, _ ->
           if (counter.get() == 0) start = Instant.now()
           // emulate a 100ms task
@@ -218,7 +220,7 @@ class ConsumerTests : StringSpec(
       }
 
       "graceful shutdown with Shared" {
-        val topic = TestFactory.random<String>()
+        val topic = Tsid.random()
         val consumingScope = CoroutineScope(Dispatchers.IO)
         val counter = AtomicInteger(0)
         val messageOpen = CopyOnWriteArrayList<Int>()
@@ -261,7 +263,7 @@ class ConsumerTests : StringSpec(
       }
 
       "graceful shutdown with Key-Shared" {
-        val topic = TestFactory.random<String>()
+        val topic = Tsid.random()
         val consumingScope = CoroutineScope(Dispatchers.IO)
         val counter = AtomicInteger(0)
         val messageOpen = CopyOnWriteArrayList<Int>()
