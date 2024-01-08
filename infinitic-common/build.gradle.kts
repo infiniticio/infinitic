@@ -37,7 +37,7 @@ dependencies {
   implementation(Libs.Avro4k.core)
   implementation(Libs.Coroutines.core)
   implementation(Libs.Coroutines.jdk8)
-  implementation(Libs.Hypersistence.tsid)
+  implementation(Libs.Uuid.generator)
 
   testFixturesImplementation(Libs.Kotlin.reflect)
   testFixturesImplementation(Libs.EasyRandom.core)

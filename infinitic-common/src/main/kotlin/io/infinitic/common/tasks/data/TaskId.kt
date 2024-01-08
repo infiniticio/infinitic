@@ -22,13 +22,13 @@
  */
 package io.infinitic.common.tasks.data
 
-import io.infinitic.common.utils.Tsid
+import io.infinitic.common.utils.IdGenerator
 import io.infinitic.common.workflows.data.commands.CommandId
 import kotlinx.serialization.Serializable
 
 @JvmInline
 @Serializable
-value class TaskId(private val id: String = Tsid.random()) {
+value class TaskId(private val id: String = IdGenerator.next()) {
   companion object {
     fun from(commandId: CommandId) = TaskId(commandId.toString())
   }

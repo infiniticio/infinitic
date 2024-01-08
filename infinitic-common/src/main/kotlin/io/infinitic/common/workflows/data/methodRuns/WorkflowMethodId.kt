@@ -23,7 +23,7 @@
 package io.infinitic.common.workflows.data.methodRuns
 
 import com.github.avrokotlin.avro4k.AvroName
-import io.infinitic.common.utils.Tsid
+import io.infinitic.common.utils.IdGenerator
 import io.infinitic.common.workflows.data.commands.CommandId
 import io.infinitic.common.workflows.data.workflows.WorkflowId
 import kotlinx.serialization.Serializable
@@ -31,7 +31,7 @@ import kotlinx.serialization.Serializable
 @JvmInline
 @Serializable
 @AvroName("MethodRunId")
-value class WorkflowMethodId(private val id: String = Tsid.random()) {
+value class WorkflowMethodId(private val id: String = IdGenerator.next()) {
   companion object {
     fun from(workflowId: WorkflowId) = WorkflowMethodId(workflowId.toString())
 

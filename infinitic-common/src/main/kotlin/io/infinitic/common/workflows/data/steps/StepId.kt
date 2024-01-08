@@ -22,11 +22,11 @@
  */
 package io.infinitic.common.workflows.data.steps
 
-import io.infinitic.common.utils.Tsid
+import io.infinitic.common.utils.IdGenerator
 import kotlinx.serialization.Serializable
 
 @JvmInline
 @Serializable
-value class StepId(private val id: String = Tsid.random()) {
+value class StepId(private val id: String = IdGenerator.next()) {
   override fun toString() = id
 }

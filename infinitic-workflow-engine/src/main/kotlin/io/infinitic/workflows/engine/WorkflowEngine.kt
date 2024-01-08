@@ -285,7 +285,7 @@ class WorkflowEngine(
   private fun logDiscarding(message: WorkflowEngineMessage, cause: () -> String) {
     val txt = { "Id ${message.workflowId} - discarding ${cause()}: $message" }
     when (message) {
-      // we don't log these messages as warning as they are expected
+      // these messages are expected, so we don't log them as warning
       is TaskTimedOut, is ChildMethodTimedOut -> logger.debug(txt)
       else -> logger.warn(txt)
     }
@@ -332,7 +332,7 @@ class WorkflowEngine(
     }
 
     when (message) {
-      is DispatchNewWorkflow -> logDiscarding(message) { "as workflow has already started" }
+      is DispatchNewWorkflow -> logDiscarding(message) { "as workflow has already started with state $state" }
       is DispatchMethodWorkflow -> dispatchMethod(producer, state, message)
       is CancelWorkflow -> cancelWorkflow(producer, state, message)
       is SendSignal -> sendSignal(producer, state, message)

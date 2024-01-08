@@ -47,7 +47,7 @@ import io.infinitic.common.tasks.executors.messages.TaskExecutorMessage
 import io.infinitic.common.tasks.tags.messages.TaskTagMessage
 import io.infinitic.common.transport.InfiniticConsumerAsync
 import io.infinitic.common.transport.InfiniticProducerAsync
-import io.infinitic.common.utils.Tsid
+import io.infinitic.common.utils.IdGenerator
 import io.infinitic.common.workflows.data.channels.ChannelName
 import io.infinitic.common.workflows.data.channels.ChannelType
 import io.infinitic.common.workflows.data.channels.SignalData
@@ -412,7 +412,7 @@ internal class InfiniticClientTests : StringSpec(
 
       "Should be able to send to a channel by id (sync)" {
         // when
-        val id = Tsid.random()
+        val id = IdGenerator.next()
         client.getWorkflowById(FakeWorkflow::class.java, id).channelString.send("a")
         // then
         workflowTagSlots.size shouldBe 0
@@ -430,7 +430,7 @@ internal class InfiniticClientTests : StringSpec(
 
       "Should be able to send to a channel by id (async)" {
         // when
-        val id = Tsid.random()
+        val id = IdGenerator.next()
         val w = client.getWorkflowById(FakeWorkflow::class.java, id)
         client.dispatchAsync(w.channelString::send, "a").join()
         // then
@@ -486,7 +486,7 @@ internal class InfiniticClientTests : StringSpec(
 
       "Should be able to send a complex Object to a channel" {
         // when
-        val id = Tsid.random()
+        val id = IdGenerator.next()
         val signal = FakeServiceImpl()
         client.getWorkflowById(FakeWorkflow::class.java, id).channelFakeTask.send(signal)
         // then
@@ -510,7 +510,7 @@ internal class InfiniticClientTests : StringSpec(
 
       "Should be able to send a complex Object to a channel targeting a parent type" {
         // when
-        val id = Tsid.random()
+        val id = IdGenerator.next()
         val signal = FakeServiceImpl()
         client.getWorkflowById(FakeWorkflow::class.java, id).channelFakeServiceParent.send(signal)
         // then
@@ -534,7 +534,7 @@ internal class InfiniticClientTests : StringSpec(
 
       "Should be able to retry tasks of a workflow targeted by id (sync)" {
         // when
-        val id = Tsid.random()
+        val id = IdGenerator.next()
         val workflow = client.getWorkflowById(FakeWorkflow::class.java, id)
         client.retryTasks(workflow)
         // then
@@ -551,7 +551,7 @@ internal class InfiniticClientTests : StringSpec(
 
       "Should be able to retry tasks of a workflow targeted by id (async)" {
         // when
-        val id = Tsid.random()
+        val id = IdGenerator.next()
         val workflow = client.getWorkflowById(FakeWorkflow::class.java, id)
         client.retryTasksAsync(workflow).join()
         // then
@@ -568,7 +568,7 @@ internal class InfiniticClientTests : StringSpec(
 
       "Should be able to complete timer of a workflow targeted by id (sync)" {
         // when
-        val id = Tsid.random()
+        val id = IdGenerator.next()
         val workflow = client.getWorkflowById(FakeWorkflow::class.java, id)
         client.completeTimers(workflow)
         // then
@@ -583,7 +583,7 @@ internal class InfiniticClientTests : StringSpec(
 
       "Should be able to complete timer of a workflow targeted by id (async)" {
         // when
-        val id = Tsid.random()
+        val id = IdGenerator.next()
         val workflow = client.getWorkflowById(FakeWorkflow::class.java, id)
         client.completeTimersAsync(workflow).join()
         // then
@@ -598,7 +598,7 @@ internal class InfiniticClientTests : StringSpec(
 
       "Should be able to dispatch a method on a workflow per id (async)" {
         // when
-        val id = Tsid.random()
+        val id = IdGenerator.next()
         val workflow = client.getWorkflowById(FakeWorkflow::class.java, id)
         val deferred = client.dispatch(workflow::m0)
         // then
@@ -645,7 +645,7 @@ internal class InfiniticClientTests : StringSpec(
 
       "Should be able to cancel workflow per id (sync)" {
         // when
-        val id = Tsid.random()
+        val id = IdGenerator.next()
         val workflow = client.getWorkflowById(FakeWorkflow::class.java, id)
         client.cancel(workflow)
         // then
@@ -661,7 +661,7 @@ internal class InfiniticClientTests : StringSpec(
 
       "Should be able to cancel workflow per id (async)" {
         // when
-        val id = Tsid.random()
+        val id = IdGenerator.next()
         val workflow = client.getWorkflowById(FakeWorkflow::class.java, id)
         client.cancelAsync(workflow).join()
         // then
@@ -744,7 +744,7 @@ internal class InfiniticClientTests : StringSpec(
           client.retryWorkflowTask(fakeWorkflow.channelString)
         }
 
-        val byId = client.getWorkflowById(FakeWorkflow::class.java, Tsid.random())
+        val byId = client.getWorkflowById(FakeWorkflow::class.java, IdGenerator.next())
         shouldThrow<InvalidStubException> { client.retryWorkflowTask(byId.channelString) }
 
         val byTag = client.getWorkflowByTag(FakeWorkflow::class.java, "foo")
@@ -754,7 +754,7 @@ internal class InfiniticClientTests : StringSpec(
       "Cancel a channel should throw" {
         shouldThrow<InvalidChannelUsageException> { client.cancel(fakeWorkflow.channelString) }
 
-        val byId = client.getWorkflowById(FakeWorkflow::class.java, Tsid.random())
+        val byId = client.getWorkflowById(FakeWorkflow::class.java, IdGenerator.next())
         shouldThrow<InvalidStubException> { client.cancel(byId.channelString) }
 
         val byTag = client.getWorkflowByTag(FakeWorkflow::class.java, "foo")
@@ -764,7 +764,7 @@ internal class InfiniticClientTests : StringSpec(
       "Get ids from channel should throw" {
         shouldThrow<InvalidChannelUsageException> { client.getIds(fakeWorkflow.channelString) }
 
-        val byId = client.getWorkflowById(FakeWorkflow::class.java, Tsid.random())
+        val byId = client.getWorkflowById(FakeWorkflow::class.java, IdGenerator.next())
         shouldThrow<InvalidStubException> { client.getIds(byId.channelString) }
 
         val byTag = client.getWorkflowByTag(FakeWorkflow::class.java, "foo")

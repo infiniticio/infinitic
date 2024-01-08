@@ -49,7 +49,7 @@ class WorkflowCmdHandler(producerAsync: InfiniticProducerAsync) {
       else -> producer.sendToWorkflowEngine(msg)
     }
 
-    msg.logTrace { "processed" }
+    msg.logTrace { "processed $msg" }
   }
 
   // We dispatch a workflow task right away

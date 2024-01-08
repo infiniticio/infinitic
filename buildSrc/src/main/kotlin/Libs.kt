@@ -43,10 +43,6 @@ object Libs {
     const val json = "org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.0"
   }
 
-  object Hypersistence {
-    const val tsid = "io.hypersistence:hypersistence-tsid:2.1.1"
-  }
-
   object CloudEvents {
     private const val version = "2.5.0"
     const val core = "io.cloudevents:cloudevents-core:$version"
@@ -63,6 +59,10 @@ object Libs {
     const val databind = "com.fasterxml.jackson.core:jackson-databind:$version"
     const val kotlin = "com.fasterxml.jackson.module:jackson-module-kotlin:$version"
     const val jsr310 = "com.fasterxml.jackson.datatype:jackson-datatype-jsr310:$version"
+  }
+
+  object Uuid {
+    const val generator = "com.fasterxml.uuid:java-uuid-generator:4.3.0"
   }
 
   object Kotest {

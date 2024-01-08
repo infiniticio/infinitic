@@ -24,7 +24,7 @@ package io.infinitic.workflows.workflowTask.workflows
 
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.infinitic.annotations.Ignore
-import io.infinitic.common.utils.Tsid
+import io.infinitic.common.utils.IdGenerator
 import io.infinitic.workflows.SendChannel
 import io.infinitic.workflows.Workflow
 import io.infinitic.workflows.workflowTask.tasks.TaskA
@@ -61,7 +61,7 @@ class WorkflowAImpl : Workflow(), WorkflowA {
   private val newWorkflowA = newWorkflow(WorkflowA::class.java)
 
   // an existing workflow
-  private val getWorkflowA = getWorkflowById(WorkflowA::class.java, Tsid.random())
+  private val getWorkflowA = getWorkflowById(WorkflowA::class.java, IdGenerator.next())
 
   // a logger
   private var logger1 = LoggerFactory.getLogger(WorkflowAImpl::class.qualifiedName)
