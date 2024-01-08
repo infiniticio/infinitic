@@ -43,20 +43,19 @@ import kotlin.time.Duration.Companion.milliseconds
 internal object Test {
   private val pulsarServer = DockerOnly().pulsarServer
 
-  val workerConfig =
-      WorkerConfig.fromResource("/pulsar.yml").let {
-        when (pulsarServer) {
-          null -> it.copy(transport = Transport.inMemory)
-          else -> it.copy(
-              transport = Transport.pulsar,
-              pulsar = it.pulsar!!.copy(
-                  brokerServiceUrl = pulsarServer.pulsarBrokerUrl, // "pulsar://localhost:6650/"
-                  webServiceUrl = pulsarServer.httpServiceUrl, // "http://localhost:8080/"
-                  policies = it.pulsar!!.policies.copy(delayedDeliveryTickTimeMillis = 1), // useful for tests
-              ),
-          )
-        }
-      }
+  val workerConfig = WorkerConfig.fromResource("/pulsar.yml").let {
+    when (pulsarServer) {
+      null -> it.copy(transport = Transport.inMemory)
+      else -> it.copy(
+          transport = Transport.pulsar,
+          pulsar = it.pulsar!!.copy(
+              brokerServiceUrl = pulsarServer.pulsarBrokerUrl, // "pulsar://localhost:6650/"
+              webServiceUrl = pulsarServer.httpServiceUrl, // "http://localhost:8080/"
+              policies = it.pulsar!!.policies.copy(delayedDeliveryTickTimeMillis = 1), // useful for tests
+          ),
+      )
+    }
+  }
 
   val worker = InfiniticWorker.fromConfig(workerConfig).also { it.startAsync() }
   val client = worker.client

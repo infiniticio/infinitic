@@ -80,8 +80,8 @@ class Consumer(
             ).getOrThrow()
 
             while (isActive) {
-              // await() ensures this coroutine exits in case of throwable not caught
               try {
+                // await() is a suspendable and should be used instead of get()
                 val pulsarMessage = consumer.receiveAsync().await()
                 // process pulsar message
                 processPulsarMessage(consumer, handler, beforeDlq, topic, pulsarMessage!!)
@@ -126,8 +126,8 @@ class Consumer(
         }
         // start message receiver
         while (isActive) {
-          // await() ensures this coroutine exits in case of throwable not caught
           try {
+            // await() is a suspendable and should be used instead of get()
             val pulsarMessage = consumer.receiveAsync().await()
             channel.send(pulsarMessage)
           } catch (e: CancellationException) {
