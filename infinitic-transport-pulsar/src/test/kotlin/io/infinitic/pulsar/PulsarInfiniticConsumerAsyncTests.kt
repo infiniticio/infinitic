@@ -49,14 +49,14 @@ class PulsarInfiniticConsumerAsyncTests : StringSpec(
       val serviceName = ServiceName("serviceTest")
 
       val handler = slot<(Message, MillisInstant) -> Unit>()
-      val handlerDlq = slot<((Message, Exception) -> Unit)>()
+      val handlerDlq = slot<((Message, Exception) -> Unit)?>()
       val nameSlot = slot<String>()
       val descSlot = slot<TopicDescription>()
-      val topic = "topicTest"
+      val topic = slot<String>()
 
       val dlqNameSlot = slot<String>()
       val dlqDescSlot = slot<TopicDescription>()
-      val dlqTopic = "dlqTopicTest"
+      val dlqTopic = slot<String?>()
 
       val subscriptionName = slot<String>()
       val subscriptionNameDlq = slot<String>()
@@ -64,21 +64,23 @@ class PulsarInfiniticConsumerAsyncTests : StringSpec(
       val consumerName = slot<String>()
       val concurrency = slot<Int>()
 
-      fun topicName(name: String, desc: TopicDescription) = name + ":" + desc.subscriptionName
+      fun topicName(name: String, desc: TopicDescription) =
+          "topic:" + name + "-" + desc.subscriptionName
+
+      fun consumerName(name: String, desc: TopicDescription) =
+          "consumer:" + name + "-" + desc.subscriptionName
+
 
       val resourceManager = mockk<ResourceManager> {
         every {
-          getTopicName(
-              capture(nameSlot),
-              capture(descSlot),
-          )
+          getTopicName(capture(nameSlot), capture(descSlot))
         } answers { topicName(nameSlot.captured, descSlot.captured) }
         every {
-          getDlqTopicName(
-              capture(dlqNameSlot),
-              capture(dlqDescSlot),
-          )
+          getDlqTopicName(capture(dlqNameSlot), capture(dlqDescSlot))
         } answers { topicName(dlqNameSlot.captured, dlqDescSlot.captured) }
+        every {
+          getConsumerName(capture(nameSlot), capture(descSlot))
+        } answers { consumerName(nameSlot.captured, descSlot.captured) }
         every { initTopicOnce(any(), any(), any()) } returns Result.success(Unit)
         every { initDlqTopicOnce(any(), any(), any()) } returns Result.success(Unit)
       }
@@ -88,10 +90,10 @@ class PulsarInfiniticConsumerAsyncTests : StringSpec(
         coEvery {
           runConsumer(
               capture(handler),
-              capture(handlerDlq),
+              captureNullable(handlerDlq),
               any(),
-              topic,
-              dlqTopic,
+              capture(topic),
+              captureNullable(dlqTopic),
               capture(subscriptionName),
               capture(subscriptionNameDlq),
               capture(subscriptionType),
@@ -106,7 +108,7 @@ class PulsarInfiniticConsumerAsyncTests : StringSpec(
       "should init client-response topic before consuming it" {
         infiniticConsumerAsync.startClientConsumerAsync(
             handler = { _, _ -> }, beforeDlq = null, clientName = clientName,
-        )
+        ).join()
 
         val name = "$clientName"
         val desc = ClientTopicDescription.RESPONSE
@@ -120,7 +122,7 @@ class PulsarInfiniticConsumerAsyncTests : StringSpec(
       "should init workflow-tag topic before consuming it" {
         infiniticConsumerAsync.startWorkflowTagConsumerAsync(
             handler = { _, _ -> }, beforeDlq = null, workflowName = workflowName, 10,
-        )
+        ).join()
 
         val name = "$workflowName"
         val desc = WorkflowTopicsDescription.TAG
@@ -134,7 +136,7 @@ class PulsarInfiniticConsumerAsyncTests : StringSpec(
       "should init workflow-engine topic before consuming it" {
         infiniticConsumerAsync.startWorkflowEngineConsumerAsync(
             handler = { _, _ -> }, beforeDlq = null, workflowName = workflowName, 10,
-        )
+        ).join()
 
         val name = "$workflowName"
         val desc = WorkflowTopicsDescription.ENGINE
@@ -148,7 +150,7 @@ class PulsarInfiniticConsumerAsyncTests : StringSpec(
       "should init workflow-delay topic before consuming it" {
         infiniticConsumerAsync.startDelayedWorkflowEngineConsumerAsync(
             handler = { _, _ -> }, beforeDlq = null, workflowName = workflowName, 10,
-        )
+        ).join()
 
         val name = "$workflowName"
         val desc = WorkflowTopicsDescription.ENGINE_DELAYED
@@ -162,7 +164,7 @@ class PulsarInfiniticConsumerAsyncTests : StringSpec(
       "should init workflow-task-executor topic before consuming it" {
         infiniticConsumerAsync.startWorkflowTaskConsumerAsync(
             handler = { _, _ -> }, beforeDlq = null, workflowName = workflowName, 10,
-        )
+        ).join()
 
         val name = "$workflowName"
         val desc = WorkflowTopicsDescription.TASK_EXECUTOR
@@ -176,7 +178,7 @@ class PulsarInfiniticConsumerAsyncTests : StringSpec(
       "should init task-tag topic before consuming it" {
         infiniticConsumerAsync.startTaskTagConsumerAsync(
             handler = { _, _ -> }, beforeDlq = null, serviceName = serviceName, 10,
-        )
+        ).join()
 
         val name = "$serviceName"
         val desc = ServiceTopicsDescription.TAG
@@ -190,7 +192,7 @@ class PulsarInfiniticConsumerAsyncTests : StringSpec(
       "should init task-executor topic before consuming it" {
         infiniticConsumerAsync.startTaskExecutorConsumerAsync(
             handler = { _, _ -> }, beforeDlq = null, serviceName = serviceName, 10,
-        )
+        ).join()
 
         val name = "$serviceName"
         val desc = ServiceTopicsDescription.EXECUTOR

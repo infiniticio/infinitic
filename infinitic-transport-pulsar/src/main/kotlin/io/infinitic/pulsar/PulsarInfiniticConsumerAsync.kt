@@ -309,24 +309,25 @@ class PulsarInfiniticConsumerAsync(
     concurrency: Int,
     name: String
   ): CompletableFuture<Unit> {
-    val topic = resourceManager.getTopicName(name, topicDescription)
-    // create topic if needed
-    resourceManager.initTopicOnce(
-        topic = topic,
-        isPartitioned = topicDescription.isPartitioned,
-        isDelayed = topicDescription.isDelayed,
-    )
-
-    val topicDlq = resourceManager.getDlqTopicName(name, topicDescription)
-    // create DLQ topic if needed
-    resourceManager.initDlqTopicOnce(
-        topic = topicDlq,
-        isPartitioned = topicDescription.isPartitioned,
-        isDelayed = topicDescription.isDelayed,
-    )
-
     return with(consumer) {
       consumingScope.future {
+        
+        val topic = resourceManager.getTopicName(name, topicDescription)
+        // create topic if needed
+        resourceManager.initTopicOnce(
+            topic = topic,
+            isPartitioned = topicDescription.isPartitioned,
+            isDelayed = topicDescription.isDelayed,
+        )
+
+        val topicDlq = resourceManager.getDlqTopicName(name, topicDescription)
+        // create DLQ topic if needed
+        resourceManager.initDlqTopicOnce(
+            topic = topicDlq,
+            isPartitioned = topicDescription.isPartitioned,
+            isDelayed = topicDescription.isDelayed,
+        )
+
         runConsumer(
             handler = handler,
             beforeDlq = beforeDlq,
