@@ -30,6 +30,7 @@ import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.delay
 import kotlin.time.Duration.Companion.minutes
+import kotlin.time.Duration.Companion.seconds
 
 internal class BranchesWorkflowTests : StringSpec(
     {
@@ -91,7 +92,7 @@ internal class BranchesWorkflowTests : StringSpec(
         worker.getWorkflowState(UtilWorkflow::class.java.name, deferred.id) shouldBe null
       }
 
-      "Check numerous runBranch" {
+      "Check numerous runBranch".config(timeout = 10.seconds) {
         val deferred = client.dispatch(utilWorkflow::receive, "a")
         val w = client.getWorkflowById(UtilWorkflow::class.java, deferred.id)
 
