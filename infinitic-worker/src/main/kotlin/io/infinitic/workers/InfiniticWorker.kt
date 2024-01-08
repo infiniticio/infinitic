@@ -63,9 +63,9 @@ class InfiniticWorker(
 
     Runtime.getRuntime().addShutdownHook(
         Thread {
-          logger.info { "Interruption! Closing worker ${producerAsync.name}!" }
+          logger.info { "Closing worker!" }
           close()
-          logger.info { "Worker ${producerAsync.name} closed" }
+          logger.info { "Worker closed" }
         },
     )
   }
@@ -93,7 +93,7 @@ class InfiniticWorker(
     startAsync().get()
   } catch (e: Throwable) {
     // exiting if any of startAsyncs is failing
-    close()
+    // this will trigger the shutdown hook
     exitProcess(1)
   }
 
