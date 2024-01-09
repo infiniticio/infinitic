@@ -23,78 +23,35 @@
 package io.infinitic.workflows.engine.commands
 
 import io.infinitic.common.emitters.EmitterName
-import io.infinitic.common.exceptions.thisShouldNotHappen
 import io.infinitic.common.transport.InfiniticProducer
 import io.infinitic.common.workflows.data.channels.SignalId
-import io.infinitic.common.workflows.data.commands.CommandId
 import io.infinitic.common.workflows.data.commands.SendSignalCommand
 import io.infinitic.common.workflows.data.commands.SendSignalPastCommand
 import io.infinitic.common.workflows.engine.messages.SendSignal
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
 import io.infinitic.common.workflows.engine.state.WorkflowState
-import io.infinitic.common.workflows.tags.messages.SendSignalByTag
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.launch
 
-internal fun CoroutineScope.sendSignalCmd(
+internal fun sendSignalCmd(
   pastCommand: SendSignalPastCommand,
   state: WorkflowState,
   producer: InfiniticProducer,
   bufferedMessages: MutableList<WorkflowEngineMessage>
 ) {
-  val emitterName = EmitterName(producer.name)
   val command: SendSignalCommand = pastCommand.command
 
-  when {
-    command.workflowId != null -> {
-      val sendToChannel = getSendSignal(emitterName, pastCommand.commandId, command)
-
-      when (command.workflowId) {
-        state.workflowId ->
-          // dispatch signal on current workflow
-          bufferedMessages.add(sendToChannel)
-
-        else ->
-          // dispatch signal on another workflow
-          launch { producer.sendToWorkflowEngine(sendToChannel) }
-      }
-    }
-
-    command.workflowTag != null -> {
-      if (state.workflowTags.contains(command.workflowTag!!)) {
-        val sendToChannel = getSendSignal(emitterName, pastCommand.commandId, command)
-        bufferedMessages.add(sendToChannel)
-      }
-      // dispatch signal per tag
-      val sendSignalByTag =
-          SendSignalByTag(
-              workflowName = command.workflowName,
-              workflowTag = command.workflowTag!!,
-              channelName = command.channelName,
-              signalId = SignalId(),
-              signalData = command.signalData,
-              channelTypes = command.channelTypes,
-              emitterWorkflowId = state.workflowId,
-              emitterName = emitterName,
-          )
-      launch { producer.sendToWorkflowTag(sendSignalByTag) }
-    }
-
-    else -> thisShouldNotHappen()
-  }
-}
-
-private fun getSendSignal(
-  emitterName: EmitterName,
-  commandId: CommandId,
-  command: SendSignalCommand
-) =
-    SendSignal(
+  if (
+    (command.workflowId != null && state.workflowId == command.workflowId) ||
+    (command.workflowTag != null && state.workflowTags.contains(command.workflowTag))
+  ) {
+    val sendToChannel = SendSignal(
         channelName = command.channelName,
-        signalId = SignalId.from(commandId),
+        signalId = SignalId.from(pastCommand.commandId),
         signalData = command.signalData,
         channelTypes = command.channelTypes,
         workflowName = command.workflowName,
         workflowId = command.workflowId!!,
-        emitterName = emitterName,
+        emitterName = EmitterName(producer.name),
     )
+    bufferedMessages.add(sendToChannel)
+  }
+}

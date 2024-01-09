@@ -24,18 +24,17 @@ package io.infinitic.tasks.executor.commands
 
 import io.infinitic.common.data.MillisInstant
 import io.infinitic.common.emitters.EmitterName
-import io.infinitic.common.exceptions.thisShouldNotHappen
-import io.infinitic.common.tasks.executors.events.TaskCompletedEvent
 import io.infinitic.common.transport.InfiniticProducer
 import io.infinitic.common.workflows.data.commands.StartInstantTimerCommand
 import io.infinitic.common.workflows.data.commands.StartInstantTimerPastCommand
 import io.infinitic.common.workflows.data.timers.TimerId
 import io.infinitic.common.workflows.engine.messages.TimerCompleted
+import io.infinitic.tasks.executor.TaskEventHandler
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
 internal fun CoroutineScope.startInstantTimerCmq(
-  msg: TaskCompletedEvent,
+  current: TaskEventHandler.CurrentWorkflow,
   publishTime: MillisInstant,
   pastCommand: StartInstantTimerPastCommand,
   producer: InfiniticProducer
@@ -45,9 +44,9 @@ internal fun CoroutineScope.startInstantTimerCmq(
 
   val timerCompleted = TimerCompleted(
       timerId = TimerId.from(pastCommand.commandId),
-      workflowName = msg.workflowName ?: thisShouldNotHappen(),
-      workflowId = msg.workflowId ?: thisShouldNotHappen(),
-      workflowMethodId = msg.workflowMethodId ?: thisShouldNotHappen(),
+      workflowName = current.workflowName,
+      workflowId = current.workflowId,
+      workflowMethodId = current.workflowMethodId,
       emitterName = emitterName,
   )
 

@@ -687,7 +687,7 @@ internal class ClientDispatcher(
             signalId = deferredSend.signalId,
             signalData = handler.signalData,
             channelTypes = handler.channelTypes,
-            emitterWorkflowId = null,
+            parentWorkflowId = null,
             emitterName = emitterName,
         )
         producerAsync.sendToWorkflowTagAsync(sendSignalByTag)

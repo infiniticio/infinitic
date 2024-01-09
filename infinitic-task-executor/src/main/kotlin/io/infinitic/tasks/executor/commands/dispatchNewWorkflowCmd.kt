@@ -25,7 +25,6 @@ package io.infinitic.tasks.executor.commands
 import io.infinitic.common.emitters.EmitterName
 import io.infinitic.common.exceptions.thisShouldNotHappen
 import io.infinitic.common.tasks.executors.errors.WorkflowMethodTimedOutError
-import io.infinitic.common.tasks.executors.events.TaskCompletedEvent
 import io.infinitic.common.transport.InfiniticProducer
 import io.infinitic.common.workflows.data.commands.DispatchNewWorkflowCommand
 import io.infinitic.common.workflows.data.commands.DispatchNewWorkflowPastCommand
@@ -35,11 +34,12 @@ import io.infinitic.common.workflows.engine.messages.ChildMethodTimedOut
 import io.infinitic.common.workflows.engine.messages.DispatchNewWorkflow
 import io.infinitic.common.workflows.tags.messages.AddTagToWorkflow
 import io.infinitic.common.workflows.tags.messages.DispatchWorkflowByCustomId
+import io.infinitic.tasks.executor.TaskEventHandler
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
 internal fun CoroutineScope.dispatchNewWorkflowCmd(
-  msg: TaskCompletedEvent,
+  currentWorkflow: TaskEventHandler.CurrentWorkflow,
   pastCommand: DispatchNewWorkflowPastCommand,
   producer: InfiniticProducer
 ) {
@@ -63,9 +63,9 @@ internal fun CoroutineScope.dispatchNewWorkflowCmd(
           methodParameterTypes = command.methodParameterTypes,
           workflowTags = command.workflowTags,
           workflowMeta = command.workflowMeta,
-          parentWorkflowName = msg.workflowName,
-          parentWorkflowId = msg.workflowId,
-          parentWorkflowMethodId = msg.workflowMethodId,
+          parentWorkflowName = currentWorkflow.workflowName,
+          parentWorkflowId = currentWorkflow.workflowId,
+          parentWorkflowMethodId = currentWorkflow.workflowMethodId,
           clientWaiting = false,
           emitterName = emitterName,
       )
@@ -95,9 +95,9 @@ internal fun CoroutineScope.dispatchNewWorkflowCmd(
           methodTimeout = command.methodTimeout,
           workflowTags = command.workflowTags,
           workflowMeta = command.workflowMeta,
-          parentWorkflowName = msg.workflowName,
-          parentWorkflowId = msg.workflowId,
-          parentWorkflowMethodId = msg.workflowMethodId,
+          parentWorkflowName = currentWorkflow.workflowName,
+          parentWorkflowId = currentWorkflow.workflowId,
+          parentWorkflowMethodId = currentWorkflow.workflowMethodId,
           clientWaiting = false,
           emitterName = emitterName,
       )
@@ -112,9 +112,9 @@ internal fun CoroutineScope.dispatchNewWorkflowCmd(
 
   if (timeout != null) {
     val childMethodTimedOut = ChildMethodTimedOut(
-        workflowId = msg.workflowId ?: thisShouldNotHappen(),
-        workflowName = msg.workflowName ?: thisShouldNotHappen(),
-        workflowMethodId = msg.workflowMethodId ?: thisShouldNotHappen(),
+        workflowId = currentWorkflow.workflowId,
+        workflowName = currentWorkflow.workflowName,
+        workflowMethodId = currentWorkflow.workflowMethodId,
         emitterName = emitterName,
         childMethodTimedOutError = WorkflowMethodTimedOutError(
             workflowName = workflowName,

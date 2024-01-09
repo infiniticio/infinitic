@@ -460,7 +460,7 @@ internal class InfiniticClientTests : StringSpec(
             signalId = msg.signalId,
             signalData = SignalData.from("a"),
             channelTypes = ChannelType.allFrom(String::class.java),
-            emitterWorkflowId = null,
+            parentWorkflowId = null,
             emitterName = emitterNameTest,
         )
       }
@@ -479,7 +479,7 @@ internal class InfiniticClientTests : StringSpec(
             signalId = msg.signalId,
             signalData = SignalData.from("a"),
             channelTypes = ChannelType.allFrom(String::class.java),
-            emitterWorkflowId = null,
+            parentWorkflowId = null,
             emitterName = emitterNameTest,
         )
       }

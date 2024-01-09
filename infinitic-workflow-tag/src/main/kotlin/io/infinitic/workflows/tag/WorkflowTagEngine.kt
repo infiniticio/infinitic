@@ -314,12 +314,12 @@ class WorkflowTagEngine(
 
   private suspend fun sendSignalByTag(message: SendSignalByTag) = coroutineScope {
     val ids = storage.getWorkflowIds(message.workflowTag, message.workflowName)
-    
+
     when (ids.isEmpty()) {
       true -> discardTagWithoutIds(message)
 
       false -> ids.forEach { workflowId ->
-        // parent workflow already applied method to self
+        // parent workflow already applied this to itself
         if (workflowId != message.parentWorkflowId) {
           launch {
             val sendSignal = SendSignal(

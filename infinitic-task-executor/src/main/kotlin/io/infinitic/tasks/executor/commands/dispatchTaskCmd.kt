@@ -27,17 +27,17 @@ import io.infinitic.common.exceptions.thisShouldNotHappen
 import io.infinitic.common.tasks.data.TaskId
 import io.infinitic.common.tasks.data.TaskRetryIndex
 import io.infinitic.common.tasks.executors.errors.TaskTimedOutError
-import io.infinitic.common.tasks.executors.events.TaskCompletedEvent
 import io.infinitic.common.tasks.executors.messages.ExecuteTask
 import io.infinitic.common.tasks.tags.messages.AddTagToTask
 import io.infinitic.common.transport.InfiniticProducer
 import io.infinitic.common.workflows.data.commands.DispatchTaskPastCommand
 import io.infinitic.common.workflows.engine.messages.TaskTimedOut
+import io.infinitic.tasks.executor.TaskEventHandler
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
 internal fun CoroutineScope.dispatchTaskCmd(
-  msg: TaskCompletedEvent,
+  currentWorkflow: TaskEventHandler.CurrentWorkflow,
   pastCommand: DispatchTaskPastCommand,
   producer: InfiniticProducer
 ) {
@@ -51,9 +51,9 @@ internal fun CoroutineScope.dispatchTaskCmd(
         emitterName = emitterName,
         taskRetrySequence = pastCommand.taskRetrySequence,
         taskRetryIndex = TaskRetryIndex(0),
-        workflowName = msg.workflowName,
-        workflowId = msg.workflowId,
-        workflowMethodId = msg.workflowMethodId ?: thisShouldNotHappen(),
+        workflowName = currentWorkflow.workflowName,
+        workflowId = currentWorkflow.workflowId,
+        workflowMethodId = currentWorkflow.workflowMethodId ?: thisShouldNotHappen(),
         taskTags = taskTags,
         taskMeta = taskMeta,
         clientWaiting = false,
@@ -61,7 +61,7 @@ internal fun CoroutineScope.dispatchTaskCmd(
         methodParameterTypes = methodParameterTypes,
         methodParameters = methodParameters,
         lastError = null,
-        workflowVersion = msg.workflowVersion,
+        workflowVersion = currentWorkflow.workflowVersion,
     )
   }
 
@@ -89,9 +89,9 @@ internal fun CoroutineScope.dispatchTaskCmd(
               taskId = executeTask.taskId,
               methodName = methodName,
           ),
-          workflowName = msg.workflowName ?: thisShouldNotHappen(),
-          workflowId = msg.workflowId ?: thisShouldNotHappen(),
-          workflowMethodId = msg.workflowMethodId ?: thisShouldNotHappen(),
+          workflowName = currentWorkflow.workflowName,
+          workflowId = currentWorkflow.workflowId,
+          workflowMethodId = currentWorkflow.workflowMethodId,
           emitterName = emitterName,
       )
     }

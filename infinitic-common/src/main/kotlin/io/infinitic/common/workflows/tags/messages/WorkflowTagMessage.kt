@@ -68,7 +68,7 @@ sealed class WorkflowTagMessage : Message {
  * @param signalId the id of the signal to send
  * @param signalData the data of the signal to send
  * @param channelTypes the types of the channel to send the signal to
- * @param emitterWorkflowId the id of the workflow that emitted this command
+ * @param parentWorkflowId the id of the workflow that emitted this command
  * @param emitterName the name of the client that emitted this command
  */
 @Serializable
@@ -80,7 +80,7 @@ data class SendSignalByTag(
   @AvroName("channelSignalId") val signalId: SignalId,
   @AvroName("channelSignal") val signalData: SignalData,
   @AvroName("channelSignalTypes") val channelTypes: Set<ChannelType>,
-  var emitterWorkflowId: WorkflowId?,
+  @AvroName("emitterWorkflowId") var parentWorkflowId: WorkflowId?,
   override val emitterName: EmitterName
 ) : WorkflowTagMessage()
 

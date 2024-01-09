@@ -40,7 +40,7 @@ data class WorkflowTaskReturnValue(
   val newStep: NewStep?,
   val properties: Map<PropertyName, PropertyValue>,
   val methodReturnValue: ReturnValue?,
-  @AvroDefault("0") val workflowVersion: WorkflowVersion = WorkflowVersion(0)
+  @AvroDefault("0") val workflowVersion: WorkflowVersion = WorkflowVersion(0),
 ) {
   fun toByteArray() = AvroSerDe.writeBinaryWithSchemaFingerprint(this, serializer())
 
