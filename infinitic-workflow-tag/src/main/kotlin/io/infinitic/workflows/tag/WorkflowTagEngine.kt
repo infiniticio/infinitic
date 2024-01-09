@@ -77,9 +77,9 @@ class WorkflowTagEngine(
     when (message) {
       is DispatchWorkflowByCustomId -> dispatchWorkflowByCustomId(message)
       is DispatchMethodByTag -> dispatchMethodByTag(message)
-      is AddTagToWorkflow -> addWorkflowTag(message)
-      is RemoveTagFromWorkflow -> removeWorkflowTag(message)
-      is SendSignalByTag -> sendToChannelByTag(message)
+      is AddTagToWorkflow -> addTagToWorkflow(message)
+      is RemoveTagFromWorkflow -> removeTagFromWorkflow(message)
+      is SendSignalByTag -> sendSignalByTag(message)
       is CancelWorkflowByTag -> cancelWorkflowByTag(message)
       is RetryWorkflowTaskByTag -> retryWorkflowTaskByTag(message)
       is RetryTasksByTag -> retryTaskByTag(message)
@@ -88,107 +88,109 @@ class WorkflowTagEngine(
     }
   }
 
-  private suspend fun dispatchWorkflowByCustomId(message: DispatchWorkflowByCustomId) {
-    val ids = storage.getWorkflowIds(message.workflowTag, message.workflowName)
+  private suspend fun dispatchWorkflowByCustomId(message: DispatchWorkflowByCustomId) =
+      coroutineScope {
+        val ids = storage.getWorkflowIds(message.workflowTag, message.workflowName)
 
-    // with coroutineScope, we send messages in parallel and wait for all of them to be processed
-    coroutineScope {
-      when (ids.size) {
-        // this workflow instance does not exist yet
-        0 -> {
-          // provided tags
-          message.workflowTags.map {
-            val addTagToWorkflow = AddTagToWorkflow(
-                workflowName = message.workflowName,
-                workflowTag = it,
-                workflowId = message.workflowId,
-                emitterName = emitterName,
-            )
+        when (ids.size) {
+          // this workflow instance does not exist yet
+          0 -> {
+            // provided tags
+            message.workflowTags.map { tag ->
+              val addTagToWorkflow = AddTagToWorkflow(
+                  workflowName = message.workflowName,
+                  workflowTag = tag,
+                  workflowId = message.workflowId,
+                  emitterName = emitterName,
+              )
 
-            when (it) {
-              message.workflowTag -> addWorkflowTag(addTagToWorkflow)
-              else -> launch { producer.sendToWorkflowTag(addTagToWorkflow) }
+              when (tag) {
+                message.workflowTag -> addTagToWorkflow(addTagToWorkflow)
+                else -> launch { producer.sendToWorkflowTag(addTagToWorkflow) }
+              }
+            }
+            // dispatch workflow message
+            launch {
+              val dispatchWorkflow = DispatchNewWorkflow(
+                  workflowName = message.workflowName,
+                  workflowId = message.workflowId,
+                  methodName = message.methodName,
+                  methodParameters = message.methodParameters,
+                  methodParameterTypes = message.methodParameterTypes,
+                  workflowTags = message.workflowTags,
+                  workflowMeta = message.workflowMeta,
+                  parentWorkflowName = message.parentWorkflowName,
+                  parentWorkflowId = message.parentWorkflowId,
+                  parentWorkflowMethodId = message.parentWorkflowMethodId,
+                  clientWaiting = message.clientWaiting,
+                  emitterName = message.emitterName,
+              )
+              producer.sendToWorkflowCmd(dispatchWorkflow)
+            }
+
+            // send global timeout if needed
+            val timeout = message.methodTimeout
+
+            if (timeout != null && message.parentWorkflowId != null) {
+              launch {
+                val childMethodTimedOut = ChildMethodTimedOut(
+                    childMethodTimedOutError = WorkflowMethodTimedOutError(
+                        workflowName = message.workflowName,
+                        workflowId = message.workflowId,
+                        methodName = message.methodName,
+                        workflowMethodId = WorkflowMethodId.from(message.workflowId),
+                    ),
+                    workflowName = message.parentWorkflowName ?: thisShouldNotHappen(),
+                    workflowId = message.parentWorkflowId ?: thisShouldNotHappen(),
+                    workflowMethodId = message.parentWorkflowMethodId ?: thisShouldNotHappen(),
+                    emitterName = emitterName,
+                )
+                producer.sendToWorkflowEngine(childMethodTimedOut, timeout)
+              }
             }
           }
-          // dispatch workflow message
-          val dispatchWorkflow = DispatchNewWorkflow(
-              workflowName = message.workflowName,
-              workflowId = message.workflowId,
-              methodName = message.methodName,
-              methodParameters = message.methodParameters,
-              methodParameterTypes = message.methodParameterTypes,
-              workflowTags = message.workflowTags,
-              workflowMeta = message.workflowMeta,
-              parentWorkflowName = message.parentWorkflowName,
-              parentWorkflowId = message.parentWorkflowId,
-              parentWorkflowMethodId = message.parentWorkflowMethodId,
-              clientWaiting = message.clientWaiting,
-              emitterName = message.emitterName,
-          )
+          // Another running workflow instance exist with same custom id
+          1 -> {
+            logger.debug {
+              "A workflow '${message.workflowName}(${ids.first()})' already exists with tag '${message.workflowTag}'"
+            }
 
-          launch { producer.sendToWorkflowCmd(dispatchWorkflow) }
-
-          // send global timeout if needed
-          val timeout = message.methodTimeout
-
-          if (timeout != null && message.parentWorkflowId != null) {
-            val childMethodTimedOut = ChildMethodTimedOut(
-                childMethodTimedOutError = WorkflowMethodTimedOutError(
+            // if needed, we inform workflowEngine that a client is waiting for its result
+            if (message.clientWaiting) {
+              launch {
+                val waitWorkflow = WaitWorkflow(
+                    workflowMethodId = WorkflowMethodId.from(ids.first()),
                     workflowName = message.workflowName,
-                    workflowId = message.workflowId,
-                    methodName = message.methodName,
-                    workflowMethodId = WorkflowMethodId.from(message.workflowId),
-                ),
-                workflowName = message.parentWorkflowName ?: thisShouldNotHappen(),
-                workflowId = message.parentWorkflowId ?: thisShouldNotHappen(),
-                workflowMethodId = message.parentWorkflowMethodId ?: thisShouldNotHappen(),
-                emitterName = emitterName,
-            )
-            launch { producer.sendToWorkflowEngine(childMethodTimedOut, timeout) }
+                    workflowId = ids.first(),
+                    emitterName = message.emitterName,
+                )
+
+                producer.sendToWorkflowCmd(waitWorkflow)
+              }
+            }
+
+            Unit
           }
+          // multiple running workflow instance exist with same custom id
+          else -> thisShouldNotHappen(
+              "Workflow '${message.workflowName}' with customId '${message.workflowTag}' has multiple ids: ${ids.joinToString()}",
+          )
         }
-        // Another running workflow instance exist with same custom id
-        1 -> {
-          logger.debug {
-            "A workflow '${message.workflowName}(${ids.first()})' already exists with tag '${message.workflowTag}'"
-          }
-
-          // if needed, we inform workflowEngine that a client is waiting for its result
-          if (message.clientWaiting) {
-            val waitWorkflow = WaitWorkflow(
-                workflowMethodId = WorkflowMethodId.from(ids.first()),
-                workflowName = message.workflowName,
-                workflowId = ids.first(),
-                emitterName = message.emitterName,
-            )
-
-            launch { producer.sendToWorkflowCmd(waitWorkflow) }
-          }
-
-          Unit
-        }
-        // multiple running workflow instance exist with same custom id
-        else -> thisShouldNotHappen(
-            "Workflow '${message.workflowName}' with customId '${message.workflowTag}' has multiple ids: ${ids.joinToString()}",
-        )
       }
-    }
-  }
 
-  private suspend fun dispatchMethodByTag(message: DispatchMethodByTag) {
+  private suspend fun dispatchMethodByTag(message: DispatchMethodByTag) = coroutineScope {
     val ids = storage.getWorkflowIds(message.workflowTag, message.workflowName)
 
-    // with coroutineScope, we send messages in parallel and wait for all of them to be processed
-    coroutineScope {
-      when (ids.isEmpty()) {
-        true -> discardTagWithoutIds(message)
+    when (ids.isEmpty()) {
+      true -> discardTagWithoutIds(message)
 
-        false -> ids.forEach {
-          // parent workflow already applied method to self
-          if (it != message.parentWorkflowId) {
+      false -> ids.forEach { workflowId ->
+        // parent workflow already applied method to self
+        if (workflowId != message.parentWorkflowId) {
+          launch {
             val dispatchMethod = DispatchMethodWorkflow(
                 workflowName = message.workflowName,
-                workflowId = it,
+                workflowId = workflowId,
                 workflowMethodId = message.workflowMethodId,
                 methodName = message.methodName,
                 methodParameters = message.methodParameters,
@@ -199,14 +201,16 @@ class WorkflowTagEngine(
                 clientWaiting = false,
                 emitterName = emitterName,
             )
-            launch { producer.sendToWorkflowCmd(dispatchMethod) }
+            producer.sendToWorkflowCmd(dispatchMethod)
+          }
 
-            // set timeout if any,
-            if (message.methodTimeout != null && message.parentWorkflowId != null) {
+          // set timeout if any,
+          if (message.methodTimeout != null && message.parentWorkflowId != null) {
+            launch {
               val childMethodTimedOut = ChildMethodTimedOut(
                   childMethodTimedOutError = WorkflowMethodTimedOutError(
                       workflowName = message.workflowName,
-                      workflowId = it,
+                      workflowId = workflowId,
                       methodName = message.methodName,
                       workflowMethodId = message.workflowMethodId,
                   ),
@@ -215,13 +219,7 @@ class WorkflowTagEngine(
                   workflowMethodId = message.parentWorkflowMethodId!!,
                   emitterName = emitterName,
               )
-
-              launch {
-                producer.sendToWorkflowEngine(
-                    childMethodTimedOut,
-                    message.methodTimeout!!,
-                )
-              }
+              producer.sendToWorkflowEngine(childMethodTimedOut, message.methodTimeout!!)
             }
           }
         }
@@ -229,127 +227,122 @@ class WorkflowTagEngine(
     }
   }
 
-  private suspend fun retryWorkflowTaskByTag(message: RetryWorkflowTaskByTag) {
+  private suspend fun retryWorkflowTaskByTag(message: RetryWorkflowTaskByTag) = coroutineScope {
     val ids = storage.getWorkflowIds(message.workflowTag, message.workflowName)
 
-    // with coroutineScope, we send messages in parallel and wait for all of them to be processed
-    coroutineScope {
-      when (ids.isEmpty()) {
-        true -> discardTagWithoutIds(message)
+    when (ids.isEmpty()) {
+      true -> discardTagWithoutIds(message)
 
-        false -> ids.forEach {
+      false -> ids.forEach { workflowId ->
+        launch {
           val retryWorkflowTask = RetryWorkflowTask(
               workflowName = message.workflowName,
-              workflowId = it,
+              workflowId = workflowId,
               emitterName = emitterName,
           )
-          launch { producer.sendToWorkflowCmd(retryWorkflowTask) }
+          producer.sendToWorkflowCmd(retryWorkflowTask)
         }
       }
     }
   }
 
-  private suspend fun retryTaskByTag(message: RetryTasksByTag) {
+  private suspend fun retryTaskByTag(message: RetryTasksByTag) = coroutineScope {
     val ids = storage.getWorkflowIds(message.workflowTag, message.workflowName)
 
-    // with coroutineScope, we send messages in parallel and wait for all of them to be processed
-    coroutineScope {
-      when (ids.isEmpty()) {
-        true -> discardTagWithoutIds(message)
+    when (ids.isEmpty()) {
+      true -> discardTagWithoutIds(message)
 
-        false -> ids.forEach {
+      false -> ids.forEach { workflowId ->
+        launch {
           val retryTasks = RetryTasks(
               taskId = message.taskId,
               taskStatus = message.taskStatus,
               serviceName = message.serviceName,
               workflowName = message.workflowName,
-              workflowId = it,
+              workflowId = workflowId,
               emitterName = emitterName,
           )
-          launch { producer.sendToWorkflowCmd(retryTasks) }
+          producer.sendToWorkflowCmd(retryTasks)
         }
       }
     }
   }
 
-  private suspend fun completeTimerByTag(message: CompleteTimersByTag) {
+  private suspend fun completeTimerByTag(message: CompleteTimersByTag) = coroutineScope {
     val ids = storage.getWorkflowIds(message.workflowTag, message.workflowName)
 
-    // with coroutineScope, we send messages in parallel and wait for all of them to be processed
-    coroutineScope {
-      when (ids.isEmpty()) {
-        true -> discardTagWithoutIds(message)
+    when (ids.isEmpty()) {
+      true -> discardTagWithoutIds(message)
 
-        false -> ids.forEach {
+      false -> ids.forEach { workflowId ->
+        launch {
           val completeTimers = CompleteTimers(
               workflowMethodId = message.workflowMethodId,
               workflowName = message.workflowName,
-              workflowId = it,
+              workflowId = workflowId,
               emitterName = emitterName,
           )
-          launch { producer.sendToWorkflowCmd(completeTimers) }
+          producer.sendToWorkflowCmd(completeTimers)
         }
       }
     }
   }
 
-  private suspend fun cancelWorkflowByTag(message: CancelWorkflowByTag) {
+  private suspend fun cancelWorkflowByTag(message: CancelWorkflowByTag) = coroutineScope {
     val ids = storage.getWorkflowIds(message.workflowTag, message.workflowName)
 
-    // with coroutineScope, we send messages in parallel and wait for all of them to be processed
-    coroutineScope {
-      when (ids.isEmpty()) {
-        true -> discardTagWithoutIds(message)
+    when (ids.isEmpty()) {
+      true -> discardTagWithoutIds(message)
 
-        false -> ids.forEach {
-          // parent workflow already applied method to self
-          if (it != message.emitterWorkflowId) {
+      false -> ids.forEach { workflowId ->
+        // parent workflow already applied method to self
+        if (workflowId != message.emitterWorkflowId) {
+          launch {
             val cancelWorkflow = CancelWorkflow(
                 cancellationReason = message.reason,
-                workflowMethodId = WorkflowMethodId.from(it),
+                workflowMethodId = WorkflowMethodId.from(workflowId),
                 workflowName = message.workflowName,
-                workflowId = it,
+                workflowId = workflowId,
                 emitterName = emitterName,
             )
-            launch { producer.sendToWorkflowCmd(cancelWorkflow) }
+            producer.sendToWorkflowCmd(cancelWorkflow)
           }
         }
       }
     }
   }
 
-  private suspend fun sendToChannelByTag(message: SendSignalByTag) {
+  private suspend fun sendSignalByTag(message: SendSignalByTag) = coroutineScope {
     val ids = storage.getWorkflowIds(message.workflowTag, message.workflowName)
+    
+    when (ids.isEmpty()) {
+      true -> discardTagWithoutIds(message)
 
-    // with coroutineScope, we send messages in parallel and wait for all of them to be processed
-    coroutineScope {
-      when (ids.isEmpty()) {
-        true -> discardTagWithoutIds(message)
-
-        false -> ids.forEach {
-          // parent workflow already applied method to self
-          if (it != message.emitterWorkflowId) {
+      false -> ids.forEach { workflowId ->
+        // parent workflow already applied method to self
+        if (workflowId != message.parentWorkflowId) {
+          launch {
             val sendSignal = SendSignal(
                 channelName = message.channelName,
                 signalId = message.signalId,
                 signalData = message.signalData,
                 channelTypes = message.channelTypes,
                 workflowName = message.workflowName,
-                workflowId = it,
+                workflowId = workflowId,
                 emitterName = emitterName,
             )
-            launch { producer.sendToWorkflowCmd(sendSignal) }
+            producer.sendToWorkflowCmd(sendSignal)
           }
         }
       }
     }
   }
 
-  private suspend fun addWorkflowTag(message: AddTagToWorkflow) {
+  private suspend fun addTagToWorkflow(message: AddTagToWorkflow) {
     storage.addWorkflowId(message.workflowTag, message.workflowName, message.workflowId)
   }
 
-  private suspend fun removeWorkflowTag(message: RemoveTagFromWorkflow) {
+  private suspend fun removeTagFromWorkflow(message: RemoveTagFromWorkflow) {
     storage.removeWorkflowId(message.workflowTag, message.workflowName, message.workflowId)
   }
 
