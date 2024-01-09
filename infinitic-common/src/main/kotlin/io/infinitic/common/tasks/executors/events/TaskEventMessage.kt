@@ -32,16 +32,20 @@ import io.infinitic.common.data.ReturnValue
 import io.infinitic.common.data.Version
 import io.infinitic.common.data.methods.MethodName
 import io.infinitic.common.emitters.EmitterName
+import io.infinitic.common.exceptions.thisShouldNotHappen
 import io.infinitic.common.messages.Message
 import io.infinitic.common.tasks.data.ServiceName
 import io.infinitic.common.tasks.data.TaskId
 import io.infinitic.common.tasks.data.TaskMeta
 import io.infinitic.common.tasks.data.TaskRetryIndex
 import io.infinitic.common.tasks.data.TaskRetrySequence
+import io.infinitic.common.tasks.data.TaskReturnValue
 import io.infinitic.common.tasks.data.TaskTag
 import io.infinitic.common.tasks.executors.errors.DeferredError
 import io.infinitic.common.tasks.executors.errors.ExecutionError
+import io.infinitic.common.tasks.executors.errors.TaskFailedError
 import io.infinitic.common.tasks.executors.messages.ExecuteTask
+import io.infinitic.common.tasks.tags.messages.RemoveTagFromTask
 import io.infinitic.common.workers.config.WorkflowVersion
 import io.infinitic.common.workers.data.WorkerName
 import io.infinitic.common.workflows.data.methodRuns.WorkflowMethodId
@@ -51,6 +55,10 @@ import io.infinitic.common.workflows.data.workflows.WorkflowName
 import io.infinitic.currentVersion
 import io.infinitic.exceptions.DeferredException
 import kotlinx.serialization.Serializable
+import io.infinitic.common.clients.messages.TaskCompleted as TaskCompletedClient
+import io.infinitic.common.clients.messages.TaskFailed as TaskFailedClient
+import io.infinitic.common.workflows.engine.messages.TaskCompleted as TaskCompletedWorkflow
+import io.infinitic.common.workflows.engine.messages.TaskFailed as TaskFailedWorkflow
 
 @Serializable
 sealed class TaskEventMessage : Message {
@@ -140,6 +148,32 @@ data class TaskFailedEvent(
   val methodName: MethodName,
   val workflowVersion: WorkflowVersion?,
 ) : TaskEventMessage(), TaskEvent {
+
+  fun getEventForClient(emitterName: EmitterName) = clientName?.let {
+    TaskFailedClient(
+        recipientName = it,
+        taskId = taskId,
+        cause = executionError,
+        emitterName = emitterName,
+    )
+  }
+
+  fun getEventForWorkflow(emitterName: EmitterName) = workflowId?.let {
+    TaskFailedWorkflow(
+        workflowId = it,
+        workflowName = workflowName ?: thisShouldNotHappen(),
+        workflowMethodId = workflowMethodId ?: thisShouldNotHappen(),
+        taskFailedError = TaskFailedError(
+            serviceName = serviceName,
+            methodName = methodName,
+            taskId = taskId,
+            cause = executionError,
+        ),
+        deferredError = deferredError,
+        emitterName = emitterName,
+    )
+  }
+
   companion object {
     fun from(
       msg: ExecuteTask,
@@ -232,6 +266,42 @@ data class TaskCompletedEvent(
   val returnValue: ReturnValue,
   val workflowVersion: WorkflowVersion?,
 ) : TaskEventMessage(), TaskEvent {
+
+  fun getEventForClient(emitterName: EmitterName) = clientName?.let {
+    TaskCompletedClient(
+        recipientName = it,
+        taskId = taskId,
+        taskReturnValue = returnValue,
+        taskMeta = taskMeta,
+        emitterName = emitterName,
+    )
+  }
+
+  fun getEventForWorkflow(emitterName: EmitterName) = workflowId?.let {
+    TaskCompletedWorkflow(
+        workflowId = it,
+        workflowName = workflowName ?: thisShouldNotHappen(),
+        workflowMethodId = workflowMethodId ?: thisShouldNotHappen(),
+        taskReturnValue =
+        TaskReturnValue(
+            serviceName = serviceName,
+            taskId = taskId,
+            taskMeta = taskMeta,
+            returnValue = returnValue,
+        ),
+        emitterName = emitterName,
+    )
+  }
+
+  fun getEventsForTag(emitterName: EmitterName) = taskTags.map {
+    RemoveTagFromTask(
+        taskTag = it,
+        serviceName = serviceName,
+        taskId = taskId,
+        emitterName = emitterName,
+    )
+  }
+
   companion object {
     fun from(
       msg: ExecuteTask,

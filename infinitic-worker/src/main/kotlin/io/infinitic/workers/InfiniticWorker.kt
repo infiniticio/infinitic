@@ -153,11 +153,11 @@ class InfiniticWorker(
       )
 
       // WORKFLOW-EVENTS
-      val workflowEvent = WorkflowEventHandler(producerAsync)
+      val workflowEventHandler = WorkflowEventHandler(producerAsync)
 
       futures.addIfNotDone(
           consumerAsync.startWorkflowEventsConsumerAsync(
-              handler = workflowEvent::handle,
+              handler = workflowEventHandler::handle,
               beforeDlq = null,
               workflowName = it.key,
               concurrency = it.value.concurrency,

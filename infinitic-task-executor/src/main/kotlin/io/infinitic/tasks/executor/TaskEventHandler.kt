@@ -25,23 +25,15 @@ package io.infinitic.tasks.executor
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.infinitic.common.data.MillisInstant
 import io.infinitic.common.emitters.EmitterName
-import io.infinitic.common.exceptions.thisShouldNotHappen
-import io.infinitic.common.tasks.data.TaskReturnValue
-import io.infinitic.common.tasks.executors.errors.TaskFailedError
 import io.infinitic.common.tasks.executors.events.TaskCompletedEvent
 import io.infinitic.common.tasks.executors.events.TaskEventMessage
 import io.infinitic.common.tasks.executors.events.TaskFailedEvent
 import io.infinitic.common.tasks.executors.events.TaskRetriedEvent
 import io.infinitic.common.tasks.executors.events.TaskStartedEvent
-import io.infinitic.common.tasks.tags.messages.RemoveTagFromTask
 import io.infinitic.common.transport.InfiniticProducerAsync
 import io.infinitic.common.transport.LoggedInfiniticProducer
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
-import io.infinitic.common.clients.messages.TaskCompleted as TaskCompletedClient
-import io.infinitic.common.clients.messages.TaskFailed as TaskFailedClient
-import io.infinitic.common.workflows.engine.messages.TaskCompleted as TaskCompletedWorkflow
-import io.infinitic.common.workflows.engine.messages.TaskFailed as TaskFailedWorkflow
 
 class TaskEventHandler(producerAsync: InfiniticProducerAsync) {
 
@@ -64,76 +56,28 @@ class TaskEventHandler(producerAsync: InfiniticProducerAsync) {
   }
 
   private suspend fun sendTaskFailed(msg: TaskFailedEvent): Unit = coroutineScope {
-
-    if (msg.clientName != null) {
-      val taskFailed = TaskFailedClient(
-          recipientName = msg.clientName!!,
-          taskId = msg.taskId,
-          cause = msg.executionError,
-          emitterName = emitterName,
-      )
-      launch { producer.sendToClient(taskFailed) }
+    // send to parent client
+    msg.getEventForClient(emitterName)?.let {
+      launch { producer.sendToClient(it) }
     }
-
-    if (msg.workflowId != null) {
-      val taskFailed = TaskFailedWorkflow(
-          workflowName = msg.workflowName ?: thisShouldNotHappen(),
-          workflowId = msg.workflowId ?: thisShouldNotHappen(),
-          workflowMethodId = msg.workflowMethodId ?: thisShouldNotHappen(),
-          taskFailedError = TaskFailedError(
-              serviceName = msg.serviceName,
-              methodName = msg.methodName,
-              taskId = msg.taskId,
-              cause = msg.executionError,
-          ),
-          deferredError = msg.deferredError,
-          emitterName = emitterName,
-      )
-
-      launch { producer.sendToWorkflowEngine(taskFailed) }
+    // send to parent workflow
+    msg.getEventForWorkflow(emitterName)?.let {
+      launch { producer.sendToWorkflowEngine(it) }
     }
   }
 
   private suspend fun sendTaskCompleted(msg: TaskCompletedEvent) = coroutineScope {
-    if (msg.clientName != null) {
-      val taskCompleted = TaskCompletedClient(
-          recipientName = msg.clientName!!,
-          taskId = msg.taskId,
-          taskReturnValue = msg.returnValue,
-          taskMeta = msg.taskMeta,
-          emitterName = emitterName,
-      )
-
-      launch { producer.sendToClient(taskCompleted) }
+    // send to parent client
+    msg.getEventForClient(emitterName)?.let {
+      launch { producer.sendToClient(it) }
     }
-
-    if (msg.workflowId != null) {
-      val taskCompleted = TaskCompletedWorkflow(
-          workflowId = msg.workflowId!!,
-          workflowName = msg.workflowName ?: thisShouldNotHappen(),
-          workflowMethodId = msg.workflowMethodId ?: thisShouldNotHappen(),
-          taskReturnValue =
-          TaskReturnValue(
-              serviceName = msg.serviceName,
-              taskId = msg.taskId,
-              taskMeta = msg.taskMeta,
-              returnValue = msg.returnValue,
-          ),
-          emitterName = emitterName,
-      )
-
-      launch { producer.sendToWorkflowEngine(taskCompleted) }
+    // send to parent workflow
+    msg.getEventForWorkflow(emitterName)?.let {
+      launch { producer.sendToWorkflowEngine(it) }
     }
-
     // remove tags
-    msg.taskTags.map {
-      val removeTagFromTask = RemoveTagFromTask(
-          taskTag = it,
-          serviceName = msg.serviceName,
-          taskId = msg.taskId,
-          emitterName = emitterName,
-      )
-      launch { producer.sendToTaskTag(removeTagFromTask) }
+    msg.getEventsForTag(emitterName).forEach {
+      launch { producer.sendToTaskTag(it) }
     }
   }
 
