@@ -22,8 +22,8 @@
  */
 package io.infinitic.tasks.executor.commands
 
+import io.infinitic.common.data.MillisInstant
 import io.infinitic.common.emitters.EmitterName
-import io.infinitic.common.exceptions.thisShouldNotHappen
 import io.infinitic.common.tasks.data.TaskId
 import io.infinitic.common.tasks.data.TaskRetryIndex
 import io.infinitic.common.tasks.executors.errors.TaskTimedOutError
@@ -39,6 +39,7 @@ import kotlinx.coroutines.launch
 internal fun CoroutineScope.dispatchTaskCmd(
   currentWorkflow: TaskEventHandler.CurrentWorkflow,
   pastCommand: DispatchTaskPastCommand,
+  workflowTaskInstant: MillisInstant,
   producer: InfiniticProducer
 ) {
   val emitterName = EmitterName(producer.name)
@@ -53,7 +54,7 @@ internal fun CoroutineScope.dispatchTaskCmd(
         taskRetryIndex = TaskRetryIndex(0),
         workflowName = currentWorkflow.workflowName,
         workflowId = currentWorkflow.workflowId,
-        workflowMethodId = currentWorkflow.workflowMethodId ?: thisShouldNotHappen(),
+        workflowMethodId = currentWorkflow.workflowMethodId,
         taskTags = taskTags,
         taskMeta = taskMeta,
         clientWaiting = false,
@@ -93,6 +94,7 @@ internal fun CoroutineScope.dispatchTaskCmd(
           workflowId = currentWorkflow.workflowId,
           workflowMethodId = currentWorkflow.workflowMethodId,
           emitterName = emitterName,
+          emittedAt = workflowTaskInstant + timeout,
       )
     }
     launch { producer.sendToWorkflowEngine(taskTimedOut, timeout) }

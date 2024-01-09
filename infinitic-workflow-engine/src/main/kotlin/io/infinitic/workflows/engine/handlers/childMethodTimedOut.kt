@@ -41,4 +41,5 @@ internal fun CoroutineScope.childMethodTimedOut(
     message.workflowMethodId,
     CommandId.from(message.childMethodTimedOutError.workflowMethodId ?: thisShouldNotHappen()),
     CommandStatus.TimedOut(message.childMethodTimedOutError, state.workflowTaskIndex),
+    message.emittedAt ?: thisShouldNotHappen(),
 )

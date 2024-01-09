@@ -37,7 +37,7 @@ import io.infinitic.common.workflows.data.channels.SignalId
 import io.infinitic.common.workflows.data.commands.CommandId
 import io.infinitic.common.workflows.data.commands.CommandStatus
 import io.infinitic.common.workflows.data.commands.PastCommand
-import io.infinitic.common.workflows.data.methodRuns.PositionInMethod
+import io.infinitic.common.workflows.data.methodRuns.PositionInWorkflowMethod
 import io.infinitic.common.workflows.data.methodRuns.WorkflowMethod
 import io.infinitic.common.workflows.data.methodRuns.WorkflowMethodId
 import io.infinitic.common.workflows.data.properties.PropertyHash
@@ -79,7 +79,7 @@ data class WorkflowState(
   @AvroName("runningMethodRunId") var runningWorkflowMethodId: WorkflowMethodId? = null,
 
   /** Position of the step that triggered WorkflowTask currently running */
-  @AvroName("runningMethodRunPosition") var positionInRunningWorkflowMethod: PositionInMethod? = null,
+  @AvroName("runningMethodRunPosition") var positionInRunningWorkflowMethod: PositionInWorkflowMethod? = null,
 
   /**
    * In some situations, we know that multiples branches must be processed. As WorkflowTask

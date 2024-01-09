@@ -216,6 +216,7 @@ internal class ClientDispatcher(
           workflowName = workflowName,
           workflowId = workflowId,
           emitterName = emitterName,
+          emittedAt = null,
       )
       // synchronously sent the message to get errors
       producerAsync.sendToWorkflowCmdAsync(waitWorkflow).join()
@@ -275,6 +276,7 @@ internal class ClientDispatcher(
           workflowName = workflowName,
           workflowId = requestBy.workflowId,
           emitterName = emitterName,
+          emittedAt = null,
       )
       producerAsync.sendToWorkflowCmdAsync(msg)
     }
@@ -286,6 +288,7 @@ internal class ClientDispatcher(
           reason = WorkflowCancellationReason.CANCELED_BY_CLIENT,
           emitterWorkflowId = null,
           emitterName = emitterName,
+          emittedAt = null,
       )
       producerAsync.sendToWorkflowTagAsync(msg)
     }
@@ -302,6 +305,7 @@ internal class ClientDispatcher(
           workflowName = workflowName,
           workflowId = requestBy.workflowId,
           emitterName = emitterName,
+          emittedAt = null,
       )
       producerAsync.sendToWorkflowCmdAsync(msg)
     }
@@ -311,6 +315,7 @@ internal class ClientDispatcher(
           workflowName = workflowName,
           workflowTag = requestBy.workflowTag,
           emitterName = emitterName,
+          emittedAt = null,
       )
       producerAsync.sendToWorkflowTagAsync(msg)
     }
@@ -330,6 +335,7 @@ internal class ClientDispatcher(
           workflowName = workflowName,
           workflowId = requestBy.workflowId,
           emitterName = emitterName,
+          emittedAt = null,
       )
       producerAsync.sendToWorkflowCmdAsync(msg)
     }
@@ -338,8 +344,9 @@ internal class ClientDispatcher(
       val msg = CompleteTimersByTag(
           workflowName = workflowName,
           workflowTag = requestBy.workflowTag,
-          emitterName = emitterName,
           workflowMethodId = workflowMethodId,
+          emitterName = emitterName,
+          emittedAt = null,
       )
       producerAsync.sendToWorkflowTagAsync(msg)
     }
@@ -363,6 +370,7 @@ internal class ClientDispatcher(
           taskId = taskId,
           taskStatus = taskStatus,
           serviceName = serviceName,
+          emittedAt = null,
       )
       producerAsync.sendToWorkflowCmdAsync(msg)
     }
@@ -371,10 +379,11 @@ internal class ClientDispatcher(
       val msg = RetryTaskInWorkflowByTag(
           workflowName = workflowName,
           workflowTag = requestBy.workflowTag,
-          emitterName = emitterName,
           taskId = taskId,
           taskStatus = taskStatus,
           serviceName = serviceName,
+          emitterName = emitterName,
+          emittedAt = null,
       )
       producerAsync.sendToWorkflowTagAsync(msg)
     }
@@ -398,6 +407,7 @@ internal class ClientDispatcher(
         workflowName = workflowName,
         workflowTag = workflowTag,
         emitterName = emitterName,
+        emittedAt = null,
     )
     // synchronously sent the message to get errors
     producerAsync.sendToWorkflowTagAsync(msg).join()
@@ -474,6 +484,7 @@ internal class ClientDispatcher(
               workflowTag = it,
               workflowId = deferred.workflowId,
               emitterName = emitterName,
+              emittedAt = null,
           )
         }
         // dispatch workflow message
@@ -490,6 +501,7 @@ internal class ClientDispatcher(
             parentWorkflowMethodId = null,
             clientWaiting = clientWaiting,
             emitterName = emitterName,
+            emittedAt = null,
         )
 
         // first, we send all tags in parallel
@@ -520,6 +532,7 @@ internal class ClientDispatcher(
             parentWorkflowMethodId = null,
             clientWaiting = clientWaiting,
             emitterName = emitterName,
+            emittedAt = null,
         )
 
         producerAsync.sendToWorkflowTagAsync(dispatchWorkflowByCustomId).thenApply { deferred }
@@ -617,6 +630,7 @@ internal class ClientDispatcher(
           parentWorkflowMethodId = null,
           clientWaiting = clientWaiting,
           emitterName = emitterName,
+          emittedAt = null,
       )
       producerAsync.sendToWorkflowCmdAsync(dispatchMethod)
     }
@@ -635,6 +649,7 @@ internal class ClientDispatcher(
           parentWorkflowMethodId = null,
           clientWaiting = clientWaiting,
           emitterName = emitterName,
+          emittedAt = null,
       )
       producerAsync.sendToWorkflowTagAsync(dispatchMethodByTag)
     }
@@ -675,6 +690,7 @@ internal class ClientDispatcher(
             workflowName = handler.workflowName,
             workflowId = (handler.requestBy as RequestByWorkflowId).workflowId,
             emitterName = emitterName,
+            emittedAt = null,
         )
         producerAsync.sendToWorkflowCmdAsync(sendSignal)
       }
@@ -689,6 +705,7 @@ internal class ClientDispatcher(
             channelTypes = handler.channelTypes,
             parentWorkflowId = null,
             emitterName = emitterName,
+            emittedAt = null,
         )
         producerAsync.sendToWorkflowTagAsync(sendSignalByTag)
       }

@@ -33,7 +33,7 @@ import io.infinitic.common.workflows.data.commands.CommandHash
 import io.infinitic.common.workflows.data.commands.CommandId
 import io.infinitic.common.workflows.data.commands.CommandSimpleName
 import io.infinitic.common.workflows.data.commands.DispatchNewWorkflowPastCommand
-import io.infinitic.common.workflows.data.methodRuns.PositionInMethod
+import io.infinitic.common.workflows.data.methodRuns.PositionInWorkflowMethod
 import io.infinitic.common.workflows.data.methodRuns.WorkflowMethodId
 import io.infinitic.common.workflows.data.properties.PropertyHash
 import io.infinitic.common.workflows.data.properties.PropertyName
@@ -157,9 +157,9 @@ class DataTests :
         }
 
         "MethodRunPosition should be serialized as String and reversible in json" {
-          val m = PositionInMethod()
+          val m = PositionInWorkflowMethod()
           val json = Json.encodeToString(m)
-          val m2 = Json.decodeFromString<PositionInMethod>(json)
+          val m2 = Json.decodeFromString<PositionInWorkflowMethod>(json)
 
           json shouldBe Json.encodeToString(-1)
           m2 shouldBe m

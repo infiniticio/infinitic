@@ -20,37 +20,43 @@
  *
  * Licensor: infinitic.io
  */
-package io.infinitic.workflows.engine.commands
+package io.infinitic.tasks.executor.commands
 
 import io.infinitic.common.data.MillisInstant
 import io.infinitic.common.emitters.EmitterName
-import io.infinitic.common.exceptions.thisShouldNotHappen
 import io.infinitic.common.transport.InfiniticProducer
 import io.infinitic.common.workflows.data.commands.StartDurationTimerCommand
 import io.infinitic.common.workflows.data.commands.StartDurationTimerPastCommand
 import io.infinitic.common.workflows.data.timers.TimerId
 import io.infinitic.common.workflows.engine.messages.TimerCompleted
-import io.infinitic.common.workflows.engine.state.WorkflowState
+import io.infinitic.tasks.executor.TaskEventHandler
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
 internal fun CoroutineScope.startDurationTimerCmd(
+  currentWorkflow: TaskEventHandler.CurrentWorkflow,
   pastCommand: StartDurationTimerPastCommand,
-  state: WorkflowState,
+  workflowTaskInstant: MillisInstant,
   producer: InfiniticProducer
 ) {
   val emitterName = EmitterName(producer.name)
   val command: StartDurationTimerCommand = pastCommand.command
 
-  val msg = TimerCompleted(
+  val timerCompleted = TimerCompleted(
       timerId = TimerId.from(pastCommand.commandId),
-      workflowName = state.workflowName,
-      workflowId = state.workflowId,
-      workflowMethodId = state.runningWorkflowMethodId ?: thisShouldNotHappen(),
+      workflowName = currentWorkflow.workflowName,
+      workflowId = currentWorkflow.workflowId,
+      workflowMethodId = currentWorkflow.workflowMethodId,
       emitterName = emitterName,
+      emittedAt = workflowTaskInstant + command.duration,
   )
-  // The duration is offset by the time spent in the workflow task
-  val diff = state.runningWorkflowTaskInstant!! - MillisInstant.now()
 
-  launch { producer.sendToWorkflowEngine(msg, command.duration + diff) }
+  // The duration is offset by the time spent in the workflow task
+  // todo: Check if there is a way not to use MillisInstant.now()
+  launch {
+    producer.sendToWorkflowEngine(
+        timerCompleted,
+        workflowTaskInstant + command.duration - MillisInstant.now(),
+    )
+  }
 }

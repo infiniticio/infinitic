@@ -22,6 +22,7 @@
  */
 package io.infinitic.tasks.executor.commands
 
+import io.infinitic.common.data.MillisInstant
 import io.infinitic.common.emitters.EmitterName
 import io.infinitic.common.transport.InfiniticProducer
 import io.infinitic.common.workflows.data.channels.SignalId
@@ -36,6 +37,7 @@ import kotlinx.coroutines.launch
 internal fun CoroutineScope.sendSignalCmd(
   currentWorkflow: TaskEventHandler.CurrentWorkflow,
   pastCommand: SendSignalPastCommand,
+  workflowTaskInstant: MillisInstant,
   producer: InfiniticProducer,
 ) {
   val emitterName = EmitterName(producer.name)
@@ -53,6 +55,7 @@ internal fun CoroutineScope.sendSignalCmd(
               workflowName = command.workflowName,
               workflowId = command.workflowId!!,
               emitterName = emitterName,
+              emittedAt = workflowTaskInstant,
           )
 
           // dispatch signal on another workflow
@@ -73,6 +76,7 @@ internal fun CoroutineScope.sendSignalCmd(
             channelTypes = command.channelTypes,
             parentWorkflowId = currentWorkflow.workflowId,
             emitterName = emitterName,
+            emittedAt = workflowTaskInstant,
         )
         // Note: tag engine MUST ignore this message for Id = parentWorkflowId
         producer.sendToWorkflowTag(sendSignalByTag)

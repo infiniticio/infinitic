@@ -22,6 +22,7 @@
  */
 package io.infinitic.workflows.engine.helpers
 
+import io.infinitic.common.data.MillisInstant
 import io.infinitic.common.exceptions.thisShouldNotHappen
 import io.infinitic.common.transport.InfiniticProducer
 import io.infinitic.common.workflows.data.commands.CommandId
@@ -42,7 +43,8 @@ internal fun CoroutineScope.commandTerminated(
   state: WorkflowState,
   workflowMethodId: WorkflowMethodId,
   commandId: CommandId,
-  commandStatus: CommandStatus
+  commandStatus: CommandStatus,
+  emittedAt: MillisInstant
 ) {
   val workflowMethod = state.getWorkflowMethod(workflowMethodId) ?: thisShouldNotHappen()
   val pastCommand = state.getPastCommand(commandId, workflowMethod)
@@ -54,7 +56,7 @@ internal fun CoroutineScope.commandTerminated(
   // update command status
   pastCommand.setTerminatedStatus(commandStatus)
 
-  if (stepTerminated(producer, state, pastCommand)) {
+  if (stepTerminated(producer, state, pastCommand, emittedAt)) {
     if (pastCommand is ReceiveSignalPastCommand) {
       // if a step is completed right away, we remove this status from state
       pastCommand.commandStatuses.remove(commandStatus)
@@ -75,7 +77,8 @@ internal fun CoroutineScope.commandTerminated(
 internal fun CoroutineScope.stepTerminated(
   producer: InfiniticProducer,
   state: WorkflowState,
-  pastCommand: PastCommand
+  pastCommand: PastCommand,
+  emittedAt: MillisInstant
 ): Boolean {
   // get all methodRuns terminated by this command
   val methodRuns =
@@ -99,7 +102,7 @@ internal fun CoroutineScope.stepTerminated(
         }
 
         // dispatch a new workflowTask
-        dispatchWorkflowTask(producer, state, it, pastStep.stepPosition)
+        dispatchWorkflowTask(producer, state, it, pastStep.stepPosition, emittedAt)
 
         // if more than 1 methodRun is completed by this command, we need to keep it
         return methodRuns.size > 1

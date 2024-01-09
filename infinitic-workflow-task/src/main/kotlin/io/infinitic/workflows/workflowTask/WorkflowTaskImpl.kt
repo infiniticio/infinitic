@@ -114,6 +114,7 @@ class WorkflowTaskImpl : WorkflowTask {
         properties = instance.getProperties(),
         methodReturnValue = methodReturnValue,
         workflowVersion = WorkflowVersion.from(instance::class.java),
+        workflowTaskInstant = workflowTaskParameters.workflowTaskInstant,
     )
   }
 }

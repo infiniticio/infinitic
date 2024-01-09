@@ -41,4 +41,5 @@ internal fun CoroutineScope.childMethodCanceled(
     message.workflowMethodId,
     CommandId.from(message.childMethodCanceledError.workflowMethodId ?: thisShouldNotHappen()),
     CommandStatus.Canceled(message.childMethodCanceledError, state.workflowTaskIndex),
+    message.emittedAt ?: thisShouldNotHappen(),
 )

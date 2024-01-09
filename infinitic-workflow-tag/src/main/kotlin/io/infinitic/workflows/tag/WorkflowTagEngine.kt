@@ -69,26 +69,27 @@ class WorkflowTagEngine(
 
   private val emitterName by lazy { EmitterName(producer.name) }
 
-
-  @Suppress("UNUSED_PARAMETER")
   fun handle(message: WorkflowTagMessage, publishTime: MillisInstant) = producer.run {
     logger.debug { "receiving $message" }
 
     when (message) {
-      is DispatchWorkflowByCustomId -> dispatchWorkflowByCustomId(message)
-      is DispatchMethodByTag -> dispatchMethodByTag(message)
       is AddTagToWorkflow -> addTagToWorkflow(message)
       is RemoveTagFromWorkflow -> removeTagFromWorkflow(message)
-      is SendSignalByTag -> sendSignalByTag(message)
-      is CancelWorkflowByTag -> cancelWorkflowByTag(message)
-      is RetryWorkflowTaskByTag -> retryWorkflowTaskByTag(message)
-      is RetryTasksByTag -> retryTaskByTag(message)
-      is CompleteTimersByTag -> completeTimerByTag(message)
       is GetWorkflowIdsByTag -> getWorkflowIds(message)
+      is DispatchWorkflowByCustomId -> dispatchWorkflowByCustomId(message, publishTime)
+      is DispatchMethodByTag -> dispatchMethodByTag(message, publishTime)
+      is SendSignalByTag -> sendSignalByTag(message, publishTime)
+      is CancelWorkflowByTag -> cancelWorkflowByTag(message, publishTime)
+      is RetryWorkflowTaskByTag -> retryWorkflowTaskByTag(message, publishTime)
+      is RetryTasksByTag -> retryTaskByTag(message, publishTime)
+      is CompleteTimersByTag -> completeTimerByTag(message, publishTime)
     }
   }
 
-  private suspend fun dispatchWorkflowByCustomId(message: DispatchWorkflowByCustomId) =
+  private suspend fun dispatchWorkflowByCustomId(
+    message: DispatchWorkflowByCustomId,
+    publishTime: MillisInstant
+  ) =
       coroutineScope {
         val ids = storage.getWorkflowIds(message.workflowTag, message.workflowName)
 
@@ -102,6 +103,7 @@ class WorkflowTagEngine(
                   workflowTag = tag,
                   workflowId = message.workflowId,
                   emitterName = emitterName,
+                  emittedAt = message.emittedAt ?: publishTime,
               )
 
               when (tag) {
@@ -124,6 +126,7 @@ class WorkflowTagEngine(
                   parentWorkflowMethodId = message.parentWorkflowMethodId,
                   clientWaiting = message.clientWaiting,
                   emitterName = message.emitterName,
+                  emittedAt = message.emittedAt ?: publishTime,
               )
               producer.sendToWorkflowCmd(dispatchWorkflow)
             }
@@ -144,6 +147,7 @@ class WorkflowTagEngine(
                     workflowId = message.parentWorkflowId ?: thisShouldNotHappen(),
                     workflowMethodId = message.parentWorkflowMethodId ?: thisShouldNotHappen(),
                     emitterName = emitterName,
+                    emittedAt = message.emittedAt ?: publishTime,
                 )
                 producer.sendToWorkflowEngine(childMethodTimedOut, timeout)
               }
@@ -163,6 +167,7 @@ class WorkflowTagEngine(
                     workflowName = message.workflowName,
                     workflowId = ids.first(),
                     emitterName = message.emitterName,
+                    emittedAt = message.emittedAt ?: publishTime,
                 )
 
                 producer.sendToWorkflowCmd(waitWorkflow)
@@ -178,7 +183,10 @@ class WorkflowTagEngine(
         }
       }
 
-  private suspend fun dispatchMethodByTag(message: DispatchMethodByTag) = coroutineScope {
+  private suspend fun dispatchMethodByTag(
+    message: DispatchMethodByTag,
+    publishTime: MillisInstant
+  ) = coroutineScope {
     val ids = storage.getWorkflowIds(message.workflowTag, message.workflowName)
 
     when (ids.isEmpty()) {
@@ -200,6 +208,7 @@ class WorkflowTagEngine(
                 parentWorkflowMethodId = message.parentWorkflowMethodId,
                 clientWaiting = false,
                 emitterName = emitterName,
+                emittedAt = message.emittedAt ?: publishTime,
             )
             producer.sendToWorkflowCmd(dispatchMethod)
           }
@@ -218,6 +227,7 @@ class WorkflowTagEngine(
                   workflowId = message.parentWorkflowId!!,
                   workflowMethodId = message.parentWorkflowMethodId!!,
                   emitterName = emitterName,
+                  emittedAt = message.emittedAt ?: publishTime,
               )
               producer.sendToWorkflowEngine(childMethodTimedOut, message.methodTimeout!!)
             }
@@ -227,7 +237,10 @@ class WorkflowTagEngine(
     }
   }
 
-  private suspend fun retryWorkflowTaskByTag(message: RetryWorkflowTaskByTag) = coroutineScope {
+  private suspend fun retryWorkflowTaskByTag(
+    message: RetryWorkflowTaskByTag,
+    publishTime: MillisInstant
+  ) = coroutineScope {
     val ids = storage.getWorkflowIds(message.workflowTag, message.workflowName)
 
     when (ids.isEmpty()) {
@@ -239,6 +252,7 @@ class WorkflowTagEngine(
               workflowName = message.workflowName,
               workflowId = workflowId,
               emitterName = emitterName,
+              emittedAt = message.emittedAt ?: publishTime,
           )
           producer.sendToWorkflowCmd(retryWorkflowTask)
         }
@@ -246,49 +260,56 @@ class WorkflowTagEngine(
     }
   }
 
-  private suspend fun retryTaskByTag(message: RetryTasksByTag) = coroutineScope {
-    val ids = storage.getWorkflowIds(message.workflowTag, message.workflowName)
+  private suspend fun retryTaskByTag(message: RetryTasksByTag, publishTime: MillisInstant) =
+      coroutineScope {
+        val ids = storage.getWorkflowIds(message.workflowTag, message.workflowName)
 
-    when (ids.isEmpty()) {
-      true -> discardTagWithoutIds(message)
+        when (ids.isEmpty()) {
+          true -> discardTagWithoutIds(message)
 
-      false -> ids.forEach { workflowId ->
-        launch {
-          val retryTasks = RetryTasks(
-              taskId = message.taskId,
-              taskStatus = message.taskStatus,
-              serviceName = message.serviceName,
-              workflowName = message.workflowName,
-              workflowId = workflowId,
-              emitterName = emitterName,
-          )
-          producer.sendToWorkflowCmd(retryTasks)
+          false -> ids.forEach { workflowId ->
+            launch {
+              val retryTasks = RetryTasks(
+                  taskId = message.taskId,
+                  taskStatus = message.taskStatus,
+                  serviceName = message.serviceName,
+                  workflowName = message.workflowName,
+                  workflowId = workflowId,
+                  emitterName = emitterName,
+                  emittedAt = message.emittedAt ?: publishTime,
+              )
+              producer.sendToWorkflowCmd(retryTasks)
+            }
+          }
         }
       }
-    }
-  }
 
-  private suspend fun completeTimerByTag(message: CompleteTimersByTag) = coroutineScope {
-    val ids = storage.getWorkflowIds(message.workflowTag, message.workflowName)
+  private suspend fun completeTimerByTag(message: CompleteTimersByTag, publishTime: MillisInstant) =
+      coroutineScope {
+        val ids = storage.getWorkflowIds(message.workflowTag, message.workflowName)
 
-    when (ids.isEmpty()) {
-      true -> discardTagWithoutIds(message)
+        when (ids.isEmpty()) {
+          true -> discardTagWithoutIds(message)
 
-      false -> ids.forEach { workflowId ->
-        launch {
-          val completeTimers = CompleteTimers(
-              workflowMethodId = message.workflowMethodId,
-              workflowName = message.workflowName,
-              workflowId = workflowId,
-              emitterName = emitterName,
-          )
-          producer.sendToWorkflowCmd(completeTimers)
+          false -> ids.forEach { workflowId ->
+            launch {
+              val completeTimers = CompleteTimers(
+                  workflowMethodId = message.workflowMethodId,
+                  workflowName = message.workflowName,
+                  workflowId = workflowId,
+                  emitterName = emitterName,
+                  emittedAt = message.emittedAt ?: publishTime,
+              )
+              producer.sendToWorkflowCmd(completeTimers)
+            }
+          }
         }
       }
-    }
-  }
 
-  private suspend fun cancelWorkflowByTag(message: CancelWorkflowByTag) = coroutineScope {
+  private suspend fun cancelWorkflowByTag(
+    message: CancelWorkflowByTag,
+    publishTime: MillisInstant
+  ) = coroutineScope {
     val ids = storage.getWorkflowIds(message.workflowTag, message.workflowName)
 
     when (ids.isEmpty()) {
@@ -304,6 +325,7 @@ class WorkflowTagEngine(
                 workflowName = message.workflowName,
                 workflowId = workflowId,
                 emitterName = emitterName,
+                emittedAt = message.emittedAt ?: publishTime,
             )
             producer.sendToWorkflowCmd(cancelWorkflow)
           }
@@ -312,31 +334,33 @@ class WorkflowTagEngine(
     }
   }
 
-  private suspend fun sendSignalByTag(message: SendSignalByTag) = coroutineScope {
-    val ids = storage.getWorkflowIds(message.workflowTag, message.workflowName)
+  private suspend fun sendSignalByTag(message: SendSignalByTag, publishTime: MillisInstant) =
+      coroutineScope {
+        val ids = storage.getWorkflowIds(message.workflowTag, message.workflowName)
 
-    when (ids.isEmpty()) {
-      true -> discardTagWithoutIds(message)
+        when (ids.isEmpty()) {
+          true -> discardTagWithoutIds(message)
 
-      false -> ids.forEach { workflowId ->
-        // parent workflow already applied this to itself
-        if (workflowId != message.parentWorkflowId) {
-          launch {
-            val sendSignal = SendSignal(
-                channelName = message.channelName,
-                signalId = message.signalId,
-                signalData = message.signalData,
-                channelTypes = message.channelTypes,
-                workflowName = message.workflowName,
-                workflowId = workflowId,
-                emitterName = emitterName,
-            )
-            producer.sendToWorkflowCmd(sendSignal)
+          false -> ids.forEach { workflowId ->
+            // parent workflow already applied this to itself
+            if (workflowId != message.parentWorkflowId) {
+              launch {
+                val sendSignal = SendSignal(
+                    channelName = message.channelName,
+                    signalId = message.signalId,
+                    signalData = message.signalData,
+                    channelTypes = message.channelTypes,
+                    workflowName = message.workflowName,
+                    workflowId = workflowId,
+                    emitterName = emitterName,
+                    emittedAt = message.emittedAt ?: publishTime,
+                )
+                producer.sendToWorkflowCmd(sendSignal)
+              }
+            }
           }
         }
       }
-    }
-  }
 
   private suspend fun addTagToWorkflow(message: AddTagToWorkflow) {
     storage.addWorkflowId(message.workflowTag, message.workflowName, message.workflowId)

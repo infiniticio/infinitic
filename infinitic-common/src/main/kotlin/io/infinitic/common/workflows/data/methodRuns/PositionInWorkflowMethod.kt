@@ -20,24 +20,23 @@
  *
  * Licensor: infinitic.io
  */
-package io.infinitic.workflows.engine.helpers
+package io.infinitic.common.workflows.data.methodRuns
 
-import io.infinitic.common.emitters.EmitterName
-import io.infinitic.common.transport.InfiniticProducer
-import io.infinitic.common.workflows.engine.state.WorkflowState
-import io.infinitic.common.workflows.tags.messages.RemoveTagFromWorkflow
-import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.launch
+import kotlinx.serialization.Serializable
 
-internal suspend fun removeTags(producer: InfiniticProducer, state: WorkflowState) =
-    coroutineScope {
-      state.workflowTags.map {
-        val removeTagFromWorkflow = RemoveTagFromWorkflow(
-            workflowName = state.workflowName,
-            workflowTag = it,
-            workflowId = state.workflowId,
-            emitterName = EmitterName(producer.name),
-        )
-        launch { producer.sendToWorkflowTag(removeTagFromWorkflow) }
-      }
-    }
+/**
+ * Represents the position of a command within a method.
+ * The position is incremented at each command
+ *
+ * @property index The index of the command within the method.
+ */
+@JvmInline
+@Serializable
+value class PositionInWorkflowMethod(private val index: Int = -1) :
+  Comparable<PositionInWorkflowMethod> {
+  override fun compareTo(other: PositionInWorkflowMethod) = index - other.index
+
+  override fun toString() = "$index"
+
+  fun next() = PositionInWorkflowMethod(index + 1)
+}

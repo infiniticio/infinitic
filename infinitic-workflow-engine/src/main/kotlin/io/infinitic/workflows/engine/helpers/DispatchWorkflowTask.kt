@@ -26,7 +26,7 @@ import io.infinitic.common.data.MillisInstant
 import io.infinitic.common.emitters.EmitterName
 import io.infinitic.common.tasks.data.TaskId
 import io.infinitic.common.transport.InfiniticProducer
-import io.infinitic.common.workflows.data.methodRuns.PositionInMethod
+import io.infinitic.common.workflows.data.methodRuns.PositionInWorkflowMethod
 import io.infinitic.common.workflows.data.methodRuns.WorkflowMethod
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskParameters
 import io.infinitic.common.workflows.engine.state.WorkflowState
@@ -37,10 +37,13 @@ internal fun CoroutineScope.dispatchWorkflowTask(
   producer: InfiniticProducer,
   state: WorkflowState,
   workflowMethod: WorkflowMethod,
-  positionInMethod: PositionInMethod,
+  positionInMethod: PositionInWorkflowMethod,
+  workflowTaskInstant: MillisInstant,
   workflowTaskId: TaskId = TaskId()
 ) {
+
   val emitterName = EmitterName(producer.name)
+
   state.workflowTaskIndex += 1
 
   // defines workflow task input
@@ -54,22 +57,19 @@ internal fun CoroutineScope.dispatchWorkflowTask(
       workflowPropertiesHashValue =
       state.propertiesHashValue, // TODO filterStore(state.propertyStore, listOf(methodRun))
       workflowTaskIndex = state.workflowTaskIndex,
+      workflowTaskInstant = workflowTaskInstant,
       workflowMethod = workflowMethod,
       emitterName = emitterName,
   )
 
-  val dispatchTaskMessage = workflowTaskParameters.toExecuteTaskMessage()
+  val executeTaskMessage = workflowTaskParameters.toExecuteTaskMessage()
 
   // dispatch workflow task
-  launch { producer.sendToTaskExecutor(dispatchTaskMessage) }
+  launch { producer.sendToTaskExecutor(executeTaskMessage) }
 
-  with(state) {
-    runningWorkflowTaskId = workflowTaskParameters.taskId
-    // if it's NOT a retry, do update runningWorkflowTaskInstant
-    if (runningWorkflowMethodId != workflowMethod.workflowMethodId || positionInRunningWorkflowMethod != positionInMethod) {
-      runningWorkflowTaskInstant = MillisInstant.now()
-      runningWorkflowMethodId = workflowMethod.workflowMethodId
-      positionInRunningWorkflowMethod = positionInMethod
-    }
-  }
+  // update runningWorkflowTask
+  state.runningWorkflowTaskId = workflowTaskId
+  state.runningWorkflowTaskInstant = workflowTaskInstant
+  state.runningWorkflowMethodId = workflowMethod.workflowMethodId
+  state.positionInRunningWorkflowMethod = positionInMethod
 }

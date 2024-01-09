@@ -50,6 +50,7 @@ import io.infinitic.tasks.executor.commands.dispatchMethodOnRunningWorkflowCmd
 import io.infinitic.tasks.executor.commands.dispatchNewWorkflowCmd
 import io.infinitic.tasks.executor.commands.dispatchTaskCmd
 import io.infinitic.tasks.executor.commands.sendSignalCmd
+import io.infinitic.tasks.executor.commands.startDurationTimerCmd
 import io.infinitic.tasks.executor.commands.startInstantTimerCmq
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
@@ -65,7 +66,7 @@ class TaskEventHandler(producerAsync: InfiniticProducerAsync) {
 
     when (msg) {
       is TaskCompletedEvent -> sendTaskCompleted(msg, publishTime)
-      is TaskFailedEvent -> sendTaskFailed(msg)
+      is TaskFailedEvent -> sendTaskFailed(msg, publishTime)
       is TaskRetriedEvent,
       is TaskStartedEvent -> Unit
     }
@@ -73,29 +74,30 @@ class TaskEventHandler(producerAsync: InfiniticProducerAsync) {
     msg.logTrace { "processed" }
   }
 
-  private suspend fun sendTaskFailed(msg: TaskFailedEvent): Unit = coroutineScope {
-    // send to parent client
-    msg.getEventForClient(emitterName)?.let {
-      launch { producer.sendToClient(it) }
-    }
-    // send to parent workflow
-    msg.getEventForWorkflow(emitterName)?.let {
-      launch { producer.sendToWorkflowEngine(it) }
-    }
-  }
+  private suspend fun sendTaskFailed(msg: TaskFailedEvent, publishTime: MillisInstant): Unit =
+      coroutineScope {
+        // send to parent client
+        msg.getEventForClient(emitterName)?.let {
+          launch { producer.sendToClient(it) }
+        }
+        // send to parent workflow
+        msg.getEventForWorkflow(emitterName, publishTime)?.let {
+          launch { producer.sendToWorkflowEngine(it) }
+        }
+      }
 
   private suspend fun sendTaskCompleted(msg: TaskCompletedEvent, publishTime: MillisInstant) =
       coroutineScope {
         // if workflowTask
         if (msg.isWorkflowTask()) {
-          launch { completeWorkflowTask(msg, publishTime) }
+          launch { completeWorkflowTask(msg) }
         }
         // send to parent client
         msg.getEventForClient(emitterName)?.let {
           launch { producer.sendToClient(it) }
         }
         // send to parent workflow
-        msg.getEventForWorkflow(emitterName)?.let {
+        msg.getEventForWorkflow(emitterName, publishTime)?.let {
           launch { producer.sendToWorkflowEngine(it) }
         }
         // remove tags
@@ -104,10 +106,12 @@ class TaskEventHandler(producerAsync: InfiniticProducerAsync) {
         }
       }
 
-  private suspend fun completeWorkflowTask(msg: TaskCompletedEvent, publishTime: MillisInstant) =
+  private suspend fun completeWorkflowTask(msg: TaskCompletedEvent) =
       coroutineScope {
 
         val result = msg.returnValue.value() as WorkflowTaskReturnValue
+
+        val workflowTaskInstant = result.workflowTaskInstant ?: thisShouldNotHappen()
 
         val currentWorkflow = CurrentWorkflow(
             workflowId = msg.workflowId ?: thisShouldNotHappen(),
@@ -119,25 +123,25 @@ class TaskEventHandler(producerAsync: InfiniticProducerAsync) {
         result.newCommands.forEach {
           when (it) {
             is DispatchTaskPastCommand ->
-              dispatchTaskCmd(currentWorkflow, it, producer)
+              dispatchTaskCmd(currentWorkflow, it, workflowTaskInstant, producer)
 
             is DispatchNewWorkflowPastCommand ->
-              dispatchNewWorkflowCmd(currentWorkflow, it, producer)
+              dispatchNewWorkflowCmd(currentWorkflow, it, workflowTaskInstant, producer)
 
             is DispatchMethodOnRunningWorkflowPastCommand ->
-              dispatchMethodOnRunningWorkflowCmd(currentWorkflow, it, producer)
+              dispatchMethodOnRunningWorkflowCmd(currentWorkflow, it, workflowTaskInstant, producer)
 
             is SendSignalPastCommand ->
-              sendSignalCmd(currentWorkflow, it, producer)
+              sendSignalCmd(currentWorkflow, it, workflowTaskInstant, producer)
 
-//        is StartDurationTimerPastCommand -> startDurationTimerCmd(msg, it, producer)
+            is StartDurationTimerPastCommand ->
+              startDurationTimerCmd(currentWorkflow, it, workflowTaskInstant, producer)
 
             is StartInstantTimerPastCommand ->
-              startInstantTimerCmq(currentWorkflow, publishTime, it, producer)
+              startInstantTimerCmq(currentWorkflow, it, producer)
 
             is ReceiveSignalPastCommand,
-            is InlineTaskPastCommand,
-            is StartDurationTimerPastCommand -> Unit // Nothing to do
+            is InlineTaskPastCommand -> Unit // Nothing to do
           }
         }
       }

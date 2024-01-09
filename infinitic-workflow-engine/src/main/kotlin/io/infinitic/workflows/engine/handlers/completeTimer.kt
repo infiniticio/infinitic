@@ -22,6 +22,7 @@
  */
 package io.infinitic.workflows.engine.handlers
 
+import io.infinitic.common.exceptions.thisShouldNotHappen
 import io.infinitic.common.workflows.data.commands.CommandStatus
 import io.infinitic.common.workflows.data.commands.StartDurationTimerPastCommand
 import io.infinitic.common.workflows.data.commands.StartInstantTimerPastCommand
@@ -42,14 +43,14 @@ internal fun completeTimer(state: WorkflowState, message: CompleteTimers) {
         .filter { it.commandStatus is CommandStatus.Ongoing }
         .sortedByDescending { it.commandPosition }
         .forEach {
-          val msg =
-              TimerCompleted(
-                  TimerId.from(it.commandId),
-                  message.workflowName,
-                  message.workflowId,
-                  methodRunId,
-                  emitterName = message.emitterName,
-              )
+          val msg = TimerCompleted(
+              TimerId.from(it.commandId),
+              message.workflowName,
+              message.workflowId,
+              methodRunId,
+              emitterName = message.emitterName,
+              emittedAt = message.emittedAt ?: thisShouldNotHappen(),
+          )
           // add fake message at the top of the messagesBuffer list
           state.messagesBuffer.add(0, msg)
         }

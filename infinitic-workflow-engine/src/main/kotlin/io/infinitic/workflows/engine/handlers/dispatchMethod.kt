@@ -24,8 +24,9 @@ package io.infinitic.workflows.engine.handlers
 
 import io.infinitic.common.clients.data.ClientName
 import io.infinitic.common.emitters.EmitterName
+import io.infinitic.common.exceptions.thisShouldNotHappen
 import io.infinitic.common.transport.InfiniticProducer
-import io.infinitic.common.workflows.data.methodRuns.PositionInMethod
+import io.infinitic.common.workflows.data.methodRuns.PositionInWorkflowMethod
 import io.infinitic.common.workflows.data.methodRuns.WorkflowMethod
 import io.infinitic.common.workflows.data.methodRuns.WorkflowMethodId
 import io.infinitic.common.workflows.engine.events.WorkflowMethodStartedEvent
@@ -36,6 +37,9 @@ import io.infinitic.workflows.engine.helpers.dispatchWorkflowTask
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
+/**
+ * This method is called when a client manually dispatches a method on a running workflow
+ */
 internal fun CoroutineScope.dispatchMethod(
   producer: InfiniticProducer,
   state: WorkflowState,
@@ -79,5 +83,11 @@ internal fun CoroutineScope.dispatchMethod(
 
   state.workflowMethods.add(workflowMethod)
 
-  dispatchWorkflowTask(producer, state, workflowMethod, PositionInMethod())
+  dispatchWorkflowTask(
+      producer,
+      state,
+      workflowMethod,
+      PositionInWorkflowMethod(),
+      message.emittedAt ?: thisShouldNotHappen(),
+  )
 }

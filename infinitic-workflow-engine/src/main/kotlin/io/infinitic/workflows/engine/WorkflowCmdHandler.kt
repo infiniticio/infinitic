@@ -44,6 +44,9 @@ class WorkflowCmdHandler(producerAsync: InfiniticProducerAsync) {
   fun handle(msg: WorkflowEngineMessage, publishTime: MillisInstant) = producer.run {
     msg.logDebug { "received $msg" }
 
+    // define emittedAt from the publishing instant if not yet defined
+    msg.emittedAt = msg.emittedAt ?: publishTime
+
     when (msg) {
       is DispatchNewWorkflow -> dispatchNewWorkflow(msg, publishTime)
       else -> producer.sendToWorkflowEngine(msg)
@@ -57,10 +60,7 @@ class WorkflowCmdHandler(producerAsync: InfiniticProducerAsync) {
   private suspend fun dispatchNewWorkflow(msg: DispatchNewWorkflow, publishTime: MillisInstant) =
       coroutineScope {
 
-        val dispatchNewWorkflow = msg.copy(
-            startAt = publishTime,
-            workflowTaskId = TaskId(),
-        )
+        val dispatchNewWorkflow = msg.copy(workflowTaskId = TaskId())
 
         // first we send to workflow-engine
         producer.sendToWorkflowEngine(dispatchNewWorkflow)
@@ -78,6 +78,7 @@ class WorkflowCmdHandler(producerAsync: InfiniticProducerAsync) {
               workflowPropertiesHashValue = mutableMapOf(),
               workflowTaskIndex = WorkflowTaskIndex(1),
               workflowMethod = dispatchNewWorkflow.workflowMethod(),
+              workflowTaskInstant = msg.emittedAt ?: publishTime,
               emitterName = emitterName,
           )
 

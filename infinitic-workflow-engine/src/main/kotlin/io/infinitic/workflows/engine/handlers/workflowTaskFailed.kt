@@ -23,6 +23,7 @@
 package io.infinitic.workflows.engine.handlers
 
 import io.infinitic.common.emitters.EmitterName
+import io.infinitic.common.exceptions.thisShouldNotHappen
 import io.infinitic.common.transport.InfiniticProducer
 import io.infinitic.common.workflows.engine.events.WorkflowMethodFailedEvent
 import io.infinitic.common.workflows.engine.messages.TaskFailed
@@ -39,11 +40,10 @@ internal fun CoroutineScope.workflowTaskFailed(
   val emitterName = EmitterName(producer.name)
   val workflowMethod = state.getRunningWorkflowMethod()
 
-  val deferredError =
-      when (val deferredError = message.deferredError) {
-        null -> message.taskFailedError
-        else -> deferredError
-      }
+  val deferredError = when (val error = message.deferredError) {
+    null -> message.taskFailedError
+    else -> error
+  }
 
   val workflowMethodFailedEvent = WorkflowMethodFailedEvent(
       workflowName = state.workflowName,
@@ -67,7 +67,11 @@ internal fun CoroutineScope.workflowTaskFailed(
 
   // send info to itself if relevant
   if (workflowMethodFailedEvent.isItsOwnParent()) {
-    bufferedMessages.add(workflowMethodFailedEvent.getEventForParentWorkflow()!!)
+    val childMethodFailed = workflowMethodFailedEvent.getEventForParentWorkflow(
+        emitterName,
+        state.runningWorkflowTaskInstant ?: thisShouldNotHappen(),
+    ) ?: thisShouldNotHappen()
+    bufferedMessages.add(childMethodFailed)
   }
 
   // add fake message at the top of the messagesBuffer list

@@ -22,6 +22,7 @@
  */
 package io.infinitic.workflows.engine.handlers
 
+import io.infinitic.common.exceptions.thisShouldNotHappen
 import io.infinitic.common.transport.InfiniticProducer
 import io.infinitic.common.workflows.data.commands.CommandId
 import io.infinitic.common.workflows.data.commands.CommandStatus
@@ -43,4 +44,5 @@ internal fun CoroutineScope.taskCompleted(
         returnValue = message.taskReturnValue.returnValue,
         completionWorkflowTaskIndex = state.workflowTaskIndex,
     ),
+    message.emittedAt ?: thisShouldNotHappen(),
 )

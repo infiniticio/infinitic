@@ -25,6 +25,7 @@ package io.infinitic.common.workflows.data.workflowTasks
 import com.github.avrokotlin.avro4k.Avro
 import com.github.avrokotlin.avro4k.AvroDefault
 import com.github.avrokotlin.avro4k.AvroName
+import io.infinitic.common.data.MillisInstant
 import io.infinitic.common.data.methods.MethodName
 import io.infinitic.common.data.methods.MethodParameterTypes
 import io.infinitic.common.data.methods.MethodParameters
@@ -59,9 +60,11 @@ data class WorkflowTaskParameters(
   val workflowMeta: WorkflowMeta,
   val workflowPropertiesHashValue: Map<PropertyHash, PropertyValue>,
   val workflowTaskIndex: WorkflowTaskIndex,
+    // this property was added in 0.13.0
+  @AvroDefault(Avro.NULL) val workflowTaskInstant: MillisInstant? = null,
     // Since 0.12.1 WorkflowTaskParameters is serialized using Avro, before that it was in JSON-Kotlin
   @AvroName("methodRun") @SerialName("methodRun") val workflowMethod: WorkflowMethod,
-  val emitterName: EmitterName
+  val emitterName: EmitterName,
 ) {
   fun toExecuteTaskMessage() = ExecuteTask(
       serviceName = ServiceName(WorkflowTask::class.java.name),

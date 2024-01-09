@@ -22,6 +22,7 @@
  */
 package io.infinitic.tasks.executor.commands
 
+import io.infinitic.common.data.MillisInstant
 import io.infinitic.common.emitters.EmitterName
 import io.infinitic.common.tasks.executors.errors.WorkflowMethodTimedOutError
 import io.infinitic.common.transport.InfiniticProducer
@@ -38,6 +39,7 @@ import kotlinx.coroutines.launch
 internal fun CoroutineScope.dispatchMethodOnRunningWorkflowCmd(
   currentWorkflow: TaskEventHandler.CurrentWorkflow,
   pastCommand: DispatchMethodOnRunningWorkflowPastCommand,
+  workflowTaskInstant: MillisInstant,
   producer: InfiniticProducer,
 ) {
   val emitterName = EmitterName(producer.name)
@@ -60,6 +62,7 @@ internal fun CoroutineScope.dispatchMethodOnRunningWorkflowCmd(
               parentWorkflowMethodId = currentWorkflow.workflowMethodId,
               clientWaiting = false,
               emitterName = emitterName,
+              emittedAt = workflowTaskInstant,
           )
           producer.sendToWorkflowCmd(dispatchMethodWorkflow)
         }
@@ -81,6 +84,7 @@ internal fun CoroutineScope.dispatchMethodOnRunningWorkflowCmd(
               workflowId = currentWorkflow.workflowId,
               workflowMethodId = currentWorkflow.workflowMethodId,
               emitterName = emitterName,
+              emittedAt = workflowTaskInstant + it,
           )
           producer.sendToWorkflowEngine(childMethodTimedOut, it)
         }
@@ -102,6 +106,7 @@ internal fun CoroutineScope.dispatchMethodOnRunningWorkflowCmd(
             parentWorkflowMethodId = currentWorkflow.workflowMethodId,
             clientWaiting = false,
             emitterName = emitterName,
+            emittedAt = workflowTaskInstant,
         )
 
         // Note: tag engine MUST ignore this message for Id = parentWorkflowId

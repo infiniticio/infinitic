@@ -50,7 +50,7 @@ import io.infinitic.common.workflows.data.commands.ReceiveSignalCommand
 import io.infinitic.common.workflows.data.commands.SendSignalCommand
 import io.infinitic.common.workflows.data.commands.StartDurationTimerCommand
 import io.infinitic.common.workflows.data.commands.StartInstantTimerCommand
-import io.infinitic.common.workflows.data.methodRuns.PositionInMethod
+import io.infinitic.common.workflows.data.methodRuns.PositionInWorkflowMethod
 import io.infinitic.common.workflows.data.properties.PropertyHash
 import io.infinitic.common.workflows.data.properties.PropertyName
 import io.infinitic.common.workflows.data.steps.NewStep
@@ -100,7 +100,7 @@ internal class WorkflowDispatcherImpl(
   var newStep: NewStep? = null
 
   // position in the current method processing
-  private var positionInMethod = PositionInMethod()
+  private var positionInMethod = PositionInWorkflowMethod()
 
   // current workflowTaskIndex (useful to retrieve status of Deferred)
   private var workflowTaskIndex = workflowTaskParameters.workflowMethod.workflowTaskIndexAtStart

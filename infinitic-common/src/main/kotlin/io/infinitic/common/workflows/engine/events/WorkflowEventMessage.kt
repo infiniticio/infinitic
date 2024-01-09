@@ -31,6 +31,7 @@ import io.infinitic.common.clients.messages.MethodCompleted
 import io.infinitic.common.clients.messages.MethodFailed
 import io.infinitic.common.clients.messages.MethodTimedOut
 import io.infinitic.common.data.MessageId
+import io.infinitic.common.data.MillisInstant
 import io.infinitic.common.data.ReturnValue
 import io.infinitic.common.data.Version
 import io.infinitic.common.data.methods.MethodName
@@ -146,7 +147,7 @@ data class WorkflowMethodCompletedEvent(
   override val workflowMeta: WorkflowMeta,
   val returnValue: ReturnValue,
 ) : WorkflowEventMessage(), WorkflowMethodEvent {
-  fun getEventsForClient() = waitingClients.map {
+  fun getEventsForClient(emitterName: EmitterName) = waitingClients.map {
     MethodCompleted(
         recipientName = it,
         workflowId = workflowId,
@@ -156,19 +157,21 @@ data class WorkflowMethodCompletedEvent(
     )
   }
 
-  fun getEventForParentWorkflow() = parentWorkflowId?.let {
-    ChildMethodCompleted(
-        childWorkflowReturnValue = WorkflowReturnValue(
-            workflowId = workflowId,
-            workflowMethodId = workflowMethodId,
-            returnValue = returnValue,
-        ),
-        workflowId = parentWorkflowId,
-        workflowName = parentWorkflowName ?: thisShouldNotHappen(),
-        workflowMethodId = parentWorkflowMethodId ?: thisShouldNotHappen(),
-        emitterName = emitterName,
-    )
-  }
+  fun getEventForParentWorkflow(emitterName: EmitterName, emittedAt: MillisInstant) =
+      parentWorkflowId?.let {
+        ChildMethodCompleted(
+            childWorkflowReturnValue = WorkflowReturnValue(
+                workflowId = workflowId,
+                workflowMethodId = workflowMethodId,
+                returnValue = returnValue,
+            ),
+            workflowId = parentWorkflowId,
+            workflowName = parentWorkflowName ?: thisShouldNotHappen(),
+            workflowMethodId = parentWorkflowMethodId ?: thisShouldNotHappen(),
+            emitterName = emitterName,
+            emittedAt = emittedAt,
+        )
+      }
 }
 
 @Serializable
@@ -188,7 +191,7 @@ data class WorkflowMethodFailedEvent(
   val workflowMethodName: MethodName,
   val deferredError: DeferredError
 ) : WorkflowEventMessage(), WorkflowMethodEvent {
-  fun getEventsForClient() = waitingClients.map {
+  fun getEventsForClient(emitterName: EmitterName) = waitingClients.map {
     MethodFailed(
         recipientName = it,
         workflowId = workflowId,
@@ -198,21 +201,23 @@ data class WorkflowMethodFailedEvent(
     )
   }
 
-  fun getEventForParentWorkflow() = parentWorkflowId?.let {
-    ChildMethodFailed(
-        childMethodFailedError = MethodFailedError(
-            workflowName = workflowName,
-            workflowId = workflowId,
-            workflowMethodName = workflowMethodName,
-            workflowMethodId = workflowMethodId,
-            deferredError = deferredError,
-        ),
-        workflowId = it,
-        workflowName = parentWorkflowName ?: thisShouldNotHappen(),
-        workflowMethodId = parentWorkflowMethodId ?: thisShouldNotHappen(),
-        emitterName = emitterName,
-    )
-  }
+  fun getEventForParentWorkflow(emitterName: EmitterName, emittedAt: MillisInstant) =
+      parentWorkflowId?.let {
+        ChildMethodFailed(
+            childMethodFailedError = MethodFailedError(
+                workflowName = workflowName,
+                workflowId = workflowId,
+                workflowMethodName = workflowMethodName,
+                workflowMethodId = workflowMethodId,
+                deferredError = deferredError,
+            ),
+            workflowId = it,
+            workflowName = parentWorkflowName ?: thisShouldNotHappen(),
+            workflowMethodId = parentWorkflowMethodId ?: thisShouldNotHappen(),
+            emitterName = emitterName,
+            emittedAt = emittedAt,
+        )
+      }
 }
 
 @Serializable
@@ -232,7 +237,7 @@ data class WorkflowMethodCanceledEvent(
   val cancellationReason: WorkflowCancellationReason,
 ) : WorkflowEventMessage(), WorkflowMethodEvent {
 
-  fun getEventsForClient() = waitingClients.map {
+  fun getEventsForClient(emitterName: EmitterName) = waitingClients.map {
     MethodCanceled(
         recipientName = it,
         workflowId = workflowId,
@@ -241,7 +246,10 @@ data class WorkflowMethodCanceledEvent(
     )
   }
 
-  fun getEventForParentWorkflow(): ChildMethodCanceled? =
+  fun getEventForParentWorkflow(
+    emitterName: EmitterName,
+    emittedAt: MillisInstant
+  ): ChildMethodCanceled? =
       if (cancellationReason != WorkflowCancellationReason.CANCELED_BY_PARENT && parentWorkflowId != null) {
         ChildMethodCanceled(
             childMethodCanceledError = MethodCanceledError(
@@ -253,6 +261,7 @@ data class WorkflowMethodCanceledEvent(
             workflowName = parentWorkflowName ?: thisShouldNotHappen(),
             workflowMethodId = parentWorkflowMethodId ?: thisShouldNotHappen(),
             emitterName = emitterName,
+            emittedAt = emittedAt,
         )
       } else null
 }
@@ -273,7 +282,7 @@ data class WorkflowMethodTimedOutEvent(
   override val workflowMeta: WorkflowMeta,
   val workflowMethodName: MethodName,
 ) : WorkflowEventMessage(), WorkflowMethodEvent {
-  fun getEventsForClient() = waitingClients.map {
+  fun getEventsForClient(emitterName: EmitterName) = waitingClients.map {
     MethodTimedOut(
         recipientName = it,
         workflowId = workflowId,
@@ -282,7 +291,10 @@ data class WorkflowMethodTimedOutEvent(
     )
   }
 
-  fun getEventForParentWorkflow(): ChildMethodTimedOut? =
+  fun getEventForParentWorkflow(
+    emitterName: EmitterName,
+    emittedAt: MillisInstant
+  ): ChildMethodTimedOut? =
       if (parentWorkflowId != null) {
         ChildMethodTimedOut(
             childMethodTimedOutError = WorkflowMethodTimedOutError(
@@ -295,6 +307,7 @@ data class WorkflowMethodTimedOutEvent(
             workflowName = parentWorkflowName ?: thisShouldNotHappen(),
             workflowMethodId = parentWorkflowMethodId ?: thisShouldNotHappen(),
             emitterName = emitterName,
+            emittedAt = emittedAt,
         )
       } else null
 }

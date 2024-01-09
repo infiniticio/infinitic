@@ -28,6 +28,7 @@ import com.github.avrokotlin.avro4k.AvroNamespace
 import io.infinitic.common.clients.data.ClientName
 import io.infinitic.common.data.MessageId
 import io.infinitic.common.data.MillisDuration
+import io.infinitic.common.data.MillisInstant
 import io.infinitic.common.data.ReturnValue
 import io.infinitic.common.data.Version
 import io.infinitic.common.data.methods.MethodName
@@ -158,7 +159,7 @@ data class TaskFailedEvent(
     )
   }
 
-  fun getEventForWorkflow(emitterName: EmitterName) = workflowId?.let {
+  fun getEventForWorkflow(emitterName: EmitterName, emittedAt: MillisInstant) = workflowId?.let {
     TaskFailedWorkflow(
         workflowId = it,
         workflowName = workflowName ?: thisShouldNotHappen(),
@@ -171,6 +172,7 @@ data class TaskFailedEvent(
         ),
         deferredError = deferredError,
         emitterName = emitterName,
+        emittedAt = emittedAt,
     )
   }
 
@@ -277,7 +279,7 @@ data class TaskCompletedEvent(
     )
   }
 
-  fun getEventForWorkflow(emitterName: EmitterName) = workflowId?.let {
+  fun getEventForWorkflow(emitterName: EmitterName, emittedAt: MillisInstant) = workflowId?.let {
     TaskCompletedWorkflow(
         workflowId = it,
         workflowName = workflowName ?: thisShouldNotHappen(),
@@ -290,6 +292,7 @@ data class TaskCompletedEvent(
             returnValue = returnValue,
         ),
         emitterName = emitterName,
+        emittedAt = emittedAt,
     )
   }
 

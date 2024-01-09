@@ -52,7 +52,7 @@ import io.infinitic.common.workflows.data.channels.ChannelName
 import io.infinitic.common.workflows.data.channels.ChannelType
 import io.infinitic.common.workflows.data.channels.SignalData
 import io.infinitic.common.workflows.data.channels.SignalId
-import io.infinitic.common.workflows.data.methodRuns.PositionInMethod
+import io.infinitic.common.workflows.data.methodRuns.PositionInWorkflowMethod
 import io.infinitic.common.workflows.data.methodRuns.WorkflowMethod
 import io.infinitic.common.workflows.data.methodRuns.WorkflowMethodId
 import io.infinitic.common.workflows.data.timers.TimerId
@@ -74,11 +74,11 @@ import kotlinx.serialization.Serializable
 
 interface WorkflowInternalEvent
 
-interface MethodEvent : WorkflowInternalEvent {
+interface WorkflowMethodEvent : WorkflowInternalEvent {
   val workflowMethodId: WorkflowMethodId
 }
 
-interface TaskEvent : MethodEvent {
+interface TaskEvent : WorkflowMethodEvent {
   fun taskId(): TaskId
 
   fun serviceName(): ServiceName
@@ -93,11 +93,74 @@ sealed class WorkflowEngineMessage : Message {
   abstract val workflowId: WorkflowId
   abstract val workflowName: WorkflowName
 
+  // emittedAt has been introduced in 0.13.0
+  // This property represents the time this event is supposed to have been emitted:
+  // * if published by a client: the publishing time (got from transport)
+  // * the published time (from transport) of the event that triggered the workflow task that triggered this event
+  abstract var emittedAt: MillisInstant?
+
   override fun envelope() = WorkflowEngineEnvelope.from(this)
 
   fun isWorkflowTaskEvent() =
       (this is TaskEvent) && this.serviceName() == ServiceName(WorkflowTask::class.java.name)
 }
+
+/**
+ * This message retries the workflow task of a running workflow.
+ *
+ * @param workflowName Name of the workflow for which we retry the workflow task
+ * @param workflowId Id of the workflow for which we retry the workflow task
+ * @param emitterName Name of the emitter
+ */
+@Serializable
+@AvroNamespace("io.infinitic.workflows.engine")
+data class RetryWorkflowTask(
+  override val workflowName: WorkflowName,
+  override val workflowId: WorkflowId,
+  override val emitterName: EmitterName,
+  @AvroDefault(Avro.NULL) override var emittedAt: MillisInstant?
+) : WorkflowEngineMessage()
+
+/**
+ * This message retries some task of a running workflow.
+ * The tasks to retry are selected by their id, status or service name.
+ *
+ * @param workflowName Name of the workflow for which we retry the tasks
+ * @param workflowId Id of the workflow for which we retry the tasks
+ * @param taskId Select the task to retry by its id (if any)
+ * @param taskStatus Select the task to retry by its status (if any)
+ * @param serviceName Select the task to retry by its name (if any)
+ * @param emitterName Name of the emitter
+ */
+@Serializable
+@AvroNamespace("io.infinitic.workflows.engine")
+data class RetryTasks(
+  val taskId: TaskId?,
+  val taskStatus: DeferredStatus?,
+  @SerialName("taskName") val serviceName: ServiceName?,
+  override val workflowName: WorkflowName,
+  override val workflowId: WorkflowId,
+  override val emitterName: EmitterName,
+  @AvroDefault(Avro.NULL) override var emittedAt: MillisInstant?
+) : WorkflowEngineMessage()
+
+/**
+ * This message tells a workflow's method that a new client is waiting for its output
+ *
+ * @param workflowName Name of the workflow to wait for
+ * @param workflowId Id of the workflow to wait for
+ * @param workflowMethodId Id of the method to wait for
+ * @param emitterName Name of the emitter
+ */
+@Serializable
+@AvroNamespace("io.infinitic.workflows.engine")
+data class WaitWorkflow(
+  @AvroName("methodRunId") val workflowMethodId: WorkflowMethodId,
+  override val workflowName: WorkflowName,
+  override val workflowId: WorkflowId,
+  override val emitterName: EmitterName,
+  @AvroDefault(Avro.NULL) override var emittedAt: MillisInstant?
+) : WorkflowEngineMessage()
 
 /**
  * This message is a command for dispatching a new workflow.
@@ -131,9 +194,9 @@ data class DispatchNewWorkflow(
   val parentWorkflowId: WorkflowId?,
   @AvroName("parentMethodRunId") var parentWorkflowMethodId: WorkflowMethodId?,
   @AvroDefault(Avro.NULL) val workflowTaskId: TaskId? = null,
-  @AvroDefault(Avro.NULL) val startAt: MillisInstant? = null,
   val clientWaiting: Boolean,
-  override val emitterName: EmitterName
+  override val emitterName: EmitterName,
+  @AvroDefault(Avro.NULL) override var emittedAt: MillisInstant?
 ) : WorkflowEngineMessage() {
 
   fun workflowMethod() = WorkflowMethod(
@@ -161,9 +224,9 @@ data class DispatchNewWorkflow(
       workflowMethods = mutableListOf(workflowMethod()),
       workflowTaskIndex = WorkflowTaskIndex(1),
       runningWorkflowTaskId = workflowTaskId ?: thisShouldNotHappen(),
-      runningWorkflowTaskInstant = startAt ?: thisShouldNotHappen(),
+      runningWorkflowTaskInstant = emittedAt ?: thisShouldNotHappen(),
       runningWorkflowMethodId = WorkflowMethodId.from(workflowId),
-      positionInRunningWorkflowMethod = PositionInMethod(),
+      positionInRunningWorkflowMethod = PositionInWorkflowMethod(),
   )
 
   fun workflowStartedEvent(emitterName: EmitterName) = WorkflowStartedEvent(
@@ -231,7 +294,8 @@ data class DispatchMethodWorkflow(
   var parentWorkflowName: WorkflowName?,
   @AvroName("parentMethodRunId") var parentWorkflowMethodId: WorkflowMethodId?,
   val clientWaiting: Boolean,
-  override val emitterName: EmitterName
+  override val emitterName: EmitterName,
+  @AvroDefault(Avro.NULL) override var emittedAt: MillisInstant?
 ) : WorkflowEngineMessage(), WorkflowInternalEvent
 
 val DispatchMethodWorkflow.parentClientName
@@ -240,42 +304,6 @@ val DispatchMethodWorkflow.parentClientName
     else -> null
   }
 
-/**
- * This message is a command to retry the workflow task of a running workflow.
- *
- * @param workflowName Name of the workflow for which we retry the workflow task
- * @param workflowId Id of the workflow for which we retry the workflow task
- * @param emitterName Name of the emitter
- */
-@Serializable
-@AvroNamespace("io.infinitic.workflows.engine")
-data class RetryWorkflowTask(
-  override val workflowName: WorkflowName,
-  override val workflowId: WorkflowId,
-  override val emitterName: EmitterName
-) : WorkflowEngineMessage()
-
-/**
- * This message is a command to retry some task of a running workflow.
- * The tasks to retry are selected by their id, status or service name.
- *
- * @param workflowName Name of the workflow for which we retry the tasks
- * @param workflowId Id of the workflow for which we retry the tasks
- * @param taskId Select the task to retry by its id (if any)
- * @param taskStatus Select the task to retry by its status (if any)
- * @param serviceName Select the task to retry by its name (if any)
- * @param emitterName Name of the emitter
- */
-@Serializable
-@AvroNamespace("io.infinitic.workflows.engine")
-data class RetryTasks(
-  val taskId: TaskId?,
-  val taskStatus: DeferredStatus?,
-  @SerialName("taskName") val serviceName: ServiceName?,
-  override val workflowName: WorkflowName,
-  override val workflowId: WorkflowId,
-  override val emitterName: EmitterName
-) : WorkflowEngineMessage()
 
 /**
  * This message is a command to complete timers of a running workflow.
@@ -291,24 +319,8 @@ data class CompleteTimers(
   @AvroName("methodRunId") val workflowMethodId: WorkflowMethodId?,
   override val workflowName: WorkflowName,
   override val workflowId: WorkflowId,
-  override val emitterName: EmitterName
-) : WorkflowEngineMessage()
-
-/**
- * This message is a command to tell a workflow's method run that a client is waiting for its output
- *
- * @param workflowName Name of the workflow to wait for
- * @param workflowId Id of the workflow to wait for
- * @param workflowMethodId Id of the method to wait for
- * @param emitterName Name of the emitter
- */
-@Serializable
-@AvroNamespace("io.infinitic.workflows.engine")
-data class WaitWorkflow(
-  @AvroName("methodRunId") val workflowMethodId: WorkflowMethodId,
-  override val workflowName: WorkflowName,
-  override val workflowId: WorkflowId,
-  override val emitterName: EmitterName
+  override val emitterName: EmitterName,
+  @AvroDefault(Avro.NULL) override var emittedAt: MillisInstant?
 ) : WorkflowEngineMessage()
 
 /**
@@ -328,7 +340,8 @@ data class CancelWorkflow(
   @AvroName("methodRunId") val workflowMethodId: WorkflowMethodId?,
   override val workflowName: WorkflowName,
   override val workflowId: WorkflowId,
-  override val emitterName: EmitterName
+  override val emitterName: EmitterName,
+  @AvroDefault(Avro.NULL) override var emittedAt: MillisInstant?
 ) : WorkflowEngineMessage(), WorkflowInternalEvent
 
 /**
@@ -345,7 +358,8 @@ data class CompleteWorkflow(
   val workflowReturnValue: ReturnValue,
   override val workflowName: WorkflowName,
   override val workflowId: WorkflowId,
-  override val emitterName: EmitterName
+  override val emitterName: EmitterName,
+  @AvroDefault(Avro.NULL) override var emittedAt: MillisInstant?
 ) : WorkflowEngineMessage(), WorkflowInternalEvent
 
 /**
@@ -368,7 +382,8 @@ data class SendSignal(
   @AvroName("channelSignalTypes") val channelTypes: Set<ChannelType>,
   override val workflowName: WorkflowName,
   override val workflowId: WorkflowId,
-  override val emitterName: EmitterName
+  override val emitterName: EmitterName,
+  @AvroDefault(Avro.NULL) override var emittedAt: MillisInstant?
 ) : WorkflowEngineMessage(), WorkflowInternalEvent
 
 /**
@@ -391,8 +406,9 @@ data class ChildMethodUnknown(
   override val workflowName: WorkflowName,
   override val workflowId: WorkflowId,
   @AvroName("methodRunId") override val workflowMethodId: WorkflowMethodId,
-  override val emitterName: EmitterName
-) : WorkflowEngineMessage(), MethodEvent
+  override val emitterName: EmitterName,
+  @AvroDefault(Avro.NULL) override var emittedAt: MillisInstant?
+) : WorkflowEngineMessage(), WorkflowMethodEvent
 
 /**
  * This message is an event telling a workflow that another workflow's method has been canceled.
@@ -411,8 +427,9 @@ data class ChildMethodCanceled(
   override val workflowName: WorkflowName,
   override val workflowId: WorkflowId,
   @AvroName("methodRunId") override val workflowMethodId: WorkflowMethodId,
-  override val emitterName: EmitterName
-) : WorkflowEngineMessage(), MethodEvent
+  override val emitterName: EmitterName,
+  @AvroDefault(Avro.NULL) override var emittedAt: MillisInstant?
+) : WorkflowEngineMessage(), WorkflowMethodEvent
 
 /**
  * This message is an event telling a workflow that another workflow's method has failed.
@@ -431,8 +448,9 @@ data class ChildMethodFailed(
   override val workflowName: WorkflowName,
   override val workflowId: WorkflowId,
   @AvroName("methodRunId") override val workflowMethodId: WorkflowMethodId,
-  override val emitterName: EmitterName
-) : WorkflowEngineMessage(), MethodEvent
+  override val emitterName: EmitterName,
+  @AvroDefault(Avro.NULL) override var emittedAt: MillisInstant?
+) : WorkflowEngineMessage(), WorkflowMethodEvent
 
 /**
  * This message is an event telling a workflow that another workflow's method has timed out.
@@ -450,8 +468,9 @@ data class ChildMethodTimedOut(
   override val workflowName: WorkflowName,
   override val workflowId: WorkflowId,
   @AvroName("methodRunId") override val workflowMethodId: WorkflowMethodId,
-  override val emitterName: EmitterName
-) : WorkflowEngineMessage(), MethodEvent
+  override val emitterName: EmitterName,
+  @AvroDefault(Avro.NULL) override var emittedAt: MillisInstant?
+) : WorkflowEngineMessage(), WorkflowMethodEvent
 
 /**
  * This message is an event telling a workflow that another workflow's method has completed.
@@ -469,8 +488,9 @@ data class ChildMethodCompleted(
   override val workflowName: WorkflowName,
   override val workflowId: WorkflowId,
   @AvroName("methodRunId") override val workflowMethodId: WorkflowMethodId,
-  override val emitterName: EmitterName
-) : WorkflowEngineMessage(), MethodEvent
+  override val emitterName: EmitterName,
+  @AvroDefault(Avro.NULL) override var emittedAt: MillisInstant?
+) : WorkflowEngineMessage(), WorkflowMethodEvent
 
 /**
  * This message is an event telling a workflow that a task was canceled.
@@ -489,7 +509,8 @@ data class TaskCanceled(
   override val workflowName: WorkflowName,
   override val workflowId: WorkflowId,
   @AvroName("methodRunId") override val workflowMethodId: WorkflowMethodId,
-  override val emitterName: EmitterName
+  override val emitterName: EmitterName,
+  @AvroDefault(Avro.NULL) override var emittedAt: MillisInstant?
 ) : WorkflowEngineMessage(), TaskEvent {
   override fun taskId() = taskCanceledError.taskId
 
@@ -515,7 +536,8 @@ data class TaskFailed(
   override val workflowName: WorkflowName,
   override val workflowId: WorkflowId,
   @AvroName("methodRunId") override val workflowMethodId: WorkflowMethodId,
-  override val emitterName: EmitterName
+  override val emitterName: EmitterName,
+  @AvroDefault(Avro.NULL) override var emittedAt: MillisInstant?
 ) : WorkflowEngineMessage(), TaskEvent {
   override fun taskId() = taskFailedError.taskId
 
@@ -538,7 +560,8 @@ data class TaskTimedOut(
   override val workflowName: WorkflowName,
   override val workflowId: WorkflowId,
   @AvroName("methodRunId") override val workflowMethodId: WorkflowMethodId,
-  override val emitterName: EmitterName
+  override val emitterName: EmitterName,
+  @AvroDefault(Avro.NULL) override var emittedAt: MillisInstant?
 ) : WorkflowEngineMessage(), TaskEvent {
   override fun taskId() = taskTimedOutError.taskId
 
@@ -561,7 +584,8 @@ data class TaskCompleted(
   override val workflowName: WorkflowName,
   override val workflowId: WorkflowId,
   @AvroName("methodRunId") override val workflowMethodId: WorkflowMethodId,
-  override val emitterName: EmitterName
+  override val emitterName: EmitterName,
+  @AvroDefault(Avro.NULL) override var emittedAt: MillisInstant?
 ) : WorkflowEngineMessage(), TaskEvent {
   override fun taskId() = taskReturnValue.taskId
 
@@ -584,5 +608,6 @@ data class TimerCompleted(
   override val workflowName: WorkflowName,
   override val workflowId: WorkflowId,
   @AvroName("methodRunId") override val workflowMethodId: WorkflowMethodId,
-  override val emitterName: EmitterName
-) : WorkflowEngineMessage(), MethodEvent
+  override val emitterName: EmitterName,
+  @AvroDefault(Avro.NULL) override var emittedAt: MillisInstant?
+) : WorkflowEngineMessage(), WorkflowMethodEvent

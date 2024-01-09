@@ -29,6 +29,7 @@ import io.infinitic.common.data.MillisInstant
 import io.infinitic.common.emitters.EmitterName
 import io.infinitic.common.exceptions.thisShouldNotHappen
 import io.infinitic.common.tasks.executors.errors.MethodUnknownError
+import io.infinitic.common.transport.InfiniticProducer
 import io.infinitic.common.transport.InfiniticProducerAsync
 import io.infinitic.common.transport.LoggedInfiniticProducer
 import io.infinitic.common.workflows.engine.events.WorkflowCompletedEvent
@@ -42,7 +43,6 @@ import io.infinitic.common.workflows.engine.messages.CompleteTimers
 import io.infinitic.common.workflows.engine.messages.CompleteWorkflow
 import io.infinitic.common.workflows.engine.messages.DispatchMethodWorkflow
 import io.infinitic.common.workflows.engine.messages.DispatchNewWorkflow
-import io.infinitic.common.workflows.engine.messages.MethodEvent
 import io.infinitic.common.workflows.engine.messages.RetryTasks
 import io.infinitic.common.workflows.engine.messages.RetryWorkflowTask
 import io.infinitic.common.workflows.engine.messages.SendSignal
@@ -55,8 +55,10 @@ import io.infinitic.common.workflows.engine.messages.TimerCompleted
 import io.infinitic.common.workflows.engine.messages.WaitWorkflow
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
 import io.infinitic.common.workflows.engine.messages.WorkflowInternalEvent
+import io.infinitic.common.workflows.engine.messages.WorkflowMethodEvent
 import io.infinitic.common.workflows.engine.state.WorkflowState
 import io.infinitic.common.workflows.engine.storage.WorkflowStateStorage
+import io.infinitic.common.workflows.tags.messages.RemoveTagFromWorkflow
 import io.infinitic.workflows.engine.handlers.cancelWorkflow
 import io.infinitic.workflows.engine.handlers.childMethodCanceled
 import io.infinitic.workflows.engine.handlers.childMethodCompleted
@@ -77,7 +79,6 @@ import io.infinitic.workflows.engine.handlers.timerCompleted
 import io.infinitic.workflows.engine.handlers.waitWorkflow
 import io.infinitic.workflows.engine.handlers.workflowTaskCompleted
 import io.infinitic.workflows.engine.handlers.workflowTaskFailed
-import io.infinitic.workflows.engine.helpers.removeTags
 import io.infinitic.workflows.engine.storage.LoggedWorkflowStateStorage
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.coroutineScope
@@ -153,6 +154,20 @@ class WorkflowEngine(
     producer.sendToWorkflowEvents(workflowCompletedEvent)
   }
 
+  private suspend fun removeTags(producer: InfiniticProducer, state: WorkflowState) =
+      coroutineScope {
+        state.workflowTags.map {
+          val removeTagFromWorkflow = RemoveTagFromWorkflow(
+              workflowName = state.workflowName,
+              workflowTag = it,
+              workflowId = state.workflowId,
+              emitterName = EmitterName(producer.name),
+              emittedAt = state.runningWorkflowTaskInstant,
+          )
+          launch { producer.sendToWorkflowTag(removeTagFromWorkflow) }
+        }
+      }
+
   private suspend fun processMessageWithoutState(
     message: WorkflowEngineMessage
   ): WorkflowState? = coroutineScope {
@@ -184,19 +199,19 @@ class WorkflowEngine(
         }
         // a workflow wants to dispatch a method on an unknown workflow
         if (message.parentWorkflowId != null && message.parentWorkflowId != message.workflowId) launch {
-          val childMethodFailed =
-              ChildMethodUnknown(
-                  childMethodUnknownError =
-                  MethodUnknownError(
-                      workflowName = message.workflowName,
-                      workflowId = message.workflowId,
-                      workflowMethodId = message.workflowMethodId,
-                  ),
-                  workflowName = message.parentWorkflowName ?: thisShouldNotHappen(),
-                  workflowId = message.parentWorkflowId!!,
-                  workflowMethodId = message.parentWorkflowMethodId ?: thisShouldNotHappen(),
-                  emitterName = emitterName,
-              )
+          val childMethodFailed = ChildMethodUnknown(
+              childMethodUnknownError =
+              MethodUnknownError(
+                  workflowName = message.workflowName,
+                  workflowId = message.workflowId,
+                  workflowMethodId = message.workflowMethodId,
+              ),
+              workflowName = message.parentWorkflowName ?: thisShouldNotHappen(),
+              workflowId = message.parentWorkflowId!!,
+              workflowMethodId = message.parentWorkflowMethodId ?: thisShouldNotHappen(),
+              emitterName = emitterName,
+              emittedAt = message.emittedAt,
+          )
 
           producer.sendToWorkflowEngine(childMethodFailed)
         }
@@ -319,7 +334,7 @@ class WorkflowEngine(
 
       }
 
-      is MethodEvent -> {
+      is WorkflowMethodEvent -> {
         // if methodRun has already been cleaned (completed), then discard the message
         if (state.getWorkflowMethod(message.workflowMethodId) == null) {
           logDiscarding(message) { "as null methodRun" }
@@ -332,6 +347,7 @@ class WorkflowEngine(
     }
 
     when (message) {
+      // CMD
       is DispatchNewWorkflow -> logDiscarding(message) { "as workflow has already started with state $state" }
       is DispatchMethodWorkflow -> dispatchMethod(producer, state, message)
       is CancelWorkflow -> cancelWorkflow(producer, state, message)
@@ -341,6 +357,7 @@ class WorkflowEngine(
       is CompleteWorkflow -> TODO() // completeWorkflow(producer, state, message)
       is RetryWorkflowTask -> retryWorkflowTask(producer, state)
       is RetryTasks -> retryTasks(producer, state, message)
+      // INTERNAL EVENTS
       is TimerCompleted -> timerCompleted(producer, state, message)
       is ChildMethodUnknown -> childMethodUnknown(producer, state, message)
       is ChildMethodCanceled -> childMethodCanceled(producer, state, message)

@@ -22,6 +22,7 @@
  */
 package io.infinitic.tasks.executor.commands
 
+import io.infinitic.common.data.MillisInstant
 import io.infinitic.common.emitters.EmitterName
 import io.infinitic.common.exceptions.thisShouldNotHappen
 import io.infinitic.common.tasks.executors.errors.WorkflowMethodTimedOutError
@@ -41,6 +42,7 @@ import kotlinx.coroutines.launch
 internal fun CoroutineScope.dispatchNewWorkflowCmd(
   currentWorkflow: TaskEventHandler.CurrentWorkflow,
   pastCommand: DispatchNewWorkflowPastCommand,
+  workflowTaskInstant: MillisInstant,
   producer: InfiniticProducer
 ) {
   val emitterName = EmitterName(producer.name)
@@ -68,6 +70,7 @@ internal fun CoroutineScope.dispatchNewWorkflowCmd(
           parentWorkflowMethodId = currentWorkflow.workflowMethodId,
           clientWaiting = false,
           emitterName = emitterName,
+          emittedAt = workflowTaskInstant,
       )
       launch { producer.sendToWorkflowCmd(dispatchWorkflow) }
 
@@ -78,6 +81,7 @@ internal fun CoroutineScope.dispatchNewWorkflowCmd(
             workflowTag = it,
             workflowId = workflowId,
             emitterName = emitterName,
+            emittedAt = workflowTaskInstant,
         )
         launch { producer.sendToWorkflowTag(addTagToWorkflow) }
       }
@@ -100,6 +104,7 @@ internal fun CoroutineScope.dispatchNewWorkflowCmd(
           parentWorkflowMethodId = currentWorkflow.workflowMethodId,
           clientWaiting = false,
           emitterName = emitterName,
+          emittedAt = workflowTaskInstant,
       )
       launch { producer.sendToWorkflowTag(dispatchWorkflowByCustomId) }
     }
@@ -115,13 +120,14 @@ internal fun CoroutineScope.dispatchNewWorkflowCmd(
         workflowId = currentWorkflow.workflowId,
         workflowName = currentWorkflow.workflowName,
         workflowMethodId = currentWorkflow.workflowMethodId,
-        emitterName = emitterName,
         childMethodTimedOutError = WorkflowMethodTimedOutError(
             workflowName = workflowName,
             workflowId = workflowId,
             methodName = methodName,
             workflowMethodId = WorkflowMethodId.from(workflowId),
         ),
+        emitterName = emitterName,
+        emittedAt = workflowTaskInstant + timeout,
     )
     launch { producer.sendToWorkflowEngine(childMethodTimedOut, timeout) }
   }

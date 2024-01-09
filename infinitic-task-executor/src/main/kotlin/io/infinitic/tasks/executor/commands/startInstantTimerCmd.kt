@@ -35,7 +35,6 @@ import kotlinx.coroutines.launch
 
 internal fun CoroutineScope.startInstantTimerCmq(
   current: TaskEventHandler.CurrentWorkflow,
-  publishTime: MillisInstant,
   pastCommand: StartInstantTimerPastCommand,
   producer: InfiniticProducer
 ) {
@@ -48,7 +47,11 @@ internal fun CoroutineScope.startInstantTimerCmq(
       workflowId = current.workflowId,
       workflowMethodId = current.workflowMethodId,
       emitterName = emitterName,
+      emittedAt = command.instant,
   )
 
-  launch { producer.sendToWorkflowEngine(timerCompleted, command.instant - publishTime) }
+  // todo: Check if there is a way not to use MillisInstant.now()
+  launch {
+    producer.sendToWorkflowEngine(timerCompleted, command.instant - MillisInstant.now())
+  }
 }
