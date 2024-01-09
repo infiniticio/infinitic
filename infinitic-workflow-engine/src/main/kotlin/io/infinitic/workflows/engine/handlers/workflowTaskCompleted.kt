@@ -47,7 +47,6 @@ import io.infinitic.workflows.engine.commands.dispatchMethodOnRunningWorkflowCmd
 import io.infinitic.workflows.engine.commands.receiveSignalCmd
 import io.infinitic.workflows.engine.commands.sendSignalCmd
 import io.infinitic.workflows.engine.commands.startDurationTimerCmd
-import io.infinitic.workflows.engine.commands.startInstantTimerCmq
 import io.infinitic.workflows.engine.helpers.stepTerminated
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
@@ -118,7 +117,7 @@ internal fun CoroutineScope.workflowTaskCompleted(
       is SendSignalPastCommand -> sendSignalCmd(it, state, producer, bufferedMessages)
       is InlineTaskPastCommand -> Unit // Nothing to do
       is StartDurationTimerPastCommand -> startDurationTimerCmd(it, state, producer)
-      is StartInstantTimerPastCommand -> startInstantTimerCmq(it, state, producer)
+      is StartInstantTimerPastCommand -> Unit // startInstantTimerCmq(it, state, producer)
       is ReceiveSignalPastCommand -> receiveSignalCmd(it, state)
     }
     workflowMethod.pastCommands.add(it)

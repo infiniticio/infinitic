@@ -34,9 +34,13 @@ import io.infinitic.common.transport.InfiniticProducerAsync
 import io.infinitic.common.transport.LoggedInfiniticProducer
 import io.infinitic.common.workflows.data.commands.DispatchNewWorkflowPastCommand
 import io.infinitic.common.workflows.data.commands.DispatchTaskPastCommand
+import io.infinitic.common.workflows.data.commands.InlineTaskPastCommand
+import io.infinitic.common.workflows.data.commands.ReceiveSignalPastCommand
+import io.infinitic.common.workflows.data.commands.StartInstantTimerPastCommand
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskReturnValue
 import io.infinitic.tasks.executor.commands.dispatchNewWorkflowCmd
 import io.infinitic.tasks.executor.commands.dispatchTaskCmd
+import io.infinitic.tasks.executor.commands.startInstantTimerCmq
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 
@@ -51,7 +55,7 @@ class TaskEventHandler(producerAsync: InfiniticProducerAsync) {
     msg.logDebug { "received $msg" }
 
     when (msg) {
-      is TaskCompletedEvent -> sendTaskCompleted(msg)
+      is TaskCompletedEvent -> sendTaskCompleted(msg, publishTime)
       is TaskFailedEvent -> sendTaskFailed(msg)
       is TaskRetriedEvent,
       is TaskStartedEvent -> Unit
@@ -71,32 +75,34 @@ class TaskEventHandler(producerAsync: InfiniticProducerAsync) {
     }
   }
 
-  private suspend fun sendTaskCompleted(msg: TaskCompletedEvent) = coroutineScope {
-    // if workflowTask
-    if (msg.isWorkflowTask()) {
-      launch { completeWorkflowTask(msg) }
-    }
-    // send to parent client
-    msg.getEventForClient(emitterName)?.let {
-      launch { producer.sendToClient(it) }
-    }
-    // send to parent workflow
-    msg.getEventForWorkflow(emitterName)?.let {
-      launch { producer.sendToWorkflowEngine(it) }
-    }
-    // remove tags
-    msg.getEventsForTag(emitterName).forEach {
-      launch { producer.sendToTaskTag(it) }
-    }
-  }
+  private suspend fun sendTaskCompleted(msg: TaskCompletedEvent, publishTime: MillisInstant) =
+      coroutineScope {
+        // if workflowTask
+        if (msg.isWorkflowTask()) {
+          launch { completeWorkflowTask(msg, publishTime) }
+        }
+        // send to parent client
+        msg.getEventForClient(emitterName)?.let {
+          launch { producer.sendToClient(it) }
+        }
+        // send to parent workflow
+        msg.getEventForWorkflow(emitterName)?.let {
+          launch { producer.sendToWorkflowEngine(it) }
+        }
+        // remove tags
+        msg.getEventsForTag(emitterName).forEach {
+          launch { producer.sendToTaskTag(it) }
+        }
+      }
 
-  private suspend fun completeWorkflowTask(msg: TaskCompletedEvent) = coroutineScope {
-    val result = msg.returnValue.value() as WorkflowTaskReturnValue
+  private suspend fun completeWorkflowTask(msg: TaskCompletedEvent, publishTime: MillisInstant) =
+      coroutineScope {
+        val result = msg.returnValue.value() as WorkflowTaskReturnValue
 
-    result.newCommands.forEach {
-      when (it) {
-        is DispatchTaskPastCommand -> dispatchTaskCmd(msg, it, producer)
-        is DispatchNewWorkflowPastCommand -> dispatchNewWorkflowCmd(msg, it, producer)
+        result.newCommands.forEach {
+          when (it) {
+            is DispatchTaskPastCommand -> dispatchTaskCmd(msg, it, producer)
+            is DispatchNewWorkflowPastCommand -> dispatchNewWorkflowCmd(msg, it, producer)
 //        is DispatchMethodOnRunningWorkflowPastCommand -> dispatchMethodOnRunningWorkflowCmd(
 //            it,
 //            state,
@@ -105,14 +111,14 @@ class TaskEventHandler(producerAsync: InfiniticProducerAsync) {
 //        )
 //
 //        is SendSignalPastCommand -> sendSignalCmd(it, state, producer, bufferedMessages)
-//        is InlineTaskPastCommand -> Unit // Nothing to do
-//        is StartDurationTimerPastCommand -> startDurationTimerCmd(it, state, producer)
-//        is StartInstantTimerPastCommand -> startInstantTimerCmq(it, state, producer)
-//        is ReceiveSignalPastCommand -> receiveSignalCmd(it, state)
-        else -> Unit
+            is InlineTaskPastCommand -> Unit // Nothing to do
+//        is StartDurationTimerPastCommand -> startDurationTimerCmd(msg, it, producer)
+            is StartInstantTimerPastCommand -> startInstantTimerCmq(msg, publishTime, it, producer)
+            is ReceiveSignalPastCommand -> Unit
+            else -> Unit
+          }
+        }
       }
-    }
-  }
 
   private fun TaskEventMessage.logDebug(description: () -> String) {
     logger.debug { "$serviceName (${taskId}): ${description()}" }
