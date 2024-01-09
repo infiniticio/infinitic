@@ -32,8 +32,10 @@ import io.infinitic.common.tasks.executors.events.TaskRetriedEvent
 import io.infinitic.common.tasks.executors.events.TaskStartedEvent
 import io.infinitic.common.transport.InfiniticProducerAsync
 import io.infinitic.common.transport.LoggedInfiniticProducer
+import io.infinitic.common.workflows.data.commands.DispatchNewWorkflowPastCommand
 import io.infinitic.common.workflows.data.commands.DispatchTaskPastCommand
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskReturnValue
+import io.infinitic.tasks.executor.commands.dispatchNewWorkflowCmd
 import io.infinitic.tasks.executor.commands.dispatchTaskCmd
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
@@ -94,7 +96,7 @@ class TaskEventHandler(producerAsync: InfiniticProducerAsync) {
     result.newCommands.forEach {
       when (it) {
         is DispatchTaskPastCommand -> dispatchTaskCmd(msg, it, producer)
-        //is DispatchNewWorkflowPastCommand -> dispatchNewWorkflowCmd(it, state, producer)
+        is DispatchNewWorkflowPastCommand -> dispatchNewWorkflowCmd(msg, it, producer)
 //        is DispatchMethodOnRunningWorkflowPastCommand -> dispatchMethodOnRunningWorkflowCmd(
 //            it,
 //            state,
