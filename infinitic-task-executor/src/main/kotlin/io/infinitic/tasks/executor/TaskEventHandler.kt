@@ -32,6 +32,9 @@ import io.infinitic.common.tasks.executors.events.TaskRetriedEvent
 import io.infinitic.common.tasks.executors.events.TaskStartedEvent
 import io.infinitic.common.transport.InfiniticProducerAsync
 import io.infinitic.common.transport.LoggedInfiniticProducer
+import io.infinitic.common.workflows.data.commands.DispatchTaskPastCommand
+import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskReturnValue
+import io.infinitic.tasks.executor.commands.dispatchTaskCmd
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 
@@ -67,6 +70,10 @@ class TaskEventHandler(producerAsync: InfiniticProducerAsync) {
   }
 
   private suspend fun sendTaskCompleted(msg: TaskCompletedEvent) = coroutineScope {
+    // if workflowTask
+    if (msg.isWorkflowTask()) {
+      launch { completeWorkflowTask(msg) }
+    }
     // send to parent client
     msg.getEventForClient(emitterName)?.let {
       launch { producer.sendToClient(it) }
@@ -78,6 +85,30 @@ class TaskEventHandler(producerAsync: InfiniticProducerAsync) {
     // remove tags
     msg.getEventsForTag(emitterName).forEach {
       launch { producer.sendToTaskTag(it) }
+    }
+  }
+
+  private suspend fun completeWorkflowTask(msg: TaskCompletedEvent) = coroutineScope {
+    val result = msg.returnValue.value() as WorkflowTaskReturnValue
+
+    result.newCommands.forEach {
+      when (it) {
+        is DispatchTaskPastCommand -> dispatchTaskCmd(msg, it, producer)
+        //is DispatchNewWorkflowPastCommand -> dispatchNewWorkflowCmd(it, state, producer)
+//        is DispatchMethodOnRunningWorkflowPastCommand -> dispatchMethodOnRunningWorkflowCmd(
+//            it,
+//            state,
+//            producer,
+//            bufferedMessages,
+//        )
+//
+//        is SendSignalPastCommand -> sendSignalCmd(it, state, producer, bufferedMessages)
+//        is InlineTaskPastCommand -> Unit // Nothing to do
+//        is StartDurationTimerPastCommand -> startDurationTimerCmd(it, state, producer)
+//        is StartInstantTimerPastCommand -> startInstantTimerCmq(it, state, producer)
+//        is ReceiveSignalPastCommand -> receiveSignalCmd(it, state)
+        else -> Unit
+      }
     }
   }
 

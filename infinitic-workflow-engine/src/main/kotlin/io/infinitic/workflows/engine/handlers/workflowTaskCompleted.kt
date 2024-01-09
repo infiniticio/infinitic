@@ -45,7 +45,6 @@ import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
 import io.infinitic.common.workflows.engine.state.WorkflowState
 import io.infinitic.workflows.engine.commands.dispatchMethodOnRunningWorkflowCmd
 import io.infinitic.workflows.engine.commands.dispatchNewWorkflowCmd
-import io.infinitic.workflows.engine.commands.dispatchTaskCmd
 import io.infinitic.workflows.engine.commands.receiveSignalCmd
 import io.infinitic.workflows.engine.commands.sendSignalCmd
 import io.infinitic.workflows.engine.commands.startDurationTimerCmd
@@ -108,7 +107,7 @@ internal fun CoroutineScope.workflowTaskCompleted(
   // add new commands to past commands
   workflowTaskReturnValue.newCommands.forEach {
     when (it) {
-      is DispatchTaskPastCommand -> dispatchTaskCmd(it, state, producer)
+      is DispatchTaskPastCommand -> Unit // dispatchTaskCmd(it, state, producer)
       is DispatchNewWorkflowPastCommand -> dispatchNewWorkflowCmd(it, state, producer)
       is DispatchMethodOnRunningWorkflowPastCommand -> dispatchMethodOnRunningWorkflowCmd(
           it,
