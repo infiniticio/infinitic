@@ -25,7 +25,7 @@ package io.infinitic.common.serDe.avro
 import com.github.avrokotlin.avro4k.Avro
 import io.infinitic.common.exceptions.thisShouldNotHappen
 import io.infinitic.currentVersion
-import io.infinitic.isReleaseVersion
+import io.infinitic.isRelease
 import io.infinitic.versions
 import kotlinx.serialization.InternalSerializationApi
 import kotlinx.serialization.KSerializer
@@ -174,7 +174,7 @@ object AvroSerDe {
         as MutableMap
 
     // add current version if not already there
-    if (!isReleaseVersion) {
+    if (!isRelease) {
       released[currentVersion] = currentSchema(klass.serializer())
     }
 

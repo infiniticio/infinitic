@@ -645,7 +645,6 @@ internal class InfiniticClientTests : StringSpec(
         // when
         val workflow = client.getWorkflowByTag(FakeWorkflow::class.java, "foo")
         val deferred = client.dispatch(workflow::m0)
-        println(deferred)
         // then
         workflowCmdSlot.isCaptured shouldBe false
         workflowTagSlots.size shouldBe 1

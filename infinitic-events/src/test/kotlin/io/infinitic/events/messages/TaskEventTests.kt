@@ -69,7 +69,6 @@ class TaskEventTests : StringSpec(
       TaskEvent::class.sealedSubclasses.forEach { klass ->
         AvroSerDe.getAllSchemas(klass).forEach { (version, schema) ->
           "We should be able to decode ${klass.simpleName} from binary version $version" {
-            println(schema)
             val bytes = AvroSerDe.getRandomBinary(schema)
 
             shouldNotThrowAny { fromByteArray(bytes, schema, klass) }

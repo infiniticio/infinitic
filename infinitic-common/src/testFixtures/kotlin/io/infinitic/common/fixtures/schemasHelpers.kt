@@ -27,32 +27,34 @@ import io.infinitic.common.serDe.avro.AvroSerDe.SCHEMAS_FOLDER
 import io.infinitic.common.serDe.avro.AvroSerDe.getAllSchemas
 import io.infinitic.common.serDe.avro.AvroSerDe.getSchemaFilePrefix
 import io.infinitic.currentVersion
-import io.infinitic.isReleaseVersion
+import io.infinitic.isRelease
 import io.kotest.assertions.throwables.shouldNotThrowAny
-import io.kotest.matchers.ints.shouldBeGreaterThan
+import io.kotest.matchers.comparables.shouldBeGreaterThan
 import io.kotest.matchers.shouldBe
 import kotlinx.serialization.KSerializer
 import org.apache.avro.SchemaValidatorBuilder
 import java.io.File
-import java.io.FileWriter
 import kotlin.reflect.KClass
 
 fun <T : Any> checkOrCreateCurrentFile(klass: KClass<T>, serializer: KSerializer<T>) {
   // Non-release version are not saved to the sources
-  if (isReleaseVersion) {
+  if (isRelease) {
+
+    val schemasFolderPath = klass.java.getResource("/$SCHEMAS_FOLDER/")!!.path
+        .replace("build/resources/main", "src/main/resources")
+
     val schemaFilePath = File(
-        "/src/main/resources/$SCHEMAS_FOLDER/",
-        "${getSchemaFilePrefix(klass)}-$currentVersion.avsc",
+        "$schemasFolderPath${getSchemaFilePrefix(klass)}-$currentVersion.avsc",
     )
 
+    val schema = AvroSerDe.currentSchema(serializer).toString(true)
     // Does the schema file already exist?
     when (schemaFilePath.exists()) {
       // create schema file for the current version
-      false -> FileWriter(schemaFilePath).use {
-        it.write(AvroSerDe.currentSchema(serializer).toString(true))
-      }
+      false -> schemaFilePath.writeText(schema)
+
       // check that schema file was not modified
-      true -> AvroSerDe.currentSchema(serializer).toString(true) shouldBe schemaFilePath.readText()
+      true -> schema shouldBe schemaFilePath.readText()
     }
   }
 }
@@ -68,5 +70,3 @@ fun <T : Any> checkBackwardCompatibility(klass: KClass<T>, serializer: KSerializ
   val newSchema = AvroSerDe.currentSchema(serializer)
   shouldNotThrowAny { validator.validate(newSchema, schemaList) }
 }
-
-

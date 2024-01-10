@@ -33,4 +33,4 @@ val versions: List<String> =
     AvroSerDe::class.java.getResource("/versions")!!.readText().split("\n").reversed()
 
 /** If [currentVersion] is in [versions] - it's a release version */
-val isReleaseVersion = currentVersion in versions
+val isRelease = currentVersion in versions
