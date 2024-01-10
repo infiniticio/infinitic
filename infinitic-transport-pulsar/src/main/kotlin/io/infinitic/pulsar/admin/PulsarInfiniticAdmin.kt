@@ -334,7 +334,7 @@ class PulsarInfiniticAdmin(
         val metadata = getPartitionedTopicMetadata(topic).getOrElse { return Result.failure(it) }
         when (metadata) {
           null -> Result.success(TopicInfo(false, ttl))
-          else -> Result.success(TopicInfo(true, ttl))
+          else -> Result.success(TopicInfo(metadata.partitions != 0, ttl))
         }
       }
     }
