@@ -39,6 +39,7 @@ import org.apache.pulsar.client.api.Consumer
 import org.apache.pulsar.client.api.MessageId
 import org.apache.pulsar.client.api.SubscriptionType
 import java.util.concurrent.CancellationException
+import java.util.concurrent.CompletionException
 import kotlin.reflect.KClass
 import org.apache.pulsar.client.api.Message as PulsarMessage
 
@@ -88,6 +89,10 @@ class Consumer(
               } catch (e: CancellationException) {
                 // exit while loop when coroutine is canceled
                 break
+              } catch (e: Exception) {
+                // for other exception, we continue
+                logWarn(e, topic, null) { "Exception in $consumerNameIt:" }
+                continue
               }
             }
             logger.debug { "Closing consumer $consumerNameIt after cancellation" }
@@ -133,6 +138,10 @@ class Consumer(
           } catch (e: CancellationException) {
             // if coroutine is canceled, we just exit the while loop
             break
+          } catch (e: Exception) {
+            // for other exception, we continue
+            logWarn(e, topic, null) { "Exception in $consumerName:" }
+            continue
           }
         }
         logger.debug { "Closing consumer $consumerName after cancellation" }
@@ -168,11 +177,9 @@ class Consumer(
       logTrace(topic, messageId) { "Processing $message" }
       handler(message, publishTime)
       logDebug(topic, messageId) { "Processed $message" }
-    } catch (e: CancellationException) {
-      // this means that the producing coroutine is down, we must exit
-      throw e.cause ?: e
     } catch (e: Exception) {
       logWarn(e, topic, messageId) { "Exception when processing $message" }
+      e.throwError()
       negativeAcknowledge(consumer, pulsarMessage, beforeDlq, message, e)
       return
     }
@@ -228,17 +235,17 @@ class Consumer(
     val messageId = pulsarMessage.messageId
     val topic = consumer.topic
 
-    // before sending to DLQ, we tell Workflow Engine about that
+    // before sending to DLQ, we apply beforeDlq if any
     if (pulsarMessage.redeliveryCount == consumerConfig.maxRedeliverCount && beforeDlq != null) {
       when (message) {
         null -> logError(cause, topic, messageId) { "Exception when applying DLQ handler" }
 
         else -> try {
-          logTrace(topic, messageId) { "Applying DLQ handler for $message}" }
+          logTrace(topic, messageId) { "Processing DLQ handler for $message}" }
           beforeDlq(message, cause)
-          logDebug(topic, messageId) { "Applied DLQ handler for $message}" }
+          logWarn(null, topic, messageId) { "Processed DLQ handler for $message}" }
         } catch (e: Exception) {
-          logError(e, topic, messageId) { "Exception when applying DLQ handler for $message}" }
+          logError(e, topic, messageId) { "Exception when processing DLQ handler for $message}" }
         }
       }
     }
@@ -260,11 +267,20 @@ class Consumer(
     logger.debug { "Topic: $topic ($messageId) - ${txt()}" }
   }
 
-  private fun logWarn(e: Exception, topic: String, messageId: MessageId, txt: () -> String) {
-    logger.warn(e) { "Topic: $topic ($messageId) - ${txt()}" }
+  private fun logWarn(e: Exception?, topic: String, messageId: MessageId?, txt: () -> String) {
+    logger.warn(e) { "Topic: $topic ${messageId?.let { "($messageId)" } ?: ""} - ${txt()}" }
   }
 
   private fun logError(e: Exception, topic: String, messageId: MessageId, txt: () -> String) {
     logger.error(e) { "Topic: $topic ($messageId) - ${txt()}" }
+  }
+
+  /**
+   *  rethrowError is used to determine whether the cause of the CompletionException
+   *  is an Error rather than an Exception and, if so, to throw that Error.
+   */
+  private fun Exception.throwError() {
+    val e = if (this is CompletionException) cause else this
+    if (e != null && e !is Exception) throw e
   }
 }

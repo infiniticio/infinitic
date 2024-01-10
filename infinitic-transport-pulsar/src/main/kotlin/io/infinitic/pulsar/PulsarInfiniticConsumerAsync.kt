@@ -86,6 +86,7 @@ class PulsarInfiniticConsumerAsync(
     if (consumingScope.isActive) {
       // delete consumingScope, all ongoing messages should be processed properly
       consumingScope.cancel()
+      
       runBlocking {
         try {
           withTimeout((shutdownGracePeriodInSeconds * 1000L).toLong()) {
@@ -311,7 +312,7 @@ class PulsarInfiniticConsumerAsync(
   ): CompletableFuture<Unit> {
     return with(consumer) {
       consumingScope.future {
-        
+
         val topic = resourceManager.getTopicName(name, topicDescription)
         // create topic if needed
         resourceManager.initTopicOnce(
