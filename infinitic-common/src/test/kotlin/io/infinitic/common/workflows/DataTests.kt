@@ -29,7 +29,6 @@ import io.infinitic.common.workflows.data.channels.ChannelName
 import io.infinitic.common.workflows.data.channels.ChannelType
 import io.infinitic.common.workflows.data.channels.SignalData
 import io.infinitic.common.workflows.data.channels.SignalId
-import io.infinitic.common.workflows.data.commands.CommandHash
 import io.infinitic.common.workflows.data.commands.CommandId
 import io.infinitic.common.workflows.data.commands.CommandSimpleName
 import io.infinitic.common.workflows.data.commands.DispatchNewWorkflowPastCommand
@@ -60,17 +59,6 @@ class DataTests :
           val m = WorkflowId(id)
           val json = Json.encodeToString(m)
           val m2 = Json.decodeFromString<WorkflowId>(json)
-
-          json shouldBe Json.encodeToString(id)
-          m2 shouldBe m
-        }
-
-        "CommandHash should be serialized as String and reversible in json" {
-          val id = TestFactory.random<String>()
-          val m = CommandHash(id)
-
-          val json = Json.encodeToString(m)
-          val m2 = Json.decodeFromString<CommandHash>(json)
 
           json shouldBe Json.encodeToString(id)
           m2 shouldBe m
