@@ -48,10 +48,10 @@ private val consumingScope = CoroutineScope(Dispatchers.IO)
 
 private val producingScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
-fun <T> consume(func: suspend () -> T): T =
+private fun <T> consume(func: suspend () -> T): T =
     consumingScope.future { func() }.join()
 
-fun <T> produce(func: suspend () -> T): T =
+private fun <T> produce(func: suspend () -> T): T =
     producingScope.future { func() }.join()
 
 /**
@@ -64,7 +64,7 @@ fun main() {
     produce {
       val r = Random.nextLong(1000)
       delay(r)
-      if (r > 990) throw OutOfMemoryError("dead")
+      // if (r > 990) throw OutOfMemoryError("dead")
       if (r > 900) throw RuntimeException("oops")
     }
   }
@@ -97,7 +97,7 @@ private suspend fun startConsumer(
   handler: (String) -> Unit
 ) = coroutineScope {
   val consumer = Consumer()
-  val concurrency = 3
+  val concurrency = 100
 
   // Channel is backpressure aware
   // we can use it to send messages to the executor coroutines
@@ -141,8 +141,8 @@ private class Consumer() {
 
   fun receiveAsync(): CompletableFuture<String> = otherScope.future {
     val r = Random.nextLong(1000)
-    if (r > 990) throw OutOfMemoryError("coming from receiveAsync")
-    if (r > 900) throw RuntimeException("coming from receiveAsync")
+    // if (r > 990) throw OutOfMemoryError("coming from receiveAsync")
+    //if (r > 900) throw RuntimeException("coming from receiveAsync")
     counter.incrementAndGet().toString()
   }
 }

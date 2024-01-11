@@ -141,8 +141,7 @@ internal class WorkflowDispatcherImpl(
                 command = command,
                 commandPosition = positionInMethod,
                 commandSimpleName = InlineTaskCommand.simpleName(),
-                commandStatus =
-                CommandStatus.Completed(
+                commandStatus = CommandStatus.Completed(
                     returnValue = ReturnValue.from(value),
                     completionWorkflowTaskIndex = workflowTaskIndex,
                 ),
@@ -444,8 +443,8 @@ internal class WorkflowDispatcherImpl(
     }
   }
 
-  private fun getPastCommandAtCurrentPosition(): PastCommand? =
-      workflowTaskParameters.workflowMethod.pastCommands.find { it.commandPosition == positionInMethod }
+  private fun getPastCommandAtCurrentPosition(): PastCommand? = workflowTaskParameters
+      .workflowMethod.pastCommands.find { it.commandPosition == positionInMethod }
 
   private fun throwCommandsChangedException(
     pastCommand: PastCommand?,

@@ -162,16 +162,12 @@ class InfiniticRegister(
       // explicit null => do nothing
       engine == null -> Unit
       // implicit null => register default tag engine
-      engine.isDefault ->
-        registerWorkflowEngine(
-            workflowName, concurrency, workerConfig.storage, workerConfig.cache,
-        )
+      engine.isDefault -> registerWorkflowEngine(
+          workflowName, concurrency, workerConfig.storage, workerConfig.cache,
+      )
       // explicit engine => register it
       else -> registerWorkflowEngine(
-          workflowName,
-          engine.concurrency!!,
-          engine.storage,
-          engine.cache,
+          workflowName, engine.concurrency!!, engine.storage, engine.cache,
       )
     }
 
@@ -179,13 +175,13 @@ class InfiniticRegister(
       // explicit null => do nothing
       tagEngine == null -> Unit
       // implicit null => register default tag engine
-      tagEngine.isDefault ->
-        registerWorkflowTag(workflowName, concurrency, workerConfig.storage, workerConfig.cache)
+      tagEngine.isDefault -> registerWorkflowTag(
+          workflowName, concurrency, workerConfig.storage, workerConfig.cache,
+      )
       // explicit engine => register it
-      else ->
-        registerWorkflowTag(
-            workflowName, tagEngine.concurrency!!, tagEngine.storage, tagEngine.cache,
-        )
+      else -> registerWorkflowTag(
+          workflowName, tagEngine.concurrency!!, tagEngine.storage, tagEngine.cache,
+      )
     }
   }
 
@@ -220,10 +216,9 @@ class InfiniticRegister(
           ": (concurrency: $concurrency, storage: ${s.type}, cache: ${c.type})"
     }
 
-    registry.workflowEngines[workflowName] =
-        RegisteredWorkflowEngine(
-            concurrency, BinaryWorkflowStateStorage(CachedKeyValueStorage(c.keyValue, s.keyValue)),
-        )
+    registry.workflowEngines[workflowName] = RegisteredWorkflowEngine(
+        concurrency, BinaryWorkflowStateStorage(CachedKeyValueStorage(c.keyValue, s.keyValue)),
+    )
   }
 
   private fun registerTaskTag(
@@ -239,14 +234,13 @@ class InfiniticRegister(
       "* task tag ".padEnd(25) + ": (concurrency: $concurrency, storage: ${s.type}, cache: ${c.type})"
     }
 
-    registry.serviceTags[serviceName] =
-        RegisteredServiceTag(
-            concurrency,
-            BinaryTaskTagStorage(
-                CachedKeyValueStorage(c.keyValue, s.keyValue),
-                CachedKeySetStorage(c.keySet, s.keySet),
-            ),
-        )
+    registry.serviceTags[serviceName] = RegisteredServiceTag(
+        concurrency,
+        BinaryTaskTagStorage(
+            CachedKeyValueStorage(c.keyValue, s.keyValue),
+            CachedKeySetStorage(c.keySet, s.keySet),
+        ),
+    )
   }
 
   private fun registerWorkflowTag(
@@ -263,13 +257,12 @@ class InfiniticRegister(
           ": (concurrency: $concurrency, storage: ${s.type}, cache: ${c.type})"
     }
 
-    registry.workflowTags[workflowName] =
-        RegisteredWorkflowTag(
-            concurrency,
-            BinaryWorkflowTagStorage(
-                CachedKeyValueStorage(c.keyValue, s.keyValue),
-                CachedKeySetStorage(c.keySet, s.keySet),
-            ),
-        )
+    registry.workflowTags[workflowName] = RegisteredWorkflowTag(
+        concurrency,
+        BinaryWorkflowTagStorage(
+            CachedKeyValueStorage(c.keyValue, s.keyValue),
+            CachedKeySetStorage(c.keySet, s.keySet),
+        ),
+    )
   }
 }

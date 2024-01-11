@@ -98,15 +98,13 @@ sealed class PastCommand {
   open fun isTerminated() = commandStatus.isTerminated()
 
   fun isSameThan(other: PastCommand, mode: WorkflowCheckMode): Boolean =
-      other.commandPosition == commandPosition &&
-          when (mode) {
-            WorkflowCheckMode.none -> true
-            WorkflowCheckMode.simple ->
-              other.command::class == command::class &&
-                  other.commandSimpleName == commandSimpleName
+      other.commandPosition == commandPosition && when (mode) {
+        WorkflowCheckMode.none -> true
+        WorkflowCheckMode.simple ->
+          (other.command::class == command::class && other.commandSimpleName == commandSimpleName)
 
-            WorkflowCheckMode.strict -> command.isSameThan(other.command)
-          }
+        WorkflowCheckMode.strict -> command.isSameThan(other.command)
+      }
 }
 
 @Serializable

@@ -46,13 +46,16 @@ class LoggedInfiniticProducer(
 ) : InfiniticProducer {
 
   /**
-   * The `producingScope` is a Coroutine Scope used for sending messages.
+   * The `producingScope` is a Coroutine Scope used for running task, engine, etc.
+   *
+   * Note: Using Dispatchers.IO instead of Dispatchers.Default creates a deadlock for high
+   * concurrency - see infinitic-transport-pulsar/src/test/kotlin/io/infinitic/pulsar/Test
    *
    * A SupervisorJob instance is used in the CoroutineScope to ensure that
-   * if an exception occurs during the process of sending a message,
+   * if an exception occurs during the processing,
    * the scope itself is not cancelled.
    */
-  private val producingScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+  private val producingScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 
   private val logger = KotlinLogging.logger(logName)
 
