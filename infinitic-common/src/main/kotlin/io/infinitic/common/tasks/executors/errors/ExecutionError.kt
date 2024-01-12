@@ -71,9 +71,12 @@ data class ExecutionError(
         )
   }
 
-  // removing stackTraceToString of the output to preserve logs
+  // we remove end of line for stackTraceToString of the output to preserve logs
   override fun toString(): String = this::class.java.simpleName + "(" +
-      listOf("name" to name, "message" to message, "cause" to cause).joinToString {
-        "${it.first}=${it.second}"
-      } + ")"
+      listOf(
+          "name" to name,
+          "message" to message,
+          "cause" to cause,
+          "stacktrace" to stackTraceToString.replace("\n", ""),
+      ).joinToString { "${it.first}=${it.second}" } + ")"
 }

@@ -22,17 +22,20 @@
  */
 package io.infinitic.common.utils
 
+import io.infinitic.common.data.MillisInstant
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.withContext
+import net.bytebuddy.utility.RandomString
+import kotlin.random.Random
 
 class IdGeneratorTests : StringSpec(
     {
       "Can not easily create collision" {
         val branches = 1000
-        val perBranch = 1000
+        val perBranch = 10000
         val lists: List<List<String>>
         withContext(Dispatchers.IO) {
           val futures = List(branches) {
@@ -45,7 +48,15 @@ class IdGeneratorTests : StringSpec(
         val list = lists.flatten()
         list.distinct().size shouldBe list.size
       }
+
+      "Can not easily create collision, even for manual creation" {
+        val now = MillisInstant.now()
+        val lists: List<String> = List(100000) {
+          val str = RandomString(Random.nextInt(10, 300)).nextString()
+          IdGenerator.from(now, str)
+        }
+        lists.distinct().size shouldBe lists.size
+      }
     },
 )
-
 

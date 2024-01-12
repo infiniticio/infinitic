@@ -57,8 +57,8 @@ import kotlinx.coroutines.launch
 
 class TaskEventHandler(producerAsync: InfiniticProducerAsync) {
 
-  private val logger = KotlinLogging.logger(javaClass.name)
-  val producer = LoggedInfiniticProducer(javaClass.name, producerAsync)
+  private val logger = KotlinLogging.logger(this::class.java.name)
+  val producer = LoggedInfiniticProducer(this::class.java.name, producerAsync)
   private val emitterName by lazy { EmitterName(producerAsync.name) }
 
   fun handle(msg: TaskEventMessage, publishTime: MillisInstant) = producer.run {
@@ -86,25 +86,25 @@ class TaskEventHandler(producerAsync: InfiniticProducerAsync) {
         }
       }
 
-  private suspend fun sendTaskCompleted(msg: TaskCompletedEvent, publishTime: MillisInstant) =
-      coroutineScope {
-        // if workflowTask
-        if (msg.isWorkflowTask()) {
-          launch { completeWorkflowTask(msg) }
-        }
-        // send to parent client
-        msg.getEventForClient(emitterName)?.let {
-          launch { producer.sendToClient(it) }
-        }
-        // send to parent workflow
-        msg.getEventForWorkflow(emitterName, publishTime)?.let {
-          launch { producer.sendToWorkflowEngine(it) }
-        }
-        // remove tags
-        msg.getEventsForTag(emitterName).forEach {
-          launch { producer.sendToTaskTag(it) }
-        }
+  private suspend fun sendTaskCompleted(msg: TaskCompletedEvent, publishTime: MillisInstant) {
+    coroutineScope {
+      // send to parent client
+      msg.getEventForClient(emitterName)?.let {
+        launch { producer.sendToClient(it) }
       }
+      // send to parent workflow
+      msg.getEventForWorkflow(emitterName, publishTime)?.let {
+        launch { producer.sendToWorkflowEngine(it) }
+      }
+      // remove tags
+      msg.getEventsForTag(emitterName).forEach {
+        launch { producer.sendToTaskTag(it) }
+      }
+    }
+    // if workflowTask, we dispatch the new commands ONCE the workflow task completion
+    // has been forwarded to the engine, to avoid a possible race condition.
+    if (msg.isWorkflowTask()) completeWorkflowTask(msg)
+  }
 
   private suspend fun completeWorkflowTask(msg: TaskCompletedEvent) = coroutineScope {
 
@@ -121,14 +121,14 @@ class TaskEventHandler(producerAsync: InfiniticProducerAsync) {
 
     result.newCommands.forEach {
       when (it) {
-        is DispatchTaskPastCommand ->
-          dispatchTaskCmd(currentWorkflow, it, workflowTaskInstant, producer)
-
         is DispatchNewWorkflowPastCommand ->
           dispatchNewWorkflowCmd(currentWorkflow, it, workflowTaskInstant, producer)
 
         is DispatchMethodOnRunningWorkflowPastCommand ->
           dispatchMethodOnRunningWorkflowCmd(currentWorkflow, it, workflowTaskInstant, producer)
+
+        is DispatchTaskPastCommand ->
+          dispatchTaskCmd(currentWorkflow, it, workflowTaskInstant, producer)
 
         is SendSignalPastCommand ->
           sendSignalCmd(currentWorkflow, it, workflowTaskInstant, producer)

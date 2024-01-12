@@ -25,52 +25,59 @@ package io.infinitic.pulsar
 
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.delay
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.future.future
 import kotlinx.coroutines.isActive
+import kotlinx.coroutines.job
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withContext
 import java.time.Duration
 import java.time.Instant
 import java.util.concurrent.atomic.AtomicInteger
+import kotlin.random.Random
 
 private val consumingScope = CoroutineScope(Dispatchers.IO)
-private val producingScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 private var counter = 0
 private var atomicCounter = AtomicInteger(0)
 
-fun main(): Unit {
+fun main() {
+  Runtime.getRuntime().addShutdownHook(
+      Thread {
+        println("\nInterrupted!\n")
+        runBlocking {
+          consumingScope.cancel()
+          // wait for all ongoing messages to be processed
+          consumingScope.coroutineContext.job.children.forEach { it.join() }
+        }
+        println("\nExiting\n")
+      },
+  )
+
   val start = Instant.now()
   try {
     startConsumer(concurrency = 500)
   } catch (e: RuntimeException) {
-    println(e)
+    println("Stopped with $e")
   }
   val duration = Duration.between(start, Instant.now())
   println("Duration = ${duration.toMillis()}ms")
 }
 
-private fun processMessage(
-  pulsarMessage: String,
-  workerIndex: Int
-) = producingScope.future {
-  println("Worker $workerIndex: start($pulsarMessage)")
-  delay(100)
-  println("Worker $workerIndex: end  ($pulsarMessage)")
-  atomicCounter.incrementAndGet().let {
-    if (it == 1000) throw RuntimeException()
-  }
-}.join()
-
 private fun startConsumer(concurrency: Int) = consumingScope.future {
   val channel = Channel<String>()
 
   // start processing coroutines
+
   repeat(concurrency) {
     launch {
       for (message in channel) {
-        processMessage(message, it)
+        withContext(NonCancellable) {
+          processMessage(message, it)
+        }
       }
     }
   }
@@ -78,5 +85,38 @@ private fun startConsumer(concurrency: Int) = consumingScope.future {
   while (isActive) {
     counter++
     channel.send("$counter")
+    randomException("error while receiving message")
   }
 }.join()
+
+private suspend fun processMessage(
+  pulsarMessage: String,
+  workerIndex: Int
+) = coroutineScope {
+  sendMessage("Worker $workerIndex: start($pulsarMessage)")
+
+  // emulate java execution
+  withContext(Dispatchers.Default) {
+    Thread.sleep(10)
+    randomException("error while processing message")
+    atomicCounter.incrementAndGet().let {
+      sendMessage("Worker $workerIndex: proce($pulsarMessage - $it)")
+      if (it == 10000) {
+        throw RuntimeException()
+        // we check here that all ongoing messages are processed correctly before leaving
+      }
+    }
+  }
+
+  sendMessage("Worker $workerIndex: end  ($pulsarMessage)")
+}
+
+private fun CoroutineScope.sendMessage(txt: String) = launch {
+  println(txt)
+  randomException("error while sending message")
+}
+
+private fun randomException(txt: String) {
+  val r = Random.nextLong(1000)
+  if (r > 950) throw RuntimeException(txt)
+}
