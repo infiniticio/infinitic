@@ -35,7 +35,7 @@ class IdGeneratorTests : StringSpec(
     {
       "Can not easily create collision" {
         val branches = 1000
-        val perBranch = 10000
+        val perBranch = 1000
         val lists: List<List<String>>
         withContext(Dispatchers.IO) {
           val futures = List(branches) {

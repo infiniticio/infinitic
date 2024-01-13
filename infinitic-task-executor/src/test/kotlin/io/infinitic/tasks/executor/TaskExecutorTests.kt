@@ -192,7 +192,7 @@ class TaskExecutorTests :
           taskExecutorSlot.isCaptured shouldBe false
           taskEventSlot.size shouldBe 1
           taskEventSlot[0] shouldBe getTaskStarted(msg, taskEventSlot[0].messageId!!)
-          throwable.message shouldBe "java.lang.Throwable: test throwable"
+          throwable.message shouldBe "test throwable"
 
           // Note that the Throwable sent (and not caught) during the test has the side effect
           // to cancel the coroutineScope of producerAsync, that's why we recreate it after the test

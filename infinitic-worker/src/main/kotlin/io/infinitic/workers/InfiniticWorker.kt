@@ -27,6 +27,7 @@ import io.infinitic.autoclose.addAutoCloseResource
 import io.infinitic.autoclose.autoClose
 import io.infinitic.clients.InfiniticClient
 import io.infinitic.clients.InfiniticClientInterface
+import io.infinitic.common.messages.Message
 import io.infinitic.common.transport.InfiniticConsumerAsync
 import io.infinitic.common.transport.InfiniticProducerAsync
 import io.infinitic.common.transport.LoggedInfiniticProducer
@@ -103,6 +104,10 @@ class InfiniticWorker(
   fun startAsync(): CompletableFuture<Unit> {
     val futures = mutableListOf<CompletableFuture<Unit>>()
 
+    val logMessageSentToDLQ = { message: Message?, e: Exception ->
+      logger.error(e) { "Sending message to DLQ ${message ?: "(Not Deserialized)"}" }
+    }
+
     workerRegistry.workflowTags.forEach {
       // WORKFLOW-TAG
       val workflowTagEngine = WorkflowTagEngine(it.value.storage, producerAsync)
@@ -110,7 +115,7 @@ class InfiniticWorker(
       futures.addIfNotDone(
           consumerAsync.startWorkflowTagConsumerAsync(
               handler = workflowTagEngine::handle,
-              beforeDlq = null,
+              beforeDlq = logMessageSentToDLQ,
               workflowName = it.key,
               concurrency = it.value.concurrency,
           ),
@@ -124,7 +129,7 @@ class InfiniticWorker(
       futures.addIfNotDone(
           consumerAsync.startWorkflowCmdConsumerAsync(
               handler = workflowCmdHandler::handle,
-              beforeDlq = null,
+              beforeDlq = logMessageSentToDLQ,
               workflowName = it.key,
               concurrency = it.value.concurrency,
           ),
@@ -136,7 +141,7 @@ class InfiniticWorker(
       futures.addIfNotDone(
           consumerAsync.startWorkflowEngineConsumerAsync(
               handler = workflowEngine::handle,
-              beforeDlq = null,
+              beforeDlq = logMessageSentToDLQ,
               workflowName = it.key,
               concurrency = it.value.concurrency,
           ),
@@ -145,8 +150,8 @@ class InfiniticWorker(
       // WORKFLOW-DELAY
       futures.addIfNotDone(
           consumerAsync.startDelayedWorkflowEngineConsumerAsync(
-              handler = { msg, _ -> delayedWorkflowProducer.run { sendToWorkflowEngine(msg) } },
-              beforeDlq = null,
+              handler = { msg, _ -> delayedWorkflowProducer.sendToWorkflowEngine(msg) },
+              beforeDlq = logMessageSentToDLQ,
               workflowName = it.key,
               concurrency = it.value.concurrency,
           ),
@@ -158,7 +163,7 @@ class InfiniticWorker(
       futures.addIfNotDone(
           consumerAsync.startWorkflowEventsConsumerAsync(
               handler = workflowEventHandler::handle,
-              beforeDlq = null,
+              beforeDlq = logMessageSentToDLQ,
               workflowName = it.key,
               concurrency = it.value.concurrency,
           ),
@@ -173,8 +178,11 @@ class InfiniticWorker(
           consumerAsync.startWorkflowTaskConsumerAsync(
               handler = workflowTaskExecutor::handle,
               beforeDlq = { message, cause ->
-                workflowTaskExecutor.run {
-                  sendTaskFailed(message, cause, Task.meta, sendingDlqMessage)
+                logMessageSentToDLQ(message, cause)
+                message?.let {
+                  workflowTaskExecutor.run {
+                    sendTaskFailed(it, cause, Task.meta, sendingDlqMessage)
+                  }
                 }
               },
               workflowName = it.key,
@@ -185,8 +193,8 @@ class InfiniticWorker(
       // WORKFLOW-TASK_EXECUTOR-DELAY
       futures.addIfNotDone(
           consumerAsync.startDelayedWorkflowTaskConsumerAsync(
-              handler = { msg, _ -> delayedTaskProducer.run { sendToTaskExecutor(msg) } },
-              beforeDlq = null,
+              handler = { msg, _ -> delayedTaskProducer.sendToTaskExecutor(msg) },
+              beforeDlq = logMessageSentToDLQ,
               workflowName = it.key,
               concurrency = it.value.concurrency,
           ),
@@ -198,7 +206,7 @@ class InfiniticWorker(
       futures.addIfNotDone(
           consumerAsync.startWorkflowTaskEventsConsumerAsync(
               handler = workflowTaskEventHandler::handle,
-              beforeDlq = null,
+              beforeDlq = logMessageSentToDLQ,
               workflowName = it.key,
               concurrency = it.value.concurrency,
           ),
@@ -212,7 +220,7 @@ class InfiniticWorker(
       futures.addIfNotDone(
           consumerAsync.startTaskTagConsumerAsync(
               handler = tagEngine::handle,
-              beforeDlq = null,
+              beforeDlq = logMessageSentToDLQ,
               serviceName = it.key,
               concurrency = it.value.concurrency,
           ),
@@ -227,7 +235,10 @@ class InfiniticWorker(
           consumerAsync.startTaskExecutorConsumerAsync(
               handler = taskExecutor::handle,
               beforeDlq = { message, cause ->
-                taskExecutor.run { sendTaskFailed(message, cause, Task.meta, sendingDlqMessage) }
+                logMessageSentToDLQ(message, cause)
+                message?.let {
+                  taskExecutor.run { sendTaskFailed(it, cause, Task.meta, sendingDlqMessage) }
+                }
               },
               serviceName = it.key,
               concurrency = it.value.concurrency,
@@ -237,8 +248,8 @@ class InfiniticWorker(
       // TASK-EXECUTOR-DELAY
       futures.addIfNotDone(
           consumerAsync.startDelayedTaskExecutorConsumerAsync(
-              handler = { msg, _ -> delayedTaskProducer.run { sendToTaskExecutor(msg) } },
-              beforeDlq = null,
+              handler = { msg, _ -> delayedTaskProducer.sendToTaskExecutor(msg) },
+              beforeDlq = logMessageSentToDLQ,
               serviceName = it.key,
               concurrency = it.value.concurrency,
           ),
@@ -250,7 +261,7 @@ class InfiniticWorker(
       futures.addIfNotDone(
           consumerAsync.startTaskEventsConsumerAsync(
               handler = taskEventHandler::handle,
-              beforeDlq = null,
+              beforeDlq = logMessageSentToDLQ,
               serviceName = it.key,
               concurrency = it.value.concurrency,
           ),

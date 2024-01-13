@@ -42,6 +42,7 @@ import io.infinitic.common.data.MillisInstant
 import io.infinitic.common.data.methods.MethodName
 import io.infinitic.common.emitters.EmitterName
 import io.infinitic.common.exceptions.thisShouldNotHappen
+import io.infinitic.common.messages.Message
 import io.infinitic.common.proxies.ChannelProxyHandler
 import io.infinitic.common.proxies.ExistingServiceProxyHandler
 import io.infinitic.common.proxies.ExistingWorkflowProxyHandler
@@ -127,7 +128,7 @@ internal class ClientDispatcher(
 
   // a message received by the client is sent to responseFlow
   @Suppress("UNUSED_PARAMETER")
-  internal fun handle(message: ClientMessage, publishTime: MillisInstant) = producer.run {
+  internal suspend fun handle(message: ClientMessage, publishTime: MillisInstant) {
     logger.debug { "Client ${producer.name}: Receiving $message" }
     responseFlow.emit(message)
   }
@@ -732,14 +733,24 @@ internal class ClientDispatcher(
         )
       }
 
+  private val logMessageSentToDLQ = { message: Message?, e: Exception ->
+    logger.error(e) { "Unable to process message ${message ?: "(Not Deserialized)"}" }
+  }
+
   private fun waitForAsync(
     timeout: Long = Long.MAX_VALUE,
     predicate: suspend (ClientMessage) -> Boolean
   ): CompletableFuture<ClientMessage?> {
+
+
     // lazily starts client consumer if not already started
     synchronized(this) {
       if (!isClientConsumerInitialized) {
-        consumerAsync.startClientConsumerAsync(::handle, null, ClientName.from(emitterName))
+        consumerAsync.startClientConsumerAsync(
+            ::handle,
+            logMessageSentToDLQ,
+            ClientName.from(emitterName),
+        )
         isClientConsumerInitialized = true
       }
     }

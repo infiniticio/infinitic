@@ -38,20 +38,6 @@ interface InfiniticProducer {
   var name: String
 
   /**
-   * This method is used to wait for all sending to be done.
-   * This is typically done when closing
-   */
-  fun join()
-
-  /**
-   * Runs a suspend function into the producer context and returns the result.
-   *
-   * @param func the suspend function to run
-   * @return the result of the suspend function
-   */
-  fun <T> run(func: suspend InfiniticProducer.() -> T): T
-
-  /**
    * Synchronously send a message to a client
    *
    * @param message the message to send

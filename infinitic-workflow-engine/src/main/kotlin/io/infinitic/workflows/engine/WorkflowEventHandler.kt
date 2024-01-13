@@ -46,7 +46,7 @@ class WorkflowEventHandler(producerAsync: InfiniticProducerAsync) {
 
   val emitterName by lazy { EmitterName(producer.name) }
 
-  fun handle(msg: WorkflowEventMessage, publishTime: MillisInstant) = producer.run {
+  suspend fun handle(msg: WorkflowEventMessage, publishTime: MillisInstant) {
     msg.logDebug { "received $msg" }
 
     when (msg) {

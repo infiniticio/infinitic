@@ -57,7 +57,7 @@ class TaskTagEngine(
 
 
   @Suppress("UNUSED_PARAMETER")
-  fun handle(message: TaskTagMessage, publishTime: MillisInstant): Unit = producer.run {
+  suspend fun handle(message: TaskTagMessage, publishTime: MillisInstant) {
     logger.debug { "receiving $message" }
 
     process(message)

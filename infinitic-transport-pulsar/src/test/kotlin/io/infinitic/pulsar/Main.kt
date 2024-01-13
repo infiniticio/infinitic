@@ -26,78 +26,114 @@ package io.infinitic.pulsar
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.NonCancellable
-import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.future.await
 import kotlinx.coroutines.future.future
 import kotlinx.coroutines.isActive
+import kotlinx.coroutines.job
 import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.yield
+import java.time.Duration
+import java.time.Instant
 import java.util.concurrent.CancellationException
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CompletionException
 import java.util.concurrent.atomic.AtomicInteger
 import kotlin.random.Random
 
-private val otherScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
-
 private val consumingScope = CoroutineScope(Dispatchers.IO)
 
-private val producingScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+private fun addShutdownHook() {
+  Runtime.getRuntime().addShutdownHook(
+      Thread {
+        println("\nInterrupted!\n")
+        cancel()
+      },
+  )
+}
 
-private fun <T> consume(func: suspend () -> T): T =
-    consumingScope.future { func() }.join()
-
-private fun <T> produce(func: suspend () -> T): T =
-    producingScope.future { func() }.join()
+fun cancel() = runBlocking {
+  if (consumingScope.isActive) {
+    consumingScope.cancel()
+    // wait for all ongoing messages to be processed
+    consumingScope.coroutineContext.job.children.forEach { it.join() }
+    println("\nExiting after completion of ongoing messages\n")
+  } else {
+    println("\nExiting as canceled\n")
+  }
+}
 
 /**
  * This code checks:
- * - that a ERROR thrown kills the worker
- * - that an Exception thrown is well handled, and does not kill the producingScope
+ * - that an Exception never stop the worker, wherever it is thrown
+ * - that an Error kills the worker, but the worker still tries to process the ongoing messages
  */
 fun main() {
-  val handler = { _: String ->
-    produce {
-      val r = Random.nextLong(1000)
-      delay(r)
-      // if (r > 990) throw OutOfMemoryError("dead")
-      if (r > 900) throw RuntimeException("oops")
-    }
-  }
+  addShutdownHook()
 
-  consume { startConsumer(handler) }
+  val start = Instant.now()
+
+  runConsumer(handler, 500)
+
+  println("Duration = ${Duration.between(start, Instant.now()).toMillis()} ms")
 }
 
-private fun Throwable.rethrowError() {
-  val e = if (this is CompletionException) cause else this
-  if (e != null && e !is Exception) throw e
-}
-
-private fun processPulsarMessage(
-  handler: (String) -> Unit,
+private suspend fun processPulsarMessage(
+  handler: suspend (String) -> Unit,
   pulsarMessage: String,
   workerIndex: Int
 ) {
-  println("Worker $workerIndex: start($pulsarMessage)")
+  val pre = "Worker ${workerIndex.format()} - message ${pulsarMessage.padEnd(5)} - "
   try {
-    handler(pulsarMessage)
-  } catch (e: Throwable) {
-    println("Worker $workerIndex: Exception ${e.cause} when processing $pulsarMessage")
-    e.rethrowError()
-    return
+    try {
+      println("$pre Deserializing")
+      randomThrowable("")
+    } catch (e: Exception) {
+      println("$pre Deserializing - $e ${e.stack()}")
+      negativeAcknowledging("$pre Deserializing")
+      return
+    }
+
+    try {
+      println("$pre Processing")
+      handler("$pre Processing")
+    } catch (e: Exception) {
+      println("$pre Processing - $e ${e.stack()}")
+      negativeAcknowledging("$pre Processing")
+      return
+    }
+
+    try {
+      acknowledging("$pre Acknowledging")
+    } catch (e: Exception) {
+      println("$pre $e ${e.stack()}")
+      negativeAcknowledging("$pre Processing")
+      return
+    }
+  } catch (t: Throwable) {
+    t.rethrowError("$pre in processPulsarMessage")
   }
-  println("Worker $workerIndex: end  ($pulsarMessage)")
 }
 
-private suspend fun startConsumer(
-  handler: (String) -> Unit
-) = coroutineScope {
+private fun runConsumer(
+  handler: suspend (String) -> Unit,
+  concurrency: Int
+) = try {
+  runConsumerAsync(handler, concurrency).join()
+} catch (e: CancellationException) {
+  // no nothing
+}
+
+private fun runConsumerAsync(
+  handler: suspend (String) -> Unit,
+  concurrency: Int
+): CompletableFuture<Unit> = consumingScope.future {
   val consumer = Consumer()
-  val concurrency = 100
 
   // Channel is backpressure aware
   // we can use it to send messages to the executor coroutines
@@ -108,12 +144,14 @@ private suspend fun startConsumer(
     launch {
       try {
         for (pulsarMessage in channel) {
-          processPulsarMessage(handler, pulsarMessage, it)
+          withContext(NonCancellable) {
+            processPulsarMessage(handler, pulsarMessage, it)
+          }
         }
       } catch (e: CancellationException) {
-        // exiting
+        // continue
       }
-      println("worker $it ended")
+      println("worker ${it.format()} ended")
     }
   }
   // start message receiver
@@ -123,15 +161,18 @@ private suspend fun startConsumer(
       val pulsarMessage = consumer.receiveAsync().await()
       channel.send(pulsarMessage)
     } catch (e: CancellationException) {
+      println("Exciting receiving loop after CancellationException")
       // if coroutine is canceled, we just exit the while loop
       break
-    } catch (e: Exception) {
+    } catch (e: Throwable) {
+      e.rethrowError("in receiveAsync")
       // for other exception, we continue
-      println("Exception $e in receiveAsync")
       continue
     }
   }
-  println("Closing consumer after cancellation")
+  // Now that the coroutine is cancelled,
+  // we wait for the completion of all ongoing processPulsarMessage
+  println("After cancellation, waiting completion of all ongoing messages")
   withContext(NonCancellable) { jobs.joinAll() }
   println("Closed consumer after cancellation")
 }
@@ -139,11 +180,84 @@ private suspend fun startConsumer(
 private class Consumer() {
   val counter = AtomicInteger(0)
 
-  fun receiveAsync(): CompletableFuture<String> = otherScope.future {
-    val r = Random.nextLong(1000)
-    // if (r > 990) throw OutOfMemoryError("coming from receiveAsync")
-    //if (r > 900) throw RuntimeException("coming from receiveAsync")
-    counter.incrementAndGet().toString()
+  fun receiveAsync(): CompletableFuture<String> = CompletableFuture.supplyAsync {
+    counter.incrementAndGet().let {
+      if (it == 1000) {
+        println("\nWORK TERMINATED\n")
+        consumingScope.cancel()
+      } else {
+        println("Receiving $it")
+        randomThrowable("$it")
+      }
+      it.toString()
+    }
   }
 }
 
+private suspend fun acknowledging(txt: String) {
+  randomThrowable("while acknowledging $txt")
+  println(txt)
+  yield()
+}
+
+private suspend fun negativeAcknowledging(txt: String) {
+  randomError("", 1000)
+  // no exception never thrown from here
+  println("$txt - negative acknowledging")
+  yield()
+}
+
+
+private suspend fun sendMessage(txt: String) {
+  randomThrowable("while sending")
+  println(txt)
+  yield()
+}
+
+private fun randomThrowable(
+  txt: String,
+  exceptionThreshold: Int = 990,
+  errorThreshold: Int = 1000
+) {
+  randomException(txt, exceptionThreshold)
+  randomError(txt, errorThreshold)
+}
+
+private fun randomException(txt: String, threshold: Int = 900) {
+  if (Random.nextLong(1000) > threshold) throw RuntimeException(txt)
+}
+
+private fun randomError(txt: String, threshold: Int = 950) {
+  if (Random.nextLong(1000) > threshold) throw OutOfMemoryError(txt)
+}
+
+val handler: suspend (String) -> Unit = { str: String ->
+  coroutineScope {
+    launch { sendMessage("$str - Handler START") }
+    // emulate user-provided java execution
+    //withContext(Dispatchers.Default) {
+    execute()
+    //}
+    launch { sendMessage("$str - Handler END") }
+  }
+}
+
+private fun execute() {
+  Thread.sleep(Random.nextLong(100))
+  randomThrowable("in execute")
+}
+
+private fun Throwable.rethrowError(txt: String) {
+  val e = if (this is CompletionException) (cause ?: this) else this
+  when (e) {
+    is Exception -> println("$txt - Exception $e ${e.stack()}")
+    else -> {
+      println("$txt - Error $e ${e.stack()}")
+      throw e
+    }
+  }
+}
+
+private fun Int.format() = String.format("%03d", this)
+
+private fun Throwable.stack() = "\n" + stackTraceToString()

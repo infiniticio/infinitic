@@ -72,11 +72,8 @@ class TaskExecutor(
   private var withTimeout: WithTimeout? = null
   private val emitterName by lazy { EmitterName(producerAsync.name) }
 
-  // this is used to use sendTaskFailed with the producer context, from Infinitic worker
-  fun <T> run(func: suspend TaskExecutor.() -> T): T = producer.run { this@TaskExecutor.func() }
-
   @Suppress("UNUSED_PARAMETER")
-  fun handle(msg: TaskExecutorMessage, publishTime: MillisInstant) = producer.run {
+  suspend fun handle(msg: TaskExecutorMessage, publishTime: MillisInstant) {
     when (msg) {
       is ExecuteTask -> {
         msg.logDebug { "received $msg" }

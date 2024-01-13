@@ -32,13 +32,7 @@ import io.infinitic.common.tasks.tags.messages.TaskTagMessage
 import io.infinitic.common.workflows.engine.events.WorkflowEventMessage
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
 import io.infinitic.common.workflows.tags.messages.WorkflowTagMessage
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.future.await
-import kotlinx.coroutines.future.future
-import kotlinx.coroutines.job
-import kotlinx.coroutines.runBlocking
 
 class LoggedInfiniticProducer(
   logName: String,
@@ -55,7 +49,6 @@ class LoggedInfiniticProducer(
    * if an exception occurs during the processing,
    * the scope itself is not cancelled.
    */
-  private val producingScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 
   private val logger = KotlinLogging.logger(logName)
 
@@ -66,26 +59,6 @@ class LoggedInfiniticProducer(
     set(value) {
       producerAsync.name = value
     }
-
-  /**
-   * Waits for all messages to be sent.
-   *
-   * This method blocks until all the messages sent by the `InfiniticProducer` have been processed.
-   */
-  override fun join() = runBlocking {
-    producingScope.coroutineContext.job.children.forEach { it.join() }
-  }
-
-  /**
-   * Runs a suspend function within the scope of the InfiniticProducer and returns the result.
-   *
-   * @param func the suspend function to run
-   * @return the result of the suspend function
-   *
-   * @param T the type of the result
-   */
-  override fun <T> run(func: suspend InfiniticProducer.() -> T): T =
-      producingScope.future { func() }.join()
 
   override suspend fun sendToClient(message: ClientMessage) {
     logDebug(message)

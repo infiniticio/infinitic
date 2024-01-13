@@ -164,7 +164,7 @@ class InfiniticClient(
   }
 
   @TestOnly
-  internal fun handle(message: ClientMessage, publishTime: MillisInstant) =
+  internal suspend fun handle(message: ClientMessage, publishTime: MillisInstant) =
       dispatcher.handle(message, publishTime)
 
   private fun getProxyHandler(stub: Any): ProxyHandler<*> {

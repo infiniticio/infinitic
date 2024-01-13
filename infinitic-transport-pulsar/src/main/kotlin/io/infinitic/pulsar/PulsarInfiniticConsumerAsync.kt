@@ -51,14 +51,8 @@ import io.infinitic.pulsar.resources.ResourceManager
 import io.infinitic.pulsar.resources.ServiceTopicsDescription
 import io.infinitic.pulsar.resources.TopicDescription
 import io.infinitic.pulsar.resources.WorkflowTopicsDescription
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.TimeoutCancellationException
-import kotlinx.coroutines.cancel
 import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.future.future
-import kotlinx.coroutines.isActive
-import kotlinx.coroutines.job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
@@ -75,26 +69,21 @@ class PulsarInfiniticConsumerAsync(
 
   private val logger by lazy { KotlinLogging.logger(logName ?: this::class.java.name) }
 
-  /** Coroutine scope used to receive messages */
-  private val consumingScope = CoroutineScope(Dispatchers.IO)
-
   private lateinit var clientName: String
 
   override fun close() {
     // we test if consumingScope is active, just in case
     // the user tries to manually close an already closed resource
-    if (consumingScope.isActive) {
-      // delete consumingScope, all ongoing messages should be processed properly
-      consumingScope.cancel()
-      
+    if (consumer.isActive) {
       runBlocking {
         try {
           withTimeout((shutdownGracePeriodInSeconds * 1000L).toLong()) {
             coroutineScope {
+              consumer.cancel()
               launch { deleteClientTopic() }
               launch {
                 logger.info { "Processing ongoing messages..." }
-                consumingScope.coroutineContext.job.children.forEach { it.join() }
+                consumer.join()
                 logger.info { "All ongoing messages have been processed." }
               }
             }
@@ -123,8 +112,8 @@ class PulsarInfiniticConsumerAsync(
 
   // Start consumers of messages to client
   override fun startClientConsumerAsync(
-    handler: (ClientMessage, MillisInstant) -> Unit,
-    beforeDlq: ((ClientMessage, Exception) -> Unit)?,
+    handler: suspend (ClientMessage, MillisInstant) -> Unit,
+    beforeDlq: suspend (ClientMessage?, Exception) -> Unit,
     clientName: ClientName
   ): CompletableFuture<Unit> = startAsync(
       handler = handler,
@@ -137,8 +126,8 @@ class PulsarInfiniticConsumerAsync(
 
   // Start consumers of messages to workflow tag
   override fun startWorkflowTagConsumerAsync(
-    handler: (WorkflowTagMessage, MillisInstant) -> Unit,
-    beforeDlq: ((WorkflowTagMessage, Exception) -> Unit)?,
+    handler: suspend (WorkflowTagMessage, MillisInstant) -> Unit,
+    beforeDlq: suspend (WorkflowTagMessage?, Exception) -> Unit,
     workflowName: WorkflowName,
     concurrency: Int
   ) = startAsync(
@@ -151,8 +140,8 @@ class PulsarInfiniticConsumerAsync(
   )
 
   override fun startWorkflowCmdConsumerAsync(
-    handler: (WorkflowEngineMessage, MillisInstant) -> Unit,
-    beforeDlq: ((WorkflowEngineMessage, Exception) -> Unit)?,
+    handler: suspend (WorkflowEngineMessage, MillisInstant) -> Unit,
+    beforeDlq: suspend (WorkflowEngineMessage?, Exception) -> Unit,
     workflowName: WorkflowName,
     concurrency: Int
   ) = startAsync(
@@ -166,8 +155,8 @@ class PulsarInfiniticConsumerAsync(
 
   // Start consumers of messages to workflow engine
   override fun startWorkflowEngineConsumerAsync(
-    handler: (WorkflowEngineMessage, MillisInstant) -> Unit,
-    beforeDlq: ((WorkflowEngineMessage, Exception) -> Unit)?,
+    handler: suspend (WorkflowEngineMessage, MillisInstant) -> Unit,
+    beforeDlq: suspend (WorkflowEngineMessage?, Exception) -> Unit,
     workflowName: WorkflowName,
     concurrency: Int
   ) = startAsync(
@@ -181,8 +170,8 @@ class PulsarInfiniticConsumerAsync(
 
   // Start consumers of delayed messages to workflow engine
   override fun startDelayedWorkflowEngineConsumerAsync(
-    handler: (WorkflowEngineMessage, MillisInstant) -> Unit,
-    beforeDlq: ((WorkflowEngineMessage, Exception) -> Unit)?,
+    handler: suspend (WorkflowEngineMessage, MillisInstant) -> Unit,
+    beforeDlq: suspend (WorkflowEngineMessage?, Exception) -> Unit,
     workflowName: WorkflowName,
     concurrency: Int
   ) = startAsync(
@@ -195,8 +184,8 @@ class PulsarInfiniticConsumerAsync(
   )
 
   override fun startWorkflowEventsConsumerAsync(
-    handler: (WorkflowEventMessage, MillisInstant) -> Unit,
-    beforeDlq: ((WorkflowEventMessage, Exception) -> Unit)?,
+    handler: suspend (WorkflowEventMessage, MillisInstant) -> Unit,
+    beforeDlq: suspend (WorkflowEventMessage?, Exception) -> Unit,
     workflowName: WorkflowName,
     concurrency: Int
   ) = startAsync(
@@ -210,8 +199,8 @@ class PulsarInfiniticConsumerAsync(
 
   // Start consumers of messages to task tags
   override fun startTaskTagConsumerAsync(
-    handler: (TaskTagMessage, MillisInstant) -> Unit,
-    beforeDlq: ((TaskTagMessage, Exception) -> Unit)?,
+    handler: suspend (TaskTagMessage, MillisInstant) -> Unit,
+    beforeDlq: suspend (TaskTagMessage?, Exception) -> Unit,
     serviceName: ServiceName,
     concurrency: Int
   ) = startAsync(
@@ -225,8 +214,8 @@ class PulsarInfiniticConsumerAsync(
 
   // Start consumers of messages to task executor
   override fun startTaskExecutorConsumerAsync(
-    handler: (TaskExecutorMessage, MillisInstant) -> Unit,
-    beforeDlq: ((TaskExecutorMessage, Exception) -> Unit)?,
+    handler: suspend (TaskExecutorMessage, MillisInstant) -> Unit,
+    beforeDlq: suspend (TaskExecutorMessage?, Exception) -> Unit,
     serviceName: ServiceName,
     concurrency: Int
   ) = startAsync(
@@ -239,8 +228,8 @@ class PulsarInfiniticConsumerAsync(
   )
 
   override fun startTaskEventsConsumerAsync(
-    handler: (TaskEventMessage, MillisInstant) -> Unit,
-    beforeDlq: ((TaskEventMessage, Exception) -> Unit)?,
+    handler: suspend (TaskEventMessage, MillisInstant) -> Unit,
+    beforeDlq: suspend (TaskEventMessage?, Exception) -> Unit,
     serviceName: ServiceName,
     concurrency: Int
   ) = startAsync(
@@ -253,8 +242,8 @@ class PulsarInfiniticConsumerAsync(
   )
 
   override fun startDelayedTaskExecutorConsumerAsync(
-    handler: (TaskExecutorMessage, MillisInstant) -> Unit,
-    beforeDlq: ((TaskExecutorMessage, Exception) -> Unit)?,
+    handler: suspend (TaskExecutorMessage, MillisInstant) -> Unit,
+    beforeDlq: suspend (TaskExecutorMessage?, Exception) -> Unit,
     serviceName: ServiceName,
     concurrency: Int
   ): CompletableFuture<Unit> {
@@ -264,8 +253,8 @@ class PulsarInfiniticConsumerAsync(
 
   // Start consumers of messages to workflow task executor
   override fun startWorkflowTaskConsumerAsync(
-    handler: (TaskExecutorMessage, MillisInstant) -> Unit,
-    beforeDlq: ((TaskExecutorMessage, Exception) -> Unit)?,
+    handler: suspend (TaskExecutorMessage, MillisInstant) -> Unit,
+    beforeDlq: suspend (TaskExecutorMessage?, Exception) -> Unit,
     workflowName: WorkflowName,
     concurrency: Int
   ) = startAsync(
@@ -278,8 +267,8 @@ class PulsarInfiniticConsumerAsync(
   )
 
   override fun startWorkflowTaskEventsConsumerAsync(
-    handler: (TaskEventMessage, MillisInstant) -> Unit,
-    beforeDlq: ((TaskEventMessage, Exception) -> Unit)?,
+    handler: suspend (TaskEventMessage, MillisInstant) -> Unit,
+    beforeDlq: suspend (TaskEventMessage?, Exception) -> Unit,
     workflowName: WorkflowName,
     concurrency: Int
   ) = startAsync(
@@ -292,8 +281,8 @@ class PulsarInfiniticConsumerAsync(
   )
 
   override fun startDelayedWorkflowTaskConsumerAsync(
-    handler: (TaskExecutorMessage, MillisInstant) -> Unit,
-    beforeDlq: ((TaskExecutorMessage, Exception) -> Unit)?,
+    handler: suspend (TaskExecutorMessage, MillisInstant) -> Unit,
+    beforeDlq: suspend (TaskExecutorMessage?, Exception) -> Unit,
     workflowName: WorkflowName,
     concurrency: Int
   ): CompletableFuture<Unit> {
@@ -303,45 +292,42 @@ class PulsarInfiniticConsumerAsync(
 
   // Start a consumer on a topic, with concurrent executors
   private fun <T : Message, S : Envelope<out T>> startAsync(
-    handler: (T, MillisInstant) -> Unit,
-    beforeDlq: ((T, Exception) -> Unit)?,
+    handler: suspend (T, MillisInstant) -> Unit,
+    beforeDlq: suspend (T?, Exception) -> Unit,
     schemaClass: KClass<S>,
     topicDescription: TopicDescription,
     concurrency: Int,
     name: String
   ): CompletableFuture<Unit> {
-    return with(consumer) {
-      consumingScope.future {
 
-        val topic = resourceManager.getTopicName(name, topicDescription)
-        // create topic if needed
-        resourceManager.initTopicOnce(
-            topic = topic,
-            isPartitioned = topicDescription.isPartitioned,
-            isDelayed = topicDescription.isDelayed,
-        )
+    val topic = resourceManager.getTopicName(name, topicDescription)
+    // create topic if needed
+    resourceManager.initTopicOnce(
+        topic = topic,
+        isPartitioned = topicDescription.isPartitioned,
+        isDelayed = topicDescription.isDelayed,
+    )
 
-        val topicDlq = resourceManager.getDlqTopicName(name, topicDescription)
-        // create DLQ topic if needed
-        resourceManager.initDlqTopicOnce(
-            topic = topicDlq,
-            isPartitioned = topicDescription.isPartitioned,
-            isDelayed = topicDescription.isDelayed,
-        )
+    val topicDlq = resourceManager.getDlqTopicName(name, topicDescription)
+    // create DLQ topic if needed
+    resourceManager.initDlqTopicOnce(
+        topic = topicDlq,
+        isPartitioned = topicDescription.isPartitioned,
+        isDelayed = topicDescription.isDelayed,
+    )
 
-        runConsumer(
-            handler = handler,
-            beforeDlq = beforeDlq,
-            schemaClass = schemaClass,
-            topic = topic,
-            topicDlq = topicDlq,
-            subscriptionName = topicDescription.subscriptionName,
-            subscriptionNameDlq = topicDescription.subscriptionNameDlq,
-            subscriptionType = topicDescription.subscriptionType,
-            consumerName = resourceManager.getConsumerName(name, topicDescription),
-            concurrency = concurrency,
-        )
-      }
-    }
+    return consumer.runAsync(
+        handler = handler,
+        beforeDlq = beforeDlq,
+        schemaClass = schemaClass,
+        topic = topic,
+        topicDlq = topicDlq,
+        subscriptionName = topicDescription.subscriptionName,
+        subscriptionNameDlq = topicDescription.subscriptionNameDlq,
+        subscriptionType = topicDescription.subscriptionType,
+        consumerName = resourceManager.getConsumerName(name, topicDescription),
+        concurrency = concurrency,
+    )
   }
 }
+

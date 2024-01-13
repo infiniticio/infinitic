@@ -41,6 +41,7 @@ import io.mockk.mockk
 import io.mockk.slot
 import io.mockk.verify
 import org.apache.pulsar.client.api.SubscriptionType
+import java.util.concurrent.CompletableFuture
 
 class PulsarInfiniticConsumerAsyncTests : StringSpec(
     {
@@ -48,8 +49,8 @@ class PulsarInfiniticConsumerAsyncTests : StringSpec(
       val workflowName = WorkflowName("workflowTest")
       val serviceName = ServiceName("serviceTest")
 
-      val handler = slot<(Message, MillisInstant) -> Unit>()
-      val handlerDlq = slot<((Message, Exception) -> Unit)?>()
+      val handler = slot<suspend (Message, MillisInstant) -> Unit>()
+      val handlerDlq = slot<suspend (Message?, Exception) -> Unit>()
       val nameSlot = slot<String>()
       val descSlot = slot<TopicDescription>()
       val topic = slot<String>()
@@ -88,9 +89,9 @@ class PulsarInfiniticConsumerAsyncTests : StringSpec(
 
       val consumer = mockk<Consumer> {
         coEvery {
-          runConsumer(
+          runAsync(
               capture(handler),
-              captureNullable(handlerDlq),
+              capture(handlerDlq),
               any(),
               capture(topic),
               captureNullable(dlqTopic),
@@ -100,14 +101,14 @@ class PulsarInfiniticConsumerAsyncTests : StringSpec(
               capture(consumerName),
               capture(concurrency),
           )
-        } returns Unit
+        } returns CompletableFuture.completedFuture(Unit)
       }
 
       val infiniticConsumerAsync = PulsarInfiniticConsumerAsync(consumer, resourceManager, 20.0)
 
       "should init client-response topic before consuming it" {
         infiniticConsumerAsync.startClientConsumerAsync(
-            handler = { _, _ -> }, beforeDlq = null, clientName = clientName,
+            handler = { _, _ -> }, beforeDlq = { _, _ -> }, clientName = clientName,
         ).join()
 
         val name = "$clientName"
@@ -121,7 +122,7 @@ class PulsarInfiniticConsumerAsyncTests : StringSpec(
 
       "should init workflow-tag topic before consuming it" {
         infiniticConsumerAsync.startWorkflowTagConsumerAsync(
-            handler = { _, _ -> }, beforeDlq = null, workflowName = workflowName, 10,
+            handler = { _, _ -> }, beforeDlq = { _, _ -> }, workflowName = workflowName, 10,
         ).join()
 
         val name = "$workflowName"
@@ -135,7 +136,7 @@ class PulsarInfiniticConsumerAsyncTests : StringSpec(
 
       "should init workflow-engine topic before consuming it" {
         infiniticConsumerAsync.startWorkflowEngineConsumerAsync(
-            handler = { _, _ -> }, beforeDlq = null, workflowName = workflowName, 10,
+            handler = { _, _ -> }, beforeDlq = { _, _ -> }, workflowName = workflowName, 10,
         ).join()
 
         val name = "$workflowName"
@@ -149,7 +150,7 @@ class PulsarInfiniticConsumerAsyncTests : StringSpec(
 
       "should init workflow-delay topic before consuming it" {
         infiniticConsumerAsync.startDelayedWorkflowEngineConsumerAsync(
-            handler = { _, _ -> }, beforeDlq = null, workflowName = workflowName, 10,
+            handler = { _, _ -> }, beforeDlq = { _, _ -> }, workflowName = workflowName, 10,
         ).join()
 
         val name = "$workflowName"
@@ -163,7 +164,7 @@ class PulsarInfiniticConsumerAsyncTests : StringSpec(
 
       "should init workflow-task-executor topic before consuming it" {
         infiniticConsumerAsync.startWorkflowTaskConsumerAsync(
-            handler = { _, _ -> }, beforeDlq = null, workflowName = workflowName, 10,
+            handler = { _, _ -> }, beforeDlq = { _, _ -> }, workflowName = workflowName, 10,
         ).join()
 
         val name = "$workflowName"
@@ -177,7 +178,7 @@ class PulsarInfiniticConsumerAsyncTests : StringSpec(
 
       "should init task-tag topic before consuming it" {
         infiniticConsumerAsync.startTaskTagConsumerAsync(
-            handler = { _, _ -> }, beforeDlq = null, serviceName = serviceName, 10,
+            handler = { _, _ -> }, beforeDlq = { _, _ -> }, serviceName = serviceName, 10,
         ).join()
 
         val name = "$serviceName"
@@ -191,7 +192,7 @@ class PulsarInfiniticConsumerAsyncTests : StringSpec(
 
       "should init task-executor topic before consuming it" {
         infiniticConsumerAsync.startTaskExecutorConsumerAsync(
-            handler = { _, _ -> }, beforeDlq = null, serviceName = serviceName, 10,
+            handler = { _, _ -> }, beforeDlq = { _, _ -> }, serviceName = serviceName, 10,
         ).join()
 
         val name = "$serviceName"

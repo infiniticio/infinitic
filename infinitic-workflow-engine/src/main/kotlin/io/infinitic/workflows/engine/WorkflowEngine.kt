@@ -93,15 +93,12 @@ class WorkflowEngine(
   }
 
   private val logger = KotlinLogging.logger(javaClass.name)
-
   private val storage = LoggedWorkflowStateStorage(javaClass.name, storage)
-
   private val producer = LoggedInfiniticProducer(javaClass.name, producerAsync)
-
   private val emitterName by lazy { EmitterName(producer.name) }
 
   @Suppress("UNUSED_PARAMETER")
-  fun handle(message: WorkflowEngineMessage, publishTime: MillisInstant) = producer.run {
+  suspend fun handle(message: WorkflowEngineMessage, publishTime: MillisInstant) {
     logDebug(message) { "Receiving $message" }
 
     // set producer id for logging purpose
@@ -117,13 +114,13 @@ class WorkflowEngine(
     if (state?.lastMessageId == message.messageId) {
       logDiscarding(message) { "as state already contains messageId ${message.messageId}" }
 
-      return@run
+      return
     }
 
     state = when (state) {
       null -> processMessageWithoutState(message)
       else -> processMessageWithState(message, state)
-    } ?: return@run // returning null means that we can stop here
+    } ?: return
 
     when (state.workflowMethods.size) {
       // workflow is completed

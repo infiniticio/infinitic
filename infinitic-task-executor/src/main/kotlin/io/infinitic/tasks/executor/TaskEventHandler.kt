@@ -61,7 +61,7 @@ class TaskEventHandler(producerAsync: InfiniticProducerAsync) {
   val producer = LoggedInfiniticProducer(this::class.java.name, producerAsync)
   private val emitterName by lazy { EmitterName(producerAsync.name) }
 
-  fun handle(msg: TaskEventMessage, publishTime: MillisInstant) = producer.run {
+  suspend fun handle(msg: TaskEventMessage, publishTime: MillisInstant) {
     msg.logDebug { "received $msg" }
 
     when (msg) {

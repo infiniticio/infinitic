@@ -69,7 +69,7 @@ class WorkflowTagEngine(
 
   private val emitterName by lazy { EmitterName(producer.name) }
 
-  fun handle(message: WorkflowTagMessage, publishTime: MillisInstant) = producer.run {
+  suspend fun handle(message: WorkflowTagMessage, publishTime: MillisInstant) {
     logger.debug { "receiving $message" }
 
     when (message) {
@@ -89,99 +89,98 @@ class WorkflowTagEngine(
   private suspend fun dispatchWorkflowByCustomId(
     message: DispatchWorkflowByCustomId,
     publishTime: MillisInstant
-  ) =
-      coroutineScope {
-        val ids = storage.getWorkflowIds(message.workflowTag, message.workflowName)
+  ) = coroutineScope {
+    val ids = storage.getWorkflowIds(message.workflowTag, message.workflowName)
 
-        when (ids.size) {
-          // this workflow instance does not exist yet
-          0 -> {
-            // provided tags
-            message.workflowTags.map { tag ->
-              val addTagToWorkflow = AddTagToWorkflow(
-                  workflowName = message.workflowName,
-                  workflowTag = tag,
-                  workflowId = message.workflowId,
-                  emitterName = emitterName,
-                  emittedAt = message.emittedAt ?: publishTime,
-              )
-
-              when (tag) {
-                message.workflowTag -> addTagToWorkflow(addTagToWorkflow)
-                else -> launch { producer.sendToWorkflowTag(addTagToWorkflow) }
-              }
-            }
-            // dispatch workflow message
-            launch {
-              val dispatchWorkflow = DispatchNewWorkflow(
-                  workflowName = message.workflowName,
-                  workflowId = message.workflowId,
-                  methodName = message.methodName,
-                  methodParameters = message.methodParameters,
-                  methodParameterTypes = message.methodParameterTypes,
-                  workflowTags = message.workflowTags,
-                  workflowMeta = message.workflowMeta,
-                  parentWorkflowName = message.parentWorkflowName,
-                  parentWorkflowId = message.parentWorkflowId,
-                  parentWorkflowMethodId = message.parentWorkflowMethodId,
-                  clientWaiting = message.clientWaiting,
-                  emitterName = message.emitterName,
-                  emittedAt = message.emittedAt ?: publishTime,
-              )
-              producer.sendToWorkflowCmd(dispatchWorkflow)
-            }
-
-            // send global timeout if needed
-            val timeout = message.methodTimeout
-
-            if (timeout != null && message.parentWorkflowId != null) {
-              launch {
-                val childMethodTimedOut = ChildMethodTimedOut(
-                    childMethodTimedOutError = WorkflowMethodTimedOutError(
-                        workflowName = message.workflowName,
-                        workflowId = message.workflowId,
-                        methodName = message.methodName,
-                        workflowMethodId = WorkflowMethodId.from(message.workflowId),
-                    ),
-                    workflowName = message.parentWorkflowName ?: thisShouldNotHappen(),
-                    workflowId = message.parentWorkflowId ?: thisShouldNotHappen(),
-                    workflowMethodId = message.parentWorkflowMethodId ?: thisShouldNotHappen(),
-                    emitterName = emitterName,
-                    emittedAt = message.emittedAt ?: publishTime,
-                )
-                producer.sendToWorkflowEngine(childMethodTimedOut, timeout)
-              }
-            }
-          }
-          // Another running workflow instance exist with same custom id
-          1 -> {
-            logger.debug {
-              "A workflow '${message.workflowName}(${ids.first()})' already exists with tag '${message.workflowTag}'"
-            }
-
-            // if needed, we inform workflowEngine that a client is waiting for its result
-            if (message.clientWaiting) {
-              launch {
-                val waitWorkflow = WaitWorkflow(
-                    workflowMethodId = WorkflowMethodId.from(ids.first()),
-                    workflowName = message.workflowName,
-                    workflowId = ids.first(),
-                    emitterName = message.emitterName,
-                    emittedAt = message.emittedAt ?: publishTime,
-                )
-
-                producer.sendToWorkflowCmd(waitWorkflow)
-              }
-            }
-
-            Unit
-          }
-          // multiple running workflow instance exist with same custom id
-          else -> thisShouldNotHappen(
-              "Workflow '${message.workflowName}' with customId '${message.workflowTag}' has multiple ids: ${ids.joinToString()}",
+    when (ids.size) {
+      // this workflow instance does not exist yet
+      0 -> {
+        // provided tags
+        message.workflowTags.map { tag ->
+          val addTagToWorkflow = AddTagToWorkflow(
+              workflowName = message.workflowName,
+              workflowTag = tag,
+              workflowId = message.workflowId,
+              emitterName = emitterName,
+              emittedAt = message.emittedAt ?: publishTime,
           )
+
+          when (tag) {
+            message.workflowTag -> addTagToWorkflow(addTagToWorkflow)
+            else -> launch { producer.sendToWorkflowTag(addTagToWorkflow) }
+          }
+        }
+        // dispatch workflow message
+        launch {
+          val dispatchWorkflow = DispatchNewWorkflow(
+              workflowName = message.workflowName,
+              workflowId = message.workflowId,
+              methodName = message.methodName,
+              methodParameters = message.methodParameters,
+              methodParameterTypes = message.methodParameterTypes,
+              workflowTags = message.workflowTags,
+              workflowMeta = message.workflowMeta,
+              parentWorkflowName = message.parentWorkflowName,
+              parentWorkflowId = message.parentWorkflowId,
+              parentWorkflowMethodId = message.parentWorkflowMethodId,
+              clientWaiting = message.clientWaiting,
+              emitterName = message.emitterName,
+              emittedAt = message.emittedAt ?: publishTime,
+          )
+          producer.sendToWorkflowCmd(dispatchWorkflow)
+        }
+
+        // send global timeout if needed
+        val timeout = message.methodTimeout
+
+        if (timeout != null && message.parentWorkflowId != null) {
+          launch {
+            val childMethodTimedOut = ChildMethodTimedOut(
+                childMethodTimedOutError = WorkflowMethodTimedOutError(
+                    workflowName = message.workflowName,
+                    workflowId = message.workflowId,
+                    methodName = message.methodName,
+                    workflowMethodId = WorkflowMethodId.from(message.workflowId),
+                ),
+                workflowName = message.parentWorkflowName ?: thisShouldNotHappen(),
+                workflowId = message.parentWorkflowId ?: thisShouldNotHappen(),
+                workflowMethodId = message.parentWorkflowMethodId ?: thisShouldNotHappen(),
+                emitterName = emitterName,
+                emittedAt = message.emittedAt ?: publishTime,
+            )
+            producer.sendToWorkflowEngine(childMethodTimedOut, timeout)
+          }
         }
       }
+      // Another running workflow instance exist with same custom id
+      1 -> {
+        logger.debug {
+          "A workflow '${message.workflowName}(${ids.first()})' already exists with tag '${message.workflowTag}'"
+        }
+
+        // if needed, we inform workflowEngine that a client is waiting for its result
+        if (message.clientWaiting) {
+          launch {
+            val waitWorkflow = WaitWorkflow(
+                workflowMethodId = WorkflowMethodId.from(ids.first()),
+                workflowName = message.workflowName,
+                workflowId = ids.first(),
+                emitterName = message.emitterName,
+                emittedAt = message.emittedAt ?: publishTime,
+            )
+
+            producer.sendToWorkflowCmd(waitWorkflow)
+          }
+        }
+
+        Unit
+      }
+      // multiple running workflow instance exist with same custom id
+      else -> thisShouldNotHappen(
+          "Workflow '${message.workflowName}' with customId '${message.workflowTag}' has multiple ids: ${ids.joinToString()}",
+      )
+    }
+  }
 
   private suspend fun dispatchMethodByTag(
     message: DispatchMethodByTag,
