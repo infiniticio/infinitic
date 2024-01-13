@@ -71,7 +71,7 @@ class TaskEventHandler(producerAsync: InfiniticProducerAsync) {
       is TaskStartedEvent -> Unit
     }
 
-    msg.logTrace { "processed" }
+    msg.logTrace { "processed $msg" }
   }
 
   private suspend fun sendTaskFailed(msg: TaskFailedEvent, publishTime: MillisInstant): Unit =
@@ -101,8 +101,10 @@ class TaskEventHandler(producerAsync: InfiniticProducerAsync) {
         launch { producer.sendToTaskTag(it) }
       }
     }
-    // if workflowTask, we dispatch the new commands ONCE the workflow task completion
-    // has been forwarded to the engine, to avoid a possible race condition.
+    // If we are dealing with a workflowTask, we ensure that new commands are dispatched only AFTER
+    // the workflow task's completion is forwarded to the engine. This is a safeguard against potential
+    // race conditions that may arise if the engine receives the outcomes of the dispatched tasks earlier
+    // than the result of the workflowTask.
     if (msg.isWorkflowTask()) completeWorkflowTask(msg)
   }
 

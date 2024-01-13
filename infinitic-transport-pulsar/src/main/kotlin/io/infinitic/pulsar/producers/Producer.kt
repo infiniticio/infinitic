@@ -54,7 +54,7 @@ class Producer(
         .getProducer(topic, schemaClass, producerName, producerConfig, key)
         .getOrElse { return CompletableFuture.failedFuture(it) }
 
-    logger.trace { "Sending after $after to topic '$topic' with key '$key': '$message'" }
+    logger.trace { "Sending${if (after > 0) " after $after ms" else ""} to topic '$topic' with key '$key': '$message'" }
 
     @Suppress("UNCHECKED_CAST")
     return producer

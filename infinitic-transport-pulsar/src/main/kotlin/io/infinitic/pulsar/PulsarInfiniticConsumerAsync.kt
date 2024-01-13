@@ -52,8 +52,6 @@ import io.infinitic.pulsar.resources.ServiceTopicsDescription
 import io.infinitic.pulsar.resources.TopicDescription
 import io.infinitic.pulsar.resources.WorkflowTopicsDescription
 import kotlinx.coroutines.TimeoutCancellationException
-import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
 import java.util.concurrent.CompletableFuture
@@ -78,18 +76,15 @@ class PulsarInfiniticConsumerAsync(
       runBlocking {
         try {
           withTimeout((shutdownGracePeriodInSeconds * 1000L).toLong()) {
-            coroutineScope {
-              consumer.cancel()
-              launch { deleteClientTopic() }
-              launch {
-                logger.info { "Processing ongoing messages..." }
-                consumer.join()
-                logger.info { "All ongoing messages have been processed." }
-              }
-            }
-            // once the messages are processed, we can close other resources (pulsar client & admin)
-            autoClose()
+            consumer.cancel()
+            logger.info { "Processing ongoing messages..." }
+            consumer.join()
+            logger.info { "All ongoing messages have been processed." }
+            // delete client topic only after
+            deleteClientTopic()
           }
+          // once the messages are processed, we can close other resources (pulsar client & admin)
+          autoClose()
         } catch (e: TimeoutCancellationException) {
           logger.warn {
             "The grace period (${shutdownGracePeriodInSeconds}s) allotted to close was insufficient. " +
@@ -103,10 +98,10 @@ class PulsarInfiniticConsumerAsync(
   private fun deleteClientTopic() {
     if (::clientName.isInitialized) {
       val clientTopic = resourceManager.getTopicName(clientName, ClientTopicDescription.RESPONSE)
-      logger.info { "Deleting client topic: '$clientTopic'" }
+      logger.debug { "Deleting client topic '$clientTopic'." }
       resourceManager.deleteTopic(clientTopic)
-          .onFailure { logger.warn(it) { "Unable to delete client topic: '$clientTopic'." } }
-          .onSuccess { logger.info { "Client topic deleted: '$clientTopic'." } }
+          .onFailure { logger.warn(it) { "Unable to delete client topic '$clientTopic'." } }
+          .onSuccess { logger.info { "Client topic '$clientTopic' deleted." } }
     }
   }
 

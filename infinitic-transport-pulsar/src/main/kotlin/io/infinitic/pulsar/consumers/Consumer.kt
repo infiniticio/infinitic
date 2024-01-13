@@ -204,9 +204,9 @@ class Consumer(
 
       val message: T
       try {
-        logTrace(topic, messageId) { "Deserializing pulsar message $pulsarMessage" }
+        logDebug(topic, messageId) { "Deserializing pulsar message $pulsarMessage" }
         message = pulsarMessage.value.message()
-        logDebug(topic, messageId) { "Deserialized pulsar message into $message" }
+        logTrace(topic, messageId) { "Deserialized pulsar message into $message" }
       } catch (e: Exception) {
         logWarn(e, topic, messageId) { "Exception when deserializing $pulsarMessage" }
         negativeAcknowledge(consumer, pulsarMessage, beforeDlq, null, e)
@@ -214,9 +214,9 @@ class Consumer(
       }
 
       try {
-        logTrace(topic, messageId) { "Processing $message" }
+        logDebug(topic, messageId) { "Processing $message" }
         handler(message, publishTime)
-        logDebug(topic, messageId) { "Processed $message" }
+        logTrace(topic, messageId) { "Processed $message" }
       } catch (e: Exception) {
         logWarn(e, topic, messageId) { "Exception when processing $message" }
         negativeAcknowledge(consumer, pulsarMessage, beforeDlq, message, e)
@@ -224,9 +224,9 @@ class Consumer(
       }
 
       try {
-        logTrace(topic, messageId) { "Acknowledging $message" }
+        logDebug(topic, messageId) { "Acknowledging $message" }
         consumer.acknowledge(messageId)
-        logDebug(topic, messageId) { "Acknowledged $message" }
+        logTrace(topic, messageId) { "Acknowledged $message" }
       } catch (e: Exception) {
         logWarn(e, topic, messageId) { "Exception when acknowledging $message" }
         negativeAcknowledge(consumer, pulsarMessage, beforeDlq, message, e)
@@ -253,9 +253,9 @@ class Consumer(
     // before sending to DLQ, we apply beforeDlq if any
     if (pulsarMessage.redeliveryCount == consumerConfig.maxRedeliverCount) {
       try {
-        logTrace(topic, messageId) { "Processing DLQ handler for $msg}" }
+        logDebug(topic, messageId) { "Processing DLQ handler for $msg}" }
         beforeDlq(message, cause)
-        logDebug(topic, messageId) { "Processed DLQ handler for $msg}" }
+        logTrace(topic, messageId) { "Processed DLQ handler for $msg}" }
       } catch (e: Exception) {
         logWarn(e, topic, messageId) { "Exception when processing DLQ handler for $msg}" }
       }

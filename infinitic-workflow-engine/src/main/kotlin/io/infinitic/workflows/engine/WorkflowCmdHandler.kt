@@ -43,7 +43,7 @@ class WorkflowCmdHandler(producerAsync: InfiniticProducerAsync) {
   val emitterName by lazy { EmitterName(producer.name) }
 
   suspend fun handle(msg: WorkflowEngineMessage, publishTime: MillisInstant) {
-    msg.logDebug { "received $msg" }
+    msg.logDebug { "Processing $msg" }
 
     // define emittedAt from the publishing instant if not yet defined
     msg.emittedAt = msg.emittedAt ?: publishTime
@@ -53,7 +53,7 @@ class WorkflowCmdHandler(producerAsync: InfiniticProducerAsync) {
       else -> producer.sendToWorkflowEngine(msg)
     }
 
-    msg.logTrace { "processed $msg" }
+    msg.logTrace { "Processed $msg" }
   }
 
   // We dispatch a workflow task right away
@@ -63,8 +63,8 @@ class WorkflowCmdHandler(producerAsync: InfiniticProducerAsync) {
 
         val dispatchNewWorkflow = msg.copy(
             workflowTaskId = TaskId(
-                // Deterministic id creation. Without it, an issue arises if this execution fails
-                // after having forwarded the dispatchNewWorkflow message to the Engine,
+                // Deterministic id creation. Without it, an issue arises if dispatchNewWorkflow fails
+                // just after having forwarded the dispatchNewWorkflow message to the Engine,
                 // that will then await for a workflowTaskId that will never come
                 IdGenerator.from(msg.emittedAt!!, "workflowId=${msg.workflowId}"),
             ),
@@ -73,7 +73,9 @@ class WorkflowCmdHandler(producerAsync: InfiniticProducerAsync) {
         // first we send to workflow-engine
         producer.sendToWorkflowEngine(dispatchNewWorkflow)
 
-        // only after, we trigger the workflow-task
+        // The workflowTask is sent only after the previous message,
+        // to prevent a possible race condition where the outcome of the workflowTask
+        // commands arrives before the engine is made aware of them by the previous message.
         launch {
           // defines workflow task input
           val workflowTaskParameters = WorkflowTaskParameters(
