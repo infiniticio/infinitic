@@ -235,7 +235,7 @@ class PulsarInfiniticClient(private val pulsarClient: PulsarClient) {
           .deadLetterPolicy(
               DeadLetterPolicy
                   .builder()
-                  .maxRedeliverCount(consumerConfig.maxRedeliverCount)
+                  .maxRedeliverCount(consumerConfig.getMaxRedeliverCount())
                   .deadLetterTopic(it.topic)
                   .build(),
           )

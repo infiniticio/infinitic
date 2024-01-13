@@ -177,7 +177,7 @@ class Consumer(
             continue
           }
         }
-        logDebug(topic, null) { "Waiting completion of ongoing messages in $consumerName" }
+        logDebug(topic) { "Waiting completion of ongoing messages in $consumerName" }
         withContext(NonCancellable) { jobs.joinAll() }
         closeConsumer(consumer)
       }
@@ -251,7 +251,7 @@ class Consumer(
     val msg = message?.let { "$it" } ?: "pulsar message ${pulsarMessage.messageId}"
 
     // before sending to DLQ, we apply beforeDlq if any
-    if (pulsarMessage.redeliveryCount == consumerConfig.maxRedeliverCount) {
+    if (pulsarMessage.redeliveryCount == consumerConfig.getMaxRedeliverCount()) {
       try {
         logDebug(topic, messageId) { "Processing DLQ handler for $msg}" }
         beforeDlq(message, cause)
