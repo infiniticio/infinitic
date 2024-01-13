@@ -28,6 +28,7 @@ import io.infinitic.common.emitters.EmitterName
 import io.infinitic.common.tasks.data.TaskId
 import io.infinitic.common.transport.InfiniticProducerAsync
 import io.infinitic.common.transport.LoggedInfiniticProducer
+import io.infinitic.common.utils.IdGenerator
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskIndex
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskParameters
 import io.infinitic.common.workflows.engine.messages.DispatchNewWorkflow
@@ -60,7 +61,14 @@ class WorkflowCmdHandler(producerAsync: InfiniticProducerAsync) {
   private suspend fun dispatchNewWorkflow(msg: DispatchNewWorkflow, publishTime: MillisInstant) =
       coroutineScope {
 
-        val dispatchNewWorkflow = msg.copy(workflowTaskId = TaskId())
+        val dispatchNewWorkflow = msg.copy(
+            workflowTaskId = TaskId(
+                // Deterministic id creation. Without it, an issue arises if this execution fails
+                // after having forwarded the dispatchNewWorkflow message to the Engine,
+                // that will then await for a workflowTaskId that will never come
+                IdGenerator.from(msg.emittedAt!!, "workflowId=${msg.workflowId}"),
+            ),
+        )
 
         // first we send to workflow-engine
         producer.sendToWorkflowEngine(dispatchNewWorkflow)

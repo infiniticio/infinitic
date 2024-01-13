@@ -79,8 +79,7 @@ data class WorkflowTaskParameters(
       taskMeta = TaskMeta(),
       clientWaiting = false,
       methodName = MethodName(WorkflowTask::handle.name),
-      methodParameterTypes =
-      MethodParameterTypes(listOf(WorkflowTaskParameters::class.java.name)),
+      methodParameterTypes = MethodParameterTypes(listOf(WorkflowTaskParameters::class.java.name)),
       methodParameters = MethodParameters.from(this),
       lastError = null,
       workflowVersion = workflowVersion,
