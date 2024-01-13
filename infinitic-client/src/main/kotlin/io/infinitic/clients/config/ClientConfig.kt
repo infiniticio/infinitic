@@ -38,7 +38,7 @@ data class ClientConfig @JvmOverloads constructor(
   override val pulsar: Pulsar? = null,
 
   /** Shutdown Grace Period */
-  override val shutdownGracePeriodInSeconds: Double = 2.0
+  override val shutdownGracePeriodInSeconds: Double = 10.0
 ) : ClientConfigInterface {
 
   companion object {
