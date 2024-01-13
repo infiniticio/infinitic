@@ -49,6 +49,12 @@ internal fun CoroutineScope.commandTerminated(
   val workflowMethod = state.getWorkflowMethod(workflowMethodId) ?: thisShouldNotHappen()
   val pastCommand = state.getPastCommand(commandId, workflowMethod)
 
+  // If workflow engine is shutdown when handling a workflow task,
+  // it's possible that the engine already dispatched some commands before the shutdown
+  // After 0.13.0, the Ids of those commands are deterministic, so this should not happen anymore
+  @Deprecated("This should be unnecessary after 0.13.0")
+  if (pastCommand == null) return
+
   // Idempotency: do nothing if this command is already terminated
   // (i.e. canceled or completed, not failed as it's a transient status)
   if (pastCommand.isTerminated()) return

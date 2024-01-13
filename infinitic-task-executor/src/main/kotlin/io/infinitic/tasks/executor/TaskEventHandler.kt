@@ -105,47 +105,49 @@ class TaskEventHandler(producerAsync: InfiniticProducerAsync) {
     // the workflow task's completion is forwarded to the engine. This is a safeguard against potential
     // race conditions that may arise if the engine receives the outcomes of the dispatched tasks earlier
     // than the result of the workflowTask.
-    if (msg.isWorkflowTask()) completeWorkflowTask(msg)
+    if (msg.isWorkflowTask()) completeWorkflowTask(msg, publishTime)
   }
 
-  private suspend fun completeWorkflowTask(msg: TaskCompletedEvent) = coroutineScope {
+  private suspend fun completeWorkflowTask(msg: TaskCompletedEvent, publishTime: MillisInstant) =
+      coroutineScope {
 
-    val result = msg.returnValue.value() as WorkflowTaskReturnValue
+        val result = msg.returnValue.value() as WorkflowTaskReturnValue
 
-    val workflowTaskInstant = result.workflowTaskInstant ?: thisShouldNotHappen()
+        // TODO After 0.13.0, workflowTaskInstant should not be null anymore
+        val workflowTaskInstant = result.workflowTaskInstant ?: publishTime
 
-    val currentWorkflow = CurrentWorkflow(
-        workflowId = msg.workflowId ?: thisShouldNotHappen(),
-        workflowName = msg.workflowName ?: thisShouldNotHappen(),
-        workflowMethodId = msg.workflowMethodId ?: thisShouldNotHappen(),
-        workflowVersion = result.workflowVersion,
-    )
+        val currentWorkflow = CurrentWorkflow(
+            workflowId = msg.workflowId ?: thisShouldNotHappen(),
+            workflowName = msg.workflowName ?: thisShouldNotHappen(),
+            workflowMethodId = msg.workflowMethodId ?: thisShouldNotHappen(),
+            workflowVersion = result.workflowVersion,
+        )
 
-    result.newCommands.forEach {
-      when (it) {
-        is DispatchNewWorkflowPastCommand ->
-          dispatchNewWorkflowCmd(currentWorkflow, it, workflowTaskInstant, producer)
+        result.newCommands.forEach {
+          when (it) {
+            is DispatchNewWorkflowPastCommand ->
+              dispatchNewWorkflowCmd(currentWorkflow, it, workflowTaskInstant, producer)
 
-        is DispatchMethodOnRunningWorkflowPastCommand ->
-          dispatchMethodOnRunningWorkflowCmd(currentWorkflow, it, workflowTaskInstant, producer)
+            is DispatchMethodOnRunningWorkflowPastCommand ->
+              dispatchMethodOnRunningWorkflowCmd(currentWorkflow, it, workflowTaskInstant, producer)
 
-        is DispatchTaskPastCommand ->
-          dispatchTaskCmd(currentWorkflow, it, workflowTaskInstant, producer)
+            is DispatchTaskPastCommand ->
+              dispatchTaskCmd(currentWorkflow, it, workflowTaskInstant, producer)
 
-        is SendSignalPastCommand ->
-          sendSignalCmd(currentWorkflow, it, workflowTaskInstant, producer)
+            is SendSignalPastCommand ->
+              sendSignalCmd(currentWorkflow, it, workflowTaskInstant, producer)
 
-        is StartDurationTimerPastCommand ->
-          startDurationTimerCmd(currentWorkflow, it, workflowTaskInstant, producer)
+            is StartDurationTimerPastCommand ->
+              startDurationTimerCmd(currentWorkflow, it, workflowTaskInstant, producer)
 
-        is StartInstantTimerPastCommand ->
-          startInstantTimerCmq(currentWorkflow, it, producer)
+            is StartInstantTimerPastCommand ->
+              startInstantTimerCmq(currentWorkflow, it, producer)
 
-        is ReceiveSignalPastCommand,
-        is InlineTaskPastCommand -> Unit // Nothing to do
+            is ReceiveSignalPastCommand,
+            is InlineTaskPastCommand -> Unit // Nothing to do
+          }
+        }
       }
-    }
-  }
 
   data class CurrentWorkflow(
     val workflowId: WorkflowId,

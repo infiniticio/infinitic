@@ -28,7 +28,6 @@ import com.github.avrokotlin.avro4k.AvroName
 import com.github.avrokotlin.avro4k.AvroNamespace
 import io.infinitic.common.data.MessageId
 import io.infinitic.common.data.MillisInstant
-import io.infinitic.common.exceptions.thisShouldNotHappen
 import io.infinitic.common.serDe.avro.AvroSerDe
 import io.infinitic.common.tasks.data.TaskId
 import io.infinitic.common.workers.config.WorkflowVersion
@@ -136,12 +135,10 @@ data class WorkflowState(
   fun getWorkflowMethod(workflowMethodId: WorkflowMethodId) =
       workflowMethods.firstOrNull { it.workflowMethodId == workflowMethodId }
 
-  fun getPastCommand(commandId: CommandId, workflowMethod: WorkflowMethod): PastCommand =
+  fun getPastCommand(commandId: CommandId, workflowMethod: WorkflowMethod): PastCommand? =
       workflowMethod.getPastCommand(commandId)
       // if we do not find in this methodRun, then search within others
         ?: workflowMethods.map { it.getPastCommand(commandId) }.firstOrNull { it != null }
-        // methodRun should not be deleted if a step is still running
-        ?: thisShouldNotHappen()
 
   fun removeWorkflowMethod(workflowMethod: WorkflowMethod) {
     workflowMethods.remove(workflowMethod)

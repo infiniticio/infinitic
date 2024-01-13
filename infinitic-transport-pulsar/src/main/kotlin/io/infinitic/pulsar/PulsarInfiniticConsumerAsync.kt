@@ -65,6 +65,7 @@ class PulsarInfiniticConsumerAsync(
 
   override var logName: String? = null
 
+  // See InfiniticWorker
   private val logger by lazy { KotlinLogging.logger(logName ?: this::class.java.name) }
 
   private lateinit var clientName: String

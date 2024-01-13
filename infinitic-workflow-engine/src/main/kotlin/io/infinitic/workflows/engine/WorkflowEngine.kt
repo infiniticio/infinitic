@@ -97,7 +97,6 @@ class WorkflowEngine(
   private val producer = LoggedInfiniticProducer(javaClass.name, producerAsync)
   private val emitterName by lazy { EmitterName(producer.name) }
 
-  @Suppress("UNUSED_PARAMETER")
   suspend fun handle(message: WorkflowEngineMessage, publishTime: MillisInstant) {
     logDebug(message) { "Receiving $message" }
 
@@ -116,6 +115,9 @@ class WorkflowEngine(
 
       return
     }
+
+    @Deprecated("This should be removed after v0.13.0")
+    if (message.emittedAt == null) message.emittedAt = publishTime
 
     state = when (state) {
       null -> processMessageWithoutState(message)

@@ -183,7 +183,7 @@ internal fun CoroutineScope.workflowTaskCompleted(
     val commandId = state.runningTerminatedCommands.first()
     val pastCommand = state.getPastCommand(commandId, workflowMethod)
 
-    if (!stepTerminated(producer, state, pastCommand, emittedAt)) {
+    if (pastCommand != null && !stepTerminated(producer, state, pastCommand, emittedAt)) {
       // if no additional step can be completed, we can remove this command
       state.runningTerminatedCommands.removeFirst()
     }
