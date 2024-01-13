@@ -176,7 +176,7 @@ class TaskExecutor(
       // We set the localThread context here as it may be used in withRetry
       Task.context.set(taskContext)
       // get seconds before retry
-      withRetry?.getMillisBeforeRetry(taskContext.retryIndex.toInt(), cause) ?: 0L
+      withRetry?.getMillisBeforeRetry(taskContext.retryIndex.toInt(), cause)
     } catch (e: Exception) {
       // We chose here not to obfuscate the initial cause of the failure
       sendTaskFailed(msg, cause, taskContext.meta) {
@@ -187,7 +187,7 @@ class TaskExecutor(
     }
 
     when {
-      delayMillis <= 0 -> sendTaskFailed(msg, cause, taskContext.meta) {
+      delayMillis == null -> sendTaskFailed(msg, cause, taskContext.meta) {
         cause.message ?: "Unknown error"
       }
 
