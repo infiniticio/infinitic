@@ -28,6 +28,7 @@ import io.infinitic.clients.config.ClientConfig
 import io.infinitic.clients.config.ClientConfigInterface
 import io.infinitic.clients.dispatcher.ClientDispatcher
 import io.infinitic.common.clients.messages.ClientMessage
+import io.infinitic.common.data.MillisInstant
 import io.infinitic.common.proxies.ExistingWorkflowProxyHandler
 import io.infinitic.common.proxies.NewServiceProxyHandler
 import io.infinitic.common.proxies.NewWorkflowProxyHandler
@@ -39,7 +40,7 @@ import io.infinitic.common.tasks.data.TaskMeta
 import io.infinitic.common.transport.InfiniticConsumerAsync
 import io.infinitic.common.transport.InfiniticProducerAsync
 import io.infinitic.common.transport.LoggedInfiniticProducer
-import io.infinitic.common.workflows.data.methodRuns.MethodRunId
+import io.infinitic.common.workflows.data.methodRuns.WorkflowMethodId
 import io.infinitic.common.workflows.data.workflows.WorkflowMeta
 import io.infinitic.common.workflows.data.workflows.WorkflowTag
 import io.infinitic.exceptions.clients.InvalidIdTagSelectionException
@@ -58,7 +59,7 @@ class InfiniticClient(
 
   private val producer = LoggedInfiniticProducer(javaClass.name, producerAsync)
 
-  private val dispatcher = ClientDispatcher(javaClass.name, consumerAsync, producer)
+  private val dispatcher = ClientDispatcher(javaClass.name, consumerAsync, producerAsync)
 
   override val name by lazy { producerAsync.name }
 
@@ -69,6 +70,7 @@ class InfiniticClient(
     dispatcher.close()
     autoClose()
   }
+
 
   /** Create a stub for a new workflow */
   override fun <T : Any> newWorkflow(
@@ -106,7 +108,7 @@ class InfiniticClient(
           dispatcher.completeTimersAsync(
               workflowName = handler.workflowName,
               requestBy = handler.requestBy,
-              methodRunId = id?.let { MethodRunId(id) },
+              workflowMethodId = id?.let { WorkflowMethodId(id) },
           )
         }
 
@@ -162,7 +164,9 @@ class InfiniticClient(
   }
 
   @TestOnly
-  internal suspend fun handle(message: ClientMessage) = dispatcher.handle(message)
+  internal suspend fun handle(message: ClientMessage, publishTime: MillisInstant) =
+      dispatcher.handle(message, publishTime)
+
   private fun getProxyHandler(stub: Any): ProxyHandler<*> {
     val exception by lazy { InvalidStubException("$stub") }
 
@@ -208,18 +212,19 @@ class InfiniticClient(
     /** Create InfiniticClient from config */
     @JvmStatic
     fun fromConfig(config: ClientConfigInterface): InfiniticClient = with(config) {
-      val transportConfig = TransportConfig(transport, pulsar)
+      // Create TransportConfig
+      val transportConfig = TransportConfig(transport, pulsar, shutdownGracePeriodInSeconds)
 
-      /** Infinitic Consumer */
+      // Get Infinitic Consumer
       val consumerAsync = transportConfig.consumerAsync
 
-      /** Infinitic  Producer */
+      // Get Infinitic  Producer
       val producerAsync = transportConfig.producerAsync
 
       // apply name if it exists
       name?.let { producerAsync.name = it }
 
-      /** Infinitic Client */
+      // Create Infinitic Client
       InfiniticClient(consumerAsync, producerAsync).also {
         // close consumer with the client
         it.addAutoCloseResource(consumerAsync)

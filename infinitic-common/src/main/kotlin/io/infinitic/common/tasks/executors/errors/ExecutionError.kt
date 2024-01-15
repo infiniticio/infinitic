@@ -24,7 +24,7 @@ package io.infinitic.common.tasks.executors.errors
 
 import com.github.avrokotlin.avro4k.AvroName
 import com.github.avrokotlin.avro4k.AvroNamespace
-import io.infinitic.common.data.ClientName
+import io.infinitic.common.workers.data.WorkerName
 import io.infinitic.exceptions.WorkerException
 import kotlinx.serialization.Serializable
 
@@ -34,7 +34,7 @@ import kotlinx.serialization.Serializable
 @AvroName("WorkerError")
 data class ExecutionError(
   /** Name of the worker */
-  val workerName: ClientName,
+  val workerName: WorkerName,
 
   /** Name of the error */
   val name: String,
@@ -51,14 +51,14 @@ data class ExecutionError(
   companion object {
     fun from(exception: WorkerException): ExecutionError =
         ExecutionError(
-            workerName = ClientName(exception.workerName),
+            workerName = WorkerName(exception.workerName),
             name = exception.name,
             message = exception.message,
             stackTraceToString = exception.stackTraceToString,
             cause = exception.cause?.let { from(it) },
         )
 
-    fun from(workerName: ClientName, throwable: Throwable): ExecutionError =
+    fun from(workerName: WorkerName, throwable: Throwable): ExecutionError =
         ExecutionError(
             workerName = workerName,
             name = throwable::class.java.name,
@@ -71,9 +71,12 @@ data class ExecutionError(
         )
   }
 
-  // removing stackTraceToString of the output to preserve logs
+  // we remove end of line for stackTraceToString of the output to preserve logs
   override fun toString(): String = this::class.java.simpleName + "(" +
-      listOf("name" to name, "message" to message, "cause" to cause).joinToString {
-        "${it.first}=${it.second}"
-      } + ")"
+      listOf(
+          "name" to name,
+          "message" to message,
+          "cause" to cause,
+          "stacktrace" to stackTraceToString.replace("\n", ""),
+      ).joinToString { "${it.first}=${it.second}" } + ")"
 }

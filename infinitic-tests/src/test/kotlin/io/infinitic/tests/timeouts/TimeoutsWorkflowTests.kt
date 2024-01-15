@@ -43,7 +43,7 @@ internal class TimeoutsWorkflowTests :
         val iTimeoutsWorkflow = client.newWorkflow(ITimeoutWorkflow::class.java)
 
         "Synchronous call of a workflow running for more than its timeout should throw" {
-          shouldThrow<WorkflowTimedOutException> { timeoutsWorkflow.withTimeoutOnMethod(1000) }
+          shouldThrow<WorkflowTimedOutException> { timeoutsWorkflow.withTimeoutOnMethod(2000) }
         }
 
         "Synchronous call of a workflow running for less than its timeout should NOT throw" {

@@ -22,8 +22,8 @@
  */
 package io.infinitic.exceptions
 
-import io.infinitic.common.data.ClientName
 import io.infinitic.common.tasks.executors.errors.ExecutionError
+import io.infinitic.common.workers.data.WorkerName
 import kotlinx.serialization.Serializable
 
 @Serializable
@@ -53,7 +53,7 @@ data class WorkerException(
             cause = error.cause?.let { from(it) },
         )
 
-    fun from(workerName: ClientName, throwable: Throwable): WorkerException =
+    fun from(workerName: WorkerName, throwable: Throwable): WorkerException =
         WorkerException(
             workerName = workerName.toString(),
             name = throwable::class.java.name,

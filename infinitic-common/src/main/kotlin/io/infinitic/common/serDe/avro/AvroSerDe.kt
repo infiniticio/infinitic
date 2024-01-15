@@ -24,10 +24,12 @@ package io.infinitic.common.serDe.avro
 
 import com.github.avrokotlin.avro4k.Avro
 import io.infinitic.common.exceptions.thisShouldNotHappen
-import io.infinitic.current
+import io.infinitic.currentVersion
+import io.infinitic.isRelease
 import io.infinitic.versions
 import kotlinx.serialization.InternalSerializationApi
 import kotlinx.serialization.KSerializer
+import kotlinx.serialization.serializer
 import kotlinx.serialization.serializerOrNull
 import org.apache.avro.Schema
 import org.apache.avro.file.SeekableByteArrayInput
@@ -50,6 +52,7 @@ import java.util.concurrent.ConcurrentHashMap
 import kotlin.reflect.KClass
 
 /** This object provides methods to serialize/deserialize an Avro-generated class */
+@OptIn(InternalSerializationApi::class)
 object AvroSerDe {
 
   const val SCHEMAS_FOLDER = "schemas"
@@ -58,38 +61,43 @@ object AvroSerDe {
   private val messageEncoders = ConcurrentHashMap<KSerializer<*>, MessageEncoder<GenericRecord>>()
 
   /** MessageDecoder cache by class serializer */
-  val messageDecoders = ConcurrentHashMap<KSerializer<*>, MessageDecoder<GenericRecord>>()
+  private val messageDecoders = ConcurrentHashMap<KSerializer<*>, MessageDecoder<GenericRecord>>()
 
   /** Schema cache by class serializer */
-  private val schemas = ConcurrentHashMap<KSerializer<*>, Schema>()
+  private val currentSchemas = ConcurrentHashMap<KSerializer<*>, Schema>()
+
+  /** Schema cache by class serializer */
+  private val allSchemas = ConcurrentHashMap<KClass<*>, Map<String, Schema>>()
 
   /** Get schema from the serializer */
-  fun <T> schema(serializer: KSerializer<T>): Schema =
-      schemas.getOrPut(serializer) { Avro.default.schema(serializer) }
+  fun <T> currentSchema(serializer: KSerializer<T>): Schema =
+      currentSchemas.getOrPut(serializer) { Avro.default.schema(serializer) }
 
   /** Get message encoder from the serializer */
   private fun <T> messageEncoder(serializer: KSerializer<T>): MessageEncoder<GenericRecord> =
       messageEncoders.getOrPut(serializer) {
-        BinaryMessageEncoder(GenericData.get(), schema(serializer))
+        BinaryMessageEncoder(GenericData.get(), currentSchema(serializer))
       }
 
   /** Get message decoder from the serializer */
   private fun <T : Any> messageDecoder(
     klass: KClass<T>,
     serializer: KSerializer<T>
-  ): MessageDecoder<GenericRecord> =
-      messageDecoders.getOrPut(serializer) {
-        BinaryMessageDecoder<GenericRecord>(GenericData.get(), schema(serializer)).also { decoder ->
-          getAllSchemas(klass).values.forEach { schema -> decoder.addSchema(schema) }
-        }
-      }
+  ): MessageDecoder<GenericRecord> = messageDecoders.getOrPut(serializer) {
+    BinaryMessageDecoder<GenericRecord>(
+        GenericData.get(),
+        currentSchema(serializer),
+    ).also { decoder ->
+      getAllSchemas(klass).values.forEach { schema -> decoder.addSchema(schema) }
+    }
+  }
 
   /** Object -> Avro binary with schema fingerprint */
-  internal fun <T> writeBinaryWithSchemaFingerprint(
+  fun <T : Any> writeBinaryWithSchemaFingerprint(
     t: T,
     serializer: KSerializer<T>
   ): ByteArray {
-    val record: GenericRecord = Avro.default.toRecord(serializer, schema(serializer), t)
+    val record: GenericRecord = Avro.default.toRecord(serializer, currentSchema(serializer), t)
     val encoder = messageEncoder(serializer)
     val out = ByteArrayOutputStream()
     encoder.encode(record, out)
@@ -98,11 +106,10 @@ object AvroSerDe {
   }
 
   /** Avro binary with schema fingerprint -> Object */
-  internal fun <T : Any> readBinaryWithSchemaFingerprint(
+  fun <T : Any> readBinaryWithSchemaFingerprint(
     bytes: ByteArray,
     klass: KClass<T>,
   ): T {
-    @OptIn(InternalSerializationApi::class)
     val serializer: KSerializer<T> = klass.serializerOrNull() ?: thisShouldNotHappen()
     val decoder = messageDecoder(klass, serializer)
 
@@ -128,9 +135,8 @@ object AvroSerDe {
 
   /** Object -> Avro binary */
   fun <T : Any> writeBinary(t: T, serializer: KSerializer<T>): ByteArray {
-    val record: GenericRecord = Avro.default.toRecord(serializer, schema(serializer), t)
-
-    val datumWriter = GenericDatumWriter<GenericRecord>(schema(serializer))
+    val record = Avro.default.toRecord(serializer, currentSchema(serializer), t)
+    val datumWriter = GenericDatumWriter<GenericRecord>(currentSchema(serializer))
     val out = ByteArrayOutputStream()
     val encoder = EncoderFactory.get().binaryEncoder(out, null)
     datumWriter.write(record, encoder)
@@ -153,17 +159,26 @@ object AvroSerDe {
       klass.simpleName!!.replaceFirstChar { it.lowercase() }
 
   /** Get map <version, schema> for all schemas of type T */
-  internal fun <T : Any> getAllSchemas(klass: KClass<T>): Map<String, Schema> {
+  fun <T : Any> getAllSchemas(klass: KClass<T>): Map<String, Schema> = allSchemas.getOrPut(klass) {
     val prefix = getSchemaFilePrefix(klass)
 
-    return versions
-        .filter { it.isNotEmpty() && it != current }
-        .associateWith { version ->
-          val url = "/$SCHEMAS_FOLDER/$prefix-$version.avsc"
-          val schemaTxt = this::class.java.getResource(url)?.readText()
-            ?: thisShouldNotHappen("Can't find schema file $url")
-          Schema.Parser().parse(schemaTxt)
-        }
+    val schemas = versions.map { version ->
+      val url = "/$SCHEMAS_FOLDER/$prefix-$version.avsc"
+      this::class.java.getResource(url)?.readText()
+    }
+
+    val released = versions.zip(schemas)
+        .filter { (_, schema) -> schema != null }
+        .toMap()
+        .mapValues { (_, schema) -> Schema.Parser().parse(schema) }
+        as MutableMap
+
+    // add current version if not already there
+    if (!isRelease) {
+      released[currentVersion] = currentSchema(klass.serializer())
+    }
+
+    return released
   }
 
   @TestOnly

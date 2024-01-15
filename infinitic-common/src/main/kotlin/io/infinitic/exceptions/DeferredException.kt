@@ -29,12 +29,12 @@ import io.infinitic.common.tasks.executors.errors.DeferredTimedOutError
 import io.infinitic.common.tasks.executors.errors.DeferredUnknownError
 import io.infinitic.common.tasks.executors.errors.MethodCanceledError
 import io.infinitic.common.tasks.executors.errors.MethodFailedError
-import io.infinitic.common.tasks.executors.errors.MethodTimedOutError
 import io.infinitic.common.tasks.executors.errors.MethodUnknownError
 import io.infinitic.common.tasks.executors.errors.TaskCanceledError
 import io.infinitic.common.tasks.executors.errors.TaskFailedError
 import io.infinitic.common.tasks.executors.errors.TaskTimedOutError
 import io.infinitic.common.tasks.executors.errors.TaskUnknownError
+import io.infinitic.common.tasks.executors.errors.WorkflowMethodTimedOutError
 import io.infinitic.common.tasks.executors.errors.WorkflowTaskFailedError
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -76,7 +76,7 @@ sealed class DeferredTimedOutException : DeferredException() {
     fun from(error: DeferredTimedOutError) =
         when (error) {
           is TaskTimedOutError -> TaskTimedOutException.from(error)
-          is MethodTimedOutError -> WorkflowTimedOutException.from(error)
+          is WorkflowMethodTimedOutError -> WorkflowTimedOutException.from(error)
         }
   }
 }
@@ -131,14 +131,14 @@ data class WorkflowUnknownException(
   val workflowId: String,
 
   /** Id of the methodRun */
-  val methodRunId: String?
+  val workflowMethodId: String?
 ) : DeferredUnknownException() {
   companion object {
     fun from(error: MethodUnknownError) =
         WorkflowUnknownException(
             workflowName = error.workflowName.toString(),
             workflowId = error.workflowId.toString(),
-            methodRunId = error.methodRunId?.toString(),
+            workflowMethodId = error.workflowMethodId?.toString(),
         )
   }
 }
@@ -178,15 +178,15 @@ data class WorkflowTimedOutException(
   val methodName: String,
 
   /** Id of the methodRun */
-  val methodRunId: String?
+  val workflowMethodId: String?
 ) : DeferredTimedOutException() {
   companion object {
-    fun from(error: MethodTimedOutError) =
+    fun from(error: WorkflowMethodTimedOutError) =
         WorkflowTimedOutException(
             workflowName = error.workflowName.toString(),
             workflowId = error.workflowId.toString(),
             methodName = error.methodName.toString(),
-            methodRunId = error.methodRunId?.toString(),
+            workflowMethodId = error.workflowMethodId?.toString(),
         )
   }
 }
@@ -223,14 +223,14 @@ data class WorkflowCanceledException(
   val workflowId: String,
 
   /** Id of the methodRun */
-  val methodRunId: String?
+  val workflowMethodId: String?
 ) : DeferredCanceledException() {
   companion object {
     fun from(error: MethodCanceledError) =
         WorkflowCanceledException(
             workflowName = error.workflowName.toString(),
             workflowId = error.workflowId.toString(),
-            methodRunId = error.methodRunId?.toString(),
+            workflowMethodId = error.workflowMethodId?.toString(),
         )
   }
 }
@@ -271,10 +271,10 @@ data class WorkflowFailedException(
   val workflowId: String,
 
   /** Method called where the error occurred */
-  val methodName: String,
+  val workflowMethodName: String,
 
   /** Id of the methodRun */
-  val methodRunId: String?,
+  val workflowMethodId: String?,
 
   /** cause of the error */
   val deferredException: DeferredException
@@ -284,8 +284,8 @@ data class WorkflowFailedException(
         WorkflowFailedException(
             workflowName = error.workflowName.toString(),
             workflowId = error.workflowId.toString(),
-            methodName = error.methodName.toString(),
-            methodRunId = error.methodRunId.toString(),
+            workflowMethodName = error.workflowMethodName.toString(),
+            workflowMethodId = error.workflowMethodId.toString(),
             deferredException = from(error.deferredError),
         )
   }

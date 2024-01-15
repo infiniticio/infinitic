@@ -26,12 +26,13 @@ import com.github.avrokotlin.avro4k.Avro
 import com.github.avrokotlin.avro4k.AvroDefault
 import com.github.avrokotlin.avro4k.AvroName
 import com.github.avrokotlin.avro4k.AvroNamespace
-import io.infinitic.common.data.ClientName
 import io.infinitic.common.data.MessageId
 import io.infinitic.common.data.MillisDuration
+import io.infinitic.common.data.MillisInstant
 import io.infinitic.common.data.methods.MethodName
 import io.infinitic.common.data.methods.MethodParameterTypes
 import io.infinitic.common.data.methods.MethodParameters
+import io.infinitic.common.emitters.EmitterName
 import io.infinitic.common.messages.Message
 import io.infinitic.common.tasks.data.ServiceName
 import io.infinitic.common.tasks.data.TaskId
@@ -39,7 +40,7 @@ import io.infinitic.common.workflows.data.channels.ChannelName
 import io.infinitic.common.workflows.data.channels.ChannelType
 import io.infinitic.common.workflows.data.channels.SignalData
 import io.infinitic.common.workflows.data.channels.SignalId
-import io.infinitic.common.workflows.data.methodRuns.MethodRunId
+import io.infinitic.common.workflows.data.methodRuns.WorkflowMethodId
 import io.infinitic.common.workflows.data.workflows.WorkflowCancellationReason
 import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.data.workflows.WorkflowMeta
@@ -52,10 +53,10 @@ import kotlinx.serialization.Serializable
 @Serializable
 @AvroNamespace("io.infinitic.workflows.tag")
 sealed class WorkflowTagMessage : Message {
-  val messageId = MessageId()
-  abstract val emitterName: ClientName
+  override val messageId = MessageId()
   abstract val workflowTag: WorkflowTag
   abstract val workflowName: WorkflowName
+  abstract val emittedAt: MillisInstant?
 
   override fun envelope() = WorkflowTagEnvelope.from(this)
 }
@@ -69,7 +70,7 @@ sealed class WorkflowTagMessage : Message {
  * @param signalId the id of the signal to send
  * @param signalData the data of the signal to send
  * @param channelTypes the types of the channel to send the signal to
- * @param emitterWorkflowId the id of the workflow that emitted this command
+ * @param parentWorkflowId the id of the workflow that emitted this command
  * @param emitterName the name of the client that emitted this command
  */
 @Serializable
@@ -81,8 +82,10 @@ data class SendSignalByTag(
   @AvroName("channelSignalId") val signalId: SignalId,
   @AvroName("channelSignal") val signalData: SignalData,
   @AvroName("channelSignalTypes") val channelTypes: Set<ChannelType>,
-  var emitterWorkflowId: WorkflowId?,
-  override val emitterName: ClientName
+  @AvroName("emitterWorkflowId") var parentWorkflowId: WorkflowId?,
+  override val emitterName: EmitterName,
+  @AvroDefault(Avro.NULL) override val emittedAt: MillisInstant?
+
 ) : WorkflowTagMessage()
 
 /**
@@ -101,7 +104,8 @@ data class CancelWorkflowByTag(
   override val workflowTag: WorkflowTag,
   @AvroNamespace("io.infinitic.workflows.data") val reason: WorkflowCancellationReason,
   var emitterWorkflowId: WorkflowId?,
-  override val emitterName: ClientName
+  override val emitterName: EmitterName,
+  @AvroDefault(Avro.NULL) override val emittedAt: MillisInstant?
 ) : WorkflowTagMessage()
 
 /**
@@ -116,7 +120,8 @@ data class CancelWorkflowByTag(
 data class RetryWorkflowTaskByTag(
   override val workflowName: WorkflowName,
   override val workflowTag: WorkflowTag,
-  override val emitterName: ClientName
+  override val emitterName: EmitterName,
+  @AvroDefault(Avro.NULL) override val emittedAt: MillisInstant?
 ) : WorkflowTagMessage()
 
 /**
@@ -137,7 +142,8 @@ data class RetryTasksByTag(
   val taskId: TaskId?,
   val taskStatus: DeferredStatus?,
   @SerialName("taskName") val serviceName: ServiceName?,
-  override val emitterName: ClientName
+  override val emitterName: EmitterName,
+  @AvroDefault(Avro.NULL) override val emittedAt: MillisInstant?
 ) : WorkflowTagMessage()
 
 /**
@@ -145,7 +151,7 @@ data class RetryTasksByTag(
  *
  * @param workflowName the name of the workflow instances to complete the timers of
  * @param workflowTag the tag of the workflow instances to complete the timers of
- * @param methodRunId the id of the method run to complete the timers of
+ * @param workflowMethodId the id of the method run to complete the timers of
  * @param emitterName the name of the client that emitted this command
  */
 @Serializable
@@ -153,8 +159,10 @@ data class RetryTasksByTag(
 data class CompleteTimersByTag(
   override val workflowName: WorkflowName,
   override val workflowTag: WorkflowTag,
-  val methodRunId: MethodRunId?,
-  override val emitterName: ClientName
+  @AvroName("methodRunId")
+  val workflowMethodId: WorkflowMethodId?,
+  override val emitterName: EmitterName,
+  @AvroDefault(Avro.NULL) override val emittedAt: MillisInstant?
 ) : WorkflowTagMessage()
 
 /**
@@ -171,7 +179,8 @@ data class AddTagToWorkflow(
   override val workflowName: WorkflowName,
   override val workflowTag: WorkflowTag,
   val workflowId: WorkflowId,
-  override val emitterName: ClientName
+  override val emitterName: EmitterName,
+  @AvroDefault(Avro.NULL) override val emittedAt: MillisInstant?
 ) : WorkflowTagMessage()
 
 /**
@@ -188,7 +197,8 @@ data class RemoveTagFromWorkflow(
   override val workflowName: WorkflowName,
   override val workflowTag: WorkflowTag,
   val workflowId: WorkflowId,
-  override val emitterName: ClientName
+  override val emitterName: EmitterName,
+  @AvroDefault(Avro.NULL) override val emittedAt: MillisInstant?
 ) : WorkflowTagMessage()
 
 /**
@@ -203,7 +213,8 @@ data class RemoveTagFromWorkflow(
 data class GetWorkflowIdsByTag(
   override val workflowName: WorkflowName,
   override val workflowTag: WorkflowTag,
-  override val emitterName: ClientName
+  override val emitterName: EmitterName,
+  @AvroDefault(Avro.NULL) override val emittedAt: MillisInstant?
 ) : WorkflowTagMessage()
 
 /**
@@ -221,7 +232,7 @@ data class GetWorkflowIdsByTag(
  * @param workflowMeta the meta of the workflow to dispatch
  * @param parentWorkflowName the name of the parent workflow that triggered this command
  * @param parentWorkflowId the id of the parent workflow that triggered this command
- * @param parentMethodRunId the id of the parent method run that triggered this command
+ * @param parentWorkflowMethodId the id of the parent method run that triggered this command
  * @param clientWaiting whether the client is waiting for the result of the workflow
  * @param emitterName the name of the client that emitted this command
  */
@@ -239,9 +250,10 @@ data class DispatchWorkflowByCustomId(
   val workflowMeta: WorkflowMeta,
   var parentWorkflowName: WorkflowName?,
   var parentWorkflowId: WorkflowId?,
-  var parentMethodRunId: MethodRunId?,
+  @AvroName("parentMethodRunId") var parentWorkflowMethodId: WorkflowMethodId?,
   val clientWaiting: Boolean,
-  override val emitterName: ClientName
+  override val emitterName: EmitterName,
+  @AvroDefault(Avro.NULL) override val emittedAt: MillisInstant?
 ) : WorkflowTagMessage() {
   init {
     require(workflowTag.isCustomId()) { "workflowTag must be a custom id" }
@@ -253,7 +265,7 @@ data class DispatchWorkflowByCustomId(
  *
  * @param workflowName the name of the targeted running workflow instances
  * @param workflowTag the tag of the targeted running workflow instances
- * @param methodRunId the Id of the method to dispatch
+ * @param workflowMethodId the Id of the method to dispatch
  * @param methodName the name of the method to dispatch
  * @param methodParameters the parameters of the method to dispatch
  * @param methodParameterTypes the types of the parameters of the method to dispatch
@@ -269,12 +281,14 @@ data class DispatchMethodByTag(
   override val workflowTag: WorkflowTag,
   var parentWorkflowId: WorkflowId?,
   var parentWorkflowName: WorkflowName?,
-  var parentMethodRunId: MethodRunId?,
-  val methodRunId: MethodRunId,
+  @AvroName("parentMethodRunId") var parentWorkflowMethodId: WorkflowMethodId?,
+  @AvroName("methodRunId")
+  val workflowMethodId: WorkflowMethodId,
   val methodName: MethodName,
   val methodParameterTypes: MethodParameterTypes?,
   val methodParameters: MethodParameters,
   @AvroDefault(Avro.NULL) val methodTimeout: MillisDuration? = null,
   val clientWaiting: Boolean,
-  override val emitterName: ClientName
+  override val emitterName: EmitterName,
+  @AvroDefault(Avro.NULL) override val emittedAt: MillisInstant?
 ) : WorkflowTagMessage()

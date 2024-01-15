@@ -40,7 +40,7 @@ object AutoClose {
   }
 
   fun close(obj: AutoCloseable) {
-    resources[obj]?.forEach { resource -> resource.close() }
+    resources[obj]?.forEach { it.close() }
     resources.remove(obj)
   }
 }

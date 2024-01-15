@@ -22,7 +22,6 @@
  */
 package io.infinitic.common.data
 
-import java.time.Instant as JavaInstant
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.descriptors.PrimitiveKind
@@ -30,11 +29,12 @@ import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
 import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
+import java.time.Instant
 
 @Serializable(with = MillisInstantSerializer::class)
 data class MillisInstant(val long: Long = 0) : Comparable<Long> {
   companion object {
-    fun now() = MillisInstant(JavaInstant.now().toEpochMilli())
+    fun now() = MillisInstant(Instant.now().toEpochMilli())
   }
 
   override fun toString() = "$long"

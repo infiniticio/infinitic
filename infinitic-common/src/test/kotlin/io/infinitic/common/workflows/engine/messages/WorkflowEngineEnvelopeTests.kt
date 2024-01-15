@@ -22,9 +22,9 @@
  */
 package io.infinitic.common.workflows.engine.messages
 
-import io.infinitic.common.checkBackwardCompatibility
-import io.infinitic.common.checkOrCreateCurrentFile
 import io.infinitic.common.fixtures.TestFactory
+import io.infinitic.common.fixtures.checkBackwardCompatibility
+import io.infinitic.common.fixtures.checkOrCreateCurrentFile
 import io.infinitic.common.serDe.avro.AvroSerDe
 import io.kotest.assertions.throwables.shouldNotThrowAny
 import io.kotest.assertions.throwables.shouldThrowAny
@@ -44,13 +44,14 @@ class WorkflowEngineEnvelopeTests :
               val byteArray = envelope.toByteArray()
 
               WorkflowEngineEnvelope.fromByteArray(
-                  byteArray, WorkflowEngineEnvelope.writerSchema,
+                  byteArray,
+                  WorkflowEngineEnvelope.writerSchema,
               ) shouldBe envelope
             }
           }
         }
 
-        "Avro Schema should be backward compatible to 0.9.0" {
+        "Avro Schema should be backward compatible" {
           // An error in this test means that we need to upgrade the version
           checkOrCreateCurrentFile(
               WorkflowEngineEnvelope::class,
@@ -63,8 +64,8 @@ class WorkflowEngineEnvelopeTests :
           )
         }
 
-        "We should be able to read binary from any previous version since 0.9.0" {
-          AvroSerDe.getAllSchemas(WorkflowEngineEnvelope::class).forEach { (_, schema) ->
+        AvroSerDe.getAllSchemas(WorkflowEngineEnvelope::class).forEach { (version, schema) ->
+          "We should be able to read binary from previous version $version" {
             val bytes = AvroSerDe.getRandomBinary(schema)
             val e = shouldThrowAny { WorkflowEngineEnvelope.fromByteArray(bytes, schema) }
             e::class shouldBeOneOf listOf(

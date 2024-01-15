@@ -26,7 +26,7 @@ import io.infinitic.annotations.Timeout
 import io.infinitic.exceptions.TaskTimedOutException
 import io.infinitic.exceptions.WorkflowTimedOutException
 import io.infinitic.tasks.WithTimeout
-import io.infinitic.tests.utils.After500MilliSeconds
+import io.infinitic.tests.utils.After1Second
 import io.infinitic.tests.utils.UtilService
 import io.infinitic.workflows.Workflow
 
@@ -34,7 +34,7 @@ import io.infinitic.workflows.Workflow
 interface TimeoutsWorkflow {
 
   // the workflow method 'withMethodTimeout' has a 100ms timeout
-  @Timeout(After500MilliSeconds::class)
+  @Timeout(After1Second::class)
   fun withTimeoutOnMethod(duration: Long): Long
 
   fun withTimeoutOnTask(wait: Long): Long
@@ -57,7 +57,7 @@ class TimeoutsWorkflowImpl : Workflow(), TimeoutsWorkflow {
   private val utilService = newService(
       UtilService::class.java,
       tags = setOf("foo", "bar"),
-      meta = mapOf("foo" to "bar".toByteArray()),
+      meta = mutableMapOf("foo" to "bar".toByteArray()),
   )
   private val timeoutsWorkflow =
       newWorkflow(TimeoutsWorkflow::class.java, tags = setOf("foo", "bar"))
@@ -91,7 +91,7 @@ interface ITimeoutWorkflow : WithTimeout {
   // the workflow method 'withMethodTimeout' has a 100ms timeout
   fun withTimeoutOnMethod(duration: Long): Long
 
-  override fun getTimeoutInSeconds(): Double? = 0.5
+  override fun getTimeoutInSeconds(): Double? = 0.4
 }
 
 class ITimeoutsWorkflowImpl : Workflow(), ITimeoutWorkflow {

@@ -22,29 +22,58 @@
  */
 package io.infinitic.workflows.engine.handlers
 
+import io.infinitic.common.clients.data.ClientName
+import io.infinitic.common.emitters.EmitterName
+import io.infinitic.common.exceptions.thisShouldNotHappen
 import io.infinitic.common.transport.InfiniticProducer
-import io.infinitic.common.workflows.data.methodRuns.MethodRun
-import io.infinitic.common.workflows.data.methodRuns.MethodRunPosition
-import io.infinitic.common.workflows.engine.messages.DispatchMethodOnRunningWorkflow
+import io.infinitic.common.workflows.data.methodRuns.PositionInWorkflowMethod
+import io.infinitic.common.workflows.data.methodRuns.WorkflowMethod
+import io.infinitic.common.workflows.data.methodRuns.WorkflowMethodId
+import io.infinitic.common.workflows.engine.events.WorkflowMethodStartedEvent
+import io.infinitic.common.workflows.engine.messages.DispatchMethodWorkflow
+import io.infinitic.common.workflows.engine.messages.parentClientName
 import io.infinitic.common.workflows.engine.state.WorkflowState
 import io.infinitic.workflows.engine.helpers.dispatchWorkflowTask
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.launch
 
+/**
+ * This method is called when a client manually dispatches a method on a running workflow
+ */
 internal fun CoroutineScope.dispatchMethod(
   producer: InfiniticProducer,
   state: WorkflowState,
-  message: DispatchMethodOnRunningWorkflow
+  message: DispatchMethodWorkflow
 ) {
-  val methodRun = MethodRun(
-      methodRunId = message.methodRunId,
+  launch {
+    val workflowMethodStartedEvent = WorkflowMethodStartedEvent(
+        workflowName = message.workflowName,
+        workflowId = message.workflowId,
+        emitterName = EmitterName(producer.name),
+        workflowTags = state.workflowTags,
+        workflowMeta = state.workflowMeta,
+        workflowMethodId = WorkflowMethodId.from(message.workflowId),
+        parentWorkflowName = null,
+        parentWorkflowId = null,
+        parentWorkflowMethodId = null,
+        parentClientName = message.parentClientName,
+        waitingClients = if (message.clientWaiting) setOf(message.parentClientName!!) else setOf(),
+    )
+
+    producer.sendToWorkflowEvents(workflowMethodStartedEvent)
+  }
+
+  val workflowMethod = WorkflowMethod(
+      workflowMethodId = message.workflowMethodId,
       waitingClients =
       when (message.clientWaiting) {
-        true -> mutableSetOf(message.emitterName)
+        true -> mutableSetOf(ClientName.from(message.emitterName))
         false -> mutableSetOf()
       },
       parentWorkflowId = message.parentWorkflowId,
       parentWorkflowName = message.parentWorkflowName,
-      parentMethodRunId = message.parentMethodRunId,
+      parentWorkflowMethodId = message.parentWorkflowMethodId,
+      parentClientName = message.parentClientName,
       methodName = message.methodName,
       methodParameterTypes = message.methodParameterTypes,
       methodParameters = message.methodParameters,
@@ -52,7 +81,13 @@ internal fun CoroutineScope.dispatchMethod(
       propertiesNameHashAtStart = state.currentPropertiesNameHash.toMap(),
   )
 
-  state.methodRuns.add(methodRun)
+  state.workflowMethods.add(workflowMethod)
 
-  dispatchWorkflowTask(producer, state, methodRun, MethodRunPosition())
+  dispatchWorkflowTask(
+      producer,
+      state,
+      workflowMethod,
+      PositionInWorkflowMethod(),
+      message.emittedAt ?: thisShouldNotHappen(),
+  )
 }

@@ -56,7 +56,7 @@ class ContextWorkflowImpl : Workflow(), ContextWorkflow {
       newService(
           UtilService::class.java,
           tags = setOf("foo", "bar"),
-          meta = mapOf("foo" to "bar".toByteArray()),
+          meta = mutableMapOf("foo" to "bar".toByteArray()),
       )
 
   override fun context1(): String = workflowId

@@ -22,13 +22,14 @@
  */
 package io.infinitic.workflows.engine.helpers
 
+import io.infinitic.common.data.MillisInstant
 import io.infinitic.common.exceptions.thisShouldNotHappen
 import io.infinitic.common.transport.InfiniticProducer
 import io.infinitic.common.workflows.data.commands.CommandId
 import io.infinitic.common.workflows.data.commands.CommandStatus
 import io.infinitic.common.workflows.data.commands.PastCommand
 import io.infinitic.common.workflows.data.commands.ReceiveSignalPastCommand
-import io.infinitic.common.workflows.data.methodRuns.MethodRunId
+import io.infinitic.common.workflows.data.methodRuns.WorkflowMethodId
 import io.infinitic.common.workflows.engine.state.WorkflowState
 import kotlinx.coroutines.CoroutineScope
 
@@ -40,12 +41,19 @@ import kotlinx.coroutines.CoroutineScope
 internal fun CoroutineScope.commandTerminated(
   producer: InfiniticProducer,
   state: WorkflowState,
-  methodRunId: MethodRunId,
+  workflowMethodId: WorkflowMethodId,
   commandId: CommandId,
-  commandStatus: CommandStatus
+  commandStatus: CommandStatus,
+  emittedAt: MillisInstant
 ) {
-  val methodRun = state.getMethodRun(methodRunId) ?: thisShouldNotHappen()
-  val pastCommand = state.getPastCommand(commandId, methodRun)
+  val workflowMethod = state.getWorkflowMethod(workflowMethodId) ?: thisShouldNotHappen()
+  val pastCommand = state.getPastCommand(commandId, workflowMethod)
+
+  // If workflow engine is shutdown when handling a workflow task,
+  // it's possible that the engine already dispatched some commands before the shutdown
+  // After 0.13.0, the Ids of those commands are deterministic, so this should not happen anymore
+  @Deprecated("This should be unnecessary after 0.13.0")
+  if (pastCommand == null) return
 
   // Idempotency: do nothing if this command is already terminated
   // (i.e. canceled or completed, not failed as it's a transient status)
@@ -54,7 +62,7 @@ internal fun CoroutineScope.commandTerminated(
   // update command status
   pastCommand.setTerminatedStatus(commandStatus)
 
-  if (stepTerminated(producer, state, pastCommand)) {
+  if (stepTerminated(producer, state, pastCommand, emittedAt)) {
     if (pastCommand is ReceiveSignalPastCommand) {
       // if a step is completed right away, we remove this status from state
       pastCommand.commandStatuses.remove(commandStatus)
@@ -66,19 +74,21 @@ internal fun CoroutineScope.commandTerminated(
     }
   }
 
-  // if this method run was already completed, but we were waiting for this command to complete,
+  // if this workflow method was already completed, but we were waiting for this command to complete,
   // we may be able to delete it now
-  if (methodRun.isTerminated()) state.removeMethodRun(methodRun)
+  if (workflowMethod.isTerminated()) state.removeWorkflowMethod(workflowMethod)
 }
 
 // search the first step completed by this command
 internal fun CoroutineScope.stepTerminated(
   producer: InfiniticProducer,
   state: WorkflowState,
-  pastCommand: PastCommand
+  pastCommand: PastCommand,
+  emittedAt: MillisInstant
 ): Boolean {
   // get all methodRuns terminated by this command
-  val methodRuns = state.methodRuns.filter { it.currentStep?.isTerminatedBy(pastCommand) == true }
+  val methodRuns =
+      state.workflowMethods.filter { it.currentStep?.isTerminatedBy(pastCommand) == true }
 
   // get step with lowest workflowTaskIndexAtStart
   methodRuns
@@ -98,7 +108,7 @@ internal fun CoroutineScope.stepTerminated(
         }
 
         // dispatch a new workflowTask
-        dispatchWorkflowTask(producer, state, it, pastStep.stepPosition)
+        dispatchWorkflowTask(producer, state, it, pastStep.stepPosition, emittedAt)
 
         // if more than 1 methodRun is completed by this command, we need to keep it
         return methodRuns.size > 1

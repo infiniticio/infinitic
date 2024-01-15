@@ -26,8 +26,10 @@ import io.github.oshai.kotlinlogging.KotlinLogging
 import io.infinitic.common.clients.messages.ClientMessage
 import io.infinitic.common.data.MillisDuration
 import io.infinitic.common.messages.Message
+import io.infinitic.common.tasks.executors.events.TaskEventMessage
 import io.infinitic.common.tasks.executors.messages.TaskExecutorMessage
 import io.infinitic.common.tasks.tags.messages.TaskTagMessage
+import io.infinitic.common.workflows.engine.events.WorkflowEventMessage
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
 import io.infinitic.common.workflows.tags.messages.WorkflowTagMessage
 import kotlinx.coroutines.future.await
@@ -36,6 +38,17 @@ class LoggedInfiniticProducer(
   logName: String,
   private val producerAsync: InfiniticProducerAsync,
 ) : InfiniticProducer {
+
+  /**
+   * The `producingScope` is a Coroutine Scope used for running task, engine, etc.
+   *
+   * Note: Using Dispatchers.IO instead of Dispatchers.Default creates a deadlock for high
+   * concurrency - see infinitic-transport-pulsar/src/test/kotlin/io/infinitic/pulsar/Test
+   *
+   * A SupervisorJob instance is used in the CoroutineScope to ensure that
+   * if an exception occurs during the processing,
+   * the scope itself is not cancelled.
+   */
 
   private val logger = KotlinLogging.logger(logName)
 
@@ -47,33 +60,54 @@ class LoggedInfiniticProducer(
       producerAsync.name = value
     }
 
-  override suspend fun send(message: ClientMessage) {
+  override suspend fun sendToClient(message: ClientMessage) {
     logDebug(message)
-    producerAsync.sendAsync(message).await()
+    producerAsync.sendToClientAsync(message).await()
     logTrace(message)
   }
 
-  override suspend fun send(message: WorkflowTagMessage) {
+  override suspend fun sendToWorkflowTag(message: WorkflowTagMessage) {
     logDebug(message)
-    producerAsync.sendAsync(message).await()
+    producerAsync.sendToWorkflowTagAsync(message).await()
     logTrace(message)
   }
 
-  override suspend fun send(message: WorkflowEngineMessage, after: MillisDuration) {
+  override suspend fun sendToWorkflowCmd(message: WorkflowEngineMessage) {
+    logDebug(message)
+    producerAsync.sendToWorkflowCmdAsync(message).await()
+    logTrace(message)
+  }
+
+  override suspend fun sendToWorkflowEngine(
+    message: WorkflowEngineMessage,
+    after: MillisDuration
+  ) {
     logDebug(message, after)
-    producerAsync.sendAsync(message, after).await()
+    producerAsync.sendToWorkflowEngineAsync(message, after).await()
     logTrace(message)
   }
 
-  override suspend fun send(message: TaskTagMessage) {
+  override suspend fun sendToWorkflowEvents(message: WorkflowEventMessage) {
     logDebug(message)
-    producerAsync.sendAsync(message).await()
+    producerAsync.sendToWorkflowEventsAsync(message).await()
     logTrace(message)
   }
 
-  override suspend fun send(message: TaskExecutorMessage, after: MillisDuration) {
+  override suspend fun sendToTaskTag(message: TaskTagMessage) {
+    logDebug(message)
+    producerAsync.sendToTaskTagAsync(message).await()
+    logTrace(message)
+  }
+
+  override suspend fun sendToTaskExecutor(message: TaskExecutorMessage, after: MillisDuration) {
     logDebug(message, after)
-    producerAsync.sendAsync(message, after).await()
+    producerAsync.sendToTaskExecutorAsync(message, after).await()
+    logTrace(message)
+  }
+
+  override suspend fun sendToTaskEvents(message: TaskEventMessage) {
+    logDebug(message)
+    producerAsync.sendToTaskEventsAsync(message).await()
     logTrace(message)
   }
 

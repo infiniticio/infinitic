@@ -37,8 +37,8 @@ internal class ContextWorkflowTests :
 
         val contextWorkflow = client.newWorkflow(
             ContextWorkflow::class.java,
-            meta = mapOf("foo" to "bar".toByteArray()),
             tags = setOf("foo", "bar"),
+            meta = mutableMapOf("foo" to "bar".toByteArray()),
         )
 
         "get id from context" { contextWorkflow.context1() shouldBe client.lastDeferred!!.id }
@@ -58,7 +58,7 @@ internal class ContextWorkflowTests :
         "get task tags from Task" { contextWorkflow.context6() shouldBe setOf("foo", "bar") }
 
         "get task meta from Task" {
-          contextWorkflow.context7() shouldBe TaskMeta(mapOf("foo" to "bar".toByteArray()))
+          contextWorkflow.context7() shouldBe TaskMeta(mutableMapOf("foo" to "bar".toByteArray()))
         }
 
         "get task retry from config file" {

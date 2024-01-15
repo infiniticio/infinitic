@@ -22,24 +22,23 @@
  */
 package io.infinitic.workers.storage
 
+import io.github.oshai.kotlinlogging.KotlinLogging
 import io.infinitic.cache.keyValue.CachedKeyValue
 import io.infinitic.storage.keyValue.KeyValueStorage
-import io.github.oshai.kotlinlogging.KotlinLogging
 import org.jetbrains.annotations.TestOnly
 
 open class CachedKeyValueStorage(
-    private val cache: CachedKeyValue<ByteArray>,
-    private val storage: KeyValueStorage
+  private val cache: CachedKeyValue<ByteArray>,
+  private val storage: KeyValueStorage
 ) : KeyValueStorage {
 
   private val logger = KotlinLogging.logger {}
 
   override suspend fun get(key: String): ByteArray? {
-    return cache.getValue(key)
-        ?: run {
-          logger.debug { "key $key - getValue - absent from cache, get from storage" }
-          storage.get(key)?.also { cache.putValue(key, it) }
-        }
+    return cache.getValue(key) ?: run {
+      logger.debug { "key $key - getValue - absent from cache, get from storage" }
+      storage.get(key)?.also { cache.putValue(key, it) }
+    }
   }
 
   override suspend fun put(key: String, value: ByteArray) {
@@ -50,6 +49,10 @@ open class CachedKeyValueStorage(
   override suspend fun del(key: String) {
     storage.del(key)
     cache.delValue(key)
+  }
+
+  override fun close() {
+    storage.close()
   }
 
   @TestOnly

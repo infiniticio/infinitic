@@ -90,7 +90,7 @@ class ErrorsWorkflowImpl : Workflow(), ErrorsWorkflow {
       newService(
           UtilService::class.java,
           tags = setOf("foo", "bar"),
-          meta = mapOf("foo" to "bar".toByteArray()),
+          meta = mutableMapOf("foo" to "bar".toByteArray()),
       )
   private val errorsWorkflow = newWorkflow(ErrorsWorkflow::class.java, tags = setOf("foo", "bar"))
 
@@ -190,15 +190,17 @@ class ErrorsWorkflowImpl : Workflow(), ErrorsWorkflow {
     // this method will success only after retry
     val deferred = dispatch(utilService::successAtRetry)
 
-    val result =
-        try {
-          deferred.await()
-        } catch (e: DeferredFailedException) {
-          "caught"
-        }
+    val result = try {
+      deferred.await()
+    } catch (e: DeferredFailedException) {
+      "caught"
+    }
 
     // trigger the retry of the previous task
     utilService.retryFailedTasks(ErrorsWorkflow::class.java.name, workflowId)
+
+    // ensure that workflow received the retryFailedTasks request
+    utilService.await(200)
 
     return deferred.await() == "ok" && result == "caught"
   }

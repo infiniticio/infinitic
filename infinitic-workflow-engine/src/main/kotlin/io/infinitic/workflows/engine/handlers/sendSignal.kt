@@ -24,6 +24,7 @@ package io.infinitic.workflows.engine.handlers
 
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.infinitic.common.data.ReturnValue
+import io.infinitic.common.exceptions.thisShouldNotHappen
 import io.infinitic.common.transport.InfiniticProducer
 import io.infinitic.common.workflows.data.commands.CommandStatus.Completed
 import io.infinitic.common.workflows.engine.messages.SendSignal
@@ -55,7 +56,7 @@ internal fun CoroutineScope.sendSignal(
         commandTerminated(
             producer,
             state,
-            it.methodRunId,
+            it.workflowMethodId,
             it.commandId,
             Completed(
                 returnIndex = it.receivedSignalCount - 1,
@@ -63,6 +64,7 @@ internal fun CoroutineScope.sendSignal(
                 completionWorkflowTaskIndex = state.workflowTaskIndex,
                 signalId = message.signalId,
             ),
+            message.emittedAt ?: thisShouldNotHappen(),
         )
       } ?: logger.debug { "discarding non-waited signal $message" }
 }

@@ -80,7 +80,7 @@ class ChannelsWorkflowImpl : Workflow(), ChannelsWorkflow {
       newService(
           UtilService::class.java,
           tags = setOf("foo", "bar"),
-          meta = mapOf("foo" to "bar".toByteArray()),
+          meta = mutableMapOf("foo" to "bar".toByteArray()),
       )
   private val workflowA = newWorkflow(ChannelsWorkflow::class.java)
 

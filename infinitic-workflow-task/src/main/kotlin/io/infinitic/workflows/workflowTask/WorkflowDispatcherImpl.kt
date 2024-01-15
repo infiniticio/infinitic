@@ -34,23 +34,26 @@ import io.infinitic.common.proxies.ExistingWorkflowProxyHandler
 import io.infinitic.common.proxies.NewServiceProxyHandler
 import io.infinitic.common.proxies.NewWorkflowProxyHandler
 import io.infinitic.common.proxies.ProxyHandler
+import io.infinitic.common.utils.IdGenerator
 import io.infinitic.common.workflows.data.channels.ChannelFilter
 import io.infinitic.common.workflows.data.channels.ChannelName
 import io.infinitic.common.workflows.data.channels.ChannelType
 import io.infinitic.common.workflows.data.channels.SignalData
 import io.infinitic.common.workflows.data.commands.Command
+import io.infinitic.common.workflows.data.commands.CommandId
 import io.infinitic.common.workflows.data.commands.CommandSimpleName
 import io.infinitic.common.workflows.data.commands.CommandStatus
-import io.infinitic.common.workflows.data.commands.DispatchExistingWorkflowCommand
+import io.infinitic.common.workflows.data.commands.DispatchMethodOnRunningWorkflowCommand
 import io.infinitic.common.workflows.data.commands.DispatchNewWorkflowCommand
 import io.infinitic.common.workflows.data.commands.DispatchTaskCommand
 import io.infinitic.common.workflows.data.commands.InlineTaskCommand
+import io.infinitic.common.workflows.data.commands.InlineTaskPastCommand
 import io.infinitic.common.workflows.data.commands.PastCommand
 import io.infinitic.common.workflows.data.commands.ReceiveSignalCommand
 import io.infinitic.common.workflows.data.commands.SendSignalCommand
 import io.infinitic.common.workflows.data.commands.StartDurationTimerCommand
 import io.infinitic.common.workflows.data.commands.StartInstantTimerCommand
-import io.infinitic.common.workflows.data.methodRuns.MethodRunPosition
+import io.infinitic.common.workflows.data.methodRuns.PositionInWorkflowMethod
 import io.infinitic.common.workflows.data.properties.PropertyHash
 import io.infinitic.common.workflows.data.properties.PropertyName
 import io.infinitic.common.workflows.data.steps.NewStep
@@ -100,10 +103,10 @@ internal class WorkflowDispatcherImpl(
   var newStep: NewStep? = null
 
   // position in the current method processing
-  private var methodRunPosition = MethodRunPosition()
+  private var positionInMethod = PositionInWorkflowMethod()
 
   // current workflowTaskIndex (useful to retrieve status of Deferred)
-  private var workflowTaskIndex = workflowTaskParameters.methodRun.workflowTaskIndexAtStart
+  private var workflowTaskIndex = workflowTaskParameters.workflowMethod.workflowTaskIndexAtStart
 
   // synchronous call: stub.method(*args)
   @Suppress("UNCHECKED_CAST")
@@ -116,11 +119,11 @@ internal class WorkflowDispatcherImpl(
   // asynchronous call: dispatch(stub::method)(*args)
   override fun <R : Any?> dispatch(handler: ProxyHandler<*>, clientWaiting: Boolean): Deferred<R> =
       when (handler) {
-        is NewServiceProxyHandler -> dispatchTask(handler)
-        is NewWorkflowProxyHandler -> dispatchWorkflow(handler)
+        is NewServiceProxyHandler -> handler.dispatchTask()
+        is NewWorkflowProxyHandler -> handler.dispatchWorkflow()
         is ExistingServiceProxyHandler -> throw InvalidRunningTaskException("${handler.stub()}")
-        is ExistingWorkflowProxyHandler -> dispatchMethod(handler)
-        is ChannelProxyHandler -> dispatchSignal(handler)
+        is ExistingWorkflowProxyHandler -> handler.dispatchMethod()
+        is ChannelProxyHandler -> handler.dispatchSignal()
       }
 
   /** Inlined task */
@@ -137,15 +140,15 @@ internal class WorkflowDispatcherImpl(
         val command = InlineTaskCommand()
 
         newCommands.add(
-            PastCommand.from(
-                command = command,
-                commandPosition = methodRunPosition,
+            InlineTaskPastCommand(
+                commandId = getCurrentCommandId(),
+                commandPosition = positionInMethod,
                 commandSimpleName = InlineTaskCommand.simpleName(),
-                commandStatus =
-                CommandStatus.Completed(
+                commandStatus = CommandStatus.Completed(
                     returnValue = ReturnValue.from(value),
                     completionWorkflowTaskIndex = workflowTaskIndex,
                 ),
+                command = command,
             ),
         )
         // returns value
@@ -171,7 +174,7 @@ internal class WorkflowDispatcherImpl(
     nextPosition()
 
     // create a new step
-    val newStep = NewStep(step = deferred.step, stepPosition = methodRunPosition)
+    val newStep = NewStep(step = deferred.step, stepPosition = positionInMethod)
 
     deferred.step.checkAwaitIndex()
 
@@ -330,81 +333,106 @@ internal class WorkflowDispatcherImpl(
     )
   }
 
+  /**
+   * Deterministic generation of the current command id based on the time of workflowTaskInstant
+   * and some unique characteristics of the command
+   *
+   * Being deterministic provides 2 benefits:
+   * - commandId can be used as an idempotency key when processing tasks and workflows
+   * - it avoids messing up the workflow state if a workflow task is processed twice,
+   * triggering signals, tasks, workflows twice
+   **/
+  private fun getCurrentCommandId(): CommandId =
+      when (val instant = workflowTaskParameters.workflowTaskInstant) {
+        // before 0.13.0 workflowTaskInstant is null, we roll back to previous implementation
+        // this workflow task will be eventually rejected by the workflow engine
+        null -> CommandId()
+
+        else -> {
+          val str = "workflowId=${workflowTaskParameters.workflowId}" +
+              "workflowMethodId=${workflowTaskParameters.workflowMethod.workflowMethodId}" +
+              "workflowVersion=${workflowTaskParameters.workflowVersion}" +
+              "positionInMethod=$positionInMethod"
+
+          CommandId(IdGenerator.from(instant, str))
+        }
+      }
+
   /** Go to next position within the same branch */
   private fun nextPosition() {
-    methodRunPosition = methodRunPosition.next()
+    positionInMethod = positionInMethod.next()
   }
 
   /** Task dispatching */
-  private fun <R : Any?> dispatchTask(handler: NewServiceProxyHandler<*>): Deferred<R> =
+  private fun <R : Any?> NewServiceProxyHandler<*>.dispatchTask(): Deferred<R> =
       dispatchCommand(
           DispatchTaskCommand(
-              serviceName = handler.serviceName,
-              methodParameters = handler.methodParameters,
-              methodParameterTypes = handler.methodParameterTypes,
-              methodName = handler.methodName,
-              methodTimeout = handler.timeoutInMillisDuration.getOrThrow(),
-              taskTags = handler.taskTags,
-              taskMeta = handler.taskMeta,
+              serviceName = serviceName,
+              methodParameters = methodParameters,
+              methodParameterTypes = methodParameterTypes,
+              methodName = methodName,
+              methodTimeout = timeoutInMillisDuration.getOrThrow(),
+              taskTags = taskTags,
+              taskMeta = taskMeta,
           ),
-          CommandSimpleName(handler.fullMethodName),
+          CommandSimpleName(fullMethodName),
       )
 
   /** Workflow dispatching */
-  private fun <R : Any?> dispatchWorkflow(handler: NewWorkflowProxyHandler<*>): Deferred<R> =
-      when (handler.isChannelGetter()) {
+  private fun <R : Any?> NewWorkflowProxyHandler<*>.dispatchWorkflow(): Deferred<R> =
+      when (isChannelGetter()) {
         true -> throw InvalidChannelUsageException()
         false -> {
           // it's not possible to have multiple customIds in tags
-          if (handler.workflowTags.count { it.isCustomId() } > 1) {
+          if (workflowTags.count { it.isCustomId() } > 1) {
             throw MultipleCustomIdException
           }
 
           dispatchCommand(
               DispatchNewWorkflowCommand(
-                  workflowName = handler.workflowName,
-                  methodName = handler.methodName,
-                  methodParameterTypes = handler.methodParameterTypes,
-                  methodParameters = handler.methodParameters,
-                  methodTimeout = handler.timeoutInMillisDuration.getOrThrow(),
-                  workflowTags = handler.workflowTags,
-                  workflowMeta = handler.workflowMeta,
+                  workflowName = workflowName,
+                  methodName = methodName,
+                  methodParameterTypes = methodParameterTypes,
+                  methodParameters = methodParameters,
+                  methodTimeout = timeoutInMillisDuration.getOrThrow(),
+                  workflowTags = workflowTags,
+                  workflowMeta = workflowMeta,
               ),
-              CommandSimpleName(handler.fullMethodName),
+              CommandSimpleName(fullMethodName),
           )
         }
       }
 
   /** Method dispatching */
-  private fun <R : Any?> dispatchMethod(handler: ExistingWorkflowProxyHandler<*>): Deferred<R> =
-      when (handler.isChannelGetter()) {
+  private fun <R : Any?> ExistingWorkflowProxyHandler<*>.dispatchMethod(): Deferred<R> =
+      when (isChannelGetter()) {
         true -> throw InvalidChannelUsageException()
         false -> dispatchCommand(
-            DispatchExistingWorkflowCommand(
-                workflowName = handler.workflowName,
-                workflowId = handler.requestBy.workflowId,
-                workflowTag = handler.requestBy.workflowTag,
-                methodName = handler.methodName,
-                methodParameterTypes = handler.methodParameterTypes,
-                methodParameters = handler.methodParameters,
-                methodTimeout = handler.timeoutInMillisDuration.getOrThrow(),
+            DispatchMethodOnRunningWorkflowCommand(
+                workflowName = workflowName,
+                workflowId = requestBy.workflowId,
+                workflowTag = requestBy.workflowTag,
+                methodName = methodName,
+                methodParameterTypes = methodParameterTypes,
+                methodParameters = methodParameters,
+                methodTimeout = timeoutInMillisDuration.getOrThrow(),
             ),
-            CommandSimpleName(handler.fullMethodName),
+            CommandSimpleName(fullMethodName),
         )
       }
 
   /** Signal dispatching */
-  private fun <R : Any?> dispatchSignal(handler: ChannelProxyHandler<*>): Deferred<R> {
-    if (handler.methodName.toString() != SendChannel<*>::send.name) thisShouldNotHappen()
+  private fun <R : Any?> ChannelProxyHandler<*>.dispatchSignal(): Deferred<R> {
+    if (methodName.toString() != SendChannel<*>::send.name) thisShouldNotHappen()
 
     return dispatchCommand(
         SendSignalCommand(
-            workflowName = handler.workflowName,
-            workflowId = handler.requestBy.workflowId,
-            workflowTag = handler.requestBy.workflowTag,
-            channelName = handler.channelName,
-            channelTypes = handler.channelTypes,
-            signalData = handler.signalData,
+            workflowName = workflowName,
+            workflowId = requestBy.workflowId,
+            workflowTag = requestBy.workflowTag,
+            channelName = channelName,
+            channelTypes = channelTypes,
+            signalData = signalData,
         ),
         SendSignalCommand.simpleName(),
     )
@@ -420,10 +448,11 @@ internal class WorkflowDispatcherImpl(
     // create instruction that will be sent to engine
     // if it does not already exist in the history
     val newCommand = PastCommand.from(
-        command = command,
-        commandPosition = methodRunPosition,
+        commandId = getCurrentCommandId(),
+        commandPosition = positionInMethod,
         commandSimpleName = commandSimpleName,
         commandStatus = CommandStatus.Ongoing,
+        command = command,
     )
 
     // do we know the same command from the history?
@@ -444,8 +473,8 @@ internal class WorkflowDispatcherImpl(
     }
   }
 
-  private fun getPastCommandAtCurrentPosition(): PastCommand? =
-      workflowTaskParameters.methodRun.pastCommands.find { it.commandPosition == methodRunPosition }
+  private fun getPastCommandAtCurrentPosition(): PastCommand? = workflowTaskParameters
+      .workflowMethod.pastCommands.find { it.commandPosition == positionInMethod }
 
   private fun throwCommandsChangedException(
     pastCommand: PastCommand?,
@@ -453,8 +482,8 @@ internal class WorkflowDispatcherImpl(
   ): Nothing {
     val e = WorkflowChangedException(
         "${workflowTaskParameters.workflowName}",
-        "${workflowTaskParameters.methodRun.methodName}",
-        "$methodRunPosition",
+        "${workflowTaskParameters.workflowMethod.methodName}",
+        "$positionInMethod",
     )
     logger.error(e) {
       """Workflow ${workflowTaskParameters.workflowId}:past and new commands are different
@@ -479,21 +508,19 @@ internal class WorkflowDispatcherImpl(
   }
 
   private fun getSimilarPastStep(newStep: NewStep): PastStep? {
-    // Do we already know a step in this position ?
-    val currentStep = workflowTaskParameters.methodRun.currentStep
-    val pastStep =
-        if (currentStep?.stepPosition == methodRunPosition) {
-          currentStep
-        } else {
-          workflowTaskParameters.methodRun.pastSteps.find { it.stepPosition == methodRunPosition }
-        }
+    // Do we already know a step in this position?
+    val currentStep = workflowTaskParameters.workflowMethod.currentStep
+    val pastStep = when (currentStep?.stepPosition) {
+      positionInMethod -> currentStep
+      else -> workflowTaskParameters.workflowMethod.pastSteps.find { it.stepPosition == positionInMethod }
+    }
 
     // if it exists, check it has not changed
     if (pastStep != null && !pastStep.isSameThan(newStep)) {
       val e = WorkflowChangedException(
           workflowTaskParameters.workflowName.name,
-          "${workflowTaskParameters.methodRun.methodName}",
-          "$methodRunPosition",
+          "${workflowTaskParameters.workflowMethod.methodName}",
+          "$positionInMethod",
       )
       logger.error(e) {
         """Workflow ${workflowTaskParameters.workflowId}: past and new steps are different

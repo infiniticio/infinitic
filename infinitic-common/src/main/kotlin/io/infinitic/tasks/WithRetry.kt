@@ -27,4 +27,4 @@ fun interface WithRetry {
 }
 
 fun WithRetry.getMillisBeforeRetry(retry: Int, e: Exception) =
-    getSecondsBeforeRetry(retry, e)?.let { (it * 1000).toLong() }
+    getSecondsBeforeRetry(retry, e)?.let { 0L.coerceAtLeast((it * 1000).toLong()) }

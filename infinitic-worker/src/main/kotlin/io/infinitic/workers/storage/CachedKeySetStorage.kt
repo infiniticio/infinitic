@@ -22,24 +22,23 @@
  */
 package io.infinitic.workers.storage
 
+import io.github.oshai.kotlinlogging.KotlinLogging
 import io.infinitic.cache.keySet.CachedKeySet
 import io.infinitic.storage.keySet.KeySetStorage
-import io.github.oshai.kotlinlogging.KotlinLogging
 import org.jetbrains.annotations.TestOnly
 
 class CachedKeySetStorage(
-    private val cache: CachedKeySet<ByteArray>,
-    private val storage: KeySetStorage
+  private val cache: CachedKeySet<ByteArray>,
+  private val storage: KeySetStorage
 ) : KeySetStorage {
 
   private val logger = KotlinLogging.logger {}
 
   override suspend fun get(key: String): Set<ByteArray> =
-      cache.get(key)
-          ?: run {
-            logger.debug { "key $key - getSet - absent from cache, get from storage" }
-            storage.get(key).also { cache.set(key, it) }
-          }
+      cache.get(key) ?: run {
+        logger.debug { "key $key - getSet - absent from cache, get from storage" }
+        storage.get(key).also { cache.set(key, it) }
+      }
 
   override suspend fun add(key: String, value: ByteArray) {
     storage.add(key, value)
@@ -49,6 +48,10 @@ class CachedKeySetStorage(
   override suspend fun remove(key: String, value: ByteArray) {
     cache.remove(key, value)
     storage.remove(key, value)
+  }
+
+  override fun close() {
+    storage.close()
   }
 
   @TestOnly

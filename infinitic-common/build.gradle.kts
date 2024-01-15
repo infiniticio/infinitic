@@ -37,6 +37,7 @@ dependencies {
   implementation(Libs.Avro4k.core)
   implementation(Libs.Coroutines.core)
   implementation(Libs.Coroutines.jdk8)
+  implementation(Libs.Uuid.generator)
 
   testFixturesImplementation(Libs.Kotlin.reflect)
   testFixturesImplementation(Libs.EasyRandom.core)
@@ -61,7 +62,7 @@ tasks.withType<KotlinCompile> {
     }
 
     // current version (snapshot or release)
-    File(project.projectDir.absolutePath, "/src/main/resources/current")
+    File(project.projectDir.absolutePath, "/src/main/resources/currentVersion")
         .writeText(Ci.version)
 
     // Pulsar version

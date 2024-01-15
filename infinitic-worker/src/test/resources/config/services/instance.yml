@@ -34,3 +34,4 @@ services:
   - name: io.infinitic.workers.samples.ServiceA
     class: io.infinitic.workers.samples.ServiceAImpl
 
+

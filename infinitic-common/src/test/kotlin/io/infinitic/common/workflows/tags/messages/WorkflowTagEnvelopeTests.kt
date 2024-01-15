@@ -22,9 +22,9 @@
  */
 package io.infinitic.common.workflows.tags.messages
 
-import io.infinitic.common.checkBackwardCompatibility
-import io.infinitic.common.checkOrCreateCurrentFile
 import io.infinitic.common.fixtures.TestFactory
+import io.infinitic.common.fixtures.checkBackwardCompatibility
+import io.infinitic.common.fixtures.checkOrCreateCurrentFile
 import io.infinitic.common.serDe.avro.AvroSerDe
 import io.infinitic.common.workflows.data.workflows.WorkflowTag
 import io.kotest.assertions.throwables.shouldNotThrowAny

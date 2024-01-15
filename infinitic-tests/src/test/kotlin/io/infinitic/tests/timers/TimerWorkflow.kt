@@ -49,7 +49,7 @@ class TimerWorkflowImpl : Workflow(), TimerWorkflow {
       newService(
           UtilService::class.java,
           tags = setOf("foo", "bar"),
-          meta = mapOf("foo" to "bar".toByteArray()))
+          meta = mutableMapOf("foo" to "bar".toByteArray()))
 
   override fun await(millis: Long) = timer(Duration.ofMillis(millis)).await()
 

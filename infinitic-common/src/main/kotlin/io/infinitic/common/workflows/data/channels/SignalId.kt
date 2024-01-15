@@ -22,13 +22,13 @@
  */
 package io.infinitic.common.workflows.data.channels
 
+import io.infinitic.common.utils.IdGenerator
 import io.infinitic.common.workflows.data.commands.CommandId
-import java.util.UUID
 import kotlinx.serialization.Serializable
 
 @JvmInline
 @Serializable
-value class SignalId(private val id: String = UUID.randomUUID().toString()) {
+value class SignalId(private val id: String = IdGenerator.next()) {
   companion object {
     fun from(command: CommandId) = SignalId(command.toString())
   }

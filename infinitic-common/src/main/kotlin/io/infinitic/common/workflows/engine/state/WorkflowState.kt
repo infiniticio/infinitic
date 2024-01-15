@@ -24,10 +24,10 @@ package io.infinitic.common.workflows.engine.state
 
 import com.github.avrokotlin.avro4k.Avro
 import com.github.avrokotlin.avro4k.AvroDefault
+import com.github.avrokotlin.avro4k.AvroName
 import com.github.avrokotlin.avro4k.AvroNamespace
 import io.infinitic.common.data.MessageId
 import io.infinitic.common.data.MillisInstant
-import io.infinitic.common.exceptions.thisShouldNotHappen
 import io.infinitic.common.serDe.avro.AvroSerDe
 import io.infinitic.common.tasks.data.TaskId
 import io.infinitic.common.workers.config.WorkflowVersion
@@ -36,9 +36,9 @@ import io.infinitic.common.workflows.data.channels.SignalId
 import io.infinitic.common.workflows.data.commands.CommandId
 import io.infinitic.common.workflows.data.commands.CommandStatus
 import io.infinitic.common.workflows.data.commands.PastCommand
-import io.infinitic.common.workflows.data.methodRuns.MethodRun
-import io.infinitic.common.workflows.data.methodRuns.MethodRunId
-import io.infinitic.common.workflows.data.methodRuns.MethodRunPosition
+import io.infinitic.common.workflows.data.methodRuns.PositionInWorkflowMethod
+import io.infinitic.common.workflows.data.methodRuns.WorkflowMethod
+import io.infinitic.common.workflows.data.methodRuns.WorkflowMethodId
 import io.infinitic.common.workflows.data.properties.PropertyHash
 import io.infinitic.common.workflows.data.properties.PropertyName
 import io.infinitic.common.workflows.data.properties.PropertyValue
@@ -75,10 +75,10 @@ data class WorkflowState(
   var runningWorkflowTaskId: TaskId? = null,
 
   /** MethodRunId of WorkflowTask currently running */
-  var runningMethodRunId: MethodRunId? = null,
+  @AvroName("runningMethodRunId") var runningWorkflowMethodId: WorkflowMethodId? = null,
 
   /** Position of the step that triggered WorkflowTask currently running */
-  var runningMethodRunPosition: MethodRunPosition? = null,
+  @AvroName("runningMethodRunPosition") var positionInRunningWorkflowMethod: PositionInWorkflowMethod? = null,
 
   /**
    * In some situations, we know that multiples branches must be processed. As WorkflowTask
@@ -94,7 +94,7 @@ data class WorkflowState(
   var workflowTaskIndex: WorkflowTaskIndex = WorkflowTaskIndex(0),
 
   /** Methods currently running. Once completed this data can be deleted to limit memory usage */
-  val methodRuns: MutableList<MethodRun>,
+  @AvroName("methodRuns") val workflowMethods: MutableList<WorkflowMethod>,
 
   /** Ordered list of channels currently receiving */
   val receivingChannels: MutableList<ReceivingChannel> = mutableListOf(),
@@ -122,37 +122,36 @@ data class WorkflowState(
   fun toByteArray() = AvroSerDe.writeBinaryWithSchemaFingerprint(this, serializer())
 
   fun hasSignalAlreadyBeenReceived(signalId: SignalId) =
-      methodRuns.any { methodRun ->
+      workflowMethods.any { methodRun ->
         methodRun.pastCommands.any {
           it.commandStatus is CommandStatus.Completed &&
               (it.commandStatus as CommandStatus.Completed).signalId == signalId
         }
       }
 
-  fun getRunningMethodRun(): MethodRun = methodRuns.first { it.methodRunId == runningMethodRunId }
+  fun getRunningWorkflowMethod(): WorkflowMethod =
+      workflowMethods.first { it.workflowMethodId == runningWorkflowMethodId }
 
-  fun getMethodRun(methodRunId: MethodRunId) =
-      methodRuns.firstOrNull { it.methodRunId == methodRunId }
+  fun getWorkflowMethod(workflowMethodId: WorkflowMethodId) =
+      workflowMethods.firstOrNull { it.workflowMethodId == workflowMethodId }
 
-  fun getPastCommand(commandId: CommandId, methodRun: MethodRun): PastCommand =
-      methodRun.getPastCommand(commandId)
+  fun getPastCommand(commandId: CommandId, workflowMethod: WorkflowMethod): PastCommand? =
+      workflowMethod.getPastCommand(commandId)
       // if we do not find in this methodRun, then search within others
-        ?: methodRuns.map { it.getPastCommand(commandId) }.firstOrNull { it != null }
-        // methodRun should not be deleted if a step is still running
-        ?: thisShouldNotHappen()
+        ?: workflowMethods.map { it.getPastCommand(commandId) }.firstOrNull { it != null }
 
-  fun removeMethodRun(methodRun: MethodRun) {
-    methodRuns.remove(methodRun)
+  fun removeWorkflowMethod(workflowMethod: WorkflowMethod) {
+    workflowMethods.remove(workflowMethod)
 
     // clean receivingChannels once deleted
-    receivingChannels.removeAll { it.methodRunId == methodRun.methodRunId }
+    receivingChannels.removeAll { it.workflowMethodId == workflowMethod.workflowMethodId }
 
     // clean properties
     removeUnusedPropertyHash()
   }
 
-  fun removeMethodRuns() {
-    methodRuns.clear()
+  fun removeWorkflowMethods() {
+    workflowMethods.clear()
 
     // clean receivingChannels once deleted
     receivingChannels.clear()
@@ -168,11 +167,11 @@ data class WorkflowState(
     // set of all hashes still in use
     val propertyHashes = mutableSetOf<PropertyHash>()
 
-    methodRuns.forEach { methodRun ->
-      methodRun.pastSteps.forEach { pastStep ->
+    workflowMethods.forEach { workflowMethod ->
+      workflowMethod.pastSteps.forEach { pastStep ->
         pastStep.propertiesNameHashAtTermination?.forEach { propertyHashes.add(it.value) }
       }
-      methodRun.propertiesNameHashAtStart.forEach { propertyHashes.add(it.value) }
+      workflowMethod.propertiesNameHashAtStart.forEach { propertyHashes.add(it.value) }
     }
     currentPropertiesNameHash.forEach { propertyHashes.add(it.value) }
 

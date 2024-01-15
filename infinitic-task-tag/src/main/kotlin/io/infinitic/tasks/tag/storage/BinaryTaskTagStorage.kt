@@ -42,7 +42,7 @@ import org.jetbrains.annotations.TestOnly
  * Any exception thrown by the storage is wrapped into KeyValueStorageException
  */
 class BinaryTaskTagStorage(keyValueStorage: KeyValueStorage, keySetStorage: KeySetStorage) :
-    TaskTagStorage {
+  TaskTagStorage {
 
   private val keyValueStorage = WrappedKeyValueStorage(keyValueStorage)
   private val keySetStorage = WrappedKeySetStorage(keySetStorage)
@@ -54,9 +54,9 @@ class BinaryTaskTagStorage(keyValueStorage: KeyValueStorage, keySetStorage: KeyS
   }
 
   override suspend fun setLastMessageId(
-      tag: TaskTag,
-      serviceName: ServiceName,
-      messageId: MessageId
+    tag: TaskTag,
+    serviceName: ServiceName,
+    messageId: MessageId
   ) {
     val key = getTagMessageIdKey(tag, serviceName)
     keyValueStorage.put(key, messageId.toByteArray())

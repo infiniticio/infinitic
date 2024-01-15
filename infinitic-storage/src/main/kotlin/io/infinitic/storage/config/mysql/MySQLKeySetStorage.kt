@@ -32,7 +32,7 @@ private const val MYSQL_TABLE = "key_set_storage"
 class MySQLKeySetStorage(internal val pool: HikariDataSource) : KeySetStorage {
 
   companion object {
-    fun of(config: MySQL) = MySQLKeySetStorage(config.getPool())
+    fun from(config: MySQL) = MySQLKeySetStorage(config.getPool())
   }
 
   init {
@@ -48,24 +48,25 @@ class MySQLKeySetStorage(internal val pool: HikariDataSource) : KeySetStorage {
                   "`value` VARCHAR(255) NOT NULL," +
                   "KEY(`key`)," + // Non unique index creation for faster search
                   "KEY `key_value_idx` (`key`,`value`)" +
-                  ") ENGINE=InnoDB DEFAULT CHARSET=utf8")
+                  ") ENGINE=InnoDB DEFAULT CHARSET=utf8",
+          )
           .use { it.executeUpdate() }
     }
   }
 
   override suspend fun get(key: String): Set<ByteArray> =
       pool.connection.use { connection ->
-        connection.prepareStatement("SELECT `value` FROM $MYSQL_TABLE WHERE `key` = ?").use {
-            statement ->
-          statement.setString(1, key)
-          statement.executeQuery().use {
-            val values = mutableSetOf<ByteArray>()
-            while (it.next()) {
-              values.add(it.getBytes("value"))
+        connection.prepareStatement("SELECT `value` FROM $MYSQL_TABLE WHERE `key` = ?")
+            .use { statement ->
+              statement.setString(1, key)
+              statement.executeQuery().use {
+                val values = mutableSetOf<ByteArray>()
+                while (it.next()) {
+                  values.add(it.getBytes("value"))
+                }
+                values
+              }
             }
-            values
-          }
-        }
       }
 
   override suspend fun add(key: String, value: ByteArray) {
@@ -86,6 +87,10 @@ class MySQLKeySetStorage(internal val pool: HikariDataSource) : KeySetStorage {
         it.executeUpdate()
       }
     }
+  }
+
+  override fun close() {
+    pool.close()
   }
 
   @TestOnly

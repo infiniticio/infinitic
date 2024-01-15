@@ -22,6 +22,12 @@
  */
 package io.infinitic.common.messages
 
+import io.infinitic.common.data.MessageId
+import io.infinitic.common.emitters.EmitterName
+
 interface Message {
+  val messageId: MessageId?
+  val emitterName: EmitterName
+
   fun envelope(): Envelope<out Message>
 }

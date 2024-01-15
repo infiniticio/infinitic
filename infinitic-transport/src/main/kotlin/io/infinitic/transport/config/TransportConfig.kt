@@ -40,16 +40,21 @@ import io.infinitic.pulsar.resources.ResourceManager
 
 data class TransportConfig(
   /** Transport configuration */
-  override val transport: Transport = Transport.pulsar,
+  override val transport: Transport,
 
   /** Pulsar configuration */
-  override val pulsar: Pulsar? = null
+  override val pulsar: Pulsar?,
+
+  /** Shutdown Grace Period */
+  override val shutdownGracePeriodInSeconds: Double
 ) : TransportConfigInterface {
 
   init {
     if (transport == Transport.pulsar) {
       require(pulsar != null) { "Missing Pulsar configuration" }
     }
+
+    require(shutdownGracePeriodInSeconds >= 0) { "shutdownGracePeriodInSeconds must be >= 0" }
   }
 
   // we provide consumer and producer together,
@@ -58,8 +63,15 @@ data class TransportConfig(
       when (transport) {
         Transport.pulsar -> with(ResourceManager.from(pulsar!!)) {
           val client = PulsarInfiniticClient(pulsar.client)
-          val consumerAsync = PulsarInfiniticConsumerAsync(Consumer(client, pulsar.consumer), this)
-          val producerAsync = PulsarInfiniticProducerAsync(Producer(client, pulsar.producer), this)
+          val consumerAsync = PulsarInfiniticConsumerAsync(
+              Consumer(client, pulsar.consumer),
+              this,
+              shutdownGracePeriodInSeconds,
+          )
+          val producerAsync = PulsarInfiniticProducerAsync(
+              Producer(client, pulsar.producer),
+              this,
+          )
 
           // Pulsar client will be closed with consumer
           consumerAsync.addAutoCloseResource(pulsar.client)

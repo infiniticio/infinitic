@@ -28,56 +28,59 @@ import io.kotest.matchers.shouldBe
 import kotlin.random.Random
 
 class CompressorTests :
-    StringSpec({
-      val charPool: List<Char> = ('Z' downTo '0').toList()
+  StringSpec(
+      {
+        val charPool: List<Char> = ('Z' downTo '0').toList()
 
-      fun randomString(length: Int) =
-          (1..length).map { Random.nextInt(0, charPool.size).let { charPool[it] } }.joinToString("")
+        fun randomString(length: Int) =
+            (1..length).map { Random.nextInt(0, charPool.size).let { charPool[it] } }
+                .joinToString("")
 
-      fun getBytes(length: Int = 1000): ByteArray {
-        val str = randomString(length)
-        return str.toByteArray()
-      }
+        fun getBytes(length: Int = 1000): ByteArray {
+          val str = randomString(length)
+          return str.toByteArray()
+        }
 
-      fun getBytesWithCompressorHeader(
+        fun getBytesWithCompressorHeader(
           compressor: Compressor,
           header: Int = 300,
           length: Int = 1000
-      ): ByteArray {
-        val bytes = getBytes(length)
-        return compressor.compress(bytes).copyOf(header) + getBytes(length - header)
-      }
+        ): ByteArray {
+          val bytes = getBytes(length)
+          return compressor.compress(bytes).copyOf(header) + getBytes(length - header)
+        }
 
-      fun testDecompressing(original: ByteArray, compressed: ByteArray) {
-        val decompressed = Compressor.decompress(compressed)
-        decompressed.contentEquals(original) shouldBe true
-      }
+        fun testDecompressing(original: ByteArray, compressed: ByteArray) {
+          val decompressed = Compressor.decompress(compressed)
+          decompressed.contentEquals(original) shouldBe true
+        }
 
-      "Decompressing uncompressed data should return the same data" {
-        val data = getBytes()
-        testDecompressing(data, data)
-      }
-
-      "Decompressing uncompressed data should return the same data, even with a compressor header" {
-        Compressor.values().forEach {
-          val data = getBytesWithCompressorHeader(it)
+        "Decompressing uncompressed data should return the same data" {
+          val data = getBytes()
           testDecompressing(data, data)
         }
-      }
 
-      "Decompressing compressed data should return the same data" {
-        Compressor.values().forEach {
-          val data = getBytes()
-          val compressed = it.compress(data)
-          testDecompressing(data, compressed)
+        "Decompressing uncompressed data should return the same data, even with a compressor header" {
+          Compressor.entries.forEach {
+            val data = getBytesWithCompressorHeader(it)
+            testDecompressing(data, data)
+          }
         }
-      }
 
-      "compressed data should be compressed" {
-        Compressor.values().forEach {
-          val data = getBytes()
-          val compressed = it.compress(data)
-          compressed.size shouldBeLessThan data.size
+        "Decompressing compressed data should return the same data" {
+          Compressor.entries.forEach {
+            val data = getBytes()
+            val compressed = it.compress(data)
+            testDecompressing(data, compressed)
+          }
         }
-      }
-    })
+
+        "compressed data should be compressed" {
+          Compressor.entries.forEach {
+            val data = getBytes()
+            val compressed = it.compress(data)
+            compressed.size shouldBeLessThan data.size
+          }
+        }
+      },
+  )

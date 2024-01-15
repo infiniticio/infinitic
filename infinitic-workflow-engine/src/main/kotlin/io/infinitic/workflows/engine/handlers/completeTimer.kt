@@ -22,10 +22,11 @@
  */
 package io.infinitic.workflows.engine.handlers
 
+import io.infinitic.common.exceptions.thisShouldNotHappen
 import io.infinitic.common.workflows.data.commands.CommandStatus
 import io.infinitic.common.workflows.data.commands.StartDurationTimerPastCommand
 import io.infinitic.common.workflows.data.commands.StartInstantTimerPastCommand
-import io.infinitic.common.workflows.data.methodRuns.MethodRunId
+import io.infinitic.common.workflows.data.methodRuns.WorkflowMethodId
 import io.infinitic.common.workflows.data.timers.TimerId
 import io.infinitic.common.workflows.engine.messages.CompleteTimers
 import io.infinitic.common.workflows.engine.messages.TimerCompleted
@@ -33,22 +34,23 @@ import io.infinitic.common.workflows.engine.state.WorkflowState
 
 internal fun completeTimer(state: WorkflowState, message: CompleteTimers) {
   // get provided methodRunId or main per default
-  val methodRunId = message.methodRunId ?: MethodRunId.from(message.workflowId)
+  val methodRunId = message.workflowMethodId ?: WorkflowMethodId.from(message.workflowId)
 
   // trigger a timer completed for all ongoing timer on this method
-  state.getMethodRun(methodRunId)?.let { methodRun ->
+  state.getWorkflowMethod(methodRunId)?.let { methodRun ->
     methodRun.pastCommands
         .filter { it is StartDurationTimerPastCommand || it is StartInstantTimerPastCommand }
         .filter { it.commandStatus is CommandStatus.Ongoing }
         .sortedByDescending { it.commandPosition }
         .forEach {
-          val msg =
-              TimerCompleted(
-                  message.workflowName,
-                  message.workflowId,
-                  methodRunId,
-                  TimerId.from(it.commandId),
-                  emitterName = message.emitterName)
+          val msg = TimerCompleted(
+              TimerId.from(it.commandId),
+              message.workflowName,
+              message.workflowId,
+              methodRunId,
+              emitterName = message.emitterName,
+              emittedAt = message.emittedAt ?: thisShouldNotHappen(),
+          )
           // add fake message at the top of the messagesBuffer list
           state.messagesBuffer.add(0, msg)
         }

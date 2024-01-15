@@ -24,8 +24,10 @@ package io.infinitic.common.transport
 
 import io.infinitic.common.clients.messages.ClientMessage
 import io.infinitic.common.data.MillisDuration
+import io.infinitic.common.tasks.executors.events.TaskEventMessage
 import io.infinitic.common.tasks.executors.messages.TaskExecutorMessage
 import io.infinitic.common.tasks.tags.messages.TaskTagMessage
+import io.infinitic.common.workflows.engine.events.WorkflowEventMessage
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
 import io.infinitic.common.workflows.tags.messages.WorkflowTagMessage
 
@@ -40,35 +42,65 @@ interface InfiniticProducer {
    *
    * @param message the message to send
    */
-  suspend fun send(message: ClientMessage)
+  suspend fun sendToClient(message: ClientMessage)
 
   /**
    * Synchronously send a message to a workflow tag engine
    *
    * @param message the message to send
    */
-  suspend fun send(message: WorkflowTagMessage)
+  suspend fun sendToWorkflowTag(message: WorkflowTagMessage)
 
   /**
-   * Synchronously send a message to a workflow engine
+   * Synchronously send a message to a workflow-cmd
+   *
+   * @param message the message to send
+   */
+  suspend fun sendToWorkflowCmd(message: WorkflowEngineMessage)
+
+  /**
+   * Synchronously send a message to a workflow-engine
    *
    * @param message the message to send
    * @param after the delay before sending the message
    */
-  suspend fun send(message: WorkflowEngineMessage, after: MillisDuration = MillisDuration.ZERO)
+  suspend fun sendToWorkflowEngine(
+    message: WorkflowEngineMessage,
+    after: MillisDuration = MillisDuration.ZERO
+  )
 
   /**
-   * Synchronously send a message to a task tag engine
+   * Synchronously send a message to workflow-events
    *
    * @param message the message to send
    */
-  suspend fun send(message: TaskTagMessage)
+  suspend fun sendToWorkflowEvents(message: WorkflowEventMessage)
 
   /**
-   * Synchronously send a message to a task executor
+   * Synchronously send a message to a task-tag
+   *
+   * @param message the message to send
+   */
+  suspend fun sendToTaskTag(message: TaskTagMessage)
+
+  /**
+   * Synchronously send a message to a task-executor
    *
    * @param message the message to send
    * @param after the delay before sending the message
    */
-  suspend fun send(message: TaskExecutorMessage, after: MillisDuration = MillisDuration.ZERO)
+  suspend fun sendToTaskExecutor(
+    message: TaskExecutorMessage,
+    after: MillisDuration = MillisDuration.ZERO
+  )
+
+
+  /**
+   * Synchronously send a message to task-events
+   *
+   * @param message the message to send to the task result handler.
+   */
+  suspend fun sendToTaskEvents(
+    message: TaskEventMessage
+  )
 }

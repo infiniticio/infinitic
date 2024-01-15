@@ -74,7 +74,7 @@ class PropertiesWorkflowImpl : Workflow(), PropertiesWorkflow {
       newService(
           UtilService::class.java,
           tags = setOf("foo", "bar"),
-          meta = mapOf("foo" to "bar".toByteArray()))
+          meta = mutableMapOf("foo" to "bar".toByteArray()))
 
   private var p1 = ""
 

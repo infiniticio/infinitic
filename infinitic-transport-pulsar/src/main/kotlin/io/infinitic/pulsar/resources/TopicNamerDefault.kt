@@ -31,7 +31,7 @@ open class TopicNamerDefault(override val tenant: String, override val namespace
 
   override fun getConsumerName(name: String, topicDescription: TopicDescription) =
       "$name<<${topicDescription.subscriptionPrefix}"
-  
+
   override fun getTopicName(name: String, topicDescription: TopicDescription): String =
       when (topicDescription) {
         is GlobalTopicDescription -> fullNameTopic(topicDescription.subscriptionPrefix)
@@ -45,7 +45,7 @@ open class TopicNamerDefault(override val tenant: String, override val namespace
       }
 
   override fun getServiceName(topic: String): String? {
-    for (type in ServiceTopicDescription.entries) {
+    for (type in ServiceTopicsDescription.entries) {
       var prefix = getTopicName("", type)
       if (topic.startsWith(prefix)) return topic.removePrefix(prefix)
 
@@ -57,7 +57,7 @@ open class TopicNamerDefault(override val tenant: String, override val namespace
   }
 
   override fun getWorkflowName(topic: String): String? {
-    val workflowTypes: List<TopicDescription> = WorkflowTopicDescription.entries.toList()
+    val workflowTypes: List<TopicDescription> = WorkflowTopicsDescription.entries.toList()
     for (type in workflowTypes) {
       var prefix = getTopicName("", type)
       if (topic.startsWith(prefix)) return topic.removePrefix(prefix)

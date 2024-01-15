@@ -29,18 +29,19 @@ import io.infinitic.common.fixtures.TestFactory
 import io.infinitic.common.messages.Envelope
 import io.infinitic.common.messages.Message
 import io.infinitic.common.tasks.data.ServiceName
+import io.infinitic.common.tasks.executors.events.TaskCompletedEvent
 import io.infinitic.common.tasks.executors.messages.ExecuteTask
-import io.infinitic.common.tasks.executors.messages.TaskExecutorMessage
 import io.infinitic.common.tasks.tags.messages.TaskTagMessage
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTask
+import io.infinitic.common.workflows.engine.events.WorkflowEventMessage
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
 import io.infinitic.common.workflows.tags.messages.WorkflowTagMessage
 import io.infinitic.pulsar.producers.Producer
 import io.infinitic.pulsar.resources.ClientTopicDescription
 import io.infinitic.pulsar.resources.ResourceManager
-import io.infinitic.pulsar.resources.ServiceTopicDescription
+import io.infinitic.pulsar.resources.ServiceTopicsDescription
 import io.infinitic.pulsar.resources.TopicDescription
-import io.infinitic.pulsar.resources.WorkflowTopicDescription
+import io.infinitic.pulsar.resources.WorkflowTopicsDescription
 import io.kotest.core.spec.style.StringSpec
 import io.mockk.every
 import io.mockk.mockk
@@ -102,7 +103,7 @@ class PulsarInfiniticProducerAsyncTests : StringSpec(
 
       "should init client-response topic before sending a message to it" {
         val message = TestFactory.random<ClientMessage>()
-        infiniticProducerAsync.sendAsync(message)
+        infiniticProducerAsync.sendToClientAsync(message)
 
         val name = message.recipientName.toString()
         val desc = ClientTopicDescription.RESPONSE
@@ -115,10 +116,23 @@ class PulsarInfiniticProducerAsyncTests : StringSpec(
 
       "should init workflow-tag topic before sending a message to it" {
         val message = TestFactory.random<WorkflowTagMessage>()
-        infiniticProducerAsync.sendAsync(message)
+        infiniticProducerAsync.sendToWorkflowTagAsync(message)
 
         val name = message.workflowName.toString()
-        val desc = WorkflowTopicDescription.TAG
+        val desc = WorkflowTopicsDescription.TAG
+
+        verify {
+          resourceManager.getTopicName(name, desc)
+          resourceManager.initTopicOnce(topicName(name, desc), true, false)
+        }
+      }
+
+      "should init workflow-cmd topic before sending a message to it" {
+        val message = TestFactory.random<WorkflowEngineMessage>()
+        infiniticProducerAsync.sendToWorkflowCmdAsync(message)
+
+        val name = message.workflowName.toString()
+        val desc = WorkflowTopicsDescription.CMD
 
         verify {
           resourceManager.getTopicName(name, desc)
@@ -128,10 +142,10 @@ class PulsarInfiniticProducerAsyncTests : StringSpec(
 
       "should init workflow-engine topic before sending a message to it" {
         val message = TestFactory.random<WorkflowEngineMessage>()
-        infiniticProducerAsync.sendAsync(message)
+        infiniticProducerAsync.sendToWorkflowEngineAsync(message)
 
         val name = message.workflowName.toString()
-        val desc = WorkflowTopicDescription.ENGINE
+        val desc = WorkflowTopicsDescription.ENGINE
 
         verify {
           resourceManager.getTopicName(name, desc)
@@ -141,10 +155,10 @@ class PulsarInfiniticProducerAsyncTests : StringSpec(
 
       "should init workflow-delay topic before sending a message to it" {
         val message = TestFactory.random<WorkflowEngineMessage>()
-        infiniticProducerAsync.sendAsync(message, MillisDuration(1))
+        infiniticProducerAsync.sendToWorkflowEngineAsync(message, MillisDuration(1))
 
         val name = message.workflowName.toString()
-        val desc = WorkflowTopicDescription.ENGINE_DELAYED
+        val desc = WorkflowTopicsDescription.ENGINE_DELAYED
 
         verify {
           resourceManager.getTopicName(name, desc)
@@ -152,14 +166,42 @@ class PulsarInfiniticProducerAsyncTests : StringSpec(
         }
       }
 
+      "should init workflow-events topic before sending a message to it" {
+        val message = TestFactory.random<WorkflowEventMessage>()
+        infiniticProducerAsync.sendToWorkflowEventsAsync(message)
+
+        val name = message.workflowName.toString()
+        val desc = WorkflowTopicsDescription.EVENTS
+
+        verify {
+          resourceManager.getTopicName(name, desc)
+          resourceManager.initTopicOnce(topicName(name, desc), true, false)
+        }
+      }
+
       "should init workflow-task-executor topic before sending a message to it" {
         val message = TestFactory.random<ExecuteTask>(
             mapOf("serviceName" to ServiceName(WorkflowTask::class.java.name)),
         )
-        infiniticProducerAsync.sendAsync(message)
+        infiniticProducerAsync.sendToTaskExecutorAsync(message)
 
         val name = message.workflowName.toString()
-        val desc = WorkflowTopicDescription.EXECUTOR
+        val desc = WorkflowTopicsDescription.TASK_EXECUTOR
+
+        verify {
+          resourceManager.getTopicName(name, desc)
+          resourceManager.initTopicOnce(topicName(name, desc), true, false)
+        }
+      }
+
+      "should init workflow-task-events topic before sending a message to it" {
+        val message = TestFactory.random<TaskCompletedEvent>(
+            mapOf("serviceName" to ServiceName(WorkflowTask::class.java.name)),
+        )
+        infiniticProducerAsync.sendToTaskEventsAsync(message)
+
+        val name = message.workflowName.toString()
+        val desc = WorkflowTopicsDescription.TASK_EVENTS
 
         verify {
           resourceManager.getTopicName(name, desc)
@@ -169,10 +211,10 @@ class PulsarInfiniticProducerAsyncTests : StringSpec(
 
       "should init task-tag topic before sending a message to it" {
         val message = TestFactory.random<TaskTagMessage>()
-        infiniticProducerAsync.sendAsync(message)
+        infiniticProducerAsync.sendToTaskTagAsync(message)
 
         val name = message.serviceName.toString()
-        val desc = ServiceTopicDescription.TAG
+        val desc = ServiceTopicsDescription.TAG
 
         verify {
           resourceManager.getTopicName(name, desc)
@@ -181,11 +223,24 @@ class PulsarInfiniticProducerAsyncTests : StringSpec(
       }
 
       "should init task-executor topic before sending a message to it" {
-        val message = TestFactory.random<TaskExecutorMessage>()
-        infiniticProducerAsync.sendAsync(message)
+        val message = TestFactory.random<ExecuteTask>()
+        infiniticProducerAsync.sendToTaskExecutorAsync(message)
 
         val name = message.serviceName.toString()
-        val desc = ServiceTopicDescription.EXECUTOR
+        val desc = ServiceTopicsDescription.EXECUTOR
+
+        verify {
+          resourceManager.getTopicName(name, desc)
+          resourceManager.initTopicOnce(topicName(name, desc), true, false)
+        }
+      }
+
+      "should init task-events topic before sending a message to it" {
+        val message = TestFactory.random<TaskCompletedEvent>()
+        infiniticProducerAsync.sendToTaskEventsAsync(message)
+
+        val name = message.serviceName.toString()
+        val desc = ServiceTopicsDescription.EVENTS
 
         verify {
           resourceManager.getTopicName(name, desc)

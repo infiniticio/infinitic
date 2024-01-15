@@ -35,7 +35,7 @@ import io.infinitic.dashboard.panels.infrastructure.requests.Loading
 import io.infinitic.dashboard.panels.infrastructure.requests.Request
 import io.infinitic.dashboard.svgs.icons.iconChevron
 import io.infinitic.pulsar.resources.TopicDescription
-import io.infinitic.pulsar.resources.WorkflowTopicDescription
+import io.infinitic.pulsar.resources.WorkflowTopicsDescription
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -73,7 +73,7 @@ class WorkflowPanel private constructor(private val workflowName: String) : Pane
   private val workflowLastUpdated = workflowState.property(WorkflowState::lastUpdatedAt)
 
   private val selectionTopicDescription: KVar<TopicDescription> =
-      KVar(WorkflowTopicDescription.ENGINE)
+      KVar(WorkflowTopicsDescription.ENGINE)
   private val selectionTopicStats: KVar<Request<PartitionedTopicStats>> = KVar(Loading())
 
   private val selectionSlide = selectionSlide(selectionTopicDescription, selectionTopicStats)
@@ -83,7 +83,7 @@ class WorkflowPanel private constructor(private val workflowName: String) : Pane
   init {
     // this listener ensures that the slideover appear/disappear with right content
     workflowState.addListener { _, new ->
-      if (selectionTopicDescription.value is WorkflowTopicDescription) {
+      if (selectionTopicDescription.value is WorkflowTopicsDescription) {
         selectionTopicStats.value = new.topicsStats[selectionTopicDescription.value]!!
       }
     }

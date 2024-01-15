@@ -255,7 +255,7 @@ class PulsarInfiniticClientTests :
           subscriptionType.captured shouldBe randomSubscriptionType
 
           deadLetterPolicy.captured shouldBe DeadLetterPolicy.builder()
-              .maxRedeliverCount(randomConfig.maxRedeliverCount)
+              .maxRedeliverCount(randomConfig.getMaxRedeliverCount())
               .deadLetterTopic(randomTopic)
               .build()
 

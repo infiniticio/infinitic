@@ -22,9 +22,9 @@
  */
 package io.infinitic.common.workflows.data.workflowTasks
 
-import io.infinitic.common.checkBackwardCompatibility
-import io.infinitic.common.checkOrCreateCurrentFile
 import io.infinitic.common.fixtures.TestFactory
+import io.infinitic.common.fixtures.checkBackwardCompatibility
+import io.infinitic.common.fixtures.checkOrCreateCurrentFile
 import io.infinitic.common.serDe.SerializedData
 import io.infinitic.common.serDe.SerializedDataType
 import io.infinitic.common.serDe.avro.AvroSerDe
@@ -64,8 +64,8 @@ class WorkflowTaskParametersTests :
           )
         }
 
-        "We should be able to read binary from any previous version since 0.9.0" {
-          AvroSerDe.getAllSchemas(WorkflowTaskParameters::class).forEach { (_, schema) ->
+        AvroSerDe.getAllSchemas(WorkflowTaskParameters::class).forEach { (version, schema) ->
+          "We should be able to read binary from version $version" {
             val bytes = AvroSerDe.getRandomBinaryWithSchemaFingerprint(schema)
 
             shouldNotThrowAny { WorkflowTaskParameters.fromByteArray(bytes) }

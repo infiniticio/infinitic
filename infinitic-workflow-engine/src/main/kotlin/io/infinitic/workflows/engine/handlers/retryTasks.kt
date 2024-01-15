@@ -22,15 +22,23 @@
  */
 package io.infinitic.workflows.engine.handlers
 
+import io.infinitic.common.emitters.EmitterName
+import io.infinitic.common.exceptions.thisShouldNotHappen
+import io.infinitic.common.tasks.data.TaskId
+import io.infinitic.common.tasks.data.TaskRetryIndex
+import io.infinitic.common.tasks.executors.errors.TaskTimedOutError
+import io.infinitic.common.tasks.executors.messages.ExecuteTask
+import io.infinitic.common.tasks.tags.messages.AddTagToTask
 import io.infinitic.common.transport.InfiniticProducer
 import io.infinitic.common.workflows.data.commands.CommandId
 import io.infinitic.common.workflows.data.commands.CommandStatus
 import io.infinitic.common.workflows.data.commands.DispatchTaskPastCommand
 import io.infinitic.common.workflows.engine.messages.RetryTasks
+import io.infinitic.common.workflows.engine.messages.TaskTimedOut
 import io.infinitic.common.workflows.engine.state.WorkflowState
 import io.infinitic.workflows.DeferredStatus
-import io.infinitic.workflows.engine.commands.dispatchTaskCmd
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.launch
 
 internal fun CoroutineScope.retryTasks(
   producer: InfiniticProducer,
@@ -50,9 +58,9 @@ internal fun CoroutineScope.retryTasks(
   val serviceName = message.serviceName
 
   // for all method runs
-  state.methodRuns.forEach { methodRun ->
+  state.workflowMethods.forEach { workflowMethod ->
     // for all past tasks
-    methodRun.pastCommands
+    workflowMethod.pastCommands
         .filterIsInstance<DispatchTaskPastCommand>()
         .filter {
           (taskId == null || it.commandId == taskId) &&
@@ -62,8 +70,71 @@ internal fun CoroutineScope.retryTasks(
         // dispatch a new sequence of those task
         .forEach { dispatchTaskPastCommand ->
           dispatchTaskPastCommand.taskRetrySequence += 1
-          dispatchTaskCmd(dispatchTaskPastCommand, state, producer)
+          reDispatchTaskCmd(dispatchTaskPastCommand, state, producer)
           dispatchTaskPastCommand.commandStatus = CommandStatus.Ongoing
         }
   }
 }
+
+private fun CoroutineScope.reDispatchTaskCmd(
+  pastCommand: DispatchTaskPastCommand,
+  state: WorkflowState,
+  producer: InfiniticProducer
+) {
+  val emitterName = EmitterName(producer.name)
+
+  // send task to task executor
+  val executeTask: ExecuteTask = with(pastCommand.command) {
+    ExecuteTask(
+        serviceName = serviceName,
+        taskId = TaskId.from(pastCommand.commandId),
+        emitterName = emitterName,
+        taskRetrySequence = pastCommand.taskRetrySequence,
+        taskRetryIndex = TaskRetryIndex(0),
+        workflowName = state.workflowName,
+        workflowId = state.workflowId,
+        workflowMethodId = state.runningWorkflowMethodId ?: thisShouldNotHappen(),
+        taskTags = taskTags,
+        taskMeta = taskMeta,
+        clientWaiting = false,
+        methodName = methodName,
+        methodParameterTypes = methodParameterTypes,
+        methodParameters = methodParameters,
+        lastError = null,
+        workflowVersion = state.workflowVersion,
+    )
+  }
+
+  launch { producer.sendToTaskExecutor(executeTask) }
+
+  // add provided tags
+  executeTask.taskTags.forEach {
+    val addTagToTask = AddTagToTask(
+        serviceName = executeTask.serviceName,
+        taskTag = it,
+        taskId = executeTask.taskId,
+        emitterName = emitterName,
+    )
+    launch { producer.sendToTaskTag(addTagToTask) }
+  }
+
+  // send global task timeout if any
+  pastCommand.command.methodTimeout?.let {
+    val taskTimedOut = with(pastCommand.command) {
+      TaskTimedOut(
+          taskTimedOutError = TaskTimedOutError(
+              serviceName = serviceName,
+              taskId = executeTask.taskId,
+              methodName = methodName,
+          ),
+          workflowName = state.workflowName,
+          workflowId = state.workflowId,
+          workflowMethodId = state.runningWorkflowMethodId ?: thisShouldNotHappen(),
+          emitterName = emitterName,
+          emittedAt = state.runningWorkflowTaskInstant,
+      )
+    }
+    launch { producer.sendToWorkflowEngine(taskTimedOut, it) }
+  }
+}
+

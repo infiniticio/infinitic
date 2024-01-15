@@ -34,10 +34,10 @@ import io.infinitic.storage.keyValue.CompressedKeyValueStorage
 import io.infinitic.storage.keyValue.KeyValueStorage
 
 data class Storage(
-    var inMemory: InMemory? = null,
-    val redis: Redis? = null,
-    val mysql: MySQL? = null,
-    val compression: Compressor? = null
+  var inMemory: InMemory? = null,
+  val redis: Redis? = null,
+  val mysql: MySQL? = null,
+  val compression: Compressor? = null
 ) {
   init {
     val nonNul = listOfNotNull(inMemory, redis, mysql)
@@ -70,18 +70,18 @@ data class Storage(
 
   val keySet: KeySetStorage by lazy {
     when {
-      inMemory != null -> InMemoryKeySetStorage.of(inMemory!!)
-      redis != null -> RedisKeySetStorage.of(redis)
-      mysql != null -> MySQLKeySetStorage.of(mysql)
+      inMemory != null -> InMemoryKeySetStorage.from(inMemory!!)
+      redis != null -> RedisKeySetStorage.from(redis)
+      mysql != null -> MySQLKeySetStorage.from(mysql)
       else -> thisShouldNotHappen()
     }
   }
 
   val keyValue: KeyValueStorage by lazy {
     when {
-      inMemory != null -> InMemoryKeyValueStorage.of(inMemory!!)
-      redis != null -> RedisKeyValueStorage.of(redis)
-      mysql != null -> MySQLKeyValueStorage.of(mysql)
+      inMemory != null -> InMemoryKeyValueStorage.from(inMemory!!)
+      redis != null -> RedisKeyValueStorage.from(redis)
+      mysql != null -> MySQLKeyValueStorage.from(mysql)
       else -> thisShouldNotHappen()
     }.let { CompressedKeyValueStorage(compression, it) }
   }

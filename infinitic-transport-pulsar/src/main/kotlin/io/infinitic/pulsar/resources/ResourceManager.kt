@@ -29,12 +29,12 @@ import io.infinitic.pulsar.config.policies.Policies
 class ResourceManager(
   val admin: PulsarInfiniticAdmin,
     // tenant configuration
-  val allowedClusters: Set<String>?,
-  val adminRoles: Set<String>?,
+  private val allowedClusters: Set<String>?,
+  private val adminRoles: Set<String>?,
     // namespace configuration
   val policies: Policies,
     // topic naming
-  val topicNamer: TopicNamer
+  private val topicNamer: TopicNamer
 ) : TopicNamer by topicNamer {
 
   /** Set of topics for current tenant and namespace */

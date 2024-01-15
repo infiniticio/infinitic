@@ -29,6 +29,8 @@ import io.infinitic.tests.utils.UtilWorkflow
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.delay
+import kotlin.time.Duration.Companion.minutes
+import kotlin.time.Duration.Companion.seconds
 
 internal class BranchesWorkflowTests : StringSpec(
     {
@@ -37,6 +39,11 @@ internal class BranchesWorkflowTests : StringSpec(
 
       val branchesWorkflow = client.newWorkflow(BranchesWorkflow::class.java)
       val utilWorkflow = client.newWorkflow(UtilWorkflow::class.java)
+
+      // the first test has a large timeout to deal with Pulsar initialization
+      "Initialization".config(timeout = 2.minutes) {
+        branchesWorkflow.seq3() shouldBe "23ba"
+      }
 
       "Sequential Workflow with an async branch" {
         branchesWorkflow.seq3() shouldBe "23ba"
@@ -85,7 +92,7 @@ internal class BranchesWorkflowTests : StringSpec(
         worker.getWorkflowState(UtilWorkflow::class.java.name, deferred.id) shouldBe null
       }
 
-      "Check numerous runBranch" {
+      "Check numerous runBranch".config(timeout = 10.seconds) {
         val deferred = client.dispatch(utilWorkflow::receive, "a")
         val w = client.getWorkflowById(UtilWorkflow::class.java, deferred.id)
 

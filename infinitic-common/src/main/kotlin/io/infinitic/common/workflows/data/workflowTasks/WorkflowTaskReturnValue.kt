@@ -22,7 +22,9 @@
  */
 package io.infinitic.common.workflows.data.workflowTasks
 
+import com.github.avrokotlin.avro4k.Avro
 import com.github.avrokotlin.avro4k.AvroDefault
+import io.infinitic.common.data.MillisInstant
 import io.infinitic.common.data.ReturnValue
 import io.infinitic.common.serDe.avro.AvroSerDe
 import io.infinitic.common.workers.config.WorkflowVersion
@@ -30,16 +32,18 @@ import io.infinitic.common.workflows.data.commands.PastCommand
 import io.infinitic.common.workflows.data.properties.PropertyName
 import io.infinitic.common.workflows.data.properties.PropertyValue
 import io.infinitic.common.workflows.data.steps.NewStep
+import io.infinitic.currentVersion
 import kotlinx.serialization.Serializable
 
 @Serializable
 data class WorkflowTaskReturnValue(
-  @AvroDefault("0.9.7") val version: String = io.infinitic.current,
+  @AvroDefault("0.9.7") val version: String = currentVersion,
   val newCommands: List<PastCommand>,
   val newStep: NewStep?,
   val properties: Map<PropertyName, PropertyValue>,
   val methodReturnValue: ReturnValue?,
-  @AvroDefault("0") val workflowVersion: WorkflowVersion = WorkflowVersion(0)
+  @AvroDefault("0") val workflowVersion: WorkflowVersion = WorkflowVersion(0),
+  @AvroDefault(Avro.NULL) val workflowTaskInstant: MillisInstant? = null,
 ) {
   fun toByteArray() = AvroSerDe.writeBinaryWithSchemaFingerprint(this, serializer())
 

@@ -22,7 +22,10 @@
  */
 package io.infinitic.common.clients.messages
 
-import io.infinitic.common.data.ClientName
+import com.github.avrokotlin.avro4k.Avro
+import com.github.avrokotlin.avro4k.AvroDefault
+import com.github.avrokotlin.avro4k.AvroName
+import io.infinitic.common.clients.data.ClientName
 import io.infinitic.common.messages.Envelope
 import io.infinitic.common.serDe.avro.AvroSerDe
 import kotlinx.serialization.Serializable
@@ -39,7 +42,8 @@ data class ClientEnvelope(
   private val workflowCompleted: MethodCompleted? = null,
   private val workflowCanceled: MethodCanceled? = null,
   private val workflowFailed: MethodFailed? = null,
-  private val unknownWorkflow: MethodRunUnknown? = null,
+  @AvroDefault(Avro.NULL) private val workflowTimedOut: MethodTimedOut? = null,
+  @AvroName("unknownWorkflow") private val workflowUnknown: MethodUnknown? = null,
   private val methodAlreadyCompleted: MethodAlreadyCompleted? = null,
   private val workflowIdsByTag: WorkflowIdsByTag? = null
 ) : Envelope<ClientMessage> {
@@ -52,74 +56,81 @@ data class ClientEnvelope(
         workflowCompleted,
         workflowCanceled,
         workflowFailed,
-        unknownWorkflow,
+        workflowTimedOut,
+        workflowUnknown,
         methodAlreadyCompleted,
         workflowIdsByTag,
     )
 
     require(noNull.size == 1)
     require(noNull.first() == message())
-    require(noNull.first().emitterName == clientName)
+    require(noNull.first().recipientName == clientName)
   }
 
   companion object {
     fun from(msg: ClientMessage) = when (msg) {
       is TaskCompleted -> ClientEnvelope(
-          clientName = msg.emitterName,
+          clientName = msg.recipientName,
           type = ClientMessageType.TASK_COMPLETED,
           taskCompleted = msg,
       )
 
       is TaskCanceled -> ClientEnvelope(
-          clientName = msg.emitterName,
+          clientName = msg.recipientName,
           type = ClientMessageType.TASK_CANCELED,
           taskCanceled = msg,
       )
 
       is TaskFailed -> ClientEnvelope(
-          clientName = msg.emitterName,
+          clientName = msg.recipientName,
           type = ClientMessageType.TASK_FAILED,
           taskFailed = msg,
       )
 
       is TaskIdsByTag -> ClientEnvelope(
-          clientName = msg.emitterName,
+          clientName = msg.recipientName,
           type = ClientMessageType.TASK_IDS_PER_TAG,
           taskIdsByTag = msg,
       )
 
       is MethodCompleted -> ClientEnvelope(
-          clientName = msg.emitterName,
+          clientName = msg.recipientName,
           type = ClientMessageType.WORKFLOW_COMPLETED,
           workflowCompleted = msg,
       )
 
       is MethodCanceled -> ClientEnvelope(
-          clientName = msg.emitterName,
+          clientName = msg.recipientName,
           type = ClientMessageType.WORKFLOW_CANCELED,
           workflowCanceled = msg,
       )
 
       is MethodFailed -> ClientEnvelope(
-          clientName = msg.emitterName,
+          clientName = msg.recipientName,
           type = ClientMessageType.WORKFLOW_FAILED,
           workflowFailed = msg,
       )
 
-      is MethodRunUnknown -> ClientEnvelope(
-          clientName = msg.emitterName,
+      is MethodTimedOut -> ClientEnvelope(
+          clientName = msg.recipientName,
+          type = ClientMessageType.WORKFLOW_TIMED_OUT,
+          workflowTimedOut = msg,
+      )
+
+      is MethodUnknown -> ClientEnvelope(
+          clientName = msg.recipientName,
           type = ClientMessageType.UNKNOWN_WORKFLOW,
-          unknownWorkflow = msg,
+          workflowUnknown = msg,
       )
 
       is MethodAlreadyCompleted -> ClientEnvelope(
-          clientName = msg.emitterName,
+          clientName = msg.recipientName,
           type = ClientMessageType.WORKFLOW_ALREADY_COMPLETED,
           methodAlreadyCompleted = msg,
       )
 
       is WorkflowIdsByTag -> ClientEnvelope(
-          clientName = msg.emitterName,
+          clientName = msg.recipientName,
           type = ClientMessageType.WORKFLOW_IDS_PER_TAG,
           workflowIdsByTag = msg,
       )
@@ -130,7 +141,7 @@ data class ClientEnvelope(
         AvroSerDe.readBinary(bytes, readerSchema, serializer())
 
     /** Current avro Schema */
-    val writerSchema = AvroSerDe.schema(serializer())
+    val writerSchema = AvroSerDe.currentSchema(serializer())
   }
 
   override fun message(): ClientMessage =
@@ -142,7 +153,8 @@ data class ClientEnvelope(
         ClientMessageType.WORKFLOW_COMPLETED -> workflowCompleted
         ClientMessageType.WORKFLOW_CANCELED -> workflowCanceled
         ClientMessageType.WORKFLOW_FAILED -> workflowFailed
-        ClientMessageType.UNKNOWN_WORKFLOW -> unknownWorkflow
+        ClientMessageType.WORKFLOW_TIMED_OUT -> workflowTimedOut
+        ClientMessageType.UNKNOWN_WORKFLOW -> workflowUnknown
         ClientMessageType.WORKFLOW_ALREADY_COMPLETED -> methodAlreadyCompleted
         ClientMessageType.WORKFLOW_IDS_PER_TAG -> workflowIdsByTag
       }!!

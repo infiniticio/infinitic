@@ -50,7 +50,6 @@ internal class WorkerConfigTests :
           val e = shouldThrow<ConfigException> {
             WorkerConfig.fromResource("/config/services/invocationTargetException.yml")
           }
-          println(e)
           e.message!! shouldContain
               "Error during instantiation of class 'io.infinitic.workers.samples.ServiceWithInvocationTargetException'"
         }

@@ -33,7 +33,7 @@ import io.infinitic.dashboard.panels.infrastructure.jobs.update
 import io.infinitic.dashboard.panels.infrastructure.requests.Loading
 import io.infinitic.dashboard.panels.infrastructure.requests.Request
 import io.infinitic.dashboard.svgs.icons.iconChevron
-import io.infinitic.pulsar.resources.ServiceTopicDescription
+import io.infinitic.pulsar.resources.ServiceTopicsDescription
 import io.infinitic.pulsar.resources.TopicDescription
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
@@ -71,7 +71,7 @@ class ServicePanel private constructor(private val taskName: String) : Panel() {
   private val isLoading = state.property(ServiceState::isLoading)
 
   private val selectionTopicDescription: KVar<TopicDescription> =
-      KVar(ServiceTopicDescription.EXECUTOR)
+      KVar(ServiceTopicsDescription.EXECUTOR)
   private val selectionTopicStats: KVar<Request<PartitionedTopicStats>> = KVar(Loading())
 
   private val selectionSlide = selectionSlide(selectionTopicDescription, selectionTopicStats)

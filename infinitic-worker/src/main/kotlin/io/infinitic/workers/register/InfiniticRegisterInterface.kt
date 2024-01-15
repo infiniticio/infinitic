@@ -33,7 +33,7 @@ import io.infinitic.workflows.WorkflowCheckMode
 import io.infinitic.workflows.engine.config.WorkflowEngine
 import io.infinitic.workflows.tag.config.WorkflowTag
 
-interface InfiniticRegisterInterface {
+interface InfiniticRegisterInterface : AutoCloseable {
 
   val registry: WorkerRegistry
 

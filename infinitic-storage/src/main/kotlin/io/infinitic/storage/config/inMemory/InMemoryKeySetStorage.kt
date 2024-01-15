@@ -28,10 +28,10 @@ import io.infinitic.storage.keySet.KeySetStorage
 import org.jetbrains.annotations.TestOnly
 
 class InMemoryKeySetStorage(internal val storage: MutableMap<String, MutableSet<Bytes>>) :
-    KeySetStorage {
+  KeySetStorage {
 
   companion object {
-    fun of(config: InMemory) = InMemoryKeySetStorage(config.getPool().keySet)
+    fun from(config: InMemory) = InMemoryKeySetStorage(config.getPool().keySet)
   }
 
   override suspend fun get(key: String): Set<ByteArray> {
@@ -49,6 +49,10 @@ class InMemoryKeySetStorage(internal val storage: MutableMap<String, MutableSet<
     if (getBytesPerKey(key).isEmpty()) storage.remove(key)
   }
 
+  override fun close() {
+    // Do nothing
+  }
+  
   @TestOnly
   override fun flush() {
     storage.clear()
@@ -56,10 +60,10 @@ class InMemoryKeySetStorage(internal val storage: MutableMap<String, MutableSet<
 
   private fun getBytesPerKey(key: String): MutableSet<Bytes> {
     return storage[key]
-        ?: run {
-          val set = mutableSetOf<Bytes>()
-          storage[key] = set
-          set
-        }
+      ?: run {
+        val set = mutableSetOf<Bytes>()
+        storage[key] = set
+        set
+      }
   }
 }

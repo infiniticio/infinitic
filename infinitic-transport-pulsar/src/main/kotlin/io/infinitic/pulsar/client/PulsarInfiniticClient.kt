@@ -75,6 +75,21 @@ class PulsarInfiniticClient(private val pulsarClient: PulsarClient) {
   }
 
   /**
+   * Closes a consumer and removes it from the list of consumers.
+   *
+   * @param consumer The consumer to close.
+   * @return Result of the close operation.
+   *         - Result.success(Unit) if the consumer was closed successfully.
+   *         - Result.failure(e) if an error occurred during the close operation.
+   */
+  fun closeConsumer(consumer: Consumer<*>): Result<Unit> = try {
+    consumer.close()
+    Result.success(Unit)
+  } catch (e: PulsarClientException) {
+    Result.failure(e)
+  }
+
+  /**
    * Create a new producer
    *
    * Returns:
@@ -83,8 +98,8 @@ class PulsarInfiniticClient(private val pulsarClient: PulsarClient) {
    */
   @Suppress("UNCHECKED_CAST")
   fun <T : Message, S : Envelope<out T>> getProducer(
-    schemaClass: KClass<S>,
     topic: String,
+    schemaClass: KClass<S>,
     producerName: String,
     producerConfig: ProducerConfig,
     key: String? = null,
@@ -93,7 +108,7 @@ class PulsarInfiniticClient(private val pulsarClient: PulsarClient) {
     // get producer if it already exists
     val producer = producers.computeIfAbsent(topic) {
       // otherwise create it
-      logger.info { "Creating Producer on topic '$topic' with name '$producerName' and key='$key'" }
+      logger.info { "Creating Producer '$producerName' on topic '$topic' ${key?.let { "with key='$key'" } ?: "without key"}" }
 
       val schema = Schema.AVRO(schemaDefinition(schemaClass))
 
@@ -184,7 +199,6 @@ class PulsarInfiniticClient(private val pulsarClient: PulsarClient) {
 
       builder.create()
     } as Producer<S>
-
     Result.success(producer)
   } catch (e: PulsarClientException) {
     logger.error(e) { "Unable to create producer $producerName on topic $topic" }
@@ -197,7 +211,7 @@ class PulsarInfiniticClient(private val pulsarClient: PulsarClient) {
    * - Result.success(Consumer)
    * - Result.failure(e) in case of error
    */
-  fun <S : Envelope<*>> newConsumer(
+  internal fun <S : Envelope<*>> newConsumer(
     schemaClass: KClass<S>,
     consumerDef: ConsumerDef,
     consumerDefDlq: ConsumerDef? = null,
@@ -221,7 +235,7 @@ class PulsarInfiniticClient(private val pulsarClient: PulsarClient) {
           .deadLetterPolicy(
               DeadLetterPolicy
                   .builder()
-                  .maxRedeliverCount(consumerConfig.maxRedeliverCount)
+                  .maxRedeliverCount(consumerConfig.getMaxRedeliverCount())
                   .deadLetterTopic(it.topic)
                   .build(),
           )
@@ -345,7 +359,8 @@ class PulsarInfiniticClient(private val pulsarClient: PulsarClient) {
     }
 
     return try {
-      Result.success(builder.subscribe())
+      val consumer = builder.subscribe()
+      Result.success(consumer)
     } catch (e: PulsarClientException) {
       logger.error(e) { "Unable to create consumer $consumerName on topic $topic" }
       Result.failure(e)
@@ -353,7 +368,7 @@ class PulsarInfiniticClient(private val pulsarClient: PulsarClient) {
   }
 
   // Convenience class to create a consumer
-  data class ConsumerDef(
+  internal data class ConsumerDef(
     val topic: String,
     val subscriptionName: String,
     val subscriptionType: SubscriptionType,

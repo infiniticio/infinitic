@@ -42,126 +42,128 @@ import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 
 class DataTests :
-    StringSpec({
-      "TaskId should be json-serializable" {
-        val id = TestFactory.random<String>()
-        val m1 = TaskId(id)
-        val json = Json.encodeToString(m1)
-        val m2 = Json.decodeFromString<TaskId>(json)
+  StringSpec(
+      {
+        "TaskId should be json-serializable" {
+          val id = TestFactory.random<String>()
+          val m1 = TaskId(id)
+          val json = Json.encodeToString(m1)
+          val m2 = Json.decodeFromString<TaskId>(json)
 
-        json shouldBe Json.encodeToString(id)
-        m2 shouldBe m1
-      }
+          json shouldBe Json.encodeToString(id)
+          m2 shouldBe m1
+        }
 
-      "TaskAttemptId should be json-serializable" {
-        val id = TestFactory.random<String>()
-        val m1 = TaskAttemptId(id)
-        val json = Json.encodeToString(m1)
-        val m2 = Json.decodeFromString<TaskAttemptId>(json)
+        "TaskAttemptId should be json-serializable" {
+          val id = TestFactory.random<String>()
+          val m1 = TaskAttemptId(id)
+          val json = Json.encodeToString(m1)
+          val m2 = Json.decodeFromString<TaskAttemptId>(json)
 
-        json shouldBe Json.encodeToString(id)
-        m2 shouldBe m1
-      }
+          json shouldBe Json.encodeToString(id)
+          m2 shouldBe m1
+        }
 
-      "MethodInput should be serialized as List<SerializedData>" {
-        val m = MethodParameters.from("a", "b")
-        val json = Json.encodeToString(m)
-        val m2 = Json.decodeFromString<MethodParameters>(json)
+        "MethodInput should be serialized as List<SerializedData>" {
+          val m = MethodParameters.from("a", "b")
+          val json = Json.encodeToString(m)
+          val m2 = Json.decodeFromString<MethodParameters>(json)
 
-        json shouldBe
-            Json.encodeToString(listOf(SerializedData.from("a"), SerializedData.from("b")))
-        m2 shouldBe m
-      }
+          json shouldBe
+              Json.encodeToString(listOf(SerializedData.from("a"), SerializedData.from("b")))
+          m2 shouldBe m
+        }
 
-      "MethodName should be serialized as String" {
-        val id = TestFactory.random<String>()
-        val m = MethodName(id)
-        val json = Json.encodeToString(m)
-        val m2 = Json.decodeFromString<MethodName>(json)
+        "MethodName should be serialized as String" {
+          val id = TestFactory.random<String>()
+          val m = MethodName(id)
+          val json = Json.encodeToString(m)
+          val m2 = Json.decodeFromString<MethodName>(json)
 
-        json shouldBe Json.encodeToString(id)
-        m2 shouldBe m
-      }
+          json shouldBe Json.encodeToString(id)
+          m2 shouldBe m
+        }
 
-      "ReturnValue should be serialized as SerializedData" {
-        val id = TestFactory.random<String>()
-        val m = ReturnValue.from(id)
-        val json = Json.encodeToString(m)
-        val m2 = Json.decodeFromString<ReturnValue>(json)
+        "ReturnValue should be serialized as SerializedData" {
+          val id = TestFactory.random<String>()
+          val m = ReturnValue.from(id)
+          val json = Json.encodeToString(m)
+          val m2 = Json.decodeFromString<ReturnValue>(json)
 
-        json shouldBe Json.encodeToString(SerializedData.from(id))
-        m2 shouldBe m
-      }
+          json shouldBe Json.encodeToString(SerializedData.from(id))
+          m2 shouldBe m
+        }
 
-      "MethodParameterTypes should be serialized as List<String>" {
-        val m = MethodParameterTypes(listOf("a", "b", "c"))
+        "MethodParameterTypes should be serialized as List<String>" {
+          val m = MethodParameterTypes(listOf("a", "b", "c"))
 
-        val json = Json.encodeToString(m)
-        json shouldBe "[\"a\",\"b\",\"c\"]"
+          val json = Json.encodeToString(m)
+          json shouldBe "[\"a\",\"b\",\"c\"]"
 
-        val m2 = Json.decodeFromString<MethodParameterTypes>(json)
-        m2 shouldBe m
-      }
+          val m2 = Json.decodeFromString<MethodParameterTypes>(json)
+          m2 shouldBe m
+        }
 
-      "TaskAttemptId should be serialized as String" {
-        val id = TestFactory.random<String>()
-        val m = TaskAttemptId(id)
-        val json = Json.encodeToString(m)
-        val m2 = Json.decodeFromString<TaskAttemptId>(json)
+        "TaskAttemptId should be serialized as String" {
+          val id = TestFactory.random<String>()
+          val m = TaskAttemptId(id)
+          val json = Json.encodeToString(m)
+          val m2 = Json.decodeFromString<TaskAttemptId>(json)
 
-        json shouldBe Json.encodeToString(id)
-        m2 shouldBe m
-      }
+          json shouldBe Json.encodeToString(id)
+          m2 shouldBe m
+        }
 
-      "TaskRetry should be serialized as Int" {
-        val m = TaskRetrySequence(42)
-        val json = Json.encodeToString(m)
-        val m2 = Json.decodeFromString<TaskRetrySequence>(json)
+        "TaskRetry should be serialized as Int" {
+          val m = TaskRetrySequence(42)
+          val json = Json.encodeToString(m)
+          val m2 = Json.decodeFromString<TaskRetrySequence>(json)
 
-        json shouldBe "42"
-        m2 shouldBe m
-      }
+          json shouldBe "42"
+          m2 shouldBe m
+        }
 
-      "TaskAttemptRetry should be serialized as Int" {
-        val m = TaskRetryIndex(42)
-        val json = Json.encodeToString(m)
-        val m2 = Json.decodeFromString<TaskRetryIndex>(json)
+        "TaskAttemptRetry should be serialized as Int" {
+          val m = TaskRetryIndex(42)
+          val json = Json.encodeToString(m)
+          val m2 = Json.decodeFromString<TaskRetryIndex>(json)
 
-        json shouldBe "42"
-        m2 shouldBe m
-      }
+          json shouldBe "42"
+          m2 shouldBe m
+        }
 
-      "TaskMeta should be serialized as Map<String, SerializedData>" {
-        val m = TaskMeta(mapOf("a" to "1".toByteArray()))
-        val json = Json.encodeToString(m)
-        val m2 = Json.decodeFromString<TaskMeta>(json)
+        "TaskMeta should be serialized as Map<String, SerializedData>" {
+          val m = TaskMeta(mutableMapOf("a" to "1".toByteArray()))
+          val json = Json.encodeToString(m)
+          val m2 = Json.decodeFromString<TaskMeta>(json)
 
-        m2 shouldBe m
-      }
+          m2 shouldBe m
+        }
 
-      "TaskName should be serialized as String" {
-        val id = TestFactory.random<String>()
-        val m = ServiceName(id)
-        val json = Json.encodeToString(m)
-        val m2 = Json.decodeFromString<ServiceName>(json)
+        "TaskName should be serialized as String" {
+          val id = TestFactory.random<String>()
+          val m = ServiceName(id)
+          val json = Json.encodeToString(m)
+          val m2 = Json.decodeFromString<ServiceName>(json)
 
-        json shouldBe Json.encodeToString(id)
-        m2 shouldBe m
-      }
+          json shouldBe Json.encodeToString(id)
+          m2 shouldBe m
+        }
 
-      "Name should be serialized as String" {
-        val id = TestFactory.random<String>()
-        val m = Name(id)
-        val json = Json.encodeToString(m)
-        val m2 = Json.decodeFromString<Name>(json)
+        "Name should be serialized as String" {
+          val id = TestFactory.random<String>()
+          val m = Name(id)
+          val json = Json.encodeToString(m)
+          val m2 = Json.decodeFromString<Name>(json)
 
-        json shouldBe Json.encodeToString(id)
-        m2 shouldBe m
-      }
+          json shouldBe Json.encodeToString(id)
+          m2 shouldBe m
+        }
 
-      "TaskTak should be stringify as string" {
-        val taskTag = TestFactory.random<TaskTag>()
+        "TaskTak should be stringify as string" {
+          val taskTag = TestFactory.random<TaskTag>()
 
-        "$taskTag" shouldBe taskTag.tag
-      }
-    })
+          "$taskTag" shouldBe taskTag.tag
+        }
+      },
+  )

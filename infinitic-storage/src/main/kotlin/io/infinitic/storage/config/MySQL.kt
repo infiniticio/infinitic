@@ -66,6 +66,6 @@ data class MySQL(
               password = this@MySQL.password?.value
               maxPoolSize?.let { maximumPoolSize = it }
             },
-        ).also { Runtime.getRuntime().addShutdownHook(Thread { it.close() }) }
+        )
       }
 }

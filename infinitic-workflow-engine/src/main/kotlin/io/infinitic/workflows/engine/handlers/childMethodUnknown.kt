@@ -38,7 +38,8 @@ internal fun CoroutineScope.childMethodUnknown(
 ) = commandTerminated(
     producer,
     state,
-    message.methodRunId,
-    CommandId.from(message.childMethodUnknownError.methodRunId ?: thisShouldNotHappen()),
+    message.workflowMethodId,
+    CommandId.from(message.childMethodUnknownError.workflowMethodId ?: thisShouldNotHappen()),
     CommandStatus.Unknown(message.childMethodUnknownError, state.workflowTaskIndex),
+    message.emittedAt ?: thisShouldNotHappen(),
 )

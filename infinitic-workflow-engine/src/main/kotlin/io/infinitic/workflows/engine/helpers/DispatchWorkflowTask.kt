@@ -22,12 +22,12 @@
  */
 package io.infinitic.workflows.engine.helpers
 
-import io.infinitic.common.data.ClientName
 import io.infinitic.common.data.MillisInstant
+import io.infinitic.common.emitters.EmitterName
 import io.infinitic.common.tasks.data.TaskId
 import io.infinitic.common.transport.InfiniticProducer
-import io.infinitic.common.workflows.data.methodRuns.MethodRun
-import io.infinitic.common.workflows.data.methodRuns.MethodRunPosition
+import io.infinitic.common.workflows.data.methodRuns.PositionInWorkflowMethod
+import io.infinitic.common.workflows.data.methodRuns.WorkflowMethod
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskParameters
 import io.infinitic.common.workflows.engine.state.WorkflowState
 import kotlinx.coroutines.CoroutineScope
@@ -36,14 +36,19 @@ import kotlinx.coroutines.launch
 internal fun CoroutineScope.dispatchWorkflowTask(
   producer: InfiniticProducer,
   state: WorkflowState,
-  methodRun: MethodRun,
-  methodRunPosition: MethodRunPosition
+  workflowMethod: WorkflowMethod,
+  positionInMethod: PositionInWorkflowMethod,
+  workflowTaskInstant: MillisInstant,
+  workflowTaskId: TaskId = TaskId()
 ) {
+
+  val emitterName = EmitterName(producer.name)
+
   state.workflowTaskIndex += 1
 
   // defines workflow task input
   val workflowTaskParameters = WorkflowTaskParameters(
-      taskId = TaskId(),
+      taskId = workflowTaskId,
       workflowId = state.workflowId,
       workflowName = state.workflowName,
       workflowVersion = state.workflowVersion,
@@ -52,23 +57,19 @@ internal fun CoroutineScope.dispatchWorkflowTask(
       workflowPropertiesHashValue =
       state.propertiesHashValue, // TODO filterStore(state.propertyStore, listOf(methodRun))
       workflowTaskIndex = state.workflowTaskIndex,
-      methodRun = methodRun,
-      emitterName = ClientName(producer.name),
+      workflowTaskInstant = workflowTaskInstant,
+      workflowMethod = workflowMethod,
+      emitterName = emitterName,
   )
 
-  val dispatchTaskMessage = workflowTaskParameters.toExecuteTaskMessage()
+  val executeTaskMessage = workflowTaskParameters.toExecuteTaskMessage()
 
   // dispatch workflow task
-  launch { producer.send(dispatchTaskMessage) }
+  launch { producer.sendToTaskExecutor(executeTaskMessage) }
 
-  with(state) {
-    runningWorkflowTaskId = workflowTaskParameters.taskId
-    // do not update runningWorkflowTaskInstant if it is a retry
-    if (runningMethodRunId != methodRun.methodRunId ||
-      runningMethodRunPosition != methodRunPosition) {
-      runningWorkflowTaskInstant = MillisInstant.now()
-      runningMethodRunId = methodRun.methodRunId
-      runningMethodRunPosition = methodRunPosition
-    }
-  }
+  // update runningWorkflowTask
+  state.runningWorkflowTaskId = workflowTaskId
+  state.runningWorkflowTaskInstant = workflowTaskInstant
+  state.runningWorkflowMethodId = workflowMethod.workflowMethodId
+  state.positionInRunningWorkflowMethod = positionInMethod
 }

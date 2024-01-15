@@ -42,8 +42,9 @@ internal class ErrorsWorkflowTests :
       {
         val client = Test.client
 
-        val errorsWorkflow =
-            client.newWorkflow(ErrorsWorkflow::class.java, tags = setOf("foo", "bar"))
+        val errorsWorkflow = client.newWorkflow(
+            ErrorsWorkflow::class.java, tags = setOf("foo", "bar"),
+        )
         val utilWorkflow = client.newWorkflow(UtilWorkflow::class.java)
 
         "Cancelling workflow" {
@@ -131,7 +132,7 @@ internal class ErrorsWorkflowTests :
 
           val cause1 = error.deferredException as WorkflowFailedException
           cause1.workflowName shouldBe ErrorsWorkflow::class.java.name
-          cause1.methodName shouldBe "failingWithException"
+          cause1.workflowMethodName shouldBe "failingWithException"
 
           val cause2 = cause1.deferredException as TaskFailedException
           cause2.serviceName shouldBe UtilService::class.java.name
@@ -187,7 +188,7 @@ internal class ErrorsWorkflowTests :
           deferred.await() shouldBe "ok"
         }
 
-        "retry a caught failed task should not throw and influence workflow" {
+        "retry a caught failed task should not throw and task status can change after retry" {
           errorsWorkflow.failing9() shouldBe true
         }
 

@@ -22,9 +22,9 @@
  */
 package io.infinitic.workflows.workflowTask
 
-import io.infinitic.common.data.ClientName
 import io.infinitic.common.data.ReturnValue
 import io.infinitic.common.workers.config.WorkflowVersion
+import io.infinitic.common.workers.data.WorkerName
 import io.infinitic.common.workflows.data.properties.PropertyHash
 import io.infinitic.common.workflows.data.properties.PropertyName
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTask
@@ -49,14 +49,14 @@ class WorkflowTaskImpl : WorkflowTask {
 
   override fun handle(workflowTaskParameters: WorkflowTaskParameters): WorkflowTaskReturnValue {
     // get method
-    val methodRun = workflowTaskParameters.methodRun
+    val methodRun = workflowTaskParameters.workflowMethod
 
     // set context
     with(workflowTaskParameters) {
       instance.workflowName = workflowName.toString()
       instance.workflowId = workflowId.toString()
       instance.methodName = methodRun.methodName.toString()
-      instance.methodId = methodRun.methodRunId.toString()
+      instance.methodId = methodRun.workflowMethodId.toString()
       instance.tags = workflowTags.map { it.tag }.toSet()
       instance.meta = workflowMeta.map
     }
@@ -101,7 +101,7 @@ class WorkflowTaskImpl : WorkflowTask {
               workflowName = workflowTaskParameters.workflowName.toString(),
               workflowId = workflowTaskParameters.workflowId.toString(),
               workflowTaskId = Task.taskId,
-              workerException = WorkerException.from(ClientName(Task.workerName), cause),
+              workerException = WorkerException.from(WorkerName(Task.workerName), cause),
           )
         // Throwable are not caught
         else -> throw cause!!
@@ -114,6 +114,7 @@ class WorkflowTaskImpl : WorkflowTask {
         properties = instance.getProperties(),
         methodReturnValue = methodReturnValue,
         workflowVersion = WorkflowVersion.from(instance::class.java),
+        workflowTaskInstant = workflowTaskParameters.workflowTaskInstant,
     )
   }
 }

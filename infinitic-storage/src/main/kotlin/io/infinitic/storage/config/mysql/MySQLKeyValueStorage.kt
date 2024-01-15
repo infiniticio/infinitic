@@ -32,7 +32,7 @@ private const val MYSQL_TABLE = "key_value_storage"
 class MySQLKeyValueStorage(internal val pool: HikariDataSource) : KeyValueStorage {
 
   companion object {
-    fun of(config: MySQL) = MySQLKeyValueStorage(config.getPool())
+    fun from(config: MySQL) = MySQLKeyValueStorage(config.getPool())
   }
 
   init {
@@ -49,22 +49,23 @@ class MySQLKeyValueStorage(internal val pool: HikariDataSource) : KeyValueStorag
                   "`last_update` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP," +
                   "`value_size_in_KiB` BIGINT(20) GENERATED ALWAYS AS ((length(`value`) / 1024)) STORED," +
                   "KEY `value_size_index` (`value_size_in_KiB`)" +
-                  ") ENGINE=InnoDB DEFAULT CHARSET=utf8")
+                  ") ENGINE=InnoDB DEFAULT CHARSET=utf8",
+          )
           .use { it.executeUpdate() }
     }
   }
 
   override suspend fun get(key: String): ByteArray? =
       pool.connection.use { connection ->
-        connection.prepareStatement("SELECT `value` FROM $MYSQL_TABLE WHERE `key`=?").use {
-            statement ->
-          statement.setString(1, key)
-          statement.executeQuery().use {
-            if (it.next()) {
-              it.getBytes("value")
-            } else null
-          }
-        }
+        connection.prepareStatement("SELECT `value` FROM $MYSQL_TABLE WHERE `key`=?")
+            .use { statement ->
+              statement.setString(1, key)
+              statement.executeQuery().use {
+                if (it.next()) {
+                  it.getBytes("value")
+                } else null
+              }
+            }
       }
 
   override suspend fun put(key: String, value: ByteArray) {
@@ -72,7 +73,8 @@ class MySQLKeyValueStorage(internal val pool: HikariDataSource) : KeyValueStorag
       connection
           .prepareStatement(
               "INSERT INTO $MYSQL_TABLE (`key`, `value`) VALUES (?, ?) " +
-                  "ON DUPLICATE KEY UPDATE `value`=?")
+                  "ON DUPLICATE KEY UPDATE `value`=?",
+          )
           .use {
             it.setString(1, key)
             it.setBytes(2, value)
@@ -91,6 +93,10 @@ class MySQLKeyValueStorage(internal val pool: HikariDataSource) : KeyValueStorag
     }
   }
 
+  override fun close() {
+    pool.close()
+  }
+  
   @TestOnly
   override fun flush() {
     pool.connection.use { connection ->

@@ -29,12 +29,11 @@ import io.infinitic.common.workflows.data.channels.ChannelName
 import io.infinitic.common.workflows.data.channels.ChannelType
 import io.infinitic.common.workflows.data.channels.SignalData
 import io.infinitic.common.workflows.data.channels.SignalId
-import io.infinitic.common.workflows.data.commands.CommandHash
 import io.infinitic.common.workflows.data.commands.CommandId
 import io.infinitic.common.workflows.data.commands.CommandSimpleName
 import io.infinitic.common.workflows.data.commands.DispatchNewWorkflowPastCommand
-import io.infinitic.common.workflows.data.methodRuns.MethodRunId
-import io.infinitic.common.workflows.data.methodRuns.MethodRunPosition
+import io.infinitic.common.workflows.data.methodRuns.PositionInWorkflowMethod
+import io.infinitic.common.workflows.data.methodRuns.WorkflowMethodId
 import io.infinitic.common.workflows.data.properties.PropertyHash
 import io.infinitic.common.workflows.data.properties.PropertyName
 import io.infinitic.common.workflows.data.properties.PropertyValue
@@ -60,17 +59,6 @@ class DataTests :
           val m = WorkflowId(id)
           val json = Json.encodeToString(m)
           val m2 = Json.decodeFromString<WorkflowId>(json)
-
-          json shouldBe Json.encodeToString(id)
-          m2 shouldBe m
-        }
-
-        "CommandHash should be serialized as String and reversible in json" {
-          val id = TestFactory.random<String>()
-          val m = CommandHash(id)
-
-          val json = Json.encodeToString(m)
-          val m2 = Json.decodeFromString<CommandHash>(json)
 
           json shouldBe Json.encodeToString(id)
           m2 shouldBe m
@@ -148,18 +136,18 @@ class DataTests :
 
         "MethodRunId should be serialized as String and reversible in json" {
           val id = TestFactory.random<String>()
-          val m = MethodRunId(id)
+          val m = WorkflowMethodId(id)
           val json = Json.encodeToString(m)
-          val m2 = Json.decodeFromString<MethodRunId>(json)
+          val m2 = Json.decodeFromString<WorkflowMethodId>(json)
 
           json shouldBe Json.encodeToString(id)
           m2 shouldBe m
         }
 
         "MethodRunPosition should be serialized as String and reversible in json" {
-          val m = MethodRunPosition()
+          val m = PositionInWorkflowMethod()
           val json = Json.encodeToString(m)
-          val m2 = Json.decodeFromString<MethodRunPosition>(json)
+          val m2 = Json.decodeFromString<PositionInWorkflowMethod>(json)
 
           json shouldBe Json.encodeToString(-1)
           m2 shouldBe m

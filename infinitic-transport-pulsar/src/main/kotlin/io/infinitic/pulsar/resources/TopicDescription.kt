@@ -78,9 +78,16 @@ enum class GlobalTopicDescription : TopicDescription {
   }
 }
 
-enum class WorkflowTopicDescription : TopicDescription {
+enum class WorkflowTopicsDescription : TopicDescription {
   TAG {
     override val subscriptionPrefix = "workflow-tag"
+    override val subscriptionType = SubscriptionType.Key_Shared
+    override val isPartitioned = true
+    override val isDelayed = false
+    override val hasDeadLetter = true
+  },
+  CMD {
+    override val subscriptionPrefix = "workflow-cmd"
     override val subscriptionType = SubscriptionType.Key_Shared
     override val isPartitioned = true
     override val isDelayed = false
@@ -100,16 +107,30 @@ enum class WorkflowTopicDescription : TopicDescription {
     override val isDelayed = true
     override val hasDeadLetter = true
   },
-  EXECUTOR {
+  EVENTS {
+    override val subscriptionPrefix = "workflow-events"
+    override val subscriptionType = SubscriptionType.Shared
+    override val isPartitioned = true
+    override val isDelayed = false
+    override val hasDeadLetter = true
+  },
+  TASK_EXECUTOR {
     override val subscriptionPrefix = "workflow-task-executor"
     override val subscriptionType = SubscriptionType.Shared
     override val isPartitioned = true
     override val isDelayed = false
     override val hasDeadLetter = true
-  }
+  },
+  TASK_EVENTS {
+    override val subscriptionPrefix = "workflow-task-events"
+    override val subscriptionType = SubscriptionType.Shared
+    override val isPartitioned = true
+    override val isDelayed = false
+    override val hasDeadLetter = true
+  },
 }
 
-enum class ServiceTopicDescription : TopicDescription {
+enum class ServiceTopicsDescription : TopicDescription {
   TAG {
     override val subscriptionPrefix = "task-tag"
     override val subscriptionType = SubscriptionType.Key_Shared
@@ -119,6 +140,13 @@ enum class ServiceTopicDescription : TopicDescription {
   },
   EXECUTOR {
     override val subscriptionPrefix = "task-executor"
+    override val subscriptionType = SubscriptionType.Shared
+    override val isPartitioned = true
+    override val isDelayed = false
+    override val hasDeadLetter = true
+  },
+  EVENTS {
+    override val subscriptionPrefix = "task-events"
     override val subscriptionType = SubscriptionType.Shared
     override val isPartitioned = true
     override val isDelayed = false

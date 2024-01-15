@@ -35,9 +35,9 @@ import org.apache.avro.Schema
 @AvroNamespace("io.infinitic.workflows.engine")
 data class WorkflowEngineEnvelope(
   private val workflowId: WorkflowId,
-  @AvroNamespace("io.infinitic.workflows.engine") private val type: WorkflowEngineMessageType,
+  private val type: WorkflowEngineMessageType,
   private val dispatchWorkflow: DispatchNewWorkflow? = null,
-  private val dispatchMethod: DispatchMethodOnRunningWorkflow? = null,
+  private val dispatchMethod: DispatchMethodWorkflow? = null,
   private val waitWorkflow: WaitWorkflow? = null,
   private val cancelWorkflow: CancelWorkflow? = null,
   private val retryWorkflowTask: RetryWorkflowTask? = null,
@@ -93,7 +93,7 @@ data class WorkflowEngineEnvelope(
           dispatchWorkflow = msg,
       )
 
-      is DispatchMethodOnRunningWorkflow -> WorkflowEngineEnvelope(
+      is DispatchMethodWorkflow -> WorkflowEngineEnvelope(
           workflowId = msg.workflowId,
           type = WorkflowEngineMessageType.DISPATCH_METHOD,
           dispatchMethod = msg,
@@ -207,7 +207,7 @@ data class WorkflowEngineEnvelope(
         AvroSerDe.readBinary(bytes, readerSchema, serializer())
 
     /** Current avro Schema */
-    val writerSchema = AvroSerDe.schema(serializer())
+    val writerSchema = AvroSerDe.currentSchema(serializer())
   }
 
   override fun message(): WorkflowEngineMessage = when (type) {

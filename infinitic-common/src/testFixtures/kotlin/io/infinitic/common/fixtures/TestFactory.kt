@@ -22,22 +22,27 @@
  */
 package io.infinitic.common.fixtures
 
+import io.infinitic.common.data.Version
 import io.infinitic.common.data.methods.MethodParameters
 import io.infinitic.common.serDe.SerializedData
 import io.infinitic.common.tasks.executors.errors.DeferredError
 import io.infinitic.common.tasks.executors.errors.ExecutionError
+import io.infinitic.common.tasks.executors.events.TaskEventEnvelope
+import io.infinitic.common.tasks.executors.events.TaskEventMessage
 import io.infinitic.common.workflows.data.commands.CommandId
 import io.infinitic.common.workflows.data.steps.NewStep
 import io.infinitic.common.workflows.data.steps.Step
+import io.infinitic.common.workflows.engine.events.WorkflowEventEnvelope
+import io.infinitic.common.workflows.engine.events.WorkflowEventMessage
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineEnvelope
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
-import java.nio.ByteBuffer
-import kotlin.random.Random
-import kotlin.reflect.KClass
 import org.jeasy.random.EasyRandom
 import org.jeasy.random.EasyRandomParameters
 import org.jeasy.random.FieldPredicates
 import org.jeasy.random.api.Randomizer
+import java.nio.ByteBuffer
+import kotlin.random.Random
+import kotlin.reflect.KClass
 
 object TestFactory {
   private var seed = 0L
@@ -63,6 +68,7 @@ object TestFactory {
             .randomize(ExecutionError::class.java) {
               ExecutionError(random(), random(), random(), random(), null)
             }
+            .randomize(Version::class.java) { Version(random<String>()) }
             .randomize(SerializedData::class.java) { SerializedData.from(random<String>()) }
             .randomize(MethodParameters::class.java) {
               MethodParameters.from(random<ByteArray>(), random<String>())
@@ -70,6 +76,14 @@ object TestFactory {
             .randomize(WorkflowEngineEnvelope::class.java) {
               val sub = WorkflowEngineMessage::class.sealedSubclasses.shuffled().first()
               WorkflowEngineEnvelope.from(random(sub))
+            }
+            .randomize(WorkflowEventEnvelope::class.java) {
+              val sub = WorkflowEventMessage::class.sealedSubclasses.shuffled().first()
+              WorkflowEventEnvelope.from(random(sub))
+            }
+            .randomize(TaskEventEnvelope::class.java) {
+              val sub = TaskEventMessage::class.sealedSubclasses.shuffled().first()
+              TaskEventEnvelope.from(random(sub))
             }
             .randomize(DeferredError::class.java) {
               val sub = DeferredError::class.sealedSubclasses.shuffled().first()
@@ -98,7 +112,8 @@ object TestFactory {
         "A AND (B OR C)" to Step.And(listOf(stepA, Step.Or(listOf(stepB, stepC)))),
         "A AND (B AND C)" to Step.And(listOf(stepA, Step.And(listOf(stepB, stepC)))),
         "A OR (B AND (C OR D))" to
-            Step.Or(listOf(stepA, Step.And(listOf(stepB, Step.Or(listOf(stepC, stepD)))))))
+            Step.Or(listOf(stepA, Step.And(listOf(stepB, Step.Or(listOf(stepC, stepD)))))),
+    )
   }
 
   private fun randomStep(): Step {

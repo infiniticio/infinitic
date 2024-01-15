@@ -47,5 +47,11 @@ data class ConsumerConfig @JvmOverloads constructor(
   val autoAckOldestChunkedMessageOnQueueFull: Boolean? = null,
   val expireTimeOfIncompleteChunkedMessageSeconds: Double? = null,
   val startPaused: Boolean? = null,
-  val maxRedeliverCount: Int = 3
-)
+  val maxRedeliverCount: Int? = null
+) {
+  companion object {
+    const val DEFAULT_MAX_REDELIVER_COUNT = 3
+  }
+
+  fun getMaxRedeliverCount() = maxRedeliverCount ?: DEFAULT_MAX_REDELIVER_COUNT
+}

@@ -38,6 +38,9 @@ data class WorkerConfig @JvmOverloads constructor(
   /** Worker name */
   override val name: String? = null,
 
+  /** Worker name */
+  override val shutdownGracePeriodInSeconds: Double = 30.0,
+
   /** Transport configuration */
   override val transport: Transport = Transport.pulsar,
 

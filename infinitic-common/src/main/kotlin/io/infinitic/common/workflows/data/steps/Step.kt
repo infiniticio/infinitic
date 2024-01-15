@@ -272,7 +272,7 @@ sealed class Step {
 
     @JsonIgnore
     override fun isTerminatedAt(index: WorkflowTaskIndex) =
-        this.steps.any { it.isTerminatedAt(index) }
+        steps.any { it.isTerminatedAt(index) }
 
     override fun checkAwaitIndex() {
       steps.map { it.checkAwaitIndex() }
@@ -322,20 +322,17 @@ sealed class Step {
     commandStatuses: List<CommandStatus>? = null
   ): Step {
     when (this) {
-      is Id ->
-        if (this.commandId == commandId) {
-          this.commandStatus =
-              if (commandStatuses == null) {
-                commandStatus
-              } else
-                when (awaitIndex) {
-                  0 -> commandStatus
-                  else ->
-                    commandStatuses.firstOrNull {
-                      it is Completed && it.returnIndex == awaitIndex
-                    } ?: thisShouldNotHappen()
-                }
+      is Id -> if (this.commandId == commandId) {
+        this.commandStatus = when (commandStatuses) {
+          null -> commandStatus
+          else -> when (awaitIndex) {
+            0 -> commandStatus
+            else -> commandStatuses.firstOrNull {
+              it is Completed && it.returnIndex == awaitIndex
+            } ?: thisShouldNotHappen()
+          }
         }
+      }
 
       is And -> steps = steps.map { it.updateWith(commandId, commandStatus, commandStatuses) }
       is Or -> steps = steps.map { it.updateWith(commandId, commandStatus, commandStatuses) }
@@ -347,12 +344,10 @@ sealed class Step {
     when (this) {
       is Id -> Unit
       is And -> steps = steps.map { it.resolveOr() }
-      is Or ->
-        steps =
-            when (isTerminated()) {
-              true -> listOf(steps.first { it.isTerminated() }.resolveOr())
-              false -> steps.map { s -> s.resolveOr() }
-            }
+      is Or -> steps = when (isTerminated()) {
+        true -> listOf(steps.first { it.isTerminated() }.resolveOr())
+        false -> steps.map { s -> s.resolveOr() }
+      }
     }
     return this
   }
@@ -360,51 +355,28 @@ sealed class Step {
   private fun compose(): Step {
     when (this) {
       is Id -> Unit
-      is And ->
-        while (steps.any { it is And || (it is Or && it.steps.count() == 1) }) {
-          steps =
-              steps.fold(mutableListOf()) { l, s ->
-                return@fold when (s) {
-                  is Id -> {
-                    l.add(s)
-                    l
-                  }
 
-                  is And -> {
-                    l.addAll(s.steps)
-                    l
-                  }
-
-                  is Or -> {
-                    if (s.steps.count() == 1) l.addAll(s.steps) else l.add(s)
-                    l
-                  }
-                }
-              }
+      is And -> while (steps.any { it is And || (it is Or && it.steps.count() == 1) }) {
+        steps = steps.fold(mutableListOf()) { l, s ->
+          when (s) {
+            is Id -> l.add(s)
+            is And -> l.addAll(s.steps)
+            is Or -> if (s.steps.count() == 1) l.addAll(s.steps) else l.add(s)
+          }
+          return@fold l
         }
+      }
 
-      is Or ->
-        while (steps.any { it is Or || (it is And && it.steps.count() == 1) }) {
-          steps =
-              steps.fold(mutableListOf()) { l, s ->
-                return@fold when (s) {
-                  is Id -> {
-                    l.add(s)
-                    l
-                  }
-
-                  is And -> {
-                    if (s.steps.count() == 1) l.addAll(s.steps) else l.add(s)
-                    l
-                  }
-
-                  is Or -> {
-                    l.addAll(s.steps)
-                    l
-                  }
-                }
-              }
+      is Or -> while (steps.any { it is Or || (it is And && it.steps.count() == 1) }) {
+        steps = steps.fold(mutableListOf()) { l, s ->
+          when (s) {
+            is Id -> l.add(s)
+            is And -> if (s.steps.count() == 1) l.addAll(s.steps) else l.add(s)
+            is Or -> l.addAll(s.steps)
+          }
+          return@fold l
         }
+      }
     }
     return this
   }

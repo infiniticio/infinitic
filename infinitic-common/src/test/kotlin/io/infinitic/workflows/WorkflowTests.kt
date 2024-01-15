@@ -40,68 +40,70 @@ import io.mockk.mockk
 import io.mockk.slot
 
 class WorkflowTests :
-    StringSpec({
-      val dispatcher = mockk<WorkflowDispatcher>()
-      val newTaskSlot = slot<NewServiceProxyHandler<*>>()
-      val newWorkflowSlot = slot<NewWorkflowProxyHandler<*>>()
-      every { dispatcher.dispatchAndWait<Long>(capture(newTaskSlot)) } returns 100L
-      every { dispatcher.dispatch<Long>(capture(newTaskSlot), false) } returns mockk()
-      every { dispatcher.dispatchAndWait<Long>(capture(newWorkflowSlot)) } returns 100L
-      every { dispatcher.dispatch<Long>(capture(newWorkflowSlot), false) } returns mockk()
+  StringSpec(
+      {
+        val dispatcher = mockk<WorkflowDispatcher>()
+        val newTaskSlot = slot<NewServiceProxyHandler<*>>()
+        val newWorkflowSlot = slot<NewWorkflowProxyHandler<*>>()
+        every { dispatcher.dispatchAndWait<Long>(capture(newTaskSlot)) } returns 100L
+        every { dispatcher.dispatch<Long>(capture(newTaskSlot), false) } returns mockk()
+        every { dispatcher.dispatchAndWait<Long>(capture(newWorkflowSlot)) } returns 100L
+        every { dispatcher.dispatch<Long>(capture(newWorkflowSlot), false) } returns mockk()
 
-      "Workflow should trigger synchronously a task" {
-        val w = WorkflowAImpl().apply { this.dispatcher = dispatcher }
+        "Workflow should trigger synchronously a task" {
+          val w = WorkflowAImpl().apply { this.dispatcher = dispatcher }
 
-        w.syncTask(100)
+          w.syncTask(100)
 
-        with(newTaskSlot.captured) {
-          serviceName shouldBe ServiceName(TaskA::class.java.name)
-          methodName.toString() shouldBe TaskA::await.name
-          methodArgs.toList() shouldBe listOf(100)
-          taskTags shouldBe setOf(TaskTag("foo"), TaskTag("bar"))
-          taskMeta shouldBe TaskMeta(mapOf("foo" to "bar".toByteArray()))
+          with(newTaskSlot.captured) {
+            serviceName shouldBe ServiceName(TaskA::class.java.name)
+            methodName.toString() shouldBe TaskA::await.name
+            methodArgs.toList() shouldBe listOf(100)
+            taskTags shouldBe setOf(TaskTag("foo"), TaskTag("bar"))
+            taskMeta shouldBe TaskMeta(mutableMapOf("foo" to "bar".toByteArray()))
+          }
         }
-      }
 
-      "Workflow should trigger asynchronously a task" {
-        val w = WorkflowAImpl().apply { this.dispatcher = dispatcher }
+        "Workflow should trigger asynchronously a task" {
+          val w = WorkflowAImpl().apply { this.dispatcher = dispatcher }
 
-        w.asyncTask(100)
+          w.asyncTask(100)
 
-        with(newTaskSlot.captured) {
-          serviceName shouldBe ServiceName(TaskA::class.java.name)
-          methodName.toString() shouldBe TaskA::await.name
-          methodArgs.toList() shouldBe listOf(100)
-          taskTags shouldBe setOf(TaskTag("foo"), TaskTag("bar"))
-          taskMeta shouldBe TaskMeta(mapOf("foo" to "bar".toByteArray()))
+          with(newTaskSlot.captured) {
+            serviceName shouldBe ServiceName(TaskA::class.java.name)
+            methodName.toString() shouldBe TaskA::await.name
+            methodArgs.toList() shouldBe listOf(100)
+            taskTags shouldBe setOf(TaskTag("foo"), TaskTag("bar"))
+            taskMeta shouldBe TaskMeta(mutableMapOf("foo" to "bar".toByteArray()))
+          }
         }
-      }
 
-      "Workflow should trigger synchronously a child-workflow" {
-        val w = WorkflowAImpl().apply { this.dispatcher = dispatcher }
+        "Workflow should trigger synchronously a child-workflow" {
+          val w = WorkflowAImpl().apply { this.dispatcher = dispatcher }
 
-        w.syncWorkflow(100)
+          w.syncWorkflow(100)
 
-        with(newWorkflowSlot.captured) {
-          workflowName shouldBe WorkflowName(WorkflowA::class.java.name)
-          methodName.toString() shouldBe WorkflowA::syncTask.name
-          methodArgs.toList() shouldBe listOf(100)
-          workflowTags shouldBe setOf(WorkflowTag("foo"), WorkflowTag("bar"))
-          workflowMeta shouldBe WorkflowMeta(mapOf("foo" to "bar".toByteArray()))
+          with(newWorkflowSlot.captured) {
+            workflowName shouldBe WorkflowName(WorkflowA::class.java.name)
+            methodName.toString() shouldBe WorkflowA::syncTask.name
+            methodArgs.toList() shouldBe listOf(100)
+            workflowTags shouldBe setOf(WorkflowTag("foo"), WorkflowTag("bar"))
+            workflowMeta shouldBe WorkflowMeta(mapOf("foo" to "bar".toByteArray()))
+          }
         }
-      }
 
-      "Workflow should trigger asynchronously a child-workflow" {
-        val w = WorkflowAImpl().apply { this.dispatcher = dispatcher }
+        "Workflow should trigger asynchronously a child-workflow" {
+          val w = WorkflowAImpl().apply { this.dispatcher = dispatcher }
 
-        w.asyncWorkflow(100)
+          w.asyncWorkflow(100)
 
-        with(newWorkflowSlot.captured) {
-          workflowName shouldBe WorkflowName(WorkflowA::class.java.name)
-          methodName.toString() shouldBe WorkflowA::syncTask.name
-          methodArgs.toList() shouldBe listOf(100)
-          workflowTags shouldBe setOf(WorkflowTag("foo"), WorkflowTag("bar"))
-          workflowMeta shouldBe WorkflowMeta(mapOf("foo" to "bar".toByteArray()))
+          with(newWorkflowSlot.captured) {
+            workflowName shouldBe WorkflowName(WorkflowA::class.java.name)
+            methodName.toString() shouldBe WorkflowA::syncTask.name
+            methodArgs.toList() shouldBe listOf(100)
+            workflowTags shouldBe setOf(WorkflowTag("foo"), WorkflowTag("bar"))
+            workflowMeta shouldBe WorkflowMeta(mapOf("foo" to "bar".toByteArray()))
+          }
         }
-      }
-    })
+      },
+  )

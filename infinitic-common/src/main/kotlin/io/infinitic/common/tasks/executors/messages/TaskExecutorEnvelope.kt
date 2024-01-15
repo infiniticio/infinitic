@@ -35,10 +35,12 @@ import org.apache.avro.Schema
 data class TaskExecutorEnvelope(
   @SerialName("taskName") private val serviceName: ServiceName,
   @AvroNamespace("io.infinitic.tasks.executor") private val type: TaskExecutorMessageType,
-  private val executeTask: ExecuteTask? = null
+  private val executeTask: ExecuteTask? = null,
 ) : Envelope<TaskExecutorMessage> {
   init {
-    val noNull = listOfNotNull(executeTask)
+    val noNull = listOfNotNull(
+        executeTask,
+    )
 
     require(noNull.size == 1)
     require(noNull.first() == message())
@@ -59,7 +61,7 @@ data class TaskExecutorEnvelope(
         AvroSerDe.readBinary(bytes, readerSchema, serializer())
 
     /** Current avro Schema */
-    val writerSchema = AvroSerDe.schema(serializer())
+    val writerSchema = AvroSerDe.currentSchema(serializer())
   }
 
   override fun message(): TaskExecutorMessage =

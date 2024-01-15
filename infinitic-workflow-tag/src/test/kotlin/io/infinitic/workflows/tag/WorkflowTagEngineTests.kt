@@ -24,6 +24,7 @@ package io.infinitic.workflows.tag
 
 import io.infinitic.common.clients.messages.ClientMessage
 import io.infinitic.common.clients.messages.WorkflowIdsByTag
+import io.infinitic.common.data.MillisInstant
 import io.infinitic.common.fixtures.TestFactory
 import io.infinitic.common.transport.InfiniticProducerAsync
 import io.infinitic.common.workflows.data.workflows.WorkflowId
@@ -74,13 +75,16 @@ private class WorkflowTagEngineTests :
           val workflowIds = setOf(WorkflowId(), WorkflowId())
           val msgIn = random<CancelWorkflowByTag>()
           // when
-          getEngine(msgIn.workflowTag, msgIn.workflowName, workflowIds = workflowIds).handle(msgIn)
+          getEngine(msgIn.workflowTag, msgIn.workflowName, workflowIds = workflowIds).handle(
+              msgIn,
+              MillisInstant.now(),
+          )
           // then
           coVerifySequence {
             workflowTagStorage.getWorkflowIds(msgIn.workflowTag, msgIn.workflowName)
             producerAsync.name
-            producerAsync.sendAsync(ofType<CancelWorkflow>())
-            producerAsync.sendAsync(ofType<CancelWorkflow>())
+            producerAsync.sendToWorkflowEngineAsync(ofType<CancelWorkflow>())
+            producerAsync.sendToWorkflowEngineAsync(ofType<CancelWorkflow>())
           }
           confirmVerified()
           // checking last message
@@ -94,13 +98,16 @@ private class WorkflowTagEngineTests :
           val workflowIds = setOf(WorkflowId(), WorkflowId())
           val msgIn = random<RetryWorkflowTaskByTag>()
           // when
-          getEngine(msgIn.workflowTag, msgIn.workflowName, workflowIds = workflowIds).handle(msgIn)
+          getEngine(msgIn.workflowTag, msgIn.workflowName, workflowIds = workflowIds).handle(
+              msgIn,
+              MillisInstant.now(),
+          )
           // then
           coVerifySequence {
             workflowTagStorage.getWorkflowIds(msgIn.workflowTag, msgIn.workflowName)
             producerAsync.name
-            producerAsync.sendAsync(ofType<RetryWorkflowTask>())
-            producerAsync.sendAsync(ofType<RetryWorkflowTask>())
+            producerAsync.sendToWorkflowEngineAsync(ofType<RetryWorkflowTask>())
+            producerAsync.sendToWorkflowEngineAsync(ofType<RetryWorkflowTask>())
           }
           confirmVerified()
           // checking last message
@@ -115,13 +122,16 @@ private class WorkflowTagEngineTests :
           val workflowIds = setOf(WorkflowId(), WorkflowId())
           val msgIn = random<RetryTasksByTag>()
           // when
-          getEngine(msgIn.workflowTag, msgIn.workflowName, workflowIds = workflowIds).handle(msgIn)
+          getEngine(msgIn.workflowTag, msgIn.workflowName, workflowIds = workflowIds).handle(
+              msgIn,
+              MillisInstant.now(),
+          )
           // then
           coVerifySequence {
             workflowTagStorage.getWorkflowIds(msgIn.workflowTag, msgIn.workflowName)
             producerAsync.name
-            producerAsync.sendAsync(ofType<RetryTasks>())
-            producerAsync.sendAsync(ofType<RetryTasks>())
+            producerAsync.sendToWorkflowEngineAsync(ofType<RetryTasks>())
+            producerAsync.sendToWorkflowEngineAsync(ofType<RetryTasks>())
           }
           confirmVerified()
           // checking last message
@@ -139,20 +149,23 @@ private class WorkflowTagEngineTests :
           val workflowIds = setOf(WorkflowId(), WorkflowId())
           val msgIn = random<CompleteTimersByTag>()
           // when
-          getEngine(msgIn.workflowTag, msgIn.workflowName, workflowIds = workflowIds).handle(msgIn)
+          getEngine(msgIn.workflowTag, msgIn.workflowName, workflowIds = workflowIds).handle(
+              msgIn,
+              MillisInstant.now(),
+          )
           // then
           coVerifySequence {
             workflowTagStorage.getWorkflowIds(msgIn.workflowTag, msgIn.workflowName)
             producerAsync.name
-            producerAsync.sendAsync(ofType<CompleteTimers>())
-            producerAsync.sendAsync(ofType<CompleteTimers>())
+            producerAsync.sendToWorkflowEngineAsync(ofType<CompleteTimers>())
+            producerAsync.sendToWorkflowEngineAsync(ofType<CompleteTimers>())
           }
           confirmVerified()
           // checking last message
           with(captured(workflowEngineSlot)!! as CompleteTimers) {
             workflowId shouldBe workflowIds.last()
             workflowName shouldBe msgIn.workflowName
-            methodRunId shouldBe msgIn.methodRunId
+            workflowMethodId shouldBe msgIn.workflowMethodId
           }
         }
 
@@ -161,13 +174,16 @@ private class WorkflowTagEngineTests :
           val workflowIds = setOf(WorkflowId(), WorkflowId())
           val msgIn = random<SendSignalByTag>()
           // when
-          getEngine(msgIn.workflowTag, msgIn.workflowName, workflowIds = workflowIds).handle(msgIn)
+          getEngine(msgIn.workflowTag, msgIn.workflowName, workflowIds = workflowIds).handle(
+              msgIn,
+              MillisInstant.now(),
+          )
           // then
           coVerifySequence {
             workflowTagStorage.getWorkflowIds(msgIn.workflowTag, msgIn.workflowName)
             producerAsync.name
-            producerAsync.sendAsync(ofType<SendSignal>())
-            producerAsync.sendAsync(ofType<SendSignal>())
+            producerAsync.sendToWorkflowEngineAsync(ofType<SendSignal>())
+            producerAsync.sendToWorkflowEngineAsync(ofType<SendSignal>())
           }
           confirmVerified()
           // checking last message
@@ -195,12 +211,12 @@ private class WorkflowTagEngineTests :
               msgIn.workflowName,
               workflowIds = setOf(workflowId1, workflowId2),
           )
-              .handle(msgIn)
+              .handle(msgIn, MillisInstant.now())
           // then
           coVerifySequence {
             workflowTagStorage.getWorkflowIds(msgIn.workflowTag, msgIn.workflowName)
             producerAsync.name
-            producerAsync.sendAsync(ofType<WorkflowIdsByTag>())
+            producerAsync.sendToClientAsync(ofType<WorkflowIdsByTag>())
           }
           confirmVerified()
 
@@ -245,8 +261,8 @@ private fun getEngine(
 
   producerAsync = mockk<InfiniticProducerAsync> {
     every { name } returns "clientWorkflowTagEngineName"
-    every { sendAsync(capture(clientSlot)) } returns completed()
-    every { sendAsync(capture(workflowEngineSlot)) } returns completed()
+    every { sendToClientAsync(capture(clientSlot)) } returns completed()
+    every { sendToWorkflowEngineAsync(capture(workflowEngineSlot)) } returns completed()
   }
 
   return WorkflowTagEngine(workflowTagStorage, producerAsync)

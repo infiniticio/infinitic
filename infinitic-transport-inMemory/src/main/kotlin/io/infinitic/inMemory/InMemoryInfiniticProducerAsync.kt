@@ -25,16 +25,16 @@ package io.infinitic.inMemory
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.infinitic.common.clients.messages.ClientMessage
 import io.infinitic.common.data.MillisDuration
+import io.infinitic.common.exceptions.thisShouldNotHappen
+import io.infinitic.common.tasks.executors.events.TaskEventMessage
 import io.infinitic.common.tasks.executors.messages.ExecuteTask
 import io.infinitic.common.tasks.executors.messages.TaskExecutorMessage
 import io.infinitic.common.tasks.tags.messages.TaskTagMessage
 import io.infinitic.common.transport.InfiniticProducerAsync
+import io.infinitic.common.workflows.engine.events.WorkflowEventMessage
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
 import io.infinitic.common.workflows.tags.messages.WorkflowTagMessage
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.future.future
 import java.util.concurrent.CompletableFuture
 
 class InMemoryInfiniticProducerAsync(private val channels: InMemoryChannels) :
@@ -42,26 +42,30 @@ class InMemoryInfiniticProducerAsync(private val channels: InMemoryChannels) :
 
   private val logger = KotlinLogging.logger {}
 
-  // Coroutine scope used to receive messages
-  private val producingScope = CoroutineScope(Dispatchers.IO)
-
   override var name = DEFAULT_NAME
 
-  override fun sendAsync(
+  override fun sendToClientAsync(
     message: ClientMessage
   ): CompletableFuture<Unit> = sendAsync(
       message,
       channels.forClient(message.recipientName),
   )
 
-  override fun sendAsync(
+  override fun sendToWorkflowTagAsync(
     message: WorkflowTagMessage
   ): CompletableFuture<Unit> = sendAsync(
       message,
       channels.forWorkflowTag(message.workflowName),
   )
 
-  override fun sendAsync(
+  override fun sendToWorkflowCmdAsync(
+    message: WorkflowEngineMessage
+  ): CompletableFuture<Unit> = sendAsync(
+      message,
+      channels.forWorkflowCmd(message.workflowName),
+  )
+
+  override fun sendToWorkflowEngineAsync(
     message: WorkflowEngineMessage,
     after: MillisDuration
   ): CompletableFuture<Unit> = when {
@@ -76,14 +80,21 @@ class InMemoryInfiniticProducerAsync(private val channels: InMemoryChannels) :
     )
   }
 
-  override fun sendAsync(
+  override fun sendToWorkflowEventsAsync(
+    message: WorkflowEventMessage
+  ): CompletableFuture<Unit> = sendAsync(
+      message,
+      channels.forWorkflowEvent(message.workflowName),
+  )
+
+  override fun sendToTaskTagAsync(
     message: TaskTagMessage
   ) = sendAsync(
       message,
       channels.forTaskTag(message.serviceName),
   )
 
-  override fun sendAsync(
+  override fun sendToTaskExecutorAsync(
     message: TaskExecutorMessage,
     after: MillisDuration
   ): CompletableFuture<Unit> = when {
@@ -99,6 +110,8 @@ class InMemoryInfiniticProducerAsync(private val channels: InMemoryChannels) :
             channels.forWorkflowTaskExecutor(message.workflowName!!),
         )
       }
+
+      else -> thisShouldNotHappen()
     }
 
     else -> when {
@@ -114,13 +127,28 @@ class InMemoryInfiniticProducerAsync(private val channels: InMemoryChannels) :
     }
   }
 
+  override fun sendToTaskEventsAsync(message: TaskEventMessage): CompletableFuture<Unit> = when {
+    message.isWorkflowTask() -> sendAsync(
+        message,
+        channels.forWorkflowTaskEvents(message.workflowName!!),
+    )
+
+    else -> sendAsync(
+        message,
+        channels.forTaskEvents(message.serviceName),
+    )
+  }
+
   private fun <T : Any> sendAsync(
     message: T,
     channel: Channel<T>,
-  ): CompletableFuture<Unit> = producingScope.future {
+  ): CompletableFuture<Unit> {
     logger.debug { "Channel ${channel.id}: sending $message" }
-    channel.send(message)
+    val future = with(channels) { channel.sendAsync(message) }
     logger.trace { "Channel ${channel.id}: sent" }
+
+    return future
+
   }
 
   companion object {

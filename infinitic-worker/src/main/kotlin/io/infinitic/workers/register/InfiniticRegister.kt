@@ -55,7 +55,10 @@ class InfiniticRegister(
 
   private val logger = KotlinLogging.logger(logName)
 
+  private val storages = mutableSetOf<Storage>()
+
   override val registry = WorkerRegistry(workerConfig.name)
+
 
   init {
     for (w in workerConfig.workflows) {
@@ -159,16 +162,12 @@ class InfiniticRegister(
       // explicit null => do nothing
       engine == null -> Unit
       // implicit null => register default tag engine
-      engine.isDefault ->
-        registerWorkflowEngine(
-            workflowName, concurrency, workerConfig.storage, workerConfig.cache,
-        )
+      engine.isDefault -> registerWorkflowEngine(
+          workflowName, concurrency, workerConfig.storage, workerConfig.cache,
+      )
       // explicit engine => register it
       else -> registerWorkflowEngine(
-          workflowName,
-          engine.concurrency!!,
-          engine.storage,
-          engine.cache,
+          workflowName, engine.concurrency!!, engine.storage, engine.cache,
       )
     }
 
@@ -176,13 +175,30 @@ class InfiniticRegister(
       // explicit null => do nothing
       tagEngine == null -> Unit
       // implicit null => register default tag engine
-      tagEngine.isDefault ->
-        registerWorkflowTag(workflowName, concurrency, workerConfig.storage, workerConfig.cache)
+      tagEngine.isDefault -> registerWorkflowTag(
+          workflowName, concurrency, workerConfig.storage, workerConfig.cache,
+      )
       // explicit engine => register it
-      else ->
-        registerWorkflowTag(
-            workflowName, tagEngine.concurrency!!, tagEngine.storage, tagEngine.cache,
-        )
+      else -> registerWorkflowTag(
+          workflowName, tagEngine.concurrency!!, tagEngine.storage, tagEngine.cache,
+      )
+    }
+  }
+
+  override fun close() {
+    storages.forEach {
+      try {
+        logger.info { "Closing KeyValueStorage $it" }
+        it.keyValue.close()
+      } catch (e: Exception) {
+        logger.warn(e) { "Unable to close KeyValueStorage $it" }
+      }
+      try {
+        logger.info { "Closing KeySetStorage $it" }
+        it.keySet.close()
+      } catch (e: Exception) {
+        logger.warn(e) { "Unable to close KeySetStorage $it" }
+      }
     }
   }
 
@@ -193,17 +209,16 @@ class InfiniticRegister(
     cache: Cache?
   ) {
     val c = cache ?: workerConfig.cache
-    val s = storage ?: workerConfig.storage
+    val s = storage ?: workerConfig.storage.also { storages.add(it) }
 
     logger.info {
       "* workflow engine".padEnd(25) +
           ": (concurrency: $concurrency, storage: ${s.type}, cache: ${c.type})"
     }
 
-    registry.workflowEngines[workflowName] =
-        RegisteredWorkflowEngine(
-            concurrency, BinaryWorkflowStateStorage(CachedKeyValueStorage(c.keyValue, s.keyValue)),
-        )
+    registry.workflowEngines[workflowName] = RegisteredWorkflowEngine(
+        concurrency, BinaryWorkflowStateStorage(CachedKeyValueStorage(c.keyValue, s.keyValue)),
+    )
   }
 
   private fun registerTaskTag(
@@ -213,20 +228,19 @@ class InfiniticRegister(
     cache: Cache?
   ) {
     val c = cache ?: workerConfig.cache
-    val s = storage ?: workerConfig.storage
+    val s = storage ?: workerConfig.storage.also { storages.add(it) }
 
     logger.info {
       "* task tag ".padEnd(25) + ": (concurrency: $concurrency, storage: ${s.type}, cache: ${c.type})"
     }
 
-    registry.serviceTags[serviceName] =
-        RegisteredServiceTag(
-            concurrency,
-            BinaryTaskTagStorage(
-                CachedKeyValueStorage(c.keyValue, s.keyValue),
-                CachedKeySetStorage(c.keySet, s.keySet),
-            ),
-        )
+    registry.serviceTags[serviceName] = RegisteredServiceTag(
+        concurrency,
+        BinaryTaskTagStorage(
+            CachedKeyValueStorage(c.keyValue, s.keyValue),
+            CachedKeySetStorage(c.keySet, s.keySet),
+        ),
+    )
   }
 
   private fun registerWorkflowTag(
@@ -236,20 +250,19 @@ class InfiniticRegister(
     cache: Cache?
   ) {
     val c = cache ?: workerConfig.cache
-    val s = storage ?: workerConfig.storage
+    val s = storage ?: workerConfig.storage.also { storages.add(it) }
 
     logger.info {
       "* workflow tag ".padEnd(25) +
           ": (concurrency: $concurrency, storage: ${s.type}, cache: ${c.type})"
     }
 
-    registry.workflowTags[workflowName] =
-        RegisteredWorkflowTag(
-            concurrency,
-            BinaryWorkflowTagStorage(
-                CachedKeyValueStorage(c.keyValue, s.keyValue),
-                CachedKeySetStorage(c.keySet, s.keySet),
-            ),
-        )
+    registry.workflowTags[workflowName] = RegisteredWorkflowTag(
+        concurrency,
+        BinaryWorkflowTagStorage(
+            CachedKeyValueStorage(c.keyValue, s.keyValue),
+            CachedKeySetStorage(c.keySet, s.keySet),
+        ),
+    )
   }
 }
