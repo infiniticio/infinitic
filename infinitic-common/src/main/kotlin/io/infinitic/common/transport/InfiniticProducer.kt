@@ -39,8 +39,7 @@ interface InfiniticProducer {
    */
   var name: String
 
-  suspend fun <T : Message> sendTo(
-    message: T,
+  suspend fun <T : Message> T.sendTo(
     topic: Topic<T>,
     after: MillisDuration? = null
   )
@@ -70,7 +69,6 @@ interface InfiniticProducer {
    * Synchronously send a message to a workflow-engine
    *
    * @param message the message to send
-   * @param after the delay before sending the message
    */
   suspend fun sendToWorkflowEngine(message: WorkflowEngineMessage)
 
@@ -97,11 +95,8 @@ interface InfiniticProducer {
    * Synchronously send a message to a task-executor
    *
    * @param message the message to send
-   * @param after the delay before sending the message
    */
-  suspend fun sendToServiceExecutor(
-    message: ServiceExecutorMessage
-  )
+  suspend fun sendToServiceExecutor(message: ServiceExecutorMessage)
 
   /**
    * Synchronously send a message to a task-executor

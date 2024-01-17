@@ -26,6 +26,12 @@ import io.infinitic.common.clients.messages.ClientMessage
 import io.infinitic.common.data.MillisDuration
 import io.infinitic.common.tasks.executors.messages.ServiceExecutorMessage
 import io.infinitic.common.tasks.tags.messages.ServiceTagMessage
+import io.infinitic.common.topics.ClientTopic
+import io.infinitic.common.topics.DelayedServiceExecutorTopic
+import io.infinitic.common.topics.ServiceExecutorTopic
+import io.infinitic.common.topics.ServiceTagTopic
+import io.infinitic.common.topics.WorkflowEngineTopic
+import io.infinitic.common.topics.WorkflowEventsTopic
 import io.infinitic.common.transport.InfiniticProducerAsync
 import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.engine.events.WorkflowEventMessage
@@ -61,21 +67,17 @@ class WorkflowEngineTests : StringSpec(
       fun completed() = CompletableFuture.completedFuture(Unit)
       val storage = mockk<WorkflowStateStorage>()
       val producerAsync = mockk<InfiniticProducerAsync> {
-        every { name } returns "testName"
-        every { sendToClientAsync(capture(clientSlot)) } returns completed()
-        every { sendToTaskTagAsync(capture(taskTagSlots)) } returns completed()
-        every { sendToWorkflowEventsAsync(capture(eventSlot)) } returns completed()
+        every { producerName } returns "testName"
+        every { capture(clientSlot).sendToAsync(ClientTopic) } returns completed()
+        every { capture(taskTagSlots).sendToAsync(ServiceTagTopic) } returns completed()
+        every { capture(eventSlot).sendToAsync(WorkflowEventsTopic) } returns completed()
 
+        every { capture(taskExecutorSlot).sendToAsync(ServiceExecutorTopic) } returns completed()
         every {
-          sendToTaskExecutorAsync(
-              capture(taskExecutorSlot),
-              capture(afterSlot),
-          )
+          capture(taskExecutorSlot).sendToAsync(DelayedServiceExecutorTopic, capture(afterSlot))
         } returns completed()
-        every { sendToWorkflowEngineAsync(capture(workflowEngineSlot)) } returns completed()
+        every { capture(workflowEngineSlot).sendToAsync(WorkflowEngineTopic) } returns completed()
       }
-
-      val engine = WorkflowEngine(storage, producerAsync)
 
       // ensure slots are emptied between each test
       beforeTest {

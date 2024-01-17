@@ -42,7 +42,7 @@ class ResourceManager(
   /**
    * Full name of the current Pulsar namespace
    */
-  val namespaceFullName = "$tenant/$namespace"
+  private val namespaceFullName = "$tenant/$namespace"
 
   /**
    * Full name of a topic
@@ -65,6 +65,14 @@ class ResourceManager(
       getWorkflowNameFromTopicName(it.removePrefix(topicFullName("")))
     }.toSet()
 
+  /**
+   * Returns the full name of a given entity for the topic.
+   * This is used both when sending a message to a topic and when starting a consumer,
+   * so we ensure that the topic exists by calling initTopicOnce
+   *
+   * @param entity The optional entity name (service name or workflow name).
+   * @return The full name of the topic with the optional entity name.
+   */
   fun Topic<*>.fullName(entity: String?) = topicFullName(name(entity))
       .also {
         initTopicOnce(
@@ -74,6 +82,14 @@ class ResourceManager(
         )
       }
 
+  /**
+   * Returns the full name of a given entity for the DLQ topic.
+   * This is used both when sending a message to a topic and when starting a consumer,
+   * so we ensure that the topic exists by calling initTopicOnce
+   *
+   * @param entity The optional entity name (service name or workflow name).
+   * @return The full name of the topic with the optional entity name.
+   */
   fun Topic<*>.fullNameDLQ(entity: String) = topicFullName(nameDLQ(entity))
       .also {
         initTopicOnce(
@@ -122,8 +138,6 @@ class ResourceManager(
     isDelayed: Boolean
   ): Result<Unit?> = topic?.let { initTopicOnce(it, isPartitioned, isDelayed) }
     ?: Result.success(null)
-
-  fun getConsumerName(name: String, topicDescription: TopicDescription): String = TODO()
 
   companion object {
     /** Create TopicManager from a Pulsar configuration instance */

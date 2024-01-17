@@ -30,11 +30,12 @@ import io.infinitic.common.fixtures.DockerOnly
 import io.infinitic.common.fixtures.TestFactory
 import io.infinitic.common.fixtures.later
 import io.infinitic.common.tasks.executors.messages.ExecuteTask
-import io.infinitic.common.tasks.executors.messages.ServiceExecutorEnvelope
 import io.infinitic.common.tasks.executors.messages.ServiceExecutorMessage
+import io.infinitic.common.topics.ServiceExecutorTopic
 import io.infinitic.pulsar.client.PulsarInfiniticClient
 import io.infinitic.pulsar.producers.Producer
 import io.infinitic.pulsar.producers.ProducerConfig
+import io.infinitic.pulsar.resources.schema
 import io.kotest.core.annotation.EnabledIf
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.comparables.shouldBeLessThan
@@ -92,7 +93,7 @@ class ConsumerTests : StringSpec(
       ) = consumer.runAsync(
           handler = handler,
           beforeDlq = { _, _ -> },
-          schemaClass = ServiceExecutorEnvelope::class,
+          schema = ServiceExecutorTopic.schema,
           topic = topic,
           topicDlq = null,
           subscriptionName = topic + "Consumer",

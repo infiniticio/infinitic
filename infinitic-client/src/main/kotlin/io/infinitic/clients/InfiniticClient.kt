@@ -61,7 +61,7 @@ class InfiniticClient(
 
   private val dispatcher = ClientDispatcher(javaClass.name, consumerAsync, producerAsync)
 
-  override val name by lazy { producerAsync.name }
+  override val name by lazy { producerAsync.producerName }
 
   /** Get last Deferred created by the call of a stub */
   override val lastDeferred get() = dispatcher.getLastDeferred()
@@ -222,7 +222,7 @@ class InfiniticClient(
       val producerAsync = transportConfig.producerAsync
 
       // apply name if it exists
-      name?.let { producerAsync.name = it }
+      name?.let { producerAsync.producerName = it }
 
       // Create Infinitic Client
       InfiniticClient(consumerAsync, producerAsync).also {

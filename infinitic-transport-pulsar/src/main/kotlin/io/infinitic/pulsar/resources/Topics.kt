@@ -53,6 +53,12 @@ import io.infinitic.pulsar.schemas.schemaDefinition
 import org.apache.pulsar.client.api.Schema
 import kotlin.reflect.KClass
 
+/**
+ * Property indicating whether a topic type receives delayed message
+ * This is used to set up TTLInSeconds which mush be much higher for delayed messages
+ *
+ * @return `true` if the topic is delayed, `false` otherwise.
+ */
 internal val Topic<*>.isDelayed
   get() = when (this) {
     DelayedWorkflowEngineTopic,
@@ -63,12 +69,23 @@ internal val Topic<*>.isDelayed
     else -> false
   }
 
+/**
+ * Determines whether a topic type is partitioned.
+ * This is used when creating a topic
+ *
+ * @return true if the topic is partitioned, false otherwise
+ */
 internal val Topic<*>.isPartitioned
   get() = when (this) {
     is NamingTopic, is ClientTopic -> false
     else -> true
   }
 
+/**
+ * Determines the prefix string per topic type
+ *
+ * @return The prefix string for the topic.
+ */
 fun Topic<*>.prefix() = when (this) {
   WorkflowTagTopic -> "workflow-tag"
   WorkflowCmdTopic -> "workflow-cmd"
@@ -84,14 +101,36 @@ fun Topic<*>.prefix() = when (this) {
   NamingTopic -> "namer"
 }
 
+/**
+ * Determines the prefix string per topic type for the dead letter queues
+ *
+ * @return The prefix string for the topic.
+ */
 internal fun Topic<*>.prefixDLQ() = "${prefix()}-dlq"
 
+
+/**
+ * Returns the name of the Topic based on topic type and the entity name
+ *
+ * @param entity The optional entity name (service name or workflow name).
+ * @return The name of the Topic with optional entity name.
+ */
 internal fun Topic<*>.name(entity: String?) = prefix() + (entity?.let { ":$entity" } ?: "")
 
+/**
+ * Returns the name of the Dead Letter Queue Topic based on topic type and the entity name
+ *
+ * @param entity The optional entity name (service name or workflow name).
+ * @return The name of the Topic with optional entity name.
+ */
 internal fun Topic<*>.nameDLQ(entity: String) = "${prefixDLQ()}:$entity"
 
-internal fun <S : Message> Topic<S>.forMessage(message: S? = null) = name(message?.entity())
 
+/**
+ * Returns the envelope class associated with a topic type.
+ *
+ * @return The envelope class that is associated with the topic.
+ */
 @Suppress("UNCHECKED_CAST")
 internal val <S : Message> Topic<S>.envelopeClass: KClass<Envelope<out S>>
   get() = when (this) {
@@ -109,9 +148,22 @@ internal val <S : Message> Topic<S>.envelopeClass: KClass<Envelope<out S>>
     NamingTopic -> thisShouldNotHappen()
   } as KClass<Envelope<out S>>
 
+/**
+ * Returns the Avro schema associated with a topic type.
+ *
+ * @param S The type of the message contained in the topic.
+ * @return The schema of the topic.
+ */
 internal val <S : Message> Topic<S>.schema: Schema<Envelope<out S>>
   get() = Schema.AVRO(schemaDefinition(envelopeClass))
 
+
+/**
+ * Retrieves the service name from a given topic name.
+ *
+ * @param topicName The name of the topic.
+ * @return The service name or null if the topic name does not match any service.
+ */
 internal fun getServiceNameFromTopicName(topicName: String): String? {
   for (serviceTopic in ServiceTopic.entries) {
     val prefix = serviceTopic.prefix()
@@ -124,13 +176,19 @@ internal fun getServiceNameFromTopicName(topicName: String): String? {
   return null
 }
 
+/**
+ * Retrieves the workflow name from the given topic name.
+ *
+ * @param topicName The topic name from which to extract the workflow name.
+ * @return The extracted workflow name, or null if no matching workflow topic prefix is found.
+ */
 internal fun getWorkflowNameFromTopicName(topicName: String): String? {
   for (workflowTopic in WorkflowTopic.entries) {
     val prefix = workflowTopic.prefix()
     if (topicName.startsWith(prefix)) return topicName.removePrefix(prefix)
 
     val prefixDLQ = workflowTopic.prefixDLQ()
-    if (topicName.startsWith(prefix)) return topicName.removePrefix(prefix)
+    if (topicName.startsWith(prefixDLQ)) return topicName.removePrefix(prefixDLQ)
   }
 
   return null

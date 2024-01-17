@@ -36,8 +36,7 @@ interface InfiniticProducerAsync {
   /**
    * Name of the sender
    */
-  var name: String
-
+  var producerName: String
 
   /**
    * Sends a message to the specified topic asynchronously.
@@ -50,5 +49,4 @@ interface InfiniticProducerAsync {
     topic: Topic<T>,
     after: MillisDuration = MillisDuration(0)
   ): CompletableFuture<Unit>
-
 }

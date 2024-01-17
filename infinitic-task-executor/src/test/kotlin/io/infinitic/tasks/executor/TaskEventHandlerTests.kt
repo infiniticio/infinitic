@@ -41,6 +41,10 @@ import io.infinitic.common.tasks.events.messages.TaskRetriedEvent
 import io.infinitic.common.tasks.events.messages.TaskStartedEvent
 import io.infinitic.common.tasks.executors.errors.TaskFailedError
 import io.infinitic.common.tasks.tags.messages.ServiceTagMessage
+import io.infinitic.common.topics.ClientTopic
+import io.infinitic.common.topics.DelayedWorkflowEngineTopic
+import io.infinitic.common.topics.ServiceTagTopic
+import io.infinitic.common.topics.WorkflowEngineTopic
 import io.infinitic.common.transport.InfiniticProducerAsync
 import io.infinitic.common.workers.config.WorkflowVersion
 import io.infinitic.common.workflows.data.methodRuns.WorkflowMethodId
@@ -78,11 +82,14 @@ class TaskEventHandlerTests :
         // mocks
         fun completed() = CompletableFuture.completedFuture(Unit)
         val producerAsync = mockk<InfiniticProducerAsync> {
-          every { name } returns "$testEmitterName"
-          every { sendToTaskTagAsync(capture(taskTagSlots)) } returns completed()
-          every { sendToClientAsync(capture(clientSlot)) } returns completed()
+          every { producerName } returns "$testEmitterName"
+          every { capture(taskTagSlots).sendToAsync(ServiceTagTopic) } returns completed()
+          every { capture(clientSlot).sendToAsync(ClientTopic) } returns completed()
           every {
-            sendToWorkflowEngineAsync(capture(workflowEngineSlot), capture(afterSlot))
+            capture(workflowEngineSlot).sendToAsync(WorkflowEngineTopic)
+          } returns completed()
+          every {
+            capture(workflowEngineSlot).sendToAsync(DelayedWorkflowEngineTopic, capture(afterSlot))
           } returns completed()
         }
 

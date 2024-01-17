@@ -45,6 +45,8 @@ import io.infinitic.common.fixtures.TestFactory
 import io.infinitic.common.fixtures.later
 import io.infinitic.common.tasks.executors.messages.ServiceExecutorMessage
 import io.infinitic.common.tasks.tags.messages.ServiceTagMessage
+import io.infinitic.common.topics.WorkflowCmdTopic
+import io.infinitic.common.topics.WorkflowTagTopic
 import io.infinitic.common.transport.InfiniticConsumerAsync
 import io.infinitic.common.transport.InfiniticProducerAsync
 import io.infinitic.common.utils.IdGenerator
@@ -126,9 +128,9 @@ private fun engineResponse(): CompletableFuture<Unit> {
 }
 
 private val producerAsync = mockk<InfiniticProducerAsync> {
-  every { name } returns "$clientNameTest"
-  every { sendToWorkflowTagAsync(capture(workflowTagSlots)) } answers { tagResponse() }
-  every { sendToWorkflowCmdAsync(capture(workflowCmdSlot)) } answers { engineResponse() }
+  every { producerName } returns "$clientNameTest"
+  every { capture(workflowTagSlots).sendToAsync(WorkflowTagTopic) } answers { tagResponse() }
+  every { capture(workflowCmdSlot).sendToAsync(WorkflowCmdTopic) } answers { engineResponse() }
 }
 
 private val consumerAsync = mockk<InfiniticConsumerAsync> {

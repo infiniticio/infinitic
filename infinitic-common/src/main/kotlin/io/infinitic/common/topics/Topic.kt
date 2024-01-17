@@ -34,23 +34,30 @@ import io.infinitic.common.workflows.tags.messages.WorkflowTagMessage
 
 sealed class Topic<S : Message>
 
+/**
+ * Topic used to get a unique producer name
+ */
+data object NamingTopic : Topic<Nothing>()
+
+/****************************************************
+ *
+ *  Client Topics
+ *
+ ****************************************************/
+
+data object ClientTopic : Topic<ClientMessage>()
+
+/****************************************************
+ *
+ *  Service Topics
+ *
+ ****************************************************/
 sealed class ServiceTopic<S : Message> : Topic<S>() {
   companion object {
     val entries: List<ServiceTopic<*>>
       get() = ServiceTopic::class.sealedSubclasses.map { it.objectInstance!! }
   }
 }
-
-sealed class WorkflowTopic<S : Message> : Topic<S>() {
-  companion object {
-    val entries: List<WorkflowTopic<*>>
-      get() = WorkflowTopic::class.sealedSubclasses.map { it.objectInstance!! }
-  }
-}
-
-data object NamingTopic : Topic<Nothing>()
-
-data object ClientTopic : Topic<ClientMessage>()
 
 data object ServiceTagTopic : ServiceTopic<ServiceTagMessage>()
 
@@ -59,6 +66,21 @@ data object ServiceExecutorTopic : ServiceTopic<ServiceExecutorMessage>()
 data object DelayedServiceExecutorTopic : ServiceTopic<ServiceExecutorMessage>()
 
 data object ServiceEventsTopic : ServiceTopic<ServiceEventMessage>()
+
+
+/****************************************************
+ *
+ *  Workflow Topics
+ *
+ ****************************************************/
+
+sealed class WorkflowTopic<S : Message> : Topic<S>() {
+  companion object {
+    val entries: List<WorkflowTopic<*>>
+      get() = WorkflowTopic::class.sealedSubclasses.map { it.objectInstance!! }
+  }
+}
+
 
 data object WorkflowTagTopic : WorkflowTopic<WorkflowTagMessage>()
 

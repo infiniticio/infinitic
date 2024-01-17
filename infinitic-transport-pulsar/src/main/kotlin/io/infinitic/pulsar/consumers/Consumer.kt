@@ -54,6 +54,7 @@ class Consumer(
 ) {
 
   val logger = KotlinLogging.logger {}
+
   private val consumingScope = CoroutineScope(Dispatchers.IO)
 
   val isActive get() = consumingScope.isActive
@@ -86,7 +87,7 @@ class Consumer(
     consumerName: String,
     concurrency: Int
   ) = consumingScope.future {
-    
+
     logger.debug { "Starting $concurrency consumers on topic $topic with subscription $subscriptionName" }
 
     when (subscriptionType) {

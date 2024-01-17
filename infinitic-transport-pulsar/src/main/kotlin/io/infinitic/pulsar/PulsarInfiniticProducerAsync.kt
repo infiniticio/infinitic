@@ -37,9 +37,16 @@ class PulsarInfiniticProducerAsync(
 
   private var suggestedName: String? = null
 
-  // Name of the sender
-  // (If set, this must be done before the first message is sent to be taking into account)
-  override var name: String
+  // If [suggestedName] is provided, we check that no other is connected with it
+  // If [suggestedName] is not provided, Pulsar will provide a unique name
+  private val uniqueName: String by lazy {
+    val namingTopic = with(resourceManager) { NamingTopic.forMessage() }
+    // Get unique name
+    producer.getUniqueName(namingTopic, suggestedName).getOrThrow()
+  }
+
+  // (if set, must be done before sending the first message)
+  override var producerName: String
     get() = uniqueName
     set(value) {
       suggestedName = value
@@ -52,20 +59,7 @@ class PulsarInfiniticProducerAsync(
       this,
       after,
       with(resourceManager) { topic.forMessage(this@sendToAsync) },
-      name,
+      producerName,
       key = key(),
   )
-
-
-  // If [suggestedName] is provided, we check that no other is connected with it
-  // If [suggestedName] is not provided, Pulsar will provide a unique name
-  private val uniqueName: String by lazy {
-    val namingTopic = with(resourceManager) { NamingTopic.forMessage() }
-    // Get unique name
-    producer.getUniqueName(namingTopic, suggestedName).getOrThrow()
-  }
-
-  companion object {
-    private val zero = MillisDuration.ZERO
-  }
 }

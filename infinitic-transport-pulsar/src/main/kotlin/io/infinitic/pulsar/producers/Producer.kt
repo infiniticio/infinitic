@@ -24,7 +24,6 @@ package io.infinitic.pulsar.producers
 
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.infinitic.common.data.MillisDuration
-import io.infinitic.common.messages.Envelope
 import io.infinitic.common.messages.Message
 import io.infinitic.pulsar.client.PulsarInfiniticClient
 import java.util.concurrent.CompletableFuture
@@ -48,7 +47,7 @@ class Producer(
     key: String? = null
   ): CompletableFuture<Unit> {
 
-    val envelope = message.envelope() as Envelope<out Message>
+    val envelope = message.envelope()
 
     val producer = client
         .getProducer(topic, envelope::class, producerName, producerConfig, key)

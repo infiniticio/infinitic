@@ -307,7 +307,7 @@ class InfiniticWorker(
     }
 
     logger.info {
-      "Worker \"${producerAsync.name}\" ready" + when (consumerAsync is PulsarInfiniticConsumerAsync) {
+      "Worker \"${producerAsync.producerName}\" ready" + when (consumerAsync is PulsarInfiniticConsumerAsync) {
         true -> " (shutdownGracePeriodInSeconds=${consumerAsync.shutdownGracePeriodInSeconds}s)"
         false -> ""
       }
@@ -333,7 +333,7 @@ class InfiniticWorker(
       val producerAsync = transportConfig.producerAsync
 
       // apply name if it exists
-      name?.let { producerAsync.name = it }
+      name?.let { producerAsync.producerName = it }
 
       /** Infinitic Client */
       val client = InfiniticClient(consumerAsync, producerAsync)

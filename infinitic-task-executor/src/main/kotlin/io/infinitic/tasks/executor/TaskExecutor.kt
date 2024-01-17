@@ -70,7 +70,7 @@ class TaskExecutor(
   private val producer = LoggedInfiniticProducer(this::class.java.name, producerAsync)
   private var withRetry: WithRetry? = null
   private var withTimeout: WithTimeout? = null
-  private val emitterName by lazy { EmitterName(producerAsync.name) }
+  private val emitterName by lazy { EmitterName(producerAsync.producerName) }
 
   @Suppress("UNUSED_PARAMETER")
   suspend fun handle(msg: ServiceExecutorMessage, publishTime: MillisInstant) {

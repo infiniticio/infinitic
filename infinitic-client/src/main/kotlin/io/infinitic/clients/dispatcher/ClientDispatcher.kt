@@ -118,14 +118,14 @@ internal class ClientDispatcher(
   private var isClientConsumerInitialized = false
 
   // Scope used to consuming messages
-  private val waitingScope = CoroutineScope(Dispatchers.IO)
+  private val clientScope = CoroutineScope(Dispatchers.IO)
 
   // Flow used to receive messages
   private val responseFlow = MutableSharedFlow<ClientMessage>(replay = 0)
 
   override fun close() {
     // Do not wait anymore for messages
-    waitingScope.cancel()
+    clientScope.cancel()
   }
 
   // a message received by the client is sent to responseFlow
@@ -758,7 +758,7 @@ internal class ClientDispatcher(
     }
 
     // wait for the first message that matches the predicate
-    return waitingScope.future {
+    return clientScope.future {
       withTimeoutOrNull(timeout) {
         responseFlow.first { predicate(it) }
       }

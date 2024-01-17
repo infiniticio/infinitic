@@ -53,50 +53,40 @@ class LoggedInfiniticProducer(
   private val producerAsync: InfiniticProducerAsync,
 ) : InfiniticProducer {
 
-  /**
-   * The `producingScope` is a Coroutine Scope used for running task, engine, etc.
-   *
-   * Note: Using Dispatchers.IO instead of Dispatchers.Default creates a deadlock for high
-   * concurrency - see infinitic-transport-pulsar/src/test/kotlin/io/infinitic/pulsar/Test
-   *
-   * A SupervisorJob instance is used in the CoroutineScope to ensure that
-   * if an exception occurs during the processing,
-   * the scope itself is not cancelled.
-   */
-
   private val logger = KotlinLogging.logger(logName)
 
   lateinit var id: String
 
   override var name: String
-    get() = producerAsync.name
+    get() = producerAsync.producerName
     set(value) {
-      producerAsync.name = value
+      producerAsync.producerName = value
     }
 
-  override suspend fun <T : Message> sendTo(
-    message: T,
+  override suspend fun <T : Message> T.sendTo(
     topic: Topic<T>,
     after: MillisDuration?
   ) {
-    TODO("Not yet implemented")
+    logDebug(this)
+    with(producerAsync) { sendToAsync(topic).await() }
+    logTrace(this)
   }
 
-  override suspend fun sendToClient(message: ClientMessage) = with(producerAsync) {
+  override suspend fun sendToClient(message: ClientMessage) {
     logDebug(message)
-    message.sendToAsync(ClientTopic).await()
+    with(producerAsync) { message.sendToAsync(ClientTopic) }.await()
     logTrace(message)
   }
 
-  override suspend fun sendToWorkflowTag(message: WorkflowTagMessage) = with(producerAsync) {
+  override suspend fun sendToWorkflowTag(message: WorkflowTagMessage) {
     logDebug(message)
-    message.sendToAsync(WorkflowTagTopic).await()
+    with(producerAsync) { message.sendToAsync(WorkflowTagTopic) }.await()
     logTrace(message)
   }
 
-  override suspend fun sendToWorkflowCmd(message: WorkflowEngineMessage) = with(producerAsync) {
+  override suspend fun sendToWorkflowCmd(message: WorkflowEngineMessage) {
     logDebug(message)
-    message.sendToAsync(WorkflowCmdTopic).await()
+    with(producerAsync) { message.sendToAsync(WorkflowCmdTopic) }.await()
     logTrace(message)
   }
 
@@ -117,53 +107,63 @@ class LoggedInfiniticProducer(
     logTrace(message)
   }
 
-  override suspend fun sendToWorkflowEvents(message: WorkflowEventMessage) = with(producerAsync) {
+  override suspend fun sendToWorkflowEvents(message: WorkflowEventMessage) {
     logDebug(message)
-    message.sendToAsync(WorkflowEventsTopic).await()
+    with(producerAsync) { message.sendToAsync(WorkflowEventsTopic) }.await()
     logTrace(message)
   }
 
-  override suspend fun sendToServiceTag(message: ServiceTagMessage) = with(producerAsync) {
+  override suspend fun sendToServiceTag(message: ServiceTagMessage) {
     logDebug(message)
-    message.sendToAsync(ServiceTagTopic).await()
+    with(producerAsync) { message.sendToAsync(ServiceTagTopic) }.await()
     logTrace(message)
   }
 
-  override suspend fun sendToServiceExecutor(message: ServiceExecutorMessage) =
-      with(producerAsync) {
-        logDebug(message)
-        when (message.isWorkflowTask()) {
-          true -> message.sendToAsync(WorkflowServiceExecutorTopic).await()
-          false -> message.sendToAsync(ServiceExecutorTopic).await()
-        }
-        logTrace(message)
+  override suspend fun sendToServiceExecutor(message: ServiceExecutorMessage) {
+    logDebug(message)
+    with(producerAsync) {
+      when (message.isWorkflowTask()) {
+        true -> message.sendToAsync(WorkflowServiceExecutorTopic)
+        false -> message.sendToAsync(ServiceExecutorTopic)
       }
+    }.await()
+    logTrace(message)
+  }
 
   override suspend fun sendToServiceExecutorAfter(
     message: ServiceExecutorMessage,
     after: MillisDuration
-  ) = with(producerAsync) {
+  ) {
     logDebug(message, after)
+
     when (message.isWorkflowTask()) {
       true -> when (after > 0) {
-        true -> message.sendToAsync(DelayedWorkflowServiceExecutorTopic, after).await()
+        true -> with(producerAsync) {
+          message.sendToAsync(DelayedWorkflowServiceExecutorTopic, after)
+        }.await()
+
         false -> sendToServiceExecutor(message)
       }
 
       false -> when (after > 0) {
-        true -> message.sendToAsync(DelayedServiceExecutorTopic, after).await()
+        true -> with(producerAsync) {
+          message.sendToAsync(DelayedServiceExecutorTopic, after)
+        }.await()
+
         false -> sendToServiceExecutor(message)
       }
     }
     logTrace(message)
   }
 
-  override suspend fun sendToTaskEvents(message: ServiceEventMessage) = with(producerAsync) {
+  override suspend fun sendToTaskEvents(message: ServiceEventMessage) {
     logDebug(message)
-    when (message.isWorkflowTask()) {
-      true -> message.sendToAsync(WorkflowServiceEventsTopic).await()
-      false -> message.sendToAsync(ServiceEventsTopic).await()
-    }
+    with(producerAsync) {
+      when (message.isWorkflowTask()) {
+        true -> message.sendToAsync(WorkflowServiceEventsTopic)
+        false -> message.sendToAsync(ServiceEventsTopic)
+      }
+    }.await()
     logTrace(message)
   }
 

@@ -49,6 +49,9 @@ import io.infinitic.common.tasks.executors.messages.ExecuteTask
 import io.infinitic.common.tasks.executors.messages.ServiceExecutorMessage
 import io.infinitic.common.tasks.executors.messages.clientName
 import io.infinitic.common.tasks.tags.messages.RemoveTagFromTask
+import io.infinitic.common.topics.DelayedServiceExecutorTopic
+import io.infinitic.common.topics.ServiceEventsTopic
+import io.infinitic.common.topics.ServiceExecutorTopic
 import io.infinitic.common.transport.InfiniticProducerAsync
 import io.infinitic.common.workers.config.ExponentialBackoffRetryPolicy
 import io.infinitic.common.workers.config.WorkflowVersion
@@ -98,11 +101,14 @@ class TaskExecutorTests :
         val workerRegistry = mockk<WorkerRegistry>()
         val client = mockk<InfiniticClientInterface>()
         val producerAsync = mockk<InfiniticProducerAsync> {
-          every { name } returns "$testWorkerName"
+          every { producerName } returns "$testWorkerName"
           every {
-            sendToTaskExecutorAsync(capture(taskExecutorSlot), capture(afterSlot))
+            capture(taskExecutorSlot).sendToAsync(ServiceExecutorTopic)
           } returns completed()
-          every { sendToTaskEventsAsync(capture(taskEventSlot)) } returns completed()
+          every {
+            capture(taskExecutorSlot).sendToAsync(DelayedServiceExecutorTopic, capture(afterSlot))
+          } returns completed()
+          every { capture(taskEventSlot).sendToAsync(ServiceEventsTopic) } returns completed()
         }
 
         var taskExecutor = TaskExecutor(workerRegistry, producerAsync, client)

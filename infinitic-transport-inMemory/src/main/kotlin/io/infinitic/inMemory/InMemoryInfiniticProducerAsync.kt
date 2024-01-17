@@ -53,7 +53,7 @@ class InMemoryInfiniticProducerAsync(private val channels: InMemoryChannels) :
 
   private val logger = KotlinLogging.logger {}
 
-  override var name = DEFAULT_NAME
+  override var producerName = DEFAULT_NAME
 
   @Suppress("UNCHECKED_CAST")
   private fun <S : Message> Topic<S>.channelForMessage(message: S): Channel<Any> = when (this) {

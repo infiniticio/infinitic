@@ -36,6 +36,8 @@ import io.infinitic.common.tasks.tags.messages.AddTagToTask
 import io.infinitic.common.tasks.tags.messages.GetTaskIdsByTag
 import io.infinitic.common.tasks.tags.messages.RemoveTagFromTask
 import io.infinitic.common.tasks.tags.storage.TaskTagStorage
+import io.infinitic.common.topics.ClientTopic
+import io.infinitic.common.topics.ServiceExecutorTopic
 import io.infinitic.common.transport.InfiniticProducerAsync
 import io.infinitic.common.workers.data.WorkerName
 import io.infinitic.tasks.tag.TaskTagEngine
@@ -69,13 +71,10 @@ private lateinit var tagStateStorage: TaskTagStorage
 private fun completed() = CompletableFuture.completedFuture(Unit)
 
 val producerMock = mockk<InfiniticProducerAsync> {
-  every { name } returns "$workername"
-  every { sendToClientAsync(capture(clientSlot)) } returns completed()
+  every { producerName } returns "$workername"
+  every { capture(clientSlot).sendToAsync(ClientTopic) } returns completed()
   every {
-    sendToTaskExecutorAsync(
-        capture(taskExecutorSlot),
-        capture(delaySlot),
-    )
+    capture(taskExecutorSlot).sendToAsync(ServiceExecutorTopic, capture(delaySlot))
   } returns completed()
 }
 
@@ -162,8 +161,8 @@ internal class TaskTagEngineTests :
           // then
           coVerifySequence {
             tagStateStorage.getTaskIds(msgIn.taskTag, msgIn.serviceName)
-            producerMock.name
-            producerMock.sendToClientAsync(ofType<TaskIdsByTag>())
+            producerMock.producerName
+            with(producerMock) { ofType<TaskIdsByTag>().sendToAsync(ClientTopic) }
             tagStateStorage.setLastMessageId(msgIn.taskTag, msgIn.serviceName, msgIn.messageId)
           }
 

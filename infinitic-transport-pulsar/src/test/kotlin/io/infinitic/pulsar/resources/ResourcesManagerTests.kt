@@ -39,14 +39,14 @@ class ResourcesManagerTests : StringSpec(
       val allowedClusters = setOf("foo", "bar")
       val adminRoles = setOf("baz")
       val policies = Policies()
-      val topicNamer = TopicNamerDefault("tenantTest", "namespaceTest")
 
       val resourceManager = ResourceManager(
           pulsarInfiniticAdmin,
+          "tenantTest",
           allowedClusters,
+          "namespaceTest",
           adminRoles,
           policies,
-          topicNamer,
       )
 
       beforeEach() {
@@ -78,6 +78,7 @@ class ResourcesManagerTests : StringSpec(
         } returns Result.success(mockk())
 
         val topic = TestFactory.random<String>()
+
         resourceManager.initTopicOnce(
             topic,
             isPartitioned = true,
@@ -85,8 +86,8 @@ class ResourcesManagerTests : StringSpec(
         ).isSuccess shouldBe true
 
         verifyAll {
-          pulsarInfiniticAdmin.initTenantOnce(topicNamer.tenant, allowedClusters, adminRoles)
-          pulsarInfiniticAdmin.initNamespaceOnce(topicNamer.fullNameSpace, policies)
+          pulsarInfiniticAdmin.initTenantOnce("tenantTest", allowedClusters, adminRoles)
+          pulsarInfiniticAdmin.initNamespaceOnce("tenantTest/namespaceTest", policies)
           pulsarInfiniticAdmin.initTopicOnce(topic, true, policies.delayedTTLInSeconds)
         }
       }

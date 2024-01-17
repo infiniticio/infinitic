@@ -59,7 +59,7 @@ class TaskEventHandler(producerAsync: InfiniticProducerAsync) {
 
   private val logger = KotlinLogging.logger(this::class.java.name)
   val producer = LoggedInfiniticProducer(this::class.java.name, producerAsync)
-  private val emitterName by lazy { EmitterName(producerAsync.name) }
+  private val emitterName by lazy { EmitterName(producerAsync.producerName) }
 
   suspend fun handle(msg: ServiceEventMessage, publishTime: MillisInstant) {
     msg.logDebug { "received $msg" }
