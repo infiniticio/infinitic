@@ -20,24 +20,16 @@
  *
  * Licensor: infinitic.io
  */
-package io.infinitic.dashboard.panels.infrastructure.service
+package io.infinitic.common.workers.registry
 
-import io.infinitic.common.topics.ServiceTopic
-import io.infinitic.dashboard.Infinitic.resourceManager
-import io.infinitic.dashboard.panels.infrastructure.jobs.JobState
-import io.infinitic.dashboard.panels.infrastructure.jobs.TopicsStats
-import io.infinitic.dashboard.panels.infrastructure.requests.Loading
-import java.time.Instant
+import io.infinitic.tasks.WithRetry
+import io.infinitic.tasks.WithTimeout
 
-data class ServiceState(
-  override val name: String,
-  override val topicsStats: TopicsStats<ServiceTopic<*>> =
-      ServiceTopic.entries.associateWith { Loading() },
-  val isLoading: Boolean = isLoading(topicsStats),
-  val lastUpdatedAt: Instant = lastUpdatedAt(topicsStats)
-) : JobState<ServiceTopic<*>>(name, topicsStats) {
-  override fun create(name: String, topicsStats: TopicsStats<ServiceTopic<*>>) =
-      ServiceState(name = name, topicsStats = topicsStats)
+typealias ServiceFactory = () -> Any
 
-  override fun getTopic(topic: ServiceTopic<*>) = with(resourceManager) { topic.fullName(name) }
-}
+data class RegisteredServiceExecutor(
+  val concurrency: Int,
+  val factory: ServiceFactory,
+  val withTimeout: WithTimeout?,
+  val withRetry: WithRetry?
+)

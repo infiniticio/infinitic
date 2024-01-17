@@ -26,28 +26,28 @@ import io.infinitic.common.fixtures.TestFactory
 import io.infinitic.common.fixtures.checkBackwardCompatibility
 import io.infinitic.common.fixtures.checkOrCreateCurrentFile
 import io.infinitic.common.serDe.avro.AvroSerDe
-import io.infinitic.common.tasks.executors.events.TaskEventEnvelope
-import io.infinitic.common.tasks.executors.events.TaskEventMessage
+import io.infinitic.common.tasks.events.messages.ServiceEventEnvelope
+import io.infinitic.common.tasks.events.messages.ServiceEventMessage
 import io.kotest.assertions.throwables.shouldNotThrowAny
 import io.kotest.assertions.throwables.shouldThrowAny
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.collections.shouldBeOneOf
 import io.kotest.matchers.shouldBe
 
-class TaskEventEnvelopeTests :
+class ServiceEventEnvelopeTests :
   StringSpec(
       {
-        TaskEventMessage::class.sealedSubclasses.map {
+        ServiceEventMessage::class.sealedSubclasses.map {
           val msg = TestFactory.random(it)
 
-          "TaskEventMessage(${msg::class.simpleName}) should be avro-convertible" {
+          "ServiceEventMessage(${msg::class.simpleName}) should be avro-convertible" {
             shouldNotThrowAny {
-              val envelope = TaskEventEnvelope.from(msg)
+              val envelope = ServiceEventEnvelope.from(msg)
               val byteArray = envelope.toByteArray()
 
-              TaskEventEnvelope.fromByteArray(
+              ServiceEventEnvelope.fromByteArray(
                   byteArray,
-                  TaskEventEnvelope.writerSchema,
+                  ServiceEventEnvelope.writerSchema,
               ) shouldBe envelope
             }
           }
@@ -56,21 +56,21 @@ class TaskEventEnvelopeTests :
         "Avro Schema should be backward compatible" {
           // An error in this test means that we need to upgrade the version
           checkOrCreateCurrentFile(
-              TaskEventEnvelope::class,
-              TaskEventEnvelope.serializer(),
+              ServiceEventEnvelope::class,
+              ServiceEventEnvelope.serializer(),
           )
 
           checkBackwardCompatibility(
-              TaskEventEnvelope::class,
-              TaskEventEnvelope.serializer(),
+              ServiceEventEnvelope::class,
+              ServiceEventEnvelope.serializer(),
           )
         }
 
 
-        AvroSerDe.getAllSchemas(TaskEventEnvelope::class).forEach { (version, schema) ->
+        AvroSerDe.getAllSchemas(ServiceEventEnvelope::class).forEach { (version, schema) ->
           "We should be able to read binary from previous version $version" {
             val bytes = AvroSerDe.getRandomBinary(schema)
-            val e = shouldThrowAny { TaskEventEnvelope.fromByteArray(bytes, schema) }
+            val e = shouldThrowAny { ServiceEventEnvelope.fromByteArray(bytes, schema) }
             e::class shouldBeOneOf listOf(
                 // IllegalArgumentException is thrown because we have more than 1 message in the envelope
                 IllegalArgumentException::class,

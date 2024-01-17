@@ -129,41 +129,8 @@
             "name" : "DispatchMethod",
             "namespace" : "PastCommand",
             "fields" : [ {
-              "name" : "command",
-              "type" : {
-                "type" : "record",
-                "name" : "DispatchMethod",
-                "namespace" : "Command",
-                "fields" : [ {
-                  "name" : "workflowName",
-                  "type" : "string"
-                }, {
-                  "name" : "workflowId",
-                  "type" : [ "null", "string" ]
-                }, {
-                  "name" : "workflowTag",
-                  "type" : [ "null", "string" ]
-                }, {
-                  "name" : "methodName",
-                  "type" : "string"
-                }, {
-                  "name" : "methodParameterTypes",
-                  "type" : {
-                    "type" : "array",
-                    "items" : "string"
-                  }
-                }, {
-                  "name" : "methodParameters",
-                  "type" : {
-                    "type" : "array",
-                    "items" : "io.infinitic.data.SerializedData"
-                  }
-                }, {
-                  "name" : "methodTimeout",
-                  "type" : [ "null", "long" ],
-                  "default" : null
-                } ]
-              }
+              "name" : "commandId",
+              "type" : "string"
             }, {
               "name" : "commandPosition",
               "type" : "int"
@@ -395,14 +362,59 @@
                 } ]
               } ]
             }, {
-              "name" : "commandId",
-              "type" : "string"
+              "name" : "command",
+              "type" : {
+                "type" : "record",
+                "name" : "DispatchMethod",
+                "namespace" : "Command",
+                "fields" : [ {
+                  "name" : "workflowName",
+                  "type" : "string"
+                }, {
+                  "name" : "workflowId",
+                  "type" : [ "null", "string" ]
+                }, {
+                  "name" : "workflowTag",
+                  "type" : [ "null", "string" ]
+                }, {
+                  "name" : "methodName",
+                  "type" : "string"
+                }, {
+                  "name" : "methodParameterTypes",
+                  "type" : {
+                    "type" : "array",
+                    "items" : "string"
+                  }
+                }, {
+                  "name" : "methodParameters",
+                  "type" : {
+                    "type" : "array",
+                    "items" : "io.infinitic.data.SerializedData"
+                  }
+                }, {
+                  "name" : "methodTimeout",
+                  "type" : [ "null", "long" ],
+                  "default" : null
+                } ]
+              }
             } ]
           }, {
             "type" : "record",
             "name" : "DispatchTask",
             "namespace" : "PastCommand",
             "fields" : [ {
+              "name" : "commandId",
+              "type" : "string"
+            }, {
+              "name" : "commandPosition",
+              "type" : "int"
+            }, {
+              "name" : "commandSimpleName",
+              "type" : "string"
+            }, {
+              "name" : "commandStatus",
+              "type" : [ "CommandStatus.Canceled", "CommandStatus.Completed", "CommandStatus.Failed", "CommandStatus.Ongoing", "CommandStatus.TimedOut", "CommandStatus.Unknown" ]
+            }, {
               "name" : "command",
               "type" : {
                 "type" : "record",
@@ -445,6 +457,17 @@
                 } ]
               }
             }, {
+              "name" : "taskRetrySequence",
+              "type" : "int"
+            } ]
+          }, {
+            "type" : "record",
+            "name" : "DispatchWorkflow",
+            "namespace" : "PastCommand",
+            "fields" : [ {
+              "name" : "commandId",
+              "type" : "string"
+            }, {
               "name" : "commandPosition",
               "type" : "int"
             }, {
@@ -454,17 +477,6 @@
               "name" : "commandStatus",
               "type" : [ "CommandStatus.Canceled", "CommandStatus.Completed", "CommandStatus.Failed", "CommandStatus.Ongoing", "CommandStatus.TimedOut", "CommandStatus.Unknown" ]
             }, {
-              "name" : "taskRetrySequence",
-              "type" : "int"
-            }, {
-              "name" : "commandId",
-              "type" : "string"
-            } ]
-          }, {
-            "type" : "record",
-            "name" : "DispatchWorkflow",
-            "namespace" : "PastCommand",
-            "fields" : [ {
               "name" : "command",
               "type" : {
                 "type" : "record",
@@ -506,6 +518,14 @@
                   }
                 } ]
               }
+            } ]
+          }, {
+            "type" : "record",
+            "name" : "InlineTask",
+            "namespace" : "PastCommand",
+            "fields" : [ {
+              "name" : "commandId",
+              "type" : "string"
             }, {
               "name" : "commandPosition",
               "type" : "int"
@@ -516,14 +536,6 @@
               "name" : "commandStatus",
               "type" : [ "CommandStatus.Canceled", "CommandStatus.Completed", "CommandStatus.Failed", "CommandStatus.Ongoing", "CommandStatus.TimedOut", "CommandStatus.Unknown" ]
             }, {
-              "name" : "commandId",
-              "type" : "string"
-            } ]
-          }, {
-            "type" : "record",
-            "name" : "InlineTask",
-            "namespace" : "PastCommand",
-            "fields" : [ {
               "name" : "command",
               "type" : {
                 "type" : "record",
@@ -534,6 +546,14 @@
                   "type" : "string"
                 } ]
               }
+            } ]
+          }, {
+            "type" : "record",
+            "name" : "ReceiveSignal",
+            "namespace" : "PastCommand",
+            "fields" : [ {
+              "name" : "commandId",
+              "type" : "string"
             }, {
               "name" : "commandPosition",
               "type" : "int"
@@ -544,14 +564,6 @@
               "name" : "commandStatus",
               "type" : [ "CommandStatus.Canceled", "CommandStatus.Completed", "CommandStatus.Failed", "CommandStatus.Ongoing", "CommandStatus.TimedOut", "CommandStatus.Unknown" ]
             }, {
-              "name" : "commandId",
-              "type" : "string"
-            } ]
-          }, {
-            "type" : "record",
-            "name" : "ReceiveSignal",
-            "namespace" : "PastCommand",
-            "fields" : [ {
               "name" : "command",
               "type" : {
                 "type" : "record",
@@ -584,18 +596,6 @@
                 } ]
               }
             }, {
-              "name" : "commandPosition",
-              "type" : "int"
-            }, {
-              "name" : "commandSimpleName",
-              "type" : "string"
-            }, {
-              "name" : "commandStatus",
-              "type" : [ "CommandStatus.Canceled", "CommandStatus.Completed", "CommandStatus.Failed", "CommandStatus.Ongoing", "CommandStatus.TimedOut", "CommandStatus.Unknown" ]
-            }, {
-              "name" : "commandId",
-              "type" : "string"
-            }, {
               "name" : "commandStatuses",
               "type" : {
                 "type" : "array",
@@ -608,6 +608,18 @@
             "name" : "SendSignal",
             "namespace" : "PastCommand",
             "fields" : [ {
+              "name" : "commandId",
+              "type" : "string"
+            }, {
+              "name" : "commandPosition",
+              "type" : "int"
+            }, {
+              "name" : "commandSimpleName",
+              "type" : "string"
+            }, {
+              "name" : "commandStatus",
+              "type" : [ "CommandStatus.Canceled", "CommandStatus.Completed", "CommandStatus.Failed", "CommandStatus.Ongoing", "CommandStatus.TimedOut", "CommandStatus.Unknown" ]
+            }, {
               "name" : "command",
               "type" : {
                 "type" : "record",
@@ -636,6 +648,14 @@
                   }
                 } ]
               }
+            } ]
+          }, {
+            "type" : "record",
+            "name" : "StartDurationTimer",
+            "namespace" : "PastCommand",
+            "fields" : [ {
+              "name" : "commandId",
+              "type" : "string"
             }, {
               "name" : "commandPosition",
               "type" : "int"
@@ -646,14 +666,6 @@
               "name" : "commandStatus",
               "type" : [ "CommandStatus.Canceled", "CommandStatus.Completed", "CommandStatus.Failed", "CommandStatus.Ongoing", "CommandStatus.TimedOut", "CommandStatus.Unknown" ]
             }, {
-              "name" : "commandId",
-              "type" : "string"
-            } ]
-          }, {
-            "type" : "record",
-            "name" : "StartDurationTimer",
-            "namespace" : "PastCommand",
-            "fields" : [ {
               "name" : "command",
               "type" : {
                 "type" : "record",
@@ -664,6 +676,14 @@
                   "type" : "long"
                 } ]
               }
+            } ]
+          }, {
+            "type" : "record",
+            "name" : "StartInstantTimer",
+            "namespace" : "PastCommand",
+            "fields" : [ {
+              "name" : "commandId",
+              "type" : "string"
             }, {
               "name" : "commandPosition",
               "type" : "int"
@@ -674,14 +694,6 @@
               "name" : "commandStatus",
               "type" : [ "CommandStatus.Canceled", "CommandStatus.Completed", "CommandStatus.Failed", "CommandStatus.Ongoing", "CommandStatus.TimedOut", "CommandStatus.Unknown" ]
             }, {
-              "name" : "commandId",
-              "type" : "string"
-            } ]
-          }, {
-            "type" : "record",
-            "name" : "StartInstantTimer",
-            "namespace" : "PastCommand",
-            "fields" : [ {
               "name" : "command",
               "type" : {
                 "type" : "record",
@@ -692,18 +704,6 @@
                   "type" : "long"
                 } ]
               }
-            }, {
-              "name" : "commandPosition",
-              "type" : "int"
-            }, {
-              "name" : "commandSimpleName",
-              "type" : "string"
-            }, {
-              "name" : "commandStatus",
-              "type" : [ "CommandStatus.Canceled", "CommandStatus.Completed", "CommandStatus.Failed", "CommandStatus.Ongoing", "CommandStatus.TimedOut", "CommandStatus.Unknown" ]
-            }, {
-              "name" : "commandId",
-              "type" : "string"
             } ]
           } ]
         }

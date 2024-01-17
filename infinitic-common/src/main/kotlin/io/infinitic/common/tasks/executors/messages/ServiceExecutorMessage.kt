@@ -54,7 +54,7 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 @Serializable
-sealed class TaskExecutorMessage : Message {
+sealed class ServiceExecutorMessage : Message {
   @Suppress("RedundantNullableReturnType")
   @AvroDefault(Avro.NULL)
   val version: Version? = Version(currentVersion)
@@ -67,9 +67,16 @@ sealed class TaskExecutorMessage : Message {
   abstract val workflowMethodId: WorkflowMethodId?
 
 
-  override fun envelope() = TaskExecutorEnvelope.from(this)
+  override fun envelope() = ServiceExecutorEnvelope.from(this)
 
-  fun isWorkflowTask() = serviceName == ServiceName(WorkflowTask::class.java.name)
+  override fun key() = null
+
+  override fun entity() = when (isWorkflowTask()) {
+    true -> workflowName!!.toString()
+    false -> serviceName.toString()
+  }
+
+  fun isWorkflowTask() = (serviceName == ServiceName(WorkflowTask::class.java.name))
 }
 
 @Serializable
@@ -92,7 +99,7 @@ data class ExecuteTask(
   val methodParameters: MethodParameters,
   val lastError: ExecutionError?,
   @AvroDefault(Avro.NULL) val workflowVersion: WorkflowVersion?
-) : TaskExecutorMessage() {
+) : ServiceExecutorMessage() {
   companion object {
     fun retryFrom(
       msg: ExecuteTask,

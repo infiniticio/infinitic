@@ -20,8 +20,9 @@
  *
  * Licensor: infinitic.io
  */
-package io.infinitic.common.tasks.executors.events
+package io.infinitic.common.tasks.events.messages
 
+import com.github.avrokotlin.avro4k.AvroName
 import com.github.avrokotlin.avro4k.AvroNamespace
 import io.infinitic.common.messages.Envelope
 import io.infinitic.common.serDe.avro.AvroSerDe
@@ -31,14 +32,15 @@ import org.apache.avro.Schema
 
 @Serializable
 @AvroNamespace("io.infinitic.tasks.events")
-data class TaskEventEnvelope(
+@AvroName("TaskEventEnvelope")
+data class ServiceEventEnvelope(
   private val serviceName: ServiceName,
-  private val type: TaskEventMessageType,
+  private val type: ServiceEventMessageType,
   private val taskStartedEvent: TaskStartedEvent? = null,
   private val taskRetried: TaskRetriedEvent? = null,
   private val taskFailedEvent: TaskFailedEvent? = null,
   private val taskCompletedEvent: TaskCompletedEvent? = null,
-) : Envelope<TaskEventMessage> {
+) : Envelope<ServiceEventMessage> {
   init {
     val noNull = listOfNotNull(
         taskStartedEvent,
@@ -53,28 +55,28 @@ data class TaskEventEnvelope(
   }
 
   companion object {
-    fun from(msg: TaskEventMessage) = when (msg) {
-      is TaskStartedEvent -> TaskEventEnvelope(
+    fun from(msg: ServiceEventMessage) = when (msg) {
+      is TaskStartedEvent -> ServiceEventEnvelope(
           serviceName = msg.serviceName,
-          type = TaskEventMessageType.TASK_STARTED,
+          type = ServiceEventMessageType.TASK_STARTED,
           taskStartedEvent = msg,
       )
 
-      is TaskRetriedEvent -> TaskEventEnvelope(
+      is TaskRetriedEvent -> ServiceEventEnvelope(
           serviceName = msg.serviceName,
-          type = TaskEventMessageType.TASK_RETRIED,
+          type = ServiceEventMessageType.TASK_RETRIED,
           taskRetried = msg,
       )
 
-      is TaskFailedEvent -> TaskEventEnvelope(
+      is TaskFailedEvent -> ServiceEventEnvelope(
           serviceName = msg.serviceName,
-          type = TaskEventMessageType.TASK_FAILED,
+          type = ServiceEventMessageType.TASK_FAILED,
           taskFailedEvent = msg,
       )
 
-      is TaskCompletedEvent -> TaskEventEnvelope(
+      is TaskCompletedEvent -> ServiceEventEnvelope(
           serviceName = msg.serviceName,
-          type = TaskEventMessageType.TASK_COMPLETED,
+          type = ServiceEventMessageType.TASK_COMPLETED,
           taskCompletedEvent = msg,
       )
     }
@@ -87,12 +89,12 @@ data class TaskEventEnvelope(
     val writerSchema = AvroSerDe.currentSchema(serializer())
   }
 
-  override fun message(): TaskEventMessage =
+  override fun message(): ServiceEventMessage =
       when (type) {
-        TaskEventMessageType.TASK_STARTED -> taskStartedEvent
-        TaskEventMessageType.TASK_RETRIED -> taskRetried
-        TaskEventMessageType.TASK_FAILED -> taskFailedEvent
-        TaskEventMessageType.TASK_COMPLETED -> taskCompletedEvent
+        ServiceEventMessageType.TASK_STARTED -> taskStartedEvent
+        ServiceEventMessageType.TASK_RETRIED -> taskRetried
+        ServiceEventMessageType.TASK_FAILED -> taskFailedEvent
+        ServiceEventMessageType.TASK_COMPLETED -> taskCompletedEvent
       }!!
 
   fun toByteArray() = AvroSerDe.writeBinary(this, serializer())

@@ -24,8 +24,8 @@ package io.infinitic.common.messages
 
 import io.infinitic.common.clients.messages.ClientEnvelope
 import io.infinitic.common.exceptions.thisShouldNotHappen
-import io.infinitic.common.tasks.executors.events.TaskEventEnvelope
-import io.infinitic.common.tasks.executors.messages.TaskExecutorEnvelope
+import io.infinitic.common.tasks.events.messages.ServiceEventEnvelope
+import io.infinitic.common.tasks.executors.messages.ServiceExecutorEnvelope
 import io.infinitic.common.tasks.tags.messages.TaskTagEnvelope
 import io.infinitic.common.workflows.engine.events.WorkflowEventEnvelope
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineEnvelope
@@ -41,8 +41,8 @@ interface Envelope<T> {
 fun <T : Envelope<*>> KClass<T>.fromByteArray(bytes: ByteArray, schema: Schema) = when (this) {
   ClientEnvelope::class -> ClientEnvelope.fromByteArray(bytes, schema)
   TaskTagEnvelope::class -> TaskTagEnvelope.fromByteArray(bytes, schema)
-  TaskExecutorEnvelope::class -> TaskExecutorEnvelope.fromByteArray(bytes, schema)
-  TaskEventEnvelope::class -> TaskEventEnvelope.fromByteArray(bytes, schema)
+  ServiceExecutorEnvelope::class -> ServiceExecutorEnvelope.fromByteArray(bytes, schema)
+  ServiceEventEnvelope::class -> ServiceEventEnvelope.fromByteArray(bytes, schema)
   WorkflowEngineEnvelope::class -> WorkflowEngineEnvelope.fromByteArray(bytes, schema)
   WorkflowEventEnvelope::class -> WorkflowEventEnvelope.fromByteArray(bytes, schema)
   WorkflowTagEnvelope::class -> WorkflowTagEnvelope.fromByteArray(bytes, schema)
@@ -52,8 +52,8 @@ fun <T : Envelope<*>> KClass<T>.fromByteArray(bytes: ByteArray, schema: Schema) 
 fun <T : Envelope<*>> KClass<T>.writerSchema() = when (this) {
   ClientEnvelope::class -> ClientEnvelope.writerSchema
   TaskTagEnvelope::class -> TaskTagEnvelope.writerSchema
-  TaskExecutorEnvelope::class -> TaskExecutorEnvelope.writerSchema
-  TaskEventEnvelope::class -> TaskEventEnvelope.writerSchema
+  ServiceExecutorEnvelope::class -> ServiceExecutorEnvelope.writerSchema
+  ServiceEventEnvelope::class -> ServiceEventEnvelope.writerSchema
   WorkflowEngineEnvelope::class -> WorkflowEngineEnvelope.writerSchema
   WorkflowEventEnvelope::class -> WorkflowEventEnvelope.writerSchema
   WorkflowTagEnvelope::class -> WorkflowTagEnvelope.writerSchema
@@ -63,8 +63,8 @@ fun <T : Envelope<*>> KClass<T>.writerSchema() = when (this) {
 fun <T : Envelope<*>> T.toByteArray() = when (this) {
   is ClientEnvelope -> this.toByteArray()
   is TaskTagEnvelope -> this.toByteArray()
-  is TaskExecutorEnvelope -> this.toByteArray()
-  is TaskEventEnvelope -> this.toByteArray()
+  is ServiceExecutorEnvelope -> this.toByteArray()
+  is ServiceEventEnvelope -> this.toByteArray()
   is WorkflowEngineEnvelope -> this.toByteArray()
   is WorkflowEventEnvelope -> this.toByteArray()
   is WorkflowTagEnvelope -> this.toByteArray()

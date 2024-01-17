@@ -105,7 +105,7 @@ private fun CoroutineScope.reDispatchTaskCmd(
     )
   }
 
-  launch { producer.sendToTaskExecutor(executeTask) }
+  launch { producer.sendToServiceExecutor(executeTask) }
 
   // add provided tags
   executeTask.taskTags.forEach {
@@ -115,7 +115,7 @@ private fun CoroutineScope.reDispatchTaskCmd(
         taskId = executeTask.taskId,
         emitterName = emitterName,
     )
-    launch { producer.sendToTaskTag(addTagToTask) }
+    launch { producer.sendToServiceTag(addTagToTask) }
   }
 
   // send global task timeout if any
@@ -134,7 +134,7 @@ private fun CoroutineScope.reDispatchTaskCmd(
           emittedAt = state.runningWorkflowTaskInstant,
       )
     }
-    launch { producer.sendToWorkflowEngine(taskTimedOut, it) }
+    launch { producer.sendToWorkflowEngineAfter(taskTimedOut, it) }
   }
 }
 

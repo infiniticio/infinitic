@@ -69,6 +69,9 @@ sealed class WorkflowEventMessage : Message {
 
   override fun envelope() = WorkflowEventEnvelope.from(this)
 
+  override fun key() = null
+
+  override fun entity() = workflowName.toString()
 }
 
 sealed interface WorkflowMethodEvent {

@@ -42,10 +42,10 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import org.apache.pulsar.client.api.Consumer
 import org.apache.pulsar.client.api.MessageId
+import org.apache.pulsar.client.api.Schema
 import org.apache.pulsar.client.api.SubscriptionType
 import java.util.concurrent.CancellationException
 import java.util.concurrent.CompletionException
-import kotlin.reflect.KClass
 import org.apache.pulsar.client.api.Message as PulsarMessage
 
 class Consumer(
@@ -77,7 +77,7 @@ class Consumer(
   internal fun <T : Message, S : Envelope<out T>> runAsync(
     handler: suspend (T, MillisInstant) -> Unit,
     beforeDlq: suspend (T?, Exception) -> Unit,
-    schemaClass: KClass<S>,
+    schema: Schema<S>,
     topic: String,
     topicDlq: String?,
     subscriptionName: String,
@@ -86,6 +86,7 @@ class Consumer(
     consumerName: String,
     concurrency: Int
   ) = consumingScope.future {
+    
     logger.debug { "Starting $concurrency consumers on topic $topic with subscription $subscriptionName" }
 
     when (subscriptionType) {
@@ -95,7 +96,7 @@ class Consumer(
             val consumerNameIt = "$consumerName-$it"
             // For Key_Shared subscription, we must create a new consumer for each executor coroutine
             val consumer = getConsumer(
-                schemaClass = schemaClass,
+                schema = schema,
                 topic = topic,
                 topicDlq = topicDlq,
                 subscriptionName = subscriptionName,
@@ -132,7 +133,7 @@ class Consumer(
       else -> {
         // For other subscription, we can use the same consumer for all executor coroutines
         val consumer = getConsumer(
-            schemaClass = schemaClass,
+            schema = schema,
             topic = topic,
             topicDlq = topicDlq,
             subscriptionName = subscriptionName,
@@ -285,8 +286,8 @@ class Consumer(
     }
   }
 
-  private fun <S : Envelope<*>> getConsumer(
-    schemaClass: KClass<S>,
+  private fun <S : Envelope<out Message>> getConsumer(
+    schema: Schema<S>,
     topic: String,
     topicDlq: String?,
     subscriptionName: String,
@@ -311,7 +312,7 @@ class Consumer(
       )
     }
 
-    return client.newConsumer(schemaClass, consumerDef, consumerDefDlq)
+    return client.newConsumer(schema, consumerDef, consumerDefDlq)
   }
 
   private fun logStr(topic: String, messageId: MessageId? = null, txt: () -> String) =

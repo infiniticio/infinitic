@@ -26,11 +26,11 @@ import io.github.oshai.kotlinlogging.KotlinLogging
 import io.infinitic.common.data.MillisInstant
 import io.infinitic.common.emitters.EmitterName
 import io.infinitic.common.exceptions.thisShouldNotHappen
-import io.infinitic.common.tasks.executors.events.TaskCompletedEvent
-import io.infinitic.common.tasks.executors.events.TaskEventMessage
-import io.infinitic.common.tasks.executors.events.TaskFailedEvent
-import io.infinitic.common.tasks.executors.events.TaskRetriedEvent
-import io.infinitic.common.tasks.executors.events.TaskStartedEvent
+import io.infinitic.common.tasks.events.messages.ServiceEventMessage
+import io.infinitic.common.tasks.events.messages.TaskCompletedEvent
+import io.infinitic.common.tasks.events.messages.TaskFailedEvent
+import io.infinitic.common.tasks.events.messages.TaskRetriedEvent
+import io.infinitic.common.tasks.events.messages.TaskStartedEvent
 import io.infinitic.common.transport.InfiniticProducerAsync
 import io.infinitic.common.transport.LoggedInfiniticProducer
 import io.infinitic.common.workers.config.WorkflowVersion
@@ -61,7 +61,7 @@ class TaskEventHandler(producerAsync: InfiniticProducerAsync) {
   val producer = LoggedInfiniticProducer(this::class.java.name, producerAsync)
   private val emitterName by lazy { EmitterName(producerAsync.name) }
 
-  suspend fun handle(msg: TaskEventMessage, publishTime: MillisInstant) {
+  suspend fun handle(msg: ServiceEventMessage, publishTime: MillisInstant) {
     msg.logDebug { "received $msg" }
 
     when (msg) {
@@ -98,7 +98,7 @@ class TaskEventHandler(producerAsync: InfiniticProducerAsync) {
       }
       // remove tags
       msg.getEventsForTag(emitterName).forEach {
-        launch { producer.sendToTaskTag(it) }
+        launch { producer.sendToServiceTag(it) }
       }
     }
     // If we are dealing with a workflowTask, we ensure that new commands are dispatched only AFTER
@@ -156,11 +156,11 @@ class TaskEventHandler(producerAsync: InfiniticProducerAsync) {
     val workflowVersion: WorkflowVersion,
   )
 
-  private fun TaskEventMessage.logDebug(description: () -> String) {
+  private fun ServiceEventMessage.logDebug(description: () -> String) {
     logger.debug { "$serviceName (${taskId}): ${description()}" }
   }
 
-  private fun TaskEventMessage.logTrace(description: () -> String) {
+  private fun ServiceEventMessage.logTrace(description: () -> String) {
     logger.trace { "$serviceName (${taskId}): ${description()}" }
   }
 }

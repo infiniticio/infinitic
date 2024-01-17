@@ -32,20 +32,20 @@ import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.collections.shouldBeOneOf
 import io.kotest.matchers.shouldBe
 
-class TaskExecutorEnvelopeTests :
+class ServiceExecutorEnvelopeTests :
   StringSpec(
       {
-        TaskExecutorMessage::class.sealedSubclasses.map {
+        ServiceExecutorMessage::class.sealedSubclasses.map {
           val msg = TestFactory.random(it)
 
-          "TaskExecutorMessage(${msg::class.simpleName}) should be avro-convertible" {
+          "ServiceExecutorMessage(${msg::class.simpleName}) should be avro-convertible" {
             shouldNotThrowAny {
-              val envelope = TaskExecutorEnvelope.from(msg)
+              val envelope = ServiceExecutorEnvelope.from(msg)
               val byteArray = envelope.toByteArray()
 
-              TaskExecutorEnvelope.fromByteArray(
+              ServiceExecutorEnvelope.fromByteArray(
                   byteArray,
-                  TaskExecutorEnvelope.writerSchema,
+                  ServiceExecutorEnvelope.writerSchema,
               ) shouldBe envelope
             }
           }
@@ -54,21 +54,21 @@ class TaskExecutorEnvelopeTests :
         "Avro Schema should be backward compatible" {
           // An error in this test means that we need to upgrade the version
           checkOrCreateCurrentFile(
-              TaskExecutorEnvelope::class,
-              TaskExecutorEnvelope.serializer(),
+              ServiceExecutorEnvelope::class,
+              ServiceExecutorEnvelope.serializer(),
           )
 
           checkBackwardCompatibility(
-              TaskExecutorEnvelope::class,
-              TaskExecutorEnvelope.serializer(),
+              ServiceExecutorEnvelope::class,
+              ServiceExecutorEnvelope.serializer(),
           )
         }
 
 
-        AvroSerDe.getAllSchemas(TaskExecutorEnvelope::class).forEach { (version, schema) ->
+        AvroSerDe.getAllSchemas(ServiceExecutorEnvelope::class).forEach { (version, schema) ->
           "We should be able to read binary from previous version $version" {
             val bytes = AvroSerDe.getRandomBinary(schema)
-            val e = shouldThrowAny { TaskExecutorEnvelope.fromByteArray(bytes, schema) }
+            val e = shouldThrowAny { ServiceExecutorEnvelope.fromByteArray(bytes, schema) }
             e::class shouldBeOneOf listOf(
                 // IllegalArgumentException is thrown because we have more than 1 message in the envelope
                 IllegalArgumentException::class,

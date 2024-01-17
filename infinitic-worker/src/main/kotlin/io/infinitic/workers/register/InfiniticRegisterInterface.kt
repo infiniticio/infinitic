@@ -25,6 +25,7 @@ package io.infinitic.workers.register
 import io.infinitic.common.workers.registry.ServiceFactory
 import io.infinitic.common.workers.registry.WorkerRegistry
 import io.infinitic.common.workers.registry.WorkflowClassList
+import io.infinitic.events.config.EventListener
 import io.infinitic.tasks.WithRetry
 import io.infinitic.tasks.WithTimeout
 import io.infinitic.tasks.tag.config.TaskTag
@@ -43,6 +44,7 @@ interface InfiniticRegisterInterface : AutoCloseable {
      * are in TaskExecutors as they can be defined through annotations as well
      */
     const val DEFAULT_CONCURRENCY = 1
+    val DEFAULT_EVENT_LISTENER = null
     val DEFAULT_TASK_TAG = TaskTag().apply { isDefault = true }
     val DEFAULT_WORKFLOW_ENGINE = WorkflowEngine().apply { isDefault = true }
     val DEFAULT_WORKFLOW_TAG = WorkflowTag().apply { isDefault = true }
@@ -57,7 +59,8 @@ interface InfiniticRegisterInterface : AutoCloseable {
     concurrency: Int = DEFAULT_CONCURRENCY,
     timeout: WithTimeout? = null,
     retry: WithRetry? = null,
-    tagEngine: TaskTag? = DEFAULT_TASK_TAG
+    tagEngine: TaskTag? = DEFAULT_TASK_TAG,
+    eventListener: EventListener? = DEFAULT_EVENT_LISTENER
   )
 
   /** Register workflow */

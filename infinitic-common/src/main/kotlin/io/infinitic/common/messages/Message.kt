@@ -30,4 +30,8 @@ interface Message {
   val emitterName: EmitterName
 
   fun envelope(): Envelope<out Message>
+
+  fun key(): String?
+
+  fun entity(): String
 }

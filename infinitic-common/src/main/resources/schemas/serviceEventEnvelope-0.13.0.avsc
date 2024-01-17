@@ -9,8 +9,7 @@
     "name" : "type",
     "type" : {
       "type" : "enum",
-      "name" : "TaskEventMessageType",
-      "namespace" : "io.infinitic.tasks.executor",
+      "name" : "ServiceEventMessageType",
       "symbols" : [ "TASK_STARTED", "TASK_RETRIED", "TASK_FAILED", "TASK_COMPLETED" ]
     }
   }, {
@@ -18,11 +17,9 @@
     "type" : [ "null", {
       "type" : "record",
       "name" : "TaskStartedEvent",
-      "namespace" : "io.infinitic.tasks.executor",
       "fields" : [ {
         "name" : "version",
-        "type" : [ "null", "string" ],
-        "default" : null
+        "type" : "string"
       }, {
         "name" : "messageId",
         "type" : "string"
@@ -78,11 +75,9 @@
     "type" : [ "null", {
       "type" : "record",
       "name" : "TaskRetriedEvent",
-      "namespace" : "io.infinitic.tasks.executor",
       "fields" : [ {
         "name" : "version",
-        "type" : [ "null", "string" ],
-        "default" : null
+        "type" : "string"
       }, {
         "name" : "messageId",
         "type" : "string"
@@ -136,6 +131,7 @@
         "type" : [ "null", {
           "type" : "record",
           "name" : "WorkerError",
+          "namespace" : "io.infinitic.tasks.executor",
           "fields" : [ {
             "name" : "workerName",
             "type" : "string"
@@ -160,11 +156,9 @@
     "type" : [ "null", {
       "type" : "record",
       "name" : "TaskFailedEvent",
-      "namespace" : "io.infinitic.tasks.executor",
       "fields" : [ {
         "name" : "version",
-        "type" : [ "null", "string" ],
-        "default" : null
+        "type" : "string"
       }, {
         "name" : "messageId",
         "type" : "string"
@@ -212,7 +206,7 @@
         }
       }, {
         "name" : "executionError",
-        "type" : "WorkerError"
+        "type" : "io.infinitic.tasks.executor.WorkerError"
       }, {
         "name" : "deferredError",
         "type" : [ "null", {
@@ -362,11 +356,9 @@
     "type" : [ "null", {
       "type" : "record",
       "name" : "TaskCompletedEvent",
-      "namespace" : "io.infinitic.tasks.executor",
       "fields" : [ {
         "name" : "version",
-        "type" : [ "null", "string" ],
-        "default" : null
+        "type" : "string"
       }, {
         "name" : "messageId",
         "type" : "string"

@@ -30,8 +30,8 @@ import io.infinitic.common.fixtures.DockerOnly
 import io.infinitic.common.fixtures.TestFactory
 import io.infinitic.common.fixtures.later
 import io.infinitic.common.tasks.executors.messages.ExecuteTask
-import io.infinitic.common.tasks.executors.messages.TaskExecutorEnvelope
-import io.infinitic.common.tasks.executors.messages.TaskExecutorMessage
+import io.infinitic.common.tasks.executors.messages.ServiceExecutorEnvelope
+import io.infinitic.common.tasks.executors.messages.ServiceExecutorMessage
 import io.infinitic.pulsar.client.PulsarInfiniticClient
 import io.infinitic.pulsar.producers.Producer
 import io.infinitic.pulsar.producers.ProducerConfig
@@ -72,7 +72,7 @@ class ConsumerTests : StringSpec(
         val start = Instant.now()
         val futures = messages.map {
           producer.sendAsync(
-              TaskExecutorEnvelope::class, it, zero, topic, "name",
+              it, zero, topic, "name",
               key = if (withKey) it.messageId.toString() else null,
           )
         }.toTypedArray()
@@ -85,14 +85,14 @@ class ConsumerTests : StringSpec(
 
       fun startAsync(
         consumer: Consumer,
-        handler: suspend (TaskExecutorMessage, MillisInstant) -> Unit,
+        handler: suspend (ServiceExecutorMessage, MillisInstant) -> Unit,
         topic: String,
         concurrency: Int,
         withKey: Boolean = false
       ) = consumer.runAsync(
           handler = handler,
           beforeDlq = { _, _ -> },
-          schemaClass = TaskExecutorEnvelope::class,
+          schemaClass = ServiceExecutorEnvelope::class,
           topic = topic,
           topicDlq = null,
           subscriptionName = topic + "Consumer",
@@ -115,7 +115,7 @@ class ConsumerTests : StringSpec(
         val counter = AtomicInteger(0)
         lateinit var start: Instant
 
-        val handler: suspend (TaskExecutorMessage, MillisInstant) -> Unit = { _, _ ->
+        val handler: suspend (ServiceExecutorMessage, MillisInstant) -> Unit = { _, _ ->
           if (counter.get() == 0) start = Instant.now()
           // emulate a 1ms task
           Thread.sleep(1)
@@ -153,7 +153,7 @@ class ConsumerTests : StringSpec(
         val counter = AtomicInteger(0)
         lateinit var start: Instant
 
-        val handler: ((TaskExecutorMessage, MillisInstant) -> Unit) = { _, _ ->
+        val handler: ((ServiceExecutorMessage, MillisInstant) -> Unit) = { _, _ ->
           if (counter.get() == 0) start = Instant.now()
           // emulate a 100ms task
           Thread.sleep(100)
@@ -191,7 +191,7 @@ class ConsumerTests : StringSpec(
         val counter = AtomicInteger(0)
         lateinit var start: Instant
 
-        val handler: ((TaskExecutorMessage, MillisInstant) -> Unit) = { _, _ ->
+        val handler: ((ServiceExecutorMessage, MillisInstant) -> Unit) = { _, _ ->
           if (counter.get() == 0) start = Instant.now()
           // emulate a 100ms task
           Thread.sleep(100)
@@ -229,7 +229,7 @@ class ConsumerTests : StringSpec(
         val messageClosed = CopyOnWriteArrayList<Int>()
         val total = 1000
 
-        val handler: ((TaskExecutorMessage, MillisInstant) -> Unit) = { _, _ ->
+        val handler: ((ServiceExecutorMessage, MillisInstant) -> Unit) = { _, _ ->
           counter.incrementAndGet().let {
             // begin of task
             messageOpen.add(it)
@@ -273,7 +273,7 @@ class ConsumerTests : StringSpec(
         val messageClosed = CopyOnWriteArrayList<Int>()
         val total = 1000
 
-        val handler: ((TaskExecutorMessage, MillisInstant) -> Unit) = { _, _ ->
+        val handler: ((ServiceExecutorMessage, MillisInstant) -> Unit) = { _, _ ->
           counter.incrementAndGet().let {
             // begin of task
             messageOpen.add(it)

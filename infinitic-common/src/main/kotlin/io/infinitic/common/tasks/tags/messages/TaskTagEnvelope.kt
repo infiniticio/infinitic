@@ -22,6 +22,7 @@
  */
 package io.infinitic.common.tasks.tags.messages
 
+import com.github.avrokotlin.avro4k.AvroName
 import com.github.avrokotlin.avro4k.AvroNamespace
 import io.infinitic.common.messages.Envelope
 import io.infinitic.common.serDe.avro.AvroSerDe
@@ -30,6 +31,7 @@ import org.apache.avro.Schema
 
 @Serializable
 @AvroNamespace("io.infinitic.tasks.tag")
+@AvroName("TaskTagEnvelope")
 data class TaskTagEnvelope(
   private val name: String,
   @AvroNamespace("io.infinitic.tasks.tag") private val type: TaskTagMessageType,
@@ -38,7 +40,7 @@ data class TaskTagEnvelope(
   private val cancelTaskByTag: CancelTaskByTag? = null,
   private val retryTaskByTag: RetryTaskByTag? = null,
   private val getTaskIdsByTag: GetTaskIdsByTag? = null
-) : Envelope<TaskTagMessage> {
+) : Envelope<ServiceTagMessage> {
   init {
     val noNull = listOfNotNull(
         addTagToTask,
@@ -54,7 +56,7 @@ data class TaskTagEnvelope(
   }
 
   companion object {
-    fun from(msg: TaskTagMessage) = when (msg) {
+    fun from(msg: ServiceTagMessage) = when (msg) {
       is AddTagToTask -> TaskTagEnvelope(
           name = "${msg.serviceName}",
           type = TaskTagMessageType.ADD_TAG_TO_TASK,

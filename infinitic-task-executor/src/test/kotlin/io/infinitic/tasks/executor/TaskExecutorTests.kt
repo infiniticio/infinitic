@@ -40,20 +40,20 @@ import io.infinitic.common.tasks.data.TaskMeta
 import io.infinitic.common.tasks.data.TaskRetryIndex
 import io.infinitic.common.tasks.data.TaskRetrySequence
 import io.infinitic.common.tasks.data.TaskTag
-import io.infinitic.common.tasks.executors.events.TaskCompletedEvent
-import io.infinitic.common.tasks.executors.events.TaskEventMessage
-import io.infinitic.common.tasks.executors.events.TaskFailedEvent
-import io.infinitic.common.tasks.executors.events.TaskRetriedEvent
-import io.infinitic.common.tasks.executors.events.TaskStartedEvent
+import io.infinitic.common.tasks.events.messages.ServiceEventMessage
+import io.infinitic.common.tasks.events.messages.TaskCompletedEvent
+import io.infinitic.common.tasks.events.messages.TaskFailedEvent
+import io.infinitic.common.tasks.events.messages.TaskRetriedEvent
+import io.infinitic.common.tasks.events.messages.TaskStartedEvent
 import io.infinitic.common.tasks.executors.messages.ExecuteTask
-import io.infinitic.common.tasks.executors.messages.TaskExecutorMessage
+import io.infinitic.common.tasks.executors.messages.ServiceExecutorMessage
 import io.infinitic.common.tasks.executors.messages.clientName
 import io.infinitic.common.tasks.tags.messages.RemoveTagFromTask
 import io.infinitic.common.transport.InfiniticProducerAsync
 import io.infinitic.common.workers.config.ExponentialBackoffRetryPolicy
 import io.infinitic.common.workers.config.WorkflowVersion
 import io.infinitic.common.workers.data.WorkerName
-import io.infinitic.common.workers.registry.RegisteredService
+import io.infinitic.common.workers.registry.RegisteredServiceExecutor
 import io.infinitic.common.workers.registry.WorkerRegistry
 import io.infinitic.exceptions.tasks.ClassNotFoundException
 import io.infinitic.exceptions.tasks.NoMethodFoundWithParameterCountException
@@ -90,8 +90,8 @@ class TaskExecutorTests :
       {
         // slots
         val afterSlot = slot<MillisDuration>()
-        val taskExecutorSlot = slot<TaskExecutorMessage>()
-        val taskEventSlot = CopyOnWriteArrayList<TaskEventMessage>()
+        val taskExecutorSlot = slot<ServiceExecutorMessage>()
+        val taskEventSlot = CopyOnWriteArrayList<ServiceEventMessage>()
 
         // mocks
         fun completed() = CompletableFuture.completedFuture(Unit)
@@ -107,7 +107,7 @@ class TaskExecutorTests :
 
         var taskExecutor = TaskExecutor(workerRegistry, producerAsync, client)
 
-        val service = RegisteredService(1, { ServiceImplService() }, null, null)
+        val service = RegisteredServiceExecutor(1, { ServiceImplService() }, null, null)
 
         // ensure slots are emptied between each test
         beforeTest {
@@ -593,7 +593,7 @@ private fun getTaskCompleted(
     workflowVersion = msg.workflowVersion,
 )
 
-internal fun getRemoveTag(message: TaskEventMessage, tag: String) = RemoveTagFromTask(
+internal fun getRemoveTag(message: ServiceEventMessage, tag: String) = RemoveTagFromTask(
     taskId = message.taskId,
     serviceName = message.serviceName,
     taskTag = TaskTag(tag),

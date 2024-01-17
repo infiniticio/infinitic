@@ -148,7 +148,7 @@ class WorkflowTagEngine(
                 emitterName = emitterName,
                 emittedAt = message.emittedAt ?: publishTime,
             )
-            producer.sendToWorkflowEngine(childMethodTimedOut, timeout)
+            producer.sendToWorkflowEngineAfter(childMethodTimedOut, timeout)
           }
         }
       }
@@ -228,7 +228,7 @@ class WorkflowTagEngine(
                   emitterName = emitterName,
                   emittedAt = message.emittedAt ?: publishTime,
               )
-              producer.sendToWorkflowEngine(childMethodTimedOut, message.methodTimeout!!)
+              producer.sendToWorkflowEngineAfter(childMethodTimedOut, message.methodTimeout!!)
             }
           }
         }

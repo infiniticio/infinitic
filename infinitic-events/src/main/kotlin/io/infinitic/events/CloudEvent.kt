@@ -27,12 +27,10 @@ import com.github.avrokotlin.avro4k.Avro
 import io.cloudevents.CloudEvent
 import io.cloudevents.core.builder.CloudEventBuilder
 import io.cloudevents.core.data.BytesCloudEventData
-import io.cloudevents.core.extensions.DistributedTracingExtension
-import io.cloudevents.core.provider.ExtensionProvider
 import io.cloudevents.core.v1.CloudEventV1
 import io.infinitic.common.serDe.avro.AvroSerDe
 import io.infinitic.common.utils.getClass
-import io.infinitic.current
+import io.infinitic.currentVersion
 import io.infinitic.events.Event.Companion.SCHEMAS_FOLDER
 import io.infinitic.versions
 import kotlinx.serialization.InternalSerializationApi
@@ -63,17 +61,19 @@ internal fun toCloudEvent(
   bytes: ByteArray
 ): CloudEvent = CloudEventBuilder.v1()
     .withId(eventId) // SHOULD BE MESSAGE ID
-    .withSource(URI.create("infinitic.io")) // SHOULD BE urn:pulsar:cluster-name/tenant/namespace/topic-name/producer-id
-    .withType(type) // io.infinitic.task.dispatched
-    .withTime(OffsetDateTime.ofInstant(timestamp, ZoneOffset.UTC))
+    .withSource(URI.create("infinitic.io"))
+    // SHOULD BE urn:pulsar:cluster-name/tenant/namespace/topic-name/emitter-id
+    // OR urn:pulsar:cluster-name/tenant/namespace/tasks/serviceName (/methodName ?)
+    .withType(type) // infinitic.task.dispatched
+    .withTime(OffsetDateTime.ofInstant(timestamp, ZoneOffset.UTC)) // publishedAt
     .withData(
         // DATA SHOULD BE DIFFERENT THAN KOTLIN DATA CLASSES
         "application/avro",
         getSchemaURI(classSimpleName, version),
         BytesCloudEventData.wrap(bytes),
     )
-    .withSubject(subject) // Service Name (Method Name???)
-    .withExtension("partitionkey", partitionKey) // TaskID?
+    .withSubject(subject) // TaskId
+    //.withExtension("partitionkey", partitionKey) // TaskID?
     .build()
 
 /**
@@ -82,17 +82,14 @@ internal fun toCloudEvent(
  * @return the converted Log object as a Result. If the conversion is successful, the Result contains the Log object.
  *         If the conversion fails, the Result contains the corresponding error.
  */
-internal fun CloudEvent.toLog(): Result<Event> = when (this) {
+internal fun CloudEvent.toInfiniticEvent(): Result<Event> = when (this) {
   is CloudEventV1 -> {
     val schema = getSchema().getOrElse { return Result.failure(it) }
-    val klass: KClass<out Event> = getLogKClass().getOrElse { return Result.failure(it) }
+    val klass: KClass<out Event> = getEventKClass().getOrElse { return Result.failure(it) }
     val serializer = @OptIn(InternalSerializationApi::class) klass.serializer()
     val bytes = getBytes().getOrElse { return Result.failure(it) }
     try {
-
       Result.success(AvroSerDe.readBinary(bytes, schema, serializer))
-
-
     } catch (e: Exception) {
       Result.failure(e)
     }
@@ -110,12 +107,12 @@ private fun CloudEvent.getBytes() = data?.toBytes()?.let { Result.success(it) }
 private fun CloudEvent.getClassName() =
     Event::class.java.`package`.name + "." + type.replaceFirstChar { it.uppercase() }
 
-private fun CloudEvent.getLogKClass(): Result<KClass<out Event>> {
+private fun CloudEvent.getEventKClass(): Result<KClass<out Event>> {
   val klass = getClassName().getClass().getOrElse { return Result.failure(it) }
 
   return when (Event::class.java.isAssignableFrom(klass)) {
     true -> @Suppress("UNCHECKED_CAST") Result.success((klass as Class<out Event>).kotlin)
-    false -> Result.failure(IllegalArgumentException("$klass is not a Class<Log>"))
+    false -> Result.failure(IllegalArgumentException("$klass is not a Class<out Event>"))
   }
 }
 
@@ -147,7 +144,7 @@ private fun CloudEvent.getSchema(): Result<Schema> {
 
   when (val eventVersion = c[1]) {
     // if current version, we return the schema directly from the class
-    current -> {
+    currentVersion -> {
       val klass = eventClassName.getClass().getOrElse {
         return error("Unknown class $eventClassName", it)
       }.kotlin

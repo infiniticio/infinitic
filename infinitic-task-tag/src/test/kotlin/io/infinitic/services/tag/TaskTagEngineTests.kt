@@ -31,7 +31,7 @@ import io.infinitic.common.fixtures.TestFactory
 import io.infinitic.common.tasks.data.ServiceName
 import io.infinitic.common.tasks.data.TaskId
 import io.infinitic.common.tasks.data.TaskTag
-import io.infinitic.common.tasks.executors.messages.TaskExecutorMessage
+import io.infinitic.common.tasks.executors.messages.ServiceExecutorMessage
 import io.infinitic.common.tasks.tags.messages.AddTagToTask
 import io.infinitic.common.tasks.tags.messages.GetTaskIdsByTag
 import io.infinitic.common.tasks.tags.messages.RemoveTagFromTask
@@ -60,7 +60,7 @@ private val workername = WorkerName("clientTaskTagEngineTests")
 private var stateMessageId = slot<String>()
 private var stateTaskId = slot<String>()
 private var clientSlot = slot<ClientMessage>()
-private var taskExecutorSlot = slot<TaskExecutorMessage>()
+private var taskExecutorSlot = slot<ServiceExecutorMessage>()
 private var delaySlot = slot<MillisDuration>()
 
 

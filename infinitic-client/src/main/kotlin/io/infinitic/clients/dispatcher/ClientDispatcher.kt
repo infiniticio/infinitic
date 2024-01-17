@@ -56,6 +56,8 @@ import io.infinitic.common.proxies.RequestByWorkflowTag
 import io.infinitic.common.tasks.data.ServiceName
 import io.infinitic.common.tasks.data.TaskId
 import io.infinitic.common.tasks.executors.errors.MethodFailedError
+import io.infinitic.common.topics.WorkflowCmdTopic
+import io.infinitic.common.topics.WorkflowTagTopic
 import io.infinitic.common.transport.InfiniticConsumerAsync
 import io.infinitic.common.transport.InfiniticProducerAsync
 import io.infinitic.common.transport.LoggedInfiniticProducer
@@ -220,7 +222,7 @@ internal class ClientDispatcher(
           emittedAt = null,
       )
       // synchronously sent the message to get errors
-      producerAsync.sendToWorkflowCmdAsync(waitWorkflow).join()
+      with(producerAsync) { waitWorkflow.sendToAsync(WorkflowCmdTopic) }.join()
     }
 
     // Get result
@@ -279,7 +281,7 @@ internal class ClientDispatcher(
           emitterName = emitterName,
           emittedAt = null,
       )
-      producerAsync.sendToWorkflowCmdAsync(msg)
+      with(producerAsync) { msg.sendToAsync(WorkflowCmdTopic) }
     }
 
     is RequestByWorkflowTag -> {
@@ -291,7 +293,7 @@ internal class ClientDispatcher(
           emitterName = emitterName,
           emittedAt = null,
       )
-      producerAsync.sendToWorkflowTagAsync(msg)
+      with(producerAsync) { msg.sendToAsync(WorkflowTagTopic) }
     }
 
     else -> thisShouldNotHappen()
@@ -308,7 +310,7 @@ internal class ClientDispatcher(
           emitterName = emitterName,
           emittedAt = null,
       )
-      producerAsync.sendToWorkflowCmdAsync(msg)
+      with(producerAsync) { msg.sendToAsync(WorkflowCmdTopic) }
     }
 
     is RequestByWorkflowTag -> {
@@ -318,7 +320,7 @@ internal class ClientDispatcher(
           emitterName = emitterName,
           emittedAt = null,
       )
-      producerAsync.sendToWorkflowTagAsync(msg)
+      with(producerAsync) { msg.sendToAsync(WorkflowTagTopic) }
     }
 
     else -> thisShouldNotHappen()
@@ -338,7 +340,7 @@ internal class ClientDispatcher(
           emitterName = emitterName,
           emittedAt = null,
       )
-      producerAsync.sendToWorkflowCmdAsync(msg)
+      with(producerAsync) { msg.sendToAsync(WorkflowCmdTopic) }
     }
 
     is RequestByWorkflowTag -> {
@@ -349,7 +351,7 @@ internal class ClientDispatcher(
           emitterName = emitterName,
           emittedAt = null,
       )
-      producerAsync.sendToWorkflowTagAsync(msg)
+      with(producerAsync) { msg.sendToAsync(WorkflowTagTopic) }
     }
 
     else -> thisShouldNotHappen()
@@ -373,7 +375,7 @@ internal class ClientDispatcher(
           serviceName = serviceName,
           emittedAt = null,
       )
-      producerAsync.sendToWorkflowCmdAsync(msg)
+      with(producerAsync) { msg.sendToAsync(WorkflowCmdTopic) }
     }
 
     is RequestByWorkflowTag -> {
@@ -386,7 +388,7 @@ internal class ClientDispatcher(
           emitterName = emitterName,
           emittedAt = null,
       )
-      producerAsync.sendToWorkflowTagAsync(msg)
+      with(producerAsync) { msg.sendToAsync(WorkflowTagTopic) }
     }
 
     else -> thisShouldNotHappen()
@@ -411,7 +413,7 @@ internal class ClientDispatcher(
         emittedAt = null,
     )
     // synchronously sent the message to get errors
-    producerAsync.sendToWorkflowTagAsync(msg).join()
+    with(producerAsync) { msg.sendToAsync(WorkflowTagTopic) }.join()
 
     val workflowIdsByTag = waiting.join() as WorkflowIdsByTag
 
@@ -507,13 +509,13 @@ internal class ClientDispatcher(
 
         // first, we send all tags in parallel
         val futures = workflowTags.map {
-          producerAsync.sendToWorkflowTagAsync(it)
+          with(producerAsync) { it.sendToAsync(WorkflowTagTopic) }
         }.toTypedArray()
         CompletableFuture.allOf(*futures).join()
 
         // workflow message is dispatched after tags
         // to avoid a potential race condition if the engine remove tags
-        producerAsync.sendToWorkflowCmdAsync(dispatchWorkflow).thenApply { deferred }
+        with(producerAsync) { dispatchWorkflow.sendToAsync(WorkflowCmdTopic) }.thenApply { deferred }
       }
       // a customId tag was provided
       1 -> {
@@ -536,7 +538,7 @@ internal class ClientDispatcher(
             emittedAt = null,
         )
 
-        producerAsync.sendToWorkflowTagAsync(dispatchWorkflowByCustomId).thenApply { deferred }
+        with(producerAsync) { dispatchWorkflowByCustomId.sendToAsync(WorkflowTagTopic) }.thenApply { deferred }
       }
       // more than 1 custom tag were provided
       else -> {
@@ -633,7 +635,7 @@ internal class ClientDispatcher(
           emitterName = emitterName,
           emittedAt = null,
       )
-      producerAsync.sendToWorkflowCmdAsync(dispatchMethod)
+      with(producerAsync) { dispatchMethod.sendToAsync(WorkflowCmdTopic) }
     }
 
     is RequestByWorkflowTag -> {
@@ -652,7 +654,7 @@ internal class ClientDispatcher(
           emitterName = emitterName,
           emittedAt = null,
       )
-      producerAsync.sendToWorkflowTagAsync(dispatchMethodByTag)
+      with(producerAsync) { dispatchMethodByTag.sendToAsync(WorkflowTagTopic) }
     }
   }
 
@@ -693,7 +695,7 @@ internal class ClientDispatcher(
             emitterName = emitterName,
             emittedAt = null,
         )
-        producerAsync.sendToWorkflowCmdAsync(sendSignal)
+        with(producerAsync) { sendSignal.sendToAsync(WorkflowCmdTopic) }
       }
 
       is RequestByWorkflowTag -> {
@@ -708,7 +710,7 @@ internal class ClientDispatcher(
             emitterName = emitterName,
             emittedAt = null,
         )
-        producerAsync.sendToWorkflowTagAsync(sendSignalByTag)
+        with(producerAsync) { sendSignalByTag.sendToAsync(WorkflowTagTopic) }
       }
 
       else -> thisShouldNotHappen()

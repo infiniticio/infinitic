@@ -29,12 +29,12 @@ import io.infinitic.common.data.MillisInstant
 import io.infinitic.common.emitters.EmitterName
 import io.infinitic.common.exceptions.thisShouldNotHappen
 import io.infinitic.common.parser.getMethodPerNameAndParameters
-import io.infinitic.common.tasks.executors.events.TaskCompletedEvent
-import io.infinitic.common.tasks.executors.events.TaskFailedEvent
-import io.infinitic.common.tasks.executors.events.TaskRetriedEvent
-import io.infinitic.common.tasks.executors.events.TaskStartedEvent
+import io.infinitic.common.tasks.events.messages.TaskCompletedEvent
+import io.infinitic.common.tasks.events.messages.TaskFailedEvent
+import io.infinitic.common.tasks.events.messages.TaskRetriedEvent
+import io.infinitic.common.tasks.events.messages.TaskStartedEvent
 import io.infinitic.common.tasks.executors.messages.ExecuteTask
-import io.infinitic.common.tasks.executors.messages.TaskExecutorMessage
+import io.infinitic.common.tasks.executors.messages.ServiceExecutorMessage
 import io.infinitic.common.transport.InfiniticProducerAsync
 import io.infinitic.common.transport.LoggedInfiniticProducer
 import io.infinitic.common.utils.getCheckMode
@@ -73,7 +73,7 @@ class TaskExecutor(
   private val emitterName by lazy { EmitterName(producerAsync.name) }
 
   @Suppress("UNUSED_PARAMETER")
-  suspend fun handle(msg: TaskExecutorMessage, publishTime: MillisInstant) {
+  suspend fun handle(msg: ServiceExecutorMessage, publishTime: MillisInstant) {
     when (msg) {
       is ExecuteTask -> {
         msg.logDebug { "received $msg" }
@@ -202,7 +202,7 @@ class TaskExecutor(
   }
 
   suspend fun sendTaskFailed(
-    msg: TaskExecutorMessage,
+    msg: ServiceExecutorMessage,
     cause: Throwable,
     meta: MutableMap<String, ByteArray>,
     description: (() -> String)?
@@ -226,7 +226,7 @@ class TaskExecutor(
 
     val executeTask = ExecuteTask.retryFrom(msg, emitterName, cause, meta)
 
-    producer.sendToTaskExecutor(executeTask, delay)
+    producer.sendToServiceExecutorAfter(executeTask, delay)
 
     // once sent, we publish the event
     val event = TaskRetriedEvent.from(msg, emitterName, cause, delay, meta)

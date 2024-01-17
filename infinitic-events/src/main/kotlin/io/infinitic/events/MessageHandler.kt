@@ -20,13 +20,11 @@
  *
  * Licensor: infinitic.io
  */
-package io.infinitic.common.tasks.executors.messages
 
-import com.github.avrokotlin.avro4k.AvroNamespace
-import kotlinx.serialization.Serializable
+package io.infinitic.events
 
-@Serializable
-@AvroNamespace("io.infinitic.tasks.executor")
-enum class TaskExecutorMessageType {
-  EXECUTE_TASK
-}
+import io.cloudevents.CloudEvent
+import io.infinitic.common.data.MillisInstant
+import io.infinitic.common.messages.Message
+
+fun Message.toCloudEvent(publishedAt: MillisInstant): CloudEvent = TODO()

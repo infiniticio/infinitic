@@ -28,9 +28,10 @@ import io.infinitic.common.clients.messages.ClientMessage
 import io.infinitic.common.data.MillisInstant
 import io.infinitic.common.messages.Message
 import io.infinitic.common.tasks.data.ServiceName
-import io.infinitic.common.tasks.executors.events.TaskEventMessage
-import io.infinitic.common.tasks.executors.messages.TaskExecutorMessage
-import io.infinitic.common.tasks.tags.messages.TaskTagMessage
+import io.infinitic.common.tasks.events.messages.ServiceEventMessage
+import io.infinitic.common.tasks.executors.messages.ServiceExecutorMessage
+import io.infinitic.common.tasks.tags.messages.ServiceTagMessage
+import io.infinitic.common.topics.Topic
 import io.infinitic.common.transport.InfiniticConsumerAsync
 import io.infinitic.common.workflows.data.workflows.WorkflowName
 import io.infinitic.common.workflows.engine.events.WorkflowEventMessage
@@ -45,6 +46,15 @@ class InMemoryInfiniticConsumerAsync(private val channels: InMemoryChannels) :
   InfiniticConsumerAsync {
 
   override var logName: String? = null
+
+  override fun <S : Message> startConsumerAsync(
+    topic: Topic<S>,
+    handler: suspend (S, MillisInstant) -> Unit,
+    beforeDlq: suspend (S?, Exception) -> Unit,
+    entity: String
+  ): CompletableFuture<Unit> {
+    TODO("Not yet implemented")
+  }
 
   private val logger = KotlinLogging.logger(logName ?: this::class.java.name)
   override fun close() {
@@ -62,8 +72,8 @@ class InMemoryInfiniticConsumerAsync(private val channels: InMemoryChannels) :
   }
 
   override fun startTaskTagConsumerAsync(
-    handler: suspend (TaskTagMessage, MillisInstant) -> Unit,
-    beforeDlq: suspend (TaskTagMessage?, Exception) -> Unit,
+    handler: suspend (ServiceTagMessage, MillisInstant) -> Unit,
+    beforeDlq: suspend (ServiceTagMessage?, Exception) -> Unit,
     serviceName: ServiceName,
     concurrency: Int
   ): CompletableFuture<Unit> {
@@ -128,8 +138,8 @@ class InMemoryInfiniticConsumerAsync(private val channels: InMemoryChannels) :
   }
 
   override fun startTaskExecutorConsumerAsync(
-    handler: suspend (TaskExecutorMessage, MillisInstant) -> Unit,
-    beforeDlq: suspend (TaskExecutorMessage?, Exception) -> Unit,
+    handler: suspend (ServiceExecutorMessage, MillisInstant) -> Unit,
+    beforeDlq: suspend (ServiceExecutorMessage?, Exception) -> Unit,
     serviceName: ServiceName,
     concurrency: Int
   ): CompletableFuture<Unit> {
@@ -139,8 +149,8 @@ class InMemoryInfiniticConsumerAsync(private val channels: InMemoryChannels) :
   }
 
   override fun startTaskEventsConsumerAsync(
-    handler: suspend (TaskEventMessage, MillisInstant) -> Unit,
-    beforeDlq: suspend (TaskEventMessage?, Exception) -> Unit,
+    handler: suspend (ServiceEventMessage, MillisInstant) -> Unit,
+    beforeDlq: suspend (ServiceEventMessage?, Exception) -> Unit,
     serviceName: ServiceName,
     concurrency: Int
   ): CompletableFuture<Unit> {
@@ -150,8 +160,8 @@ class InMemoryInfiniticConsumerAsync(private val channels: InMemoryChannels) :
   }
 
   override fun startDelayedTaskExecutorConsumerAsync(
-    handler: suspend (TaskExecutorMessage, MillisInstant) -> Unit,
-    beforeDlq: suspend (TaskExecutorMessage?, Exception) -> Unit,
+    handler: suspend (ServiceExecutorMessage, MillisInstant) -> Unit,
+    beforeDlq: suspend (ServiceExecutorMessage?, Exception) -> Unit,
     serviceName: ServiceName,
     concurrency: Int
   ): CompletableFuture<Unit> {
@@ -161,8 +171,8 @@ class InMemoryInfiniticConsumerAsync(private val channels: InMemoryChannels) :
   }
 
   override fun startWorkflowTaskConsumerAsync(
-    handler: suspend (TaskExecutorMessage, MillisInstant) -> Unit,
-    beforeDlq: suspend (TaskExecutorMessage?, Exception) -> Unit,
+    handler: suspend (ServiceExecutorMessage, MillisInstant) -> Unit,
+    beforeDlq: suspend (ServiceExecutorMessage?, Exception) -> Unit,
     workflowName: WorkflowName,
     concurrency: Int
   ): CompletableFuture<Unit> {
@@ -172,8 +182,8 @@ class InMemoryInfiniticConsumerAsync(private val channels: InMemoryChannels) :
   }
 
   override fun startWorkflowTaskEventsConsumerAsync(
-    handler: suspend (TaskEventMessage, MillisInstant) -> Unit,
-    beforeDlq: suspend (TaskEventMessage?, Exception) -> Unit,
+    handler: suspend (ServiceEventMessage, MillisInstant) -> Unit,
+    beforeDlq: suspend (ServiceEventMessage?, Exception) -> Unit,
     workflowName: WorkflowName,
     concurrency: Int
   ): CompletableFuture<Unit> {
@@ -183,8 +193,8 @@ class InMemoryInfiniticConsumerAsync(private val channels: InMemoryChannels) :
   }
 
   override fun startDelayedWorkflowTaskConsumerAsync(
-    handler: suspend (TaskExecutorMessage, MillisInstant) -> Unit,
-    beforeDlq: suspend (TaskExecutorMessage?, Exception) -> Unit,
+    handler: suspend (ServiceExecutorMessage, MillisInstant) -> Unit,
+    beforeDlq: suspend (ServiceExecutorMessage?, Exception) -> Unit,
     workflowName: WorkflowName,
     concurrency: Int
   ): CompletableFuture<Unit> {

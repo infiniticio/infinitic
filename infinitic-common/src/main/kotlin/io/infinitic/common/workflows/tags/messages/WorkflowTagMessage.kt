@@ -59,6 +59,10 @@ sealed class WorkflowTagMessage : Message {
   abstract val emittedAt: MillisInstant?
 
   override fun envelope() = WorkflowTagEnvelope.from(this)
+
+  override fun key() = workflowTag.toString()
+
+  override fun entity() = workflowName.toString()
 }
 
 /**

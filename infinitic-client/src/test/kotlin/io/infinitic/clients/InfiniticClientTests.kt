@@ -43,8 +43,8 @@ import io.infinitic.common.data.methods.MethodParameters
 import io.infinitic.common.emitters.EmitterName
 import io.infinitic.common.fixtures.TestFactory
 import io.infinitic.common.fixtures.later
-import io.infinitic.common.tasks.executors.messages.TaskExecutorMessage
-import io.infinitic.common.tasks.tags.messages.TaskTagMessage
+import io.infinitic.common.tasks.executors.messages.ServiceExecutorMessage
+import io.infinitic.common.tasks.tags.messages.ServiceTagMessage
 import io.infinitic.common.transport.InfiniticConsumerAsync
 import io.infinitic.common.transport.InfiniticProducerAsync
 import io.infinitic.common.utils.IdGenerator
@@ -85,9 +85,9 @@ import io.mockk.verify
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CopyOnWriteArrayList
 
-private val taskTagSlots = CopyOnWriteArrayList<TaskTagMessage>() // multithreading update
+private val taskTagSlots = CopyOnWriteArrayList<ServiceTagMessage>() // multithreading update
 private val workflowTagSlots = CopyOnWriteArrayList<WorkflowTagMessage>() // multithreading update
-private val taskSlot = slot<TaskExecutorMessage>()
+private val taskSlot = slot<ServiceExecutorMessage>()
 private val workflowCmdSlot = slot<WorkflowEngineMessage>()
 private val delaySlot = slot<MillisDuration>()
 

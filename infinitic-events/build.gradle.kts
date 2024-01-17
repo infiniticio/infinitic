@@ -23,8 +23,8 @@
 
 dependencies {
 
-  implementation(Libs.CloudEvents.core)
-  implementation(Libs.CloudEvents.api)
+  api(Libs.CloudEvents.core)
+  api(Libs.CloudEvents.api)
   implementation(Libs.Avro4k.core)
 
   implementation(project(":infinitic-common"))

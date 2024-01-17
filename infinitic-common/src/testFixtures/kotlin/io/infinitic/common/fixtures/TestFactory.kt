@@ -25,10 +25,10 @@ package io.infinitic.common.fixtures
 import io.infinitic.common.data.Version
 import io.infinitic.common.data.methods.MethodParameters
 import io.infinitic.common.serDe.SerializedData
+import io.infinitic.common.tasks.events.messages.ServiceEventEnvelope
+import io.infinitic.common.tasks.events.messages.ServiceEventMessage
 import io.infinitic.common.tasks.executors.errors.DeferredError
 import io.infinitic.common.tasks.executors.errors.ExecutionError
-import io.infinitic.common.tasks.executors.events.TaskEventEnvelope
-import io.infinitic.common.tasks.executors.events.TaskEventMessage
 import io.infinitic.common.workflows.data.commands.CommandId
 import io.infinitic.common.workflows.data.steps.NewStep
 import io.infinitic.common.workflows.data.steps.Step
@@ -81,9 +81,9 @@ object TestFactory {
               val sub = WorkflowEventMessage::class.sealedSubclasses.shuffled().first()
               WorkflowEventEnvelope.from(random(sub))
             }
-            .randomize(TaskEventEnvelope::class.java) {
-              val sub = TaskEventMessage::class.sealedSubclasses.shuffled().first()
-              TaskEventEnvelope.from(random(sub))
+            .randomize(ServiceEventEnvelope::class.java) {
+              val sub = ServiceEventMessage::class.sealedSubclasses.shuffled().first()
+              ServiceEventEnvelope.from(random(sub))
             }
             .randomize(DeferredError::class.java) {
               val sub = DeferredError::class.sealedSubclasses.shuffled().first()

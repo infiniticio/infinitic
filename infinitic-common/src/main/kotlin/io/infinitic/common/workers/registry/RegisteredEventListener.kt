@@ -20,16 +20,11 @@
  *
  * Licensor: infinitic.io
  */
-package io.infinitic.common.tasks.executors.events
+package io.infinitic.common.workers.registry
 
-import com.github.avrokotlin.avro4k.AvroNamespace
-import kotlinx.serialization.Serializable
+import io.infinitic.common.events.CloudEventListener
 
-@Serializable
-@AvroNamespace("io.infinitic.tasks.executor")
-enum class TaskEventMessageType {
-  TASK_STARTED,
-  TASK_RETRIED,
-  TASK_FAILED,
-  TASK_COMPLETED
-}
+data class RegisteredEventListener(
+  val eventListener: CloudEventListener,
+  val concurrency: Int,
+)

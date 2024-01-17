@@ -33,13 +33,13 @@ import io.infinitic.workflows.WorkflowCheckMode
 
 typealias WorkflowClassList = List<Class<out Workflow>>
 
-data class RegisteredWorkflow(
-    val workflowName: WorkflowName,
-    val classes: WorkflowClassList,
-    val concurrency: Int,
-    val withTimeout: WithTimeout?,
-    val withRetry: WithRetry?,
-    val checkMode: WorkflowCheckMode?
+data class RegisteredWorkflowExecutor(
+  val workflowName: WorkflowName,
+  val classes: WorkflowClassList,
+  val concurrency: Int,
+  val withTimeout: WithTimeout?,
+  val withRetry: WithRetry?,
+  val checkMode: WorkflowCheckMode?
 ) {
   init {
     require(classes.isNotEmpty()) { "List of classes must not be empty for workflow $workflowName" }
@@ -55,7 +55,8 @@ data class RegisteredWorkflow(
             val list = filter { version == it.value }.keys.map { it.name }.joinToString()
 
             throw IllegalArgumentException(
-                "$list have same version $version for workflow $workflowName")
+                "$list have same version $version for workflow $workflowName",
+            )
           }
     }
   }

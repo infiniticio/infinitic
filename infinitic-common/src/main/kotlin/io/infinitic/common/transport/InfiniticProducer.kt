@@ -24,9 +24,11 @@ package io.infinitic.common.transport
 
 import io.infinitic.common.clients.messages.ClientMessage
 import io.infinitic.common.data.MillisDuration
-import io.infinitic.common.tasks.executors.events.TaskEventMessage
-import io.infinitic.common.tasks.executors.messages.TaskExecutorMessage
-import io.infinitic.common.tasks.tags.messages.TaskTagMessage
+import io.infinitic.common.messages.Message
+import io.infinitic.common.tasks.events.messages.ServiceEventMessage
+import io.infinitic.common.tasks.executors.messages.ServiceExecutorMessage
+import io.infinitic.common.tasks.tags.messages.ServiceTagMessage
+import io.infinitic.common.topics.Topic
 import io.infinitic.common.workflows.engine.events.WorkflowEventMessage
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
 import io.infinitic.common.workflows.tags.messages.WorkflowTagMessage
@@ -36,6 +38,12 @@ interface InfiniticProducer {
    * Name of the sender
    */
   var name: String
+
+  suspend fun <T : Message> sendTo(
+    message: T,
+    topic: Topic<T>,
+    after: MillisDuration? = null
+  )
 
   /**
    * Synchronously send a message to a client
@@ -64,9 +72,11 @@ interface InfiniticProducer {
    * @param message the message to send
    * @param after the delay before sending the message
    */
-  suspend fun sendToWorkflowEngine(
+  suspend fun sendToWorkflowEngine(message: WorkflowEngineMessage)
+
+  suspend fun sendToWorkflowEngineAfter(
     message: WorkflowEngineMessage,
-    after: MillisDuration = MillisDuration.ZERO
+    after: MillisDuration
   )
 
   /**
@@ -81,7 +91,7 @@ interface InfiniticProducer {
    *
    * @param message the message to send
    */
-  suspend fun sendToTaskTag(message: TaskTagMessage)
+  suspend fun sendToServiceTag(message: ServiceTagMessage)
 
   /**
    * Synchronously send a message to a task-executor
@@ -89,9 +99,19 @@ interface InfiniticProducer {
    * @param message the message to send
    * @param after the delay before sending the message
    */
-  suspend fun sendToTaskExecutor(
-    message: TaskExecutorMessage,
-    after: MillisDuration = MillisDuration.ZERO
+  suspend fun sendToServiceExecutor(
+    message: ServiceExecutorMessage
+  )
+
+  /**
+   * Synchronously send a message to a task-executor
+   *
+   * @param message the message to send
+   * @param after the delay before sending the message
+   */
+  suspend fun sendToServiceExecutorAfter(
+    message: ServiceExecutorMessage,
+    after: MillisDuration
   )
 
 
@@ -101,6 +121,6 @@ interface InfiniticProducer {
    * @param message the message to send to the task result handler.
    */
   suspend fun sendToTaskEvents(
-    message: TaskEventMessage
+    message: ServiceEventMessage
   )
 }

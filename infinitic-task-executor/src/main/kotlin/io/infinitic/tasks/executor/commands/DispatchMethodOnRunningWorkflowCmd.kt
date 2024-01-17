@@ -86,7 +86,7 @@ internal fun CoroutineScope.dispatchMethodOnRunningWorkflowCmd(
               emitterName = emitterName,
               emittedAt = workflowTaskInstant + it,
           )
-          producer.sendToWorkflowEngine(childMethodTimedOut, it)
+          producer.sendToWorkflowEngineAfter(childMethodTimedOut, it)
         }
       }
     }

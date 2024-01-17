@@ -95,7 +95,7 @@ class WorkflowCmdHandler(producerAsync: InfiniticProducerAsync) {
           val dispatchTaskMessage = workflowTaskParameters.toExecuteTaskMessage()
 
           // dispatch workflow task
-          producer.sendToTaskExecutor(dispatchTaskMessage)
+          producer.sendToServiceExecutor(dispatchTaskMessage)
         }
 
         // the 2 events are sent sequentially, to ensure they have consistent timestamps

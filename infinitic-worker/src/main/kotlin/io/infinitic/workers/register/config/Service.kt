@@ -25,6 +25,7 @@ package io.infinitic.workers.register.config
 import io.infinitic.common.utils.getInstance
 import io.infinitic.common.utils.isImplementationOf
 import io.infinitic.common.workers.config.RetryPolicy
+import io.infinitic.events.config.EventListener
 import io.infinitic.tasks.tag.config.TaskTag
 import io.infinitic.workers.register.InfiniticRegisterInterface
 
@@ -34,7 +35,8 @@ data class Service(
   var concurrency: Int? = null,
   var timeoutInSeconds: Double? = null,
   var retry: RetryPolicy? = null,
-  var tagEngine: TaskTag? = InfiniticRegisterInterface.DEFAULT_TASK_TAG
+  var tagEngine: TaskTag? = InfiniticRegisterInterface.DEFAULT_TASK_TAG,
+  var eventListener: EventListener? = InfiniticRegisterInterface.DEFAULT_EVENT_LISTENER,
 ) {
   fun getInstance(): Any = `class`!!.getInstance(
       classNotFound = error("Class '${`class`}' unknown"),
@@ -49,8 +51,8 @@ data class Service(
 
     when (`class`) {
       null -> {
-        require(tagEngine != null) {
-          error("'${::`class`.name}' and '${::tagEngine.name}' can not be both undefined")
+        require(tagEngine != null || eventListener != null) {
+          error("'Nothing defined for `name: $name`")
         }
       }
 

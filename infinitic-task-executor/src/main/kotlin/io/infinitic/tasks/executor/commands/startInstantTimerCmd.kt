@@ -52,6 +52,6 @@ internal fun CoroutineScope.startInstantTimerCmq(
 
   // todo: Check if there is a way not to use MillisInstant.now()
   launch {
-    producer.sendToWorkflowEngine(timerCompleted, command.instant - MillisInstant.now())
+    producer.sendToWorkflowEngineAfter(timerCompleted, command.instant - MillisInstant.now())
   }
 }

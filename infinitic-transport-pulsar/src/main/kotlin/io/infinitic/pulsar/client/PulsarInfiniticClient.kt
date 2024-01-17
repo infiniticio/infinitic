@@ -96,15 +96,13 @@ class PulsarInfiniticClient(private val pulsarClient: PulsarClient) {
    * - Result.success(Producer)
    * - Result.failure(e) in case of error
    */
-  @Suppress("UNCHECKED_CAST")
-  fun <T : Message, S : Envelope<out T>> getProducer(
+  fun getProducer(
     topic: String,
-    schemaClass: KClass<S>,
+    schemaClass: KClass<out Envelope<out Message>>,
     producerName: String,
     producerConfig: ProducerConfig,
     key: String? = null,
-  ): Result<Producer<S>> = try {
-
+  ): Result<Producer<Envelope<out Message>>> = try {
     // get producer if it already exists
     val producer = producers.computeIfAbsent(topic) {
       // otherwise create it
@@ -197,8 +195,9 @@ class PulsarInfiniticClient(private val pulsarClient: PulsarClient) {
         }
       }
 
-      builder.create()
-    } as Producer<S>
+      @Suppress("UNCHECKED_CAST")
+      builder.create() as Producer<Envelope<out Message>>
+    }
     Result.success(producer)
   } catch (e: PulsarClientException) {
     logger.error(e) { "Unable to create producer $producerName on topic $topic" }
@@ -211,15 +210,13 @@ class PulsarInfiniticClient(private val pulsarClient: PulsarClient) {
    * - Result.success(Consumer)
    * - Result.failure(e) in case of error
    */
-  internal fun <S : Envelope<*>> newConsumer(
-    schemaClass: KClass<S>,
+  internal fun <S : Envelope<out Message>> newConsumer(
+    schema: Schema<S>,
     consumerDef: ConsumerDef,
     consumerDefDlq: ConsumerDef? = null,
   ): Result<Consumer<S>> {
 
     val (topic, subscriptionName, subscriptionType, consumerName, consumerConfig) = consumerDef
-
-    val schema = Schema.AVRO(schemaDefinition(schemaClass))
 
     val builder = pulsarClient
         .newConsumer(schema)
@@ -245,7 +242,7 @@ class PulsarInfiniticClient(private val pulsarClient: PulsarClient) {
 
       // to avoid immediate deletion of messages in DLQ, we immediately create a subscription
       val consumerDlq =
-          newConsumer(schemaClass, it).getOrElse { throwable ->
+          newConsumer(schema, it).getOrElse { throwable ->
             logger.error { "Unable to create consumer on DLQ topic ${it.topic}" }
             return Result.failure(throwable)
           }
@@ -377,6 +374,6 @@ class PulsarInfiniticClient(private val pulsarClient: PulsarClient) {
   )
 
   companion object {
-    val producers = ConcurrentHashMap<String, Producer<out Envelope<*>>>()
+    val producers = ConcurrentHashMap<String, Producer<Envelope<out Message>>>()
   }
 }

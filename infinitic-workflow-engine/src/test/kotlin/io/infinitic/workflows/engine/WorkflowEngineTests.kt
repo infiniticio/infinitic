@@ -24,8 +24,8 @@ package io.infinitic.workflows.engine
 
 import io.infinitic.common.clients.messages.ClientMessage
 import io.infinitic.common.data.MillisDuration
-import io.infinitic.common.tasks.executors.messages.TaskExecutorMessage
-import io.infinitic.common.tasks.tags.messages.TaskTagMessage
+import io.infinitic.common.tasks.executors.messages.ServiceExecutorMessage
+import io.infinitic.common.tasks.tags.messages.ServiceTagMessage
 import io.infinitic.common.transport.InfiniticProducerAsync
 import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.engine.events.WorkflowEventMessage
@@ -51,8 +51,8 @@ class WorkflowEngineTests : StringSpec(
       val workflowIdSlot = slot<WorkflowId>()
       val clientSlot = slot<ClientMessage>()
       val eventSlot = slot<WorkflowEventMessage>()
-      val taskTagSlots = CopyOnWriteArrayList<TaskTagMessage>()
-      val taskExecutorSlot = slot<TaskExecutorMessage>()
+      val taskTagSlots = CopyOnWriteArrayList<ServiceTagMessage>()
+      val taskExecutorSlot = slot<ServiceExecutorMessage>()
       val workflowTagSlots = CopyOnWriteArrayList<WorkflowTagMessage>()
       val workflowEngineSlot = slot<WorkflowEngineMessage>()
       val afterSlot = slot<MillisDuration>()

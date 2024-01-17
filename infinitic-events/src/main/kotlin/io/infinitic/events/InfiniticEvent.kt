@@ -24,12 +24,8 @@
 package io.infinitic.events
 
 import io.cloudevents.CloudEvent
-import java.net.URI
-import java.time.OffsetDateTime
 
-class InfiniticEventImpl(
-  ce: CloudEvent
-) : InfiniticEvent, CloudEvent by ce {
+class InfiniticEventImpl(ce: CloudEvent) : InfiniticEvent, CloudEvent by ce {
   override val isTaskEvent: Boolean
     get() = TODO("Not yet implemented")
   override val isWorkflowEvent: Boolean

@@ -27,10 +27,12 @@ import io.infinitic.autoclose.addAutoCloseResource
 import io.infinitic.autoclose.autoClose
 import io.infinitic.clients.InfiniticClient
 import io.infinitic.clients.InfiniticClientInterface
+import io.infinitic.common.data.MillisInstant
 import io.infinitic.common.messages.Message
 import io.infinitic.common.transport.InfiniticConsumerAsync
 import io.infinitic.common.transport.InfiniticProducerAsync
 import io.infinitic.common.transport.LoggedInfiniticProducer
+import io.infinitic.events.toCloudEvent
 import io.infinitic.pulsar.PulsarInfiniticConsumerAsync
 import io.infinitic.tasks.Task
 import io.infinitic.tasks.executor.TaskEventHandler
@@ -170,7 +172,7 @@ class InfiniticWorker(
       )
     }
 
-    workerRegistry.workflows.forEach {
+    workerRegistry.workflowExecutors.forEach {
       // WORKFLOW-TASK_EXECUTOR
       val workflowTaskExecutor = TaskExecutor(workerRegistry, producerAsync, client)
 
@@ -180,9 +182,7 @@ class InfiniticWorker(
               beforeDlq = { message, cause ->
                 logMessageSentToDLQ(message, cause)
                 message?.let {
-                  workflowTaskExecutor.run {
-                    sendTaskFailed(it, cause, Task.meta, sendingDlqMessage)
-                  }
+                  workflowTaskExecutor.sendTaskFailed(it, cause, Task.meta, sendingDlqMessage)
                 }
               },
               workflowName = it.key,
@@ -193,7 +193,7 @@ class InfiniticWorker(
       // WORKFLOW-TASK_EXECUTOR-DELAY
       futures.addIfNotDone(
           consumerAsync.startDelayedWorkflowTaskConsumerAsync(
-              handler = { msg, _ -> delayedTaskProducer.sendToTaskExecutor(msg) },
+              handler = { msg, _ -> delayedTaskProducer.sendToServiceExecutor(msg) },
               beforeDlq = logMessageSentToDLQ,
               workflowName = it.key,
               concurrency = it.value.concurrency,
@@ -227,7 +227,8 @@ class InfiniticWorker(
       )
     }
 
-    workerRegistry.services.forEach {
+    workerRegistry.serviceExecutors.forEach {
+
       // TASK-EXECUTOR
       val taskExecutor = TaskExecutor(workerRegistry, producerAsync, client)
 
@@ -237,7 +238,7 @@ class InfiniticWorker(
               beforeDlq = { message, cause ->
                 logMessageSentToDLQ(message, cause)
                 message?.let {
-                  taskExecutor.run { sendTaskFailed(it, cause, Task.meta, sendingDlqMessage) }
+                  taskExecutor.sendTaskFailed(it, cause, Task.meta, sendingDlqMessage)
                 }
               },
               serviceName = it.key,
@@ -245,10 +246,11 @@ class InfiniticWorker(
           ),
       )
 
+
       // TASK-EXECUTOR-DELAY
       futures.addIfNotDone(
           consumerAsync.startDelayedTaskExecutorConsumerAsync(
-              handler = { msg, _ -> delayedTaskProducer.sendToTaskExecutor(msg) },
+              handler = { msg, _ -> delayedTaskProducer.sendToServiceExecutor(msg) },
               beforeDlq = logMessageSentToDLQ,
               serviceName = it.key,
               concurrency = it.value.concurrency,
@@ -261,6 +263,42 @@ class InfiniticWorker(
       futures.addIfNotDone(
           consumerAsync.startTaskEventsConsumerAsync(
               handler = taskEventHandler::handle,
+              beforeDlq = logMessageSentToDLQ,
+              serviceName = it.key,
+              concurrency = it.value.concurrency,
+          ),
+      )
+    }
+
+    workerRegistry.serviceListeners.forEach {
+      val eventHandler = { message: Message, publishedAt: MillisInstant ->
+        it.value.eventListener.onCloudEvent(message.toCloudEvent(publishedAt))
+      }
+
+      // TASK-EXECUTOR topic
+      futures.addIfNotDone(
+          consumerAsync.startTaskExecutorConsumerAsync(
+              handler = eventHandler,
+              beforeDlq = logMessageSentToDLQ,
+              serviceName = it.key,
+              concurrency = it.value.concurrency,
+          ),
+      )
+
+      // TASK-EXECUTOR-DELAY topic
+      futures.addIfNotDone(
+          consumerAsync.startDelayedTaskExecutorConsumerAsync(
+              handler = eventHandler,
+              beforeDlq = logMessageSentToDLQ,
+              serviceName = it.key,
+              concurrency = it.value.concurrency,
+          ),
+      )
+
+      // TASK-EVENTS topic
+      futures.addIfNotDone(
+          consumerAsync.startTaskEventsConsumerAsync(
+              handler = eventHandler,
               beforeDlq = logMessageSentToDLQ,
               serviceName = it.key,
               concurrency = it.value.concurrency,

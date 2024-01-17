@@ -20,43 +20,15 @@
  *
  * Licensor: infinitic.io
  */
+package io.infinitic.common.tasks.executors.messages
 
-package io.infinitic.events.requesters
-
-import io.infinitic.common.clients.data.ClientName
-import io.infinitic.common.tasks.data.ServiceName
-import io.infinitic.common.workers.data.WorkerName
-import io.infinitic.common.workflows.data.methodRuns.WorkflowMethodId
-import io.infinitic.common.workflows.data.workflows.WorkflowId
-import io.infinitic.common.workflows.data.workflows.WorkflowName
+import com.github.avrokotlin.avro4k.AvroName
+import com.github.avrokotlin.avro4k.AvroNamespace
 import kotlinx.serialization.Serializable
 
 @Serializable
-sealed interface Requester
-
-@Serializable
-data class ClientRequester(
-  val clientName: ClientName,
-  val clientWaiting: Boolean
-) : Requester
-
-@Serializable
-data class WorkflowEngineRequester(
-  val workflowName: WorkflowName,
-  val workflowId: WorkflowId,
-  val workflowMethodId: WorkflowMethodId,
-  val workerName: WorkerName,
-) : Requester
-
-@Serializable
-data class ServiceWorkerRequester(
-  val serviceName: ServiceName,
-  val workerName: WorkerName,
-) : Requester
-
-@Serializable
-data class WorkflowWorkerRequester(
-  val workflowName: WorkflowName,
-  val workerName: WorkerName,
-) : Requester
-
+@AvroNamespace("io.infinitic.tasks.executor")
+@AvroName("TaskExecutorMessageType")
+enum class ServiceExecutorMessageType {
+  EXECUTE_TASK
+}

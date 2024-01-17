@@ -22,22 +22,22 @@
  */
 package io.infinitic.dashboard.panels.infrastructure.workflow
 
+import io.infinitic.common.topics.WorkflowTopic
 import io.infinitic.dashboard.Infinitic.resourceManager
 import io.infinitic.dashboard.panels.infrastructure.jobs.JobState
 import io.infinitic.dashboard.panels.infrastructure.jobs.TopicsStats
 import io.infinitic.dashboard.panels.infrastructure.requests.Loading
-import io.infinitic.pulsar.resources.WorkflowTopicsDescription
 import java.time.Instant
 
 data class WorkflowState(
   override val name: String,
-  override val topicsStats: TopicsStats<WorkflowTopicsDescription> =
-      WorkflowTopicsDescription.entries.associateWith { Loading() },
+  override val topicsStats: TopicsStats<WorkflowTopic<*>> =
+      WorkflowTopic.entries.associateWith { Loading() },
   val isLoading: Boolean = isLoading(topicsStats),
   val lastUpdatedAt: Instant = lastUpdatedAt(topicsStats)
-) : JobState<WorkflowTopicsDescription>(name, topicsStats) {
-  override fun create(name: String, topicsStats: TopicsStats<WorkflowTopicsDescription>) =
+) : JobState<WorkflowTopic<*>>(name, topicsStats) {
+  override fun create(name: String, topicsStats: TopicsStats<WorkflowTopic<*>>) =
       WorkflowState(name = name, topicsStats = topicsStats)
 
-  override fun getTopic(type: WorkflowTopicsDescription) = resourceManager.getTopicName(name, type)
+  override fun getTopic(topic: WorkflowTopic<*>) = with(resourceManager) { topic.fullName(name) }
 }

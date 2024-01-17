@@ -29,7 +29,6 @@ import io.infinitic.common.messages.Message
 import io.infinitic.pulsar.client.PulsarInfiniticClient
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.TimeUnit
-import kotlin.reflect.KClass
 
 class Producer(
   val client: PulsarInfiniticClient,
@@ -41,25 +40,25 @@ class Producer(
   fun getUniqueName(namerTopic: String, proposedName: String?) =
       client.getUniqueName(namerTopic, proposedName)
 
-  fun <T : Message, S : Envelope<out T>> sendAsync(
-    schemaClass: KClass<S>,
-    message: T,
+  fun sendAsync(
+    message: Message,
     after: MillisDuration,
     topic: String,
     producerName: String,
     key: String? = null
   ): CompletableFuture<Unit> {
 
+    val envelope = message.envelope() as Envelope<out Message>
+
     val producer = client
-        .getProducer(topic, schemaClass, producerName, producerConfig, key)
+        .getProducer(topic, envelope::class, producerName, producerConfig, key)
         .getOrElse { return CompletableFuture.failedFuture(it) }
 
     logger.trace { "Sending${if (after > 0) " after $after ms" else ""} to topic '$topic' with key '$key': '$message'" }
 
-    @Suppress("UNCHECKED_CAST")
     return producer
         .newMessage()
-        .value(message.envelope() as S)
+        .value(envelope)
         .also {
           if (key != null) {
             it.key(key)

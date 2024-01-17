@@ -26,12 +26,11 @@ package io.infinitic.pulsar
 import io.infinitic.common.clients.messages.ClientMessage
 import io.infinitic.common.data.MillisDuration
 import io.infinitic.common.fixtures.TestFactory
-import io.infinitic.common.messages.Envelope
 import io.infinitic.common.messages.Message
 import io.infinitic.common.tasks.data.ServiceName
-import io.infinitic.common.tasks.executors.events.TaskCompletedEvent
+import io.infinitic.common.tasks.events.messages.TaskCompletedEvent
 import io.infinitic.common.tasks.executors.messages.ExecuteTask
-import io.infinitic.common.tasks.tags.messages.TaskTagMessage
+import io.infinitic.common.tasks.tags.messages.ServiceTagMessage
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTask
 import io.infinitic.common.workflows.engine.events.WorkflowEventMessage
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
@@ -48,7 +47,6 @@ import io.mockk.mockk
 import io.mockk.slot
 import io.mockk.verify
 import java.util.concurrent.CompletableFuture
-import kotlin.reflect.KClass
 
 class PulsarInfiniticProducerAsyncTests : StringSpec(
     {
@@ -65,6 +63,9 @@ class PulsarInfiniticProducerAsyncTests : StringSpec(
           "producer:" + name + ":" + desc.subscriptionName
 
       val resourceManager = mockk<ResourceManager> {
+        every {
+          topicFullName()
+        }
         every {
           getTopicName(capture(nameSlot), capture(descSlot))
         } answers { topicName(nameSlot.captured, descSlot.captured) }
@@ -89,7 +90,6 @@ class PulsarInfiniticProducerAsyncTests : StringSpec(
 
         every {
           sendAsync(
-              schemaClass = any<KClass<Envelope<Message>>>(),
               message = any<Message>(),
               after = any<MillisDuration>(),
               topic = any<String>(),
@@ -210,7 +210,7 @@ class PulsarInfiniticProducerAsyncTests : StringSpec(
       }
 
       "should init task-tag topic before sending a message to it" {
-        val message = TestFactory.random<TaskTagMessage>()
+        val message = TestFactory.random<ServiceTagMessage>()
         infiniticProducerAsync.sendToTaskTagAsync(message)
 
         val name = message.serviceName.toString()

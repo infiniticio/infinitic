@@ -35,6 +35,7 @@ dependencies {
 
   implementation(project(":infinitic-autoclose"))
   implementation(project(":infinitic-transport"))
+  implementation(project(":infinitic-events"))
   implementation(project(":infinitic-task-executor"))
   implementation(project(":infinitic-workflow-engine"))
   implementation(project(":infinitic-workflow-task"))

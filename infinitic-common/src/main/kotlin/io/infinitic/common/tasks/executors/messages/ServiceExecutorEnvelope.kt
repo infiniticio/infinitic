@@ -22,6 +22,7 @@
  */
 package io.infinitic.common.tasks.executors.messages
 
+import com.github.avrokotlin.avro4k.AvroName
 import com.github.avrokotlin.avro4k.AvroNamespace
 import io.infinitic.common.messages.Envelope
 import io.infinitic.common.serDe.avro.AvroSerDe
@@ -32,11 +33,12 @@ import org.apache.avro.Schema
 
 @Serializable
 @AvroNamespace("io.infinitic.tasks.executor")
-data class TaskExecutorEnvelope(
+@AvroName("TaskExecutorEnvelope")
+data class ServiceExecutorEnvelope(
   @SerialName("taskName") private val serviceName: ServiceName,
-  @AvroNamespace("io.infinitic.tasks.executor") private val type: TaskExecutorMessageType,
+  @AvroNamespace("io.infinitic.tasks.executor") private val type: ServiceExecutorMessageType,
   private val executeTask: ExecuteTask? = null,
-) : Envelope<TaskExecutorMessage> {
+) : Envelope<ServiceExecutorMessage> {
   init {
     val noNull = listOfNotNull(
         executeTask,
@@ -48,10 +50,10 @@ data class TaskExecutorEnvelope(
   }
 
   companion object {
-    fun from(msg: TaskExecutorMessage) = when (msg) {
-      is ExecuteTask -> TaskExecutorEnvelope(
+    fun from(msg: ServiceExecutorMessage) = when (msg) {
+      is ExecuteTask -> ServiceExecutorEnvelope(
           serviceName = msg.serviceName,
-          type = TaskExecutorMessageType.EXECUTE_TASK,
+          type = ServiceExecutorMessageType.EXECUTE_TASK,
           executeTask = msg,
       )
     }
@@ -64,9 +66,9 @@ data class TaskExecutorEnvelope(
     val writerSchema = AvroSerDe.currentSchema(serializer())
   }
 
-  override fun message(): TaskExecutorMessage =
+  override fun message(): ServiceExecutorMessage =
       when (type) {
-        TaskExecutorMessageType.EXECUTE_TASK -> executeTask
+        ServiceExecutorMessageType.EXECUTE_TASK -> executeTask
       }!!
 
   fun toByteArray() = AvroSerDe.writeBinary(this, serializer())

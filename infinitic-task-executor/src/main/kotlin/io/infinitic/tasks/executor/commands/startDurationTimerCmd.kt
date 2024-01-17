@@ -54,7 +54,7 @@ internal fun CoroutineScope.startDurationTimerCmd(
   // The duration is offset by the time spent in the workflow task
   // todo: Check if there is a way not to use MillisInstant.now()
   launch {
-    producer.sendToWorkflowEngine(
+    producer.sendToWorkflowEngineAfter(
         timerCompleted,
         workflowTaskInstant + command.duration - MillisInstant.now(),
     )
