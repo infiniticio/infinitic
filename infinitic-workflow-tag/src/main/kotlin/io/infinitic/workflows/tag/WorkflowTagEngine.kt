@@ -29,6 +29,10 @@ import io.infinitic.common.data.MillisInstant
 import io.infinitic.common.emitters.EmitterName
 import io.infinitic.common.exceptions.thisShouldNotHappen
 import io.infinitic.common.tasks.executors.errors.WorkflowMethodTimedOutError
+import io.infinitic.common.topics.ClientTopic
+import io.infinitic.common.topics.DelayedWorkflowEngineTopic
+import io.infinitic.common.topics.WorkflowCmdTopic
+import io.infinitic.common.topics.WorkflowTagTopic
 import io.infinitic.common.transport.InfiniticProducerAsync
 import io.infinitic.common.transport.LoggedInfiniticProducer
 import io.infinitic.common.workflows.data.methodRuns.WorkflowMethodId
@@ -96,7 +100,7 @@ class WorkflowTagEngine(
       // this workflow instance does not exist yet
       0 -> {
         // provided tags
-        message.workflowTags.map { tag ->
+        message.workflowTags.forEach { tag ->
           val addTagToWorkflow = AddTagToWorkflow(
               workflowName = message.workflowName,
               workflowTag = tag,
@@ -107,7 +111,7 @@ class WorkflowTagEngine(
 
           when (tag) {
             message.workflowTag -> addTagToWorkflow(addTagToWorkflow)
-            else -> launch { producer.sendToWorkflowTag(addTagToWorkflow) }
+            else -> launch { with(producer) { addTagToWorkflow.sendTo(WorkflowTagTopic) } }
           }
         }
         // dispatch workflow message
@@ -127,29 +131,27 @@ class WorkflowTagEngine(
               emitterName = message.emitterName,
               emittedAt = message.emittedAt ?: publishTime,
           )
-          producer.sendToWorkflowCmd(dispatchWorkflow)
+          with(producer) { dispatchWorkflow.sendTo(WorkflowCmdTopic) }
         }
 
         // send global timeout if needed
         val timeout = message.methodTimeout
 
-        if (timeout != null && message.parentWorkflowId != null) {
-          launch {
-            val childMethodTimedOut = ChildMethodTimedOut(
-                childMethodTimedOutError = WorkflowMethodTimedOutError(
-                    workflowName = message.workflowName,
-                    workflowId = message.workflowId,
-                    methodName = message.methodName,
-                    workflowMethodId = WorkflowMethodId.from(message.workflowId),
-                ),
-                workflowName = message.parentWorkflowName ?: thisShouldNotHappen(),
-                workflowId = message.parentWorkflowId ?: thisShouldNotHappen(),
-                workflowMethodId = message.parentWorkflowMethodId ?: thisShouldNotHappen(),
-                emitterName = emitterName,
-                emittedAt = message.emittedAt ?: publishTime,
-            )
-            producer.sendToWorkflowEngineAfter(childMethodTimedOut, timeout)
-          }
+        if (timeout != null && message.parentWorkflowId != null) launch {
+          val childMethodTimedOut = ChildMethodTimedOut(
+              childMethodTimedOutError = WorkflowMethodTimedOutError(
+                  workflowName = message.workflowName,
+                  workflowId = message.workflowId,
+                  methodName = message.methodName,
+                  workflowMethodId = WorkflowMethodId.from(message.workflowId),
+              ),
+              workflowName = message.parentWorkflowName ?: thisShouldNotHappen(),
+              workflowId = message.parentWorkflowId ?: thisShouldNotHappen(),
+              workflowMethodId = message.parentWorkflowMethodId ?: thisShouldNotHappen(),
+              emitterName = emitterName,
+              emittedAt = message.emittedAt ?: publishTime,
+          )
+          with(producer) { childMethodTimedOut.sendTo(DelayedWorkflowEngineTopic, timeout) }
         }
       }
       // Another running workflow instance exist with same custom id
@@ -168,8 +170,7 @@ class WorkflowTagEngine(
                 emitterName = message.emitterName,
                 emittedAt = message.emittedAt ?: publishTime,
             )
-
-            producer.sendToWorkflowCmd(waitWorkflow)
+            with(producer) { waitWorkflow.sendTo(WorkflowCmdTopic) }
           }
         }
 
@@ -209,7 +210,7 @@ class WorkflowTagEngine(
                 emitterName = emitterName,
                 emittedAt = message.emittedAt ?: publishTime,
             )
-            producer.sendToWorkflowCmd(dispatchMethod)
+            with(producer) { dispatchMethod.sendTo(WorkflowCmdTopic) }
           }
 
           // set timeout if any,
@@ -228,7 +229,9 @@ class WorkflowTagEngine(
                   emitterName = emitterName,
                   emittedAt = message.emittedAt ?: publishTime,
               )
-              producer.sendToWorkflowEngineAfter(childMethodTimedOut, message.methodTimeout!!)
+              with(producer) {
+                childMethodTimedOut.sendTo(DelayedWorkflowEngineTopic, message.methodTimeout!!)
+              }
             }
           }
         }
@@ -253,7 +256,7 @@ class WorkflowTagEngine(
               emitterName = emitterName,
               emittedAt = message.emittedAt ?: publishTime,
           )
-          producer.sendToWorkflowCmd(retryWorkflowTask)
+          with(producer) { retryWorkflowTask.sendTo(WorkflowCmdTopic) }
         }
       }
     }
@@ -277,7 +280,7 @@ class WorkflowTagEngine(
                   emitterName = emitterName,
                   emittedAt = message.emittedAt ?: publishTime,
               )
-              producer.sendToWorkflowCmd(retryTasks)
+              with(producer) { retryTasks.sendTo(WorkflowCmdTopic) }
             }
           }
         }
@@ -299,7 +302,7 @@ class WorkflowTagEngine(
                   emitterName = emitterName,
                   emittedAt = message.emittedAt ?: publishTime,
               )
-              producer.sendToWorkflowCmd(completeTimers)
+              with(producer) { completeTimers.sendTo(WorkflowCmdTopic) }
             }
           }
         }
@@ -326,7 +329,7 @@ class WorkflowTagEngine(
                 emitterName = emitterName,
                 emittedAt = message.emittedAt ?: publishTime,
             )
-            producer.sendToWorkflowCmd(cancelWorkflow)
+            with(producer) { cancelWorkflow.sendTo(WorkflowCmdTopic) }
           }
         }
       }
@@ -354,7 +357,7 @@ class WorkflowTagEngine(
                     emitterName = emitterName,
                     emittedAt = message.emittedAt ?: publishTime,
                 )
-                producer.sendToWorkflowCmd(sendSignal)
+                with(producer) { sendSignal.sendTo(WorkflowCmdTopic) }
               }
             }
           }
@@ -379,7 +382,7 @@ class WorkflowTagEngine(
         workflowIds,
         emitterName = emitterName,
     )
-    coroutineScope { producer.sendToClient(workflowIdsByTag) }
+    with(producer) { workflowIdsByTag.sendTo(ClientTopic) }
   }
 
   private fun discardTagWithoutIds(message: WorkflowTagMessage) {

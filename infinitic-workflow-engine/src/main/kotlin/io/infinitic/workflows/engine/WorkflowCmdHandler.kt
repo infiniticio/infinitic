@@ -26,6 +26,7 @@ import io.github.oshai.kotlinlogging.KotlinLogging
 import io.infinitic.common.data.MillisInstant
 import io.infinitic.common.emitters.EmitterName
 import io.infinitic.common.tasks.data.TaskId
+import io.infinitic.common.topics.WorkflowEngineTopic
 import io.infinitic.common.transport.InfiniticProducerAsync
 import io.infinitic.common.transport.LoggedInfiniticProducer
 import io.infinitic.common.utils.IdGenerator
@@ -50,7 +51,7 @@ class WorkflowCmdHandler(producerAsync: InfiniticProducerAsync) {
 
     when (msg) {
       is DispatchNewWorkflow -> dispatchNewWorkflow(msg, publishTime)
-      else -> producer.sendToWorkflowEngine(msg)
+      else -> with(producer) { msg.sendTo(WorkflowEngineTopic) }
     }
 
     msg.logTrace { "Processed $msg" }
@@ -71,8 +72,8 @@ class WorkflowCmdHandler(producerAsync: InfiniticProducerAsync) {
         )
 
         // first we send to workflow-engine
-        producer.sendToWorkflowEngine(dispatchNewWorkflow)
-
+        with(producer) { dispatchNewWorkflow.sendTo(WorkflowEngineTopic) }
+        
         // The workflowTask is sent only after the previous message,
         // to prevent a possible race condition where the outcome of the workflowTask
         // commands arrives before the engine is made aware of them by the previous message.

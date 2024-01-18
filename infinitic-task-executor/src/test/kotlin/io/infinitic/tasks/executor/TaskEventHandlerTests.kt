@@ -89,7 +89,10 @@ class TaskEventHandlerTests :
             capture(workflowEngineSlot).sendToAsync(WorkflowEngineTopic)
           } returns completed()
           every {
-            capture(workflowEngineSlot).sendToAsync(DelayedWorkflowEngineTopic, capture(afterSlot))
+            capture(workflowEngineSlot).sendToAsync(
+                DelayedWorkflowEngineTopic,
+                capture(afterSlot),
+            )
           } returns completed()
         }
 

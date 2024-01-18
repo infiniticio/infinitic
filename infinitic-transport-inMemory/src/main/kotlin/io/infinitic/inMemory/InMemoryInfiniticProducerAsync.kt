@@ -64,9 +64,7 @@ class InMemoryInfiniticProducerAsync(private val channels: InMemoryChannels) :
     WorkflowEventsTopic -> channels.forWorkflowEvent(WorkflowName(message.entity()))
     WorkflowServiceExecutorTopic -> channels.forWorkflowTaskExecutor(WorkflowName(message.entity()))
     DelayedWorkflowServiceExecutorTopic -> channels.forDelayedWorkflowTaskExecutor(
-        WorkflowName(
-            message.entity(),
-        ),
+        WorkflowName(message.entity()),
     )
 
     WorkflowServiceEventsTopic -> channels.forWorkflowTaskEvents(WorkflowName(message.entity()))
@@ -78,16 +76,16 @@ class InMemoryInfiniticProducerAsync(private val channels: InMemoryChannels) :
     NamingTopic -> thisShouldNotHappen()
   } as Channel<Any>
 
-  override fun <T : Message> T.sendToAsync(
+  override fun <T : Message> internalSendToAsync(
+    message: T,
     topic: Topic<T>,
     after: MillisDuration
   ): CompletableFuture<Unit> {
     val msg: Any = when (after > 0) {
-      true -> DelayedMessage(this, after)
-      false -> this
+      true -> DelayedMessage(message, after)
+      false -> message
     }
-
-    val channel = topic.channelForMessage(this)
+    val channel = topic.channelForMessage(message)
     logger.debug { "Channel ${channel.id}: sending $msg" }
     val future = with(channels) { channel.sendAsync(msg) }
     logger.trace { "Channel ${channel.id}: sent" }

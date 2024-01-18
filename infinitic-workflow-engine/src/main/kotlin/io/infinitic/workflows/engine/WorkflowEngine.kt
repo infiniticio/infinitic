@@ -29,6 +29,9 @@ import io.infinitic.common.data.MillisInstant
 import io.infinitic.common.emitters.EmitterName
 import io.infinitic.common.exceptions.thisShouldNotHappen
 import io.infinitic.common.tasks.executors.errors.MethodUnknownError
+import io.infinitic.common.topics.ClientTopic
+import io.infinitic.common.topics.WorkflowEngineTopic
+import io.infinitic.common.topics.WorkflowTagTopic
 import io.infinitic.common.transport.InfiniticProducer
 import io.infinitic.common.transport.InfiniticProducerAsync
 import io.infinitic.common.transport.LoggedInfiniticProducer
@@ -163,7 +166,7 @@ class WorkflowEngine(
               emitterName = EmitterName(producer.name),
               emittedAt = state.runningWorkflowTaskInstant,
           )
-          launch { producer.sendToWorkflowTag(removeTagFromWorkflow) }
+          launch { with(producer) { removeTagFromWorkflow.sendTo(WorkflowTagTopic) } }
         }
       }
 
@@ -194,7 +197,7 @@ class WorkflowEngine(
               message.workflowMethodId,
               emitterName = emitterName,
           )
-          producer.sendToClient(methodUnknown)
+          with(producer) { methodUnknown.sendTo(ClientTopic) }
         }
         // a workflow wants to dispatch a method on an unknown workflow
         if (message.parentWorkflowId != null && message.parentWorkflowId != message.workflowId) launch {
@@ -211,8 +214,7 @@ class WorkflowEngine(
               emitterName = emitterName,
               emittedAt = message.emittedAt,
           )
-
-          producer.sendToWorkflowEngine(childMethodFailed)
+          with(producer) { childMethodFailed.sendTo(WorkflowEngineTopic) }
         }
       }
 
@@ -224,7 +226,7 @@ class WorkflowEngine(
             message.workflowMethodId,
             emitterName = emitterName,
         )
-        producer.sendToClient(methodUnknown)
+        with(producer) { methodUnknown.sendTo(ClientTopic) }
       }
 
 

@@ -29,6 +29,7 @@ import io.infinitic.clients.InfiniticClient
 import io.infinitic.clients.InfiniticClientInterface
 import io.infinitic.common.data.MillisInstant
 import io.infinitic.common.messages.Message
+import io.infinitic.common.topics.WorkflowEngineTopic
 import io.infinitic.common.transport.InfiniticConsumerAsync
 import io.infinitic.common.transport.InfiniticProducerAsync
 import io.infinitic.common.transport.LoggedInfiniticProducer
@@ -152,7 +153,7 @@ class InfiniticWorker(
       // WORKFLOW-DELAY
       futures.addIfNotDone(
           consumerAsync.startDelayedWorkflowEngineConsumerAsync(
-              handler = { msg, _ -> delayedWorkflowProducer.sendToWorkflowEngine(msg) },
+              handler = { msg, _ -> with(delayedWorkflowProducer) { msg.sendTo(WorkflowEngineTopic) } },
               beforeDlq = logMessageSentToDLQ,
               workflowName = it.key,
               concurrency = it.value.concurrency,

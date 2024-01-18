@@ -26,6 +26,9 @@ import io.infinitic.common.data.MillisInstant
 import io.infinitic.common.emitters.EmitterName
 import io.infinitic.common.exceptions.thisShouldNotHappen
 import io.infinitic.common.tasks.executors.errors.WorkflowMethodTimedOutError
+import io.infinitic.common.topics.DelayedWorkflowEngineTopic
+import io.infinitic.common.topics.WorkflowCmdTopic
+import io.infinitic.common.topics.WorkflowTagTopic
 import io.infinitic.common.transport.InfiniticProducer
 import io.infinitic.common.workflows.data.commands.DispatchNewWorkflowCommand
 import io.infinitic.common.workflows.data.commands.DispatchNewWorkflowPastCommand
@@ -72,22 +75,24 @@ internal fun CoroutineScope.dispatchNewWorkflowCmd(
           emitterName = emitterName,
           emittedAt = workflowTaskInstant,
       )
-      launch { producer.sendToWorkflowCmd(dispatchWorkflow) }
+      launch { with(producer) { dispatchWorkflow.sendTo(WorkflowCmdTopic) } }
 
       // add provided tags
       dispatchWorkflow.workflowTags.forEach {
-        val addTagToWorkflow = AddTagToWorkflow(
-            workflowName = dispatchWorkflow.workflowName,
-            workflowTag = it,
-            workflowId = workflowId,
-            emitterName = emitterName,
-            emittedAt = workflowTaskInstant,
-        )
-        launch { producer.sendToWorkflowTag(addTagToWorkflow) }
+        launch {
+          val addTagToWorkflow = AddTagToWorkflow(
+              workflowName = dispatchWorkflow.workflowName,
+              workflowTag = it,
+              workflowId = workflowId,
+              emitterName = emitterName,
+              emittedAt = workflowTaskInstant,
+          )
+          with(producer) { addTagToWorkflow.sendTo(WorkflowTagTopic) }
+        }
       }
     }
 
-    1 -> {
+    1 -> launch {
       // send to workflow tag engine
       val dispatchWorkflowByCustomId = DispatchWorkflowByCustomId(
           workflowName = workflowName,
@@ -106,7 +111,7 @@ internal fun CoroutineScope.dispatchNewWorkflowCmd(
           emitterName = emitterName,
           emittedAt = workflowTaskInstant,
       )
-      launch { producer.sendToWorkflowTag(dispatchWorkflowByCustomId) }
+      with(producer) { dispatchWorkflowByCustomId.sendTo(WorkflowTagTopic) }
     }
     // this must be excluded from workflow task
     else -> thisShouldNotHappen()
@@ -116,19 +121,21 @@ internal fun CoroutineScope.dispatchNewWorkflowCmd(
   val timeout = command.methodTimeout
 
   if (timeout != null) {
-    val childMethodTimedOut = ChildMethodTimedOut(
-        workflowId = currentWorkflow.workflowId,
-        workflowName = currentWorkflow.workflowName,
-        workflowMethodId = currentWorkflow.workflowMethodId,
-        childMethodTimedOutError = WorkflowMethodTimedOutError(
-            workflowName = workflowName,
-            workflowId = workflowId,
-            methodName = methodName,
-            workflowMethodId = WorkflowMethodId.from(workflowId),
-        ),
-        emitterName = emitterName,
-        emittedAt = workflowTaskInstant + timeout,
-    )
-    launch { producer.sendToWorkflowEngineAfter(childMethodTimedOut, timeout) }
+    launch {
+      val childMethodTimedOut = ChildMethodTimedOut(
+          workflowId = currentWorkflow.workflowId,
+          workflowName = currentWorkflow.workflowName,
+          workflowMethodId = currentWorkflow.workflowMethodId,
+          childMethodTimedOutError = WorkflowMethodTimedOutError(
+              workflowName = workflowName,
+              workflowId = workflowId,
+              methodName = methodName,
+              workflowMethodId = WorkflowMethodId.from(workflowId),
+          ),
+          emitterName = emitterName,
+          emittedAt = workflowTaskInstant + timeout,
+      )
+      with(producer) { childMethodTimedOut.sendTo(DelayedWorkflowEngineTopic, timeout) }
+    }
   }
 }

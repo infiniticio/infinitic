@@ -57,9 +57,9 @@ class InfiniticClient(
   producerAsync: InfiniticProducerAsync
 ) : InfiniticClientInterface {
 
-  private val producer = LoggedInfiniticProducer(javaClass.name, producerAsync)
+  private val producer = LoggedInfiniticProducer(this::class.java.name, producerAsync)
 
-  private val dispatcher = ClientDispatcher(javaClass.name, consumerAsync, producerAsync)
+  private val dispatcher = ClientDispatcher(this::class.java.name, consumerAsync, producerAsync)
 
   override val name by lazy { producerAsync.producerName }
 

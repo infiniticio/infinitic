@@ -24,6 +24,8 @@ package io.infinitic.tasks.executor.commands
 
 import io.infinitic.common.data.MillisInstant
 import io.infinitic.common.emitters.EmitterName
+import io.infinitic.common.topics.WorkflowCmdTopic
+import io.infinitic.common.topics.WorkflowTagTopic
 import io.infinitic.common.transport.InfiniticProducer
 import io.infinitic.common.workflows.data.channels.SignalId
 import io.infinitic.common.workflows.data.commands.SendSignalCommand
@@ -57,9 +59,8 @@ internal fun CoroutineScope.sendSignalCmd(
               emitterName = emitterName,
               emittedAt = workflowTaskInstant,
           )
-
           // dispatch signal on another workflow
-          producer.sendToWorkflowCmd(sendToChannel)
+          with(producer) { sendToChannel.sendTo(WorkflowCmdTopic) }
         }
       }
     }
@@ -79,7 +80,7 @@ internal fun CoroutineScope.sendSignalCmd(
             emittedAt = workflowTaskInstant,
         )
         // Note: tag engine MUST ignore this message for Id = parentWorkflowId
-        producer.sendToWorkflowTag(sendSignalByTag)
+        with(producer) { sendSignalByTag.sendTo(WorkflowTagTopic) }
       }
     }
   }

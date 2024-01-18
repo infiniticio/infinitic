@@ -24,6 +24,7 @@ package io.infinitic.tasks.executor.commands
 
 import io.infinitic.common.data.MillisInstant
 import io.infinitic.common.emitters.EmitterName
+import io.infinitic.common.topics.DelayedWorkflowEngineTopic
 import io.infinitic.common.transport.InfiniticProducer
 import io.infinitic.common.workflows.data.commands.StartInstantTimerCommand
 import io.infinitic.common.workflows.data.commands.StartInstantTimerPastCommand
@@ -37,7 +38,7 @@ internal fun CoroutineScope.startInstantTimerCmq(
   current: TaskEventHandler.CurrentWorkflow,
   pastCommand: StartInstantTimerPastCommand,
   producer: InfiniticProducer
-) {
+) = launch {
   val emitterName = EmitterName(producer.name)
   val command: StartInstantTimerCommand = pastCommand.command
 
@@ -51,7 +52,6 @@ internal fun CoroutineScope.startInstantTimerCmq(
   )
 
   // todo: Check if there is a way not to use MillisInstant.now()
-  launch {
-    producer.sendToWorkflowEngineAfter(timerCompleted, command.instant - MillisInstant.now())
-  }
+  val duration = timerCompleted.emittedAt!! - MillisInstant.now()
+  with(producer) { timerCompleted.sendTo(DelayedWorkflowEngineTopic, duration) }
 }

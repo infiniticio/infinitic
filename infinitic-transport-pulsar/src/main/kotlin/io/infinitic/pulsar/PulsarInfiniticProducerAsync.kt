@@ -29,7 +29,6 @@ import io.infinitic.common.topics.Topic
 import io.infinitic.common.transport.InfiniticProducerAsync
 import io.infinitic.pulsar.producers.Producer
 import io.infinitic.pulsar.resources.PulsarResources
-import io.infinitic.pulsar.resources.isDelayed
 import java.util.concurrent.CompletableFuture
 
 class PulsarInfiniticProducerAsync(
@@ -54,14 +53,13 @@ class PulsarInfiniticProducerAsync(
       suggestedName = value
     }
 
-  override fun <T : Message> T.sendToAsync(
+  override fun <T : Message> internalSendToAsync(
+    message: T,
     topic: Topic<T>,
     after: MillisDuration
   ): CompletableFuture<Unit> {
-    require((after <= 0) || topic.isDelayed)
+    val topicFullName = with(pulsarResources) { topic.forMessage(message) }
 
-    val topicFullName = with(pulsarResources) { topic.forMessage(this@sendToAsync) }
-
-    return producer.sendAsync(this, after, topicFullName, producerName, key = key())
+    return producer.sendAsync(message, after, topicFullName, producerName, key = message.key())
   }
 }

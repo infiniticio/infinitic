@@ -22,7 +22,6 @@
  */
 package io.infinitic.common.transport
 
-import io.infinitic.common.clients.messages.ClientMessage
 import io.infinitic.common.data.MillisDuration
 import io.infinitic.common.messages.Message
 import io.infinitic.common.tasks.events.messages.ServiceEventMessage
@@ -30,8 +29,6 @@ import io.infinitic.common.tasks.executors.messages.ServiceExecutorMessage
 import io.infinitic.common.tasks.tags.messages.ServiceTagMessage
 import io.infinitic.common.topics.Topic
 import io.infinitic.common.workflows.engine.events.WorkflowEventMessage
-import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
-import io.infinitic.common.workflows.tags.messages.WorkflowTagMessage
 
 interface InfiniticProducer {
   /**
@@ -41,7 +38,7 @@ interface InfiniticProducer {
 
   suspend fun <T : Message> T.sendTo(
     topic: Topic<T>,
-    after: MillisDuration? = null
+    after: MillisDuration = MillisDuration(0)
   )
 
   /**
@@ -49,33 +46,33 @@ interface InfiniticProducer {
    *
    * @param message the message to send
    */
-  suspend fun sendToClient(message: ClientMessage)
+  //suspend fun sendToClient(message: ClientMessage)
 
   /**
    * Synchronously send a message to a workflow tag engine
    *
    * @param message the message to send
    */
-  suspend fun sendToWorkflowTag(message: WorkflowTagMessage)
+  //suspend fun sendToWorkflowTag(message: WorkflowTagMessage)
 
   /**
    * Synchronously send a message to a workflow-cmd
    *
    * @param message the message to send
    */
-  suspend fun sendToWorkflowCmd(message: WorkflowEngineMessage)
+  //suspend fun sendToWorkflowCmd(message: WorkflowEngineMessage)
 
   /**
    * Synchronously send a message to a workflow-engine
    *
    * @param message the message to send
    */
-  suspend fun sendToWorkflowEngine(message: WorkflowEngineMessage)
+  //suspend fun sendToWorkflowEngine(message: WorkflowEngineMessage)
 
-  suspend fun sendToWorkflowEngineAfter(
-    message: WorkflowEngineMessage,
-    after: MillisDuration
-  )
+//  suspend fun sendToWorkflowEngineAfter(
+//    message: WorkflowEngineMessage,
+//    after: MillisDuration
+//  )
 
   /**
    * Synchronously send a message to workflow-events

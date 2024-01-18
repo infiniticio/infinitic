@@ -54,22 +54,6 @@ import org.apache.pulsar.client.api.Schema
 import kotlin.reflect.KClass
 
 /**
- * Property indicating whether a topic type receives delayed message
- * This is used to set up TTLInSeconds which mush be much higher for delayed messages
- *
- * @return `true` if the topic is delayed, `false` otherwise.
- */
-internal val Topic<*>.isDelayed
-  get() = when (this) {
-    DelayedWorkflowEngineTopic,
-    DelayedWorkflowServiceExecutorTopic,
-    DelayedServiceExecutorTopic
-    -> true
-
-    else -> false
-  }
-
-/**
  * Determines whether a topic type is partitioned.
  * This is used when creating a topic
  *

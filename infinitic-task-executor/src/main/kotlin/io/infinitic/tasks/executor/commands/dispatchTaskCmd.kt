@@ -29,6 +29,7 @@ import io.infinitic.common.tasks.data.TaskRetryIndex
 import io.infinitic.common.tasks.executors.errors.TaskTimedOutError
 import io.infinitic.common.tasks.executors.messages.ExecuteTask
 import io.infinitic.common.tasks.tags.messages.AddTagToTask
+import io.infinitic.common.topics.DelayedWorkflowEngineTopic
 import io.infinitic.common.transport.InfiniticProducer
 import io.infinitic.common.workflows.data.commands.DispatchTaskPastCommand
 import io.infinitic.common.workflows.engine.messages.TaskTimedOut
@@ -82,7 +83,7 @@ internal fun CoroutineScope.dispatchTaskCmd(
   // send global task timeout if any
   val timeout = pastCommand.command.methodTimeout
 
-  if (timeout != null) {
+  if (timeout != null) launch {
     val taskTimedOut = with(pastCommand.command) {
       TaskTimedOut(
           taskTimedOutError = TaskTimedOutError(
@@ -97,6 +98,6 @@ internal fun CoroutineScope.dispatchTaskCmd(
           emittedAt = workflowTaskInstant + timeout,
       )
     }
-    launch { producer.sendToWorkflowEngineAfter(taskTimedOut, timeout) }
+    with(producer) { taskTimedOut.sendTo(DelayedWorkflowEngineTopic, timeout) }
   }
 }

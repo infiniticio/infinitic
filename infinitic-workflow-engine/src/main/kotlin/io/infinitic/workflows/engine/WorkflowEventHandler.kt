@@ -25,6 +25,8 @@ package io.infinitic.workflows.engine
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.infinitic.common.data.MillisInstant
 import io.infinitic.common.emitters.EmitterName
+import io.infinitic.common.topics.ClientTopic
+import io.infinitic.common.topics.WorkflowEngineTopic
 import io.infinitic.common.transport.InfiniticProducerAsync
 import io.infinitic.common.transport.LoggedInfiniticProducer
 import io.infinitic.common.workflows.engine.events.WorkflowCanceledEvent
@@ -69,14 +71,14 @@ class WorkflowEventHandler(producerAsync: InfiniticProducerAsync) {
   ) = coroutineScope {
     // tell waiting clients
     msg.getEventsForClient(emitterName).forEach {
-      launch { producer.sendToClient(it) }
+      launch { with(producer) { it.sendTo(ClientTopic) } }
     }
 
     // tell parent workflow (except itself) if any
     val event = msg.getEventForParentWorkflow(emitterName, publishTime)
 
     if (event != null && !msg.isItsOwnParent()) launch {
-      producer.sendToWorkflowEngine(event)
+      with(producer) { event.sendTo(WorkflowEngineTopic) }
     }
   }
 
@@ -86,14 +88,14 @@ class WorkflowEventHandler(producerAsync: InfiniticProducerAsync) {
   ) = coroutineScope {
     // tell waiting clients
     msg.getEventsForClient(emitterName).forEach {
-      launch { producer.sendToClient(it) }
+      launch { with(producer) { it.sendTo(ClientTopic) } }
     }
 
     // tell parent workflow (except itself) if any
     val event = msg.getEventForParentWorkflow(emitterName, publishTime)
 
     if (event != null && !msg.isItsOwnParent()) launch {
-      producer.sendToWorkflowEngine(event)
+      with(producer) { event.sendTo(WorkflowEngineTopic) }
     }
   }
 
@@ -103,14 +105,14 @@ class WorkflowEventHandler(producerAsync: InfiniticProducerAsync) {
   ) = coroutineScope {
     // tell waiting clients
     msg.getEventsForClient(emitterName).forEach {
-      launch { producer.sendToClient(it) }
+      launch { with(producer) { it.sendTo(ClientTopic) } }
     }
 
     // tell parent workflow (except itself) if any
     val event = msg.getEventForParentWorkflow(emitterName, publishTime)
 
     if (event != null && !msg.isItsOwnParent()) launch {
-      producer.sendToWorkflowEngine(event)
+      with(producer) { event.sendTo(WorkflowEngineTopic) }
     }
   }
 
@@ -120,14 +122,14 @@ class WorkflowEventHandler(producerAsync: InfiniticProducerAsync) {
   ) = coroutineScope {
     // tell waiting clients
     msg.getEventsForClient(emitterName).forEach {
-      launch { producer.sendToClient(it) }
+      launch { with(producer) { it.sendTo(ClientTopic) } }
     }
 
     // tell parent workflow (except itself) if any
     val event = msg.getEventForParentWorkflow(emitterName, publishTime)
 
     if (event != null && !msg.isItsOwnParent()) launch {
-      producer.sendToWorkflowEngine(event)
+      with(producer) { event.sendTo(WorkflowEngineTopic) }
     }
   }
 

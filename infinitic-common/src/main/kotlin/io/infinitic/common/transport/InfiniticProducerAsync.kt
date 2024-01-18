@@ -25,6 +25,8 @@ package io.infinitic.common.transport
 import io.infinitic.common.data.MillisDuration
 import io.infinitic.common.messages.Message
 import io.infinitic.common.topics.Topic
+import io.infinitic.common.topics.isDelayed
+import io.infinitic.common.topics.withoutDelay
 import java.util.concurrent.CompletableFuture
 
 /**
@@ -38,6 +40,13 @@ interface InfiniticProducerAsync {
    */
   var producerName: String
 
+
+  fun <T : Message> internalSendToAsync(
+    message: T,
+    topic: Topic<T>,
+    after: MillisDuration = MillisDuration(0)
+  ): CompletableFuture<Unit>
+
   /**
    * Sends a message to the specified topic asynchronously.
    *
@@ -48,5 +57,12 @@ interface InfiniticProducerAsync {
   fun <T : Message> T.sendToAsync(
     topic: Topic<T>,
     after: MillisDuration = MillisDuration(0)
-  ): CompletableFuture<Unit>
+  ): CompletableFuture<Unit> {
+    require(after <= 0 || topic.isDelayed) { "Trying to send to $topic with a delay $after" }
+
+    return when {
+      after <= 0 -> internalSendToAsync(this, topic.withoutDelay, MillisDuration(0))
+      else -> internalSendToAsync(this, topic, after)
+    }
+  }
 }

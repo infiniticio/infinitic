@@ -24,6 +24,7 @@ package io.infinitic.pulsar.resources
 
 import io.infinitic.common.messages.Message
 import io.infinitic.common.topics.Topic
+import io.infinitic.common.topics.isDelayed
 import io.infinitic.pulsar.admin.PulsarInfiniticAdmin
 import io.infinitic.pulsar.config.Pulsar
 import io.infinitic.pulsar.config.policies.Policies

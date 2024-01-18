@@ -108,8 +108,16 @@ private class WorkflowTagEngineTests :
           coVerifySequence {
             workflowTagStorage.getWorkflowIds(msgIn.workflowTag, msgIn.workflowName)
             producerAsync.producerName
-            with(producerAsync) { ofType<RetryWorkflowTask>().sendToAsync(WorkflowEngineTopic) }
-            with(producerAsync) { ofType<RetryWorkflowTask>().sendToAsync(WorkflowEngineTopic) }
+            with(producerAsync) {
+              ofType<RetryWorkflowTask>().sendToAsync(
+                  WorkflowEngineTopic,
+              )
+            }
+            with(producerAsync) {
+              ofType<RetryWorkflowTask>().sendToAsync(
+                  WorkflowEngineTopic,
+              )
+            }
           }
           confirmVerified()
           // checking last message

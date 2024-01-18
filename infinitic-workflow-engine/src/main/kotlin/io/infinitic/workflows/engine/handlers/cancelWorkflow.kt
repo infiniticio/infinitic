@@ -25,6 +25,8 @@ package io.infinitic.workflows.engine.handlers
 import io.infinitic.common.data.MillisInstant
 import io.infinitic.common.emitters.EmitterName
 import io.infinitic.common.exceptions.thisShouldNotHappen
+import io.infinitic.common.topics.WorkflowEngineTopic
+import io.infinitic.common.topics.WorkflowTagTopic
 import io.infinitic.common.transport.InfiniticProducer
 import io.infinitic.common.workflows.data.commands.DispatchMethodOnRunningWorkflowCommand
 import io.infinitic.common.workflows.data.commands.DispatchNewWorkflowCommand
@@ -113,7 +115,7 @@ private fun CoroutineScope.cancelWorkflowMethod(
                 emitterName = emitterName,
                 emittedAt = emittedAt,
             )
-            producer.sendToWorkflowEngine(cancelWorkflow)
+            with(producer) { cancelWorkflow.sendTo(WorkflowEngineTopic) }
           }
 
           command.workflowTag != null -> launch {
@@ -125,7 +127,7 @@ private fun CoroutineScope.cancelWorkflowMethod(
                 emitterName = emitterName,
                 emittedAt = emittedAt,
             )
-            producer.sendToWorkflowTag(cancelWorkflowByTag)
+            with(producer) { cancelWorkflowByTag.sendTo(WorkflowTagTopic) }
           }
 
           else -> thisShouldNotHappen()
@@ -141,7 +143,7 @@ private fun CoroutineScope.cancelWorkflowMethod(
             emitterName = emitterName,
             emittedAt = emittedAt,
         )
-        producer.sendToWorkflowEngine(cancelWorkflow)
+        with(producer) { cancelWorkflow.sendTo(WorkflowEngineTopic) }
       }
 
       else -> Unit

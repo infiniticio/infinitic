@@ -109,7 +109,7 @@ internal class ClientDispatcher(
 ) : ProxyDispatcher, Closeable {
   private val logger = KotlinLogging.logger(logName)
 
-  private val producer = LoggedInfiniticProducer(this::class.java.name, producerAsync)
+  private val producer = LoggedInfiniticProducer(logName, producerAsync)
 
   // Name of the client
   private val emitterName by lazy { EmitterName(producer.name) }
@@ -490,6 +490,13 @@ internal class ClientDispatcher(
               emittedAt = null,
           )
         }
+
+        // first, we send all tags in parallel
+        val futures = workflowTags.map {
+          with(producerAsync) { it.sendToAsync(WorkflowTagTopic) }
+        }.toTypedArray()
+        CompletableFuture.allOf(*futures).join()
+
         // dispatch workflow message
         val dispatchWorkflow = DispatchNewWorkflow(
             workflowName = deferred.workflowName,
@@ -506,12 +513,6 @@ internal class ClientDispatcher(
             emitterName = emitterName,
             emittedAt = null,
         )
-
-        // first, we send all tags in parallel
-        val futures = workflowTags.map {
-          with(producerAsync) { it.sendToAsync(WorkflowTagTopic) }
-        }.toTypedArray()
-        CompletableFuture.allOf(*futures).join()
 
         // workflow message is dispatched after tags
         // to avoid a potential race condition if the engine remove tags

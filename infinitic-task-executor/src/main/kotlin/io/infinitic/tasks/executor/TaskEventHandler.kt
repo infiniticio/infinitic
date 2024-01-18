@@ -31,6 +31,8 @@ import io.infinitic.common.tasks.events.messages.TaskCompletedEvent
 import io.infinitic.common.tasks.events.messages.TaskFailedEvent
 import io.infinitic.common.tasks.events.messages.TaskRetriedEvent
 import io.infinitic.common.tasks.events.messages.TaskStartedEvent
+import io.infinitic.common.topics.ClientTopic
+import io.infinitic.common.topics.WorkflowEngineTopic
 import io.infinitic.common.transport.InfiniticProducerAsync
 import io.infinitic.common.transport.LoggedInfiniticProducer
 import io.infinitic.common.workers.config.WorkflowVersion
@@ -78,11 +80,11 @@ class TaskEventHandler(producerAsync: InfiniticProducerAsync) {
       coroutineScope {
         // send to parent client
         msg.getEventForClient(emitterName)?.let {
-          launch { producer.sendToClient(it) }
+          launch { with(producer) { it.sendTo(ClientTopic) } }
         }
         // send to parent workflow
         msg.getEventForWorkflow(emitterName, publishTime)?.let {
-          launch { producer.sendToWorkflowEngine(it) }
+          launch { with(producer) { it.sendTo(WorkflowEngineTopic) } }
         }
       }
 
@@ -90,11 +92,11 @@ class TaskEventHandler(producerAsync: InfiniticProducerAsync) {
     coroutineScope {
       // send to parent client
       msg.getEventForClient(emitterName)?.let {
-        launch { producer.sendToClient(it) }
+        launch { with(producer) { it.sendTo(ClientTopic) } }
       }
       // send to parent workflow
       msg.getEventForWorkflow(emitterName, publishTime)?.let {
-        launch { producer.sendToWorkflowEngine(it) }
+        launch { with(producer) { it.sendTo(WorkflowEngineTopic) } }
       }
       // remove tags
       msg.getEventsForTag(emitterName).forEach {

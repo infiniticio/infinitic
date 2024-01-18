@@ -98,3 +98,34 @@ data object DelayedWorkflowServiceExecutorTopic : WorkflowTopic<ServiceExecutorM
 
 data object WorkflowServiceEventsTopic : WorkflowTopic<ServiceEventMessage>()
 
+
+/**
+ * Property indicating whether a topic type receives delayed message
+ * This is used to set up TTLInSeconds which mush be much higher for delayed messages
+ *
+ * @return `true` if the topic is delayed, `false` otherwise.
+ */
+val Topic<*>.isDelayed
+  get() = when (this) {
+    DelayedWorkflowEngineTopic,
+    DelayedWorkflowServiceExecutorTopic,
+    DelayedServiceExecutorTopic
+    -> true
+
+    else -> false
+  }
+
+/**
+ * Returns a [Topic] without delay. If the current [Topic] is a delayed topic, it returns the corresponding
+ * non-delayed [Topic]. If the current [Topic] is not a delayed topic, it returns itself.
+ *
+ * @return The [Topic] without delay.
+ */
+@Suppress("UNCHECKED_CAST")
+val <S : Message> Topic<S>.withoutDelay
+  get() = when (this) {
+    DelayedWorkflowEngineTopic -> WorkflowEngineTopic
+    DelayedWorkflowServiceExecutorTopic -> WorkflowServiceExecutorTopic
+    DelayedServiceExecutorTopic -> ServiceExecutorTopic
+    else -> this
+  } as Topic<S>
