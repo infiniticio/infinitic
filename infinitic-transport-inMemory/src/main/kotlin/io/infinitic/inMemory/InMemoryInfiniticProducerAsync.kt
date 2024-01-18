@@ -76,7 +76,7 @@ class InMemoryInfiniticProducerAsync(private val channels: InMemoryChannels) :
     NamingTopic -> thisShouldNotHappen()
   } as Channel<Any>
 
-  override fun <T : Message> internalSendToAsync(
+  override suspend fun <T : Message> internalSendToAsync(
     message: T,
     topic: Topic<T>,
     after: MillisDuration
@@ -87,10 +87,10 @@ class InMemoryInfiniticProducerAsync(private val channels: InMemoryChannels) :
     }
     val channel = topic.channelForMessage(message)
     logger.debug { "Channel ${channel.id}: sending $msg" }
-    val future = with(channels) { channel.sendAsync(msg) }
+    channel.send(msg)
     logger.trace { "Channel ${channel.id}: sent" }
 
-    return future
+    return CompletableFuture.completedFuture(Unit)
   }
 
   companion object {

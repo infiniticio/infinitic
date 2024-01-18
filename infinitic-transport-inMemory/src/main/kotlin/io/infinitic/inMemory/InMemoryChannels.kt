@@ -38,8 +38,9 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.future.future
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.job
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import java.util.concurrent.ConcurrentHashMap
 
@@ -48,10 +49,9 @@ class InMemoryChannels : AutoCloseable {
   // Coroutine scope used to receive messages
   private val producingScope = CoroutineScope(Dispatchers.IO)
   private val consumingScope = CoroutineScope(Dispatchers.IO)
-
-  fun <T> Channel<T>.sendAsync(msg: T) = producingScope.future { send(msg) }
-
-  fun <T> runAsync(func: suspend () -> T) = consumingScope.future { func() }
+  suspend fun <T> consume(func: suspend () -> T) = coroutineScope {
+    launch(consumingScope.coroutineContext) { func() }
+  }
 
 
   override fun close() {
