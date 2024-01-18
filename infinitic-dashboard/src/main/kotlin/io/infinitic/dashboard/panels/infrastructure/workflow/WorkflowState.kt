@@ -39,5 +39,6 @@ data class WorkflowState(
   override fun create(name: String, topicsStats: TopicsStats<WorkflowTopic<*>>) =
       WorkflowState(name = name, topicsStats = topicsStats)
 
-  override fun getTopic(topic: WorkflowTopic<*>) = with(pulsarResources) { topic.fullName(name) }
+  override suspend fun getTopic(topic: WorkflowTopic<*>) =
+      with(pulsarResources) { topic.fullName(name) }
 }

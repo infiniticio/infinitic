@@ -38,9 +38,9 @@ data class AllWorkflowsState(
   override fun create(names: JobNames, stats: JobStats) =
       AllWorkflowsState(names = names, stats = stats)
 
-  override fun getNames() = Infinitic.pulsarResources.workflowsName
+  override suspend fun getNames() = Infinitic.pulsarResources.getWorkflowsName()
 
-  override fun getPartitionedStats(name: String): Result<PartitionedTopicStats?> {
+  override suspend fun getPartitionedStats(name: String): Result<PartitionedTopicStats?> {
     val topic =
         with(Infinitic.pulsarResources) { WorkflowTaskExecutorTopic.fullName(name) }
 

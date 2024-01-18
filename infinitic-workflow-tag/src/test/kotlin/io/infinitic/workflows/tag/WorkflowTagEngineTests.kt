@@ -271,8 +271,8 @@ private fun getEngine(
 
   producerAsync = mockk<InfiniticProducerAsync> {
     every { producerName } returns "clientWorkflowTagEngineName"
-    every { capture(clientSlot).sendToAsync(ClientTopic) } returns completed()
-    every { capture(workflowEngineSlot).sendToAsync(WorkflowEngineTopic) } returns completed()
+    coEvery { capture(clientSlot).sendToAsync(ClientTopic) } returns completed()
+    coEvery { capture(workflowEngineSlot).sendToAsync(WorkflowEngineTopic) } returns completed()
   }
 
   return WorkflowTagEngine(workflowTagStorage, producerAsync)

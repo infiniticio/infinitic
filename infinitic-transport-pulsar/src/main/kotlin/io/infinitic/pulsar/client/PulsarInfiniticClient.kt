@@ -28,6 +28,7 @@ import io.infinitic.common.messages.Message
 import io.infinitic.pulsar.consumers.ConsumerConfig
 import io.infinitic.pulsar.producers.ProducerConfig
 import io.infinitic.pulsar.schemas.schemaDefinition
+import kotlinx.coroutines.future.await
 import org.apache.pulsar.client.api.BatcherBuilder
 import org.apache.pulsar.client.api.Consumer
 import org.apache.pulsar.client.api.DeadLetterPolicy
@@ -51,7 +52,7 @@ class PulsarInfiniticClient(private val pulsarClient: PulsarClient) {
   /**
    * Useful to check the uniqueness of a connected producer's name or to provide a unique name
    */
-  fun getUniqueName(namerTopic: String, proposedName: String?): Result<String> {
+  suspend fun getUniqueName(namerTopic: String, proposedName: String?): Result<String> {
     if (::name.isInitialized) return Result.success(name)
 
     // this consumer must stay active until client is closed
@@ -63,7 +64,8 @@ class PulsarInfiniticClient(private val pulsarClient: PulsarClient) {
           .also {
             proposedName?.let { name -> it.producerName(name) }
           }
-          .create()
+          .createAsync()
+          .await()
           .producerName
     } catch (e: PulsarClientException) {
       // if the producer name is already taken

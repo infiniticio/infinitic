@@ -30,6 +30,8 @@ import io.infinitic.dashboard.panels.infrastructure.requests.Loading
 import io.infinitic.dashboard.panels.infrastructure.requests.Request
 import io.infinitic.dashboard.slideovers.Slideover
 import io.infinitic.pulsar.resources.prefix
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.runBlocking
 import kweb.Element
 import kweb.ElementCreator
 import kweb.div
@@ -99,7 +101,11 @@ internal fun ElementCreator<Element>.displayJobStatsTable(
                       state.topicsStats.forEach {
                         val topic = it.key
                         val request = it.value
-                        val topicFullName = with(Infinitic.pulsarResources) { topic.fullName(name) }
+                        val topicFullName = runBlocking(Dispatchers.IO) {
+                          with(Infinitic.pulsarResources) {
+                            topic.fullName(name)
+                          }
+                        }
                         val row = tr()
 
                         when (request) {

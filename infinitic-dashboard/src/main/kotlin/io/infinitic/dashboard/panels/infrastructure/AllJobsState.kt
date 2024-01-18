@@ -73,9 +73,9 @@ abstract class AllJobsState(
 
   abstract fun create(names: JobNames = this.names, stats: JobStats = this.stats): AllJobsState
 
-  abstract fun getNames(): Set<String>
+  abstract suspend fun getNames(): Set<String>
 
-  abstract fun getPartitionedStats(name: String): Result<PartitionedTopicStats?>
+  abstract suspend fun getPartitionedStats(name: String): Result<PartitionedTopicStats?>
 }
 
 @Suppress("UNCHECKED_CAST")

@@ -46,7 +46,6 @@ import org.apache.pulsar.client.api.PulsarClient
 import org.apache.pulsar.client.api.SubscriptionType
 import java.time.Duration
 import java.time.Instant
-import java.util.concurrent.CancellationException
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.atomic.AtomicInteger
@@ -84,13 +83,13 @@ class ConsumerTests : StringSpec(
         }
       }
 
-      fun startAsync(
+      suspend fun startAsync(
         consumer: Consumer,
         handler: suspend (ServiceExecutorMessage, MillisInstant) -> Unit,
         topic: String,
         concurrency: Int,
         withKey: Boolean = false
-      ) = consumer.runAsync(
+      ) = consumer.startConsumerLoop(
           handler = handler,
           beforeDlq = { _, _ -> },
           schema = ServiceExecutorTopic.schema,
@@ -129,19 +128,12 @@ class ConsumerTests : StringSpec(
             }
           }
         }
-
         // start consumers
-        val future = startAsync(consumer, handler, topic, 1)
-
+        startAsync(consumer, handler, topic, 1)
         // send messages
         sendMessage(topic, total)
-
         // wait for scope cancellation
-        try {
-          future.join()
-        } catch (e: CancellationException) {
-          // do nothing
-        }
+        consumer.join()
 
         averageMillisToConsume.shouldBeLessThan(5.0)
       }
@@ -167,19 +159,12 @@ class ConsumerTests : StringSpec(
             }
           }
         }
-
         // start consumers
-        val future = startAsync(consumer, handler, topic, 100)
-
+        startAsync(consumer, handler, topic, 100)
         // send messages
         sendMessage(topic, total)
-
         // wait for scope cancellation
-        try {
-          future.join()
-        } catch (e: CancellationException) {
-          // do nothing
-        }
+        consumer.join()
 
         averageMillisToConsume.shouldBeLessThan(5.0)
       }
@@ -205,19 +190,12 @@ class ConsumerTests : StringSpec(
             }
           }
         }
-
         // start consumers
-        val future = startAsync(consumer, handler, topic, 100, true)
-
+        startAsync(consumer, handler, topic, 100, true)
         // send messages
         sendMessage(topic, total, true)
-
         // wait for scope cancellation
-        try {
-          future.join()
-        } catch (e: CancellationException) {
-          // do nothing
-        }
+        consumer.join()
 
         averageMillisToConsume.shouldBeLessThan(5.0)
       }
@@ -240,24 +218,14 @@ class ConsumerTests : StringSpec(
             messageClosed.add(it)
           }
         }
-
         // start consumers
-        val future = startAsync(consumer, handler, topic, 100)
-
+        startAsync(consumer, handler, topic, 100)
         // send messages
         sendMessage(topic, total)
-
-        later(1000) {
-          //println("Canceling scope")
-          consumer.cancel()
-        }
-
+        // cancel after 0.4s
+        later(400) { consumer.cancel() }
         // wait for scope cancellation
-        try {
-          future.join()
-        } catch (e: CancellationException) {
-          // do nothing
-        }
+        consumer.join()
 
         // for the test to be meaningful, all messages should not have been processed
         messageOpen.count().shouldBeLessThan(total)
@@ -284,24 +252,14 @@ class ConsumerTests : StringSpec(
             messageClosed.add(it)
           }
         }
-
         // start consumers
-        val future = startAsync(consumer, handler, topic, 100, true)
-
+        startAsync(consumer, handler, topic, 100, true)
         // send messages
         sendMessage(topic, total, true)
-
-        later(1000) {
-          //println("Canceling scope")
-          consumer.cancel()
-        }
-
+        // cancel after 1s
+        later(1000) { consumer.cancel() }
         // wait for scope cancellation
-        try {
-          future.join()
-        } catch (e: CancellationException) {
-          // do nothing
-        }
+        consumer.join()
 
         // for the test to be meaningful, all messages should not have been processed
         messageOpen.count().shouldBeLessThan(total)

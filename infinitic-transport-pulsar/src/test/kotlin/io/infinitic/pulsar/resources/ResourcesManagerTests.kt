@@ -29,9 +29,9 @@ import io.infinitic.pulsar.config.policies.Policies
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
 import io.mockk.clearMocks
-import io.mockk.every
+import io.mockk.coEvery
+import io.mockk.coVerifyAll
 import io.mockk.mockk
-import io.mockk.verifyAll
 
 class ResourcesManagerTests : StringSpec(
     {
@@ -54,26 +54,26 @@ class ResourcesManagerTests : StringSpec(
       }
 
       "should delete topic" {
-        every { pulsarInfiniticAdmin.deleteTopic(any()) } returns Result.success(Unit)
+        coEvery { pulsarInfiniticAdmin.deleteTopic(any()) } returns Result.success(Unit)
 
         val topic = TestFactory.random<String>()
         pulsarResources.deleteTopic(topic)
 
-        verifyAll {
+        coVerifyAll {
           pulsarInfiniticAdmin.deleteTopic(topic)
         }
       }
 
       "should be able to init delayed topic even if I can not check tenant and namespace" {
-        every {
+        coEvery {
           pulsarInfiniticAdmin.initTenantOnce(any(), any(), any())
         } returns Result.failure(mockk())
 
-        every {
+        coEvery {
           pulsarInfiniticAdmin.initNamespaceOnce(any(), any())
         } returns Result.failure(mockk())
 
-        every {
+        coEvery {
           pulsarInfiniticAdmin.initTopicOnce(any(), any(), any())
         } returns Result.success(mockk())
 
@@ -85,7 +85,7 @@ class ResourcesManagerTests : StringSpec(
             isDelayed = true,
         ).isSuccess shouldBe true
 
-        verifyAll {
+        coVerifyAll {
           pulsarInfiniticAdmin.initTenantOnce("tenantTest", allowedClusters, adminRoles)
           pulsarInfiniticAdmin.initNamespaceOnce("tenantTest/namespaceTest", policies)
           pulsarInfiniticAdmin.initTopicOnce(topic, true, policies.delayedTTLInSeconds)

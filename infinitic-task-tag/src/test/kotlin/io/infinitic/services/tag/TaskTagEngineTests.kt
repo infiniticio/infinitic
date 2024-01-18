@@ -72,8 +72,8 @@ private fun completed() = CompletableFuture.completedFuture(Unit)
 
 val producerMock = mockk<InfiniticProducerAsync> {
   every { producerName } returns "$workername"
-  every { capture(clientSlot).sendToAsync(ClientTopic) } returns completed()
-  every {
+  coEvery { capture(clientSlot).sendToAsync(ClientTopic) } returns completed()
+  coEvery {
     capture(taskExecutorSlot).sendToAsync(ServiceExecutorTopic, capture(delaySlot))
   } returns completed()
 }

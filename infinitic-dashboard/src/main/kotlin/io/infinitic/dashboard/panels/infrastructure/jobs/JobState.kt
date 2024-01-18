@@ -55,7 +55,7 @@ abstract class JobState<T : Topic<*>>(
         topicsStats.maxOfOrNull { it.value.lastUpdated } ?: Instant.now()
   }
 
-  abstract fun getTopic(topic: T): String
+  abstract suspend fun getTopic(topic: T): String
 
   fun statsLoading() = create(topicsStats = topicsStats.mapValues { it.value.copyLoading() })
 }

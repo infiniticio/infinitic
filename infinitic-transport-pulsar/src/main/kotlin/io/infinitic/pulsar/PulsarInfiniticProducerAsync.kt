@@ -29,6 +29,8 @@ import io.infinitic.common.topics.Topic
 import io.infinitic.common.transport.InfiniticProducerAsync
 import io.infinitic.pulsar.producers.Producer
 import io.infinitic.pulsar.resources.PulsarResources
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.runBlocking
 import java.util.concurrent.CompletableFuture
 
 class PulsarInfiniticProducerAsync(
@@ -41,9 +43,11 @@ class PulsarInfiniticProducerAsync(
   // If [suggestedName] is provided, we check that no other is connected with it
   // If [suggestedName] is not provided, Pulsar will provide a unique name
   private val uniqueName: String by lazy {
-    val namingTopic = with(pulsarResources) { NamingTopic.forMessage() }
-    // Get unique name
-    producer.getUniqueName(namingTopic, suggestedName).getOrThrow()
+    runBlocking(Dispatchers.IO) {
+      val namingTopic = with(pulsarResources) { NamingTopic.forMessage() }
+      // Get unique name
+      producer.getUniqueName(namingTopic, suggestedName).getOrThrow()
+    }
   }
 
   // (if set, must be done before sending the first message)
@@ -53,7 +57,7 @@ class PulsarInfiniticProducerAsync(
       suggestedName = value
     }
 
-  override fun <T : Message> internalSendToAsync(
+  override suspend fun <T : Message> internalSendToAsync(
     message: T,
     topic: Topic<T>,
     after: MillisDuration

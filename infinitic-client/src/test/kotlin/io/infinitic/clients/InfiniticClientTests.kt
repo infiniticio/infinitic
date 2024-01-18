@@ -79,11 +79,13 @@ import io.infinitic.exceptions.clients.InvalidStubException
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
-import io.mockk.called
+import io.mockk.Runs
+import io.mockk.coEvery
+import io.mockk.coVerify
 import io.mockk.every
+import io.mockk.just
 import io.mockk.mockk
 import io.mockk.slot
-import io.mockk.verify
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CopyOnWriteArrayList
 
@@ -129,12 +131,12 @@ private fun engineResponse(): CompletableFuture<Unit> {
 
 private val producerAsync = mockk<InfiniticProducerAsync> {
   every { producerName } returns "$clientNameTest"
-  every { capture(workflowTagSlots).sendToAsync(WorkflowTagTopic) } answers { tagResponse() }
-  every { capture(workflowCmdSlot).sendToAsync(WorkflowCmdTopic) } answers { engineResponse() }
+  coEvery { capture(workflowTagSlots).sendToAsync(WorkflowTagTopic) } answers { tagResponse() }
+  coEvery { capture(workflowCmdSlot).sendToAsync(WorkflowCmdTopic) } answers { engineResponse() }
 }
 
 private val consumerAsync = mockk<InfiniticConsumerAsync> {
-  every { startClientConsumerAsync(any(), any(), clientNameTest) } returns completed()
+  coEvery { startClientConsumerAsync(any(), any(), clientNameTest) } just Runs
 }
 
 private val client = InfiniticClient(consumerAsync, producerAsync)
@@ -183,7 +185,7 @@ internal class InfiniticClientTests : StringSpec(
         )
 
         // when asynchronously dispatching a workflow, the consumer should not be started
-        verify { consumerAsync.startClientConsumerAsync(any(), any(), any()) wasNot called }
+        coVerify(exactly = 0) { consumerAsync.startClientConsumerAsync(any(), any(), any()) }
       }
 
       "Should be able to dispatch a workflow with annotation" {
@@ -397,13 +399,13 @@ internal class InfiniticClientTests : StringSpec(
         )
 
         // when waiting for a workflow, the consumer should be started
-        verify { consumerAsync.startClientConsumerAsync(any(), any(), clientNameTest) }
+        coVerify { consumerAsync.startClientConsumerAsync(any(), any(), clientNameTest) }
 
         // restart a workflow
         client.dispatch(fakeWorkflow::m3, 0, "a").await()
 
         // the consumer should be started only once
-        verify { consumerAsync.startClientConsumerAsync(any(), any(), any()) wasNot called }
+        coVerify(exactly = 1) { consumerAsync.startClientConsumerAsync(any(), any(), any()) }
       }
 
       "Should throw a WorkflowTimedOutException when waiting for a workflow more than timeout" {

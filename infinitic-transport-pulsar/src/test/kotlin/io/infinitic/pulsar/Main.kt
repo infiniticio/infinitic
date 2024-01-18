@@ -30,7 +30,6 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.future.await
-import kotlinx.coroutines.future.future
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.job
 import kotlinx.coroutines.joinAll
@@ -73,12 +72,15 @@ fun cancel() = runBlocking {
  * - that an Exception never stop the worker, wherever it is thrown
  * - that an Error kills the worker, but the worker still tries to process the ongoing messages
  */
-fun main() {
+suspend fun main() {
   addShutdownHook()
 
   val start = Instant.now()
 
-  runConsumer(handler, 500)
+  startConsumerLoop(handler, 500)
+
+  // wait for all ongoing messages to be processed
+  runBlocking { consumingScope.coroutineContext.job.children.forEach { it.join() } }
 
   println("Duration = ${Duration.between(start, Instant.now()).toMillis()} ms")
 }
@@ -120,19 +122,10 @@ private suspend fun processPulsarMessage(
   }
 }
 
-private fun runConsumer(
+private suspend fun startConsumerLoop(
   handler: suspend (String) -> Unit,
   concurrency: Int
-) = try {
-  runConsumerAsync(handler, concurrency).join()
-} catch (e: CancellationException) {
-  // no nothing
-}
-
-private fun runConsumerAsync(
-  handler: suspend (String) -> Unit,
-  concurrency: Int
-): CompletableFuture<Unit> = consumingScope.future {
+) = coroutineScope {
   val consumer = Consumer()
 
   // Channel is backpressure aware
@@ -141,7 +134,7 @@ private fun runConsumerAsync(
 
   // start executor coroutines
   val jobs = List(concurrency) {
-    launch {
+    launch(consumingScope.coroutineContext) {
       try {
         for (pulsarMessage in channel) {
           withContext(NonCancellable) {
@@ -155,26 +148,28 @@ private fun runConsumerAsync(
     }
   }
   // start message receiver
-  while (isActive) {
-    try {
-      // await() is a suspendable and should be used instead of get()
-      val pulsarMessage = consumer.receiveAsync().await()
-      channel.send(pulsarMessage)
-    } catch (e: CancellationException) {
-      println("Exciting receiving loop after CancellationException")
-      // if coroutine is canceled, we just exit the while loop
-      break
-    } catch (e: Throwable) {
-      e.rethrowError("in receiveAsync")
-      // for other exception, we continue
-      continue
+  launch(consumingScope.coroutineContext) {
+    while (isActive) {
+      try {
+        // await() is a suspendable and should be used instead of get()
+        val pulsarMessage = consumer.receiveAsync().await()
+        channel.send(pulsarMessage)
+      } catch (e: CancellationException) {
+        println("Exciting receiving loop after CancellationException")
+        // if coroutine is canceled, we just exit the while loop
+        break
+      } catch (e: Throwable) {
+        e.rethrowError("in receiveAsync")
+        // for other exception, we continue
+        continue
+      }
     }
+    // Now that the coroutine is cancelled,
+    // we wait for the completion of all ongoing processPulsarMessage
+    println("After cancellation, waiting completion of all ongoing messages")
+    withContext(NonCancellable) { jobs.joinAll() }
+    println("Closed consumer after cancellation")
   }
-  // Now that the coroutine is cancelled,
-  // we wait for the completion of all ongoing processPulsarMessage
-  println("After cancellation, waiting completion of all ongoing messages")
-  withContext(NonCancellable) { jobs.joinAll() }
-  println("Closed consumer after cancellation")
 }
 
 private class Consumer() {
@@ -182,7 +177,7 @@ private class Consumer() {
 
   fun receiveAsync(): CompletableFuture<String> = CompletableFuture.supplyAsync {
     counter.incrementAndGet().let {
-      if (it == 1000) {
+      if (it == 10000) {
         println("\nWORK TERMINATED\n")
         consumingScope.cancel()
       } else {

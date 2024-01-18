@@ -44,7 +44,7 @@ interface InfiniticProducerAsync {
   var producerName: String
 
 
-  fun <T : Message> internalSendToAsync(
+  suspend fun <T : Message> internalSendToAsync(
     message: T,
     topic: Topic<T>,
     after: MillisDuration = MillisDuration(0)
@@ -57,7 +57,7 @@ interface InfiniticProducerAsync {
    * @param after the delay before consuming the message
    * @return a CompletableFuture that completes when the message has been sent
    */
-  fun <T : Message> T.sendToAsync(
+  suspend fun <T : Message> T.sendToAsync(
     topic: Topic<T>,
     after: MillisDuration = MillisDuration(0)
   ): CompletableFuture<Unit> {

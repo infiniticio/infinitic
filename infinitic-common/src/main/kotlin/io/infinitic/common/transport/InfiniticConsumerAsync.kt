@@ -35,121 +35,122 @@ import io.infinitic.common.workflows.data.workflows.WorkflowName
 import io.infinitic.common.workflows.engine.events.WorkflowEventMessage
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
 import io.infinitic.common.workflows.tags.messages.WorkflowTagMessage
-import java.util.concurrent.CompletableFuture
 
 interface InfiniticConsumerAsync : AutoCloseable {
 
   // name used for logging
   var logName: String?
 
-  fun <S : Message> startConsumerAsync(
+  fun join()
+
+  suspend fun <S : Message> startConsumerAsync(
     topic: Topic<S>,
     handler: suspend (S, MillisInstant) -> Unit,
     beforeDlq: (suspend (S?, Exception) -> Unit),
     entity: String,
-  ): CompletableFuture<Unit>
+  )
 
   // Asynchronously start consumers of messages to client
-  fun startClientConsumerAsync(
+  suspend fun startClientConsumerAsync(
     handler: suspend (ClientMessage, MillisInstant) -> Unit,
     beforeDlq: (suspend (ClientMessage?, Exception) -> Unit),
     clientName: ClientName
-  ): CompletableFuture<Unit>
+  )
 
   // Asynchronously start consumers of messages to workflow tag
-  fun startWorkflowTagConsumerAsync(
+  suspend fun startWorkflowTagConsumerAsync(
     handler: suspend (WorkflowTagMessage, MillisInstant) -> Unit,
     beforeDlq: suspend (WorkflowTagMessage?, Exception) -> Unit,
     workflowName: WorkflowName,
     concurrency: Int
-  ): CompletableFuture<Unit>
+  )
 
   // Asynchronously start consumers of messages to workflow-cmd
-  fun startWorkflowCmdConsumerAsync(
+  suspend fun startWorkflowCmdConsumerAsync(
     handler: suspend (WorkflowEngineMessage, MillisInstant) -> Unit,
     beforeDlq: suspend (WorkflowEngineMessage?, Exception) -> Unit,
     workflowName: WorkflowName,
     concurrency: Int
-  ): CompletableFuture<Unit>
+  )
 
   // Asynchronously start consumers of messages to workflow engine
-  fun startWorkflowEngineConsumerAsync(
+  suspend fun startWorkflowEngineConsumerAsync(
     handler: suspend (WorkflowEngineMessage, MillisInstant) -> Unit,
     beforeDlq: suspend (WorkflowEngineMessage?, Exception) -> Unit,
     workflowName: WorkflowName,
     concurrency: Int
-  ): CompletableFuture<Unit>
+  )
 
   // Asynchronously start consumers of delayed messages to workflow engine
-  fun startDelayedWorkflowEngineConsumerAsync(
+  suspend fun startDelayedWorkflowEngineConsumerAsync(
     handler: suspend (WorkflowEngineMessage, MillisInstant) -> Unit,
     beforeDlq: suspend (WorkflowEngineMessage?, Exception) -> Unit,
     workflowName: WorkflowName,
     concurrency: Int
-  ): CompletableFuture<Unit>
+  )
 
   // Asynchronously start consumers of delayed messages to workflow engine
-  fun startWorkflowEventsConsumerAsync(
+  suspend fun startWorkflowEventsConsumerAsync(
     handler: suspend (WorkflowEventMessage, MillisInstant) -> Unit,
     beforeDlq: (suspend (WorkflowEventMessage?, Exception) -> Unit),
     workflowName: WorkflowName,
     concurrency: Int
-  ): CompletableFuture<Unit>
+  )
 
   // Asynchronously start consumers of messages to task tags
-  fun startTaskTagConsumerAsync(
+  suspend fun startTaskTagConsumerAsync(
     handler: suspend (ServiceTagMessage, MillisInstant) -> Unit,
     beforeDlq: (suspend (ServiceTagMessage?, Exception) -> Unit),
     serviceName: ServiceName,
     concurrency: Int
-  ): CompletableFuture<Unit>
+  )
 
   // Asynchronously start consumers of messages to task executor
-  fun startTaskExecutorConsumerAsync(
+  suspend fun startTaskExecutorConsumerAsync(
     handler: suspend (ServiceExecutorMessage, MillisInstant) -> Unit,
     beforeDlq: (suspend (ServiceExecutorMessage?, Exception) -> Unit),
     serviceName: ServiceName,
     concurrency: Int
-  ): CompletableFuture<Unit>
+  )
 
 
   // Asynchronously start consumers of messages to task events
-  fun startTaskEventsConsumerAsync(
+  suspend fun startTaskEventsConsumerAsync(
     handler: suspend (ServiceEventMessage, MillisInstant) -> Unit,
     beforeDlq: (suspend (ServiceEventMessage?, Exception) -> Unit),
     serviceName: ServiceName,
     concurrency: Int
-  ): CompletableFuture<Unit>
+  )
 
   // Asynchronously start consumers of delayed messages to task executor
-  fun startDelayedTaskExecutorConsumerAsync(
+  suspend fun startDelayedTaskExecutorConsumerAsync(
     handler: suspend (ServiceExecutorMessage, MillisInstant) -> Unit,
     beforeDlq: (suspend (ServiceExecutorMessage?, Exception) -> Unit),
     serviceName: ServiceName,
     concurrency: Int
-  ): CompletableFuture<Unit>
+  )
 
   // Asynchronously start consumers of messages to workflow task executor
-  fun startWorkflowTaskConsumerAsync(
+  suspend fun startWorkflowTaskConsumerAsync(
     handler: suspend (ServiceExecutorMessage, MillisInstant) -> Unit,
     beforeDlq: (suspend (ServiceExecutorMessage?, Exception) -> Unit),
     workflowName: WorkflowName,
     concurrency: Int
-  ): CompletableFuture<Unit>
+  )
 
   // Asynchronously start consumers of messages to task events
-  fun startWorkflowTaskEventsConsumerAsync(
+  suspend fun startWorkflowTaskEventsConsumerAsync(
     handler: suspend (ServiceEventMessage, MillisInstant) -> Unit,
     beforeDlq: (suspend (ServiceEventMessage?, Exception) -> Unit),
     workflowName: WorkflowName,
     concurrency: Int
-  ): CompletableFuture<Unit>
+  )
 
   // Asynchronously start consumers of delayed messages to workflow task executor
-  fun startDelayedWorkflowTaskConsumerAsync(
+  suspend fun startDelayedWorkflowTaskConsumerAsync(
     handler: suspend (ServiceExecutorMessage, MillisInstant) -> Unit,
     beforeDlq: (suspend (ServiceExecutorMessage?, Exception) -> Unit),
     workflowName: WorkflowName,
     concurrency: Int
-  ): CompletableFuture<Unit>
+  )
 }

@@ -53,6 +53,7 @@ import io.infinitic.common.workflows.data.workflows.WorkflowName
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
+import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.slot
@@ -83,12 +84,12 @@ class TaskEventHandlerTests :
         fun completed() = CompletableFuture.completedFuture(Unit)
         val producerAsync = mockk<InfiniticProducerAsync> {
           every { producerName } returns "$testEmitterName"
-          every { capture(taskTagSlots).sendToAsync(ServiceTagTopic) } returns completed()
-          every { capture(clientSlot).sendToAsync(ClientTopic) } returns completed()
-          every {
+          coEvery { capture(taskTagSlots).sendToAsync(ServiceTagTopic) } returns completed()
+          coEvery { capture(clientSlot).sendToAsync(ClientTopic) } returns completed()
+          coEvery {
             capture(workflowEngineSlot).sendToAsync(WorkflowEngineTopic)
           } returns completed()
-          every {
+          coEvery {
             capture(workflowEngineSlot).sendToAsync(
                 DelayedWorkflowEngineTopic,
                 capture(afterSlot),

@@ -31,6 +31,7 @@ import io.kotest.core.spec.style.StringSpec
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import org.apache.pulsar.client.admin.PulsarAdmin
 import org.apache.pulsar.client.admin.PulsarAdminException
@@ -82,10 +83,10 @@ class PulsarInfiniticAdminTests :
           // with multiple new tags (there is one topic per tag).
           // This test ensures that this case is handled correctly.
           shouldNotThrow<PulsarAdminException> {
-            CoroutineScope(Dispatchers.IO).async {
+            coroutineScope {
               launch { admin.initTopicOnce("test-topic", true, 60).getOrThrow() }
               launch { admin.initTopicOnce("test-topic", true, 60).getOrThrow() }
-            }.await()
+            }
           }
         }
       },

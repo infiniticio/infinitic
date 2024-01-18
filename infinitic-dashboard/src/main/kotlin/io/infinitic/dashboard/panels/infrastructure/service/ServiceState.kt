@@ -39,5 +39,6 @@ data class ServiceState(
   override fun create(name: String, topicsStats: TopicsStats<ServiceTopic<*>>) =
       ServiceState(name = name, topicsStats = topicsStats)
 
-  override fun getTopic(topic: ServiceTopic<*>) = with(pulsarResources) { topic.fullName(name) }
+  override suspend fun getTopic(topic: ServiceTopic<*>) =
+      with(pulsarResources) { topic.fullName(name) }
 }

@@ -77,6 +77,7 @@ import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
 import io.mockk.clearMocks
+import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.slot
@@ -102,13 +103,13 @@ class TaskExecutorTests :
         val client = mockk<InfiniticClientInterface>()
         val producerAsync = mockk<InfiniticProducerAsync> {
           every { producerName } returns "$testWorkerName"
-          every {
+          coEvery {
             capture(taskExecutorSlot).sendToAsync(ServiceExecutorTopic)
           } returns completed()
-          every {
+          coEvery {
             capture(taskExecutorSlot).sendToAsync(DelayedServiceExecutorTopic, capture(afterSlot))
           } returns completed()
-          every { capture(taskEventSlot).sendToAsync(ServiceEventsTopic) } returns completed()
+          coEvery { capture(taskEventSlot).sendToAsync(ServiceEventsTopic) } returns completed()
         }
 
         var taskExecutor = TaskExecutor(workerRegistry, producerAsync, client)

@@ -36,7 +36,7 @@ class Producer(
 
   val logger = KotlinLogging.logger {}
 
-  fun getUniqueName(namerTopic: String, proposedName: String?) =
+  suspend fun getUniqueName(namerTopic: String, proposedName: String?) =
       client.getUniqueName(namerTopic, proposedName)
 
   fun sendAsync(

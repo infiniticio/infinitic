@@ -51,20 +51,17 @@ class PulsarResources(
   fun topicFullName(topic: String) = "persistent://$namespaceFullName/$topic"
 
   /** Set of topics for current tenant and namespace */
-  val topicsFullName: Set<String>
-    get() = admin.getTopicsSet(namespaceFullName).getOrThrow()
+  suspend fun getTopicsFullName(): Set<String> = admin.getTopicsSet(namespaceFullName).getOrThrow()
 
   /** Set of service's names for current tenant and namespace */
-  val servicesName: Set<String>
-    get() = topicsFullName.mapNotNull {
-      getServiceNameFromTopicName(it.removePrefix(topicFullName("")))
-    }.toSet()
+  suspend fun getServicesName(): Set<String> = getTopicsFullName().mapNotNull {
+    getServiceNameFromTopicName(it.removePrefix(topicFullName("")))
+  }.toSet()
 
   /** Set of workflow's names for current tenant and namespace */
-  val workflowsName: Set<String>
-    get() = topicsFullName.mapNotNull {
-      getWorkflowNameFromTopicName(it.removePrefix(topicFullName("")))
-    }.toSet()
+  suspend fun getWorkflowsName(): Set<String> = getTopicsFullName().mapNotNull {
+    getWorkflowNameFromTopicName(it.removePrefix(topicFullName("")))
+  }.toSet()
 
   /**
    * Returns the full name of a given entity for the topic.
@@ -74,7 +71,7 @@ class PulsarResources(
    * @param entity The optional entity name (service name or workflow name).
    * @return The full name of the topic with the optional entity name.
    */
-  fun Topic<*>.fullName(entity: String?) = topicFullName(name(entity))
+  suspend fun Topic<*>.fullName(entity: String?) = topicFullName(name(entity))
       .also {
         initTopicOnce(
             topic = it,
@@ -91,7 +88,7 @@ class PulsarResources(
    * @param entity The optional entity name (service name or workflow name).
    * @return The full name of the topic with the optional entity name.
    */
-  fun Topic<*>.fullNameDLQ(entity: String) = topicFullName(nameDLQ(entity))
+  suspend fun Topic<*>.fullNameDLQ(entity: String) = topicFullName(nameDLQ(entity))
       .also {
         initTopicOnce(
             topic = it,
@@ -100,18 +97,18 @@ class PulsarResources(
         )
       }
 
-  fun <S : Message> Topic<S>.forMessage(message: S? = null) = fullName(message?.entity())
+  suspend fun <S : Message> Topic<S>.forMessage(message: S? = null) = fullName(message?.entity())
 
   /**
    * Delete a topic by name
    */
-  fun deleteTopic(topic: String): Result<Unit> = admin.deleteTopic(topic)
+  suspend fun deleteTopic(topic: String): Result<Unit> = admin.deleteTopic(topic)
 
   /**
    * Check if a topic exists, and create it if not
    * We skip this if the topic has already been initialized
    */
-  fun initTopicOnce(
+  suspend fun initTopicOnce(
     topic: String,
     isPartitioned: Boolean,
     isDelayed: Boolean
@@ -133,7 +130,7 @@ class PulsarResources(
    * Check if a Dead Letter Queue topic exists, and create it if not
    * We skip this if the topic has already been initialized
    */
-  fun initDlqTopicOnce(
+  suspend fun initDlqTopicOnce(
     topic: String?,
     isPartitioned: Boolean,
     isDelayed: Boolean
