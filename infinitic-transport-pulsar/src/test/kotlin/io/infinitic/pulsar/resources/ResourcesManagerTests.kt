@@ -40,7 +40,7 @@ class ResourcesManagerTests : StringSpec(
       val adminRoles = setOf("baz")
       val policies = Policies()
 
-      val resourceManager = ResourceManager(
+      val pulsarResources = PulsarResources(
           pulsarInfiniticAdmin,
           "tenantTest",
           allowedClusters,
@@ -57,7 +57,7 @@ class ResourcesManagerTests : StringSpec(
         every { pulsarInfiniticAdmin.deleteTopic(any()) } returns Result.success(Unit)
 
         val topic = TestFactory.random<String>()
-        resourceManager.deleteTopic(topic)
+        pulsarResources.deleteTopic(topic)
 
         verifyAll {
           pulsarInfiniticAdmin.deleteTopic(topic)
@@ -79,7 +79,7 @@ class ResourcesManagerTests : StringSpec(
 
         val topic = TestFactory.random<String>()
 
-        resourceManager.initTopicOnce(
+        pulsarResources.initTopicOnce(
             topic,
             isPartitioned = true,
             isDelayed = true,

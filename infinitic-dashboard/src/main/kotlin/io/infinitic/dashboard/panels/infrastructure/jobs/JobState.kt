@@ -72,7 +72,7 @@ internal fun <S : Topic<*>, T : JobState<S>> CoroutineScope.update(kvar: KVar<T>
       val topicsStats = mutableMapOf<S, Request<PartitionedTopicStats>>()
       value.topicsStats.forEach {
         val name = value.getTopic(it.key)
-        val result = Infinitic.resourceManager.admin.getPartitionedTopicStats(name)
+        val result = Infinitic.pulsarResources.admin.getPartitionedTopicStats(name)
         topicsStats[it.key] = when {
           result.isSuccess -> result.getOrNull()?.let { Completed(it) }
             ?: Failed(Exception("Topic not found for workflow $name"))

@@ -36,7 +36,7 @@ import io.infinitic.pulsar.client.PulsarInfiniticClient
 import io.infinitic.pulsar.config.Pulsar
 import io.infinitic.pulsar.consumers.Consumer
 import io.infinitic.pulsar.producers.Producer
-import io.infinitic.pulsar.resources.ResourceManager
+import io.infinitic.pulsar.resources.PulsarResources
 
 data class TransportConfig(
   /** Transport configuration */
@@ -61,7 +61,7 @@ data class TransportConfig(
   // as they must share the same configuration
   private val cp: Pair<InfiniticConsumerAsync, InfiniticProducerAsync> =
       when (transport) {
-        Transport.pulsar -> with(ResourceManager.from(pulsar!!)) {
+        Transport.pulsar -> with(PulsarResources.from(pulsar!!)) {
           val client = PulsarInfiniticClient(pulsar.client)
           val consumerAsync = PulsarInfiniticConsumerAsync(
               Consumer(client, pulsar.consumer),

@@ -38,11 +38,11 @@ data class AllServicesState(
   override fun create(names: JobNames, stats: JobStats) =
       AllServicesState(names = names, stats = stats)
 
-  override fun getNames() = Infinitic.resourceManager.servicesName
+  override fun getNames() = Infinitic.pulsarResources.servicesName
 
   override fun getPartitionedStats(name: String): Result<PartitionedTopicStats?> {
-    val topic = with(Infinitic.resourceManager) { ServiceExecutorTopic.fullName(name) }
+    val topic = with(Infinitic.pulsarResources) { ServiceExecutorTopic.fullName(name) }
 
-    return Infinitic.resourceManager.admin.getPartitionedTopicStats(topic)
+    return Infinitic.pulsarResources.admin.getPartitionedTopicStats(topic)
   }
 }

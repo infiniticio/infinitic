@@ -31,7 +31,7 @@ import io.infinitic.common.workflows.data.workflows.WorkflowName
 import io.infinitic.pulsar.admin.PulsarInfiniticAdmin
 import io.infinitic.pulsar.config.policies.Policies
 import io.infinitic.pulsar.consumers.Consumer
-import io.infinitic.pulsar.resources.ResourceManager
+import io.infinitic.pulsar.resources.PulsarResources
 import io.kotest.core.spec.style.StringSpec
 import io.mockk.coEvery
 import io.mockk.every
@@ -64,7 +64,7 @@ class PulsarInfiniticConsumerAsyncTests : StringSpec(
       val tenant = RandomString().nextString()
       val namespace = RandomString().nextString()
 
-      val original = ResourceManager(
+      val original = PulsarResources(
           mockk<PulsarInfiniticAdmin>(),
           tenant,
           setOf(),
@@ -73,7 +73,7 @@ class PulsarInfiniticConsumerAsyncTests : StringSpec(
           Policies(),
       )
 
-      val resourceManager = spyk(original) {
+      val pulsarResources = spyk(original) {
         every { initTopicOnce(any(), any(), any()) } returns Result.success(Unit)
 
         every { initDlqTopicOnce(any(), any(), any()) } returns Result.success(Unit)
@@ -96,7 +96,7 @@ class PulsarInfiniticConsumerAsyncTests : StringSpec(
         } returns CompletableFuture.completedFuture(Unit)
       }
 
-      val infiniticConsumerAsync = PulsarInfiniticConsumerAsync(consumer, resourceManager, 20.0)
+      val infiniticConsumerAsync = PulsarInfiniticConsumerAsync(consumer, pulsarResources, 20.0)
 
       "should init client-response topic before consuming it" {
         infiniticConsumerAsync.startClientConsumerAsync(
@@ -106,7 +106,7 @@ class PulsarInfiniticConsumerAsyncTests : StringSpec(
         val name = "$clientName"
 
         verify {
-          resourceManager.initTopicOnce(
+          pulsarResources.initTopicOnce(
               "persistent://$tenant/$namespace/response:$name",
               false,
               false,
@@ -122,7 +122,7 @@ class PulsarInfiniticConsumerAsyncTests : StringSpec(
         val name = "$workflowName"
 
         verify {
-          resourceManager.initTopicOnce(
+          pulsarResources.initTopicOnce(
               "persistent://$tenant/$namespace/workflow-tag:$name",
               true,
               false,
@@ -138,7 +138,7 @@ class PulsarInfiniticConsumerAsyncTests : StringSpec(
         val name = "$workflowName"
 
         verify {
-          resourceManager.initTopicOnce(
+          pulsarResources.initTopicOnce(
               "persistent://$tenant/$namespace/workflow-cmd:$name",
               true,
               false,
@@ -154,7 +154,7 @@ class PulsarInfiniticConsumerAsyncTests : StringSpec(
         val name = "$workflowName"
 
         verify {
-          resourceManager.initTopicOnce(
+          pulsarResources.initTopicOnce(
               "persistent://$tenant/$namespace/workflow-engine:$name",
               true,
               false,
@@ -170,7 +170,7 @@ class PulsarInfiniticConsumerAsyncTests : StringSpec(
         val name = "$workflowName"
 
         verify {
-          resourceManager.initTopicOnce(
+          pulsarResources.initTopicOnce(
               "persistent://$tenant/$namespace/workflow-delay:$name",
               true,
               true,
@@ -186,7 +186,7 @@ class PulsarInfiniticConsumerAsyncTests : StringSpec(
         val name = "$workflowName"
 
         verify {
-          resourceManager.initTopicOnce(
+          pulsarResources.initTopicOnce(
               "persistent://$tenant/$namespace/workflow-events:$name",
               true,
               false,
@@ -202,7 +202,7 @@ class PulsarInfiniticConsumerAsyncTests : StringSpec(
         val name = "$workflowName"
 
         verify {
-          resourceManager.initTopicOnce(
+          pulsarResources.initTopicOnce(
               "persistent://$tenant/$namespace/workflow-task-executor:$name",
               true,
               false,
@@ -218,7 +218,7 @@ class PulsarInfiniticConsumerAsyncTests : StringSpec(
         val name = "$workflowName"
 
         verify {
-          resourceManager.initTopicOnce(
+          pulsarResources.initTopicOnce(
               "persistent://$tenant/$namespace/workflow-task-events:$name",
               true,
               false,
@@ -234,7 +234,7 @@ class PulsarInfiniticConsumerAsyncTests : StringSpec(
         val name = "$serviceName"
 
         verify {
-          resourceManager.initTopicOnce(
+          pulsarResources.initTopicOnce(
               "persistent://$tenant/$namespace/task-tag:$name",
               true,
               false,
@@ -250,7 +250,7 @@ class PulsarInfiniticConsumerAsyncTests : StringSpec(
         val name = "$serviceName"
 
         verify {
-          resourceManager.initTopicOnce(
+          pulsarResources.initTopicOnce(
               "persistent://$tenant/$namespace/task-executor:$name",
               true,
               false,
@@ -266,7 +266,7 @@ class PulsarInfiniticConsumerAsyncTests : StringSpec(
         val name = "$serviceName"
 
         verify {
-          resourceManager.initTopicOnce(
+          pulsarResources.initTopicOnce(
               "persistent://$tenant/$namespace/task-events:$name",
               true,
               false,

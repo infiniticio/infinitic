@@ -23,7 +23,7 @@
 package io.infinitic.dashboard.panels.infrastructure.service
 
 import io.infinitic.common.topics.ServiceTopic
-import io.infinitic.dashboard.Infinitic.resourceManager
+import io.infinitic.dashboard.Infinitic.pulsarResources
 import io.infinitic.dashboard.panels.infrastructure.jobs.JobState
 import io.infinitic.dashboard.panels.infrastructure.jobs.TopicsStats
 import io.infinitic.dashboard.panels.infrastructure.requests.Loading
@@ -39,5 +39,5 @@ data class ServiceState(
   override fun create(name: String, topicsStats: TopicsStats<ServiceTopic<*>>) =
       ServiceState(name = name, topicsStats = topicsStats)
 
-  override fun getTopic(topic: ServiceTopic<*>) = with(resourceManager) { topic.fullName(name) }
+  override fun getTopic(topic: ServiceTopic<*>) = with(pulsarResources) { topic.fullName(name) }
 }

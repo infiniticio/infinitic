@@ -28,7 +28,7 @@ import io.infinitic.pulsar.admin.PulsarInfiniticAdmin
 import io.infinitic.pulsar.config.Pulsar
 import io.infinitic.pulsar.config.policies.Policies
 
-class ResourceManager(
+class PulsarResources(
   val admin: PulsarInfiniticAdmin,
     // tenant configuration
   val tenant: String,
@@ -141,7 +141,7 @@ class ResourceManager(
 
   companion object {
     /** Create TopicManager from a Pulsar configuration instance */
-    fun from(pulsar: Pulsar) = ResourceManager(
+    fun from(pulsar: Pulsar) = PulsarResources(
         PulsarInfiniticAdmin(pulsar.admin),
         pulsar.tenant,
         pulsar.allowedClusters,

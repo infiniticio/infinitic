@@ -28,11 +28,13 @@ import io.infinitic.common.topics.NamingTopic
 import io.infinitic.common.topics.Topic
 import io.infinitic.common.transport.InfiniticProducerAsync
 import io.infinitic.pulsar.producers.Producer
-import io.infinitic.pulsar.resources.ResourceManager
+import io.infinitic.pulsar.resources.PulsarResources
+import io.infinitic.pulsar.resources.isDelayed
+import java.util.concurrent.CompletableFuture
 
 class PulsarInfiniticProducerAsync(
   private val producer: Producer,
-  private val resourceManager: ResourceManager
+  private val pulsarResources: PulsarResources
 ) : InfiniticProducerAsync {
 
   private var suggestedName: String? = null
@@ -40,7 +42,7 @@ class PulsarInfiniticProducerAsync(
   // If [suggestedName] is provided, we check that no other is connected with it
   // If [suggestedName] is not provided, Pulsar will provide a unique name
   private val uniqueName: String by lazy {
-    val namingTopic = with(resourceManager) { NamingTopic.forMessage() }
+    val namingTopic = with(pulsarResources) { NamingTopic.forMessage() }
     // Get unique name
     producer.getUniqueName(namingTopic, suggestedName).getOrThrow()
   }
@@ -55,11 +57,11 @@ class PulsarInfiniticProducerAsync(
   override fun <T : Message> T.sendToAsync(
     topic: Topic<T>,
     after: MillisDuration
-  ) = producer.sendAsync(
-      this,
-      after,
-      with(resourceManager) { topic.forMessage(this@sendToAsync) },
-      producerName,
-      key = key(),
-  )
+  ): CompletableFuture<Unit> {
+    require((after <= 0) || topic.isDelayed)
+
+    val topicFullName = with(pulsarResources) { topic.forMessage(this@sendToAsync) }
+
+    return producer.sendAsync(this, after, topicFullName, producerName, key = key())
+  }
 }

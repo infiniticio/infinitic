@@ -51,7 +51,7 @@ import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
 import io.infinitic.common.workflows.tags.messages.WorkflowTagMessage
 import io.infinitic.pulsar.consumers.Consumer
 import io.infinitic.pulsar.resources.MainSubscription
-import io.infinitic.pulsar.resources.ResourceManager
+import io.infinitic.pulsar.resources.PulsarResources
 import io.infinitic.pulsar.resources.schema
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.runBlocking
@@ -60,7 +60,7 @@ import java.util.concurrent.CompletableFuture
 
 class PulsarInfiniticConsumerAsync(
   private val consumer: Consumer,
-  private val resourceManager: ResourceManager,
+  private val pulsarResources: PulsarResources,
   val shutdownGracePeriodInSeconds: Double
 ) : InfiniticConsumerAsync {
 
@@ -109,9 +109,9 @@ class PulsarInfiniticConsumerAsync(
 
   private fun deleteClientTopic() {
     if (::clientName.isInitialized) {
-      val clientTopic = with(resourceManager) { ClientTopic.fullName(clientName) }
+      val clientTopic = with(pulsarResources) { ClientTopic.fullName(clientName) }
       logger.debug { "Deleting client topic '$clientTopic'." }
-      resourceManager.deleteTopic(clientTopic)
+      pulsarResources.deleteTopic(clientTopic)
           .onFailure { logger.warn(it) { "Unable to delete client topic '$clientTopic'." } }
           .onSuccess { logger.info { "Client topic '$clientTopic' deleted." } }
     }
@@ -296,10 +296,10 @@ class PulsarInfiniticConsumerAsync(
   ): CompletableFuture<Unit> {
 
     // name of topic
-    val topicName = with(resourceManager) { topic.fullName(name) }
+    val topicName = with(pulsarResources) { topic.fullName(name) }
 
     // name of DLQ topic
-    val topicDLQName = with(resourceManager) { topic.fullNameDLQ(name) }
+    val topicDLQName = with(pulsarResources) { topic.fullNameDLQ(name) }
 
     return consumer.runAsync(
         handler = handler,

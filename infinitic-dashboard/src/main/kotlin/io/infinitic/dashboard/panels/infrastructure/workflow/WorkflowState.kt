@@ -23,7 +23,7 @@
 package io.infinitic.dashboard.panels.infrastructure.workflow
 
 import io.infinitic.common.topics.WorkflowTopic
-import io.infinitic.dashboard.Infinitic.resourceManager
+import io.infinitic.dashboard.Infinitic.pulsarResources
 import io.infinitic.dashboard.panels.infrastructure.jobs.JobState
 import io.infinitic.dashboard.panels.infrastructure.jobs.TopicsStats
 import io.infinitic.dashboard.panels.infrastructure.requests.Loading
@@ -39,5 +39,5 @@ data class WorkflowState(
   override fun create(name: String, topicsStats: TopicsStats<WorkflowTopic<*>>) =
       WorkflowState(name = name, topicsStats = topicsStats)
 
-  override fun getTopic(topic: WorkflowTopic<*>) = with(resourceManager) { topic.fullName(name) }
+  override fun getTopic(topic: WorkflowTopic<*>) = with(pulsarResources) { topic.fullName(name) }
 }
