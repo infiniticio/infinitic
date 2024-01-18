@@ -96,10 +96,10 @@ class WorkflowEngine(
     const val NO_STATE_DISCARDING_REASON = "for having null workflow state"
   }
 
-  private val logger = KotlinLogging.logger(javaClass.name)
-  private val storage = LoggedWorkflowStateStorage(javaClass.name, storage)
-  private val producer = LoggedInfiniticProducer(javaClass.name, producerAsync)
-  private val emitterName by lazy { EmitterName(producer.name) }
+  private val logger = KotlinLogging.logger(this::class.java.name)
+  private val storage = LoggedWorkflowStateStorage(this::class.java.name, storage)
+  private val producer = LoggedInfiniticProducer(this::class.java.name, producerAsync)
+  private val emitterName by lazy { EmitterName(this::class.java.name) }
 
   suspend fun handle(message: WorkflowEngineMessage, publishTime: MillisInstant) {
     logDebug(message) { "Receiving $message" }

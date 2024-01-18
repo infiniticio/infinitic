@@ -43,8 +43,8 @@ import kotlinx.coroutines.launch
 
 class WorkflowEventHandler(producerAsync: InfiniticProducerAsync) {
 
-  private val logger = KotlinLogging.logger(javaClass.name)
-  val producer = LoggedInfiniticProducer(javaClass.name, producerAsync)
+  private val logger = KotlinLogging.logger(this::class.java.name)
+  val producer = LoggedInfiniticProducer(this::class.java.name, producerAsync)
 
   val emitterName by lazy { EmitterName(producer.name) }
 

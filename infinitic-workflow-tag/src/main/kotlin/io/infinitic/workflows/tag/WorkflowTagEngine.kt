@@ -65,11 +65,11 @@ class WorkflowTagEngine(
   storage: WorkflowTagStorage,
   producerAsync: InfiniticProducerAsync
 ) {
-  private val storage = LoggedWorkflowTagStorage(javaClass.name, storage)
+  private val storage = LoggedWorkflowTagStorage(this::class.java.name, storage)
 
-  private val producer = LoggedInfiniticProducer(javaClass.name, producerAsync)
+  private val producer = LoggedInfiniticProducer(this::class.java.name, producerAsync)
 
-  private val logger = KotlinLogging.logger(javaClass.name)
+  private val logger = KotlinLogging.logger(this::class.java.name)
 
   private val emitterName by lazy { EmitterName(producer.name) }
 
