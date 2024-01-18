@@ -32,7 +32,7 @@ import io.infinitic.common.tasks.tags.messages.TaskTagEnvelope
 import io.infinitic.common.topics.ClientTopic
 import io.infinitic.common.topics.DelayedServiceExecutorTopic
 import io.infinitic.common.topics.DelayedWorkflowEngineTopic
-import io.infinitic.common.topics.DelayedWorkflowServiceExecutorTopic
+import io.infinitic.common.topics.DelayedWorkflowTaskExecutorTopic
 import io.infinitic.common.topics.NamingTopic
 import io.infinitic.common.topics.ServiceEventsTopic
 import io.infinitic.common.topics.ServiceExecutorTopic
@@ -42,9 +42,9 @@ import io.infinitic.common.topics.Topic
 import io.infinitic.common.topics.WorkflowCmdTopic
 import io.infinitic.common.topics.WorkflowEngineTopic
 import io.infinitic.common.topics.WorkflowEventsTopic
-import io.infinitic.common.topics.WorkflowServiceEventsTopic
-import io.infinitic.common.topics.WorkflowServiceExecutorTopic
 import io.infinitic.common.topics.WorkflowTagTopic
+import io.infinitic.common.topics.WorkflowTaskEventsTopic
+import io.infinitic.common.topics.WorkflowTaskExecutorTopic
 import io.infinitic.common.topics.WorkflowTopic
 import io.infinitic.common.workflows.engine.events.WorkflowEventEnvelope
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineEnvelope
@@ -76,8 +76,8 @@ fun Topic<*>.prefix() = when (this) {
   WorkflowEngineTopic -> "workflow-engine"
   DelayedWorkflowEngineTopic -> "workflow-delay"
   WorkflowEventsTopic -> "workflow-events"
-  WorkflowServiceExecutorTopic, DelayedWorkflowServiceExecutorTopic -> "workflow-task-executor"
-  WorkflowServiceEventsTopic -> "workflow-task-events"
+  WorkflowTaskExecutorTopic, DelayedWorkflowTaskExecutorTopic -> "workflow-task-executor"
+  WorkflowTaskEventsTopic -> "workflow-task-events"
   ServiceTagTopic -> "task-tag"
   ServiceExecutorTopic, DelayedServiceExecutorTopic -> "task-executor"
   ServiceEventsTopic -> "task-events"
@@ -123,8 +123,8 @@ internal val <S : Message> Topic<S>.envelopeClass: KClass<Envelope<out S>>
     WorkflowEngineTopic -> WorkflowEngineEnvelope::class
     DelayedWorkflowEngineTopic -> WorkflowEngineEnvelope::class
     WorkflowEventsTopic -> WorkflowEventEnvelope::class
-    WorkflowServiceExecutorTopic, DelayedWorkflowServiceExecutorTopic -> ServiceExecutorEnvelope::class
-    WorkflowServiceEventsTopic -> ServiceEventEnvelope::class
+    WorkflowTaskExecutorTopic, DelayedWorkflowTaskExecutorTopic -> ServiceExecutorEnvelope::class
+    WorkflowTaskEventsTopic -> ServiceEventEnvelope::class
     ServiceTagTopic -> TaskTagEnvelope::class
     ServiceExecutorTopic, DelayedServiceExecutorTopic -> ServiceExecutorEnvelope::class
     ServiceEventsTopic -> ServiceEventEnvelope::class

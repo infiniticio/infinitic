@@ -25,6 +25,7 @@ package io.infinitic.workflows.engine.handlers
 import io.infinitic.common.clients.data.ClientName
 import io.infinitic.common.emitters.EmitterName
 import io.infinitic.common.exceptions.thisShouldNotHappen
+import io.infinitic.common.topics.WorkflowEventsTopic
 import io.infinitic.common.transport.InfiniticProducer
 import io.infinitic.common.workflows.data.methodRuns.PositionInWorkflowMethod
 import io.infinitic.common.workflows.data.methodRuns.WorkflowMethod
@@ -59,8 +60,7 @@ internal fun CoroutineScope.dispatchMethod(
         parentClientName = message.parentClientName,
         waitingClients = if (message.clientWaiting) setOf(message.parentClientName!!) else setOf(),
     )
-
-    producer.sendToWorkflowEvents(workflowMethodStartedEvent)
+    with(producer) { workflowMethodStartedEvent.sendTo(WorkflowEventsTopic) }
   }
 
   val workflowMethod = WorkflowMethod(

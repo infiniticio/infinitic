@@ -27,6 +27,8 @@ import io.infinitic.common.data.MillisInstant
 import io.infinitic.common.emitters.EmitterName
 import io.infinitic.common.tasks.data.TaskId
 import io.infinitic.common.topics.WorkflowEngineTopic
+import io.infinitic.common.topics.WorkflowEventsTopic
+import io.infinitic.common.topics.WorkflowTaskExecutorTopic
 import io.infinitic.common.transport.InfiniticProducerAsync
 import io.infinitic.common.transport.LoggedInfiniticProducer
 import io.infinitic.common.utils.IdGenerator
@@ -73,7 +75,7 @@ class WorkflowCmdHandler(producerAsync: InfiniticProducerAsync) {
 
         // first we send to workflow-engine
         with(producer) { dispatchNewWorkflow.sendTo(WorkflowEngineTopic) }
-        
+
         // The workflowTask is sent only after the previous message,
         // to prevent a possible race condition where the outcome of the workflowTask
         // commands arrives before the engine is made aware of them by the previous message.
@@ -93,17 +95,19 @@ class WorkflowCmdHandler(producerAsync: InfiniticProducerAsync) {
               emitterName = emitterName,
           )
 
-          val dispatchTaskMessage = workflowTaskParameters.toExecuteTaskMessage()
+          val executeTaskMessage = workflowTaskParameters.toExecuteTaskMessage()
 
           // dispatch workflow task
-          producer.sendToServiceExecutor(dispatchTaskMessage)
+          with(producer) { executeTaskMessage.sendTo(WorkflowTaskExecutorTopic) }
         }
 
         // the 2 events are sent sequentially, to ensure they have consistent timestamps
         // (workflowStarted before workflowMethodStarted)
         launch {
-          producer.sendToWorkflowEvents(dispatchNewWorkflow.workflowStartedEvent(emitterName))
-          producer.sendToWorkflowEvents(dispatchNewWorkflow.workflowMethodStartedEvent(emitterName))
+          with(producer) {
+            dispatchNewWorkflow.workflowStartedEvent(emitterName).sendTo(WorkflowEventsTopic)
+            dispatchNewWorkflow.workflowMethodStartedEvent(emitterName).sendTo(WorkflowEventsTopic)
+          }
         }
       }
 

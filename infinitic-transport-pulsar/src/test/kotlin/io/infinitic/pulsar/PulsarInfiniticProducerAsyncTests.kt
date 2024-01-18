@@ -39,9 +39,9 @@ import io.infinitic.common.topics.ServiceTagTopic
 import io.infinitic.common.topics.WorkflowCmdTopic
 import io.infinitic.common.topics.WorkflowEngineTopic
 import io.infinitic.common.topics.WorkflowEventsTopic
-import io.infinitic.common.topics.WorkflowServiceEventsTopic
-import io.infinitic.common.topics.WorkflowServiceExecutorTopic
 import io.infinitic.common.topics.WorkflowTagTopic
+import io.infinitic.common.topics.WorkflowTaskEventsTopic
+import io.infinitic.common.topics.WorkflowTaskExecutorTopic
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTask
 import io.infinitic.common.workflows.engine.events.WorkflowEventMessage
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
@@ -198,7 +198,7 @@ class PulsarInfiniticProducerAsyncTests : StringSpec(
         val message = TestFactory.random<ExecuteTask>(
             mapOf("serviceName" to ServiceName(WorkflowTask::class.java.name)),
         )
-        with(infiniticProducerAsync) { message.sendToAsync(WorkflowServiceExecutorTopic) }
+        with(infiniticProducerAsync) { message.sendToAsync(WorkflowTaskExecutorTopic) }
 
         val name = message.workflowName.toString()
 
@@ -215,7 +215,7 @@ class PulsarInfiniticProducerAsyncTests : StringSpec(
         val message = TestFactory.random<TaskCompletedEvent>(
             mapOf("serviceName" to ServiceName(WorkflowTask::class.java.name)),
         )
-        with(infiniticProducerAsync) { message.sendToAsync(WorkflowServiceEventsTopic) }
+        with(infiniticProducerAsync) { message.sendToAsync(WorkflowTaskEventsTopic) }
 
         val name = message.workflowName.toString()
 

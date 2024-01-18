@@ -54,6 +54,6 @@ internal fun CoroutineScope.startDurationTimerCmd(
 
   // The duration is offset by the time spent in the workflow task
   // todo: Check if there is a way not to use MillisInstant.now() that used local time
-  val duration = timerCompleted.emittedAt!! - MillisInstant.now()
-  with(producer) { timerCompleted.sendTo(DelayedWorkflowEngineTopic, duration) }
+  val delay = timerCompleted.emittedAt!! - MillisInstant.now()
+  with(producer) { timerCompleted.sendTo(DelayedWorkflowEngineTopic, delay) }
 }

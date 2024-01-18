@@ -32,6 +32,7 @@ import io.infinitic.common.tasks.events.messages.TaskFailedEvent
 import io.infinitic.common.tasks.events.messages.TaskRetriedEvent
 import io.infinitic.common.tasks.events.messages.TaskStartedEvent
 import io.infinitic.common.topics.ClientTopic
+import io.infinitic.common.topics.ServiceTagTopic
 import io.infinitic.common.topics.WorkflowEngineTopic
 import io.infinitic.common.transport.InfiniticProducerAsync
 import io.infinitic.common.transport.LoggedInfiniticProducer
@@ -100,7 +101,7 @@ class TaskEventHandler(producerAsync: InfiniticProducerAsync) {
       }
       // remove tags
       msg.getEventsForTag(emitterName).forEach {
-        launch { producer.sendToServiceTag(it) }
+        launch { with(producer) { it.sendTo(ServiceTagTopic) } }
       }
     }
     // If we are dealing with a workflowTask, we ensure that new commands are dispatched only AFTER

@@ -31,7 +31,7 @@ import io.infinitic.common.tasks.data.ServiceName
 import io.infinitic.common.topics.ClientTopic
 import io.infinitic.common.topics.DelayedServiceExecutorTopic
 import io.infinitic.common.topics.DelayedWorkflowEngineTopic
-import io.infinitic.common.topics.DelayedWorkflowServiceExecutorTopic
+import io.infinitic.common.topics.DelayedWorkflowTaskExecutorTopic
 import io.infinitic.common.topics.NamingTopic
 import io.infinitic.common.topics.ServiceEventsTopic
 import io.infinitic.common.topics.ServiceExecutorTopic
@@ -40,9 +40,9 @@ import io.infinitic.common.topics.Topic
 import io.infinitic.common.topics.WorkflowCmdTopic
 import io.infinitic.common.topics.WorkflowEngineTopic
 import io.infinitic.common.topics.WorkflowEventsTopic
-import io.infinitic.common.topics.WorkflowServiceEventsTopic
-import io.infinitic.common.topics.WorkflowServiceExecutorTopic
 import io.infinitic.common.topics.WorkflowTagTopic
+import io.infinitic.common.topics.WorkflowTaskEventsTopic
+import io.infinitic.common.topics.WorkflowTaskExecutorTopic
 import io.infinitic.common.transport.InfiniticProducerAsync
 import io.infinitic.common.workflows.data.workflows.WorkflowName
 import kotlinx.coroutines.channels.Channel
@@ -62,12 +62,12 @@ class InMemoryInfiniticProducerAsync(private val channels: InMemoryChannels) :
     WorkflowEngineTopic -> channels.forWorkflowEngine(WorkflowName(message.entity()))
     DelayedWorkflowEngineTopic -> channels.forDelayedWorkflowEngine(WorkflowName(message.entity()))
     WorkflowEventsTopic -> channels.forWorkflowEvent(WorkflowName(message.entity()))
-    WorkflowServiceExecutorTopic -> channels.forWorkflowTaskExecutor(WorkflowName(message.entity()))
-    DelayedWorkflowServiceExecutorTopic -> channels.forDelayedWorkflowTaskExecutor(
+    WorkflowTaskExecutorTopic -> channels.forWorkflowTaskExecutor(WorkflowName(message.entity()))
+    DelayedWorkflowTaskExecutorTopic -> channels.forDelayedWorkflowTaskExecutor(
         WorkflowName(message.entity()),
     )
 
-    WorkflowServiceEventsTopic -> channels.forWorkflowTaskEvents(WorkflowName(message.entity()))
+    WorkflowTaskEventsTopic -> channels.forWorkflowTaskEvents(WorkflowName(message.entity()))
     ServiceTagTopic -> channels.forTaskTag(ServiceName(message.entity()))
     ServiceExecutorTopic -> channels.forTaskExecutor(ServiceName(message.entity()))
     DelayedServiceExecutorTopic -> channels.forDelayedTaskExecutor(ServiceName(message.entity()))

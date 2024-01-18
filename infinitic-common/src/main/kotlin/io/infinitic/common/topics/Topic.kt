@@ -92,11 +92,11 @@ data object DelayedWorkflowEngineTopic : WorkflowTopic<WorkflowEngineMessage>()
 
 data object WorkflowEventsTopic : WorkflowTopic<WorkflowEventMessage>()
 
-data object WorkflowServiceExecutorTopic : WorkflowTopic<ServiceExecutorMessage>()
+data object WorkflowTaskExecutorTopic : WorkflowTopic<ServiceExecutorMessage>()
 
-data object DelayedWorkflowServiceExecutorTopic : WorkflowTopic<ServiceExecutorMessage>()
+data object DelayedWorkflowTaskExecutorTopic : WorkflowTopic<ServiceExecutorMessage>()
 
-data object WorkflowServiceEventsTopic : WorkflowTopic<ServiceEventMessage>()
+data object WorkflowTaskEventsTopic : WorkflowTopic<ServiceEventMessage>()
 
 
 /**
@@ -108,7 +108,7 @@ data object WorkflowServiceEventsTopic : WorkflowTopic<ServiceEventMessage>()
 val Topic<*>.isDelayed
   get() = when (this) {
     DelayedWorkflowEngineTopic,
-    DelayedWorkflowServiceExecutorTopic,
+    DelayedWorkflowTaskExecutorTopic,
     DelayedServiceExecutorTopic
     -> true
 
@@ -125,7 +125,21 @@ val Topic<*>.isDelayed
 val <S : Message> Topic<S>.withoutDelay
   get() = when (this) {
     DelayedWorkflowEngineTopic -> WorkflowEngineTopic
-    DelayedWorkflowServiceExecutorTopic -> WorkflowServiceExecutorTopic
+    DelayedWorkflowTaskExecutorTopic -> WorkflowTaskExecutorTopic
     DelayedServiceExecutorTopic -> ServiceExecutorTopic
+    else -> this
+  } as Topic<S>
+
+/**
+ * Returns a [Topic] relative to workflowTask
+ *
+ * @return The [Topic] without delay.
+ */
+@Suppress("UNCHECKED_CAST")
+val <S : Message> Topic<S>.forWorkflow
+  get() = when (this) {
+    ServiceExecutorTopic -> WorkflowTaskExecutorTopic
+    DelayedServiceExecutorTopic -> DelayedWorkflowTaskExecutorTopic
+    ServiceEventsTopic -> WorkflowTaskEventsTopic
     else -> this
   } as Topic<S>

@@ -24,6 +24,7 @@ package io.infinitic.workflows.engine.handlers
 
 import io.infinitic.common.emitters.EmitterName
 import io.infinitic.common.exceptions.thisShouldNotHappen
+import io.infinitic.common.topics.WorkflowEventsTopic
 import io.infinitic.common.transport.InfiniticProducer
 import io.infinitic.common.workflows.data.methodRuns.PositionInWorkflowMethod
 import io.infinitic.common.workflows.data.methodRuns.WorkflowMethod
@@ -102,8 +103,10 @@ internal fun CoroutineScope.dispatchWorkflow(
 
     // the 2 events are sent sequentially, to ensure they have consistent timestamps
     // (workflowStarted before workflowMethodStarted)
-    producer.sendToWorkflowEvents(workflowStartedEvent)
-    producer.sendToWorkflowEvents(workflowMethodStartedEvent)
+    with(producer) {
+      workflowStartedEvent.sendTo(WorkflowEventsTopic)
+      workflowMethodStartedEvent.sendTo(WorkflowEventsTopic)
+    }
   }
 
   return state

@@ -24,6 +24,7 @@ package io.infinitic.workflows.engine.handlers
 
 import io.infinitic.common.emitters.EmitterName
 import io.infinitic.common.exceptions.thisShouldNotHappen
+import io.infinitic.common.topics.WorkflowEventsTopic
 import io.infinitic.common.transport.InfiniticProducer
 import io.infinitic.common.workflows.data.channels.ReceivingChannel
 import io.infinitic.common.workflows.data.channels.SignalId
@@ -167,7 +168,7 @@ internal fun CoroutineScope.workflowTaskCompleted(
         emitterName = emitterName,
     )
 
-    launch { producer.sendToWorkflowEvents(workflowMethodCompletedEvent) }
+    launch { with(producer) { workflowMethodCompletedEvent.sendTo(WorkflowEventsTopic) } }
 
 
     // tell itself if needed

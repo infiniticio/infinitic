@@ -31,6 +31,7 @@ import io.infinitic.common.exceptions.thisShouldNotHappen
 import io.infinitic.common.tasks.executors.errors.MethodUnknownError
 import io.infinitic.common.topics.ClientTopic
 import io.infinitic.common.topics.WorkflowEngineTopic
+import io.infinitic.common.topics.WorkflowEventsTopic
 import io.infinitic.common.topics.WorkflowTagTopic
 import io.infinitic.common.transport.InfiniticProducer
 import io.infinitic.common.transport.InfiniticProducerAsync
@@ -153,7 +154,7 @@ class WorkflowEngine(
         workflowTags = state.workflowTags,
         emitterName = emitterName,
     )
-    producer.sendToWorkflowEvents(workflowCompletedEvent)
+    with(producer) { workflowCompletedEvent.sendTo(WorkflowEventsTopic) }
   }
 
   private suspend fun removeTags(producer: InfiniticProducer, state: WorkflowState) =

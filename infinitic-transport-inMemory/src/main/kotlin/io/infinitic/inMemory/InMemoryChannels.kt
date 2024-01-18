@@ -59,20 +59,6 @@ class InMemoryChannels : AutoCloseable {
     runBlocking { consumingScope.coroutineContext.job.children.forEach { it.join() } }
     runBlocking { producingScope.coroutineContext.job.children.forEach { it.join() } }
     producingScope.cancel()
-
-//    clientChannels.values.forEach { it.close() }
-//    taskTagChannels.values.forEach { it.close() }
-//    workflowTagChannels.values.forEach { it.close() }
-//    taskExecutorChannels.values.forEach { it.close() }
-//    taskEventsChannels.values.forEach { it.close() }
-//    delayedTaskExecutorChannels.values.forEach { it.close() }
-//    workflowCmdChannels.values.forEach { it.close() }
-//    workflowEngineChannels.values.forEach { it.close() }
-//    delayedWorkflowEngineChannels.values.forEach { it.close() }
-//    workflowEventChannels.values.forEach { it.close() }
-//    workflowTaskExecutorChannels.values.forEach { it.close() }
-//    workflowTaskEventsChannels.values.forEach { it.close() }
-//    delayedWorkflowTaskExecutorChannels.values.forEach { it.close() }
   }
 
   // Client channel

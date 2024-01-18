@@ -24,6 +24,7 @@ package io.infinitic.workflows.engine.handlers
 
 import io.infinitic.common.emitters.EmitterName
 import io.infinitic.common.exceptions.thisShouldNotHappen
+import io.infinitic.common.topics.WorkflowEventsTopic
 import io.infinitic.common.transport.InfiniticProducer
 import io.infinitic.common.workflows.engine.events.WorkflowMethodFailedEvent
 import io.infinitic.common.workflows.engine.messages.TaskFailed
@@ -61,7 +62,7 @@ internal fun CoroutineScope.workflowTaskFailed(
       deferredError = deferredError,
   )
 
-  launch { producer.sendToWorkflowEvents(workflowMethodFailedEvent) }
+  launch { with(producer) { workflowMethodFailedEvent.sendTo(WorkflowEventsTopic) } }
 
   val bufferedMessages = mutableListOf<WorkflowEngineMessage>()
 
