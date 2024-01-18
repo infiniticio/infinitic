@@ -24,7 +24,10 @@ package io.infinitic.common.transport
 
 import io.infinitic.common.data.MillisDuration
 import io.infinitic.common.messages.Message
+import io.infinitic.common.tasks.events.messages.ServiceEventMessage
+import io.infinitic.common.tasks.executors.messages.ServiceExecutorMessage
 import io.infinitic.common.topics.Topic
+import io.infinitic.common.topics.forWorkflow
 import io.infinitic.common.topics.isDelayed
 import io.infinitic.common.topics.withoutDelay
 import java.util.concurrent.CompletableFuture
@@ -60,9 +63,16 @@ interface InfiniticProducerAsync {
   ): CompletableFuture<Unit> {
     require(after <= 0 || topic.isDelayed) { "Trying to send to $topic with a delay $after" }
 
+    // Switch to workflow-related topics for workflowTasks
+    val t = when (this) {
+      is ServiceExecutorMessage -> if (isWorkflowTask()) topic.forWorkflow else topic
+      is ServiceEventMessage -> if (isWorkflowTask()) topic.forWorkflow else topic
+      else -> topic
+    }
+
     return when {
-      after <= 0 -> internalSendToAsync(this, topic.withoutDelay, MillisDuration(0))
-      else -> internalSendToAsync(this, topic, after)
+      after <= 0 -> internalSendToAsync(this, t.withoutDelay, MillisDuration(0))
+      else -> internalSendToAsync(this, t, after)
     }
   }
 }

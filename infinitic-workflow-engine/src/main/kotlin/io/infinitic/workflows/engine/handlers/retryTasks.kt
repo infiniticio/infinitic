@@ -30,6 +30,8 @@ import io.infinitic.common.tasks.executors.errors.TaskTimedOutError
 import io.infinitic.common.tasks.executors.messages.ExecuteTask
 import io.infinitic.common.tasks.tags.messages.AddTagToTask
 import io.infinitic.common.topics.DelayedWorkflowEngineTopic
+import io.infinitic.common.topics.ServiceExecutorTopic
+import io.infinitic.common.topics.ServiceTagTopic
 import io.infinitic.common.transport.InfiniticProducer
 import io.infinitic.common.workflows.data.commands.CommandId
 import io.infinitic.common.workflows.data.commands.CommandStatus
@@ -106,7 +108,7 @@ private fun CoroutineScope.reDispatchTaskCmd(
     )
   }
 
-  launch { producer.sendToServiceExecutor(executeTask) }
+  launch { with(producer) { executeTask.sendTo(ServiceExecutorTopic) } }
 
   // add provided tags
   executeTask.taskTags.forEach {
@@ -116,7 +118,7 @@ private fun CoroutineScope.reDispatchTaskCmd(
         taskId = executeTask.taskId,
         emitterName = emitterName,
     )
-    launch { producer.sendToServiceTag(addTagToTask) }
+    launch { with(producer) { addTagToTask.sendTo(ServiceTagTopic) } }
   }
 
   // send global task timeout if any

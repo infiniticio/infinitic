@@ -41,9 +41,9 @@ import io.infinitic.common.topics.Topic
 import io.infinitic.common.topics.WorkflowCmdTopic
 import io.infinitic.common.topics.WorkflowEngineTopic
 import io.infinitic.common.topics.WorkflowEventsTopic
-import io.infinitic.common.topics.WorkflowServiceEventsTopic
-import io.infinitic.common.topics.WorkflowServiceExecutorTopic
 import io.infinitic.common.topics.WorkflowTagTopic
+import io.infinitic.common.topics.WorkflowTaskEventsTopic
+import io.infinitic.common.topics.WorkflowTaskExecutorTopic
 import io.infinitic.common.transport.InfiniticConsumerAsync
 import io.infinitic.common.workflows.data.workflows.WorkflowName
 import io.infinitic.common.workflows.engine.events.WorkflowEventMessage
@@ -258,7 +258,7 @@ class PulsarInfiniticConsumerAsync(
   ) = startAsync(
       handler = handler,
       beforeDlq = beforeDlq,
-      topic = WorkflowServiceExecutorTopic,
+      topic = WorkflowTaskExecutorTopic,
       concurrency = concurrency,
       name = "$workflowName",
   )
@@ -271,7 +271,7 @@ class PulsarInfiniticConsumerAsync(
   ) = startAsync(
       handler = handler,
       beforeDlq = beforeDlq,
-      topic = WorkflowServiceEventsTopic,
+      topic = WorkflowTaskEventsTopic,
       concurrency = concurrency,
       name = "$workflowName",
   )

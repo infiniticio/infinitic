@@ -35,6 +35,8 @@ import io.infinitic.common.tasks.events.messages.TaskRetriedEvent
 import io.infinitic.common.tasks.events.messages.TaskStartedEvent
 import io.infinitic.common.tasks.executors.messages.ExecuteTask
 import io.infinitic.common.tasks.executors.messages.ServiceExecutorMessage
+import io.infinitic.common.topics.DelayedServiceExecutorTopic
+import io.infinitic.common.topics.ServiceEventsTopic
 import io.infinitic.common.transport.InfiniticProducerAsync
 import io.infinitic.common.transport.LoggedInfiniticProducer
 import io.infinitic.common.utils.getCheckMode
@@ -197,8 +199,7 @@ class TaskExecutor(
 
   private suspend fun sendTaskStarted(msg: ExecuteTask) {
     val event = TaskStartedEvent.from(msg, emitterName)
-
-    producer.sendToTaskEvents(event)
+    with(producer) { event.sendTo(ServiceEventsTopic) }
   }
 
   suspend fun sendTaskFailed(
@@ -212,8 +213,7 @@ class TaskExecutor(
     description?.let { msg.logError(cause, it) }
 
     val event = TaskFailedEvent.from(msg, emitterName, cause, meta)
-
-    producer.sendToTaskEvents(event)
+    with(producer) { event.sendTo(ServiceEventsTopic) }
   }
 
   private suspend fun sendRetryTask(
@@ -225,13 +225,11 @@ class TaskExecutor(
     msg.logWarn(cause) { "Retrying in $delay" }
 
     val executeTask = ExecuteTask.retryFrom(msg, emitterName, cause, meta)
-
-    producer.sendToServiceExecutorAfter(executeTask, delay)
+    with(producer) { executeTask.sendTo(DelayedServiceExecutorTopic, delay) }
 
     // once sent, we publish the event
     val event = TaskRetriedEvent.from(msg, emitterName, cause, delay, meta)
-
-    producer.sendToTaskEvents(event)
+    with(producer) { event.sendTo(ServiceEventsTopic) }
   }
 
   private suspend fun sendTaskCompleted(
@@ -240,8 +238,7 @@ class TaskExecutor(
     meta: MutableMap<String, ByteArray>
   ) {
     val event = TaskCompletedEvent.from(msg, emitterName, value, meta)
-
-    producer.sendToTaskEvents(event)
+    with(producer) { event.sendTo(ServiceEventsTopic) }
   }
 
   private fun parse(msg: ExecuteTask): TaskCommand {

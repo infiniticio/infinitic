@@ -52,6 +52,6 @@ internal fun CoroutineScope.startInstantTimerCmq(
   )
 
   // todo: Check if there is a way not to use MillisInstant.now()
-  val duration = timerCompleted.emittedAt!! - MillisInstant.now()
-  with(producer) { timerCompleted.sendTo(DelayedWorkflowEngineTopic, duration) }
+  val delay = timerCompleted.emittedAt!! - MillisInstant.now()
+  with(producer) { timerCompleted.sendTo(DelayedWorkflowEngineTopic, delay) }
 }

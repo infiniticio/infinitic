@@ -29,7 +29,9 @@ import io.infinitic.clients.InfiniticClient
 import io.infinitic.clients.InfiniticClientInterface
 import io.infinitic.common.data.MillisInstant
 import io.infinitic.common.messages.Message
+import io.infinitic.common.topics.ServiceExecutorTopic
 import io.infinitic.common.topics.WorkflowEngineTopic
+import io.infinitic.common.topics.WorkflowTaskExecutorTopic
 import io.infinitic.common.transport.InfiniticConsumerAsync
 import io.infinitic.common.transport.InfiniticProducerAsync
 import io.infinitic.common.transport.LoggedInfiniticProducer
@@ -194,7 +196,9 @@ class InfiniticWorker(
       // WORKFLOW-TASK_EXECUTOR-DELAY
       futures.addIfNotDone(
           consumerAsync.startDelayedWorkflowTaskConsumerAsync(
-              handler = { msg, _ -> delayedTaskProducer.sendToServiceExecutor(msg) },
+              handler = { msg, _ ->
+                with(delayedTaskProducer) { msg.sendTo(WorkflowTaskExecutorTopic) }
+              },
               beforeDlq = logMessageSentToDLQ,
               workflowName = it.key,
               concurrency = it.value.concurrency,
@@ -251,7 +255,7 @@ class InfiniticWorker(
       // TASK-EXECUTOR-DELAY
       futures.addIfNotDone(
           consumerAsync.startDelayedTaskExecutorConsumerAsync(
-              handler = { msg, _ -> delayedTaskProducer.sendToServiceExecutor(msg) },
+              handler = { msg, _ -> with(delayedTaskProducer) { msg.sendTo(ServiceExecutorTopic) } },
               beforeDlq = logMessageSentToDLQ,
               serviceName = it.key,
               concurrency = it.value.concurrency,
