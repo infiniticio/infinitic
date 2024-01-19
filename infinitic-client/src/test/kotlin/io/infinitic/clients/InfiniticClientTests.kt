@@ -45,6 +45,8 @@ import io.infinitic.common.fixtures.TestFactory
 import io.infinitic.common.fixtures.later
 import io.infinitic.common.tasks.executors.messages.ServiceExecutorMessage
 import io.infinitic.common.tasks.tags.messages.ServiceTagMessage
+import io.infinitic.common.topics.ClientTopic
+import io.infinitic.common.topics.Topic
 import io.infinitic.common.topics.WorkflowCmdTopic
 import io.infinitic.common.topics.WorkflowTagTopic
 import io.infinitic.common.transport.InfiniticConsumerAsync
@@ -136,7 +138,7 @@ private val producerAsync = mockk<InfiniticProducerAsync> {
 }
 
 private val consumerAsync = mockk<InfiniticConsumerAsync> {
-  coEvery { startClientConsumerAsync(any(), any(), clientNameTest) } just Runs
+  coEvery { start(any<Topic<*>>(), any(), any(), "$clientNameTest", any()) } just Runs
 }
 
 private val client = InfiniticClient(consumerAsync, producerAsync)
@@ -185,7 +187,15 @@ internal class InfiniticClientTests : StringSpec(
         )
 
         // when asynchronously dispatching a workflow, the consumer should not be started
-        coVerify(exactly = 0) { consumerAsync.startClientConsumerAsync(any(), any(), any()) }
+        coVerify(exactly = 0) {
+          consumerAsync.start(
+              ClientTopic,
+              any(),
+              any(),
+              "$clientNameTest",
+              1,
+          )
+        }
       }
 
       "Should be able to dispatch a workflow with annotation" {
@@ -399,13 +409,21 @@ internal class InfiniticClientTests : StringSpec(
         )
 
         // when waiting for a workflow, the consumer should be started
-        coVerify { consumerAsync.startClientConsumerAsync(any(), any(), clientNameTest) }
+        coVerify { consumerAsync.start(ClientTopic, any(), any(), "$clientNameTest", 1) }
 
         // restart a workflow
         client.dispatch(fakeWorkflow::m3, 0, "a").await()
 
         // the consumer should be started only once
-        coVerify(exactly = 1) { consumerAsync.startClientConsumerAsync(any(), any(), any()) }
+        coVerify(exactly = 1) {
+          consumerAsync.start(
+              ClientTopic,
+              any(),
+              any(),
+              "$clientNameTest",
+              1,
+          )
+        }
       }
 
       "Should throw a WorkflowTimedOutException when waiting for a workflow more than timeout" {

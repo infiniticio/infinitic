@@ -47,13 +47,22 @@ class PulsarInfiniticConsumerAsync(
   val shutdownGracePeriodInSeconds: Double
 ) : InfiniticConsumerAsync {
 
-  override var logName: String? = null
   override fun join() = consumer.join()
 
   // See InfiniticWorker
+  override var logName: String? = null
   private val logger by lazy { KotlinLogging.logger(logName ?: this::class.java.name) }
 
   private lateinit var clientName: String
+  private suspend fun deleteClientTopic() {
+    if (::clientName.isInitialized) {
+      val clientTopic = with(pulsarResources) { ClientTopic.fullName(clientName) }
+      logger.debug { "Deleting client topic '$clientTopic'." }
+      pulsarResources.deleteTopic(clientTopic)
+          .onFailure { logger.warn(it) { "Unable to delete client topic '$clientTopic'." } }
+          .onSuccess { logger.info { "Client topic '$clientTopic' deleted." } }
+    }
+  }
 
   override fun close() {
     // we test if consumingScope is active, just in case
@@ -81,16 +90,6 @@ class PulsarInfiniticConsumerAsync(
     }
   }
 
-  private suspend fun deleteClientTopic() {
-    if (::clientName.isInitialized) {
-      val clientTopic = with(pulsarResources) { ClientTopic.fullName(clientName) }
-      logger.debug { "Deleting client topic '$clientTopic'." }
-      pulsarResources.deleteTopic(clientTopic)
-          .onFailure { logger.warn(it) { "Unable to delete client topic '$clientTopic'." } }
-          .onSuccess { logger.info { "Client topic '$clientTopic' deleted." } }
-    }
-  }
-
   override suspend fun <S : Message> start(
     topic: Topic<S>,
     handler: suspend (S, MillisInstant) -> Unit,
@@ -106,24 +105,6 @@ class PulsarInfiniticConsumerAsync(
       ClientTopic -> clientName = entity
       else -> Unit
     }
-
-    startLoop(
-        topic = topic,
-        handler = handler,
-        beforeDlq = beforeDlq,
-        concurrency = concurrency,
-        entity = entity,
-    )
-  }
-
-  // Start a consumer on a topic, with concurrent executors
-  private suspend fun <T : Message> startLoop(
-    topic: Topic<T>,
-    handler: suspend (T, MillisInstant) -> Unit,
-    beforeDlq: suspend (T?, Exception) -> Unit,
-    concurrency: Int,
-    entity: String
-  ) {
 
     lateinit var topicName: String
     lateinit var topicDLQName: String
