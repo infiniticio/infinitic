@@ -89,7 +89,7 @@ class ConsumerTests : StringSpec(
         topic: String,
         concurrency: Int,
         withKey: Boolean = false
-      ) = consumer.startConsumerLoop(
+      ) = consumer.startListening(
           handler = handler,
           beforeDlq = { _, _ -> },
           schema = ServiceExecutorTopic.schema,

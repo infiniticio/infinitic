@@ -80,7 +80,7 @@ class PulsarInfiniticConsumerAsyncTests : StringSpec(
 
       val consumer = mockk<Consumer> {
         coEvery {
-          startConsumerLoop(
+          startListening(
               capture(handler),
               capture(handlerDlq),
               any(),

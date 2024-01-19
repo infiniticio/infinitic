@@ -77,7 +77,7 @@ class Consumer(
     }
   }
 
-  internal suspend fun <T : Message, S : Envelope<out T>> startConsumerLoop(
+  internal suspend fun <T : Message, S : Envelope<out T>> startListening(
     handler: suspend (T, MillisInstant) -> Unit,
     beforeDlq: suspend (T?, Exception) -> Unit,
     schema: Schema<S>,

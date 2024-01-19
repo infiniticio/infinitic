@@ -22,11 +22,8 @@
  */
 package io.infinitic.pulsar.resources
 
-import io.infinitic.common.topics.ServiceTagTopic
 import io.infinitic.common.topics.Topic
-import io.infinitic.common.topics.WorkflowCmdTopic
-import io.infinitic.common.topics.WorkflowEngineTopic
-import io.infinitic.common.topics.WorkflowTagTopic
+import io.infinitic.common.topics.hasKey
 import org.apache.pulsar.client.api.SubscriptionInitialPosition
 import org.apache.pulsar.client.api.SubscriptionType
 
@@ -38,13 +35,9 @@ interface Subscription {
 }
 
 object MainSubscription : Subscription {
-  override fun type(topic: Topic<*>) = when (topic) {
-    ServiceTagTopic,
-    WorkflowTagTopic,
-    WorkflowCmdTopic,
-    WorkflowEngineTopic -> SubscriptionType.Key_Shared
-
-    else -> SubscriptionType.Shared
+  override fun type(topic: Topic<*>) = when (topic.hasKey) {
+    true -> SubscriptionType.Key_Shared
+    false -> SubscriptionType.Shared
   }
 
   override fun name(topic: Topic<*>) = "${topic.prefix()}-subscription"

@@ -28,7 +28,6 @@ import io.infinitic.clients.deferred.DeferredChannel
 import io.infinitic.clients.deferred.DeferredSend
 import io.infinitic.clients.deferred.ExistingDeferredWorkflow
 import io.infinitic.clients.deferred.NewDeferredWorkflow
-import io.infinitic.common.clients.data.ClientName
 import io.infinitic.common.clients.messages.ClientMessage
 import io.infinitic.common.clients.messages.MethodCanceled
 import io.infinitic.common.clients.messages.MethodCompleted
@@ -56,6 +55,7 @@ import io.infinitic.common.proxies.RequestByWorkflowTag
 import io.infinitic.common.tasks.data.ServiceName
 import io.infinitic.common.tasks.data.TaskId
 import io.infinitic.common.tasks.executors.errors.MethodFailedError
+import io.infinitic.common.topics.ClientTopic
 import io.infinitic.common.topics.Topic
 import io.infinitic.common.topics.WorkflowCmdTopic
 import io.infinitic.common.topics.WorkflowTagTopic
@@ -754,10 +754,12 @@ internal class ClientDispatcher(
     synchronized(this) {
       if (!isClientConsumerInitialized) {
         runBlocking(clientScope.coroutineContext) {
-          consumerAsync.startClientConsumerAsync(
-              ::handle,
-              logMessageSentToDLQ,
-              ClientName.from(emitterName),
+          consumerAsync.start(
+              topic = ClientTopic,
+              handler = ::handle,
+              beforeDlq = logMessageSentToDLQ,
+              concurrency = 1,
+              entity = emitterName.toString(),
           )
           isClientConsumerInitialized = true
         }

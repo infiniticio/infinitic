@@ -24,31 +24,13 @@ package io.infinitic.pulsar
 
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.infinitic.autoclose.autoClose
-import io.infinitic.common.clients.data.ClientName
-import io.infinitic.common.clients.messages.ClientMessage
 import io.infinitic.common.data.MillisInstant
 import io.infinitic.common.messages.Message
-import io.infinitic.common.tasks.data.ServiceName
-import io.infinitic.common.tasks.events.messages.ServiceEventMessage
-import io.infinitic.common.tasks.executors.messages.ServiceExecutorMessage
-import io.infinitic.common.tasks.tags.messages.ServiceTagMessage
 import io.infinitic.common.topics.ClientTopic
-import io.infinitic.common.topics.DelayedWorkflowEngineTopic
-import io.infinitic.common.topics.ServiceEventsTopic
-import io.infinitic.common.topics.ServiceExecutorTopic
-import io.infinitic.common.topics.ServiceTagTopic
+import io.infinitic.common.topics.DelayedServiceExecutorTopic
+import io.infinitic.common.topics.DelayedWorkflowTaskExecutorTopic
 import io.infinitic.common.topics.Topic
-import io.infinitic.common.topics.WorkflowCmdTopic
-import io.infinitic.common.topics.WorkflowEngineTopic
-import io.infinitic.common.topics.WorkflowEventsTopic
-import io.infinitic.common.topics.WorkflowTagTopic
-import io.infinitic.common.topics.WorkflowTaskEventsTopic
-import io.infinitic.common.topics.WorkflowTaskExecutorTopic
 import io.infinitic.common.transport.InfiniticConsumerAsync
-import io.infinitic.common.workflows.data.workflows.WorkflowName
-import io.infinitic.common.workflows.engine.events.WorkflowEventMessage
-import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
-import io.infinitic.common.workflows.tags.messages.WorkflowTagMessage
 import io.infinitic.pulsar.consumers.Consumer
 import io.infinitic.pulsar.resources.MainSubscription
 import io.infinitic.pulsar.resources.PulsarResources
@@ -67,16 +49,6 @@ class PulsarInfiniticConsumerAsync(
 
   override var logName: String? = null
   override fun join() = consumer.join()
-  
-  override suspend fun <S : Message> startConsumerAsync(
-    topic: Topic<S>,
-    handler: suspend (S, MillisInstant) -> Unit,
-    beforeDlq: suspend (S?, Exception) -> Unit,
-    entity: String
-  ) {
-
-    TODO("Not yet implemented")
-  }
 
   // See InfiniticWorker
   private val logger by lazy { KotlinLogging.logger(logName ?: this::class.java.name) }
@@ -119,194 +91,52 @@ class PulsarInfiniticConsumerAsync(
     }
   }
 
-  // Start consumers of messages to client
-  override suspend fun startClientConsumerAsync(
-    handler: suspend (ClientMessage, MillisInstant) -> Unit,
-    beforeDlq: suspend (ClientMessage?, Exception) -> Unit,
-    clientName: ClientName
-  ) = startLoop(
-      handler = handler,
-      beforeDlq = beforeDlq,
-      topic = ClientTopic,
-      concurrency = 1,
-      name = "$clientName",
-  ).also { this.clientName = "$clientName" }
-
-  // Start consumers of messages to workflow tag
-  override suspend fun startWorkflowTagConsumerAsync(
-    handler: suspend (WorkflowTagMessage, MillisInstant) -> Unit,
-    beforeDlq: suspend (WorkflowTagMessage?, Exception) -> Unit,
-    workflowName: WorkflowName,
-    concurrency: Int
-  ) = startLoop(
-      handler = handler,
-      beforeDlq = beforeDlq,
-      topic = WorkflowTagTopic,
-      concurrency = concurrency,
-      name = "$workflowName",
-  )
-
-  override suspend fun startWorkflowCmdConsumerAsync(
-    handler: suspend (WorkflowEngineMessage, MillisInstant) -> Unit,
-    beforeDlq: suspend (WorkflowEngineMessage?, Exception) -> Unit,
-    workflowName: WorkflowName,
-    concurrency: Int
-  ) = startLoop(
-      handler = handler,
-      beforeDlq = beforeDlq,
-      topic = WorkflowCmdTopic,
-      concurrency = concurrency,
-      name = "$workflowName",
-  )
-
-  // Start consumers of messages to workflow engine
-  override suspend fun startWorkflowEngineConsumerAsync(
-    handler: suspend (WorkflowEngineMessage, MillisInstant) -> Unit,
-    beforeDlq: suspend (WorkflowEngineMessage?, Exception) -> Unit,
-    workflowName: WorkflowName,
-    concurrency: Int
-  ) = startLoop(
-      handler = handler,
-      beforeDlq = beforeDlq,
-      topic = WorkflowEngineTopic,
-      concurrency = concurrency,
-      name = "$workflowName",
-  )
-
-  // Start consumers of delayed messages to workflow engine
-  override suspend fun startDelayedWorkflowEngineConsumerAsync(
-    handler: suspend (WorkflowEngineMessage, MillisInstant) -> Unit,
-    beforeDlq: suspend (WorkflowEngineMessage?, Exception) -> Unit,
-    workflowName: WorkflowName,
-    concurrency: Int
-  ) = startLoop(
-      handler = handler,
-      beforeDlq = beforeDlq,
-      topic = DelayedWorkflowEngineTopic,
-      concurrency = concurrency,
-      name = "$workflowName",
-  )
-
-  override suspend fun startWorkflowEventsConsumerAsync(
-    handler: suspend (WorkflowEventMessage, MillisInstant) -> Unit,
-    beforeDlq: suspend (WorkflowEventMessage?, Exception) -> Unit,
-    workflowName: WorkflowName,
-    concurrency: Int
-  ) = startLoop(
-      handler = handler,
-      beforeDlq = beforeDlq,
-      topic = WorkflowEventsTopic,
-      concurrency = concurrency,
-      name = "$workflowName",
-  )
-
-  // Start consumers of messages to task tags
-  override suspend fun startTaskTagConsumerAsync(
-    handler: suspend (ServiceTagMessage, MillisInstant) -> Unit,
-    beforeDlq: suspend (ServiceTagMessage?, Exception) -> Unit,
-    serviceName: ServiceName,
-    concurrency: Int
-  ) = startLoop(
-      handler = handler,
-      beforeDlq = beforeDlq,
-      topic = ServiceTagTopic,
-      concurrency = concurrency,
-      name = "$serviceName",
-  )
-
-  // Start consumers of messages to task executor
-  override suspend fun startTaskExecutorConsumerAsync(
-    handler: suspend (ServiceExecutorMessage, MillisInstant) -> Unit,
-    beforeDlq: suspend (ServiceExecutorMessage?, Exception) -> Unit,
-    serviceName: ServiceName,
-    concurrency: Int
-  ) = startLoop(
-      handler = handler,
-      beforeDlq = beforeDlq,
-      topic = ServiceExecutorTopic,
-      concurrency = concurrency,
-      name = "$serviceName",
-  )
-
-  override suspend fun startTaskEventsConsumerAsync(
-    handler: suspend (ServiceEventMessage, MillisInstant) -> Unit,
-    beforeDlq: suspend (ServiceEventMessage?, Exception) -> Unit,
-    serviceName: ServiceName,
-    concurrency: Int
-  ) = startLoop(
-      handler = handler,
-      beforeDlq = beforeDlq,
-      topic = ServiceEventsTopic,
-      concurrency = concurrency,
-      name = "$serviceName",
-  )
-
-  override suspend fun startDelayedTaskExecutorConsumerAsync(
-    handler: suspend (ServiceExecutorMessage, MillisInstant) -> Unit,
-    beforeDlq: suspend (ServiceExecutorMessage?, Exception) -> Unit,
-    serviceName: ServiceName,
-    concurrency: Int
+  override suspend fun <S : Message> start(
+    topic: Topic<S>,
+    handler: suspend (S, MillisInstant) -> Unit,
+    beforeDlq: suspend (S?, Exception) -> Unit,
+    entity: String,
+    concurrency: Int,
   ) {
-    // Nothing to do
-  }
+    when (topic) {
+      // we do nothing here, as WorkflowTaskExecutorTopic and ServiceExecutorTopic
+      // do not need a distinct topic to handle delayed messages in Pulsar
+      DelayedWorkflowTaskExecutorTopic, DelayedServiceExecutorTopic -> return
+      // record client name to be able to delete topic at closing
+      ClientTopic -> clientName = entity
+      else -> Unit
+    }
 
-  // Start consumers of messages to workflow task executor
-  override suspend fun startWorkflowTaskConsumerAsync(
-    handler: suspend (ServiceExecutorMessage, MillisInstant) -> Unit,
-    beforeDlq: suspend (ServiceExecutorMessage?, Exception) -> Unit,
-    workflowName: WorkflowName,
-    concurrency: Int
-  ) = startLoop(
-      handler = handler,
-      beforeDlq = beforeDlq,
-      topic = WorkflowTaskExecutorTopic,
-      concurrency = concurrency,
-      name = "$workflowName",
-  )
-
-  override suspend fun startWorkflowTaskEventsConsumerAsync(
-    handler: suspend (ServiceEventMessage, MillisInstant) -> Unit,
-    beforeDlq: suspend (ServiceEventMessage?, Exception) -> Unit,
-    workflowName: WorkflowName,
-    concurrency: Int
-  ) = startLoop(
-      handler = handler,
-      beforeDlq = beforeDlq,
-      topic = WorkflowTaskEventsTopic,
-      concurrency = concurrency,
-      name = "$workflowName",
-  )
-
-  override suspend fun startDelayedWorkflowTaskConsumerAsync(
-    handler: suspend (ServiceExecutorMessage, MillisInstant) -> Unit,
-    beforeDlq: suspend (ServiceExecutorMessage?, Exception) -> Unit,
-    workflowName: WorkflowName,
-    concurrency: Int
-  ) {
-    // Nothing to do
+    startLoop(
+        topic = topic,
+        handler = handler,
+        beforeDlq = beforeDlq,
+        concurrency = concurrency,
+        entity = entity,
+    )
   }
 
   // Start a consumer on a topic, with concurrent executors
   private suspend fun <T : Message> startLoop(
+    topic: Topic<T>,
     handler: suspend (T, MillisInstant) -> Unit,
     beforeDlq: suspend (T?, Exception) -> Unit,
-    topic: Topic<T>,
     concurrency: Int,
-    name: String
+    entity: String
   ) {
 
     lateinit var topicName: String
     lateinit var topicDLQName: String
 
     coroutineScope {
-      // name of topic
-      launch { topicName = with(pulsarResources) { topic.fullName(name) } }
+      // get name of topic, creates it if it does not exist yet
+      launch { topicName = with(pulsarResources) { topic.fullName(entity) } }
 
-      // name of DLQ topic
-      launch { topicDLQName = with(pulsarResources) { topic.fullNameDLQ(name) } }
+      // name of DLQ topic, creates it if it does not exist yet
+      launch { topicDLQName = with(pulsarResources) { topic.fullNameDLQ(entity) } }
     }
 
-    consumer.startConsumerLoop(
+    consumer.startListening(
         handler = handler,
         beforeDlq = beforeDlq,
         schema = topic.schema,
@@ -315,7 +145,7 @@ class PulsarInfiniticConsumerAsync(
         subscriptionName = MainSubscription.name(topic),
         subscriptionNameDlq = MainSubscription.nameDLQ(topic),
         subscriptionType = MainSubscription.type(topic),
-        consumerName = name,
+        consumerName = entity,
         concurrency = concurrency,
     )
   }
