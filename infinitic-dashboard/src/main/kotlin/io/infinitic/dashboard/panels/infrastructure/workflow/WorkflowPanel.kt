@@ -22,6 +22,9 @@
  */
 package io.infinitic.dashboard.panels.infrastructure.workflow
 
+import io.infinitic.common.topics.Topic
+import io.infinitic.common.topics.WorkflowEngineTopic
+import io.infinitic.common.topics.WorkflowTopic
 import io.infinitic.dashboard.InfiniticDashboard
 import io.infinitic.dashboard.Panel
 import io.infinitic.dashboard.menus.InfraMenu
@@ -34,8 +37,6 @@ import io.infinitic.dashboard.panels.infrastructure.jobs.update
 import io.infinitic.dashboard.panels.infrastructure.requests.Loading
 import io.infinitic.dashboard.panels.infrastructure.requests.Request
 import io.infinitic.dashboard.svgs.icons.iconChevron
-import io.infinitic.pulsar.resources.TopicDescription
-import io.infinitic.pulsar.resources.WorkflowTopicsDescription
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -72,19 +73,18 @@ class WorkflowPanel private constructor(private val workflowName: String) : Pane
   private val workflowIsLoading = workflowState.property(WorkflowState::isLoading)
   private val workflowLastUpdated = workflowState.property(WorkflowState::lastUpdatedAt)
 
-  private val selectionTopicDescription: KVar<TopicDescription> =
-      KVar(WorkflowTopicsDescription.ENGINE)
+  private val selectionTopic: KVar<Topic<*>> = KVar(WorkflowEngineTopic)
   private val selectionTopicStats: KVar<Request<PartitionedTopicStats>> = KVar(Loading())
 
-  private val selectionSlide = selectionSlide(selectionTopicDescription, selectionTopicStats)
+  private val selectionSlide = selectionSlide(selectionTopic, selectionTopicStats)
 
   lateinit var job: Job
 
   init {
     // this listener ensures that the slideover appear/disappear with right content
     workflowState.addListener { _, new ->
-      if (selectionTopicDescription.value is WorkflowTopicsDescription) {
-        selectionTopicStats.value = new.topicsStats[selectionTopicDescription.value]!!
+      if (selectionTopic.value is WorkflowTopic<*>) {
+        selectionTopicStats.value = new.topicsStats[selectionTopic.value]!!
       }
     }
   }
@@ -164,7 +164,7 @@ class WorkflowPanel private constructor(private val workflowName: String) : Pane
     text: String,
     isLoading: KVar<Boolean>,
     lastUpdated: KVar<Instant>,
-    state: KVar<out JobState<out TopicDescription>>
+    state: KVar<out JobState<out Topic<*>>>
   ) {
     div().classes("pt-8 pb-8").new {
       div().classes("max-w-7xl mx-auto sm:px-6 md:px-8").new {
@@ -173,7 +173,7 @@ class WorkflowPanel private constructor(private val workflowName: String) : Pane
           span().text(text).addText(" Click on a row to get more details on its real-time stats.")
         }
         displayJobStatsTable(
-            workflowName, state, selectionSlide, selectionTopicDescription, selectionTopicStats,
+            workflowName, state, selectionSlide, selectionTopic, selectionTopicStats,
         )
       }
     }

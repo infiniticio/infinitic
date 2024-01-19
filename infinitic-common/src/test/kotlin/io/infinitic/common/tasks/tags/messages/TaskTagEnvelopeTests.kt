@@ -35,7 +35,7 @@ import io.kotest.matchers.shouldBe
 class TaskTagEnvelopeTests :
   StringSpec(
       {
-        TaskTagMessage::class.sealedSubclasses.map {
+        ServiceTagMessage::class.sealedSubclasses.map {
           val msg = TestFactory.random(it)
 
           "TaskTagMessage(${msg::class.simpleName}) should be avro-convertible" {

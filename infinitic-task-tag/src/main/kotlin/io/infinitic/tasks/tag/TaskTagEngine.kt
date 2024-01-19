@@ -32,8 +32,9 @@ import io.infinitic.common.tasks.tags.messages.CancelTaskByTag
 import io.infinitic.common.tasks.tags.messages.GetTaskIdsByTag
 import io.infinitic.common.tasks.tags.messages.RemoveTagFromTask
 import io.infinitic.common.tasks.tags.messages.RetryTaskByTag
-import io.infinitic.common.tasks.tags.messages.TaskTagMessage
+import io.infinitic.common.tasks.tags.messages.ServiceTagMessage
 import io.infinitic.common.tasks.tags.storage.TaskTagStorage
+import io.infinitic.common.topics.ClientTopic
 import io.infinitic.common.transport.InfiniticProducerAsync
 import io.infinitic.common.transport.LoggedInfiniticProducer
 import io.infinitic.tasks.tag.storage.LoggedTaskTagStorage
@@ -47,17 +48,17 @@ class TaskTagEngine(
 ) {
   private lateinit var scope: CoroutineScope
 
-  private val storage = LoggedTaskTagStorage(javaClass.name, storage)
+  private val storage = LoggedTaskTagStorage(this::class.java.name, storage)
 
-  private val producer = LoggedInfiniticProducer(javaClass.name, producerAsync)
+  private val producer = LoggedInfiniticProducer(this::class.java.name, producerAsync)
 
-  private val logger = KotlinLogging.logger(javaClass.name)
+  private val logger = KotlinLogging.logger(this::class.java.name)
 
   private val emitterName by lazy { EmitterName(producer.name) }
 
 
   @Suppress("UNUSED_PARAMETER")
-  suspend fun handle(message: TaskTagMessage, publishTime: MillisInstant) {
+  suspend fun handle(message: ServiceTagMessage, publishTime: MillisInstant) {
     logger.debug { "receiving $message" }
 
     process(message)
@@ -67,7 +68,7 @@ class TaskTagEngine(
 
   // coroutineScope let send messages in parallel
   // it's important as we can have a lot of them
-  private suspend fun process(message: TaskTagMessage) = coroutineScope {
+  private suspend fun process(message: ServiceTagMessage) = coroutineScope {
     scope = this
 
     when (message) {
@@ -120,10 +121,10 @@ class TaskTagEngine(
         emitterName = emitterName,
     )
 
-    scope.launch { producer.sendToClient(taskIdsByTag) }
+    scope.launch { with(producer) { taskIdsByTag.sendTo(ClientTopic) } }
   }
 
-  private suspend fun hasMessageAlreadyBeenHandled(message: TaskTagMessage) =
+  private suspend fun hasMessageAlreadyBeenHandled(message: ServiceTagMessage) =
       when (storage.getLastMessageId(message.taskTag, message.serviceName)) {
         message.messageId -> {
           logger.info { "discarding as state already contains this messageId: $message" }
@@ -133,7 +134,7 @@ class TaskTagEngine(
         else -> false
       }
 
-  private fun discardTagWithoutIds(message: TaskTagMessage) {
+  private fun discardTagWithoutIds(message: ServiceTagMessage) {
     logger.debug { "discarding as no id found for the provided tag: $message" }
   }
 }

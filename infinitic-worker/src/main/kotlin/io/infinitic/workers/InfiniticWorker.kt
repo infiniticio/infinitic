@@ -27,10 +27,15 @@ import io.infinitic.autoclose.addAutoCloseResource
 import io.infinitic.autoclose.autoClose
 import io.infinitic.clients.InfiniticClient
 import io.infinitic.clients.InfiniticClientInterface
+import io.infinitic.common.data.MillisInstant
 import io.infinitic.common.messages.Message
+import io.infinitic.common.topics.ServiceExecutorTopic
+import io.infinitic.common.topics.WorkflowEngineTopic
+import io.infinitic.common.topics.WorkflowTaskExecutorTopic
 import io.infinitic.common.transport.InfiniticConsumerAsync
 import io.infinitic.common.transport.InfiniticProducerAsync
 import io.infinitic.common.transport.LoggedInfiniticProducer
+import io.infinitic.events.toCloudEvent
 import io.infinitic.pulsar.PulsarInfiniticConsumerAsync
 import io.infinitic.tasks.Task
 import io.infinitic.tasks.executor.TaskEventHandler
@@ -45,6 +50,9 @@ import io.infinitic.workflows.engine.WorkflowCmdHandler
 import io.infinitic.workflows.engine.WorkflowEngine
 import io.infinitic.workflows.engine.WorkflowEventHandler
 import io.infinitic.workflows.tag.WorkflowTagEngine
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import java.util.concurrent.CompletableFuture
 import kotlin.system.exitProcess
 
@@ -93,7 +101,6 @@ class InfiniticWorker(
   fun start(): Unit = try {
     startAsync().get()
   } catch (e: Throwable) {
-    // exiting if any of startAsyncs is failing
     // this will trigger the shutdown hook
     exitProcess(1)
   }
@@ -102,180 +109,208 @@ class InfiniticWorker(
    * Start worker asynchronously
    */
   fun startAsync(): CompletableFuture<Unit> {
-    val futures = mutableListOf<CompletableFuture<Unit>>()
+    runBlocking(Dispatchers.IO) {
 
-    val logMessageSentToDLQ = { message: Message?, e: Exception ->
-      logger.error(e) { "Sending message to DLQ ${message ?: "(Not Deserialized)"}" }
-    }
+      val logMessageSentToDLQ = { message: Message?, e: Exception ->
+        logger.error(e) { "Sending message to DLQ ${message ?: "(Not Deserialized)"}" }
+      }
 
-    workerRegistry.workflowTags.forEach {
-      // WORKFLOW-TAG
-      val workflowTagEngine = WorkflowTagEngine(it.value.storage, producerAsync)
-
-      futures.addIfNotDone(
+      workerRegistry.workflowTags.forEach {
+        // WORKFLOW-TAG
+        launch {
+          val workflowTagEngine = WorkflowTagEngine(it.value.storage, producerAsync)
           consumerAsync.startWorkflowTagConsumerAsync(
               handler = workflowTagEngine::handle,
               beforeDlq = logMessageSentToDLQ,
               workflowName = it.key,
               concurrency = it.value.concurrency,
-          ),
-      )
-    }
+          )
+        }
+      }
 
-    workerRegistry.workflowEngines.forEach {
-      // WORKFLOW-CMD
-      val workflowCmdHandler = WorkflowCmdHandler(producerAsync)
-
-      futures.addIfNotDone(
+      workerRegistry.workflowEngines.forEach {
+        // WORKFLOW-CMD
+        launch {
+          val workflowCmdHandler = WorkflowCmdHandler(producerAsync)
           consumerAsync.startWorkflowCmdConsumerAsync(
               handler = workflowCmdHandler::handle,
               beforeDlq = logMessageSentToDLQ,
               workflowName = it.key,
               concurrency = it.value.concurrency,
-          ),
-      )
+          )
+        }
 
-      // WORKFLOW-ENGINE
-      val workflowEngine = WorkflowEngine(it.value.storage, producerAsync)
-
-      futures.addIfNotDone(
+        // WORKFLOW-ENGINE
+        launch {
+          val workflowEngine = WorkflowEngine(it.value.storage, producerAsync)
           consumerAsync.startWorkflowEngineConsumerAsync(
               handler = workflowEngine::handle,
               beforeDlq = logMessageSentToDLQ,
               workflowName = it.key,
               concurrency = it.value.concurrency,
-          ),
-      )
+          )
+        }
 
-      // WORKFLOW-DELAY
-      futures.addIfNotDone(
+        // WORKFLOW-DELAY
+        launch {
           consumerAsync.startDelayedWorkflowEngineConsumerAsync(
-              handler = { msg, _ -> delayedWorkflowProducer.sendToWorkflowEngine(msg) },
+              handler = { msg, _ ->
+                with(delayedWorkflowProducer) { msg.sendTo(WorkflowEngineTopic) }
+              },
               beforeDlq = logMessageSentToDLQ,
               workflowName = it.key,
               concurrency = it.value.concurrency,
-          ),
-      )
+          )
+        }
 
-      // WORKFLOW-EVENTS
-      val workflowEventHandler = WorkflowEventHandler(producerAsync)
-
-      futures.addIfNotDone(
+        // WORKFLOW-EVENTS
+        launch {
+          val workflowEventHandler = WorkflowEventHandler(producerAsync)
           consumerAsync.startWorkflowEventsConsumerAsync(
               handler = workflowEventHandler::handle,
               beforeDlq = logMessageSentToDLQ,
               workflowName = it.key,
               concurrency = it.value.concurrency,
-          ),
-      )
-    }
+          )
+        }
+      }
 
-    workerRegistry.workflows.forEach {
-      // WORKFLOW-TASK_EXECUTOR
-      val workflowTaskExecutor = TaskExecutor(workerRegistry, producerAsync, client)
-
-      futures.addIfNotDone(
+      workerRegistry.workflowExecutors.forEach {
+        // WORKFLOW-TASK_EXECUTOR
+        launch {
+          val workflowTaskExecutor = TaskExecutor(workerRegistry, producerAsync, client)
           consumerAsync.startWorkflowTaskConsumerAsync(
               handler = workflowTaskExecutor::handle,
               beforeDlq = { message, cause ->
                 logMessageSentToDLQ(message, cause)
                 message?.let {
-                  workflowTaskExecutor.run {
-                    sendTaskFailed(it, cause, Task.meta, sendingDlqMessage)
-                  }
+                  workflowTaskExecutor.sendTaskFailed(it, cause, Task.meta, sendingDlqMessage)
                 }
               },
               workflowName = it.key,
               concurrency = it.value.concurrency,
-          ),
-      )
+          )
+        }
 
-      // WORKFLOW-TASK_EXECUTOR-DELAY
-      futures.addIfNotDone(
+        // WORKFLOW-TASK_EXECUTOR-DELAY
+        launch {
           consumerAsync.startDelayedWorkflowTaskConsumerAsync(
-              handler = { msg, _ -> delayedTaskProducer.sendToTaskExecutor(msg) },
+              handler = { msg, _ ->
+                with(delayedTaskProducer) { msg.sendTo(WorkflowTaskExecutorTopic) }
+              },
               beforeDlq = logMessageSentToDLQ,
               workflowName = it.key,
               concurrency = it.value.concurrency,
-          ),
-      )
+          )
+        }
 
-      // WORKFLOW-TASK-EVENT
-      val workflowTaskEventHandler = TaskEventHandler(producerAsync)
-
-      futures.addIfNotDone(
+        // WORKFLOW-TASK-EVENT
+        launch {
+          val workflowTaskEventHandler = TaskEventHandler(producerAsync)
           consumerAsync.startWorkflowTaskEventsConsumerAsync(
               handler = workflowTaskEventHandler::handle,
               beforeDlq = logMessageSentToDLQ,
               workflowName = it.key,
               concurrency = it.value.concurrency,
-          ),
-      )
-    }
+          )
+        }
+      }
 
-    workerRegistry.serviceTags.forEach {
-      // TASK-TAG
-      val tagEngine = TaskTagEngine(it.value.storage, producerAsync)
-
-      futures.addIfNotDone(
+      workerRegistry.serviceTags.forEach {
+        // TASK-TAG
+        launch {
+          val tagEngine = TaskTagEngine(it.value.storage, producerAsync)
           consumerAsync.startTaskTagConsumerAsync(
               handler = tagEngine::handle,
               beforeDlq = logMessageSentToDLQ,
               serviceName = it.key,
               concurrency = it.value.concurrency,
-          ),
-      )
-    }
+          )
+        }
+      }
 
-    workerRegistry.services.forEach {
-      // TASK-EXECUTOR
-      val taskExecutor = TaskExecutor(workerRegistry, producerAsync, client)
-
-      futures.addIfNotDone(
+      workerRegistry.serviceExecutors.forEach {
+        // TASK-EXECUTOR
+        launch {
+          val taskExecutor = TaskExecutor(workerRegistry, producerAsync, client)
           consumerAsync.startTaskExecutorConsumerAsync(
               handler = taskExecutor::handle,
               beforeDlq = { message, cause ->
                 logMessageSentToDLQ(message, cause)
                 message?.let {
-                  taskExecutor.run { sendTaskFailed(it, cause, Task.meta, sendingDlqMessage) }
+                  taskExecutor.sendTaskFailed(it, cause, Task.meta, sendingDlqMessage)
                 }
               },
               serviceName = it.key,
               concurrency = it.value.concurrency,
-          ),
-      )
+          )
+        }
 
-      // TASK-EXECUTOR-DELAY
-      futures.addIfNotDone(
+        // TASK-EXECUTOR-DELAY
+        launch {
           consumerAsync.startDelayedTaskExecutorConsumerAsync(
-              handler = { msg, _ -> delayedTaskProducer.sendToTaskExecutor(msg) },
+              handler = { msg, _ -> with(delayedTaskProducer) { msg.sendTo(ServiceExecutorTopic) } },
               beforeDlq = logMessageSentToDLQ,
               serviceName = it.key,
               concurrency = it.value.concurrency,
-          ),
-      )
+          )
+        }
 
-      // TASK-EVENTS
-      val taskEventHandler = TaskEventHandler(producerAsync)
-
-      futures.addIfNotDone(
+        // TASK-EVENTS
+        launch {
+          val taskEventHandler = TaskEventHandler(producerAsync)
           consumerAsync.startTaskEventsConsumerAsync(
               handler = taskEventHandler::handle,
               beforeDlq = logMessageSentToDLQ,
               serviceName = it.key,
               concurrency = it.value.concurrency,
-          ),
-      )
+          )
+        }
+      }
+
+      workerRegistry.serviceListeners.forEach {
+        val eventHandler = { message: Message, publishedAt: MillisInstant ->
+          it.value.eventListener.onCloudEvent(message.toCloudEvent(publishedAt))
+        }
+        // TASK-EXECUTOR topic
+        launch {
+          consumerAsync.startTaskExecutorConsumerAsync(
+              handler = eventHandler,
+              beforeDlq = logMessageSentToDLQ,
+              serviceName = it.key,
+              concurrency = it.value.concurrency,
+          )
+        }
+        // TASK-EXECUTOR-DELAY topic
+        launch {
+          consumerAsync.startDelayedTaskExecutorConsumerAsync(
+              handler = eventHandler,
+              beforeDlq = logMessageSentToDLQ,
+              serviceName = it.key,
+              concurrency = it.value.concurrency,
+          )
+        }
+        // TASK-EVENTS topic
+        launch {
+          consumerAsync.startTaskEventsConsumerAsync(
+              handler = eventHandler,
+              beforeDlq = logMessageSentToDLQ,
+              serviceName = it.key,
+              concurrency = it.value.concurrency,
+          )
+        }
+      }
     }
 
+
     logger.info {
-      "Worker \"${producerAsync.name}\" ready" + when (consumerAsync is PulsarInfiniticConsumerAsync) {
+      "Worker \"${producerAsync.producerName}\" ready" + when (consumerAsync is PulsarInfiniticConsumerAsync) {
         true -> " (shutdownGracePeriodInSeconds=${consumerAsync.shutdownGracePeriodInSeconds}s)"
         false -> ""
       }
     }
 
-    return CompletableFuture.anyOf(*futures.toTypedArray()).thenApply {}
+    return CompletableFuture.supplyAsync { consumerAsync.join() }
   }
 
   private fun MutableList<CompletableFuture<Unit>>.addIfNotDone(future: CompletableFuture<Unit>) {
@@ -295,7 +330,7 @@ class InfiniticWorker(
       val producerAsync = transportConfig.producerAsync
 
       // apply name if it exists
-      name?.let { producerAsync.name = it }
+      name?.let { producerAsync.producerName = it }
 
       /** Infinitic Client */
       val client = InfiniticClient(consumerAsync, producerAsync)

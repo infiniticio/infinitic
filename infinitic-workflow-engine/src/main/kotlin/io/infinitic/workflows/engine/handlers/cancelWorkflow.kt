@@ -25,6 +25,9 @@ package io.infinitic.workflows.engine.handlers
 import io.infinitic.common.data.MillisInstant
 import io.infinitic.common.emitters.EmitterName
 import io.infinitic.common.exceptions.thisShouldNotHappen
+import io.infinitic.common.topics.WorkflowEngineTopic
+import io.infinitic.common.topics.WorkflowEventsTopic
+import io.infinitic.common.topics.WorkflowTagTopic
 import io.infinitic.common.transport.InfiniticProducer
 import io.infinitic.common.workflows.data.commands.DispatchMethodOnRunningWorkflowCommand
 import io.infinitic.common.workflows.data.commands.DispatchNewWorkflowCommand
@@ -85,8 +88,7 @@ internal fun CoroutineScope.cancelWorkflow(
         cancellationReason = message.cancellationReason,
         emitterName = EmitterName(producer.name),
     )
-
-    producer.sendToWorkflowEvents(workflowCanceledEvent)
+    with(producer) { workflowCanceledEvent.sendTo(WorkflowEventsTopic) }
   }
 }
 
@@ -113,7 +115,7 @@ private fun CoroutineScope.cancelWorkflowMethod(
                 emitterName = emitterName,
                 emittedAt = emittedAt,
             )
-            producer.sendToWorkflowEngine(cancelWorkflow)
+            with(producer) { cancelWorkflow.sendTo(WorkflowEngineTopic) }
           }
 
           command.workflowTag != null -> launch {
@@ -125,7 +127,7 @@ private fun CoroutineScope.cancelWorkflowMethod(
                 emitterName = emitterName,
                 emittedAt = emittedAt,
             )
-            producer.sendToWorkflowTag(cancelWorkflowByTag)
+            with(producer) { cancelWorkflowByTag.sendTo(WorkflowTagTopic) }
           }
 
           else -> thisShouldNotHappen()
@@ -141,7 +143,7 @@ private fun CoroutineScope.cancelWorkflowMethod(
             emitterName = emitterName,
             emittedAt = emittedAt,
         )
-        producer.sendToWorkflowEngine(cancelWorkflow)
+        with(producer) { cancelWorkflow.sendTo(WorkflowEngineTopic) }
       }
 
       else -> Unit
@@ -163,7 +165,6 @@ private fun CoroutineScope.cancelWorkflowMethod(
         workflowMeta = state.workflowMeta,
         cancellationReason = cancellationReason,
     )
-
-    producer.sendToWorkflowEvents(workflowMethodCanceledEvent)
+    with(producer) { workflowMethodCanceledEvent.sendTo(WorkflowEventsTopic) }
   }
 }

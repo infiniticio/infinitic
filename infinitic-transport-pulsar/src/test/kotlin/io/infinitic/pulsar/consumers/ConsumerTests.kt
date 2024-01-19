@@ -30,11 +30,12 @@ import io.infinitic.common.fixtures.DockerOnly
 import io.infinitic.common.fixtures.TestFactory
 import io.infinitic.common.fixtures.later
 import io.infinitic.common.tasks.executors.messages.ExecuteTask
-import io.infinitic.common.tasks.executors.messages.TaskExecutorEnvelope
-import io.infinitic.common.tasks.executors.messages.TaskExecutorMessage
+import io.infinitic.common.tasks.executors.messages.ServiceExecutorMessage
+import io.infinitic.common.topics.ServiceExecutorTopic
 import io.infinitic.pulsar.client.PulsarInfiniticClient
 import io.infinitic.pulsar.producers.Producer
 import io.infinitic.pulsar.producers.ProducerConfig
+import io.infinitic.pulsar.resources.schema
 import io.kotest.core.annotation.EnabledIf
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.comparables.shouldBeLessThan
@@ -45,7 +46,6 @@ import org.apache.pulsar.client.api.PulsarClient
 import org.apache.pulsar.client.api.SubscriptionType
 import java.time.Duration
 import java.time.Instant
-import java.util.concurrent.CancellationException
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.atomic.AtomicInteger
@@ -72,7 +72,7 @@ class ConsumerTests : StringSpec(
         val start = Instant.now()
         val futures = messages.map {
           producer.sendAsync(
-              TaskExecutorEnvelope::class, it, zero, topic, "name",
+              it, zero, topic, "name",
               key = if (withKey) it.messageId.toString() else null,
           )
         }.toTypedArray()
@@ -83,16 +83,16 @@ class ConsumerTests : StringSpec(
         }
       }
 
-      fun startAsync(
+      suspend fun startAsync(
         consumer: Consumer,
-        handler: suspend (TaskExecutorMessage, MillisInstant) -> Unit,
+        handler: suspend (ServiceExecutorMessage, MillisInstant) -> Unit,
         topic: String,
         concurrency: Int,
         withKey: Boolean = false
-      ) = consumer.runAsync(
+      ) = consumer.startConsumerLoop(
           handler = handler,
           beforeDlq = { _, _ -> },
-          schemaClass = TaskExecutorEnvelope::class,
+          schema = ServiceExecutorTopic.schema,
           topic = topic,
           topicDlq = null,
           subscriptionName = topic + "Consumer",
@@ -115,7 +115,7 @@ class ConsumerTests : StringSpec(
         val counter = AtomicInteger(0)
         lateinit var start: Instant
 
-        val handler: suspend (TaskExecutorMessage, MillisInstant) -> Unit = { _, _ ->
+        val handler: suspend (ServiceExecutorMessage, MillisInstant) -> Unit = { _, _ ->
           if (counter.get() == 0) start = Instant.now()
           // emulate a 1ms task
           Thread.sleep(1)
@@ -128,19 +128,12 @@ class ConsumerTests : StringSpec(
             }
           }
         }
-
         // start consumers
-        val future = startAsync(consumer, handler, topic, 1)
-
+        startAsync(consumer, handler, topic, 1)
         // send messages
         sendMessage(topic, total)
-
         // wait for scope cancellation
-        try {
-          future.join()
-        } catch (e: CancellationException) {
-          // do nothing
-        }
+        consumer.join()
 
         averageMillisToConsume.shouldBeLessThan(5.0)
       }
@@ -153,7 +146,7 @@ class ConsumerTests : StringSpec(
         val counter = AtomicInteger(0)
         lateinit var start: Instant
 
-        val handler: ((TaskExecutorMessage, MillisInstant) -> Unit) = { _, _ ->
+        val handler: ((ServiceExecutorMessage, MillisInstant) -> Unit) = { _, _ ->
           if (counter.get() == 0) start = Instant.now()
           // emulate a 100ms task
           Thread.sleep(100)
@@ -166,19 +159,12 @@ class ConsumerTests : StringSpec(
             }
           }
         }
-
         // start consumers
-        val future = startAsync(consumer, handler, topic, 100)
-
+        startAsync(consumer, handler, topic, 100)
         // send messages
         sendMessage(topic, total)
-
         // wait for scope cancellation
-        try {
-          future.join()
-        } catch (e: CancellationException) {
-          // do nothing
-        }
+        consumer.join()
 
         averageMillisToConsume.shouldBeLessThan(5.0)
       }
@@ -191,7 +177,7 @@ class ConsumerTests : StringSpec(
         val counter = AtomicInteger(0)
         lateinit var start: Instant
 
-        val handler: ((TaskExecutorMessage, MillisInstant) -> Unit) = { _, _ ->
+        val handler: ((ServiceExecutorMessage, MillisInstant) -> Unit) = { _, _ ->
           if (counter.get() == 0) start = Instant.now()
           // emulate a 100ms task
           Thread.sleep(100)
@@ -204,19 +190,12 @@ class ConsumerTests : StringSpec(
             }
           }
         }
-
         // start consumers
-        val future = startAsync(consumer, handler, topic, 100, true)
-
+        startAsync(consumer, handler, topic, 100, true)
         // send messages
         sendMessage(topic, total, true)
-
         // wait for scope cancellation
-        try {
-          future.join()
-        } catch (e: CancellationException) {
-          // do nothing
-        }
+        consumer.join()
 
         averageMillisToConsume.shouldBeLessThan(5.0)
       }
@@ -229,7 +208,7 @@ class ConsumerTests : StringSpec(
         val messageClosed = CopyOnWriteArrayList<Int>()
         val total = 1000
 
-        val handler: ((TaskExecutorMessage, MillisInstant) -> Unit) = { _, _ ->
+        val handler: ((ServiceExecutorMessage, MillisInstant) -> Unit) = { _, _ ->
           counter.incrementAndGet().let {
             // begin of task
             messageOpen.add(it)
@@ -239,24 +218,14 @@ class ConsumerTests : StringSpec(
             messageClosed.add(it)
           }
         }
-
         // start consumers
-        val future = startAsync(consumer, handler, topic, 100)
-
+        startAsync(consumer, handler, topic, 100)
         // send messages
         sendMessage(topic, total)
-
-        later(1000) {
-          //println("Canceling scope")
-          consumer.cancel()
-        }
-
+        // cancel after 0.4s
+        later(400) { consumer.cancel() }
         // wait for scope cancellation
-        try {
-          future.join()
-        } catch (e: CancellationException) {
-          // do nothing
-        }
+        consumer.join()
 
         // for the test to be meaningful, all messages should not have been processed
         messageOpen.count().shouldBeLessThan(total)
@@ -273,7 +242,7 @@ class ConsumerTests : StringSpec(
         val messageClosed = CopyOnWriteArrayList<Int>()
         val total = 1000
 
-        val handler: ((TaskExecutorMessage, MillisInstant) -> Unit) = { _, _ ->
+        val handler: ((ServiceExecutorMessage, MillisInstant) -> Unit) = { _, _ ->
           counter.incrementAndGet().let {
             // begin of task
             messageOpen.add(it)
@@ -283,24 +252,14 @@ class ConsumerTests : StringSpec(
             messageClosed.add(it)
           }
         }
-
         // start consumers
-        val future = startAsync(consumer, handler, topic, 100, true)
-
+        startAsync(consumer, handler, topic, 100, true)
         // send messages
         sendMessage(topic, total, true)
-
-        later(1000) {
-          //println("Canceling scope")
-          consumer.cancel()
-        }
-
+        // cancel after 1s
+        later(1000) { consumer.cancel() }
         // wait for scope cancellation
-        try {
-          future.join()
-        } catch (e: CancellationException) {
-          // do nothing
-        }
+        consumer.join()
 
         // for the test to be meaningful, all messages should not have been processed
         messageOpen.count().shouldBeLessThan(total)

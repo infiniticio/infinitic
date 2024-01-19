@@ -25,6 +25,9 @@ package io.infinitic.tasks.executor.commands
 import io.infinitic.common.data.MillisInstant
 import io.infinitic.common.emitters.EmitterName
 import io.infinitic.common.tasks.executors.errors.WorkflowMethodTimedOutError
+import io.infinitic.common.topics.DelayedWorkflowEngineTopic
+import io.infinitic.common.topics.WorkflowCmdTopic
+import io.infinitic.common.topics.WorkflowTagTopic
 import io.infinitic.common.transport.InfiniticProducer
 import io.infinitic.common.workflows.data.commands.DispatchMethodOnRunningWorkflowCommand
 import io.infinitic.common.workflows.data.commands.DispatchMethodOnRunningWorkflowPastCommand
@@ -64,7 +67,7 @@ internal fun CoroutineScope.dispatchMethodOnRunningWorkflowCmd(
               emitterName = emitterName,
               emittedAt = workflowTaskInstant,
           )
-          producer.sendToWorkflowCmd(dispatchMethodWorkflow)
+          with(producer) { dispatchMethodWorkflow.sendTo(WorkflowCmdTopic) }
         }
       }
 
@@ -86,7 +89,7 @@ internal fun CoroutineScope.dispatchMethodOnRunningWorkflowCmd(
               emitterName = emitterName,
               emittedAt = workflowTaskInstant + it,
           )
-          producer.sendToWorkflowEngine(childMethodTimedOut, it)
+          with(producer) { childMethodTimedOut.sendTo(DelayedWorkflowEngineTopic, it) }
         }
       }
     }
@@ -110,7 +113,7 @@ internal fun CoroutineScope.dispatchMethodOnRunningWorkflowCmd(
         )
 
         // Note: tag engine MUST ignore this message for Id = parentWorkflowId
-        producer.sendToWorkflowTag(dispatchMethodByTag)
+        with(producer) { dispatchMethodByTag.sendTo(WorkflowTagTopic) }
       }
     }
   }

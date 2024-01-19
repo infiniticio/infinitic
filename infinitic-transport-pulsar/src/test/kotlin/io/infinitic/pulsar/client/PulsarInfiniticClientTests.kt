@@ -24,8 +24,10 @@
 package io.infinitic.pulsar.client
 
 import io.infinitic.common.fixtures.TestFactory
+import io.infinitic.common.topics.WorkflowEngineTopic
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineEnvelope
 import io.infinitic.pulsar.consumers.ConsumerConfig
+import io.infinitic.pulsar.resources.schema
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
 import io.mockk.every
@@ -184,7 +186,7 @@ class PulsarInfiniticClientTests :
               consumerConfig = randomConfig,
           )
 
-          client.newConsumer(WorkflowEngineEnvelope::class, consumerDef, null)
+          client.newConsumer(WorkflowEngineTopic.schema, consumerDef, null)
 
           // then
           topic.captured shouldBe randomTopic
@@ -247,7 +249,7 @@ class PulsarInfiniticClientTests :
               consumerConfig = randomConfig,
           )
 
-          client.newConsumer(WorkflowEngineEnvelope::class, consumerDef, consumerDefDlq)
+          client.newConsumer(WorkflowEngineTopic.schema, consumerDef, consumerDefDlq)
 
           // then
           topic.captured shouldBe randomTopic

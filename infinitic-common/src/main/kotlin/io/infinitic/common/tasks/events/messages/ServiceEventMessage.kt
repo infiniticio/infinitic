@@ -20,10 +20,8 @@
  *
  * Licensor: infinitic.io
  */
-package io.infinitic.common.tasks.executors.events
+package io.infinitic.common.tasks.events.messages
 
-import com.github.avrokotlin.avro4k.Avro
-import com.github.avrokotlin.avro4k.AvroDefault
 import com.github.avrokotlin.avro4k.AvroNamespace
 import io.infinitic.common.clients.data.ClientName
 import io.infinitic.common.data.MessageId
@@ -62,10 +60,8 @@ import io.infinitic.common.workflows.engine.messages.TaskCompleted as TaskComple
 import io.infinitic.common.workflows.engine.messages.TaskFailed as TaskFailedWorkflow
 
 @Serializable
-sealed class TaskEventMessage : Message {
-  @Suppress("RedundantNullableReturnType")
-  @AvroDefault(Avro.NULL)
-  val version: Version? = Version(currentVersion)
+sealed class ServiceEventMessage : Message {
+  val version: Version = Version(currentVersion)
   abstract val serviceName: ServiceName
   abstract val taskId: TaskId
   abstract val taskRetrySequence: TaskRetrySequence
@@ -73,26 +69,26 @@ sealed class TaskEventMessage : Message {
   abstract val workflowName: WorkflowName?
   abstract val workflowId: WorkflowId?
   abstract val workflowMethodId: WorkflowMethodId?
+  abstract val clientName: ClientName?
+  abstract val clientWaiting: Boolean?
+  abstract val taskTags: Set<TaskTag>
+  abstract val taskMeta: TaskMeta
 
-  fun isWorkflowTask() = serviceName == ServiceName(WorkflowTask::class.java.name)
+  override fun envelope() = ServiceEventEnvelope.from(this)
 
-  override fun envelope() = TaskEventEnvelope.from(this)
-}
+  override fun key() = null
 
-sealed interface TaskEvent {
-  val serviceName: ServiceName
-  val taskId: TaskId
-  val workflowName: WorkflowName?
-  val workflowId: WorkflowId?
-  val workflowMethodId: WorkflowMethodId?
-  val clientName: ClientName?
-  val clientWaiting: Boolean?
-  val taskTags: Set<TaskTag>
-  val taskMeta: TaskMeta
+  override fun entity() = when (isWorkflowTask()) {
+    true -> workflowName!!.toString()
+    false -> serviceName.toString()
+  }
+
+  fun isWorkflowTask() = (serviceName == ServiceName(WorkflowTask::class.java.name))
+
 }
 
 @Serializable
-@AvroNamespace("io.infinitic.tasks.executor")
+@AvroNamespace("io.infinitic.tasks.events")
 data class TaskStartedEvent(
   override val messageId: MessageId = MessageId(),
   override val serviceName: ServiceName,
@@ -108,7 +104,7 @@ data class TaskStartedEvent(
   override val taskTags: Set<TaskTag>,
   override val taskMeta: TaskMeta,
   val workflowVersion: WorkflowVersion?
-) : TaskEventMessage(), TaskEvent {
+) : ServiceEventMessage() {
   companion object {
     fun from(msg: ExecuteTask, emitterName: EmitterName) = TaskStartedEvent(
         serviceName = msg.serviceName,
@@ -129,7 +125,7 @@ data class TaskStartedEvent(
 }
 
 @Serializable
-@AvroNamespace("io.infinitic.tasks.executor")
+@AvroNamespace("io.infinitic.tasks.events")
 data class TaskFailedEvent(
   override val messageId: MessageId = MessageId(),
   override val serviceName: ServiceName,
@@ -148,7 +144,7 @@ data class TaskFailedEvent(
   val deferredError: DeferredError?,
   val methodName: MethodName,
   val workflowVersion: WorkflowVersion?,
-) : TaskEventMessage(), TaskEvent {
+) : ServiceEventMessage() {
 
   fun getEventForClient(emitterName: EmitterName) = clientName?.let {
     TaskFailedClient(
@@ -204,7 +200,7 @@ data class TaskFailedEvent(
 }
 
 @Serializable
-@AvroNamespace("io.infinitic.tasks.executor")
+@AvroNamespace("io.infinitic.tasks.events")
 data class TaskRetriedEvent(
   override val messageId: MessageId = MessageId(),
   override val serviceName: ServiceName,
@@ -221,7 +217,7 @@ data class TaskRetriedEvent(
   override val taskMeta: TaskMeta,
   val taskRetryDelay: MillisDuration,
   val lastError: ExecutionError?,
-) : TaskEventMessage(), TaskEvent {
+) : ServiceEventMessage() {
 
   companion object {
     fun from(
@@ -250,7 +246,7 @@ data class TaskRetriedEvent(
 }
 
 @Serializable
-@AvroNamespace("io.infinitic.tasks.executor")
+@AvroNamespace("io.infinitic.tasks.events")
 data class TaskCompletedEvent(
   override val messageId: MessageId = MessageId(),
   override val serviceName: ServiceName,
@@ -267,7 +263,7 @@ data class TaskCompletedEvent(
   override val taskMeta: TaskMeta,
   val returnValue: ReturnValue,
   val workflowVersion: WorkflowVersion?,
-) : TaskEventMessage(), TaskEvent {
+) : ServiceEventMessage() {
 
   fun getEventForClient(emitterName: EmitterName) = clientName?.let {
     TaskCompletedClient(

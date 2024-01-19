@@ -24,16 +24,19 @@ package io.infinitic.workers.register
 
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.infinitic.cache.config.Cache
+import io.infinitic.common.events.CloudEventListener
 import io.infinitic.common.tasks.data.ServiceName
-import io.infinitic.common.workers.registry.RegisteredService
+import io.infinitic.common.workers.registry.RegisteredEventListener
+import io.infinitic.common.workers.registry.RegisteredServiceExecutor
 import io.infinitic.common.workers.registry.RegisteredServiceTag
-import io.infinitic.common.workers.registry.RegisteredWorkflow
 import io.infinitic.common.workers.registry.RegisteredWorkflowEngine
+import io.infinitic.common.workers.registry.RegisteredWorkflowExecutor
 import io.infinitic.common.workers.registry.RegisteredWorkflowTag
 import io.infinitic.common.workers.registry.ServiceFactory
 import io.infinitic.common.workers.registry.WorkerRegistry
 import io.infinitic.common.workers.registry.WorkflowClassList
 import io.infinitic.common.workflows.data.workflows.WorkflowName
+import io.infinitic.events.config.EventListener
 import io.infinitic.storage.config.Storage
 import io.infinitic.tasks.WithRetry
 import io.infinitic.tasks.WithTimeout
@@ -92,10 +95,18 @@ class InfiniticRegister(
       logger.info { "Service ${s.name}:" }
 
       when (s.`class`) {
-        null ->
+        null -> {
           s.tagEngine?.let {
             registerTaskTag(ServiceName(s.name), it.concurrency!!, it.storage, it.cache)
           }
+          s.eventListener?.let {
+            registerEventListener(
+                ServiceName(s.name),
+                it.instance,
+                it.concurrency!!,
+            )
+          }
+        }
 
         else ->
           registerService(
@@ -105,6 +116,7 @@ class InfiniticRegister(
               s.timeoutInSeconds?.let { { it } },
               s.retry,
               s.tagEngine,
+              s.eventListener,
           )
       }
     }
@@ -117,7 +129,8 @@ class InfiniticRegister(
     concurrency: Int,
     timeout: WithTimeout?,
     retry: WithRetry?,
-    tagEngine: TaskTag?
+    tagEngine: TaskTag?,
+    eventListener: EventListener?
   ) {
     logger.info {
       "* task executor".padEnd(25) +
@@ -125,8 +138,10 @@ class InfiniticRegister(
     }
 
     val serviceName = ServiceName(name)
-    registry.services[serviceName] = RegisteredService(concurrency, factory, timeout, retry)
+    registry.serviceExecutors[serviceName] =
+        RegisteredServiceExecutor(concurrency, factory, timeout, retry)
 
+    // service tag engine
     when {
       // explicit null => do nothing
       tagEngine == null -> Unit
@@ -136,6 +151,19 @@ class InfiniticRegister(
       // explicit tagEngine => register it
       else ->
         registerTaskTag(serviceName, tagEngine.concurrency!!, tagEngine.storage, tagEngine.cache)
+    }
+
+    // service event listener
+    when {
+      // explicit null => do nothing
+      eventListener == null -> Unit
+      // explicit eventListener => register it
+      else ->
+        registerEventListener(
+            serviceName,
+            eventListener.instance,
+            eventListener.concurrency!!,
+        )
     }
   }
 
@@ -155,8 +183,15 @@ class InfiniticRegister(
     }
 
     val workflowName = WorkflowName(name)
-    registry.workflows[workflowName] =
-        RegisteredWorkflow(workflowName, classes.distinct(), concurrency, timeout, retry, checkMode)
+    registry.workflowExecutors[workflowName] =
+        RegisteredWorkflowExecutor(
+            workflowName,
+            classes.distinct(),
+            concurrency,
+            timeout,
+            retry,
+            checkMode,
+        )
 
     when {
       // explicit null => do nothing
@@ -240,6 +275,21 @@ class InfiniticRegister(
             CachedKeyValueStorage(c.keyValue, s.keyValue),
             CachedKeySetStorage(c.keySet, s.keySet),
         ),
+    )
+  }
+
+  private fun registerEventListener(
+    serviceName: ServiceName,
+    eventListener: CloudEventListener,
+    concurrency: Int,
+  ) {
+    logger.info {
+      "* event listener ".padEnd(25) + ": (concurrency: $concurrency)"
+    }
+
+    registry.serviceListeners[serviceName] = RegisteredEventListener(
+        eventListener,
+        concurrency,
     )
   }
 

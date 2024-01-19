@@ -26,7 +26,7 @@ package io.infinitic.events.requesters
 import io.infinitic.common.clients.data.ClientName
 import io.infinitic.common.tasks.data.ServiceName
 import io.infinitic.common.workers.data.WorkerName
-import io.infinitic.common.workflows.data.methodRuns.MethodRunId
+import io.infinitic.common.workflows.data.methodRuns.WorkflowMethodId
 import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.data.workflows.WorkflowName
 import kotlinx.serialization.Serializable
@@ -44,7 +44,7 @@ data class ClientRequester(
 data class WorkflowEngineRequester(
   val workflowName: WorkflowName,
   val workflowId: WorkflowId,
-  val workflowMethodId: MethodRunId,
+  val workflowMethodId: WorkflowMethodId,
   val workerName: WorkerName,
 ) : Requester
 

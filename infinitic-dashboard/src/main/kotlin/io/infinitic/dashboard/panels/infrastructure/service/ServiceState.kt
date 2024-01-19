@@ -22,22 +22,23 @@
  */
 package io.infinitic.dashboard.panels.infrastructure.service
 
-import io.infinitic.dashboard.Infinitic.resourceManager
+import io.infinitic.common.topics.ServiceTopic
+import io.infinitic.dashboard.Infinitic.pulsarResources
 import io.infinitic.dashboard.panels.infrastructure.jobs.JobState
 import io.infinitic.dashboard.panels.infrastructure.jobs.TopicsStats
 import io.infinitic.dashboard.panels.infrastructure.requests.Loading
-import io.infinitic.pulsar.resources.ServiceTopicsDescription
 import java.time.Instant
 
 data class ServiceState(
   override val name: String,
-  override val topicsStats: TopicsStats<ServiceTopicsDescription> =
-      ServiceTopicsDescription.entries.associateWith { Loading() },
+  override val topicsStats: TopicsStats<ServiceTopic<*>> =
+      ServiceTopic.entries.associateWith { Loading() },
   val isLoading: Boolean = isLoading(topicsStats),
   val lastUpdatedAt: Instant = lastUpdatedAt(topicsStats)
-) : JobState<ServiceTopicsDescription>(name, topicsStats) {
-  override fun create(name: String, topicsStats: TopicsStats<ServiceTopicsDescription>) =
+) : JobState<ServiceTopic<*>>(name, topicsStats) {
+  override fun create(name: String, topicsStats: TopicsStats<ServiceTopic<*>>) =
       ServiceState(name = name, topicsStats = topicsStats)
 
-  override fun getTopic(type: ServiceTopicsDescription) = resourceManager.getTopicName(name, type)
+  override suspend fun getTopic(topic: ServiceTopic<*>) =
+      with(pulsarResources) { topic.fullName(name) }
 }

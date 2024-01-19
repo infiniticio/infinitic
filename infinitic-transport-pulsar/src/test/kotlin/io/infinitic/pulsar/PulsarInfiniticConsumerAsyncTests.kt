@@ -28,18 +28,17 @@ import io.infinitic.common.data.MillisInstant
 import io.infinitic.common.messages.Message
 import io.infinitic.common.tasks.data.ServiceName
 import io.infinitic.common.workflows.data.workflows.WorkflowName
+import io.infinitic.pulsar.admin.PulsarInfiniticAdmin
+import io.infinitic.pulsar.config.policies.Policies
 import io.infinitic.pulsar.consumers.Consumer
-import io.infinitic.pulsar.resources.ClientTopicDescription
-import io.infinitic.pulsar.resources.ResourceManager
-import io.infinitic.pulsar.resources.ServiceTopicsDescription
-import io.infinitic.pulsar.resources.TopicDescription
-import io.infinitic.pulsar.resources.WorkflowTopicsDescription
+import io.infinitic.pulsar.resources.PulsarResources
 import io.kotest.core.spec.style.StringSpec
 import io.mockk.coEvery
-import io.mockk.every
+import io.mockk.coVerify
 import io.mockk.mockk
 import io.mockk.slot
-import io.mockk.verify
+import io.mockk.spyk
+import net.bytebuddy.utility.RandomString
 import org.apache.pulsar.client.api.SubscriptionType
 import java.util.concurrent.CompletableFuture
 
@@ -51,12 +50,8 @@ class PulsarInfiniticConsumerAsyncTests : StringSpec(
 
       val handler = slot<suspend (Message, MillisInstant) -> Unit>()
       val handlerDlq = slot<suspend (Message?, Exception) -> Unit>()
-      val nameSlot = slot<String>()
-      val descSlot = slot<TopicDescription>()
       val topic = slot<String>()
 
-      val dlqNameSlot = slot<String>()
-      val dlqDescSlot = slot<TopicDescription>()
       val dlqTopic = slot<String?>()
 
       val subscriptionName = slot<String>()
@@ -65,31 +60,27 @@ class PulsarInfiniticConsumerAsyncTests : StringSpec(
       val consumerName = slot<String>()
       val concurrency = slot<Int>()
 
-      fun topicName(name: String, desc: TopicDescription) =
-          "topic:" + name + "-" + desc.subscriptionName
+      val tenant = RandomString().nextString()
+      val namespace = RandomString().nextString()
 
-      fun consumerName(name: String, desc: TopicDescription) =
-          "consumer:" + name + "-" + desc.subscriptionName
+      val original = PulsarResources(
+          mockk<PulsarInfiniticAdmin>(),
+          tenant,
+          setOf(),
+          namespace,
+          setOf(),
+          Policies(),
+      )
 
+      val pulsarResources = spyk(original) {
+        coEvery { initTopicOnce(any(), any(), any()) } returns Result.success(Unit)
 
-      val resourceManager = mockk<ResourceManager> {
-        every {
-          getTopicName(capture(nameSlot), capture(descSlot))
-        } answers { topicName(nameSlot.captured, descSlot.captured) }
-        every {
-          getDlqTopicName(capture(dlqNameSlot), capture(dlqDescSlot))
-        } answers { topicName(dlqNameSlot.captured, dlqDescSlot.captured) }
-        every {
-          getConsumerName(capture(nameSlot), capture(descSlot))
-        } answers { consumerName(nameSlot.captured, descSlot.captured) }
-        every { initTopicOnce(any(), any(), any()) } returns Result.success(Unit)
-        every { initDlqTopicOnce(any(), any(), any()) } returns Result.success(Unit)
+        coEvery { initDlqTopicOnce(any(), any(), any()) } returns Result.success(Unit)
       }
-
 
       val consumer = mockk<Consumer> {
         coEvery {
-          runAsync(
+          startConsumerLoop(
               capture(handler),
               capture(handlerDlq),
               any(),
@@ -104,103 +95,181 @@ class PulsarInfiniticConsumerAsyncTests : StringSpec(
         } returns CompletableFuture.completedFuture(Unit)
       }
 
-      val infiniticConsumerAsync = PulsarInfiniticConsumerAsync(consumer, resourceManager, 20.0)
+      val infiniticConsumerAsync = PulsarInfiniticConsumerAsync(consumer, pulsarResources, 20.0)
 
       "should init client-response topic before consuming it" {
         infiniticConsumerAsync.startClientConsumerAsync(
             handler = { _, _ -> }, beforeDlq = { _, _ -> }, clientName = clientName,
-        ).join()
+        )
 
         val name = "$clientName"
-        val desc = ClientTopicDescription.RESPONSE
 
-        verify {
-          resourceManager.getTopicName(name, desc)
-          resourceManager.initTopicOnce(topicName(name, desc), false, false)
+        coVerify {
+          pulsarResources.initTopicOnce(
+              "persistent://$tenant/$namespace/response:$name",
+              false,
+              false,
+          )
         }
       }
 
       "should init workflow-tag topic before consuming it" {
         infiniticConsumerAsync.startWorkflowTagConsumerAsync(
             handler = { _, _ -> }, beforeDlq = { _, _ -> }, workflowName = workflowName, 10,
-        ).join()
+        )
 
         val name = "$workflowName"
-        val desc = WorkflowTopicsDescription.TAG
 
-        verify {
-          resourceManager.getTopicName(name, desc)
-          resourceManager.initTopicOnce(topicName(name, desc), true, false)
+        coVerify {
+          pulsarResources.initTopicOnce(
+              "persistent://$tenant/$namespace/workflow-tag:$name",
+              true,
+              false,
+          )
+        }
+      }
+
+      "should init workflow-cmd topic before consuming it" {
+        infiniticConsumerAsync.startWorkflowCmdConsumerAsync(
+            handler = { _, _ -> }, beforeDlq = { _, _ -> }, workflowName = workflowName, 10,
+        )
+
+        val name = "$workflowName"
+
+        coVerify {
+          pulsarResources.initTopicOnce(
+              "persistent://$tenant/$namespace/workflow-cmd:$name",
+              true,
+              false,
+          )
         }
       }
 
       "should init workflow-engine topic before consuming it" {
         infiniticConsumerAsync.startWorkflowEngineConsumerAsync(
             handler = { _, _ -> }, beforeDlq = { _, _ -> }, workflowName = workflowName, 10,
-        ).join()
+        )
 
         val name = "$workflowName"
-        val desc = WorkflowTopicsDescription.ENGINE
 
-        verify {
-          resourceManager.getTopicName(name, desc)
-          resourceManager.initTopicOnce(topicName(name, desc), true, false)
+        coVerify {
+          pulsarResources.initTopicOnce(
+              "persistent://$tenant/$namespace/workflow-engine:$name",
+              true,
+              false,
+          )
         }
       }
 
       "should init workflow-delay topic before consuming it" {
         infiniticConsumerAsync.startDelayedWorkflowEngineConsumerAsync(
             handler = { _, _ -> }, beforeDlq = { _, _ -> }, workflowName = workflowName, 10,
-        ).join()
+        )
 
         val name = "$workflowName"
-        val desc = WorkflowTopicsDescription.ENGINE_DELAYED
 
-        verify {
-          resourceManager.getTopicName(name, desc)
-          resourceManager.initTopicOnce(topicName(name, desc), true, true)
+        coVerify {
+          pulsarResources.initTopicOnce(
+              "persistent://$tenant/$namespace/workflow-delay:$name",
+              true,
+              true,
+          )
+        }
+      }
+
+      "should init workflow-events topic before consuming it" {
+        infiniticConsumerAsync.startWorkflowEventsConsumerAsync(
+            handler = { _, _ -> }, beforeDlq = { _, _ -> }, workflowName = workflowName, 10,
+        )
+
+        val name = "$workflowName"
+
+        coVerify {
+          pulsarResources.initTopicOnce(
+              "persistent://$tenant/$namespace/workflow-events:$name",
+              true,
+              false,
+          )
         }
       }
 
       "should init workflow-task-executor topic before consuming it" {
         infiniticConsumerAsync.startWorkflowTaskConsumerAsync(
             handler = { _, _ -> }, beforeDlq = { _, _ -> }, workflowName = workflowName, 10,
-        ).join()
+        )
 
         val name = "$workflowName"
-        val desc = WorkflowTopicsDescription.TASK_EXECUTOR
 
-        verify {
-          resourceManager.getTopicName(name, desc)
-          resourceManager.initTopicOnce(topicName(name, desc), true, false)
+        coVerify {
+          pulsarResources.initTopicOnce(
+              "persistent://$tenant/$namespace/workflow-task-executor:$name",
+              true,
+              false,
+          )
+        }
+      }
+
+      "should init workflow-task-events topic before consuming it" {
+        infiniticConsumerAsync.startWorkflowTaskEventsConsumerAsync(
+            handler = { _, _ -> }, beforeDlq = { _, _ -> }, workflowName = workflowName, 10,
+        )
+
+        val name = "$workflowName"
+
+        coVerify {
+          pulsarResources.initTopicOnce(
+              "persistent://$tenant/$namespace/workflow-task-events:$name",
+              true,
+              false,
+          )
         }
       }
 
       "should init task-tag topic before consuming it" {
         infiniticConsumerAsync.startTaskTagConsumerAsync(
             handler = { _, _ -> }, beforeDlq = { _, _ -> }, serviceName = serviceName, 10,
-        ).join()
+        )
 
         val name = "$serviceName"
-        val desc = ServiceTopicsDescription.TAG
 
-        verify {
-          resourceManager.getTopicName(name, desc)
-          resourceManager.initTopicOnce(topicName(name, desc), true, false)
+        coVerify {
+          pulsarResources.initTopicOnce(
+              "persistent://$tenant/$namespace/task-tag:$name",
+              true,
+              false,
+          )
         }
       }
 
       "should init task-executor topic before consuming it" {
         infiniticConsumerAsync.startTaskExecutorConsumerAsync(
             handler = { _, _ -> }, beforeDlq = { _, _ -> }, serviceName = serviceName, 10,
-        ).join()
+        )
 
         val name = "$serviceName"
-        val desc = ServiceTopicsDescription.EXECUTOR
 
-        verify {
-          resourceManager.getTopicName(name, desc)
-          resourceManager.initTopicOnce(topicName(name, desc), true, false)
+        coVerify {
+          pulsarResources.initTopicOnce(
+              "persistent://$tenant/$namespace/task-executor:$name",
+              true,
+              false,
+          )
+        }
+      }
+
+      "should init task-events topic before consuming it" {
+        infiniticConsumerAsync.startTaskEventsConsumerAsync(
+            handler = { _, _ -> }, beforeDlq = { _, _ -> }, serviceName = serviceName, 10,
+        )
+
+        val name = "$serviceName"
+
+        coVerify {
+          pulsarResources.initTopicOnce(
+              "persistent://$tenant/$namespace/task-events:$name",
+              true,
+              false,
+          )
         }
       }
     },

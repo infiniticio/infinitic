@@ -29,12 +29,12 @@ import kotlinx.serialization.Serializable
  * Represents a serialized object in Avro format, **including a schema fingerprint**
  *
  * @property `class` The class of the serialized object.
- * @property avro The Avro binary data.
+ * @property bytes The Avro binary data.
  */
 @Serializable
 data class AvroBinaryData(
   val `class`: String,
-  val avro: ByteArray,
+  val bytes: ByteArray,
 ) : Data {
   override fun equals(other: Any?): Boolean {
     if (this === other) return true
@@ -43,14 +43,14 @@ data class AvroBinaryData(
     other as AvroBinaryData
 
     if (`class` != other.`class`) return false
-    if (!avro.contentEquals(other.avro)) return false
+    if (!bytes.contentEquals(other.bytes)) return false
 
     return true
   }
 
   override fun hashCode(): Int {
     var result = `class`.hashCode()
-    result = 31 * result + avro.contentHashCode()
+    result = 31 * result + bytes.contentHashCode()
     return result
   }
 }

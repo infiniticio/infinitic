@@ -26,7 +26,6 @@ package io.infinitic.events
 import io.cloudevents.CloudEvent
 import io.infinitic.common.emitters.EmitterName
 import io.infinitic.common.serDe.avro.AvroSerDe
-import io.infinitic.current
 import io.infinitic.events.requesters.Requester
 import kotlinx.serialization.InternalSerializationApi
 import kotlinx.serialization.KSerializer
@@ -59,13 +58,13 @@ sealed interface Event {
     internal const val SCHEMAS_FOLDER = "schemas"
 
     internal const val SCHEMA_PREFIX = "https://raw.githubusercontent.com/" +
-        "infiniticio/infinitic/main/infinitic-logs/src/main/resources/$SCHEMAS_FOLDER/"
+        "infiniticio/infinitic/main/infinitic-events/src/main/resources/$SCHEMAS_FOLDER/"
 
     internal const val SCHEMA_EXTENSION = ".avsc"
 
     @JvmStatic
     @Throws(IllegalArgumentException::class)
-    fun from(ce: CloudEvent): Event = ce.toLog().getOrThrow()
+    fun from(ce: CloudEvent): Event = ce.toInfiniticEvent().getOrThrow()
   }
 }
 
@@ -74,15 +73,16 @@ sealed interface Event {
  *
  * @return The CloudEvent object.
  */
-internal fun Event.toCloudEvent(): CloudEvent = toCloudEvent(
-    eventId = ceEventId,
-    classSimpleName = this::class.java.simpleName,
-    version = current,
-    type = ceType,
-    subject = ceSubject,
-    timestamp = timestamp,
-    bytes = toByteArray(),
-)
+//internal fun Event.toCloudEvent(): CloudEvent = toCloudEvent(
+//    eventId = ceEventId,
+//    partitionKey =,//,
+//    classSimpleName = this::class.java.simpleName,
+//    version = currentVersion,
+//    type = ceType,
+//    subject = ceSubject,
+//    timestamp = timestamp,
+//    bytes = toByteArray(),
+//)
 
 /**
  * Converts the Log object to a byte array using Avro serialization.

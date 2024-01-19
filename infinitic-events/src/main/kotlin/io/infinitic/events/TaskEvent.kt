@@ -24,12 +24,6 @@
 package io.infinitic.events
 
 import io.infinitic.common.data.MillisDuration
-import io.infinitic.common.tasks.data.ServiceName
-import io.infinitic.common.tasks.data.TaskId
-import io.infinitic.common.tasks.data.TaskMeta
-import io.infinitic.common.tasks.data.TaskRetryIndex
-import io.infinitic.common.tasks.data.TaskRetrySequence
-import io.infinitic.common.tasks.data.TaskTag
 import io.infinitic.events.data.Data
 import io.infinitic.events.errors.Error
 import io.infinitic.events.methods.Method
@@ -47,10 +41,10 @@ import kotlinx.serialization.Serializable
  */
 @Serializable
 sealed interface TaskEvent : Event {
-  val serviceName: ServiceName
-  val taskId: TaskId
-  val retrySequence: TaskRetrySequence
-  val retryIndex: TaskRetryIndex
+  val serviceName: String
+  val taskId: String
+  val retrySequence: Int
+  val retryIndex: Int
 
   companion object {
     const val TYPE_PREFIX = "io.infinitic.task"
@@ -67,8 +61,8 @@ sealed interface TaskEvent : Event {
 @Serializable
 data class TaskDispatchedData(
   val method: Method,
-  val meta: TaskMeta,
-  val tags: Set<TaskTag>,
+  val meta: Map<String, ByteArray>,
+  val tags: Set<String>,
 )
 
 @Serializable

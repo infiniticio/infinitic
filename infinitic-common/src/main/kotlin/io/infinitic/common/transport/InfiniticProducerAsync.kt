@@ -22,14 +22,14 @@
  */
 package io.infinitic.common.transport
 
-import io.infinitic.common.clients.messages.ClientMessage
 import io.infinitic.common.data.MillisDuration
-import io.infinitic.common.tasks.executors.events.TaskEventMessage
-import io.infinitic.common.tasks.executors.messages.TaskExecutorMessage
-import io.infinitic.common.tasks.tags.messages.TaskTagMessage
-import io.infinitic.common.workflows.engine.events.WorkflowEventMessage
-import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
-import io.infinitic.common.workflows.tags.messages.WorkflowTagMessage
+import io.infinitic.common.messages.Message
+import io.infinitic.common.tasks.events.messages.ServiceEventMessage
+import io.infinitic.common.tasks.executors.messages.ServiceExecutorMessage
+import io.infinitic.common.topics.Topic
+import io.infinitic.common.topics.forWorkflow
+import io.infinitic.common.topics.isDelayed
+import io.infinitic.common.topics.withoutDelay
 import java.util.concurrent.CompletableFuture
 
 /**
@@ -41,72 +41,38 @@ interface InfiniticProducerAsync {
   /**
    * Name of the sender
    */
-  var name: String
-  
-  /**
-   * Asynchronously send a message to a client
-   *
-   * @param message the message to send
-   */
-  fun sendToClientAsync(message: ClientMessage): CompletableFuture<Unit>
+  var producerName: String
 
-  /**
-   * Asynchronously send a message to a workflow tag engine
-   *
-   * @param message the message to send
-   */
-  fun sendToWorkflowTagAsync(message: WorkflowTagMessage): CompletableFuture<Unit>
 
-  /**
-   * Asynchronously send a message to workflow start
-   *
-   * @param message the message to send
-   */
-  fun sendToWorkflowCmdAsync(message: WorkflowEngineMessage): CompletableFuture<Unit>
-
-  /**
-   * Asynchronously send a message to a workflow engine
-   *
-   * @param message the message to send
-   * @param after the delay before sending the message
-   */
-  fun sendToWorkflowEngineAsync(
-    message: WorkflowEngineMessage,
-    after: MillisDuration = MillisDuration.ZERO
+  suspend fun <T : Message> internalSendToAsync(
+    message: T,
+    topic: Topic<T>,
+    after: MillisDuration = MillisDuration(0)
   ): CompletableFuture<Unit>
 
   /**
-   * Asynchronously send a message to a workflow-events
+   * Sends a message to the specified topic asynchronously.
    *
-   * @param message the message to send
+   * @param topic the topic to send the message to
+   * @param after the delay before consuming the message
+   * @return a CompletableFuture that completes when the message has been sent
    */
-  fun sendToWorkflowEventsAsync(message: WorkflowEventMessage): CompletableFuture<Unit>
+  suspend fun <T : Message> T.sendToAsync(
+    topic: Topic<T>,
+    after: MillisDuration = MillisDuration(0)
+  ): CompletableFuture<Unit> {
+    require(after <= 0 || topic.isDelayed) { "Trying to send to $topic with a delay $after" }
 
-  /**
-   * Asynchronously send a message to a task tag engine
-   *
-   * @param message the message to send
-   */
-  fun sendToTaskTagAsync(message: TaskTagMessage): CompletableFuture<Unit>
+    // Switch to workflow-related topics for workflowTasks
+    val t = when (this) {
+      is ServiceExecutorMessage -> if (isWorkflowTask()) topic.forWorkflow else topic
+      is ServiceEventMessage -> if (isWorkflowTask()) topic.forWorkflow else topic
+      else -> topic
+    }
 
-  /**
-   * Asynchronously send a message to a task executor
-   *
-   * @param message the message to send
-   * @param after the delay before sending the message
-   */
-  fun sendToTaskExecutorAsync(
-    message: TaskExecutorMessage,
-    after: MillisDuration = MillisDuration.ZERO
-  ): CompletableFuture<Unit>
-
-  /**
-   * Sends a [TaskExecutorMessage] to a task event handler asynchronously.
-   *
-   * @param message the [TaskExecutorMessage] to send
-   * @return a [CompletableFuture] that completes when the message has been sent
-   */
-  fun sendToTaskEventsAsync(
-    message: TaskEventMessage
-  ): CompletableFuture<Unit>
+    return when {
+      after <= 0 -> internalSendToAsync(this, t.withoutDelay, MillisDuration(0))
+      else -> internalSendToAsync(this, t, after)
+    }
+  }
 }

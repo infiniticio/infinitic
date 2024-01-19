@@ -20,16 +20,35 @@
  *
  * Licensor: infinitic.io
  */
-package io.infinitic.common.workers.registry
+package io.infinitic.events.config
 
-import io.infinitic.tasks.WithRetry
-import io.infinitic.tasks.WithTimeout
+import io.infinitic.common.events.CloudEventListener
+import io.infinitic.common.utils.getInstance
 
-typealias ServiceFactory = () -> Any
+data class EventListener(
+  val `class`: String,
+  var concurrency: Int? = null,
+) {
 
-data class RegisteredService(
-  val concurrency: Int,
-  val factory: ServiceFactory,
-  val withTimeout: WithTimeout?,
-  val withRetry: WithRetry?
-)
+  val instance: CloudEventListener
+
+  init {
+    require(`class`.isNotEmpty()) { error("'class' empty") }
+
+    val instance = `class`.getInstance().getOrThrow()
+
+    require(instance is CloudEventListener) {
+      error("Class '$`class`' must implement ${CloudEventListener::class.java.name}")
+    }
+
+    this.instance = instance
+
+    if (concurrency != null) {
+      require(concurrency!! >= 0) {
+        error("'${::concurrency.name}' must be an integer >= 0")
+      }
+    }
+  }
+
+  private fun error(txt: String) = "Listener: $txt"
+}

@@ -23,17 +23,28 @@
 package io.infinitic.inMemory
 
 import io.github.oshai.kotlinlogging.KotlinLogging
-import io.infinitic.common.clients.messages.ClientMessage
+import io.infinitic.common.clients.data.ClientName
 import io.infinitic.common.data.MillisDuration
 import io.infinitic.common.exceptions.thisShouldNotHappen
-import io.infinitic.common.tasks.executors.events.TaskEventMessage
-import io.infinitic.common.tasks.executors.messages.ExecuteTask
-import io.infinitic.common.tasks.executors.messages.TaskExecutorMessage
-import io.infinitic.common.tasks.tags.messages.TaskTagMessage
+import io.infinitic.common.messages.Message
+import io.infinitic.common.tasks.data.ServiceName
+import io.infinitic.common.topics.ClientTopic
+import io.infinitic.common.topics.DelayedServiceExecutorTopic
+import io.infinitic.common.topics.DelayedWorkflowEngineTopic
+import io.infinitic.common.topics.DelayedWorkflowTaskExecutorTopic
+import io.infinitic.common.topics.NamingTopic
+import io.infinitic.common.topics.ServiceEventsTopic
+import io.infinitic.common.topics.ServiceExecutorTopic
+import io.infinitic.common.topics.ServiceTagTopic
+import io.infinitic.common.topics.Topic
+import io.infinitic.common.topics.WorkflowCmdTopic
+import io.infinitic.common.topics.WorkflowEngineTopic
+import io.infinitic.common.topics.WorkflowEventsTopic
+import io.infinitic.common.topics.WorkflowTagTopic
+import io.infinitic.common.topics.WorkflowTaskEventsTopic
+import io.infinitic.common.topics.WorkflowTaskExecutorTopic
 import io.infinitic.common.transport.InfiniticProducerAsync
-import io.infinitic.common.workflows.engine.events.WorkflowEventMessage
-import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
-import io.infinitic.common.workflows.tags.messages.WorkflowTagMessage
+import io.infinitic.common.workflows.data.workflows.WorkflowName
 import kotlinx.coroutines.channels.Channel
 import java.util.concurrent.CompletableFuture
 
@@ -42,117 +53,49 @@ class InMemoryInfiniticProducerAsync(private val channels: InMemoryChannels) :
 
   private val logger = KotlinLogging.logger {}
 
-  override var name = DEFAULT_NAME
+  override var producerName = DEFAULT_NAME
 
-  override fun sendToClientAsync(
-    message: ClientMessage
-  ): CompletableFuture<Unit> = sendAsync(
-      message,
-      channels.forClient(message.recipientName),
-  )
-
-  override fun sendToWorkflowTagAsync(
-    message: WorkflowTagMessage
-  ): CompletableFuture<Unit> = sendAsync(
-      message,
-      channels.forWorkflowTag(message.workflowName),
-  )
-
-  override fun sendToWorkflowCmdAsync(
-    message: WorkflowEngineMessage
-  ): CompletableFuture<Unit> = sendAsync(
-      message,
-      channels.forWorkflowCmd(message.workflowName),
-  )
-
-  override fun sendToWorkflowEngineAsync(
-    message: WorkflowEngineMessage,
-    after: MillisDuration
-  ): CompletableFuture<Unit> = when {
-    after > 0 -> sendAsync(
-        DelayedMessage(message, after),
-        channels.forDelayedWorkflowEngine(message.workflowName),
+  @Suppress("UNCHECKED_CAST")
+  private fun <S : Message> Topic<S>.channelForMessage(message: S): Channel<Any> = when (this) {
+    WorkflowTagTopic -> channels.forWorkflowTag(WorkflowName(message.entity()))
+    WorkflowCmdTopic -> channels.forWorkflowCmd(WorkflowName(message.entity()))
+    WorkflowEngineTopic -> channels.forWorkflowEngine(WorkflowName(message.entity()))
+    DelayedWorkflowEngineTopic -> channels.forDelayedWorkflowEngine(WorkflowName(message.entity()))
+    WorkflowEventsTopic -> channels.forWorkflowEvent(WorkflowName(message.entity()))
+    WorkflowTaskExecutorTopic -> channels.forWorkflowTaskExecutor(WorkflowName(message.entity()))
+    DelayedWorkflowTaskExecutorTopic -> channels.forDelayedWorkflowTaskExecutor(
+        WorkflowName(message.entity()),
     )
 
-    else -> sendAsync(
-        message,
-        channels.forWorkflowEngine(message.workflowName),
-    )
-  }
+    WorkflowTaskEventsTopic -> channels.forWorkflowTaskEvents(WorkflowName(message.entity()))
+    ServiceTagTopic -> channels.forTaskTag(ServiceName(message.entity()))
+    ServiceExecutorTopic -> channels.forTaskExecutor(ServiceName(message.entity()))
+    DelayedServiceExecutorTopic -> channels.forDelayedTaskExecutor(ServiceName(message.entity()))
+    ServiceEventsTopic -> channels.forTaskEvents(ServiceName(message.entity()))
+    ClientTopic -> channels.forClient(ClientName(message.entity()))
+    NamingTopic -> thisShouldNotHappen()
+  } as Channel<Any>
 
-  override fun sendToWorkflowEventsAsync(
-    message: WorkflowEventMessage
-  ): CompletableFuture<Unit> = sendAsync(
-      message,
-      channels.forWorkflowEvent(message.workflowName),
-  )
-
-  override fun sendToTaskTagAsync(
-    message: TaskTagMessage
-  ) = sendAsync(
-      message,
-      channels.forTaskTag(message.serviceName),
-  )
-
-  override fun sendToTaskExecutorAsync(
-    message: TaskExecutorMessage,
-    after: MillisDuration
-  ): CompletableFuture<Unit> = when {
-    message.isWorkflowTask() -> when (message) {
-      is ExecuteTask -> when {
-        after > 0 -> sendAsync(
-            DelayedMessage(message, after),
-            channels.forDelayedWorkflowTaskExecutor(message.workflowName!!),
-        )
-
-        else -> sendAsync(
-            message,
-            channels.forWorkflowTaskExecutor(message.workflowName!!),
-        )
-      }
-
-      else -> thisShouldNotHappen()
-    }
-
-    else -> when {
-      after > 0 -> sendAsync(
-          DelayedMessage(message, after),
-          channels.forDelayedTaskExecutor(message.serviceName),
-      )
-
-      else -> sendAsync(
-          message,
-          channels.forTaskExecutor(message.serviceName),
-      )
-    }
-  }
-
-  override fun sendToTaskEventsAsync(message: TaskEventMessage): CompletableFuture<Unit> = when {
-    message.isWorkflowTask() -> sendAsync(
-        message,
-        channels.forWorkflowTaskEvents(message.workflowName!!),
-    )
-
-    else -> sendAsync(
-        message,
-        channels.forTaskEvents(message.serviceName),
-    )
-  }
-
-  private fun <T : Any> sendAsync(
+  override suspend fun <T : Message> internalSendToAsync(
     message: T,
-    channel: Channel<T>,
+    topic: Topic<T>,
+    after: MillisDuration
   ): CompletableFuture<Unit> {
-    logger.debug { "Channel ${channel.id}: sending $message" }
-    val future = with(channels) { channel.sendAsync(message) }
+    val msg: Any = when (after > 0) {
+      true -> DelayedMessage(message, after)
+      false -> message
+    }
+    val channel = topic.channelForMessage(message)
+    logger.debug { "Channel ${channel.id}: sending $msg" }
+    channel.send(msg)
     logger.trace { "Channel ${channel.id}: sent" }
 
-    return future
-
+    return CompletableFuture.completedFuture(Unit)
   }
 
   companion object {
     private const val DEFAULT_NAME = "inMemory"
   }
 }
+
 

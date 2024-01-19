@@ -23,11 +23,11 @@
 
 package io.infinitic.events.methods
 
-import io.infinitic.common.data.methods.MethodName
+import io.infinitic.events.data.Data
 import kotlinx.serialization.Serializable
 
 @Serializable
 data class Method(
-  val methodName: MethodName,
-  val methodArgs: MethodArgs,
+  val methodName: String,
+  val methodArgs: List<Data>,
 )

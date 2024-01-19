@@ -29,6 +29,10 @@ import io.infinitic.common.data.MillisInstant
 import io.infinitic.common.emitters.EmitterName
 import io.infinitic.common.exceptions.thisShouldNotHappen
 import io.infinitic.common.tasks.executors.errors.MethodUnknownError
+import io.infinitic.common.topics.ClientTopic
+import io.infinitic.common.topics.WorkflowEngineTopic
+import io.infinitic.common.topics.WorkflowEventsTopic
+import io.infinitic.common.topics.WorkflowTagTopic
 import io.infinitic.common.transport.InfiniticProducer
 import io.infinitic.common.transport.InfiniticProducerAsync
 import io.infinitic.common.transport.LoggedInfiniticProducer
@@ -92,10 +96,10 @@ class WorkflowEngine(
     const val NO_STATE_DISCARDING_REASON = "for having null workflow state"
   }
 
-  private val logger = KotlinLogging.logger(javaClass.name)
-  private val storage = LoggedWorkflowStateStorage(javaClass.name, storage)
-  private val producer = LoggedInfiniticProducer(javaClass.name, producerAsync)
-  private val emitterName by lazy { EmitterName(producer.name) }
+  private val logger = KotlinLogging.logger(this::class.java.name)
+  private val storage = LoggedWorkflowStateStorage(this::class.java.name, storage)
+  private val producer = LoggedInfiniticProducer(this::class.java.name, producerAsync)
+  private val emitterName by lazy { EmitterName(this::class.java.name) }
 
   suspend fun handle(message: WorkflowEngineMessage, publishTime: MillisInstant) {
     logDebug(message) { "Receiving $message" }
@@ -150,7 +154,7 @@ class WorkflowEngine(
         workflowTags = state.workflowTags,
         emitterName = emitterName,
     )
-    producer.sendToWorkflowEvents(workflowCompletedEvent)
+    with(producer) { workflowCompletedEvent.sendTo(WorkflowEventsTopic) }
   }
 
   private suspend fun removeTags(producer: InfiniticProducer, state: WorkflowState) =
@@ -163,7 +167,7 @@ class WorkflowEngine(
               emitterName = EmitterName(producer.name),
               emittedAt = state.runningWorkflowTaskInstant,
           )
-          launch { producer.sendToWorkflowTag(removeTagFromWorkflow) }
+          launch { with(producer) { removeTagFromWorkflow.sendTo(WorkflowTagTopic) } }
         }
       }
 
@@ -194,7 +198,7 @@ class WorkflowEngine(
               message.workflowMethodId,
               emitterName = emitterName,
           )
-          producer.sendToClient(methodUnknown)
+          with(producer) { methodUnknown.sendTo(ClientTopic) }
         }
         // a workflow wants to dispatch a method on an unknown workflow
         if (message.parentWorkflowId != null && message.parentWorkflowId != message.workflowId) launch {
@@ -211,8 +215,7 @@ class WorkflowEngine(
               emitterName = emitterName,
               emittedAt = message.emittedAt,
           )
-
-          producer.sendToWorkflowEngine(childMethodFailed)
+          with(producer) { childMethodFailed.sendTo(WorkflowEngineTopic) }
         }
       }
 
@@ -224,7 +227,7 @@ class WorkflowEngine(
             message.workflowMethodId,
             emitterName = emitterName,
         )
-        producer.sendToClient(methodUnknown)
+        with(producer) { methodUnknown.sendTo(ClientTopic) }
       }
 
 

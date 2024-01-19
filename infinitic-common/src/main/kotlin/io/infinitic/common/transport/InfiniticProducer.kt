@@ -22,14 +22,9 @@
  */
 package io.infinitic.common.transport
 
-import io.infinitic.common.clients.messages.ClientMessage
 import io.infinitic.common.data.MillisDuration
-import io.infinitic.common.tasks.executors.events.TaskEventMessage
-import io.infinitic.common.tasks.executors.messages.TaskExecutorMessage
-import io.infinitic.common.tasks.tags.messages.TaskTagMessage
-import io.infinitic.common.workflows.engine.events.WorkflowEventMessage
-import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
-import io.infinitic.common.workflows.tags.messages.WorkflowTagMessage
+import io.infinitic.common.messages.Message
+import io.infinitic.common.topics.Topic
 
 interface InfiniticProducer {
   /**
@@ -37,70 +32,8 @@ interface InfiniticProducer {
    */
   var name: String
 
-  /**
-   * Synchronously send a message to a client
-   *
-   * @param message the message to send
-   */
-  suspend fun sendToClient(message: ClientMessage)
-
-  /**
-   * Synchronously send a message to a workflow tag engine
-   *
-   * @param message the message to send
-   */
-  suspend fun sendToWorkflowTag(message: WorkflowTagMessage)
-
-  /**
-   * Synchronously send a message to a workflow-cmd
-   *
-   * @param message the message to send
-   */
-  suspend fun sendToWorkflowCmd(message: WorkflowEngineMessage)
-
-  /**
-   * Synchronously send a message to a workflow-engine
-   *
-   * @param message the message to send
-   * @param after the delay before sending the message
-   */
-  suspend fun sendToWorkflowEngine(
-    message: WorkflowEngineMessage,
-    after: MillisDuration = MillisDuration.ZERO
-  )
-
-  /**
-   * Synchronously send a message to workflow-events
-   *
-   * @param message the message to send
-   */
-  suspend fun sendToWorkflowEvents(message: WorkflowEventMessage)
-
-  /**
-   * Synchronously send a message to a task-tag
-   *
-   * @param message the message to send
-   */
-  suspend fun sendToTaskTag(message: TaskTagMessage)
-
-  /**
-   * Synchronously send a message to a task-executor
-   *
-   * @param message the message to send
-   * @param after the delay before sending the message
-   */
-  suspend fun sendToTaskExecutor(
-    message: TaskExecutorMessage,
-    after: MillisDuration = MillisDuration.ZERO
-  )
-
-
-  /**
-   * Synchronously send a message to task-events
-   *
-   * @param message the message to send to the task result handler.
-   */
-  suspend fun sendToTaskEvents(
-    message: TaskEventMessage
+  suspend fun <T : Message> T.sendTo(
+    topic: Topic<T>,
+    after: MillisDuration = MillisDuration(0)
   )
 }

@@ -56,6 +56,9 @@ import io.infinitic.common.proxies.RequestByWorkflowTag
 import io.infinitic.common.tasks.data.ServiceName
 import io.infinitic.common.tasks.data.TaskId
 import io.infinitic.common.tasks.executors.errors.MethodFailedError
+import io.infinitic.common.topics.Topic
+import io.infinitic.common.topics.WorkflowCmdTopic
+import io.infinitic.common.topics.WorkflowTagTopic
 import io.infinitic.common.transport.InfiniticConsumerAsync
 import io.infinitic.common.transport.InfiniticProducerAsync
 import io.infinitic.common.transport.LoggedInfiniticProducer
@@ -94,6 +97,7 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.future.future
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeoutOrNull
 import java.io.Closeable
 import java.util.concurrent.CompletableFuture
@@ -107,7 +111,7 @@ internal class ClientDispatcher(
 ) : ProxyDispatcher, Closeable {
   private val logger = KotlinLogging.logger(logName)
 
-  private val producer = LoggedInfiniticProducer(this::class.java.name, producerAsync)
+  private val producer = LoggedInfiniticProducer(logName, producerAsync)
 
   // Name of the client
   private val emitterName by lazy { EmitterName(producer.name) }
@@ -116,15 +120,20 @@ internal class ClientDispatcher(
   private var isClientConsumerInitialized = false
 
   // Scope used to consuming messages
-  private val waitingScope = CoroutineScope(Dispatchers.IO)
+  private val clientScope = CoroutineScope(Dispatchers.IO)
 
   // Flow used to receive messages
   private val responseFlow = MutableSharedFlow<ClientMessage>(replay = 0)
 
   override fun close() {
     // Do not wait anymore for messages
-    waitingScope.cancel()
+    clientScope.cancel()
   }
+
+  private fun <T : Message> T.sendToAsync(topic: Topic<T>) =
+      runBlocking(clientScope.coroutineContext) {
+        with(producerAsync) { sendToAsync(topic) }
+      }
 
   // a message received by the client is sent to responseFlow
   @Suppress("UNUSED_PARAMETER")
@@ -220,7 +229,7 @@ internal class ClientDispatcher(
           emittedAt = null,
       )
       // synchronously sent the message to get errors
-      producerAsync.sendToWorkflowCmdAsync(waitWorkflow).join()
+      waitWorkflow.sendToAsync(WorkflowCmdTopic)
     }
 
     // Get result
@@ -279,7 +288,7 @@ internal class ClientDispatcher(
           emitterName = emitterName,
           emittedAt = null,
       )
-      producerAsync.sendToWorkflowCmdAsync(msg)
+      msg.sendToAsync(WorkflowCmdTopic)
     }
 
     is RequestByWorkflowTag -> {
@@ -291,7 +300,7 @@ internal class ClientDispatcher(
           emitterName = emitterName,
           emittedAt = null,
       )
-      producerAsync.sendToWorkflowTagAsync(msg)
+      msg.sendToAsync(WorkflowTagTopic)
     }
 
     else -> thisShouldNotHappen()
@@ -308,7 +317,7 @@ internal class ClientDispatcher(
           emitterName = emitterName,
           emittedAt = null,
       )
-      producerAsync.sendToWorkflowCmdAsync(msg)
+      msg.sendToAsync(WorkflowCmdTopic)
     }
 
     is RequestByWorkflowTag -> {
@@ -318,7 +327,7 @@ internal class ClientDispatcher(
           emitterName = emitterName,
           emittedAt = null,
       )
-      producerAsync.sendToWorkflowTagAsync(msg)
+      msg.sendToAsync(WorkflowTagTopic)
     }
 
     else -> thisShouldNotHappen()
@@ -338,7 +347,7 @@ internal class ClientDispatcher(
           emitterName = emitterName,
           emittedAt = null,
       )
-      producerAsync.sendToWorkflowCmdAsync(msg)
+      msg.sendToAsync(WorkflowCmdTopic)
     }
 
     is RequestByWorkflowTag -> {
@@ -349,7 +358,7 @@ internal class ClientDispatcher(
           emitterName = emitterName,
           emittedAt = null,
       )
-      producerAsync.sendToWorkflowTagAsync(msg)
+      msg.sendToAsync(WorkflowTagTopic)
     }
 
     else -> thisShouldNotHappen()
@@ -373,7 +382,7 @@ internal class ClientDispatcher(
           serviceName = serviceName,
           emittedAt = null,
       )
-      producerAsync.sendToWorkflowCmdAsync(msg)
+      msg.sendToAsync(WorkflowCmdTopic)
     }
 
     is RequestByWorkflowTag -> {
@@ -386,7 +395,7 @@ internal class ClientDispatcher(
           emitterName = emitterName,
           emittedAt = null,
       )
-      producerAsync.sendToWorkflowTagAsync(msg)
+      msg.sendToAsync(WorkflowTagTopic)
     }
 
     else -> thisShouldNotHappen()
@@ -411,7 +420,7 @@ internal class ClientDispatcher(
         emittedAt = null,
     )
     // synchronously sent the message to get errors
-    producerAsync.sendToWorkflowTagAsync(msg).join()
+    msg.sendToAsync(WorkflowTagTopic).join()
 
     val workflowIdsByTag = waiting.join() as WorkflowIdsByTag
 
@@ -488,6 +497,13 @@ internal class ClientDispatcher(
               emittedAt = null,
           )
         }
+
+        // first, we send all tags in parallel
+        val futures = workflowTags.map {
+          it.sendToAsync(WorkflowTagTopic)
+        }.toTypedArray()
+        CompletableFuture.allOf(*futures).join()
+
         // dispatch workflow message
         val dispatchWorkflow = DispatchNewWorkflow(
             workflowName = deferred.workflowName,
@@ -505,15 +521,9 @@ internal class ClientDispatcher(
             emittedAt = null,
         )
 
-        // first, we send all tags in parallel
-        val futures = workflowTags.map {
-          producerAsync.sendToWorkflowTagAsync(it)
-        }.toTypedArray()
-        CompletableFuture.allOf(*futures).join()
-
         // workflow message is dispatched after tags
         // to avoid a potential race condition if the engine remove tags
-        producerAsync.sendToWorkflowCmdAsync(dispatchWorkflow).thenApply { deferred }
+        dispatchWorkflow.sendToAsync(WorkflowCmdTopic).thenApply { deferred }
       }
       // a customId tag was provided
       1 -> {
@@ -535,8 +545,7 @@ internal class ClientDispatcher(
             emitterName = emitterName,
             emittedAt = null,
         )
-
-        producerAsync.sendToWorkflowTagAsync(dispatchWorkflowByCustomId).thenApply { deferred }
+        dispatchWorkflowByCustomId.sendToAsync(WorkflowTagTopic).thenApply { deferred }
       }
       // more than 1 custom tag were provided
       else -> {
@@ -633,7 +642,7 @@ internal class ClientDispatcher(
           emitterName = emitterName,
           emittedAt = null,
       )
-      producerAsync.sendToWorkflowCmdAsync(dispatchMethod)
+      dispatchMethod.sendToAsync(WorkflowCmdTopic)
     }
 
     is RequestByWorkflowTag -> {
@@ -652,7 +661,7 @@ internal class ClientDispatcher(
           emitterName = emitterName,
           emittedAt = null,
       )
-      producerAsync.sendToWorkflowTagAsync(dispatchMethodByTag)
+      dispatchMethodByTag.sendToAsync(WorkflowTagTopic)
     }
   }
 
@@ -693,7 +702,7 @@ internal class ClientDispatcher(
             emitterName = emitterName,
             emittedAt = null,
         )
-        producerAsync.sendToWorkflowCmdAsync(sendSignal)
+        sendSignal.sendToAsync(WorkflowCmdTopic)
       }
 
       is RequestByWorkflowTag -> {
@@ -708,7 +717,7 @@ internal class ClientDispatcher(
             emitterName = emitterName,
             emittedAt = null,
         )
-        producerAsync.sendToWorkflowTagAsync(sendSignalByTag)
+        sendSignalByTag.sendToAsync(WorkflowTagTopic)
       }
 
       else -> thisShouldNotHappen()
@@ -741,22 +750,22 @@ internal class ClientDispatcher(
     timeout: Long = Long.MAX_VALUE,
     predicate: suspend (ClientMessage) -> Boolean
   ): CompletableFuture<ClientMessage?> {
-
-
     // lazily starts client consumer if not already started
     synchronized(this) {
       if (!isClientConsumerInitialized) {
-        consumerAsync.startClientConsumerAsync(
-            ::handle,
-            logMessageSentToDLQ,
-            ClientName.from(emitterName),
-        )
-        isClientConsumerInitialized = true
+        runBlocking(clientScope.coroutineContext) {
+          consumerAsync.startClientConsumerAsync(
+              ::handle,
+              logMessageSentToDLQ,
+              ClientName.from(emitterName),
+          )
+          isClientConsumerInitialized = true
+        }
       }
     }
 
     // wait for the first message that matches the predicate
-    return waitingScope.future {
+    return clientScope.future {
       withTimeoutOrNull(timeout) {
         responseFlow.first { predicate(it) }
       }

@@ -29,12 +29,14 @@ import io.infinitic.common.data.MillisInstant
 import io.infinitic.common.emitters.EmitterName
 import io.infinitic.common.exceptions.thisShouldNotHappen
 import io.infinitic.common.parser.getMethodPerNameAndParameters
-import io.infinitic.common.tasks.executors.events.TaskCompletedEvent
-import io.infinitic.common.tasks.executors.events.TaskFailedEvent
-import io.infinitic.common.tasks.executors.events.TaskRetriedEvent
-import io.infinitic.common.tasks.executors.events.TaskStartedEvent
+import io.infinitic.common.tasks.events.messages.TaskCompletedEvent
+import io.infinitic.common.tasks.events.messages.TaskFailedEvent
+import io.infinitic.common.tasks.events.messages.TaskRetriedEvent
+import io.infinitic.common.tasks.events.messages.TaskStartedEvent
 import io.infinitic.common.tasks.executors.messages.ExecuteTask
-import io.infinitic.common.tasks.executors.messages.TaskExecutorMessage
+import io.infinitic.common.tasks.executors.messages.ServiceExecutorMessage
+import io.infinitic.common.topics.DelayedServiceExecutorTopic
+import io.infinitic.common.topics.ServiceEventsTopic
 import io.infinitic.common.transport.InfiniticProducerAsync
 import io.infinitic.common.transport.LoggedInfiniticProducer
 import io.infinitic.common.utils.getCheckMode
@@ -70,10 +72,10 @@ class TaskExecutor(
   private val producer = LoggedInfiniticProducer(this::class.java.name, producerAsync)
   private var withRetry: WithRetry? = null
   private var withTimeout: WithTimeout? = null
-  private val emitterName by lazy { EmitterName(producerAsync.name) }
+  private val emitterName by lazy { EmitterName(producerAsync.producerName) }
 
   @Suppress("UNUSED_PARAMETER")
-  suspend fun handle(msg: TaskExecutorMessage, publishTime: MillisInstant) {
+  suspend fun handle(msg: ServiceExecutorMessage, publishTime: MillisInstant) {
     when (msg) {
       is ExecuteTask -> {
         msg.logDebug { "received $msg" }
@@ -197,12 +199,11 @@ class TaskExecutor(
 
   private suspend fun sendTaskStarted(msg: ExecuteTask) {
     val event = TaskStartedEvent.from(msg, emitterName)
-
-    producer.sendToTaskEvents(event)
+    with(producer) { event.sendTo(ServiceEventsTopic) }
   }
 
   suspend fun sendTaskFailed(
-    msg: TaskExecutorMessage,
+    msg: ServiceExecutorMessage,
     cause: Throwable,
     meta: MutableMap<String, ByteArray>,
     description: (() -> String)?
@@ -212,8 +213,7 @@ class TaskExecutor(
     description?.let { msg.logError(cause, it) }
 
     val event = TaskFailedEvent.from(msg, emitterName, cause, meta)
-
-    producer.sendToTaskEvents(event)
+    with(producer) { event.sendTo(ServiceEventsTopic) }
   }
 
   private suspend fun sendRetryTask(
@@ -225,13 +225,11 @@ class TaskExecutor(
     msg.logWarn(cause) { "Retrying in $delay" }
 
     val executeTask = ExecuteTask.retryFrom(msg, emitterName, cause, meta)
-
-    producer.sendToTaskExecutor(executeTask, delay)
+    with(producer) { executeTask.sendTo(DelayedServiceExecutorTopic, delay) }
 
     // once sent, we publish the event
     val event = TaskRetriedEvent.from(msg, emitterName, cause, delay, meta)
-
-    producer.sendToTaskEvents(event)
+    with(producer) { event.sendTo(ServiceEventsTopic) }
   }
 
   private suspend fun sendTaskCompleted(
@@ -240,8 +238,7 @@ class TaskExecutor(
     meta: MutableMap<String, ByteArray>
   ) {
     val event = TaskCompletedEvent.from(msg, emitterName, value, meta)
-
-    producer.sendToTaskEvents(event)
+    with(producer) { event.sendTo(ServiceEventsTopic) }
   }
 
   private fun parse(msg: ExecuteTask): TaskCommand {

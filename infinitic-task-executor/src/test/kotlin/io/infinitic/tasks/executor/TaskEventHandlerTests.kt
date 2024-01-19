@@ -35,12 +35,16 @@ import io.infinitic.common.tasks.data.TaskRetryIndex
 import io.infinitic.common.tasks.data.TaskRetrySequence
 import io.infinitic.common.tasks.data.TaskReturnValue
 import io.infinitic.common.tasks.data.TaskTag
+import io.infinitic.common.tasks.events.messages.TaskCompletedEvent
+import io.infinitic.common.tasks.events.messages.TaskFailedEvent
+import io.infinitic.common.tasks.events.messages.TaskRetriedEvent
+import io.infinitic.common.tasks.events.messages.TaskStartedEvent
 import io.infinitic.common.tasks.executors.errors.TaskFailedError
-import io.infinitic.common.tasks.executors.events.TaskCompletedEvent
-import io.infinitic.common.tasks.executors.events.TaskFailedEvent
-import io.infinitic.common.tasks.executors.events.TaskRetriedEvent
-import io.infinitic.common.tasks.executors.events.TaskStartedEvent
-import io.infinitic.common.tasks.tags.messages.TaskTagMessage
+import io.infinitic.common.tasks.tags.messages.ServiceTagMessage
+import io.infinitic.common.topics.ClientTopic
+import io.infinitic.common.topics.DelayedWorkflowEngineTopic
+import io.infinitic.common.topics.ServiceTagTopic
+import io.infinitic.common.topics.WorkflowEngineTopic
 import io.infinitic.common.transport.InfiniticProducerAsync
 import io.infinitic.common.workers.config.WorkflowVersion
 import io.infinitic.common.workflows.data.methodRuns.WorkflowMethodId
@@ -49,6 +53,7 @@ import io.infinitic.common.workflows.data.workflows.WorkflowName
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
+import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.slot
@@ -71,18 +76,24 @@ class TaskEventHandlerTests :
       {
         // slots
         val afterSlot = slot<MillisDuration>()
-        val taskTagSlots = CopyOnWriteArrayList<TaskTagMessage>() // multithreading update
+        val taskTagSlots = CopyOnWriteArrayList<ServiceTagMessage>() // multithreading update
         val clientSlot = slot<ClientMessage>()
         val workflowEngineSlot = slot<WorkflowEngineMessage>()
 
         // mocks
         fun completed() = CompletableFuture.completedFuture(Unit)
         val producerAsync = mockk<InfiniticProducerAsync> {
-          every { name } returns "$testEmitterName"
-          every { sendToTaskTagAsync(capture(taskTagSlots)) } returns completed()
-          every { sendToClientAsync(capture(clientSlot)) } returns completed()
-          every {
-            sendToWorkflowEngineAsync(capture(workflowEngineSlot), capture(afterSlot))
+          every { producerName } returns "$testEmitterName"
+          coEvery { capture(taskTagSlots).sendToAsync(ServiceTagTopic) } returns completed()
+          coEvery { capture(clientSlot).sendToAsync(ClientTopic) } returns completed()
+          coEvery {
+            capture(workflowEngineSlot).sendToAsync(WorkflowEngineTopic)
+          } returns completed()
+          coEvery {
+            capture(workflowEngineSlot).sendToAsync(
+                DelayedWorkflowEngineTopic,
+                capture(afterSlot),
+            )
           } returns completed()
         }
 

@@ -29,6 +29,9 @@ import io.infinitic.common.tasks.data.TaskRetryIndex
 import io.infinitic.common.tasks.executors.errors.TaskTimedOutError
 import io.infinitic.common.tasks.executors.messages.ExecuteTask
 import io.infinitic.common.tasks.tags.messages.AddTagToTask
+import io.infinitic.common.topics.DelayedWorkflowEngineTopic
+import io.infinitic.common.topics.ServiceExecutorTopic
+import io.infinitic.common.topics.ServiceTagTopic
 import io.infinitic.common.transport.InfiniticProducer
 import io.infinitic.common.workflows.data.commands.DispatchTaskPastCommand
 import io.infinitic.common.workflows.engine.messages.TaskTimedOut
@@ -66,23 +69,25 @@ internal fun CoroutineScope.dispatchTaskCmd(
     )
   }
 
-  launch { producer.sendToTaskExecutor(executeTask) }
+  launch { with(producer) { executeTask.sendTo(ServiceExecutorTopic) } }
 
   // add provided tags
   executeTask.taskTags.forEach {
-    val addTagToTask = AddTagToTask(
-        serviceName = executeTask.serviceName,
-        taskTag = it,
-        taskId = executeTask.taskId,
-        emitterName = emitterName,
-    )
-    launch { producer.sendToTaskTag(addTagToTask) }
+    launch {
+      val addTagToTask = AddTagToTask(
+          serviceName = executeTask.serviceName,
+          taskTag = it,
+          taskId = executeTask.taskId,
+          emitterName = emitterName,
+      )
+      with(producer) { addTagToTask.sendTo(ServiceTagTopic) }
+    }
   }
 
   // send global task timeout if any
   val timeout = pastCommand.command.methodTimeout
 
-  if (timeout != null) {
+  if (timeout != null) launch {
     val taskTimedOut = with(pastCommand.command) {
       TaskTimedOut(
           taskTimedOutError = TaskTimedOutError(
@@ -97,6 +102,6 @@ internal fun CoroutineScope.dispatchTaskCmd(
           emittedAt = workflowTaskInstant + timeout,
       )
     }
-    launch { producer.sendToWorkflowEngine(taskTimedOut, timeout) }
+    with(producer) { taskTimedOut.sendTo(DelayedWorkflowEngineTopic, timeout) }
   }
 }

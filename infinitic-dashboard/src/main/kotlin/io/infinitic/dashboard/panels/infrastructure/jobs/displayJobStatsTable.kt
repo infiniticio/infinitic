@@ -22,13 +22,16 @@
  */
 package io.infinitic.dashboard.panels.infrastructure.jobs
 
+import io.infinitic.common.topics.Topic
 import io.infinitic.dashboard.Infinitic
 import io.infinitic.dashboard.panels.infrastructure.requests.Completed
 import io.infinitic.dashboard.panels.infrastructure.requests.Failed
 import io.infinitic.dashboard.panels.infrastructure.requests.Loading
 import io.infinitic.dashboard.panels.infrastructure.requests.Request
 import io.infinitic.dashboard.slideovers.Slideover
-import io.infinitic.pulsar.resources.TopicDescription
+import io.infinitic.pulsar.resources.prefix
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.runBlocking
 import kweb.Element
 import kweb.ElementCreator
 import kweb.div
@@ -45,9 +48,9 @@ import org.apache.pulsar.common.policies.data.PartitionedTopicStats
 
 internal fun ElementCreator<Element>.displayJobStatsTable(
   name: String,
-  state: KVar<out JobState<out TopicDescription>>,
+  state: KVar<out JobState<out Topic<*>>>,
   selectionSlide: Slideover<*>,
-  selectionType: KVar<TopicDescription>,
+  selectionType: KVar<Topic<*>>,
   selectionStats: KVar<Request<PartitionedTopicStats>>
 ) {
   // Topics table
@@ -96,9 +99,13 @@ internal fun ElementCreator<Element>.displayJobStatsTable(
                     }
                     tbody().new {
                       state.topicsStats.forEach {
-                        val type = it.key
+                        val topic = it.key
                         val request = it.value
-                        val topic = Infinitic.resourceManager.getTopicName(name, type)
+                        val topicFullName = runBlocking(Dispatchers.IO) {
+                          with(Infinitic.pulsarResources) {
+                            topic.fullName(name)
+                          }
+                        }
                         val row = tr()
 
                         when (request) {
@@ -106,23 +113,23 @@ internal fun ElementCreator<Element>.displayJobStatsTable(
                             row.classes("bg-white").new {
                               td()
                                   .classes("px-6 py-4 text-sm font-medium text-gray-900")
-                                  .text(type.subscriptionPrefix)
+                                  .text(topic.prefix())
                               td().classes("px-6 py-4 text-sm text-gray-500").text("loading...")
                               td().classes("px-6 py-4 text-sm text-gray-500").text("loading...")
                               td().classes("px-6 py-4 text-sm text-gray-500").text("loading...")
-                              td().classes("px-6 py-4 text-sm text-gray-500").text(topic)
+                              td().classes("px-6 py-4 text-sm text-gray-500").text(topicFullName)
                             }
 
                           is Failed ->
                             row.classes("bg-white cursor-pointer hover:bg-gray-50").new {
                               td()
                                   .classes("px-6 py-4 text-sm font-medium text-gray-900")
-                                  .text(type.subscriptionPrefix)
+                                  .text(topic.prefix())
                               td()
                                   .classes("px-6 py-4 text-sm text-gray-500 text-center italic")
                                   .set("colspan", 3)
                                   .text(request.title)
-                              td().classes("px-6 py-4 text-sm text-gray-500").text(topic)
+                              td().classes("px-6 py-4 text-sm text-gray-500").text(topicFullName)
                             }
 
                           is Completed ->
@@ -130,7 +137,7 @@ internal fun ElementCreator<Element>.displayJobStatsTable(
                               row.classes("bg-white cursor-pointer hover:bg-gray-50").new {
                                 td()
                                     .classes("px-6 py-4 text-sm font-medium text-gray-900")
-                                    .text(type.subscriptionPrefix)
+                                    .text(topic.prefix())
                                 td()
                                     .classes("px-6 py-4 text-sm text-gray-500")
                                     .text(entry.value.consumers.size.toString())
@@ -140,14 +147,14 @@ internal fun ElementCreator<Element>.displayJobStatsTable(
                                 td()
                                     .classes("px-6 py-4 text-sm text-gray-500")
                                     .text("%.2f".format(entry.value.msgRateOut) + " msg/s")
-                                td().classes("px-6 py-4 text-sm text-gray-500").text(topic)
+                                td().classes("px-6 py-4 text-sm text-gray-500").text(topicFullName)
                               }
                             }
                         }
                         if (request !is Loading<*>) {
                           row.on.click {
-                            if (selectionType.value != type) {
-                              selectionType.value = type
+                            if (selectionType.value != topic) {
+                              selectionType.value = topic
                               selectionStats.value = request
                             }
 

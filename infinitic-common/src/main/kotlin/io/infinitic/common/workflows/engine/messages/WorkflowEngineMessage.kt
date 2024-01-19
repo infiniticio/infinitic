@@ -101,6 +101,10 @@ sealed class WorkflowEngineMessage : Message {
 
   override fun envelope() = WorkflowEngineEnvelope.from(this)
 
+  override fun key() = workflowId.toString()
+
+  override fun entity() = workflowName.toString()
+
   fun isWorkflowTaskEvent() =
       (this is TaskEvent) && this.serviceName() == ServiceName(WorkflowTask::class.java.name)
 }

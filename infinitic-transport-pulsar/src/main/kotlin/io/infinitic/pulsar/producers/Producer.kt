@@ -24,12 +24,10 @@ package io.infinitic.pulsar.producers
 
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.infinitic.common.data.MillisDuration
-import io.infinitic.common.messages.Envelope
 import io.infinitic.common.messages.Message
 import io.infinitic.pulsar.client.PulsarInfiniticClient
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.TimeUnit
-import kotlin.reflect.KClass
 
 class Producer(
   val client: PulsarInfiniticClient,
@@ -38,28 +36,28 @@ class Producer(
 
   val logger = KotlinLogging.logger {}
 
-  fun getUniqueName(namerTopic: String, proposedName: String?) =
+  suspend fun getUniqueName(namerTopic: String, proposedName: String?) =
       client.getUniqueName(namerTopic, proposedName)
 
-  fun <T : Message, S : Envelope<out T>> sendAsync(
-    schemaClass: KClass<S>,
-    message: T,
+  fun sendAsync(
+    message: Message,
     after: MillisDuration,
     topic: String,
     producerName: String,
     key: String? = null
   ): CompletableFuture<Unit> {
 
+    val envelope = message.envelope()
+
     val producer = client
-        .getProducer(topic, schemaClass, producerName, producerConfig, key)
+        .getProducer(topic, envelope::class, producerName, producerConfig, key)
         .getOrElse { return CompletableFuture.failedFuture(it) }
 
     logger.trace { "Sending${if (after > 0) " after $after ms" else ""} to topic '$topic' with key '$key': '$message'" }
 
-    @Suppress("UNCHECKED_CAST")
     return producer
         .newMessage()
-        .value(message.envelope() as S)
+        .value(envelope)
         .also {
           if (key != null) {
             it.key(key)

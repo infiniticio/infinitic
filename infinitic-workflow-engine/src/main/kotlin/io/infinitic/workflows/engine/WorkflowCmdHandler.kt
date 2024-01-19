@@ -26,6 +26,9 @@ import io.github.oshai.kotlinlogging.KotlinLogging
 import io.infinitic.common.data.MillisInstant
 import io.infinitic.common.emitters.EmitterName
 import io.infinitic.common.tasks.data.TaskId
+import io.infinitic.common.topics.WorkflowEngineTopic
+import io.infinitic.common.topics.WorkflowEventsTopic
+import io.infinitic.common.topics.WorkflowTaskExecutorTopic
 import io.infinitic.common.transport.InfiniticProducerAsync
 import io.infinitic.common.transport.LoggedInfiniticProducer
 import io.infinitic.common.utils.IdGenerator
@@ -38,8 +41,8 @@ import kotlinx.coroutines.launch
 
 class WorkflowCmdHandler(producerAsync: InfiniticProducerAsync) {
 
-  private val logger = KotlinLogging.logger(javaClass.name)
-  val producer = LoggedInfiniticProducer(javaClass.name, producerAsync)
+  private val logger = KotlinLogging.logger(this::class.java.name)
+  val producer = LoggedInfiniticProducer(this::class.java.name, producerAsync)
   val emitterName by lazy { EmitterName(producer.name) }
 
   suspend fun handle(msg: WorkflowEngineMessage, publishTime: MillisInstant) {
@@ -50,7 +53,7 @@ class WorkflowCmdHandler(producerAsync: InfiniticProducerAsync) {
 
     when (msg) {
       is DispatchNewWorkflow -> dispatchNewWorkflow(msg, publishTime)
-      else -> producer.sendToWorkflowEngine(msg)
+      else -> with(producer) { msg.sendTo(WorkflowEngineTopic) }
     }
 
     msg.logTrace { "Processed $msg" }
@@ -71,7 +74,7 @@ class WorkflowCmdHandler(producerAsync: InfiniticProducerAsync) {
         )
 
         // first we send to workflow-engine
-        producer.sendToWorkflowEngine(dispatchNewWorkflow)
+        with(producer) { dispatchNewWorkflow.sendTo(WorkflowEngineTopic) }
 
         // The workflowTask is sent only after the previous message,
         // to prevent a possible race condition where the outcome of the workflowTask
@@ -92,17 +95,19 @@ class WorkflowCmdHandler(producerAsync: InfiniticProducerAsync) {
               emitterName = emitterName,
           )
 
-          val dispatchTaskMessage = workflowTaskParameters.toExecuteTaskMessage()
+          val executeTaskMessage = workflowTaskParameters.toExecuteTaskMessage()
 
           // dispatch workflow task
-          producer.sendToTaskExecutor(dispatchTaskMessage)
+          with(producer) { executeTaskMessage.sendTo(WorkflowTaskExecutorTopic) }
         }
 
         // the 2 events are sent sequentially, to ensure they have consistent timestamps
         // (workflowStarted before workflowMethodStarted)
         launch {
-          producer.sendToWorkflowEvents(dispatchNewWorkflow.workflowStartedEvent(emitterName))
-          producer.sendToWorkflowEvents(dispatchNewWorkflow.workflowMethodStartedEvent(emitterName))
+          with(producer) {
+            dispatchNewWorkflow.workflowStartedEvent(emitterName).sendTo(WorkflowEventsTopic)
+            dispatchNewWorkflow.workflowMethodStartedEvent(emitterName).sendTo(WorkflowEventsTopic)
+          }
         }
       }
 

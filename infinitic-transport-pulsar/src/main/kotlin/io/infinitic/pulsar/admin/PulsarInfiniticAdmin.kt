@@ -24,6 +24,11 @@ package io.infinitic.pulsar.admin
 
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.infinitic.pulsar.config.policies.Policies
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.future.await
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import org.apache.pulsar.client.admin.PulsarAdmin
 import org.apache.pulsar.client.admin.PulsarAdminException
 import org.apache.pulsar.common.partition.PartitionedTopicMetadata
@@ -33,6 +38,7 @@ import org.apache.pulsar.common.policies.data.TenantInfo
 import org.apache.pulsar.common.policies.data.impl.AutoTopicCreationOverrideImpl
 import org.apache.pulsar.common.policies.data.impl.DelayedDeliveryPoliciesImpl
 import java.util.concurrent.ConcurrentHashMap
+import kotlin.random.Random
 import org.apache.pulsar.common.policies.data.Policies as PulsarPolicies
 import org.apache.pulsar.common.policies.data.TopicType as PulsarTopicType
 
@@ -48,6 +54,8 @@ class PulsarInfiniticAdmin(
   private val tenants = pulsarAdmin.tenants()
   private val namespaces = pulsarAdmin.namespaces()
 
+  private val topicsMutex = Mutex()
+
   /**
    * Get set of clusters' name
    *
@@ -55,9 +63,9 @@ class PulsarInfiniticAdmin(
    * - Result.success(Set<String>)
    * - Result.failure(e) in case of error
    */
-  fun getClusters(): Result<Set<String>> = try {
+  suspend fun getClusters(): Result<Set<String>> = try {
     logger.debug { "Getting list of clusters." }
-    val clusters = clusters.clusters.toSet()
+    val clusters = clusters.clustersAsync.await().toSet()
     logger.info { "List of clusters got ($clusters)." }
     Result.success(clusters)
   } catch (e: PulsarAdminException) {
@@ -72,13 +80,14 @@ class PulsarInfiniticAdmin(
    *  - Result.success(Set<String>)
    *  - Result.failure(e) in case of error
    **/
-  fun getTopicsSet(fullNamespace: String): Result<Set<String>> =
+  suspend fun getTopicsSet(fullNamespace: String): Result<Set<String>> =
       try {
         val topicSet = with(topics) {
-          (getPartitionedTopicList(fullNamespace) + getList(fullNamespace).filter {
-            // filter out non-partitioned topic whose name ends like -partition-<number>
-            !it.matches(Regex(".+-partition-[0-9]+$"))
-          }).toSet()
+          (getPartitionedTopicListAsync(fullNamespace).await() + getListAsync(fullNamespace).await()
+              .filter {
+                // filter out non-partitioned topic whose name ends like -partition-<number>
+                !it.matches(Regex(".+-partition-[0-9]+$"))
+              }).toSet()
         }
 
         Result.success(topicSet)
@@ -90,77 +99,104 @@ class PulsarInfiniticAdmin(
   /**
    * Ensure once that tenant exists.
    *
+   * Note we do not use a Mutex like for topics,
+   * because it would trigger multiple creation of the same tenant in parallel
+   *
    * Returns:
    *  - Result.success(TenantInfo) if tenant exists or has been created
    *  - Result.failure(e) in case of error
    **/
-  fun initTenantOnce(
+  suspend fun initTenantOnce(
     tenant: String,
     allowedClusters: Set<String>?,
     adminRoles: Set<String>?
   ): Result<TenantInfo> = initializedTenants.computeIfAbsent(tenant) {
-    try {
-      // get tenant info or create it
-      val tenantInfo = getTenantInfo(tenant).getOrThrow()
-        ?: createTenant(tenant, allowedClusters, adminRoles).getOrThrow()
+    runBlocking {
+      try {
+        // get tenant info or create it
+        val tenantInfo = getTenantInfo(tenant).getOrThrow()
+          ?: createTenant(tenant, allowedClusters, adminRoles).getOrThrow()
 
-      checkTenantInfo(tenant, tenantInfo, allowedClusters, adminRoles)
-      Result.success(tenantInfo)
-    } catch (e: Exception) {
-      logger.info(e) { "Unable to check/create tenant '$tenant'" }
-      Result.failure(e)
+        checkTenantInfo(tenant, tenantInfo, allowedClusters, adminRoles)
+        Result.success(tenantInfo)
+      } catch (e: Exception) {
+        logger.info(e) { "Unable to check/create tenant '$tenant'" }
+        Result.failure(e)
+      }
     }
   }
 
+
   /**
    * Ensure once that namespace exists.
+   *
+   * Note we do not use a Mutex like for topics,
+   * because it would trigger multiple creation of the same tenant in parallel
    *
    * Returns:
    *  - Result.success(Policies) if tenant exists or has been created
    *  - Result.failure(e) in case of error
    **/
-  fun initNamespaceOnce(
+  suspend fun initNamespaceOnce(
     fullNamespace: String,
     config: Policies
   ): Result<PulsarPolicies> = initializedNamespaces.computeIfAbsent(fullNamespace) {
-    try {
-      // get Namespace policies or create it
-      val policies = getNamespacePolicies(fullNamespace).getOrThrow()
-        ?: createNamespace(fullNamespace, config).getOrThrow()
+    runBlocking {
+      try {
+        // get Namespace policies or create it
+        val policies = getNamespacePolicies(fullNamespace).getOrThrow()
+          ?: createNamespace(fullNamespace, config).getOrThrow()
 
-      checkNamespacePolicies(policies, config.getPulsarPolicies())
-      Result.success(policies)
-    } catch (e: Exception) {
-      logger.info(e) { "Unable to check/create namespace '$fullNamespace'" }
-      Result.failure(e)
+        checkNamespacePolicies(policies, config.getPulsarPolicies())
+        Result.success(policies)
+      } catch (e: Exception) {
+        logger.info(e) { "Unable to check/create namespace '$fullNamespace'" }
+        Result.failure(e)
+      }
     }
   }
 
+
   /**
    * Ensure once that topic exists.
+   *
+   * As topics are created on the fly, it can happen that
+   * the same topic is created twice simultaneously, e.g. when dispatching a task
+   * with multiple new tags (there is one topic per tag).
+   * That's why we manage ConflictException with retry and random delay
    *
    * Returns:
    *  - Result.success(Unit) if topic exists or has been created
    *  - Result.failure(e) in case of error
    **/
-  fun initTopicOnce(
+  suspend fun initTopicOnce(
     topic: String,
     isPartitioned: Boolean,
-    messageTTLPolicy: Int
-  ): Result<TopicInfo> = initializedTopics.computeIfAbsent(topic) {
-    try {
-      // get Namespace policies or create it
+    messageTTLPolicy: Int,
+    retry: Int = 0
+  ): Result<TopicInfo> = initializedTopics[topic]
+    ?: try {
+      // get topic info or creates it
       val topicInfo = getTopicInfo(topic).getOrThrow()
         ?: createTopic(topic, isPartitioned, messageTTLPolicy).getOrThrow()
-
       checkTopicInfo(topic, topicInfo, TopicInfo(isPartitioned, messageTTLPolicy))
       Result.success(topicInfo)
+    } catch (e: PulsarAdminException.ConflictException) {
+      when {
+        retry >= 3 -> {
+          logger.warn(e) { "Unable to check/create topic '$topic'" }
+          Result.failure(e)
+        }
+
+        else -> {
+          delay(Random.nextLong(100))
+          initTopicOnce(topic, isPartitioned, messageTTLPolicy, retry + 1)
+        }
+      }
     } catch (e: Exception) {
       logger.warn(e) { "Unable to check/create topic '$topic'" }
       Result.failure(e)
-    }
-  }
-
+    }.also { topicsMutex.withLock { initializedTopics[topic] = it } }
 
   /**
    * Delete topic.
@@ -169,9 +205,9 @@ class PulsarInfiniticAdmin(
    * - Result.success(Unit) in case of success or already deleted topic
    * - Result.failure(e) in case of error
    */
-  fun deleteTopic(topic: String): Result<Unit> = try {
+  suspend fun deleteTopic(topic: String): Result<Unit> = try {
     logger.debug { "Deleting topic $topic." }
-    topics.delete(topic, true)
+    topics.deleteAsync(topic, true).await()
     logger.info { "Topic '$topic' deleted." }
     Result.success(Unit)
   } catch (e: PulsarAdminException.NotFoundException) {
@@ -190,10 +226,10 @@ class PulsarInfiniticAdmin(
    *  - Result.success(null) if topic does not exist
    *  - Result.failure(e) in case of error
    **/
-  fun getPartitionedTopicStats(topic: String): Result<PartitionedTopicStats?> {
+  suspend fun getPartitionedTopicStats(topic: String): Result<PartitionedTopicStats?> {
     return try {
       logger.debug { "Topic '$topic': getting PartitionedStats." }
-      val stats = topics.getPartitionedStats(topic, false, false, false, false)
+      val stats = topics.getPartitionedStatsAsync(topic, false, false, false, false).await()
       logger.info { "Topic '$topic': PartitionedStats retrieved ($stats)." }
       Result.success(stats)
     } catch (e: PulsarAdminException.NotFoundException) {
@@ -205,10 +241,10 @@ class PulsarInfiniticAdmin(
     }
   }
 
-  fun getTenantInfo(tenant: String): Result<TenantInfo?> =
+  suspend fun getTenantInfo(tenant: String): Result<TenantInfo?> =
       try {
         logger.debug { "Tenant '$tenant': Getting info." }
-        val info = tenants.getTenantInfo(tenant)
+        val info = tenants.getTenantInfoAsync(tenant).await()
         logger.info { "Tenant '$tenant': info got ($info)." }
         Result.success(info)
       } catch (e: PulsarAdminException.NotAuthorizedException) {
@@ -222,7 +258,7 @@ class PulsarInfiniticAdmin(
         Result.failure(e)
       }
 
-  private fun createTenant(
+  private suspend fun createTenant(
     tenant: String,
     allowedClusters: Set<String>?,
     adminRoles: Set<String>?
@@ -236,7 +272,7 @@ class PulsarInfiniticAdmin(
             )
             .adminRoles(adminRoles)
             .build()
-        tenants.createTenant(tenant, tenantInfo)
+        tenants.createTenantAsync(tenant, tenantInfo).await()
         logger.info { "Tenant '$tenant' created with tenantInfo=$tenantInfo." }
         Result.success(tenantInfo)
       } catch (e: PulsarAdminException.NotAuthorizedException) {
@@ -253,11 +289,11 @@ class PulsarInfiniticAdmin(
         Result.failure(e)
       }
 
-  fun createNamespace(fullNamespace: String, config: Policies): Result<PulsarPolicies> =
+  suspend fun createNamespace(fullNamespace: String, config: Policies): Result<PulsarPolicies> =
       try {
         logger.debug { "Creating namespace '$fullNamespace'." }
         val pulsarPolicies = config.getPulsarPolicies()
-        namespaces.createNamespace(fullNamespace, pulsarPolicies)
+        namespaces.createNamespaceAsync(fullNamespace, pulsarPolicies).await()
         logger.info { "Namespace '$fullNamespace' created with policies $pulsarPolicies." }
         Result.success(pulsarPolicies)
       } catch (e: PulsarAdminException.NotAuthorizedException) {
@@ -274,15 +310,15 @@ class PulsarInfiniticAdmin(
         Result.failure(e)
       }
 
-  fun createTopic(
+  suspend fun createTopic(
     topic: String,
     isPartitioned: Boolean,
     messageTTLPolicy: Int
   ): Result<TopicInfo> = try {
     logger.debug { "Creating topic $topic." }
     when (isPartitioned) {
-      true -> topics.createPartitionedTopic(topic, DEFAUT_NUM_PARTITIONS)
-      false -> topics.createNonPartitionedTopic(topic)
+      true -> topics.createPartitionedTopicAsync(topic, DEFAUT_NUM_PARTITIONS).await()
+      false -> topics.createNonPartitionedTopicAsync(topic).await()
     }
     logger.info {
       "Topic '$topic' created " +
@@ -300,10 +336,10 @@ class PulsarInfiniticAdmin(
     Result.failure(e)
   }
 
-  fun getNamespacePolicies(fullNamespace: String): Result<PulsarPolicies?> =
+  suspend fun getNamespacePolicies(fullNamespace: String): Result<PulsarPolicies?> =
       try {
         logger.debug { "Getting namespace policies." }
-        val pulsarPolicies = namespaces.getPolicies(fullNamespace)
+        val pulsarPolicies = namespaces.getPoliciesAsync(fullNamespace).await()
         logger.info { "Namespace policies got ($pulsarPolicies)." }
         Result.success(pulsarPolicies)
       } catch (e: PulsarAdminException.NotAuthorizedException) {
@@ -326,7 +362,7 @@ class PulsarInfiniticAdmin(
     Result.failure(e)
   }
 
-  private fun getTopicInfo(topic: String): Result<TopicInfo?> {
+  private suspend fun getTopicInfo(topic: String): Result<TopicInfo?> {
     val ttl = getMessageTTL(topic).getOrElse { return Result.failure(it) }
     return when (ttl) {
       null -> Result.success(null)
@@ -354,10 +390,10 @@ class PulsarInfiniticAdmin(
         Result.failure(e)
       }
 
-  fun getPartitionedTopicMetadata(topic: String): Result<PartitionedTopicMetadata?> {
+  suspend fun getPartitionedTopicMetadata(topic: String): Result<PartitionedTopicMetadata?> {
     return try {
       logger.debug { "Topic '$topic': getting PartitionedTopicMetadata." }
-      val metadata = topics.getPartitionedTopicMetadata(topic)
+      val metadata = topics.getPartitionedTopicMetadataAsync(topic).await()
       logger.info { "Topic '$topic': PartitionedTopicMetadata retrieved ($metadata)." }
       Result.success(metadata)
     } catch (e: PulsarAdminException.NotFoundException) {
@@ -486,6 +522,6 @@ class PulsarInfiniticAdmin(
     private val initializedNamespaces = ConcurrentHashMap<String, Result<PulsarPolicies>>()
 
     // thread-safe set of initialized topics (topic name includes tenant and namespace)
-    private val initializedTopics = ConcurrentHashMap<String, Result<TopicInfo>>()
+    private val initializedTopics = mutableMapOf<String, Result<TopicInfo>>()
   }
 }
