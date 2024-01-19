@@ -23,28 +23,11 @@
 package io.infinitic.inMemory
 
 import io.github.oshai.kotlinlogging.KotlinLogging
-import io.infinitic.common.clients.data.ClientName
 import io.infinitic.common.data.MillisDuration
-import io.infinitic.common.exceptions.thisShouldNotHappen
 import io.infinitic.common.messages.Message
-import io.infinitic.common.tasks.data.ServiceName
-import io.infinitic.common.topics.ClientTopic
-import io.infinitic.common.topics.DelayedServiceExecutorTopic
-import io.infinitic.common.topics.DelayedWorkflowEngineTopic
-import io.infinitic.common.topics.DelayedWorkflowTaskExecutorTopic
-import io.infinitic.common.topics.NamingTopic
-import io.infinitic.common.topics.ServiceEventsTopic
-import io.infinitic.common.topics.ServiceExecutorTopic
-import io.infinitic.common.topics.ServiceTagTopic
 import io.infinitic.common.topics.Topic
-import io.infinitic.common.topics.WorkflowCmdTopic
-import io.infinitic.common.topics.WorkflowEngineTopic
-import io.infinitic.common.topics.WorkflowEventsTopic
-import io.infinitic.common.topics.WorkflowTagTopic
-import io.infinitic.common.topics.WorkflowTaskEventsTopic
-import io.infinitic.common.topics.WorkflowTaskExecutorTopic
+import io.infinitic.common.topics.isDelayed
 import io.infinitic.common.transport.InfiniticProducerAsync
-import io.infinitic.common.workflows.data.workflows.WorkflowName
 import kotlinx.coroutines.channels.Channel
 import java.util.concurrent.CompletableFuture
 
@@ -55,40 +38,32 @@ class InMemoryInfiniticProducerAsync(private val channels: InMemoryChannels) :
 
   override var producerName = DEFAULT_NAME
 
-  @Suppress("UNCHECKED_CAST")
-  private fun <S : Message> Topic<S>.channelForMessage(message: S): Channel<Any> = when (this) {
-    WorkflowTagTopic -> channels.forWorkflowTag(WorkflowName(message.entity()))
-    WorkflowCmdTopic -> channels.forWorkflowCmd(WorkflowName(message.entity()))
-    WorkflowEngineTopic -> channels.forWorkflowEngine(WorkflowName(message.entity()))
-    DelayedWorkflowEngineTopic -> channels.forDelayedWorkflowEngine(WorkflowName(message.entity()))
-    WorkflowEventsTopic -> channels.forWorkflowEvent(WorkflowName(message.entity()))
-    WorkflowTaskExecutorTopic -> channels.forWorkflowTaskExecutor(WorkflowName(message.entity()))
-    DelayedWorkflowTaskExecutorTopic -> channels.forDelayedWorkflowTaskExecutor(
-        WorkflowName(message.entity()),
-    )
+  private fun <S : Message> Topic<S>.channelForMessage(message: S): Channel<S> =
+      with(channels) { channel(message.entity()) }
 
-    WorkflowTaskEventsTopic -> channels.forWorkflowTaskEvents(WorkflowName(message.entity()))
-    ServiceTagTopic -> channels.forTaskTag(ServiceName(message.entity()))
-    ServiceExecutorTopic -> channels.forTaskExecutor(ServiceName(message.entity()))
-    DelayedServiceExecutorTopic -> channels.forDelayedTaskExecutor(ServiceName(message.entity()))
-    ServiceEventsTopic -> channels.forTaskEvents(ServiceName(message.entity()))
-    ClientTopic -> channels.forClient(ClientName(message.entity()))
-    NamingTopic -> thisShouldNotHappen()
-  } as Channel<Any>
+  private fun <S : Message> Topic<S>.channelForDelayedMessage(message: S): Channel<DelayedMessage<S>> =
+      with(channels) { channelForDelayed(message.entity()) }
 
   override suspend fun <T : Message> internalSendToAsync(
     message: T,
     topic: Topic<T>,
     after: MillisDuration
   ): CompletableFuture<Unit> {
-    val msg: Any = when (after > 0) {
-      true -> DelayedMessage(message, after)
-      false -> message
+    when (topic.isDelayed) {
+      false -> {
+        val channel = topic.channelForMessage(message)
+        logger.debug { "Channel ${channel.id}: sending $message" }
+        channel.send(message)
+        logger.trace { "Channel ${channel.id}: sent" }
+      }
+
+      true -> {
+        val channel = topic.channelForDelayedMessage(message)
+        logger.debug { "Channel ${channel.id}: sending $message" }
+        channel.send(DelayedMessage(message, after))
+        logger.trace { "Channel ${channel.id}: sent" }
+      }
     }
-    val channel = topic.channelForMessage(message)
-    logger.debug { "Channel ${channel.id}: sending $msg" }
-    channel.send(msg)
-    logger.trace { "Channel ${channel.id}: sent" }
 
     return CompletableFuture.completedFuture(Unit)
   }
