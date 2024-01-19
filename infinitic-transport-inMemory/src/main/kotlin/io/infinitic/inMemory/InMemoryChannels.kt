@@ -48,7 +48,6 @@ class InMemoryChannels : AutoCloseable {
 
   // Coroutine scope used to receive messages
   private val consumingScope = CoroutineScope(Dispatchers.IO)
-
   suspend fun <T> consume(func: suspend () -> T) = coroutineScope {
     launch(consumingScope.coroutineContext) { func() }
   }
