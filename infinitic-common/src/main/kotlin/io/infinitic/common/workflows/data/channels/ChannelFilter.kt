@@ -32,8 +32,8 @@ import com.jayway.jsonpath.JsonPath
 import com.jayway.jsonpath.Option
 import com.jayway.jsonpath.spi.json.JacksonJsonProvider
 import com.jayway.jsonpath.spi.mapper.JacksonMappingProvider
-import java.security.InvalidParameterException
 import kotlinx.serialization.Serializable
+import java.security.InvalidParameterException
 
 @Serializable
 @AvroNamespace("io.infinitic.workflows.data")
@@ -43,9 +43,9 @@ data class ChannelFilter(val jsonPath: String, val filter: String? = null) {
     @JvmOverloads
     fun from(jsonPath: String?, criteria: Criteria? = null): ChannelFilter? =
         jsonPath?.let { ChannelFilter(it, criteria?.let { c -> filter(c).toString() }) }
-            ?: if (criteria != null)
-                throw InvalidParameterException("jsonPath can not be null if criteria is non null")
-            else null
+          ?: if (criteria != null)
+            throw InvalidParameterException("jsonPath can not be null if criteria is non null")
+          else null
 
     init {
       Configuration.setDefaults(
@@ -55,7 +55,8 @@ data class ChannelFilter(val jsonPath: String, val filter: String? = null) {
             override fun mappingProvider() = JacksonMappingProvider()
 
             override fun options() = setOf(Option.ALWAYS_RETURN_LIST)
-          })
+          },
+      )
     }
   }
 
@@ -65,7 +66,7 @@ data class ChannelFilter(val jsonPath: String, val filter: String? = null) {
    */
   fun check(event: SignalData): Boolean {
     // get Json of the provided event
-    val json = event.serializedData.getJson()
+    val json = event.serializedData.toJson()
     // is this json filtered by the provided jsonPath
     return when (filter) {
       null -> JsonPath.parse(json).read<List<Any>>(jsonPath)

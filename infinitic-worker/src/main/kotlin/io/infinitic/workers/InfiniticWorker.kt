@@ -70,7 +70,8 @@ class InfiniticWorker(
   private val register: InfiniticRegisterInterface,
   private val consumerAsync: InfiniticConsumerAsync,
   private val producerAsync: InfiniticProducerAsync,
-  val client: InfiniticClientInterface
+  val client: InfiniticClientInterface,
+  val source: String
 ) : AutoCloseable, InfiniticRegisterInterface by register {
 
   private val logger = KotlinLogging.logger {}
@@ -291,7 +292,7 @@ class InfiniticWorker(
 
       workerRegistry.serviceListeners.forEach {
         val eventHandler = { message: Message, publishedAt: MillisInstant ->
-          it.value.eventListener.onCloudEvent(message.toCloudEvent(publishedAt))
+          it.value.eventListener.onCloudEvent(message.toCloudEvent(publishedAt, source))
         }
         // TASK-EXECUTOR topic
         launch {
@@ -325,7 +326,6 @@ class InfiniticWorker(
         }
       }
     }
-
 
     logger.info {
       "Worker \"${producerAsync.producerName}\" ready" + when (consumerAsync is PulsarInfiniticConsumerAsync) {
@@ -363,7 +363,13 @@ class InfiniticWorker(
       val register = InfiniticRegister(InfiniticWorker::class.java.name, this)
 
       /** Infinitic Worker */
-      InfiniticWorker(register, consumerAsync, producerAsync, client).also {
+      InfiniticWorker(
+          register,
+          consumerAsync,
+          producerAsync,
+          client,
+          transportConfig.source,
+      ).also {
         // close client with the worker
         it.addAutoCloseResource(client)
         // close consumer with the worker

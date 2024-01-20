@@ -21,13 +21,33 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.events.errors
+package io.infinitic.events.data
 
-import kotlinx.serialization.Serializable
+import io.infinitic.common.serDe.json.Json
+import io.infinitic.common.tasks.executors.errors.ExecutionError
 
-@Serializable
-data class Error(
-  val errorName: String,
-  val errorMessage: String,
-  val errorStackTrace: String
+
+/**
+ * Data class representing error data, used for avoiding
+ * leaking the internal representation of ExecutionError
+ *
+ * @property name The name of the error.
+ * @property message The message of the error.
+ * @property stackTrace The string representation of the stack trace.
+ * @property cause The cause of the error, if any.
+ */
+data class ErrorData(
+  val name: String,
+  val message: String,
+  val stackTrace: String,
+  val cause: ErrorData?
+) {
+  fun toJson() = Json.stringify(this, false)
+}
+
+fun ExecutionError.toErrorEvent(): ErrorData = ErrorData(
+    name = name,
+    message = message ?: "",
+    stackTrace = stackTraceToString,
+    cause = cause?.toErrorEvent(),
 )

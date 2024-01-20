@@ -45,6 +45,9 @@ services:
     concurrency: 5
     retry:
       maximumRetries: 1
+    #eventListener:
+    #  class: io.infinitic.tests.utils.Listener
+    #  concurrency: 2
   - name: io.infinitic.tests.utils.TestService
     class: io.infinitic.tests.utils.TestServiceImpl
     concurrency: 5

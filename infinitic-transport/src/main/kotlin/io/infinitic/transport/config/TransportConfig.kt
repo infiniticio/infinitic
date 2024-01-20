@@ -37,6 +37,7 @@ import io.infinitic.pulsar.config.Pulsar
 import io.infinitic.pulsar.consumers.Consumer
 import io.infinitic.pulsar.producers.Producer
 import io.infinitic.pulsar.resources.PulsarResources
+import java.net.URLEncoder
 
 data class TransportConfig(
   /** Transport configuration */
@@ -55,6 +56,15 @@ data class TransportConfig(
     }
 
     require(shutdownGracePeriodInSeconds >= 0) { "shutdownGracePeriodInSeconds must be >= 0" }
+  }
+
+  /** This is used as source prefix for CloudEvents */
+  val source: String = when (transport) {
+    Transport.pulsar -> pulsar!!.brokerServiceUrl.removeSuffix("/") + "/" +
+        URLEncoder.encode(pulsar.tenant, Charsets.UTF_8) + "/" +
+        URLEncoder.encode(pulsar.namespace, Charsets.UTF_8)
+
+    Transport.inMemory -> "inmemory"
   }
 
   // we provide consumer and producer together,

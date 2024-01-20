@@ -23,34 +23,4 @@
 
 package io.infinitic.events.data
 
-import kotlinx.serialization.Serializable
-
-/**
- * Represents a serialized object in Avro format, **including a schema fingerprint**
- *
- * @property `class` The class of the serialized object.
- * @property bytes The Avro binary data.
- */
-@Serializable
-data class AvroBinaryData(
-  val `class`: String,
-  val bytes: ByteArray,
-) : Data {
-  override fun equals(other: Any?): Boolean {
-    if (this === other) return true
-    if (javaClass != other?.javaClass) return false
-
-    other as AvroBinaryData
-
-    if (`class` != other.`class`) return false
-    if (!bytes.contentEquals(other.bytes)) return false
-
-    return true
-  }
-
-  override fun hashCode(): Int {
-    var result = `class`.hashCode()
-    result = 31 * result + bytes.contentHashCode()
-    return result
-  }
-}
+sealed interface MessageData

@@ -26,7 +26,7 @@ package io.infinitic.events
 import io.cloudevents.CloudEvent
 import io.infinitic.common.emitters.EmitterName
 import io.infinitic.common.serDe.avro.AvroSerDe
-import io.infinitic.events.requesters.Requester
+import io.infinitic.events.data.RequesterData
 import kotlinx.serialization.InternalSerializationApi
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
@@ -46,12 +46,11 @@ import java.time.Instant
 @Serializable
 sealed interface Event {
   val timestamp: Instant
-  val requester: Requester
+  val requester: RequesterData
   val emitterName: EmitterName
 
   val ceEventId: String
   val ceType: String
-  val ceSubject: String
 
   companion object {
 

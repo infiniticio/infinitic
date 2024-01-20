@@ -47,6 +47,7 @@ object Libs {
     private const val version = "2.5.0"
     const val core = "io.cloudevents:cloudevents-core:$version"
     const val api = "io.cloudevents:cloudevents-api:$version"
+    const val json = "io.cloudevents:cloudevents-json-jackson:$version"
   }
 
   object JsonPath {

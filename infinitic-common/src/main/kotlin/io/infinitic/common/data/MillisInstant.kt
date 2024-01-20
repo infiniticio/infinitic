@@ -39,6 +39,8 @@ data class MillisInstant(val long: Long = 0) : Comparable<Long> {
 
   override fun toString() = "$long"
 
+  fun toInstant() = Instant.ofEpochSecond(long)
+
   override operator fun compareTo(other: Long): Int = this.long.compareTo(other)
 
   operator fun plus(other: MillisDuration) = MillisInstant(this.long + other.long)

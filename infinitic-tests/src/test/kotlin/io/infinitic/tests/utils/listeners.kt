@@ -21,10 +21,16 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.events
+package io.infinitic.tests.utils
 
 import io.cloudevents.CloudEvent
-import io.infinitic.common.data.MillisInstant
-import io.infinitic.common.messages.Message
+import io.cloudevents.jackson.JsonFormat
+import io.infinitic.common.events.CloudEventListener
 
-fun Message.toCloudEvent(publishedAt: MillisInstant): CloudEvent = TODO()
+class Listener : CloudEventListener {
+
+  override fun onCloudEvent(event: CloudEvent) {
+    println(String(JsonFormat().serialize(event)))
+  }
+  
+}

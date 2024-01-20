@@ -216,7 +216,7 @@ data class TaskRetriedEvent(
   override val taskTags: Set<TaskTag>,
   override val taskMeta: TaskMeta,
   val taskRetryDelay: MillisDuration,
-  val lastError: ExecutionError?,
+  val lastError: ExecutionError,
 ) : ServiceEventMessage() {
 
   companion object {

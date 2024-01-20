@@ -130,21 +130,21 @@ enum class InfiniticEventType(val type: String) {
   ),
 
   // Happening at Task Level (Point of view of Task)
-  // Source = urn:pulsar:cluster-name/tenant/namespace/tasks/serviceName
+  // Source = urn:infinitic:pulsar:cluster-name/tenant/namespace/services/serviceName
 
   TASK_REQUESTED(
-      type = "$TYPE_TASK.task.requested",
+      type = "$TYPE_TASK.requested",
   ),
   TASK_STARTED(
-      type = "$TYPE_TASK.task.started",
+      type = "$TYPE_TASK.started",
   ),
   TASK_COMPLETED(
-      type = "$TYPE_TASK.task.completed",
+      type = "$TYPE_TASK.completed",
   ),
   TASK_FAILED(
-      type = "$TYPE_TASK.task.failed",
+      type = "$TYPE_TASK.failed",
   ),
   TASK_RETRIED(
-      type = "$TYPE_TASK.task.retried",
+      type = "$TYPE_TASK.retried",
   ),
 }

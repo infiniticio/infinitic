@@ -21,42 +21,22 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.events.requesters
+package io.infinitic.events.data
 
-import io.infinitic.common.clients.data.ClientName
-import io.infinitic.common.tasks.data.ServiceName
-import io.infinitic.common.workers.data.WorkerName
-import io.infinitic.common.workflows.data.methodRuns.WorkflowMethodId
-import io.infinitic.common.workflows.data.workflows.WorkflowId
-import io.infinitic.common.workflows.data.workflows.WorkflowName
 import kotlinx.serialization.Serializable
 
 @Serializable
-sealed interface Requester
+sealed interface RequesterData
 
 @Serializable
-data class ClientRequester(
-  val clientName: ClientName,
-  val clientWaiting: Boolean
-) : Requester
+data class ClientRequesterData(
+  val clientName: String,
+) : RequesterData
 
 @Serializable
-data class WorkflowEngineRequester(
-  val workflowName: WorkflowName,
-  val workflowId: WorkflowId,
-  val workflowMethodId: WorkflowMethodId,
-  val workerName: WorkerName,
-) : Requester
-
-@Serializable
-data class ServiceWorkerRequester(
-  val serviceName: ServiceName,
-  val workerName: WorkerName,
-) : Requester
-
-@Serializable
-data class WorkflowWorkerRequester(
-  val workflowName: WorkflowName,
-  val workerName: WorkerName,
-) : Requester
-
+data class WorkflowRequesterData(
+  val workflowName: String,
+  val workflowId: String,
+  val methodId: String,
+  val workerName: String,
+) : RequesterData
