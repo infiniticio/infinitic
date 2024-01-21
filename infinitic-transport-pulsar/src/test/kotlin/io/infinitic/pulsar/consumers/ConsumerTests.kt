@@ -31,7 +31,7 @@ import io.infinitic.common.fixtures.TestFactory
 import io.infinitic.common.fixtures.later
 import io.infinitic.common.tasks.executors.messages.ExecuteTask
 import io.infinitic.common.tasks.executors.messages.ServiceExecutorMessage
-import io.infinitic.common.topics.ServiceExecutorTopic
+import io.infinitic.common.transport.ServiceExecutorTopic
 import io.infinitic.pulsar.client.PulsarInfiniticClient
 import io.infinitic.pulsar.producers.Producer
 import io.infinitic.pulsar.producers.ProducerConfig
@@ -43,6 +43,7 @@ import io.kotest.matchers.doubles.shouldBeLessThan
 import io.kotest.matchers.ints.shouldBeExactly
 import net.bytebuddy.utility.RandomString
 import org.apache.pulsar.client.api.PulsarClient
+import org.apache.pulsar.client.api.SubscriptionInitialPosition
 import org.apache.pulsar.client.api.SubscriptionType
 import java.time.Duration
 import java.time.Instant
@@ -98,6 +99,7 @@ class ConsumerTests : StringSpec(
           subscriptionName = topic + "Consumer",
           subscriptionNameDlq = "",
           subscriptionType = if (withKey) SubscriptionType.Key_Shared else SubscriptionType.Shared,
+          subscriptionInitialPosition = SubscriptionInitialPosition.Earliest,
           consumerName = "consumerTest",
           concurrency = concurrency,
       )

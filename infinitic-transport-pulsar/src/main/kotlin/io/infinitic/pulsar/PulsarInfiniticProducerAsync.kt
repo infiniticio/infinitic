@@ -24,9 +24,9 @@ package io.infinitic.pulsar
 
 import io.infinitic.common.data.MillisDuration
 import io.infinitic.common.messages.Message
-import io.infinitic.common.topics.NamingTopic
-import io.infinitic.common.topics.Topic
 import io.infinitic.common.transport.InfiniticProducerAsync
+import io.infinitic.common.transport.NamingTopic
+import io.infinitic.common.transport.Topic
 import io.infinitic.pulsar.producers.Producer
 import io.infinitic.pulsar.resources.PulsarResources
 import kotlinx.coroutines.Dispatchers

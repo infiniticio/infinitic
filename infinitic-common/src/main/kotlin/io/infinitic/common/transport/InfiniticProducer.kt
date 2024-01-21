@@ -24,7 +24,6 @@ package io.infinitic.common.transport
 
 import io.infinitic.common.data.MillisDuration
 import io.infinitic.common.messages.Message
-import io.infinitic.common.topics.Topic
 
 interface InfiniticProducer {
   /**

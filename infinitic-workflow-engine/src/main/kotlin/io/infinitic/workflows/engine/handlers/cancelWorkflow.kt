@@ -25,10 +25,10 @@ package io.infinitic.workflows.engine.handlers
 import io.infinitic.common.data.MillisInstant
 import io.infinitic.common.emitters.EmitterName
 import io.infinitic.common.exceptions.thisShouldNotHappen
-import io.infinitic.common.topics.WorkflowEngineTopic
-import io.infinitic.common.topics.WorkflowEventsTopic
-import io.infinitic.common.topics.WorkflowTagTopic
 import io.infinitic.common.transport.InfiniticProducer
+import io.infinitic.common.transport.WorkflowEngineTopic
+import io.infinitic.common.transport.WorkflowEventsTopic
+import io.infinitic.common.transport.WorkflowTagTopic
 import io.infinitic.common.workflows.data.commands.DispatchMethodOnRunningWorkflowCommand
 import io.infinitic.common.workflows.data.commands.DispatchNewWorkflowCommand
 import io.infinitic.common.workflows.data.methodRuns.WorkflowMethod

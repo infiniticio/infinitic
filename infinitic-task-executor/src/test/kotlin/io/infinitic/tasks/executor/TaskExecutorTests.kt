@@ -49,10 +49,10 @@ import io.infinitic.common.tasks.executors.messages.ExecuteTask
 import io.infinitic.common.tasks.executors.messages.ServiceExecutorMessage
 import io.infinitic.common.tasks.executors.messages.clientName
 import io.infinitic.common.tasks.tags.messages.RemoveTagFromTask
-import io.infinitic.common.topics.DelayedServiceExecutorTopic
-import io.infinitic.common.topics.ServiceEventsTopic
-import io.infinitic.common.topics.ServiceExecutorTopic
+import io.infinitic.common.transport.DelayedServiceExecutorTopic
 import io.infinitic.common.transport.InfiniticProducerAsync
+import io.infinitic.common.transport.ServiceEventsTopic
+import io.infinitic.common.transport.ServiceExecutorTopic
 import io.infinitic.common.workers.config.ExponentialBackoffRetryPolicy
 import io.infinitic.common.workers.config.WorkflowVersion
 import io.infinitic.common.workers.data.WorkerName
@@ -536,8 +536,8 @@ fun TaskRetriedEvent.check(
   taskTags shouldBe msg.taskTags
   taskMeta shouldBe TaskMeta(meta)
   taskRetryDelay shouldBe delay
-  lastError!!.name shouldBe errorName
-  lastError!!.workerName shouldBe WorkerName.from(msg.emitterName)
+  lastError.name shouldBe errorName
+  lastError.workerName shouldBe WorkerName.from(msg.emitterName)
 }
 
 internal fun getExecuteTask(method: String, input: Array<out Any?>, types: List<String>?) =

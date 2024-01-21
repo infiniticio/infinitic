@@ -92,13 +92,10 @@ data class TransportConfig(
         }
 
         Transport.inMemory -> {
-          val channels = InMemoryChannels()
-          val consumerAsync = InMemoryInfiniticConsumerAsync(channels)
-          val producerAsync = InMemoryInfiniticProducerAsync(channels)
-
-          // channels will be closed with consumer
-          consumerAsync.addAutoCloseResource(channels)
-
+          val mainChannels = InMemoryChannels()
+          val listenerChannels = InMemoryChannels()
+          val consumerAsync = InMemoryInfiniticConsumerAsync(mainChannels, listenerChannels)
+          val producerAsync = InMemoryInfiniticProducerAsync(mainChannels, listenerChannels)
           Pair(consumerAsync, producerAsync)
         }
       }

@@ -24,7 +24,6 @@ package io.infinitic.common.transport
 
 import io.infinitic.common.data.MillisInstant
 import io.infinitic.common.messages.Message
-import io.infinitic.common.topics.Topic
 
 interface InfiniticConsumerAsync : AutoCloseable {
 
@@ -34,7 +33,7 @@ interface InfiniticConsumerAsync : AutoCloseable {
   fun join()
 
   suspend fun <S : Message> start(
-    topic: Topic<S>,
+    subscription: Subscription<S>,
     handler: suspend (S, MillisInstant) -> Unit,
     beforeDlq: (suspend (S?, Exception) -> Unit),
     entity: String,

@@ -22,37 +22,33 @@
  */
 package io.infinitic.pulsar.resources
 
-import io.infinitic.common.topics.Topic
-import io.infinitic.common.topics.hasKey
+import io.infinitic.common.transport.ListenerSubscription
+import io.infinitic.common.transport.MainSubscription
+import io.infinitic.common.transport.Subscription
 import org.apache.pulsar.client.api.SubscriptionInitialPosition
 import org.apache.pulsar.client.api.SubscriptionType
 
-interface Subscription {
-  fun type(topic: Topic<*>): SubscriptionType
-  fun name(topic: Topic<*>): String
-  fun nameDLQ(topic: Topic<*>): String
-  fun initialPosition(topic: Topic<*>): SubscriptionInitialPosition
-}
-
-object MainSubscription : Subscription {
-  override fun type(topic: Topic<*>) = when (topic.hasKey) {
+val Subscription<*>.type
+  get() = when (withKey) {
     true -> SubscriptionType.Key_Shared
     false -> SubscriptionType.Shared
   }
 
-  override fun name(topic: Topic<*>) = "${topic.prefix()}-subscription"
+val Subscription<*>.name
+  get() = when (this) {
+    is MainSubscription -> "${topic.prefix()}-subscription"
+    is ListenerSubscription -> "${topic.prefix()}-listener-subscription"
+  }
 
-  override fun nameDLQ(topic: Topic<*>) = "${name(topic)}-dlq"
+val Subscription<*>.nameDLQ
+  get() = when (this) {
+    is MainSubscription -> "${topic.prefix()}-dlq-subscription"
+    is ListenerSubscription -> "${topic.prefix()}-dlq-listener-subscription"
+  }
 
-  override fun initialPosition(topic: Topic<*>) = SubscriptionInitialPosition.Earliest
-}
+val Subscription<*>.initialPosition
+  get() = when (this) {
+    is MainSubscription -> SubscriptionInitialPosition.Earliest
+    is ListenerSubscription -> SubscriptionInitialPosition.Latest
+  }
 
-object ListenerSubscription : Subscription {
-  override fun type(topic: Topic<*>) = SubscriptionType.Shared
-
-  override fun name(topic: Topic<*>) = "${topic.prefix()}-listener-subscription"
-
-  override fun nameDLQ(topic: Topic<*>) = "${name(topic)}-dlq"
-
-  override fun initialPosition(topic: Topic<*>) = SubscriptionInitialPosition.Latest
-}

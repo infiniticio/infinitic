@@ -20,15 +20,17 @@
  *
  * Licensor: infinitic.io
  */
+
 package io.infinitic.pulsar.resources
 
 import io.infinitic.common.messages.Message
-import io.infinitic.common.topics.Topic
-import io.infinitic.common.topics.isDelayed
+import io.infinitic.common.transport.Topic
+import io.infinitic.common.transport.isDelayed
 import io.infinitic.pulsar.admin.PulsarInfiniticAdmin
 import io.infinitic.pulsar.config.Pulsar
 import io.infinitic.pulsar.config.policies.Policies
 
+@Suppress("MemberVisibilityCanBePrivate")
 class PulsarResources(
   val admin: PulsarInfiniticAdmin,
     // tenant configuration

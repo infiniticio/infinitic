@@ -31,11 +31,11 @@ import io.infinitic.common.tasks.events.messages.TaskCompletedEvent
 import io.infinitic.common.tasks.events.messages.TaskFailedEvent
 import io.infinitic.common.tasks.events.messages.TaskRetriedEvent
 import io.infinitic.common.tasks.events.messages.TaskStartedEvent
-import io.infinitic.common.topics.ClientTopic
-import io.infinitic.common.topics.ServiceTagTopic
-import io.infinitic.common.topics.WorkflowEngineTopic
+import io.infinitic.common.transport.ClientTopic
 import io.infinitic.common.transport.InfiniticProducerAsync
 import io.infinitic.common.transport.LoggedInfiniticProducer
+import io.infinitic.common.transport.ServiceTagTopic
+import io.infinitic.common.transport.WorkflowEngineTopic
 import io.infinitic.common.workers.config.WorkflowVersion
 import io.infinitic.common.workflows.data.commands.DispatchMethodOnRunningWorkflowPastCommand
 import io.infinitic.common.workflows.data.commands.DispatchNewWorkflowPastCommand
@@ -60,8 +60,10 @@ import kotlinx.coroutines.launch
 
 class TaskEventHandler(producerAsync: InfiniticProducerAsync) {
 
-  private val logger = KotlinLogging.logger(this::class.java.name)
-  val producer = LoggedInfiniticProducer(this::class.java.name, producerAsync)
+  private val logger = KotlinLogging.logger(TaskExecutor::class.java.name)
+
+  val producer = LoggedInfiniticProducer(TaskExecutor::class.java.name, producerAsync)
+
   private val emitterName by lazy { EmitterName(producerAsync.producerName) }
 
   suspend fun handle(msg: ServiceEventMessage, publishTime: MillisInstant) {

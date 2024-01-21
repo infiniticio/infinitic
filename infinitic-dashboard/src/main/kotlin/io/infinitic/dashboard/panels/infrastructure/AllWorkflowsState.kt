@@ -22,7 +22,7 @@
  */
 package io.infinitic.dashboard.panels.infrastructure
 
-import io.infinitic.common.topics.WorkflowTaskExecutorTopic
+import io.infinitic.common.transport.WorkflowTaskExecutorTopic
 import io.infinitic.dashboard.Infinitic
 import io.infinitic.dashboard.panels.infrastructure.requests.Loading
 import org.apache.pulsar.common.policies.data.PartitionedTopicStats

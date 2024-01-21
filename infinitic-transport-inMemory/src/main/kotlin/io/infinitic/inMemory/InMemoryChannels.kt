@@ -29,45 +29,27 @@ import io.infinitic.common.messages.Message
 import io.infinitic.common.tasks.events.messages.ServiceEventMessage
 import io.infinitic.common.tasks.executors.messages.ServiceExecutorMessage
 import io.infinitic.common.tasks.tags.messages.ServiceTagMessage
-import io.infinitic.common.topics.ClientTopic
-import io.infinitic.common.topics.DelayedServiceExecutorTopic
-import io.infinitic.common.topics.DelayedWorkflowEngineTopic
-import io.infinitic.common.topics.DelayedWorkflowTaskExecutorTopic
-import io.infinitic.common.topics.ServiceEventsTopic
-import io.infinitic.common.topics.ServiceExecutorTopic
-import io.infinitic.common.topics.ServiceTagTopic
-import io.infinitic.common.topics.Topic
-import io.infinitic.common.topics.WorkflowCmdTopic
-import io.infinitic.common.topics.WorkflowEngineTopic
-import io.infinitic.common.topics.WorkflowEventsTopic
-import io.infinitic.common.topics.WorkflowTagTopic
-import io.infinitic.common.topics.WorkflowTaskEventsTopic
-import io.infinitic.common.topics.WorkflowTaskExecutorTopic
+import io.infinitic.common.transport.ClientTopic
+import io.infinitic.common.transport.DelayedServiceExecutorTopic
+import io.infinitic.common.transport.DelayedWorkflowEngineTopic
+import io.infinitic.common.transport.DelayedWorkflowTaskExecutorTopic
+import io.infinitic.common.transport.ServiceEventsTopic
+import io.infinitic.common.transport.ServiceExecutorTopic
+import io.infinitic.common.transport.ServiceTagTopic
+import io.infinitic.common.transport.Topic
+import io.infinitic.common.transport.WorkflowCmdTopic
+import io.infinitic.common.transport.WorkflowEngineTopic
+import io.infinitic.common.transport.WorkflowEventsTopic
+import io.infinitic.common.transport.WorkflowTagTopic
+import io.infinitic.common.transport.WorkflowTaskEventsTopic
+import io.infinitic.common.transport.WorkflowTaskExecutorTopic
 import io.infinitic.common.workflows.engine.events.WorkflowEventMessage
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
 import io.infinitic.common.workflows.tags.messages.WorkflowTagMessage
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.cancel
 import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.job
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
 import java.util.concurrent.ConcurrentHashMap
 
-class InMemoryChannels : AutoCloseable {
-
-  // Coroutine scope used to receive messages
-  private val consumingScope = CoroutineScope(Dispatchers.IO)
-  suspend fun <T> consume(func: suspend () -> T) = coroutineScope {
-    launch(consumingScope.coroutineContext) { func() }
-  }
-
-  override fun close() {
-    consumingScope.cancel()
-    runBlocking { consumingScope.coroutineContext.job.children.forEach { it.join() } }
-  }
+class InMemoryChannels {
 
   private val clientChannels =
       ConcurrentHashMap<String, Channel<ClientMessage>>()

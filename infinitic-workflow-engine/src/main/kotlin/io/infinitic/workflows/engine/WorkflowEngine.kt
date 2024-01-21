@@ -29,13 +29,13 @@ import io.infinitic.common.data.MillisInstant
 import io.infinitic.common.emitters.EmitterName
 import io.infinitic.common.exceptions.thisShouldNotHappen
 import io.infinitic.common.tasks.executors.errors.MethodUnknownError
-import io.infinitic.common.topics.ClientTopic
-import io.infinitic.common.topics.WorkflowEngineTopic
-import io.infinitic.common.topics.WorkflowEventsTopic
-import io.infinitic.common.topics.WorkflowTagTopic
+import io.infinitic.common.transport.ClientTopic
 import io.infinitic.common.transport.InfiniticProducer
 import io.infinitic.common.transport.InfiniticProducerAsync
 import io.infinitic.common.transport.LoggedInfiniticProducer
+import io.infinitic.common.transport.WorkflowEngineTopic
+import io.infinitic.common.transport.WorkflowEventsTopic
+import io.infinitic.common.transport.WorkflowTagTopic
 import io.infinitic.common.workflows.engine.events.WorkflowCompletedEvent
 import io.infinitic.common.workflows.engine.messages.CancelWorkflow
 import io.infinitic.common.workflows.engine.messages.ChildMethodCanceled

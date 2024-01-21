@@ -35,10 +35,10 @@ import io.infinitic.common.tasks.events.messages.TaskRetriedEvent
 import io.infinitic.common.tasks.events.messages.TaskStartedEvent
 import io.infinitic.common.tasks.executors.messages.ExecuteTask
 import io.infinitic.common.tasks.executors.messages.ServiceExecutorMessage
-import io.infinitic.common.topics.DelayedServiceExecutorTopic
-import io.infinitic.common.topics.ServiceEventsTopic
+import io.infinitic.common.transport.DelayedServiceExecutorTopic
 import io.infinitic.common.transport.InfiniticProducerAsync
 import io.infinitic.common.transport.LoggedInfiniticProducer
+import io.infinitic.common.transport.ServiceEventsTopic
 import io.infinitic.common.utils.getCheckMode
 import io.infinitic.common.utils.getWithRetry
 import io.infinitic.common.utils.getWithTimeout
@@ -189,7 +189,7 @@ class TaskExecutor(
     }
 
     when {
-      delayMillis == null -> sendTaskFailed(msg, cause, taskContext.meta) {
+      delayMillis == null || delayMillis <= 0L -> sendTaskFailed(msg, cause, taskContext.meta) {
         cause.message ?: "Unknown error"
       }
 

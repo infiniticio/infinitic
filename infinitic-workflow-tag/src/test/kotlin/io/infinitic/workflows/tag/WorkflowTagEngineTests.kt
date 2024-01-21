@@ -26,9 +26,9 @@ import io.infinitic.common.clients.messages.ClientMessage
 import io.infinitic.common.clients.messages.WorkflowIdsByTag
 import io.infinitic.common.data.MillisInstant
 import io.infinitic.common.fixtures.TestFactory
-import io.infinitic.common.topics.ClientTopic
-import io.infinitic.common.topics.WorkflowEngineTopic
+import io.infinitic.common.transport.ClientTopic
 import io.infinitic.common.transport.InfiniticProducerAsync
+import io.infinitic.common.transport.WorkflowEngineTopic
 import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.data.workflows.WorkflowName
 import io.infinitic.common.workflows.data.workflows.WorkflowTag

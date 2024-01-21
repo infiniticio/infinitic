@@ -22,7 +22,7 @@
  */
 package io.infinitic.dashboard.panels.infrastructure.service
 
-import io.infinitic.common.topics.ServiceTopic
+import io.infinitic.common.transport.ServiceTopic
 import io.infinitic.dashboard.Infinitic.pulsarResources
 import io.infinitic.dashboard.panels.infrastructure.jobs.JobState
 import io.infinitic.dashboard.panels.infrastructure.jobs.TopicsStats

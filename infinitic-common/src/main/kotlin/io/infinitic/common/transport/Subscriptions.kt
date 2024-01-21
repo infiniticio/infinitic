@@ -20,33 +20,26 @@
  *
  * Licensor: infinitic.io
  */
+package io.infinitic.common.transport
 
-package io.infinitic.events.data
+import io.infinitic.common.messages.Message
 
-import io.infinitic.common.tasks.executors.errors.ExecutionError
-import kotlinx.serialization.Serializable
+sealed interface Subscription<S : Message> {
+  val topic: Topic<S>
+  val withKey: Boolean
+}
 
+data class MainSubscription<S : Message>(override val topic: Topic<S>) : Subscription<S> {
+  override val withKey = when (topic) {
+    WorkflowTagTopic,
+    WorkflowCmdTopic,
+    WorkflowEngineTopic,
+    ServiceTagTopic -> true
 
-/**
- * Data class representing error data, used for avoiding
- * leaking the internal representation of ExecutionError
- *
- * @property name The name of the error.
- * @property message The message of the error.
- * @property stackTrace The string representation of the stack trace.
- * @property cause The cause of the error, if any.
- */
-@Serializable
-data class ErrorData(
-  val name: String,
-  val message: String,
-  val stackTrace: String,
-  val cause: ErrorData?
-)
+    else -> false
+  }
+}
 
-fun ExecutionError.toErrorEvent(): ErrorData = ErrorData(
-    name = name,
-    message = message ?: "",
-    stackTrace = stackTraceToString,
-    cause = cause?.toErrorEvent(),
-)
+data class ListenerSubscription<S : Message>(override val topic: Topic<S>) : Subscription<S> {
+  override val withKey = false
+}

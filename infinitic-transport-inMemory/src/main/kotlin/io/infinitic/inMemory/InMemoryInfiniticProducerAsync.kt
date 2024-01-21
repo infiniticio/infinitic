@@ -25,24 +25,38 @@ package io.infinitic.inMemory
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.infinitic.common.data.MillisDuration
 import io.infinitic.common.messages.Message
-import io.infinitic.common.topics.Topic
-import io.infinitic.common.topics.isDelayed
 import io.infinitic.common.transport.InfiniticProducerAsync
+import io.infinitic.common.transport.Topic
+import io.infinitic.common.transport.isDelayed
 import kotlinx.coroutines.channels.Channel
 import java.util.concurrent.CompletableFuture
 
-class InMemoryInfiniticProducerAsync(private val channels: InMemoryChannels) :
-  InfiniticProducerAsync {
+class InMemoryInfiniticProducerAsync(
+  private val mainChannels: InMemoryChannels,
+  private val listenerChannels: InMemoryChannels
+) : InfiniticProducerAsync {
 
   private val logger = KotlinLogging.logger {}
 
   override var producerName = DEFAULT_NAME
 
-  private fun <S : Message> Topic<S>.channelForMessage(message: S): Channel<S> =
-      with(channels) { channel(message.entity()) }
+  private fun <S : Message> Topic<S>.channelForMessage(message: S): List<Channel<S>> {
+    val entity = message.entity()
 
-  private fun <S : Message> Topic<S>.channelForDelayedMessage(message: S): Channel<DelayedMessage<S>> =
-      with(channels) { channelForDelayed(message.entity()) }
+    return listOf(
+        with(mainChannels) { channel(entity) },
+        with(listenerChannels) { channel(entity) },
+    )
+  }
+
+  private fun <S : Message> Topic<S>.channelForDelayedMessage(message: S): List<Channel<DelayedMessage<S>>> {
+    val entity = message.entity()
+
+    return listOf(
+        with(mainChannels) { channelForDelayed(entity) },
+        with(listenerChannels) { channelForDelayed(entity) },
+    )
+  }
 
   override suspend fun <T : Message> internalSendToAsync(
     message: T,
@@ -50,18 +64,20 @@ class InMemoryInfiniticProducerAsync(private val channels: InMemoryChannels) :
     after: MillisDuration
   ): CompletableFuture<Unit> {
     when (topic.isDelayed) {
-      false -> {
-        val channel = topic.channelForMessage(message)
-        logger.debug { "Channel ${channel.id}: sending $message" }
-        channel.send(message)
-        logger.trace { "Channel ${channel.id}: sent" }
+      true -> {
+        topic.channelForDelayedMessage(message).forEach {
+          logger.trace { "Topic $topic(${it.id}): sending $message" }
+          it.send(DelayedMessage(message, after))
+          logger.debug { "Topic $topic(${it.id}): sent $message" }
+        }
       }
 
-      true -> {
-        val channel = topic.channelForDelayedMessage(message)
-        logger.debug { "Channel ${channel.id}: sending $message" }
-        channel.send(DelayedMessage(message, after))
-        logger.trace { "Channel ${channel.id}: sent" }
+      false -> {
+        topic.channelForMessage(message).forEach {
+          logger.trace { "Topic $topic(${it.id}): sending $message" }
+          it.send(message)
+          logger.debug { "Topic $topic(${it.id}): sent $message" }
+        }
       }
     }
 

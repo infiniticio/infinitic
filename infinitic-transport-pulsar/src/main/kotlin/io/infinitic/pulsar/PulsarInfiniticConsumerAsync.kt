@@ -26,15 +26,18 @@ import io.github.oshai.kotlinlogging.KotlinLogging
 import io.infinitic.autoclose.autoClose
 import io.infinitic.common.data.MillisInstant
 import io.infinitic.common.messages.Message
-import io.infinitic.common.topics.ClientTopic
-import io.infinitic.common.topics.DelayedServiceExecutorTopic
-import io.infinitic.common.topics.DelayedWorkflowTaskExecutorTopic
-import io.infinitic.common.topics.Topic
+import io.infinitic.common.transport.ClientTopic
+import io.infinitic.common.transport.DelayedServiceExecutorTopic
+import io.infinitic.common.transport.DelayedWorkflowTaskExecutorTopic
 import io.infinitic.common.transport.InfiniticConsumerAsync
+import io.infinitic.common.transport.Subscription
 import io.infinitic.pulsar.consumers.Consumer
-import io.infinitic.pulsar.resources.MainSubscription
 import io.infinitic.pulsar.resources.PulsarResources
+import io.infinitic.pulsar.resources.initialPosition
+import io.infinitic.pulsar.resources.name
+import io.infinitic.pulsar.resources.nameDLQ
 import io.infinitic.pulsar.resources.schema
+import io.infinitic.pulsar.resources.type
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
@@ -91,13 +94,13 @@ class PulsarInfiniticConsumerAsync(
   }
 
   override suspend fun <S : Message> start(
-    topic: Topic<S>,
+    subscription: Subscription<S>,
     handler: suspend (S, MillisInstant) -> Unit,
     beforeDlq: suspend (S?, Exception) -> Unit,
     entity: String,
     concurrency: Int,
   ) {
-    when (topic) {
+    when (subscription.topic) {
       // we do nothing here, as WorkflowTaskExecutorTopic and ServiceExecutorTopic
       // do not need a distinct topic to handle delayed messages in Pulsar
       DelayedWorkflowTaskExecutorTopic, DelayedServiceExecutorTopic -> return
@@ -111,21 +114,22 @@ class PulsarInfiniticConsumerAsync(
 
     coroutineScope {
       // get name of topic, creates it if it does not exist yet
-      launch { topicName = with(pulsarResources) { topic.fullName(entity) } }
+      launch { topicName = with(pulsarResources) { subscription.topic.fullName(entity) } }
 
       // name of DLQ topic, creates it if it does not exist yet
-      launch { topicDLQName = with(pulsarResources) { topic.fullNameDLQ(entity) } }
+      launch { topicDLQName = with(pulsarResources) { subscription.topic.fullNameDLQ(entity) } }
     }
 
     consumer.startListening(
         handler = handler,
         beforeDlq = beforeDlq,
-        schema = topic.schema,
+        schema = subscription.topic.schema,
         topic = topicName,
         topicDlq = topicDLQName,
-        subscriptionName = MainSubscription.name(topic),
-        subscriptionNameDlq = MainSubscription.nameDLQ(topic),
-        subscriptionType = MainSubscription.type(topic),
+        subscriptionName = subscription.name,
+        subscriptionNameDlq = subscription.nameDLQ,
+        subscriptionType = subscription.type,
+        subscriptionInitialPosition = subscription.initialPosition,
         consumerName = entity,
         concurrency = concurrency,
     )

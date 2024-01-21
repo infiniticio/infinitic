@@ -29,12 +29,12 @@ import io.infinitic.common.data.MillisInstant
 import io.infinitic.common.emitters.EmitterName
 import io.infinitic.common.exceptions.thisShouldNotHappen
 import io.infinitic.common.tasks.executors.errors.WorkflowMethodTimedOutError
-import io.infinitic.common.topics.ClientTopic
-import io.infinitic.common.topics.DelayedWorkflowEngineTopic
-import io.infinitic.common.topics.WorkflowCmdTopic
-import io.infinitic.common.topics.WorkflowTagTopic
+import io.infinitic.common.transport.ClientTopic
+import io.infinitic.common.transport.DelayedWorkflowEngineTopic
 import io.infinitic.common.transport.InfiniticProducerAsync
 import io.infinitic.common.transport.LoggedInfiniticProducer
+import io.infinitic.common.transport.WorkflowCmdTopic
+import io.infinitic.common.transport.WorkflowTagTopic
 import io.infinitic.common.workflows.data.methodRuns.WorkflowMethodId
 import io.infinitic.common.workflows.engine.messages.CancelWorkflow
 import io.infinitic.common.workflows.engine.messages.ChildMethodTimedOut

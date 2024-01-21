@@ -20,7 +20,7 @@
  *
  * Licensor: infinitic.io
  */
-package io.infinitic.common.topics
+package io.infinitic.common.transport
 
 import io.infinitic.common.clients.messages.ClientMessage
 import io.infinitic.common.messages.Message
@@ -33,19 +33,6 @@ import io.infinitic.common.workflows.tags.messages.WorkflowTagMessage
 
 
 sealed class Topic<S : Message>
-
-/**
- * Tell if a topic is key-shared
- */
-val Topic<*>.hasKey: Boolean
-  get() = when (this) {
-    ServiceTagTopic,
-    WorkflowTagTopic,
-    WorkflowCmdTopic,
-    WorkflowEngineTopic -> true
-
-    else -> false
-  }
 
 /**
  * Topic used to get a unique producer name

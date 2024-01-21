@@ -51,7 +51,7 @@ data class TaskCompletedData(
 data class TaskFailedData(
   val retrySequence: Int,
   val retryIndex: Int,
-  val error: String,
+  val error: ErrorData,
   val meta: Map<String, ByteArray>,
   val tags: Set<String>,
   val workerName: String
@@ -60,7 +60,7 @@ data class TaskFailedData(
 data class TaskRetriedData(
   val retrySequence: Int,
   val retryIndex: Int,
-  val error: String,
+  val error: ErrorData,
   val delayMillis: Long,
   val meta: Map<String, ByteArray>,
   val tags: Set<String>,
@@ -90,7 +90,7 @@ fun ServiceEventMessage.toData(): ServiceEventData = when (this) {
   is TaskFailedEvent -> TaskFailedData(
       retrySequence = taskRetrySequence.toInt(),
       retryIndex = taskRetryIndex.toInt(),
-      error = executionError.toErrorEvent().toJson(),
+      error = executionError.toErrorEvent(),
       meta = taskMeta.map,
       tags = taskTags.map { it.toString() }.toSet(),
       workerName = emitterName.toString(),
@@ -99,7 +99,7 @@ fun ServiceEventMessage.toData(): ServiceEventData = when (this) {
   is TaskRetriedEvent -> TaskRetriedData(
       retrySequence = taskRetrySequence.toInt(),
       retryIndex = taskRetryIndex.toInt(),
-      error = lastError.toErrorEvent().toJson(),
+      error = lastError.toErrorEvent(),
       delayMillis = taskRetryDelay.long,
       meta = taskMeta.map,
       tags = taskTags.map { it.toString() }.toSet(),

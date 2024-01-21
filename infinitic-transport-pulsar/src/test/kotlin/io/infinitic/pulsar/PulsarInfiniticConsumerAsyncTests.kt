@@ -27,17 +27,18 @@ import io.infinitic.common.clients.data.ClientName
 import io.infinitic.common.data.MillisInstant
 import io.infinitic.common.messages.Message
 import io.infinitic.common.tasks.data.ServiceName
-import io.infinitic.common.topics.ClientTopic
-import io.infinitic.common.topics.DelayedWorkflowEngineTopic
-import io.infinitic.common.topics.ServiceEventsTopic
-import io.infinitic.common.topics.ServiceExecutorTopic
-import io.infinitic.common.topics.ServiceTagTopic
-import io.infinitic.common.topics.WorkflowCmdTopic
-import io.infinitic.common.topics.WorkflowEngineTopic
-import io.infinitic.common.topics.WorkflowEventsTopic
-import io.infinitic.common.topics.WorkflowTagTopic
-import io.infinitic.common.topics.WorkflowTaskEventsTopic
-import io.infinitic.common.topics.WorkflowTaskExecutorTopic
+import io.infinitic.common.transport.ClientTopic
+import io.infinitic.common.transport.DelayedWorkflowEngineTopic
+import io.infinitic.common.transport.MainSubscription
+import io.infinitic.common.transport.ServiceEventsTopic
+import io.infinitic.common.transport.ServiceExecutorTopic
+import io.infinitic.common.transport.ServiceTagTopic
+import io.infinitic.common.transport.WorkflowCmdTopic
+import io.infinitic.common.transport.WorkflowEngineTopic
+import io.infinitic.common.transport.WorkflowEventsTopic
+import io.infinitic.common.transport.WorkflowTagTopic
+import io.infinitic.common.transport.WorkflowTaskEventsTopic
+import io.infinitic.common.transport.WorkflowTaskExecutorTopic
 import io.infinitic.common.workflows.data.workflows.WorkflowName
 import io.infinitic.pulsar.admin.PulsarInfiniticAdmin
 import io.infinitic.pulsar.config.policies.Policies
@@ -50,6 +51,7 @@ import io.mockk.mockk
 import io.mockk.slot
 import io.mockk.spyk
 import net.bytebuddy.utility.RandomString
+import org.apache.pulsar.client.api.SubscriptionInitialPosition
 import org.apache.pulsar.client.api.SubscriptionType
 import java.util.concurrent.CompletableFuture
 
@@ -68,6 +70,7 @@ class PulsarInfiniticConsumerAsyncTests : StringSpec(
       val subscriptionName = slot<String>()
       val subscriptionNameDlq = slot<String>()
       val subscriptionType = slot<SubscriptionType>()
+      val subscriptionInitialPosition = slot<SubscriptionInitialPosition>()
       val consumerName = slot<String>()
       val concurrency = slot<Int>()
 
@@ -100,6 +103,7 @@ class PulsarInfiniticConsumerAsyncTests : StringSpec(
               capture(subscriptionName),
               capture(subscriptionNameDlq),
               capture(subscriptionType),
+              capture(subscriptionInitialPosition),
               capture(consumerName),
               capture(concurrency),
           )
@@ -112,7 +116,7 @@ class PulsarInfiniticConsumerAsyncTests : StringSpec(
         val name = "$clientName"
 
         infiniticConsumerAsync.start(
-            topic = ClientTopic,
+            subscription = MainSubscription(ClientTopic),
             handler = { _, _ -> },
             beforeDlq = { _, _ -> },
             entity = name,
@@ -133,7 +137,7 @@ class PulsarInfiniticConsumerAsyncTests : StringSpec(
         val name = "$workflowName"
 
         infiniticConsumerAsync.start(
-            topic = WorkflowTagTopic,
+            subscription = MainSubscription(WorkflowTagTopic),
             handler = { _, _ -> },
             beforeDlq = { _, _ -> },
             entity = name,
@@ -153,7 +157,7 @@ class PulsarInfiniticConsumerAsyncTests : StringSpec(
         val name = "$workflowName"
 
         infiniticConsumerAsync.start(
-            topic = WorkflowCmdTopic,
+            subscription = MainSubscription(WorkflowCmdTopic),
             handler = { _, _ -> },
             beforeDlq = { _, _ -> },
             entity = name,
@@ -173,7 +177,7 @@ class PulsarInfiniticConsumerAsyncTests : StringSpec(
         val name = "$workflowName"
 
         infiniticConsumerAsync.start(
-            topic = WorkflowEngineTopic,
+            subscription = MainSubscription(WorkflowEngineTopic),
             handler = { _, _ -> },
             beforeDlq = { _, _ -> },
             entity = name,
@@ -193,7 +197,7 @@ class PulsarInfiniticConsumerAsyncTests : StringSpec(
         val name = "$workflowName"
 
         infiniticConsumerAsync.start(
-            topic = DelayedWorkflowEngineTopic,
+            subscription = MainSubscription(DelayedWorkflowEngineTopic),
             handler = { _, _ -> },
             beforeDlq = { _, _ -> },
             entity = name,
@@ -213,7 +217,7 @@ class PulsarInfiniticConsumerAsyncTests : StringSpec(
         val name = "$workflowName"
 
         infiniticConsumerAsync.start(
-            topic = WorkflowEventsTopic,
+            subscription = MainSubscription(WorkflowEventsTopic),
             handler = { _, _ -> },
             beforeDlq = { _, _ -> },
             entity = name,
@@ -233,7 +237,7 @@ class PulsarInfiniticConsumerAsyncTests : StringSpec(
         val name = "$workflowName"
 
         infiniticConsumerAsync.start(
-            topic = WorkflowTaskExecutorTopic,
+            subscription = MainSubscription(WorkflowTaskExecutorTopic),
             handler = { _, _ -> },
             beforeDlq = { _, _ -> },
             entity = name,
@@ -253,7 +257,7 @@ class PulsarInfiniticConsumerAsyncTests : StringSpec(
         val name = "$workflowName"
 
         infiniticConsumerAsync.start(
-            topic = WorkflowTaskEventsTopic,
+            subscription = MainSubscription(WorkflowTaskEventsTopic),
             handler = { _, _ -> },
             beforeDlq = { _, _ -> },
             entity = name,
@@ -273,7 +277,7 @@ class PulsarInfiniticConsumerAsyncTests : StringSpec(
         val name = "$serviceName"
 
         infiniticConsumerAsync.start(
-            topic = ServiceTagTopic,
+            subscription = MainSubscription(ServiceTagTopic),
             handler = { _, _ -> },
             beforeDlq = { _, _ -> },
             entity = name,
@@ -293,7 +297,7 @@ class PulsarInfiniticConsumerAsyncTests : StringSpec(
         val name = "$serviceName"
 
         infiniticConsumerAsync.start(
-            topic = ServiceExecutorTopic,
+            subscription = MainSubscription(ServiceExecutorTopic),
             handler = { _, _ -> },
             beforeDlq = { _, _ -> },
             entity = name,
@@ -313,13 +317,13 @@ class PulsarInfiniticConsumerAsyncTests : StringSpec(
         val name = "$serviceName"
 
         infiniticConsumerAsync.start(
-            topic = ServiceEventsTopic,
+            subscription = MainSubscription(ServiceEventsTopic),
             handler = { _, _ -> },
             beforeDlq = { _, _ -> },
             entity = name,
             concurrency = 10,
         )
-        
+
         coVerify {
           pulsarResources.initTopicOnce(
               "persistent://$tenant/$namespace/task-events:$name",

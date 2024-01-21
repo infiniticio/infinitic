@@ -45,12 +45,13 @@ import io.infinitic.common.fixtures.TestFactory
 import io.infinitic.common.fixtures.later
 import io.infinitic.common.tasks.executors.messages.ServiceExecutorMessage
 import io.infinitic.common.tasks.tags.messages.ServiceTagMessage
-import io.infinitic.common.topics.ClientTopic
-import io.infinitic.common.topics.Topic
-import io.infinitic.common.topics.WorkflowCmdTopic
-import io.infinitic.common.topics.WorkflowTagTopic
+import io.infinitic.common.transport.ClientTopic
 import io.infinitic.common.transport.InfiniticConsumerAsync
 import io.infinitic.common.transport.InfiniticProducerAsync
+import io.infinitic.common.transport.MainSubscription
+import io.infinitic.common.transport.Subscription
+import io.infinitic.common.transport.WorkflowCmdTopic
+import io.infinitic.common.transport.WorkflowTagTopic
 import io.infinitic.common.utils.IdGenerator
 import io.infinitic.common.workflows.data.channels.ChannelName
 import io.infinitic.common.workflows.data.channels.ChannelType
@@ -138,7 +139,7 @@ private val producerAsync = mockk<InfiniticProducerAsync> {
 }
 
 private val consumerAsync = mockk<InfiniticConsumerAsync> {
-  coEvery { start(any<Topic<*>>(), any(), any(), "$clientNameTest", any()) } just Runs
+  coEvery { start(any<Subscription<*>>(), any(), any(), "$clientNameTest", any()) } just Runs
 }
 
 private val client = InfiniticClient(consumerAsync, producerAsync)
@@ -189,7 +190,7 @@ internal class InfiniticClientTests : StringSpec(
         // when asynchronously dispatching a workflow, the consumer should not be started
         coVerify(exactly = 0) {
           consumerAsync.start(
-              ClientTopic,
+              MainSubscription(ClientTopic),
               any(),
               any(),
               "$clientNameTest",
@@ -409,7 +410,15 @@ internal class InfiniticClientTests : StringSpec(
         )
 
         // when waiting for a workflow, the consumer should be started
-        coVerify { consumerAsync.start(ClientTopic, any(), any(), "$clientNameTest", 1) }
+        coVerify {
+          consumerAsync.start(
+              MainSubscription(ClientTopic),
+              any(),
+              any(),
+              "$clientNameTest",
+              1,
+          )
+        }
 
         // restart a workflow
         client.dispatch(fakeWorkflow::m3, 0, "a").await()
@@ -417,7 +426,7 @@ internal class InfiniticClientTests : StringSpec(
         // the consumer should be started only once
         coVerify(exactly = 1) {
           consumerAsync.start(
-              ClientTopic,
+              MainSubscription(ClientTopic),
               any(),
               any(),
               "$clientNameTest",

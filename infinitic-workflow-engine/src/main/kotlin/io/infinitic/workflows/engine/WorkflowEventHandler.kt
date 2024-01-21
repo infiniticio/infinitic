@@ -25,10 +25,10 @@ package io.infinitic.workflows.engine
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.infinitic.common.data.MillisInstant
 import io.infinitic.common.emitters.EmitterName
-import io.infinitic.common.topics.ClientTopic
-import io.infinitic.common.topics.WorkflowEngineTopic
+import io.infinitic.common.transport.ClientTopic
 import io.infinitic.common.transport.InfiniticProducerAsync
 import io.infinitic.common.transport.LoggedInfiniticProducer
+import io.infinitic.common.transport.WorkflowEngineTopic
 import io.infinitic.common.workflows.engine.events.WorkflowCanceledEvent
 import io.infinitic.common.workflows.engine.events.WorkflowCompletedEvent
 import io.infinitic.common.workflows.engine.events.WorkflowEventMessage

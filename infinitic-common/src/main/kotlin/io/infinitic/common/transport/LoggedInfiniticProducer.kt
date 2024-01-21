@@ -25,7 +25,6 @@ package io.infinitic.common.transport
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.infinitic.common.data.MillisDuration
 import io.infinitic.common.messages.Message
-import io.infinitic.common.topics.Topic
 import kotlinx.coroutines.future.await
 
 class LoggedInfiniticProducer(

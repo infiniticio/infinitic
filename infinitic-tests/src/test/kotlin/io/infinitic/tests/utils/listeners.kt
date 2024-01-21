@@ -32,5 +32,5 @@ class Listener : CloudEventListener {
   override fun onCloudEvent(event: CloudEvent) {
     println(String(JsonFormat().serialize(event)))
   }
-  
+
 }

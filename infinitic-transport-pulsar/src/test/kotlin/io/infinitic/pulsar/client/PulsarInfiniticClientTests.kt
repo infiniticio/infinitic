@@ -24,7 +24,7 @@
 package io.infinitic.pulsar.client
 
 import io.infinitic.common.fixtures.TestFactory
-import io.infinitic.common.topics.WorkflowEngineTopic
+import io.infinitic.common.transport.WorkflowEngineTopic
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineEnvelope
 import io.infinitic.pulsar.consumers.ConsumerConfig
 import io.infinitic.pulsar.resources.schema
@@ -175,6 +175,7 @@ class PulsarInfiniticClientTests :
           val randomTopic = TestFactory.random<String>()
           val randomSubscriptionName = TestFactory.random<String>()
           val randomSubscriptionType = TestFactory.random<SubscriptionType>()
+          val randomSubscriptionInitialPosition = TestFactory.random<SubscriptionInitialPosition>()
           val randomConsumerName = TestFactory.random<String>()
 
           // when
@@ -182,6 +183,7 @@ class PulsarInfiniticClientTests :
               topic = randomTopic,
               subscriptionName = randomSubscriptionName, //  MUST be the same for all instances!
               subscriptionType = randomSubscriptionType,
+              subscriptionInitialPosition = randomSubscriptionInitialPosition,
               consumerName = randomConsumerName,
               consumerConfig = randomConfig,
           )
@@ -231,6 +233,7 @@ class PulsarInfiniticClientTests :
           val randomTopic = TestFactory.random<String>()
           val randomSubscriptionName = TestFactory.random<String>()
           val randomSubscriptionType = TestFactory.random<SubscriptionType>()
+          val randomSubscriptionInitialPosition = TestFactory.random<SubscriptionInitialPosition>()
           val randomConsumerName = TestFactory.random<String>()
 
           // when
@@ -238,6 +241,7 @@ class PulsarInfiniticClientTests :
               topic = "topic",
               subscriptionName = "subscriptionName",
               subscriptionType = SubscriptionType.Shared,
+              subscriptionInitialPosition = SubscriptionInitialPosition.Earliest,
               consumerName = "consumerName",
               consumerConfig = randomConfig,
           )
@@ -245,6 +249,7 @@ class PulsarInfiniticClientTests :
               topic = randomTopic,
               subscriptionName = randomSubscriptionName,
               subscriptionType = randomSubscriptionType,
+              subscriptionInitialPosition = randomSubscriptionInitialPosition,
               consumerName = randomConsumerName,
               consumerConfig = randomConfig,
           )
