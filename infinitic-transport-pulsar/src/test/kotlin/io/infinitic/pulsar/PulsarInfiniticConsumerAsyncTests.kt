@@ -117,9 +117,9 @@ class PulsarInfiniticConsumerAsyncTests : StringSpec(
 
         infiniticConsumerAsync.start(
             subscription = MainSubscription(ClientTopic),
+            entity = name,
             handler = { _, _ -> },
             beforeDlq = { _, _ -> },
-            entity = name,
             concurrency = 1,
         )
 
@@ -138,9 +138,9 @@ class PulsarInfiniticConsumerAsyncTests : StringSpec(
 
         infiniticConsumerAsync.start(
             subscription = MainSubscription(WorkflowTagTopic),
+            entity = name,
             handler = { _, _ -> },
             beforeDlq = { _, _ -> },
-            entity = name,
             concurrency = 10,
         )
 
@@ -158,9 +158,9 @@ class PulsarInfiniticConsumerAsyncTests : StringSpec(
 
         infiniticConsumerAsync.start(
             subscription = MainSubscription(WorkflowCmdTopic),
+            entity = name,
             handler = { _, _ -> },
             beforeDlq = { _, _ -> },
-            entity = name,
             concurrency = 10,
         )
 
@@ -178,9 +178,9 @@ class PulsarInfiniticConsumerAsyncTests : StringSpec(
 
         infiniticConsumerAsync.start(
             subscription = MainSubscription(WorkflowEngineTopic),
+            entity = name,
             handler = { _, _ -> },
             beforeDlq = { _, _ -> },
-            entity = name,
             concurrency = 10,
         )
 
@@ -198,9 +198,9 @@ class PulsarInfiniticConsumerAsyncTests : StringSpec(
 
         infiniticConsumerAsync.start(
             subscription = MainSubscription(DelayedWorkflowEngineTopic),
+            entity = name,
             handler = { _, _ -> },
             beforeDlq = { _, _ -> },
-            entity = name,
             concurrency = 10,
         )
 
@@ -218,9 +218,9 @@ class PulsarInfiniticConsumerAsyncTests : StringSpec(
 
         infiniticConsumerAsync.start(
             subscription = MainSubscription(WorkflowEventsTopic),
+            entity = name,
             handler = { _, _ -> },
             beforeDlq = { _, _ -> },
-            entity = name,
             concurrency = 10,
         )
 
@@ -238,9 +238,9 @@ class PulsarInfiniticConsumerAsyncTests : StringSpec(
 
         infiniticConsumerAsync.start(
             subscription = MainSubscription(WorkflowTaskExecutorTopic),
+            entity = name,
             handler = { _, _ -> },
             beforeDlq = { _, _ -> },
-            entity = name,
             concurrency = 10,
         )
 
@@ -258,9 +258,9 @@ class PulsarInfiniticConsumerAsyncTests : StringSpec(
 
         infiniticConsumerAsync.start(
             subscription = MainSubscription(WorkflowTaskEventsTopic),
+            entity = name,
             handler = { _, _ -> },
             beforeDlq = { _, _ -> },
-            entity = name,
             concurrency = 10,
         )
 
@@ -278,9 +278,9 @@ class PulsarInfiniticConsumerAsyncTests : StringSpec(
 
         infiniticConsumerAsync.start(
             subscription = MainSubscription(ServiceTagTopic),
+            entity = name,
             handler = { _, _ -> },
             beforeDlq = { _, _ -> },
-            entity = name,
             concurrency = 10,
         )
 
@@ -298,9 +298,9 @@ class PulsarInfiniticConsumerAsyncTests : StringSpec(
 
         infiniticConsumerAsync.start(
             subscription = MainSubscription(ServiceExecutorTopic),
+            entity = name,
             handler = { _, _ -> },
             beforeDlq = { _, _ -> },
-            entity = name,
             concurrency = 10,
         )
 
@@ -318,9 +318,9 @@ class PulsarInfiniticConsumerAsyncTests : StringSpec(
 
         infiniticConsumerAsync.start(
             subscription = MainSubscription(ServiceEventsTopic),
+            entity = name,
             handler = { _, _ -> },
             beforeDlq = { _, _ -> },
-            entity = name,
             concurrency = 10,
         )
 

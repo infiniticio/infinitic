@@ -22,7 +22,6 @@
  */
 package io.infinitic.common.workers.registry
 
-import io.infinitic.common.exceptions.thisShouldNotHappen
 import io.infinitic.common.tasks.data.ServiceName
 import io.infinitic.common.workflows.data.workflows.WorkflowName
 import org.jetbrains.annotations.TestOnly
@@ -35,12 +34,28 @@ class WorkerRegistry(val name: String?) {
   val workflowEngines = mutableMapOf<WorkflowName, RegisteredWorkflowEngine>()
   val workflowExecutors = mutableMapOf<WorkflowName, RegisteredWorkflowExecutor>()
   val workflowTags = mutableMapOf<WorkflowName, RegisteredWorkflowTag>()
+  val workflowListeners = mutableMapOf<WorkflowName, RegisteredEventListener>()
 
   fun getRegisteredService(serviceName: ServiceName) =
-      serviceExecutors[serviceName] ?: thisShouldNotHappen()
+      serviceExecutors[serviceName]
+
+  fun getRegisteredServiceTag(serviceName: ServiceName) =
+      serviceTags[serviceName]
 
   fun getRegisteredWorkflow(workflowName: WorkflowName) =
-      workflowExecutors[workflowName] ?: thisShouldNotHappen()
+      workflowExecutors[workflowName]
+
+  fun getRegisteredWorkflowEngine(workflowName: WorkflowName) =
+      workflowEngines[workflowName]
+
+  fun getRegisteredWorkflowTag(workflowName: WorkflowName) =
+      workflowTags[workflowName]
+
+  fun getRegisteredServiceEventListener(serviceName: ServiceName) =
+      serviceListeners[serviceName]
+
+  fun getRegisteredWorkflowEventListener(workflowName: WorkflowName) =
+      workflowListeners[workflowName]
 
   @TestOnly
   fun flush() {

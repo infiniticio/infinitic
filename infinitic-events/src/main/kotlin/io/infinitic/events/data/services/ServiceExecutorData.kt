@@ -21,38 +21,41 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.events.data
+package io.infinitic.events.data.services
 
 import io.infinitic.common.exceptions.thisShouldNotHappen
 import io.infinitic.common.tasks.executors.messages.ExecuteTask
 import io.infinitic.common.tasks.executors.messages.ServiceExecutorMessage
 import io.infinitic.common.tasks.executors.messages.clientName
-import io.infinitic.events.InfiniticEventType
+import io.infinitic.events.InfiniticServiceEventType
+import io.infinitic.events.TaskDispatched
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.JsonElement
 
-fun ServiceExecutorMessage.type() = when (this) {
-  is ExecuteTask -> InfiniticEventType.TASK_REQUESTED
+fun ServiceExecutorMessage.serviceType(): InfiniticServiceEventType = when (this) {
+  is ExecuteTask -> TaskDispatched
 }
 
-sealed interface ServiceExecutorData : MessageData
+@Serializable
+data class TaskDispatchedData(
+  val taskName: String,
+  val taskArgs: List<JsonElement>,
+  val requester: RequesterData,
+  override val retrySequence: Int,
+  override val retryIndex: Int,
+  override val taskMeta: Map<String, ByteArray>,
+  override val taskTags: Set<String>,
+  override val infiniticVersion: String
+) : ServiceEventData
 
-data class TaskRequestedData(
-  val retrySequence: Int,
-  val retryIndex: Int,
-  val name: String,
-  val args: List<String>,
-  val meta: Map<String, ByteArray>,
-  val tags: Set<String>,
-  val requester: RequesterData
-) : ServiceExecutorData
-
-fun ServiceExecutorMessage.toData() = when (this) {
-  is ExecuteTask -> TaskRequestedData(
+fun ServiceExecutorMessage.toServiceData() = when (this) {
+  is ExecuteTask -> TaskDispatchedData(
       retrySequence = taskRetrySequence.toInt(),
       retryIndex = taskRetryIndex.toInt(),
-      name = methodName.toString(),
-      args = methodParameters.map { String(it.bytes) },
-      meta = taskMeta.map,
-      tags = taskTags.map { it.toString() }.toSet(),
+      taskName = methodName.toString(),
+      taskArgs = methodParameters.toJson(),
+      taskMeta = taskMeta.map,
+      taskTags = taskTags.map { it.toString() }.toSet(),
       requester = when {
         workflowName != null -> WorkflowRequesterData(
             workflowName = workflowName.toString(),
@@ -67,5 +70,6 @@ fun ServiceExecutorMessage.toData() = when (this) {
 
         else -> thisShouldNotHappen()
       },
+      infiniticVersion = version.toString(),
   )
 }

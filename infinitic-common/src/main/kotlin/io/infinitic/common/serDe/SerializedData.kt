@@ -36,9 +36,12 @@ import kotlinx.serialization.InternalSerializationApi
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.SerializationException
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.serializerOrNull
 import java.math.BigInteger
 import java.security.MessageDigest
+import java.util.*
 import io.infinitic.common.serDe.json.Json as JsonJackson
 
 @Serializable
@@ -57,7 +60,7 @@ data class SerializedData(
     const val META_JAVA_CLASS = "javaClass"
 
     // use a less obvious key than "type" for polymorphic data, to avoid collusion
-    private val jsonKotlin = kotlinx.serialization.json.Json {
+    private val jsonKotlin = Json {
       classDiscriminator = "#klass"
       ignoreUnknownKeys = true
     }
@@ -120,7 +123,7 @@ data class SerializedData(
         SerializedDataType.JSON_JACKSON -> {
           val klass = getDataClass()
           try {
-            JsonJackson.parse(toJson(), klass)
+            JsonJackson.parse(toJsonString(), klass)
           } catch (e: JsonProcessingException) {
             throw JsonDeserializationException(klass.name, causeString = e.toString())
           }
@@ -134,7 +137,7 @@ data class SerializedData(
             ?: throw SerializerNotFoundException(klass.name)
 
           try {
-            jsonKotlin.decodeFromString(serializer, toJson())
+            jsonKotlin.decodeFromString(serializer, toJsonString())
           } catch (e: SerializationException) {
             throw KotlinDeserializationException(klass.name, causeString = e.toString())
           }
@@ -149,7 +152,24 @@ data class SerializedData(
         }
       }
 
-  fun toJson(): String = String(bytes, Charsets.UTF_8)
+  fun toJson() = Json.parseToJsonElement(toJsonString())
+
+  fun toJsonString(): String = when (type) {
+    SerializedDataType.NULL -> "null"
+    SerializedDataType.JSON_JACKSON, SerializedDataType.JSON_KOTLIN -> String(bytes, Charsets.UTF_8)
+    SerializedDataType.AVRO_WITH_SCHEMA -> JsonPrimitive(
+        Base64.getEncoder().encodeToString(bytes),
+    ).toString()
+//    SerializedDataType.AVRO_WITH_SCHEMA -> when (getDataClassString()) {
+//      WORKFLOW_TASK_PARAMETERS ->
+//        JsonJackson.stringify(WorkflowTaskParameters.fromByteArray(bytes))
+//
+//      WORKFLOW_TASK_RETURN_VALUE ->
+//        JsonJackson.stringify(WorkflowTaskReturnValue.fromByteArray(bytes))
+//
+//      else -> thisShouldNotHappen()
+//    }
+  }
 
   fun hash(): String {
     // MD5 implementation, enough to avoid collision in practical cases
@@ -159,7 +179,7 @@ data class SerializedData(
 
   /** Readable version */
   override fun toString() = mapOf(
-      "bytes" to toJson().replace("\n", ""),
+      "bytes" to toJsonString().replace("\n", ""),
       "type" to type,
       "meta" to meta.mapValues { String(it.value) },
   ).toString()

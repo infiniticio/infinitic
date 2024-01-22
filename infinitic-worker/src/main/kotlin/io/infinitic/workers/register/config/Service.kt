@@ -35,16 +35,10 @@ data class Service(
   var concurrency: Int? = null,
   var timeoutInSeconds: Double? = null,
   var retry: RetryPolicy? = null,
-  var tagEngine: TaskTag? = InfiniticRegisterInterface.DEFAULT_TASK_TAG,
-  var eventListener: EventListener? = InfiniticRegisterInterface.DEFAULT_EVENT_LISTENER,
+  var tagEngine: TaskTag? = InfiniticRegisterInterface.DEFAULT_SERVICE_TAG,
+  var eventListener: EventListener? = null,
 ) {
-  fun getInstance(): Any = `class`!!.getInstance(
-      classNotFound = error("Class '${`class`}' unknown"),
-      errorClass = error("Can not access class '${`class`}'"),
-      noEmptyConstructor = error("Class '${::`class`.name}' must have an empty constructor"),
-      constructorError = error("Can not access class '$`class`' constructor"),
-      instanceError = error("Error during instantiation of class '$`class`'"),
-  ).getOrThrow()
+  fun getInstance(): Any = `class`!!.getInstance().getOrThrow()
 
   init {
     require(name.isNotEmpty()) { "'${::name.name}' can not be empty" }

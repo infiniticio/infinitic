@@ -21,7 +21,7 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.events.data
+package io.infinitic.events.data.services
 
 import kotlinx.serialization.Serializable
 

@@ -24,127 +24,207 @@
 package io.infinitic.events
 
 private const val TYPE_DOMAIN = "infinitic"
-private const val TYPE_TASK = "$TYPE_DOMAIN.task"
 private const val TYPE_WORKFLOW = "$TYPE_DOMAIN.workflow"
+private const val TYPE_WORKFLOW_TASK = "$TYPE_WORKFLOW.task"
 private const val TYPE_WORKFLOW_METHOD = "$TYPE_WORKFLOW.method"
+private const val TYPE_TASK = "$TYPE_DOMAIN.task"
 
-enum class InfiniticEventType(val type: String) {
+sealed interface InfiniticEventType {
+  val type: String
+}
 
-  // Happening at Workflow Level
-  // Source = urn:pulsar:cluster-name/tenant/namespace/workflows/$workflowName
+/**
+ * ABOUT SERVICES
+ * Source = urn:pulsar:cluster-name/tenant/namespace/services/$ServiceName
+ */
 
-  WORKFLOW_REQUESTED(
-      type = "$TYPE_WORKFLOW.requested",
-  ),
-  WORKFLOW_STARTED(
-      type = "$TYPE_WORKFLOW.started",
-  ),
-  WORKFLOW_CANCEL_REQUESTED(
-      type = "$TYPE_WORKFLOW.cancel.requested",
-  ),
-  WORKFLOW_CANCELED(
-      type = "$TYPE_WORKFLOW.canceled",
-  ),
-  WORKFLOW_SIGNAL_SENT(
-      type = "$TYPE_WORKFLOW.signal",
-  ),
-  WORKFLOW_SIGNAL_RECEIVED(
-      type = "$TYPE_WORKFLOW.signaled",
-  ),
-  WORKFLOW_COMPLETED(
-      type = "$TYPE_WORKFLOW.completed",
-  ),
-  WORKFLOW_TASK_RETRY_REQUESTED(
-      type = "$TYPE_WORKFLOW.task.retry",
-  ),
-  WORKFLOW_TASK_RETRIED(
-      type = "$TYPE_WORKFLOW.task.retried",
-  ),
-  WORKFLOW_TASK_DISPATCHED(
-      type = "$TYPE_WORKFLOW.task.dispatched",
-  ),
-  WORKFLOW_TASK_COMPLETED(
-      type = "$TYPE_WORKFLOW.task.completed",
-  ),
-  WORKFLOW_TASK_FAILED(
-      type = "$TYPE_WORKFLOW.task.failed",
-  ),
-  WORKFLOW_TASK_TIMED_OUT(
-      type = "$TYPE_WORKFLOW.task.timedout",
-  ),
+sealed interface InfiniticServiceEventType : InfiniticEventType {
+  override val type: String
+}
 
-  // Happening at Workflow Method Level (Point of view of Workflow Method)
-  // Source = urn:pulsar:cluster-name/tenant/namespace/workflows/$workflowName/$methodName
-  // Source = urn:pulsar:cluster-name/tenant/namespace/workflows/$workflowName/$workflowId/$methodName
+data object TaskDispatched : InfiniticServiceEventType {
+  override val type = "$TYPE_TASK.dispatched"
+}
 
-  METHOD_REQUESTED(
-      type = "$TYPE_WORKFLOW_METHOD.requested",
-  ),
-  METHOD_STARTED(
-      type = "$TYPE_WORKFLOW_METHOD.started",
-  ),
-  METHOD_COMPLETED(
-      type = "$TYPE_WORKFLOW_METHOD.completed",
-  ),
-  METHOD_FAILED(
-      type = "$TYPE_WORKFLOW_METHOD.failed",
-  ),
-  METHOD_CANCELED(
-      type = "$TYPE_WORKFLOW_METHOD.canceled",
-  ),
-  METHOD_TIMED_OUT(
-      type = "$TYPE_WORKFLOW_METHOD.timedOut",
-  ),
+data object TaskStarted : InfiniticServiceEventType {
+  override val type = "$TYPE_TASK.started"
+}
 
-  // Inside workflow method
+data object TaskCompleted : InfiniticServiceEventType {
+  override val type = "$TYPE_TASK.completed"
+}
 
-  METHOD_TIMER_DISPATCHED(
-      type = "$TYPE_WORKFLOW_METHOD.timer.dispatched",
-  ),
-  METHOD_TIMER_COMPLETED(
-      type = "$TYPE_WORKFLOW_METHOD.timer.completed",
-  ),
-  METHOD_TASK_DISPATCHED(
-      type = "$TYPE_WORKFLOW_METHOD.task.dispatched",
-  ),
-  METHOD_TASK_COMPLETED(
-      type = "$TYPE_WORKFLOW_METHOD.task.completed",
-  ),
-  METHOD_TASK_FAILED(
-      type = "$TYPE_WORKFLOW_METHOD.task.failed",
-  ),
-  METHOD_TASK_TIMED_OUT(
-      type = "$TYPE_WORKFLOW_METHOD.task.timedout",
-  ),
-  METHOD_CHILD_DISPATCHED(
-      type = "$TYPE_WORKFLOW_METHOD.child.dispatched",
-  ),
-  METHOD_CHILD_COMPLETED(
-      type = "$TYPE_WORKFLOW_METHOD.child.completed",
-  ),
-  METHOD_CHILD_FAILED(
-      type = "$TYPE_WORKFLOW_METHOD.child.failed",
-  ),
-  METHOD_CHILD_TIMED_OUT(
-      type = "$TYPE_WORKFLOW_METHOD.child.timedout",
-  ),
+data object TaskFailed : InfiniticServiceEventType {
+  override val type = "$TYPE_TASK.failed"
+}
 
-  // Happening at Task Level (Point of view of Task)
-  // Source = urn:infinitic:pulsar:cluster-name/tenant/namespace/services/serviceName
+data object TaskRetried : InfiniticServiceEventType {
+  override val type = "$TYPE_TASK.retried"
+}
 
-  TASK_REQUESTED(
-      type = "$TYPE_TASK.requested",
-  ),
-  TASK_STARTED(
-      type = "$TYPE_TASK.started",
-  ),
-  TASK_COMPLETED(
-      type = "$TYPE_TASK.completed",
-  ),
-  TASK_FAILED(
-      type = "$TYPE_TASK.failed",
-  ),
-  TASK_RETRIED(
-      type = "$TYPE_TASK.retried",
-  ),
+/**
+ * ABOUT WORKFLOWS
+ * Source = urn:pulsar:cluster-name/tenant/namespace/workflow/$WorkflowName
+ */
+
+sealed interface InfiniticWorkflowEventType : InfiniticEventType {
+  override val type: String
+}
+
+data object WorkflowDispatched : InfiniticWorkflowEventType {
+  override val type = "$TYPE_WORKFLOW.dispatched"
+}
+
+data object WorkflowStarted : InfiniticWorkflowEventType {
+  override val type = "$TYPE_WORKFLOW.started"
+}
+
+data object WorkflowCancelRequested : InfiniticWorkflowEventType {
+  override val type = "$TYPE_WORKFLOW.cancelRequested"
+}
+
+data object WorkflowCanceled : InfiniticWorkflowEventType {
+  override val type = "$TYPE_WORKFLOW.canceled"
+}
+
+data object WorkflowSignalSent : InfiniticWorkflowEventType {
+  override val type = "$TYPE_WORKFLOW.signalSent"
+}
+
+data object WorkflowSignalReceived : InfiniticWorkflowEventType {
+  override val type = "$TYPE_WORKFLOW.signalReceived"
+}
+
+data object WorkflowCompleted : InfiniticWorkflowEventType {
+  override val type = "$TYPE_WORKFLOW.completed"
+}
+
+
+/**
+ * ABOUT WORKFLOW TASKS
+ * Source = urn:pulsar:cluster-name/tenant/namespace/workflow/$WorkflowName
+ */
+
+sealed interface InfiniticWorkflowTaskEventType : InfiniticWorkflowEventType {
+  override val type: String
+}
+
+data object WorkflowTaskRetryRequested : InfiniticWorkflowTaskEventType {
+  override val type = "$TYPE_WORKFLOW_TASK.retryRequested"
+}
+
+data object WorkflowTaskRetried : InfiniticWorkflowTaskEventType {
+  override val type = "$TYPE_WORKFLOW_TASK.retried"
+}
+
+data object WorkflowTaskDispatched : InfiniticWorkflowTaskEventType {
+  override val type = "$TYPE_WORKFLOW_TASK.dispatched"
+}
+
+data object WorkflowTaskCompleted : InfiniticWorkflowTaskEventType {
+  override val type = "$TYPE_WORKFLOW_TASK.completed"
+}
+
+data object WorkflowTaskFailed : InfiniticWorkflowTaskEventType {
+  override val type = "$TYPE_WORKFLOW_TASK.failed"
+}
+
+data object WorkflowTaskTimedOut : InfiniticWorkflowTaskEventType {
+  override val type = "$TYPE_WORKFLOW_TASK.timedOut"
+}
+
+/**
+ * ABOUT WORKFLOW METHODS
+ */
+
+// Happening at Workflow Method Level (Point of view of Workflow Method)
+// Source = urn:pulsar:cluster-name/tenant/namespace/workflows/$workflowName/$methodName
+// Source = urn:pulsar:cluster-name/tenant/namespace/workflows/$workflowName/$workflowId/$methodName
+
+sealed interface InfiniticWorkflowMethodEventType : InfiniticWorkflowEventType {
+  override val type: String
+}
+
+data object WorkflowMethodDispatched : InfiniticWorkflowMethodEventType {
+  override val type = "$TYPE_WORKFLOW_METHOD.dispatched"
+}
+
+data object WorkflowMethodStarted : InfiniticWorkflowMethodEventType {
+  override val type = "$TYPE_WORKFLOW_METHOD.started"
+}
+
+data object WorkflowMethodCompleted : InfiniticWorkflowMethodEventType {
+  override val type = "$TYPE_WORKFLOW_METHOD.completed"
+}
+
+data object WorkflowMethodFailed : InfiniticWorkflowMethodEventType {
+  override val type = "$TYPE_WORKFLOW_METHOD.failed"
+}
+
+data object WorkflowMethodCanceled : InfiniticWorkflowMethodEventType {
+  override val type = "$TYPE_WORKFLOW_METHOD.canceled"
+}
+
+data object WorkflowMethodTimedOut : InfiniticWorkflowMethodEventType {
+  override val type = "$TYPE_WORKFLOW_METHOD.timedOut"
+}
+
+/**
+ * ABOUT TIMERS DISPATCHED FROM A WORKFLOW METHOD
+ */
+
+data object WorkflowMethodTimerDispatched : InfiniticWorkflowMethodEventType {
+  override val type = "$TYPE_WORKFLOW_METHOD.timer.dispatched"
+}
+
+data object WorkflowMethodTimerCompleted : InfiniticWorkflowMethodEventType {
+  override val type = "$TYPE_WORKFLOW_METHOD.timer.completed"
+}
+
+/**
+ * ABOUT TASKS DISPATCHED FROM A WORKFLOW METHOD
+ */
+data object WorkflowMethodTaskDispatched : InfiniticWorkflowMethodEventType {
+  override val type = "$TYPE_WORKFLOW_METHOD.task.dispatched"
+}
+
+data object WorkflowMethodTaskCompleted : InfiniticWorkflowMethodEventType {
+  override val type = "$TYPE_WORKFLOW_METHOD.task.completed"
+}
+
+data object WorkflowMethodTaskFailed : InfiniticWorkflowMethodEventType {
+  override val type = "$TYPE_WORKFLOW_METHOD.task.failed"
+}
+
+data object WorkflowMethodTaskCanceled : InfiniticWorkflowMethodEventType {
+  override val type = "$TYPE_WORKFLOW_METHOD.task.canceled"
+}
+
+data object WorkflowMethodTaskTimedOut : InfiniticWorkflowMethodEventType {
+  override val type = "$TYPE_WORKFLOW_METHOD.task.timedout"
+}
+
+
+/**
+ * ABOUT CHILD WORKFLOW METHOD DISPATCHED FROM A WORKFLOW METHOD
+ */
+
+data object WorkflowMethodChildDispatched : InfiniticWorkflowMethodEventType {
+  override val type = "$TYPE_WORKFLOW_METHOD.child.dispatched"
+}
+
+data object WorkflowMethodChildCompleted : InfiniticWorkflowMethodEventType {
+  override val type = "$TYPE_WORKFLOW_METHOD.child.completed"
+}
+
+data object WorkflowMethodChildFailed : InfiniticWorkflowMethodEventType {
+  override val type = "$TYPE_WORKFLOW_METHOD.child.failed"
+}
+
+data object WorkflowMethodChildCanceled : InfiniticWorkflowMethodEventType {
+  override val type = "$TYPE_WORKFLOW_METHOD.child.canceled"
+}
+
+data object WorkflowMethodChildTimedOut : InfiniticWorkflowMethodEventType {
+  override val type = "$TYPE_WORKFLOW_METHOD.child.timedout"
 }

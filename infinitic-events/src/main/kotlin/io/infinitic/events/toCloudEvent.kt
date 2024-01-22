@@ -26,59 +26,43 @@ package io.infinitic.events
 import io.cloudevents.CloudEvent
 import io.cloudevents.core.v1.CloudEventBuilder
 import io.infinitic.common.data.MillisInstant
-import io.infinitic.common.exceptions.thisShouldNotHappen
 import io.infinitic.common.messages.Message
-import io.infinitic.common.serDe.json.Json
-import io.infinitic.common.tasks.events.messages.ServiceEventMessage
-import io.infinitic.common.tasks.executors.messages.ServiceExecutorMessage
-import io.infinitic.events.data.toData
-import io.infinitic.events.data.type
-import java.net.URI
-import java.net.URLEncoder
 import java.time.OffsetDateTime
 import java.time.ZoneOffset
 
+fun Message.toServiceCloudEvent(publishedAt: MillisInstant, prefix: String): CloudEvent? =
+    with(CloudEventContext.SERVICE) {
+      when (val type = type()) {
+        null -> null
+        else -> CloudEventBuilder()
+            .withId(messageId.toString())
+            .withTime(OffsetDateTime.ofInstant(publishedAt.toInstant(), ZoneOffset.UTC))
+            .withType(type)
+            .withSubject(subject())
+            .withSource(source(prefix))
+            .withDataContentType("application/json")
+            .withoutDataSchema()
+            .withData(dataBytes())
+            .build()
+      }
+    }
 
-fun Message.toCloudEvent(publishedAt: MillisInstant, prefix: String): CloudEvent =
-    CloudEventBuilder()
-        .withId(messageId.toString())
-        .withTime(OffsetDateTime.ofInstant(publishedAt.toInstant(), ZoneOffset.UTC))
-        .withType(type())
-        .withSubject(subject())
-        .withSource(source(prefix))
-        .withDataContentType("application/json")
-        .withoutDataSchema()
-        .withData(dataBytes())
-        .build()
+fun Message.toWorkflowCloudEvent(publishedAt: MillisInstant, prefix: String): CloudEvent? =
+    with(CloudEventContext.WORKFLOW) {
+      null
+//      when (val type = type()) {
+//        null -> null
+//        else -> CloudEventBuilder()
+//            .withId(messageId.toString())
+//            .withTime(OffsetDateTime.ofInstant(publishedAt.toInstant(), ZoneOffset.UTC))
+//            .withType(type)
+//            .withSubject(subject())
+//            .withSource(source(prefix))
+//            .withDataContentType("application/json")
+//            .withoutDataSchema()
+//            .withData(dataBytes())
+//            .build()
+//      }
+    }
 
-
-fun Message.type() = when (this) {
-  is ServiceExecutorMessage -> type()
-  is ServiceEventMessage -> type()
-  else -> thisShouldNotHappen()
-}.type
-
-fun Message.subject(): String = when (this) {
-  is ServiceExecutorMessage -> taskId
-  is ServiceEventMessage -> taskId
-  else -> thisShouldNotHappen()
-}.toString()
-
-fun Message.source(prefix: String): URI = when (this) {
-  is ServiceExecutorMessage -> serviceName
-  is ServiceEventMessage -> serviceName
-  else -> thisShouldNotHappen()
-}.let {
-  URI.create(
-      "$prefix/services/${URLEncoder.encode(it.toString(), Charsets.UTF_8)}",
-  )
-}
-
-fun Message.dataBytes() = when (this) {
-  is ServiceExecutorMessage -> toData()
-  is ServiceEventMessage -> toData()
-  else -> thisShouldNotHappen()
-}.let {
-  Json.bytesify(it)
-}
 

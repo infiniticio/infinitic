@@ -37,6 +37,9 @@ import java.lang.reflect.Method
 @Serializable(with = MethodParametersSerializer::class)
 data class MethodParameters(val parameters: List<SerializedData> = listOf()) :
   Collection<SerializedData> by parameters {
+
+  fun toJson() = parameters.map { it.toJson() }
+
   companion object {
     fun from(method: Method, data: Array<*>) =
         MethodParameters(

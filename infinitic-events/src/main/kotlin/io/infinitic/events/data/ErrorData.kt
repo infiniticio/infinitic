@@ -44,9 +44,9 @@ data class ErrorData(
   val cause: ErrorData?
 )
 
-fun ExecutionError.toErrorEvent(): ErrorData = ErrorData(
+fun ExecutionError.toErrorData(): ErrorData = ErrorData(
     name = name,
     message = message ?: "",
     stackTrace = stackTraceToString,
-    cause = cause?.toErrorEvent(),
+    cause = cause?.toErrorData(),
 )

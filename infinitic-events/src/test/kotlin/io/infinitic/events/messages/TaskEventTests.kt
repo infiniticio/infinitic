@@ -22,33 +22,26 @@
  */
 package io.infinitic.events.messages
 
-import com.fasterxml.jackson.module.kotlin.jsonMapper
-import io.cloudevents.CloudEvent
-import io.cloudevents.jackson.JsonFormat
-import io.infinitic.common.data.MillisInstant
 import io.infinitic.common.data.methods.MethodParameters
 import io.infinitic.common.fixtures.TestFactory
 import io.infinitic.common.serDe.SerializedData
 import io.infinitic.common.tasks.data.TaskMeta
 import io.infinitic.common.tasks.data.TaskTag
 import io.infinitic.common.tasks.executors.messages.ExecuteTask
-import io.infinitic.events.data.toData
-import io.infinitic.events.toCloudEvent
 import io.kotest.core.spec.style.StringSpec
 import kotlinx.serialization.InternalSerializationApi
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
 import java.time.Instant
 
 fun main() {
-  val d = SerializedData.from(12L)
-  println(d)
+  val data = SerializedData.from("e")
+  println(data)
 
-  val json = String(d.bytes)
+  val json = data.toJson()
 
   println(json)
-
-  val mapper = jsonMapper {}
-  val tree = mapper.readTree(json)
-  println(tree)
+  println(Json.encodeToString(json))
 
 
   val executeTask = TestFactory.random<ExecuteTask>().copy(
@@ -63,17 +56,6 @@ fun main() {
       taskTags = setOf(TaskTag("tagA"), TaskTag("tagB")),
   )
 
-  println(executeTask.methodParameters)
-  println(executeTask.toData())
-
-  val event: CloudEvent = executeTask.toCloudEvent(
-      MillisInstant.now(),
-      "urn:pulsar:cluster-name/tenant/namespace",
-  )
-
-  println(event)
-
-  println(String(JsonFormat().serialize(event)))
 }
 
 @OptIn(InternalSerializationApi::class)

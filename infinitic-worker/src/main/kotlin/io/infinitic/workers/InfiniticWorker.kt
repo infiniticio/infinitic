@@ -46,7 +46,8 @@ import io.infinitic.common.transport.WorkflowEventsTopic
 import io.infinitic.common.transport.WorkflowTagTopic
 import io.infinitic.common.transport.WorkflowTaskEventsTopic
 import io.infinitic.common.transport.WorkflowTaskExecutorTopic
-import io.infinitic.events.toCloudEvent
+import io.infinitic.events.toServiceCloudEvent
+import io.infinitic.events.toWorkflowCloudEvent
 import io.infinitic.pulsar.PulsarInfiniticConsumerAsync
 import io.infinitic.tasks.Task
 import io.infinitic.tasks.executor.TaskEventHandler
@@ -133,9 +134,9 @@ class InfiniticWorker(
           val workflowTagEngine = WorkflowTagEngine(it.value.storage, producerAsync)
           consumerAsync.start(
               subscription = MainSubscription(WorkflowTagTopic),
+              entity = it.key.toString(),
               handler = workflowTagEngine::handle,
               beforeDlq = logMessageSentToDLQ,
-              entity = it.key.toString(),
               concurrency = it.value.concurrency,
           )
         }
@@ -147,9 +148,9 @@ class InfiniticWorker(
           val workflowCmdHandler = WorkflowCmdHandler(producerAsync)
           consumerAsync.start(
               subscription = MainSubscription(WorkflowCmdTopic),
+              entity = it.key.toString(),
               handler = workflowCmdHandler::handle,
               beforeDlq = logMessageSentToDLQ,
-              entity = it.key.toString(),
               concurrency = it.value.concurrency,
           )
         }
@@ -159,9 +160,9 @@ class InfiniticWorker(
           val workflowEngine = WorkflowEngine(it.value.storage, producerAsync)
           consumerAsync.start(
               subscription = MainSubscription(WorkflowEngineTopic),
+              entity = it.key.toString(),
               handler = workflowEngine::handle,
               beforeDlq = logMessageSentToDLQ,
-              entity = it.key.toString(),
               concurrency = it.value.concurrency,
           )
         }
@@ -170,11 +171,11 @@ class InfiniticWorker(
         launch {
           consumerAsync.start(
               subscription = MainSubscription(DelayedWorkflowEngineTopic),
+              entity = it.key.toString(),
               handler = { msg, _ ->
                 with(delayedWorkflowProducer) { msg.sendTo(WorkflowEngineTopic) }
               },
               beforeDlq = logMessageSentToDLQ,
-              entity = it.key.toString(),
               concurrency = it.value.concurrency,
           )
         }
@@ -184,9 +185,9 @@ class InfiniticWorker(
           val workflowEventHandler = WorkflowEventHandler(producerAsync)
           consumerAsync.start(
               subscription = MainSubscription(WorkflowEventsTopic),
+              entity = it.key.toString(),
               handler = workflowEventHandler::handle,
               beforeDlq = logMessageSentToDLQ,
-              entity = it.key.toString(),
               concurrency = it.value.concurrency,
           )
         }
@@ -198,6 +199,7 @@ class InfiniticWorker(
           val workflowTaskExecutor = TaskExecutor(workerRegistry, producerAsync, client)
           consumerAsync.start(
               subscription = MainSubscription(WorkflowTaskExecutorTopic),
+              entity = it.key.toString(),
               handler = workflowTaskExecutor::handle,
               beforeDlq = { message, cause ->
                 logMessageSentToDLQ(message, cause)
@@ -205,7 +207,6 @@ class InfiniticWorker(
                   workflowTaskExecutor.sendTaskFailed(it, cause, Task.meta, sendingDlqMessage)
                 }
               },
-              entity = it.key.toString(),
               concurrency = it.value.concurrency,
           )
         }
@@ -214,11 +215,11 @@ class InfiniticWorker(
         launch {
           consumerAsync.start(
               subscription = MainSubscription(DelayedWorkflowTaskExecutorTopic),
+              entity = it.key.toString(),
               handler = { msg, _ ->
                 with(delayedTaskProducer) { msg.sendTo(WorkflowTaskExecutorTopic) }
               },
               beforeDlq = logMessageSentToDLQ,
-              entity = it.key.toString(),
               concurrency = it.value.concurrency,
           )
         }
@@ -228,9 +229,9 @@ class InfiniticWorker(
           val workflowTaskEventHandler = TaskEventHandler(producerAsync)
           consumerAsync.start(
               subscription = MainSubscription(WorkflowTaskEventsTopic),
+              entity = it.key.toString(),
               handler = workflowTaskEventHandler::handle,
               beforeDlq = logMessageSentToDLQ,
-              entity = it.key.toString(),
               concurrency = it.value.concurrency,
           )
         }
@@ -242,9 +243,9 @@ class InfiniticWorker(
           val tagEngine = TaskTagEngine(it.value.storage, producerAsync)
           consumerAsync.start(
               subscription = MainSubscription(ServiceTagTopic),
+              entity = it.key.toString(),
               handler = tagEngine::handle,
               beforeDlq = logMessageSentToDLQ,
-              entity = it.key.toString(),
               concurrency = it.value.concurrency,
           )
         }
@@ -256,6 +257,7 @@ class InfiniticWorker(
           val taskExecutor = TaskExecutor(workerRegistry, producerAsync, client)
           consumerAsync.start(
               subscription = MainSubscription(ServiceExecutorTopic),
+              entity = it.key.toString(),
               handler = taskExecutor::handle,
               beforeDlq = { message, cause ->
                 logMessageSentToDLQ(message, cause)
@@ -263,7 +265,6 @@ class InfiniticWorker(
                   taskExecutor.sendTaskFailed(it, cause, Task.meta, sendingDlqMessage)
                 }
               },
-              entity = it.key.toString(),
               concurrency = it.value.concurrency,
           )
         }
@@ -272,9 +273,9 @@ class InfiniticWorker(
         launch {
           consumerAsync.start(
               subscription = MainSubscription(DelayedServiceExecutorTopic),
+              entity = it.key.toString(),
               handler = { msg, _ -> with(delayedTaskProducer) { msg.sendTo(ServiceExecutorTopic) } },
               beforeDlq = logMessageSentToDLQ,
-              entity = it.key.toString(),
               concurrency = it.value.concurrency,
           )
         }
@@ -284,49 +285,121 @@ class InfiniticWorker(
           val taskEventHandler = TaskEventHandler(producerAsync)
           consumerAsync.start(
               subscription = MainSubscription(ServiceEventsTopic),
+              entity = it.key.toString(),
               handler = taskEventHandler::handle,
               beforeDlq = logMessageSentToDLQ,
-              entity = it.key.toString(),
               concurrency = it.value.concurrency,
           )
         }
       }
 
-      workerRegistry.serviceListeners.forEach {
+      workerRegistry.serviceListeners.forEach { (serviceName, registeredEventListener) ->
         val eventHandler = { message: Message, publishedAt: MillisInstant ->
-          //println("MESSAGE=$message")
-          val event = message.toCloudEvent(publishedAt, source)
-          //println("EVENT=$event")
-          it.value.eventListener.onCloudEvent(event)
+          message.toServiceCloudEvent(publishedAt, source)?.let {
+            registeredEventListener.eventListener.onCloudEvent(it)
+          } ?: Unit
         }
         // TASK-EXECUTOR topic
         launch {
           consumerAsync.start(
               subscription = ListenerSubscription(ServiceExecutorTopic),
+              entity = serviceName.toString(),
               handler = eventHandler,
               beforeDlq = logMessageSentToDLQ,
-              entity = it.key.toString(),
-              concurrency = it.value.concurrency,
+              concurrency = registeredEventListener.concurrency,
           )
         }
         // TASK-EXECUTOR-DELAY topic
         launch {
           consumerAsync.start(
               subscription = ListenerSubscription(DelayedServiceExecutorTopic),
+              entity = serviceName.toString(),
               handler = eventHandler,
               beforeDlq = logMessageSentToDLQ,
-              entity = it.key.toString(),
-              concurrency = it.value.concurrency,
+              concurrency = registeredEventListener.concurrency,
           )
         }
         // TASK-EVENTS topic
         launch {
           consumerAsync.start(
               subscription = ListenerSubscription(ServiceEventsTopic),
+              entity = serviceName.toString(),
               handler = eventHandler,
               beforeDlq = logMessageSentToDLQ,
-              entity = it.key.toString(),
-              concurrency = it.value.concurrency,
+              concurrency = registeredEventListener.concurrency,
+          )
+        }
+      }
+
+      workerRegistry.workflowListeners.forEach { (workflowName, registeredEventListener) ->
+        val serviceEventHandler = { message: Message, publishedAt: MillisInstant ->
+          message.toServiceCloudEvent(publishedAt, source)?.let {
+            registeredEventListener.eventListener.onCloudEvent(it)
+          } ?: Unit
+        }
+        val workflowEventHandler = { message: Message, publishedAt: MillisInstant ->
+          message.toWorkflowCloudEvent(publishedAt, source)?.let {
+            registeredEventListener.eventListener.onCloudEvent(it)
+          } ?: Unit
+        }
+        // WORKFLOW-TASK-EXECUTOR topic
+        launch {
+          consumerAsync.start(
+              subscription = ListenerSubscription(WorkflowTaskExecutorTopic),
+              entity = workflowName.toString(),
+              handler = serviceEventHandler,
+              beforeDlq = logMessageSentToDLQ,
+              concurrency = registeredEventListener.concurrency,
+          )
+        }
+        // WORKFLOW-TASK-EXECUTOR-DELAY topic
+        launch {
+          consumerAsync.start(
+              subscription = ListenerSubscription(DelayedWorkflowTaskExecutorTopic),
+              entity = workflowName.toString(),
+              handler = serviceEventHandler,
+              beforeDlq = logMessageSentToDLQ,
+              concurrency = registeredEventListener.concurrency,
+          )
+        }
+        // WORKFLOW-TASK-EVENTS topic
+        launch {
+          consumerAsync.start(
+              subscription = ListenerSubscription(WorkflowTaskEventsTopic),
+              entity = workflowName.toString(),
+              handler = serviceEventHandler,
+              beforeDlq = logMessageSentToDLQ,
+              concurrency = registeredEventListener.concurrency,
+          )
+        }
+        // WORKFLOW-CMD topic
+        launch {
+          consumerAsync.start(
+              subscription = ListenerSubscription(WorkflowCmdTopic),
+              entity = workflowName.toString(),
+              handler = workflowEventHandler,
+              beforeDlq = logMessageSentToDLQ,
+              concurrency = registeredEventListener.concurrency,
+          )
+        }
+        // WORKFLOW-ENGINE topic
+        launch {
+          consumerAsync.start(
+              subscription = ListenerSubscription(WorkflowEngineTopic),
+              entity = workflowName.toString(),
+              handler = workflowEventHandler,
+              beforeDlq = logMessageSentToDLQ,
+              concurrency = registeredEventListener.concurrency,
+          )
+        }
+        // WORKFLOW-EVENTS topic
+        launch {
+          consumerAsync.start(
+              subscription = ListenerSubscription(WorkflowEventsTopic),
+              entity = workflowName.toString(),
+              handler = workflowEventHandler,
+              beforeDlq = logMessageSentToDLQ,
+              concurrency = registeredEventListener.concurrency,
           )
         }
       }

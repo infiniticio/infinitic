@@ -20,7 +20,17 @@
  *
  * Licensor: infinitic.io
  */
+@file:Suppress("unused")
 
-package io.infinitic.events.data
+package io.infinitic.workers.samples
 
-interface MessageData
+import io.cloudevents.CloudEvent
+import io.infinitic.common.events.CloudEventListener
+
+
+internal class ServiceEventListenerImpl : CloudEventListener {
+  override fun onCloudEvent(event: CloudEvent) {
+    // do nothing
+  }
+}
+

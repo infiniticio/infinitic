@@ -139,7 +139,7 @@ private val producerAsync = mockk<InfiniticProducerAsync> {
 }
 
 private val consumerAsync = mockk<InfiniticConsumerAsync> {
-  coEvery { start(any<Subscription<*>>(), any(), any(), "$clientNameTest", any()) } just Runs
+  coEvery { start(any<Subscription<*>>(), "$clientNameTest", any(), any(), any()) } just Runs
 }
 
 private val client = InfiniticClient(consumerAsync, producerAsync)
@@ -191,9 +191,9 @@ internal class InfiniticClientTests : StringSpec(
         coVerify(exactly = 0) {
           consumerAsync.start(
               MainSubscription(ClientTopic),
-              any(),
-              any(),
               "$clientNameTest",
+              any(),
+              any(),
               1,
           )
         }
@@ -413,9 +413,9 @@ internal class InfiniticClientTests : StringSpec(
         coVerify {
           consumerAsync.start(
               MainSubscription(ClientTopic),
-              any(),
-              any(),
               "$clientNameTest",
+              any(),
+              any(),
               1,
           )
         }
@@ -427,9 +427,9 @@ internal class InfiniticClientTests : StringSpec(
         coVerify(exactly = 1) {
           consumerAsync.start(
               MainSubscription(ClientTopic),
-              any(),
-              any(),
               "$clientNameTest",
+              any(),
+              any(),
               1,
           )
         }

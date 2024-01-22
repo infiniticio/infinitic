@@ -45,7 +45,7 @@ interface InfiniticRegisterInterface : AutoCloseable {
      */
     const val DEFAULT_CONCURRENCY = 1
     val DEFAULT_EVENT_LISTENER = null
-    val DEFAULT_TASK_TAG = TaskTag().apply { isDefault = true }
+    val DEFAULT_SERVICE_TAG = TaskTag().apply { isDefault = true }
     val DEFAULT_WORKFLOW_ENGINE = WorkflowEngine().apply { isDefault = true }
     val DEFAULT_WORKFLOW_TAG = WorkflowTag().apply { isDefault = true }
   }
@@ -59,7 +59,7 @@ interface InfiniticRegisterInterface : AutoCloseable {
     concurrency: Int = DEFAULT_CONCURRENCY,
     timeout: WithTimeout? = null,
     retry: WithRetry? = null,
-    tagEngine: TaskTag? = DEFAULT_TASK_TAG,
+    tagEngine: TaskTag? = DEFAULT_SERVICE_TAG,
     eventListener: EventListener? = DEFAULT_EVENT_LISTENER
   )
 
@@ -74,7 +74,8 @@ interface InfiniticRegisterInterface : AutoCloseable {
     retry: WithRetry? = null,
     checkMode: WorkflowCheckMode? = null,
     engine: WorkflowEngine? = DEFAULT_WORKFLOW_ENGINE,
-    tagEngine: WorkflowTag? = DEFAULT_WORKFLOW_TAG
+    tagEngine: WorkflowTag? = DEFAULT_WORKFLOW_TAG,
+    eventListener: EventListener? = DEFAULT_EVENT_LISTENER
   )
 
   @Suppress("OVERLOADS_INTERFACE")
@@ -87,7 +88,8 @@ interface InfiniticRegisterInterface : AutoCloseable {
     retry: WithRetry? = null,
     checkMode: WorkflowCheckMode? = null,
     engine: WorkflowEngine? = DEFAULT_WORKFLOW_ENGINE,
-    tagEngine: WorkflowTag? = DEFAULT_WORKFLOW_TAG
+    tagEngine: WorkflowTag? = DEFAULT_WORKFLOW_TAG,
+    eventListener: EventListener? = DEFAULT_EVENT_LISTENER
   ) = registerWorkflow(
       name,
       listOf(`class`),
@@ -97,5 +99,6 @@ interface InfiniticRegisterInterface : AutoCloseable {
       checkMode,
       engine,
       tagEngine,
+      eventListener,
   )
 }

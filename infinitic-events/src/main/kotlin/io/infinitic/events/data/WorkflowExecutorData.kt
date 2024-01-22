@@ -23,4 +23,18 @@
 
 package io.infinitic.events.data
 
-interface MessageData
+import io.infinitic.events.data.services.RequesterData
+
+sealed interface WorkflowExecutorData : MessageData
+
+data class WorkflowTaskRequestedData(
+  val retrySequence: Int,
+  val retryIndex: Int,
+  val name: String,
+  val args: List<String>,
+  val meta: Map<String, ByteArray>,
+  val tags: Set<String>,
+  val requester: RequesterData,
+  val infiniticVersion: String
+) : WorkflowExecutorData
+

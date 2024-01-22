@@ -37,11 +37,14 @@ data class WorkflowDefault(
 ) {
   init {
     concurrency?.let {
-      require(it >= 0) { "default workflow ${::concurrency.name} must be positive" }
+      require(it >= 0) { error("'${::concurrency.name}' must be positive") }
     }
 
     timeoutInSeconds?.let {
-      require(it > 0) { "default workflow ${::timeoutInSeconds.name} must be strictly positive" }
+      require(it > 0) { error("'${::timeoutInSeconds.name}' must be strictly positive") }
     }
   }
+
+  private fun error(msg: String) = "default workflow: $msg"
+
 }

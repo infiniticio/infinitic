@@ -39,7 +39,7 @@ data class MillisInstant(val long: Long = 0) : Comparable<Long> {
 
   override fun toString() = "$long"
 
-  fun toInstant() = Instant.ofEpochSecond(long)
+  fun toInstant(): Instant = Instant.ofEpochMilli(long)
 
   override operator fun compareTo(other: Long): Int = this.long.compareTo(other)
 

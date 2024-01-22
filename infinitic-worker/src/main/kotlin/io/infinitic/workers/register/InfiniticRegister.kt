@@ -75,6 +75,13 @@ class InfiniticRegister(
           w.workflowEngine?.let {
             registerWorkflowEngine(WorkflowName(w.name), it.concurrency!!, it.storage, it.cache)
           }
+          w.eventListener?.let {
+            registerWorkflowEventListener(
+                WorkflowName(w.name),
+                w.eventListener!!.instance,
+                w.eventListener!!.concurrency!!,
+            )
+          }
         }
 
         false ->
@@ -87,6 +94,7 @@ class InfiniticRegister(
               w.checkMode,
               w.workflowEngine,
               w.tagEngine,
+              w.eventListener,
           )
       }
     }
@@ -100,10 +108,10 @@ class InfiniticRegister(
             registerTaskTag(ServiceName(s.name), it.concurrency!!, it.storage, it.cache)
           }
           s.eventListener?.let {
-            registerEventListener(
+            registerServiceEventListener(
                 ServiceName(s.name),
-                it.instance,
-                it.concurrency!!,
+                s.eventListener!!.instance,
+                s.eventListener!!.concurrency!!,
             )
           }
         }
@@ -138,6 +146,7 @@ class InfiniticRegister(
     }
 
     val serviceName = ServiceName(name)
+
     registry.serviceExecutors[serviceName] =
         RegisteredServiceExecutor(concurrency, factory, timeout, retry)
 
@@ -159,10 +168,10 @@ class InfiniticRegister(
       eventListener == null -> Unit
       // explicit eventListener => register it
       else ->
-        registerEventListener(
+        registerServiceEventListener(
             serviceName,
             eventListener.instance,
-            eventListener.concurrency!!,
+            eventListener.concurrency ?: concurrency,
         )
     }
   }
@@ -176,7 +185,8 @@ class InfiniticRegister(
     retry: WithRetry?,
     checkMode: WorkflowCheckMode?,
     engine: WorkflowEngine?,
-    tagEngine: WorkflowTag?
+    tagEngine: WorkflowTag?,
+    eventListener: EventListener?
   ) {
     logger.info {
       "* workflow executor".padEnd(25) + ": (concurrency: $concurrency, class: ${classes.joinToString { it.name }})"
@@ -216,6 +226,16 @@ class InfiniticRegister(
       // explicit engine => register it
       else -> registerWorkflowTag(
           workflowName, tagEngine.concurrency!!, tagEngine.storage, tagEngine.cache,
+      )
+    }
+
+    // workflow event listener
+    when {
+      eventListener == null -> Unit
+      else -> registerWorkflowEventListener(
+          workflowName,
+          eventListener.instance,
+          eventListener.concurrency ?: concurrency,
       )
     }
   }
@@ -278,16 +298,27 @@ class InfiniticRegister(
     )
   }
 
-  private fun registerEventListener(
+  private fun registerServiceEventListener(
     serviceName: ServiceName,
     eventListener: CloudEventListener,
     concurrency: Int,
   ) {
-    logger.info {
-      "* event listener ".padEnd(25) + ": (concurrency: $concurrency)"
-    }
+    logger.info { "* event listener ".padEnd(25) + ": (concurrency: $concurrency)" }
 
     registry.serviceListeners[serviceName] = RegisteredEventListener(
+        eventListener,
+        concurrency,
+    )
+  }
+
+  private fun registerWorkflowEventListener(
+    workflowName: WorkflowName,
+    eventListener: CloudEventListener,
+    concurrency: Int,
+  ) {
+    logger.info { "* event listener ".padEnd(25) + ": (concurrency: $concurrency)" }
+
+    registry.workflowListeners[workflowName] = RegisteredEventListener(
         eventListener,
         concurrency,
     )

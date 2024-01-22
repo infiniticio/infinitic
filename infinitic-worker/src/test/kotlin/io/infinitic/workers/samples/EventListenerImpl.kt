@@ -20,40 +20,17 @@
  *
  * Licensor: infinitic.io
  */
+@file:Suppress("unused")
 
-package io.infinitic.events
+package io.infinitic.workers.samples
 
 import io.cloudevents.CloudEvent
+import io.infinitic.common.events.CloudEventListener
 
-class InfiniticEventImpl(ce: CloudEvent) : InfiniticEvent, CloudEvent by ce {
-  override val isTaskEvent: Boolean
-    get() = TODO("Not yet implemented")
-  override val isWorkflowEvent: Boolean
-    get() = TODO("Not yet implemented")
-  override val serviceName: String?
-    get() = TODO("Not yet implemented")
-  override val taskId: String?
-    get() = TODO("Not yet implemented")
-  override val workflowName: String?
-    get() = TODO("Not yet implemented")
-  override val workflowId: String?
-    get() = TODO("Not yet implemented")
 
-  companion object {
-    internal const val SCHEMAS_FOLDER = "schemas"
-
-    internal const val SCHEMA_PREFIX = "https://raw.githubusercontent.com/" +
-        "infiniticio/infinitic/main/infinitic-logs/src/main/resources/$SCHEMAS_FOLDER/"
-
-    internal const val SCHEMA_EXTENSION = ".avsc"
+internal class EventListenerImpl : CloudEventListener {
+  override fun onCloudEvent(event: CloudEvent) {
+    // do nothing
   }
 }
 
-interface InfiniticEvent {
-  val isTaskEvent: Boolean
-  val isWorkflowEvent: Boolean
-  val serviceName: String?
-  val taskId: String?
-  val workflowName: String?
-  val workflowId: String?
-}

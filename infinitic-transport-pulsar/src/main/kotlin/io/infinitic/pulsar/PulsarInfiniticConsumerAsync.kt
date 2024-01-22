@@ -95,9 +95,9 @@ class PulsarInfiniticConsumerAsync(
 
   override suspend fun <S : Message> start(
     subscription: Subscription<S>,
+    entity: String,
     handler: suspend (S, MillisInstant) -> Unit,
     beforeDlq: suspend (S?, Exception) -> Unit,
-    entity: String,
     concurrency: Int,
   ) {
     when (subscription.topic) {

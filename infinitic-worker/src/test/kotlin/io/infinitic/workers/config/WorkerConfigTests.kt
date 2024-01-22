@@ -23,6 +23,7 @@
 package io.infinitic.workers.config
 
 import com.sksamuel.hoplite.ConfigException
+import io.infinitic.common.events.CloudEventListener
 import io.infinitic.workers.register.InfiniticRegisterInterface.Companion.DEFAULT_CONCURRENCY
 import io.infinitic.workers.register.config.ServiceDefault
 import io.infinitic.workers.register.config.WorkflowDefault
@@ -51,7 +52,7 @@ internal class WorkerConfigTests :
             WorkerConfig.fromResource("/config/services/invocationTargetException.yml")
           }
           e.message!! shouldContain
-              "Error during instantiation of class 'io.infinitic.workers.samples.ServiceWithInvocationTargetException'"
+              "Error during class 'io.infinitic.workers.samples.ServiceWithInvocationTargetException' instantiation"
         }
 
         "workflow with InvocationTargetException should throw cause" {
@@ -59,7 +60,7 @@ internal class WorkerConfigTests :
             WorkerConfig.fromResource("/config/workflows/invocationTargetException.yml")
           }
           e.message!! shouldContain
-              "Error during instantiation of class 'io.infinitic.workers.samples.WorkflowWithInvocationTargetException'"
+              "Error during class 'io.infinitic.workers.samples.WorkflowWithInvocationTargetException' instantiation"
         }
 
         "task with ExceptionInInitializerError should throw cause" {
@@ -80,14 +81,36 @@ internal class WorkerConfigTests :
           val e = shouldThrow<ConfigException> {
             WorkerConfig.fromResource("/config/services/unknown.yml")
           }
-          e.message!! shouldContain "Class 'io.infinitic.workers.samples.UnknownService' unknown"
+          e.message!! shouldContain "Class 'io.infinitic.workers.samples.UnknownService' not found"
+        }
+
+        "Service Event Listener Unknown" {
+          val e = shouldThrow<ConfigException> {
+            WorkerConfig.fromResource("/config/services/unknownListener.yml")
+          }
+          e.message!! shouldContain "Class 'io.infinitic.workers.samples.UnknownListener' not found"
+        }
+
+        "not a Service Event Listener" {
+          val e = shouldThrow<ConfigException> {
+            WorkerConfig.fromResource("/config/services/incompatibleListener.yml")
+          }
+          e.message!! shouldContain
+              "Class 'io.infinitic.workers.samples.ServiceAImpl' must implement '${CloudEventListener::class.java.name}'"
+        }
+
+        "Service Event Listener should inherit concurrency from Service" {
+          val config =
+              WorkerConfig.fromResource("/config/services/instanceWithListener.yml")
+
+          config.services
         }
 
         "workflow Unknown" {
           val e = shouldThrow<ConfigException> {
             WorkerConfig.fromResource("/config/workflows/unknown.yml")
           }
-          e.message!! shouldContain "Class 'io.infinitic.workers.samples.UnknownWorkflow' unknown"
+          e.message!! shouldContain "Class 'io.infinitic.workers.samples.UnknownWorkflow' not found"
         }
 
         "not a workflow" {

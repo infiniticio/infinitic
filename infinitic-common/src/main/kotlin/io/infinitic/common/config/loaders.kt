@@ -63,7 +63,7 @@ inline fun <reified T : Any> loadConfigFromFile(vararg files: String): T {
 /**
  * Loads a configuration of type [T]  from a YAML string.
  *
- * @param yaml The YAML string to load the configuration from.
+ * @param yamls The YAML strings to load the configuration from.
  * @return The loaded configuration object of type T.
  */
 inline fun <reified T : Any> loadConfigFromYaml(vararg yamls: String): T {

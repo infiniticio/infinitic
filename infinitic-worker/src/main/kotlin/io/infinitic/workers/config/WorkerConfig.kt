@@ -26,6 +26,7 @@ import io.infinitic.cache.config.Cache
 import io.infinitic.common.config.loadConfigFromFile
 import io.infinitic.common.config.loadConfigFromResource
 import io.infinitic.common.config.loadConfigFromYaml
+import io.infinitic.events.config.EventListener
 import io.infinitic.pulsar.config.Pulsar
 import io.infinitic.storage.config.Storage
 import io.infinitic.transport.config.Transport
@@ -64,7 +65,10 @@ data class WorkerConfig @JvmOverloads constructor(
   override val serviceDefault: ServiceDefault = ServiceDefault(),
 
   /** Default workflow configuration */
-  override val workflowDefault: WorkflowDefault = WorkflowDefault()
+  override val workflowDefault: WorkflowDefault = WorkflowDefault(),
+
+  /** Default event listener configuration */
+  override val eventListener: EventListener? = null
 
 ) : WorkerConfigInterface {
 
@@ -74,29 +78,42 @@ data class WorkerConfig @JvmOverloads constructor(
 
     // apply default, if not set
     services.map { s ->
-      s.concurrency =
-          s.concurrency ?: serviceDefault.concurrency ?: DEFAULT_CONCURRENCY
-      s.retry =
-          (s.retry ?: serviceDefault.retry)?.also { it.check() }
-      s.timeoutInSeconds =
-          s.timeoutInSeconds ?: serviceDefault.timeoutInSeconds
+      // if service.concurrency, is not defined
+      // then use serviceDefault.concurrency
+      // then DEFAULT_CONCURRENCY
+      s.concurrency = s.concurrency ?: serviceDefault.concurrency ?: DEFAULT_CONCURRENCY
+      // if service.retry, is not defined
+      // then use serviceDefault.retry
+      s.retry = (s.retry ?: serviceDefault.retry)?.also { it.check() }
+      // if service.timeoutInSeconds, is not defined
+      // then use serviceDefault.timeoutInSeconds
+      s.timeoutInSeconds = s.timeoutInSeconds ?: serviceDefault.timeoutInSeconds
 
-      // tagEngine default is superseded by service default if any
-      if (s.tagEngine != null && s.tagEngine!!.isDefault) {
-        serviceDefault.tagEngine?.let {
-          s.tagEngine = it.apply {
-            concurrency = concurrency ?: s.concurrency
-          }
-        }
+      s.tagEngine?.apply {
+        // if storage is not defined,
+        // then use default tag engine storage
+        // else use default storage
+        storage = storage ?: serviceDefault.tagEngine?.storage ?: storage
+        // if cache is not defined,
+        // then use default tag engine cache
+        // else use default cache
+        cache = cache ?: serviceDefault.tagEngine?.cache ?: cache
+        // if concurrency is not defined,
+        // then use default tag engine concurrency
+        // else use service concurrency
+        concurrency = concurrency ?: serviceDefault.tagEngine?.concurrency ?: s.concurrency
       }
 
-      s.tagEngine?.let {
-        it.storage =
-            it.storage ?: serviceDefault.tagEngine?.storage ?: storage
-        it.cache =
-            it.cache ?: serviceDefault.tagEngine?.cache ?: cache
-        it.concurrency =
-            it.concurrency ?: serviceDefault.tagEngine?.concurrency ?: DEFAULT_CONCURRENCY
+      s.eventListener = (s.eventListener ?: eventListener)?.apply {
+        // if concurrency is not defined,
+        // then use default event listener concurrency
+        // else use service concurrency
+        concurrency = concurrency ?: eventListener?.concurrency ?: s.concurrency
+        // if class is not defined
+        // then use default event listener class
+        `class` = `class` ?: eventListener?.`class`
+        // class must be defined eventually
+        require(`class` != null) { "No `class` is defined for the event listener of service '${s.name}'" }
       }
     }
 
@@ -105,49 +122,62 @@ data class WorkerConfig @JvmOverloads constructor(
 
     // apply default, if not set
     workflows.map { w ->
-      w.concurrency =
-          w.concurrency ?: workflowDefault.concurrency ?: DEFAULT_CONCURRENCY
-      w.retry =
-          (w.retry ?: workflowDefault.retry)?.also { it.check() }
-      w.timeoutInSeconds =
-          w.timeoutInSeconds ?: workflowDefault.timeoutInSeconds
-      w.checkMode =
-          w.checkMode ?: workflowDefault.checkMode
+      // if workflow.concurrency, is not defined
+      // then use workflowDefault.concurrency
+      // then DEFAULT_CONCURRENCY
+      w.concurrency = w.concurrency ?: workflowDefault.concurrency ?: DEFAULT_CONCURRENCY
+      // if workflow.retry, is not defined
+      // then use workflowDefault.retry
+      w.retry = (w.retry ?: workflowDefault.retry)?.also { it.check() }
+      // if workflow.timeoutInSeconds, is not defined
+      // then use workflowDefault.timeoutInSeconds
+      w.timeoutInSeconds = w.timeoutInSeconds ?: workflowDefault.timeoutInSeconds
+      // if workflow.checkMode, is not defined
+      // then use workflowDefault.checkMode
+      w.checkMode = w.checkMode ?: workflowDefault.checkMode
 
-      // tagEngine default is superseded by workflow default if any
-      if (w.tagEngine != null && w.tagEngine!!.isDefault) {
-        workflowDefault.tagEngine?.let {
-          w.tagEngine = it.apply {
-            concurrency = concurrency ?: w.concurrency
-          }
-        }
+      w.tagEngine?.apply {
+        // if storage is not defined,
+        // then use default workflow tag engine storage
+        // else use default storage
+        storage = storage ?: workflowDefault.tagEngine?.storage ?: storage
+        // if cache is not defined,
+        // then use default workflow tag engine cache
+        // else use default cache
+        cache = cache ?: workflowDefault.tagEngine?.cache ?: cache
+        // if concurrency is not defined,
+        // then use default workflow tag engine concurrency
+        // else use workflow concurrency
+        concurrency = concurrency ?: workflowDefault.tagEngine?.concurrency ?: w.concurrency
       }
 
-      w.tagEngine?.let {
-        it.storage =
-            it.storage ?: workflowDefault.tagEngine?.storage ?: storage
-        it.cache =
-            it.cache ?: workflowDefault.tagEngine?.cache ?: cache
-        it.concurrency =
-            it.concurrency ?: workflowDefault.tagEngine?.concurrency ?: DEFAULT_CONCURRENCY
+      w.workflowEngine?.apply {
+        // if storage is not defined,
+        // then use default workflow workflowEngine engine storage
+        // else use default storage
+        storage = storage ?: workflowDefault.workflowEngine?.storage ?: storage
+        // if cache is not defined,
+        // then use default workflow workflowEngine engine cache
+        // else use default cache
+        cache = cache ?: workflowDefault.workflowEngine?.cache ?: cache
+        // if concurrency is not defined,
+        // then use default workflow workflowEngine engine concurrency
+        // else use workflow concurrency
+        concurrency = concurrency ?: workflowDefault.workflowEngine?.concurrency ?: w.concurrency
       }
 
-      // workflowEngine default is superseded by workflow default if any
-      if (w.workflowEngine != null && w.workflowEngine!!.isDefault) {
-        workflowDefault.workflowEngine?.let {
-          w.workflowEngine = it.apply {
-            concurrency?.let { concurrency = w.concurrency }
-          }
-        }
-      }
-
-      w.workflowEngine?.let {
-        it.storage =
-            it.storage ?: workflowDefault.workflowEngine?.storage ?: storage
-        it.cache =
-            it.cache ?: workflowDefault.workflowEngine?.cache ?: cache
-        it.concurrency =
-            it.concurrency ?: workflowDefault.workflowEngine?.concurrency ?: DEFAULT_CONCURRENCY
+      // contrary to tagEngine/workflowEngine,
+      // you can not set null for the eventListener if a default event listener is provided
+      w.eventListener = (w.eventListener ?: eventListener)?.apply {
+        // if concurrency is not defined,
+        // then use default event listener concurrency
+        // else use service concurrency
+        concurrency = concurrency ?: eventListener?.concurrency ?: w.concurrency
+        // if class is not defined
+        // then use default event listener class
+        `class` = `class` ?: eventListener?.`class`
+        // class must be defined eventually
+        require(`class` != null) { "No `class` is defined for the event listener of workflow '${w.name}'" }
       }
     }
   }

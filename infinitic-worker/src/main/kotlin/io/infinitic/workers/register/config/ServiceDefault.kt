@@ -33,11 +33,13 @@ data class ServiceDefault(
 ) {
   init {
     concurrency?.let {
-      require(it >= 0) { "default service ${::concurrency.name} must be positive" }
+      require(it >= 0) { error("'${::concurrency.name}' must be positive") }
     }
 
     timeoutInSeconds?.let {
-      require(it > 0) { "default service ${::timeoutInSeconds.name} must be strictly positive" }
+      require(it > 0) { error("'${::timeoutInSeconds.name}' must be strictly positive") }
     }
   }
+
+  private fun error(msg: String) = "default service: $msg"
 }

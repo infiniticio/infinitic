@@ -757,10 +757,10 @@ internal class ClientDispatcher(
         runBlocking(clientScope.coroutineContext) {
           consumerAsync.start(
               subscription = MainSubscription(ClientTopic),
+              entity = emitterName.toString(),
               handler = ::handle,
               beforeDlq = logMessageSentToDLQ,
               concurrency = 1,
-              entity = emitterName.toString(),
           )
           isClientConsumerInitialized = true
         }

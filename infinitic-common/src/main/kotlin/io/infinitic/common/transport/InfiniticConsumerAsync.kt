@@ -34,9 +34,9 @@ interface InfiniticConsumerAsync : AutoCloseable {
 
   suspend fun <S : Message> start(
     subscription: Subscription<S>,
-    handler: suspend (S, MillisInstant) -> Unit,
-    beforeDlq: (suspend (S?, Exception) -> Unit),
     entity: String,
+    handler: suspend (S, MillisInstant) -> Unit,
+    beforeDlq: suspend (S?, Exception) -> Unit,
     concurrency: Int
   )
 }
