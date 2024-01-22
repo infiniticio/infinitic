@@ -24,6 +24,7 @@ package io.infinitic.dashboard.config
 
 import io.infinitic.common.config.loadConfigFromFile
 import io.infinitic.common.config.loadConfigFromResource
+import io.infinitic.common.config.loadConfigFromYaml
 import io.infinitic.pulsar.config.Pulsar
 
 data class DashboardConfig(
@@ -46,11 +47,16 @@ data class DashboardConfig(
   companion object {
     /** Create DashboardConfig from file in file system */
     @JvmStatic
-    fun fromFile(vararg files: String): DashboardConfig = loadConfigFromFile(files.toList())
+    fun fromFile(vararg files: String): DashboardConfig = loadConfigFromFile(*files)
 
     /** Create DashboardConfig from file in resources directory */
     @JvmStatic
     fun fromResource(vararg resources: String): DashboardConfig =
-        loadConfigFromResource(resources.toList())
+        loadConfigFromResource(*resources)
+
+    /** Create DashboardConfig from yaml strings */
+    @JvmStatic
+    fun fromYaml(vararg yamls: String): DashboardConfig =
+        loadConfigFromYaml(*yamls)
   }
 }

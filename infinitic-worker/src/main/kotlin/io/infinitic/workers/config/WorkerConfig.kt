@@ -25,6 +25,7 @@ package io.infinitic.workers.config
 import io.infinitic.cache.config.Cache
 import io.infinitic.common.config.loadConfigFromFile
 import io.infinitic.common.config.loadConfigFromResource
+import io.infinitic.common.config.loadConfigFromYaml
 import io.infinitic.pulsar.config.Pulsar
 import io.infinitic.storage.config.Storage
 import io.infinitic.transport.config.Transport
@@ -152,14 +153,19 @@ data class WorkerConfig @JvmOverloads constructor(
   }
 
   companion object {
-    /** Create ClientConfig from file in file system */
+    /** Create ClientConfig from files in file system */
     @JvmStatic
     fun fromFile(vararg files: String): WorkerConfig =
-        loadConfigFromFile(files.toList())
+        loadConfigFromFile(*files)
 
-    /** Create ClientConfig from file in resources directory */
+    /** Create ClientConfig from files in resources directory */
     @JvmStatic
     fun fromResource(vararg resources: String): WorkerConfig =
-        loadConfigFromResource(resources.toList())
+        loadConfigFromResource(*resources)
+
+    /** Create ClientConfig from yaml strings */
+    @JvmStatic
+    fun fromYaml(vararg yamls: String): WorkerConfig =
+        loadConfigFromYaml(*yamls)
   }
 }

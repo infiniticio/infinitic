@@ -23,8 +23,6 @@
 package io.infinitic.transport.config
 
 import io.infinitic.autoclose.addAutoCloseResource
-import io.infinitic.common.config.loadConfigFromFile
-import io.infinitic.common.config.loadConfigFromResource
 import io.infinitic.common.transport.InfiniticConsumerAsync
 import io.infinitic.common.transport.InfiniticProducerAsync
 import io.infinitic.inMemory.InMemoryChannels
@@ -105,17 +103,5 @@ data class TransportConfig(
 
   /** Infinitic Producer */
   val producerAsync: InfiniticProducerAsync = cp.second
-
-  companion object {
-    /** Create TransportConfig from file in file system */
-    @JvmStatic
-    fun fromFile(vararg files: String): TransportConfig =
-        loadConfigFromFile(files.toList())
-
-    /** Create TransportConfig from file in resources */
-    @JvmStatic
-    fun fromResource(vararg resources: String): TransportConfig =
-        loadConfigFromResource(resources.toList())
-  }
 }
 

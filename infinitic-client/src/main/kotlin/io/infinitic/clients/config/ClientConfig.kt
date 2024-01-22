@@ -24,6 +24,7 @@ package io.infinitic.clients.config
 
 import io.infinitic.common.config.loadConfigFromFile
 import io.infinitic.common.config.loadConfigFromResource
+import io.infinitic.common.config.loadConfigFromYaml
 import io.infinitic.pulsar.config.Pulsar
 import io.infinitic.transport.config.Transport
 
@@ -45,11 +46,16 @@ data class ClientConfig @JvmOverloads constructor(
     /** Create ClientConfig from file in file system */
     @JvmStatic
     fun fromFile(vararg files: String): ClientConfig =
-        loadConfigFromFile<ClientConfig>(files.toList())
+        loadConfigFromFile<ClientConfig>(*files)
 
     /** Create ClientConfig from file in resources directory */
     @JvmStatic
     fun fromResource(vararg resources: String): ClientConfig =
-        loadConfigFromResource<ClientConfig>(resources.toList())
+        loadConfigFromResource<ClientConfig>(*resources)
+
+    /** Create ClientConfig from yaml strings */
+    @JvmStatic
+    fun fromYaml(vararg yamls: String): ClientConfig =
+        loadConfigFromYaml<ClientConfig>(*yamls)
   }
 }
