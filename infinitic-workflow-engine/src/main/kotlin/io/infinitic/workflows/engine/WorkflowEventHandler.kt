@@ -29,15 +29,15 @@ import io.infinitic.common.transport.ClientTopic
 import io.infinitic.common.transport.InfiniticProducerAsync
 import io.infinitic.common.transport.LoggedInfiniticProducer
 import io.infinitic.common.transport.WorkflowEngineTopic
-import io.infinitic.common.workflows.engine.events.WorkflowCanceledEvent
-import io.infinitic.common.workflows.engine.events.WorkflowCompletedEvent
-import io.infinitic.common.workflows.engine.events.WorkflowEventMessage
-import io.infinitic.common.workflows.engine.events.WorkflowMethodCanceledEvent
-import io.infinitic.common.workflows.engine.events.WorkflowMethodCompletedEvent
-import io.infinitic.common.workflows.engine.events.WorkflowMethodFailedEvent
-import io.infinitic.common.workflows.engine.events.WorkflowMethodStartedEvent
-import io.infinitic.common.workflows.engine.events.WorkflowMethodTimedOutEvent
-import io.infinitic.common.workflows.engine.events.WorkflowStartedEvent
+import io.infinitic.common.workflows.engine.messages.WorkflowCanceledEvent
+import io.infinitic.common.workflows.engine.messages.WorkflowCompletedEvent
+import io.infinitic.common.workflows.engine.messages.WorkflowEventMessage
+import io.infinitic.common.workflows.engine.messages.WorkflowMethodCanceledEvent
+import io.infinitic.common.workflows.engine.messages.WorkflowMethodCompletedEvent
+import io.infinitic.common.workflows.engine.messages.WorkflowMethodFailedEvent
+import io.infinitic.common.workflows.engine.messages.WorkflowMethodStartedEvent
+import io.infinitic.common.workflows.engine.messages.WorkflowMethodTimedOutEvent
+import io.infinitic.common.workflows.engine.messages.WorkflowStartedEvent
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 

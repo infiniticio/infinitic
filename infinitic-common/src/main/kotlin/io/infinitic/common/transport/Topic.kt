@@ -27,8 +27,9 @@ import io.infinitic.common.messages.Message
 import io.infinitic.common.tasks.events.messages.ServiceEventMessage
 import io.infinitic.common.tasks.executors.messages.ServiceExecutorMessage
 import io.infinitic.common.tasks.tags.messages.ServiceTagMessage
-import io.infinitic.common.workflows.engine.events.WorkflowEventMessage
+import io.infinitic.common.workflows.engine.messages.WorkflowCmdMessage
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
+import io.infinitic.common.workflows.engine.messages.WorkflowEventMessage
 import io.infinitic.common.workflows.tags.messages.WorkflowTagMessage
 
 
@@ -84,7 +85,7 @@ sealed class WorkflowTopic<S : Message> : Topic<S>() {
 
 data object WorkflowTagTopic : WorkflowTopic<WorkflowTagMessage>()
 
-data object WorkflowCmdTopic : WorkflowTopic<WorkflowEngineMessage>()
+data object WorkflowCmdTopic : WorkflowTopic<WorkflowCmdMessage>()
 
 data object WorkflowEngineTopic : WorkflowTopic<WorkflowEngineMessage>()
 

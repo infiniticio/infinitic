@@ -32,7 +32,7 @@ import org.apache.avro.Schema
 @Serializable
 @AvroNamespace("io.infinitic.tasks.tag")
 @AvroName("TaskTagEnvelope")
-data class TaskTagEnvelope(
+data class ServiceTagEnvelope(
   private val name: String,
   @AvroNamespace("io.infinitic.tasks.tag") private val type: TaskTagMessageType,
   private val addTagToTask: AddTagToTask? = null,
@@ -57,31 +57,31 @@ data class TaskTagEnvelope(
 
   companion object {
     fun from(msg: ServiceTagMessage) = when (msg) {
-      is AddTagToTask -> TaskTagEnvelope(
+      is AddTagToTask -> ServiceTagEnvelope(
           name = "${msg.serviceName}",
           type = TaskTagMessageType.ADD_TAG_TO_TASK,
           addTagToTask = msg,
       )
 
-      is RemoveTagFromTask -> TaskTagEnvelope(
+      is RemoveTagFromTask -> ServiceTagEnvelope(
           name = "${msg.serviceName}",
           type = TaskTagMessageType.REMOVE_TAG_FROM_TASK,
           removeTagFromTask = msg,
       )
 
-      is CancelTaskByTag -> TaskTagEnvelope(
+      is CancelTaskByTag -> ServiceTagEnvelope(
           name = "${msg.serviceName}",
           type = TaskTagMessageType.CANCEL_TASK_BY_TAG,
           cancelTaskByTag = msg,
       )
 
-      is RetryTaskByTag -> TaskTagEnvelope(
+      is RetryTaskByTag -> ServiceTagEnvelope(
           name = "${msg.serviceName}",
           type = TaskTagMessageType.RETRY_TASK_BY_TAG,
           retryTaskByTag = msg,
       )
 
-      is GetTaskIdsByTag -> TaskTagEnvelope(
+      is GetTaskIdsByTag -> ServiceTagEnvelope(
           name = "${msg.serviceName}",
           type = TaskTagMessageType.GET_TASK_IDS_BY_TAG,
           getTaskIdsByTag = msg,

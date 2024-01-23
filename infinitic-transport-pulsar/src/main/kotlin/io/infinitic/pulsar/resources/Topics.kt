@@ -31,8 +31,8 @@ import io.infinitic.common.tasks.events.messages.ServiceEventEnvelope
 import io.infinitic.common.tasks.events.messages.ServiceEventMessage
 import io.infinitic.common.tasks.executors.messages.ServiceExecutorEnvelope
 import io.infinitic.common.tasks.executors.messages.ServiceExecutorMessage
+import io.infinitic.common.tasks.tags.messages.ServiceTagEnvelope
 import io.infinitic.common.tasks.tags.messages.ServiceTagMessage
-import io.infinitic.common.tasks.tags.messages.TaskTagEnvelope
 import io.infinitic.common.transport.ClientTopic
 import io.infinitic.common.transport.DelayedServiceExecutorTopic
 import io.infinitic.common.transport.DelayedWorkflowEngineTopic
@@ -50,10 +50,12 @@ import io.infinitic.common.transport.WorkflowTagTopic
 import io.infinitic.common.transport.WorkflowTaskEventsTopic
 import io.infinitic.common.transport.WorkflowTaskExecutorTopic
 import io.infinitic.common.transport.WorkflowTopic
-import io.infinitic.common.workflows.engine.events.WorkflowEventEnvelope
-import io.infinitic.common.workflows.engine.events.WorkflowEventMessage
+import io.infinitic.common.workflows.engine.messages.WorkflowCmdEnvelope
+import io.infinitic.common.workflows.engine.messages.WorkflowCmdMessage
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineEnvelope
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
+import io.infinitic.common.workflows.engine.messages.WorkflowEventEnvelope
+import io.infinitic.common.workflows.engine.messages.WorkflowEventMessage
 import io.infinitic.common.workflows.tags.messages.WorkflowTagEnvelope
 import io.infinitic.common.workflows.tags.messages.WorkflowTagMessage
 import io.infinitic.pulsar.schemas.schemaDefinition
@@ -118,28 +120,6 @@ internal fun Topic<*>.nameDLQ(entity: String) = "${prefixDLQ()}:$entity"
 
 
 /**
- * Returns the envelope class associated with a topic type.
- *
- * @return The envelope class that is associated with the topic.
- */
-@Suppress("UNCHECKED_CAST")
-internal val <S : Message> Topic<S>.envelopeClass: KClass<Envelope<out S>>
-  get() = when (this) {
-    WorkflowTagTopic -> WorkflowTagEnvelope::class
-    WorkflowCmdTopic -> WorkflowEngineEnvelope::class
-    WorkflowEngineTopic -> WorkflowEngineEnvelope::class
-    DelayedWorkflowEngineTopic -> WorkflowEngineEnvelope::class
-    WorkflowEventsTopic -> WorkflowEventEnvelope::class
-    WorkflowTaskExecutorTopic, DelayedWorkflowTaskExecutorTopic -> ServiceExecutorEnvelope::class
-    WorkflowTaskEventsTopic -> ServiceEventEnvelope::class
-    ServiceTagTopic -> TaskTagEnvelope::class
-    ServiceExecutorTopic, DelayedServiceExecutorTopic -> ServiceExecutorEnvelope::class
-    ServiceEventsTopic -> ServiceEventEnvelope::class
-    ClientTopic -> ClientEnvelope::class
-    NamingTopic -> thisShouldNotHappen()
-  } as KClass<Envelope<out S>>
-
-/**
  * Returns the Avro schema associated with a topic type.
  *
  * @param S The type of the message contained in the topic.
@@ -185,21 +165,40 @@ internal fun getWorkflowNameFromTopicName(topicName: String): String? {
   return null
 }
 
+/**
+ * Returns the envelope class associated with a topic type.
+ *
+ * @return The envelope class that is associated with the topic.
+ */
+@Suppress("UNCHECKED_CAST")
+internal val <S : Message> Topic<S>.envelopeClass: KClass<Envelope<out S>>
+  get() = when (this) {
+    NamingTopic -> thisShouldNotHappen()
+    ClientTopic -> ClientEnvelope::class
+    WorkflowTagTopic -> WorkflowTagEnvelope::class
+    WorkflowCmdTopic -> WorkflowCmdEnvelope::class
+    WorkflowEngineTopic, DelayedWorkflowEngineTopic -> WorkflowEngineEnvelope::class
+    WorkflowEventsTopic -> WorkflowEventEnvelope::class
+    WorkflowTaskExecutorTopic, DelayedWorkflowTaskExecutorTopic -> ServiceExecutorEnvelope::class
+    WorkflowTaskEventsTopic -> ServiceEventEnvelope::class
+    ServiceTagTopic -> ServiceTagEnvelope::class
+    ServiceExecutorTopic, DelayedServiceExecutorTopic -> ServiceExecutorEnvelope::class
+    ServiceEventsTopic -> ServiceEventEnvelope::class
+  } as KClass<Envelope<out S>>
 
 @Suppress("UNCHECKED_CAST")
 fun <S : Message> Topic<S>.envelope(message: S) = when (this) {
-  ClientTopic -> ClientEnvelope.from(message as ClientMessage)
   NamingTopic -> thisShouldNotHappen()
-  DelayedServiceExecutorTopic -> ServiceExecutorEnvelope.from(message as ServiceExecutorMessage)
-  ServiceEventsTopic -> ServiceEventEnvelope.from(message as ServiceEventMessage)
-  ServiceExecutorTopic -> ServiceExecutorEnvelope.from(message as ServiceExecutorMessage)
-  ServiceTagTopic -> TaskTagEnvelope.from(message as ServiceTagMessage)
-  DelayedWorkflowEngineTopic -> WorkflowEngineEnvelope.from(message as WorkflowEngineMessage)
-  DelayedWorkflowTaskExecutorTopic -> ServiceExecutorEnvelope.from(message as ServiceExecutorMessage)
-  WorkflowCmdTopic -> WorkflowEngineEnvelope.from(message as WorkflowEngineMessage)
-  WorkflowEngineTopic -> WorkflowEngineEnvelope.from(message as WorkflowEngineMessage)
-  WorkflowEventsTopic -> WorkflowEventEnvelope.from(message as WorkflowEventMessage)
+  ClientTopic -> ClientEnvelope.from(message as ClientMessage)
   WorkflowTagTopic -> WorkflowTagEnvelope.from(message as WorkflowTagMessage)
+  WorkflowCmdTopic -> WorkflowCmdEnvelope.from(message as WorkflowCmdMessage)
+  WorkflowEngineTopic, DelayedWorkflowEngineTopic -> WorkflowEngineEnvelope.from(message as WorkflowEngineMessage)
+  WorkflowEventsTopic -> WorkflowEventEnvelope.from(message as WorkflowEventMessage)
+  WorkflowTaskExecutorTopic, DelayedWorkflowTaskExecutorTopic ->
+    ServiceExecutorEnvelope.from(message as ServiceExecutorMessage)
+
   WorkflowTaskEventsTopic -> ServiceEventEnvelope.from(message as ServiceEventMessage)
-  WorkflowTaskExecutorTopic -> ServiceExecutorEnvelope.from(message as ServiceExecutorMessage)
+  ServiceTagTopic -> ServiceTagEnvelope.from(message as ServiceTagMessage)
+  ServiceExecutorTopic, DelayedServiceExecutorTopic -> ServiceExecutorEnvelope.from(message as ServiceExecutorMessage)
+  ServiceEventsTopic -> ServiceEventEnvelope.from(message as ServiceEventMessage)
 } as Envelope<out S>

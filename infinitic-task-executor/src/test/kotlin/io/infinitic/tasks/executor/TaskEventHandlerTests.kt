@@ -50,6 +50,8 @@ import io.infinitic.common.workers.config.WorkflowVersion
 import io.infinitic.common.workflows.data.methodRuns.WorkflowMethodId
 import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.data.workflows.WorkflowName
+import io.infinitic.common.workflows.engine.messages.TaskCompleted
+import io.infinitic.common.workflows.engine.messages.TaskFailed
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
@@ -277,7 +279,7 @@ private fun getTaskCompletedClient(msg: TaskCompletedEvent) =
     )
 
 private fun getTaskCompletedWorkflow(msg: TaskCompletedEvent) =
-    io.infinitic.common.workflows.engine.messages.TaskCompleted(
+    TaskCompleted(
         workflowName = msg.workflowName!!,
         workflowId = msg.workflowId!!,
         workflowMethodId = msg.workflowMethodId!!,
@@ -319,7 +321,7 @@ private fun getTaskFailedClient(msg: TaskFailedEvent) =
     )
 
 private fun getTaskFailedWorkflow(msg: TaskFailedEvent) =
-    io.infinitic.common.workflows.engine.messages.TaskFailed(
+    TaskFailed(
         workflowName = msg.workflowName!!,
         workflowId = msg.workflowId!!,
         workflowMethodId = msg.workflowMethodId!!,

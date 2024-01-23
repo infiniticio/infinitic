@@ -69,7 +69,7 @@ import io.infinitic.common.workflows.engine.messages.DispatchNewWorkflow
 import io.infinitic.common.workflows.engine.messages.RetryTasks
 import io.infinitic.common.workflows.engine.messages.SendSignal
 import io.infinitic.common.workflows.engine.messages.WaitWorkflow
-import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
+import io.infinitic.common.workflows.engine.messages.WorkflowCmdMessage
 import io.infinitic.common.workflows.tags.messages.AddTagToWorkflow
 import io.infinitic.common.workflows.tags.messages.CancelWorkflowByTag
 import io.infinitic.common.workflows.tags.messages.DispatchMethodByTag
@@ -95,7 +95,7 @@ import java.util.concurrent.CopyOnWriteArrayList
 private val taskTagSlots = CopyOnWriteArrayList<ServiceTagMessage>() // multithreading update
 private val workflowTagSlots = CopyOnWriteArrayList<WorkflowTagMessage>() // multithreading update
 private val taskSlot = slot<ServiceExecutorMessage>()
-private val workflowCmdSlot = slot<WorkflowEngineMessage>()
+private val workflowCmdSlot = slot<WorkflowCmdMessage>()
 private val delaySlot = slot<MillisDuration>()
 
 private val clientNameTest = ClientName("clientTest")

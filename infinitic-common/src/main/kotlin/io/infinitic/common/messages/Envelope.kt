@@ -26,9 +26,10 @@ import io.infinitic.common.clients.messages.ClientEnvelope
 import io.infinitic.common.exceptions.thisShouldNotHappen
 import io.infinitic.common.tasks.events.messages.ServiceEventEnvelope
 import io.infinitic.common.tasks.executors.messages.ServiceExecutorEnvelope
-import io.infinitic.common.tasks.tags.messages.TaskTagEnvelope
-import io.infinitic.common.workflows.engine.events.WorkflowEventEnvelope
+import io.infinitic.common.tasks.tags.messages.ServiceTagEnvelope
+import io.infinitic.common.workflows.engine.messages.WorkflowCmdEnvelope
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineEnvelope
+import io.infinitic.common.workflows.engine.messages.WorkflowEventEnvelope
 import io.infinitic.common.workflows.tags.messages.WorkflowTagEnvelope
 import org.apache.avro.Schema
 import kotlin.reflect.KClass
@@ -40,9 +41,10 @@ interface Envelope<T> {
 @Suppress("UNCHECKED_CAST")
 fun <T : Envelope<*>> KClass<T>.fromByteArray(bytes: ByteArray, schema: Schema) = when (this) {
   ClientEnvelope::class -> ClientEnvelope.fromByteArray(bytes, schema)
-  TaskTagEnvelope::class -> TaskTagEnvelope.fromByteArray(bytes, schema)
+  ServiceTagEnvelope::class -> ServiceTagEnvelope.fromByteArray(bytes, schema)
   ServiceExecutorEnvelope::class -> ServiceExecutorEnvelope.fromByteArray(bytes, schema)
   ServiceEventEnvelope::class -> ServiceEventEnvelope.fromByteArray(bytes, schema)
+  WorkflowCmdEnvelope::class -> WorkflowCmdEnvelope.fromByteArray(bytes, schema)
   WorkflowEngineEnvelope::class -> WorkflowEngineEnvelope.fromByteArray(bytes, schema)
   WorkflowEventEnvelope::class -> WorkflowEventEnvelope.fromByteArray(bytes, schema)
   WorkflowTagEnvelope::class -> WorkflowTagEnvelope.fromByteArray(bytes, schema)
@@ -51,9 +53,10 @@ fun <T : Envelope<*>> KClass<T>.fromByteArray(bytes: ByteArray, schema: Schema) 
 
 fun <T : Envelope<*>> KClass<T>.writerSchema() = when (this) {
   ClientEnvelope::class -> ClientEnvelope.writerSchema
-  TaskTagEnvelope::class -> TaskTagEnvelope.writerSchema
+  ServiceTagEnvelope::class -> ServiceTagEnvelope.writerSchema
   ServiceExecutorEnvelope::class -> ServiceExecutorEnvelope.writerSchema
   ServiceEventEnvelope::class -> ServiceEventEnvelope.writerSchema
+  WorkflowCmdEnvelope::class -> WorkflowCmdEnvelope.writerSchema
   WorkflowEngineEnvelope::class -> WorkflowEngineEnvelope.writerSchema
   WorkflowEventEnvelope::class -> WorkflowEventEnvelope.writerSchema
   WorkflowTagEnvelope::class -> WorkflowTagEnvelope.writerSchema
@@ -62,9 +65,10 @@ fun <T : Envelope<*>> KClass<T>.writerSchema() = when (this) {
 
 fun <T : Envelope<*>> T.toByteArray() = when (this) {
   is ClientEnvelope -> this.toByteArray()
-  is TaskTagEnvelope -> this.toByteArray()
+  is ServiceTagEnvelope -> this.toByteArray()
   is ServiceExecutorEnvelope -> this.toByteArray()
   is ServiceEventEnvelope -> this.toByteArray()
+  is WorkflowCmdEnvelope -> this.toByteArray()
   is WorkflowEngineEnvelope -> this.toByteArray()
   is WorkflowEventEnvelope -> this.toByteArray()
   is WorkflowTagEnvelope -> this.toByteArray()

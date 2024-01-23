@@ -73,7 +73,7 @@ sealed class ServiceEventMessage : Message {
   abstract val clientWaiting: Boolean?
   abstract val taskTags: Set<TaskTag>
   abstract val taskMeta: TaskMeta
-  
+
   override fun key() = null
 
   override fun entity() = when (isWorkflowTask()) {

@@ -30,9 +30,9 @@ import io.infinitic.common.workflows.data.methodRuns.PositionInWorkflowMethod
 import io.infinitic.common.workflows.data.methodRuns.WorkflowMethod
 import io.infinitic.common.workflows.data.methodRuns.WorkflowMethodId
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskIndex
-import io.infinitic.common.workflows.engine.events.WorkflowMethodStartedEvent
-import io.infinitic.common.workflows.engine.events.WorkflowStartedEvent
 import io.infinitic.common.workflows.engine.messages.DispatchNewWorkflow
+import io.infinitic.common.workflows.engine.messages.WorkflowMethodStartedEvent
+import io.infinitic.common.workflows.engine.messages.WorkflowStartedEvent
 import io.infinitic.common.workflows.engine.state.WorkflowState
 import io.infinitic.workflows.engine.helpers.dispatchWorkflowTask
 import kotlinx.coroutines.CoroutineScope

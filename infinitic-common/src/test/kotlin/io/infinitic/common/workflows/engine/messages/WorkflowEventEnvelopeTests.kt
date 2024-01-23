@@ -32,50 +32,49 @@ import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.collections.shouldBeOneOf
 import io.kotest.matchers.shouldBe
 
-class WorkflowEngineEnvelopeTests :
+class WorkflowEventEnvelopeTests :
   StringSpec(
       {
-        WorkflowEngineMessage::class.sealedSubclasses.map {
+        WorkflowEventMessage::class.sealedSubclasses.map {
           val msg = TestFactory.random(it)
 
-          "WorkflowEngineEnvelope: ${msg::class.simpleName} should be avro-convertible" {
+          "WorkflowEventEnvelope: ${msg::class.simpleName} should be avro-convertible" {
             shouldNotThrowAny {
-              val envelope = WorkflowEngineEnvelope.from(msg)
+              val envelope = WorkflowEventEnvelope.from(msg)
               val byteArray = envelope.toByteArray()
 
-              WorkflowEngineEnvelope.fromByteArray(
+              WorkflowEventEnvelope.fromByteArray(
                   byteArray,
-                  WorkflowEngineEnvelope.writerSchema,
+                  WorkflowEventEnvelope.writerSchema,
               ) shouldBe envelope
             }
           }
         }
 
-        "WorkflowEngineEnvelope: Avro Schema should be backward compatible" {
+        "WorkflowEventEnvelope: Avro Schema should be backward compatible" {
           // An error in this test means that we need to upgrade the version
           checkOrCreateCurrentFile(
-              WorkflowEngineEnvelope::class,
-              WorkflowEngineEnvelope.serializer(),
+              WorkflowEventEnvelope::class,
+              WorkflowEventEnvelope.serializer(),
           )
 
           checkBackwardCompatibility(
-              WorkflowEngineEnvelope::class,
-              WorkflowEngineEnvelope.serializer(),
+              WorkflowEventEnvelope::class,
+              WorkflowEventEnvelope.serializer(),
           )
         }
 
-        AvroSerDe.getAllSchemas(WorkflowEngineEnvelope::class)
-            .forEach { (version, schema) ->
-              "WorkflowEngineEnvelope: We should be able to read binary from previous version $version" {
-                val bytes = AvroSerDe.getRandomBinary(schema)
-                val e = shouldThrowAny { WorkflowEngineEnvelope.fromByteArray(bytes, schema) }
-                e::class shouldBeOneOf listOf(
-                    // IllegalArgumentException is thrown because we have more than 1 message in the envelope
-                    IllegalArgumentException::class,
-                    // NullPointerException is thrown because message() can be null
-                    NullPointerException::class,
-                )
-              }
-            }
+        AvroSerDe.getAllSchemas(WorkflowEventEnvelope::class).forEach { (version, schema) ->
+          "WorkflowEventEnvelope: We should be able to read binary from previous version $version" {
+            val bytes = AvroSerDe.getRandomBinary(schema)
+            val e = shouldThrowAny { WorkflowEventEnvelope.fromByteArray(bytes, schema) }
+            e::class shouldBeOneOf listOf(
+                // IllegalArgumentException is thrown because we have more than 1 message in the envelope
+                IllegalArgumentException::class,
+                // NullPointerException is thrown because message() can be null
+                NullPointerException::class,
+            )
+          }
+        }
       },
   )

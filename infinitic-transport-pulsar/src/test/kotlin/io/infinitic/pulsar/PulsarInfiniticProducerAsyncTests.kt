@@ -44,8 +44,9 @@ import io.infinitic.common.transport.WorkflowTagTopic
 import io.infinitic.common.transport.WorkflowTaskEventsTopic
 import io.infinitic.common.transport.WorkflowTaskExecutorTopic
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTask
-import io.infinitic.common.workflows.engine.events.WorkflowEventMessage
+import io.infinitic.common.workflows.engine.messages.WorkflowCmdMessage
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
+import io.infinitic.common.workflows.engine.messages.WorkflowEventMessage
 import io.infinitic.common.workflows.tags.messages.WorkflowTagMessage
 import io.infinitic.pulsar.admin.PulsarInfiniticAdmin
 import io.infinitic.pulsar.config.policies.Policies
@@ -110,8 +111,8 @@ class PulsarInfiniticProducerAsyncTests : StringSpec(
         coVerify {
           pulsarResources.initTopicOnce(
               "persistent://$tenant/$namespace/response:$name",
-              false,
-              false,
+              isPartitioned = false,
+              isDelayed = false,
           )
         }
       }
@@ -125,14 +126,14 @@ class PulsarInfiniticProducerAsyncTests : StringSpec(
         coVerify {
           pulsarResources.initTopicOnce(
               "persistent://$tenant/$namespace/workflow-tag:$name",
-              true,
-              false,
+              isPartitioned = true,
+              isDelayed = false,
           )
         }
       }
 
       "should init workflow-cmd topic before sending a message to it" {
-        val message = TestFactory.random<WorkflowEngineMessage>()
+        val message = TestFactory.random<WorkflowCmdMessage>()
         with(infiniticProducerAsync) { message.sendToAsync(WorkflowCmdTopic) }
 
         val name = message.workflowName.toString()
@@ -140,8 +141,8 @@ class PulsarInfiniticProducerAsyncTests : StringSpec(
         coVerify {
           pulsarResources.initTopicOnce(
               "persistent://$tenant/$namespace/workflow-cmd:$name",
-              true,
-              false,
+              isPartitioned = true,
+              isDelayed = false,
           )
         }
       }
@@ -155,8 +156,8 @@ class PulsarInfiniticProducerAsyncTests : StringSpec(
         coVerify {
           pulsarResources.initTopicOnce(
               "persistent://$tenant/$namespace/workflow-engine:$name",
-              true,
-              false,
+              isPartitioned = true,
+              isDelayed = false,
           )
         }
       }
@@ -175,8 +176,8 @@ class PulsarInfiniticProducerAsyncTests : StringSpec(
         coVerify {
           pulsarResources.initTopicOnce(
               "persistent://$tenant/$namespace/workflow-delay:$name",
-              true,
-              true,
+              isPartitioned = true,
+              isDelayed = true,
           )
         }
       }
@@ -190,8 +191,8 @@ class PulsarInfiniticProducerAsyncTests : StringSpec(
         coVerify {
           pulsarResources.initTopicOnce(
               "persistent://$tenant/$namespace/workflow-events:$name",
-              true,
-              false,
+              isPartitioned = true,
+              isDelayed = false,
           )
         }
       }
@@ -207,8 +208,8 @@ class PulsarInfiniticProducerAsyncTests : StringSpec(
         coVerify {
           pulsarResources.initTopicOnce(
               "persistent://$tenant/$namespace/workflow-task-executor:$name",
-              true,
-              false,
+              isPartitioned = true,
+              isDelayed = false,
           )
         }
       }
@@ -224,8 +225,8 @@ class PulsarInfiniticProducerAsyncTests : StringSpec(
         coVerify {
           pulsarResources.initTopicOnce(
               "persistent://$tenant/$namespace/workflow-task-events:$name",
-              true,
-              false,
+              isPartitioned = true,
+              isDelayed = false,
           )
         }
       }
@@ -239,8 +240,8 @@ class PulsarInfiniticProducerAsyncTests : StringSpec(
         coVerify {
           pulsarResources.initTopicOnce(
               "persistent://$tenant/$namespace/task-tag:$name",
-              true,
-              false,
+              isPartitioned = true,
+              isDelayed = false,
           )
         }
       }
@@ -254,8 +255,8 @@ class PulsarInfiniticProducerAsyncTests : StringSpec(
         coVerify {
           pulsarResources.initTopicOnce(
               "persistent://$tenant/$namespace/task-executor:$name",
-              true,
-              false,
+              isPartitioned = true,
+              isDelayed = false,
           )
         }
       }
@@ -269,8 +270,8 @@ class PulsarInfiniticProducerAsyncTests : StringSpec(
         coVerify {
           pulsarResources.initTopicOnce(
               "persistent://$tenant/$namespace/task-events:$name",
-              true,
-              false,
+              isPartitioned = true,
+              isDelayed = false,
           )
         }
       }

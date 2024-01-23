@@ -26,8 +26,23 @@ import com.github.avrokotlin.avro4k.AvroNamespace
 import kotlinx.serialization.Serializable
 
 @Serializable
+sealed interface WorkflowCmdMessage : WorkflowEngineMessage
+
+fun WorkflowCmdMessage.type(): WorkflowCmdMessageType = when (this) {
+  is CancelWorkflow -> WorkflowCmdMessageType.CANCEL_WORKFLOW
+  is CompleteTimers -> WorkflowCmdMessageType.COMPLETE_TIMERS
+  is CompleteWorkflow -> WorkflowCmdMessageType.COMPLETE_WORKFLOW
+  is DispatchMethodWorkflow -> WorkflowCmdMessageType.DISPATCH_METHOD
+  is DispatchNewWorkflow -> WorkflowCmdMessageType.COMPLETE_WORKFLOW
+  is RetryTasks -> WorkflowCmdMessageType.RETRY_TASKS
+  is RetryWorkflowTask -> WorkflowCmdMessageType.RETRY_WORKFLOW_TASK
+  is SendSignal -> WorkflowCmdMessageType.SEND_SIGNAL
+  is WaitWorkflow -> WorkflowCmdMessageType.WAIT_WORKFLOW
+}
+
+@Serializable
 @AvroNamespace("io.infinitic.workflows.engine")
-enum class WorkflowEngineMessageType {
+enum class WorkflowCmdMessageType {
   WAIT_WORKFLOW,
   CANCEL_WORKFLOW,
   RETRY_WORKFLOW_TASK,
@@ -37,14 +52,4 @@ enum class WorkflowEngineMessageType {
   SEND_SIGNAL,
   DISPATCH_WORKFLOW,
   DISPATCH_METHOD,
-  TIMER_COMPLETED,
-  CHILD_WORKFLOW_UNKNOWN,
-  CHILD_WORKFLOW_CANCELED,
-  CHILD_WORKFLOW_FAILED,
-  CHILD_WORKFLOW_TIMED_OUT,
-  CHILD_WORKFLOW_COMPLETED,
-  TASK_CANCELED,
-  TASK_TIMED_OUT,
-  TASK_FAILED,
-  TASK_COMPLETED
 }
