@@ -24,9 +24,11 @@
 package io.infinitic.events
 
 private const val TYPE_DOMAIN = "infinitic"
+
 private const val TYPE_WORKFLOW = "$TYPE_DOMAIN.workflow"
 private const val TYPE_WORKFLOW_TASK = "$TYPE_WORKFLOW.task"
 private const val TYPE_WORKFLOW_METHOD = "$TYPE_WORKFLOW.method"
+
 private const val TYPE_TASK = "$TYPE_DOMAIN.task"
 
 sealed interface InfiniticEventType {

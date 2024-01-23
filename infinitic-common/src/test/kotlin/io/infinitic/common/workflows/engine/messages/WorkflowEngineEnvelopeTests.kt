@@ -64,17 +64,18 @@ class WorkflowEngineEnvelopeTests :
           )
         }
 
-        AvroSerDe.getAllSchemas(WorkflowEngineEnvelope::class).forEach { (version, schema) ->
-          "We should be able to read binary from previous version $version" {
-            val bytes = AvroSerDe.getRandomBinary(schema)
-            val e = shouldThrowAny { WorkflowEngineEnvelope.fromByteArray(bytes, schema) }
-            e::class shouldBeOneOf listOf(
-                // IllegalArgumentException is thrown because we have more than 1 message in the envelope
-                IllegalArgumentException::class,
-                // NullPointerException is thrown because message() can be null
-                NullPointerException::class,
-            )
-          }
-        }
+        AvroSerDe.getAllSchemas(WorkflowEngineEnvelope::class)
+            .forEach { (version, schema) ->
+              "We should be able to read binary from previous version $version" {
+                val bytes = AvroSerDe.getRandomBinary(schema)
+                val e = shouldThrowAny { WorkflowEngineEnvelope.fromByteArray(bytes, schema) }
+                e::class shouldBeOneOf listOf(
+                    // IllegalArgumentException is thrown because we have more than 1 message in the envelope
+                    IllegalArgumentException::class,
+                    // NullPointerException is thrown because message() can be null
+                    NullPointerException::class,
+                )
+              }
+            }
       },
   )

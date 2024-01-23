@@ -26,6 +26,7 @@ package io.infinitic.pulsar
 import io.infinitic.common.clients.messages.ClientMessage
 import io.infinitic.common.data.MillisDuration
 import io.infinitic.common.fixtures.TestFactory
+import io.infinitic.common.messages.Envelope
 import io.infinitic.common.messages.Message
 import io.infinitic.common.tasks.data.ServiceName
 import io.infinitic.common.tasks.events.messages.TaskCompletedEvent
@@ -89,7 +90,7 @@ class PulsarInfiniticProducerAsyncTests : StringSpec(
 
         every {
           sendAsync(
-              message = any<Message>(),
+              envelope = any<Envelope<out Message>>(),
               after = any<MillisDuration>(),
               topic = any<String>(),
               producerName = any<String>(),

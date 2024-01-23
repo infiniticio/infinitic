@@ -23,11 +23,15 @@
 package io.infinitic.pulsar.resources
 
 import io.infinitic.common.clients.messages.ClientEnvelope
+import io.infinitic.common.clients.messages.ClientMessage
 import io.infinitic.common.exceptions.thisShouldNotHappen
 import io.infinitic.common.messages.Envelope
 import io.infinitic.common.messages.Message
 import io.infinitic.common.tasks.events.messages.ServiceEventEnvelope
+import io.infinitic.common.tasks.events.messages.ServiceEventMessage
 import io.infinitic.common.tasks.executors.messages.ServiceExecutorEnvelope
+import io.infinitic.common.tasks.executors.messages.ServiceExecutorMessage
+import io.infinitic.common.tasks.tags.messages.ServiceTagMessage
 import io.infinitic.common.tasks.tags.messages.TaskTagEnvelope
 import io.infinitic.common.transport.ClientTopic
 import io.infinitic.common.transport.DelayedServiceExecutorTopic
@@ -47,8 +51,11 @@ import io.infinitic.common.transport.WorkflowTaskEventsTopic
 import io.infinitic.common.transport.WorkflowTaskExecutorTopic
 import io.infinitic.common.transport.WorkflowTopic
 import io.infinitic.common.workflows.engine.events.WorkflowEventEnvelope
+import io.infinitic.common.workflows.engine.events.WorkflowEventMessage
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineEnvelope
+import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
 import io.infinitic.common.workflows.tags.messages.WorkflowTagEnvelope
+import io.infinitic.common.workflows.tags.messages.WorkflowTagMessage
 import io.infinitic.pulsar.schemas.schemaDefinition
 import org.apache.pulsar.client.api.Schema
 import kotlin.reflect.KClass
@@ -177,3 +184,22 @@ internal fun getWorkflowNameFromTopicName(topicName: String): String? {
 
   return null
 }
+
+
+@Suppress("UNCHECKED_CAST")
+fun <S : Message> Topic<S>.envelope(message: S) = when (this) {
+  ClientTopic -> ClientEnvelope.from(message as ClientMessage)
+  NamingTopic -> thisShouldNotHappen()
+  DelayedServiceExecutorTopic -> ServiceExecutorEnvelope.from(message as ServiceExecutorMessage)
+  ServiceEventsTopic -> ServiceEventEnvelope.from(message as ServiceEventMessage)
+  ServiceExecutorTopic -> ServiceExecutorEnvelope.from(message as ServiceExecutorMessage)
+  ServiceTagTopic -> TaskTagEnvelope.from(message as ServiceTagMessage)
+  DelayedWorkflowEngineTopic -> WorkflowEngineEnvelope.from(message as WorkflowEngineMessage)
+  DelayedWorkflowTaskExecutorTopic -> ServiceExecutorEnvelope.from(message as ServiceExecutorMessage)
+  WorkflowCmdTopic -> WorkflowEngineEnvelope.from(message as WorkflowEngineMessage)
+  WorkflowEngineTopic -> WorkflowEngineEnvelope.from(message as WorkflowEngineMessage)
+  WorkflowEventsTopic -> WorkflowEventEnvelope.from(message as WorkflowEventMessage)
+  WorkflowTagTopic -> WorkflowTagEnvelope.from(message as WorkflowTagMessage)
+  WorkflowTaskEventsTopic -> ServiceEventEnvelope.from(message as ServiceEventMessage)
+  WorkflowTaskExecutorTopic -> ServiceExecutorEnvelope.from(message as ServiceExecutorMessage)
+} as Envelope<out S>

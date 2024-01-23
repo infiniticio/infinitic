@@ -65,10 +65,7 @@ sealed class ServiceExecutorMessage : Message {
   abstract val workflowName: WorkflowName?
   abstract val workflowId: WorkflowId?
   abstract val workflowMethodId: WorkflowMethodId?
-
-
-  override fun envelope() = ServiceExecutorEnvelope.from(this)
-
+  
   override fun key() = null
 
   override fun entity() = when (isWorkflowTask()) {

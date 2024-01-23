@@ -99,8 +99,6 @@ sealed class WorkflowEngineMessage : Message {
   // * the published time (from transport) of the event that triggered the workflow task that triggered this event
   abstract var emittedAt: MillisInstant?
 
-  override fun envelope() = WorkflowEngineEnvelope.from(this)
-
   override fun key() = workflowId.toString()
 
   override fun entity() = workflowName.toString()

@@ -29,6 +29,7 @@ import io.infinitic.common.transport.NamingTopic
 import io.infinitic.common.transport.Topic
 import io.infinitic.pulsar.producers.Producer
 import io.infinitic.pulsar.resources.PulsarResources
+import io.infinitic.pulsar.resources.envelope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import java.util.concurrent.CompletableFuture
@@ -64,6 +65,12 @@ class PulsarInfiniticProducerAsync(
   ): CompletableFuture<Unit> {
     val topicFullName = with(pulsarResources) { topic.forMessage(message) }
 
-    return producer.sendAsync(message, after, topicFullName, producerName, key = message.key())
+    return producer.sendAsync(
+        topic.envelope(message),
+        after,
+        topicFullName,
+        producerName,
+        key = message.key(),
+    )
   }
 }

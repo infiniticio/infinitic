@@ -28,9 +28,7 @@ import io.infinitic.common.emitters.EmitterName
 interface Message {
   val messageId: MessageId?
   val emitterName: EmitterName
-
-  fun envelope(): Envelope<out Message>
-
+  
   fun key(): String?
 
   fun entity(): String

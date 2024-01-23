@@ -30,6 +30,7 @@ import io.infinitic.common.fixtures.DockerOnly
 import io.infinitic.common.fixtures.TestFactory
 import io.infinitic.common.fixtures.later
 import io.infinitic.common.tasks.executors.messages.ExecuteTask
+import io.infinitic.common.tasks.executors.messages.ServiceExecutorEnvelope
 import io.infinitic.common.tasks.executors.messages.ServiceExecutorMessage
 import io.infinitic.common.transport.ServiceExecutorTopic
 import io.infinitic.pulsar.client.PulsarInfiniticClient
@@ -68,13 +69,14 @@ class ConsumerTests : StringSpec(
       fun sendMessage(topic: String, total: Int, withKey: Boolean = false): Double {
         // creating messages in advance (creation time of messages should not be into the sending time)
         val message = TestFactory.random<ExecuteTask>()
-        val messages = List(total) { message.copy(messageId = MessageId()) }
+        val envelopes =
+            List(total) { ServiceExecutorEnvelope.from(message.copy(messageId = MessageId())) }
         // sending messages
         val start = Instant.now()
-        val futures = messages.map {
+        val futures = envelopes.map {
           producer.sendAsync(
               it, zero, topic, "name",
-              key = if (withKey) it.messageId.toString() else null,
+              key = if (withKey) it.message().messageId.toString() else null,
           )
         }.toTypedArray()
         // wait for all to be sent

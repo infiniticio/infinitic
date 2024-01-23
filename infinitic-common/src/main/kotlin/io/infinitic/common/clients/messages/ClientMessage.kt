@@ -48,9 +48,7 @@ sealed class ClientMessage : Message {
   override val messageId: MessageId = MessageId()
   abstract override val emitterName: EmitterName
   abstract val recipientName: ClientName
-
-  override fun envelope() = ClientEnvelope.from(this)
-
+  
   override fun key() = null
 
   override fun entity() = recipientName.toString()

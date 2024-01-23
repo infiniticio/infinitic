@@ -43,12 +43,7 @@ import io.infinitic.common.tasks.executors.errors.MethodCanceledError
 import io.infinitic.common.tasks.executors.errors.MethodFailedError
 import io.infinitic.common.tasks.executors.errors.WorkflowMethodTimedOutError
 import io.infinitic.common.workflows.data.methodRuns.WorkflowMethodId
-import io.infinitic.common.workflows.data.workflows.WorkflowCancellationReason
-import io.infinitic.common.workflows.data.workflows.WorkflowId
-import io.infinitic.common.workflows.data.workflows.WorkflowMeta
-import io.infinitic.common.workflows.data.workflows.WorkflowName
-import io.infinitic.common.workflows.data.workflows.WorkflowReturnValue
-import io.infinitic.common.workflows.data.workflows.WorkflowTag
+import io.infinitic.common.workflows.data.workflows.*
 import io.infinitic.common.workflows.engine.messages.ChildMethodCanceled
 import io.infinitic.common.workflows.engine.messages.ChildMethodCompleted
 import io.infinitic.common.workflows.engine.messages.ChildMethodFailed
@@ -58,259 +53,257 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 sealed class WorkflowEventMessage : Message {
-  @Suppress("RedundantNullableReturnType")
-  @AvroDefault(Avro.NULL)
-  val version: Version? = Version(currentVersion)
-  override val messageId: MessageId = MessageId()
-  abstract val workflowId: WorkflowId
-  abstract val workflowName: WorkflowName
-  abstract val workflowTags: Set<WorkflowTag>
-  abstract val workflowMeta: WorkflowMeta
+    @Suppress("RedundantNullableReturnType")
+    @AvroDefault(Avro.NULL)
+    val version: Version? = Version(currentVersion)
+    override val messageId: MessageId = MessageId()
+    abstract val workflowId: WorkflowId
+    abstract val workflowName: WorkflowName
+    abstract val workflowTags: Set<WorkflowTag>
+    abstract val workflowMeta: WorkflowMeta
 
-  override fun envelope() = WorkflowEventEnvelope.from(this)
+    override fun key() = null
 
-  override fun key() = null
-
-  override fun entity() = workflowName.toString()
+    override fun entity() = workflowName.toString()
 }
 
 sealed interface WorkflowMethodEvent {
-  val workflowId: WorkflowId
-  val workflowName: WorkflowName
-  val workflowMethodId: WorkflowMethodId
-  val parentWorkflowName: WorkflowName?
-  val parentWorkflowId: WorkflowId?
-  val parentWorkflowMethodId: WorkflowMethodId?
-  val parentClientName: ClientName?
-  val waitingClients: Set<ClientName>
+    val workflowId: WorkflowId
+    val workflowName: WorkflowName
+    val workflowMethodId: WorkflowMethodId
+    val parentWorkflowName: WorkflowName?
+    val parentWorkflowId: WorkflowId?
+    val parentWorkflowMethodId: WorkflowMethodId?
+    val parentClientName: ClientName?
+    val waitingClients: Set<ClientName>
 
-  fun isItsOwnParent() = (parentWorkflowId == workflowId && workflowName == parentWorkflowName)
+    fun isItsOwnParent() = (parentWorkflowId == workflowId && workflowName == parentWorkflowName)
 }
 
 @Serializable
 @AvroNamespace("io.infinitic.workflows.events")
 data class WorkflowStartedEvent(
-  override val workflowName: WorkflowName,
-  override val workflowId: WorkflowId,
-  override val emitterName: EmitterName,
-  override val workflowTags: Set<WorkflowTag>,
-  override val workflowMeta: WorkflowMeta,
+    override val workflowName: WorkflowName,
+    override val workflowId: WorkflowId,
+    override val emitterName: EmitterName,
+    override val workflowTags: Set<WorkflowTag>,
+    override val workflowMeta: WorkflowMeta,
 ) : WorkflowEventMessage()
 
 @Serializable
 @AvroNamespace("io.infinitic.workflows.events")
 data class WorkflowCompletedEvent(
-  override val workflowName: WorkflowName,
-  override val workflowId: WorkflowId,
-  override val emitterName: EmitterName,
-  override val workflowTags: Set<WorkflowTag>,
-  override val workflowMeta: WorkflowMeta,
+    override val workflowName: WorkflowName,
+    override val workflowId: WorkflowId,
+    override val emitterName: EmitterName,
+    override val workflowTags: Set<WorkflowTag>,
+    override val workflowMeta: WorkflowMeta,
 ) : WorkflowEventMessage()
 
 @Serializable
 @AvroNamespace("io.infinitic.workflows.events")
 data class WorkflowCanceledEvent(
-  override val workflowName: WorkflowName,
-  override val workflowId: WorkflowId,
-  override val emitterName: EmitterName,
-  override val workflowTags: Set<WorkflowTag>,
-  override val workflowMeta: WorkflowMeta,
-  val cancellationReason: WorkflowCancellationReason,
+    override val workflowName: WorkflowName,
+    override val workflowId: WorkflowId,
+    override val emitterName: EmitterName,
+    override val workflowTags: Set<WorkflowTag>,
+    override val workflowMeta: WorkflowMeta,
+    val cancellationReason: WorkflowCancellationReason,
 ) : WorkflowEventMessage()
 
 @Serializable
 @AvroNamespace("io.infinitic.workflows.events")
 data class WorkflowMethodStartedEvent(
-  override val workflowName: WorkflowName,
-  override val workflowId: WorkflowId,
-  override val workflowMethodId: WorkflowMethodId,
-  override val parentWorkflowName: WorkflowName?,
-  override val parentWorkflowId: WorkflowId?,
-  override val parentWorkflowMethodId: WorkflowMethodId?,
-  override val parentClientName: ClientName?,
-  override val waitingClients: Set<ClientName>,
-  override val emitterName: EmitterName,
-  override val workflowTags: Set<WorkflowTag>,
-  override val workflowMeta: WorkflowMeta,
+    override val workflowName: WorkflowName,
+    override val workflowId: WorkflowId,
+    override val workflowMethodId: WorkflowMethodId,
+    override val parentWorkflowName: WorkflowName?,
+    override val parentWorkflowId: WorkflowId?,
+    override val parentWorkflowMethodId: WorkflowMethodId?,
+    override val parentClientName: ClientName?,
+    override val waitingClients: Set<ClientName>,
+    override val emitterName: EmitterName,
+    override val workflowTags: Set<WorkflowTag>,
+    override val workflowMeta: WorkflowMeta,
 ) : WorkflowEventMessage(), WorkflowMethodEvent
 
 @Serializable
 @AvroNamespace("io.infinitic.workflows.events")
 data class WorkflowMethodCompletedEvent(
-  override val workflowName: WorkflowName,
-  override val workflowId: WorkflowId,
-  override val workflowMethodId: WorkflowMethodId,
-  override val parentWorkflowName: WorkflowName?,
-  override val parentWorkflowId: WorkflowId?,
-  override val parentWorkflowMethodId: WorkflowMethodId?,
-  override val parentClientName: ClientName?,
-  override val waitingClients: Set<ClientName>,
-  override val emitterName: EmitterName,
-  override val workflowTags: Set<WorkflowTag>,
-  override val workflowMeta: WorkflowMeta,
-  val returnValue: ReturnValue,
+    override val workflowName: WorkflowName,
+    override val workflowId: WorkflowId,
+    override val workflowMethodId: WorkflowMethodId,
+    override val parentWorkflowName: WorkflowName?,
+    override val parentWorkflowId: WorkflowId?,
+    override val parentWorkflowMethodId: WorkflowMethodId?,
+    override val parentClientName: ClientName?,
+    override val waitingClients: Set<ClientName>,
+    override val emitterName: EmitterName,
+    override val workflowTags: Set<WorkflowTag>,
+    override val workflowMeta: WorkflowMeta,
+    val returnValue: ReturnValue,
 ) : WorkflowEventMessage(), WorkflowMethodEvent {
-  fun getEventsForClient(emitterName: EmitterName) = waitingClients.map {
-    MethodCompleted(
-        recipientName = it,
-        workflowId = workflowId,
-        workflowMethodId = workflowMethodId,
-        methodReturnValue = returnValue,
-        emitterName = emitterName,
-    )
-  }
-
-  fun getEventForParentWorkflow(emitterName: EmitterName, emittedAt: MillisInstant) =
-      parentWorkflowId?.let {
-        ChildMethodCompleted(
-            childWorkflowReturnValue = WorkflowReturnValue(
-                workflowId = workflowId,
-                workflowMethodId = workflowMethodId,
-                returnValue = returnValue,
-            ),
-            workflowId = parentWorkflowId,
-            workflowName = parentWorkflowName ?: thisShouldNotHappen(),
-            workflowMethodId = parentWorkflowMethodId ?: thisShouldNotHappen(),
+    fun getEventsForClient(emitterName: EmitterName) = waitingClients.map {
+        MethodCompleted(
+            recipientName = it,
+            workflowId = workflowId,
+            workflowMethodId = workflowMethodId,
+            methodReturnValue = returnValue,
             emitterName = emitterName,
-            emittedAt = emittedAt,
         )
-      }
+    }
+
+    fun getEventForParentWorkflow(emitterName: EmitterName, emittedAt: MillisInstant) =
+        parentWorkflowId?.let {
+            ChildMethodCompleted(
+                childWorkflowReturnValue = WorkflowReturnValue(
+                    workflowId = workflowId,
+                    workflowMethodId = workflowMethodId,
+                    returnValue = returnValue,
+                ),
+                workflowId = parentWorkflowId,
+                workflowName = parentWorkflowName ?: thisShouldNotHappen(),
+                workflowMethodId = parentWorkflowMethodId ?: thisShouldNotHappen(),
+                emitterName = emitterName,
+                emittedAt = emittedAt,
+            )
+        }
 }
 
 @Serializable
 @AvroNamespace("io.infinitic.workflows.events")
 data class WorkflowMethodFailedEvent(
-  override val workflowName: WorkflowName,
-  override val workflowId: WorkflowId,
-  override val workflowMethodId: WorkflowMethodId,
-  override val parentWorkflowName: WorkflowName?,
-  override val parentWorkflowId: WorkflowId?,
-  override val parentWorkflowMethodId: WorkflowMethodId?,
-  override val parentClientName: ClientName?,
-  override val waitingClients: Set<ClientName>,
-  override val emitterName: EmitterName,
-  override val workflowTags: Set<WorkflowTag>,
-  override val workflowMeta: WorkflowMeta,
-  val workflowMethodName: MethodName,
-  val deferredError: DeferredError
+    override val workflowName: WorkflowName,
+    override val workflowId: WorkflowId,
+    override val workflowMethodId: WorkflowMethodId,
+    override val parentWorkflowName: WorkflowName?,
+    override val parentWorkflowId: WorkflowId?,
+    override val parentWorkflowMethodId: WorkflowMethodId?,
+    override val parentClientName: ClientName?,
+    override val waitingClients: Set<ClientName>,
+    override val emitterName: EmitterName,
+    override val workflowTags: Set<WorkflowTag>,
+    override val workflowMeta: WorkflowMeta,
+    val workflowMethodName: MethodName,
+    val deferredError: DeferredError
 ) : WorkflowEventMessage(), WorkflowMethodEvent {
-  fun getEventsForClient(emitterName: EmitterName) = waitingClients.map {
-    MethodFailed(
-        recipientName = it,
-        workflowId = workflowId,
-        workflowMethodId = workflowMethodId,
-        cause = deferredError,
-        emitterName = emitterName,
-    )
-  }
-
-  fun getEventForParentWorkflow(emitterName: EmitterName, emittedAt: MillisInstant) =
-      parentWorkflowId?.let {
-        ChildMethodFailed(
-            childMethodFailedError = MethodFailedError(
-                workflowName = workflowName,
-                workflowId = workflowId,
-                workflowMethodName = workflowMethodName,
-                workflowMethodId = workflowMethodId,
-                deferredError = deferredError,
-            ),
-            workflowId = it,
-            workflowName = parentWorkflowName ?: thisShouldNotHappen(),
-            workflowMethodId = parentWorkflowMethodId ?: thisShouldNotHappen(),
+    fun getEventsForClient(emitterName: EmitterName) = waitingClients.map {
+        MethodFailed(
+            recipientName = it,
+            workflowId = workflowId,
+            workflowMethodId = workflowMethodId,
+            cause = deferredError,
             emitterName = emitterName,
-            emittedAt = emittedAt,
         )
-      }
+    }
+
+    fun getEventForParentWorkflow(emitterName: EmitterName, emittedAt: MillisInstant) =
+        parentWorkflowId?.let {
+            ChildMethodFailed(
+                childMethodFailedError = MethodFailedError(
+                    workflowName = workflowName,
+                    workflowId = workflowId,
+                    workflowMethodName = workflowMethodName,
+                    workflowMethodId = workflowMethodId,
+                    deferredError = deferredError,
+                ),
+                workflowId = it,
+                workflowName = parentWorkflowName ?: thisShouldNotHappen(),
+                workflowMethodId = parentWorkflowMethodId ?: thisShouldNotHappen(),
+                emitterName = emitterName,
+                emittedAt = emittedAt,
+            )
+        }
 }
 
 @Serializable
 @AvroNamespace("io.infinitic.workflows.events")
 data class WorkflowMethodCanceledEvent(
-  override val workflowName: WorkflowName,
-  override val workflowId: WorkflowId,
-  override val workflowMethodId: WorkflowMethodId,
-  override val parentWorkflowName: WorkflowName?,
-  override val parentWorkflowId: WorkflowId?,
-  override val parentWorkflowMethodId: WorkflowMethodId?,
-  override val parentClientName: ClientName?,
-  override val waitingClients: Set<ClientName>,
-  override val emitterName: EmitterName,
-  override val workflowTags: Set<WorkflowTag>,
-  override val workflowMeta: WorkflowMeta,
-  val cancellationReason: WorkflowCancellationReason,
+    override val workflowName: WorkflowName,
+    override val workflowId: WorkflowId,
+    override val workflowMethodId: WorkflowMethodId,
+    override val parentWorkflowName: WorkflowName?,
+    override val parentWorkflowId: WorkflowId?,
+    override val parentWorkflowMethodId: WorkflowMethodId?,
+    override val parentClientName: ClientName?,
+    override val waitingClients: Set<ClientName>,
+    override val emitterName: EmitterName,
+    override val workflowTags: Set<WorkflowTag>,
+    override val workflowMeta: WorkflowMeta,
+    val cancellationReason: WorkflowCancellationReason,
 ) : WorkflowEventMessage(), WorkflowMethodEvent {
 
-  fun getEventsForClient(emitterName: EmitterName) = waitingClients.map {
-    MethodCanceled(
-        recipientName = it,
-        workflowId = workflowId,
-        workflowMethodId = workflowMethodId,
-        emitterName = emitterName,
-    )
-  }
-
-  fun getEventForParentWorkflow(
-    emitterName: EmitterName,
-    emittedAt: MillisInstant
-  ): ChildMethodCanceled? =
-      if (cancellationReason != WorkflowCancellationReason.CANCELED_BY_PARENT && parentWorkflowId != null) {
-        ChildMethodCanceled(
-            childMethodCanceledError = MethodCanceledError(
-                workflowName = workflowName,
-                workflowId = workflowId,
-                workflowMethodId = workflowMethodId,
-            ),
-            workflowId = parentWorkflowId,
-            workflowName = parentWorkflowName ?: thisShouldNotHappen(),
-            workflowMethodId = parentWorkflowMethodId ?: thisShouldNotHappen(),
+    fun getEventsForClient(emitterName: EmitterName) = waitingClients.map {
+        MethodCanceled(
+            recipientName = it,
+            workflowId = workflowId,
+            workflowMethodId = workflowMethodId,
             emitterName = emitterName,
-            emittedAt = emittedAt,
         )
-      } else null
+    }
+
+    fun getEventForParentWorkflow(
+        emitterName: EmitterName,
+        emittedAt: MillisInstant
+    ): ChildMethodCanceled? =
+        if (cancellationReason != WorkflowCancellationReason.CANCELED_BY_PARENT && parentWorkflowId != null) {
+            ChildMethodCanceled(
+                childMethodCanceledError = MethodCanceledError(
+                    workflowName = workflowName,
+                    workflowId = workflowId,
+                    workflowMethodId = workflowMethodId,
+                ),
+                workflowId = parentWorkflowId,
+                workflowName = parentWorkflowName ?: thisShouldNotHappen(),
+                workflowMethodId = parentWorkflowMethodId ?: thisShouldNotHappen(),
+                emitterName = emitterName,
+                emittedAt = emittedAt,
+            )
+        } else null
 }
 
 @Serializable
 @AvroNamespace("io.infinitic.workflows.events")
 data class WorkflowMethodTimedOutEvent(
-  override val workflowName: WorkflowName,
-  override val workflowId: WorkflowId,
-  override val workflowMethodId: WorkflowMethodId,
-  override val parentWorkflowName: WorkflowName?,
-  override val parentWorkflowId: WorkflowId?,
-  override val parentWorkflowMethodId: WorkflowMethodId?,
-  override val parentClientName: ClientName?,
-  override val waitingClients: Set<ClientName>,
-  override val emitterName: EmitterName,
-  override val workflowTags: Set<WorkflowTag>,
-  override val workflowMeta: WorkflowMeta,
-  val workflowMethodName: MethodName,
+    override val workflowName: WorkflowName,
+    override val workflowId: WorkflowId,
+    override val workflowMethodId: WorkflowMethodId,
+    override val parentWorkflowName: WorkflowName?,
+    override val parentWorkflowId: WorkflowId?,
+    override val parentWorkflowMethodId: WorkflowMethodId?,
+    override val parentClientName: ClientName?,
+    override val waitingClients: Set<ClientName>,
+    override val emitterName: EmitterName,
+    override val workflowTags: Set<WorkflowTag>,
+    override val workflowMeta: WorkflowMeta,
+    val workflowMethodName: MethodName,
 ) : WorkflowEventMessage(), WorkflowMethodEvent {
-  fun getEventsForClient(emitterName: EmitterName) = waitingClients.map {
-    MethodTimedOut(
-        recipientName = it,
-        workflowId = workflowId,
-        workflowMethodId = workflowMethodId,
-        emitterName = emitterName,
-    )
-  }
-
-  fun getEventForParentWorkflow(
-    emitterName: EmitterName,
-    emittedAt: MillisInstant
-  ): ChildMethodTimedOut? =
-      if (parentWorkflowId != null) {
-        ChildMethodTimedOut(
-            childMethodTimedOutError = WorkflowMethodTimedOutError(
-                workflowName = workflowName,
-                workflowId = workflowId,
-                workflowMethodId = workflowMethodId,
-                methodName = workflowMethodName,
-            ),
-            workflowId = parentWorkflowId,
-            workflowName = parentWorkflowName ?: thisShouldNotHappen(),
-            workflowMethodId = parentWorkflowMethodId ?: thisShouldNotHappen(),
+    fun getEventsForClient(emitterName: EmitterName) = waitingClients.map {
+        MethodTimedOut(
+            recipientName = it,
+            workflowId = workflowId,
+            workflowMethodId = workflowMethodId,
             emitterName = emitterName,
-            emittedAt = emittedAt,
         )
-      } else null
+    }
+
+    fun getEventForParentWorkflow(
+        emitterName: EmitterName,
+        emittedAt: MillisInstant
+    ): ChildMethodTimedOut? =
+        if (parentWorkflowId != null) {
+            ChildMethodTimedOut(
+                childMethodTimedOutError = WorkflowMethodTimedOutError(
+                    workflowName = workflowName,
+                    workflowId = workflowId,
+                    workflowMethodId = workflowMethodId,
+                    methodName = workflowMethodName,
+                ),
+                workflowId = parentWorkflowId,
+                workflowName = parentWorkflowName ?: thisShouldNotHappen(),
+                workflowMethodId = parentWorkflowMethodId ?: thisShouldNotHappen(),
+                emitterName = emitterName,
+                emittedAt = emittedAt,
+            )
+        } else null
 }
