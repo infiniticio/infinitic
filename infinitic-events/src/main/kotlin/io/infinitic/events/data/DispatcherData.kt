@@ -21,22 +21,22 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.events.data.services
+package io.infinitic.events.data
 
 import kotlinx.serialization.Serializable
 
 @Serializable
-sealed interface RequesterData
+sealed interface DispatcherData
 
 @Serializable
-data class ClientRequesterData(
+data class ClientDispatcherData(
   val clientName: String,
-) : RequesterData
+) : DispatcherData
 
 @Serializable
-data class WorkflowRequesterData(
+data class WorkflowDispatcherData(
   val workflowName: String,
   val workflowId: String,
-  val methodId: String,
+  val workflowMethodId: String,
   val workerName: String,
-) : RequesterData
+) : DispatcherData

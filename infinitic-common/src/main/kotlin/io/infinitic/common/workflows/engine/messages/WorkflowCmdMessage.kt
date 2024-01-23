@@ -23,10 +23,17 @@
 package io.infinitic.common.workflows.engine.messages
 
 import com.github.avrokotlin.avro4k.AvroNamespace
+import io.infinitic.common.workflows.data.methodRuns.WorkflowMethodId
+import io.infinitic.common.workflows.data.workflows.WorkflowId
+import io.infinitic.common.workflows.data.workflows.WorkflowName
 import kotlinx.serialization.Serializable
 
 @Serializable
-sealed interface WorkflowCmdMessage : WorkflowEngineMessage
+sealed interface WorkflowCmdMessage : WorkflowEngineMessage {
+  val parentWorkflowName: WorkflowName?
+  val parentWorkflowId: WorkflowId?
+  val parentWorkflowMethodId: WorkflowMethodId?
+}
 
 fun WorkflowCmdMessage.type(): WorkflowCmdMessageType = when (this) {
   is CancelWorkflow -> WorkflowCmdMessageType.CANCEL_WORKFLOW

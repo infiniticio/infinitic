@@ -190,7 +190,7 @@ class InfiniticClient(
   ): CompletableFuture<Unit> =
       when (val handler = getProxyHandler(stub)) {
         is ExistingWorkflowProxyHandler -> {
-          val taskName =
+          val serviceName =
               taskClass?.let {
                 // Use NewTaskProxyHandler in case of use of @Name annotation
                 NewServiceProxyHandler(it, setOf(), TaskMeta()) { dispatcher }.serviceName
@@ -199,7 +199,7 @@ class InfiniticClient(
           dispatcher.retryTaskAsync(
               workflowName = handler.workflowName,
               requestBy = handler.requestBy,
-              serviceName = taskName,
+              serviceName = serviceName,
               taskStatus = taskStatus,
               taskId = taskId?.let { TaskId(it) },
           )

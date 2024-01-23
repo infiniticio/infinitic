@@ -64,6 +64,7 @@ sealed class ServiceEventMessage : Message {
   val version: Version = Version(currentVersion)
   abstract val serviceName: ServiceName
   abstract val taskId: TaskId
+  abstract val taskMethodName: MethodName
   abstract val taskRetrySequence: TaskRetrySequence
   abstract val taskRetryIndex: TaskRetryIndex
   abstract val workflowName: WorkflowName?
@@ -91,6 +92,7 @@ data class TaskStartedEvent(
   override val messageId: MessageId = MessageId(),
   override val serviceName: ServiceName,
   override val taskId: TaskId,
+  override val taskMethodName: MethodName,
   override val emitterName: EmitterName,
   override val taskRetrySequence: TaskRetrySequence,
   override val taskRetryIndex: TaskRetryIndex,
@@ -107,6 +109,7 @@ data class TaskStartedEvent(
     fun from(msg: ExecuteTask, emitterName: EmitterName) = TaskStartedEvent(
         serviceName = msg.serviceName,
         taskId = msg.taskId,
+        taskMethodName = msg.methodName,
         emitterName = emitterName,
         taskRetrySequence = msg.taskRetrySequence,
         taskRetryIndex = msg.taskRetryIndex,
@@ -128,6 +131,7 @@ data class TaskFailedEvent(
   override val messageId: MessageId = MessageId(),
   override val serviceName: ServiceName,
   override val taskId: TaskId,
+  override val taskMethodName: MethodName,
   override val emitterName: EmitterName,
   override val taskRetrySequence: TaskRetrySequence,
   override val taskRetryIndex: TaskRetryIndex,
@@ -140,7 +144,6 @@ data class TaskFailedEvent(
   override val taskMeta: TaskMeta,
   val executionError: ExecutionError,
   val deferredError: DeferredError?,
-  val methodName: MethodName,
   val workflowVersion: WorkflowVersion?,
 ) : ServiceEventMessage() {
 
@@ -160,7 +163,7 @@ data class TaskFailedEvent(
         workflowMethodId = workflowMethodId ?: thisShouldNotHappen(),
         taskFailedError = TaskFailedError(
             serviceName = serviceName,
-            methodName = methodName,
+            taskMethodName = taskMethodName,
             taskId = taskId,
             cause = executionError,
         ),
@@ -179,6 +182,7 @@ data class TaskFailedEvent(
     ) = TaskFailedEvent(
         serviceName = msg.serviceName,
         taskId = msg.taskId,
+        taskMethodName = msg.methodName,
         emitterName = emitterName,
         taskRetrySequence = msg.taskRetrySequence,
         taskRetryIndex = msg.taskRetryIndex,
@@ -191,7 +195,6 @@ data class TaskFailedEvent(
         taskMeta = TaskMeta(meta),
         executionError = cause.getExecutionError(emitterName),
         deferredError = cause.deferredError,
-        methodName = msg.methodName,
         workflowVersion = msg.workflowVersion,
     )
   }
@@ -203,6 +206,7 @@ data class TaskRetriedEvent(
   override val messageId: MessageId = MessageId(),
   override val serviceName: ServiceName,
   override val taskId: TaskId,
+  override val taskMethodName: MethodName,
   override val emitterName: EmitterName,
   override val taskRetrySequence: TaskRetrySequence,
   override val taskRetryIndex: TaskRetryIndex,
@@ -227,6 +231,7 @@ data class TaskRetriedEvent(
     ) = TaskRetriedEvent(
         serviceName = msg.serviceName,
         taskId = msg.taskId,
+        taskMethodName = msg.methodName,
         emitterName = emitterName,
         taskRetrySequence = msg.taskRetrySequence,
         taskRetryIndex = msg.taskRetryIndex + 1,
@@ -249,6 +254,7 @@ data class TaskCompletedEvent(
   override val messageId: MessageId = MessageId(),
   override val serviceName: ServiceName,
   override val taskId: TaskId,
+  override val taskMethodName: MethodName,
   override val emitterName: EmitterName,
   override val taskRetrySequence: TaskRetrySequence,
   override val taskRetryIndex: TaskRetryIndex,
@@ -283,6 +289,7 @@ data class TaskCompletedEvent(
             serviceName = serviceName,
             taskId = taskId,
             taskMeta = taskMeta,
+            taskMethodName = taskMethodName,
             returnValue = returnValue,
         ),
         emitterName = emitterName,
@@ -308,6 +315,7 @@ data class TaskCompletedEvent(
     ) = TaskCompletedEvent(
         serviceName = msg.serviceName,
         taskId = msg.taskId,
+        taskMethodName = msg.methodName,
         emitterName = emitterName,
         taskRetrySequence = msg.taskRetrySequence,
         taskRetryIndex = msg.taskRetryIndex,

@@ -245,6 +245,14 @@
         "name" : "emitterWorkflowId",
         "type" : [ "null", "string" ]
       }, {
+        "name" : "parentWorkflowName",
+        "type" : [ "null", "string" ],
+        "default" : null
+      }, {
+        "name" : "parentWorkflowMethodId",
+        "type" : [ "null", "string" ],
+        "default" : null
+      }, {
         "name" : "emitterName",
         "type" : "string"
       }, {
@@ -279,6 +287,14 @@
         "name" : "emitterWorkflowId",
         "type" : [ "null", "string" ]
       }, {
+        "name" : "parentWorkflowName",
+        "type" : [ "null", "string" ],
+        "default" : null
+      }, {
+        "name" : "parentWorkflowMethodId",
+        "type" : [ "null", "string" ],
+        "default" : null
+      }, {
         "name" : "emitterName",
         "type" : "string"
       }, {
@@ -301,6 +317,18 @@
       }, {
         "name" : "workflowTag",
         "type" : "string"
+      }, {
+        "name" : "parentWorkflowId",
+        "type" : [ "null", "string" ],
+        "default" : null
+      }, {
+        "name" : "parentWorkflowName",
+        "type" : [ "null", "string" ],
+        "default" : null
+      }, {
+        "name" : "parentWorkflowMethodId",
+        "type" : [ "null", "string" ],
+        "default" : null
       }, {
         "name" : "emitterName",
         "type" : "string"
@@ -339,6 +367,18 @@
         "name" : "taskName",
         "type" : [ "null", "string" ]
       }, {
+        "name" : "parentWorkflowId",
+        "type" : [ "null", "string" ],
+        "default" : null
+      }, {
+        "name" : "parentWorkflowName",
+        "type" : [ "null", "string" ],
+        "default" : null
+      }, {
+        "name" : "parentWorkflowMethodId",
+        "type" : [ "null", "string" ],
+        "default" : null
+      }, {
         "name" : "emitterName",
         "type" : "string"
       }, {
@@ -364,6 +404,18 @@
       }, {
         "name" : "methodRunId",
         "type" : [ "null", "string" ]
+      }, {
+        "name" : "parentWorkflowId",
+        "type" : [ "null", "string" ],
+        "default" : null
+      }, {
+        "name" : "parentWorkflowName",
+        "type" : [ "null", "string" ],
+        "default" : null
+      }, {
+        "name" : "parentWorkflowMethodId",
+        "type" : [ "null", "string" ],
+        "default" : null
       }, {
         "name" : "emitterName",
         "type" : "string"

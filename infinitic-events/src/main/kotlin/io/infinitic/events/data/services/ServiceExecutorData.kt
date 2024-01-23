@@ -24,11 +24,15 @@
 package io.infinitic.events.data.services
 
 import io.infinitic.common.exceptions.thisShouldNotHappen
+import io.infinitic.common.tasks.data.set
 import io.infinitic.common.tasks.executors.messages.ExecuteTask
 import io.infinitic.common.tasks.executors.messages.ServiceExecutorMessage
 import io.infinitic.common.tasks.executors.messages.clientName
 import io.infinitic.events.InfiniticServiceEventType
 import io.infinitic.events.TaskDispatched
+import io.infinitic.events.data.ClientDispatcherData
+import io.infinitic.events.data.DispatcherData
+import io.infinitic.events.data.WorkflowDispatcherData
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonElement
 
@@ -40,9 +44,9 @@ fun ServiceExecutorMessage.serviceType(): InfiniticServiceEventType = when (this
 data class TaskDispatchedData(
   val taskName: String,
   val taskArgs: List<JsonElement>,
-  val requester: RequesterData,
-  override val retrySequence: Int,
-  override val retryIndex: Int,
+  val dispatcher: DispatcherData,
+  override val taskRetrySequence: Int,
+  override val taskRetryIndex: Int,
   override val taskMeta: Map<String, ByteArray>,
   override val taskTags: Set<String>,
   override val infiniticVersion: String
@@ -50,21 +54,21 @@ data class TaskDispatchedData(
 
 fun ServiceExecutorMessage.toServiceData() = when (this) {
   is ExecuteTask -> TaskDispatchedData(
-      retrySequence = taskRetrySequence.toInt(),
-      retryIndex = taskRetryIndex.toInt(),
+      taskRetrySequence = taskRetrySequence.toInt(),
+      taskRetryIndex = taskRetryIndex.toInt(),
       taskName = methodName.toString(),
       taskArgs = methodParameters.toJson(),
       taskMeta = taskMeta.map,
-      taskTags = taskTags.map { it.toString() }.toSet(),
-      requester = when {
-        workflowName != null -> WorkflowRequesterData(
+      taskTags = taskTags.set,
+      dispatcher = when {
+        workflowName != null -> WorkflowDispatcherData(
             workflowName = workflowName.toString(),
             workflowId = workflowId?.toString() ?: thisShouldNotHappen(),
-            methodId = workflowMethodId?.toString() ?: thisShouldNotHappen(),
+            workflowMethodId = workflowMethodId?.toString() ?: thisShouldNotHappen(),
             workerName = emitterName.toString(),
         )
 
-        clientName != null -> ClientRequesterData(
+        clientName != null -> ClientDispatcherData(
             clientName = clientName.toString(),
         )
 

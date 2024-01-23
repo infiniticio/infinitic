@@ -257,10 +257,12 @@ data class MethodCanceledError(
 @SerialName("FailedTaskError")
 data class TaskFailedError(
   /** Name of failed task */
-  @SerialName("taskName") val serviceName: ServiceName,
+  @SerialName("taskName") @AvroName("taskName")
+  val serviceName: ServiceName,
 
   /** Method of failed task */
-  val methodName: MethodName,
+  @SerialName("methodName") @AvroName("methodName")
+  val taskMethodName: MethodName,
 
   /** Id of failed task */
   val taskId: TaskId,
@@ -272,7 +274,7 @@ data class TaskFailedError(
     fun from(exception: TaskFailedException) =
         TaskFailedError(
             serviceName = ServiceName(exception.serviceName),
-            methodName = MethodName(exception.methodName),
+            taskMethodName = MethodName(exception.methodName),
             taskId = TaskId(exception.taskId),
             cause = ExecutionError.from(exception.workerException),
         )

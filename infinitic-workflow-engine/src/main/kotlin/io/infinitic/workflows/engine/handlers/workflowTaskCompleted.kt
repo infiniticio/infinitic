@@ -263,6 +263,9 @@ internal fun sendSignalCmd(
         channelTypes = command.channelTypes,
         workflowName = command.workflowName,
         workflowId = command.workflowId!!,
+        parentWorkflowId = state.workflowId,
+        parentWorkflowName = state.workflowName,
+        parentWorkflowMethodId = state.runningWorkflowMethodId,
         emitterName = EmitterName(producer.name),
         emittedAt = state.runningWorkflowTaskInstant,
     )

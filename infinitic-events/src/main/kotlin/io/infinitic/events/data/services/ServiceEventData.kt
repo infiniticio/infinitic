@@ -47,8 +47,8 @@ fun ServiceEventMessage.serviceType() = when (this) {
 
 @Serializable
 sealed interface ServiceEventData : MessageData {
-  val retrySequence: Int
-  val retryIndex: Int
+  val taskRetrySequence: Int
+  val taskRetryIndex: Int
   val taskMeta: Map<String, ByteArray>
   val taskTags: Set<String>
   val infiniticVersion: String
@@ -56,8 +56,8 @@ sealed interface ServiceEventData : MessageData {
 
 @Serializable
 data class TaskStartedData(
-  override val retrySequence: Int,
-  override val retryIndex: Int,
+  override val taskRetrySequence: Int,
+  override val taskRetryIndex: Int,
   override val taskMeta: Map<String, ByteArray>,
   override val taskTags: Set<String>,
   val workerName: String,
@@ -66,9 +66,9 @@ data class TaskStartedData(
 
 @Serializable
 data class TaskFailedData(
-  val error: ErrorData,
-  override val retrySequence: Int,
-  override val retryIndex: Int,
+  val taskError: ErrorData,
+  override val taskRetrySequence: Int,
+  override val taskRetryIndex: Int,
   override val taskMeta: Map<String, ByteArray>,
   override val taskTags: Set<String>,
   val workerName: String,
@@ -77,10 +77,10 @@ data class TaskFailedData(
 
 @Serializable
 data class TaskRetriedData(
-  val error: ErrorData,
-  val delayMillis: Long,
-  override val retrySequence: Int,
-  override val retryIndex: Int,
+  val taskError: ErrorData,
+  val taskRetryDelayMillis: Long,
+  override val taskRetrySequence: Int,
+  override val taskRetryIndex: Int,
   override val taskMeta: Map<String, ByteArray>,
   override val taskTags: Set<String>,
   val workerName: String,
@@ -89,9 +89,9 @@ data class TaskRetriedData(
 
 @Serializable
 data class TaskCompletedData(
-  val returnValue: JsonElement,
-  override val retrySequence: Int,
-  override val retryIndex: Int,
+  val taskResult: JsonElement,
+  override val taskRetrySequence: Int,
+  override val taskRetryIndex: Int,
   override val taskMeta: Map<String, ByteArray>,
   override val taskTags: Set<String>,
   val workerName: String,
@@ -101,8 +101,8 @@ data class TaskCompletedData(
 fun ServiceEventMessage.toServiceData(): ServiceEventData = when (this) {
 
   is TaskStartedEvent -> TaskStartedData(
-      retrySequence = taskRetrySequence.toInt(),
-      retryIndex = taskRetryIndex.toInt(),
+      taskRetrySequence = taskRetrySequence.toInt(),
+      taskRetryIndex = taskRetryIndex.toInt(),
       taskMeta = taskMeta.map,
       taskTags = taskTags.map { it.toString() }.toSet(),
       workerName = emitterName.toString(),
@@ -110,10 +110,10 @@ fun ServiceEventMessage.toServiceData(): ServiceEventData = when (this) {
   )
 
   is TaskRetriedEvent -> TaskRetriedData(
-      error = lastError.toErrorData(),
-      delayMillis = taskRetryDelay.long,
-      retrySequence = taskRetrySequence.toInt(),
-      retryIndex = taskRetryIndex.toInt(),
+      taskError = lastError.toErrorData(),
+      taskRetryDelayMillis = taskRetryDelay.long,
+      taskRetrySequence = taskRetrySequence.toInt(),
+      taskRetryIndex = taskRetryIndex.toInt(),
       taskMeta = taskMeta.map,
       taskTags = taskTags.map { it.toString() }.toSet(),
       workerName = emitterName.toString(),
@@ -121,9 +121,9 @@ fun ServiceEventMessage.toServiceData(): ServiceEventData = when (this) {
   )
 
   is TaskFailedEvent -> TaskFailedData(
-      error = executionError.toErrorData(),
-      retrySequence = taskRetrySequence.toInt(),
-      retryIndex = taskRetryIndex.toInt(),
+      taskError = executionError.toErrorData(),
+      taskRetrySequence = taskRetrySequence.toInt(),
+      taskRetryIndex = taskRetryIndex.toInt(),
       taskMeta = taskMeta.map,
       taskTags = taskTags.map { it.toString() }.toSet(),
       workerName = emitterName.toString(),
@@ -131,9 +131,9 @@ fun ServiceEventMessage.toServiceData(): ServiceEventData = when (this) {
   )
 
   is TaskCompletedEvent -> TaskCompletedData(
-      returnValue = returnValue.toJson(),
-      retrySequence = taskRetrySequence.toInt(),
-      retryIndex = taskRetryIndex.toInt(),
+      taskResult = returnValue.toJson(),
+      taskRetrySequence = taskRetrySequence.toInt(),
+      taskRetryIndex = taskRetryIndex.toInt(),
       taskMeta = taskMeta.map,
       taskTags = taskTags.map { it.toString() }.toSet(),
       workerName = emitterName.toString(),

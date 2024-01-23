@@ -56,6 +56,9 @@ internal fun CoroutineScope.sendSignalCmd(
               channelTypes = command.channelTypes,
               workflowName = command.workflowName,
               workflowId = command.workflowId!!,
+              parentWorkflowId = currentWorkflow.workflowId,
+              parentWorkflowName = currentWorkflow.workflowName,
+              parentWorkflowMethodId = currentWorkflow.workflowMethodId,
               emitterName = emitterName,
               emittedAt = workflowTaskInstant,
           )
@@ -76,6 +79,8 @@ internal fun CoroutineScope.sendSignalCmd(
             signalData = command.signalData,
             channelTypes = command.channelTypes,
             parentWorkflowId = currentWorkflow.workflowId,
+            parentWorkflowName = currentWorkflow.workflowName,
+            parentWorkflowMethodId = currentWorkflow.workflowMethodId,
             emitterName = emitterName,
             emittedAt = workflowTaskInstant,
         )

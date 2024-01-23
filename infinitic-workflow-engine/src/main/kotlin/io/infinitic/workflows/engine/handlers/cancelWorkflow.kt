@@ -112,6 +112,9 @@ private fun CoroutineScope.cancelWorkflowMethod(
                 workflowMethodId = WorkflowMethodId.from(it.commandId),
                 workflowName = command.workflowName,
                 workflowId = command.workflowId!!,
+                parentWorkflowId = state.workflowId,
+                parentWorkflowName = state.workflowName,
+                parentWorkflowMethodId = workflowMethod.workflowMethodId,
                 emitterName = emitterName,
                 emittedAt = emittedAt,
             )
@@ -123,7 +126,9 @@ private fun CoroutineScope.cancelWorkflowMethod(
                 workflowTag = command.workflowTag!!,
                 workflowName = command.workflowName,
                 reason = WorkflowCancellationReason.CANCELED_BY_PARENT,
-                emitterWorkflowId = state.workflowId,
+                parentWorkflowId = state.workflowId,
+                parentWorkflowName = state.workflowName,
+                parentWorkflowMethodId = workflowMethod.workflowMethodId,
                 emitterName = emitterName,
                 emittedAt = emittedAt,
             )
@@ -140,6 +145,9 @@ private fun CoroutineScope.cancelWorkflowMethod(
             workflowName = command.workflowName,
             workflowMethodId = null,
             cancellationReason = WorkflowCancellationReason.CANCELED_BY_PARENT,
+            parentWorkflowId = state.workflowId,
+            parentWorkflowName = state.workflowName,
+            parentWorkflowMethodId = workflowMethod.workflowMethodId,
             emitterName = emitterName,
             emittedAt = emittedAt,
         )

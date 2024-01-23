@@ -45,3 +45,5 @@ object TaskTagSerializer : KSerializer<TaskTag> {
 
   override fun deserialize(decoder: Decoder) = TaskTag(decoder.decodeString())
 }
+
+val Set<TaskTag>.set get() = map { it.tag }.toSet()

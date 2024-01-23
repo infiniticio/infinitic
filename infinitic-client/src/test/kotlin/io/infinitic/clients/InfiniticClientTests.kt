@@ -406,6 +406,9 @@ internal class InfiniticClientTests : StringSpec(
             workflowName = WorkflowName(FakeWorkflow::class.java.name),
             workflowId = msg.workflowId,
             emitterName = emitterNameTest,
+            parentWorkflowId = null,
+            parentWorkflowName = null,
+            parentWorkflowMethodId = null,
             emittedAt = null,
         )
 
@@ -466,6 +469,9 @@ internal class InfiniticClientTests : StringSpec(
             channelTypes = ChannelType.allFrom(String::class.java),
             workflowName = WorkflowName(FakeWorkflow::class.java.name),
             workflowId = WorkflowId(id),
+            parentWorkflowId = null,
+            parentWorkflowName = null,
+            parentWorkflowMethodId = null,
             emitterName = emitterNameTest,
             emittedAt = null,
         )
@@ -486,6 +492,9 @@ internal class InfiniticClientTests : StringSpec(
             channelTypes = ChannelType.allFrom(String::class.java),
             workflowName = WorkflowName(FakeWorkflow::class.java.name),
             workflowId = WorkflowId(id),
+            parentWorkflowId = null,
+            parentWorkflowName = null,
+            parentWorkflowMethodId = null,
             emitterName = emitterNameTest,
             emittedAt = null,
         )
@@ -505,6 +514,8 @@ internal class InfiniticClientTests : StringSpec(
             signalData = SignalData.from("a"),
             channelTypes = ChannelType.allFrom(String::class.java),
             parentWorkflowId = null,
+            parentWorkflowName = null,
+            parentWorkflowMethodId = null,
             emitterName = emitterNameTest,
             emittedAt = null,
         )
@@ -525,6 +536,8 @@ internal class InfiniticClientTests : StringSpec(
             signalData = SignalData.from("a"),
             channelTypes = ChannelType.allFrom(String::class.java),
             parentWorkflowId = null,
+            parentWorkflowName = null,
+            parentWorkflowMethodId = null,
             emitterName = emitterNameTest,
             emittedAt = null,
         )
@@ -550,6 +563,9 @@ internal class InfiniticClientTests : StringSpec(
             ),
             workflowName = WorkflowName(FakeWorkflow::class.java.name),
             workflowId = WorkflowId(id),
+            parentWorkflowId = null,
+            parentWorkflowName = null,
+            parentWorkflowMethodId = null,
             emitterName = emitterNameTest,
             emittedAt = null,
         )
@@ -575,6 +591,9 @@ internal class InfiniticClientTests : StringSpec(
             ),
             workflowName = WorkflowName(FakeWorkflow::class.java.name),
             workflowId = WorkflowId(id),
+            parentWorkflowId = null,
+            parentWorkflowName = null,
+            parentWorkflowMethodId = null,
             emitterName = emitterNameTest,
             emittedAt = null,
         )
@@ -593,6 +612,9 @@ internal class InfiniticClientTests : StringSpec(
             serviceName = null,
             workflowName = WorkflowName(FakeWorkflow::class.java.name),
             workflowId = WorkflowId(id),
+            parentWorkflowId = null,
+            parentWorkflowName = null,
+            parentWorkflowMethodId = null,
             emitterName = emitterNameTest,
             emittedAt = null,
         )
@@ -611,6 +633,9 @@ internal class InfiniticClientTests : StringSpec(
             serviceName = null,
             workflowName = WorkflowName(FakeWorkflow::class.java.name),
             workflowId = WorkflowId(id),
+            parentWorkflowId = null,
+            parentWorkflowName = null,
+            parentWorkflowMethodId = null,
             emitterName = emitterNameTest,
             emittedAt = null,
         )
@@ -627,6 +652,9 @@ internal class InfiniticClientTests : StringSpec(
             workflowMethodId = null,
             workflowName = WorkflowName(FakeWorkflow::class.java.name),
             workflowId = WorkflowId(id),
+            parentWorkflowId = null,
+            parentWorkflowName = null,
+            parentWorkflowMethodId = null,
             emitterName = emitterNameTest,
             emittedAt = null,
         )
@@ -643,6 +671,9 @@ internal class InfiniticClientTests : StringSpec(
             workflowMethodId = null,
             workflowName = WorkflowName(FakeWorkflow::class.java.name),
             workflowId = WorkflowId(id),
+            parentWorkflowId = null,
+            parentWorkflowName = null,
+            parentWorkflowMethodId = null,
             emitterName = emitterNameTest,
             emittedAt = null,
         )
@@ -709,6 +740,9 @@ internal class InfiniticClientTests : StringSpec(
             workflowName = WorkflowName(FakeWorkflow::class.java.name),
             workflowId = WorkflowId(id),
             emitterName = emitterNameTest,
+            parentWorkflowId = null,
+            parentWorkflowName = null,
+            parentWorkflowMethodId = null,
             emittedAt = null,
         )
       }
@@ -725,6 +759,9 @@ internal class InfiniticClientTests : StringSpec(
             workflowMethodId = null,
             workflowName = WorkflowName(FakeWorkflow::class.java.name),
             workflowId = WorkflowId(id),
+            parentWorkflowId = null,
+            parentWorkflowName = null,
+            parentWorkflowMethodId = null,
             emitterName = emitterNameTest,
             emittedAt = null,
         )
@@ -741,7 +778,9 @@ internal class InfiniticClientTests : StringSpec(
             workflowName = WorkflowName(FakeWorkflow::class.java.name),
             workflowTag = WorkflowTag(tag),
             reason = WorkflowCancellationReason.CANCELED_BY_CLIENT,
-            emitterWorkflowId = null,
+            parentWorkflowId = null,
+            parentWorkflowName = null,
+            parentWorkflowMethodId = null,
             emitterName = emitterNameTest,
             emittedAt = null,
         )
@@ -759,7 +798,9 @@ internal class InfiniticClientTests : StringSpec(
             workflowName = WorkflowName(FakeWorkflow::class.java.name),
             workflowTag = WorkflowTag("foo"),
             reason = WorkflowCancellationReason.CANCELED_BY_CLIENT,
-            emitterWorkflowId = null,
+            parentWorkflowId = null,
+            parentWorkflowName = null,
+            parentWorkflowMethodId = null,
             emitterName = emitterNameTest,
             emittedAt = null,
         )
@@ -778,6 +819,9 @@ internal class InfiniticClientTests : StringSpec(
             workflowName = WorkflowName(FakeWorkflow::class.java.name),
             workflowId = WorkflowId(deferred.id),
             emitterName = emitterNameTest,
+            parentWorkflowId = null,
+            parentWorkflowName = null,
+            parentWorkflowMethodId = null,
             emittedAt = null,
         )
       }

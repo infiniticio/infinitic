@@ -116,6 +116,9 @@ sealed class WorkflowMessage : WorkflowMessageInterface {
 data class RetryWorkflowTask(
   override val workflowName: WorkflowName,
   override val workflowId: WorkflowId,
+  @AvroDefault(Avro.NULL) override val parentWorkflowName: WorkflowName?,
+  @AvroDefault(Avro.NULL) override val parentWorkflowId: WorkflowId?,
+  @AvroDefault(Avro.NULL) override var parentWorkflowMethodId: WorkflowMethodId?,
   override val emitterName: EmitterName,
   @AvroDefault(Avro.NULL) override var emittedAt: MillisInstant?
 ) : WorkflowMessage(), WorkflowCmdMessage
@@ -139,6 +142,9 @@ data class RetryTasks(
   @SerialName("taskName") val serviceName: ServiceName?,
   override val workflowName: WorkflowName,
   override val workflowId: WorkflowId,
+  @AvroDefault(Avro.NULL) override val parentWorkflowName: WorkflowName?,
+  @AvroDefault(Avro.NULL) override val parentWorkflowId: WorkflowId?,
+  @AvroDefault(Avro.NULL) override var parentWorkflowMethodId: WorkflowMethodId?,
   override val emitterName: EmitterName,
   @AvroDefault(Avro.NULL) override var emittedAt: MillisInstant?
 ) : WorkflowMessage(), WorkflowCmdMessage
@@ -157,6 +163,9 @@ data class WaitWorkflow(
   @AvroName("methodRunId") val workflowMethodId: WorkflowMethodId,
   override val workflowName: WorkflowName,
   override val workflowId: WorkflowId,
+  @AvroDefault(Avro.NULL) override val parentWorkflowName: WorkflowName?,
+  @AvroDefault(Avro.NULL) override val parentWorkflowId: WorkflowId?,
+  @AvroDefault(Avro.NULL) override var parentWorkflowMethodId: WorkflowMethodId?,
   override val emitterName: EmitterName,
   @AvroDefault(Avro.NULL) override var emittedAt: MillisInstant?
 ) : WorkflowMessage(), WorkflowCmdMessage
@@ -189,9 +198,9 @@ data class DispatchNewWorkflow(
   val methodParameterTypes: MethodParameterTypes?,
   val workflowTags: Set<WorkflowTag>,
   val workflowMeta: WorkflowMeta,
-  val parentWorkflowName: WorkflowName?,
-  val parentWorkflowId: WorkflowId?,
-  @AvroName("parentMethodRunId") var parentWorkflowMethodId: WorkflowMethodId?,
+  override val parentWorkflowName: WorkflowName?,
+  override val parentWorkflowId: WorkflowId?,
+  @AvroName("parentMethodRunId") override var parentWorkflowMethodId: WorkflowMethodId?,
   @AvroDefault(Avro.NULL) val workflowTaskId: TaskId? = null,
   val clientWaiting: Boolean,
   override val emitterName: EmitterName,
@@ -289,9 +298,9 @@ data class DispatchMethodWorkflow(
   val methodName: MethodName,
   val methodParameters: MethodParameters,
   val methodParameterTypes: MethodParameterTypes?,
-  var parentWorkflowId: WorkflowId?,
-  var parentWorkflowName: WorkflowName?,
-  @AvroName("parentMethodRunId") var parentWorkflowMethodId: WorkflowMethodId?,
+  override val parentWorkflowId: WorkflowId?,
+  override val parentWorkflowName: WorkflowName?,
+  @AvroName("parentMethodRunId") override val parentWorkflowMethodId: WorkflowMethodId?,
   val clientWaiting: Boolean,
   override val emitterName: EmitterName,
   @AvroDefault(Avro.NULL) override var emittedAt: MillisInstant?
@@ -318,6 +327,9 @@ data class CompleteTimers(
   @AvroName("methodRunId") val workflowMethodId: WorkflowMethodId?,
   override val workflowName: WorkflowName,
   override val workflowId: WorkflowId,
+  @AvroDefault(Avro.NULL) override val parentWorkflowName: WorkflowName?,
+  @AvroDefault(Avro.NULL) override val parentWorkflowId: WorkflowId?,
+  @AvroDefault(Avro.NULL) override var parentWorkflowMethodId: WorkflowMethodId?,
   override val emitterName: EmitterName,
   @AvroDefault(Avro.NULL) override var emittedAt: MillisInstant?
 ) : WorkflowMessage(), WorkflowCmdMessage, WorkflowInternalEvent
@@ -337,11 +349,20 @@ data class CancelWorkflow(
   @AvroNamespace("io.infinitic.workflows.data")
   @AvroName("reason") val cancellationReason: WorkflowCancellationReason,
   @AvroName("methodRunId") val workflowMethodId: WorkflowMethodId?,
+  @AvroDefault(Avro.NULL) override val parentWorkflowId: WorkflowId?,
+  @AvroDefault(Avro.NULL) override val parentWorkflowName: WorkflowName?,
+  @AvroDefault(Avro.NULL) override val parentWorkflowMethodId: WorkflowMethodId?,
   override val workflowName: WorkflowName,
   override val workflowId: WorkflowId,
   override val emitterName: EmitterName,
   @AvroDefault(Avro.NULL) override var emittedAt: MillisInstant?
 ) : WorkflowMessage(), WorkflowCmdMessage, WorkflowInternalEvent
+
+val CancelWorkflow.parentClientName
+  get() = when (parentWorkflowId) {
+    null -> ClientName.from(emitterName)
+    else -> null
+  }
 
 /**
  * This message is a command to manually complete a running workflow
@@ -357,6 +378,9 @@ data class CompleteWorkflow(
   val workflowReturnValue: ReturnValue,
   override val workflowName: WorkflowName,
   override val workflowId: WorkflowId,
+  @AvroDefault(Avro.NULL) override val parentWorkflowName: WorkflowName?,
+  @AvroDefault(Avro.NULL) override val parentWorkflowId: WorkflowId?,
+  @AvroDefault(Avro.NULL) override var parentWorkflowMethodId: WorkflowMethodId?,
   override val emitterName: EmitterName,
   @AvroDefault(Avro.NULL) override var emittedAt: MillisInstant?
 ) : WorkflowMessage(), WorkflowCmdMessage, WorkflowInternalEvent
@@ -381,6 +405,9 @@ data class SendSignal(
   @AvroName("channelSignalTypes") val channelTypes: Set<ChannelType>,
   override val workflowName: WorkflowName,
   override val workflowId: WorkflowId,
+  @AvroDefault(Avro.NULL) override val parentWorkflowName: WorkflowName?,
+  @AvroDefault(Avro.NULL) override val parentWorkflowId: WorkflowId?,
+  @AvroDefault(Avro.NULL) override var parentWorkflowMethodId: WorkflowMethodId?,
   override val emitterName: EmitterName,
   @AvroDefault(Avro.NULL) override var emittedAt: MillisInstant?
 ) : WorkflowMessage(), WorkflowCmdMessage, WorkflowInternalEvent

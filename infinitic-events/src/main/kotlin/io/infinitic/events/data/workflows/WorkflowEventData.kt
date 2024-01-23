@@ -115,7 +115,7 @@ fun ServiceEventMessage.toWorkflowData(): WorkflowEventData = when (this) {
   is TaskRetriedEvent -> thisShouldNotHappen()
 
   is TaskFailedEvent -> thisShouldNotHappen()
-  
+
 
   is TaskCompletedEvent -> thisShouldNotHappen()
 }

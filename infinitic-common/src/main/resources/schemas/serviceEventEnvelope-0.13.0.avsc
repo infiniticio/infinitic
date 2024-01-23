@@ -30,6 +30,9 @@
         "name" : "taskId",
         "type" : "string"
       }, {
+        "name" : "taskMethodName",
+        "type" : "string"
+      }, {
         "name" : "emitterName",
         "type" : "string"
       }, {
@@ -86,6 +89,9 @@
         "type" : "string"
       }, {
         "name" : "taskId",
+        "type" : "string"
+      }, {
+        "name" : "taskMethodName",
         "type" : "string"
       }, {
         "name" : "emitterName",
@@ -167,6 +173,9 @@
         "type" : "string"
       }, {
         "name" : "taskId",
+        "type" : "string"
+      }, {
+        "name" : "taskMethodName",
         "type" : "string"
       }, {
         "name" : "emitterName",
@@ -344,9 +353,6 @@
           } ]
         }, "FailedWorkflowTaskError", "TimedOutTaskError", "TimedOutWorkflowError", "UnknownTaskError", "UnknownWorkflowError" ]
       }, {
-        "name" : "methodName",
-        "type" : "string"
-      }, {
         "name" : "workflowVersion",
         "type" : [ "null", "int" ]
       } ]
@@ -367,6 +373,9 @@
         "type" : "string"
       }, {
         "name" : "taskId",
+        "type" : "string"
+      }, {
+        "name" : "taskMethodName",
         "type" : "string"
       }, {
         "name" : "emitterName",

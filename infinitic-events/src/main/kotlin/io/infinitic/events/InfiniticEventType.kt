@@ -101,6 +101,10 @@ data object WorkflowCompleted : InfiniticWorkflowEventType {
   override val type = "$TYPE_WORKFLOW.completed"
 }
 
+data object TaskRetryRequested : InfiniticWorkflowTaskEventType {
+  override val type = "$TYPE_WORKFLOW.retryTaskRequested"
+}
+
 
 /**
  * ABOUT WORKFLOW TASKS
@@ -129,10 +133,6 @@ data object WorkflowTaskCompleted : InfiniticWorkflowTaskEventType {
 
 data object WorkflowTaskFailed : InfiniticWorkflowTaskEventType {
   override val type = "$TYPE_WORKFLOW_TASK.failed"
-}
-
-data object WorkflowTaskTimedOut : InfiniticWorkflowTaskEventType {
-  override val type = "$TYPE_WORKFLOW_TASK.timedOut"
 }
 
 /**

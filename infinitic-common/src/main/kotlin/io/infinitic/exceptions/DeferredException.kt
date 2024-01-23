@@ -255,7 +255,7 @@ data class TaskFailedException(
         TaskFailedException(
             serviceName = error.serviceName.toString(),
             taskId = error.taskId.toString(),
-            methodName = error.methodName.toString(),
+            methodName = error.taskMethodName.toString(),
             workerException = WorkerException.from(error.cause),
         )
   }

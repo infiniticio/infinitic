@@ -514,7 +514,7 @@ fun TaskFailedEvent.check(
   clientWaiting shouldBe msg.clientWaiting
   executionError.name shouldBe errorName
   executionError.workerName shouldBe WorkerName.from(msg.emitterName)
-  methodName shouldBe msg.methodName
+  taskMethodName shouldBe msg.methodName
   taskMeta shouldBe TaskMeta(meta)
   taskId shouldBe msg.taskId
 }
@@ -564,6 +564,7 @@ private fun getTaskStarted(msg: ExecuteTask, messageId: MessageId) = TaskStarted
     messageId = messageId,
     serviceName = msg.serviceName,
     taskId = msg.taskId,
+    taskMethodName = msg.methodName,
     emitterName = testEmitterName,
     taskRetrySequence = msg.taskRetrySequence,
     taskRetryIndex = msg.taskRetryIndex,
@@ -586,6 +587,7 @@ private fun getTaskCompleted(
     messageId = messageId,
     serviceName = msg.serviceName,
     taskId = msg.taskId,
+    taskMethodName = msg.methodName,
     emitterName = testEmitterName,
     taskRetrySequence = msg.taskRetrySequence,
     taskRetryIndex = msg.taskRetryIndex,

@@ -46,6 +46,9 @@ import io.infinitic.common.transport.WorkflowEventsTopic
 import io.infinitic.common.transport.WorkflowTagTopic
 import io.infinitic.common.transport.WorkflowTaskEventsTopic
 import io.infinitic.common.transport.WorkflowTaskExecutorTopic
+import io.infinitic.common.workflows.engine.messages.WorkflowCmdMessage
+import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
+import io.infinitic.common.workflows.engine.messages.WorkflowEventMessage
 import io.infinitic.events.toServiceCloudEvent
 import io.infinitic.events.toWorkflowCloudEvent
 import io.infinitic.pulsar.PulsarInfiniticConsumerAsync
@@ -337,7 +340,17 @@ class InfiniticWorker(
             registeredEventListener.eventListener.onCloudEvent(it)
           } ?: Unit
         }
-        val workflowEventHandler = { message: Message, publishedAt: MillisInstant ->
+        val workflowCmdHandler = { message: WorkflowCmdMessage, publishedAt: MillisInstant ->
+          message.toWorkflowCloudEvent(publishedAt, source)?.let {
+            registeredEventListener.eventListener.onCloudEvent(it)
+          } ?: Unit
+        }
+        val workflowEngineHandler = { message: WorkflowEngineMessage, publishedAt: MillisInstant ->
+          // workflow-cmd messages are ignored
+          if (message !is WorkflowCmdMessage) message.toWorkflowCloudEvent(publishedAt, source)
+              ?.let { registeredEventListener.eventListener.onCloudEvent(it) }
+        }
+        val workflowEventHandler = { message: WorkflowEventMessage, publishedAt: MillisInstant ->
           message.toWorkflowCloudEvent(publishedAt, source)?.let {
             registeredEventListener.eventListener.onCloudEvent(it)
           } ?: Unit
@@ -377,7 +390,7 @@ class InfiniticWorker(
           consumerAsync.start(
               subscription = ListenerSubscription(WorkflowCmdTopic),
               entity = workflowName.toString(),
-              handler = workflowEventHandler,
+              handler = workflowCmdHandler,
               beforeDlq = logMessageSentToDLQ,
               concurrency = registeredEventListener.concurrency,
           )
@@ -387,7 +400,7 @@ class InfiniticWorker(
           consumerAsync.start(
               subscription = ListenerSubscription(WorkflowEngineTopic),
               entity = workflowName.toString(),
-              handler = workflowEventHandler,
+              handler = workflowEngineHandler,
               beforeDlq = logMessageSentToDLQ,
               concurrency = registeredEventListener.concurrency,
           )

@@ -51,3 +51,5 @@ object WorkflowTagSerializer : KSerializer<WorkflowTag> {
 
   override fun deserialize(decoder: Decoder) = WorkflowTag(decoder.decodeString())
 }
+
+val Set<WorkflowTag>.set get() = map { it.tag }.toSet()

@@ -222,6 +222,7 @@ class TaskEventHandlerTests :
 private fun getTaskRetried() = TaskRetriedEvent(
     serviceName = testServiceName,
     taskId = TaskId(),
+    taskMethodName = TestFactory.random(),
     emitterName = EmitterName("previousEmitter"),
     taskRetrySequence = TaskRetrySequence(12),
     taskRetryIndex = TaskRetryIndex(7),
@@ -239,6 +240,7 @@ private fun getTaskRetried() = TaskRetriedEvent(
 private fun getTaskStarted() = TaskStartedEvent(
     serviceName = testServiceName,
     taskId = TaskId(),
+    taskMethodName = TestFactory.random(),
     emitterName = EmitterName("previousEmitter"),
     taskRetrySequence = TaskRetrySequence(12),
     taskRetryIndex = TaskRetryIndex(7),
@@ -255,6 +257,7 @@ private fun getTaskStarted() = TaskStartedEvent(
 private fun getTaskCompleted() = TaskCompletedEvent(
     serviceName = testServiceName,
     taskId = TaskId(),
+    taskMethodName = TestFactory.random(),
     emitterName = EmitterName("previousEmitter"),
     taskRetrySequence = TaskRetrySequence(12),
     taskRetryIndex = TaskRetryIndex(7),
@@ -286,6 +289,7 @@ private fun getTaskCompletedWorkflow(msg: TaskCompletedEvent) =
         taskReturnValue = TaskReturnValue(
             msg.taskId,
             msg.serviceName,
+            msg.taskMethodName,
             msg.taskMeta,
             msg.returnValue,
         ),
@@ -296,6 +300,7 @@ private fun getTaskCompletedWorkflow(msg: TaskCompletedEvent) =
 private fun getTaskFailed() = TaskFailedEvent(
     serviceName = testServiceName,
     taskId = TaskId(),
+    taskMethodName = TestFactory.random(),
     emitterName = EmitterName("previousEmitter"),
     taskRetrySequence = TaskRetrySequence(12),
     taskRetryIndex = TaskRetryIndex(7),
@@ -308,7 +313,6 @@ private fun getTaskFailed() = TaskFailedEvent(
     taskMeta = TestFactory.random(),
     executionError = TestFactory.random(),
     deferredError = TestFactory.random(),
-    methodName = TestFactory.random(),
     workflowVersion = WorkflowVersion(42),
 )
 
@@ -327,7 +331,7 @@ private fun getTaskFailedWorkflow(msg: TaskFailedEvent) =
         workflowMethodId = msg.workflowMethodId!!,
         taskFailedError = TaskFailedError(
             serviceName = msg.serviceName,
-            methodName = msg.methodName,
+            taskMethodName = msg.taskMethodName,
             taskId = msg.taskId,
             cause = msg.executionError,
         ),

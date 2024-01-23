@@ -182,6 +182,18 @@
         "name" : "workflowId",
         "type" : "string"
       }, {
+        "name" : "parentWorkflowName",
+        "type" : [ "null", "string" ],
+        "default" : null
+      }, {
+        "name" : "parentWorkflowId",
+        "type" : [ "null", "string" ],
+        "default" : null
+      }, {
+        "name" : "parentWorkflowMethodId",
+        "type" : [ "null", "string" ],
+        "default" : null
+      }, {
         "name" : "emitterName",
         "type" : "string"
       }, {
@@ -213,6 +225,18 @@
       }, {
         "name" : "methodRunId",
         "type" : [ "null", "string" ]
+      }, {
+        "name" : "parentWorkflowId",
+        "type" : [ "null", "string" ],
+        "default" : null
+      }, {
+        "name" : "parentWorkflowName",
+        "type" : [ "null", "string" ],
+        "default" : null
+      }, {
+        "name" : "parentWorkflowMethodId",
+        "type" : [ "null", "string" ],
+        "default" : null
       }, {
         "name" : "workflowName",
         "type" : "string"
@@ -246,6 +270,18 @@
       }, {
         "name" : "workflowId",
         "type" : "string"
+      }, {
+        "name" : "parentWorkflowName",
+        "type" : [ "null", "string" ],
+        "default" : null
+      }, {
+        "name" : "parentWorkflowId",
+        "type" : [ "null", "string" ],
+        "default" : null
+      }, {
+        "name" : "parentWorkflowMethodId",
+        "type" : [ "null", "string" ],
+        "default" : null
       }, {
         "name" : "emitterName",
         "type" : "string"
@@ -288,6 +324,18 @@
         "name" : "workflowId",
         "type" : "string"
       }, {
+        "name" : "parentWorkflowName",
+        "type" : [ "null", "string" ],
+        "default" : null
+      }, {
+        "name" : "parentWorkflowId",
+        "type" : [ "null", "string" ],
+        "default" : null
+      }, {
+        "name" : "parentWorkflowMethodId",
+        "type" : [ "null", "string" ],
+        "default" : null
+      }, {
         "name" : "emitterName",
         "type" : "string"
       }, {
@@ -318,6 +366,18 @@
         "name" : "workflowId",
         "type" : "string"
       }, {
+        "name" : "parentWorkflowName",
+        "type" : [ "null", "string" ],
+        "default" : null
+      }, {
+        "name" : "parentWorkflowId",
+        "type" : [ "null", "string" ],
+        "default" : null
+      }, {
+        "name" : "parentWorkflowMethodId",
+        "type" : [ "null", "string" ],
+        "default" : null
+      }, {
         "name" : "emitterName",
         "type" : "string"
       }, {
@@ -347,6 +407,18 @@
       }, {
         "name" : "workflowId",
         "type" : "string"
+      }, {
+        "name" : "parentWorkflowName",
+        "type" : [ "null", "string" ],
+        "default" : null
+      }, {
+        "name" : "parentWorkflowId",
+        "type" : [ "null", "string" ],
+        "default" : null
+      }, {
+        "name" : "parentWorkflowMethodId",
+        "type" : [ "null", "string" ],
+        "default" : null
       }, {
         "name" : "emitterName",
         "type" : "string"
@@ -389,6 +461,18 @@
       }, {
         "name" : "workflowId",
         "type" : "string"
+      }, {
+        "name" : "parentWorkflowName",
+        "type" : [ "null", "string" ],
+        "default" : null
+      }, {
+        "name" : "parentWorkflowId",
+        "type" : [ "null", "string" ],
+        "default" : null
+      }, {
+        "name" : "parentWorkflowMethodId",
+        "type" : [ "null", "string" ],
+        "default" : null
       }, {
         "name" : "emitterName",
         "type" : "string"

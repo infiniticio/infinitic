@@ -49,20 +49,19 @@ fun Message.toServiceCloudEvent(publishedAt: MillisInstant, prefix: String): Clo
 
 fun Message.toWorkflowCloudEvent(publishedAt: MillisInstant, prefix: String): CloudEvent? =
     with(CloudEventContext.WORKFLOW) {
-      null
-//      when (val type = type()) {
-//        null -> null
-//        else -> CloudEventBuilder()
-//            .withId(messageId.toString())
-//            .withTime(OffsetDateTime.ofInstant(publishedAt.toInstant(), ZoneOffset.UTC))
-//            .withType(type)
-//            .withSubject(subject())
-//            .withSource(source(prefix))
-//            .withDataContentType("application/json")
-//            .withoutDataSchema()
-//            .withData(dataBytes())
-//            .build()
-//      }
+      when (val type = type()) {
+        null -> null
+        else -> CloudEventBuilder()
+            .withId(messageId.toString())
+            .withTime(OffsetDateTime.ofInstant(publishedAt.toInstant(), ZoneOffset.UTC))
+            .withType(type)
+            .withSubject(subject())
+            .withSource(source(prefix))
+            .withDataContentType("application/json")
+            .withoutDataSchema()
+            .withData(dataBytes())
+            .build()
+      }
     }
 
 

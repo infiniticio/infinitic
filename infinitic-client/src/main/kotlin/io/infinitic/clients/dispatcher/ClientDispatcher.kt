@@ -227,6 +227,9 @@ internal class ClientDispatcher(
           workflowName = workflowName,
           workflowId = workflowId,
           emitterName = emitterName,
+          parentWorkflowId = null,
+          parentWorkflowName = null,
+          parentWorkflowMethodId = null,
           emittedAt = null,
       )
       // synchronously sent the message to get errors
@@ -286,6 +289,9 @@ internal class ClientDispatcher(
           workflowMethodId = workflowMethodId,
           workflowName = workflowName,
           workflowId = requestBy.workflowId,
+          parentWorkflowId = null,
+          parentWorkflowName = null,
+          parentWorkflowMethodId = null,
           emitterName = emitterName,
           emittedAt = null,
       )
@@ -297,7 +303,9 @@ internal class ClientDispatcher(
           workflowName = workflowName,
           workflowTag = requestBy.workflowTag,
           reason = WorkflowCancellationReason.CANCELED_BY_CLIENT,
-          emitterWorkflowId = null,
+          parentWorkflowId = null,
+          parentWorkflowName = null,
+          parentWorkflowMethodId = null,
           emitterName = emitterName,
           emittedAt = null,
       )
@@ -316,6 +324,9 @@ internal class ClientDispatcher(
           workflowName = workflowName,
           workflowId = requestBy.workflowId,
           emitterName = emitterName,
+          parentWorkflowId = null,
+          parentWorkflowName = null,
+          parentWorkflowMethodId = null,
           emittedAt = null,
       )
       msg.sendToAsync(WorkflowCmdTopic)
@@ -325,6 +336,9 @@ internal class ClientDispatcher(
       val msg = RetryWorkflowTaskByTag(
           workflowName = workflowName,
           workflowTag = requestBy.workflowTag,
+          parentWorkflowId = null,
+          parentWorkflowName = null,
+          parentWorkflowMethodId = null,
           emitterName = emitterName,
           emittedAt = null,
       )
@@ -346,6 +360,9 @@ internal class ClientDispatcher(
           workflowName = workflowName,
           workflowId = requestBy.workflowId,
           emitterName = emitterName,
+          parentWorkflowId = null,
+          parentWorkflowName = null,
+          parentWorkflowMethodId = null,
           emittedAt = null,
       )
       msg.sendToAsync(WorkflowCmdTopic)
@@ -357,6 +374,9 @@ internal class ClientDispatcher(
           workflowTag = requestBy.workflowTag,
           workflowMethodId = workflowMethodId,
           emitterName = emitterName,
+          parentWorkflowId = null,
+          parentWorkflowName = null,
+          parentWorkflowMethodId = null,
           emittedAt = null,
       )
       msg.sendToAsync(WorkflowTagTopic)
@@ -381,6 +401,9 @@ internal class ClientDispatcher(
           taskId = taskId,
           taskStatus = taskStatus,
           serviceName = serviceName,
+          parentWorkflowId = null,
+          parentWorkflowName = null,
+          parentWorkflowMethodId = null,
           emittedAt = null,
       )
       msg.sendToAsync(WorkflowCmdTopic)
@@ -394,6 +417,9 @@ internal class ClientDispatcher(
           taskStatus = taskStatus,
           serviceName = serviceName,
           emitterName = emitterName,
+          parentWorkflowId = null,
+          parentWorkflowName = null,
+          parentWorkflowMethodId = null,
           emittedAt = null,
       )
       msg.sendToAsync(WorkflowTagTopic)
@@ -700,6 +726,9 @@ internal class ClientDispatcher(
             channelTypes = handler.channelTypes,
             workflowName = handler.workflowName,
             workflowId = (handler.requestBy as RequestByWorkflowId).workflowId,
+            parentWorkflowId = null,
+            parentWorkflowName = null,
+            parentWorkflowMethodId = null,
             emitterName = emitterName,
             emittedAt = null,
         )
@@ -715,6 +744,8 @@ internal class ClientDispatcher(
             signalData = handler.signalData,
             channelTypes = handler.channelTypes,
             parentWorkflowId = null,
+            parentWorkflowName = null,
+            parentWorkflowMethodId = null,
             emitterName = emitterName,
             emittedAt = null,
         )

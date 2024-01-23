@@ -167,6 +167,9 @@ class WorkflowTagEngine(
                 workflowMethodId = WorkflowMethodId.from(ids.first()),
                 workflowName = message.workflowName,
                 workflowId = ids.first(),
+                parentWorkflowId = message.parentWorkflowId,
+                parentWorkflowName = message.workflowName,
+                parentWorkflowMethodId = message.parentWorkflowMethodId,
                 emitterName = message.emitterName,
                 emittedAt = message.emittedAt ?: publishTime,
             )
@@ -253,6 +256,9 @@ class WorkflowTagEngine(
           val retryWorkflowTask = RetryWorkflowTask(
               workflowName = message.workflowName,
               workflowId = workflowId,
+              parentWorkflowId = message.parentWorkflowId,
+              parentWorkflowName = message.parentWorkflowName,
+              parentWorkflowMethodId = message.parentWorkflowMethodId,
               emitterName = emitterName,
               emittedAt = message.emittedAt ?: publishTime,
           )
@@ -277,6 +283,9 @@ class WorkflowTagEngine(
                   serviceName = message.serviceName,
                   workflowName = message.workflowName,
                   workflowId = workflowId,
+                  parentWorkflowId = message.parentWorkflowId,
+                  parentWorkflowName = message.parentWorkflowName,
+                  parentWorkflowMethodId = message.parentWorkflowMethodId,
                   emitterName = emitterName,
                   emittedAt = message.emittedAt ?: publishTime,
               )
@@ -299,6 +308,9 @@ class WorkflowTagEngine(
                   workflowMethodId = message.workflowMethodId,
                   workflowName = message.workflowName,
                   workflowId = workflowId,
+                  parentWorkflowId = message.parentWorkflowId,
+                  parentWorkflowName = message.parentWorkflowName,
+                  parentWorkflowMethodId = message.parentWorkflowMethodId,
                   emitterName = emitterName,
                   emittedAt = message.emittedAt ?: publishTime,
               )
@@ -319,13 +331,16 @@ class WorkflowTagEngine(
 
       false -> ids.forEach { workflowId ->
         // parent workflow already applied method to self
-        if (workflowId != message.emitterWorkflowId) {
+        if (workflowId != message.parentWorkflowId) {
           launch {
             val cancelWorkflow = CancelWorkflow(
                 cancellationReason = message.reason,
                 workflowMethodId = WorkflowMethodId.from(workflowId),
                 workflowName = message.workflowName,
                 workflowId = workflowId,
+                parentWorkflowId = message.parentWorkflowId,
+                parentWorkflowName = message.parentWorkflowName,
+                parentWorkflowMethodId = message.parentWorkflowMethodId,
                 emitterName = emitterName,
                 emittedAt = message.emittedAt ?: publishTime,
             )
@@ -354,6 +369,9 @@ class WorkflowTagEngine(
                     channelTypes = message.channelTypes,
                     workflowName = message.workflowName,
                     workflowId = workflowId,
+                    parentWorkflowId = message.parentWorkflowId,
+                    parentWorkflowName = message.parentWorkflowName,
+                    parentWorkflowMethodId = message.parentWorkflowMethodId,
                     emitterName = emitterName,
                     emittedAt = message.emittedAt ?: publishTime,
                 )
