@@ -32,6 +32,7 @@ import io.infinitic.common.clients.messages.MethodCompleted
 import io.infinitic.common.clients.messages.MethodFailed
 import io.infinitic.common.clients.messages.MethodTimedOut
 import io.infinitic.common.data.MessageId
+import io.infinitic.common.data.MillisDuration
 import io.infinitic.common.data.MillisInstant
 import io.infinitic.common.data.ReturnValue
 import io.infinitic.common.data.Version
@@ -47,11 +48,11 @@ import io.infinitic.common.tasks.data.TaskReturnValue
 import io.infinitic.common.tasks.executors.errors.DeferredError
 import io.infinitic.common.tasks.executors.errors.MethodCanceledError
 import io.infinitic.common.tasks.executors.errors.MethodFailedError
+import io.infinitic.common.tasks.executors.errors.MethodTimedOutError
 import io.infinitic.common.tasks.executors.errors.MethodUnknownError
 import io.infinitic.common.tasks.executors.errors.TaskCanceledError
 import io.infinitic.common.tasks.executors.errors.TaskFailedError
 import io.infinitic.common.tasks.executors.errors.TaskTimedOutError
-import io.infinitic.common.tasks.executors.errors.WorkflowMethodTimedOutError
 import io.infinitic.common.workflows.data.channels.ChannelName
 import io.infinitic.common.workflows.data.channels.ChannelType
 import io.infinitic.common.workflows.data.channels.SignalData
@@ -349,7 +350,7 @@ data class CancelWorkflow(
   @AvroNamespace("io.infinitic.workflows.data")
   @AvroName("reason") val cancellationReason: WorkflowCancellationReason,
   @AvroName("methodRunId") val workflowMethodId: WorkflowMethodId?,
-  @AvroDefault(Avro.NULL) override val parentWorkflowId: WorkflowId?,
+  @AvroDefault(Avro.NULL) @AvroName("parentWorkflowId") override val parentWorkflowId: WorkflowId?,
   @AvroDefault(Avro.NULL) override val parentWorkflowName: WorkflowName?,
   @AvroDefault(Avro.NULL) override val parentWorkflowMethodId: WorkflowMethodId?,
   override val workflowName: WorkflowName,
@@ -490,7 +491,7 @@ data class ChildMethodFailed(
 @Serializable
 @AvroNamespace("io.infinitic.workflows.engine")
 data class ChildMethodTimedOut(
-  val childMethodTimedOutError: WorkflowMethodTimedOutError,
+  val childMethodTimedOutError: MethodTimedOutError,
   override val workflowName: WorkflowName,
   override val workflowId: WorkflowId,
   @AvroName("methodRunId") override val workflowMethodId: WorkflowMethodId,
@@ -717,6 +718,7 @@ data class WorkflowMethodCompletedEvent(
             childWorkflowReturnValue = WorkflowReturnValue(
                 workflowId = workflowId,
                 workflowMethodId = workflowMethodId,
+                workflowName = workflowName,
                 returnValue = returnValue,
             ),
             workflowId = parentWorkflowId,
@@ -834,6 +836,7 @@ data class WorkflowMethodTimedOutEvent(
   override val emitterName: EmitterName,
   override val workflowTags: Set<WorkflowTag>,
   override val workflowMeta: WorkflowMeta,
+  val timeout: MillisDuration,
   val workflowMethodName: MethodName,
 ) : WorkflowMessage(), WorkflowEventMessage, WorkflowMethodMessage {
   fun getEventsForClient(emitterName: EmitterName) = waitingClients.map {
@@ -851,11 +854,12 @@ data class WorkflowMethodTimedOutEvent(
   ): ChildMethodTimedOut? =
       if (parentWorkflowId != null) {
         ChildMethodTimedOut(
-            childMethodTimedOutError = WorkflowMethodTimedOutError(
+            childMethodTimedOutError = MethodTimedOutError(
+                timeout = timeout,
                 workflowName = workflowName,
                 workflowId = workflowId,
                 workflowMethodId = workflowMethodId,
-                methodName = workflowMethodName,
+                taskName = workflowMethodName,
             ),
             workflowId = parentWorkflowId,
             workflowName = parentWorkflowName ?: thisShouldNotHappen(),

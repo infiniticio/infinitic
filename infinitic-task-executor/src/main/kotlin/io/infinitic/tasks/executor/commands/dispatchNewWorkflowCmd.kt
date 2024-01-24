@@ -25,7 +25,7 @@ package io.infinitic.tasks.executor.commands
 import io.infinitic.common.data.MillisInstant
 import io.infinitic.common.emitters.EmitterName
 import io.infinitic.common.exceptions.thisShouldNotHappen
-import io.infinitic.common.tasks.executors.errors.WorkflowMethodTimedOutError
+import io.infinitic.common.tasks.executors.errors.MethodTimedOutError
 import io.infinitic.common.transport.DelayedWorkflowEngineTopic
 import io.infinitic.common.transport.InfiniticProducer
 import io.infinitic.common.transport.WorkflowCmdTopic
@@ -126,10 +126,11 @@ internal fun CoroutineScope.dispatchNewWorkflowCmd(
           workflowId = currentWorkflow.workflowId,
           workflowName = currentWorkflow.workflowName,
           workflowMethodId = currentWorkflow.workflowMethodId,
-          childMethodTimedOutError = WorkflowMethodTimedOutError(
+          childMethodTimedOutError = MethodTimedOutError(
+              timeout = timeout,
               workflowName = workflowName,
               workflowId = workflowId,
-              methodName = methodName,
+              taskName = methodName,
               workflowMethodId = WorkflowMethodId.from(workflowId),
           ),
           emitterName = emitterName,

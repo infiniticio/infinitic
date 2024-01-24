@@ -126,9 +126,10 @@ private fun CoroutineScope.reDispatchTaskCmd(
     val taskTimedOut = with(pastCommand.command) {
       TaskTimedOut(
           taskTimedOutError = TaskTimedOutError(
+              timeout = it,
               serviceName = serviceName,
               taskId = executeTask.taskId,
-              methodName = methodName,
+              taskName = methodName,
           ),
           workflowName = state.workflowName,
           workflowId = state.workflowId,

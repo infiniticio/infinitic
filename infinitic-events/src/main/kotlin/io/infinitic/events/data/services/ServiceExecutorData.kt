@@ -29,22 +29,22 @@ import io.infinitic.common.tasks.executors.messages.ExecuteTask
 import io.infinitic.common.tasks.executors.messages.ServiceExecutorMessage
 import io.infinitic.common.tasks.executors.messages.clientName
 import io.infinitic.events.InfiniticServiceEventType
-import io.infinitic.events.TaskDispatched
-import io.infinitic.events.data.ClientDispatcherData
-import io.infinitic.events.data.DispatcherData
-import io.infinitic.events.data.WorkflowDispatcherData
+import io.infinitic.events.TaskDispatchedType
+import io.infinitic.events.data.ClientRequesterData
+import io.infinitic.events.data.RequesterData
+import io.infinitic.events.data.WorkflowRequesterData
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonElement
 
 fun ServiceExecutorMessage.serviceType(): InfiniticServiceEventType = when (this) {
-  is ExecuteTask -> TaskDispatched
+  is ExecuteTask -> TaskDispatchedType
 }
 
 @Serializable
 data class TaskDispatchedData(
   val taskName: String,
   val taskArgs: List<JsonElement>,
-  val dispatcher: DispatcherData,
+  val requester: RequesterData,
   override val taskRetrySequence: Int,
   override val taskRetryIndex: Int,
   override val taskMeta: Map<String, ByteArray>,
@@ -60,15 +60,15 @@ fun ServiceExecutorMessage.toServiceData() = when (this) {
       taskArgs = methodParameters.toJson(),
       taskMeta = taskMeta.map,
       taskTags = taskTags.set,
-      dispatcher = when {
-        workflowName != null -> WorkflowDispatcherData(
+      requester = when {
+        workflowName != null -> WorkflowRequesterData(
             workflowName = workflowName.toString(),
             workflowId = workflowId?.toString() ?: thisShouldNotHappen(),
             workflowMethodId = workflowMethodId?.toString() ?: thisShouldNotHappen(),
             workerName = emitterName.toString(),
         )
 
-        clientName != null -> ClientDispatcherData(
+        clientName != null -> ClientRequesterData(
             clientName = clientName.toString(),
         )
 

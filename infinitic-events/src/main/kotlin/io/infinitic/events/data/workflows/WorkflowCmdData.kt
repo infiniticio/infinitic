@@ -36,27 +36,27 @@ import io.infinitic.common.workflows.engine.messages.SendSignal
 import io.infinitic.common.workflows.engine.messages.WaitWorkflow
 import io.infinitic.common.workflows.engine.messages.WorkflowCmdMessage
 import io.infinitic.events.InfiniticWorkflowEventType
-import io.infinitic.events.TaskRetryRequested
-import io.infinitic.events.WorkflowCancelRequested
-import io.infinitic.events.WorkflowDispatched
-import io.infinitic.events.WorkflowMethodDispatched
-import io.infinitic.events.WorkflowSignalSent
-import io.infinitic.events.WorkflowTaskRetryRequested
-import io.infinitic.events.data.ClientDispatcherData
-import io.infinitic.events.data.DispatcherData
-import io.infinitic.events.data.WorkflowDispatcherData
+import io.infinitic.events.TaskRetryRequestedType
+import io.infinitic.events.WorkflowCancelRequestedType
+import io.infinitic.events.WorkflowDispatchedType
+import io.infinitic.events.WorkflowMethodDispatchedType
+import io.infinitic.events.WorkflowSignalSentType
+import io.infinitic.events.WorkflowTaskRetryRequestedType
+import io.infinitic.events.data.ClientRequesterData
+import io.infinitic.events.data.RequesterData
+import io.infinitic.events.data.WorkflowRequesterData
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonElement
 
 fun WorkflowCmdMessage.workflowType(): InfiniticWorkflowEventType? = when (this) {
-  is DispatchNewWorkflow -> WorkflowDispatched
-  is DispatchMethodWorkflow -> WorkflowMethodDispatched
-  is CancelWorkflow -> WorkflowCancelRequested
+  is DispatchNewWorkflow -> WorkflowDispatchedType
+  is DispatchMethodWorkflow -> WorkflowMethodDispatchedType
+  is CancelWorkflow -> WorkflowCancelRequestedType
   is CompleteTimers -> null
   is CompleteWorkflow -> null
-  is RetryTasks -> TaskRetryRequested
-  is RetryWorkflowTask -> WorkflowTaskRetryRequested
-  is SendSignal -> WorkflowSignalSent
+  is RetryTasks -> TaskRetryRequestedType
+  is RetryWorkflowTask -> WorkflowTaskRetryRequestedType
+  is SendSignal -> WorkflowSignalSentType
   is WaitWorkflow -> null
 }
 
@@ -64,20 +64,20 @@ fun WorkflowCmdMessage.toWorkflowData(): WorkflowCmdData = when (this) {
   is DispatchNewWorkflow -> WorkflowDispatchedData(
       workflowMeta = workflowMeta.map,
       workflowTags = workflowTags.set,
-      dispatcher = dispatcher,
+      requester = dispatcher,
       infiniticVersion = version.toString(),
   )
 
   is DispatchMethodWorkflow -> WorkflowMethodDispatchedData(
       workflowMethodArgs = methodParameters.toJson(),
-      dispatcher = dispatcher,
+      requester = dispatcher,
       workflowMethodName = methodName.toString(),
       workflowMethodId = workflowMethodId.toString(),
       infiniticVersion = version.toString(),
   )
 
   is CancelWorkflow -> WorkflowCancelRequestedData(
-      dispatcher = dispatcher,
+      requester = dispatcher,
       infiniticVersion = version.toString(),
   )
 
@@ -89,12 +89,12 @@ fun WorkflowCmdMessage.toWorkflowData(): WorkflowCmdData = when (this) {
       taskId = taskId?.toString(),
       taskStatus = taskStatus?.toString(),
       serviceName = serviceName?.toString(),
-      dispatcher = dispatcher,
+      requester = dispatcher,
       infiniticVersion = version.toString(),
   )
 
   is RetryWorkflowTask -> WorkflowTaskRetryRequestedData(
-      dispatcher = dispatcher,
+      requester = dispatcher,
       infiniticVersion = version.toString(),
   )
 
@@ -102,7 +102,7 @@ fun WorkflowCmdMessage.toWorkflowData(): WorkflowCmdData = when (this) {
       channelName = channelName.toString(),
       signalId = signalId.toString(),
       signalArg = signalData.serializedData.toJson(),
-      dispatcher = dispatcher,
+      requester = dispatcher,
       infiniticVersion = version.toString(),
   )
 
@@ -111,21 +111,21 @@ fun WorkflowCmdMessage.toWorkflowData(): WorkflowCmdData = when (this) {
 
 @Serializable
 sealed interface WorkflowCmdData : WorkflowEventData {
-  val dispatcher: DispatcherData
+  val requester: RequesterData
 }
 
 @Serializable
 data class WorkflowDispatchedData(
   val workflowMeta: Map<String, ByteArray>,
   val workflowTags: Set<String>,
-  override val dispatcher: DispatcherData,
+  override val requester: RequesterData,
   override val infiniticVersion: String
 ) : WorkflowCmdData
 
 @Serializable
 data class WorkflowMethodDispatchedData(
   val workflowMethodArgs: List<JsonElement>,
-  override val dispatcher: DispatcherData,
+  override val requester: RequesterData,
   override val workflowMethodName: String,
   override val workflowMethodId: String,
   override val infiniticVersion: String
@@ -133,13 +133,13 @@ data class WorkflowMethodDispatchedData(
 
 @Serializable
 data class WorkflowCancelRequestedData(
-  override val dispatcher: DispatcherData,
+  override val requester: RequesterData,
   override val infiniticVersion: String
 ) : WorkflowCmdData
 
 @Serializable
 data class WorkflowTaskRetryRequestedData(
-  override val dispatcher: DispatcherData,
+  override val requester: RequesterData,
   override val infiniticVersion: String
 ) : WorkflowCmdData
 
@@ -148,7 +148,7 @@ data class TaskRetryRequestedData(
   val taskId: String?,
   val taskStatus: String?,
   val serviceName: String?,
-  override val dispatcher: DispatcherData,
+  override val requester: RequesterData,
   override val infiniticVersion: String
 ) : WorkflowCmdData
 
@@ -157,18 +157,18 @@ data class WorkflowSignalSentData(
   val channelName: String,
   val signalId: String,
   val signalArg: JsonElement,
-  override val dispatcher: DispatcherData,
+  override val requester: RequesterData,
   override val infiniticVersion: String
 ) : WorkflowCmdData
 
 private val WorkflowCmdMessage.dispatcher
   get() = when {
-    parentWorkflowName != null -> WorkflowDispatcherData(
+    parentWorkflowName != null -> WorkflowRequesterData(
         workflowName = parentWorkflowName.toString(),
         workflowId = parentWorkflowId?.toString() ?: thisShouldNotHappen(),
         workflowMethodId = parentWorkflowMethodId?.toString() ?: thisShouldNotHappen(),
         workerName = emitterName.toString(),
     )
 
-    else -> ClientDispatcherData(clientName = emitterName.toString())
+    else -> ClientRequesterData(clientName = emitterName.toString())
   }

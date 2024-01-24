@@ -50,3 +50,4 @@ fun ExecutionError.toErrorData(): ErrorData = ErrorData(
     stackTrace = stackTraceToString,
     cause = cause?.toErrorData(),
 )
+

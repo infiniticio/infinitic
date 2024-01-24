@@ -36,46 +36,122 @@ import io.infinitic.common.workflows.engine.messages.TaskTimedOut
 import io.infinitic.common.workflows.engine.messages.TimerCompleted
 import io.infinitic.common.workflows.engine.messages.WorkflowCmdMessage
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
+import io.infinitic.events.ChildMethodCanceledType
+import io.infinitic.events.ChildMethodCompletedType
+import io.infinitic.events.ChildMethodFailedType
+import io.infinitic.events.ChildMethodTimedOutType
+import io.infinitic.events.ChildMethodUnknownType
+import io.infinitic.events.ChildTaskCompletedType
+import io.infinitic.events.ChildTaskFailedType
+import io.infinitic.events.ChildTaskTimedOutType
+import io.infinitic.events.ChildTimerCompletedType
 import io.infinitic.events.InfiniticWorkflowEventType
-import io.infinitic.events.WorkflowMethodChildCompleted
-import io.infinitic.events.WorkflowMethodChildFailed
-import io.infinitic.events.WorkflowMethodChildTimedOut
-import io.infinitic.events.WorkflowMethodTaskCompleted
-import io.infinitic.events.WorkflowMethodTaskFailed
-import io.infinitic.events.WorkflowMethodTaskTimedOut
-import io.infinitic.events.WorkflowMethodTimerCompleted
+import io.infinitic.events.data.DeferredErrorData
 import io.infinitic.events.data.ErrorData
+import io.infinitic.events.data.RequesterData
+import io.infinitic.events.data.toDeferredErrorData
 import io.infinitic.events.data.toErrorData
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonElement
 
+private const val UNDEFINED = "Undefined"
 fun WorkflowEngineMessage.workflowType(): InfiniticWorkflowEventType? = when (this) {
   is WorkflowCmdMessage -> null
-  is ChildMethodCompleted -> WorkflowMethodChildCompleted
-  is ChildMethodCanceled -> TODO()
-  is ChildMethodFailed -> WorkflowMethodChildFailed
-  is ChildMethodTimedOut -> WorkflowMethodChildTimedOut
-  is ChildMethodUnknown -> TODO()
-  is TaskCompleted -> WorkflowMethodTaskCompleted
-  is TaskCanceled -> TODO()
-  is TaskFailed -> WorkflowMethodTaskFailed
-  is TaskTimedOut -> WorkflowMethodTaskTimedOut
-  is TimerCompleted -> WorkflowMethodTimerCompleted
+  is ChildMethodCompleted -> ChildMethodCompletedType
+  is ChildMethodCanceled -> ChildMethodCanceledType
+  is ChildMethodFailed -> ChildMethodFailedType
+  is ChildMethodTimedOut -> ChildMethodTimedOutType
+  is ChildMethodUnknown -> ChildMethodUnknownType
+  is TaskCompleted -> ChildTaskCompletedType
+  is TaskCanceled -> null
+  is TaskFailed -> ChildTaskFailedType
+  is TaskTimedOut -> ChildTaskTimedOutType
+  is TimerCompleted -> ChildTimerCompletedType
 }
 
-fun WorkflowEngineMessage.toWorkflowData(): WorkflowEngineData? = when (this) {
+fun WorkflowEngineMessage.toWorkflowData(): WorkflowEngineData = when (this) {
   is WorkflowCmdMessage -> thisShouldNotHappen()
-  is ChildMethodCompleted -> TODO()
-  is ChildMethodCanceled -> TODO()
-  is ChildMethodFailed -> TODO()
-  is ChildMethodTimedOut -> TODO()
-  is ChildMethodUnknown -> TODO()
 
-  is TaskCompleted -> WorkflowMethodTaskCompletedData(
-      taskResult = taskReturnValue.returnValue.toJson(),
-      taskId = taskReturnValue.taskId.toString(),
-      serviceMethodName = taskReturnValue.taskMethodName.toString(),
-      serviceName = taskReturnValue.serviceName.toString(),
+  is ChildMethodCompleted -> ChildWorkflowCompletedInWorkflowData(
+      childWorkflowCompleted = with(childWorkflowReturnValue) {
+        ChildWorkflowCompletedData(
+            result = returnValue.toJson(),
+            workflowId = workflowId.toString(),
+            workflowName = workflowName?.toString() ?: UNDEFINED,
+            workflowMethodId = workflowMethodId.toString(),
+        )
+      },
+      workflowMethodId = workflowMethodId.toString(),
+      workerName = emitterName.toString(),
+      infiniticVersion = version.toString(),
+  )
+
+  is ChildMethodCanceled -> ChildWorkflowCanceledInWorkflowData(
+      childWorkflowCanceled = with(childMethodCanceledError) {
+        ChildWorkflowCanceledData(
+            requester = TODO(),
+            workflowId = workflowId.toString(),
+            workflowName = workflowName.toString(),
+            workflowMethodId = workflowMethodId.toString(),
+        )
+      },
+      workflowMethodId = workflowMethodId.toString(),
+      workerName = emitterName.toString(),
+      infiniticVersion = version.toString(),
+  )
+
+  is ChildMethodFailed -> ChildWorkflowFailedInWorkflowData(
+      childWorkflowFailed = with(childMethodFailedError) {
+        ChildWorkflowFailedData(
+            error = deferredError.toDeferredErrorData(),
+            workflowId = workflowId.toString(),
+            workflowName = workflowName.toString(),
+            workflowMethodId = workflowMethodId.toString(),
+        )
+      },
+
+      workflowMethodId = workflowMethodId.toString(),
+      workerName = emitterName.toString(),
+      infiniticVersion = version.toString(),
+  )
+
+  is ChildMethodTimedOut -> ChildWorkflowTimedOutInWorkflowData(
+      childWorkflowTimedOut = with(childMethodTimedOutError) {
+        ChildWorkflowTimedOutData(
+            timeoutMillis = timeout.long,
+            workflowId = workflowId.toString(),
+            workflowName = workflowName.toString(),
+            workflowMethodId = workflowMethodId.toString(),
+        )
+      },
+
+      workflowMethodId = workflowMethodId.toString(),
+      workerName = emitterName.toString(),
+      infiniticVersion = version.toString(),
+  )
+
+  is ChildMethodUnknown -> ChildWorkflowUnknownInWorkflowData(
+      childWorkflowUnknown = with(childMethodUnknownError) {
+        ChildWorkflowUnknownData(
+            workflowId = workflowId.toString(),
+            workflowName = workflowName.toString(),
+            workflowMethodId = workflowMethodId.toString(),
+        )
+      },
+      workflowMethodId = workflowMethodId.toString(),
+      workerName = emitterName.toString(),
+      infiniticVersion = version.toString(),
+  )
+
+  is TaskCompleted -> TaskCompleteInWorkflowData(
+      taskCompleted = with(taskReturnValue) {
+        ChildTaskCompletedData(
+            result = returnValue.toJson(),
+            taskId = taskId.toString(),
+            taskName = taskMethodName?.toString() ?: UNDEFINED,
+            serviceName = serviceName.toString(),
+        )
+      },
       workflowMethodId = workflowMethodId.toString(),
       workerName = emitterName.toString(),
       infiniticVersion = version.toString(),
@@ -83,26 +159,42 @@ fun WorkflowEngineMessage.toWorkflowData(): WorkflowEngineData? = when (this) {
 
   is TaskCanceled -> TODO()
 
-  is TaskFailed -> WorkflowMethodTaskFailedData(
-      taskError = taskFailedError.cause.toErrorData(),
-      taskId = taskFailedError.taskId.toString(),
-      serviceMethodName = taskFailedError.taskMethodName.toString(),
-      serviceName = taskFailedError.serviceName.toString(),
+  is TaskFailed -> TaskFailedInWorkflowData(
+      taskFailed = with(taskFailedError) {
+        ChildTaskFailedData(
+            error = cause.toErrorData(),
+            taskId = taskId.toString(),
+            taskName = taskName.toString(),
+            serviceName = serviceName.toString(),
+        )
+      },
       workflowMethodId = workflowMethodId.toString(),
       workerName = emitterName.toString(),
       infiniticVersion = version.toString(),
   )
 
-  is TaskTimedOut -> WorkflowMethodTaskTimedOutData(
-      taskId = taskTimedOutError.taskId.toString(),
-      serviceMethodName = taskTimedOutError.methodName.toString(),
-      serviceName = taskTimedOutError.serviceName.toString(),
+  is TaskTimedOut -> TaskTimedOutInWorkflowData(
+      taskTimedOut = with(taskTimedOutError) {
+        ChildTaskTimedOutData(
+            timeoutMillis = timeout.long,
+            taskId = taskId.toString(),
+            taskName = taskName.toString(),
+            serviceName = serviceName.toString(),
+        )
+      },
       workflowMethodId = workflowMethodId.toString(),
       workerName = emitterName.toString(),
       infiniticVersion = version.toString(),
   )
 
-  is TimerCompleted -> TODO()
+  is TimerCompleted -> TimerCompletedInWorkflowData(
+      timerCompleted = ChildTimerCompletedData(
+          timerId = timerId.toString(),
+      ),
+      workflowMethodId = workflowMethodId.toString(),
+      workerName = emitterName.toString(),
+      infiniticVersion = version.toString(),
+  )
 }
 
 @Serializable
@@ -111,33 +203,156 @@ sealed interface WorkflowEngineData : WorkflowEventData {
 }
 
 @Serializable
-data class WorkflowMethodTaskCompletedData(
-  val taskResult: JsonElement,
-  val taskId: String,
-  val serviceMethodName: String,
-  val serviceName: String,
+data class TaskCompleteInWorkflowData(
+  val taskCompleted: ChildTaskCompletedData,
   val workflowMethodId: String,
   override val workerName: String,
   override val infiniticVersion: String
 ) : WorkflowEngineData
 
 @Serializable
-data class WorkflowMethodTaskFailedData(
-  val taskError: ErrorData,
-  val taskId: String,
-  val serviceMethodName: String,
-  val serviceName: String,
+data class TaskFailedInWorkflowData(
+  val taskFailed: ChildTaskFailedData,
   val workflowMethodId: String,
   override val workerName: String,
   override val infiniticVersion: String
 ) : WorkflowEngineData
 
 @Serializable
-data class WorkflowMethodTaskTimedOutData(
-  val taskId: String,
-  val serviceMethodName: String,
-  val serviceName: String,
+data class TaskTimedOutInWorkflowData(
+  val taskTimedOut: ChildTaskTimedOutData,
   val workflowMethodId: String,
   override val workerName: String,
   override val infiniticVersion: String
 ) : WorkflowEngineData
+
+
+@Serializable
+data class TimerCompletedInWorkflowData(
+  val timerCompleted: ChildTimerCompletedData,
+  val workflowMethodId: String,
+  override val workerName: String,
+  override val infiniticVersion: String
+) : WorkflowEngineData
+
+@Serializable
+data class ChildWorkflowCompletedInWorkflowData(
+  val childWorkflowCompleted: ChildWorkflowCompletedData,
+  val workflowMethodId: String,
+  override val workerName: String,
+  override val infiniticVersion: String
+) : WorkflowEngineData
+
+@Serializable
+data class ChildWorkflowFailedInWorkflowData(
+  val childWorkflowFailed: ChildWorkflowFailedData,
+  val workflowMethodId: String,
+  override val workerName: String,
+  override val infiniticVersion: String
+) : WorkflowEngineData
+
+@Serializable
+data class ChildWorkflowTimedOutInWorkflowData(
+  val childWorkflowTimedOut: ChildWorkflowTimedOutData,
+  val workflowMethodId: String,
+  override val workerName: String,
+  override val infiniticVersion: String
+) : WorkflowEngineData
+
+@Serializable
+data class ChildWorkflowCanceledInWorkflowData(
+  val childWorkflowCanceled: ChildWorkflowCanceledData,
+  val workflowMethodId: String,
+  override val workerName: String,
+  override val infiniticVersion: String
+) : WorkflowEngineData
+
+@Serializable
+data class ChildWorkflowUnknownInWorkflowData(
+  val childWorkflowUnknown: ChildWorkflowUnknownData,
+  val workflowMethodId: String,
+  override val workerName: String,
+  override val infiniticVersion: String
+) : WorkflowEngineData
+
+@Serializable
+sealed interface ChildWorkflowData {
+  val workflowId: String
+  val workflowName: String
+  val workflowMethodId: String
+}
+
+@Serializable
+data class ChildWorkflowCompletedData(
+  val result: JsonElement,
+  override val workflowId: String,
+  override val workflowName: String,
+  override val workflowMethodId: String,
+) : ChildWorkflowData
+
+@Serializable
+data class ChildWorkflowFailedData(
+  val error: DeferredErrorData,
+  override val workflowId: String,
+  override val workflowName: String,
+  override val workflowMethodId: String,
+) : ChildWorkflowData
+
+@Serializable
+data class ChildWorkflowTimedOutData(
+  val timeoutMillis: Long,
+  override val workflowId: String,
+  override val workflowName: String,
+  override val workflowMethodId: String,
+) : ChildWorkflowData
+
+@Serializable
+data class ChildWorkflowCanceledData(
+  val requester: RequesterData,
+  override val workflowId: String,
+  override val workflowName: String,
+  override val workflowMethodId: String,
+) : ChildWorkflowData
+
+@Serializable
+data class ChildWorkflowUnknownData(
+  override val workflowId: String,
+  override val workflowName: String,
+  override val workflowMethodId: String,
+) : ChildWorkflowData
+
+@Serializable
+sealed interface ChildTaskData {
+  val taskId: String
+  val taskName: String
+  val serviceName: String
+}
+
+@Serializable
+data class ChildTaskCompletedData(
+  val result: JsonElement,
+  override val taskId: String,
+  override val taskName: String,
+  override val serviceName: String,
+) : ChildTaskData
+
+@Serializable
+data class ChildTaskFailedData(
+  val error: ErrorData,
+  override val taskId: String,
+  override val taskName: String,
+  override val serviceName: String,
+) : ChildTaskData
+
+@Serializable
+data class ChildTaskTimedOutData(
+  val timeoutMillis: Long,
+  override val taskId: String,
+  override val taskName: String,
+  override val serviceName: String
+) : ChildTaskData
+
+@Serializable
+data class ChildTimerCompletedData(
+  val timerId: String,
+)

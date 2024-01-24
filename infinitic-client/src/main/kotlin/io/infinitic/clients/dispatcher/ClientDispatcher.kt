@@ -173,7 +173,7 @@ internal class ClientDispatcher(
       deferred.workflowName,
       deferred.workflowId,
       deferred.methodName,
-      null,
+      WorkflowMethodId.from(deferred.workflowId),
       deferred.methodTimeout,
       deferred.dispatchTime,
       clientWaiting,
@@ -201,14 +201,11 @@ internal class ClientDispatcher(
     workflowName: WorkflowName,
     workflowId: WorkflowId,
     workflowMethodName: MethodName,
-    workflowMethodId: WorkflowMethodId?,
+    workflowMethodId: WorkflowMethodId,
     methodTimeout: MillisDuration?,
     dispatchTime: Long,
     clientWaiting: Boolean
   ): T {
-
-    val runId = workflowMethodId ?: WorkflowMethodId.from(workflowId)
-
     // calculate timeout from now
     val timeout = methodTimeout
         ?.let { it.long - (System.currentTimeMillis() - dispatchTime) }
@@ -217,13 +214,13 @@ internal class ClientDispatcher(
 
     // lazily starts client consumer if not already started and waits
     val waiting = waitForAsync(timeout) {
-      it is MethodMessage && it.workflowId == workflowId && it.workflowMethodId == runId
+      it is MethodMessage && it.workflowId == workflowId && it.workflowMethodId == workflowMethodId
     }
 
     // if task was not initially sync, then send WaitTask message
     if (clientWaiting) {
       val waitWorkflow = WaitWorkflow(
-          workflowMethodId = runId,
+          workflowMethodId = workflowMethodId,
           workflowName = workflowName,
           workflowId = workflowId,
           emitterName = emitterName,
@@ -243,10 +240,11 @@ internal class ClientDispatcher(
     return when (workflowResult) {
       is MethodTimedOut, null -> {
         throw WorkflowTimedOutException(
+            timeoutMillis = timeout,
             workflowName = workflowName.toString(),
             workflowId = workflowId.toString(),
             methodName = workflowMethodName.toString(),
-            workflowMethodId = workflowMethodId?.toString(),
+            workflowMethodId = workflowMethodId.toString(),
         )
       }
 
@@ -255,7 +253,7 @@ internal class ClientDispatcher(
       is MethodCanceled -> throw WorkflowCanceledException(
           workflowName = workflowName.toString(),
           workflowId = workflowId.toString(),
-          workflowMethodId = workflowMethodId?.toString(),
+          workflowMethodId = workflowMethodId.toString(),
       )
 
       is MethodFailed -> throw WorkflowFailedException.from(
@@ -271,7 +269,7 @@ internal class ClientDispatcher(
       is MethodUnknown -> throw WorkflowUnknownException(
           workflowName = workflowName.toString(),
           workflowId = workflowId.toString(),
-          workflowMethodId = workflowMethodId?.toString(),
+          workflowMethodId = workflowMethodId.toString(),
       )
 
       else -> thisShouldNotHappen("Unexpected ${workflowResult::class}")

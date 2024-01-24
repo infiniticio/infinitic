@@ -1017,6 +1017,10 @@
               "name" : "workflowId",
               "type" : "string"
             }, {
+              "name" : "workflowName",
+              "type" : [ "null", "string" ],
+              "default" : null
+            }, {
               "name" : "methodRunId",
               "type" : "string"
             }, {

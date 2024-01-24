@@ -26,17 +26,17 @@ package io.infinitic.events.data
 import kotlinx.serialization.Serializable
 
 @Serializable
-sealed interface DispatcherData
+sealed interface RequesterData
 
 @Serializable
-data class ClientDispatcherData(
+data class ClientRequesterData(
   val clientName: String,
-) : DispatcherData
+) : RequesterData
 
 @Serializable
-data class WorkflowDispatcherData(
+data class WorkflowRequesterData(
   val workflowName: String,
   val workflowId: String,
   val workflowMethodId: String,
   val workerName: String,
-) : DispatcherData
+) : RequesterData

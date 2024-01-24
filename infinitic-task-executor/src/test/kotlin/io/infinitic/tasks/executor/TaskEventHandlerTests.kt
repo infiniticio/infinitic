@@ -331,7 +331,7 @@ private fun getTaskFailedWorkflow(msg: TaskFailedEvent) =
         workflowMethodId = msg.workflowMethodId!!,
         taskFailedError = TaskFailedError(
             serviceName = msg.serviceName,
-            taskMethodName = msg.taskMethodName,
+            taskName = msg.taskMethodName,
             taskId = msg.taskId,
             cause = msg.executionError,
         ),

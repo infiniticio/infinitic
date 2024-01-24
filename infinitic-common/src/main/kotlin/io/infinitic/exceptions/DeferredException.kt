@@ -22,6 +22,7 @@
  */
 package io.infinitic.exceptions
 
+import io.infinitic.common.data.MillisDuration
 import io.infinitic.common.tasks.executors.errors.DeferredCanceledError
 import io.infinitic.common.tasks.executors.errors.DeferredError
 import io.infinitic.common.tasks.executors.errors.DeferredFailedError
@@ -29,12 +30,12 @@ import io.infinitic.common.tasks.executors.errors.DeferredTimedOutError
 import io.infinitic.common.tasks.executors.errors.DeferredUnknownError
 import io.infinitic.common.tasks.executors.errors.MethodCanceledError
 import io.infinitic.common.tasks.executors.errors.MethodFailedError
+import io.infinitic.common.tasks.executors.errors.MethodTimedOutError
 import io.infinitic.common.tasks.executors.errors.MethodUnknownError
 import io.infinitic.common.tasks.executors.errors.TaskCanceledError
 import io.infinitic.common.tasks.executors.errors.TaskFailedError
 import io.infinitic.common.tasks.executors.errors.TaskTimedOutError
 import io.infinitic.common.tasks.executors.errors.TaskUnknownError
-import io.infinitic.common.tasks.executors.errors.WorkflowMethodTimedOutError
 import io.infinitic.common.tasks.executors.errors.WorkflowTaskFailedError
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -76,7 +77,7 @@ sealed class DeferredTimedOutException : DeferredException() {
     fun from(error: DeferredTimedOutError) =
         when (error) {
           is TaskTimedOutError -> TaskTimedOutException.from(error)
-          is WorkflowMethodTimedOutError -> WorkflowTimedOutException.from(error)
+          is MethodTimedOutError -> WorkflowTimedOutException.from(error)
         }
   }
 }
@@ -146,6 +147,9 @@ data class WorkflowUnknownException(
 /** Exception occurring when waiting for a timed-out task */
 @Serializable
 data class TaskTimedOutException(
+  /** timeout duration*/
+  val timeoutMillis: Long,
+
   /** Name of the canceled task */
   @SerialName("taskName") val serviceName: String,
 
@@ -158,16 +162,20 @@ data class TaskTimedOutException(
   companion object {
     fun from(error: TaskTimedOutError) =
         TaskTimedOutException(
+            timeoutMillis = error.timeout.long,
             serviceName = error.serviceName.toString(),
             taskId = error.taskId.toString(),
-            methodName = error.methodName.toString(),
+            methodName = error.taskName.toString(),
         )
   }
 }
 
-/** Error occurring when waiting for an timed-out workflow */
+/** Error occurring when waiting for a timed-out workflow */
 @Serializable
 data class WorkflowTimedOutException(
+  /** Timeout duration */
+  val timeoutMillis: Long,
+
   /** Name of the canceled child workflow */
   val workflowName: String,
 
@@ -181,11 +189,12 @@ data class WorkflowTimedOutException(
   val workflowMethodId: String?
 ) : DeferredTimedOutException() {
   companion object {
-    fun from(error: WorkflowMethodTimedOutError) =
+    fun from(error: MethodTimedOutError) =
         WorkflowTimedOutException(
+            timeoutMillis = error.timeout.long,
             workflowName = error.workflowName.toString(),
             workflowId = error.workflowId.toString(),
-            methodName = error.methodName.toString(),
+            methodName = error.taskName.toString(),
             workflowMethodId = error.workflowMethodId?.toString(),
         )
   }
@@ -208,7 +217,7 @@ data class TaskCanceledException(
         TaskCanceledException(
             serviceName = error.serviceName.toString(),
             taskId = error.taskId.toString(),
-            methodName = error.methodName.toString(),
+            methodName = error.taskName.toString(),
         )
   }
 }
@@ -255,7 +264,7 @@ data class TaskFailedException(
         TaskFailedException(
             serviceName = error.serviceName.toString(),
             taskId = error.taskId.toString(),
-            methodName = error.taskMethodName.toString(),
+            methodName = error.taskName.toString(),
             workerException = WorkerException.from(error.cause),
         )
   }

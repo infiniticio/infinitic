@@ -163,7 +163,7 @@ data class TaskFailedEvent(
         workflowMethodId = workflowMethodId ?: thisShouldNotHappen(),
         taskFailedError = TaskFailedError(
             serviceName = serviceName,
-            taskMethodName = taskMethodName,
+            taskName = taskMethodName,
             taskId = taskId,
             cause = executionError,
         ),
