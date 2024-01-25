@@ -24,33 +24,38 @@
 package io.infinitic.events.data.workflows
 
 import io.infinitic.common.exceptions.thisShouldNotHappen
+import io.infinitic.common.tasks.data.TaskRetryIndex
+import io.infinitic.common.tasks.data.TaskRetrySequence
 import io.infinitic.common.tasks.executors.messages.ExecuteTask
 import io.infinitic.common.tasks.executors.messages.ServiceExecutorMessage
 import io.infinitic.events.InfiniticWorkflowEventType
+import io.infinitic.events.WorkflowTaskDispatchedType
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.JsonElement
 
-fun ServiceExecutorMessage.workflowType(): InfiniticWorkflowEventType = when (this) {
-  is ExecuteTask -> TODO()
-}
+fun ServiceExecutorMessage.workflowType(): InfiniticWorkflowEventType? =
+    when (isWorkflowTaskDispatched) {
+      false -> null
+      true -> WorkflowTaskDispatchedType
+    }
 
-//
-//@Serializable
-//data class WorkflowMethodTaskDispatchedData(
-//  override val workflowMethodName: String,
-//  override val workflowMethodId: String,
-//  override val serviceName: String,
-//  override val taskName: String,
-//  override val taskId: String,
-//  val taskArgs: List<JsonElement>,
-//  val meta: Map<String, ByteArray>,
-//  val tags: Set<String>,
-//  val workerName: String,
-//  override val infiniticVersion: String
-//) : WorkflowMethodTaskEventData
-//
-fun ServiceExecutorMessage.toWorkflowData(): WorkflowEventData? = when (this) {
-  is ExecuteTask -> when (this.isWorkflowTask()) {
-    true -> thisShouldNotHappen()
+fun ServiceExecutorMessage.toWorkflowData(): WorkflowEventData =
+    when (isWorkflowTaskDispatched) {
+      false -> thisShouldNotHappen()
+      true -> WorkflowTaskDispatchedData(
+          arg = (this as ExecuteTask).methodParameters.first().toJson(),
+          workerName = emitterName.toString(),
+          infiniticVersion = version.toString(),
+      )
+    }
 
-    false -> thisShouldNotHappen()
-  }
-}
+val ServiceExecutorMessage.isWorkflowTaskDispatched: Boolean
+  get() = (this is ExecuteTask) && this.isWorkflowTask() &&
+      taskRetryIndex == TaskRetryIndex(0) && taskRetrySequence == TaskRetrySequence(0)
+
+@Serializable
+data class WorkflowTaskDispatchedData(
+  val arg: JsonElement,
+  override val workerName: String,
+  override val infiniticVersion: String
+) : WorkflowEngineData

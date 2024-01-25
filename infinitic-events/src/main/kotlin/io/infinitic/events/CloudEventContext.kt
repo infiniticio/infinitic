@@ -28,6 +28,8 @@ import io.infinitic.common.messages.Message
 import io.infinitic.common.tasks.events.messages.ServiceEventMessage
 import io.infinitic.common.tasks.executors.messages.ServiceExecutorMessage
 import io.infinitic.common.workflows.engine.messages.WorkflowCmdMessage
+import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
+import io.infinitic.common.workflows.engine.messages.WorkflowEventMessage
 import io.infinitic.events.data.services.serviceType
 import io.infinitic.events.data.services.toServiceData
 import io.infinitic.events.data.workflows.toWorkflowData
@@ -44,6 +46,8 @@ enum class CloudEventContext {
       is ServiceExecutorMessage -> workflowType()
       is ServiceEventMessage -> workflowType()
       is WorkflowCmdMessage -> workflowType()
+      is WorkflowEngineMessage -> workflowType()
+      is WorkflowEventMessage -> workflowType()
       else -> null
     }?.type
 
@@ -51,6 +55,8 @@ enum class CloudEventContext {
       is ServiceExecutorMessage -> workflowId
       is ServiceEventMessage -> workflowId
       is WorkflowCmdMessage -> workflowId
+      is WorkflowEngineMessage -> workflowId
+      is WorkflowEventMessage -> workflowId
       else -> thisShouldNotHappen()
     }.toString()
 
@@ -58,6 +64,8 @@ enum class CloudEventContext {
       is ServiceExecutorMessage -> workflowName
       is ServiceEventMessage -> workflowName
       is WorkflowCmdMessage -> workflowName
+      is WorkflowEngineMessage -> workflowName
+      is WorkflowEventMessage -> workflowName
       else -> thisShouldNotHappen()
     }.let {
       URI.create(
@@ -69,6 +77,8 @@ enum class CloudEventContext {
       is ServiceExecutorMessage -> toWorkflowData()
       is ServiceEventMessage -> toWorkflowData()
       is WorkflowCmdMessage -> toWorkflowData()
+      is WorkflowEngineMessage -> toWorkflowData()
+      is WorkflowEventMessage -> toWorkflowData()
       else -> thisShouldNotHappen()
     }.let {
       Json.encodeToString(it).toByteArray()

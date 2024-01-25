@@ -23,22 +23,37 @@
 
 package io.infinitic.events.data.workflows
 
-import io.infinitic.common.exceptions.thisShouldNotHappen
-import io.infinitic.common.tasks.events.messages.ServiceEventMessage
-import io.infinitic.common.tasks.events.messages.TaskCompletedEvent
-import io.infinitic.common.tasks.events.messages.TaskFailedEvent
-import io.infinitic.common.tasks.events.messages.TaskRetriedEvent
-import io.infinitic.common.tasks.events.messages.TaskStartedEvent
-import io.infinitic.events.ChildTaskCompletedType
-import io.infinitic.events.ChildTaskFailedType
+import io.infinitic.common.workflows.data.workflows.set
+import io.infinitic.common.workflows.engine.messages.WorkflowCanceledEvent
+import io.infinitic.common.workflows.engine.messages.WorkflowCompletedEvent
+import io.infinitic.common.workflows.engine.messages.WorkflowEventMessage
+import io.infinitic.common.workflows.engine.messages.WorkflowMethodCanceledEvent
+import io.infinitic.common.workflows.engine.messages.WorkflowMethodCompletedEvent
+import io.infinitic.common.workflows.engine.messages.WorkflowMethodFailedEvent
+import io.infinitic.common.workflows.engine.messages.WorkflowMethodStartedEvent
+import io.infinitic.common.workflows.engine.messages.WorkflowMethodTimedOutEvent
+import io.infinitic.common.workflows.engine.messages.WorkflowStartedEvent
+import io.infinitic.events.WorkflowCanceledType
+import io.infinitic.events.WorkflowCompletedType
+import io.infinitic.events.WorkflowMethodCanceledType
+import io.infinitic.events.WorkflowMethodCompletedType
+import io.infinitic.events.WorkflowMethodFailedType
+import io.infinitic.events.WorkflowMethodStartedType
+import io.infinitic.events.WorkflowMethodTimedOutType
+import io.infinitic.events.WorkflowStartedType
 import io.infinitic.events.data.MessageData
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.JsonElement
 
-fun ServiceEventMessage.workflowType() = when (this) {
-  is TaskCompletedEvent -> ChildTaskCompletedType
-  is TaskFailedEvent -> ChildTaskFailedType
-  is TaskRetriedEvent -> thisShouldNotHappen()
-  is TaskStartedEvent -> thisShouldNotHappen()
+fun WorkflowEventMessage.workflowType() = when (this) {
+  is WorkflowStartedEvent -> WorkflowStartedType
+  is WorkflowCompletedEvent -> WorkflowCompletedType
+  is WorkflowCanceledEvent -> WorkflowCanceledType
+  is WorkflowMethodStartedEvent -> WorkflowMethodStartedType
+  is WorkflowMethodCompletedEvent -> WorkflowMethodCompletedType
+  is WorkflowMethodFailedEvent -> WorkflowMethodFailedType
+  is WorkflowMethodCanceledEvent -> WorkflowMethodCanceledType
+  is WorkflowMethodTimedOutEvent -> WorkflowMethodTimedOutType
 }
 
 @Serializable
@@ -51,71 +66,111 @@ sealed interface WorkflowMethodEventData : WorkflowEventData {
   val workflowMethodName: String
 }
 
-sealed interface WorkflowTaskEventData : WorkflowMethodEventData {
-  val workflowTaskId: String
-  val workflowVersion: String?
+fun WorkflowEventMessage.toWorkflowData(): WorkflowEventData = when (this) {
+  
+  is WorkflowStartedEvent -> WorkflowStartedData(
+      workflowMeta = workflowMeta.map,
+      workflowTags = workflowTags.set,
+      workerName = emitterName.toString(),
+      infiniticVersion = version.toString(),
+  )
+
+  is WorkflowCompletedEvent -> WorkflowCompletedData(
+      workerName = emitterName.toString(),
+      infiniticVersion = version.toString(),
+  )
+
+  is WorkflowCanceledEvent -> WorkflowCanceledData(
+      workerName = emitterName.toString(),
+      infiniticVersion = version.toString(),
+  )
+
+  is WorkflowMethodStartedEvent -> WorkflowMethodStartedData(
+      workflowMethodId = workflowMethodId.toString(),
+      workerName = emitterName.toString(),
+      infiniticVersion = version.toString(),
+  )
+
+  is WorkflowMethodCompletedEvent -> WorkflowMethodCompletedData(
+      result = returnValue.toJson(),
+      workflowMethodId = workflowMethodId.toString(),
+      workerName = emitterName.toString(),
+      infiniticVersion = version.toString(),
+  )
+
+  is WorkflowMethodFailedEvent -> WorkflowMethodFailedData(
+      error = deferredError.toDeferredErrorData(),
+      workflowMethodId = workflowMethodId.toString(),
+      workerName = emitterName.toString(),
+      infiniticVersion = version.toString(),
+  )
+
+  is WorkflowMethodCanceledEvent -> WorkflowMethodCanceledData(
+      workflowMethodId = workflowMethodId.toString(),
+      workerName = emitterName.toString(),
+      infiniticVersion = version.toString(),
+  )
+
+  is WorkflowMethodTimedOutEvent -> WorkflowMethodTimedOutData(
+      workflowMethodId = workflowMethodId.toString(),
+      workerName = emitterName.toString(),
+      infiniticVersion = version.toString(),
+  )
 }
 
-sealed interface WorkflowMethodTaskEventData : WorkflowMethodEventData {
-  val serviceName: String
-  val taskName: String
-  val taskId: String
-}
+@Serializable
+data class WorkflowStartedData(
+  val workflowTags: Set<String>,
+  val workflowMeta: Map<String, ByteArray>,
+  override val workerName: String,
+  override val infiniticVersion: String
+) : WorkflowEngineData
 
-sealed interface WorkflowMethodTimerEventData : WorkflowMethodEventData {
-  val timerID: String
-}
+@Serializable
+data class WorkflowCompletedData(
+  override val workerName: String,
+  override val infiniticVersion: String
+) : WorkflowEngineData
 
-sealed interface WorkflowMethodChildEventData : WorkflowMethodEventData {
-  val childWorkflowId: String
-  val childWorkflowName: String
-  val childWorkflowMethodId: String
-  val childWorkflowMethodName: String
-}
+@Serializable
+data class WorkflowCanceledData(
+  override val workerName: String,
+  override val infiniticVersion: String
+) : WorkflowEngineData
 
+@Serializable
+data class WorkflowMethodStartedData(
+  val workflowMethodId: String,
+  override val workerName: String,
+  override val infiniticVersion: String
+) : WorkflowEngineData
 
-//@Serializable
-//data class WorkflowMethodTaskCompletedData(
-//  val error: ErrorData,
-//  override val retrySequence: Int,
-//  override val retryIndex: Int,
-//  override val meta: Map<String, ByteArray>,
-//  override val tags: Set<String>,
-//  val workerName: String,
-//  override val infiniticVersion: String
-//) : ServiceEventData
-//
-//@Serializable
-//data class WorkflowMethodTaskFailedData(
-//  val error: ErrorData,
-//  val delayMillis: Long,
-//  override val retrySequence: Int,
-//  override val retryIndex: Int,
-//  override val meta: Map<String, ByteArray>,
-//  override val tags: Set<String>,
-//  val workerName: String,
-//  override val infiniticVersion: String
-//) : ServiceEventData
-//
-//@Serializable
-//data class WorkflowMethodTaskTimedOutData(
-//  val returnValue: JsonElement,
-//  override val retrySequence: Int,
-//  override val retryIndex: Int,
-//  override val meta: Map<String, ByteArray>,
-//  override val tags: Set<String>,
-//  val workerName: String,
-//  override val infiniticVersion: String
-//) : ServiceEventData
-//
-fun ServiceEventMessage.toWorkflowData(): WorkflowEventData = when (this) {
+@Serializable
+data class WorkflowMethodCompletedData(
+  val result: JsonElement,
+  val workflowMethodId: String,
+  override val workerName: String,
+  override val infiniticVersion: String
+) : WorkflowEngineData
 
-  is TaskStartedEvent -> thisShouldNotHappen()
+@Serializable
+data class WorkflowMethodFailedData(
+  val error: DeferredErrorData,
+  val workflowMethodId: String,
+  override val workerName: String,
+  override val infiniticVersion: String
+) : WorkflowEngineData
 
-  is TaskRetriedEvent -> thisShouldNotHappen()
+@Serializable
+data class WorkflowMethodCanceledData(
+  val workflowMethodId: String,
+  override val workerName: String,
+  override val infiniticVersion: String
+) : WorkflowEngineData
 
-  is TaskFailedEvent -> thisShouldNotHappen()
-
-
-  is TaskCompletedEvent -> thisShouldNotHappen()
-}
+@Serializable
+data class WorkflowMethodTimedOutData(
+  val workflowMethodId: String,
+  override val workerName: String,
+  override val infiniticVersion: String
+) : WorkflowEngineData

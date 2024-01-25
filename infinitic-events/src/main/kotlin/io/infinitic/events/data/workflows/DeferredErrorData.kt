@@ -74,7 +74,7 @@ data class DeferredWorkflowFailedData(
   val workflowName: String,
   val workflowMethodId: String?,
   val workflowMethodName: String,
-  val error: DeferredErrorData
+  val deferredError: DeferredErrorData
 ) : DeferredErrorData
 
 @Serializable
@@ -143,7 +143,7 @@ fun DeferredError.toDeferredErrorData(): DeferredErrorData = when (this) {
       workflowName = workflowName.toString(),
       workflowMethodId = workflowMethodId?.toString(),
       workflowMethodName = workflowMethodName.toString(),
-      error = toDeferredErrorData(),
+      deferredError = deferredError.toDeferredErrorData(),
   )
 
   is MethodCanceledError -> DeferredWorkflowCanceledData(

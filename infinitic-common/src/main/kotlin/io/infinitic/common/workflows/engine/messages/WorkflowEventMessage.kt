@@ -59,6 +59,8 @@ enum class WorkflowEventMessageType {
   WORKFLOW_METHOD_FAILED,
   WORKFLOW_METHOD_CANCELED,
   WORKFLOW_METHOD_TIMED_OUT,
+  //TASK_DISPATCHED,
+  //CHILD_WORKFLOW_DISPATCHED,
 }
 
 sealed interface WorkflowMethodMessage {
