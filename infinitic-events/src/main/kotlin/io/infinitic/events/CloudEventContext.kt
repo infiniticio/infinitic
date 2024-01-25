@@ -27,6 +27,7 @@ import io.infinitic.common.exceptions.thisShouldNotHappen
 import io.infinitic.common.messages.Message
 import io.infinitic.common.tasks.events.messages.ServiceEventMessage
 import io.infinitic.common.tasks.executors.messages.ServiceExecutorMessage
+import io.infinitic.common.workflows.engine.messages.WorkflowCmdMessage
 import io.infinitic.events.data.services.serviceType
 import io.infinitic.events.data.services.toServiceData
 import io.infinitic.events.data.workflows.toWorkflowData
@@ -42,18 +43,21 @@ enum class CloudEventContext {
     override fun Message.type() = when (this) {
       is ServiceExecutorMessage -> workflowType()
       is ServiceEventMessage -> workflowType()
+      is WorkflowCmdMessage -> workflowType()
       else -> null
     }?.type
 
     override fun Message.subject(): String = when (this) {
       is ServiceExecutorMessage -> workflowId
       is ServiceEventMessage -> workflowId
+      is WorkflowCmdMessage -> workflowId
       else -> thisShouldNotHappen()
     }.toString()
 
     override fun Message.source(prefix: String): URI = when (this) {
       is ServiceExecutorMessage -> workflowName
       is ServiceEventMessage -> workflowName
+      is WorkflowCmdMessage -> workflowName
       else -> thisShouldNotHappen()
     }.let {
       URI.create(
@@ -64,6 +68,7 @@ enum class CloudEventContext {
     override fun Message.dataBytes(): ByteArray = when (this) {
       is ServiceExecutorMessage -> toWorkflowData()
       is ServiceEventMessage -> toWorkflowData()
+      is WorkflowCmdMessage -> toWorkflowData()
       else -> thisShouldNotHappen()
     }.let {
       Json.encodeToString(it).toByteArray()
