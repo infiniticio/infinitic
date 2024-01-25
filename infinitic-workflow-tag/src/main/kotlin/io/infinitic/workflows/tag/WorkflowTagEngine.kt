@@ -28,7 +28,7 @@ import io.infinitic.common.clients.messages.WorkflowIdsByTag
 import io.infinitic.common.data.MillisInstant
 import io.infinitic.common.emitters.EmitterName
 import io.infinitic.common.exceptions.thisShouldNotHappen
-import io.infinitic.common.tasks.executors.errors.WorkflowMethodTimedOutError
+import io.infinitic.common.tasks.executors.errors.MethodTimedOutError
 import io.infinitic.common.transport.ClientTopic
 import io.infinitic.common.transport.DelayedWorkflowEngineTopic
 import io.infinitic.common.transport.InfiniticProducerAsync
@@ -139,7 +139,7 @@ class WorkflowTagEngine(
 
         if (timeout != null && message.requesterWorkflowId != null) launch {
           val childMethodTimedOut = ChildMethodTimedOut(
-              childMethodTimedOutError = WorkflowMethodTimedOutError(
+              childMethodTimedOutError = MethodTimedOutError(
                   workflowName = message.workflowName,
                   workflowId = message.workflowId,
                   methodName = message.methodName,
@@ -220,7 +220,7 @@ class WorkflowTagEngine(
           if (message.methodTimeout != null && message.requesterWorkflowId != null) {
             launch {
               val childMethodTimedOut = ChildMethodTimedOut(
-                  childMethodTimedOutError = WorkflowMethodTimedOutError(
+                  childMethodTimedOutError = MethodTimedOutError(
                       workflowName = message.workflowName,
                       workflowId = workflowId,
                       methodName = message.methodName,

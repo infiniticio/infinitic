@@ -278,8 +278,7 @@ data class TaskCompletedEvent(
         workflowId = it,
         workflowName = workflowName ?: thisShouldNotHappen(),
         workflowMethodId = workflowMethodId ?: thisShouldNotHappen(),
-        taskReturnValue =
-        TaskReturnValue(
+        taskReturnValue = TaskReturnValue(
             serviceName = serviceName,
             taskId = taskId,
             taskMeta = taskMeta,
