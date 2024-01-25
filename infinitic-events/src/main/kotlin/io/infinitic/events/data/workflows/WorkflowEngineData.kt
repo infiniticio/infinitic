@@ -46,9 +46,7 @@ import io.infinitic.events.ChildTaskFailedType
 import io.infinitic.events.ChildTaskTimedOutType
 import io.infinitic.events.ChildTimerCompletedType
 import io.infinitic.events.InfiniticWorkflowEventType
-import io.infinitic.events.data.DeferredErrorData
 import io.infinitic.events.data.ErrorData
-import io.infinitic.events.data.toDeferredErrorData
 import io.infinitic.events.data.toErrorData
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonElement

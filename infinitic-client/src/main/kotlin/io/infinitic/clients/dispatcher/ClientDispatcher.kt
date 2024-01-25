@@ -255,7 +255,7 @@ internal class ClientDispatcher(
       is MethodCanceled -> throw WorkflowCanceledException(
           workflowName = workflowName.toString(),
           workflowId = workflowId.toString(),
-          workflowMethodId = workflowMethodId?.toString(),
+          workflowMethodId = workflowResult.workflowMethodId.toString(),
       )
 
       is MethodFailed -> throw WorkflowFailedException.from(
@@ -263,7 +263,7 @@ internal class ClientDispatcher(
               workflowName = workflowName,
               workflowMethodName = workflowMethodName,
               workflowId = workflowId,
-              workflowMethodId = workflowMethodId,
+              workflowMethodId = workflowResult.workflowMethodId,
               deferredError = workflowResult.cause,
           ),
       )
