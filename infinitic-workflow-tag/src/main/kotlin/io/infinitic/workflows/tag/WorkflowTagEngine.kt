@@ -124,9 +124,9 @@ class WorkflowTagEngine(
               methodParameterTypes = message.methodParameterTypes,
               workflowTags = message.workflowTags,
               workflowMeta = message.workflowMeta,
-              parentWorkflowName = message.parentWorkflowName,
-              parentWorkflowId = message.parentWorkflowId,
-              parentWorkflowMethodId = message.parentWorkflowMethodId,
+              requesterWorkflowName = message.requesterWorkflowName,
+              requesterWorkflowId = message.requesterWorkflowId,
+              requesterWorkflowMethodId = message.requesterWorkflowMethodId,
               clientWaiting = message.clientWaiting,
               emitterName = message.emitterName,
               emittedAt = message.emittedAt ?: publishTime,
@@ -137,7 +137,7 @@ class WorkflowTagEngine(
         // send global timeout if needed
         val timeout = message.methodTimeout
 
-        if (timeout != null && message.parentWorkflowId != null) launch {
+        if (timeout != null && message.requesterWorkflowId != null) launch {
           val childMethodTimedOut = ChildMethodTimedOut(
               childMethodTimedOutError = WorkflowMethodTimedOutError(
                   workflowName = message.workflowName,
@@ -145,9 +145,9 @@ class WorkflowTagEngine(
                   methodName = message.methodName,
                   workflowMethodId = WorkflowMethodId.from(message.workflowId),
               ),
-              workflowName = message.parentWorkflowName ?: thisShouldNotHappen(),
-              workflowId = message.parentWorkflowId ?: thisShouldNotHappen(),
-              workflowMethodId = message.parentWorkflowMethodId ?: thisShouldNotHappen(),
+              workflowName = message.requesterWorkflowName ?: thisShouldNotHappen(),
+              workflowId = message.requesterWorkflowId ?: thisShouldNotHappen(),
+              workflowMethodId = message.requesterWorkflowMethodId ?: thisShouldNotHappen(),
               emitterName = emitterName,
               emittedAt = message.emittedAt ?: publishTime,
           )
@@ -169,6 +169,9 @@ class WorkflowTagEngine(
                 workflowId = ids.first(),
                 emitterName = message.emitterName,
                 emittedAt = message.emittedAt ?: publishTime,
+                requesterWorkflowId = message.requesterWorkflowId,
+                requesterWorkflowName = message.requesterWorkflowName,
+                requesterWorkflowMethodId = message.requesterWorkflowMethodId,
             )
             with(producer) { waitWorkflow.sendTo(WorkflowCmdTopic) }
           }
@@ -194,7 +197,7 @@ class WorkflowTagEngine(
 
       false -> ids.forEach { workflowId ->
         // parent workflow already applied method to self
-        if (workflowId != message.parentWorkflowId) {
+        if (workflowId != message.requesterWorkflowId) {
           launch {
             val dispatchMethod = DispatchMethodWorkflow(
                 workflowName = message.workflowName,
@@ -203,9 +206,9 @@ class WorkflowTagEngine(
                 methodName = message.methodName,
                 methodParameters = message.methodParameters,
                 methodParameterTypes = message.methodParameterTypes,
-                parentWorkflowId = message.parentWorkflowId,
-                parentWorkflowName = message.parentWorkflowName,
-                parentWorkflowMethodId = message.parentWorkflowMethodId,
+                requesterWorkflowId = message.requesterWorkflowId,
+                requesterWorkflowName = message.requesterWorkflowName,
+                requesterWorkflowMethodId = message.requesterWorkflowMethodId,
                 clientWaiting = false,
                 emitterName = emitterName,
                 emittedAt = message.emittedAt ?: publishTime,
@@ -214,7 +217,7 @@ class WorkflowTagEngine(
           }
 
           // set timeout if any,
-          if (message.methodTimeout != null && message.parentWorkflowId != null) {
+          if (message.methodTimeout != null && message.requesterWorkflowId != null) {
             launch {
               val childMethodTimedOut = ChildMethodTimedOut(
                   childMethodTimedOutError = WorkflowMethodTimedOutError(
@@ -223,9 +226,9 @@ class WorkflowTagEngine(
                       methodName = message.methodName,
                       workflowMethodId = message.workflowMethodId,
                   ),
-                  workflowName = message.parentWorkflowName!!,
-                  workflowId = message.parentWorkflowId!!,
-                  workflowMethodId = message.parentWorkflowMethodId!!,
+                  workflowName = message.requesterWorkflowName!!,
+                  workflowId = message.requesterWorkflowId!!,
+                  workflowMethodId = message.requesterWorkflowMethodId!!,
                   emitterName = emitterName,
                   emittedAt = message.emittedAt ?: publishTime,
               )
@@ -255,6 +258,9 @@ class WorkflowTagEngine(
               workflowId = workflowId,
               emitterName = emitterName,
               emittedAt = message.emittedAt ?: publishTime,
+              requesterWorkflowId = message.requesterWorkflowId,
+              requesterWorkflowName = message.requesterWorkflowName,
+              requesterWorkflowMethodId = message.requesterWorkflowMethodId,
           )
           with(producer) { retryWorkflowTask.sendTo(WorkflowCmdTopic) }
         }
@@ -279,6 +285,9 @@ class WorkflowTagEngine(
                   workflowId = workflowId,
                   emitterName = emitterName,
                   emittedAt = message.emittedAt ?: publishTime,
+                  requesterWorkflowId = message.requesterWorkflowId,
+                  requesterWorkflowName = message.requesterWorkflowName,
+                  requesterWorkflowMethodId = message.requesterWorkflowMethodId,
               )
               with(producer) { retryTasks.sendTo(WorkflowCmdTopic) }
             }
@@ -301,6 +310,9 @@ class WorkflowTagEngine(
                   workflowId = workflowId,
                   emitterName = emitterName,
                   emittedAt = message.emittedAt ?: publishTime,
+                  requesterWorkflowId = message.requesterWorkflowId,
+                  requesterWorkflowName = message.requesterWorkflowName,
+                  requesterWorkflowMethodId = message.requesterWorkflowMethodId,
               )
               with(producer) { completeTimers.sendTo(WorkflowCmdTopic) }
             }
@@ -328,6 +340,9 @@ class WorkflowTagEngine(
                 workflowId = workflowId,
                 emitterName = emitterName,
                 emittedAt = message.emittedAt ?: publishTime,
+                requesterWorkflowId = message.requesterWorkflowId,
+                requesterWorkflowName = message.requesterWorkflowName,
+                requesterWorkflowMethodId = message.requesterWorkflowMethodId,
             )
             with(producer) { cancelWorkflow.sendTo(WorkflowCmdTopic) }
           }
@@ -356,6 +371,9 @@ class WorkflowTagEngine(
                     workflowId = workflowId,
                     emitterName = emitterName,
                     emittedAt = message.emittedAt ?: publishTime,
+                    requesterWorkflowId = message.requesterWorkflowId,
+                    requesterWorkflowName = message.requesterWorkflowName,
+                    requesterWorkflowMethodId = message.requesterWorkflowMethodId,
                 )
                 with(producer) { sendSignal.sendTo(WorkflowCmdTopic) }
               }

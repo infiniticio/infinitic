@@ -70,9 +70,9 @@ internal fun CoroutineScope.dispatchMethod(
         true -> mutableSetOf(ClientName.from(message.emitterName))
         false -> mutableSetOf()
       },
-      parentWorkflowId = message.parentWorkflowId,
-      parentWorkflowName = message.parentWorkflowName,
-      parentWorkflowMethodId = message.parentWorkflowMethodId,
+      parentWorkflowId = message.requesterWorkflowId,
+      parentWorkflowName = message.requesterWorkflowName,
+      parentWorkflowMethodId = message.requesterWorkflowMethodId,
       parentClientName = message.parentClientName,
       methodName = message.methodName,
       methodParameterTypes = message.methodParameterTypes,

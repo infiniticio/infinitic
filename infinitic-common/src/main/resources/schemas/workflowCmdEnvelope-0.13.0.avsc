@@ -79,15 +79,6 @@
           "values" : "bytes"
         }
       }, {
-        "name" : "parentWorkflowName",
-        "type" : [ "null", "string" ]
-      }, {
-        "name" : "parentWorkflowId",
-        "type" : [ "null", "string" ]
-      }, {
-        "name" : "parentMethodRunId",
-        "type" : [ "null", "string" ]
-      }, {
         "name" : "workflowTaskId",
         "type" : [ "null", "string" ],
         "default" : null
@@ -101,6 +92,15 @@
         "name" : "emittedAt",
         "type" : [ "null", "long" ],
         "default" : null
+      }, {
+        "name" : "parentWorkflowId",
+        "type" : [ "null", "string" ]
+      }, {
+        "name" : "parentWorkflowName",
+        "type" : [ "null", "string" ]
+      }, {
+        "name" : "parentMethodRunId",
+        "type" : [ "null", "string" ]
       } ]
     } ]
   }, {
@@ -188,6 +188,18 @@
         "name" : "emittedAt",
         "type" : [ "null", "long" ],
         "default" : null
+      }, {
+        "name" : "requesterWorkflowId",
+        "type" : [ "null", "string" ],
+        "default" : null
+      }, {
+        "name" : "requesterWorkflowName",
+        "type" : [ "null", "string" ],
+        "default" : null
+      }, {
+        "name" : "requesterWorkflowMethodId",
+        "type" : [ "null", "string" ],
+        "default" : null
       } ]
     } ]
   }, {
@@ -226,6 +238,18 @@
         "name" : "emittedAt",
         "type" : [ "null", "long" ],
         "default" : null
+      }, {
+        "name" : "requesterWorkflowId",
+        "type" : [ "null", "string" ],
+        "default" : null
+      }, {
+        "name" : "requesterWorkflowName",
+        "type" : [ "null", "string" ],
+        "default" : null
+      }, {
+        "name" : "requesterWorkflowMethodId",
+        "type" : [ "null", "string" ],
+        "default" : null
       } ]
     } ]
   }, {
@@ -252,6 +276,18 @@
       }, {
         "name" : "emittedAt",
         "type" : [ "null", "long" ],
+        "default" : null
+      }, {
+        "name" : "requesterWorkflowId",
+        "type" : [ "null", "string" ],
+        "default" : null
+      }, {
+        "name" : "requesterWorkflowName",
+        "type" : [ "null", "string" ],
+        "default" : null
+      }, {
+        "name" : "requesterWorkflowMethodId",
+        "type" : [ "null", "string" ],
         "default" : null
       } ]
     } ]
@@ -294,6 +330,18 @@
         "name" : "emittedAt",
         "type" : [ "null", "long" ],
         "default" : null
+      }, {
+        "name" : "requesterWorkflowId",
+        "type" : [ "null", "string" ],
+        "default" : null
+      }, {
+        "name" : "requesterWorkflowName",
+        "type" : [ "null", "string" ],
+        "default" : null
+      }, {
+        "name" : "requesterWorkflowMethodId",
+        "type" : [ "null", "string" ],
+        "default" : null
       } ]
     } ]
   }, {
@@ -324,6 +372,18 @@
         "name" : "emittedAt",
         "type" : [ "null", "long" ],
         "default" : null
+      }, {
+        "name" : "requesterWorkflowId",
+        "type" : [ "null", "string" ],
+        "default" : null
+      }, {
+        "name" : "requesterWorkflowName",
+        "type" : [ "null", "string" ],
+        "default" : null
+      }, {
+        "name" : "requesterWorkflowMethodId",
+        "type" : [ "null", "string" ],
+        "default" : null
       } ]
     } ]
   }, {
@@ -353,6 +413,18 @@
       }, {
         "name" : "emittedAt",
         "type" : [ "null", "long" ],
+        "default" : null
+      }, {
+        "name" : "requesterWorkflowId",
+        "type" : [ "null", "string" ],
+        "default" : null
+      }, {
+        "name" : "requesterWorkflowName",
+        "type" : [ "null", "string" ],
+        "default" : null
+      }, {
+        "name" : "requesterWorkflowMethodId",
+        "type" : [ "null", "string" ],
         "default" : null
       } ]
     } ]
@@ -395,6 +467,18 @@
       }, {
         "name" : "emittedAt",
         "type" : [ "null", "long" ],
+        "default" : null
+      }, {
+        "name" : "requesterWorkflowId",
+        "type" : [ "null", "string" ],
+        "default" : null
+      }, {
+        "name" : "requesterWorkflowName",
+        "type" : [ "null", "string" ],
+        "default" : null
+      }, {
+        "name" : "requesterWorkflowMethodId",
+        "type" : [ "null", "string" ],
         "default" : null
       } ]
     } ]

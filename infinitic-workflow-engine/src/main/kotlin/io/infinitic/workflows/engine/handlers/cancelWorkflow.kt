@@ -114,6 +114,9 @@ private fun CoroutineScope.cancelWorkflowMethod(
                 workflowId = command.workflowId!!,
                 emitterName = emitterName,
                 emittedAt = emittedAt,
+                requesterWorkflowId = state.workflowId,
+                requesterWorkflowName = state.workflowName,
+                requesterWorkflowMethodId = workflowMethod.workflowMethodId,
             )
             with(producer) { cancelWorkflow.sendTo(WorkflowEngineTopic) }
           }
@@ -126,6 +129,9 @@ private fun CoroutineScope.cancelWorkflowMethod(
                 emitterWorkflowId = state.workflowId,
                 emitterName = emitterName,
                 emittedAt = emittedAt,
+                requesterWorkflowId = state.workflowId,
+                requesterWorkflowName = state.workflowName,
+                requesterWorkflowMethodId = workflowMethod.workflowMethodId,
             )
             with(producer) { cancelWorkflowByTag.sendTo(WorkflowTagTopic) }
           }
@@ -142,6 +148,9 @@ private fun CoroutineScope.cancelWorkflowMethod(
             cancellationReason = WorkflowCancellationReason.CANCELED_BY_PARENT,
             emitterName = emitterName,
             emittedAt = emittedAt,
+            requesterWorkflowId = state.workflowId,
+            requesterWorkflowName = state.workflowName,
+            requesterWorkflowMethodId = workflowMethod.workflowMethodId,
         )
         with(producer) { cancelWorkflow.sendTo(WorkflowEngineTopic) }
       }

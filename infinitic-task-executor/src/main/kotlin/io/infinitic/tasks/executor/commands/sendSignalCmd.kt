@@ -58,6 +58,9 @@ internal fun CoroutineScope.sendSignalCmd(
               workflowId = command.workflowId!!,
               emitterName = emitterName,
               emittedAt = workflowTaskInstant,
+              requesterWorkflowId = null,
+              requesterWorkflowName = null,
+              requesterWorkflowMethodId = null,
           )
           // dispatch signal on another workflow
           with(producer) { sendToChannel.sendTo(WorkflowCmdTopic) }
@@ -78,6 +81,9 @@ internal fun CoroutineScope.sendSignalCmd(
             parentWorkflowId = currentWorkflow.workflowId,
             emitterName = emitterName,
             emittedAt = workflowTaskInstant,
+            requesterWorkflowId = currentWorkflow.workflowId,
+            requesterWorkflowName = currentWorkflow.workflowName,
+            requesterWorkflowMethodId = currentWorkflow.workflowMethodId,
         )
         // Note: tag engine MUST ignore this message for Id = parentWorkflowId
         with(producer) { sendSignalByTag.sendTo(WorkflowTagTopic) }

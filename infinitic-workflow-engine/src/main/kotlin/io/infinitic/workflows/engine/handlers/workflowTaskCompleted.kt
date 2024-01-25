@@ -215,9 +215,9 @@ internal fun dispatchMethodOnRunningWorkflowCmd(
         methodName = command.methodName,
         methodParameters = command.methodParameters,
         methodParameterTypes = command.methodParameterTypes,
-        parentWorkflowId = state.workflowId,
-        parentWorkflowName = state.workflowName,
-        parentWorkflowMethodId = state.runningWorkflowMethodId,
+        requesterWorkflowId = state.workflowId,
+        requesterWorkflowName = state.workflowName,
+        requesterWorkflowMethodId = state.runningWorkflowMethodId,
         clientWaiting = false,
         emitterName = EmitterName(producer.name),
         emittedAt = state.runningWorkflowTaskInstant,
@@ -265,6 +265,9 @@ internal fun sendSignalCmd(
         workflowId = command.workflowId!!,
         emitterName = EmitterName(producer.name),
         emittedAt = state.runningWorkflowTaskInstant,
+        requesterWorkflowId = state.workflowId,
+        requesterWorkflowName = state.workflowName,
+        requesterWorkflowMethodId = state.runningWorkflowMethodId,
     )
     bufferedMessages.add(sendToChannel)
   }

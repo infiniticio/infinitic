@@ -179,9 +179,9 @@ internal class InfiniticClientTests : StringSpec(
             methodParameterTypes = MethodParameterTypes(listOf()),
             workflowTags = setOf(),
             workflowMeta = WorkflowMeta(),
-            parentWorkflowName = null,
-            parentWorkflowId = null,
-            parentWorkflowMethodId = null,
+            requesterWorkflowName = null,
+            requesterWorkflowId = null,
+            requesterWorkflowMethodId = null,
             clientWaiting = false,
             emitterName = emitterNameTest,
             emittedAt = null,
@@ -212,9 +212,9 @@ internal class InfiniticClientTests : StringSpec(
             methodParameterTypes = MethodParameterTypes(listOf()),
             workflowTags = setOf(),
             workflowMeta = WorkflowMeta(),
-            parentWorkflowName = null,
-            parentWorkflowId = null,
-            parentWorkflowMethodId = null,
+            requesterWorkflowName = null,
+            requesterWorkflowId = null,
+            requesterWorkflowMethodId = null,
             clientWaiting = false,
             emitterName = emitterNameTest,
             emittedAt = null,
@@ -234,9 +234,9 @@ internal class InfiniticClientTests : StringSpec(
             methodParameterTypes = MethodParameterTypes(listOf()),
             workflowTags = setOf(),
             workflowMeta = WorkflowMeta(),
-            parentWorkflowName = null,
-            parentWorkflowId = null,
-            parentWorkflowMethodId = null,
+            requesterWorkflowName = null,
+            requesterWorkflowId = null,
+            requesterWorkflowMethodId = null,
             clientWaiting = false,
             emitterName = emitterNameTest,
             emittedAt = null,
@@ -256,9 +256,9 @@ internal class InfiniticClientTests : StringSpec(
             methodParameterTypes = MethodParameterTypes(listOf()),
             workflowTags = setOf(),
             workflowMeta = WorkflowMeta(),
-            parentWorkflowName = null,
-            parentWorkflowId = null,
-            parentWorkflowMethodId = null,
+            requesterWorkflowName = null,
+            requesterWorkflowId = null,
+            requesterWorkflowMethodId = null,
             clientWaiting = false,
             emitterName = emitterNameTest,
             emittedAt = null,
@@ -278,9 +278,9 @@ internal class InfiniticClientTests : StringSpec(
             methodParameterTypes = MethodParameterTypes(listOf()),
             workflowTags = setOf(),
             workflowMeta = WorkflowMeta(meta),
-            parentWorkflowName = null,
-            parentWorkflowId = null,
-            parentWorkflowMethodId = null,
+            requesterWorkflowName = null,
+            requesterWorkflowId = null,
+            requesterWorkflowMethodId = null,
             clientWaiting = false,
             emitterName = emitterNameTest,
             emittedAt = null,
@@ -310,9 +310,9 @@ internal class InfiniticClientTests : StringSpec(
             methodParameterTypes = MethodParameterTypes(listOf()),
             workflowTags = tags.map { WorkflowTag(it) }.toSet(),
             workflowMeta = WorkflowMeta(),
-            parentWorkflowName = null,
-            parentWorkflowId = null,
-            parentWorkflowMethodId = null,
+            requesterWorkflowName = null,
+            requesterWorkflowId = null,
+            requesterWorkflowMethodId = null,
             clientWaiting = false,
             emitterName = emitterNameTest,
             emittedAt = null,
@@ -333,9 +333,9 @@ internal class InfiniticClientTests : StringSpec(
             methodParameterTypes = MethodParameterTypes(listOf(Integer::class.java.name)),
             workflowTags = setOf(),
             workflowMeta = WorkflowMeta(),
-            parentWorkflowName = null,
-            parentWorkflowId = null,
-            parentWorkflowMethodId = null,
+            requesterWorkflowName = null,
+            requesterWorkflowId = null,
+            requesterWorkflowMethodId = null,
             clientWaiting = false,
             emitterName = emitterNameTest,
             emittedAt = null,
@@ -357,9 +357,9 @@ internal class InfiniticClientTests : StringSpec(
             MethodParameterTypes(listOf(Int::class.java.name, String::class.java.name)),
             workflowTags = setOf(),
             workflowMeta = WorkflowMeta(),
-            parentWorkflowName = null,
-            parentWorkflowId = null,
-            parentWorkflowMethodId = null,
+            requesterWorkflowName = null,
+            requesterWorkflowId = null,
+            requesterWorkflowMethodId = null,
             clientWaiting = false,
             emitterName = emitterNameTest,
             emittedAt = null,
@@ -382,9 +382,9 @@ internal class InfiniticClientTests : StringSpec(
             methodParameterTypes = MethodParameterTypes(listOf(FakeInterface::class.java.name)),
             workflowTags = setOf(),
             workflowMeta = WorkflowMeta(),
-            parentWorkflowName = null,
-            parentWorkflowId = null,
-            parentWorkflowMethodId = null,
+            requesterWorkflowName = null,
+            requesterWorkflowId = null,
+            requesterWorkflowMethodId = null,
             clientWaiting = false,
             emitterName = emitterNameTest,
             emittedAt = null,
@@ -407,6 +407,9 @@ internal class InfiniticClientTests : StringSpec(
             workflowId = msg.workflowId,
             emitterName = emitterNameTest,
             emittedAt = null,
+            requesterWorkflowId = null,
+            requesterWorkflowName = null,
+            requesterWorkflowMethodId = null,
         )
 
         // when waiting for a workflow, the consumer should be started
@@ -468,6 +471,9 @@ internal class InfiniticClientTests : StringSpec(
             workflowId = WorkflowId(id),
             emitterName = emitterNameTest,
             emittedAt = null,
+            requesterWorkflowId = null,
+            requesterWorkflowName = null,
+            requesterWorkflowMethodId = null,
         )
       }
 
@@ -488,6 +494,9 @@ internal class InfiniticClientTests : StringSpec(
             workflowId = WorkflowId(id),
             emitterName = emitterNameTest,
             emittedAt = null,
+            requesterWorkflowId = null,
+            requesterWorkflowName = null,
+            requesterWorkflowMethodId = null,
         )
       }
 
@@ -507,6 +516,9 @@ internal class InfiniticClientTests : StringSpec(
             parentWorkflowId = null,
             emitterName = emitterNameTest,
             emittedAt = null,
+            requesterWorkflowId = null,
+            requesterWorkflowName = null,
+            requesterWorkflowMethodId = null,
         )
       }
 
@@ -527,6 +539,9 @@ internal class InfiniticClientTests : StringSpec(
             parentWorkflowId = null,
             emitterName = emitterNameTest,
             emittedAt = null,
+            requesterWorkflowId = null,
+            requesterWorkflowName = null,
+            requesterWorkflowMethodId = null,
         )
       }
 
@@ -552,6 +567,9 @@ internal class InfiniticClientTests : StringSpec(
             workflowId = WorkflowId(id),
             emitterName = emitterNameTest,
             emittedAt = null,
+            requesterWorkflowId = null,
+            requesterWorkflowName = null,
+            requesterWorkflowMethodId = null,
         )
       }
 
@@ -577,6 +595,9 @@ internal class InfiniticClientTests : StringSpec(
             workflowId = WorkflowId(id),
             emitterName = emitterNameTest,
             emittedAt = null,
+            requesterWorkflowId = null,
+            requesterWorkflowName = null,
+            requesterWorkflowMethodId = null,
         )
       }
 
@@ -595,6 +616,9 @@ internal class InfiniticClientTests : StringSpec(
             workflowId = WorkflowId(id),
             emitterName = emitterNameTest,
             emittedAt = null,
+            requesterWorkflowId = null,
+            requesterWorkflowName = null,
+            requesterWorkflowMethodId = null,
         )
       }
 
@@ -613,6 +637,9 @@ internal class InfiniticClientTests : StringSpec(
             workflowId = WorkflowId(id),
             emitterName = emitterNameTest,
             emittedAt = null,
+            requesterWorkflowId = null,
+            requesterWorkflowName = null,
+            requesterWorkflowMethodId = null,
         )
       }
 
@@ -629,6 +656,9 @@ internal class InfiniticClientTests : StringSpec(
             workflowId = WorkflowId(id),
             emitterName = emitterNameTest,
             emittedAt = null,
+            requesterWorkflowId = null,
+            requesterWorkflowName = null,
+            requesterWorkflowMethodId = null,
         )
       }
 
@@ -645,6 +675,9 @@ internal class InfiniticClientTests : StringSpec(
             workflowId = WorkflowId(id),
             emitterName = emitterNameTest,
             emittedAt = null,
+            requesterWorkflowId = null,
+            requesterWorkflowName = null,
+            requesterWorkflowMethodId = null,
         )
       }
 
@@ -663,9 +696,9 @@ internal class InfiniticClientTests : StringSpec(
             methodName = MethodName("m0"),
             methodParameters = MethodParameters(),
             methodParameterTypes = MethodParameterTypes(listOf()),
-            parentWorkflowName = null,
-            parentWorkflowId = null,
-            parentWorkflowMethodId = null,
+            requesterWorkflowName = null,
+            requesterWorkflowId = null,
+            requesterWorkflowMethodId = null,
             clientWaiting = false,
             emitterName = emitterNameTest,
             emittedAt = null,
@@ -687,9 +720,9 @@ internal class InfiniticClientTests : StringSpec(
             methodParameters = MethodParameters(),
             methodParameterTypes = MethodParameterTypes(listOf()),
             methodTimeout = null,
-            parentWorkflowName = null,
-            parentWorkflowId = null,
-            parentWorkflowMethodId = null,
+            requesterWorkflowName = null,
+            requesterWorkflowId = null,
+            requesterWorkflowMethodId = null,
             clientWaiting = false,
             emitterName = emitterNameTest,
             emittedAt = null,
@@ -710,6 +743,9 @@ internal class InfiniticClientTests : StringSpec(
             workflowId = WorkflowId(id),
             emitterName = emitterNameTest,
             emittedAt = null,
+            requesterWorkflowId = null,
+            requesterWorkflowName = null,
+            requesterWorkflowMethodId = null,
         )
       }
 
@@ -727,6 +763,9 @@ internal class InfiniticClientTests : StringSpec(
             workflowId = WorkflowId(id),
             emitterName = emitterNameTest,
             emittedAt = null,
+            requesterWorkflowId = null,
+            requesterWorkflowName = null,
+            requesterWorkflowMethodId = null,
         )
       }
 
@@ -744,6 +783,9 @@ internal class InfiniticClientTests : StringSpec(
             emitterWorkflowId = null,
             emitterName = emitterNameTest,
             emittedAt = null,
+            requesterWorkflowId = null,
+            requesterWorkflowName = null,
+            requesterWorkflowMethodId = null,
         )
         workflowCmdSlot.isCaptured shouldBe false
       }
@@ -762,6 +804,9 @@ internal class InfiniticClientTests : StringSpec(
             emitterWorkflowId = null,
             emitterName = emitterNameTest,
             emittedAt = null,
+            requesterWorkflowId = null,
+            requesterWorkflowName = null,
+            requesterWorkflowMethodId = null,
         )
         workflowCmdSlot.isCaptured shouldBe false
       }
@@ -779,6 +824,9 @@ internal class InfiniticClientTests : StringSpec(
             workflowId = WorkflowId(deferred.id),
             emitterName = emitterNameTest,
             emittedAt = null,
+            requesterWorkflowId = null,
+            requesterWorkflowName = null,
+            requesterWorkflowMethodId = null,
         )
       }
 

@@ -201,7 +201,7 @@ class WorkflowEngine(
           with(producer) { methodUnknown.sendTo(ClientTopic) }
         }
         // a workflow wants to dispatch a method on an unknown workflow
-        if (message.parentWorkflowId != null && message.parentWorkflowId != message.workflowId) launch {
+        if (message.requesterWorkflowId != null && message.requesterWorkflowId != message.workflowId) launch {
           val childMethodFailed = ChildMethodUnknown(
               childMethodUnknownError =
               MethodUnknownError(
@@ -209,9 +209,9 @@ class WorkflowEngine(
                   workflowId = message.workflowId,
                   workflowMethodId = message.workflowMethodId,
               ),
-              workflowName = message.parentWorkflowName ?: thisShouldNotHappen(),
-              workflowId = message.parentWorkflowId!!,
-              workflowMethodId = message.parentWorkflowMethodId ?: thisShouldNotHappen(),
+              workflowName = message.requesterWorkflowName ?: thisShouldNotHappen(),
+              workflowId = message.requesterWorkflowId!!,
+              workflowMethodId = message.requesterWorkflowMethodId ?: thisShouldNotHappen(),
               emitterName = emitterName,
               emittedAt = message.emittedAt,
           )

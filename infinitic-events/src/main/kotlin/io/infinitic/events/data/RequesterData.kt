@@ -21,7 +21,7 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.events.data.services
+package io.infinitic.events.data
 
 import kotlinx.serialization.Serializable
 
@@ -37,6 +37,6 @@ data class ClientRequesterData(
 data class WorkflowRequesterData(
   val workflowName: String,
   val workflowId: String,
-  val methodId: String,
+  val workflowMethodId: String,
   val workerName: String,
 ) : RequesterData

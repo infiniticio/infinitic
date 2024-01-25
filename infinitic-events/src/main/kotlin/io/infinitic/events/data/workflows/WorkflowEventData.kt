@@ -29,14 +29,14 @@ import io.infinitic.common.tasks.events.messages.TaskCompletedEvent
 import io.infinitic.common.tasks.events.messages.TaskFailedEvent
 import io.infinitic.common.tasks.events.messages.TaskRetriedEvent
 import io.infinitic.common.tasks.events.messages.TaskStartedEvent
-import io.infinitic.events.WorkflowMethodTaskCompleted
-import io.infinitic.events.WorkflowMethodTaskFailed
+import io.infinitic.events.ChildTaskCompletedType
+import io.infinitic.events.ChildTaskFailedType
 import io.infinitic.events.data.MessageData
 import kotlinx.serialization.Serializable
 
 fun ServiceEventMessage.workflowType() = when (this) {
-  is TaskCompletedEvent -> WorkflowMethodTaskCompleted
-  is TaskFailedEvent -> WorkflowMethodTaskFailed
+  is TaskCompletedEvent -> ChildTaskCompletedType
+  is TaskFailedEvent -> ChildTaskFailedType
   is TaskRetriedEvent -> thisShouldNotHappen()
   is TaskStartedEvent -> thisShouldNotHappen()
 }
@@ -115,7 +115,7 @@ fun ServiceEventMessage.toWorkflowData(): WorkflowEventData = when (this) {
   is TaskRetriedEvent -> thisShouldNotHappen()
 
   is TaskFailedEvent -> thisShouldNotHappen()
-  
+
 
   is TaskCompletedEvent -> thisShouldNotHappen()
 }

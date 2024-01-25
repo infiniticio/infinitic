@@ -117,7 +117,10 @@ data class RetryWorkflowTask(
   override val workflowName: WorkflowName,
   override val workflowId: WorkflowId,
   override val emitterName: EmitterName,
-  @AvroDefault(Avro.NULL) override var emittedAt: MillisInstant?
+  @AvroDefault(Avro.NULL) override var emittedAt: MillisInstant?,
+  @AvroDefault(Avro.NULL) override val requesterWorkflowId: WorkflowId?,
+  @AvroDefault(Avro.NULL) override val requesterWorkflowName: WorkflowName?,
+  @AvroDefault(Avro.NULL) override val requesterWorkflowMethodId: WorkflowMethodId?
 ) : WorkflowMessage(), WorkflowCmdMessage
 
 /**
@@ -140,7 +143,10 @@ data class RetryTasks(
   override val workflowName: WorkflowName,
   override val workflowId: WorkflowId,
   override val emitterName: EmitterName,
-  @AvroDefault(Avro.NULL) override var emittedAt: MillisInstant?
+  @AvroDefault(Avro.NULL) override var emittedAt: MillisInstant?,
+  @AvroDefault(Avro.NULL) override val requesterWorkflowId: WorkflowId?,
+  @AvroDefault(Avro.NULL) override val requesterWorkflowName: WorkflowName?,
+  @AvroDefault(Avro.NULL) override val requesterWorkflowMethodId: WorkflowMethodId?
 ) : WorkflowMessage(), WorkflowCmdMessage
 
 /**
@@ -158,7 +164,10 @@ data class WaitWorkflow(
   override val workflowName: WorkflowName,
   override val workflowId: WorkflowId,
   override val emitterName: EmitterName,
-  @AvroDefault(Avro.NULL) override var emittedAt: MillisInstant?
+  @AvroDefault(Avro.NULL) override var emittedAt: MillisInstant?,
+  @AvroDefault(Avro.NULL) override val requesterWorkflowId: WorkflowId?,
+  @AvroDefault(Avro.NULL) override val requesterWorkflowName: WorkflowName?,
+  @AvroDefault(Avro.NULL) override val requesterWorkflowMethodId: WorkflowMethodId?
 ) : WorkflowMessage(), WorkflowCmdMessage
 
 /**
@@ -171,9 +180,9 @@ data class WaitWorkflow(
  * @param methodParameterTypes Parameter types of the method to dispatch
  * @param workflowTags Tags of the workflow to dispatch
  * @param workflowMeta Meta of the workflow to dispatch
- * @param parentWorkflowId Id of the workflow that triggered the command
- * @param parentWorkflowName Name of the workflow that triggered the command
- * @param parentWorkflowMethodId Id of the method that triggered the command
+ * @param requesterWorkflowId Id of the workflow that triggered the command
+ * @param requesterWorkflowName Name of the workflow that triggered the command
+ * @param requesterWorkflowMethodId Id of the method that triggered the command
  * @param clientWaiting if a client is waiting for the workflow to complete
  * @param emitterName Name of the emitter
  */
@@ -189,22 +198,22 @@ data class DispatchNewWorkflow(
   val methodParameterTypes: MethodParameterTypes?,
   val workflowTags: Set<WorkflowTag>,
   val workflowMeta: WorkflowMeta,
-  val parentWorkflowName: WorkflowName?,
-  val parentWorkflowId: WorkflowId?,
-  @AvroName("parentMethodRunId") var parentWorkflowMethodId: WorkflowMethodId?,
   @AvroDefault(Avro.NULL) val workflowTaskId: TaskId? = null,
   val clientWaiting: Boolean,
   override val emitterName: EmitterName,
-  @AvroDefault(Avro.NULL) override var emittedAt: MillisInstant?
+  @AvroDefault(Avro.NULL) override var emittedAt: MillisInstant?,
+  @AvroName("parentWorkflowId") override val requesterWorkflowId: WorkflowId?,
+  @AvroName("parentWorkflowName") override val requesterWorkflowName: WorkflowName?,
+  @AvroName("parentMethodRunId") override val requesterWorkflowMethodId: WorkflowMethodId?,
 ) : WorkflowMessage(), WorkflowCmdMessage {
 
   fun workflowMethod() = WorkflowMethod(
       workflowMethodId = WorkflowMethodId.from(workflowId),
       waitingClients = waitingClients(),
-      parentWorkflowId = parentWorkflowId,
-      parentWorkflowName = parentWorkflowName,
-      parentWorkflowMethodId = parentWorkflowMethodId,
-      parentClientName = parentClientName(),
+      parentWorkflowId = requesterWorkflowId,
+      parentWorkflowName = requesterWorkflowName,
+      parentWorkflowMethodId = requesterWorkflowMethodId,
+      parentClientName = parentClientName,
       methodName = methodName,
       methodParameterTypes = methodParameterTypes,
       methodParameters = methodParameters,
@@ -243,20 +252,15 @@ data class DispatchNewWorkflow(
       workflowTags = workflowTags,
       workflowMeta = workflowMeta,
       workflowMethodId = WorkflowMethodId.from(workflowId),
-      parentWorkflowName = parentWorkflowName,
-      parentWorkflowId = parentWorkflowId,
-      parentWorkflowMethodId = parentWorkflowMethodId,
-      parentClientName = parentClientName(),
-      waitingClients = if (clientWaiting) setOf(parentClientName()!!) else setOf(),
+      parentWorkflowName = requesterWorkflowName,
+      parentWorkflowId = requesterWorkflowId,
+      parentWorkflowMethodId = requesterWorkflowMethodId,
+      parentClientName = parentClientName,
+      waitingClients = if (clientWaiting) setOf(parentClientName!!) else setOf(),
   )
 
-  fun parentClientName(): ClientName? = when (parentWorkflowId) {
-    null -> ClientName.from(emitterName)
-    else -> null
-  }
-
   fun waitingClients() = when (clientWaiting) {
-    true -> mutableSetOf(parentClientName()!!)
+    true -> mutableSetOf(parentClientName!!)
     false -> mutableSetOf()
   }
 }
@@ -265,7 +269,7 @@ data class DispatchNewWorkflow(
 /**
  * This message is a command to dispatch a new method for a running workflow.
  * If this request was triggered from another workflow, then
- * [parentWorkflowName], [parentWorkflowId] and [parentWorkflowMethodId] describe it
+ * [requesterWorkflowName], [requesterWorkflowId] and [requesterWorkflowMethodId] describe it
  *
  * @param workflowName Name of the running workflow
  * @param workflowId Id of the running workflow
@@ -273,9 +277,9 @@ data class DispatchNewWorkflow(
  * @param methodName Name of the method to dispatch
  * @param methodParameters Parameters of the method to dispatch
  * @param methodParameterTypes Parameter types of the method to dispatch
- * @param parentWorkflowId Id of the workflow that triggered the command
- * @param parentWorkflowName Name of the workflow that triggered the command
- * @param parentWorkflowMethodId Id of the method that triggered the command
+ * @param requesterWorkflowId Id of the workflow that triggered the command
+ * @param requesterWorkflowName Name of the workflow that triggered the command
+ * @param requesterWorkflowMethodId Id of the method that triggered the command
  * @param clientWaiting if a client is waiting for the method to complete
  * @param emitterName Name of the emitter
  */
@@ -289,19 +293,13 @@ data class DispatchMethodWorkflow(
   val methodName: MethodName,
   val methodParameters: MethodParameters,
   val methodParameterTypes: MethodParameterTypes?,
-  var parentWorkflowId: WorkflowId?,
-  var parentWorkflowName: WorkflowName?,
-  @AvroName("parentMethodRunId") var parentWorkflowMethodId: WorkflowMethodId?,
+  @AvroName("parentWorkflowId") override val requesterWorkflowId: WorkflowId?,
+  @AvroName("parentWorkflowName") override val requesterWorkflowName: WorkflowName?,
+  @AvroName("parentMethodRunId") override val requesterWorkflowMethodId: WorkflowMethodId?,
   val clientWaiting: Boolean,
   override val emitterName: EmitterName,
   @AvroDefault(Avro.NULL) override var emittedAt: MillisInstant?
 ) : WorkflowMessage(), WorkflowCmdMessage, WorkflowInternalMethodEvent
-
-val DispatchMethodWorkflow.parentClientName
-  get() = when (parentWorkflowId) {
-    null -> ClientName.from(emitterName)
-    else -> null
-  }
 
 
 /**
@@ -319,7 +317,10 @@ data class CompleteTimers(
   override val workflowName: WorkflowName,
   override val workflowId: WorkflowId,
   override val emitterName: EmitterName,
-  @AvroDefault(Avro.NULL) override var emittedAt: MillisInstant?
+  @AvroDefault(Avro.NULL) override var emittedAt: MillisInstant?,
+  @AvroDefault(Avro.NULL) override val requesterWorkflowId: WorkflowId?,
+  @AvroDefault(Avro.NULL) override val requesterWorkflowName: WorkflowName?,
+  @AvroDefault(Avro.NULL) override val requesterWorkflowMethodId: WorkflowMethodId?
 ) : WorkflowMessage(), WorkflowCmdMessage, WorkflowInternalEvent
 
 /**
@@ -340,7 +341,10 @@ data class CancelWorkflow(
   override val workflowName: WorkflowName,
   override val workflowId: WorkflowId,
   override val emitterName: EmitterName,
-  @AvroDefault(Avro.NULL) override var emittedAt: MillisInstant?
+  @AvroDefault(Avro.NULL) override var emittedAt: MillisInstant?,
+  @AvroDefault(Avro.NULL) override val requesterWorkflowId: WorkflowId?,
+  @AvroDefault(Avro.NULL) override val requesterWorkflowName: WorkflowName?,
+  @AvroDefault(Avro.NULL) override val requesterWorkflowMethodId: WorkflowMethodId?
 ) : WorkflowMessage(), WorkflowCmdMessage, WorkflowInternalEvent
 
 /**
@@ -358,7 +362,10 @@ data class CompleteWorkflow(
   override val workflowName: WorkflowName,
   override val workflowId: WorkflowId,
   override val emitterName: EmitterName,
-  @AvroDefault(Avro.NULL) override var emittedAt: MillisInstant?
+  @AvroDefault(Avro.NULL) override var emittedAt: MillisInstant?,
+  @AvroDefault(Avro.NULL) override val requesterWorkflowId: WorkflowId?,
+  @AvroDefault(Avro.NULL) override val requesterWorkflowName: WorkflowName?,
+  @AvroDefault(Avro.NULL) override val requesterWorkflowMethodId: WorkflowMethodId?
 ) : WorkflowMessage(), WorkflowCmdMessage, WorkflowInternalEvent
 
 /**
@@ -382,7 +389,10 @@ data class SendSignal(
   override val workflowName: WorkflowName,
   override val workflowId: WorkflowId,
   override val emitterName: EmitterName,
-  @AvroDefault(Avro.NULL) override var emittedAt: MillisInstant?
+  @AvroDefault(Avro.NULL) override var emittedAt: MillisInstant?,
+  @AvroDefault(Avro.NULL) override val requesterWorkflowId: WorkflowId?,
+  @AvroDefault(Avro.NULL) override val requesterWorkflowName: WorkflowName?,
+  @AvroDefault(Avro.NULL) override val requesterWorkflowMethodId: WorkflowMethodId?
 ) : WorkflowMessage(), WorkflowCmdMessage, WorkflowInternalEvent
 
 /**

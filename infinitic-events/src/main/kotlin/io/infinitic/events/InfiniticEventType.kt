@@ -26,8 +26,10 @@ package io.infinitic.events
 private const val TYPE_DOMAIN = "infinitic"
 
 private const val TYPE_WORKFLOW = "$TYPE_DOMAIN.workflow"
-private const val TYPE_WORKFLOW_TASK = "$TYPE_WORKFLOW.task"
+private const val TYPE_WORKFLOW_WORKFLOW_TASK = "$TYPE_WORKFLOW.workflowTask"
 private const val TYPE_WORKFLOW_METHOD = "$TYPE_WORKFLOW.method"
+private const val TYPE_WORKFLOW_METHOD_CHILD = "$TYPE_WORKFLOW_METHOD.child"
+private const val TYPE_WORKFLOW_METHOD_TASK = "$TYPE_WORKFLOW_METHOD.task"
 
 private const val TYPE_TASK = "$TYPE_DOMAIN.task"
 
@@ -44,23 +46,23 @@ sealed interface InfiniticServiceEventType : InfiniticEventType {
   override val type: String
 }
 
-data object TaskDispatched : InfiniticServiceEventType {
+data object TaskDispatchedType : InfiniticServiceEventType {
   override val type = "$TYPE_TASK.dispatched"
 }
 
-data object TaskStarted : InfiniticServiceEventType {
+data object TaskStartedType : InfiniticServiceEventType {
   override val type = "$TYPE_TASK.started"
 }
 
-data object TaskCompleted : InfiniticServiceEventType {
+data object TaskCompletedType : InfiniticServiceEventType {
   override val type = "$TYPE_TASK.completed"
 }
 
-data object TaskFailed : InfiniticServiceEventType {
+data object TaskFailedType : InfiniticServiceEventType {
   override val type = "$TYPE_TASK.failed"
 }
 
-data object TaskRetried : InfiniticServiceEventType {
+data object TaskRetriedType : InfiniticServiceEventType {
   override val type = "$TYPE_TASK.retried"
 }
 
@@ -73,32 +75,36 @@ sealed interface InfiniticWorkflowEventType : InfiniticEventType {
   override val type: String
 }
 
-data object WorkflowDispatched : InfiniticWorkflowEventType {
+data object WorkflowDispatchedType : InfiniticWorkflowEventType {
   override val type = "$TYPE_WORKFLOW.dispatched"
 }
 
-data object WorkflowStarted : InfiniticWorkflowEventType {
+data object WorkflowStartedType : InfiniticWorkflowEventType {
   override val type = "$TYPE_WORKFLOW.started"
 }
 
-data object WorkflowCancelRequested : InfiniticWorkflowEventType {
+data object WorkflowCancelRequestedType : InfiniticWorkflowEventType {
   override val type = "$TYPE_WORKFLOW.cancelRequested"
 }
 
-data object WorkflowCanceled : InfiniticWorkflowEventType {
+data object WorkflowCanceledType : InfiniticWorkflowEventType {
   override val type = "$TYPE_WORKFLOW.canceled"
 }
 
-data object WorkflowSignalSent : InfiniticWorkflowEventType {
+data object WorkflowSignalSentType : InfiniticWorkflowEventType {
   override val type = "$TYPE_WORKFLOW.signalSent"
 }
 
-data object WorkflowSignalReceived : InfiniticWorkflowEventType {
+data object WorkflowSignalReceivedType : InfiniticWorkflowEventType {
   override val type = "$TYPE_WORKFLOW.signalReceived"
 }
 
-data object WorkflowCompleted : InfiniticWorkflowEventType {
+data object WorkflowCompletedType : InfiniticWorkflowEventType {
   override val type = "$TYPE_WORKFLOW.completed"
+}
+
+data object TaskRetryRequestedType : InfiniticWorkflowTaskEventType {
+  override val type = "$TYPE_WORKFLOW.retryTaskRequested"
 }
 
 
@@ -111,28 +117,24 @@ sealed interface InfiniticWorkflowTaskEventType : InfiniticWorkflowEventType {
   override val type: String
 }
 
-data object WorkflowTaskRetryRequested : InfiniticWorkflowTaskEventType {
-  override val type = "$TYPE_WORKFLOW_TASK.retryRequested"
+data object WorkflowTaskRetryRequestedType : InfiniticWorkflowTaskEventType {
+  override val type = "$TYPE_WORKFLOW_WORKFLOW_TASK.retryRequested"
 }
 
-data object WorkflowTaskRetried : InfiniticWorkflowTaskEventType {
-  override val type = "$TYPE_WORKFLOW_TASK.retried"
+data object WorkflowTaskRetriedType : InfiniticWorkflowTaskEventType {
+  override val type = "$TYPE_WORKFLOW_WORKFLOW_TASK.retried"
 }
 
-data object WorkflowTaskDispatched : InfiniticWorkflowTaskEventType {
-  override val type = "$TYPE_WORKFLOW_TASK.dispatched"
+data object WorkflowTaskDispatchedType : InfiniticWorkflowTaskEventType {
+  override val type = "$TYPE_WORKFLOW_WORKFLOW_TASK.dispatched"
 }
 
-data object WorkflowTaskCompleted : InfiniticWorkflowTaskEventType {
-  override val type = "$TYPE_WORKFLOW_TASK.completed"
+data object WorkflowTaskCompletedType : InfiniticWorkflowTaskEventType {
+  override val type = "$TYPE_WORKFLOW_WORKFLOW_TASK.completed"
 }
 
-data object WorkflowTaskFailed : InfiniticWorkflowTaskEventType {
-  override val type = "$TYPE_WORKFLOW_TASK.failed"
-}
-
-data object WorkflowTaskTimedOut : InfiniticWorkflowTaskEventType {
-  override val type = "$TYPE_WORKFLOW_TASK.timedOut"
+data object WorkflowTaskFailedType : InfiniticWorkflowTaskEventType {
+  override val type = "$TYPE_WORKFLOW_WORKFLOW_TASK.failed"
 }
 
 /**
@@ -147,27 +149,27 @@ sealed interface InfiniticWorkflowMethodEventType : InfiniticWorkflowEventType {
   override val type: String
 }
 
-data object WorkflowMethodDispatched : InfiniticWorkflowMethodEventType {
+data object WorkflowMethodDispatchedType : InfiniticWorkflowMethodEventType {
   override val type = "$TYPE_WORKFLOW_METHOD.dispatched"
 }
 
-data object WorkflowMethodStarted : InfiniticWorkflowMethodEventType {
+data object WorkflowMethodStartedType : InfiniticWorkflowMethodEventType {
   override val type = "$TYPE_WORKFLOW_METHOD.started"
 }
 
-data object WorkflowMethodCompleted : InfiniticWorkflowMethodEventType {
+data object WorkflowMethodCompletedType : InfiniticWorkflowMethodEventType {
   override val type = "$TYPE_WORKFLOW_METHOD.completed"
 }
 
-data object WorkflowMethodFailed : InfiniticWorkflowMethodEventType {
+data object WorkflowMethodFailedType : InfiniticWorkflowMethodEventType {
   override val type = "$TYPE_WORKFLOW_METHOD.failed"
 }
 
-data object WorkflowMethodCanceled : InfiniticWorkflowMethodEventType {
+data object WorkflowMethodCanceledType : InfiniticWorkflowMethodEventType {
   override val type = "$TYPE_WORKFLOW_METHOD.canceled"
 }
 
-data object WorkflowMethodTimedOut : InfiniticWorkflowMethodEventType {
+data object WorkflowMethodTimedOutType : InfiniticWorkflowMethodEventType {
   override val type = "$TYPE_WORKFLOW_METHOD.timedOut"
 }
 
@@ -175,35 +177,35 @@ data object WorkflowMethodTimedOut : InfiniticWorkflowMethodEventType {
  * ABOUT TIMERS DISPATCHED FROM A WORKFLOW METHOD
  */
 
-data object WorkflowMethodTimerDispatched : InfiniticWorkflowMethodEventType {
+data object WorkflowMethodTimerDispatchedType : InfiniticWorkflowMethodEventType {
   override val type = "$TYPE_WORKFLOW_METHOD.timer.dispatched"
 }
 
-data object WorkflowMethodTimerCompleted : InfiniticWorkflowMethodEventType {
+data object ChildTimerCompletedType : InfiniticWorkflowMethodEventType {
   override val type = "$TYPE_WORKFLOW_METHOD.timer.completed"
 }
 
 /**
  * ABOUT TASKS DISPATCHED FROM A WORKFLOW METHOD
  */
-data object WorkflowMethodTaskDispatched : InfiniticWorkflowMethodEventType {
-  override val type = "$TYPE_WORKFLOW_METHOD.task.dispatched"
+data object ChildTaskDispatchedType : InfiniticWorkflowMethodEventType {
+  override val type = "$TYPE_WORKFLOW_METHOD_TASK.dispatched"
 }
 
-data object WorkflowMethodTaskCompleted : InfiniticWorkflowMethodEventType {
-  override val type = "$TYPE_WORKFLOW_METHOD.task.completed"
+data object ChildTaskCompletedType : InfiniticWorkflowMethodEventType {
+  override val type = "$TYPE_WORKFLOW_METHOD_TASK.completed"
 }
 
-data object WorkflowMethodTaskFailed : InfiniticWorkflowMethodEventType {
-  override val type = "$TYPE_WORKFLOW_METHOD.task.failed"
+data object ChildTaskFailedType : InfiniticWorkflowMethodEventType {
+  override val type = "$TYPE_WORKFLOW_METHOD_TASK.failed"
 }
 
-data object WorkflowMethodTaskCanceled : InfiniticWorkflowMethodEventType {
-  override val type = "$TYPE_WORKFLOW_METHOD.task.canceled"
+data object ChildTaskCanceledType : InfiniticWorkflowMethodEventType {
+  override val type = "$TYPE_WORKFLOW_METHOD_TASK.canceled"
 }
 
-data object WorkflowMethodTaskTimedOut : InfiniticWorkflowMethodEventType {
-  override val type = "$TYPE_WORKFLOW_METHOD.task.timedout"
+data object ChildTaskTimedOutType : InfiniticWorkflowMethodEventType {
+  override val type = "$TYPE_WORKFLOW_METHOD_TASK.timedout"
 }
 
 
@@ -211,22 +213,26 @@ data object WorkflowMethodTaskTimedOut : InfiniticWorkflowMethodEventType {
  * ABOUT CHILD WORKFLOW METHOD DISPATCHED FROM A WORKFLOW METHOD
  */
 
-data object WorkflowMethodChildDispatched : InfiniticWorkflowMethodEventType {
-  override val type = "$TYPE_WORKFLOW_METHOD.child.dispatched"
+data object ChildMethodDispatchedType : InfiniticWorkflowMethodEventType {
+  override val type = "$TYPE_WORKFLOW_METHOD_CHILD.dispatched"
 }
 
-data object WorkflowMethodChildCompleted : InfiniticWorkflowMethodEventType {
-  override val type = "$TYPE_WORKFLOW_METHOD.child.completed"
+data object ChildMethodCompletedType : InfiniticWorkflowMethodEventType {
+  override val type = "$TYPE_WORKFLOW_METHOD_CHILD.completed"
 }
 
-data object WorkflowMethodChildFailed : InfiniticWorkflowMethodEventType {
-  override val type = "$TYPE_WORKFLOW_METHOD.child.failed"
+data object ChildMethodFailedType : InfiniticWorkflowMethodEventType {
+  override val type = "$TYPE_WORKFLOW_METHOD_CHILD.failed"
 }
 
-data object WorkflowMethodChildCanceled : InfiniticWorkflowMethodEventType {
-  override val type = "$TYPE_WORKFLOW_METHOD.child.canceled"
+data object ChildMethodCanceledType : InfiniticWorkflowMethodEventType {
+  override val type = "$TYPE_WORKFLOW_METHOD_CHILD.canceled"
 }
 
-data object WorkflowMethodChildTimedOut : InfiniticWorkflowMethodEventType {
-  override val type = "$TYPE_WORKFLOW_METHOD.child.timedout"
+data object ChildMethodTimedOutType : InfiniticWorkflowMethodEventType {
+  override val type = "$TYPE_WORKFLOW_METHOD_CHILD.timedout"
+}
+
+data object ChildMethodUnknownType : InfiniticWorkflowMethodEventType {
+  override val type = "$TYPE_WORKFLOW_METHOD_CHILD.unknown"
 }

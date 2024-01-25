@@ -33,6 +33,7 @@ import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskIndex
 import io.infinitic.common.workflows.engine.messages.DispatchNewWorkflow
 import io.infinitic.common.workflows.engine.messages.WorkflowMethodStartedEvent
 import io.infinitic.common.workflows.engine.messages.WorkflowStartedEvent
+import io.infinitic.common.workflows.engine.messages.parentClientName
 import io.infinitic.common.workflows.engine.state.WorkflowState
 import io.infinitic.workflows.engine.helpers.dispatchWorkflowTask
 import kotlinx.coroutines.CoroutineScope
@@ -47,10 +48,10 @@ internal fun CoroutineScope.dispatchWorkflow(
   val workflowMethod = WorkflowMethod(
       workflowMethodId = WorkflowMethodId.from(message.workflowId),
       waitingClients = message.waitingClients(),
-      parentWorkflowId = message.parentWorkflowId,
-      parentWorkflowName = message.parentWorkflowName,
-      parentWorkflowMethodId = message.parentWorkflowMethodId,
-      parentClientName = message.parentClientName(),
+      parentWorkflowId = message.requesterWorkflowId,
+      parentWorkflowName = message.requesterWorkflowName,
+      parentWorkflowMethodId = message.requesterWorkflowMethodId,
+      parentClientName = message.parentClientName,
       methodName = message.methodName,
       methodParameterTypes = message.methodParameterTypes,
       methodParameters = message.methodParameters,
@@ -97,7 +98,7 @@ internal fun CoroutineScope.dispatchWorkflow(
         parentWorkflowName = workflowMethod.parentWorkflowName,
         parentWorkflowId = workflowMethod.parentWorkflowId,
         parentWorkflowMethodId = workflowMethod.parentWorkflowMethodId,
-        parentClientName = message.parentClientName(),
+        parentClientName = message.parentClientName,
         waitingClients = message.waitingClients(),
     )
 

@@ -228,6 +228,9 @@ internal class ClientDispatcher(
           workflowId = workflowId,
           emitterName = emitterName,
           emittedAt = null,
+          requesterWorkflowId = null,
+          requesterWorkflowName = null,
+          requesterWorkflowMethodId = null,
       )
       // synchronously sent the message to get errors
       waitWorkflow.sendToAsync(WorkflowCmdTopic)
@@ -288,6 +291,9 @@ internal class ClientDispatcher(
           workflowId = requestBy.workflowId,
           emitterName = emitterName,
           emittedAt = null,
+          requesterWorkflowId = null,
+          requesterWorkflowName = null,
+          requesterWorkflowMethodId = null,
       )
       msg.sendToAsync(WorkflowCmdTopic)
     }
@@ -300,6 +306,9 @@ internal class ClientDispatcher(
           emitterWorkflowId = null,
           emitterName = emitterName,
           emittedAt = null,
+          requesterWorkflowId = null,
+          requesterWorkflowName = null,
+          requesterWorkflowMethodId = null,
       )
       msg.sendToAsync(WorkflowTagTopic)
     }
@@ -317,6 +326,9 @@ internal class ClientDispatcher(
           workflowId = requestBy.workflowId,
           emitterName = emitterName,
           emittedAt = null,
+          requesterWorkflowId = null,
+          requesterWorkflowName = null,
+          requesterWorkflowMethodId = null,
       )
       msg.sendToAsync(WorkflowCmdTopic)
     }
@@ -327,6 +339,9 @@ internal class ClientDispatcher(
           workflowTag = requestBy.workflowTag,
           emitterName = emitterName,
           emittedAt = null,
+          requesterWorkflowId = null,
+          requesterWorkflowName = null,
+          requesterWorkflowMethodId = null,
       )
       msg.sendToAsync(WorkflowTagTopic)
     }
@@ -347,6 +362,9 @@ internal class ClientDispatcher(
           workflowId = requestBy.workflowId,
           emitterName = emitterName,
           emittedAt = null,
+          requesterWorkflowId = null,
+          requesterWorkflowName = null,
+          requesterWorkflowMethodId = null,
       )
       msg.sendToAsync(WorkflowCmdTopic)
     }
@@ -358,6 +376,9 @@ internal class ClientDispatcher(
           workflowMethodId = workflowMethodId,
           emitterName = emitterName,
           emittedAt = null,
+          requesterWorkflowId = null,
+          requesterWorkflowName = null,
+          requesterWorkflowMethodId = null,
       )
       msg.sendToAsync(WorkflowTagTopic)
     }
@@ -382,6 +403,9 @@ internal class ClientDispatcher(
           taskStatus = taskStatus,
           serviceName = serviceName,
           emittedAt = null,
+          requesterWorkflowId = null,
+          requesterWorkflowName = null,
+          requesterWorkflowMethodId = null,
       )
       msg.sendToAsync(WorkflowCmdTopic)
     }
@@ -395,6 +419,9 @@ internal class ClientDispatcher(
           serviceName = serviceName,
           emitterName = emitterName,
           emittedAt = null,
+          requesterWorkflowId = null,
+          requesterWorkflowName = null,
+          requesterWorkflowMethodId = null,
       )
       msg.sendToAsync(WorkflowTagTopic)
     }
@@ -514,9 +541,9 @@ internal class ClientDispatcher(
             methodParameterTypes = handler.methodParameterTypes,
             workflowTags = handler.workflowTags,
             workflowMeta = handler.workflowMeta,
-            parentWorkflowName = null,
-            parentWorkflowId = null,
-            parentWorkflowMethodId = null,
+            requesterWorkflowName = null,
+            requesterWorkflowId = null,
+            requesterWorkflowMethodId = null,
             clientWaiting = clientWaiting,
             emitterName = emitterName,
             emittedAt = null,
@@ -539,9 +566,9 @@ internal class ClientDispatcher(
             methodTimeout = deferred.methodTimeout,
             workflowTags = handler.workflowTags,
             workflowMeta = handler.workflowMeta,
-            parentWorkflowName = null,
-            parentWorkflowId = null,
-            parentWorkflowMethodId = null,
+            requesterWorkflowName = null,
+            requesterWorkflowId = null,
+            requesterWorkflowMethodId = null,
             clientWaiting = clientWaiting,
             emitterName = emitterName,
             emittedAt = null,
@@ -636,9 +663,9 @@ internal class ClientDispatcher(
           methodName = handler.methodName,
           methodParameters = handler.methodParameters,
           methodParameterTypes = handler.methodParameterTypes,
-          parentWorkflowId = null,
-          parentWorkflowName = null,
-          parentWorkflowMethodId = null,
+          requesterWorkflowId = null,
+          requesterWorkflowName = null,
+          requesterWorkflowMethodId = null,
           clientWaiting = clientWaiting,
           emitterName = emitterName,
           emittedAt = null,
@@ -655,9 +682,9 @@ internal class ClientDispatcher(
           methodParameterTypes = handler.methodParameterTypes,
           methodParameters = handler.methodParameters,
           methodTimeout = deferred.methodTimeout,
-          parentWorkflowId = null,
-          parentWorkflowName = null,
-          parentWorkflowMethodId = null,
+          requesterWorkflowId = null,
+          requesterWorkflowName = null,
+          requesterWorkflowMethodId = null,
           clientWaiting = clientWaiting,
           emitterName = emitterName,
           emittedAt = null,
@@ -702,6 +729,9 @@ internal class ClientDispatcher(
             workflowId = (handler.requestBy as RequestByWorkflowId).workflowId,
             emitterName = emitterName,
             emittedAt = null,
+            requesterWorkflowId = null,
+            requesterWorkflowName = null,
+            requesterWorkflowMethodId = null,
         )
         sendSignal.sendToAsync(WorkflowCmdTopic)
       }
@@ -717,6 +747,9 @@ internal class ClientDispatcher(
             parentWorkflowId = null,
             emitterName = emitterName,
             emittedAt = null,
+            requesterWorkflowId = null,
+            requesterWorkflowName = null,
+            requesterWorkflowMethodId = null,
         )
         sendSignalByTag.sendToAsync(WorkflowTagTopic)
       }

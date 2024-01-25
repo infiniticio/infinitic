@@ -23,6 +23,8 @@
 
 package io.infinitic.events.data.workflows
 
+import io.infinitic.common.exceptions.thisShouldNotHappen
+import io.infinitic.common.workflows.data.workflows.set
 import io.infinitic.common.workflows.engine.messages.CancelWorkflow
 import io.infinitic.common.workflows.engine.messages.CompleteTimers
 import io.infinitic.common.workflows.engine.messages.CompleteWorkflow
@@ -34,42 +36,139 @@ import io.infinitic.common.workflows.engine.messages.SendSignal
 import io.infinitic.common.workflows.engine.messages.WaitWorkflow
 import io.infinitic.common.workflows.engine.messages.WorkflowCmdMessage
 import io.infinitic.events.InfiniticWorkflowEventType
+import io.infinitic.events.TaskRetryRequestedType
+import io.infinitic.events.WorkflowCancelRequestedType
+import io.infinitic.events.WorkflowDispatchedType
+import io.infinitic.events.WorkflowMethodDispatchedType
+import io.infinitic.events.WorkflowSignalSentType
+import io.infinitic.events.WorkflowTaskRetryRequestedType
+import io.infinitic.events.data.ClientRequesterData
+import io.infinitic.events.data.RequesterData
+import io.infinitic.events.data.WorkflowRequesterData
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.JsonElement
 
-fun WorkflowCmdMessage.workflowType(): InfiniticWorkflowEventType = when (this) {
-  is CancelWorkflow -> TODO()
+fun WorkflowCmdMessage.workflowType(): InfiniticWorkflowEventType? = when (this) {
+  is DispatchNewWorkflow -> WorkflowDispatchedType
+  is DispatchMethodWorkflow -> WorkflowMethodDispatchedType
+  is CancelWorkflow -> WorkflowCancelRequestedType
+  is CompleteTimers -> null
+  is CompleteWorkflow -> null
+  is RetryTasks -> TaskRetryRequestedType
+  is RetryWorkflowTask -> WorkflowTaskRetryRequestedType
+  is SendSignal -> WorkflowSignalSentType
+  is WaitWorkflow -> null
+}
+
+fun WorkflowCmdMessage.toWorkflowData(): WorkflowCmdData = when (this) {
+  is DispatchNewWorkflow -> WorkflowDispatchedData(
+      workflowMeta = workflowMeta.map,
+      workflowTags = workflowTags.set,
+      requester = requester,
+      infiniticVersion = version.toString(),
+  )
+
+  is DispatchMethodWorkflow -> WorkflowMethodDispatchedData(
+      workflowMethodArgs = methodParameters.toJson(),
+      workflowMethodName = methodName.toString(),
+      workflowMethodId = workflowMethodId.toString(),
+      requester = requester,
+      infiniticVersion = version.toString(),
+  )
+
+  is CancelWorkflow -> WorkflowCancelRequestedData(
+      requester = requester,
+      infiniticVersion = version.toString(),
+  )
+
   is CompleteTimers -> TODO()
+
   is CompleteWorkflow -> TODO()
-  is DispatchMethodWorkflow -> TODO()
-  is DispatchNewWorkflow -> TODO()
-  is RetryTasks -> TODO()
-  is RetryWorkflowTask -> TODO()
-  is SendSignal -> TODO()
+
+  is RetryTasks -> TaskRetryRequestedData(
+      taskId = taskId?.toString(),
+      taskStatus = taskStatus?.toString(),
+      serviceName = serviceName?.toString(),
+      requester = requester,
+      infiniticVersion = version.toString(),
+  )
+
+  is RetryWorkflowTask -> WorkflowTaskRetryRequestedData(
+      requester = requester,
+      infiniticVersion = version.toString(),
+  )
+
+  is SendSignal -> WorkflowSignalSentData(
+      channelName = channelName.toString(),
+      signalId = signalId.toString(),
+      signalArg = signalData.serializedData.toJson(),
+      requester = requester,
+      infiniticVersion = version.toString(),
+  )
+
   is WaitWorkflow -> TODO()
 }
 
-//
-//@Serializable
-//data class WorkflowMethodTaskDispatchedData(
-//  override val workflowMethodName: String,
-//  override val workflowMethodId: String,
-//  override val serviceName: String,
-//  override val taskName: String,
-//  override val taskId: String,
-//  val taskArgs: List<JsonElement>,
-//  val meta: Map<String, ByteArray>,
-//  val tags: Set<String>,
-//  val workerName: String,
-//  override val infiniticVersion: String
-//) : WorkflowMethodTaskEventData
-//
-fun WorkflowCmdMessage.toWorkflowData(): WorkflowEventData? = when (this) {
-  is CancelWorkflow -> TODO()
-  is CompleteTimers -> TODO()
-  is CompleteWorkflow -> TODO()
-  is DispatchMethodWorkflow -> TODO()
-  is DispatchNewWorkflow -> TODO()
-  is RetryTasks -> TODO()
-  is RetryWorkflowTask -> TODO()
-  is SendSignal -> TODO()
-  is WaitWorkflow -> TODO()
+@Serializable
+sealed interface WorkflowCmdData : WorkflowEventData {
+  val requester: RequesterData
 }
+
+@Serializable
+data class WorkflowDispatchedData(
+  val workflowMeta: Map<String, ByteArray>,
+  val workflowTags: Set<String>,
+  override val requester: RequesterData,
+  override val infiniticVersion: String
+) : WorkflowCmdData
+
+@Serializable
+data class WorkflowMethodDispatchedData(
+  val workflowMethodArgs: List<JsonElement>,
+  override val requester: RequesterData,
+  override val workflowMethodName: String,
+  override val workflowMethodId: String,
+  override val infiniticVersion: String
+) : WorkflowCmdData, WorkflowMethodEventData
+
+@Serializable
+data class WorkflowCancelRequestedData(
+  override val requester: RequesterData,
+  override val infiniticVersion: String
+) : WorkflowCmdData
+
+@Serializable
+data class WorkflowTaskRetryRequestedData(
+  override val requester: RequesterData,
+  override val infiniticVersion: String
+) : WorkflowCmdData
+
+@Serializable
+data class TaskRetryRequestedData(
+  val taskId: String?,
+  val taskStatus: String?,
+  val serviceName: String?,
+  override val requester: RequesterData,
+  override val infiniticVersion: String
+) : WorkflowCmdData
+
+@Serializable
+data class WorkflowSignalSentData(
+  val channelName: String,
+  val signalId: String,
+  val signalArg: JsonElement,
+  override val requester: RequesterData,
+  override val infiniticVersion: String
+) : WorkflowCmdData
+
+private val WorkflowCmdMessage.requester
+  get() = when {
+    requesterWorkflowName != null -> WorkflowRequesterData(
+        workflowName = requesterWorkflowName.toString(),
+        workflowId = requesterWorkflowId?.toString() ?: thisShouldNotHappen(),
+        workflowMethodId = requesterWorkflowMethodId?.toString() ?: thisShouldNotHappen(),
+        workerName = emitterName.toString(),
+    )
+
+    else -> ClientRequesterData(clientName = emitterName.toString())
+  }
