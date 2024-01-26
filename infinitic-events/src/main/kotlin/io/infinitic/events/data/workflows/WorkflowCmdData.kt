@@ -28,7 +28,7 @@ import io.infinitic.common.workflows.data.workflows.set
 import io.infinitic.common.workflows.engine.messages.CancelWorkflow
 import io.infinitic.common.workflows.engine.messages.CompleteTimers
 import io.infinitic.common.workflows.engine.messages.CompleteWorkflow
-import io.infinitic.common.workflows.engine.messages.DispatchMethodWorkflow
+import io.infinitic.common.workflows.engine.messages.DispatchMethod
 import io.infinitic.common.workflows.engine.messages.DispatchNewWorkflow
 import io.infinitic.common.workflows.engine.messages.RetryTasks
 import io.infinitic.common.workflows.engine.messages.RetryWorkflowTask
@@ -50,7 +50,7 @@ import kotlinx.serialization.json.JsonElement
 
 fun WorkflowCmdMessage.workflowType(): InfiniticWorkflowEventType? = when (this) {
   is DispatchNewWorkflow -> WorkflowDispatchedType
-  is DispatchMethodWorkflow -> WorkflowMethodDispatchedType
+  is DispatchMethod -> WorkflowMethodDispatchedType
   is CancelWorkflow -> WorkflowCancelRequestedType
   is CompleteTimers -> null
   is CompleteWorkflow -> null
@@ -68,7 +68,7 @@ fun WorkflowCmdMessage.toWorkflowData(): WorkflowCmdData = when (this) {
       infiniticVersion = version.toString(),
   )
 
-  is DispatchMethodWorkflow -> WorkflowMethodDispatchedData(
+  is DispatchMethod -> WorkflowMethodDispatchedData(
       workflowMethodArgs = methodParameters.toJson(),
       workflowMethodName = methodName.toString(),
       workflowMethodId = workflowMethodId.toString(),

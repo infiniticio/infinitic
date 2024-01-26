@@ -26,12 +26,12 @@ import io.infinitic.common.emitters.EmitterName
 import io.infinitic.common.exceptions.thisShouldNotHappen
 import io.infinitic.common.transport.InfiniticProducer
 import io.infinitic.common.transport.WorkflowEventsTopic
-import io.infinitic.common.workflows.data.methodRuns.PositionInWorkflowMethod
-import io.infinitic.common.workflows.data.methodRuns.WorkflowMethod
-import io.infinitic.common.workflows.data.methodRuns.WorkflowMethodId
+import io.infinitic.common.workflows.data.workflowMethods.PositionInWorkflowMethod
+import io.infinitic.common.workflows.data.workflowMethods.WorkflowMethod
+import io.infinitic.common.workflows.data.workflowMethods.WorkflowMethodId
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskIndex
 import io.infinitic.common.workflows.engine.messages.DispatchNewWorkflow
-import io.infinitic.common.workflows.engine.messages.WorkflowMethodStartedEvent
+import io.infinitic.common.workflows.engine.messages.MethodStartedEvent
 import io.infinitic.common.workflows.engine.messages.WorkflowStartedEvent
 import io.infinitic.common.workflows.engine.messages.parentClientName
 import io.infinitic.common.workflows.engine.state.WorkflowState
@@ -84,29 +84,20 @@ internal fun CoroutineScope.dispatchWorkflow(
         workflowName = message.workflowName,
         workflowId = message.workflowId,
         emitterName = emitterName,
-        workflowTags = message.workflowTags,
-        workflowMeta = message.workflowMeta,
     )
 
-    val workflowMethodStartedEvent = WorkflowMethodStartedEvent(
+    val methodStartedEvent = MethodStartedEvent(
         workflowName = state.workflowName,
         workflowId = state.workflowId,
         emitterName = emitterName,
-        workflowTags = state.workflowTags,
-        workflowMeta = state.workflowMeta,
         workflowMethodId = workflowMethod.workflowMethodId,
-        parentWorkflowName = workflowMethod.parentWorkflowName,
-        parentWorkflowId = workflowMethod.parentWorkflowId,
-        parentWorkflowMethodId = workflowMethod.parentWorkflowMethodId,
-        parentClientName = message.parentClientName,
-        waitingClients = message.waitingClients(),
     )
 
     // the 2 events are sent sequentially, to ensure they have consistent timestamps
     // (workflowStarted before workflowMethodStarted)
     with(producer) {
       workflowStartedEvent.sendTo(WorkflowEventsTopic)
-      workflowMethodStartedEvent.sendTo(WorkflowEventsTopic)
+      methodStartedEvent.sendTo(WorkflowEventsTopic)
     }
   }
 

@@ -37,22 +37,26 @@ data class WorkflowEventEnvelope(
   private val workflowStartedEvent: WorkflowStartedEvent? = null,
   private val workflowCompletedEvent: WorkflowCompletedEvent? = null,
   private val workflowCanceledEvent: WorkflowCanceledEvent? = null,
-  private val workflowMethodStartedEvent: WorkflowMethodStartedEvent? = null,
-  private val workflowMethodCompletedEvent: WorkflowMethodCompletedEvent? = null,
-  private val workflowMethodFailedEvent: WorkflowMethodFailedEvent? = null,
-  private val workflowMethodCanceledEvent: WorkflowMethodCanceledEvent? = null,
-  private val workflowMethodTimedOutEvent: WorkflowMethodTimedOutEvent? = null
+  private val methodDispatchedEvent: MethodDispatchedEvent? = null,
+  private val methodStartedEvent: MethodStartedEvent? = null,
+  private val methodCompletedEvent: MethodCompletedEvent? = null,
+  private val methodFailedEvent: MethodFailedEvent? = null,
+  private val methodCanceledEvent: MethodCanceledEvent? = null,
+  private val methodTimedOutEvent: MethodTimedOutEvent? = null,
+  private val taskDispatched: TaskDispatchedEvent? = null
 ) : Envelope<WorkflowEventMessage> {
   init {
     val noNull = listOfNotNull(
         workflowStartedEvent,
         workflowCompletedEvent,
         workflowCanceledEvent,
-        workflowMethodStartedEvent,
-        workflowMethodCompletedEvent,
-        workflowMethodFailedEvent,
-        workflowMethodCanceledEvent,
-        workflowMethodTimedOutEvent,
+        methodDispatchedEvent,
+        methodStartedEvent,
+        methodCompletedEvent,
+        methodFailedEvent,
+        methodCanceledEvent,
+        methodTimedOutEvent,
+        taskDispatched,
     )
 
     require(noNull.size == 1)
@@ -81,34 +85,46 @@ data class WorkflowEventEnvelope(
           workflowCanceledEvent = msg,
       )
 
-      is WorkflowMethodStartedEvent -> WorkflowEventEnvelope(
+      is MethodDispatchedEvent -> WorkflowEventEnvelope(
           workflowId = msg.workflowId,
-          type = WorkflowEventMessageType.WORKFLOW_METHOD_STARTED,
-          workflowMethodStartedEvent = msg,
+          type = WorkflowEventMessageType.METHOD_DISPATCHED,
+          methodDispatchedEvent = msg,
       )
 
-      is WorkflowMethodCompletedEvent -> WorkflowEventEnvelope(
+      is MethodStartedEvent -> WorkflowEventEnvelope(
           workflowId = msg.workflowId,
-          type = WorkflowEventMessageType.WORKFLOW_METHOD_COMPLETED,
-          workflowMethodCompletedEvent = msg,
+          type = WorkflowEventMessageType.METHOD_STARTED,
+          methodStartedEvent = msg,
       )
 
-      is WorkflowMethodFailedEvent -> WorkflowEventEnvelope(
+      is MethodCompletedEvent -> WorkflowEventEnvelope(
           workflowId = msg.workflowId,
-          type = WorkflowEventMessageType.WORKFLOW_METHOD_FAILED,
-          workflowMethodFailedEvent = msg,
+          type = WorkflowEventMessageType.METHOD_COMPLETED,
+          methodCompletedEvent = msg,
       )
 
-      is WorkflowMethodCanceledEvent -> WorkflowEventEnvelope(
+      is MethodFailedEvent -> WorkflowEventEnvelope(
           workflowId = msg.workflowId,
-          type = WorkflowEventMessageType.WORKFLOW_METHOD_CANCELED,
-          workflowMethodCanceledEvent = msg,
+          type = WorkflowEventMessageType.METHOD_FAILED,
+          methodFailedEvent = msg,
       )
 
-      is WorkflowMethodTimedOutEvent -> WorkflowEventEnvelope(
+      is MethodCanceledEvent -> WorkflowEventEnvelope(
           workflowId = msg.workflowId,
-          type = WorkflowEventMessageType.WORKFLOW_METHOD_TIMED_OUT,
-          workflowMethodTimedOutEvent = msg,
+          type = WorkflowEventMessageType.METHOD_CANCELED,
+          methodCanceledEvent = msg,
+      )
+
+      is MethodTimedOutEvent -> WorkflowEventEnvelope(
+          workflowId = msg.workflowId,
+          type = WorkflowEventMessageType.METHOD_TIMED_OUT,
+          methodTimedOutEvent = msg,
+      )
+
+      is TaskDispatchedEvent -> WorkflowEventEnvelope(
+          workflowId = msg.workflowId,
+          type = WorkflowEventMessageType.TASK_DISPATCHED,
+          taskDispatched = msg,
       )
     }
 
@@ -124,11 +140,13 @@ data class WorkflowEventEnvelope(
     WorkflowEventMessageType.WORKFLOW_STARTED -> workflowStartedEvent
     WorkflowEventMessageType.WORKFLOW_COMPLETED -> workflowCompletedEvent
     WorkflowEventMessageType.WORKFLOW_CANCELED -> workflowCanceledEvent
-    WorkflowEventMessageType.WORKFLOW_METHOD_STARTED -> workflowMethodStartedEvent
-    WorkflowEventMessageType.WORKFLOW_METHOD_COMPLETED -> workflowMethodCompletedEvent
-    WorkflowEventMessageType.WORKFLOW_METHOD_FAILED -> workflowMethodFailedEvent
-    WorkflowEventMessageType.WORKFLOW_METHOD_CANCELED -> workflowMethodCanceledEvent
-    WorkflowEventMessageType.WORKFLOW_METHOD_TIMED_OUT -> workflowMethodTimedOutEvent
+    WorkflowEventMessageType.METHOD_DISPATCHED -> methodDispatchedEvent
+    WorkflowEventMessageType.METHOD_STARTED -> methodStartedEvent
+    WorkflowEventMessageType.METHOD_COMPLETED -> methodCompletedEvent
+    WorkflowEventMessageType.METHOD_FAILED -> methodFailedEvent
+    WorkflowEventMessageType.METHOD_CANCELED -> methodCanceledEvent
+    WorkflowEventMessageType.METHOD_TIMED_OUT -> methodTimedOutEvent
+    WorkflowEventMessageType.TASK_DISPATCHED -> taskDispatched
   }!!
 
   fun toByteArray() = AvroSerDe.writeBinary(this, serializer())

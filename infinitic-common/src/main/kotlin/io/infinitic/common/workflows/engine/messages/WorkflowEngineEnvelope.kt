@@ -37,7 +37,7 @@ data class WorkflowEngineEnvelope(
   private val workflowId: WorkflowId,
   private val type: WorkflowEngineMessageType,
   private val dispatchWorkflow: DispatchNewWorkflow? = null,
-  private val dispatchMethod: DispatchMethodWorkflow? = null,
+  private val dispatchMethod: DispatchMethod? = null,
   private val waitWorkflow: WaitWorkflow? = null,
   private val cancelWorkflow: CancelWorkflow? = null,
   private val retryWorkflowTask: RetryWorkflowTask? = null,
@@ -153,7 +153,7 @@ data class WorkflowEngineEnvelope(
           dispatchWorkflow = msg,
       )
 
-      is DispatchMethodWorkflow -> WorkflowEngineEnvelope(
+      is DispatchMethod -> WorkflowEngineEnvelope(
           workflowId = msg.workflowId,
           type = WorkflowEngineMessageType.DISPATCH_METHOD,
           dispatchMethod = msg,

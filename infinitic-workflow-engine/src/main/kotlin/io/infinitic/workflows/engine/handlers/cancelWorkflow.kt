@@ -31,13 +31,14 @@ import io.infinitic.common.transport.WorkflowEventsTopic
 import io.infinitic.common.transport.WorkflowTagTopic
 import io.infinitic.common.workflows.data.commands.DispatchMethodOnRunningWorkflowCommand
 import io.infinitic.common.workflows.data.commands.DispatchNewWorkflowCommand
-import io.infinitic.common.workflows.data.methodRuns.WorkflowMethod
-import io.infinitic.common.workflows.data.methodRuns.WorkflowMethodId
+import io.infinitic.common.workflows.data.workflowMethods.WorkflowMethod
+import io.infinitic.common.workflows.data.workflowMethods.WorkflowMethodId
+import io.infinitic.common.workflows.data.workflowMethods.awaitingRequesters
 import io.infinitic.common.workflows.data.workflows.WorkflowCancellationReason
 import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.engine.messages.CancelWorkflow
+import io.infinitic.common.workflows.engine.messages.MethodCanceledEvent
 import io.infinitic.common.workflows.engine.messages.WorkflowCanceledEvent
-import io.infinitic.common.workflows.engine.messages.WorkflowMethodCanceledEvent
 import io.infinitic.common.workflows.engine.state.WorkflowState
 import io.infinitic.common.workflows.tags.messages.CancelWorkflowByTag
 import kotlinx.coroutines.CoroutineScope
@@ -83,9 +84,6 @@ internal fun CoroutineScope.cancelWorkflow(
     val workflowCanceledEvent = WorkflowCanceledEvent(
         workflowName = message.workflowName,
         workflowId = message.workflowId,
-        workflowTags = state.workflowTags,
-        workflowMeta = state.workflowMeta,
-        cancellationReason = message.cancellationReason,
         emitterName = EmitterName(producer.name),
     )
     with(producer) { workflowCanceledEvent.sendTo(WorkflowEventsTopic) }
@@ -160,20 +158,13 @@ private fun CoroutineScope.cancelWorkflowMethod(
   }
 
   return launch {
-    val workflowMethodCanceledEvent = WorkflowMethodCanceledEvent(
+    val methodCanceledEvent = MethodCanceledEvent(
         workflowName = state.workflowName,
         workflowId = state.workflowId,
         workflowMethodId = workflowMethod.workflowMethodId,
-        parentWorkflowName = workflowMethod.parentWorkflowName,
-        parentWorkflowId = workflowMethod.parentWorkflowId,
-        parentWorkflowMethodId = workflowMethod.parentWorkflowMethodId,
-        parentClientName = workflowMethod.parentClientName,
-        waitingClients = workflowMethod.waitingClients,
+        awaitingRequesters = workflowMethod.awaitingRequesters,
         emitterName = emitterName,
-        workflowTags = state.workflowTags,
-        workflowMeta = state.workflowMeta,
-        cancellationReason = cancellationReason,
     )
-    with(producer) { workflowMethodCanceledEvent.sendTo(WorkflowEventsTopic) }
+    with(producer) { methodCanceledEvent.sendTo(WorkflowEventsTopic) }
   }
 }

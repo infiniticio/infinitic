@@ -20,7 +20,7 @@
  *
  * Licensor: infinitic.io
  */
-package io.infinitic.common.workflows.data.methodRuns
+package io.infinitic.common.workflows.data.workflowMethods
 
 import com.github.avrokotlin.avro4k.AvroName
 import io.infinitic.common.utils.IdGenerator

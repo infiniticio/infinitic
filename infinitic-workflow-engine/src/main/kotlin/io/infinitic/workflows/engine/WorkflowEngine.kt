@@ -44,7 +44,7 @@ import io.infinitic.common.workflows.engine.messages.ChildMethodTimedOut
 import io.infinitic.common.workflows.engine.messages.ChildMethodUnknown
 import io.infinitic.common.workflows.engine.messages.CompleteTimers
 import io.infinitic.common.workflows.engine.messages.CompleteWorkflow
-import io.infinitic.common.workflows.engine.messages.DispatchMethodWorkflow
+import io.infinitic.common.workflows.engine.messages.DispatchMethod
 import io.infinitic.common.workflows.engine.messages.DispatchNewWorkflow
 import io.infinitic.common.workflows.engine.messages.RetryTasks
 import io.infinitic.common.workflows.engine.messages.RetryWorkflowTask
@@ -58,8 +58,8 @@ import io.infinitic.common.workflows.engine.messages.WaitWorkflow
 import io.infinitic.common.workflows.engine.messages.WorkflowCompletedEvent
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
 import io.infinitic.common.workflows.engine.messages.WorkflowInternalEvent
-import io.infinitic.common.workflows.engine.messages.WorkflowInternalMethodEvent
-import io.infinitic.common.workflows.engine.messages.WorkflowInternalMethodTaskEvent
+import io.infinitic.common.workflows.engine.messages.WorkflowMethodEvent
+import io.infinitic.common.workflows.engine.messages.WorkflowMethodTaskEvent
 import io.infinitic.common.workflows.engine.state.WorkflowState
 import io.infinitic.common.workflows.engine.storage.WorkflowStateStorage
 import io.infinitic.common.workflows.tags.messages.RemoveTagFromWorkflow
@@ -150,8 +150,6 @@ class WorkflowEngine(
     val workflowCompletedEvent = WorkflowCompletedEvent(
         workflowName = state.workflowName,
         workflowId = state.workflowId,
-        workflowMeta = state.workflowMeta,
-        workflowTags = state.workflowTags,
         emitterName = emitterName,
     )
     with(producer) { workflowCompletedEvent.sendTo(WorkflowEventsTopic) }
@@ -190,7 +188,7 @@ class WorkflowEngine(
       }
 
       // a client wants to dispatch a method on an unknown workflow
-      is DispatchMethodWorkflow -> {
+      is DispatchMethod -> {
         if (message.clientWaiting) launch {
           val methodUnknown = MethodUnknown(
               recipientName = ClientName.from(message.emitterName),
@@ -259,7 +257,7 @@ class WorkflowEngine(
         }
 
         // Idempotency: discard if this workflowTask is not the current one
-        if (state.runningWorkflowTaskId != (message as WorkflowInternalMethodTaskEvent).taskId()) {
+        if (state.runningWorkflowTaskId != (message as WorkflowMethodTaskEvent).taskId()) {
           logDiscarding(message) { "as workflowTask ${message.taskId()} is different than ${state.runningWorkflowTaskId} in state" }
 
           return null
@@ -317,7 +315,7 @@ class WorkflowEngine(
     if (message.isWorkflowTaskEvent()) state.runningWorkflowTaskId = null
 
     when (message) {
-      is DispatchMethodWorkflow -> {
+      is DispatchMethod -> {
         // Idempotency: do not relaunch if this method has already been launched
         if (state.getWorkflowMethod(message.workflowMethodId) != null) {
           logDiscarding(message) { "as this method has already been launched" }
@@ -336,7 +334,7 @@ class WorkflowEngine(
 
       }
 
-      is WorkflowInternalMethodEvent -> {
+      is WorkflowMethodEvent -> {
         // if methodRun has already been cleaned (completed), then discard the message
         if (state.getWorkflowMethod(message.workflowMethodId) == null) {
           logDiscarding(message) { "as null methodRun" }
@@ -351,7 +349,7 @@ class WorkflowEngine(
     when (message) {
       // CMD
       is DispatchNewWorkflow -> logDiscarding(message) { "as workflow has already started with state $state" }
-      is DispatchMethodWorkflow -> dispatchMethod(producer, state, message)
+      is DispatchMethod -> dispatchMethod(producer, state, message)
       is CancelWorkflow -> cancelWorkflow(producer, state, message)
       is SendSignal -> sendSignal(producer, state, message)
       is WaitWorkflow -> waitWorkflow(producer, state, message)

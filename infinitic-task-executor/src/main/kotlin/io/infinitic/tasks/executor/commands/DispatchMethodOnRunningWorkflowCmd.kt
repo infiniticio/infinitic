@@ -31,9 +31,9 @@ import io.infinitic.common.transport.WorkflowCmdTopic
 import io.infinitic.common.transport.WorkflowTagTopic
 import io.infinitic.common.workflows.data.commands.DispatchMethodOnRunningWorkflowCommand
 import io.infinitic.common.workflows.data.commands.DispatchMethodOnRunningWorkflowPastCommand
-import io.infinitic.common.workflows.data.methodRuns.WorkflowMethodId
+import io.infinitic.common.workflows.data.workflowMethods.WorkflowMethodId
 import io.infinitic.common.workflows.engine.messages.ChildMethodTimedOut
-import io.infinitic.common.workflows.engine.messages.DispatchMethodWorkflow
+import io.infinitic.common.workflows.engine.messages.DispatchMethod
 import io.infinitic.common.workflows.tags.messages.DispatchMethodByTag
 import io.infinitic.tasks.executor.TaskEventHandler
 import kotlinx.coroutines.CoroutineScope
@@ -53,7 +53,7 @@ internal fun CoroutineScope.dispatchMethodOnRunningWorkflowCmd(
     command.workflowId != null -> {
       if (command.workflowId != currentWorkflow.workflowId) {
         launch {
-          val dispatchMethodWorkflow = DispatchMethodWorkflow(
+          val dispatchMethod = DispatchMethod(
               workflowName = command.workflowName,
               workflowId = command.workflowId!!,
               workflowMethodId = workflowMethodId,
@@ -67,7 +67,7 @@ internal fun CoroutineScope.dispatchMethodOnRunningWorkflowCmd(
               emitterName = emitterName,
               emittedAt = workflowTaskInstant,
           )
-          with(producer) { dispatchMethodWorkflow.sendTo(WorkflowCmdTopic) }
+          with(producer) { dispatchMethod.sendTo(WorkflowCmdTopic) }
         }
       }
 

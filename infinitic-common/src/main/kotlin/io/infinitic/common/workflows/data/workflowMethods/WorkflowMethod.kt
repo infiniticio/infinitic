@@ -20,7 +20,7 @@
  *
  * Licensor: infinitic.io
  */
-package io.infinitic.common.workflows.data.methodRuns
+package io.infinitic.common.workflows.data.workflowMethods
 
 import com.github.avrokotlin.avro4k.Avro
 import com.github.avrokotlin.avro4k.AvroDefault
@@ -31,6 +31,10 @@ import io.infinitic.common.data.ReturnValue
 import io.infinitic.common.data.methods.MethodName
 import io.infinitic.common.data.methods.MethodParameterTypes
 import io.infinitic.common.data.methods.MethodParameters
+import io.infinitic.common.exceptions.thisShouldNotHappen
+import io.infinitic.common.requester.ClientRequester
+import io.infinitic.common.requester.Requester
+import io.infinitic.common.requester.WorkflowRequester
 import io.infinitic.common.workflows.data.commands.CommandId
 import io.infinitic.common.workflows.data.commands.DispatchMethodOnRunningWorkflowCommand
 import io.infinitic.common.workflows.data.commands.DispatchNewWorkflowCommand
@@ -91,3 +95,21 @@ data class WorkflowMethod(
           }
           .all { it.isTerminated() }
 }
+
+// This is a transient method
+// currently, method can have only one awaiting workflow
+val WorkflowMethod.awaitingRequesters: Set<Requester>
+  get() {
+    val awaiting = mutableSetOf<Requester>()
+    waitingClients.forEach { awaiting.add(ClientRequester(clientName = it)) }
+    parentWorkflowId?.let {
+      awaiting.add(
+          WorkflowRequester(
+              workflowId = it,
+              workflowName = parentWorkflowName ?: thisShouldNotHappen(),
+              workflowMethodId = parentWorkflowMethodId ?: thisShouldNotHappen(),
+          ),
+      )
+    }
+    return awaiting
+  }

@@ -24,7 +24,7 @@ package io.infinitic.common.workflows.data.commands
 
 import com.github.avrokotlin.avro4k.AvroDefault
 import io.infinitic.common.tasks.data.TaskRetrySequence
-import io.infinitic.common.workflows.data.methodRuns.PositionInWorkflowMethod
+import io.infinitic.common.workflows.data.workflowMethods.PositionInWorkflowMethod
 import io.infinitic.workflows.WorkflowCheckMode
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable

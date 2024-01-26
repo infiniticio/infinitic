@@ -24,8 +24,8 @@ package io.infinitic.common.workflows.data.commands
 
 import io.infinitic.common.tasks.data.TaskId
 import io.infinitic.common.utils.IdGenerator
-import io.infinitic.common.workflows.data.methodRuns.WorkflowMethodId
 import io.infinitic.common.workflows.data.timers.TimerId
+import io.infinitic.common.workflows.data.workflowMethods.WorkflowMethodId
 import io.infinitic.common.workflows.data.workflows.WorkflowId
 import kotlinx.serialization.Serializable
 

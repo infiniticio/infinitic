@@ -22,7 +22,7 @@
  */
 package io.infinitic.common.clients.messages.interfaces
 
-import io.infinitic.common.workflows.data.methodRuns.WorkflowMethodId
+import io.infinitic.common.workflows.data.workflowMethods.WorkflowMethodId
 
 interface MethodMessage : WorkflowMessage {
   val workflowMethodId: WorkflowMethodId

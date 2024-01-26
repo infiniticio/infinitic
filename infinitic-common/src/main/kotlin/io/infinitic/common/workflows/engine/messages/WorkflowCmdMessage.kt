@@ -24,7 +24,7 @@ package io.infinitic.common.workflows.engine.messages
 
 import com.github.avrokotlin.avro4k.AvroNamespace
 import io.infinitic.common.clients.data.ClientName
-import io.infinitic.common.workflows.data.methodRuns.WorkflowMethodId
+import io.infinitic.common.workflows.data.workflowMethods.WorkflowMethodId
 import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.data.workflows.WorkflowName
 import kotlinx.serialization.Serializable
@@ -40,7 +40,7 @@ fun WorkflowCmdMessage.type(): WorkflowCmdMessageType = when (this) {
   is CancelWorkflow -> WorkflowCmdMessageType.CANCEL_WORKFLOW
   is CompleteTimers -> WorkflowCmdMessageType.COMPLETE_TIMERS
   is CompleteWorkflow -> WorkflowCmdMessageType.COMPLETE_WORKFLOW
-  is DispatchMethodWorkflow -> WorkflowCmdMessageType.DISPATCH_METHOD
+  is DispatchMethod -> WorkflowCmdMessageType.DISPATCH_METHOD
   is DispatchNewWorkflow -> WorkflowCmdMessageType.COMPLETE_WORKFLOW
   is RetryTasks -> WorkflowCmdMessageType.RETRY_TASKS
   is RetryWorkflowTask -> WorkflowCmdMessageType.RETRY_WORKFLOW_TASK

@@ -36,7 +36,7 @@ import io.infinitic.common.tasks.data.TaskMeta
 import io.infinitic.common.tasks.data.TaskTag
 import io.infinitic.common.tasks.executors.errors.DeferredError
 import io.infinitic.common.tasks.executors.errors.ExecutionError
-import io.infinitic.common.workflows.data.methodRuns.WorkflowMethodId
+import io.infinitic.common.workflows.data.workflowMethods.WorkflowMethodId
 import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.data.workflows.WorkflowName
 import io.infinitic.common.workflows.data.workflows.WorkflowTag
@@ -48,7 +48,7 @@ sealed class ClientMessage : Message {
   override val messageId: MessageId = MessageId()
   abstract override val emitterName: EmitterName
   abstract val recipientName: ClientName
-  
+
   override fun key() = null
 
   override fun entity() = recipientName.toString()

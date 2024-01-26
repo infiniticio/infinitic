@@ -23,29 +23,27 @@
 package io.infinitic.common.workflows.engine.messages
 
 import com.github.avrokotlin.avro4k.AvroNamespace
-import io.infinitic.common.clients.data.ClientName
-import io.infinitic.common.workflows.data.methodRuns.WorkflowMethodId
-import io.infinitic.common.workflows.data.workflows.WorkflowId
-import io.infinitic.common.workflows.data.workflows.WorkflowMeta
-import io.infinitic.common.workflows.data.workflows.WorkflowName
-import io.infinitic.common.workflows.data.workflows.WorkflowTag
+import io.infinitic.common.clients.messages.ClientMessage
+import io.infinitic.common.data.MillisInstant
+import io.infinitic.common.emitters.EmitterName
+import io.infinitic.common.requester.Requester
+import io.infinitic.common.workflows.data.workflowMethods.WorkflowMethodId
 import kotlinx.serialization.Serializable
 
 @Serializable
-sealed interface WorkflowEventMessage : WorkflowMessageInterface {
-  val workflowTags: Set<WorkflowTag>
-  val workflowMeta: WorkflowMeta
-}
+sealed interface WorkflowEventMessage : WorkflowMessageInterface
 
 fun WorkflowEventMessage.type(): WorkflowEventMessageType = when (this) {
   is WorkflowStartedEvent -> WorkflowEventMessageType.WORKFLOW_STARTED
   is WorkflowCompletedEvent -> WorkflowEventMessageType.WORKFLOW_COMPLETED
   is WorkflowCanceledEvent -> WorkflowEventMessageType.WORKFLOW_CANCELED
-  is WorkflowMethodStartedEvent -> WorkflowEventMessageType.WORKFLOW_METHOD_STARTED
-  is WorkflowMethodCompletedEvent -> WorkflowEventMessageType.WORKFLOW_METHOD_COMPLETED
-  is WorkflowMethodFailedEvent -> WorkflowEventMessageType.WORKFLOW_METHOD_FAILED
-  is WorkflowMethodCanceledEvent -> WorkflowEventMessageType.WORKFLOW_METHOD_CANCELED
-  is WorkflowMethodTimedOutEvent -> WorkflowEventMessageType.WORKFLOW_METHOD_TIMED_OUT
+  is MethodDispatchedEvent -> WorkflowEventMessageType.METHOD_DISPATCHED
+  is MethodStartedEvent -> WorkflowEventMessageType.METHOD_STARTED
+  is MethodCompletedEvent -> WorkflowEventMessageType.METHOD_COMPLETED
+  is MethodFailedEvent -> WorkflowEventMessageType.METHOD_FAILED
+  is MethodCanceledEvent -> WorkflowEventMessageType.METHOD_CANCELED
+  is MethodTimedOutEvent -> WorkflowEventMessageType.METHOD_TIMED_OUT
+  is TaskDispatchedEvent -> WorkflowEventMessageType.TASK_DISPATCHED
 }
 
 @Serializable
@@ -54,24 +52,26 @@ enum class WorkflowEventMessageType {
   WORKFLOW_STARTED,
   WORKFLOW_COMPLETED,
   WORKFLOW_CANCELED,
-  WORKFLOW_METHOD_STARTED,
-  WORKFLOW_METHOD_COMPLETED,
-  WORKFLOW_METHOD_FAILED,
-  WORKFLOW_METHOD_CANCELED,
-  WORKFLOW_METHOD_TIMED_OUT,
-  //TASK_DISPATCHED,
-  //CHILD_WORKFLOW_DISPATCHED,
+  METHOD_STARTED,
+  METHOD_COMPLETED,
+  METHOD_FAILED,
+  METHOD_CANCELED,
+  METHOD_TIMED_OUT,
+  TASK_DISPATCHED,
+  METHOD_DISPATCHED,
 }
 
-sealed interface WorkflowMethodMessage {
-  val workflowId: WorkflowId
-  val workflowName: WorkflowName
+interface MethodTerminated : WorkflowMessageInterface {
   val workflowMethodId: WorkflowMethodId
-  val parentWorkflowName: WorkflowName?
-  val parentWorkflowId: WorkflowId?
-  val parentWorkflowMethodId: WorkflowMethodId?
-  val parentClientName: ClientName?
-  val waitingClients: Set<ClientName>
+  val awaitingRequesters: Set<Requester>
 
-  fun isItsOwnParent() = (parentWorkflowId == workflowId && workflowName == parentWorkflowName)
+  fun getEventForAwaitingClients(emitterName: EmitterName): List<ClientMessage>
+  fun getEventForAwaitingWorkflows(
+    emitterName: EmitterName,
+    emittedAt: MillisInstant
+  ): List<WorkflowEngineMessage>
+}
+
+interface Dispatched : WorkflowMessageInterface {
+  val requester: Requester
 }

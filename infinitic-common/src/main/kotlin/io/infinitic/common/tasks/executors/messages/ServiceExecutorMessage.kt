@@ -44,7 +44,7 @@ import io.infinitic.common.tasks.executors.errors.DeferredError
 import io.infinitic.common.tasks.executors.errors.ExecutionError
 import io.infinitic.common.workers.config.WorkflowVersion
 import io.infinitic.common.workers.data.WorkerName
-import io.infinitic.common.workflows.data.methodRuns.WorkflowMethodId
+import io.infinitic.common.workflows.data.workflowMethods.WorkflowMethodId
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTask
 import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.data.workflows.WorkflowName
@@ -65,7 +65,7 @@ sealed class ServiceExecutorMessage : Message {
   abstract val workflowName: WorkflowName?
   abstract val workflowId: WorkflowId?
   abstract val workflowMethodId: WorkflowMethodId?
-  
+
   override fun key() = null
 
   override fun entity() = when (isWorkflowTask()) {

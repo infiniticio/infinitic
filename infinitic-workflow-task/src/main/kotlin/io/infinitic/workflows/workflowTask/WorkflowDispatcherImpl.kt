@@ -53,7 +53,6 @@ import io.infinitic.common.workflows.data.commands.ReceiveSignalCommand
 import io.infinitic.common.workflows.data.commands.SendSignalCommand
 import io.infinitic.common.workflows.data.commands.StartDurationTimerCommand
 import io.infinitic.common.workflows.data.commands.StartInstantTimerCommand
-import io.infinitic.common.workflows.data.methodRuns.PositionInWorkflowMethod
 import io.infinitic.common.workflows.data.properties.PropertyHash
 import io.infinitic.common.workflows.data.properties.PropertyName
 import io.infinitic.common.workflows.data.steps.NewStep
@@ -68,6 +67,7 @@ import io.infinitic.common.workflows.data.steps.StepStatus.Failed
 import io.infinitic.common.workflows.data.steps.StepStatus.TimedOut
 import io.infinitic.common.workflows.data.steps.StepStatus.Unknown
 import io.infinitic.common.workflows.data.steps.StepStatus.Waiting
+import io.infinitic.common.workflows.data.workflowMethods.PositionInWorkflowMethod
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskParameters
 import io.infinitic.exceptions.DeferredCanceledException
 import io.infinitic.exceptions.DeferredFailedException

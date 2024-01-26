@@ -20,19 +20,38 @@
  *
  * Licensor: infinitic.io
  */
-package io.infinitic.common.workflows.data.steps
 
-import com.github.avrokotlin.avro4k.AvroNamespace
-import io.infinitic.common.workflows.data.workflowMethods.PositionInWorkflowMethod
+package io.infinitic.common.requester
+
+import io.infinitic.common.clients.data.ClientName
+import io.infinitic.common.workflows.data.workflowMethods.WorkflowMethodId
+import io.infinitic.common.workflows.data.workflows.WorkflowId
+import io.infinitic.common.workflows.data.workflows.WorkflowName
 import kotlinx.serialization.Serializable
 
 @Serializable
-@AvroNamespace("io.infinitic.workflows.data")
-data class NewStep(
-  val stepId: StepId = StepId(),
-  val step: Step,
-  val stepPosition: PositionInWorkflowMethod
-) {
-  // https://github.com/Kotlin/kotlinx.serialization/issues/133
-  val stepHash: StepHash by lazy { step.hash() }
-}
+sealed interface Requester
+
+@Serializable
+data class ClientRequester(
+  val clientName: ClientName,
+) : Requester
+
+@Serializable
+data class WorkflowRequester(
+  val workflowName: WorkflowName,
+  val workflowId: WorkflowId,
+  val workflowMethodId: WorkflowMethodId,
+) : Requester
+
+val Requester.clientName: ClientName?
+  get() = when (this is ClientRequester) {
+    true -> clientName
+    false -> null
+  }
+
+val Requester.workflowId: WorkflowId?
+  get() = when (this is WorkflowRequester) {
+    true -> workflowId
+    false -> null
+  }
