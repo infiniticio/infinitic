@@ -24,6 +24,7 @@
 package io.infinitic.common.requester
 
 import io.infinitic.common.clients.data.ClientName
+import io.infinitic.common.exceptions.thisShouldNotHappen
 import io.infinitic.common.workflows.data.workflowMethods.WorkflowMethodId
 import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.data.workflows.WorkflowName
@@ -44,14 +45,34 @@ data class WorkflowRequester(
   val workflowMethodId: WorkflowMethodId,
 ) : Requester
 
-val Requester.clientName: ClientName?
+val Requester?.clientName: ClientName?
   get() = when (this is ClientRequester) {
     true -> clientName
     false -> null
   }
 
-val Requester.workflowId: WorkflowId?
+val Requester?.workflowId: WorkflowId?
   get() = when (this is WorkflowRequester) {
     true -> workflowId
     false -> null
   }
+
+val Requester?.workflowName: WorkflowName?
+  get() = when (this is WorkflowRequester) {
+    true -> workflowName
+    false -> null
+  }
+
+val Requester?.workflowMethodId: WorkflowMethodId?
+  get() = when (this is WorkflowRequester) {
+    true -> workflowMethodId
+    false -> null
+  }
+
+fun Requester.waitingClients(waitingClient: Boolean) = when (waitingClient) {
+  false -> mutableSetOf()
+  true -> when (this is ClientRequester) {
+    true -> mutableSetOf(this.clientName)
+    false -> thisShouldNotHappen()
+  }
+}

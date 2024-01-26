@@ -42,9 +42,8 @@ import io.infinitic.events.WorkflowDispatchedType
 import io.infinitic.events.WorkflowMethodDispatchedType
 import io.infinitic.events.WorkflowSignalSentType
 import io.infinitic.events.WorkflowTaskRetryRequestedType
-import io.infinitic.events.data.ClientRequesterData
 import io.infinitic.events.data.RequesterData
-import io.infinitic.events.data.WorkflowRequesterData
+import io.infinitic.events.data.toData
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonElement
 
@@ -64,7 +63,7 @@ fun WorkflowCmdMessage.toWorkflowData(): WorkflowCmdData = when (this) {
   is DispatchNewWorkflow -> WorkflowDispatchedData(
       workflowMeta = workflowMeta.map,
       workflowTags = workflowTags.set,
-      requester = requester,
+      requester = (requester ?: thisShouldNotHappen()).toData(),
       infiniticVersion = version.toString(),
   )
 
@@ -72,12 +71,12 @@ fun WorkflowCmdMessage.toWorkflowData(): WorkflowCmdData = when (this) {
       workflowMethodArgs = methodParameters.toJson(),
       workflowMethodName = methodName.toString(),
       workflowMethodId = workflowMethodId.toString(),
-      requester = requester,
+      requester = (requester ?: thisShouldNotHappen()).toData(),
       infiniticVersion = version.toString(),
   )
 
   is CancelWorkflow -> WorkflowCancelRequestedData(
-      requester = requester,
+      requester = (requester ?: thisShouldNotHappen()).toData(),
       infiniticVersion = version.toString(),
   )
 
@@ -89,12 +88,12 @@ fun WorkflowCmdMessage.toWorkflowData(): WorkflowCmdData = when (this) {
       taskId = taskId?.toString(),
       taskStatus = taskStatus?.toString(),
       serviceName = serviceName?.toString(),
-      requester = requester,
+      requester = (requester ?: thisShouldNotHappen()).toData(),
       infiniticVersion = version.toString(),
   )
 
   is RetryWorkflowTask -> WorkflowTaskRetryRequestedData(
-      requester = requester,
+      requester = (requester ?: thisShouldNotHappen()).toData(),
       infiniticVersion = version.toString(),
   )
 
@@ -102,7 +101,7 @@ fun WorkflowCmdMessage.toWorkflowData(): WorkflowCmdData = when (this) {
       channelName = channelName.toString(),
       signalId = signalId.toString(),
       signalArg = signalData.serializedData.toJson(),
-      requester = requester,
+      requester = (requester ?: thisShouldNotHappen()).toData(),
       infiniticVersion = version.toString(),
   )
 
@@ -161,14 +160,3 @@ data class WorkflowSignalSentData(
   override val infiniticVersion: String
 ) : WorkflowCmdData
 
-private val WorkflowCmdMessage.requester
-  get() = when {
-    requesterWorkflowName != null -> WorkflowRequesterData(
-        workflowName = requesterWorkflowName.toString(),
-        workflowId = requesterWorkflowId?.toString() ?: thisShouldNotHappen(),
-        workflowMethodId = requesterWorkflowMethodId?.toString() ?: thisShouldNotHappen(),
-        workerName = emitterName.toString(),
-    )
-
-    else -> ClientRequesterData(clientName = emitterName.toString())
-  }

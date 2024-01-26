@@ -26,6 +26,7 @@ import com.github.avrokotlin.avro4k.Avro
 import com.github.avrokotlin.avro4k.AvroDefault
 import com.github.avrokotlin.avro4k.AvroName
 import com.github.avrokotlin.avro4k.AvroNamespace
+import io.infinitic.common.clients.data.ClientName
 import io.infinitic.common.clients.messages.MethodCanceled
 import io.infinitic.common.clients.messages.MethodCompleted
 import io.infinitic.common.clients.messages.MethodFailed
@@ -43,6 +44,11 @@ import io.infinitic.common.messages.Message
 import io.infinitic.common.requester.ClientRequester
 import io.infinitic.common.requester.Requester
 import io.infinitic.common.requester.WorkflowRequester
+import io.infinitic.common.requester.clientName
+import io.infinitic.common.requester.waitingClients
+import io.infinitic.common.requester.workflowId
+import io.infinitic.common.requester.workflowMethodId
+import io.infinitic.common.requester.workflowName
 import io.infinitic.common.tasks.data.ServiceName
 import io.infinitic.common.tasks.data.TaskId
 import io.infinitic.common.tasks.data.TaskReturnValue
@@ -97,10 +103,6 @@ interface WorkflowMethodTaskEvent : WorkflowMethodEvent {
   fun serviceName(): ServiceName
 }
 
-interface EndMessage {
-
-}
-
 @Serializable
 sealed class WorkflowMessage : WorkflowMessageInterface {
   @AvroDefault(Avro.NULL)
@@ -120,9 +122,7 @@ data class RetryWorkflowTask(
   override val workflowId: WorkflowId,
   override val emitterName: EmitterName,
   @AvroDefault(Avro.NULL) override var emittedAt: MillisInstant?,
-  @AvroDefault(Avro.NULL) override val requesterWorkflowId: WorkflowId?,
-  @AvroDefault(Avro.NULL) override val requesterWorkflowName: WorkflowName?,
-  @AvroDefault(Avro.NULL) override val requesterWorkflowMethodId: WorkflowMethodId?
+  @AvroDefault(Avro.NULL) override val requester: Requester?,
 ) : WorkflowMessage(), WorkflowCmdMessage
 
 /**
@@ -140,9 +140,7 @@ data class RetryTasks(
   override val workflowId: WorkflowId,
   override val emitterName: EmitterName,
   @AvroDefault(Avro.NULL) override var emittedAt: MillisInstant?,
-  @AvroDefault(Avro.NULL) override val requesterWorkflowId: WorkflowId?,
-  @AvroDefault(Avro.NULL) override val requesterWorkflowName: WorkflowName?,
-  @AvroDefault(Avro.NULL) override val requesterWorkflowMethodId: WorkflowMethodId?
+  @AvroDefault(Avro.NULL) override val requester: Requester?,
 ) : WorkflowMessage(), WorkflowCmdMessage
 
 /**
@@ -156,9 +154,7 @@ data class WaitWorkflow(
   override val workflowId: WorkflowId,
   override val emitterName: EmitterName,
   @AvroDefault(Avro.NULL) override var emittedAt: MillisInstant?,
-  @AvroDefault(Avro.NULL) override val requesterWorkflowId: WorkflowId?,
-  @AvroDefault(Avro.NULL) override val requesterWorkflowName: WorkflowName?,
-  @AvroDefault(Avro.NULL) override val requesterWorkflowMethodId: WorkflowMethodId?
+  @AvroDefault(Avro.NULL) override val requester: Requester?,
 ) : WorkflowMessage(), WorkflowCmdMessage
 
 /**
@@ -178,19 +174,33 @@ data class DispatchNewWorkflow(
   @AvroDefault(Avro.NULL) val workflowTaskId: TaskId? = null,
   val clientWaiting: Boolean,
   override val emitterName: EmitterName,
+  @Deprecated("Not used anymore after 0.13.0") val parentWorkflowName: WorkflowName? = null,
+  @Deprecated("Not used anymore after 0.13.0") val parentWorkflowId: WorkflowId? = null,
+  @Deprecated("Not used anymore after 0.13.0") val parentMethodRunId: WorkflowMethodId? = null,
+  @AvroDefault(Avro.NULL) override var requester: Requester?,
   @AvroDefault(Avro.NULL) override var emittedAt: MillisInstant?,
-  @AvroName("parentWorkflowId") override val requesterWorkflowId: WorkflowId?,
-  @AvroName("parentWorkflowName") override val requesterWorkflowName: WorkflowName?,
-  @AvroName("parentMethodRunId") override val requesterWorkflowMethodId: WorkflowMethodId?,
 ) : WorkflowMessage(), WorkflowCmdMessage {
+
+  init {
+    // this is used only to handle previous messages that are still on <0.13 version
+    // in topics or in bufferedMessages of a workflow state
+    requester = requester ?: when (parentWorkflowId) {
+      null -> ClientRequester(clientName = ClientName.from(emitterName))
+      else -> WorkflowRequester(
+          workflowId = parentWorkflowId,
+          workflowName = parentWorkflowName ?: WorkflowName("Undefined"),
+          workflowMethodId = parentMethodRunId ?: WorkflowMethodId("Undefined"),
+      )
+    }
+  }
 
   fun workflowMethod() = WorkflowMethod(
       workflowMethodId = WorkflowMethodId.from(workflowId),
-      waitingClients = waitingClients(),
-      parentWorkflowId = requesterWorkflowId,
-      parentWorkflowName = requesterWorkflowName,
-      parentWorkflowMethodId = requesterWorkflowMethodId,
-      parentClientName = parentClientName,
+      waitingClients = requester?.waitingClients(clientWaiting) ?: waitingClients(),
+      parentWorkflowId = requester.workflowId,
+      parentWorkflowName = requester.workflowName,
+      parentWorkflowMethodId = requester.workflowMethodId,
+      parentClientName = requester.clientName,
       methodName = methodName,
       methodParameterTypes = methodParameterTypes,
       methodParameters = methodParameters,
@@ -227,8 +237,9 @@ data class DispatchNewWorkflow(
       emitterName = emitterName,
   )
 
+  @Deprecated("Not used anymore after 0.13.0")
   fun waitingClients() = when (clientWaiting) {
-    true -> mutableSetOf(parentClientName!!)
+    true -> mutableSetOf(ClientName.from(emitterName))
     false -> mutableSetOf()
   }
 }
@@ -246,13 +257,27 @@ data class DispatchMethod(
   val methodName: MethodName,
   val methodParameters: MethodParameters,
   val methodParameterTypes: MethodParameterTypes?,
-  @AvroName("parentWorkflowId") override val requesterWorkflowId: WorkflowId?,
-  @AvroName("parentWorkflowName") override val requesterWorkflowName: WorkflowName?,
-  @AvroName("parentMethodRunId") override val requesterWorkflowMethodId: WorkflowMethodId?,
+  @Deprecated("Not used anymore after 0.13.0") val parentWorkflowId: WorkflowId? = null,
+  @Deprecated("Not used anymore after 0.13.0") val parentWorkflowName: WorkflowName? = null,
+  @Deprecated("Not used anymore after 0.13.0") val parentMethodRunId: WorkflowMethodId? = null,
+  @AvroDefault(Avro.NULL) override var requester: Requester?,
   val clientWaiting: Boolean,
   override val emitterName: EmitterName,
   @AvroDefault(Avro.NULL) override var emittedAt: MillisInstant?
-) : WorkflowMessage(), WorkflowCmdMessage, WorkflowMethodEvent
+) : WorkflowMessage(), WorkflowCmdMessage, WorkflowMethodEvent {
+  init {
+    // this is used only to handle previous messages that are still on <0.13 version
+    // in topics or in bufferedMessages of a workflow state
+    requester = requester ?: when (parentWorkflowId) {
+      null -> ClientRequester(clientName = ClientName.from(emitterName))
+      else -> WorkflowRequester(
+          workflowId = parentWorkflowId,
+          workflowName = parentWorkflowName ?: WorkflowName("Undefined"),
+          workflowMethodId = parentMethodRunId ?: WorkflowMethodId("Undefined"),
+      )
+    }
+  }
+}
 
 
 /**
@@ -266,9 +291,7 @@ data class CompleteTimers(
   override val workflowId: WorkflowId,
   override val emitterName: EmitterName,
   @AvroDefault(Avro.NULL) override var emittedAt: MillisInstant?,
-  @AvroDefault(Avro.NULL) override val requesterWorkflowId: WorkflowId?,
-  @AvroDefault(Avro.NULL) override val requesterWorkflowName: WorkflowName?,
-  @AvroDefault(Avro.NULL) override val requesterWorkflowMethodId: WorkflowMethodId?
+  @AvroDefault(Avro.NULL) override val requester: Requester?,
 ) : WorkflowMessage(), WorkflowCmdMessage, WorkflowInternalEvent
 
 /**
@@ -284,9 +307,7 @@ data class CancelWorkflow(
   override val workflowId: WorkflowId,
   override val emitterName: EmitterName,
   @AvroDefault(Avro.NULL) override var emittedAt: MillisInstant?,
-  @AvroDefault(Avro.NULL) override val requesterWorkflowId: WorkflowId?,
-  @AvroDefault(Avro.NULL) override val requesterWorkflowName: WorkflowName?,
-  @AvroDefault(Avro.NULL) override val requesterWorkflowMethodId: WorkflowMethodId?
+  @AvroDefault(Avro.NULL) override val requester: Requester?,
 ) : WorkflowMessage(), WorkflowCmdMessage, WorkflowInternalEvent
 
 /**
@@ -300,9 +321,7 @@ data class CompleteWorkflow(
   override val workflowId: WorkflowId,
   override val emitterName: EmitterName,
   @AvroDefault(Avro.NULL) override var emittedAt: MillisInstant?,
-  @AvroDefault(Avro.NULL) override val requesterWorkflowId: WorkflowId?,
-  @AvroDefault(Avro.NULL) override val requesterWorkflowName: WorkflowName?,
-  @AvroDefault(Avro.NULL) override val requesterWorkflowMethodId: WorkflowMethodId?
+  @AvroDefault(Avro.NULL) override val requester: Requester?,
 ) : WorkflowMessage(), WorkflowCmdMessage, WorkflowInternalEvent
 
 /**
@@ -319,9 +338,7 @@ data class SendSignal(
   override val workflowId: WorkflowId,
   override val emitterName: EmitterName,
   @AvroDefault(Avro.NULL) override var emittedAt: MillisInstant?,
-  @AvroDefault(Avro.NULL) override val requesterWorkflowId: WorkflowId?,
-  @AvroDefault(Avro.NULL) override val requesterWorkflowName: WorkflowName?,
-  @AvroDefault(Avro.NULL) override val requesterWorkflowMethodId: WorkflowMethodId?
+  @AvroDefault(Avro.NULL) override val requester: Requester?,
 ) : WorkflowMessage(), WorkflowCmdMessage, WorkflowInternalEvent
 
 /**

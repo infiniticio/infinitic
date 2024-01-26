@@ -23,17 +23,12 @@
 package io.infinitic.common.workflows.engine.messages
 
 import com.github.avrokotlin.avro4k.AvroNamespace
-import io.infinitic.common.clients.data.ClientName
-import io.infinitic.common.workflows.data.workflowMethods.WorkflowMethodId
-import io.infinitic.common.workflows.data.workflows.WorkflowId
-import io.infinitic.common.workflows.data.workflows.WorkflowName
+import io.infinitic.common.requester.Requester
 import kotlinx.serialization.Serializable
 
 @Serializable
 sealed interface WorkflowCmdMessage : WorkflowEngineMessage {
-  val requesterWorkflowId: WorkflowId?
-  val requesterWorkflowName: WorkflowName?
-  val requesterWorkflowMethodId: WorkflowMethodId?
+  val requester: Requester?
 }
 
 fun WorkflowCmdMessage.type(): WorkflowCmdMessageType = when (this) {
@@ -62,8 +57,3 @@ enum class WorkflowCmdMessageType {
   DISPATCH_METHOD,
 }
 
-val WorkflowCmdMessage.parentClientName
-  get() = when (requesterWorkflowId) {
-    null -> ClientName.from(emitterName)
-    else -> null
-  }

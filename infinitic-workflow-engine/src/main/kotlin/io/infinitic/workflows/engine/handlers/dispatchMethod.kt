@@ -25,6 +25,10 @@ package io.infinitic.workflows.engine.handlers
 import io.infinitic.common.clients.data.ClientName
 import io.infinitic.common.emitters.EmitterName
 import io.infinitic.common.exceptions.thisShouldNotHappen
+import io.infinitic.common.requester.clientName
+import io.infinitic.common.requester.workflowId
+import io.infinitic.common.requester.workflowMethodId
+import io.infinitic.common.requester.workflowName
 import io.infinitic.common.transport.InfiniticProducer
 import io.infinitic.common.transport.WorkflowEventsTopic
 import io.infinitic.common.workflows.data.workflowMethods.PositionInWorkflowMethod
@@ -32,7 +36,6 @@ import io.infinitic.common.workflows.data.workflowMethods.WorkflowMethod
 import io.infinitic.common.workflows.data.workflowMethods.WorkflowMethodId
 import io.infinitic.common.workflows.engine.messages.DispatchMethod
 import io.infinitic.common.workflows.engine.messages.MethodStartedEvent
-import io.infinitic.common.workflows.engine.messages.parentClientName
 import io.infinitic.common.workflows.engine.state.WorkflowState
 import io.infinitic.workflows.engine.helpers.dispatchWorkflowTask
 import kotlinx.coroutines.CoroutineScope
@@ -58,15 +61,14 @@ internal fun CoroutineScope.dispatchMethod(
 
   val workflowMethod = WorkflowMethod(
       workflowMethodId = message.workflowMethodId,
-      waitingClients =
-      when (message.clientWaiting) {
+      waitingClients = when (message.clientWaiting) {
         true -> mutableSetOf(ClientName.from(message.emitterName))
         false -> mutableSetOf()
       },
-      parentWorkflowId = message.requesterWorkflowId,
-      parentWorkflowName = message.requesterWorkflowName,
-      parentWorkflowMethodId = message.requesterWorkflowMethodId,
-      parentClientName = message.parentClientName,
+      parentWorkflowId = message.requester.workflowId,
+      parentWorkflowName = message.requester.workflowName,
+      parentWorkflowMethodId = message.requester.workflowMethodId,
+      parentClientName = message.requester.clientName,
       methodName = message.methodName,
       methodParameterTypes = message.methodParameterTypes,
       methodParameters = message.methodParameters,

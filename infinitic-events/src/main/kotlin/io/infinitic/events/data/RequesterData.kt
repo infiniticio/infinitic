@@ -23,6 +23,9 @@
 
 package io.infinitic.events.data
 
+import io.infinitic.common.requester.ClientRequester
+import io.infinitic.common.requester.Requester
+import io.infinitic.common.requester.WorkflowRequester
 import kotlinx.serialization.Serializable
 
 @Serializable
@@ -38,5 +41,13 @@ data class WorkflowRequesterData(
   val workflowName: String,
   val workflowId: String,
   val workflowMethodId: String,
-  val workerName: String,
 ) : RequesterData
+
+fun Requester.toData() = when (this) {
+  is ClientRequester -> ClientRequesterData(clientName = clientName.toString())
+  is WorkflowRequester -> WorkflowRequesterData(
+      workflowName = workflowName.toString(),
+      workflowId = workflowId.toString(),
+      workflowMethodId = workflowMethodId.toString(),
+  )
+}

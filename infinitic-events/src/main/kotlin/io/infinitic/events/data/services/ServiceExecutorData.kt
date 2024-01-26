@@ -64,7 +64,6 @@ fun ServiceExecutorMessage.toServiceData() = when (this) {
             workflowName = workflowName.toString(),
             workflowId = workflowId?.toString() ?: thisShouldNotHappen(),
             workflowMethodId = workflowMethodId?.toString() ?: thisShouldNotHappen(),
-            workerName = emitterName.toString(),
         )
 
         clientName != null -> ClientRequesterData(

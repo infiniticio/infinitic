@@ -28,6 +28,7 @@ import io.infinitic.common.clients.messages.WorkflowIdsByTag
 import io.infinitic.common.data.MillisInstant
 import io.infinitic.common.emitters.EmitterName
 import io.infinitic.common.exceptions.thisShouldNotHappen
+import io.infinitic.common.requester.WorkflowRequester
 import io.infinitic.common.tasks.executors.errors.MethodTimedOutError
 import io.infinitic.common.transport.ClientTopic
 import io.infinitic.common.transport.DelayedWorkflowEngineTopic
@@ -95,6 +96,7 @@ class WorkflowTagEngine(
     publishTime: MillisInstant
   ) = coroutineScope {
     val ids = storage.getWorkflowIds(message.workflowTag, message.workflowName)
+    val requester = message.requester
 
     when (ids.size) {
       // this workflow instance does not exist yet
@@ -124,9 +126,7 @@ class WorkflowTagEngine(
               methodParameterTypes = message.methodParameterTypes,
               workflowTags = message.workflowTags,
               workflowMeta = message.workflowMeta,
-              requesterWorkflowName = message.requesterWorkflowName,
-              requesterWorkflowId = message.requesterWorkflowId,
-              requesterWorkflowMethodId = message.requesterWorkflowMethodId,
+              requester = requester,
               clientWaiting = message.clientWaiting,
               emitterName = message.emitterName,
               emittedAt = message.emittedAt ?: publishTime,
@@ -137,7 +137,7 @@ class WorkflowTagEngine(
         // send global timeout if needed
         val timeout = message.methodTimeout
 
-        if (timeout != null && message.requesterWorkflowId != null) launch {
+        if (timeout != null && requester is WorkflowRequester) launch {
           val childMethodTimedOut = ChildMethodTimedOut(
               childMethodTimedOutError = MethodTimedOutError(
                   workflowName = message.workflowName,
@@ -145,9 +145,9 @@ class WorkflowTagEngine(
                   methodName = message.methodName,
                   workflowMethodId = WorkflowMethodId.from(message.workflowId),
               ),
-              workflowName = message.requesterWorkflowName ?: thisShouldNotHappen(),
-              workflowId = message.requesterWorkflowId ?: thisShouldNotHappen(),
-              workflowMethodId = message.requesterWorkflowMethodId ?: thisShouldNotHappen(),
+              workflowName = requester.workflowName,
+              workflowId = requester.workflowId,
+              workflowMethodId = requester.workflowMethodId,
               emitterName = emitterName,
               emittedAt = message.emittedAt ?: publishTime,
           )
@@ -169,9 +169,7 @@ class WorkflowTagEngine(
                 workflowId = ids.first(),
                 emitterName = message.emitterName,
                 emittedAt = message.emittedAt ?: publishTime,
-                requesterWorkflowId = message.requesterWorkflowId,
-                requesterWorkflowName = message.requesterWorkflowName,
-                requesterWorkflowMethodId = message.requesterWorkflowMethodId,
+                requester = requester,
             )
             with(producer) { waitWorkflow.sendTo(WorkflowCmdTopic) }
           }
@@ -191,13 +189,14 @@ class WorkflowTagEngine(
     publishTime: MillisInstant
   ) = coroutineScope {
     val ids = storage.getWorkflowIds(message.workflowTag, message.workflowName)
+    val requester = message.requester
 
     when (ids.isEmpty()) {
       true -> discardTagWithoutIds(message)
 
       false -> ids.forEach { workflowId ->
         // parent workflow already applied method to self
-        if (workflowId != message.requesterWorkflowId) {
+        if (requester is WorkflowRequester && workflowId != requester.workflowId) {
           launch {
             val dispatchMethod = DispatchMethod(
                 workflowName = message.workflowName,
@@ -206,9 +205,7 @@ class WorkflowTagEngine(
                 methodName = message.methodName,
                 methodParameters = message.methodParameters,
                 methodParameterTypes = message.methodParameterTypes,
-                requesterWorkflowId = message.requesterWorkflowId,
-                requesterWorkflowName = message.requesterWorkflowName,
-                requesterWorkflowMethodId = message.requesterWorkflowMethodId,
+                requester = requester,
                 clientWaiting = false,
                 emitterName = emitterName,
                 emittedAt = message.emittedAt ?: publishTime,
@@ -217,7 +214,7 @@ class WorkflowTagEngine(
           }
 
           // set timeout if any,
-          if (message.methodTimeout != null && message.requesterWorkflowId != null) {
+          if (message.methodTimeout != null) {
             launch {
               val childMethodTimedOut = ChildMethodTimedOut(
                   childMethodTimedOutError = MethodTimedOutError(
@@ -226,9 +223,9 @@ class WorkflowTagEngine(
                       methodName = message.methodName,
                       workflowMethodId = message.workflowMethodId,
                   ),
-                  workflowName = message.requesterWorkflowName!!,
-                  workflowId = message.requesterWorkflowId!!,
-                  workflowMethodId = message.requesterWorkflowMethodId!!,
+                  workflowName = requester.workflowName,
+                  workflowId = requester.workflowId,
+                  workflowMethodId = requester.workflowMethodId,
                   emitterName = emitterName,
                   emittedAt = message.emittedAt ?: publishTime,
               )
@@ -258,9 +255,7 @@ class WorkflowTagEngine(
               workflowId = workflowId,
               emitterName = emitterName,
               emittedAt = message.emittedAt ?: publishTime,
-              requesterWorkflowId = message.requesterWorkflowId,
-              requesterWorkflowName = message.requesterWorkflowName,
-              requesterWorkflowMethodId = message.requesterWorkflowMethodId,
+              requester = message.requester,
           )
           with(producer) { retryWorkflowTask.sendTo(WorkflowCmdTopic) }
         }
@@ -285,9 +280,7 @@ class WorkflowTagEngine(
                   workflowId = workflowId,
                   emitterName = emitterName,
                   emittedAt = message.emittedAt ?: publishTime,
-                  requesterWorkflowId = message.requesterWorkflowId,
-                  requesterWorkflowName = message.requesterWorkflowName,
-                  requesterWorkflowMethodId = message.requesterWorkflowMethodId,
+                  requester = message.requester,
               )
               with(producer) { retryTasks.sendTo(WorkflowCmdTopic) }
             }
@@ -310,9 +303,7 @@ class WorkflowTagEngine(
                   workflowId = workflowId,
                   emitterName = emitterName,
                   emittedAt = message.emittedAt ?: publishTime,
-                  requesterWorkflowId = message.requesterWorkflowId,
-                  requesterWorkflowName = message.requesterWorkflowName,
-                  requesterWorkflowMethodId = message.requesterWorkflowMethodId,
+                  requester = message.requester,
               )
               with(producer) { completeTimers.sendTo(WorkflowCmdTopic) }
             }
@@ -340,9 +331,7 @@ class WorkflowTagEngine(
                 workflowId = workflowId,
                 emitterName = emitterName,
                 emittedAt = message.emittedAt ?: publishTime,
-                requesterWorkflowId = message.requesterWorkflowId,
-                requesterWorkflowName = message.requesterWorkflowName,
-                requesterWorkflowMethodId = message.requesterWorkflowMethodId,
+                requester = message.requester,
             )
             with(producer) { cancelWorkflow.sendTo(WorkflowCmdTopic) }
           }
@@ -371,9 +360,7 @@ class WorkflowTagEngine(
                     workflowId = workflowId,
                     emitterName = emitterName,
                     emittedAt = message.emittedAt ?: publishTime,
-                    requesterWorkflowId = message.requesterWorkflowId,
-                    requesterWorkflowName = message.requesterWorkflowName,
-                    requesterWorkflowMethodId = message.requesterWorkflowMethodId,
+                    requester = message.requester,
                 )
                 with(producer) { sendSignal.sendTo(WorkflowCmdTopic) }
               }

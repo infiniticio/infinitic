@@ -24,6 +24,7 @@ package io.infinitic.workflows.engine.handlers
 
 import io.infinitic.common.emitters.EmitterName
 import io.infinitic.common.exceptions.thisShouldNotHappen
+import io.infinitic.common.requester.WorkflowRequester
 import io.infinitic.common.transport.InfiniticProducer
 import io.infinitic.common.transport.WorkflowEventsTopic
 import io.infinitic.common.workflows.data.channels.ReceivingChannel
@@ -207,9 +208,11 @@ internal fun dispatchMethodOnRunningWorkflowCmd(
         methodName = command.methodName,
         methodParameters = command.methodParameters,
         methodParameterTypes = command.methodParameterTypes,
-        requesterWorkflowId = state.workflowId,
-        requesterWorkflowName = state.workflowName,
-        requesterWorkflowMethodId = state.runningWorkflowMethodId,
+        requester = WorkflowRequester(
+            workflowId = state.workflowId,
+            workflowName = state.workflowName,
+            workflowMethodId = state.runningWorkflowMethodId ?: thisShouldNotHappen(),
+        ),
         clientWaiting = false,
         emitterName = EmitterName(producer.name),
         emittedAt = state.runningWorkflowTaskInstant,
@@ -257,9 +260,11 @@ internal fun sendSignalCmd(
         workflowId = command.workflowId!!,
         emitterName = EmitterName(producer.name),
         emittedAt = state.runningWorkflowTaskInstant,
-        requesterWorkflowId = state.workflowId,
-        requesterWorkflowName = state.workflowName,
-        requesterWorkflowMethodId = state.runningWorkflowMethodId,
+        requester = WorkflowRequester(
+            workflowId = state.workflowId,
+            workflowName = state.workflowName,
+            workflowMethodId = state.runningWorkflowMethodId ?: thisShouldNotHappen(),
+        ),
     )
     bufferedMessages.add(sendToChannel)
   }

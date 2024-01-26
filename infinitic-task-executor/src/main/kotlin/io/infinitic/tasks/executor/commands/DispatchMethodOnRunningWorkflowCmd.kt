@@ -24,6 +24,7 @@ package io.infinitic.tasks.executor.commands
 
 import io.infinitic.common.data.MillisInstant
 import io.infinitic.common.emitters.EmitterName
+import io.infinitic.common.requester.WorkflowRequester
 import io.infinitic.common.tasks.executors.errors.MethodTimedOutError
 import io.infinitic.common.transport.DelayedWorkflowEngineTopic
 import io.infinitic.common.transport.InfiniticProducer
@@ -60,9 +61,11 @@ internal fun CoroutineScope.dispatchMethodOnRunningWorkflowCmd(
               methodName = command.methodName,
               methodParameters = command.methodParameters,
               methodParameterTypes = command.methodParameterTypes,
-              requesterWorkflowId = currentWorkflow.workflowId,
-              requesterWorkflowName = currentWorkflow.workflowName,
-              requesterWorkflowMethodId = currentWorkflow.workflowMethodId,
+              requester = WorkflowRequester(
+                  workflowId = currentWorkflow.workflowId,
+                  workflowName = currentWorkflow.workflowName,
+                  workflowMethodId = currentWorkflow.workflowMethodId,
+              ),
               clientWaiting = false,
               emitterName = emitterName,
               emittedAt = workflowTaskInstant,
@@ -104,9 +107,11 @@ internal fun CoroutineScope.dispatchMethodOnRunningWorkflowCmd(
             methodParameterTypes = command.methodParameterTypes,
             methodParameters = command.methodParameters,
             methodTimeout = command.methodTimeout,
-            requesterWorkflowId = currentWorkflow.workflowId,
-            requesterWorkflowName = currentWorkflow.workflowName,
-            requesterWorkflowMethodId = currentWorkflow.workflowMethodId,
+            requester = WorkflowRequester(
+                workflowId = currentWorkflow.workflowId,
+                workflowName = currentWorkflow.workflowName,
+                workflowMethodId = currentWorkflow.workflowMethodId,
+            ),
             clientWaiting = false,
             emitterName = emitterName,
             emittedAt = workflowTaskInstant,

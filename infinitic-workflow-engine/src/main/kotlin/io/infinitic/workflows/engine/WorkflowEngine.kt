@@ -28,6 +28,8 @@ import io.infinitic.common.clients.messages.MethodUnknown
 import io.infinitic.common.data.MillisInstant
 import io.infinitic.common.emitters.EmitterName
 import io.infinitic.common.exceptions.thisShouldNotHappen
+import io.infinitic.common.requester.ClientRequester
+import io.infinitic.common.requester.WorkflowRequester
 import io.infinitic.common.tasks.executors.errors.MethodUnknownError
 import io.infinitic.common.transport.ClientTopic
 import io.infinitic.common.transport.InfiniticProducer
@@ -178,7 +180,7 @@ class WorkflowEngine(
       is DispatchNewWorkflow -> {
         // Before 0.13, all messages had a null version
         // Since 0.13, the workflow-task is dispatched in workflowCmdHandler
-        @Deprecated("This should be removed after v0.13.0")
+        @Deprecated("This should be removed once v0.13.0 is deployed")
         if (message.version == null) {
           return@coroutineScope dispatchWorkflow(producer, message)
         }
@@ -188,34 +190,41 @@ class WorkflowEngine(
       }
 
       // a client wants to dispatch a method on an unknown workflow
-      is DispatchMethod -> {
-        if (message.clientWaiting) launch {
-          val methodUnknown = MethodUnknown(
-              recipientName = ClientName.from(message.emitterName),
-              message.workflowId,
-              message.workflowMethodId,
-              emitterName = emitterName,
-          )
-          with(producer) { methodUnknown.sendTo(ClientTopic) }
+      is DispatchMethod -> when (val requester = message.requester ?: thisShouldNotHappen()) {
+        // a client wants to dispatch a method on an unknown workflow
+        is ClientRequester -> {
+          if (message.clientWaiting) launch {
+            val methodUnknown = MethodUnknown(
+                recipientName = ClientName.from(message.emitterName),
+                message.workflowId,
+                message.workflowMethodId,
+                emitterName = emitterName,
+            )
+            with(producer) { methodUnknown.sendTo(ClientTopic) }
+          }
         }
-        // a workflow wants to dispatch a method on an unknown workflow
-        if (message.requesterWorkflowId != null && message.requesterWorkflowId != message.workflowId) launch {
-          val childMethodFailed = ChildMethodUnknown(
-              childMethodUnknownError =
-              MethodUnknownError(
-                  workflowName = message.workflowName,
-                  workflowId = message.workflowId,
-                  workflowMethodId = message.workflowMethodId,
-              ),
-              workflowName = message.requesterWorkflowName ?: thisShouldNotHappen(),
-              workflowId = message.requesterWorkflowId!!,
-              workflowMethodId = message.requesterWorkflowMethodId ?: thisShouldNotHappen(),
-              emitterName = emitterName,
-              emittedAt = message.emittedAt,
-          )
-          with(producer) { childMethodFailed.sendTo(WorkflowEngineTopic) }
+
+        is WorkflowRequester -> {
+          if (requester.workflowId != message.workflowId) launch {
+            // a workflow wants to dispatch a method on an unknown workflow
+            val childMethodFailed = ChildMethodUnknown(
+                childMethodUnknownError =
+                MethodUnknownError(
+                    workflowName = message.workflowName,
+                    workflowId = message.workflowId,
+                    workflowMethodId = message.workflowMethodId,
+                ),
+                workflowName = requester.workflowName,
+                workflowId = requester.workflowId,
+                workflowMethodId = requester.workflowMethodId,
+                emitterName = emitterName,
+                emittedAt = message.emittedAt,
+            )
+            with(producer) { childMethodFailed.sendTo(WorkflowEngineTopic) }
+          }
         }
       }
+
 
       // a client wants to wait the missing workflow
       is WaitWorkflow -> launch {
