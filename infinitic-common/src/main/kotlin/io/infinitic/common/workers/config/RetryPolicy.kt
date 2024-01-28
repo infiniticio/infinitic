@@ -40,7 +40,7 @@ sealed class RetryPolicy(open val maximumRetries: Int, open val ignoredException
     ignoredExceptions.map { klass ->
       klass.getClass().getOrThrow().also {
         require(Exception::class.java.isAssignableFrom(it)) {
-          "Class \"$klass\" in ${::ignoredExceptions.name} must be an Exception"
+          "Class '$klass' in ${::ignoredExceptions.name} must be an Exception"
         }
       }
     }

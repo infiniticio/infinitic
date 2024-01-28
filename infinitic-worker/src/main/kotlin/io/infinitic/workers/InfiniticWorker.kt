@@ -26,7 +26,6 @@ import io.github.oshai.kotlinlogging.KotlinLogging
 import io.infinitic.autoclose.addAutoCloseResource
 import io.infinitic.autoclose.autoClose
 import io.infinitic.clients.InfiniticClient
-import io.infinitic.clients.InfiniticClientInterface
 import io.infinitic.common.data.MillisInstant
 import io.infinitic.common.messages.Message
 import io.infinitic.common.transport.DelayedServiceExecutorTopic
@@ -57,7 +56,7 @@ import io.infinitic.transport.config.TransportConfig
 import io.infinitic.workers.config.WorkerConfig
 import io.infinitic.workers.config.WorkerConfigInterface
 import io.infinitic.workers.register.InfiniticRegister
-import io.infinitic.workers.register.InfiniticRegisterInterface
+import io.infinitic.workers.register.InfiniticRegisterImpl
 import io.infinitic.workflows.engine.WorkflowCmdHandler
 import io.infinitic.workflows.engine.WorkflowEngine
 import io.infinitic.workflows.engine.WorkflowEventHandler
@@ -70,14 +69,16 @@ import kotlin.system.exitProcess
 
 @Suppress("unused")
 class InfiniticWorker(
-  private val register: InfiniticRegisterInterface,
-  private val consumerAsync: InfiniticConsumerAsync,
-  private val producerAsync: InfiniticProducerAsync,
-  val client: InfiniticClientInterface,
+  val register: InfiniticRegister,
+  val consumerAsync: InfiniticConsumerAsync,
+  val producerAsync: InfiniticProducerAsync,
   val source: String
-) : AutoCloseable, InfiniticRegisterInterface by register {
+) : AutoCloseable, InfiniticRegister by register {
 
   private val logger = KotlinLogging.logger {}
+
+  /** Infinitic Client */
+  val client = InfiniticClient(consumerAsync, producerAsync)
 
   init {
     // Aggregate logs from consumerAsync with InfiniticWorker's
@@ -103,6 +104,7 @@ class InfiniticWorker(
   private val sendingDlqMessage = { "Unable to process message, sending to Dead Letter Queue" }
 
   override fun close() {
+    client.close()
     autoClose()
   }
 
@@ -415,10 +417,6 @@ class InfiniticWorker(
     return CompletableFuture.supplyAsync { consumerAsync.join() }
   }
 
-  private fun MutableList<CompletableFuture<Unit>>.addIfNotDone(future: CompletableFuture<Unit>) {
-    if (!future.isDone) add(future)
-  }
-
   companion object {
     /** Create [InfiniticWorker] from config */
     @JvmStatic
@@ -431,25 +429,21 @@ class InfiniticWorker(
       /** Infinitic  Producer */
       val producerAsync = transportConfig.producerAsync
 
-      // apply name if it exists
+      // set name if it exists in the configuration
       name?.let { producerAsync.producerName = it }
 
-      /** Infinitic Client */
-      val client = InfiniticClient(consumerAsync, producerAsync)
-
       /** Infinitic Register */
-      val register = InfiniticRegister(InfiniticWorker::class.java.name, this)
+      val register = InfiniticRegisterImpl.fromConfig(this).apply {
+        logName = InfiniticWorker::class.java.name
+      }
 
       /** Infinitic Worker */
       InfiniticWorker(
           register,
           consumerAsync,
           producerAsync,
-          client,
           transportConfig.source,
       ).also {
-        // close client with the worker
-        it.addAutoCloseResource(client)
         // close consumer with the worker
         it.addAutoCloseResource(consumerAsync)
         // close storages with the worker

@@ -24,7 +24,7 @@ package io.infinitic.workers.config
 
 import com.sksamuel.hoplite.ConfigException
 import io.infinitic.common.events.CloudEventListener
-import io.infinitic.workers.register.InfiniticRegisterInterface.Companion.DEFAULT_CONCURRENCY
+import io.infinitic.workers.register.InfiniticRegister.Companion.DEFAULT_CONCURRENCY
 import io.infinitic.workers.register.config.ServiceDefault
 import io.infinitic.workers.register.config.WorkflowDefault
 import io.infinitic.workers.samples.ServiceA

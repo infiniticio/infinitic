@@ -26,11 +26,10 @@ import io.infinitic.common.utils.getInstance
 import io.infinitic.common.utils.isImplementationOf
 import io.infinitic.common.workers.config.RetryPolicy
 import io.infinitic.events.config.EventListener
-import io.infinitic.workers.register.InfiniticRegisterInterface
 import io.infinitic.workflows.Workflow
 import io.infinitic.workflows.WorkflowCheckMode
-import io.infinitic.workflows.engine.config.StateEngine
-import io.infinitic.workflows.tag.config.WorkflowTag
+import io.infinitic.workflows.engine.config.WorkflowStateEngine
+import io.infinitic.workflows.tag.config.WorkflowTagEngine
 import io.infinitic.workflows.Workflow as WorkflowBase
 
 data class Workflow(
@@ -41,8 +40,8 @@ data class Workflow(
   var timeoutInSeconds: Double? = null,
   var retry: RetryPolicy? = null,
   var checkMode: WorkflowCheckMode? = null,
-  var tagEngine: WorkflowTag? = InfiniticRegisterInterface.DEFAULT_WORKFLOW_TAG,
-  var stateEngine: StateEngine? = InfiniticRegisterInterface.DEFAULT_WORKFLOW_ENGINE,
+  var tagEngine: WorkflowTagEngine? = DEFAULT_TAG_ENGINE,
+  var stateEngine: WorkflowStateEngine? = DEFAULT_STATE_ENGINE,
   var eventListener: EventListener? = null,
 ) {
   val allClasses = mutableListOf<Class<out WorkflowBase>>()
@@ -94,4 +93,9 @@ data class Workflow(
   }
 
   private fun error(txt: String) = "Workflow $name: $txt"
+
+  companion object {
+    val DEFAULT_STATE_ENGINE = WorkflowStateEngine().apply { isDefault = true }
+    val DEFAULT_TAG_ENGINE = WorkflowTagEngine().apply { isDefault = true }
+  }
 }

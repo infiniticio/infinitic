@@ -26,7 +26,7 @@ import io.infinitic.common.tasks.data.ServiceName
 import io.infinitic.common.workflows.data.workflows.WorkflowName
 import org.jetbrains.annotations.TestOnly
 
-class WorkerRegistry(val name: String?) {
+class WorkerRegistry {
   val serviceExecutors = mutableMapOf<ServiceName, RegisteredServiceExecutor>()
   val serviceTags = mutableMapOf<ServiceName, RegisteredServiceTag>()
   val serviceListeners = mutableMapOf<ServiceName, RegisteredEventListener>()

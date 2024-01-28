@@ -30,7 +30,7 @@ import io.infinitic.events.config.EventListener
 import io.infinitic.pulsar.config.Pulsar
 import io.infinitic.storage.config.Storage
 import io.infinitic.transport.config.Transport
-import io.infinitic.workers.register.InfiniticRegisterInterface.Companion.DEFAULT_CONCURRENCY
+import io.infinitic.workers.register.InfiniticRegister.Companion.DEFAULT_CONCURRENCY
 import io.infinitic.workers.register.config.Service
 import io.infinitic.workers.register.config.ServiceDefault
 import io.infinitic.workers.register.config.Workflow
@@ -93,11 +93,11 @@ data class WorkerConfig @JvmOverloads constructor(
         // if storage is not defined,
         // then use default tag engine storage
         // else use default storage
-        storage = storage ?: serviceDefault.tagEngine?.storage ?: storage
+        storage = storage ?: serviceDefault.tagEngine?.storage ?: this@WorkerConfig.storage
         // if cache is not defined,
         // then use default tag engine cache
         // else use default cache
-        cache = cache ?: serviceDefault.tagEngine?.cache ?: cache
+        cache = cache ?: serviceDefault.tagEngine?.cache ?: this@WorkerConfig.cache
         // if concurrency is not defined,
         // then use default tag engine concurrency
         // else use service concurrency
@@ -140,30 +140,30 @@ data class WorkerConfig @JvmOverloads constructor(
         // if storage is not defined,
         // then use default workflow tag engine storage
         // else use default storage
-        storage = storage ?: workflowDefault.tagEngine?.storage ?: storage
+        storage = storage ?: workflowDefault.tagEngine?.storage ?: this@WorkerConfig.storage
         // if cache is not defined,
         // then use default workflow tag engine cache
         // else use default cache
-        cache = cache ?: workflowDefault.tagEngine?.cache ?: cache
+        cache = cache ?: workflowDefault.tagEngine?.cache ?: this@WorkerConfig.cache
         // if concurrency is not defined,
         // then use default workflow tag engine concurrency
         // else use workflow concurrency
         concurrency = concurrency ?: workflowDefault.tagEngine?.concurrency ?: w.concurrency
       }
 
-      w.workflowEngine?.apply {
+      w.stateEngine?.apply {
         // if storage is not defined,
         // then use default workflow workflowEngine engine storage
         // else use default storage
-        storage = storage ?: workflowDefault.workflowEngine?.storage ?: storage
+        storage = storage ?: workflowDefault.stateEngine?.storage ?: this@WorkerConfig.storage
         // if cache is not defined,
         // then use default workflow workflowEngine engine cache
         // else use default cache
-        cache = cache ?: workflowDefault.workflowEngine?.cache ?: cache
+        cache = cache ?: workflowDefault.stateEngine?.cache ?: cache ?: this@WorkerConfig.cache
         // if concurrency is not defined,
         // then use default workflow workflowEngine engine concurrency
         // else use workflow concurrency
-        concurrency = concurrency ?: workflowDefault.workflowEngine?.concurrency ?: w.concurrency
+        concurrency = concurrency ?: workflowDefault.stateEngine?.concurrency ?: w.concurrency
       }
 
       // contrary to tagEngine/workflowEngine,

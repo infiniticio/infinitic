@@ -20,12 +20,12 @@
  *
  * Licensor: infinitic.io
  */
-package io.infinitic.tasks.tag.config
+package io.infinitic.workflows.engine.config
 
 import io.infinitic.cache.config.Cache
 import io.infinitic.storage.config.Storage
 
-data class TaskTag(
+data class WorkflowStateEngine(
   var concurrency: Int? = null,
   var storage: Storage? = null,
   var cache: Cache? = null

@@ -24,15 +24,15 @@ package io.infinitic.workers.register.config
 
 import io.infinitic.common.workers.config.RetryPolicy
 import io.infinitic.workflows.WorkflowCheckMode
-import io.infinitic.workflows.engine.config.WorkflowEngine
-import io.infinitic.workflows.tag.config.WorkflowTag
+import io.infinitic.workflows.engine.config.WorkflowStateEngine
+import io.infinitic.workflows.tag.config.WorkflowTagEngine
 
 data class WorkflowDefault(
   val concurrency: Int? = null,
   val timeoutInSeconds: Double? = null,
   val retry: RetryPolicy? = null,
-  val tagEngine: WorkflowTag? = null,
-  var workflowEngine: WorkflowEngine? = null,
+  val tagEngine: WorkflowTagEngine? = null,
+  var stateEngine: WorkflowStateEngine? = null,
   val checkMode: WorkflowCheckMode? = null
 ) {
   init {

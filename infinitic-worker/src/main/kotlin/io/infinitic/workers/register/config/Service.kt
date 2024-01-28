@@ -26,8 +26,7 @@ import io.infinitic.common.utils.getInstance
 import io.infinitic.common.utils.isImplementationOf
 import io.infinitic.common.workers.config.RetryPolicy
 import io.infinitic.events.config.EventListener
-import io.infinitic.tasks.tag.config.TaskTag
-import io.infinitic.workers.register.InfiniticRegisterInterface
+import io.infinitic.tasks.tag.config.ServiceTagEngine
 
 data class Service(
   val name: String,
@@ -35,7 +34,7 @@ data class Service(
   var concurrency: Int? = null,
   var timeoutInSeconds: Double? = null,
   var retry: RetryPolicy? = null,
-  var tagEngine: TaskTag? = InfiniticRegisterInterface.DEFAULT_SERVICE_TAG,
+  var tagEngine: ServiceTagEngine? = DEFAULT_TAG_ENGINE,
   var eventListener: EventListener? = null,
 ) {
   fun getInstance(): Any = `class`!!.getInstance().getOrThrow()
@@ -75,4 +74,8 @@ data class Service(
   }
 
   private fun error(txt: String) = "Service $name: $txt"
+
+  companion object {
+    val DEFAULT_TAG_ENGINE = ServiceTagEngine().apply { isDefault = true }
+  }
 }

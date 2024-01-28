@@ -26,7 +26,7 @@ import com.sksamuel.hoplite.ConfigException
 import io.infinitic.common.tasks.data.ServiceName
 import io.infinitic.common.workflows.data.workflows.WorkflowName
 import io.infinitic.workers.config.WorkerConfig
-import io.infinitic.workers.register.InfiniticRegister
+import io.infinitic.workers.register.InfiniticRegisterImpl
 import io.infinitic.workers.samples.EventListenerImpl
 import io.infinitic.workers.samples.ServiceEventListenerImpl
 import io.kotest.assertions.throwables.shouldThrow
@@ -54,7 +54,7 @@ services:
     tagEngine: null
               """,
           )
-          val register = InfiniticRegister("log", config)
+          val register = InfiniticRegisterImpl.fromConfig(config)
           val serviceName = "io.infinitic.workers.samples.ServiceA".serviceName()
           val tagEngine = register.registry.getRegisteredServiceTag(serviceName)
           val service = register.registry.getRegisteredService(serviceName)
@@ -73,7 +73,7 @@ services:
       concurrency: 5
               """,
           )
-          val register = InfiniticRegister("log", config)
+          val register = InfiniticRegisterImpl.fromConfig(config)
           val serviceName = "io.infinitic.workers.samples.ServiceA".serviceName()
           val tagEngine = register.registry.getRegisteredServiceTag(serviceName)
           val service = register.registry.getRegisteredService(serviceName)
@@ -92,7 +92,7 @@ workflows:
     tagEngine: null
               """,
           )
-          val register = InfiniticRegister("log", config)
+          val register = InfiniticRegisterImpl.fromConfig(config)
           val workflowName = WorkflowName("io.infinitic.workers.samples.WorkflowA")
           val tagEngine = register.registry.getRegisteredWorkflowTag(workflowName)
           val workflow = register.registry.getRegisteredWorkflow(workflowName)
@@ -111,7 +111,7 @@ workflows:
       concurrency: 5
               """,
           )
-          val register = InfiniticRegister("log", config)
+          val register = InfiniticRegisterImpl.fromConfig(config)
           val workflowName = WorkflowName("io.infinitic.workers.samples.WorkflowA")
           val tagEngine = register.registry.getRegisteredWorkflowTag(workflowName)
           val workflow = register.registry.getRegisteredWorkflow(workflowName)
@@ -128,10 +128,10 @@ workflows:
   - name: io.infinitic.workers.samples.WorkflowA
     class: io.infinitic.workers.samples.WorkflowAImpl
     concurrency: 5
-    workflowEngine: null
+    stateEngine: null
               """,
           )
-          val register = InfiniticRegister("log", config)
+          val register = InfiniticRegisterImpl.fromConfig(config)
           val workflowName = WorkflowName("io.infinitic.workers.samples.WorkflowA")
           val engine = register.registry.getRegisteredWorkflowEngine(workflowName)
           val workflow = register.registry.getRegisteredWorkflow(workflowName)
@@ -147,11 +147,11 @@ workflows:
               """
 workflows:
   - name: io.infinitic.workers.samples.WorkflowA
-    workflowEngine:
+    stateEngine:
       concurrency: 5
               """,
           )
-          val register = InfiniticRegister("log", config)
+          val register = InfiniticRegisterImpl.fromConfig(config)
           val workflowName = WorkflowName("io.infinitic.workers.samples.WorkflowA")
           val engine = register.registry.getRegisteredWorkflowEngine(workflowName)
           val workflow = register.registry.getRegisteredWorkflow(workflowName)
@@ -172,7 +172,7 @@ services:
     concurrency: 10
               """,
           )
-          val register = InfiniticRegister("log", config)
+          val register = InfiniticRegisterImpl.fromConfig(config)
           val serviceName = "io.infinitic.workers.samples.ServiceA".serviceName()
           val listener = register.registry.getRegisteredServiceEventListener(serviceName)
 
@@ -196,7 +196,7 @@ services:
               """,
           )
 
-          val register = InfiniticRegister("log", config)
+          val register = InfiniticRegisterImpl.fromConfig(config)
           val serviceName = "io.infinitic.workers.samples.ServiceA".serviceName()
           val listener = register.registry.getRegisteredServiceEventListener(serviceName)!!
 
@@ -220,7 +220,7 @@ services:
               """,
           )
 
-          val register = InfiniticRegister("log", config)
+          val register = InfiniticRegisterImpl.fromConfig(config)
           val serviceName = "io.infinitic.workers.samples.ServiceA".serviceName()
           val listener = register.registry.getRegisteredServiceEventListener(serviceName)!!
 
@@ -240,7 +240,7 @@ services:
               """,
           )
 
-          val register = InfiniticRegister("log", config)
+          val register = InfiniticRegisterImpl.fromConfig(config)
           val serviceName = "io.infinitic.workers.samples.ServiceA".serviceName()
           val listener = register.registry.getRegisteredServiceEventListener(serviceName)!!
 
@@ -261,7 +261,7 @@ services:
               """,
           )
 
-          val register = InfiniticRegister("log", config)
+          val register = InfiniticRegisterImpl.fromConfig(config)
           val serviceName = "io.infinitic.workers.samples.ServiceA".serviceName()
           val listener = register.registry.getRegisteredServiceEventListener(serviceName)!!
           listener.concurrency shouldBe 10
@@ -283,7 +283,7 @@ services:
               """,
           )
 
-          val register = InfiniticRegister("log", config)
+          val register = InfiniticRegisterImpl.fromConfig(config)
           val serviceName = "io.infinitic.workers.samples.ServiceA".serviceName()
           val listener = register.registry.getRegisteredServiceEventListener(serviceName)!!
 
