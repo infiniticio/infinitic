@@ -29,7 +29,7 @@ import io.infinitic.events.config.EventListener
 import io.infinitic.workers.register.InfiniticRegisterInterface
 import io.infinitic.workflows.Workflow
 import io.infinitic.workflows.WorkflowCheckMode
-import io.infinitic.workflows.engine.config.WorkflowEngine
+import io.infinitic.workflows.engine.config.StateEngine
 import io.infinitic.workflows.tag.config.WorkflowTag
 import io.infinitic.workflows.Workflow as WorkflowBase
 
@@ -42,7 +42,7 @@ data class Workflow(
   var retry: RetryPolicy? = null,
   var checkMode: WorkflowCheckMode? = null,
   var tagEngine: WorkflowTag? = InfiniticRegisterInterface.DEFAULT_WORKFLOW_TAG,
-  var workflowEngine: WorkflowEngine? = InfiniticRegisterInterface.DEFAULT_WORKFLOW_ENGINE,
+  var stateEngine: StateEngine? = InfiniticRegisterInterface.DEFAULT_WORKFLOW_ENGINE,
   var eventListener: EventListener? = null,
 ) {
   val allClasses = mutableListOf<Class<out WorkflowBase>>()
@@ -51,8 +51,8 @@ data class Workflow(
     require(name.isNotEmpty()) { "name can not be empty" }
 
     when {
-      (`class` == null) && (classes == null) -> require(tagEngine != null || workflowEngine != null || eventListener != null) {
-        error("'${::`class`.name}', '${::classes.name}', '${::tagEngine.name}', '${::workflowEngine.name}' and '${::eventListener.name}' can not be all null")
+      (`class` == null) && (classes == null) -> require(tagEngine != null || stateEngine != null || eventListener != null) {
+        error("'${::`class`.name}', '${::classes.name}', '${::tagEngine.name}', '${::stateEngine.name}' and '${::eventListener.name}' can not be all null")
       }
 
       else -> {
