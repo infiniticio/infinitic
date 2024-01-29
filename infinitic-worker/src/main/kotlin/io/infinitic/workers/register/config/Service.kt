@@ -42,32 +42,24 @@ data class Service(
   init {
     require(name.isNotEmpty()) { "'${::name.name}' can not be empty" }
 
-    when (`class`) {
-      null -> {
-        require(tagEngine != null || eventListener != null) {
-          error("'Nothing defined for `name: $name`")
+    `class`?.let {
+      require(it.isNotEmpty()) { error("'class' empty") }
+
+      val instance = getInstance()
+
+      require(instance::class.java.isImplementationOf(name)) {
+        error("Class '${instance::class.java.name}' is not an implementation of this service - check your configuration")
+      }
+
+      if (concurrency != null) {
+        require(concurrency!! >= 0) {
+          error("'${::concurrency.name}' must be an integer >= 0")
         }
       }
 
-      else -> {
-        require(`class`.isNotEmpty()) { error("'class' empty") }
-
-        val instance = getInstance()
-
-        require(instance::class.java.isImplementationOf(name)) {
-          error("Class '${instance::class.java.name}' is not an implementation of this service - check your configuration")
-        }
-
-        if (concurrency != null) {
-          require(concurrency!! >= 0) {
-            error("'${::concurrency.name}' must be an integer >= 0")
-          }
-        }
-
-        if (timeoutInSeconds != null) {
-          require(timeoutInSeconds!! > 0) {
-            error("'${::timeoutInSeconds.name}' must be an integer > 0")
-          }
+      if (timeoutInSeconds != null) {
+        require(timeoutInSeconds!! > 0) {
+          error("'${::timeoutInSeconds.name}' must be an integer > 0")
         }
       }
     }

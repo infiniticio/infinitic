@@ -45,6 +45,7 @@ import io.infinitic.common.transport.WorkflowEventsTopic
 import io.infinitic.common.transport.WorkflowTagTopic
 import io.infinitic.common.transport.WorkflowTaskEventsTopic
 import io.infinitic.common.transport.WorkflowTaskExecutorTopic
+import io.infinitic.common.workflows.engine.messages.WorkflowCmdMessage
 import io.infinitic.events.toServiceCloudEvent
 import io.infinitic.events.toWorkflowCloudEvent
 import io.infinitic.pulsar.PulsarInfiniticConsumerAsync
@@ -389,7 +390,9 @@ class InfiniticWorker(
           consumerAsync.start(
               subscription = ListenerSubscription(WorkflowEngineTopic),
               entity = workflowName.toString(),
-              handler = workflowEventHandler,
+              handler = { message: Message, publishedAt: MillisInstant ->
+                if (message !is WorkflowCmdMessage) workflowEventHandler(message, publishedAt)
+              },
               beforeDlq = logMessageSentToDLQ,
               concurrency = registeredEventListener.concurrency,
           )

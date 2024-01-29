@@ -59,8 +59,8 @@ data class SerializedData(
     // meta key containing the name of the serialized java class
     const val META_JAVA_CLASS = "javaClass"
 
-    // use a less obvious key than "type" for polymorphic data, to avoid collusion
     private val jsonKotlin = Json {
+      // use a less obvious key than "type" for polymorphic data, to avoid collusion
       classDiscriminator = "#klass"
       ignoreUnknownKeys = true
     }

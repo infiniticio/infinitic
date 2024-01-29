@@ -27,20 +27,20 @@ import io.infinitic.common.exceptions.thisShouldNotHappen
 import io.infinitic.common.tasks.events.messages.ServiceEventMessage
 import io.infinitic.common.tasks.events.messages.TaskCompletedEvent
 import io.infinitic.common.tasks.events.messages.TaskFailedEvent
-import io.infinitic.events.InfiniticWorkflowTaskEventType
-import io.infinitic.events.WorkflowTaskCompletedType
-import io.infinitic.events.WorkflowTaskFailedType
+import io.infinitic.events.InfiniticEventType
+import io.infinitic.events.InfiniticEventType.WORKFLOW_EXECUTOR_COMPLETED
+import io.infinitic.events.InfiniticEventType.WORKFLOW_EXECUTOR_FAILED
 import io.infinitic.events.data.ErrorData
 import io.infinitic.events.data.toErrorData
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonElement
 
-fun ServiceEventMessage.workflowType(): InfiniticWorkflowTaskEventType? =
+fun ServiceEventMessage.workflowType(): InfiniticEventType? =
     when (this.isWorkflowTask()) {
       false -> null
       true -> when (this) {
-        is TaskCompletedEvent -> WorkflowTaskCompletedType
-        is TaskFailedEvent -> WorkflowTaskFailedType
+        is TaskCompletedEvent -> WORKFLOW_EXECUTOR_COMPLETED
+        is TaskFailedEvent -> WORKFLOW_EXECUTOR_FAILED
         else -> null
       }
     }
@@ -70,7 +70,7 @@ data class WorkflowTaskCompletedData(
   val result: JsonElement,
   override val workerName: String,
   override val infiniticVersion: String
-) : WorkflowEngineData
+) : WorkflowEventData
 
 @Serializable
 data class WorkflowTaskFailedData(
@@ -78,4 +78,4 @@ data class WorkflowTaskFailedData(
   val error: ErrorData,
   override val workerName: String,
   override val infiniticVersion: String
-) : WorkflowEngineData
+) : WorkflowEventData

@@ -27,16 +27,15 @@ import io.infinitic.common.exceptions.thisShouldNotHappen
 import io.infinitic.common.tasks.executors.messages.ExecuteTask
 import io.infinitic.common.tasks.executors.messages.ServiceExecutorMessage
 import io.infinitic.common.tasks.executors.messages.clientName
-import io.infinitic.events.InfiniticServiceEventType
-import io.infinitic.events.TaskDispatchedType
+import io.infinitic.events.InfiniticEventType
 import io.infinitic.events.data.ClientRequesterData
 import io.infinitic.events.data.RequesterData
 import io.infinitic.events.data.WorkflowRequesterData
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonElement
 
-fun ServiceExecutorMessage.serviceType(): InfiniticServiceEventType = when (this) {
-  is ExecuteTask -> TaskDispatchedType
+fun ServiceExecutorMessage.serviceType(): InfiniticEventType = when (this) {
+  is ExecuteTask -> InfiniticEventType.TASK_DISPATCHED
 }
 
 @Serializable

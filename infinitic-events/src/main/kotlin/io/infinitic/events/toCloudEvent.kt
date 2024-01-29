@@ -47,7 +47,7 @@ fun Message.toServiceCloudEvent(publishedAt: MillisInstant, prefix: String): Clo
       }
     }
 
-fun Message.toWorkflowCloudEvent(publishedAt: MillisInstant, prefix: String): CloudEvent? =
+fun Message.toWorkflowCloudEvent(publishedAt: MillisInstant, sourcePrefix: String): CloudEvent? =
     with(CloudEventContext.WORKFLOW) {
       when (val type = type()) {
         null -> null
@@ -56,7 +56,7 @@ fun Message.toWorkflowCloudEvent(publishedAt: MillisInstant, prefix: String): Cl
             .withTime(OffsetDateTime.ofInstant(publishedAt.toInstant(), ZoneOffset.UTC))
             .withType(type)
             .withSubject(subject())
-            .withSource(source(prefix))
+            .withSource(source(sourcePrefix))
             .withDataContentType("application/json")
             .withoutDataSchema()
             .withData(dataBytes())

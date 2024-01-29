@@ -40,7 +40,7 @@ class InMemoryInfiniticProducerAsync(
 
   override var producerName = DEFAULT_NAME
 
-  private fun <S : Message> Topic<S>.channelForMessage(message: S): List<Channel<S>> {
+  private fun <S : Message> Topic<S>.channelsForMessage(message: S): List<Channel<S>> {
     val entity = message.entity()
 
     return listOf(
@@ -49,7 +49,7 @@ class InMemoryInfiniticProducerAsync(
     )
   }
 
-  private fun <S : Message> Topic<S>.channelForDelayedMessage(message: S): List<Channel<DelayedMessage<S>>> {
+  private fun <S : Message> Topic<S>.channelsForDelayedMessage(message: S): List<Channel<DelayedMessage<S>>> {
     val entity = message.entity()
 
     return listOf(
@@ -65,7 +65,7 @@ class InMemoryInfiniticProducerAsync(
   ): CompletableFuture<Unit> {
     when (topic.isDelayed) {
       true -> {
-        topic.channelForDelayedMessage(message).forEach {
+        topic.channelsForDelayedMessage(message).forEach {
           logger.trace { "Topic $topic(${it.id}): sending $message" }
           it.send(DelayedMessage(message, after))
           logger.debug { "Topic $topic(${it.id}): sent $message" }
@@ -73,7 +73,7 @@ class InMemoryInfiniticProducerAsync(
       }
 
       false -> {
-        topic.channelForMessage(message).forEach {
+        topic.channelsForMessage(message).forEach {
           logger.trace { "Topic $topic(${it.id}): sending $message" }
           it.send(message)
           logger.debug { "Topic $topic(${it.id}): sent $message" }

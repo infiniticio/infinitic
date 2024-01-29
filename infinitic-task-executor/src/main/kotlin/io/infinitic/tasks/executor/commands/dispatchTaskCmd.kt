@@ -33,6 +33,7 @@ import io.infinitic.common.transport.DelayedWorkflowEngineTopic
 import io.infinitic.common.transport.InfiniticProducer
 import io.infinitic.common.transport.ServiceExecutorTopic
 import io.infinitic.common.transport.ServiceTagTopic
+import io.infinitic.common.transport.WorkflowEventsTopic
 import io.infinitic.common.workflows.data.commands.DispatchTaskPastCommand
 import io.infinitic.common.workflows.engine.messages.TaskTimedOut
 import io.infinitic.tasks.executor.TaskEventHandler
@@ -48,7 +49,7 @@ internal fun CoroutineScope.dispatchTaskCmd(
   val emitterName = EmitterName(producer.name)
 
   // send task to task executor
-  val executeTask: ExecuteTask = with(pastCommand.command) {
+  val executeTask = with(pastCommand.command) {
     ExecuteTask(
         serviceName = serviceName,
         taskId = TaskId.from(pastCommand.commandId),
@@ -82,6 +83,12 @@ internal fun CoroutineScope.dispatchTaskCmd(
       )
       with(producer) { addTagToTask.sendTo(ServiceTagTopic) }
     }
+  }
+
+  // sent to workflow event
+  launch {
+    val taskDispatchedEvent = executeTask.getWorkflowEvent(emitterName)
+    with(producer) { taskDispatchedEvent.sendTo(WorkflowEventsTopic) }
   }
 
   // send global task timeout if any

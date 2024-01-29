@@ -21,20 +21,12 @@
  * Licensor: infinitic.io
  */
 
-dependencies {
+package io.infinitic.events.data.workflows
 
-  api(Libs.CloudEvents.core)
-  api(Libs.CloudEvents.api)
-  api(Libs.CloudEvents.json)
-  implementation(Libs.Avro4k.core)
-  implementation(Libs.Jackson.kotlin)
+import io.infinitic.events.data.MessageData
+import kotlinx.serialization.Serializable
 
-  implementation(project(":infinitic-common"))
-
-  testImplementation(project(":infinitic-worker"))
-
-
+@Serializable
+sealed interface InfiniticCloudEventsData : MessageData {
+  val infiniticVersion: String
 }
-
-apply("../publish.gradle.kts")
-

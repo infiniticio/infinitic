@@ -736,24 +736,6 @@ data class MethodTimedOutEvent(
 }
 
 /**
- * This event tells us that a new method has been dispatched on this workflow
- */
-@Serializable
-@AvroNamespace("io.infinitic.workflows.engine")
-data class MethodDispatchedEvent(
-  override val workflowName: WorkflowName,
-  override val workflowId: WorkflowId,
-  val workflowMethodId: WorkflowMethodId,
-  override val requester: Requester,
-  val methodName: MethodName,
-  val methodParameterTypes: MethodParameterTypes?,
-  val methodParameters: MethodParameters,
-  val workflowTags: Set<WorkflowTag>,
-  val workflowMeta: WorkflowMeta,
-  override val emitterName: EmitterName,
-) : WorkflowMessage(), Dispatched, WorkflowEventMessage
-
-/**
  * This event tells us that a task was dispatched by this workflow
  */
 @Serializable
@@ -762,11 +744,10 @@ data class TaskDispatchedEvent(
   override val workflowName: WorkflowName,
   override val workflowId: WorkflowId,
   val workflowMethodId: WorkflowMethodId,
-  override val requester: Requester,
   val taskId: TaskId,
   val methodName: MethodName,
   val methodParameterTypes: MethodParameterTypes?,
   val methodParameters: MethodParameters,
   val serviceName: ServiceName,
   override val emitterName: EmitterName,
-) : WorkflowMessage(), Dispatched, WorkflowEventMessage
+) : WorkflowMessage(), WorkflowEventMessage

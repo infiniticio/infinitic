@@ -28,15 +28,15 @@ import io.infinitic.common.tasks.data.TaskRetryIndex
 import io.infinitic.common.tasks.data.TaskRetrySequence
 import io.infinitic.common.tasks.executors.messages.ExecuteTask
 import io.infinitic.common.tasks.executors.messages.ServiceExecutorMessage
-import io.infinitic.events.InfiniticWorkflowEventType
-import io.infinitic.events.WorkflowTaskDispatchedType
+import io.infinitic.events.InfiniticEventType
+import io.infinitic.events.InfiniticEventType.WORKFLOW_EXECUTOR_DISPATCHED
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonElement
 
-fun ServiceExecutorMessage.workflowType(): InfiniticWorkflowEventType? =
+fun ServiceExecutorMessage.workflowType(): InfiniticEventType? =
     when (isWorkflowTaskDispatched) {
       false -> null
-      true -> WorkflowTaskDispatchedType
+      true -> WORKFLOW_EXECUTOR_DISPATCHED
     }
 
 fun ServiceExecutorMessage.toWorkflowData(): WorkflowEventData =
@@ -58,4 +58,4 @@ data class WorkflowTaskDispatchedData(
   val arg: JsonElement,
   override val workerName: String,
   override val infiniticVersion: String
-) : WorkflowEngineData
+) : WorkflowEventData

@@ -37,7 +37,6 @@ fun WorkflowEventMessage.type(): WorkflowEventMessageType = when (this) {
   is WorkflowStartedEvent -> WorkflowEventMessageType.WORKFLOW_STARTED
   is WorkflowCompletedEvent -> WorkflowEventMessageType.WORKFLOW_COMPLETED
   is WorkflowCanceledEvent -> WorkflowEventMessageType.WORKFLOW_CANCELED
-  is MethodDispatchedEvent -> WorkflowEventMessageType.METHOD_DISPATCHED
   is MethodStartedEvent -> WorkflowEventMessageType.METHOD_STARTED
   is MethodCompletedEvent -> WorkflowEventMessageType.METHOD_COMPLETED
   is MethodFailedEvent -> WorkflowEventMessageType.METHOD_FAILED
@@ -58,7 +57,6 @@ enum class WorkflowEventMessageType {
   METHOD_CANCELED,
   METHOD_TIMED_OUT,
   TASK_DISPATCHED,
-  METHOD_DISPATCHED,
 }
 
 interface MethodTerminated : WorkflowMessageInterface {
@@ -70,8 +68,4 @@ interface MethodTerminated : WorkflowMessageInterface {
     emitterName: EmitterName,
     emittedAt: MillisInstant
   ): List<WorkflowEngineMessage>
-}
-
-interface Dispatched : WorkflowMessageInterface {
-  val requester: Requester
 }

@@ -35,27 +35,27 @@ import io.infinitic.common.workflows.engine.messages.RetryWorkflowTask
 import io.infinitic.common.workflows.engine.messages.SendSignal
 import io.infinitic.common.workflows.engine.messages.WaitWorkflow
 import io.infinitic.common.workflows.engine.messages.WorkflowCmdMessage
-import io.infinitic.events.InfiniticWorkflowEventType
-import io.infinitic.events.TaskRetryRequestedType
-import io.infinitic.events.WorkflowCancelRequestedType
-import io.infinitic.events.WorkflowDispatchedType
-import io.infinitic.events.WorkflowMethodDispatchedType
-import io.infinitic.events.WorkflowSignalSentType
-import io.infinitic.events.WorkflowTaskRetryRequestedType
+import io.infinitic.events.InfiniticEventType
+import io.infinitic.events.InfiniticEventType.WORKFLOW_CANCELED
+import io.infinitic.events.InfiniticEventType.WORKFLOW_DISPATCHED
+import io.infinitic.events.InfiniticEventType.WORKFLOW_EXECUTOR_RETRY_REQUESTED
+import io.infinitic.events.InfiniticEventType.WORKFLOW_METHOD_DISPATCHED
+import io.infinitic.events.InfiniticEventType.WORKFLOW_SIGNALED
+import io.infinitic.events.InfiniticEventType.WORKFLOW_TASKS_RETRY_REQUESTED
 import io.infinitic.events.data.RequesterData
 import io.infinitic.events.data.toData
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonElement
 
-fun WorkflowCmdMessage.workflowType(): InfiniticWorkflowEventType? = when (this) {
-  is DispatchNewWorkflow -> WorkflowDispatchedType
-  is DispatchMethod -> WorkflowMethodDispatchedType
-  is CancelWorkflow -> WorkflowCancelRequestedType
+fun WorkflowCmdMessage.workflowType(): InfiniticEventType? = when (this) {
+  is DispatchNewWorkflow -> WORKFLOW_DISPATCHED
+  is DispatchMethod -> WORKFLOW_METHOD_DISPATCHED
+  is CancelWorkflow -> WORKFLOW_CANCELED
   is CompleteTimers -> null
   is CompleteWorkflow -> null
-  is RetryTasks -> TaskRetryRequestedType
-  is RetryWorkflowTask -> WorkflowTaskRetryRequestedType
-  is SendSignal -> WorkflowSignalSentType
+  is RetryTasks -> WORKFLOW_TASKS_RETRY_REQUESTED
+  is RetryWorkflowTask -> WORKFLOW_EXECUTOR_RETRY_REQUESTED
+  is SendSignal -> WORKFLOW_SIGNALED
   is WaitWorkflow -> null
 }
 
@@ -109,7 +109,7 @@ fun WorkflowCmdMessage.toWorkflowData(): WorkflowCmdData = when (this) {
 }
 
 @Serializable
-sealed interface WorkflowCmdData : WorkflowEventData {
+sealed interface WorkflowCmdData : InfiniticCloudEventsData {
   val requester: RequesterData
 }
 
@@ -124,11 +124,11 @@ data class WorkflowDispatchedData(
 @Serializable
 data class WorkflowMethodDispatchedData(
   val workflowMethodArgs: List<JsonElement>,
+  val workflowMethodName: String,
+  val workflowMethodId: String,
   override val requester: RequesterData,
-  override val workflowMethodName: String,
-  override val workflowMethodId: String,
   override val infiniticVersion: String
-) : WorkflowCmdData, WorkflowMethodEventData
+) : WorkflowCmdData
 
 @Serializable
 data class WorkflowCancelRequestedData(

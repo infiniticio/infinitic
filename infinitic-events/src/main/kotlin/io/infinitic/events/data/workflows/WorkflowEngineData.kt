@@ -36,33 +36,33 @@ import io.infinitic.common.workflows.engine.messages.TaskTimedOut
 import io.infinitic.common.workflows.engine.messages.TimerCompleted
 import io.infinitic.common.workflows.engine.messages.WorkflowCmdMessage
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
-import io.infinitic.events.ChildMethodCanceledType
-import io.infinitic.events.ChildMethodCompletedType
-import io.infinitic.events.ChildMethodFailedType
-import io.infinitic.events.ChildMethodTimedOutType
-import io.infinitic.events.ChildMethodUnknownType
-import io.infinitic.events.ChildTaskCompletedType
-import io.infinitic.events.ChildTaskFailedType
-import io.infinitic.events.ChildTaskTimedOutType
-import io.infinitic.events.ChildTimerCompletedType
-import io.infinitic.events.InfiniticWorkflowEventType
+import io.infinitic.events.InfiniticEventType
+import io.infinitic.events.InfiniticEventType.WORKFLOW_METHOD_CHILD_CANCELED
+import io.infinitic.events.InfiniticEventType.WORKFLOW_METHOD_CHILD_COMPLETED
+import io.infinitic.events.InfiniticEventType.WORKFLOW_METHOD_CHILD_FAILED
+import io.infinitic.events.InfiniticEventType.WORKFLOW_METHOD_CHILD_TIMED_OUT
+import io.infinitic.events.InfiniticEventType.WORKFLOW_METHOD_CHILD_UNKNOWN
+import io.infinitic.events.InfiniticEventType.WORKFLOW_METHOD_TASK_COMPLETED
+import io.infinitic.events.InfiniticEventType.WORKFLOW_METHOD_TASK_FAILED
+import io.infinitic.events.InfiniticEventType.WORKFLOW_METHOD_TASK_TIMED_OUT
+import io.infinitic.events.InfiniticEventType.WORKFLOW_METHOD_TIMER_COMPLETED
 import io.infinitic.events.data.ErrorData
 import io.infinitic.events.data.toErrorData
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonElement
 
-fun WorkflowEngineMessage.workflowType(): InfiniticWorkflowEventType? = when (this) {
+fun WorkflowEngineMessage.workflowType(): InfiniticEventType? = when (this) {
   is WorkflowCmdMessage -> null
-  is ChildMethodCompleted -> ChildMethodCompletedType
-  is ChildMethodCanceled -> ChildMethodCanceledType
-  is ChildMethodFailed -> ChildMethodFailedType
-  is ChildMethodTimedOut -> ChildMethodTimedOutType
-  is ChildMethodUnknown -> ChildMethodUnknownType
-  is TaskCompleted -> ChildTaskCompletedType
+  is ChildMethodCompleted -> WORKFLOW_METHOD_CHILD_COMPLETED
+  is ChildMethodCanceled -> WORKFLOW_METHOD_CHILD_CANCELED
+  is ChildMethodFailed -> WORKFLOW_METHOD_CHILD_FAILED
+  is ChildMethodTimedOut -> WORKFLOW_METHOD_CHILD_TIMED_OUT
+  is ChildMethodUnknown -> WORKFLOW_METHOD_CHILD_UNKNOWN
+  is TaskCompleted -> WORKFLOW_METHOD_TASK_COMPLETED
   is TaskCanceled -> null
-  is TaskFailed -> ChildTaskFailedType
-  is TaskTimedOut -> ChildTaskTimedOutType
-  is TimerCompleted -> ChildTimerCompletedType
+  is TaskFailed -> WORKFLOW_METHOD_TASK_FAILED
+  is TaskTimedOut -> WORKFLOW_METHOD_TASK_TIMED_OUT
+  is TimerCompleted -> WORKFLOW_METHOD_TIMER_COMPLETED
 }
 
 fun WorkflowEngineMessage.toWorkflowData(): WorkflowEngineData = when (this) {
@@ -188,7 +188,7 @@ fun WorkflowEngineMessage.toWorkflowData(): WorkflowEngineData = when (this) {
 }
 
 @Serializable
-sealed interface WorkflowEngineData : WorkflowEventData {
+sealed interface WorkflowEngineData : InfiniticCloudEventsData {
   val workerName: String
 }
 

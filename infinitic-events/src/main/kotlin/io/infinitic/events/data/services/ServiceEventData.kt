@@ -28,10 +28,10 @@ import io.infinitic.common.tasks.events.messages.TaskCompletedEvent
 import io.infinitic.common.tasks.events.messages.TaskFailedEvent
 import io.infinitic.common.tasks.events.messages.TaskRetriedEvent
 import io.infinitic.common.tasks.events.messages.TaskStartedEvent
-import io.infinitic.events.TaskCompletedType
-import io.infinitic.events.TaskFailedType
-import io.infinitic.events.TaskRetriedType
-import io.infinitic.events.TaskStartedType
+import io.infinitic.events.InfiniticEventType.TASK_COMPLETED
+import io.infinitic.events.InfiniticEventType.TASK_FAILED
+import io.infinitic.events.InfiniticEventType.TASK_RETRIED
+import io.infinitic.events.InfiniticEventType.TASK_STARTED
 import io.infinitic.events.data.ErrorData
 import io.infinitic.events.data.MessageData
 import io.infinitic.events.data.toErrorData
@@ -39,10 +39,10 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonElement
 
 fun ServiceEventMessage.serviceType() = when (this) {
-  is TaskCompletedEvent -> TaskCompletedType
-  is TaskFailedEvent -> TaskFailedType
-  is TaskRetriedEvent -> TaskRetriedType
-  is TaskStartedEvent -> TaskStartedType
+  is TaskCompletedEvent -> TASK_COMPLETED
+  is TaskFailedEvent -> TASK_FAILED
+  is TaskRetriedEvent -> TASK_RETRIED
+  is TaskStartedEvent -> TASK_STARTED
 }
 
 @Serializable

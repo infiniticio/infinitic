@@ -42,14 +42,14 @@ import java.net.URLEncoder
 enum class CloudEventContext {
 
   WORKFLOW {
-    override fun Message.type() = when (this) {
+    override fun Message.type(): String? = when (this) {
       is ServiceExecutorMessage -> workflowType()
       is ServiceEventMessage -> workflowType()
       is WorkflowCmdMessage -> workflowType()
       is WorkflowEngineMessage -> workflowType()
       is WorkflowEventMessage -> workflowType()
       else -> null
-    }?.type
+    }?.value
 
     override fun Message.subject(): String = when (this) {
       is ServiceExecutorMessage -> workflowId
@@ -68,9 +68,7 @@ enum class CloudEventContext {
       is WorkflowEventMessage -> workflowName
       else -> thisShouldNotHappen()
     }.let {
-      URI.create(
-          "$prefix/workflows/${URLEncoder.encode(it.toString(), Charsets.UTF_8)}",
-      )
+      URI.create("$prefix/workflows/${URLEncoder.encode(it.toString(), Charsets.UTF_8)}")
     }
 
     override fun Message.dataBytes(): ByteArray = when (this) {
@@ -85,11 +83,11 @@ enum class CloudEventContext {
     }
   },
   SERVICE {
-    override fun Message.type() = when (this) {
+    override fun Message.type(): String? = when (this) {
       is ServiceExecutorMessage -> serviceType()
       is ServiceEventMessage -> serviceType()
       else -> null
-    }?.type
+    }?.value
 
     override fun Message.subject(): String = when (this) {
       is ServiceExecutorMessage -> taskId
@@ -102,9 +100,7 @@ enum class CloudEventContext {
       is ServiceEventMessage -> serviceName
       else -> thisShouldNotHappen()
     }.let {
-      URI.create(
-          "$prefix/services/${URLEncoder.encode(it.toString(), Charsets.UTF_8)}",
-      )
+      URI.create("$prefix/services/${URLEncoder.encode(it.toString(), Charsets.UTF_8)}")
     }
 
     override fun Message.dataBytes(): ByteArray = when (this) {
