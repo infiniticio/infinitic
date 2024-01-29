@@ -107,7 +107,7 @@ private val worker = InfiniticWorker.fromConfig(workerConfig).apply {
 private suspend fun <T : Message> T.sendToTopic(topic: Topic<T>) {
   with(worker.producerAsync) { sendToAsync(topic).join() }
   // wait a bit to let listener do its work
-  delay(100)
+  delay(200)
 }
 
 internal class CloudEventTests :
