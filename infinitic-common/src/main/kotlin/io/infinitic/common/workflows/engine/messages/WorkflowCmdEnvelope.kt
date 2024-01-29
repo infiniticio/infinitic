@@ -34,7 +34,7 @@ import org.apache.avro.Schema
 data class WorkflowCmdEnvelope(
   private val workflowId: WorkflowId,
   private val type: WorkflowCmdMessageType,
-  private val dispatchWorkflow: DispatchNewWorkflow? = null,
+  private val dispatchWorkflow: DispatchWorkflow? = null,
   private val dispatchMethod: DispatchMethod? = null,
   private val waitWorkflow: WaitWorkflow? = null,
   private val cancelWorkflow: CancelWorkflow? = null,
@@ -65,7 +65,7 @@ data class WorkflowCmdEnvelope(
   companion object {
     fun from(msg: WorkflowCmdMessage) = when (msg) {
 
-      is DispatchNewWorkflow -> WorkflowCmdEnvelope(
+      is DispatchWorkflow -> WorkflowCmdEnvelope(
           workflowId = msg.workflowId,
           type = WorkflowCmdMessageType.DISPATCH_WORKFLOW,
           dispatchWorkflow = msg,

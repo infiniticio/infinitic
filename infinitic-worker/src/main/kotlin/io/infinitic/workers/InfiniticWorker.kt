@@ -28,6 +28,7 @@ import io.infinitic.autoclose.autoClose
 import io.infinitic.clients.InfiniticClient
 import io.infinitic.common.data.MillisInstant
 import io.infinitic.common.messages.Message
+import io.infinitic.common.requester.ClientRequester
 import io.infinitic.common.transport.DelayedServiceExecutorTopic
 import io.infinitic.common.transport.DelayedWorkflowEngineTopic
 import io.infinitic.common.transport.DelayedWorkflowTaskExecutorTopic
@@ -391,7 +392,10 @@ class InfiniticWorker(
               subscription = ListenerSubscription(WorkflowEngineTopic),
               entity = workflowName.toString(),
               handler = { message: Message, publishedAt: MillisInstant ->
-                if (message !is WorkflowCmdMessage) workflowEventHandler(message, publishedAt)
+                // the event handler is not applied for WorkflowCmdMessage from clients
+                // as the event has already been handled in the workflow-cmd topic
+                if (message !is WorkflowCmdMessage || message.requester !is ClientRequester)
+                  workflowEventHandler(message, publishedAt)
               },
               beforeDlq = logMessageSentToDLQ,
               concurrency = registeredEventListener.concurrency,

@@ -29,16 +29,16 @@ import io.infinitic.common.transport.ClientTopic
 import io.infinitic.common.transport.InfiniticProducerAsync
 import io.infinitic.common.transport.LoggedInfiniticProducer
 import io.infinitic.common.transport.WorkflowEngineTopic
+import io.infinitic.common.workflows.engine.messages.ChildMethodDispatchedEvent
 import io.infinitic.common.workflows.engine.messages.MethodCanceledEvent
 import io.infinitic.common.workflows.engine.messages.MethodCompletedEvent
+import io.infinitic.common.workflows.engine.messages.MethodDispatchedEvent
 import io.infinitic.common.workflows.engine.messages.MethodFailedEvent
-import io.infinitic.common.workflows.engine.messages.MethodStartedEvent
 import io.infinitic.common.workflows.engine.messages.MethodTimedOutEvent
 import io.infinitic.common.workflows.engine.messages.TaskDispatchedEvent
 import io.infinitic.common.workflows.engine.messages.WorkflowCanceledEvent
 import io.infinitic.common.workflows.engine.messages.WorkflowCompletedEvent
 import io.infinitic.common.workflows.engine.messages.WorkflowEventMessage
-import io.infinitic.common.workflows.engine.messages.WorkflowStartedEvent
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 
@@ -53,15 +53,15 @@ class WorkflowEventHandler(producerAsync: InfiniticProducerAsync) {
     msg.logDebug { "received $msg" }
 
     when (msg) {
-      is WorkflowStartedEvent -> Unit
       is WorkflowCanceledEvent -> Unit
       is WorkflowCompletedEvent -> Unit
-      is MethodStartedEvent -> Unit
+      is MethodDispatchedEvent -> Unit
       is MethodCanceledEvent -> sendWorkflowMethodCanceled(msg, publishTime)
       is MethodCompletedEvent -> sendWorkflowMethodCompleted(msg, publishTime)
       is MethodFailedEvent -> sendWorkflowMethodFailed(msg, publishTime)
       is MethodTimedOutEvent -> sendWorkflowMethodTimedOut(msg, publishTime)
       is TaskDispatchedEvent -> Unit
+      is ChildMethodDispatchedEvent -> Unit
     }
 
     msg.logTrace { "processed" }

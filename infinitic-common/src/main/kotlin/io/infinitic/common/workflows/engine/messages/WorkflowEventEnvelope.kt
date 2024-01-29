@@ -34,27 +34,27 @@ import org.apache.avro.Schema
 data class WorkflowEventEnvelope(
   private val workflowId: WorkflowId,
   private val type: WorkflowEventMessageType,
-  private val workflowStartedEvent: WorkflowStartedEvent? = null,
   private val workflowCompletedEvent: WorkflowCompletedEvent? = null,
   private val workflowCanceledEvent: WorkflowCanceledEvent? = null,
-  private val methodStartedEvent: MethodStartedEvent? = null,
+  private val methodDispatchedEvent: MethodDispatchedEvent? = null,
   private val methodCompletedEvent: MethodCompletedEvent? = null,
   private val methodFailedEvent: MethodFailedEvent? = null,
   private val methodCanceledEvent: MethodCanceledEvent? = null,
   private val methodTimedOutEvent: MethodTimedOutEvent? = null,
-  private val taskDispatched: TaskDispatchedEvent? = null
+  private val taskDispatched: TaskDispatchedEvent? = null,
+  private val childDispatched: ChildMethodDispatchedEvent? = null,
 ) : Envelope<WorkflowEventMessage> {
   init {
     val noNull = listOfNotNull(
-        workflowStartedEvent,
         workflowCompletedEvent,
         workflowCanceledEvent,
-        methodStartedEvent,
+        methodDispatchedEvent,
         methodCompletedEvent,
         methodFailedEvent,
         methodCanceledEvent,
         methodTimedOutEvent,
         taskDispatched,
+        childDispatched,
     )
 
     require(noNull.size == 1)
@@ -64,12 +64,6 @@ data class WorkflowEventEnvelope(
 
   companion object {
     fun from(msg: WorkflowEventMessage) = when (msg) {
-
-      is WorkflowStartedEvent -> WorkflowEventEnvelope(
-          workflowId = msg.workflowId,
-          type = WorkflowEventMessageType.WORKFLOW_STARTED,
-          workflowStartedEvent = msg,
-      )
 
       is WorkflowCompletedEvent -> WorkflowEventEnvelope(
           workflowId = msg.workflowId,
@@ -83,10 +77,10 @@ data class WorkflowEventEnvelope(
           workflowCanceledEvent = msg,
       )
 
-      is MethodStartedEvent -> WorkflowEventEnvelope(
+      is MethodDispatchedEvent -> WorkflowEventEnvelope(
           workflowId = msg.workflowId,
-          type = WorkflowEventMessageType.METHOD_STARTED,
-          methodStartedEvent = msg,
+          type = WorkflowEventMessageType.METHOD_DISPATCHED,
+          methodDispatchedEvent = msg,
       )
 
       is MethodCompletedEvent -> WorkflowEventEnvelope(
@@ -115,8 +109,14 @@ data class WorkflowEventEnvelope(
 
       is TaskDispatchedEvent -> WorkflowEventEnvelope(
           workflowId = msg.workflowId,
-          type = WorkflowEventMessageType.TASK_DISPATCHED,
+          type = WorkflowEventMessageType.METHOD_TASK_DISPATCHED,
           taskDispatched = msg,
+      )
+
+      is ChildMethodDispatchedEvent -> WorkflowEventEnvelope(
+          workflowId = msg.workflowId,
+          type = WorkflowEventMessageType.METHOD_CHILD_DISPATCHED,
+          childDispatched = msg,
       )
     }
 
@@ -129,15 +129,15 @@ data class WorkflowEventEnvelope(
   }
 
   override fun message(): WorkflowEventMessage = when (type) {
-    WorkflowEventMessageType.WORKFLOW_STARTED -> workflowStartedEvent
     WorkflowEventMessageType.WORKFLOW_COMPLETED -> workflowCompletedEvent
     WorkflowEventMessageType.WORKFLOW_CANCELED -> workflowCanceledEvent
-    WorkflowEventMessageType.METHOD_STARTED -> methodStartedEvent
+    WorkflowEventMessageType.METHOD_DISPATCHED -> methodDispatchedEvent
     WorkflowEventMessageType.METHOD_COMPLETED -> methodCompletedEvent
     WorkflowEventMessageType.METHOD_FAILED -> methodFailedEvent
     WorkflowEventMessageType.METHOD_CANCELED -> methodCanceledEvent
     WorkflowEventMessageType.METHOD_TIMED_OUT -> methodTimedOutEvent
-    WorkflowEventMessageType.TASK_DISPATCHED -> taskDispatched
+    WorkflowEventMessageType.METHOD_TASK_DISPATCHED -> taskDispatched
+    WorkflowEventMessageType.METHOD_CHILD_DISPATCHED -> childDispatched
   }!!
 
   fun toByteArray() = AvroSerDe.writeBinary(this, serializer())

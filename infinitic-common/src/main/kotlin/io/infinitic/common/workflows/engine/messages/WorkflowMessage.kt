@@ -32,6 +32,7 @@ import io.infinitic.common.clients.messages.MethodCompleted
 import io.infinitic.common.clients.messages.MethodFailed
 import io.infinitic.common.clients.messages.MethodTimedOut
 import io.infinitic.common.data.MessageId
+import io.infinitic.common.data.MillisDuration
 import io.infinitic.common.data.MillisInstant
 import io.infinitic.common.data.ReturnValue
 import io.infinitic.common.data.Version
@@ -163,7 +164,7 @@ data class WaitWorkflow(
 @Serializable
 @AvroNamespace("io.infinitic.workflows.engine")
 @AvroName("DispatchWorkflow")
-data class DispatchNewWorkflow(
+data class DispatchWorkflow(
   override val workflowName: WorkflowName,
   override val workflowId: WorkflowId,
   val methodName: MethodName,
@@ -224,18 +225,46 @@ data class DispatchNewWorkflow(
       positionInRunningWorkflowMethod = PositionInWorkflowMethod(),
   )
 
-  fun workflowStartedEvent(emitterName: EmitterName) = WorkflowStartedEvent(
-      workflowName = workflowName,
-      workflowId = workflowId,
-      emitterName = emitterName,
-  )
-
-  fun workflowMethodStartedEvent(emitterName: EmitterName) = MethodStartedEvent(
+  fun methodDispatchedEvent(emitterName: EmitterName) = MethodDispatchedEvent(
       workflowName = workflowName,
       workflowId = workflowId,
       workflowMethodId = WorkflowMethodId.from(workflowId),
+      methodName = methodName,
+      methodParameters = methodParameters,
+      methodParameterTypes = methodParameterTypes,
+      requester = requester ?: thisShouldNotHappen(),
       emitterName = emitterName,
   )
+
+  fun childMethodDispatchedEvent(emitterName: EmitterName) = ChildMethodDispatchedEvent(
+      childMethodDispatched = ChildMethodDispatched(
+          workflowId = workflowId,
+          workflowName = workflowName,
+          workflowMethodId = WorkflowMethodId.from(workflowId),
+          methodName = methodName,
+          methodParameters = methodParameters,
+          methodParameterTypes = methodParameterTypes,
+      ),
+      workflowName = requester.workflowName ?: thisShouldNotHappen(),
+      workflowId = requester.workflowId ?: thisShouldNotHappen(),
+      workflowMethodId = requester.workflowMethodId ?: thisShouldNotHappen(),
+      emitterName = emitterName,
+  )
+
+  fun childMethodTimedOut(emitterName: EmitterName, timeoutDuration: MillisDuration) =
+      ChildMethodTimedOut(
+          childMethodTimedOutError = MethodTimedOutError(
+              workflowName = workflowName,
+              workflowId = workflowId,
+              methodName = methodName,
+              workflowMethodId = WorkflowMethodId.from(workflowId),
+          ),
+          workflowName = requester.workflowName ?: thisShouldNotHappen(),
+          workflowId = requester.workflowId ?: thisShouldNotHappen(),
+          workflowMethodId = requester.workflowMethodId ?: thisShouldNotHappen(),
+          emitterName = emitterName,
+          emittedAt = (emittedAt ?: thisShouldNotHappen()) + timeoutDuration,
+      )
 
   @Deprecated("Not used anymore after 0.13.0")
   fun waitingClients() = when (clientWaiting) {
@@ -250,6 +279,7 @@ data class DispatchNewWorkflow(
  */
 @Serializable
 @AvroNamespace("io.infinitic.workflows.engine")
+@AvroName("DispatchMethod")
 data class DispatchMethod(
   override val workflowName: WorkflowName,
   override val workflowId: WorkflowId,
@@ -277,6 +307,47 @@ data class DispatchMethod(
       )
     }
   }
+
+  fun methodDispatchedEvent(emitterName: EmitterName) = MethodDispatchedEvent(
+      workflowName = workflowName,
+      workflowId = workflowId,
+      workflowMethodId = workflowMethodId,
+      methodName = methodName,
+      methodParameters = methodParameters,
+      methodParameterTypes = methodParameterTypes,
+      requester = requester ?: thisShouldNotHappen(),
+      emitterName = emitterName,
+  )
+
+  fun childMethodDispatchedEvent(emitterName: EmitterName) = ChildMethodDispatchedEvent(
+      childMethodDispatched = ChildMethodDispatched(
+          workflowId = workflowId,
+          workflowName = workflowName,
+          workflowMethodId = workflowMethodId,
+          methodName = methodName,
+          methodParameters = methodParameters,
+          methodParameterTypes = methodParameterTypes,
+      ),
+      workflowName = requester.workflowName ?: thisShouldNotHappen(),
+      workflowId = requester.workflowId ?: thisShouldNotHappen(),
+      workflowMethodId = requester.workflowMethodId ?: thisShouldNotHappen(),
+      emitterName = emitterName,
+  )
+
+  fun childMethodTimedOut(emitterName: EmitterName, timeoutDuration: MillisDuration) =
+      ChildMethodTimedOut(
+          childMethodTimedOutError = MethodTimedOutError(
+              workflowName = workflowName,
+              workflowId = workflowId,
+              methodName = methodName,
+              workflowMethodId = workflowMethodId,
+          ),
+          workflowName = requester.workflowName ?: thisShouldNotHappen(),
+          workflowId = requester.workflowId ?: thisShouldNotHappen(),
+          workflowMethodId = requester.workflowMethodId ?: thisShouldNotHappen(),
+          emitterName = emitterName,
+          emittedAt = (emittedAt ?: thisShouldNotHappen()) + timeoutDuration,
+      )
 }
 
 
@@ -525,17 +596,6 @@ data class TimerCompleted(
 ) : WorkflowMessage(), WorkflowEngineMessage, WorkflowMethodEvent
 
 /**
- * This event tells us that the workflow has started.
- */
-@Serializable
-@AvroNamespace("io.infinitic.workflows.engine")
-data class WorkflowStartedEvent(
-  override val workflowName: WorkflowName,
-  override val workflowId: WorkflowId,
-  override val emitterName: EmitterName,
-) : WorkflowMessage(), WorkflowEventMessage
-
-/**
  * This event tells us that the workflow has completed
  */
 @Serializable
@@ -558,14 +618,18 @@ data class WorkflowCanceledEvent(
 ) : WorkflowMessage(), WorkflowEventMessage
 
 /**
- * This event tells us that a method has started on this workflow
+ * This event tells us that a new method has been dispatched on this workflow
  */
 @Serializable
 @AvroNamespace("io.infinitic.workflows.engine")
-data class MethodStartedEvent(
+data class MethodDispatchedEvent(
   override val workflowName: WorkflowName,
   override val workflowId: WorkflowId,
   val workflowMethodId: WorkflowMethodId,
+  val methodName: MethodName,
+  val methodParameters: MethodParameters,
+  val methodParameterTypes: MethodParameterTypes?,
+  val requester: Requester,
   override val emitterName: EmitterName,
 ) : WorkflowMessage(), WorkflowEventMessage
 
@@ -741,13 +805,44 @@ data class MethodTimedOutEvent(
 @Serializable
 @AvroNamespace("io.infinitic.workflows.engine")
 data class TaskDispatchedEvent(
+  val taskDispatched: TaskDispatched,
   override val workflowName: WorkflowName,
   override val workflowId: WorkflowId,
+  override val workflowMethodId: WorkflowMethodId,
+  override val emitterName: EmitterName,
+) : WorkflowMessage(), WorkflowEventMessage, WorkflowMethodEvent
+
+/**
+ * This event tells us that a child method was dispatched by this workflow
+ */
+@Serializable
+@AvroNamespace("io.infinitic.workflows.engine")
+data class ChildMethodDispatchedEvent(
+  val childMethodDispatched: ChildMethodDispatched,
+  override val workflowName: WorkflowName,
+  override val workflowId: WorkflowId,
+  override val workflowMethodId: WorkflowMethodId,
+  override val emitterName: EmitterName,
+) : WorkflowMessage(), WorkflowEventMessage, WorkflowMethodEvent
+
+
+@Serializable
+@AvroNamespace("io.infinitic.workflows.engine")
+data class ChildMethodDispatched(
+  val workflowId: WorkflowId,
+  val workflowName: WorkflowName,
   val workflowMethodId: WorkflowMethodId,
-  val taskId: TaskId,
   val methodName: MethodName,
+  val methodParameters: MethodParameters,
+  val methodParameterTypes: MethodParameterTypes?
+)
+
+@Serializable
+@AvroNamespace("io.infinitic.workflows.engine")
+data class TaskDispatched(
+  val taskId: TaskId,
+  val taskName: MethodName,
   val methodParameterTypes: MethodParameterTypes?,
   val methodParameters: MethodParameters,
   val serviceName: ServiceName,
-  override val emitterName: EmitterName,
-) : WorkflowMessage(), WorkflowEventMessage
+)

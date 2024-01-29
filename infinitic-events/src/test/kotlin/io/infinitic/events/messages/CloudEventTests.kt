@@ -24,10 +24,12 @@
 package io.infinitic.events.messages
 
 import io.cloudevents.CloudEvent
+import io.infinitic.common.clients.data.ClientName
 import io.infinitic.common.events.CloudEventListener
 import io.infinitic.common.exceptions.thisShouldNotHappen
 import io.infinitic.common.fixtures.TestFactory
 import io.infinitic.common.messages.Message
+import io.infinitic.common.requester.ClientRequester
 import io.infinitic.common.tasks.data.ServiceName
 import io.infinitic.common.tasks.events.messages.ServiceEventMessage
 import io.infinitic.common.tasks.events.messages.TaskCompletedEvent
@@ -46,17 +48,18 @@ import io.infinitic.common.workflows.data.workflows.WorkflowName
 import io.infinitic.common.workflows.engine.messages.CancelWorkflow
 import io.infinitic.common.workflows.engine.messages.ChildMethodCanceled
 import io.infinitic.common.workflows.engine.messages.ChildMethodCompleted
+import io.infinitic.common.workflows.engine.messages.ChildMethodDispatchedEvent
 import io.infinitic.common.workflows.engine.messages.ChildMethodFailed
 import io.infinitic.common.workflows.engine.messages.ChildMethodTimedOut
 import io.infinitic.common.workflows.engine.messages.ChildMethodUnknown
 import io.infinitic.common.workflows.engine.messages.CompleteTimers
 import io.infinitic.common.workflows.engine.messages.CompleteWorkflow
 import io.infinitic.common.workflows.engine.messages.DispatchMethod
-import io.infinitic.common.workflows.engine.messages.DispatchNewWorkflow
+import io.infinitic.common.workflows.engine.messages.DispatchWorkflow
 import io.infinitic.common.workflows.engine.messages.MethodCanceledEvent
 import io.infinitic.common.workflows.engine.messages.MethodCompletedEvent
+import io.infinitic.common.workflows.engine.messages.MethodDispatchedEvent
 import io.infinitic.common.workflows.engine.messages.MethodFailedEvent
-import io.infinitic.common.workflows.engine.messages.MethodStartedEvent
 import io.infinitic.common.workflows.engine.messages.MethodTimedOutEvent
 import io.infinitic.common.workflows.engine.messages.RetryTasks
 import io.infinitic.common.workflows.engine.messages.RetryWorkflowTask
@@ -73,7 +76,6 @@ import io.infinitic.common.workflows.engine.messages.WorkflowCmdMessage
 import io.infinitic.common.workflows.engine.messages.WorkflowCompletedEvent
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
 import io.infinitic.common.workflows.engine.messages.WorkflowEventMessage
-import io.infinitic.common.workflows.engine.messages.WorkflowStartedEvent
 import io.infinitic.workers.InfiniticWorker
 import io.infinitic.workers.config.WorkerConfig
 import io.kotest.core.spec.style.StringSpec
@@ -86,6 +88,7 @@ import kotlinx.coroutines.delay
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
+import net.bytebuddy.utility.RandomString
 import java.net.URI
 import kotlin.reflect.full.isSubclassOf
 
@@ -179,7 +182,7 @@ internal class CloudEventTests :
               CompleteTimers::class -> null
               CompleteWorkflow::class -> null
               DispatchMethod::class -> "infinitic.workflow.method.dispatched"
-              DispatchNewWorkflow::class -> "infinitic.workflow.dispatched"
+              DispatchWorkflow::class -> "infinitic.workflow.dispatched"
               RetryTasks::class -> "infinitic.workflow.tasks.retryRequested"
               RetryWorkflowTask::class -> "infinitic.workflow.executor.retryRequested"
               SendSignal::class -> "infinitic.workflow.signaled"
@@ -216,7 +219,10 @@ internal class CloudEventTests :
           "No ${it.simpleName} event should come from engine topic" {
             val message = TestFactory.random(
                 it,
-                mapOf("workflowName" to WorkflowName("WorkflowA")),
+                mapOf(
+                    "workflowName" to WorkflowName("WorkflowA"),
+                    "requester" to ClientRequester(clientName = ClientName(RandomString().nextString())),
+                ),
             )
             message.sendToTopic(WorkflowEngineTopic)
             events.size shouldBe 0
@@ -268,15 +274,15 @@ internal class CloudEventTests :
             message.sendToTopic(WorkflowEventsTopic)
 
             val type = when (it) {
-              WorkflowStartedEvent::class -> "infinitic.workflow.started"
               WorkflowCompletedEvent::class -> "infinitic.workflow.completed"
               WorkflowCanceledEvent::class -> "infinitic.workflow.canceled"
-              MethodStartedEvent::class -> "infinitic.workflow.method.started"
+              MethodDispatchedEvent::class -> "infinitic.workflow.method.dispatched"
               MethodCompletedEvent::class -> "infinitic.workflow.method.completed"
               MethodFailedEvent::class -> "infinitic.workflow.method.failed"
               MethodCanceledEvent::class -> "infinitic.workflow.method.canceled"
               MethodTimedOutEvent::class -> "infinitic.workflow.method.timedOut"
               TaskDispatchedEvent::class -> "infinitic.workflow.method.task.dispatched"
+              ChildMethodDispatchedEvent::class -> "infinitic.workflow.method.child.dispatched"
               else -> thisShouldNotHappen()
             }
 

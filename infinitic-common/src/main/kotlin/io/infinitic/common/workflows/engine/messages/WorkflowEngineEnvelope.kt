@@ -36,7 +36,7 @@ import org.apache.avro.Schema
 data class WorkflowEngineEnvelope(
   private val workflowId: WorkflowId,
   private val type: WorkflowEngineMessageType,
-  private val dispatchWorkflow: DispatchNewWorkflow? = null,
+  private val dispatchWorkflow: DispatchWorkflow? = null,
   private val dispatchMethod: DispatchMethod? = null,
   private val waitWorkflow: WaitWorkflow? = null,
   private val cancelWorkflow: CancelWorkflow? = null,
@@ -147,7 +147,7 @@ data class WorkflowEngineEnvelope(
           taskCompleted = msg,
       )
 
-      is DispatchNewWorkflow -> WorkflowEngineEnvelope(
+      is DispatchWorkflow -> WorkflowEngineEnvelope(
           workflowId = msg.workflowId,
           type = WorkflowEngineMessageType.DISPATCH_WORKFLOW,
           dispatchWorkflow = msg,

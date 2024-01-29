@@ -36,7 +36,7 @@ fun WorkflowCmdMessage.type(): WorkflowCmdMessageType = when (this) {
   is CompleteTimers -> WorkflowCmdMessageType.COMPLETE_TIMERS
   is CompleteWorkflow -> WorkflowCmdMessageType.COMPLETE_WORKFLOW
   is DispatchMethod -> WorkflowCmdMessageType.DISPATCH_METHOD
-  is DispatchNewWorkflow -> WorkflowCmdMessageType.COMPLETE_WORKFLOW
+  is DispatchWorkflow -> WorkflowCmdMessageType.DISPATCH_WORKFLOW
   is RetryTasks -> WorkflowCmdMessageType.RETRY_TASKS
   is RetryWorkflowTask -> WorkflowCmdMessageType.RETRY_WORKFLOW_TASK
   is SendSignal -> WorkflowCmdMessageType.SEND_SIGNAL

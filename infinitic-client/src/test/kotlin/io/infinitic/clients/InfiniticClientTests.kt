@@ -66,7 +66,7 @@ import io.infinitic.common.workflows.data.workflows.WorkflowTag
 import io.infinitic.common.workflows.engine.messages.CancelWorkflow
 import io.infinitic.common.workflows.engine.messages.CompleteTimers
 import io.infinitic.common.workflows.engine.messages.DispatchMethod
-import io.infinitic.common.workflows.engine.messages.DispatchNewWorkflow
+import io.infinitic.common.workflows.engine.messages.DispatchWorkflow
 import io.infinitic.common.workflows.engine.messages.RetryTasks
 import io.infinitic.common.workflows.engine.messages.SendSignal
 import io.infinitic.common.workflows.engine.messages.WaitWorkflow
@@ -120,7 +120,7 @@ private fun tagResponse(): CompletableFuture<Unit> {
 
 private fun engineResponse(): CompletableFuture<Unit> {
   val msg = workflowCmdSlot.captured
-  if (msg is DispatchNewWorkflow && msg.clientWaiting || msg is WaitWorkflow) {
+  if (msg is DispatchWorkflow && msg.clientWaiting || msg is WaitWorkflow) {
     val methodCompleted = MethodCompleted(
         recipientName = ClientName(client.name),
         workflowId = msg.workflowId,
@@ -172,7 +172,7 @@ internal class InfiniticClientTests : StringSpec(
         val deferred = client.dispatch(fakeWorkflow::m0)
         // then
         workflowTagSlots.size shouldBe 0
-        workflowCmdSlot.captured shouldBe DispatchNewWorkflow(
+        workflowCmdSlot.captured shouldBe DispatchWorkflow(
             workflowName = WorkflowName(FakeWorkflow::class.java.name),
             workflowId = WorkflowId(deferred.id),
             methodName = MethodName("m0"),
@@ -203,7 +203,7 @@ internal class InfiniticClientTests : StringSpec(
         val deferred = client.dispatch(fooWorkflow::m)
         // then
         workflowTagSlots.size shouldBe 0
-        workflowCmdSlot.captured shouldBe DispatchNewWorkflow(
+        workflowCmdSlot.captured shouldBe DispatchWorkflow(
             workflowName = WorkflowName("foo"),
             workflowId = WorkflowId(deferred.id),
             methodName = MethodName("bar"),
@@ -223,7 +223,7 @@ internal class InfiniticClientTests : StringSpec(
         val deferred = client.dispatch(fooWorkflow::annotated)
         // then
         workflowTagSlots.size shouldBe 0
-        workflowCmdSlot.captured shouldBe DispatchNewWorkflow(
+        workflowCmdSlot.captured shouldBe DispatchWorkflow(
             workflowName = WorkflowName("foo"),
             workflowId = WorkflowId(deferred.id),
             methodName = MethodName("bar"),
@@ -243,7 +243,7 @@ internal class InfiniticClientTests : StringSpec(
         val deferred = client.dispatch(fakeWorkflow::parent)
         // then
         workflowTagSlots.size shouldBe 0
-        workflowCmdSlot.captured shouldBe DispatchNewWorkflow(
+        workflowCmdSlot.captured shouldBe DispatchWorkflow(
             workflowName = WorkflowName(FakeWorkflow::class.java.name),
             workflowId = WorkflowId(deferred.id),
             methodName = MethodName("parent"),
@@ -263,7 +263,7 @@ internal class InfiniticClientTests : StringSpec(
         val deferred = client.dispatch(fakeWorkflowWithMeta::m0)
         // then
         workflowTagSlots.size shouldBe 0
-        workflowCmdSlot.captured shouldBe DispatchNewWorkflow(
+        workflowCmdSlot.captured shouldBe DispatchWorkflow(
             workflowName = WorkflowName(FakeWorkflow::class.java.name),
             workflowId = WorkflowId(deferred.id),
             methodName = MethodName("m0"),
@@ -293,7 +293,7 @@ internal class InfiniticClientTests : StringSpec(
           )
         }.toSet()
 
-        workflowCmdSlot.captured shouldBe DispatchNewWorkflow(
+        workflowCmdSlot.captured shouldBe DispatchWorkflow(
             workflowName = WorkflowName(FakeWorkflow::class.java.name),
             workflowId = WorkflowId(deferred.id),
             methodName = MethodName("m0"),
@@ -314,7 +314,7 @@ internal class InfiniticClientTests : StringSpec(
         // then
         workflowCmdSlot.isCaptured shouldBe true
         val msg = workflowCmdSlot.captured
-        msg shouldBe DispatchNewWorkflow(
+        msg shouldBe DispatchWorkflow(
             workflowName = WorkflowName(FakeWorkflow::class.java.name),
             workflowId = WorkflowId(deferred.id),
             methodName = MethodName("m1"),
@@ -335,7 +335,7 @@ internal class InfiniticClientTests : StringSpec(
         // then
         workflowCmdSlot.isCaptured shouldBe true
         val msg = workflowCmdSlot.captured
-        msg shouldBe DispatchNewWorkflow(
+        msg shouldBe DispatchWorkflow(
             workflowName = WorkflowName(FakeWorkflow::class.java.name),
             workflowId = WorkflowId(deferred.id),
             methodName = MethodName("m3"),
@@ -359,7 +359,7 @@ internal class InfiniticClientTests : StringSpec(
         workflowCmdSlot.isCaptured shouldBe true
         val msg = workflowCmdSlot.captured
 
-        msg shouldBe DispatchNewWorkflow(
+        msg shouldBe DispatchWorkflow(
             workflowName = WorkflowName(FakeWorkflow::class.java.name),
             workflowId = WorkflowId(deferred.id),
             methodName = MethodName("m4"),

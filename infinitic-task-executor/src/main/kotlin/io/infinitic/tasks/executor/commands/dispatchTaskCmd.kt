@@ -87,28 +87,24 @@ internal fun CoroutineScope.dispatchTaskCmd(
 
   // sent to workflow event
   launch {
-    val taskDispatchedEvent = executeTask.getWorkflowEvent(emitterName)
+    val taskDispatchedEvent = executeTask.getTaskDispatchedEvent(emitterName)
     with(producer) { taskDispatchedEvent.sendTo(WorkflowEventsTopic) }
   }
 
   // send global task timeout if any
-  val timeout = pastCommand.command.methodTimeout
-
-  if (timeout != null) launch {
-    val taskTimedOut = with(pastCommand.command) {
-      TaskTimedOut(
-          taskTimedOutError = TaskTimedOutError(
-              serviceName = serviceName,
-              taskId = executeTask.taskId,
-              methodName = methodName,
-          ),
-          workflowName = currentWorkflow.workflowName,
-          workflowId = currentWorkflow.workflowId,
-          workflowMethodId = currentWorkflow.workflowMethodId,
-          emitterName = emitterName,
-          emittedAt = workflowTaskInstant + timeout,
-      )
-    }
-    with(producer) { taskTimedOut.sendTo(DelayedWorkflowEngineTopic, timeout) }
+  pastCommand.command.methodTimeout?.let {
+    val taskTimedOut = TaskTimedOut(
+        taskTimedOutError = TaskTimedOutError(
+            serviceName = executeTask.serviceName,
+            taskId = executeTask.taskId,
+            methodName = executeTask.methodName,
+        ),
+        workflowName = currentWorkflow.workflowName,
+        workflowId = currentWorkflow.workflowId,
+        workflowMethodId = currentWorkflow.workflowMethodId,
+        emitterName = emitterName,
+        emittedAt = workflowTaskInstant + it,
+    )
+    launch { with(producer) { taskTimedOut.sendTo(DelayedWorkflowEngineTopic, it) } }
   }
 }

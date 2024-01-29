@@ -35,49 +35,47 @@ private const val TYPE_WORKFLOW_METHOD_TIMER = "$TYPE_WORKFLOW_METHOD.timer"
 private const val TYPE_TASK = "$TYPE_DOMAIN.task"
 
 enum class InfiniticEventType(val value: String) {
-  // task level
+  // events at task level
   TASK_DISPATCHED("$TYPE_TASK.dispatched"),
   TASK_STARTED("$TYPE_TASK.started"),
   TASK_COMPLETED("$TYPE_TASK.completed"),
   TASK_FAILED("$TYPE_TASK.failed"),
   TASK_RETRIED("$TYPE_TASK.retried"),
 
-  // workflow level
+  // events at workflow level
   WORKFLOW_DISPATCHED("$TYPE_WORKFLOW.dispatched"),
-  WORKFLOW_STARTED("$TYPE_WORKFLOW.started"),
   WORKFLOW_COMPLETED("$TYPE_WORKFLOW.completed"),
   WORKFLOW_CANCELED("$TYPE_WORKFLOW.canceled"),
   WORKFLOW_SIGNALED("$TYPE_WORKFLOW.signaled"),
   WORKFLOW_TASKS_RETRY_REQUESTED("$TYPE_WORKFLOW.tasks.retryRequested"),
   WORKFLOW_TASKS_RETRIED("$TYPE_WORKFLOW.tasks.retried"),
 
-  // workflow task executor
+  // events related to workflow task executor
   WORKFLOW_EXECUTOR_DISPATCHED("$TYPE_WORKFLOW_EXECUTOR.dispatched"),
   WORKFLOW_EXECUTOR_COMPLETED("$TYPE_WORKFLOW_EXECUTOR.completed"),
   WORKFLOW_EXECUTOR_FAILED("$TYPE_WORKFLOW_EXECUTOR.failed"),
   WORKFLOW_EXECUTOR_RETRY_REQUESTED("$TYPE_WORKFLOW_EXECUTOR.retryRequested"),
   WORKFLOW_EXECUTOR_RETRIED("$TYPE_WORKFLOW_EXECUTOR.retried"),
 
-  // workflow method level
+  // events related to workflow methods
   WORKFLOW_METHOD_DISPATCHED("$TYPE_WORKFLOW_METHOD.dispatched"),
-  WORKFLOW_METHOD_STARTED("$TYPE_WORKFLOW_METHOD.started"),
   WORKFLOW_METHOD_COMPLETED("$TYPE_WORKFLOW_METHOD.completed"),
   WORKFLOW_METHOD_FAILED("$TYPE_WORKFLOW_METHOD.failed"),
   WORKFLOW_METHOD_TIMED_OUT("$TYPE_WORKFLOW_METHOD.timedOut"),
   WORKFLOW_METHOD_CANCELED("$TYPE_WORKFLOW_METHOD.canceled"),
 
-  // tasks in workflow methods
+  // events related to tasks in workflow methods
   WORKFLOW_METHOD_TASK_DISPATCHED("$TYPE_WORKFLOW_METHOD_TASK.dispatched"),
   WORKFLOW_METHOD_TASK_COMPLETED("$TYPE_WORKFLOW_METHOD_TASK.completed"),
   WORKFLOW_METHOD_TASK_FAILED("$TYPE_WORKFLOW_METHOD_TASK.failed"),
   WORKFLOW_METHOD_TASK_CANCELED("$TYPE_WORKFLOW_METHOD_TASK.canceled"),
   WORKFLOW_METHOD_TASK_TIMED_OUT("$TYPE_WORKFLOW_METHOD_TASK.timedOut"),
 
-  // timers in workflow methods
+  // events related to timers in workflow methods
   WORKFLOW_METHOD_TIMER_DISPATCHED("$TYPE_WORKFLOW_METHOD_TIMER.dispatched"),
   WORKFLOW_METHOD_TIMER_COMPLETED("$TYPE_WORKFLOW_METHOD_TIMER.completed"),
 
-  // child workflows in workflow methods
+  // events related to child workflows in workflow methods
   WORKFLOW_METHOD_CHILD_DISPATCHED("$TYPE_WORKFLOW_METHOD_CHILD.dispatched"),
   WORKFLOW_METHOD_CHILD_COMPLETED("$TYPE_WORKFLOW_METHOD_CHILD.completed"),
   WORKFLOW_METHOD_CHILD_FAILED("$TYPE_WORKFLOW_METHOD_CHILD.failed"),

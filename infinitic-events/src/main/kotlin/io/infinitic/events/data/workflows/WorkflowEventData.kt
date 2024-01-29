@@ -23,38 +23,39 @@
 
 package io.infinitic.events.data.workflows
 
+import io.infinitic.common.workflows.engine.messages.ChildMethodDispatchedEvent
 import io.infinitic.common.workflows.engine.messages.MethodCanceledEvent
 import io.infinitic.common.workflows.engine.messages.MethodCompletedEvent
+import io.infinitic.common.workflows.engine.messages.MethodDispatchedEvent
 import io.infinitic.common.workflows.engine.messages.MethodFailedEvent
-import io.infinitic.common.workflows.engine.messages.MethodStartedEvent
 import io.infinitic.common.workflows.engine.messages.MethodTimedOutEvent
 import io.infinitic.common.workflows.engine.messages.TaskDispatchedEvent
 import io.infinitic.common.workflows.engine.messages.WorkflowCanceledEvent
 import io.infinitic.common.workflows.engine.messages.WorkflowCompletedEvent
 import io.infinitic.common.workflows.engine.messages.WorkflowEventMessage
-import io.infinitic.common.workflows.engine.messages.WorkflowStartedEvent
 import io.infinitic.events.InfiniticEventType.WORKFLOW_CANCELED
 import io.infinitic.events.InfiniticEventType.WORKFLOW_COMPLETED
 import io.infinitic.events.InfiniticEventType.WORKFLOW_METHOD_CANCELED
+import io.infinitic.events.InfiniticEventType.WORKFLOW_METHOD_CHILD_DISPATCHED
 import io.infinitic.events.InfiniticEventType.WORKFLOW_METHOD_COMPLETED
+import io.infinitic.events.InfiniticEventType.WORKFLOW_METHOD_DISPATCHED
 import io.infinitic.events.InfiniticEventType.WORKFLOW_METHOD_FAILED
-import io.infinitic.events.InfiniticEventType.WORKFLOW_METHOD_STARTED
 import io.infinitic.events.InfiniticEventType.WORKFLOW_METHOD_TASK_DISPATCHED
 import io.infinitic.events.InfiniticEventType.WORKFLOW_METHOD_TIMED_OUT
-import io.infinitic.events.InfiniticEventType.WORKFLOW_STARTED
+import io.infinitic.events.data.toData
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonElement
 
 fun WorkflowEventMessage.workflowType() = when (this) {
-  is WorkflowStartedEvent -> WORKFLOW_STARTED
   is WorkflowCompletedEvent -> WORKFLOW_COMPLETED
   is WorkflowCanceledEvent -> WORKFLOW_CANCELED
-  is MethodStartedEvent -> WORKFLOW_METHOD_STARTED
+  is MethodDispatchedEvent -> WORKFLOW_METHOD_DISPATCHED
   is MethodCompletedEvent -> WORKFLOW_METHOD_COMPLETED
   is MethodFailedEvent -> WORKFLOW_METHOD_FAILED
   is MethodCanceledEvent -> WORKFLOW_METHOD_CANCELED
   is MethodTimedOutEvent -> WORKFLOW_METHOD_TIMED_OUT
   is TaskDispatchedEvent -> WORKFLOW_METHOD_TASK_DISPATCHED
+  is ChildMethodDispatchedEvent -> WORKFLOW_METHOD_CHILD_DISPATCHED
 }
 
 @Serializable
@@ -62,12 +63,7 @@ sealed interface WorkflowEventData : InfiniticCloudEventsData {
   val workerName: String
 }
 
-fun WorkflowEventMessage.toWorkflowData(): WorkflowEventData = when (this) {
-
-  is WorkflowStartedEvent -> WorkflowStartedData(
-      workerName = emitterName.toString(),
-      infiniticVersion = version.toString(),
-  )
+fun WorkflowEventMessage.toWorkflowData(): InfiniticCloudEventsData = when (this) {
 
   is WorkflowCompletedEvent -> WorkflowCompletedData(
       workerName = emitterName.toString(),
@@ -79,9 +75,11 @@ fun WorkflowEventMessage.toWorkflowData(): WorkflowEventData = when (this) {
       infiniticVersion = version.toString(),
   )
 
-  is MethodStartedEvent -> MethodStartedData(
+  is MethodDispatchedEvent -> WorkflowMethodDispatchedData(
+      workflowMethodArgs = methodParameters.toJson(),
+      workflowMethodName = methodName.toString(),
       workflowMethodId = workflowMethodId.toString(),
-      workerName = emitterName.toString(),
+      requester = requester.toData(),
       infiniticVersion = version.toString(),
   )
 
@@ -112,21 +110,30 @@ fun WorkflowEventMessage.toWorkflowData(): WorkflowEventData = when (this) {
   )
 
   is TaskDispatchedEvent -> TaskDispatchedData(
-      taskId = taskId.toString(),
-      taskName = methodName.toString(),
-      taskArgs = methodParameters.toJson(),
-      serviceName = serviceName.toString(),
+      taskDispatched = ChildTaskDispatchedData(
+          methodName = taskDispatched.taskName.toString(),
+          methodArgs = taskDispatched.methodParameters.toJson(),
+          taskId = taskDispatched.taskId.toString(),
+          serviceName = taskDispatched.serviceName.toString(),
+      ),
       workflowMethodId = workflowMethodId.toString(),
       workerName = emitterName.toString(),
       infiniticVersion = version.toString(),
   )
-}
 
-@Serializable
-data class WorkflowStartedData(
-  override val workerName: String,
-  override val infiniticVersion: String
-) : WorkflowEventData
+  is ChildMethodDispatchedEvent -> ChildMethodDispatchedData(
+      childWorkflowDispatched = ChildWorkflowDispatchedData(
+          methodName = childMethodDispatched.methodName.toString(),
+          methodArgs = childMethodDispatched.methodParameters.toJson(),
+          workflowId = childMethodDispatched.workflowId.toString(),
+          workflowName = childMethodDispatched.workflowName.toString(),
+          workflowMethodId = childMethodDispatched.workflowMethodId.toString(),
+      ),
+      workflowMethodId = workflowMethodId.toString(),
+      workerName = workflowName.toString(),
+      infiniticVersion = version.toString(),
+  )
+}
 
 @Serializable
 data class WorkflowCompletedData(
@@ -136,13 +143,6 @@ data class WorkflowCompletedData(
 
 @Serializable
 data class WorkflowCanceledData(
-  override val workerName: String,
-  override val infiniticVersion: String
-) : WorkflowEventData
-
-@Serializable
-data class MethodStartedData(
-  val workflowMethodId: String,
   override val workerName: String,
   override val infiniticVersion: String
 ) : WorkflowEventData
@@ -179,10 +179,15 @@ data class MethodTimedOutData(
 
 @Serializable
 data class TaskDispatchedData(
-  val taskId: String,
-  val taskName: String,
-  val taskArgs: List<JsonElement>,
-  val serviceName: String,
+  val taskDispatched: ChildTaskDispatchedData,
+  val workflowMethodId: String,
+  override val workerName: String,
+  override val infiniticVersion: String
+) : WorkflowEventData
+
+@Serializable
+data class ChildMethodDispatchedData(
+  val childWorkflowDispatched: ChildWorkflowDispatchedData,
   val workflowMethodId: String,
   override val workerName: String,
   override val infiniticVersion: String

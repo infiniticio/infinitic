@@ -34,29 +34,29 @@ import kotlinx.serialization.Serializable
 sealed interface WorkflowEventMessage : WorkflowMessageInterface
 
 fun WorkflowEventMessage.type(): WorkflowEventMessageType = when (this) {
-  is WorkflowStartedEvent -> WorkflowEventMessageType.WORKFLOW_STARTED
   is WorkflowCompletedEvent -> WorkflowEventMessageType.WORKFLOW_COMPLETED
   is WorkflowCanceledEvent -> WorkflowEventMessageType.WORKFLOW_CANCELED
-  is MethodStartedEvent -> WorkflowEventMessageType.METHOD_STARTED
+  is MethodDispatchedEvent -> WorkflowEventMessageType.METHOD_DISPATCHED
   is MethodCompletedEvent -> WorkflowEventMessageType.METHOD_COMPLETED
   is MethodFailedEvent -> WorkflowEventMessageType.METHOD_FAILED
   is MethodCanceledEvent -> WorkflowEventMessageType.METHOD_CANCELED
   is MethodTimedOutEvent -> WorkflowEventMessageType.METHOD_TIMED_OUT
-  is TaskDispatchedEvent -> WorkflowEventMessageType.TASK_DISPATCHED
+  is TaskDispatchedEvent -> WorkflowEventMessageType.METHOD_TASK_DISPATCHED
+  is ChildMethodDispatchedEvent -> WorkflowEventMessageType.METHOD_CHILD_DISPATCHED
 }
 
 @Serializable
 @AvroNamespace("io.infinitic.workflows.events")
 enum class WorkflowEventMessageType {
-  WORKFLOW_STARTED,
   WORKFLOW_COMPLETED,
   WORKFLOW_CANCELED,
-  METHOD_STARTED,
+  METHOD_DISPATCHED,
   METHOD_COMPLETED,
   METHOD_FAILED,
   METHOD_CANCELED,
   METHOD_TIMED_OUT,
-  TASK_DISPATCHED,
+  METHOD_TASK_DISPATCHED,
+  METHOD_CHILD_DISPATCHED
 }
 
 interface MethodTerminated : WorkflowMessageInterface {

@@ -44,22 +44,21 @@ import io.infinitic.common.workflows.engine.state.WorkflowState
 import io.infinitic.common.workflows.tags.messages.CancelWorkflowByTag
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.joinAll
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 
 internal fun CoroutineScope.cancelWorkflow(
   producer: InfiniticProducer,
   state: WorkflowState,
   message: CancelWorkflow
-) {
-  launch {
-    val jobs = mutableListOf<Job>()
-    val emittedAt = message.emittedAt ?: thisShouldNotHappen()
+) = launch {
+  val emittedAt = message.emittedAt ?: thisShouldNotHappen()
 
+  coroutineScope {
     when (message.workflowMethodId) {
       null -> {
         state.workflowMethods.forEach {
-          jobs.add(cancelWorkflowMethod(producer, state, it, emittedAt))
+          launch { cancelWorkflowMethod(producer, state, it, emittedAt) }
         }
 
         // clean state
@@ -68,24 +67,23 @@ internal fun CoroutineScope.cancelWorkflow(
 
       else -> {
         state.getWorkflowMethod(message.workflowMethodId!!)?.let {
-          jobs.add(cancelWorkflowMethod(producer, state, it, emittedAt))
+          launch { cancelWorkflowMethod(producer, state, it, emittedAt) }
           // clean state
           state.removeWorkflowMethod(it)
         }
       }
     }
-
-    // ensure that WorkflowCanceledEvent is emitted after all WorkflowMethodCanceledEvent
-    jobs.joinAll()
-
-    val workflowCanceledEvent = WorkflowCanceledEvent(
-        workflowName = message.workflowName,
-        workflowId = message.workflowId,
-        emitterName = EmitterName(producer.name),
-    )
-    with(producer) { workflowCanceledEvent.sendTo(WorkflowEventsTopic) }
   }
+
+  // WorkflowCanceledEvent is emitted after all WorkflowMethodCanceledEvent
+  val workflowCanceledEvent = WorkflowCanceledEvent(
+      workflowName = message.workflowName,
+      workflowId = message.workflowId,
+      emitterName = EmitterName(producer.name),
+  )
+  with(producer) { workflowCanceledEvent.sendTo(WorkflowEventsTopic) }
 }
+
 
 private fun CoroutineScope.cancelWorkflowMethod(
   producer: InfiniticProducer,

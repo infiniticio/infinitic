@@ -50,7 +50,7 @@ fun WorkflowEngineMessage.type(): WorkflowEngineMessageType = when (this) {
   is CompleteTimers -> WorkflowEngineMessageType.COMPLETE_TIMERS
   is CompleteWorkflow -> WorkflowEngineMessageType.COMPLETE_WORKFLOW
   is DispatchMethod -> WorkflowEngineMessageType.DISPATCH_METHOD
-  is DispatchNewWorkflow -> WorkflowEngineMessageType.DISPATCH_WORKFLOW
+  is DispatchWorkflow -> WorkflowEngineMessageType.DISPATCH_WORKFLOW
   is RetryTasks -> WorkflowEngineMessageType.RETRY_TASKS
   is RetryWorkflowTask -> WorkflowEngineMessageType.RETRY_WORKFLOW_TASK
   is SendSignal -> WorkflowEngineMessageType.SEND_SIGNAL

@@ -47,7 +47,7 @@ import io.infinitic.common.workflows.engine.messages.ChildMethodUnknown
 import io.infinitic.common.workflows.engine.messages.CompleteTimers
 import io.infinitic.common.workflows.engine.messages.CompleteWorkflow
 import io.infinitic.common.workflows.engine.messages.DispatchMethod
-import io.infinitic.common.workflows.engine.messages.DispatchNewWorkflow
+import io.infinitic.common.workflows.engine.messages.DispatchWorkflow
 import io.infinitic.common.workflows.engine.messages.RetryTasks
 import io.infinitic.common.workflows.engine.messages.RetryWorkflowTask
 import io.infinitic.common.workflows.engine.messages.SendSignal
@@ -177,7 +177,7 @@ class WorkflowEngine(
     // targeted workflow is not found, we tell the message emitter
     when (message) {
       // New workflow to dispatch
-      is DispatchNewWorkflow -> {
+      is DispatchWorkflow -> {
         // Before 0.13, all messages had a null version
         // Since 0.13, the workflow-task is dispatched in workflowCmdHandler
         @Deprecated("This should be removed once v0.13.0 is deployed")
@@ -340,13 +340,12 @@ class WorkflowEngine(
 
           return
         }
-
       }
 
       is WorkflowMethodEvent -> {
         // if methodRun has already been cleaned (completed), then discard the message
         if (state.getWorkflowMethod(message.workflowMethodId) == null) {
-          logDiscarding(message) { "as null methodRun" }
+          logDiscarding(message) { "as there is no running workflow method related" }
 
           return
         }
@@ -357,7 +356,7 @@ class WorkflowEngine(
 
     when (message) {
       // CMD
-      is DispatchNewWorkflow -> logDiscarding(message) { "as workflow has already started with state $state" }
+      is DispatchWorkflow -> logDiscarding(message) { "as workflow has already started (state: $state)" }
       is DispatchMethod -> dispatchMethod(producer, state, message)
       is CancelWorkflow -> cancelWorkflow(producer, state, message)
       is SendSignal -> sendSignal(producer, state, message)

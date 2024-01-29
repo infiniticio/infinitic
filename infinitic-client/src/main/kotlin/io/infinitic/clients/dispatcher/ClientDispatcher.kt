@@ -74,7 +74,7 @@ import io.infinitic.common.workflows.data.workflows.WorkflowTag
 import io.infinitic.common.workflows.engine.messages.CancelWorkflow
 import io.infinitic.common.workflows.engine.messages.CompleteTimers
 import io.infinitic.common.workflows.engine.messages.DispatchMethod
-import io.infinitic.common.workflows.engine.messages.DispatchNewWorkflow
+import io.infinitic.common.workflows.engine.messages.DispatchWorkflow
 import io.infinitic.common.workflows.engine.messages.RetryWorkflowTask
 import io.infinitic.common.workflows.engine.messages.SendSignal
 import io.infinitic.common.workflows.engine.messages.WaitWorkflow
@@ -517,7 +517,7 @@ internal class ClientDispatcher(
         CompletableFuture.allOf(*futures).join()
 
         // dispatch workflow message
-        val dispatchWorkflow = DispatchNewWorkflow(
+        val dispatchWorkflow = DispatchWorkflow(
             workflowName = deferred.workflowName,
             workflowId = deferred.workflowId,
             methodName = handler.methodName,

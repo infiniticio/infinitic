@@ -23,42 +23,27 @@
 package io.infinitic.workflows.engine.handlers
 
 import io.infinitic.common.clients.data.ClientName
-import io.infinitic.common.emitters.EmitterName
 import io.infinitic.common.exceptions.thisShouldNotHappen
 import io.infinitic.common.requester.clientName
 import io.infinitic.common.requester.workflowId
 import io.infinitic.common.requester.workflowMethodId
 import io.infinitic.common.requester.workflowName
 import io.infinitic.common.transport.InfiniticProducer
-import io.infinitic.common.transport.WorkflowEventsTopic
 import io.infinitic.common.workflows.data.workflowMethods.PositionInWorkflowMethod
 import io.infinitic.common.workflows.data.workflowMethods.WorkflowMethod
-import io.infinitic.common.workflows.data.workflowMethods.WorkflowMethodId
 import io.infinitic.common.workflows.engine.messages.DispatchMethod
-import io.infinitic.common.workflows.engine.messages.MethodStartedEvent
 import io.infinitic.common.workflows.engine.state.WorkflowState
 import io.infinitic.workflows.engine.helpers.dispatchWorkflowTask
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.launch
 
 /**
- * This method is called when a client manually dispatches a method on a running workflow
+ * This method is called when to dispatch a method on a running workflow
  */
 internal fun CoroutineScope.dispatchMethod(
   producer: InfiniticProducer,
   state: WorkflowState,
   message: DispatchMethod
 ) {
-  launch {
-    val methodStartedEvent = MethodStartedEvent(
-        workflowName = message.workflowName,
-        workflowId = message.workflowId,
-        emitterName = EmitterName(producer.name),
-        workflowMethodId = WorkflowMethodId.from(message.workflowId),
-    )
-    with(producer) { methodStartedEvent.sendTo(WorkflowEventsTopic) }
-  }
-
   val workflowMethod = WorkflowMethod(
       workflowMethodId = message.workflowMethodId,
       waitingClients = when (message.clientWaiting) {

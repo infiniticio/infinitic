@@ -34,9 +34,7 @@ import io.infinitic.common.workflows.data.workflowMethods.PositionInWorkflowMeth
 import io.infinitic.common.workflows.data.workflowMethods.WorkflowMethod
 import io.infinitic.common.workflows.data.workflowMethods.WorkflowMethodId
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskIndex
-import io.infinitic.common.workflows.engine.messages.DispatchNewWorkflow
-import io.infinitic.common.workflows.engine.messages.MethodStartedEvent
-import io.infinitic.common.workflows.engine.messages.WorkflowStartedEvent
+import io.infinitic.common.workflows.engine.messages.DispatchWorkflow
 import io.infinitic.common.workflows.engine.state.WorkflowState
 import io.infinitic.workflows.engine.helpers.dispatchWorkflowTask
 import kotlinx.coroutines.CoroutineScope
@@ -45,7 +43,7 @@ import kotlinx.coroutines.launch
 @Deprecated("This should be removed after v0.13.0")
 internal fun CoroutineScope.dispatchWorkflow(
   producer: InfiniticProducer,
-  message: DispatchNewWorkflow
+  message: DispatchWorkflow
 ): WorkflowState {
 
   val workflowMethod = WorkflowMethod(
@@ -82,25 +80,9 @@ internal fun CoroutineScope.dispatchWorkflow(
 
   launch {
     val emitterName = EmitterName(producer.name)
-
-    val workflowStartedEvent = WorkflowStartedEvent(
-        workflowName = message.workflowName,
-        workflowId = message.workflowId,
-        emitterName = emitterName,
-    )
-
-    val methodStartedEvent = MethodStartedEvent(
-        workflowName = state.workflowName,
-        workflowId = state.workflowId,
-        emitterName = emitterName,
-        workflowMethodId = workflowMethod.workflowMethodId,
-    )
-
-    // the 2 events are sent sequentially, to ensure they have consistent timestamps
-    // (workflowStarted before workflowMethodStarted)
+    
     with(producer) {
-      workflowStartedEvent.sendTo(WorkflowEventsTopic)
-      methodStartedEvent.sendTo(WorkflowEventsTopic)
+      message.methodDispatchedEvent(emitterName).sendTo(WorkflowEventsTopic)
     }
   }
 

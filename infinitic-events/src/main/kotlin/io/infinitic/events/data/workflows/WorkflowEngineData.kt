@@ -310,10 +310,27 @@ data class ChildWorkflowUnknownData(
 ) : ChildWorkflowData
 
 @Serializable
+data class ChildWorkflowDispatchedData(
+  val methodName: String,
+  val methodArgs: List<JsonElement>,
+  override val workflowId: String,
+  override val workflowName: String,
+  override val workflowMethodId: String,
+) : ChildWorkflowData
+
+@Serializable
 sealed interface ChildTaskData {
   val taskId: String
   val serviceName: String
 }
+
+@Serializable
+data class ChildTaskDispatchedData(
+  val methodName: String,
+  val methodArgs: List<JsonElement>,
+  override val taskId: String,
+  override val serviceName: String,
+) : ChildTaskData
 
 @Serializable
 data class ChildTaskCompletedData(

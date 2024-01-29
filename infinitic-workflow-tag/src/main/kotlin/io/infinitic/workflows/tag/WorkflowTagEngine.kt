@@ -29,19 +29,18 @@ import io.infinitic.common.data.MillisInstant
 import io.infinitic.common.emitters.EmitterName
 import io.infinitic.common.exceptions.thisShouldNotHappen
 import io.infinitic.common.requester.WorkflowRequester
-import io.infinitic.common.tasks.executors.errors.MethodTimedOutError
 import io.infinitic.common.transport.ClientTopic
 import io.infinitic.common.transport.DelayedWorkflowEngineTopic
 import io.infinitic.common.transport.InfiniticProducerAsync
 import io.infinitic.common.transport.LoggedInfiniticProducer
 import io.infinitic.common.transport.WorkflowCmdTopic
+import io.infinitic.common.transport.WorkflowEventsTopic
 import io.infinitic.common.transport.WorkflowTagTopic
 import io.infinitic.common.workflows.data.workflowMethods.WorkflowMethodId
 import io.infinitic.common.workflows.engine.messages.CancelWorkflow
-import io.infinitic.common.workflows.engine.messages.ChildMethodTimedOut
 import io.infinitic.common.workflows.engine.messages.CompleteTimers
 import io.infinitic.common.workflows.engine.messages.DispatchMethod
-import io.infinitic.common.workflows.engine.messages.DispatchNewWorkflow
+import io.infinitic.common.workflows.engine.messages.DispatchWorkflow
 import io.infinitic.common.workflows.engine.messages.RetryTasks
 import io.infinitic.common.workflows.engine.messages.RetryWorkflowTask
 import io.infinitic.common.workflows.engine.messages.SendSignal
@@ -117,42 +116,40 @@ class WorkflowTagEngine(
           }
         }
         // dispatch workflow message
+        val dispatchWorkflow = DispatchWorkflow(
+            workflowName = message.workflowName,
+            workflowId = message.workflowId,
+            methodName = message.methodName,
+            methodParameters = message.methodParameters,
+            methodParameterTypes = message.methodParameterTypes,
+            workflowTags = message.workflowTags,
+            workflowMeta = message.workflowMeta,
+            requester = requester,
+            clientWaiting = message.clientWaiting,
+            emitterName = message.emitterName,
+            emittedAt = message.emittedAt ?: publishTime,
+        )
         launch {
-          val dispatchWorkflow = DispatchNewWorkflow(
-              workflowName = message.workflowName,
-              workflowId = message.workflowId,
-              methodName = message.methodName,
-              methodParameters = message.methodParameters,
-              methodParameterTypes = message.methodParameterTypes,
-              workflowTags = message.workflowTags,
-              workflowMeta = message.workflowMeta,
-              requester = requester,
-              clientWaiting = message.clientWaiting,
-              emitterName = message.emitterName,
-              emittedAt = message.emittedAt ?: publishTime,
-          )
           with(producer) { dispatchWorkflow.sendTo(WorkflowCmdTopic) }
         }
 
-        // send global timeout if needed
-        val timeout = message.methodTimeout
+        if (requester is WorkflowRequester) {
+          // Sending event message
+          launch {
+            val childMethodDispatchedEvent =
+                dispatchWorkflow.childMethodDispatchedEvent(emitterName)
+            with(producer) { childMethodDispatchedEvent.sendTo(WorkflowEventsTopic) }
+          }
 
-        if (timeout != null && requester is WorkflowRequester) launch {
-          val childMethodTimedOut = ChildMethodTimedOut(
-              childMethodTimedOutError = MethodTimedOutError(
-                  workflowName = message.workflowName,
-                  workflowId = message.workflowId,
-                  methodName = message.methodName,
-                  workflowMethodId = WorkflowMethodId.from(message.workflowId),
-              ),
-              workflowName = requester.workflowName,
-              workflowId = requester.workflowId,
-              workflowMethodId = requester.workflowMethodId,
-              emitterName = emitterName,
-              emittedAt = message.emittedAt ?: publishTime,
-          )
-          with(producer) { childMethodTimedOut.sendTo(DelayedWorkflowEngineTopic, timeout) }
+          // send global timeout if needed
+          message.methodTimeout?.let {
+            launch {
+              val childMethodTimedOut = dispatchWorkflow.childMethodTimedOut(emitterName, it)
+              with(producer) { childMethodTimedOut.sendTo(DelayedWorkflowEngineTopic, it) }
+            }
+          }
         }
+
       }
       // Another running workflow instance exist with same custom id
       1 -> {
@@ -195,43 +192,37 @@ class WorkflowTagEngine(
       true -> discardTagWithoutIds(message)
 
       false -> ids.forEach { workflowId ->
+        val dispatchMethod = DispatchMethod(
+            workflowName = message.workflowName,
+            workflowId = workflowId,
+            workflowMethodId = message.workflowMethodId,
+            methodName = message.methodName,
+            methodParameters = message.methodParameters,
+            methodParameterTypes = message.methodParameterTypes,
+            requester = requester,
+            clientWaiting = false,
+            emitterName = emitterName,
+            emittedAt = message.emittedAt ?: publishTime,
+        )
+
         // parent workflow already applied method to self
-        if (requester is WorkflowRequester && workflowId != requester.workflowId) {
+        if (requester !is WorkflowRequester || workflowId != requester.workflowId) {
+          launch { with(producer) { dispatchMethod.sendTo(WorkflowCmdTopic) } }
+        }
+
+        if (requester is WorkflowRequester) {
+          // event for the dispatching of a child method
           launch {
-            val dispatchMethod = DispatchMethod(
-                workflowName = message.workflowName,
-                workflowId = workflowId,
-                workflowMethodId = message.workflowMethodId,
-                methodName = message.methodName,
-                methodParameters = message.methodParameters,
-                methodParameterTypes = message.methodParameterTypes,
-                requester = requester,
-                clientWaiting = false,
-                emitterName = emitterName,
-                emittedAt = message.emittedAt ?: publishTime,
-            )
-            with(producer) { dispatchMethod.sendTo(WorkflowCmdTopic) }
+            val childMethodDispatchedEvent =
+                dispatchMethod.childMethodDispatchedEvent(emitterName)
+            with(producer) { childMethodDispatchedEvent.sendTo(WorkflowEventsTopic) }
           }
 
-          // set timeout if any,
-          if (message.methodTimeout != null) {
+          // set timeout for the dispatched child method,
+          message.methodTimeout?.let {
             launch {
-              val childMethodTimedOut = ChildMethodTimedOut(
-                  childMethodTimedOutError = MethodTimedOutError(
-                      workflowName = message.workflowName,
-                      workflowId = workflowId,
-                      methodName = message.methodName,
-                      workflowMethodId = message.workflowMethodId,
-                  ),
-                  workflowName = requester.workflowName,
-                  workflowId = requester.workflowId,
-                  workflowMethodId = requester.workflowMethodId,
-                  emitterName = emitterName,
-                  emittedAt = message.emittedAt ?: publishTime,
-              )
-              with(producer) {
-                childMethodTimedOut.sendTo(DelayedWorkflowEngineTopic, message.methodTimeout!!)
-              }
+              val childMethodTimedOut = dispatchMethod.childMethodTimedOut(emitterName, it)
+              with(producer) { childMethodTimedOut.sendTo(DelayedWorkflowEngineTopic, it) }
             }
           }
         }

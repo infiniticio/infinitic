@@ -48,6 +48,7 @@ import io.infinitic.common.workflows.data.workflowMethods.WorkflowMethodId
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTask
 import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.data.workflows.WorkflowName
+import io.infinitic.common.workflows.engine.messages.TaskDispatched
 import io.infinitic.common.workflows.engine.messages.TaskDispatchedEvent
 import io.infinitic.currentVersion
 import io.infinitic.exceptions.DeferredException
@@ -124,15 +125,17 @@ data class ExecuteTask(
     )
   }
 
-  fun getWorkflowEvent(emitterName: EmitterName) = TaskDispatchedEvent(
+  fun getTaskDispatchedEvent(emitterName: EmitterName) = TaskDispatchedEvent(
+      taskDispatched = TaskDispatched(
+          taskId = taskId,
+          taskName = methodName,
+          methodParameterTypes = methodParameterTypes,
+          methodParameters = methodParameters,
+          serviceName = serviceName,
+      ),
       workflowName = workflowName!!,
       workflowId = workflowId!!,
       workflowMethodId = workflowMethodId!!,
-      taskId = taskId,
-      methodName = methodName,
-      methodParameterTypes = methodParameterTypes,
-      methodParameters = methodParameters,
-      serviceName = serviceName,
       emitterName = emitterName,
   )
 }
