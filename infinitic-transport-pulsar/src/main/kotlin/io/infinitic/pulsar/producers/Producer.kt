@@ -24,6 +24,7 @@ package io.infinitic.pulsar.producers
 
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.infinitic.common.data.MillisDuration
+import io.infinitic.common.messages.Envelope
 import io.infinitic.common.messages.Message
 import io.infinitic.pulsar.client.PulsarInfiniticClient
 import java.util.concurrent.CompletableFuture
@@ -40,20 +41,18 @@ class Producer(
       client.getUniqueName(namerTopic, proposedName)
 
   fun sendAsync(
-    message: Message,
+    envelope: Envelope<out Message>,
     after: MillisDuration,
     topic: String,
     producerName: String,
     key: String? = null
   ): CompletableFuture<Unit> {
 
-    val envelope = message.envelope()
-
     val producer = client
         .getProducer(topic, envelope::class, producerName, producerConfig, key)
         .getOrElse { return CompletableFuture.failedFuture(it) }
 
-    logger.trace { "Sending${if (after > 0) " after $after ms" else ""} to topic '$topic' with key '$key': '$message'" }
+    logger.trace { "Sending${if (after > 0) " after $after ms" else ""} to topic '$topic' with key '$key': '$envelope'" }
 
     return producer
         .newMessage()

@@ -25,10 +25,11 @@ package io.infinitic.workflows.engine.helpers
 import io.infinitic.common.data.MillisInstant
 import io.infinitic.common.emitters.EmitterName
 import io.infinitic.common.tasks.data.TaskId
-import io.infinitic.common.topics.WorkflowTaskExecutorTopic
 import io.infinitic.common.transport.InfiniticProducer
-import io.infinitic.common.workflows.data.methodRuns.PositionInWorkflowMethod
-import io.infinitic.common.workflows.data.methodRuns.WorkflowMethod
+import io.infinitic.common.transport.WorkflowEventsTopic
+import io.infinitic.common.transport.WorkflowTaskExecutorTopic
+import io.infinitic.common.workflows.data.workflowMethods.PositionInWorkflowMethod
+import io.infinitic.common.workflows.data.workflowMethods.WorkflowMethod
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskParameters
 import io.infinitic.common.workflows.engine.state.WorkflowState
 import kotlinx.coroutines.CoroutineScope
@@ -66,7 +67,12 @@ internal fun CoroutineScope.dispatchWorkflowTask(
   val executeTaskMessage = workflowTaskParameters.toExecuteTaskMessage()
 
   // dispatch workflow task
-  launch { with(producer) { executeTaskMessage.sendTo(WorkflowTaskExecutorTopic) } }
+  launch {
+    with(producer) {
+      executeTaskMessage.sendTo(WorkflowTaskExecutorTopic)
+      executeTaskMessage.taskDispatchedEvent(emitterName).sendTo(WorkflowEventsTopic)
+    }
+  }
 
   // update runningWorkflowTask
   state.runningWorkflowTaskId = workflowTaskId

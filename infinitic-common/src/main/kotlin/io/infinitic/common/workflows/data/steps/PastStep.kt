@@ -26,7 +26,6 @@ import com.fasterxml.jackson.annotation.JsonIgnore
 import com.github.avrokotlin.avro4k.AvroNamespace
 import io.infinitic.common.workflows.data.commands.PastCommand
 import io.infinitic.common.workflows.data.commands.ReceiveSignalPastCommand
-import io.infinitic.common.workflows.data.methodRuns.PositionInWorkflowMethod
 import io.infinitic.common.workflows.data.properties.PropertyHash
 import io.infinitic.common.workflows.data.properties.PropertyName
 import io.infinitic.common.workflows.data.steps.StepStatus.Canceled
@@ -35,6 +34,7 @@ import io.infinitic.common.workflows.data.steps.StepStatus.CurrentlyFailed
 import io.infinitic.common.workflows.data.steps.StepStatus.CurrentlyTimedOut
 import io.infinitic.common.workflows.data.steps.StepStatus.Failed
 import io.infinitic.common.workflows.data.steps.StepStatus.Unknown
+import io.infinitic.common.workflows.data.workflowMethods.PositionInWorkflowMethod
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskIndex
 import kotlinx.serialization.Serializable
 

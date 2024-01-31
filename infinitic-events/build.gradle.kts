@@ -25,11 +25,14 @@ dependencies {
 
   api(Libs.CloudEvents.core)
   api(Libs.CloudEvents.api)
+  api(Libs.CloudEvents.json)
   implementation(Libs.Avro4k.core)
+  implementation(Libs.Jackson.kotlin)
 
   implementation(project(":infinitic-common"))
 
-  testImplementation(Libs.Kotlin.reflect)
+  testImplementation(project(":infinitic-worker"))
+
 
 }
 

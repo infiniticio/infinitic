@@ -26,29 +26,32 @@ import io.infinitic.common.events.CloudEventListener
 import io.infinitic.common.utils.getInstance
 
 data class EventListener(
-  val `class`: String,
+  var `class`: String? = null,
   var concurrency: Int? = null,
+  var subscriptionName: String? = null,
 ) {
-
   val instance: CloudEventListener
+    get() = `class`!!.getInstance().getOrThrow() as CloudEventListener
 
   init {
-    require(`class`.isNotEmpty()) { error("'class' empty") }
-
-    val instance = `class`.getInstance().getOrThrow()
-
-    require(instance is CloudEventListener) {
-      error("Class '$`class`' must implement ${CloudEventListener::class.java.name}")
+    `class`?.let {
+      require(it.isNotEmpty()) { error("'class' must not be empty") }
+      val instance = it.getInstance().getOrThrow()
+      require(instance is CloudEventListener) {
+        error("Class '$`class`' must implement '${CloudEventListener::class.java.name}'")
+      }
     }
 
-    this.instance = instance
-
-    if (concurrency != null) {
-      require(concurrency!! >= 0) {
+    concurrency?.let {
+      require(it >= 0) {
         error("'${::concurrency.name}' must be an integer >= 0")
       }
     }
+
+    subscriptionName?.let {
+      require(it.isNotEmpty()) { error("'${::subscriptionName.name}' must not be empty") }
+    }
   }
 
-  private fun error(txt: String) = "Listener: $txt"
+  private fun error(txt: String) = "eventListener: $txt"
 }

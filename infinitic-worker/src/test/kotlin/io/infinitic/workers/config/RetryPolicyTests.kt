@@ -133,7 +133,7 @@ serviceDefault:
                 )
               }
           e.message!! shouldContain
-              "\"io.infinitic.workers.InfiniticWorker\" in ignoredExceptions must be an Exception"
+              "'io.infinitic.workers.InfiniticWorker' in ignoredExceptions must be an Exception"
         }
 
         "No Exception class in ignoredExceptions in task should throw" {
@@ -152,7 +152,7 @@ services:
                 )
               }
           e.message!! shouldContain
-              "\"io.infinitic.workers.InfiniticWorker\" in ignoredExceptions must be an Exception"
+              "'io.infinitic.workers.InfiniticWorker' in ignoredExceptions must be an Exception"
         }
 
         "timeout in task should be positive" {

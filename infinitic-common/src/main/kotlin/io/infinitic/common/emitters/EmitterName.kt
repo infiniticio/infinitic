@@ -23,14 +23,18 @@
 package io.infinitic.common.emitters
 
 import io.infinitic.common.clients.data.ClientName
+import io.infinitic.common.utils.JsonAble
 import io.infinitic.common.workers.data.WorkerName
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.JsonPrimitive
 
 
 @JvmInline
 @Serializable
-value class EmitterName(private val name: String) {
+value class EmitterName(private val name: String) : JsonAble {
   override fun toString() = name
+
+  override fun toJson() = JsonPrimitive(name)
 
   companion object {
     fun from(clientName: ClientName) = EmitterName(clientName.toString())

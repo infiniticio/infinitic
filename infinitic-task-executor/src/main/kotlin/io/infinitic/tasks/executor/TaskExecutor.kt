@@ -35,10 +35,10 @@ import io.infinitic.common.tasks.events.messages.TaskRetriedEvent
 import io.infinitic.common.tasks.events.messages.TaskStartedEvent
 import io.infinitic.common.tasks.executors.messages.ExecuteTask
 import io.infinitic.common.tasks.executors.messages.ServiceExecutorMessage
-import io.infinitic.common.topics.DelayedServiceExecutorTopic
-import io.infinitic.common.topics.ServiceEventsTopic
+import io.infinitic.common.transport.DelayedServiceExecutorTopic
 import io.infinitic.common.transport.InfiniticProducerAsync
 import io.infinitic.common.transport.LoggedInfiniticProducer
+import io.infinitic.common.transport.ServiceEventsTopic
 import io.infinitic.common.utils.getCheckMode
 import io.infinitic.common.utils.getWithRetry
 import io.infinitic.common.utils.getWithTimeout
@@ -189,7 +189,7 @@ class TaskExecutor(
     }
 
     when {
-      delayMillis == null -> sendTaskFailed(msg, cause, taskContext.meta) {
+      delayMillis == null || delayMillis <= 0L -> sendTaskFailed(msg, cause, taskContext.meta) {
         cause.message ?: "Unknown error"
       }
 
@@ -244,7 +244,7 @@ class TaskExecutor(
   private fun parse(msg: ExecuteTask): TaskCommand {
     val service = when (msg.isWorkflowTask()) {
       true -> WorkflowTaskImpl()
-      false -> workerRegistry.getRegisteredService(msg.serviceName).factory()
+      false -> workerRegistry.getRegisteredService(msg.serviceName)!!.factory()
     }
 
     val taskMethod = getMethodPerNameAndParameters(
@@ -259,7 +259,7 @@ class TaskExecutor(
     when (msg.isWorkflowTask()) {
       true -> {
         val workflowTaskParameters = parameters.first() as WorkflowTaskParameters
-        val registered = workerRegistry.getRegisteredWorkflow(msg.workflowName!!)
+        val registered = workerRegistry.getRegisteredWorkflow(msg.workflowName!!)!!
         val workflow = registered.getInstance(workflowTaskParameters.workflowVersion)
         val workflowMethod = with(workflowTaskParameters) {
           // method instance
@@ -302,7 +302,7 @@ class TaskExecutor(
       }
 
       false -> {
-        val registered = workerRegistry.getRegisteredService(msg.serviceName)
+        val registered = workerRegistry.getRegisteredService(msg.serviceName)!!
 
         this.withTimeout =
             // use withTimeout from registry, if it exists

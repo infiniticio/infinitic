@@ -23,9 +23,12 @@
 package io.infinitic.common.data.methods
 
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.JsonPrimitive
 
 @JvmInline
 @Serializable
 value class MethodName(private val name: String) {
   override fun toString() = name
+
+  fun toJson() = JsonPrimitive(name)
 }

@@ -25,6 +25,7 @@ package io.infinitic.common.workflows.data.channels
 import io.infinitic.common.utils.IdGenerator
 import io.infinitic.common.workflows.data.commands.CommandId
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.JsonPrimitive
 
 @JvmInline
 @Serializable
@@ -34,4 +35,6 @@ value class SignalId(private val id: String = IdGenerator.next()) {
   }
 
   override fun toString() = id
+
+  fun toJson() = JsonPrimitive(id)
 }

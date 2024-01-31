@@ -27,7 +27,7 @@ import com.github.avrokotlin.avro4k.AvroNamespace
 import io.infinitic.common.data.methods.MethodName
 import io.infinitic.common.tasks.data.ServiceName
 import io.infinitic.common.tasks.data.TaskId
-import io.infinitic.common.workflows.data.methodRuns.WorkflowMethodId
+import io.infinitic.common.workflows.data.workflowMethods.WorkflowMethodId
 import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.data.workflows.WorkflowName
 import io.infinitic.exceptions.DeferredCanceledException
@@ -94,7 +94,7 @@ sealed class DeferredTimedOutError : DeferredError() {
     fun from(exception: DeferredTimedOutException) =
         when (exception) {
           is TaskTimedOutException -> TaskTimedOutError.from(exception)
-          is WorkflowTimedOutException -> WorkflowMethodTimedOutError.from(exception)
+          is WorkflowTimedOutException -> MethodTimedOutError.from(exception)
         }
   }
 }
@@ -180,7 +180,8 @@ data class TaskTimedOutError(
 /** Error occurring when waiting a timed-out child workflow */
 @Serializable
 @SerialName("TimedOutWorkflowError")
-data class WorkflowMethodTimedOutError(
+@AvroName("TimedOutWorkflowError")
+data class MethodTimedOutError(
   /** Name of timed-out child workflow */
   val workflowName: WorkflowName,
 
@@ -196,7 +197,7 @@ data class WorkflowMethodTimedOutError(
 ) : DeferredTimedOutError() {
   companion object {
     fun from(exception: WorkflowTimedOutException) =
-        WorkflowMethodTimedOutError(
+        MethodTimedOutError(
             workflowName = WorkflowName(exception.workflowName),
             workflowId = WorkflowId(exception.workflowId),
             methodName = MethodName(exception.methodName),

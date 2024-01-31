@@ -25,6 +25,7 @@ package io.infinitic.common.workflows.data.channels
 import io.infinitic.common.data.methods.MethodName
 import java.lang.reflect.Method
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.JsonPrimitive
 
 @JvmInline
 @Serializable
@@ -36,4 +37,6 @@ value class ChannelName(private val name: String) {
   }
 
   override fun toString() = name
+
+  fun toJson() = JsonPrimitive(name)
 }

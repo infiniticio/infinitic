@@ -22,6 +22,7 @@
  */
 package io.infinitic.common.tasks.data
 
+import io.infinitic.common.utils.JsonAble
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.descriptors.PrimitiveKind
@@ -29,10 +30,13 @@ import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
 import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
+import kotlinx.serialization.json.JsonPrimitive
 
 @Serializable(with = TaskRetrySequenceSerializer::class)
-data class TaskRetrySequence(private val int: Int = 0) : Comparable<TaskRetrySequence> {
+data class TaskRetrySequence(private val int: Int = 0) : Comparable<TaskRetrySequence>, JsonAble {
   override fun toString() = "$int"
+
+  override fun toJson() = JsonPrimitive(int)
 
   fun toInt() = int
 

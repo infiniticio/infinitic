@@ -22,7 +22,7 @@
  */
 package io.infinitic.dashboard.panels.infrastructure.jobs
 
-import io.infinitic.common.topics.Topic
+import io.infinitic.common.transport.Topic
 import io.infinitic.dashboard.Infinitic
 import io.infinitic.dashboard.panels.infrastructure.requests.Completed
 import io.infinitic.dashboard.panels.infrastructure.requests.Failed

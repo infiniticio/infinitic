@@ -41,15 +41,17 @@ import io.infinitic.common.tasks.events.messages.TaskRetriedEvent
 import io.infinitic.common.tasks.events.messages.TaskStartedEvent
 import io.infinitic.common.tasks.executors.errors.TaskFailedError
 import io.infinitic.common.tasks.tags.messages.ServiceTagMessage
-import io.infinitic.common.topics.ClientTopic
-import io.infinitic.common.topics.DelayedWorkflowEngineTopic
-import io.infinitic.common.topics.ServiceTagTopic
-import io.infinitic.common.topics.WorkflowEngineTopic
+import io.infinitic.common.transport.ClientTopic
+import io.infinitic.common.transport.DelayedWorkflowEngineTopic
 import io.infinitic.common.transport.InfiniticProducerAsync
+import io.infinitic.common.transport.ServiceTagTopic
+import io.infinitic.common.transport.WorkflowEngineTopic
 import io.infinitic.common.workers.config.WorkflowVersion
-import io.infinitic.common.workflows.data.methodRuns.WorkflowMethodId
+import io.infinitic.common.workflows.data.workflowMethods.WorkflowMethodId
 import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.data.workflows.WorkflowName
+import io.infinitic.common.workflows.engine.messages.TaskCompleted
+import io.infinitic.common.workflows.engine.messages.TaskFailed
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
@@ -277,7 +279,7 @@ private fun getTaskCompletedClient(msg: TaskCompletedEvent) =
     )
 
 private fun getTaskCompletedWorkflow(msg: TaskCompletedEvent) =
-    io.infinitic.common.workflows.engine.messages.TaskCompleted(
+    TaskCompleted(
         workflowName = msg.workflowName!!,
         workflowId = msg.workflowId!!,
         workflowMethodId = msg.workflowMethodId!!,
@@ -319,7 +321,7 @@ private fun getTaskFailedClient(msg: TaskFailedEvent) =
     )
 
 private fun getTaskFailedWorkflow(msg: TaskFailedEvent) =
-    io.infinitic.common.workflows.engine.messages.TaskFailed(
+    TaskFailed(
         workflowName = msg.workflowName!!,
         workflowId = msg.workflowId!!,
         workflowMethodId = msg.workflowMethodId!!,

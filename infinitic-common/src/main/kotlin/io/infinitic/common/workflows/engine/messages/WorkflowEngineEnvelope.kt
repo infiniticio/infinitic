@@ -36,8 +36,8 @@ import org.apache.avro.Schema
 data class WorkflowEngineEnvelope(
   private val workflowId: WorkflowId,
   private val type: WorkflowEngineMessageType,
-  private val dispatchWorkflow: DispatchNewWorkflow? = null,
-  private val dispatchMethod: DispatchMethodWorkflow? = null,
+  private val dispatchWorkflow: DispatchWorkflow? = null,
+  private val dispatchMethod: DispatchMethod? = null,
   private val waitWorkflow: WaitWorkflow? = null,
   private val cancelWorkflow: CancelWorkflow? = null,
   private val retryWorkflowTask: RetryWorkflowTask? = null,
@@ -86,60 +86,6 @@ data class WorkflowEngineEnvelope(
 
   companion object {
     fun from(msg: WorkflowEngineMessage) = when (msg) {
-
-      is DispatchNewWorkflow -> WorkflowEngineEnvelope(
-          workflowId = msg.workflowId,
-          type = WorkflowEngineMessageType.DISPATCH_WORKFLOW,
-          dispatchWorkflow = msg,
-      )
-
-      is DispatchMethodWorkflow -> WorkflowEngineEnvelope(
-          workflowId = msg.workflowId,
-          type = WorkflowEngineMessageType.DISPATCH_METHOD,
-          dispatchMethod = msg,
-      )
-
-      is WaitWorkflow -> WorkflowEngineEnvelope(
-          workflowId = msg.workflowId,
-          type = WorkflowEngineMessageType.WAIT_WORKFLOW,
-          waitWorkflow = msg,
-      )
-
-      is CancelWorkflow -> WorkflowEngineEnvelope(
-          workflowId = msg.workflowId,
-          type = WorkflowEngineMessageType.CANCEL_WORKFLOW,
-          cancelWorkflow = msg,
-      )
-
-      is RetryWorkflowTask -> WorkflowEngineEnvelope(
-          workflowId = msg.workflowId,
-          type = WorkflowEngineMessageType.RETRY_WORKFLOW_TASK,
-          retryWorkflowTask = msg,
-      )
-
-      is RetryTasks -> WorkflowEngineEnvelope(
-          workflowId = msg.workflowId,
-          type = WorkflowEngineMessageType.RETRY_TASKS,
-          retryTasks = msg,
-      )
-
-      is CompleteTimers -> WorkflowEngineEnvelope(
-          workflowId = msg.workflowId,
-          type = WorkflowEngineMessageType.COMPLETE_TIMERS,
-          completeTimers = msg,
-      )
-
-      is CompleteWorkflow -> WorkflowEngineEnvelope(
-          workflowId = msg.workflowId,
-          type = WorkflowEngineMessageType.COMPLETE_WORKFLOW,
-          completeWorkflow = msg,
-      )
-
-      is SendSignal -> WorkflowEngineEnvelope(
-          workflowId = msg.workflowId,
-          type = WorkflowEngineMessageType.SEND_SIGNAL,
-          sendSignal = msg,
-      )
 
       is TimerCompleted -> WorkflowEngineEnvelope(
           workflowId = msg.workflowId,
@@ -199,6 +145,60 @@ data class WorkflowEngineEnvelope(
           workflowId = msg.workflowId,
           type = WorkflowEngineMessageType.TASK_COMPLETED,
           taskCompleted = msg,
+      )
+
+      is DispatchWorkflow -> WorkflowEngineEnvelope(
+          workflowId = msg.workflowId,
+          type = WorkflowEngineMessageType.DISPATCH_WORKFLOW,
+          dispatchWorkflow = msg,
+      )
+
+      is DispatchMethod -> WorkflowEngineEnvelope(
+          workflowId = msg.workflowId,
+          type = WorkflowEngineMessageType.DISPATCH_METHOD,
+          dispatchMethod = msg,
+      )
+
+      is WaitWorkflow -> WorkflowEngineEnvelope(
+          workflowId = msg.workflowId,
+          type = WorkflowEngineMessageType.WAIT_WORKFLOW,
+          waitWorkflow = msg,
+      )
+
+      is CancelWorkflow -> WorkflowEngineEnvelope(
+          workflowId = msg.workflowId,
+          type = WorkflowEngineMessageType.CANCEL_WORKFLOW,
+          cancelWorkflow = msg,
+      )
+
+      is RetryWorkflowTask -> WorkflowEngineEnvelope(
+          workflowId = msg.workflowId,
+          type = WorkflowEngineMessageType.RETRY_WORKFLOW_TASK,
+          retryWorkflowTask = msg,
+      )
+
+      is RetryTasks -> WorkflowEngineEnvelope(
+          workflowId = msg.workflowId,
+          type = WorkflowEngineMessageType.RETRY_TASKS,
+          retryTasks = msg,
+      )
+
+      is CompleteTimers -> WorkflowEngineEnvelope(
+          workflowId = msg.workflowId,
+          type = WorkflowEngineMessageType.COMPLETE_TIMERS,
+          completeTimers = msg,
+      )
+
+      is CompleteWorkflow -> WorkflowEngineEnvelope(
+          workflowId = msg.workflowId,
+          type = WorkflowEngineMessageType.COMPLETE_WORKFLOW,
+          completeWorkflow = msg,
+      )
+
+      is SendSignal -> WorkflowEngineEnvelope(
+          workflowId = msg.workflowId,
+          type = WorkflowEngineMessageType.SEND_SIGNAL,
+          sendSignal = msg,
       )
     }
 

@@ -22,132 +22,92 @@
  */
 package io.infinitic.inMemory
 
-import io.infinitic.common.clients.data.ClientName
 import io.infinitic.common.clients.messages.ClientMessage
 import io.infinitic.common.data.MillisDuration
+import io.infinitic.common.exceptions.thisShouldNotHappen
 import io.infinitic.common.messages.Message
-import io.infinitic.common.tasks.data.ServiceName
 import io.infinitic.common.tasks.events.messages.ServiceEventMessage
 import io.infinitic.common.tasks.executors.messages.ServiceExecutorMessage
 import io.infinitic.common.tasks.tags.messages.ServiceTagMessage
-import io.infinitic.common.workflows.data.workflows.WorkflowName
-import io.infinitic.common.workflows.engine.events.WorkflowEventMessage
+import io.infinitic.common.transport.ClientTopic
+import io.infinitic.common.transport.DelayedServiceExecutorTopic
+import io.infinitic.common.transport.DelayedWorkflowEngineTopic
+import io.infinitic.common.transport.DelayedWorkflowTaskExecutorTopic
+import io.infinitic.common.transport.ServiceEventsTopic
+import io.infinitic.common.transport.ServiceExecutorTopic
+import io.infinitic.common.transport.ServiceTagTopic
+import io.infinitic.common.transport.Topic
+import io.infinitic.common.transport.WorkflowCmdTopic
+import io.infinitic.common.transport.WorkflowEngineTopic
+import io.infinitic.common.transport.WorkflowEventsTopic
+import io.infinitic.common.transport.WorkflowTagTopic
+import io.infinitic.common.transport.WorkflowTaskEventsTopic
+import io.infinitic.common.transport.WorkflowTaskExecutorTopic
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
+import io.infinitic.common.workflows.engine.messages.WorkflowEventMessage
 import io.infinitic.common.workflows.tags.messages.WorkflowTagMessage
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.cancel
 import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.job
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
 import java.util.concurrent.ConcurrentHashMap
 
-class InMemoryChannels : AutoCloseable {
+class InMemoryChannels {
 
-  // Coroutine scope used to receive messages
-  private val consumingScope = CoroutineScope(Dispatchers.IO)
-  suspend fun <T> consume(func: suspend () -> T) = coroutineScope {
-    launch(consumingScope.coroutineContext) { func() }
-  }
-
-  override fun close() {
-    consumingScope.cancel()
-    runBlocking { consumingScope.coroutineContext.job.children.forEach { it.join() } }
-  }
-
-  // Client channel
   private val clientChannels =
-      ConcurrentHashMap<ClientName, Channel<ClientMessage>>()
-
-  // Channel for TaskTagMessages
-  private val taskTagChannels =
-      ConcurrentHashMap<ServiceName, Channel<ServiceTagMessage>>()
-
-  // Channel for WorkflowTagMessages
+      ConcurrentHashMap<String, Channel<ClientMessage>>()
+  private val serviceTagChannels =
+      ConcurrentHashMap<String, Channel<ServiceTagMessage>>()
   private val workflowTagChannels =
-      ConcurrentHashMap<WorkflowName, Channel<WorkflowTagMessage>>()
-
-  // Channel for TaskExecutorMessages
-  private val taskExecutorChannels =
-      ConcurrentHashMap<ServiceName, Channel<ServiceExecutorMessage>>()
-
-  // Channel for TaskEventsMessages
-  private val taskEventsChannels =
-      ConcurrentHashMap<ServiceName, Channel<ServiceEventMessage>>()
-
-  // Channel for delayed TaskExecutorMessages
-  private val delayedTaskExecutorChannels =
-      ConcurrentHashMap<ServiceName, Channel<DelayedMessage<ServiceExecutorMessage>>>()
-
-  // Channel for WorkflowStart
+      ConcurrentHashMap<String, Channel<WorkflowTagMessage>>()
+  private val serviceExecutorChannels =
+      ConcurrentHashMap<String, Channel<ServiceExecutorMessage>>()
+  private val serviceEventsChannels =
+      ConcurrentHashMap<String, Channel<ServiceEventMessage>>()
+  private val delayedServiceExecutorChannels =
+      ConcurrentHashMap<String, Channel<DelayedMessage<ServiceExecutorMessage>>>()
   private val workflowCmdChannels =
-      ConcurrentHashMap<WorkflowName, Channel<WorkflowEngineMessage>>()
-
-  // Channel for WorkflowEngineMessages
+      ConcurrentHashMap<String, Channel<WorkflowEngineMessage>>()
   private val workflowEngineChannels =
-      ConcurrentHashMap<WorkflowName, Channel<WorkflowEngineMessage>>()
-
-  // Channel for delayed WorkflowEngineMessages
+      ConcurrentHashMap<String, Channel<WorkflowEngineMessage>>()
   private val delayedWorkflowEngineChannels =
-      ConcurrentHashMap<WorkflowName, Channel<DelayedMessage<WorkflowEngineMessage>>>()
-
-  // Channel for WorkflowEventMessages
-  private val workflowEventChannels =
-      ConcurrentHashMap<WorkflowName, Channel<WorkflowEventMessage>>()
-
-  // Channel for WorkflowTaskMessages
+      ConcurrentHashMap<String, Channel<DelayedMessage<WorkflowEngineMessage>>>()
+  private val workflowEventsChannels =
+      ConcurrentHashMap<String, Channel<WorkflowEventMessage>>()
   private val workflowTaskExecutorChannels =
-      ConcurrentHashMap<WorkflowName, Channel<ServiceExecutorMessage>>()
-
-  // Channel for WorkflowTaskMessages
+      ConcurrentHashMap<String, Channel<ServiceExecutorMessage>>()
   private val workflowTaskEventsChannels =
-      ConcurrentHashMap<WorkflowName, Channel<ServiceEventMessage>>()
-
-  // Channel for delayed WorkflowTaskMessages
+      ConcurrentHashMap<String, Channel<ServiceEventMessage>>()
   private val delayedWorkflowTaskExecutorChannels =
-      ConcurrentHashMap<WorkflowName, Channel<DelayedMessage<ServiceExecutorMessage>>>()
+      ConcurrentHashMap<String, Channel<DelayedMessage<ServiceExecutorMessage>>>()
 
-  fun forClient(clientName: ClientName): Channel<ClientMessage> =
-      clientChannels.getOrPut(clientName) { Channel(Channel.UNLIMITED) }
+  @Suppress("UNCHECKED_CAST")
+  fun <S : Message> Topic<S>.channel(entity: String): Channel<S> = when (this) {
+    ClientTopic -> clientChannels.getOrPut(entity, newChannel())
+    ServiceTagTopic -> serviceTagChannels.getOrPut(entity, newChannel())
+    WorkflowTagTopic -> workflowTagChannels.getOrPut(entity, newChannel())
+    ServiceExecutorTopic -> serviceExecutorChannels.getOrPut(entity, newChannel())
+    ServiceEventsTopic -> serviceEventsChannels.getOrPut(entity, newChannel())
+    WorkflowCmdTopic -> workflowCmdChannels.getOrPut(entity, newChannel())
+    WorkflowEngineTopic -> workflowEngineChannels.getOrPut(entity, newChannel())
+    WorkflowEventsTopic -> workflowEventsChannels.getOrPut(entity, newChannel())
+    WorkflowTaskExecutorTopic -> workflowTaskExecutorChannels.getOrPut(entity, newChannel())
+    WorkflowTaskEventsTopic -> workflowTaskEventsChannels.getOrPut(entity, newChannel())
+    else -> thisShouldNotHappen()
+  } as Channel<S>
 
-  fun forTaskTag(serviceName: ServiceName): Channel<ServiceTagMessage> =
-      taskTagChannels.getOrPut(serviceName) { Channel(Channel.UNLIMITED) }
+  @Suppress("UNCHECKED_CAST")
+  fun <S : Message> Topic<S>.channelForDelayed(entity: String): Channel<DelayedMessage<S>> {
+    return when (this) {
+      DelayedServiceExecutorTopic -> delayedServiceExecutorChannels.getOrPut(entity, newChannel())
+      DelayedWorkflowEngineTopic -> delayedWorkflowEngineChannels.getOrPut(entity, newChannel())
+      DelayedWorkflowTaskExecutorTopic -> delayedWorkflowTaskExecutorChannels.getOrPut(
+          entity,
+          newChannel(),
+      )
 
-  fun forWorkflowTag(workflowName: WorkflowName): Channel<WorkflowTagMessage> =
-      workflowTagChannels.getOrPut(workflowName) { Channel(Channel.UNLIMITED) }
+      else -> thisShouldNotHappen()
+    } as Channel<DelayedMessage<S>>
+  }
 
-  fun forTaskExecutor(serviceName: ServiceName): Channel<ServiceExecutorMessage> =
-      taskExecutorChannels.getOrPut(serviceName) { Channel(Channel.UNLIMITED) }
-
-  fun forTaskEvents(serviceName: ServiceName): Channel<ServiceEventMessage> =
-      taskEventsChannels.getOrPut(serviceName) { Channel(Channel.UNLIMITED) }
-
-  fun forDelayedTaskExecutor(serviceName: ServiceName): Channel<DelayedMessage<ServiceExecutorMessage>> =
-      delayedTaskExecutorChannels.getOrPut(serviceName) { Channel(Channel.UNLIMITED) }
-
-  fun forWorkflowCmd(workflowName: WorkflowName): Channel<WorkflowEngineMessage> =
-      workflowCmdChannels.getOrPut(workflowName) { Channel(Channel.UNLIMITED) }
-
-  fun forWorkflowEngine(workflowName: WorkflowName): Channel<WorkflowEngineMessage> =
-      workflowEngineChannels.getOrPut(workflowName) { Channel(Channel.UNLIMITED) }
-
-  fun forDelayedWorkflowEngine(workflowName: WorkflowName): Channel<DelayedMessage<WorkflowEngineMessage>> =
-      delayedWorkflowEngineChannels.getOrPut(workflowName) { Channel(Channel.UNLIMITED) }
-
-  fun forWorkflowEvent(workflowName: WorkflowName): Channel<WorkflowEventMessage> =
-      workflowEventChannels.getOrPut(workflowName) { Channel(Channel.UNLIMITED) }
-
-  fun forWorkflowTaskExecutor(workflowName: WorkflowName): Channel<ServiceExecutorMessage> =
-      workflowTaskExecutorChannels.getOrPut(workflowName) { Channel(Channel.UNLIMITED) }
-
-  fun forWorkflowTaskEvents(workflowName: WorkflowName): Channel<ServiceEventMessage> =
-      workflowTaskEventsChannels.getOrPut(workflowName) { Channel(Channel.UNLIMITED) }
-
-  fun forDelayedWorkflowTaskExecutor(workflowName: WorkflowName): Channel<DelayedMessage<ServiceExecutorMessage>> =
-      delayedWorkflowTaskExecutorChannels.getOrPut(workflowName) { Channel(Channel.UNLIMITED) }
-
+  private fun <S> newChannel(): () -> Channel<S> = { Channel(Channel.UNLIMITED) }
 }
 
 internal val Channel<*>.id

@@ -29,10 +29,11 @@ import io.infinitic.common.tasks.data.TaskRetryIndex
 import io.infinitic.common.tasks.executors.errors.TaskTimedOutError
 import io.infinitic.common.tasks.executors.messages.ExecuteTask
 import io.infinitic.common.tasks.tags.messages.AddTagToTask
-import io.infinitic.common.topics.DelayedWorkflowEngineTopic
-import io.infinitic.common.topics.ServiceExecutorTopic
-import io.infinitic.common.topics.ServiceTagTopic
+import io.infinitic.common.transport.DelayedWorkflowEngineTopic
 import io.infinitic.common.transport.InfiniticProducer
+import io.infinitic.common.transport.ServiceExecutorTopic
+import io.infinitic.common.transport.ServiceTagTopic
+import io.infinitic.common.transport.WorkflowEventsTopic
 import io.infinitic.common.workflows.data.commands.DispatchTaskPastCommand
 import io.infinitic.common.workflows.engine.messages.TaskTimedOut
 import io.infinitic.tasks.executor.TaskEventHandler
@@ -48,7 +49,7 @@ internal fun CoroutineScope.dispatchTaskCmd(
   val emitterName = EmitterName(producer.name)
 
   // send task to task executor
-  val executeTask: ExecuteTask = with(pastCommand.command) {
+  val executeTask = with(pastCommand.command) {
     ExecuteTask(
         serviceName = serviceName,
         taskId = TaskId.from(pastCommand.commandId),
@@ -84,24 +85,26 @@ internal fun CoroutineScope.dispatchTaskCmd(
     }
   }
 
-  // send global task timeout if any
-  val timeout = pastCommand.command.methodTimeout
+  // sent to workflow event
+  launch {
+    val taskDispatchedEvent = executeTask.taskDispatchedEvent(emitterName)
+    with(producer) { taskDispatchedEvent.sendTo(WorkflowEventsTopic) }
+  }
 
-  if (timeout != null) launch {
-    val taskTimedOut = with(pastCommand.command) {
-      TaskTimedOut(
-          taskTimedOutError = TaskTimedOutError(
-              serviceName = serviceName,
-              taskId = executeTask.taskId,
-              methodName = methodName,
-          ),
-          workflowName = currentWorkflow.workflowName,
-          workflowId = currentWorkflow.workflowId,
-          workflowMethodId = currentWorkflow.workflowMethodId,
-          emitterName = emitterName,
-          emittedAt = workflowTaskInstant + timeout,
-      )
-    }
-    with(producer) { taskTimedOut.sendTo(DelayedWorkflowEngineTopic, timeout) }
+  // send global task timeout if any
+  pastCommand.command.methodTimeout?.let {
+    val taskTimedOut = TaskTimedOut(
+        taskTimedOutError = TaskTimedOutError(
+            serviceName = executeTask.serviceName,
+            taskId = executeTask.taskId,
+            methodName = executeTask.methodName,
+        ),
+        workflowName = currentWorkflow.workflowName,
+        workflowId = currentWorkflow.workflowId,
+        workflowMethodId = currentWorkflow.workflowMethodId,
+        emitterName = emitterName,
+        emittedAt = workflowTaskInstant + it,
+    )
+    launch { with(producer) { taskTimedOut.sendTo(DelayedWorkflowEngineTopic, it) } }
   }
 }

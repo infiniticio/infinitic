@@ -22,6 +22,7 @@
  */
 package io.infinitic.common.tasks.data
 
+import io.infinitic.common.utils.JsonAble
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.descriptors.PrimitiveKind
@@ -29,10 +30,13 @@ import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
 import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
+import kotlinx.serialization.json.JsonPrimitive
 
 @Serializable(with = TaskTagSerializer::class)
-data class TaskTag(val tag: String) {
+data class TaskTag(val tag: String) : JsonAble {
   override fun toString() = tag
+
+  override fun toJson() = JsonPrimitive(tag)
 }
 
 object TaskTagSerializer : KSerializer<TaskTag> {

@@ -22,9 +22,9 @@
  */
 package io.infinitic.dashboard.panels.infrastructure.workflow
 
-import io.infinitic.common.topics.Topic
-import io.infinitic.common.topics.WorkflowEngineTopic
-import io.infinitic.common.topics.WorkflowTopic
+import io.infinitic.common.transport.Topic
+import io.infinitic.common.transport.WorkflowEngineTopic
+import io.infinitic.common.transport.WorkflowTopic
 import io.infinitic.dashboard.InfiniticDashboard
 import io.infinitic.dashboard.Panel
 import io.infinitic.dashboard.menus.InfraMenu

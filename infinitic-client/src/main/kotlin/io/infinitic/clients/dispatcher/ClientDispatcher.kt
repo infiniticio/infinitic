@@ -53,25 +53,28 @@ import io.infinitic.common.proxies.ProxyHandler
 import io.infinitic.common.proxies.RequestBy
 import io.infinitic.common.proxies.RequestByWorkflowId
 import io.infinitic.common.proxies.RequestByWorkflowTag
+import io.infinitic.common.requester.ClientRequester
 import io.infinitic.common.tasks.data.ServiceName
 import io.infinitic.common.tasks.data.TaskId
 import io.infinitic.common.tasks.executors.errors.MethodFailedError
-import io.infinitic.common.topics.Topic
-import io.infinitic.common.topics.WorkflowCmdTopic
-import io.infinitic.common.topics.WorkflowTagTopic
+import io.infinitic.common.transport.ClientTopic
 import io.infinitic.common.transport.InfiniticConsumerAsync
 import io.infinitic.common.transport.InfiniticProducerAsync
 import io.infinitic.common.transport.LoggedInfiniticProducer
+import io.infinitic.common.transport.MainSubscription
+import io.infinitic.common.transport.Topic
+import io.infinitic.common.transport.WorkflowCmdTopic
+import io.infinitic.common.transport.WorkflowTagTopic
 import io.infinitic.common.workflows.data.channels.SignalId
-import io.infinitic.common.workflows.data.methodRuns.WorkflowMethodId
+import io.infinitic.common.workflows.data.workflowMethods.WorkflowMethodId
 import io.infinitic.common.workflows.data.workflows.WorkflowCancellationReason
 import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.data.workflows.WorkflowName
 import io.infinitic.common.workflows.data.workflows.WorkflowTag
 import io.infinitic.common.workflows.engine.messages.CancelWorkflow
 import io.infinitic.common.workflows.engine.messages.CompleteTimers
-import io.infinitic.common.workflows.engine.messages.DispatchMethodWorkflow
-import io.infinitic.common.workflows.engine.messages.DispatchNewWorkflow
+import io.infinitic.common.workflows.engine.messages.DispatchMethod
+import io.infinitic.common.workflows.engine.messages.DispatchWorkflow
 import io.infinitic.common.workflows.engine.messages.RetryWorkflowTask
 import io.infinitic.common.workflows.engine.messages.SendSignal
 import io.infinitic.common.workflows.engine.messages.WaitWorkflow
@@ -225,6 +228,7 @@ internal class ClientDispatcher(
           workflowMethodId = runId,
           workflowName = workflowName,
           workflowId = workflowId,
+          requester = ClientRequester(clientName = ClientName.from(emitterName)),
           emitterName = emitterName,
           emittedAt = null,
       )
@@ -251,7 +255,7 @@ internal class ClientDispatcher(
       is MethodCanceled -> throw WorkflowCanceledException(
           workflowName = workflowName.toString(),
           workflowId = workflowId.toString(),
-          workflowMethodId = workflowMethodId?.toString(),
+          workflowMethodId = workflowResult.workflowMethodId.toString(),
       )
 
       is MethodFailed -> throw WorkflowFailedException.from(
@@ -259,7 +263,7 @@ internal class ClientDispatcher(
               workflowName = workflowName,
               workflowMethodName = workflowMethodName,
               workflowId = workflowId,
-              workflowMethodId = workflowMethodId,
+              workflowMethodId = workflowResult.workflowMethodId,
               deferredError = workflowResult.cause,
           ),
       )
@@ -285,6 +289,7 @@ internal class ClientDispatcher(
           workflowMethodId = workflowMethodId,
           workflowName = workflowName,
           workflowId = requestBy.workflowId,
+          requester = ClientRequester(clientName = ClientName.from(emitterName)),
           emitterName = emitterName,
           emittedAt = null,
       )
@@ -297,6 +302,7 @@ internal class ClientDispatcher(
           workflowTag = requestBy.workflowTag,
           reason = WorkflowCancellationReason.CANCELED_BY_CLIENT,
           emitterWorkflowId = null,
+          requester = ClientRequester(clientName = ClientName.from(emitterName)),
           emitterName = emitterName,
           emittedAt = null,
       )
@@ -314,6 +320,7 @@ internal class ClientDispatcher(
       val msg = RetryWorkflowTask(
           workflowName = workflowName,
           workflowId = requestBy.workflowId,
+          requester = ClientRequester(clientName = ClientName.from(emitterName)),
           emitterName = emitterName,
           emittedAt = null,
       )
@@ -324,6 +331,7 @@ internal class ClientDispatcher(
       val msg = RetryWorkflowTaskByTag(
           workflowName = workflowName,
           workflowTag = requestBy.workflowTag,
+          requester = ClientRequester(clientName = ClientName.from(emitterName)),
           emitterName = emitterName,
           emittedAt = null,
       )
@@ -344,6 +352,7 @@ internal class ClientDispatcher(
           workflowMethodId = workflowMethodId,
           workflowName = workflowName,
           workflowId = requestBy.workflowId,
+          requester = ClientRequester(clientName = ClientName.from(emitterName)),
           emitterName = emitterName,
           emittedAt = null,
       )
@@ -355,6 +364,7 @@ internal class ClientDispatcher(
           workflowName = workflowName,
           workflowTag = requestBy.workflowTag,
           workflowMethodId = workflowMethodId,
+          requester = ClientRequester(clientName = ClientName.from(emitterName)),
           emitterName = emitterName,
           emittedAt = null,
       )
@@ -380,6 +390,7 @@ internal class ClientDispatcher(
           taskId = taskId,
           taskStatus = taskStatus,
           serviceName = serviceName,
+          requester = ClientRequester(clientName = ClientName.from(emitterName)),
           emittedAt = null,
       )
       msg.sendToAsync(WorkflowCmdTopic)
@@ -392,6 +403,7 @@ internal class ClientDispatcher(
           taskId = taskId,
           taskStatus = taskStatus,
           serviceName = serviceName,
+          requester = ClientRequester(clientName = ClientName.from(emitterName)),
           emitterName = emitterName,
           emittedAt = null,
       )
@@ -505,7 +517,7 @@ internal class ClientDispatcher(
         CompletableFuture.allOf(*futures).join()
 
         // dispatch workflow message
-        val dispatchWorkflow = DispatchNewWorkflow(
+        val dispatchWorkflow = DispatchWorkflow(
             workflowName = deferred.workflowName,
             workflowId = deferred.workflowId,
             methodName = handler.methodName,
@@ -513,9 +525,7 @@ internal class ClientDispatcher(
             methodParameterTypes = handler.methodParameterTypes,
             workflowTags = handler.workflowTags,
             workflowMeta = handler.workflowMeta,
-            parentWorkflowName = null,
-            parentWorkflowId = null,
-            parentWorkflowMethodId = null,
+            requester = ClientRequester(clientName = ClientName.from(emitterName)),
             clientWaiting = clientWaiting,
             emitterName = emitterName,
             emittedAt = null,
@@ -538,9 +548,7 @@ internal class ClientDispatcher(
             methodTimeout = deferred.methodTimeout,
             workflowTags = handler.workflowTags,
             workflowMeta = handler.workflowMeta,
-            parentWorkflowName = null,
-            parentWorkflowId = null,
-            parentWorkflowMethodId = null,
+            requester = ClientRequester(clientName = ClientName.from(emitterName)),
             clientWaiting = clientWaiting,
             emitterName = emitterName,
             emittedAt = null,
@@ -628,16 +636,14 @@ internal class ClientDispatcher(
     handler: ExistingWorkflowProxyHandler<*>
   ): CompletableFuture<Unit> = when (deferred.requestBy) {
     is RequestByWorkflowId -> {
-      val dispatchMethod = DispatchMethodWorkflow(
+      val dispatchMethod = DispatchMethod(
           workflowName = deferred.workflowName,
           workflowId = deferred.requestBy.workflowId,
           workflowMethodId = deferred.workflowMethodId,
           methodName = handler.methodName,
           methodParameters = handler.methodParameters,
           methodParameterTypes = handler.methodParameterTypes,
-          parentWorkflowId = null,
-          parentWorkflowName = null,
-          parentWorkflowMethodId = null,
+          requester = ClientRequester(clientName = ClientName.from(emitterName)),
           clientWaiting = clientWaiting,
           emitterName = emitterName,
           emittedAt = null,
@@ -654,9 +660,7 @@ internal class ClientDispatcher(
           methodParameterTypes = handler.methodParameterTypes,
           methodParameters = handler.methodParameters,
           methodTimeout = deferred.methodTimeout,
-          parentWorkflowId = null,
-          parentWorkflowName = null,
-          parentWorkflowMethodId = null,
+          requester = ClientRequester(clientName = ClientName.from(emitterName)),
           clientWaiting = clientWaiting,
           emitterName = emitterName,
           emittedAt = null,
@@ -701,6 +705,7 @@ internal class ClientDispatcher(
             workflowId = (handler.requestBy as RequestByWorkflowId).workflowId,
             emitterName = emitterName,
             emittedAt = null,
+            requester = ClientRequester(clientName = ClientName.from(emitterName)),
         )
         sendSignal.sendToAsync(WorkflowCmdTopic)
       }
@@ -716,6 +721,7 @@ internal class ClientDispatcher(
             parentWorkflowId = null,
             emitterName = emitterName,
             emittedAt = null,
+            requester = ClientRequester(clientName = ClientName.from(emitterName)),
         )
         sendSignalByTag.sendToAsync(WorkflowTagTopic)
       }
@@ -754,10 +760,12 @@ internal class ClientDispatcher(
     synchronized(this) {
       if (!isClientConsumerInitialized) {
         runBlocking(clientScope.coroutineContext) {
-          consumerAsync.startClientConsumerAsync(
-              ::handle,
-              logMessageSentToDLQ,
-              ClientName.from(emitterName),
+          consumerAsync.start(
+              subscription = MainSubscription(ClientTopic),
+              entity = emitterName.toString(),
+              handler = ::handle,
+              beforeDlq = logMessageSentToDLQ,
+              concurrency = 1,
           )
           isClientConsumerInitialized = true
         }

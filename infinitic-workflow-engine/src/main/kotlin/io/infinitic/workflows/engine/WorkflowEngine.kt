@@ -28,15 +28,16 @@ import io.infinitic.common.clients.messages.MethodUnknown
 import io.infinitic.common.data.MillisInstant
 import io.infinitic.common.emitters.EmitterName
 import io.infinitic.common.exceptions.thisShouldNotHappen
+import io.infinitic.common.requester.ClientRequester
+import io.infinitic.common.requester.WorkflowRequester
 import io.infinitic.common.tasks.executors.errors.MethodUnknownError
-import io.infinitic.common.topics.ClientTopic
-import io.infinitic.common.topics.WorkflowEngineTopic
-import io.infinitic.common.topics.WorkflowEventsTopic
-import io.infinitic.common.topics.WorkflowTagTopic
+import io.infinitic.common.transport.ClientTopic
 import io.infinitic.common.transport.InfiniticProducer
 import io.infinitic.common.transport.InfiniticProducerAsync
 import io.infinitic.common.transport.LoggedInfiniticProducer
-import io.infinitic.common.workflows.engine.events.WorkflowCompletedEvent
+import io.infinitic.common.transport.WorkflowEngineTopic
+import io.infinitic.common.transport.WorkflowEventsTopic
+import io.infinitic.common.transport.WorkflowTagTopic
 import io.infinitic.common.workflows.engine.messages.CancelWorkflow
 import io.infinitic.common.workflows.engine.messages.ChildMethodCanceled
 import io.infinitic.common.workflows.engine.messages.ChildMethodCompleted
@@ -45,8 +46,9 @@ import io.infinitic.common.workflows.engine.messages.ChildMethodTimedOut
 import io.infinitic.common.workflows.engine.messages.ChildMethodUnknown
 import io.infinitic.common.workflows.engine.messages.CompleteTimers
 import io.infinitic.common.workflows.engine.messages.CompleteWorkflow
-import io.infinitic.common.workflows.engine.messages.DispatchMethodWorkflow
-import io.infinitic.common.workflows.engine.messages.DispatchNewWorkflow
+import io.infinitic.common.workflows.engine.messages.DispatchMethod
+import io.infinitic.common.workflows.engine.messages.DispatchWorkflow
+import io.infinitic.common.workflows.engine.messages.MethodEvent
 import io.infinitic.common.workflows.engine.messages.RetryTasks
 import io.infinitic.common.workflows.engine.messages.RetryWorkflowTask
 import io.infinitic.common.workflows.engine.messages.SendSignal
@@ -57,9 +59,9 @@ import io.infinitic.common.workflows.engine.messages.TaskFailed
 import io.infinitic.common.workflows.engine.messages.TaskTimedOut
 import io.infinitic.common.workflows.engine.messages.TimerCompleted
 import io.infinitic.common.workflows.engine.messages.WaitWorkflow
+import io.infinitic.common.workflows.engine.messages.WorkflowCompletedEvent
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
-import io.infinitic.common.workflows.engine.messages.WorkflowInternalEvent
-import io.infinitic.common.workflows.engine.messages.WorkflowMethodEvent
+import io.infinitic.common.workflows.engine.messages.WorkflowEvent
 import io.infinitic.common.workflows.engine.state.WorkflowState
 import io.infinitic.common.workflows.engine.storage.WorkflowStateStorage
 import io.infinitic.common.workflows.tags.messages.RemoveTagFromWorkflow
@@ -150,8 +152,6 @@ class WorkflowEngine(
     val workflowCompletedEvent = WorkflowCompletedEvent(
         workflowName = state.workflowName,
         workflowId = state.workflowId,
-        workflowMeta = state.workflowMeta,
-        workflowTags = state.workflowTags,
         emitterName = emitterName,
     )
     with(producer) { workflowCompletedEvent.sendTo(WorkflowEventsTopic) }
@@ -177,10 +177,10 @@ class WorkflowEngine(
     // targeted workflow is not found, we tell the message emitter
     when (message) {
       // New workflow to dispatch
-      is DispatchNewWorkflow -> {
+      is DispatchWorkflow -> {
         // Before 0.13, all messages had a null version
         // Since 0.13, the workflow-task is dispatched in workflowCmdHandler
-        @Deprecated("This should be removed after v0.13.0")
+        @Deprecated("This should be removed once v0.13.0 is deployed")
         if (message.version == null) {
           return@coroutineScope dispatchWorkflow(producer, message)
         }
@@ -190,34 +190,41 @@ class WorkflowEngine(
       }
 
       // a client wants to dispatch a method on an unknown workflow
-      is DispatchMethodWorkflow -> {
-        if (message.clientWaiting) launch {
-          val methodUnknown = MethodUnknown(
-              recipientName = ClientName.from(message.emitterName),
-              message.workflowId,
-              message.workflowMethodId,
-              emitterName = emitterName,
-          )
-          with(producer) { methodUnknown.sendTo(ClientTopic) }
+      is DispatchMethod -> when (val requester = message.requester ?: thisShouldNotHappen()) {
+        // a client wants to dispatch a method on an unknown workflow
+        is ClientRequester -> {
+          if (message.clientWaiting) launch {
+            val methodUnknown = MethodUnknown(
+                recipientName = ClientName.from(message.emitterName),
+                message.workflowId,
+                message.workflowMethodId,
+                emitterName = emitterName,
+            )
+            with(producer) { methodUnknown.sendTo(ClientTopic) }
+          }
         }
-        // a workflow wants to dispatch a method on an unknown workflow
-        if (message.parentWorkflowId != null && message.parentWorkflowId != message.workflowId) launch {
-          val childMethodFailed = ChildMethodUnknown(
-              childMethodUnknownError =
-              MethodUnknownError(
-                  workflowName = message.workflowName,
-                  workflowId = message.workflowId,
-                  workflowMethodId = message.workflowMethodId,
-              ),
-              workflowName = message.parentWorkflowName ?: thisShouldNotHappen(),
-              workflowId = message.parentWorkflowId!!,
-              workflowMethodId = message.parentWorkflowMethodId ?: thisShouldNotHappen(),
-              emitterName = emitterName,
-              emittedAt = message.emittedAt,
-          )
-          with(producer) { childMethodFailed.sendTo(WorkflowEngineTopic) }
+
+        is WorkflowRequester -> {
+          if (requester.workflowId != message.workflowId) launch {
+            // a workflow wants to dispatch a method on an unknown workflow
+            val childMethodFailed = ChildMethodUnknown(
+                childMethodUnknownError =
+                MethodUnknownError(
+                    workflowName = message.workflowName,
+                    workflowId = message.workflowId,
+                    workflowMethodId = message.workflowMethodId,
+                ),
+                workflowName = requester.workflowName,
+                workflowId = requester.workflowId,
+                workflowMethodId = requester.workflowMethodId,
+                emitterName = emitterName,
+                emittedAt = message.emittedAt,
+            )
+            with(producer) { childMethodFailed.sendTo(WorkflowEngineTopic) }
+          }
         }
       }
+
 
       // a client wants to wait the missing workflow
       is WaitWorkflow -> launch {
@@ -267,7 +274,7 @@ class WorkflowEngine(
       }
 
       false -> {
-        if (message is WorkflowInternalEvent && state.runningWorkflowTaskId != null) {
+        if (message is WorkflowEvent && state.runningWorkflowTaskId != null) {
           // if a workflow task is ongoing then buffer all WorkflowEvent message,
           // except those associated to a WorkflowTask
           logDebug(message) { "buffering $message" }
@@ -317,7 +324,7 @@ class WorkflowEngine(
     if (message.isWorkflowTaskEvent()) state.runningWorkflowTaskId = null
 
     when (message) {
-      is DispatchMethodWorkflow -> {
+      is DispatchMethod -> {
         // Idempotency: do not relaunch if this method has already been launched
         if (state.getWorkflowMethod(message.workflowMethodId) != null) {
           logDiscarding(message) { "as this method has already been launched" }
@@ -333,13 +340,12 @@ class WorkflowEngine(
 
           return
         }
-
       }
 
-      is WorkflowMethodEvent -> {
+      is MethodEvent -> {
         // if methodRun has already been cleaned (completed), then discard the message
         if (state.getWorkflowMethod(message.workflowMethodId) == null) {
-          logDiscarding(message) { "as null methodRun" }
+          logDiscarding(message) { "as there is no running workflow method related" }
 
           return
         }
@@ -350,8 +356,8 @@ class WorkflowEngine(
 
     when (message) {
       // CMD
-      is DispatchNewWorkflow -> logDiscarding(message) { "as workflow has already started with state $state" }
-      is DispatchMethodWorkflow -> dispatchMethod(producer, state, message)
+      is DispatchWorkflow -> logDiscarding(message) { "as workflow has already started (state: $state)" }
+      is DispatchMethod -> dispatchMethod(producer, state, message)
       is CancelWorkflow -> cancelWorkflow(producer, state, message)
       is SendSignal -> sendSignal(producer, state, message)
       is WaitWorkflow -> waitWorkflow(producer, state, message)

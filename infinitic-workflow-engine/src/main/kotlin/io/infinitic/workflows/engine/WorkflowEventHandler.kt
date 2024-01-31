@@ -25,19 +25,20 @@ package io.infinitic.workflows.engine
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.infinitic.common.data.MillisInstant
 import io.infinitic.common.emitters.EmitterName
-import io.infinitic.common.topics.ClientTopic
-import io.infinitic.common.topics.WorkflowEngineTopic
+import io.infinitic.common.transport.ClientTopic
 import io.infinitic.common.transport.InfiniticProducerAsync
 import io.infinitic.common.transport.LoggedInfiniticProducer
-import io.infinitic.common.workflows.engine.events.WorkflowCanceledEvent
-import io.infinitic.common.workflows.engine.events.WorkflowCompletedEvent
-import io.infinitic.common.workflows.engine.events.WorkflowEventMessage
-import io.infinitic.common.workflows.engine.events.WorkflowMethodCanceledEvent
-import io.infinitic.common.workflows.engine.events.WorkflowMethodCompletedEvent
-import io.infinitic.common.workflows.engine.events.WorkflowMethodFailedEvent
-import io.infinitic.common.workflows.engine.events.WorkflowMethodStartedEvent
-import io.infinitic.common.workflows.engine.events.WorkflowMethodTimedOutEvent
-import io.infinitic.common.workflows.engine.events.WorkflowStartedEvent
+import io.infinitic.common.transport.WorkflowEngineTopic
+import io.infinitic.common.workflows.engine.messages.ChildMethodDispatchedEvent
+import io.infinitic.common.workflows.engine.messages.MethodCanceledEvent
+import io.infinitic.common.workflows.engine.messages.MethodCommandedEvent
+import io.infinitic.common.workflows.engine.messages.MethodCompletedEvent
+import io.infinitic.common.workflows.engine.messages.MethodFailedEvent
+import io.infinitic.common.workflows.engine.messages.MethodTimedOutEvent
+import io.infinitic.common.workflows.engine.messages.TaskDispatchedEvent
+import io.infinitic.common.workflows.engine.messages.WorkflowCanceledEvent
+import io.infinitic.common.workflows.engine.messages.WorkflowCompletedEvent
+import io.infinitic.common.workflows.engine.messages.WorkflowEventMessage
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 
@@ -52,85 +53,82 @@ class WorkflowEventHandler(producerAsync: InfiniticProducerAsync) {
     msg.logDebug { "received $msg" }
 
     when (msg) {
-      is WorkflowStartedEvent -> Unit
       is WorkflowCanceledEvent -> Unit
       is WorkflowCompletedEvent -> Unit
-      is WorkflowMethodStartedEvent -> Unit
-      is WorkflowMethodCanceledEvent -> sendWorkflowMethodCanceled(msg, publishTime)
-      is WorkflowMethodCompletedEvent -> sendWorkflowMethodCompleted(msg, publishTime)
-      is WorkflowMethodFailedEvent -> sendWorkflowMethodFailed(msg, publishTime)
-      is WorkflowMethodTimedOutEvent -> sendWorkflowMethodTimedOut(msg, publishTime)
+      is MethodCommandedEvent -> Unit
+      is MethodCanceledEvent -> sendWorkflowMethodCanceled(msg, publishTime)
+      is MethodCompletedEvent -> sendWorkflowMethodCompleted(msg, publishTime)
+      is MethodFailedEvent -> sendWorkflowMethodFailed(msg, publishTime)
+      is MethodTimedOutEvent -> sendWorkflowMethodTimedOut(msg, publishTime)
+      is TaskDispatchedEvent -> Unit
+      is ChildMethodDispatchedEvent -> Unit
     }
 
     msg.logTrace { "processed" }
   }
 
   private suspend fun sendWorkflowMethodCanceled(
-    msg: WorkflowMethodCanceledEvent,
+    msg: MethodCanceledEvent,
     publishTime: MillisInstant
   ) = coroutineScope {
-    // tell waiting clients
-    msg.getEventsForClient(emitterName).forEach {
-      launch { with(producer) { it.sendTo(ClientTopic) } }
+    // tell awaiting clients
+    msg.getEventForAwaitingClients(emitterName).forEach { event ->
+      launch { with(producer) { event.sendTo(ClientTopic) } }
     }
 
-    // tell parent workflow (except itself) if any
-    val event = msg.getEventForParentWorkflow(emitterName, publishTime)
-
-    if (event != null && !msg.isItsOwnParent()) launch {
-      with(producer) { event.sendTo(WorkflowEngineTopic) }
-    }
+    // tell awaiting workflow (except itself)
+    msg.getEventForAwaitingWorkflows(emitterName, publishTime)
+        .filter { it.workflowId != msg.workflowId }.forEach { event ->
+          launch { with(producer) { event.sendTo(WorkflowEngineTopic) } }
+        }
   }
 
   private suspend fun sendWorkflowMethodCompleted(
-    msg: WorkflowMethodCompletedEvent,
+    msg: MethodCompletedEvent,
     publishTime: MillisInstant
   ) = coroutineScope {
-    // tell waiting clients
-    msg.getEventsForClient(emitterName).forEach {
-      launch { with(producer) { it.sendTo(ClientTopic) } }
+    // tell awaiting clients
+    msg.getEventForAwaitingClients(emitterName).forEach { event ->
+      launch { with(producer) { event.sendTo(ClientTopic) } }
     }
 
-    // tell parent workflow (except itself) if any
-    val event = msg.getEventForParentWorkflow(emitterName, publishTime)
-
-    if (event != null && !msg.isItsOwnParent()) launch {
-      with(producer) { event.sendTo(WorkflowEngineTopic) }
-    }
+    // tell awaiting workflow (except itself)
+    msg.getEventForAwaitingWorkflows(emitterName, publishTime)
+        .filter { it.workflowId != msg.workflowId }.forEach { event ->
+          launch { with(producer) { event.sendTo(WorkflowEngineTopic) } }
+        }
   }
 
   private suspend fun sendWorkflowMethodFailed(
-    msg: WorkflowMethodFailedEvent,
+    msg: MethodFailedEvent,
     publishTime: MillisInstant
   ) = coroutineScope {
-    // tell waiting clients
-    msg.getEventsForClient(emitterName).forEach {
-      launch { with(producer) { it.sendTo(ClientTopic) } }
+    // tell awaiting clients
+    msg.getEventForAwaitingClients(emitterName).forEach { event ->
+      launch { with(producer) { event.sendTo(ClientTopic) } }
     }
 
-    // tell parent workflow (except itself) if any
-    val event = msg.getEventForParentWorkflow(emitterName, publishTime)
-
-    if (event != null && !msg.isItsOwnParent()) launch {
-      with(producer) { event.sendTo(WorkflowEngineTopic) }
-    }
+    // tell awaiting workflow (except itself)
+    msg.getEventForAwaitingWorkflows(emitterName, publishTime)
+        .filter { it.workflowId != msg.workflowId }.forEach { event ->
+          launch { with(producer) { event.sendTo(WorkflowEngineTopic) } }
+        }
   }
 
   private suspend fun sendWorkflowMethodTimedOut(
-    msg: WorkflowMethodTimedOutEvent,
+    msg: MethodTimedOutEvent,
     publishTime: MillisInstant
   ) = coroutineScope {
-    // tell waiting clients
-    msg.getEventsForClient(emitterName).forEach {
-      launch { with(producer) { it.sendTo(ClientTopic) } }
+    // tell awaiting clients
+    msg.getEventForAwaitingClients(emitterName).forEach { event ->
+      launch { with(producer) { event.sendTo(ClientTopic) } }
     }
 
-    // tell parent workflow (except itself) if any
-    val event = msg.getEventForParentWorkflow(emitterName, publishTime)
-
-    if (event != null && !msg.isItsOwnParent()) launch {
-      with(producer) { event.sendTo(WorkflowEngineTopic) }
-    }
+    // tell awaiting workflow (except itself)
+    msg.getEventForAwaitingWorkflows(emitterName, publishTime)
+        .filter { it.workflowId != msg.workflowId }.forEach { event ->
+          launch { with(producer) { event.sendTo(WorkflowEngineTopic) } }
+        }
   }
 
   private fun WorkflowEventMessage.logDebug(description: () -> String) {

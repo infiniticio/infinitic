@@ -31,12 +31,16 @@ import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
+import kotlinx.serialization.json.JsonArray
 import org.jetbrains.annotations.TestOnly
 import java.lang.reflect.Method
 
 @Serializable(with = MethodParametersSerializer::class)
 data class MethodParameters(val parameters: List<SerializedData> = listOf()) :
   Collection<SerializedData> by parameters {
+
+  fun toJson() = JsonArray(parameters.map { it.toJson() })
+
   companion object {
     fun from(method: Method, data: Array<*>) =
         MethodParameters(

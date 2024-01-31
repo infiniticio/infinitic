@@ -954,6 +954,32 @@
           "name" : "emittedAt",
           "type" : [ "null", "long" ],
           "default" : null
+        }, {
+          "name" : "requester",
+          "type" : [ "null", {
+            "type" : "record",
+            "name" : "ClientRequester",
+            "namespace" : "io.infinitic.common.requester",
+            "fields" : [ {
+              "name" : "clientName",
+              "type" : "string"
+            } ]
+          }, {
+            "type" : "record",
+            "name" : "WorkflowRequester",
+            "namespace" : "io.infinitic.common.requester",
+            "fields" : [ {
+              "name" : "workflowName",
+              "type" : "string"
+            }, {
+              "name" : "workflowId",
+              "type" : "string"
+            }, {
+              "name" : "workflowMethodId",
+              "type" : "string"
+            } ]
+          } ],
+          "default" : null
         } ]
       }, {
         "type" : "record",
@@ -1145,6 +1171,10 @@
           "name" : "emittedAt",
           "type" : [ "null", "long" ],
           "default" : null
+        }, {
+          "name" : "requester",
+          "type" : [ "null", "io.infinitic.common.requester.ClientRequester", "io.infinitic.common.requester.WorkflowRequester" ],
+          "default" : null
         } ]
       }, {
         "type" : "record",
@@ -1171,6 +1201,10 @@
         }, {
           "name" : "emittedAt",
           "type" : [ "null", "long" ],
+          "default" : null
+        }, {
+          "name" : "requester",
+          "type" : [ "null", "io.infinitic.common.requester.ClientRequester", "io.infinitic.common.requester.WorkflowRequester" ],
           "default" : null
         } ]
       }, {
@@ -1216,6 +1250,10 @@
         }, {
           "name" : "parentMethodRunId",
           "type" : [ "null", "string" ]
+        }, {
+          "name" : "requester",
+          "type" : [ "null", "io.infinitic.common.requester.ClientRequester", "io.infinitic.common.requester.WorkflowRequester" ],
+          "default" : null
         }, {
           "name" : "clientWaiting",
           "type" : "boolean"
@@ -1271,15 +1309,6 @@
             "values" : "bytes"
           }
         }, {
-          "name" : "parentWorkflowName",
-          "type" : [ "null", "string" ]
-        }, {
-          "name" : "parentWorkflowId",
-          "type" : [ "null", "string" ]
-        }, {
-          "name" : "parentMethodRunId",
-          "type" : [ "null", "string" ]
-        }, {
           "name" : "workflowTaskId",
           "type" : [ "null", "string" ],
           "default" : null
@@ -1289,6 +1318,19 @@
         }, {
           "name" : "emitterName",
           "type" : "string"
+        }, {
+          "name" : "parentWorkflowName",
+          "type" : [ "null", "string" ]
+        }, {
+          "name" : "parentWorkflowId",
+          "type" : [ "null", "string" ]
+        }, {
+          "name" : "parentMethodRunId",
+          "type" : [ "null", "string" ]
+        }, {
+          "name" : "requester",
+          "type" : [ "null", "io.infinitic.common.requester.ClientRequester", "io.infinitic.common.requester.WorkflowRequester" ],
+          "default" : null
         }, {
           "name" : "emittedAt",
           "type" : [ "null", "long" ],
@@ -1331,6 +1373,10 @@
           "name" : "emittedAt",
           "type" : [ "null", "long" ],
           "default" : null
+        }, {
+          "name" : "requester",
+          "type" : [ "null", "io.infinitic.common.requester.ClientRequester", "io.infinitic.common.requester.WorkflowRequester" ],
+          "default" : null
         } ]
       }, {
         "type" : "record",
@@ -1354,6 +1400,10 @@
         }, {
           "name" : "emittedAt",
           "type" : [ "null", "long" ],
+          "default" : null
+        }, {
+          "name" : "requester",
+          "type" : [ "null", "io.infinitic.common.requester.ClientRequester", "io.infinitic.common.requester.WorkflowRequester" ],
           "default" : null
         } ]
       }, {
@@ -1393,6 +1443,10 @@
         }, {
           "name" : "emittedAt",
           "type" : [ "null", "long" ],
+          "default" : null
+        }, {
+          "name" : "requester",
+          "type" : [ "null", "io.infinitic.common.requester.ClientRequester", "io.infinitic.common.requester.WorkflowRequester" ],
           "default" : null
         } ]
       }, {
@@ -1593,6 +1647,10 @@
         }, {
           "name" : "emittedAt",
           "type" : [ "null", "long" ],
+          "default" : null
+        }, {
+          "name" : "requester",
+          "type" : [ "null", "io.infinitic.common.requester.ClientRequester", "io.infinitic.common.requester.WorkflowRequester" ],
           "default" : null
         } ]
       } ]

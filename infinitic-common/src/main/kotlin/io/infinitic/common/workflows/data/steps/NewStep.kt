@@ -23,7 +23,7 @@
 package io.infinitic.common.workflows.data.steps
 
 import com.github.avrokotlin.avro4k.AvroNamespace
-import io.infinitic.common.workflows.data.methodRuns.PositionInWorkflowMethod
+import io.infinitic.common.workflows.data.workflowMethods.PositionInWorkflowMethod
 import kotlinx.serialization.Serializable
 
 @Serializable

@@ -26,28 +26,28 @@ import io.infinitic.common.exceptions.thisShouldNotHappen
 import io.infinitic.common.workflows.data.commands.CommandStatus
 import io.infinitic.common.workflows.data.commands.StartDurationTimerPastCommand
 import io.infinitic.common.workflows.data.commands.StartInstantTimerPastCommand
-import io.infinitic.common.workflows.data.methodRuns.WorkflowMethodId
 import io.infinitic.common.workflows.data.timers.TimerId
+import io.infinitic.common.workflows.data.workflowMethods.WorkflowMethodId
 import io.infinitic.common.workflows.engine.messages.CompleteTimers
 import io.infinitic.common.workflows.engine.messages.TimerCompleted
 import io.infinitic.common.workflows.engine.state.WorkflowState
 
 internal fun completeTimer(state: WorkflowState, message: CompleteTimers) {
   // get provided methodRunId or main per default
-  val methodRunId = message.workflowMethodId ?: WorkflowMethodId.from(message.workflowId)
+  val workflowMethodId = message.workflowMethodId ?: WorkflowMethodId.from(message.workflowId)
 
   // trigger a timer completed for all ongoing timer on this method
-  state.getWorkflowMethod(methodRunId)?.let { methodRun ->
+  state.getWorkflowMethod(workflowMethodId)?.let { methodRun ->
     methodRun.pastCommands
         .filter { it is StartDurationTimerPastCommand || it is StartInstantTimerPastCommand }
         .filter { it.commandStatus is CommandStatus.Ongoing }
         .sortedByDescending { it.commandPosition }
         .forEach {
           val msg = TimerCompleted(
-              TimerId.from(it.commandId),
-              message.workflowName,
-              message.workflowId,
-              methodRunId,
+              timerId = TimerId.from(it.commandId),
+              workflowName = message.workflowName,
+              workflowId = message.workflowId,
+              workflowMethodId = workflowMethodId,
               emitterName = message.emitterName,
               emittedAt = message.emittedAt ?: thisShouldNotHappen(),
           )

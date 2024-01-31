@@ -31,11 +31,14 @@ import kotlinx.serialization.encoding.Encoder
 
 @Serializable(with = ReturnValueSerializer::class)
 data class ReturnValue(val serializedData: SerializedData) {
+
   companion object {
     fun from(data: Any?) = ReturnValue(SerializedData.from(data))
   }
 
   override fun toString() = serializedData.toString()
+
+  fun toJson() = serializedData.toJson()
 
   fun value(): Any? = serializedData.deserialize()
 }

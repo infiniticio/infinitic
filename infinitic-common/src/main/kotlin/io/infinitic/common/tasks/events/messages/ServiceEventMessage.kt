@@ -47,7 +47,7 @@ import io.infinitic.common.tasks.executors.messages.ExecuteTask
 import io.infinitic.common.tasks.tags.messages.RemoveTagFromTask
 import io.infinitic.common.workers.config.WorkflowVersion
 import io.infinitic.common.workers.data.WorkerName
-import io.infinitic.common.workflows.data.methodRuns.WorkflowMethodId
+import io.infinitic.common.workflows.data.workflowMethods.WorkflowMethodId
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTask
 import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.data.workflows.WorkflowName
@@ -73,8 +73,6 @@ sealed class ServiceEventMessage : Message {
   abstract val clientWaiting: Boolean?
   abstract val taskTags: Set<TaskTag>
   abstract val taskMeta: TaskMeta
-
-  override fun envelope() = ServiceEventEnvelope.from(this)
 
   override fun key() = null
 
@@ -216,7 +214,7 @@ data class TaskRetriedEvent(
   override val taskTags: Set<TaskTag>,
   override val taskMeta: TaskMeta,
   val taskRetryDelay: MillisDuration,
-  val lastError: ExecutionError?,
+  val lastError: ExecutionError,
 ) : ServiceEventMessage() {
 
   companion object {
@@ -280,8 +278,7 @@ data class TaskCompletedEvent(
         workflowId = it,
         workflowName = workflowName ?: thisShouldNotHappen(),
         workflowMethodId = workflowMethodId ?: thisShouldNotHappen(),
-        taskReturnValue =
-        TaskReturnValue(
+        taskReturnValue = TaskReturnValue(
             serviceName = serviceName,
             taskId = taskId,
             taskMeta = taskMeta,

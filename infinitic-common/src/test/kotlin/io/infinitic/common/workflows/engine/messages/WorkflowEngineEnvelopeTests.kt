@@ -38,7 +38,7 @@ class WorkflowEngineEnvelopeTests :
         WorkflowEngineMessage::class.sealedSubclasses.map {
           val msg = TestFactory.random(it)
 
-          "WorkflowEngineEnvelope(${msg::class.simpleName}) should be avro-convertible" {
+          "WorkflowEngineEnvelope: ${msg::class.simpleName} should be avro-convertible" {
             shouldNotThrowAny {
               val envelope = WorkflowEngineEnvelope.from(msg)
               val byteArray = envelope.toByteArray()
@@ -51,7 +51,7 @@ class WorkflowEngineEnvelopeTests :
           }
         }
 
-        "Avro Schema should be backward compatible" {
+        "WorkflowEngineEnvelope: Avro Schema should be backward compatible" {
           // An error in this test means that we need to upgrade the version
           checkOrCreateCurrentFile(
               WorkflowEngineEnvelope::class,
@@ -64,17 +64,18 @@ class WorkflowEngineEnvelopeTests :
           )
         }
 
-        AvroSerDe.getAllSchemas(WorkflowEngineEnvelope::class).forEach { (version, schema) ->
-          "We should be able to read binary from previous version $version" {
-            val bytes = AvroSerDe.getRandomBinary(schema)
-            val e = shouldThrowAny { WorkflowEngineEnvelope.fromByteArray(bytes, schema) }
-            e::class shouldBeOneOf listOf(
-                // IllegalArgumentException is thrown because we have more than 1 message in the envelope
-                IllegalArgumentException::class,
-                // NullPointerException is thrown because message() can be null
-                NullPointerException::class,
-            )
-          }
-        }
+        AvroSerDe.getAllSchemas(WorkflowEngineEnvelope::class)
+            .forEach { (version, schema) ->
+              "WorkflowEngineEnvelope: We should be able to read binary from previous version $version" {
+                val bytes = AvroSerDe.getRandomBinary(schema)
+                val e = shouldThrowAny { WorkflowEngineEnvelope.fromByteArray(bytes, schema) }
+                e::class shouldBeOneOf listOf(
+                    // IllegalArgumentException is thrown because we have more than 1 message in the envelope
+                    IllegalArgumentException::class,
+                    // NullPointerException is thrown because message() can be null
+                    NullPointerException::class,
+                )
+              }
+            }
       },
   )

@@ -26,15 +26,15 @@ import io.github.oshai.kotlinlogging.KotlinLogging
 import io.infinitic.common.data.MillisInstant
 import io.infinitic.common.emitters.EmitterName
 import io.infinitic.common.tasks.data.TaskId
-import io.infinitic.common.topics.WorkflowEngineTopic
-import io.infinitic.common.topics.WorkflowEventsTopic
-import io.infinitic.common.topics.WorkflowTaskExecutorTopic
 import io.infinitic.common.transport.InfiniticProducerAsync
 import io.infinitic.common.transport.LoggedInfiniticProducer
+import io.infinitic.common.transport.WorkflowEngineTopic
+import io.infinitic.common.transport.WorkflowEventsTopic
+import io.infinitic.common.transport.WorkflowTaskExecutorTopic
 import io.infinitic.common.utils.IdGenerator
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskIndex
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskParameters
-import io.infinitic.common.workflows.engine.messages.DispatchNewWorkflow
+import io.infinitic.common.workflows.engine.messages.DispatchWorkflow
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
@@ -52,7 +52,7 @@ class WorkflowCmdHandler(producerAsync: InfiniticProducerAsync) {
     msg.emittedAt = msg.emittedAt ?: publishTime
 
     when (msg) {
-      is DispatchNewWorkflow -> dispatchNewWorkflow(msg, publishTime)
+      is DispatchWorkflow -> dispatchNewWorkflow(msg, publishTime)
       else -> with(producer) { msg.sendTo(WorkflowEngineTopic) }
     }
 
@@ -61,7 +61,7 @@ class WorkflowCmdHandler(producerAsync: InfiniticProducerAsync) {
 
   // We dispatch a workflow task right away
   // This is done to accelerate the processing in case of burst
-  private suspend fun dispatchNewWorkflow(msg: DispatchNewWorkflow, publishTime: MillisInstant) =
+  private suspend fun dispatchNewWorkflow(msg: DispatchWorkflow, publishTime: MillisInstant) =
       coroutineScope {
 
         val dispatchNewWorkflow = msg.copy(
@@ -98,15 +98,15 @@ class WorkflowCmdHandler(producerAsync: InfiniticProducerAsync) {
           val executeTaskMessage = workflowTaskParameters.toExecuteTaskMessage()
 
           // dispatch workflow task
-          with(producer) { executeTaskMessage.sendTo(WorkflowTaskExecutorTopic) }
+          with(producer) {
+            executeTaskMessage.sendTo(WorkflowTaskExecutorTopic)
+            executeTaskMessage.taskDispatchedEvent(emitterName).sendTo(WorkflowEventsTopic)
+          }
         }
 
-        // the 2 events are sent sequentially, to ensure they have consistent timestamps
-        // (workflowStarted before workflowMethodStarted)
         launch {
           with(producer) {
-            dispatchNewWorkflow.workflowStartedEvent(emitterName).sendTo(WorkflowEventsTopic)
-            dispatchNewWorkflow.workflowMethodStartedEvent(emitterName).sendTo(WorkflowEventsTopic)
+            dispatchNewWorkflow.methodDispatchedEvent(emitterName).sendTo(WorkflowEventsTopic)
           }
         }
       }

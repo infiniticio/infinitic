@@ -22,6 +22,7 @@
  */
 package io.infinitic.common.workflows.data.workflows
 
+import io.infinitic.common.utils.JsonAble
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.builtins.ByteArraySerializer
@@ -30,9 +31,13 @@ import kotlinx.serialization.builtins.serializer
 import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
+import java.util.*
 
 @Serializable(with = WorkflowMetaSerializer::class)
-data class WorkflowMeta(val map: Map<String, ByteArray> = mapOf()) : Map<String, ByteArray> by map {
+data class WorkflowMeta(val map: Map<String, ByteArray> = mapOf()) : Map<String, ByteArray> by map,
+  JsonAble {
   override fun equals(other: Any?): Boolean {
     if (this === other) return true
     if (javaClass != other?.javaClass) return false
@@ -46,6 +51,10 @@ data class WorkflowMeta(val map: Map<String, ByteArray> = mapOf()) : Map<String,
   override fun hashCode(): Int {
     return map.hashCode()
   }
+
+  override fun toJson() = JsonObject(
+      map.mapValues { JsonPrimitive(Base64.getEncoder().encodeToString(it.value)) },
+  )
 }
 
 object WorkflowMetaSerializer : KSerializer<WorkflowMeta> {

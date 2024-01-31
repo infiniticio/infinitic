@@ -36,6 +36,9 @@ pulsar:
 #    privateKey:
 #    audience:
 
+eventListener:
+  class: io.infinitic.tests.utils.Listener
+
 services:
   - name: annotatedService
     class: io.infinitic.tests.utils.AnnotatedServiceImpl

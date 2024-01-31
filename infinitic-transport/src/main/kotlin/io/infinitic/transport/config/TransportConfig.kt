@@ -23,8 +23,6 @@
 package io.infinitic.transport.config
 
 import io.infinitic.autoclose.addAutoCloseResource
-import io.infinitic.common.config.loadConfigFromFile
-import io.infinitic.common.config.loadConfigFromResource
 import io.infinitic.common.transport.InfiniticConsumerAsync
 import io.infinitic.common.transport.InfiniticProducerAsync
 import io.infinitic.inMemory.InMemoryChannels
@@ -37,6 +35,7 @@ import io.infinitic.pulsar.config.Pulsar
 import io.infinitic.pulsar.consumers.Consumer
 import io.infinitic.pulsar.producers.Producer
 import io.infinitic.pulsar.resources.PulsarResources
+import java.net.URLEncoder
 
 data class TransportConfig(
   /** Transport configuration */
@@ -55,6 +54,15 @@ data class TransportConfig(
     }
 
     require(shutdownGracePeriodInSeconds >= 0) { "shutdownGracePeriodInSeconds must be >= 0" }
+  }
+
+  /** This is used as source prefix for CloudEvents */
+  val source: String = when (transport) {
+    Transport.pulsar -> pulsar!!.brokerServiceUrl.removeSuffix("/") + "/" +
+        URLEncoder.encode(pulsar.tenant, Charsets.UTF_8) + "/" +
+        URLEncoder.encode(pulsar.namespace, Charsets.UTF_8)
+
+    Transport.inMemory -> "inmemory"
   }
 
   // we provide consumer and producer together,
@@ -82,13 +90,10 @@ data class TransportConfig(
         }
 
         Transport.inMemory -> {
-          val channels = InMemoryChannels()
-          val consumerAsync = InMemoryInfiniticConsumerAsync(channels)
-          val producerAsync = InMemoryInfiniticProducerAsync(channels)
-
-          // channels will be closed with consumer
-          consumerAsync.addAutoCloseResource(channels)
-
+          val mainChannels = InMemoryChannels()
+          val listenerChannels = InMemoryChannels()
+          val consumerAsync = InMemoryInfiniticConsumerAsync(mainChannels, listenerChannels)
+          val producerAsync = InMemoryInfiniticProducerAsync(mainChannels, listenerChannels)
           Pair(consumerAsync, producerAsync)
         }
       }
@@ -98,17 +103,5 @@ data class TransportConfig(
 
   /** Infinitic Producer */
   val producerAsync: InfiniticProducerAsync = cp.second
-
-  companion object {
-    /** Create TransportConfig from file in file system */
-    @JvmStatic
-    fun fromFile(vararg files: String): TransportConfig =
-        loadConfigFromFile(files.toList())
-
-    /** Create TransportConfig from file in resources */
-    @JvmStatic
-    fun fromResource(vararg resources: String): TransportConfig =
-        loadConfigFromResource(resources.toList())
-  }
 }
 

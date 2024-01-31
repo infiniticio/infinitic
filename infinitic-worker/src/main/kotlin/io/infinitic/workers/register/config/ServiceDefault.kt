@@ -23,21 +23,23 @@
 package io.infinitic.workers.register.config
 
 import io.infinitic.common.workers.config.RetryPolicy
-import io.infinitic.tasks.tag.config.TaskTag
+import io.infinitic.tasks.tag.config.ServiceTagEngine
 
 data class ServiceDefault(
   val concurrency: Int? = null,
   val timeoutInSeconds: Double? = null,
   val retry: RetryPolicy? = null,
-  val tagEngine: TaskTag? = null
+  val tagEngine: ServiceTagEngine? = null
 ) {
   init {
     concurrency?.let {
-      require(it >= 0) { "default service ${::concurrency.name} must be positive" }
+      require(it >= 0) { error("'${::concurrency.name}' must be positive") }
     }
 
     timeoutInSeconds?.let {
-      require(it > 0) { "default service ${::timeoutInSeconds.name} must be strictly positive" }
+      require(it > 0) { error("'${::timeoutInSeconds.name}' must be strictly positive") }
     }
   }
+
+  private fun error(msg: String) = "default service: $msg"
 }

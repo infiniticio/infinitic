@@ -26,8 +26,7 @@ import io.infinitic.common.utils.getInstance
 import io.infinitic.common.utils.isImplementationOf
 import io.infinitic.common.workers.config.RetryPolicy
 import io.infinitic.events.config.EventListener
-import io.infinitic.tasks.tag.config.TaskTag
-import io.infinitic.workers.register.InfiniticRegisterInterface
+import io.infinitic.tasks.tag.config.ServiceTagEngine
 
 data class Service(
   val name: String,
@@ -35,50 +34,40 @@ data class Service(
   var concurrency: Int? = null,
   var timeoutInSeconds: Double? = null,
   var retry: RetryPolicy? = null,
-  var tagEngine: TaskTag? = InfiniticRegisterInterface.DEFAULT_TASK_TAG,
-  var eventListener: EventListener? = InfiniticRegisterInterface.DEFAULT_EVENT_LISTENER,
+  var tagEngine: ServiceTagEngine? = DEFAULT_TAG_ENGINE,
+  var eventListener: EventListener? = null,
 ) {
-  fun getInstance(): Any = `class`!!.getInstance(
-      classNotFound = error("Class '${`class`}' unknown"),
-      errorClass = error("Can not access class '${`class`}'"),
-      noEmptyConstructor = error("Class '${::`class`.name}' must have an empty constructor"),
-      constructorError = error("Can not access class '$`class`' constructor"),
-      instanceError = error("Error during instantiation of class '$`class`'"),
-  ).getOrThrow()
+  fun getInstance(): Any = `class`!!.getInstance().getOrThrow()
 
   init {
     require(name.isNotEmpty()) { "'${::name.name}' can not be empty" }
 
-    when (`class`) {
-      null -> {
-        require(tagEngine != null || eventListener != null) {
-          error("'Nothing defined for `name: $name`")
+    `class`?.let {
+      require(it.isNotEmpty()) { error("'class' empty") }
+
+      val instance = getInstance()
+
+      require(instance::class.java.isImplementationOf(name)) {
+        error("Class '${instance::class.java.name}' is not an implementation of this service - check your configuration")
+      }
+
+      if (concurrency != null) {
+        require(concurrency!! >= 0) {
+          error("'${::concurrency.name}' must be an integer >= 0")
         }
       }
 
-      else -> {
-        require(`class`.isNotEmpty()) { error("'class' empty") }
-
-        val instance = getInstance()
-
-        require(instance::class.java.isImplementationOf(name)) {
-          error("Class '${instance::class.java.name}' is not an implementation of this service - check your configuration")
-        }
-
-        if (concurrency != null) {
-          require(concurrency!! >= 0) {
-            error("'${::concurrency.name}' must be an integer >= 0")
-          }
-        }
-
-        if (timeoutInSeconds != null) {
-          require(timeoutInSeconds!! > 0) {
-            error("'${::timeoutInSeconds.name}' must be an integer > 0")
-          }
+      if (timeoutInSeconds != null) {
+        require(timeoutInSeconds!! > 0) {
+          error("'${::timeoutInSeconds.name}' must be an integer > 0")
         }
       }
     }
   }
 
   private fun error(txt: String) = "Service $name: $txt"
+
+  companion object {
+    val DEFAULT_TAG_ENGINE = ServiceTagEngine().apply { isDefault = true }
+  }
 }

@@ -36,14 +36,10 @@ val logger = KotlinLogging.logger("io.infinitic.common.config.loaders")
  * @param resources The list of resource names to be loaded.
  * @return The loaded configuration object.
  */
-inline fun <reified T : Any> loadConfigFromResource(resources: List<String>): T {
-  val config =
-      ConfigLoaderBuilder.default()
-          .also { builder ->
-            resources.map { builder.addSource(PropertySource.resource(it, false)) }
-          }
-          .build()
-          .loadConfigOrThrow<T>()
+inline fun <reified T : Any> loadConfigFromResource(vararg resources: String): T {
+  val builder = ConfigLoaderBuilder.default()
+  resources.map { builder.addSource(PropertySource.resource(it, false)) }
+  val config = builder.build().loadConfigOrThrow<T>()
   logger.info { "Config loaded from resource: $config" }
 
   return config
@@ -55,29 +51,25 @@ inline fun <reified T : Any> loadConfigFromResource(resources: List<String>): T 
  * @param files The list of file paths to load the configuration from.
  * @return The loaded configuration of type [T].
  */
-inline fun <reified T : Any> loadConfigFromFile(files: List<String>): T {
-  val config =
-      ConfigLoaderBuilder.default()
-          .also { builder -> files.map { builder.addSource(PropertySource.file(File(it), false)) } }
-          .build()
-          .loadConfigOrThrow<T>()
+inline fun <reified T : Any> loadConfigFromFile(vararg files: String): T {
+  val builder = ConfigLoaderBuilder.default()
+  files.map { builder.addSource(PropertySource.file(File(it), false)) }
+  val config = builder.build().loadConfigOrThrow<T>()
   logger.info { "Config loaded from file: $config" }
 
   return config
 }
 
 /**
- * Loads a configuration object from a YAML string.
+ * Loads a configuration of type [T]  from a YAML string.
  *
- * @param yaml The YAML string to load the configuration from.
+ * @param yamls The YAML strings to load the configuration from.
  * @return The loaded configuration object of type T.
  */
-inline fun <reified T : Any> loadConfigFromYaml(yaml: String): T {
-  val config =
-      ConfigLoaderBuilder.default()
-          .also { builder -> builder.addSource(YamlPropertySource(yaml)) }
-          .build()
-          .loadConfigOrThrow<T>()
+inline fun <reified T : Any> loadConfigFromYaml(vararg yamls: String): T {
+  val builder = ConfigLoaderBuilder.default()
+  yamls.map { builder.addSource(YamlPropertySource(it)) }
+  val config = builder.build().loadConfigOrThrow<T>()
   logger.info { "Config loaded from yaml: $config" }
 
   return config

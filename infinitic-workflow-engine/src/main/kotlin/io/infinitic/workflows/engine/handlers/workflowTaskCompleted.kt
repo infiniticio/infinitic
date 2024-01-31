@@ -24,8 +24,9 @@ package io.infinitic.workflows.engine.handlers
 
 import io.infinitic.common.emitters.EmitterName
 import io.infinitic.common.exceptions.thisShouldNotHappen
-import io.infinitic.common.topics.WorkflowEventsTopic
+import io.infinitic.common.requester.WorkflowRequester
 import io.infinitic.common.transport.InfiniticProducer
+import io.infinitic.common.transport.WorkflowEventsTopic
 import io.infinitic.common.workflows.data.channels.ReceivingChannel
 import io.infinitic.common.workflows.data.channels.SignalId
 import io.infinitic.common.workflows.data.commands.DispatchMethodOnRunningWorkflowCommand
@@ -39,15 +40,16 @@ import io.infinitic.common.workflows.data.commands.SendSignalCommand
 import io.infinitic.common.workflows.data.commands.SendSignalPastCommand
 import io.infinitic.common.workflows.data.commands.StartDurationTimerPastCommand
 import io.infinitic.common.workflows.data.commands.StartInstantTimerPastCommand
-import io.infinitic.common.workflows.data.methodRuns.WorkflowMethodId
 import io.infinitic.common.workflows.data.steps.PastStep
 import io.infinitic.common.workflows.data.steps.StepStatus.CurrentlyFailed
 import io.infinitic.common.workflows.data.steps.StepStatus.CurrentlyTimedOut
 import io.infinitic.common.workflows.data.steps.StepStatus.Failed
 import io.infinitic.common.workflows.data.steps.StepStatus.TimedOut
+import io.infinitic.common.workflows.data.workflowMethods.WorkflowMethodId
+import io.infinitic.common.workflows.data.workflowMethods.awaitingRequesters
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskReturnValue
-import io.infinitic.common.workflows.engine.events.WorkflowMethodCompletedEvent
-import io.infinitic.common.workflows.engine.messages.DispatchMethodWorkflow
+import io.infinitic.common.workflows.engine.messages.DispatchMethod
+import io.infinitic.common.workflows.engine.messages.MethodCompletedEvent
 import io.infinitic.common.workflows.engine.messages.SendSignal
 import io.infinitic.common.workflows.engine.messages.TaskCompleted
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
@@ -153,30 +155,21 @@ internal fun CoroutineScope.workflowTaskCompleted(
     // set methodOutput in state
     workflowMethod.methodReturnValue = workflowTaskReturnValue.methodReturnValue
 
-    val workflowMethodCompletedEvent = WorkflowMethodCompletedEvent(
+    val methodCompletedEvent = MethodCompletedEvent(
         workflowName = state.workflowName,
         workflowId = state.workflowId,
-        workflowTags = state.workflowTags,
-        workflowMeta = state.workflowMeta,
-        waitingClients = workflowMethod.waitingClients,
         workflowMethodId = workflowMethod.workflowMethodId,
-        parentWorkflowId = workflowMethod.parentWorkflowId,
-        parentWorkflowName = workflowMethod.parentWorkflowName,
-        parentWorkflowMethodId = workflowMethod.parentWorkflowMethodId,
-        parentClientName = workflowMethod.parentClientName,
+        awaitingRequesters = workflowMethod.awaitingRequesters,
         returnValue = workflowMethod.methodReturnValue!!,
         emitterName = emitterName,
     )
-
-    launch { with(producer) { workflowMethodCompletedEvent.sendTo(WorkflowEventsTopic) } }
-
+    launch { with(producer) { methodCompletedEvent.sendTo(WorkflowEventsTopic) } }
 
     // tell itself if needed
-    if (workflowMethodCompletedEvent.isItsOwnParent()) {
-      val childMethodCompleted =
-          workflowMethodCompletedEvent.getEventForParentWorkflow(emitterName, emittedAt)!!
-      bufferedMessages.add(childMethodCompleted)
-    }
+    methodCompletedEvent.getEventForAwaitingWorkflows(emitterName, emittedAt)
+        .firstOrNull { it.workflowId == message.workflowId }?.let {
+          bufferedMessages.add(it)
+        }
   }
 
   // does previous commands trigger another workflowTask?
@@ -208,21 +201,23 @@ internal fun dispatchMethodOnRunningWorkflowCmd(
     (command.workflowId != null && state.workflowId == command.workflowId) ||
     (command.workflowTag != null && state.workflowTags.contains(command.workflowTag))
   ) {
-    val dispatchMethodWorkflow = DispatchMethodWorkflow(
+    val dispatchMethod = DispatchMethod(
         workflowName = command.workflowName,
         workflowId = command.workflowId!!,
         workflowMethodId = WorkflowMethodId.from(pastCommand.commandId),
         methodName = command.methodName,
         methodParameters = command.methodParameters,
         methodParameterTypes = command.methodParameterTypes,
-        parentWorkflowId = state.workflowId,
-        parentWorkflowName = state.workflowName,
-        parentWorkflowMethodId = state.runningWorkflowMethodId,
+        requester = WorkflowRequester(
+            workflowId = state.workflowId,
+            workflowName = state.workflowName,
+            workflowMethodId = state.runningWorkflowMethodId ?: thisShouldNotHappen(),
+        ),
         clientWaiting = false,
         emitterName = EmitterName(producer.name),
         emittedAt = state.runningWorkflowTaskInstant,
     )
-    bufferedMessages.add(dispatchMethodWorkflow)
+    bufferedMessages.add(dispatchMethod)
   }
 }
 
@@ -265,6 +260,11 @@ internal fun sendSignalCmd(
         workflowId = command.workflowId!!,
         emitterName = EmitterName(producer.name),
         emittedAt = state.runningWorkflowTaskInstant,
+        requester = WorkflowRequester(
+            workflowId = state.workflowId,
+            workflowName = state.workflowName,
+            workflowMethodId = state.runningWorkflowMethodId ?: thisShouldNotHappen(),
+        ),
     )
     bufferedMessages.add(sendToChannel)
   }

@@ -23,15 +23,18 @@
 package io.infinitic.common.workflows.data.timers
 
 import io.infinitic.common.utils.IdGenerator
+import io.infinitic.common.utils.JsonAble
 import io.infinitic.common.workflows.data.commands.CommandId
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.JsonPrimitive
 
 @JvmInline
 @Serializable
-value class TimerId(private val id: String = IdGenerator.next()) {
+value class TimerId(private val id: String = IdGenerator.next()) : JsonAble {
   companion object {
     fun from(commandId: CommandId) = TimerId(commandId.toString())
   }
 
   override fun toString() = id
+  override fun toJson() = JsonPrimitive(id)
 }

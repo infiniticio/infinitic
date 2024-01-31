@@ -33,8 +33,8 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import com.fasterxml.jackson.module.kotlin.KotlinFeature
 import com.fasterxml.jackson.module.kotlin.KotlinModule
 import com.fasterxml.jackson.module.kotlin.jsonMapper
-import java.io.IOException
 import org.apache.avro.specific.SpecificRecordBase
+import java.io.IOException
 
 object Json {
   private val mapper = jsonMapper {
@@ -46,7 +46,7 @@ object Json {
     configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false)
     configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
   }
-
+  
   fun stringify(msg: Any?, pretty: Boolean = false): String =
       when (pretty) {
         true -> mapper.writerWithDefaultPrettyPrinter().writeValueAsString(msg)
@@ -59,9 +59,11 @@ object Json {
    * Cause should not be included to the json, as it triggers a circular reference when cause = this
    */
   private abstract class ExceptionMixIn {
-    @JsonIgnore abstract fun getCause(): Throwable
+    @JsonIgnore
+    abstract fun getCause(): Throwable
 
-    @JsonIgnore abstract fun getMessage(): String
+    @JsonIgnore
+    abstract fun getMessage(): String
   }
 
   /**
@@ -71,9 +73,11 @@ object Json {
    * IMPORTANT: properties of generated Avro classes MUST have public visibility
    */
   private abstract class AvroMixIn {
-    @JsonIgnore abstract fun getSchema(): org.apache.avro.Schema
+    @JsonIgnore
+    abstract fun getSchema(): org.apache.avro.Schema
 
-    @JsonIgnore abstract fun getSpecificData(): org.apache.avro.specific.SpecificData
+    @JsonIgnore
+    abstract fun getSpecificData(): org.apache.avro.specific.SpecificData
 
     @JsonSerialize(using = AvroListStringSerializer::class)
     abstract fun getListOfString(): List<String>
@@ -83,9 +87,9 @@ object Json {
   private class AvroListStringSerializer : JsonSerializer<List<String>>() {
     @Throws(IOException::class)
     override fun serialize(
-        value: List<String>,
-        gen: JsonGenerator,
-        serializers: SerializerProvider
+      value: List<String>,
+      gen: JsonGenerator,
+      serializers: SerializerProvider
     ) {
       gen.writeStartArray()
       for (o in value) {

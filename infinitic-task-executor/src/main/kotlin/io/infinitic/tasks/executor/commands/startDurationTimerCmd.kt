@@ -24,7 +24,7 @@ package io.infinitic.tasks.executor.commands
 
 import io.infinitic.common.data.MillisInstant
 import io.infinitic.common.emitters.EmitterName
-import io.infinitic.common.topics.DelayedWorkflowEngineTopic
+import io.infinitic.common.transport.DelayedWorkflowEngineTopic
 import io.infinitic.common.transport.InfiniticProducer
 import io.infinitic.common.workflows.data.commands.StartDurationTimerCommand
 import io.infinitic.common.workflows.data.commands.StartDurationTimerPastCommand

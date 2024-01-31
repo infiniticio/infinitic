@@ -29,7 +29,7 @@ import io.infinitic.common.data.methods.MethodName
 import io.infinitic.common.proxies.RequestBy
 import io.infinitic.common.proxies.RequestByWorkflowId
 import io.infinitic.common.proxies.RequestByWorkflowTag
-import io.infinitic.common.workflows.data.methodRuns.WorkflowMethodId
+import io.infinitic.common.workflows.data.workflowMethods.WorkflowMethodId
 import io.infinitic.common.workflows.data.workflows.WorkflowName
 
 class ExistingDeferredWorkflow<R> internal constructor(

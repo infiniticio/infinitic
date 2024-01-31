@@ -128,7 +128,7 @@
         "type" : "long"
       }, {
         "name" : "lastError",
-        "type" : [ "null", {
+        "type" : {
           "type" : "record",
           "name" : "WorkerError",
           "namespace" : "io.infinitic.tasks.executor",
@@ -148,7 +148,7 @@
             "name" : "cause",
             "type" : [ "null", "WorkerError" ]
           } ]
-        } ]
+        }
       } ]
     } ]
   }, {

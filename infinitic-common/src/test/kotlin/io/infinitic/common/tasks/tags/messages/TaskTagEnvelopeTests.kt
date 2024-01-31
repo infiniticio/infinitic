@@ -40,12 +40,12 @@ class TaskTagEnvelopeTests :
 
           "TaskTagMessage(${msg::class.simpleName}) should be avro-convertible" {
             shouldNotThrowAny {
-              val envelope = TaskTagEnvelope.from(msg)
+              val envelope = ServiceTagEnvelope.from(msg)
               val byteArray = envelope.toByteArray()
 
-              TaskTagEnvelope.fromByteArray(
+              ServiceTagEnvelope.fromByteArray(
                   byteArray,
-                  TaskTagEnvelope.writerSchema,
+                  ServiceTagEnvelope.writerSchema,
               ) shouldBe envelope
             }
           }
@@ -53,15 +53,15 @@ class TaskTagEnvelopeTests :
 
         "Avro Schema should be backward compatible to 0.9.0" {
           // An error in this test means that we need to upgrade the version
-          checkOrCreateCurrentFile(TaskTagEnvelope::class, TaskTagEnvelope.serializer())
+          checkOrCreateCurrentFile(ServiceTagEnvelope::class, ServiceTagEnvelope.serializer())
 
-          checkBackwardCompatibility(TaskTagEnvelope::class, TaskTagEnvelope.serializer())
+          checkBackwardCompatibility(ServiceTagEnvelope::class, ServiceTagEnvelope.serializer())
         }
 
         "We should be able to read binary from any previous version since 0.9.0" {
-          AvroSerDe.getAllSchemas(TaskTagEnvelope::class).forEach { (_, schema) ->
+          AvroSerDe.getAllSchemas(ServiceTagEnvelope::class).forEach { (_, schema) ->
             val bytes = AvroSerDe.getRandomBinary(schema)
-            val e = shouldThrowAny { TaskTagEnvelope.fromByteArray(bytes, schema) }
+            val e = shouldThrowAny { ServiceTagEnvelope.fromByteArray(bytes, schema) }
             e::class shouldBeOneOf listOf(
                 // IllegalArgumentException is thrown because we have more than 1 message in the envelope
                 IllegalArgumentException::class,

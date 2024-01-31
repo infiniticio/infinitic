@@ -10,48 +10,14 @@
     "type" : {
       "type" : "enum",
       "name" : "WorkflowEventMessageType",
-      "symbols" : [ "WORKFLOW_STARTED", "WORKFLOW_COMPLETED", "WORKFLOW_CANCELED", "WORKFLOW_METHOD_STARTED", "WORKFLOW_METHOD_COMPLETED", "WORKFLOW_METHOD_FAILED", "WORKFLOW_METHOD_CANCELED", "WORKFLOW_METHOD_TIMED_OUT" ]
+      "symbols" : [ "WORKFLOW_COMPLETED", "WORKFLOW_CANCELED", "METHOD_DISPATCHED", "METHOD_COMPLETED", "METHOD_FAILED", "METHOD_CANCELED", "METHOD_TIMED_OUT", "METHOD_TASK_DISPATCHED", "METHOD_CHILD_DISPATCHED" ]
     }
-  }, {
-    "name" : "workflowStartedEvent",
-    "type" : [ "null", {
-      "type" : "record",
-      "name" : "WorkflowStartedEvent",
-      "fields" : [ {
-        "name" : "version",
-        "type" : [ "null", "string" ],
-        "default" : null
-      }, {
-        "name" : "messageId",
-        "type" : "string"
-      }, {
-        "name" : "workflowName",
-        "type" : "string"
-      }, {
-        "name" : "workflowId",
-        "type" : "string"
-      }, {
-        "name" : "emitterName",
-        "type" : "string"
-      }, {
-        "name" : "workflowTags",
-        "type" : {
-          "type" : "array",
-          "items" : "string"
-        }
-      }, {
-        "name" : "workflowMeta",
-        "type" : {
-          "type" : "map",
-          "values" : "bytes"
-        }
-      } ]
-    } ]
   }, {
     "name" : "workflowCompletedEvent",
     "type" : [ "null", {
       "type" : "record",
       "name" : "WorkflowCompletedEvent",
+      "namespace" : "io.infinitic.workflows.engine",
       "fields" : [ {
         "name" : "version",
         "type" : [ "null", "string" ],
@@ -68,18 +34,6 @@
       }, {
         "name" : "emitterName",
         "type" : "string"
-      }, {
-        "name" : "workflowTags",
-        "type" : {
-          "type" : "array",
-          "items" : "string"
-        }
-      }, {
-        "name" : "workflowMeta",
-        "type" : {
-          "type" : "map",
-          "values" : "bytes"
-        }
       } ]
     } ]
   }, {
@@ -87,6 +41,7 @@
     "type" : [ "null", {
       "type" : "record",
       "name" : "WorkflowCanceledEvent",
+      "namespace" : "io.infinitic.workflows.engine",
       "fields" : [ {
         "name" : "version",
         "type" : [ "null", "string" ],
@@ -103,33 +58,14 @@
       }, {
         "name" : "emitterName",
         "type" : "string"
-      }, {
-        "name" : "workflowTags",
-        "type" : {
-          "type" : "array",
-          "items" : "string"
-        }
-      }, {
-        "name" : "workflowMeta",
-        "type" : {
-          "type" : "map",
-          "values" : "bytes"
-        }
-      }, {
-        "name" : "cancellationReason",
-        "type" : {
-          "type" : "enum",
-          "name" : "WorkflowCancellationReason",
-          "namespace" : "io.infinitic.workflows.data",
-          "symbols" : [ "CANCELED_BY_CLIENT", "CANCELED_BY_PARENT" ]
-        }
       } ]
     } ]
   }, {
-    "name" : "workflowMethodStartedEvent",
+    "name" : "methodDispatchedEvent",
     "type" : [ "null", {
       "type" : "record",
-      "name" : "WorkflowMethodStartedEvent",
+      "name" : "MethodDispatchedEvent",
+      "namespace" : "io.infinitic.workflows.engine",
       "fields" : [ {
         "name" : "version",
         "type" : [ "null", "string" ],
@@ -147,45 +83,77 @@
         "name" : "workflowMethodId",
         "type" : "string"
       }, {
-        "name" : "parentWorkflowName",
-        "type" : [ "null", "string" ]
+        "name" : "methodName",
+        "type" : "string"
       }, {
-        "name" : "parentWorkflowId",
-        "type" : [ "null", "string" ]
-      }, {
-        "name" : "parentWorkflowMethodId",
-        "type" : [ "null", "string" ]
-      }, {
-        "name" : "parentClientName",
-        "type" : [ "null", "string" ]
-      }, {
-        "name" : "waitingClients",
+        "name" : "methodParameters",
         "type" : {
           "type" : "array",
-          "items" : "string"
+          "items" : {
+            "type" : "record",
+            "name" : "SerializedData",
+            "namespace" : "io.infinitic.data",
+            "fields" : [ {
+              "name" : "bytes",
+              "type" : "bytes"
+            }, {
+              "name" : "type",
+              "type" : {
+                "type" : "enum",
+                "name" : "SerializedDataType",
+                "symbols" : [ "NULL", "JSON_JACKSON", "JSON_KOTLIN", "AVRO_WITH_SCHEMA" ]
+              }
+            }, {
+              "name" : "meta",
+              "type" : {
+                "type" : "map",
+                "values" : "bytes"
+              }
+            } ]
+          }
         }
+      }, {
+        "name" : "methodParameterTypes",
+        "type" : [ "null", {
+          "type" : "array",
+          "items" : "string"
+        } ]
+      }, {
+        "name" : "requester",
+        "type" : [ {
+          "type" : "record",
+          "name" : "ClientRequester",
+          "namespace" : "io.infinitic.common.requester",
+          "fields" : [ {
+            "name" : "clientName",
+            "type" : "string"
+          } ]
+        }, {
+          "type" : "record",
+          "name" : "WorkflowRequester",
+          "namespace" : "io.infinitic.common.requester",
+          "fields" : [ {
+            "name" : "workflowName",
+            "type" : "string"
+          }, {
+            "name" : "workflowId",
+            "type" : "string"
+          }, {
+            "name" : "workflowMethodId",
+            "type" : "string"
+          } ]
+        } ]
       }, {
         "name" : "emitterName",
         "type" : "string"
-      }, {
-        "name" : "workflowTags",
-        "type" : {
-          "type" : "array",
-          "items" : "string"
-        }
-      }, {
-        "name" : "workflowMeta",
-        "type" : {
-          "type" : "map",
-          "values" : "bytes"
-        }
       } ]
     } ]
   }, {
-    "name" : "workflowMethodCompletedEvent",
+    "name" : "methodCompletedEvent",
     "type" : [ "null", {
       "type" : "record",
-      "name" : "WorkflowMethodCompletedEvent",
+      "name" : "MethodCompletedEvent",
+      "namespace" : "io.infinitic.workflows.engine",
       "fields" : [ {
         "name" : "version",
         "type" : [ "null", "string" ],
@@ -203,69 +171,25 @@
         "name" : "workflowMethodId",
         "type" : "string"
       }, {
-        "name" : "parentWorkflowName",
-        "type" : [ "null", "string" ]
-      }, {
-        "name" : "parentWorkflowId",
-        "type" : [ "null", "string" ]
-      }, {
-        "name" : "parentWorkflowMethodId",
-        "type" : [ "null", "string" ]
-      }, {
-        "name" : "parentClientName",
-        "type" : [ "null", "string" ]
-      }, {
-        "name" : "waitingClients",
+        "name" : "awaitingRequesters",
         "type" : {
           "type" : "array",
-          "items" : "string"
+          "items" : [ "io.infinitic.common.requester.ClientRequester", "io.infinitic.common.requester.WorkflowRequester" ]
         }
       }, {
         "name" : "emitterName",
         "type" : "string"
-      }, {
-        "name" : "workflowTags",
-        "type" : {
-          "type" : "array",
-          "items" : "string"
-        }
-      }, {
-        "name" : "workflowMeta",
-        "type" : {
-          "type" : "map",
-          "values" : "bytes"
-        }
       }, {
         "name" : "returnValue",
-        "type" : {
-          "type" : "record",
-          "name" : "SerializedData",
-          "namespace" : "io.infinitic.data",
-          "fields" : [ {
-            "name" : "bytes",
-            "type" : "bytes"
-          }, {
-            "name" : "type",
-            "type" : {
-              "type" : "enum",
-              "name" : "SerializedDataType",
-              "symbols" : [ "NULL", "JSON_JACKSON", "JSON_KOTLIN", "AVRO_WITH_SCHEMA" ]
-            }
-          }, {
-            "name" : "meta",
-            "type" : {
-              "type" : "map",
-              "values" : "bytes"
-            }
-          } ]
-        }
+        "type" : "io.infinitic.data.SerializedData"
       } ]
     } ]
   }, {
-    "name" : "workflowMethodFailedEvent",
+    "name" : "methodFailedEvent",
     "type" : [ "null", {
       "type" : "record",
-      "name" : "WorkflowMethodFailedEvent",
+      "name" : "MethodFailedEvent",
+      "namespace" : "io.infinitic.workflows.engine",
       "fields" : [ {
         "name" : "version",
         "type" : [ "null", "string" ],
@@ -283,40 +207,16 @@
         "name" : "workflowMethodId",
         "type" : "string"
       }, {
-        "name" : "parentWorkflowName",
-        "type" : [ "null", "string" ]
+        "name" : "workflowMethodName",
+        "type" : "string"
       }, {
-        "name" : "parentWorkflowId",
-        "type" : [ "null", "string" ]
-      }, {
-        "name" : "parentWorkflowMethodId",
-        "type" : [ "null", "string" ]
-      }, {
-        "name" : "parentClientName",
-        "type" : [ "null", "string" ]
-      }, {
-        "name" : "waitingClients",
+        "name" : "awaitingRequesters",
         "type" : {
           "type" : "array",
-          "items" : "string"
+          "items" : [ "io.infinitic.common.requester.ClientRequester", "io.infinitic.common.requester.WorkflowRequester" ]
         }
       }, {
         "name" : "emitterName",
-        "type" : "string"
-      }, {
-        "name" : "workflowTags",
-        "type" : {
-          "type" : "array",
-          "items" : "string"
-        }
-      }, {
-        "name" : "workflowMeta",
-        "type" : {
-          "type" : "map",
-          "values" : "bytes"
-        }
-      }, {
-        "name" : "workflowMethodName",
         "type" : "string"
       }, {
         "name" : "deferredError",
@@ -477,10 +377,11 @@
       } ]
     } ]
   }, {
-    "name" : "workflowMethodCanceledEvent",
+    "name" : "methodCanceledEvent",
     "type" : [ "null", {
       "type" : "record",
-      "name" : "WorkflowMethodCanceledEvent",
+      "name" : "MethodCanceledEvent",
+      "namespace" : "io.infinitic.workflows.engine",
       "fields" : [ {
         "name" : "version",
         "type" : [ "null", "string" ],
@@ -498,48 +399,22 @@
         "name" : "workflowMethodId",
         "type" : "string"
       }, {
-        "name" : "parentWorkflowName",
-        "type" : [ "null", "string" ]
-      }, {
-        "name" : "parentWorkflowId",
-        "type" : [ "null", "string" ]
-      }, {
-        "name" : "parentWorkflowMethodId",
-        "type" : [ "null", "string" ]
-      }, {
-        "name" : "parentClientName",
-        "type" : [ "null", "string" ]
-      }, {
-        "name" : "waitingClients",
+        "name" : "awaitingRequesters",
         "type" : {
           "type" : "array",
-          "items" : "string"
+          "items" : [ "io.infinitic.common.requester.ClientRequester", "io.infinitic.common.requester.WorkflowRequester" ]
         }
       }, {
         "name" : "emitterName",
         "type" : "string"
-      }, {
-        "name" : "workflowTags",
-        "type" : {
-          "type" : "array",
-          "items" : "string"
-        }
-      }, {
-        "name" : "workflowMeta",
-        "type" : {
-          "type" : "map",
-          "values" : "bytes"
-        }
-      }, {
-        "name" : "cancellationReason",
-        "type" : "io.infinitic.workflows.data.WorkflowCancellationReason"
       } ]
     } ]
   }, {
-    "name" : "workflowMethodTimedOutEvent",
+    "name" : "methodTimedOutEvent",
     "type" : [ "null", {
       "type" : "record",
-      "name" : "WorkflowMethodTimedOutEvent",
+      "name" : "MethodTimedOutEvent",
+      "namespace" : "io.infinitic.workflows.engine",
       "fields" : [ {
         "name" : "version",
         "type" : [ "null", "string" ],
@@ -557,40 +432,129 @@
         "name" : "workflowMethodId",
         "type" : "string"
       }, {
-        "name" : "parentWorkflowName",
-        "type" : [ "null", "string" ]
-      }, {
-        "name" : "parentWorkflowId",
-        "type" : [ "null", "string" ]
-      }, {
-        "name" : "parentWorkflowMethodId",
-        "type" : [ "null", "string" ]
-      }, {
-        "name" : "parentClientName",
-        "type" : [ "null", "string" ]
-      }, {
-        "name" : "waitingClients",
+        "name" : "awaitingRequesters",
         "type" : {
           "type" : "array",
-          "items" : "string"
-        }
-      }, {
-        "name" : "emitterName",
-        "type" : "string"
-      }, {
-        "name" : "workflowTags",
-        "type" : {
-          "type" : "array",
-          "items" : "string"
-        }
-      }, {
-        "name" : "workflowMeta",
-        "type" : {
-          "type" : "map",
-          "values" : "bytes"
+          "items" : [ "io.infinitic.common.requester.ClientRequester", "io.infinitic.common.requester.WorkflowRequester" ]
         }
       }, {
         "name" : "workflowMethodName",
+        "type" : "string"
+      }, {
+        "name" : "emitterName",
+        "type" : "string"
+      } ]
+    } ]
+  }, {
+    "name" : "taskDispatched",
+    "type" : [ "null", {
+      "type" : "record",
+      "name" : "TaskDispatchedEvent",
+      "namespace" : "io.infinitic.workflows.engine",
+      "fields" : [ {
+        "name" : "version",
+        "type" : [ "null", "string" ],
+        "default" : null
+      }, {
+        "name" : "messageId",
+        "type" : "string"
+      }, {
+        "name" : "taskDispatched",
+        "type" : {
+          "type" : "record",
+          "name" : "TaskDispatched",
+          "fields" : [ {
+            "name" : "taskId",
+            "type" : "string"
+          }, {
+            "name" : "taskName",
+            "type" : "string"
+          }, {
+            "name" : "methodParameterTypes",
+            "type" : [ "null", {
+              "type" : "array",
+              "items" : "string"
+            } ]
+          }, {
+            "name" : "methodParameters",
+            "type" : {
+              "type" : "array",
+              "items" : "io.infinitic.data.SerializedData"
+            }
+          }, {
+            "name" : "serviceName",
+            "type" : "string"
+          } ]
+        }
+      }, {
+        "name" : "workflowName",
+        "type" : "string"
+      }, {
+        "name" : "workflowId",
+        "type" : "string"
+      }, {
+        "name" : "workflowMethodId",
+        "type" : "string"
+      }, {
+        "name" : "emitterName",
+        "type" : "string"
+      } ]
+    } ]
+  }, {
+    "name" : "childDispatched",
+    "type" : [ "null", {
+      "type" : "record",
+      "name" : "ChildMethodDispatchedEvent",
+      "namespace" : "io.infinitic.workflows.engine",
+      "fields" : [ {
+        "name" : "version",
+        "type" : [ "null", "string" ],
+        "default" : null
+      }, {
+        "name" : "messageId",
+        "type" : "string"
+      }, {
+        "name" : "childMethodDispatched",
+        "type" : {
+          "type" : "record",
+          "name" : "ChildMethodDispatched",
+          "fields" : [ {
+            "name" : "workflowId",
+            "type" : "string"
+          }, {
+            "name" : "workflowName",
+            "type" : "string"
+          }, {
+            "name" : "workflowMethodId",
+            "type" : "string"
+          }, {
+            "name" : "methodName",
+            "type" : "string"
+          }, {
+            "name" : "methodParameters",
+            "type" : {
+              "type" : "array",
+              "items" : "io.infinitic.data.SerializedData"
+            }
+          }, {
+            "name" : "methodParameterTypes",
+            "type" : [ "null", {
+              "type" : "array",
+              "items" : "string"
+            } ]
+          } ]
+        }
+      }, {
+        "name" : "workflowName",
+        "type" : "string"
+      }, {
+        "name" : "workflowId",
+        "type" : "string"
+      }, {
+        "name" : "workflowMethodId",
+        "type" : "string"
+      }, {
+        "name" : "emitterName",
         "type" : "string"
       } ]
     } ]

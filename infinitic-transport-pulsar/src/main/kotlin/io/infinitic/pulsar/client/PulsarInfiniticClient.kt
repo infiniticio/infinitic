@@ -218,7 +218,13 @@ class PulsarInfiniticClient(private val pulsarClient: PulsarClient) {
     consumerDefDlq: ConsumerDef? = null,
   ): Result<Consumer<S>> {
 
-    val (topic, subscriptionName, subscriptionType, consumerName, consumerConfig) = consumerDef
+    val (topic,
+        subscriptionName,
+        subscriptionType,
+        subscriptionInitialPosition,
+        consumerName,
+        consumerConfig
+    ) = consumerDef
 
     val builder = pulsarClient
         .newConsumer(schema)
@@ -226,7 +232,7 @@ class PulsarInfiniticClient(private val pulsarClient: PulsarClient) {
         .subscriptionType(subscriptionType)
         .subscriptionName(subscriptionName)
         .consumerName(consumerName)
-        .subscriptionInitialPosition(SubscriptionInitialPosition.Earliest)
+        .subscriptionInitialPosition(subscriptionInitialPosition)
 
     // Dead Letter Queue
     consumerDefDlq?.let {
@@ -371,6 +377,7 @@ class PulsarInfiniticClient(private val pulsarClient: PulsarClient) {
     val topic: String,
     val subscriptionName: String,
     val subscriptionType: SubscriptionType,
+    val subscriptionInitialPosition: SubscriptionInitialPosition,
     val consumerName: String,
     val consumerConfig: ConsumerConfig,
   )

@@ -24,9 +24,10 @@ package io.infinitic.tasks.executor.commands
 
 import io.infinitic.common.data.MillisInstant
 import io.infinitic.common.emitters.EmitterName
-import io.infinitic.common.topics.WorkflowCmdTopic
-import io.infinitic.common.topics.WorkflowTagTopic
+import io.infinitic.common.requester.WorkflowRequester
 import io.infinitic.common.transport.InfiniticProducer
+import io.infinitic.common.transport.WorkflowCmdTopic
+import io.infinitic.common.transport.WorkflowTagTopic
 import io.infinitic.common.workflows.data.channels.SignalId
 import io.infinitic.common.workflows.data.commands.SendSignalCommand
 import io.infinitic.common.workflows.data.commands.SendSignalPastCommand
@@ -58,6 +59,11 @@ internal fun CoroutineScope.sendSignalCmd(
               workflowId = command.workflowId!!,
               emitterName = emitterName,
               emittedAt = workflowTaskInstant,
+              requester = WorkflowRequester(
+                  workflowId = currentWorkflow.workflowId,
+                  workflowName = currentWorkflow.workflowName,
+                  workflowMethodId = currentWorkflow.workflowMethodId,
+              ),
           )
           // dispatch signal on another workflow
           with(producer) { sendToChannel.sendTo(WorkflowCmdTopic) }
@@ -78,6 +84,11 @@ internal fun CoroutineScope.sendSignalCmd(
             parentWorkflowId = currentWorkflow.workflowId,
             emitterName = emitterName,
             emittedAt = workflowTaskInstant,
+            requester = WorkflowRequester(
+                workflowId = currentWorkflow.workflowId,
+                workflowName = currentWorkflow.workflowName,
+                workflowMethodId = currentWorkflow.workflowMethodId,
+            ),
         )
         // Note: tag engine MUST ignore this message for Id = parentWorkflowId
         with(producer) { sendSignalByTag.sendTo(WorkflowTagTopic) }

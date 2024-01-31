@@ -22,8 +22,8 @@
  */
 package io.infinitic.dashboard.panels.infrastructure.service
 
-import io.infinitic.common.topics.ServiceExecutorTopic
-import io.infinitic.common.topics.Topic
+import io.infinitic.common.transport.ServiceExecutorTopic
+import io.infinitic.common.transport.Topic
 import io.infinitic.dashboard.InfiniticDashboard
 import io.infinitic.dashboard.Panel
 import io.infinitic.dashboard.menus.InfraMenu

@@ -38,9 +38,7 @@ sealed class ServiceTagMessage : Message {
   override val messageId = MessageId()
   abstract val taskTag: TaskTag
   abstract val serviceName: ServiceName
-
-  override fun envelope() = TaskTagEnvelope.from(this)
-
+  
   override fun key() = taskTag.toString()
 
   override fun entity() = serviceName.toString()

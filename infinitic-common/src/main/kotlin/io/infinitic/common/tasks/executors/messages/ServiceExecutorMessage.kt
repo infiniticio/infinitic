@@ -33,7 +33,10 @@ import io.infinitic.common.data.methods.MethodName
 import io.infinitic.common.data.methods.MethodParameterTypes
 import io.infinitic.common.data.methods.MethodParameters
 import io.infinitic.common.emitters.EmitterName
+import io.infinitic.common.exceptions.thisShouldNotHappen
 import io.infinitic.common.messages.Message
+import io.infinitic.common.requester.ClientRequester
+import io.infinitic.common.requester.WorkflowRequester
 import io.infinitic.common.tasks.data.ServiceName
 import io.infinitic.common.tasks.data.TaskId
 import io.infinitic.common.tasks.data.TaskMeta
@@ -44,10 +47,12 @@ import io.infinitic.common.tasks.executors.errors.DeferredError
 import io.infinitic.common.tasks.executors.errors.ExecutionError
 import io.infinitic.common.workers.config.WorkflowVersion
 import io.infinitic.common.workers.data.WorkerName
-import io.infinitic.common.workflows.data.methodRuns.WorkflowMethodId
+import io.infinitic.common.workflows.data.workflowMethods.WorkflowMethodId
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTask
 import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.data.workflows.WorkflowName
+import io.infinitic.common.workflows.engine.messages.TaskDispatched
+import io.infinitic.common.workflows.engine.messages.TaskDispatchedEvent
 import io.infinitic.currentVersion
 import io.infinitic.exceptions.DeferredException
 import kotlinx.serialization.SerialName
@@ -65,9 +70,6 @@ sealed class ServiceExecutorMessage : Message {
   abstract val workflowName: WorkflowName?
   abstract val workflowId: WorkflowId?
   abstract val workflowMethodId: WorkflowMethodId?
-
-
-  override fun envelope() = ServiceExecutorEnvelope.from(this)
 
   override fun key() = null
 
@@ -125,10 +127,35 @@ data class ExecuteTask(
         workflowVersion = msg.workflowVersion,
     )
   }
+
+  fun taskDispatchedEvent(emitterName: EmitterName) = TaskDispatchedEvent(
+      taskDispatched = TaskDispatched(
+          taskId = taskId,
+          taskName = methodName,
+          methodParameterTypes = methodParameterTypes,
+          methodParameters = methodParameters,
+          serviceName = serviceName,
+      ),
+      workflowName = workflowName!!,
+      workflowId = workflowId!!,
+      workflowMethodId = workflowMethodId!!,
+      emitterName = emitterName,
+  )
 }
 
 val ExecuteTask.clientName
   get() = if (workflowName == null) ClientName.from(emitterName) else null
+
+val ExecuteTask.requester
+  get() = when (workflowName == null) {
+    true -> ClientRequester(clientName = ClientName.from(emitterName))
+
+    false -> WorkflowRequester(
+        workflowName = workflowName,
+        workflowId = workflowId ?: thisShouldNotHappen(),
+        workflowMethodId = workflowMethodId ?: thisShouldNotHappen(),
+    )
+  }
 
 val Throwable.deferredError
   get() = when (this is DeferredException) {

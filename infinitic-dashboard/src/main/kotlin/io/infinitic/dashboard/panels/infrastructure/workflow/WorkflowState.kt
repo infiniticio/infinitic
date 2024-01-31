@@ -22,7 +22,7 @@
  */
 package io.infinitic.dashboard.panels.infrastructure.workflow
 
-import io.infinitic.common.topics.WorkflowTopic
+import io.infinitic.common.transport.WorkflowTopic
 import io.infinitic.dashboard.Infinitic.pulsarResources
 import io.infinitic.dashboard.panels.infrastructure.jobs.JobState
 import io.infinitic.dashboard.panels.infrastructure.jobs.TopicsStats

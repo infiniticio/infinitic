@@ -43,17 +43,21 @@ import io.infinitic.common.data.methods.MethodParameters
 import io.infinitic.common.emitters.EmitterName
 import io.infinitic.common.fixtures.TestFactory
 import io.infinitic.common.fixtures.later
+import io.infinitic.common.requester.ClientRequester
 import io.infinitic.common.tasks.executors.messages.ServiceExecutorMessage
 import io.infinitic.common.tasks.tags.messages.ServiceTagMessage
-import io.infinitic.common.topics.WorkflowCmdTopic
-import io.infinitic.common.topics.WorkflowTagTopic
+import io.infinitic.common.transport.ClientTopic
 import io.infinitic.common.transport.InfiniticConsumerAsync
 import io.infinitic.common.transport.InfiniticProducerAsync
+import io.infinitic.common.transport.MainSubscription
+import io.infinitic.common.transport.Subscription
+import io.infinitic.common.transport.WorkflowCmdTopic
+import io.infinitic.common.transport.WorkflowTagTopic
 import io.infinitic.common.utils.IdGenerator
 import io.infinitic.common.workflows.data.channels.ChannelName
 import io.infinitic.common.workflows.data.channels.ChannelType
 import io.infinitic.common.workflows.data.channels.SignalData
-import io.infinitic.common.workflows.data.methodRuns.WorkflowMethodId
+import io.infinitic.common.workflows.data.workflowMethods.WorkflowMethodId
 import io.infinitic.common.workflows.data.workflows.WorkflowCancellationReason
 import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.data.workflows.WorkflowMeta
@@ -61,12 +65,12 @@ import io.infinitic.common.workflows.data.workflows.WorkflowName
 import io.infinitic.common.workflows.data.workflows.WorkflowTag
 import io.infinitic.common.workflows.engine.messages.CancelWorkflow
 import io.infinitic.common.workflows.engine.messages.CompleteTimers
-import io.infinitic.common.workflows.engine.messages.DispatchMethodWorkflow
-import io.infinitic.common.workflows.engine.messages.DispatchNewWorkflow
+import io.infinitic.common.workflows.engine.messages.DispatchMethod
+import io.infinitic.common.workflows.engine.messages.DispatchWorkflow
 import io.infinitic.common.workflows.engine.messages.RetryTasks
 import io.infinitic.common.workflows.engine.messages.SendSignal
 import io.infinitic.common.workflows.engine.messages.WaitWorkflow
-import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
+import io.infinitic.common.workflows.engine.messages.WorkflowCmdMessage
 import io.infinitic.common.workflows.tags.messages.AddTagToWorkflow
 import io.infinitic.common.workflows.tags.messages.CancelWorkflowByTag
 import io.infinitic.common.workflows.tags.messages.DispatchMethodByTag
@@ -92,7 +96,7 @@ import java.util.concurrent.CopyOnWriteArrayList
 private val taskTagSlots = CopyOnWriteArrayList<ServiceTagMessage>() // multithreading update
 private val workflowTagSlots = CopyOnWriteArrayList<WorkflowTagMessage>() // multithreading update
 private val taskSlot = slot<ServiceExecutorMessage>()
-private val workflowCmdSlot = slot<WorkflowEngineMessage>()
+private val workflowCmdSlot = slot<WorkflowCmdMessage>()
 private val delaySlot = slot<MillisDuration>()
 
 private val clientNameTest = ClientName("clientTest")
@@ -116,7 +120,7 @@ private fun tagResponse(): CompletableFuture<Unit> {
 
 private fun engineResponse(): CompletableFuture<Unit> {
   val msg = workflowCmdSlot.captured
-  if (msg is DispatchNewWorkflow && msg.clientWaiting || msg is WaitWorkflow) {
+  if (msg is DispatchWorkflow && msg.clientWaiting || msg is WaitWorkflow) {
     val methodCompleted = MethodCompleted(
         recipientName = ClientName(client.name),
         workflowId = msg.workflowId,
@@ -136,7 +140,7 @@ private val producerAsync = mockk<InfiniticProducerAsync> {
 }
 
 private val consumerAsync = mockk<InfiniticConsumerAsync> {
-  coEvery { startClientConsumerAsync(any(), any(), clientNameTest) } just Runs
+  coEvery { start(any<Subscription<*>>(), "$clientNameTest", any(), any(), any()) } just Runs
 }
 
 private val client = InfiniticClient(consumerAsync, producerAsync)
@@ -168,7 +172,7 @@ internal class InfiniticClientTests : StringSpec(
         val deferred = client.dispatch(fakeWorkflow::m0)
         // then
         workflowTagSlots.size shouldBe 0
-        workflowCmdSlot.captured shouldBe DispatchNewWorkflow(
+        workflowCmdSlot.captured shouldBe DispatchWorkflow(
             workflowName = WorkflowName(FakeWorkflow::class.java.name),
             workflowId = WorkflowId(deferred.id),
             methodName = MethodName("m0"),
@@ -176,16 +180,22 @@ internal class InfiniticClientTests : StringSpec(
             methodParameterTypes = MethodParameterTypes(listOf()),
             workflowTags = setOf(),
             workflowMeta = WorkflowMeta(),
-            parentWorkflowName = null,
-            parentWorkflowId = null,
-            parentWorkflowMethodId = null,
+            requester = ClientRequester(clientName = ClientName.from(emitterNameTest)),
             clientWaiting = false,
             emitterName = emitterNameTest,
             emittedAt = null,
         )
 
         // when asynchronously dispatching a workflow, the consumer should not be started
-        coVerify(exactly = 0) { consumerAsync.startClientConsumerAsync(any(), any(), any()) }
+        coVerify(exactly = 0) {
+          consumerAsync.start(
+              MainSubscription(ClientTopic),
+              "$clientNameTest",
+              any(),
+              any(),
+              1,
+          )
+        }
       }
 
       "Should be able to dispatch a workflow with annotation" {
@@ -193,7 +203,7 @@ internal class InfiniticClientTests : StringSpec(
         val deferred = client.dispatch(fooWorkflow::m)
         // then
         workflowTagSlots.size shouldBe 0
-        workflowCmdSlot.captured shouldBe DispatchNewWorkflow(
+        workflowCmdSlot.captured shouldBe DispatchWorkflow(
             workflowName = WorkflowName("foo"),
             workflowId = WorkflowId(deferred.id),
             methodName = MethodName("bar"),
@@ -201,9 +211,7 @@ internal class InfiniticClientTests : StringSpec(
             methodParameterTypes = MethodParameterTypes(listOf()),
             workflowTags = setOf(),
             workflowMeta = WorkflowMeta(),
-            parentWorkflowName = null,
-            parentWorkflowId = null,
-            parentWorkflowMethodId = null,
+            requester = ClientRequester(clientName = ClientName.from(emitterNameTest)),
             clientWaiting = false,
             emitterName = emitterNameTest,
             emittedAt = null,
@@ -215,7 +223,7 @@ internal class InfiniticClientTests : StringSpec(
         val deferred = client.dispatch(fooWorkflow::annotated)
         // then
         workflowTagSlots.size shouldBe 0
-        workflowCmdSlot.captured shouldBe DispatchNewWorkflow(
+        workflowCmdSlot.captured shouldBe DispatchWorkflow(
             workflowName = WorkflowName("foo"),
             workflowId = WorkflowId(deferred.id),
             methodName = MethodName("bar"),
@@ -223,9 +231,7 @@ internal class InfiniticClientTests : StringSpec(
             methodParameterTypes = MethodParameterTypes(listOf()),
             workflowTags = setOf(),
             workflowMeta = WorkflowMeta(),
-            parentWorkflowName = null,
-            parentWorkflowId = null,
-            parentWorkflowMethodId = null,
+            requester = ClientRequester(clientName = ClientName.from(emitterNameTest)),
             clientWaiting = false,
             emitterName = emitterNameTest,
             emittedAt = null,
@@ -237,7 +243,7 @@ internal class InfiniticClientTests : StringSpec(
         val deferred = client.dispatch(fakeWorkflow::parent)
         // then
         workflowTagSlots.size shouldBe 0
-        workflowCmdSlot.captured shouldBe DispatchNewWorkflow(
+        workflowCmdSlot.captured shouldBe DispatchWorkflow(
             workflowName = WorkflowName(FakeWorkflow::class.java.name),
             workflowId = WorkflowId(deferred.id),
             methodName = MethodName("parent"),
@@ -245,9 +251,7 @@ internal class InfiniticClientTests : StringSpec(
             methodParameterTypes = MethodParameterTypes(listOf()),
             workflowTags = setOf(),
             workflowMeta = WorkflowMeta(),
-            parentWorkflowName = null,
-            parentWorkflowId = null,
-            parentWorkflowMethodId = null,
+            requester = ClientRequester(clientName = ClientName.from(emitterNameTest)),
             clientWaiting = false,
             emitterName = emitterNameTest,
             emittedAt = null,
@@ -259,7 +263,7 @@ internal class InfiniticClientTests : StringSpec(
         val deferred = client.dispatch(fakeWorkflowWithMeta::m0)
         // then
         workflowTagSlots.size shouldBe 0
-        workflowCmdSlot.captured shouldBe DispatchNewWorkflow(
+        workflowCmdSlot.captured shouldBe DispatchWorkflow(
             workflowName = WorkflowName(FakeWorkflow::class.java.name),
             workflowId = WorkflowId(deferred.id),
             methodName = MethodName("m0"),
@@ -267,9 +271,7 @@ internal class InfiniticClientTests : StringSpec(
             methodParameterTypes = MethodParameterTypes(listOf()),
             workflowTags = setOf(),
             workflowMeta = WorkflowMeta(meta),
-            parentWorkflowName = null,
-            parentWorkflowId = null,
-            parentWorkflowMethodId = null,
+            requester = ClientRequester(clientName = ClientName.from(emitterNameTest)),
             clientWaiting = false,
             emitterName = emitterNameTest,
             emittedAt = null,
@@ -291,7 +293,7 @@ internal class InfiniticClientTests : StringSpec(
           )
         }.toSet()
 
-        workflowCmdSlot.captured shouldBe DispatchNewWorkflow(
+        workflowCmdSlot.captured shouldBe DispatchWorkflow(
             workflowName = WorkflowName(FakeWorkflow::class.java.name),
             workflowId = WorkflowId(deferred.id),
             methodName = MethodName("m0"),
@@ -299,9 +301,7 @@ internal class InfiniticClientTests : StringSpec(
             methodParameterTypes = MethodParameterTypes(listOf()),
             workflowTags = tags.map { WorkflowTag(it) }.toSet(),
             workflowMeta = WorkflowMeta(),
-            parentWorkflowName = null,
-            parentWorkflowId = null,
-            parentWorkflowMethodId = null,
+            requester = ClientRequester(clientName = ClientName.from(emitterNameTest)),
             clientWaiting = false,
             emitterName = emitterNameTest,
             emittedAt = null,
@@ -314,7 +314,7 @@ internal class InfiniticClientTests : StringSpec(
         // then
         workflowCmdSlot.isCaptured shouldBe true
         val msg = workflowCmdSlot.captured
-        msg shouldBe DispatchNewWorkflow(
+        msg shouldBe DispatchWorkflow(
             workflowName = WorkflowName(FakeWorkflow::class.java.name),
             workflowId = WorkflowId(deferred.id),
             methodName = MethodName("m1"),
@@ -322,9 +322,7 @@ internal class InfiniticClientTests : StringSpec(
             methodParameterTypes = MethodParameterTypes(listOf(Integer::class.java.name)),
             workflowTags = setOf(),
             workflowMeta = WorkflowMeta(),
-            parentWorkflowName = null,
-            parentWorkflowId = null,
-            parentWorkflowMethodId = null,
+            requester = ClientRequester(clientName = ClientName.from(emitterNameTest)),
             clientWaiting = false,
             emitterName = emitterNameTest,
             emittedAt = null,
@@ -337,7 +335,7 @@ internal class InfiniticClientTests : StringSpec(
         // then
         workflowCmdSlot.isCaptured shouldBe true
         val msg = workflowCmdSlot.captured
-        msg shouldBe DispatchNewWorkflow(
+        msg shouldBe DispatchWorkflow(
             workflowName = WorkflowName(FakeWorkflow::class.java.name),
             workflowId = WorkflowId(deferred.id),
             methodName = MethodName("m3"),
@@ -346,9 +344,7 @@ internal class InfiniticClientTests : StringSpec(
             MethodParameterTypes(listOf(Int::class.java.name, String::class.java.name)),
             workflowTags = setOf(),
             workflowMeta = WorkflowMeta(),
-            parentWorkflowName = null,
-            parentWorkflowId = null,
-            parentWorkflowMethodId = null,
+            requester = ClientRequester(clientName = ClientName.from(emitterNameTest)),
             clientWaiting = false,
             emitterName = emitterNameTest,
             emittedAt = null,
@@ -363,7 +359,7 @@ internal class InfiniticClientTests : StringSpec(
         workflowCmdSlot.isCaptured shouldBe true
         val msg = workflowCmdSlot.captured
 
-        msg shouldBe DispatchNewWorkflow(
+        msg shouldBe DispatchWorkflow(
             workflowName = WorkflowName(FakeWorkflow::class.java.name),
             workflowId = WorkflowId(deferred.id),
             methodName = MethodName("m4"),
@@ -371,9 +367,7 @@ internal class InfiniticClientTests : StringSpec(
             methodParameterTypes = MethodParameterTypes(listOf(FakeInterface::class.java.name)),
             workflowTags = setOf(),
             workflowMeta = WorkflowMeta(),
-            parentWorkflowName = null,
-            parentWorkflowId = null,
-            parentWorkflowMethodId = null,
+            requester = ClientRequester(clientName = ClientName.from(emitterNameTest)),
             clientWaiting = false,
             emitterName = emitterNameTest,
             emittedAt = null,
@@ -396,16 +390,33 @@ internal class InfiniticClientTests : StringSpec(
             workflowId = msg.workflowId,
             emitterName = emitterNameTest,
             emittedAt = null,
+            requester = ClientRequester(clientName = ClientName.from(emitterNameTest)),
         )
 
         // when waiting for a workflow, the consumer should be started
-        coVerify { consumerAsync.startClientConsumerAsync(any(), any(), clientNameTest) }
+        coVerify {
+          consumerAsync.start(
+              MainSubscription(ClientTopic),
+              "$clientNameTest",
+              any(),
+              any(),
+              1,
+          )
+        }
 
         // restart a workflow
         client.dispatch(fakeWorkflow::m3, 0, "a").await()
 
         // the consumer should be started only once
-        coVerify(exactly = 1) { consumerAsync.startClientConsumerAsync(any(), any(), any()) }
+        coVerify(exactly = 1) {
+          consumerAsync.start(
+              MainSubscription(ClientTopic),
+              "$clientNameTest",
+              any(),
+              any(),
+              1,
+          )
+        }
       }
 
       "Should throw a WorkflowTimedOutException when waiting for a workflow more than timeout" {
@@ -441,6 +452,7 @@ internal class InfiniticClientTests : StringSpec(
             workflowId = WorkflowId(id),
             emitterName = emitterNameTest,
             emittedAt = null,
+            requester = ClientRequester(clientName = ClientName.from(emitterNameTest)),
         )
       }
 
@@ -461,6 +473,7 @@ internal class InfiniticClientTests : StringSpec(
             workflowId = WorkflowId(id),
             emitterName = emitterNameTest,
             emittedAt = null,
+            requester = ClientRequester(clientName = ClientName.from(emitterNameTest)),
         )
       }
 
@@ -480,6 +493,7 @@ internal class InfiniticClientTests : StringSpec(
             parentWorkflowId = null,
             emitterName = emitterNameTest,
             emittedAt = null,
+            requester = ClientRequester(clientName = ClientName.from(emitterNameTest)),
         )
       }
 
@@ -500,6 +514,7 @@ internal class InfiniticClientTests : StringSpec(
             parentWorkflowId = null,
             emitterName = emitterNameTest,
             emittedAt = null,
+            requester = ClientRequester(clientName = ClientName.from(emitterNameTest)),
         )
       }
 
@@ -525,6 +540,7 @@ internal class InfiniticClientTests : StringSpec(
             workflowId = WorkflowId(id),
             emitterName = emitterNameTest,
             emittedAt = null,
+            requester = ClientRequester(clientName = ClientName.from(emitterNameTest)),
         )
       }
 
@@ -550,6 +566,7 @@ internal class InfiniticClientTests : StringSpec(
             workflowId = WorkflowId(id),
             emitterName = emitterNameTest,
             emittedAt = null,
+            requester = ClientRequester(clientName = ClientName.from(emitterNameTest)),
         )
       }
 
@@ -568,6 +585,7 @@ internal class InfiniticClientTests : StringSpec(
             workflowId = WorkflowId(id),
             emitterName = emitterNameTest,
             emittedAt = null,
+            requester = ClientRequester(clientName = ClientName.from(emitterNameTest)),
         )
       }
 
@@ -586,6 +604,7 @@ internal class InfiniticClientTests : StringSpec(
             workflowId = WorkflowId(id),
             emitterName = emitterNameTest,
             emittedAt = null,
+            requester = ClientRequester(clientName = ClientName.from(emitterNameTest)),
         )
       }
 
@@ -602,6 +621,7 @@ internal class InfiniticClientTests : StringSpec(
             workflowId = WorkflowId(id),
             emitterName = emitterNameTest,
             emittedAt = null,
+            requester = ClientRequester(clientName = ClientName.from(emitterNameTest)),
         )
       }
 
@@ -618,6 +638,7 @@ internal class InfiniticClientTests : StringSpec(
             workflowId = WorkflowId(id),
             emitterName = emitterNameTest,
             emittedAt = null,
+            requester = ClientRequester(clientName = ClientName.from(emitterNameTest)),
         )
       }
 
@@ -629,16 +650,14 @@ internal class InfiniticClientTests : StringSpec(
         // then
         workflowCmdSlot.isCaptured shouldBe true
         val msg = workflowCmdSlot.captured
-        msg shouldBe DispatchMethodWorkflow(
+        msg shouldBe DispatchMethod(
             workflowName = WorkflowName(FakeWorkflow::class.java.name),
             workflowId = WorkflowId(id),
             workflowMethodId = WorkflowMethodId(deferred.id),
             methodName = MethodName("m0"),
             methodParameters = MethodParameters(),
             methodParameterTypes = MethodParameterTypes(listOf()),
-            parentWorkflowName = null,
-            parentWorkflowId = null,
-            parentWorkflowMethodId = null,
+            requester = ClientRequester(clientName = ClientName.from(emitterNameTest)),
             clientWaiting = false,
             emitterName = emitterNameTest,
             emittedAt = null,
@@ -660,9 +679,7 @@ internal class InfiniticClientTests : StringSpec(
             methodParameters = MethodParameters(),
             methodParameterTypes = MethodParameterTypes(listOf()),
             methodTimeout = null,
-            parentWorkflowName = null,
-            parentWorkflowId = null,
-            parentWorkflowMethodId = null,
+            requester = ClientRequester(clientName = ClientName.from(emitterNameTest)),
             clientWaiting = false,
             emitterName = emitterNameTest,
             emittedAt = null,
@@ -683,6 +700,7 @@ internal class InfiniticClientTests : StringSpec(
             workflowId = WorkflowId(id),
             emitterName = emitterNameTest,
             emittedAt = null,
+            requester = ClientRequester(clientName = ClientName.from(emitterNameTest)),
         )
       }
 
@@ -700,6 +718,7 @@ internal class InfiniticClientTests : StringSpec(
             workflowId = WorkflowId(id),
             emitterName = emitterNameTest,
             emittedAt = null,
+            requester = ClientRequester(clientName = ClientName.from(emitterNameTest)),
         )
       }
 
@@ -717,6 +736,7 @@ internal class InfiniticClientTests : StringSpec(
             emitterWorkflowId = null,
             emitterName = emitterNameTest,
             emittedAt = null,
+            requester = ClientRequester(clientName = ClientName.from(emitterNameTest)),
         )
         workflowCmdSlot.isCaptured shouldBe false
       }
@@ -735,6 +755,7 @@ internal class InfiniticClientTests : StringSpec(
             emitterWorkflowId = null,
             emitterName = emitterNameTest,
             emittedAt = null,
+            requester = ClientRequester(clientName = ClientName.from(emitterNameTest)),
         )
         workflowCmdSlot.isCaptured shouldBe false
       }
@@ -752,6 +773,7 @@ internal class InfiniticClientTests : StringSpec(
             workflowId = WorkflowId(deferred.id),
             emitterName = emitterNameTest,
             emittedAt = null,
+            requester = ClientRequester(clientName = ClientName.from(emitterNameTest)),
         )
       }
 

@@ -22,6 +22,7 @@
  */
 package io.infinitic.common.workflows.data.workflows
 
+import io.infinitic.common.utils.JsonAble
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.descriptors.PrimitiveKind
@@ -29,10 +30,14 @@ import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
 import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
+import kotlinx.serialization.json.JsonArray
+import kotlinx.serialization.json.JsonPrimitive
 
 @Serializable(with = WorkflowTagSerializer::class)
-data class WorkflowTag(val tag: String) {
+data class WorkflowTag(val tag: String) : JsonAble {
   override fun toString() = tag
+
+  override fun toJson() = JsonPrimitive(tag)
 
   companion object {
     const val CUSTOM_ID_PREFIX = "customId:"
@@ -51,3 +56,6 @@ object WorkflowTagSerializer : KSerializer<WorkflowTag> {
 
   override fun deserialize(decoder: Decoder) = WorkflowTag(decoder.decodeString())
 }
+
+val Set<WorkflowTag>.set get() = map { it.tag }.toSet()
+

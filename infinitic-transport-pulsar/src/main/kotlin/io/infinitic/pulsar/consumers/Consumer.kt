@@ -43,6 +43,7 @@ import kotlinx.coroutines.withContext
 import org.apache.pulsar.client.api.Consumer
 import org.apache.pulsar.client.api.MessageId
 import org.apache.pulsar.client.api.Schema
+import org.apache.pulsar.client.api.SubscriptionInitialPosition
 import org.apache.pulsar.client.api.SubscriptionType
 import java.util.concurrent.CancellationException
 import java.util.concurrent.CompletionException
@@ -62,9 +63,7 @@ class Consumer(
   val isActive get() = consumingScope.isActive
 
   fun cancel() {
-    if (consumingScope.isActive) {
-      consumingScope.cancel()
-    }
+    if (isActive) consumingScope.cancel()
   }
 
   fun join() = runBlocking {
@@ -77,15 +76,36 @@ class Consumer(
     }
   }
 
-  internal suspend fun <T : Message, S : Envelope<out T>> startConsumerLoop(
-    handler: suspend (T, MillisInstant) -> Unit,
-    beforeDlq: suspend (T?, Exception) -> Unit,
-    schema: Schema<S>,
+  /**
+   * Starts listening for messages on a Pulsar topic.
+   *
+   * Consumers are concurrently created on the current coroutine,
+   * but the consuming loop is done on consumingScope.
+   * The processing of message is done on a NonCancellable context
+   * to guarantee that the ongoing messages are handled entirely during a shutdown
+   *
+   * @param T the type of the message
+   * @param S the type of the envelope that wraps the message
+   * @param handler the handler function to process the received message
+   * @param beforeDlq the function to be called before sending a message to DLQ (Dead Letter Queue)
+   * @param schema the schema used to deserialize the message envelope
+   * @param topic the topic to listen to
+   * @param topicDlq the DLQ topic to send failed messages to (can be null)
+   * @param subscriptionName the subscription name for the regular topic
+   * @param subscriptionNameDlq the subscription name for the DLQ topic
+   * @param subscriptionType the subscription type to use (e.g., Exclusive, Shared, Key_Shared)
+   * @param consumerName the name of the consumer
+   * @param concurrency the number of consumers*/
+  internal suspend fun <S : Message, T : Envelope<out S>> startListening(
+    handler: suspend (S, MillisInstant) -> Unit,
+    beforeDlq: suspend (S?, Exception) -> Unit,
+    schema: Schema<T>,
     topic: String,
     topicDlq: String?,
     subscriptionName: String,
     subscriptionNameDlq: String,
     subscriptionType: SubscriptionType,
+    subscriptionInitialPosition: SubscriptionInitialPosition,
     consumerName: String,
     concurrency: Int
   ) = coroutineScope {
@@ -105,6 +125,7 @@ class Consumer(
                 subscriptionName = subscriptionName,
                 subscriptionNameDlq = subscriptionNameDlq,
                 subscriptionType = subscriptionType,
+                subscriptionInitialPosition = subscriptionInitialPosition,
                 consumerName = consumerNameIt,
             ).getOrThrow()
 
@@ -141,19 +162,20 @@ class Consumer(
             subscriptionName = subscriptionName,
             subscriptionNameDlq = subscriptionNameDlq,
             subscriptionType = subscriptionType,
+            subscriptionInitialPosition = subscriptionInitialPosition,
             consumerName = consumerName,
         ).getOrThrow()
 
         // Channel is backpressure aware
         // we can use it to send messages to the executor coroutines
-        val channel = Channel<PulsarMessage<S>>()
+        val channel = Channel<PulsarMessage<T>>()
 
         // start executor coroutines
         launch(consumingScope.coroutineContext) {
           val jobs = List(concurrency) {
             launch {
               try {
-                for (pulsarMessage: PulsarMessage<S> in channel) {
+                for (pulsarMessage: PulsarMessage<T> in channel) {
                   // this ensures that ongoing messages are processed
                   // even after scope is cancelled following an interruption or an Error
                   withContext(NonCancellable) {
@@ -297,12 +319,14 @@ class Consumer(
     subscriptionName: String,
     subscriptionNameDlq: String,
     subscriptionType: SubscriptionType,
+    subscriptionInitialPosition: SubscriptionInitialPosition,
     consumerName: String,
   ): Result<Consumer<S>> {
     val consumerDef = PulsarInfiniticClient.ConsumerDef(
         topic = topic,
         subscriptionName = subscriptionName, //  MUST be the same for all instances!
         subscriptionType = subscriptionType,
+        subscriptionInitialPosition = subscriptionInitialPosition,
         consumerName = consumerName,
         consumerConfig = consumerConfig,
     )
@@ -311,6 +335,7 @@ class Consumer(
           topic = it,
           subscriptionName = subscriptionNameDlq, //  MUST be the same for all instances!
           subscriptionType = SubscriptionType.Shared,
+          subscriptionInitialPosition = subscriptionInitialPosition,
           consumerName = "$consumerName-dlq",
           consumerConfig = consumerConfig,
       )
