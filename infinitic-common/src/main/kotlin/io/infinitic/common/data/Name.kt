@@ -22,6 +22,7 @@
  */
 package io.infinitic.common.data
 
+import io.infinitic.common.utils.JsonAble
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.descriptors.PrimitiveKind
@@ -29,10 +30,14 @@ import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
 import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
+import kotlinx.serialization.json.JsonPrimitive
 
 @Serializable(with = NameSerializer::class)
-open class Name(open val name: String) : CharSequence by name, Comparable<String> by name {
+open class Name(open val name: String) : CharSequence by name, Comparable<String> by name,
+  JsonAble {
   final override fun toString() = name
+
+  override fun toJson() = JsonPrimitive(name)
 
   fun get() = name
 

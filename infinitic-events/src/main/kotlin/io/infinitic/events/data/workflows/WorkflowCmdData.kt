@@ -24,7 +24,7 @@
 package io.infinitic.events.data.workflows
 
 import io.infinitic.common.exceptions.thisShouldNotHappen
-import io.infinitic.common.workflows.data.workflows.set
+import io.infinitic.common.utils.toJson
 import io.infinitic.common.workflows.engine.messages.CancelWorkflow
 import io.infinitic.common.workflows.engine.messages.CompleteTimers
 import io.infinitic.common.workflows.engine.messages.CompleteWorkflow
@@ -35,128 +35,101 @@ import io.infinitic.common.workflows.engine.messages.RetryWorkflowTask
 import io.infinitic.common.workflows.engine.messages.SendSignal
 import io.infinitic.common.workflows.engine.messages.WaitWorkflow
 import io.infinitic.common.workflows.engine.messages.WorkflowCmdMessage
-import io.infinitic.events.InfiniticEventType
-import io.infinitic.events.InfiniticEventType.WORKFLOW_CANCELED
-import io.infinitic.events.InfiniticEventType.WORKFLOW_DISPATCHED
-import io.infinitic.events.InfiniticEventType.WORKFLOW_EXECUTOR_RETRY_REQUESTED
-import io.infinitic.events.InfiniticEventType.WORKFLOW_METHOD_DISPATCHED
-import io.infinitic.events.InfiniticEventType.WORKFLOW_SIGNALED
-import io.infinitic.events.InfiniticEventType.WORKFLOW_TASKS_RETRY_REQUESTED
-import io.infinitic.events.data.RequesterData
-import io.infinitic.events.data.toData
-import kotlinx.serialization.Serializable
-import kotlinx.serialization.json.JsonElement
+import io.infinitic.events.properties.CHANNEL_NAME
+import io.infinitic.events.properties.INFINITIC_VERSION
+import io.infinitic.events.properties.REQUESTER
+import io.infinitic.events.properties.SERVICE_NAME
+import io.infinitic.events.properties.SIGNAL_DATA
+import io.infinitic.events.properties.SIGNAL_ID
+import io.infinitic.events.properties.TARGET
+import io.infinitic.events.properties.TASK_ID
+import io.infinitic.events.properties.TASK_STATUS
+import io.infinitic.events.properties.WORKFLOW_META
+import io.infinitic.events.properties.WORKFLOW_METHOD_ARGS
+import io.infinitic.events.properties.WORKFLOW_METHOD_ID
+import io.infinitic.events.properties.WORKFLOW_METHOD_NAME
+import io.infinitic.events.properties.WORKFLOW_TAGS
+import io.infinitic.events.types.WORKFLOW_CANCELED
+import io.infinitic.events.types.WORKFLOW_COMMANDED
+import io.infinitic.events.types.WORKFLOW_EXECUTOR_RETRY_COMMANDED
+import io.infinitic.events.types.WORKFLOW_METHOD_COMMANDED
+import io.infinitic.events.types.WORKFLOW_SIGNAL_COMMANDED
+import io.infinitic.events.types.WORKFLOW_TASKS_RETRY_COMMANDED
+import kotlinx.serialization.json.JsonObject
 
-fun WorkflowCmdMessage.workflowType(): InfiniticEventType? = when (this) {
-  is DispatchWorkflow -> WORKFLOW_DISPATCHED
-  is DispatchMethod -> WORKFLOW_METHOD_DISPATCHED
+fun WorkflowCmdMessage.workflowType(): String? = when (this) {
+  is DispatchWorkflow -> WORKFLOW_COMMANDED
+  is DispatchMethod -> WORKFLOW_METHOD_COMMANDED
   is CancelWorkflow -> WORKFLOW_CANCELED
   is CompleteTimers -> null
   is CompleteWorkflow -> null
-  is RetryTasks -> WORKFLOW_TASKS_RETRY_REQUESTED
-  is RetryWorkflowTask -> WORKFLOW_EXECUTOR_RETRY_REQUESTED
-  is SendSignal -> WORKFLOW_SIGNALED
+  is RetryTasks -> WORKFLOW_TASKS_RETRY_COMMANDED
+  is RetryWorkflowTask -> WORKFLOW_EXECUTOR_RETRY_COMMANDED
+  is SendSignal -> WORKFLOW_SIGNAL_COMMANDED
   is WaitWorkflow -> null
 }
 
-fun WorkflowCmdMessage.toWorkflowData(): WorkflowCmdData = when (this) {
-  is DispatchWorkflow -> WorkflowDispatchedData(
-      workflowMeta = workflowMeta.map,
-      workflowTags = workflowTags.set,
-      requester = (requester ?: thisShouldNotHappen()).toData(),
-      infiniticVersion = version.toString(),
+fun WorkflowCmdMessage.toWorkflowJson(): JsonObject = when (this) {
+  is DispatchWorkflow -> JsonObject(
+      mapOf(
+          WORKFLOW_META to workflowMeta.toJson(),
+          WORKFLOW_TAGS to workflowTags.toJson(),
+          REQUESTER to requester.toJson(),
+          INFINITIC_VERSION to version.toJson(),
+      ),
   )
 
-  is DispatchMethod -> WorkflowMethodDispatchedData(
-      workflowMethodArgs = methodParameters.toJson(),
-      workflowMethodName = methodName.toString(),
-      workflowMethodId = workflowMethodId.toString(),
-      requester = (requester ?: thisShouldNotHappen()).toData(),
-      infiniticVersion = version.toString(),
+  is DispatchMethod -> JsonObject(
+      mapOf(
+          WORKFLOW_METHOD_ARGS to methodParameters.toJson(),
+          WORKFLOW_METHOD_NAME to methodName.toJson(),
+          WORKFLOW_METHOD_ID to workflowMethodId.toJson(),
+          REQUESTER to requester.toJson(),
+          INFINITIC_VERSION to version.toJson(),
+      ),
   )
 
-  is CancelWorkflow -> WorkflowCancelRequestedData(
-      requester = (requester ?: thisShouldNotHappen()).toData(),
-      infiniticVersion = version.toString(),
+  is CancelWorkflow -> JsonObject(
+      mapOf(
+          REQUESTER to requester.toJson(),
+          INFINITIC_VERSION to version.toJson(),
+      ),
   )
 
   is CompleteTimers -> TODO()
 
   is CompleteWorkflow -> TODO()
 
-  is RetryTasks -> TaskRetryRequestedData(
-      taskId = taskId?.toString(),
-      taskStatus = taskStatus?.toString(),
-      serviceName = serviceName?.toString(),
-      requester = (requester ?: thisShouldNotHappen()).toData(),
-      infiniticVersion = version.toString(),
+  is RetryTasks -> JsonObject(
+      mapOf(
+          TARGET to JsonObject(
+              mapOf(
+                  TASK_ID to taskId.toJson(),
+                  TASK_STATUS to taskStatus.toJson(),
+                  SERVICE_NAME to serviceName.toJson(),
+              ),
+          ),
+          REQUESTER to requester.toJson(),
+          INFINITIC_VERSION to version.toJson(),
+      ),
   )
 
-  is RetryWorkflowTask -> WorkflowTaskRetryRequestedData(
-      requester = (requester ?: thisShouldNotHappen()).toData(),
-      infiniticVersion = version.toString(),
+  is RetryWorkflowTask -> JsonObject(
+      mapOf(
+          REQUESTER to requester.toJson(),
+          INFINITIC_VERSION to version.toJson(),
+      ),
   )
 
-  is SendSignal -> WorkflowSignalSentData(
-      channelName = channelName.toString(),
-      signalId = signalId.toString(),
-      signalArg = signalData.serializedData.toJson(),
-      requester = (requester ?: thisShouldNotHappen()).toData(),
-      infiniticVersion = version.toString(),
+  is SendSignal -> JsonObject(
+      mapOf(
+          CHANNEL_NAME to channelName.toJson(),
+          SIGNAL_ID to signalId.toJson(),
+          SIGNAL_DATA to signalData.toJson(),
+          REQUESTER to requester.toJson(),
+          INFINITIC_VERSION to version.toJson(),
+      ),
   )
 
-  is WaitWorkflow -> TODO()
+  is WaitWorkflow -> thisShouldNotHappen()
 }
-
-@Serializable
-sealed interface WorkflowCmdData : InfiniticCloudEventsData {
-  val requester: RequesterData
-}
-
-@Serializable
-data class WorkflowDispatchedData(
-  val workflowMeta: Map<String, ByteArray>,
-  val workflowTags: Set<String>,
-  override val requester: RequesterData,
-  override val infiniticVersion: String
-) : WorkflowCmdData
-
-@Serializable
-data class WorkflowMethodDispatchedData(
-  val workflowMethodArgs: List<JsonElement>,
-  val workflowMethodName: String,
-  val workflowMethodId: String,
-  override val requester: RequesterData,
-  override val infiniticVersion: String
-) : WorkflowCmdData
-
-@Serializable
-data class WorkflowCancelRequestedData(
-  override val requester: RequesterData,
-  override val infiniticVersion: String
-) : WorkflowCmdData
-
-@Serializable
-data class WorkflowTaskRetryRequestedData(
-  override val requester: RequesterData,
-  override val infiniticVersion: String
-) : WorkflowCmdData
-
-@Serializable
-data class TaskRetryRequestedData(
-  val taskId: String?,
-  val taskStatus: String?,
-  val serviceName: String?,
-  override val requester: RequesterData,
-  override val infiniticVersion: String
-) : WorkflowCmdData
-
-@Serializable
-data class WorkflowSignalSentData(
-  val channelName: String,
-  val signalId: String,
-  val signalArg: JsonElement,
-  override val requester: RequesterData,
-  override val infiniticVersion: String
-) : WorkflowCmdData
-

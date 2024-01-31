@@ -23,54 +23,36 @@
 
 package io.infinitic.events.data.services
 
-import io.infinitic.common.exceptions.thisShouldNotHappen
 import io.infinitic.common.tasks.executors.messages.ExecuteTask
 import io.infinitic.common.tasks.executors.messages.ServiceExecutorMessage
-import io.infinitic.common.tasks.executors.messages.clientName
-import io.infinitic.events.InfiniticEventType
-import io.infinitic.events.data.ClientRequesterData
-import io.infinitic.events.data.RequesterData
-import io.infinitic.events.data.WorkflowRequesterData
-import kotlinx.serialization.Serializable
-import kotlinx.serialization.json.JsonElement
+import io.infinitic.common.tasks.executors.messages.requester
+import io.infinitic.common.utils.toJson
+import io.infinitic.events.properties.INFINITIC_VERSION
+import io.infinitic.events.properties.REQUESTER
+import io.infinitic.events.properties.TASK_ARGS
+import io.infinitic.events.properties.TASK_META
+import io.infinitic.events.properties.TASK_NAME
+import io.infinitic.events.properties.TASK_RETRY_INDEX
+import io.infinitic.events.properties.TASK_RETRY_SEQUENCE
+import io.infinitic.events.properties.TASK_TAGS
+import io.infinitic.events.types.TASK_COMMANDED
+import kotlinx.serialization.json.JsonObject
 
-fun ServiceExecutorMessage.serviceType(): InfiniticEventType = when (this) {
-  is ExecuteTask -> InfiniticEventType.TASK_DISPATCHED
+fun ServiceExecutorMessage.serviceType(): String = when (this) {
+  is ExecuteTask -> TASK_COMMANDED
 }
 
-@Serializable
-data class TaskDispatchedData(
-  val taskName: String,
-  val taskArgs: List<JsonElement>,
-  val requester: RequesterData,
-  override val retrySequence: Int,
-  override val retryIndex: Int,
-  override val taskMeta: Map<String, ByteArray>,
-  override val taskTags: Set<String>,
-  override val infiniticVersion: String
-) : ServiceEventData
-
-fun ServiceExecutorMessage.toServiceData() = when (this) {
-  is ExecuteTask -> TaskDispatchedData(
-      retrySequence = taskRetrySequence.toInt(),
-      retryIndex = taskRetryIndex.toInt(),
-      taskName = methodName.toString(),
-      taskArgs = methodParameters.toJson(),
-      taskMeta = taskMeta.map,
-      taskTags = taskTags.map { it.toString() }.toSet(),
-      requester = when {
-        workflowName != null -> WorkflowRequesterData(
-            workflowName = workflowName.toString(),
-            workflowId = workflowId?.toString() ?: thisShouldNotHappen(),
-            workflowMethodId = workflowMethodId?.toString() ?: thisShouldNotHappen(),
-        )
-
-        clientName != null -> ClientRequesterData(
-            clientName = clientName.toString(),
-        )
-
-        else -> thisShouldNotHappen()
-      },
-      infiniticVersion = version.toString(),
+fun ServiceExecutorMessage.toServiceJson() = when (this) {
+  is ExecuteTask -> JsonObject(
+      mapOf(
+          TASK_RETRY_SEQUENCE to taskRetrySequence.toJson(),
+          TASK_RETRY_INDEX to taskRetryIndex.toJson(),
+          TASK_NAME to methodName.toJson(),
+          TASK_ARGS to methodParameters.toJson(),
+          TASK_META to taskMeta.toJson(),
+          TASK_TAGS to taskTags.toJson(),
+          REQUESTER to requester.toJson(),
+          INFINITIC_VERSION to version.toJson(),
+      ),
   )
 }

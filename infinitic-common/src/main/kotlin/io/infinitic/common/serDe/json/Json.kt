@@ -46,9 +46,7 @@ object Json {
     configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false)
     configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
   }
-
-  fun bytesify(msg: Any?): ByteArray = mapper.writeValueAsBytes(msg)
-
+  
   fun stringify(msg: Any?, pretty: Boolean = false): String =
       when (pretty) {
         true -> mapper.writerWithDefaultPrettyPrinter().writeValueAsString(msg)

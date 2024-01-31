@@ -22,40 +22,36 @@
  */
 
 package io.infinitic.events.data.workflows
-
-import io.infinitic.common.exceptions.thisShouldNotHappen
-import io.infinitic.common.tasks.data.TaskRetryIndex
-import io.infinitic.common.tasks.data.TaskRetrySequence
-import io.infinitic.common.tasks.executors.messages.ExecuteTask
-import io.infinitic.common.tasks.executors.messages.ServiceExecutorMessage
-import io.infinitic.events.InfiniticEventType
-import io.infinitic.events.InfiniticEventType.WORKFLOW_EXECUTOR_DISPATCHED
-import kotlinx.serialization.Serializable
-import kotlinx.serialization.json.JsonElement
-
-fun ServiceExecutorMessage.workflowType(): InfiniticEventType? =
-    when (isWorkflowTaskDispatched) {
-      false -> null
-      true -> WORKFLOW_EXECUTOR_DISPATCHED
-    }
-
-fun ServiceExecutorMessage.toWorkflowData(): WorkflowEventData =
-    when (isWorkflowTaskDispatched) {
-      false -> thisShouldNotHappen()
-      true -> WorkflowTaskDispatchedData(
-          arg = (this as ExecuteTask).methodParameters.first().toJson(),
-          workerName = emitterName.toString(),
-          infiniticVersion = version.toString(),
-      )
-    }
-
-val ServiceExecutorMessage.isWorkflowTaskDispatched: Boolean
-  get() = (this is ExecuteTask) && this.isWorkflowTask() &&
-      taskRetryIndex == TaskRetryIndex(0) && taskRetrySequence == TaskRetrySequence(0)
-
-@Serializable
-data class WorkflowTaskDispatchedData(
-  val arg: JsonElement,
-  override val workerName: String,
-  override val infiniticVersion: String
-) : WorkflowEventData
+//
+//import io.infinitic.common.exceptions.thisShouldNotHappen
+//import io.infinitic.common.tasks.data.TaskRetryIndex
+//import io.infinitic.common.tasks.data.TaskRetrySequence
+//import io.infinitic.common.tasks.executors.messages.ExecuteTask
+//import io.infinitic.common.tasks.executors.messages.ServiceExecutorMessage
+//import io.infinitic.common.utils.toJson
+//import io.infinitic.events.types.WORKFLOW_EXECUTOR_DISPATCHED
+//import kotlinx.serialization.json.JsonObject
+//
+//fun ServiceExecutorMessage.workflowType(): String? =
+//    when (isWorkflowTaskDispatched) {
+//      true -> WORKFLOW_EXECUTOR_DISPATCHED
+//      false -> null
+//    }
+//
+//fun ServiceExecutorMessage.toWorkflowJson(): JsonObject =
+//    when (isWorkflowTaskDispatched) {
+//      true -> JsonObject(
+//          mapOf(
+//              "arg" to (this as ExecuteTask).methodParameters.first().toJson(),
+//              "workerName" to emitterName.toJson(),
+//              "infiniticVersion" to version.toJson(),
+//          ),
+//      )
+//
+//      false -> thisShouldNotHappen()
+//    }
+//
+//
+//val ServiceExecutorMessage.isWorkflowTaskDispatched: Boolean
+//  get() = (this is ExecuteTask) && this.isWorkflowTask() &&
+//      taskRetryIndex == TaskRetryIndex(0) && taskRetrySequence == TaskRetrySequence(0)

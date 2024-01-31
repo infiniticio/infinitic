@@ -48,20 +48,20 @@ import io.infinitic.common.workflows.engine.messages.CompleteTimers
 import io.infinitic.common.workflows.engine.messages.CompleteWorkflow
 import io.infinitic.common.workflows.engine.messages.DispatchMethod
 import io.infinitic.common.workflows.engine.messages.DispatchWorkflow
+import io.infinitic.common.workflows.engine.messages.MethodEvent
 import io.infinitic.common.workflows.engine.messages.RetryTasks
 import io.infinitic.common.workflows.engine.messages.RetryWorkflowTask
 import io.infinitic.common.workflows.engine.messages.SendSignal
 import io.infinitic.common.workflows.engine.messages.TaskCanceled
 import io.infinitic.common.workflows.engine.messages.TaskCompleted
+import io.infinitic.common.workflows.engine.messages.TaskEvent
 import io.infinitic.common.workflows.engine.messages.TaskFailed
 import io.infinitic.common.workflows.engine.messages.TaskTimedOut
 import io.infinitic.common.workflows.engine.messages.TimerCompleted
 import io.infinitic.common.workflows.engine.messages.WaitWorkflow
 import io.infinitic.common.workflows.engine.messages.WorkflowCompletedEvent
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
-import io.infinitic.common.workflows.engine.messages.WorkflowInternalEvent
-import io.infinitic.common.workflows.engine.messages.WorkflowMethodEvent
-import io.infinitic.common.workflows.engine.messages.WorkflowMethodTaskEvent
+import io.infinitic.common.workflows.engine.messages.WorkflowEvent
 import io.infinitic.common.workflows.engine.state.WorkflowState
 import io.infinitic.common.workflows.engine.storage.WorkflowStateStorage
 import io.infinitic.common.workflows.tags.messages.RemoveTagFromWorkflow
@@ -266,7 +266,7 @@ class WorkflowEngine(
         }
 
         // Idempotency: discard if this workflowTask is not the current one
-        if (state.runningWorkflowTaskId != (message as WorkflowMethodTaskEvent).taskId()) {
+        if (state.runningWorkflowTaskId != (message as TaskEvent).taskId()) {
           logDiscarding(message) { "as workflowTask ${message.taskId()} is different than ${state.runningWorkflowTaskId} in state" }
 
           return null
@@ -274,7 +274,7 @@ class WorkflowEngine(
       }
 
       false -> {
-        if (message is WorkflowInternalEvent && state.runningWorkflowTaskId != null) {
+        if (message is WorkflowEvent && state.runningWorkflowTaskId != null) {
           // if a workflow task is ongoing then buffer all WorkflowEvent message,
           // except those associated to a WorkflowTask
           logDebug(message) { "buffering $message" }
@@ -342,7 +342,7 @@ class WorkflowEngine(
         }
       }
 
-      is WorkflowMethodEvent -> {
+      is MethodEvent -> {
         // if methodRun has already been cleaned (completed), then discard the message
         if (state.getWorkflowMethod(message.workflowMethodId) == null) {
           logDiscarding(message) { "as there is no running workflow method related" }

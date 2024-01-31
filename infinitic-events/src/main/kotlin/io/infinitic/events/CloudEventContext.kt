@@ -31,11 +31,9 @@ import io.infinitic.common.workflows.engine.messages.WorkflowCmdMessage
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
 import io.infinitic.common.workflows.engine.messages.WorkflowEventMessage
 import io.infinitic.events.data.services.serviceType
-import io.infinitic.events.data.services.toServiceData
-import io.infinitic.events.data.workflows.toWorkflowData
+import io.infinitic.events.data.services.toServiceJson
+import io.infinitic.events.data.workflows.toWorkflowJson
 import io.infinitic.events.data.workflows.workflowType
-import kotlinx.serialization.encodeToString
-import kotlinx.serialization.json.Json
 import java.net.URI
 import java.net.URLEncoder
 
@@ -43,17 +41,13 @@ enum class CloudEventContext {
 
   WORKFLOW {
     override fun Message.type(): String? = when (this) {
-      is ServiceExecutorMessage -> workflowType()
-      is ServiceEventMessage -> workflowType()
       is WorkflowCmdMessage -> workflowType()
       is WorkflowEngineMessage -> workflowType()
       is WorkflowEventMessage -> workflowType()
       else -> null
-    }?.value
+    }
 
     override fun Message.subject(): String = when (this) {
-      is ServiceExecutorMessage -> workflowId
-      is ServiceEventMessage -> workflowId
       is WorkflowCmdMessage -> workflowId
       is WorkflowEngineMessage -> workflowId
       is WorkflowEventMessage -> workflowId
@@ -61,8 +55,6 @@ enum class CloudEventContext {
     }.toString()
 
     override fun Message.source(prefix: String): URI = when (this) {
-      is ServiceExecutorMessage -> workflowName
-      is ServiceEventMessage -> workflowName
       is WorkflowCmdMessage -> workflowName
       is WorkflowEngineMessage -> workflowName
       is WorkflowEventMessage -> workflowName
@@ -72,22 +64,19 @@ enum class CloudEventContext {
     }
 
     override fun Message.dataBytes(): ByteArray = when (this) {
-      is ServiceExecutorMessage -> toWorkflowData()
-      is ServiceEventMessage -> toWorkflowData()
-      is WorkflowCmdMessage -> toWorkflowData()
-      is WorkflowEngineMessage -> toWorkflowData()
-      is WorkflowEventMessage -> toWorkflowData()
+      is WorkflowCmdMessage -> toWorkflowJson()
+      is WorkflowEngineMessage -> toWorkflowJson()
+      is WorkflowEventMessage -> toWorkflowJson()
       else -> thisShouldNotHappen()
-    }.let {
-      Json.encodeToString(it).toByteArray()
-    }
+    }.toString().toByteArray()
   },
+
   SERVICE {
     override fun Message.type(): String? = when (this) {
       is ServiceExecutorMessage -> serviceType()
       is ServiceEventMessage -> serviceType()
       else -> null
-    }?.value
+    }
 
     override fun Message.subject(): String = when (this) {
       is ServiceExecutorMessage -> taskId
@@ -104,12 +93,10 @@ enum class CloudEventContext {
     }
 
     override fun Message.dataBytes(): ByteArray = when (this) {
-      is ServiceExecutorMessage -> toServiceData()
-      is ServiceEventMessage -> toServiceData()
+      is ServiceExecutorMessage -> toServiceJson()
+      is ServiceEventMessage -> toServiceJson()
       else -> thisShouldNotHappen()
-    }.let {
-      Json.encodeToString(it).toByteArray()
-    }
+    }.toString().toByteArray()
   };
 
   abstract fun Message.type(): String?

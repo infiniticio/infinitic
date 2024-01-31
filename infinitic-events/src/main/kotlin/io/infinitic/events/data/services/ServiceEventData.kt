@@ -28,115 +28,76 @@ import io.infinitic.common.tasks.events.messages.TaskCompletedEvent
 import io.infinitic.common.tasks.events.messages.TaskFailedEvent
 import io.infinitic.common.tasks.events.messages.TaskRetriedEvent
 import io.infinitic.common.tasks.events.messages.TaskStartedEvent
-import io.infinitic.events.InfiniticEventType.TASK_COMPLETED
-import io.infinitic.events.InfiniticEventType.TASK_FAILED
-import io.infinitic.events.InfiniticEventType.TASK_RETRIED
-import io.infinitic.events.InfiniticEventType.TASK_STARTED
-import io.infinitic.events.data.ErrorData
-import io.infinitic.events.data.MessageData
-import io.infinitic.events.data.toErrorData
-import kotlinx.serialization.Serializable
-import kotlinx.serialization.json.JsonElement
+import io.infinitic.common.utils.toJson
+import io.infinitic.events.properties.ERROR
+import io.infinitic.events.properties.INFINITIC_VERSION
+import io.infinitic.events.properties.RESULT
+import io.infinitic.events.properties.TASK_META
+import io.infinitic.events.properties.TASK_RETRY_DELAY
+import io.infinitic.events.properties.TASK_RETRY_INDEX
+import io.infinitic.events.properties.TASK_RETRY_SEQUENCE
+import io.infinitic.events.properties.TASK_TAGS
+import io.infinitic.events.properties.WORKER_NAME
+import io.infinitic.events.types.TASK_COMPLETED
+import io.infinitic.events.types.TASK_FAILED
+import io.infinitic.events.types.TASK_RETRIED
+import io.infinitic.events.types.TASK_STARTED
+import kotlinx.serialization.json.JsonObject
 
-fun ServiceEventMessage.serviceType() = when (this) {
+fun ServiceEventMessage.serviceType(): String = when (this) {
   is TaskCompletedEvent -> TASK_COMPLETED
   is TaskFailedEvent -> TASK_FAILED
   is TaskRetriedEvent -> TASK_RETRIED
   is TaskStartedEvent -> TASK_STARTED
 }
 
-@Serializable
-sealed interface ServiceEventData : MessageData {
-  val retrySequence: Int
-  val retryIndex: Int
-  val taskMeta: Map<String, ByteArray>
-  val taskTags: Set<String>
-  val infiniticVersion: String
-}
+fun ServiceEventMessage.toServiceJson(): JsonObject = when (this) {
 
-@Serializable
-data class TaskStartedData(
-  override val retrySequence: Int,
-  override val retryIndex: Int,
-  override val taskMeta: Map<String, ByteArray>,
-  override val taskTags: Set<String>,
-  val workerName: String,
-  override val infiniticVersion: String
-) : ServiceEventData
-
-@Serializable
-data class TaskFailedData(
-  val error: ErrorData,
-  override val retrySequence: Int,
-  override val retryIndex: Int,
-  override val taskMeta: Map<String, ByteArray>,
-  override val taskTags: Set<String>,
-  val workerName: String,
-  override val infiniticVersion: String
-) : ServiceEventData
-
-@Serializable
-data class TaskRetriedData(
-  val error: ErrorData,
-  val delayMillis: Long,
-  override val retrySequence: Int,
-  override val retryIndex: Int,
-  override val taskMeta: Map<String, ByteArray>,
-  override val taskTags: Set<String>,
-  val workerName: String,
-  override val infiniticVersion: String
-) : ServiceEventData
-
-@Serializable
-data class TaskCompletedData(
-  val returnValue: JsonElement,
-  override val retrySequence: Int,
-  override val retryIndex: Int,
-  override val taskMeta: Map<String, ByteArray>,
-  override val taskTags: Set<String>,
-  val workerName: String,
-  override val infiniticVersion: String
-) : ServiceEventData
-
-fun ServiceEventMessage.toServiceData(): ServiceEventData = when (this) {
-
-  is TaskStartedEvent -> TaskStartedData(
-      retrySequence = taskRetrySequence.toInt(),
-      retryIndex = taskRetryIndex.toInt(),
-      taskMeta = taskMeta.map,
-      taskTags = taskTags.map { it.toString() }.toSet(),
-      workerName = emitterName.toString(),
-      infiniticVersion = version.toString(),
+  is TaskStartedEvent -> JsonObject(
+      mapOf(
+          TASK_RETRY_SEQUENCE to taskRetrySequence.toJson(),
+          TASK_RETRY_INDEX to taskRetryIndex.toJson(),
+          TASK_META to taskMeta.toJson(),
+          TASK_TAGS to taskTags.toJson(),
+          WORKER_NAME to emitterName.toJson(),
+          INFINITIC_VERSION to version.toJson(),
+      ),
   )
 
-  is TaskRetriedEvent -> TaskRetriedData(
-      error = lastError.toErrorData(),
-      delayMillis = taskRetryDelay.long,
-      retrySequence = taskRetrySequence.toInt(),
-      retryIndex = taskRetryIndex.toInt(),
-      taskMeta = taskMeta.map,
-      taskTags = taskTags.map { it.toString() }.toSet(),
-      workerName = emitterName.toString(),
-      infiniticVersion = version.toString(),
+  is TaskRetriedEvent -> JsonObject(
+      mapOf(
+          ERROR to lastError.toJson(),
+          TASK_RETRY_DELAY to taskRetryDelay.toJson(),
+          TASK_RETRY_SEQUENCE to taskRetrySequence.toJson(),
+          TASK_RETRY_INDEX to taskRetryIndex.toJson(),
+          TASK_META to taskMeta.toJson(),
+          TASK_TAGS to taskTags.toJson(),
+          WORKER_NAME to emitterName.toJson(),
+          INFINITIC_VERSION to version.toJson(),
+      ),
   )
 
-  is TaskFailedEvent -> TaskFailedData(
-      error = executionError.toErrorData(),
-      retrySequence = taskRetrySequence.toInt(),
-      retryIndex = taskRetryIndex.toInt(),
-      taskMeta = taskMeta.map,
-      taskTags = taskTags.map { it.toString() }.toSet(),
-      workerName = emitterName.toString(),
-      infiniticVersion = version.toString(),
+  is TaskFailedEvent -> JsonObject(
+      mapOf(
+          ERROR to executionError.toJson(),
+          TASK_RETRY_SEQUENCE to taskRetrySequence.toJson(),
+          TASK_RETRY_INDEX to taskRetryIndex.toJson(),
+          TASK_META to taskMeta.toJson(),
+          TASK_TAGS to taskTags.toJson(),
+          WORKER_NAME to emitterName.toJson(),
+          INFINITIC_VERSION to version.toJson(),
+      ),
   )
 
-  is TaskCompletedEvent -> TaskCompletedData(
-      returnValue = returnValue.toJson(),
-      retrySequence = taskRetrySequence.toInt(),
-      retryIndex = taskRetryIndex.toInt(),
-      taskMeta = taskMeta.map,
-      taskTags = taskTags.map { it.toString() }.toSet(),
-      workerName = emitterName.toString(),
-      infiniticVersion = version.toString(),
+  is TaskCompletedEvent -> JsonObject(
+      mapOf(
+          RESULT to returnValue.toJson(),
+          TASK_RETRY_SEQUENCE to taskRetrySequence.toJson(),
+          TASK_RETRY_INDEX to taskRetryIndex.toJson(),
+          TASK_META to taskMeta.toJson(),
+          TASK_TAGS to taskTags.toJson(),
+          WORKER_NAME to emitterName.toJson(),
+          INFINITIC_VERSION to version.toJson(),
+      ),
   )
 }

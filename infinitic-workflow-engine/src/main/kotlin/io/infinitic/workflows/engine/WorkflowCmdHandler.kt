@@ -98,7 +98,10 @@ class WorkflowCmdHandler(producerAsync: InfiniticProducerAsync) {
           val executeTaskMessage = workflowTaskParameters.toExecuteTaskMessage()
 
           // dispatch workflow task
-          with(producer) { executeTaskMessage.sendTo(WorkflowTaskExecutorTopic) }
+          with(producer) {
+            executeTaskMessage.sendTo(WorkflowTaskExecutorTopic)
+            executeTaskMessage.taskDispatchedEvent(emitterName).sendTo(WorkflowEventsTopic)
+          }
         }
 
         launch {

@@ -23,172 +23,152 @@
 
 package io.infinitic.events.data.workflows
 
+import io.infinitic.common.utils.toJson
 import io.infinitic.common.workflows.engine.messages.ChildMethodDispatchedEvent
 import io.infinitic.common.workflows.engine.messages.MethodCanceledEvent
+import io.infinitic.common.workflows.engine.messages.MethodCommandedEvent
 import io.infinitic.common.workflows.engine.messages.MethodCompletedEvent
-import io.infinitic.common.workflows.engine.messages.MethodDispatchedEvent
 import io.infinitic.common.workflows.engine.messages.MethodFailedEvent
 import io.infinitic.common.workflows.engine.messages.MethodTimedOutEvent
 import io.infinitic.common.workflows.engine.messages.TaskDispatchedEvent
 import io.infinitic.common.workflows.engine.messages.WorkflowCanceledEvent
 import io.infinitic.common.workflows.engine.messages.WorkflowCompletedEvent
 import io.infinitic.common.workflows.engine.messages.WorkflowEventMessage
-import io.infinitic.events.InfiniticEventType.WORKFLOW_CANCELED
-import io.infinitic.events.InfiniticEventType.WORKFLOW_COMPLETED
-import io.infinitic.events.InfiniticEventType.WORKFLOW_METHOD_CANCELED
-import io.infinitic.events.InfiniticEventType.WORKFLOW_METHOD_CHILD_DISPATCHED
-import io.infinitic.events.InfiniticEventType.WORKFLOW_METHOD_COMPLETED
-import io.infinitic.events.InfiniticEventType.WORKFLOW_METHOD_DISPATCHED
-import io.infinitic.events.InfiniticEventType.WORKFLOW_METHOD_FAILED
-import io.infinitic.events.InfiniticEventType.WORKFLOW_METHOD_TASK_DISPATCHED
-import io.infinitic.events.InfiniticEventType.WORKFLOW_METHOD_TIMED_OUT
-import io.infinitic.events.data.toData
-import kotlinx.serialization.Serializable
-import kotlinx.serialization.json.JsonElement
+import io.infinitic.events.properties.DEFERRED_ERROR
+import io.infinitic.events.properties.INFINITIC_VERSION
+import io.infinitic.events.properties.REQUESTER
+import io.infinitic.events.properties.RESULT
+import io.infinitic.events.properties.SERVICE_NAME
+import io.infinitic.events.properties.TASK_ARGS
+import io.infinitic.events.properties.TASK_ID
+import io.infinitic.events.properties.TASK_NAME
+import io.infinitic.events.properties.WORKER_NAME
+import io.infinitic.events.properties.WORKFLOW_ID
+import io.infinitic.events.properties.WORKFLOW_METHOD_ARGS
+import io.infinitic.events.properties.WORKFLOW_METHOD_ID
+import io.infinitic.events.properties.WORKFLOW_METHOD_NAME
+import io.infinitic.events.properties.WORKFLOW_NAME
+import io.infinitic.events.types.WORKFLOW_CANCELED
+import io.infinitic.events.types.WORKFLOW_CHILD_DISPATCHED
+import io.infinitic.events.types.WORKFLOW_COMPLETED
+import io.infinitic.events.types.WORKFLOW_EXECUTOR_DISPATCHED
+import io.infinitic.events.types.WORKFLOW_METHOD_CANCELED
+import io.infinitic.events.types.WORKFLOW_METHOD_COMMANDED
+import io.infinitic.events.types.WORKFLOW_METHOD_COMPLETED
+import io.infinitic.events.types.WORKFLOW_METHOD_FAILED
+import io.infinitic.events.types.WORKFLOW_METHOD_TIMED_OUT
+import io.infinitic.events.types.WORKFLOW_TASK_DISPATCHED
+import kotlinx.serialization.json.JsonObject
 
-fun WorkflowEventMessage.workflowType() = when (this) {
+fun WorkflowEventMessage.workflowType(): String = when (this) {
   is WorkflowCompletedEvent -> WORKFLOW_COMPLETED
   is WorkflowCanceledEvent -> WORKFLOW_CANCELED
-  is MethodDispatchedEvent -> WORKFLOW_METHOD_DISPATCHED
+  is MethodCommandedEvent -> WORKFLOW_METHOD_COMMANDED
   is MethodCompletedEvent -> WORKFLOW_METHOD_COMPLETED
   is MethodFailedEvent -> WORKFLOW_METHOD_FAILED
   is MethodCanceledEvent -> WORKFLOW_METHOD_CANCELED
   is MethodTimedOutEvent -> WORKFLOW_METHOD_TIMED_OUT
-  is TaskDispatchedEvent -> WORKFLOW_METHOD_TASK_DISPATCHED
-  is ChildMethodDispatchedEvent -> WORKFLOW_METHOD_CHILD_DISPATCHED
+  is ChildMethodDispatchedEvent -> WORKFLOW_CHILD_DISPATCHED
+  is TaskDispatchedEvent -> when (isWorkflowTaskEvent()) {
+    true -> WORKFLOW_EXECUTOR_DISPATCHED
+    false -> WORKFLOW_TASK_DISPATCHED
+  }
 }
 
-@Serializable
-sealed interface WorkflowEventData : InfiniticCloudEventsData {
-  val workerName: String
-}
+fun WorkflowEventMessage.toWorkflowJson(): JsonObject = when (this) {
 
-fun WorkflowEventMessage.toWorkflowData(): InfiniticCloudEventsData = when (this) {
-
-  is WorkflowCompletedEvent -> WorkflowCompletedData(
-      workerName = emitterName.toString(),
-      infiniticVersion = version.toString(),
-  )
-
-  is WorkflowCanceledEvent -> WorkflowCanceledData(
-      workerName = emitterName.toString(),
-      infiniticVersion = version.toString(),
-  )
-
-  is MethodDispatchedEvent -> WorkflowMethodDispatchedData(
-      workflowMethodArgs = methodParameters.toJson(),
-      workflowMethodName = methodName.toString(),
-      workflowMethodId = workflowMethodId.toString(),
-      requester = requester.toData(),
-      infiniticVersion = version.toString(),
-  )
-
-  is MethodCompletedEvent -> MethodCompletedData(
-      result = returnValue.toJson(),
-      workflowMethodId = workflowMethodId.toString(),
-      workerName = emitterName.toString(),
-      infiniticVersion = version.toString(),
-  )
-
-  is MethodFailedEvent -> MethodFailedData(
-      error = deferredError.toDeferredErrorData(),
-      workflowMethodId = workflowMethodId.toString(),
-      workerName = emitterName.toString(),
-      infiniticVersion = version.toString(),
-  )
-
-  is MethodCanceledEvent -> MethodCanceledData(
-      workflowMethodId = workflowMethodId.toString(),
-      workerName = emitterName.toString(),
-      infiniticVersion = version.toString(),
-  )
-
-  is MethodTimedOutEvent -> MethodTimedOutData(
-      workflowMethodId = workflowMethodId.toString(),
-      workerName = emitterName.toString(),
-      infiniticVersion = version.toString(),
-  )
-
-  is TaskDispatchedEvent -> TaskDispatchedData(
-      taskDispatched = ChildTaskDispatchedData(
-          methodName = taskDispatched.taskName.toString(),
-          methodArgs = taskDispatched.methodParameters.toJson(),
-          taskId = taskDispatched.taskId.toString(),
-          serviceName = taskDispatched.serviceName.toString(),
+  is WorkflowCompletedEvent -> JsonObject(
+      mapOf(
+          WORKER_NAME to emitterName.toJson(),
+          INFINITIC_VERSION to version.toJson(),
       ),
-      workflowMethodId = workflowMethodId.toString(),
-      workerName = emitterName.toString(),
-      infiniticVersion = version.toString(),
   )
 
-  is ChildMethodDispatchedEvent -> ChildMethodDispatchedData(
-      childWorkflowDispatched = ChildWorkflowDispatchedData(
-          methodName = childMethodDispatched.methodName.toString(),
-          methodArgs = childMethodDispatched.methodParameters.toJson(),
-          workflowId = childMethodDispatched.workflowId.toString(),
-          workflowName = childMethodDispatched.workflowName.toString(),
-          workflowMethodId = childMethodDispatched.workflowMethodId.toString(),
+  is WorkflowCanceledEvent -> JsonObject(
+      mapOf(
+          WORKER_NAME to emitterName.toJson(),
+          INFINITIC_VERSION to version.toJson(),
       ),
-      workflowMethodId = workflowMethodId.toString(),
-      workerName = workflowName.toString(),
-      infiniticVersion = version.toString(),
+  )
+
+  is MethodCommandedEvent -> JsonObject(
+      mapOf(
+          WORKFLOW_METHOD_ARGS to methodParameters.toJson(),
+          WORKFLOW_METHOD_NAME to methodName.toJson(),
+          WORKFLOW_METHOD_ID to workflowMethodId.toJson(),
+          REQUESTER to requester.toJson(),
+          INFINITIC_VERSION to version.toJson(),
+      ),
+  )
+
+  is MethodCompletedEvent -> JsonObject(
+      mapOf(
+          RESULT to returnValue.toJson(),
+          WORKFLOW_METHOD_ID to workflowMethodId.toJson(),
+          WORKER_NAME to emitterName.toJson(),
+          INFINITIC_VERSION to version.toJson(),
+      ),
+  )
+
+  is MethodFailedEvent -> JsonObject(
+      mapOf(
+          DEFERRED_ERROR to deferredError.toDeferredErrorData().toJson(),
+          WORKFLOW_METHOD_ID to workflowMethodId.toJson(),
+          WORKER_NAME to emitterName.toJson(),
+          INFINITIC_VERSION to version.toJson(),
+      ),
+  )
+
+  is MethodCanceledEvent -> JsonObject(
+      mapOf(
+          WORKFLOW_METHOD_ID to workflowMethodId.toJson(),
+          WORKER_NAME to emitterName.toJson(),
+          INFINITIC_VERSION to version.toJson(),
+      ),
+  )
+
+  is MethodTimedOutEvent -> JsonObject(
+      mapOf(
+          WORKFLOW_METHOD_ID to workflowMethodId.toJson(),
+          WORKER_NAME to emitterName.toJson(),
+          INFINITIC_VERSION to version.toJson(),
+      ),
+  )
+
+  is TaskDispatchedEvent -> JsonObject(
+      mapOf(
+          "taskDispatched" to JsonObject(
+              with(taskDispatched) {
+                mapOf(
+                    SERVICE_NAME to serviceName.toJson(),
+                    TASK_NAME to taskName.toJson(),
+                    TASK_ARGS to methodParameters.toJson(),
+                    TASK_ID to taskId.toJson(),
+                )
+              },
+          ),
+          WORKFLOW_METHOD_ID to workflowMethodId.toJson(),
+          WORKER_NAME to emitterName.toJson(),
+          INFINITIC_VERSION to version.toJson(),
+      ),
+  )
+
+  is ChildMethodDispatchedEvent -> JsonObject(
+      mapOf(
+          "childWorkflowDispatched" to JsonObject(
+              with(childMethodDispatched) {
+                mapOf(
+                    WORKFLOW_NAME to workflowName.toJson(),
+                    WORKFLOW_ID to workflowId.toJson(),
+                    WORKFLOW_METHOD_ID to workflowMethodId.toJson(),
+                    WORKFLOW_METHOD_NAME to methodName.toJson(),
+                    WORKFLOW_METHOD_ARGS to methodParameters.toJson(),
+                )
+              },
+          ),
+          WORKFLOW_METHOD_ID to workflowMethodId.toJson(),
+          WORKER_NAME to emitterName.toJson(),
+          INFINITIC_VERSION to version.toJson(),
+      ),
   )
 }
-
-@Serializable
-data class WorkflowCompletedData(
-  override val workerName: String,
-  override val infiniticVersion: String
-) : WorkflowEventData
-
-@Serializable
-data class WorkflowCanceledData(
-  override val workerName: String,
-  override val infiniticVersion: String
-) : WorkflowEventData
-
-@Serializable
-data class MethodCompletedData(
-  val result: JsonElement,
-  val workflowMethodId: String,
-  override val workerName: String,
-  override val infiniticVersion: String
-) : WorkflowEventData
-
-@Serializable
-data class MethodFailedData(
-  val error: DeferredErrorData,
-  val workflowMethodId: String,
-  override val workerName: String,
-  override val infiniticVersion: String
-) : WorkflowEventData
-
-@Serializable
-data class MethodCanceledData(
-  val workflowMethodId: String,
-  override val workerName: String,
-  override val infiniticVersion: String
-) : WorkflowEventData
-
-@Serializable
-data class MethodTimedOutData(
-  val workflowMethodId: String,
-  override val workerName: String,
-  override val infiniticVersion: String
-) : WorkflowEventData
-
-@Serializable
-data class TaskDispatchedData(
-  val taskDispatched: ChildTaskDispatchedData,
-  val workflowMethodId: String,
-  override val workerName: String,
-  override val infiniticVersion: String
-) : WorkflowEventData
-
-@Serializable
-data class ChildMethodDispatchedData(
-  val childWorkflowDispatched: ChildWorkflowDispatchedData,
-  val workflowMethodId: String,
-  override val workerName: String,
-  override val infiniticVersion: String
-) : WorkflowEventData

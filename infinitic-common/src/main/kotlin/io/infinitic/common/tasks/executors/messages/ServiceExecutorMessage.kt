@@ -33,7 +33,10 @@ import io.infinitic.common.data.methods.MethodName
 import io.infinitic.common.data.methods.MethodParameterTypes
 import io.infinitic.common.data.methods.MethodParameters
 import io.infinitic.common.emitters.EmitterName
+import io.infinitic.common.exceptions.thisShouldNotHappen
 import io.infinitic.common.messages.Message
+import io.infinitic.common.requester.ClientRequester
+import io.infinitic.common.requester.WorkflowRequester
 import io.infinitic.common.tasks.data.ServiceName
 import io.infinitic.common.tasks.data.TaskId
 import io.infinitic.common.tasks.data.TaskMeta
@@ -125,7 +128,7 @@ data class ExecuteTask(
     )
   }
 
-  fun getTaskDispatchedEvent(emitterName: EmitterName) = TaskDispatchedEvent(
+  fun taskDispatchedEvent(emitterName: EmitterName) = TaskDispatchedEvent(
       taskDispatched = TaskDispatched(
           taskId = taskId,
           taskName = methodName,
@@ -142,6 +145,17 @@ data class ExecuteTask(
 
 val ExecuteTask.clientName
   get() = if (workflowName == null) ClientName.from(emitterName) else null
+
+val ExecuteTask.requester
+  get() = when (workflowName == null) {
+    true -> ClientRequester(clientName = ClientName.from(emitterName))
+
+    false -> WorkflowRequester(
+        workflowName = workflowName,
+        workflowId = workflowId ?: thisShouldNotHappen(),
+        workflowMethodId = workflowMethodId ?: thisShouldNotHappen(),
+    )
+  }
 
 val Throwable.deferredError
   get() = when (this is DeferredException) {

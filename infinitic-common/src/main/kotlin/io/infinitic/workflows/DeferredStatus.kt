@@ -22,11 +22,33 @@
  */
 package io.infinitic.workflows
 
-enum class DeferredStatus {
+import io.infinitic.common.utils.JsonAble
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.Json
+
+@Serializable
+enum class DeferredStatus : JsonAble {
+  @SerialName("ONGOING")
   ONGOING,
+
+  @SerialName("UNKNOWN")
   UNKNOWN,
+
+  @SerialName("CANCELED")
   CANCELED,
+
+  @SerialName("FAILED")
   FAILED,
+
+  @SerialName("COMPLETED")
   COMPLETED,
-  TIMED_OUT,
+
+  @SerialName("TIMED_OUT")
+  TIMED_OUT;
+
+  override fun toJson() = json.encodeToJsonElement(DeferredStatus.serializer(), this)
 }
+
+private val json = Json { encodeDefaults = true }
+

@@ -22,60 +22,46 @@
  */
 
 package io.infinitic.events.data.workflows
-
-import io.infinitic.common.exceptions.thisShouldNotHappen
-import io.infinitic.common.tasks.events.messages.ServiceEventMessage
-import io.infinitic.common.tasks.events.messages.TaskCompletedEvent
-import io.infinitic.common.tasks.events.messages.TaskFailedEvent
-import io.infinitic.events.InfiniticEventType
-import io.infinitic.events.InfiniticEventType.WORKFLOW_EXECUTOR_COMPLETED
-import io.infinitic.events.InfiniticEventType.WORKFLOW_EXECUTOR_FAILED
-import io.infinitic.events.data.ErrorData
-import io.infinitic.events.data.toErrorData
-import kotlinx.serialization.Serializable
-import kotlinx.serialization.json.JsonElement
-
-fun ServiceEventMessage.workflowType(): InfiniticEventType? =
-    when (this.isWorkflowTask()) {
-      false -> null
-      true -> when (this) {
-        is TaskCompletedEvent -> WORKFLOW_EXECUTOR_COMPLETED
-        is TaskFailedEvent -> WORKFLOW_EXECUTOR_FAILED
-        else -> null
-      }
-    }
-
-fun ServiceEventMessage.toWorkflowData(): WorkflowEventData = when (this.isWorkflowTask()) {
-  false -> thisShouldNotHappen()
-  true -> when (this) {
-    is TaskCompletedEvent -> WorkflowTaskCompletedData(
-        result = returnValue.toJson(),
-        workerName = emitterName.toString(),
-        infiniticVersion = version.toString(),
-    )
-
-    is TaskFailedEvent -> WorkflowTaskFailedData(
-        deferredError = deferredError?.toDeferredErrorData(),
-        error = executionError.toErrorData(),
-        workerName = emitterName.toString(),
-        infiniticVersion = version.toString(),
-    )
-
-    else -> thisShouldNotHappen()
-  }
-}
-
-@Serializable
-data class WorkflowTaskCompletedData(
-  val result: JsonElement,
-  override val workerName: String,
-  override val infiniticVersion: String
-) : WorkflowEventData
-
-@Serializable
-data class WorkflowTaskFailedData(
-  val deferredError: DeferredErrorData?,
-  val error: ErrorData,
-  override val workerName: String,
-  override val infiniticVersion: String
-) : WorkflowEventData
+//
+//import io.infinitic.common.exceptions.thisShouldNotHappen
+//import io.infinitic.common.tasks.events.messages.ServiceEventMessage
+//import io.infinitic.common.tasks.events.messages.TaskCompletedEvent
+//import io.infinitic.common.tasks.events.messages.TaskFailedEvent
+//import io.infinitic.common.utils.toJson
+//import io.infinitic.events.types.WORKFLOW_EXECUTOR_COMPLETED
+//import io.infinitic.events.types.WORKFLOW_EXECUTOR_FAILED
+//import kotlinx.serialization.json.JsonObject
+//
+//fun ServiceEventMessage.workflowType(): String? =
+//    when (this.isWorkflowTask()) {
+//      false -> null
+//      true -> when (this) {
+//        is TaskCompletedEvent -> WORKFLOW_EXECUTOR_COMPLETED
+//        is TaskFailedEvent -> WORKFLOW_EXECUTOR_FAILED
+//        else -> null
+//      }
+//    }
+//
+//fun ServiceEventMessage.toWorkflowJson(): JsonObject = when (this.isWorkflowTask()) {
+//  false -> thisShouldNotHappen()
+//  true -> when (this) {
+//    is TaskCompletedEvent -> JsonObject(
+//        mapOf(
+//            "result" to returnValue.toJson(),
+//            "workerName" to emitterName.toJson(),
+//            "infiniticVersion" to version.toJson(),
+//        ),
+//    )
+//
+//    is TaskFailedEvent -> JsonObject(
+//        mapOf(
+//            "deferredError" to deferredError?.toDeferredErrorData().toJson(),
+//            "error" to executionError.toJson(),
+//            "workerName" to emitterName.toJson(),
+//            "infiniticVersion" to version.toJson(),
+//        ),
+//    )
+//
+//    else -> thisShouldNotHappen()
+//  }
+//}

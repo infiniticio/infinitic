@@ -24,9 +24,13 @@ package io.infinitic.common.tasks.executors.errors
 
 import com.github.avrokotlin.avro4k.AvroName
 import com.github.avrokotlin.avro4k.AvroNamespace
+import io.infinitic.common.utils.JsonAble
+import io.infinitic.common.utils.toJson
 import io.infinitic.common.workers.data.WorkerName
 import io.infinitic.exceptions.WorkerException
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
 
 /** Data class representing an error */
 @Serializable
@@ -47,7 +51,7 @@ data class ExecutionError(
 
   /** cause of the error */
   val cause: ExecutionError?
-) {
+) : JsonAble {
   companion object {
     fun from(exception: WorkerException): ExecutionError =
         ExecutionError(
@@ -79,4 +83,13 @@ data class ExecutionError(
           "cause" to cause,
           "stacktrace" to stackTraceToString.replace("\n", ""),
       ).joinToString { "${it.first}=${it.second}" } + ")"
+
+  override fun toJson(): JsonObject = JsonObject(
+      mapOf(
+          "name" to JsonPrimitive(name),
+          "message" to JsonPrimitive(message),
+          "stackTrace" to JsonPrimitive(stackTraceToString),
+          "cause" to cause.toJson(),
+      ),
+  )
 }

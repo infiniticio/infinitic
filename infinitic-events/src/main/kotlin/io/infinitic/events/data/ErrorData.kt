@@ -24,7 +24,10 @@
 package io.infinitic.events.data
 
 import io.infinitic.common.tasks.executors.errors.ExecutionError
+import io.infinitic.common.utils.JsonAble
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
 
 
 /**
@@ -50,3 +53,4 @@ fun ExecutionError.toErrorData(): ErrorData = ErrorData(
     stackTrace = stackTraceToString,
     cause = cause?.toErrorData(),
 )
+

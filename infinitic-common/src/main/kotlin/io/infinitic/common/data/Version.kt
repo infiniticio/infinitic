@@ -22,6 +22,7 @@
  */
 package io.infinitic.common.data
 
+import io.infinitic.common.utils.JsonAble
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.descriptors.PrimitiveKind
@@ -29,11 +30,14 @@ import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
 import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
+import kotlinx.serialization.json.JsonPrimitive
 
 @Serializable(with = VersionSerializer::class)
-data class Version(val versionString: String) : Comparable<Version> {
+data class Version(val versionString: String) : Comparable<Version>, JsonAble {
 
   override fun toString() = versionString
+
+  override fun toJson() = JsonPrimitive(versionString)
 
   override fun compareTo(other: Version): Int {
     val (major, minor, patch) = parts
@@ -67,3 +71,4 @@ object VersionSerializer : KSerializer<Version> {
 
   override fun deserialize(decoder: Decoder) = Version(decoder.decodeString())
 }
+

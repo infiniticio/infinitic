@@ -36,7 +36,7 @@ sealed interface WorkflowEventMessage : WorkflowMessageInterface
 fun WorkflowEventMessage.type(): WorkflowEventMessageType = when (this) {
   is WorkflowCompletedEvent -> WorkflowEventMessageType.WORKFLOW_COMPLETED
   is WorkflowCanceledEvent -> WorkflowEventMessageType.WORKFLOW_CANCELED
-  is MethodDispatchedEvent -> WorkflowEventMessageType.METHOD_DISPATCHED
+  is MethodCommandedEvent -> WorkflowEventMessageType.METHOD_DISPATCHED
   is MethodCompletedEvent -> WorkflowEventMessageType.METHOD_COMPLETED
   is MethodFailedEvent -> WorkflowEventMessageType.METHOD_FAILED
   is MethodCanceledEvent -> WorkflowEventMessageType.METHOD_CANCELED

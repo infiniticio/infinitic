@@ -36,6 +36,8 @@ data class SignalData(val serializedData: SerializedData) {
   }
 
   override fun toString() = serializedData.toString()
+
+  fun toJson() = serializedData.toJson()
 }
 
 object ChannelSignalSerializer : KSerializer<SignalData> {

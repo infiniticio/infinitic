@@ -1,0 +1,451 @@
+{
+  "type" : "record",
+  "name" : "WorkflowTagEnvelope",
+  "namespace" : "io.infinitic.workflows.tag",
+  "fields" : [ {
+    "name" : "name",
+    "type" : "string"
+  }, {
+    "name" : "type",
+    "type" : {
+      "type" : "enum",
+      "name" : "WorkflowTagMessageType",
+      "symbols" : [ "DISPATCH_WORKFLOW_BY_CUSTOM_ID", "DISPATCH_METHOD_BY_TAG", "ADD_TAG_TO_WORKFLOW", "REMOVE_TAG_FROM_WORKFLOW", "SEND_SIGNAL_BY_TAG", "CANCEL_WORKFLOW_BY_TAG", "RETRY_WORKFLOW_TASK_BY_TAG", "RETRY_TASKS_BY_TAG", "COMPLETE_TIMER_BY_TAG", "GET_WORKFLOW_IDS_BY_TAG" ]
+    }
+  }, {
+    "name" : "dispatchWorkflowByCustomId",
+    "type" : [ "null", {
+      "type" : "record",
+      "name" : "DispatchWorkflowByCustomId",
+      "fields" : [ {
+        "name" : "messageId",
+        "type" : "string"
+      }, {
+        "name" : "workflowName",
+        "type" : "string"
+      }, {
+        "name" : "workflowTag",
+        "type" : "string"
+      }, {
+        "name" : "workflowId",
+        "type" : "string"
+      }, {
+        "name" : "methodName",
+        "type" : "string"
+      }, {
+        "name" : "methodParameters",
+        "type" : {
+          "type" : "array",
+          "items" : {
+            "type" : "record",
+            "name" : "SerializedData",
+            "namespace" : "io.infinitic.data",
+            "fields" : [ {
+              "name" : "bytes",
+              "type" : "bytes"
+            }, {
+              "name" : "type",
+              "type" : {
+                "type" : "enum",
+                "name" : "SerializedDataType",
+                "symbols" : [ "NULL", "JSON_JACKSON", "JSON_KOTLIN", "AVRO_WITH_SCHEMA" ]
+              }
+            }, {
+              "name" : "meta",
+              "type" : {
+                "type" : "map",
+                "values" : "bytes"
+              }
+            } ]
+          }
+        }
+      }, {
+        "name" : "methodParameterTypes",
+        "type" : [ "null", {
+          "type" : "array",
+          "items" : "string"
+        } ]
+      }, {
+        "name" : "methodTimeout",
+        "type" : [ "null", "long" ],
+        "default" : null
+      }, {
+        "name" : "workflowTags",
+        "type" : {
+          "type" : "array",
+          "items" : "string"
+        }
+      }, {
+        "name" : "workflowMeta",
+        "type" : {
+          "type" : "map",
+          "values" : "bytes"
+        }
+      }, {
+        "name" : "parentWorkflowName",
+        "type" : [ "null", "string" ]
+      }, {
+        "name" : "parentWorkflowId",
+        "type" : [ "null", "string" ]
+      }, {
+        "name" : "parentMethodRunId",
+        "type" : [ "null", "string" ]
+      }, {
+        "name" : "requester",
+        "type" : [ "null", {
+          "type" : "record",
+          "name" : "ClientRequester",
+          "namespace" : "io.infinitic.common.requester",
+          "fields" : [ {
+            "name" : "clientName",
+            "type" : "string"
+          } ]
+        }, {
+          "type" : "record",
+          "name" : "WorkflowRequester",
+          "namespace" : "io.infinitic.common.requester",
+          "fields" : [ {
+            "name" : "workflowName",
+            "type" : "string"
+          }, {
+            "name" : "workflowId",
+            "type" : "string"
+          }, {
+            "name" : "workflowMethodId",
+            "type" : "string"
+          } ]
+        } ],
+        "default" : null
+      }, {
+        "name" : "clientWaiting",
+        "type" : "boolean"
+      }, {
+        "name" : "emitterName",
+        "type" : "string"
+      }, {
+        "name" : "emittedAt",
+        "type" : [ "null", "long" ],
+        "default" : null
+      } ]
+    } ],
+    "default" : null
+  }, {
+    "name" : "dispatchMethodByTag",
+    "type" : [ "null", {
+      "type" : "record",
+      "name" : "DispatchMethodByTag",
+      "fields" : [ {
+        "name" : "messageId",
+        "type" : "string"
+      }, {
+        "name" : "workflowName",
+        "type" : "string"
+      }, {
+        "name" : "workflowTag",
+        "type" : "string"
+      }, {
+        "name" : "methodRunId",
+        "type" : "string"
+      }, {
+        "name" : "parentWorkflowId",
+        "type" : [ "null", "string" ]
+      }, {
+        "name" : "parentWorkflowName",
+        "type" : [ "null", "string" ]
+      }, {
+        "name" : "parentMethodRunId",
+        "type" : [ "null", "string" ]
+      }, {
+        "name" : "requester",
+        "type" : [ "null", "io.infinitic.common.requester.ClientRequester", "io.infinitic.common.requester.WorkflowRequester" ],
+        "default" : null
+      }, {
+        "name" : "clientWaiting",
+        "type" : "boolean"
+      }, {
+        "name" : "methodName",
+        "type" : "string"
+      }, {
+        "name" : "methodParameterTypes",
+        "type" : [ "null", {
+          "type" : "array",
+          "items" : "string"
+        } ]
+      }, {
+        "name" : "methodParameters",
+        "type" : {
+          "type" : "array",
+          "items" : "io.infinitic.data.SerializedData"
+        }
+      }, {
+        "name" : "methodTimeout",
+        "type" : [ "null", "long" ],
+        "default" : null
+      }, {
+        "name" : "emittedAt",
+        "type" : [ "null", "long" ],
+        "default" : null
+      }, {
+        "name" : "emitterName",
+        "type" : "string"
+      } ]
+    } ]
+  }, {
+    "name" : "addTagToWorkflow",
+    "type" : [ "null", {
+      "type" : "record",
+      "name" : "AddTagToWorkflow",
+      "fields" : [ {
+        "name" : "messageId",
+        "type" : "string"
+      }, {
+        "name" : "workflowName",
+        "type" : "string"
+      }, {
+        "name" : "workflowTag",
+        "type" : "string"
+      }, {
+        "name" : "workflowId",
+        "type" : "string"
+      }, {
+        "name" : "emitterName",
+        "type" : "string"
+      }, {
+        "name" : "emittedAt",
+        "type" : [ "null", "long" ],
+        "default" : null
+      } ]
+    } ]
+  }, {
+    "name" : "removeTagFromWorkflow",
+    "type" : [ "null", {
+      "type" : "record",
+      "name" : "RemoveTagFromWorkflow",
+      "fields" : [ {
+        "name" : "messageId",
+        "type" : "string"
+      }, {
+        "name" : "workflowName",
+        "type" : "string"
+      }, {
+        "name" : "workflowTag",
+        "type" : "string"
+      }, {
+        "name" : "workflowId",
+        "type" : "string"
+      }, {
+        "name" : "emitterName",
+        "type" : "string"
+      }, {
+        "name" : "emittedAt",
+        "type" : [ "null", "long" ],
+        "default" : null
+      } ]
+    } ]
+  }, {
+    "name" : "sendSignalByTag",
+    "type" : [ "null", {
+      "type" : "record",
+      "name" : "SendSignalByTag",
+      "fields" : [ {
+        "name" : "messageId",
+        "type" : "string"
+      }, {
+        "name" : "workflowName",
+        "type" : "string"
+      }, {
+        "name" : "workflowTag",
+        "type" : "string"
+      }, {
+        "name" : "channelName",
+        "type" : "string"
+      }, {
+        "name" : "channelSignalId",
+        "type" : "string"
+      }, {
+        "name" : "channelSignal",
+        "type" : "io.infinitic.data.SerializedData"
+      }, {
+        "name" : "channelSignalTypes",
+        "type" : {
+          "type" : "array",
+          "items" : "string"
+        }
+      }, {
+        "name" : "emitterWorkflowId",
+        "type" : [ "null", "string" ]
+      }, {
+        "name" : "requester",
+        "type" : [ "null", "io.infinitic.common.requester.ClientRequester", "io.infinitic.common.requester.WorkflowRequester" ],
+        "default" : null
+      }, {
+        "name" : "emittedAt",
+        "type" : [ "null", "long" ],
+        "default" : null
+      }, {
+        "name" : "emitterName",
+        "type" : "string"
+      } ]
+    } ]
+  }, {
+    "name" : "cancelWorkflowByTag",
+    "type" : [ "null", {
+      "type" : "record",
+      "name" : "CancelWorkflowByTag",
+      "fields" : [ {
+        "name" : "messageId",
+        "type" : "string"
+      }, {
+        "name" : "workflowName",
+        "type" : "string"
+      }, {
+        "name" : "workflowTag",
+        "type" : "string"
+      }, {
+        "name" : "reason",
+        "type" : {
+          "type" : "enum",
+          "name" : "WorkflowCancellationReason",
+          "namespace" : "io.infinitic.workflows.data",
+          "symbols" : [ "CANCELED_BY_CLIENT", "CANCELED_BY_PARENT" ]
+        }
+      }, {
+        "name" : "emitterWorkflowId",
+        "type" : [ "null", "string" ]
+      }, {
+        "name" : "requester",
+        "type" : [ "null", "io.infinitic.common.requester.ClientRequester", "io.infinitic.common.requester.WorkflowRequester" ],
+        "default" : null
+      }, {
+        "name" : "emittedAt",
+        "type" : [ "null", "long" ],
+        "default" : null
+      }, {
+        "name" : "emitterName",
+        "type" : "string"
+      } ]
+    } ]
+  }, {
+    "name" : "retryWorkflowTaskByTag",
+    "type" : [ "null", {
+      "type" : "record",
+      "name" : "RetryWorkflowTaskByTag",
+      "fields" : [ {
+        "name" : "messageId",
+        "type" : "string"
+      }, {
+        "name" : "workflowName",
+        "type" : "string"
+      }, {
+        "name" : "workflowTag",
+        "type" : "string"
+      }, {
+        "name" : "requester",
+        "type" : [ "null", "io.infinitic.common.requester.ClientRequester", "io.infinitic.common.requester.WorkflowRequester" ],
+        "default" : null
+      }, {
+        "name" : "emittedAt",
+        "type" : [ "null", "long" ],
+        "default" : null
+      }, {
+        "name" : "emitterName",
+        "type" : "string"
+      } ]
+    } ]
+  }, {
+    "name" : "retryTasksByTag",
+    "type" : [ "null", {
+      "type" : "record",
+      "name" : "RetryTasksByTag",
+      "fields" : [ {
+        "name" : "messageId",
+        "type" : "string"
+      }, {
+        "name" : "workflowName",
+        "type" : "string"
+      }, {
+        "name" : "workflowTag",
+        "type" : "string"
+      }, {
+        "name" : "taskId",
+        "type" : [ "null", "string" ]
+      }, {
+        "name" : "taskStatus",
+        "type" : [ "null", {
+          "type" : "enum",
+          "name" : "DeferredStatus",
+          "namespace" : "io.infinitic.workflows",
+          "symbols" : [ "ONGOING", "UNKNOWN", "CANCELED", "FAILED", "COMPLETED", "TIMED_OUT" ]
+        } ]
+      }, {
+        "name" : "taskName",
+        "type" : [ "null", "string" ]
+      }, {
+        "name" : "requester",
+        "type" : [ "null", "io.infinitic.common.requester.ClientRequester", "io.infinitic.common.requester.WorkflowRequester" ],
+        "default" : null
+      }, {
+        "name" : "emittedAt",
+        "type" : [ "null", "long" ],
+        "default" : null
+      }, {
+        "name" : "emitterName",
+        "type" : "string"
+      } ]
+    } ]
+  }, {
+    "name" : "completeTimersByTag",
+    "type" : [ "null", {
+      "type" : "record",
+      "name" : "CompleteTimersByTag",
+      "fields" : [ {
+        "name" : "messageId",
+        "type" : "string"
+      }, {
+        "name" : "workflowName",
+        "type" : "string"
+      }, {
+        "name" : "workflowTag",
+        "type" : "string"
+      }, {
+        "name" : "methodRunId",
+        "type" : [ "null", "string" ]
+      }, {
+        "name" : "requester",
+        "type" : [ "null", "io.infinitic.common.requester.ClientRequester", "io.infinitic.common.requester.WorkflowRequester" ],
+        "default" : null
+      }, {
+        "name" : "emittedAt",
+        "type" : [ "null", "long" ],
+        "default" : null
+      }, {
+        "name" : "emitterName",
+        "type" : "string"
+      } ]
+    } ],
+    "default" : null
+  }, {
+    "name" : "getWorkflowIdsByTag",
+    "type" : [ "null", {
+      "type" : "record",
+      "name" : "GetWorkflowIdsByTag",
+      "fields" : [ {
+        "name" : "messageId",
+        "type" : "string"
+      }, {
+        "name" : "workflowName",
+        "type" : "string"
+      }, {
+        "name" : "workflowTag",
+        "type" : "string"
+      }, {
+        "name" : "emitterName",
+        "type" : "string"
+      }, {
+        "name" : "emittedAt",
+        "type" : [ "null", "long" ],
+        "default" : null
+      } ]
+    } ]
+  } ]
+}

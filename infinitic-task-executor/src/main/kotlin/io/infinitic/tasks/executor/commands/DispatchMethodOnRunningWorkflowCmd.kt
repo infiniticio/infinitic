@@ -121,6 +121,5 @@ internal fun CoroutineScope.dispatchMethodOnRunningWorkflowCmd(
         with(producer) { dispatchMethodByTag.sendTo(WorkflowTagTopic) }
       }
     }
-
   }
 }

@@ -31,8 +31,8 @@ import io.infinitic.common.transport.LoggedInfiniticProducer
 import io.infinitic.common.transport.WorkflowEngineTopic
 import io.infinitic.common.workflows.engine.messages.ChildMethodDispatchedEvent
 import io.infinitic.common.workflows.engine.messages.MethodCanceledEvent
+import io.infinitic.common.workflows.engine.messages.MethodCommandedEvent
 import io.infinitic.common.workflows.engine.messages.MethodCompletedEvent
-import io.infinitic.common.workflows.engine.messages.MethodDispatchedEvent
 import io.infinitic.common.workflows.engine.messages.MethodFailedEvent
 import io.infinitic.common.workflows.engine.messages.MethodTimedOutEvent
 import io.infinitic.common.workflows.engine.messages.TaskDispatchedEvent
@@ -55,7 +55,7 @@ class WorkflowEventHandler(producerAsync: InfiniticProducerAsync) {
     when (msg) {
       is WorkflowCanceledEvent -> Unit
       is WorkflowCompletedEvent -> Unit
-      is MethodDispatchedEvent -> Unit
+      is MethodCommandedEvent -> Unit
       is MethodCanceledEvent -> sendWorkflowMethodCanceled(msg, publishTime)
       is MethodCompletedEvent -> sendWorkflowMethodCompleted(msg, publishTime)
       is MethodFailedEvent -> sendWorkflowMethodFailed(msg, publishTime)

@@ -21,6 +21,19 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.events.data
+package io.infinitic.common.utils
 
-interface MessageData
+import kotlinx.serialization.json.JsonArray
+import kotlinx.serialization.json.JsonElement
+import kotlinx.serialization.json.JsonNull
+
+interface JsonAble {
+  fun toJson(): JsonElement
+}
+
+fun JsonAble?.toJson() = when (this) {
+  null -> JsonNull
+  else -> toJson()
+}
+
+fun Collection<JsonAble?>.toJson() = JsonArray(this.map { it.toJson() })

@@ -22,6 +22,7 @@
  */
 package io.infinitic.common.tasks.data
 
+import io.infinitic.common.utils.JsonAble
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.builtins.ByteArraySerializer
@@ -30,10 +31,17 @@ import kotlinx.serialization.builtins.serializer
 import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
+import java.util.*
 
 @Serializable(with = TaskMetaSerializer::class)
 data class TaskMeta(val map: MutableMap<String, ByteArray> = mutableMapOf()) :
-  MutableMap<String, ByteArray> by map {
+  MutableMap<String, ByteArray> by map, JsonAble {
+  override fun toJson() = JsonObject(
+      map.mapValues { JsonPrimitive(Base64.getEncoder().encodeToString(it.value)) },
+  )
+
   override fun equals(other: Any?): Boolean {
     if (this === other) return true
     if (javaClass != other?.javaClass) return false

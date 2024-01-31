@@ -25,25 +25,40 @@ package io.infinitic.common.requester
 
 import io.infinitic.common.clients.data.ClientName
 import io.infinitic.common.exceptions.thisShouldNotHappen
+import io.infinitic.common.utils.JsonAble
 import io.infinitic.common.workflows.data.workflowMethods.WorkflowMethodId
 import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.data.workflows.WorkflowName
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
 
 @Serializable
-sealed interface Requester
+sealed interface Requester : JsonAble {
+  override fun toJson(): JsonObject
+}
 
 @Serializable
 data class ClientRequester(
   val clientName: ClientName,
-) : Requester
+) : Requester {
+  override fun toJson() = JsonObject(mapOf("clientName" to JsonPrimitive(clientName.toString())))
+}
 
 @Serializable
 data class WorkflowRequester(
   val workflowName: WorkflowName,
   val workflowId: WorkflowId,
   val workflowMethodId: WorkflowMethodId,
-) : Requester
+) : Requester {
+  override fun toJson() = JsonObject(
+      mapOf(
+          "workflowName" to JsonPrimitive(workflowName.toString()),
+          "workflowId" to JsonPrimitive(workflowId.toString()),
+          "workflowMethodId" to JsonPrimitive(workflowMethodId.toString()),
+      ),
+  )
+}
 
 val Requester?.clientName: ClientName?
   get() = when (this is ClientRequester) {

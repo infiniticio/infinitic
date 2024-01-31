@@ -22,6 +22,7 @@
  */
 package io.infinitic.common.data
 
+import io.infinitic.common.utils.JsonAble
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.descriptors.PrimitiveKind
@@ -29,10 +30,13 @@ import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
 import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
+import kotlinx.serialization.json.JsonPrimitive
 
 @Serializable(with = MillisDurationSerializer::class)
-data class MillisDuration(val long: Long) : Comparable<Long> {
+data class MillisDuration(val long: Long) : Comparable<Long>, JsonAble {
   override fun toString() = "$long ms"
+  
+  override fun toJson() = JsonPrimitive(long)
 
   override operator fun compareTo(other: Long): Int = this.long.compareTo(other)
 

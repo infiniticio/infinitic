@@ -36,7 +36,7 @@ data class WorkflowEventEnvelope(
   private val type: WorkflowEventMessageType,
   private val workflowCompletedEvent: WorkflowCompletedEvent? = null,
   private val workflowCanceledEvent: WorkflowCanceledEvent? = null,
-  private val methodDispatchedEvent: MethodDispatchedEvent? = null,
+  private val methodDispatchedEvent: MethodCommandedEvent? = null,
   private val methodCompletedEvent: MethodCompletedEvent? = null,
   private val methodFailedEvent: MethodFailedEvent? = null,
   private val methodCanceledEvent: MethodCanceledEvent? = null,
@@ -77,7 +77,7 @@ data class WorkflowEventEnvelope(
           workflowCanceledEvent = msg,
       )
 
-      is MethodDispatchedEvent -> WorkflowEventEnvelope(
+      is MethodCommandedEvent -> WorkflowEventEnvelope(
           workflowId = msg.workflowId,
           type = WorkflowEventMessageType.METHOD_DISPATCHED,
           methodDispatchedEvent = msg,

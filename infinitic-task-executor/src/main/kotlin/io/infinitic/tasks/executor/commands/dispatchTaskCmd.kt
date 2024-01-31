@@ -87,7 +87,7 @@ internal fun CoroutineScope.dispatchTaskCmd(
 
   // sent to workflow event
   launch {
-    val taskDispatchedEvent = executeTask.getTaskDispatchedEvent(emitterName)
+    val taskDispatchedEvent = executeTask.taskDispatchedEvent(emitterName)
     with(producer) { taskDispatchedEvent.sendTo(WorkflowEventsTopic) }
   }
 
