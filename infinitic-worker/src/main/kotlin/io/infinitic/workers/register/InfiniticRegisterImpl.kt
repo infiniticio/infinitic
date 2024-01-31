@@ -118,12 +118,14 @@ class InfiniticRegisterImpl : InfiniticRegister {
     serviceName: String,
     concurrency: Int,
     eventListener: CloudEventListener,
+    subscriptionName: String?,
   ) {
     logger.info { "* event listener ".padEnd(25) + ": (concurrency: $concurrency)" }
 
     registry.serviceListeners[ServiceName(serviceName)] = RegisteredEventListener(
         eventListener,
         concurrency,
+        subscriptionName,
     )
   }
 
@@ -199,12 +201,14 @@ class InfiniticRegisterImpl : InfiniticRegister {
     workflowName: String,
     concurrency: Int,
     eventListener: CloudEventListener,
+    subscriptionName: String?,
   ) {
     logger.info { "* event listener ".padEnd(25) + ": (concurrency: $concurrency)" }
 
     registry.workflowListeners[WorkflowName(workflowName)] = RegisteredEventListener(
         eventListener,
         concurrency,
+        subscriptionName,
     )
   }
 
@@ -237,6 +241,7 @@ class InfiniticRegisterImpl : InfiniticRegister {
                   w.name,
                   it.concurrency!!,
                   it.instance,
+                  it.subscriptionName,
               )
             }
             if (w.allClasses.isNotEmpty()) {
@@ -267,6 +272,7 @@ class InfiniticRegisterImpl : InfiniticRegister {
                   s.name,
                   it.concurrency!!,
                   it.instance,
+                  it.subscriptionName,
               )
             }
             s.`class`?.let {

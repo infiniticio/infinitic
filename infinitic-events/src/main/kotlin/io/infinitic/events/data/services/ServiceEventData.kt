@@ -40,18 +40,18 @@ import io.infinitic.events.properties.TASK_TAGS
 import io.infinitic.events.properties.WORKER_NAME
 import io.infinitic.events.types.TASK_COMPLETED
 import io.infinitic.events.types.TASK_FAILED
-import io.infinitic.events.types.TASK_RETRIED
+import io.infinitic.events.types.TASK_RETRY_SCHEDULED
 import io.infinitic.events.types.TASK_STARTED
 import kotlinx.serialization.json.JsonObject
 
 fun ServiceEventMessage.serviceType(): String = when (this) {
   is TaskCompletedEvent -> TASK_COMPLETED
   is TaskFailedEvent -> TASK_FAILED
-  is TaskRetriedEvent -> TASK_RETRIED
+  is TaskRetriedEvent -> TASK_RETRY_SCHEDULED
   is TaskStartedEvent -> TASK_STARTED
 }
 
-fun ServiceEventMessage.toServiceJson(): JsonObject = when (this) {
+fun ServiceEventMessage.toJson(): JsonObject = when (this) {
 
   is TaskStartedEvent -> JsonObject(
       mapOf(

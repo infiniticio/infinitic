@@ -58,10 +58,13 @@ interface InfiniticRegister : AutoCloseable {
 
 
   /** Register service event listener */
+  @Suppress("OVERLOADS_INTERFACE")
+  @JvmOverloads
   fun registerServiceEventListener(
     serviceName: String,
     concurrency: Int,
     eventListener: CloudEventListener,
+    subscriptionName: String? = null,
   )
 
   /** Register workflow */
@@ -111,10 +114,13 @@ interface InfiniticRegister : AutoCloseable {
   )
 
   /** Register workflow event listener */
+  @Suppress("OVERLOADS_INTERFACE")
+  @JvmOverloads
   fun registerWorkflowEventListener(
     workflowName: String,
     concurrency: Int,
     eventListener: CloudEventListener,
+    subscriptionName: String? = null,
   )
 
   companion object {

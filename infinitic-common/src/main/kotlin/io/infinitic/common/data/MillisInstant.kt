@@ -30,6 +30,8 @@ import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
 import java.time.Instant
+import java.time.OffsetDateTime
+import java.time.ZoneOffset
 
 @Serializable(with = MillisInstantSerializer::class)
 data class MillisInstant(val long: Long = 0) : Comparable<Long> {
@@ -39,7 +41,8 @@ data class MillisInstant(val long: Long = 0) : Comparable<Long> {
 
   override fun toString() = "$long"
 
-  fun toInstant(): Instant = Instant.ofEpochMilli(long)
+  fun toOffsetDateTime(): OffsetDateTime =
+      OffsetDateTime.ofInstant(Instant.ofEpochMilli(long), ZoneOffset.UTC)
 
   override operator fun compareTo(other: Long): Int = this.long.compareTo(other)
 

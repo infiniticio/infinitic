@@ -29,7 +29,7 @@ import io.infinitic.common.events.CloudEventListener
 
 class Listener : CloudEventListener {
 
-  override fun onCloudEvent(event: CloudEvent) {
+  override fun onEvent(event: CloudEvent) {
     println(String(JsonFormat().serialize(event)))
   }
 

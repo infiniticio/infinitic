@@ -24,15 +24,12 @@
 package io.infinitic.events.properties
 
 const val ERROR = "error"
-const val DEFERRED_ERROR = "deferredError"
 const val RESULT = "result"
 const val WORKER_NAME = "workerName"
 const val INFINITIC_VERSION = "infiniticVersion"
 const val REQUESTER = "requester"
-const val TARGET = "target"
 
 const val SERVICE_NAME = "serviceName"
-
 const val TASK_RETRY_SEQUENCE = "retrySequence"
 const val TASK_RETRY_INDEX = "retryIndex"
 const val TASK_RETRY_DELAY = "retryDelayMillis"
@@ -55,3 +52,18 @@ const val CHANNEL_NAME = "channelName"
 const val SIGNAL_ID = "signalId"
 const val SIGNAL_DATA = "signalData"
 const val TIMER_ID = "timerId"
+
+/* Events */
+const val WORKFLOW_EXECUTOR_FAILED = "workflowExecutorFailed"
+
+const val TASK_COMPLETED = "taskCompleted"
+const val TASK_FAILED = "taskFailed"
+const val TASK_CANCELED = "taskCanceled"
+const val TASK_TIMED_OUT = "taskTimedOut"
+const val TASK_UNKNOWN = "taskUnknown"
+
+const val CHILD_WORKFLOW_COMPLETED = "childWorkflowCompleted"
+const val CHILD_WORKFLOW_FAILED = "childWorkflowFailed"
+const val CHILD_WORKFLOW_CANCELED = "childWorkflowCanceled"
+const val CHILD_WORKFLOW_TIMED_OUT = "childWorkflowTimedOut"
+const val CHILD_WORKFLOW_UNKNOWN = "childWorkflowUnknown"

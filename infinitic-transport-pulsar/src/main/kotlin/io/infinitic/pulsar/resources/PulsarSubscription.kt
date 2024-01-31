@@ -34,19 +34,23 @@ val Subscription<*>.type
     false -> SubscriptionType.Shared
   }
 
-val Subscription<*>.name
+val Subscription<*>.defaultName
   get() = when (this) {
+    // IMPORTANT: subscription name must stay UNCHANGED through all Infinitic versions
+    // as Pulsar identify subscriptions through their name.
+    // Changing it would create a new one, and users would lose the cursor on acknowledged messages
     is MainSubscription -> "${topic.prefix()}-subscription"
-    is ListenerSubscription -> "${topic.prefix()}-listener-subscription"
+    // BUT users can change the listener subscription name on purpose to replay the events
+    is ListenerSubscription -> "listener-subscription"
   }
 
-val Subscription<*>.nameDLQ
+val Subscription<*>.defaultNameDLQ
   get() = when (this) {
-    is MainSubscription -> "${topic.prefix()}-dlq-subscription"
-    is ListenerSubscription -> "${topic.prefix()}-dlq-listener-subscription"
+    is MainSubscription -> "${topic.prefix()}-subscription-dlq"
+    is ListenerSubscription -> "listener-subscription-dlq"
   }
 
-val Subscription<*>.initialPosition
+val Subscription<*>.defaultInitialPosition
   get() = when (this) {
     is MainSubscription -> SubscriptionInitialPosition.Earliest
     is ListenerSubscription -> SubscriptionInitialPosition.Latest

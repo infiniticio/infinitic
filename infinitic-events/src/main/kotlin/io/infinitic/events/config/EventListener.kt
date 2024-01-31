@@ -28,8 +28,8 @@ import io.infinitic.common.utils.getInstance
 data class EventListener(
   var `class`: String? = null,
   var concurrency: Int? = null,
+  var subscriptionName: String? = null,
 ) {
-
   val instance: CloudEventListener
     get() = `class`!!.getInstance().getOrThrow() as CloudEventListener
 
@@ -47,7 +47,11 @@ data class EventListener(
         error("'${::concurrency.name}' must be an integer >= 0")
       }
     }
+
+    subscriptionName?.let {
+      require(it.isNotEmpty()) { error("'${::subscriptionName.name}' must not be empty") }
+    }
   }
 
-  private fun error(txt: String) = "event listener: $txt"
+  private fun error(txt: String) = "eventListener: $txt"
 }

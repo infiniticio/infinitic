@@ -40,6 +40,9 @@ data class MainSubscription<S : Message>(override val topic: Topic<S>) : Subscri
   }
 }
 
-data class ListenerSubscription<S : Message>(override val topic: Topic<S>) : Subscription<S> {
+data class ListenerSubscription<S : Message>(
+  override val topic: Topic<S>,
+  val name: String?
+) : Subscription<S> {
   override val withKey = false
 }

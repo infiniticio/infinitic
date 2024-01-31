@@ -42,7 +42,7 @@ fun ServiceExecutorMessage.serviceType(): String = when (this) {
   is ExecuteTask -> TASK_COMMANDED
 }
 
-fun ServiceExecutorMessage.toServiceJson() = when (this) {
+fun ServiceExecutorMessage.toJson() = when (this) {
   is ExecuteTask -> JsonObject(
       mapOf(
           TASK_RETRY_SEQUENCE to taskRetrySequence.toJson(),

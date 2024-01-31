@@ -41,7 +41,6 @@ import io.infinitic.events.properties.REQUESTER
 import io.infinitic.events.properties.SERVICE_NAME
 import io.infinitic.events.properties.SIGNAL_DATA
 import io.infinitic.events.properties.SIGNAL_ID
-import io.infinitic.events.properties.TARGET
 import io.infinitic.events.properties.TASK_ID
 import io.infinitic.events.properties.TASK_STATUS
 import io.infinitic.events.properties.WORKFLOW_META
@@ -49,27 +48,32 @@ import io.infinitic.events.properties.WORKFLOW_METHOD_ARGS
 import io.infinitic.events.properties.WORKFLOW_METHOD_ID
 import io.infinitic.events.properties.WORKFLOW_METHOD_NAME
 import io.infinitic.events.properties.WORKFLOW_TAGS
-import io.infinitic.events.types.WORKFLOW_CANCELED
+import io.infinitic.events.types.METHOD_CANCEL_COMMANDED
+import io.infinitic.events.types.METHOD_COMMANDED
+import io.infinitic.events.types.SIGNAL_COMMANDED
+import io.infinitic.events.types.WORKFLOW_CANCEL_COMMANDED
 import io.infinitic.events.types.WORKFLOW_COMMANDED
 import io.infinitic.events.types.WORKFLOW_EXECUTOR_RETRY_COMMANDED
-import io.infinitic.events.types.WORKFLOW_METHOD_COMMANDED
-import io.infinitic.events.types.WORKFLOW_SIGNAL_COMMANDED
 import io.infinitic.events.types.WORKFLOW_TASKS_RETRY_COMMANDED
 import kotlinx.serialization.json.JsonObject
 
 fun WorkflowCmdMessage.workflowType(): String? = when (this) {
   is DispatchWorkflow -> WORKFLOW_COMMANDED
-  is DispatchMethod -> WORKFLOW_METHOD_COMMANDED
-  is CancelWorkflow -> WORKFLOW_CANCELED
+  is DispatchMethod -> METHOD_COMMANDED
+  is CancelWorkflow -> when (workflowMethodId) {
+    null -> WORKFLOW_CANCEL_COMMANDED
+    else -> METHOD_CANCEL_COMMANDED
+  }
+
   is CompleteTimers -> null
   is CompleteWorkflow -> null
   is RetryTasks -> WORKFLOW_TASKS_RETRY_COMMANDED
   is RetryWorkflowTask -> WORKFLOW_EXECUTOR_RETRY_COMMANDED
-  is SendSignal -> WORKFLOW_SIGNAL_COMMANDED
+  is SendSignal -> SIGNAL_COMMANDED
   is WaitWorkflow -> null
 }
 
-fun WorkflowCmdMessage.toWorkflowJson(): JsonObject = when (this) {
+fun WorkflowCmdMessage.toJson(): JsonObject = when (this) {
   is DispatchWorkflow -> JsonObject(
       mapOf(
           WORKFLOW_META to workflowMeta.toJson(),
@@ -90,10 +94,18 @@ fun WorkflowCmdMessage.toWorkflowJson(): JsonObject = when (this) {
   )
 
   is CancelWorkflow -> JsonObject(
-      mapOf(
-          REQUESTER to requester.toJson(),
-          INFINITIC_VERSION to version.toJson(),
-      ),
+      when (workflowMethodId) {
+        null -> mapOf(
+            REQUESTER to requester.toJson(),
+            INFINITIC_VERSION to version.toJson(),
+        )
+
+        else -> mapOf(
+            WORKFLOW_METHOD_ID to workflowMethodId.toJson(),
+            REQUESTER to requester.toJson(),
+            INFINITIC_VERSION to version.toJson(),
+        )
+      },
   )
 
   is CompleteTimers -> TODO()
@@ -102,13 +114,9 @@ fun WorkflowCmdMessage.toWorkflowJson(): JsonObject = when (this) {
 
   is RetryTasks -> JsonObject(
       mapOf(
-          TARGET to JsonObject(
-              mapOf(
-                  TASK_ID to taskId.toJson(),
-                  TASK_STATUS to taskStatus.toJson(),
-                  SERVICE_NAME to serviceName.toJson(),
-              ),
-          ),
+          TASK_ID to taskId.toJson(),
+          TASK_STATUS to taskStatus.toJson(),
+          SERVICE_NAME to serviceName.toJson(),
           REQUESTER to requester.toJson(),
           INFINITIC_VERSION to version.toJson(),
       ),

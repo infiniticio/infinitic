@@ -27,4 +27,5 @@ import io.infinitic.common.events.CloudEventListener
 data class RegisteredEventListener(
   val eventListener: CloudEventListener,
   val concurrency: Int,
+  val subscriptionName: String?
 )

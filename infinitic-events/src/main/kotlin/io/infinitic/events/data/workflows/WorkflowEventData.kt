@@ -34,7 +34,7 @@ import io.infinitic.common.workflows.engine.messages.TaskDispatchedEvent
 import io.infinitic.common.workflows.engine.messages.WorkflowCanceledEvent
 import io.infinitic.common.workflows.engine.messages.WorkflowCompletedEvent
 import io.infinitic.common.workflows.engine.messages.WorkflowEventMessage
-import io.infinitic.events.properties.DEFERRED_ERROR
+import io.infinitic.events.errors.toJson
 import io.infinitic.events.properties.INFINITIC_VERSION
 import io.infinitic.events.properties.REQUESTER
 import io.infinitic.events.properties.RESULT
@@ -48,34 +48,34 @@ import io.infinitic.events.properties.WORKFLOW_METHOD_ARGS
 import io.infinitic.events.properties.WORKFLOW_METHOD_ID
 import io.infinitic.events.properties.WORKFLOW_METHOD_NAME
 import io.infinitic.events.properties.WORKFLOW_NAME
+import io.infinitic.events.types.METHOD_CANCELED
+import io.infinitic.events.types.METHOD_COMMANDED
+import io.infinitic.events.types.METHOD_COMPLETED
+import io.infinitic.events.types.METHOD_FAILED
+import io.infinitic.events.types.METHOD_TIMED_OUT
+import io.infinitic.events.types.REMOTE_TASK_DISPATCHED
+import io.infinitic.events.types.REMOTE_WORKFLOW_DISPATCHED
 import io.infinitic.events.types.WORKFLOW_CANCELED
-import io.infinitic.events.types.WORKFLOW_CHILD_DISPATCHED
 import io.infinitic.events.types.WORKFLOW_COMPLETED
 import io.infinitic.events.types.WORKFLOW_EXECUTOR_DISPATCHED
-import io.infinitic.events.types.WORKFLOW_METHOD_CANCELED
-import io.infinitic.events.types.WORKFLOW_METHOD_COMMANDED
-import io.infinitic.events.types.WORKFLOW_METHOD_COMPLETED
-import io.infinitic.events.types.WORKFLOW_METHOD_FAILED
-import io.infinitic.events.types.WORKFLOW_METHOD_TIMED_OUT
-import io.infinitic.events.types.WORKFLOW_TASK_DISPATCHED
 import kotlinx.serialization.json.JsonObject
 
 fun WorkflowEventMessage.workflowType(): String = when (this) {
   is WorkflowCompletedEvent -> WORKFLOW_COMPLETED
   is WorkflowCanceledEvent -> WORKFLOW_CANCELED
-  is MethodCommandedEvent -> WORKFLOW_METHOD_COMMANDED
-  is MethodCompletedEvent -> WORKFLOW_METHOD_COMPLETED
-  is MethodFailedEvent -> WORKFLOW_METHOD_FAILED
-  is MethodCanceledEvent -> WORKFLOW_METHOD_CANCELED
-  is MethodTimedOutEvent -> WORKFLOW_METHOD_TIMED_OUT
-  is ChildMethodDispatchedEvent -> WORKFLOW_CHILD_DISPATCHED
+  is MethodCommandedEvent -> METHOD_COMMANDED
+  is MethodCompletedEvent -> METHOD_COMPLETED
+  is MethodFailedEvent -> METHOD_FAILED
+  is MethodCanceledEvent -> METHOD_CANCELED
+  is MethodTimedOutEvent -> METHOD_TIMED_OUT
+  is ChildMethodDispatchedEvent -> REMOTE_WORKFLOW_DISPATCHED
   is TaskDispatchedEvent -> when (isWorkflowTaskEvent()) {
     true -> WORKFLOW_EXECUTOR_DISPATCHED
-    false -> WORKFLOW_TASK_DISPATCHED
+    false -> REMOTE_TASK_DISPATCHED
   }
 }
 
-fun WorkflowEventMessage.toWorkflowJson(): JsonObject = when (this) {
+fun WorkflowEventMessage.toJson(): JsonObject = when (this) {
 
   is WorkflowCompletedEvent -> JsonObject(
       mapOf(
@@ -112,7 +112,7 @@ fun WorkflowEventMessage.toWorkflowJson(): JsonObject = when (this) {
 
   is MethodFailedEvent -> JsonObject(
       mapOf(
-          DEFERRED_ERROR to deferredError.toDeferredErrorData().toJson(),
+          deferredError.toJson(),
           WORKFLOW_METHOD_ID to workflowMethodId.toJson(),
           WORKER_NAME to emitterName.toJson(),
           INFINITIC_VERSION to version.toJson(),

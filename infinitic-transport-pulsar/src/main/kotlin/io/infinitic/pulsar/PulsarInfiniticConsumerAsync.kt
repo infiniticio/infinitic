@@ -30,12 +30,14 @@ import io.infinitic.common.transport.ClientTopic
 import io.infinitic.common.transport.DelayedServiceExecutorTopic
 import io.infinitic.common.transport.DelayedWorkflowTaskExecutorTopic
 import io.infinitic.common.transport.InfiniticConsumerAsync
+import io.infinitic.common.transport.ListenerSubscription
+import io.infinitic.common.transport.MainSubscription
 import io.infinitic.common.transport.Subscription
 import io.infinitic.pulsar.consumers.Consumer
 import io.infinitic.pulsar.resources.PulsarResources
-import io.infinitic.pulsar.resources.initialPosition
-import io.infinitic.pulsar.resources.name
-import io.infinitic.pulsar.resources.nameDLQ
+import io.infinitic.pulsar.resources.defaultInitialPosition
+import io.infinitic.pulsar.resources.defaultName
+import io.infinitic.pulsar.resources.defaultNameDLQ
 import io.infinitic.pulsar.resources.schema
 import io.infinitic.pulsar.resources.type
 import kotlinx.coroutines.TimeoutCancellationException
@@ -43,6 +45,7 @@ import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
+import org.apache.pulsar.client.api.SubscriptionInitialPosition
 
 class PulsarInfiniticConsumerAsync(
   private val consumer: Consumer,
@@ -134,5 +137,26 @@ class PulsarInfiniticConsumerAsync(
         concurrency = concurrency,
     )
   }
+
+  private val Subscription<*>.name
+    get() = when (this) {
+      is ListenerSubscription -> name ?: defaultName
+      is MainSubscription -> defaultName
+    }
+
+  private val Subscription<*>.nameDLQ
+    get() = when (this) {
+      is ListenerSubscription -> name?.let { "$it-dlq" } ?: defaultNameDLQ
+      is MainSubscription -> defaultNameDLQ
+    }
+
+  private val Subscription<*>.initialPosition
+    get() = when (this) {
+      is ListenerSubscription -> name?.let {
+        SubscriptionInitialPosition.Earliest
+      } ?: defaultInitialPosition
+
+      is MainSubscription -> defaultInitialPosition
+    }
 }
 

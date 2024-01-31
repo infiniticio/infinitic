@@ -109,6 +109,9 @@ data class WorkerConfig @JvmOverloads constructor(
         // then use default event listener concurrency
         // else use service concurrency
         concurrency = concurrency ?: eventListener?.concurrency ?: s.concurrency
+        // if subscriptionName is not defined
+        // then use default event listener subscriptionName
+        subscriptionName = subscriptionName ?: eventListener?.subscriptionName
         // if class is not defined
         // then use default event listener class
         `class` = `class` ?: eventListener?.`class`
@@ -173,6 +176,9 @@ data class WorkerConfig @JvmOverloads constructor(
         // then use default event listener concurrency
         // else use service concurrency
         concurrency = concurrency ?: eventListener?.concurrency ?: w.concurrency
+        // if subscriptionName is not defined
+        // then use default event listener subscriptionName
+        subscriptionName = subscriptionName ?: eventListener?.subscriptionName
         // if class is not defined
         // then use default event listener class
         `class` = `class` ?: eventListener?.`class`

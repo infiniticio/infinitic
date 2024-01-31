@@ -37,59 +37,60 @@ import io.infinitic.common.workflows.engine.messages.TaskTimedOut
 import io.infinitic.common.workflows.engine.messages.TimerCompleted
 import io.infinitic.common.workflows.engine.messages.WorkflowCmdMessage
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
-import io.infinitic.events.properties.DEFERRED_ERROR
-import io.infinitic.events.properties.ERROR
+import io.infinitic.events.errors.toJson
+import io.infinitic.events.properties.CHILD_WORKFLOW_COMPLETED
 import io.infinitic.events.properties.INFINITIC_VERSION
 import io.infinitic.events.properties.RESULT
 import io.infinitic.events.properties.SERVICE_NAME
+import io.infinitic.events.properties.TASK_COMPLETED
 import io.infinitic.events.properties.TASK_ID
 import io.infinitic.events.properties.TIMER_ID
 import io.infinitic.events.properties.WORKER_NAME
 import io.infinitic.events.properties.WORKFLOW_ID
 import io.infinitic.events.properties.WORKFLOW_METHOD_ID
 import io.infinitic.events.properties.WORKFLOW_NAME
-import io.infinitic.events.types.WORKFLOW_CHILD_CANCELED
-import io.infinitic.events.types.WORKFLOW_CHILD_COMPLETED
-import io.infinitic.events.types.WORKFLOW_CHILD_FAILED
-import io.infinitic.events.types.WORKFLOW_CHILD_TIMED_OUT
-import io.infinitic.events.types.WORKFLOW_CHILD_UNKNOWN
+import io.infinitic.events.types.REMOTE_TASK_COMPLETED
+import io.infinitic.events.types.REMOTE_TASK_FAILED
+import io.infinitic.events.types.REMOTE_TASK_TIMED_OUT
+import io.infinitic.events.types.REMOTE_TIMER_COMPLETED
+import io.infinitic.events.types.REMOTE_WORKFLOW_CANCELED
+import io.infinitic.events.types.REMOTE_WORKFLOW_COMPLETED
+import io.infinitic.events.types.REMOTE_WORKFLOW_FAILED
+import io.infinitic.events.types.REMOTE_WORKFLOW_TIMED_OUT
+import io.infinitic.events.types.REMOTE_WORKFLOW_UNKNOWN
 import io.infinitic.events.types.WORKFLOW_EXECUTOR_COMPLETED
 import io.infinitic.events.types.WORKFLOW_EXECUTOR_FAILED
-import io.infinitic.events.types.WORKFLOW_TASK_COMPLETED
-import io.infinitic.events.types.WORKFLOW_TASK_FAILED
-import io.infinitic.events.types.WORKFLOW_TASK_TIMED_OUT
-import io.infinitic.events.types.WORKFLOW_TIMER_COMPLETED
 import kotlinx.serialization.json.JsonObject
 
 fun WorkflowEngineMessage.workflowType(): String? = when (this) {
   is WorkflowCmdMessage -> null
-  is TimerCompleted -> WORKFLOW_TIMER_COMPLETED
-  is ChildMethodCompleted -> WORKFLOW_CHILD_COMPLETED
-  is ChildMethodCanceled -> WORKFLOW_CHILD_CANCELED
-  is ChildMethodFailed -> WORKFLOW_CHILD_FAILED
-  is ChildMethodTimedOut -> WORKFLOW_CHILD_TIMED_OUT
-  is ChildMethodUnknown -> WORKFLOW_CHILD_UNKNOWN
+  is TimerCompleted -> REMOTE_TIMER_COMPLETED
+  is ChildMethodCompleted -> REMOTE_WORKFLOW_COMPLETED
+  is ChildMethodCanceled -> REMOTE_WORKFLOW_CANCELED
+  is ChildMethodFailed -> REMOTE_WORKFLOW_FAILED
+  is ChildMethodTimedOut -> REMOTE_WORKFLOW_TIMED_OUT
+  is ChildMethodUnknown -> REMOTE_WORKFLOW_UNKNOWN
   is TaskCanceled -> null
-  is TaskTimedOut -> WORKFLOW_TASK_TIMED_OUT
+  is TaskTimedOut -> REMOTE_TASK_TIMED_OUT
 
   is TaskFailed -> when (isWorkflowTaskEvent()) {
     true -> WORKFLOW_EXECUTOR_FAILED
-    false -> WORKFLOW_TASK_FAILED
+    false -> REMOTE_TASK_FAILED
   }
 
   is TaskCompleted -> when (isWorkflowTaskEvent()) {
     true -> WORKFLOW_EXECUTOR_COMPLETED
-    false -> WORKFLOW_TASK_COMPLETED
+    false -> REMOTE_TASK_COMPLETED
   }
 }
 
-fun WorkflowEngineMessage.toWorkflowJson(): JsonObject = when (this) {
+fun WorkflowEngineMessage.toJson(): JsonObject = when (this) {
 
   is WorkflowCmdMessage -> thisShouldNotHappen()
 
   is ChildMethodCompleted -> JsonObject(
       mapOf(
-          "childWorkflowCompleted" to JsonObject(
+          CHILD_WORKFLOW_COMPLETED to JsonObject(
               with(childWorkflowReturnValue) {
                 mapOf(
                     RESULT to returnValue.toJson(),
@@ -107,15 +108,7 @@ fun WorkflowEngineMessage.toWorkflowJson(): JsonObject = when (this) {
 
   is ChildMethodCanceled -> JsonObject(
       mapOf(
-          "childWorkflowCanceled" to JsonObject(
-              with(childMethodCanceledError) {
-                mapOf(
-                    WORKFLOW_ID to workflowId.toJson(),
-                    WORKFLOW_NAME to workflowName.toJson(),
-                    WORKFLOW_METHOD_ID to workflowMethodId.toJson(),
-                )
-              },
-          ),
+          childMethodCanceledError.toJson(),
           WORKFLOW_METHOD_ID to workflowMethodId.toJson(),
           WORKER_NAME to emitterName.toJson(),
           INFINITIC_VERSION to version.toJson(),
@@ -124,16 +117,7 @@ fun WorkflowEngineMessage.toWorkflowJson(): JsonObject = when (this) {
 
   is ChildMethodFailed -> JsonObject(
       mapOf(
-          "childWorkflowFailed" to JsonObject(
-              with(childMethodFailedError) {
-                mapOf(
-                    DEFERRED_ERROR to deferredError.toDeferredErrorData().toJson(),
-                    WORKFLOW_ID to workflowId.toJson(),
-                    WORKFLOW_NAME to workflowName.toJson(),
-                    WORKFLOW_METHOD_ID to workflowMethodId.toJson(),
-                )
-              },
-          ),
+          childMethodFailedError.toJson(),
           WORKFLOW_METHOD_ID to workflowMethodId.toJson(),
           WORKER_NAME to emitterName.toJson(),
           INFINITIC_VERSION to version.toJson(),
@@ -142,15 +126,7 @@ fun WorkflowEngineMessage.toWorkflowJson(): JsonObject = when (this) {
 
   is ChildMethodTimedOut -> JsonObject(
       mapOf(
-          "childWorkflowTimedOut" to JsonObject(
-              with(childMethodTimedOutError) {
-                mapOf(
-                    WORKFLOW_ID to workflowId.toJson(),
-                    WORKFLOW_NAME to workflowName.toJson(),
-                    WORKFLOW_METHOD_ID to workflowMethodId.toJson(),
-                )
-              },
-          ),
+          childMethodTimedOutError.toJson(),
           WORKFLOW_METHOD_ID to workflowMethodId.toJson(),
           WORKER_NAME to emitterName.toJson(),
           INFINITIC_VERSION to version.toJson(),
@@ -159,15 +135,7 @@ fun WorkflowEngineMessage.toWorkflowJson(): JsonObject = when (this) {
 
   is ChildMethodUnknown -> JsonObject(
       mapOf(
-          "childWorkflowUnknown" to JsonObject(
-              with(childMethodUnknownError) {
-                mapOf(
-                    WORKFLOW_ID to workflowId.toJson(),
-                    WORKFLOW_NAME to workflowName.toJson(),
-                    WORKFLOW_METHOD_ID to workflowMethodId.toJson(),
-                )
-              },
-          ),
+          childMethodUnknownError.toJson(),
           WORKFLOW_METHOD_ID to workflowMethodId.toJson(),
           WORKER_NAME to emitterName.toJson(),
           INFINITIC_VERSION to version.toJson(),
@@ -176,7 +144,7 @@ fun WorkflowEngineMessage.toWorkflowJson(): JsonObject = when (this) {
 
   is TaskCompleted -> JsonObject(
       mapOf(
-          "taskCompleted" to JsonObject(
+          TASK_COMPLETED to JsonObject(
               with(taskReturnValue) {
                 mapOf(
                     RESULT to returnValue.toJson(),
@@ -195,15 +163,7 @@ fun WorkflowEngineMessage.toWorkflowJson(): JsonObject = when (this) {
 
   is TaskFailed -> JsonObject(
       mapOf(
-          "taskFailed" to JsonObject(
-              with(taskFailedError) {
-                mapOf(
-                    ERROR to cause.toJson(),
-                    TASK_ID to taskId.toJson(),
-                    SERVICE_NAME to serviceName.toJson(),
-                )
-              },
-          ),
+          taskFailedError.toJson(),
           WORKFLOW_METHOD_ID to workflowMethodId.toJson(),
           WORKER_NAME to emitterName.toJson(),
           INFINITIC_VERSION to version.toJson(),
@@ -212,14 +172,7 @@ fun WorkflowEngineMessage.toWorkflowJson(): JsonObject = when (this) {
 
   is TaskTimedOut -> JsonObject(
       mapOf(
-          "taskTimedOut" to JsonObject(
-              with(taskTimedOutError) {
-                mapOf(
-                    TASK_ID to taskId.toJson(),
-                    SERVICE_NAME to serviceName.toJson(),
-                )
-              },
-          ),
+          taskTimedOutError.toJson(),
           WORKFLOW_METHOD_ID to workflowMethodId.toJson(),
           WORKER_NAME to emitterName.toJson(),
           INFINITIC_VERSION to version.toJson(),
