@@ -24,6 +24,7 @@
 package io.infinitic.common.requester
 
 import io.infinitic.common.clients.data.ClientName
+import io.infinitic.common.data.methods.MethodName
 import io.infinitic.common.exceptions.thisShouldNotHappen
 import io.infinitic.common.utils.JsonAble
 import io.infinitic.common.workflows.data.workflowMethods.WorkflowMethodId
@@ -49,13 +50,15 @@ data class ClientRequester(
 data class WorkflowRequester(
   val workflowName: WorkflowName,
   val workflowId: WorkflowId,
+  val workflowMethodName: MethodName,
   val workflowMethodId: WorkflowMethodId,
 ) : Requester {
   override fun toJson() = JsonObject(
       mapOf(
           "workflowName" to JsonPrimitive(workflowName.toString()),
           "workflowId" to JsonPrimitive(workflowId.toString()),
-          "workflowMethodId" to JsonPrimitive(workflowMethodId.toString()),
+          "methodName" to JsonPrimitive(workflowMethodName.toString()),
+          "methodId" to JsonPrimitive(workflowMethodId.toString()),
       ),
   )
 }
@@ -75,6 +78,12 @@ val Requester?.workflowId: WorkflowId?
 val Requester?.workflowName: WorkflowName?
   get() = when (this is WorkflowRequester) {
     true -> workflowName
+    false -> null
+  }
+
+val Requester?.workflowMethodName: MethodName?
+  get() = when (this is WorkflowRequester) {
+    true -> workflowMethodName
     false -> null
   }
 

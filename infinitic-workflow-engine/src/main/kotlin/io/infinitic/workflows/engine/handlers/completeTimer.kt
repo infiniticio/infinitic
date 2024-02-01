@@ -27,26 +27,24 @@ import io.infinitic.common.workflows.data.commands.CommandStatus
 import io.infinitic.common.workflows.data.commands.StartDurationTimerPastCommand
 import io.infinitic.common.workflows.data.commands.StartInstantTimerPastCommand
 import io.infinitic.common.workflows.data.timers.TimerId
-import io.infinitic.common.workflows.data.workflowMethods.WorkflowMethodId
+import io.infinitic.common.workflows.data.workflowMethods.WorkflowMethod
 import io.infinitic.common.workflows.engine.messages.CompleteTimers
-import io.infinitic.common.workflows.engine.messages.TimerCompleted
+import io.infinitic.common.workflows.engine.messages.RemoteTimerCompleted
 import io.infinitic.common.workflows.engine.state.WorkflowState
 
 internal fun completeTimer(state: WorkflowState, message: CompleteTimers) {
-  // get provided methodRunId or main per default
-  val workflowMethodId = message.workflowMethodId ?: WorkflowMethodId.from(message.workflowId)
 
-  // trigger a timer completed for all ongoing timer on this method
-  state.getWorkflowMethod(workflowMethodId)?.let { methodRun ->
-    methodRun.pastCommands
+  fun WorkflowMethod.completeTimer() {
+    pastCommands
         .filter { it is StartDurationTimerPastCommand || it is StartInstantTimerPastCommand }
         .filter { it.commandStatus is CommandStatus.Ongoing }
         .sortedByDescending { it.commandPosition }
         .forEach {
-          val msg = TimerCompleted(
+          val msg = RemoteTimerCompleted(
               timerId = TimerId.from(it.commandId),
-              workflowName = message.workflowName,
-              workflowId = message.workflowId,
+              workflowName = state.workflowName,
+              workflowId = state.workflowId,
+              workflowMethodName = methodName,
               workflowMethodId = workflowMethodId,
               emitterName = message.emitterName,
               emittedAt = message.emittedAt ?: thisShouldNotHappen(),
@@ -54,5 +52,15 @@ internal fun completeTimer(state: WorkflowState, message: CompleteTimers) {
           // add fake message at the top of the messagesBuffer list
           state.messagesBuffer.add(0, msg)
         }
+  }
+
+  // get provided workflowMethodId or all by default
+  val workflowMethodIds = message.workflowMethodId?.let {
+    listOf(it)
+  } ?: state.workflowMethods.map { it.workflowMethodId }
+
+  // trigger a timer completed for all ongoing timer on those methods
+  workflowMethodIds.forEach {
+    state.getWorkflowMethod(it)?.completeTimer()
   }
 }

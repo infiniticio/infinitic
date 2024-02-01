@@ -39,25 +39,25 @@ import io.infinitic.common.transport.WorkflowEngineTopic
 import io.infinitic.common.transport.WorkflowEventsTopic
 import io.infinitic.common.transport.WorkflowTagTopic
 import io.infinitic.common.workflows.engine.messages.CancelWorkflow
-import io.infinitic.common.workflows.engine.messages.ChildMethodCanceled
-import io.infinitic.common.workflows.engine.messages.ChildMethodCompleted
-import io.infinitic.common.workflows.engine.messages.ChildMethodFailed
-import io.infinitic.common.workflows.engine.messages.ChildMethodTimedOut
-import io.infinitic.common.workflows.engine.messages.ChildMethodUnknown
 import io.infinitic.common.workflows.engine.messages.CompleteTimers
 import io.infinitic.common.workflows.engine.messages.CompleteWorkflow
 import io.infinitic.common.workflows.engine.messages.DispatchMethod
 import io.infinitic.common.workflows.engine.messages.DispatchWorkflow
 import io.infinitic.common.workflows.engine.messages.MethodEvent
+import io.infinitic.common.workflows.engine.messages.RemoteMethodCanceled
+import io.infinitic.common.workflows.engine.messages.RemoteMethodCompleted
+import io.infinitic.common.workflows.engine.messages.RemoteMethodFailed
+import io.infinitic.common.workflows.engine.messages.RemoteMethodTimedOut
+import io.infinitic.common.workflows.engine.messages.RemoteMethodUnknown
+import io.infinitic.common.workflows.engine.messages.RemoteTaskCanceled
+import io.infinitic.common.workflows.engine.messages.RemoteTaskCompleted
+import io.infinitic.common.workflows.engine.messages.RemoteTaskFailed
+import io.infinitic.common.workflows.engine.messages.RemoteTaskTimedOut
+import io.infinitic.common.workflows.engine.messages.RemoteTimerCompleted
 import io.infinitic.common.workflows.engine.messages.RetryTasks
 import io.infinitic.common.workflows.engine.messages.RetryWorkflowTask
 import io.infinitic.common.workflows.engine.messages.SendSignal
-import io.infinitic.common.workflows.engine.messages.TaskCanceled
-import io.infinitic.common.workflows.engine.messages.TaskCompleted
 import io.infinitic.common.workflows.engine.messages.TaskEvent
-import io.infinitic.common.workflows.engine.messages.TaskFailed
-import io.infinitic.common.workflows.engine.messages.TaskTimedOut
-import io.infinitic.common.workflows.engine.messages.TimerCompleted
 import io.infinitic.common.workflows.engine.messages.WaitWorkflow
 import io.infinitic.common.workflows.engine.messages.WorkflowCompletedEvent
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
@@ -207,15 +207,17 @@ class WorkflowEngine(
         is WorkflowRequester -> {
           if (requester.workflowId != message.workflowId) launch {
             // a workflow wants to dispatch a method on an unknown workflow
-            val childMethodFailed = ChildMethodUnknown(
+            val childMethodFailed = RemoteMethodUnknown(
                 childMethodUnknownError =
                 MethodUnknownError(
                     workflowName = message.workflowName,
                     workflowId = message.workflowId,
+                    workflowMethodName = message.workflowMethodName,
                     workflowMethodId = message.workflowMethodId,
                 ),
                 workflowName = requester.workflowName,
                 workflowId = requester.workflowId,
+                workflowMethodName = requester.workflowMethodName,
                 workflowMethodId = requester.workflowMethodId,
                 emitterName = emitterName,
                 emittedAt = message.emittedAt,
@@ -310,7 +312,7 @@ class WorkflowEngine(
     val txt = { "Id ${message.workflowId} - discarding ${cause()}: $message" }
     when (message) {
       // these messages are expected, so we don't log them as warning
-      is TaskTimedOut, is ChildMethodTimedOut -> logger.debug(txt)
+      is RemoteTaskTimedOut, is RemoteMethodTimedOut -> logger.debug(txt)
       else -> logger.warn(txt)
     }
   }
@@ -366,29 +368,29 @@ class WorkflowEngine(
       is RetryWorkflowTask -> retryWorkflowTask(producer, state)
       is RetryTasks -> retryTasks(producer, state, message)
       // INTERNAL EVENTS
-      is TimerCompleted -> timerCompleted(producer, state, message)
-      is ChildMethodUnknown -> childMethodUnknown(producer, state, message)
-      is ChildMethodCanceled -> childMethodCanceled(producer, state, message)
-      is ChildMethodTimedOut -> childMethodTimedOut(producer, state, message)
-      is ChildMethodFailed -> childMethodFailed(producer, state, message)
-      is ChildMethodCompleted -> childMethodCompleted(producer, state, message)
+      is RemoteTimerCompleted -> timerCompleted(producer, state, message)
+      is RemoteMethodUnknown -> childMethodUnknown(producer, state, message)
+      is RemoteMethodCanceled -> childMethodCanceled(producer, state, message)
+      is RemoteMethodTimedOut -> childMethodTimedOut(producer, state, message)
+      is RemoteMethodFailed -> childMethodFailed(producer, state, message)
+      is RemoteMethodCompleted -> childMethodCompleted(producer, state, message)
 
-      is TaskCanceled -> when (message.isWorkflowTaskEvent()) {
+      is RemoteTaskCanceled -> when (message.isWorkflowTaskEvent()) {
         true -> TODO() // workflowTaskCanceled(producer, state, message)
         false -> taskCanceled(producer, state, message)
       }
 
-      is TaskTimedOut -> when (message.isWorkflowTaskEvent()) {
+      is RemoteTaskTimedOut -> when (message.isWorkflowTaskEvent()) {
         true -> TODO() // workflowTaskTimedOut(producer, state, message)
         false -> taskTimedOut(producer, state, message)
       }
 
-      is TaskFailed -> when (message.isWorkflowTaskEvent()) {
+      is RemoteTaskFailed -> when (message.isWorkflowTaskEvent()) {
         true -> workflowTaskFailed(producer, state, message)
         false -> taskFailed(producer, state, message)
       }
 
-      is TaskCompleted -> when (message.isWorkflowTaskEvent()) {
+      is RemoteTaskCompleted -> when (message.isWorkflowTaskEvent()) {
         true -> workflowTaskCompleted(producer, state, message)
         false -> taskCompleted(producer, state, message)
       }

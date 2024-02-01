@@ -110,13 +110,17 @@ data class TaskUnknownException(
   /** Name of the canceled task */
   @SerialName("taskName") val serviceName: String,
 
+  val methodName: String? = null,
+
   /** Id of the canceled task */
   val taskId: String
 ) : DeferredUnknownException() {
   companion object {
     fun from(error: TaskUnknownError): TaskUnknownException =
         TaskUnknownException(
-            serviceName = error.serviceName.toString(), taskId = error.taskId.toString(),
+            serviceName = error.serviceName.toString(),
+            methodName = error.methodName?.let { toString() },
+            taskId = error.taskId.toString(),
         )
   }
 }
@@ -130,6 +134,8 @@ data class WorkflowUnknownException(
   /** Id of the canceled child workflow */
   val workflowId: String,
 
+  val workflowMethodName: String?,
+
   /** Id of the methodRun */
   val workflowMethodId: String?
 ) : DeferredUnknownException() {
@@ -138,6 +144,7 @@ data class WorkflowUnknownException(
         WorkflowUnknownException(
             workflowName = error.workflowName.toString(),
             workflowId = error.workflowId.toString(),
+            workflowMethodName = error.workflowMethodName?.toString(),
             workflowMethodId = error.workflowMethodId?.toString(),
         )
   }
@@ -174,8 +181,7 @@ data class WorkflowTimedOutException(
   /** Id of the canceled child workflow */
   val workflowId: String,
 
-  /** Method called */
-  val methodName: String,
+  val workflowMethodName: String,
 
   /** Id of the methodRun */
   val workflowMethodId: String?
@@ -185,7 +191,7 @@ data class WorkflowTimedOutException(
         WorkflowTimedOutException(
             workflowName = error.workflowName.toString(),
             workflowId = error.workflowId.toString(),
-            methodName = error.methodName.toString(),
+            workflowMethodName = error.workflowMethodName.toString(),
             workflowMethodId = error.workflowMethodId?.toString(),
         )
   }
@@ -222,6 +228,8 @@ data class WorkflowCanceledException(
   /** Id of the canceled child workflow */
   val workflowId: String,
 
+  val workflowMethodName: String?,
+
   /** Id of the methodRun */
   val workflowMethodId: String?
 ) : DeferredCanceledException() {
@@ -230,6 +238,7 @@ data class WorkflowCanceledException(
         WorkflowCanceledException(
             workflowName = error.workflowName.toString(),
             workflowId = error.workflowId.toString(),
+            workflowMethodName = error.workflowMethodName?.toString(),
             workflowMethodId = error.workflowMethodId?.toString(),
         )
   }

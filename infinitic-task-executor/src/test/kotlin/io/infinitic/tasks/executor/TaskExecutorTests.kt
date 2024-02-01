@@ -25,6 +25,7 @@
 package io.infinitic.tasks.executor
 
 import io.infinitic.clients.InfiniticClientInterface
+import io.infinitic.common.clients.data.ClientName
 import io.infinitic.common.data.MessageId
 import io.infinitic.common.data.MillisDuration
 import io.infinitic.common.data.MillisInstant
@@ -34,6 +35,7 @@ import io.infinitic.common.data.methods.MethodParameterTypes
 import io.infinitic.common.data.methods.MethodParameters
 import io.infinitic.common.emitters.EmitterName
 import io.infinitic.common.fixtures.TestFactory
+import io.infinitic.common.requester.ClientRequester
 import io.infinitic.common.tasks.data.ServiceName
 import io.infinitic.common.tasks.data.TaskId
 import io.infinitic.common.tasks.data.TaskMeta
@@ -47,7 +49,6 @@ import io.infinitic.common.tasks.events.messages.TaskRetriedEvent
 import io.infinitic.common.tasks.events.messages.TaskStartedEvent
 import io.infinitic.common.tasks.executors.messages.ExecuteTask
 import io.infinitic.common.tasks.executors.messages.ServiceExecutorMessage
-import io.infinitic.common.tasks.executors.messages.clientName
 import io.infinitic.common.tasks.tags.messages.RemoveTagFromTask
 import io.infinitic.common.transport.DelayedServiceExecutorTopic
 import io.infinitic.common.transport.InfiniticProducerAsync
@@ -483,11 +484,8 @@ fun ExecuteTask.check(
   emitterName shouldBe testEmitterName
   taskRetrySequence shouldBe msg.taskRetrySequence
   taskRetryIndex shouldBe msg.taskRetryIndex + 1
-  workflowName shouldBe msg.workflowName
-  workflowId shouldBe msg.workflowId
   workflowVersion shouldBe msg.workflowVersion
-  workflowMethodId shouldBe msg.workflowMethodId
-  clientName shouldBe msg.clientName
+  requester shouldBe msg.requester
   clientWaiting shouldBe msg.clientWaiting
   methodName shouldBe msg.methodName
   taskMeta shouldBe TaskMeta(meta)
@@ -506,11 +504,8 @@ fun TaskFailedEvent.check(
   emitterName shouldBe testEmitterName
   taskRetrySequence shouldBe msg.taskRetrySequence
   taskRetryIndex shouldBe msg.taskRetryIndex
-  workflowName shouldBe msg.workflowName
-  workflowId shouldBe msg.workflowId
+  requester shouldBe msg.requester
   workflowVersion shouldBe msg.workflowVersion
-  workflowMethodId shouldBe msg.workflowMethodId
-  clientName shouldBe msg.clientName
   clientWaiting shouldBe msg.clientWaiting
   executionError.name shouldBe errorName
   executionError.workerName shouldBe WorkerName.from(msg.emitterName)
@@ -530,9 +525,7 @@ fun TaskRetriedEvent.check(
   emitterName shouldBe testEmitterName
   taskRetrySequence shouldBe msg.taskRetrySequence
   taskRetryIndex shouldBe msg.taskRetryIndex + 1
-  workflowName shouldBe msg.workflowName
-  workflowId shouldBe msg.workflowId
-  workflowMethodId shouldBe msg.workflowMethodId
+  requester shouldBe msg.requester
   taskTags shouldBe msg.taskTags
   taskMeta shouldBe TaskMeta(meta)
   taskRetryDelay shouldBe delay
@@ -547,9 +540,7 @@ internal fun getExecuteTask(method: String, input: Array<out Any?>, types: List<
         emitterName = testEmitterName,
         taskRetrySequence = TaskRetrySequence(12),
         taskRetryIndex = TaskRetryIndex(7),
-        workflowName = null,
-        workflowId = null,
-        workflowMethodId = null,
+        requester = ClientRequester(clientName = ClientName("test")),
         taskTags = TestFactory.random(),
         taskMeta = TestFactory.random(),
         clientWaiting = false,
@@ -563,14 +554,12 @@ internal fun getExecuteTask(method: String, input: Array<out Any?>, types: List<
 private fun getTaskStarted(msg: ExecuteTask, messageId: MessageId) = TaskStartedEvent(
     messageId = messageId,
     serviceName = msg.serviceName,
+    methodName = msg.methodName,
     taskId = msg.taskId,
     emitterName = testEmitterName,
     taskRetrySequence = msg.taskRetrySequence,
     taskRetryIndex = msg.taskRetryIndex,
-    workflowName = msg.workflowName,
-    workflowId = msg.workflowId,
-    workflowMethodId = msg.workflowMethodId,
-    clientName = msg.clientName,
+    requester = msg.requester!!,
     clientWaiting = msg.clientWaiting,
     taskTags = msg.taskTags,
     taskMeta = msg.taskMeta,
@@ -585,14 +574,12 @@ private fun getTaskCompleted(
 ) = TaskCompletedEvent(
     messageId = messageId,
     serviceName = msg.serviceName,
+    methodName = msg.methodName,
     taskId = msg.taskId,
     emitterName = testEmitterName,
     taskRetrySequence = msg.taskRetrySequence,
     taskRetryIndex = msg.taskRetryIndex,
-    workflowName = msg.workflowName,
-    workflowId = msg.workflowId,
-    workflowMethodId = msg.workflowMethodId,
-    clientName = msg.clientName,
+    requester = msg.requester!!,
     clientWaiting = msg.clientWaiting,
     taskTags = msg.taskTags,
     taskMeta = TaskMeta(meta),

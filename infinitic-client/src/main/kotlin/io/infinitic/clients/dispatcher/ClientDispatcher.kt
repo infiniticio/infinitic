@@ -245,7 +245,7 @@ internal class ClientDispatcher(
         throw WorkflowTimedOutException(
             workflowName = workflowName.toString(),
             workflowId = workflowId.toString(),
-            methodName = workflowMethodName.toString(),
+            workflowMethodName = workflowMethodName.toString(),
             workflowMethodId = workflowMethodId?.toString(),
         )
       }
@@ -255,6 +255,7 @@ internal class ClientDispatcher(
       is MethodCanceled -> throw WorkflowCanceledException(
           workflowName = workflowName.toString(),
           workflowId = workflowId.toString(),
+          workflowMethodName = workflowMethodName.toString(),
           workflowMethodId = workflowResult.workflowMethodId.toString(),
       )
 
@@ -271,6 +272,7 @@ internal class ClientDispatcher(
       is MethodUnknown -> throw WorkflowUnknownException(
           workflowName = workflowName.toString(),
           workflowId = workflowId.toString(),
+          workflowMethodName = workflowMethodName.toString(),
           workflowMethodId = workflowMethodId?.toString(),
       )
 
@@ -640,7 +642,7 @@ internal class ClientDispatcher(
           workflowName = deferred.workflowName,
           workflowId = deferred.requestBy.workflowId,
           workflowMethodId = deferred.workflowMethodId,
-          methodName = handler.methodName,
+          workflowMethodName = handler.methodName,
           methodParameters = handler.methodParameters,
           methodParameterTypes = handler.methodParameterTypes,
           requester = ClientRequester(clientName = ClientName.from(emitterName)),

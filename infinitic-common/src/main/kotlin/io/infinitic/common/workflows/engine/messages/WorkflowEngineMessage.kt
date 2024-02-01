@@ -36,16 +36,16 @@ sealed interface WorkflowEngineMessage : WorkflowMessageInterface {
 }
 
 fun WorkflowEngineMessage.type(): WorkflowEngineMessageType = when (this) {
-  is ChildMethodCanceled -> WorkflowEngineMessageType.CHILD_WORKFLOW_CANCELED
-  is ChildMethodCompleted -> WorkflowEngineMessageType.CHILD_WORKFLOW_COMPLETED
-  is ChildMethodFailed -> WorkflowEngineMessageType.CHILD_WORKFLOW_FAILED
-  is ChildMethodTimedOut -> WorkflowEngineMessageType.CHILD_WORKFLOW_TIMED_OUT
-  is ChildMethodUnknown -> WorkflowEngineMessageType.CHILD_WORKFLOW_UNKNOWN
-  is TaskCanceled -> WorkflowEngineMessageType.TASK_CANCELED
-  is TaskCompleted -> WorkflowEngineMessageType.TASK_COMPLETED
-  is TaskFailed -> WorkflowEngineMessageType.TASK_FAILED
-  is TaskTimedOut -> WorkflowEngineMessageType.TASK_TIMED_OUT
-  is TimerCompleted -> WorkflowEngineMessageType.TIMER_COMPLETED
+  is RemoteMethodCanceled -> WorkflowEngineMessageType.CHILD_WORKFLOW_CANCELED
+  is RemoteMethodCompleted -> WorkflowEngineMessageType.CHILD_WORKFLOW_COMPLETED
+  is RemoteMethodFailed -> WorkflowEngineMessageType.CHILD_WORKFLOW_FAILED
+  is RemoteMethodTimedOut -> WorkflowEngineMessageType.CHILD_WORKFLOW_TIMED_OUT
+  is RemoteMethodUnknown -> WorkflowEngineMessageType.CHILD_WORKFLOW_UNKNOWN
+  is RemoteTaskCanceled -> WorkflowEngineMessageType.TASK_CANCELED
+  is RemoteTaskCompleted -> WorkflowEngineMessageType.TASK_COMPLETED
+  is RemoteTaskFailed -> WorkflowEngineMessageType.TASK_FAILED
+  is RemoteTaskTimedOut -> WorkflowEngineMessageType.TASK_TIMED_OUT
+  is RemoteTimerCompleted -> WorkflowEngineMessageType.TIMER_COMPLETED
   is CancelWorkflow -> WorkflowEngineMessageType.CANCEL_WORKFLOW
   is CompleteTimers -> WorkflowEngineMessageType.COMPLETE_TIMERS
   is CompleteWorkflow -> WorkflowEngineMessageType.COMPLETE_WORKFLOW

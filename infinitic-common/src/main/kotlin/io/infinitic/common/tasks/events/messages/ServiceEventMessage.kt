@@ -33,6 +33,10 @@ import io.infinitic.common.data.methods.MethodName
 import io.infinitic.common.emitters.EmitterName
 import io.infinitic.common.exceptions.thisShouldNotHappen
 import io.infinitic.common.messages.Message
+import io.infinitic.common.requester.ClientRequester
+import io.infinitic.common.requester.Requester
+import io.infinitic.common.requester.WorkflowRequester
+import io.infinitic.common.requester.workflowName
 import io.infinitic.common.tasks.data.ServiceName
 import io.infinitic.common.tasks.data.TaskId
 import io.infinitic.common.tasks.data.TaskMeta
@@ -47,29 +51,24 @@ import io.infinitic.common.tasks.executors.messages.ExecuteTask
 import io.infinitic.common.tasks.tags.messages.RemoveTagFromTask
 import io.infinitic.common.workers.config.WorkflowVersion
 import io.infinitic.common.workers.data.WorkerName
-import io.infinitic.common.workflows.data.workflowMethods.WorkflowMethodId
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTask
-import io.infinitic.common.workflows.data.workflows.WorkflowId
-import io.infinitic.common.workflows.data.workflows.WorkflowName
 import io.infinitic.currentVersion
 import io.infinitic.exceptions.DeferredException
 import kotlinx.serialization.Serializable
 import io.infinitic.common.clients.messages.TaskCompleted as TaskCompletedClient
 import io.infinitic.common.clients.messages.TaskFailed as TaskFailedClient
-import io.infinitic.common.workflows.engine.messages.TaskCompleted as TaskCompletedWorkflow
-import io.infinitic.common.workflows.engine.messages.TaskFailed as TaskFailedWorkflow
+import io.infinitic.common.workflows.engine.messages.RemoteTaskCompleted as TaskCompletedWorkflow
+import io.infinitic.common.workflows.engine.messages.RemoteTaskFailed as TaskFailedWorkflow
 
 @Serializable
 sealed class ServiceEventMessage : Message {
   val version: Version = Version(currentVersion)
-  abstract val serviceName: ServiceName
   abstract val taskId: TaskId
+  abstract val serviceName: ServiceName
+  abstract val methodName: MethodName
   abstract val taskRetrySequence: TaskRetrySequence
   abstract val taskRetryIndex: TaskRetryIndex
-  abstract val workflowName: WorkflowName?
-  abstract val workflowId: WorkflowId?
-  abstract val workflowMethodId: WorkflowMethodId?
-  abstract val clientName: ClientName?
+  abstract val requester: Requester
   abstract val clientWaiting: Boolean?
   abstract val taskTags: Set<TaskTag>
   abstract val taskMeta: TaskMeta
@@ -77,7 +76,7 @@ sealed class ServiceEventMessage : Message {
   override fun key() = null
 
   override fun entity() = when (isWorkflowTask()) {
-    true -> workflowName!!.toString()
+    true -> requester.workflowName!!.toString()
     false -> serviceName.toString()
   }
 
@@ -90,14 +89,12 @@ sealed class ServiceEventMessage : Message {
 data class TaskStartedEvent(
   override val messageId: MessageId = MessageId(),
   override val serviceName: ServiceName,
+  override val methodName: MethodName,
   override val taskId: TaskId,
   override val emitterName: EmitterName,
   override val taskRetrySequence: TaskRetrySequence,
   override val taskRetryIndex: TaskRetryIndex,
-  override val workflowName: WorkflowName?,
-  override val workflowId: WorkflowId?,
-  override val workflowMethodId: WorkflowMethodId?,
-  override val clientName: ClientName?,
+  override val requester: Requester,
   override val clientWaiting: Boolean?,
   override val taskTags: Set<TaskTag>,
   override val taskMeta: TaskMeta,
@@ -106,14 +103,12 @@ data class TaskStartedEvent(
   companion object {
     fun from(msg: ExecuteTask, emitterName: EmitterName) = TaskStartedEvent(
         serviceName = msg.serviceName,
+        methodName = msg.methodName,
         taskId = msg.taskId,
         emitterName = emitterName,
         taskRetrySequence = msg.taskRetrySequence,
         taskRetryIndex = msg.taskRetryIndex,
-        workflowName = msg.workflowName,
-        workflowId = msg.workflowId,
-        workflowMethodId = msg.workflowMethodId,
-        clientName = msg.clientName,
+        requester = msg.requester ?: thisShouldNotHappen(),
         clientWaiting = msg.clientWaiting,
         taskTags = msg.taskTags,
         taskMeta = msg.taskMeta,
@@ -127,37 +122,36 @@ data class TaskStartedEvent(
 data class TaskFailedEvent(
   override val messageId: MessageId = MessageId(),
   override val serviceName: ServiceName,
+  override val methodName: MethodName,
   override val taskId: TaskId,
   override val emitterName: EmitterName,
   override val taskRetrySequence: TaskRetrySequence,
   override val taskRetryIndex: TaskRetryIndex,
-  override val workflowName: WorkflowName?,
-  override val workflowId: WorkflowId?,
-  override val workflowMethodId: WorkflowMethodId?,
-  override val clientName: ClientName?,
+  override val requester: Requester,
   override val clientWaiting: Boolean?,
   override val taskTags: Set<TaskTag>,
   override val taskMeta: TaskMeta,
   val executionError: ExecutionError,
   val deferredError: DeferredError?,
-  val methodName: MethodName,
   val workflowVersion: WorkflowVersion?,
 ) : ServiceEventMessage() {
 
-  fun getEventForClient(emitterName: EmitterName) = clientName?.let {
-    TaskFailedClient(
-        recipientName = it,
+  fun getEventForClient(emitterName: EmitterName) = when (requester) {
+    is WorkflowRequester -> null
+    is ClientRequester -> TaskFailedClient(
+        recipientName = requester.clientName,
         taskId = taskId,
         cause = executionError,
         emitterName = emitterName,
     )
   }
 
-  fun getEventForWorkflow(emitterName: EmitterName, emittedAt: MillisInstant) = workflowId?.let {
-    TaskFailedWorkflow(
-        workflowId = it,
-        workflowName = workflowName ?: thisShouldNotHappen(),
-        workflowMethodId = workflowMethodId ?: thisShouldNotHappen(),
+  fun getEventForWorkflow(emitterName: EmitterName, emittedAt: MillisInstant) = when (requester) {
+    is WorkflowRequester -> TaskFailedWorkflow(
+        workflowId = requester.workflowId,
+        workflowName = requester.workflowName,
+        workflowMethodName = requester.workflowMethodName,
+        workflowMethodId = requester.workflowMethodId,
         taskFailedError = TaskFailedError(
             serviceName = serviceName,
             methodName = methodName,
@@ -168,6 +162,8 @@ data class TaskFailedEvent(
         emitterName = emitterName,
         emittedAt = emittedAt,
     )
+
+    is ClientRequester -> null
   }
 
   companion object {
@@ -178,20 +174,17 @@ data class TaskFailedEvent(
       meta: MutableMap<String, ByteArray>
     ) = TaskFailedEvent(
         serviceName = msg.serviceName,
+        methodName = msg.methodName,
         taskId = msg.taskId,
         emitterName = emitterName,
         taskRetrySequence = msg.taskRetrySequence,
         taskRetryIndex = msg.taskRetryIndex,
-        workflowName = msg.workflowName,
-        workflowId = msg.workflowId,
-        workflowMethodId = msg.workflowMethodId,
-        clientName = msg.clientName,
+        requester = msg.requester ?: thisShouldNotHappen(),
         clientWaiting = msg.clientWaiting,
         taskTags = msg.taskTags,
         taskMeta = TaskMeta(meta),
         executionError = cause.getExecutionError(emitterName),
         deferredError = cause.deferredError,
-        methodName = msg.methodName,
         workflowVersion = msg.workflowVersion,
     )
   }
@@ -202,17 +195,16 @@ data class TaskFailedEvent(
 data class TaskRetriedEvent(
   override val messageId: MessageId = MessageId(),
   override val serviceName: ServiceName,
+  override val methodName: MethodName,
   override val taskId: TaskId,
   override val emitterName: EmitterName,
   override val taskRetrySequence: TaskRetrySequence,
   override val taskRetryIndex: TaskRetryIndex,
-  override val workflowName: WorkflowName?,
-  override val workflowId: WorkflowId?,
-  override val workflowMethodId: WorkflowMethodId?,
-  override val clientName: ClientName?,
+  override val requester: Requester,
   override val clientWaiting: Boolean?,
   override val taskTags: Set<TaskTag>,
   override val taskMeta: TaskMeta,
+
   val taskRetryDelay: MillisDuration,
   val lastError: ExecutionError,
 ) : ServiceEventMessage() {
@@ -226,14 +218,12 @@ data class TaskRetriedEvent(
       meta: MutableMap<String, ByteArray>
     ) = TaskRetriedEvent(
         serviceName = msg.serviceName,
+        methodName = msg.methodName,
         taskId = msg.taskId,
         emitterName = emitterName,
         taskRetrySequence = msg.taskRetrySequence,
         taskRetryIndex = msg.taskRetryIndex + 1,
-        workflowName = msg.workflowName,
-        workflowId = msg.workflowId,
-        workflowMethodId = msg.workflowMethodId,
-        clientName = msg.clientName,
+        requester = msg.requester ?: thisShouldNotHappen(),
         clientWaiting = msg.clientWaiting,
         taskTags = msg.taskTags,
         taskMeta = TaskMeta(meta),
@@ -248,14 +238,12 @@ data class TaskRetriedEvent(
 data class TaskCompletedEvent(
   override val messageId: MessageId = MessageId(),
   override val serviceName: ServiceName,
+  override val methodName: MethodName,
   override val taskId: TaskId,
   override val emitterName: EmitterName,
   override val taskRetrySequence: TaskRetrySequence,
   override val taskRetryIndex: TaskRetryIndex,
-  override val workflowName: WorkflowName?,
-  override val workflowId: WorkflowId?,
-  override val workflowMethodId: WorkflowMethodId?,
-  override val clientName: ClientName?,
+  override val requester: Requester,
   override val clientWaiting: Boolean?,
   override val taskTags: Set<TaskTag>,
   override val taskMeta: TaskMeta,
@@ -263,24 +251,29 @@ data class TaskCompletedEvent(
   val workflowVersion: WorkflowVersion?,
 ) : ServiceEventMessage() {
 
-  fun getEventForClient(emitterName: EmitterName) = clientName?.let {
-    TaskCompletedClient(
-        recipientName = it,
+  fun getEventForClient(emitterName: EmitterName) = when (requester) {
+    is ClientRequester -> TaskCompletedClient(
+        recipientName = requester.clientName,
         taskId = taskId,
         taskReturnValue = returnValue,
         taskMeta = taskMeta,
         emitterName = emitterName,
     )
+
+    is WorkflowRequester -> null
   }
 
-  fun getEventForWorkflow(emitterName: EmitterName, emittedAt: MillisInstant) = workflowId?.let {
-    TaskCompletedWorkflow(
-        workflowId = it,
-        workflowName = workflowName ?: thisShouldNotHappen(),
-        workflowMethodId = workflowMethodId ?: thisShouldNotHappen(),
+  fun getEventForWorkflow(emitterName: EmitterName, emittedAt: MillisInstant) = when (requester) {
+    is ClientRequester -> null
+    is WorkflowRequester -> TaskCompletedWorkflow(
+        workflowId = requester.workflowId,
+        workflowName = requester.workflowName,
+        workflowMethodName = requester.workflowMethodName,
+        workflowMethodId = requester.workflowMethodId,
         taskReturnValue = TaskReturnValue(
             serviceName = serviceName,
             taskId = taskId,
+            methodName = methodName,
             taskMeta = taskMeta,
             returnValue = returnValue,
         ),
@@ -306,14 +299,12 @@ data class TaskCompletedEvent(
       meta: MutableMap<String, ByteArray>
     ) = TaskCompletedEvent(
         serviceName = msg.serviceName,
+        methodName = msg.methodName,
         taskId = msg.taskId,
         emitterName = emitterName,
         taskRetrySequence = msg.taskRetrySequence,
         taskRetryIndex = msg.taskRetryIndex,
-        workflowName = msg.workflowName,
-        workflowId = msg.workflowId,
-        workflowMethodId = msg.workflowMethodId,
-        clientName = msg.clientName,
+        requester = msg.requester ?: thisShouldNotHappen(),
         clientWaiting = msg.clientWaiting,
         taskTags = msg.taskTags,
         taskMeta = TaskMeta(meta),

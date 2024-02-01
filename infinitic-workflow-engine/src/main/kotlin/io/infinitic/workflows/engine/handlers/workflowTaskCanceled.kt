@@ -23,14 +23,14 @@
 package io.infinitic.workflows.engine.handlers
 
 import io.infinitic.common.transport.InfiniticProducer
-import io.infinitic.common.workflows.engine.messages.TaskCanceled
+import io.infinitic.common.workflows.engine.messages.RemoteTaskCanceled
 import io.infinitic.common.workflows.engine.state.WorkflowState
 import kotlinx.coroutines.CoroutineScope
 
 internal fun CoroutineScope.workflowTaskCanceled(
   producer: InfiniticProducer,
   state: WorkflowState,
-  message: TaskCanceled
+  message: RemoteTaskCanceled
 ) {
   TODO()
 }

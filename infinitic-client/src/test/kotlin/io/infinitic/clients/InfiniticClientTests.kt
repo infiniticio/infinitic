@@ -654,7 +654,7 @@ internal class InfiniticClientTests : StringSpec(
             workflowName = WorkflowName(FakeWorkflow::class.java.name),
             workflowId = WorkflowId(id),
             workflowMethodId = WorkflowMethodId(deferred.id),
-            methodName = MethodName("m0"),
+            workflowMethodName = MethodName("m0"),
             methodParameters = MethodParameters(),
             methodParameterTypes = MethodParameterTypes(listOf()),
             requester = ClientRequester(clientName = ClientName.from(emitterNameTest)),

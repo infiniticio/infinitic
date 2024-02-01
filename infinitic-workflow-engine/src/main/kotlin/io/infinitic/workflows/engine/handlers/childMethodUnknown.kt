@@ -26,7 +26,7 @@ import io.infinitic.common.exceptions.thisShouldNotHappen
 import io.infinitic.common.transport.InfiniticProducer
 import io.infinitic.common.workflows.data.commands.CommandId
 import io.infinitic.common.workflows.data.commands.CommandStatus
-import io.infinitic.common.workflows.engine.messages.ChildMethodUnknown
+import io.infinitic.common.workflows.engine.messages.RemoteMethodUnknown
 import io.infinitic.common.workflows.engine.state.WorkflowState
 import io.infinitic.workflows.engine.helpers.commandTerminated
 import kotlinx.coroutines.CoroutineScope
@@ -34,7 +34,7 @@ import kotlinx.coroutines.CoroutineScope
 internal fun CoroutineScope.childMethodUnknown(
   producer: InfiniticProducer,
   state: WorkflowState,
-  message: ChildMethodUnknown
+  message: RemoteMethodUnknown
 ) = commandTerminated(
     producer,
     state,

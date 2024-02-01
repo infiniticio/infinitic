@@ -28,7 +28,7 @@ import io.infinitic.common.transport.InfiniticProducer
 import io.infinitic.common.transport.WorkflowEventsTopic
 import io.infinitic.common.workflows.data.workflowMethods.awaitingRequesters
 import io.infinitic.common.workflows.engine.messages.MethodFailedEvent
-import io.infinitic.common.workflows.engine.messages.TaskFailed
+import io.infinitic.common.workflows.engine.messages.RemoteTaskFailed
 import io.infinitic.common.workflows.engine.state.WorkflowState
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
@@ -36,7 +36,7 @@ import kotlinx.coroutines.launch
 internal fun CoroutineScope.workflowTaskFailed(
   producer: InfiniticProducer,
   state: WorkflowState,
-  message: TaskFailed
+  message: RemoteTaskFailed
 ) {
   val emitterName = EmitterName(producer.name)
   val emittedAt = state.runningWorkflowTaskInstant ?: thisShouldNotHappen()

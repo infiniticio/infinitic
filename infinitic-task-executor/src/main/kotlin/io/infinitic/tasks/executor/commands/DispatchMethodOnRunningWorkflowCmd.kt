@@ -35,12 +35,11 @@ import io.infinitic.common.workflows.data.commands.DispatchMethodOnRunningWorkfl
 import io.infinitic.common.workflows.data.workflowMethods.WorkflowMethodId
 import io.infinitic.common.workflows.engine.messages.DispatchMethod
 import io.infinitic.common.workflows.tags.messages.DispatchMethodByTag
-import io.infinitic.tasks.executor.TaskEventHandler
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
 internal fun CoroutineScope.dispatchMethodOnRunningWorkflowCmd(
-  currentWorkflow: TaskEventHandler.CurrentWorkflow,
+  currentWorkflow: WorkflowRequester,
   pastCommand: DispatchMethodOnRunningWorkflowPastCommand,
   workflowTaskInstant: MillisInstant,
   producer: InfiniticProducer,
@@ -54,15 +53,11 @@ internal fun CoroutineScope.dispatchMethodOnRunningWorkflowCmd(
       val dispatchMethod = DispatchMethod(
           workflowName = command.workflowName,
           workflowId = command.workflowId!!,
+          workflowMethodName = command.methodName,
           workflowMethodId = workflowMethodId,
-          methodName = command.methodName,
           methodParameters = command.methodParameters,
           methodParameterTypes = command.methodParameterTypes,
-          requester = WorkflowRequester(
-              workflowId = currentWorkflow.workflowId,
-              workflowName = currentWorkflow.workflowName,
-              workflowMethodId = currentWorkflow.workflowMethodId,
-          ),
+          requester = currentWorkflow,
           clientWaiting = false,
           emitterName = emitterName,
           emittedAt = workflowTaskInstant,
@@ -107,11 +102,7 @@ internal fun CoroutineScope.dispatchMethodOnRunningWorkflowCmd(
           methodParameterTypes = command.methodParameterTypes,
           methodParameters = command.methodParameters,
           methodTimeout = command.methodTimeout,
-          requester = WorkflowRequester(
-              workflowId = currentWorkflow.workflowId,
-              workflowName = currentWorkflow.workflowName,
-              workflowMethodId = currentWorkflow.workflowMethodId,
-          ),
+          requester = currentWorkflow,
           clientWaiting = false,
           emitterName = emitterName,
           emittedAt = workflowTaskInstant,

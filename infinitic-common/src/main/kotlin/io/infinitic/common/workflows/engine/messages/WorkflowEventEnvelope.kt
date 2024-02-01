@@ -41,8 +41,8 @@ data class WorkflowEventEnvelope(
   private val methodFailedEvent: MethodFailedEvent? = null,
   private val methodCanceledEvent: MethodCanceledEvent? = null,
   private val methodTimedOutEvent: MethodTimedOutEvent? = null,
-  private val taskDispatched: TaskDispatchedEvent? = null,
-  private val childDispatched: ChildMethodDispatchedEvent? = null,
+  private val taskDispatched: RemoteTaskDispatchedEvent? = null,
+  private val childDispatched: RemoteMethodDispatchedEvent? = null,
 ) : Envelope<WorkflowEventMessage> {
   init {
     val noNull = listOfNotNull(
@@ -107,13 +107,13 @@ data class WorkflowEventEnvelope(
           methodTimedOutEvent = msg,
       )
 
-      is TaskDispatchedEvent -> WorkflowEventEnvelope(
+      is RemoteTaskDispatchedEvent -> WorkflowEventEnvelope(
           workflowId = msg.workflowId,
           type = WorkflowEventMessageType.METHOD_TASK_DISPATCHED,
           taskDispatched = msg,
       )
 
-      is ChildMethodDispatchedEvent -> WorkflowEventEnvelope(
+      is RemoteMethodDispatchedEvent -> WorkflowEventEnvelope(
           workflowId = msg.workflowId,
           type = WorkflowEventMessageType.METHOD_CHILD_DISPATCHED,
           childDispatched = msg,

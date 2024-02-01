@@ -25,6 +25,7 @@ package io.infinitic.common.workflows.engine.messages
 import com.github.avrokotlin.avro4k.AvroNamespace
 import io.infinitic.common.clients.messages.ClientMessage
 import io.infinitic.common.data.MillisInstant
+import io.infinitic.common.data.methods.MethodName
 import io.infinitic.common.emitters.EmitterName
 import io.infinitic.common.requester.Requester
 import io.infinitic.common.workflows.data.workflowMethods.WorkflowMethodId
@@ -41,8 +42,8 @@ fun WorkflowEventMessage.type(): WorkflowEventMessageType = when (this) {
   is MethodFailedEvent -> WorkflowEventMessageType.METHOD_FAILED
   is MethodCanceledEvent -> WorkflowEventMessageType.METHOD_CANCELED
   is MethodTimedOutEvent -> WorkflowEventMessageType.METHOD_TIMED_OUT
-  is TaskDispatchedEvent -> WorkflowEventMessageType.METHOD_TASK_DISPATCHED
-  is ChildMethodDispatchedEvent -> WorkflowEventMessageType.METHOD_CHILD_DISPATCHED
+  is RemoteTaskDispatchedEvent -> WorkflowEventMessageType.METHOD_TASK_DISPATCHED
+  is RemoteMethodDispatchedEvent -> WorkflowEventMessageType.METHOD_CHILD_DISPATCHED
 }
 
 @Serializable
@@ -60,6 +61,7 @@ enum class WorkflowEventMessageType {
 }
 
 interface MethodTerminated : WorkflowMessageInterface {
+  val workflowMethodName: MethodName
   val workflowMethodId: WorkflowMethodId
   val awaitingRequesters: Set<Requester>
 

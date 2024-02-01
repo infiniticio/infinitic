@@ -45,16 +45,16 @@ data class WorkflowEngineEnvelope(
   @AvroDefault(Avro.NULL) private val completeTimers: CompleteTimers? = null,
   private val completeWorkflow: CompleteWorkflow? = null,
   private val sendSignal: SendSignal? = null,
-  private val timerCompleted: TimerCompleted? = null,
-  private val childMethodUnknown: ChildMethodUnknown? = null,
-  private val childMethodCanceled: ChildMethodCanceled? = null,
-  @AvroDefault(Avro.NULL) private val childMethodTimedOut: ChildMethodTimedOut? = null,
-  private val childMethodFailed: ChildMethodFailed? = null,
-  private val childMethodCompleted: ChildMethodCompleted? = null,
-  private val taskCanceled: TaskCanceled? = null,
-  @AvroDefault(Avro.NULL) private val taskTimedOut: TaskTimedOut? = null,
-  private val taskFailed: TaskFailed? = null,
-  private val taskCompleted: TaskCompleted? = null
+  private val timerCompleted: RemoteTimerCompleted? = null,
+  private val childMethodUnknown: RemoteMethodUnknown? = null,
+  private val childMethodCanceled: RemoteMethodCanceled? = null,
+  @AvroDefault(Avro.NULL) private val childMethodTimedOut: RemoteMethodTimedOut? = null,
+  private val childMethodFailed: RemoteMethodFailed? = null,
+  private val childMethodCompleted: RemoteMethodCompleted? = null,
+  private val taskCanceled: RemoteTaskCanceled? = null,
+  @AvroDefault(Avro.NULL) private val taskTimedOut: RemoteTaskTimedOut? = null,
+  private val taskFailed: RemoteTaskFailed? = null,
+  private val taskCompleted: RemoteTaskCompleted? = null
 ) : Envelope<WorkflowEngineMessage> {
   init {
     val noNull = listOfNotNull(
@@ -87,61 +87,61 @@ data class WorkflowEngineEnvelope(
   companion object {
     fun from(msg: WorkflowEngineMessage) = when (msg) {
 
-      is TimerCompleted -> WorkflowEngineEnvelope(
+      is RemoteTimerCompleted -> WorkflowEngineEnvelope(
           workflowId = msg.workflowId,
           type = WorkflowEngineMessageType.TIMER_COMPLETED,
           timerCompleted = msg,
       )
 
-      is ChildMethodUnknown -> WorkflowEngineEnvelope(
+      is RemoteMethodUnknown -> WorkflowEngineEnvelope(
           workflowId = msg.workflowId,
           type = WorkflowEngineMessageType.CHILD_WORKFLOW_UNKNOWN,
           childMethodUnknown = msg,
       )
 
-      is ChildMethodCanceled -> WorkflowEngineEnvelope(
+      is RemoteMethodCanceled -> WorkflowEngineEnvelope(
           workflowId = msg.workflowId,
           type = WorkflowEngineMessageType.CHILD_WORKFLOW_CANCELED,
           childMethodCanceled = msg,
       )
 
-      is ChildMethodTimedOut -> WorkflowEngineEnvelope(
+      is RemoteMethodTimedOut -> WorkflowEngineEnvelope(
           workflowId = msg.workflowId,
           type = WorkflowEngineMessageType.CHILD_WORKFLOW_TIMED_OUT,
           childMethodTimedOut = msg,
       )
 
-      is ChildMethodFailed -> WorkflowEngineEnvelope(
+      is RemoteMethodFailed -> WorkflowEngineEnvelope(
           workflowId = msg.workflowId,
           type = WorkflowEngineMessageType.CHILD_WORKFLOW_FAILED,
           childMethodFailed = msg,
       )
 
-      is ChildMethodCompleted -> WorkflowEngineEnvelope(
+      is RemoteMethodCompleted -> WorkflowEngineEnvelope(
           workflowId = msg.workflowId,
           type = WorkflowEngineMessageType.CHILD_WORKFLOW_COMPLETED,
           childMethodCompleted = msg,
       )
 
-      is TaskCanceled -> WorkflowEngineEnvelope(
+      is RemoteTaskCanceled -> WorkflowEngineEnvelope(
           workflowId = msg.workflowId,
           type = WorkflowEngineMessageType.TASK_CANCELED,
           taskCanceled = msg,
       )
 
-      is TaskTimedOut -> WorkflowEngineEnvelope(
+      is RemoteTaskTimedOut -> WorkflowEngineEnvelope(
           workflowId = msg.workflowId,
           type = WorkflowEngineMessageType.TASK_TIMED_OUT,
           taskTimedOut = msg,
       )
 
-      is TaskFailed -> WorkflowEngineEnvelope(
+      is RemoteTaskFailed -> WorkflowEngineEnvelope(
           workflowId = msg.workflowId,
           type = WorkflowEngineMessageType.TASK_FAILED,
           taskFailed = msg,
       )
 
-      is TaskCompleted -> WorkflowEngineEnvelope(
+      is RemoteTaskCompleted -> WorkflowEngineEnvelope(
           workflowId = msg.workflowId,
           type = WorkflowEngineMessageType.TASK_COMPLETED,
           taskCompleted = msg,

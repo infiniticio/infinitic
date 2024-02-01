@@ -24,6 +24,7 @@ package io.infinitic.tasks.executor.commands
 
 import io.infinitic.common.data.MillisInstant
 import io.infinitic.common.emitters.EmitterName
+import io.infinitic.common.requester.WorkflowRequester
 import io.infinitic.common.tasks.data.TaskId
 import io.infinitic.common.tasks.data.TaskRetryIndex
 import io.infinitic.common.tasks.executors.errors.TaskTimedOutError
@@ -34,14 +35,15 @@ import io.infinitic.common.transport.InfiniticProducer
 import io.infinitic.common.transport.ServiceExecutorTopic
 import io.infinitic.common.transport.ServiceTagTopic
 import io.infinitic.common.transport.WorkflowEventsTopic
+import io.infinitic.common.workers.config.WorkflowVersion
 import io.infinitic.common.workflows.data.commands.DispatchTaskPastCommand
-import io.infinitic.common.workflows.engine.messages.TaskTimedOut
-import io.infinitic.tasks.executor.TaskEventHandler
+import io.infinitic.common.workflows.engine.messages.RemoteTaskTimedOut
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
 internal fun CoroutineScope.dispatchTaskCmd(
-  currentWorkflow: TaskEventHandler.CurrentWorkflow,
+  currentWorkflow: WorkflowRequester,
+  workflowVersion: WorkflowVersion,
   pastCommand: DispatchTaskPastCommand,
   workflowTaskInstant: MillisInstant,
   producer: InfiniticProducer
@@ -56,9 +58,7 @@ internal fun CoroutineScope.dispatchTaskCmd(
         emitterName = emitterName,
         taskRetrySequence = pastCommand.taskRetrySequence,
         taskRetryIndex = TaskRetryIndex(0),
-        workflowName = currentWorkflow.workflowName,
-        workflowId = currentWorkflow.workflowId,
-        workflowMethodId = currentWorkflow.workflowMethodId,
+        requester = currentWorkflow,
         taskTags = taskTags,
         taskMeta = taskMeta,
         clientWaiting = false,
@@ -66,7 +66,7 @@ internal fun CoroutineScope.dispatchTaskCmd(
         methodParameterTypes = methodParameterTypes,
         methodParameters = methodParameters,
         lastError = null,
-        workflowVersion = currentWorkflow.workflowVersion,
+        workflowVersion = workflowVersion,
     )
   }
 
@@ -93,7 +93,7 @@ internal fun CoroutineScope.dispatchTaskCmd(
 
   // send global task timeout if any
   pastCommand.command.methodTimeout?.let {
-    val taskTimedOut = TaskTimedOut(
+    val remoteTaskTimedOut = RemoteTaskTimedOut(
         taskTimedOutError = TaskTimedOutError(
             serviceName = executeTask.serviceName,
             taskId = executeTask.taskId,
@@ -101,10 +101,11 @@ internal fun CoroutineScope.dispatchTaskCmd(
         ),
         workflowName = currentWorkflow.workflowName,
         workflowId = currentWorkflow.workflowId,
+        workflowMethodName = currentWorkflow.workflowMethodName,
         workflowMethodId = currentWorkflow.workflowMethodId,
         emitterName = emitterName,
         emittedAt = workflowTaskInstant + it,
     )
-    launch { with(producer) { taskTimedOut.sendTo(DelayedWorkflowEngineTopic, it) } }
+    launch { with(producer) { remoteTaskTimedOut.sendTo(DelayedWorkflowEngineTopic, it) } }
   }
 }

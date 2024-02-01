@@ -33,17 +33,20 @@ import io.infinitic.common.data.methods.MethodName
 import io.infinitic.common.data.methods.MethodParameterTypes
 import io.infinitic.common.data.methods.MethodParameters
 import io.infinitic.common.emitters.EmitterName
-import io.infinitic.common.exceptions.thisShouldNotHappen
 import io.infinitic.common.messages.Message
 import io.infinitic.common.requester.ClientRequester
+import io.infinitic.common.requester.Requester
 import io.infinitic.common.requester.WorkflowRequester
+import io.infinitic.common.requester.workflowId
+import io.infinitic.common.requester.workflowMethodId
+import io.infinitic.common.requester.workflowMethodName
+import io.infinitic.common.requester.workflowName
 import io.infinitic.common.tasks.data.ServiceName
 import io.infinitic.common.tasks.data.TaskId
 import io.infinitic.common.tasks.data.TaskMeta
 import io.infinitic.common.tasks.data.TaskRetryIndex
 import io.infinitic.common.tasks.data.TaskRetrySequence
 import io.infinitic.common.tasks.data.TaskTag
-import io.infinitic.common.tasks.executors.errors.DeferredError
 import io.infinitic.common.tasks.executors.errors.ExecutionError
 import io.infinitic.common.workers.config.WorkflowVersion
 import io.infinitic.common.workers.data.WorkerName
@@ -51,10 +54,9 @@ import io.infinitic.common.workflows.data.workflowMethods.WorkflowMethodId
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTask
 import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.data.workflows.WorkflowName
-import io.infinitic.common.workflows.engine.messages.TaskDispatched
-import io.infinitic.common.workflows.engine.messages.TaskDispatchedEvent
+import io.infinitic.common.workflows.engine.messages.RemoteTaskDispatchedDesc
+import io.infinitic.common.workflows.engine.messages.RemoteTaskDispatchedEvent
 import io.infinitic.currentVersion
-import io.infinitic.exceptions.DeferredException
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
@@ -67,14 +69,12 @@ sealed class ServiceExecutorMessage : Message {
   abstract val taskId: TaskId
   abstract val taskRetrySequence: TaskRetrySequence
   abstract val taskRetryIndex: TaskRetryIndex
-  abstract val workflowName: WorkflowName?
-  abstract val workflowId: WorkflowId?
-  abstract val workflowMethodId: WorkflowMethodId?
+  abstract val requester: Requester?
 
   override fun key() = null
 
   override fun entity() = when (isWorkflowTask()) {
-    true -> workflowName!!.toString()
+    true -> requester.workflowName!!.toString()
     false -> serviceName.toString()
   }
 
@@ -90,9 +90,10 @@ data class ExecuteTask(
   override val emitterName: EmitterName,
   override val taskRetrySequence: TaskRetrySequence,
   override val taskRetryIndex: TaskRetryIndex,
-  override val workflowName: WorkflowName?,
-  override val workflowId: WorkflowId?,
-  @AvroName("methodRunId") override val workflowMethodId: WorkflowMethodId?,
+  @AvroDefault(Avro.NULL) override var requester: Requester?,
+  @Deprecated("Not used anymore after 0.13.0") val workflowName: WorkflowName? = null,
+  @Deprecated("Not used anymore after 0.13.0") val workflowId: WorkflowId? = null,
+  @Deprecated("Not used anymore after 0.13.0") @AvroName("methodRunId") val workflowMethodId: WorkflowMethodId? = null,
   val taskTags: Set<TaskTag>,
   val taskMeta: TaskMeta,
   val clientWaiting: Boolean,
@@ -102,6 +103,21 @@ data class ExecuteTask(
   val lastError: ExecutionError?,
   @AvroDefault(Avro.NULL) val workflowVersion: WorkflowVersion?
 ) : ServiceExecutorMessage() {
+
+  init {
+    // this is used only to handle previous messages that are still on <0.13 version
+    // in topics or in bufferedMessages of a workflow state
+    requester = requester ?: when (workflowId) {
+      null -> ClientRequester(clientName = ClientName.from(emitterName))
+      else -> WorkflowRequester(
+          workflowId = workflowId,
+          workflowName = workflowName ?: WorkflowName("undefined"),
+          workflowMethodName = MethodName("undefined"),
+          workflowMethodId = workflowMethodId ?: WorkflowMethodId("undefined"),
+      )
+    }
+  }
+
   companion object {
     fun retryFrom(
       msg: ExecuteTask,
@@ -114,9 +130,7 @@ data class ExecuteTask(
         emitterName = emitterName,
         taskRetrySequence = msg.taskRetrySequence,
         taskRetryIndex = msg.taskRetryIndex + 1,
-        workflowName = msg.workflowName,
-        workflowId = msg.workflowId,
-        workflowMethodId = msg.workflowMethodId,
+        requester = msg.requester,
         taskTags = msg.taskTags,
         taskMeta = TaskMeta(meta),
         clientWaiting = msg.clientWaiting,
@@ -128,40 +142,21 @@ data class ExecuteTask(
     )
   }
 
-  fun taskDispatchedEvent(emitterName: EmitterName) = TaskDispatchedEvent(
-      taskDispatched = TaskDispatched(
+  fun taskDispatchedEvent(emitterName: EmitterName) = RemoteTaskDispatchedEvent(
+      remoteTaskDispatched = RemoteTaskDispatchedDesc(
           taskId = taskId,
           taskName = methodName,
           methodParameterTypes = methodParameterTypes,
           methodParameters = methodParameters,
           serviceName = serviceName,
       ),
-      workflowName = workflowName!!,
-      workflowId = workflowId!!,
-      workflowMethodId = workflowMethodId!!,
+      workflowName = requester.workflowName!!,
+      workflowId = requester.workflowId!!,
+      workflowMethodName = requester.workflowMethodName!!,
+      workflowMethodId = requester.workflowMethodId!!,
       emitterName = emitterName,
   )
 }
 
-val ExecuteTask.clientName
-  get() = if (workflowName == null) ClientName.from(emitterName) else null
-
-val ExecuteTask.requester
-  get() = when (workflowName == null) {
-    true -> ClientRequester(clientName = ClientName.from(emitterName))
-
-    false -> WorkflowRequester(
-        workflowName = workflowName,
-        workflowId = workflowId ?: thisShouldNotHappen(),
-        workflowMethodId = workflowMethodId ?: thisShouldNotHappen(),
-    )
-  }
-
-val Throwable.deferredError
-  get() = when (this is DeferredException) {
-    true -> DeferredError.from(this)
-    false -> null
-  }
-
-fun Throwable.getExecutionError(emitterName: EmitterName) =
+private fun Throwable.getExecutionError(emitterName: EmitterName) =
     ExecutionError.from(WorkerName.from(emitterName), this)
