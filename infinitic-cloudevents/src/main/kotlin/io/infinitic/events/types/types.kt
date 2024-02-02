@@ -24,7 +24,7 @@
 package io.infinitic.events.types
 
 
-private const val TYPE_DOMAIN = "io.infinitic"
+private const val TYPE_DOMAIN = "infinitic"
 const val TYPE_TASK = "$TYPE_DOMAIN.task"
 const val TYPE_WORKFLOW = "$TYPE_DOMAIN.workflow"
 
@@ -36,6 +36,7 @@ const val CANCELED = "canceled"
 const val STARTED = "started"
 const val FAILED = "failed"
 const val RETRY_SCHEDULED = "retryScheduled"
+const val COMPLETION_DELEGATED = "completionDelegated"
 
 const val CANCEL_COMMANDED = "cancel"
 
@@ -63,8 +64,8 @@ const val METHOD_FAILED = "methodFailed"
 const val METHOD_TIMED_OUT = "methodTimedOut"
 
 // events related to  remote timers
-const val REMOTE_TIMER_DISPATCHED = "remoteTimerDispatched"
-const val REMOTE_TIMER_COMPLETED = "remoteTimerCompleted"
+const val REMOTE_TIMER_DISPATCHED = "timerDispatched"
+const val REMOTE_TIMER_COMPLETED = "timerCompleted"
 
 // events related to remote tasks
 const val REMOTE_TASK_DISPATCHED = "taskDispatched"

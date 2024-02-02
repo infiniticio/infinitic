@@ -1,0 +1,235 @@
+{
+  "type" : "record",
+  "name" : "TaskTagEnvelope",
+  "namespace" : "io.infinitic.tasks.tag",
+  "fields" : [ {
+    "name" : "name",
+    "type" : "string"
+  }, {
+    "name" : "type",
+    "type" : {
+      "type" : "enum",
+      "name" : "TaskTagMessageType",
+      "symbols" : [ "GET_TASK_IDS_BY_TAG", "ADD_TAG_TO_TASK", "REMOVE_TAG_FROM_TASK", "CANCEL_TASK_BY_TAG", "RETRY_TASK_BY_TAG", "SET_ASYNC_TASK_DATA", "COMPLETE_ASYNC_TASK" ]
+    }
+  }, {
+    "name" : "addTagToTask",
+    "type" : [ "null", {
+      "type" : "record",
+      "name" : "AddTagToTask",
+      "fields" : [ {
+        "name" : "taskId",
+        "type" : "string"
+      }, {
+        "name" : "messageId",
+        "type" : "string"
+      }, {
+        "name" : "taskName",
+        "type" : "string"
+      }, {
+        "name" : "taskTag",
+        "type" : "string"
+      }, {
+        "name" : "emitterName",
+        "type" : "string"
+      } ]
+    } ]
+  }, {
+    "name" : "removeTagFromTask",
+    "type" : [ "null", {
+      "type" : "record",
+      "name" : "RemoveTagFromTask",
+      "fields" : [ {
+        "name" : "taskId",
+        "type" : "string"
+      }, {
+        "name" : "messageId",
+        "type" : "string"
+      }, {
+        "name" : "taskName",
+        "type" : "string"
+      }, {
+        "name" : "taskTag",
+        "type" : "string"
+      }, {
+        "name" : "emitterName",
+        "type" : "string"
+      } ]
+    } ]
+  }, {
+    "name" : "cancelTaskByTag",
+    "type" : [ "null", {
+      "type" : "record",
+      "name" : "CancelTaskByTag",
+      "fields" : [ {
+        "name" : "messageId",
+        "type" : "string"
+      }, {
+        "name" : "taskName",
+        "type" : "string"
+      }, {
+        "name" : "taskTag",
+        "type" : "string"
+      }, {
+        "name" : "emitterName",
+        "type" : "string"
+      } ]
+    } ]
+  }, {
+    "name" : "retryTaskByTag",
+    "type" : [ "null", {
+      "type" : "record",
+      "name" : "RetryTaskByTag",
+      "fields" : [ {
+        "name" : "messageId",
+        "type" : "string"
+      }, {
+        "name" : "taskName",
+        "type" : "string"
+      }, {
+        "name" : "taskTag",
+        "type" : "string"
+      }, {
+        "name" : "emitterName",
+        "type" : "string"
+      } ]
+    } ]
+  }, {
+    "name" : "getTaskIdsByTag",
+    "type" : [ "null", {
+      "type" : "record",
+      "name" : "GetTaskIdsByTag",
+      "fields" : [ {
+        "name" : "messageId",
+        "type" : "string"
+      }, {
+        "name" : "taskName",
+        "type" : "string"
+      }, {
+        "name" : "taskTag",
+        "type" : "string"
+      }, {
+        "name" : "emitterName",
+        "type" : "string"
+      } ]
+    } ]
+  }, {
+    "name" : "setAsyncTaskData",
+    "type" : [ "null", {
+      "type" : "record",
+      "name" : "SetAsyncTaskData",
+      "fields" : [ {
+        "name" : "asyncTaskData",
+        "type" : {
+          "type" : "record",
+          "name" : "AsyncTaskData",
+          "namespace" : "io.infinitic.tasks",
+          "fields" : [ {
+            "name" : "serviceName",
+            "type" : "string"
+          }, {
+            "name" : "methodName",
+            "type" : "string"
+          }, {
+            "name" : "taskId",
+            "type" : "string"
+          }, {
+            "name" : "requester",
+            "type" : [ {
+              "type" : "record",
+              "name" : "ClientRequester",
+              "namespace" : "io.infinitic.common.requester",
+              "fields" : [ {
+                "name" : "clientName",
+                "type" : "string"
+              } ]
+            }, {
+              "type" : "record",
+              "name" : "WorkflowRequester",
+              "namespace" : "io.infinitic.common.requester",
+              "fields" : [ {
+                "name" : "workflowName",
+                "type" : "string"
+              }, {
+                "name" : "workflowId",
+                "type" : "string"
+              }, {
+                "name" : "workflowMethodName",
+                "type" : "string"
+              }, {
+                "name" : "workflowMethodId",
+                "type" : "string"
+              } ]
+            } ]
+          }, {
+            "name" : "clientWaiting",
+            "type" : [ "null", "boolean" ]
+          }, {
+            "name" : "taskMeta",
+            "type" : {
+              "type" : "map",
+              "values" : "bytes"
+            }
+          } ]
+        }
+      }, {
+        "name" : "messageId",
+        "type" : "string"
+      }, {
+        "name" : "serviceName",
+        "type" : "string"
+      }, {
+        "name" : "taskId",
+        "type" : "string"
+      }, {
+        "name" : "emitterName",
+        "type" : "string"
+      } ]
+    } ],
+    "default" : null
+  }, {
+    "name" : "completeAsyncTask",
+    "type" : [ "null", {
+      "type" : "record",
+      "name" : "CompleteAsyncTask",
+      "fields" : [ {
+        "name" : "returnValue",
+        "type" : {
+          "type" : "record",
+          "name" : "SerializedData",
+          "namespace" : "io.infinitic.data",
+          "fields" : [ {
+            "name" : "bytes",
+            "type" : "bytes"
+          }, {
+            "name" : "type",
+            "type" : {
+              "type" : "enum",
+              "name" : "SerializedDataType",
+              "symbols" : [ "NULL", "JSON_JACKSON", "JSON_KOTLIN", "AVRO_WITH_SCHEMA" ]
+            }
+          }, {
+            "name" : "meta",
+            "type" : {
+              "type" : "map",
+              "values" : "bytes"
+            }
+          } ]
+        }
+      }, {
+        "name" : "messageId",
+        "type" : "string"
+      }, {
+        "name" : "serviceName",
+        "type" : "string"
+      }, {
+        "name" : "taskId",
+        "type" : "string"
+      }, {
+        "name" : "emitterName",
+        "type" : "string"
+      } ]
+    } ],
+    "default" : null
+  } ]
+}

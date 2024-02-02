@@ -30,6 +30,8 @@ import io.infinitic.common.data.MessageId
 import io.infinitic.common.data.ReturnValue
 import io.infinitic.common.emitters.EmitterName
 import io.infinitic.common.messages.Message
+import io.infinitic.common.requester.ClientRequester
+import io.infinitic.common.tasks.data.AsyncTaskData
 import io.infinitic.common.tasks.data.ServiceName
 import io.infinitic.common.tasks.data.TaskId
 import io.infinitic.common.tasks.data.TaskMeta
@@ -59,9 +61,24 @@ data class TaskCompleted(
   override val emitterName: EmitterName,
   override val recipientName: ClientName,
   override val taskId: TaskId,
-  val taskReturnValue: ReturnValue,
+  @AvroName("taskReturnValue") val returnValue: ReturnValue,
   val taskMeta: TaskMeta
-) : ClientMessage(), TaskMessage
+) : ClientMessage(), TaskMessage {
+  companion object {
+    fun from(data: AsyncTaskData, returnValue: ReturnValue, emitterName: EmitterName) =
+        when (data.requester is ClientRequester && data.clientWaiting == true) {
+          true -> TaskCompleted(
+              recipientName = data.requester.clientName,
+              taskId = data.taskId,
+              returnValue = returnValue,
+              taskMeta = data.taskMeta,
+              emitterName = emitterName,
+          )
+
+          false -> null
+        }
+  }
+}
 
 @Serializable
 data class TaskFailed(

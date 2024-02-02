@@ -24,7 +24,6 @@ package io.infinitic.services.tag
 
 import io.infinitic.common.clients.messages.ClientMessage
 import io.infinitic.common.clients.messages.TaskIdsByTag
-import io.infinitic.common.data.MessageId
 import io.infinitic.common.data.MillisDuration
 import io.infinitic.common.data.MillisInstant
 import io.infinitic.common.fixtures.TestFactory
@@ -32,9 +31,9 @@ import io.infinitic.common.tasks.data.ServiceName
 import io.infinitic.common.tasks.data.TaskId
 import io.infinitic.common.tasks.data.TaskTag
 import io.infinitic.common.tasks.executors.messages.ServiceExecutorMessage
-import io.infinitic.common.tasks.tags.messages.AddTagToTask
+import io.infinitic.common.tasks.tags.messages.AddTaskIdToTag
 import io.infinitic.common.tasks.tags.messages.GetTaskIdsByTag
-import io.infinitic.common.tasks.tags.messages.RemoveTagFromTask
+import io.infinitic.common.tasks.tags.messages.RemoveTaskIdFromTag
 import io.infinitic.common.tasks.tags.storage.TaskTagStorage
 import io.infinitic.common.transport.ClientTopic
 import io.infinitic.common.transport.InfiniticProducerAsync
@@ -84,16 +83,12 @@ private inline fun <reified T : Any> random(values: Map<String, Any?>? = null) =
 private fun mockTagStateStorage(
   tag: TaskTag,
   name: ServiceName,
-  messageId: MessageId?,
   taskIds: Set<TaskId>
 ): TaskTagStorage {
   val tagStateStorage = mockk<TaskTagStorage>()
-  coEvery { tagStateStorage.getLastMessageId(tag, name) } returns messageId
-  coEvery { tagStateStorage.setLastMessageId(tag, name, MessageId(capture(stateMessageId))) } just
-      Runs
-  coEvery { tagStateStorage.getTaskIds(tag, name) } returns taskIds
-  coEvery { tagStateStorage.addTaskId(tag, name, TaskId(capture(stateTaskId))) } just Runs
-  coEvery { tagStateStorage.removeTaskId(tag, name, TaskId(capture(stateTaskId))) } just Runs
+  coEvery { tagStateStorage.getTaskIdsForTag(tag, name) } returns taskIds
+  coEvery { tagStateStorage.addTaskIdToTag(tag, name, TaskId(capture(stateTaskId))) } just Runs
+  coEvery { tagStateStorage.removeTaskIdFromTag(tag, name, TaskId(capture(stateTaskId))) } just Runs
 
   return tagStateStorage
 }
@@ -101,10 +96,9 @@ private fun mockTagStateStorage(
 private fun getEngine(
   taskTag: TaskTag,
   serviceName: ServiceName,
-  messageId: MessageId? = MessageId(),
   taskIds: Set<TaskId> = setOf(TaskId())
 ): TaskTagEngine {
-  tagStateStorage = mockTagStateStorage(taskTag, serviceName, messageId, taskIds)
+  tagStateStorage = mockTagStateStorage(taskTag, serviceName, taskIds)
 
   return TaskTagEngine(tagStateStorage, producerMock)
 }
@@ -123,19 +117,18 @@ internal class TaskTagEngineTests :
 
         "addTaskTag should add id" {
           // given
-          val msgIn = random<AddTagToTask>()
+          val msgIn = random<AddTaskIdToTag>()
           // when
           getEngine(msgIn.taskTag, msgIn.serviceName).handle(msgIn, MillisInstant.now())
           // then
           coVerifySequence {
-            tagStateStorage.addTaskId(msgIn.taskTag, msgIn.serviceName, msgIn.taskId)
-            tagStateStorage.setLastMessageId(msgIn.taskTag, msgIn.serviceName, msgIn.messageId)
+            tagStateStorage.addTaskIdToTag(msgIn.taskTag, msgIn.serviceName, msgIn.taskId)
           }
         }
 
         "removeTaskTag should remove id" {
           // given
-          val msgIn = random<RemoveTagFromTask>()
+          val msgIn = random<RemoveTaskIdFromTag>()
           // when
           getEngine(msgIn.taskTag, msgIn.serviceName, taskIds = setOf(msgIn.taskId)).handle(
               msgIn,
@@ -143,8 +136,7 @@ internal class TaskTagEngineTests :
           )
           // then
           coVerifySequence {
-            tagStateStorage.removeTaskId(msgIn.taskTag, msgIn.serviceName, msgIn.taskId)
-            tagStateStorage.setLastMessageId(msgIn.taskTag, msgIn.serviceName, msgIn.messageId)
+            tagStateStorage.removeTaskIdFromTag(msgIn.taskTag, msgIn.serviceName, msgIn.taskId)
           }
         }
 
@@ -160,10 +152,9 @@ internal class TaskTagEngineTests :
           )
           // then
           coVerifySequence {
-            tagStateStorage.getTaskIds(msgIn.taskTag, msgIn.serviceName)
+            tagStateStorage.getTaskIdsForTag(msgIn.taskTag, msgIn.serviceName)
             producerMock.producerName
             with(producerMock) { ofType<TaskIdsByTag>().sendToAsync(ClientTopic) }
-            tagStateStorage.setLastMessageId(msgIn.taskTag, msgIn.serviceName, msgIn.messageId)
           }
 
           captured(clientSlot).shouldBeInstanceOf<TaskIdsByTag>()

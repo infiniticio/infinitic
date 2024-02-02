@@ -28,7 +28,7 @@ import io.infinitic.common.tasks.data.TaskId
 import io.infinitic.common.tasks.data.TaskRetryIndex
 import io.infinitic.common.tasks.executors.errors.TaskTimedOutError
 import io.infinitic.common.tasks.executors.messages.ExecuteTask
-import io.infinitic.common.tasks.tags.messages.AddTagToTask
+import io.infinitic.common.tasks.tags.messages.AddTaskIdToTag
 import io.infinitic.common.transport.DelayedWorkflowEngineTopic
 import io.infinitic.common.transport.InfiniticProducer
 import io.infinitic.common.transport.ServiceExecutorTopic
@@ -117,13 +117,13 @@ private fun CoroutineScope.reDispatchTaskCmd(
 
   // add provided tags
   executeTask.taskTags.forEach {
-    val addTagToTask = AddTagToTask(
+    val addTaskIdToTag = AddTaskIdToTag(
         serviceName = executeTask.serviceName,
         taskTag = it,
         taskId = executeTask.taskId,
         emitterName = emitterName,
     )
-    launch { with(producer) { addTagToTask.sendTo(ServiceTagTopic) } }
+    launch { with(producer) { addTaskIdToTag.sendTo(ServiceTagTopic) } }
   }
 
   // send global task timeout if any

@@ -28,6 +28,8 @@ import io.infinitic.common.data.MillisDuration
 import io.infinitic.common.fixtures.TestFactory
 import io.infinitic.common.messages.Envelope
 import io.infinitic.common.messages.Message
+import io.infinitic.common.requester.WorkflowRequester
+import io.infinitic.common.requester.workflowName
 import io.infinitic.common.tasks.data.ServiceName
 import io.infinitic.common.tasks.events.messages.TaskCompletedEvent
 import io.infinitic.common.tasks.executors.messages.ExecuteTask
@@ -199,11 +201,14 @@ class PulsarInfiniticProducerAsyncTests : StringSpec(
 
       "should init workflow-task-executor topic before sending a message to it" {
         val message = TestFactory.random<ExecuteTask>(
-            mapOf("serviceName" to ServiceName(WorkflowTask::class.java.name)),
+            mapOf(
+                "serviceName" to ServiceName(WorkflowTask::class.java.name),
+                "requester" to TestFactory.random<WorkflowRequester>(),
+            ),
         )
         with(infiniticProducerAsync) { message.sendToAsync(WorkflowTaskExecutorTopic) }
 
-        val name = message.workflowName.toString()
+        val name = message.requester.workflowName.toString()
 
         coVerify {
           pulsarResources.initTopicOnce(
@@ -216,11 +221,14 @@ class PulsarInfiniticProducerAsyncTests : StringSpec(
 
       "should init workflow-task-events topic before sending a message to it" {
         val message = TestFactory.random<TaskCompletedEvent>(
-            mapOf("serviceName" to ServiceName(WorkflowTask::class.java.name)),
+            mapOf(
+                "serviceName" to ServiceName(WorkflowTask::class.java.name),
+                "requester" to TestFactory.random<WorkflowRequester>(),
+            ),
         )
         with(infiniticProducerAsync) { message.sendToAsync(WorkflowTaskEventsTopic) }
 
-        val name = message.workflowName.toString()
+        val name = message.requester.workflowName.toString()
 
         coVerify {
           pulsarResources.initTopicOnce(

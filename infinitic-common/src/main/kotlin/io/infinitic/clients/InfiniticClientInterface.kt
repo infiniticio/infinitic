@@ -20,6 +20,8 @@
  *
  * Licensor: infinitic.io
  */
+@file:Suppress("unused")
+
 package io.infinitic.clients
 
 import io.infinitic.workflows.Consumer0
@@ -486,9 +488,35 @@ interface InfiniticClientInterface : Closeable {
    * Complete ongoing timers
    *
    * @property stub should be a workflow stub obtained by [getWorkflowById] or [getWorkflowByTag]
-   * @id of the method run - main one if null
+   * @id of the method run - all if null
    */
-  fun completeTimers(stub: Any, id: String? = null): Unit = completeTimersAsync(stub, id).join()
+  fun completeTimers(stub: Any, methodId: String? = null): Unit =
+      completeTimersAsync(stub, methodId).join()
+
+
+  /**
+   * Completes a task asynchronously.
+   *
+   * @param klass The interface of the service to be completed.
+   * @param taskId The ID of the task to be completed.
+   * @param result The result of the task. Can be of any type.
+   * @return A CompletableFuture representing the status of the task completion. The CompletableFuture
+   *         will complete with a Unit value when the message is sent.
+   */
+  fun completeTaskAsync(klass: Class<*>, taskId: String, result: Any?): CompletableFuture<Unit>
+
+
+  /**
+   * Completes a task.
+   *
+   * @param klass The class of the task to be completed.
+   * @param taskId The ID of the task to be completed.
+   * @param result The result that should be associated with the completed task.
+   *
+   * @return Returns nothing.
+   */
+  fun completeTask(klass: Class<*>, taskId: String, result: Any?): Unit =
+      completeTaskAsync(klass, taskId, result).join()
 
   /**
    * Retry the workflow task (without waiting for the message to be sent)

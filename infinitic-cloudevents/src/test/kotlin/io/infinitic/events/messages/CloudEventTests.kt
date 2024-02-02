@@ -220,7 +220,7 @@ internal class CloudEventTests :
             event.dataContentType shouldBe "application/json"
             event.subject shouldBe message.taskId.toString()
             event.type shouldBe when (it) {
-              ExecuteTask::class -> "infinitic.task.commanded"
+              ExecuteTask::class -> "infinitic.task.start"
               else -> thisShouldNotHappen()
             }
           }
@@ -242,7 +242,11 @@ internal class CloudEventTests :
             event.subject shouldBe message.taskId.toString()
             event.type shouldBe when (it) {
               TaskStartedEvent::class -> "infinitic.task.started"
-              TaskCompletedEvent::class -> "infinitic.task.completed"
+              TaskCompletedEvent::class -> when ((message as TaskCompletedEvent).isAsync) {
+                true -> "infinitic.task.completionDelegated"
+                false -> "infinitic.task.completed"
+              }
+
               TaskFailedEvent::class -> "infinitic.task.failed"
               TaskRetriedEvent::class -> "infinitic.task.retryScheduled"
               else -> thisShouldNotHappen()
@@ -266,7 +270,7 @@ internal class CloudEventTests :
             event.source shouldBe URI("inmemory/services/executor/WorkflowA")
             event.subject shouldBe message.taskId.toString()
             event.type shouldBe when (it) {
-              ExecuteTask::class -> "infinitic.task.commanded"
+              ExecuteTask::class -> "infinitic.task.start"
               else -> thisShouldNotHappen()
             }
           }
@@ -274,13 +278,16 @@ internal class CloudEventTests :
 
         ServiceEventMessage::class.sealedSubclasses.forEach {
           "Check ${it.simpleName} source for WorkflowTask" {
-            val message = TestFactory.random(
+            var message = TestFactory.random(
                 it,
                 mapOf(
                     "serviceName" to ServiceName(WorkflowTask::class.java.name),
                     "workflowName" to WorkflowName("WorkflowA"),
                 ),
             )
+            if (message is TaskCompletedEvent) {
+              message = (message as TaskCompletedEvent).copy(isAsync = false)
+            }
             message.sendToTopic(WorkflowTaskEventsTopic)
 
             events.size shouldBe 1
@@ -307,17 +314,17 @@ internal class CloudEventTests :
 
             val type = when (it) {
               CancelWorkflow::class -> when ((message as CancelWorkflow).workflowMethodId) {
-                null -> "infinitic.workflow.cancelCommanded"
-                else -> "infinitic.workflow.method.cancelCommanded"
+                null -> "infinitic.workflow.cancel"
+                else -> "infinitic.workflow.cancelMethod"
               }
 
               CompleteTimers::class -> null
               CompleteWorkflow::class -> null
-              DispatchMethod::class -> "infinitic.workflow.method.commanded"
-              DispatchWorkflow::class -> "infinitic.workflow.commanded"
-              RetryTasks::class -> "infinitic.workflow.remote.task.retryCommanded"
-              RetryWorkflowTask::class -> "infinitic.workflow.executor.retryCommanded"
-              SendSignal::class -> "infinitic.workflow.signal.commanded"
+              DispatchMethod::class -> "infinitic.workflow.startMethod"
+              DispatchWorkflow::class -> "infinitic.workflow.start"
+              RetryTasks::class -> "infinitic.workflow.retryTasks"
+              RetryWorkflowTask::class -> "infinitic.workflow.retryExecutor"
+              SendSignal::class -> "infinitic.workflow.signal"
               WaitWorkflow::class -> null
               else -> thisShouldNotHappen()
             }
@@ -371,16 +378,16 @@ internal class CloudEventTests :
               message.sendToTopic(WorkflowEngineTopic)
 
               val type = when (it) {
-                RemoteMethodCanceled::class -> "infinitic.workflow.remote.method.canceled"
-                RemoteMethodCompleted::class -> "infinitic.workflow.remote.method.completed"
-                RemoteMethodFailed::class -> "infinitic.workflow.remote.method.failed"
-                RemoteMethodTimedOut::class -> "infinitic.workflow.remote.method.timedOut"
-                RemoteMethodUnknown::class -> "infinitic.workflow.remote.method.unknown"
+                RemoteMethodCanceled::class -> "infinitic.workflow.remoteMethodCanceled"
+                RemoteMethodCompleted::class -> "infinitic.workflow.remoteMethodCompleted"
+                RemoteMethodFailed::class -> "infinitic.workflow.remoteMethodFailed"
+                RemoteMethodTimedOut::class -> "infinitic.workflow.remoteMethodTimedOut"
+                RemoteMethodUnknown::class -> "infinitic.workflow.remoteMethodUnknown"
                 RemoteTaskCanceled::class -> null
-                RemoteTaskCompleted::class -> "infinitic.workflow.remote.task.completed"
-                RemoteTaskFailed::class -> "infinitic.workflow.remote.task.failed"
-                RemoteTaskTimedOut::class -> "infinitic.workflow.remote.task.timedOut"
-                RemoteTimerCompleted::class -> "infinitic.workflow.remote.timer.completed"
+                RemoteTaskCompleted::class -> "infinitic.workflow.taskCompleted"
+                RemoteTaskFailed::class -> "infinitic.workflow.taskFailed"
+                RemoteTaskTimedOut::class -> "infinitic.workflow.taskTimedOut"
+                RemoteTimerCompleted::class -> "infinitic.workflow.timerCompleted"
                 else -> thisShouldNotHappen()
               }
 
@@ -406,15 +413,15 @@ internal class CloudEventTests :
             message.sendToTopic(WorkflowEventsTopic)
 
             val type = when (it) {
-              WorkflowCompletedEvent::class -> "infinitic.workflow.completed"
+              WorkflowCompletedEvent::class -> "infinitic.workflow.ended"
               WorkflowCanceledEvent::class -> "infinitic.workflow.canceled"
-              MethodCommandedEvent::class -> "infinitic.workflow.method.commanded"
-              MethodCompletedEvent::class -> "infinitic.workflow.method.completed"
-              MethodFailedEvent::class -> "infinitic.workflow.method.failed"
-              MethodCanceledEvent::class -> "infinitic.workflow.method.canceled"
-              MethodTimedOutEvent::class -> "infinitic.workflow.method.timedOut"
-              RemoteTaskDispatchedEvent::class -> "infinitic.workflow.remote.task.dispatched"
-              RemoteMethodDispatchedEvent::class -> "infinitic.workflow.remote.method.dispatched"
+              MethodCommandedEvent::class -> "infinitic.workflow.startMethod"
+              MethodCompletedEvent::class -> "infinitic.workflow.methodCompleted"
+              MethodFailedEvent::class -> "infinitic.workflow.methodFailed"
+              MethodCanceledEvent::class -> "infinitic.workflow.methodCanceled"
+              MethodTimedOutEvent::class -> "infinitic.workflow.methodTimedOut"
+              RemoteTaskDispatchedEvent::class -> "infinitic.workflow.taskDispatched"
+              RemoteMethodDispatchedEvent::class -> "infinitic.workflow.remoteMethodDispatched"
               else -> thisShouldNotHappen()
             }
 

@@ -23,7 +23,8 @@
 package io.infinitic.common.tasks.events.messages
 
 import com.github.avrokotlin.avro4k.AvroNamespace
-import io.infinitic.common.clients.data.ClientName
+import io.infinitic.common.clients.messages.TaskCompleted
+import io.infinitic.common.clients.messages.TaskFailed
 import io.infinitic.common.data.MessageId
 import io.infinitic.common.data.MillisDuration
 import io.infinitic.common.data.MillisInstant
@@ -37,6 +38,8 @@ import io.infinitic.common.requester.ClientRequester
 import io.infinitic.common.requester.Requester
 import io.infinitic.common.requester.WorkflowRequester
 import io.infinitic.common.requester.workflowName
+import io.infinitic.common.serDe.avro.AvroSerDe
+import io.infinitic.common.tasks.data.AsyncTaskData
 import io.infinitic.common.tasks.data.ServiceName
 import io.infinitic.common.tasks.data.TaskId
 import io.infinitic.common.tasks.data.TaskMeta
@@ -48,17 +51,14 @@ import io.infinitic.common.tasks.executors.errors.DeferredError
 import io.infinitic.common.tasks.executors.errors.ExecutionError
 import io.infinitic.common.tasks.executors.errors.TaskFailedError
 import io.infinitic.common.tasks.executors.messages.ExecuteTask
-import io.infinitic.common.tasks.tags.messages.RemoveTagFromTask
-import io.infinitic.common.workers.config.WorkflowVersion
+import io.infinitic.common.tasks.tags.messages.RemoveTaskIdFromTag
 import io.infinitic.common.workers.data.WorkerName
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTask
+import io.infinitic.common.workflows.engine.messages.RemoteTaskCompleted
+import io.infinitic.common.workflows.engine.messages.RemoteTaskFailed
 import io.infinitic.currentVersion
 import io.infinitic.exceptions.DeferredException
 import kotlinx.serialization.Serializable
-import io.infinitic.common.clients.messages.TaskCompleted as TaskCompletedClient
-import io.infinitic.common.clients.messages.TaskFailed as TaskFailedClient
-import io.infinitic.common.workflows.engine.messages.RemoteTaskCompleted as TaskCompletedWorkflow
-import io.infinitic.common.workflows.engine.messages.RemoteTaskFailed as TaskFailedWorkflow
 
 @Serializable
 sealed class ServiceEventMessage : Message {
@@ -98,7 +98,6 @@ data class TaskStartedEvent(
   override val clientWaiting: Boolean?,
   override val taskTags: Set<TaskTag>,
   override val taskMeta: TaskMeta,
-  val workflowVersion: WorkflowVersion?
 ) : ServiceEventMessage() {
   companion object {
     fun from(msg: ExecuteTask, emitterName: EmitterName) = TaskStartedEvent(
@@ -112,7 +111,6 @@ data class TaskStartedEvent(
         clientWaiting = msg.clientWaiting,
         taskTags = msg.taskTags,
         taskMeta = msg.taskMeta,
-        workflowVersion = msg.workflowVersion,
     )
   }
 }
@@ -133,12 +131,11 @@ data class TaskFailedEvent(
   override val taskMeta: TaskMeta,
   val executionError: ExecutionError,
   val deferredError: DeferredError?,
-  val workflowVersion: WorkflowVersion?,
 ) : ServiceEventMessage() {
 
   fun getEventForClient(emitterName: EmitterName) = when (requester) {
     is WorkflowRequester -> null
-    is ClientRequester -> TaskFailedClient(
+    is ClientRequester -> TaskFailed(
         recipientName = requester.clientName,
         taskId = taskId,
         cause = executionError,
@@ -147,7 +144,7 @@ data class TaskFailedEvent(
   }
 
   fun getEventForWorkflow(emitterName: EmitterName, emittedAt: MillisInstant) = when (requester) {
-    is WorkflowRequester -> TaskFailedWorkflow(
+    is WorkflowRequester -> RemoteTaskFailed(
         workflowId = requester.workflowId,
         workflowName = requester.workflowName,
         workflowMethodName = requester.workflowMethodName,
@@ -185,7 +182,6 @@ data class TaskFailedEvent(
         taskMeta = TaskMeta(meta),
         executionError = cause.getExecutionError(emitterName),
         deferredError = cause.deferredError,
-        workflowVersion = msg.workflowVersion,
     )
   }
 }
@@ -204,7 +200,6 @@ data class TaskRetriedEvent(
   override val clientWaiting: Boolean?,
   override val taskTags: Set<TaskTag>,
   override val taskMeta: TaskMeta,
-
   val taskRetryDelay: MillisDuration,
   val lastError: ExecutionError,
 ) : ServiceEventMessage() {
@@ -247,15 +242,24 @@ data class TaskCompletedEvent(
   override val clientWaiting: Boolean?,
   override val taskTags: Set<TaskTag>,
   override val taskMeta: TaskMeta,
+  val isAsync: Boolean,
   val returnValue: ReturnValue,
-  val workflowVersion: WorkflowVersion?,
 ) : ServiceEventMessage() {
 
+  fun getAsyncTaskData() = AsyncTaskData(
+      serviceName = serviceName,
+      methodName = methodName,
+      taskId = taskId,
+      requester = requester,
+      clientWaiting = clientWaiting,
+      taskMeta = taskMeta,
+  )
+
   fun getEventForClient(emitterName: EmitterName) = when (requester) {
-    is ClientRequester -> TaskCompletedClient(
+    is ClientRequester -> TaskCompleted(
         recipientName = requester.clientName,
         taskId = taskId,
-        taskReturnValue = returnValue,
+        returnValue = returnValue,
         taskMeta = taskMeta,
         emitterName = emitterName,
     )
@@ -265,7 +269,7 @@ data class TaskCompletedEvent(
 
   fun getEventForWorkflow(emitterName: EmitterName, emittedAt: MillisInstant) = when (requester) {
     is ClientRequester -> null
-    is WorkflowRequester -> TaskCompletedWorkflow(
+    is WorkflowRequester -> RemoteTaskCompleted(
         workflowId = requester.workflowId,
         workflowName = requester.workflowName,
         workflowMethodName = requester.workflowMethodName,
@@ -283,7 +287,7 @@ data class TaskCompletedEvent(
   }
 
   fun getEventsForTag(emitterName: EmitterName) = taskTags.map {
-    RemoveTagFromTask(
+    RemoveTaskIdFromTag(
         taskTag = it,
         serviceName = serviceName,
         taskId = taskId,
@@ -291,11 +295,17 @@ data class TaskCompletedEvent(
     )
   }
 
+  fun toByteArray() = AvroSerDe.writeBinaryWithSchemaFingerprint(this, serializer())
+
   companion object {
+    fun fromByteArray(bytes: ByteArray) =
+        AvroSerDe.readBinaryWithSchemaFingerprint(bytes, TaskCompletedEvent::class)
+
     fun from(
       msg: ExecuteTask,
       emitterName: EmitterName,
       value: Any?,
+      isAsync: Boolean,
       meta: MutableMap<String, ByteArray>
     ) = TaskCompletedEvent(
         serviceName = msg.serviceName,
@@ -309,19 +319,16 @@ data class TaskCompletedEvent(
         taskTags = msg.taskTags,
         taskMeta = TaskMeta(meta),
         returnValue = ReturnValue.from(value),
-        workflowVersion = msg.workflowVersion,
+        isAsync = isAsync,
     )
   }
 }
 
-val ExecuteTask.clientName
-  get() = if (workflowName == null) ClientName.from(emitterName) else null
-
-val Throwable.deferredError
+private val Throwable.deferredError
   get() = when (this is DeferredException) {
     true -> DeferredError.from(this)
     false -> null
   }
 
-fun Throwable.getExecutionError(emitterName: EmitterName) =
+private fun Throwable.getExecutionError(emitterName: EmitterName) =
     ExecutionError.from(WorkerName.from(emitterName), this)

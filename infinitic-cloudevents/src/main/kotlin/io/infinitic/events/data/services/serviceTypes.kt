@@ -32,13 +32,18 @@ import io.infinitic.common.tasks.executors.messages.ExecuteTask
 import io.infinitic.common.tasks.executors.messages.ServiceExecutorMessage
 import io.infinitic.events.types.COMMANDED
 import io.infinitic.events.types.COMPLETED
+import io.infinitic.events.types.COMPLETION_DELEGATED
 import io.infinitic.events.types.FAILED
 import io.infinitic.events.types.RETRY_SCHEDULED
 import io.infinitic.events.types.STARTED
 import io.infinitic.events.types.TYPE_TASK
 
 fun ServiceEventMessage.serviceType(): String = "$TYPE_TASK." + when (this) {
-  is TaskCompletedEvent -> COMPLETED
+  is TaskCompletedEvent -> when (isAsync) {
+    true -> COMPLETION_DELEGATED
+    false -> COMPLETED
+  }
+
   is TaskFailedEvent -> FAILED
   is TaskRetriedEvent -> RETRY_SCHEDULED
   is TaskStartedEvent -> STARTED

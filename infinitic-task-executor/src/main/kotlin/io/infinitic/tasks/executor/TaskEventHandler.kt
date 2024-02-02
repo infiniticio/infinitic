@@ -31,6 +31,7 @@ import io.infinitic.common.tasks.events.messages.TaskCompletedEvent
 import io.infinitic.common.tasks.events.messages.TaskFailedEvent
 import io.infinitic.common.tasks.events.messages.TaskRetriedEvent
 import io.infinitic.common.tasks.events.messages.TaskStartedEvent
+import io.infinitic.common.tasks.tags.messages.SetAsyncTaskData
 import io.infinitic.common.transport.ClientTopic
 import io.infinitic.common.transport.InfiniticProducerAsync
 import io.infinitic.common.transport.LoggedInfiniticProducer
@@ -89,17 +90,35 @@ class TaskEventHandler(producerAsync: InfiniticProducerAsync) {
 
   private suspend fun sendTaskCompleted(msg: TaskCompletedEvent, publishTime: MillisInstant) {
     coroutineScope {
-      // send to parent client
-      msg.getEventForClient(emitterName)?.let {
-        launch { with(producer) { it.sendTo(ClientTopic) } }
-      }
-      // send to parent workflow
-      msg.getEventForWorkflow(emitterName, publishTime)?.let {
-        launch { with(producer) { it.sendTo(WorkflowEngineTopic) } }
-      }
-      // remove tags
-      msg.getEventsForTag(emitterName).forEach {
-        launch { with(producer) { it.sendTo(ServiceTagTopic) } }
+      when (msg.isAsync) {
+        // if this task is marked as asynchronous, we do not forward the result, add a tag.
+        // this tag is a convenient way to memorize workflowId and workflowName
+        // so that the user just has to complete task by its Id
+        true -> launch {
+
+          val addTaskToTag = SetAsyncTaskData(
+              serviceName = msg.serviceName,
+              asyncTaskData = msg.getAsyncTaskData(),
+              taskId = msg.taskId,
+              emitterName = msg.emitterName,
+          )
+          with(producer) { addTaskToTag.sendTo(ServiceTagTopic) }
+        }
+
+        false -> {
+          // send to parent client
+          msg.getEventForClient(emitterName)?.let {
+            launch { with(producer) { it.sendTo(ClientTopic) } }
+          }
+          // send to parent workflow
+          msg.getEventForWorkflow(emitterName, publishTime)?.let {
+            launch { with(producer) { it.sendTo(WorkflowEngineTopic) } }
+          }
+          // remove tags
+          msg.getEventsForTag(emitterName).forEach {
+            launch { with(producer) { it.sendTo(ServiceTagTopic) } }
+          }
+        }
       }
     }
     // If we are dealing with a workflowTask, we ensure that new commands are dispatched only AFTER

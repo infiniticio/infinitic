@@ -20,22 +20,37 @@
  *
  * Licensor: infinitic.io
  */
-package io.infinitic.common.tasks.tags.messages
+package io.infinitic.common.tasks.data
 
 import com.github.avrokotlin.avro4k.AvroNamespace
+import io.infinitic.common.data.ReturnValue
+import io.infinitic.common.data.methods.MethodName
+import io.infinitic.common.requester.Requester
+import io.infinitic.common.serDe.avro.AvroSerDe
 import kotlinx.serialization.Serializable
 
 @Serializable
-@AvroNamespace("io.infinitic.tasks.tag")
-enum class TaskTagMessageType {
-  GET_TASK_IDS_BY_TAG,
-  ADD_TAG_TO_TASK,
-  REMOVE_TAG_FROM_TASK,
-  CANCEL_TASK_BY_TAG,
+@AvroNamespace("io.infinitic.tasks")
+data class AsyncTaskData(
+  val serviceName: ServiceName,
+  val methodName: MethodName,
+  val taskId: TaskId,
+  val requester: Requester,
+  val clientWaiting: Boolean?,
+  val taskMeta: TaskMeta,
+) {
+  fun taskReturnData(returnValue: ReturnValue) = TaskReturnValue(
+      taskId = taskId,
+      serviceName = serviceName,
+      methodName = methodName,
+      taskMeta = taskMeta,
+      returnValue = returnValue,
+  )
 
-  @Deprecated("unused")
-  RETRY_TASK_BY_TAG,
-  SET_ASYNC_TASK_DATA,
-  COMPLETE_ASYNC_TASK
+  fun toByteArray() = AvroSerDe.writeBinaryWithSchemaFingerprint(this, serializer())
+
+  companion object {
+    fun fromByteArray(bytes: ByteArray) =
+        AvroSerDe.readBinaryWithSchemaFingerprint(bytes, AsyncTaskData::class)
+  }
 }
-

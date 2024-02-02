@@ -49,7 +49,7 @@ import io.infinitic.common.tasks.events.messages.TaskRetriedEvent
 import io.infinitic.common.tasks.events.messages.TaskStartedEvent
 import io.infinitic.common.tasks.executors.messages.ExecuteTask
 import io.infinitic.common.tasks.executors.messages.ServiceExecutorMessage
-import io.infinitic.common.tasks.tags.messages.RemoveTagFromTask
+import io.infinitic.common.tasks.tags.messages.RemoveTaskIdFromTag
 import io.infinitic.common.transport.DelayedServiceExecutorTopic
 import io.infinitic.common.transport.InfiniticProducerAsync
 import io.infinitic.common.transport.ServiceEventsTopic
@@ -505,7 +505,6 @@ fun TaskFailedEvent.check(
   taskRetrySequence shouldBe msg.taskRetrySequence
   taskRetryIndex shouldBe msg.taskRetryIndex
   requester shouldBe msg.requester
-  workflowVersion shouldBe msg.workflowVersion
   clientWaiting shouldBe msg.clientWaiting
   executionError.name shouldBe errorName
   executionError.workerName shouldBe WorkerName.from(msg.emitterName)
@@ -563,7 +562,6 @@ private fun getTaskStarted(msg: ExecuteTask, messageId: MessageId) = TaskStarted
     clientWaiting = msg.clientWaiting,
     taskTags = msg.taskTags,
     taskMeta = msg.taskMeta,
-    workflowVersion = msg.workflowVersion,
 )
 
 private fun getTaskCompleted(
@@ -584,10 +582,10 @@ private fun getTaskCompleted(
     taskTags = msg.taskTags,
     taskMeta = TaskMeta(meta),
     returnValue = ReturnValue.from(value),
-    workflowVersion = msg.workflowVersion,
+    isAsync = false,
 )
 
-internal fun getRemoveTag(message: ServiceEventMessage, tag: String) = RemoveTagFromTask(
+internal fun getRemoveTag(message: ServiceEventMessage, tag: String) = RemoveTaskIdFromTag(
     taskId = message.taskId,
     serviceName = message.serviceName,
     taskTag = TaskTag(tag),

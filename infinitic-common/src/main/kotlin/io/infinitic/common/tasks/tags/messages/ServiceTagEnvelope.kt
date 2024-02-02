@@ -22,8 +22,11 @@
  */
 package io.infinitic.common.tasks.tags.messages
 
+import com.github.avrokotlin.avro4k.Avro
+import com.github.avrokotlin.avro4k.AvroDefault
 import com.github.avrokotlin.avro4k.AvroName
 import com.github.avrokotlin.avro4k.AvroNamespace
+import io.infinitic.common.exceptions.thisShouldNotHappen
 import io.infinitic.common.messages.Envelope
 import io.infinitic.common.serDe.avro.AvroSerDe
 import kotlinx.serialization.Serializable
@@ -35,19 +38,23 @@ import org.apache.avro.Schema
 data class ServiceTagEnvelope(
   private val name: String,
   @AvroNamespace("io.infinitic.tasks.tag") private val type: TaskTagMessageType,
-  private val addTagToTask: AddTagToTask? = null,
-  private val removeTagFromTask: RemoveTagFromTask? = null,
+  @AvroName("addTagToTask") private val addTaskIdToTag: AddTaskIdToTag? = null,
+  @AvroName("removeTagFromTask") private val removeTaskIdFromTag: RemoveTaskIdFromTag? = null,
   private val cancelTaskByTag: CancelTaskByTag? = null,
-  private val retryTaskByTag: RetryTaskByTag? = null,
-  private val getTaskIdsByTag: GetTaskIdsByTag? = null
+  @Deprecated("unused") private val retryTaskByTag: RetryTaskByTag? = null,
+  private val getTaskIdsByTag: GetTaskIdsByTag? = null,
+  @AvroDefault(Avro.NULL) private val setAsyncTaskData: SetAsyncTaskData? = null,
+  @AvroDefault(Avro.NULL) private val completeAsyncTask: CompleteAsyncTask? = null
 ) : Envelope<ServiceTagMessage> {
   init {
     val noNull = listOfNotNull(
-        addTagToTask,
-        removeTagFromTask,
+        addTaskIdToTag,
+        removeTaskIdFromTag,
         cancelTaskByTag,
         retryTaskByTag,
         getTaskIdsByTag,
+        setAsyncTaskData,
+        completeAsyncTask,
     )
 
     require(noNull.size == 1)
@@ -57,16 +64,16 @@ data class ServiceTagEnvelope(
 
   companion object {
     fun from(msg: ServiceTagMessage) = when (msg) {
-      is AddTagToTask -> ServiceTagEnvelope(
+      is AddTaskIdToTag -> ServiceTagEnvelope(
           name = "${msg.serviceName}",
           type = TaskTagMessageType.ADD_TAG_TO_TASK,
-          addTagToTask = msg,
+          addTaskIdToTag = msg,
       )
 
-      is RemoveTagFromTask -> ServiceTagEnvelope(
+      is RemoveTaskIdFromTag -> ServiceTagEnvelope(
           name = "${msg.serviceName}",
           type = TaskTagMessageType.REMOVE_TAG_FROM_TASK,
-          removeTagFromTask = msg,
+          removeTaskIdFromTag = msg,
       )
 
       is CancelTaskByTag -> ServiceTagEnvelope(
@@ -86,6 +93,20 @@ data class ServiceTagEnvelope(
           type = TaskTagMessageType.GET_TASK_IDS_BY_TAG,
           getTaskIdsByTag = msg,
       )
+
+      is SetAsyncTaskData -> ServiceTagEnvelope(
+          name = "${msg.serviceName}",
+          type = TaskTagMessageType.SET_ASYNC_TASK_DATA,
+          setAsyncTaskData = msg,
+      )
+
+      is CompleteAsyncTask -> ServiceTagEnvelope(
+          name = "${msg.serviceName}",
+          type = TaskTagMessageType.COMPLETE_ASYNC_TASK,
+          completeAsyncTask = msg,
+      )
+
+      else -> thisShouldNotHappen()
     }
 
     /** Deserialize from a byte array and an avro schema */
@@ -98,11 +119,13 @@ data class ServiceTagEnvelope(
 
   override fun message() =
       when (type) {
-        TaskTagMessageType.ADD_TAG_TO_TASK -> addTagToTask
-        TaskTagMessageType.REMOVE_TAG_FROM_TASK -> removeTagFromTask
+        TaskTagMessageType.ADD_TAG_TO_TASK -> addTaskIdToTag
+        TaskTagMessageType.REMOVE_TAG_FROM_TASK -> removeTaskIdFromTag
         TaskTagMessageType.CANCEL_TASK_BY_TAG -> cancelTaskByTag
         TaskTagMessageType.RETRY_TASK_BY_TAG -> retryTaskByTag
         TaskTagMessageType.GET_TASK_IDS_BY_TAG -> getTaskIdsByTag
+        TaskTagMessageType.SET_ASYNC_TASK_DATA -> setAsyncTaskData
+        TaskTagMessageType.COMPLETE_ASYNC_TASK -> completeAsyncTask
       }!!
 
   fun toByteArray() = AvroSerDe.writeBinary(this, serializer())

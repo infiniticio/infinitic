@@ -50,6 +50,7 @@ import io.infinitic.common.requester.workflowId
 import io.infinitic.common.requester.workflowMethodId
 import io.infinitic.common.requester.workflowMethodName
 import io.infinitic.common.requester.workflowName
+import io.infinitic.common.tasks.data.AsyncTaskData
 import io.infinitic.common.tasks.data.ServiceName
 import io.infinitic.common.tasks.data.TaskId
 import io.infinitic.common.tasks.data.TaskReturnValue
@@ -175,9 +176,9 @@ data class DispatchWorkflow(
   @AvroDefault(Avro.NULL) val workflowTaskId: TaskId? = null,
   val clientWaiting: Boolean,
   override val emitterName: EmitterName,
-  @Deprecated("Not used anymore after 0.13.0") val parentWorkflowName: WorkflowName? = null,
-  @Deprecated("Not used anymore after 0.13.0") val parentWorkflowId: WorkflowId? = null,
-  @Deprecated("Not used anymore after 0.13.0") val parentMethodRunId: WorkflowMethodId? = null,
+  @Deprecated("Not used since version 0.13.0") val parentWorkflowName: WorkflowName? = null,
+  @Deprecated("Not used since version 0.13.0") val parentWorkflowId: WorkflowId? = null,
+  @Deprecated("Not used since version 0.13.0") val parentMethodRunId: WorkflowMethodId? = null,
   @AvroDefault(Avro.NULL) override var requester: Requester?,
   @AvroDefault(Avro.NULL) override var emittedAt: MillisInstant?,
 ) : WorkflowMessage(), WorkflowCmdMessage {
@@ -287,9 +288,9 @@ data class DispatchMethod(
   @AvroName("methodName") override val workflowMethodName: MethodName,
   val methodParameters: MethodParameters,
   val methodParameterTypes: MethodParameterTypes?,
-  @Deprecated("Not used anymore after 0.13.0") val parentWorkflowId: WorkflowId? = null,
-  @Deprecated("Not used anymore after 0.13.0") val parentWorkflowName: WorkflowName? = null,
-  @Deprecated("Not used anymore after 0.13.0") val parentMethodRunId: WorkflowMethodId? = null,
+  @Deprecated("Not used since version 0.13.0") val parentWorkflowId: WorkflowId? = null,
+  @Deprecated("Not used since version 0.13.0") val parentWorkflowName: WorkflowName? = null,
+  @Deprecated("Not used since version 0.13.0") val parentMethodRunId: WorkflowMethodId? = null,
   @AvroDefault(Avro.NULL) override var requester: Requester?,
   val clientWaiting: Boolean,
   override val emitterName: EmitterName,
@@ -601,6 +602,27 @@ data class RemoteTaskCompleted(
   override fun taskId() = taskReturnValue.taskId
 
   override fun serviceName() = taskReturnValue.serviceName
+
+  companion object {
+    fun from(
+      data: AsyncTaskData,
+      returnValue: ReturnValue,
+      emitterName: EmitterName,
+      emittedAt: MillisInstant
+    ) = when (data.requester) {
+      is WorkflowRequester -> RemoteTaskCompleted(
+          taskReturnValue = data.taskReturnData(returnValue),
+          workflowName = data.requester.workflowName,
+          workflowId = data.requester.workflowId,
+          workflowMethodName = data.requester.workflowMethodName,
+          workflowMethodId = data.requester.workflowMethodId,
+          emitterName = emitterName,
+          emittedAt = emittedAt,
+      )
+
+      is ClientRequester -> null
+    }
+  }
 }
 
 /**

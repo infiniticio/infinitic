@@ -20,22 +20,8 @@
  *
  * Licensor: infinitic.io
  */
-package io.infinitic.common.tasks.tags.messages
+package io.infinitic.annotations
 
-import com.github.avrokotlin.avro4k.AvroNamespace
-import kotlinx.serialization.Serializable
-
-@Serializable
-@AvroNamespace("io.infinitic.tasks.tag")
-enum class TaskTagMessageType {
-  GET_TASK_IDS_BY_TAG,
-  ADD_TAG_TO_TASK,
-  REMOVE_TAG_FROM_TASK,
-  CANCEL_TASK_BY_TAG,
-
-  @Deprecated("unused")
-  RETRY_TASK_BY_TAG,
-  SET_ASYNC_TASK_DATA,
-  COMPLETE_ASYNC_TASK
-}
-
+/** Use this annotation to mark a task as being completed asynchronously */
+@Target(AnnotationTarget.FUNCTION)
+annotation class Async()
