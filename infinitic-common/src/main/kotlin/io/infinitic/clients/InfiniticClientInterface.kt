@@ -497,26 +497,28 @@ interface InfiniticClientInterface : Closeable {
   /**
    * Completes a task asynchronously.
    *
-   * @param klass The interface of the service to be completed.
+   * @param serviceName The name of the service of the task
+   * (defined by the @name annotation, of the name of the interface defining the service)
    * @param taskId The ID of the task to be completed.
    * @param result The result of the task. Can be of any type.
    * @return A CompletableFuture representing the status of the task completion. The CompletableFuture
    *         will complete with a Unit value when the message is sent.
    */
-  fun completeTaskAsync(klass: Class<*>, taskId: String, result: Any?): CompletableFuture<Unit>
+  fun completeTaskAsync(serviceName: String, taskId: String, result: Any?): CompletableFuture<Unit>
 
 
   /**
    * Completes a task.
    *
-   * @param klass The class of the task to be completed.
+   * @param serviceName The name of the service of the task
+   * (defined by the @name annotation, of the name of the interface defining the service)
    * @param taskId The ID of the task to be completed.
    * @param result The result that should be associated with the completed task.
    *
    * @return Returns nothing.
    */
-  fun completeTask(klass: Class<*>, taskId: String, result: Any?): Unit =
-      completeTaskAsync(klass, taskId, result).join()
+  fun completeTask(serviceName: String, taskId: String, result: Any?): Unit =
+      completeTaskAsync(serviceName, taskId, result).join()
 
   /**
    * Retry the workflow task (without waiting for the message to be sent)

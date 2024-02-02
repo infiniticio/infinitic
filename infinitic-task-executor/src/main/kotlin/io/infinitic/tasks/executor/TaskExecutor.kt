@@ -23,6 +23,7 @@
 package io.infinitic.tasks.executor
 
 import io.github.oshai.kotlinlogging.KotlinLogging
+import io.infinitic.annotations.Delegated
 import io.infinitic.clients.InfiniticClientInterface
 import io.infinitic.common.data.MillisDuration
 import io.infinitic.common.data.MillisInstant
@@ -62,7 +63,6 @@ import io.infinitic.workflows.workflowTask.WorkflowTaskImpl
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.withTimeout
-import org.jetbrains.annotations.Async
 import java.lang.reflect.InvocationTargetException
 import java.util.concurrent.TimeoutException
 
@@ -243,9 +243,9 @@ class TaskExecutor(
     meta: MutableMap<String, ByteArray>
   ) {
     if (value != null && isDelegated) {
-      msg.logWarn {
-        "this method is marked with the '${Async::class.java.name}' " +
-            "annotation, but returns a non-null result. It will be ignored"
+      msg.logDebug {
+        "This method is marked with the '${Delegated::class.java.name}' " +
+            "annotation, provided result is ignored"
       }
     }
     val event = TaskCompletedEvent.from(msg, emitterName, value, isDelegated, meta)

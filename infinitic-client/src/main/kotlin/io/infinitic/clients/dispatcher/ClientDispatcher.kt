@@ -349,12 +349,12 @@ internal class ClientDispatcher(
   fun completeTaskAsync(
     serviceName: ServiceName,
     taskId: TaskId,
-    result: Any?
+    returnValue: ReturnValue
   ): CompletableFuture<Unit> {
     val msg = CompleteDelegatedTask(
         serviceName = serviceName,
         taskId = taskId,
-        returnValue = ReturnValue.from(result),
+        returnValue = returnValue,
         emitterName = emitterName,
     )
     return msg.sendToAsync(ServiceTagTopic)

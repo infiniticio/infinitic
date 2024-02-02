@@ -100,3 +100,6 @@ workflows:
       - io.infinitic.tests.versioning.VersionedWorkflowImpl
       - io.infinitic.tests.versioning.VersionedWorkflowImpl_1
     concurrency: 2
+  - name: Delegation
+    class: io.infinitic.tests.delegation.DelegationWorkflowImpl
+    concurrency: 2

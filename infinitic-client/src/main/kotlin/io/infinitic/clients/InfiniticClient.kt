@@ -29,6 +29,7 @@ import io.infinitic.clients.config.ClientConfigInterface
 import io.infinitic.clients.dispatcher.ClientDispatcher
 import io.infinitic.common.clients.messages.ClientMessage
 import io.infinitic.common.data.MillisInstant
+import io.infinitic.common.data.ReturnValue
 import io.infinitic.common.proxies.ExistingWorkflowProxyHandler
 import io.infinitic.common.proxies.NewServiceProxyHandler
 import io.infinitic.common.proxies.NewWorkflowProxyHandler
@@ -41,7 +42,6 @@ import io.infinitic.common.tasks.data.TaskMeta
 import io.infinitic.common.transport.InfiniticConsumerAsync
 import io.infinitic.common.transport.InfiniticProducerAsync
 import io.infinitic.common.transport.LoggedInfiniticProducer
-import io.infinitic.common.utils.findName
 import io.infinitic.common.workflows.data.workflowMethods.WorkflowMethodId
 import io.infinitic.common.workflows.data.workflows.WorkflowMeta
 import io.infinitic.common.workflows.data.workflows.WorkflowTag
@@ -118,11 +118,14 @@ class InfiniticClient(
       }
 
   override fun completeTaskAsync(
-    klass: Class<*>,
+    serviceName: String,
     taskId: String,
     result: Any?
-  ): CompletableFuture<Unit> =
-      dispatcher.completeTaskAsync(ServiceName(klass.findName()), TaskId(taskId), result)
+  ): CompletableFuture<Unit> = dispatcher.completeTaskAsync(
+      ServiceName(serviceName),
+      TaskId(taskId),
+      ReturnValue.from(result),
+  )
 
   /** Retry a workflow task */
   override fun retryWorkflowTaskAsync(stub: Any): CompletableFuture<Unit> =
