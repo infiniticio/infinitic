@@ -39,7 +39,7 @@ import io.infinitic.common.requester.Requester
 import io.infinitic.common.requester.WorkflowRequester
 import io.infinitic.common.requester.workflowName
 import io.infinitic.common.serDe.avro.AvroSerDe
-import io.infinitic.common.tasks.data.AsyncTaskData
+import io.infinitic.common.tasks.data.DelegatedTaskData
 import io.infinitic.common.tasks.data.ServiceName
 import io.infinitic.common.tasks.data.TaskId
 import io.infinitic.common.tasks.data.TaskMeta
@@ -133,15 +133,17 @@ data class TaskFailedEvent(
   val deferredError: DeferredError?,
 ) : ServiceEventMessage() {
 
-  fun getEventForClient(emitterName: EmitterName) = when (requester) {
-    is WorkflowRequester -> null
-    is ClientRequester -> TaskFailed(
-        recipientName = requester.clientName,
-        taskId = taskId,
-        cause = executionError,
-        emitterName = emitterName,
-    )
-  }
+  fun getEventForClient(emitterName: EmitterName) =
+      when (requester is ClientRequester && clientWaiting == true) {
+        true -> TaskFailed(
+            recipientName = requester.clientName,
+            taskId = taskId,
+            cause = executionError,
+            emitterName = emitterName,
+        )
+
+        false -> null
+      }
 
   fun getEventForWorkflow(emitterName: EmitterName, emittedAt: MillisInstant) = when (requester) {
     is WorkflowRequester -> RemoteTaskFailed(
@@ -242,11 +244,11 @@ data class TaskCompletedEvent(
   override val clientWaiting: Boolean?,
   override val taskTags: Set<TaskTag>,
   override val taskMeta: TaskMeta,
-  val isAsync: Boolean,
+  val isDelegated: Boolean,
   val returnValue: ReturnValue,
 ) : ServiceEventMessage() {
 
-  fun getAsyncTaskData() = AsyncTaskData(
+  fun getDelegatedTaskData() = DelegatedTaskData(
       serviceName = serviceName,
       methodName = methodName,
       taskId = taskId,
@@ -255,17 +257,18 @@ data class TaskCompletedEvent(
       taskMeta = taskMeta,
   )
 
-  fun getEventForClient(emitterName: EmitterName) = when (requester) {
-    is ClientRequester -> TaskCompleted(
-        recipientName = requester.clientName,
-        taskId = taskId,
-        returnValue = returnValue,
-        taskMeta = taskMeta,
-        emitterName = emitterName,
-    )
+  fun getEventForClient(emitterName: EmitterName) =
+      when (requester is ClientRequester && clientWaiting == true) {
+        true -> TaskCompleted(
+            recipientName = requester.clientName,
+            taskId = taskId,
+            returnValue = returnValue,
+            taskMeta = taskMeta,
+            emitterName = emitterName,
+        )
 
-    is WorkflowRequester -> null
-  }
+        false -> null
+      }
 
   fun getEventForWorkflow(emitterName: EmitterName, emittedAt: MillisInstant) = when (requester) {
     is ClientRequester -> null
@@ -305,7 +308,7 @@ data class TaskCompletedEvent(
       msg: ExecuteTask,
       emitterName: EmitterName,
       value: Any?,
-      isAsync: Boolean,
+      isDelegated: Boolean,
       meta: MutableMap<String, ByteArray>
     ) = TaskCompletedEvent(
         serviceName = msg.serviceName,
@@ -319,7 +322,7 @@ data class TaskCompletedEvent(
         taskTags = msg.taskTags,
         taskMeta = TaskMeta(meta),
         returnValue = ReturnValue.from(value),
-        isAsync = isAsync,
+        isDelegated = isDelegated,
     )
   }
 }

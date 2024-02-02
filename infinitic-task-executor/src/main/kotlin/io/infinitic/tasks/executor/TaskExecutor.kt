@@ -44,7 +44,7 @@ import io.infinitic.common.transport.ServiceEventsTopic
 import io.infinitic.common.utils.getCheckMode
 import io.infinitic.common.utils.getWithRetry
 import io.infinitic.common.utils.getWithTimeout
-import io.infinitic.common.utils.isAsync
+import io.infinitic.common.utils.isDelegated
 import io.infinitic.common.workers.config.RetryPolicy
 import io.infinitic.common.workers.registry.WorkerRegistry
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskParameters
@@ -77,7 +77,7 @@ class TaskExecutor(
   private var withRetry: WithRetry? = null
   private var withTimeout: WithTimeout? = null
   private val emitterName by lazy { EmitterName(producerAsync.producerName) }
-  private var isAsync = false
+  private var isDelegated = false
 
   @Suppress("UNUSED_PARAMETER")
   suspend fun handle(msg: ServiceExecutorMessage, publishTime: MillisInstant) {
@@ -242,13 +242,13 @@ class TaskExecutor(
     value: Any?,
     meta: MutableMap<String, ByteArray>
   ) {
-    if (value != null && isAsync) {
+    if (value != null && isDelegated) {
       msg.logWarn {
         "this method is marked with the '${Async::class.java.name}' " +
             "annotation, but returns a non-null result. It will be ignored"
       }
     }
-    val event = TaskCompletedEvent.from(msg, emitterName, value, isAsync, meta)
+    val event = TaskCompletedEvent.from(msg, emitterName, value, isDelegated, meta)
     with(producer) { event.sendTo(ServiceEventsTopic) }
   }
 
@@ -331,7 +331,7 @@ class TaskExecutor(
               ?: DEFAULT_TASK_RETRY
 
         // check is this method has the @Async annotation
-        this.isAsync = taskMethod.isAsync()
+        this.isDelegated = taskMethod.isDelegated()
       }
     }
 

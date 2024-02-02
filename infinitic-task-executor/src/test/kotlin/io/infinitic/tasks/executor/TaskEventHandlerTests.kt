@@ -38,6 +38,7 @@ import io.infinitic.common.requester.workflowId
 import io.infinitic.common.requester.workflowMethodId
 import io.infinitic.common.requester.workflowMethodName
 import io.infinitic.common.requester.workflowName
+import io.infinitic.common.tasks.data.DelegatedTaskData
 import io.infinitic.common.tasks.data.ServiceName
 import io.infinitic.common.tasks.data.TaskId
 import io.infinitic.common.tasks.data.TaskRetryIndex
@@ -51,6 +52,7 @@ import io.infinitic.common.tasks.events.messages.TaskStartedEvent
 import io.infinitic.common.tasks.executors.errors.TaskFailedError
 import io.infinitic.common.tasks.tags.messages.RemoveTaskIdFromTag
 import io.infinitic.common.tasks.tags.messages.ServiceTagMessage
+import io.infinitic.common.tasks.tags.messages.SetDelegatedTaskData
 import io.infinitic.common.transport.ClientTopic
 import io.infinitic.common.transport.DelayedWorkflowEngineTopic
 import io.infinitic.common.transport.InfiniticProducerAsync
@@ -68,7 +70,6 @@ import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.slot
-import kotlinx.coroutines.coroutineScope
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CopyOnWriteArrayList
 
@@ -125,7 +126,7 @@ class TaskEventHandlerTests :
         }
 
         "on TaskStarted, should do nothing" {
-          coroutineScope { taskEventHandler.handle(getTaskStarted(workflowRequester), emittedAt) }
+          taskEventHandler.handle(getTaskStarted(workflowRequester), emittedAt)
 
           clientSlot.isCaptured shouldBe false
           workflowEngineSlot.isCaptured shouldBe false
@@ -133,7 +134,7 @@ class TaskEventHandlerTests :
         }
 
         "on TaskRetried, should do nothing" {
-          coroutineScope { taskEventHandler.handle(getTaskRetried(workflowRequester), emittedAt) }
+          taskEventHandler.handle(getTaskRetried(workflowRequester), emittedAt)
 
           clientSlot.isCaptured shouldBe false
           workflowEngineSlot.isCaptured shouldBe false
@@ -141,28 +142,43 @@ class TaskEventHandlerTests :
         }
 
         "on TaskCompleted, should send message back to parent workflow" {
-          // without parent workflow
-          coroutineScope { taskEventHandler.handle(getTaskCompleted(clientRequester), emittedAt) }
+          // requested by client
+          taskEventHandler.handle(getTaskCompleted(clientRequester), emittedAt)
+          clientSlot.isCaptured shouldBe false
+          workflowEngineSlot.isCaptured shouldBe false
+
+          // requested by workflow, but async
+          taskEventHandler.handle(
+              getTaskCompleted(workflowRequester).copy(isDelegated = true),
+              emittedAt,
+          )
           workflowEngineSlot.isCaptured shouldBe false
 
           // with parent workflow
           val msg = getTaskCompleted(workflowRequester)
-
-          coroutineScope { taskEventHandler.handle(msg, emittedAt) }
-
+          taskEventHandler.handle(msg, emittedAt)
           workflowEngineSlot.captured shouldBe getTaskCompletedWorkflow(msg)
         }
 
         "on TaskCompleted, should send message back to waiting client" {
-          // without waiting client
-          coroutineScope {
-            taskEventHandler.handle(getTaskCompleted(workflowRequester), emittedAt)
-          }
+          // requested by workflow
+          taskEventHandler.handle(getTaskCompleted(workflowRequester), emittedAt)
           clientSlot.isCaptured shouldBe false
 
-          // with waiting client
+          // requested by client, but not waiting
+          taskEventHandler.handle(getTaskCompleted(clientRequester), emittedAt)
+          clientSlot.isCaptured shouldBe false
+
+          // requested by waiting client, but async
+          taskEventHandler.handle(
+              getTaskCompleted(clientRequester).copy(clientWaiting = true, isDelegated = true),
+              emittedAt,
+          )
+          clientSlot.isCaptured shouldBe false
+
+          // sync task, requested by waiting client
           val msg = getTaskCompleted(clientRequester).copy(clientWaiting = true)
-          coroutineScope { taskEventHandler.handle(msg, emittedAt) }
+          taskEventHandler.handle(msg, emittedAt)
 
           clientSlot.isCaptured shouldBe true
           clientSlot.captured shouldBe getTaskCompletedClient(msg)
@@ -170,12 +186,20 @@ class TaskEventHandlerTests :
 
         "on TaskCompleted, should send messages to remove tags" {
           // without tags
-          coroutineScope { taskEventHandler.handle(getTaskCompleted(clientRequester), emittedAt) }
+          taskEventHandler.handle(getTaskCompleted(clientRequester), emittedAt)
           taskTagSlots.size shouldBe 0
+
+          // with tags, but async
+          taskEventHandler.handle(
+              getTaskCompleted(clientRequester).copy(taskTags = taskTags, isDelegated = true),
+              emittedAt,
+          )
+          taskTagSlots.size shouldBe 1
+          taskTagSlots.clear()
 
           // with tags
           val msg = getTaskCompleted(clientRequester).copy(taskTags = taskTags)
-          coroutineScope { taskEventHandler.handle(msg, emittedAt) }
+          taskEventHandler.handle(msg, emittedAt)
 
           taskTagSlots.size shouldBe 2
           val msg0 = taskTagSlots[0] as RemoveTaskIdFromTag
@@ -188,39 +212,63 @@ class TaskEventHandlerTests :
           msgBar shouldBe getRemoveTag(msg, "bar").copy(messageId = msgBar.messageId)
         }
 
+        "on TaskCompleted, if asynchronous, should send SetDelegatedTaskData to tag engine" {
+          val msg =
+              getTaskCompleted(workflowRequester).copy(taskTags = taskTags, isDelegated = true)
+          taskEventHandler.handle(msg, emittedAt)
+
+          workflowEngineSlot.isCaptured shouldBe false
+          clientSlot.isCaptured shouldBe false
+          taskTagSlots.size shouldBe 1
+
+          taskTagSlots[0] shouldBe SetDelegatedTaskData(
+              delegatedTaskData = DelegatedTaskData(
+                  serviceName = msg.serviceName,
+                  methodName = msg.methodName,
+                  taskId = msg.taskId,
+                  requester = msg.requester,
+                  clientWaiting = msg.clientWaiting,
+                  taskMeta = msg.taskMeta,
+              ),
+              messageId = taskTagSlots[0].messageId!!,
+              serviceName = msg.serviceName,
+              taskId = msg.taskId,
+              emitterName = testEmitterName,
+          )
+
+        }
+
         "on TaskFailed, should send message back to parent workflow" {
           // without parent workflow
-          coroutineScope { taskEventHandler.handle(getTaskFailed(clientRequester), emittedAt) }
+          taskEventHandler.handle(getTaskFailed(clientRequester), emittedAt)
           workflowEngineSlot.isCaptured shouldBe false
 
           // with parent workflow
           val msg = getTaskFailed(workflowRequester)
-          coroutineScope { taskEventHandler.handle(msg, emittedAt) }
-
+          taskEventHandler.handle(msg, emittedAt)
           workflowEngineSlot.captured shouldBe getTaskFailedWorkflow(msg)
         }
 
         "on TaskFailed, should send message back to waiting client" {
           // without waiting client
-          coroutineScope { taskEventHandler.handle(getTaskFailed(workflowRequester), emittedAt) }
+          taskEventHandler.handle(getTaskFailed(workflowRequester), emittedAt)
           clientSlot.isCaptured shouldBe false
 
           // with waiting client
           val msg = getTaskFailed(clientRequester).copy(clientWaiting = true)
-          coroutineScope { taskEventHandler.handle(msg, emittedAt) }
-
+          taskEventHandler.handle(msg, emittedAt)
           clientSlot.isCaptured shouldBe true
           clientSlot.captured shouldBe getTaskFailedClient(msg)
         }
 
         "on TaskFailed, should NOT send messages to remove tags" {
           // without tags
-          coroutineScope { taskEventHandler.handle(getTaskFailed(clientRequester), emittedAt) }
+          taskEventHandler.handle(getTaskFailed(clientRequester), emittedAt)
           taskTagSlots.size shouldBe 0
 
           // with tags
           val msg = getTaskFailed(clientRequester).copy(taskTags = taskTags)
-          coroutineScope { taskEventHandler.handle(msg, emittedAt) }
+          taskEventHandler.handle(msg, emittedAt)
 
           taskTagSlots.size shouldBe 0
         }
@@ -267,7 +315,7 @@ private fun getTaskCompleted(requester: Requester) = TaskCompletedEvent(
     taskTags = setOf(),
     taskMeta = TestFactory.random(),
     returnValue = ReturnValue.from("42"),
-    isAsync = false,
+    isDelegated = false,
 )
 
 private fun getTaskCompletedClient(msg: TaskCompletedEvent) =

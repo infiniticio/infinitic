@@ -58,7 +58,7 @@ import io.infinitic.common.requester.ClientRequester
 import io.infinitic.common.tasks.data.ServiceName
 import io.infinitic.common.tasks.data.TaskId
 import io.infinitic.common.tasks.executors.errors.MethodFailedError
-import io.infinitic.common.tasks.tags.messages.CompleteAsyncTask
+import io.infinitic.common.tasks.tags.messages.CompleteDelegatedTask
 import io.infinitic.common.transport.ClientTopic
 import io.infinitic.common.transport.InfiniticConsumerAsync
 import io.infinitic.common.transport.InfiniticProducerAsync
@@ -351,7 +351,7 @@ internal class ClientDispatcher(
     taskId: TaskId,
     result: Any?
   ): CompletableFuture<Unit> {
-    val msg = CompleteAsyncTask(
+    val msg = CompleteDelegatedTask(
         serviceName = serviceName,
         taskId = taskId,
         returnValue = ReturnValue.from(result),

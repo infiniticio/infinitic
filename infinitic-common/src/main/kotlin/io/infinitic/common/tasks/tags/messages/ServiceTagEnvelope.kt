@@ -43,8 +43,8 @@ data class ServiceTagEnvelope(
   private val cancelTaskByTag: CancelTaskByTag? = null,
   @Deprecated("unused") private val retryTaskByTag: RetryTaskByTag? = null,
   private val getTaskIdsByTag: GetTaskIdsByTag? = null,
-  @AvroDefault(Avro.NULL) private val setAsyncTaskData: SetAsyncTaskData? = null,
-  @AvroDefault(Avro.NULL) private val completeAsyncTask: CompleteAsyncTask? = null
+  @AvroDefault(Avro.NULL) private val setDelegatedTaskData: SetDelegatedTaskData? = null,
+  @AvroDefault(Avro.NULL) private val completeDelegatedTask: CompleteDelegatedTask? = null
 ) : Envelope<ServiceTagMessage> {
   init {
     val noNull = listOfNotNull(
@@ -53,8 +53,8 @@ data class ServiceTagEnvelope(
         cancelTaskByTag,
         retryTaskByTag,
         getTaskIdsByTag,
-        setAsyncTaskData,
-        completeAsyncTask,
+        setDelegatedTaskData,
+        completeDelegatedTask,
     )
 
     require(noNull.size == 1)
@@ -94,16 +94,16 @@ data class ServiceTagEnvelope(
           getTaskIdsByTag = msg,
       )
 
-      is SetAsyncTaskData -> ServiceTagEnvelope(
+      is SetDelegatedTaskData -> ServiceTagEnvelope(
           name = "${msg.serviceName}",
           type = TaskTagMessageType.SET_ASYNC_TASK_DATA,
-          setAsyncTaskData = msg,
+          setDelegatedTaskData = msg,
       )
 
-      is CompleteAsyncTask -> ServiceTagEnvelope(
+      is CompleteDelegatedTask -> ServiceTagEnvelope(
           name = "${msg.serviceName}",
           type = TaskTagMessageType.COMPLETE_ASYNC_TASK,
-          completeAsyncTask = msg,
+          completeDelegatedTask = msg,
       )
 
       else -> thisShouldNotHappen()
@@ -124,8 +124,8 @@ data class ServiceTagEnvelope(
         TaskTagMessageType.CANCEL_TASK_BY_TAG -> cancelTaskByTag
         TaskTagMessageType.RETRY_TASK_BY_TAG -> retryTaskByTag
         TaskTagMessageType.GET_TASK_IDS_BY_TAG -> getTaskIdsByTag
-        TaskTagMessageType.SET_ASYNC_TASK_DATA -> setAsyncTaskData
-        TaskTagMessageType.COMPLETE_ASYNC_TASK -> completeAsyncTask
+        TaskTagMessageType.SET_ASYNC_TASK_DATA -> setDelegatedTaskData
+        TaskTagMessageType.COMPLETE_ASYNC_TASK -> completeDelegatedTask
       }!!
 
   fun toByteArray() = AvroSerDe.writeBinary(this, serializer())

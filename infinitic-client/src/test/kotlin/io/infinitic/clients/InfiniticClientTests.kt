@@ -44,12 +44,16 @@ import io.infinitic.common.emitters.EmitterName
 import io.infinitic.common.fixtures.TestFactory
 import io.infinitic.common.fixtures.later
 import io.infinitic.common.requester.ClientRequester
+import io.infinitic.common.tasks.data.ServiceName
+import io.infinitic.common.tasks.data.TaskId
 import io.infinitic.common.tasks.executors.messages.ServiceExecutorMessage
+import io.infinitic.common.tasks.tags.messages.CompleteDelegatedTask
 import io.infinitic.common.tasks.tags.messages.ServiceTagMessage
 import io.infinitic.common.transport.ClientTopic
 import io.infinitic.common.transport.InfiniticConsumerAsync
 import io.infinitic.common.transport.InfiniticProducerAsync
 import io.infinitic.common.transport.MainSubscription
+import io.infinitic.common.transport.ServiceTagTopic
 import io.infinitic.common.transport.Subscription
 import io.infinitic.common.transport.WorkflowCmdTopic
 import io.infinitic.common.transport.WorkflowTagTopic
@@ -71,6 +75,7 @@ import io.infinitic.common.workflows.engine.messages.RetryTasks
 import io.infinitic.common.workflows.engine.messages.SendSignal
 import io.infinitic.common.workflows.engine.messages.WaitWorkflow
 import io.infinitic.common.workflows.engine.messages.WorkflowCmdMessage
+import io.infinitic.common.workflows.engine.messages.WorkflowEngineEnvelope
 import io.infinitic.common.workflows.tags.messages.AddTagToWorkflow
 import io.infinitic.common.workflows.tags.messages.CancelWorkflowByTag
 import io.infinitic.common.workflows.tags.messages.DispatchMethodByTag
@@ -135,6 +140,7 @@ private fun engineResponse(): CompletableFuture<Unit> {
 
 private val producerAsync = mockk<InfiniticProducerAsync> {
   every { producerName } returns "$clientNameTest"
+  coEvery { capture(taskTagSlots).sendToAsync(ServiceTagTopic) } answers { completed() }
   coEvery { capture(workflowTagSlots).sendToAsync(WorkflowTagTopic) } answers { tagResponse() }
   coEvery { capture(workflowCmdSlot).sendToAsync(WorkflowCmdTopic) } answers { engineResponse() }
 }
@@ -828,6 +834,24 @@ internal class InfiniticClientTests : StringSpec(
       "Should throw when using an instance" {
         val fake = FakeWorkflowImpl()
         shouldThrow<InvalidStubException> { client.dispatch(fake::m0) }
+      }
+
+      "Should be able to complete a task" {
+        // when
+        val taskId = TestFactory.random<String>()
+        // complex result
+        val result = TestFactory.random<WorkflowEngineEnvelope>()
+        client.completeTask(FakeService::class.java, taskId, result)
+        // then
+        taskTagSlots.size shouldBe 1
+        val msg = taskTagSlots.first() as CompleteDelegatedTask
+        msg shouldBe CompleteDelegatedTask(
+            returnValue = ReturnValue.from(result),
+            messageId = msg.messageId,
+            serviceName = ServiceName(FakeService::class.java.name),
+            taskId = TaskId(taskId),
+            emitterName = emitterNameTest,
+        )
       }
     },
 )

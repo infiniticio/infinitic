@@ -31,7 +31,7 @@ import io.infinitic.common.data.ReturnValue
 import io.infinitic.common.emitters.EmitterName
 import io.infinitic.common.messages.Message
 import io.infinitic.common.requester.ClientRequester
-import io.infinitic.common.tasks.data.AsyncTaskData
+import io.infinitic.common.tasks.data.DelegatedTaskData
 import io.infinitic.common.tasks.data.ServiceName
 import io.infinitic.common.tasks.data.TaskId
 import io.infinitic.common.tasks.data.TaskMeta
@@ -65,7 +65,7 @@ data class TaskCompleted(
   val taskMeta: TaskMeta
 ) : ClientMessage(), TaskMessage {
   companion object {
-    fun from(data: AsyncTaskData, returnValue: ReturnValue, emitterName: EmitterName) =
+    fun from(data: DelegatedTaskData, returnValue: ReturnValue, emitterName: EmitterName) =
         when (data.requester is ClientRequester && data.clientWaiting == true) {
           true -> TaskCompleted(
               recipientName = data.requester.clientName,

@@ -39,7 +39,7 @@ import io.infinitic.events.types.STARTED
 import io.infinitic.events.types.TYPE_TASK
 
 fun ServiceEventMessage.serviceType(): String = "$TYPE_TASK." + when (this) {
-  is TaskCompletedEvent -> when (isAsync) {
+  is TaskCompletedEvent -> when (isDelegated) {
     true -> COMPLETION_DELEGATED
     false -> COMPLETED
   }

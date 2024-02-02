@@ -31,12 +31,12 @@ import io.infinitic.common.emitters.EmitterName
 import io.infinitic.common.exceptions.thisShouldNotHappen
 import io.infinitic.common.tasks.tags.messages.AddTaskIdToTag
 import io.infinitic.common.tasks.tags.messages.CancelTaskByTag
-import io.infinitic.common.tasks.tags.messages.CompleteAsyncTask
+import io.infinitic.common.tasks.tags.messages.CompleteDelegatedTask
 import io.infinitic.common.tasks.tags.messages.GetTaskIdsByTag
 import io.infinitic.common.tasks.tags.messages.RemoveTaskIdFromTag
 import io.infinitic.common.tasks.tags.messages.RetryTaskByTag
 import io.infinitic.common.tasks.tags.messages.ServiceTagMessage
-import io.infinitic.common.tasks.tags.messages.SetAsyncTaskData
+import io.infinitic.common.tasks.tags.messages.SetDelegatedTaskData
 import io.infinitic.common.tasks.tags.storage.TaskTagStorage
 import io.infinitic.common.transport.ClientTopic
 import io.infinitic.common.transport.InfiniticProducerAsync
@@ -44,16 +44,12 @@ import io.infinitic.common.transport.LoggedInfiniticProducer
 import io.infinitic.common.transport.WorkflowEngineTopic
 import io.infinitic.common.workflows.engine.messages.RemoteTaskCompleted
 import io.infinitic.tasks.tag.storage.LoggedTaskTagStorage
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.launch
 
 class TaskTagEngine(
   storage: TaskTagStorage,
   producerAsync: InfiniticProducerAsync
 ) {
-  private lateinit var scope: CoroutineScope
-
   private val storage = LoggedTaskTagStorage(storage).apply {
     logName = this::class.java.name
   }
@@ -64,20 +60,16 @@ class TaskTagEngine(
 
   private val emitterName by lazy { EmitterName(producer.name) }
 
-  // coroutineScope let send messages in parallel
-  // it's important as we can have a lot of them
   suspend fun handle(message: ServiceTagMessage, publishTime: MillisInstant) = coroutineScope {
     logger.debug { "receiving $message" }
-
-    scope = this
 
     when (message) {
       is AddTaskIdToTag -> addTaskIdToTag(message)
       is RemoveTaskIdFromTag -> removeTaskIdFromTag(message)
       is CancelTaskByTag -> TODO()
       is RetryTaskByTag -> thisShouldNotHappen()
-      is SetAsyncTaskData -> setAsyncTaskData(message)
-      is CompleteAsyncTask -> completeAsyncTask(message, publishTime)
+      is SetDelegatedTaskData -> setDelegatedTaskData(message)
+      is CompleteDelegatedTask -> completeAsyncTask(message, publishTime)
       is GetTaskIdsByTag -> getTaskIds(message)
       else -> thisShouldNotHappen()
     }
@@ -91,28 +83,27 @@ class TaskTagEngine(
     storage.removeTaskIdFromTag(message.taskTag, message.serviceName, message.taskId)
   }
 
-  private suspend fun setAsyncTaskData(message: SetAsyncTaskData) {
-    storage.setAsyncTaskData(message.taskId, message.asyncTaskData)
+  private suspend fun setDelegatedTaskData(message: SetDelegatedTaskData) {
+    storage.setDelegatedTaskData(message.taskId, message.delegatedTaskData)
   }
 
   private suspend fun completeAsyncTask(
-    message: CompleteAsyncTask,
+    message: CompleteDelegatedTask,
     publishTime: MillisInstant
   ) {
-    storage.getAsyncTaskData(message.taskId)?.let {
-      coroutineScope {
-        // send to waiting client
-        TaskCompleted.from(it, message.returnValue, message.emitterName)?.let {
-          scope.launch { with(producer) { it.sendTo(ClientTopic) } }
-        }
-        // send to waiting workflow
-        RemoteTaskCompleted.from(it, message.returnValue, message.emitterName, publishTime)?.let {
-          scope.launch { with(producer) { it.sendTo(WorkflowEngineTopic) } }
-        }
+    storage.getDelegatedTaskData(message.taskId)?.let {
+      // send to waiting client
+      TaskCompleted.from(it, message.returnValue, emitterName)?.let {
+        with(producer) { it.sendTo(ClientTopic) }
       }
-      // delete asyncTaskData
-      storage.delAsyncTaskData(message.taskId)
+      // send to waiting workflow
+      RemoteTaskCompleted.from(it, message.returnValue, emitterName, publishTime)?.let {
+        with(producer) { it.sendTo(WorkflowEngineTopic) }
+      }
+      // delete delegatedTaskData
+      storage.delDelegatedTaskData(message.taskId)
     }
+      ?: logger.warn { "Discarding message as no DelegatedTaskData found $message" }
   }
 
   private suspend fun getTaskIds(message: GetTaskIdsByTag) {
@@ -126,6 +117,6 @@ class TaskTagEngine(
         emitterName = emitterName,
     )
 
-    scope.launch { with(producer) { taskIdsByTag.sendTo(ClientTopic) } }
+    with(producer) { taskIdsByTag.sendTo(ClientTopic) }
   }
 }

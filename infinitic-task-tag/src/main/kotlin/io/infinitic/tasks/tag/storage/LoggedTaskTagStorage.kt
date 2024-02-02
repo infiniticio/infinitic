@@ -23,7 +23,7 @@
 package io.infinitic.tasks.tag.storage
 
 import io.github.oshai.kotlinlogging.KotlinLogging
-import io.infinitic.common.tasks.data.AsyncTaskData
+import io.infinitic.common.tasks.data.DelegatedTaskData
 import io.infinitic.common.tasks.data.ServiceName
 import io.infinitic.common.tasks.data.TaskId
 import io.infinitic.common.tasks.data.TaskTag
@@ -57,22 +57,22 @@ class LoggedTaskTagStorage(
     logger.debug { "tag $tag - name $serviceName - removed TaskId $taskId" }
   }
 
-  override suspend fun setAsyncTaskData(taskId: TaskId, data: AsyncTaskData) {
-    logger.trace { "taskId $taskId - setting AsyncData $data" }
-    storage.setAsyncTaskData(taskId, data)
-    logger.debug { "taskId $taskId - set AsyncData $data" }
+  override suspend fun setDelegatedTaskData(taskId: TaskId, data: DelegatedTaskData) {
+    logger.trace { "taskId $taskId - setting DelegatedTaskData $data" }
+    storage.setDelegatedTaskData(taskId, data)
+    logger.debug { "taskId $taskId - set DelegatedTaskData $data" }
   }
 
-  override suspend fun delAsyncTaskData(taskId: TaskId) {
-    logger.trace { "taskId $taskId - deleting AsyncData" }
-    storage.delAsyncTaskData(taskId)
-    logger.debug { "taskId $taskId - deleted AsyncData" }
+  override suspend fun delDelegatedTaskData(taskId: TaskId) {
+    logger.trace { "taskId $taskId - deleting DelegatedTaskData" }
+    storage.delDelegatedTaskData(taskId)
+    logger.debug { "taskId $taskId - deleted DelegatedTaskData" }
   }
 
-  override suspend fun getAsyncTaskData(taskId: TaskId): AsyncTaskData? {
-    logger.trace { "taskId $taskId - getting AsyncData" }
-    val asyncData = storage.getAsyncTaskData(taskId)
-    logger.debug { "taskId $taskId - got AsyncData $asyncData" }
+  override suspend fun getDelegatedTaskData(taskId: TaskId): DelegatedTaskData? {
+    logger.trace { "taskId $taskId - getting DelegatedTaskData" }
+    val asyncData = storage.getDelegatedTaskData(taskId)
+    logger.debug { "taskId $taskId - got DelegatedTaskData $asyncData" }
     return asyncData
   }
 

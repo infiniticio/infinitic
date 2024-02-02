@@ -22,6 +22,14 @@
  */
 package io.infinitic.annotations
 
-/** Use this annotation to mark a task as being completed asynchronously */
+/**
+ * Use this annotation to indicate that the completion of the task will be delegated to an external system
+ *
+ *  The implementation should call client.completeTask(serviceName, taskId, result)
+ *  where:
+ *  - serviceName is given by Task.serviceName
+ *  - taskId is given by Task.taskId
+ *  within the task body
+ **/
 @Target(AnnotationTarget.FUNCTION)
-annotation class Async()
+annotation class Delegated()

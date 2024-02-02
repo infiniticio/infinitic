@@ -26,35 +26,35 @@ import io.infinitic.common.fixtures.TestFactory
 import io.infinitic.common.fixtures.checkBackwardCompatibility
 import io.infinitic.common.fixtures.checkOrCreateCurrentFile
 import io.infinitic.common.serDe.avro.AvroSerDe
-import io.infinitic.common.tasks.data.AsyncTaskData
+import io.infinitic.common.tasks.data.DelegatedTaskData
 import io.kotest.assertions.throwables.shouldNotThrowAny
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
 
-class AsyncTaskDataTests :
+class DelegatedTaskDataTests :
   StringSpec(
       {
-        "AsyncTaskData should be avro-convertible" {
+        "DelegatedTaskData should be avro-convertible" {
           shouldNotThrowAny {
-            val data = TestFactory.random<AsyncTaskData>()
+            val data = TestFactory.random<DelegatedTaskData>()
             val bytes: ByteArray = data.toByteArray()
 
-            AsyncTaskData.fromByteArray(bytes) shouldBe data
+            DelegatedTaskData.fromByteArray(bytes) shouldBe data
           }
         }
 
-        "AsyncTaskData Avro schema should be backward compatible" {
+        "DelegatedTaskData Avro schema should be backward compatible" {
           // An error in this test means that we need to upgrade the version
-          checkOrCreateCurrentFile(AsyncTaskData::class, AsyncTaskData.serializer())
+          checkOrCreateCurrentFile(DelegatedTaskData::class, DelegatedTaskData.serializer())
 
-          checkBackwardCompatibility(AsyncTaskData::class, AsyncTaskData.serializer())
+          checkBackwardCompatibility(DelegatedTaskData::class, DelegatedTaskData.serializer())
         }
 
-        "We should be able to read AsyncTaskData binary from any previous version" {
-          AvroSerDe.getAllSchemas(AsyncTaskData::class).forEach { (_, schema) ->
+        "We should be able to read DelegatedTaskData binary from any previous version" {
+          AvroSerDe.getAllSchemas(DelegatedTaskData::class).forEach { (_, schema) ->
             val bytes = AvroSerDe.getRandomBinaryWithSchemaFingerprint(schema)
 
-            shouldNotThrowAny { AsyncTaskData.fromByteArray(bytes) }
+            shouldNotThrowAny { DelegatedTaskData.fromByteArray(bytes) }
           }
         }
       },

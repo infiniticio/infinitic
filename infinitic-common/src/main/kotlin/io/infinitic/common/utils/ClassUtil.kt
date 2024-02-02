@@ -22,8 +22,8 @@
  */
 package io.infinitic.common.utils
 
-import io.infinitic.annotations.Async
 import io.infinitic.annotations.CheckMode
+import io.infinitic.annotations.Delegated
 import io.infinitic.annotations.Name
 import io.infinitic.annotations.Retry
 import io.infinitic.annotations.Timeout
@@ -143,9 +143,9 @@ fun Method.getWithTimeout(): Result<WithTimeout?> =
       })?.getInstance() ?: Result.success(null)
 
 /**
- * Returns true if this method has the [Async] annotation
+ * Returns true if this method has the [Delegated] annotation
  */
-fun Method.isAsync(): Boolean = findAnnotation(Async::class.java) != null
+fun Method.isDelegated(): Boolean = findAnnotation(Delegated::class.java) != null
 
 /**
  * Get the WithTimeout instance of a method (if any)

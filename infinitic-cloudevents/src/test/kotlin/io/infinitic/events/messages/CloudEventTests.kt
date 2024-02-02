@@ -242,7 +242,7 @@ internal class CloudEventTests :
             event.subject shouldBe message.taskId.toString()
             event.type shouldBe when (it) {
               TaskStartedEvent::class -> "infinitic.task.started"
-              TaskCompletedEvent::class -> when ((message as TaskCompletedEvent).isAsync) {
+              TaskCompletedEvent::class -> when ((message as TaskCompletedEvent).isDelegated) {
                 true -> "infinitic.task.completionDelegated"
                 false -> "infinitic.task.completed"
               }
@@ -286,7 +286,7 @@ internal class CloudEventTests :
                 ),
             )
             if (message is TaskCompletedEvent) {
-              message = (message as TaskCompletedEvent).copy(isAsync = false)
+              message = (message as TaskCompletedEvent).copy(isDelegated = false)
             }
             message.sendToTopic(WorkflowTaskEventsTopic)
 

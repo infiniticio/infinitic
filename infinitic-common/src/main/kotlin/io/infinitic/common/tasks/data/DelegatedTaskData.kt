@@ -31,7 +31,7 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 @AvroNamespace("io.infinitic.tasks")
-data class AsyncTaskData(
+data class DelegatedTaskData(
   val serviceName: ServiceName,
   val methodName: MethodName,
   val taskId: TaskId,
@@ -51,6 +51,6 @@ data class AsyncTaskData(
 
   companion object {
     fun fromByteArray(bytes: ByteArray) =
-        AvroSerDe.readBinaryWithSchemaFingerprint(bytes, AsyncTaskData::class)
+        AvroSerDe.readBinaryWithSchemaFingerprint(bytes, DelegatedTaskData::class)
   }
 }

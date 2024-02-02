@@ -114,15 +114,15 @@
       } ]
     } ]
   }, {
-    "name" : "setAsyncTaskData",
+    "name" : "setDelegatedTaskData",
     "type" : [ "null", {
       "type" : "record",
-      "name" : "SetAsyncTaskData",
+      "name" : "SetDelegatedTaskData",
       "fields" : [ {
-        "name" : "asyncTaskData",
+        "name" : "delegatedTaskData",
         "type" : {
           "type" : "record",
-          "name" : "AsyncTaskData",
+          "name" : "DelegatedTaskData",
           "namespace" : "io.infinitic.tasks",
           "fields" : [ {
             "name" : "serviceName",
@@ -188,10 +188,10 @@
     } ],
     "default" : null
   }, {
-    "name" : "completeAsyncTask",
+    "name" : "completeDelegatedTask",
     "type" : [ "null", {
       "type" : "record",
-      "name" : "CompleteAsyncTask",
+      "name" : "CompleteDelegatedTask",
       "fields" : [ {
         "name" : "returnValue",
         "type" : {

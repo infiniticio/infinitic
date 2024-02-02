@@ -28,7 +28,7 @@ import io.infinitic.common.data.MessageId
 import io.infinitic.common.data.ReturnValue
 import io.infinitic.common.emitters.EmitterName
 import io.infinitic.common.messages.Message
-import io.infinitic.common.tasks.data.AsyncTaskData
+import io.infinitic.common.tasks.data.DelegatedTaskData
 import io.infinitic.common.tasks.data.ServiceName
 import io.infinitic.common.tasks.data.TaskId
 import io.infinitic.common.tasks.data.TaskTag
@@ -53,8 +53,8 @@ interface WithTaskIdAsKey : ServiceTagMessage {
 
 @Serializable
 @AvroNamespace("io.infinitic.tasks.tag")
-data class SetAsyncTaskData(
-  val asyncTaskData: AsyncTaskData,
+data class SetDelegatedTaskData(
+  val delegatedTaskData: DelegatedTaskData,
   override val messageId: MessageId = MessageId(),
   override val serviceName: ServiceName,
   override val taskId: TaskId,
@@ -63,7 +63,7 @@ data class SetAsyncTaskData(
 
 @Serializable
 @AvroNamespace("io.infinitic.tasks.tag")
-data class CompleteAsyncTask(
+data class CompleteDelegatedTask(
   val returnValue: ReturnValue,
   override val messageId: MessageId = MessageId(),
   override val serviceName: ServiceName,

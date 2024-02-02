@@ -409,7 +409,7 @@
           "values" : "bytes"
         }
       }, {
-        "name" : "isAsync",
+        "name" : "isDelegated",
         "type" : "boolean"
       }, {
         "name" : "returnValue",

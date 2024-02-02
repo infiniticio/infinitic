@@ -1,6 +1,6 @@
 {
   "type" : "record",
-  "name" : "AsyncTaskData",
+  "name" : "DelegatedTaskData",
   "namespace" : "io.infinitic.tasks",
   "fields" : [ {
     "name" : "serviceName",

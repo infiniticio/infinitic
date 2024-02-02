@@ -582,7 +582,7 @@ private fun getTaskCompleted(
     taskTags = msg.taskTags,
     taskMeta = TaskMeta(meta),
     returnValue = ReturnValue.from(value),
-    isAsync = false,
+    isDelegated = false,
 )
 
 internal fun getRemoveTag(message: ServiceEventMessage, tag: String) = RemoveTaskIdFromTag(

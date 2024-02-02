@@ -50,7 +50,7 @@ import io.infinitic.common.requester.workflowId
 import io.infinitic.common.requester.workflowMethodId
 import io.infinitic.common.requester.workflowMethodName
 import io.infinitic.common.requester.workflowName
-import io.infinitic.common.tasks.data.AsyncTaskData
+import io.infinitic.common.tasks.data.DelegatedTaskData
 import io.infinitic.common.tasks.data.ServiceName
 import io.infinitic.common.tasks.data.TaskId
 import io.infinitic.common.tasks.data.TaskReturnValue
@@ -605,7 +605,7 @@ data class RemoteTaskCompleted(
 
   companion object {
     fun from(
-      data: AsyncTaskData,
+      data: DelegatedTaskData,
       returnValue: ReturnValue,
       emitterName: EmitterName,
       emittedAt: MillisInstant

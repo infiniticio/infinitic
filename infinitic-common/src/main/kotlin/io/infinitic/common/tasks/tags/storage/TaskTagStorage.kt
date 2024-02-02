@@ -23,7 +23,7 @@
 package io.infinitic.common.tasks.tags.storage
 
 import io.infinitic.common.storage.Flushable
-import io.infinitic.common.tasks.data.AsyncTaskData
+import io.infinitic.common.tasks.data.DelegatedTaskData
 import io.infinitic.common.tasks.data.ServiceName
 import io.infinitic.common.tasks.data.TaskId
 import io.infinitic.common.tasks.data.TaskTag
@@ -43,9 +43,9 @@ interface TaskTagStorage : Flushable {
 
   suspend fun removeTaskIdFromTag(tag: TaskTag, serviceName: ServiceName, taskId: TaskId)
 
-  suspend fun getAsyncTaskData(taskId: TaskId): AsyncTaskData?
+  suspend fun getDelegatedTaskData(taskId: TaskId): DelegatedTaskData?
 
-  suspend fun setAsyncTaskData(taskId: TaskId, data: AsyncTaskData)
+  suspend fun setDelegatedTaskData(taskId: TaskId, data: DelegatedTaskData)
 
-  suspend fun delAsyncTaskData(taskId: TaskId)
+  suspend fun delDelegatedTaskData(taskId: TaskId)
 }

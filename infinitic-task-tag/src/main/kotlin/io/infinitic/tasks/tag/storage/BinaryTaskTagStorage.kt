@@ -22,7 +22,7 @@
  */
 package io.infinitic.tasks.tag.storage
 
-import io.infinitic.common.tasks.data.AsyncTaskData
+import io.infinitic.common.tasks.data.DelegatedTaskData
 import io.infinitic.common.tasks.data.ServiceName
 import io.infinitic.common.tasks.data.TaskId
 import io.infinitic.common.tasks.data.TaskTag
@@ -62,26 +62,26 @@ class BinaryTaskTagStorage(keyValueStorage: KeyValueStorage, keySetStorage: KeyS
     keySetStorage.remove(key, taskId.toString().toByteArray())
   }
 
-  override suspend fun setAsyncTaskData(taskId: TaskId, data: AsyncTaskData) {
-    val key = getAsyncTaskDataKey(taskId)
+  override suspend fun setDelegatedTaskData(taskId: TaskId, data: DelegatedTaskData) {
+    val key = getDelegatedTaskDataKey(taskId)
     keyValueStorage.put(key, data.toByteArray())
   }
 
-  override suspend fun delAsyncTaskData(taskId: TaskId) {
-    val key = getAsyncTaskDataKey(taskId)
+  override suspend fun delDelegatedTaskData(taskId: TaskId) {
+    val key = getDelegatedTaskDataKey(taskId)
     keyValueStorage.del(key)
   }
 
-  override suspend fun getAsyncTaskData(taskId: TaskId): AsyncTaskData? {
-    val key = getAsyncTaskDataKey(taskId)
-    return keyValueStorage.get(key)?.let { AsyncTaskData.fromByteArray(it) }
+  override suspend fun getDelegatedTaskData(taskId: TaskId): DelegatedTaskData? {
+    val key = getDelegatedTaskDataKey(taskId)
+    return keyValueStorage.get(key)?.let { DelegatedTaskData.fromByteArray(it) }
 
   }
 
   private fun getTaskIdsByTagKey(tag: TaskTag, serviceName: ServiceName) =
       "task:$serviceName|tag:$tag|setIds"
 
-  private fun getAsyncTaskDataKey(taskId: TaskId) = "taskId:$taskId|asyncTaskData"
+  private fun getDelegatedTaskDataKey(taskId: TaskId) = "taskId:$taskId|delegatedTaskData"
 
   @TestOnly
   override fun flush() {
