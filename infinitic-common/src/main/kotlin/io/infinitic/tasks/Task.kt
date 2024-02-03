@@ -26,7 +26,11 @@ import io.infinitic.clients.InfiniticClientInterface
 import io.infinitic.common.tasks.executors.errors.ExecutionError
 
 object Task {
-  val context: ThreadLocal<TaskContext> = ThreadLocal.withInitial { null }
+  private val context: ThreadLocal<TaskContext> = ThreadLocal.withInitial { null }
+
+  fun set(c: TaskContext) {
+    context.set(c)
+  }
 
   @JvmStatic
   val workerName

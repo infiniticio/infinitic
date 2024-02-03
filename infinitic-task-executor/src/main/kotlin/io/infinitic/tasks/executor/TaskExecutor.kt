@@ -140,7 +140,7 @@ class TaskExecutor(
       withTimeout(timeout) {
         coroutineScope {
           // Put context in execution's thread (it may be used in the following method)
-          Task.context.set(taskContext)
+          Task.set(taskContext)
           // method execution
           method.invoke(service, *parameters)
         }
@@ -181,7 +181,7 @@ class TaskExecutor(
     val delayMillis = try {
       msg.logTrace { "retrieving delay before retry" }
       // We set the localThread context here as it may be used in withRetry
-      Task.context.set(taskContext)
+      Task.set(taskContext)
       // get seconds before retry
       withRetry?.getMillisBeforeRetry(taskContext.retryIndex.toInt(), cause)
     } catch (e: Exception) {
