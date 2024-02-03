@@ -41,7 +41,7 @@ internal class DelegationWorkflowTests :
           // val deferred = client.dispatch(delegationWorkflow::test, 100)
 
           later(1000) {
-            client.completeTask(
+            client.completeDelegatedTask(
                 UtilServiceImpl.delegatedServiceName,
                 UtilServiceImpl.delegatedTaskId,
                 "success",

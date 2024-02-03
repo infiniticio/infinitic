@@ -59,7 +59,7 @@ data class SetDelegatedTaskData(
   override val serviceName: ServiceName,
   override val taskId: TaskId,
   override val emitterName: EmitterName
-) : ServiceTagMessage, WithTaskIdAsKey
+) : WithTaskIdAsKey
 
 @Serializable
 @AvroNamespace("io.infinitic.tasks.tag")
@@ -69,7 +69,7 @@ data class CompleteDelegatedTask(
   override val serviceName: ServiceName,
   override val taskId: TaskId,
   override val emitterName: EmitterName,
-) : ServiceTagMessage, WithTaskIdAsKey
+) : WithTaskIdAsKey
 
 @Serializable
 @AvroNamespace("io.infinitic.tasks.tag")
@@ -79,7 +79,7 @@ data class RetryTaskByTag(
   @SerialName("taskName") override val serviceName: ServiceName,
   override val taskTag: TaskTag,
   override val emitterName: EmitterName
-) : ServiceTagMessage, WithTagAsKey
+) : WithTagAsKey
 
 @Serializable
 @AvroNamespace("io.infinitic.tasks.tag")
@@ -88,7 +88,7 @@ data class CancelTaskByTag(
   @SerialName("taskName") override val serviceName: ServiceName,
   override val taskTag: TaskTag,
   override val emitterName: EmitterName
-) : ServiceTagMessage, WithTagAsKey
+) : WithTagAsKey
 
 @Serializable
 @AvroNamespace("io.infinitic.tasks.tag")
@@ -99,7 +99,7 @@ data class AddTaskIdToTag(
   @SerialName("taskName") override val serviceName: ServiceName,
   override val taskTag: TaskTag,
   override val emitterName: EmitterName
-) : ServiceTagMessage, WithTagAsKey
+) : WithTagAsKey
 
 @Serializable
 @AvroNamespace("io.infinitic.tasks.tag")
@@ -110,7 +110,7 @@ data class RemoveTaskIdFromTag(
   @SerialName("taskName") override val serviceName: ServiceName,
   override val taskTag: TaskTag,
   override val emitterName: EmitterName
-) : ServiceTagMessage, WithTagAsKey
+) : WithTagAsKey
 
 @Serializable
 @AvroNamespace("io.infinitic.tasks.tag")
@@ -119,4 +119,4 @@ data class GetTaskIdsByTag(
   @SerialName("taskName") override val serviceName: ServiceName,
   override val taskTag: TaskTag,
   override val emitterName: EmitterName
-) : ServiceTagMessage, WithTagAsKey
+) : WithTagAsKey

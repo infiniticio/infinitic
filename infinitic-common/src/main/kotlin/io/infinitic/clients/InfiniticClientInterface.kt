@@ -77,16 +77,16 @@ interface InfiniticClientInterface : Closeable {
   /**
    * Create a stub for an existing workflow (targeted by id)
    *
-   * @property klass should the interface of a workflow
-   * @property id should the workflow's id
+   * @param klass should the interface of a workflow
+   * @param id should the workflow's id
    */
   fun <T : Any> getWorkflowById(klass: Class<out T>, id: String): T
 
   /**
-   * Create a stub for existing workflow(s) (targeted by tag)
+   * Create a stub for existing workflows (targeted by tag)
    *
-   * @property klass should the interface of a workflow
-   * @property tag should the workflow's tag
+   * @param klass The class of the workflow to retrieve.
+   * @param tag The tag associated with the workflow to retrieve.
    */
   fun <T : Any> getWorkflowByTag(klass: Class<out T>, tag: String): T
 
@@ -501,14 +501,17 @@ interface InfiniticClientInterface : Closeable {
    * (defined by the @name annotation, of the name of the interface defining the service)
    * @param taskId The ID of the task to be completed.
    * @param result The result of the task. Can be of any type.
-   * @return A CompletableFuture representing the status of the task completion. The CompletableFuture
-   *         will complete with a Unit value when the message is sent.
+   * @return A CompletableFuture that will complete with a Unit value when the message is sent.
    */
-  fun completeTaskAsync(serviceName: String, taskId: String, result: Any?): CompletableFuture<Unit>
+  fun completeDelegatedTaskAsync(
+    serviceName: String,
+    taskId: String,
+    result: Any?
+  ): CompletableFuture<Unit>
 
 
   /**
-   * Completes a task.
+   * Completes a delegated task.
    *
    * @param serviceName The name of the service of the task
    * (defined by the @name annotation, of the name of the interface defining the service)
@@ -517,8 +520,8 @@ interface InfiniticClientInterface : Closeable {
    *
    * @return Returns nothing.
    */
-  fun completeTask(serviceName: String, taskId: String, result: Any?): Unit =
-      completeTaskAsync(serviceName, taskId, result).join()
+  fun completeDelegatedTask(serviceName: String, taskId: String, result: Any?): Unit =
+      completeDelegatedTaskAsync(serviceName, taskId, result).join()
 
   /**
    * Retry the workflow task (without waiting for the message to be sent)
@@ -583,6 +586,7 @@ interface InfiniticClientInterface : Closeable {
    * @property stub should be a workflow stub obtained by [getWorkflowById] or [getWorkflowByTag]
    */
   fun <T : Any> getIds(stub: T): Set<String>
+
 
   fun <R> startAsync(invoke: () -> R): CompletableFuture<Deferred<R>>
 

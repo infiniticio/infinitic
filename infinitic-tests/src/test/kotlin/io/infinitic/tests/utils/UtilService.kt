@@ -122,9 +122,9 @@ class UtilServiceImpl : UtilService {
 
   override fun meta() = TaskMeta(Task.meta)
 
-  override fun getRetry(): WithRetry? = Task.context.get().withRetry
+  override fun getRetry(): WithRetry? = Task.withRetry
 
-  override fun getTimeout(): WithTimeout? = Task.context.get().withTimeout
+  override fun getTimeout(): WithTimeout? = Task.withTimeout
 
   override fun withTimeout(wait: Long): Long {
     Thread.sleep(wait)

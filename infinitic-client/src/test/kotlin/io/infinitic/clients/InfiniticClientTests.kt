@@ -841,7 +841,7 @@ internal class InfiniticClientTests : StringSpec(
         val taskId = TestFactory.random<String>()
         // complex result
         val result = TestFactory.random<WorkflowEngineEnvelope>()
-        client.completeTask(FakeService::class.java.name, taskId, result)
+        client.completeDelegatedTask(FakeService::class.java.name, taskId, result)
         // then
         taskTagSlots.size shouldBe 1
         val msg = taskTagSlots.first() as CompleteDelegatedTask

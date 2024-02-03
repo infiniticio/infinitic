@@ -80,6 +80,15 @@ object Task {
   val meta: MutableMap<String, ByteArray>
     get() = context.get().meta
 
+
+  @JvmStatic
+  val withTimeout: WithTimeout?
+    get() = context.get().withTimeout
+
+  @JvmStatic
+  val withRetry: WithRetry?
+    get() = context.get().withRetry
+
   @JvmStatic
   val client: InfiniticClientInterface
     get() = context.get().client

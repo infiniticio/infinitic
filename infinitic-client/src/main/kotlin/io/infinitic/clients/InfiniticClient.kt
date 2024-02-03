@@ -117,7 +117,7 @@ class InfiniticClient(
         else -> throw InvalidStubException("$stub")
       }
 
-  override fun completeTaskAsync(
+  override fun completeDelegatedTaskAsync(
     serviceName: String,
     taskId: String,
     result: Any?
