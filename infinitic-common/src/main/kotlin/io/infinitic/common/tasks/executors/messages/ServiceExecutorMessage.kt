@@ -78,7 +78,7 @@ sealed class ServiceExecutorMessage : Message {
     false -> serviceName.toString()
   }
 
-  fun isWorkflowTask() = (serviceName == ServiceName(WorkflowTask::class.java.name))
+  fun isWorkflowTask() = (serviceName == WorkflowTask.SERVICE_NAME)
 }
 
 @Serializable

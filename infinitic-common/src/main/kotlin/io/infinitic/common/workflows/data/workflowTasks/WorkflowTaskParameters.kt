@@ -32,7 +32,6 @@ import io.infinitic.common.data.methods.MethodParameters
 import io.infinitic.common.emitters.EmitterName
 import io.infinitic.common.requester.WorkflowRequester
 import io.infinitic.common.serDe.avro.AvroSerDe
-import io.infinitic.common.tasks.data.ServiceName
 import io.infinitic.common.tasks.data.TaskId
 import io.infinitic.common.tasks.data.TaskMeta
 import io.infinitic.common.tasks.data.TaskRetryIndex
@@ -68,7 +67,7 @@ data class WorkflowTaskParameters(
   val emitterName: EmitterName,
 ) {
   fun toExecuteTaskMessage() = ExecuteTask(
-      serviceName = ServiceName(WorkflowTask::class.java.name),
+      serviceName = WorkflowTask.SERVICE_NAME,
       taskId = taskId,
       emitterName = emitterName,
       taskRetrySequence = TaskRetrySequence(0),

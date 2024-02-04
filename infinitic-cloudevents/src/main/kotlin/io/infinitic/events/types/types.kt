@@ -23,28 +23,26 @@
 
 package io.infinitic.events.types
 
-
 private const val TYPE_DOMAIN = "infinitic"
 const val TYPE_TASK = "$TYPE_DOMAIN.task"
 const val TYPE_WORKFLOW = "$TYPE_DOMAIN.workflow"
 
-// actions
-const val COMMANDED = "start"
+const val START = "start"
+const val CANCEL = "cancel"
 const val ENDED = "ended"
-const val COMPLETED = "completed"
-const val CANCELED = "canceled"
+
 const val STARTED = "started"
 const val FAILED = "failed"
+const val CANCELED = "canceled"
+const val COMPLETED = "completed"
 const val RETRY_SCHEDULED = "retryScheduled"
 const val COMPLETION_DELEGATED = "completionDelegated"
-
-const val CANCEL_COMMANDED = "cancel"
 
 const val REMOTE_TASKS_RETRY_COMMANDED = "retryTasks"
 const val REMOTE_TASKS_RETRIED = "tasksRetried"
 
 // events related to signals
-const val SIGNAL_COMMANDED = "signal"
+const val SIGNAL = "signal"
 const val SIGNAL_HANDLED = "signalHandled"
 const val SIGNAL_DISCARDED = "signalDiscarded"
 
@@ -56,7 +54,7 @@ const val EXECUTOR_RETRY_COMMANDED = "retryExecutor"
 const val EXECUTOR_RETRIED = "executorRetried"
 
 // events related to workflow methods
-const val METHOD_CANCEL_COMMANDED = "cancelMethod"
+const val METHOD_CANCEL = "cancelMethod"
 const val METHOD_CANCELED = "methodCanceled"
 const val METHOD_COMMANDED = "startMethod"
 const val METHOD_COMPLETED = "methodCompleted"

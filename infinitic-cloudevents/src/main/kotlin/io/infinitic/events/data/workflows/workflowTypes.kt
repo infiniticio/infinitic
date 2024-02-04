@@ -54,16 +54,15 @@ import io.infinitic.common.workflows.engine.messages.WorkflowCmdMessage
 import io.infinitic.common.workflows.engine.messages.WorkflowCompletedEvent
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
 import io.infinitic.common.workflows.engine.messages.WorkflowEventMessage
+import io.infinitic.events.types.CANCEL
 import io.infinitic.events.types.CANCELED
-import io.infinitic.events.types.CANCEL_COMMANDED
-import io.infinitic.events.types.COMMANDED
 import io.infinitic.events.types.ENDED
 import io.infinitic.events.types.EXECUTOR_COMPLETED
 import io.infinitic.events.types.EXECUTOR_DISPATCHED
 import io.infinitic.events.types.EXECUTOR_FAILED
 import io.infinitic.events.types.EXECUTOR_RETRY_COMMANDED
+import io.infinitic.events.types.METHOD_CANCEL
 import io.infinitic.events.types.METHOD_CANCELED
-import io.infinitic.events.types.METHOD_CANCEL_COMMANDED
 import io.infinitic.events.types.METHOD_COMMANDED
 import io.infinitic.events.types.METHOD_COMPLETED
 import io.infinitic.events.types.METHOD_FAILED
@@ -80,22 +79,23 @@ import io.infinitic.events.types.REMOTE_TASK_DISPATCHED
 import io.infinitic.events.types.REMOTE_TASK_FAILED
 import io.infinitic.events.types.REMOTE_TASK_TIMED_OUT
 import io.infinitic.events.types.REMOTE_TIMER_COMPLETED
-import io.infinitic.events.types.SIGNAL_COMMANDED
+import io.infinitic.events.types.SIGNAL
+import io.infinitic.events.types.START
 import io.infinitic.events.types.TYPE_WORKFLOW
 
 fun WorkflowCmdMessage.workflowType(): String? = when (this) {
-  is DispatchWorkflow -> COMMANDED
+  is DispatchWorkflow -> START
   is DispatchMethod -> METHOD_COMMANDED
   is CancelWorkflow -> when (workflowMethodId) {
-    null -> CANCEL_COMMANDED
-    else -> METHOD_CANCEL_COMMANDED
+    null -> CANCEL
+    else -> METHOD_CANCEL
   }
 
   is CompleteTimers -> null
   is CompleteWorkflow -> null
   is RetryTasks -> REMOTE_TASKS_RETRY_COMMANDED
   is RetryWorkflowTask -> EXECUTOR_RETRY_COMMANDED
-  is SendSignal -> SIGNAL_COMMANDED
+  is SendSignal -> SIGNAL
   is WaitWorkflow -> null
 }?.let { "$TYPE_WORKFLOW.$it" }
 

@@ -32,14 +32,9 @@ internal class DelegationWorkflowTests :
   StringSpec(
       {
         val client = Test.client
-
         val delegationWorkflow = client.newWorkflow(DelegationWorkflow::class.java)
 
-
         "I can complete a delegated task with the client" {
-
-          // val deferred = client.dispatch(delegationWorkflow::test, 100)
-
           later(1000) {
             client.completeDelegatedTask(
                 UtilServiceImpl.delegatedServiceName,

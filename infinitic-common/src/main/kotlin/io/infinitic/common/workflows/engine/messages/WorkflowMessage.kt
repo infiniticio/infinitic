@@ -90,7 +90,7 @@ interface WorkflowMessageInterface : Message {
   val workflowId: WorkflowId
   val workflowName: WorkflowName
   fun isWorkflowTaskEvent() =
-      (this is TaskEvent) && this.serviceName() == ServiceName(WorkflowTask::class.java.name)
+      (this is TaskEvent) && this.serviceName() == WorkflowTask.SERVICE_NAME
 }
 
 interface WorkflowEvent
