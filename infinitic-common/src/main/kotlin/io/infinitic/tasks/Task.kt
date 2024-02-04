@@ -26,7 +26,11 @@ import io.infinitic.clients.InfiniticClientInterface
 import io.infinitic.common.tasks.executors.errors.ExecutionError
 
 object Task {
-  val context: ThreadLocal<TaskContext> = ThreadLocal.withInitial { null }
+  private val context: ThreadLocal<TaskContext> = ThreadLocal.withInitial { null }
+
+  fun set(c: TaskContext) {
+    context.set(c)
+  }
 
   @JvmStatic
   val workerName
@@ -75,6 +79,15 @@ object Task {
   @JvmStatic
   val meta: MutableMap<String, ByteArray>
     get() = context.get().meta
+
+
+  @JvmStatic
+  val withTimeout: WithTimeout?
+    get() = context.get().withTimeout
+
+  @JvmStatic
+  val withRetry: WithRetry?
+    get() = context.get().withRetry
 
   @JvmStatic
   val client: InfiniticClientInterface

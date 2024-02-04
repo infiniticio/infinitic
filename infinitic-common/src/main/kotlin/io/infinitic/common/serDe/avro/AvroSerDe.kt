@@ -118,7 +118,6 @@ object AvroSerDe {
       Avro.default.fromRecord(serializer, record)
     } catch (e: BadHeaderException) {
       // we try to decode binary using all known schemas
-      // in case binary was created without schema fingerprint (<= 0.9.7)
       run breaking@{
         getAllSchemas(klass).forEach { (_, schema) ->
           try {

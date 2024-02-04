@@ -33,12 +33,11 @@ import io.infinitic.common.workflows.data.commands.SendSignalCommand
 import io.infinitic.common.workflows.data.commands.SendSignalPastCommand
 import io.infinitic.common.workflows.engine.messages.SendSignal
 import io.infinitic.common.workflows.tags.messages.SendSignalByTag
-import io.infinitic.tasks.executor.TaskEventHandler
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
 internal fun CoroutineScope.sendSignalCmd(
-  currentWorkflow: TaskEventHandler.CurrentWorkflow,
+  current: WorkflowRequester,
   pastCommand: SendSignalPastCommand,
   workflowTaskInstant: MillisInstant,
   producer: InfiniticProducer,
@@ -48,7 +47,7 @@ internal fun CoroutineScope.sendSignalCmd(
 
   when {
     command.workflowId != null -> {
-      if (command.workflowId != currentWorkflow.workflowId) {
+      if (command.workflowId != current.workflowId) {
         launch {
           val sendToChannel = SendSignal(
               channelName = command.channelName,
@@ -59,11 +58,7 @@ internal fun CoroutineScope.sendSignalCmd(
               workflowId = command.workflowId!!,
               emitterName = emitterName,
               emittedAt = workflowTaskInstant,
-              requester = WorkflowRequester(
-                  workflowId = currentWorkflow.workflowId,
-                  workflowName = currentWorkflow.workflowName,
-                  workflowMethodId = currentWorkflow.workflowMethodId,
-              ),
+              requester = current,
           )
           // dispatch signal on another workflow
           with(producer) { sendToChannel.sendTo(WorkflowCmdTopic) }
@@ -81,14 +76,10 @@ internal fun CoroutineScope.sendSignalCmd(
             signalId = SignalId(),
             signalData = command.signalData,
             channelTypes = command.channelTypes,
-            parentWorkflowId = currentWorkflow.workflowId,
+            parentWorkflowId = current.workflowId,
             emitterName = emitterName,
             emittedAt = workflowTaskInstant,
-            requester = WorkflowRequester(
-                workflowId = currentWorkflow.workflowId,
-                workflowName = currentWorkflow.workflowName,
-                workflowMethodId = currentWorkflow.workflowMethodId,
-            ),
+            requester = current,
         )
         // Note: tag engine MUST ignore this message for Id = parentWorkflowId
         with(producer) { sendSignalByTag.sendTo(WorkflowTagTopic) }

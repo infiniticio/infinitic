@@ -45,13 +45,14 @@ import io.infinitic.common.workflows.data.steps.StepStatus.CurrentlyFailed
 import io.infinitic.common.workflows.data.steps.StepStatus.CurrentlyTimedOut
 import io.infinitic.common.workflows.data.steps.StepStatus.Failed
 import io.infinitic.common.workflows.data.steps.StepStatus.TimedOut
+import io.infinitic.common.workflows.data.workflowMethods.WorkflowMethod
 import io.infinitic.common.workflows.data.workflowMethods.WorkflowMethodId
 import io.infinitic.common.workflows.data.workflowMethods.awaitingRequesters
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskReturnValue
 import io.infinitic.common.workflows.engine.messages.DispatchMethod
 import io.infinitic.common.workflows.engine.messages.MethodCompletedEvent
+import io.infinitic.common.workflows.engine.messages.RemoteTaskCompleted
 import io.infinitic.common.workflows.engine.messages.SendSignal
-import io.infinitic.common.workflows.engine.messages.TaskCompleted
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
 import io.infinitic.common.workflows.engine.state.WorkflowState
 import io.infinitic.workflows.engine.helpers.stepTerminated
@@ -61,7 +62,7 @@ import kotlinx.coroutines.launch
 internal fun CoroutineScope.workflowTaskCompleted(
   producer: InfiniticProducer,
   state: WorkflowState,
-  message: TaskCompleted
+  message: RemoteTaskCompleted
 ) {
   val emitterName = EmitterName(producer.name)
   val emittedAt = state.runningWorkflowTaskInstant ?: thisShouldNotHappen()
@@ -119,10 +120,10 @@ internal fun CoroutineScope.workflowTaskCompleted(
   workflowTaskReturnValue.newCommands.forEach {
     when (it) {
       is DispatchMethodOnRunningWorkflowPastCommand ->
-        dispatchMethodOnRunningWorkflowCmd(it, state, producer, bufferedMessages)
+        dispatchMethodOnRunningWorkflowCmd(it, state, workflowMethod, producer, bufferedMessages)
 
       is SendSignalPastCommand ->
-        sendSignalCmd(it, state, producer, bufferedMessages)
+        sendSignalCmd(it, state, workflowMethod, producer, bufferedMessages)
 
       is ReceiveSignalPastCommand ->
         receiveSignalCmd(it, state)
@@ -158,6 +159,7 @@ internal fun CoroutineScope.workflowTaskCompleted(
     val methodCompletedEvent = MethodCompletedEvent(
         workflowName = state.workflowName,
         workflowId = state.workflowId,
+        workflowMethodName = workflowMethod.methodName,
         workflowMethodId = workflowMethod.workflowMethodId,
         awaitingRequesters = workflowMethod.awaitingRequesters,
         returnValue = workflowMethod.methodReturnValue!!,
@@ -192,6 +194,7 @@ internal fun CoroutineScope.workflowTaskCompleted(
 internal fun dispatchMethodOnRunningWorkflowCmd(
   pastCommand: DispatchMethodOnRunningWorkflowPastCommand,
   state: WorkflowState,
+  workflowMethod: WorkflowMethod,
   producer: InfiniticProducer,
   bufferedMessages: MutableList<WorkflowEngineMessage>
 ) {
@@ -205,13 +208,14 @@ internal fun dispatchMethodOnRunningWorkflowCmd(
         workflowName = command.workflowName,
         workflowId = command.workflowId!!,
         workflowMethodId = WorkflowMethodId.from(pastCommand.commandId),
-        methodName = command.methodName,
+        workflowMethodName = command.methodName,
         methodParameters = command.methodParameters,
         methodParameterTypes = command.methodParameterTypes,
         requester = WorkflowRequester(
             workflowId = state.workflowId,
             workflowName = state.workflowName,
-            workflowMethodId = state.runningWorkflowMethodId ?: thisShouldNotHappen(),
+            workflowMethodName = workflowMethod.methodName,
+            workflowMethodId = workflowMethod.workflowMethodId,
         ),
         clientWaiting = false,
         emitterName = EmitterName(producer.name),
@@ -242,6 +246,7 @@ internal fun receiveSignalCmd(
 internal fun sendSignalCmd(
   pastCommand: SendSignalPastCommand,
   state: WorkflowState,
+  workflowMethod: WorkflowMethod,
   producer: InfiniticProducer,
   bufferedMessages: MutableList<WorkflowEngineMessage>
 ) {
@@ -263,7 +268,8 @@ internal fun sendSignalCmd(
         requester = WorkflowRequester(
             workflowId = state.workflowId,
             workflowName = state.workflowName,
-            workflowMethodId = state.runningWorkflowMethodId ?: thisShouldNotHappen(),
+            workflowMethodName = workflowMethod.methodName,
+            workflowMethodId = workflowMethod.workflowMethodId,
         ),
     )
     bufferedMessages.add(sendToChannel)

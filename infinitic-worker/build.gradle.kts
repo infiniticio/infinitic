@@ -32,7 +32,7 @@ dependencies {
   api(project(":infinitic-transport"))
   api(project(":infinitic-client"))
   api(project(":infinitic-common"))
-  api(project(":infinitic-events"))
+  api(project(":infinitic-cloudevents"))
 
   implementation(project(":infinitic-autoclose"))
   implementation(project(":infinitic-transport"))

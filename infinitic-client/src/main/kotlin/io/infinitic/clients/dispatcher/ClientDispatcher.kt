@@ -39,6 +39,7 @@ import io.infinitic.common.clients.messages.WorkflowIdsByTag
 import io.infinitic.common.clients.messages.interfaces.MethodMessage
 import io.infinitic.common.data.MillisDuration
 import io.infinitic.common.data.MillisInstant
+import io.infinitic.common.data.ReturnValue
 import io.infinitic.common.data.methods.MethodName
 import io.infinitic.common.emitters.EmitterName
 import io.infinitic.common.exceptions.thisShouldNotHappen
@@ -57,11 +58,13 @@ import io.infinitic.common.requester.ClientRequester
 import io.infinitic.common.tasks.data.ServiceName
 import io.infinitic.common.tasks.data.TaskId
 import io.infinitic.common.tasks.executors.errors.MethodFailedError
+import io.infinitic.common.tasks.tags.messages.CompleteDelegatedTask
 import io.infinitic.common.transport.ClientTopic
 import io.infinitic.common.transport.InfiniticConsumerAsync
 import io.infinitic.common.transport.InfiniticProducerAsync
 import io.infinitic.common.transport.LoggedInfiniticProducer
 import io.infinitic.common.transport.MainSubscription
+import io.infinitic.common.transport.ServiceTagTopic
 import io.infinitic.common.transport.Topic
 import io.infinitic.common.transport.WorkflowCmdTopic
 import io.infinitic.common.transport.WorkflowTagTopic
@@ -245,7 +248,7 @@ internal class ClientDispatcher(
         throw WorkflowTimedOutException(
             workflowName = workflowName.toString(),
             workflowId = workflowId.toString(),
-            methodName = workflowMethodName.toString(),
+            workflowMethodName = workflowMethodName.toString(),
             workflowMethodId = workflowMethodId?.toString(),
         )
       }
@@ -255,6 +258,7 @@ internal class ClientDispatcher(
       is MethodCanceled -> throw WorkflowCanceledException(
           workflowName = workflowName.toString(),
           workflowId = workflowId.toString(),
+          workflowMethodName = workflowMethodName.toString(),
           workflowMethodId = workflowResult.workflowMethodId.toString(),
       )
 
@@ -271,6 +275,7 @@ internal class ClientDispatcher(
       is MethodUnknown -> throw WorkflowUnknownException(
           workflowName = workflowName.toString(),
           workflowId = workflowId.toString(),
+          workflowMethodName = workflowMethodName.toString(),
           workflowMethodId = workflowMethodId?.toString(),
       )
 
@@ -341,6 +346,19 @@ internal class ClientDispatcher(
     else -> thisShouldNotHappen()
   }
 
+  fun completeTaskAsync(
+    serviceName: ServiceName,
+    taskId: TaskId,
+    returnValue: ReturnValue
+  ): CompletableFuture<Unit> {
+    val msg = CompleteDelegatedTask(
+        serviceName = serviceName,
+        taskId = taskId,
+        returnValue = returnValue,
+        emitterName = emitterName,
+    )
+    return msg.sendToAsync(ServiceTagTopic)
+  }
 
   fun completeTimersAsync(
     workflowName: WorkflowName,
@@ -640,7 +658,7 @@ internal class ClientDispatcher(
           workflowName = deferred.workflowName,
           workflowId = deferred.requestBy.workflowId,
           workflowMethodId = deferred.workflowMethodId,
-          methodName = handler.methodName,
+          workflowMethodName = handler.methodName,
           methodParameters = handler.methodParameters,
           methodParameterTypes = handler.methodParameterTypes,
           requester = ClientRequester(clientName = ClientName.from(emitterName)),

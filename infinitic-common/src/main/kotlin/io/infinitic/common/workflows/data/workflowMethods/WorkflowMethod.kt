@@ -56,10 +56,12 @@ import kotlinx.serialization.Serializable
 data class WorkflowMethod(
   val waitingClients: MutableSet<ClientName>,
   @AvroName("methodRunId") @SerialName("methodRunId") val workflowMethodId: WorkflowMethodId,
-  val parentWorkflowId: WorkflowId?,
-  val parentWorkflowName: WorkflowName?,
-  @AvroName("parentMethodRunId") @SerialName("parentMethodRunId") val parentWorkflowMethodId: WorkflowMethodId?,
-  @AvroDefault(Avro.NULL) val parentClientName: ClientName? = null,
+  @AvroDefault(Avro.NULL) var requester: Requester?,
+  @Deprecated("Not used since version 0.13.0") val parentWorkflowId: WorkflowId? = null,
+  @Deprecated("Not used since version 0.13.0") val parentWorkflowName: WorkflowName? = null,
+  @Deprecated("Not used since version 0.13.0") @AvroDefault(Avro.NULL) val parentWorkflowMethodName: MethodName? = null,
+  @Deprecated("Not used since version 0.13.0") @AvroName("parentMethodRunId") @SerialName("parentMethodRunId") val parentWorkflowMethodId: WorkflowMethodId? = null,
+  @Deprecated("Not used since version 0.13.0") @AvroDefault(Avro.NULL) val parentClientName: ClientName? = null,
   val methodName: MethodName,
   val methodParameterTypes: MethodParameterTypes?,
   val methodParameters: MethodParameters,
@@ -70,6 +72,20 @@ data class WorkflowMethod(
   val pastSteps: MutableList<PastStep> = mutableListOf(),
   var currentStep: PastStep? = null
 ) {
+
+  init {
+    // this is used only to handle previous messages that are still on <0.13 version
+    // in topics or in bufferedMessages of a workflow state
+    requester = requester ?: when (parentWorkflowId) {
+      null -> ClientRequester(clientName = parentClientName ?: ClientName("undefined"))
+      else -> WorkflowRequester(
+          workflowId = parentWorkflowId,
+          workflowName = parentWorkflowName ?: WorkflowName("undefined"),
+          workflowMethodName = MethodName("undefined"),
+          workflowMethodId = parentWorkflowMethodId ?: WorkflowMethodId("undefined"),
+      )
+    }
+  }
 
   /** Retrieve pastCommand per commandId. */
   fun getPastCommand(commandId: CommandId): PastCommand? =
@@ -100,16 +116,7 @@ data class WorkflowMethod(
 // currently, method can have only one awaiting workflow
 val WorkflowMethod.awaitingRequesters: Set<Requester>
   get() {
-    val awaiting = mutableSetOf<Requester>()
+    val awaiting = mutableSetOf(requester ?: thisShouldNotHappen())
     waitingClients.forEach { awaiting.add(ClientRequester(clientName = it)) }
-    parentWorkflowId?.let {
-      awaiting.add(
-          WorkflowRequester(
-              workflowId = it,
-              workflowName = parentWorkflowName ?: thisShouldNotHappen(),
-              workflowMethodId = parentWorkflowMethodId ?: thisShouldNotHappen(),
-          ),
-      )
-    }
     return awaiting
   }

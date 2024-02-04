@@ -25,18 +25,18 @@ package io.infinitic.tasks.executor
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.infinitic.common.data.MillisInstant
 import io.infinitic.common.emitters.EmitterName
-import io.infinitic.common.exceptions.thisShouldNotHappen
+import io.infinitic.common.requester.WorkflowRequester
 import io.infinitic.common.tasks.events.messages.ServiceEventMessage
 import io.infinitic.common.tasks.events.messages.TaskCompletedEvent
 import io.infinitic.common.tasks.events.messages.TaskFailedEvent
 import io.infinitic.common.tasks.events.messages.TaskRetriedEvent
 import io.infinitic.common.tasks.events.messages.TaskStartedEvent
+import io.infinitic.common.tasks.tags.messages.SetDelegatedTaskData
 import io.infinitic.common.transport.ClientTopic
 import io.infinitic.common.transport.InfiniticProducerAsync
 import io.infinitic.common.transport.LoggedInfiniticProducer
 import io.infinitic.common.transport.ServiceTagTopic
 import io.infinitic.common.transport.WorkflowEngineTopic
-import io.infinitic.common.workers.config.WorkflowVersion
 import io.infinitic.common.workflows.data.commands.DispatchMethodOnRunningWorkflowPastCommand
 import io.infinitic.common.workflows.data.commands.DispatchNewWorkflowPastCommand
 import io.infinitic.common.workflows.data.commands.DispatchTaskPastCommand
@@ -45,10 +45,7 @@ import io.infinitic.common.workflows.data.commands.ReceiveSignalPastCommand
 import io.infinitic.common.workflows.data.commands.SendSignalPastCommand
 import io.infinitic.common.workflows.data.commands.StartDurationTimerPastCommand
 import io.infinitic.common.workflows.data.commands.StartInstantTimerPastCommand
-import io.infinitic.common.workflows.data.workflowMethods.WorkflowMethodId
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskReturnValue
-import io.infinitic.common.workflows.data.workflows.WorkflowId
-import io.infinitic.common.workflows.data.workflows.WorkflowName
 import io.infinitic.tasks.executor.commands.dispatchMethodOnRunningWorkflowCmd
 import io.infinitic.tasks.executor.commands.dispatchNewWorkflowCmd
 import io.infinitic.tasks.executor.commands.dispatchTaskCmd
@@ -93,17 +90,35 @@ class TaskEventHandler(producerAsync: InfiniticProducerAsync) {
 
   private suspend fun sendTaskCompleted(msg: TaskCompletedEvent, publishTime: MillisInstant) {
     coroutineScope {
-      // send to parent client
-      msg.getEventForClient(emitterName)?.let {
-        launch { with(producer) { it.sendTo(ClientTopic) } }
-      }
-      // send to parent workflow
-      msg.getEventForWorkflow(emitterName, publishTime)?.let {
-        launch { with(producer) { it.sendTo(WorkflowEngineTopic) } }
-      }
-      // remove tags
-      msg.getEventsForTag(emitterName).forEach {
-        launch { with(producer) { it.sendTo(ServiceTagTopic) } }
+      when (msg.isDelegated) {
+        // if this task is marked as asynchronous, we do not forward the result, add a tag.
+        // this tag is a convenient way to memorize workflowId and workflowName
+        // so that the user just has to complete task by its Id
+        true -> launch {
+
+          val addTaskToTag = SetDelegatedTaskData(
+              serviceName = msg.serviceName,
+              delegatedTaskData = msg.getDelegatedTaskData(),
+              taskId = msg.taskId,
+              emitterName = emitterName,
+          )
+          with(producer) { addTaskToTag.sendTo(ServiceTagTopic) }
+        }
+
+        false -> {
+          // send to parent client
+          msg.getEventForClient(emitterName)?.let {
+            launch { with(producer) { it.sendTo(ClientTopic) } }
+          }
+          // send to parent workflow
+          msg.getEventForWorkflow(emitterName, publishTime)?.let {
+            launch { with(producer) { it.sendTo(WorkflowEngineTopic) } }
+          }
+          // remove tags
+          msg.getEventsForTag(emitterName).forEach {
+            launch { with(producer) { it.sendTo(ServiceTagTopic) } }
+          }
+        }
       }
     }
     // If we are dealing with a workflowTask, we ensure that new commands are dispatched only AFTER
@@ -121,45 +136,33 @@ class TaskEventHandler(producerAsync: InfiniticProducerAsync) {
         // TODO After 0.13.0, workflowTaskInstant should not be null anymore
         val workflowTaskInstant = result.workflowTaskInstant ?: publishTime
 
-        val currentWorkflow = CurrentWorkflow(
-            workflowId = msg.workflowId ?: thisShouldNotHappen(),
-            workflowName = msg.workflowName ?: thisShouldNotHappen(),
-            workflowMethodId = msg.workflowMethodId ?: thisShouldNotHappen(),
-            workflowVersion = result.workflowVersion,
-        )
+        val requester = msg.requester as WorkflowRequester
 
         result.newCommands.forEach {
           when (it) {
             is DispatchNewWorkflowPastCommand ->
-              dispatchNewWorkflowCmd(currentWorkflow, it, workflowTaskInstant, producer)
+              dispatchNewWorkflowCmd(requester, it, workflowTaskInstant, producer)
 
             is DispatchMethodOnRunningWorkflowPastCommand ->
-              dispatchMethodOnRunningWorkflowCmd(currentWorkflow, it, workflowTaskInstant, producer)
+              dispatchMethodOnRunningWorkflowCmd(requester, it, workflowTaskInstant, producer)
 
             is DispatchTaskPastCommand ->
-              dispatchTaskCmd(currentWorkflow, it, workflowTaskInstant, producer)
+              dispatchTaskCmd(requester, result.workflowVersion, it, workflowTaskInstant, producer)
 
             is SendSignalPastCommand ->
-              sendSignalCmd(currentWorkflow, it, workflowTaskInstant, producer)
+              sendSignalCmd(requester, it, workflowTaskInstant, producer)
 
             is StartDurationTimerPastCommand ->
-              startDurationTimerCmd(currentWorkflow, it, workflowTaskInstant, producer)
+              startDurationTimerCmd(requester, it, workflowTaskInstant, producer)
 
             is StartInstantTimerPastCommand ->
-              startInstantTimerCmq(currentWorkflow, it, producer)
+              startInstantTimerCmq(requester, it, producer)
 
             is ReceiveSignalPastCommand,
             is InlineTaskPastCommand -> Unit // Nothing to do
           }
         }
       }
-
-  data class CurrentWorkflow(
-    val workflowId: WorkflowId,
-    val workflowName: WorkflowName,
-    val workflowMethodId: WorkflowMethodId,
-    val workflowVersion: WorkflowVersion,
-  )
 
   private fun ServiceEventMessage.logDebug(description: () -> String) {
     logger.debug { "$serviceName (${taskId}): ${description()}" }

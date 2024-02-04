@@ -196,7 +196,7 @@ class WorkflowTagEngine(
             workflowName = message.workflowName,
             workflowId = workflowId,
             workflowMethodId = message.workflowMethodId,
-            methodName = message.methodName,
+            workflowMethodName = message.methodName,
             methodParameters = message.methodParameters,
             methodParameterTypes = message.methodParameterTypes,
             requester = requester,

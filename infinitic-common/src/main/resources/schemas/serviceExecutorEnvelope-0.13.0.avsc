@@ -41,6 +41,35 @@
         "name" : "taskRetryIndex",
         "type" : "int"
       }, {
+        "name" : "requester",
+        "type" : [ "null", {
+          "type" : "record",
+          "name" : "ClientRequester",
+          "namespace" : "io.infinitic.common.requester",
+          "fields" : [ {
+            "name" : "clientName",
+            "type" : "string"
+          } ]
+        }, {
+          "type" : "record",
+          "name" : "WorkflowRequester",
+          "namespace" : "io.infinitic.common.requester",
+          "fields" : [ {
+            "name" : "workflowName",
+            "type" : "string"
+          }, {
+            "name" : "workflowId",
+            "type" : "string"
+          }, {
+            "name" : "workflowMethodName",
+            "type" : "string"
+          }, {
+            "name" : "workflowMethodId",
+            "type" : "string"
+          } ]
+        } ],
+        "default" : null
+      }, {
         "name" : "workflowName",
         "type" : [ "null", "string" ]
       }, {

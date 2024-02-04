@@ -29,12 +29,14 @@ import io.infinitic.clients.config.ClientConfigInterface
 import io.infinitic.clients.dispatcher.ClientDispatcher
 import io.infinitic.common.clients.messages.ClientMessage
 import io.infinitic.common.data.MillisInstant
+import io.infinitic.common.data.ReturnValue
 import io.infinitic.common.proxies.ExistingWorkflowProxyHandler
 import io.infinitic.common.proxies.NewServiceProxyHandler
 import io.infinitic.common.proxies.NewWorkflowProxyHandler
 import io.infinitic.common.proxies.ProxyHandler
 import io.infinitic.common.proxies.RequestByWorkflowId
 import io.infinitic.common.proxies.RequestByWorkflowTag
+import io.infinitic.common.tasks.data.ServiceName
 import io.infinitic.common.tasks.data.TaskId
 import io.infinitic.common.tasks.data.TaskMeta
 import io.infinitic.common.transport.InfiniticConsumerAsync
@@ -114,6 +116,16 @@ class InfiniticClient(
 
         else -> throw InvalidStubException("$stub")
       }
+
+  override fun completeDelegatedTaskAsync(
+    serviceName: String,
+    taskId: String,
+    result: Any?
+  ): CompletableFuture<Unit> = dispatcher.completeTaskAsync(
+      ServiceName(serviceName),
+      TaskId(taskId),
+      ReturnValue.from(result),
+  )
 
   /** Retry a workflow task */
   override fun retryWorkflowTaskAsync(stub: Any): CompletableFuture<Unit> =

@@ -27,6 +27,9 @@
         "name" : "serviceName",
         "type" : "string"
       }, {
+        "name" : "methodName",
+        "type" : "string"
+      }, {
         "name" : "taskId",
         "type" : "string"
       }, {
@@ -39,17 +42,33 @@
         "name" : "taskRetryIndex",
         "type" : "int"
       }, {
-        "name" : "workflowName",
-        "type" : [ "null", "string" ]
-      }, {
-        "name" : "workflowId",
-        "type" : [ "null", "string" ]
-      }, {
-        "name" : "workflowMethodId",
-        "type" : [ "null", "string" ]
-      }, {
-        "name" : "clientName",
-        "type" : [ "null", "string" ]
+        "name" : "requester",
+        "type" : [ {
+          "type" : "record",
+          "name" : "ClientRequester",
+          "namespace" : "io.infinitic.common.requester",
+          "fields" : [ {
+            "name" : "clientName",
+            "type" : "string"
+          } ]
+        }, {
+          "type" : "record",
+          "name" : "WorkflowRequester",
+          "namespace" : "io.infinitic.common.requester",
+          "fields" : [ {
+            "name" : "workflowName",
+            "type" : "string"
+          }, {
+            "name" : "workflowId",
+            "type" : "string"
+          }, {
+            "name" : "workflowMethodName",
+            "type" : "string"
+          }, {
+            "name" : "workflowMethodId",
+            "type" : "string"
+          } ]
+        } ]
       }, {
         "name" : "clientWaiting",
         "type" : [ "null", "boolean" ]
@@ -65,9 +84,6 @@
           "type" : "map",
           "values" : "bytes"
         }
-      }, {
-        "name" : "workflowVersion",
-        "type" : [ "null", "int" ]
       } ]
     } ]
   }, {
@@ -85,6 +101,9 @@
         "name" : "serviceName",
         "type" : "string"
       }, {
+        "name" : "methodName",
+        "type" : "string"
+      }, {
         "name" : "taskId",
         "type" : "string"
       }, {
@@ -97,17 +116,8 @@
         "name" : "taskRetryIndex",
         "type" : "int"
       }, {
-        "name" : "workflowName",
-        "type" : [ "null", "string" ]
-      }, {
-        "name" : "workflowId",
-        "type" : [ "null", "string" ]
-      }, {
-        "name" : "workflowMethodId",
-        "type" : [ "null", "string" ]
-      }, {
-        "name" : "clientName",
-        "type" : [ "null", "string" ]
+        "name" : "requester",
+        "type" : [ "io.infinitic.common.requester.ClientRequester", "io.infinitic.common.requester.WorkflowRequester" ]
       }, {
         "name" : "clientWaiting",
         "type" : [ "null", "boolean" ]
@@ -166,6 +176,9 @@
         "name" : "serviceName",
         "type" : "string"
       }, {
+        "name" : "methodName",
+        "type" : "string"
+      }, {
         "name" : "taskId",
         "type" : "string"
       }, {
@@ -178,17 +191,8 @@
         "name" : "taskRetryIndex",
         "type" : "int"
       }, {
-        "name" : "workflowName",
-        "type" : [ "null", "string" ]
-      }, {
-        "name" : "workflowId",
-        "type" : [ "null", "string" ]
-      }, {
-        "name" : "workflowMethodId",
-        "type" : [ "null", "string" ]
-      }, {
-        "name" : "clientName",
-        "type" : [ "null", "string" ]
+        "name" : "requester",
+        "type" : [ "io.infinitic.common.requester.ClientRequester", "io.infinitic.common.requester.WorkflowRequester" ]
       }, {
         "name" : "clientWaiting",
         "type" : [ "null", "boolean" ]
@@ -234,6 +238,10 @@
             "name" : "workflowId",
             "type" : "string"
           }, {
+            "name" : "workflowMethodName",
+            "type" : [ "null", "string" ],
+            "default" : null
+          }, {
             "name" : "methodRunId",
             "type" : [ "null", "string" ]
           } ]
@@ -262,10 +270,10 @@
             "name" : "workflowName",
             "type" : "string"
           }, {
-            "name" : "methodName",
+            "name" : "workflowId",
             "type" : "string"
           }, {
-            "name" : "workflowId",
+            "name" : "methodName",
             "type" : "string"
           }, {
             "name" : "methodRunId",
@@ -324,6 +332,10 @@
                 "name" : "taskName",
                 "type" : "string"
               }, {
+                "name" : "methodName",
+                "type" : [ "null", "string" ],
+                "default" : null
+              }, {
                 "name" : "taskId",
                 "type" : "string"
               } ]
@@ -337,18 +349,16 @@
                 "name" : "workflowId",
                 "type" : "string"
               }, {
+                "name" : "workflowMethodName",
+                "type" : [ "null", "string" ],
+                "default" : null
+              }, {
                 "name" : "methodRunId",
                 "type" : [ "null", "string" ]
               } ]
             } ]
           } ]
         }, "FailedWorkflowTaskError", "TimedOutTaskError", "TimedOutWorkflowError", "UnknownTaskError", "UnknownWorkflowError" ]
-      }, {
-        "name" : "methodName",
-        "type" : "string"
-      }, {
-        "name" : "workflowVersion",
-        "type" : [ "null", "int" ]
       } ]
     } ]
   }, {
@@ -366,6 +376,9 @@
         "name" : "serviceName",
         "type" : "string"
       }, {
+        "name" : "methodName",
+        "type" : "string"
+      }, {
         "name" : "taskId",
         "type" : "string"
       }, {
@@ -378,17 +391,8 @@
         "name" : "taskRetryIndex",
         "type" : "int"
       }, {
-        "name" : "workflowName",
-        "type" : [ "null", "string" ]
-      }, {
-        "name" : "workflowId",
-        "type" : [ "null", "string" ]
-      }, {
-        "name" : "workflowMethodId",
-        "type" : [ "null", "string" ]
-      }, {
-        "name" : "clientName",
-        "type" : [ "null", "string" ]
+        "name" : "requester",
+        "type" : [ "io.infinitic.common.requester.ClientRequester", "io.infinitic.common.requester.WorkflowRequester" ]
       }, {
         "name" : "clientWaiting",
         "type" : [ "null", "boolean" ]
@@ -404,6 +408,9 @@
           "type" : "map",
           "values" : "bytes"
         }
+      }, {
+        "name" : "isDelegated",
+        "type" : "boolean"
       }, {
         "name" : "returnValue",
         "type" : {
@@ -428,9 +435,6 @@
             }
           } ]
         }
-      }, {
-        "name" : "workflowVersion",
-        "type" : [ "null", "int" ]
       } ]
     } ]
   } ]

@@ -29,13 +29,13 @@ import io.infinitic.common.transport.ClientTopic
 import io.infinitic.common.transport.InfiniticProducerAsync
 import io.infinitic.common.transport.LoggedInfiniticProducer
 import io.infinitic.common.transport.WorkflowEngineTopic
-import io.infinitic.common.workflows.engine.messages.ChildMethodDispatchedEvent
 import io.infinitic.common.workflows.engine.messages.MethodCanceledEvent
 import io.infinitic.common.workflows.engine.messages.MethodCommandedEvent
 import io.infinitic.common.workflows.engine.messages.MethodCompletedEvent
 import io.infinitic.common.workflows.engine.messages.MethodFailedEvent
 import io.infinitic.common.workflows.engine.messages.MethodTimedOutEvent
-import io.infinitic.common.workflows.engine.messages.TaskDispatchedEvent
+import io.infinitic.common.workflows.engine.messages.RemoteMethodDispatchedEvent
+import io.infinitic.common.workflows.engine.messages.RemoteTaskDispatchedEvent
 import io.infinitic.common.workflows.engine.messages.WorkflowCanceledEvent
 import io.infinitic.common.workflows.engine.messages.WorkflowCompletedEvent
 import io.infinitic.common.workflows.engine.messages.WorkflowEventMessage
@@ -60,8 +60,8 @@ class WorkflowEventHandler(producerAsync: InfiniticProducerAsync) {
       is MethodCompletedEvent -> sendWorkflowMethodCompleted(msg, publishTime)
       is MethodFailedEvent -> sendWorkflowMethodFailed(msg, publishTime)
       is MethodTimedOutEvent -> sendWorkflowMethodTimedOut(msg, publishTime)
-      is TaskDispatchedEvent -> Unit
-      is ChildMethodDispatchedEvent -> Unit
+      is RemoteTaskDispatchedEvent -> Unit
+      is RemoteMethodDispatchedEvent -> Unit
     }
 
     msg.logTrace { "processed" }

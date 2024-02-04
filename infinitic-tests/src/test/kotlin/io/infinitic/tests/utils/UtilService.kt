@@ -24,6 +24,7 @@
 
 package io.infinitic.tests.utils
 
+import io.infinitic.annotations.Delegated
 import io.infinitic.annotations.Retry
 import io.infinitic.annotations.Timeout
 import io.infinitic.common.tasks.data.TaskMeta
@@ -73,6 +74,9 @@ interface UtilService : ParentInterface {
   @Timeout(After100MilliSeconds::class)
   // Timeout at Service level
   fun tryAgain(): Int
+
+  @Delegated
+  fun delegate(long: Long): String
 }
 
 @Retry(Only1Retry::class)
@@ -118,9 +122,9 @@ class UtilServiceImpl : UtilService {
 
   override fun meta() = TaskMeta(Task.meta)
 
-  override fun getRetry(): WithRetry? = Task.context.get().withRetry
+  override fun getRetry(): WithRetry? = Task.withRetry
 
-  override fun getTimeout(): WithTimeout? = Task.context.get().withTimeout
+  override fun getTimeout(): WithTimeout? = Task.withTimeout
 
   override fun withTimeout(wait: Long): Long {
     Thread.sleep(wait)
@@ -133,5 +137,17 @@ class UtilServiceImpl : UtilService {
       return 0
     }
     return Task.retrySequence
+  }
+
+  override fun delegate(long: Long): String {
+    delegatedTaskId = Task.taskId
+    delegatedServiceName = Task.serviceName
+    // do nothing
+    return "this won't be used"
+  }
+
+  companion object {
+    lateinit var delegatedTaskId: String
+    lateinit var delegatedServiceName: String
   }
 }

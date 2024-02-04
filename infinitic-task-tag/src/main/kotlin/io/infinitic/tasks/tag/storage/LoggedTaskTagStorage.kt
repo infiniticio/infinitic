@@ -23,7 +23,7 @@
 package io.infinitic.tasks.tag.storage
 
 import io.github.oshai.kotlinlogging.KotlinLogging
-import io.infinitic.common.data.MessageId
+import io.infinitic.common.tasks.data.DelegatedTaskData
 import io.infinitic.common.tasks.data.ServiceName
 import io.infinitic.common.tasks.data.TaskId
 import io.infinitic.common.tasks.data.TaskTag
@@ -31,43 +31,49 @@ import io.infinitic.common.tasks.tags.storage.TaskTagStorage
 import org.jetbrains.annotations.TestOnly
 
 class LoggedTaskTagStorage(
-  logName: String,
   private val storage: TaskTagStorage
 ) : TaskTagStorage {
 
-  private val logger = KotlinLogging.logger(logName)
+  // TaskTagEngine
+  var logName: String? = null
+  private val logger = KotlinLogging.logger(logName ?: TaskTagStorage::class.java.name)
 
-  override suspend fun getLastMessageId(tag: TaskTag, serviceName: ServiceName): MessageId? {
-    val messageId = storage.getLastMessageId(tag, serviceName)
-    logger.debug { "tag $tag - name $serviceName - getLastMessageId $messageId" }
-
-    return messageId
-  }
-
-  override suspend fun setLastMessageId(
-    tag: TaskTag,
-    serviceName: ServiceName,
-    messageId: MessageId
-  ) {
-    logger.debug { "tag $tag - name $serviceName - setLastMessageId $messageId" }
-    storage.setLastMessageId(tag, serviceName, messageId)
-  }
-
-  override suspend fun getTaskIds(tag: TaskTag, serviceName: ServiceName): Set<TaskId> {
-    val taskIds = storage.getTaskIds(tag, serviceName)
-    logger.debug { "tag $tag - taskName $serviceName - getTaskIds $taskIds" }
-
+  override suspend fun getTaskIdsForTag(tag: TaskTag, serviceName: ServiceName): Set<TaskId> {
+    logger.trace { "tag $tag - taskName $serviceName - getting TaskIds" }
+    val taskIds = storage.getTaskIdsForTag(tag, serviceName)
+    logger.debug { "tag $tag - taskName $serviceName - got TaskIds $taskIds" }
     return taskIds
   }
 
-  override suspend fun addTaskId(tag: TaskTag, serviceName: ServiceName, taskId: TaskId) {
-    logger.debug { "tag $tag - name $serviceName - addTaskId $taskId" }
-    storage.addTaskId(tag, serviceName, taskId)
+  override suspend fun addTaskIdToTag(tag: TaskTag, serviceName: ServiceName, taskId: TaskId) {
+    logger.trace { "tag $tag - name $serviceName - adding TaskId $taskId" }
+    storage.addTaskIdToTag(tag, serviceName, taskId)
+    logger.debug { "tag $tag - name $serviceName - added TaskId $taskId" }
   }
 
-  override suspend fun removeTaskId(tag: TaskTag, serviceName: ServiceName, taskId: TaskId) {
-    logger.debug { "tag $tag - name $serviceName - removeTaskId $taskId" }
-    storage.removeTaskId(tag, serviceName, taskId)
+  override suspend fun removeTaskIdFromTag(tag: TaskTag, serviceName: ServiceName, taskId: TaskId) {
+    logger.trace { "tag $tag - name $serviceName - removing TaskId $taskId" }
+    storage.removeTaskIdFromTag(tag, serviceName, taskId)
+    logger.debug { "tag $tag - name $serviceName - removed TaskId $taskId" }
+  }
+
+  override suspend fun setDelegatedTaskData(taskId: TaskId, data: DelegatedTaskData) {
+    logger.trace { "taskId $taskId - setting DelegatedTaskData $data" }
+    storage.setDelegatedTaskData(taskId, data)
+    logger.debug { "taskId $taskId - set DelegatedTaskData $data" }
+  }
+
+  override suspend fun delDelegatedTaskData(taskId: TaskId) {
+    logger.trace { "taskId $taskId - deleting DelegatedTaskData" }
+    storage.delDelegatedTaskData(taskId)
+    logger.debug { "taskId $taskId - deleted DelegatedTaskData" }
+  }
+
+  override suspend fun getDelegatedTaskData(taskId: TaskId): DelegatedTaskData? {
+    logger.trace { "taskId $taskId - getting DelegatedTaskData" }
+    val asyncData = storage.getDelegatedTaskData(taskId)
+    logger.debug { "taskId $taskId - got DelegatedTaskData $asyncData" }
+    return asyncData
   }
 
   @TestOnly

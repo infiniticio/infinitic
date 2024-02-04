@@ -37,12 +37,11 @@ import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.engine.messages.DispatchWorkflow
 import io.infinitic.common.workflows.tags.messages.AddTagToWorkflow
 import io.infinitic.common.workflows.tags.messages.DispatchWorkflowByCustomId
-import io.infinitic.tasks.executor.TaskEventHandler
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
 internal fun CoroutineScope.dispatchNewWorkflowCmd(
-  currentWorkflow: TaskEventHandler.CurrentWorkflow,
+  currentWorkflow: WorkflowRequester,
   pastCommand: DispatchNewWorkflowPastCommand,
   workflowTaskInstant: MillisInstant,
   producer: InfiniticProducer
@@ -67,11 +66,7 @@ internal fun CoroutineScope.dispatchNewWorkflowCmd(
           methodParameterTypes = command.methodParameterTypes,
           workflowTags = command.workflowTags,
           workflowMeta = command.workflowMeta,
-          requester = WorkflowRequester(
-              workflowId = currentWorkflow.workflowId,
-              workflowName = currentWorkflow.workflowName,
-              workflowMethodId = currentWorkflow.workflowMethodId,
-          ),
+          requester = currentWorkflow,
           clientWaiting = false,
           emitterName = emitterName,
           emittedAt = workflowTaskInstant,
@@ -119,11 +114,7 @@ internal fun CoroutineScope.dispatchNewWorkflowCmd(
           methodTimeout = command.methodTimeout,
           workflowTags = command.workflowTags,
           workflowMeta = command.workflowMeta,
-          requester = WorkflowRequester(
-              workflowId = currentWorkflow.workflowId,
-              workflowName = currentWorkflow.workflowName,
-              workflowMethodId = currentWorkflow.workflowMethodId,
-          ),
+          requester = currentWorkflow,
           clientWaiting = false,
           emitterName = emitterName,
           emittedAt = workflowTaskInstant,

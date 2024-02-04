@@ -24,10 +24,6 @@ package io.infinitic.workflows.engine.handlers
 
 import io.infinitic.common.clients.data.ClientName
 import io.infinitic.common.exceptions.thisShouldNotHappen
-import io.infinitic.common.requester.clientName
-import io.infinitic.common.requester.workflowId
-import io.infinitic.common.requester.workflowMethodId
-import io.infinitic.common.requester.workflowName
 import io.infinitic.common.transport.InfiniticProducer
 import io.infinitic.common.workflows.data.workflowMethods.PositionInWorkflowMethod
 import io.infinitic.common.workflows.data.workflowMethods.WorkflowMethod
@@ -50,11 +46,8 @@ internal fun CoroutineScope.dispatchMethod(
         true -> mutableSetOf(ClientName.from(message.emitterName))
         false -> mutableSetOf()
       },
-      parentWorkflowId = message.requester.workflowId,
-      parentWorkflowName = message.requester.workflowName,
-      parentWorkflowMethodId = message.requester.workflowMethodId,
-      parentClientName = message.requester.clientName,
-      methodName = message.methodName,
+      requester = message.requester,
+      methodName = message.workflowMethodName,
       methodParameterTypes = message.methodParameterTypes,
       methodParameters = message.methodParameters,
       workflowTaskIndexAtStart = state.workflowTaskIndex,

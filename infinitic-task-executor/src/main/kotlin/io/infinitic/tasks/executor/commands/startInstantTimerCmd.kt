@@ -24,34 +24,35 @@ package io.infinitic.tasks.executor.commands
 
 import io.infinitic.common.data.MillisInstant
 import io.infinitic.common.emitters.EmitterName
+import io.infinitic.common.requester.WorkflowRequester
 import io.infinitic.common.transport.DelayedWorkflowEngineTopic
 import io.infinitic.common.transport.InfiniticProducer
 import io.infinitic.common.workflows.data.commands.StartInstantTimerCommand
 import io.infinitic.common.workflows.data.commands.StartInstantTimerPastCommand
 import io.infinitic.common.workflows.data.timers.TimerId
-import io.infinitic.common.workflows.engine.messages.TimerCompleted
-import io.infinitic.tasks.executor.TaskEventHandler
+import io.infinitic.common.workflows.engine.messages.RemoteTimerCompleted
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
 internal fun CoroutineScope.startInstantTimerCmq(
-  current: TaskEventHandler.CurrentWorkflow,
+  current: WorkflowRequester,
   pastCommand: StartInstantTimerPastCommand,
   producer: InfiniticProducer
 ) = launch {
   val emitterName = EmitterName(producer.name)
   val command: StartInstantTimerCommand = pastCommand.command
 
-  val timerCompleted = TimerCompleted(
+  val remoteTimerCompleted = RemoteTimerCompleted(
       timerId = TimerId.from(pastCommand.commandId),
       workflowName = current.workflowName,
       workflowId = current.workflowId,
+      workflowMethodName = current.workflowMethodName,
       workflowMethodId = current.workflowMethodId,
       emitterName = emitterName,
       emittedAt = command.instant,
   )
 
   // todo: Check if there is a way not to use MillisInstant.now()
-  val delay = timerCompleted.emittedAt!! - MillisInstant.now()
-  with(producer) { timerCompleted.sendTo(DelayedWorkflowEngineTopic, delay) }
+  val delay = remoteTimerCompleted.emittedAt!! - MillisInstant.now()
+  with(producer) { remoteTimerCompleted.sendTo(DelayedWorkflowEngineTopic, delay) }
 }

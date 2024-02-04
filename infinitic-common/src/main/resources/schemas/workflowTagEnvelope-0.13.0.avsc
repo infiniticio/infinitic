@@ -111,6 +111,9 @@
             "name" : "workflowId",
             "type" : "string"
           }, {
+            "name" : "workflowMethodName",
+            "type" : "string"
+          }, {
             "name" : "workflowMethodId",
             "type" : "string"
           } ]

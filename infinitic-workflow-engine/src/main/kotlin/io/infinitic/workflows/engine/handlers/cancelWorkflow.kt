@@ -109,6 +109,7 @@ private fun CoroutineScope.cancelWorkflowMethod(
                 requester = WorkflowRequester(
                     workflowId = state.workflowId,
                     workflowName = state.workflowName,
+                    workflowMethodName = workflowMethod.methodName,
                     workflowMethodId = workflowMethod.workflowMethodId,
                 ),
             )
@@ -126,6 +127,7 @@ private fun CoroutineScope.cancelWorkflowMethod(
                 requester = WorkflowRequester(
                     workflowId = state.workflowId,
                     workflowName = state.workflowName,
+                    workflowMethodName = workflowMethod.methodName,
                     workflowMethodId = workflowMethod.workflowMethodId,
                 ),
             )
@@ -147,6 +149,7 @@ private fun CoroutineScope.cancelWorkflowMethod(
             requester = WorkflowRequester(
                 workflowId = state.workflowId,
                 workflowName = state.workflowName,
+                workflowMethodName = workflowMethod.methodName,
                 workflowMethodId = workflowMethod.workflowMethodId,
             ),
         )
@@ -161,6 +164,7 @@ private fun CoroutineScope.cancelWorkflowMethod(
     val methodCanceledEvent = MethodCanceledEvent(
         workflowName = state.workflowName,
         workflowId = state.workflowId,
+        workflowMethodName = workflowMethod.methodName,
         workflowMethodId = workflowMethod.workflowMethodId,
         awaitingRequesters = workflowMethod.awaitingRequesters,
         emitterName = emitterName,

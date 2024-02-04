@@ -24,31 +24,35 @@ package io.infinitic.tasks.tag
 
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.infinitic.common.clients.data.ClientName
+import io.infinitic.common.clients.messages.TaskCompleted
 import io.infinitic.common.clients.messages.TaskIdsByTag
 import io.infinitic.common.data.MillisInstant
 import io.infinitic.common.emitters.EmitterName
-import io.infinitic.common.tasks.tags.messages.AddTagToTask
+import io.infinitic.common.exceptions.thisShouldNotHappen
+import io.infinitic.common.tasks.tags.messages.AddTaskIdToTag
 import io.infinitic.common.tasks.tags.messages.CancelTaskByTag
+import io.infinitic.common.tasks.tags.messages.CompleteDelegatedTask
 import io.infinitic.common.tasks.tags.messages.GetTaskIdsByTag
-import io.infinitic.common.tasks.tags.messages.RemoveTagFromTask
+import io.infinitic.common.tasks.tags.messages.RemoveTaskIdFromTag
 import io.infinitic.common.tasks.tags.messages.RetryTaskByTag
 import io.infinitic.common.tasks.tags.messages.ServiceTagMessage
+import io.infinitic.common.tasks.tags.messages.SetDelegatedTaskData
 import io.infinitic.common.tasks.tags.storage.TaskTagStorage
 import io.infinitic.common.transport.ClientTopic
 import io.infinitic.common.transport.InfiniticProducerAsync
 import io.infinitic.common.transport.LoggedInfiniticProducer
+import io.infinitic.common.transport.WorkflowEngineTopic
+import io.infinitic.common.workflows.engine.messages.RemoteTaskCompleted
 import io.infinitic.tasks.tag.storage.LoggedTaskTagStorage
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.launch
 
 class TaskTagEngine(
   storage: TaskTagStorage,
   producerAsync: InfiniticProducerAsync
 ) {
-  private lateinit var scope: CoroutineScope
-
-  private val storage = LoggedTaskTagStorage(this::class.java.name, storage)
+  private val storage = LoggedTaskTagStorage(storage).apply {
+    logName = this::class.java.name
+  }
 
   private val producer = LoggedInfiniticProducer(this::class.java.name, producerAsync)
 
@@ -56,62 +60,54 @@ class TaskTagEngine(
 
   private val emitterName by lazy { EmitterName(producer.name) }
 
-
-  @Suppress("UNUSED_PARAMETER")
-  suspend fun handle(message: ServiceTagMessage, publishTime: MillisInstant) {
+  suspend fun handle(message: ServiceTagMessage, publishTime: MillisInstant) = coroutineScope {
     logger.debug { "receiving $message" }
 
-    process(message)
-
-    storage.setLastMessageId(message.taskTag, message.serviceName, message.messageId)
-  }
-
-  // coroutineScope let send messages in parallel
-  // it's important as we can have a lot of them
-  private suspend fun process(message: ServiceTagMessage) = coroutineScope {
-    scope = this
-
     when (message) {
-      is AddTagToTask -> addTagToTask(message)
-      is RemoveTagFromTask -> removeTagFromTask(message)
-      is CancelTaskByTag -> cancelTaskByTag(message)
-      is RetryTaskByTag -> retryTaskByTag(message)
+      is AddTaskIdToTag -> addTaskIdToTag(message)
+      is RemoveTaskIdFromTag -> removeTaskIdFromTag(message)
+      is CancelTaskByTag -> TODO()
+      is RetryTaskByTag -> thisShouldNotHappen()
+      is SetDelegatedTaskData -> setDelegatedTaskData(message)
+      is CompleteDelegatedTask -> completeAsyncTask(message, publishTime)
       is GetTaskIdsByTag -> getTaskIds(message)
+      else -> thisShouldNotHappen()
     }
   }
 
-  private suspend fun addTagToTask(message: AddTagToTask) {
-    storage.addTaskId(message.taskTag, message.serviceName, message.taskId)
+  private suspend fun addTaskIdToTag(message: AddTaskIdToTag) {
+    storage.addTaskIdToTag(message.taskTag, message.serviceName, message.taskId)
   }
 
-  private suspend fun removeTagFromTask(message: RemoveTagFromTask) {
-    storage.removeTaskId(message.taskTag, message.serviceName, message.taskId)
+  private suspend fun removeTaskIdFromTag(message: RemoveTaskIdFromTag) {
+    storage.removeTaskIdFromTag(message.taskTag, message.serviceName, message.taskId)
   }
 
-  private suspend fun retryTaskByTag(message: RetryTaskByTag) {
-    // is not an idempotent action
-    if (hasMessageAlreadyBeenHandled(message)) return
+  private suspend fun setDelegatedTaskData(message: SetDelegatedTaskData) {
+    storage.setDelegatedTaskData(message.taskId, message.delegatedTaskData)
+  }
 
-    val taskIds = storage.getTaskIds(message.taskTag, message.serviceName)
-    when (taskIds.isEmpty()) {
-      true -> discardTagWithoutIds(message)
-      false -> taskIds.forEach { TODO() }
+  private suspend fun completeAsyncTask(
+    message: CompleteDelegatedTask,
+    publishTime: MillisInstant
+  ) {
+    storage.getDelegatedTaskData(message.taskId)?.let {
+      // send to waiting client
+      TaskCompleted.from(it, message.returnValue, emitterName)?.let {
+        with(producer) { it.sendTo(ClientTopic) }
+      }
+      // send to waiting workflow
+      RemoteTaskCompleted.from(it, message.returnValue, emitterName, publishTime)?.let {
+        with(producer) { it.sendTo(WorkflowEngineTopic) }
+      }
+      // delete delegatedTaskData
+      storage.delDelegatedTaskData(message.taskId)
     }
-  }
-
-  private suspend fun cancelTaskByTag(message: CancelTaskByTag) {
-    // is not an idempotent action
-    if (hasMessageAlreadyBeenHandled(message)) return
-
-    val ids = storage.getTaskIds(message.taskTag, message.serviceName)
-    when (ids.isEmpty()) {
-      true -> discardTagWithoutIds(message)
-      false -> ids.forEach { TODO() }
-    }
+      ?: logger.warn { "Discarding message as no DelegatedTaskData found $message" }
   }
 
   private suspend fun getTaskIds(message: GetTaskIdsByTag) {
-    val taskIds = storage.getTaskIds(message.taskTag, message.serviceName)
+    val taskIds = storage.getTaskIdsForTag(message.taskTag, message.serviceName)
 
     val taskIdsByTag = TaskIdsByTag(
         recipientName = ClientName.from(message.emitterName),
@@ -121,20 +117,6 @@ class TaskTagEngine(
         emitterName = emitterName,
     )
 
-    scope.launch { with(producer) { taskIdsByTag.sendTo(ClientTopic) } }
-  }
-
-  private suspend fun hasMessageAlreadyBeenHandled(message: ServiceTagMessage) =
-      when (storage.getLastMessageId(message.taskTag, message.serviceName)) {
-        message.messageId -> {
-          logger.info { "discarding as state already contains this messageId: $message" }
-          true
-        }
-
-        else -> false
-      }
-
-  private fun discardTagWithoutIds(message: ServiceTagMessage) {
-    logger.debug { "discarding as no id found for the provided tag: $message" }
+    with(producer) { taskIdsByTag.sendTo(ClientTopic) }
   }
 }

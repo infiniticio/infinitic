@@ -83,7 +83,7 @@ data class SendSignalByTag(
   @AvroName("channelSignalId") val signalId: SignalId,
   @AvroName("channelSignal") val signalData: SignalData,
   @AvroName("channelSignalTypes") val channelTypes: Set<ChannelType>,
-  @AvroName("emitterWorkflowId") var parentWorkflowId: WorkflowId?,
+  @AvroName("emitterWorkflowId") var parentWorkflowId: WorkflowId? = null,
   @AvroDefault(Avro.NULL) override val requester: Requester?,
   @AvroDefault(Avro.NULL) override val emittedAt: MillisInstant?,
   override val emitterName: EmitterName,
@@ -202,9 +202,9 @@ data class DispatchWorkflowByCustomId(
   @AvroDefault(Avro.NULL) val methodTimeout: MillisDuration? = null,
   val workflowTags: Set<WorkflowTag>,
   val workflowMeta: WorkflowMeta,
-  @Deprecated("Not used anymore after 0.13.0") val parentWorkflowName: WorkflowName? = null,
-  @Deprecated("Not used anymore after 0.13.0") val parentWorkflowId: WorkflowId? = null,
-  @Deprecated("Not used anymore after 0.13.0") val parentMethodRunId: WorkflowMethodId? = null,
+  @Deprecated("Not used since version 0.13.0") val parentWorkflowName: WorkflowName? = null,
+  @Deprecated("Not used since version 0.13.0") val parentWorkflowId: WorkflowId? = null,
+  @Deprecated("Not used since version 0.13.0") val parentMethodRunId: WorkflowMethodId? = null,
   @AvroDefault(Avro.NULL) override var requester: Requester?,
   val clientWaiting: Boolean,
   override val emitterName: EmitterName,
@@ -219,8 +219,9 @@ data class DispatchWorkflowByCustomId(
       null -> ClientRequester(clientName = ClientName.from(emitterName))
       else -> WorkflowRequester(
           workflowId = parentWorkflowId,
-          workflowName = parentWorkflowName ?: WorkflowName("Undefined"),
-          workflowMethodId = parentMethodRunId ?: WorkflowMethodId("Undefined"),
+          workflowName = parentWorkflowName ?: WorkflowName("undefined"),
+          workflowMethodName = MethodName("undefined"),
+          workflowMethodId = parentMethodRunId ?: WorkflowMethodId("undefined"),
       )
     }
   }
@@ -236,9 +237,9 @@ data class DispatchMethodByTag(
   override val workflowName: WorkflowName,
   override val workflowTag: WorkflowTag,
   @AvroName("methodRunId") val workflowMethodId: WorkflowMethodId,
-  @Deprecated("Not used anymore after 0.13.0") val parentWorkflowId: WorkflowId? = null,
-  @Deprecated("Not used anymore after 0.13.0") val parentWorkflowName: WorkflowName? = null,
-  @Deprecated("Not used anymore after 0.13.0") val parentMethodRunId: WorkflowMethodId? = null,
+  @Deprecated("Not used since version 0.13.0") val parentWorkflowId: WorkflowId? = null,
+  @Deprecated("Not used since version 0.13.0") val parentWorkflowName: WorkflowName? = null,
+  @Deprecated("Not used since version 0.13.0") val parentMethodRunId: WorkflowMethodId? = null,
   @AvroDefault(Avro.NULL) override var requester: Requester?,
   val clientWaiting: Boolean,
   val methodName: MethodName,
@@ -255,8 +256,9 @@ data class DispatchMethodByTag(
       null -> ClientRequester(clientName = ClientName.from(emitterName))
       else -> WorkflowRequester(
           workflowId = parentWorkflowId,
-          workflowName = parentWorkflowName ?: WorkflowName("Undefined"),
-          workflowMethodId = parentMethodRunId ?: WorkflowMethodId("Undefined"),
+          workflowName = parentWorkflowName ?: WorkflowName("undefined"),
+          workflowMethodName = MethodName("undefined"),
+          workflowMethodId = parentMethodRunId ?: WorkflowMethodId("undefined"),
       )
     }
   }

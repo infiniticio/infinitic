@@ -24,10 +24,6 @@ package io.infinitic.workflows.engine.handlers
 
 import io.infinitic.common.emitters.EmitterName
 import io.infinitic.common.exceptions.thisShouldNotHappen
-import io.infinitic.common.requester.clientName
-import io.infinitic.common.requester.workflowId
-import io.infinitic.common.requester.workflowMethodId
-import io.infinitic.common.requester.workflowName
 import io.infinitic.common.transport.InfiniticProducer
 import io.infinitic.common.transport.WorkflowEventsTopic
 import io.infinitic.common.workflows.data.workflowMethods.PositionInWorkflowMethod
@@ -49,10 +45,7 @@ internal fun CoroutineScope.dispatchWorkflow(
   val workflowMethod = WorkflowMethod(
       workflowMethodId = WorkflowMethodId.from(message.workflowId),
       waitingClients = message.waitingClients(),
-      parentWorkflowId = message.requester.workflowId,
-      parentWorkflowName = message.requester.workflowName,
-      parentWorkflowMethodId = message.requester.workflowMethodId,
-      parentClientName = message.requester.clientName,
+      requester = message.requester,
       methodName = message.methodName,
       methodParameterTypes = message.methodParameterTypes,
       methodParameters = message.methodParameters,
@@ -80,7 +73,7 @@ internal fun CoroutineScope.dispatchWorkflow(
 
   launch {
     val emitterName = EmitterName(producer.name)
-    
+
     with(producer) {
       message.methodDispatchedEvent(emitterName).sendTo(WorkflowEventsTopic)
     }

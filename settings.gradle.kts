@@ -24,7 +24,7 @@ include("infinitic-autoclose")
 
 include("infinitic-common")
 
-include("infinitic-events")
+include("infinitic-cloudevents")
 
 include("infinitic-cache")
 

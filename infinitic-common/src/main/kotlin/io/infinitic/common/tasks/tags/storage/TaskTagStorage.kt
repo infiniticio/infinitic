@@ -22,8 +22,8 @@
  */
 package io.infinitic.common.tasks.tags.storage
 
-import io.infinitic.common.data.MessageId
 import io.infinitic.common.storage.Flushable
+import io.infinitic.common.tasks.data.DelegatedTaskData
 import io.infinitic.common.tasks.data.ServiceName
 import io.infinitic.common.tasks.data.TaskId
 import io.infinitic.common.tasks.data.TaskTag
@@ -36,13 +36,16 @@ import io.infinitic.common.tasks.data.TaskTag
  * should be transformed before being stored. These details are left to the implementation.
  */
 interface TaskTagStorage : Flushable {
-  suspend fun getLastMessageId(tag: TaskTag, serviceName: ServiceName): MessageId?
 
-  suspend fun setLastMessageId(tag: TaskTag, serviceName: ServiceName, messageId: MessageId)
+  suspend fun getTaskIdsForTag(tag: TaskTag, serviceName: ServiceName): Set<TaskId>
 
-  suspend fun getTaskIds(tag: TaskTag, serviceName: ServiceName): Set<TaskId>
+  suspend fun addTaskIdToTag(tag: TaskTag, serviceName: ServiceName, taskId: TaskId)
 
-  suspend fun addTaskId(tag: TaskTag, serviceName: ServiceName, taskId: TaskId)
+  suspend fun removeTaskIdFromTag(tag: TaskTag, serviceName: ServiceName, taskId: TaskId)
 
-  suspend fun removeTaskId(tag: TaskTag, serviceName: ServiceName, taskId: TaskId)
+  suspend fun getDelegatedTaskData(taskId: TaskId): DelegatedTaskData?
+
+  suspend fun setDelegatedTaskData(taskId: TaskId, data: DelegatedTaskData)
+
+  suspend fun delDelegatedTaskData(taskId: TaskId)
 }

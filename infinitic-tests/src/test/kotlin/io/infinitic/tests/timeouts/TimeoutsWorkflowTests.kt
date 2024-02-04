@@ -56,7 +56,7 @@ internal class TimeoutsWorkflowTests :
           e.deferredException.shouldBeInstanceOf<WorkflowTimedOutException>()
           val cause = e.deferredException as WorkflowTimedOutException
           cause.workflowName shouldBe TimeoutsWorkflow::class.java.name
-          cause.methodName shouldBe "withTimeoutOnMethod"
+          cause.workflowMethodName shouldBe "withTimeoutOnMethod"
         }
 
         "Synchronous call of a child-workflow running for less than its timeout should NOT throw" {

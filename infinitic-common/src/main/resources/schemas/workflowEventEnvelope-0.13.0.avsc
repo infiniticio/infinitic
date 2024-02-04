@@ -64,7 +64,7 @@
     "name" : "methodDispatchedEvent",
     "type" : [ "null", {
       "type" : "record",
-      "name" : "MethodDispatchedEvent",
+      "name" : "MethodCommandedEvent",
       "namespace" : "io.infinitic.workflows.engine",
       "fields" : [ {
         "name" : "version",
@@ -139,6 +139,9 @@
             "name" : "workflowId",
             "type" : "string"
           }, {
+            "name" : "workflowMethodName",
+            "type" : "string"
+          }, {
             "name" : "workflowMethodId",
             "type" : "string"
           } ]
@@ -166,6 +169,9 @@
         "type" : "string"
       }, {
         "name" : "workflowId",
+        "type" : "string"
+      }, {
+        "name" : "workflowMethodName",
         "type" : "string"
       }, {
         "name" : "workflowMethodId",
@@ -204,10 +210,10 @@
         "name" : "workflowId",
         "type" : "string"
       }, {
-        "name" : "workflowMethodId",
+        "name" : "workflowMethodName",
         "type" : "string"
       }, {
-        "name" : "workflowMethodName",
+        "name" : "workflowMethodId",
         "type" : "string"
       }, {
         "name" : "awaitingRequesters",
@@ -244,6 +250,10 @@
           }, {
             "name" : "workflowId",
             "type" : "string"
+          }, {
+            "name" : "workflowMethodName",
+            "type" : [ "null", "string" ],
+            "default" : null
           }, {
             "name" : "methodRunId",
             "type" : [ "null", "string" ]
@@ -293,10 +303,10 @@
             "name" : "workflowName",
             "type" : "string"
           }, {
-            "name" : "methodName",
+            "name" : "workflowId",
             "type" : "string"
           }, {
-            "name" : "workflowId",
+            "name" : "methodName",
             "type" : "string"
           }, {
             "name" : "methodRunId",
@@ -355,6 +365,10 @@
                 "name" : "taskName",
                 "type" : "string"
               }, {
+                "name" : "methodName",
+                "type" : [ "null", "string" ],
+                "default" : null
+              }, {
                 "name" : "taskId",
                 "type" : "string"
               } ]
@@ -367,6 +381,10 @@
               }, {
                 "name" : "workflowId",
                 "type" : "string"
+              }, {
+                "name" : "workflowMethodName",
+                "type" : [ "null", "string" ],
+                "default" : null
               }, {
                 "name" : "methodRunId",
                 "type" : [ "null", "string" ]
@@ -394,6 +412,9 @@
         "type" : "string"
       }, {
         "name" : "workflowId",
+        "type" : "string"
+      }, {
+        "name" : "workflowMethodName",
         "type" : "string"
       }, {
         "name" : "workflowMethodId",
@@ -429,6 +450,9 @@
         "name" : "workflowId",
         "type" : "string"
       }, {
+        "name" : "workflowMethodName",
+        "type" : "string"
+      }, {
         "name" : "workflowMethodId",
         "type" : "string"
       }, {
@@ -438,9 +462,6 @@
           "items" : [ "io.infinitic.common.requester.ClientRequester", "io.infinitic.common.requester.WorkflowRequester" ]
         }
       }, {
-        "name" : "workflowMethodName",
-        "type" : "string"
-      }, {
         "name" : "emitterName",
         "type" : "string"
       } ]
@@ -449,7 +470,7 @@
     "name" : "taskDispatched",
     "type" : [ "null", {
       "type" : "record",
-      "name" : "TaskDispatchedEvent",
+      "name" : "RemoteTaskDispatchedEvent",
       "namespace" : "io.infinitic.workflows.engine",
       "fields" : [ {
         "name" : "version",
@@ -459,10 +480,10 @@
         "name" : "messageId",
         "type" : "string"
       }, {
-        "name" : "taskDispatched",
+        "name" : "remoteTaskDispatched",
         "type" : {
           "type" : "record",
-          "name" : "TaskDispatched",
+          "name" : "RemoteTaskDispatchedDesc",
           "fields" : [ {
             "name" : "taskId",
             "type" : "string"
@@ -493,6 +514,9 @@
         "name" : "workflowId",
         "type" : "string"
       }, {
+        "name" : "workflowMethodName",
+        "type" : "string"
+      }, {
         "name" : "workflowMethodId",
         "type" : "string"
       }, {
@@ -504,7 +528,7 @@
     "name" : "childDispatched",
     "type" : [ "null", {
       "type" : "record",
-      "name" : "ChildMethodDispatchedEvent",
+      "name" : "RemoteMethodDispatchedEvent",
       "namespace" : "io.infinitic.workflows.engine",
       "fields" : [ {
         "name" : "version",
@@ -514,15 +538,18 @@
         "name" : "messageId",
         "type" : "string"
       }, {
-        "name" : "childMethodDispatched",
+        "name" : "remoteMethodDispatched",
         "type" : {
           "type" : "record",
-          "name" : "ChildMethodDispatched",
+          "name" : "RemoteMethodDispatchedDesc",
           "fields" : [ {
             "name" : "workflowId",
             "type" : "string"
           }, {
             "name" : "workflowName",
+            "type" : "string"
+          }, {
+            "name" : "workflowMethodName",
             "type" : "string"
           }, {
             "name" : "workflowMethodId",
@@ -549,6 +576,9 @@
         "type" : "string"
       }, {
         "name" : "workflowId",
+        "type" : "string"
+      }, {
+        "name" : "workflowMethodName",
         "type" : "string"
       }, {
         "name" : "workflowMethodId",

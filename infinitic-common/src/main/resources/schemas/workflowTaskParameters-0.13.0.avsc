@@ -81,11 +81,44 @@
         "name" : "methodRunId",
         "type" : "string"
       }, {
+        "name" : "requester",
+        "type" : [ "null", {
+          "type" : "record",
+          "name" : "ClientRequester",
+          "namespace" : "io.infinitic.common.requester",
+          "fields" : [ {
+            "name" : "clientName",
+            "type" : "string"
+          } ]
+        }, {
+          "type" : "record",
+          "name" : "WorkflowRequester",
+          "namespace" : "io.infinitic.common.requester",
+          "fields" : [ {
+            "name" : "workflowName",
+            "type" : "string"
+          }, {
+            "name" : "workflowId",
+            "type" : "string"
+          }, {
+            "name" : "workflowMethodName",
+            "type" : "string"
+          }, {
+            "name" : "workflowMethodId",
+            "type" : "string"
+          } ]
+        } ],
+        "default" : null
+      }, {
         "name" : "parentWorkflowId",
         "type" : [ "null", "string" ]
       }, {
         "name" : "parentWorkflowName",
         "type" : [ "null", "string" ]
+      }, {
+        "name" : "parentWorkflowMethodName",
+        "type" : [ "null", "string" ],
+        "default" : null
       }, {
         "name" : "parentMethodRunId",
         "type" : [ "null", "string" ]
@@ -170,6 +203,10 @@
                       "name" : "workflowId",
                       "type" : "string"
                     }, {
+                      "name" : "workflowMethodName",
+                      "type" : [ "null", "string" ],
+                      "default" : null
+                    }, {
                       "name" : "methodRunId",
                       "type" : [ "null", "string" ]
                     } ]
@@ -248,10 +285,10 @@
                       "name" : "workflowName",
                       "type" : "string"
                     }, {
-                      "name" : "methodName",
+                      "name" : "workflowId",
                       "type" : "string"
                     }, {
-                      "name" : "workflowId",
+                      "name" : "methodName",
                       "type" : "string"
                     }, {
                       "name" : "methodRunId",
@@ -310,6 +347,10 @@
                           "name" : "taskName",
                           "type" : "string"
                         }, {
+                          "name" : "methodName",
+                          "type" : [ "null", "string" ],
+                          "default" : null
+                        }, {
                           "name" : "taskId",
                           "type" : "string"
                         } ]
@@ -322,6 +363,10 @@
                         }, {
                           "name" : "workflowId",
                           "type" : "string"
+                        }, {
+                          "name" : "workflowMethodName",
+                          "type" : [ "null", "string" ],
+                          "default" : null
                         }, {
                           "name" : "methodRunId",
                           "type" : [ "null", "string" ]

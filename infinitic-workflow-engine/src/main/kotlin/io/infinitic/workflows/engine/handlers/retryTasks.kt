@@ -23,12 +23,12 @@
 package io.infinitic.workflows.engine.handlers
 
 import io.infinitic.common.emitters.EmitterName
-import io.infinitic.common.exceptions.thisShouldNotHappen
+import io.infinitic.common.requester.WorkflowRequester
 import io.infinitic.common.tasks.data.TaskId
 import io.infinitic.common.tasks.data.TaskRetryIndex
 import io.infinitic.common.tasks.executors.errors.TaskTimedOutError
 import io.infinitic.common.tasks.executors.messages.ExecuteTask
-import io.infinitic.common.tasks.tags.messages.AddTagToTask
+import io.infinitic.common.tasks.tags.messages.AddTaskIdToTag
 import io.infinitic.common.transport.DelayedWorkflowEngineTopic
 import io.infinitic.common.transport.InfiniticProducer
 import io.infinitic.common.transport.ServiceExecutorTopic
@@ -36,8 +36,9 @@ import io.infinitic.common.transport.ServiceTagTopic
 import io.infinitic.common.workflows.data.commands.CommandId
 import io.infinitic.common.workflows.data.commands.CommandStatus
 import io.infinitic.common.workflows.data.commands.DispatchTaskPastCommand
+import io.infinitic.common.workflows.data.workflowMethods.WorkflowMethod
+import io.infinitic.common.workflows.engine.messages.RemoteTaskTimedOut
 import io.infinitic.common.workflows.engine.messages.RetryTasks
-import io.infinitic.common.workflows.engine.messages.TaskTimedOut
 import io.infinitic.common.workflows.engine.state.WorkflowState
 import io.infinitic.workflows.DeferredStatus
 import kotlinx.coroutines.CoroutineScope
@@ -73,7 +74,7 @@ internal fun CoroutineScope.retryTasks(
         // dispatch a new sequence of those task
         .forEach { dispatchTaskPastCommand ->
           dispatchTaskPastCommand.taskRetrySequence += 1
-          reDispatchTaskCmd(dispatchTaskPastCommand, state, producer)
+          reDispatchTaskCmd(dispatchTaskPastCommand, state, workflowMethod, producer)
           dispatchTaskPastCommand.commandStatus = CommandStatus.Ongoing
         }
   }
@@ -82,6 +83,7 @@ internal fun CoroutineScope.retryTasks(
 private fun CoroutineScope.reDispatchTaskCmd(
   pastCommand: DispatchTaskPastCommand,
   state: WorkflowState,
+  workflowMethod: WorkflowMethod,
   producer: InfiniticProducer
 ) {
   val emitterName = EmitterName(producer.name)
@@ -94,9 +96,12 @@ private fun CoroutineScope.reDispatchTaskCmd(
         emitterName = emitterName,
         taskRetrySequence = pastCommand.taskRetrySequence,
         taskRetryIndex = TaskRetryIndex(0),
-        workflowName = state.workflowName,
-        workflowId = state.workflowId,
-        workflowMethodId = state.runningWorkflowMethodId ?: thisShouldNotHappen(),
+        requester = WorkflowRequester(
+            workflowName = state.workflowName,
+            workflowId = state.workflowId,
+            workflowMethodName = workflowMethod.methodName,
+            workflowMethodId = workflowMethod.workflowMethodId,
+        ),
         taskTags = taskTags,
         taskMeta = taskMeta,
         clientWaiting = false,
@@ -112,19 +117,19 @@ private fun CoroutineScope.reDispatchTaskCmd(
 
   // add provided tags
   executeTask.taskTags.forEach {
-    val addTagToTask = AddTagToTask(
+    val addTaskIdToTag = AddTaskIdToTag(
         serviceName = executeTask.serviceName,
         taskTag = it,
         taskId = executeTask.taskId,
         emitterName = emitterName,
     )
-    launch { with(producer) { addTagToTask.sendTo(ServiceTagTopic) } }
+    launch { with(producer) { addTaskIdToTag.sendTo(ServiceTagTopic) } }
   }
 
   // send global task timeout if any
   pastCommand.command.methodTimeout?.let {
-    val taskTimedOut = with(pastCommand.command) {
-      TaskTimedOut(
+    val remoteTaskTimedOut = with(pastCommand.command) {
+      RemoteTaskTimedOut(
           taskTimedOutError = TaskTimedOutError(
               serviceName = serviceName,
               taskId = executeTask.taskId,
@@ -132,12 +137,13 @@ private fun CoroutineScope.reDispatchTaskCmd(
           ),
           workflowName = state.workflowName,
           workflowId = state.workflowId,
-          workflowMethodId = state.runningWorkflowMethodId ?: thisShouldNotHappen(),
+          workflowMethodName = workflowMethod.methodName,
+          workflowMethodId = workflowMethod.workflowMethodId,
           emitterName = emitterName,
           emittedAt = state.runningWorkflowTaskInstant,
       )
     }
-    launch { with(producer) { taskTimedOut.sendTo(DelayedWorkflowEngineTopic, it) } }
+    launch { with(producer) { remoteTaskTimedOut.sendTo(DelayedWorkflowEngineTopic, it) } }
   }
 }
 

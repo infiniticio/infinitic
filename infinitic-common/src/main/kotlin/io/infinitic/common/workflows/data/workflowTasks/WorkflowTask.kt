@@ -22,6 +22,12 @@
  */
 package io.infinitic.common.workflows.data.workflowTasks
 
+import io.infinitic.common.tasks.data.ServiceName
+
 interface WorkflowTask {
   fun handle(workflowTaskParameters: WorkflowTaskParameters): WorkflowTaskReturnValue
+
+  companion object {
+    val SERVICE_NAME = ServiceName("infinitic.workflow.Executor")
+  }
 }

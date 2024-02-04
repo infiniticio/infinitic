@@ -28,9 +28,14 @@ import kotlinx.serialization.Serializable
 @Serializable
 @AvroNamespace("io.infinitic.tasks.tag")
 enum class TaskTagMessageType {
+  GET_TASK_IDS_BY_TAG,
   ADD_TAG_TO_TASK,
   REMOVE_TAG_FROM_TASK,
   CANCEL_TASK_BY_TAG,
+
+  @Deprecated("unused")
   RETRY_TASK_BY_TAG,
-  GET_TASK_IDS_BY_TAG
+  SET_ASYNC_TASK_DATA,
+  COMPLETE_ASYNC_TASK
 }
+

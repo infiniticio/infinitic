@@ -23,12 +23,15 @@
 package io.infinitic.tasks.executor
 
 import io.github.oshai.kotlinlogging.KotlinLogging
+import io.infinitic.annotations.Delegated
 import io.infinitic.clients.InfiniticClientInterface
 import io.infinitic.common.data.MillisDuration
 import io.infinitic.common.data.MillisInstant
 import io.infinitic.common.emitters.EmitterName
 import io.infinitic.common.exceptions.thisShouldNotHappen
 import io.infinitic.common.parser.getMethodPerNameAndParameters
+import io.infinitic.common.requester.workflowId
+import io.infinitic.common.requester.workflowName
 import io.infinitic.common.tasks.events.messages.TaskCompletedEvent
 import io.infinitic.common.tasks.events.messages.TaskFailedEvent
 import io.infinitic.common.tasks.events.messages.TaskRetriedEvent
@@ -42,6 +45,7 @@ import io.infinitic.common.transport.ServiceEventsTopic
 import io.infinitic.common.utils.getCheckMode
 import io.infinitic.common.utils.getWithRetry
 import io.infinitic.common.utils.getWithTimeout
+import io.infinitic.common.utils.isDelegated
 import io.infinitic.common.workers.config.RetryPolicy
 import io.infinitic.common.workers.registry.WorkerRegistry
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskParameters
@@ -73,6 +77,7 @@ class TaskExecutor(
   private var withRetry: WithRetry? = null
   private var withTimeout: WithTimeout? = null
   private val emitterName by lazy { EmitterName(producerAsync.producerName) }
+  private var isDelegated = false
 
   @Suppress("UNUSED_PARAMETER")
   suspend fun handle(msg: ServiceExecutorMessage, publishTime: MillisInstant) {
@@ -106,8 +111,8 @@ class TaskExecutor(
         serviceName = msg.serviceName,
         taskId = msg.taskId,
         taskName = msg.methodName,
-        workflowId = msg.workflowId,
-        workflowName = msg.workflowName,
+        workflowId = msg.requester.workflowId,
+        workflowName = msg.requester.workflowName,
         workflowVersion = msg.workflowVersion,
         retrySequence = msg.taskRetrySequence,
         retryIndex = msg.taskRetryIndex,
@@ -135,7 +140,7 @@ class TaskExecutor(
       withTimeout(timeout) {
         coroutineScope {
           // Put context in execution's thread (it may be used in the following method)
-          Task.context.set(taskContext)
+          Task.set(taskContext)
           // method execution
           method.invoke(service, *parameters)
         }
@@ -176,7 +181,7 @@ class TaskExecutor(
     val delayMillis = try {
       msg.logTrace { "retrieving delay before retry" }
       // We set the localThread context here as it may be used in withRetry
-      Task.context.set(taskContext)
+      Task.set(taskContext)
       // get seconds before retry
       withRetry?.getMillisBeforeRetry(taskContext.retryIndex.toInt(), cause)
     } catch (e: Exception) {
@@ -237,7 +242,13 @@ class TaskExecutor(
     value: Any?,
     meta: MutableMap<String, ByteArray>
   ) {
-    val event = TaskCompletedEvent.from(msg, emitterName, value, meta)
+    if (value != null && isDelegated) {
+      msg.logDebug {
+        "This method is marked with the '${Delegated::class.java.name}' " +
+            "annotation, provided result is ignored"
+      }
+    }
+    val event = TaskCompletedEvent.from(msg, emitterName, value, isDelegated, meta)
     with(producer) { event.sendTo(ServiceEventsTopic) }
   }
 
@@ -259,7 +270,7 @@ class TaskExecutor(
     when (msg.isWorkflowTask()) {
       true -> {
         val workflowTaskParameters = parameters.first() as WorkflowTaskParameters
-        val registered = workerRegistry.getRegisteredWorkflow(msg.workflowName!!)!!
+        val registered = workerRegistry.getRegisteredWorkflow(msg.requester.workflowName!!)!!
         val workflow = registered.getInstance(workflowTaskParameters.workflowVersion)
         val workflowMethod = with(workflowTaskParameters) {
           // method instance
@@ -318,6 +329,9 @@ class TaskExecutor(
           ?: taskMethod.getWithRetry().getOrThrow()
               // else use default value
               ?: DEFAULT_TASK_RETRY
+
+        // check is this method has the @Async annotation
+        this.isDelegated = taskMethod.isDelegated()
       }
     }
 
@@ -330,7 +344,7 @@ class TaskExecutor(
     }
   }
 
-  private fun ExecuteTask.logWarn(e: Exception, description: () -> String) {
+  private fun ExecuteTask.logWarn(e: Exception? = null, description: () -> String) {
     logger.warn(e) {
       "${serviceName}::${methodName} (${taskId}): ${description()}"
     }
