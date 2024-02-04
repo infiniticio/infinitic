@@ -31,7 +31,7 @@ dependencies {
   testImplementation(project(":infinitic-worker"))
   testImplementation(project(":infinitic-workflow-engine"))
   testImplementation(project(":infinitic-task-executor"))
-  testImplementation(project(":infinitic-transport-inMemory"))
+  testImplementation(project(":infinitic-transport-inmemory"))
   testImplementation(project(":infinitic-transport"))
   testImplementation(project(":infinitic-transport-pulsar"))
 }

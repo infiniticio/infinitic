@@ -26,7 +26,7 @@ dependencies {
   implementation(project(":infinitic-autoclose"))
 
   api(project(":infinitic-transport-pulsar"))
-  api(project(":infinitic-transport-inMemory"))
+  api(project(":infinitic-transport-inmemory"))
 }
 
 apply("../publish.gradle.kts")
