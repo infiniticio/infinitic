@@ -32,7 +32,7 @@ include("infinitic-storage")
 
 include("infinitic-transport")
 
-include("infinitic-transport-inmemory")
+include("infinitic-transport-inMemory")
 
 include("infinitic-transport-pulsar")
 
