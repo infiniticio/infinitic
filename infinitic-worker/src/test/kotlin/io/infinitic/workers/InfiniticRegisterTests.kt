@@ -128,7 +128,7 @@ workflows:
   - name: io.infinitic.workers.samples.WorkflowA
     class: io.infinitic.workers.samples.WorkflowAImpl
     concurrency: 5
-    stateEngine: null
+    workflowEngine: null
               """,
           )
           val register = InfiniticRegisterImpl.fromConfig(config)
@@ -147,7 +147,7 @@ workflows:
               """
 workflows:
   - name: io.infinitic.workers.samples.WorkflowA
-    stateEngine:
+    workflowEngine:
       concurrency: 5
               """,
           )
