@@ -54,18 +54,18 @@ import io.infinitic.common.workflows.engine.messages.WorkflowCmdMessage
 import io.infinitic.common.workflows.engine.messages.WorkflowCompletedEvent
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
 import io.infinitic.common.workflows.engine.messages.WorkflowEventMessage
-import io.infinitic.events.types.CANCEL
 import io.infinitic.events.types.CANCELED
+import io.infinitic.events.types.CANCEL_CMD
 import io.infinitic.events.types.ENDED
 import io.infinitic.events.types.EXECUTOR_COMPLETED
 import io.infinitic.events.types.EXECUTOR_DISPATCHED
 import io.infinitic.events.types.EXECUTOR_FAILED
-import io.infinitic.events.types.EXECUTOR_RETRY_COMMANDED
-import io.infinitic.events.types.METHOD_CANCEL
+import io.infinitic.events.types.EXECUTOR_RETRY_CMD
 import io.infinitic.events.types.METHOD_CANCELED
-import io.infinitic.events.types.METHOD_COMMANDED
+import io.infinitic.events.types.METHOD_CANCEL_CMD
 import io.infinitic.events.types.METHOD_COMPLETED
 import io.infinitic.events.types.METHOD_FAILED
+import io.infinitic.events.types.METHOD_START_CMD
 import io.infinitic.events.types.METHOD_TIMED_OUT
 import io.infinitic.events.types.REMOTE_METHOD_CANCELED
 import io.infinitic.events.types.REMOTE_METHOD_COMPLETED
@@ -73,29 +73,29 @@ import io.infinitic.events.types.REMOTE_METHOD_DISPATCHED
 import io.infinitic.events.types.REMOTE_METHOD_FAILED
 import io.infinitic.events.types.REMOTE_METHOD_TIMED_OUT
 import io.infinitic.events.types.REMOTE_METHOD_UNKNOWN
-import io.infinitic.events.types.REMOTE_TASKS_RETRY_COMMANDED
+import io.infinitic.events.types.REMOTE_TASKS_RETRY_CMD
 import io.infinitic.events.types.REMOTE_TASK_COMPLETED
 import io.infinitic.events.types.REMOTE_TASK_DISPATCHED
 import io.infinitic.events.types.REMOTE_TASK_FAILED
 import io.infinitic.events.types.REMOTE_TASK_TIMED_OUT
 import io.infinitic.events.types.REMOTE_TIMER_COMPLETED
-import io.infinitic.events.types.SIGNAL
-import io.infinitic.events.types.START
+import io.infinitic.events.types.SIGNAL_CMD
+import io.infinitic.events.types.START_CMD
 import io.infinitic.events.types.TYPE_WORKFLOW
 
 fun WorkflowCmdMessage.workflowType(): String? = when (this) {
-  is DispatchWorkflow -> START
-  is DispatchMethod -> METHOD_COMMANDED
+  is DispatchWorkflow -> START_CMD
+  is DispatchMethod -> METHOD_START_CMD
   is CancelWorkflow -> when (workflowMethodId) {
-    null -> CANCEL
-    else -> METHOD_CANCEL
+    null -> CANCEL_CMD
+    else -> METHOD_CANCEL_CMD
   }
 
   is CompleteTimers -> null
   is CompleteWorkflow -> null
-  is RetryTasks -> REMOTE_TASKS_RETRY_COMMANDED
-  is RetryWorkflowTask -> EXECUTOR_RETRY_COMMANDED
-  is SendSignal -> SIGNAL
+  is RetryTasks -> REMOTE_TASKS_RETRY_CMD
+  is RetryWorkflowTask -> EXECUTOR_RETRY_CMD
+  is SendSignal -> SIGNAL_CMD
   is WaitWorkflow -> null
 }?.let { "$TYPE_WORKFLOW.$it" }
 
@@ -124,7 +124,7 @@ fun WorkflowEngineMessage.workflowType(): String? = when (this) {
 fun WorkflowEventMessage.workflowType(): String = "$TYPE_WORKFLOW." + when (this) {
   is WorkflowCompletedEvent -> ENDED
   is WorkflowCanceledEvent -> CANCELED
-  is MethodCommandedEvent -> METHOD_COMMANDED
+  is MethodCommandedEvent -> METHOD_START_CMD
   is MethodCompletedEvent -> METHOD_COMPLETED
   is MethodFailedEvent -> METHOD_FAILED
   is MethodCanceledEvent -> METHOD_CANCELED
