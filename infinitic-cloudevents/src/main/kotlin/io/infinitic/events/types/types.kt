@@ -27,8 +27,8 @@ private const val TYPE_DOMAIN = "infinitic"
 const val TYPE_TASK = "$TYPE_DOMAIN.task"
 const val TYPE_WORKFLOW = "$TYPE_DOMAIN.workflow"
 
-const val START = "start"
-const val CANCEL = "cancel"
+const val START_CMD = "start"
+const val CANCEL_CMD = "cancel"
 const val ENDED = "ended"
 
 const val STARTED = "started"
@@ -38,11 +38,11 @@ const val COMPLETED = "completed"
 const val RETRY_SCHEDULED = "retryScheduled"
 const val COMPLETION_DELEGATED = "completionDelegated"
 
-const val REMOTE_TASKS_RETRY_COMMANDED = "retryTasks"
+const val REMOTE_TASKS_RETRY_CMD = "retryTasks"
 const val REMOTE_TASKS_RETRIED = "tasksRetried"
 
 // events related to signals
-const val SIGNAL = "signal"
+const val SIGNAL_CMD = "signal"
 const val SIGNAL_HANDLED = "signalHandled"
 const val SIGNAL_DISCARDED = "signalDiscarded"
 
@@ -50,13 +50,13 @@ const val SIGNAL_DISCARDED = "signalDiscarded"
 const val EXECUTOR_DISPATCHED = "executorDispatched"
 const val EXECUTOR_COMPLETED = "executorCompleted"
 const val EXECUTOR_FAILED = "executorFailed"
-const val EXECUTOR_RETRY_COMMANDED = "retryExecutor"
+const val EXECUTOR_RETRY_CMD = "retryExecutor"
 const val EXECUTOR_RETRIED = "executorRetried"
 
 // events related to workflow methods
-const val METHOD_CANCEL = "cancelMethod"
+const val METHOD_START_CMD = "startMethod"
+const val METHOD_CANCEL_CMD = "cancelMethod"
 const val METHOD_CANCELED = "methodCanceled"
-const val METHOD_COMMANDED = "startMethod"
 const val METHOD_COMPLETED = "methodCompleted"
 const val METHOD_FAILED = "methodFailed"
 const val METHOD_TIMED_OUT = "methodTimedOut"

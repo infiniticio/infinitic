@@ -20,6 +20,7 @@
  *
  * Licensor: infinitic.io
  */
+import com.adarshr.gradle.testlogger.theme.ThemeType
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 buildscript {
@@ -73,8 +74,13 @@ subprojects {
 
   tasks.withType<Test> {
     useJUnitPlatform()
-
-    testlogger { showFullStackTraces = true }
+    reports.html.required = true
+    testlogger {
+      theme = ThemeType.MOCHA
+      showSummary = true
+      showSkipped = true
+      showFullStackTraces = true
+    }
   }
 
   tasks.withType<KotlinCompile> {

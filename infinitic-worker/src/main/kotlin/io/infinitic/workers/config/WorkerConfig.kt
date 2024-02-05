@@ -154,19 +154,19 @@ data class WorkerConfig @JvmOverloads constructor(
         concurrency = concurrency ?: workflowDefault.tagEngine?.concurrency ?: w.concurrency
       }
 
-      w.stateEngine?.apply {
+      w.workflowEngine?.apply {
         // if storage is not defined,
         // then use default workflow workflowEngine engine storage
         // else use default storage
-        storage = storage ?: workflowDefault.stateEngine?.storage ?: this@WorkerConfig.storage
+        storage = storage ?: workflowDefault.workflowEngine?.storage ?: this@WorkerConfig.storage
         // if cache is not defined,
         // then use default workflow workflowEngine engine cache
         // else use default cache
-        cache = cache ?: workflowDefault.stateEngine?.cache ?: cache ?: this@WorkerConfig.cache
+        cache = cache ?: workflowDefault.workflowEngine?.cache ?: cache ?: this@WorkerConfig.cache
         // if concurrency is not defined,
         // then use default workflow workflowEngine engine concurrency
         // else use workflow concurrency
-        concurrency = concurrency ?: workflowDefault.stateEngine?.concurrency ?: w.concurrency
+        concurrency = concurrency ?: workflowDefault.workflowEngine?.concurrency ?: w.concurrency
       }
 
       // contrary to tagEngine/workflowEngine,

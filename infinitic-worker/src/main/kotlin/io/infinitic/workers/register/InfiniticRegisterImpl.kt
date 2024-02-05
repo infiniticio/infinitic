@@ -228,7 +228,7 @@ class InfiniticRegisterImpl : InfiniticRegister {
                   it.cache!!,
               )
             }
-            w.stateEngine?.let {
+            w.workflowEngine?.let {
               registerWorkflowStateEngine(
                   w.name,
                   it.concurrency!!,
