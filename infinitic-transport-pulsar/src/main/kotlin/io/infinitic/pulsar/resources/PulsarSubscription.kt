@@ -36,7 +36,7 @@ val Subscription<*>.type
 
 val Subscription<*>.defaultName
   get() = when (this) {
-    // IMPORTANT: subscription name must stay UNCHANGED through all Infinitic versions
+    // IMPORTANT: subscription name MUST stay UNCHANGED through all Infinitic versions
     // as Pulsar identify subscriptions through their name.
     // Changing it would create a new one, and users would lose the cursor on acknowledged messages
     is MainSubscription -> "${topic.prefix()}-subscription"

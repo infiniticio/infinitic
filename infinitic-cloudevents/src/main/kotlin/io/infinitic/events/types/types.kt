@@ -36,7 +36,7 @@ const val FAILED = "failed"
 const val CANCELED = "canceled"
 const val COMPLETED = "completed"
 const val RETRY_SCHEDULED = "retryScheduled"
-const val COMPLETION_DELEGATED = "completionDelegated"
+const val DELEGATION_COMPLETED = "delegationCompleted"
 
 const val REMOTE_TASKS_RETRY_CMD = "retryTasks"
 const val REMOTE_TASKS_RETRIED = "tasksRetried"
