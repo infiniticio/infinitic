@@ -313,6 +313,8 @@ class WorkflowEngine(
     when (message) {
       // these messages are expected, so we don't log them as warning
       is RemoteTaskTimedOut, is RemoteMethodTimedOut -> logger.debug(txt)
+      // this can happen in normal operation
+      is RemoteTimerCompleted -> logger.info(txt)
       else -> logger.warn(txt)
     }
   }
