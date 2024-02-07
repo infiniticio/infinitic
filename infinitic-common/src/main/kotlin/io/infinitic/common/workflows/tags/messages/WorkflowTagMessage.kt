@@ -220,6 +220,7 @@ data class DispatchWorkflowByCustomId(
       else -> WorkflowRequester(
           workflowId = parentWorkflowId,
           workflowName = parentWorkflowName ?: WorkflowName("undefined"),
+          workflowVersion = null,
           workflowMethodName = MethodName("undefined"),
           workflowMethodId = parentMethodRunId ?: WorkflowMethodId("undefined"),
       )
@@ -257,6 +258,7 @@ data class DispatchMethodByTag(
       else -> WorkflowRequester(
           workflowId = parentWorkflowId,
           workflowName = parentWorkflowName ?: WorkflowName("undefined"),
+          workflowVersion = null,
           workflowMethodName = MethodName("undefined"),
           workflowMethodId = parentMethodRunId ?: WorkflowMethodId("undefined"),
       )

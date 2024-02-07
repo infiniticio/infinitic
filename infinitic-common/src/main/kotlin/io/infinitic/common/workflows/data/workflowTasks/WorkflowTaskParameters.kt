@@ -51,7 +51,7 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 data class WorkflowTaskParameters(
-  @AvroDefault("0.9.7") val version: String = currentVersion,
+  @AvroName("version") @AvroDefault("0.9.7") val infiniticVersion: String = currentVersion,
   val taskId: TaskId,
   val workflowId: WorkflowId,
   val workflowName: WorkflowName,
@@ -75,6 +75,7 @@ data class WorkflowTaskParameters(
       requester = WorkflowRequester(
           workflowName = workflowName,
           workflowId = workflowId,
+          workflowVersion = workflowVersion,
           workflowMethodName = workflowMethod.methodName,
           workflowMethodId = workflowMethod.workflowMethodId,
       ),

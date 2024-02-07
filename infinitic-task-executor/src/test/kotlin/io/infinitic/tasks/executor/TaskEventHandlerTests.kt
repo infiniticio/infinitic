@@ -58,6 +58,7 @@ import io.infinitic.common.transport.DelayedWorkflowEngineTopic
 import io.infinitic.common.transport.InfiniticProducerAsync
 import io.infinitic.common.transport.ServiceTagTopic
 import io.infinitic.common.transport.WorkflowEngineTopic
+import io.infinitic.common.workers.config.WorkflowVersion
 import io.infinitic.common.workflows.data.workflowMethods.WorkflowMethodId
 import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.data.workflows.WorkflowName
@@ -84,6 +85,7 @@ private val clientRequester = ClientRequester(clientName = clientName)
 private val workflowRequester = WorkflowRequester(
     workflowId = workflowId,
     workflowName = workflowName,
+    workflowVersion = WorkflowVersion(2),
     workflowMethodId = methodRunId,
     workflowMethodName = MethodName("methodTest"),
 )

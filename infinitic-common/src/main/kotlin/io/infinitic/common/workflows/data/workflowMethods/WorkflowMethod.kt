@@ -81,6 +81,7 @@ data class WorkflowMethod(
       else -> WorkflowRequester(
           workflowId = parentWorkflowId,
           workflowName = parentWorkflowName ?: WorkflowName("undefined"),
+          workflowVersion = null,
           workflowMethodName = MethodName("undefined"),
           workflowMethodId = parentWorkflowMethodId ?: WorkflowMethodId("undefined"),
       )

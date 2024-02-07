@@ -20,13 +20,14 @@
  *
  * Licensor: infinitic.io
  */
-
 package io.infinitic.common.requester
 
+import com.github.avrokotlin.avro4k.AvroNamespace
 import io.infinitic.common.clients.data.ClientName
 import io.infinitic.common.data.methods.MethodName
 import io.infinitic.common.exceptions.thisShouldNotHappen
 import io.infinitic.common.utils.JsonAble
+import io.infinitic.common.workers.config.WorkflowVersion
 import io.infinitic.common.workflows.data.workflowMethods.WorkflowMethodId
 import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.data.workflows.WorkflowName
@@ -35,11 +36,13 @@ import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 
 @Serializable
+@AvroNamespace("io.infinitic.data")
 sealed interface Requester : JsonAble {
   override fun toJson(): JsonObject
 }
 
 @Serializable
+@AvroNamespace("io.infinitic.data")
 data class ClientRequester(
   val clientName: ClientName,
 ) : Requester {
@@ -47,8 +50,10 @@ data class ClientRequester(
 }
 
 @Serializable
+@AvroNamespace("io.infinitic.data")
 data class WorkflowRequester(
   val workflowName: WorkflowName,
+  val workflowVersion: WorkflowVersion?,
   val workflowId: WorkflowId,
   val workflowMethodName: MethodName,
   val workflowMethodId: WorkflowMethodId,

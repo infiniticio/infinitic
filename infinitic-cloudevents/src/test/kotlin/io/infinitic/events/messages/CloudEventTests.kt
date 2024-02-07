@@ -243,7 +243,7 @@ internal class CloudEventTests :
             event.type shouldBe when (it) {
               TaskStartedEvent::class -> "infinitic.task.started"
               TaskCompletedEvent::class -> when ((message as TaskCompletedEvent).isDelegated) {
-                true -> "infinitic.task.completionDelegated"
+                true -> "infinitic.task.delegationCompleted"
                 false -> "infinitic.task.completed"
               }
 

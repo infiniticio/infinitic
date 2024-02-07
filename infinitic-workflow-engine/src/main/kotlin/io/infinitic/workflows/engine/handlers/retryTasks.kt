@@ -99,6 +99,7 @@ private fun CoroutineScope.reDispatchTaskCmd(
         requester = WorkflowRequester(
             workflowName = state.workflowName,
             workflowId = state.workflowId,
+            workflowVersion = state.workflowVersion,
             workflowMethodName = workflowMethod.methodName,
             workflowMethodId = workflowMethod.workflowMethodId,
         ),

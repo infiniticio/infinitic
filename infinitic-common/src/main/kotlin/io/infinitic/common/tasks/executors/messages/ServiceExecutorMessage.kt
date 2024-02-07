@@ -112,6 +112,7 @@ data class ExecuteTask(
       else -> WorkflowRequester(
           workflowId = workflowId,
           workflowName = workflowName ?: WorkflowName("undefined"),
+          workflowVersion = null,
           workflowMethodName = MethodName("undefined"),
           workflowMethodId = workflowMethodId ?: WorkflowMethodId("undefined"),
       )

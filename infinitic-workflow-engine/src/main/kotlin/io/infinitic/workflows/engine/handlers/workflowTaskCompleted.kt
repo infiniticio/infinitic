@@ -214,6 +214,7 @@ internal fun dispatchMethodOnRunningWorkflowCmd(
         requester = WorkflowRequester(
             workflowId = state.workflowId,
             workflowName = state.workflowName,
+            workflowVersion = state.workflowVersion,
             workflowMethodName = workflowMethod.methodName,
             workflowMethodId = workflowMethod.workflowMethodId,
         ),
@@ -268,6 +269,7 @@ internal fun sendSignalCmd(
         requester = WorkflowRequester(
             workflowId = state.workflowId,
             workflowName = state.workflowName,
+            workflowVersion = state.workflowVersion,
             workflowMethodName = workflowMethod.methodName,
             workflowMethodId = workflowMethod.workflowMethodId,
         ),
