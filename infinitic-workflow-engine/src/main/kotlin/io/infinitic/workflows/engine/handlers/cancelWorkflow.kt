@@ -30,7 +30,7 @@ import io.infinitic.common.transport.InfiniticProducer
 import io.infinitic.common.transport.WorkflowEngineTopic
 import io.infinitic.common.transport.WorkflowEventsTopic
 import io.infinitic.common.transport.WorkflowTagTopic
-import io.infinitic.common.workflows.data.commands.DispatchMethodOnRunningWorkflowCommand
+import io.infinitic.common.workflows.data.commands.DispatchNewMethodCommand
 import io.infinitic.common.workflows.data.commands.DispatchNewWorkflowCommand
 import io.infinitic.common.workflows.data.workflowMethods.WorkflowMethod
 import io.infinitic.common.workflows.data.workflowMethods.WorkflowMethodId
@@ -97,7 +97,7 @@ private fun CoroutineScope.cancelWorkflowMethod(
   // cancel children
   workflowMethod.pastCommands.forEach {
     when (val command = it.command) {
-      is DispatchMethodOnRunningWorkflowCommand -> {
+      is DispatchNewMethodCommand -> {
         when {
           command.workflowId != null -> launch {
             val cancelWorkflow = CancelWorkflow(

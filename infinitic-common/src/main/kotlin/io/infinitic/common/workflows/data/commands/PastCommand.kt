@@ -45,7 +45,7 @@ sealed class PastCommand {
       commandStatus: CommandStatus,
       command: Command
     ) = when (command) {
-      is DispatchMethodOnRunningWorkflowCommand -> DispatchMethodOnRunningWorkflowPastCommand(
+      is DispatchNewMethodCommand -> DispatchNewMethodPastCommand(
           commandId, commandPosition, commandSimpleName, commandStatus, command,
       )
 
@@ -118,12 +118,12 @@ data class DispatchNewWorkflowPastCommand(
 
 @Serializable
 @SerialName("PastCommand.DispatchMethod")
-data class DispatchMethodOnRunningWorkflowPastCommand(
+data class DispatchNewMethodPastCommand(
   override val commandId: CommandId,
   override val commandPosition: PositionInWorkflowMethod,
   override val commandSimpleName: CommandSimpleName,
   override var commandStatus: CommandStatus,
-  override val command: DispatchMethodOnRunningWorkflowCommand
+  override val command: DispatchNewMethodCommand
 ) : PastCommand()
 
 @Serializable

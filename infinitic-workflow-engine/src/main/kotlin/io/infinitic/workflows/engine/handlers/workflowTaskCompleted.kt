@@ -29,8 +29,8 @@ import io.infinitic.common.transport.InfiniticProducer
 import io.infinitic.common.transport.WorkflowEventsTopic
 import io.infinitic.common.workflows.data.channels.ReceivingChannel
 import io.infinitic.common.workflows.data.channels.SignalId
-import io.infinitic.common.workflows.data.commands.DispatchMethodOnRunningWorkflowCommand
-import io.infinitic.common.workflows.data.commands.DispatchMethodOnRunningWorkflowPastCommand
+import io.infinitic.common.workflows.data.commands.DispatchNewMethodCommand
+import io.infinitic.common.workflows.data.commands.DispatchNewMethodPastCommand
 import io.infinitic.common.workflows.data.commands.DispatchNewWorkflowPastCommand
 import io.infinitic.common.workflows.data.commands.DispatchTaskPastCommand
 import io.infinitic.common.workflows.data.commands.InlineTaskPastCommand
@@ -119,7 +119,7 @@ internal fun CoroutineScope.workflowTaskCompleted(
   // add new commands to past commands
   workflowTaskReturnValue.newCommands.forEach {
     when (it) {
-      is DispatchMethodOnRunningWorkflowPastCommand ->
+      is DispatchNewMethodPastCommand ->
         dispatchMethodOnRunningWorkflowCmd(it, state, workflowMethod, producer, bufferedMessages)
 
       is SendSignalPastCommand ->
@@ -193,13 +193,13 @@ internal fun CoroutineScope.workflowTaskCompleted(
 }
 
 internal fun dispatchMethodOnRunningWorkflowCmd(
-  pastCommand: DispatchMethodOnRunningWorkflowPastCommand,
+  pastCommand: DispatchNewMethodPastCommand,
   state: WorkflowState,
   workflowMethod: WorkflowMethod,
   producer: InfiniticProducer,
   bufferedMessages: MutableList<WorkflowEngineMessage>
 ) {
-  val command: DispatchMethodOnRunningWorkflowCommand = pastCommand.command
+  val command: DispatchNewMethodCommand = pastCommand.command
 
   if (
     (command.workflowId != null && state.workflowId == command.workflowId) ||

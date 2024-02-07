@@ -30,7 +30,6 @@ import io.infinitic.common.transport.InfiniticProducerAsync
 import io.infinitic.common.transport.LoggedInfiniticProducer
 import io.infinitic.common.transport.WorkflowEngineTopic
 import io.infinitic.common.transport.WorkflowEventsTopic
-import io.infinitic.common.transport.WorkflowTaskExecutorTopic
 import io.infinitic.common.utils.IdGenerator
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskIndex
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskParameters
@@ -81,30 +80,29 @@ class WorkflowCmdHandler(producerAsync: InfiniticProducerAsync) {
         // commands arrives before the engine is made aware of them by the previous message.
         launch {
           // defines workflow task input
-          val workflowTaskParameters = WorkflowTaskParameters(
-              taskId = dispatchNewWorkflow.workflowTaskId!!,
-              workflowId = dispatchNewWorkflow.workflowId,
-              workflowName = dispatchNewWorkflow.workflowName,
-              workflowVersion = null,
-              workflowTags = dispatchNewWorkflow.workflowTags,
-              workflowMeta = dispatchNewWorkflow.workflowMeta,
-              workflowPropertiesHashValue = mutableMapOf(),
-              workflowTaskIndex = WorkflowTaskIndex(1),
-              workflowMethod = dispatchNewWorkflow.workflowMethod(),
-              workflowTaskInstant = msg.emittedAt ?: publishTime,
-              emitterName = emitterName,
-          )
+          val workflowTaskParameters = with(dispatchNewWorkflow) {
+            WorkflowTaskParameters(
+                taskId = workflowTaskId!!,
+                workflowId = workflowId,
+                workflowName = workflowName,
+                workflowVersion = null,
+                workflowTags = workflowTags,
+                workflowMeta = workflowMeta,
+                workflowPropertiesHashValue = mutableMapOf(),
+                workflowTaskIndex = WorkflowTaskIndex(1),
+                workflowMethod = workflowMethod(),
+                workflowTaskInstant = msg.emittedAt ?: publishTime,
+                emitterName = emitterName,
+            )
+          }
 
-          val executeTaskMessage = workflowTaskParameters.toExecuteTaskMessage()
-
-          // dispatch workflow task
           with(producer) {
             // event: starting new method
             dispatchNewWorkflow.methodCommandedEvent(emitterName).sendTo(WorkflowEventsTopic)
             // event: starting new workflow Task
-            executeTaskMessage.taskDispatchedEvent(emitterName).sendTo(WorkflowEventsTopic)
-            // starting new workflow Task
-            executeTaskMessage.sendTo(WorkflowTaskExecutorTopic)
+            val taskDispatchedEvent =
+                workflowTaskParameters.workflowTaskDispatchedEvent(emitterName)
+            taskDispatchedEvent.sendTo(WorkflowEventsTopic)
           }
         }
       }

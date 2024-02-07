@@ -137,14 +137,14 @@ class WorkflowTagEngine(
           // Sending event message
           launch {
             val childMethodDispatchedEvent =
-                dispatchWorkflow.childMethodDispatchedEvent(emitterName)
+                dispatchWorkflow.remoteMethodDispatchedEvent(emitterName)
             with(producer) { childMethodDispatchedEvent.sendTo(WorkflowEventsTopic) }
           }
 
           // send global timeout if needed
           message.methodTimeout?.let {
             launch {
-              val childMethodTimedOut = dispatchWorkflow.childMethodTimedOut(emitterName, it)
+              val childMethodTimedOut = dispatchWorkflow.remoteMethodTimedOut(emitterName, it)
               with(producer) { childMethodTimedOut.sendTo(DelayedWorkflowEngineTopic, it) }
             }
           }
@@ -214,14 +214,14 @@ class WorkflowTagEngine(
           // event for the dispatching of a child method
           launch {
             val childMethodDispatchedEvent =
-                dispatchMethod.childMethodDispatchedEvent(emitterName)
+                dispatchMethod.remoteMethodDispatchedEvent(emitterName)
             with(producer) { childMethodDispatchedEvent.sendTo(WorkflowEventsTopic) }
           }
 
           // set timeout for the dispatched child method,
           message.methodTimeout?.let {
             launch {
-              val childMethodTimedOut = dispatchMethod.childMethodTimedOut(emitterName, it)
+              val childMethodTimedOut = dispatchMethod.remoteMethodTimedOut(emitterName, it)
               with(producer) { childMethodTimedOut.sendTo(DelayedWorkflowEngineTopic, it) }
             }
           }

@@ -37,7 +37,7 @@ import io.infinitic.common.transport.InfiniticProducerAsync
 import io.infinitic.common.transport.LoggedInfiniticProducer
 import io.infinitic.common.transport.ServiceTagTopic
 import io.infinitic.common.transport.WorkflowEngineTopic
-import io.infinitic.common.workflows.data.commands.DispatchMethodOnRunningWorkflowPastCommand
+import io.infinitic.common.workflows.data.commands.DispatchNewMethodPastCommand
 import io.infinitic.common.workflows.data.commands.DispatchNewWorkflowPastCommand
 import io.infinitic.common.workflows.data.commands.DispatchTaskPastCommand
 import io.infinitic.common.workflows.data.commands.InlineTaskPastCommand
@@ -46,12 +46,12 @@ import io.infinitic.common.workflows.data.commands.SendSignalPastCommand
 import io.infinitic.common.workflows.data.commands.StartDurationTimerPastCommand
 import io.infinitic.common.workflows.data.commands.StartInstantTimerPastCommand
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskReturnValue
+import io.infinitic.tasks.executor.commands.dispatchDurationTimerCmd
+import io.infinitic.tasks.executor.commands.dispatchInstantTimerCmd
 import io.infinitic.tasks.executor.commands.dispatchRemoteMethodCmd
-import io.infinitic.tasks.executor.commands.dispatchRemoteTaskCmd
+import io.infinitic.tasks.executor.commands.dispatchRemoteSignalCmd
 import io.infinitic.tasks.executor.commands.dispatchRemoteWorkflowCmd
-import io.infinitic.tasks.executor.commands.sendSignalCmd
-import io.infinitic.tasks.executor.commands.startDurationTimerCmd
-import io.infinitic.tasks.executor.commands.startInstantTimerCmq
+import io.infinitic.tasks.executor.commands.dispatchTaskCmd
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 
@@ -137,28 +137,28 @@ class TaskEventHandler(producerAsync: InfiniticProducerAsync) {
         val workflowTaskInstant = result.workflowTaskInstant ?: publishTime
 
         // from there, workflowVersion is defined
-        val requester =
+        val current =
             (msg.requester as WorkflowRequester).copy(workflowVersion = result.workflowVersion)
 
         result.newCommands.forEach {
           when (it) {
             is DispatchNewWorkflowPastCommand ->
-              dispatchRemoteWorkflowCmd(requester, it, workflowTaskInstant, producer)
+              dispatchRemoteWorkflowCmd(current, it, workflowTaskInstant, producer)
 
-            is DispatchMethodOnRunningWorkflowPastCommand ->
-              dispatchRemoteMethodCmd(requester, it, workflowTaskInstant, producer)
+            is DispatchNewMethodPastCommand ->
+              dispatchRemoteMethodCmd(current, it, workflowTaskInstant, producer)
 
             is DispatchTaskPastCommand ->
-              dispatchRemoteTaskCmd(requester, it, workflowTaskInstant, producer)
+              dispatchTaskCmd(current, it, workflowTaskInstant, producer)
 
             is SendSignalPastCommand ->
-              sendSignalCmd(requester, it, workflowTaskInstant, producer)
+              dispatchRemoteSignalCmd(current, it, workflowTaskInstant, producer)
 
             is StartDurationTimerPastCommand ->
-              startDurationTimerCmd(requester, it, workflowTaskInstant, producer)
+              dispatchDurationTimerCmd(current, it, workflowTaskInstant, producer)
 
             is StartInstantTimerPastCommand ->
-              startInstantTimerCmq(requester, it, producer)
+              dispatchInstantTimerCmd(current, it, workflowTaskInstant, producer)
 
             is ReceiveSignalPastCommand,
             is InlineTaskPastCommand -> Unit // Nothing to do

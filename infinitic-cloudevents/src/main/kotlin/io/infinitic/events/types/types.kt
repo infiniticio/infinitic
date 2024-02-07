@@ -45,6 +45,7 @@ const val REMOTE_TASKS_RETRIED = "tasksRetried"
 const val SIGNAL_CMD = "signal"
 const val SIGNAL_HANDLED = "signalHandled"
 const val SIGNAL_DISCARDED = "signalDiscarded"
+const val SIGNAL_DISPATCHED = "signalDispatched"
 
 // events related to workflow executor
 const val EXECUTOR_DISPATCHED = "executorDispatched"
@@ -62,10 +63,10 @@ const val METHOD_FAILED = "methodFailed"
 const val METHOD_TIMED_OUT = "methodTimedOut"
 
 // events related to  remote timers
-const val REMOTE_TIMER_DISPATCHED = "timerDispatched"
-const val REMOTE_TIMER_COMPLETED = "timerCompleted"
+const val TIMER_DISPATCHED = "timerDispatched"
+const val TIMER_COMPLETED = "timerCompleted"
 
-// events related to remote tasks
+// events related to tasks
 const val REMOTE_TASK_DISPATCHED = "taskDispatched"
 const val REMOTE_TASK_COMPLETED = "taskCompleted"
 const val REMOTE_TASK_FAILED = "taskFailed"

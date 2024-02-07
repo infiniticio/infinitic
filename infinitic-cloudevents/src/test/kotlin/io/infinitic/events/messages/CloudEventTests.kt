@@ -68,14 +68,14 @@ import io.infinitic.common.workflows.engine.messages.RemoteMethodTimedOut
 import io.infinitic.common.workflows.engine.messages.RemoteMethodUnknown
 import io.infinitic.common.workflows.engine.messages.RemoteTaskCanceled
 import io.infinitic.common.workflows.engine.messages.RemoteTaskCompleted
-import io.infinitic.common.workflows.engine.messages.RemoteTaskDispatchedEvent
 import io.infinitic.common.workflows.engine.messages.RemoteTaskFailed
 import io.infinitic.common.workflows.engine.messages.RemoteTaskTimedOut
 import io.infinitic.common.workflows.engine.messages.RemoteTimerCompleted
-import io.infinitic.common.workflows.engine.messages.RemoteTimerDispatchedEvent
 import io.infinitic.common.workflows.engine.messages.RetryTasks
 import io.infinitic.common.workflows.engine.messages.RetryWorkflowTask
 import io.infinitic.common.workflows.engine.messages.SendSignal
+import io.infinitic.common.workflows.engine.messages.TaskDispatchedEvent
+import io.infinitic.common.workflows.engine.messages.TimerDispatchedEvent
 import io.infinitic.common.workflows.engine.messages.WaitWorkflow
 import io.infinitic.common.workflows.engine.messages.WorkflowCanceledEvent
 import io.infinitic.common.workflows.engine.messages.WorkflowCmdMessage
@@ -421,9 +421,9 @@ internal class CloudEventTests :
               MethodFailedEvent::class -> "infinitic.workflow.methodFailed"
               MethodCanceledEvent::class -> "infinitic.workflow.methodCanceled"
               MethodTimedOutEvent::class -> "infinitic.workflow.methodTimedOut"
-              RemoteTaskDispatchedEvent::class -> "infinitic.workflow.taskDispatched"
+              TaskDispatchedEvent::class -> "infinitic.workflow.taskDispatched"
               RemoteMethodDispatchedEvent::class -> "infinitic.workflow.remoteMethodDispatched"
-              RemoteTimerDispatchedEvent::class -> "infinitic.workflow.timerDispatched"
+              TimerDispatchedEvent::class -> "infinitic.workflow.timerDispatched"
               else -> thisShouldNotHappen()
             }
 

@@ -41,7 +41,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
 internal fun CoroutineScope.dispatchRemoteWorkflowCmd(
-  currentWorkflow: WorkflowRequester,
+  current: WorkflowRequester,
   pastCommand: DispatchNewWorkflowPastCommand,
   workflowTaskInstant: MillisInstant,
   producer: InfiniticProducer
@@ -66,7 +66,7 @@ internal fun CoroutineScope.dispatchRemoteWorkflowCmd(
           methodParameterTypes = command.methodParameterTypes,
           workflowTags = command.workflowTags,
           workflowMeta = command.workflowMeta,
-          requester = currentWorkflow,
+          requester = current,
           clientWaiting = false,
           emitterName = emitterName,
           emittedAt = workflowTaskInstant,
@@ -75,7 +75,7 @@ internal fun CoroutineScope.dispatchRemoteWorkflowCmd(
       launch {
         with(producer) {
           // Event: starting child method
-          dispatchWorkflow.childMethodDispatchedEvent(emitterName).sendTo(WorkflowEventsTopic)
+          dispatchWorkflow.remoteMethodDispatchedEvent(emitterName).sendTo(WorkflowEventsTopic)
           // Starting new workflow
           dispatchWorkflow.sendTo(WorkflowCmdTopic)
         }
@@ -98,7 +98,7 @@ internal fun CoroutineScope.dispatchRemoteWorkflowCmd(
       // send a timeout for the child method
       command.methodTimeout?.let {
         launch {
-          val childMethodTimedOut = dispatchWorkflow.childMethodTimedOut(emitterName, it)
+          val childMethodTimedOut = dispatchWorkflow.remoteMethodTimedOut(emitterName, it)
           with(producer) { childMethodTimedOut.sendTo(DelayedWorkflowEngineTopic, it) }
         }
       }
@@ -116,7 +116,7 @@ internal fun CoroutineScope.dispatchRemoteWorkflowCmd(
           methodTimeout = command.methodTimeout,
           workflowTags = command.workflowTags,
           workflowMeta = command.workflowMeta,
-          requester = currentWorkflow,
+          requester = current,
           clientWaiting = false,
           emitterName = emitterName,
           emittedAt = workflowTaskInstant,

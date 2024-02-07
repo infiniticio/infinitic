@@ -41,9 +41,10 @@ data class WorkflowEventEnvelope(
   private val methodFailedEvent: MethodFailedEvent? = null,
   private val methodCanceledEvent: MethodCanceledEvent? = null,
   private val methodTimedOutEvent: MethodTimedOutEvent? = null,
-  private val taskDispatched: RemoteTaskDispatchedEvent? = null,
+  private val taskDispatched: TaskDispatchedEvent? = null,
   private val childDispatched: RemoteMethodDispatchedEvent? = null,
-  private val timerDispatched: RemoteTimerDispatchedEvent? = null
+  private val timerDispatched: TimerDispatchedEvent? = null,
+  private val signalDispatched: RemoteSignalDispatchedEvent? = null
 ) : Envelope<WorkflowEventMessage> {
   init {
     val noNull = listOfNotNull(
@@ -57,6 +58,7 @@ data class WorkflowEventEnvelope(
         taskDispatched,
         childDispatched,
         timerDispatched,
+        signalDispatched,
     )
 
     require(noNull.size == 1)
@@ -109,7 +111,7 @@ data class WorkflowEventEnvelope(
           methodTimedOutEvent = msg,
       )
 
-      is RemoteTaskDispatchedEvent -> WorkflowEventEnvelope(
+      is TaskDispatchedEvent -> WorkflowEventEnvelope(
           workflowId = msg.workflowId,
           type = WorkflowEventMessageType.REMOTE_TASK_DISPATCHED,
           taskDispatched = msg,
@@ -121,10 +123,16 @@ data class WorkflowEventEnvelope(
           childDispatched = msg,
       )
 
-      is RemoteTimerDispatchedEvent -> WorkflowEventEnvelope(
+      is TimerDispatchedEvent -> WorkflowEventEnvelope(
           workflowId = msg.workflowId,
           type = WorkflowEventMessageType.REMOTE_TIMER_DISPATCHED,
           timerDispatched = msg,
+      )
+
+      is RemoteSignalDispatchedEvent -> WorkflowEventEnvelope(
+          workflowId = msg.workflowId,
+          type = WorkflowEventMessageType.SIGNAL_DISPATCHED,
+          signalDispatched = msg,
       )
     }
 
@@ -147,6 +155,7 @@ data class WorkflowEventEnvelope(
     WorkflowEventMessageType.REMOTE_TASK_DISPATCHED -> taskDispatched
     WorkflowEventMessageType.REMOTE_METHOD_DISPATCHED -> childDispatched
     WorkflowEventMessageType.REMOTE_TIMER_DISPATCHED -> timerDispatched
+    WorkflowEventMessageType.SIGNAL_DISPATCHED -> signalDispatched
   }!!
 
   fun toByteArray() = AvroSerDe.writeBinary(this, serializer())

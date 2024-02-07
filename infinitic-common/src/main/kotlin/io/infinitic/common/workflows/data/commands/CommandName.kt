@@ -35,7 +35,7 @@ value class CommandName private constructor(private val name: String) {
           is DispatchNewWorkflowCommand ->
             CommandName("${command.workflowName}::${command.methodName}")
 
-          is DispatchMethodOnRunningWorkflowCommand -> CommandName("${command.workflowName}::${command.methodName}")
+          is DispatchNewMethodCommand -> CommandName("${command.workflowName}::${command.methodName}")
           is SendSignalCommand -> CommandName("${command.workflowName}::${command.channelName}")
           else -> thisShouldNotHappen()
         }

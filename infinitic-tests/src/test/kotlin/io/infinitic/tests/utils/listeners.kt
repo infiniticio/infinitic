@@ -49,7 +49,7 @@ class Listener : CloudEventListener {
           .filter { it.type.startsWith("infinitic.workflow") }
           .forEach {
             val jsonNode = objectMapper.readTree(String(JsonFormat().serialize(it)))
-            println(objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(jsonNode))
+            //println(objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(jsonNode))
           }
     }
   }

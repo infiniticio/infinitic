@@ -27,7 +27,7 @@ import io.infinitic.common.emitters.EmitterName
 import io.infinitic.common.tasks.data.TaskId
 import io.infinitic.common.transport.InfiniticProducer
 import io.infinitic.common.transport.WorkflowEventsTopic
-import io.infinitic.common.transport.WorkflowTaskExecutorTopic
+import io.infinitic.common.utils.IdGenerator
 import io.infinitic.common.workflows.data.workflowMethods.PositionInWorkflowMethod
 import io.infinitic.common.workflows.data.workflowMethods.WorkflowMethod
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskParameters
@@ -40,38 +40,39 @@ internal fun CoroutineScope.dispatchWorkflowTask(
   state: WorkflowState,
   workflowMethod: WorkflowMethod,
   positionInMethod: PositionInWorkflowMethod,
-  workflowTaskInstant: MillisInstant,
-  workflowTaskId: TaskId = TaskId()
+  workflowTaskInstant: MillisInstant
 ) {
-
   val emitterName = EmitterName(producer.name)
 
+  // next workflow task
   state.workflowTaskIndex += 1
 
-  // defines workflow task input
-  val workflowTaskParameters = WorkflowTaskParameters(
-      taskId = workflowTaskId,
-      workflowId = state.workflowId,
-      workflowName = state.workflowName,
-      workflowVersion = state.workflowVersion,
-      workflowTags = state.workflowTags,
-      workflowMeta = state.workflowMeta,
-      workflowPropertiesHashValue =
-      state.propertiesHashValue, // TODO filterStore(state.propertyStore, listOf(methodRun))
-      workflowTaskIndex = state.workflowTaskIndex,
-      workflowTaskInstant = workflowTaskInstant,
-      workflowMethod = workflowMethod,
-      emitterName = emitterName,
-  )
+  // Deterministic generation of workflowTaskInstant
+  val seed = "workflowId=${state.workflowId}" +
+      "workflowVersion=${state.workflowVersion}" +
+      "workflowMethodId=${workflowMethod.workflowMethodId}" +
+      "positionInMethod=$positionInMethod"
+  val workflowTaskId = TaskId(IdGenerator.from(workflowTaskInstant, seed))
 
-  val executeTaskMessage = workflowTaskParameters.toExecuteTaskMessage()
-
-  // dispatch workflow task
   launch {
-    with(producer) {
-      executeTaskMessage.sendTo(WorkflowTaskExecutorTopic)
-      executeTaskMessage.taskDispatchedEvent(emitterName).sendTo(WorkflowEventsTopic)
-    }
+    // defines workflow task input
+    val workflowTaskParameters = WorkflowTaskParameters(
+        taskId = workflowTaskId,
+        workflowId = state.workflowId,
+        workflowName = state.workflowName,
+        workflowVersion = state.workflowVersion,
+        workflowTags = state.workflowTags,
+        workflowMeta = state.workflowMeta,
+        workflowPropertiesHashValue = state.propertiesHashValue, // TODO filterStore(state.propertyStore, listOf(methodRun))
+        workflowTaskIndex = state.workflowTaskIndex,
+        workflowTaskInstant = workflowTaskInstant,
+        workflowMethod = workflowMethod,
+        emitterName = emitterName,
+    )
+
+    // dispatch workflow task
+    val taskDispatchedEvent = workflowTaskParameters.workflowTaskDispatchedEvent(emitterName)
+    with(producer) { taskDispatchedEvent.sendTo(WorkflowEventsTopic) }
   }
 
   // update runningWorkflowTask

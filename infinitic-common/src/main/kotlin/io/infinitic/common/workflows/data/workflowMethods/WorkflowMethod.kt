@@ -36,7 +36,7 @@ import io.infinitic.common.requester.ClientRequester
 import io.infinitic.common.requester.Requester
 import io.infinitic.common.requester.WorkflowRequester
 import io.infinitic.common.workflows.data.commands.CommandId
-import io.infinitic.common.workflows.data.commands.DispatchMethodOnRunningWorkflowCommand
+import io.infinitic.common.workflows.data.commands.DispatchNewMethodCommand
 import io.infinitic.common.workflows.data.commands.DispatchNewWorkflowCommand
 import io.infinitic.common.workflows.data.commands.DispatchTaskCommand
 import io.infinitic.common.workflows.data.commands.PastCommand
@@ -104,7 +104,7 @@ data class WorkflowMethod(
           .filter {
             when (it.command) {
               is DispatchNewWorkflowCommand,
-              is DispatchMethodOnRunningWorkflowCommand,
+              is DispatchNewMethodCommand,
               is DispatchTaskCommand -> true
 
               else -> false

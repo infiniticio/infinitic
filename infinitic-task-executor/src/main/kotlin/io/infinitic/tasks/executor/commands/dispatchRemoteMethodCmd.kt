@@ -30,8 +30,8 @@ import io.infinitic.common.transport.InfiniticProducer
 import io.infinitic.common.transport.WorkflowCmdTopic
 import io.infinitic.common.transport.WorkflowEventsTopic
 import io.infinitic.common.transport.WorkflowTagTopic
-import io.infinitic.common.workflows.data.commands.DispatchMethodOnRunningWorkflowCommand
-import io.infinitic.common.workflows.data.commands.DispatchMethodOnRunningWorkflowPastCommand
+import io.infinitic.common.workflows.data.commands.DispatchNewMethodCommand
+import io.infinitic.common.workflows.data.commands.DispatchNewMethodPastCommand
 import io.infinitic.common.workflows.data.workflowMethods.WorkflowMethodId
 import io.infinitic.common.workflows.engine.messages.DispatchMethod
 import io.infinitic.common.workflows.engine.messages.MethodCommandedEvent
@@ -40,13 +40,13 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
 internal fun CoroutineScope.dispatchRemoteMethodCmd(
-  currentWorkflow: WorkflowRequester,
-  pastCommand: DispatchMethodOnRunningWorkflowPastCommand,
+  current: WorkflowRequester,
+  pastCommand: DispatchNewMethodPastCommand,
   workflowTaskInstant: MillisInstant,
   producer: InfiniticProducer,
 ) {
   val emitterName = EmitterName(producer.name)
-  val command: DispatchMethodOnRunningWorkflowCommand = pastCommand.command
+  val command: DispatchNewMethodCommand = pastCommand.command
   val workflowMethodId = WorkflowMethodId.from(pastCommand.commandId)
 
   when {
@@ -58,7 +58,7 @@ internal fun CoroutineScope.dispatchRemoteMethodCmd(
           workflowMethodId = workflowMethodId,
           methodParameters = command.methodParameters,
           methodParameterTypes = command.methodParameterTypes,
-          requester = currentWorkflow,
+          requester = current,
           clientWaiting = false,
           emitterName = emitterName,
           emittedAt = workflowTaskInstant,
@@ -67,22 +67,22 @@ internal fun CoroutineScope.dispatchRemoteMethodCmd(
       launch {
         // Event: Starting remote method
         with(producer) {
-          dispatchMethod.childMethodDispatchedEvent(emitterName).sendTo(WorkflowEventsTopic)
+          dispatchMethod.remoteMethodDispatchedEvent(emitterName).sendTo(WorkflowEventsTopic)
         }
-        when (command.workflowId == currentWorkflow.workflowId) {
+        when (command.workflowId == current.workflowId) {
           // if we target the same workflow, the method will be actually be dispatched with
           // the return of the workflowTask, so we just emit MethodCommandedEvent
           true -> {
             // Event: Starting method
             val methodCommandedEvent = MethodCommandedEvent(
-                workflowName = currentWorkflow.workflowName,
-                workflowVersion = currentWorkflow.workflowVersion,
-                workflowId = currentWorkflow.workflowId,
+                workflowName = current.workflowName,
+                workflowVersion = current.workflowVersion,
+                workflowId = current.workflowId,
                 workflowMethodId = dispatchMethod.workflowMethodId,
                 methodName = dispatchMethod.workflowMethodName,
                 methodParameters = dispatchMethod.methodParameters,
                 methodParameterTypes = dispatchMethod.methodParameterTypes,
-                requester = currentWorkflow,
+                requester = current,
                 emitterName = emitterName,
             )
             with(producer) { methodCommandedEvent.sendTo(WorkflowEventsTopic) }
@@ -98,9 +98,9 @@ internal fun CoroutineScope.dispatchRemoteMethodCmd(
       // as the timeout is relative to the current workflow
       command.methodTimeout?.let {
         launch {
-          val childMethodTimedOut =
-              dispatchMethod.childMethodTimedOut(emitterName, it)
-          with(producer) { childMethodTimedOut.sendTo(DelayedWorkflowEngineTopic, it) }
+          val remoteMethodTimedOut =
+              dispatchMethod.remoteMethodTimedOut(emitterName, it)
+          with(producer) { remoteMethodTimedOut.sendTo(DelayedWorkflowEngineTopic, it) }
         }
       }
     }
@@ -114,7 +114,7 @@ internal fun CoroutineScope.dispatchRemoteMethodCmd(
           methodParameterTypes = command.methodParameterTypes,
           methodParameters = command.methodParameters,
           methodTimeout = command.methodTimeout,
-          requester = currentWorkflow,
+          requester = current,
           clientWaiting = false,
           emitterName = emitterName,
           emittedAt = workflowTaskInstant,
