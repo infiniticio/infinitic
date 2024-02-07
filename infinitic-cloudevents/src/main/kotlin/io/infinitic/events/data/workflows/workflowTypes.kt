@@ -45,6 +45,7 @@ import io.infinitic.common.workflows.engine.messages.RemoteTaskDispatchedEvent
 import io.infinitic.common.workflows.engine.messages.RemoteTaskFailed
 import io.infinitic.common.workflows.engine.messages.RemoteTaskTimedOut
 import io.infinitic.common.workflows.engine.messages.RemoteTimerCompleted
+import io.infinitic.common.workflows.engine.messages.RemoteTimerDispatchedEvent
 import io.infinitic.common.workflows.engine.messages.RetryTasks
 import io.infinitic.common.workflows.engine.messages.RetryWorkflowTask
 import io.infinitic.common.workflows.engine.messages.SendSignal
@@ -79,6 +80,7 @@ import io.infinitic.events.types.REMOTE_TASK_DISPATCHED
 import io.infinitic.events.types.REMOTE_TASK_FAILED
 import io.infinitic.events.types.REMOTE_TASK_TIMED_OUT
 import io.infinitic.events.types.REMOTE_TIMER_COMPLETED
+import io.infinitic.events.types.REMOTE_TIMER_DISPATCHED
 import io.infinitic.events.types.SIGNAL_CMD
 import io.infinitic.events.types.START_CMD
 import io.infinitic.events.types.TYPE_WORKFLOW
@@ -134,4 +136,6 @@ fun WorkflowEventMessage.workflowType(): String = "$TYPE_WORKFLOW." + when (this
     true -> EXECUTOR_DISPATCHED
     false -> REMOTE_TASK_DISPATCHED
   }
+
+  is RemoteTimerDispatchedEvent -> REMOTE_TIMER_DISPATCHED
 }

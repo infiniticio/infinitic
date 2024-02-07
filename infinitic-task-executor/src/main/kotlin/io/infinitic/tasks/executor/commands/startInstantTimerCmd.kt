@@ -27,10 +27,13 @@ import io.infinitic.common.emitters.EmitterName
 import io.infinitic.common.requester.WorkflowRequester
 import io.infinitic.common.transport.DelayedWorkflowEngineTopic
 import io.infinitic.common.transport.InfiniticProducer
+import io.infinitic.common.transport.WorkflowEventsTopic
 import io.infinitic.common.workflows.data.commands.StartInstantTimerCommand
 import io.infinitic.common.workflows.data.commands.StartInstantTimerPastCommand
 import io.infinitic.common.workflows.data.timers.TimerId
+import io.infinitic.common.workflows.engine.messages.RemoteInstantTimerDescription
 import io.infinitic.common.workflows.engine.messages.RemoteTimerCompleted
+import io.infinitic.common.workflows.engine.messages.RemoteTimerDispatchedEvent
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
@@ -41,6 +44,25 @@ internal fun CoroutineScope.startInstantTimerCmq(
 ) = launch {
   val emitterName = EmitterName(producer.name)
   val command: StartInstantTimerCommand = pastCommand.command
+  val timerId = TimerId.from(pastCommand.commandId)
+  val timerInstant = command.instant
+
+  launch {
+    // Event: dispatching instant timer
+    val remoteTimerDispatchedEvent = RemoteTimerDispatchedEvent(
+        remoteTimerDispatched = RemoteInstantTimerDescription(
+            timerId = timerId,
+            instant = timerInstant,
+        ),
+        workflowName = current.workflowName,
+        workflowId = current.workflowId,
+        workflowVersion = current.workflowVersion,
+        workflowMethodName = current.workflowMethodName,
+        workflowMethodId = current.workflowMethodId,
+        emitterName = emitterName,
+    )
+    with(producer) { remoteTimerDispatchedEvent.sendTo(WorkflowEventsTopic) }
+  }
 
   val remoteTimerCompleted = RemoteTimerCompleted(
       timerId = TimerId.from(pastCommand.commandId),
@@ -50,7 +72,7 @@ internal fun CoroutineScope.startInstantTimerCmq(
       workflowMethodName = current.workflowMethodName,
       workflowMethodId = current.workflowMethodId,
       emitterName = emitterName,
-      emittedAt = command.instant,
+      emittedAt = timerInstant,
   )
 
   // todo: Check if there is a way not to use MillisInstant.now()

@@ -67,7 +67,14 @@ internal fun CoroutineScope.dispatchRemoteTaskCmd(
     )
   }
 
-  launch { with(producer) { executeTask.sendTo(ServiceExecutorTopic) } }
+  launch {
+    with(producer) {
+      // event: Starting new task
+      executeTask.taskDispatchedEvent(emitterName).sendTo(WorkflowEventsTopic)
+      // Starting new task
+      executeTask.sendTo(ServiceExecutorTopic)
+    }
+  }
 
   // add provided tags
   executeTask.taskTags.forEach {
@@ -80,12 +87,6 @@ internal fun CoroutineScope.dispatchRemoteTaskCmd(
       )
       with(producer) { addTaskIdToTag.sendTo(ServiceTagTopic) }
     }
-  }
-
-  // sent to workflow event
-  launch {
-    val taskDispatchedEvent = executeTask.taskDispatchedEvent(emitterName)
-    with(producer) { taskDispatchedEvent.sendTo(WorkflowEventsTopic) }
   }
 
   // send global task timeout if any

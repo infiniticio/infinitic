@@ -27,31 +27,53 @@ import io.infinitic.common.emitters.EmitterName
 import io.infinitic.common.requester.WorkflowRequester
 import io.infinitic.common.transport.DelayedWorkflowEngineTopic
 import io.infinitic.common.transport.InfiniticProducer
+import io.infinitic.common.transport.WorkflowEventsTopic
 import io.infinitic.common.workflows.data.commands.StartDurationTimerCommand
 import io.infinitic.common.workflows.data.commands.StartDurationTimerPastCommand
 import io.infinitic.common.workflows.data.timers.TimerId
+import io.infinitic.common.workflows.engine.messages.RemoteDurationTimerDescription
 import io.infinitic.common.workflows.engine.messages.RemoteTimerCompleted
+import io.infinitic.common.workflows.engine.messages.RemoteTimerDispatchedEvent
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
 internal fun CoroutineScope.startDurationTimerCmd(
-  requester: WorkflowRequester,
+  current: WorkflowRequester,
   pastCommand: StartDurationTimerPastCommand,
   workflowTaskInstant: MillisInstant,
   producer: InfiniticProducer
 ) = launch {
   val emitterName = EmitterName(producer.name)
   val command: StartDurationTimerCommand = pastCommand.command
+  val timerId = TimerId.from(pastCommand.commandId)
+  val timerDuration = command.duration
+
+  launch {
+    // Event: dispatching duration timer
+    val remoteTimerDispatchedEvent = RemoteTimerDispatchedEvent(
+        remoteTimerDispatched = RemoteDurationTimerDescription(
+            timerId = timerId,
+            duration = timerDuration,
+        ),
+        workflowName = current.workflowName,
+        workflowId = current.workflowId,
+        workflowVersion = current.workflowVersion,
+        workflowMethodName = current.workflowMethodName,
+        workflowMethodId = current.workflowMethodId,
+        emitterName = emitterName,
+    )
+    with(producer) { remoteTimerDispatchedEvent.sendTo(WorkflowEventsTopic) }
+  }
 
   val remoteTimerCompleted = RemoteTimerCompleted(
-      timerId = TimerId.from(pastCommand.commandId),
-      workflowName = requester.workflowName,
-      workflowId = requester.workflowId,
-      workflowVersion = requester.workflowVersion,
-      workflowMethodName = requester.workflowMethodName,
-      workflowMethodId = requester.workflowMethodId,
+      timerId = timerId,
+      workflowName = current.workflowName,
+      workflowId = current.workflowId,
+      workflowVersion = current.workflowVersion,
+      workflowMethodName = current.workflowMethodName,
+      workflowMethodId = current.workflowMethodId,
       emitterName = emitterName,
-      emittedAt = workflowTaskInstant + command.duration,
+      emittedAt = workflowTaskInstant + timerDuration,
   )
 
   // The duration is offset by the time spent in the workflow task

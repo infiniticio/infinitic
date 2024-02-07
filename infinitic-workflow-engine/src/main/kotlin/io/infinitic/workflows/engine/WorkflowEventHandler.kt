@@ -36,6 +36,7 @@ import io.infinitic.common.workflows.engine.messages.MethodFailedEvent
 import io.infinitic.common.workflows.engine.messages.MethodTimedOutEvent
 import io.infinitic.common.workflows.engine.messages.RemoteMethodDispatchedEvent
 import io.infinitic.common.workflows.engine.messages.RemoteTaskDispatchedEvent
+import io.infinitic.common.workflows.engine.messages.RemoteTimerDispatchedEvent
 import io.infinitic.common.workflows.engine.messages.WorkflowCanceledEvent
 import io.infinitic.common.workflows.engine.messages.WorkflowCompletedEvent
 import io.infinitic.common.workflows.engine.messages.WorkflowEventMessage
@@ -62,6 +63,7 @@ class WorkflowEventHandler(producerAsync: InfiniticProducerAsync) {
       is MethodTimedOutEvent -> sendWorkflowMethodTimedOut(msg, publishTime)
       is RemoteTaskDispatchedEvent -> Unit
       is RemoteMethodDispatchedEvent -> Unit
+      is RemoteTimerDispatchedEvent -> Unit
     }
 
     msg.logTrace { "processed" }

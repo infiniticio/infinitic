@@ -33,7 +33,6 @@ import io.infinitic.cloudEvents.RESULT
 import io.infinitic.cloudEvents.SERVICE_NAME
 import io.infinitic.cloudEvents.SIGNAL_DATA
 import io.infinitic.cloudEvents.SIGNAL_ID
-import io.infinitic.cloudEvents.TASK_ARGS
 import io.infinitic.cloudEvents.TASK_ID
 import io.infinitic.cloudEvents.TASK_NAME
 import io.infinitic.cloudEvents.TASK_STATUS
@@ -68,6 +67,7 @@ import io.infinitic.common.workflows.engine.messages.RemoteTaskDispatchedEvent
 import io.infinitic.common.workflows.engine.messages.RemoteTaskFailed
 import io.infinitic.common.workflows.engine.messages.RemoteTaskTimedOut
 import io.infinitic.common.workflows.engine.messages.RemoteTimerCompleted
+import io.infinitic.common.workflows.engine.messages.RemoteTimerDispatchedEvent
 import io.infinitic.common.workflows.engine.messages.RetryTasks
 import io.infinitic.common.workflows.engine.messages.RetryWorkflowTask
 import io.infinitic.common.workflows.engine.messages.SendSignal
@@ -83,6 +83,7 @@ import io.infinitic.events.types.REMOTE_METHOD_DISPATCHED
 import io.infinitic.events.types.REMOTE_TASK_COMPLETED
 import io.infinitic.events.types.REMOTE_TASK_DISPATCHED
 import io.infinitic.events.types.REMOTE_TIMER_COMPLETED
+import io.infinitic.events.types.REMOTE_TIMER_DISPATCHED
 import kotlinx.serialization.json.JsonObject
 
 fun WorkflowCmdMessage.toJson(): JsonObject = when (this) {
@@ -379,16 +380,7 @@ fun WorkflowEventMessage.toJson(): JsonObject = when (this) {
 
   is RemoteTaskDispatchedEvent -> JsonObject(
       mapOf(
-          REMOTE_TASK_DISPATCHED to JsonObject(
-              with(remoteTaskDispatched) {
-                mapOf(
-                    SERVICE_NAME to serviceName.toJson(),
-                    TASK_NAME to taskName.toJson(),
-                    TASK_ARGS to methodParameters.toJson(),
-                    TASK_ID to taskId.toJson(),
-                )
-              },
-          ),
+          REMOTE_TASK_DISPATCHED to remoteTaskDispatched.toJson(),
           METHOD_ID to workflowMethodId.toJson(),
           METHOD_NAME to workflowMethodName.toJson(),
           WORKFLOW_NAME to workflowName.toJson(),
@@ -400,17 +392,19 @@ fun WorkflowEventMessage.toJson(): JsonObject = when (this) {
 
   is RemoteMethodDispatchedEvent -> JsonObject(
       mapOf(
-          REMOTE_METHOD_DISPATCHED to JsonObject(
-              with(remoteMethodDispatched) {
-                mapOf(
-                    METHOD_ARGS to methodParameters.toJson(),
-                    WORKFLOW_ID to workflowId.toJson(),
-                    WORKFLOW_NAME to workflowName.toJson(),
-                    METHOD_ID to workflowMethodId.toJson(),
-                    METHOD_NAME to methodName.toJson(),
-                )
-              },
-          ),
+          REMOTE_METHOD_DISPATCHED to remoteMethodDispatched.toJson(),
+          METHOD_ID to workflowMethodId.toJson(),
+          METHOD_NAME to workflowMethodName.toJson(),
+          WORKFLOW_NAME to workflowName.toJson(),
+          WORKFLOW_VERSION to workflowVersion.toJson(),
+          WORKER_NAME to emitterName.toJson(),
+          INFINITIC_VERSION to version.toJson(),
+      ),
+  )
+
+  is RemoteTimerDispatchedEvent -> JsonObject(
+      mapOf(
+          REMOTE_TIMER_DISPATCHED to remoteTimerDispatched.toJson(),
           METHOD_ID to workflowMethodId.toJson(),
           METHOD_NAME to workflowMethodName.toJson(),
           WORKFLOW_NAME to workflowName.toJson(),

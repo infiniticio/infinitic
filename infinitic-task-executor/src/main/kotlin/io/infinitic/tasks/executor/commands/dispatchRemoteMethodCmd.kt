@@ -65,10 +65,15 @@ internal fun CoroutineScope.dispatchRemoteMethodCmd(
       )
 
       launch {
+        // Event: Starting remote method
+        with(producer) {
+          dispatchMethod.childMethodDispatchedEvent(emitterName).sendTo(WorkflowEventsTopic)
+        }
         when (command.workflowId == currentWorkflow.workflowId) {
           // if we target the same workflow, the method will be actually be dispatched with
-          // the return of the workflowTask, we just emit MethodCommandedEvent
+          // the return of the workflowTask, so we just emit MethodCommandedEvent
           true -> {
+            // Event: Starting method
             val methodCommandedEvent = MethodCommandedEvent(
                 workflowName = currentWorkflow.workflowName,
                 workflowVersion = currentWorkflow.workflowVersion,
@@ -82,16 +87,10 @@ internal fun CoroutineScope.dispatchRemoteMethodCmd(
             )
             with(producer) { methodCommandedEvent.sendTo(WorkflowEventsTopic) }
           }
-          // if we target another workflow, the event will be on the cmd topic
+          // if we target another workflow, the MethodCommandedEvent event
+          // will be triggered by WorkflowCmdHandler
           false -> with(producer) { dispatchMethod.sendTo(WorkflowCmdTopic) }
         }
-      }
-
-      // Sending child method event message
-      launch {
-        val remoteMethodDispatchedEvent =
-            dispatchMethod.childMethodDispatchedEvent(emitterName)
-        with(producer) { remoteMethodDispatchedEvent.sendTo(WorkflowEventsTopic) }
       }
 
       // set timeout if any

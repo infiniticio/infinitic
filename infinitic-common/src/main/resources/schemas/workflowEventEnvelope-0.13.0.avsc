@@ -10,7 +10,7 @@
     "type" : {
       "type" : "enum",
       "name" : "WorkflowEventMessageType",
-      "symbols" : [ "WORKFLOW_COMPLETED", "WORKFLOW_CANCELED", "METHOD_DISPATCHED", "METHOD_COMPLETED", "METHOD_FAILED", "METHOD_CANCELED", "METHOD_TIMED_OUT", "METHOD_TASK_DISPATCHED", "METHOD_CHILD_DISPATCHED" ]
+      "symbols" : [ "WORKFLOW_COMPLETED", "WORKFLOW_CANCELED", "METHOD_DISPATCHED", "METHOD_COMPLETED", "METHOD_FAILED", "METHOD_CANCELED", "METHOD_TIMED_OUT", "REMOTE_TASK_DISPATCHED", "REMOTE_METHOD_DISPATCHED", "REMOTE_TIMER_DISPATCHED" ]
     }
   }, {
     "name" : "workflowCompletedEvent",
@@ -507,7 +507,7 @@
         "name" : "remoteTaskDispatched",
         "type" : {
           "type" : "record",
-          "name" : "RemoteTaskDispatchedDesc",
+          "name" : "RemoteTaskDescription",
           "fields" : [ {
             "name" : "taskId",
             "type" : "string"
@@ -568,7 +568,7 @@
         "name" : "remoteMethodDispatched",
         "type" : {
           "type" : "record",
-          "name" : "RemoteMethodDispatchedDesc",
+          "name" : "RemoteMethodDescription",
           "fields" : [ {
             "name" : "workflowId",
             "type" : "string"
@@ -598,6 +598,62 @@
             } ]
           } ]
         }
+      }, {
+        "name" : "workflowName",
+        "type" : "string"
+      }, {
+        "name" : "workflowId",
+        "type" : "string"
+      }, {
+        "name" : "workflowVersion",
+        "type" : [ "null", "int" ]
+      }, {
+        "name" : "workflowMethodName",
+        "type" : "string"
+      }, {
+        "name" : "workflowMethodId",
+        "type" : "string"
+      }, {
+        "name" : "emitterName",
+        "type" : "string"
+      } ]
+    } ]
+  }, {
+    "name" : "timerDispatched",
+    "type" : [ "null", {
+      "type" : "record",
+      "name" : "RemoteTimerDispatchedEvent",
+      "namespace" : "io.infinitic.workflows.engine",
+      "fields" : [ {
+        "name" : "version",
+        "type" : [ "null", "string" ],
+        "default" : null
+      }, {
+        "name" : "messageId",
+        "type" : "string"
+      }, {
+        "name" : "remoteTimerDispatched",
+        "type" : [ {
+          "type" : "record",
+          "name" : "RemoteDurationTimerDescription",
+          "fields" : [ {
+            "name" : "timerId",
+            "type" : "string"
+          }, {
+            "name" : "duration",
+            "type" : "long"
+          } ]
+        }, {
+          "type" : "record",
+          "name" : "RemoteInstantTimerDescription",
+          "fields" : [ {
+            "name" : "timerId",
+            "type" : "string"
+          }, {
+            "name" : "instant",
+            "type" : "long"
+          } ]
+        } ]
       }, {
         "name" : "workflowName",
         "type" : "string"

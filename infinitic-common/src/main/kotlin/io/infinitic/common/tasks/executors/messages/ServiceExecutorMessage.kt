@@ -55,7 +55,7 @@ import io.infinitic.common.workflows.data.workflowMethods.WorkflowMethodId
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTask
 import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.data.workflows.WorkflowName
-import io.infinitic.common.workflows.engine.messages.RemoteTaskDispatchedDesc
+import io.infinitic.common.workflows.engine.messages.RemoteTaskDescription
 import io.infinitic.common.workflows.engine.messages.RemoteTaskDispatchedEvent
 import io.infinitic.currentVersion
 import kotlinx.serialization.SerialName
@@ -144,7 +144,7 @@ data class ExecuteTask(
   }
 
   fun taskDispatchedEvent(emitterName: EmitterName) = RemoteTaskDispatchedEvent(
-      remoteTaskDispatched = RemoteTaskDispatchedDesc(
+      remoteTaskDispatched = RemoteTaskDescription(
           taskId = taskId,
           taskName = methodName,
           methodParameterTypes = methodParameterTypes,

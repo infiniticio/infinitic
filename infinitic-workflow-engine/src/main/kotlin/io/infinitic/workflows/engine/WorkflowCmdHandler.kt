@@ -99,14 +99,12 @@ class WorkflowCmdHandler(producerAsync: InfiniticProducerAsync) {
 
           // dispatch workflow task
           with(producer) {
-            executeTaskMessage.sendTo(WorkflowTaskExecutorTopic)
+            // event: starting new method
+            dispatchNewWorkflow.methodCommandedEvent(emitterName).sendTo(WorkflowEventsTopic)
+            // event: starting new workflow Task
             executeTaskMessage.taskDispatchedEvent(emitterName).sendTo(WorkflowEventsTopic)
-          }
-        }
-
-        launch {
-          with(producer) {
-            dispatchNewWorkflow.methodDispatchedEvent(emitterName).sendTo(WorkflowEventsTopic)
+            // starting new workflow Task
+            executeTaskMessage.sendTo(WorkflowTaskExecutorTopic)
           }
         }
       }

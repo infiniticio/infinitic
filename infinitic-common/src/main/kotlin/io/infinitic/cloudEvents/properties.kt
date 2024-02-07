@@ -56,6 +56,8 @@ const val CHANNEL_NAME = "channel"
 const val SIGNAL_ID = "signalId"
 const val SIGNAL_DATA = "signalData"
 const val TIMER_ID = "timerId"
+const val TIMER_DURATION = "timerDuration"
+const val TIMER_INSTANT = "timerInstant"
 
 const val ERROR_NAME = "name"
 const val ERROR_MESSAGE = "message"

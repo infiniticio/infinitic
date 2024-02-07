@@ -71,7 +71,15 @@ internal fun CoroutineScope.dispatchRemoteWorkflowCmd(
           emitterName = emitterName,
           emittedAt = workflowTaskInstant,
       )
-      launch { with(producer) { dispatchWorkflow.sendTo(WorkflowCmdTopic) } }
+
+      launch {
+        with(producer) {
+          // Event: starting child method
+          dispatchWorkflow.childMethodDispatchedEvent(emitterName).sendTo(WorkflowEventsTopic)
+          // Starting new workflow
+          dispatchWorkflow.sendTo(WorkflowCmdTopic)
+        }
+      }
 
       // add provided tags
       dispatchWorkflow.workflowTags.forEach {
@@ -85,12 +93,6 @@ internal fun CoroutineScope.dispatchRemoteWorkflowCmd(
           )
           with(producer) { addTagToWorkflow.sendTo(WorkflowTagTopic) }
         }
-      }
-
-      // Sending method child event message
-      launch {
-        val childMethodDispatchedEvent = dispatchWorkflow.childMethodDispatchedEvent(emitterName)
-        with(producer) { childMethodDispatchedEvent.sendTo(WorkflowEventsTopic) }
       }
 
       // send a timeout for the child method

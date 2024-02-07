@@ -45,8 +45,9 @@ fun WorkflowEventMessage.type(): WorkflowEventMessageType = when (this) {
   is MethodFailedEvent -> WorkflowEventMessageType.METHOD_FAILED
   is MethodCanceledEvent -> WorkflowEventMessageType.METHOD_CANCELED
   is MethodTimedOutEvent -> WorkflowEventMessageType.METHOD_TIMED_OUT
-  is RemoteTaskDispatchedEvent -> WorkflowEventMessageType.METHOD_TASK_DISPATCHED
-  is RemoteMethodDispatchedEvent -> WorkflowEventMessageType.METHOD_CHILD_DISPATCHED
+  is RemoteTaskDispatchedEvent -> WorkflowEventMessageType.REMOTE_TASK_DISPATCHED
+  is RemoteMethodDispatchedEvent -> WorkflowEventMessageType.REMOTE_METHOD_DISPATCHED
+  is RemoteTimerDispatchedEvent -> WorkflowEventMessageType.REMOTE_TIMER_DISPATCHED
 }
 
 @Serializable
@@ -59,8 +60,9 @@ enum class WorkflowEventMessageType {
   METHOD_FAILED,
   METHOD_CANCELED,
   METHOD_TIMED_OUT,
-  METHOD_TASK_DISPATCHED,
-  METHOD_CHILD_DISPATCHED
+  REMOTE_TASK_DISPATCHED,
+  REMOTE_METHOD_DISPATCHED,
+  REMOTE_TIMER_DISPATCHED
 }
 
 interface MethodTerminated : WorkflowMessageInterface {

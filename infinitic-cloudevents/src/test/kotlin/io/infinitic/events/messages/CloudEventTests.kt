@@ -72,6 +72,7 @@ import io.infinitic.common.workflows.engine.messages.RemoteTaskDispatchedEvent
 import io.infinitic.common.workflows.engine.messages.RemoteTaskFailed
 import io.infinitic.common.workflows.engine.messages.RemoteTaskTimedOut
 import io.infinitic.common.workflows.engine.messages.RemoteTimerCompleted
+import io.infinitic.common.workflows.engine.messages.RemoteTimerDispatchedEvent
 import io.infinitic.common.workflows.engine.messages.RetryTasks
 import io.infinitic.common.workflows.engine.messages.RetryWorkflowTask
 import io.infinitic.common.workflows.engine.messages.SendSignal
@@ -422,6 +423,7 @@ internal class CloudEventTests :
               MethodTimedOutEvent::class -> "infinitic.workflow.methodTimedOut"
               RemoteTaskDispatchedEvent::class -> "infinitic.workflow.taskDispatched"
               RemoteMethodDispatchedEvent::class -> "infinitic.workflow.remoteMethodDispatched"
+              RemoteTimerDispatchedEvent::class -> "infinitic.workflow.timerDispatched"
               else -> thisShouldNotHappen()
             }
 
