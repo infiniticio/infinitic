@@ -24,6 +24,10 @@ package io.infinitic.common.tasks.executors.errors
 
 import com.github.avrokotlin.avro4k.AvroName
 import com.github.avrokotlin.avro4k.AvroNamespace
+import io.infinitic.cloudEvents.ERROR_CAUSE
+import io.infinitic.cloudEvents.ERROR_MESSAGE
+import io.infinitic.cloudEvents.ERROR_NAME
+import io.infinitic.cloudEvents.ERROR_STACKTRACE
 import io.infinitic.common.utils.JsonAble
 import io.infinitic.common.utils.toJson
 import io.infinitic.common.workers.data.WorkerName
@@ -80,16 +84,16 @@ data class ExecutionError(
       listOf(
           "name" to name,
           "message" to message,
+          "stackTrace" to stackTraceToString.replace("\n", ""),
           "cause" to cause,
-          "stacktrace" to stackTraceToString.replace("\n", ""),
       ).joinToString { "${it.first}=${it.second}" } + ")"
 
   override fun toJson(): JsonObject = JsonObject(
       mapOf(
-          "name" to JsonPrimitive(name),
-          "message" to JsonPrimitive(message),
-          "stackTrace" to JsonPrimitive(stackTraceToString),
-          "cause" to cause.toJson(),
+          ERROR_NAME to JsonPrimitive(name),
+          ERROR_MESSAGE to JsonPrimitive(message),
+          ERROR_STACKTRACE to JsonPrimitive(stackTraceToString),
+          ERROR_CAUSE to cause.toJson(),
       ),
   )
 }
