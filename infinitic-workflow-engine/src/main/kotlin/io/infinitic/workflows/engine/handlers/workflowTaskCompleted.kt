@@ -159,6 +159,7 @@ internal fun CoroutineScope.workflowTaskCompleted(
     val methodCompletedEvent = MethodCompletedEvent(
         workflowName = state.workflowName,
         workflowId = state.workflowId,
+        workflowVersion = state.workflowVersion,
         workflowMethodName = workflowMethod.methodName,
         workflowMethodId = workflowMethod.workflowMethodId,
         awaitingRequesters = workflowMethod.awaitingRequesters,

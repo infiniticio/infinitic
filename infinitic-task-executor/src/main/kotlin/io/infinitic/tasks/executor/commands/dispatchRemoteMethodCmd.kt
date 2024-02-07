@@ -34,11 +34,12 @@ import io.infinitic.common.workflows.data.commands.DispatchMethodOnRunningWorkfl
 import io.infinitic.common.workflows.data.commands.DispatchMethodOnRunningWorkflowPastCommand
 import io.infinitic.common.workflows.data.workflowMethods.WorkflowMethodId
 import io.infinitic.common.workflows.engine.messages.DispatchMethod
+import io.infinitic.common.workflows.engine.messages.MethodCommandedEvent
 import io.infinitic.common.workflows.tags.messages.DispatchMethodByTag
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
-internal fun CoroutineScope.dispatchMethodOnRunningWorkflowCmd(
+internal fun CoroutineScope.dispatchRemoteMethodCmd(
   currentWorkflow: WorkflowRequester,
   pastCommand: DispatchMethodOnRunningWorkflowPastCommand,
   workflowTaskInstant: MillisInstant,
@@ -63,12 +64,23 @@ internal fun CoroutineScope.dispatchMethodOnRunningWorkflowCmd(
           emittedAt = workflowTaskInstant,
       )
 
-      // if we target another workflow, send this message
       launch {
         when (command.workflowId == currentWorkflow.workflowId) {
-          // if we target the same workflow, the MethodDispatchEvent  won't be on the cmd topic
-          true -> with(producer) {
-            dispatchMethod.methodDispatchedEvent(emitterName).sendTo(WorkflowEventsTopic)
+          // if we target the same workflow, the method will be actually be dispatched with
+          // the return of the workflowTask, we just emit MethodCommandedEvent
+          true -> {
+            val methodCommandedEvent = MethodCommandedEvent(
+                workflowName = currentWorkflow.workflowName,
+                workflowVersion = currentWorkflow.workflowVersion,
+                workflowId = currentWorkflow.workflowId,
+                workflowMethodId = dispatchMethod.workflowMethodId,
+                methodName = dispatchMethod.workflowMethodName,
+                methodParameters = dispatchMethod.methodParameters,
+                methodParameterTypes = dispatchMethod.methodParameterTypes,
+                requester = currentWorkflow,
+                emitterName = emitterName,
+            )
+            with(producer) { methodCommandedEvent.sendTo(WorkflowEventsTopic) }
           }
           // if we target another workflow, the event will be on the cmd topic
           false -> with(producer) { dispatchMethod.sendTo(WorkflowCmdTopic) }
@@ -77,8 +89,9 @@ internal fun CoroutineScope.dispatchMethodOnRunningWorkflowCmd(
 
       // Sending child method event message
       launch {
-        val childMethodDispatchedEvent = dispatchMethod.childMethodDispatchedEvent(emitterName)
-        with(producer) { childMethodDispatchedEvent.sendTo(WorkflowEventsTopic) }
+        val remoteMethodDispatchedEvent =
+            dispatchMethod.childMethodDispatchedEvent(emitterName)
+        with(producer) { remoteMethodDispatchedEvent.sendTo(WorkflowEventsTopic) }
       }
 
       // set timeout if any

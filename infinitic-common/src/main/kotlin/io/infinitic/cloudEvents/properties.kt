@@ -21,7 +21,7 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.events.properties
+package io.infinitic.cloudEvents
 
 const val ERROR = "error"
 const val RESULT = "result"
@@ -40,8 +40,11 @@ const val TASK_ARGS = "taskArgs"
 const val TASK_ID = "taskId"
 const val TASK_STATUS = "taskStatus"
 
+const val CLIENT_NAME = "clientName"
+
 const val WORKFLOW_ID = "workflowId"
 const val WORKFLOW_NAME = "workflowName"
+const val WORKFLOW_VERSION = "workflowVersion"
 const val WORKFLOW_META = "workflowMeta"
 const val WORKFLOW_TAGS = "workflowTags"
 
@@ -53,9 +56,3 @@ const val CHANNEL_NAME = "channel"
 const val SIGNAL_ID = "signalId"
 const val SIGNAL_DATA = "signalData"
 const val TIMER_ID = "timerId"
-
-
-
-
-
-

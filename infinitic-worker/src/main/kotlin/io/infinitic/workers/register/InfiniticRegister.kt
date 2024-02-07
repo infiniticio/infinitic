@@ -23,7 +23,7 @@
 package io.infinitic.workers.register
 
 import io.infinitic.cache.config.Cache
-import io.infinitic.common.events.CloudEventListener
+import io.infinitic.cloudEvents.CloudEventListener
 import io.infinitic.common.workers.registry.ServiceFactory
 import io.infinitic.common.workers.registry.WorkerRegistry
 import io.infinitic.common.workers.registry.WorkflowClassList

@@ -50,6 +50,7 @@ import io.infinitic.common.requester.workflowId
 import io.infinitic.common.requester.workflowMethodId
 import io.infinitic.common.requester.workflowMethodName
 import io.infinitic.common.requester.workflowName
+import io.infinitic.common.requester.workflowVersion
 import io.infinitic.common.tasks.data.DelegatedTaskData
 import io.infinitic.common.tasks.data.ServiceName
 import io.infinitic.common.tasks.data.TaskId
@@ -62,6 +63,7 @@ import io.infinitic.common.tasks.executors.errors.MethodUnknownError
 import io.infinitic.common.tasks.executors.errors.TaskCanceledError
 import io.infinitic.common.tasks.executors.errors.TaskFailedError
 import io.infinitic.common.tasks.executors.errors.TaskTimedOutError
+import io.infinitic.common.workers.config.WorkflowVersion
 import io.infinitic.common.workflows.data.channels.ChannelName
 import io.infinitic.common.workflows.data.channels.ChannelType
 import io.infinitic.common.workflows.data.channels.SignalData
@@ -96,6 +98,7 @@ interface WorkflowMessageInterface : Message {
 interface WorkflowEvent
 
 interface MethodEvent : WorkflowEvent {
+  val workflowVersion: WorkflowVersion?
   val workflowMethodName: MethodName?
   val workflowMethodId: WorkflowMethodId
 }
@@ -227,6 +230,7 @@ data class DispatchWorkflow(
 
   fun methodDispatchedEvent(emitterName: EmitterName) = MethodCommandedEvent(
       workflowName = workflowName,
+      workflowVersion = null,
       workflowId = workflowId,
       workflowMethodId = WorkflowMethodId.from(workflowId),
       methodName = methodName,
@@ -248,6 +252,7 @@ data class DispatchWorkflow(
       ),
       workflowName = requester.workflowName ?: thisShouldNotHappen(),
       workflowId = requester.workflowId ?: thisShouldNotHappen(),
+      workflowVersion = requester.workflowVersion,
       workflowMethodName = requester.workflowMethodName ?: thisShouldNotHappen(),
       workflowMethodId = requester.workflowMethodId ?: thisShouldNotHappen(),
       emitterName = emitterName,
@@ -263,6 +268,7 @@ data class DispatchWorkflow(
           ),
           workflowName = requester.workflowName ?: thisShouldNotHappen(),
           workflowId = requester.workflowId ?: thisShouldNotHappen(),
+          workflowVersion = requester.workflowVersion,
           workflowMethodName = requester.workflowMethodName,
           workflowMethodId = requester.workflowMethodId ?: thisShouldNotHappen(),
           emitterName = emitterName,
@@ -285,8 +291,8 @@ data class DispatchWorkflow(
 data class DispatchMethod(
   override val workflowName: WorkflowName,
   override val workflowId: WorkflowId,
-  @AvroName("methodRunId") override val workflowMethodId: WorkflowMethodId,
-  @AvroName("methodName") override val workflowMethodName: MethodName,
+  @AvroName("methodRunId") val workflowMethodId: WorkflowMethodId,
+  @AvroName("methodName") val workflowMethodName: MethodName,
   val methodParameters: MethodParameters,
   val methodParameterTypes: MethodParameterTypes?,
   @Deprecated("Not used since version 0.13.0") val parentWorkflowId: WorkflowId? = null,
@@ -296,7 +302,7 @@ data class DispatchMethod(
   val clientWaiting: Boolean,
   override val emitterName: EmitterName,
   @AvroDefault(Avro.NULL) override var emittedAt: MillisInstant?
-) : WorkflowMessage(), WorkflowCmdMessage, MethodEvent {
+) : WorkflowMessage(), WorkflowCmdMessage, WorkflowEvent {
   init {
     // this is used only to handle previous messages that are still on <0.13 version
     // in topics or in bufferedMessages of a workflow state
@@ -312,17 +318,6 @@ data class DispatchMethod(
     }
   }
 
-  fun methodDispatchedEvent(emitterName: EmitterName) = MethodCommandedEvent(
-      workflowName = workflowName,
-      workflowId = workflowId,
-      workflowMethodId = workflowMethodId,
-      methodName = workflowMethodName,
-      methodParameters = methodParameters,
-      methodParameterTypes = methodParameterTypes,
-      requester = requester ?: thisShouldNotHappen(),
-      emitterName = emitterName,
-  )
-
   fun childMethodDispatchedEvent(emitterName: EmitterName) = RemoteMethodDispatchedEvent(
       remoteMethodDispatched = RemoteMethodDispatchedDesc(
           workflowId = workflowId,
@@ -335,6 +330,7 @@ data class DispatchMethod(
       ),
       workflowName = requester.workflowName ?: thisShouldNotHappen(),
       workflowId = requester.workflowId ?: thisShouldNotHappen(),
+      workflowVersion = requester.workflowVersion,
       workflowMethodName = requester.workflowMethodName ?: thisShouldNotHappen(),
       workflowMethodId = requester.workflowMethodId ?: thisShouldNotHappen(),
       emitterName = emitterName,
@@ -350,6 +346,7 @@ data class DispatchMethod(
           ),
           workflowName = requester.workflowName ?: thisShouldNotHappen(),
           workflowId = requester.workflowId ?: thisShouldNotHappen(),
+          workflowVersion = requester.workflowVersion,
           workflowMethodName = requester.workflowMethodName,
           workflowMethodId = requester.workflowMethodId ?: thisShouldNotHappen(),
           emitterName = emitterName,
@@ -433,6 +430,7 @@ data class RemoteMethodUnknown(
   val childMethodUnknownError: MethodUnknownError,
   override val workflowName: WorkflowName,
   override val workflowId: WorkflowId,
+  @AvroDefault(Avro.NULL) override val workflowVersion: WorkflowVersion?,
   @AvroDefault(Avro.NULL) override val workflowMethodName: MethodName?,
   @AvroName("methodRunId") override val workflowMethodId: WorkflowMethodId,
   override val emitterName: EmitterName,
@@ -453,6 +451,7 @@ data class RemoteMethodCanceled(
   val childMethodCanceledError: MethodCanceledError,
   override val workflowName: WorkflowName,
   override val workflowId: WorkflowId,
+  @AvroDefault(Avro.NULL) override val workflowVersion: WorkflowVersion?,
   @AvroDefault(Avro.NULL) override val workflowMethodName: MethodName?,
   @AvroName("methodRunId") override val workflowMethodId: WorkflowMethodId,
   override val emitterName: EmitterName,
@@ -473,6 +472,7 @@ data class RemoteMethodFailed(
   val childMethodFailedError: MethodFailedError,
   override val workflowName: WorkflowName,
   override val workflowId: WorkflowId,
+  @AvroDefault(Avro.NULL) override val workflowVersion: WorkflowVersion?,
   @AvroDefault(Avro.NULL) override val workflowMethodName: MethodName?,
   @AvroName("methodRunId") override val workflowMethodId: WorkflowMethodId,
   override val emitterName: EmitterName,
@@ -492,6 +492,7 @@ data class RemoteMethodTimedOut(
   val childMethodTimedOutError: MethodTimedOutError,
   override val workflowName: WorkflowName,
   override val workflowId: WorkflowId,
+  @AvroDefault(Avro.NULL) override val workflowVersion: WorkflowVersion?,
   @AvroDefault(Avro.NULL) override val workflowMethodName: MethodName?,
   @AvroName("methodRunId") override val workflowMethodId: WorkflowMethodId,
   override val emitterName: EmitterName,
@@ -511,6 +512,7 @@ data class RemoteMethodCompleted(
   val childWorkflowReturnValue: WorkflowReturnValue,
   override val workflowName: WorkflowName,
   override val workflowId: WorkflowId,
+  @AvroDefault(Avro.NULL) override val workflowVersion: WorkflowVersion?,
   @AvroDefault(Avro.NULL) override val workflowMethodName: MethodName?,
   @AvroName("methodRunId") override val workflowMethodId: WorkflowMethodId,
   override val emitterName: EmitterName,
@@ -530,6 +532,7 @@ data class RemoteTaskCanceled(
   val taskCanceledError: TaskCanceledError,
   override val workflowName: WorkflowName,
   override val workflowId: WorkflowId,
+  @AvroDefault(Avro.NULL) override val workflowVersion: WorkflowVersion?,
   @AvroDefault(Avro.NULL) override val workflowMethodName: MethodName?,
   @AvroName("methodRunId") override val workflowMethodId: WorkflowMethodId,
   override val emitterName: EmitterName,
@@ -552,6 +555,7 @@ data class RemoteTaskFailed(
   val deferredError: DeferredError?,
   override val workflowName: WorkflowName,
   override val workflowId: WorkflowId,
+  @AvroDefault(Avro.NULL) override val workflowVersion: WorkflowVersion?,
   @AvroDefault(Avro.NULL) override val workflowMethodName: MethodName?,
   @AvroName("methodRunId") override val workflowMethodId: WorkflowMethodId,
   override val emitterName: EmitterName,
@@ -575,6 +579,7 @@ data class RemoteTaskTimedOut(
   val taskTimedOutError: TaskTimedOutError,
   override val workflowName: WorkflowName,
   override val workflowId: WorkflowId,
+  @AvroDefault(Avro.NULL) override val workflowVersion: WorkflowVersion?,
   @AvroDefault(Avro.NULL) override val workflowMethodName: MethodName?,
   @AvroName("methodRunId") override val workflowMethodId: WorkflowMethodId,
   override val emitterName: EmitterName,
@@ -596,6 +601,7 @@ data class RemoteTaskCompleted(
   val taskReturnValue: TaskReturnValue,
   override val workflowName: WorkflowName,
   override val workflowId: WorkflowId,
+  @AvroDefault(Avro.NULL) override val workflowVersion: WorkflowVersion?,
   @AvroDefault(Avro.NULL) override val workflowMethodName: MethodName?,
   @AvroName("methodRunId") override val workflowMethodId: WorkflowMethodId,
   override val emitterName: EmitterName,
@@ -616,6 +622,7 @@ data class RemoteTaskCompleted(
           taskReturnValue = data.taskReturnData(returnValue),
           workflowName = data.requester.workflowName,
           workflowId = data.requester.workflowId,
+          workflowVersion = data.requester.workflowVersion,
           workflowMethodName = data.requester.workflowMethodName,
           workflowMethodId = data.requester.workflowMethodId,
           emitterName = emitterName,
@@ -637,6 +644,7 @@ data class RemoteTimerCompleted(
   val timerId: TimerId,
   override val workflowName: WorkflowName,
   override val workflowId: WorkflowId,
+  @AvroDefault(Avro.NULL) override val workflowVersion: WorkflowVersion?,
   @AvroDefault(Avro.NULL) override val workflowMethodName: MethodName?,
   @AvroName("methodRunId") override val workflowMethodId: WorkflowMethodId,
   override val emitterName: EmitterName,
@@ -650,6 +658,7 @@ data class RemoteTimerCompleted(
 @AvroNamespace("io.infinitic.workflows.engine")
 data class WorkflowCompletedEvent(
   override val workflowName: WorkflowName,
+  override val workflowVersion: WorkflowVersion?,
   override val workflowId: WorkflowId,
   override val emitterName: EmitterName,
 ) : WorkflowMessage(), WorkflowEventMessage
@@ -661,6 +670,7 @@ data class WorkflowCompletedEvent(
 @AvroNamespace("io.infinitic.workflows.engine")
 data class WorkflowCanceledEvent(
   override val workflowName: WorkflowName,
+  override val workflowVersion: WorkflowVersion?,
   override val workflowId: WorkflowId,
   override val emitterName: EmitterName,
 ) : WorkflowMessage(), WorkflowEventMessage
@@ -672,6 +682,7 @@ data class WorkflowCanceledEvent(
 @AvroNamespace("io.infinitic.workflows.engine")
 data class MethodCommandedEvent(
   override val workflowName: WorkflowName,
+  override val workflowVersion: WorkflowVersion?,
   override val workflowId: WorkflowId,
   val workflowMethodId: WorkflowMethodId,
   val methodName: MethodName,
@@ -688,6 +699,7 @@ data class MethodCommandedEvent(
 @AvroNamespace("io.infinitic.workflows.engine")
 data class MethodCompletedEvent(
   override val workflowName: WorkflowName,
+  override val workflowVersion: WorkflowVersion?,
   override val workflowId: WorkflowId,
   override val workflowMethodName: MethodName,
   override val workflowMethodId: WorkflowMethodId,
@@ -716,6 +728,7 @@ data class MethodCompletedEvent(
             ),
             workflowName = requester.workflowName,
             workflowId = requester.workflowId,
+            workflowVersion = requester.workflowVersion,
             workflowMethodName = requester.workflowMethodName,
             workflowMethodId = requester.workflowMethodId,
             emitterName = emitterName,
@@ -731,6 +744,7 @@ data class MethodCompletedEvent(
 @AvroNamespace("io.infinitic.workflows.engine")
 data class MethodFailedEvent(
   override val workflowName: WorkflowName,
+  override val workflowVersion: WorkflowVersion?,
   override val workflowId: WorkflowId,
   override val workflowMethodName: MethodName,
   override val workflowMethodId: WorkflowMethodId,
@@ -761,6 +775,7 @@ data class MethodFailedEvent(
             ),
             workflowName = requester.workflowName,
             workflowId = requester.workflowId,
+            workflowVersion = requester.workflowVersion,
             workflowMethodName = requester.workflowMethodName,
             workflowMethodId = requester.workflowMethodId,
             emitterName = emitterName,
@@ -776,6 +791,7 @@ data class MethodFailedEvent(
 @AvroNamespace("io.infinitic.workflows.engine")
 data class MethodCanceledEvent(
   override val workflowName: WorkflowName,
+  override val workflowVersion: WorkflowVersion?,
   override val workflowId: WorkflowId,
   override val workflowMethodName: MethodName,
   override val workflowMethodId: WorkflowMethodId,
@@ -804,6 +820,7 @@ data class MethodCanceledEvent(
             ),
             workflowId = requester.workflowId,
             workflowName = requester.workflowName,
+            workflowVersion = requester.workflowVersion,
             workflowMethodName = requester.workflowMethodName,
             workflowMethodId = requester.workflowMethodId,
             emitterName = emitterName,
@@ -819,6 +836,7 @@ data class MethodCanceledEvent(
 @AvroNamespace("io.infinitic.workflows.engine")
 data class MethodTimedOutEvent(
   override val workflowName: WorkflowName,
+  override val workflowVersion: WorkflowVersion?,
   override val workflowId: WorkflowId,
   override val workflowMethodName: MethodName,
   override val workflowMethodId: WorkflowMethodId,
@@ -846,6 +864,7 @@ data class MethodTimedOutEvent(
             ),
             workflowId = requester.workflowId,
             workflowName = requester.workflowName,
+            workflowVersion = requester.workflowVersion,
             workflowMethodName = requester.workflowMethodName,
             workflowMethodId = requester.workflowMethodId,
             emitterName = emitterName,
@@ -863,6 +882,7 @@ data class RemoteTaskDispatchedEvent(
   val remoteTaskDispatched: RemoteTaskDispatchedDesc,
   override val workflowName: WorkflowName,
   override val workflowId: WorkflowId,
+  override val workflowVersion: WorkflowVersion?,
   override val workflowMethodName: MethodName,
   override val workflowMethodId: WorkflowMethodId,
   override val emitterName: EmitterName,
@@ -880,6 +900,7 @@ data class RemoteMethodDispatchedEvent(
   val remoteMethodDispatched: RemoteMethodDispatchedDesc,
   override val workflowName: WorkflowName,
   override val workflowId: WorkflowId,
+  override val workflowVersion: WorkflowVersion?,
   override val workflowMethodName: MethodName,
   override val workflowMethodId: WorkflowMethodId,
   override val emitterName: EmitterName,

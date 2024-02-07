@@ -36,6 +36,7 @@ import io.infinitic.common.requester.workflowId
 import io.infinitic.common.requester.workflowMethodId
 import io.infinitic.common.requester.workflowMethodName
 import io.infinitic.common.requester.workflowName
+import io.infinitic.common.requester.workflowVersion
 import io.infinitic.common.tasks.data.DelegatedTaskData
 import io.infinitic.common.tasks.data.ServiceName
 import io.infinitic.common.tasks.data.TaskId
@@ -253,6 +254,7 @@ internal class TaskTagEngineTests :
                   returnValue = msgIn.returnValue,
               ),
               workflowName = delegatedTaskData.requester.workflowName!!,
+              workflowVersion = delegatedTaskData.requester.workflowVersion,
               workflowId = delegatedTaskData.requester.workflowId!!,
               workflowMethodName = delegatedTaskData.requester.workflowMethodName!!,
               workflowMethodId = delegatedTaskData.requester.workflowMethodId!!,

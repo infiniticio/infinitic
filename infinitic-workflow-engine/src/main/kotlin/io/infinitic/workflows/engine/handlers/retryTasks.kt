@@ -110,7 +110,6 @@ private fun CoroutineScope.reDispatchTaskCmd(
         methodParameterTypes = methodParameterTypes,
         methodParameters = methodParameters,
         lastError = null,
-        workflowVersion = state.workflowVersion,
     )
   }
 
@@ -138,6 +137,7 @@ private fun CoroutineScope.reDispatchTaskCmd(
           ),
           workflowName = state.workflowName,
           workflowId = state.workflowId,
+          workflowVersion = state.workflowVersion,
           workflowMethodName = workflowMethod.methodName,
           workflowMethodId = workflowMethod.workflowMethodId,
           emitterName = emitterName,

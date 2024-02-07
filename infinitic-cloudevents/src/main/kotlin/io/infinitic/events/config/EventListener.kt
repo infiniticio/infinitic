@@ -22,7 +22,7 @@
  */
 package io.infinitic.events.config
 
-import io.infinitic.common.events.CloudEventListener
+import io.infinitic.cloudEvents.CloudEventListener
 import io.infinitic.common.utils.getInstance
 
 data class EventListener(

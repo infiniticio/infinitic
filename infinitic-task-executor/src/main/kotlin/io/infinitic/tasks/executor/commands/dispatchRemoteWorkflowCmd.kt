@@ -40,7 +40,7 @@ import io.infinitic.common.workflows.tags.messages.DispatchWorkflowByCustomId
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
-internal fun CoroutineScope.dispatchNewWorkflowCmd(
+internal fun CoroutineScope.dispatchRemoteWorkflowCmd(
   currentWorkflow: WorkflowRequester,
   pastCommand: DispatchNewWorkflowPastCommand,
   workflowTaskInstant: MillisInstant,

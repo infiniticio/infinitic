@@ -28,11 +28,14 @@ import io.infinitic.common.data.MillisInstant
 import io.infinitic.common.data.methods.MethodName
 import io.infinitic.common.emitters.EmitterName
 import io.infinitic.common.requester.Requester
+import io.infinitic.common.workers.config.WorkflowVersion
 import io.infinitic.common.workflows.data.workflowMethods.WorkflowMethodId
 import kotlinx.serialization.Serializable
 
 @Serializable
-sealed interface WorkflowEventMessage : WorkflowMessageInterface
+sealed interface WorkflowEventMessage : WorkflowMessageInterface {
+  val workflowVersion: WorkflowVersion?
+}
 
 fun WorkflowEventMessage.type(): WorkflowEventMessageType = when (this) {
   is WorkflowCompletedEvent -> WorkflowEventMessageType.WORKFLOW_COMPLETED

@@ -78,6 +78,7 @@ internal fun CoroutineScope.cancelWorkflow(
   // WorkflowCanceledEvent is emitted after all WorkflowMethodCanceledEvent
   val workflowCanceledEvent = WorkflowCanceledEvent(
       workflowName = message.workflowName,
+      workflowVersion = state.workflowVersion,
       workflowId = message.workflowId,
       emitterName = EmitterName(producer.name),
   )
@@ -166,6 +167,7 @@ private fun CoroutineScope.cancelWorkflowMethod(
   return launch {
     val methodCanceledEvent = MethodCanceledEvent(
         workflowName = state.workflowName,
+        workflowVersion = state.workflowVersion,
         workflowId = state.workflowId,
         workflowMethodName = workflowMethod.methodName,
         workflowMethodId = workflowMethod.workflowMethodId,

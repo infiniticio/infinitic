@@ -22,7 +22,7 @@
  */
 package io.infinitic.common.workers.registry
 
-import io.infinitic.common.events.CloudEventListener
+import io.infinitic.cloudEvents.CloudEventListener
 
 data class RegisteredEventListener(
   val eventListener: CloudEventListener,

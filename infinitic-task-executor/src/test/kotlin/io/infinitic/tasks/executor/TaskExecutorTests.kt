@@ -55,7 +55,6 @@ import io.infinitic.common.transport.InfiniticProducerAsync
 import io.infinitic.common.transport.ServiceEventsTopic
 import io.infinitic.common.transport.ServiceExecutorTopic
 import io.infinitic.common.workers.config.ExponentialBackoffRetryPolicy
-import io.infinitic.common.workers.config.WorkflowVersion
 import io.infinitic.common.workers.data.WorkerName
 import io.infinitic.common.workers.registry.RegisteredServiceExecutor
 import io.infinitic.common.workers.registry.WorkerRegistry
@@ -484,7 +483,6 @@ fun ExecuteTask.check(
   emitterName shouldBe testEmitterName
   taskRetrySequence shouldBe msg.taskRetrySequence
   taskRetryIndex shouldBe msg.taskRetryIndex + 1
-  workflowVersion shouldBe msg.workflowVersion
   requester shouldBe msg.requester
   clientWaiting shouldBe msg.clientWaiting
   methodName shouldBe msg.methodName
@@ -547,7 +545,6 @@ internal fun getExecuteTask(method: String, input: Array<out Any?>, types: List<
         methodParameterTypes = types?.let { MethodParameterTypes(it) },
         methodParameters = MethodParameters.from(*input),
         lastError = null,
-        workflowVersion = WorkflowVersion(42),
     )
 
 private fun getTaskStarted(msg: ExecuteTask, messageId: MessageId) = TaskStartedEvent(

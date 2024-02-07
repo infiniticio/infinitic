@@ -23,6 +23,14 @@
 
 package io.infinitic.events.errors
 
+import io.infinitic.cloudEvents.ERROR
+import io.infinitic.cloudEvents.METHOD_ID
+import io.infinitic.cloudEvents.METHOD_NAME
+import io.infinitic.cloudEvents.SERVICE_NAME
+import io.infinitic.cloudEvents.TASK_ID
+import io.infinitic.cloudEvents.TASK_NAME
+import io.infinitic.cloudEvents.WORKFLOW_ID
+import io.infinitic.cloudEvents.WORKFLOW_NAME
 import io.infinitic.common.tasks.executors.errors.DeferredError
 import io.infinitic.common.tasks.executors.errors.MethodCanceledError
 import io.infinitic.common.tasks.executors.errors.MethodFailedError
@@ -34,14 +42,6 @@ import io.infinitic.common.tasks.executors.errors.TaskTimedOutError
 import io.infinitic.common.tasks.executors.errors.TaskUnknownError
 import io.infinitic.common.tasks.executors.errors.WorkflowTaskFailedError
 import io.infinitic.common.utils.toJson
-import io.infinitic.events.properties.ERROR
-import io.infinitic.events.properties.METHOD_ID
-import io.infinitic.events.properties.METHOD_NAME
-import io.infinitic.events.properties.SERVICE_NAME
-import io.infinitic.events.properties.TASK_ID
-import io.infinitic.events.properties.TASK_NAME
-import io.infinitic.events.properties.WORKFLOW_ID
-import io.infinitic.events.properties.WORKFLOW_NAME
 import io.infinitic.events.types.EXECUTOR_FAILED
 import io.infinitic.events.types.REMOTE_METHOD_CANCELED
 import io.infinitic.events.types.REMOTE_METHOD_FAILED

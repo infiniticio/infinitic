@@ -86,7 +86,6 @@ data class WorkflowTaskParameters(
       methodParameterTypes = MethodParameterTypes(listOf(WorkflowTaskParameters::class.java.name)),
       methodParameters = MethodParameters.from(this),
       lastError = null,
-      workflowVersion = workflowVersion,
   )
 
   fun toByteArray() = AvroSerDe.writeBinaryWithSchemaFingerprint(this, serializer())

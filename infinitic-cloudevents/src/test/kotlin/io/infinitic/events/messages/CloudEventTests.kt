@@ -26,8 +26,8 @@ package io.infinitic.events.messages
 import com.fasterxml.jackson.module.kotlin.jsonMapper
 import io.cloudevents.CloudEvent
 import io.cloudevents.jackson.JsonFormat
+import io.infinitic.cloudEvents.CloudEventListener
 import io.infinitic.common.clients.data.ClientName
-import io.infinitic.common.events.CloudEventListener
 import io.infinitic.common.exceptions.thisShouldNotHappen
 import io.infinitic.common.fixtures.TestFactory
 import io.infinitic.common.messages.Message

@@ -23,14 +23,34 @@
 
 package io.infinitic.tests.utils
 
+import com.fasterxml.jackson.databind.ObjectMapper
 import io.cloudevents.CloudEvent
 import io.cloudevents.jackson.JsonFormat
-import io.infinitic.common.events.CloudEventListener
+import io.infinitic.cloudEvents.CloudEventListener
+import org.ehcache.impl.internal.concurrent.ConcurrentHashMap
 
 class Listener : CloudEventListener {
-
   override fun onEvent(event: CloudEvent) {
-    println(String(JsonFormat().serialize(event)))
+    events.add(event)
   }
 
+  companion object {
+    private val objectMapper = ObjectMapper()
+
+    private val events = ConcurrentHashMap.newKeySet<CloudEvent>()
+
+    fun clear() {
+      events.clear()
+    }
+
+    fun print() {
+      events
+          .sortedBy { it.time }
+          .filter { it.type.startsWith("infinitic.workflow") }
+          .forEach {
+            val jsonNode = objectMapper.readTree(String(JsonFormat().serialize(it)))
+            println(objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(jsonNode))
+          }
+    }
+  }
 }

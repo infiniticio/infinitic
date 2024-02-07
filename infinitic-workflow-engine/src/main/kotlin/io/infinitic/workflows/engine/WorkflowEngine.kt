@@ -151,6 +151,7 @@ class WorkflowEngine(
   private suspend fun sendWorkflowCompletedEvent(state: WorkflowState) {
     val workflowCompletedEvent = WorkflowCompletedEvent(
         workflowName = state.workflowName,
+        workflowVersion = state.workflowVersion,
         workflowId = state.workflowId,
         emitterName = emitterName,
     )
@@ -217,6 +218,7 @@ class WorkflowEngine(
                 ),
                 workflowName = requester.workflowName,
                 workflowId = requester.workflowId,
+                workflowVersion = requester.workflowVersion,
                 workflowMethodName = requester.workflowMethodName,
                 workflowMethodId = requester.workflowMethodId,
                 emitterName = emitterName,

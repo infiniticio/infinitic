@@ -44,6 +44,7 @@ internal fun completeTimer(state: WorkflowState, message: CompleteTimers) {
               timerId = TimerId.from(it.commandId),
               workflowName = state.workflowName,
               workflowId = state.workflowId,
+              workflowVersion = state.workflowVersion,
               workflowMethodName = methodName,
               workflowMethodId = workflowMethodId,
               emitterName = message.emitterName,

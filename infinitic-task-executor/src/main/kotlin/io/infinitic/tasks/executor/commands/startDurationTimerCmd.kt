@@ -47,6 +47,7 @@ internal fun CoroutineScope.startDurationTimerCmd(
       timerId = TimerId.from(pastCommand.commandId),
       workflowName = requester.workflowName,
       workflowId = requester.workflowId,
+      workflowVersion = requester.workflowVersion,
       workflowMethodName = requester.workflowMethodName,
       workflowMethodId = requester.workflowMethodId,
       emitterName = emitterName,

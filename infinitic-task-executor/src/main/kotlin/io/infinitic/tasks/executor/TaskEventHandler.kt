@@ -46,9 +46,9 @@ import io.infinitic.common.workflows.data.commands.SendSignalPastCommand
 import io.infinitic.common.workflows.data.commands.StartDurationTimerPastCommand
 import io.infinitic.common.workflows.data.commands.StartInstantTimerPastCommand
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskReturnValue
-import io.infinitic.tasks.executor.commands.dispatchMethodOnRunningWorkflowCmd
-import io.infinitic.tasks.executor.commands.dispatchNewWorkflowCmd
-import io.infinitic.tasks.executor.commands.dispatchTaskCmd
+import io.infinitic.tasks.executor.commands.dispatchRemoteMethodCmd
+import io.infinitic.tasks.executor.commands.dispatchRemoteTaskCmd
+import io.infinitic.tasks.executor.commands.dispatchRemoteWorkflowCmd
 import io.infinitic.tasks.executor.commands.sendSignalCmd
 import io.infinitic.tasks.executor.commands.startDurationTimerCmd
 import io.infinitic.tasks.executor.commands.startInstantTimerCmq
@@ -136,18 +136,20 @@ class TaskEventHandler(producerAsync: InfiniticProducerAsync) {
         // TODO After 0.13.0, workflowTaskInstant should not be null anymore
         val workflowTaskInstant = result.workflowTaskInstant ?: publishTime
 
-        val requester = msg.requester as WorkflowRequester
+        // from there, workflowVersion is defined
+        val requester =
+            (msg.requester as WorkflowRequester).copy(workflowVersion = result.workflowVersion)
 
         result.newCommands.forEach {
           when (it) {
             is DispatchNewWorkflowPastCommand ->
-              dispatchNewWorkflowCmd(requester, it, workflowTaskInstant, producer)
+              dispatchRemoteWorkflowCmd(requester, it, workflowTaskInstant, producer)
 
             is DispatchMethodOnRunningWorkflowPastCommand ->
-              dispatchMethodOnRunningWorkflowCmd(requester, it, workflowTaskInstant, producer)
+              dispatchRemoteMethodCmd(requester, it, workflowTaskInstant, producer)
 
             is DispatchTaskPastCommand ->
-              dispatchTaskCmd(requester, result.workflowVersion, it, workflowTaskInstant, producer)
+              dispatchRemoteTaskCmd(requester, it, workflowTaskInstant, producer)
 
             is SendSignalPastCommand ->
               sendSignalCmd(requester, it, workflowTaskInstant, producer)

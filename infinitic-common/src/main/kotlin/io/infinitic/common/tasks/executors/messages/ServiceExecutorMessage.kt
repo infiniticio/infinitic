@@ -41,6 +41,7 @@ import io.infinitic.common.requester.workflowId
 import io.infinitic.common.requester.workflowMethodId
 import io.infinitic.common.requester.workflowMethodName
 import io.infinitic.common.requester.workflowName
+import io.infinitic.common.requester.workflowVersion
 import io.infinitic.common.tasks.data.ServiceName
 import io.infinitic.common.tasks.data.TaskId
 import io.infinitic.common.tasks.data.TaskMeta
@@ -101,7 +102,7 @@ data class ExecuteTask(
   val methodParameterTypes: MethodParameterTypes?,
   val methodParameters: MethodParameters,
   val lastError: ExecutionError?,
-  @AvroDefault(Avro.NULL) val workflowVersion: WorkflowVersion?
+  @Deprecated("Not used since version 0.13.0") @AvroDefault(Avro.NULL) val workflowVersion: WorkflowVersion? = null
 ) : ServiceExecutorMessage() {
 
   init {
@@ -139,7 +140,6 @@ data class ExecuteTask(
         methodParameterTypes = msg.methodParameterTypes,
         methodParameters = msg.methodParameters,
         lastError = cause.getExecutionError(emitterName),
-        workflowVersion = msg.workflowVersion,
     )
   }
 
@@ -153,6 +153,7 @@ data class ExecuteTask(
       ),
       workflowName = requester.workflowName!!,
       workflowId = requester.workflowId!!,
+      workflowVersion = requester.workflowVersion,
       workflowMethodName = requester.workflowMethodName!!,
       workflowMethodId = requester.workflowMethodId!!,
       emitterName = emitterName,

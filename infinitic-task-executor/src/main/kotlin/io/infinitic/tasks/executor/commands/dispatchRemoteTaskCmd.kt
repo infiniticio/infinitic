@@ -35,15 +35,13 @@ import io.infinitic.common.transport.InfiniticProducer
 import io.infinitic.common.transport.ServiceExecutorTopic
 import io.infinitic.common.transport.ServiceTagTopic
 import io.infinitic.common.transport.WorkflowEventsTopic
-import io.infinitic.common.workers.config.WorkflowVersion
 import io.infinitic.common.workflows.data.commands.DispatchTaskPastCommand
 import io.infinitic.common.workflows.engine.messages.RemoteTaskTimedOut
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
-internal fun CoroutineScope.dispatchTaskCmd(
+internal fun CoroutineScope.dispatchRemoteTaskCmd(
   currentWorkflow: WorkflowRequester,
-  workflowVersion: WorkflowVersion,
   pastCommand: DispatchTaskPastCommand,
   workflowTaskInstant: MillisInstant,
   producer: InfiniticProducer
@@ -66,7 +64,6 @@ internal fun CoroutineScope.dispatchTaskCmd(
         methodParameterTypes = methodParameterTypes,
         methodParameters = methodParameters,
         lastError = null,
-        workflowVersion = workflowVersion,
     )
   }
 
@@ -101,6 +98,7 @@ internal fun CoroutineScope.dispatchTaskCmd(
         ),
         workflowName = currentWorkflow.workflowName,
         workflowId = currentWorkflow.workflowId,
+        workflowVersion = currentWorkflow.workflowVersion,
         workflowMethodName = currentWorkflow.workflowMethodName,
         workflowMethodId = currentWorkflow.workflowMethodId,
         emitterName = emitterName,

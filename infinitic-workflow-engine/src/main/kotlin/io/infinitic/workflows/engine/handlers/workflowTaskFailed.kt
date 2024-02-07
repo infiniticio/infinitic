@@ -51,6 +51,7 @@ internal fun CoroutineScope.workflowTaskFailed(
   val methodFailedEvent = MethodFailedEvent(
       workflowName = state.workflowName,
       workflowId = state.workflowId,
+      workflowVersion = state.workflowVersion,
       workflowMethodId = workflowMethod.workflowMethodId,
       workflowMethodName = workflowMethod.methodName,
       awaitingRequesters = workflowMethod.awaitingRequesters,

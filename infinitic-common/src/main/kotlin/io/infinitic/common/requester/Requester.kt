@@ -23,17 +23,23 @@
 package io.infinitic.common.requester
 
 import com.github.avrokotlin.avro4k.AvroNamespace
+import io.infinitic.cloudEvents.CLIENT_NAME
+import io.infinitic.cloudEvents.METHOD_ID
+import io.infinitic.cloudEvents.METHOD_NAME
+import io.infinitic.cloudEvents.WORKFLOW_ID
+import io.infinitic.cloudEvents.WORKFLOW_NAME
+import io.infinitic.cloudEvents.WORKFLOW_VERSION
 import io.infinitic.common.clients.data.ClientName
 import io.infinitic.common.data.methods.MethodName
 import io.infinitic.common.exceptions.thisShouldNotHappen
 import io.infinitic.common.utils.JsonAble
+import io.infinitic.common.utils.toJson
 import io.infinitic.common.workers.config.WorkflowVersion
 import io.infinitic.common.workflows.data.workflowMethods.WorkflowMethodId
 import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.data.workflows.WorkflowName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonObject
-import kotlinx.serialization.json.JsonPrimitive
 
 @Serializable
 @AvroNamespace("io.infinitic.data")
@@ -46,7 +52,7 @@ sealed interface Requester : JsonAble {
 data class ClientRequester(
   val clientName: ClientName,
 ) : Requester {
-  override fun toJson() = JsonObject(mapOf("clientName" to JsonPrimitive(clientName.toString())))
+  override fun toJson() = JsonObject(mapOf(CLIENT_NAME to clientName.toJson()))
 }
 
 @Serializable
@@ -60,10 +66,11 @@ data class WorkflowRequester(
 ) : Requester {
   override fun toJson() = JsonObject(
       mapOf(
-          "workflowName" to JsonPrimitive(workflowName.toString()),
-          "workflowId" to JsonPrimitive(workflowId.toString()),
-          "methodName" to JsonPrimitive(workflowMethodName.toString()),
-          "methodId" to JsonPrimitive(workflowMethodId.toString()),
+          WORKFLOW_NAME to workflowName.toJson(),
+          WORKFLOW_ID to workflowId.toJson(),
+          WORKFLOW_VERSION to workflowVersion.toJson(),
+          METHOD_NAME to workflowMethodName.toJson(),
+          METHOD_ID to workflowMethodId.toJson(),
       ),
   )
 }
@@ -77,6 +84,12 @@ val Requester?.clientName: ClientName?
 val Requester?.workflowId: WorkflowId?
   get() = when (this is WorkflowRequester) {
     true -> workflowId
+    false -> null
+  }
+
+val Requester?.workflowVersion: WorkflowVersion?
+  get() = when (this is WorkflowRequester) {
+    true -> workflowVersion
     false -> null
   }
 

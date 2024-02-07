@@ -32,6 +32,7 @@ import io.infinitic.common.exceptions.thisShouldNotHappen
 import io.infinitic.common.parser.getMethodPerNameAndParameters
 import io.infinitic.common.requester.workflowId
 import io.infinitic.common.requester.workflowName
+import io.infinitic.common.requester.workflowVersion
 import io.infinitic.common.tasks.events.messages.TaskCompletedEvent
 import io.infinitic.common.tasks.events.messages.TaskFailedEvent
 import io.infinitic.common.tasks.events.messages.TaskRetriedEvent
@@ -113,7 +114,7 @@ class TaskExecutor(
         taskName = msg.methodName,
         workflowId = msg.requester.workflowId,
         workflowName = msg.requester.workflowName,
-        workflowVersion = msg.workflowVersion,
+        workflowVersion = msg.requester.workflowVersion,
         retrySequence = msg.taskRetrySequence,
         retryIndex = msg.taskRetryIndex,
         lastError = msg.lastError,

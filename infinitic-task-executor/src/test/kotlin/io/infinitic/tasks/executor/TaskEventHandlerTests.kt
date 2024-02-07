@@ -38,6 +38,7 @@ import io.infinitic.common.requester.workflowId
 import io.infinitic.common.requester.workflowMethodId
 import io.infinitic.common.requester.workflowMethodName
 import io.infinitic.common.requester.workflowName
+import io.infinitic.common.requester.workflowVersion
 import io.infinitic.common.tasks.data.DelegatedTaskData
 import io.infinitic.common.tasks.data.ServiceName
 import io.infinitic.common.tasks.data.TaskId
@@ -332,6 +333,7 @@ private fun getTaskCompletedClient(msg: TaskCompletedEvent) =
 private fun getTaskCompletedWorkflow(msg: TaskCompletedEvent) =
     RemoteTaskCompleted(
         workflowName = msg.requester.workflowName!!,
+        workflowVersion = msg.requester.workflowVersion,
         workflowId = msg.requester.workflowId!!,
         workflowMethodName = msg.requester.workflowMethodName!!,
         workflowMethodId = msg.requester.workflowMethodId!!,
@@ -372,6 +374,7 @@ private fun getTaskFailedClient(msg: TaskFailedEvent) =
 private fun getTaskFailedWorkflow(msg: TaskFailedEvent) =
     RemoteTaskFailed(
         workflowName = msg.requester.workflowName!!,
+        workflowVersion = msg.requester.workflowVersion,
         workflowId = msg.requester.workflowId!!,
         workflowMethodName = msg.requester.workflowMethodName,
         workflowMethodId = msg.requester.workflowMethodId!!,

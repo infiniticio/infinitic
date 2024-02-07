@@ -46,6 +46,7 @@ internal fun CoroutineScope.startInstantTimerCmq(
       timerId = TimerId.from(pastCommand.commandId),
       workflowName = current.workflowName,
       workflowId = current.workflowId,
+      workflowVersion = current.workflowVersion,
       workflowMethodName = current.workflowMethodName,
       workflowMethodId = current.workflowMethodId,
       emitterName = emitterName,

@@ -23,6 +23,27 @@
 
 package io.infinitic.events.data.workflows
 
+import io.infinitic.cloudEvents.CHANNEL_NAME
+import io.infinitic.cloudEvents.INFINITIC_VERSION
+import io.infinitic.cloudEvents.METHOD_ARGS
+import io.infinitic.cloudEvents.METHOD_ID
+import io.infinitic.cloudEvents.METHOD_NAME
+import io.infinitic.cloudEvents.REQUESTER
+import io.infinitic.cloudEvents.RESULT
+import io.infinitic.cloudEvents.SERVICE_NAME
+import io.infinitic.cloudEvents.SIGNAL_DATA
+import io.infinitic.cloudEvents.SIGNAL_ID
+import io.infinitic.cloudEvents.TASK_ARGS
+import io.infinitic.cloudEvents.TASK_ID
+import io.infinitic.cloudEvents.TASK_NAME
+import io.infinitic.cloudEvents.TASK_STATUS
+import io.infinitic.cloudEvents.TIMER_ID
+import io.infinitic.cloudEvents.WORKER_NAME
+import io.infinitic.cloudEvents.WORKFLOW_ID
+import io.infinitic.cloudEvents.WORKFLOW_META
+import io.infinitic.cloudEvents.WORKFLOW_NAME
+import io.infinitic.cloudEvents.WORKFLOW_TAGS
+import io.infinitic.cloudEvents.WORKFLOW_VERSION
 import io.infinitic.common.exceptions.thisShouldNotHappen
 import io.infinitic.common.utils.toJson
 import io.infinitic.common.workflows.engine.messages.CancelWorkflow
@@ -57,26 +78,6 @@ import io.infinitic.common.workflows.engine.messages.WorkflowCompletedEvent
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
 import io.infinitic.common.workflows.engine.messages.WorkflowEventMessage
 import io.infinitic.events.errors.toJson
-import io.infinitic.events.properties.CHANNEL_NAME
-import io.infinitic.events.properties.INFINITIC_VERSION
-import io.infinitic.events.properties.METHOD_ARGS
-import io.infinitic.events.properties.METHOD_ID
-import io.infinitic.events.properties.METHOD_NAME
-import io.infinitic.events.properties.REQUESTER
-import io.infinitic.events.properties.RESULT
-import io.infinitic.events.properties.SERVICE_NAME
-import io.infinitic.events.properties.SIGNAL_DATA
-import io.infinitic.events.properties.SIGNAL_ID
-import io.infinitic.events.properties.TASK_ARGS
-import io.infinitic.events.properties.TASK_ID
-import io.infinitic.events.properties.TASK_NAME
-import io.infinitic.events.properties.TASK_STATUS
-import io.infinitic.events.properties.TIMER_ID
-import io.infinitic.events.properties.WORKER_NAME
-import io.infinitic.events.properties.WORKFLOW_ID
-import io.infinitic.events.properties.WORKFLOW_META
-import io.infinitic.events.properties.WORKFLOW_NAME
-import io.infinitic.events.properties.WORKFLOW_TAGS
 import io.infinitic.events.types.REMOTE_METHOD_COMPLETED
 import io.infinitic.events.types.REMOTE_METHOD_DISPATCHED
 import io.infinitic.events.types.REMOTE_TASK_COMPLETED
@@ -180,6 +181,7 @@ fun WorkflowEngineMessage.toJson(): JsonObject = when (this) {
           METHOD_ID to workflowMethodId.toJson(),
           METHOD_NAME to workflowMethodName.toJson(),
           WORKFLOW_NAME to workflowName.toJson(),
+          WORKFLOW_VERSION to workflowVersion.toJson(),
           WORKER_NAME to emitterName.toJson(),
           INFINITIC_VERSION to version.toJson(),
       ),
@@ -191,6 +193,7 @@ fun WorkflowEngineMessage.toJson(): JsonObject = when (this) {
           METHOD_ID to workflowMethodId.toJson(),
           METHOD_NAME to workflowMethodName.toJson(),
           WORKFLOW_NAME to workflowName.toJson(),
+          WORKFLOW_VERSION to workflowVersion.toJson(),
           WORKER_NAME to emitterName.toJson(),
           INFINITIC_VERSION to version.toJson(),
       ),
@@ -202,6 +205,7 @@ fun WorkflowEngineMessage.toJson(): JsonObject = when (this) {
           METHOD_ID to workflowMethodId.toJson(),
           METHOD_NAME to workflowMethodName.toJson(),
           WORKFLOW_NAME to workflowName.toJson(),
+          WORKFLOW_VERSION to workflowVersion.toJson(),
           WORKER_NAME to emitterName.toJson(),
           INFINITIC_VERSION to version.toJson(),
       ),
@@ -213,6 +217,7 @@ fun WorkflowEngineMessage.toJson(): JsonObject = when (this) {
           METHOD_ID to workflowMethodId.toJson(),
           METHOD_NAME to workflowMethodName.toJson(),
           WORKFLOW_NAME to workflowName.toJson(),
+          WORKFLOW_VERSION to workflowVersion.toJson(),
           WORKER_NAME to emitterName.toJson(),
           INFINITIC_VERSION to version.toJson(),
       ),
@@ -224,6 +229,7 @@ fun WorkflowEngineMessage.toJson(): JsonObject = when (this) {
           METHOD_ID to workflowMethodId.toJson(),
           METHOD_NAME to workflowMethodName.toJson(),
           WORKFLOW_NAME to workflowName.toJson(),
+          WORKFLOW_VERSION to workflowVersion.toJson(),
           WORKER_NAME to emitterName.toJson(),
           INFINITIC_VERSION to version.toJson(),
       ),
@@ -244,6 +250,7 @@ fun WorkflowEngineMessage.toJson(): JsonObject = when (this) {
           METHOD_ID to workflowMethodId.toJson(),
           METHOD_NAME to workflowMethodName.toJson(),
           WORKFLOW_NAME to workflowName.toJson(),
+          WORKFLOW_VERSION to workflowVersion.toJson(),
           WORKER_NAME to emitterName.toJson(),
           INFINITIC_VERSION to version.toJson(),
       ),
@@ -257,6 +264,7 @@ fun WorkflowEngineMessage.toJson(): JsonObject = when (this) {
           METHOD_ID to workflowMethodId.toJson(),
           METHOD_NAME to workflowMethodName.toJson(),
           WORKFLOW_NAME to workflowName.toJson(),
+          WORKFLOW_VERSION to workflowVersion.toJson(),
           WORKER_NAME to emitterName.toJson(),
           INFINITIC_VERSION to version.toJson(),
       ),
@@ -268,6 +276,7 @@ fun WorkflowEngineMessage.toJson(): JsonObject = when (this) {
           METHOD_ID to workflowMethodId.toJson(),
           METHOD_NAME to workflowMethodName.toJson(),
           WORKFLOW_NAME to workflowName.toJson(),
+          WORKFLOW_VERSION to workflowVersion.toJson(),
           WORKER_NAME to emitterName.toJson(),
           INFINITIC_VERSION to version.toJson(),
       ),
@@ -283,6 +292,7 @@ fun WorkflowEngineMessage.toJson(): JsonObject = when (this) {
           METHOD_ID to workflowMethodId.toJson(),
           METHOD_NAME to workflowMethodName.toJson(),
           WORKFLOW_NAME to workflowName.toJson(),
+          WORKFLOW_VERSION to workflowVersion.toJson(),
           WORKER_NAME to emitterName.toJson(),
           INFINITIC_VERSION to version.toJson(),
       ),
@@ -294,6 +304,7 @@ fun WorkflowEventMessage.toJson(): JsonObject = when (this) {
   is WorkflowCompletedEvent -> JsonObject(
       mapOf(
           WORKFLOW_NAME to workflowName.toJson(),
+          WORKFLOW_VERSION to workflowVersion.toJson(),
           WORKER_NAME to emitterName.toJson(),
           INFINITIC_VERSION to version.toJson(),
       ),
@@ -302,6 +313,7 @@ fun WorkflowEventMessage.toJson(): JsonObject = when (this) {
   is WorkflowCanceledEvent -> JsonObject(
       mapOf(
           WORKFLOW_NAME to workflowName.toJson(),
+          WORKFLOW_VERSION to workflowVersion.toJson(),
           WORKER_NAME to emitterName.toJson(),
           INFINITIC_VERSION to version.toJson(),
       ),
@@ -313,6 +325,7 @@ fun WorkflowEventMessage.toJson(): JsonObject = when (this) {
           METHOD_NAME to methodName.toJson(),
           METHOD_ID to workflowMethodId.toJson(),
           WORKFLOW_NAME to workflowName.toJson(),
+          WORKFLOW_VERSION to workflowVersion.toJson(),
           REQUESTER to requester.toJson(),
           INFINITIC_VERSION to version.toJson(),
       ),
@@ -324,6 +337,7 @@ fun WorkflowEventMessage.toJson(): JsonObject = when (this) {
           METHOD_ID to workflowMethodId.toJson(),
           METHOD_NAME to workflowMethodName.toJson(),
           WORKFLOW_NAME to workflowName.toJson(),
+          WORKFLOW_VERSION to workflowVersion.toJson(),
           WORKER_NAME to emitterName.toJson(),
           INFINITIC_VERSION to version.toJson(),
       ),
@@ -335,6 +349,7 @@ fun WorkflowEventMessage.toJson(): JsonObject = when (this) {
           METHOD_ID to workflowMethodId.toJson(),
           METHOD_NAME to workflowMethodName.toJson(),
           WORKFLOW_NAME to workflowName.toJson(),
+          WORKFLOW_VERSION to workflowVersion.toJson(),
           WORKER_NAME to emitterName.toJson(),
           INFINITIC_VERSION to version.toJson(),
       ),
@@ -345,6 +360,7 @@ fun WorkflowEventMessage.toJson(): JsonObject = when (this) {
           METHOD_ID to workflowMethodId.toJson(),
           METHOD_NAME to workflowMethodName.toJson(),
           WORKFLOW_NAME to workflowName.toJson(),
+          WORKFLOW_VERSION to workflowVersion.toJson(),
           WORKER_NAME to emitterName.toJson(),
           INFINITIC_VERSION to version.toJson(),
       ),
@@ -355,6 +371,7 @@ fun WorkflowEventMessage.toJson(): JsonObject = when (this) {
           METHOD_ID to workflowMethodId.toJson(),
           METHOD_NAME to workflowMethodName.toJson(),
           WORKFLOW_NAME to workflowName.toJson(),
+          WORKFLOW_VERSION to workflowVersion.toJson(),
           WORKER_NAME to emitterName.toJson(),
           INFINITIC_VERSION to version.toJson(),
       ),
@@ -375,6 +392,7 @@ fun WorkflowEventMessage.toJson(): JsonObject = when (this) {
           METHOD_ID to workflowMethodId.toJson(),
           METHOD_NAME to workflowMethodName.toJson(),
           WORKFLOW_NAME to workflowName.toJson(),
+          WORKFLOW_VERSION to workflowVersion.toJson(),
           WORKER_NAME to emitterName.toJson(),
           INFINITIC_VERSION to version.toJson(),
       ),
@@ -396,6 +414,7 @@ fun WorkflowEventMessage.toJson(): JsonObject = when (this) {
           METHOD_ID to workflowMethodId.toJson(),
           METHOD_NAME to workflowMethodName.toJson(),
           WORKFLOW_NAME to workflowName.toJson(),
+          WORKFLOW_VERSION to workflowVersion.toJson(),
           WORKER_NAME to emitterName.toJson(),
           INFINITIC_VERSION to version.toJson(),
       ),
