@@ -103,7 +103,7 @@ data class DispatchTaskPastCommand(
   override val commandSimpleName: CommandSimpleName,
   override var commandStatus: CommandStatus,
   override val command: DispatchTaskCommand,
-  var taskRetrySequence: TaskRetrySequence = TaskRetrySequence(0),
+  var taskRetrySequence: TaskRetrySequence = TaskRetrySequence(),
 ) : PastCommand()
 
 @Serializable

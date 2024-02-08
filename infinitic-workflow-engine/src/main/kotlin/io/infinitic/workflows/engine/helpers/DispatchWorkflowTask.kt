@@ -27,10 +27,11 @@ import io.infinitic.common.emitters.EmitterName
 import io.infinitic.common.tasks.data.TaskId
 import io.infinitic.common.transport.InfiniticProducer
 import io.infinitic.common.transport.WorkflowEventsTopic
-import io.infinitic.common.utils.IdGenerator
 import io.infinitic.common.workflows.data.workflowMethods.PositionInWorkflowMethod
 import io.infinitic.common.workflows.data.workflowMethods.WorkflowMethod
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskParameters
+import io.infinitic.common.workflows.engine.commands.dispatchTask
+import io.infinitic.common.workflows.engine.messages.requester
 import io.infinitic.common.workflows.engine.state.WorkflowState
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
@@ -43,16 +44,10 @@ internal fun CoroutineScope.dispatchWorkflowTask(
   workflowTaskInstant: MillisInstant
 ) {
   val emitterName = EmitterName(producer.name)
+  val workflowTaskId = TaskId()
 
   // next workflow task
   state.workflowTaskIndex += 1
-
-  // Deterministic generation of workflowTaskInstant
-  val seed = "workflowId=${state.workflowId}" +
-      "workflowVersion=${state.workflowVersion}" +
-      "workflowMethodId=${workflowMethod.workflowMethodId}" +
-      "positionInMethod=$positionInMethod"
-  val workflowTaskId = TaskId(IdGenerator.from(workflowTaskInstant, seed))
 
   launch {
     // defines workflow task input
@@ -70,9 +65,13 @@ internal fun CoroutineScope.dispatchWorkflowTask(
         emitterName = emitterName,
     )
 
-    // dispatch workflow task
     val taskDispatchedEvent = workflowTaskParameters.workflowTaskDispatchedEvent(emitterName)
-    with(producer) { taskDispatchedEvent.sendTo(WorkflowEventsTopic) }
+    with(producer) {
+      // dispatch workflow task
+      dispatchTask(taskDispatchedEvent.taskDispatched, taskDispatchedEvent.requester)
+      // dispatch workflow event
+      taskDispatchedEvent.sendTo(WorkflowEventsTopic)
+    }
   }
 
   // update runningWorkflowTask

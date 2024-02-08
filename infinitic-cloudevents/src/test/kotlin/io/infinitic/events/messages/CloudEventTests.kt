@@ -66,6 +66,7 @@ import io.infinitic.common.workflows.engine.messages.RemoteMethodDispatchedEvent
 import io.infinitic.common.workflows.engine.messages.RemoteMethodFailed
 import io.infinitic.common.workflows.engine.messages.RemoteMethodTimedOut
 import io.infinitic.common.workflows.engine.messages.RemoteMethodUnknown
+import io.infinitic.common.workflows.engine.messages.RemoteSignalDispatchedEvent
 import io.infinitic.common.workflows.engine.messages.RemoteTaskCanceled
 import io.infinitic.common.workflows.engine.messages.RemoteTaskCompleted
 import io.infinitic.common.workflows.engine.messages.RemoteTaskFailed
@@ -74,6 +75,8 @@ import io.infinitic.common.workflows.engine.messages.RemoteTimerCompleted
 import io.infinitic.common.workflows.engine.messages.RetryTasks
 import io.infinitic.common.workflows.engine.messages.RetryWorkflowTask
 import io.infinitic.common.workflows.engine.messages.SendSignal
+import io.infinitic.common.workflows.engine.messages.SignalDiscardedEvent
+import io.infinitic.common.workflows.engine.messages.SignalReceivedEvent
 import io.infinitic.common.workflows.engine.messages.TaskDispatchedEvent
 import io.infinitic.common.workflows.engine.messages.TimerDispatchedEvent
 import io.infinitic.common.workflows.engine.messages.WaitWorkflow
@@ -323,7 +326,7 @@ internal class CloudEventTests :
               CompleteWorkflow::class -> null
               DispatchMethod::class -> "infinitic.workflow.startMethod"
               DispatchWorkflow::class -> "infinitic.workflow.start"
-              RetryTasks::class -> "infinitic.workflow.retryTasks"
+              RetryTasks::class -> "infinitic.workflow.retryTask"
               RetryWorkflowTask::class -> "infinitic.workflow.retryExecutor"
               SendSignal::class -> "infinitic.workflow.signal"
               WaitWorkflow::class -> null
@@ -406,7 +409,7 @@ internal class CloudEventTests :
         }
 
         WorkflowEventMessage::class.sealedSubclasses.forEach {
-          "Check ${it.simpleName} event envelope from engine topic" {
+          "Check ${it.simpleName} event envelope from events topic" {
             val message = TestFactory.random(
                 it,
                 mapOf("workflowName" to WorkflowName("WorkflowA")),
@@ -424,6 +427,9 @@ internal class CloudEventTests :
               TaskDispatchedEvent::class -> "infinitic.workflow.taskDispatched"
               RemoteMethodDispatchedEvent::class -> "infinitic.workflow.remoteMethodDispatched"
               TimerDispatchedEvent::class -> "infinitic.workflow.timerDispatched"
+              RemoteSignalDispatchedEvent::class -> "infinitic.workflow.signalDispatched"
+              SignalReceivedEvent::class -> "infinitic.workflow.signalReceived"
+              SignalDiscardedEvent::class -> "infinitic.workflow.signalDiscarded"
               else -> thisShouldNotHappen()
             }
 

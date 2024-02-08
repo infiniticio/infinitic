@@ -123,7 +123,6 @@ private fun CoroutineScope.cancelWorkflowMethod(
                 workflowTag = command.workflowTag!!,
                 workflowName = command.workflowName,
                 reason = WorkflowCancellationReason.CANCELED_BY_PARENT,
-                emitterWorkflowId = state.workflowId,
                 emitterName = emitterName,
                 emittedAt = emittedAt,
                 requester = WorkflowRequester(

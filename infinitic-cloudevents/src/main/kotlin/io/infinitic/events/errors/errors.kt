@@ -47,10 +47,10 @@ import io.infinitic.events.types.REMOTE_METHOD_CANCELED
 import io.infinitic.events.types.REMOTE_METHOD_FAILED
 import io.infinitic.events.types.REMOTE_METHOD_TIMED_OUT
 import io.infinitic.events.types.REMOTE_METHOD_UNKNOWN
-import io.infinitic.events.types.REMOTE_TASK_CANCELED
-import io.infinitic.events.types.REMOTE_TASK_FAILED
-import io.infinitic.events.types.REMOTE_TASK_TIMED_OUT
-import io.infinitic.events.types.REMOTE_TASK_UNKNOWN
+import io.infinitic.events.types.TASK_CANCELED
+import io.infinitic.events.types.TASK_FAILED
+import io.infinitic.events.types.TASK_TIMED_OUT
+import io.infinitic.events.types.TASK_UNKNOWN
 import kotlinx.serialization.json.JsonObject
 
 
@@ -62,7 +62,7 @@ fun DeferredError.toJson(): Pair<String, JsonObject> = when (this) {
       ),
   )
 
-  is TaskFailedError -> REMOTE_TASK_FAILED to JsonObject(
+  is TaskFailedError -> TASK_FAILED to JsonObject(
       mapOf(
           ERROR to cause.toJson(),
           TASK_ID to taskId.toJson(),
@@ -71,7 +71,7 @@ fun DeferredError.toJson(): Pair<String, JsonObject> = when (this) {
       ),
   )
 
-  is TaskCanceledError -> REMOTE_TASK_CANCELED to JsonObject(
+  is TaskCanceledError -> TASK_CANCELED to JsonObject(
       mapOf(
           TASK_ID to taskId.toJson(),
           TASK_NAME to methodName.toJson(),
@@ -79,7 +79,7 @@ fun DeferredError.toJson(): Pair<String, JsonObject> = when (this) {
       ),
   )
 
-  is TaskTimedOutError -> REMOTE_TASK_TIMED_OUT to JsonObject(
+  is TaskTimedOutError -> TASK_TIMED_OUT to JsonObject(
       mapOf(
           TASK_ID to taskId.toJson(),
           TASK_NAME to methodName.toJson(),
@@ -87,7 +87,7 @@ fun DeferredError.toJson(): Pair<String, JsonObject> = when (this) {
       ),
   )
 
-  is TaskUnknownError -> REMOTE_TASK_UNKNOWN to JsonObject(
+  is TaskUnknownError -> TASK_UNKNOWN to JsonObject(
       mapOf(
           TASK_ID to taskId.toJson(),
           TASK_NAME to methodName.toJson(),

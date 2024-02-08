@@ -20,7 +20,7 @@
  *
  * Licensor: infinitic.io
  */
-package io.infinitic.tasks.executor.commands
+package io.infinitic.tasks.executor.events
 
 import io.infinitic.common.data.MillisInstant
 import io.infinitic.common.emitters.EmitterName
@@ -31,9 +31,10 @@ import io.infinitic.common.transport.WorkflowEventsTopic
 import io.infinitic.common.workflows.data.channels.SignalId
 import io.infinitic.common.workflows.data.commands.SendSignalCommand
 import io.infinitic.common.workflows.data.commands.SendSignalPastCommand
-import io.infinitic.common.workflows.engine.messages.RemoteSignalDescriptionById
-import io.infinitic.common.workflows.engine.messages.RemoteSignalDescriptionByTag
+import io.infinitic.common.workflows.engine.commands.dispatchRemoteSignal
 import io.infinitic.common.workflows.engine.messages.RemoteSignalDispatchedEvent
+import io.infinitic.common.workflows.engine.messages.data.RemoteSignalDispatchedById
+import io.infinitic.common.workflows.engine.messages.data.RemoteSignalDispatchedByTag
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
@@ -42,14 +43,15 @@ internal fun CoroutineScope.dispatchRemoteSignalCmd(
   pastCommand: SendSignalPastCommand,
   workflowTaskInstant: MillisInstant,
   producer: InfiniticProducer,
-) {
+) = launch {
   val emitterName = EmitterName(producer.name)
   val command: SendSignalCommand = pastCommand.command
   val signalId = SignalId.from(pastCommand.commandId)
   val signalData = command.signalData
 
-  val signal = when {
-    command.workflowId != null -> RemoteSignalDescriptionById(
+  // Description of the dispatched remote signal
+  val remoteSignal = when {
+    command.workflowId != null -> RemoteSignalDispatchedById(
         workflowName = command.workflowName,
         workflowId = command.workflowId!!,
         signalId = signalId,
@@ -59,7 +61,7 @@ internal fun CoroutineScope.dispatchRemoteSignalCmd(
         emittedAt = workflowTaskInstant,
     )
 
-    command.workflowTag != null -> RemoteSignalDescriptionByTag(
+    command.workflowTag != null -> RemoteSignalDispatchedByTag(
         workflowName = command.workflowName,
         workflowTag = command.workflowTag!!,
         signalId = signalId,
@@ -71,19 +73,21 @@ internal fun CoroutineScope.dispatchRemoteSignalCmd(
 
     else -> thisShouldNotHappen()
   }
+  // Dispatching of the remote signal
+  with(producer) { dispatchRemoteSignal(remoteSignal, current) }
 
-  // Event: Dispatching signal
-  launch {
-    val remoteSignalDispatchedEvent = RemoteSignalDispatchedEvent(
-        remoteSignalDispatched = signal,
-        workflowName = current.workflowName,
-        workflowId = current.workflowId,
-        workflowVersion = current.workflowVersion,
-        workflowMethodName = current.workflowMethodName,
-        workflowMethodId = current.workflowMethodId,
-        emitterName = emitterName,
-    )
-    with(producer) { remoteSignalDispatchedEvent.sendTo(WorkflowEventsTopic) }
-  }
+  // Description of the workflow event
+  val remoteSignalDispatchedEvent = RemoteSignalDispatchedEvent(
+      remoteSignalDispatched = remoteSignal,
+      workflowName = current.workflowName,
+      workflowId = current.workflowId,
+      workflowVersion = current.workflowVersion,
+      workflowMethodName = current.workflowMethodName,
+      workflowMethodId = current.workflowMethodId,
+      emitterName = emitterName,
+  )
+  // Dispatching the workflow event
+  with(producer) { remoteSignalDispatchedEvent.sendTo(WorkflowEventsTopic) }
 }
+
 

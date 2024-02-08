@@ -10,7 +10,7 @@
     "type" : {
       "type" : "enum",
       "name" : "WorkflowEventMessageType",
-      "symbols" : [ "WORKFLOW_COMPLETED", "WORKFLOW_CANCELED", "METHOD_DISPATCHED", "METHOD_COMPLETED", "METHOD_FAILED", "METHOD_CANCELED", "METHOD_TIMED_OUT", "REMOTE_TASK_DISPATCHED", "REMOTE_METHOD_DISPATCHED", "REMOTE_TIMER_DISPATCHED" ]
+      "symbols" : [ "WORKFLOW_COMPLETED", "WORKFLOW_CANCELED", "METHOD_DISPATCHED", "METHOD_COMPLETED", "METHOD_FAILED", "METHOD_CANCELED", "METHOD_TIMED_OUT", "TASK_DISPATCHED", "REMOTE_METHOD_DISPATCHED", "TIMER_DISPATCHED", "REMOTE_SIGNAL_DISPATCHED", "SIGNAL_RECEIVED", "SIGNAL_DISCARDED" ]
     }
   }, {
     "name" : "workflowCompletedEvent",
@@ -494,7 +494,7 @@
     "name" : "taskDispatched",
     "type" : [ "null", {
       "type" : "record",
-      "name" : "RemoteTaskDispatchedEvent",
+      "name" : "TaskDispatchedEvent",
       "namespace" : "io.infinitic.workflows.engine",
       "fields" : [ {
         "name" : "version",
@@ -504,15 +504,22 @@
         "name" : "messageId",
         "type" : "string"
       }, {
-        "name" : "remoteTaskDispatched",
+        "name" : "taskDispatched",
         "type" : {
           "type" : "record",
-          "name" : "RemoteTaskDescription",
+          "name" : "TaskDispatched",
+          "namespace" : "io.infinitic.workflows.data",
           "fields" : [ {
+            "name" : "serviceName",
+            "type" : "string"
+          }, {
             "name" : "taskId",
             "type" : "string"
           }, {
-            "name" : "taskName",
+            "name" : "taskRetrySequence",
+            "type" : "int"
+          }, {
+            "name" : "methodName",
             "type" : "string"
           }, {
             "name" : "methodParameterTypes",
@@ -527,8 +534,20 @@
               "items" : "io.infinitic.data.SerializedData"
             }
           }, {
-            "name" : "serviceName",
-            "type" : "string"
+            "name" : "taskTags",
+            "type" : {
+              "type" : "array",
+              "items" : "string"
+            }
+          }, {
+            "name" : "taskMeta",
+            "type" : {
+              "type" : "map",
+              "values" : "bytes"
+            }
+          }, {
+            "name" : "timeoutInstant",
+            "type" : [ "null", "long" ]
           } ]
         }
       }, {
@@ -552,7 +571,7 @@
       } ]
     } ]
   }, {
-    "name" : "childDispatched",
+    "name" : "remoteMethodDispatched",
     "type" : [ "null", {
       "type" : "record",
       "name" : "RemoteMethodDispatchedEvent",
@@ -566,10 +585,99 @@
         "type" : "string"
       }, {
         "name" : "remoteMethodDispatched",
-        "type" : {
+        "type" : [ {
           "type" : "record",
-          "name" : "RemoteMethodDescription",
+          "name" : "RemoteMethodDispatchedById",
+          "namespace" : "io.infinitic.workflows.data",
           "fields" : [ {
+            "name" : "workflowId",
+            "type" : "string"
+          }, {
+            "name" : "workflowName",
+            "type" : "string"
+          }, {
+            "name" : "workflowMethodId",
+            "type" : "string"
+          }, {
+            "name" : "workflowMethodName",
+            "type" : "string"
+          }, {
+            "name" : "methodName",
+            "type" : "string"
+          }, {
+            "name" : "methodParameters",
+            "type" : {
+              "type" : "array",
+              "items" : "io.infinitic.data.SerializedData"
+            }
+          }, {
+            "name" : "methodParameterTypes",
+            "type" : [ "null", {
+              "type" : "array",
+              "items" : "string"
+            } ]
+          }, {
+            "name" : "timeout",
+            "type" : [ "null", "long" ]
+          }, {
+            "name" : "emittedAt",
+            "type" : "long"
+          } ]
+        }, {
+          "type" : "record",
+          "name" : "RemoteMethodDispatchedByTag",
+          "namespace" : "io.infinitic.workflows.data",
+          "fields" : [ {
+            "name" : "workflowTag",
+            "type" : "string"
+          }, {
+            "name" : "workflowName",
+            "type" : "string"
+          }, {
+            "name" : "workflowMethodId",
+            "type" : "string"
+          }, {
+            "name" : "workflowMethodName",
+            "type" : "string"
+          }, {
+            "name" : "methodName",
+            "type" : "string"
+          }, {
+            "name" : "methodParameters",
+            "type" : {
+              "type" : "array",
+              "items" : "io.infinitic.data.SerializedData"
+            }
+          }, {
+            "name" : "methodParameterTypes",
+            "type" : [ "null", {
+              "type" : "array",
+              "items" : "string"
+            } ]
+          }, {
+            "name" : "timeout",
+            "type" : [ "null", "long" ]
+          }, {
+            "name" : "emittedAt",
+            "type" : "long"
+          } ]
+        }, {
+          "type" : "record",
+          "name" : "RemoteWorkflowDispatched",
+          "namespace" : "io.infinitic.workflows.data",
+          "fields" : [ {
+            "name" : "workflowTags",
+            "type" : {
+              "type" : "array",
+              "items" : "string"
+            }
+          }, {
+            "name" : "workflowMeta",
+            "type" : {
+              "type" : "map",
+              "values" : "bytes"
+            }
+          }, {
             "name" : "workflowId",
             "type" : "string"
           }, {
@@ -596,8 +704,67 @@
               "type" : "array",
               "items" : "string"
             } ]
+          }, {
+            "name" : "timeout",
+            "type" : [ "null", "long" ]
+          }, {
+            "name" : "emittedAt",
+            "type" : "long"
           } ]
-        }
+        }, {
+          "type" : "record",
+          "name" : "RemoteWorkflowDispatchedByCustomId",
+          "namespace" : "io.infinitic.workflows.data",
+          "fields" : [ {
+            "name" : "customId",
+            "type" : "string"
+          }, {
+            "name" : "workflowTags",
+            "type" : {
+              "type" : "array",
+              "items" : "string"
+            }
+          }, {
+            "name" : "workflowMeta",
+            "type" : {
+              "type" : "map",
+              "values" : "bytes"
+            }
+          }, {
+            "name" : "workflowId",
+            "type" : "string"
+          }, {
+            "name" : "workflowName",
+            "type" : "string"
+          }, {
+            "name" : "workflowMethodName",
+            "type" : "string"
+          }, {
+            "name" : "workflowMethodId",
+            "type" : "string"
+          }, {
+            "name" : "methodName",
+            "type" : "string"
+          }, {
+            "name" : "methodParameters",
+            "type" : {
+              "type" : "array",
+              "items" : "io.infinitic.data.SerializedData"
+            }
+          }, {
+            "name" : "methodParameterTypes",
+            "type" : [ "null", {
+              "type" : "array",
+              "items" : "string"
+            } ]
+          }, {
+            "name" : "timeout",
+            "type" : [ "null", "long" ]
+          }, {
+            "name" : "emittedAt",
+            "type" : "long"
+          } ]
+        } ]
       }, {
         "name" : "workflowName",
         "type" : "string"
@@ -622,7 +789,7 @@
     "name" : "timerDispatched",
     "type" : [ "null", {
       "type" : "record",
-      "name" : "RemoteTimerDispatchedEvent",
+      "name" : "TimerDispatchedEvent",
       "namespace" : "io.infinitic.workflows.engine",
       "fields" : [ {
         "name" : "version",
@@ -632,25 +799,33 @@
         "name" : "messageId",
         "type" : "string"
       }, {
-        "name" : "remoteTimerDispatched",
+        "name" : "timerDispatched",
         "type" : [ {
           "type" : "record",
-          "name" : "RemoteDurationTimerDescription",
+          "name" : "DurationTimerDispatched",
+          "namespace" : "io.infinitic.workflows.data",
           "fields" : [ {
             "name" : "timerId",
             "type" : "string"
+          }, {
+            "name" : "emittedAt",
+            "type" : "long"
           }, {
             "name" : "duration",
             "type" : "long"
           } ]
         }, {
           "type" : "record",
-          "name" : "RemoteInstantTimerDescription",
+          "name" : "InstantTimerDispatched",
+          "namespace" : "io.infinitic.workflows.data",
           "fields" : [ {
             "name" : "timerId",
             "type" : "string"
           }, {
-            "name" : "instant",
+            "name" : "emittedAt",
+            "type" : "long"
+          }, {
+            "name" : "timerInstant",
             "type" : "long"
           } ]
         } ]
@@ -669,6 +844,176 @@
       }, {
         "name" : "workflowMethodId",
         "type" : "string"
+      }, {
+        "name" : "emitterName",
+        "type" : "string"
+      } ]
+    } ]
+  }, {
+    "name" : "remoteSignalDispatched",
+    "type" : [ "null", {
+      "type" : "record",
+      "name" : "RemoteSignalDispatchedEvent",
+      "namespace" : "io.infinitic.workflows.engine",
+      "fields" : [ {
+        "name" : "version",
+        "type" : [ "null", "string" ],
+        "default" : null
+      }, {
+        "name" : "messageId",
+        "type" : "string"
+      }, {
+        "name" : "remoteSignalDispatched",
+        "type" : [ {
+          "type" : "record",
+          "name" : "RemoteSignalDispatchedById",
+          "namespace" : "io.infinitic.workflows.data",
+          "fields" : [ {
+            "name" : "workflowId",
+            "type" : "string"
+          }, {
+            "name" : "signalId",
+            "type" : "string"
+          }, {
+            "name" : "signalData",
+            "type" : "io.infinitic.data.SerializedData"
+          }, {
+            "name" : "channelName",
+            "type" : "string"
+          }, {
+            "name" : "channelTypes",
+            "type" : {
+              "type" : "array",
+              "items" : "string"
+            }
+          }, {
+            "name" : "workflowName",
+            "type" : "string"
+          }, {
+            "name" : "emittedAt",
+            "type" : "long"
+          } ]
+        }, {
+          "type" : "record",
+          "name" : "RemoteSignalDispatchedByTag",
+          "namespace" : "io.infinitic.workflows.data",
+          "fields" : [ {
+            "name" : "workflowTag",
+            "type" : "string"
+          }, {
+            "name" : "signalId",
+            "type" : "string"
+          }, {
+            "name" : "signalData",
+            "type" : "io.infinitic.data.SerializedData"
+          }, {
+            "name" : "channelName",
+            "type" : "string"
+          }, {
+            "name" : "channelTypes",
+            "type" : {
+              "type" : "array",
+              "items" : "string"
+            }
+          }, {
+            "name" : "workflowName",
+            "type" : "string"
+          }, {
+            "name" : "emittedAt",
+            "type" : "long"
+          } ]
+        } ]
+      }, {
+        "name" : "workflowName",
+        "type" : "string"
+      }, {
+        "name" : "workflowId",
+        "type" : "string"
+      }, {
+        "name" : "workflowVersion",
+        "type" : [ "null", "int" ]
+      }, {
+        "name" : "workflowMethodName",
+        "type" : "string"
+      }, {
+        "name" : "workflowMethodId",
+        "type" : "string"
+      }, {
+        "name" : "emitterName",
+        "type" : "string"
+      } ]
+    } ]
+  }, {
+    "name" : "signalDiscarded",
+    "type" : [ "null", {
+      "type" : "record",
+      "name" : "SignalDiscardedEvent",
+      "namespace" : "io.infinitic.workflows.engine",
+      "fields" : [ {
+        "name" : "version",
+        "type" : [ "null", "string" ],
+        "default" : null
+      }, {
+        "name" : "messageId",
+        "type" : "string"
+      }, {
+        "name" : "signalDiscarded",
+        "type" : {
+          "type" : "record",
+          "name" : "SignalDiscarded",
+          "namespace" : "io.infinitic.workflows.data",
+          "fields" : [ {
+            "name" : "signalId",
+            "type" : "string"
+          } ]
+        }
+      }, {
+        "name" : "workflowName",
+        "type" : "string"
+      }, {
+        "name" : "workflowId",
+        "type" : "string"
+      }, {
+        "name" : "workflowVersion",
+        "type" : [ "null", "int" ]
+      }, {
+        "name" : "emitterName",
+        "type" : "string"
+      } ]
+    } ]
+  }, {
+    "name" : "signalReceived",
+    "type" : [ "null", {
+      "type" : "record",
+      "name" : "SignalReceivedEvent",
+      "namespace" : "io.infinitic.workflows.engine",
+      "fields" : [ {
+        "name" : "version",
+        "type" : [ "null", "string" ],
+        "default" : null
+      }, {
+        "name" : "messageId",
+        "type" : "string"
+      }, {
+        "name" : "signalReceived",
+        "type" : {
+          "type" : "record",
+          "name" : "SignalReceived",
+          "namespace" : "io.infinitic.workflows.data",
+          "fields" : [ {
+            "name" : "signalId",
+            "type" : "string"
+          } ]
+        }
+      }, {
+        "name" : "workflowName",
+        "type" : "string"
+      }, {
+        "name" : "workflowId",
+        "type" : "string"
+      }, {
+        "name" : "workflowVersion",
+        "type" : [ "null", "int" ]
       }, {
         "name" : "emitterName",
         "type" : "string"

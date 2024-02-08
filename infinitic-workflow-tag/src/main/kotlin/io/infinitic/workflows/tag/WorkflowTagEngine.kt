@@ -28,24 +28,21 @@ import io.infinitic.common.clients.messages.WorkflowIdsByTag
 import io.infinitic.common.data.MillisInstant
 import io.infinitic.common.emitters.EmitterName
 import io.infinitic.common.exceptions.thisShouldNotHappen
-import io.infinitic.common.requester.WorkflowRequester
 import io.infinitic.common.requester.workflowId
 import io.infinitic.common.transport.ClientTopic
-import io.infinitic.common.transport.DelayedWorkflowEngineTopic
 import io.infinitic.common.transport.InfiniticProducerAsync
 import io.infinitic.common.transport.LoggedInfiniticProducer
 import io.infinitic.common.transport.WorkflowCmdTopic
-import io.infinitic.common.transport.WorkflowEventsTopic
-import io.infinitic.common.transport.WorkflowTagTopic
 import io.infinitic.common.workflows.data.workflowMethods.WorkflowMethodId
+import io.infinitic.common.workflows.engine.commands.dispatchRemoteMethod
 import io.infinitic.common.workflows.engine.messages.CancelWorkflow
 import io.infinitic.common.workflows.engine.messages.CompleteTimers
-import io.infinitic.common.workflows.engine.messages.DispatchMethod
-import io.infinitic.common.workflows.engine.messages.DispatchWorkflow
 import io.infinitic.common.workflows.engine.messages.RetryTasks
 import io.infinitic.common.workflows.engine.messages.RetryWorkflowTask
 import io.infinitic.common.workflows.engine.messages.SendSignal
 import io.infinitic.common.workflows.engine.messages.WaitWorkflow
+import io.infinitic.common.workflows.engine.messages.data.RemoteMethodDispatchedById
+import io.infinitic.common.workflows.engine.messages.data.RemoteWorkflowDispatched
 import io.infinitic.common.workflows.tags.messages.AddTagToWorkflow
 import io.infinitic.common.workflows.tags.messages.CancelWorkflowByTag
 import io.infinitic.common.workflows.tags.messages.CompleteTimersByTag
@@ -96,75 +93,38 @@ class WorkflowTagEngine(
     publishTime: MillisInstant
   ) = coroutineScope {
     val ids = storage.getWorkflowIds(message.workflowTag, message.workflowName)
-    val requester = message.requester
+    val requester = message.requester ?: thisShouldNotHappen()
 
     when (ids.size) {
       // this workflow instance does not exist yet
       0 -> {
-        // provided tags
-        message.workflowTags.forEach { tag ->
-          val addTagToWorkflow = AddTagToWorkflow(
-              workflowName = message.workflowName,
-              workflowTag = tag,
-              workflowId = message.workflowId,
-              emitterName = emitterName,
-              emittedAt = message.emittedAt ?: publishTime,
+        val remoteWorkflowDispatched = with(message) {
+          RemoteWorkflowDispatched(
+              workflowId = workflowId,
+              workflowName = workflowName,
+              workflowMethodId = WorkflowMethodId.from(workflowId),
+              workflowMethodName = methodName,
+              methodName = methodName,
+              methodParameters = methodParameters,
+              methodParameterTypes = methodParameterTypes,
+              workflowTags = workflowTags,
+              workflowMeta = workflowMeta,
+              timeout = methodTimeout,
+              emittedAt = emittedAt ?: publishTime,
           )
-
-          when (tag) {
-            message.workflowTag -> addTagToWorkflow(addTagToWorkflow)
-            else -> launch { with(producer) { addTagToWorkflow.sendTo(WorkflowTagTopic) } }
-          }
         }
-        // dispatch workflow message
-        val dispatchWorkflow = DispatchWorkflow(
-            workflowName = message.workflowName,
-            workflowId = message.workflowId,
-            methodName = message.methodName,
-            methodParameters = message.methodParameters,
-            methodParameterTypes = message.methodParameterTypes,
-            workflowTags = message.workflowTags,
-            workflowMeta = message.workflowMeta,
-            requester = requester,
-            clientWaiting = message.clientWaiting,
-            emitterName = message.emitterName,
-            emittedAt = message.emittedAt ?: publishTime,
-        )
-        launch {
-          with(producer) { dispatchWorkflow.sendTo(WorkflowCmdTopic) }
-        }
-
-        if (requester is WorkflowRequester) {
-          // Sending event message
-          launch {
-            val childMethodDispatchedEvent =
-                dispatchWorkflow.remoteMethodDispatchedEvent(emitterName, message.methodTimeout)
-            with(producer) { childMethodDispatchedEvent.sendTo(WorkflowEventsTopic) }
-          }
-
-          // send global timeout if needed
-          message.methodTimeout?.let {
-            launch {
-              val childMethodTimedOut = dispatchWorkflow.remoteMethodTimedOut(emitterName, it)
-              with(producer) { childMethodTimedOut.sendTo(DelayedWorkflowEngineTopic, it) }
-            }
-          }
-        }
-
+        with(producer) { dispatchRemoteMethod(remoteWorkflowDispatched, requester) }
       }
-      // Another running workflow instance exist with same custom id
+      // Another running workflow instance already exist with same custom id
       1 -> {
-        logger.debug {
-          "A workflow '${message.workflowName}(${ids.first()})' already exists with tag '${message.workflowTag}'"
-        }
-
+        val workflowId = ids.first()
         // if needed, we inform workflowEngine that a client is waiting for its result
         if (message.clientWaiting) {
           launch {
             val waitWorkflow = WaitWorkflow(
-                workflowMethodId = WorkflowMethodId.from(ids.first()),
+                workflowMethodId = WorkflowMethodId.from(workflowId),
                 workflowName = message.workflowName,
-                workflowId = ids.first(),
+                workflowId = workflowId,
                 emitterName = message.emitterName,
                 emittedAt = message.emittedAt ?: publishTime,
                 requester = requester,
@@ -187,46 +147,26 @@ class WorkflowTagEngine(
     publishTime: MillisInstant
   ) = coroutineScope {
     val ids = storage.getWorkflowIds(message.workflowTag, message.workflowName)
-    val requester = message.requester
+    val requester = message.requester ?: thisShouldNotHappen()
 
     when (ids.isEmpty()) {
       true -> discardTagWithoutIds(message)
 
       false -> ids.forEach { workflowId ->
-        val dispatchMethod = DispatchMethod(
-            workflowName = message.workflowName,
-            workflowId = workflowId,
-            workflowMethodId = message.workflowMethodId,
-            workflowMethodName = message.methodName,
-            methodParameters = message.methodParameters,
-            methodParameterTypes = message.methodParameterTypes,
-            requester = requester,
-            clientWaiting = false,
-            emitterName = emitterName,
-            emittedAt = message.emittedAt ?: publishTime,
-        )
-
-        // parent workflow already applied method to self
-        if (requester !is WorkflowRequester || workflowId != requester.workflowId) {
-          launch { with(producer) { dispatchMethod.sendTo(WorkflowCmdTopic) } }
+        val remoteMethodDispatched = with(message) {
+          RemoteMethodDispatchedById(
+              workflowId = workflowId,
+              workflowName = workflowName,
+              workflowMethodId = workflowMethodId,
+              workflowMethodName = methodName,
+              methodName = methodName,
+              methodParameters = methodParameters,
+              methodParameterTypes = methodParameterTypes,
+              timeout = methodTimeout,
+              emittedAt = emittedAt ?: publishTime,
+          )
         }
-
-        if (requester is WorkflowRequester) {
-          // event for the dispatching of a child method
-          launch {
-            val childMethodDispatchedEvent =
-                dispatchMethod.remoteMethodDispatchedEvent(emitterName, message.methodTimeout)
-            with(producer) { childMethodDispatchedEvent.sendTo(WorkflowEventsTopic) }
-          }
-
-          // set timeout for the dispatched child method,
-          message.methodTimeout?.let {
-            launch {
-              val childMethodTimedOut = dispatchMethod.remoteMethodTimedOut(emitterName, it)
-              with(producer) { childMethodTimedOut.sendTo(DelayedWorkflowEngineTopic, it) }
-            }
-          }
-        }
+        with(producer) { dispatchRemoteMethod(remoteMethodDispatched, requester) }
       }
     }
   }
@@ -314,11 +254,11 @@ class WorkflowTagEngine(
 
       false -> ids.forEach { workflowId ->
         // parent workflow already applied method to self
-        if (workflowId != message.emitterWorkflowId) {
+        if (workflowId != message.requester.workflowId) {
           launch {
             val cancelWorkflow = CancelWorkflow(
                 cancellationReason = message.reason,
-                workflowMethodId = WorkflowMethodId.from(workflowId),
+                workflowMethodId = null,
                 workflowName = message.workflowName,
                 workflowId = workflowId,
                 emitterName = emitterName,

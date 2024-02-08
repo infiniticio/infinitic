@@ -29,6 +29,7 @@ const val WORKER_NAME = "workerName"
 const val INFINITIC_VERSION = "infiniticVersion"
 const val REQUESTER = "requester"
 const val EMITTED_AT = "emittedAt"
+const val TIMEOUT = "timeout"
 
 const val SERVICE_NAME = "serviceName"
 const val TASK_RETRY_SEQUENCE = "retrySequence"

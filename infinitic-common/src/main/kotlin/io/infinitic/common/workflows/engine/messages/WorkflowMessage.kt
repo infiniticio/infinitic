@@ -26,25 +26,6 @@ import com.github.avrokotlin.avro4k.Avro
 import com.github.avrokotlin.avro4k.AvroDefault
 import com.github.avrokotlin.avro4k.AvroName
 import com.github.avrokotlin.avro4k.AvroNamespace
-import io.infinitic.cloudEvents.CHANNEL_NAME
-import io.infinitic.cloudEvents.EMITTED_AT
-import io.infinitic.cloudEvents.METHOD_ARGS
-import io.infinitic.cloudEvents.METHOD_ID
-import io.infinitic.cloudEvents.METHOD_NAME
-import io.infinitic.cloudEvents.SERVICE_NAME
-import io.infinitic.cloudEvents.SIGNAL_DATA
-import io.infinitic.cloudEvents.SIGNAL_ID
-import io.infinitic.cloudEvents.TASK_ARGS
-import io.infinitic.cloudEvents.TASK_ID
-import io.infinitic.cloudEvents.TASK_NAME
-import io.infinitic.cloudEvents.TIMER_DURATION
-import io.infinitic.cloudEvents.TIMER_ID
-import io.infinitic.cloudEvents.TIMER_INSTANT
-import io.infinitic.cloudEvents.WORKFLOW_ID
-import io.infinitic.cloudEvents.WORKFLOW_META
-import io.infinitic.cloudEvents.WORKFLOW_NAME
-import io.infinitic.cloudEvents.WORKFLOW_TAG
-import io.infinitic.cloudEvents.WORKFLOW_TAGS
 import io.infinitic.common.clients.data.ClientName
 import io.infinitic.common.clients.messages.MethodCanceled
 import io.infinitic.common.clients.messages.MethodCompleted
@@ -73,9 +54,7 @@ import io.infinitic.common.requester.workflowVersion
 import io.infinitic.common.tasks.data.DelegatedTaskData
 import io.infinitic.common.tasks.data.ServiceName
 import io.infinitic.common.tasks.data.TaskId
-import io.infinitic.common.tasks.data.TaskMeta
 import io.infinitic.common.tasks.data.TaskReturnValue
-import io.infinitic.common.tasks.data.TaskTag
 import io.infinitic.common.tasks.executors.errors.DeferredError
 import io.infinitic.common.tasks.executors.errors.MethodCanceledError
 import io.infinitic.common.tasks.executors.errors.MethodFailedError
@@ -84,8 +63,6 @@ import io.infinitic.common.tasks.executors.errors.MethodUnknownError
 import io.infinitic.common.tasks.executors.errors.TaskCanceledError
 import io.infinitic.common.tasks.executors.errors.TaskFailedError
 import io.infinitic.common.tasks.executors.errors.TaskTimedOutError
-import io.infinitic.common.utils.JsonAble
-import io.infinitic.common.utils.toJson
 import io.infinitic.common.workers.config.WorkflowVersion
 import io.infinitic.common.workflows.data.channels.ChannelName
 import io.infinitic.common.workflows.data.channels.ChannelType
@@ -103,12 +80,18 @@ import io.infinitic.common.workflows.data.workflows.WorkflowMeta
 import io.infinitic.common.workflows.data.workflows.WorkflowName
 import io.infinitic.common.workflows.data.workflows.WorkflowReturnValue
 import io.infinitic.common.workflows.data.workflows.WorkflowTag
+import io.infinitic.common.workflows.engine.messages.data.RemoteMethodDispatched
+import io.infinitic.common.workflows.engine.messages.data.RemoteMethodDispatchedById
+import io.infinitic.common.workflows.engine.messages.data.RemoteSignalDispatched
+import io.infinitic.common.workflows.engine.messages.data.SignalDiscarded
+import io.infinitic.common.workflows.engine.messages.data.SignalReceived
+import io.infinitic.common.workflows.engine.messages.data.TaskDispatched
+import io.infinitic.common.workflows.engine.messages.data.TimerDispatched
 import io.infinitic.common.workflows.engine.state.WorkflowState
 import io.infinitic.currentVersion
 import io.infinitic.workflows.DeferredStatus
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.json.JsonObject
 
 interface WorkflowMessageInterface : Message {
   override val messageId: MessageId
@@ -122,10 +105,21 @@ interface WorkflowMessageInterface : Message {
 interface WorkflowEvent
 
 interface MethodEvent : WorkflowEvent {
+  val workflowId: WorkflowId
+  val workflowName: WorkflowName
   val workflowVersion: WorkflowVersion?
   val workflowMethodName: MethodName?
   val workflowMethodId: WorkflowMethodId
 }
+
+val MethodEvent.requester
+  get() = WorkflowRequester(
+      workflowName = workflowName,
+      workflowId = workflowId,
+      workflowMethodName = workflowMethodName ?: MethodName("undefined"),
+      workflowVersion = workflowVersion,
+      workflowMethodId = workflowMethodId,
+  )
 
 interface TaskEvent : MethodEvent {
   fun taskId(): TaskId
@@ -263,27 +257,6 @@ data class DispatchWorkflow(
       emitterName = emitterName,
   )
 
-  fun remoteMethodDispatchedEvent(emitterName: EmitterName, timeout: MillisDuration?) =
-      RemoteMethodDispatchedEvent(
-          remoteMethodDispatched = NewRemoteWorkflowDescription(
-              workflowId = workflowId,
-              workflowName = workflowName,
-              workflowMethodName = methodName,
-              methodName = methodName,
-              methodParameters = methodParameters,
-              methodParameterTypes = methodParameterTypes,
-              workflowMeta = workflowMeta,
-              workflowTags = workflowTags,
-              timeout = timeout,
-              emittedAt = emittedAt ?: thisShouldNotHappen(),
-          ),
-          workflowName = requester.workflowName ?: thisShouldNotHappen(),
-          workflowId = requester.workflowId ?: thisShouldNotHappen(),
-          workflowVersion = requester.workflowVersion,
-          workflowMethodName = requester.workflowMethodName ?: thisShouldNotHappen(),
-          workflowMethodId = requester.workflowMethodId ?: thisShouldNotHappen(),
-          emitterName = emitterName,
-      )
 
   fun remoteMethodTimedOut(emitterName: EmitterName, timeoutDuration: MillisDuration) =
       RemoteMethodTimedOut(
@@ -347,7 +320,7 @@ data class DispatchMethod(
 
   fun remoteMethodDispatchedEvent(emitterName: EmitterName, timeout: MillisDuration?) =
       RemoteMethodDispatchedEvent(
-          remoteMethodDispatched = NewRemoteMethodDescription(
+          remoteMethodDispatched = RemoteMethodDispatchedById(
               workflowId = workflowId,
               workflowName = workflowName,
               workflowMethodName = workflowMethodName,
@@ -909,7 +882,7 @@ data class MethodTimedOutEvent(
 @Serializable
 @AvroNamespace("io.infinitic.workflows.engine")
 data class TaskDispatchedEvent(
-  val taskDispatched: TaskDescription,
+  val taskDispatched: TaskDispatched,
   override val workflowName: WorkflowName,
   override val workflowId: WorkflowId,
   override val workflowVersion: WorkflowVersion?,
@@ -919,14 +892,6 @@ data class TaskDispatchedEvent(
 ) : WorkflowMessage(), WorkflowEventMessage, MethodEvent, TaskEvent {
   override fun taskId() = taskDispatched.taskId
   override fun serviceName() = taskDispatched.serviceName
-
-  fun requester() = WorkflowRequester(
-      workflowName = workflowName,
-      workflowVersion = workflowVersion,
-      workflowId = workflowId,
-      workflowMethodName = workflowMethodName,
-      workflowMethodId = workflowMethodId,
-  )
 }
 
 /**
@@ -935,22 +900,14 @@ data class TaskDispatchedEvent(
 @Serializable
 @AvroNamespace("io.infinitic.workflows.engine")
 data class RemoteMethodDispatchedEvent(
-  val remoteMethodDispatched: RemoteMethodDescription,
+  val remoteMethodDispatched: RemoteMethodDispatched,
   override val workflowName: WorkflowName,
   override val workflowId: WorkflowId,
   override val workflowVersion: WorkflowVersion?,
   override val workflowMethodName: MethodName,
   override val workflowMethodId: WorkflowMethodId,
   override val emitterName: EmitterName,
-) : WorkflowMessage(), WorkflowEventMessage, MethodEvent {
-  fun requester() = WorkflowRequester(
-      workflowName = workflowName,
-      workflowVersion = workflowVersion,
-      workflowId = workflowId,
-      workflowMethodName = workflowMethodName,
-      workflowMethodId = workflowMethodId,
-  )
-}
+) : WorkflowMessage(), WorkflowEventMessage, MethodEvent
 
 /**
  * This event tells us that a remote timer was dispatched by this workflow
@@ -958,7 +915,7 @@ data class RemoteMethodDispatchedEvent(
 @Serializable
 @AvroNamespace("io.infinitic.workflows.engine")
 data class TimerDispatchedEvent(
-  val timerDispatched: RemoteTimerDescription,
+  val timerDispatched: TimerDispatched,
   override val workflowName: WorkflowName,
   override val workflowId: WorkflowId,
   override val workflowVersion: WorkflowVersion?,
@@ -973,197 +930,37 @@ data class TimerDispatchedEvent(
 @Serializable
 @AvroNamespace("io.infinitic.workflows.engine")
 data class RemoteSignalDispatchedEvent(
-  val remoteSignalDispatched: RemoteSignalDescription,
+  val remoteSignalDispatched: RemoteSignalDispatched,
   override val workflowName: WorkflowName,
   override val workflowId: WorkflowId,
   override val workflowVersion: WorkflowVersion?,
   override val workflowMethodName: MethodName,
   override val workflowMethodId: WorkflowMethodId,
   override val emitterName: EmitterName,
-) : WorkflowMessage(), WorkflowEventMessage, MethodEvent {
-  fun requester() = WorkflowRequester(
-      workflowName = workflowName,
-      workflowVersion = workflowVersion,
-      workflowId = workflowId,
-      workflowMethodName = workflowMethodName,
-      workflowMethodId = workflowMethodId,
-  )
-}
+) : WorkflowMessage(), WorkflowEventMessage, MethodEvent
 
-@Serializable
-sealed interface RemoteMethodDescription : JsonAble {
-  val workflowId: WorkflowId
-  val workflowName: WorkflowName
-  val workflowMethodName: MethodName
-  val methodName: MethodName
-  val methodParameters: MethodParameters
-  val methodParameterTypes: MethodParameterTypes?
-  val timeout: MillisDuration?
-  val emittedAt: MillisInstant
-}
-
+/**
+ * This event tells us that a signal was received and discarded
+ */
 @Serializable
 @AvroNamespace("io.infinitic.workflows.engine")
-data class NewRemoteWorkflowDescription(
-  val workflowTags: Set<WorkflowTag>,
-  val workflowMeta: WorkflowMeta,
+data class SignalDiscardedEvent(
+  val signalDiscarded: SignalDiscarded,
+  override val workflowName: WorkflowName,
   override val workflowId: WorkflowId,
-  override val workflowName: WorkflowName,
-  override val workflowMethodName: MethodName,
-  override val methodName: MethodName,
-  override val methodParameters: MethodParameters,
-  override val methodParameterTypes: MethodParameterTypes?,
-  override val timeout: MillisDuration?,
-  override val emittedAt: MillisInstant
-) : RemoteMethodDescription {
-  override fun toJson() = JsonObject(
-      mapOf(
-          WORKFLOW_NAME to workflowName.toJson(),
-          WORKFLOW_ID to workflowId.toJson(),
-          METHOD_NAME to methodName.toJson(),
-          METHOD_ARGS to methodParameters.toJson(),
-          WORKFLOW_TAGS to workflowTags.toJson(),
-          WORKFLOW_META to workflowMeta.toJson(),
-      ),
-  )
-}
+  override val workflowVersion: WorkflowVersion?,
+  override val emitterName: EmitterName,
+) : WorkflowMessage(), WorkflowEventMessage
 
+/**
+ * This event tells us that a signal was received and used
+ */
 @Serializable
 @AvroNamespace("io.infinitic.workflows.engine")
-data class NewRemoteMethodDescription(
-  val workflowMethodId: WorkflowMethodId,
+data class SignalReceivedEvent(
+  val signalReceived: SignalReceived,
+  override val workflowName: WorkflowName,
   override val workflowId: WorkflowId,
-  override val workflowName: WorkflowName,
-  override val workflowMethodName: MethodName,
-  override val methodName: MethodName,
-  override val methodParameters: MethodParameters,
-  override val methodParameterTypes: MethodParameterTypes?,
-  override val timeout: MillisDuration?,
-  override val emittedAt: MillisInstant
-) : RemoteMethodDescription {
-  override fun toJson() = JsonObject(
-      mapOf(
-          WORKFLOW_NAME to workflowName.toJson(),
-          WORKFLOW_ID to workflowId.toJson(),
-          METHOD_NAME to methodName.toJson(),
-          METHOD_ID to workflowMethodId.toJson(),
-          METHOD_ARGS to methodParameters.toJson(),
-      ),
-  )
-}
-
-@Serializable
-@AvroNamespace("io.infinitic.workflows.engine")
-data class TaskDescription(
-  val serviceName: ServiceName,
-  val taskId: TaskId,
-  val methodName: MethodName,
-  val methodParameterTypes: MethodParameterTypes?,
-  val methodParameters: MethodParameters,
-  val taskTags: Set<TaskTag>,
-  val taskMeta: TaskMeta,
-  val timeout: MillisDuration?,
-  val emittedAt: MillisInstant
-) : JsonAble {
-  override fun toJson() = JsonObject(
-      mapOf(
-          SERVICE_NAME to serviceName.toJson(),
-          TASK_NAME to methodName.toJson(),
-          TASK_ARGS to methodParameters.toJson(),
-          TASK_ID to taskId.toJson(),
-      ),
-  )
-}
-
-@Serializable
-sealed interface RemoteSignalDescription : JsonAble {
-  val signalId: SignalId
-  val signalData: SignalData
-  val channelName: ChannelName
-  val channelTypes: Set<ChannelType>
-  val workflowName: WorkflowName
-  val emittedAt: MillisInstant
-}
-
-@Serializable
-@AvroNamespace("io.infinitic.workflows.engine")
-data class RemoteSignalDescriptionById(
-  val workflowId: WorkflowId,
-  override val signalId: SignalId,
-  override val signalData: SignalData,
-  override val channelName: ChannelName,
-  override val channelTypes: Set<ChannelType>,
-  override val workflowName: WorkflowName,
-  override val emittedAt: MillisInstant
-) : RemoteSignalDescription {
-  override fun toJson() = JsonObject(
-      mapOf(
-          SIGNAL_ID to signalId.toJson(),
-          SIGNAL_DATA to signalData.toJson(),
-          CHANNEL_NAME to channelName.toJson(),
-          WORKFLOW_ID to workflowId.toJson(),
-          WORKFLOW_NAME to workflowName.toJson(),
-      ),
-  )
-}
-
-
-@Serializable
-@AvroNamespace("io.infinitic.workflows.engine")
-data class RemoteSignalDescriptionByTag(
-  val workflowTag: WorkflowTag,
-  override val signalId: SignalId,
-  override val signalData: SignalData,
-  override val channelName: ChannelName,
-  override val channelTypes: Set<ChannelType>,
-  override val workflowName: WorkflowName,
-  override val emittedAt: MillisInstant
-) : RemoteSignalDescription {
-  override fun toJson() = JsonObject(
-      mapOf(
-          SIGNAL_ID to signalId.toJson(),
-          SIGNAL_DATA to signalData.toJson(),
-          CHANNEL_NAME to channelName.toJson(),
-          WORKFLOW_TAG to workflowTag.toJson(),
-          WORKFLOW_NAME to workflowName.toJson(),
-      ),
-  )
-}
-
-@Serializable
-sealed interface RemoteTimerDescription : JsonAble {
-  val timerId: TimerId
-  val emittedAt: MillisInstant
-}
-
-@Serializable
-@AvroNamespace("io.infinitic.workflows.engine")
-data class DurationTimerDescription(
-  override val timerId: TimerId,
-  override val emittedAt: MillisInstant,
-  val duration: MillisDuration,
-) : RemoteTimerDescription {
-  override fun toJson() = JsonObject(
-      mapOf(
-          TIMER_ID to timerId.toJson(),
-          TIMER_DURATION to duration.toJson(),
-          EMITTED_AT to emittedAt.toJson(),
-      ),
-  )
-}
-
-@Serializable
-@AvroNamespace("io.infinitic.workflows.engine")
-data class InstantTimerDescription(
-  override val timerId: TimerId,
-  override val emittedAt: MillisInstant,
-  val timerInstant: MillisInstant
-) : RemoteTimerDescription {
-  override fun toJson() = JsonObject(
-      mapOf(
-          TIMER_ID to timerId.toJson(),
-          TIMER_INSTANT to timerInstant.toJson(),
-          EMITTED_AT to emittedAt.toJson(),
-      ),
-  )
-}
+  override val workflowVersion: WorkflowVersion?,
+  override val emitterName: EmitterName,
+) : WorkflowMessage(), WorkflowEventMessage

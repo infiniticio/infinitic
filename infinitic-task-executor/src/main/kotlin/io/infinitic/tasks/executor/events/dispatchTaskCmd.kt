@@ -20,17 +20,19 @@
  *
  * Licensor: infinitic.io
  */
-package io.infinitic.tasks.executor.commands
+package io.infinitic.tasks.executor.events
 
 import io.infinitic.common.data.MillisInstant
 import io.infinitic.common.emitters.EmitterName
 import io.infinitic.common.requester.WorkflowRequester
 import io.infinitic.common.tasks.data.TaskId
+import io.infinitic.common.tasks.data.TaskRetrySequence
 import io.infinitic.common.transport.InfiniticProducer
 import io.infinitic.common.transport.WorkflowEventsTopic
 import io.infinitic.common.workflows.data.commands.DispatchTaskPastCommand
-import io.infinitic.common.workflows.engine.messages.TaskDescription
+import io.infinitic.common.workflows.engine.commands.dispatchTask
 import io.infinitic.common.workflows.engine.messages.TaskDispatchedEvent
+import io.infinitic.common.workflows.engine.messages.data.TaskDispatched
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
@@ -43,21 +45,26 @@ internal fun CoroutineScope.dispatchTaskCmd(
   val emitterName = EmitterName(producer.name)
   val dispatchTaskCommand = pastCommand.command
 
-  // Event: Dispatching task
+  // Description of the dispatched task
+  val taskDispatched = with(dispatchTaskCommand) {
+    TaskDispatched(
+        taskId = TaskId.from(pastCommand.commandId),
+        methodName = methodName,
+        methodParameterTypes = methodParameterTypes,
+        methodParameters = methodParameters,
+        serviceName = serviceName,
+        taskMeta = taskMeta,
+        taskTags = taskTags,
+        taskRetrySequence = TaskRetrySequence(),
+        timeoutInstant = methodTimeout?.let { it + workflowTaskInstant },
+    )
+  }
+  // Dispatching the task
+  with(producer) { dispatchTask(taskDispatched, current) }
+
+  // Description of the workflow event
   val taskDispatchedEvent = TaskDispatchedEvent(
-      taskDispatched = with(dispatchTaskCommand) {
-        TaskDescription(
-            taskId = TaskId.from(pastCommand.commandId),
-            methodName = methodName,
-            methodParameterTypes = methodParameterTypes,
-            methodParameters = methodParameters,
-            serviceName = serviceName,
-            taskMeta = taskMeta,
-            taskTags = taskTags,
-            timeout = methodTimeout,
-            emittedAt = workflowTaskInstant,
-        )
-      },
+      taskDispatched = taskDispatched,
       workflowName = current.workflowName,
       workflowId = current.workflowId,
       workflowVersion = current.workflowVersion,
@@ -65,6 +72,6 @@ internal fun CoroutineScope.dispatchTaskCmd(
       workflowMethodId = current.workflowMethodId,
       emitterName = emitterName,
   )
-
+  // Dispatching the workflow event
   with(producer) { taskDispatchedEvent.sendTo(WorkflowEventsTopic) }
 }

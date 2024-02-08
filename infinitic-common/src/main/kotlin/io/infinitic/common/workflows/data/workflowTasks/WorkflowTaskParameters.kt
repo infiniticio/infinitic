@@ -30,10 +30,10 @@ import io.infinitic.common.data.methods.MethodName
 import io.infinitic.common.data.methods.MethodParameterTypes
 import io.infinitic.common.data.methods.MethodParameters
 import io.infinitic.common.emitters.EmitterName
-import io.infinitic.common.exceptions.thisShouldNotHappen
 import io.infinitic.common.serDe.avro.AvroSerDe
 import io.infinitic.common.tasks.data.TaskId
 import io.infinitic.common.tasks.data.TaskMeta
+import io.infinitic.common.tasks.data.TaskRetrySequence
 import io.infinitic.common.workers.config.WorkflowVersion
 import io.infinitic.common.workflows.data.properties.PropertyHash
 import io.infinitic.common.workflows.data.properties.PropertyValue
@@ -42,8 +42,8 @@ import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.data.workflows.WorkflowMeta
 import io.infinitic.common.workflows.data.workflows.WorkflowName
 import io.infinitic.common.workflows.data.workflows.WorkflowTag
-import io.infinitic.common.workflows.engine.messages.TaskDescription
 import io.infinitic.common.workflows.engine.messages.TaskDispatchedEvent
+import io.infinitic.common.workflows.engine.messages.data.TaskDispatched
 import io.infinitic.currentVersion
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -66,7 +66,7 @@ data class WorkflowTaskParameters(
   val emitterName: EmitterName,
 ) {
   fun workflowTaskDispatchedEvent(emitterName: EmitterName) = TaskDispatchedEvent(
-      taskDispatched = TaskDescription(
+      taskDispatched = TaskDispatched(
           taskId = taskId,
           methodName = MethodName(WorkflowTask::handle.name),
           methodParameterTypes = MethodParameterTypes(listOf(WorkflowTaskParameters::class.java.name)),
@@ -74,8 +74,8 @@ data class WorkflowTaskParameters(
           serviceName = WorkflowTask.SERVICE_NAME,
           taskTags = setOf(),
           taskMeta = TaskMeta(),
-          emittedAt = workflowTaskInstant ?: thisShouldNotHappen(),
-          timeout = null,
+          taskRetrySequence = TaskRetrySequence(),
+          timeoutInstant = null,
       ),
       workflowName = workflowName,
       workflowId = workflowId,

@@ -46,12 +46,12 @@ import io.infinitic.common.workflows.data.commands.SendSignalPastCommand
 import io.infinitic.common.workflows.data.commands.StartDurationTimerPastCommand
 import io.infinitic.common.workflows.data.commands.StartInstantTimerPastCommand
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskReturnValue
-import io.infinitic.tasks.executor.commands.dispatchDurationTimerCmd
-import io.infinitic.tasks.executor.commands.dispatchInstantTimerCmd
-import io.infinitic.tasks.executor.commands.dispatchRemoteMethodCmd
-import io.infinitic.tasks.executor.commands.dispatchRemoteSignalCmd
-import io.infinitic.tasks.executor.commands.dispatchRemoteWorkflowCmd
-import io.infinitic.tasks.executor.commands.dispatchTaskCmd
+import io.infinitic.tasks.executor.events.dispatchDurationTimerCmd
+import io.infinitic.tasks.executor.events.dispatchInstantTimerCmd
+import io.infinitic.tasks.executor.events.dispatchRemoteMethodCmd
+import io.infinitic.tasks.executor.events.dispatchRemoteSignalCmd
+import io.infinitic.tasks.executor.events.dispatchRemoteWorkflowCmd
+import io.infinitic.tasks.executor.events.dispatchTaskCmd
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 

@@ -28,8 +28,6 @@ import com.github.avrokotlin.avro4k.AvroName
 import com.github.avrokotlin.avro4k.AvroNamespace
 import io.infinitic.common.clients.data.ClientName
 import io.infinitic.common.data.MessageId
-import io.infinitic.common.data.MillisDuration
-import io.infinitic.common.data.MillisInstant
 import io.infinitic.common.data.Version
 import io.infinitic.common.data.methods.MethodName
 import io.infinitic.common.data.methods.MethodParameterTypes
@@ -39,11 +37,7 @@ import io.infinitic.common.messages.Message
 import io.infinitic.common.requester.ClientRequester
 import io.infinitic.common.requester.Requester
 import io.infinitic.common.requester.WorkflowRequester
-import io.infinitic.common.requester.workflowId
-import io.infinitic.common.requester.workflowMethodId
-import io.infinitic.common.requester.workflowMethodName
 import io.infinitic.common.requester.workflowName
-import io.infinitic.common.requester.workflowVersion
 import io.infinitic.common.tasks.data.ServiceName
 import io.infinitic.common.tasks.data.TaskId
 import io.infinitic.common.tasks.data.TaskMeta
@@ -57,8 +51,6 @@ import io.infinitic.common.workflows.data.workflowMethods.WorkflowMethodId
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTask
 import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.data.workflows.WorkflowName
-import io.infinitic.common.workflows.engine.messages.TaskDescription
-import io.infinitic.common.workflows.engine.messages.TaskDispatchedEvent
 import io.infinitic.currentVersion
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -144,30 +136,6 @@ data class ExecuteTask(
         lastError = cause.getExecutionError(emitterName),
     )
   }
-
-  fun taskDispatchedEvent(
-    emitterName: EmitterName,
-    emittedAt: MillisInstant,
-    timeout: MillisDuration?
-  ) = TaskDispatchedEvent(
-      taskDispatched = TaskDescription(
-          taskId = taskId,
-          methodName = methodName,
-          methodParameterTypes = methodParameterTypes,
-          methodParameters = methodParameters,
-          serviceName = serviceName,
-          taskTags = taskTags,
-          taskMeta = taskMeta,
-          emittedAt = emittedAt,
-          timeout = timeout,
-      ),
-      workflowName = requester.workflowName!!,
-      workflowId = requester.workflowId!!,
-      workflowVersion = requester.workflowVersion,
-      workflowMethodName = requester.workflowMethodName!!,
-      workflowMethodId = requester.workflowMethodId!!,
-      emitterName = emitterName,
-  )
 }
 
 private fun Throwable.getExecutionError(emitterName: EmitterName) =

@@ -30,7 +30,6 @@ import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
 import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
-import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonPrimitive
 
 @Serializable(with = WorkflowTagSerializer::class)
@@ -59,3 +58,5 @@ object WorkflowTagSerializer : KSerializer<WorkflowTag> {
 
 val Set<WorkflowTag>.set get() = map { it.tag }.toSet()
 
+val Set<WorkflowTag>.customId: WorkflowTag?
+  get() = filter { it.isCustomId() }.getOrNull(0)
