@@ -25,6 +25,7 @@ package io.infinitic.workflows.engine
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.infinitic.common.data.MillisInstant
 import io.infinitic.common.emitters.EmitterName
+import io.infinitic.common.exceptions.thisShouldNotHappen
 import io.infinitic.common.tasks.data.TaskRetryIndex
 import io.infinitic.common.tasks.data.TaskRetrySequence
 import io.infinitic.common.tasks.executors.errors.TaskTimedOutError
@@ -36,7 +37,10 @@ import io.infinitic.common.transport.InfiniticProducerAsync
 import io.infinitic.common.transport.LoggedInfiniticProducer
 import io.infinitic.common.transport.ServiceExecutorTopic
 import io.infinitic.common.transport.ServiceTagTopic
+import io.infinitic.common.transport.WorkflowCmdTopic
 import io.infinitic.common.transport.WorkflowEngineTopic
+import io.infinitic.common.transport.WorkflowTagTopic
+import io.infinitic.common.workflows.engine.messages.DispatchWorkflow
 import io.infinitic.common.workflows.engine.messages.DurationTimerDescription
 import io.infinitic.common.workflows.engine.messages.InstantTimerDescription
 import io.infinitic.common.workflows.engine.messages.MethodCanceledEvent
@@ -44,15 +48,23 @@ import io.infinitic.common.workflows.engine.messages.MethodCommandedEvent
 import io.infinitic.common.workflows.engine.messages.MethodCompletedEvent
 import io.infinitic.common.workflows.engine.messages.MethodFailedEvent
 import io.infinitic.common.workflows.engine.messages.MethodTimedOutEvent
+import io.infinitic.common.workflows.engine.messages.NewRemoteMethodDescription
+import io.infinitic.common.workflows.engine.messages.NewRemoteWorkflowDescription
 import io.infinitic.common.workflows.engine.messages.RemoteMethodDispatchedEvent
+import io.infinitic.common.workflows.engine.messages.RemoteSignalDescriptionById
+import io.infinitic.common.workflows.engine.messages.RemoteSignalDescriptionByTag
 import io.infinitic.common.workflows.engine.messages.RemoteSignalDispatchedEvent
 import io.infinitic.common.workflows.engine.messages.RemoteTaskTimedOut
 import io.infinitic.common.workflows.engine.messages.RemoteTimerCompleted
+import io.infinitic.common.workflows.engine.messages.SendSignal
 import io.infinitic.common.workflows.engine.messages.TaskDispatchedEvent
 import io.infinitic.common.workflows.engine.messages.TimerDispatchedEvent
 import io.infinitic.common.workflows.engine.messages.WorkflowCanceledEvent
 import io.infinitic.common.workflows.engine.messages.WorkflowCompletedEvent
 import io.infinitic.common.workflows.engine.messages.WorkflowEventMessage
+import io.infinitic.common.workflows.tags.messages.AddTagToWorkflow
+import io.infinitic.common.workflows.tags.messages.DispatchWorkflowByCustomId
+import io.infinitic.common.workflows.tags.messages.SendSignalByTag
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 
@@ -75,12 +87,147 @@ class WorkflowEventHandler(producerAsync: InfiniticProducerAsync) {
       is MethodFailedEvent -> sendWorkflowMethodFailed(msg, publishTime)
       is MethodTimedOutEvent -> sendWorkflowMethodTimedOut(msg, publishTime)
       is TaskDispatchedEvent -> sendTask(msg)
-      is RemoteMethodDispatchedEvent -> Unit
-      is TimerDispatchedEvent -> sendTimer(msg)
-      is RemoteSignalDispatchedEvent -> TODO()
+      is RemoteMethodDispatchedEvent -> dispatchMethod(msg)
+      is TimerDispatchedEvent -> dispatchTimer(msg)
+      is RemoteSignalDispatchedEvent -> dispatchSignal(msg)
     }
 
     msg.logTrace { "processed" }
+  }
+
+  private suspend fun dispatchMethod(msg: RemoteMethodDispatchedEvent) {
+    when (val remote = msg.remoteMethodDispatched) {
+      // New Workflow
+      is NewRemoteWorkflowDescription -> coroutineScope {
+
+        val customIds = remote.workflowTags.filter { it.isCustomId() }
+
+        when (customIds.size) {
+          // no customId tag provided
+          0 -> {
+            // send workflow to workflow engine
+            val dispatchWorkflow = with(remote) {
+              DispatchWorkflow(
+                  workflowName = workflowName,
+                  workflowId = workflowId,
+                  methodName = methodName,
+                  methodParameters = methodParameters,
+                  methodParameterTypes = methodParameterTypes,
+                  workflowTags = workflowTags,
+                  workflowMeta = workflowMeta,
+                  requester = msg.requester(),
+                  clientWaiting = false,
+                  emitterName = emitterName,
+                  emittedAt = emittedAt,
+              )
+            }
+
+            launch { with(producer) { dispatchWorkflow.sendTo(WorkflowCmdTopic) } }
+
+            // add provided tags
+            dispatchWorkflow.workflowTags.forEach {
+              launch {
+                val addTagToWorkflow = with(dispatchWorkflow) {
+                  AddTagToWorkflow(
+                      workflowName = dispatchWorkflow.workflowName,
+                      workflowTag = it,
+                      workflowId = workflowId,
+                      emitterName = emitterName,
+                      emittedAt = emittedAt,
+                  )
+                }
+                with(producer) { addTagToWorkflow.sendTo(WorkflowTagTopic) }
+              }
+            }
+
+            // send a timeout if needed
+            remote.timeout?.let {
+              launch {
+                val childMethodTimedOut = dispatchWorkflow.remoteMethodTimedOut(emitterName, it)
+                with(producer) { childMethodTimedOut.sendTo(DelayedWorkflowEngineTopic, it) }
+              }
+            }
+          }
+
+          // the workflow is dispatched with a custom id
+          1 -> {
+            // delegate to workflow tag engine
+            val dispatchWorkflowByCustomId = with(remote) {
+              DispatchWorkflowByCustomId(
+                  workflowName = workflowName,
+                  workflowTag = customIds.first(),
+                  workflowId = workflowId,
+                  methodName = methodName,
+                  methodParameters = methodParameters,
+                  methodParameterTypes = methodParameterTypes,
+                  methodTimeout = timeout,
+                  workflowTags = workflowTags,
+                  workflowMeta = workflowMeta,
+                  requester = msg.requester(),
+                  clientWaiting = false,
+                  emitterName = emitterName,
+                  emittedAt = emittedAt,
+              )
+            }
+            with(producer) { dispatchWorkflowByCustomId.sendTo(WorkflowTagTopic) }
+          }
+
+          else -> thisShouldNotHappen()
+        }
+      }
+
+      // New Method on a running workflow
+      is NewRemoteMethodDescription -> Unit
+    }
+
+  }
+
+  private suspend fun dispatchSignal(msg: RemoteSignalDispatchedEvent) {
+    when (val signal = msg.remoteSignalDispatched) {
+      is RemoteSignalDescriptionById -> when (signal.workflowId) {
+        msg.workflowId -> {
+          // do nothing as the signal is handled from the workflowTaskCompleted
+        }
+
+        else -> {
+          // dispatch signal to the other workflow
+          val sendToChannel = with(signal) {
+            SendSignal(
+                workflowName = workflowName,
+                workflowId = workflowId,
+                channelName = channelName,
+                signalId = signalId,
+                signalData = signalData,
+                channelTypes = channelTypes,
+                emitterName = emitterName,
+                emittedAt = emittedAt,
+                requester = msg.requester(),
+            )
+          }
+          with(producer) { sendToChannel.sendTo(WorkflowCmdTopic) }
+        }
+      }
+
+      is RemoteSignalDescriptionByTag -> {
+        // dispatch signal per tag
+        val sendSignalByTag = with(signal) {
+          SendSignalByTag(
+              workflowName = workflowName,
+              workflowTag = workflowTag,
+              channelName = channelName,
+              signalId = signalId,
+              signalData = signalData,
+              channelTypes = channelTypes,
+              emitterName = emitterName,
+              emittedAt = emittedAt,
+              requester = msg.requester(),
+          )
+        }
+        // Note: tag engine MUST ignore this message for workflowId = requester.workflowId
+        // as the signal is handled from the workflowTaskCompleted
+        with(producer) { sendSignalByTag.sendTo(WorkflowTagTopic) }
+      }
+    }
   }
 
   private suspend fun sendTask(
@@ -144,7 +291,7 @@ class WorkflowEventHandler(producerAsync: InfiniticProducerAsync) {
     }
   }
 
-  private suspend fun sendTimer(
+  private suspend fun dispatchTimer(
     msg: TimerDispatchedEvent,
   ) {
     val timer = msg.timerDispatched

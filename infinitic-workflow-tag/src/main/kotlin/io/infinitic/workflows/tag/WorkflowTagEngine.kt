@@ -29,6 +29,7 @@ import io.infinitic.common.data.MillisInstant
 import io.infinitic.common.emitters.EmitterName
 import io.infinitic.common.exceptions.thisShouldNotHappen
 import io.infinitic.common.requester.WorkflowRequester
+import io.infinitic.common.requester.workflowId
 import io.infinitic.common.transport.ClientTopic
 import io.infinitic.common.transport.DelayedWorkflowEngineTopic
 import io.infinitic.common.transport.InfiniticProducerAsync
@@ -137,7 +138,7 @@ class WorkflowTagEngine(
           // Sending event message
           launch {
             val childMethodDispatchedEvent =
-                dispatchWorkflow.remoteMethodDispatchedEvent(emitterName)
+                dispatchWorkflow.remoteMethodDispatchedEvent(emitterName, message.methodTimeout)
             with(producer) { childMethodDispatchedEvent.sendTo(WorkflowEventsTopic) }
           }
 
@@ -214,7 +215,7 @@ class WorkflowTagEngine(
           // event for the dispatching of a child method
           launch {
             val childMethodDispatchedEvent =
-                dispatchMethod.remoteMethodDispatchedEvent(emitterName)
+                dispatchMethod.remoteMethodDispatchedEvent(emitterName, message.methodTimeout)
             with(producer) { childMethodDispatchedEvent.sendTo(WorkflowEventsTopic) }
           }
 
@@ -340,19 +341,21 @@ class WorkflowTagEngine(
 
           false -> ids.forEach { workflowId ->
             // parent workflow already applied this to itself
-            if (workflowId != message.parentWorkflowId) {
+            if (workflowId != (message.requester.workflowId ?: message.parentWorkflowId)) {
               launch {
-                val sendSignal = SendSignal(
-                    channelName = message.channelName,
-                    signalId = message.signalId,
-                    signalData = message.signalData,
-                    channelTypes = message.channelTypes,
-                    workflowName = message.workflowName,
-                    workflowId = workflowId,
-                    emitterName = emitterName,
-                    emittedAt = message.emittedAt ?: publishTime,
-                    requester = message.requester,
-                )
+                val sendSignal = with(message) {
+                  SendSignal(
+                      workflowName = workflowName,
+                      workflowId = workflowId,
+                      signalId = signalId,
+                      signalData = signalData,
+                      channelName = channelName,
+                      channelTypes = channelTypes,
+                      emitterName = emitterName,
+                      emittedAt = emittedAt ?: publishTime,
+                      requester = requester,
+                  )
+                }
                 with(producer) { sendSignal.sendTo(WorkflowCmdTopic) }
               }
             }

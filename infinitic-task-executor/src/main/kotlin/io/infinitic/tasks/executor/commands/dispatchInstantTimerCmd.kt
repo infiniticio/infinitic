@@ -43,7 +43,7 @@ internal fun CoroutineScope.dispatchInstantTimerCmd(
   val emitterName = EmitterName(producer.name)
   val startInstantTimer = pastCommand.command
 
-  // Event: dispatching instant timer
+  // Event: Dispatching instant timer
   val timerDispatchedEvent = TimerDispatchedEvent(
       timerDispatched = InstantTimerDescription(
           timerId = TimerId.from(pastCommand.commandId),

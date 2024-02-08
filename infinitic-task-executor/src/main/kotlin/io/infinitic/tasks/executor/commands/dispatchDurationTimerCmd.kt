@@ -43,7 +43,7 @@ internal fun CoroutineScope.dispatchDurationTimerCmd(
   val emitterName = EmitterName(producer.name)
   val startDurationTimer = pastCommand.command
 
-  // Event: dispatching duration timer
+  // Event: Dispatching duration timer
   val timerDispatchedEvent = TimerDispatchedEvent(
       timerDispatched = DurationTimerDescription(
           timerId = TimerId.from(pastCommand.commandId),

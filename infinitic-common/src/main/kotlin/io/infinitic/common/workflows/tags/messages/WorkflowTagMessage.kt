@@ -83,7 +83,7 @@ data class SendSignalByTag(
   @AvroName("channelSignalId") val signalId: SignalId,
   @AvroName("channelSignal") val signalData: SignalData,
   @AvroName("channelSignalTypes") val channelTypes: Set<ChannelType>,
-  @AvroName("emitterWorkflowId") var parentWorkflowId: WorkflowId? = null,
+  @Deprecated("Not used since version 0.13.0") @AvroName("emitterWorkflowId") var parentWorkflowId: WorkflowId? = null,
   @AvroDefault(Avro.NULL) override val requester: Requester?,
   @AvroDefault(Avro.NULL) override val emittedAt: MillisInstant?,
   override val emitterName: EmitterName,

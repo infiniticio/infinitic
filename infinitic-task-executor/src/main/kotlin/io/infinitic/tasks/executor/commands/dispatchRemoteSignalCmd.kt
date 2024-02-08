@@ -24,19 +24,16 @@ package io.infinitic.tasks.executor.commands
 
 import io.infinitic.common.data.MillisInstant
 import io.infinitic.common.emitters.EmitterName
+import io.infinitic.common.exceptions.thisShouldNotHappen
 import io.infinitic.common.requester.WorkflowRequester
 import io.infinitic.common.transport.InfiniticProducer
-import io.infinitic.common.transport.WorkflowCmdTopic
 import io.infinitic.common.transport.WorkflowEventsTopic
-import io.infinitic.common.transport.WorkflowTagTopic
 import io.infinitic.common.workflows.data.channels.SignalId
 import io.infinitic.common.workflows.data.commands.SendSignalCommand
 import io.infinitic.common.workflows.data.commands.SendSignalPastCommand
 import io.infinitic.common.workflows.engine.messages.RemoteSignalDescriptionById
 import io.infinitic.common.workflows.engine.messages.RemoteSignalDescriptionByTag
 import io.infinitic.common.workflows.engine.messages.RemoteSignalDispatchedEvent
-import io.infinitic.common.workflows.engine.messages.SendSignal
-import io.infinitic.common.workflows.tags.messages.SendSignalByTag
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
@@ -51,89 +48,42 @@ internal fun CoroutineScope.dispatchRemoteSignalCmd(
   val signalId = SignalId.from(pastCommand.commandId)
   val signalData = command.signalData
 
-  when {
-    command.workflowId != null -> {
-      // Event: sending a signal
-      launch {
-        val remoteSignalDispatchedEvent = RemoteSignalDispatchedEvent(
-            remoteSignalDispatched = RemoteSignalDescriptionById(
-                signalId = signalId,
-                signalData = signalData,
-                channelName = command.channelName,
-                channelTypes = command.channelTypes,
-                workflowName = command.workflowName,
-                workflowId = command.workflowId!!,
-            ),
-            workflowName = current.workflowName,
-            workflowId = current.workflowId,
-            workflowVersion = current.workflowVersion,
-            workflowMethodName = current.workflowMethodName,
-            workflowMethodId = current.workflowMethodId,
-            emitterName = emitterName,
-        )
-        with(producer) { remoteSignalDispatchedEvent.sendTo(WorkflowEventsTopic) }
-      }
+  val signal = when {
+    command.workflowId != null -> RemoteSignalDescriptionById(
+        workflowName = command.workflowName,
+        workflowId = command.workflowId!!,
+        signalId = signalId,
+        signalData = signalData,
+        channelName = command.channelName,
+        channelTypes = command.channelTypes,
+        emittedAt = workflowTaskInstant,
+    )
 
+    command.workflowTag != null -> RemoteSignalDescriptionByTag(
+        workflowName = command.workflowName,
+        workflowTag = command.workflowTag!!,
+        signalId = signalId,
+        signalData = command.signalData,
+        channelName = command.channelName,
+        channelTypes = command.channelTypes,
+        emittedAt = workflowTaskInstant,
+    )
 
-      if (command.workflowId != current.workflowId) {
-        // dispatch signal on another workflow
-        launch {
-          val sendToChannel = SendSignal(
-              channelName = command.channelName,
-              signalId = SignalId.from(pastCommand.commandId),
-              signalData = command.signalData,
-              channelTypes = command.channelTypes,
-              workflowName = command.workflowName,
-              workflowId = command.workflowId!!,
-              emitterName = emitterName,
-              emittedAt = workflowTaskInstant,
-              requester = current,
-          )
-          with(producer) { sendToChannel.sendTo(WorkflowCmdTopic) }
-        }
-      }
-    }
+    else -> thisShouldNotHappen()
+  }
 
-    command.workflowTag != null -> {
-      // Event: sending a signal
-      launch {
-        val remoteSignalDispatchedEvent = RemoteSignalDispatchedEvent(
-            remoteSignalDispatched = RemoteSignalDescriptionByTag(
-                signalId = signalId,
-                signalData = command.signalData,
-                channelName = command.channelName,
-                channelTypes = command.channelTypes,
-                workflowName = command.workflowName,
-                workflowTag = command.workflowTag!!,
-            ),
-            workflowName = current.workflowName,
-            workflowId = current.workflowId,
-            workflowVersion = current.workflowVersion,
-            workflowMethodName = current.workflowMethodName,
-            workflowMethodId = current.workflowMethodId,
-            emitterName = emitterName,
-        )
-        with(producer) { remoteSignalDispatchedEvent.sendTo(WorkflowEventsTopic) }
-      }
-
-      launch {
-        // dispatch signal per tag
-        val sendSignalByTag = SendSignalByTag(
-            workflowName = command.workflowName,
-            workflowTag = command.workflowTag!!,
-            channelName = command.channelName,
-            signalId = SignalId(),
-            signalData = command.signalData,
-            channelTypes = command.channelTypes,
-            parentWorkflowId = current.workflowId,
-            emitterName = emitterName,
-            emittedAt = workflowTaskInstant,
-            requester = current,
-        )
-        // Note: tag engine MUST ignore this message for Id = parentWorkflowId
-        with(producer) { sendSignalByTag.sendTo(WorkflowTagTopic) }
-      }
-    }
+  // Event: Dispatching signal
+  launch {
+    val remoteSignalDispatchedEvent = RemoteSignalDispatchedEvent(
+        remoteSignalDispatched = signal,
+        workflowName = current.workflowName,
+        workflowId = current.workflowId,
+        workflowVersion = current.workflowVersion,
+        workflowMethodName = current.workflowMethodName,
+        workflowMethodId = current.workflowMethodId,
+        emitterName = emitterName,
+    )
+    with(producer) { remoteSignalDispatchedEvent.sendTo(WorkflowEventsTopic) }
   }
 }
 

@@ -24,19 +24,13 @@ package io.infinitic.tasks.executor.commands
 
 import io.infinitic.common.data.MillisInstant
 import io.infinitic.common.emitters.EmitterName
-import io.infinitic.common.exceptions.thisShouldNotHappen
 import io.infinitic.common.requester.WorkflowRequester
-import io.infinitic.common.transport.DelayedWorkflowEngineTopic
 import io.infinitic.common.transport.InfiniticProducer
-import io.infinitic.common.transport.WorkflowCmdTopic
 import io.infinitic.common.transport.WorkflowEventsTopic
-import io.infinitic.common.transport.WorkflowTagTopic
-import io.infinitic.common.workflows.data.commands.DispatchNewWorkflowCommand
 import io.infinitic.common.workflows.data.commands.DispatchNewWorkflowPastCommand
 import io.infinitic.common.workflows.data.workflows.WorkflowId
-import io.infinitic.common.workflows.engine.messages.DispatchWorkflow
-import io.infinitic.common.workflows.tags.messages.AddTagToWorkflow
-import io.infinitic.common.workflows.tags.messages.DispatchWorkflowByCustomId
+import io.infinitic.common.workflows.engine.messages.NewRemoteWorkflowDescription
+import io.infinitic.common.workflows.engine.messages.RemoteMethodDispatchedEvent
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
@@ -45,85 +39,32 @@ internal fun CoroutineScope.dispatchRemoteWorkflowCmd(
   pastCommand: DispatchNewWorkflowPastCommand,
   workflowTaskInstant: MillisInstant,
   producer: InfiniticProducer
-) {
+) = launch {
   val emitterName = EmitterName(producer.name)
-  val command: DispatchNewWorkflowCommand = pastCommand.command
-  val workflowId = WorkflowId.from(pastCommand.commandId)
-  val workflowName = command.workflowName
-  val methodName = command.methodName
+  val dispatchNewWorkflow = pastCommand.command
 
-  val customIds = command.workflowTags.filter { it.isCustomId() }
-
-  when (customIds.size) {
-    // no customId tag provided
-    0 -> {
-      // send workflow to workflow engine
-      val dispatchWorkflow = DispatchWorkflow(
-          workflowName = workflowName,
-          workflowId = workflowId,
-          methodName = methodName,
-          methodParameters = command.methodParameters,
-          methodParameterTypes = command.methodParameterTypes,
-          workflowTags = command.workflowTags,
-          workflowMeta = command.workflowMeta,
-          requester = current,
-          clientWaiting = false,
-          emitterName = emitterName,
-          emittedAt = workflowTaskInstant,
-      )
-
-      launch {
-        with(producer) {
-          // Event: starting child method
-          dispatchWorkflow.remoteMethodDispatchedEvent(emitterName).sendTo(WorkflowEventsTopic)
-          // Starting new workflow
-          dispatchWorkflow.sendTo(WorkflowCmdTopic)
-        }
-      }
-
-      // add provided tags
-      dispatchWorkflow.workflowTags.forEach {
-        launch {
-          val addTagToWorkflow = AddTagToWorkflow(
-              workflowName = dispatchWorkflow.workflowName,
-              workflowTag = it,
-              workflowId = workflowId,
-              emitterName = emitterName,
-              emittedAt = workflowTaskInstant,
-          )
-          with(producer) { addTagToWorkflow.sendTo(WorkflowTagTopic) }
-        }
-      }
-
-      // send a timeout for the child method
-      command.methodTimeout?.let {
-        launch {
-          val childMethodTimedOut = dispatchWorkflow.remoteMethodTimedOut(emitterName, it)
-          with(producer) { childMethodTimedOut.sendTo(DelayedWorkflowEngineTopic, it) }
-        }
-      }
-    }
-
-    1 -> launch {
-      // send to workflow tag engine
-      val dispatchWorkflowByCustomId = DispatchWorkflowByCustomId(
-          workflowName = workflowName,
-          workflowTag = customIds.first(),
-          workflowId = workflowId,
-          methodName = methodName,
-          methodParameters = command.methodParameters,
-          methodParameterTypes = command.methodParameterTypes,
-          methodTimeout = command.methodTimeout,
-          workflowTags = command.workflowTags,
-          workflowMeta = command.workflowMeta,
-          requester = current,
-          clientWaiting = false,
-          emitterName = emitterName,
-          emittedAt = workflowTaskInstant,
-      )
-      with(producer) { dispatchWorkflowByCustomId.sendTo(WorkflowTagTopic) }
-    }
-    // this must be excluded from workflow task
-    else -> thisShouldNotHappen()
-  }
+  val remoteMethod = RemoteMethodDispatchedEvent(
+      remoteMethodDispatched = with(dispatchNewWorkflow) {
+        NewRemoteWorkflowDescription(
+            workflowId = WorkflowId.from(pastCommand.commandId),
+            workflowName = workflowName,
+            workflowMethodName = methodName,
+            methodName = methodName,
+            methodParameters = methodParameters,
+            methodParameterTypes = methodParameterTypes,
+            workflowTags = workflowTags,
+            workflowMeta = workflowMeta,
+            timeout = methodTimeout,
+            emittedAt = workflowTaskInstant,
+        )
+      },
+      workflowName = current.workflowName,
+      workflowId = current.workflowId,
+      workflowVersion = current.workflowVersion,
+      workflowMethodName = current.workflowMethodName,
+      workflowMethodId = current.workflowMethodId,
+      emitterName = emitterName,
+  )
+  // Event: starting remote method
+  with(producer) { remoteMethod.sendTo(WorkflowEventsTopic) }
 }

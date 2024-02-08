@@ -43,7 +43,7 @@ internal fun CoroutineScope.dispatchTaskCmd(
   val emitterName = EmitterName(producer.name)
   val dispatchTaskCommand = pastCommand.command
 
-  // event: Starting new task
+  // Event: Dispatching task
   val taskDispatchedEvent = TaskDispatchedEvent(
       taskDispatched = with(dispatchTaskCommand) {
         TaskDescription(

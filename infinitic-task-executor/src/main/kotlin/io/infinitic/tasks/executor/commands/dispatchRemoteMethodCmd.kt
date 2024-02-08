@@ -67,7 +67,8 @@ internal fun CoroutineScope.dispatchRemoteMethodCmd(
       launch {
         // Event: Starting remote method
         with(producer) {
-          dispatchMethod.remoteMethodDispatchedEvent(emitterName).sendTo(WorkflowEventsTopic)
+          dispatchMethod.remoteMethodDispatchedEvent(emitterName, command.methodTimeout)
+              .sendTo(WorkflowEventsTopic)
         }
         when (command.workflowId == current.workflowId) {
           // if we target the same workflow, the method will be actually be dispatched with
