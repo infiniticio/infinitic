@@ -149,6 +149,7 @@ data class TaskFailedEvent(
     is WorkflowRequester -> RemoteTaskFailed(
         workflowId = requester.workflowId,
         workflowName = requester.workflowName,
+        workflowVersion = requester.workflowVersion,
         workflowMethodName = requester.workflowMethodName,
         workflowMethodId = requester.workflowMethodId,
         taskFailedError = TaskFailedError(
@@ -275,6 +276,7 @@ data class TaskCompletedEvent(
     is WorkflowRequester -> RemoteTaskCompleted(
         workflowId = requester.workflowId,
         workflowName = requester.workflowName,
+        workflowVersion = requester.workflowVersion,
         workflowMethodName = requester.workflowMethodName,
         workflowMethodId = requester.workflowMethodId,
         taskReturnValue = TaskReturnValue(

@@ -26,6 +26,7 @@ import io.infinitic.common.fixtures.DockerOnly
 import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.data.workflows.WorkflowName
 import io.infinitic.common.workflows.engine.state.WorkflowState
+import io.infinitic.tests.utils.Listener
 import io.infinitic.transport.config.Transport
 import io.infinitic.workers.InfiniticWorker
 import io.infinitic.workers.config.WorkerConfig
@@ -34,6 +35,7 @@ import io.kotest.core.listeners.AfterProjectListener
 import io.kotest.core.spec.AutoScan
 import kotlinx.coroutines.delay
 import kotlin.time.Duration.Companion.milliseconds
+
 
 /**
  * This singleton provides the client and the worker used in tests
@@ -95,4 +97,12 @@ internal suspend fun InfiniticWorker.getWorkflowState(
 object ProjectConfig : AbstractProjectConfig() {
   // each test should not be longer than 5s
   override val timeout = 5000.milliseconds
+
+  override fun beforeAll() {
+    Listener.clear()
+  }
+
+  override fun afterAll() {
+    Listener.print()
+  }
 }

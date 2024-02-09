@@ -37,9 +37,6 @@ import io.infinitic.common.messages.Message
 import io.infinitic.common.requester.ClientRequester
 import io.infinitic.common.requester.Requester
 import io.infinitic.common.requester.WorkflowRequester
-import io.infinitic.common.requester.workflowId
-import io.infinitic.common.requester.workflowMethodId
-import io.infinitic.common.requester.workflowMethodName
 import io.infinitic.common.requester.workflowName
 import io.infinitic.common.tasks.data.ServiceName
 import io.infinitic.common.tasks.data.TaskId
@@ -54,8 +51,6 @@ import io.infinitic.common.workflows.data.workflowMethods.WorkflowMethodId
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTask
 import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.data.workflows.WorkflowName
-import io.infinitic.common.workflows.engine.messages.RemoteTaskDispatchedDesc
-import io.infinitic.common.workflows.engine.messages.RemoteTaskDispatchedEvent
 import io.infinitic.currentVersion
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -101,7 +96,7 @@ data class ExecuteTask(
   val methodParameterTypes: MethodParameterTypes?,
   val methodParameters: MethodParameters,
   val lastError: ExecutionError?,
-  @AvroDefault(Avro.NULL) val workflowVersion: WorkflowVersion?
+  @Deprecated("Not used since version 0.13.0") @AvroDefault(Avro.NULL) val workflowVersion: WorkflowVersion? = null
 ) : ServiceExecutorMessage() {
 
   init {
@@ -112,6 +107,7 @@ data class ExecuteTask(
       else -> WorkflowRequester(
           workflowId = workflowId,
           workflowName = workflowName ?: WorkflowName("undefined"),
+          workflowVersion = null,
           workflowMethodName = MethodName("undefined"),
           workflowMethodId = workflowMethodId ?: WorkflowMethodId("undefined"),
       )
@@ -138,24 +134,8 @@ data class ExecuteTask(
         methodParameterTypes = msg.methodParameterTypes,
         methodParameters = msg.methodParameters,
         lastError = cause.getExecutionError(emitterName),
-        workflowVersion = msg.workflowVersion,
     )
   }
-
-  fun taskDispatchedEvent(emitterName: EmitterName) = RemoteTaskDispatchedEvent(
-      remoteTaskDispatched = RemoteTaskDispatchedDesc(
-          taskId = taskId,
-          taskName = methodName,
-          methodParameterTypes = methodParameterTypes,
-          methodParameters = methodParameters,
-          serviceName = serviceName,
-      ),
-      workflowName = requester.workflowName!!,
-      workflowId = requester.workflowId!!,
-      workflowMethodName = requester.workflowMethodName!!,
-      workflowMethodId = requester.workflowMethodId!!,
-      emitterName = emitterName,
-  )
 }
 
 private fun Throwable.getExecutionError(emitterName: EmitterName) =

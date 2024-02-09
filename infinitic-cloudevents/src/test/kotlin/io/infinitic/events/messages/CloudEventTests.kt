@@ -26,8 +26,8 @@ package io.infinitic.events.messages
 import com.fasterxml.jackson.module.kotlin.jsonMapper
 import io.cloudevents.CloudEvent
 import io.cloudevents.jackson.JsonFormat
+import io.infinitic.cloudEvents.CloudEventListener
 import io.infinitic.common.clients.data.ClientName
-import io.infinitic.common.events.CloudEventListener
 import io.infinitic.common.exceptions.thisShouldNotHappen
 import io.infinitic.common.fixtures.TestFactory
 import io.infinitic.common.messages.Message
@@ -66,15 +66,19 @@ import io.infinitic.common.workflows.engine.messages.RemoteMethodDispatchedEvent
 import io.infinitic.common.workflows.engine.messages.RemoteMethodFailed
 import io.infinitic.common.workflows.engine.messages.RemoteMethodTimedOut
 import io.infinitic.common.workflows.engine.messages.RemoteMethodUnknown
+import io.infinitic.common.workflows.engine.messages.RemoteSignalDispatchedEvent
 import io.infinitic.common.workflows.engine.messages.RemoteTaskCanceled
 import io.infinitic.common.workflows.engine.messages.RemoteTaskCompleted
-import io.infinitic.common.workflows.engine.messages.RemoteTaskDispatchedEvent
 import io.infinitic.common.workflows.engine.messages.RemoteTaskFailed
 import io.infinitic.common.workflows.engine.messages.RemoteTaskTimedOut
 import io.infinitic.common.workflows.engine.messages.RemoteTimerCompleted
 import io.infinitic.common.workflows.engine.messages.RetryTasks
 import io.infinitic.common.workflows.engine.messages.RetryWorkflowTask
 import io.infinitic.common.workflows.engine.messages.SendSignal
+import io.infinitic.common.workflows.engine.messages.SignalDiscardedEvent
+import io.infinitic.common.workflows.engine.messages.SignalReceivedEvent
+import io.infinitic.common.workflows.engine.messages.TaskDispatchedEvent
+import io.infinitic.common.workflows.engine.messages.TimerDispatchedEvent
 import io.infinitic.common.workflows.engine.messages.WaitWorkflow
 import io.infinitic.common.workflows.engine.messages.WorkflowCanceledEvent
 import io.infinitic.common.workflows.engine.messages.WorkflowCmdMessage
@@ -243,7 +247,7 @@ internal class CloudEventTests :
             event.type shouldBe when (it) {
               TaskStartedEvent::class -> "infinitic.task.started"
               TaskCompletedEvent::class -> when ((message as TaskCompletedEvent).isDelegated) {
-                true -> "infinitic.task.completionDelegated"
+                true -> "infinitic.task.delegationCompleted"
                 false -> "infinitic.task.completed"
               }
 
@@ -322,7 +326,7 @@ internal class CloudEventTests :
               CompleteWorkflow::class -> null
               DispatchMethod::class -> "infinitic.workflow.startMethod"
               DispatchWorkflow::class -> "infinitic.workflow.start"
-              RetryTasks::class -> "infinitic.workflow.retryTasks"
+              RetryTasks::class -> "infinitic.workflow.retryTask"
               RetryWorkflowTask::class -> "infinitic.workflow.retryExecutor"
               SendSignal::class -> "infinitic.workflow.signal"
               WaitWorkflow::class -> null
@@ -405,7 +409,7 @@ internal class CloudEventTests :
         }
 
         WorkflowEventMessage::class.sealedSubclasses.forEach {
-          "Check ${it.simpleName} event envelope from engine topic" {
+          "Check ${it.simpleName} event envelope from events topic" {
             val message = TestFactory.random(
                 it,
                 mapOf("workflowName" to WorkflowName("WorkflowA")),
@@ -420,8 +424,12 @@ internal class CloudEventTests :
               MethodFailedEvent::class -> "infinitic.workflow.methodFailed"
               MethodCanceledEvent::class -> "infinitic.workflow.methodCanceled"
               MethodTimedOutEvent::class -> "infinitic.workflow.methodTimedOut"
-              RemoteTaskDispatchedEvent::class -> "infinitic.workflow.taskDispatched"
+              TaskDispatchedEvent::class -> "infinitic.workflow.taskDispatched"
               RemoteMethodDispatchedEvent::class -> "infinitic.workflow.remoteMethodDispatched"
+              TimerDispatchedEvent::class -> "infinitic.workflow.timerDispatched"
+              RemoteSignalDispatchedEvent::class -> "infinitic.workflow.signalDispatched"
+              SignalReceivedEvent::class -> "infinitic.workflow.signalReceived"
+              SignalDiscardedEvent::class -> "infinitic.workflow.signalDiscarded"
               else -> thisShouldNotHappen()
             }
 

@@ -41,9 +41,14 @@ data class WorkflowEventEnvelope(
   private val methodFailedEvent: MethodFailedEvent? = null,
   private val methodCanceledEvent: MethodCanceledEvent? = null,
   private val methodTimedOutEvent: MethodTimedOutEvent? = null,
-  private val taskDispatched: RemoteTaskDispatchedEvent? = null,
-  private val childDispatched: RemoteMethodDispatchedEvent? = null,
-) : Envelope<WorkflowEventMessage> {
+  private val taskDispatched: TaskDispatchedEvent? = null,
+  private val remoteMethodDispatched: RemoteMethodDispatchedEvent? = null,
+  private val timerDispatched: TimerDispatchedEvent? = null,
+  private val remoteSignalDispatched: RemoteSignalDispatchedEvent? = null,
+  private val signalDiscarded: SignalDiscardedEvent? = null,
+  private val signalReceived: SignalReceivedEvent? = null,
+
+  ) : Envelope<WorkflowEventMessage> {
   init {
     val noNull = listOfNotNull(
         workflowCompletedEvent,
@@ -54,7 +59,11 @@ data class WorkflowEventEnvelope(
         methodCanceledEvent,
         methodTimedOutEvent,
         taskDispatched,
-        childDispatched,
+        remoteMethodDispatched,
+        timerDispatched,
+        remoteSignalDispatched,
+        signalDiscarded,
+        signalReceived,
     )
 
     require(noNull.size == 1)
@@ -107,16 +116,40 @@ data class WorkflowEventEnvelope(
           methodTimedOutEvent = msg,
       )
 
-      is RemoteTaskDispatchedEvent -> WorkflowEventEnvelope(
+      is TaskDispatchedEvent -> WorkflowEventEnvelope(
           workflowId = msg.workflowId,
-          type = WorkflowEventMessageType.METHOD_TASK_DISPATCHED,
+          type = WorkflowEventMessageType.TASK_DISPATCHED,
           taskDispatched = msg,
       )
 
       is RemoteMethodDispatchedEvent -> WorkflowEventEnvelope(
           workflowId = msg.workflowId,
-          type = WorkflowEventMessageType.METHOD_CHILD_DISPATCHED,
-          childDispatched = msg,
+          type = WorkflowEventMessageType.REMOTE_METHOD_DISPATCHED,
+          remoteMethodDispatched = msg,
+      )
+
+      is TimerDispatchedEvent -> WorkflowEventEnvelope(
+          workflowId = msg.workflowId,
+          type = WorkflowEventMessageType.TIMER_DISPATCHED,
+          timerDispatched = msg,
+      )
+
+      is RemoteSignalDispatchedEvent -> WorkflowEventEnvelope(
+          workflowId = msg.workflowId,
+          type = WorkflowEventMessageType.REMOTE_SIGNAL_DISPATCHED,
+          remoteSignalDispatched = msg,
+      )
+
+      is SignalDiscardedEvent -> WorkflowEventEnvelope(
+          workflowId = msg.workflowId,
+          type = WorkflowEventMessageType.SIGNAL_DISCARDED,
+          signalDiscarded = msg,
+      )
+
+      is SignalReceivedEvent -> WorkflowEventEnvelope(
+          workflowId = msg.workflowId,
+          type = WorkflowEventMessageType.SIGNAL_RECEIVED,
+          signalReceived = msg,
       )
     }
 
@@ -136,8 +169,12 @@ data class WorkflowEventEnvelope(
     WorkflowEventMessageType.METHOD_FAILED -> methodFailedEvent
     WorkflowEventMessageType.METHOD_CANCELED -> methodCanceledEvent
     WorkflowEventMessageType.METHOD_TIMED_OUT -> methodTimedOutEvent
-    WorkflowEventMessageType.METHOD_TASK_DISPATCHED -> taskDispatched
-    WorkflowEventMessageType.METHOD_CHILD_DISPATCHED -> childDispatched
+    WorkflowEventMessageType.TASK_DISPATCHED -> taskDispatched
+    WorkflowEventMessageType.REMOTE_METHOD_DISPATCHED -> remoteMethodDispatched
+    WorkflowEventMessageType.TIMER_DISPATCHED -> timerDispatched
+    WorkflowEventMessageType.REMOTE_SIGNAL_DISPATCHED -> remoteSignalDispatched
+    WorkflowEventMessageType.SIGNAL_RECEIVED -> signalReceived
+    WorkflowEventMessageType.SIGNAL_DISCARDED -> signalDiscarded
   }!!
 
   fun toByteArray() = AvroSerDe.writeBinary(this, serializer())

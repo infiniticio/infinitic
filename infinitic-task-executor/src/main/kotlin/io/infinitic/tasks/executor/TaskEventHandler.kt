@@ -37,7 +37,7 @@ import io.infinitic.common.transport.InfiniticProducerAsync
 import io.infinitic.common.transport.LoggedInfiniticProducer
 import io.infinitic.common.transport.ServiceTagTopic
 import io.infinitic.common.transport.WorkflowEngineTopic
-import io.infinitic.common.workflows.data.commands.DispatchMethodOnRunningWorkflowPastCommand
+import io.infinitic.common.workflows.data.commands.DispatchNewMethodPastCommand
 import io.infinitic.common.workflows.data.commands.DispatchNewWorkflowPastCommand
 import io.infinitic.common.workflows.data.commands.DispatchTaskPastCommand
 import io.infinitic.common.workflows.data.commands.InlineTaskPastCommand
@@ -46,12 +46,12 @@ import io.infinitic.common.workflows.data.commands.SendSignalPastCommand
 import io.infinitic.common.workflows.data.commands.StartDurationTimerPastCommand
 import io.infinitic.common.workflows.data.commands.StartInstantTimerPastCommand
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskReturnValue
-import io.infinitic.tasks.executor.commands.dispatchMethodOnRunningWorkflowCmd
-import io.infinitic.tasks.executor.commands.dispatchNewWorkflowCmd
-import io.infinitic.tasks.executor.commands.dispatchTaskCmd
-import io.infinitic.tasks.executor.commands.sendSignalCmd
-import io.infinitic.tasks.executor.commands.startDurationTimerCmd
-import io.infinitic.tasks.executor.commands.startInstantTimerCmq
+import io.infinitic.tasks.executor.events.dispatchDurationTimerCmd
+import io.infinitic.tasks.executor.events.dispatchInstantTimerCmd
+import io.infinitic.tasks.executor.events.dispatchRemoteMethodCmd
+import io.infinitic.tasks.executor.events.dispatchRemoteSignalCmd
+import io.infinitic.tasks.executor.events.dispatchRemoteWorkflowCmd
+import io.infinitic.tasks.executor.events.dispatchTaskCmd
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 
@@ -136,27 +136,29 @@ class TaskEventHandler(producerAsync: InfiniticProducerAsync) {
         // TODO After 0.13.0, workflowTaskInstant should not be null anymore
         val workflowTaskInstant = result.workflowTaskInstant ?: publishTime
 
-        val requester = msg.requester as WorkflowRequester
+        // from there, workflowVersion is defined
+        val current =
+            (msg.requester as WorkflowRequester).copy(workflowVersion = result.workflowVersion)
 
         result.newCommands.forEach {
           when (it) {
             is DispatchNewWorkflowPastCommand ->
-              dispatchNewWorkflowCmd(requester, it, workflowTaskInstant, producer)
+              dispatchRemoteWorkflowCmd(current, it, workflowTaskInstant, producer)
 
-            is DispatchMethodOnRunningWorkflowPastCommand ->
-              dispatchMethodOnRunningWorkflowCmd(requester, it, workflowTaskInstant, producer)
+            is DispatchNewMethodPastCommand ->
+              dispatchRemoteMethodCmd(current, it, workflowTaskInstant, producer)
 
             is DispatchTaskPastCommand ->
-              dispatchTaskCmd(requester, result.workflowVersion, it, workflowTaskInstant, producer)
+              dispatchTaskCmd(current, it, workflowTaskInstant, producer)
 
             is SendSignalPastCommand ->
-              sendSignalCmd(requester, it, workflowTaskInstant, producer)
+              dispatchRemoteSignalCmd(current, it, workflowTaskInstant, producer)
 
             is StartDurationTimerPastCommand ->
-              startDurationTimerCmd(requester, it, workflowTaskInstant, producer)
+              dispatchDurationTimerCmd(current, it, workflowTaskInstant, producer)
 
             is StartInstantTimerPastCommand ->
-              startInstantTimerCmq(requester, it, producer)
+              dispatchInstantTimerCmd(current, it, workflowTaskInstant, producer)
 
             is ReceiveSignalPastCommand,
             is InlineTaskPastCommand -> Unit // Nothing to do

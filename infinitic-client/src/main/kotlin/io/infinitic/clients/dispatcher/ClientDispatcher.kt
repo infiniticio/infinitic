@@ -306,7 +306,6 @@ internal class ClientDispatcher(
           workflowName = workflowName,
           workflowTag = requestBy.workflowTag,
           reason = WorkflowCancellationReason.CANCELED_BY_CLIENT,
-          emitterWorkflowId = null,
           requester = ClientRequester(clientName = ClientName.from(emitterName)),
           emitterName = emitterName,
           emittedAt = null,

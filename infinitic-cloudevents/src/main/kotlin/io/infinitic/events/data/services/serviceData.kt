@@ -23,6 +23,19 @@
 
 package io.infinitic.events.data.services
 
+import io.infinitic.cloudEvents.ERROR
+import io.infinitic.cloudEvents.INFINITIC_VERSION
+import io.infinitic.cloudEvents.REQUESTER
+import io.infinitic.cloudEvents.RESULT
+import io.infinitic.cloudEvents.SERVICE_NAME
+import io.infinitic.cloudEvents.TASK_ARGS
+import io.infinitic.cloudEvents.TASK_META
+import io.infinitic.cloudEvents.TASK_NAME
+import io.infinitic.cloudEvents.TASK_RETRY_DELAY
+import io.infinitic.cloudEvents.TASK_RETRY_INDEX
+import io.infinitic.cloudEvents.TASK_RETRY_SEQUENCE
+import io.infinitic.cloudEvents.TASK_TAGS
+import io.infinitic.cloudEvents.WORKER_NAME
 import io.infinitic.common.tasks.events.messages.ServiceEventMessage
 import io.infinitic.common.tasks.events.messages.TaskCompletedEvent
 import io.infinitic.common.tasks.events.messages.TaskFailedEvent
@@ -31,19 +44,6 @@ import io.infinitic.common.tasks.events.messages.TaskStartedEvent
 import io.infinitic.common.tasks.executors.messages.ExecuteTask
 import io.infinitic.common.tasks.executors.messages.ServiceExecutorMessage
 import io.infinitic.common.utils.toJson
-import io.infinitic.events.properties.ERROR
-import io.infinitic.events.properties.INFINITIC_VERSION
-import io.infinitic.events.properties.REQUESTER
-import io.infinitic.events.properties.RESULT
-import io.infinitic.events.properties.SERVICE_NAME
-import io.infinitic.events.properties.TASK_ARGS
-import io.infinitic.events.properties.TASK_META
-import io.infinitic.events.properties.TASK_NAME
-import io.infinitic.events.properties.TASK_RETRY_DELAY
-import io.infinitic.events.properties.TASK_RETRY_INDEX
-import io.infinitic.events.properties.TASK_RETRY_SEQUENCE
-import io.infinitic.events.properties.TASK_TAGS
-import io.infinitic.events.properties.WORKER_NAME
 import kotlinx.serialization.json.JsonObject
 
 fun ServiceExecutorMessage.toJson() = when (this) {

@@ -38,6 +38,7 @@ import io.infinitic.common.requester.workflowId
 import io.infinitic.common.requester.workflowMethodId
 import io.infinitic.common.requester.workflowMethodName
 import io.infinitic.common.requester.workflowName
+import io.infinitic.common.requester.workflowVersion
 import io.infinitic.common.tasks.data.DelegatedTaskData
 import io.infinitic.common.tasks.data.ServiceName
 import io.infinitic.common.tasks.data.TaskId
@@ -58,6 +59,7 @@ import io.infinitic.common.transport.DelayedWorkflowEngineTopic
 import io.infinitic.common.transport.InfiniticProducerAsync
 import io.infinitic.common.transport.ServiceTagTopic
 import io.infinitic.common.transport.WorkflowEngineTopic
+import io.infinitic.common.workers.config.WorkflowVersion
 import io.infinitic.common.workflows.data.workflowMethods.WorkflowMethodId
 import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.data.workflows.WorkflowName
@@ -84,6 +86,7 @@ private val clientRequester = ClientRequester(clientName = clientName)
 private val workflowRequester = WorkflowRequester(
     workflowId = workflowId,
     workflowName = workflowName,
+    workflowVersion = WorkflowVersion(2),
     workflowMethodId = methodRunId,
     workflowMethodName = MethodName("methodTest"),
 )
@@ -330,6 +333,7 @@ private fun getTaskCompletedClient(msg: TaskCompletedEvent) =
 private fun getTaskCompletedWorkflow(msg: TaskCompletedEvent) =
     RemoteTaskCompleted(
         workflowName = msg.requester.workflowName!!,
+        workflowVersion = msg.requester.workflowVersion,
         workflowId = msg.requester.workflowId!!,
         workflowMethodName = msg.requester.workflowMethodName!!,
         workflowMethodId = msg.requester.workflowMethodId!!,
@@ -370,6 +374,7 @@ private fun getTaskFailedClient(msg: TaskFailedEvent) =
 private fun getTaskFailedWorkflow(msg: TaskFailedEvent) =
     RemoteTaskFailed(
         workflowName = msg.requester.workflowName!!,
+        workflowVersion = msg.requester.workflowVersion,
         workflowId = msg.requester.workflowId!!,
         workflowMethodName = msg.requester.workflowMethodName,
         workflowMethodId = msg.requester.workflowMethodId!!,

@@ -45,7 +45,7 @@
         "type" : [ "null", {
           "type" : "record",
           "name" : "ClientRequester",
-          "namespace" : "io.infinitic.common.requester",
+          "namespace" : "io.infinitic.data",
           "fields" : [ {
             "name" : "clientName",
             "type" : "string"
@@ -53,10 +53,13 @@
         }, {
           "type" : "record",
           "name" : "WorkflowRequester",
-          "namespace" : "io.infinitic.common.requester",
+          "namespace" : "io.infinitic.data",
           "fields" : [ {
             "name" : "workflowName",
             "type" : "string"
+          }, {
+            "name" : "workflowVersion",
+            "type" : [ "null", "int" ]
           }, {
             "name" : "workflowId",
             "type" : "string"

@@ -25,7 +25,7 @@
 package io.infinitic.workers.samples
 
 import io.cloudevents.CloudEvent
-import io.infinitic.common.events.CloudEventListener
+import io.infinitic.cloudEvents.CloudEventListener
 
 
 internal class ServiceEventListenerImpl : CloudEventListener {

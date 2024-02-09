@@ -22,6 +22,7 @@
  */
 package io.infinitic.common.data
 
+import io.infinitic.common.utils.JsonAble
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.descriptors.PrimitiveKind
@@ -29,17 +30,21 @@ import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
 import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
+import kotlinx.serialization.json.JsonPrimitive
 import java.time.Instant
 import java.time.OffsetDateTime
 import java.time.ZoneOffset
 
 @Serializable(with = MillisInstantSerializer::class)
-data class MillisInstant(val long: Long = 0) : Comparable<Long> {
+data class MillisInstant(val long: Long = 0) : Comparable<Long>, JsonAble {
   companion object {
     fun now() = MillisInstant(Instant.now().toEpochMilli())
   }
 
   override fun toString() = "$long"
+
+  override fun toJson() = JsonPrimitive(long)
+
 
   fun toOffsetDateTime(): OffsetDateTime =
       OffsetDateTime.ofInstant(Instant.ofEpochMilli(long), ZoneOffset.UTC)

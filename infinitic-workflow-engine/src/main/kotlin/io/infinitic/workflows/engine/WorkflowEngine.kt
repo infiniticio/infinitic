@@ -151,6 +151,7 @@ class WorkflowEngine(
   private suspend fun sendWorkflowCompletedEvent(state: WorkflowState) {
     val workflowCompletedEvent = WorkflowCompletedEvent(
         workflowName = state.workflowName,
+        workflowVersion = state.workflowVersion,
         workflowId = state.workflowId,
         emitterName = emitterName,
     )
@@ -217,6 +218,7 @@ class WorkflowEngine(
                 ),
                 workflowName = requester.workflowName,
                 workflowId = requester.workflowId,
+                workflowVersion = requester.workflowVersion,
                 workflowMethodName = requester.workflowMethodName,
                 workflowMethodId = requester.workflowMethodId,
                 emitterName = emitterName,
@@ -313,6 +315,8 @@ class WorkflowEngine(
     when (message) {
       // these messages are expected, so we don't log them as warning
       is RemoteTaskTimedOut, is RemoteMethodTimedOut -> logger.debug(txt)
+      // this can happen in normal operation
+      is RemoteTimerCompleted -> logger.info(txt)
       else -> logger.warn(txt)
     }
   }

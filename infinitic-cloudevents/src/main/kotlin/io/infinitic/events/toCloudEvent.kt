@@ -112,6 +112,7 @@ enum class CloudEventContext {
     }.toString().toByteArray()
 
     override fun Message.time(publishedAt: MillisInstant): OffsetDateTime = when (this) {
+      is WorkflowCmdMessage -> publishedAt
       is WorkflowEngineMessage -> emittedAt ?: publishedAt
       is WorkflowEventMessage -> publishedAt
       else -> thisShouldNotHappen()

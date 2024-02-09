@@ -21,7 +21,7 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.common.events
+package io.infinitic.cloudEvents
 
 import io.cloudevents.CloudEvent
 

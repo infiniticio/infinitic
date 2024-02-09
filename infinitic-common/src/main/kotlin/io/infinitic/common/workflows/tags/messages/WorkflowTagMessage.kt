@@ -83,7 +83,7 @@ data class SendSignalByTag(
   @AvroName("channelSignalId") val signalId: SignalId,
   @AvroName("channelSignal") val signalData: SignalData,
   @AvroName("channelSignalTypes") val channelTypes: Set<ChannelType>,
-  @AvroName("emitterWorkflowId") var parentWorkflowId: WorkflowId? = null,
+  @Deprecated("Not used since version 0.13.0") @AvroName("emitterWorkflowId") var parentWorkflowId: WorkflowId? = null,
   @AvroDefault(Avro.NULL) override val requester: Requester?,
   @AvroDefault(Avro.NULL) override val emittedAt: MillisInstant?,
   override val emitterName: EmitterName,
@@ -98,11 +98,26 @@ data class CancelWorkflowByTag(
   override val workflowName: WorkflowName,
   override val workflowTag: WorkflowTag,
   @AvroNamespace("io.infinitic.workflows.data") val reason: WorkflowCancellationReason,
-  var emitterWorkflowId: WorkflowId?,
-  @AvroDefault(Avro.NULL) override val requester: Requester?,
+  @Deprecated("Not used since version 0.13.0") var emitterWorkflowId: WorkflowId? = null,
+  @AvroDefault(Avro.NULL) override var requester: Requester?,
   @AvroDefault(Avro.NULL) override val emittedAt: MillisInstant?,
   override val emitterName: EmitterName,
-) : WorkflowTagMessage(), WorkflowTagCmdMessage
+) : WorkflowTagMessage(), WorkflowTagCmdMessage {
+  init {
+    // this is used only to handle previous messages that are still on <0.13 version
+    // in topics or in bufferedMessages of a workflow state
+    requester = requester ?: when (emitterWorkflowId) {
+      null -> ClientRequester(clientName = ClientName.from(emitterName))
+      else -> WorkflowRequester(
+          workflowId = emitterWorkflowId!!,
+          workflowName = WorkflowName("undefined"),
+          workflowVersion = null,
+          workflowMethodName = MethodName("undefined"),
+          workflowMethodId = WorkflowMethodId("undefined"),
+      )
+    }
+  }
+}
 
 /**
  * This message is a command to retry the workflow task of all workflow instances with the provided tag.
@@ -220,6 +235,7 @@ data class DispatchWorkflowByCustomId(
       else -> WorkflowRequester(
           workflowId = parentWorkflowId,
           workflowName = parentWorkflowName ?: WorkflowName("undefined"),
+          workflowVersion = null,
           workflowMethodName = MethodName("undefined"),
           workflowMethodId = parentMethodRunId ?: WorkflowMethodId("undefined"),
       )
@@ -257,6 +273,7 @@ data class DispatchMethodByTag(
       else -> WorkflowRequester(
           workflowId = parentWorkflowId,
           workflowName = parentWorkflowName ?: WorkflowName("undefined"),
+          workflowVersion = null,
           workflowMethodName = MethodName("undefined"),
           workflowMethodId = parentMethodRunId ?: WorkflowMethodId("undefined"),
       )

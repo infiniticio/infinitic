@@ -20,39 +20,49 @@
  *
  * Licensor: infinitic.io
  */
-package io.infinitic.tasks.executor.commands
+package io.infinitic.tasks.executor.events
 
 import io.infinitic.common.data.MillisInstant
 import io.infinitic.common.emitters.EmitterName
 import io.infinitic.common.requester.WorkflowRequester
-import io.infinitic.common.transport.DelayedWorkflowEngineTopic
 import io.infinitic.common.transport.InfiniticProducer
-import io.infinitic.common.workflows.data.commands.StartInstantTimerCommand
-import io.infinitic.common.workflows.data.commands.StartInstantTimerPastCommand
+import io.infinitic.common.transport.WorkflowEventsTopic
+import io.infinitic.common.workflows.data.commands.StartDurationTimerPastCommand
 import io.infinitic.common.workflows.data.timers.TimerId
-import io.infinitic.common.workflows.engine.messages.RemoteTimerCompleted
+import io.infinitic.common.workflows.engine.commands.dispatchTimer
+import io.infinitic.common.workflows.engine.messages.TimerDispatchedEvent
+import io.infinitic.common.workflows.engine.messages.data.DurationTimerDispatched
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
-internal fun CoroutineScope.startInstantTimerCmq(
+internal fun CoroutineScope.dispatchDurationTimerCmd(
   current: WorkflowRequester,
-  pastCommand: StartInstantTimerPastCommand,
+  pastCommand: StartDurationTimerPastCommand,
+  workflowTaskInstant: MillisInstant,
   producer: InfiniticProducer
 ) = launch {
   val emitterName = EmitterName(producer.name)
-  val command: StartInstantTimerCommand = pastCommand.command
+  val startDurationTimer = pastCommand.command
 
-  val remoteTimerCompleted = RemoteTimerCompleted(
+  // Description of the dispatched timer
+  val timerDispatched = DurationTimerDispatched(
       timerId = TimerId.from(pastCommand.commandId),
+      duration = startDurationTimer.duration,
+      emittedAt = workflowTaskInstant,
+  )
+  // Dispatching of the timer
+  with(producer) { dispatchTimer(timerDispatched, current) }
+
+  // Description of the workflow event
+  val timerDispatchedEvent = TimerDispatchedEvent(
+      timerDispatched = timerDispatched,
       workflowName = current.workflowName,
       workflowId = current.workflowId,
+      workflowVersion = current.workflowVersion,
       workflowMethodName = current.workflowMethodName,
       workflowMethodId = current.workflowMethodId,
       emitterName = emitterName,
-      emittedAt = command.instant,
   )
-
-  // todo: Check if there is a way not to use MillisInstant.now()
-  val delay = remoteTimerCompleted.emittedAt!! - MillisInstant.now()
-  with(producer) { remoteTimerCompleted.sendTo(DelayedWorkflowEngineTopic, delay) }
+  // Dispatching the workflow event
+  with(producer) { timerDispatchedEvent.sendTo(WorkflowEventsTopic) }
 }

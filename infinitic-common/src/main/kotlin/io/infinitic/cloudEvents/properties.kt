@@ -21,13 +21,15 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.events.properties
+package io.infinitic.cloudEvents
 
 const val ERROR = "error"
 const val RESULT = "result"
 const val WORKER_NAME = "workerName"
 const val INFINITIC_VERSION = "infiniticVersion"
 const val REQUESTER = "requester"
+const val EMITTED_AT = "emittedAt"
+const val TIMEOUT = "timeout"
 
 const val SERVICE_NAME = "serviceName"
 const val TASK_RETRY_SEQUENCE = "retrySequence"
@@ -40,10 +42,14 @@ const val TASK_ARGS = "taskArgs"
 const val TASK_ID = "taskId"
 const val TASK_STATUS = "taskStatus"
 
+const val CLIENT_NAME = "clientName"
+
 const val WORKFLOW_ID = "workflowId"
 const val WORKFLOW_NAME = "workflowName"
+const val WORKFLOW_VERSION = "workflowVersion"
 const val WORKFLOW_META = "workflowMeta"
 const val WORKFLOW_TAGS = "workflowTags"
+const val WORKFLOW_TAG = "workflowTag"
 
 const val METHOD_ARGS = "methodArgs"
 const val METHOD_NAME = "methodName"
@@ -53,9 +59,10 @@ const val CHANNEL_NAME = "channel"
 const val SIGNAL_ID = "signalId"
 const val SIGNAL_DATA = "signalData"
 const val TIMER_ID = "timerId"
+const val TIMER_DURATION = "timerDuration"
+const val TIMER_INSTANT = "timerInstant"
 
-
-
-
-
-
+const val ERROR_NAME = "name"
+const val ERROR_MESSAGE = "message"
+const val ERROR_STACKTRACE = "stackTrace"
+const val ERROR_CAUSE = "cause"

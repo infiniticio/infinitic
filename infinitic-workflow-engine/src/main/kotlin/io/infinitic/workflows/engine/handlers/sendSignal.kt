@@ -24,13 +24,20 @@ package io.infinitic.workflows.engine.handlers
 
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.infinitic.common.data.ReturnValue
+import io.infinitic.common.emitters.EmitterName
 import io.infinitic.common.exceptions.thisShouldNotHappen
 import io.infinitic.common.transport.InfiniticProducer
+import io.infinitic.common.transport.WorkflowEventsTopic
 import io.infinitic.common.workflows.data.commands.CommandStatus.Completed
 import io.infinitic.common.workflows.engine.messages.SendSignal
+import io.infinitic.common.workflows.engine.messages.SignalDiscardedEvent
+import io.infinitic.common.workflows.engine.messages.SignalReceivedEvent
+import io.infinitic.common.workflows.engine.messages.data.SignalDiscarded
+import io.infinitic.common.workflows.engine.messages.data.SignalReceived
 import io.infinitic.common.workflows.engine.state.WorkflowState
 import io.infinitic.workflows.engine.helpers.commandTerminated
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.launch
 
 private val logger = KotlinLogging.logger {}
 
@@ -39,6 +46,8 @@ internal fun CoroutineScope.sendSignal(
   state: WorkflowState,
   message: SendSignal
 ) {
+  val emitterName = EmitterName(producer.name)
+
   state.receivingChannels
       .firstOrNull {
         it.channelName == message.channelName &&
@@ -66,5 +75,31 @@ internal fun CoroutineScope.sendSignal(
             ),
             message.emittedAt ?: thisShouldNotHappen(),
         )
-      } ?: logger.debug { "discarding non-waited signal $message" }
+
+        // Event: signal received
+        launch {
+          val signalReceivedEvent = SignalReceivedEvent(
+              signalReceived = SignalReceived(signalId = message.signalId),
+              workflowName = message.workflowName,
+              workflowId = message.workflowId,
+              workflowVersion = state.workflowVersion,
+              emitterName = emitterName,
+          )
+          with(producer) { signalReceivedEvent.sendTo(WorkflowEventsTopic) }
+        }
+
+      } ?: launch {
+    logger.debug { "discarding non-waited signal $message" }
+
+    // Event: signal discarded
+    val signalDiscardedEvent = SignalDiscardedEvent(
+        signalDiscarded = SignalDiscarded(signalId = message.signalId),
+        workflowName = message.workflowName,
+        workflowId = message.workflowId,
+        workflowVersion = state.workflowVersion,
+        emitterName = emitterName,
+    )
+
+    with(producer) { signalDiscardedEvent.sendTo(WorkflowEventsTopic) }
+  }
 }

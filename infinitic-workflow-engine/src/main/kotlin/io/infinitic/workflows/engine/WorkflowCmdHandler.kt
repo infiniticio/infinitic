@@ -30,12 +30,13 @@ import io.infinitic.common.transport.InfiniticProducerAsync
 import io.infinitic.common.transport.LoggedInfiniticProducer
 import io.infinitic.common.transport.WorkflowEngineTopic
 import io.infinitic.common.transport.WorkflowEventsTopic
-import io.infinitic.common.transport.WorkflowTaskExecutorTopic
 import io.infinitic.common.utils.IdGenerator
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskIndex
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskParameters
+import io.infinitic.common.workflows.engine.commands.dispatchTask
 import io.infinitic.common.workflows.engine.messages.DispatchWorkflow
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
+import io.infinitic.common.workflows.engine.messages.requester
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 
@@ -46,7 +47,7 @@ class WorkflowCmdHandler(producerAsync: InfiniticProducerAsync) {
   val emitterName by lazy { EmitterName(producer.name) }
 
   suspend fun handle(msg: WorkflowEngineMessage, publishTime: MillisInstant) {
-    msg.logDebug { "Processing $msg" }
+    msg.logTrace { "Processing $msg" }
 
     // define emittedAt from the publishing instant if not yet defined
     msg.emittedAt = msg.emittedAt ?: publishTime
@@ -56,7 +57,7 @@ class WorkflowCmdHandler(producerAsync: InfiniticProducerAsync) {
       else -> with(producer) { msg.sendTo(WorkflowEngineTopic) }
     }
 
-    msg.logTrace { "Processed $msg" }
+    msg.logDebug { "Processed $msg" }
   }
 
   // We dispatch a workflow task right away
@@ -64,6 +65,7 @@ class WorkflowCmdHandler(producerAsync: InfiniticProducerAsync) {
   private suspend fun dispatchNewWorkflow(msg: DispatchWorkflow, publishTime: MillisInstant) =
       coroutineScope {
 
+        // first we forward the message to workflow-engine
         val dispatchNewWorkflow = msg.copy(
             workflowTaskId = TaskId(
                 // Deterministic id creation. Without it, an issue arises if dispatchNewWorkflow fails
@@ -72,8 +74,6 @@ class WorkflowCmdHandler(producerAsync: InfiniticProducerAsync) {
                 IdGenerator.from(msg.emittedAt!!, "workflowId=${msg.workflowId}"),
             ),
         )
-
-        // first we send to workflow-engine
         with(producer) { dispatchNewWorkflow.sendTo(WorkflowEngineTopic) }
 
         // The workflowTask is sent only after the previous message,
@@ -81,32 +81,36 @@ class WorkflowCmdHandler(producerAsync: InfiniticProducerAsync) {
         // commands arrives before the engine is made aware of them by the previous message.
         launch {
           // defines workflow task input
-          val workflowTaskParameters = WorkflowTaskParameters(
-              taskId = dispatchNewWorkflow.workflowTaskId!!,
-              workflowId = dispatchNewWorkflow.workflowId,
-              workflowName = dispatchNewWorkflow.workflowName,
-              workflowVersion = null,
-              workflowTags = dispatchNewWorkflow.workflowTags,
-              workflowMeta = dispatchNewWorkflow.workflowMeta,
-              workflowPropertiesHashValue = mutableMapOf(),
-              workflowTaskIndex = WorkflowTaskIndex(1),
-              workflowMethod = dispatchNewWorkflow.workflowMethod(),
-              workflowTaskInstant = msg.emittedAt ?: publishTime,
-              emitterName = emitterName,
-          )
-
-          val executeTaskMessage = workflowTaskParameters.toExecuteTaskMessage()
-
-          // dispatch workflow task
-          with(producer) {
-            executeTaskMessage.sendTo(WorkflowTaskExecutorTopic)
-            executeTaskMessage.taskDispatchedEvent(emitterName).sendTo(WorkflowEventsTopic)
+          val workflowTaskParameters = with(dispatchNewWorkflow) {
+            WorkflowTaskParameters(
+                taskId = workflowTaskId!!,
+                workflowId = workflowId,
+                workflowName = workflowName,
+                workflowVersion = null,
+                workflowTags = workflowTags,
+                workflowMeta = workflowMeta,
+                workflowPropertiesHashValue = mutableMapOf(),
+                workflowTaskIndex = WorkflowTaskIndex(1),
+                workflowMethod = workflowMethod(),
+                workflowTaskInstant = msg.emittedAt ?: publishTime,
+                emitterName = emitterName,
+            )
           }
-        }
 
-        launch {
+          val taskDispatchedEvent =
+              workflowTaskParameters.workflowTaskDispatchedEvent(emitterName)
+
           with(producer) {
-            dispatchNewWorkflow.methodDispatchedEvent(emitterName).sendTo(WorkflowEventsTopic)
+            // dispatch workflow task
+            dispatchTask(taskDispatchedEvent.taskDispatched, taskDispatchedEvent.requester)
+            // dispatch workflow event
+            taskDispatchedEvent.sendTo(WorkflowEventsTopic)
+          }
+
+
+          with(producer) {
+            // event: starting new method
+            dispatchNewWorkflow.methodCommandedEvent(emitterName).sendTo(WorkflowEventsTopic)
           }
         }
       }

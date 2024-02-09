@@ -28,11 +28,14 @@ import io.infinitic.common.data.MillisInstant
 import io.infinitic.common.data.methods.MethodName
 import io.infinitic.common.emitters.EmitterName
 import io.infinitic.common.requester.Requester
+import io.infinitic.common.workers.config.WorkflowVersion
 import io.infinitic.common.workflows.data.workflowMethods.WorkflowMethodId
 import kotlinx.serialization.Serializable
 
 @Serializable
-sealed interface WorkflowEventMessage : WorkflowMessageInterface
+sealed interface WorkflowEventMessage : WorkflowMessageInterface {
+  val workflowVersion: WorkflowVersion?
+}
 
 fun WorkflowEventMessage.type(): WorkflowEventMessageType = when (this) {
   is WorkflowCompletedEvent -> WorkflowEventMessageType.WORKFLOW_COMPLETED
@@ -42,8 +45,12 @@ fun WorkflowEventMessage.type(): WorkflowEventMessageType = when (this) {
   is MethodFailedEvent -> WorkflowEventMessageType.METHOD_FAILED
   is MethodCanceledEvent -> WorkflowEventMessageType.METHOD_CANCELED
   is MethodTimedOutEvent -> WorkflowEventMessageType.METHOD_TIMED_OUT
-  is RemoteTaskDispatchedEvent -> WorkflowEventMessageType.METHOD_TASK_DISPATCHED
-  is RemoteMethodDispatchedEvent -> WorkflowEventMessageType.METHOD_CHILD_DISPATCHED
+  is TaskDispatchedEvent -> WorkflowEventMessageType.TASK_DISPATCHED
+  is RemoteMethodDispatchedEvent -> WorkflowEventMessageType.REMOTE_METHOD_DISPATCHED
+  is TimerDispatchedEvent -> WorkflowEventMessageType.TIMER_DISPATCHED
+  is RemoteSignalDispatchedEvent -> WorkflowEventMessageType.REMOTE_SIGNAL_DISPATCHED
+  is SignalDiscardedEvent -> WorkflowEventMessageType.SIGNAL_DISCARDED
+  is SignalReceivedEvent -> WorkflowEventMessageType.SIGNAL_RECEIVED
 }
 
 @Serializable
@@ -56,8 +63,12 @@ enum class WorkflowEventMessageType {
   METHOD_FAILED,
   METHOD_CANCELED,
   METHOD_TIMED_OUT,
-  METHOD_TASK_DISPATCHED,
-  METHOD_CHILD_DISPATCHED
+  TASK_DISPATCHED,
+  REMOTE_METHOD_DISPATCHED,
+  TIMER_DISPATCHED,
+  REMOTE_SIGNAL_DISPATCHED,
+  SIGNAL_RECEIVED,
+  SIGNAL_DISCARDED,
 }
 
 interface MethodTerminated : WorkflowMessageInterface {

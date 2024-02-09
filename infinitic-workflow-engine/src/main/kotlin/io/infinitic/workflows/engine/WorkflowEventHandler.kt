@@ -35,7 +35,11 @@ import io.infinitic.common.workflows.engine.messages.MethodCompletedEvent
 import io.infinitic.common.workflows.engine.messages.MethodFailedEvent
 import io.infinitic.common.workflows.engine.messages.MethodTimedOutEvent
 import io.infinitic.common.workflows.engine.messages.RemoteMethodDispatchedEvent
-import io.infinitic.common.workflows.engine.messages.RemoteTaskDispatchedEvent
+import io.infinitic.common.workflows.engine.messages.RemoteSignalDispatchedEvent
+import io.infinitic.common.workflows.engine.messages.SignalDiscardedEvent
+import io.infinitic.common.workflows.engine.messages.SignalReceivedEvent
+import io.infinitic.common.workflows.engine.messages.TaskDispatchedEvent
+import io.infinitic.common.workflows.engine.messages.TimerDispatchedEvent
 import io.infinitic.common.workflows.engine.messages.WorkflowCanceledEvent
 import io.infinitic.common.workflows.engine.messages.WorkflowCompletedEvent
 import io.infinitic.common.workflows.engine.messages.WorkflowEventMessage
@@ -56,12 +60,16 @@ class WorkflowEventHandler(producerAsync: InfiniticProducerAsync) {
       is WorkflowCanceledEvent -> Unit
       is WorkflowCompletedEvent -> Unit
       is MethodCommandedEvent -> Unit
+      is SignalDiscardedEvent -> Unit
+      is SignalReceivedEvent -> Unit
       is MethodCanceledEvent -> sendWorkflowMethodCanceled(msg, publishTime)
       is MethodCompletedEvent -> sendWorkflowMethodCompleted(msg, publishTime)
       is MethodFailedEvent -> sendWorkflowMethodFailed(msg, publishTime)
       is MethodTimedOutEvent -> sendWorkflowMethodTimedOut(msg, publishTime)
-      is RemoteTaskDispatchedEvent -> Unit
+      is TaskDispatchedEvent -> Unit
       is RemoteMethodDispatchedEvent -> Unit
+      is TimerDispatchedEvent -> Unit
+      is RemoteSignalDispatchedEvent -> Unit
     }
 
     msg.logTrace { "processed" }
@@ -126,7 +134,8 @@ class WorkflowEventHandler(producerAsync: InfiniticProducerAsync) {
 
     // tell awaiting workflow (except itself)
     msg.getEventForAwaitingWorkflows(emitterName, publishTime)
-        .filter { it.workflowId != msg.workflowId }.forEach { event ->
+        .filter { it.workflowId != msg.workflowId }
+        .forEach { event ->
           launch { with(producer) { event.sendTo(WorkflowEngineTopic) } }
         }
   }

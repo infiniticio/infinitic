@@ -31,16 +31,16 @@ import io.infinitic.common.tasks.events.messages.TaskStartedEvent
 import io.infinitic.common.tasks.executors.messages.ExecuteTask
 import io.infinitic.common.tasks.executors.messages.ServiceExecutorMessage
 import io.infinitic.events.types.COMPLETED
-import io.infinitic.events.types.COMPLETION_DELEGATED
+import io.infinitic.events.types.DELEGATION_COMPLETED
 import io.infinitic.events.types.FAILED
 import io.infinitic.events.types.RETRY_SCHEDULED
+import io.infinitic.events.types.START
 import io.infinitic.events.types.STARTED
-import io.infinitic.events.types.START_CMD
 import io.infinitic.events.types.TYPE_TASK
 
 fun ServiceEventMessage.serviceType(): String = "$TYPE_TASK." + when (this) {
   is TaskCompletedEvent -> when (isDelegated) {
-    true -> COMPLETION_DELEGATED
+    true -> DELEGATION_COMPLETED
     false -> COMPLETED
   }
 
@@ -50,6 +50,6 @@ fun ServiceEventMessage.serviceType(): String = "$TYPE_TASK." + when (this) {
 }
 
 fun ServiceExecutorMessage.serviceType(): String = "$TYPE_TASK." + when (this) {
-  is ExecuteTask -> START_CMD
+  is ExecuteTask -> START
 }
 

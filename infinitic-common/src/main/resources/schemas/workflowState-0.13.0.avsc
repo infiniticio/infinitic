@@ -70,7 +70,7 @@
           "type" : [ "null", {
             "type" : "record",
             "name" : "ClientRequester",
-            "namespace" : "io.infinitic.common.requester",
+            "namespace" : "io.infinitic.data",
             "fields" : [ {
               "name" : "clientName",
               "type" : "string"
@@ -78,10 +78,13 @@
           }, {
             "type" : "record",
             "name" : "WorkflowRequester",
-            "namespace" : "io.infinitic.common.requester",
+            "namespace" : "io.infinitic.data",
             "fields" : [ {
               "name" : "workflowName",
               "type" : "string"
+            }, {
+              "name" : "workflowVersion",
+              "type" : [ "null", "int" ]
             }, {
               "name" : "workflowId",
               "type" : "string"
@@ -1001,7 +1004,7 @@
           "default" : null
         }, {
           "name" : "requester",
-          "type" : [ "null", "io.infinitic.common.requester.ClientRequester", "io.infinitic.common.requester.WorkflowRequester" ],
+          "type" : [ "null", "io.infinitic.data.ClientRequester", "io.infinitic.data.WorkflowRequester" ],
           "default" : null
         } ]
       }, {
@@ -1032,7 +1035,7 @@
           "default" : null
         }, {
           "name" : "requester",
-          "type" : [ "null", "io.infinitic.common.requester.ClientRequester", "io.infinitic.common.requester.WorkflowRequester" ],
+          "type" : [ "null", "io.infinitic.data.ClientRequester", "io.infinitic.data.WorkflowRequester" ],
           "default" : null
         } ]
       }, {
@@ -1063,7 +1066,7 @@
           "default" : null
         }, {
           "name" : "requester",
-          "type" : [ "null", "io.infinitic.common.requester.ClientRequester", "io.infinitic.common.requester.WorkflowRequester" ],
+          "type" : [ "null", "io.infinitic.data.ClientRequester", "io.infinitic.data.WorkflowRequester" ],
           "default" : null
         } ]
       }, {
@@ -1111,7 +1114,7 @@
           "type" : [ "null", "string" ]
         }, {
           "name" : "requester",
-          "type" : [ "null", "io.infinitic.common.requester.ClientRequester", "io.infinitic.common.requester.WorkflowRequester" ],
+          "type" : [ "null", "io.infinitic.data.ClientRequester", "io.infinitic.data.WorkflowRequester" ],
           "default" : null
         }, {
           "name" : "clientWaiting",
@@ -1188,7 +1191,7 @@
           "type" : [ "null", "string" ]
         }, {
           "name" : "requester",
-          "type" : [ "null", "io.infinitic.common.requester.ClientRequester", "io.infinitic.common.requester.WorkflowRequester" ],
+          "type" : [ "null", "io.infinitic.data.ClientRequester", "io.infinitic.data.WorkflowRequester" ],
           "default" : null
         }, {
           "name" : "emittedAt",
@@ -1214,6 +1217,10 @@
         }, {
           "name" : "workflowId",
           "type" : "string"
+        }, {
+          "name" : "workflowVersion",
+          "type" : [ "null", "int" ],
+          "default" : null
         }, {
           "name" : "workflowMethodName",
           "type" : [ "null", "string" ],
@@ -1263,6 +1270,10 @@
           "name" : "workflowId",
           "type" : "string"
         }, {
+          "name" : "workflowVersion",
+          "type" : [ "null", "int" ],
+          "default" : null
+        }, {
           "name" : "workflowMethodName",
           "type" : [ "null", "string" ],
           "default" : null
@@ -1296,6 +1307,10 @@
         }, {
           "name" : "workflowId",
           "type" : "string"
+        }, {
+          "name" : "workflowVersion",
+          "type" : [ "null", "int" ],
+          "default" : null
         }, {
           "name" : "workflowMethodName",
           "type" : [ "null", "string" ],
@@ -1331,6 +1346,10 @@
           "name" : "workflowId",
           "type" : "string"
         }, {
+          "name" : "workflowVersion",
+          "type" : [ "null", "int" ],
+          "default" : null
+        }, {
           "name" : "workflowMethodName",
           "type" : [ "null", "string" ],
           "default" : null
@@ -1365,6 +1384,10 @@
           "name" : "workflowId",
           "type" : "string"
         }, {
+          "name" : "workflowVersion",
+          "type" : [ "null", "int" ],
+          "default" : null
+        }, {
           "name" : "workflowMethodName",
           "type" : [ "null", "string" ],
           "default" : null
@@ -1398,6 +1421,10 @@
         }, {
           "name" : "workflowId",
           "type" : "string"
+        }, {
+          "name" : "workflowVersion",
+          "type" : [ "null", "int" ],
+          "default" : null
         }, {
           "name" : "workflowMethodName",
           "type" : [ "null", "string" ],
@@ -1457,6 +1484,10 @@
           "name" : "workflowId",
           "type" : "string"
         }, {
+          "name" : "workflowVersion",
+          "type" : [ "null", "int" ],
+          "default" : null
+        }, {
           "name" : "workflowMethodName",
           "type" : [ "null", "string" ],
           "default" : null
@@ -1494,6 +1525,10 @@
           "name" : "workflowId",
           "type" : "string"
         }, {
+          "name" : "workflowVersion",
+          "type" : [ "null", "int" ],
+          "default" : null
+        }, {
           "name" : "workflowMethodName",
           "type" : [ "null", "string" ],
           "default" : null
@@ -1528,6 +1563,10 @@
           "name" : "workflowId",
           "type" : "string"
         }, {
+          "name" : "workflowVersion",
+          "type" : [ "null", "int" ],
+          "default" : null
+        }, {
           "name" : "workflowMethodName",
           "type" : [ "null", "string" ],
           "default" : null
@@ -1561,6 +1600,10 @@
         }, {
           "name" : "workflowId",
           "type" : "string"
+        }, {
+          "name" : "workflowVersion",
+          "type" : [ "null", "int" ],
+          "default" : null
         }, {
           "name" : "workflowMethodName",
           "type" : [ "null", "string" ],
@@ -1615,7 +1658,7 @@
           "default" : null
         }, {
           "name" : "requester",
-          "type" : [ "null", "io.infinitic.common.requester.ClientRequester", "io.infinitic.common.requester.WorkflowRequester" ],
+          "type" : [ "null", "io.infinitic.data.ClientRequester", "io.infinitic.data.WorkflowRequester" ],
           "default" : null
         } ]
       }, {
@@ -1643,7 +1686,7 @@
           "default" : null
         }, {
           "name" : "requester",
-          "type" : [ "null", "io.infinitic.common.requester.ClientRequester", "io.infinitic.common.requester.WorkflowRequester" ],
+          "type" : [ "null", "io.infinitic.data.ClientRequester", "io.infinitic.data.WorkflowRequester" ],
           "default" : null
         } ]
       }, {
@@ -1686,7 +1729,7 @@
           "default" : null
         }, {
           "name" : "requester",
-          "type" : [ "null", "io.infinitic.common.requester.ClientRequester", "io.infinitic.common.requester.WorkflowRequester" ],
+          "type" : [ "null", "io.infinitic.data.ClientRequester", "io.infinitic.data.WorkflowRequester" ],
           "default" : null
         } ]
       }, {
@@ -1717,7 +1760,7 @@
           "default" : null
         }, {
           "name" : "requester",
-          "type" : [ "null", "io.infinitic.common.requester.ClientRequester", "io.infinitic.common.requester.WorkflowRequester" ],
+          "type" : [ "null", "io.infinitic.data.ClientRequester", "io.infinitic.data.WorkflowRequester" ],
           "default" : null
         } ]
       } ]
