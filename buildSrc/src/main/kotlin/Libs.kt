@@ -30,7 +30,7 @@ object Libs {
   }
 
   object Coroutines {
-    private const val version = "1.7.3"
+    private const val version = "1.8.0"
     const val core = "org.jetbrains.kotlinx:kotlinx-coroutines-core:$version"
     const val jdk8 = "org.jetbrains.kotlinx:kotlinx-coroutines-jdk8:$version"
   }
@@ -40,7 +40,7 @@ object Libs {
   }
 
   object Serialization {
-    const val json = "org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.0"
+    const val json = "org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.3"
   }
 
   object CloudEvents {
@@ -51,7 +51,7 @@ object Libs {
   }
 
   object JsonPath {
-    const val jayway = "com.jayway.jsonpath:json-path:2.8.0"
+    const val jayway = "com.jayway.jsonpath:json-path:2.9.0"
   }
 
   object Jackson {
@@ -74,7 +74,7 @@ object Libs {
   }
 
   object TestContainers {
-    private const val version = "1.19.3"
+    private const val version = "1.19.5"
     const val testcontainers = "org.testcontainers:testcontainers:$version"
     const val mysql = "org.testcontainers:mysql:$version"
   }
@@ -111,16 +111,16 @@ object Libs {
   }
 
   object Slf4j {
-    private const val version = "2.0.9"
+    private const val version = "2.0.12"
     const val simple = "org.slf4j:slf4j-simple:$version"
     const val api = "org.slf4j:slf4j-api:$version"
   }
 
   object Logging {
-    const val jvm = "io.github.oshai:kotlin-logging-jvm:5.1.0"
+    const val jvm = "io.github.oshai:kotlin-logging-jvm:6.0.3"
   }
 
   object Compress {
-    const val commons = "org.apache.commons:commons-compress:1.24.0"
+    const val commons = "org.apache.commons:commons-compress:1.25.0"
   }
 }
