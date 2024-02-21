@@ -27,6 +27,8 @@ dependencies {
   implementation(Libs.Slf4j.api)
 
   implementation(project(":infinitic-common"))
+
+  testImplementation(Libs.Serialization.json)
 }
 
 apply("../publish.gradle.kts")

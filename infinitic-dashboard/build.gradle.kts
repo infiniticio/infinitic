@@ -28,7 +28,9 @@ application { mainClass.set("io.infinitic.dashboard.MainKt") }
 
 dependencies {
   implementation(Libs.Kweb.core)
-
+  implementation(Libs.Pulsar.client)
+  implementation(Libs.Pulsar.clientAdmin)
+  
   implementation(project(":infinitic-autoclose"))
 
   api(project(":infinitic-transport-pulsar"))

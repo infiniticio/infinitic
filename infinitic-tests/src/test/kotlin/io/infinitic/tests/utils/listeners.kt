@@ -27,7 +27,7 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import io.cloudevents.CloudEvent
 import io.cloudevents.jackson.JsonFormat
 import io.infinitic.cloudEvents.CloudEventListener
-import org.ehcache.impl.internal.concurrent.ConcurrentHashMap
+import java.util.concurrent.ConcurrentHashMap
 
 class Listener : CloudEventListener {
   override fun onEvent(event: CloudEvent) {

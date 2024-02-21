@@ -25,8 +25,8 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 plugins { id("java-test-fixtures") }
 
 dependencies {
-  api(Libs.Serialization.json)
-  api(Libs.JsonPath.jayway)
+  implementation(Libs.Serialization.json)
+  implementation(Libs.JsonPath.jayway)
 
   implementation(Libs.Mockk.mockk)
   implementation(Libs.Hoplite.core)

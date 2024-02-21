@@ -24,6 +24,7 @@ dependencies {
   implementation(kotlin("reflect"))
   implementation(Libs.Coroutines.core)
   implementation(Libs.Coroutines.jdk8)
+  implementation(Libs.CloudEvents.core)
 
   api(project(":infinitic-workflow-tag"))
   api(project(":infinitic-task-tag"))

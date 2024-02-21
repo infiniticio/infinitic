@@ -21,11 +21,15 @@
  * Licensor: infinitic.io
  */
 dependencies {
+  testImplementation(Libs.Serialization.json)
+  testImplementation(Libs.JsonPath.jayway)
   testImplementation(Libs.Coroutines.core)
   testImplementation(Libs.Coroutines.jdk8)
   testImplementation(Libs.Hoplite.core)
   testImplementation(Libs.Hoplite.yaml)
   testImplementation(Libs.Kotest.datatest)
+  testImplementation(Libs.CloudEvents.json)
+  testImplementation(Libs.Pulsar.clientAdmin)
 
   testImplementation(project(":infinitic-client"))
   testImplementation(project(":infinitic-worker"))
