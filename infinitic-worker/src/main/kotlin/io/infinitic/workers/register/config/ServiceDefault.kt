@@ -23,13 +23,15 @@
 package io.infinitic.workers.register.config
 
 import io.infinitic.common.workers.config.RetryPolicy
+import io.infinitic.events.config.EventListener
 import io.infinitic.tasks.tag.config.ServiceTagEngine
 
 data class ServiceDefault(
   val concurrency: Int? = null,
   val timeoutInSeconds: Double? = null,
   val retry: RetryPolicy? = null,
-  val tagEngine: ServiceTagEngine? = null
+  val tagEngine: ServiceTagEngine? = null,
+  val eventListener: EventListener? = null
 ) {
   init {
     concurrency?.let {

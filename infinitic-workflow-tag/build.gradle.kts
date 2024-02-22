@@ -21,8 +21,8 @@
  * Licensor: infinitic.io
  */
 dependencies {
-  api(Libs.Coroutines.core)
-  api(Libs.Coroutines.jdk8)
+  implementation(Libs.Coroutines.core)
+  implementation(Libs.Coroutines.jdk8)
 
   api(project(":infinitic-common"))
   api(project(":infinitic-cache"))

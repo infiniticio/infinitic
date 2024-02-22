@@ -27,13 +27,13 @@ dependencies {
   implementation(Libs.Coroutines.jdk8)
   implementation(Libs.Pulsar.functions)
   implementation(Libs.Hoplite.yaml)
+  implementation(Libs.Hoplite.core)
 
-  api(Libs.Hoplite.core)
   api(Libs.Pulsar.client)
   api(Libs.Pulsar.clientAdmin)
   api(Libs.Pulsar.authAthenz)
   api(Libs.Pulsar.authSasl)
-  
+
   api(project(":infinitic-common"))
   api(project(":infinitic-task-executor"))
 

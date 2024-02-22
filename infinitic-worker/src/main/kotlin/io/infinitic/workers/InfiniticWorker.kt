@@ -117,6 +117,7 @@ class InfiniticWorker(
   fun start(): Unit = try {
     startAsync().get()
   } catch (e: Throwable) {
+    logger.error(e) { "Exiting" }
     // this will trigger the shutdown hook
     exitProcess(1)
   }

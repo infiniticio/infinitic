@@ -23,6 +23,7 @@
 package io.infinitic.workers.register.config
 
 import io.infinitic.common.workers.config.RetryPolicy
+import io.infinitic.events.config.EventListener
 import io.infinitic.workflows.WorkflowCheckMode
 import io.infinitic.workflows.engine.config.WorkflowStateEngine
 import io.infinitic.workflows.tag.config.WorkflowTagEngine
@@ -33,7 +34,8 @@ data class WorkflowDefault(
   val retry: RetryPolicy? = null,
   val tagEngine: WorkflowTagEngine? = null,
   var workflowEngine: WorkflowStateEngine? = null,
-  val checkMode: WorkflowCheckMode? = null
+  val checkMode: WorkflowCheckMode? = null,
+  val eventListener: EventListener? = null
 ) {
   init {
     concurrency?.let {
