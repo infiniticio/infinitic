@@ -104,17 +104,27 @@ data class WorkerConfig @JvmOverloads constructor(
         concurrency = concurrency ?: serviceDefault.tagEngine?.concurrency ?: s.concurrency
       }
 
-      s.eventListener = (s.eventListener ?: eventListener)?.apply {
+      s.eventListener = (s.eventListener ?: serviceDefault.eventListener ?: eventListener)?.apply {
         // if concurrency is not defined,
-        // then use default event listener concurrency
+        // then use concurrency of serviceDefault's eventListener
+        // else use concurrency of default's eventListener
         // else use service concurrency
-        concurrency = concurrency ?: eventListener?.concurrency ?: s.concurrency
+        concurrency = concurrency
+          ?: serviceDefault.eventListener?.concurrency
+              ?: eventListener?.concurrency
+              ?: s.concurrency
         // if subscriptionName is not defined
-        // then use default event listener subscriptionName
-        subscriptionName = subscriptionName ?: eventListener?.subscriptionName
+        // then use subscriptionName of serviceDefault's eventListener
+        // else use subscriptionName of default's eventListener
+        subscriptionName = subscriptionName
+          ?: serviceDefault.eventListener?.subscriptionName
+              ?: eventListener?.subscriptionName
         // if class is not defined
-        // then use default event listener class
-        `class` = `class` ?: eventListener?.`class`
+        // then use class of serviceDefault's eventListener
+        // else use class of default's eventListener
+        `class` = `class`
+          ?: serviceDefault.eventListener?.`class`
+              ?: eventListener?.`class`
         // class must be defined eventually
         require(`class` != null) { "No `class` is defined for the event listener of service '${s.name}'" }
       }
@@ -171,17 +181,27 @@ data class WorkerConfig @JvmOverloads constructor(
 
       // contrary to tagEngine/workflowEngine,
       // you can not set null for the eventListener if a default event listener is provided
-      w.eventListener = (w.eventListener ?: eventListener)?.apply {
+      w.eventListener = (w.eventListener ?: serviceDefault.eventListener ?: eventListener)?.apply {
         // if concurrency is not defined,
-        // then use default event listener concurrency
+        // then use concurrency of serviceDefault event listener
+        // else use concurrency of default event listener
         // else use service concurrency
-        concurrency = concurrency ?: eventListener?.concurrency ?: w.concurrency
+        concurrency = concurrency
+          ?: serviceDefault.eventListener?.concurrency
+              ?: eventListener?.concurrency
+              ?: w.concurrency
         // if subscriptionName is not defined
-        // then use default event listener subscriptionName
-        subscriptionName = subscriptionName ?: eventListener?.subscriptionName
+        // then use subscriptionName of serviceDefault event listener
+        // else use subscriptionName of default event listener
+        subscriptionName = subscriptionName
+          ?: serviceDefault.eventListener?.subscriptionName
+              ?: eventListener?.subscriptionName
         // if class is not defined
-        // then use default event listener class
-        `class` = `class` ?: eventListener?.`class`
+        // then use class of serviceDefault event listener
+        // else use class of default event listener
+        `class` = `class`
+          ?: serviceDefault.eventListener?.`class`
+              ?: eventListener?.`class`
         // class must be defined eventually
         require(`class` != null) { "No `class` is defined for the event listener of workflow '${w.name}'" }
       }
