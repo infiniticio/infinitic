@@ -28,7 +28,7 @@ data class Policies @JvmOverloads constructor(
     // Retain messages for 7 days
   val retentionTimeInMinutes: Int = 60 * 24 * 7,
     // Retain messages up to 1GB
-  val retentionSizeInMB: Int = 1024,
+  val retentionSizeInMB: Long = 1024,
     // Expire messages after 14 days
   val messageTTLInSeconds: Int = 3600 * 24 * 14,
     // Expire delayed messages after 1 year
