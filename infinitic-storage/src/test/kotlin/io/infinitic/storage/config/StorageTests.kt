@@ -103,10 +103,7 @@ class StorageTests :
                         withPassword("password")
                         withDatabaseName("infinitic")
                       }
-                      .let {
-                        it.start()
-                        it
-                      }
+                      .also { it.start() }
 
               val mysql =
                   MySQL(

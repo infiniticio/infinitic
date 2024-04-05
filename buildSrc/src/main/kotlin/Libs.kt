@@ -94,7 +94,7 @@ object Libs {
   }
 
   object Pulsar {
-    const val version = "2.11.2"
+    const val version = "3.0.4"
     const val client = "org.apache.pulsar:pulsar-client:$version"
     const val clientAdmin = "org.apache.pulsar:pulsar-client-admin:$version"
     const val functions = "org.apache.pulsar:pulsar-functions-api:$version"
@@ -121,6 +121,6 @@ object Libs {
   }
 
   object Compress {
-    const val commons = "org.apache.commons:commons-compress:1.25.0"
+    const val commons = "org.apache.commons:commons-compress:1.26.1"
   }
 }
