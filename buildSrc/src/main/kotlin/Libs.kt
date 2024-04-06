@@ -44,7 +44,7 @@ object Libs {
   }
 
   object CloudEvents {
-    private const val version = "2.5.0"
+    private const val version = "3.0.0"
     const val core = "io.cloudevents:cloudevents-core:$version"
     const val api = "io.cloudevents:cloudevents-api:$version"
     const val json = "io.cloudevents:cloudevents-json-jackson:$version"
@@ -55,7 +55,7 @@ object Libs {
   }
 
   object Jackson {
-    private const val version = "2.15.3"
+    private const val version = "2.17.0"
     const val core = "com.fasterxml.jackson.core:jackson-core:$version"
     const val databind = "com.fasterxml.jackson.core:jackson-databind:$version"
     const val kotlin = "com.fasterxml.jackson.module:jackson-module-kotlin:$version"
@@ -63,24 +63,24 @@ object Libs {
   }
 
   object Uuid {
-    const val generator = "com.fasterxml.uuid:java-uuid-generator:4.3.0"
+    const val generator = "com.fasterxml.uuid:java-uuid-generator:5.0.0"
   }
 
   object Kotest {
-    private const val version = "5.8.0"
+    private const val version = "5.8.1"
     const val property = "io.kotest:kotest-property-jvm:$version"
     const val junit5 = "io.kotest:kotest-runner-junit5-jvm:$version"
     const val datatest = "io.kotest:kotest-framework-datatest:$version"
   }
 
   object TestContainers {
-    private const val version = "1.19.5"
+    private const val version = "1.19.7"
     const val testcontainers = "org.testcontainers:testcontainers:$version"
     const val mysql = "org.testcontainers:mysql:$version"
   }
 
   object Mockk {
-    const val mockk = "io.mockk:mockk:1.13.8"
+    const val mockk = "io.mockk:mockk:1.13.10"
   }
 
   object Avro4k {
