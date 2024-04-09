@@ -30,14 +30,17 @@ import io.infinitic.cache.config.none.NoCachedKeyValue
 import io.infinitic.cache.keySet.CachedKeySet
 import io.infinitic.cache.keyValue.CachedKeyValue
 
-data class Cache(val none: None? = null, var caffeine: Caffeine? = null) {
+data class Cache(
+  var none: None? = null,
+  val caffeine: Caffeine? = null
+) {
 
   init {
     val nonNul = listOfNotNull(none, caffeine)
 
     if (nonNul.isEmpty()) {
-      // default cache is Caffeine
-      caffeine = Caffeine.default()
+      // No cache  by default
+      none = None()
     } else {
       require(nonNul.count() == 1) { "Multiple definitions for cache" }
     }
@@ -54,7 +57,7 @@ data class Cache(val none: None? = null, var caffeine: Caffeine? = null) {
   val keySet: CachedKeySet<ByteArray> by lazy {
     when {
       none != null -> NoCachedKeySet()
-      caffeine != null -> CaffeineCachedKeySet(caffeine!!)
+      caffeine != null -> CaffeineCachedKeySet(caffeine)
       else -> throw RuntimeException("This should not happen")
     }
   }
@@ -62,7 +65,7 @@ data class Cache(val none: None? = null, var caffeine: Caffeine? = null) {
   val keyValue: CachedKeyValue<ByteArray> by lazy {
     when {
       none != null -> NoCachedKeyValue()
-      caffeine != null -> CaffeineCachedKeyValue(caffeine!!)
+      caffeine != null -> CaffeineCachedKeyValue(caffeine)
       else -> throw RuntimeException("This should not happen")
     }
   }
