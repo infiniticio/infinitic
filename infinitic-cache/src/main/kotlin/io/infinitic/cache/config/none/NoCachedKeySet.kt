@@ -23,7 +23,6 @@
 package io.infinitic.cache.config.none
 
 import io.infinitic.cache.keySet.CachedKeySet
-import org.jetbrains.annotations.TestOnly
 
 class NoCachedKeySet<T> : CachedKeySet<T> {
 
@@ -43,7 +42,6 @@ class NoCachedKeySet<T> : CachedKeySet<T> {
     // nothing
   }
 
-  @TestOnly
   override fun flush() {
     // nothing
   }
