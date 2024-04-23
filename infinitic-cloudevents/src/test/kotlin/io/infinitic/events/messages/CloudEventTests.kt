@@ -66,7 +66,6 @@ import io.infinitic.common.workflows.engine.messages.RemoteMethodDispatchedEvent
 import io.infinitic.common.workflows.engine.messages.RemoteMethodFailed
 import io.infinitic.common.workflows.engine.messages.RemoteMethodTimedOut
 import io.infinitic.common.workflows.engine.messages.RemoteMethodUnknown
-import io.infinitic.common.workflows.engine.messages.RemoteSignalDispatchedEvent
 import io.infinitic.common.workflows.engine.messages.RemoteTaskCanceled
 import io.infinitic.common.workflows.engine.messages.RemoteTaskCompleted
 import io.infinitic.common.workflows.engine.messages.RemoteTaskFailed
@@ -76,6 +75,7 @@ import io.infinitic.common.workflows.engine.messages.RetryTasks
 import io.infinitic.common.workflows.engine.messages.RetryWorkflowTask
 import io.infinitic.common.workflows.engine.messages.SendSignal
 import io.infinitic.common.workflows.engine.messages.SignalDiscardedEvent
+import io.infinitic.common.workflows.engine.messages.SignalDispatchedEvent
 import io.infinitic.common.workflows.engine.messages.SignalReceivedEvent
 import io.infinitic.common.workflows.engine.messages.TaskDispatchedEvent
 import io.infinitic.common.workflows.engine.messages.TimerDispatchedEvent
@@ -427,7 +427,7 @@ internal class CloudEventTests :
               TaskDispatchedEvent::class -> "infinitic.workflow.taskDispatched"
               RemoteMethodDispatchedEvent::class -> "infinitic.workflow.remoteMethodDispatched"
               TimerDispatchedEvent::class -> "infinitic.workflow.timerDispatched"
-              RemoteSignalDispatchedEvent::class -> "infinitic.workflow.signalDispatched"
+              SignalDispatchedEvent::class -> "infinitic.workflow.signalDispatched"
               SignalReceivedEvent::class -> "infinitic.workflow.signalReceived"
               SignalDiscardedEvent::class -> "infinitic.workflow.signalDiscarded"
               else -> thisShouldNotHappen()

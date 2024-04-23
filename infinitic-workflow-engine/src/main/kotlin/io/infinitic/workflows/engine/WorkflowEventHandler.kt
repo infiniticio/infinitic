@@ -35,8 +35,8 @@ import io.infinitic.common.workflows.engine.messages.MethodCompletedEvent
 import io.infinitic.common.workflows.engine.messages.MethodFailedEvent
 import io.infinitic.common.workflows.engine.messages.MethodTimedOutEvent
 import io.infinitic.common.workflows.engine.messages.RemoteMethodDispatchedEvent
-import io.infinitic.common.workflows.engine.messages.RemoteSignalDispatchedEvent
 import io.infinitic.common.workflows.engine.messages.SignalDiscardedEvent
+import io.infinitic.common.workflows.engine.messages.SignalDispatchedEvent
 import io.infinitic.common.workflows.engine.messages.SignalReceivedEvent
 import io.infinitic.common.workflows.engine.messages.TaskDispatchedEvent
 import io.infinitic.common.workflows.engine.messages.TimerDispatchedEvent
@@ -69,7 +69,7 @@ class WorkflowEventHandler(producerAsync: InfiniticProducerAsync) {
       is TaskDispatchedEvent -> Unit
       is RemoteMethodDispatchedEvent -> Unit
       is TimerDispatchedEvent -> Unit
-      is RemoteSignalDispatchedEvent -> Unit
+      is SignalDispatchedEvent -> Unit
     }
 
     msg.logTrace { "processed" }

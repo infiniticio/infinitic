@@ -929,7 +929,7 @@ data class TimerDispatchedEvent(
  */
 @Serializable
 @AvroNamespace("io.infinitic.workflows.engine")
-data class RemoteSignalDispatchedEvent(
+data class SignalDispatchedEvent(
   val remoteSignalDispatched: RemoteSignalDispatched,
   override val workflowName: WorkflowName,
   override val workflowId: WorkflowId,
