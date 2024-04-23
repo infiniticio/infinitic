@@ -54,6 +54,25 @@ suspend fun InfiniticProducer.dispatchRemoteMethod(
   when (remote) {
     // New Workflow
     is RemoteWorkflowDispatched -> {
+      // First, we set tags, in case the Engine update them
+      // add provided tags, except customId that have been set previously in WorkflowTag
+      coroutineScope {
+        remote.workflowTags.filter { !it.isCustomId() }.forEach {
+          launch {
+            val addTagToWorkflow = with(remote) {
+              AddTagToWorkflow(
+                  workflowName = workflowName,
+                  workflowTag = it,
+                  workflowId = workflowId,
+                  emitterName = emitterName,
+                  emittedAt = emittedAt,
+              )
+            }
+            addTagToWorkflow.sendTo(WorkflowTagTopic)
+          }
+        }
+      }
+
       // send workflow to workflow engine
       val dispatchWorkflow = with(remote) {
         DispatchWorkflow(
@@ -71,22 +90,6 @@ suspend fun InfiniticProducer.dispatchRemoteMethod(
         )
       }
       launch { dispatchWorkflow.sendTo(WorkflowCmdTopic) }
-
-      // add provided tags
-      dispatchWorkflow.workflowTags.forEach {
-        launch {
-          val addTagToWorkflow = with(dispatchWorkflow) {
-            AddTagToWorkflow(
-                workflowName = dispatchWorkflow.workflowName,
-                workflowTag = it,
-                workflowId = workflowId,
-                emitterName = emitterName,
-                emittedAt = emittedAt,
-            )
-          }
-          addTagToWorkflow.sendTo(WorkflowTagTopic)
-        }
-      }
 
       // send a timeout if needed
       remote.timeout?.let {
@@ -120,7 +123,7 @@ suspend fun InfiniticProducer.dispatchRemoteMethod(
       dispatchWorkflowByCustomId.sendTo(WorkflowTagTopic)
     }
 
-    // New Method on a running workflow
+    // New Method on a workflow targeted by Id
     is RemoteMethodDispatchedById -> {
       val dispatchMethod = with(remote) {
         DispatchMethod(

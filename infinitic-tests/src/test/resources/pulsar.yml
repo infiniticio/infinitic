@@ -86,6 +86,9 @@ workflows:
   - name: io.infinitic.tests.syntax.SyntaxWorkflow
     class: io.infinitic.tests.syntax.SyntaxWorkflowImpl
     concurrency: 2
+  - name: io.infinitic.tests.tags.TagWorkflow
+    class: io.infinitic.tests.tags.TagWorkflowImpl
+    concurrency: 2
   - name: io.infinitic.tests.timers.TimerWorkflow
     class: io.infinitic.tests.timers.TimerWorkflowImpl
     concurrency: 2

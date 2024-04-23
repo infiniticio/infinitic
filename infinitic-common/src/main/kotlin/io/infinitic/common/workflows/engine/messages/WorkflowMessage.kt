@@ -81,7 +81,6 @@ import io.infinitic.common.workflows.data.workflows.WorkflowName
 import io.infinitic.common.workflows.data.workflows.WorkflowReturnValue
 import io.infinitic.common.workflows.data.workflows.WorkflowTag
 import io.infinitic.common.workflows.engine.messages.data.RemoteMethodDispatched
-import io.infinitic.common.workflows.engine.messages.data.RemoteMethodDispatchedById
 import io.infinitic.common.workflows.engine.messages.data.RemoteSignalDispatched
 import io.infinitic.common.workflows.engine.messages.data.SignalDiscarded
 import io.infinitic.common.workflows.engine.messages.data.SignalReceived
@@ -317,27 +316,6 @@ data class DispatchMethod(
       )
     }
   }
-
-  fun remoteMethodDispatchedEvent(emitterName: EmitterName, timeout: MillisDuration?) =
-      RemoteMethodDispatchedEvent(
-          remoteMethodDispatched = RemoteMethodDispatchedById(
-              workflowId = workflowId,
-              workflowName = workflowName,
-              workflowMethodName = workflowMethodName,
-              workflowMethodId = workflowMethodId,
-              methodName = workflowMethodName,
-              methodParameters = methodParameters,
-              methodParameterTypes = methodParameterTypes,
-              timeout = timeout,
-              emittedAt = emittedAt ?: thisShouldNotHappen(),
-          ),
-          workflowName = requester.workflowName ?: thisShouldNotHappen(),
-          workflowId = requester.workflowId ?: thisShouldNotHappen(),
-          workflowVersion = requester.workflowVersion,
-          workflowMethodName = requester.workflowMethodName ?: thisShouldNotHappen(),
-          workflowMethodId = requester.workflowMethodId ?: thisShouldNotHappen(),
-          emitterName = emitterName,
-      )
 
   fun remoteMethodTimedOut(emitterName: EmitterName, timeoutDuration: MillisDuration) =
       RemoteMethodTimedOut(

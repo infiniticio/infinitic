@@ -37,15 +37,25 @@ internal class ChildrenWorkflowTests :
             client.newWorkflow(ChildrenWorkflow::class.java, tags = setOf("foo", "bar"))
         val utilWorkflow = client.newWorkflow(UtilWorkflow::class.java)
 
-        "run task from parent interface" { childrenWorkflow.parent() shouldBe "ok" }
+        "run task from parent interface" {
+          childrenWorkflow.parent() shouldBe "ok"
+        }
 
-        "run childWorkflow from parent interface" { childrenWorkflow.wparent() shouldBe "ok" }
+        "run childWorkflow from parent interface" {
+          childrenWorkflow.wparent() shouldBe "ok"
+        }
 
-        "Sequential Child Workflow" { childrenWorkflow.child1() shouldBe "ab" }
+        "Sequential Child Workflow" {
+          childrenWorkflow.child1() shouldBe "ab"
+        }
 
-        "Asynchronous Child Workflow" { childrenWorkflow.child2() shouldBe "baba" }
+        "Asynchronous Child Workflow" {
+          childrenWorkflow.child2() shouldBe "baba"
+        }
 
-        "Nested Child Workflow" { utilWorkflow.factorial(14) shouldBe 87178291200 }
+        "Nested Child Workflow" {
+          utilWorkflow.factorial(14) shouldBe 87178291200
+        }
 
         "Child workflow is canceled when parent workflow is canceled - tag are also added and deleted" {
           client.dispatch(childrenWorkflow::cancel)

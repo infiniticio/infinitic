@@ -114,8 +114,22 @@ class WorkflowTagEngine(
           )
         }
         with(producer) { dispatchRemoteMethod(remoteWorkflowDispatched, requester) }
+
+        // add customId tag
+        val addTagToWorkflow = with(message) {
+          AddTagToWorkflow(
+              workflowName = workflowName,
+              workflowTag = workflowTag,
+              workflowId = workflowId,
+              emitterName = emitterName,
+              emittedAt = emittedAt,
+          )
+        }
+        addTagToWorkflow(addTagToWorkflow)
       }
       // Another running workflow instance already exist with same custom id
+      // TODO: the way clientWaiting is used here can be tricky, as nothing guarantees that
+      //  this call is similar to the previous one, maybe sending back an error would be more relevant
       1 -> {
         val workflowId = ids.first()
         // if needed, we inform workflowEngine that a client is waiting for its result
@@ -153,7 +167,7 @@ class WorkflowTagEngine(
       true -> discardTagWithoutIds(message)
 
       false -> ids.forEach { workflowId ->
-        val remoteMethodDispatched = with(message) {
+        val remoteMethodDispatchedById = with(message) {
           RemoteMethodDispatchedById(
               workflowId = workflowId,
               workflowName = workflowName,
@@ -166,7 +180,7 @@ class WorkflowTagEngine(
               emittedAt = emittedAt ?: publishTime,
           )
         }
-        with(producer) { dispatchRemoteMethod(remoteMethodDispatched, requester) }
+        with(producer) { dispatchRemoteMethod(remoteMethodDispatchedById, requester) }
       }
     }
   }
@@ -325,6 +339,6 @@ class WorkflowTagEngine(
   }
 
   private fun discardTagWithoutIds(message: WorkflowTagMessage) {
-    logger.debug { "discarding as no id found for the provided tag: $message" }
+    logger.debug { "discarding as no workflow `${message.workflowName}` found for tag `${message.workflowTag}`" }
   }
 }
