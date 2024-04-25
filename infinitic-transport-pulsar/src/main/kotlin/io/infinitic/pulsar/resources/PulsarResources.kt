@@ -66,16 +66,25 @@ class PulsarResources(
   }.toSet()
 
   /**
-   * Returns the full name of a given entity for the topic.
-   * This is used both when sending a message to a topic and when starting a consumer,
-   * so we ensure that the topic exists by calling initTopicOnce
-   *
    * @param entity The optional entity name (service name or workflow name).
    * @return The full name of the topic with the optional entity name.
    */
-  suspend fun Topic<*>.fullName(entity: String?) = topicFullName(name(entity))
-      .also {
-        initTopicOnce(
+  fun Topic<*>.fullName(entity: String?) = topicFullName(name(entity))
+
+  /**
+   * @param entity The optional entity name (service name or workflow name).
+   * @return The full name of the topic with the optional entity name.
+   */
+  fun Topic<*>.fullNameDLQ(entity: String) = topicFullName(nameDLQ(entity))
+
+  /**
+   * @return the full name of a topic for an entity
+   *
+   * If [init] is true, ensure that the topic exists by calling initTopicOnce
+   */
+  suspend fun <S : Message> Topic<S>.forEntity(entity: String?, init: Boolean): String =
+      fullName(entity).also {
+        if (init) initTopicOnce(
             topic = it,
             isPartitioned = isPartitioned,
             isDelayed = isDelayed,
@@ -83,23 +92,18 @@ class PulsarResources(
       }
 
   /**
-   * Returns the full name of a given entity for the DLQ topic.
-   * This is used both when sending a message to a topic and when starting a consumer,
-   * so we ensure that the topic exists by calling initTopicOnce
+   * @return the full name of a DLQ topic for an entity
    *
-   * @param entity The optional entity name (service name or workflow name).
-   * @return The full name of the topic with the optional entity name.
+   * If [init] is true, ensure that the topic exists by calling initTopicOnce
    */
-  suspend fun Topic<*>.fullNameDLQ(entity: String) = topicFullName(nameDLQ(entity))
-      .also {
-        initTopicOnce(
+  suspend fun <S : Message> Topic<S>.forEntityDLQ(entity: String, init: Boolean): String =
+      fullNameDLQ(entity).also {
+        if (init) initTopicOnce(
             topic = it,
             isPartitioned = isPartitioned,
             isDelayed = isDelayed,
         )
       }
-
-  suspend fun <S : Message> Topic<S>.forMessage(message: S? = null) = fullName(message?.entity())
 
   /**
    * Delete a topic by name
@@ -113,7 +117,7 @@ class PulsarResources(
   suspend fun initTopicOnce(
     topic: String,
     isPartitioned: Boolean,
-    isDelayed: Boolean
+    isDelayed: Boolean,
   ): Result<Unit> {
     // initialize tenant once (do nothing on error)
     admin.initTenantOnce(tenant, allowedClusters, adminRoles)
@@ -135,7 +139,7 @@ class PulsarResources(
   suspend fun initDlqTopicOnce(
     topic: String?,
     isPartitioned: Boolean,
-    isDelayed: Boolean
+    isDelayed: Boolean,
   ): Result<Unit?> = topic?.let { initTopicOnce(it, isPartitioned, isDelayed) }
     ?: Result.success(null)
 

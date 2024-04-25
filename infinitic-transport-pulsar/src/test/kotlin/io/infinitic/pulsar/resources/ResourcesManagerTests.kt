@@ -74,7 +74,7 @@ class ResourcesManagerTests : StringSpec(
         } returns Result.failure(mockk())
 
         coEvery {
-          pulsarInfiniticAdmin.initTopicOnce(any(), any(), any())
+          pulsarInfiniticAdmin.initTopicOnce(any(), any(), any(), any())
         } returns Result.success(mockk())
 
         val topic = TestFactory.random<String>()

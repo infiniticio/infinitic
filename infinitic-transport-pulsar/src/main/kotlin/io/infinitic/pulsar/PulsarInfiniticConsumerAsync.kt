@@ -71,13 +71,14 @@ class PulsarInfiniticConsumerAsync(
       runBlocking {
         try {
           withTimeout((shutdownGracePeriodInSeconds * 1000L).toLong()) {
-            consumer.cancel()
+            // By cancelling the consumer coroutine, we interrupt the main loop of consumption
             logger.info { "Processing ongoing messages..." }
+            consumer.cancel()
             consumer.join()
             logger.info { "All ongoing messages have been processed." }
-            // delete client topic only after
+            // delete client topic after all in-memory messages have been processed
             deleteClientTopics()
-            // once the messages are processed, we can close other resources (pulsar client & admin)
+            // then close other resources (typically pulsar client & admin)
             autoClose()
           }
         } catch (e: TimeoutCancellationException) {
@@ -111,10 +112,14 @@ class PulsarInfiniticConsumerAsync(
 
     coroutineScope {
       // get name of topic, creates it if it does not exist yet
-      launch { topicName = with(pulsarResources) { subscription.topic.fullName(entity) } }
+      launch {
+        topicName = with(pulsarResources) { subscription.topic.forEntity(entity, true) }
+      }
 
       // name of DLQ topic, creates it if it does not exist yet
-      launch { topicDLQName = with(pulsarResources) { subscription.topic.fullNameDLQ(entity) } }
+      launch {
+        topicDLQName = with(pulsarResources) { subscription.topic.forEntityDLQ(entity, true) }
+      }
     }
 
     consumer.startListening(

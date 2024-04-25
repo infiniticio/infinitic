@@ -18,7 +18,7 @@
  *
  * License: MIT License (https://opensource.org/licenses/MIT)
  *
- * Licensor: infinitiio
+ * Licensor: infinitic.io
  */
 package io.infinitic.pulsar.client
 
@@ -202,7 +202,7 @@ class PulsarInfiniticClient(private val pulsarClient: PulsarClient) {
     }
     Result.success(producer)
   } catch (e: PulsarClientException) {
-    logger.error(e) { "Unable to create producer $producerName on topic $topic" }
+    logger.warn(e) { "Unable to create producer $producerName on topic $topic" }
     Result.failure(e)
   }
 

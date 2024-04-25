@@ -58,7 +58,6 @@ class PulsarInfiniticAdminTests :
           }
         }
 
-
         "can create the same namespace twice simultaneously" {
           // As topics are created on the fly, it can happen that
           // the same topic is created twice simultaneously, e.g. when dispatching a task

@@ -117,10 +117,9 @@ val Topic<*>.isDelayed
   }
 
 /**
- * Returns a [Topic] without delay. If the current [Topic] is a delayed topic, it returns the corresponding
- * non-delayed [Topic]. If the current [Topic] is not a delayed topic, it returns itself.
- *
  * @return The [Topic] without delay.
+ * If the current [Topic] is a delayed topic, it returns the corresponding non-delayed [Topic].
+ * If the current [Topic] is not a delayed topic, it returns itself.
  */
 @Suppress("UNCHECKED_CAST")
 val <S : Message> Topic<S>.withoutDelay
@@ -132,9 +131,7 @@ val <S : Message> Topic<S>.withoutDelay
   } as Topic<S>
 
 /**
- * Returns a [Topic] relative to workflowTask
- *
- * @return The [Topic] without delay.
+ * @return a [Topic] relative to workflowTask.
  */
 @Suppress("UNCHECKED_CAST")
 val <S : Message> Topic<S>.forWorkflow

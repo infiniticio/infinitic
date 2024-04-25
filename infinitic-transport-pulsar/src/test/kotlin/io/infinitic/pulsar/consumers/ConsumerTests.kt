@@ -42,6 +42,7 @@ import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.comparables.shouldBeLessThan
 import io.kotest.matchers.doubles.shouldBeLessThan
 import io.kotest.matchers.ints.shouldBeExactly
+import kotlinx.coroutines.delay
 import net.bytebuddy.utility.RandomString
 import org.apache.pulsar.client.api.PulsarClient
 import org.apache.pulsar.client.api.SubscriptionInitialPosition
@@ -122,7 +123,7 @@ class ConsumerTests : StringSpec(
         val handler: suspend (ServiceExecutorMessage, MillisInstant) -> Unit = { _, _ ->
           if (counter.get() == 0) start = Instant.now()
           // emulate a 1ms task
-          Thread.sleep(1)
+          delay(1)
           // increment counter
           counter.incrementAndGet().let {
             if (it == total) {

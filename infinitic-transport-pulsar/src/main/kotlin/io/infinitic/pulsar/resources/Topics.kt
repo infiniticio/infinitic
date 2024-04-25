@@ -202,3 +202,12 @@ fun <S : Message> Topic<S>.envelope(message: S) = when (this) {
   ServiceExecutorTopic, DelayedServiceExecutorTopic -> ServiceExecutorEnvelope.from(message as ServiceExecutorMessage)
   ServiceEventsTopic -> ServiceEventEnvelope.from(message as ServiceEventMessage)
 } as Envelope<out S>
+
+/**
+ * Returns a boolean indicating if the topic should be created when producing a message to this topic
+ */
+internal val <S : Message> Topic<S>.initWhenProducing: Boolean
+  get() = when (this) {
+    ClientTopic -> false
+    else -> true
+  }
