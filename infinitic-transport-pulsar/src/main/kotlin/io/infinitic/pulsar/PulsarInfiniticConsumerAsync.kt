@@ -61,12 +61,21 @@ class PulsarInfiniticConsumerAsync(
 
   private lateinit var clientName: String
   private suspend fun deleteClientTopic() {
-    if (::clientName.isInitialized) {
-      val clientTopic = with(pulsarResources) { ClientTopic.fullName(clientName) }
-      logger.debug { "Deleting client topic '$clientTopic'." }
-      pulsarResources.deleteTopic(clientTopic)
-          .onFailure { logger.warn(it) { "Unable to delete client topic '$clientTopic'." } }
-          .onSuccess { logger.info { "Client topic '$clientTopic' deleted." } }
+    if (::clientName.isInitialized) coroutineScope {
+      launch {
+        val clientTopic = with(pulsarResources) { ClientTopic.fullName(clientName) }
+        logger.debug { "Deleting client topic '$clientTopic'." }
+        pulsarResources.deleteTopic(clientTopic)
+            .onFailure { logger.warn(it) { "Unable to delete client topic '$clientTopic'." } }
+            .onSuccess { logger.info { "Client topic '$clientTopic' deleted." } }
+      }
+      launch {
+        val clientDLQTopic = with(pulsarResources) { ClientTopic.fullNameDLQ(clientName) }
+        logger.debug { "Deleting client DLQ topic '$clientDLQTopic'." }
+        pulsarResources.deleteTopic(clientDLQTopic)
+            .onFailure { logger.warn(it) { "Unable to delete client DLQ topic '$clientDLQTopic'." } }
+            .onSuccess { logger.info { "Client DLQ topic '$clientDLQTopic' deleted." } }
+      }
     }
   }
 
