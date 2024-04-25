@@ -66,14 +66,20 @@ sealed class ServiceExecutorMessage : Message {
   abstract val taskRetryIndex: TaskRetryIndex
   abstract val requester: Requester?
 
-  override fun key() = null
+  override fun key() = when (isWorkflowTask()) {
+    true -> requester.workflowName!!.toString()
+    false -> null
+  }
 
   override fun entity() = when (isWorkflowTask()) {
     true -> requester.workflowName!!.toString()
     false -> serviceName.toString()
   }
 
-  fun isWorkflowTask() = (serviceName == WorkflowTask.SERVICE_NAME)
+  fun isWorkflowTask() =
+      (serviceName == WorkflowTask.SERVICE_NAME) ||
+          // For backward compatibility to version < 0.13.0
+          serviceName == ServiceName(WorkflowTask::class.java.name)
 }
 
 @Serializable
