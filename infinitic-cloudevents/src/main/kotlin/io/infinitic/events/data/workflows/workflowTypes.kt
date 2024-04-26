@@ -39,7 +39,6 @@ import io.infinitic.common.workflows.engine.messages.RemoteMethodDispatchedEvent
 import io.infinitic.common.workflows.engine.messages.RemoteMethodFailed
 import io.infinitic.common.workflows.engine.messages.RemoteMethodTimedOut
 import io.infinitic.common.workflows.engine.messages.RemoteMethodUnknown
-import io.infinitic.common.workflows.engine.messages.RemoteSignalDispatchedEvent
 import io.infinitic.common.workflows.engine.messages.RemoteTaskCanceled
 import io.infinitic.common.workflows.engine.messages.RemoteTaskCompleted
 import io.infinitic.common.workflows.engine.messages.RemoteTaskFailed
@@ -49,6 +48,7 @@ import io.infinitic.common.workflows.engine.messages.RetryTasks
 import io.infinitic.common.workflows.engine.messages.RetryWorkflowTask
 import io.infinitic.common.workflows.engine.messages.SendSignal
 import io.infinitic.common.workflows.engine.messages.SignalDiscardedEvent
+import io.infinitic.common.workflows.engine.messages.SignalDispatchedEvent
 import io.infinitic.common.workflows.engine.messages.SignalReceivedEvent
 import io.infinitic.common.workflows.engine.messages.TaskDispatchedEvent
 import io.infinitic.common.workflows.engine.messages.TimerDispatchedEvent
@@ -144,7 +144,7 @@ fun WorkflowEventMessage.workflowType(): String = "$TYPE_WORKFLOW." + when (this
   }
 
   is TimerDispatchedEvent -> TIMER_DISPATCHED
-  is RemoteSignalDispatchedEvent -> SIGNAL_DISPATCHED
+  is SignalDispatchedEvent -> SIGNAL_DISPATCHED
   is SignalDiscardedEvent -> SIGNAL_DISCARDED
   is SignalReceivedEvent -> SIGNAL_RECEIVED
 }

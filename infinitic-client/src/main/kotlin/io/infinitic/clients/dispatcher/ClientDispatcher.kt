@@ -122,6 +122,9 @@ internal class ClientDispatcher(
   // Name of the client
   private val emitterName by lazy { EmitterName(producer.name) }
 
+  // This as requester
+  private val clientRequester by lazy { ClientRequester(clientName = ClientName.from(emitterName)) }
+
   // flag telling if the client consumer loop is initialized
   private var isClientConsumerInitialized = false
 
@@ -231,7 +234,7 @@ internal class ClientDispatcher(
           workflowMethodId = runId,
           workflowName = workflowName,
           workflowId = workflowId,
-          requester = ClientRequester(clientName = ClientName.from(emitterName)),
+          requester = clientRequester,
           emitterName = emitterName,
           emittedAt = null,
       )
@@ -294,7 +297,7 @@ internal class ClientDispatcher(
           workflowMethodId = workflowMethodId,
           workflowName = workflowName,
           workflowId = requestBy.workflowId,
-          requester = ClientRequester(clientName = ClientName.from(emitterName)),
+          requester = clientRequester,
           emitterName = emitterName,
           emittedAt = null,
       )
@@ -306,7 +309,7 @@ internal class ClientDispatcher(
           workflowName = workflowName,
           workflowTag = requestBy.workflowTag,
           reason = WorkflowCancellationReason.CANCELED_BY_CLIENT,
-          requester = ClientRequester(clientName = ClientName.from(emitterName)),
+          requester = clientRequester,
           emitterName = emitterName,
           emittedAt = null,
       )
@@ -324,7 +327,7 @@ internal class ClientDispatcher(
       val msg = RetryWorkflowTask(
           workflowName = workflowName,
           workflowId = requestBy.workflowId,
-          requester = ClientRequester(clientName = ClientName.from(emitterName)),
+          requester = clientRequester,
           emitterName = emitterName,
           emittedAt = null,
       )
@@ -335,7 +338,7 @@ internal class ClientDispatcher(
       val msg = RetryWorkflowTaskByTag(
           workflowName = workflowName,
           workflowTag = requestBy.workflowTag,
-          requester = ClientRequester(clientName = ClientName.from(emitterName)),
+          requester = clientRequester,
           emitterName = emitterName,
           emittedAt = null,
       )
@@ -369,7 +372,7 @@ internal class ClientDispatcher(
           workflowMethodId = workflowMethodId,
           workflowName = workflowName,
           workflowId = requestBy.workflowId,
-          requester = ClientRequester(clientName = ClientName.from(emitterName)),
+          requester = clientRequester,
           emitterName = emitterName,
           emittedAt = null,
       )
@@ -381,7 +384,7 @@ internal class ClientDispatcher(
           workflowName = workflowName,
           workflowTag = requestBy.workflowTag,
           workflowMethodId = workflowMethodId,
-          requester = ClientRequester(clientName = ClientName.from(emitterName)),
+          requester = clientRequester,
           emitterName = emitterName,
           emittedAt = null,
       )
@@ -407,7 +410,7 @@ internal class ClientDispatcher(
           taskId = taskId,
           taskStatus = taskStatus,
           serviceName = serviceName,
-          requester = ClientRequester(clientName = ClientName.from(emitterName)),
+          requester = clientRequester,
           emittedAt = null,
       )
       msg.sendToAsync(WorkflowCmdTopic)
@@ -420,7 +423,7 @@ internal class ClientDispatcher(
           taskId = taskId,
           taskStatus = taskStatus,
           serviceName = serviceName,
-          requester = ClientRequester(clientName = ClientName.from(emitterName)),
+          requester = clientRequester,
           emitterName = emitterName,
           emittedAt = null,
       )
@@ -542,7 +545,7 @@ internal class ClientDispatcher(
             methodParameterTypes = handler.methodParameterTypes,
             workflowTags = handler.workflowTags,
             workflowMeta = handler.workflowMeta,
-            requester = ClientRequester(clientName = ClientName.from(emitterName)),
+            requester = clientRequester,
             clientWaiting = clientWaiting,
             emitterName = emitterName,
             emittedAt = null,
@@ -565,14 +568,14 @@ internal class ClientDispatcher(
             methodTimeout = deferred.methodTimeout,
             workflowTags = handler.workflowTags,
             workflowMeta = handler.workflowMeta,
-            requester = ClientRequester(clientName = ClientName.from(emitterName)),
+            requester = clientRequester,
             clientWaiting = clientWaiting,
             emitterName = emitterName,
             emittedAt = null,
         )
         dispatchWorkflowByCustomId.sendToAsync(WorkflowTagTopic).thenApply { deferred }
       }
-      // more than 1 custom tag were provided
+      // more than 1 customId tag were provided
       else -> {
         throw MultipleCustomIdException
       }
@@ -660,7 +663,7 @@ internal class ClientDispatcher(
           workflowMethodName = handler.methodName,
           methodParameters = handler.methodParameters,
           methodParameterTypes = handler.methodParameterTypes,
-          requester = ClientRequester(clientName = ClientName.from(emitterName)),
+          requester = clientRequester,
           clientWaiting = clientWaiting,
           emitterName = emitterName,
           emittedAt = null,
@@ -677,7 +680,7 @@ internal class ClientDispatcher(
           methodParameterTypes = handler.methodParameterTypes,
           methodParameters = handler.methodParameters,
           methodTimeout = deferred.methodTimeout,
-          requester = ClientRequester(clientName = ClientName.from(emitterName)),
+          requester = clientRequester,
           clientWaiting = clientWaiting,
           emitterName = emitterName,
           emittedAt = null,
@@ -722,7 +725,7 @@ internal class ClientDispatcher(
             workflowId = (handler.requestBy as RequestByWorkflowId).workflowId,
             emitterName = emitterName,
             emittedAt = null,
-            requester = ClientRequester(clientName = ClientName.from(emitterName)),
+            requester = clientRequester,
         )
         sendSignal.sendToAsync(WorkflowCmdTopic)
       }
@@ -738,7 +741,7 @@ internal class ClientDispatcher(
             parentWorkflowId = null,
             emitterName = emitterName,
             emittedAt = null,
-            requester = ClientRequester(clientName = ClientName.from(emitterName)),
+            requester = clientRequester,
         )
         sendSignalByTag.sendToAsync(WorkflowTagTopic)
       }

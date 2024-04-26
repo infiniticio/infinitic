@@ -25,19 +25,19 @@ package io.infinitic.pulsar
 
 import io.infinitic.common.clients.messages.ClientMessage
 import io.infinitic.common.data.MillisDuration
+import io.infinitic.common.fixtures.DockerOnly
 import io.infinitic.common.fixtures.TestFactory
-import io.infinitic.common.messages.Envelope
-import io.infinitic.common.messages.Message
 import io.infinitic.common.requester.WorkflowRequester
-import io.infinitic.common.requester.workflowName
-import io.infinitic.common.tasks.events.messages.TaskCompletedEvent
+import io.infinitic.common.tasks.events.messages.ServiceEventMessage
+import io.infinitic.common.tasks.events.messages.TaskStartedEvent
 import io.infinitic.common.tasks.executors.messages.ExecuteTask
-import io.infinitic.common.tasks.tags.messages.ServiceTagMessage
+import io.infinitic.common.tasks.executors.messages.ServiceExecutorMessage
 import io.infinitic.common.transport.ClientTopic
+import io.infinitic.common.transport.DelayedServiceExecutorTopic
 import io.infinitic.common.transport.DelayedWorkflowEngineTopic
+import io.infinitic.common.transport.DelayedWorkflowTaskExecutorTopic
 import io.infinitic.common.transport.ServiceEventsTopic
 import io.infinitic.common.transport.ServiceExecutorTopic
-import io.infinitic.common.transport.ServiceTagTopic
 import io.infinitic.common.transport.WorkflowCmdTopic
 import io.infinitic.common.transport.WorkflowEngineTopic
 import io.infinitic.common.transport.WorkflowEventsTopic
@@ -50,237 +50,246 @@ import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
 import io.infinitic.common.workflows.engine.messages.WorkflowEventMessage
 import io.infinitic.common.workflows.tags.messages.WorkflowTagMessage
 import io.infinitic.pulsar.admin.PulsarInfiniticAdmin
+import io.infinitic.pulsar.client.PulsarInfiniticClient
 import io.infinitic.pulsar.config.policies.Policies
 import io.infinitic.pulsar.producers.Producer
+import io.infinitic.pulsar.producers.ProducerConfig
 import io.infinitic.pulsar.resources.PulsarResources
+import io.kotest.assertions.throwables.shouldNotThrowAny
+import io.kotest.core.annotation.EnabledIf
 import io.kotest.core.spec.style.StringSpec
-import io.mockk.coEvery
-import io.mockk.coVerify
-import io.mockk.every
-import io.mockk.mockk
-import io.mockk.slot
-import io.mockk.spyk
+import io.kotest.matchers.shouldBe
+import io.kotest.matchers.shouldNotBe
+import kotlinx.coroutines.future.await
 import net.bytebuddy.utility.RandomString
-import java.util.concurrent.CompletableFuture
+import org.apache.pulsar.client.admin.PulsarAdmin
+import org.apache.pulsar.client.api.PulsarClient
 
+@EnabledIf(DockerOnly::class)
 class PulsarInfiniticProducerAsyncTests : StringSpec(
     {
-      val tenant = RandomString().nextString()
-      val namespace = RandomString().nextString()
+      val pulsarServer = DockerOnly().pulsarServer!!
 
-      val original = PulsarResources(
-          mockk<PulsarInfiniticAdmin>(),
-          tenant,
-          setOf(),
-          namespace,
-          setOf(),
-          Policies(),
+      val client = PulsarInfiniticClient(
+          PulsarClient.builder().serviceUrl(pulsarServer.pulsarBrokerUrl).build(),
       )
 
-      val pulsarResources = spyk(original) {
-        coEvery { initTopicOnce(any(), any(), any()) } returns Result.success(Unit)
+      val admin = PulsarInfiniticAdmin(
+          PulsarAdmin.builder().serviceHttpUrl(pulsarServer.httpServiceUrl).build(),
+      )
 
-        coEvery { initDlqTopicOnce(any(), any(), any()) } returns Result.success(Unit)
-      }
+      val tenant = RandomString(10).nextString()
+      val namespace = RandomString(10).nextString()
 
-      val nameSlot = slot<String>()
+      val pulsarResources = PulsarResources(
+          admin,
+          tenant,
+          null,
+          namespace,
+          null,
+          Policies(),
+      )
+      val pulsarProducerAsync =
+          PulsarInfiniticProducerAsync(Producer(client, ProducerConfig()), pulsarResources)
 
-      val producer = mockk<Producer> {
-        coEvery {
-          getUniqueName(capture(nameSlot), null)
-        } answers { Result.success(nameSlot.captured) }
-
-        every {
-          sendAsync(
-              envelope = any<Envelope<out Message>>(),
-              after = any<MillisDuration>(),
-              topic = any<String>(),
-              producerName = any<String>(),
-              key = any<String>(),
-          )
-        } returns CompletableFuture.completedFuture(Unit)
-      }
-
-      val infiniticProducerAsync = PulsarInfiniticProducerAsync(producer, pulsarResources)
-
-      "should init client-response topic before sending a message to it" {
+      "publishing to an absent ClientTopic should not throw, should NOT create the topic" {
         val message = TestFactory.random<ClientMessage>()
-        with(infiniticProducerAsync) { message.sendToAsync(ClientTopic) }
 
-        val name = message.recipientName.toString()
+        // publishing to an absent ClientTopic should not throw
+        shouldNotThrowAny { pulsarProducerAsync.internalSendToAsync(message, ClientTopic).await() }
 
-        coVerify {
-          pulsarResources.initTopicOnce(
-              "persistent://$tenant/$namespace/response:$name",
-              isPartitioned = false,
-              isDelayed = false,
-          )
-        }
+        // publishing to an absent ClientTopic should NOT create it
+        val topic = with(pulsarResources) { ClientTopic.fullName(message.entity()) }
+        admin.getTopicInfo(topic).getOrThrow() shouldBe null
       }
 
-      "should init workflow-tag topic before sending a message to it" {
+      "publishing to a deleted ClientTopic should not throw, should NOT create the topic" {
+        val message = TestFactory.random<ClientMessage>()
+        val topic = with(pulsarResources) { ClientTopic.fullName(message.entity()) }
+
+        // can be isSuccess or isFailure depending on other tests
+        admin.createTenant(tenant, null, null)
+        admin.createNamespace("$tenant/$namespace", Policies())
+        // topic creation
+        admin.createTopic(topic, false, 3600).isSuccess shouldBe true
+
+        // publishing to an existing ClientTopic should not throw
+        shouldNotThrowAny { pulsarProducerAsync.internalSendToAsync(message, ClientTopic).await() }
+
+        // topic deletion
+        admin.deleteTopic(topic).isSuccess shouldBe true
+
+        // publishing to a used but deleted ClientTopic should not throw
+        shouldNotThrowAny { pulsarProducerAsync.internalSendToAsync(message, ClientTopic).await() }
+
+        // publishing to a used but deleted ClientTopic should NOT create it
+        admin.getTopicInfo(topic).getOrThrow() shouldBe null
+      }
+
+      "publishing to an absent WorkflowTagTopic should not throw, should create the topic" {
         val message = TestFactory.random<WorkflowTagMessage>()
-        with(infiniticProducerAsync) { message.sendToAsync(WorkflowTagTopic) }
 
-        val name = message.workflowName.toString()
-
-        coVerify {
-          pulsarResources.initTopicOnce(
-              "persistent://$tenant/$namespace/workflow-tag:$name",
-              isPartitioned = true,
-              isDelayed = false,
-          )
+        // publishing to an absent ClientTopic should not throw
+        shouldNotThrowAny {
+          pulsarProducerAsync.internalSendToAsync(message, WorkflowTagTopic).await()
         }
+
+        // publishing to an absent WorkflowTagTopic should create it
+        val topic = with(pulsarResources) { WorkflowTagTopic.fullName(message.entity()) }
+        admin.getTopicInfo(topic).getOrThrow() shouldNotBe null
       }
 
-      "should init workflow-cmd topic before sending a message to it" {
+      "publishing to an absent WorkflowCmdTopic should not throw, should create the topic" {
         val message = TestFactory.random<WorkflowCmdMessage>()
-        with(infiniticProducerAsync) { message.sendToAsync(WorkflowCmdTopic) }
 
-        val name = message.workflowName.toString()
-
-        coVerify {
-          pulsarResources.initTopicOnce(
-              "persistent://$tenant/$namespace/workflow-cmd:$name",
-              isPartitioned = true,
-              isDelayed = false,
-          )
+        // publishing to an absent WorkflowCmdTopic should not throw
+        shouldNotThrowAny {
+          pulsarProducerAsync.internalSendToAsync(message, WorkflowCmdTopic).await()
         }
+
+        // publishing to an absent WorkflowCmdTopic should create it
+        val topic = with(pulsarResources) { WorkflowCmdTopic.fullName(message.entity()) }
+        admin.getTopicInfo(topic).getOrThrow() shouldNotBe null
       }
 
-      "should init workflow-engine topic before sending a message to it" {
+      "publishing to an absent WorkflowEngineTopic should not throw, should create the topic" {
         val message = TestFactory.random<WorkflowEngineMessage>()
-        with(infiniticProducerAsync) { message.sendToAsync(WorkflowEngineTopic) }
 
-        val name = message.workflowName.toString()
-
-        coVerify {
-          pulsarResources.initTopicOnce(
-              "persistent://$tenant/$namespace/workflow-engine:$name",
-              isPartitioned = true,
-              isDelayed = false,
-          )
+        // publishing to an absent WorkflowEngineTopic should not throw
+        shouldNotThrowAny {
+          pulsarProducerAsync.internalSendToAsync(message, WorkflowEngineTopic).await()
         }
+
+        // publishing to an absent WorkflowEngineTopic should create it
+        val topic = with(pulsarResources) { WorkflowEngineTopic.fullName(message.entity()) }
+        admin.getTopicInfo(topic).getOrThrow() shouldNotBe null
       }
 
-      "should init workflow-delay topic before sending a message to it" {
+      "publishing to an absent DelayedWorkflowEngineTopic should not throw, should create the topic" {
         val message = TestFactory.random<WorkflowEngineMessage>()
-        with(infiniticProducerAsync) {
-          message.sendToAsync(
+
+        // publishing to an absent DelayedWorkflowEngineTopic should not throw
+        shouldNotThrowAny {
+          pulsarProducerAsync.internalSendToAsync(
+              message,
               DelayedWorkflowEngineTopic,
               MillisDuration(1),
-          )
+          ).await()
         }
 
-        val name = message.workflowName.toString()
-
-        coVerify {
-          pulsarResources.initTopicOnce(
-              "persistent://$tenant/$namespace/workflow-delay:$name",
-              isPartitioned = true,
-              isDelayed = true,
-          )
-        }
+        // publishing to an absent DelayedWorkflowEngineTopic should create it
+        val topic = with(pulsarResources) { DelayedWorkflowEngineTopic.fullName(message.entity()) }
+        admin.getTopicInfo(topic).getOrThrow() shouldNotBe null
       }
 
-      "should init workflow-events topic before sending a message to it" {
+      "publishing to an absent WorkflowEventTopic should not throw, should create the topic" {
         val message = TestFactory.random<WorkflowEventMessage>()
-        with(infiniticProducerAsync) { message.sendToAsync(WorkflowEventsTopic) }
 
-        val name = message.workflowName.toString()
 
-        coVerify {
-          pulsarResources.initTopicOnce(
-              "persistent://$tenant/$namespace/workflow-events:$name",
-              isPartitioned = true,
-              isDelayed = false,
-          )
+        // publishing to an absent WorkflowEventsTopic should not throw
+        shouldNotThrowAny {
+          pulsarProducerAsync.internalSendToAsync(message, WorkflowEventsTopic).await()
         }
+
+        // publishing to an absent WorkflowEventsTopic should create it
+        val topic = with(pulsarResources) { WorkflowEventsTopic.fullName(message.entity()) }
+        admin.getTopicInfo(topic).getOrThrow() shouldNotBe null
       }
 
-      "should init workflow-task-executor topic before sending a message to it" {
-        val message = TestFactory.random<ExecuteTask>(
-            mapOf(
-                "serviceName" to WorkflowTask.SERVICE_NAME,
-                "requester" to TestFactory.random<WorkflowRequester>(),
-            ),
+      "publishing to an absent WorkflowTaskExecutorTopic should not throw, should create the topic" {
+        val message = TestFactory.random<ExecuteTask>().copy(
+            serviceName = WorkflowTask.SERVICE_NAME,
+            requester = TestFactory.random<WorkflowRequester>(),
         )
-        with(infiniticProducerAsync) { message.sendToAsync(WorkflowTaskExecutorTopic) }
 
-        val name = message.requester.workflowName.toString()
-
-        coVerify {
-          pulsarResources.initTopicOnce(
-              "persistent://$tenant/$namespace/workflow-task-executor:$name",
-              isPartitioned = true,
-              isDelayed = false,
-          )
+        // publishing to an absent WorkflowTaskExecutorTopic should not throw
+        shouldNotThrowAny {
+          pulsarProducerAsync.internalSendToAsync(message, WorkflowTaskExecutorTopic).await()
         }
+
+        // publishing to an absent WorkflowTaskExecutorTopic should create it
+        val topic = with(pulsarResources) { WorkflowTaskExecutorTopic.fullName(message.entity()) }
+        admin.getTopicInfo(topic).getOrThrow() shouldNotBe null
       }
 
-      "should init workflow-task-events topic before sending a message to it" {
-        val message = TestFactory.random<TaskCompletedEvent>(
-            mapOf(
-                "serviceName" to WorkflowTask.SERVICE_NAME,
-                "requester" to TestFactory.random<WorkflowRequester>(),
-            ),
+      "publishing to an absent DelayedWorkflowTaskExecutorTopic should not throw, should create the topic" {
+        val message = TestFactory.random<ExecuteTask>().copy(
+            serviceName = WorkflowTask.SERVICE_NAME,
+            requester = TestFactory.random<WorkflowRequester>(),
         )
-        with(infiniticProducerAsync) { message.sendToAsync(WorkflowTaskEventsTopic) }
 
-        val name = message.requester.workflowName.toString()
-
-        coVerify {
-          pulsarResources.initTopicOnce(
-              "persistent://$tenant/$namespace/workflow-task-events:$name",
-              isPartitioned = true,
-              isDelayed = false,
-          )
+        // publishing to an absent DelayedWorkflowTaskExecutorTopic should not throw
+        shouldNotThrowAny {
+          pulsarProducerAsync.internalSendToAsync(
+              message,
+              DelayedWorkflowTaskExecutorTopic,
+              MillisDuration(1),
+          ).await()
         }
+
+        // publishing to an absent DelayedWorkflowTaskExecutorTopic should create it
+        val topic =
+            with(pulsarResources) { DelayedWorkflowTaskExecutorTopic.fullName(message.entity()) }
+        admin.getTopicInfo(topic).getOrThrow() shouldNotBe null
       }
 
-      "should init task-tag topic before sending a message to it" {
-        val message = TestFactory.random<ServiceTagMessage>()
-        with(infiniticProducerAsync) { message.sendToAsync(ServiceTagTopic) }
+      "publishing to an absent WorkflowTaskEventsTopic should not throw, should create the topic" {
+        val message = TestFactory.random<TaskStartedEvent>().copy(
+            serviceName = WorkflowTask.SERVICE_NAME,
+            requester = TestFactory.random<WorkflowRequester>(),
+        )
 
-        val name = message.serviceName.toString()
-
-        coVerify {
-          pulsarResources.initTopicOnce(
-              "persistent://$tenant/$namespace/task-tag:$name",
-              isPartitioned = true,
-              isDelayed = false,
-          )
+        // publishing to an absent WorkflowTaskEventsTopic should not throw
+        shouldNotThrowAny {
+          pulsarProducerAsync.internalSendToAsync(message, WorkflowTaskEventsTopic).await()
         }
+
+        // publishing to an absent WorkflowTaskEventsTopic should create it
+        val topic = with(pulsarResources) { WorkflowTaskEventsTopic.fullName(message.entity()) }
+        admin.getTopicInfo(topic).getOrThrow() shouldNotBe null
       }
 
-      "should init task-executor topic before sending a message to it" {
-        val message = TestFactory.random<ExecuteTask>()
-        with(infiniticProducerAsync) { message.sendToAsync(ServiceExecutorTopic) }
+      "publishing to an absent ServiceExecutorTopic should not throw, should create the topic" {
+        val message = TestFactory.random<ServiceExecutorMessage>()
 
-        val name = message.serviceName.toString()
-
-        coVerify {
-          pulsarResources.initTopicOnce(
-              "persistent://$tenant/$namespace/task-executor:$name",
-              isPartitioned = true,
-              isDelayed = false,
-          )
+        // publishing to an absent ServiceExecutorTopic should not throw
+        shouldNotThrowAny {
+          pulsarProducerAsync.internalSendToAsync(message, ServiceExecutorTopic).await()
         }
+
+        // publishing to an absent ServiceExecutorTopic should create it
+        val topic = with(pulsarResources) { ServiceExecutorTopic.fullName(message.entity()) }
+        admin.getTopicInfo(topic).getOrThrow() shouldNotBe null
       }
 
-      "should init task-events topic before sending a message to it" {
-        val message = TestFactory.random<TaskCompletedEvent>()
-        with(infiniticProducerAsync) { message.sendToAsync(ServiceEventsTopic) }
+      "publishing to an absent DelayedServiceExecutorTopic should not throw, should create the topic" {
+        val message = TestFactory.random<ServiceExecutorMessage>()
 
-        val name = message.serviceName.toString()
-
-        coVerify {
-          pulsarResources.initTopicOnce(
-              "persistent://$tenant/$namespace/task-events:$name",
-              isPartitioned = true,
-              isDelayed = false,
-          )
+        // publishing to an absent DelayedServiceExecutorTopic should not throw
+        shouldNotThrowAny {
+          pulsarProducerAsync.internalSendToAsync(
+              message,
+              DelayedServiceExecutorTopic,
+              MillisDuration(1),
+          ).await()
         }
+
+        // publishing to an absent DelayedServiceExecutorTopic should create it
+        val topic = with(pulsarResources) { DelayedServiceExecutorTopic.fullName(message.entity()) }
+        admin.getTopicInfo(topic).getOrThrow() shouldNotBe null
+      }
+
+      "publishing to an absent ServiceEventsTopic Topic should not throw, should create the topic" {
+        val message = TestFactory.random<ServiceEventMessage>()
+
+        // publishing to an absent ServiceEventsTopic should not throw
+        shouldNotThrowAny {
+          pulsarProducerAsync.internalSendToAsync(message, ServiceEventsTopic).await()
+        }
+
+        // publishing to an absent ServiceEventsTopic should create it
+        val topic = with(pulsarResources) { ServiceEventsTopic.fullName(message.entity()) }
+        admin.getTopicInfo(topic).getOrThrow() shouldNotBe null
       }
     },
 )

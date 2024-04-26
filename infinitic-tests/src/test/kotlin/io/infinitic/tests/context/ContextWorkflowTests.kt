@@ -30,43 +30,50 @@ import io.infinitic.tests.Test
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
 
-internal class ContextWorkflowTests :
-  StringSpec(
-      {
-        val client = Test.client
+internal class ContextWorkflowTests : StringSpec(
+    {
+      val client = Test.client
 
-        val contextWorkflow = client.newWorkflow(
-            ContextWorkflow::class.java,
-            tags = setOf("foo", "bar"),
-            meta = mutableMapOf("foo" to "bar".toByteArray()),
-        )
+      val contextWorkflow = client.newWorkflow(
+          ContextWorkflow::class.java,
+          tags = setOf("foo", "bar"),
+          meta = mutableMapOf("foo" to "bar".toByteArray()),
+      )
 
-        "get id from context" { contextWorkflow.context1() shouldBe client.lastDeferred!!.id }
+      "get id from context" {
+        contextWorkflow.context1() shouldBe client.lastDeferred!!.id
+      }
 
-        "get tags from context" { contextWorkflow.context2() shouldBe setOf("foo", "bar") }
+      "get tags from context" {
+        contextWorkflow.context2() shouldBe setOf("foo", "bar")
+      }
 
-        "get meta from context" {
-          contextWorkflow.context3() shouldBe WorkflowMeta(mapOf("foo" to "bar".toByteArray()))
-        }
+      "get meta from context" {
+        contextWorkflow.context3() shouldBe WorkflowMeta(mapOf("foo" to "bar".toByteArray()))
+      }
 
-        "get workflow id from Task" { contextWorkflow.context4() shouldBe client.lastDeferred!!.id }
+      "get workflow id from Task" {
+        contextWorkflow.context4() shouldBe client.lastDeferred!!.id
+      }
 
-        "get workflow name from Task" {
-          contextWorkflow.context5() shouldBe ContextWorkflow::class.java.name
-        }
+      "get workflow name from Task" {
+        contextWorkflow.context5() shouldBe ContextWorkflow::class.java.name
+      }
 
-        "get task tags from Task" { contextWorkflow.context6() shouldBe setOf("foo", "bar") }
+      "get task tags from Task" {
+        contextWorkflow.context6() shouldBe setOf("foo", "bar")
+      }
 
-        "get task meta from Task" {
-          contextWorkflow.context7() shouldBe TaskMeta(mutableMapOf("foo" to "bar".toByteArray()))
-        }
+      "get task meta from Task" {
+        contextWorkflow.context7() shouldBe TaskMeta(mutableMapOf("foo" to "bar".toByteArray()))
+      }
 
-        "get task retry from config file" {
-          contextWorkflow.context8() shouldBe DEFAULT_TASK_RETRY.copy(maximumRetries = 1)
-        }
+      "get task retry from config file" {
+        contextWorkflow.context8() shouldBe DEFAULT_TASK_RETRY.copy(maximumRetries = 1)
+      }
 
-        "get task timeout from config file" {
-          contextWorkflow.context9() shouldBe DEFAULT_TASK_TIMEOUT
-        }
-      },
-  )
+      "get task timeout from config file" {
+        contextWorkflow.context9() shouldBe DEFAULT_TASK_TIMEOUT
+      }
+    },
+)

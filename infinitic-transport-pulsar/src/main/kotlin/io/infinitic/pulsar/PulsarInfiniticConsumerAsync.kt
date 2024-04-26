@@ -46,6 +46,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
 import org.apache.pulsar.client.api.SubscriptionInitialPosition
+import java.util.concurrent.atomic.AtomicBoolean
 
 class PulsarInfiniticConsumerAsync(
   private val consumer: Consumer,
@@ -55,37 +56,31 @@ class PulsarInfiniticConsumerAsync(
 
   override fun join() = consumer.join()
 
+  private var isClosed: AtomicBoolean = AtomicBoolean(false)
+
   // See InfiniticWorker
   override var logName: String? = null
   private val logger by lazy { KotlinLogging.logger(logName ?: this::class.java.name) }
 
   private lateinit var clientName: String
-  private suspend fun deleteClientTopic() {
-    if (::clientName.isInitialized) {
-      val clientTopic = with(pulsarResources) { ClientTopic.fullName(clientName) }
-      logger.debug { "Deleting client topic '$clientTopic'." }
-      pulsarResources.deleteTopic(clientTopic)
-          .onFailure { logger.warn(it) { "Unable to delete client topic '$clientTopic'." } }
-          .onSuccess { logger.info { "Client topic '$clientTopic' deleted." } }
-    }
-  }
 
   override fun close() {
     // we test if consumingScope is active, just in case
     // the user tries to manually close an already closed resource
-    if (consumer.isActive) {
+    if (!isClosed.getAndSet(true)) {
       runBlocking {
         try {
           withTimeout((shutdownGracePeriodInSeconds * 1000L).toLong()) {
-            consumer.cancel()
+            // By cancelling the consumer coroutine, we interrupt the main loop of consumption
             logger.info { "Processing ongoing messages..." }
+            consumer.cancel()
             consumer.join()
             logger.info { "All ongoing messages have been processed." }
-            // delete client topic only after
-            deleteClientTopic()
+            // delete client topic after all in-memory messages have been processed
+            deleteClientTopics()
+            // then close other resources (typically pulsar client & admin)
+            autoClose()
           }
-          // once the messages are processed, we can close other resources (pulsar client & admin)
-          autoClose()
         } catch (e: TimeoutCancellationException) {
           logger.warn {
             "The grace period (${shutdownGracePeriodInSeconds}s) allotted to close was insufficient. " +
@@ -117,10 +112,14 @@ class PulsarInfiniticConsumerAsync(
 
     coroutineScope {
       // get name of topic, creates it if it does not exist yet
-      launch { topicName = with(pulsarResources) { subscription.topic.fullName(entity) } }
+      launch {
+        topicName = with(pulsarResources) { subscription.topic.forEntity(entity, true) }
+      }
 
       // name of DLQ topic, creates it if it does not exist yet
-      launch { topicDLQName = with(pulsarResources) { subscription.topic.fullNameDLQ(entity) } }
+      launch {
+        topicDLQName = with(pulsarResources) { subscription.topic.forEntityDLQ(entity, true) }
+      }
     }
 
     consumer.startListening(
@@ -158,5 +157,24 @@ class PulsarInfiniticConsumerAsync(
 
       is MainSubscription -> defaultInitialPosition
     }
+
+  private suspend fun deleteClientTopics() {
+    if (::clientName.isInitialized) coroutineScope {
+      launch {
+        val clientTopic = with(pulsarResources) { ClientTopic.fullName(clientName) }
+        logger.debug { "Deleting client topic '$clientTopic'." }
+        pulsarResources.deleteTopic(clientTopic)
+            .onFailure { logger.warn(it) { "Unable to delete client topic '$clientTopic'." } }
+            .onSuccess { logger.info { "Client topic '$clientTopic' deleted." } }
+      }
+      launch {
+        val clientDLQTopic = with(pulsarResources) { ClientTopic.fullNameDLQ(clientName) }
+        logger.debug { "Deleting client DLQ topic '$clientDLQTopic'." }
+        pulsarResources.deleteTopic(clientDLQTopic)
+            .onFailure { logger.warn(it) { "Unable to delete client DLQ topic '$clientDLQTopic'." } }
+            .onSuccess { logger.info { "Client DLQ topic '$clientDLQTopic' deleted." } }
+      }
+    }
+  }
 }
 

@@ -52,12 +52,15 @@ import io.infinitic.workflows.DeferredStatus
 import org.jetbrains.annotations.TestOnly
 import java.lang.reflect.Proxy
 import java.util.concurrent.CompletableFuture
+import java.util.concurrent.atomic.AtomicBoolean
 
 @Suppress("unused")
 class InfiniticClient(
   consumerAsync: InfiniticConsumerAsync,
   producerAsync: InfiniticProducerAsync
 ) : InfiniticClientInterface {
+
+  private var isClosed: AtomicBoolean = AtomicBoolean(false)
 
   private val producer = LoggedInfiniticProducer(this::class.java.name, producerAsync)
 
@@ -68,9 +71,20 @@ class InfiniticClient(
   /** Get last Deferred created by the call of a stub */
   override val lastDeferred get() = dispatcher.getLastDeferred()
 
+  /** Close client if interrupted */
+  init {
+    Runtime.getRuntime().addShutdownHook(
+        Thread {
+          close()
+        },
+    )
+  }
+
   override fun close() {
-    dispatcher.close()
-    autoClose()
+    if (!isClosed.getAndSet(true)) {
+      dispatcher.close()
+      autoClose()
+    }
   }
 
 

@@ -20,29 +20,24 @@
  *
  * Licensor: infinitic.io
  */
-package io.infinitic.cache.config.none
+package io.infinitic.tests.tags
 
-import io.infinitic.cache.keySet.CachedKeySet
+import io.infinitic.workflows.Workflow
+import java.time.Duration
 
-class NoCachedKeySet<T> : CachedKeySet<T> {
+interface TagWorkflow {
+  fun context(): Set<String>
 
-  override fun get(key: String): Set<T>? {
-    return null
+  fun await()
+}
+
+@Suppress("unused")
+class TagWorkflowImpl : Workflow(), TagWorkflow {
+
+  override fun context(): Set<String> = tags
+
+  override fun await() {
+    timer(Duration.ofHours(1)).await()
   }
 
-  override fun set(key: String, value: Set<T>) {
-    // nothing
-  }
-
-  override fun add(key: String, value: T) {
-    // nothing
-  }
-
-  override fun remove(key: String, value: T) {
-    // nothing
-  }
-
-  override fun flush() {
-    // nothing
-  }
 }

@@ -60,7 +60,10 @@ import io.infinitic.common.workflows.tags.messages.WorkflowTagEnvelope
 import io.infinitic.common.workflows.tags.messages.WorkflowTagMessage
 import io.infinitic.pulsar.schemas.schemaDefinition
 import org.apache.pulsar.client.api.Schema
+import org.apache.pulsar.shade.org.apache.commons.lang.StringEscapeUtils
 import kotlin.reflect.KClass
+
+private const val SEPARATOR = ":"
 
 /**
  * Determines whether a topic type is partitioned.
@@ -108,7 +111,8 @@ internal fun Topic<*>.prefixDLQ() = "${prefix()}-dlq"
  * @param entity The optional entity name (service name or workflow name).
  * @return The name of the Topic with optional entity name.
  */
-internal fun Topic<*>.name(entity: String?) = prefix() + (entity?.let { ":$entity" } ?: "")
+internal fun Topic<*>.name(entity: String?) =
+    prefix() + (entity?.let { "$SEPARATOR${StringEscapeUtils.escapeJava(it)}" } ?: "")
 
 /**
  * Returns the name of the Dead Letter Queue Topic based on topic type and the entity name
@@ -116,7 +120,8 @@ internal fun Topic<*>.name(entity: String?) = prefix() + (entity?.let { ":$entit
  * @param entity The optional entity name (service name or workflow name).
  * @return The name of the Topic with optional entity name.
  */
-internal fun Topic<*>.nameDLQ(entity: String) = "${prefixDLQ()}:$entity"
+internal fun Topic<*>.nameDLQ(entity: String) =
+    "${prefixDLQ()}$SEPARATOR${StringEscapeUtils.escapeJava(entity)}"
 
 
 /**
@@ -137,11 +142,15 @@ internal val <S : Message> Topic<S>.schema: Schema<Envelope<out S>>
  */
 internal fun getServiceNameFromTopicName(topicName: String): String? {
   for (serviceTopic in ServiceTopic.entries) {
-    val prefix = serviceTopic.prefix()
-    if (topicName.startsWith(prefix)) return topicName.removePrefix(prefix)
+    val prefix = serviceTopic.prefix() + SEPARATOR
+    if (topicName.startsWith(prefix)) return StringEscapeUtils.unescapeJava(
+        topicName.removePrefix(prefix),
+    )
 
-    val prefixDLQ = serviceTopic.prefixDLQ()
-    if (topicName.startsWith(prefixDLQ)) return topicName.removePrefix(prefixDLQ)
+    val prefixDLQ = serviceTopic.prefixDLQ() + SEPARATOR
+    if (topicName.startsWith(prefixDLQ)) return StringEscapeUtils.unescapeJava(
+        topicName.removePrefix(prefixDLQ),
+    )
   }
 
   return null
@@ -155,11 +164,15 @@ internal fun getServiceNameFromTopicName(topicName: String): String? {
  */
 internal fun getWorkflowNameFromTopicName(topicName: String): String? {
   for (workflowTopic in WorkflowTopic.entries) {
-    val prefix = workflowTopic.prefix()
-    if (topicName.startsWith(prefix)) return topicName.removePrefix(prefix)
+    val prefix = workflowTopic.prefix() + SEPARATOR
+    if (topicName.startsWith(prefix)) return StringEscapeUtils.unescapeJava(
+        topicName.removePrefix(prefix),
+    )
 
-    val prefixDLQ = workflowTopic.prefixDLQ()
-    if (topicName.startsWith(prefixDLQ)) return topicName.removePrefix(prefixDLQ)
+    val prefixDLQ = workflowTopic.prefixDLQ() + SEPARATOR
+    if (topicName.startsWith(prefixDLQ)) return StringEscapeUtils.unescapeJava(
+        topicName.removePrefix(prefixDLQ),
+    )
   }
 
   return null
@@ -202,3 +215,12 @@ fun <S : Message> Topic<S>.envelope(message: S) = when (this) {
   ServiceExecutorTopic, DelayedServiceExecutorTopic -> ServiceExecutorEnvelope.from(message as ServiceExecutorMessage)
   ServiceEventsTopic -> ServiceEventEnvelope.from(message as ServiceEventMessage)
 } as Envelope<out S>
+
+/**
+ * Returns a boolean indicating if the topic should be created when producing a message to this topic
+ */
+internal val <S : Message> Topic<S>.initWhenProducing: Boolean
+  get() = when (this) {
+    ClientTopic -> false
+    else -> true
+  }

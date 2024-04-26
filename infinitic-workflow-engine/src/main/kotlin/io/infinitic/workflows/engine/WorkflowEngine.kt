@@ -51,13 +51,13 @@ import io.infinitic.common.workflows.engine.messages.RemoteMethodTimedOut
 import io.infinitic.common.workflows.engine.messages.RemoteMethodUnknown
 import io.infinitic.common.workflows.engine.messages.RemoteTaskCanceled
 import io.infinitic.common.workflows.engine.messages.RemoteTaskCompleted
+import io.infinitic.common.workflows.engine.messages.RemoteTaskEvent
 import io.infinitic.common.workflows.engine.messages.RemoteTaskFailed
 import io.infinitic.common.workflows.engine.messages.RemoteTaskTimedOut
 import io.infinitic.common.workflows.engine.messages.RemoteTimerCompleted
 import io.infinitic.common.workflows.engine.messages.RetryTasks
 import io.infinitic.common.workflows.engine.messages.RetryWorkflowTask
 import io.infinitic.common.workflows.engine.messages.SendSignal
-import io.infinitic.common.workflows.engine.messages.TaskEvent
 import io.infinitic.common.workflows.engine.messages.WaitWorkflow
 import io.infinitic.common.workflows.engine.messages.WorkflowCompletedEvent
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
@@ -182,12 +182,12 @@ class WorkflowEngine(
         // Before 0.13, all messages had a null version
         // Since 0.13, the workflow-task is dispatched in workflowCmdHandler
         @Deprecated("This should be removed once v0.13.0 is deployed")
-        if (message.version == null) {
+        if (message.infiniticVersion == null) {
           return@coroutineScope dispatchWorkflow(producer, message)
         }
 
         // all actions are now done in WorkflowCmdHandler::dispatchNewWorkflow
-        return@coroutineScope message.state()
+        return@coroutineScope message.newState()
       }
 
       // a client wants to dispatch a method on an unknown workflow
@@ -262,7 +262,7 @@ class WorkflowEngine(
         // we retry workflow task, as commands are not executed anymore
         // inside the engine for version >= 0.13
         @Deprecated("This should be removed after v0.13.0")
-        if (message.version == null) {
+        if (message.infiniticVersion == null) {
           logDiscarding(message) { "workflowTask that has a null version - retrying it" }
           coroutineScope { retryWorkflowTask(producer, state) }
 
@@ -270,7 +270,7 @@ class WorkflowEngine(
         }
 
         // Idempotency: discard if this workflowTask is not the current one
-        if (state.runningWorkflowTaskId != (message as TaskEvent).taskId()) {
+        if (state.runningWorkflowTaskId != (message as RemoteTaskEvent).taskId()) {
           logDiscarding(message) { "as workflowTask ${message.taskId()} is different than ${state.runningWorkflowTaskId} in state" }
 
           return null

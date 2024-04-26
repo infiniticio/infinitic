@@ -32,7 +32,7 @@ import io.infinitic.common.workflows.data.channels.SignalId
 import io.infinitic.common.workflows.data.commands.SendSignalCommand
 import io.infinitic.common.workflows.data.commands.SendSignalPastCommand
 import io.infinitic.common.workflows.engine.commands.dispatchRemoteSignal
-import io.infinitic.common.workflows.engine.messages.RemoteSignalDispatchedEvent
+import io.infinitic.common.workflows.engine.messages.SignalDispatchedEvent
 import io.infinitic.common.workflows.engine.messages.data.RemoteSignalDispatchedById
 import io.infinitic.common.workflows.engine.messages.data.RemoteSignalDispatchedByTag
 import kotlinx.coroutines.CoroutineScope
@@ -77,7 +77,7 @@ internal fun CoroutineScope.dispatchRemoteSignalCmd(
   with(producer) { dispatchRemoteSignal(remoteSignal, current) }
 
   // Description of the workflow event
-  val remoteSignalDispatchedEvent = RemoteSignalDispatchedEvent(
+  val signalDispatchedEvent = SignalDispatchedEvent(
       remoteSignalDispatched = remoteSignal,
       workflowName = current.workflowName,
       workflowId = current.workflowId,
@@ -87,7 +87,7 @@ internal fun CoroutineScope.dispatchRemoteSignalCmd(
       emitterName = emitterName,
   )
   // Dispatching the workflow event
-  with(producer) { remoteSignalDispatchedEvent.sendTo(WorkflowEventsTopic) }
+  with(producer) { signalDispatchedEvent.sendTo(WorkflowEventsTopic) }
 }
 
 

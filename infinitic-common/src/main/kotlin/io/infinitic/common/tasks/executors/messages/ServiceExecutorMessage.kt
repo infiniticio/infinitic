@@ -48,7 +48,7 @@ import io.infinitic.common.tasks.executors.errors.ExecutionError
 import io.infinitic.common.workers.config.WorkflowVersion
 import io.infinitic.common.workers.data.WorkerName
 import io.infinitic.common.workflows.data.workflowMethods.WorkflowMethodId
-import io.infinitic.common.workflows.data.workflowTasks.WorkflowTask
+import io.infinitic.common.workflows.data.workflowTasks.isWorkflowTask
 import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.data.workflows.WorkflowName
 import io.infinitic.currentVersion
@@ -66,14 +66,17 @@ sealed class ServiceExecutorMessage : Message {
   abstract val taskRetryIndex: TaskRetryIndex
   abstract val requester: Requester?
 
-  override fun key() = null
+  override fun key() = when (isWorkflowTask()) {
+    true -> requester.workflowName!!.toString()
+    false -> null
+  }
 
   override fun entity() = when (isWorkflowTask()) {
     true -> requester.workflowName!!.toString()
     false -> serviceName.toString()
   }
 
-  fun isWorkflowTask() = (serviceName == WorkflowTask.SERVICE_NAME)
+  fun isWorkflowTask() = serviceName.isWorkflowTask()
 }
 
 @Serializable

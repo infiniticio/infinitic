@@ -26,9 +26,8 @@ import com.github.benmanes.caffeine.cache.Cache
 import com.github.benmanes.caffeine.cache.Caffeine
 import io.infinitic.cache.Bytes
 import io.infinitic.cache.Flushable
-import io.infinitic.cache.config.caffeine.Caffeine as CaffeineConfig
 import io.infinitic.cache.keySet.CachedKeySet
-import org.jetbrains.annotations.TestOnly
+import io.infinitic.cache.config.caffeine.Caffeine as CaffeineConfig
 
 class CaffeineCachedKeySet(config: CaffeineConfig) : CachedKeySet<ByteArray>, Flushable {
 
@@ -50,7 +49,6 @@ class CaffeineCachedKeySet(config: CaffeineConfig) : CachedKeySet<ByteArray>, Fl
     caffeine.getIfPresent(key)?.also { caffeine.put(key, it.minus(Bytes(value))) }
   }
 
-  @TestOnly
   override fun flush() {
     caffeine.invalidateAll()
   }

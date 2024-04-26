@@ -258,7 +258,7 @@ class PulsarInfiniticAdmin(
         Result.failure(e)
       }
 
-  private suspend fun createTenant(
+  suspend fun createTenant(
     tenant: String,
     allowedClusters: Set<String>?,
     adminRoles: Set<String>?
@@ -317,12 +317,12 @@ class PulsarInfiniticAdmin(
   ): Result<TopicInfo> = try {
     logger.debug { "Creating topic $topic." }
     when (isPartitioned) {
-      true -> topics.createPartitionedTopicAsync(topic, DEFAUT_NUM_PARTITIONS).await()
+      true -> topics.createPartitionedTopicAsync(topic, DEFAULT_NUM_PARTITIONS).await()
       false -> topics.createNonPartitionedTopicAsync(topic).await()
     }
     logger.info {
       "Topic '$topic' created " +
-          if (isPartitioned) "with $DEFAUT_NUM_PARTITIONS partitions." else "without partition."
+          if (isPartitioned) "with $DEFAULT_NUM_PARTITIONS partitions." else "without partition."
     }
     // set message TTL
     setTopicTTL(topic, messageTTLPolicy)
@@ -362,7 +362,7 @@ class PulsarInfiniticAdmin(
     Result.failure(e)
   }
 
-  private suspend fun getTopicInfo(topic: String): Result<TopicInfo?> {
+  suspend fun getTopicInfo(topic: String): Result<TopicInfo?> {
     val ttl = getMessageTTL(topic).getOrElse { return Result.failure(it) }
     return when (ttl) {
       null -> Result.success(null)
@@ -513,7 +513,7 @@ class PulsarInfiniticAdmin(
   )
 
   companion object {
-    private const val DEFAUT_NUM_PARTITIONS = 3
+    private const val DEFAULT_NUM_PARTITIONS = 3
 
     // thread-safe set of initialized tenants
     private val initializedTenants = ConcurrentHashMap<String, Result<TenantInfo>>()

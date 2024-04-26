@@ -34,6 +34,7 @@ data class MainSubscription<S : Message>(override val topic: Topic<S>) : Subscri
     WorkflowTagTopic,
     WorkflowCmdTopic,
     WorkflowEngineTopic,
+    WorkflowTaskExecutorTopic,
     ServiceTagTopic -> true
 
     else -> false

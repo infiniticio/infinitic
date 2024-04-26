@@ -48,7 +48,7 @@ fun WorkflowEventMessage.type(): WorkflowEventMessageType = when (this) {
   is TaskDispatchedEvent -> WorkflowEventMessageType.TASK_DISPATCHED
   is RemoteMethodDispatchedEvent -> WorkflowEventMessageType.REMOTE_METHOD_DISPATCHED
   is TimerDispatchedEvent -> WorkflowEventMessageType.TIMER_DISPATCHED
-  is RemoteSignalDispatchedEvent -> WorkflowEventMessageType.REMOTE_SIGNAL_DISPATCHED
+  is SignalDispatchedEvent -> WorkflowEventMessageType.REMOTE_SIGNAL_DISPATCHED
   is SignalDiscardedEvent -> WorkflowEventMessageType.SIGNAL_DISCARDED
   is SignalReceivedEvent -> WorkflowEventMessageType.SIGNAL_RECEIVED
 }

@@ -23,6 +23,7 @@
 package io.infinitic.common.workflows.data.workflowTasks
 
 import io.infinitic.common.tasks.data.ServiceName
+import io.infinitic.common.workflows.data.workflowTasks.WorkflowTask.Companion.SERVICE_NAME
 
 interface WorkflowTask {
   fun handle(workflowTaskParameters: WorkflowTaskParameters): WorkflowTaskReturnValue
@@ -31,3 +32,7 @@ interface WorkflowTask {
     val SERVICE_NAME = ServiceName("infinitic.workflow.Executor")
   }
 }
+
+internal fun ServiceName.isWorkflowTask() = (this == SERVICE_NAME) ||
+    // For backward compatibility with Infinitic version < 0.13.0
+    (this == ServiceName("io.infinitic.common.workflows.data.workflowTasks.WorkflowTask"))
