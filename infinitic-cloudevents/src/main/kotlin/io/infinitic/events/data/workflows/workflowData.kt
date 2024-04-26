@@ -99,7 +99,7 @@ fun WorkflowCmdMessage.toJson(): JsonObject = when (this) {
           WORKFLOW_TAGS to workflowTags.toJson(),
           WORKFLOW_NAME to workflowName.toJson(),
           REQUESTER to requester.toJson(),
-          INFINITIC_VERSION to version.toJson(),
+          INFINITIC_VERSION to infiniticVersion.toJson(),
       ),
   )
 
@@ -110,7 +110,7 @@ fun WorkflowCmdMessage.toJson(): JsonObject = when (this) {
           METHOD_ID to workflowMethodId.toJson(),
           WORKFLOW_NAME to workflowName.toJson(),
           REQUESTER to requester.toJson(),
-          INFINITIC_VERSION to version.toJson(),
+          INFINITIC_VERSION to infiniticVersion.toJson(),
       ),
   )
 
@@ -119,14 +119,14 @@ fun WorkflowCmdMessage.toJson(): JsonObject = when (this) {
         null -> mapOf(
             WORKFLOW_NAME to workflowName.toJson(),
             REQUESTER to requester.toJson(),
-            INFINITIC_VERSION to version.toJson(),
+            INFINITIC_VERSION to infiniticVersion.toJson(),
         )
 
         else -> mapOf(
             METHOD_ID to workflowMethodId.toJson(),
             WORKFLOW_NAME to workflowName.toJson(),
             REQUESTER to requester.toJson(),
-            INFINITIC_VERSION to version.toJson(),
+            INFINITIC_VERSION to infiniticVersion.toJson(),
         )
       },
   )
@@ -142,7 +142,7 @@ fun WorkflowCmdMessage.toJson(): JsonObject = when (this) {
           SERVICE_NAME to serviceName.toJson(),
           WORKFLOW_NAME to workflowName.toJson(),
           REQUESTER to requester.toJson(),
-          INFINITIC_VERSION to version.toJson(),
+          INFINITIC_VERSION to infiniticVersion.toJson(),
       ),
   )
 
@@ -150,7 +150,7 @@ fun WorkflowCmdMessage.toJson(): JsonObject = when (this) {
       mapOf(
           WORKFLOW_NAME to workflowName.toJson(),
           REQUESTER to requester.toJson(),
-          INFINITIC_VERSION to version.toJson(),
+          INFINITIC_VERSION to infiniticVersion.toJson(),
       ),
   )
 
@@ -161,7 +161,7 @@ fun WorkflowCmdMessage.toJson(): JsonObject = when (this) {
           SIGNAL_DATA to signalData.toJson(),
           WORKFLOW_NAME to workflowName.toJson(),
           REQUESTER to requester.toJson(),
-          INFINITIC_VERSION to version.toJson(),
+          INFINITIC_VERSION to infiniticVersion.toJson(),
       ),
   )
 
@@ -190,7 +190,7 @@ fun WorkflowEngineMessage.toJson(): JsonObject = when (this) {
           WORKFLOW_NAME to workflowName.toJson(),
           WORKFLOW_VERSION to workflowVersion.toJson(),
           WORKER_NAME to emitterName.toJson(),
-          INFINITIC_VERSION to version.toJson(),
+          INFINITIC_VERSION to infiniticVersion.toJson(),
       ),
   )
 
@@ -202,7 +202,7 @@ fun WorkflowEngineMessage.toJson(): JsonObject = when (this) {
           WORKFLOW_NAME to workflowName.toJson(),
           WORKFLOW_VERSION to workflowVersion.toJson(),
           WORKER_NAME to emitterName.toJson(),
-          INFINITIC_VERSION to version.toJson(),
+          INFINITIC_VERSION to infiniticVersion.toJson(),
       ),
   )
 
@@ -214,7 +214,7 @@ fun WorkflowEngineMessage.toJson(): JsonObject = when (this) {
           WORKFLOW_NAME to workflowName.toJson(),
           WORKFLOW_VERSION to workflowVersion.toJson(),
           WORKER_NAME to emitterName.toJson(),
-          INFINITIC_VERSION to version.toJson(),
+          INFINITIC_VERSION to infiniticVersion.toJson(),
       ),
   )
 
@@ -226,7 +226,7 @@ fun WorkflowEngineMessage.toJson(): JsonObject = when (this) {
           WORKFLOW_NAME to workflowName.toJson(),
           WORKFLOW_VERSION to workflowVersion.toJson(),
           WORKER_NAME to emitterName.toJson(),
-          INFINITIC_VERSION to version.toJson(),
+          INFINITIC_VERSION to infiniticVersion.toJson(),
       ),
   )
 
@@ -238,7 +238,7 @@ fun WorkflowEngineMessage.toJson(): JsonObject = when (this) {
           WORKFLOW_NAME to workflowName.toJson(),
           WORKFLOW_VERSION to workflowVersion.toJson(),
           WORKER_NAME to emitterName.toJson(),
-          INFINITIC_VERSION to version.toJson(),
+          INFINITIC_VERSION to infiniticVersion.toJson(),
       ),
   )
 
@@ -259,7 +259,7 @@ fun WorkflowEngineMessage.toJson(): JsonObject = when (this) {
           WORKFLOW_NAME to workflowName.toJson(),
           WORKFLOW_VERSION to workflowVersion.toJson(),
           WORKER_NAME to emitterName.toJson(),
-          INFINITIC_VERSION to version.toJson(),
+          INFINITIC_VERSION to infiniticVersion.toJson(),
       ),
   )
 
@@ -273,7 +273,7 @@ fun WorkflowEngineMessage.toJson(): JsonObject = when (this) {
           WORKFLOW_NAME to workflowName.toJson(),
           WORKFLOW_VERSION to workflowVersion.toJson(),
           WORKER_NAME to emitterName.toJson(),
-          INFINITIC_VERSION to version.toJson(),
+          INFINITIC_VERSION to infiniticVersion.toJson(),
       ),
   )
 
@@ -285,7 +285,7 @@ fun WorkflowEngineMessage.toJson(): JsonObject = when (this) {
           WORKFLOW_NAME to workflowName.toJson(),
           WORKFLOW_VERSION to workflowVersion.toJson(),
           WORKER_NAME to emitterName.toJson(),
-          INFINITIC_VERSION to version.toJson(),
+          INFINITIC_VERSION to infiniticVersion.toJson(),
       ),
   )
 
@@ -301,7 +301,7 @@ fun WorkflowEngineMessage.toJson(): JsonObject = when (this) {
           WORKFLOW_NAME to workflowName.toJson(),
           WORKFLOW_VERSION to workflowVersion.toJson(),
           WORKER_NAME to emitterName.toJson(),
-          INFINITIC_VERSION to version.toJson(),
+          INFINITIC_VERSION to infiniticVersion.toJson(),
       ),
   )
 }
@@ -313,7 +313,7 @@ fun WorkflowEventMessage.toJson(): JsonObject = when (this) {
           WORKFLOW_NAME to workflowName.toJson(),
           WORKFLOW_VERSION to workflowVersion.toJson(),
           WORKER_NAME to emitterName.toJson(),
-          INFINITIC_VERSION to version.toJson(),
+          INFINITIC_VERSION to infiniticVersion.toJson(),
       ),
   )
 
@@ -322,7 +322,7 @@ fun WorkflowEventMessage.toJson(): JsonObject = when (this) {
           WORKFLOW_NAME to workflowName.toJson(),
           WORKFLOW_VERSION to workflowVersion.toJson(),
           WORKER_NAME to emitterName.toJson(),
-          INFINITIC_VERSION to version.toJson(),
+          INFINITIC_VERSION to infiniticVersion.toJson(),
       ),
   )
 
@@ -334,7 +334,7 @@ fun WorkflowEventMessage.toJson(): JsonObject = when (this) {
           WORKFLOW_NAME to workflowName.toJson(),
           WORKFLOW_VERSION to workflowVersion.toJson(),
           REQUESTER to requester.toJson(),
-          INFINITIC_VERSION to version.toJson(),
+          INFINITIC_VERSION to infiniticVersion.toJson(),
       ),
   )
 
@@ -346,7 +346,7 @@ fun WorkflowEventMessage.toJson(): JsonObject = when (this) {
           WORKFLOW_NAME to workflowName.toJson(),
           WORKFLOW_VERSION to workflowVersion.toJson(),
           WORKER_NAME to emitterName.toJson(),
-          INFINITIC_VERSION to version.toJson(),
+          INFINITIC_VERSION to infiniticVersion.toJson(),
       ),
   )
 
@@ -358,7 +358,7 @@ fun WorkflowEventMessage.toJson(): JsonObject = when (this) {
           WORKFLOW_NAME to workflowName.toJson(),
           WORKFLOW_VERSION to workflowVersion.toJson(),
           WORKER_NAME to emitterName.toJson(),
-          INFINITIC_VERSION to version.toJson(),
+          INFINITIC_VERSION to infiniticVersion.toJson(),
       ),
   )
 
@@ -369,7 +369,7 @@ fun WorkflowEventMessage.toJson(): JsonObject = when (this) {
           WORKFLOW_NAME to workflowName.toJson(),
           WORKFLOW_VERSION to workflowVersion.toJson(),
           WORKER_NAME to emitterName.toJson(),
-          INFINITIC_VERSION to version.toJson(),
+          INFINITIC_VERSION to infiniticVersion.toJson(),
       ),
   )
 
@@ -380,7 +380,7 @@ fun WorkflowEventMessage.toJson(): JsonObject = when (this) {
           WORKFLOW_NAME to workflowName.toJson(),
           WORKFLOW_VERSION to workflowVersion.toJson(),
           WORKER_NAME to emitterName.toJson(),
-          INFINITIC_VERSION to version.toJson(),
+          INFINITIC_VERSION to infiniticVersion.toJson(),
       ),
   )
 
@@ -392,7 +392,7 @@ fun WorkflowEventMessage.toJson(): JsonObject = when (this) {
           WORKFLOW_NAME to workflowName.toJson(),
           WORKFLOW_VERSION to workflowVersion.toJson(),
           WORKER_NAME to emitterName.toJson(),
-          INFINITIC_VERSION to version.toJson(),
+          INFINITIC_VERSION to infiniticVersion.toJson(),
       ),
   )
 
@@ -404,7 +404,7 @@ fun WorkflowEventMessage.toJson(): JsonObject = when (this) {
           WORKFLOW_NAME to workflowName.toJson(),
           WORKFLOW_VERSION to workflowVersion.toJson(),
           WORKER_NAME to emitterName.toJson(),
-          INFINITIC_VERSION to version.toJson(),
+          INFINITIC_VERSION to infiniticVersion.toJson(),
       ),
   )
 
@@ -416,7 +416,7 @@ fun WorkflowEventMessage.toJson(): JsonObject = when (this) {
           WORKFLOW_NAME to workflowName.toJson(),
           WORKFLOW_VERSION to workflowVersion.toJson(),
           WORKER_NAME to emitterName.toJson(),
-          INFINITIC_VERSION to version.toJson(),
+          INFINITIC_VERSION to infiniticVersion.toJson(),
       ),
   )
 
@@ -428,7 +428,7 @@ fun WorkflowEventMessage.toJson(): JsonObject = when (this) {
           WORKFLOW_NAME to workflowName.toJson(),
           WORKFLOW_VERSION to workflowVersion.toJson(),
           WORKER_NAME to emitterName.toJson(),
-          INFINITIC_VERSION to version.toJson(),
+          INFINITIC_VERSION to infiniticVersion.toJson(),
       ),
   )
 
@@ -438,7 +438,7 @@ fun WorkflowEventMessage.toJson(): JsonObject = when (this) {
           WORKFLOW_NAME to workflowName.toJson(),
           WORKFLOW_VERSION to workflowVersion.toJson(),
           WORKER_NAME to emitterName.toJson(),
-          INFINITIC_VERSION to version.toJson(),
+          INFINITIC_VERSION to infiniticVersion.toJson(),
       ),
   )
 
@@ -448,7 +448,7 @@ fun WorkflowEventMessage.toJson(): JsonObject = when (this) {
           WORKFLOW_NAME to workflowName.toJson(),
           WORKFLOW_VERSION to workflowVersion.toJson(),
           WORKER_NAME to emitterName.toJson(),
-          INFINITIC_VERSION to version.toJson(),
+          INFINITIC_VERSION to infiniticVersion.toJson(),
       ),
   )
 }

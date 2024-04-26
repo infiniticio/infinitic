@@ -48,7 +48,7 @@ import io.infinitic.common.tasks.executors.errors.ExecutionError
 import io.infinitic.common.workers.config.WorkflowVersion
 import io.infinitic.common.workers.data.WorkerName
 import io.infinitic.common.workflows.data.workflowMethods.WorkflowMethodId
-import io.infinitic.common.workflows.data.workflowTasks.WorkflowTask
+import io.infinitic.common.workflows.data.workflowTasks.isWorkflowTask
 import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.data.workflows.WorkflowName
 import io.infinitic.currentVersion
@@ -76,10 +76,7 @@ sealed class ServiceExecutorMessage : Message {
     false -> serviceName.toString()
   }
 
-  fun isWorkflowTask() =
-      (serviceName == WorkflowTask.SERVICE_NAME) ||
-          // For backward compatibility to version < 0.13.0
-          serviceName == ServiceName(WorkflowTask::class.java.name)
+  fun isWorkflowTask() = serviceName.isWorkflowTask()
 }
 
 @Serializable

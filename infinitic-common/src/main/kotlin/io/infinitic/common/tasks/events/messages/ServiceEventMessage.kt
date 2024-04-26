@@ -53,7 +53,7 @@ import io.infinitic.common.tasks.executors.errors.TaskFailedError
 import io.infinitic.common.tasks.executors.messages.ExecuteTask
 import io.infinitic.common.tasks.tags.messages.RemoveTaskIdFromTag
 import io.infinitic.common.workers.data.WorkerName
-import io.infinitic.common.workflows.data.workflowTasks.WorkflowTask
+import io.infinitic.common.workflows.data.workflowTasks.isWorkflowTask
 import io.infinitic.common.workflows.engine.messages.RemoteTaskCompleted
 import io.infinitic.common.workflows.engine.messages.RemoteTaskFailed
 import io.infinitic.currentVersion
@@ -80,7 +80,7 @@ sealed class ServiceEventMessage : Message {
     false -> serviceName.toString()
   }
 
-  fun isWorkflowTask() = (serviceName == WorkflowTask.SERVICE_NAME)
+  fun isWorkflowTask() = serviceName.isWorkflowTask()
 
 }
 
