@@ -28,7 +28,6 @@ import io.infinitic.common.data.MillisDuration
 import io.infinitic.common.fixtures.DockerOnly
 import io.infinitic.common.fixtures.TestFactory
 import io.infinitic.common.requester.WorkflowRequester
-import io.infinitic.common.tasks.data.ServiceName
 import io.infinitic.common.tasks.events.messages.ServiceEventMessage
 import io.infinitic.common.tasks.events.messages.TaskStartedEvent
 import io.infinitic.common.tasks.executors.messages.ExecuteTask
@@ -46,7 +45,6 @@ import io.infinitic.common.transport.WorkflowTagTopic
 import io.infinitic.common.transport.WorkflowTaskEventsTopic
 import io.infinitic.common.transport.WorkflowTaskExecutorTopic
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTask
-import io.infinitic.common.workflows.data.workflows.WorkflowName
 import io.infinitic.common.workflows.engine.messages.WorkflowCmdMessage
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
 import io.infinitic.common.workflows.engine.messages.WorkflowEventMessage
@@ -129,9 +127,7 @@ class PulsarInfiniticProducerAsyncTests : StringSpec(
       }
 
       "publishing to an absent WorkflowTagTopic should not throw, should create the topic" {
-        val message = TestFactory.random<WorkflowTagMessage>(
-            mapOf("workflowName" to WorkflowName(RandomString(10).nextString())),
-        )
+        val message = TestFactory.random<WorkflowTagMessage>()
 
         // publishing to an absent ClientTopic should not throw
         shouldNotThrowAny {
@@ -144,9 +140,7 @@ class PulsarInfiniticProducerAsyncTests : StringSpec(
       }
 
       "publishing to an absent WorkflowCmdTopic should not throw, should create the topic" {
-        val message = TestFactory.random<WorkflowCmdMessage>(
-            mapOf("workflowName" to WorkflowName(RandomString(10).nextString())),
-        )
+        val message = TestFactory.random<WorkflowCmdMessage>()
 
         // publishing to an absent WorkflowCmdTopic should not throw
         shouldNotThrowAny {
@@ -159,9 +153,7 @@ class PulsarInfiniticProducerAsyncTests : StringSpec(
       }
 
       "publishing to an absent WorkflowEngineTopic should not throw, should create the topic" {
-        val message = TestFactory.random<WorkflowEngineMessage>(
-            mapOf("workflowName" to WorkflowName(RandomString(10).nextString())),
-        )
+        val message = TestFactory.random<WorkflowEngineMessage>()
 
         // publishing to an absent WorkflowEngineTopic should not throw
         shouldNotThrowAny {
@@ -174,9 +166,7 @@ class PulsarInfiniticProducerAsyncTests : StringSpec(
       }
 
       "publishing to an absent DelayedWorkflowEngineTopic should not throw, should create the topic" {
-        val message = TestFactory.random<WorkflowEngineMessage>(
-            mapOf("workflowName" to WorkflowName(RandomString(10).nextString())),
-        )
+        val message = TestFactory.random<WorkflowEngineMessage>()
 
         // publishing to an absent DelayedWorkflowEngineTopic should not throw
         shouldNotThrowAny {
@@ -193,9 +183,7 @@ class PulsarInfiniticProducerAsyncTests : StringSpec(
       }
 
       "publishing to an absent WorkflowEventTopic should not throw, should create the topic" {
-        val message = TestFactory.random<WorkflowEventMessage>(
-            mapOf("workflowName" to WorkflowName(RandomString(10).nextString())),
-        )
+        val message = TestFactory.random<WorkflowEventMessage>()
 
 
         // publishing to an absent WorkflowEventsTopic should not throw
@@ -262,9 +250,7 @@ class PulsarInfiniticProducerAsyncTests : StringSpec(
       }
 
       "publishing to an absent ServiceExecutorTopic should not throw, should create the topic" {
-        val message = TestFactory.random<ServiceExecutorMessage>(
-            mapOf("serviceName" to ServiceName(RandomString(10).nextString())),
-        )
+        val message = TestFactory.random<ServiceExecutorMessage>()
 
         // publishing to an absent ServiceExecutorTopic should not throw
         shouldNotThrowAny {
@@ -277,9 +263,7 @@ class PulsarInfiniticProducerAsyncTests : StringSpec(
       }
 
       "publishing to an absent DelayedServiceExecutorTopic should not throw, should create the topic" {
-        val message = TestFactory.random<ServiceExecutorMessage>(
-            mapOf("serviceName" to ServiceName(RandomString(10).nextString())),
-        )
+        val message = TestFactory.random<ServiceExecutorMessage>()
 
         // publishing to an absent DelayedServiceExecutorTopic should not throw
         shouldNotThrowAny {
@@ -296,9 +280,7 @@ class PulsarInfiniticProducerAsyncTests : StringSpec(
       }
 
       "publishing to an absent ServiceEventsTopic Topic should not throw, should create the topic" {
-        val message = TestFactory.random<ServiceEventMessage>(
-            mapOf("serviceName" to ServiceName(RandomString(10).nextString())),
-        )
+        val message = TestFactory.random<ServiceEventMessage>()
 
         // publishing to an absent ServiceEventsTopic should not throw
         shouldNotThrowAny {
