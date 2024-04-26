@@ -31,7 +31,6 @@ import io.infinitic.common.data.ReturnValue
 import io.infinitic.common.data.methods.MethodName
 import io.infinitic.common.data.methods.MethodParameterTypes
 import io.infinitic.common.data.methods.MethodParameters
-import io.infinitic.common.exceptions.thisShouldNotHappen
 import io.infinitic.common.requester.ClientRequester
 import io.infinitic.common.requester.Requester
 import io.infinitic.common.requester.WorkflowRequester
@@ -117,7 +116,9 @@ data class WorkflowMethod(
 // currently, method can have only one awaiting workflow
 val WorkflowMethod.awaitingRequesters: Set<Requester>
   get() {
-    val awaiting = mutableSetOf(requester ?: thisShouldNotHappen())
+    val awaiting = mutableSetOf<Requester>()
+    if (requester is WorkflowRequester) awaiting.add(requester!!)
     waitingClients.forEach { awaiting.add(ClientRequester(clientName = it)) }
+
     return awaiting
   }
