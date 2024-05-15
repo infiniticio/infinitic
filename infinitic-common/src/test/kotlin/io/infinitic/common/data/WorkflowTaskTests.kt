@@ -20,19 +20,17 @@
  *
  * Licensor: infinitic.io
  */
-package io.infinitic.common.workflows.data.workflowTasks
+package io.infinitic.common.data
 
-import io.infinitic.common.tasks.data.ServiceName
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTask.Companion.WORKFLOW_SERVICE_NAME
+import io.kotest.core.spec.style.StringSpec
+import io.kotest.matchers.shouldBe
 
-interface WorkflowTask {
-  fun handle(workflowTaskParameters: WorkflowTaskParameters): WorkflowTaskReturnValue
-
-  companion object {
-    val WORKFLOW_SERVICE_NAME = ServiceName("infinitic.workflow.Executor")
-  }
-}
-
-internal fun ServiceName.isWorkflowTask() = (this == WORKFLOW_SERVICE_NAME) ||
-    // For backward compatibility with Infinitic version < 0.13.0
-    (this == ServiceName("io.infinitic.common.workflows.data.workflowTasks.WorkflowTask"))
+class WorkflowTaskTests :
+  StringSpec(
+      {
+        "WorkflowTask name should not change" {
+          WORKFLOW_SERVICE_NAME.toString() shouldBe "infinitic.workflow.Executor"
+        }
+      },
+  )

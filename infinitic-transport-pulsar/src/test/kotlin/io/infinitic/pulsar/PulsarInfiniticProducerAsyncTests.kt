@@ -198,7 +198,7 @@ class PulsarInfiniticProducerAsyncTests : StringSpec(
 
       "publishing to an absent WorkflowTaskExecutorTopic should not throw, should create the topic" {
         val message = TestFactory.random<ExecuteTask>().copy(
-            serviceName = WorkflowTask.SERVICE_NAME,
+            serviceName = WorkflowTask.WORKFLOW_SERVICE_NAME,
             requester = TestFactory.random<WorkflowRequester>(),
         )
 
@@ -214,7 +214,7 @@ class PulsarInfiniticProducerAsyncTests : StringSpec(
 
       "publishing to an absent DelayedWorkflowTaskExecutorTopic should not throw, should create the topic" {
         val message = TestFactory.random<ExecuteTask>().copy(
-            serviceName = WorkflowTask.SERVICE_NAME,
+            serviceName = WorkflowTask.WORKFLOW_SERVICE_NAME,
             requester = TestFactory.random<WorkflowRequester>(),
         )
 
@@ -235,7 +235,7 @@ class PulsarInfiniticProducerAsyncTests : StringSpec(
 
       "publishing to an absent WorkflowTaskEventsTopic should not throw, should create the topic" {
         val message = TestFactory.random<TaskStartedEvent>().copy(
-            serviceName = WorkflowTask.SERVICE_NAME,
+            serviceName = WorkflowTask.WORKFLOW_SERVICE_NAME,
             requester = TestFactory.random<WorkflowRequester>(),
         )
 
