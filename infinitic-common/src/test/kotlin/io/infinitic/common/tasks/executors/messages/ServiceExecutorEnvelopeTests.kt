@@ -25,7 +25,9 @@ package io.infinitic.common.tasks.executors.messages
 import io.infinitic.common.fixtures.TestFactory
 import io.infinitic.common.fixtures.checkBackwardCompatibility
 import io.infinitic.common.fixtures.checkOrCreateCurrentFile
+import io.infinitic.common.requester.WorkflowRequester
 import io.infinitic.common.serDe.avro.AvroSerDe
+import io.infinitic.common.workflows.data.workflowTasks.WorkflowTask.Companion.WORKFLOW_SERVICE_NAME
 import io.kotest.assertions.throwables.shouldNotThrowAny
 import io.kotest.assertions.throwables.shouldThrowAny
 import io.kotest.core.spec.style.StringSpec
@@ -48,6 +50,30 @@ class ServiceExecutorEnvelopeTests :
                   ServiceExecutorEnvelope.writerSchema,
               ) shouldBe envelope
             }
+          }
+        }
+
+
+        ServiceExecutorMessage::class.sealedSubclasses.map {
+          val requester = TestFactory.random(WorkflowRequester::class)
+          val msg = TestFactory.random(
+              it,
+              mapOf(
+                  "serviceName" to WORKFLOW_SERVICE_NAME,
+                  "requester" to requester,
+              ),
+          )
+
+          "ServiceExecutorMessage(${msg::class.simpleName}) for $WORKFLOW_SERVICE_NAME should have key=workflowId " {
+            msg.key() shouldBe requester.workflowId.toString()
+          }
+        }
+
+        ServiceExecutorMessage::class.sealedSubclasses.map {
+          val msg = TestFactory.random(it)
+
+          "ServiceExecutorMessage(${msg::class.simpleName}) should have key=null " {
+            msg.key() shouldBe null
           }
         }
 
