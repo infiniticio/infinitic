@@ -383,6 +383,7 @@ class PulsarInfiniticClient(private val pulsarClient: PulsarClient) {
   )
 
   companion object {
+    // producer per topic
     val producers = ConcurrentHashMap<String, Producer<Envelope<out Message>>>()
   }
 }

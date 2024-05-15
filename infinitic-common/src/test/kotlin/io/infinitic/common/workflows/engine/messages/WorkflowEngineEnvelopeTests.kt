@@ -38,6 +38,14 @@ class WorkflowEngineEnvelopeTests :
         WorkflowEngineMessage::class.sealedSubclasses.map {
           val msg = TestFactory.random(it)
 
+          "WorkflowEngineMessage: ${msg::class.simpleName} should be have its workflowId as key" {
+            msg.key() shouldBe msg.workflowId.toString()
+          }
+        }
+
+        WorkflowEngineMessage::class.sealedSubclasses.map {
+          val msg = TestFactory.random(it)
+
           "WorkflowEngineEnvelope: ${msg::class.simpleName} should be avro-convertible" {
             shouldNotThrowAny {
               val envelope = WorkflowEngineEnvelope.from(msg)

@@ -20,27 +20,17 @@
  *
  * Licensor: infinitic.io
  */
-object Ci {
+package io.infinitic.common.data
 
-  private const val SNAPSHOT = "-SNAPSHOT"
+import io.infinitic.common.workflows.data.workflowTasks.WorkflowTask.Companion.WORKFLOW_SERVICE_NAME
+import io.kotest.core.spec.style.StringSpec
+import io.kotest.matchers.shouldBe
 
-  // base version number
-  private const val BASE = "0.13.2"
-
-  // GitHub run number
-  private val githubRunNumber = System.getenv("GITHUB_RUN_NUMBER")
-
-  private val snapshotVersion = when (githubRunNumber) {
-    null -> "$BASE$SNAPSHOT"
-    else -> "$BASE.$githubRunNumber$SNAPSHOT"
-  }
-
-  val isRelease = (System.getenv("RELEASE")?.let { it.toBoolean() } ?: false).also {
-    println("isRelease = $it")
-  }
-
-  val version = when (isRelease) {
-    true -> BASE
-    false -> snapshotVersion
-  }
-}
+class WorkflowTaskTests :
+  StringSpec(
+      {
+        "WorkflowTask name should not change" {
+          WORKFLOW_SERVICE_NAME.toString() shouldBe "infinitic.workflow.Executor"
+        }
+      },
+  )

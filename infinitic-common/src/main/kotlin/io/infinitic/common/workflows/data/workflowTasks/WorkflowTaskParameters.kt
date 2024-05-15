@@ -71,7 +71,7 @@ data class WorkflowTaskParameters(
           methodName = MethodName(WorkflowTask::handle.name),
           methodParameterTypes = MethodParameterTypes(listOf(WorkflowTaskParameters::class.java.name)),
           methodParameters = MethodParameters.from(this),
-          serviceName = WorkflowTask.SERVICE_NAME,
+          serviceName = WorkflowTask.WORKFLOW_SERVICE_NAME,
           taskTags = setOf(),
           taskMeta = TaskMeta(),
           taskRetrySequence = TaskRetrySequence(),

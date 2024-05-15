@@ -38,6 +38,14 @@ class WorkflowCmdEnvelopeTests :
         WorkflowCmdMessage::class.sealedSubclasses.map {
           val msg = TestFactory.random(it)
 
+          "WorkflowCmdEnvelope: ${msg::class.simpleName} should be have its workflowId as key" {
+            msg.key() shouldBe msg.workflowId.toString()
+          }
+        }
+
+        WorkflowCmdMessage::class.sealedSubclasses.map {
+          val msg = TestFactory.random(it)
+
           "WorkflowCmdEnvelope: ${msg::class.simpleName} should be avro-convertible" {
             shouldNotThrowAny {
               val envelope = WorkflowCmdEnvelope.from(msg)

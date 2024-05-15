@@ -263,7 +263,7 @@ internal class CloudEventTests :
             val message = TestFactory.random(
                 it,
                 mapOf(
-                    "serviceName" to WorkflowTask.SERVICE_NAME,
+                    "serviceName" to WorkflowTask.WORKFLOW_SERVICE_NAME,
                     "workflowName" to WorkflowName("WorkflowA"),
                 ),
             )
@@ -285,7 +285,7 @@ internal class CloudEventTests :
             var message = TestFactory.random(
                 it,
                 mapOf(
-                    "serviceName" to WorkflowTask.SERVICE_NAME,
+                    "serviceName" to WorkflowTask.WORKFLOW_SERVICE_NAME,
                     "workflowName" to WorkflowName("WorkflowA"),
                 ),
             )

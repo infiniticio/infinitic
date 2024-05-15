@@ -37,6 +37,7 @@ import io.infinitic.common.messages.Message
 import io.infinitic.common.requester.ClientRequester
 import io.infinitic.common.requester.Requester
 import io.infinitic.common.requester.WorkflowRequester
+import io.infinitic.common.requester.workflowId
 import io.infinitic.common.requester.workflowName
 import io.infinitic.common.tasks.data.ServiceName
 import io.infinitic.common.tasks.data.TaskId
@@ -67,7 +68,7 @@ sealed class ServiceExecutorMessage : Message {
   abstract val requester: Requester?
 
   override fun key() = when (isWorkflowTask()) {
-    true -> requester.workflowName!!.toString()
+    true -> requester.workflowId!!.toString()
     false -> null
   }
 
