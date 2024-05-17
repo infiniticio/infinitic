@@ -123,7 +123,7 @@ data class ExecuteTask(
       msg: ExecuteTask,
       emitterName: EmitterName,
       cause: Throwable,
-      meta: MutableMap<String, ByteArray>
+      meta: Map<String, ByteArray>
     ) = ExecuteTask(
         serviceName = msg.serviceName,
         taskId = msg.taskId,

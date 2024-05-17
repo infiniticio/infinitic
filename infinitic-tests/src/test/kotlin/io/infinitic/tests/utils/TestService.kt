@@ -35,11 +35,12 @@ class ExpectedException(log: String? = null) : Exception(log)
 
 @Suppress("unused")
 class TestServiceImpl : TestService, WithRetry {
+
   companion object {
     lateinit var behavior: (index: Int, retry: Int) -> Status
   }
 
-  var log = ""
+  private var log = ""
 
   override fun log(): String {
     Thread.sleep(50)

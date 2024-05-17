@@ -36,8 +36,9 @@ import kotlinx.serialization.json.JsonPrimitive
 import java.util.*
 
 @Serializable(with = TaskMetaSerializer::class)
-data class TaskMeta(val map: MutableMap<String, ByteArray> = mutableMapOf()) :
-  MutableMap<String, ByteArray> by map, JsonAble {
+data class TaskMeta(val map: Map<String, ByteArray> = mutableMapOf()) :
+  Map<String, ByteArray> by map, JsonAble {
+    
   override fun toJson() = JsonObject(
       map.mapValues { JsonPrimitive(Base64.getEncoder().encodeToString(it.value)) },
   )
