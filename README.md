@@ -2,7 +2,7 @@
 
 # Infinitic
 
-Infinitic is still in active development. Subscribe [here](https://infinitic.substack.com) to follow the progress.
+[Infinitic](https://infinitic.io) is still in active development. Subscribe [here](https://infinitic.substack.com) to follow the progress.
 
 ## What is it?
 
