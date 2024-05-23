@@ -122,7 +122,7 @@ class WorkflowEngine(
       return
     }
 
-    @Deprecated("This should be removed after v0.13.0")
+    // This is needed for compatibility with messages before v0.13.0
     if (message.emittedAt == null) message.emittedAt = publishTime
 
     state = when (state) {
@@ -181,7 +181,6 @@ class WorkflowEngine(
       is DispatchWorkflow -> {
         // Before 0.13, all messages had a null version
         // Since 0.13, the workflow-task is dispatched in workflowCmdHandler
-        @Deprecated("This should be removed once v0.13.0 is deployed")
         if (message.infiniticVersion == null) {
           return@coroutineScope dispatchWorkflow(producer, message)
         }
@@ -261,7 +260,6 @@ class WorkflowEngine(
         // messages had a null version before 0.13
         // we retry workflow task, as commands are not executed anymore
         // inside the engine for version >= 0.13
-        @Deprecated("This should be removed after v0.13.0")
         if (message.infiniticVersion == null) {
           logDiscarding(message) { "workflowTask that has a null version - retrying it" }
           coroutineScope { retryWorkflowTask(producer, state) }

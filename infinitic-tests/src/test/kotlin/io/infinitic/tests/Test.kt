@@ -98,11 +98,11 @@ object ProjectConfig : AbstractProjectConfig() {
   // each test should not be longer than 5s
   override val timeout = 5000.milliseconds
 
-  override fun beforeAll() {
+  override suspend fun beforeProject() {
     Listener.clear()
   }
 
-  override fun afterAll() {
+  override suspend fun afterProject() {
     Listener.print()
   }
 }
