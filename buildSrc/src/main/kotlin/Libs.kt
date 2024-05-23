@@ -80,7 +80,7 @@ object Libs {
   }
 
   object Mockk {
-    const val mockk = "io.mockk:mockk:1.13.10"
+    const val mockk = "io.mockk:mockk:1.13.11"
   }
 
   object Avro4k {
@@ -111,13 +111,13 @@ object Libs {
   }
 
   object Slf4j {
-    private const val version = "2.0.12"
+    private const val version = "2.0.13"
     const val simple = "org.slf4j:slf4j-simple:$version"
     const val api = "org.slf4j:slf4j-api:$version"
   }
 
   object Logging {
-    const val jvm = "io.github.oshai:kotlin-logging-jvm:6.0.3"
+    const val jvm = "io.github.oshai:kotlin-logging-jvm:6.0.9"
   }
 
   object Compress {
