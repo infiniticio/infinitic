@@ -87,13 +87,13 @@ subprojects {
     kotlinOptions {
       freeCompilerArgs += "-opt-in=kotlin.RequiresOptIn"
       freeCompilerArgs += "-Xjvm-default=all"
-      jvmTarget = JavaVersion.VERSION_11.toString()
+      jvmTarget = JavaVersion.VERSION_17.toString()
     }
   }
 
   // Keep this to tell compatibility to applications
   tasks.withType<JavaCompile> {
-    sourceCompatibility = JavaVersion.VERSION_11.toString()
-    targetCompatibility = JavaVersion.VERSION_11.toString()
+    sourceCompatibility = JavaVersion.VERSION_17.toString()
+    targetCompatibility = JavaVersion.VERSION_17.toString()
   }
 }
