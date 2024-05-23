@@ -68,11 +68,11 @@ abstract class Workflow {
   protected fun <T : Any> newService(
     klass: Class<out T>,
     tags: Set<String>? = null,
-    meta: MutableMap<String, ByteArray>? = null
+    meta: Map<String, ByteArray>? = null
   ): T = NewServiceProxyHandler(
       klass = klass,
       taskTags = tags?.map { TaskTag(it) }?.toSet() ?: setOf(),
-      taskMeta = TaskMeta(meta ?: mutableMapOf()),
+      taskMeta = TaskMeta(meta ?: mapOf()),
   ) {
     dispatcher
   }

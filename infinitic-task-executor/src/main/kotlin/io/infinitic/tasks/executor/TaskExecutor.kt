@@ -119,7 +119,7 @@ class TaskExecutor(
         retryIndex = msg.taskRetryIndex,
         lastError = msg.lastError,
         tags = msg.taskTags.map { it.tag }.toSet(),
-        meta = msg.taskMeta.map,
+        meta = msg.taskMeta.map.toMutableMap(),
         withRetry = withRetry,
         withTimeout = withTimeout,
         client = client,
@@ -211,7 +211,7 @@ class TaskExecutor(
   suspend fun sendTaskFailed(
     msg: ServiceExecutorMessage,
     cause: Throwable,
-    meta: MutableMap<String, ByteArray>,
+    meta: Map<String, ByteArray>,
     description: (() -> String)?
   ) {
     if (msg !is ExecuteTask) thisShouldNotHappen()
@@ -226,7 +226,7 @@ class TaskExecutor(
     msg: ExecuteTask,
     cause: Exception,
     delay: MillisDuration,
-    meta: MutableMap<String, ByteArray>
+    meta: Map<String, ByteArray>
   ) {
     msg.logWarn(cause) { "Retrying in $delay" }
 
@@ -241,7 +241,7 @@ class TaskExecutor(
   private suspend fun sendTaskCompleted(
     msg: ExecuteTask,
     value: Any?,
-    meta: MutableMap<String, ByteArray>
+    meta: Map<String, ByteArray>
   ) {
     if (value != null && isDelegated) {
       msg.logDebug {

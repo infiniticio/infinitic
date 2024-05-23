@@ -476,7 +476,7 @@ class TaskExecutorTests :
 fun ExecuteTask.check(
   msg: ExecuteTask,
   errorName: String,
-  meta: MutableMap<String, ByteArray>
+  meta: Map<String, ByteArray>
 ) {
   serviceName shouldBe msg.serviceName
   taskId shouldBe msg.taskId
@@ -495,7 +495,7 @@ fun ExecuteTask.check(
 fun TaskFailedEvent.check(
   msg: ExecuteTask,
   errorName: String,
-  meta: MutableMap<String, ByteArray>
+  meta: Map<String, ByteArray>
 ) {
   serviceName shouldBe msg.serviceName
   taskId shouldBe msg.taskId
@@ -515,7 +515,7 @@ fun TaskRetriedEvent.check(
   msg: ExecuteTask,
   delay: MillisDuration,
   errorName: String,
-  meta: MutableMap<String, ByteArray>
+  meta: Map<String, ByteArray>
 ) {
   serviceName shouldBe msg.serviceName
   taskId shouldBe msg.taskId
@@ -565,7 +565,7 @@ private fun getTaskCompleted(
   msg: ExecuteTask,
   messageId: MessageId,
   value: Any?,
-  meta: MutableMap<String, ByteArray>
+  meta: Map<String, ByteArray>
 ) = TaskCompletedEvent(
     messageId = messageId,
     serviceName = msg.serviceName,
