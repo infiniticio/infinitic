@@ -67,7 +67,7 @@ object Libs {
   }
 
   object Kotest {
-    private const val version = "5.8.1"
+    private const val version = "5.9.0"
     const val property = "io.kotest:kotest-property-jvm:$version"
     const val junit5 = "io.kotest:kotest-runner-junit5-jvm:$version"
     const val datatest = "io.kotest:kotest-framework-datatest:$version"
