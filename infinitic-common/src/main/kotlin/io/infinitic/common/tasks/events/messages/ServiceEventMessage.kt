@@ -171,7 +171,7 @@ data class TaskFailedEvent(
       msg: ExecuteTask,
       emitterName: EmitterName,
       cause: Throwable,
-      meta: MutableMap<String, ByteArray>
+      meta: Map<String, ByteArray>
     ) = TaskFailedEvent(
         serviceName = msg.serviceName,
         methodName = msg.methodName,
@@ -213,7 +213,7 @@ data class TaskRetriedEvent(
       emitterName: EmitterName,
       cause: Throwable,
       delay: MillisDuration,
-      meta: MutableMap<String, ByteArray>
+      meta: Map<String, ByteArray>
     ) = TaskRetriedEvent(
         serviceName = msg.serviceName,
         methodName = msg.methodName,
@@ -311,7 +311,7 @@ data class TaskCompletedEvent(
       emitterName: EmitterName,
       value: Any?,
       isDelegated: Boolean,
-      meta: MutableMap<String, ByteArray>
+      meta: Map<String, ByteArray>
     ) = TaskCompletedEvent(
         serviceName = msg.serviceName,
         methodName = msg.methodName,
