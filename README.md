@@ -2,29 +2,34 @@
 
 # Infinitic
 
-[Infinitic](https://infinitic.io) is still in active development. Subscribe [here](https://infinitic.substack.com) to follow the progress.
+[Infinitic](https://infinitic.io) is still in active development. Subscribe [here](https://infinitic.substack.com) to stay up-to-date.
 
 ## What is it?
 
-Infinitic is a framework based on [Apache Pulsar](https://pulsar.apache.org/) that considerably eases building
-asynchronous distributed apps.
+Infinitic is an open source orchestration framework for application teams to build durable and flexible backend processes
+without managing the complexities of infrastructure or accumulating technical debt.
 
-Many issues arise when we build and scale a distributed system - issues we don’t have in a single-process one. Infinitic
-provides simple but powerful libraries that let developers build distributed applications as if they were run on an
-infallible single-process system. It does this on top of Pulsar to benefit from its scalability and reliability.
+As distributed systems scale, managing their intricate components and ensuring fault-tolerance can become increasingly challenging.
+Infinitic addresses these complexities by providing powerful yet simple libraries that enable developers to build distributed applications
+as if they were running on an infallible single-process system. 
 
-Infinitic is very good at orchestrating workflows, ie. at managing the execution of tasks on distributed servers
-according to any complex scenario. Moreover, Infinitic ensures that a failure somewhere will never break your workflows.
+**Key Features:**
 
-At last, Infinitic lets us monitor everything occurring inside your app through dashboards.
+- **Workflow Orchestration**: Infinitic excels at orchestrating workflows, managing the execution of tasks across distributed servers according to complex scenarios.
+- **Failure Handling**: With Infinitic, failures in one part of the system never break your workflows, providing robust and reliable operation.
+- **Monitoring and Observability**: Gain visibility into your application's internal operations through intuitive dashboards, enabling proactive monitoring and timely troubleshooting.
 
-Possible use cases are:
+**Potential Use Cases:**
 
-- microservices orchestration
-- distributed transactions (payments...)
-- data pipelines operations
-- business processes implementation
-- etc.
+- Microservices Orchestration
+- Distributed Transactions (e.g., Payments, Order Processing)
+- Data Pipelines Operations
+- Business Process Implementation
+- Event-Driven Architectures
+- And more!
+
+Whether you're building microservices, implementing complex business processes, or managing data pipelines,
+Infinitic simplifies the development and orchestration of distributed backend systems, allowing you to focus on delivering value without getting bogged down by infrastructure complexities.
 
 ## Getting Started
 
