@@ -24,6 +24,7 @@
 package io.infinitic.pulsar.resources
 
 import io.infinitic.common.messages.Message
+import io.infinitic.common.transport.MainSubscription
 import io.infinitic.common.transport.Topic
 import io.infinitic.common.transport.isDelayed
 import io.infinitic.pulsar.admin.PulsarInfiniticAdmin
@@ -82,14 +83,23 @@ class PulsarResources(
    *
    * If [init] is true, ensure that the topic exists by calling initTopicOnce
    */
-  suspend fun <S : Message> Topic<S>.forEntity(entity: String?, init: Boolean): String =
-      fullName(entity).also {
-        if (init) initTopicOnce(
-            topic = it,
-            isPartitioned = isPartitioned,
-            isDelayed = isDelayed,
-        )
-      }
+  suspend fun <S : Message> Topic<S>.forEntity(
+    entity: String?,
+    init: Boolean,
+    checkConsumer: Boolean
+  ): String = fullName(entity).also {
+    if (init) initTopicOnce(
+        topic = it,
+        isPartitioned = isPartitioned,
+        isDelayed = isDelayed,
+    )
+
+    if (checkConsumer) admin.checkSubscriptionHasConsumerOnce(
+        it,
+        isPartitioned,
+        MainSubscription(this).defaultName,
+    )
+  }
 
   /**
    * @return the full name of a DLQ topic for an entity
