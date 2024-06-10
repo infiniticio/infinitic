@@ -92,7 +92,7 @@ class PulsarInfiniticClient(private val pulsarClient: PulsarClient) {
   }
 
   /**
-   * Create a new producer
+   * Get existing producer or create a new one
    *
    * Returns:
    * - Result.success(Producer)
@@ -104,106 +104,119 @@ class PulsarInfiniticClient(private val pulsarClient: PulsarClient) {
     producerName: String,
     producerConfig: ProducerConfig,
     key: String? = null,
-  ): Result<Producer<Envelope<out Message>>> = try {
+  ): Result<Producer<Envelope<out Message>>> {
     // get producer if it already exists
-    val producer = producers.computeIfAbsent(topic) {
-      // otherwise create it
-      logger.info { "Creating Producer '$producerName' on topic '$topic' ${key?.let { "with key='$key'" } ?: "without key"}" }
-
-      val schema = Schema.AVRO(schemaDefinition(schemaClass))
-
-      val builder = pulsarClient
-          .newProducer(schema)
-          .topic(topic)
-          .producerName(producerName)
-
-      with(builder) {
-        key?.also { batcherBuilder(BatcherBuilder.KEY_BASED) }
-
-        producerConfig.autoUpdatePartitions?.also {
-          logger.info { "Producer $producerName: autoUpdatePartitions=$it" }
-          autoUpdatePartitions(it)
-        }
-        producerConfig.autoUpdatePartitionsIntervalSeconds?.also {
-          logger.info { "Producer $producerName: autoUpdatePartitionsInterval=$it" }
-          autoUpdatePartitionsInterval((it * 1000).toInt(), TimeUnit.MILLISECONDS)
-        }
-        producerConfig.batchingMaxBytes?.also {
-          logger.info { "Producer $producerName: batchingMaxBytes=$it" }
-          batchingMaxBytes(it)
-        }
-        producerConfig.batchingMaxMessages?.also {
-          logger.info { "Producer $producerName: batchingMaxMessages=$it" }
-          batchingMaxMessages(it)
-        }
-        producerConfig.batchingMaxPublishDelaySeconds?.also {
-          logger.info { "Producer $producerName: batchingMaxPublishDelay=$it" }
-          batchingMaxPublishDelay((it * 1000).toLong(), TimeUnit.MILLISECONDS)
-        }
-        producerConfig.compressionType?.also {
-          logger.info { "Producer $producerName: compressionType=$it" }
-          compressionType(it)
-        }
-        producerConfig.cryptoFailureAction?.also {
-          logger.info { "Producer $producerName: cryptoFailureAction=$it" }
-          cryptoFailureAction(it)
-        }
-        producerConfig.defaultCryptoKeyReader?.also {
-          logger.info { "Producer $producerName: defaultCryptoKeyReader=$it" }
-          defaultCryptoKeyReader(it)
-        }
-        producerConfig.encryptionKey?.also {
-          logger.info { "Producer $producerName: addEncryptionKey=$it" }
-          addEncryptionKey(it)
-        }
-        producerConfig.enableBatching?.also {
-          logger.info { "Producer $producerName: enableBatching=$it" }
-          enableBatching(it)
-        }
-        producerConfig.enableChunking?.also {
-          logger.info { "Producer $producerName: enableChunking=$it" }
-          enableChunking(it)
-        }
-        producerConfig.enableLazyStartPartitionedProducers?.also {
-          logger.info { "Producer $producerName: enableLazyStartPartitionedProducers=$it" }
-          enableLazyStartPartitionedProducers(it)
-        }
-        producerConfig.enableMultiSchema?.also {
-          logger.info { "Producer $producerName: enableMultiSchema=$it" }
-          enableMultiSchema(it)
-        }
-        producerConfig.hashingScheme?.also {
-          logger.info { "Producer $producerName: hashingScheme=$it" }
-          hashingScheme(it)
-        }
-        producerConfig.messageRoutingMode?.also {
-          logger.info { "Producer $producerName: messageRoutingMode=$it" }
-          messageRoutingMode(it)
-        }
-        producerConfig.properties?.also {
-          logger.info { "Producer $producerName: properties=$it" }
-          properties(it)
-        }
-        producerConfig.roundRobinRouterBatchingPartitionSwitchFrequency?.also {
-          logger.info { "Producer $producerName: roundRobinRouterBatchingPartitionSwitchFrequency=$it" }
-          roundRobinRouterBatchingPartitionSwitchFrequency(it)
-        }
-        producerConfig.sendTimeoutSeconds?.also {
-          logger.info { "Producer $producerName: sendTimeout=$it" }
-          sendTimeout((it * 1000).toInt(), TimeUnit.MILLISECONDS)
-        }
-        blockIfQueueFull(producerConfig.blockIfQueueFull).also {
-          logger.info { "Producer $producerName: blockIfQueueFull=${producerConfig.blockIfQueueFull}" }
-        }
-      }
-
-      @Suppress("UNCHECKED_CAST")
-      builder.create() as Producer<Envelope<out Message>>
+    return try {
+      Result.success(
+          producers.computeIfAbsent(topic) {
+            createProducer(topic, schemaClass, producerName, producerConfig, key)
+          },
+      )
+    } catch (e: PulsarClientException) {
+      logger.warn(e) { "Unable to create producer $producerName on topic $topic" }
+      Result.failure(e)
     }
-    Result.success(producer)
-  } catch (e: PulsarClientException) {
-    logger.warn(e) { "Unable to create producer $producerName on topic $topic" }
-    Result.failure(e)
+  }
+
+  private fun createProducer(
+    topic: String,
+    schemaClass: KClass<out Envelope<out Message>>,
+    producerName: String,
+    producerConfig: ProducerConfig,
+    key: String? = null,
+  ): Producer<Envelope<out Message>> {
+    // otherwise create it
+    logger.info { "Creating Producer '$producerName' on topic '$topic' ${key?.let { "with key='$key'" } ?: "without key"}" }
+
+    val schema = Schema.AVRO(schemaDefinition(schemaClass))
+
+    val builder = pulsarClient
+        .newProducer(schema)
+        .topic(topic)
+        .producerName(producerName)
+
+    with(builder) {
+      key?.also { batcherBuilder(BatcherBuilder.KEY_BASED) }
+
+      producerConfig.autoUpdatePartitions?.also {
+        logger.info { "Producer $producerName: autoUpdatePartitions=$it" }
+        autoUpdatePartitions(it)
+      }
+      producerConfig.autoUpdatePartitionsIntervalSeconds?.also {
+        logger.info { "Producer $producerName: autoUpdatePartitionsInterval=$it" }
+        autoUpdatePartitionsInterval((it * 1000).toInt(), TimeUnit.MILLISECONDS)
+      }
+      producerConfig.batchingMaxBytes?.also {
+        logger.info { "Producer $producerName: batchingMaxBytes=$it" }
+        batchingMaxBytes(it)
+      }
+      producerConfig.batchingMaxMessages?.also {
+        logger.info { "Producer $producerName: batchingMaxMessages=$it" }
+        batchingMaxMessages(it)
+      }
+      producerConfig.batchingMaxPublishDelaySeconds?.also {
+        logger.info { "Producer $producerName: batchingMaxPublishDelay=$it" }
+        batchingMaxPublishDelay((it * 1000).toLong(), TimeUnit.MILLISECONDS)
+      }
+      producerConfig.compressionType?.also {
+        logger.info { "Producer $producerName: compressionType=$it" }
+        compressionType(it)
+      }
+      producerConfig.cryptoFailureAction?.also {
+        logger.info { "Producer $producerName: cryptoFailureAction=$it" }
+        cryptoFailureAction(it)
+      }
+      producerConfig.defaultCryptoKeyReader?.also {
+        logger.info { "Producer $producerName: defaultCryptoKeyReader=$it" }
+        defaultCryptoKeyReader(it)
+      }
+      producerConfig.encryptionKey?.also {
+        logger.info { "Producer $producerName: addEncryptionKey=$it" }
+        addEncryptionKey(it)
+      }
+      producerConfig.enableBatching?.also {
+        logger.info { "Producer $producerName: enableBatching=$it" }
+        enableBatching(it)
+      }
+      producerConfig.enableChunking?.also {
+        logger.info { "Producer $producerName: enableChunking=$it" }
+        enableChunking(it)
+      }
+      producerConfig.enableLazyStartPartitionedProducers?.also {
+        logger.info { "Producer $producerName: enableLazyStartPartitionedProducers=$it" }
+        enableLazyStartPartitionedProducers(it)
+      }
+      producerConfig.enableMultiSchema?.also {
+        logger.info { "Producer $producerName: enableMultiSchema=$it" }
+        enableMultiSchema(it)
+      }
+      producerConfig.hashingScheme?.also {
+        logger.info { "Producer $producerName: hashingScheme=$it" }
+        hashingScheme(it)
+      }
+      producerConfig.messageRoutingMode?.also {
+        logger.info { "Producer $producerName: messageRoutingMode=$it" }
+        messageRoutingMode(it)
+      }
+      producerConfig.properties?.also {
+        logger.info { "Producer $producerName: properties=$it" }
+        properties(it)
+      }
+      producerConfig.roundRobinRouterBatchingPartitionSwitchFrequency?.also {
+        logger.info { "Producer $producerName: roundRobinRouterBatchingPartitionSwitchFrequency=$it" }
+        roundRobinRouterBatchingPartitionSwitchFrequency(it)
+      }
+      producerConfig.sendTimeoutSeconds?.also {
+        logger.info { "Producer $producerName: sendTimeout=$it" }
+        sendTimeout((it * 1000).toInt(), TimeUnit.MILLISECONDS)
+      }
+      blockIfQueueFull(producerConfig.blockIfQueueFull).also {
+        logger.info { "Producer $producerName: blockIfQueueFull=${producerConfig.blockIfQueueFull}" }
+      }
+    }
+
+    @Suppress("UNCHECKED_CAST")
+    return builder.create() as Producer<Envelope<out Message>>
   }
 
   /** Create a new consumer
