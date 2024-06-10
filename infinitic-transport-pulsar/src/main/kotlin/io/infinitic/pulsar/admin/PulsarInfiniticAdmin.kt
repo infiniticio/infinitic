@@ -97,6 +97,21 @@ class PulsarInfiniticAdmin(
       }
 
   /**
+   * Checks if a subscription has any consumer and ensures that the check is performed only once.
+   *
+   * @param topic The name of the topic.
+   * @param isPartitioned Boolean value indicating if the topic is partitioned or not.
+   * @param subscriptionName The name of the subscription.
+   */
+  suspend fun checkSubscriptionHasConsumerOnce(
+    topic: String,
+    isPartitioned: Boolean,
+    subscriptionName: String
+  ): Result<Boolean> = subscriptionCheckedForConsumers.getOrPut(Pair(topic, subscriptionName)) {
+    checkSubscriptionHasConsumer(topic, isPartitioned, subscriptionName)
+  }
+
+  /**
    * Ensure once that tenant exists.
    *
    * Note we do not use a Mutex like for topics,
@@ -405,7 +420,7 @@ class PulsarInfiniticAdmin(
     }
   }
 
-  fun checkTenantInfo(
+  private fun checkTenantInfo(
     tenant: String,
     tenantInfo: TenantInfo,
     allowedClusters: Set<String>?,
@@ -512,6 +527,26 @@ class PulsarInfiniticAdmin(
     val messageTTLPolicy: Int,
   )
 
+  private suspend fun checkSubscriptionHasConsumer(
+    topic: String,
+    isPartitioned: Boolean,
+    subscriptionName: String
+  ): Result<Boolean> {
+    return try {
+      val hasConsumer = when (isPartitioned) {
+        true -> topics.getPartitionedStatsAsync(topic, false)
+        false -> topics.getStatsAsync(topic)
+      }.await().subscriptions[subscriptionName]?.consumers?.isNotEmpty() ?: false
+
+      if (!hasConsumer) logger.warn { "No consumer detected for subscription '$subscriptionName' on topic '$topic' " }
+
+      Result.success(hasConsumer)
+    } catch (e: PulsarAdminException) {
+      logger.info(e) { "Unable to check presence of consumer for subscription '$subscriptionName' on topic '$topic' " }
+      Result.failure(e)
+    }
+  }
+
   companion object {
     private const val DEFAULT_NUM_PARTITIONS = 3
 
@@ -523,5 +558,9 @@ class PulsarInfiniticAdmin(
 
     // thread-safe set of initialized topics (topic name includes tenant and namespace)
     private val initializedTopics = mutableMapOf<String, Result<TopicInfo>>()
+
+    // thread-safe set of (topic, subscription name) that have already been checked for consumers
+    private val subscriptionCheckedForConsumers =
+        ConcurrentHashMap<Pair<String, String>, Result<Boolean>>()
   }
 }

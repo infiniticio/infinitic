@@ -113,7 +113,13 @@ class PulsarInfiniticConsumerAsync(
     coroutineScope {
       // get name of topic, creates it if it does not exist yet
       launch {
-        topicName = with(pulsarResources) { subscription.topic.forEntity(entity, true) }
+        topicName = with(pulsarResources) {
+          subscription.topic.forEntity(
+              entity,
+              init = true,
+              checkConsumer = false,
+          )
+        }
       }
 
       // name of DLQ topic, creates it if it does not exist yet

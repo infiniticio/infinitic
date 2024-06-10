@@ -50,7 +50,13 @@ class PulsarInfiniticProducerAsync(
   // If [suggestedName] is not provided, Pulsar will provide a unique name
   private val uniqueName: String by lazy {
     runBlocking(Dispatchers.IO) {
-      val namingTopic = with(pulsarResources) { NamingTopic.forEntity(null, true) }
+      val namingTopic = with(pulsarResources) {
+        NamingTopic.forEntity(
+            null,
+            init = true,
+            checkConsumer = false,
+        )
+      }
       // Get unique name
       producer.getUniqueName(namingTopic, suggestedName).getOrThrow()
     }
@@ -69,7 +75,13 @@ class PulsarInfiniticProducerAsync(
     after: MillisDuration
   ): CompletableFuture<Unit> {
     val topicFullName =
-        with(pulsarResources) { topic.forEntity(message.entity(), topic.initWhenProducing) }
+        with(pulsarResources) {
+          topic.forEntity(
+              message.entity(),
+              init = topic.initWhenProducing,
+              checkConsumer = true,
+          )
+        }
 
     return producer.sendAsync(
         topic.envelope(message),
