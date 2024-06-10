@@ -21,7 +21,7 @@
  * Licensor: infinitic.io
  */
 import com.adarshr.gradle.testlogger.theme.ThemeType
-import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 buildscript {
   repositories {
@@ -83,11 +83,10 @@ subprojects {
     }
   }
 
-  tasks.withType<KotlinCompile> {
-    kotlinOptions {
-      freeCompilerArgs += "-opt-in=kotlin.RequiresOptIn"
-      freeCompilerArgs += "-Xjvm-default=all"
-      jvmTarget = JavaVersion.VERSION_17.toString()
+  kotlin {
+    compilerOptions {
+      jvmTarget.set(JvmTarget.JVM_17)
+      freeCompilerArgs.set(listOf("-Xjvm-default=all"))
     }
   }
 
