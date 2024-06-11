@@ -20,23 +20,23 @@
  *
  * Licensor: infinitic.io
  */
-package io.infinitic.storage.mysql
+package io.infinitic.storage.postgresql
 
 import com.sksamuel.hoplite.Secret
 import io.infinitic.storage.Bytes
 import io.infinitic.storage.DockerOnly
-import io.infinitic.storage.config.MySQL
-import io.infinitic.storage.databases.mysql.MySQLKeySetStorage
+import io.infinitic.storage.config.PostgreSQL
+import io.infinitic.storage.databases.postgresql.PostgreSQLKeySetStorage
 import io.kotest.core.annotation.EnabledIf
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
-import org.testcontainers.containers.MySQLContainer
+import org.testcontainers.containers.PostgreSQLContainer
 
 @EnabledIf(DockerOnly::class)
-class MySQLKeySetStorageTests :
+class PostgreSQLKeySetStorageTests :
   StringSpec(
       {
-        val mysqlServer = MySQLContainer<Nothing>("mysql:5.7")
+        val postgresqlServer = PostgreSQLContainer<Nothing>("postgres:11")
             .apply {
               startupAttempts = 1
               withUsername("test")
@@ -45,19 +45,19 @@ class MySQLKeySetStorageTests :
             }
             .also { it.start() }
 
-        val config = MySQL(
-            host = mysqlServer.host,
-            port = mysqlServer.firstMappedPort,
-            user = mysqlServer.username,
-            password = Secret(mysqlServer.password),
-            database = mysqlServer.databaseName,
+        val config = PostgreSQL(
+            host = postgresqlServer.host,
+            port = postgresqlServer.firstMappedPort,
+            user = postgresqlServer.username,
+            password = Secret(postgresqlServer.password),
+            database = postgresqlServer.databaseName,
         )
 
-        val storage = MySQLKeySetStorage.from(config)
+        val storage = PostgreSQLKeySetStorage.from(config)
 
         afterSpec {
           config.close()
-          mysqlServer.stop()
+          postgresqlServer.stop()
         }
 
         beforeTest { storage.add("foo", "bar".toByteArray()) }

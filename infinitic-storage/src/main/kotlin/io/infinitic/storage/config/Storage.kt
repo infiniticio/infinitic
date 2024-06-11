@@ -27,6 +27,8 @@ import io.infinitic.storage.databases.inMemory.InMemoryKeySetStorage
 import io.infinitic.storage.databases.inMemory.InMemoryKeyValueStorage
 import io.infinitic.storage.databases.mysql.MySQLKeySetStorage
 import io.infinitic.storage.databases.mysql.MySQLKeyValueStorage
+import io.infinitic.storage.databases.postgresql.PostgreSQLKeySetStorage
+import io.infinitic.storage.databases.postgresql.PostgreSQLKeyValueStorage
 import io.infinitic.storage.databases.redis.RedisKeySetStorage
 import io.infinitic.storage.databases.redis.RedisKeyValueStorage
 import io.infinitic.storage.keySet.KeySetStorage
@@ -37,10 +39,11 @@ data class Storage(
   var inMemory: InMemory? = null,
   val redis: Redis? = null,
   val mysql: MySQL? = null,
+  val postgresql: PostgreSQL? = null,
   val compression: Compressor? = null
 ) {
   init {
-    val nonNul = listOfNotNull(inMemory, redis, mysql)
+    val nonNul = listOfNotNull(inMemory, redis, mysql, postgresql)
 
     if (nonNul.isEmpty()) {
       // default storage is inMemory
@@ -55,6 +58,7 @@ data class Storage(
       inMemory != null -> inMemory!!.close()
       redis != null -> redis.close()
       mysql != null -> mysql.close()
+      postgresql != null -> postgresql.close()
       else -> thisShouldNotHappen()
     }
   }
@@ -64,6 +68,7 @@ data class Storage(
       inMemory != null -> "inMemory"
       redis != null -> "redis"
       mysql != null -> "mysql"
+      postgresql != null -> "postgresql"
       else -> thisShouldNotHappen()
     }
   }
@@ -73,6 +78,7 @@ data class Storage(
       inMemory != null -> InMemoryKeySetStorage.from(inMemory!!)
       redis != null -> RedisKeySetStorage.from(redis)
       mysql != null -> MySQLKeySetStorage.from(mysql)
+      postgresql != null -> PostgreSQLKeySetStorage.from(postgresql)
       else -> thisShouldNotHappen()
     }
   }
@@ -82,6 +88,7 @@ data class Storage(
       inMemory != null -> InMemoryKeyValueStorage.from(inMemory!!)
       redis != null -> RedisKeyValueStorage.from(redis)
       mysql != null -> MySQLKeyValueStorage.from(mysql)
+      postgresql != null -> PostgreSQLKeyValueStorage.from(postgresql)
       else -> thisShouldNotHappen()
     }.let { CompressedKeyValueStorage(compression, it) }
   }
