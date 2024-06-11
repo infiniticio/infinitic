@@ -40,21 +40,25 @@ data class InMemory(val type: String = "default") {
     pools[this]?.close()
     pools.remove(this)
   }
-}
 
-class InMemoryPool {
-  private val _keySet = mutableMapOf<String, MutableSet<Bytes>>()
+  /**
+   * InMemoryPool class represents a pool for storing key-value and key-set pairs in memory.
+   */
+  class InMemoryPool {
+    private val _keySet = mutableMapOf<String, MutableSet<Bytes>>()
 
-  private val _keyValue = ConcurrentHashMap<String, ByteArray>()
+    private val _keyValue = ConcurrentHashMap<String, ByteArray>()
 
-  internal val keySet
-    get() = _keySet
+    internal val keySet
+      get() = _keySet
 
-  internal val keyValue
-    get() = _keyValue
+    internal val keyValue
+      get() = _keyValue
 
-  fun close() {
-    _keyValue.clear()
-    _keySet.clear()
+    fun close() {
+      _keyValue.clear()
+      _keySet.clear()
+    }
   }
 }
+

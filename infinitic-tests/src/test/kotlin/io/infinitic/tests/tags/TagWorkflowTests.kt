@@ -58,6 +58,7 @@ internal class TagWorkflowTests : StringSpec(
 
         client.dispatch(tagWorkflow::await)
         client.dispatch(tagWorkflow::await)
+        delay(100)
 
         val w = client.getWorkflowByTag(TagWorkflow::class.java, "foo")
         client.getIds(w).size shouldBe 1
