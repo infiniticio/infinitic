@@ -37,7 +37,7 @@ import org.apache.avro.specific.SpecificRecordBase
 import java.io.IOException
 
 object Json {
-  private val mapper = jsonMapper {
+  var mapper = jsonMapper {
     addMixIn(SpecificRecordBase::class.java, AvroMixIn::class.java)
     addMixIn(Exception::class.java, ExceptionMixIn::class.java)
     addModule(JavaTimeModule())
@@ -46,7 +46,7 @@ object Json {
     configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false)
     configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
   }
-  
+
   fun stringify(msg: Any?, pretty: Boolean = false): String =
       when (pretty) {
         true -> mapper.writerWithDefaultPrettyPrinter().writeValueAsString(msg)
