@@ -23,12 +23,12 @@
 package io.infinitic.storage.config
 
 import io.infinitic.storage.compressor.Compressor
-import io.infinitic.storage.config.inMemory.InMemoryKeySetStorage
-import io.infinitic.storage.config.inMemory.InMemoryKeyValueStorage
-import io.infinitic.storage.config.mysql.MySQLKeySetStorage
-import io.infinitic.storage.config.mysql.MySQLKeyValueStorage
-import io.infinitic.storage.config.redis.RedisKeySetStorage
-import io.infinitic.storage.config.redis.RedisKeyValueStorage
+import io.infinitic.storage.databases.inMemory.InMemoryKeySetStorage
+import io.infinitic.storage.databases.inMemory.InMemoryKeyValueStorage
+import io.infinitic.storage.databases.mysql.MySQLKeySetStorage
+import io.infinitic.storage.databases.mysql.MySQLKeyValueStorage
+import io.infinitic.storage.databases.redis.RedisKeySetStorage
+import io.infinitic.storage.databases.redis.RedisKeyValueStorage
 import io.infinitic.storage.keySet.KeySetStorage
 import io.infinitic.storage.keyValue.CompressedKeyValueStorage
 import io.infinitic.storage.keyValue.KeyValueStorage

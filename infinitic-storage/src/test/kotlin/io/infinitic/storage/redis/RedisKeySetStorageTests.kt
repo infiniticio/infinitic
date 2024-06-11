@@ -25,7 +25,7 @@ package io.infinitic.storage.redis
 import io.infinitic.storage.Bytes
 import io.infinitic.storage.DockerOnly
 import io.infinitic.storage.config.Redis
-import io.infinitic.storage.config.redis.RedisKeySetStorage
+import io.infinitic.storage.databases.redis.RedisKeySetStorage
 import io.kotest.core.annotation.EnabledIf
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe

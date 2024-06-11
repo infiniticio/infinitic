@@ -25,7 +25,7 @@ package io.infinitic.storage.mysql
 import com.sksamuel.hoplite.Secret
 import io.infinitic.storage.DockerOnly
 import io.infinitic.storage.config.MySQL
-import io.infinitic.storage.config.mysql.MySQLKeyValueStorage
+import io.infinitic.storage.databases.mysql.MySQLKeyValueStorage
 import io.kotest.core.annotation.EnabledIf
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe

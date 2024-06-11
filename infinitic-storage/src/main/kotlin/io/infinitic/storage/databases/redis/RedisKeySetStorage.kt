@@ -20,50 +20,36 @@
  *
  * Licensor: infinitic.io
  */
-package io.infinitic.storage.config.inMemory
+package io.infinitic.storage.databases.redis
 
-import io.infinitic.storage.Bytes
-import io.infinitic.storage.config.InMemory
+import io.infinitic.storage.config.Redis
 import io.infinitic.storage.keySet.KeySetStorage
 import org.jetbrains.annotations.TestOnly
+import redis.clients.jedis.JedisPool
 
-class InMemoryKeySetStorage(internal val storage: MutableMap<String, MutableSet<Bytes>>) :
-  KeySetStorage {
+class RedisKeySetStorage(internal val pool: JedisPool) : KeySetStorage {
 
   companion object {
-    fun from(config: InMemory) = InMemoryKeySetStorage(config.getPool().keySet)
+    fun from(config: Redis) = RedisKeySetStorage(config.getPool())
   }
 
-  override suspend fun get(key: String): Set<ByteArray> {
-    return getBytesPerKey(key).map { it.content }.toSet()
-  }
+  override suspend fun get(key: String): Set<ByteArray> =
+      pool.resource.use { it.smembers(key.toByteArray()) }
 
   override suspend fun add(key: String, value: ByteArray) {
-    getBytesPerKey(key).add(Bytes(value))
+    pool.resource.use { it.sadd(key.toByteArray(), value) }
   }
 
   override suspend fun remove(key: String, value: ByteArray) {
-    getBytesPerKey(key).remove(Bytes(value))
-
-    // clean key if now empty
-    if (getBytesPerKey(key).isEmpty()) storage.remove(key)
+    pool.resource.use { it.srem(key.toByteArray(), value) }
   }
 
   override fun close() {
-    // Do nothing
-  }
-  
-  @TestOnly
-  override fun flush() {
-    storage.clear()
+    pool.close()
   }
 
-  private fun getBytesPerKey(key: String): MutableSet<Bytes> {
-    return storage[key]
-      ?: run {
-        val set = mutableSetOf<Bytes>()
-        storage[key] = set
-        set
-      }
+  @TestOnly
+  override fun flush() {
+    pool.resource.use { it.flushDB() }
   }
 }

@@ -20,40 +20,50 @@
  *
  * Licensor: infinitic.io
  */
-package io.infinitic.storage.config.redis
+package io.infinitic.storage.databases.inMemory
 
-import io.infinitic.storage.config.Redis
-import io.infinitic.storage.keyValue.KeyValueStorage
+import io.infinitic.storage.Bytes
+import io.infinitic.storage.config.InMemory
+import io.infinitic.storage.keySet.KeySetStorage
 import org.jetbrains.annotations.TestOnly
-import redis.clients.jedis.JedisPool
 
-class RedisKeyValueStorage(internal val pool: JedisPool) : KeyValueStorage {
+class InMemoryKeySetStorage(internal val storage: MutableMap<String, MutableSet<Bytes>>) :
+  KeySetStorage {
 
   companion object {
-    fun from(config: Redis) = RedisKeyValueStorage(config.getPool())
+    fun from(config: InMemory) = InMemoryKeySetStorage(config.getPool().keySet)
   }
 
-  override suspend fun get(key: String): ByteArray? =
-      pool.resource.use { it.get(key.toByteArray()) }
+  override suspend fun get(key: String): Set<ByteArray> {
+    return getBytesPerKey(key).map { it.content }.toSet()
+  }
 
-  override suspend fun put(key: String, value: ByteArray) =
-      pool.resource.use {
-        it.set(key.toByteArray(), value)
-        Unit
-      }
+  override suspend fun add(key: String, value: ByteArray) {
+    getBytesPerKey(key).add(Bytes(value))
+  }
 
-  override suspend fun del(key: String) =
-      pool.resource.use {
-        it.del(key.toByteArray())
-        Unit
-      }
+  override suspend fun remove(key: String, value: ByteArray) {
+    getBytesPerKey(key).remove(Bytes(value))
+
+    // clean key if now empty
+    if (getBytesPerKey(key).isEmpty()) storage.remove(key)
+  }
 
   override fun close() {
-    pool.close()
+    // Do nothing
   }
-  
+
   @TestOnly
   override fun flush() {
-    pool.resource.use { it.flushDB() }
+    storage.clear()
+  }
+
+  private fun getBytesPerKey(key: String): MutableSet<Bytes> {
+    return storage[key]
+      ?: run {
+        val set = mutableSetOf<Bytes>()
+        storage[key] = set
+        set
+      }
   }
 }

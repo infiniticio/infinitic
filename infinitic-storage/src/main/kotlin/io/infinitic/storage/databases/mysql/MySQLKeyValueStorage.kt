@@ -20,7 +20,7 @@
  *
  * Licensor: infinitic.io
  */
-package io.infinitic.storage.config.mysql
+package io.infinitic.storage.databases.mysql
 
 import com.zaxxer.hikari.HikariDataSource
 import io.infinitic.storage.config.MySQL
@@ -96,7 +96,7 @@ class MySQLKeyValueStorage(internal val pool: HikariDataSource) : KeyValueStorag
   override fun close() {
     pool.close()
   }
-  
+
   @TestOnly
   override fun flush() {
     pool.connection.use { connection ->

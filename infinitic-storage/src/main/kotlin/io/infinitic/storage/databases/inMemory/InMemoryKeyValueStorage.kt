@@ -20,7 +20,7 @@
  *
  * Licensor: infinitic.io
  */
-package io.infinitic.storage.config.inMemory
+package io.infinitic.storage.databases.inMemory
 
 import io.infinitic.storage.config.InMemory
 import io.infinitic.storage.keyValue.KeyValueStorage
