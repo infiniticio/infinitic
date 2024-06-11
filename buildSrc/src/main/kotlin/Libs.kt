@@ -84,7 +84,7 @@ object Libs {
   }
 
   object Avro4k {
-    const val core = "com.github.avro-kotlin.avro4k:avro4k-core:1.10.0"
+    const val core = "com.github.avro-kotlin.avro4k:avro4k-core:1.10.1"
   }
 
   object Hoplite {
