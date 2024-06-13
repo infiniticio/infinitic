@@ -20,48 +20,36 @@
  *
  * Licensor: infinitic.io
  */
-package io.infinitic.storage.databases.postgresql
+package io.infinitic.storage.databases.postgres
 
 import com.zaxxer.hikari.HikariDataSource
-import io.infinitic.storage.config.PostgreSQL
+import io.infinitic.storage.config.Postgres
 import io.infinitic.storage.keyValue.KeyValueStorage
 import org.jetbrains.annotations.TestOnly
+import kotlin.math.ceil
 
-private const val POSTGRESQL_TABLE = "key_value_storage"
+private const val KEY_VALUE_TABLE = "key_value_storage"
 
-class PostgreSQLKeyValueStorage(private val pool: HikariDataSource) : KeyValueStorage {
+class PostgresKeyValueStorage(private val pool: HikariDataSource) : KeyValueStorage {
 
   companion object {
-    fun from(config: PostgreSQL) = PostgreSQLKeyValueStorage(config.getPool())
+    fun from(config: Postgres) = PostgresKeyValueStorage(config.getPool())
   }
 
   init {
-    // Create MySQL table at init, for first time usage
-    // Here key is typically a workflowId
-    // And value is typically a serialized workflow state
-    pool.connection.use { connection ->
-      connection
-          .prepareStatement(
-              "CREATE TABLE IF NOT EXISTS $POSTGRESQL_TABLE (" +
-                  "id BIGSERIAL PRIMARY KEY," +
-                  "key VARCHAR(255) NOT NULL UNIQUE," +
-                  "value BYTEA NOT NULL," +
-                  "last_update TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP," +
-                  "value_size_in_KiB INTEGER" +
-                  ");" +
-                  // Separate statement to create the index
-                  "CREATE INDEX IF NOT EXISTS value_size_index ON $POSTGRESQL_TABLE(value_size_in_KiB);",
-          )
-          .use { it.executeUpdate() }
-    }
+    initKeyValueTable()
+  }
+
+  override fun close() {
+    pool.close()
   }
 
   override suspend fun get(key: String): ByteArray? =
       pool.connection.use { connection ->
-        connection.prepareStatement("SELECT value FROM $POSTGRESQL_TABLE WHERE key=?")
-            .use { statement ->
-              statement.setString(1, key)
-              statement.executeQuery().use {
+        connection.prepareStatement("SELECT value FROM $KEY_VALUE_TABLE WHERE key=?")
+            .use {
+              it.setString(1, key)
+              it.executeQuery().use {
                 if (it.next()) {
                   it.getBytes("value")
                 } else null
@@ -73,13 +61,13 @@ class PostgreSQLKeyValueStorage(private val pool: HikariDataSource) : KeyValueSt
     pool.connection.use { connection ->
       connection
           .prepareStatement(
-              "INSERT INTO $POSTGRESQL_TABLE (key, value, value_size_in_KiB) VALUES (?, ?, ?) " +
+              "INSERT INTO $KEY_VALUE_TABLE (key, value, value_size_in_KiB) VALUES (?, ?, ?) " +
                   "ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value",
           )
           .use {
             it.setString(1, key)
             it.setBytes(2, value)
-            it.setInt(3, value.size / 1024)
+            it.setInt(3, ceil(value.size / 1024.0).toInt())
             it.executeUpdate()
           }
     }
@@ -87,21 +75,35 @@ class PostgreSQLKeyValueStorage(private val pool: HikariDataSource) : KeyValueSt
 
   override suspend fun del(key: String) {
     pool.connection.use { connection ->
-      connection.prepareStatement("DELETE FROM $POSTGRESQL_TABLE WHERE key=?").use {
+      connection.prepareStatement("DELETE FROM $KEY_VALUE_TABLE WHERE key=?").use {
         it.setString(1, key)
         it.executeUpdate()
       }
     }
   }
 
-  override fun close() {
-    pool.close()
-  }
-
   @TestOnly
   override fun flush() {
     pool.connection.use { connection ->
-      connection.prepareStatement("TRUNCATE $POSTGRESQL_TABLE").use { it.executeUpdate() }
+      connection.prepareStatement("TRUNCATE $KEY_VALUE_TABLE").use { it.executeUpdate() }
+    }
+  }
+
+  private fun initKeyValueTable() {
+    pool.connection.use { connection ->
+      connection.prepareStatement(
+          "CREATE TABLE IF NOT EXISTS $KEY_VALUE_TABLE (" +
+              "id BIGSERIAL PRIMARY KEY," +
+              "key VARCHAR(255) NOT NULL UNIQUE," +
+              "value BYTEA NOT NULL," +
+              "last_update TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP," +
+              "value_size_in_KiB INTEGER" +
+              ");",
+      ).use { it.executeUpdate() }
+
+      connection.prepareStatement(
+          "CREATE INDEX IF NOT EXISTS value_size_index ON $KEY_VALUE_TABLE(value_size_in_KiB);",
+      ).use { it.executeUpdate() }
     }
   }
 }

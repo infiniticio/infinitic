@@ -20,44 +20,32 @@
  *
  * Licensor: infinitic.io
  */
-package io.infinitic.storage.databases.postgresql
+package io.infinitic.storage.databases.postgres
 
 import com.zaxxer.hikari.HikariDataSource
-import io.infinitic.storage.config.PostgreSQL
+import io.infinitic.storage.config.Postgres
 import io.infinitic.storage.keySet.KeySetStorage
 import org.jetbrains.annotations.TestOnly
 
-private const val POSTGRESQL_TABLE = "key_set_storage"
+private const val KEY_SET_TABLE = "key_set_storage"
 
-class PostgreSQLKeySetStorage(private val pool: HikariDataSource) : KeySetStorage {
+class PostgresKeySetStorage(private val pool: HikariDataSource) : KeySetStorage {
 
   companion object {
-    fun from(config: PostgreSQL) = PostgreSQLKeySetStorage(config.getPool())
+    fun from(config: Postgres) = PostgresKeySetStorage(config.getPool())
   }
 
   init {
-    // Create MySQL table at init, for first time usage
-    // Here key is typically a tag
-    // And value is typically a workflowId
-    pool.connection.use { connection ->
-      connection
-          .prepareStatement(
-              "CREATE TABLE IF NOT EXISTS $POSTGRESQL_TABLE (" +
-                  "id SERIAL PRIMARY KEY," +
-                  "key VARCHAR(255) NOT NULL," +
-                  "value BYTEA NOT NULL" +
-                  "); " +
-                  // Separate statements to create the indexes
-                  "CREATE INDEX IF NOT EXISTS index_key ON $POSTGRESQL_TABLE (key);" +
-                  "CREATE INDEX IF NOT EXISTS index_key_value ON $POSTGRESQL_TABLE (key, value);",
-          )
-          .use { it.executeUpdate() }
-    }
+    initKeySetTable()
+  }
+
+  override fun close() {
+    pool.close()
   }
 
   override suspend fun get(key: String): Set<ByteArray> =
       pool.connection.use { connection ->
-        connection.prepareStatement("SELECT value FROM $POSTGRESQL_TABLE WHERE key = ?")
+        connection.prepareStatement("SELECT value FROM $KEY_SET_TABLE WHERE key = ?")
             .use { statement ->
               statement.setString(1, key)
               statement.executeQuery().use {
@@ -72,7 +60,7 @@ class PostgreSQLKeySetStorage(private val pool: HikariDataSource) : KeySetStorag
 
   override suspend fun add(key: String, value: ByteArray) {
     pool.connection.use { connection ->
-      connection.prepareStatement("INSERT INTO $POSTGRESQL_TABLE (key, value) VALUES (?, ?)").use {
+      connection.prepareStatement("INSERT INTO $KEY_SET_TABLE (key, value) VALUES (?, ?)").use {
         it.setString(1, key)
         it.setBytes(2, value)
         it.executeUpdate()
@@ -82,7 +70,7 @@ class PostgreSQLKeySetStorage(private val pool: HikariDataSource) : KeySetStorag
 
   override suspend fun remove(key: String, value: ByteArray) {
     pool.connection.use { connection ->
-      connection.prepareStatement("DELETE FROM $POSTGRESQL_TABLE WHERE key = ? AND value = ?").use {
+      connection.prepareStatement("DELETE FROM $KEY_SET_TABLE WHERE key = ? AND value = ?").use {
         it.setString(1, key)
         it.setBytes(2, value)
         it.executeUpdate()
@@ -90,14 +78,30 @@ class PostgreSQLKeySetStorage(private val pool: HikariDataSource) : KeySetStorag
     }
   }
 
-  override fun close() {
-    pool.close()
-  }
-
   @TestOnly
   override fun flush() {
     pool.connection.use { connection ->
-      connection.prepareStatement("TRUNCATE $POSTGRESQL_TABLE").use { it.executeUpdate() }
+      connection.prepareStatement("TRUNCATE $KEY_SET_TABLE").use { it.executeUpdate() }
+    }
+  }
+
+  private fun initKeySetTable() {
+    // Create table at init, for first time usage
+    // Here key is typically a tag
+    // And value is typically a workflowId
+    pool.connection.use { connection ->
+      connection
+          .prepareStatement(
+              "CREATE TABLE IF NOT EXISTS $KEY_SET_TABLE (" +
+                  "id SERIAL PRIMARY KEY," +
+                  "key VARCHAR(255) NOT NULL," +
+                  "value BYTEA NOT NULL" +
+                  "); " +
+                  // Separate statements to create the indexes
+                  "CREATE INDEX IF NOT EXISTS index_key ON $KEY_SET_TABLE (key);" +
+                  "CREATE INDEX IF NOT EXISTS index_key_value ON $KEY_SET_TABLE (key, value);",
+          )
+          .use { it.executeUpdate() }
     }
   }
 }

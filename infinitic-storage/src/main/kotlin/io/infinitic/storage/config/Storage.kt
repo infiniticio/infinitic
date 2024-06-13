@@ -27,8 +27,8 @@ import io.infinitic.storage.databases.inMemory.InMemoryKeySetStorage
 import io.infinitic.storage.databases.inMemory.InMemoryKeyValueStorage
 import io.infinitic.storage.databases.mysql.MySQLKeySetStorage
 import io.infinitic.storage.databases.mysql.MySQLKeyValueStorage
-import io.infinitic.storage.databases.postgresql.PostgreSQLKeySetStorage
-import io.infinitic.storage.databases.postgresql.PostgreSQLKeyValueStorage
+import io.infinitic.storage.databases.postgres.PostgresKeySetStorage
+import io.infinitic.storage.databases.postgres.PostgresKeyValueStorage
 import io.infinitic.storage.databases.redis.RedisKeySetStorage
 import io.infinitic.storage.databases.redis.RedisKeyValueStorage
 import io.infinitic.storage.keySet.KeySetStorage
@@ -39,17 +39,17 @@ data class Storage(
   var inMemory: InMemory? = null,
   val redis: Redis? = null,
   val mysql: MySQL? = null,
-  val postgresql: PostgreSQL? = null,
+  val postgres: Postgres? = null,
   val compression: Compressor? = null
 ) {
   init {
-    val nonNul = listOfNotNull(inMemory, redis, mysql, postgresql)
+    val nonNul = listOfNotNull(inMemory, redis, mysql, postgres)
 
     if (nonNul.isEmpty()) {
       // default storage is inMemory
       inMemory = InMemory()
     } else {
-      require(nonNul.count() == 1) { "Multiple definitions for storage" }
+      require(nonNul.count() == 1) { "Storage should not have multiple definitions: ${nonNul.joinToString { it::class.java.name }}" }
     }
   }
 
@@ -58,7 +58,7 @@ data class Storage(
       inMemory != null -> inMemory!!.close()
       redis != null -> redis.close()
       mysql != null -> mysql.close()
-      postgresql != null -> postgresql.close()
+      postgres != null -> postgres.close()
       else -> thisShouldNotHappen()
     }
   }
@@ -68,7 +68,7 @@ data class Storage(
       inMemory != null -> "inMemory"
       redis != null -> "redis"
       mysql != null -> "mysql"
-      postgresql != null -> "postgresql"
+      postgres != null -> "postgres"
       else -> thisShouldNotHappen()
     }
   }
@@ -78,7 +78,7 @@ data class Storage(
       inMemory != null -> InMemoryKeySetStorage.from(inMemory!!)
       redis != null -> RedisKeySetStorage.from(redis)
       mysql != null -> MySQLKeySetStorage.from(mysql)
-      postgresql != null -> PostgreSQLKeySetStorage.from(postgresql)
+      postgres != null -> PostgresKeySetStorage.from(postgres)
       else -> thisShouldNotHappen()
     }
   }
@@ -88,7 +88,7 @@ data class Storage(
       inMemory != null -> InMemoryKeyValueStorage.from(inMemory!!)
       redis != null -> RedisKeyValueStorage.from(redis)
       mysql != null -> MySQLKeyValueStorage.from(mysql)
-      postgresql != null -> PostgreSQLKeyValueStorage.from(postgresql)
+      postgres != null -> PostgresKeyValueStorage.from(postgres)
       else -> thisShouldNotHappen()
     }.let { CompressedKeyValueStorage(compression, it) }
   }

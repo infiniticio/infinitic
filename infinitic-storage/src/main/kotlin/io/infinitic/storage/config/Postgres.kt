@@ -27,7 +27,7 @@ import com.zaxxer.hikari.HikariConfig
 import com.zaxxer.hikari.HikariDataSource
 import java.util.concurrent.ConcurrentHashMap
 
-data class PostgreSQL(
+data class Postgres(
   val host: String = "127.0.0.1",
   val port: Int = 5432,
   val user: String = "postgres",
@@ -39,6 +39,10 @@ data class PostgreSQL(
   val connectionTimeout: Long? = null, // milli seconds
   val maxLifetime: Long? = null // milli seconds
 ) {
+  private val jdbcUrl = "jdbc:postgresql://$host:$port/$database"
+  private val jdbcUrlDefault = "jdbc:postgresql://$host:$port/postgres"
+  private val driverClassName = "org.postgresql.Driver"
+
   init {
     maximumPoolSize?.let {
       require(it > 0) { "maximumPoolSize must by strictly positive" }
@@ -58,7 +62,7 @@ data class PostgreSQL(
   }
 
   companion object {
-    val pools = ConcurrentHashMap<PostgreSQL, HikariDataSource>()
+    val pools = ConcurrentHashMap<Postgres, HikariDataSource>()
     fun close() {
       pools.keys.forEach { it.close() }
     }
@@ -71,19 +75,49 @@ data class PostgreSQL(
 
   fun getPool() =
       pools.computeIfAbsent(this) {
+        val config = this@Postgres
+        // Create the provided Database if needed
+        initDatabase()
         // Default values for HikariConfig for Postgres.
         HikariDataSource(
             HikariConfig().apply {
-              jdbcUrl = "jdbc:postgresql://$host:$port/$database"
-              driverClassName = "org.postgresql.Driver"
-              username = user
-              password = this@PostgreSQL.password?.value
-              this@PostgreSQL.maximumPoolSize?.let { maximumPoolSize = it }
-              this@PostgreSQL.minimumIdle?.let { minimumIdle = it }
-              this@PostgreSQL.idleTimeout?.let { idleTimeout = it }
-              this@PostgreSQL.connectionTimeout?.let { connectionTimeout = it }
-              this@PostgreSQL.maxLifetime?.let { maxLifetime = it }
+              jdbcUrl = config.jdbcUrl
+              driverClassName = config.driverClassName
+              username = config.user
+              password = config.password?.value
+              config.maximumPoolSize?.let { maximumPoolSize = it }
+              config.minimumIdle?.let { minimumIdle = it }
+              config.idleTimeout?.let { idleTimeout = it }
+              config.connectionTimeout?.let { connectionTimeout = it }
+              config.maxLifetime?.let { maxLifetime = it }
             },
         )
       }
+
+  private fun initDatabase() {
+    val config = this
+    HikariDataSource(
+        HikariConfig().apply {
+          // use a default source
+          jdbcUrl = config.jdbcUrlDefault
+          driverClassName = config.driverClassName
+          username = config.user
+          password = config.password?.value
+        },
+    ).use { pool ->
+      val resultSet = pool.connection.use { it.metaData.catalogs }
+
+      val dbExists = generateSequence {
+        if (resultSet.next()) resultSet.getString(1) else null
+      }.any { it == database }
+
+      if (!dbExists) {
+        pool.connection.use { connection ->
+          connection.createStatement().use {
+            it.executeUpdate("CREATE DATABASE $database")
+          }
+        }
+      }
+    }
+  }
 }

@@ -20,23 +20,23 @@
  *
  * Licensor: infinitic.io
  */
-package io.infinitic.storage.postgresql
+package io.infinitic.storage.postgres
 
 import com.sksamuel.hoplite.Secret
 import io.infinitic.storage.Bytes
 import io.infinitic.storage.DockerOnly
-import io.infinitic.storage.config.PostgreSQL
-import io.infinitic.storage.databases.postgresql.PostgreSQLKeySetStorage
+import io.infinitic.storage.config.Postgres
+import io.infinitic.storage.databases.postgres.PostgresKeySetStorage
 import io.kotest.core.annotation.EnabledIf
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
 import org.testcontainers.containers.PostgreSQLContainer
 
 @EnabledIf(DockerOnly::class)
-class PostgreSQLKeySetStorageTests :
+class PostgresKeySetStorageTests :
   StringSpec(
       {
-        val postgresqlServer = PostgreSQLContainer<Nothing>("postgres:16")
+        val postgresServer = PostgreSQLContainer<Nothing>("postgres:16")
             .apply {
               startupAttempts = 1
               withUsername("test")
@@ -45,19 +45,19 @@ class PostgreSQLKeySetStorageTests :
             }
             .also { it.start() }
 
-        val config = PostgreSQL(
-            host = postgresqlServer.host,
-            port = postgresqlServer.firstMappedPort,
-            user = postgresqlServer.username,
-            password = Secret(postgresqlServer.password),
-            database = postgresqlServer.databaseName,
+        val config = Postgres(
+            host = postgresServer.host,
+            port = postgresServer.firstMappedPort,
+            user = postgresServer.username,
+            password = Secret(postgresServer.password),
+            database = postgresServer.databaseName,
         )
 
-        val storage = PostgreSQLKeySetStorage.from(config)
+        val storage = PostgresKeySetStorage.from(config)
 
         afterSpec {
           config.close()
-          postgresqlServer.stop()
+          postgresServer.stop()
         }
 
         beforeTest { storage.add("foo", "bar".toByteArray()) }
