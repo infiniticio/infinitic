@@ -34,7 +34,11 @@ data class MySQL(
   val password: Secret? = null,
   val database: String = "infinitic",
   val tablePrefix: String = "",
-  val maxPoolSize: Int? = null
+  val maximumPoolSize: Int? = null,
+  val minimumIdle: Int? = null,
+  val idleTimeout: Long? = null, // milli seconds
+  val connectionTimeout: Long? = null, // milli seconds
+  val maxLifetime: Long? = null // milli seconds
 ) {
 
   private val jdbcUrl = "jdbc:mysql://$host:$port/$database"
@@ -42,8 +46,20 @@ data class MySQL(
   private val driverClassName = "com.mysql.cj.jdbc.Driver"
 
   init {
-    maxPoolSize?.let {
-      require(it > 0) { "maxPoolSize must by strictly positive" }
+    maximumPoolSize?.let {
+      require(it > 0) { "maximumPoolSize must by strictly positive" }
+    }
+    minimumIdle?.let {
+      require(it > 0) { "minimumIdle must by strictly positive" }
+    }
+    idleTimeout?.let {
+      require(it > 0) { "idleTimeout must by strictly positive" }
+    }
+    connectionTimeout?.let {
+      require(it > 0) { "connectionTimeout must by strictly positive" }
+    }
+    maxLifetime?.let {
+      require(it > 0) { "maxLifetime must by strictly positive" }
     }
   }
 
@@ -72,7 +88,11 @@ data class MySQL(
               driverClassName = config.driverClassName
               username = config.user
               password = config.password?.value
-              config.maxPoolSize?.let { maximumPoolSize = it }
+              config.maximumPoolSize?.let { maximumPoolSize = it }
+              config.minimumIdle?.let { minimumIdle = it }
+              config.idleTimeout?.let { idleTimeout = it }
+              config.connectionTimeout?.let { connectionTimeout = it }
+              config.maxLifetime?.let { maxLifetime = it }
             },
         )
       }
