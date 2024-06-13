@@ -27,36 +27,30 @@ import io.infinitic.storage.config.MySQL
 import io.infinitic.storage.keySet.KeySetStorage
 import org.jetbrains.annotations.TestOnly
 
-private const val MYSQL_TABLE = "key_set_storage"
+private const val KEY_SET_TABLE = "key_set_storage"
 
-class MySQLKeySetStorage(internal val pool: HikariDataSource) : KeySetStorage {
+class MySQLKeySetStorage(
+  internal val pool: HikariDataSource,
+  tablePrefix: String
+) : KeySetStorage {
 
   companion object {
-    fun from(config: MySQL) = MySQLKeySetStorage(config.getPool())
+    fun from(config: MySQL) = MySQLKeySetStorage(config.getPool(), config.tablePrefix)
+  }
+
+  // table's name
+  val table = (if (tablePrefix.isEmpty()) KEY_SET_TABLE else "${tablePrefix}_$KEY_SET_TABLE").also {
+    if (!it.isValidMySQLTableName()) throw IllegalArgumentException("$it is not a valid MySQL table name")
   }
 
   init {
-    // Create MySQL table at init, for first time usage
-    // Here key is typically a tag
-    // And value is typically a workflowId
-    pool.connection.use { connection ->
-      connection
-          .prepareStatement(
-              "CREATE TABLE IF NOT EXISTS $MYSQL_TABLE ( " +
-                  "`id` BIGINT(20) AUTO_INCREMENT PRIMARY KEY," +
-                  "`key` VARCHAR(255) NOT NULL," +
-                  "`value` VARCHAR(255) NOT NULL," +
-                  "KEY(`key`)," + // Non unique index creation for faster search
-                  "KEY `key_value_idx` (`key`,`value`)" +
-                  ") ENGINE=InnoDB DEFAULT CHARSET=utf8",
-          )
-          .use { it.executeUpdate() }
-    }
+    // Create table if needed
+    initKeySetTable()
   }
 
   override suspend fun get(key: String): Set<ByteArray> =
       pool.connection.use { connection ->
-        connection.prepareStatement("SELECT `value` FROM $MYSQL_TABLE WHERE `key` = ?")
+        connection.prepareStatement("SELECT `value` FROM $table WHERE `key` = ?")
             .use { statement ->
               statement.setString(1, key)
               statement.executeQuery().use {
@@ -71,7 +65,7 @@ class MySQLKeySetStorage(internal val pool: HikariDataSource) : KeySetStorage {
 
   override suspend fun add(key: String, value: ByteArray) {
     pool.connection.use { connection ->
-      connection.prepareStatement("INSERT INTO $MYSQL_TABLE (`key`, `value`) VALUES (?, ?)").use {
+      connection.prepareStatement("INSERT INTO $table (`key`, `value`) VALUES (?, ?)").use {
         it.setString(1, key)
         it.setBytes(2, value)
         it.executeUpdate()
@@ -81,7 +75,7 @@ class MySQLKeySetStorage(internal val pool: HikariDataSource) : KeySetStorage {
 
   override suspend fun remove(key: String, value: ByteArray) {
     pool.connection.use { connection ->
-      connection.prepareStatement("DELETE FROM $MYSQL_TABLE WHERE `key`=? AND `value`=?").use {
+      connection.prepareStatement("DELETE FROM $table WHERE `key`=? AND `value`=?").use {
         it.setString(1, key)
         it.setBytes(2, value)
         it.executeUpdate()
@@ -96,7 +90,23 @@ class MySQLKeySetStorage(internal val pool: HikariDataSource) : KeySetStorage {
   @TestOnly
   override fun flush() {
     pool.connection.use { connection ->
-      connection.prepareStatement("TRUNCATE $MYSQL_TABLE").use { it.executeUpdate() }
+      connection.prepareStatement("TRUNCATE $table").use { it.executeUpdate() }
+    }
+  }
+
+  private fun initKeySetTable() {
+    // Here key is typically a tag
+    // And value is typically a workflowId
+    pool.connection.use { connection ->
+      connection.prepareStatement(
+          "CREATE TABLE IF NOT EXISTS $table ( " +
+              "`id` BIGINT(20) AUTO_INCREMENT PRIMARY KEY," +
+              "`key` VARCHAR(255) NOT NULL," +
+              "`value` VARCHAR(255) NOT NULL," +
+              "KEY(`key`)," + // Non unique index creation for faster search
+              "KEY `key_value_idx` (`key`,`value`)" +
+              ") ENGINE=InnoDB DEFAULT CHARSET=utf8",
+      ).use { it.executeUpdate() }
     }
   }
 }

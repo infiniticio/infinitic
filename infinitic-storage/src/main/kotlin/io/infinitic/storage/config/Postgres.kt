@@ -33,6 +33,7 @@ data class Postgres(
   val user: String = "postgres",
   val password: Secret? = null,
   val database: String = "infinitic",
+  val tablePrefix: String = "",
   val maximumPoolSize: Int? = null,
   val minimumIdle: Int? = null,
   val idleTimeout: Long? = null, // milli seconds

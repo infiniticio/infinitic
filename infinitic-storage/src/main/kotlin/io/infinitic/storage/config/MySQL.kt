@@ -33,6 +33,7 @@ data class MySQL(
   val user: String = "root",
   val password: Secret? = null,
   val database: String = "infinitic",
+  val tablePrefix: String = "",
   val maxPoolSize: Int? = null
 ) {
   init {
