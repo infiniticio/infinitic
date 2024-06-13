@@ -67,8 +67,20 @@ class MySQLKeySetStorageTests :
         fun equalsTo(set1: Set<ByteArray>, set2: Set<ByteArray>) =
             set1.map { Bytes(it) }.toSet() == set2.map { Bytes(it) }.toSet()
 
+        "check creation of table (without prefix)" {
+          with(config) { storage.pool.tableExists("key_set_storage") } shouldBe true
+        }
+
+        "check creation of table (with prefix)" {
+          val configWithPrefix = config.copy(tablePrefix = "prefix")
+
+          MySQLKeySetStorage.from(configWithPrefix).use {
+            with(configWithPrefix) { it.pool.tableExists("prefix_key_set_storage") } shouldBe true
+          }
+        }
+
         "get should return an empty set on unknown key" {
-          storage.get("unknown") shouldBe setOf<ByteArray>()
+          storage.get("unknown") shouldBe setOf()
         }
 
         "get should return the set on known key" {

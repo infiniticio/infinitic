@@ -30,7 +30,7 @@ import org.jetbrains.annotations.TestOnly
 private const val KEY_SET_TABLE = "key_set_storage"
 
 class PostgresKeySetStorage(
-  private val pool: HikariDataSource,
+  internal val pool: HikariDataSource,
   tablePrefix: String
 ) : KeySetStorage {
 

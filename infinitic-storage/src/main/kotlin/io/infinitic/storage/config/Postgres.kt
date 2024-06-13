@@ -40,6 +40,7 @@ data class Postgres(
   val connectionTimeout: Long? = null, // milli seconds
   val maxLifetime: Long? = null // milli seconds
 ) {
+
   private val jdbcUrl = "jdbc:postgresql://$host:$port/$database"
   private val jdbcUrlDefault = "jdbc:postgresql://$host:$port/postgres"
   private val driverClassName = "org.postgresql.Driver"
@@ -74,45 +75,29 @@ data class Postgres(
     pools.remove(this)
   }
 
-  fun getPool() =
-      pools.computeIfAbsent(this) {
-        val config = this@Postgres
-        // Create the provided Database if needed
-        initDatabase()
-        // Default values for HikariConfig for Postgres.
-        HikariDataSource(
-            HikariConfig().apply {
-              jdbcUrl = config.jdbcUrl
-              driverClassName = config.driverClassName
-              username = config.user
-              password = config.password?.value
-              config.maximumPoolSize?.let { maximumPoolSize = it }
-              config.minimumIdle?.let { minimumIdle = it }
-              config.idleTimeout?.let { idleTimeout = it }
-              config.connectionTimeout?.let { connectionTimeout = it }
-              config.maxLifetime?.let { maxLifetime = it }
-            },
-        )
-      }
-
-  private fun initDatabase() {
-    val config = this
+  fun getPool() = pools.computeIfAbsent(this) {
+    // Create the Database if needed
+    initDatabase()
+    // create pool
+    val config = this@Postgres
     HikariDataSource(
         HikariConfig().apply {
-          // use a default source
-          jdbcUrl = config.jdbcUrlDefault
+          jdbcUrl = config.jdbcUrl
           driverClassName = config.driverClassName
           username = config.user
           password = config.password?.value
+          config.maximumPoolSize?.let { maximumPoolSize = it }
+          config.minimumIdle?.let { minimumIdle = it }
+          config.idleTimeout?.let { idleTimeout = it }
+          config.connectionTimeout?.let { connectionTimeout = it }
+          config.maxLifetime?.let { maxLifetime = it }
         },
-    ).use { pool ->
-      val resultSet = pool.connection.use { it.metaData.catalogs }
+    )
+  }
 
-      val dbExists = generateSequence {
-        if (resultSet.next()) resultSet.getString(1) else null
-      }.any { it == database }
-
-      if (!dbExists) {
+  private fun initDatabase() {
+    getDefaultPool().use { pool ->
+      if (!pool.databaseExists(database)) {
         pool.connection.use { connection ->
           connection.createStatement().use {
             it.executeUpdate("CREATE DATABASE $database")
@@ -121,4 +106,28 @@ data class Postgres(
       }
     }
   }
+
+  internal fun HikariDataSource.databaseExists(databaseName: String): Boolean =
+      connection.use { it.metaData.catalogs }.use { resultSet ->
+        generateSequence {
+          if (resultSet.next()) resultSet.getString(1) else null
+        }.any { it == databaseName }
+      }
+
+  internal fun HikariDataSource.tableExists(tableName: String): Boolean =
+      connection.use { connection ->
+        connection.metaData.getTables(null, null, tableName, null).use {
+          it.next()
+        }
+      }
+  
+  internal fun getDefaultPool() = HikariDataSource(
+      HikariConfig().apply {
+        // use a default source
+        jdbcUrl = this@Postgres.jdbcUrlDefault
+        driverClassName = this@Postgres.driverClassName
+        username = this@Postgres.user
+        password = this@Postgres.password?.value
+      },
+  )
 }

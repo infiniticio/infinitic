@@ -35,10 +35,8 @@ import org.testcontainers.utility.DockerImageName
 class RedisKeyValueStorageTests :
   StringSpec(
       {
-        val redisServer =
-            GenericContainer(DockerImageName.parse("redis:7.2.3")).withExposedPorts(6379).also {
-              it.start()
-            }
+        val redisServer = GenericContainer(DockerImageName.parse("redis:7.2.3"))
+            .withExposedPorts(6379).also { it.start() }
         val config = Redis(host = redisServer.host, port = redisServer.firstMappedPort)
         val storage = RedisKeyValueStorage.from(config)
 

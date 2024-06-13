@@ -36,6 +36,11 @@ data class MySQL(
   val tablePrefix: String = "",
   val maxPoolSize: Int? = null
 ) {
+
+  private val jdbcUrl = "jdbc:mysql://$host:$port/$database"
+  private val jdbcUrlDefault = "jdbc:mysql://$host:$port/"
+  private val driverClassName = "com.mysql.cj.jdbc.Driver"
+
   init {
     maxPoolSize?.let {
       require(it > 0) { "maxPoolSize must by strictly positive" }
@@ -57,16 +62,55 @@ data class MySQL(
 
   fun getPool() =
       pools.computeIfAbsent(this) {
+        // Create the Database if needed
+        initDatabase()
+        // create pool
+        val config = this@MySQL
         HikariDataSource(
-            // Default values set according to
-            // https://github.com/brettwooldridge/HikariCP/wiki/MySQL-Configuration
             HikariConfig().apply {
-              jdbcUrl = "jdbc:mysql://$host:$port/$database"
-              driverClassName = "com.mysql.cj.jdbc.Driver"
-              username = user
-              password = this@MySQL.password?.value
-              maxPoolSize?.let { maximumPoolSize = it }
+              jdbcUrl = config.jdbcUrl
+              driverClassName = config.driverClassName
+              username = config.user
+              password = config.password?.value
+              config.maxPoolSize?.let { maximumPoolSize = it }
             },
         )
       }
+
+  private fun initDatabase() {
+    getDefaultPool().use { pool ->
+      if (!pool.databaseExists(database)) {
+        pool.connection.use { connection ->
+          connection.createStatement().use {
+            it.executeUpdate("CREATE DATABASE $database")
+          }
+        }
+      }
+    }
+  }
+
+  internal fun HikariDataSource.databaseExists(databaseName: String): Boolean =
+      connection.use { it.metaData.catalogs }.use { resultSet ->
+        generateSequence {
+          if (resultSet.next()) resultSet.getString(1) else null
+        }.any { databaseName.equals(it, ignoreCase = true) }
+      }
+
+  internal fun HikariDataSource.tableExists(tableName: String): Boolean =
+      connection.use { connection ->
+        connection.metaData.getTables(null, null, tableName, null).use {
+          it.next()
+        }
+      }
+
+  internal fun getDefaultPool() = HikariDataSource(
+      HikariConfig().apply {
+        val config = this@MySQL
+        // use a default source
+        jdbcUrl = config.jdbcUrlDefault
+        driverClassName = config.driverClassName
+        username = config.user
+        password = config.password?.value
+      },
+  )
 }

@@ -85,18 +85,28 @@ storage:
           config shouldBe StorageConfigImpl(storage = Storage(mysql = MySQL()))
         }
 
+        "can choose Postgres storage" {
+          val config = loadConfigFromYaml<StorageConfigImpl>(
+              """
+storage:
+  postgres:
+     """,
+          )
+
+          config shouldBe StorageConfigImpl(storage = Storage(postgres = Postgres()))
+        }
+
         "can not have multiple definition in storage" {
-          val e =
-              shouldThrow<ConfigException> {
-                loadConfigFromYaml<StorageConfigImpl>(
-                    """
+          val e = shouldThrow<ConfigException> {
+            loadConfigFromYaml<StorageConfigImpl>(
+                """
 storage:
   redis:
   mysql:
      """,
-                )
-              }
-          e.message shouldContain ("Multiple definitions for storage")
+            )
+          }
+          e.message shouldContain ("Storage should not have multiple definitions")
         }
       },
   )

@@ -31,7 +31,7 @@ import kotlin.math.ceil
 private const val KEY_VALUE_TABLE = "key_value_storage"
 
 class PostgresKeyValueStorage(
-  private val pool: HikariDataSource,
+  internal val pool: HikariDataSource,
   tablePrefix: String
 ) : KeyValueStorage {
 

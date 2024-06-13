@@ -63,6 +63,18 @@ class PostgresKeyValueStorageTests :
 
         afterTest { storage.flush() }
 
+        "check creation of table (without prefix)" {
+          with(config) { storage.pool.tableExists("key_value_storage") } shouldBe true
+        }
+
+        "check creation of table (with prefix)" {
+          val configWithPrefix = config.copy(tablePrefix = "prefix")
+
+          PostgresKeyValueStorage.from(configWithPrefix).use {
+            with(configWithPrefix) { it.pool.tableExists("prefix_key_value_storage") } shouldBe true
+          }
+        }
+
         "getValue should return null on unknown key" { storage.get("unknown") shouldBe null }
 
         "getValue should return value" {
