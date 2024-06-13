@@ -35,7 +35,7 @@ import org.testcontainers.containers.PostgreSQLContainer
 class PostgreSQLKeyValueStorageTests :
   StringSpec(
       {
-        val postgresqlServer = PostgreSQLContainer<Nothing>("postgres:11")
+        val postgresqlServer = PostgreSQLContainer<Nothing>("postgres:16")
             .apply {
               startupAttempts = 1
               withUsername("test")
