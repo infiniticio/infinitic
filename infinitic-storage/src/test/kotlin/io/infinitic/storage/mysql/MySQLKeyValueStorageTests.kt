@@ -35,7 +35,7 @@ import org.testcontainers.containers.MySQLContainer
 class MySQLKeyValueStorageTests :
   StringSpec(
       {
-        val mysqlServer = MySQLContainer<Nothing>("mysql:5.7")
+        val mysqlServer = MySQLContainer<Nothing>("mysql:8.3")
             .apply {
               startupAttempts = 1
               withUsername("test")
