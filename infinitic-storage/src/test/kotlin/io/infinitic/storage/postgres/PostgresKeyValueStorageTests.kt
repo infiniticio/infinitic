@@ -20,22 +20,22 @@
  *
  * Licensor: infinitic.io
  */
-package io.infinitic.storage.mysql
+package io.infinitic.storage.postgres
 
 import com.sksamuel.hoplite.Secret
 import io.infinitic.storage.DockerOnly
-import io.infinitic.storage.config.MySQL
-import io.infinitic.storage.databases.mysql.MySQLKeyValueStorage
+import io.infinitic.storage.config.Postgres
+import io.infinitic.storage.databases.postgres.PostgresKeyValueStorage
 import io.kotest.core.annotation.EnabledIf
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
-import org.testcontainers.containers.MySQLContainer
+import org.testcontainers.containers.PostgreSQLContainer
 
 @EnabledIf(DockerOnly::class)
-class MySQLKeyValueStorageTests :
+class PostgresKeyValueStorageTests :
   StringSpec(
       {
-        val mysqlServer = MySQLContainer<Nothing>("mysql:8.3")
+        val postgresServer = PostgreSQLContainer<Nothing>("postgres:16")
             .apply {
               startupAttempts = 1
               withUsername("test")
@@ -44,19 +44,19 @@ class MySQLKeyValueStorageTests :
             }
             .also { it.start() }
 
-        val config = MySQL(
-            host = mysqlServer.host,
-            port = mysqlServer.firstMappedPort,
-            user = mysqlServer.username,
-            password = Secret(mysqlServer.password),
-            database = mysqlServer.databaseName,
+        val config = Postgres(
+            host = postgresServer.host,
+            port = postgresServer.firstMappedPort,
+            user = postgresServer.username,
+            password = Secret(postgresServer.password),
+            database = postgresServer.databaseName,
         )
 
-        val storage = MySQLKeyValueStorage.from(config)
+        val storage = PostgresKeyValueStorage.from(config)
 
         afterSpec {
           config.close()
-          mysqlServer.stop()
+          postgresServer.stop()
         }
 
         beforeTest { storage.put("foo", "bar".toByteArray()) }
@@ -70,7 +70,7 @@ class MySQLKeyValueStorageTests :
         "check creation of table (with prefix)" {
           val configWithPrefix = config.copy(tablePrefix = "prefix")
 
-          MySQLKeyValueStorage.from(configWithPrefix).use {
+          PostgresKeyValueStorage.from(configWithPrefix).use {
             with(configWithPrefix) { it.pool.tableExists("prefix_key_value_storage") } shouldBe true
           }
         }

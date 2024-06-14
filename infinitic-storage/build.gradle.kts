@@ -33,7 +33,9 @@ dependencies {
   // MySql
   implementation("com.zaxxer:HikariCP:5.0.1")
   implementation("com.mysql:mysql-connector-j:8.2.0")
+  implementation("org.postgresql:postgresql:42.7.3")
   testImplementation(Libs.TestContainers.mysql)
+  testImplementation(Libs.TestContainers.postgresql)
 
   testImplementation(Libs.Hoplite.yaml)
 }

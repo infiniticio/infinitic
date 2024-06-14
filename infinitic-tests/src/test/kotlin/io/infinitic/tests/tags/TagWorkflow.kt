@@ -39,5 +39,4 @@ class TagWorkflowImpl : Workflow(), TagWorkflow {
   override fun await() {
     timer(Duration.ofHours(1)).await()
   }
-
 }

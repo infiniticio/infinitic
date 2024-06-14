@@ -74,6 +74,7 @@ data class Redis(
         )
     }
   }
+
+  data class PoolConfig(var maxTotal: Int = -1, var maxIdle: Int = 8, var minIdle: Int = 0)
 }
 
-data class PoolConfig(var maxTotal: Int = -1, var maxIdle: Int = 8, var minIdle: Int = 0)

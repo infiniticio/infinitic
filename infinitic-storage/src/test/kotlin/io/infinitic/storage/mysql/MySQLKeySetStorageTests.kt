@@ -26,7 +26,7 @@ import com.sksamuel.hoplite.Secret
 import io.infinitic.storage.Bytes
 import io.infinitic.storage.DockerOnly
 import io.infinitic.storage.config.MySQL
-import io.infinitic.storage.config.mysql.MySQLKeySetStorage
+import io.infinitic.storage.databases.mysql.MySQLKeySetStorage
 import io.kotest.core.annotation.EnabledIf
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
@@ -36,27 +36,22 @@ import org.testcontainers.containers.MySQLContainer
 class MySQLKeySetStorageTests :
   StringSpec(
       {
-        val mysqlServer =
-            MySQLContainer<Nothing>("mysql:5.7")
-                .apply {
-                  startupAttempts = 1
-                  withUsername("test")
-                  withPassword("password")
-                  withDatabaseName("infinitic")
-                }
-                .let {
-                  it.start()
-                  it
-                }
+        val mysqlServer = MySQLContainer<Nothing>("mysql:8.3")
+            .apply {
+              startupAttempts = 1
+              withUsername("test")
+              withPassword("password")
+              withDatabaseName("infinitic")
+            }
+            .also { it.start() }
 
-        val config =
-            MySQL(
-                host = mysqlServer.host,
-                port = mysqlServer.firstMappedPort,
-                user = mysqlServer.username,
-                password = Secret(mysqlServer.password),
-                database = mysqlServer.databaseName,
-            )
+        val config = MySQL(
+            host = mysqlServer.host,
+            port = mysqlServer.firstMappedPort,
+            user = mysqlServer.username,
+            password = Secret(mysqlServer.password),
+            database = mysqlServer.databaseName,
+        )
 
         val storage = MySQLKeySetStorage.from(config)
 
@@ -72,8 +67,20 @@ class MySQLKeySetStorageTests :
         fun equalsTo(set1: Set<ByteArray>, set2: Set<ByteArray>) =
             set1.map { Bytes(it) }.toSet() == set2.map { Bytes(it) }.toSet()
 
+        "check creation of table (without prefix)" {
+          with(config) { storage.pool.tableExists("key_set_storage") } shouldBe true
+        }
+
+        "check creation of table (with prefix)" {
+          val configWithPrefix = config.copy(tablePrefix = "prefix")
+
+          MySQLKeySetStorage.from(configWithPrefix).use {
+            with(configWithPrefix) { it.pool.tableExists("prefix_key_set_storage") } shouldBe true
+          }
+        }
+
         "get should return an empty set on unknown key" {
-          storage.get("unknown") shouldBe setOf<ByteArray>()
+          storage.get("unknown") shouldBe setOf()
         }
 
         "get should return the set on known key" {

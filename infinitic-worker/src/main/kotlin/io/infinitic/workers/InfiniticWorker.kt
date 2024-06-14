@@ -432,6 +432,7 @@ class InfiniticWorker(
     /** Create [InfiniticWorker] from config */
     @JvmStatic
     fun fromConfig(workerConfig: WorkerConfigInterface): InfiniticWorker = with(workerConfig) {
+
       val transportConfig = TransportConfig(transport, pulsar, shutdownGracePeriodInSeconds)
 
       /** Infinitic Consumer */
@@ -444,8 +445,14 @@ class InfiniticWorker(
       name?.let { producerAsync.producerName = it }
 
       /** Infinitic Register */
-      val register = InfiniticRegisterImpl.fromConfig(this).apply {
-        logName = InfiniticWorker::class.java.name
+      // if an exception is thrown, we ensure to close the previously created resource
+      val register = try {
+        InfiniticRegisterImpl.fromConfig(this).apply {
+          logName = InfiniticWorker::class.java.name
+        }
+      } catch (e: Exception) {
+        consumerAsync.close()
+        throw e
       }
 
       /** Infinitic Worker */

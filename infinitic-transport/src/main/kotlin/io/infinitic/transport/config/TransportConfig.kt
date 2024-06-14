@@ -71,20 +71,20 @@ data class TransportConfig(
       when (transport) {
         Transport.pulsar -> with(PulsarResources.from(pulsar!!)) {
           val client = PulsarInfiniticClient(pulsar.client)
+
           val consumerAsync = PulsarInfiniticConsumerAsync(
               Consumer(client, pulsar.consumer),
               this,
               shutdownGracePeriodInSeconds,
           )
+          // Pulsar client and admin will be closed with consumer
+          consumerAsync.addAutoCloseResource(pulsar.client)
+          consumerAsync.addAutoCloseResource(pulsar.admin)
+
           val producerAsync = PulsarInfiniticProducerAsync(
               Producer(client, pulsar.producer),
               this,
           )
-
-          // Pulsar client will be closed with consumer
-          consumerAsync.addAutoCloseResource(pulsar.client)
-          // Pulsar admin will be closed with consumer
-          consumerAsync.addAutoCloseResource(pulsar.admin)
 
           Pair(consumerAsync, producerAsync)
         }

@@ -27,10 +27,10 @@ import com.zaxxer.hikari.HikariConfig
 import com.zaxxer.hikari.HikariDataSource
 import java.util.concurrent.ConcurrentHashMap
 
-data class MySQL(
+data class Postgres(
   val host: String = "127.0.0.1",
-  val port: Int = 3306,
-  val user: String = "root",
+  val port: Int = 5432,
+  val user: String = "postgres",
   val password: Secret? = null,
   val database: String = "infinitic",
   val tablePrefix: String = "",
@@ -41,9 +41,9 @@ data class MySQL(
   val maxLifetime: Long? = null // milli seconds
 ) {
 
-  private val jdbcUrl = "jdbc:mysql://$host:$port/$database"
-  private val jdbcUrlDefault = "jdbc:mysql://$host:$port/"
-  private val driverClassName = "com.mysql.cj.jdbc.Driver"
+  private val jdbcUrl = "jdbc:postgresql://$host:$port/$database"
+  private val jdbcUrlDefault = "jdbc:postgresql://$host:$port/postgres"
+  private val driverClassName = "org.postgresql.Driver"
 
   init {
     maximumPoolSize?.let {
@@ -64,8 +64,7 @@ data class MySQL(
   }
 
   companion object {
-    val pools = ConcurrentHashMap<MySQL, HikariDataSource>()
-
+    val pools = ConcurrentHashMap<Postgres, HikariDataSource>()
     fun close() {
       pools.keys.forEach { it.close() }
     }
@@ -76,26 +75,25 @@ data class MySQL(
     pools.remove(this)
   }
 
-  fun getPool() =
-      pools.computeIfAbsent(this) {
-        // Create the Database if needed
-        initDatabase()
-        // create pool
-        val config = this@MySQL
-        HikariDataSource(
-            HikariConfig().apply {
-              jdbcUrl = config.jdbcUrl
-              driverClassName = config.driverClassName
-              username = config.user
-              password = config.password?.value
-              config.maximumPoolSize?.let { maximumPoolSize = it }
-              config.minimumIdle?.let { minimumIdle = it }
-              config.idleTimeout?.let { idleTimeout = it }
-              config.connectionTimeout?.let { connectionTimeout = it }
-              config.maxLifetime?.let { maxLifetime = it }
-            },
-        )
-      }
+  fun getPool() = pools.computeIfAbsent(this) {
+    // Create the Database if needed
+    initDatabase()
+    // create pool
+    val config = this@Postgres
+    HikariDataSource(
+        HikariConfig().apply {
+          jdbcUrl = config.jdbcUrl
+          driverClassName = config.driverClassName
+          username = config.user
+          password = config.password?.value
+          config.maximumPoolSize?.let { maximumPoolSize = it }
+          config.minimumIdle?.let { minimumIdle = it }
+          config.idleTimeout?.let { idleTimeout = it }
+          config.connectionTimeout?.let { connectionTimeout = it }
+          config.maxLifetime?.let { maxLifetime = it }
+        },
+    )
+  }
 
   private fun initDatabase() {
     getDefaultPool().use { pool ->
@@ -113,7 +111,7 @@ data class MySQL(
       connection.use { it.metaData.catalogs }.use { resultSet ->
         generateSequence {
           if (resultSet.next()) resultSet.getString(1) else null
-        }.any { databaseName.equals(it, ignoreCase = true) }
+        }.any { it == databaseName }
       }
 
   internal fun HikariDataSource.tableExists(tableName: String): Boolean =
@@ -122,15 +120,14 @@ data class MySQL(
           it.next()
         }
       }
-
+  
   internal fun getDefaultPool() = HikariDataSource(
       HikariConfig().apply {
-        val config = this@MySQL
         // use a default source
-        jdbcUrl = config.jdbcUrlDefault
-        driverClassName = config.driverClassName
-        username = config.user
-        password = config.password?.value
+        jdbcUrl = this@Postgres.jdbcUrlDefault
+        driverClassName = this@Postgres.driverClassName
+        username = this@Postgres.user
+        password = this@Postgres.password?.value
       },
   )
 }

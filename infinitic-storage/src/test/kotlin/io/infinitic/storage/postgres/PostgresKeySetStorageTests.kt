@@ -20,19 +20,45 @@
  *
  * Licensor: infinitic.io
  */
-package io.infinitic.storage.inMemory
+package io.infinitic.storage.postgres
 
+import com.sksamuel.hoplite.Secret
 import io.infinitic.storage.Bytes
-import io.infinitic.storage.config.InMemory
-import io.infinitic.storage.databases.inMemory.InMemoryKeySetStorage
+import io.infinitic.storage.DockerOnly
+import io.infinitic.storage.config.Postgres
+import io.infinitic.storage.databases.postgres.PostgresKeySetStorage
+import io.kotest.core.annotation.EnabledIf
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
+import org.testcontainers.containers.PostgreSQLContainer
 
-class InMemoryKeySetStorageTests :
+@EnabledIf(DockerOnly::class)
+class PostgresKeySetStorageTests :
   StringSpec(
       {
-        val config = InMemory("test")
-        val storage = InMemoryKeySetStorage.from(config)
+        val postgresServer = PostgreSQLContainer<Nothing>("postgres:16")
+            .apply {
+              startupAttempts = 1
+              withUsername("test")
+              withPassword("password")
+              withDatabaseName("infinitic")
+            }
+            .also { it.start() }
+
+        val config = Postgres(
+            host = postgresServer.host,
+            port = postgresServer.firstMappedPort,
+            user = postgresServer.username,
+            password = Secret(postgresServer.password),
+            database = postgresServer.databaseName,
+        )
+
+        val storage = PostgresKeySetStorage.from(config)
+
+        afterSpec {
+          config.close()
+          postgresServer.stop()
+        }
 
         beforeTest { storage.add("foo", "bar".toByteArray()) }
 
@@ -40,6 +66,18 @@ class InMemoryKeySetStorageTests :
 
         fun equalsTo(set1: Set<ByteArray>, set2: Set<ByteArray>) =
             set1.map { Bytes(it) }.toSet() == set2.map { Bytes(it) }.toSet()
+
+        "check creation of table (without prefix)" {
+          with(config) { storage.pool.tableExists("key_set_storage") } shouldBe true
+        }
+
+        "check creation of table (with prefix)" {
+          val configWithPrefix = config.copy(tablePrefix = "prefix")
+
+          PostgresKeySetStorage.from(configWithPrefix).use {
+            with(configWithPrefix) { it.pool.tableExists("prefix_key_set_storage") } shouldBe true
+          }
+        }
 
         "get should return an empty set on unknown key" {
           storage.get("unknown") shouldBe setOf<ByteArray>()

@@ -20,45 +20,27 @@
  *
  * Licensor: infinitic.io
  */
-package io.infinitic.storage.config
 
-import io.infinitic.storage.Bytes
-import java.util.concurrent.ConcurrentHashMap
+package io.infinitic.storage.databases.postgres
 
-data class InMemory(val type: String = "default") {
-  companion object {
-    val pools = ConcurrentHashMap<InMemory, InMemoryPool>()
-
-    fun close() {
-      pools.keys.forEach { it.close() }
-    }
+internal fun String.isValidPostgresTableName(): Boolean {
+  // Check length
+  // Note that since Postgres uses bytes and Kotlin uses UTF-16 characters,
+  // this will not be entirely correct for multi-byte characters.
+  if (toByteArray(Charsets.UTF_8).size > 63) {
+    return false
   }
 
-  fun getPool() = pools.computeIfAbsent(this) { InMemoryPool() }
-
-  fun close() {
-    pools[this]?.close()
-    pools.remove(this)
+  // Check first character
+  if (!first().isLetter() && first() != '_') {
+    return false
   }
 
-  /**
-   * InMemoryPool class represents a pool for storing key-value and key-set pairs in memory.
-   */
-  class InMemoryPool {
-    private val _keySet = mutableMapOf<String, MutableSet<Bytes>>()
-
-    private val _keyValue = ConcurrentHashMap<String, ByteArray>()
-
-    internal val keySet
-      get() = _keySet
-
-    internal val keyValue
-      get() = _keyValue
-
-    fun close() {
-      _keyValue.clear()
-      _keySet.clear()
-    }
+  // Check illegal characters
+  if (any { !it.isLetterOrDigit() && it != '_' && it != '$' }) {
+    return false
   }
+
+  // Okay if it passed all checks
+  return true
 }
-

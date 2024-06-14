@@ -74,9 +74,10 @@ object Libs {
   }
 
   object TestContainers {
-    private const val version = "1.19.7"
+    private const val version = "1.19.8"
     const val testcontainers = "org.testcontainers:testcontainers:$version"
     const val mysql = "org.testcontainers:mysql:$version"
+    const val postgresql = "org.testcontainers:postgresql:$version"
   }
 
   object Mockk {

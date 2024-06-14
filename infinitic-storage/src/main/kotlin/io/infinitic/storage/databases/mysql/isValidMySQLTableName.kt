@@ -20,39 +20,25 @@
  *
  * Licensor: infinitic.io
  */
-package io.infinitic.storage.config.inMemory
 
-import io.infinitic.storage.config.InMemory
-import io.infinitic.storage.keyValue.KeyValueStorage
-import org.jetbrains.annotations.TestOnly
-import java.util.concurrent.ConcurrentHashMap
+package io.infinitic.storage.databases.mysql
 
-class InMemoryKeyValueStorage(internal val storage: ConcurrentHashMap<String, ByteArray>) :
-  KeyValueStorage {
-
-  companion object {
-    fun from(config: InMemory) = InMemoryKeyValueStorage(config.getPool().keyValue)
+internal fun String.isValidMySQLTableName(): Boolean {
+  // Check length
+  if (length > 64) {
+    return false
   }
 
-  override suspend fun get(key: String): ByteArray? {
-    return storage[key]
+  // Check first character
+  if (!first().isLetter()) {
+    return false
   }
 
-  override suspend fun put(key: String, value: ByteArray) {
-    storage[key] = value
+  // Check illegal characters
+  if (any { !it.isLetterOrDigit() && it != '_' && it != '$' && it != '#' }) {
+    return false
   }
 
-  override suspend fun del(key: String) {
-    storage.remove(key)
-  }
-
-  override fun close() {
-    // Do nothing
-  }
-
-  @TestOnly
-  override fun flush() {
-    storage.clear()
-  }
-
+  // Okay if it passed all checks
+  return true
 }

@@ -20,45 +20,50 @@
  *
  * Licensor: infinitic.io
  */
-package io.infinitic.storage.config
+package io.infinitic.storage.databases.inMemory
 
 import io.infinitic.storage.Bytes
-import java.util.concurrent.ConcurrentHashMap
+import io.infinitic.storage.config.InMemory
+import io.infinitic.storage.keySet.KeySetStorage
+import org.jetbrains.annotations.TestOnly
 
-data class InMemory(val type: String = "default") {
+class InMemoryKeySetStorage(internal val storage: MutableMap<String, MutableSet<Bytes>>) :
+  KeySetStorage {
+
   companion object {
-    val pools = ConcurrentHashMap<InMemory, InMemoryPool>()
-
-    fun close() {
-      pools.keys.forEach { it.close() }
-    }
+    fun from(config: InMemory) = InMemoryKeySetStorage(config.getPool().keySet)
   }
 
-  fun getPool() = pools.computeIfAbsent(this) { InMemoryPool() }
-
-  fun close() {
-    pools[this]?.close()
-    pools.remove(this)
+  override suspend fun get(key: String): Set<ByteArray> {
+    return getBytesPerKey(key).map { it.content }.toSet()
   }
 
-  /**
-   * InMemoryPool class represents a pool for storing key-value and key-set pairs in memory.
-   */
-  class InMemoryPool {
-    private val _keySet = mutableMapOf<String, MutableSet<Bytes>>()
+  override suspend fun add(key: String, value: ByteArray) {
+    getBytesPerKey(key).add(Bytes(value))
+  }
 
-    private val _keyValue = ConcurrentHashMap<String, ByteArray>()
+  override suspend fun remove(key: String, value: ByteArray) {
+    getBytesPerKey(key).remove(Bytes(value))
 
-    internal val keySet
-      get() = _keySet
+    // clean key if now empty
+    if (getBytesPerKey(key).isEmpty()) storage.remove(key)
+  }
 
-    internal val keyValue
-      get() = _keyValue
+  override fun close() {
+    // Do nothing
+  }
 
-    fun close() {
-      _keyValue.clear()
-      _keySet.clear()
-    }
+  @TestOnly
+  override fun flush() {
+    storage.clear()
+  }
+
+  private fun getBytesPerKey(key: String): MutableSet<Bytes> {
+    return storage[key]
+      ?: run {
+        val set = mutableSetOf<Bytes>()
+        storage[key] = set
+        set
+      }
   }
 }
-

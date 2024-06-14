@@ -20,7 +20,7 @@
  *
  * Licensor: infinitic.io
  */
-package io.infinitic.storage.config.redis
+package io.infinitic.storage.databases.redis
 
 import io.infinitic.storage.config.Redis
 import io.infinitic.storage.keyValue.KeyValueStorage
@@ -51,7 +51,7 @@ class RedisKeyValueStorage(internal val pool: JedisPool) : KeyValueStorage {
   override fun close() {
     pool.close()
   }
-  
+
   @TestOnly
   override fun flush() {
     pool.resource.use { it.flushDB() }

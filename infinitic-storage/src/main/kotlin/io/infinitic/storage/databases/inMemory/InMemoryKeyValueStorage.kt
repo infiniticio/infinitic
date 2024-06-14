@@ -20,50 +20,39 @@
  *
  * Licensor: infinitic.io
  */
-package io.infinitic.storage.config.inMemory
+package io.infinitic.storage.databases.inMemory
 
-import io.infinitic.storage.Bytes
 import io.infinitic.storage.config.InMemory
-import io.infinitic.storage.keySet.KeySetStorage
+import io.infinitic.storage.keyValue.KeyValueStorage
 import org.jetbrains.annotations.TestOnly
+import java.util.concurrent.ConcurrentHashMap
 
-class InMemoryKeySetStorage(internal val storage: MutableMap<String, MutableSet<Bytes>>) :
-  KeySetStorage {
+class InMemoryKeyValueStorage(internal val storage: ConcurrentHashMap<String, ByteArray>) :
+  KeyValueStorage {
 
   companion object {
-    fun from(config: InMemory) = InMemoryKeySetStorage(config.getPool().keySet)
+    fun from(config: InMemory) = InMemoryKeyValueStorage(config.getPool().keyValue)
   }
 
-  override suspend fun get(key: String): Set<ByteArray> {
-    return getBytesPerKey(key).map { it.content }.toSet()
+  override suspend fun get(key: String): ByteArray? {
+    return storage[key]
   }
 
-  override suspend fun add(key: String, value: ByteArray) {
-    getBytesPerKey(key).add(Bytes(value))
+  override suspend fun put(key: String, value: ByteArray) {
+    storage[key] = value
   }
 
-  override suspend fun remove(key: String, value: ByteArray) {
-    getBytesPerKey(key).remove(Bytes(value))
-
-    // clean key if now empty
-    if (getBytesPerKey(key).isEmpty()) storage.remove(key)
+  override suspend fun del(key: String) {
+    storage.remove(key)
   }
 
   override fun close() {
     // Do nothing
   }
-  
+
   @TestOnly
   override fun flush() {
     storage.clear()
   }
 
-  private fun getBytesPerKey(key: String): MutableSet<Bytes> {
-    return storage[key]
-      ?: run {
-        val set = mutableSetOf<Bytes>()
-        storage[key] = set
-        set
-      }
-  }
 }
