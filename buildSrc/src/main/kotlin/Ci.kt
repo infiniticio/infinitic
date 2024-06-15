@@ -35,12 +35,11 @@ object Ci {
     else -> "$BASE.$githubRunNumber$SNAPSHOT"
   }
 
-  val isRelease = (System.getenv("RELEASE")?.toBoolean() ?: false).also {
-    println("isRelease = $it")
-  }
+  val isRelease get() = (System.getenv("RELEASE")?.toBoolean() ?: false)
 
-  val version = when (isRelease) {
-    true -> BASE
-    false -> snapshotVersion
-  }
+  val version
+    get() = when (isRelease) {
+      true -> BASE
+      false -> snapshotVersion
+    }
 }
