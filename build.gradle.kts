@@ -47,6 +47,8 @@ kotlin { jvmToolchain(17) }
 
 repositories { mavenCentral() }
 
+println("version = ${Ci.version}")
+
 subprojects {
   apply(plugin = Plugins.Kotlin.id)
   apply(plugin = Plugins.Serialization.id)
