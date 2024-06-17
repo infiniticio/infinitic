@@ -47,19 +47,19 @@ data class MySQL(
 
   init {
     maximumPoolSize?.let {
-      require(it > 0) { "maximumPoolSize must by strictly positive" }
+      require(it > 0) { "maximumPoolSize must be strictly positive" }
     }
     minimumIdle?.let {
-      require(it > 0) { "minimumIdle must by strictly positive" }
+      require(it >= 0) { "minimumIdle must be positive" }
     }
     idleTimeout?.let {
-      require(it > 0) { "idleTimeout must by strictly positive" }
+      require(it > 0) { "idleTimeout must be strictly positive" }
     }
     connectionTimeout?.let {
-      require(it > 0) { "connectionTimeout must by strictly positive" }
+      require(it > 0) { "connectionTimeout must be strictly positive" }
     }
     maxLifetime?.let {
-      require(it > 0) { "maxLifetime must by strictly positive" }
+      require(it > 0) { "maxLifetime must be strictly positive" }
     }
   }
 
@@ -81,20 +81,34 @@ data class MySQL(
         // Create the Database if needed
         initDatabase()
         // create pool
-        val config = this@MySQL
-        HikariDataSource(
-            HikariConfig().apply {
-              jdbcUrl = config.jdbcUrl
-              driverClassName = config.driverClassName
-              username = config.user
-              password = config.password?.value
-              config.maximumPoolSize?.let { maximumPoolSize = it }
-              config.minimumIdle?.let { minimumIdle = it }
-              config.idleTimeout?.let { idleTimeout = it }
-              config.connectionTimeout?.let { connectionTimeout = it }
-              config.maxLifetime?.let { maxLifetime = it }
-            },
-        )
+        HikariDataSource(hikariConfig)
+      }
+
+  private val hikariConfig = HikariConfig().apply {
+    val config = this@MySQL
+    jdbcUrl = config.jdbcUrl
+    driverClassName = config.driverClassName
+    username = config.user
+    password = config.password?.value
+    config.maximumPoolSize?.let { maximumPoolSize = it }
+    config.minimumIdle?.let { minimumIdle = it }
+    config.idleTimeout?.let { idleTimeout = it }
+    config.connectionTimeout?.let { connectionTimeout = it }
+    config.maxLifetime?.let { maxLifetime = it }
+  }
+
+  private fun HikariDataSource.databaseExists(databaseName: String): Boolean =
+      connection.use { it.metaData.catalogs }.use { resultSet ->
+        generateSequence {
+          if (resultSet.next()) resultSet.getString(1) else null
+        }.any { databaseName.equals(it, ignoreCase = true) }
+      }
+
+  internal fun HikariDataSource.tableExists(tableName: String): Boolean =
+      connection.use { connection ->
+        connection.metaData.getTables(null, null, tableName, null).use {
+          it.next()
+        }
       }
 
   private fun initDatabase() {
@@ -109,21 +123,7 @@ data class MySQL(
     }
   }
 
-  internal fun HikariDataSource.databaseExists(databaseName: String): Boolean =
-      connection.use { it.metaData.catalogs }.use { resultSet ->
-        generateSequence {
-          if (resultSet.next()) resultSet.getString(1) else null
-        }.any { databaseName.equals(it, ignoreCase = true) }
-      }
-
-  internal fun HikariDataSource.tableExists(tableName: String): Boolean =
-      connection.use { connection ->
-        connection.metaData.getTables(null, null, tableName, null).use {
-          it.next()
-        }
-      }
-
-  internal fun getDefaultPool() = HikariDataSource(
+  private fun getDefaultPool() = HikariDataSource(
       HikariConfig().apply {
         val config = this@MySQL
         // use a default source
