@@ -43,40 +43,43 @@ class RegisteredWorkflowTests :
         class MyWorkflow_2 : Workflow()
 
         "List of classes must not be empty" {
-          val e =
-              shouldThrow<IllegalArgumentException> {
-                RegisteredWorkflowExecutor(WorkflowName("foo"), listOf(), 42, null, null, null)
-              }
+          val e = shouldThrow<IllegalArgumentException> {
+            RegisteredWorkflowExecutor(WorkflowName("foo"), listOf(), 42, null, null, null)
+          }
           e.message shouldContain "List of classes must not be empty"
         }
 
         "Exception when workflows have same version" {
-          val e =
-              shouldThrow<IllegalArgumentException> {
-                RegisteredWorkflowExecutor(
-                    WorkflowName("foo"),
-                    listOf(MyWorkflow::class.java, MyWorkflow_0::class.java),
-                    42,
-                    null,
-                    null,
-                    null,
-                )
-              }
+          val e = shouldThrow<IllegalArgumentException> {
+            RegisteredWorkflowExecutor(
+                WorkflowName("foo"),
+                listOf(MyWorkflow::class.java, MyWorkflow_0::class.java),
+                42,
+                null,
+                null,
+                null,
+            )
+          }
           e.message shouldContain "have same version"
         }
 
         "Get instance with single class" {
-          val rw =
-              RegisteredWorkflowExecutor(
-                  WorkflowName("foo"), listOf(MyWorkflow::class.java), 42, null, null, null,
-              )
+          val rw = RegisteredWorkflowExecutor(
+              WorkflowName("foo"), listOf(MyWorkflow::class.java), 42, null, null, null,
+          )
           // get explicit version 0
-          rw.getInstance(WorkflowVersion(0))::class.java shouldBe MyWorkflow::class.java
+          rw.getInstanceByVersion(WorkflowVersion(0))::class.java shouldBe MyWorkflow::class.java
           // get default version
-          rw.getInstance(null)::class.java shouldBe MyWorkflow::class.java
+          rw.getInstanceByVersion(null)::class.java shouldBe MyWorkflow::class.java
           // get unknown version
           val e =
-              shouldThrow<UnknownWorkflowVersionException> { rw.getInstance(WorkflowVersion(1)) }
+              shouldThrow<UnknownWorkflowVersionException> {
+                rw.getInstanceByVersion(
+                    WorkflowVersion(
+                        1,
+                    ),
+                )
+              }
           e.message shouldContain "Unknown version \"1\""
         }
 
@@ -86,12 +89,18 @@ class RegisteredWorkflowTests :
                   WorkflowName("foo"), listOf(MyWorkflow_2::class.java), 42, null, null, null,
               )
           // get explicit version 0
-          rw.getInstance(WorkflowVersion(2))::class.java shouldBe MyWorkflow_2::class.java
+          rw.getInstanceByVersion(WorkflowVersion(2))::class.java shouldBe MyWorkflow_2::class.java
           // get default version
-          rw.getInstance(null)::class.java shouldBe MyWorkflow_2::class.java
+          rw.getInstanceByVersion(null)::class.java shouldBe MyWorkflow_2::class.java
           // get unknown version
           val e =
-              shouldThrow<UnknownWorkflowVersionException> { rw.getInstance(WorkflowVersion(1)) }
+              shouldThrow<UnknownWorkflowVersionException> {
+                rw.getInstanceByVersion(
+                    WorkflowVersion(
+                        1,
+                    ),
+                )
+              }
           e.message shouldContain "Unknown version \"1\""
         }
 
@@ -106,14 +115,20 @@ class RegisteredWorkflowTests :
                   null,
               )
           // get explicit version 0
-          rw.getInstance(WorkflowVersion(0))::class.java shouldBe MyWorkflow::class.java
+          rw.getInstanceByVersion(WorkflowVersion(0))::class.java shouldBe MyWorkflow::class.java
           // get explicit version 2
-          rw.getInstance(WorkflowVersion(2))::class.java shouldBe MyWorkflow_2::class.java
+          rw.getInstanceByVersion(WorkflowVersion(2))::class.java shouldBe MyWorkflow_2::class.java
           // get default version
-          rw.getInstance(null)::class.java shouldBe MyWorkflow_2::class.java
+          rw.getInstanceByVersion(null)::class.java shouldBe MyWorkflow_2::class.java
           // get unknown version
           val e =
-              shouldThrow<UnknownWorkflowVersionException> { rw.getInstance(WorkflowVersion(1)) }
+              shouldThrow<UnknownWorkflowVersionException> {
+                rw.getInstanceByVersion(
+                    WorkflowVersion(
+                        1,
+                    ),
+                )
+              }
           e.message shouldContain "Unknown version \"1\""
         }
       },

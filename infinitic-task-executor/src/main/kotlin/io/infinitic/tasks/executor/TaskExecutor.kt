@@ -141,7 +141,7 @@ class TaskExecutor(
       withTimeout(timeout) {
         coroutineScope {
           // Put context in execution's thread (it may be used in the following method)
-          Task.set(taskContext)
+          Task.setContext(taskContext)
           // method execution
           method.invoke(service, *parameters)
         }
@@ -182,7 +182,7 @@ class TaskExecutor(
     val delayMillis = try {
       msg.logTrace { "retrieving delay before retry" }
       // We set the localThread context here as it may be used in withRetry
-      Task.set(taskContext)
+      Task.setContext(taskContext)
       // get seconds before retry
       withRetry?.getMillisBeforeRetry(taskContext.retryIndex.toInt(), cause)
     } catch (e: Exception) {
@@ -272,11 +272,12 @@ class TaskExecutor(
       true -> {
         val workflowTaskParameters = parameters.first() as WorkflowTaskParameters
         val registered = workerRegistry.getRegisteredWorkflow(msg.requester.workflowName!!)!!
-        val workflow = registered.getInstance(workflowTaskParameters.workflowVersion)
+        // workflow instance
+        val workflowInstance = registered.getInstance(workflowTaskParameters)
+        // method instance
         val workflowMethod = with(workflowTaskParameters) {
-          // method instance
           getMethodPerNameAndParameters(
-              workflow::class.java,
+              workflowInstance::class.java,
               "${workflowMethod.methodName}",
               workflowMethod.methodParameterTypes?.types,
               workflowMethod.methodParameters.size,
@@ -308,7 +309,7 @@ class TaskExecutor(
 
         with(service as WorkflowTaskImpl) {
           this.checkMode = checkMode
-          this.instance = workflow
+          this.instance = workflowInstance
           this.method = workflowMethod
         }
       }

@@ -28,7 +28,8 @@ import io.infinitic.common.tasks.executors.errors.ExecutionError
 object Task {
   private val context: ThreadLocal<TaskContext> = ThreadLocal.withInitial { null }
 
-  fun set(c: TaskContext) {
+  @JvmStatic
+  fun setContext(c: TaskContext) {
     context.set(c)
   }
 
