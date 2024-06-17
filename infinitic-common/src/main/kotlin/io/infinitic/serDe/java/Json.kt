@@ -20,12 +20,13 @@
  *
  * Licensor: infinitic.io
  */
-package io.infinitic.common.serDe.json
+package io.infinitic.serDe.java
 
 import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.core.JsonGenerator
 import com.fasterxml.jackson.databind.DeserializationFeature
 import com.fasterxml.jackson.databind.JsonSerializer
+import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.SerializationFeature
 import com.fasterxml.jackson.databind.SerializerProvider
 import com.fasterxml.jackson.databind.annotation.JsonSerialize
@@ -37,7 +38,8 @@ import org.apache.avro.specific.SpecificRecordBase
 import java.io.IOException
 
 object Json {
-  var mapper = jsonMapper {
+  @JvmStatic
+  var mapper: ObjectMapper = jsonMapper {
     addMixIn(SpecificRecordBase::class.java, AvroMixIn::class.java)
     addMixIn(Exception::class.java, ExceptionMixIn::class.java)
     addModule(JavaTimeModule())

@@ -22,7 +22,6 @@
  */
 package io.infinitic.dashboard.panels.infrastructure.jobs
 
-import io.infinitic.common.serDe.json.Json
 import io.infinitic.common.transport.Topic
 import io.infinitic.dashboard.panels.infrastructure.lastUpdated
 import io.infinitic.dashboard.panels.infrastructure.requests.Completed
@@ -31,6 +30,7 @@ import io.infinitic.dashboard.panels.infrastructure.requests.Loading
 import io.infinitic.dashboard.panels.infrastructure.requests.Request
 import io.infinitic.dashboard.slideovers.Slideover
 import io.infinitic.pulsar.resources.prefix
+import io.infinitic.serDe.java.Json
 import kweb.a
 import kweb.new
 import kweb.p

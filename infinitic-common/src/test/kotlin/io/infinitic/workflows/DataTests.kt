@@ -32,23 +32,25 @@ import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 
 class DataTests :
-    StringSpec({
-      "Deferred should be serDe with SerializedData" {
-        val step = TestFactory.random<Step>()
-        val m1 = Deferred<String>(step).apply { this.workflowDispatcher = mockk() }
+  StringSpec(
+      {
+        "Deferred should be serDe with SerializedData" {
+          val step = TestFactory.random<Step>()
+          val m1 = Deferred<String>(step).apply { this.workflowDispatcher = mockk() }
 
-        val data = SerializedData.from(m1)
-        val m2 = data.deserialize()
+          val data = SerializedData.from(m1)
+          val m2 = data.deserialize()
 
-        m2 shouldBe m1
-      }
+          m2 shouldBe m1
+        }
 
-      "Deferred should be json-serializable by kotlinx.serialization" {
-        val step = TestFactory.random<Step>()
-        val m1 = Deferred<String>(step).apply { this.workflowDispatcher = mockk() }
-        val json = Json.encodeToString(m1)
-        val m2 = Json.decodeFromString<Deferred<String>>(json)
+        "Deferred should be json-serializable by kotlinx.serialization" {
+          val step = TestFactory.random<Step>()
+          val m1 = Deferred<String>(step).apply { this.workflowDispatcher = mockk() }
+          val json = Json.encodeToString(m1)
+          val m2 = Json.decodeFromString<Deferred<String>>(json)
 
-        m2 shouldBe m1
-      }
-    })
+          m2 shouldBe m1
+        }
+      },
+  )

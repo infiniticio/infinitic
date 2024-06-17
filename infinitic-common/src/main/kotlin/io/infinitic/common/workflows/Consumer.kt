@@ -20,41 +20,44 @@
  *
  * Licensor: infinitic.io
  */
-package io.infinitic.workflows
+package io.infinitic.common.workflows
 
-import com.jayway.jsonpath.Criteria
-import io.infinitic.exceptions.workflows.ChannelWithoutGetterException
+interface Consumer0 {
+  fun apply()
+}
 
-class Channel<T : Any>(private val dispatcherFn: () -> WorkflowDispatcher) : SendChannel<T> {
-  private lateinit var _name: String
+interface Consumer1<P1> {
+  fun apply(p1: P1)
+}
 
-  internal fun setName(name: String) {
-    _name = name
-  }
+interface Consumer2<P1, P2> {
+  fun apply(p1: P1, p2: P2)
+}
 
-  internal fun hasName() = ::_name.isInitialized
+interface Consumer3<P1, P2, P3> {
+  fun apply(p1: P1, p2: P2, p3: P3)
+}
 
-  val name by lazy {
-    when (hasName()) {
-      true -> _name
-      else -> throw ChannelWithoutGetterException
-    }
-  }
+interface Consumer4<P1, P2, P3, P4> {
+  fun apply(p1: P1, p2: P2, p3: P3, p4: P4)
+}
 
-  override fun send(signal: T) = dispatcherFn().send(this, signal)
+interface Consumer5<P1, P2, P3, P4, P5> {
+  fun apply(p1: P1, p2: P2, p3: P3, p4: P4, p5: P5)
+}
 
-  @JvmOverloads
-  fun receive(
-      limit: Int? = null,
-      jsonPath: String? = null,
-      criteria: Criteria? = null
-  ): Deferred<T> = dispatcherFn().receive(this, null, limit, jsonPath, criteria)
+interface Consumer6<P1, P2, P3, P4, P5, P6> {
+  fun apply(p1: P1, p2: P2, p3: P3, p4: P4, p5: P5, p6: P6)
+}
 
-  @JvmOverloads
-  fun <S : T> receive(
-      klass: Class<S>,
-      limit: Int? = null,
-      jsonPath: String? = null,
-      criteria: Criteria? = null
-  ): Deferred<S> = dispatcherFn().receive(this, klass, limit, jsonPath, criteria)
+interface Consumer7<P1, P2, P3, P4, P5, P6, P7> {
+  fun apply(p1: P1, p2: P2, p3: P3, p4: P4, p5: P5, p6: P6, p7: P7)
+}
+
+interface Consumer8<P1, P2, P3, P4, P5, P6, P7, P8> {
+  fun apply(p1: P1, p2: P2, p3: P3, p4: P4, p5: P5, p6: P6, p7: P7, p8: P8)
+}
+
+interface Consumer9<P1, P2, P3, P4, P5, P6, P7, P8, P9> {
+  fun apply(p1: P1, p2: P2, p3: P3, p4: P4, p5: P5, p6: P6, p7: P7, p8: P8, p9: P9)
 }

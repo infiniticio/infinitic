@@ -22,9 +22,9 @@
  */
 package io.infinitic.common.workflows.engine.state
 
+import io.infinitic.common.fixtures.TestFactory
 import io.infinitic.common.fixtures.checkBackwardCompatibility
 import io.infinitic.common.fixtures.checkOrCreateCurrentFile
-import io.infinitic.common.fixtures.TestFactory
 import io.infinitic.common.serDe.avro.AvroSerDe.getAllSchemas
 import io.infinitic.common.serDe.avro.AvroSerDe.getRandomBinaryWithSchemaFingerprint
 import io.kotest.assertions.throwables.shouldNotThrowAny

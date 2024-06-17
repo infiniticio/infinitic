@@ -23,15 +23,16 @@
 package io.infinitic.workflows
 
 import com.fasterxml.jackson.annotation.JsonIgnore
+import io.infinitic.common.workflows.WorkflowDispatcher
 import io.infinitic.common.workflows.data.steps.Step
-import io.infinitic.common.workflows.data.steps.and as stepAnd
-import io.infinitic.common.workflows.data.steps.or as stepOr
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
+import io.infinitic.common.workflows.data.steps.and as stepAnd
+import io.infinitic.common.workflows.data.steps.or as stepOr
 
 @Serializable(with = DeferredSerializer::class)
 data class Deferred<T>(val step: Step) {

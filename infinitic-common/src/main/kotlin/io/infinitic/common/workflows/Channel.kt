@@ -20,35 +20,43 @@
  *
  * Licensor: infinitic.io
  */
-package io.infinitic.workflows
+package io.infinitic.common.workflows
 
 import com.jayway.jsonpath.Criteria
-import io.infinitic.common.proxies.ProxyDispatcher
-import io.infinitic.common.proxies.ProxyHandler
-import java.time.Duration
-import java.time.Instant
+import io.infinitic.exceptions.workflows.ChannelWithoutGetterException
+import io.infinitic.workflows.Deferred
+import io.infinitic.workflows.SendChannel
 
-interface WorkflowDispatcher : ProxyDispatcher {
+class Channel<T : Any>(private val dispatcherFn: () -> WorkflowDispatcher) : SendChannel<T> {
+  private lateinit var _name: String
 
-  fun <R : Any?> dispatch(handler: ProxyHandler<*>, clientWaiting: Boolean): Deferred<R>
+  internal fun setName(name: String) {
+    _name = name
+  }
 
-  fun <T> inline(task: () -> T): T
+  internal fun hasName() = ::_name.isInitialized
 
-  fun <T> await(deferred: Deferred<T>): T
+  val name by lazy {
+    when (hasName()) {
+      true -> _name
+      else -> throw ChannelWithoutGetterException
+    }
+  }
 
-  fun <T> status(deferred: Deferred<T>): DeferredStatus
+  override fun send(signal: T) = dispatcherFn().send(this, signal)
 
-  fun timer(duration: Duration): Deferred<Instant>
+  @JvmOverloads
+  fun receive(
+    limit: Int? = null,
+    jsonPath: String? = null,
+    criteria: Criteria? = null
+  ): Deferred<T> = dispatcherFn().receive(this, null, limit, jsonPath, criteria)
 
-  fun timer(instant: Instant): Deferred<Instant>
-
-  fun <S : T, T : Any> receive(
-      channel: Channel<T>,
-      klass: Class<S>?,
-      limit: Int?,
-      jsonPath: String?,
-      criteria: Criteria?
-  ): Deferred<S>
-
-  fun <T : Any> send(channel: Channel<T>, signal: T)
+  @JvmOverloads
+  fun <S : T> receive(
+    klass: Class<S>,
+    limit: Int? = null,
+    jsonPath: String? = null,
+    criteria: Criteria? = null
+  ): Deferred<S> = dispatcherFn().receive(this, klass, limit, jsonPath, criteria)
 }

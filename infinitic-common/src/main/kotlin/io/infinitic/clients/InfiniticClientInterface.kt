@@ -24,16 +24,16 @@
 
 package io.infinitic.clients
 
-import io.infinitic.workflows.Consumer0
-import io.infinitic.workflows.Consumer1
-import io.infinitic.workflows.Consumer2
-import io.infinitic.workflows.Consumer3
-import io.infinitic.workflows.Consumer4
-import io.infinitic.workflows.Consumer5
-import io.infinitic.workflows.Consumer6
-import io.infinitic.workflows.Consumer7
-import io.infinitic.workflows.Consumer8
-import io.infinitic.workflows.Consumer9
+import io.infinitic.common.workflows.Consumer0
+import io.infinitic.common.workflows.Consumer1
+import io.infinitic.common.workflows.Consumer2
+import io.infinitic.common.workflows.Consumer3
+import io.infinitic.common.workflows.Consumer4
+import io.infinitic.common.workflows.Consumer5
+import io.infinitic.common.workflows.Consumer6
+import io.infinitic.common.workflows.Consumer7
+import io.infinitic.common.workflows.Consumer8
+import io.infinitic.common.workflows.Consumer9
 import io.infinitic.workflows.DeferredStatus
 import java.io.Closeable
 import java.util.concurrent.CompletableFuture

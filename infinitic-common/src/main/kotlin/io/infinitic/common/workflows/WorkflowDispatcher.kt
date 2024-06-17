@@ -20,44 +20,37 @@
  *
  * Licensor: infinitic.io
  */
-package io.infinitic.workflows
+package io.infinitic.common.workflows
 
-interface Consumer0 {
-  fun apply()
-}
+import com.jayway.jsonpath.Criteria
+import io.infinitic.common.proxies.ProxyDispatcher
+import io.infinitic.common.proxies.ProxyHandler
+import io.infinitic.workflows.Deferred
+import io.infinitic.workflows.DeferredStatus
+import java.time.Duration
+import java.time.Instant
 
-interface Consumer1<P1> {
-  fun apply(p1: P1)
-}
+interface WorkflowDispatcher : ProxyDispatcher {
 
-interface Consumer2<P1, P2> {
-  fun apply(p1: P1, p2: P2)
-}
+  fun <R : Any?> dispatch(handler: ProxyHandler<*>, clientWaiting: Boolean): Deferred<R>
 
-interface Consumer3<P1, P2, P3> {
-  fun apply(p1: P1, p2: P2, p3: P3)
-}
+  fun <T> inline(task: () -> T): T
 
-interface Consumer4<P1, P2, P3, P4> {
-  fun apply(p1: P1, p2: P2, p3: P3, p4: P4)
-}
+  fun <T> await(deferred: Deferred<T>): T
 
-interface Consumer5<P1, P2, P3, P4, P5> {
-  fun apply(p1: P1, p2: P2, p3: P3, p4: P4, p5: P5)
-}
+  fun <T> status(deferred: Deferred<T>): DeferredStatus
 
-interface Consumer6<P1, P2, P3, P4, P5, P6> {
-  fun apply(p1: P1, p2: P2, p3: P3, p4: P4, p5: P5, p6: P6)
-}
+  fun timer(duration: Duration): Deferred<Instant>
 
-interface Consumer7<P1, P2, P3, P4, P5, P6, P7> {
-  fun apply(p1: P1, p2: P2, p3: P3, p4: P4, p5: P5, p6: P6, p7: P7)
-}
+  fun timer(instant: Instant): Deferred<Instant>
 
-interface Consumer8<P1, P2, P3, P4, P5, P6, P7, P8> {
-  fun apply(p1: P1, p2: P2, p3: P3, p4: P4, p5: P5, p6: P6, p7: P7, p8: P8)
-}
+  fun <S : T, T : Any> receive(
+    channel: Channel<T>,
+    klass: Class<S>?,
+    limit: Int?,
+    jsonPath: String?,
+    criteria: Criteria?
+  ): Deferred<S>
 
-interface Consumer9<P1, P2, P3, P4, P5, P6, P7, P8, P9> {
-  fun apply(p1: P1, p2: P2, p3: P3, p4: P4, p5: P5, p6: P6, p7: P7, p8: P8, p9: P9)
+  fun <T : Any> send(channel: Channel<T>, signal: T)
 }

@@ -20,13 +20,14 @@
  *
  * Licensor: infinitic.io
  */
-package io.infinitic.common.serDe
+package io.infinitic.serDe
 
 import com.fasterxml.jackson.annotation.JsonTypeInfo
 import com.fasterxml.jackson.databind.MapperFeature
 import com.fasterxml.jackson.module.kotlin.KotlinModule
 import com.fasterxml.jackson.module.kotlin.jsonMapper
-import io.infinitic.common.serDe.json.Json
+import io.infinitic.common.serDe.SerializedData
+import io.infinitic.serDe.java.Json
 import io.kotest.assertions.throwables.shouldNotThrowAny
 import io.kotest.assertions.throwables.shouldThrowAny
 import io.kotest.core.spec.style.StringSpec

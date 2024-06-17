@@ -25,12 +25,12 @@ package io.infinitic.workflows.workflowTask
 import io.github.oshai.kotlinlogging.KLogger
 import io.infinitic.annotations.Ignore
 import io.infinitic.common.exceptions.thisShouldNotHappen
+import io.infinitic.common.workflows.Channel
 import io.infinitic.common.workflows.data.properties.PropertyHash
 import io.infinitic.common.workflows.data.properties.PropertyName
 import io.infinitic.common.workflows.data.properties.PropertyValue
 import io.infinitic.common.workflows.executors.getPropertiesFromObject
 import io.infinitic.common.workflows.executors.setPropertiesToObject
-import io.infinitic.workflows.Channel
 import io.infinitic.workflows.Workflow
 import org.slf4j.Logger
 import java.lang.reflect.Proxy

@@ -20,9 +20,10 @@
  *
  * Licensor: infinitic.io
  */
-package io.infinitic.common.serDe
+package io.infinitic.serDe
 
 import io.infinitic.common.fixtures.TestFactory
+import io.infinitic.common.serDe.SerializedData
 import io.infinitic.common.serDe.SerializedData.Companion.META_JAVA_CLASS
 import io.infinitic.common.workflows.data.steps.Step
 import io.kotest.core.spec.style.StringSpec
