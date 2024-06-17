@@ -20,25 +20,12 @@
  *
  * Licensor: infinitic.io
  */
+package io.infinitic.serDe.kotlin
 
-package io.infinitic.storage.databases.mysql
+import kotlinx.serialization.json.Json
 
-internal fun String.isValidMySQLTableName(): Boolean {
-  // Check length
-  if (length > 64) {
-    return false
-  }
-
-  // Check first character
-  if (!first().isLetter()) {
-    return false
-  }
-
-  // Check illegal characters
-  if (any { !it.isLetterOrDigit() && it != '_' && it != '$' && it != '#' }) {
-    return false
-  }
-
-  // Okay if it passed all checks
-  return true
+var json = Json {
+  // use a less obvious key than "type" for polymorphic data, to avoid collusion
+  classDiscriminator = "#klass"
+  ignoreUnknownKeys = true
 }
