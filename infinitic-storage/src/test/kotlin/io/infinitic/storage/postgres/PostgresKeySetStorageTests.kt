@@ -72,10 +72,10 @@ class PostgresKeySetStorageTests :
         }
 
         "check creation of table (with prefix)" {
-          val configWithPrefix = config.copy(tablePrefix = "prefix")
+          val configWithCustomTable = config.copy(keySetTable = "custom_key_set_table")
 
-          PostgresKeySetStorage.from(configWithPrefix).use {
-            with(configWithPrefix) { it.pool.tableExists("prefix_key_set_storage") } shouldBe true
+          PostgresKeySetStorage.from(configWithCustomTable).use {
+            with(configWithCustomTable) { it.pool.tableExists("custom_key_set_table") } shouldBe true
           }
         }
 

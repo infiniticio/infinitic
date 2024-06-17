@@ -33,7 +33,8 @@ data class Postgres(
   val user: String = "postgres",
   val password: Secret? = null,
   val database: String = "infinitic",
-  val tablePrefix: String = "",
+  val keySetTable: String = "key_set_storage",
+  val keyValueTable: String = "key_value_storage",
   val maximumPoolSize: Int? = null,
   val minimumIdle: Int? = null,
   val idleTimeout: Long? = null, // milli seconds
@@ -61,6 +62,9 @@ data class Postgres(
     maxLifetime?.let {
       require(it > 0) { "maxLifetime must be strictly positive" }
     }
+
+    require(keySetTable.isValidTableName()) { "'$keySetTable' is not a valid PostgresSQL table name" }
+    require(keyValueTable.isValidTableName()) { "'$keyValueTable' is not a valid PostgresSQL table name" }
   }
 
   companion object {
@@ -130,4 +134,26 @@ data class Postgres(
         password = this@Postgres.password?.value
       },
   )
+
+  private fun String.isValidTableName(): Boolean {
+    // Check length
+    // Note that since Postgres uses bytes and Kotlin uses UTF-16 characters,
+    // this will not be entirely correct for multi-byte characters.
+    if (toByteArray(Charsets.UTF_8).size > 63) {
+      return false
+    }
+
+    // Check first character
+    if (!first().isLetter() && first() != '_') {
+      return false
+    }
+
+    // Check illegal characters
+    if (any { !it.isLetterOrDigit() && it != '_' && it != '$' }) {
+      return false
+    }
+
+    // Okay if it passed all checks
+    return true
+  }
 }

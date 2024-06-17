@@ -33,7 +33,8 @@ data class MySQL(
   val user: String = "root",
   val password: Secret? = null,
   val database: String = "infinitic",
-  val tablePrefix: String = "",
+  val keySetTable: String = "key_set_storage",
+  val keyValueTable: String = "key_value_storage",
   val maximumPoolSize: Int? = null,
   val minimumIdle: Int? = null,
   val idleTimeout: Long? = null, // milli seconds
@@ -61,6 +62,9 @@ data class MySQL(
     maxLifetime?.let {
       require(it > 0) { "maxLifetime must be strictly positive" }
     }
+
+    require(keySetTable.isValidTableName()) { "'$keySetTable' is not a valid MySQL table name" }
+    require(keyValueTable.isValidTableName()) { "'$keyValueTable' is not a valid MySQL table name" }
   }
 
   companion object {
@@ -133,4 +137,24 @@ data class MySQL(
         password = config.password?.value
       },
   )
+
+  private fun String.isValidTableName(): Boolean {
+    // Check length
+    if (length > 64) {
+      return false
+    }
+
+    // Check first character
+    if (!first().isLetter()) {
+      return false
+    }
+
+    // Check illegal characters
+    if (any { !it.isLetterOrDigit() && it != '_' && it != '$' && it != '#' }) {
+      return false
+    }
+
+    // Okay if it passed all checks
+    return true
+  }
 }

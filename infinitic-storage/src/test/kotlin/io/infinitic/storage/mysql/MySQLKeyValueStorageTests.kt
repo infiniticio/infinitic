@@ -63,15 +63,15 @@ class MySQLKeyValueStorageTests :
 
         afterTest { storage.flush() }
 
-        "check creation of table (without prefix)" {
+        "check creation of table (default table)" {
           with(config) { storage.pool.tableExists("key_value_storage") } shouldBe true
         }
 
         "check creation of table (with prefix)" {
-          val configWithPrefix = config.copy(tablePrefix = "prefix")
+          val configWithCustomTable = config.copy(keyValueTable = "custom_key_value_table")
 
-          MySQLKeyValueStorage.from(configWithPrefix).use {
-            with(configWithPrefix) { it.pool.tableExists("prefix_key_value_storage") } shouldBe true
+          MySQLKeyValueStorage.from(configWithCustomTable).use {
+            with(configWithCustomTable) { it.pool.tableExists("custom_key_value_table") } shouldBe true
           }
         }
 

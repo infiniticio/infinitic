@@ -27,20 +27,13 @@ import io.infinitic.storage.config.MySQL
 import io.infinitic.storage.keySet.KeySetStorage
 import org.jetbrains.annotations.TestOnly
 
-private const val KEY_SET_TABLE = "key_set_storage"
-
 class MySQLKeySetStorage(
   internal val pool: HikariDataSource,
-  tablePrefix: String
+  private val tableName: String
 ) : KeySetStorage {
 
   companion object {
-    fun from(config: MySQL) = MySQLKeySetStorage(config.getPool(), config.tablePrefix)
-  }
-
-  // table's name
-  val table = (if (tablePrefix.isEmpty()) KEY_SET_TABLE else "${tablePrefix}_$KEY_SET_TABLE").also {
-    if (!it.isValidMySQLTableName()) throw IllegalArgumentException("$it is not a valid MySQL table name")
+    fun from(config: MySQL) = MySQLKeySetStorage(config.getPool(), config.keySetTable)
   }
 
   init {
@@ -50,7 +43,7 @@ class MySQLKeySetStorage(
 
   override suspend fun get(key: String): Set<ByteArray> =
       pool.connection.use { connection ->
-        connection.prepareStatement("SELECT `value` FROM $table WHERE `key` = ?")
+        connection.prepareStatement("SELECT `value` FROM $tableName WHERE `key` = ?")
             .use { statement ->
               statement.setString(1, key)
               statement.executeQuery().use {
@@ -65,7 +58,7 @@ class MySQLKeySetStorage(
 
   override suspend fun add(key: String, value: ByteArray) {
     pool.connection.use { connection ->
-      connection.prepareStatement("INSERT INTO $table (`key`, `value`) VALUES (?, ?)").use {
+      connection.prepareStatement("INSERT INTO $tableName (`key`, `value`) VALUES (?, ?)").use {
         it.setString(1, key)
         it.setBytes(2, value)
         it.executeUpdate()
@@ -75,7 +68,7 @@ class MySQLKeySetStorage(
 
   override suspend fun remove(key: String, value: ByteArray) {
     pool.connection.use { connection ->
-      connection.prepareStatement("DELETE FROM $table WHERE `key`=? AND `value`=?").use {
+      connection.prepareStatement("DELETE FROM $tableName WHERE `key`=? AND `value`=?").use {
         it.setString(1, key)
         it.setBytes(2, value)
         it.executeUpdate()
@@ -90,7 +83,7 @@ class MySQLKeySetStorage(
   @TestOnly
   override fun flush() {
     pool.connection.use { connection ->
-      connection.prepareStatement("TRUNCATE $table").use { it.executeUpdate() }
+      connection.prepareStatement("TRUNCATE $tableName").use { it.executeUpdate() }
     }
   }
 
@@ -99,7 +92,7 @@ class MySQLKeySetStorage(
     // And value is typically a workflowId
     pool.connection.use { connection ->
       connection.prepareStatement(
-          "CREATE TABLE IF NOT EXISTS $table ( " +
+          "CREATE TABLE IF NOT EXISTS $tableName ( " +
               "`id` BIGINT(20) AUTO_INCREMENT PRIMARY KEY," +
               "`key` VARCHAR(255) NOT NULL," +
               "`value` VARCHAR(255) NOT NULL," +

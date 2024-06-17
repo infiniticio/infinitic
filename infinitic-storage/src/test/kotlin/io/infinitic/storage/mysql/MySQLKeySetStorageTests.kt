@@ -67,15 +67,15 @@ class MySQLKeySetStorageTests :
         fun equalsTo(set1: Set<ByteArray>, set2: Set<ByteArray>) =
             set1.map { Bytes(it) }.toSet() == set2.map { Bytes(it) }.toSet()
 
-        "check creation of table (without prefix)" {
+        "check creation of table (default table)" {
           with(config) { storage.pool.tableExists("key_set_storage") } shouldBe true
         }
 
-        "check creation of table (with prefix)" {
-          val configWithPrefix = config.copy(tablePrefix = "prefix")
+        "check creation of table (custom table)" {
+          val configWithCustomTable = config.copy(keySetTable = "custom_key_set_table")
 
-          MySQLKeySetStorage.from(configWithPrefix).use {
-            with(configWithPrefix) { it.pool.tableExists("prefix_key_set_storage") } shouldBe true
+          MySQLKeySetStorage.from(configWithCustomTable).use {
+            with(configWithCustomTable) { it.pool.tableExists("custom_key_set_table") } shouldBe true
           }
         }
 

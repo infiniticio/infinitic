@@ -111,7 +111,7 @@ storage:
       },
   )
 
-private inline fun <reified T : Any> loadConfigFromYaml(yaml: String): T =
+internal inline fun <reified T : Any> loadConfigFromYaml(yaml: String): T =
     ConfigLoaderBuilder.default()
         .also { builder -> builder.addSource(YamlPropertySource(yaml)) }
         .build()
