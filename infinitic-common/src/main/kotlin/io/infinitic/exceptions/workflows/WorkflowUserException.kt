@@ -23,9 +23,9 @@
 package io.infinitic.exceptions.workflows
 
 import io.infinitic.common.workers.config.WorkflowVersion
-import io.infinitic.common.workflows.Channel
 import io.infinitic.common.workflows.data.workflows.WorkflowName
 import io.infinitic.exceptions.UserException
+import io.infinitic.workflows.Channel
 
 sealed class WorkflowUserException(msg: String, help: String) : UserException("$msg.\n$help")
 

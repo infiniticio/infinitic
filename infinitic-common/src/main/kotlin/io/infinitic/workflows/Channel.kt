@@ -20,12 +20,11 @@
  *
  * Licensor: infinitic.io
  */
-package io.infinitic.common.workflows
+package io.infinitic.workflows
 
 import com.jayway.jsonpath.Criteria
+import io.infinitic.common.workflows.WorkflowDispatcher
 import io.infinitic.exceptions.workflows.ChannelWithoutGetterException
-import io.infinitic.workflows.Deferred
-import io.infinitic.workflows.SendChannel
 
 class Channel<T : Any>(private val dispatcherFn: () -> WorkflowDispatcher) : SendChannel<T> {
   private lateinit var _name: String

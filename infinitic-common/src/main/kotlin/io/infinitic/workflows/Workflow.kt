@@ -31,7 +31,6 @@ import io.infinitic.common.proxies.RequestByWorkflowId
 import io.infinitic.common.proxies.RequestByWorkflowTag
 import io.infinitic.common.tasks.data.TaskMeta
 import io.infinitic.common.tasks.data.TaskTag
-import io.infinitic.common.workflows.Channel
 import io.infinitic.common.workflows.Consumer0
 import io.infinitic.common.workflows.Consumer1
 import io.infinitic.common.workflows.Consumer2
