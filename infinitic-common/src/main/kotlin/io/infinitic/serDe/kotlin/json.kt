@@ -24,8 +24,14 @@ package io.infinitic.serDe.kotlin
 
 import kotlinx.serialization.json.Json
 
+/**
+ * JSON configuration for native Kotlin serialization and deserialization.
+ *
+ * This property is mutable to be updated by user when needed
+ */
 var json = Json {
   // use a less obvious key than "type" for polymorphic data, to avoid collusion
   classDiscriminator = "#klass"
+  // useful for object versioning
   ignoreUnknownKeys = true
 }

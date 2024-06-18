@@ -34,9 +34,16 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import com.fasterxml.jackson.module.kotlin.KotlinFeature
 import com.fasterxml.jackson.module.kotlin.KotlinModule
 import com.fasterxml.jackson.module.kotlin.jsonMapper
+import io.infinitic.serDe.java.Json.mapper
 import org.apache.avro.specific.SpecificRecordBase
 import java.io.IOException
 
+/**
+ * Json is an object used for JSON serialization for non-kotlin object
+ *
+ *  @property mapper is mutable to be updated by user when needed
+ *
+ */
 object Json {
   @JvmStatic
   var mapper: ObjectMapper = jsonMapper {
