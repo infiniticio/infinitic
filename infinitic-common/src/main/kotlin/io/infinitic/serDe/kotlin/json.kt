@@ -20,23 +20,18 @@
  *
  * Licensor: infinitic.io
  */
-package io.infinitic.common.serDe.kserializer
+package io.infinitic.serDe.kotlin
 
-import java.time.Duration
-import kotlinx.serialization.KSerializer
-import kotlinx.serialization.descriptors.PrimitiveKind
-import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
-import kotlinx.serialization.descriptors.SerialDescriptor
-import kotlinx.serialization.encoding.Decoder
-import kotlinx.serialization.encoding.Encoder
+import kotlinx.serialization.json.Json
 
-object DurationSerializer : KSerializer<Duration> {
-  override val descriptor: SerialDescriptor =
-      PrimitiveSerialDescriptor("DurationLong", PrimitiveKind.LONG)
-
-  override fun serialize(encoder: Encoder, value: Duration) {
-    encoder.encodeLong(value.toMillis())
-  }
-
-  override fun deserialize(decoder: Decoder): Duration = Duration.ofMillis(decoder.decodeLong())
+/**
+ * JSON configuration for native Kotlin serialization and deserialization.
+ *
+ * This property is mutable to be updated by user when needed
+ */
+var json = Json {
+  // use a less obvious key than "type" for polymorphic data, to avoid collusion
+  classDiscriminator = "#klass"
+  // useful for object versioning
+  ignoreUnknownKeys = true
 }

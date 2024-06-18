@@ -20,25 +20,24 @@
  *
  * Licensor: infinitic.io
  */
+package io.infinitic.common.workflows
 
-package io.infinitic.storage.databases.mysql
-
-internal fun String.isValidMySQLTableName(): Boolean {
-  // Check length
-  if (length > 64) {
-    return false
+data class WorkflowContext(
+  val workflowName: String,
+  val workflowId: String,
+  val methodName: String,
+  val methodId: String,
+  val tags: Set<String>,
+  val meta: Map<String, ByteArray>
+) {
+  companion object {
+    val dummy = WorkflowContext(
+        workflowName = "workflowName",
+        workflowId = "workflowId",
+        methodName = "methodName",
+        methodId = "methodId",
+        tags = emptySet(),
+        meta = mutableMapOf(),
+    )
   }
-
-  // Check first character
-  if (!first().isLetter()) {
-    return false
-  }
-
-  // Check illegal characters
-  if (any { !it.isLetterOrDigit() && it != '_' && it != '$' && it != '#' }) {
-    return false
-  }
-
-  // Okay if it passed all checks
-  return true
 }

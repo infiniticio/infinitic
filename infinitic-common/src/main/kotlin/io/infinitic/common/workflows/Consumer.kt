@@ -20,8 +20,44 @@
  *
  * Licensor: infinitic.io
  */
-package io.infinitic.workflows
+package io.infinitic.common.workflows
 
-import kotlinx.serialization.Serializable
+interface Consumer0 {
+  fun apply()
+}
 
-@Serializable data class DeferredOptions(val timeoutSeconds: Double? = null)
+interface Consumer1<P1> {
+  fun apply(p1: P1)
+}
+
+interface Consumer2<P1, P2> {
+  fun apply(p1: P1, p2: P2)
+}
+
+interface Consumer3<P1, P2, P3> {
+  fun apply(p1: P1, p2: P2, p3: P3)
+}
+
+interface Consumer4<P1, P2, P3, P4> {
+  fun apply(p1: P1, p2: P2, p3: P3, p4: P4)
+}
+
+interface Consumer5<P1, P2, P3, P4, P5> {
+  fun apply(p1: P1, p2: P2, p3: P3, p4: P4, p5: P5)
+}
+
+interface Consumer6<P1, P2, P3, P4, P5, P6> {
+  fun apply(p1: P1, p2: P2, p3: P3, p4: P4, p5: P5, p6: P6)
+}
+
+interface Consumer7<P1, P2, P3, P4, P5, P6, P7> {
+  fun apply(p1: P1, p2: P2, p3: P3, p4: P4, p5: P5, p6: P6, p7: P7)
+}
+
+interface Consumer8<P1, P2, P3, P4, P5, P6, P7, P8> {
+  fun apply(p1: P1, p2: P2, p3: P3, p4: P4, p5: P5, p6: P6, p7: P7, p8: P8)
+}
+
+interface Consumer9<P1, P2, P3, P4, P5, P6, P7, P8, P9> {
+  fun apply(p1: P1, p2: P2, p3: P3, p4: P4, p5: P5, p6: P6, p7: P7, p8: P8, p9: P9)
+}

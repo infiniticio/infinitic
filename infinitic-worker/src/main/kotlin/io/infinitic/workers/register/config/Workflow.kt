@@ -25,6 +25,7 @@ package io.infinitic.workers.register.config
 import io.infinitic.common.utils.getInstance
 import io.infinitic.common.utils.isImplementationOf
 import io.infinitic.common.workers.config.RetryPolicy
+import io.infinitic.common.workflows.WorkflowContext
 import io.infinitic.events.config.EventListener
 import io.infinitic.workflows.Workflow
 import io.infinitic.workflows.WorkflowCheckMode
@@ -77,12 +78,14 @@ data class Workflow(
   }
 
   private fun getWorkflowClass(className: String): Class<out Workflow> {
+    // make sure to have a context to be able to create the workflow instance
+    Workflow.setContext(WorkflowContext.dummy)
     val instance = className.getInstance().getOrThrow()
 
     val klass = instance::class.java
 
     require(klass.isImplementationOf(name)) {
-      error("Class '${klass.name}' is not an implementation of this workflow - check your configuration")
+      error("Class '${klass.name}' is not an implementation of '$name' - check your configuration")
     }
 
     require(instance is WorkflowBase) {

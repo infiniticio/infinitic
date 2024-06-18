@@ -33,7 +33,8 @@ data class Postgres(
   val user: String = "postgres",
   val password: Secret? = null,
   val database: String = "infinitic",
-  val tablePrefix: String = "",
+  val keySetTable: String = "key_set_storage",
+  val keyValueTable: String = "key_value_storage",
   val maximumPoolSize: Int? = null,
   val minimumIdle: Int? = null,
   val idleTimeout: Long? = null, // milli seconds
@@ -47,20 +48,23 @@ data class Postgres(
 
   init {
     maximumPoolSize?.let {
-      require(it > 0) { "maximumPoolSize must by strictly positive" }
+      require(it > 0) { "maximumPoolSize must be strictly positive" }
     }
     minimumIdle?.let {
-      require(it > 0) { "minimumIdle must by strictly positive" }
+      require(it >= 0) { "minimumIdle must be positive" }
     }
     idleTimeout?.let {
-      require(it > 0) { "idleTimeout must by strictly positive" }
+      require(it > 0) { "idleTimeout must be strictly positive" }
     }
     connectionTimeout?.let {
-      require(it > 0) { "connectionTimeout must by strictly positive" }
+      require(it > 0) { "connectionTimeout must be strictly positive" }
     }
     maxLifetime?.let {
-      require(it > 0) { "maxLifetime must by strictly positive" }
+      require(it > 0) { "maxLifetime must be strictly positive" }
     }
+
+    require(keySetTable.isValidTableName()) { "'$keySetTable' is not a valid PostgresSQL table name" }
+    require(keyValueTable.isValidTableName()) { "'$keyValueTable' is not a valid PostgresSQL table name" }
   }
 
   companion object {
@@ -79,21 +83,35 @@ data class Postgres(
     // Create the Database if needed
     initDatabase()
     // create pool
-    val config = this@Postgres
-    HikariDataSource(
-        HikariConfig().apply {
-          jdbcUrl = config.jdbcUrl
-          driverClassName = config.driverClassName
-          username = config.user
-          password = config.password?.value
-          config.maximumPoolSize?.let { maximumPoolSize = it }
-          config.minimumIdle?.let { minimumIdle = it }
-          config.idleTimeout?.let { idleTimeout = it }
-          config.connectionTimeout?.let { connectionTimeout = it }
-          config.maxLifetime?.let { maxLifetime = it }
-        },
-    )
+    HikariDataSource(hikariConfig)
   }
+
+  private val hikariConfig = HikariConfig().apply {
+    val config = this@Postgres
+    jdbcUrl = config.jdbcUrl
+    driverClassName = config.driverClassName
+    username = config.user
+    password = config.password?.value
+    config.maximumPoolSize?.let { maximumPoolSize = it }
+    config.minimumIdle?.let { minimumIdle = it }
+    config.idleTimeout?.let { idleTimeout = it }
+    config.connectionTimeout?.let { connectionTimeout = it }
+    config.maxLifetime?.let { maxLifetime = it }
+  }
+
+  private fun HikariDataSource.databaseExists(databaseName: String): Boolean =
+      connection.use { it.metaData.catalogs }.use { resultSet ->
+        generateSequence {
+          if (resultSet.next()) resultSet.getString(1) else null
+        }.any { it == databaseName }
+      }
+
+  internal fun HikariDataSource.tableExists(tableName: String): Boolean =
+      connection.use { connection ->
+        connection.metaData.getTables(null, null, tableName, null).use {
+          it.next()
+        }
+      }
 
   private fun initDatabase() {
     getDefaultPool().use { pool ->
@@ -107,21 +125,7 @@ data class Postgres(
     }
   }
 
-  internal fun HikariDataSource.databaseExists(databaseName: String): Boolean =
-      connection.use { it.metaData.catalogs }.use { resultSet ->
-        generateSequence {
-          if (resultSet.next()) resultSet.getString(1) else null
-        }.any { it == databaseName }
-      }
-
-  internal fun HikariDataSource.tableExists(tableName: String): Boolean =
-      connection.use { connection ->
-        connection.metaData.getTables(null, null, tableName, null).use {
-          it.next()
-        }
-      }
-  
-  internal fun getDefaultPool() = HikariDataSource(
+  private fun getDefaultPool() = HikariDataSource(
       HikariConfig().apply {
         // use a default source
         jdbcUrl = this@Postgres.jdbcUrlDefault
@@ -130,4 +134,26 @@ data class Postgres(
         password = this@Postgres.password?.value
       },
   )
+
+  private fun String.isValidTableName(): Boolean {
+    // Check length
+    // Note that since Postgres uses bytes and Kotlin uses UTF-16 characters,
+    // this will not be entirely correct for multi-byte characters.
+    if (toByteArray(Charsets.UTF_8).size > 63) {
+      return false
+    }
+
+    // Check first character
+    if (!first().isLetter() && first() != '_') {
+      return false
+    }
+
+    // Check illegal characters
+    if (any { !it.isLetterOrDigit() && it != '_' && it != '$' }) {
+      return false
+    }
+
+    // Okay if it passed all checks
+    return true
+  }
 }

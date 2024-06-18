@@ -40,15 +40,15 @@ internal class ContextWorkflowTests : StringSpec(
           meta = mutableMapOf("foo" to "bar".toByteArray()),
       )
 
-      "get id from context" {
+      "get id from context (from initialisation)" {
         contextWorkflow.context1() shouldBe client.lastDeferred!!.id
       }
 
-      "get tags from context" {
+      "get tags from context (from initialisation)" {
         contextWorkflow.context2() shouldBe setOf("foo", "bar")
       }
 
-      "get meta from context" {
+      "get meta from context (from initialisation)" {
         contextWorkflow.context3() shouldBe WorkflowMeta(mapOf("foo" to "bar".toByteArray()))
       }
 

@@ -155,7 +155,7 @@ internal class WorkerConfigTests :
             WorkerConfig.fromResource("/config/workflows/incompatibleWorkflowName.yml")
           }
           e.message!! shouldContain
-              "Class '${WorkflowAImpl::class.java.name}' is not an implementation of this workflow"
+              "Class '${WorkflowAImpl::class.java.name}' is not an implementation of 'UnknownWorkflow'"
         }
 
         "checking the compatibility between name and classes in workflows" {
@@ -163,7 +163,7 @@ internal class WorkerConfigTests :
             WorkerConfig.fromResource("/config/workflows/incompatibleWorkflowsName.yml")
           }
           e.message!! shouldContain
-              "Class '${WorkflowAImpl2::class.java.name}' is not an implementation of this workflow"
+              "Class '${WorkflowAImpl2::class.java.name}' is not an implementation of 'io.infinitic.workers.samples.WorkflowA'"
         }
       },
   )

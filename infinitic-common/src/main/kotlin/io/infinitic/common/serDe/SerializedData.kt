@@ -32,6 +32,7 @@ import io.infinitic.exceptions.serialization.JsonDeserializationException
 import io.infinitic.exceptions.serialization.KotlinDeserializationException
 import io.infinitic.exceptions.serialization.MissingMetaJavaClassException
 import io.infinitic.exceptions.serialization.SerializerNotFoundException
+import io.infinitic.serDe.kotlin.json
 import kotlinx.serialization.InternalSerializationApi
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
@@ -42,7 +43,7 @@ import kotlinx.serialization.serializerOrNull
 import java.math.BigInteger
 import java.security.MessageDigest
 import java.util.*
-import io.infinitic.common.serDe.json.Json as JsonJackson
+import io.infinitic.serDe.java.Json as JsonJackson
 
 @Serializable
 @AvroNamespace("io.infinitic.data")
@@ -58,12 +59,6 @@ data class SerializedData(
 
     // meta key containing the name of the serialized java class
     const val META_JAVA_CLASS = "javaClass"
-
-    private val jsonKotlin = Json {
-      // use a less obvious key than "type" for polymorphic data, to avoid collusion
-      classDiscriminator = "#klass"
-      ignoreUnknownKeys = true
-    }
 
     private fun String.toBytes(): ByteArray = toByteArray(charset = Charsets.UTF_8)
 
@@ -105,7 +100,7 @@ data class SerializedData(
             else -> {
               type = SerializedDataType.JSON_KOTLIN
               @Suppress("UNCHECKED_CAST")
-              bytes = jsonKotlin.encodeToString(serializer as KSerializer<T>, value).toByteArray()
+              bytes = json.encodeToString(serializer as KSerializer<T>, value).toByteArray()
             }
           }
           meta = mutableMapOf(META_JAVA_CLASS to value.getClassInBytes())
@@ -137,7 +132,7 @@ data class SerializedData(
             ?: throw SerializerNotFoundException(klass.name)
 
           try {
-            jsonKotlin.decodeFromString(serializer, toJsonString())
+            json.decodeFromString(serializer, toJsonString())
           } catch (e: SerializationException) {
             throw KotlinDeserializationException(klass.name, causeString = e.toString())
           }

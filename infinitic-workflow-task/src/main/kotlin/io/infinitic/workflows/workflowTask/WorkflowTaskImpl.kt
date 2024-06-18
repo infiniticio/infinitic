@@ -51,15 +51,7 @@ class WorkflowTaskImpl : WorkflowTask {
     // get method
     val methodRun = workflowTaskParameters.workflowMethod
 
-    // set context
-    with(workflowTaskParameters) {
-      instance.workflowName = workflowName.toString()
-      instance.workflowId = workflowId.toString()
-      instance.methodName = methodRun.methodName.toString()
-      instance.methodId = methodRun.workflowMethodId.toString()
-      instance.tags = workflowTags.map { it.tag }.toSet()
-      instance.meta = workflowMeta.map
-    }
+    // set dispatcher
     val dispatcher = WorkflowDispatcherImpl(checkMode, workflowTaskParameters)
     instance.dispatcher = dispatcher
 

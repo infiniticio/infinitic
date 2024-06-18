@@ -52,18 +52,21 @@ interface ContextWorkflow {
 @Suppress("unused")
 class ContextWorkflowImpl : Workflow(), ContextWorkflow {
 
-  private val utilService =
-      newService(
-          UtilService::class.java,
-          tags = setOf("foo", "bar"),
-          meta = mutableMapOf("foo" to "bar".toByteArray()),
-      )
+  private val _workflowId = workflowId
+  private val _tags = tags
+  private val _meta = meta
 
-  override fun context1(): String = workflowId
+  private val utilService = newService(
+      UtilService::class.java,
+      tags = setOf("foo", "bar"),
+      meta = mutableMapOf("foo" to "bar".toByteArray()),
+  )
 
-  override fun context2(): Set<String> = tags
+  override fun context1(): String = _workflowId
 
-  override fun context3() = WorkflowMeta(meta)
+  override fun context2(): Set<String> = _tags
+
+  override fun context3() = WorkflowMeta(_meta)
 
   override fun context4() = utilService.workflowId()
 

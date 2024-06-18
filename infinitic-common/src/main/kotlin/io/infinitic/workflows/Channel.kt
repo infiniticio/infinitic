@@ -23,6 +23,7 @@
 package io.infinitic.workflows
 
 import com.jayway.jsonpath.Criteria
+import io.infinitic.common.workflows.WorkflowDispatcher
 import io.infinitic.exceptions.workflows.ChannelWithoutGetterException
 
 class Channel<T : Any>(private val dispatcherFn: () -> WorkflowDispatcher) : SendChannel<T> {
@@ -45,16 +46,16 @@ class Channel<T : Any>(private val dispatcherFn: () -> WorkflowDispatcher) : Sen
 
   @JvmOverloads
   fun receive(
-      limit: Int? = null,
-      jsonPath: String? = null,
-      criteria: Criteria? = null
+    limit: Int? = null,
+    jsonPath: String? = null,
+    criteria: Criteria? = null
   ): Deferred<T> = dispatcherFn().receive(this, null, limit, jsonPath, criteria)
 
   @JvmOverloads
   fun <S : T> receive(
-      klass: Class<S>,
-      limit: Int? = null,
-      jsonPath: String? = null,
-      criteria: Criteria? = null
+    klass: Class<S>,
+    limit: Int? = null,
+    jsonPath: String? = null,
+    criteria: Criteria? = null
   ): Deferred<S> = dispatcherFn().receive(this, klass, limit, jsonPath, criteria)
 }

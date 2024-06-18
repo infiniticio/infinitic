@@ -20,11 +20,14 @@
  *
  * Licensor: infinitic.io
  */
-package io.infinitic.workflows
+package io.infinitic.common.workflows
 
 import com.jayway.jsonpath.Criteria
 import io.infinitic.common.proxies.ProxyDispatcher
 import io.infinitic.common.proxies.ProxyHandler
+import io.infinitic.workflows.Channel
+import io.infinitic.workflows.Deferred
+import io.infinitic.workflows.DeferredStatus
 import java.time.Duration
 import java.time.Instant
 

@@ -23,8 +23,8 @@
 package io.infinitic.exceptions.serialization
 
 import io.infinitic.common.serDe.SerializedData
-import io.infinitic.common.serDe.json.Json
 import io.infinitic.exceptions.UserException
+import io.infinitic.serDe.java.Json
 
 sealed class SerializationException(msg: String, help: String) : UserException("$msg.\n$help")
 

@@ -20,12 +20,13 @@
  *
  * Licensor: infinitic.io
  */
-package io.infinitic.common.serDe.json
+package io.infinitic.serDe.java
 
 import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.core.JsonGenerator
 import com.fasterxml.jackson.databind.DeserializationFeature
 import com.fasterxml.jackson.databind.JsonSerializer
+import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.SerializationFeature
 import com.fasterxml.jackson.databind.SerializerProvider
 import com.fasterxml.jackson.databind.annotation.JsonSerialize
@@ -33,11 +34,19 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import com.fasterxml.jackson.module.kotlin.KotlinFeature
 import com.fasterxml.jackson.module.kotlin.KotlinModule
 import com.fasterxml.jackson.module.kotlin.jsonMapper
+import io.infinitic.serDe.java.Json.mapper
 import org.apache.avro.specific.SpecificRecordBase
 import java.io.IOException
 
+/**
+ * Json is an object used for JSON serialization for non-kotlin object
+ *
+ *  @property mapper is mutable to be updated by user when needed
+ *
+ */
 object Json {
-  var mapper = jsonMapper {
+  @JvmStatic
+  var mapper: ObjectMapper = jsonMapper {
     addMixIn(SpecificRecordBase::class.java, AvroMixIn::class.java)
     addMixIn(Exception::class.java, ExceptionMixIn::class.java)
     addModule(JavaTimeModule())

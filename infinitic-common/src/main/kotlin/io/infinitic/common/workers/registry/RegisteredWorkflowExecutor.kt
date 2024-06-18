@@ -24,6 +24,8 @@ package io.infinitic.common.workers.registry
 
 import io.infinitic.common.exceptions.thisShouldNotHappen
 import io.infinitic.common.workers.config.WorkflowVersion
+import io.infinitic.common.workflows.WorkflowContext
+import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskParameters
 import io.infinitic.common.workflows.data.workflows.WorkflowName
 import io.infinitic.exceptions.workflows.UnknownWorkflowVersionException
 import io.infinitic.tasks.WithRetry
@@ -65,11 +67,29 @@ data class RegisteredWorkflowExecutor(
 
   private val lastVersion by lazy { classByVersion.keys.maxOrNull() ?: thisShouldNotHappen() }
 
-  fun getInstance(workflowVersion: WorkflowVersion?): Workflow =
-      getClass(workflowVersion).getDeclaredConstructor().newInstance()
+  fun getInstance(workflowTaskParameters: WorkflowTaskParameters): Workflow =
+      with(workflowTaskParameters) {
+        // set WorkflowContext before Workflow instance creation
+        Workflow.setContext(
+            WorkflowContext(
+                workflowName = workflowName.toString(),
+                workflowId = workflowId.toString(),
+                methodName = workflowMethod.methodName.toString(),
+                methodId = workflowMethod.workflowMethodId.toString(),
+                meta = workflowMeta.map,
+                tags = workflowTags.map { it.tag }.toSet(),
+            ),
+        )
 
-  private fun getClass(workflowVersion: WorkflowVersion?) =
-      (workflowVersion ?: lastVersion).run {
-        classByVersion[this] ?: throw UnknownWorkflowVersionException(workflowName, this)
+        getInstanceByVersion(workflowVersion)
       }
+
+  fun getInstanceByVersion(workflowVersion: WorkflowVersion?): Workflow =
+      getClassByVersion(workflowVersion).getDeclaredConstructor().newInstance()
+
+  private fun getClassByVersion(workflowVersion: WorkflowVersion?): Class<out Workflow> {
+    val version = workflowVersion ?: lastVersion
+
+    return classByVersion[version] ?: throw UnknownWorkflowVersionException(workflowName, version)
+  }
 }

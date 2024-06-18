@@ -24,7 +24,6 @@ package io.infinitic.pulsar.config
 
 import com.sksamuel.hoplite.Secret
 import io.github.oshai.kotlinlogging.KotlinLogging
-import io.infinitic.common.serDe.json.Json
 import io.infinitic.pulsar.config.auth.AuthenticationAthenz
 import io.infinitic.pulsar.config.auth.AuthenticationOAuth2
 import io.infinitic.pulsar.config.auth.AuthenticationSasl
@@ -33,6 +32,7 @@ import io.infinitic.pulsar.config.auth.ClientAuthentication
 import io.infinitic.pulsar.config.policies.Policies
 import io.infinitic.pulsar.consumers.ConsumerConfig
 import io.infinitic.pulsar.producers.ProducerConfig
+import io.infinitic.serDe.java.Json
 import org.apache.pulsar.client.admin.PulsarAdmin
 import org.apache.pulsar.client.api.AuthenticationFactory
 import org.apache.pulsar.client.api.PulsarClient
