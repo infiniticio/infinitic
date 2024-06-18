@@ -25,7 +25,7 @@ object Ci {
   private const val SNAPSHOT = "-SNAPSHOT"
 
   // base version number
-  private const val BASE = "0.14.0"
+  private const val BASE = "0.14.1"
 
   // GitHub run number
   private val githubRunNumber = System.getenv("GITHUB_RUN_NUMBER")
