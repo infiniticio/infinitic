@@ -36,7 +36,9 @@ import io.infinitic.common.workflows.data.steps.or as stepOr
 
 @Serializable(with = DeferredSerializer::class)
 data class Deferred<T>(val step: Step) {
-  @Transient @JsonIgnore lateinit var workflowDispatcher: WorkflowDispatcher
+  @Transient
+  @JsonIgnore
+  lateinit var workflowDispatcher: WorkflowDispatcher
 
   @Transient
   @JsonIgnore
@@ -68,39 +70,55 @@ data class Deferred<T>(val step: Step) {
   fun status(): DeferredStatus = workflowDispatcher.status(this)
 
   /** This deferred is still ongoing */
-  @JsonIgnore fun isOngoing() = status() == DeferredStatus.ONGOING
+  @JsonIgnore
+  fun isOngoing() = status() == DeferredStatus.ONGOING
 
   /** This deferred is unknown, it can happen when targeting an unknown id, or already terminated */
-  @JsonIgnore fun isUnknown() = status() == DeferredStatus.UNKNOWN
+  @JsonIgnore
+  fun isUnknown() = status() == DeferredStatus.UNKNOWN
 
   /** This deferred is now cancelled */
-  @JsonIgnore fun isCanceled() = status() == DeferredStatus.CANCELED
+  @JsonIgnore
+  fun isCanceled() = status() == DeferredStatus.CANCELED
 
   /** This deferred is now failed */
-  @JsonIgnore fun isFailed() = status() == DeferredStatus.FAILED
+  @JsonIgnore
+  fun isFailed() = status() == DeferredStatus.FAILED
 
   /** This deferred is now completed */
-  @JsonIgnore fun isCompleted() = status() == DeferredStatus.COMPLETED
+  @JsonIgnore
+  fun isCompleted() = status() == DeferredStatus.COMPLETED
+
+  /**
+   * Combines this Deferred with another Deferred using the logical OR operation.
+   * Returns a new Deferred that represents the result of the OR operation.
+   * The resulting Deferred will complete when either this Deferred or the other Deferred completes.
+   *
+   * @param other The other Deferred to combine with this Deferred.
+   * @return The new Deferred representing the result of the OR operation.
+   */
+  fun or(other: Deferred<out T>): Deferred<T> = this or other
+
+  /**
+   * Combines this Deferred with another Deferred using the logical AND operation.
+   * Returns a new Deferred that represents the result of the AND operation.
+   * The resulting Deferred will complete when both this Deferred and the other Deferred completes.
+   *
+   * @param other The other Deferred to combine with this Deferred.
+   * @return The new Deferred representing the result of the AND operation.
+   */
+  fun and(other: Deferred<out T>): Deferred<List<T>> = this and other
 }
 
-object DeferredSerializer : KSerializer<Deferred<*>> {
-  override val descriptor: SerialDescriptor = Step.serializer().descriptor
+fun <T> or(vararg others: Deferred<out T>): Deferred<T> = (others.toList()).or()
 
-  override fun serialize(encoder: Encoder, value: Deferred<*>) {
-    encoder.encodeSerializableValue(Step.serializer(), value.step)
-  }
-
-  override fun deserialize(decoder: Decoder): Deferred<*> =
-      Deferred<Any>(decoder.decodeSerializableValue(Step.serializer()))
-}
-
-fun <T> or(vararg others: Deferred<out T>) = others.reduce { acc, deferred -> acc or deferred }
-
-fun and(vararg others: Deferred<*>) = others.reduce { acc, deferred -> acc and deferred }
+fun <T> and(vararg others: Deferred<out T>): Deferred<List<T>> = (others.toList()).and()
 
 @JvmName("orT0")
 infix fun <T> Deferred<out T>.or(other: Deferred<out T>) =
-    Deferred<T>(stepOr(step, other.step)).apply { workflowDispatcher = this@or.workflowDispatcher }
+    Deferred<T>(stepOr(step, other.step)).apply {
+      workflowDispatcher = this@or.workflowDispatcher
+    }
 
 @JvmName("orT1")
 infix fun <T> Deferred<List<T>>.or(other: Deferred<out T>) =
@@ -145,11 +163,24 @@ infix fun <T> Deferred<out T>.and(other: Deferred<List<T>>) =
     }
 
 // extension function to apply AND to a List<Deferred<T>>
-fun <T> List<Deferred<T>>.and() =
+fun <T> List<Deferred<out T>>.and(): Deferred<List<T>> =
     Deferred<List<T>>(Step.And(map { it.step })).apply {
       workflowDispatcher = first().workflowDispatcher
     }
 
 // extension function to apply OR to a List<Deferred<T>>
-fun <T> List<Deferred<T>>.or() =
-    Deferred<T>(Step.Or(map { it.step })).apply { workflowDispatcher = first().workflowDispatcher }
+fun <T> List<Deferred<out T>>.or(): Deferred<T> =
+    Deferred<T>(Step.Or(map { it.step })).apply {
+      workflowDispatcher = first().workflowDispatcher
+    }
+
+private object DeferredSerializer : KSerializer<Deferred<*>> {
+  override val descriptor: SerialDescriptor = Step.serializer().descriptor
+
+  override fun serialize(encoder: Encoder, value: Deferred<*>) {
+    encoder.encodeSerializableValue(Step.serializer(), value.step)
+  }
+
+  override fun deserialize(decoder: Decoder): Deferred<*> =
+      Deferred<Any>(decoder.decodeSerializableValue(Step.serializer()))
+}
