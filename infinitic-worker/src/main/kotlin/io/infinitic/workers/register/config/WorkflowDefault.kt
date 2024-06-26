@@ -33,7 +33,7 @@ data class WorkflowDefault(
   val timeoutInSeconds: Double? = null,
   val retry: RetryPolicy? = null,
   val tagEngine: WorkflowTagEngine? = null,
-  var workflowEngine: WorkflowStateEngine? = null,
+  var stateEngine: WorkflowStateEngine? = null,
   val checkMode: WorkflowCheckMode? = null,
   val eventListener: EventListener? = null
 ) {

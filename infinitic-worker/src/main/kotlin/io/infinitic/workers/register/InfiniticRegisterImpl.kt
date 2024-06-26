@@ -228,8 +228,8 @@ class InfiniticRegisterImpl : InfiniticRegister {
     storage?.let { storages.add(it) }
 
     val workflow = WorkflowName(workflowName)
-    val s = storage ?: workflowDefault.workflowEngine?.storage ?: defaultStorage
-    val c = cache ?: workflowDefault.workflowEngine?.cache ?: defaultCache
+    val s = storage ?: workflowDefault.stateEngine?.storage ?: defaultStorage
+    val c = cache ?: workflowDefault.stateEngine?.cache ?: defaultCache
 
     logger.info {
       "* workflow engine".padEnd(25) +
@@ -238,7 +238,7 @@ class InfiniticRegisterImpl : InfiniticRegister {
 
     registry.workflowEngines[workflow] = RegisteredWorkflowEngine(
         concurrency
-          ?: workflowDefault.workflowEngine?.concurrency
+          ?: workflowDefault.stateEngine?.concurrency
           ?: registry.workflowExecutors[workflow]?.concurrency
           ?: DEFAULT_CONCURRENCY,
         BinaryWorkflowStateStorage(
@@ -256,8 +256,8 @@ class InfiniticRegisterImpl : InfiniticRegister {
     storage?.let { storages.add(it) }
 
     val workflow = WorkflowName(workflowName)
-    val s = storage ?: workflowDefault.workflowEngine?.storage ?: defaultStorage
-    val c = cache ?: workflowDefault.workflowEngine?.cache ?: defaultCache
+    val s = storage ?: workflowDefault.stateEngine?.storage ?: defaultStorage
+    val c = cache ?: workflowDefault.stateEngine?.cache ?: defaultCache
 
     logger.info {
       "* workflow tag ".padEnd(25) +
@@ -335,7 +335,7 @@ class InfiniticRegisterImpl : InfiniticRegister {
                   it.cache,
               )
             }
-            w.workflowEngine?.let {
+            w.stateEngine?.let {
               registerWorkflowStateEngine(
                   w.name,
                   it.concurrency,

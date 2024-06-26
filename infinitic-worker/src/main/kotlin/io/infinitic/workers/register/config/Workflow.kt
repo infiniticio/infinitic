@@ -44,7 +44,7 @@ import io.infinitic.workflows.Workflow as WorkflowBase
  * @property retry The retry policy for the workflow. Optional.
  * @property checkMode The workflow check mode. Optional.
  * @property tagEngine The tag engine for the workflow. Optional.
- * @property workflowEngine The workflow state engine for the workflow. Optional.
+ * @property stateEngine The workflow state engine for the workflow. Optional.
  * @property eventListener The event listener for the workflow. Optional.
  * @property allClasses A mutable list of workflow base classes.
  *
@@ -64,7 +64,7 @@ data class Workflow(
   var retry: RetryPolicy? = UNDEFINED_RETRY,
   var checkMode: WorkflowCheckMode? = null,
   var tagEngine: WorkflowTagEngine? = DEFAULT_WORKFLOW_TAG_ENGINE,
-  var workflowEngine: WorkflowStateEngine? = DEFAULT_WORKFLOW_STATE_ENGINE,
+  var stateEngine: WorkflowStateEngine? = DEFAULT_WORKFLOW_STATE_ENGINE,
   var eventListener: EventListener? = UNDEFINED_EVENT_LISTENER,
 ) {
   val allClasses = mutableListOf<Class<out WorkflowBase>>()
@@ -73,8 +73,8 @@ data class Workflow(
     require(name.isNotEmpty()) { "name can not be empty" }
 
     when {
-      (`class` == null) && (classes == null) -> require(tagEngine != null || workflowEngine != null || eventListener != null) {
-        error("'${::`class`.name}', '${::classes.name}', '${::tagEngine.name}', '${::workflowEngine.name}' and '${::eventListener.name}' can not be all null")
+      (`class` == null) && (classes == null) -> require(tagEngine != null || stateEngine != null || eventListener != null) {
+        error("'${::`class`.name}', '${::classes.name}', '${::tagEngine.name}', '${::stateEngine.name}' and '${::eventListener.name}' can not be all null")
       }
 
       else -> {
