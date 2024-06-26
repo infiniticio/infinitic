@@ -49,7 +49,7 @@ data class Storage(
       // default storage is inMemory
       inMemory = InMemory()
     } else {
-      require(nonNul.count() == 1) { "Storage should not have multiple definitions: ${nonNul.joinToString { it::class.java.simpleName }}" }
+      require(nonNul.count() == 1) { "Storage should have only one definition: ${nonNul.joinToString { it::class.java.simpleName }}" }
     }
   }
 

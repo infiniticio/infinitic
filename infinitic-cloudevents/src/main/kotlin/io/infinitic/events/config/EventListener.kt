@@ -30,6 +30,8 @@ data class EventListener(
   var concurrency: Int? = null,
   var subscriptionName: String? = null,
 ) {
+  var isDefined = true
+
   val instance: CloudEventListener
     get() = `class`!!.getInstance().getOrThrow() as CloudEventListener
 

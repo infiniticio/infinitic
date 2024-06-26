@@ -28,22 +28,33 @@ import io.infinitic.common.workers.config.RetryPolicy
 import io.infinitic.events.config.EventListener
 import io.infinitic.tasks.tag.config.ServiceTagEngine
 
+/**
+ * Represents a service.
+ *
+ * @property name The name of the service.
+ * @property class The fully qualified class name of the service implementation.
+ * @property concurrency The number of concurrent messages that can be handled by the service.
+ * @property timeoutInSeconds The timeout value for the service in seconds.
+ * @property retry The retry policy for the service.
+ * @property tagEngine The tag engine for the service.
+ * @property eventListener The event listener for the service.
+ */
 data class Service(
   val name: String,
   val `class`: String? = null,
   var concurrency: Int? = null,
-  var timeoutInSeconds: Double? = null,
-  var retry: RetryPolicy? = null,
-  var tagEngine: ServiceTagEngine? = DEFAULT_TAG_ENGINE,
-  var eventListener: EventListener? = null,
+  var timeoutInSeconds: Double? = UNDEFINED_TIMEOUT,
+  var retry: RetryPolicy? = UNDEFINED_RETRY,
+  var tagEngine: ServiceTagEngine? = DEFAULT_SERVICE_TAG,
+  var eventListener: EventListener? = UNDEFINED_EVENT_LISTENER,
 ) {
   fun getInstance(): Any = `class`!!.getInstance().getOrThrow()
 
   init {
     require(name.isNotEmpty()) { "'${::name.name}' can not be empty" }
 
-    `class`?.let {
-      require(it.isNotEmpty()) { error("'class' empty") }
+    `class`?.let { klass ->
+      require(klass.isNotEmpty()) { error("'class' empty") }
 
       val instance = getInstance()
 
@@ -51,23 +62,15 @@ data class Service(
         error("Class '${instance::class.java.name}' is not an implementation of this service - check your configuration")
       }
 
-      if (concurrency != null) {
-        require(concurrency!! >= 0) {
-          error("'${::concurrency.name}' must be an integer >= 0")
-        }
+      concurrency?.let {
+        require(it >= 0) { error("'${::concurrency.name}' must be an integer >= 0") }
       }
 
-      if (timeoutInSeconds != null) {
-        require(timeoutInSeconds!! > 0) {
-          error("'${::timeoutInSeconds.name}' must be an integer > 0")
-        }
+      timeoutInSeconds?.let  { timeout ->
+        require(timeout > 0 || timeout == UNDEFINED_TIMEOUT ) { error("'${::timeoutInSeconds.name}' must be an integer > 0") }
       }
     }
   }
 
   private fun error(txt: String) = "Service $name: $txt"
-
-  companion object {
-    val DEFAULT_TAG_ENGINE = ServiceTagEngine().apply { isDefault = true }
-  }
 }

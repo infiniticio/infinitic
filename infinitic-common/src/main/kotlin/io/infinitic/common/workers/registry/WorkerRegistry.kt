@@ -36,13 +36,13 @@ class WorkerRegistry {
   val workflowTags = mutableMapOf<WorkflowName, RegisteredWorkflowTag>()
   val workflowListeners = mutableMapOf<WorkflowName, RegisteredEventListener>()
 
-  fun getRegisteredService(serviceName: ServiceName) =
+  fun getRegisteredServiceExecutor(serviceName: ServiceName) =
       serviceExecutors[serviceName]
 
   fun getRegisteredServiceTag(serviceName: ServiceName) =
       serviceTags[serviceName]
 
-  fun getRegisteredWorkflow(workflowName: WorkflowName) =
+  fun getRegisteredWorkflowExecutor(workflowName: WorkflowName) =
       workflowExecutors[workflowName]
 
   fun getRegisteredWorkflowEngine(workflowName: WorkflowName) =

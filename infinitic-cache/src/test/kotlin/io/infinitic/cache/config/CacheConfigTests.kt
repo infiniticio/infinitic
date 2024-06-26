@@ -54,12 +54,10 @@ class CacheConfigTests :
         }
 
         "can choose none cache" {
-          val config = loadConfigFromYaml<CacheConfigImpl>(
-              """
+          val config = loadConfigFromYaml<CacheConfigImpl>("""
 cache:
   none:
-     """,
-          )
+     """)
 
           config shouldBe CacheConfigImpl(cache = Cache(none = None()))
           config.cache.type shouldBe "none"
@@ -68,13 +66,10 @@ cache:
         }
 
         "can choose Caffeine cache" {
-          val config = loadConfigFromYaml<CacheConfigImpl>(
-              """
+          val config = loadConfigFromYaml<CacheConfigImpl>("""
 cache:
   caffeine:
-     """,
-          )
-
+     """)
           config shouldBe CacheConfigImpl(cache = Cache(caffeine = Caffeine()))
           config.cache.type shouldBe "caffeine"
           config.cache.keyValue::class shouldBe CaffeineCachedKeyValue::class
@@ -82,16 +77,13 @@ cache:
         }
 
         "can choose Caffeine cache with correct values" {
-          val config =
-              loadConfigFromYaml<CacheConfigImpl>(
-                  """
+          val config = loadConfigFromYaml<CacheConfigImpl>("""
 cache:
   caffeine:
     maximumSize: 100
     expireAfterAccess: 42
     expireAfterWrite: 64
-     """,
-              )
+     """)
 
           config shouldBe CacheConfigImpl(cache = Cache(caffeine = Caffeine(100, 42, 64)))
           config.cache.type shouldBe "caffeine"
@@ -100,17 +92,14 @@ cache:
         }
 
         "can not have multiple definition in cache" {
-          val e =
-              shouldThrow<ConfigException> {
-                loadConfigFromYaml<CacheConfigImpl>(
-                    """
+          val e = shouldThrow<ConfigException> {
+                loadConfigFromYaml<CacheConfigImpl>("""
 cache:
   none:
   caffeine:
-     """,
-                )
+     """)
               }
-          e.message shouldContain ("Multiple definitions for cache")
+          e.message shouldContain ("Cache should have only one definition")
         }
       },
   )

@@ -42,7 +42,7 @@ data class Cache(
       // No cache  by default
       none = None()
     } else {
-      require(nonNul.count() == 1) { "Multiple definitions for cache" }
+      require(nonNul.count() == 1) { "Cache should have only one definition: ${nonNul.joinToString { it::class.java.simpleName }}" }
     }
   }
 
