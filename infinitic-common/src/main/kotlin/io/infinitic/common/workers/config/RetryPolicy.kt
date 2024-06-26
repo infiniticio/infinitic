@@ -36,6 +36,8 @@ sealed class RetryPolicy(open val maximumRetries: Int, open val ignoredException
     val DEFAULT = ExponentialBackoffRetryPolicy()
   }
 
+  var isDefined = true
+
   val ignoredClasses: List<Class<*>> by lazy {
     ignoredExceptions.map { klass ->
       klass.getClass().getOrThrow().also {

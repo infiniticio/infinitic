@@ -256,7 +256,7 @@ class TaskExecutor(
   private fun parse(msg: ExecuteTask): TaskCommand {
     val service = when (msg.isWorkflowTask()) {
       true -> WorkflowTaskImpl()
-      false -> workerRegistry.getRegisteredService(msg.serviceName)!!.factory()
+      false -> workerRegistry.getRegisteredServiceExecutor(msg.serviceName)!!.factory()
     }
 
     val taskMethod = getMethodPerNameAndParameters(
@@ -271,7 +271,7 @@ class TaskExecutor(
     when (msg.isWorkflowTask()) {
       true -> {
         val workflowTaskParameters = parameters.first() as WorkflowTaskParameters
-        val registered = workerRegistry.getRegisteredWorkflow(msg.requester.workflowName!!)!!
+        val registered = workerRegistry.getRegisteredWorkflowExecutor(msg.requester.workflowName!!)!!
         // workflow instance
         val workflowInstance = registered.getInstance(workflowTaskParameters)
         // method instance
@@ -315,7 +315,7 @@ class TaskExecutor(
       }
 
       false -> {
-        val registered = workerRegistry.getRegisteredService(msg.serviceName)!!
+        val registered = workerRegistry.getRegisteredServiceExecutor(msg.serviceName)!!
 
         this.withTimeout =
             // use withTimeout from registry, if it exists

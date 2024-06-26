@@ -106,7 +106,7 @@ storage:
      """,
             )
           }
-          e.message shouldContain ("Storage should not have multiple definitions")
+          e.message shouldContain ("Storage should have only one definition")
         }
       },
   )

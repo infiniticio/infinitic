@@ -32,10 +32,10 @@ interface RegisterConfigInterface {
   val services: List<Service>
 
   /** Default service configuration */
-  val serviceDefault: ServiceDefault
+  val serviceDefault: ServiceDefault?
 
   /** Default workflow configuration */
-  val workflowDefault: WorkflowDefault
+  val workflowDefault: WorkflowDefault?
 
   /** Default event listener configuration */
   val eventListener: EventListener?

@@ -25,7 +25,7 @@ package io.infinitic.cloudEvents
 
 import io.cloudevents.CloudEvent
 
-interface CloudEventListener {
+fun interface CloudEventListener {
 
   fun onEvent(event: CloudEvent)
 

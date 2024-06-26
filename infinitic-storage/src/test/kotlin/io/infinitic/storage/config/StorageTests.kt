@@ -49,18 +49,6 @@ class StorageTests :
           storage shouldBe Storage(inMemory = InMemory())
         }
 
-        "multiple definition should throw" {
-          val e = shouldThrow<IllegalArgumentException> {
-            Storage(inMemory = InMemory(), redis = Redis())
-          }
-          e.message shouldContain "Storage should not have multiple definitions"
-
-          val e2 = shouldThrow<IllegalArgumentException> {
-            Storage(mysql = MySQL(), redis = Redis())
-          }
-          e2.message shouldContain "Storage should not have multiple definitions"
-        }
-
         "properties of InMemory" {
           val config = Storage(inMemory = InMemory("test"), compression = null)
 

@@ -22,31 +22,33 @@
  */
 package io.infinitic.workers.register.config
 
-import io.infinitic.common.workers.config.RetryPolicy
+import io.infinitic.common.workers.config.ExponentialBackoffRetryPolicy
 import io.infinitic.events.config.EventListener
-import io.infinitic.workflows.WorkflowCheckMode
+import io.infinitic.tasks.WithRetry
+import io.infinitic.tasks.WithTimeout
+import io.infinitic.tasks.tag.config.ServiceTagEngine
 import io.infinitic.workflows.engine.config.WorkflowStateEngine
 import io.infinitic.workflows.tag.config.WorkflowTagEngine
 
-data class WorkflowDefault(
-  val concurrency: Int? = null,
-  val timeoutInSeconds: Double? = null,
-  val retry: RetryPolicy? = null,
-  val tagEngine: WorkflowTagEngine? = null,
-  var stateEngine: WorkflowStateEngine? = null,
-  val checkMode: WorkflowCheckMode? = null,
-  val eventListener: EventListener? = null
-) {
-  init {
-    concurrency?.let {
-      require(it >= 0) { error("'${::concurrency.name}' must be positive") }
-    }
+/**
+ * Note: Final default values for withRetry, withTimeout and workflow check mode
+ * are in TaskExecutors as they can be defined through annotations as well
+ */
+internal const val DEFAULT_CONCURRENCY = 1
 
-    timeoutInSeconds?.let {
-      require(it > 0) { error("'${::timeoutInSeconds.name}' must be strictly positive") }
-    }
-  }
+internal const val UNDEFINED_TIMEOUT = -Double.MAX_VALUE
 
-  private fun error(msg: String) = "default workflow: $msg"
+internal val UNDEFINED_WITH_TIMEOUT = WithTimeout { UNDEFINED_TIMEOUT }
 
-}
+internal val UNDEFINED_RETRY = ExponentialBackoffRetryPolicy().apply { isDefined = false }
+
+internal val UNDEFINED_WITH_RETRY = WithRetry { _: Int, _: Exception -> null }
+
+internal val UNDEFINED_EVENT_LISTENER = EventListener().apply { isDefined = false }
+
+internal val DEFAULT_SERVICE_TAG = ServiceTagEngine().apply { isDefault = true }
+
+internal val DEFAULT_WORKFLOW_STATE_ENGINE = WorkflowStateEngine().apply { isDefault = true }
+
+internal val DEFAULT_WORKFLOW_TAG_ENGINE = WorkflowTagEngine().apply { isDefault = true }
+

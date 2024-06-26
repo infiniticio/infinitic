@@ -478,5 +478,10 @@ class InfiniticWorker(
     @JvmStatic
     fun fromConfigFile(vararg files: String): InfiniticWorker =
         fromConfig(WorkerConfig.fromFile(*files))
+
+    /** Create [InfiniticWorker] from yaml strings */
+    @JvmStatic
+    fun fromConfigYaml(vararg yamls: String): InfiniticWorker =
+        fromConfig(WorkerConfig.fromYaml(*yamls))
   }
 }

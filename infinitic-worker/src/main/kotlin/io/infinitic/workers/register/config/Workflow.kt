@@ -33,17 +33,39 @@ import io.infinitic.workflows.engine.config.WorkflowStateEngine
 import io.infinitic.workflows.tag.config.WorkflowTagEngine
 import io.infinitic.workflows.Workflow as WorkflowBase
 
+/**
+ * Represents a workflow entity with its properties and validation logic.
+ *
+ * @property name The name of the workflow.
+ * @property class The class name for the workflow. Optional.
+ * @property classes A list of class names for the workflow. Optional.
+ * @property concurrency The concurrency value for the workflow. Optional.
+ * @property timeoutInSeconds The timeout value in seconds for the workflow. Optional.
+ * @property retry The retry policy for the workflow. Optional.
+ * @property checkMode The workflow check mode. Optional.
+ * @property tagEngine The tag engine for the workflow. Optional.
+ * @property stateEngine The workflow state engine for the workflow. Optional.
+ * @property eventListener The event listener for the workflow. Optional.
+ * @property allClasses A mutable list of workflow base classes.
+ *
+ * @constructor Creates a Workflow instance.
+ *
+ * @throws IllegalArgumentException if the name is empty or all relevant properties are null.
+ * @throws IllegalArgumentException if the class or any of the classes are empty.
+ * @throws IllegalArgumentException if the concurrency is less than 0.
+ * @throws IllegalArgumentException if the timeoutInSeconds is not greater than 0 or UNDEFINED_TIMEOUT.
+ */
 data class Workflow(
   val name: String,
   val `class`: String? = null,
   val classes: List<String>? = null,
   var concurrency: Int? = null,
-  var timeoutInSeconds: Double? = null,
-  var retry: RetryPolicy? = null,
+  var timeoutInSeconds: Double? = UNDEFINED_TIMEOUT,
+  var retry: RetryPolicy? = UNDEFINED_RETRY,
   var checkMode: WorkflowCheckMode? = null,
-  var tagEngine: WorkflowTagEngine? = DEFAULT_TAG_ENGINE,
-  var workflowEngine: WorkflowStateEngine? = DEFAULT_STATE_ENGINE,
-  var eventListener: EventListener? = null,
+  var tagEngine: WorkflowTagEngine? = DEFAULT_WORKFLOW_TAG_ENGINE,
+  var stateEngine: WorkflowStateEngine? = DEFAULT_WORKFLOW_STATE_ENGINE,
+  var eventListener: EventListener? = UNDEFINED_EVENT_LISTENER,
 ) {
   val allClasses = mutableListOf<Class<out WorkflowBase>>()
 
@@ -51,27 +73,26 @@ data class Workflow(
     require(name.isNotEmpty()) { "name can not be empty" }
 
     when {
-      (`class` == null) && (classes == null) -> require(tagEngine != null || workflowEngine != null || eventListener != null) {
-        error("'${::`class`.name}', '${::classes.name}', '${::tagEngine.name}', '${::workflowEngine.name}' and '${::eventListener.name}' can not be all null")
+      (`class` == null) && (classes == null) -> require(tagEngine != null || stateEngine != null || eventListener != null) {
+        error("'${::`class`.name}', '${::classes.name}', '${::tagEngine.name}', '${::stateEngine.name}' and '${::eventListener.name}' can not be all null")
       }
 
       else -> {
-        if (`class` != null) {
+        `class`?.let {
+          allClasses.add(getWorkflowClass(it))
           require(`class`.isNotEmpty()) { error("'${::`class`.name}' can not be empty") }
         }
         classes?.forEachIndexed { index, s: String ->
+          allClasses.add(getWorkflowClass(s))
           require(s.isNotEmpty()) { error("'${::classes.name}[$index]' can not be empty") }
         }
 
-        `class`?.also { allClasses.add(getWorkflowClass(it)) }
-        classes?.forEach { allClasses.add(getWorkflowClass(it)) }
-
-        if (concurrency != null) {
-          require(concurrency!! >= 0) { error("'${::concurrency.name}' must be an integer >= 0") }
+        concurrency?.let {
+          require(it >= 0) { error("'${::concurrency.name}' must be an integer >= 0") }
         }
 
-        if (timeoutInSeconds != null) {
-          require(timeoutInSeconds!! > 0) { error("'${::timeoutInSeconds.name}' must be an integer > 0") }
+        timeoutInSeconds?.let  { timeout ->
+          require(timeout > 0 || timeout == UNDEFINED_TIMEOUT ) { error("'${::timeoutInSeconds.name}' must be an integer > 0") }
         }
       }
     }
@@ -96,9 +117,4 @@ data class Workflow(
   }
 
   private fun error(txt: String) = "Workflow $name: $txt"
-
-  companion object {
-    val DEFAULT_STATE_ENGINE = WorkflowStateEngine().apply { isDefault = true }
-    val DEFAULT_TAG_ENGINE = WorkflowTagEngine().apply { isDefault = true }
-  }
 }
