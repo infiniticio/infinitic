@@ -386,7 +386,7 @@ workflows:
   - name: $workflowName
     class: $workflowImplName
     concurrency: 5
-    workflowEngine: null
+    stateEngine: null
               """)
           val register = InfiniticRegisterImpl.fromConfig(config)
           val engine = register.registry.getRegisteredWorkflowEngine(workflowName)
@@ -401,7 +401,7 @@ workflows:
           val config = WorkerConfig.fromYaml(yaml, """
 workflows:
   - name: $workflowName
-    workflowEngine:
+    stateEngine:
       concurrency: 5
               """)
           val register = InfiniticRegisterImpl.fromConfig(config)
