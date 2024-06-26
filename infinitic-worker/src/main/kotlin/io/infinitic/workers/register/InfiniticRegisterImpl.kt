@@ -322,7 +322,7 @@ class InfiniticRegisterImpl : InfiniticRegister {
           for (w in workerConfig.workflows) {
             logger.info { "Workflow ${w.name}:" }
 
-            // executors are registered first, as it serves as default values for some others
+            // Workflow Executors are registered first, as it defines some default values for the others
             if (w.allClasses.isNotEmpty()) {
               registerWorkflowExecutor(
                   w.name,
@@ -333,6 +333,7 @@ class InfiniticRegisterImpl : InfiniticRegister {
                   w.checkMode,
               )
             }
+            // Workflow Tag Engine
             w.tagEngine?.let {
               registerWorkflowTagEngine(
                   w.name,
@@ -341,6 +342,7 @@ class InfiniticRegisterImpl : InfiniticRegister {
                   it.cache,
               )
             }
+            // Workflow State Engine
             w.stateEngine?.let {
               registerWorkflowStateEngine(
                   w.name,
@@ -349,6 +351,7 @@ class InfiniticRegisterImpl : InfiniticRegister {
                   it.cache,
               )
             }
+            // Workflow Event Listener
             w.eventListener?.let {
               val listener = if (it.isDefined) it else null
               if (listener != null || defaultEventListener != null) {
@@ -365,7 +368,7 @@ class InfiniticRegisterImpl : InfiniticRegister {
           for (s in workerConfig.services) {
             logger.info { "Service ${s.name}:" }
 
-            // executors are registered first, as it serves as default values for some others
+            // Service Executors are registered first, as it defines some default values for the others
             s.`class`?.let {
               registerServiceExecutor(
                   s.name,
@@ -375,6 +378,7 @@ class InfiniticRegisterImpl : InfiniticRegister {
                   s.retry?.let { if (it.isDefined) it else UNDEFINED_WITH_RETRY },
               )
             }
+            // Service Tag Engine
             s.tagEngine?.let {
               registerServiceTagEngine(
                   s.name,
@@ -383,6 +387,7 @@ class InfiniticRegisterImpl : InfiniticRegister {
                   it.cache,
               )
             }
+            // Service Event Listener
             s.eventListener?.let {
               val listener = if (it.isDefined) it else null
               if (listener != null || defaultEventListener != null) {
