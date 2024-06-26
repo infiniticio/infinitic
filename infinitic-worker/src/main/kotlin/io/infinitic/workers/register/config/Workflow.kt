@@ -25,7 +25,7 @@ package io.infinitic.workers.register.config
 import io.infinitic.common.utils.getInstance
 import io.infinitic.common.utils.isImplementationOf
 import io.infinitic.common.workers.config.RetryPolicy
-import io.infinitic.common.workflows.WorkflowContext
+import io.infinitic.common.workflows.emptyWorkflowContext
 import io.infinitic.events.config.EventListener
 import io.infinitic.workflows.Workflow
 import io.infinitic.workflows.WorkflowCheckMode
@@ -79,20 +79,20 @@ data class Workflow(
 
       else -> {
         `class`?.let {
-          allClasses.add(getWorkflowClass(it))
           require(`class`.isNotEmpty()) { error("'${::`class`.name}' can not be empty") }
+          allClasses.add(getWorkflowClass(it))
         }
         classes?.forEachIndexed { index, s: String ->
-          allClasses.add(getWorkflowClass(s))
           require(s.isNotEmpty()) { error("'${::classes.name}[$index]' can not be empty") }
+          allClasses.add(getWorkflowClass(s))
         }
 
         concurrency?.let {
           require(it >= 0) { error("'${::concurrency.name}' must be an integer >= 0") }
         }
 
-        timeoutInSeconds?.let  { timeout ->
-          require(timeout > 0 || timeout == UNDEFINED_TIMEOUT ) { error("'${::timeoutInSeconds.name}' must be an integer > 0") }
+        timeoutInSeconds?.let { timeout ->
+          require(timeout > 0 || timeout == UNDEFINED_TIMEOUT) { error("'${::timeoutInSeconds.name}' must be an integer > 0") }
         }
       }
     }
@@ -100,9 +100,9 @@ data class Workflow(
 
   private fun getWorkflowClass(className: String): Class<out Workflow> {
     // make sure to have a context to be able to create the workflow instance
-    Workflow.setContext(WorkflowContext.dummy)
-    val instance = className.getInstance().getOrThrow()
+    Workflow.setContext(emptyWorkflowContext)
 
+    val instance = className.getInstance().getOrThrow()
     val klass = instance::class.java
 
     require(klass.isImplementationOf(name)) {
