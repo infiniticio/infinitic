@@ -263,10 +263,14 @@ class InfiniticClient(
     fun fromConfigResource(vararg resources: String): InfiniticClient =
         fromConfig(ClientConfig.fromResource(*resources))
 
-
     /** Create InfiniticClient with config from system file */
     @JvmStatic
     fun fromConfigFile(vararg files: String): InfiniticClient =
         fromConfig(ClientConfig.fromFile(*files))
+
+    /** Create InfiniticClient with config from yaml strings */
+    @JvmStatic
+    fun fromConfigYaml(vararg yamls: String): InfiniticClient =
+        fromConfig(ClientConfig.fromYaml(*yamls))
   }
 }
