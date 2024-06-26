@@ -79,5 +79,5 @@ class UnknownWorkflowVersionException(
   workflowVersion: WorkflowVersion?
 ) :
   WorkflowUserException(
-      msg = "Unknown version \"$workflowVersion\" for Workflow \"$workflowName\"", help = "",
+      msg = "Unknown version '$workflowVersion' for Workflow '$workflowName'", help = "",
   )

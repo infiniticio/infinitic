@@ -29,15 +29,13 @@ data class WorkflowContext(
   val methodId: String,
   val tags: Set<String>,
   val meta: Map<String, ByteArray>
-) {
-  companion object {
-    val dummy = WorkflowContext(
-        workflowName = "workflowName",
-        workflowId = "workflowId",
-        methodName = "methodName",
-        methodId = "methodId",
-        tags = emptySet(),
-        meta = mutableMapOf(),
-    )
-  }
-}
+)
+
+val emptyWorkflowContext = WorkflowContext(
+    workflowName = "",
+    workflowId = "",
+    methodName = "",
+    methodId = "",
+    tags = emptySet(),
+    meta = mapOf(),
+)

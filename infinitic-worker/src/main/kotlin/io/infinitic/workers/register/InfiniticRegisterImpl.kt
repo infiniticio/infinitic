@@ -118,8 +118,8 @@ class InfiniticRegisterImpl : InfiniticRegister {
         withR,
     ).also {
       logger.info {
-        "* task executor".padEnd(25) +
-            ": (concurrency: ${it.concurrency}, class: ${serviceFactory()::class.java.name})"
+        "* service executor".padEnd(25) +
+            ": (concurrency: ${it.concurrency}, class: ${it.factory()::class.java.simpleName})"
       }
     }
   }
@@ -148,7 +148,8 @@ class InfiniticRegisterImpl : InfiniticRegister {
         ),
     ).also {
       logger.info {
-        "* task tag ".padEnd(25) + ": (concurrency: ${it.concurrency}, storage: ${s.type}, cache: ${c.type})"
+        "* service tag engine".padEnd(25) +
+            ": (concurrency: ${it.concurrency}, storage: ${s.type}, cache: ${c.type})"
       }
     }
   }
@@ -175,7 +176,10 @@ class InfiniticRegisterImpl : InfiniticRegister {
           ?: serviceDefault.eventListener?.subscriptionName
           ?: defaultEventListener?.subscriptionName,
     ).also {
-      logger.info { "* event listener ".padEnd(25) + ": (concurrency: ${it.concurrency})" }
+      logger.info {
+        "* service event listener ".padEnd(25) +
+            ": (concurrency: ${it.concurrency})"
+      }
     }
   }
 
@@ -212,7 +216,8 @@ class InfiniticRegisterImpl : InfiniticRegister {
         checkMode ?: workflowDefault.checkMode,
     ).also {
       logger.info {
-        "* workflow executor".padEnd(25) + ": (concurrency: ${it.concurrency}, classes: ${it.classes.joinToString { it.simpleName }})"
+        "* workflow executor".padEnd(25) +
+            ": (concurrency: ${it.concurrency}, classes: ${it.classes.joinToString { it.simpleName }})"
       }
     }
   }
@@ -239,7 +244,7 @@ class InfiniticRegisterImpl : InfiniticRegister {
         ),
     ).also {
       logger.info {
-        "* workflow engine".padEnd(25) +
+        "* workflow state engine".padEnd(25) +
             ": (concurrency: ${it.concurrency}, storage: ${s.type}, cache: ${c.type})"
       }
     }
@@ -268,7 +273,7 @@ class InfiniticRegisterImpl : InfiniticRegister {
         ),
     ).also {
       logger.info {
-        "* workflow tag ".padEnd(25) +
+        "* workflow tag engine".padEnd(25) +
             ": (concurrency: ${it.concurrency}, storage: ${s.type}, cache: ${c.type})"
       }
     }
@@ -296,7 +301,10 @@ class InfiniticRegisterImpl : InfiniticRegister {
           ?: workflowDefault.eventListener?.subscriptionName
           ?: defaultEventListener?.subscriptionName,
     ).also {
-      logger.info { "* event listener ".padEnd(25) + ": (concurrency: ${it.concurrency})" }
+      logger.info {
+        "* workflow event listener ".padEnd(25) +
+            ": (concurrency: ${it.concurrency})"
+      }
     }
   }
 
