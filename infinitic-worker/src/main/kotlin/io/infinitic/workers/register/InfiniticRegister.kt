@@ -26,7 +26,7 @@ import io.infinitic.cache.config.Cache
 import io.infinitic.cloudEvents.CloudEventListener
 import io.infinitic.common.workers.registry.ServiceFactory
 import io.infinitic.common.workers.registry.WorkerRegistry
-import io.infinitic.common.workers.registry.WorkflowClassList
+import io.infinitic.common.workers.registry.WorkflowFactories
 import io.infinitic.events.config.EventListener
 import io.infinitic.storage.config.Storage
 import io.infinitic.tasks.WithRetry
@@ -42,10 +42,29 @@ interface InfiniticRegister : AutoCloseable {
 
   val registry: WorkerRegistry
 
+  /**
+   * Default value of Storage
+   */
   var defaultStorage: Storage
+
+  /**
+   * Default value of Cache
+   */
   var defaultCache: Cache
+
+  /**
+   * Service default values
+   */
   var serviceDefault: ServiceDefault
+
+  /**
+   * Workflow default values
+   */
   var workflowDefault: WorkflowDefault
+
+  /**
+   * Default value of EventListener
+   */
   var defaultEventListener: EventListener?
 
   /** Register service tag engine */
@@ -85,7 +104,7 @@ interface InfiniticRegister : AutoCloseable {
   @JvmOverloads
   fun registerWorkflowExecutor(
     workflowName: String,
-    classes: WorkflowClassList,
+    factories: WorkflowFactories,
     concurrency: Int? = null,
     withTimeout: WithTimeout? = UNDEFINED_WITH_TIMEOUT,
     withRetry: WithRetry? = UNDEFINED_WITH_RETRY,
@@ -96,14 +115,14 @@ interface InfiniticRegister : AutoCloseable {
   @JvmOverloads
   fun registerWorkflowExecutor(
     workflowName: String,
-    `class`: Class<out Workflow>,
+    factory: () -> Workflow,
     concurrency: Int? = null,
     withTimeout: WithTimeout? = UNDEFINED_WITH_TIMEOUT,
     withRetry: WithRetry? = UNDEFINED_WITH_RETRY,
     checkMode: WorkflowCheckMode? = null,
   ) = registerWorkflowExecutor(
       workflowName,
-      listOf(`class`),
+      listOf(factory),
       concurrency,
       withTimeout,
       withRetry,
@@ -116,8 +135,8 @@ interface InfiniticRegister : AutoCloseable {
   fun registerWorkflowStateEngine(
     workflowName: String,
     concurrency: Int? = null,
-    storage: Storage?= null,
-    cache: Cache?= null
+    storage: Storage? = null,
+    cache: Cache? = null
   )
 
   /** Register workflow tag engine */
@@ -135,7 +154,7 @@ interface InfiniticRegister : AutoCloseable {
   @JvmOverloads
   fun registerWorkflowEventListener(
     workflowName: String,
-    concurrency: Int?= null,
+    concurrency: Int? = null,
     eventListener: CloudEventListener? = null,
     subscriptionName: String? = null,
   )

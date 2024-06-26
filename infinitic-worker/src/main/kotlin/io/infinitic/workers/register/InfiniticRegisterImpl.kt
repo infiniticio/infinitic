@@ -34,7 +34,7 @@ import io.infinitic.common.workers.registry.RegisteredWorkflowExecutor
 import io.infinitic.common.workers.registry.RegisteredWorkflowTag
 import io.infinitic.common.workers.registry.ServiceFactory
 import io.infinitic.common.workers.registry.WorkerRegistry
-import io.infinitic.common.workers.registry.WorkflowClassList
+import io.infinitic.common.workers.registry.WorkflowFactories
 import io.infinitic.common.workflows.data.workflows.WorkflowName
 import io.infinitic.events.config.EventListener
 import io.infinitic.storage.config.Storage
@@ -43,8 +43,8 @@ import io.infinitic.tasks.WithTimeout
 import io.infinitic.tasks.tag.storage.BinaryTaskTagStorage
 import io.infinitic.workers.config.WorkerConfigInterface
 import io.infinitic.workers.register.config.DEFAULT_CONCURRENCY
-import io.infinitic.workers.register.config.UNDEFINED_TIMEOUT
 import io.infinitic.workers.register.config.ServiceDefault
+import io.infinitic.workers.register.config.UNDEFINED_TIMEOUT
 import io.infinitic.workers.register.config.UNDEFINED_WITH_RETRY
 import io.infinitic.workers.register.config.UNDEFINED_WITH_TIMEOUT
 import io.infinitic.workers.register.config.WorkflowDefault
@@ -72,7 +72,7 @@ class InfiniticRegisterImpl : InfiniticRegister {
   override var defaultEventListener: EventListener? = null
 
   override var serviceDefault: ServiceDefault = ServiceDefault()
-  override var workflowDefault: WorkflowDefault =  WorkflowDefault()
+  override var workflowDefault: WorkflowDefault = WorkflowDefault()
 
   override fun close() {
     storages.forEach {
@@ -99,32 +99,30 @@ class InfiniticRegisterImpl : InfiniticRegister {
     withTimeout: WithTimeout?,
     withRetry: WithRetry?,
   ) {
-    logger.info {
-      "* task executor".padEnd(25) +
-          ": (concurrency: $concurrency, class: ${serviceFactory()::class.java.name})"
-    }
-
-    val withT = when(withTimeout) {
+    val withT = when (withTimeout) {
       null -> null
       else -> (if (withTimeout == UNDEFINED_WITH_TIMEOUT) null else withTimeout)
         ?: serviceDefault.timeoutInSeconds?.let { WithTimeout { it } }
     }
 
-    val withR = when(withRetry) {
+    val withR = when (withRetry) {
       null -> null
       else -> (if (withRetry == UNDEFINED_WITH_RETRY) null else withRetry)
         ?: serviceDefault.retry
     }
 
-    registry.serviceExecutors[ServiceName(serviceName)] =
-        RegisteredServiceExecutor(
-            concurrency ?: serviceDefault.concurrency ?: DEFAULT_CONCURRENCY,
-            serviceFactory,
-            withT,
-            withR
-        )
+    registry.serviceExecutors[ServiceName(serviceName)] = RegisteredServiceExecutor(
+        concurrency ?: serviceDefault.concurrency ?: DEFAULT_CONCURRENCY,
+        serviceFactory,
+        withT,
+        withR,
+    ).also {
+      logger.info {
+        "* task executor".padEnd(25) +
+            ": (concurrency: ${it.concurrency}, class: ${serviceFactory()::class.java.name})"
+      }
+    }
   }
-
 
 
   override fun registerServiceTagEngine(
@@ -133,15 +131,11 @@ class InfiniticRegisterImpl : InfiniticRegister {
     storage: Storage?,
     cache: Cache?
   ) {
-    storage?.let { storages.add(it) }
-
     val service = ServiceName(serviceName)
     val s = storage ?: serviceDefault.tagEngine?.storage ?: defaultStorage
     val c = cache ?: serviceDefault.tagEngine?.cache ?: defaultCache
 
-    logger.info {
-      "* task tag ".padEnd(25) + ": (concurrency: $concurrency, storage: ${s.type}, cache: ${c.type})"
-    }
+    storages.add(s)
 
     registry.serviceTags[service] = RegisteredServiceTag(
         concurrency
@@ -152,7 +146,11 @@ class InfiniticRegisterImpl : InfiniticRegister {
             CachedKeyValueStorage(c.keyValue, s.keyValue),
             CachedKeySetStorage(c.keySet, s.keySet),
         ),
-    )
+    ).also {
+      logger.info {
+        "* task tag ".padEnd(25) + ": (concurrency: ${it.concurrency}, storage: ${s.type}, cache: ${c.type})"
+      }
+    }
   }
 
   override fun registerServiceEventListener(
@@ -161,8 +159,6 @@ class InfiniticRegisterImpl : InfiniticRegister {
     eventListener: CloudEventListener?,
     subscriptionName: String?,
   ) {
-    logger.info { "* event listener ".padEnd(25) + ": (concurrency: $concurrency)" }
-
     val service = ServiceName(serviceName)
 
     registry.serviceListeners[service] = RegisteredEventListener(
@@ -178,32 +174,30 @@ class InfiniticRegisterImpl : InfiniticRegister {
         subscriptionName
           ?: serviceDefault.eventListener?.subscriptionName
           ?: defaultEventListener?.subscriptionName,
-    )
+    ).also {
+      logger.info { "* event listener ".padEnd(25) + ": (concurrency: ${it.concurrency})" }
+    }
   }
 
 
   /** Register workflow */
   override fun registerWorkflowExecutor(
     workflowName: String,
-    classes: WorkflowClassList,
+    factories: WorkflowFactories,
     concurrency: Int?,
     withTimeout: WithTimeout?,
     withRetry: WithRetry?,
     checkMode: WorkflowCheckMode?,
   ) {
-    logger.info {
-      "* workflow executor".padEnd(25) + ": (concurrency: $concurrency, class: ${classes.joinToString { it.name }})"
-    }
-
     val workflow = WorkflowName(workflowName)
 
-    val withT = when(withTimeout) {
+    val withT = when (withTimeout) {
       null -> null
       else -> (if (withTimeout == UNDEFINED_WITH_TIMEOUT) null else withTimeout)
         ?: workflowDefault.timeoutInSeconds?.let { WithTimeout { it } }
     }
 
-    val withR = when(withRetry) {
+    val withR = when (withRetry) {
       null -> null
       else -> (if (withRetry == UNDEFINED_WITH_RETRY) null else withRetry)
         ?: workflowDefault.retry
@@ -211,12 +205,16 @@ class InfiniticRegisterImpl : InfiniticRegister {
 
     registry.workflowExecutors[workflow] = RegisteredWorkflowExecutor(
         workflow,
-        classes.distinct(),
+        factories,
         concurrency ?: workflowDefault.concurrency ?: DEFAULT_CONCURRENCY,
         withT,
         withR,
         checkMode ?: workflowDefault.checkMode,
-    )
+    ).also {
+      logger.info {
+        "* workflow executor".padEnd(25) + ": (concurrency: ${it.concurrency}, classes: ${it.classes.joinToString { it.simpleName }})"
+      }
+    }
   }
 
   override fun registerWorkflowStateEngine(
@@ -225,16 +223,11 @@ class InfiniticRegisterImpl : InfiniticRegister {
     storage: Storage?,
     cache: Cache?
   ) {
-    storage?.let { storages.add(it) }
-
     val workflow = WorkflowName(workflowName)
     val s = storage ?: workflowDefault.stateEngine?.storage ?: defaultStorage
     val c = cache ?: workflowDefault.stateEngine?.cache ?: defaultCache
 
-    logger.info {
-      "* workflow engine".padEnd(25) +
-          ": (concurrency: $concurrency, storage: ${s.type}, cache: ${c.type})"
-    }
+    storages.add(s)
 
     registry.workflowEngines[workflow] = RegisteredWorkflowEngine(
         concurrency
@@ -244,7 +237,12 @@ class InfiniticRegisterImpl : InfiniticRegister {
         BinaryWorkflowStateStorage(
             CachedKeyValueStorage(c.keyValue, s.keyValue),
         ),
-    )
+    ).also {
+      logger.info {
+        "* workflow engine".padEnd(25) +
+            ": (concurrency: ${it.concurrency}, storage: ${s.type}, cache: ${c.type})"
+      }
+    }
   }
 
   override fun registerWorkflowTagEngine(
@@ -253,16 +251,11 @@ class InfiniticRegisterImpl : InfiniticRegister {
     storage: Storage?,
     cache: Cache?
   ) {
-    storage?.let { storages.add(it) }
-
     val workflow = WorkflowName(workflowName)
     val s = storage ?: workflowDefault.stateEngine?.storage ?: defaultStorage
     val c = cache ?: workflowDefault.stateEngine?.cache ?: defaultCache
 
-    logger.info {
-      "* workflow tag ".padEnd(25) +
-          ": (concurrency: $concurrency, storage: ${s.type}, cache: ${c.type})"
-    }
+    storages.add(s)
 
     registry.workflowTags[WorkflowName(workflowName)] = RegisteredWorkflowTag(
         concurrency
@@ -273,7 +266,12 @@ class InfiniticRegisterImpl : InfiniticRegister {
             CachedKeyValueStorage(c.keyValue, s.keyValue),
             CachedKeySetStorage(c.keySet, s.keySet),
         ),
-    )
+    ).also {
+      logger.info {
+        "* workflow tag ".padEnd(25) +
+            ": (concurrency: ${it.concurrency}, storage: ${s.type}, cache: ${c.type})"
+      }
+    }
   }
 
   override fun registerWorkflowEventListener(
@@ -282,8 +280,6 @@ class InfiniticRegisterImpl : InfiniticRegister {
     eventListener: CloudEventListener?,
     subscriptionName: String?,
   ) {
-    logger.info { "* event listener ".padEnd(25) + ": (concurrency: $concurrency)" }
-
     val workflow = WorkflowName(workflowName)
 
     registry.workflowListeners[workflow] = RegisteredEventListener(
@@ -292,14 +288,16 @@ class InfiniticRegisterImpl : InfiniticRegister {
           ?: defaultEventListener?.instance
           ?: throw InvalidParameterException("Missing ${CloudEventListener::class.simpleName} at registration for workflow $workflow"),
         concurrency
-        ?: workflowDefault.eventListener?.concurrency
-        ?: defaultEventListener?.concurrency
-        ?: registry.workflowExecutors[workflow]?.concurrency
-        ?: DEFAULT_CONCURRENCY,
+          ?: workflowDefault.eventListener?.concurrency
+          ?: defaultEventListener?.concurrency
+          ?: registry.workflowExecutors[workflow]?.concurrency
+          ?: DEFAULT_CONCURRENCY,
         subscriptionName
           ?: workflowDefault.eventListener?.subscriptionName
           ?: defaultEventListener?.subscriptionName,
-    )
+    ).also {
+      logger.info { "* event listener ".padEnd(25) + ": (concurrency: ${it.concurrency})" }
+    }
   }
 
   companion object {
@@ -309,9 +307,9 @@ class InfiniticRegisterImpl : InfiniticRegister {
         InfiniticRegisterImpl().apply {
           workerConfig.storage?.let { defaultStorage = it }
           workerConfig.cache?.let { defaultCache = it }
-          workerConfig.serviceDefault?. let { serviceDefault = it }
-          workerConfig.workflowDefault?. let { workflowDefault = it }
-          workerConfig.eventListener?. let { defaultEventListener = it }
+          workerConfig.serviceDefault?.let { serviceDefault = it }
+          workerConfig.workflowDefault?.let { workflowDefault = it }
+          workerConfig.eventListener?.let { defaultEventListener = it }
 
           for (w in workerConfig.workflows) {
             logger.info { "Workflow ${w.name}:" }
@@ -320,7 +318,7 @@ class InfiniticRegisterImpl : InfiniticRegister {
             if (w.allClasses.isNotEmpty()) {
               registerWorkflowExecutor(
                   w.name,
-                  w.allClasses,
+                  w.allClasses.map { { it.getDeclaredConstructor().newInstance() } },
                   w.concurrency,
                   w.timeoutInSeconds?.let { if (it == UNDEFINED_TIMEOUT) UNDEFINED_WITH_TIMEOUT else WithTimeout { it } },
                   w.retry?.let { if (it.isDefined) it else UNDEFINED_WITH_RETRY },

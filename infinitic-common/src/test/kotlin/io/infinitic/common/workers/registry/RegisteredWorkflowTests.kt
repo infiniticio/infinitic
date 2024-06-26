@@ -46,14 +46,14 @@ class RegisteredWorkflowTests :
           val e = shouldThrow<IllegalArgumentException> {
             RegisteredWorkflowExecutor(WorkflowName("foo"), listOf(), 42, null, null, null)
           }
-          e.message shouldContain "List of classes must not be empty"
+          e.message shouldContain "List of factory must not be empty for workflow foo"
         }
 
         "Exception when workflows have same version" {
           val e = shouldThrow<IllegalArgumentException> {
             RegisteredWorkflowExecutor(
                 WorkflowName("foo"),
-                listOf(MyWorkflow::class.java, MyWorkflow_0::class.java),
+                listOf({ MyWorkflow() }, { MyWorkflow_0() }),
                 42,
                 null,
                 null,
@@ -65,7 +65,7 @@ class RegisteredWorkflowTests :
 
         "Get instance with single class" {
           val rw = RegisteredWorkflowExecutor(
-              WorkflowName("foo"), listOf(MyWorkflow::class.java), 42, null, null, null,
+              WorkflowName("foo"), listOf { MyWorkflow() }, 42, null, null, null,
           )
           // get explicit version 0
           rw.getInstanceByVersion(WorkflowVersion(0))::class.java shouldBe MyWorkflow::class.java
@@ -86,7 +86,7 @@ class RegisteredWorkflowTests :
         "Get instance with single class with version" {
           val rw =
               RegisteredWorkflowExecutor(
-                  WorkflowName("foo"), listOf(MyWorkflow_2::class.java), 42, null, null, null,
+                  WorkflowName("foo"), listOf { MyWorkflow_2() }, 42, null, null, null,
               )
           // get explicit version 0
           rw.getInstanceByVersion(WorkflowVersion(2))::class.java shouldBe MyWorkflow_2::class.java
@@ -108,7 +108,7 @@ class RegisteredWorkflowTests :
           val rw =
               RegisteredWorkflowExecutor(
                   WorkflowName("foo"),
-                  listOf(MyWorkflow::class.java, MyWorkflow_2::class.java),
+                  listOf({ MyWorkflow() }, { MyWorkflow_2() }),
                   42,
                   null,
                   null,

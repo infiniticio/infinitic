@@ -79,20 +79,20 @@ data class Workflow(
 
       else -> {
         `class`?.let {
-          allClasses.add(getWorkflowClass(it))
           require(`class`.isNotEmpty()) { error("'${::`class`.name}' can not be empty") }
+          allClasses.add(getWorkflowClass(it))
         }
         classes?.forEachIndexed { index, s: String ->
-          allClasses.add(getWorkflowClass(s))
           require(s.isNotEmpty()) { error("'${::classes.name}[$index]' can not be empty") }
+          allClasses.add(getWorkflowClass(s))
         }
 
         concurrency?.let {
           require(it >= 0) { error("'${::concurrency.name}' must be an integer >= 0") }
         }
 
-        timeoutInSeconds?.let  { timeout ->
-          require(timeout > 0 || timeout == UNDEFINED_TIMEOUT ) { error("'${::timeoutInSeconds.name}' must be an integer > 0") }
+        timeoutInSeconds?.let { timeout ->
+          require(timeout > 0 || timeout == UNDEFINED_TIMEOUT) { error("'${::timeoutInSeconds.name}' must be an integer > 0") }
         }
       }
     }
