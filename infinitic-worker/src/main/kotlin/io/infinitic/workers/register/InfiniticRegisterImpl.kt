@@ -23,7 +23,6 @@
 package io.infinitic.workers.register
 
 import io.github.oshai.kotlinlogging.KotlinLogging
-import io.infinitic.cache.config.Cache
 import io.infinitic.cloudEvents.CloudEventListener
 import io.infinitic.common.tasks.data.ServiceName
 import io.infinitic.common.workers.registry.RegisteredEventListener
@@ -37,7 +36,7 @@ import io.infinitic.common.workers.registry.WorkerRegistry
 import io.infinitic.common.workers.registry.WorkflowFactories
 import io.infinitic.common.workflows.data.workflows.WorkflowName
 import io.infinitic.events.config.EventListener
-import io.infinitic.storage.config.Storage
+import io.infinitic.storage.Storage
 import io.infinitic.tasks.WithRetry
 import io.infinitic.tasks.WithTimeout
 import io.infinitic.tasks.tag.storage.BinaryTaskTagStorage
@@ -48,8 +47,6 @@ import io.infinitic.workers.register.config.UNDEFINED_TIMEOUT
 import io.infinitic.workers.register.config.UNDEFINED_WITH_RETRY
 import io.infinitic.workers.register.config.UNDEFINED_WITH_TIMEOUT
 import io.infinitic.workers.register.config.WorkflowDefault
-import io.infinitic.workers.storage.CachedKeySetStorage
-import io.infinitic.workers.storage.CachedKeyValueStorage
 import io.infinitic.workflows.WorkflowCheckMode
 import io.infinitic.workflows.engine.storage.BinaryWorkflowStateStorage
 import io.infinitic.workflows.tag.storage.BinaryWorkflowTagStorage
@@ -68,9 +65,7 @@ class InfiniticRegisterImpl : InfiniticRegister {
   override val registry = WorkerRegistry()
 
   override var defaultStorage: Storage = Storage()
-  override var defaultCache: Cache = Cache()
   override var defaultEventListener: EventListener? = null
-
   override var serviceDefault: ServiceDefault = ServiceDefault()
   override var workflowDefault: WorkflowDefault = WorkflowDefault()
 
@@ -128,12 +123,10 @@ class InfiniticRegisterImpl : InfiniticRegister {
   override fun registerServiceTagEngine(
     serviceName: String,
     concurrency: Int?,
-    storage: Storage?,
-    cache: Cache?
+    storage: Storage?
   ) {
     val service = ServiceName(serviceName)
     val s = storage ?: serviceDefault.tagEngine?.storage ?: defaultStorage
-    val c = cache ?: serviceDefault.tagEngine?.cache ?: defaultCache
 
     storages.add(s)
 
@@ -142,14 +135,11 @@ class InfiniticRegisterImpl : InfiniticRegister {
           ?: serviceDefault.tagEngine?.concurrency
           ?: registry.serviceExecutors[service]?.concurrency
           ?: DEFAULT_CONCURRENCY,
-        BinaryTaskTagStorage(
-            CachedKeyValueStorage(c.keyValue, s.keyValue),
-            CachedKeySetStorage(c.keySet, s.keySet),
-        ),
+        BinaryTaskTagStorage(s.keyValue, s.keySet),
     ).also {
       logger.info {
         "* service tag engine".padEnd(25) +
-            ": (concurrency: ${it.concurrency}, storage: ${s.type}, cache: ${c.type})"
+            ": (concurrency: ${it.concurrency}, storage: ${s.type}, cache: ${s.cache?.type})"
       }
     }
   }
@@ -226,11 +216,9 @@ class InfiniticRegisterImpl : InfiniticRegister {
     workflowName: String,
     concurrency: Int?,
     storage: Storage?,
-    cache: Cache?
   ) {
     val workflow = WorkflowName(workflowName)
     val s = storage ?: workflowDefault.stateEngine?.storage ?: defaultStorage
-    val c = cache ?: workflowDefault.stateEngine?.cache ?: defaultCache
 
     storages.add(s)
 
@@ -239,13 +227,11 @@ class InfiniticRegisterImpl : InfiniticRegister {
           ?: workflowDefault.stateEngine?.concurrency
           ?: registry.workflowExecutors[workflow]?.concurrency
           ?: DEFAULT_CONCURRENCY,
-        BinaryWorkflowStateStorage(
-            CachedKeyValueStorage(c.keyValue, s.keyValue),
-        ),
+        BinaryWorkflowStateStorage(s.keyValue),
     ).also {
       logger.info {
         "* workflow state engine".padEnd(25) +
-            ": (concurrency: ${it.concurrency}, storage: ${s.type}, cache: ${c.type})"
+            ": (concurrency: ${it.concurrency}, storage: ${s.type}, cache: ${s.cache?.type})"
       }
     }
   }
@@ -254,11 +240,9 @@ class InfiniticRegisterImpl : InfiniticRegister {
     workflowName: String,
     concurrency: Int?,
     storage: Storage?,
-    cache: Cache?
   ) {
     val workflow = WorkflowName(workflowName)
     val s = storage ?: workflowDefault.stateEngine?.storage ?: defaultStorage
-    val c = cache ?: workflowDefault.stateEngine?.cache ?: defaultCache
 
     storages.add(s)
 
@@ -267,14 +251,11 @@ class InfiniticRegisterImpl : InfiniticRegister {
           ?: workflowDefault.tagEngine?.concurrency
           ?: registry.workflowExecutors[workflow]?.concurrency
           ?: DEFAULT_CONCURRENCY,
-        BinaryWorkflowTagStorage(
-            CachedKeyValueStorage(c.keyValue, s.keyValue),
-            CachedKeySetStorage(c.keySet, s.keySet),
-        ),
+        BinaryWorkflowTagStorage(s.keyValue, s.keySet),
     ).also {
       logger.info {
         "* workflow tag engine".padEnd(25) +
-            ": (concurrency: ${it.concurrency}, storage: ${s.type}, cache: ${c.type})"
+            ": (concurrency: ${it.concurrency}, storage: ${s.type}, cache: ${s.cache?.type})"
       }
     }
   }
@@ -314,7 +295,6 @@ class InfiniticRegisterImpl : InfiniticRegister {
     fun fromConfig(workerConfig: WorkerConfigInterface): InfiniticRegisterImpl =
         InfiniticRegisterImpl().apply {
           workerConfig.storage?.let { defaultStorage = it }
-          workerConfig.cache?.let { defaultCache = it }
           workerConfig.serviceDefault?.let { serviceDefault = it }
           workerConfig.workflowDefault?.let { workflowDefault = it }
           workerConfig.eventListener?.let { defaultEventListener = it }
@@ -339,7 +319,6 @@ class InfiniticRegisterImpl : InfiniticRegister {
                   w.name,
                   it.concurrency,
                   it.storage,
-                  it.cache,
               )
             }
             // Workflow State Engine
@@ -348,7 +327,6 @@ class InfiniticRegisterImpl : InfiniticRegister {
                   w.name,
                   it.concurrency,
                   it.storage,
-                  it.cache,
               )
             }
             // Workflow Event Listener
@@ -384,7 +362,6 @@ class InfiniticRegisterImpl : InfiniticRegister {
                   s.name,
                   it.concurrency,
                   it.storage,
-                  it.cache,
               )
             }
             // Service Event Listener

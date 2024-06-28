@@ -29,7 +29,6 @@ dependencies {
   api(project(":infinitic-workflow-tag"))
   api(project(":infinitic-task-tag"))
   api(project(":infinitic-storage"))
-  api(project(":infinitic-cache"))
   api(project(":infinitic-transport"))
   api(project(":infinitic-client"))
   api(project(":infinitic-common"))

@@ -24,7 +24,7 @@ package io.infinitic.storage.postgres
 
 import com.sksamuel.hoplite.Secret
 import io.infinitic.storage.DockerOnly
-import io.infinitic.storage.config.Postgres
+import io.infinitic.storage.Postgres
 import io.infinitic.storage.databases.postgres.PostgresKeyValueStorage
 import io.kotest.core.annotation.EnabledIf
 import io.kotest.core.spec.style.StringSpec

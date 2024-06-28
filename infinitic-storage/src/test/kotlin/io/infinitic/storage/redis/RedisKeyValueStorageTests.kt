@@ -23,7 +23,7 @@
 package io.infinitic.storage.redis
 
 import io.infinitic.storage.DockerOnly
-import io.infinitic.storage.config.Redis
+import io.infinitic.storage.Redis
 import io.infinitic.storage.databases.redis.RedisKeyValueStorage
 import io.kotest.core.annotation.EnabledIf
 import io.kotest.core.spec.style.StringSpec

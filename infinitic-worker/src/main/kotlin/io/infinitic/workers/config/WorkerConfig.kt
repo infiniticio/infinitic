@@ -22,13 +22,12 @@
  */
 package io.infinitic.workers.config
 
-import io.infinitic.cache.config.Cache
 import io.infinitic.common.config.loadConfigFromFile
 import io.infinitic.common.config.loadConfigFromResource
 import io.infinitic.common.config.loadConfigFromYaml
 import io.infinitic.events.config.EventListener
 import io.infinitic.pulsar.config.Pulsar
-import io.infinitic.storage.config.Storage
+import io.infinitic.storage.Storage
 import io.infinitic.transport.config.Transport
 import io.infinitic.workers.register.config.Service
 import io.infinitic.workers.register.config.ServiceDefault
@@ -50,9 +49,6 @@ data class WorkerConfig @JvmOverloads constructor(
 
   /** Default storage */
   override val storage: Storage? = null,
-
-  /** Default cache */
-  override var cache: Cache? = null,
 
   /** Workflows configuration */
   override val workflows: List<Workflow> = listOf(),

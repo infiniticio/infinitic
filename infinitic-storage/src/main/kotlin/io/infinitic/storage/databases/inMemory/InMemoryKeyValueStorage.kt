@@ -22,7 +22,7 @@
  */
 package io.infinitic.storage.databases.inMemory
 
-import io.infinitic.storage.config.InMemory
+import io.infinitic.storage.InMemory
 import io.infinitic.storage.keyValue.KeyValueStorage
 import org.jetbrains.annotations.TestOnly
 import java.util.concurrent.ConcurrentHashMap

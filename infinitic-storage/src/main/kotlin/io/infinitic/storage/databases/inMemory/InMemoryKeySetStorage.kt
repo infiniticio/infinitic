@@ -22,8 +22,8 @@
  */
 package io.infinitic.storage.databases.inMemory
 
-import io.infinitic.storage.Bytes
-import io.infinitic.storage.config.InMemory
+import io.infinitic.storage.InMemory
+import io.infinitic.storage.data.Bytes
 import io.infinitic.storage.keySet.KeySetStorage
 import org.jetbrains.annotations.TestOnly
 

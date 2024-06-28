@@ -22,7 +22,7 @@
  */
 package io.infinitic.storage.databases.redis
 
-import io.infinitic.storage.config.Redis
+import io.infinitic.storage.Redis
 import io.infinitic.storage.keyValue.KeyValueStorage
 import org.jetbrains.annotations.TestOnly
 import redis.clients.jedis.JedisPool
