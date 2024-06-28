@@ -22,13 +22,11 @@
  */
 package io.infinitic.workflows.tag.config
 
-import io.infinitic.cache.Cache
 import io.infinitic.storage.Storage
 
 data class WorkflowTagEngine(
   var concurrency: Int? = null,
   var storage: Storage? = null,
-  var cache: Cache? = null
 ) {
   var isDefault: Boolean = false
 
