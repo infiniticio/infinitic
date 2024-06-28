@@ -20,26 +20,28 @@
  *
  * Licensor: infinitic.io
  */
-package io.infinitic.cache.config.none
+package io.infinitic.cache.caches.none
 
-import io.infinitic.cache.keyValue.CachedKeyValue
-import org.jetbrains.annotations.TestOnly
+import io.infinitic.cache.keySet.CachedKeySet
 
-class NoCachedKeyValue<T> : CachedKeyValue<T> {
+class NoCachedKeySet<T> : CachedKeySet<T> {
 
-  override fun getValue(key: String): T? {
+  override fun get(key: String): Set<T>? {
     return null
   }
 
-  override fun putValue(key: String, value: T) {
+  override fun set(key: String, value: Set<T>) {
     // nothing
   }
 
-  override fun delValue(key: String) {
+  override fun add(key: String, value: T) {
     // nothing
   }
 
-  @TestOnly
+  override fun remove(key: String, value: T) {
+    // nothing
+  }
+
   override fun flush() {
     // nothing
   }

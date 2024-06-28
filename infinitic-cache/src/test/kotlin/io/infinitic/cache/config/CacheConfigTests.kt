@@ -25,11 +25,13 @@ package io.infinitic.cache.config
 import com.sksamuel.hoplite.ConfigException
 import com.sksamuel.hoplite.ConfigLoaderBuilder
 import com.sksamuel.hoplite.yaml.YamlPropertySource
-import io.infinitic.cache.config.caffeine.Caffeine
-import io.infinitic.cache.config.caffeine.CaffeineCachedKeySet
-import io.infinitic.cache.config.caffeine.CaffeineCachedKeyValue
-import io.infinitic.cache.config.none.NoCachedKeySet
-import io.infinitic.cache.config.none.NoCachedKeyValue
+import io.infinitic.cache.Cache
+import io.infinitic.cache.Caffeine
+import io.infinitic.cache.None
+import io.infinitic.cache.caches.caffeine.CaffeineCachedKeySet
+import io.infinitic.cache.caches.caffeine.CaffeineCachedKeyValue
+import io.infinitic.cache.caches.none.NoCachedKeySet
+import io.infinitic.cache.caches.none.NoCachedKeyValue
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
@@ -48,57 +50,65 @@ class CacheConfigTests :
           val config = loadConfigFromYaml<CacheConfigImpl>("cache:")
 
           config shouldBe CacheConfigImpl(cache = Cache(none = None()))
-          config.cache.type shouldBe "none"
+          config.cache.type shouldBe Cache.CacheType.NONE
           config.cache.keyValue::class shouldBe NoCachedKeyValue::class
           config.cache.keySet::class shouldBe NoCachedKeySet::class
         }
 
         "can choose none cache" {
-          val config = loadConfigFromYaml<CacheConfigImpl>("""
+          val config = loadConfigFromYaml<CacheConfigImpl>(
+              """
 cache:
   none:
-     """)
+     """,
+          )
 
           config shouldBe CacheConfigImpl(cache = Cache(none = None()))
-          config.cache.type shouldBe "none"
+          config.cache.type shouldBe Cache.CacheType.NONE
           config.cache.keyValue::class shouldBe NoCachedKeyValue::class
           config.cache.keySet::class shouldBe NoCachedKeySet::class
         }
 
         "can choose Caffeine cache" {
-          val config = loadConfigFromYaml<CacheConfigImpl>("""
+          val config = loadConfigFromYaml<CacheConfigImpl>(
+              """
 cache:
   caffeine:
-     """)
+     """,
+          )
           config shouldBe CacheConfigImpl(cache = Cache(caffeine = Caffeine()))
-          config.cache.type shouldBe "caffeine"
+          config.cache.type shouldBe Cache.CacheType.CAFFEINE
           config.cache.keyValue::class shouldBe CaffeineCachedKeyValue::class
           config.cache.keySet::class shouldBe CaffeineCachedKeySet::class
         }
 
         "can choose Caffeine cache with correct values" {
-          val config = loadConfigFromYaml<CacheConfigImpl>("""
+          val config = loadConfigFromYaml<CacheConfigImpl>(
+              """
 cache:
   caffeine:
     maximumSize: 100
     expireAfterAccess: 42
     expireAfterWrite: 64
-     """)
+     """,
+          )
 
           config shouldBe CacheConfigImpl(cache = Cache(caffeine = Caffeine(100, 42, 64)))
-          config.cache.type shouldBe "caffeine"
+          config.cache.type shouldBe Cache.CacheType.CAFFEINE
           config.cache.keyValue::class shouldBe CaffeineCachedKeyValue::class
           config.cache.keySet::class shouldBe CaffeineCachedKeySet::class
         }
 
         "can not have multiple definition in cache" {
           val e = shouldThrow<ConfigException> {
-                loadConfigFromYaml<CacheConfigImpl>("""
+            loadConfigFromYaml<CacheConfigImpl>(
+                """
 cache:
   none:
   caffeine:
-     """)
-              }
+     """,
+            )
+          }
           e.message shouldContain ("Cache should have only one definition")
         }
       },

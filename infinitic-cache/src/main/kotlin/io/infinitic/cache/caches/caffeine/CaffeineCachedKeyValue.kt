@@ -20,29 +20,29 @@
  *
  * Licensor: infinitic.io
  */
-package io.infinitic.cache.config.none
+package io.infinitic.cache.caches.caffeine
 
-import io.infinitic.cache.keySet.CachedKeySet
+import com.github.benmanes.caffeine.cache.Cache
+import com.github.benmanes.caffeine.cache.Caffeine
+import io.infinitic.cache.Flushable
+import io.infinitic.cache.keyValue.CachedKeyValue
+import io.infinitic.cache.setup
+import io.infinitic.cache.Caffeine as CaffeineConfig
 
-class NoCachedKeySet<T> : CachedKeySet<T> {
+class CaffeineCachedKeyValue<S>(config: CaffeineConfig) : CachedKeyValue<S>, Flushable {
+  private var caffeine: Cache<String, S> = Caffeine.newBuilder().setup(config).build()
 
-  override fun get(key: String): Set<T>? {
-    return null
+  override fun delValue(key: String) {
+    caffeine.invalidate(key)
   }
 
-  override fun set(key: String, value: Set<T>) {
-    // nothing
+  override fun putValue(key: String, value: S) {
+    caffeine.put(key, value!!)
   }
 
-  override fun add(key: String, value: T) {
-    // nothing
-  }
-
-  override fun remove(key: String, value: T) {
-    // nothing
-  }
+  override fun getValue(key: String): S? = caffeine.getIfPresent(key)
 
   override fun flush() {
-    // nothing
+    caffeine.invalidateAll()
   }
 }

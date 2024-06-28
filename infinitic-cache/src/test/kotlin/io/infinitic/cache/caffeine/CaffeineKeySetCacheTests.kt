@@ -22,49 +22,51 @@
  */
 package io.infinitic.cache.caffeine
 
-import io.infinitic.cache.config.caffeine.Caffeine
-import io.infinitic.cache.config.caffeine.CaffeineCachedKeySet
+import io.infinitic.cache.Caffeine
+import io.infinitic.cache.caches.caffeine.CaffeineCachedKeySet
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
 
 class CaffeineKeySetCacheTests :
-    StringSpec({
-      val storage = CaffeineCachedKeySet(Caffeine())
+  StringSpec(
+      {
+        val storage = CaffeineCachedKeySet(Caffeine())
 
-      beforeTest { storage.set("key", setOf("foo".toByteArray(), "bar".toByteArray())) }
+        beforeTest { storage.set("key", setOf("foo".toByteArray(), "bar".toByteArray())) }
 
-      afterTest { storage.flush() }
+        afterTest { storage.flush() }
 
-      "get should return null on unknown key" { storage.get("unknown") shouldBe null }
+        "get should return null on unknown key" { storage.get("unknown") shouldBe null }
 
-      "get should return value" {
-        val set = storage.get("key")!!
-        set.map { String(it) }.toSet() shouldBe setOf("foo", "bar")
-      }
+        "get should return value" {
+          val set = storage.get("key")!!
+          set.map { String(it) }.toSet() shouldBe setOf("foo", "bar")
+        }
 
-      "add on new key should stay null" {
-        storage.add("foo2", "bar2".toByteArray())
+        "add on new key should stay null" {
+          storage.add("foo2", "bar2".toByteArray())
 
-        storage.get("foo2") shouldBe null
-      }
+          storage.get("foo2") shouldBe null
+        }
 
-      "add on existing key should update value" {
-        storage.add("key", "bar2".toByteArray())
+        "add on existing key should update value" {
+          storage.add("key", "bar2".toByteArray())
 
-        storage.get("key")!!.map { String(it) }.toSet() shouldBe setOf("foo", "bar", "bar2")
-      }
+          storage.get("key")!!.map { String(it) }.toSet() shouldBe setOf("foo", "bar", "bar2")
+        }
 
-      "remove on unknown key does nothing" { storage.remove("unknown", "foo".toByteArray()) }
+        "remove on unknown key does nothing" { storage.remove("unknown", "foo".toByteArray()) }
 
-      "remove should remove value" {
-        storage.remove("key", "foo".toByteArray())
+        "remove should remove value" {
+          storage.remove("key", "foo".toByteArray())
 
-        storage.get("key")!!.map { String(it) }.toSet() shouldBe setOf("bar")
-      }
+          storage.get("key")!!.map { String(it) }.toSet() shouldBe setOf("bar")
+        }
 
-      "remove should do nothing if not on set" {
-        storage.remove("key", "unknown".toByteArray())
+        "remove should do nothing if not on set" {
+          storage.remove("key", "unknown".toByteArray())
 
-        storage.get("key")!!.map { String(it) }.toSet() shouldBe setOf("foo", "bar")
-      }
-    })
+          storage.get("key")!!.map { String(it) }.toSet() shouldBe setOf("foo", "bar")
+        }
+      },
+  )

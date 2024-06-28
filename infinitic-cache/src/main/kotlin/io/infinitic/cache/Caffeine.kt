@@ -20,7 +20,7 @@
  *
  * Licensor: infinitic.io
  */
-package io.infinitic.cache.config.caffeine
+package io.infinitic.cache
 
 import com.github.benmanes.caffeine.cache.RemovalCause
 import io.github.oshai.kotlinlogging.KotlinLogging
@@ -30,9 +30,9 @@ import com.github.benmanes.caffeine.cache.Caffeine as CaffeineCache
 internal val logger = KotlinLogging.logger {}
 
 data class Caffeine(
-  @JvmField val maximumSize: Int? = null,
-  @JvmField val expireAfterAccess: Int? = null,
-  @JvmField val expireAfterWrite: Int? = null
+  val maximumSize: Int? = 10000,
+  val expireAfterAccess: Int? = 3600,
+  val expireAfterWrite: Int? = 3600
 ) {
   init {
     maximumSize?.let { require(it > 0) { "maximumSize MUST be >0" } }
@@ -41,8 +41,31 @@ data class Caffeine(
   }
 
   companion object {
-    fun default() = Caffeine(expireAfterAccess = 3600, maximumSize = 10000)
+    @JvmStatic
+    fun builder() = CaffeineBuilder()
   }
+
+  /**
+   * Caffeine builder (Useful for Java user)
+   */
+  class CaffeineBuilder {
+    private val default = Caffeine()
+
+    private var maximumSize = default.maximumSize
+    private var expireAfterAccess = default.expireAfterAccess
+    private var expireAfterWrite = default.expireAfterWrite
+
+    fun setMaximumSize(maximumSize: Int) = apply { this.maximumSize = maximumSize }
+    fun setExpireAfterAccess(expAftAccess: Int) = apply { this.expireAfterAccess = expAftAccess }
+    fun setExpireAfterWrite(expAftWrite: Int) = apply { this.expireAfterWrite = expAftWrite }
+
+    fun build() = Caffeine(
+        maximumSize = maximumSize,
+        expireAfterAccess = expireAfterAccess,
+        expireAfterWrite = expireAfterWrite,
+    )
+  }
+
 }
 
 fun <S, T> CaffeineCache<S, T>.setup(config: Caffeine): CaffeineCache<S, T> {
@@ -55,6 +78,7 @@ fun <S, T> CaffeineCache<S, T>.setup(config: Caffeine): CaffeineCache<S, T> {
   if (config.expireAfterWrite is Int) {
     this.expireAfterWrite(config.expireAfterWrite.toLong(), TimeUnit.SECONDS)
   }
+  
   this.removalListener<S, T> { key, _, cause ->
     when (cause) {
       RemovalCause.SIZE -> logger.debug { "Cache size exceeded, removing $key" }

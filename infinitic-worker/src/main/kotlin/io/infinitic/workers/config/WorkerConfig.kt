@@ -22,7 +22,7 @@
  */
 package io.infinitic.workers.config
 
-import io.infinitic.cache.config.Cache
+import io.infinitic.cache.Cache
 import io.infinitic.common.config.loadConfigFromFile
 import io.infinitic.common.config.loadConfigFromResource
 import io.infinitic.common.config.loadConfigFromYaml

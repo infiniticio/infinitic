@@ -20,19 +20,18 @@
  *
  * Licensor: infinitic.io
  */
-package io.infinitic.cache.config
+package io.infinitic.cache
 
-import io.infinitic.cache.config.caffeine.Caffeine
-import io.infinitic.cache.config.caffeine.CaffeineCachedKeySet
-import io.infinitic.cache.config.caffeine.CaffeineCachedKeyValue
-import io.infinitic.cache.config.none.NoCachedKeySet
-import io.infinitic.cache.config.none.NoCachedKeyValue
+import io.infinitic.cache.caches.caffeine.CaffeineCachedKeySet
+import io.infinitic.cache.caches.caffeine.CaffeineCachedKeyValue
+import io.infinitic.cache.caches.none.NoCachedKeySet
+import io.infinitic.cache.caches.none.NoCachedKeyValue
 import io.infinitic.cache.keySet.CachedKeySet
 import io.infinitic.cache.keyValue.CachedKeyValue
 
 data class Cache(
-  var none: None? = null,
-  val caffeine: Caffeine? = null
+  internal var none: None? = null,
+  internal val caffeine: Caffeine? = null
 ) {
 
   init {
@@ -46,10 +45,18 @@ data class Cache(
     }
   }
 
-  val type: String by lazy {
+  companion object {
+    @JvmStatic
+    fun from(none: None) = Cache(none = none)
+
+    @JvmStatic
+    fun from(caffeine: Caffeine) = Cache(caffeine = caffeine)
+  }
+
+  val type: CacheType by lazy {
     when {
-      none != null -> "none"
-      caffeine != null -> "caffeine"
+      none != null -> CacheType.NONE
+      caffeine != null -> CacheType.CAFFEINE
       else -> throw RuntimeException("This should not happen")
     }
   }
@@ -68,5 +75,10 @@ data class Cache(
       caffeine != null -> CaffeineCachedKeyValue(caffeine)
       else -> throw RuntimeException("This should not happen")
     }
+  }
+
+  enum class CacheType {
+    NONE,
+    CAFFEINE
   }
 }

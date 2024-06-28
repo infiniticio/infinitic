@@ -22,7 +22,7 @@
  */
 package io.infinitic.workflows.tag.config
 
-import io.infinitic.cache.config.Cache
+import io.infinitic.cache.Cache
 import io.infinitic.storage.Storage
 
 data class WorkflowTagEngine(

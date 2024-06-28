@@ -23,7 +23,7 @@
 package io.infinitic.workers.register
 
 import io.github.oshai.kotlinlogging.KotlinLogging
-import io.infinitic.cache.config.Cache
+import io.infinitic.cache.Cache
 import io.infinitic.cloudEvents.CloudEventListener
 import io.infinitic.common.tasks.data.ServiceName
 import io.infinitic.common.workers.registry.RegisteredEventListener
