@@ -25,7 +25,7 @@ package io.infinitic.storage
 import io.infinitic.storage.data.Bytes
 import java.util.concurrent.ConcurrentHashMap
 
-data class InMemory(val type: String = "default") {
+data class InMemory(private val type: String = "unused") {
   companion object {
     val pools = ConcurrentHashMap<InMemory, InMemoryPool>()
 
