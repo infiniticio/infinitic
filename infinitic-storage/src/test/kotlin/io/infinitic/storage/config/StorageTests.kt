@@ -24,6 +24,11 @@ package io.infinitic.storage.config
 
 import com.sksamuel.hoplite.Secret
 import io.infinitic.storage.DockerOnly
+import io.infinitic.storage.InMemory
+import io.infinitic.storage.MySQL
+import io.infinitic.storage.Postgres
+import io.infinitic.storage.Redis
+import io.infinitic.storage.Storage
 import io.infinitic.storage.databases.inMemory.InMemoryKeySetStorage
 import io.infinitic.storage.databases.inMemory.InMemoryKeyValueStorage
 import io.infinitic.storage.databases.mysql.MySQLKeySetStorage
@@ -33,10 +38,8 @@ import io.infinitic.storage.databases.postgres.PostgresKeyValueStorage
 import io.infinitic.storage.databases.redis.RedisKeySetStorage
 import io.infinitic.storage.databases.redis.RedisKeyValueStorage
 import io.infinitic.storage.keyValue.CompressedKeyValueStorage
-import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
-import io.kotest.matchers.string.shouldContain
 import org.testcontainers.containers.MySQLContainer
 import org.testcontainers.containers.PostgreSQLContainer
 
@@ -52,7 +55,7 @@ class StorageTests :
         "properties of InMemory" {
           val config = Storage(inMemory = InMemory("test"), compression = null)
 
-          config.type shouldBe "inMemory"
+          config.type shouldBe Storage.StorageType.IN_MEMORY
 
           // config.keySet should be InMemoryKeySetStorage()
           config.keySet::class shouldBe InMemoryKeySetStorage::class
@@ -70,7 +73,7 @@ class StorageTests :
         "properties of Redis" {
           val config = Storage(redis = Redis(), compression = null)
 
-          config.type shouldBe "redis"
+          config.type shouldBe Storage.StorageType.REDIS
 
           // config.keySet should be RedisKeySetStorage(pool)
           config.keySet::class shouldBe RedisKeySetStorage::class
@@ -104,7 +107,7 @@ class StorageTests :
 
           val config = Storage(mysql = mysql, compression = null)
 
-          config.type shouldBe "mysql"
+          config.type shouldBe Storage.StorageType.MYSQL
 
           // config.keySet should be MySQLKeySetStorage(pool)
           config.keySet::class shouldBe MySQLKeySetStorage::class
@@ -141,7 +144,7 @@ class StorageTests :
 
           val config = Storage(postgres = postgres, compression = null)
 
-          config.type shouldBe "postgres"
+          config.type shouldBe Storage.StorageType.POSTGRES
 
           // config.keySet should be PostgresKeySetStorage(pool)
           config.keySet::class shouldBe PostgresKeySetStorage::class

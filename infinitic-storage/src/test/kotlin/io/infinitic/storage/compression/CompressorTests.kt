@@ -20,7 +20,7 @@
  *
  * Licensor: infinitic.io
  */
-package io.infinitic.storage.compressor
+package io.infinitic.storage.compression
 
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.ints.shouldBeLessThan
@@ -42,16 +42,16 @@ class CompressorTests :
         }
 
         fun getBytesWithCompressorHeader(
-          compressor: Compressor,
+          compression: Compression,
           header: Int = 300,
           length: Int = 1000
         ): ByteArray {
           val bytes = getBytes(length)
-          return compressor.compress(bytes).copyOf(header) + getBytes(length - header)
+          return compression.compress(bytes).copyOf(header) + getBytes(length - header)
         }
 
         fun testDecompressing(original: ByteArray, compressed: ByteArray) {
-          val decompressed = Compressor.decompress(compressed)
+          val decompressed = Compression.decompress(compressed)
           decompressed.contentEquals(original) shouldBe true
         }
 
@@ -61,14 +61,14 @@ class CompressorTests :
         }
 
         "Decompressing uncompressed data should return the same data, even with a compressor header" {
-          Compressor.entries.forEach {
+          Compression.entries.forEach {
             val data = getBytesWithCompressorHeader(it)
             testDecompressing(data, data)
           }
         }
 
         "Decompressing compressed data should return the same data" {
-          Compressor.entries.forEach {
+          Compression.entries.forEach {
             val data = getBytes()
             val compressed = it.compress(data)
             testDecompressing(data, compressed)
@@ -76,7 +76,7 @@ class CompressorTests :
         }
 
         "compressed data should be compressed" {
-          Compressor.entries.forEach {
+          Compression.entries.forEach {
             val data = getBytes()
             val compressed = it.compress(data)
             compressed.size shouldBeLessThan data.size

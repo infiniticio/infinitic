@@ -23,7 +23,7 @@
 package io.infinitic.workflows.tag.config
 
 import io.infinitic.cache.config.Cache
-import io.infinitic.storage.config.Storage
+import io.infinitic.storage.Storage
 
 data class WorkflowTagEngine(
   var concurrency: Int? = null,

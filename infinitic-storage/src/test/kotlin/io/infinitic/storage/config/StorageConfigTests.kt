@@ -25,6 +25,11 @@ package io.infinitic.storage.config
 import com.sksamuel.hoplite.ConfigException
 import com.sksamuel.hoplite.ConfigLoaderBuilder
 import com.sksamuel.hoplite.yaml.YamlPropertySource
+import io.infinitic.storage.InMemory
+import io.infinitic.storage.MySQL
+import io.infinitic.storage.Postgres
+import io.infinitic.storage.Redis
+import io.infinitic.storage.Storage
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe

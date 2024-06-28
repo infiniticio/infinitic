@@ -20,7 +20,7 @@
  *
  * Licensor: infinitic.io
  */
-package io.infinitic.storage.compressor
+package io.infinitic.storage.compression
 
 import io.github.oshai.kotlinlogging.KotlinLogging
 import org.apache.commons.compress.compressors.CompressorException
@@ -28,7 +28,7 @@ import org.apache.commons.compress.compressors.CompressorStreamFactory
 import java.io.ByteArrayOutputStream
 
 @Suppress("EnumEntryName")
-enum class Compressor {
+enum class Compression {
   gzip {
     override fun toString() = CompressorStreamFactory.GZIP
   },

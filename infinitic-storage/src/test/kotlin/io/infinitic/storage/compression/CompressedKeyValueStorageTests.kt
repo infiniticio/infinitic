@@ -20,7 +20,7 @@
  *
  * Licensor: infinitic.io
  */
-package io.infinitic.storage.compressor
+package io.infinitic.storage.compression
 
 import io.infinitic.storage.keyValue.CompressedKeyValueStorage
 import io.infinitic.storage.keyValue.KeyValueStorage
@@ -37,7 +37,7 @@ class CompressedKeyValueStorageTests :
       {
         val keyValueStorage = mockk<KeyValueStorage>()
         coEvery { keyValueStorage.get("foo") } returns "bar".toByteArray()
-        Compressor.entries.forEach {
+        Compression.entries.forEach {
           coEvery { keyValueStorage.get(it.toString()) } returns it.compress("bar".toByteArray())
         }
         val bytes = slot<ByteArray>()
@@ -47,16 +47,16 @@ class CompressedKeyValueStorageTests :
         beforeTest { bytes.clear() }
 
         "get returns the uncompressed value, independently of the compressor used" {
-          Compressor.entries.forEach { whatEverCompressor ->
+          Compression.entries.forEach { whatEverCompressor ->
             val compressedStorage = CompressedKeyValueStorage(whatEverCompressor, keyValueStorage)
             compressedStorage.get("foo")!!.contentEquals("bar".toByteArray()) shouldBe true
           }
         }
 
         "get returns a value decompressed, independently of the compressor used" {
-          Compressor.entries.forEach { whatEver ->
+          Compression.entries.forEach { whatEver ->
             val compressedStorage = CompressedKeyValueStorage(whatEver, keyValueStorage)
-            Compressor.entries.forEach {
+            Compression.entries.forEach {
               compressedStorage.get(it.toString())!!
                   .contentEquals("bar".toByteArray()) shouldBe true
             }
@@ -64,7 +64,7 @@ class CompressedKeyValueStorageTests :
         }
 
         "put stores a value compressed with the compressor provided" {
-          Compressor.entries.forEach { compressor ->
+          Compression.entries.forEach { compressor ->
             val compressedStorage = CompressedKeyValueStorage(compressor, keyValueStorage)
             compressedStorage.put("foo", "bar".toByteArray())
             bytes.isCaptured shouldBe true

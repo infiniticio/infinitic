@@ -20,11 +20,45 @@
  *
  * Licensor: infinitic.io
  */
-package io.infinitic.storage.config
+package io.infinitic.storage
 
-@Suppress("EnumEntryName", "unused")
-enum class StorageType {
-  inMemory,
-  redis,
-  mysql
+import io.infinitic.storage.data.Bytes
+import java.util.concurrent.ConcurrentHashMap
+
+data class InMemory(val type: String = "default") {
+  companion object {
+    val pools = ConcurrentHashMap<InMemory, InMemoryPool>()
+
+    fun close() {
+      pools.keys.forEach { it.close() }
+    }
+  }
+
+  fun getPool() = pools.computeIfAbsent(this) { InMemoryPool() }
+
+  fun close() {
+    pools[this]?.close()
+    pools.remove(this)
+  }
+
+  /**
+   * InMemoryPool class represents a pool for storing key-value and key-set pairs in memory.
+   */
+  class InMemoryPool {
+    private val _keySet = mutableMapOf<String, MutableSet<Bytes>>()
+
+    private val _keyValue = ConcurrentHashMap<String, ByteArray>()
+
+    internal val keySet
+      get() = _keySet
+
+    internal val keyValue
+      get() = _keyValue
+
+    fun close() {
+      _keyValue.clear()
+      _keySet.clear()
+    }
+  }
 }
+

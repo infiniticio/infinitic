@@ -22,19 +22,9 @@
  */
 package io.infinitic.storage
 
-class Bytes(val content: ByteArray) {
-  override fun equals(other: Any?): Boolean {
-    if (this === other) return true
-    if (javaClass != other?.javaClass) return false
-
-    other as Bytes
-
-    if (!content.contentEquals(other.content)) return false
-
-    return true
-  }
-
-  override fun hashCode(): Int {
-    return content.contentHashCode()
-  }
+@Suppress("EnumEntryName", "unused")
+enum class StorageType {
+  inMemory,
+  redis,
+  mysql
 }

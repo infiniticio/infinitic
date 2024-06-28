@@ -22,18 +22,21 @@
  */
 package io.infinitic.storage.keyValue
 
-import io.infinitic.storage.compressor.Compressor
+import io.infinitic.storage.compression.Compression
 
-class CompressedKeyValueStorage(private val compressor: Compressor?, val storage: KeyValueStorage) :
+class CompressedKeyValueStorage(
+  private val compression: Compression?,
+  val storage: KeyValueStorage
+) :
   KeyValueStorage by storage {
 
   override suspend fun get(key: String): ByteArray? =
   // As the compression method can change over time,
   // we always detect if the state is compressed or not
       // independently of the provided compressor
-      storage.get(key)?.let { Compressor.decompress(it) }
+      storage.get(key)?.let { Compression.decompress(it) }
 
   override suspend fun put(key: String, value: ByteArray) =
       // apply the provided compression method, if any
-      storage.put(key, compressor?.compress(value) ?: value)
+      storage.put(key, compression?.compress(value) ?: value)
 }

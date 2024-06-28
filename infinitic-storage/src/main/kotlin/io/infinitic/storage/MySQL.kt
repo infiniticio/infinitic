@@ -20,17 +20,17 @@
  *
  * Licensor: infinitic.io
  */
-package io.infinitic.storage.config
+package io.infinitic.storage
 
 import com.sksamuel.hoplite.Secret
 import com.zaxxer.hikari.HikariConfig
 import com.zaxxer.hikari.HikariDataSource
 import java.util.concurrent.ConcurrentHashMap
 
-data class Postgres(
+data class MySQL(
   val host: String = "127.0.0.1",
-  val port: Int = 5432,
-  val user: String = "postgres",
+  val port: Int = 3306,
+  val user: String = "root",
   val password: Secret? = null,
   val database: String = "infinitic",
   val keySetTable: String = "key_set_storage",
@@ -42,9 +42,9 @@ data class Postgres(
   val maxLifetime: Long? = null // milli seconds
 ) {
 
-  private val jdbcUrl = "jdbc:postgresql://$host:$port/$database"
-  private val jdbcUrlDefault = "jdbc:postgresql://$host:$port/postgres"
-  private val driverClassName = "org.postgresql.Driver"
+  private val jdbcUrl = "jdbc:mysql://$host:$port/$database"
+  private val jdbcUrlDefault = "jdbc:mysql://$host:$port/"
+  private val driverClassName = "com.mysql.cj.jdbc.Driver"
 
   init {
     maximumPoolSize?.let {
@@ -63,15 +63,15 @@ data class Postgres(
       require(it > 0) { "maxLifetime must be strictly positive" }
     }
 
-    require(keySetTable.isValidTableName()) { "'$keySetTable' is not a valid PostgresSQL table name" }
-    require(keyValueTable.isValidTableName()) { "'$keyValueTable' is not a valid PostgresSQL table name" }
+    require(keySetTable.isValidTableName()) { "'$keySetTable' is not a valid MySQL table name" }
+    require(keyValueTable.isValidTableName()) { "'$keyValueTable' is not a valid MySQL table name" }
   }
 
   companion object {
-    val pools = ConcurrentHashMap<Postgres, HikariDataSource>()
-    fun close() {
-      pools.keys.forEach { it.close() }
-    }
+    private val pools = ConcurrentHashMap<MySQL, HikariDataSource>()
+
+    @JvmStatic
+    fun builder() = MySQLBuilder()
   }
 
   fun close() {
@@ -79,15 +79,16 @@ data class Postgres(
     pools.remove(this)
   }
 
-  fun getPool() = pools.computeIfAbsent(this) {
-    // Create the Database if needed
-    initDatabase()
-    // create pool
-    HikariDataSource(hikariConfig)
-  }
+  fun getPool() =
+      pools.computeIfAbsent(this) {
+        // Create the Database if needed
+        initDatabase()
+        // create pool
+        HikariDataSource(hikariConfig)
+      }
 
   private val hikariConfig = HikariConfig().apply {
-    val config = this@Postgres
+    val config = this@MySQL
     jdbcUrl = config.jdbcUrl
     driverClassName = config.driverClassName
     username = config.user
@@ -103,7 +104,7 @@ data class Postgres(
       connection.use { it.metaData.catalogs }.use { resultSet ->
         generateSequence {
           if (resultSet.next()) resultSet.getString(1) else null
-        }.any { it == databaseName }
+        }.any { databaseName.equals(it, ignoreCase = true) }
       }
 
   internal fun HikariDataSource.tableExists(tableName: String): Boolean =
@@ -127,33 +128,82 @@ data class Postgres(
 
   private fun getDefaultPool() = HikariDataSource(
       HikariConfig().apply {
+        val config = this@MySQL
         // use a default source
-        jdbcUrl = this@Postgres.jdbcUrlDefault
-        driverClassName = this@Postgres.driverClassName
-        username = this@Postgres.user
-        password = this@Postgres.password?.value
+        jdbcUrl = config.jdbcUrlDefault
+        driverClassName = config.driverClassName
+        username = config.user
+        password = config.password?.value
       },
   )
 
   private fun String.isValidTableName(): Boolean {
     // Check length
-    // Note that since Postgres uses bytes and Kotlin uses UTF-16 characters,
-    // this will not be entirely correct for multi-byte characters.
-    if (toByteArray(Charsets.UTF_8).size > 63) {
+    if (length > 64) {
       return false
     }
 
     // Check first character
-    if (!first().isLetter() && first() != '_') {
+    if (!first().isLetter()) {
       return false
     }
 
     // Check illegal characters
-    if (any { !it.isLetterOrDigit() && it != '_' && it != '$' }) {
+    if (any { !it.isLetterOrDigit() && it != '_' && it != '$' && it != '#' }) {
       return false
     }
 
     // Okay if it passed all checks
     return true
+  }
+
+  /**
+   * MySQL builder (Useful for Java user)
+   */
+  class MySQLBuilder {
+    private val default = MySQL()
+
+    private var host = default.host
+    private var port = default.port
+    private var user = default.user
+    private var password = default.password
+    private var database = default.database
+    private var keySetTable = default.keySetTable
+    private var keyValueTable = default.keyValueTable
+    private var maximumPoolSize = default.maximumPoolSize
+    private var minimumIdle = default.minimumIdle
+    private var idleTimeout = default.idleTimeout
+    private var connectionTimeout = default.connectionTimeout
+    private var maxLifetime = default.maxLifetime
+
+    fun setHost(host: String) = apply { this.host = host }
+    fun setPort(port: Int) = apply { this.port = port }
+    fun setUser(user: String) = apply { this.user = user }
+    fun setPassword(password: Secret?) = apply { this.password = password }
+    fun setDatabase(database: String) = apply { this.database = database }
+    fun setKeySetTable(keySetTable: String) = apply { this.keySetTable = keySetTable }
+    fun setKeyValueTable(keyValueTable: String) = apply { this.keyValueTable = keyValueTable }
+    fun setMaximumPoolSize(maximumPoolSize: Int?) = apply { this.maximumPoolSize = maximumPoolSize }
+    fun setMinimumIdle(minimumIdle: Int?) = apply { this.minimumIdle = minimumIdle }
+    fun setIdleTimeout(idleTimeout: Long?) = apply { this.idleTimeout = idleTimeout }
+    fun setConnectionTimeout(connTimeout: Long?) = apply { this.connectionTimeout = connTimeout }
+    fun setMaxLifetime(maxLifetime: Long?) = apply { this.maxLifetime = maxLifetime }
+
+    fun build(): MySQL {
+      return MySQL(
+          host = host,
+          port = port,
+          user = user,
+          password = password,
+          database = database,
+          keySetTable = keySetTable,
+          keyValueTable = keyValueTable,
+          maximumPoolSize = maximumPoolSize,
+          minimumIdle = minimumIdle,
+          idleTimeout = idleTimeout,
+          connectionTimeout = connectionTimeout,
+          maxLifetime = maxLifetime,
+      )
+    }
   }
 }

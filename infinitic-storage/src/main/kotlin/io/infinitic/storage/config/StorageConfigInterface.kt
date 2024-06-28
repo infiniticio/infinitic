@@ -22,6 +22,8 @@
  */
 package io.infinitic.storage.config
 
+import io.infinitic.storage.Storage
+
 /** Storage configuration */
 interface StorageConfigInterface {
   val storage: Storage?

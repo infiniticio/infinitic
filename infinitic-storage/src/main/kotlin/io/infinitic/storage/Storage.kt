@@ -20,9 +20,9 @@
  *
  * Licensor: infinitic.io
  */
-package io.infinitic.storage.config
+package io.infinitic.storage
 
-import io.infinitic.storage.compressor.Compressor
+import io.infinitic.storage.compression.Compression
 import io.infinitic.storage.databases.inMemory.InMemoryKeySetStorage
 import io.infinitic.storage.databases.inMemory.InMemoryKeyValueStorage
 import io.infinitic.storage.databases.mysql.MySQLKeySetStorage
@@ -36,11 +36,11 @@ import io.infinitic.storage.keyValue.CompressedKeyValueStorage
 import io.infinitic.storage.keyValue.KeyValueStorage
 
 data class Storage(
-  var inMemory: InMemory? = null,
-  val redis: Redis? = null,
-  val mysql: MySQL? = null,
-  val postgres: Postgres? = null,
-  val compression: Compressor? = null
+  private var inMemory: InMemory? = null,
+  private val redis: Redis? = null,
+  private val mysql: MySQL? = null,
+  private val postgres: Postgres? = null,
+  var compression: Compression? = null
 ) {
   init {
     val nonNul = listOfNotNull(inMemory, redis, mysql, postgres)
@@ -51,6 +51,20 @@ data class Storage(
     } else {
       require(nonNul.count() == 1) { "Storage should have only one definition: ${nonNul.joinToString { it::class.java.simpleName }}" }
     }
+  }
+
+  companion object {
+    @JvmStatic
+    fun from(inMemory: InMemory) = Storage(inMemory = inMemory)
+
+    @JvmStatic
+    fun from(redis: Redis) = Storage(redis = redis)
+
+    @JvmStatic
+    fun from(mysql: MySQL) = Storage(mysql = mysql)
+
+    @JvmStatic
+    fun from(postgres: Postgres) = Storage(postgres = postgres)
   }
 
   fun close() {
@@ -65,10 +79,10 @@ data class Storage(
 
   val type by lazy {
     when {
-      inMemory != null -> "inMemory"
-      redis != null -> "redis"
-      mysql != null -> "mysql"
-      postgres != null -> "postgres"
+      inMemory != null -> StorageType.IN_MEMORY
+      redis != null -> StorageType.REDIS
+      mysql != null -> StorageType.MYSQL
+      postgres != null -> StorageType.POSTGRES
       else -> thisShouldNotHappen()
     }
   }
@@ -95,5 +109,12 @@ data class Storage(
 
   private fun thisShouldNotHappen(): Nothing {
     throw RuntimeException("This should not happen")
+  }
+
+  enum class StorageType {
+    IN_MEMORY,
+    REDIS,
+    POSTGRES,
+    MYSQL
   }
 }
