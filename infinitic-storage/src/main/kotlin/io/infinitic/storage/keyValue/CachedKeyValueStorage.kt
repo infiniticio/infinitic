@@ -20,14 +20,43 @@
  *
  * Licensor: infinitic.io
  */
-package io.infinitic.cache.keyValue
+package io.infinitic.storage.keyValue
 
-import io.infinitic.cache.Flushable
+import io.github.oshai.kotlinlogging.KotlinLogging
+import io.infinitic.cache.caches.keyValue.CachedKeyValue
+import org.jetbrains.annotations.TestOnly
 
-interface CachedKeyValue<T> : Flushable {
-  fun getValue(key: String): T?
+open class CachedKeyValueStorage(
+  private val cache: CachedKeyValue<ByteArray>,
+  private val storage: KeyValueStorage
+) : KeyValueStorage {
 
-  fun putValue(key: String, value: T)
+  private val logger = KotlinLogging.logger {}
 
-  fun delValue(key: String)
+  override suspend fun get(key: String): ByteArray? {
+    return cache.getValue(key) ?: run {
+      logger.debug { "key $key - getValue - absent from cache, get from storage" }
+      storage.get(key)?.also { cache.putValue(key, it) }
+    }
+  }
+
+  override suspend fun put(key: String, value: ByteArray) {
+    storage.put(key, value)
+    cache.putValue(key, value)
+  }
+
+  override suspend fun del(key: String) {
+    storage.del(key)
+    cache.delValue(key)
+  }
+
+  override fun close() {
+    storage.close()
+  }
+
+  @TestOnly
+  override fun flush() {
+    cache.flush()
+    storage.flush()
+  }
 }

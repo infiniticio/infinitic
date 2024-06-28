@@ -22,7 +22,6 @@
  */
 package io.infinitic.workers.register
 
-import io.infinitic.cache.Cache
 import io.infinitic.cloudEvents.CloudEventListener
 import io.infinitic.common.workers.registry.ServiceFactory
 import io.infinitic.common.workers.registry.WorkerRegistry
@@ -48,11 +47,6 @@ interface InfiniticRegister : AutoCloseable {
   var defaultStorage: Storage
 
   /**
-   * Default value of Cache
-   */
-  var defaultCache: Cache
-
-  /**
    * Service default values
    */
   var serviceDefault: ServiceDefault
@@ -73,8 +67,7 @@ interface InfiniticRegister : AutoCloseable {
   fun registerServiceTagEngine(
     serviceName: String,
     concurrency: Int? = null,
-    storage: Storage? = null,
-    cache: Cache? = null
+    storage: Storage? = null
   )
 
   /** Register service */
@@ -135,8 +128,7 @@ interface InfiniticRegister : AutoCloseable {
   fun registerWorkflowStateEngine(
     workflowName: String,
     concurrency: Int? = null,
-    storage: Storage? = null,
-    cache: Cache? = null
+    storage: Storage? = null
   )
 
   /** Register workflow tag engine */
@@ -145,8 +137,7 @@ interface InfiniticRegister : AutoCloseable {
   fun registerWorkflowTagEngine(
     workflowName: String,
     concurrency: Int? = null,
-    storage: Storage? = null,
-    cache: Cache? = null
+    storage: Storage? = null
   )
 
   /** Register workflow event listener */

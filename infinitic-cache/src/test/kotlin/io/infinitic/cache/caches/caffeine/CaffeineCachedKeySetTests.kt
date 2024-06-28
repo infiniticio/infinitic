@@ -20,14 +20,13 @@
  *
  * Licensor: infinitic.io
  */
-package io.infinitic.cache.caffeine
+package io.infinitic.cache.caches.caffeine
 
 import io.infinitic.cache.Caffeine
-import io.infinitic.cache.caches.caffeine.CaffeineCachedKeySet
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
 
-class CaffeineKeySetCacheTests :
+class CaffeineCachedKeySetTests :
   StringSpec(
       {
         val storage = CaffeineCachedKeySet(Caffeine())

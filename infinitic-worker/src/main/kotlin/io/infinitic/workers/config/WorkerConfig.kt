@@ -22,7 +22,6 @@
  */
 package io.infinitic.workers.config
 
-import io.infinitic.cache.Cache
 import io.infinitic.common.config.loadConfigFromFile
 import io.infinitic.common.config.loadConfigFromResource
 import io.infinitic.common.config.loadConfigFromYaml
@@ -50,9 +49,6 @@ data class WorkerConfig @JvmOverloads constructor(
 
   /** Default storage */
   override val storage: Storage? = null,
-
-  /** Default cache */
-  override var cache: Cache? = null,
 
   /** Workflows configuration */
   override val workflows: List<Workflow> = listOf(),

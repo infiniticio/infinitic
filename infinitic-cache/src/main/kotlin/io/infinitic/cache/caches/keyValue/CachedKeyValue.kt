@@ -20,21 +20,14 @@
  *
  * Licensor: infinitic.io
  */
-package io.infinitic.cache.data
+package io.infinitic.cache.caches.keyValue
 
-class Bytes(val content: ByteArray) {
-  override fun equals(other: Any?): Boolean {
-    if (this === other) return true
-    if (javaClass != other?.javaClass) return false
+import io.infinitic.cache.caches.Flushable
 
-    other as Bytes
+interface CachedKeyValue<T> : Flushable {
+  fun getValue(key: String): T?
 
-    if (!content.contentEquals(other.content)) return false
+  fun putValue(key: String, value: T)
 
-    return true
-  }
-
-  override fun hashCode(): Int {
-    return content.contentHashCode()
-  }
+  fun delValue(key: String)
 }

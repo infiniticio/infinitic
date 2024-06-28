@@ -22,22 +22,15 @@
  */
 package io.infinitic.cache
 
-import com.github.benmanes.caffeine.cache.RemovalCause
-import io.github.oshai.kotlinlogging.KotlinLogging
-import java.util.concurrent.TimeUnit
-import com.github.benmanes.caffeine.cache.Caffeine as CaffeineCache
-
-internal val logger = KotlinLogging.logger {}
-
 data class Caffeine(
-  val maximumSize: Int? = 10000,
-  val expireAfterAccess: Int? = 3600,
-  val expireAfterWrite: Int? = 3600
+  val maximumSize: Long? = 10000, // 10k units
+  val expireAfterAccess: Long? = 3600, // 1 hour
+  val expireAfterWrite: Long? = 3600 // 1 hour
 ) {
   init {
-    maximumSize?.let { require(it > 0) { "maximumSize MUST be >0" } }
-    expireAfterAccess?.let { require(it > 0) { "expireAfterAccess MUST be >0" } }
-    expireAfterWrite?.let { require(it > 0) { "expireAfterWrite MUST be >0" } }
+    maximumSize?.let { require(it > 0) { "maximumSize MUST be > 0" } }
+    expireAfterAccess?.let { require(it >= 0) { "expireAfterAccess MUST be >= 0" } }
+    expireAfterWrite?.let { require(it >= 0) { "expireAfterWrite MUST be >= 0" } }
   }
 
   companion object {
@@ -55,9 +48,9 @@ data class Caffeine(
     private var expireAfterAccess = default.expireAfterAccess
     private var expireAfterWrite = default.expireAfterWrite
 
-    fun setMaximumSize(maximumSize: Int) = apply { this.maximumSize = maximumSize }
-    fun setExpireAfterAccess(expAftAccess: Int) = apply { this.expireAfterAccess = expAftAccess }
-    fun setExpireAfterWrite(expAftWrite: Int) = apply { this.expireAfterWrite = expAftWrite }
+    fun setMaximumSize(maximumSize: Long) = apply { this.maximumSize = maximumSize }
+    fun setExpireAfterAccess(expAftAccess: Long) = apply { this.expireAfterAccess = expAftAccess }
+    fun setExpireAfterWrite(expAftWrite: Long) = apply { this.expireAfterWrite = expAftWrite }
 
     fun build() = Caffeine(
         maximumSize = maximumSize,
@@ -65,27 +58,4 @@ data class Caffeine(
         expireAfterWrite = expireAfterWrite,
     )
   }
-
-}
-
-fun <S, T> CaffeineCache<S, T>.setup(config: Caffeine): CaffeineCache<S, T> {
-  if (config.maximumSize is Int) {
-    this.maximumSize(config.maximumSize.toLong())
-  }
-  if (config.expireAfterAccess is Int) {
-    this.expireAfterAccess(config.expireAfterAccess.toLong(), TimeUnit.SECONDS)
-  }
-  if (config.expireAfterWrite is Int) {
-    this.expireAfterWrite(config.expireAfterWrite.toLong(), TimeUnit.SECONDS)
-  }
-  
-  this.removalListener<S, T> { key, _, cause ->
-    when (cause) {
-      RemovalCause.SIZE -> logger.debug { "Cache size exceeded, removing $key" }
-      RemovalCause.EXPIRED -> logger.debug { "Cache expired, removing $key" }
-      else -> Unit // Do nothing
-    }
-  }
-
-  return this
 }

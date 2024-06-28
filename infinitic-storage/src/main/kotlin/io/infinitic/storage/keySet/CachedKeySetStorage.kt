@@ -20,6 +20,42 @@
  *
  * Licensor: infinitic.io
  */
-package io.infinitic.cache
+package io.infinitic.storage.keySet
 
-data class None(val type: String = "unused")
+import io.github.oshai.kotlinlogging.KotlinLogging
+import io.infinitic.cache.caches.keySet.CachedKeySet
+import org.jetbrains.annotations.TestOnly
+
+class CachedKeySetStorage(
+  private val cache: CachedKeySet<ByteArray>,
+  private val storage: KeySetStorage
+) : KeySetStorage {
+
+  private val logger = KotlinLogging.logger {}
+
+  override suspend fun get(key: String): Set<ByteArray> =
+      cache.get(key) ?: run {
+        logger.debug { "key $key - getSet - absent from cache, get from storage" }
+        storage.get(key).also { cache.set(key, it) }
+      }
+
+  override suspend fun add(key: String, value: ByteArray) {
+    storage.add(key, value)
+    cache.add(key, value)
+  }
+
+  override suspend fun remove(key: String, value: ByteArray) {
+    cache.remove(key, value)
+    storage.remove(key, value)
+  }
+
+  override fun close() {
+    storage.close()
+  }
+
+  @TestOnly
+  override fun flush() {
+    storage.flush()
+    cache.flush()
+  }
+}

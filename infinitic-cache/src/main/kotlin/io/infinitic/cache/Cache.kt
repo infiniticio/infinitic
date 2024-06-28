@@ -24,56 +24,36 @@ package io.infinitic.cache
 
 import io.infinitic.cache.caches.caffeine.CaffeineCachedKeySet
 import io.infinitic.cache.caches.caffeine.CaffeineCachedKeyValue
-import io.infinitic.cache.caches.none.NoCachedKeySet
-import io.infinitic.cache.caches.none.NoCachedKeyValue
-import io.infinitic.cache.keySet.CachedKeySet
-import io.infinitic.cache.keyValue.CachedKeyValue
+import io.infinitic.cache.caches.keySet.CachedKeySet
+import io.infinitic.cache.caches.keyValue.CachedKeyValue
 
 data class Cache(
-  internal var none: None? = null,
   internal val caffeine: Caffeine? = null
 ) {
 
-  init {
-    val nonNul = listOfNotNull(none, caffeine)
-
-    if (nonNul.isEmpty()) {
-      // No cache  by default
-      none = None()
-    } else {
-      require(nonNul.count() == 1) { "Cache should have only one definition: ${nonNul.joinToString { it::class.java.simpleName }}" }
-    }
-  }
-
   companion object {
-    @JvmStatic
-    fun from(none: None) = Cache(none = none)
-
     @JvmStatic
     fun from(caffeine: Caffeine) = Cache(caffeine = caffeine)
   }
 
   val type: CacheType by lazy {
     when {
-      none != null -> CacheType.NONE
       caffeine != null -> CacheType.CAFFEINE
-      else -> throw RuntimeException("This should not happen")
+      else -> CacheType.NONE
     }
   }
 
-  val keySet: CachedKeySet<ByteArray> by lazy {
+  val keySet: CachedKeySet<ByteArray>? by lazy {
     when {
-      none != null -> NoCachedKeySet()
       caffeine != null -> CaffeineCachedKeySet(caffeine)
-      else -> throw RuntimeException("This should not happen")
+      else -> null
     }
   }
 
-  val keyValue: CachedKeyValue<ByteArray> by lazy {
+  val keyValue: CachedKeyValue<ByteArray>? by lazy {
     when {
-      none != null -> NoCachedKeyValue()
       caffeine != null -> CaffeineCachedKeyValue(caffeine)
-      else -> throw RuntimeException("This should not happen")
+      else -> null
     }
   }
 

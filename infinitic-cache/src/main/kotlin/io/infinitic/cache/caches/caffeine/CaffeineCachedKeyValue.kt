@@ -24,12 +24,11 @@ package io.infinitic.cache.caches.caffeine
 
 import com.github.benmanes.caffeine.cache.Cache
 import com.github.benmanes.caffeine.cache.Caffeine
-import io.infinitic.cache.Flushable
-import io.infinitic.cache.keyValue.CachedKeyValue
-import io.infinitic.cache.setup
+import io.infinitic.cache.caches.Flushable
+import io.infinitic.cache.caches.keyValue.CachedKeyValue
 import io.infinitic.cache.Caffeine as CaffeineConfig
 
-class CaffeineCachedKeyValue<S>(config: CaffeineConfig) : CachedKeyValue<S>, Flushable {
+class CaffeineCachedKeyValue<S : Any>(config: CaffeineConfig) : CachedKeyValue<S>, Flushable {
   private var caffeine: Cache<String, S> = Caffeine.newBuilder().setup(config).build()
 
   override fun delValue(key: String) {
@@ -37,10 +36,11 @@ class CaffeineCachedKeyValue<S>(config: CaffeineConfig) : CachedKeyValue<S>, Flu
   }
 
   override fun putValue(key: String, value: S) {
-    caffeine.put(key, value!!)
+    caffeine.put(key, value)
   }
 
-  override fun getValue(key: String): S? = caffeine.getIfPresent(key)
+  override fun getValue(key: String): S? =
+      caffeine.getIfPresent(key)
 
   override fun flush() {
     caffeine.invalidateAll()

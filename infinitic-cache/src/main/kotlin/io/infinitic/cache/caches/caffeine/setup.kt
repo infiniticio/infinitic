@@ -20,43 +20,30 @@
  *
  * Licensor: infinitic.io
  */
-package io.infinitic.workers.storage
+package io.infinitic.cache.caches.caffeine
 
+import com.github.benmanes.caffeine.cache.RemovalCause
 import io.github.oshai.kotlinlogging.KotlinLogging
-import io.infinitic.cache.keySet.CachedKeySet
-import io.infinitic.storage.keySet.KeySetStorage
-import org.jetbrains.annotations.TestOnly
+import io.infinitic.cache.Cache
+import io.infinitic.cache.Caffeine
+import java.util.concurrent.TimeUnit
+import com.github.benmanes.caffeine.cache.Caffeine as CaffeineCache
 
-class CachedKeySetStorage(
-  private val cache: CachedKeySet<ByteArray>,
-  private val storage: KeySetStorage
-) : KeySetStorage {
+internal val logger = KotlinLogging.logger(Cache::class.java.name)
 
-  private val logger = KotlinLogging.logger {}
+internal fun <S, T> CaffeineCache<S, T>.setup(config: Caffeine): CaffeineCache<S, T> {
 
-  override suspend fun get(key: String): Set<ByteArray> =
-      cache.get(key) ?: run {
-        logger.debug { "key $key - getSet - absent from cache, get from storage" }
-        storage.get(key).also { cache.set(key, it) }
-      }
+  config.maximumSize?.let { maximumSize(it) }
+  config.expireAfterAccess?.let { expireAfterAccess(it, TimeUnit.SECONDS) }
+  config.expireAfterWrite?.let { expireAfterWrite(it, TimeUnit.SECONDS) }
 
-  override suspend fun add(key: String, value: ByteArray) {
-    storage.add(key, value)
-    cache.add(key, value)
+  removalListener<S, T> { key, _, cause ->
+    when (cause) {
+      RemovalCause.SIZE -> logger.debug { "Cache size exceeded, removing $key" }
+      RemovalCause.EXPIRED -> logger.debug { "Cache expired, removing $key" }
+      else -> Unit
+    }
   }
 
-  override suspend fun remove(key: String, value: ByteArray) {
-    cache.remove(key, value)
-    storage.remove(key, value)
-  }
-
-  override fun close() {
-    storage.close()
-  }
-
-  @TestOnly
-  override fun flush() {
-    storage.flush()
-    cache.flush()
-  }
+  return this
 }

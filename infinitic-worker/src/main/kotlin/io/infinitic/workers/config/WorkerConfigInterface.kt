@@ -22,14 +22,12 @@
  */
 package io.infinitic.workers.config
 
-import io.infinitic.cache.config.CacheConfigInterface
 import io.infinitic.clients.config.ClientConfigInterface
 import io.infinitic.storage.config.StorageConfigInterface
 import io.infinitic.workers.register.config.RegisterConfigInterface
 
 interface WorkerConfigInterface :
   RegisterConfigInterface,
-  CacheConfigInterface,
   StorageConfigInterface,
   ClientConfigInterface
 

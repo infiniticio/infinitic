@@ -22,6 +22,7 @@
  */
 package io.infinitic.storage
 
+import io.infinitic.cache.Cache
 import io.infinitic.storage.compression.Compression
 import io.infinitic.storage.databases.inMemory.InMemoryKeySetStorage
 import io.infinitic.storage.databases.inMemory.InMemoryKeyValueStorage
@@ -31,7 +32,9 @@ import io.infinitic.storage.databases.postgres.PostgresKeySetStorage
 import io.infinitic.storage.databases.postgres.PostgresKeyValueStorage
 import io.infinitic.storage.databases.redis.RedisKeySetStorage
 import io.infinitic.storage.databases.redis.RedisKeyValueStorage
+import io.infinitic.storage.keySet.CachedKeySetStorage
 import io.infinitic.storage.keySet.KeySetStorage
+import io.infinitic.storage.keyValue.CachedKeyValueStorage
 import io.infinitic.storage.keyValue.CompressedKeyValueStorage
 import io.infinitic.storage.keyValue.KeyValueStorage
 
@@ -40,7 +43,8 @@ data class Storage(
   private val redis: Redis? = null,
   private val mysql: MySQL? = null,
   private val postgres: Postgres? = null,
-  var compression: Compression? = null
+  var compression: Compression? = null,
+  var cache: Cache? = null
 ) {
   init {
     val nonNul = listOfNotNull(inMemory, redis, mysql, postgres)
@@ -94,7 +98,7 @@ data class Storage(
       mysql != null -> MySQLKeySetStorage.from(mysql)
       postgres != null -> PostgresKeySetStorage.from(postgres)
       else -> thisShouldNotHappen()
-    }
+    }.withCache()
   }
 
   val keyValue: KeyValueStorage by lazy {
@@ -104,11 +108,21 @@ data class Storage(
       mysql != null -> MySQLKeyValueStorage.from(mysql)
       postgres != null -> PostgresKeyValueStorage.from(postgres)
       else -> thisShouldNotHappen()
-    }.let { CompressedKeyValueStorage(compression, it) }
+    }.let { CompressedKeyValueStorage(compression, it) }.withCache()
   }
 
   private fun thisShouldNotHappen(): Nothing {
     throw RuntimeException("This should not happen")
+  }
+
+  private fun KeyValueStorage.withCache() = when {
+    cache?.keyValue == null -> this
+    else -> CachedKeyValueStorage(cache!!.keyValue!!, this)
+  }
+
+  private fun KeySetStorage.withCache() = when {
+    cache?.keySet == null -> this
+    else -> CachedKeySetStorage(cache!!.keySet!!, this)
   }
 
   enum class StorageType {

@@ -22,21 +22,27 @@
  */
 dependencies {
   implementation(Libs.Hoplite.core)
+  implementation("com.zaxxer:HikariCP:5.0.1")
+
+  // Cache
+  implementation(project(":infinitic-cache"))
 
   // Compressor
   implementation(Libs.Compress.commons)
 
   // Redis
   implementation("redis.clients:jedis:5.0.2")
-  testImplementation(Libs.TestContainers.testcontainers)
 
   // MySql
-  implementation("com.zaxxer:HikariCP:5.0.1")
   implementation("com.mysql:mysql-connector-j:8.2.0")
+
+  //Postgres
   implementation("org.postgresql:postgresql:42.7.3")
+
+  // Tests
+  testImplementation(Libs.TestContainers.testcontainers)
   testImplementation(Libs.TestContainers.mysql)
   testImplementation(Libs.TestContainers.postgresql)
-
   testImplementation(Libs.Hoplite.yaml)
 }
 

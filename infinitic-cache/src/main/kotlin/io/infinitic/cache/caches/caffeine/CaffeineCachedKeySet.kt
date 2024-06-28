@@ -24,19 +24,17 @@ package io.infinitic.cache.caches.caffeine
 
 import com.github.benmanes.caffeine.cache.Cache
 import com.github.benmanes.caffeine.cache.Caffeine
-import io.infinitic.cache.Flushable
-import io.infinitic.cache.data.Bytes
-import io.infinitic.cache.keySet.CachedKeySet
-import io.infinitic.cache.setup
+import io.infinitic.cache.caches.Flushable
+import io.infinitic.cache.caches.data.Bytes
+import io.infinitic.cache.caches.keySet.CachedKeySet
 import io.infinitic.cache.Caffeine as CaffeineConfig
 
 class CaffeineCachedKeySet(config: CaffeineConfig) : CachedKeySet<ByteArray>, Flushable {
 
-  private var caffeine: Cache<String, Set<Bytes>> = Caffeine.newBuilder().setup(config).build()
+  private val caffeine: Cache<String, Set<Bytes>> = Caffeine.newBuilder().setup(config).build()
 
-  override fun get(key: String): Set<ByteArray>? {
-    return caffeine.get(key) { null }?.map { it.content }?.toSet()
-  }
+  override fun get(key: String): Set<ByteArray>? =
+      caffeine.get(key) { null }?.map { it.content }?.toSet()
 
   override fun set(key: String, value: Set<ByteArray>) {
     caffeine.put(key, value.map { Bytes(it) }.toMutableSet())

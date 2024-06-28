@@ -20,29 +20,21 @@
  *
  * Licensor: infinitic.io
  */
-package io.infinitic.cache.caches.none
+package io.infinitic.cache.caches.data
 
-import io.infinitic.cache.keySet.CachedKeySet
+class Bytes(val content: ByteArray) {
+  override fun equals(other: Any?): Boolean {
+    if (this === other) return true
+    if (javaClass != other?.javaClass) return false
 
-class NoCachedKeySet<T> : CachedKeySet<T> {
+    other as Bytes
 
-  override fun get(key: String): Set<T>? {
-    return null
+    if (!content.contentEquals(other.content)) return false
+
+    return true
   }
 
-  override fun set(key: String, value: Set<T>) {
-    // nothing
-  }
-
-  override fun add(key: String, value: T) {
-    // nothing
-  }
-
-  override fun remove(key: String, value: T) {
-    // nothing
-  }
-
-  override fun flush() {
-    // nothing
+  override fun hashCode(): Int {
+    return content.contentHashCode()
   }
 }
