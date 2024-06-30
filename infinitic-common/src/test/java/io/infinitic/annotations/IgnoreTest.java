@@ -1,4 +1,4 @@
-/**
+/*
  * "Commons Clause" License Condition v1.0
  *
  * The Software is provided to you by the Licensor under the License, as defined below, subject to
@@ -20,11 +20,22 @@
  *
  * Licensor: infinitic.io
  */
-package io.infinitic.annotations
 
-/**
- * Use this annotation to flag properties that should be ignored when storing the state of a
- * workflow
- */
-@Target(AnnotationTarget.FIELD, AnnotationTarget.PROPERTY)
-annotation class Ignore
+package io.infinitic.annotations;
+
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
+
+public class IgnoreTest {
+    @Ignore
+    private String ignoredField;
+
+    @Test
+    public void testIgnoreAnnotationPresentOnField() throws NoSuchFieldException {
+        // Get the field from the class by its name
+        var field = this.getClass().getDeclaredField("ignoredField");
+
+        // Assert that the field is annotated with the Ignore annotation
+        Assertions.assertTrue(field.isAnnotationPresent(Ignore.class));
+    }
+}
