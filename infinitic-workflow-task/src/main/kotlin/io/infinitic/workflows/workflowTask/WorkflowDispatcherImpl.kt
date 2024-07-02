@@ -26,7 +26,7 @@ import com.jayway.jsonpath.Criteria
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.infinitic.common.data.MillisDuration
 import io.infinitic.common.data.MillisInstant
-import io.infinitic.common.data.ReturnValue
+import io.infinitic.common.data.methods.MethodReturnValue
 import io.infinitic.common.exceptions.thisShouldNotHappen
 import io.infinitic.common.proxies.ChannelProxyHandler
 import io.infinitic.common.proxies.ExistingServiceProxyHandler
@@ -145,7 +145,7 @@ internal class WorkflowDispatcherImpl(
                 commandPosition = positionInMethod,
                 commandSimpleName = InlineTaskCommand.simpleName(),
                 commandStatus = CommandStatus.Completed(
-                    returnValue = ReturnValue.from(value),
+                    returnValue = MethodReturnValue.from(value),
                     completionWorkflowTaskIndex = workflowTaskIndex,
                 ),
                 command = command,

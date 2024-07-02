@@ -39,8 +39,8 @@ import io.infinitic.common.clients.messages.WorkflowIdsByTag
 import io.infinitic.common.clients.messages.interfaces.MethodMessage
 import io.infinitic.common.data.MillisDuration
 import io.infinitic.common.data.MillisInstant
-import io.infinitic.common.data.ReturnValue
 import io.infinitic.common.data.methods.MethodName
+import io.infinitic.common.data.methods.MethodReturnValue
 import io.infinitic.common.emitters.EmitterName
 import io.infinitic.common.exceptions.thisShouldNotHappen
 import io.infinitic.common.messages.Message
@@ -351,7 +351,7 @@ internal class ClientDispatcher(
   fun completeTaskAsync(
     serviceName: ServiceName,
     taskId: TaskId,
-    returnValue: ReturnValue
+    returnValue: MethodReturnValue
   ): CompletableFuture<Unit> {
     val msg = CompleteDelegatedTask(
         serviceName = serviceName,

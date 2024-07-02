@@ -25,7 +25,7 @@ package io.infinitic.common.tasks.tags.messages
 import com.github.avrokotlin.avro4k.AvroName
 import com.github.avrokotlin.avro4k.AvroNamespace
 import io.infinitic.common.data.MessageId
-import io.infinitic.common.data.ReturnValue
+import io.infinitic.common.data.methods.MethodReturnValue
 import io.infinitic.common.emitters.EmitterName
 import io.infinitic.common.messages.Message
 import io.infinitic.common.tasks.data.DelegatedTaskData
@@ -64,7 +64,7 @@ data class SetDelegatedTaskData(
 @Serializable
 @AvroNamespace("io.infinitic.tasks.tag")
 data class CompleteDelegatedTask(
-  val returnValue: ReturnValue,
+  val returnValue: MethodReturnValue,
   override val messageId: MessageId = MessageId(),
   override val serviceName: ServiceName,
   override val taskId: TaskId,

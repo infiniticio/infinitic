@@ -25,7 +25,7 @@ package io.infinitic.common.workflows.data.workflowTasks
 import com.github.avrokotlin.avro4k.Avro
 import com.github.avrokotlin.avro4k.AvroDefault
 import io.infinitic.common.data.MillisInstant
-import io.infinitic.common.data.ReturnValue
+import io.infinitic.common.data.methods.MethodReturnValue
 import io.infinitic.common.serDe.avro.AvroSerDe
 import io.infinitic.common.workers.config.WorkflowVersion
 import io.infinitic.common.workflows.data.commands.PastCommand
@@ -41,7 +41,7 @@ data class WorkflowTaskReturnValue(
   val newCommands: List<PastCommand>,
   val newStep: NewStep?,
   val properties: Map<PropertyName, PropertyValue>,
-  val methodReturnValue: ReturnValue?,
+  val methodReturnValue: MethodReturnValue?,
   @AvroDefault("0") val workflowVersion: WorkflowVersion = WorkflowVersion(0),
   @AvroDefault(Avro.NULL) val workflowTaskInstant: MillisInstant? = null,
 ) {

@@ -65,7 +65,7 @@ internal fun selectionSlide(
                 when (val request = kvar.value) {
                   is Loading -> "Loading..."
                   is Failed -> request.error.stackTraceToString()
-                  is Completed -> Json.stringify(request.result, true)
+                  is Completed -> Json.stringify(request.result)
                 },
             )
       }

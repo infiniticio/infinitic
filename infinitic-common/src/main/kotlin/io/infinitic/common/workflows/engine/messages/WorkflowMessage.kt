@@ -34,11 +34,11 @@ import io.infinitic.common.clients.messages.MethodTimedOut
 import io.infinitic.common.data.MessageId
 import io.infinitic.common.data.MillisDuration
 import io.infinitic.common.data.MillisInstant
-import io.infinitic.common.data.ReturnValue
 import io.infinitic.common.data.Version
 import io.infinitic.common.data.methods.MethodName
 import io.infinitic.common.data.methods.MethodParameterTypes
 import io.infinitic.common.data.methods.MethodParameters
+import io.infinitic.common.data.methods.MethodReturnValue
 import io.infinitic.common.emitters.EmitterName
 import io.infinitic.common.exceptions.thisShouldNotHappen
 import io.infinitic.common.messages.Message
@@ -372,7 +372,7 @@ data class CancelWorkflow(
 @Serializable
 @AvroNamespace("io.infinitic.workflows.engine")
 data class CompleteWorkflow(
-  val workflowReturnValue: ReturnValue,
+  val workflowReturnValue: MethodReturnValue,
   override val workflowName: WorkflowName,
   override val workflowId: WorkflowId,
   override val emitterName: EmitterName,
@@ -595,7 +595,7 @@ data class RemoteTaskCompleted(
   companion object {
     fun from(
       data: DelegatedTaskData,
-      returnValue: ReturnValue,
+      returnValue: MethodReturnValue,
       emitterName: EmitterName,
       emittedAt: MillisInstant
     ) = when (data.requester) {
@@ -686,7 +686,7 @@ data class MethodCompletedEvent(
   override val workflowMethodId: WorkflowMethodId,
   override val awaitingRequesters: Set<Requester>,
   override val emitterName: EmitterName,
-  val returnValue: ReturnValue,
+  val returnValue: MethodReturnValue,
 ) : WorkflowMessage(), WorkflowEventMessage, MethodTerminated {
   override fun getEventForAwaitingClients(emitterName: EmitterName) =
       awaitingRequesters.filterIsInstance<ClientRequester>().map { requester ->

@@ -22,7 +22,7 @@
  */
 package io.infinitic.common.workflows.data.steps
 
-import io.infinitic.common.data.ReturnValue
+import io.infinitic.common.data.methods.MethodReturnValue
 import io.infinitic.common.tasks.executors.errors.DeferredCanceledError
 import io.infinitic.common.tasks.executors.errors.DeferredFailedError
 import io.infinitic.common.tasks.executors.errors.DeferredTimedOutError
@@ -103,7 +103,7 @@ sealed class StepStatus {
   @Serializable
   @SerialName("StepStatus.Completed")
   data class Completed(
-    val returnValue: ReturnValue,
+    val returnValue: MethodReturnValue,
     val completionWorkflowTaskIndex: WorkflowTaskIndex
   ) : StepStatus()
 

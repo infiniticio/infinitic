@@ -22,7 +22,7 @@
  */
 package io.infinitic.workflows.workflowTask
 
-import io.infinitic.common.data.ReturnValue
+import io.infinitic.common.data.methods.MethodReturnValue
 import io.infinitic.common.workers.config.WorkflowVersion
 import io.infinitic.common.workers.data.WorkerName
 import io.infinitic.common.workflows.data.properties.PropertyHash
@@ -80,7 +80,7 @@ class WorkflowTaskImpl : WorkflowTask {
 
     // run method and get return value (null if end not reached)
     val methodReturnValue = try {
-      ReturnValue.from(method.invoke(instance, *parameters))
+      MethodReturnValue.from(method.invoke(instance, *parameters))
     } catch (e: InvocationTargetException) {
       when (val cause = e.cause) {
         // we reach an uncompleted step

@@ -27,7 +27,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.annotation.JsonTypeInfo
 import com.github.avrokotlin.avro4k.Avro
 import com.github.avrokotlin.avro4k.AvroDefault
-import io.infinitic.common.data.ReturnValue
+import io.infinitic.common.data.methods.MethodReturnValue
 import io.infinitic.common.exceptions.thisShouldNotHappen
 import io.infinitic.common.serDe.SerializedData
 import io.infinitic.common.workflows.data.commands.CommandId
@@ -157,40 +157,36 @@ sealed class Step {
           is Ongoing -> StepStatus.Waiting
           is Unknown ->
             when (index >= status.unknowingWorkflowTaskIndex) {
-              true ->
-                StepStatus.Unknown(
-                    status.deferredUnknownError, status.unknowingWorkflowTaskIndex,
-                )
+              true -> StepStatus.Unknown(
+                  status.deferredUnknownError, status.unknowingWorkflowTaskIndex,
+              )
 
               false -> StepStatus.Waiting
             }
 
           is Canceled ->
             when (index >= status.cancellationWorkflowTaskIndex) {
-              true ->
-                StepStatus.Canceled(
-                    status.deferredCanceledError, status.cancellationWorkflowTaskIndex,
-                )
+              true -> StepStatus.Canceled(
+                  status.deferredCanceledError, status.cancellationWorkflowTaskIndex,
+              )
 
               false -> StepStatus.Waiting
             }
 
           is TimedOut ->
             when (index >= status.timeoutWorkflowTaskIndex) {
-              true ->
-                StepStatus.CurrentlyTimedOut(
-                    status.deferredTimedOutError, status.timeoutWorkflowTaskIndex,
-                )
+              true -> StepStatus.CurrentlyTimedOut(
+                  status.deferredTimedOutError, status.timeoutWorkflowTaskIndex,
+              )
 
               false -> StepStatus.Waiting
             }
 
           is Failed ->
             when (index >= status.failureWorkflowTaskIndex) {
-              true ->
-                StepStatus.CurrentlyFailed(
-                    status.deferredFailedError, status.failureWorkflowTaskIndex,
-                )
+              true -> StepStatus.CurrentlyFailed(
+                  status.deferredFailedError, status.failureWorkflowTaskIndex,
+              )
 
               false -> StepStatus.Waiting
             }
@@ -226,26 +222,25 @@ sealed class Step {
 
       // if at least one step is canceled or currentlyFailed, then And(...steps) is the first of
       // them
-      val firstTerminated =
-          statuses
-              .filter {
-                it is StepStatus.CurrentlyFailed ||
-                    it is StepStatus.CurrentlyTimedOut ||
-                    it is StepStatus.Canceled ||
-                    it is StepStatus.Unknown
-              }
-              .minByOrNull {
-                when (it) {
-                  is StepStatus.Unknown -> it.unknowingWorkflowTaskIndex
-                  is StepStatus.Canceled -> it.cancellationWorkflowTaskIndex
-                  is StepStatus.CurrentlyFailed -> it.failureWorkflowTaskIndex
-                  is StepStatus.CurrentlyTimedOut -> it.timeoutWorkflowTaskIndex
-                  is StepStatus.Completed,
-                  is StepStatus.Failed,
-                  is StepStatus.TimedOut,
-                  is StepStatus.Waiting -> thisShouldNotHappen()
-                }
-              }
+      val firstTerminated = statuses
+          .filter {
+            it is StepStatus.CurrentlyFailed ||
+                it is StepStatus.CurrentlyTimedOut ||
+                it is StepStatus.Canceled ||
+                it is StepStatus.Unknown
+          }
+          .minByOrNull {
+            when (it) {
+              is StepStatus.Unknown -> it.unknowingWorkflowTaskIndex
+              is StepStatus.Canceled -> it.cancellationWorkflowTaskIndex
+              is StepStatus.CurrentlyFailed -> it.failureWorkflowTaskIndex
+              is StepStatus.CurrentlyTimedOut -> it.timeoutWorkflowTaskIndex
+              is StepStatus.Completed,
+              is StepStatus.Failed,
+              is StepStatus.TimedOut,
+              is StepStatus.Waiting -> thisShouldNotHappen()
+            }
+          }
 
       if (firstTerminated != null) return firstTerminated
 
@@ -257,7 +252,7 @@ sealed class Step {
         val maxIndex = statuses.maxOf { (it as StepStatus.Completed).completionWorkflowTaskIndex }
         val results = statuses.map { (it as StepStatus.Completed).returnValue.value() }
 
-        return StepStatus.Completed(ReturnValue.from(results), maxIndex)
+        return StepStatus.Completed(MethodReturnValue.from(results), maxIndex)
       }
 
       thisShouldNotHappen()

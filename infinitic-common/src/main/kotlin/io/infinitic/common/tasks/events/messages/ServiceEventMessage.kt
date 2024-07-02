@@ -28,9 +28,9 @@ import io.infinitic.common.clients.messages.TaskFailed
 import io.infinitic.common.data.MessageId
 import io.infinitic.common.data.MillisDuration
 import io.infinitic.common.data.MillisInstant
-import io.infinitic.common.data.ReturnValue
 import io.infinitic.common.data.Version
 import io.infinitic.common.data.methods.MethodName
+import io.infinitic.common.data.methods.MethodReturnValue
 import io.infinitic.common.emitters.EmitterName
 import io.infinitic.common.exceptions.thisShouldNotHappen
 import io.infinitic.common.messages.Message
@@ -246,7 +246,7 @@ data class TaskCompletedEvent(
   override val taskTags: Set<TaskTag>,
   override val taskMeta: TaskMeta,
   val isDelegated: Boolean,
-  val returnValue: ReturnValue,
+  val returnValue: MethodReturnValue,
 ) : ServiceEventMessage() {
 
   fun getDelegatedTaskData() = DelegatedTaskData(
@@ -323,7 +323,7 @@ data class TaskCompletedEvent(
         clientWaiting = msg.clientWaiting,
         taskTags = msg.taskTags,
         taskMeta = TaskMeta(meta),
-        returnValue = ReturnValue.from(value),
+        returnValue = MethodReturnValue.from(value),
         isDelegated = isDelegated,
     )
   }
