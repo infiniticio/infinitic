@@ -31,15 +31,15 @@ import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskIndex
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
 
-fun getStepId() = Step.Id(CommandId())
+internal fun getStepId() = Step.Id(CommandId())
 
-fun getCompletedStatus(output: Any? = null, index: Int = 0) =
+internal fun getCompletedStatus(output: Any? = null, index: Int = 0) =
     Completed(
-        returnValue = MethodReturnValue.from(output),
+        returnValue = MethodReturnValue.from(output, null),
         completionWorkflowTaskIndex = WorkflowTaskIndex(index),
     )
 
-class StepTests :
+internal class StepTests :
   StringSpec(
       {
         "Step should not be terminated by default" {

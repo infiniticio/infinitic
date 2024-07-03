@@ -22,9 +22,9 @@
  */
 package io.infinitic.common.data.methods
 
-import com.fasterxml.jackson.annotation.JsonView
 import com.fasterxml.jackson.core.JsonProcessingException
 import io.infinitic.common.serDe.SerializedData
+import io.infinitic.common.utils.getJsonViewClassOnParameter
 import io.infinitic.exceptions.serialization.ParameterSerializationException
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
@@ -33,44 +33,41 @@ import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
 import kotlinx.serialization.json.JsonArray
-import org.jetbrains.annotations.TestOnly
 import java.lang.reflect.Method
-import java.lang.reflect.Parameter
-import java.security.InvalidParameterException
-import kotlin.reflect.KClass
 
 @Serializable(with = MethodParametersSerializer::class)
-data class MethodParameters(val parameters: List<SerializedData> = listOf()) :
-  Collection<SerializedData> by parameters {
+data class MethodParameters(internal val parameters: List<SerializedData> = listOf()) {
+
+  val size = parameters.size
 
   fun toJson() = JsonArray(parameters.map { it.toJson() })
 
+  fun toParameters(method: Method): Array<Any?> = parameters.mapIndexed { index, serializedData ->
+    serializedData.deserialize(method.getJsonViewClassOnParameter(index))
+  }.toTypedArray()
+
   companion object {
-    fun from(method: Method, data: Array<*>): MethodParameters {
-      val parameters = method.parameters
+    fun from(method: Method, data: Array<*>) = MethodParameters(
+        data.mapIndexed { index, value ->
+          val jsonViewClass = method.getJsonViewClassOnParameter(index)
+          try {
+            SerializedData.from(value, jsonViewClass = jsonViewClass)
+          } catch (e: JsonProcessingException) {
+            throw ParameterSerializationException(
+                method.parameters[index].name,
+                method.parameterTypes[index].kotlin.javaObjectType.name,
+                method.name,
+                method.declaringClass.name,
+            )
+          }
+        }.toList(),
+    )
 
-      return MethodParameters(
-          data.mapIndexed { index, value ->
-            try {
-              SerializedData.from(value, jsonViewClass = parameters[index].getJsonViewClass())
-            } catch (e: JsonProcessingException) {
-              throw ParameterSerializationException(
-                  method.parameters[index].name,
-                  method.parameterTypes[index].kotlin.javaObjectType.name,
-                  method.name,
-                  method.declaringClass.name,
-              )
-            }
-          }.toList(),
-      )
-    }
-
-    @TestOnly
     fun from(vararg data: Any?) = MethodParameters(data.map { SerializedData.from(it) }.toList())
   }
 }
 
-object MethodParametersSerializer : KSerializer<MethodParameters> {
+internal object MethodParametersSerializer : KSerializer<MethodParameters> {
   override val descriptor: SerialDescriptor = ListSerializer(SerializedData.serializer()).descriptor
 
   override fun serialize(encoder: Encoder, value: MethodParameters) {
@@ -79,25 +76,4 @@ object MethodParametersSerializer : KSerializer<MethodParameters> {
 
   override fun deserialize(decoder: Decoder) =
       MethodParameters(ListSerializer(SerializedData.serializer()).deserialize(decoder).toList())
-}
-
-private fun Method.getJsonViewClasses(): Array<KClass<*>>? {
-  val jsonViewAnnotation = getAnnotation(JsonView::class.java)
-  jsonViewAnnotation?.let { annotation ->
-    annotation.value.let { if (it.isNotEmpty()) return it }
-  }
-
-  return null
-}
-
-private fun Parameter.getJsonViewClass(): Class<*>? {
-  val jsonViewAnnotation = getAnnotation(JsonView::class.java)
-  jsonViewAnnotation?.value?.let {
-    when {
-      it.size == 1 -> return it[0].java
-      else -> throw InvalidParameterException("When present the annotation @JsonView must have one parameter")
-    }
-  }
-
-  return null
 }

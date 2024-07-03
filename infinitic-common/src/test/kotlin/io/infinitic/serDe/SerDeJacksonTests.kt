@@ -38,14 +38,14 @@ class SerDeJacksonTests :
       {
         "Null (Obj) should be serializable / deserializable" {
           val obj1: JObj1? = null
-          val obj2 = SerializedData.from(obj1).deserialize()
+          val obj2 = SerializedData.from(obj1).deserialize(null)
 
           obj2 shouldBe obj1
         }
 
         "Simple Object should be serializable / deserializable" {
           val val1 = JObj1("42", 42, JType.TYPE_1)
-          val val2 = SerializedData.from(val1).deserialize()
+          val val2 = SerializedData.from(val1).deserialize(null)
 
           val2 shouldBe val1
         }
@@ -61,7 +61,7 @@ class SerDeJacksonTests :
                               JObj2::class.java.name.toByteArray(charset = Charsets.UTF_8),
                       ),
                   )
-          val val2 = data.deserialize() as JObj2
+          val val2 = data.deserialize(null) as JObj2
 
           val2.foo shouldBe val1.foo
           val2.bar shouldBe val1.bar
@@ -78,7 +78,7 @@ class SerDeJacksonTests :
                               JObj1::class.java.name.toByteArray(charset = Charsets.UTF_8),
                       ),
                   )
-          val val1 = data.deserialize() as JObj1
+          val val1 = data.deserialize(null) as JObj1
 
           val1.foo shouldBe val2.foo
           val1.bar shouldBe val2.bar
@@ -87,7 +87,7 @@ class SerDeJacksonTests :
 
         "Object containing set of sealed should be serializable / deserializable (even with a 'type' property)" {
           val val1 = JObjs(setOf(JObj1("42", 42, JType.TYPE_1)))
-          val val2 = SerializedData.from(val1).deserialize()
+          val val2 = SerializedData.from(val1).deserialize(null)
 
           val2 shouldBe val1
         }

@@ -317,7 +317,7 @@ private fun getTaskCompleted(requester: Requester) = TaskCompletedEvent(
     clientWaiting = null,
     taskTags = setOf(),
     taskMeta = TestFactory.random(),
-    returnValue = MethodReturnValue.from("42"),
+    returnValue = MethodReturnValue.from("42", null),
     isDelegated = false,
 )
 

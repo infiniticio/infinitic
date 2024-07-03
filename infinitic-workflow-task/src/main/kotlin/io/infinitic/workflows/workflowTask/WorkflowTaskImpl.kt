@@ -75,12 +75,13 @@ class WorkflowTaskImpl : WorkflowTask {
     // get method parameters
     // in case parameters contain some Deferred
     Deferred.setWorkflowDispatcher(dispatcher)
-    val parameters = methodRun.methodParameters.map { it.deserialize() }.toTypedArray()
+    val parameters = methodRun.methodParameters.toParameters(method)
     Deferred.delWorkflowDispatcher()
 
     // run method and get return value (null if end not reached)
     val methodReturnValue = try {
-      MethodReturnValue.from(method.invoke(instance, *parameters))
+      // method is the workflow method currently processed
+      MethodReturnValue.from(method.invoke(instance, *parameters), method)
     } catch (e: InvocationTargetException) {
       when (val cause = e.cause) {
         // we reach an uncompleted step

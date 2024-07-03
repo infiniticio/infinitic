@@ -32,12 +32,13 @@ import kotlinx.serialization.encoding.Encoder
 @Serializable(with = PropertyValueSerializer::class)
 data class PropertyValue(val serializedData: SerializedData) {
   companion object {
-    fun from(data: Any?) = PropertyValue(SerializedData.from(data))
+    fun from(data: Any?, jsonViewClass: Class<*>?) =
+        PropertyValue(SerializedData.from(data, jsonViewClass))
   }
 
   override fun toString() = serializedData.toString()
 
-  fun value(): Any? = serializedData.deserialize()
+  fun value(jsonViewClass: Class<*>?): Any? = serializedData.deserialize(jsonViewClass)
 
   fun hash() = PropertyHash(serializedData.hash())
 }

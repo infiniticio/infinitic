@@ -309,7 +309,7 @@ data class TaskCompletedEvent(
     fun from(
       msg: ExecuteTask,
       emitterName: EmitterName,
-      value: Any?,
+      returnValue: MethodReturnValue,
       isDelegated: Boolean,
       meta: Map<String, ByteArray>
     ) = TaskCompletedEvent(
@@ -323,7 +323,7 @@ data class TaskCompletedEvent(
         clientWaiting = msg.clientWaiting,
         taskTags = msg.taskTags,
         taskMeta = TaskMeta(meta),
-        returnValue = MethodReturnValue.from(value),
+        returnValue = returnValue,
         isDelegated = isDelegated,
     )
   }

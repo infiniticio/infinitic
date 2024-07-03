@@ -76,7 +76,7 @@ class DataTests :
 
         "CommandOutput should be serialized as SerializedData and reversible in json" {
           val id = TestFactory.random<String>()
-          val m = MethodReturnValue.from(id)
+          val m = MethodReturnValue.from(id, null)
           val json = Json.encodeToString(m)
           val m2 = Json.decodeFromString<MethodReturnValue>(json)
 
@@ -175,7 +175,7 @@ class DataTests :
 
         "PropertyValue should be serialized as SerializedData and reversible in json" {
           val id = TestFactory.random<String>()
-          val m = PropertyValue.from(id)
+          val m = PropertyValue.from(id, null)
           val json = Json.encodeToString(m)
           val m2 = Json.decodeFromString<PropertyValue>(json)
 
@@ -205,7 +205,7 @@ class DataTests :
 
         "StepOutput should be serialized as SerializedData and reversible in json" {
           val id = TestFactory.random<String>()
-          val m = MethodReturnValue.from(id)
+          val m = MethodReturnValue.from(id, null)
           val json = Json.encodeToString(m)
           val m2 = Json.decodeFromString<MethodReturnValue>(json)
 

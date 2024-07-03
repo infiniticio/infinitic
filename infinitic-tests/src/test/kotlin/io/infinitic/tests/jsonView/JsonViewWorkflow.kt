@@ -26,6 +26,8 @@ import com.fasterxml.jackson.annotation.JsonView
 import io.infinitic.workflows.Workflow
 
 internal interface JsonViewWorkflow {
+  val request: Request?
+
   fun getUser_00(request: Request): User
   fun getUser_01(request: Request): User
   fun getUser_02(request: Request): User
@@ -65,6 +67,9 @@ internal interface JsonViewWorkflow {
 internal class JsonViewWorkflowImpl : Workflow(), JsonViewWorkflow {
 
   private val jsonViewService = newService(JsonViewService::class.java)
+
+  @JsonView(Views.Public::class)
+  override var request: Request? = null
 
   override fun getUser_00(request: Request) = jsonViewService.getUser_0(request)
   override fun getUser_01(request: Request) = jsonViewService.getUser_1(request)

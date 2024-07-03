@@ -22,6 +22,7 @@
  */
 package io.infinitic.common.utils
 
+import com.fasterxml.jackson.annotation.JsonView
 import io.infinitic.annotations.CheckMode
 import io.infinitic.annotations.Delegated
 import io.infinitic.annotations.Name
@@ -37,6 +38,7 @@ import io.mockk.every
 import io.mockk.mockkClass
 import java.lang.reflect.Constructor
 import java.lang.reflect.Method
+import java.security.InvalidParameterException
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.reflect.jvm.javaMethod
 
@@ -268,6 +270,31 @@ internal fun Method.findWithRetryClass(): Class<out WithRetry>? =
     // else look at the class level
       ?: declaringClass.findWithRetryClass()
 
+internal fun Method.getJsonViewClass(): Class<*>? =
+    // look for @JsonView annotation on this method
+    findAnnotation(JsonView::class.java)?.value?.let {
+      when (it.size) {
+        0 -> null
+        1 -> it[0].java
+        else -> throw InvalidParameterException(
+            "The annotation @JsonView on method ${declaringClass.simpleName}::$name " +
+                " must not have more than one parameter",
+        )
+      }
+    }
+
+internal fun Method.getJsonViewClassOnParameter(index: Int): Class<*>? =
+    findAnnotationOnParameter(JsonView::class.java, index)?.value?.let {
+      when (it.size) {
+        0 -> null
+        1 -> it[0].java
+        else -> throw InvalidParameterException(
+            "The annotation @JsonView on parameter $index of " +
+                "${declaringClass.simpleName}::${name} must not have more than one parameter",
+        )
+      }
+    }
+
 // search for an annotation on a method, in the class, its interfaces, or its parent
 internal fun <T : Annotation, S : Class<out T>> Method.findAnnotation(
   annotation: S,
@@ -280,12 +307,47 @@ internal fun <T : Annotation, S : Class<out T>> Method.findAnnotation(
     method.getAnnotation(annotation)?.also { return it }
 
     // Look for the annotation on all interfaces
-    klass.interfaces.forEach { interfac ->
+    klass.interfaces.forEach { `interface` ->
       try {
-        interfac.getMethod(name, *parameterTypes).also { it.isAccessible = true }
+        `interface`.getMethod(name, *parameterTypes).also { it.isAccessible = true }
       } catch (e: Exception) {
         null
       }?.findAnnotation(annotation)?.also { return it }
+    }
+
+    // Look for the annotation on the superclass
+    klass = klass.superclass ?: break
+
+    method = try {
+      klass.getMethod(name, *parameterTypes).also { it.isAccessible = true }
+    } catch (e: Exception) {
+      break
+    }
+
+  } while (true)
+
+  return null
+}
+
+// search for an annotation on a Method's parameter, its interfaces, or its parent
+internal fun <T : Annotation, S : Class<out T>> Method.findAnnotationOnParameter(
+  annotation: S,
+  parameterIndex: Int
+): T? {
+  var method = this
+  var klass = declaringClass
+
+  do {
+    // Look for the annotation on the parameter of current method
+    method.parameters[parameterIndex].getAnnotation(annotation)?.also { return it }
+
+    // Look for the annotation on all interfaces
+    klass.interfaces.forEach { `interface` ->
+      try {
+        `interface`.getMethod(name, *parameterTypes).also { it.isAccessible = true }
+      } catch (e: Exception) {
+        null
+      }?.findAnnotationOnParameter(annotation, parameterIndex)?.also { return it }
     }
 
     // Look for the annotation on the superclass
@@ -311,8 +373,8 @@ internal fun <T : Annotation> Class<*>.findAnnotation(annotation: Class<out T>):
     klass.getAnnotation(annotation)?.also { return it }
 
     // Look for the annotation on the interfaces
-    klass.interfaces.forEach { interfce ->
-      interfce.findAnnotation(annotation)?.also { return it }
+    klass.interfaces.forEach { `interface` ->
+      `interface`.findAnnotation(annotation)?.also { return it }
     }
 
     // if not, inspect the superclass
@@ -322,6 +384,7 @@ internal fun <T : Annotation> Class<*>.findAnnotation(annotation: Class<out T>):
 
   return null
 }
+
 
 // search for an interface and its implemented method on a class
 internal fun Class<*>.hasMethodImplemented(method: Method): Boolean {

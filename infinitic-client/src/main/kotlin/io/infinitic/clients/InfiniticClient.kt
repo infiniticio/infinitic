@@ -137,7 +137,7 @@ class InfiniticClient(
   ): CompletableFuture<Unit> = dispatcher.completeTaskAsync(
       ServiceName(serviceName),
       TaskId(taskId),
-      MethodReturnValue.from(result),
+      MethodReturnValue.from(result, null),
   )
 
   /** Retry a workflow task */

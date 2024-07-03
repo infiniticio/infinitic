@@ -39,7 +39,7 @@ class DataTests :
           val m1 = Deferred<String>(step).apply { this.workflowDispatcher = mockk() }
 
           val data = SerializedData.from(m1)
-          val m2 = data.deserialize()
+          val m2 = data.deserialize(null)
 
           m2 shouldBe m1
         }

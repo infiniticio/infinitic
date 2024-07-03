@@ -578,7 +578,7 @@ private fun getTaskCompleted(
     clientWaiting = msg.clientWaiting,
     taskTags = msg.taskTags,
     taskMeta = TaskMeta(meta),
-    returnValue = MethodReturnValue.from(value),
+    returnValue = MethodReturnValue.from(value, null),
     isDelegated = false,
 )
 

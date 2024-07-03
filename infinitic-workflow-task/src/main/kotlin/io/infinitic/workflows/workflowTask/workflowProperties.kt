@@ -43,11 +43,10 @@ internal fun Workflow.setProperties(
   propertiesHashValue: Map<PropertyHash, PropertyValue>,
   propertiesNameHash: Map<PropertyName, PropertyHash>
 ) {
-  val properties =
-      propertiesNameHash.mapValues {
-        propertiesHashValue[it.value]
-          ?: thisShouldNotHappen("unknown hash ${it.value} in $propertiesHashValue")
-      }
+  val properties = propertiesNameHash.mapValues {
+    propertiesHashValue[it.value]
+      ?: thisShouldNotHappen("unknown hash ${it.value} in $propertiesHashValue")
+  }
 
   setPropertiesToObject(this, properties)
 }

@@ -45,6 +45,7 @@ import io.infinitic.exceptions.workflows.OutOfBoundAwaitException
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
+import java.lang.reflect.Method
 import kotlin.Int.Companion.MAX_VALUE
 
 @Serializable
@@ -81,6 +82,12 @@ sealed class Step {
     @AvroDefault("0") // before this feature was added, we consider it was the first wait
     var awaitIndex: Int = 0
   ) : Step() {
+    // the method that created this deferred (only used in workflow task)
+    // can be null for receiving channels or timers
+    @Transient
+    @JsonIgnore
+    var method: Method? = null
+
     // status of first wait occurrence
     @JsonIgnore
     var commandStatus: CommandStatus = Ongoing
@@ -100,13 +107,14 @@ sealed class Step {
 
     companion object {
       // only used in workflow task
-      fun from(pastCommand: PastCommand) =
+      fun from(pastCommand: PastCommand, method: Method?) =
           Id(pastCommand.commandId).apply {
-            commandStatus = pastCommand.commandStatus
+            this.method = method
+            this.commandStatus = pastCommand.commandStatus
 
             if (pastCommand is ReceiveSignalPastCommand) {
-              commandStatuses = pastCommand.commandStatuses
-              commandStatusLimit = pastCommand.command.receivedSignalLimit
+              this.commandStatuses = pastCommand.commandStatuses
+              this.commandStatusLimit = pastCommand.command.receivedSignalLimit
             }
           }
 
@@ -194,6 +202,8 @@ sealed class Step {
           is Completed ->
             when (index >= status.completionWorkflowTaskIndex) {
               true -> StepStatus.Completed(status.returnValue, status.completionWorkflowTaskIndex)
+                  .apply { method = this@Id.method }
+
               false -> StepStatus.Waiting
             }
         }
@@ -250,9 +260,9 @@ sealed class Step {
       // if all steps are completed, then And(...steps) is completed
       if (statuses.all { it is StepStatus.Completed }) {
         val maxIndex = statuses.maxOf { (it as StepStatus.Completed).completionWorkflowTaskIndex }
-        val results = statuses.map { (it as StepStatus.Completed).returnValue.value() }
+        val results = statuses.map { (it as StepStatus.Completed).value }
 
-        return StepStatus.Completed(MethodReturnValue.from(results), maxIndex)
+        return StepStatus.Completed(MethodReturnValue.from(results, null), maxIndex)
       }
 
       thisShouldNotHappen()

@@ -55,7 +55,22 @@ internal class JsonViewWorkflowTests : StringSpec(
       }
 
       "with JsonView on both Service parameter and return value" {
-        val user = jsonViewWorkflow.getUser_02(request)
+        val user = jsonViewWorkflow.getUser_03(request)
+        user shouldBe User(userId).apply { this.company = null; this.password = null }
+      }
+
+      "with JsonView on Workflow parameter" {
+        val user = jsonViewWorkflow.getUser_10(request)
+        user shouldBe User(userId).apply { this.company = null; this.password = request.password }
+      }
+
+      "with JsonView on Workflow return value" {
+        val user = jsonViewWorkflow.getUser_20(request)
+        user shouldBe User(userId).apply { this.company = request.company; this.password = null }
+      }
+
+      "with JsonView on both Workflow parameter and return value" {
+        val user = jsonViewWorkflow.getUser_30(request)
         user shouldBe User(userId).apply { this.company = null; this.password = null }
       }
     },

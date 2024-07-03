@@ -86,7 +86,7 @@ class DataTests :
 
         "ReturnValue should be serialized as SerializedData" {
           val id = TestFactory.random<String>()
-          val m = MethodReturnValue.from(id)
+          val m = MethodReturnValue.from(id, null)
           val json = Json.encodeToString(m)
           val m2 = Json.decodeFromString<MethodReturnValue>(json)
 

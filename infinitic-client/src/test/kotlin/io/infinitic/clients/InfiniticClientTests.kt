@@ -130,7 +130,7 @@ private fun engineResponse(): CompletableFuture<Unit> {
         recipientName = ClientName(client.name),
         workflowId = msg.workflowId,
         workflowMethodId = WorkflowMethodId.from(msg.workflowId),
-        methodReturnValue = MethodReturnValue.from("success"),
+        methodReturnValue = MethodReturnValue.from("success", null),
         emitterName = EmitterName("mockk"),
     )
     later { client.handle(methodCompleted, MillisInstant.now()) }
@@ -844,7 +844,7 @@ internal class InfiniticClientTests : StringSpec(
         taskTagSlots.size shouldBe 1
         val msg = taskTagSlots.first() as CompleteDelegatedTask
         msg shouldBe CompleteDelegatedTask(
-            returnValue = MethodReturnValue.from(result),
+            returnValue = MethodReturnValue.from(result, null),
             messageId = msg.messageId,
             serviceName = ServiceName(FakeService::class.java.name),
             taskId = TaskId(taskId),

@@ -35,84 +35,84 @@ class SerDeTests :
       {
         "Primitive (ByteArray) should be serializable / deserializable" {
           val bytes1: ByteArray = TestFactory.random()
-          val bytes2 = SerializedData.from(bytes1).deserialize() as ByteArray
+          val bytes2 = SerializedData.from(bytes1).deserialize(null) as ByteArray
 
           bytes1.contentEquals(bytes2) shouldBe true
         }
 
         "Primitive (Short) should be serializable / deserializable" {
           val val1: Short = TestFactory.random()
-          val val2 = SerializedData.from(val1).deserialize()
+          val val2 = SerializedData.from(val1).deserialize(null)
 
           val2 shouldBe val1
         }
 
         "Primitive (Int) should be serializable / deserializable" {
           val val1: Int = TestFactory.random()
-          val val2 = SerializedData.from(val1).deserialize()
+          val val2 = SerializedData.from(val1).deserialize(null)
 
           val2 shouldBe val1
         }
 
         "Primitive (Long) should be serializable / deserializable" {
           val val1: Long = TestFactory.random()
-          val val2 = SerializedData.from(val1).deserialize()
+          val val2 = SerializedData.from(val1).deserialize(null)
 
           val2 shouldBe val1
         }
 
         "Primitive (Float) should be serializable / deserializable" {
           val val1: Float = TestFactory.random()
-          val val2 = SerializedData.from(val1).deserialize()
+          val val2 = SerializedData.from(val1).deserialize(null)
 
           val2 shouldBe val1
         }
 
         "Primitive (Double) should be serializable / deserializable" {
           val val1: Double = TestFactory.random()
-          val val2 = SerializedData.from(val1).deserialize()
+          val val2 = SerializedData.from(val1).deserialize(null)
 
           val2 shouldBe val1
         }
 
         "Primitive (Boolean) should be serializable / deserializable" {
           val val1: Boolean = TestFactory.random()
-          val val2 = SerializedData.from(val1).deserialize()
+          val val2 = SerializedData.from(val1).deserialize(null)
 
           val2 shouldBe val1
         }
 
         "Primitive (Char) should be serializable / deserializable" {
           val val1: Char = TestFactory.random()
-          val val2 = SerializedData.from(val1).deserialize()
+          val val2 = SerializedData.from(val1).deserialize(null)
 
           val2 shouldBe val1
         }
 
         "String should be serializable / deserializable" {
           val val1: String = TestFactory.random()
-          val val2 = SerializedData.from(val1).deserialize()
+          val val2 = SerializedData.from(val1).deserialize(null)
 
           val2 shouldBe val1
         }
 
         "List Of primitives should be serializable / deserializable" {
           val val1 = listOf(42F, true, "!@#%")
-          val val2 = SerializedData.from(val1).deserialize()
+          val val2 = SerializedData.from(val1).deserialize(null)
 
           val2 shouldBe val1
         }
 
         "Null (Obj) should be serializable / deserializable" {
           val obj1: Obj1? = null
-          val obj2 = SerializedData.from(obj1).deserialize()
+          val obj2 = SerializedData.from(obj1).deserialize(null)
 
           obj2 shouldBe obj1
         }
 
         "Simple Object should be serializable / deserializable" {
           val val1 = Obj1("42", 42, Type.TYPE_1)
-          val val2 = SerializedData.from(val1).deserialize()
+          val val2 = SerializedData.from(val1).deserialize(null)
 
           val2 shouldBe val1
         }
@@ -128,7 +128,7 @@ class SerDeTests :
                               Obj2::class.java.name.toByteArray(charset = Charsets.UTF_8),
                       ),
                   )
-          val val2 = data.deserialize() as Obj2
+          val val2 = data.deserialize(null) as Obj2
 
           val2.foo shouldBe val1.foo
           val2.bar shouldBe val2.bar
@@ -145,7 +145,7 @@ class SerDeTests :
                               Obj1::class.java.name.toByteArray(charset = Charsets.UTF_8),
                       ),
                   )
-          val val2 = data.deserialize() as Obj1
+          val val2 = data.deserialize(null) as Obj1
 
           val2.foo shouldBe val1.foo
           val2.bar shouldBe val1.bar
@@ -154,28 +154,28 @@ class SerDeTests :
 
         "Object containing set of sealed should be serializable / deserializable (even with a 'type' property)" {
           val val1 = Objs(setOf(Obj1("42", 42, Type.TYPE_1)))
-          val val2 = SerializedData.from(val1).deserialize()
+          val val2 = SerializedData.from(val1).deserialize(null)
 
           val2 shouldBe val1
         }
 
         "Step.Id should be serializable / deserializable" {
           val step1 = TestFactory.random<Step.Id>()
-          val step2 = SerializedData.from(step1).deserialize()
+          val step2 = SerializedData.from(step1).deserialize(null)
 
           step2 shouldBe step1
         }
 
         "Step.Or should be serializable / deserializable" {
           val step1 = TestFactory.random<Step.Or>()
-          val step2 = SerializedData.from(step1).deserialize()
+          val step2 = SerializedData.from(step1).deserialize(null)
 
           step2 shouldBe step1
         }
 
         "Step.And should be serializable / deserializable" {
           val step1 = TestFactory.random<Step.And>()
-          val step2 = SerializedData.from(step1).deserialize()
+          val step2 = SerializedData.from(step1).deserialize(null)
 
           step2 shouldBe step1
         }
@@ -190,7 +190,7 @@ class SerDeTests :
 
         //    "List of simple Objects should be serializable / deserializable" {
         //        val val1 = listOf(Obj1("42", 42, Type.TYPE_1), Obj1("24", 24, Type.TYPE_2))
-        //        val val2 = SerializedData.from(val1).deserialize()
+        //        val val2 = SerializedData.from(val1).deserialize(null)
         //
         //        val1 shouldBe val2
         //    }

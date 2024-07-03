@@ -83,6 +83,7 @@ import io.infinitic.workflows.Deferred
 import io.infinitic.workflows.DeferredStatus
 import io.infinitic.workflows.SendChannel
 import io.infinitic.workflows.WorkflowCheckMode
+import java.lang.reflect.Method
 import java.time.Duration as JavaDuration
 import java.time.Instant as JavaInstant
 
@@ -145,7 +146,7 @@ internal class WorkflowDispatcherImpl(
                 commandPosition = positionInMethod,
                 commandSimpleName = InlineTaskCommand.simpleName(),
                 commandStatus = CommandStatus.Completed(
-                    returnValue = MethodReturnValue.from(value),
+                    returnValue = MethodReturnValue.from(value, null),
                     completionWorkflowTaskIndex = workflowTaskIndex,
                 ),
                 command = command,
@@ -158,7 +159,7 @@ internal class WorkflowDispatcherImpl(
       else -> when (pastCommand.commandSimpleName == InlineTaskCommand.simpleName()) {
         true ->
           when (val status = pastCommand.commandStatus) {
-            is CommandStatus.Completed -> status.returnValue.value() as S
+            is CommandStatus.Completed -> status.returnValue.value(null) as S
             else -> thisShouldNotHappen()
           }
 
@@ -199,9 +200,7 @@ internal class WorkflowDispatcherImpl(
             throw getDeferredException(stepStatus)
           }
 
-          is Completed -> {
-            stepStatus.returnValue.value() as T
-          }
+          is Completed -> stepStatus.value as T
         }
       }
       // this step is already in the history
@@ -266,7 +265,7 @@ internal class WorkflowDispatcherImpl(
             // workflowTaskIndex is now the one where this deferred was completed
             workflowTaskIndex = stepStatus.completionWorkflowTaskIndex
 
-            stepStatus.returnValue.value() as T
+            stepStatus.value as T
           }
         }
       }
@@ -295,12 +294,14 @@ internal class WorkflowDispatcherImpl(
       dispatchCommand(
           StartDurationTimerCommand(MillisDuration(duration.toMillis())),
           StartDurationTimerCommand.simpleName(),
+          null,
       )
 
   override fun timer(instant: JavaInstant): Deferred<JavaInstant> =
       dispatchCommand(
           StartInstantTimerCommand(MillisInstant(instant.toEpochMilli())),
           StartInstantTimerCommand.simpleName(),
+          null,
       )
 
   override fun <S : T, T : Any> receive(
@@ -317,6 +318,7 @@ internal class WorkflowDispatcherImpl(
           limit,
       ),
       ReceiveSignalCommand.simpleName(),
+      null,
   )
 
   override fun <T : Any> send(channel: Channel<T>, signal: T) {
@@ -330,6 +332,7 @@ internal class WorkflowDispatcherImpl(
             signalData = SignalData.from(signal),
         ),
         SendSignalCommand.simpleName(),
+        null,
     )
   }
 
@@ -376,6 +379,7 @@ internal class WorkflowDispatcherImpl(
               taskMeta = taskMeta,
           ),
           CommandSimpleName(fullMethodName),
+          method,
       )
 
   /** Workflow dispatching */
@@ -399,6 +403,7 @@ internal class WorkflowDispatcherImpl(
                   workflowMeta = workflowMeta,
               ),
               CommandSimpleName(fullMethodName),
+              method,
           )
         }
       }
@@ -418,6 +423,7 @@ internal class WorkflowDispatcherImpl(
                 methodTimeout = timeoutInMillisDuration.getOrThrow(),
             ),
             CommandSimpleName(fullMethodName),
+            method,
         )
       }
 
@@ -435,12 +441,14 @@ internal class WorkflowDispatcherImpl(
             signalData = signalData,
         ),
         SendSignalCommand.simpleName(),
+        null,
     )
   }
 
   private fun <S> dispatchCommand(
     command: Command,
-    commandSimpleName: CommandSimpleName
+    commandSimpleName: CommandSimpleName,
+    method: Method?
   ): Deferred<S> {
     // increment position
     nextPosition()
@@ -458,18 +466,13 @@ internal class WorkflowDispatcherImpl(
     // do we know the same command from the history?
     val pastCommand = getSimilarPastCommand(newCommand)
 
-    return if (pastCommand == null) {
-      // if this is a new command, we add it to the newCommands list
+    // new or existing command
+    val c = pastCommand ?: newCommand.also {
       newCommands.add(newCommand)
-      // and returns a Deferred with an ongoing step
-      Deferred<S>(Step.Id.from(newCommand)).apply {
-        this.workflowDispatcher = this@WorkflowDispatcherImpl
-      }
-    } else {
-      // else returns a Deferred linked to pastCommand
-      Deferred<S>(Step.Id.from(pastCommand)).apply {
-        this.workflowDispatcher = this@WorkflowDispatcherImpl
-      }
+    }
+
+    return Deferred<S>(Step.Id.from(c, method)).apply {
+      this.workflowDispatcher = this@WorkflowDispatcherImpl
     }
   }
 

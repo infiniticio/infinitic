@@ -68,7 +68,7 @@ internal fun CoroutineScope.workflowTaskCompleted(
   val emittedAt = state.runningWorkflowTaskInstant ?: thisShouldNotHappen()
 
   val workflowTaskReturnValue =
-      message.taskReturnValue.returnValue.value() as WorkflowTaskReturnValue
+      message.taskReturnValue.returnValue.value(null) as WorkflowTaskReturnValue
 
   // set workflowVersion
   when (state.workflowVersion) {

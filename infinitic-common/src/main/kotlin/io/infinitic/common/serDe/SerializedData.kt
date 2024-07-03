@@ -111,14 +111,14 @@ data class SerializedData(
   }
 
   /** @return deserialized value */
-  fun deserialize(): Any? =
+  fun deserialize(jsonViewClass: Class<*>?): Any? =
       when (type) {
         SerializedDataType.NULL -> null
 
         SerializedDataType.JSON_JACKSON -> {
           val klass = getDataClass()
           try {
-            JsonJackson.parse(toJsonString(), klass)
+            JsonJackson.parse(toJsonString(), klass, jsonViewClass = jsonViewClass)
           } catch (e: JsonProcessingException) {
             throw JsonDeserializationException(klass.name, causeString = e.toString())
           }

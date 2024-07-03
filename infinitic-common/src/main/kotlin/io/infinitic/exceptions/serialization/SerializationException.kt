@@ -27,7 +27,7 @@ import io.infinitic.exceptions.UserException
 
 sealed class SerializationException(msg: String, help: String) : UserException("$msg.\n$help")
 
-object MissingMetaJavaClassException : SerializationException(
+data object MissingMetaJavaClassException : SerializationException(
     msg =
     "Trying to deserialize data without explicitly providing java class in \"${SerializedData.META_JAVA_CLASS}\" meta value",
     help =
