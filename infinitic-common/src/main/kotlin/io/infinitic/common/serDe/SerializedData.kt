@@ -65,7 +65,7 @@ data class SerializedData(
     private fun Any.getClassInBytes(): ByteArray = this::class.java.name.toBytes()
 
     /** @return serialized value */
-    fun <T : Any> from(value: T?): SerializedData {
+    fun <T : Any> from(value: T?, jsonViewClass: Class<*>? = null): SerializedData {
       val bytes: ByteArray
       val type: SerializedDataType
       val meta: Map<String, ByteArray>
@@ -94,7 +94,7 @@ data class SerializedData(
           when (val serializer = value::class.serializerOrNull()) {
             null -> {
               type = SerializedDataType.JSON_JACKSON
-              bytes = JsonJackson.stringify(value).toByteArray()
+              bytes = JsonJackson.stringify(value, jsonViewClass).toByteArray()
             }
 
             else -> {
@@ -111,14 +111,14 @@ data class SerializedData(
   }
 
   /** @return deserialized value */
-  fun deserialize(): Any? =
+  fun deserialize(jsonViewClass: Class<*>?): Any? =
       when (type) {
         SerializedDataType.NULL -> null
 
         SerializedDataType.JSON_JACKSON -> {
           val klass = getDataClass()
           try {
-            JsonJackson.parse(toJsonString(), klass)
+            JsonJackson.parse(toJsonString(), klass, jsonViewClass = jsonViewClass)
           } catch (e: JsonProcessingException) {
             throw JsonDeserializationException(klass.name, causeString = e.toString())
           }

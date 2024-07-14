@@ -39,8 +39,8 @@ import io.infinitic.common.clients.messages.WorkflowIdsByTag
 import io.infinitic.common.clients.messages.interfaces.MethodMessage
 import io.infinitic.common.data.MillisDuration
 import io.infinitic.common.data.MillisInstant
-import io.infinitic.common.data.ReturnValue
 import io.infinitic.common.data.methods.MethodName
+import io.infinitic.common.data.methods.MethodReturnValue
 import io.infinitic.common.emitters.EmitterName
 import io.infinitic.common.exceptions.thisShouldNotHappen
 import io.infinitic.common.messages.Message
@@ -106,6 +106,7 @@ import kotlinx.coroutines.future.future
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeoutOrNull
 import java.io.Closeable
+import java.lang.reflect.Method
 import java.util.concurrent.CompletableFuture
 import io.infinitic.common.workflows.engine.messages.RetryTasks as RetryTaskInWorkflow
 import io.infinitic.common.workflows.tags.messages.RetryTasksByTag as RetryTaskInWorkflowByTag
@@ -180,7 +181,7 @@ internal class ClientDispatcher(
   ): T = awaitWorkflow(
       deferred.workflowName,
       deferred.workflowId,
-      deferred.methodName,
+      deferred.method,
       null,
       deferred.methodTimeout,
       deferred.dispatchTime,
@@ -194,7 +195,7 @@ internal class ClientDispatcher(
     is RequestByWorkflowId -> awaitWorkflow(
         deferred.workflowName,
         deferred.requestBy.workflowId,
-        deferred.methodName,
+        deferred.method,
         deferred.workflowMethodId,
         deferred.methodTimeout,
         deferred.dispatchTime,
@@ -208,7 +209,7 @@ internal class ClientDispatcher(
   private fun <T> awaitWorkflow(
     workflowName: WorkflowName,
     workflowId: WorkflowId,
-    workflowMethodName: MethodName,
+    workflowMethod: Method,
     workflowMethodId: WorkflowMethodId?,
     methodTimeout: MillisDuration?,
     dispatchTime: Long,
@@ -251,24 +252,24 @@ internal class ClientDispatcher(
         throw WorkflowTimedOutException(
             workflowName = workflowName.toString(),
             workflowId = workflowId.toString(),
-            workflowMethodName = workflowMethodName.toString(),
+            workflowMethodName = workflowMethod.name,
             workflowMethodId = workflowMethodId?.toString(),
         )
       }
 
-      is MethodCompleted -> workflowResult.methodReturnValue.value() as T
+      is MethodCompleted -> workflowResult.methodReturnValue.value(workflowMethod) as T
 
       is MethodCanceled -> throw WorkflowCanceledException(
           workflowName = workflowName.toString(),
           workflowId = workflowId.toString(),
-          workflowMethodName = workflowMethodName.toString(),
+          workflowMethodName = workflowMethod.name,
           workflowMethodId = workflowResult.workflowMethodId.toString(),
       )
 
       is MethodFailed -> throw WorkflowFailedException.from(
           MethodFailedError(
               workflowName = workflowName,
-              workflowMethodName = workflowMethodName,
+              workflowMethodName = MethodName(workflowMethod.name),
               workflowId = workflowId,
               workflowMethodId = workflowResult.workflowMethodId,
               deferredError = workflowResult.cause,
@@ -278,7 +279,7 @@ internal class ClientDispatcher(
       is MethodUnknown -> throw WorkflowUnknownException(
           workflowName = workflowName.toString(),
           workflowId = workflowId.toString(),
-          workflowMethodName = workflowMethodName.toString(),
+          workflowMethodName = workflowMethod.name,
           workflowMethodId = workflowMethodId?.toString(),
       )
 
@@ -351,7 +352,7 @@ internal class ClientDispatcher(
   fun completeTaskAsync(
     serviceName: ServiceName,
     taskId: TaskId,
-    returnValue: ReturnValue
+    returnValue: MethodReturnValue
   ): CompletableFuture<Unit> {
     val msg = CompleteDelegatedTask(
         serviceName = serviceName,
@@ -469,7 +470,7 @@ internal class ClientDispatcher(
         false -> {
           val deferredWorkflow = newDeferredWorkflow(
               handler.workflowName,
-              handler.methodName,
+              handler.method,
               handler.method.returnType as Class<R>,
               getTimeout(handler),
           )
@@ -486,7 +487,7 @@ internal class ClientDispatcher(
         false -> {
           val deferred = newDeferredWorkflow(
               handler.workflowName,
-              handler.methodName,
+              handler.method,
               handler.method.returnType as Class<R>,
               getTimeout(handler),
           )
@@ -498,10 +499,10 @@ internal class ClientDispatcher(
 
   private fun <R : Any?> newDeferredWorkflow(
     workflowName: WorkflowName,
-    methodName: MethodName,
+    method: Method,
     methodReturnClass: Class<R>,
     methodTimeout: MillisDuration?
-  ) = NewDeferredWorkflow(workflowName, methodName, methodReturnClass, methodTimeout, this)
+  ) = NewDeferredWorkflow(workflowName, method, methodReturnClass, methodTimeout, this)
       .also {
         // store in ThreadLocal to be used in ::getDeferred
         localLastDeferred.set(it)
@@ -562,7 +563,7 @@ internal class ClientDispatcher(
             workflowName = deferred.workflowName,
             workflowTag = customIds.first(),
             workflowId = deferred.workflowId,
-            methodName = deferred.methodName,
+            methodName = MethodName(deferred.method.name),
             methodParameters = handler.methodParameters,
             methodParameterTypes = handler.methodParameterTypes,
             methodTimeout = deferred.methodTimeout,
@@ -598,7 +599,7 @@ internal class ClientDispatcher(
           val deferred = existingDeferredWorkflow(
               handler.workflowName,
               handler.requestBy,
-              handler.methodName,
+              handler.method,
               handler.method.returnType as Class<R>,
               getTimeout(handler),
           )
@@ -622,7 +623,7 @@ internal class ClientDispatcher(
           val deferred = existingDeferredWorkflow(
               handler.workflowName,
               handler.requestBy,
-              handler.methodName,
+              handler.method,
               handler.method.returnType as Class<R>,
               getTimeout(handler),
           )
@@ -637,13 +638,13 @@ internal class ClientDispatcher(
   private fun <R : Any?> existingDeferredWorkflow(
     workflowName: WorkflowName,
     requestBy: RequestBy,
-    methodName: MethodName,
+    method: Method,
     methodReturnClass: Class<R>,
     methodTimeout: MillisDuration?
   ) = ExistingDeferredWorkflow(
       workflowName,
       requestBy,
-      methodName,
+      method,
       methodReturnClass,
       methodTimeout,
       this,

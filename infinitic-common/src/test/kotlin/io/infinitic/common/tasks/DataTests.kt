@@ -23,10 +23,10 @@
 package io.infinitic.common.tasks
 
 import io.infinitic.common.data.Name
-import io.infinitic.common.data.ReturnValue
 import io.infinitic.common.data.methods.MethodName
 import io.infinitic.common.data.methods.MethodParameterTypes
 import io.infinitic.common.data.methods.MethodParameters
+import io.infinitic.common.data.methods.MethodReturnValue
 import io.infinitic.common.fixtures.TestFactory
 import io.infinitic.common.serDe.SerializedData
 import io.infinitic.common.tasks.data.ServiceName
@@ -86,9 +86,9 @@ class DataTests :
 
         "ReturnValue should be serialized as SerializedData" {
           val id = TestFactory.random<String>()
-          val m = ReturnValue.from(id)
+          val m = MethodReturnValue.from(id, null)
           val json = Json.encodeToString(m)
-          val m2 = Json.decodeFromString<ReturnValue>(json)
+          val m2 = Json.decodeFromString<MethodReturnValue>(json)
 
           json shouldBe Json.encodeToString(SerializedData.from(id))
           m2 shouldBe m

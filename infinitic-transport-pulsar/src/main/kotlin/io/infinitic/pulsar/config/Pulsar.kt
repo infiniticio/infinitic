@@ -233,8 +233,7 @@ data class Pulsar @JvmOverloads constructor(
 
         null -> Unit
       }
-    }
-        .build()
+    }.build()
         .also {
           logger.info {
             "Created PulsarClient with config: ${

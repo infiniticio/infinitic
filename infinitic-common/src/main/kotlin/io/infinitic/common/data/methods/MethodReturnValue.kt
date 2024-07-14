@@ -20,36 +20,39 @@
  *
  * Licensor: infinitic.io
  */
-package io.infinitic.common.data
+package io.infinitic.common.data.methods
 
 import io.infinitic.common.serDe.SerializedData
+import io.infinitic.common.utils.getJsonViewClass
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
+import java.lang.reflect.Method
 
-@Serializable(with = ReturnValueSerializer::class)
-data class ReturnValue(val serializedData: SerializedData) {
+@Serializable(with = MethodReturnValueSerializer::class)
+data class MethodReturnValue(internal val serializedData: SerializedData) {
 
   companion object {
-    fun from(data: Any?) = ReturnValue(SerializedData.from(data))
+    fun from(data: Any?, method: Method?) =
+        MethodReturnValue(SerializedData.from(data, method?.getJsonViewClass()))
   }
 
   override fun toString() = serializedData.toString()
 
   fun toJson() = serializedData.toJson()
 
-  fun value(): Any? = serializedData.deserialize()
+  fun value(method: Method?): Any? = serializedData.deserialize(method?.getJsonViewClass())
 }
 
-object ReturnValueSerializer : KSerializer<ReturnValue> {
+object MethodReturnValueSerializer : KSerializer<MethodReturnValue> {
   override val descriptor: SerialDescriptor = SerializedData.serializer().descriptor
 
-  override fun serialize(encoder: Encoder, value: ReturnValue) {
+  override fun serialize(encoder: Encoder, value: MethodReturnValue) {
     SerializedData.serializer().serialize(encoder, value.serializedData)
   }
 
   override fun deserialize(decoder: Decoder) =
-      ReturnValue(SerializedData.serializer().deserialize(decoder))
+      MethodReturnValue(SerializedData.serializer().deserialize(decoder))
 }

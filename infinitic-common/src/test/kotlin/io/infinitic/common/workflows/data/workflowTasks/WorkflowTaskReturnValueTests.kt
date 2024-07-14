@@ -38,7 +38,7 @@ class WorkflowTaskReturnValueTests :
         "WorkflowTaskReturnValue should be SerializedData-convertible" {
           shouldNotThrowAny {
             val msg = TestFactory.random<WorkflowTaskReturnValue>()
-            val msg2 = SerializedData.from(msg).deserialize()
+            val msg2 = SerializedData.from(msg).deserialize(null)
 
             msg shouldBe msg2
           }

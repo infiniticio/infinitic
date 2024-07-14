@@ -29,19 +29,18 @@ import io.infinitic.clients.config.ClientConfigInterface
 import io.infinitic.clients.dispatcher.ClientDispatcher
 import io.infinitic.common.clients.messages.ClientMessage
 import io.infinitic.common.data.MillisInstant
-import io.infinitic.common.data.ReturnValue
+import io.infinitic.common.data.methods.MethodReturnValue
 import io.infinitic.common.proxies.ExistingWorkflowProxyHandler
-import io.infinitic.common.proxies.NewServiceProxyHandler
 import io.infinitic.common.proxies.NewWorkflowProxyHandler
 import io.infinitic.common.proxies.ProxyHandler
 import io.infinitic.common.proxies.RequestByWorkflowId
 import io.infinitic.common.proxies.RequestByWorkflowTag
 import io.infinitic.common.tasks.data.ServiceName
 import io.infinitic.common.tasks.data.TaskId
-import io.infinitic.common.tasks.data.TaskMeta
 import io.infinitic.common.transport.InfiniticConsumerAsync
 import io.infinitic.common.transport.InfiniticProducerAsync
 import io.infinitic.common.transport.LoggedInfiniticProducer
+import io.infinitic.common.utils.findName
 import io.infinitic.common.workflows.data.workflowMethods.WorkflowMethodId
 import io.infinitic.common.workflows.data.workflows.WorkflowMeta
 import io.infinitic.common.workflows.data.workflows.WorkflowTag
@@ -138,7 +137,7 @@ class InfiniticClient(
   ): CompletableFuture<Unit> = dispatcher.completeTaskAsync(
       ServiceName(serviceName),
       TaskId(taskId),
-      ReturnValue.from(result),
+      MethodReturnValue.from(result, null),
   )
 
   /** Retry a workflow task */
@@ -216,16 +215,12 @@ class InfiniticClient(
   ): CompletableFuture<Unit> =
       when (val handler = getProxyHandler(stub)) {
         is ExistingWorkflowProxyHandler -> {
-          val taskName =
-              taskClass?.let {
-                // Use NewTaskProxyHandler in case of use of @Name annotation
-                NewServiceProxyHandler(it, setOf(), TaskMeta()) { dispatcher }.serviceName
-              }
+          val taskName = taskClass?.findName()
 
           dispatcher.retryTaskAsync(
               workflowName = handler.workflowName,
               requestBy = handler.requestBy,
-              serviceName = taskName,
+              serviceName = taskName?.let { ServiceName(it) },
               taskStatus = taskStatus,
               taskId = taskId?.let { TaskId(it) },
           )

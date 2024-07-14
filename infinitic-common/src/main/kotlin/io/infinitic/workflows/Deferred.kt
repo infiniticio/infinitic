@@ -42,11 +42,10 @@ data class Deferred<T>(val step: Step) {
 
   @Transient
   @JsonIgnore
-  val id: String? =
-      when (step) {
-        is Step.Id -> step.commandId.toString()
-        else -> null
-      }
+  val id: String? = when (step) {
+    is Step.Id -> step.commandId.toString()
+    else -> null
+  }
 
   // used in WorkflowTaskImpl to set workflowDispatcher
   companion object {

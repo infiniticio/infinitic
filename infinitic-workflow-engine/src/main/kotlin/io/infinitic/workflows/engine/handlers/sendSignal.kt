@@ -23,7 +23,7 @@
 package io.infinitic.workflows.engine.handlers
 
 import io.github.oshai.kotlinlogging.KotlinLogging
-import io.infinitic.common.data.ReturnValue
+import io.infinitic.common.data.methods.MethodReturnValue
 import io.infinitic.common.emitters.EmitterName
 import io.infinitic.common.exceptions.thisShouldNotHappen
 import io.infinitic.common.transport.InfiniticProducer
@@ -69,7 +69,7 @@ internal fun CoroutineScope.sendSignal(
             it.commandId,
             Completed(
                 returnIndex = it.receivedSignalCount - 1,
-                returnValue = ReturnValue(message.signalData.serializedData),
+                returnValue = MethodReturnValue(message.signalData.serializedData),
                 completionWorkflowTaskIndex = state.workflowTaskIndex,
                 signalId = message.signalId,
             ),

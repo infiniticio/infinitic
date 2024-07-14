@@ -26,7 +26,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.annotation.JsonTypeInfo
 import com.github.avrokotlin.avro4k.Avro
 import com.github.avrokotlin.avro4k.AvroDefault
-import io.infinitic.common.data.ReturnValue
+import io.infinitic.common.data.methods.MethodReturnValue
 import io.infinitic.common.tasks.executors.errors.DeferredCanceledError
 import io.infinitic.common.tasks.executors.errors.DeferredFailedError
 import io.infinitic.common.tasks.executors.errors.DeferredTimedOutError
@@ -106,7 +106,7 @@ sealed class CommandStatus {
   @SerialName("CommandStatus.Completed")
   data class Completed(
     @AvroDefault("0") val returnIndex: Int = 0,
-    val returnValue: ReturnValue,
+    val returnValue: MethodReturnValue,
     val completionWorkflowTaskIndex: WorkflowTaskIndex,
     @AvroDefault(Avro.NULL) val signalId: SignalId? = null
   ) : CommandStatus()

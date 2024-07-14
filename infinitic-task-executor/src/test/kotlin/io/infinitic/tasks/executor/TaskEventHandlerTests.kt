@@ -26,8 +26,8 @@ import io.infinitic.common.clients.data.ClientName
 import io.infinitic.common.clients.messages.ClientMessage
 import io.infinitic.common.data.MillisDuration
 import io.infinitic.common.data.MillisInstant
-import io.infinitic.common.data.ReturnValue
 import io.infinitic.common.data.methods.MethodName
+import io.infinitic.common.data.methods.MethodReturnValue
 import io.infinitic.common.emitters.EmitterName
 import io.infinitic.common.fixtures.TestFactory
 import io.infinitic.common.requester.ClientRequester
@@ -317,7 +317,7 @@ private fun getTaskCompleted(requester: Requester) = TaskCompletedEvent(
     clientWaiting = null,
     taskTags = setOf(),
     taskMeta = TestFactory.random(),
-    returnValue = ReturnValue.from("42"),
+    returnValue = MethodReturnValue.from("42", null),
     isDelegated = false,
 )
 

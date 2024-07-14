@@ -56,13 +56,16 @@ object Json {
     configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
   }
 
-  fun stringify(msg: Any?, pretty: Boolean = false): String =
-      when (pretty) {
-        true -> mapper.writerWithDefaultPrettyPrinter().writeValueAsString(msg)
-        false -> mapper.writeValueAsString(msg)
-      }
+  fun stringify(msg: Any?, jsonViewClass: Class<*>? = null): String = when (jsonViewClass) {
+    null -> mapper.writeValueAsString(msg)
+    else -> mapper.writerWithView(jsonViewClass).writeValueAsString(msg)
+  }
 
-  fun <T> parse(json: String, klass: Class<out T>): T = mapper.readValue(json, klass)
+  fun <T> parse(json: String, klass: Class<out T>, jsonViewClass: Class<*>? = null): T =
+      when (jsonViewClass) {
+        null -> mapper.readValue(json, klass)
+        else -> mapper.readerWithView(jsonViewClass).readValue(json, klass)
+      }
 
   /**
    * Cause should not be included to the json, as it triggers a circular reference when cause = this

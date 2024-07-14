@@ -22,7 +22,7 @@
  */
 package io.infinitic.common.workflows
 
-import io.infinitic.common.data.ReturnValue
+import io.infinitic.common.data.methods.MethodReturnValue
 import io.infinitic.common.fixtures.TestFactory
 import io.infinitic.common.serDe.SerializedData
 import io.infinitic.common.workflows.data.channels.ChannelName
@@ -76,9 +76,9 @@ class DataTests :
 
         "CommandOutput should be serialized as SerializedData and reversible in json" {
           val id = TestFactory.random<String>()
-          val m = ReturnValue.from(id)
+          val m = MethodReturnValue.from(id, null)
           val json = Json.encodeToString(m)
-          val m2 = Json.decodeFromString<ReturnValue>(json)
+          val m2 = Json.decodeFromString<MethodReturnValue>(json)
 
           json shouldBe Json.encodeToString(SerializedData.from(id))
           m2 shouldBe m
@@ -175,7 +175,7 @@ class DataTests :
 
         "PropertyValue should be serialized as SerializedData and reversible in json" {
           val id = TestFactory.random<String>()
-          val m = PropertyValue.from(id)
+          val m = PropertyValue.from(id, null)
           val json = Json.encodeToString(m)
           val m2 = Json.decodeFromString<PropertyValue>(json)
 
@@ -205,9 +205,9 @@ class DataTests :
 
         "StepOutput should be serialized as SerializedData and reversible in json" {
           val id = TestFactory.random<String>()
-          val m = ReturnValue.from(id)
+          val m = MethodReturnValue.from(id, null)
           val json = Json.encodeToString(m)
-          val m2 = Json.decodeFromString<ReturnValue>(json)
+          val m2 = Json.decodeFromString<MethodReturnValue>(json)
 
           json shouldBe Json.encodeToString(SerializedData.from(id))
           m2 shouldBe m

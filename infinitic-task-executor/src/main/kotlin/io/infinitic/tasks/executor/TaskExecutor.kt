@@ -27,6 +27,7 @@ import io.infinitic.annotations.Delegated
 import io.infinitic.clients.InfiniticClientInterface
 import io.infinitic.common.data.MillisDuration
 import io.infinitic.common.data.MillisInstant
+import io.infinitic.common.data.methods.MethodReturnValue
 import io.infinitic.common.emitters.EmitterName
 import io.infinitic.common.exceptions.thisShouldNotHappen
 import io.infinitic.common.parser.getMethodPerNameAndParameters
@@ -65,6 +66,7 @@ import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.withTimeout
 import java.lang.reflect.InvocationTargetException
+import java.lang.reflect.Method
 import java.util.concurrent.TimeoutException
 
 class TaskExecutor(
@@ -170,7 +172,7 @@ class TaskExecutor(
       return@coroutineScope
     }
 
-    sendTaskCompleted(msg, output, taskContext.meta)
+    sendTaskCompleted(msg, output, method, taskContext.meta)
   }
 
   private suspend fun retryTask(
@@ -240,16 +242,19 @@ class TaskExecutor(
 
   private suspend fun sendTaskCompleted(
     msg: ExecuteTask,
-    value: Any?,
+    output: Any?,
+    method: Method,
     meta: Map<String, ByteArray>
   ) {
-    if (value != null && isDelegated) {
+    if (isDelegated && output != null) {
       msg.logDebug {
-        "This method is marked with the '${Delegated::class.java.name}' " +
-            "annotation, provided result is ignored"
+        "Method '$method' has an '${Delegated::class.java.name}' annotation, so result is ignored"
       }
     }
-    val event = TaskCompletedEvent.from(msg, emitterName, value, isDelegated, meta)
+
+    val returnValue = MethodReturnValue.from(output, method)
+
+    val event = TaskCompletedEvent.from(msg, emitterName, returnValue, isDelegated, meta)
     with(producer) { event.sendTo(ServiceEventsTopic) }
   }
 
@@ -259,19 +264,20 @@ class TaskExecutor(
       false -> workerRegistry.getRegisteredServiceExecutor(msg.serviceName)!!.factory()
     }
 
-    val taskMethod = getMethodPerNameAndParameters(
+    val method = getMethodPerNameAndParameters(
         service::class.java,
         "${msg.methodName}",
         msg.methodParameterTypes?.types,
         msg.methodParameters.size,
     )
 
-    val parameters = msg.methodParameters.map { it.deserialize() }.toTypedArray()
+    val parameters = msg.methodParameters.toParameters(method)
 
     when (msg.isWorkflowTask()) {
       true -> {
         val workflowTaskParameters = parameters.first() as WorkflowTaskParameters
-        val registered = workerRegistry.getRegisteredWorkflowExecutor(msg.requester.workflowName!!)!!
+        val registered =
+            workerRegistry.getRegisteredWorkflowExecutor(msg.requester.workflowName!!)!!
         // workflow instance
         val workflowInstance = registered.getInstance(workflowTaskParameters)
         // method instance
@@ -321,23 +327,23 @@ class TaskExecutor(
             // use withTimeout from registry, if it exists
             registered.withTimeout
                 // else use @Timeout annotation, or WithTimeout interface
-              ?: taskMethod.getWithTimeout().getOrThrow()
+              ?: method.getWithTimeout().getOrThrow()
                   // else use default value
                   ?: DEFAULT_TASK_TIMEOUT
 
         // use withRetry from registry, if it exists
         this.withRetry = registered.withRetry
             // else use @Timeout annotation, or WithTimeout interface
-          ?: taskMethod.getWithRetry().getOrThrow()
+          ?: method.getWithRetry().getOrThrow()
               // else use default value
               ?: DEFAULT_TASK_RETRY
 
         // check is this method has the @Async annotation
-        this.isDelegated = taskMethod.isDelegated()
+        this.isDelegated = method.isDelegated()
       }
     }
 
-    return TaskCommand(service, taskMethod, parameters)
+    return TaskCommand(service, method, parameters)
   }
 
   private fun ExecuteTask.logError(e: Throwable, description: () -> String) {

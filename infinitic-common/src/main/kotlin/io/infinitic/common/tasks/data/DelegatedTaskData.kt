@@ -23,8 +23,8 @@
 package io.infinitic.common.tasks.data
 
 import com.github.avrokotlin.avro4k.AvroNamespace
-import io.infinitic.common.data.ReturnValue
 import io.infinitic.common.data.methods.MethodName
+import io.infinitic.common.data.methods.MethodReturnValue
 import io.infinitic.common.requester.Requester
 import io.infinitic.common.serDe.avro.AvroSerDe
 import kotlinx.serialization.Serializable
@@ -39,7 +39,7 @@ data class DelegatedTaskData(
   val clientWaiting: Boolean?,
   val taskMeta: TaskMeta,
 ) {
-  fun taskReturnData(returnValue: ReturnValue) = TaskReturnValue(
+  fun taskReturnData(returnValue: MethodReturnValue) = TaskReturnValue(
       taskId = taskId,
       serviceName = serviceName,
       methodName = methodName,

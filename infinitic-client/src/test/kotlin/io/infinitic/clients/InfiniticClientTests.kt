@@ -36,10 +36,10 @@ import io.infinitic.common.clients.messages.MethodCompleted
 import io.infinitic.common.clients.messages.WorkflowIdsByTag
 import io.infinitic.common.data.MillisDuration
 import io.infinitic.common.data.MillisInstant
-import io.infinitic.common.data.ReturnValue
 import io.infinitic.common.data.methods.MethodName
 import io.infinitic.common.data.methods.MethodParameterTypes
 import io.infinitic.common.data.methods.MethodParameters
+import io.infinitic.common.data.methods.MethodReturnValue
 import io.infinitic.common.emitters.EmitterName
 import io.infinitic.common.fixtures.TestFactory
 import io.infinitic.common.fixtures.later
@@ -130,7 +130,7 @@ private fun engineResponse(): CompletableFuture<Unit> {
         recipientName = ClientName(client.name),
         workflowId = msg.workflowId,
         workflowMethodId = WorkflowMethodId.from(msg.workflowId),
-        methodReturnValue = ReturnValue.from("success"),
+        methodReturnValue = MethodReturnValue.from("success", null),
         emitterName = EmitterName("mockk"),
     )
     later { client.handle(methodCompleted, MillisInstant.now()) }
@@ -844,7 +844,7 @@ internal class InfiniticClientTests : StringSpec(
         taskTagSlots.size shouldBe 1
         val msg = taskTagSlots.first() as CompleteDelegatedTask
         msg shouldBe CompleteDelegatedTask(
-            returnValue = ReturnValue.from(result),
+            returnValue = MethodReturnValue.from(result, null),
             messageId = msg.messageId,
             serviceName = ServiceName(FakeService::class.java.name),
             taskId = TaskId(taskId),

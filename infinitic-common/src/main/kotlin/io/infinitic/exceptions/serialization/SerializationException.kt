@@ -24,11 +24,10 @@ package io.infinitic.exceptions.serialization
 
 import io.infinitic.common.serDe.SerializedData
 import io.infinitic.exceptions.UserException
-import io.infinitic.serDe.java.Json
 
 sealed class SerializationException(msg: String, help: String) : UserException("$msg.\n$help")
 
-object MissingMetaJavaClassException : SerializationException(
+data object MissingMetaJavaClassException : SerializationException(
     msg =
     "Trying to deserialize data without explicitly providing java class in \"${SerializedData.META_JAVA_CLASS}\" meta value",
     help =
@@ -72,8 +71,14 @@ class ParameterSerializationException(
 ) : SerializationException(
     msg =
     "Error during Json serialization of parameter $parameterName of $className::$methodName",
-    help =
-    "We are using Jackson library per default to serialize object through the ${Json::class.java.name} wrapper. If an exception is thrown during serialization, please consider those options:\n" +
-        "- modifying $parameterType to make it serializable by ${Json::class.java.name}\n" +
-        "- replacing $parameterType by more simple parameters in $className::$methodName\n",
+    help = "",
+)
+
+class ReturnValueSerializationException(
+  methodName: String,
+  className: String
+) : SerializationException(
+    msg =
+    "Error during Json serialization of the return value of $className::$methodName",
+    help = "",
 )

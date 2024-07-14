@@ -116,6 +116,24 @@ class ClassUtilTests : StringSpec(
             .getOrThrow() shouldBe MillisDuration(10)
       }
 
+      "find parameter annotation" {
+        FooParentInterface::bar.javaMethod
+            ?.findAnnotationOnParameter(Parameter::class.java, 0).shouldBeInstanceOf<Parameter>()
+      }
+
+      "find parameter annotation on parent interface" {
+        val annotation = FooParent::bar.javaMethod
+            ?.findAnnotationOnParameter(Parameter::class.java, 0)
+        annotation.shouldBeInstanceOf<Parameter>()
+        annotation.name shouldBe ""
+      }
+
+      "find parameter annotation on parent" {
+        val annotation = Foo2::bar.javaMethod
+            ?.findAnnotationOnParameter(Parameter::class.java, 0)
+        annotation.shouldBeInstanceOf<Parameter>()
+        annotation.name shouldBe "2"
+      }
     },
 )
 
@@ -124,7 +142,7 @@ class ClassUtilTests : StringSpec(
 private interface FooParentInterface {
   @Test7
   @Name("barMethodInterface")
-  fun bar(p: String): String
+  fun bar(@Parameter p: String): String
 }
 
 @Test6
@@ -146,6 +164,10 @@ private class Foo : FooParent(), FooInterface {
   @Test1
   @Name("bar")
   override fun bar(p: String) = p
+}
+
+private class Foo2 : FooParent(), FooInterface {
+  override fun bar(@Parameter("2") p: String) = p
 }
 
 @Target(AnnotationTarget.CLASS, AnnotationTarget.FUNCTION)
@@ -174,6 +196,9 @@ private annotation class Test7()
 
 @Target(AnnotationTarget.CLASS, AnnotationTarget.FUNCTION)
 private annotation class Test8()
+
+@Target(AnnotationTarget.VALUE_PARAMETER)
+private annotation class Parameter(val name: String = "")
 
 private interface Bar : WithTimeout {
   fun foo()

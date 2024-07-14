@@ -32,6 +32,7 @@ import io.infinitic.common.tasks.executors.errors.ExecutionError
 import io.infinitic.common.workflows.data.commands.CommandId
 import io.infinitic.common.workflows.data.steps.NewStep
 import io.infinitic.common.workflows.data.steps.Step
+import io.infinitic.common.workflows.data.steps.StepStatus
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineEnvelope
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
 import io.infinitic.common.workflows.engine.messages.WorkflowEventEnvelope
@@ -53,42 +54,43 @@ object TestFactory {
     // if not updated, 2 subsequents calls to this method would provide the same values
     seed++
 
-    val parameters =
-        EasyRandomParameters()
-            .seed(seed)
-            .scanClasspathForConcreteTypes(true)
-            .overrideDefaultInitialization(true)
-            .collectionSizeRange(1, 5)
-            .randomize(Any::class.java) { random<String>() }
-            .randomize(Step::class.java) { randomStep() }
-            .randomize(String::class.java) { String(random(), Charsets.UTF_8) }
-            .randomize(NewStep::class.java) { NewStep(step = random(), stepPosition = random()) }
-            .randomize(ByteArray::class.java) { Random(seed).nextBytes(10) }
-            .randomize(ByteBuffer::class.java) { ByteBuffer.wrap(random()) }
-            .randomize(ExecutionError::class.java) {
-              ExecutionError(random(), random(), random(), random(), null)
-            }
-            .randomize(Version::class.java) { Version(random<String>()) }
-            .randomize(SerializedData::class.java) { SerializedData.from(random<String>()) }
-            .randomize(MethodParameters::class.java) {
-              MethodParameters.from(random<ByteArray>(), random<String>())
-            }
-            .randomize(WorkflowEngineEnvelope::class.java) {
-              val sub = WorkflowEngineMessage::class.sealedSubclasses.shuffled().first()
-              WorkflowEngineEnvelope.from(random(sub))
-            }
-            .randomize(WorkflowEventEnvelope::class.java) {
-              val sub = WorkflowEventMessage::class.sealedSubclasses.shuffled().first()
-              WorkflowEventEnvelope.from(random(sub))
-            }
-            .randomize(ServiceEventEnvelope::class.java) {
-              val sub = ServiceEventMessage::class.sealedSubclasses.shuffled().first()
-              ServiceEventEnvelope.from(random(sub))
-            }
-            .randomize(DeferredError::class.java) {
-              val sub = DeferredError::class.sealedSubclasses.shuffled().first()
-              random(sub)
-            }
+    val parameters = EasyRandomParameters()
+        .seed(seed)
+        .scanClasspathForConcreteTypes(true)
+        .overrideDefaultInitialization(true)
+        .collectionSizeRange(1, 5)
+        .randomize(Any::class.java) { random<String>() }
+        .randomize(Step::class.java) { randomStep() }
+        .randomize(String::class.java) { String(random(), Charsets.UTF_8) }
+        .randomize(NewStep::class.java) { NewStep(step = random(), stepPosition = random()) }
+        .randomize(Step.Id::class.java) { Step.Id(random(), random()) }
+        .randomize(StepStatus.Completed::class.java) { StepStatus.Completed(random(), random()) }
+        .randomize(ByteArray::class.java) { Random(seed).nextBytes(10) }
+        .randomize(ByteBuffer::class.java) { ByteBuffer.wrap(random()) }
+        .randomize(ExecutionError::class.java) {
+          ExecutionError(random(), random(), random(), random(), null)
+        }
+        .randomize(Version::class.java) { Version(random<String>()) }
+        .randomize(SerializedData::class.java) { SerializedData.from(random<String>()) }
+        .randomize(MethodParameters::class.java) {
+          MethodParameters.from(random<ByteArray>(), random<String>())
+        }
+        .randomize(WorkflowEngineEnvelope::class.java) {
+          val sub = WorkflowEngineMessage::class.sealedSubclasses.shuffled().first()
+          WorkflowEngineEnvelope.from(random(sub))
+        }
+        .randomize(WorkflowEventEnvelope::class.java) {
+          val sub = WorkflowEventMessage::class.sealedSubclasses.shuffled().first()
+          WorkflowEventEnvelope.from(random(sub))
+        }
+        .randomize(ServiceEventEnvelope::class.java) {
+          val sub = ServiceEventMessage::class.sealedSubclasses.shuffled().first()
+          ServiceEventEnvelope.from(random(sub))
+        }
+        .randomize(DeferredError::class.java) {
+          val sub = DeferredError::class.sealedSubclasses.shuffled().first()
+          random(sub)
+        }
 
     values?.forEach { parameters.randomize(FieldPredicates.named(it.key), Randomizer { it.value }) }
 
