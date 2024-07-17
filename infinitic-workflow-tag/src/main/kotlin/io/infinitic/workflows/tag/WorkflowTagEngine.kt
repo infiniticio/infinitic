@@ -132,6 +132,11 @@ class WorkflowTagEngine(
       //  this call is similar to the previous one, maybe sending back an error would be more relevant
       1 -> {
         val workflowId = ids.first()
+
+        logger.info {
+          "Not launching new `${message.workflowName}` workflow as there is already `$workflowId` with tag `${message.workflowTag}`"
+        }
+
         // if needed, we inform workflowEngine that a client is waiting for its result
         if (message.clientWaiting) {
           launch {
