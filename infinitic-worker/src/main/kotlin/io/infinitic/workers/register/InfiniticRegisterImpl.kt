@@ -139,7 +139,7 @@ class InfiniticRegisterImpl : InfiniticRegister {
     ).also {
       logger.info {
         "* service tag engine".padEnd(25) +
-            ": (concurrency: ${it.concurrency}, storage: ${s.type}, cache: ${s.cache?.type})"
+            ": (concurrency: ${it.concurrency}, storage: ${s.type}, cache: ${s.cache?.type}, compression: ${s.compression})"
       }
     }
   }
@@ -231,7 +231,7 @@ class InfiniticRegisterImpl : InfiniticRegister {
     ).also {
       logger.info {
         "* workflow state engine".padEnd(25) +
-            ": (concurrency: ${it.concurrency}, storage: ${s.type}, cache: ${s.cache?.type})"
+            ": (concurrency: ${it.concurrency}, storage: ${s.type}, cache: ${s.cache?.type}, compression: ${s.compression})"
       }
     }
   }
@@ -255,7 +255,7 @@ class InfiniticRegisterImpl : InfiniticRegister {
     ).also {
       logger.info {
         "* workflow tag engine".padEnd(25) +
-            ": (concurrency: ${it.concurrency}, storage: ${s.type}, cache: ${s.cache?.type})"
+            ": (concurrency: ${it.concurrency}, storage: ${s.type}, cache: ${s.cache?.type}, compression: ${s.compression})"
       }
     }
   }
