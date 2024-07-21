@@ -22,7 +22,7 @@
  */
 package io.infinitic.tests.syntax
 
-import io.infinitic.tests.Test
+import io.infinitic.Test
 import io.infinitic.tests.utils.AnnotatedWorkflow
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe

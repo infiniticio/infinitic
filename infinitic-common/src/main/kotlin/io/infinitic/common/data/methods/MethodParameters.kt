@@ -24,7 +24,7 @@ package io.infinitic.common.data.methods
 
 import com.fasterxml.jackson.core.JsonProcessingException
 import io.infinitic.common.serDe.SerializedData
-import io.infinitic.common.utils.getJsonViewClassOnParameter
+import io.infinitic.common.utils.getParameterJsonViewClass
 import io.infinitic.exceptions.serialization.ParameterSerializationException
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
@@ -43,13 +43,13 @@ data class MethodParameters(internal val parameters: List<SerializedData> = list
   fun toJson() = JsonArray(parameters.map { it.toJson() })
 
   fun toParameters(method: Method): Array<Any?> = parameters.mapIndexed { index, serializedData ->
-    serializedData.deserialize(method.getJsonViewClassOnParameter(index))
+    serializedData.deserialize(method.getParameterJsonViewClass(index))
   }.toTypedArray()
 
   companion object {
     fun from(method: Method, data: Array<*>) = MethodParameters(
         data.mapIndexed { index, value ->
-          val jsonViewClass = method.getJsonViewClassOnParameter(index)
+          val jsonViewClass = method.getParameterJsonViewClass(index)
           try {
             SerializedData.from(value, jsonViewClass = jsonViewClass)
           } catch (e: JsonProcessingException) {

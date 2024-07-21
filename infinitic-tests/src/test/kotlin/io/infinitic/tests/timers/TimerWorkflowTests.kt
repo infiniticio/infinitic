@@ -23,7 +23,7 @@
 package io.infinitic.tests.timers
 
 import io.infinitic.common.fixtures.later
-import io.infinitic.tests.Test
+import io.infinitic.Test
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.comparables.shouldBeGreaterThanOrEqualTo
 import io.kotest.matchers.longs.shouldBeGreaterThan
@@ -60,7 +60,7 @@ internal class TimerWorkflowTests :
           val start = Instant.now().toEpochMilli()
 
           val deferred = client.dispatch(timerWorkflow::await, Instant.now().plusMillis(200))
-          
+
           (deferred.await().toEpochMilli() - start) shouldBeLessThan (2000L)
         }
 

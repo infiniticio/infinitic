@@ -30,7 +30,6 @@ import io.infinitic.common.data.MillisInstant
 import io.infinitic.common.data.methods.MethodReturnValue
 import io.infinitic.common.emitters.EmitterName
 import io.infinitic.common.exceptions.thisShouldNotHappen
-import io.infinitic.common.parser.getMethodPerNameAndParameters
 import io.infinitic.common.requester.workflowId
 import io.infinitic.common.requester.workflowName
 import io.infinitic.common.requester.workflowVersion
@@ -45,6 +44,7 @@ import io.infinitic.common.transport.InfiniticProducerAsync
 import io.infinitic.common.transport.LoggedInfiniticProducer
 import io.infinitic.common.transport.ServiceEventsTopic
 import io.infinitic.common.utils.getCheckMode
+import io.infinitic.common.utils.getMethodPerNameAndParameters
 import io.infinitic.common.utils.getWithRetry
 import io.infinitic.common.utils.getWithTimeout
 import io.infinitic.common.utils.isDelegated
@@ -264,8 +264,7 @@ class TaskExecutor(
       false -> workerRegistry.getRegisteredServiceExecutor(msg.serviceName)!!.factory()
     }
 
-    val method = getMethodPerNameAndParameters(
-        service::class.java,
+    val method = service::class.java.getMethodPerNameAndParameters(
         "${msg.methodName}",
         msg.methodParameterTypes?.types,
         msg.methodParameters.size,
@@ -282,8 +281,7 @@ class TaskExecutor(
         val workflowInstance = registered.getInstance(workflowTaskParameters)
         // method instance
         val workflowMethod = with(workflowTaskParameters) {
-          getMethodPerNameAndParameters(
-              workflowInstance::class.java,
+          workflowInstance::class.java.getMethodPerNameAndParameters(
               "${workflowMethod.methodName}",
               workflowMethod.methodParameterTypes?.types,
               workflowMethod.methodParameters.size,

@@ -20,21 +20,39 @@
  *
  * Licensor: infinitic.io
  */
-package io.infinitic.tests.versioning
+package io.infinitic.tests.cache
 
 import io.infinitic.Test
+import io.infinitic.common.utils.maxCachesSize
+import io.infinitic.exceptions.WorkflowUnknownException
+import io.infinitic.tests.inline.InlineWorkflow
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
 
-internal class VersionedWorkflowTests :
+internal class CacheTests :
   StringSpec(
       {
         val client = Test.client
 
-        val versionedWorkflow = client.newWorkflow(VersionedWorkflow::class.java)
+        "Cache utilities should not grow while running instances" {
 
-        "Dispatch workflow should use last version" {
-          versionedWorkflow.name() shouldBe VersionedWorkflowImpl_1::class.java.name
+          val inlineWorkflow = client.newWorkflow(InlineWorkflow::class.java)
+
+          // first instance
+          inlineWorkflow.inline1(0)
+
+          val size = maxCachesSize
+
+          // running 100 instances more
+          (1..100).map { client.dispatch(inlineWorkflow::inline1, it) }.forEach {
+            try {
+              it.await()
+            } catch (e: WorkflowUnknownException) {
+              // ignore
+            }
+          }
+          // checking that dispatching 100 instances does not make the cache grow
+          maxCachesSize shouldBe size
         }
       },
   )

@@ -1,0 +1,101 @@
+# "Commons Clause" License Condition v1.0
+#
+# The Software is provided to you by the Licensor under the License, as defined
+# below, subject to the following condition.
+#
+# Without limiting other conditions in the License, the grant of rights under the
+# License will not include, and the License does not grant to you, the right to
+# Sell the Software.
+#
+# For purposes of the foregoing, “Sell” means practicing any or all of the rights
+# granted to you under the License to provide to third parties, for a fee or
+# other consideration (including without limitation fees for hosting or
+# consulting/ support services related to the Software), a product or service
+# whose value derives, entirely or substantially, from the functionality of the
+# Software. Any license notice or attribution required by the License must also
+# include this Commons Clause License Condition notice.
+#
+# Software: Infinitic
+#
+# License: MIT License (https://opensource.org/licenses/MIT)
+#
+# Licensor: infinitic.io
+
+# Comment the line below to perform tests on a local Pulsar cluster
+
+eventListener:
+  class: io.infinitic.tests.utils.Listener
+
+services:
+  - name: annotatedService
+    class: io.infinitic.tests.utils.AnnotatedServiceImpl
+    concurrency: 5
+  - name: io.infinitic.tests.utils.UtilService
+    class: io.infinitic.tests.utils.UtilServiceImpl
+    concurrency: 5
+    retry:
+      maximumRetries: 1
+  - name: io.infinitic.tests.utils.TestService
+    class: io.infinitic.tests.utils.TestServiceImpl
+    concurrency: 5
+  - name: io.infinitic.tests.jsonView.JsonViewService
+    class: io.infinitic.tests.jsonView.JsonViewServiceImpl
+    concurrency: 5
+
+workflows:
+  - name: annotatedWorkflow
+    class: io.infinitic.tests.utils.AnnotatedWorkflowImpl
+    concurrency: 2
+  - name: io.infinitic.tests.utils.UtilWorkflow
+    class: io.infinitic.tests.utils.UtilWorkflowImpl
+    concurrency: 2
+  - name: io.infinitic.tests.branches.BranchesWorkflow
+    class: io.infinitic.tests.branches.BranchesWorkflowImpl
+    concurrency: 2
+  - name: io.infinitic.tests.channels.ChannelsWorkflow
+    class: io.infinitic.tests.channels.ChannelsWorkflowImpl
+    concurrency: 2
+  - name: io.infinitic.tests.children.ChildrenWorkflow
+    class: io.infinitic.tests.children.ChildrenWorkflowImpl
+    concurrency: 2
+  - name: io.infinitic.tests.context.ContextWorkflow
+    class: io.infinitic.tests.context.ContextWorkflowImpl
+    concurrency: 2
+  - name: io.infinitic.tests.deferred.DeferredWorkflow
+    class: io.infinitic.tests.deferred.DeferredWorkflowImpl
+    concurrency: 2
+  - name: io.infinitic.tests.errors.ErrorsWorkflow
+    class: io.infinitic.tests.errors.ErrorsWorkflowImpl
+    concurrency: 2
+  - name: io.infinitic.tests.inline.InlineWorkflow
+    class: io.infinitic.tests.inline.InlineWorkflowImpl
+    concurrency: 2
+  - name: io.infinitic.tests.properties.PropertiesWorkflow
+    class: io.infinitic.tests.properties.PropertiesWorkflowImpl
+    concurrency: 2
+  - name: io.infinitic.tests.syntax.SyntaxWorkflow
+    class: io.infinitic.tests.syntax.SyntaxWorkflowImpl
+    concurrency: 2
+  - name: io.infinitic.tests.tags.TagWorkflow
+    class: io.infinitic.tests.tags.TagWorkflowImpl
+    concurrency: 2
+  - name: io.infinitic.tests.timers.TimerWorkflow
+    class: io.infinitic.tests.timers.TimerWorkflowImpl
+    concurrency: 2
+  - name: io.infinitic.tests.timeouts.TimeoutsWorkflow
+    class: io.infinitic.tests.timeouts.TimeoutsWorkflowImpl
+    concurrency: 2
+  - name: io.infinitic.tests.timeouts.ITimeoutWorkflow
+    class: io.infinitic.tests.timeouts.ITimeoutsWorkflowImpl
+    concurrency: 2
+  - name: io.infinitic.tests.versioning.VersionedWorkflow
+    classes:
+      - io.infinitic.tests.versioning.VersionedWorkflowImpl
+      - io.infinitic.tests.versioning.VersionedWorkflowImpl_1
+    concurrency: 2
+  - name: Delegation
+    class: io.infinitic.tests.delegation.DelegationWorkflowImpl
+    concurrency: 2
+  - name: io.infinitic.tests.jsonView.JsonViewWorkflow
+    class: io.infinitic.tests.jsonView.JsonViewWorkflowImpl
+    concurrency: 5

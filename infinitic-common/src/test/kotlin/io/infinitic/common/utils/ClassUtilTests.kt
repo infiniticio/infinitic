@@ -34,7 +34,6 @@ import kotlin.reflect.jvm.javaMethod
 
 class ClassUtilTests : StringSpec(
     {
-
       val method: Method = Foo::bar.javaMethod!!
       val klass: Class<Foo> = Foo::class.java
 
@@ -81,18 +80,18 @@ class ClassUtilTests : StringSpec(
       }
 
       "Interface name with annotation should be annotation" {
-        FooParentInterface::class.java.findName() shouldBe "FooParentInterface"
+        FooParentInterface::class.java.findName() shouldBe "FooParentInterfaceAnnotated"
       }
 
-      "class name without annotation should be interface name with annotation" {
-        FooParent::class.java.findName() shouldBe "FooParentInterface"
+      "Class name without annotation should be interface name with annotation" {
+        FooParent::class.java.findName() shouldBe "FooParentInterfaceAnnotated"
       }
 
-      "class name with annotation should be annotation name" {
-        Foo::class.java.findName() shouldBe "Foo"
+      "Class name with annotation should be annotation name" {
+        Foo::class.java.findName() shouldBe "FooAnnotatedAnnotated"
       }
 
-      "class name with annotation should be class name" {
+      "Class name with annotation should be class name" {
         BarImpl::class.java.findName() shouldBe BarImpl::class.java.name
       }
 
@@ -116,29 +115,41 @@ class ClassUtilTests : StringSpec(
             .getOrThrow() shouldBe MillisDuration(10)
       }
 
-      "find parameter annotation" {
+      "Find parameter annotation" {
         FooParentInterface::bar.javaMethod
-            ?.findAnnotationOnParameter(Parameter::class.java, 0).shouldBeInstanceOf<Parameter>()
+            ?.findParameterAnnotation(Parameter::class.java, 0).shouldBeInstanceOf<Parameter>()
       }
 
-      "find parameter annotation on parent interface" {
+      "Find parameter annotation on parent interface" {
         val annotation = FooParent::bar.javaMethod
-            ?.findAnnotationOnParameter(Parameter::class.java, 0)
+            ?.findParameterAnnotation(Parameter::class.java, 0)
         annotation.shouldBeInstanceOf<Parameter>()
         annotation.name shouldBe ""
       }
 
-      "find parameter annotation on parent" {
+      "Find parameter annotation on parent" {
         val annotation = Foo2::bar.javaMethod
-            ?.findAnnotationOnParameter(Parameter::class.java, 0)
+            ?.findParameterAnnotation(Parameter::class.java, 0)
         annotation.shouldBeInstanceOf<Parameter>()
         annotation.name shouldBe "2"
+      }
+
+      "Full method name should not change (as it could trigger false positive in change detection)" {
+        klass.getFullMethodName(method) shouldBe "FooAnnotatedAnnotated::bar"
+
+        val k1 = Foo2::class.java
+        val m1 = k1.getMethod("bar", String::class.java)
+        k1.getFullMethodName(m1) shouldBe "FooInterfaceAnnotated::barMethodInterface"
+
+        val k2 = Foo3::class.java
+        val m2 = k2.getMethod("bar", String::class.java)
+        k2.getFullMethodName(m2) shouldBe "Foo3::bar"
       }
     },
 )
 
 @Test8
-@Name("FooParentInterface")
+@Name("FooParentInterfaceAnnotated")
 private interface FooParentInterface {
   @Test7
   @Name("barMethodInterface")
@@ -152,14 +163,14 @@ private open class FooParent : FooParentInterface {
 }
 
 @Test4
-@Name("FooInterface")
+@Name("FooInterfaceAnnotated")
 private interface FooInterface {
   @Test3
   fun bar(p: String): String
 }
 
 @Test2
-@Name("Foo")
+@Name("FooAnnotatedAnnotated")
 private class Foo : FooParent(), FooInterface {
   @Test1
   @Name("bar")
@@ -168,6 +179,10 @@ private class Foo : FooParent(), FooInterface {
 
 private class Foo2 : FooParent(), FooInterface {
   override fun bar(@Parameter("2") p: String) = p
+}
+
+private class Foo3 {
+  fun bar(p: String) = p
 }
 
 @Target(AnnotationTarget.CLASS, AnnotationTarget.FUNCTION)

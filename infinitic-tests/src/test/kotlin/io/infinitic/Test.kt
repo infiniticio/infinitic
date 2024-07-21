@@ -20,7 +20,7 @@
  *
  * Licensor: infinitic.io
  */
-package io.infinitic.tests
+package io.infinitic
 
 import io.infinitic.common.fixtures.DockerOnly
 import io.infinitic.common.workflows.data.workflows.WorkflowId
@@ -45,14 +45,14 @@ import kotlin.time.Duration.Companion.milliseconds
 internal object Test {
   private val pulsarServer = DockerOnly().pulsarServer
 
-  val workerConfig = WorkerConfig.fromResource("/pulsar.yml").let {
+  private val workerConfig = WorkerConfig.fromResource("/pulsar.yml", "/register.yml").let {
     when (pulsarServer) {
       null -> it.copy(transport = Transport.inMemory)
       else -> it.copy(
           transport = Transport.pulsar,
           pulsar = it.pulsar!!.copy(
-              brokerServiceUrl = pulsarServer.pulsarBrokerUrl, // "pulsar://localhost:6650/"
-              webServiceUrl = pulsarServer.httpServiceUrl, // "http://localhost:8080/"
+              brokerServiceUrl = pulsarServer.pulsarBrokerUrl,
+              webServiceUrl = pulsarServer.httpServiceUrl,
               policies = it.pulsar!!.policies.copy(delayedDeliveryTickTimeMillis = 1), // useful for tests
           ),
       )
