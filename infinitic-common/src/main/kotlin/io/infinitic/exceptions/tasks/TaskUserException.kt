@@ -33,8 +33,7 @@ class NoMethodFoundWithParameterTypesException(
     klass: String,
     method: String,
     parameterTypes: List<String>
-) :
-    TaskUserException(
+) : TaskUserException(
         msg = "No method \"$method(${ parameterTypes.joinToString() })\" found in \"$klass\" class",
         help = "")
 
