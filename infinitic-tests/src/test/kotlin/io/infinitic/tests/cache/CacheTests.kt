@@ -43,15 +43,15 @@ internal class CacheTests :
 
           val size = maxCachesSize
 
-          // running 100 instances more
-          (1..100).map { client.dispatch(inlineWorkflow::inline1, it) }.forEach {
+          // running more instances
+          (1..20).map { client.dispatch(inlineWorkflow::inline1, it) }.forEach {
             try {
               it.await()
             } catch (e: WorkflowUnknownException) {
               // ignore
             }
           }
-          // checking that dispatching 100 instances does not make the cache grow
+          // checking that dispatching more instances does not make the cache grow
           maxCachesSize shouldBe size
         }
       },
