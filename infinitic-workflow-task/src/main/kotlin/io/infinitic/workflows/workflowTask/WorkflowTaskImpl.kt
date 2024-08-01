@@ -23,6 +23,7 @@
 package io.infinitic.workflows.workflowTask
 
 import io.infinitic.common.data.methods.MethodReturnValue
+import io.infinitic.common.data.methods.deserialize
 import io.infinitic.common.workers.config.WorkflowVersion
 import io.infinitic.common.workers.data.WorkerName
 import io.infinitic.common.workflows.data.properties.PropertyHash
@@ -75,7 +76,7 @@ class WorkflowTaskImpl : WorkflowTask {
     // get method parameters
     // in case parameters contain some Deferred
     Deferred.setWorkflowDispatcher(dispatcher)
-    val parameters = methodRun.methodParameters.toParameters(method)
+    val parameters =  method.deserialize(methodRun.methodParameters)
     Deferred.delWorkflowDispatcher()
 
     // run method and get return value (null if end not reached)

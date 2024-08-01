@@ -28,6 +28,7 @@ import io.infinitic.clients.InfiniticClientInterface
 import io.infinitic.common.data.MillisDuration
 import io.infinitic.common.data.MillisInstant
 import io.infinitic.common.data.methods.MethodReturnValue
+import io.infinitic.common.data.methods.deserialize
 import io.infinitic.common.emitters.EmitterName
 import io.infinitic.common.exceptions.thisShouldNotHappen
 import io.infinitic.common.parser.getMethodPerNameAndParameters
@@ -271,7 +272,7 @@ class TaskExecutor(
         msg.methodParameters.size,
     )
 
-    val parameters = msg.methodParameters.toParameters(method)
+    val parameters = method.deserialize(msg.methodParameters)
 
     when (msg.isWorkflowTask()) {
       true -> {

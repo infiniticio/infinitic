@@ -26,6 +26,8 @@ import io.infinitic.common.data.MillisDuration
 import io.infinitic.common.data.methods.MethodName
 import io.infinitic.common.data.methods.MethodParameterTypes
 import io.infinitic.common.data.methods.MethodParameters
+import io.infinitic.common.data.methods.deserialize
+import io.infinitic.common.data.methods.serialize
 import io.infinitic.common.utils.findName
 import io.infinitic.common.utils.getFullMethodName
 import io.infinitic.common.utils.getMillisDuration
@@ -116,7 +118,7 @@ sealed class ProxyHandler<T : Any>(
   /** MethodParameters from method */
   val methodParameters: MethodParameters
     //  MUST be a get() as this.method changes
-    get() = MethodParameters.from(method, methodArgs)
+    get() = method.serialize(methodArgs)
 
   /** provides a stub of type T */
   @Suppress("UNCHECKED_CAST")

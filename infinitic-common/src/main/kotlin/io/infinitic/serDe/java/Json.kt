@@ -34,16 +34,10 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import com.fasterxml.jackson.module.kotlin.KotlinFeature
 import com.fasterxml.jackson.module.kotlin.KotlinModule
 import com.fasterxml.jackson.module.kotlin.jsonMapper
-import io.infinitic.serDe.java.Json.mapper
 import org.apache.avro.specific.SpecificRecordBase
 import java.io.IOException
+import java.util.*
 
-/**
- * Json is an object used for JSON serialization for non-kotlin object
- *
- *  @property mapper is mutable to be updated by user when needed
- *
- */
 object Json {
   @JvmStatic
   var mapper: ObjectMapper = jsonMapper {
@@ -57,15 +51,17 @@ object Json {
   }
 
   fun stringify(msg: Any?, jsonViewClass: Class<*>? = null): String = when (jsonViewClass) {
-    null -> mapper.writeValueAsString(msg)
-    else -> mapper.writerWithView(jsonViewClass).writeValueAsString(msg)
-  }
+    null -> mapper.writer()
+    else -> mapper.writerWithView(jsonViewClass)
+  }.writeValueAsString(msg)
 
-  fun <T> parse(json: String, klass: Class<out T>, jsonViewClass: Class<*>? = null): T =
-      when (jsonViewClass) {
-        null -> mapper.readValue(json, klass)
-        else -> mapper.readerWithView(jsonViewClass).readValue(json, klass)
-      }
+  fun <T> parse(json: String, klass: Class<out T>, jsonViewClass: Class<*>? = null): T {
+    // val type = mapper.typeFactory.constructType(klass)
+    return when (jsonViewClass) {
+      null -> mapper.reader()
+      else -> mapper.readerWithView(jsonViewClass)
+    }.readValue(json, klass)
+  }
 
   /**
    * Cause should not be included to the json, as it triggers a circular reference when cause = this

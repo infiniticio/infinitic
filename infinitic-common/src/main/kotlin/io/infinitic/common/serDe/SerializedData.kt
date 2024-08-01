@@ -64,7 +64,11 @@ data class SerializedData(
 
     private fun Any.getClassInBytes(): ByteArray = this::class.java.name.toBytes()
 
+    @JvmStatic
+    val NULL = SerializedData("".toByteArray(), SerializedDataType.NULL, mapOf())
+
     /** @return serialized value */
+    @JvmStatic
     fun <T : Any> from(value: T?, jsonViewClass: Class<*>? = null): SerializedData {
       val bytes: ByteArray
       val type: SerializedDataType
@@ -72,9 +76,9 @@ data class SerializedData(
 
       when (value) {
         null -> {
-          type = SerializedDataType.NULL
-          bytes = "".toByteArray()
-          meta = mutableMapOf()
+          type = NULL.type
+          bytes = NULL.bytes
+          meta = NULL.meta
         }
 
         is WorkflowTaskParameters -> {
