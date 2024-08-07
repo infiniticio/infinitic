@@ -131,7 +131,10 @@ class TaskEventHandler(producerAsync: InfiniticProducerAsync) {
   private suspend fun completeWorkflowTask(msg: TaskCompletedEvent, publishTime: MillisInstant) =
       coroutineScope {
 
-        val result = msg.returnValue.value(null) as WorkflowTaskReturnValue
+        val result = msg.returnValue.deserialize(
+            type = WorkflowTaskReturnValue::class.java,
+            jsonViewClass = null,
+        ) as WorkflowTaskReturnValue
 
         // TODO After 0.13.0, workflowTaskInstant should not be null anymore
         val workflowTaskInstant = result.workflowTaskInstant ?: publishTime

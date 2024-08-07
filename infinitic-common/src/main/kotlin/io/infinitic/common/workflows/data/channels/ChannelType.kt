@@ -40,6 +40,9 @@ data class ChannelType(override val name: String) : Name(name) {
   }
 }
 
+/**
+ * Serializer for the `ChannelType` objects
+ */
 object ChannelTypeSerializer : KSerializer<ChannelType> {
   override val descriptor: SerialDescriptor =
       PrimitiveSerialDescriptor("ChannelType", PrimitiveKind.STRING)

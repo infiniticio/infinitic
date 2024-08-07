@@ -29,8 +29,6 @@ import io.infinitic.annotations.Retry
 import io.infinitic.annotations.Timeout
 import io.infinitic.common.tasks.data.TaskMeta
 import io.infinitic.tasks.Task
-import io.infinitic.tasks.WithRetry
-import io.infinitic.tasks.WithTimeout
 import io.infinitic.workflows.DeferredStatus
 
 interface ParentInterface {
@@ -63,9 +61,9 @@ interface UtilService : ParentInterface {
 
   fun meta(): TaskMeta
 
-  fun getRetry(): WithRetry?
+  fun getRetry(): Double?
 
-  fun getTimeout(): WithTimeout?
+  fun getTimeout(): Double?
 
   @Timeout(After100MilliSeconds::class)
   // Timeout at Service level
@@ -122,9 +120,9 @@ class UtilServiceImpl : UtilService {
 
   override fun meta() = TaskMeta(Task.meta)
 
-  override fun getRetry(): WithRetry? = Task.withRetry
+  override fun getRetry(): Double? = Task.withRetry?.getSecondsBeforeRetry(4, RuntimeException())
 
-  override fun getTimeout(): WithTimeout? = Task.withTimeout
+  override fun getTimeout(): Double? = Task.withTimeout?.getTimeoutInSeconds()
 
   override fun withTimeout(wait: Long): Long {
     Thread.sleep(wait)

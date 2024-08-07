@@ -24,8 +24,11 @@ package io.infinitic.tests.utils
 
 import kotlinx.serialization.Serializable
 
+@Serializable
 sealed class Obj
 
-@Serializable data class Obj1(val foo: String, val bar: Int) : Obj()
+@Serializable
+data class Obj1(val foo: String, val bar: Int) : Obj()
 
-@Serializable data class Obj2(val foo: String, val bar: Int) : Obj()
+@Serializable
+data class Obj2(val foo: String, val bar: Int) : Obj()

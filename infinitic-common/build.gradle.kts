@@ -39,7 +39,7 @@ dependencies {
   implementation(Libs.Coroutines.jdk8)
   implementation(Libs.Uuid.generator)
   implementation(Libs.CloudEvents.api)
-
+  
   testFixturesImplementation(Libs.Kotlin.reflect)
   testFixturesImplementation(Libs.EasyRandom.core)
   testFixturesImplementation(Libs.Coroutines.core)

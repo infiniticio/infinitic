@@ -28,21 +28,25 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
+import java.lang.reflect.Type
 
 @Serializable(with = PropertyValueSerializer::class)
 data class PropertyValue(val serializedData: SerializedData) {
   companion object {
-    fun from(data: Any?, jsonViewClass: Class<*>?) =
-        PropertyValue(SerializedData.from(data, jsonViewClass))
+    fun from(data: Any?, type: Type) = PropertyValue(SerializedData.encode(data, type, null))
   }
 
   override fun toString() = serializedData.toString()
 
-  fun value(jsonViewClass: Class<*>?): Any? = serializedData.deserialize(jsonViewClass)
+  fun value(type: Type, jsonViewClass: Class<*>?): Any? =
+      serializedData.decode(type = type, jsonViewClass = jsonViewClass)
 
   fun hash() = PropertyHash(serializedData.hash())
 }
 
+/**
+ * This class is responsible for serializing and deserializing instances of the [PropertyValue] class.
+ */
 object PropertyValueSerializer : KSerializer<PropertyValue> {
   override val descriptor: SerialDescriptor = SerializedData.serializer().descriptor
 

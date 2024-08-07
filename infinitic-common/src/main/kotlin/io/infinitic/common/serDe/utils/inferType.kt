@@ -1,62 +1,59 @@
-package io.infinitic.serDe.java
+/**
+ * "Commons Clause" License Condition v1.0
+ *
+ * The Software is provided to you by the Licensor under the License, as defined below, subject to
+ * the following condition.
+ *
+ * Without limiting other conditions in the License, the grant of rights under the License will not
+ * include, and the License does not grant to you, the right to Sell the Software.
+ *
+ * For purposes of the foregoing, “Sell” means practicing any or all of the rights granted to you
+ * under the License to provide to third parties, for a fee or other consideration (including
+ * without limitation fees for hosting or consulting/ support services related to the Software), a
+ * product or service whose value derives, entirely or substantially, from the functionality of the
+ * Software. Any license notice or attribution required by the License must also include this
+ * Commons Clause License Condition notice.
+ *
+ * Software: Infinitic
+ *
+ * License: MIT License (https://opensource.org/licenses/MIT)
+ *
+ * Licensor: infinitic.io
+ */
+package io.infinitic.common.serDe.utils
 
 import com.fasterxml.jackson.databind.JavaType
 import com.fasterxml.jackson.databind.type.TypeFactory
+import io.infinitic.serDe.java.Json.mapper
 import kotlin.reflect.full.superclasses
-
-//private fun main() {
-//  val obj: List<Map<Int, List<Pojo>>> =
-//      listOf(mapOf(1 to listOf(Pojo2("a", "b"), Pojo1("a", 32, JType.TYPE_2))))
-//
-//  val mapper = ObjectMapper()
-//  val javaType = mapper.typeFactory.inferType(obj)
-//  val javaTypeStr = mapper.writeValueAsString(javaType).replace(
-//      "java.util.Collections\$SingletonMap<", "java.util.LinkedHashMap<",
-//  ).replace(
-//      "java.util.Collections\$SingletonSet<", "java.util.LinkedHashSet<",
-//  ).replace(
-//      "java.util.Collections\$SingletonList<", "java.util.ArrayList<",
-//  )
-//  val javaType2 = mapper.readValue(javaTypeStr, JavaType::class.java)
-//  println("javaType2=$javaType2")
-//
-//  val objStr = mapper.writeValueAsString(obj)
-//  println("objStr=$objStr")
-//
-//  val obj2: Any? = mapper.readValue(objStr, javaType2)
-//  println("obj2=$obj2")
-//  println("obj1=obj2 ${obj == obj2}")
-//}
 
 /**
  * Infers the JavaType of the given object.
  *
- * @param any The object to infer the JavaType from.
  * @return The inferred JavaType or null if the object is null.
  */
-private fun TypeFactory.inferType(any: Any?): JavaType? {
-  return when (any) {
-    null -> null
+internal fun Any.inferJavaType(): JavaType {
+  val typeFactory = mapper.typeFactory
+  val rawType = this::class.java
+  return when (this) {
     is Array<*> -> {
-      val rawType = any::class.java
-      val typeArg = inferIteratorType(any.iterator())
-      constructParametricType(rawType, typeArg)
+      // for Array, rawType contains elements type
+      val typeArg = typeFactory.inferIteratorType(iterator())
+      typeFactory.constructArrayType(typeArg)
     }
 
     is Collection<*> -> {
-      val rawType = any::class.java
-      val typeArg = inferIteratorType(any.iterator())
-      constructParametricType(rawType, typeArg)
+      val typeArg = typeFactory.inferIteratorType(iterator())
+      typeFactory.constructParametricType(rawType, typeArg)
     }
 
     is Map<*, *> -> {
-      val rawType = any::class.java
-      val typeKey = inferIteratorType(any.keys.iterator())
-      val typeVal = inferIteratorType(any.values.iterator())
-      constructParametricType(rawType, typeKey, typeVal)
+      val typeKey = typeFactory.inferIteratorType(keys.iterator())
+      val typeVal = typeFactory.inferIteratorType(values.iterator())
+      typeFactory.constructParametricType(rawType, typeKey, typeVal)
     }
 
-    else -> constructType(any::class.java)
+    else -> typeFactory.constructType(this::class.java)
   }
 }
 
@@ -123,7 +120,7 @@ private fun TypeFactory.inferIteratorType(iterator: Iterator<*>): JavaType {
     }
   }
 
-  val elementTypes = iterator.asSequence().map { inferType(it) }.toList()
+  val elementTypes = iterator.asSequence().filterNotNull().map { it.inferJavaType() }.toList()
 
   return commonSuperType(elementTypes)
 }

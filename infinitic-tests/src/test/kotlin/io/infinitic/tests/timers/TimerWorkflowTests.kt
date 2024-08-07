@@ -60,7 +60,7 @@ internal class TimerWorkflowTests :
           val start = Instant.now().toEpochMilli()
 
           val deferred = client.dispatch(timerWorkflow::await, Instant.now().plusMillis(200))
-          
+
           (deferred.await().toEpochMilli() - start) shouldBeLessThan (2000L)
         }
 
@@ -75,7 +75,7 @@ internal class TimerWorkflowTests :
         "Wait for a timer or a signal - timer wins" {
           val deferred = client.dispatch(timerWorkflow::awaitSignal, 200L)
 
-          deferred.await()::class shouldBe Instant::class
+          deferred.await() shouldBe "Instant"
         }
 
         "Wait for a timer or a signal - signal wins" {
@@ -102,7 +102,7 @@ internal class TimerWorkflowTests :
             w.channel.send("bingo")
           }
 
-          deferred.await()::class shouldBe Instant::class
+          deferred.await() shouldBe "Instant"
         }
 
         "Wait for a timer or a signal - timer wins after manual completion by tag" {
@@ -118,7 +118,7 @@ internal class TimerWorkflowTests :
             w.channel.send("bingo")
           }
 
-          deferred.await()::class shouldBe Instant::class
+          deferred.await() shouldBe "Instant"
         }
 
         "Wait for a timer or a signal - signal wins after manual timer completion with wrong methodRunId" {
@@ -150,7 +150,7 @@ internal class TimerWorkflowTests :
             w.channel.send("bingo")
           }
 
-          deferred.await()::class shouldBe Instant::class
+          deferred.await() shouldBe "Instant"
         }
       },
   )

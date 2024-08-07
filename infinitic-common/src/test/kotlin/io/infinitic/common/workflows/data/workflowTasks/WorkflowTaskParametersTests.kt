@@ -38,7 +38,8 @@ class WorkflowTaskParametersTests :
         "WorkflowTaskParameters should be SerializedData-convertible" {
           shouldNotThrowAny {
             val msg = TestFactory.random<WorkflowTaskParameters>()
-            val msg2 = SerializedData.from(msg).deserialize(null)
+            val msg2 = SerializedData.encode(msg, WorkflowTaskParameters::class.java, null)
+                .decode(WorkflowTaskParameters::class.java, null)
 
             msg shouldBe msg2
           }
@@ -46,8 +47,8 @@ class WorkflowTaskParametersTests :
 
         "WorkflowTaskParameters SerializedData should use finger printed schema" {
           val msg = TestFactory.random<WorkflowTaskParameters>()
-          val data = SerializedData.from(msg)
-          data.type shouldBe SerializedDataType.AVRO_WITH_SCHEMA
+          val data = SerializedData.encode(msg, WorkflowTaskParameters::class.java, null)
+          data.dataType shouldBe SerializedDataType.AVRO_WITH_SCHEMA
           data.bytes.contentEquals(msg.toByteArray()) shouldBe true
         }
 

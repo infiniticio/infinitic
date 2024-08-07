@@ -23,30 +23,55 @@
 package io.infinitic.common.data.methods
 
 import io.infinitic.common.serDe.SerializedData
-import io.infinitic.common.utils.getJsonViewClass
+import io.infinitic.common.utils.jsonViewClass
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
 import java.lang.reflect.Method
+import java.lang.reflect.Type
 
 @Serializable(with = MethodReturnValueSerializer::class)
 data class MethodReturnValue(internal val serializedData: SerializedData) {
 
   companion object {
-    fun from(data: Any?, method: Method?) =
-        MethodReturnValue(SerializedData.from(data, method?.getJsonViewClass()))
+    fun from(data: Any?, type: Type?) = MethodReturnValue(SerializedData.encode(data, type, null))
   }
 
   override fun toString() = serializedData.toString()
 
   fun toJson() = serializedData.toJson()
 
-  fun value(method: Method?): Any? = serializedData.deserialize(method?.getJsonViewClass())
+  fun deserialize(type: Type?, jsonViewClass: Class<out Any>?): Any? =
+      serializedData.decode(type, jsonViewClass)
 }
 
-object MethodReturnValueSerializer : KSerializer<MethodReturnValue> {
+/**
+ * Serializes the given [MethodReturnValue]
+ */
+fun Method.encodeReturnValue(value: Any?) = MethodReturnValue(
+    SerializedData.encode(
+        value,
+        type = genericReturnType,
+        jsonViewClass = jsonViewClass,
+    ),
+)
+
+/**
+ * Deserializes the given [MethodReturnValue]
+ */
+fun Method?.decodeReturnValue(methodReturnValue: MethodReturnValue): Any? {
+  return methodReturnValue.deserialize(
+      type = this?.genericReturnType,
+      jsonViewClass = this?.jsonViewClass,
+  )
+}
+
+/**
+ * Serializer for [MethodReturnValue] class.
+ */
+internal object MethodReturnValueSerializer : KSerializer<MethodReturnValue> {
   override val descriptor: SerialDescriptor = SerializedData.serializer().descriptor
 
   override fun serialize(encoder: Encoder, value: MethodReturnValue) {

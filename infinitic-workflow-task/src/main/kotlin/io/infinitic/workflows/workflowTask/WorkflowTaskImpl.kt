@@ -22,8 +22,8 @@
  */
 package io.infinitic.workflows.workflowTask
 
-import io.infinitic.common.data.methods.MethodReturnValue
-import io.infinitic.common.data.methods.deserialize
+import io.infinitic.common.data.methods.deserializeArgs
+import io.infinitic.common.data.methods.encodeReturnValue
 import io.infinitic.common.workers.config.WorkflowVersion
 import io.infinitic.common.workers.data.WorkerName
 import io.infinitic.common.workflows.data.properties.PropertyHash
@@ -39,6 +39,7 @@ import io.infinitic.workflows.Deferred
 import io.infinitic.workflows.Workflow
 import io.infinitic.workflows.WorkflowCheckMode
 import io.infinitic.workflows.setChannelNames
+import io.infinitic.workflows.setChannelTypes
 import java.lang.reflect.InvocationTargetException
 import java.lang.reflect.Method
 
@@ -70,19 +71,22 @@ class WorkflowTaskImpl : WorkflowTask {
     // set workflow's initial properties
     setProperties(methodRun.propertiesNameHashAtStart)
 
-    // initialize name of channels for this workflow, based on the methods that provide them
+    // initialize name of channels for this workflow
     instance.setChannelNames()
+
+    // initialize type of channels for this workflow
+    instance.setChannelTypes()
 
     // get method parameters
     // in case parameters contain some Deferred
     Deferred.setWorkflowDispatcher(dispatcher)
-    val parameters =  method.deserialize(methodRun.methodParameters)
+    val parameters = method.deserializeArgs(methodRun.methodParameters)
     Deferred.delWorkflowDispatcher()
 
     // run method and get return value (null if end not reached)
     val methodReturnValue = try {
       // method is the workflow method currently processed
-      MethodReturnValue.from(method.invoke(instance, *parameters), method)
+      method.encodeReturnValue(method.invoke(instance, *parameters))
     } catch (e: InvocationTargetException) {
       when (val cause = e.cause) {
         // we reach an uncompleted step
@@ -90,13 +94,12 @@ class WorkflowTaskImpl : WorkflowTask {
         // the errors below will be caught by the task executor
         is DeferredException -> throw cause
         // Send back other exceptions
-        is Exception ->
-          throw WorkflowTaskFailedException(
-              workflowName = workflowTaskParameters.workflowName.toString(),
-              workflowId = workflowTaskParameters.workflowId.toString(),
-              workflowTaskId = Task.taskId,
-              workerException = WorkerException.from(WorkerName(Task.workerName), cause),
-          )
+        is Exception -> throw WorkflowTaskFailedException(
+            workflowName = workflowTaskParameters.workflowName.toString(),
+            workflowId = workflowTaskParameters.workflowId.toString(),
+            workflowTaskId = Task.taskId,
+            workerException = WorkerException.from(WorkerName(Task.workerName), cause),
+        )
         // Throwable are not caught
         else -> throw cause!!
       }

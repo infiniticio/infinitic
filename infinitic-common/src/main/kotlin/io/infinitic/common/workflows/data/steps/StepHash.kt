@@ -34,6 +34,9 @@ import kotlinx.serialization.encoding.Encoder
 @Serializable(with = StepHashSerializer::class)
 data class StepHash(override val hash: String) : Hash(hash)
 
+/**
+ * Serializes and deserializes objects of type StepHash.
+ */
 object StepHashSerializer : KSerializer<StepHash> {
   override val descriptor: SerialDescriptor =
       PrimitiveSerialDescriptor("StepHash", PrimitiveKind.STRING)

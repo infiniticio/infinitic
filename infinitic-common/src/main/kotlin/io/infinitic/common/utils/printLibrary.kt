@@ -20,30 +20,17 @@
  *
  * Licensor: infinitic.io
  */
-dependencies {
-  // Cache
-  implementation(project(":infinitic-cache"))
 
-  implementation(Libs.Hoplite.core)
-  implementation("com.zaxxer:HikariCP:5.0.1")
+package io.infinitic.common.utils
 
-  // Compressor
-  implementation(Libs.Compress.commons)
+import java.io.File
 
-  // Redis
-  implementation("redis.clients:jedis:5.0.2")
-
-  // MySql
-  implementation("com.mysql:mysql-connector-j:8.2.0")
-
-  //Postgres
-  implementation("org.postgresql:postgresql:42.7.3")
-
-  // Tests
-  testImplementation(Libs.TestContainers.testcontainers)
-  testImplementation(Libs.TestContainers.mysql)
-  testImplementation(Libs.TestContainers.postgresql)
-  testImplementation(Libs.Hoplite.yaml)
+fun printLibrary(clazz: Class<*>) {
+  val classPath = clazz.getResource(clazz.simpleName + ".class")!!.toString()
+  val libraries = System.getProperty("java.class.path").split(File.pathSeparator)
+  for (library in libraries) {
+    if (library.endsWith(".jar") && classPath.contains(library)) {
+      println("library: $library")
+    }
+  }
 }
-
-apply("../publish.gradle.kts")

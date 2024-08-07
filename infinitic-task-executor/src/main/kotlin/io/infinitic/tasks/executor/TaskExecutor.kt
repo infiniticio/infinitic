@@ -27,8 +27,8 @@ import io.infinitic.annotations.Delegated
 import io.infinitic.clients.InfiniticClientInterface
 import io.infinitic.common.data.MillisDuration
 import io.infinitic.common.data.MillisInstant
-import io.infinitic.common.data.methods.MethodReturnValue
-import io.infinitic.common.data.methods.deserialize
+import io.infinitic.common.data.methods.deserializeArgs
+import io.infinitic.common.data.methods.encodeReturnValue
 import io.infinitic.common.emitters.EmitterName
 import io.infinitic.common.exceptions.thisShouldNotHappen
 import io.infinitic.common.parser.getMethodPerNameAndParameters
@@ -253,7 +253,7 @@ class TaskExecutor(
       }
     }
 
-    val returnValue = MethodReturnValue.from(output, method)
+    val returnValue = method.encodeReturnValue(output)
 
     val event = TaskCompletedEvent.from(msg, emitterName, returnValue, isDelegated, meta)
     with(producer) { event.sendTo(ServiceEventsTopic) }
@@ -272,11 +272,11 @@ class TaskExecutor(
         msg.methodParameters.size,
     )
 
-    val parameters = method.deserialize(msg.methodParameters)
+    val args = method.deserializeArgs(msg.methodParameters)
 
     when (msg.isWorkflowTask()) {
       true -> {
-        val workflowTaskParameters = parameters.first() as WorkflowTaskParameters
+        val workflowTaskParameters = args.first() as WorkflowTaskParameters
         val registered =
             workerRegistry.getRegisteredWorkflowExecutor(msg.requester.workflowName!!)!!
         // workflow instance
@@ -344,7 +344,7 @@ class TaskExecutor(
       }
     }
 
-    return TaskCommand(service, method, parameters)
+    return TaskCommand(service, method, args)
   }
 
   private fun ExecuteTask.logError(e: Throwable, description: () -> String) {
@@ -372,11 +372,11 @@ class TaskExecutor(
   }
 
   companion object {
-    val DEFAULT_TASK_TIMEOUT = null
-    val DEFAULT_TASK_RETRY = RetryPolicy.DEFAULT
+    val DEFAULT_TASK_TIMEOUT: WithTimeout? = null
+    val DEFAULT_TASK_RETRY: RetryPolicy = RetryPolicy.DEFAULT
 
     val DEFAULT_WORKFLOW_TASK_TIMEOUT = WithTimeout { 60.0 }
-    val DEFAULT_WORKFLOW_TASK_RETRY = null
+    val DEFAULT_WORKFLOW_TASK_RETRY: RetryPolicy? = null
     val DEFAULT_WORKFLOW_CHECK_MODE = WorkflowCheckMode.simple
   }
 }

@@ -23,6 +23,7 @@
 package io.infinitic.tests.context
 
 import io.infinitic.common.tasks.data.TaskMeta
+import io.infinitic.common.workers.config.ExponentialBackoffRetryPolicy
 import io.infinitic.common.workflows.data.workflows.WorkflowMeta
 import io.infinitic.tasks.executor.TaskExecutor.Companion.DEFAULT_TASK_RETRY
 import io.infinitic.tasks.executor.TaskExecutor.Companion.DEFAULT_TASK_TIMEOUT
@@ -69,11 +70,12 @@ internal class ContextWorkflowTests : StringSpec(
       }
 
       "get task retry from config file" {
-        contextWorkflow.context8() shouldBe DEFAULT_TASK_RETRY.copy(maximumRetries = 1)
+        contextWorkflow.context8() shouldBe (DEFAULT_TASK_RETRY as ExponentialBackoffRetryPolicy)
+            .copy(maximumRetries = 1).getSecondsBeforeRetry(4, RuntimeException())
       }
 
       "get task timeout from config file" {
-        contextWorkflow.context9() shouldBe DEFAULT_TASK_TIMEOUT
+        contextWorkflow.context9() shouldBe DEFAULT_TASK_TIMEOUT?.getTimeoutInSeconds()
       }
     },
 )

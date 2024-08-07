@@ -21,11 +21,11 @@
  * Licensor: infinitic.io
  */
 dependencies {
-  implementation(Libs.Coroutines.core)
-
   implementation(project(":infinitic-common"))
   implementation(project(":infinitic-cache"))
   implementation(project(":infinitic-storage"))
+
+  implementation(Libs.Coroutines.core)
 }
 
 apply("../publish.gradle.kts")

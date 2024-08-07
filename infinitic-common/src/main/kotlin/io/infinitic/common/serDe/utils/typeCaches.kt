@@ -20,30 +20,27 @@
  *
  * Licensor: infinitic.io
  */
-dependencies {
-  // Cache
-  implementation(project(":infinitic-cache"))
 
-  implementation(Libs.Hoplite.core)
-  implementation("com.zaxxer:HikariCP:5.0.1")
+package io.infinitic.common.serDe.utils
 
-  // Compressor
-  implementation(Libs.Compress.commons)
+import com.fasterxml.jackson.databind.JavaType
+import io.infinitic.serDe.java.Json.mapper
+import java.util.concurrent.ConcurrentHashMap
 
-  // Redis
-  implementation("redis.clients:jedis:5.0.2")
+private val javaTypeNameCache: ConcurrentHashMap<JavaType, String> = ConcurrentHashMap()
+private val nameJavaTypeCache: ConcurrentHashMap<String, JavaType> = ConcurrentHashMap()
 
-  // MySql
-  implementation("com.mysql:mysql-connector-j:8.2.0")
-
-  //Postgres
-  implementation("org.postgresql:postgresql:42.7.3")
-
-  // Tests
-  testImplementation(Libs.TestContainers.testcontainers)
-  testImplementation(Libs.TestContainers.mysql)
-  testImplementation(Libs.TestContainers.postgresql)
-  testImplementation(Libs.Hoplite.yaml)
+/**
+ * Retrieves the name for the given JavaType, with caching
+ */
+internal fun JavaType.name() = javaTypeNameCache.getOrPut(this) {
+  mapper.writeValueAsString(this)
 }
 
-apply("../publish.gradle.kts")
+/**
+ * Retrieves the JavaType by its name, with caching
+ */
+internal fun String.toJavaType() = nameJavaTypeCache.getOrPut(this) {
+  mapper.readerFor(JavaType::class.java).readValue(this)
+}
+

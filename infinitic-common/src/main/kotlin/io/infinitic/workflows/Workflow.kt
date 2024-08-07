@@ -48,6 +48,7 @@ import io.infinitic.common.workflows.data.workflows.WorkflowTag
 import io.infinitic.exceptions.clients.InvalidStubException
 import io.infinitic.exceptions.workflows.MultipleGettersForSameChannelException
 import io.infinitic.exceptions.workflows.NonIdempotentChannelGetterException
+import java.lang.reflect.ParameterizedType
 import java.time.Duration
 import java.time.Instant
 
@@ -328,14 +329,13 @@ abstract class Workflow {
 
 /** Set names of all channels in this workflow */
 fun Workflow.setChannelNames() {
-  this::class
-      .java
-      .declaredMethods
+  this::class.java.declaredMethods
       .filter { it.returnType.name == Channel::class.java.name && it.parameterCount == 0 }
       .map {
         // channel must be created only once per method
         it.isAccessible = true
         val channel = it.invoke(this)
+        // checking getter idempotency
         if (channel !== it.invoke(this)) {
           throw NonIdempotentChannelGetterException(this::class.java.name, it.name)
         }
@@ -346,5 +346,18 @@ fun Workflow.setChannelNames() {
         }
         // set channel name
         channel.setName(it.name)
+      }
+}
+
+/** Set types of all channels in this workflow */
+fun Workflow.setChannelTypes() {
+  this::class.java.declaredFields
+      .filter { it.type.name == Channel::class.java.name }
+      .map {
+        // get Channel object
+        it.isAccessible = true
+        val channel = it.get(this) as Channel<*>
+        // set channel type
+        channel.type = (it.genericType as ParameterizedType).actualTypeArguments[0]
       }
 }

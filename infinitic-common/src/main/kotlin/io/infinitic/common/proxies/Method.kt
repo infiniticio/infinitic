@@ -22,12 +22,12 @@
  */
 package io.infinitic.common.proxies
 
+import io.infinitic.common.data.methods.MethodArgs
 import io.infinitic.common.data.methods.MethodName
 import io.infinitic.common.data.methods.MethodParameterTypes
-import io.infinitic.common.data.methods.MethodParameters
 
 data class Method(
-    var methodName: MethodName,
-    val methodParameterTypes: MethodParameterTypes,
-    val methodParameters: MethodParameters,
+  var methodName: MethodName,
+  val methodParameterTypes: MethodParameterTypes,
+  val methodParameters: MethodArgs,
 )

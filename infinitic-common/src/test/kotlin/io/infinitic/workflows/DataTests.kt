@@ -30,6 +30,8 @@ import io.kotest.matchers.shouldBe
 import io.mockk.mockk
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+import kotlin.reflect.jvm.javaType
+import kotlin.reflect.typeOf
 
 class DataTests :
   StringSpec(
@@ -38,8 +40,8 @@ class DataTests :
           val step = TestFactory.random<Step>()
           val m1 = Deferred<String>(step).apply { this.workflowDispatcher = mockk() }
 
-          val data = SerializedData.from(m1)
-          val m2 = data.deserialize(null)
+          val data = SerializedData.encode(m1, typeOf<Deferred<String>>().javaType, null)
+          val m2 = data.decode(typeOf<Deferred<String>>().javaType, null)
 
           m2 shouldBe m1
         }

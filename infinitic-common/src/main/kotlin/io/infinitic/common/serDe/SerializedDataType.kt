@@ -29,7 +29,12 @@ import kotlinx.serialization.Serializable
 @AvroNamespace("io.infinitic.data")
 enum class SerializedDataType {
   NULL,
+  AVRO_WITH_SCHEMA,
+  JSON,
+
+  @Deprecated("JSON_JACKSON should not be used anymore after version 0.15.0")
   JSON_JACKSON,
-  JSON_KOTLIN,
-  AVRO_WITH_SCHEMA
+
+  @Deprecated("JSON_KOTLIN should not be used anymore after version 0.15.0")
+  JSON_KOTLIN
 }

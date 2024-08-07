@@ -38,6 +38,7 @@ import io.mockk.every
 import io.mockk.mockkClass
 import java.lang.reflect.Constructor
 import java.lang.reflect.Method
+import java.lang.reflect.Type
 import java.security.InvalidParameterException
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.reflect.jvm.javaMethod
@@ -270,7 +271,7 @@ internal fun Method.findWithRetryClass(): Class<out WithRetry>? =
     // else look at the class level
       ?: declaringClass.findWithRetryClass()
 
-internal fun Method.getJsonViewClass(): Class<*>? =
+val Method.jsonViewClass get(): Class<*>? =
     // look for @JsonView annotation on this method
     findAnnotation(JsonView::class.java)?.value?.let {
       when (it.size) {
@@ -282,6 +283,8 @@ internal fun Method.getJsonViewClass(): Class<*>? =
         )
       }
     }
+
+internal fun Method.getParameterType(index: Int): Type = parameters[index].parameterizedType
 
 internal fun Method.getJsonViewClassOnParameter(index: Int): Class<*>? =
     findAnnotationOnParameter(JsonView::class.java, index)?.value?.let {

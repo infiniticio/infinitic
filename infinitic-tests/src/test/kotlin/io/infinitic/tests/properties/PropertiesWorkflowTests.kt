@@ -33,20 +33,36 @@ internal class PropertiesWorkflowTests :
 
         val propertiesWorkflow = client.newWorkflow(PropertiesWorkflow::class.java)
 
-        "Check prop1" { propertiesWorkflow.prop1() shouldBe "ac" }
+        "Share data between branches" {
+          propertiesWorkflow.prop1() shouldBe "abc"
+        }
 
-        "Check prop2" { propertiesWorkflow.prop2() shouldBe "acbd" }
+        "Share data between branches processed in parallel" {
+          propertiesWorkflow.prop2() shouldBe "acbd"
+        }
 
-        "Check prop3" { propertiesWorkflow.prop3() shouldBe "acbd" }
+        "Share data between branches processed in parallel (multiple steps)" {
+          propertiesWorkflow.prop3() shouldBe "acbd"
+        }
 
-        "Check prop4" { propertiesWorkflow.prop4() shouldBe "acd" }
+        "Share data between multiple branches processed in parallel (time)" {
+          propertiesWorkflow.prop4() shouldBe "acd"
+        }
 
-        "Check prop5" { propertiesWorkflow.prop5() shouldBe "adbc" }
+        "Check prop5" {
+          propertiesWorkflow.prop5() shouldBe "adcb"
+        }
 
-        "Check prop6" { propertiesWorkflow.prop6() shouldBe "abab" }
+        "With Deferred as branch argument" {
+          propertiesWorkflow.prop6() shouldBe "abab"
+        }
 
-        "Check prop7" { propertiesWorkflow.prop7() shouldBe "abab" }
+        "With Deferred as property" {
+          propertiesWorkflow.prop7() shouldBe "abab"
+        }
 
-        "Check prop8" { propertiesWorkflow.prop8() shouldBe "acbd" }
+        "Check prop8" {
+          propertiesWorkflow.prop8() shouldBe "acbd"
+        }
       },
   )

@@ -30,9 +30,9 @@ import io.infinitic.common.clients.data.ClientName
 import io.infinitic.common.data.MessageId
 import io.infinitic.common.data.MillisDuration
 import io.infinitic.common.data.MillisInstant
+import io.infinitic.common.data.methods.MethodArgs
 import io.infinitic.common.data.methods.MethodName
 import io.infinitic.common.data.methods.MethodParameterTypes
-import io.infinitic.common.data.methods.MethodParameters
 import io.infinitic.common.emitters.EmitterName
 import io.infinitic.common.messages.Message
 import io.infinitic.common.requester.ClientRequester
@@ -212,7 +212,7 @@ data class DispatchWorkflowByCustomId(
   override val workflowTag: WorkflowTag,
   val workflowId: WorkflowId,
   val methodName: MethodName,
-  val methodParameters: MethodParameters,
+  val methodParameters: MethodArgs,
   val methodParameterTypes: MethodParameterTypes?,
   @AvroDefault(Avro.NULL) val methodTimeout: MillisDuration? = null,
   val workflowTags: Set<WorkflowTag>,
@@ -260,7 +260,7 @@ data class DispatchMethodByTag(
   val clientWaiting: Boolean,
   val methodName: MethodName,
   val methodParameterTypes: MethodParameterTypes?,
-  val methodParameters: MethodParameters,
+  val methodParameters: MethodArgs,
   @AvroDefault(Avro.NULL) val methodTimeout: MillisDuration? = null,
   @AvroDefault(Avro.NULL) override val emittedAt: MillisInstant?,
   override val emitterName: EmitterName,

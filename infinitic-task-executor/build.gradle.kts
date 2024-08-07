@@ -21,11 +21,11 @@
  * Licensor: infinitic.io
  */
 dependencies {
-  implementation(kotlin("reflect"))
-  implementation(Libs.Coroutines.core)
-
   implementation(project(":infinitic-common"))
   implementation(project(":infinitic-workflow-task"))
+  
+  implementation(kotlin("reflect"))
+  implementation(Libs.Coroutines.core)
 }
 
 apply("../publish.gradle.kts")

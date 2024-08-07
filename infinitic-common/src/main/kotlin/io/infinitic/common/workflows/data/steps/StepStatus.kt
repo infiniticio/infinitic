@@ -31,7 +31,6 @@ import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskIndex
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
-import java.lang.reflect.Method
 
 @Serializable
 sealed class StepStatus {
@@ -105,12 +104,13 @@ sealed class StepStatus {
   @Serializable
   @SerialName("StepStatus.Completed")
   data class Completed(
-    private val returnValue: MethodReturnValue,
+    val returnValue: MethodReturnValue,
     val completionWorkflowTaskIndex: WorkflowTaskIndex
   ) : StepStatus() {
+    /**
+     * This is used only for Step.And
+     */
     @Transient
-    var method: Method? = null
-
-    val value: Any? by lazy { returnValue.value(method) }
+    lateinit var returnValues: List<MethodReturnValue>
   }
 }

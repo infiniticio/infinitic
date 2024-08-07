@@ -21,11 +21,6 @@
  * Licensor: infinitic.io
  */
 dependencies {
-  implementation(kotlin("reflect"))
-  implementation(Libs.Coroutines.core)
-  implementation(Libs.Coroutines.jdk8)
-  implementation(Libs.CloudEvents.core)
-
   api(project(":infinitic-workflow-tag"))
   api(project(":infinitic-task-tag"))
   api(project(":infinitic-storage"))
@@ -39,6 +34,11 @@ dependencies {
   implementation(project(":infinitic-task-executor"))
   implementation(project(":infinitic-workflow-engine"))
   implementation(project(":infinitic-workflow-task"))
+  
+  implementation(kotlin("reflect"))
+  implementation(Libs.Coroutines.core)
+  implementation(Libs.Coroutines.jdk8)
+  implementation(Libs.CloudEvents.core)
 
   testImplementation(Libs.Hoplite.core)
   testImplementation(Libs.Hoplite.yaml)

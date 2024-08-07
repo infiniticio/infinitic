@@ -92,9 +92,6 @@ data class Deferred<T>(val step: Step) {
    * Combines this Deferred with another Deferred using the logical OR operation.
    * Returns a new Deferred that represents the result of the OR operation.
    * The resulting Deferred will complete when either this Deferred or the other Deferred completes.
-   *
-   * @param other The other Deferred to combine with this Deferred.
-   * @return The new Deferred representing the result of the OR operation.
    */
   fun or(other: Deferred<out T>): Deferred<T> = this or other
 
@@ -102,9 +99,6 @@ data class Deferred<T>(val step: Step) {
    * Combines this Deferred with another Deferred using the logical AND operation.
    * Returns a new Deferred that represents the result of the AND operation.
    * The resulting Deferred will complete when both this Deferred and the other Deferred completes.
-   *
-   * @param other The other Deferred to combine with this Deferred.
-   * @return The new Deferred representing the result of the AND operation.
    */
   fun and(other: Deferred<out T>): Deferred<List<T>> = this and other
 }
@@ -173,6 +167,9 @@ fun <T> List<Deferred<out T>>.or(): Deferred<T> =
       workflowDispatcher = first().workflowDispatcher
     }
 
+/**
+ * Serializer for Deferred objects.
+ */
 private object DeferredSerializer : KSerializer<Deferred<*>> {
   override val descriptor: SerialDescriptor = Step.serializer().descriptor
 

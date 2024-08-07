@@ -41,6 +41,7 @@ import io.infinitic.common.data.MillisDuration
 import io.infinitic.common.data.MillisInstant
 import io.infinitic.common.data.methods.MethodName
 import io.infinitic.common.data.methods.MethodReturnValue
+import io.infinitic.common.data.methods.decodeReturnValue
 import io.infinitic.common.emitters.EmitterName
 import io.infinitic.common.exceptions.thisShouldNotHappen
 import io.infinitic.common.messages.Message
@@ -257,7 +258,7 @@ internal class ClientDispatcher(
         )
       }
 
-      is MethodCompleted -> workflowResult.methodReturnValue.value(workflowMethod) as T
+      is MethodCompleted -> workflowMethod.decodeReturnValue(workflowResult.methodReturnValue) as T
 
       is MethodCanceled -> throw WorkflowCanceledException(
           workflowName = workflowName.toString(),
@@ -485,15 +486,15 @@ internal class ClientDispatcher(
       when (handler.isChannelGetter()) {
         true -> throw InvalidChannelUsageException()
         false -> {
-          val deferred = newDeferredWorkflow(
+          val deferredWorkflow = newDeferredWorkflow(
               handler.workflowName,
               handler.method,
               handler.method.returnType as Class<R>,
               getTimeout(handler),
           )
-          dispatchNewWorkflowAsync(deferred, true, handler)
+          dispatchNewWorkflowAsync(deferredWorkflow, true, handler)
 
-          awaitNewWorkflow(deferred, false)
+          awaitNewWorkflow(deferredWorkflow, false)
         }
       }
 
@@ -503,10 +504,8 @@ internal class ClientDispatcher(
     methodReturnClass: Class<R>,
     methodTimeout: MillisDuration?
   ) = NewDeferredWorkflow(workflowName, method, methodReturnClass, methodTimeout, this)
-      .also {
-        // store in ThreadLocal to be used in ::getDeferred
-        localLastDeferred.set(it)
-      }
+      // store in ThreadLocal to be used in ::getDeferred
+      .also { localLastDeferred.set(it) }
 
   private fun <R : Any?> dispatchNewWorkflowAsync(
     deferred: NewDeferredWorkflow<R>,
@@ -577,9 +576,7 @@ internal class ClientDispatcher(
         dispatchWorkflowByCustomId.sendToAsync(WorkflowTagTopic).thenApply { deferred }
       }
       // more than 1 customId tag were provided
-      else -> {
-        throw MultipleCustomIdException
-      }
+      else -> throw MultipleCustomIdException
     }
   }
 

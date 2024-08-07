@@ -23,11 +23,10 @@
 package io.infinitic.common.proxies
 
 import io.infinitic.common.data.MillisDuration
+import io.infinitic.common.data.methods.MethodArgs
 import io.infinitic.common.data.methods.MethodName
 import io.infinitic.common.data.methods.MethodParameterTypes
-import io.infinitic.common.data.methods.MethodParameters
-import io.infinitic.common.data.methods.deserialize
-import io.infinitic.common.data.methods.serialize
+import io.infinitic.common.data.methods.serializeArgs
 import io.infinitic.common.utils.findName
 import io.infinitic.common.utils.getFullMethodName
 import io.infinitic.common.utils.getMillisDuration
@@ -116,9 +115,9 @@ sealed class ProxyHandler<T : Any>(
     get() = method.returnType
 
   /** MethodParameters from method */
-  val methodParameters: MethodParameters
+  val methodParameters: MethodArgs
     //  MUST be a get() as this.method changes
-    get() = method.serialize(methodArgs)
+    get() = method.serializeArgs(*methodArgs)
 
   /** provides a stub of type T */
   @Suppress("UNCHECKED_CAST")

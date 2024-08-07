@@ -23,6 +23,12 @@
 plugins { `java-library` }
 
 dependencies {
+  api(project(":infinitic-common"))
+  api(project(":infinitic-task-executor"))
+  implementation(project(":infinitic-autoclose"))
+  implementation(project(":infinitic-workflow-tag"))
+  implementation(project(":infinitic-workflow-engine"))
+
   implementation(Libs.Coroutines.core)
   implementation(Libs.Coroutines.jdk8)
   implementation(Libs.Pulsar.functions)
@@ -33,13 +39,6 @@ dependencies {
   api(Libs.Pulsar.clientAdmin)
   api(Libs.Pulsar.authAthenz)
   api(Libs.Pulsar.authSasl)
-
-  api(project(":infinitic-common"))
-  api(project(":infinitic-task-executor"))
-
-  implementation(project(":infinitic-autoclose"))
-  implementation(project(":infinitic-workflow-tag"))
-  implementation(project(":infinitic-workflow-engine"))
 
   testImplementation(Libs.Kotlin.reflect)
 }

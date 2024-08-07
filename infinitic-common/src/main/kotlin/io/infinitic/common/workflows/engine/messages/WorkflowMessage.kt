@@ -35,9 +35,9 @@ import io.infinitic.common.data.MessageId
 import io.infinitic.common.data.MillisDuration
 import io.infinitic.common.data.MillisInstant
 import io.infinitic.common.data.Version
+import io.infinitic.common.data.methods.MethodArgs
 import io.infinitic.common.data.methods.MethodName
 import io.infinitic.common.data.methods.MethodParameterTypes
-import io.infinitic.common.data.methods.MethodParameters
 import io.infinitic.common.data.methods.MethodReturnValue
 import io.infinitic.common.emitters.EmitterName
 import io.infinitic.common.exceptions.thisShouldNotHappen
@@ -189,7 +189,7 @@ data class DispatchWorkflow(
   override val workflowName: WorkflowName,
   override val workflowId: WorkflowId,
   val methodName: MethodName,
-  val methodParameters: MethodParameters,
+  val methodParameters: MethodArgs,
   val methodParameterTypes: MethodParameterTypes?,
   val workflowTags: Set<WorkflowTag>,
   val workflowMeta: WorkflowMeta,
@@ -292,7 +292,7 @@ data class DispatchMethod(
   override val workflowId: WorkflowId,
   @AvroName("methodRunId") val workflowMethodId: WorkflowMethodId,
   @AvroName("methodName") val workflowMethodName: MethodName,
-  val methodParameters: MethodParameters,
+  val methodParameters: MethodArgs,
   val methodParameterTypes: MethodParameterTypes?,
   @Deprecated("Not used since version 0.13.0") val parentWorkflowId: WorkflowId? = null,
   @Deprecated("Not used since version 0.13.0") val parentWorkflowName: WorkflowName? = null,
@@ -667,7 +667,7 @@ data class MethodCommandedEvent(
   override val workflowId: WorkflowId,
   val workflowMethodId: WorkflowMethodId,
   val methodName: MethodName,
-  val methodParameters: MethodParameters,
+  val methodParameters: MethodArgs,
   val methodParameterTypes: MethodParameterTypes?,
   val requester: Requester,
   override val emitterName: EmitterName,

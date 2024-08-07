@@ -46,9 +46,9 @@ import io.infinitic.cloudEvents.WORKFLOW_TAG
 import io.infinitic.cloudEvents.WORKFLOW_TAGS
 import io.infinitic.common.data.MillisDuration
 import io.infinitic.common.data.MillisInstant
+import io.infinitic.common.data.methods.MethodArgs
 import io.infinitic.common.data.methods.MethodName
 import io.infinitic.common.data.methods.MethodParameterTypes
-import io.infinitic.common.data.methods.MethodParameters
 import io.infinitic.common.tasks.data.ServiceName
 import io.infinitic.common.tasks.data.TaskId
 import io.infinitic.common.tasks.data.TaskMeta
@@ -100,7 +100,7 @@ sealed interface RemoteMethodDispatched : JsonAble {
   val workflowMethodName: MethodName
   val workflowMethodId: WorkflowMethodId
   val methodName: MethodName
-  val methodParameters: MethodParameters
+  val methodParameters: MethodArgs
   val methodParameterTypes: MethodParameterTypes?
   val timeout: MillisDuration?
   val emittedAt: MillisInstant
@@ -116,7 +116,7 @@ data class RemoteWorkflowDispatched(
   override val workflowMethodName: MethodName,
   override val workflowMethodId: WorkflowMethodId,
   override val methodName: MethodName,
-  override val methodParameters: MethodParameters,
+  override val methodParameters: MethodArgs,
   override val methodParameterTypes: MethodParameterTypes?,
   override val timeout: MillisDuration?,
   override val emittedAt: MillisInstant
@@ -146,7 +146,7 @@ data class RemoteWorkflowDispatchedByCustomId(
   override val workflowMethodName: MethodName,
   override val workflowMethodId: WorkflowMethodId,
   override val methodName: MethodName,
-  override val methodParameters: MethodParameters,
+  override val methodParameters: MethodArgs,
   override val methodParameterTypes: MethodParameterTypes?,
   override val timeout: MillisDuration?,
   override val emittedAt: MillisInstant
@@ -173,7 +173,7 @@ data class RemoteMethodDispatchedById(
   override val workflowMethodId: WorkflowMethodId,
   override val workflowMethodName: MethodName,
   override val methodName: MethodName,
-  override val methodParameters: MethodParameters,
+  override val methodParameters: MethodArgs,
   override val methodParameterTypes: MethodParameterTypes?,
   override val timeout: MillisDuration?,
   override val emittedAt: MillisInstant
@@ -198,7 +198,7 @@ data class RemoteMethodDispatchedByTag(
   override val workflowMethodId: WorkflowMethodId,
   override val workflowMethodName: MethodName,
   override val methodName: MethodName,
-  override val methodParameters: MethodParameters,
+  override val methodParameters: MethodArgs,
   override val methodParameterTypes: MethodParameterTypes?,
   override val timeout: MillisDuration?,
   override val emittedAt: MillisInstant
@@ -222,7 +222,7 @@ data class TaskDispatched(
   val taskRetrySequence: TaskRetrySequence,
   val methodName: MethodName,
   val methodParameterTypes: MethodParameterTypes?,
-  val methodParameters: MethodParameters,
+  val methodParameters: MethodArgs,
   val taskTags: Set<TaskTag>,
   val taskMeta: TaskMeta,
   val timeoutInstant: MillisInstant?,

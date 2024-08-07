@@ -31,10 +31,10 @@ import io.infinitic.common.data.MillisDuration
 import io.infinitic.common.data.MillisInstant
 import io.infinitic.common.data.methods.MethodName
 import io.infinitic.common.data.methods.MethodParameterTypes
-import io.infinitic.common.data.methods.MethodParameters
 import io.infinitic.common.data.methods.MethodReturnValue
 import io.infinitic.common.emitters.EmitterName
 import io.infinitic.common.fixtures.TestFactory
+import io.infinitic.common.fixtures.methodParametersFrom
 import io.infinitic.common.requester.ClientRequester
 import io.infinitic.common.tasks.data.ServiceName
 import io.infinitic.common.tasks.data.TaskId
@@ -142,7 +142,7 @@ class TaskExecutorTests :
           taskEventSlot[1] shouldBe getTaskCompleted(
               msg,
               taskEventSlot[1]!!.messageId!!,
-              ServiceImplService().handle(3, 3),
+              MethodReturnValue.from(ServiceImplService().handle(3, 3), Int::class.java),
               msg.taskMeta,
           )
         }
@@ -162,7 +162,7 @@ class TaskExecutorTests :
           taskEventSlot[1] shouldBe getTaskCompleted(
               msg,
               taskEventSlot[1]!!.messageId!!,
-              ServiceImplService().other(3, "3"),
+              MethodReturnValue.from(ServiceImplService().other(3, "3"), String::class.java),
               msg.taskMeta,
           )
         }
@@ -181,7 +181,7 @@ class TaskExecutorTests :
           taskEventSlot[1] shouldBe getTaskCompleted(
               msg,
               taskEventSlot[1]!!.messageId!!,
-              ServiceImplService().other(4, "3"),
+              MethodReturnValue.from(ServiceImplService().other(4, "3"), String::class.java),
               msg.taskMeta,
           )
         }
@@ -394,7 +394,10 @@ class TaskExecutorTests :
           taskEventSlot[1] shouldBe getTaskCompleted(
               msg,
               taskEventSlot[1].messageId!!,
-              (6 * msg.taskRetrySequence.toInt()).toString(),
+              MethodReturnValue.from(
+                  (6 * msg.taskRetrySequence.toInt()).toString(),
+                  String::class.java,
+              ),
               msg.taskMeta.map,
           )
         }
@@ -543,7 +546,7 @@ internal fun getExecuteTask(method: String, input: Array<out Any?>, types: List<
         clientWaiting = false,
         methodName = MethodName(method),
         methodParameterTypes = types?.let { MethodParameterTypes(it) },
-        methodParameters = MethodParameters.from(*input),
+        methodParameters = methodParametersFrom(*input),
         lastError = null,
     )
 
@@ -564,7 +567,7 @@ private fun getTaskStarted(msg: ExecuteTask, messageId: MessageId) = TaskStarted
 private fun getTaskCompleted(
   msg: ExecuteTask,
   messageId: MessageId,
-  value: Any?,
+  value: MethodReturnValue,
   meta: Map<String, ByteArray>
 ) = TaskCompletedEvent(
     messageId = messageId,
@@ -578,7 +581,7 @@ private fun getTaskCompleted(
     clientWaiting = msg.clientWaiting,
     taskTags = msg.taskTags,
     taskMeta = TaskMeta(meta),
-    returnValue = MethodReturnValue.from(value, null),
+    returnValue = value,
     isDelegated = false,
 )
 

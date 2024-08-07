@@ -23,11 +23,12 @@
 package io.infinitic.common.tasks
 
 import io.infinitic.common.data.Name
+import io.infinitic.common.data.methods.MethodArgs
 import io.infinitic.common.data.methods.MethodName
 import io.infinitic.common.data.methods.MethodParameterTypes
-import io.infinitic.common.data.methods.MethodParameters
 import io.infinitic.common.data.methods.MethodReturnValue
 import io.infinitic.common.fixtures.TestFactory
+import io.infinitic.common.fixtures.methodParametersFrom
 import io.infinitic.common.serDe.SerializedData
 import io.infinitic.common.tasks.data.ServiceName
 import io.infinitic.common.tasks.data.TaskAttemptId
@@ -65,12 +66,17 @@ class DataTests :
         }
 
         "MethodInput should be serialized as List<SerializedData>" {
-          val m = MethodParameters.from("a", "b")
+          val m = methodParametersFrom("a", "b")
           val json = Json.encodeToString(m)
-          val m2 = Json.decodeFromString<MethodParameters>(json)
+          val m2 = Json.decodeFromString<MethodArgs>(json)
 
           json shouldBe
-              Json.encodeToString(listOf(SerializedData.from("a"), SerializedData.from("b")))
+              Json.encodeToString(
+                  listOf(
+                      SerializedData.encode("a", String::class.java, null),
+                      SerializedData.encode("b", String::class.java, null),
+                  ),
+              )
           m2 shouldBe m
         }
 
@@ -86,11 +92,11 @@ class DataTests :
 
         "ReturnValue should be serialized as SerializedData" {
           val id = TestFactory.random<String>()
-          val m = MethodReturnValue.from(id, null)
+          val m = MethodReturnValue.from(id, String::class.java)
           val json = Json.encodeToString(m)
           val m2 = Json.decodeFromString<MethodReturnValue>(json)
 
-          json shouldBe Json.encodeToString(SerializedData.from(id))
+          json shouldBe Json.encodeToString(SerializedData.encode(id, String::class.java, null))
           m2 shouldBe m
         }
 

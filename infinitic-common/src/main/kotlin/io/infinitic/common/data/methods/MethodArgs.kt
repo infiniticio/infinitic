@@ -22,9 +22,10 @@
  */
 package io.infinitic.common.data.methods
 
-import com.fasterxml.jackson.core.JsonProcessingException
 import io.infinitic.common.serDe.SerializedData
 import io.infinitic.common.utils.getJsonViewClassOnParameter
+import io.infinitic.common.utils.getParameterType
+import io.infinitic.exceptions.serialization.ParameterDeserializationException
 import io.infinitic.exceptions.serialization.ParameterSerializationException
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
@@ -36,47 +37,62 @@ import kotlinx.serialization.json.JsonArray
 import java.lang.reflect.Method
 
 @Serializable(with = MethodParametersSerializer::class)
-data class MethodParameters(internal val serializedParameters: List<SerializedData> = listOf()) {
+data class MethodArgs(internal val serializedParameters: List<SerializedData> = listOf()) {
 
   val size = serializedParameters.size
 
   fun toJson() = JsonArray(serializedParameters.map { it.toJson() })
-
-  companion object {
-    fun from(vararg data: Any?) =
-        MethodParameters(data.map { SerializedData.from(it) }.toList())
-  }
 }
 
-fun Method.serialize(data: Array<*>) = MethodParameters(
-    data.mapIndexed { index, value ->
-      val jsonViewClass = getJsonViewClassOnParameter(index)
+/**
+ * Serializes the provided method parameters.
+ */
+fun Method.serializeArgs(vararg args: Any?) = MethodArgs(
+    args.mapIndexed { index, value ->
       try {
-        when(jsonViewClass) {
-          null -> SerializedData.from(value)
-          else ->  SerializedData.from(value, jsonViewClass)
-        }
-        SerializedData.from(value, jsonViewClass = jsonViewClass)
-      } catch (e: JsonProcessingException) {
+        SerializedData.encode(
+            value,
+            type = getParameterType(index),
+            jsonViewClass = getJsonViewClassOnParameter(index),
+        )
+      } catch (e: Exception) {
         throw ParameterSerializationException(
             parameters[index].name,
-            parameterTypes[index].kotlin.javaObjectType.name,
+            parameters[index].parameterizedType.typeName,
             name,
             declaringClass.name,
         )
       }
-    }.toList()
+    }.toList(),
 )
 
-fun Method.deserialize(methodParameters: MethodParameters): Array<*> =
+/**
+ * Deserializes the serialized method parameters.
+ */
+fun Method.deserializeArgs(methodParameters: MethodArgs): Array<*> =
     methodParameters.serializedParameters.mapIndexed { index, serializedData ->
-      serializedData.deserialize(getJsonViewClassOnParameter(index))
+      try {
+        serializedData.decode(
+            type = getParameterType(index),
+            jsonViewClass = getJsonViewClassOnParameter(index),
+        )
+      } catch (e: Exception) {
+        throw ParameterDeserializationException(
+            parameters[index].name,
+            getParameterType(index).typeName,
+            name,
+            declaringClass.name,
+        )
+      }
     }.toTypedArray()
 
-internal object MethodParametersSerializer : KSerializer<MethodParameters> {
+/**
+ * Serializer for [MethodArgs] class.
+ */
+internal object MethodParametersSerializer : KSerializer<MethodArgs> {
   override val descriptor: SerialDescriptor = ListSerializer(SerializedData.serializer()).descriptor
 
-  override fun serialize(encoder: Encoder, value: MethodParameters) {
+  override fun serialize(encoder: Encoder, value: MethodArgs) {
     ListSerializer(SerializedData.serializer()).serialize(
         encoder,
         value.serializedParameters.toList(),
@@ -84,5 +100,5 @@ internal object MethodParametersSerializer : KSerializer<MethodParameters> {
   }
 
   override fun deserialize(decoder: Decoder) =
-      MethodParameters(ListSerializer(SerializedData.serializer()).deserialize(decoder).toList())
+      MethodArgs(ListSerializer(SerializedData.serializer()).deserialize(decoder).toList())
 }

@@ -52,23 +52,29 @@ fun <T : Any> getPropertiesFromObject(
         .filter { filter(it) }
         .associateBy(
             { PropertyName(it.first.name) },
-            { PropertyValue.from(it.second, it.first.getJsonViewClass()) },
+            {
+              PropertyValue.from(
+                  it.second,
+                  it.first.javaField!!.genericType,
+              )
+            },
         )
 
-private fun KProperty1<*, *>.getJsonViewClass(): Class<*>? {
-  val jsonViewAnnotation = findAnnotations(JsonView::class)
-      .also {
-        if (it.size > 1)
-          throw InvalidParameterException("Property '$name' should not have more than one @JsonView annotation")
-      }
-      .firstOrNull()
-  return jsonViewAnnotation?.value
-      ?.also {
-        if (it.size != 1)
-          throw InvalidParameterException("The annotation @JsonView on property '$name' must have one parameter")
-      }
-      ?.firstOrNull()?.java
-}
+private val KProperty1<*, *>.jsonViewClass
+  get(): Class<*>? {
+    val jsonViewAnnotation = findAnnotations(JsonView::class)
+        .also {
+          if (it.size > 1)
+            throw InvalidParameterException("Property '$name' should not have more than one @JsonView annotation")
+        }
+        .firstOrNull()
+    return jsonViewAnnotation?.value
+        ?.also {
+          if (it.size != 1)
+            throw InvalidParameterException("The annotation @JsonView on property '$name' must have one parameter")
+        }
+        ?.firstOrNull()?.java
+  }
 
 private fun <T : Any> getProperty(obj: T, kProperty: KProperty1<out T, *>): Any? =
     kProperty.javaField?.let {
@@ -96,7 +102,7 @@ private fun <T : Any> setProperty(
     } catch (e: SecurityException) {
       throw RuntimeException("$errorMsg (not accessible)", e)
     }
-    val value = propertyValue.value(kProperty.getJsonViewClass())
+    val value = propertyValue.value(genericType, kProperty.jsonViewClass)
 
     set(obj, value)
   }

@@ -22,7 +22,6 @@
  */
 package io.infinitic.common.data.methods
 
-import java.lang.reflect.Method
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.builtins.ListSerializer
@@ -30,6 +29,7 @@ import kotlinx.serialization.builtins.serializer
 import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
+import java.lang.reflect.Method
 
 @Serializable(with = MethodParameterTypesSerializer::class)
 data class MethodParameterTypes(val types: List<String>) {
@@ -38,7 +38,10 @@ data class MethodParameterTypes(val types: List<String>) {
   }
 }
 
-object MethodParameterTypesSerializer : KSerializer<MethodParameterTypes> {
+/**
+ * Serializer for [MethodParameterTypes] class.
+ */
+internal object MethodParameterTypesSerializer : KSerializer<MethodParameterTypes> {
   override val descriptor: SerialDescriptor = ListSerializer(String.serializer()).descriptor
 
   override fun serialize(encoder: Encoder, value: MethodParameterTypes) {

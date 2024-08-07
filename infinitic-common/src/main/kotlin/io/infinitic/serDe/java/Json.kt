@@ -49,61 +49,48 @@ object Json {
     configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false)
     configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
   }
+}
 
-  fun stringify(msg: Any?, jsonViewClass: Class<*>? = null): String = when (jsonViewClass) {
-    null -> mapper.writer()
-    else -> mapper.writerWithView(jsonViewClass)
-  }.writeValueAsString(msg)
+/**
+ * Cause should not be included to the json, as it triggers a circular reference when cause = this
+ */
+private abstract class ExceptionMixIn {
+  @JsonIgnore
+  abstract fun getCause(): Throwable
 
-  fun <T> parse(json: String, klass: Class<out T>, jsonViewClass: Class<*>? = null): T {
-    // val type = mapper.typeFactory.constructType(klass)
-    return when (jsonViewClass) {
-      null -> mapper.reader()
-      else -> mapper.readerWithView(jsonViewClass)
-    }.readValue(json, klass)
-  }
+  @JsonIgnore
+  abstract fun getMessage(): String
+}
 
-  /**
-   * Cause should not be included to the json, as it triggers a circular reference when cause = this
-   */
-  private abstract class ExceptionMixIn {
-    @JsonIgnore
-    abstract fun getCause(): Throwable
+/**
+ * Schema and Data should not be included to the json
+ * https://stackoverflow.com/questions/56742226/avro-generated-class-issue-with-json-conversion-kotlin
+ *
+ * IMPORTANT: properties of generated Avro classes MUST have public visibility
+ */
+private abstract class AvroMixIn {
+  @JsonIgnore
+  abstract fun getSchema(): org.apache.avro.Schema
 
-    @JsonIgnore
-    abstract fun getMessage(): String
-  }
+  @JsonIgnore
+  abstract fun getSpecificData(): org.apache.avro.specific.SpecificData
 
-  /**
-   * Schema and Data should not be included to the json
-   * https://stackoverflow.com/questions/56742226/avro-generated-class-issue-with-json-conversion-kotlin
-   *
-   * IMPORTANT: properties of generated Avro classes MUST have public visibility
-   */
-  private abstract class AvroMixIn {
-    @JsonIgnore
-    abstract fun getSchema(): org.apache.avro.Schema
+  @JsonSerialize(using = AvroListStringSerializer::class)
+  abstract fun getListOfString(): List<String>
+}
 
-    @JsonIgnore
-    abstract fun getSpecificData(): org.apache.avro.specific.SpecificData
-
-    @JsonSerialize(using = AvroListStringSerializer::class)
-    abstract fun getListOfString(): List<String>
-  }
-
-  // https://issues.apache.org/jira/browse/AVRO-2702
-  private class AvroListStringSerializer : JsonSerializer<List<String>>() {
-    @Throws(IOException::class)
-    override fun serialize(
-      value: List<String>,
-      gen: JsonGenerator,
-      serializers: SerializerProvider
-    ) {
-      gen.writeStartArray()
-      for (o in value) {
-        gen.writeString(o)
-      }
-      gen.writeEndArray()
+// https://issues.apache.org/jira/browse/AVRO-2702
+private class AvroListStringSerializer : JsonSerializer<List<String>>() {
+  @Throws(IOException::class)
+  override fun serialize(
+    value: List<String>,
+    gen: JsonGenerator,
+    serializers: SerializerProvider
+  ) {
+    gen.writeStartArray()
+    for (o in value) {
+      gen.writeString(o)
     }
+    gen.writeEndArray()
   }
 }
