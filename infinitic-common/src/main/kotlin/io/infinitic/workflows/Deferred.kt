@@ -23,6 +23,9 @@
 package io.infinitic.workflows
 
 import com.fasterxml.jackson.annotation.JsonIgnore
+import com.fasterxml.jackson.core.JsonGenerator
+import com.fasterxml.jackson.databind.SerializerProvider
+import com.fasterxml.jackson.databind.ser.std.StdSerializer
 import io.infinitic.common.workflows.WorkflowDispatcher
 import io.infinitic.common.workflows.data.steps.Step
 import kotlinx.serialization.KSerializer
@@ -31,6 +34,7 @@ import kotlinx.serialization.Transient
 import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
+import java.security.InvalidParameterException
 import io.infinitic.common.workflows.data.steps.and as stepAnd
 import io.infinitic.common.workflows.data.steps.or as stepOr
 
@@ -168,15 +172,31 @@ fun <T> List<Deferred<out T>>.or(): Deferred<T> =
     }
 
 /**
- * Serializer for Deferred objects.
+ * Kotlin Serializer for Deferred objects.
  */
 private object DeferredSerializer : KSerializer<Deferred<*>> {
   override val descriptor: SerialDescriptor = Step.serializer().descriptor
 
   override fun serialize(encoder: Encoder, value: Deferred<*>) {
-    encoder.encodeSerializableValue(Step.serializer(), value.step)
+    throwInvalidParameterException()
   }
 
   override fun deserialize(decoder: Decoder): Deferred<*> =
       Deferred<Any>(decoder.decodeSerializableValue(Step.serializer()))
 }
+
+/**
+ * Jackson Serializer for Deferred objects.
+ */
+internal class DeferredJacksonSerializer : StdSerializer<Deferred<*>>(Deferred::class.java) {
+  override fun serialize(value: Deferred<*>, gen: JsonGenerator, provider: SerializerProvider) {
+    throwInvalidParameterException()
+  }
+}
+
+private fun throwInvalidParameterException(): Nothing =
+    throw InvalidParameterException(
+        "Invalid usage detected. " +
+            "Deferred objects should not be present in Workflow properties or any method arguments. " +
+            "Please ensure to use deferred objects in their context.",
+    )

@@ -25,8 +25,8 @@ package io.infinitic.common.data.methods
 import io.infinitic.common.serDe.SerializedData
 import io.infinitic.common.utils.getJsonViewClassOnParameter
 import io.infinitic.common.utils.getParameterType
-import io.infinitic.exceptions.serialization.ParameterDeserializationException
-import io.infinitic.exceptions.serialization.ParameterSerializationException
+import io.infinitic.exceptions.serialization.ArgumentDeserializationException
+import io.infinitic.exceptions.serialization.ArgumentSerializationException
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.builtins.ListSerializer
@@ -56,11 +56,12 @@ fun Method.serializeArgs(vararg args: Any?) = MethodArgs(
             jsonViewClass = getJsonViewClassOnParameter(index),
         )
       } catch (e: Exception) {
-        throw ParameterSerializationException(
+        throw ArgumentSerializationException(
+            declaringClass.name,
+            name,
             parameters[index].name,
             parameters[index].parameterizedType.typeName,
-            name,
-            declaringClass.name,
+            e,
         )
       }
     }.toList(),
@@ -77,11 +78,12 @@ fun Method.deserializeArgs(methodParameters: MethodArgs): Array<*> =
             jsonViewClass = getJsonViewClassOnParameter(index),
         )
       } catch (e: Exception) {
-        throw ParameterDeserializationException(
+        throw ArgumentDeserializationException(
+            declaringClass.name,
+            name,
             parameters[index].name,
             getParameterType(index).typeName,
-            name,
-            declaringClass.name,
+            e,
         )
       }
     }.toTypedArray()

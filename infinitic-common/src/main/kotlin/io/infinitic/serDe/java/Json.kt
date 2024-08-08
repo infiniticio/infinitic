@@ -30,10 +30,13 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.SerializationFeature
 import com.fasterxml.jackson.databind.SerializerProvider
 import com.fasterxml.jackson.databind.annotation.JsonSerialize
+import com.fasterxml.jackson.databind.module.SimpleModule
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import com.fasterxml.jackson.module.kotlin.KotlinFeature
 import com.fasterxml.jackson.module.kotlin.KotlinModule
 import com.fasterxml.jackson.module.kotlin.jsonMapper
+import io.infinitic.workflows.Deferred
+import io.infinitic.workflows.DeferredJacksonSerializer
 import org.apache.avro.specific.SpecificRecordBase
 import java.io.IOException
 import java.util.*
@@ -45,6 +48,7 @@ object Json {
     addMixIn(Exception::class.java, ExceptionMixIn::class.java)
     addModule(JavaTimeModule())
     addModule(KotlinModule.Builder().configure(KotlinFeature.NullIsSameAsDefault, true).build())
+    addModule(SimpleModule().addSerializer(Deferred::class.java, DeferredJacksonSerializer()))
     configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false)
     configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false)
     configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)

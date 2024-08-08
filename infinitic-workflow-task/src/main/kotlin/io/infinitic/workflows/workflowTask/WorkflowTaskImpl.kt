@@ -49,69 +49,72 @@ class WorkflowTaskImpl : WorkflowTask {
   lateinit var instance: Workflow
   lateinit var method: Method
 
-  override fun handle(workflowTaskParameters: WorkflowTaskParameters): WorkflowTaskReturnValue {
-    // get method
-    val methodRun = workflowTaskParameters.workflowMethod
+  override fun handle(workflowTaskParameters: WorkflowTaskParameters): WorkflowTaskReturnValue =
+      try {
+        // get method
+        val methodRun = workflowTaskParameters.workflowMethod
 
-    // set dispatcher
-    val dispatcher = WorkflowDispatcherImpl(checkMode, workflowTaskParameters)
-    instance.dispatcher = dispatcher
+        // set dispatcher
+        val dispatcher = WorkflowDispatcherImpl(checkMode, workflowTaskParameters)
+        instance.dispatcher = dispatcher
 
-    // define setProperties function
-    val setProperties = { nameHashes: Map<PropertyName, PropertyHash> ->
-      // in case properties contain some Deferred
-      Deferred.setWorkflowDispatcher(dispatcher)
-      instance.setProperties(workflowTaskParameters.workflowPropertiesHashValue, nameHashes)
-      Deferred.delWorkflowDispatcher()
-    }
+        // define setProperties function
+        val setProperties = { nameHashes: Map<PropertyName, PropertyHash> ->
+          // in case properties contain some Deferred
+          Deferred.setWorkflowDispatcher(dispatcher)
+          instance.setProperties(workflowTaskParameters.workflowPropertiesHashValue, nameHashes)
+          Deferred.delWorkflowDispatcher()
+        }
 
-    // give it to dispatcher
-    dispatcher.setProperties = setProperties
+        // give it to dispatcher
+        dispatcher.setProperties = setProperties
 
-    // set workflow's initial properties
-    setProperties(methodRun.propertiesNameHashAtStart)
+        // set workflow's initial properties
+        setProperties(methodRun.propertiesNameHashAtStart)
 
-    // initialize name of channels for this workflow
-    instance.setChannelNames()
+        // initialize name of channels for this workflow
+        instance.setChannelNames()
 
-    // initialize type of channels for this workflow
-    instance.setChannelTypes()
+        // initialize type of channels for this workflow
+        instance.setChannelTypes()
 
-    // get method parameters
-    // in case parameters contain some Deferred
-    Deferred.setWorkflowDispatcher(dispatcher)
-    val parameters = method.deserializeArgs(methodRun.methodParameters)
-    Deferred.delWorkflowDispatcher()
+        // get method parameters
+        // in case parameters contain some Deferred
+        Deferred.setWorkflowDispatcher(dispatcher)
+        val parameters = method.deserializeArgs(methodRun.methodParameters)
+        Deferred.delWorkflowDispatcher()
 
-    // run method and get return value (null if end not reached)
-    val methodReturnValue = try {
-      // method is the workflow method currently processed
-      method.encodeReturnValue(method.invoke(instance, *parameters))
-    } catch (e: InvocationTargetException) {
-      when (val cause = e.cause) {
-        // we reach an uncompleted step
-        is WorkflowTaskException -> null
-        // the errors below will be caught by the task executor
-        is DeferredException -> throw cause
-        // Send back other exceptions
-        is Exception -> throw WorkflowTaskFailedException(
-            workflowName = workflowTaskParameters.workflowName.toString(),
-            workflowId = workflowTaskParameters.workflowId.toString(),
-            workflowTaskId = Task.taskId,
-            workerException = WorkerException.from(WorkerName(Task.workerName), cause),
+        // run method and get return value (null if end not reached)
+        val methodReturnValue = try {
+          // method is the workflow method currently processed
+          method.encodeReturnValue(method.invoke(instance, *parameters))
+        } catch (e: InvocationTargetException) {
+          when (val cause = e.cause ?: e) {
+            // we reach an uncompleted step
+            is WorkflowStepException -> null
+            else -> throw cause
+          }
+        }
+
+        WorkflowTaskReturnValue(
+            newCommands = dispatcher.newPastCommands,
+            newStep = dispatcher.newCurrentStep,
+            properties = instance.getProperties(),
+            methodReturnValue = methodReturnValue,
+            workflowVersion = WorkflowVersion.from(instance::class.java),
+            workflowTaskInstant = workflowTaskParameters.workflowTaskInstant,
         )
-        // Throwable are not caught
-        else -> throw cause!!
-      }
-    }
+      } catch (e: Exception) {
+        when (e) {
+          // the errors below will be caught by the task executor
+          is DeferredException -> throw e
+          else -> throw WorkflowTaskFailedException(
+              workflowName = workflowTaskParameters.workflowName.toString(),
+              workflowId = workflowTaskParameters.workflowId.toString(),
+              workflowTaskId = Task.taskId,
+              workerException = WorkerException.from(WorkerName(Task.workerName), e),
+          )
+        }
 
-    return WorkflowTaskReturnValue(
-        newCommands = dispatcher.newCommands,
-        newStep = dispatcher.newStep,
-        properties = instance.getProperties(),
-        methodReturnValue = methodReturnValue,
-        workflowVersion = WorkflowVersion.from(instance::class.java),
-        workflowTaskInstant = workflowTaskParameters.workflowTaskInstant,
-    )
-  }
+      }
 }

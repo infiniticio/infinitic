@@ -23,13 +23,9 @@
 package io.infinitic.tests.properties
 
 import io.infinitic.annotations.Ignore
-import io.infinitic.common.serDe.SerializedData
-import io.infinitic.common.workflows.data.steps.Step
 import io.infinitic.tests.utils.UtilService
 import io.infinitic.workflows.Deferred
 import io.infinitic.workflows.Workflow
-import kotlin.reflect.jvm.javaType
-import kotlin.reflect.typeOf
 
 interface PropertiesWorkflow {
   fun prop1(): String
@@ -46,11 +42,15 @@ interface PropertiesWorkflow {
 
   fun prop6(): String
 
-  fun prop6bis(deferred: Deferred<String>): String
+  fun prop6bis(): String
+
+  fun prop6other(deferred: Deferred<String>): String
 
   fun prop7(): String
 
   fun prop7bis(): String
+
+  fun prop7other(): String
 
   fun prop8(): String
 
@@ -124,7 +124,7 @@ class PropertiesWorkflowImpl : Workflow(), PropertiesWorkflow {
 
   override fun prop6(): String {
     val d1 = dispatch(utilService::reverse, "12")
-    val d2 = dispatch(self::prop6bis, d1)
+    val d2 = dispatch(self::prop6other, d1)
     d1.await()
     p1 += "a"
     p1 = d2.await() + p1
@@ -135,20 +135,20 @@ class PropertiesWorkflowImpl : Workflow(), PropertiesWorkflow {
     return p1 // should be "abab"
   }
 
-  override fun prop6bis(deferred: Deferred<String>): String {
+  override fun prop6bis(): String {
+    val d1 = dispatch(utilService::reverse, "12")
+    d1.await()
+    val d2 = dispatch(self::prop6other, d1)
+    p1 += "a"
+    p1 = d2.await() + p1
+    // unfortunately p1 = p1 + d2.await() would fail the test
+    // because d2.await() updates p1 value too lately in the expression
+    // not sure how to fix that or if it should be fixed
 
-    println("deferred.step=${deferred.step}")
-    println("deferred.step.commandStatus=${(deferred.step as Step.Id).commandStatus}")
-    println(
-        "deferred.data=${
-          SerializedData.encode(
-              deferred,
-              typeOf<Deferred<String>>().javaType,
-              null,
-          )
-        }",
-    )
+    return p1 // should be "abab"
+  }
 
+  override fun prop6other(deferred: Deferred<String>): String {
     deferred.await()
     p1 += "b"
     return p1
@@ -156,7 +156,7 @@ class PropertiesWorkflowImpl : Workflow(), PropertiesWorkflow {
 
   override fun prop7(): String {
     deferred = dispatch(utilService::reverse, "12")
-    val d2 = dispatch(self::prop7bis)
+    val d2 = dispatch(self::prop7other)
     deferred.await()
     p1 += "a"
     p1 = d2.await() + p1
@@ -168,6 +168,20 @@ class PropertiesWorkflowImpl : Workflow(), PropertiesWorkflow {
   }
 
   override fun prop7bis(): String {
+    deferred = dispatch(utilService::reverse, "12")
+    deferred.await()
+
+    val d2 = dispatch(self::prop7other)
+    p1 += "a"
+    p1 = d2.await() + p1
+    // unfortunately p1 = p1 + d2.await() would fail the test
+    // because d2.await() updates p1 value too lately in the expression
+    // not sure, how to fix that or if it should be fixed
+
+    return p1 // should be "abab"
+  }
+
+  override fun prop7other(): String {
     deferred.await()
     p1 += "b"
     return p1

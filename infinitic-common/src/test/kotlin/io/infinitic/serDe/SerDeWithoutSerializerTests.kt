@@ -24,6 +24,7 @@
 package io.infinitic.serDe
 
 import io.infinitic.common.serDe.SerializedData
+import io.infinitic.serDe.kotlin.json
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
 import kotlin.reflect.jvm.javaType
@@ -31,6 +32,10 @@ import kotlin.reflect.typeOf
 
 class SerDeWithoutSerializerTests : StringSpec(
     {
+      "class discriminator must not change" {
+        json.configuration.classDiscriminator shouldBe "#klass"
+      }
+
       "List of Objects without serializer should be serializable / deserializable (without type)" {
         val val1 = listOf(Pojo1("42", 42, JType.TYPE_1))
         val data = SerializedData.encode(val1, null, null)
@@ -80,14 +85,15 @@ class SerDeWithoutSerializerTests : StringSpec(
       }
 
 //      "Array of Map of Objects without serializer should be serializable / deserializable (without type)" {
+//        val o = Pojo1("42", 42, JType.TYPE_1)
 //        val val1 = arrayOf(
-//            mapOf(1 to Pojo1("42", 42, JType.TYPE_1)),
-//            mapOf(1 to Pojo1("42", 42, JType.TYPE_1)),
+//            mapOf(1 to o, 2 to o),
+//            mapOf(1 to o, 2 to o),
 //        )
 //        println(val1.inferJavaType())
 //        val data = SerializedData.encode(val1, null, null)
 //        println(data)
-//        println(data.getMetaJavaTypeString())
+//        //println(data.getMetaJavaTypeString())
 //        val val2 = data.decode(null, null)
 //
 //        val2 shouldBe val1

@@ -22,9 +22,15 @@
  */
 package io.infinitic.tests.properties
 
+import io.infinitic.exceptions.WorkflowFailedException
+import io.infinitic.exceptions.WorkflowTaskFailedException
 import io.infinitic.tests.Test
+import io.infinitic.workflows.Deferred
+import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
+import io.kotest.matchers.string.shouldContain
+import io.kotest.matchers.types.instanceOf
 
 internal class PropertiesWorkflowTests :
   StringSpec(
@@ -53,12 +59,52 @@ internal class PropertiesWorkflowTests :
           propertiesWorkflow.prop5() shouldBe "adcb"
         }
 
-        "With Deferred as branch argument" {
-          propertiesWorkflow.prop6() shouldBe "abab"
+        /**
+         * It is still not possible to use Deferred in arguments, so here we just check the error
+         */
+        "With non completed Deferred as branch argument" {
+          val e = shouldThrow<WorkflowFailedException> {
+            propertiesWorkflow.prop6() shouldBe "abab"
+          }
+          e.deferredException shouldBe instanceOf<WorkflowTaskFailedException>()
+          val workerException = (e.deferredException as WorkflowTaskFailedException).workerException
+          workerException.message shouldContain Deferred::class.java.name
         }
 
-        "With Deferred as property" {
-          propertiesWorkflow.prop7() shouldBe "abab"
+        /**
+         * It is still not possible to use Deferred in arguments, so here we just check the error
+         */
+        "With completed Deferred as branch argument" {
+          val e = shouldThrow<WorkflowFailedException> {
+            propertiesWorkflow.prop6bis() shouldBe "abab"
+          }
+          e.deferredException shouldBe instanceOf<WorkflowTaskFailedException>()
+          val workerException = (e.deferredException as WorkflowTaskFailedException).workerException
+          workerException.message shouldContain Deferred::class.java.name
+        }
+
+        /**
+         * It is still not possible to use Deferred in properties, so here we just check the error
+         */
+        "With non-completed Deferred as property" {
+          val e = shouldThrow<WorkflowFailedException> {
+            propertiesWorkflow.prop7() shouldBe "abab"
+          }
+          e.deferredException shouldBe instanceOf<WorkflowTaskFailedException>()
+          val workerException = (e.deferredException as WorkflowTaskFailedException).workerException
+          workerException.message shouldContain Deferred::class.java.name
+        }
+
+        /**
+         * It is still not possible to use Deferred in properties, so here we just check the error
+         */
+        "With completed Deferred as property" {
+          val e = shouldThrow<WorkflowFailedException> {
+            propertiesWorkflow.prop7bis() shouldBe "abab"
+          }
+          e.deferredException shouldBe instanceOf<WorkflowTaskFailedException>()
+          val workerException = (e.deferredException as WorkflowTaskFailedException).workerException
+          workerException.message shouldContain Deferred::class.java.name
         }
 
         "Check prop8" {

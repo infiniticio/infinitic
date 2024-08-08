@@ -156,7 +156,7 @@ class TaskExecutor(
       return@coroutineScope
     } catch (e: InvocationTargetException) {
       // exception in method execution
-      when (val cause = e.cause) {
+      when (val cause = e.cause ?: e.targetException) {
         // do not retry failed workflow task due to failed/canceled task/workflow
         is DeferredException -> sendTaskFailed(msg, cause, taskContext.meta, null)
         // exception during task execution

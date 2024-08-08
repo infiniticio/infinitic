@@ -24,55 +24,78 @@ package io.infinitic.exceptions.serialization
 
 import io.infinitic.exceptions.UserException
 
-sealed class SerializationException(msg: String, help: String) : UserException("$msg.\n$help")
+sealed class SerializationException(msg: String, cause: Throwable? = null) :
+  UserException("$msg.", cause)
 
+@Deprecated("this should not be used anymore after 0.15.0")
 class SerializerNotFoundException(name: String) : SerializationException(
-    msg = "Trying to deserialize data into '$name' but this class has no serializer",
-    help =
-    "Your data was correctly serialized, so make sure you use the same code base everywhere",
+    "Trying to deserialize data into '$name' but this class has no serializer",
 )
 
-class KotlinDeserializationException(type: String, causeString: String) : SerializationException(
-    msg =
-    "Trying to deserialize data into '$type' but an error occurred during Kotlin deserialization: $causeString",
-    help =
-    "Make sure type '$type' can be safely serialized/deserialized using kotlinx.serialization",
-)
+class KotlinSerializationException(obj: Any, cause: Throwable) :
+  SerializationException(
+      "Unable to serialize the object '$obj' (class '${obj::class.java.name}') using kotlinx.serialization",
+      cause,
+  )
 
-class JsonDeserializationException(type: String, causeString: String) : SerializationException(
-    msg =
-    "Trying to deserialize data into '$type' but an error occurred during json deserialization: $causeString",
-    help =
-    "Make sure type '$type' can be safely serialized/deserialized in Json using FasterXML/jackson",
-)
+class JsonSerializationException(obj: Any, type: String?, cause: Throwable) :
+  SerializationException(
+      "Unable to serialize " + (type?.let { "with type '$type' " } ?: "") +
+          "the object '$obj' (class '${obj::class.java.name}') using FasterXML/jackson",
+      cause,
+  )
 
-class ParameterSerializationException(
+class KotlinDeserializationException(json: String, type: String?, cause: Throwable) :
+  SerializationException(
+      "Unable to deserialize '$json' "
+          + (type?.let { "into type '$type' " } ?: "") + "using kotlinx.serialization",
+      cause,
+  )
+
+class JsonDeserializationException(json: String, type: String?, cause: Throwable) :
+  SerializationException(
+      "Unable to deserialize '$json' "
+          + (type?.let { "into type '$type' " } ?: "") + "using FasterXML/jackson",
+      cause,
+  )
+
+class ArgumentSerializationException(
+  className: String,
+  methodName: String,
   parameterName: String,
   parameterType: String,
-  methodName: String,
-  className: String
+  cause: Throwable
 ) : SerializationException(
-    msg =
-    "Error during Json serialization of parameter '$parameterType $parameterName' of '$className.$methodName'",
-    help = "",
+    "Error during Json serialization of parameter '$parameterName' (type '$parameterType') of method '$methodName' (class '$className')",
+    cause,
 )
 
-class ParameterDeserializationException(
+class ArgumentDeserializationException(
+  className: String,
+  methodName: String,
   parameterName: String,
   parameterType: String,
-  methodName: String,
-  className: String
+  cause: Throwable
 ) : SerializationException(
-    msg =
-    "Error during Json deserialization of parameter '$parameterType $parameterName' of '$className.$methodName'",
-    help = "",
+    "Error during Json deserialization of parameter '$parameterName' (type '$parameterType') of method '$methodName' (class '$className')",
+    cause,
 )
 
 class ReturnValueSerializationException(
+  className: String,
   methodName: String,
-  className: String
+  cause: Throwable
 ) : SerializationException(
-    msg =
-    "Error during Json serialization of the return value of '$className.$methodName'",
-    help = "",
+    "Error during Json serialization of the return value of method '$methodName' (class '$className')",
+    cause,
 )
+
+class ReturnValueDeserializationException(
+  className: String,
+  methodName: String,
+  cause: Throwable
+) : SerializationException(
+    "Error during deserialization of the return value of method '$methodName' (class '$className')",
+    cause,
+)
+

@@ -24,7 +24,6 @@ package io.infinitic.tests.utils
 
 import io.infinitic.annotations.Ignore
 import io.infinitic.tests.channels.ChannelsWorkflow
-import io.infinitic.workflows.Deferred
 import io.infinitic.workflows.SendChannel
 import io.infinitic.workflows.Workflow
 
@@ -43,8 +42,6 @@ interface UtilWorkflow {
   fun cancelChild1(): Long
 
   fun cancelChild2(): Long
-
-  fun cancelChild2bis(deferred: Deferred<String>): String
 }
 
 @Suppress("unused")
@@ -55,7 +52,8 @@ class UtilWorkflowImpl : Workflow(), UtilWorkflow {
   private val utilWorkflow = newWorkflow(UtilWorkflow::class.java)
   private val channelsWorkflow = newWorkflow(ChannelsWorkflow::class.java)
 
-  @Ignore private val self by lazy { getWorkflowById(UtilWorkflow::class.java, workflowId) }
+  @Ignore
+  private val self by lazy { getWorkflowById(UtilWorkflow::class.java, workflowId) }
 
   override fun concat(input: String): String {
     log = utilService.concat(log, input)
@@ -92,15 +90,9 @@ class UtilWorkflowImpl : Workflow(), UtilWorkflow {
   override fun cancelChild2(): Long {
     val deferred = dispatch(channelsWorkflow::channel1)
 
-    utilService.cancelWorkflow(ChannelsWorkflow::class.java.name, deferred.id!!)
-
-    dispatch(self::cancelChild2bis, deferred)
+    dispatch(utilService::cancelWorkflow, ChannelsWorkflow::class.java.name, deferred.id!!)
 
     return utilService.await(200)
-  }
-
-  override fun cancelChild2bis(deferred: Deferred<String>): String {
-    return deferred.await()
   }
 
   override fun factorial(n: Long) =

@@ -33,7 +33,9 @@ import io.infinitic.common.utils.getClass
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskParameters
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskReturnValue
 import io.infinitic.exceptions.serialization.JsonDeserializationException
+import io.infinitic.exceptions.serialization.JsonSerializationException
 import io.infinitic.exceptions.serialization.KotlinDeserializationException
+import io.infinitic.exceptions.serialization.KotlinSerializationException
 import io.infinitic.exceptions.serialization.SerializerNotFoundException
 import io.infinitic.serDe.java.Json.mapper
 import io.infinitic.serDe.kotlin.json
@@ -42,7 +44,6 @@ import kotlinx.serialization.KSerializer
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.SerializationException
-import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.serializerOrNull
 import java.lang.reflect.Type
@@ -110,14 +111,21 @@ data class SerializedData(
         meta = mapOf(META_JAVA_TYPE to WORKFLOW_TASK_RETURN_VALUE.toBytes()),
     )
 
-    private fun <T> encodeJsonWithSerializer(
+    private fun <T : Any> encodeJsonWithSerializer(
       value: T,
       serializer: KSerializer<T>,
-    ) = SerializedData(
-        dataType = SerializedDataType.JSON,
-        bytes = json.encodeToString(serializer, value).toByteArray(),
-        meta = mapOf(),
-    )
+    ): SerializedData {
+      val jsonString = try {
+        json.encodeToString(serializer, value)
+      } catch (e: Exception) {
+        throw KotlinSerializationException(value, e)
+      }
+      return SerializedData(
+          dataType = SerializedDataType.JSON,
+          bytes = jsonString.toByteArray(),
+          meta = mapOf(),
+      )
+    }
 
     private fun encodeJsonWithoutSerializer(
       value: Any,
@@ -127,18 +135,19 @@ data class SerializedData(
       // if type is unknown (it should be the case for inline tasks only)
       // we store the type inferred from the provided value
       val inferType by lazy { value.inferJavaType() }
-      val meta = when (javaType) {
-        null -> mapOf(META_JAVA_TYPE to inferType.name().toBytes())
-        else -> mapOf()
+      val (meta, actualType) = when (javaType) {
+        null -> mapOf(META_JAVA_TYPE to inferType.name().toBytes()) to inferType
+        else -> mapOf<String, ByteArray>() to javaType
       }
-      var writer = when (javaType) {
-        null -> mapper.writerFor(inferType)
-        else -> mapper.writerFor(javaType)
+      val jsonString = try {
+        mapper.writerFor(actualType)
+            .let { if (jsonViewClass != null) it.withView(jsonViewClass) else it }
+            .writeValueAsString(value)
+      } catch (e: Exception) {
+        throw JsonSerializationException(value, actualType.name(), e)
       }
-      jsonViewClass?.let { writer = writer.withView(it) }
-
       return SerializedData(
-          bytes = writer.writeValueAsString(value).toByteArray(),
+          bytes = jsonString.toByteArray(),
           dataType = SerializedDataType.JSON,
           meta = meta,
       )
@@ -155,7 +164,7 @@ data class SerializedData(
         SerializedDataType.JSON_JACKSON -> decodeJsonJackson(jsonViewClass)
       }
 
-  fun toJson() = Json.parseToJsonElement(toJsonString())
+  fun toJson() = json.parseToJsonElement(toJsonString())
 
   fun toJsonString(): String = when (dataType) {
     SerializedDataType.NULL -> "null"
@@ -203,33 +212,40 @@ data class SerializedData(
   private fun decodeJsonWithoutSerializer(
     javaType: JavaType,
     jsonViewClass: Class<*>?
-  ) = try {
-    var reader = mapper.readerFor(javaType)
-    jsonViewClass?.let { reader = reader.withView(it) }
-    reader.readValue(toJsonString()) as Any
-  } catch (e: Exception) {
-    throw JsonDeserializationException(javaType.name(), causeString = e.toString())
+  ): Any {
+    val jsonStr = toJsonString()
+    return try {
+      mapper.readerFor(javaType)
+          .let { if (jsonViewClass != null) it.withView(jsonViewClass) else it }
+          .readValue(jsonStr) as Any
+    } catch (e: Exception) {
+      throw JsonDeserializationException(jsonStr, javaType.name(), e)
+    }
   }
 
   private fun decodeJsonWithSerializer(
     serializer: KSerializer<*>,
     javaType: JavaType
-  ) = try {
-    json.decodeFromString(serializer, toJsonString()) as Any
-  } catch (e: Exception) {
-    throw KotlinDeserializationException(javaType.name(), causeString = e.toString())
+  ): Any {
+    val jsonStr = toJsonString()
+    return try {
+      json.decodeFromString(serializer, jsonStr) as Any
+    } catch (e: Exception) {
+      throw KotlinDeserializationException(jsonStr, javaType.name(), e)
+    }
   }
 
   @Deprecated("JSON_Jackson should not be used anymore after version 0.15.0")
   private fun decodeJsonJackson(jsonViewClass: Class<*>?): Any {
     val klass = getMetaJavaTypeString()!!.getClass().getOrThrow()
+    val jsonStr = toJsonString()
     return try {
       when (jsonViewClass) {
         null -> mapper.reader()
         else -> mapper.readerWithView(jsonViewClass)
-      }.readValue(toJsonString(), klass)
+      }.readValue(jsonStr, klass)
     } catch (e: JsonProcessingException) {
-      throw JsonDeserializationException(klass.name, causeString = e.toString())
+      throw JsonDeserializationException(jsonStr, klass.name, e)
     }
   }
 
@@ -240,15 +256,15 @@ data class SerializedData(
     @OptIn(InternalSerializationApi::class)
     val serializer = klass.kotlin.serializerOrNull()
       ?: throw SerializerNotFoundException(klass.name)
-
+    val jsonStr = toJsonString()
     try {
-      json.decodeFromString(serializer, toJsonString())
+      json.decodeFromString(serializer, jsonStr)
     } catch (e: SerializationException) {
-      throw KotlinDeserializationException(klass.name, causeString = e.toString())
+      throw KotlinDeserializationException(jsonStr, klass.name, e)
     }
   }
 
-  internal fun getMetaJavaTypeString(): String? = meta[META_JAVA_TYPE]?.let {
+  private fun getMetaJavaTypeString(): String? = meta[META_JAVA_TYPE]?.let {
     String(it, charset = Charsets.UTF_8)
   }
 

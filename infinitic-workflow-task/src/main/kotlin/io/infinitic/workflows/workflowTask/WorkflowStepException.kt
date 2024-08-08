@@ -22,8 +22,12 @@
  */
 package io.infinitic.workflows.workflowTask
 
-internal sealed class WorkflowTaskException : RuntimeException()
+internal sealed class WorkflowStepException : RuntimeException()
 
-internal object NewStepException : WorkflowTaskException()
+internal data object NewStepException : WorkflowStepException() {
+  private fun readResolve(): Any = NewStepException
+}
 
-internal object KnownStepException : WorkflowTaskException()
+internal data object KnownStepException : WorkflowStepException() {
+  private fun readResolve(): Any = KnownStepException
+}

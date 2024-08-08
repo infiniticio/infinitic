@@ -24,6 +24,8 @@ package io.infinitic.common.data.methods
 
 import io.infinitic.common.serDe.SerializedData
 import io.infinitic.common.utils.jsonViewClass
+import io.infinitic.exceptions.serialization.ReturnValueDeserializationException
+import io.infinitic.exceptions.serialization.ReturnValueSerializationException
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.descriptors.SerialDescriptor
@@ -51,21 +53,27 @@ data class MethodReturnValue(internal val serializedData: SerializedData) {
  * Serializes the given [MethodReturnValue]
  */
 fun Method.encodeReturnValue(value: Any?) = MethodReturnValue(
-    SerializedData.encode(
-        value,
-        type = genericReturnType,
-        jsonViewClass = jsonViewClass,
-    ),
+    try {
+      SerializedData.encode(
+          value,
+          type = genericReturnType,
+          jsonViewClass = jsonViewClass,
+      )
+    } catch (e: Exception) {
+      throw ReturnValueSerializationException(declaringClass.name, name, e)
+    },
 )
 
 /**
  * Deserializes the given [MethodReturnValue]
  */
-fun Method?.decodeReturnValue(methodReturnValue: MethodReturnValue): Any? {
-  return methodReturnValue.deserialize(
-      type = this?.genericReturnType,
-      jsonViewClass = this?.jsonViewClass,
+fun Method.decodeReturnValue(methodReturnValue: MethodReturnValue): Any? = try {
+  methodReturnValue.deserialize(
+      type = this.genericReturnType,
+      jsonViewClass = this.jsonViewClass,
   )
+} catch (e: Exception) {
+  throw ReturnValueDeserializationException(declaringClass.name, name, e)
 }
 
 /**

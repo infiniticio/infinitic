@@ -33,8 +33,6 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.modules.SerializersModule
-import kotlinx.serialization.serializer
-import java.lang.reflect.Method
 import java.time.Duration
 import java.time.Instant
 import kotlin.reflect.jvm.javaType
@@ -264,7 +262,25 @@ class SerDeTests : StringSpec(
         val2.type shouldBe Type.TYPE_1
       }
 
-      "Object containing set of sealed should be serializable / deserializable" {
+      "Object containing set of serializable should be serializable / deserializable" {
+        val obj = Obj1("42", 42, Type.TYPE_2)
+        val val1 = SetOfObj1s(setOf(obj))
+        val data = SerializedData.encode(val1, SetOfObj1s::class.java, null)
+        val val2 = data.decode(SetOfObj1s::class.java, null)
+
+        val2 shouldBe val1
+      }
+
+      "Object containing set of sealed serializable should be serializable / deserializable" {
+        val obj = Obj1("42", 42, Type.TYPE_2)
+        val val1 = SetOfObjs(setOf(obj))
+        val data = SerializedData.encode(val1, SetOfObjs::class.java, null)
+        val val2 = data.decode(SetOfObjs::class.java, null)
+
+        val2 shouldBe val1
+      }
+
+      "Object containing set of sealed interfaces should be serializable / deserializable" {
         json = Json {
           classDiscriminator = "klass"
           serializersModule = SerializersModule {
@@ -273,9 +289,9 @@ class SerDeTests : StringSpec(
           }
         }
         val obj = Obj1("42", 42, Type.TYPE_2)
-        val val1 = Objs(setOf(obj), setOf(obj))
-        val val1ser = SerializedData.encode(val1, Objs::class.java, null)
-        val val2 = val1ser.decode(Objs::class.java, null)
+        val val1 = SetOfWithFoo(setOf(obj))
+        val data = SerializedData.encode(val1, SetOfWithFoo::class.java, null)
+        val val2 = data.decode(SetOfWithFoo::class.java, null)
 
         val2 shouldBe val1
       }
@@ -332,31 +348,6 @@ class SerDeTests : StringSpec(
     },
 )
 
-fun main() {
-  val json = Json {
-    classDiscriminator = "#klass"
-
-    serializersModule = SerializersModule {
-      polymorphic(WithFoo::class, Obj1::class, Obj1.serializer())
-      polymorphic(WithFoo::class, Obj2::class, Obj2.serializer())
-    }
-  }
-
-  val method: Method = Obj1::class.java.getMethod("test", List::class.java)
-  val type = method.parameters[0].parameterizedType
-  val serializer = serializer(type)
-
-  val o: List<Map<Int, WithFoo>> = listOf(mapOf(1 to Obj1("a", 2, Type.TYPE_1)))
-
-  val oStr = json.encodeToString(serializer, o)
-
-  println("oStr = $oStr")
-
-  val o2: Any = json.decodeFromString(serializer, oStr)
-
-  println("o2 = $o2")
-  println("o = o2 : ${o == o2}")
-}
 
 @Serializable
 private sealed class Obj
@@ -388,9 +379,16 @@ private data class Obj1(
 private data class Obj2(override val foo: String, val bar: Int) : Obj(), WithFoo
 
 @Serializable
-private data class Objs(val objs: Set<Obj>, val others: Set<WithFoo>)
+private data class SetOfObj1s(val objs: Set<Obj1>)
+
+@Serializable
+private data class SetOfObjs(val objs: Set<Obj>)
+
+@Serializable
+private data class SetOfWithFoo(val objs: Set<WithFoo>)
 
 @Polymorphic
 private sealed interface WithFoo {
   val foo: String
 }
+

@@ -99,10 +99,10 @@ internal class WorkflowDispatcherImpl(
   lateinit var setProperties: (Map<PropertyName, PropertyHash>) -> Unit
 
   // new commands discovered during execution of the method
-  var newCommands: MutableList<PastCommand> = mutableListOf()
+  val newPastCommands: MutableList<PastCommand> = mutableListOf()
 
   // new step discovered during execution the method
-  var newStep: NewStep? = null
+  var newCurrentStep: NewStep? = null
 
   // position in the current method processing
   private var positionInMethod = PositionInWorkflowMethod()
@@ -141,7 +141,7 @@ internal class WorkflowDispatcherImpl(
         // record result
         val command = InlineTaskCommand()
 
-        newCommands.add(
+        newPastCommands.add(
             InlineTaskPastCommand(
                 commandId = getCurrentCommandId(),
                 commandPosition = positionInMethod,
@@ -187,7 +187,7 @@ internal class WorkflowDispatcherImpl(
         when (val stepStatus = newStep.step.statusAt(workflowTaskIndex)) {
           // we do not know the status of this step based on history
           is Waiting -> {
-            this.newStep = newStep
+            this.newCurrentStep = newStep
 
             throw NewStepException
           }
@@ -473,7 +473,7 @@ internal class WorkflowDispatcherImpl(
 
     // new or existing command
     val c = pastCommand ?: commandCandidate.also {
-      newCommands.add(commandCandidate)
+      newPastCommands.add(commandCandidate)
     }
 
     return Deferred<S>(Step.Id.from(c, returnValueType, returnValueJsonViewClass)).apply {
