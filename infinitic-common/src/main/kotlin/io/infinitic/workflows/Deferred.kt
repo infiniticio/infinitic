@@ -38,6 +38,7 @@ import java.security.InvalidParameterException
 import io.infinitic.common.workflows.data.steps.and as stepAnd
 import io.infinitic.common.workflows.data.steps.or as stepOr
 
+@Suppress("unused")
 @Serializable(with = DeferredSerializer::class)
 data class Deferred<T>(val step: Step) {
   @Transient
