@@ -22,13 +22,13 @@
  */
 package io.infinitic.tests.channels
 
+import io.infinitic.Test
 import io.infinitic.common.fixtures.later
 import io.infinitic.exceptions.WorkflowFailedException
 import io.infinitic.exceptions.WorkflowTaskFailedException
 import io.infinitic.exceptions.workflows.OutOfBoundAwaitException
-import io.infinitic.tests.Test
-import io.infinitic.tests.utils.Obj1
-import io.infinitic.tests.utils.Obj2
+import io.infinitic.utils.Obj1
+import io.infinitic.utils.Obj2
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe

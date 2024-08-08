@@ -29,6 +29,8 @@ import io.infinitic.annotations.Retry
 import io.infinitic.annotations.Timeout
 import io.infinitic.common.tasks.data.TaskMeta
 import io.infinitic.tasks.Task
+import io.infinitic.utils.NoRetry
+import io.infinitic.utils.Only1Retry
 import io.infinitic.workflows.DeferredStatus
 
 interface ParentInterface {

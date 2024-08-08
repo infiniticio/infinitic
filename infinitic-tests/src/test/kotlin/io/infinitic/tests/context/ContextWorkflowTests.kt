@@ -22,12 +22,12 @@
  */
 package io.infinitic.tests.context
 
+import io.infinitic.Test
 import io.infinitic.common.tasks.data.TaskMeta
 import io.infinitic.common.workers.config.ExponentialBackoffRetryPolicy
 import io.infinitic.common.workflows.data.workflows.WorkflowMeta
 import io.infinitic.tasks.executor.TaskExecutor.Companion.DEFAULT_TASK_RETRY
 import io.infinitic.tasks.executor.TaskExecutor.Companion.DEFAULT_TASK_TIMEOUT
-import io.infinitic.tests.Test
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
 

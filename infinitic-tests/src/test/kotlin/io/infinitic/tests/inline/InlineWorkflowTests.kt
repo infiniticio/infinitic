@@ -22,10 +22,10 @@
  */
 package io.infinitic.tests.inline
 
+import io.infinitic.Test
 import io.infinitic.exceptions.WorkflowFailedException
 import io.infinitic.exceptions.WorkflowTaskFailedException
 import io.infinitic.exceptions.workflows.InvalidInlineException
-import io.infinitic.tests.Test
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe

@@ -27,11 +27,11 @@ import io.infinitic.common.workflows.data.workflows.WorkflowName
 import io.infinitic.common.workflows.data.workflows.WorkflowTag
 
 class NewWorkflowProxyHandler<K : Any>(
-    override val klass: Class<K>,
-    val workflowTags: Set<WorkflowTag>,
-    val workflowMeta: WorkflowMeta,
-    override val dispatcherFn: () -> ProxyDispatcher
+  override val klass: Class<K>,
+  val workflowTags: Set<WorkflowTag>,
+  val workflowMeta: WorkflowMeta,
+  override val dispatcherFn: () -> ProxyDispatcher
 ) : ProxyHandler<K>(klass, dispatcherFn) {
 
-  val workflowName = WorkflowName(name)
+  val workflowName = WorkflowName(annotatedName)
 }

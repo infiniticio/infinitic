@@ -40,7 +40,7 @@ import io.infinitic.common.tasks.data.TaskId
 import io.infinitic.common.transport.InfiniticConsumerAsync
 import io.infinitic.common.transport.InfiniticProducerAsync
 import io.infinitic.common.transport.LoggedInfiniticProducer
-import io.infinitic.common.utils.findName
+import io.infinitic.common.utils.annotatedName
 import io.infinitic.common.workflows.data.workflowMethods.WorkflowMethodId
 import io.infinitic.common.workflows.data.workflows.WorkflowMeta
 import io.infinitic.common.workflows.data.workflows.WorkflowTag
@@ -215,7 +215,7 @@ class InfiniticClient(
   ): CompletableFuture<Unit> =
       when (val handler = getProxyHandler(stub)) {
         is ExistingWorkflowProxyHandler -> {
-          val taskName = taskClass?.findName()
+          val taskName = taskClass?.annotatedName
 
           dispatcher.retryTaskAsync(
               workflowName = handler.workflowName,

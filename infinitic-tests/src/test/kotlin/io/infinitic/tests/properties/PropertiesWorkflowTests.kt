@@ -22,9 +22,9 @@
  */
 package io.infinitic.tests.properties
 
+import io.infinitic.Test
 import io.infinitic.exceptions.WorkflowFailedException
 import io.infinitic.exceptions.WorkflowTaskFailedException
-import io.infinitic.tests.Test
 import io.infinitic.workflows.Deferred
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.StringSpec

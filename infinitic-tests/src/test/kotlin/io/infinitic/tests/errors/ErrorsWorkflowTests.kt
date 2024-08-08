@@ -22,12 +22,12 @@
  */
 package io.infinitic.tests.errors
 
+import io.infinitic.Test
 import io.infinitic.common.fixtures.later
 import io.infinitic.exceptions.TaskFailedException
 import io.infinitic.exceptions.WorkflowCanceledException
 import io.infinitic.exceptions.WorkflowFailedException
 import io.infinitic.exceptions.WorkflowUnknownException
-import io.infinitic.tests.Test
 import io.infinitic.tests.channels.ChannelsWorkflow
 import io.infinitic.tests.utils.UtilService
 import io.infinitic.tests.utils.UtilWorkflow

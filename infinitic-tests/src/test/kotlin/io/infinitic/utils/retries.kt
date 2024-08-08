@@ -20,21 +20,18 @@
  *
  * Licensor: infinitic.io
  */
-package io.infinitic.tests.versioning
 
-import io.infinitic.Test
-import io.kotest.core.spec.style.StringSpec
-import io.kotest.matchers.shouldBe
+package io.infinitic.utils
 
-internal class VersionedWorkflowTests :
-  StringSpec(
-      {
-        val client = Test.client
+import io.infinitic.tasks.WithRetry
 
-        val versionedWorkflow = client.newWorkflow(VersionedWorkflow::class.java)
+class NoRetry : WithRetry {
+  override fun getSecondsBeforeRetry(retry: Int, e: Exception) = null
+}
 
-        "Dispatch workflow should use last version" {
-          versionedWorkflow.name() shouldBe VersionedWorkflowImpl_1::class.java.name
-        }
-      },
-  )
+class Only1Retry : WithRetry {
+  override fun getSecondsBeforeRetry(retry: Int, e: Exception) = when (retry) {
+    0 -> 1.0
+    else -> null
+  }
+}

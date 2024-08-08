@@ -20,15 +20,28 @@
  *
  * Licensor: infinitic.io
  */
-package io.infinitic.tests.utils
+package io.infinitic.utils
 
-import kotlinx.serialization.Serializable
+import io.infinitic.annotations.Name
+import io.infinitic.workflows.Workflow
 
-@Serializable
-sealed class Obj
+@Name("annotatedWorkflow")
+interface AnnotatedWorkflow {
+  @Name("bar")
+  fun concatABC(input: String): String
+}
 
-@Serializable
-data class Obj1(val foo: String, val bar: Int) : Obj()
+@Suppress("unused")
+class AnnotatedWorkflowImpl : Workflow(), AnnotatedWorkflow {
+  private val service = newService(AnnotatedService::class.java)
 
-@Serializable
-data class Obj2(val foo: String, val bar: Int) : Obj()
+  override fun concatABC(input: String): String {
+    var str = input
+
+    str = service.foo(str, "a")
+    str = service.foo(str, "b")
+    str = service.foo(str, "c")
+
+    return str // should be "${input}abc"
+  }
+}

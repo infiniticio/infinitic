@@ -20,18 +20,15 @@
  *
  * Licensor: infinitic.io
  */
+package io.infinitic.utils
 
-package io.infinitic.tests.utils
+import kotlinx.serialization.Serializable
 
-import io.infinitic.tasks.WithRetry
+@Serializable
+sealed class Obj
 
-class NoRetry : WithRetry {
-  override fun getSecondsBeforeRetry(retry: Int, e: Exception) = null
-}
+@Serializable
+data class Obj1(val foo: String, val bar: Int) : Obj()
 
-class Only1Retry : WithRetry {
-  override fun getSecondsBeforeRetry(retry: Int, e: Exception) = when (retry) {
-    0 -> 1.0
-    else -> null
-  }
-}
+@Serializable
+data class Obj2(val foo: String, val bar: Int) : Obj()

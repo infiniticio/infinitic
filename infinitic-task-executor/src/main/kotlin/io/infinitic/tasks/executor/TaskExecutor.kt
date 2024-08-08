@@ -31,7 +31,6 @@ import io.infinitic.common.data.methods.deserializeArgs
 import io.infinitic.common.data.methods.encodeReturnValue
 import io.infinitic.common.emitters.EmitterName
 import io.infinitic.common.exceptions.thisShouldNotHappen
-import io.infinitic.common.parser.getMethodPerNameAndParameters
 import io.infinitic.common.requester.workflowId
 import io.infinitic.common.requester.workflowName
 import io.infinitic.common.requester.workflowVersion
@@ -45,10 +44,11 @@ import io.infinitic.common.transport.DelayedServiceExecutorTopic
 import io.infinitic.common.transport.InfiniticProducerAsync
 import io.infinitic.common.transport.LoggedInfiniticProducer
 import io.infinitic.common.transport.ServiceEventsTopic
-import io.infinitic.common.utils.getCheckMode
-import io.infinitic.common.utils.getWithRetry
-import io.infinitic.common.utils.getWithTimeout
+import io.infinitic.common.utils.checkMode
+import io.infinitic.common.utils.getMethodPerNameAndParameters
 import io.infinitic.common.utils.isDelegated
+import io.infinitic.common.utils.withRetry
+import io.infinitic.common.utils.withTimeout
 import io.infinitic.common.workers.config.RetryPolicy
 import io.infinitic.common.workers.registry.WorkerRegistry
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskParameters
@@ -265,8 +265,7 @@ class TaskExecutor(
       false -> workerRegistry.getRegisteredServiceExecutor(msg.serviceName)!!.factory()
     }
 
-    val method = getMethodPerNameAndParameters(
-        service::class.java,
+    val method = service::class.java.getMethodPerNameAndParameters(
         "${msg.methodName}",
         msg.methodParameterTypes?.types,
         msg.methodParameters.size,
@@ -283,8 +282,7 @@ class TaskExecutor(
         val workflowInstance = registered.getInstance(workflowTaskParameters)
         // method instance
         val workflowMethod = with(workflowTaskParameters) {
-          getMethodPerNameAndParameters(
-              workflowInstance::class.java,
+          workflowInstance::class.java.getMethodPerNameAndParameters(
               "${workflowMethod.methodName}",
               workflowMethod.methodParameterTypes?.types,
               workflowMethod.methodParameters.size,
@@ -303,14 +301,14 @@ class TaskExecutor(
         // use withRetry from registry, if it exists
         this.withRetry = registered.withRetry
             // else use @Retry annotation, or WithRetry interface
-          ?: workflowMethod.getWithRetry().getOrThrow()
+          ?: workflowMethod.withRetry.getOrThrow()
               // else use default value
               ?: DEFAULT_WORKFLOW_TASK_RETRY
 
         // get checkMode from registry
         val checkMode = registered.checkMode
         // else use CheckMode method annotation on method or class
-          ?: workflowMethod.getCheckMode()
+          ?: workflowMethod.checkMode
           // else use default value
           ?: DEFAULT_WORKFLOW_CHECK_MODE
 
@@ -328,19 +326,19 @@ class TaskExecutor(
             // use withTimeout from registry, if it exists
             registered.withTimeout
                 // else use @Timeout annotation, or WithTimeout interface
-              ?: method.getWithTimeout().getOrThrow()
+              ?: method.withTimeout.getOrThrow()
                   // else use default value
                   ?: DEFAULT_TASK_TIMEOUT
 
         // use withRetry from registry, if it exists
         this.withRetry = registered.withRetry
             // else use @Timeout annotation, or WithTimeout interface
-          ?: method.getWithRetry().getOrThrow()
+          ?: method.withRetry.getOrThrow()
               // else use default value
               ?: DEFAULT_TASK_RETRY
 
         // check is this method has the @Async annotation
-        this.isDelegated = method.isDelegated()
+        this.isDelegated = method.isDelegated
       }
     }
 

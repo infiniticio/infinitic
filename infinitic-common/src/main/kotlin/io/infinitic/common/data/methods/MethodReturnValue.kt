@@ -69,8 +69,8 @@ fun Method.encodeReturnValue(value: Any?) = MethodReturnValue(
  */
 fun Method.decodeReturnValue(methodReturnValue: MethodReturnValue): Any? = try {
   methodReturnValue.deserialize(
-      type = this.genericReturnType,
-      jsonViewClass = this.jsonViewClass,
+      type = genericReturnType,
+      jsonViewClass = jsonViewClass,
   )
 } catch (e: Exception) {
   throw ReturnValueDeserializationException(declaringClass.name, name, e)

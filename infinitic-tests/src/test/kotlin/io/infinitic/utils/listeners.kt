@@ -20,27 +20,37 @@
  *
  * Licensor: infinitic.io
  */
-package io.infinitic.tests.utils
 
-import io.infinitic.annotations.Name
-import io.infinitic.workflows.Workflow
+package io.infinitic.utils
 
-@Name("annotatedWorkflow")
-interface AnnotatedWorkflow {
-  @Name("bar") fun concatABC(input: String): String
-}
+import com.fasterxml.jackson.databind.ObjectMapper
+import io.cloudevents.CloudEvent
+import io.cloudevents.jackson.JsonFormat
+import io.infinitic.cloudEvents.CloudEventListener
+import java.util.concurrent.ConcurrentHashMap
 
-@Suppress("unused")
-class AnnotatedWorkflowImpl : Workflow(), AnnotatedWorkflow {
-  private val service = newService(AnnotatedService::class.java)
+class Listener : CloudEventListener {
+  override fun onEvent(event: CloudEvent) {
+    events.add(event)
+  }
 
-  override fun concatABC(input: String): String {
-    var str = input
+  companion object {
+    private val objectMapper = ObjectMapper()
 
-    str = service.foo(str, "a")
-    str = service.foo(str, "b")
-    str = service.foo(str, "c")
+    private val events = ConcurrentHashMap.newKeySet<CloudEvent>()
 
-    return str // should be "${input}abc"
+    fun clear() {
+      events.clear()
+    }
+
+    fun print() {
+      events
+          .sortedBy { it.time }
+          .filter { it.type.startsWith("infinitic.workflow") }
+          .forEach {
+            val jsonNode = objectMapper.readTree(String(JsonFormat().serialize(it)))
+            println(objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(jsonNode))
+          }
+    }
   }
 }

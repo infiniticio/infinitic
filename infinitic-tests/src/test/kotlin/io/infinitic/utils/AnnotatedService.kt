@@ -20,13 +20,14 @@
  *
  * Licensor: infinitic.io
  */
-package io.infinitic.tests.utils
+package io.infinitic.utils
 
 import io.infinitic.annotations.Name
 
 @Name("annotatedService")
 interface AnnotatedService {
-  @Name("bar") fun foo(str1: String, str2: String): String
+  @Name("bar")
+  fun foo(str1: String, str2: String): String
 }
 
 @Suppress("unused")

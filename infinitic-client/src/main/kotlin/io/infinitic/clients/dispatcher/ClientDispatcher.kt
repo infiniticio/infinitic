@@ -540,7 +540,7 @@ internal class ClientDispatcher(
         val dispatchWorkflow = DispatchWorkflow(
             workflowName = deferred.workflowName,
             workflowId = deferred.workflowId,
-            methodName = handler.methodName,
+            methodName = handler.annotatedMethodName,
             methodParameters = handler.methodParameters,
             methodParameterTypes = handler.methodParameterTypes,
             workflowTags = handler.workflowTags,
@@ -658,7 +658,7 @@ internal class ClientDispatcher(
           workflowName = deferred.workflowName,
           workflowId = deferred.requestBy.workflowId,
           workflowMethodId = deferred.workflowMethodId,
-          workflowMethodName = handler.methodName,
+          workflowMethodName = handler.annotatedMethodName,
           methodParameters = handler.methodParameters,
           methodParameterTypes = handler.methodParameterTypes,
           requester = clientRequester,
@@ -674,7 +674,7 @@ internal class ClientDispatcher(
           workflowName = deferred.workflowName,
           workflowTag = deferred.requestBy.workflowTag,
           workflowMethodId = deferred.workflowMethodId,
-          methodName = handler.methodName,
+          methodName = handler.annotatedMethodName,
           methodParameterTypes = handler.methodParameterTypes,
           methodParameters = handler.methodParameters,
           methodTimeout = deferred.methodTimeout,
@@ -710,7 +710,7 @@ internal class ClientDispatcher(
     deferredSend: DeferredSend<*>,
     handler: ChannelProxyHandler<*>
   ): CompletableFuture<Unit> {
-    if (handler.methodName.toString() != SendChannel<*>::send.name) thisShouldNotHappen()
+    if (handler.annotatedMethodName.toString() != SendChannel<*>::send.name) thisShouldNotHappen()
 
     return when (handler.requestBy) {
       is RequestByWorkflowId -> {

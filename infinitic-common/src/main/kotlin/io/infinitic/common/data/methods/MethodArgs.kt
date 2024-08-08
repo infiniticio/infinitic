@@ -23,7 +23,7 @@
 package io.infinitic.common.data.methods
 
 import io.infinitic.common.serDe.SerializedData
-import io.infinitic.common.utils.getJsonViewClassOnParameter
+import io.infinitic.common.utils.getParameterJsonViewClass
 import io.infinitic.common.utils.getParameterType
 import io.infinitic.exceptions.serialization.ArgumentDeserializationException
 import io.infinitic.exceptions.serialization.ArgumentSerializationException
@@ -53,7 +53,7 @@ fun Method.serializeArgs(vararg args: Any?) = MethodArgs(
         SerializedData.encode(
             value,
             type = getParameterType(index),
-            jsonViewClass = getJsonViewClassOnParameter(index),
+            jsonViewClass = getParameterJsonViewClass(index),
         )
       } catch (e: Exception) {
         throw ArgumentSerializationException(
@@ -75,7 +75,7 @@ fun Method.deserializeArgs(methodParameters: MethodArgs): Array<*> =
       try {
         serializedData.decode(
             type = getParameterType(index),
-            jsonViewClass = getJsonViewClassOnParameter(index),
+            jsonViewClass = getParameterJsonViewClass(index),
         )
       } catch (e: Exception) {
         throw ArgumentDeserializationException(

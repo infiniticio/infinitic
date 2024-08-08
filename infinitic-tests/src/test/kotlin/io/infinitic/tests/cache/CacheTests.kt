@@ -20,37 +20,39 @@
  *
  * Licensor: infinitic.io
  */
+package io.infinitic.tests.cache
 
-package io.infinitic.tests.utils
+import io.infinitic.Test
+import io.infinitic.common.utils.maxCachesSize
+import io.infinitic.exceptions.WorkflowUnknownException
+import io.infinitic.tests.inline.InlineWorkflow
+import io.kotest.core.spec.style.StringSpec
+import io.kotest.matchers.shouldBe
 
-import com.fasterxml.jackson.databind.ObjectMapper
-import io.cloudevents.CloudEvent
-import io.cloudevents.jackson.JsonFormat
-import io.infinitic.cloudEvents.CloudEventListener
-import java.util.concurrent.ConcurrentHashMap
+internal class CacheTests :
+  StringSpec(
+      {
+        val client = Test.client
 
-class Listener : CloudEventListener {
-  override fun onEvent(event: CloudEvent) {
-    events.add(event)
-  }
+        "Cache utilities should not grow while running instances" {
 
-  companion object {
-    private val objectMapper = ObjectMapper()
+          val inlineWorkflow = client.newWorkflow(InlineWorkflow::class.java)
 
-    private val events = ConcurrentHashMap.newKeySet<CloudEvent>()
+          // first instance
+          inlineWorkflow.inline1(0)
 
-    fun clear() {
-      events.clear()
-    }
+          val size = maxCachesSize
 
-    fun print() {
-      events
-          .sortedBy { it.time }
-          .filter { it.type.startsWith("infinitic.workflow") }
-          .forEach {
-            val jsonNode = objectMapper.readTree(String(JsonFormat().serialize(it)))
-            //println(objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(jsonNode))
+          // running more instances
+          (1..20).map { client.dispatch(inlineWorkflow::inline1, it) }.forEach {
+            try {
+              it.await()
+            } catch (e: WorkflowUnknownException) {
+              // ignore
+            }
           }
-    }
-  }
-}
+          // checking that dispatching more instances does not make the cache grow
+          maxCachesSize shouldBe size
+        }
+      },
+  )

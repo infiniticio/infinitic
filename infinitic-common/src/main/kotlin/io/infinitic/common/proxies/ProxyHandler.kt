@@ -27,7 +27,7 @@ import io.infinitic.common.data.methods.MethodArgs
 import io.infinitic.common.data.methods.MethodName
 import io.infinitic.common.data.methods.MethodParameterTypes
 import io.infinitic.common.data.methods.serializeArgs
-import io.infinitic.common.utils.findName
+import io.infinitic.common.utils.annotatedName
 import io.infinitic.common.utils.getFullMethodName
 import io.infinitic.common.utils.getMillisDuration
 import io.infinitic.exceptions.workflows.InvalidInlineException
@@ -92,7 +92,7 @@ sealed class ProxyHandler<T : Any>(
     get() = method.getMillisDuration(klass)
 
   /** Class name provided by @Name annotation, or java class name by default */
-  protected val name: String by lazy { klass.findName() }
+  protected val annotatedName: String by lazy { klass.annotatedName }
 
   /** SimpleName provided by @Name annotation, or class name by default */
   val fullMethodName: String
@@ -100,9 +100,9 @@ sealed class ProxyHandler<T : Any>(
     get() = klass.getFullMethodName(method)
 
   /** MethodName provided by @Name annotation, or java method name by default */
-  val methodName: MethodName
+  val annotatedMethodName: MethodName
     //  MUST be a get() as this.method changes
-    get() = MethodName(method.findName())
+    get() = MethodName(method.annotatedName)
 
   /** MethodParameterTypes from method */
   val methodParameterTypes: MethodParameterTypes
@@ -114,7 +114,7 @@ sealed class ProxyHandler<T : Any>(
     //  MUST be a get() as this.method changes
     get() = method.returnType
 
-  /** MethodParameters from method */
+  /** MethodArgs from method */
   val methodParameters: MethodArgs
     //  MUST be a get() as this.method changes
     get() = method.serializeArgs(*methodArgs)

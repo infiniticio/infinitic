@@ -28,10 +28,10 @@ import io.infinitic.common.tasks.data.TaskId
 import io.infinitic.common.tasks.data.TaskTag
 
 class ExistingServiceProxyHandler<K : Any>(
-    override val klass: Class<K>,
-    val taskId: TaskId?,
-    val taskTag: TaskTag?,
-    override val dispatcherFn: () -> ProxyDispatcher
+  override val klass: Class<K>,
+  val taskId: TaskId?,
+  val taskTag: TaskTag?,
+  override val dispatcherFn: () -> ProxyDispatcher
 ) : ProxyHandler<K>(klass, dispatcherFn) {
 
   init {
@@ -40,5 +40,5 @@ class ExistingServiceProxyHandler<K : Any>(
     }
   }
 
-  val serviceName = ServiceName(name)
+  val serviceName = ServiceName(annotatedName)
 }

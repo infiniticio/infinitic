@@ -40,7 +40,7 @@ class ChannelProxyHandler<K : SendChannel<*>>(
   }
 
   val workflowName = handler.workflowName
-  val channelName = ChannelName.from(handler.methodName)
+  val channelName = ChannelName.from(handler.annotatedMethodName)
   val requestBy = handler.requestBy
   val signalType: Type =
       (handler.method.genericReturnType as ParameterizedType).actualTypeArguments[0]

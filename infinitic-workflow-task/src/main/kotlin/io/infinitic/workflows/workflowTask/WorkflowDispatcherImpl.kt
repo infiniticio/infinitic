@@ -373,7 +373,7 @@ internal class WorkflowDispatcherImpl(
           serviceName = serviceName,
           methodParameters = methodParameters,
           methodParameterTypes = methodParameterTypes,
-          methodName = methodName,
+          methodName = annotatedMethodName,
           methodTimeout = timeoutInMillisDuration.getOrThrow(),
           taskTags = taskTags,
           taskMeta = taskMeta,
@@ -396,7 +396,7 @@ internal class WorkflowDispatcherImpl(
           dispatchCommand(
               DispatchNewWorkflowCommand(
                   workflowName = workflowName,
-                  methodName = methodName,
+                  methodName = annotatedMethodName,
                   methodParameterTypes = methodParameterTypes,
                   methodParameters = methodParameters,
                   methodTimeout = timeoutInMillisDuration.getOrThrow(),
@@ -419,7 +419,7 @@ internal class WorkflowDispatcherImpl(
                 workflowName = workflowName,
                 workflowId = requestBy.workflowId,
                 workflowTag = requestBy.workflowTag,
-                methodName = methodName,
+                methodName = annotatedMethodName,
                 methodParameterTypes = methodParameterTypes,
                 methodParameters = methodParameters,
                 methodTimeout = timeoutInMillisDuration.getOrThrow(),
@@ -432,7 +432,7 @@ internal class WorkflowDispatcherImpl(
 
   /** Signal dispatching */
   private fun <R : Any?> ChannelProxyHandler<*>.dispatchSignal(): Deferred<R> {
-    if (methodName.toString() != SendChannel<*>::send.name) thisShouldNotHappen()
+    if (annotatedMethodName.toString() != SendChannel<*>::send.name) thisShouldNotHappen()
 
     return dispatchCommand(
         SendSignalCommand(
