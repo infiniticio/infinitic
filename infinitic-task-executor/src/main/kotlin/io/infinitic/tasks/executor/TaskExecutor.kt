@@ -104,7 +104,7 @@ class TaskExecutor(
     // Retrieve service instance, service method and method arguments
     val (service, method, args) =
         try {
-          parse(msg)
+          msg.parse()
         } catch (e: Exception) {
           // returning the exception (no retry)
           msg.sendTaskFailed(e, msg.taskMeta) { "Unable to parse message $msg" }
@@ -159,16 +159,16 @@ class TaskExecutor(
       // exception in method execution
       when (val cause = e.cause ?: e.targetException) {
         // do not retry failed workflow task due to failed/canceled task/workflow
-        is DeferredException -> msg.sendTaskFailed(cause, taskContext.meta, null)
+        is DeferredException -> msg.sendTaskFailed(cause, taskContext.meta) { cause.description }
         // exception during task execution
         is Exception -> retryTask(msg, taskContext, cause)
         // Throwable are not caught
-        else -> throw cause ?: e
+        is Throwable -> throw cause
       }
       // stop here
       return@coroutineScope
     } catch (e: Exception) {
-      // just in case, this should not happen
+      // Catch everything else
       msg.sendTaskFailed(e, taskContext.meta) { "Unexpected error" }
       // stop here
       return@coroutineScope
@@ -215,9 +215,9 @@ class TaskExecutor(
   suspend fun ExecuteTask.sendTaskFailed(
     cause: Throwable,
     meta: Map<String, ByteArray>,
-    description: (() -> String)?
+    description: (() -> String)
   ) {
-    description?.let { logError(cause, it) }
+    logError(cause, description)
 
     val event = TaskFailedEvent.from(this, emitterName, cause, meta)
     with(producer) { event.sendTo(ServiceEventsTopic) }
@@ -255,19 +255,10 @@ class TaskExecutor(
     with(producer) { event.sendTo(ServiceEventsTopic) }
   }
 
-  private fun parse(msg: ExecuteTask): Triple<Any, Method, Array<*>> =
-      when (msg.isWorkflowTask()) {
-        true -> parseWorkflowTask(
-            (msg.requester as WorkflowRequester).workflowName,
-            msg.methodParameters,
-        )
-
-        false -> parseTask(
-            msg.serviceName,
-            msg.methodName,
-            msg.methodParameterTypes,
-            msg.methodParameters,
-        )
+  private fun ExecuteTask.parse(): Triple<Any, Method, Array<*>> =
+      when (isWorkflowTask()) {
+        true -> parseWorkflowTask((requester as WorkflowRequester).workflowName, methodParameters)
+        false -> parseTask(serviceName, methodName, methodParameterTypes, methodParameters)
       }
 
   private fun parseTask(
