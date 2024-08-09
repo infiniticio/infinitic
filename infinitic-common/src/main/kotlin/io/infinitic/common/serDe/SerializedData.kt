@@ -250,14 +250,14 @@ data class SerializedData(
   }
 
   @Deprecated("JSON_KOTLIN should not be used anymore after version 0.15.0")
-  private fun decodeJsonKotlin() {
+  private fun decodeJsonKotlin(): Any {
     val klass = getMetaJavaTypeString()!!.getClass().getOrThrow()
 
     @OptIn(InternalSerializationApi::class)
     val serializer = klass.kotlin.serializerOrNull()
       ?: throw SerializerNotFoundException(klass.name)
     val jsonStr = toJsonString()
-    try {
+    return try {
       json.decodeFromString(serializer, jsonStr)
     } catch (e: SerializationException) {
       throw KotlinDeserializationException(jsonStr, klass.name, e)
