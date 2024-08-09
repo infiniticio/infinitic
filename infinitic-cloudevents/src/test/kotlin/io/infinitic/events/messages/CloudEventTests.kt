@@ -101,7 +101,7 @@ import net.bytebuddy.utility.RandomString
 import java.net.URI
 import kotlin.reflect.full.isSubclassOf
 
-private val serviceConfig = """
+private const val serviceConfig = """
 transport: inMemory
 storage: inMemory
 """

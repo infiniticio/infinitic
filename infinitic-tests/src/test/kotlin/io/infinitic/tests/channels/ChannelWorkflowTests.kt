@@ -22,18 +22,17 @@
  */
 package io.infinitic.tests.channels
 
+import io.infinitic.Test
 import io.infinitic.common.fixtures.later
 import io.infinitic.exceptions.WorkflowFailedException
 import io.infinitic.exceptions.WorkflowTaskFailedException
 import io.infinitic.exceptions.workflows.OutOfBoundAwaitException
-import io.infinitic.tests.Test
-import io.infinitic.tests.utils.Obj1
-import io.infinitic.tests.utils.Obj2
+import io.infinitic.utils.Obj1
+import io.infinitic.utils.Obj2
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.delay
-import java.time.Instant
 
 internal class ChannelWorkflowTests :
   StringSpec(
@@ -47,7 +46,10 @@ internal class ChannelWorkflowTests :
           val deferred = client.dispatch(channelsWorkflow::channel1)
 
           later {
-            client.getWorkflowById(ChannelsWorkflow::class.java, deferred.id).channelA.send("test")
+            client.getWorkflowById(
+                ChannelsWorkflow::class.java,
+                deferred.id,
+            ).channelStrA.send("test")
           }
 
           deferred.await() shouldBe "test"
@@ -57,7 +59,10 @@ internal class ChannelWorkflowTests :
           val deferred = client.dispatch(channelsWorkflow::channel1)
 
           later {
-            client.getWorkflowById(ChannelsWorkflow::class.java, deferred.id).channelA.send("test")
+            client.getWorkflowById(
+                ChannelsWorkflow::class.java,
+                deferred.id,
+            ).channelStrA.send("test")
           }
 
           deferred.await() shouldBe "test"
@@ -70,7 +75,7 @@ internal class ChannelWorkflowTests :
             client.getWorkflowByTag(
                 ChannelsWorkflow::class.java,
                 "foo",
-            ).channelA.send("test")
+            ).channelStrA.send("test")
           }
 
           deferred.await() shouldBe "test"
@@ -79,9 +84,8 @@ internal class ChannelWorkflowTests :
         "Waiting for event, sent to the right channel" {
           val deferred = client.dispatch(channelsWorkflow::channel2)
 
-          later(0) {
-            client.getWorkflowById(ChannelsWorkflow::class.java, deferred.id).channelA.send("test")
-          }
+          client.getWorkflowById(ChannelsWorkflow::class.java, deferred.id)
+              .channelStrA.send("test")
 
           deferred.await() shouldBe "test"
         }
@@ -89,21 +93,23 @@ internal class ChannelWorkflowTests :
         "Waiting for event but sent to the wrong channel" {
           val deferred = client.dispatch(channelsWorkflow::channel2)
 
-          later {
-            client.getWorkflowById(ChannelsWorkflow::class.java, deferred.id).channelB.send("test")
-          }
+          client.getWorkflowById(ChannelsWorkflow::class.java, deferred.id)
+              .channelStrB.send("test")
 
-          deferred.await()::class.java.name shouldBe Instant::class.java.name
+          deferred.await() shouldBe "Instant"
         }
 
         "Sending event before waiting for it prevents catching" {
           val deferred = client.dispatch(channelsWorkflow::channel3)
 
           later {
-            client.getWorkflowById(ChannelsWorkflow::class.java, deferred.id).channelA.send("test")
+            client.getWorkflowById(
+                ChannelsWorkflow::class.java,
+                deferred.id,
+            ).channelStrA.send("test")
           }
 
-          deferred.await()::class.java.name shouldBe Instant::class.java.name
+          deferred.await() shouldBe "Instant"
         }
 
         "Waiting for Obj event" {
@@ -226,9 +232,9 @@ internal class ChannelWorkflowTests :
 
           later {
             val w = client.getWorkflowById(ChannelsWorkflow::class.java, deferred.id)
-            w.channelA.send("a")
-            w.channelA.send("b")
-            w.channelA.send("c")
+            w.channelStrA.send("a")
+            w.channelStrA.send("b")
+            w.channelStrA.send("c")
           }
 
           deferred.await() shouldBe "abc"
@@ -240,11 +246,11 @@ internal class ChannelWorkflowTests :
           later {
             val w = client.getWorkflowById(ChannelsWorkflow::class.java, deferred.id)
             delay(300)
-            w.channelA.send("a")
+            w.channelStrA.send("a")
             delay(300)
-            w.channelA.send("b")
+            w.channelStrA.send("b")
             delay(300)
-            w.channelA.send("c")
+            w.channelStrA.send("c")
           }
 
           deferred.await() shouldBe "abc"
@@ -255,7 +261,7 @@ internal class ChannelWorkflowTests :
           val deferred = client.dispatch(channelsWorkflow::channel7, count)
 
           val w = client.getWorkflowById(ChannelsWorkflow::class.java, deferred.id)
-          later { repeat(count) { w.channelA.send("a") } }
+          later { repeat(count) { w.channelStrA.send("a") } }
 
           deferred.await() shouldBe "a".repeat(count)
         }
@@ -265,10 +271,9 @@ internal class ChannelWorkflowTests :
           val deferred = client.dispatch(channelsWorkflow::channel7, count, 1)
 
           val w = client.getWorkflowById(ChannelsWorkflow::class.java, deferred.id)
-          later { repeat(count) { w.channelA.send("a") } }
+          later { repeat(count) { w.channelStrA.send("a") } }
 
           val error = shouldThrow<WorkflowFailedException> { deferred.await() }
-
           (error.deferredException as WorkflowTaskFailedException).workerException.name shouldBe
               OutOfBoundAwaitException::class.java.name
         }
@@ -281,7 +286,7 @@ internal class ChannelWorkflowTests :
           later {
             repeat(count) {
               delay(300)
-              w.channelA.send("a")
+              w.channelStrA.send("a")
             }
           }
 
@@ -295,7 +300,10 @@ internal class ChannelWorkflowTests :
           val deferred = client.dispatch(channelsWorkflow::channel8)
 
           later(0) {
-            client.getWorkflowById(ChannelsWorkflow::class.java, deferred.id).channelA.send("test")
+            client.getWorkflowById(
+                ChannelsWorkflow::class.java,
+                deferred.id,
+            ).channelStrA.send("test")
           }
 
           deferred.await() shouldBe "falsetruefalse"

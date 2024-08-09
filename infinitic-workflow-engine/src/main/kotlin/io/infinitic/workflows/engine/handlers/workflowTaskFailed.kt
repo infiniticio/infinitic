@@ -24,8 +24,12 @@ package io.infinitic.workflows.engine.handlers
 
 import io.infinitic.common.emitters.EmitterName
 import io.infinitic.common.exceptions.thisShouldNotHappen
+import io.infinitic.common.tasks.executors.errors.DeferredError
+import io.infinitic.common.tasks.executors.errors.ExecutionError
+import io.infinitic.common.tasks.executors.errors.WorkflowTaskFailedError
 import io.infinitic.common.transport.InfiniticProducer
 import io.infinitic.common.transport.WorkflowEventsTopic
+import io.infinitic.common.workers.data.WorkerName
 import io.infinitic.common.workflows.data.workflowMethods.awaitingRequesters
 import io.infinitic.common.workflows.engine.messages.MethodFailedEvent
 import io.infinitic.common.workflows.engine.messages.RemoteTaskFailed
@@ -43,9 +47,24 @@ internal fun CoroutineScope.workflowTaskFailed(
 
   val workflowMethod = state.getRunningWorkflowMethod()
 
-  val deferredError = when (val error = message.deferredError) {
-    null -> message.taskFailedError
-    else -> error
+  val deferredError: DeferredError = when (val deferredError = message.deferredError) {
+    // an Exception has thrown in the workflow task
+    null -> WorkflowTaskFailedError(
+        workflowName = message.workflowName,
+        workflowId = message.workflowId,
+        workflowTaskId = message.taskId(),
+        cause = with(message.taskFailedError.cause) {
+          ExecutionError(
+              workerName = WorkerName.from(message.emitterName),
+              name = name,
+              message = this.message,
+              stackTraceToString = stackTraceToString,
+              cause = cause,
+          )
+        },
+    )
+    // a deferred Exception has thrown in the workflow task
+    else -> deferredError
   }
 
   val methodFailedEvent = MethodFailedEvent(
@@ -65,3 +84,4 @@ internal fun CoroutineScope.workflowTaskFailed(
       .firstOrNull { it.workflowId == message.workflowId }
       ?.let { state.messagesBuffer.add(0, it) }
 }
+

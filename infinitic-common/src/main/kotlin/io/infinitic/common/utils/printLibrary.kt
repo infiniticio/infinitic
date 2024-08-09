@@ -20,16 +20,17 @@
  *
  * Licensor: infinitic.io
  */
-package io.infinitic.tests.utils
 
-import io.infinitic.annotations.Name
+package io.infinitic.common.utils
 
-@Name("annotatedService")
-interface AnnotatedService {
-  @Name("bar") fun foo(str1: String, str2: String): String
-}
+import java.io.File
 
-@Suppress("unused")
-class AnnotatedServiceImpl : AnnotatedService {
-  override fun foo(str1: String, str2: String) = str1 + str2
+fun printLibrary(clazz: Class<*>) {
+  val classPath = clazz.getResource(clazz.simpleName + ".class")!!.toString()
+  val libraries = System.getProperty("java.class.path").split(File.pathSeparator)
+  for (library in libraries) {
+    if (library.endsWith(".jar") && classPath.contains(library)) {
+      println("library: $library")
+    }
+  }
 }

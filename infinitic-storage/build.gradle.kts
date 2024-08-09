@@ -21,11 +21,11 @@
  * Licensor: infinitic.io
  */
 dependencies {
-  implementation(Libs.Hoplite.core)
-  implementation("com.zaxxer:HikariCP:5.0.1")
-
   // Cache
   implementation(project(":infinitic-cache"))
+
+  implementation(Libs.Hoplite.core)
+  implementation("com.zaxxer:HikariCP:5.0.1")
 
   // Compressor
   implementation(Libs.Compress.commons)

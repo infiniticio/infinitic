@@ -20,7 +20,7 @@
  *
  * Licensor: infinitic.io
  */
-package io.infinitic.tests.scaffolds
+package io.infinitic.scaffolds
 
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job

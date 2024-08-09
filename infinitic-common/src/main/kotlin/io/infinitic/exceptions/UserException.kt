@@ -22,4 +22,7 @@
  */
 package io.infinitic.exceptions
 
-open class UserException(override val message: String) : kotlin.RuntimeException(message)
+open class UserException(
+  override val message: String,
+  override val cause: Throwable? = null
+) : kotlin.RuntimeException(message, cause)

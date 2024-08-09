@@ -27,13 +27,15 @@ import io.infinitic.exceptions.DeferredFailedException
 import io.infinitic.exceptions.TaskFailedException
 import io.infinitic.exceptions.WorkflowFailedException
 import io.infinitic.exceptions.WorkflowUnknownException
-import io.infinitic.tests.utils.UtilService
+import io.infinitic.utils.UtilService
 import io.infinitic.workflows.Deferred
 import io.infinitic.workflows.Workflow
 import java.time.Duration
 
 interface ErrorsWorkflow {
   fun waiting(): String
+
+  fun failing0(): String
 
   fun failing1(): String
 
@@ -86,12 +88,12 @@ class ErrorsWorkflowImpl : Workflow(), ErrorsWorkflow {
 
   lateinit var deferred: Deferred<String>
 
-  private val utilService =
-      newService(
-          UtilService::class.java,
-          tags = setOf("foo", "bar"),
-          meta = mutableMapOf("foo" to "bar".toByteArray()),
-      )
+  private val utilService = newService(
+      UtilService::class.java,
+      tags = setOf("foo", "bar"),
+      meta = mutableMapOf("foo" to "bar".toByteArray()),
+  )
+
   private val errorsWorkflow = newWorkflow(ErrorsWorkflow::class.java, tags = setOf("foo", "bar"))
 
   private var p1 = ""
@@ -102,13 +104,17 @@ class ErrorsWorkflowImpl : Workflow(), ErrorsWorkflow {
     return "ok"
   }
 
-  override fun failing1() =
-      try {
-        utilService.failingWithException()
-        "ok"
-      } catch (e: TaskFailedException) {
-        utilService.reverse("ok")
-      }
+  override fun failing0(): String {
+    utilService.reverse("ok")
+    throw Exception()
+  }
+
+  override fun failing1() = try {
+    utilService.failingWithException()
+    "ok"
+  } catch (e: TaskFailedException) {
+    utilService.reverse("ok")
+  }
 
   override fun failingWithException() = utilService.failingWithException()
 

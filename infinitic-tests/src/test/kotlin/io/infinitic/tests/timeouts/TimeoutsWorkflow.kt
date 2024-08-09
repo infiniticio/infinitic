@@ -26,8 +26,8 @@ import io.infinitic.annotations.Timeout
 import io.infinitic.exceptions.TaskTimedOutException
 import io.infinitic.exceptions.WorkflowTimedOutException
 import io.infinitic.tasks.WithTimeout
-import io.infinitic.tests.utils.After1Second
-import io.infinitic.tests.utils.UtilService
+import io.infinitic.utils.After1Second
+import io.infinitic.utils.UtilService
 import io.infinitic.workflows.Workflow
 
 

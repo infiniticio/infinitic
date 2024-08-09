@@ -29,38 +29,18 @@ internal interface JsonViewWorkflow {
   val request: Request?
 
   fun getUser_00(request: Request): User
+
   fun getUser_01(request: Request): User
   fun getUser_02(request: Request): User
   fun getUser_03(request: Request): User
 
   fun getUser_10(@JsonView(Views.Public::class) request: Request): User
-  fun getUser_11(@JsonView(Views.Public::class) request: Request): User
-  fun getUser_12(@JsonView(Views.Public::class) request: Request): User
-  fun getUser_13(@JsonView(Views.Public::class) request: Request): User
 
   @JsonView(Views.Public::class)
   fun getUser_20(request: Request): User
 
   @JsonView(Views.Public::class)
-  fun getUser_21(request: Request): User
-
-  @JsonView(Views.Public::class)
-  fun getUser_22(request: Request): User
-
-  @JsonView(Views.Public::class)
-  fun getUser_23(request: Request): User
-
-  @JsonView(Views.Public::class)
   fun getUser_30(@JsonView(Views.Public::class) request: Request): User
-
-  @JsonView(Views.Public::class)
-  fun getUser_31(@JsonView(Views.Public::class) request: Request): User
-
-  @JsonView(Views.Public::class)
-  fun getUser_32(@JsonView(Views.Public::class) request: Request): User
-
-  @JsonView(Views.Public::class)
-  fun getUser_33(@JsonView(Views.Public::class) request: Request): User
 }
 
 @Suppress("unused")
@@ -72,24 +52,12 @@ internal class JsonViewWorkflowImpl : Workflow(), JsonViewWorkflow {
   override var request: Request? = null
 
   override fun getUser_00(request: Request) = jsonViewService.getUser_0(request)
+
   override fun getUser_01(request: Request) = jsonViewService.getUser_1(request)
   override fun getUser_02(request: Request) = jsonViewService.getUser_2(request)
   override fun getUser_03(request: Request) = jsonViewService.getUser_3(request)
 
   override fun getUser_10(request: Request): User = jsonViewService.getUser_0(request)
-  override fun getUser_11(request: Request): User = jsonViewService.getUser_1(request)
-  override fun getUser_12(request: Request): User = jsonViewService.getUser_2(request)
-  override fun getUser_13(request: Request): User = jsonViewService.getUser_3(request)
-
   override fun getUser_20(request: Request): User = jsonViewService.getUser_0(request)
-  override fun getUser_21(request: Request): User = jsonViewService.getUser_1(request)
-  override fun getUser_22(request: Request): User = jsonViewService.getUser_2(request)
-  override fun getUser_23(request: Request): User = jsonViewService.getUser_3(request)
-
   override fun getUser_30(request: Request): User = jsonViewService.getUser_0(request)
-  override fun getUser_31(request: Request): User = jsonViewService.getUser_1(request)
-  override fun getUser_32(request: Request): User = jsonViewService.getUser_2(request)
-  override fun getUser_33(request: Request): User = jsonViewService.getUser_3(request)
 }
-
-

@@ -21,14 +21,36 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.tests.utils
+package io.infinitic.utils
 
-import io.infinitic.tasks.WithTimeout
+import com.fasterxml.jackson.databind.ObjectMapper
+import io.cloudevents.CloudEvent
+import io.cloudevents.jackson.JsonFormat
+import io.infinitic.cloudEvents.CloudEventListener
+import java.util.concurrent.ConcurrentHashMap
 
-class After100MilliSeconds : WithTimeout {
-  override fun getTimeoutInSeconds() = 0.1
-}
+class Listener : CloudEventListener {
+  override fun onEvent(event: CloudEvent) {
+    events.add(event)
+  }
 
-class After1Second : WithTimeout {
-  override fun getTimeoutInSeconds() = 1.0
+  companion object {
+    private val objectMapper = ObjectMapper()
+
+    private val events = ConcurrentHashMap.newKeySet<CloudEvent>()
+
+    fun clear() {
+      events.clear()
+    }
+
+    fun print() {
+      events
+          .sortedBy { it.time }
+          .filter { it.type.startsWith("infinitic.workflow") }
+          .forEach {
+            val jsonNode = objectMapper.readTree(String(JsonFormat().serialize(it)))
+            println(objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(jsonNode))
+          }
+    }
+  }
 }

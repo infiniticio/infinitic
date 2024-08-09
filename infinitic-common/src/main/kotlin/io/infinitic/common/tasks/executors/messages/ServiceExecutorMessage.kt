@@ -29,9 +29,9 @@ import com.github.avrokotlin.avro4k.AvroNamespace
 import io.infinitic.common.clients.data.ClientName
 import io.infinitic.common.data.MessageId
 import io.infinitic.common.data.Version
+import io.infinitic.common.data.methods.MethodArgs
 import io.infinitic.common.data.methods.MethodName
 import io.infinitic.common.data.methods.MethodParameterTypes
-import io.infinitic.common.data.methods.MethodParameters
 import io.infinitic.common.emitters.EmitterName
 import io.infinitic.common.messages.Message
 import io.infinitic.common.requester.ClientRequester
@@ -98,7 +98,7 @@ data class ExecuteTask(
   val clientWaiting: Boolean,
   val methodName: MethodName,
   val methodParameterTypes: MethodParameterTypes?,
-  val methodParameters: MethodParameters,
+  val methodParameters: MethodArgs,
   val lastError: ExecutionError?,
   @Deprecated("Not used since version 0.13.0") @AvroDefault(Avro.NULL) val workflowVersion: WorkflowVersion? = null
 ) : ServiceExecutorMessage() {

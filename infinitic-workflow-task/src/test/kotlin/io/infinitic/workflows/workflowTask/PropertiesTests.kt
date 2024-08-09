@@ -39,7 +39,7 @@ internal class PropertiesTests :
           // then
           p.size shouldBe 1
           p.keys.first() shouldBe PropertyName("key2")
-          p.values.first() shouldBe PropertyValue.from(42, null)
+          p.values.first() shouldBe PropertyValue.from(42, Int::class.java)
         }
       },
   )

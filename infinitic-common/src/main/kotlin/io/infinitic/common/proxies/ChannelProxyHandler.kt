@@ -27,20 +27,24 @@ import io.infinitic.common.workflows.data.channels.ChannelType
 import io.infinitic.common.workflows.data.channels.SignalData
 import io.infinitic.exceptions.clients.InvalidChannelGetterException
 import io.infinitic.workflows.SendChannel
+import java.lang.reflect.ParameterizedType
+import java.lang.reflect.Type
 
 @Suppress("UNCHECKED_CAST")
 class ChannelProxyHandler<K : SendChannel<*>>(
-    handler: ExistingWorkflowProxyHandler<*>,
+  handler: ExistingWorkflowProxyHandler<*>,
 ) : ProxyHandler<K>(handler.method.returnType as Class<out K>, handler.dispatcherFn) {
   init {
     if (handler.method.returnType != SendChannel::class.java)
-        throw InvalidChannelGetterException(handler.method.returnType.name)
+      throw InvalidChannelGetterException(handler.method.returnType.name)
   }
 
   val workflowName = handler.workflowName
-  val channelName = ChannelName.from(handler.methodName)
+  val channelName = ChannelName.from(handler.annotatedMethodName)
   val requestBy = handler.requestBy
+  val signalType: Type =
+      (handler.method.genericReturnType as ParameterizedType).actualTypeArguments[0]
 
   val channelTypes by lazy { ChannelType.allFrom(methodArgs.first()::class.java) }
-  val signalData by lazy { SignalData.from(methodArgs.first()) }
+  val signalData by lazy { SignalData.from(methodArgs.first(), signalType) }
 }

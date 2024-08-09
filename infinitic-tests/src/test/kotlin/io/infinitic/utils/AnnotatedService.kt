@@ -20,37 +20,17 @@
  *
  * Licensor: infinitic.io
  */
+package io.infinitic.utils
 
-package io.infinitic.tests.utils
+import io.infinitic.annotations.Name
 
-import com.fasterxml.jackson.databind.ObjectMapper
-import io.cloudevents.CloudEvent
-import io.cloudevents.jackson.JsonFormat
-import io.infinitic.cloudEvents.CloudEventListener
-import java.util.concurrent.ConcurrentHashMap
+@Name("annotatedService")
+interface AnnotatedService {
+  @Name("bar")
+  fun foo(str1: String, str2: String): String
+}
 
-class Listener : CloudEventListener {
-  override fun onEvent(event: CloudEvent) {
-    events.add(event)
-  }
-
-  companion object {
-    private val objectMapper = ObjectMapper()
-
-    private val events = ConcurrentHashMap.newKeySet<CloudEvent>()
-
-    fun clear() {
-      events.clear()
-    }
-
-    fun print() {
-      events
-          .sortedBy { it.time }
-          .filter { it.type.startsWith("infinitic.workflow") }
-          .forEach {
-            val jsonNode = objectMapper.readTree(String(JsonFormat().serialize(it)))
-            //println(objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(jsonNode))
-          }
-    }
-  }
+@Suppress("unused")
+class AnnotatedServiceImpl : AnnotatedService {
+  override fun foo(str1: String, str2: String) = str1 + str2
 }

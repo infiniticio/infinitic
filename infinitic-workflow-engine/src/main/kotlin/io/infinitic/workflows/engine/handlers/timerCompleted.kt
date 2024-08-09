@@ -43,7 +43,7 @@ internal fun CoroutineScope.timerCompleted(
     message.workflowMethodId,
     CommandId.from(message.timerId),
     CommandStatus.Completed(
-        returnValue = MethodReturnValue.from(Instant.now(), null),
+        returnValue = MethodReturnValue.from(Instant.now(), Instant::class.java),
         completionWorkflowTaskIndex = state.workflowTaskIndex,
     ),
     message.emittedAt ?: thisShouldNotHappen(),

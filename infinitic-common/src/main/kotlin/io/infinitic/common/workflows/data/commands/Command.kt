@@ -27,9 +27,9 @@ import com.github.avrokotlin.avro4k.AvroDefault
 import com.github.avrokotlin.avro4k.AvroName
 import io.infinitic.common.data.MillisDuration
 import io.infinitic.common.data.MillisInstant
+import io.infinitic.common.data.methods.MethodArgs
 import io.infinitic.common.data.methods.MethodName
 import io.infinitic.common.data.methods.MethodParameterTypes
-import io.infinitic.common.data.methods.MethodParameters
 import io.infinitic.common.tasks.data.ServiceName
 import io.infinitic.common.tasks.data.TaskMeta
 import io.infinitic.common.tasks.data.TaskTag
@@ -56,7 +56,7 @@ data class DispatchTaskCommand(
   @SerialName("taskName") val serviceName: ServiceName,
   val methodName: MethodName,
   val methodParameterTypes: MethodParameterTypes,
-  val methodParameters: MethodParameters,
+  val methodParameters: MethodArgs,
   @AvroDefault(Avro.NULL) val methodTimeout: MillisDuration? = null,
   val taskTags: Set<TaskTag>,
   val taskMeta: TaskMeta
@@ -79,7 +79,7 @@ data class DispatchNewWorkflowCommand(
   val workflowName: WorkflowName,
   val methodName: MethodName,
   val methodParameterTypes: MethodParameterTypes,
-  val methodParameters: MethodParameters,
+  val methodParameters: MethodArgs,
   @AvroDefault(Avro.NULL) val methodTimeout: MillisDuration? = null,
   val workflowTags: Set<WorkflowTag>,
   val workflowMeta: WorkflowMeta
@@ -104,7 +104,7 @@ data class DispatchNewMethodCommand(
   val workflowTag: WorkflowTag?,
   val methodName: MethodName,
   val methodParameterTypes: MethodParameterTypes,
-  val methodParameters: MethodParameters,
+  val methodParameters: MethodArgs,
   @AvroDefault(Avro.NULL) val methodTimeout: MillisDuration? = null,
 ) : Command() {
   override fun isSameThan(other: Command): Boolean {

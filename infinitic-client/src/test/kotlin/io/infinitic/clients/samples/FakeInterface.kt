@@ -22,6 +22,10 @@
  */
 package io.infinitic.clients.samples
 
-internal interface FakeInterface
+import kotlinx.serialization.Serializable
 
+@Serializable
+internal sealed interface FakeInterface
+
+@Serializable
 internal data class FakeClass(val i: Int? = 0) : FakeInterface

@@ -25,8 +25,10 @@ package io.infinitic.workflows
 import com.jayway.jsonpath.Criteria
 import io.infinitic.common.workflows.WorkflowDispatcher
 import io.infinitic.exceptions.workflows.ChannelWithoutGetterException
+import java.lang.reflect.Type
 
 class Channel<T : Any>(private val dispatcherFn: () -> WorkflowDispatcher) : SendChannel<T> {
+  lateinit var type: Type
   private lateinit var _name: String
 
   internal fun setName(name: String) {

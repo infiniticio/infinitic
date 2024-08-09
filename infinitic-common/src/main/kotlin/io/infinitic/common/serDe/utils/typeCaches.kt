@@ -20,27 +20,27 @@
  *
  * Licensor: infinitic.io
  */
-package io.infinitic.tests.utils
 
-import io.infinitic.annotations.Name
-import io.infinitic.workflows.Workflow
+package io.infinitic.common.serDe.utils
 
-@Name("annotatedWorkflow")
-interface AnnotatedWorkflow {
-  @Name("bar") fun concatABC(input: String): String
+import com.fasterxml.jackson.databind.JavaType
+import io.infinitic.serDe.java.Json.mapper
+import java.util.concurrent.ConcurrentHashMap
+
+private val javaTypeNameCache: ConcurrentHashMap<JavaType, String> = ConcurrentHashMap()
+private val nameJavaTypeCache: ConcurrentHashMap<String, JavaType> = ConcurrentHashMap()
+
+/**
+ * Retrieves the name for the given JavaType, with caching
+ */
+internal fun JavaType.name() = javaTypeNameCache.getOrPut(this) {
+  mapper.writeValueAsString(this)
 }
 
-@Suppress("unused")
-class AnnotatedWorkflowImpl : Workflow(), AnnotatedWorkflow {
-  private val service = newService(AnnotatedService::class.java)
-
-  override fun concatABC(input: String): String {
-    var str = input
-
-    str = service.foo(str, "a")
-    str = service.foo(str, "b")
-    str = service.foo(str, "c")
-
-    return str // should be "${input}abc"
-  }
+/**
+ * Retrieves the JavaType by its name, with caching
+ */
+internal fun String.toJavaType() = nameJavaTypeCache.getOrPut(this) {
+  mapper.readerFor(JavaType::class.java).readValue(this)
 }
+

@@ -32,7 +32,7 @@ import io.infinitic.pulsar.config.auth.ClientAuthentication
 import io.infinitic.pulsar.config.policies.Policies
 import io.infinitic.pulsar.consumers.ConsumerConfig
 import io.infinitic.pulsar.producers.ProducerConfig
-import io.infinitic.serDe.java.Json
+import io.infinitic.serDe.java.Json.mapper
 import org.apache.pulsar.client.admin.PulsarAdmin
 import org.apache.pulsar.client.api.AuthenticationFactory
 import org.apache.pulsar.client.api.PulsarClient
@@ -126,7 +126,7 @@ data class Pulsar @JvmOverloads constructor(
           authentication(
               AuthenticationFactory.create(
                   PulsarAuthenticationAthenz::class.java.name,
-                  Json.stringify(authentication),
+                  mapper.writeValueAsString(authentication),
               ),
           )
           log["AuthenticationFactory.AuthenticationAthenz"] = "****************"
@@ -136,7 +136,7 @@ data class Pulsar @JvmOverloads constructor(
           authentication(
               AuthenticationFactory.create(
                   PulsarAuthenticationSasl::class.java.name,
-                  Json.stringify(authentication),
+                  mapper.writeValueAsString(authentication),
               ),
           )
           log["AuthenticationFactory.AuthenticationSasl"] = "****************"
@@ -202,7 +202,7 @@ data class Pulsar @JvmOverloads constructor(
           authentication(
               AuthenticationFactory.create(
                   PulsarAuthenticationAthenz::class.java.name,
-                  Json.stringify(authentication),
+                  mapper.writeValueAsString(authentication),
               ),
           )
           log["AuthenticationFactory.AuthenticationAthenz"] = "****************"
@@ -212,7 +212,7 @@ data class Pulsar @JvmOverloads constructor(
           authentication(
               AuthenticationFactory.create(
                   PulsarAuthenticationSasl::class.java.name,
-                  Json.stringify(authentication),
+                  mapper.writeValueAsString(authentication),
               ),
           )
           log["AuthenticationFactory.AuthenticationSasl"] = "****************"

@@ -20,12 +20,14 @@
  *
  * Licensor: infinitic.io
  */
-package io.infinitic.tests.utils
+package io.infinitic.workflows.workflowTask
 
-import kotlinx.serialization.Serializable
+internal sealed class WorkflowStepException : RuntimeException()
 
-sealed class Obj
+internal data object NewStepException : WorkflowStepException() {
+  private fun readResolve(): Any = NewStepException
+}
 
-@Serializable data class Obj1(val foo: String, val bar: Int) : Obj()
-
-@Serializable data class Obj2(val foo: String, val bar: Int) : Obj()
+internal data object KnownStepException : WorkflowStepException() {
+  private fun readResolve(): Any = KnownStepException
+}

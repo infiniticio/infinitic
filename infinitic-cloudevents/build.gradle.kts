@@ -22,12 +22,12 @@
  */
 
 dependencies {
+  implementation(project(":infinitic-common"))
+
   implementation(Libs.Serialization.json)
   implementation(Libs.CloudEvents.json)
   implementation(Libs.Avro4k.core)
   implementation(Libs.Jackson.kotlin)
-
-  implementation(project(":infinitic-common"))
 
   testImplementation(project(":infinitic-worker"))
 

@@ -21,6 +21,14 @@
  * Licensor: infinitic.io
  */
 dependencies {
+  testImplementation(project(":infinitic-client"))
+  testImplementation(project(":infinitic-worker"))
+  testImplementation(project(":infinitic-workflow-engine"))
+  testImplementation(project(":infinitic-task-executor"))
+  testImplementation(project(":infinitic-transport-inMemory"))
+  testImplementation(project(":infinitic-transport"))
+  testImplementation(project(":infinitic-transport-pulsar"))
+  
   testImplementation(Libs.Serialization.json)
   testImplementation(Libs.JsonPath.jayway)
   testImplementation(Libs.Coroutines.core)
@@ -30,12 +38,4 @@ dependencies {
   testImplementation(Libs.Kotest.datatest)
   testImplementation(Libs.CloudEvents.json)
   testImplementation(Libs.Pulsar.clientAdmin)
-
-  testImplementation(project(":infinitic-client"))
-  testImplementation(project(":infinitic-worker"))
-  testImplementation(project(":infinitic-workflow-engine"))
-  testImplementation(project(":infinitic-task-executor"))
-  testImplementation(project(":infinitic-transport-inMemory"))
-  testImplementation(project(":infinitic-transport"))
-  testImplementation(project(":infinitic-transport-pulsar"))
 }

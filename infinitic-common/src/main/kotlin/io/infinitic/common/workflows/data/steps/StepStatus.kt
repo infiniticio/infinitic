@@ -30,8 +30,6 @@ import io.infinitic.common.tasks.executors.errors.DeferredUnknownError
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskIndex
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.Transient
-import java.lang.reflect.Method
 
 @Serializable
 sealed class StepStatus {
@@ -105,12 +103,7 @@ sealed class StepStatus {
   @Serializable
   @SerialName("StepStatus.Completed")
   data class Completed(
-    private val returnValue: MethodReturnValue,
+    val returnValue: MethodReturnValue,
     val completionWorkflowTaskIndex: WorkflowTaskIndex
-  ) : StepStatus() {
-    @Transient
-    var method: Method? = null
-
-    val value: Any? by lazy { returnValue.value(method) }
-  }
+  ) : StepStatus()
 }

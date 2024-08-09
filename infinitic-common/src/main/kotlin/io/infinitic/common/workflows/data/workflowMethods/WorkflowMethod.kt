@@ -27,9 +27,9 @@ import com.github.avrokotlin.avro4k.AvroDefault
 import com.github.avrokotlin.avro4k.AvroName
 import com.github.avrokotlin.avro4k.AvroNamespace
 import io.infinitic.common.clients.data.ClientName
+import io.infinitic.common.data.methods.MethodArgs
 import io.infinitic.common.data.methods.MethodName
 import io.infinitic.common.data.methods.MethodParameterTypes
-import io.infinitic.common.data.methods.MethodParameters
 import io.infinitic.common.data.methods.MethodReturnValue
 import io.infinitic.common.requester.ClientRequester
 import io.infinitic.common.requester.Requester
@@ -63,7 +63,7 @@ data class WorkflowMethod(
   @Deprecated("Not used since version 0.13.0") @AvroDefault(Avro.NULL) val parentClientName: ClientName? = null,
   val methodName: MethodName,
   val methodParameterTypes: MethodParameterTypes?,
-  val methodParameters: MethodParameters,
+  val methodParameters: MethodArgs,
   var methodReturnValue: MethodReturnValue? = null,
   val workflowTaskIndexAtStart: WorkflowTaskIndex,
   val propertiesNameHashAtStart: Map<PropertyName, PropertyHash>,

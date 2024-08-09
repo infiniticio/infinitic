@@ -50,11 +50,10 @@ data class PastStep(
   var workflowTaskIndexAtTermination: WorkflowTaskIndex? = null
 ) {
   @JsonIgnore
-  fun isTerminated() =
-      stepStatus is Completed ||
-          stepStatus is Canceled ||
-          stepStatus is Failed ||
-          stepStatus is Unknown
+  fun isTerminated() = stepStatus is Completed ||
+      stepStatus is Canceled ||
+      stepStatus is Failed ||
+      stepStatus is Unknown
 
   fun updateWith(pastCommand: PastCommand) {
     step.updateWith(

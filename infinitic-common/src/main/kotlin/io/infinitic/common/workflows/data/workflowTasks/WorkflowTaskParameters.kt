@@ -28,7 +28,7 @@ import com.github.avrokotlin.avro4k.AvroName
 import io.infinitic.common.data.MillisInstant
 import io.infinitic.common.data.methods.MethodName
 import io.infinitic.common.data.methods.MethodParameterTypes
-import io.infinitic.common.data.methods.MethodParameters
+import io.infinitic.common.data.methods.serializeArgs
 import io.infinitic.common.emitters.EmitterName
 import io.infinitic.common.serDe.avro.AvroSerDe
 import io.infinitic.common.tasks.data.TaskId
@@ -47,6 +47,7 @@ import io.infinitic.common.workflows.engine.messages.data.TaskDispatched
 import io.infinitic.currentVersion
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import kotlin.reflect.jvm.javaMethod
 
 @Serializable
 data class WorkflowTaskParameters(
@@ -70,7 +71,7 @@ data class WorkflowTaskParameters(
           taskId = taskId,
           methodName = MethodName(WorkflowTask::handle.name),
           methodParameterTypes = MethodParameterTypes(listOf(WorkflowTaskParameters::class.java.name)),
-          methodParameters = MethodParameters.from(this),
+          methodParameters = WorkflowTask::handle.javaMethod!!.serializeArgs(this),
           serviceName = WorkflowTask.WORKFLOW_SERVICE_NAME,
           taskTags = setOf(),
           taskMeta = TaskMeta(),

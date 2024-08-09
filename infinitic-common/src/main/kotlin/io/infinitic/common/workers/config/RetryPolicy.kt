@@ -32,10 +32,6 @@ import kotlin.random.Random
 sealed class RetryPolicy(open val maximumRetries: Int, open val ignoredExceptions: List<String>) :
   WithRetry {
 
-  companion object {
-    val DEFAULT = ExponentialBackoffRetryPolicy()
-  }
-
   var isDefined = true
 
   val ignoredClasses: List<Class<*>> by lazy {

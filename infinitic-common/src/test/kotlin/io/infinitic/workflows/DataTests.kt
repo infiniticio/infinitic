@@ -25,32 +25,23 @@ package io.infinitic.workflows
 import io.infinitic.common.fixtures.TestFactory
 import io.infinitic.common.serDe.SerializedData
 import io.infinitic.common.workflows.data.steps.Step
+import io.infinitic.exceptions.serialization.KotlinSerializationException
+import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.StringSpec
-import io.kotest.matchers.shouldBe
 import io.mockk.mockk
-import kotlinx.serialization.encodeToString
-import kotlinx.serialization.json.Json
+import kotlin.reflect.jvm.javaType
+import kotlin.reflect.typeOf
 
 class DataTests :
   StringSpec(
       {
-        "Deferred should be serDe with SerializedData" {
+        "Deferred should not be serializable" {
           val step = TestFactory.random<Step>()
           val m1 = Deferred<String>(step).apply { this.workflowDispatcher = mockk() }
 
-          val data = SerializedData.from(m1)
-          val m2 = data.deserialize(null)
-
-          m2 shouldBe m1
-        }
-
-        "Deferred should be json-serializable by kotlinx.serialization" {
-          val step = TestFactory.random<Step>()
-          val m1 = Deferred<String>(step).apply { this.workflowDispatcher = mockk() }
-          val json = Json.encodeToString(m1)
-          val m2 = Json.decodeFromString<Deferred<String>>(json)
-
-          m2 shouldBe m1
+          val e = shouldThrow<KotlinSerializationException> {
+            SerializedData.encode(m1, typeOf<Deferred<String>>().javaType, null)
+          }
         }
       },
   )

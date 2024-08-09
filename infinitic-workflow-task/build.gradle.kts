@@ -21,12 +21,12 @@
  * Licensor: infinitic.io
  */
 dependencies {
+  implementation(project(":infinitic-common"))
+  
   implementation(kotlin("reflect"))
   implementation(Libs.Coroutines.core)
   implementation(Libs.JsonPath.jayway)
   implementation(Libs.Slf4j.api)
-
-  implementation(project(":infinitic-common"))
 
   testImplementation(Libs.Serialization.json)
 }

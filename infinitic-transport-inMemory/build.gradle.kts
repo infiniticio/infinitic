@@ -21,15 +21,15 @@
  * Licensor: infinitic.io
  */
 dependencies {
-  implementation(Libs.Coroutines.core)
-  implementation(Libs.Coroutines.jdk8)
-
   api(project(":infinitic-common"))
   api(project(":infinitic-storage"))
   implementation(project(":infinitic-cache"))
   implementation(project(":infinitic-workflow-tag"))
   implementation(project(":infinitic-workflow-engine"))
   implementation(project(":infinitic-task-executor"))
+  
+  implementation(Libs.Coroutines.core)
+  implementation(Libs.Coroutines.jdk8)
 }
 
 apply("../publish.gradle.kts")

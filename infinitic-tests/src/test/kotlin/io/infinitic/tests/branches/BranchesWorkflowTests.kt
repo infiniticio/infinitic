@@ -22,10 +22,10 @@
  */
 package io.infinitic.tests.branches
 
+import io.infinitic.Test
 import io.infinitic.common.fixtures.later
-import io.infinitic.tests.Test
-import io.infinitic.tests.getWorkflowState
-import io.infinitic.tests.utils.UtilWorkflow
+import io.infinitic.getWorkflowState
+import io.infinitic.utils.UtilWorkflow
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.delay

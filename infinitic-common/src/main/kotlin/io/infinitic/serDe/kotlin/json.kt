@@ -30,7 +30,7 @@ import kotlinx.serialization.json.Json
  * This property is mutable to be updated by user when needed
  */
 var json = Json {
-  // use a less obvious key than "type" for polymorphic data, to avoid collusion
+  // use a less obvious key than "type" for polymorphic data, to avoid collision
   classDiscriminator = "#klass"
   // useful for object versioning
   ignoreUnknownKeys = true

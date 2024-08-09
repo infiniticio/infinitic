@@ -23,15 +23,18 @@
 package io.infinitic.clients.samples
 
 import io.infinitic.annotations.Name
+import kotlinx.serialization.Serializable
 
-internal interface FakeServiceParent {
+@Serializable
+internal sealed interface FakeServiceParent {
   fun parent(): String
 
   @Name("bar")
   fun annotated(): String
 }
 
-internal interface FakeService : FakeServiceParent {
+@Serializable
+internal sealed interface FakeService : FakeServiceParent {
   fun m0()
 
   fun m0String(): String
@@ -55,6 +58,7 @@ internal interface FooTask : FakeServiceParent {
   fun m()
 }
 
+@Serializable
 internal class FakeServiceImpl : FakeService {
   override fun m0() {}
 
@@ -75,4 +79,12 @@ internal class FakeServiceImpl : FakeService {
   override fun parent() = "Not needed"
 
   override fun annotated(): String = "Not needed"
+
+  override fun equals(other: Any?): Boolean {
+    return this === other
+  }
+
+  override fun hashCode(): Int {
+    return System.identityHashCode(this)
+  }
 }

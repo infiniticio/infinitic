@@ -86,7 +86,8 @@ class WorkflowEventHandler(producerAsync: InfiniticProducerAsync) {
 
     // tell awaiting workflow (except itself)
     msg.getEventForAwaitingWorkflows(emitterName, publishTime)
-        .filter { it.workflowId != msg.workflowId }.forEach { event ->
+        .filter { it.workflowId != msg.workflowId }
+        .forEach { event ->
           launch { with(producer) { event.sendTo(WorkflowEngineTopic) } }
         }
   }
@@ -102,7 +103,8 @@ class WorkflowEventHandler(producerAsync: InfiniticProducerAsync) {
 
     // tell awaiting workflow (except itself)
     msg.getEventForAwaitingWorkflows(emitterName, publishTime)
-        .filter { it.workflowId != msg.workflowId }.forEach { event ->
+        .filter { it.workflowId != msg.workflowId }
+        .forEach { event ->
           launch { with(producer) { event.sendTo(WorkflowEngineTopic) } }
         }
   }
@@ -118,7 +120,8 @@ class WorkflowEventHandler(producerAsync: InfiniticProducerAsync) {
 
     // tell awaiting workflow (except itself)
     msg.getEventForAwaitingWorkflows(emitterName, publishTime)
-        .filter { it.workflowId != msg.workflowId }.forEach { event ->
+        .filter { it.workflowId != msg.workflowId }
+        .forEach { event ->
           launch { with(producer) { event.sendTo(WorkflowEngineTopic) } }
         }
   }

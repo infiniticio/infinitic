@@ -22,8 +22,8 @@
  */
 package io.infinitic.tests.syntax
 
-import io.infinitic.tests.utils.ParentInterface
-import io.infinitic.tests.utils.UtilService
+import io.infinitic.utils.ParentInterface
+import io.infinitic.utils.UtilService
 import io.infinitic.workflows.Workflow
 
 interface SyntaxWorkflow : ParentInterface {
@@ -41,7 +41,8 @@ class SyntaxWorkflowImpl : Workflow(), SyntaxWorkflow {
       newService(
           UtilService::class.java,
           tags = setOf("foo", "bar"),
-          meta = mutableMapOf("foo" to "bar".toByteArray()))
+          meta = mutableMapOf("foo" to "bar".toByteArray()),
+      )
   private val syntaxWorkflow = newWorkflow(SyntaxWorkflow::class.java)
 
   private var p1 = ""

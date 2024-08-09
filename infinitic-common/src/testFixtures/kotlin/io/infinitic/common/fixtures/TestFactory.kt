@@ -23,7 +23,7 @@
 package io.infinitic.common.fixtures
 
 import io.infinitic.common.data.Version
-import io.infinitic.common.data.methods.MethodParameters
+import io.infinitic.common.data.methods.MethodArgs
 import io.infinitic.common.serDe.SerializedData
 import io.infinitic.common.tasks.events.messages.ServiceEventEnvelope
 import io.infinitic.common.tasks.events.messages.ServiceEventMessage
@@ -44,6 +44,9 @@ import org.jeasy.random.api.Randomizer
 import java.nio.ByteBuffer
 import kotlin.random.Random
 import kotlin.reflect.KClass
+
+fun methodParametersFrom(vararg data: Any?) =
+    MethodArgs(data.map { SerializedData.encode(it, (it ?: "")::class.java, null) }.toList())
 
 object TestFactory {
   private var seed = 0L
@@ -71,9 +74,11 @@ object TestFactory {
           ExecutionError(random(), random(), random(), random(), null)
         }
         .randomize(Version::class.java) { Version(random<String>()) }
-        .randomize(SerializedData::class.java) { SerializedData.from(random<String>()) }
-        .randomize(MethodParameters::class.java) {
-          MethodParameters.from(random<ByteArray>(), random<String>())
+        .randomize(SerializedData::class.java) {
+          SerializedData.encode(random<String>(), String::class.java, null)
+        }
+        .randomize(MethodArgs::class.java) {
+          methodParametersFrom(random<ByteArray>(), random<String>())
         }
         .randomize(WorkflowEngineEnvelope::class.java) {
           val sub = WorkflowEngineMessage::class.sealedSubclasses.shuffled().first()

@@ -20,10 +20,39 @@
  *
  * Licensor: infinitic.io
  */
-package io.infinitic.workflows.workflowTask
+package io.infinitic.tests.cache
 
-internal sealed class WorkflowTaskException : RuntimeException()
+import io.infinitic.Test
+import io.infinitic.common.utils.maxCachesSize
+import io.infinitic.exceptions.WorkflowUnknownException
+import io.infinitic.tests.inline.InlineWorkflow
+import io.kotest.core.spec.style.StringSpec
+import io.kotest.matchers.shouldBe
 
-internal object NewStepException : WorkflowTaskException()
+internal class CacheTests :
+  StringSpec(
+      {
+        val client = Test.client
 
-internal object KnownStepException : WorkflowTaskException()
+        "Cache utilities should not grow while running instances" {
+
+          val inlineWorkflow = client.newWorkflow(InlineWorkflow::class.java)
+
+          // first instance
+          inlineWorkflow.inline1(0)
+
+          val size = maxCachesSize
+
+          // running more instances
+          (1..20).map { client.dispatch(inlineWorkflow::inline1, it) }.forEach {
+            try {
+              it.await()
+            } catch (e: WorkflowUnknownException) {
+              // ignore
+            }
+          }
+          // checking that dispatching more instances does not make the cache grow
+          maxCachesSize shouldBe size
+        }
+      },
+  )

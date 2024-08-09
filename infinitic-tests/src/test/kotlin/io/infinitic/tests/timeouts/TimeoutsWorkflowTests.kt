@@ -22,11 +22,11 @@
  */
 package io.infinitic.tests.timeouts
 
+import io.infinitic.Test
 import io.infinitic.exceptions.TaskTimedOutException
 import io.infinitic.exceptions.WorkflowFailedException
 import io.infinitic.exceptions.WorkflowTimedOutException
-import io.infinitic.tests.Test
-import io.infinitic.tests.utils.UtilService
+import io.infinitic.utils.UtilService
 import io.infinitic.workflows.DeferredStatus
 import io.kotest.assertions.throwables.shouldNotThrowAny
 import io.kotest.assertions.throwables.shouldThrow
