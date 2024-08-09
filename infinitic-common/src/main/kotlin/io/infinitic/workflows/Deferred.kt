@@ -52,21 +52,6 @@ data class Deferred<T>(val step: Step) {
     else -> null
   }
 
-  // used in WorkflowTaskImpl to set workflowDispatcher
-  companion object {
-    private val workflowDispatcherLocal: ThreadLocal<WorkflowDispatcher> = ThreadLocal()
-
-    fun setWorkflowDispatcher(workflowDispatcher: WorkflowDispatcher) =
-        workflowDispatcherLocal.set(workflowDispatcher)
-
-    fun delWorkflowDispatcher() = workflowDispatcherLocal.set(null)
-  }
-
-  init {
-    // special way to initialize workflowDispatcher when deserializing Deferred in WorkflowTaskImpl
-    workflowDispatcherLocal.get()?.let { workflowDispatcher = it }
-  }
-
   /** Wait the completion or cancellation of a deferred and get its result */
   fun await(): T = workflowDispatcher.await(this)
 

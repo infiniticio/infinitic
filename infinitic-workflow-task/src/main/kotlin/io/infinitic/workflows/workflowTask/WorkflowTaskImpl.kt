@@ -35,7 +35,6 @@ import io.infinitic.exceptions.DeferredException
 import io.infinitic.exceptions.WorkerException
 import io.infinitic.exceptions.WorkflowTaskFailedException
 import io.infinitic.tasks.Task
-import io.infinitic.workflows.Deferred
 import io.infinitic.workflows.Workflow
 import io.infinitic.workflows.WorkflowCheckMode
 import io.infinitic.workflows.setChannelNames
@@ -60,10 +59,7 @@ class WorkflowTaskImpl : WorkflowTask {
 
         // define setProperties function
         val setProperties = { nameHashes: Map<PropertyName, PropertyHash> ->
-          // in case properties contain some Deferred
-          Deferred.setWorkflowDispatcher(dispatcher)
           instance.setProperties(workflowTaskParameters.workflowPropertiesHashValue, nameHashes)
-          Deferred.delWorkflowDispatcher()
         }
 
         // give it to dispatcher
@@ -79,10 +75,7 @@ class WorkflowTaskImpl : WorkflowTask {
         instance.setChannelTypes()
 
         // get method parameters
-        // in case parameters contain some Deferred
-        Deferred.setWorkflowDispatcher(dispatcher)
         val parameters = method.deserializeArgs(methodRun.methodParameters)
-        Deferred.delWorkflowDispatcher()
 
         // run method and get return value (null if end not reached)
         val methodReturnValue = try {
