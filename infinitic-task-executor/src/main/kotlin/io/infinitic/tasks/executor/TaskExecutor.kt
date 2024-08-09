@@ -193,8 +193,8 @@ class TaskExecutor(
       return
     }
 
-    when {
-      delayMillis == null -> sendTaskFailed(cause, taskContext.meta)
+    when (delayMillis) {
+      null -> sendTaskFailed(cause, taskContext.meta)
       else -> sendRetryTask(cause, MillisDuration(delayMillis), taskContext.meta)
     }
   }
@@ -284,14 +284,14 @@ class TaskExecutor(
             // else use @Timeout annotation, or WithTimeout interface
           ?: serviceMethod.withTimeout.getOrThrow()
               // else use default value
-              ?: DEFAULT_TASK_WITH_TIMEOUT
+              ?: TASK_WITH_TIMEOUT_DEFAULT
 
     // use withRetry from registry, if it exists
     this.withRetry = registeredServiceExecutor.withRetry
         // else use @Timeout annotation, or WithTimeout interface
       ?: serviceMethod.withRetry.getOrThrow()
           // else use default value
-          ?: DEFAULT_TASK_WITH_RETRY
+          ?: TASK_WITH_RETRY_DEFAULT
 
     // check is this method has the @Async annotation
     this.isDelegated = serviceMethod.isDelegated
@@ -327,7 +327,7 @@ class TaskExecutor(
     // else use CheckMode method annotation on method or class
       ?: workflowMethod.checkMode
       // else use default value
-      ?: DEFAULT_WORKFLOW_CHECK_MODE
+      ?: WORKFLOW_CHECK_MODE_DEFAULT
 
     serviceInstance.apply {
       this.checkMode = checkMode
@@ -342,27 +342,27 @@ class TaskExecutor(
         // THE @Timeout ANNOTATION OR THE WithTimeout INTERFACE
         // THAT HAS A DIFFERENT MEANING IN WORKFLOWS
         // else use default value
-      ?: DEFAULT_WORKFLOW_TASK_WITH_TIMEOUT
+      ?: WORKFLOW_TASK_WITH_TIMEOUT_DEFAULT
 
     // use withRetry from registry, if it exists
     this.withRetry = registeredWorkflowExecutor.withRetry
         // else use @Retry annotation, or WithRetry interface
       ?: workflowMethod.withRetry.getOrThrow()
           // else use default value
-          ?: DEFAULT_WORKFLOW_TASK_WITH_RETRY
+          ?: WORKFLOW_TASK_WITH_RETRY_DEFAULT
 
     return Triple(serviceInstance, serviceMethod, serviceArgs)
   }
 
   private fun ExecuteTask.logError(e: Throwable, description: (() -> String)?) {
     logger.error(e) {
-      "${serviceName}::${methodName} (${taskId}): ${description?.let { it() } ?: e.message}"
+      "${serviceName}::${methodName} (${taskId}): ${description?.let { it() } ?: e.message ?: ""}"
     }
   }
 
   private fun ExecuteTask.logWarn(e: Exception, description: (() -> String)?) {
     logger.warn(e) {
-      "${serviceName}::${methodName} (${taskId}): ${description?.let { it() } ?: e.message}"
+      "${serviceName}::${methodName} (${taskId}): ${description?.let { it() } ?: e.message ?: ""}"
     }
   }
 
@@ -379,10 +379,10 @@ class TaskExecutor(
   }
 
   companion object {
-    val DEFAULT_TASK_WITH_TIMEOUT: WithTimeout? = null
-    val DEFAULT_TASK_WITH_RETRY: WithRetry? = null
-    val DEFAULT_WORKFLOW_TASK_WITH_TIMEOUT = WithTimeout { 60.0 }
-    val DEFAULT_WORKFLOW_TASK_WITH_RETRY: WithRetry? = null
-    val DEFAULT_WORKFLOW_CHECK_MODE = WorkflowCheckMode.simple
+    val TASK_WITH_TIMEOUT_DEFAULT: WithTimeout? = null
+    val TASK_WITH_RETRY_DEFAULT: WithRetry? = null
+    val WORKFLOW_TASK_WITH_TIMEOUT_DEFAULT = WithTimeout { 60.0 }
+    val WORKFLOW_TASK_WITH_RETRY_DEFAULT: WithRetry? = null
+    val WORKFLOW_CHECK_MODE_DEFAULT = WorkflowCheckMode.simple
   }
 }
