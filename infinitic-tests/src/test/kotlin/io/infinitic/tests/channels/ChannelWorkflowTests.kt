@@ -275,6 +275,7 @@ internal class ChannelWorkflowTests :
 
           val error = shouldThrow<WorkflowFailedException> { deferred.await() }
 
+          println(error)
           (error.deferredException as WorkflowTaskFailedException).workerException.name shouldBe
               OutOfBoundAwaitException::class.java.name
         }

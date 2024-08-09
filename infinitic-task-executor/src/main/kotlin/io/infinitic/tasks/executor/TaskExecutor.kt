@@ -32,6 +32,7 @@ import io.infinitic.common.data.methods.MethodName
 import io.infinitic.common.data.methods.MethodParameterTypes
 import io.infinitic.common.data.methods.deserializeArgs
 import io.infinitic.common.data.methods.encodeReturnValue
+import io.infinitic.common.emitters.EmitterName
 import io.infinitic.common.requester.WorkflowRequester
 import io.infinitic.common.requester.workflowId
 import io.infinitic.common.requester.workflowName
@@ -52,7 +53,6 @@ import io.infinitic.common.utils.getMethodPerNameAndParameters
 import io.infinitic.common.utils.isDelegated
 import io.infinitic.common.utils.withRetry
 import io.infinitic.common.utils.withTimeout
-import io.infinitic.common.workers.config.RetryPolicy
 import io.infinitic.common.workers.registry.WorkerRegistry
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskParameters
 import io.infinitic.common.workflows.data.workflows.WorkflowName
@@ -82,6 +82,7 @@ class TaskExecutor(
 
   private val logger = KotlinLogging.logger(this::class.java.name)
   private val producer = LoggedInfiniticProducer(this::class.java.name, producerAsync)
+  private val emitterName by lazy { EmitterName(producerAsync.producerName) }
   private var withRetry: WithRetry? = null
   private var withTimeout: WithTimeout? = null
   private var isDelegated = false
@@ -152,16 +153,19 @@ class TaskExecutor(
         }
       }
     } catch (e: TimeoutCancellationException) {
-      retryTask(msg, taskContext, TimeoutException("Task execution timed-out after $timeout ms"))
+      msg.retryOrSendTaskFailed(
+          taskContext,
+          TimeoutException("Task execution timed-out after $timeout ms"),
+      )
       // stop here
       return@coroutineScope
     } catch (e: InvocationTargetException) {
       // exception in method execution
       when (val cause = e.cause ?: e.targetException) {
-        // do not retry failed workflow task due to failed/canceled task/workflow
+        // Do not retry failed workflow task due to failed/canceled task/workflow
         is DeferredException -> msg.sendTaskFailed(cause, taskContext.meta) { cause.description }
-        // exception during task execution
-        is Exception -> retryTask(msg, taskContext, cause)
+        // Check if this task should be retried
+        is Exception -> msg.retryOrSendTaskFailed(taskContext, cause)
         // Throwable are not caught
         is Throwable -> throw cause
       }
@@ -169,7 +173,7 @@ class TaskExecutor(
       return@coroutineScope
     } catch (e: Exception) {
       // Catch everything else
-      msg.sendTaskFailed(e, taskContext.meta) { "Unexpected error" }
+      msg.sendTaskFailed(e, taskContext.meta)
       // stop here
       return@coroutineScope
     }
@@ -177,49 +181,48 @@ class TaskExecutor(
     msg.sendTaskCompleted(output, method, taskContext.meta)
   }
 
-  private suspend fun retryTask(
-    msg: ExecuteTask,
+  private suspend fun ExecuteTask.retryOrSendTaskFailed(
     taskContext: TaskContext,
     cause: Exception
   ) {
-    // Retrieving delay before retry
-    val delayMillis = try {
-      msg.logTrace { "Retrieving delay before retry" }
-      // We set the localThread context here as it may be used in withRetry
-      Task.setContext(taskContext)
-      // get seconds before retry
-      withRetry?.getMillisBeforeRetry(taskContext.retryIndex.toInt(), cause)
-    } catch (e: Exception) {
+    val delayMillis = getDelayMillis(taskContext, cause).getOrElse {
       // We chose here not to obfuscate the initial cause of the failure
-      msg.sendTaskFailed(cause, taskContext.meta) {
-        "Unable to retry due to an ${e::class.simpleName} error in ${withRetry?.javaClass?.simpleName} method"
+      sendTaskFailed(cause, taskContext.meta) {
+        "Unable to retry. A ${it::class.java.name} has threw in $withRetry method:\n" + it.stackTraceToString()
       }
-
       return
     }
 
     when {
-      delayMillis == null -> msg.sendTaskFailed(cause, taskContext.meta) {
-        cause.message ?: "Unknown error"
-      }
-
-      else -> msg.sendRetryTask(cause, MillisDuration(delayMillis), taskContext.meta)
+      delayMillis == null -> sendTaskFailed(cause, taskContext.meta)
+      else -> sendRetryTask(cause, MillisDuration(delayMillis), taskContext.meta)
     }
   }
 
+  private fun ExecuteTask.getDelayMillis(taskContext: TaskContext, cause: Exception) = try {
+    logDebug { "Retrieving delay before retry" }
+    // We set the localThread context here as it may be used in withRetry
+    Task.setContext(taskContext)
+    // get millis before retry
+    val delayMillis = withRetry?.getMillisBeforeRetry(taskContext.retryIndex.toInt(), cause)
+    logTrace { "Delay before retry retrieved: $delayMillis" }
+    Result.success(delayMillis)
+  } catch (e: Exception) {
+    Result.failure(e)
+  }
+
   private suspend fun ExecuteTask.sendTaskStarted() {
-    val event = TaskStartedEvent.from(this, emitterName)
+    val event = TaskStartedEvent.from(this, this@TaskExecutor.emitterName)
     with(producer) { event.sendTo(ServiceEventsTopic) }
   }
 
   suspend fun ExecuteTask.sendTaskFailed(
     cause: Throwable,
     meta: Map<String, ByteArray>,
-    description: (() -> String)
+    description: (() -> String)? = null
   ) {
     logError(cause, description)
-
-    val event = TaskFailedEvent.from(this, emitterName, cause, meta)
+    val event = TaskFailedEvent.from(this, this@TaskExecutor.emitterName, cause, meta)
     with(producer) { event.sendTo(ServiceEventsTopic) }
   }
 
@@ -229,6 +232,7 @@ class TaskExecutor(
     meta: Map<String, ByteArray>
   ) {
     logWarn(cause) { "Retrying in $delay" }
+    val emitterName = this@TaskExecutor.emitterName
 
     val executeTask = ExecuteTask.retryFrom(this, emitterName, cause, meta)
     with(producer) { executeTask.sendTo(DelayedServiceExecutorTopic, delay) }
@@ -243,15 +247,12 @@ class TaskExecutor(
     method: Method,
     meta: Map<String, ByteArray>
   ) {
-    if (isDelegated && output != null) {
-      logDebug {
-        "Method '$method' has an '${Delegated::class.java.name}' annotation, so result is ignored"
-      }
+    if (isDelegated && output != null) logDebug {
+      "Method '$method' has an '${Delegated::class.java.name}' annotation, so its result is ignored"
     }
-
     val returnValue = method.encodeReturnValue(output)
-
-    val event = TaskCompletedEvent.from(this, emitterName, returnValue, isDelegated, meta)
+    val event =
+        TaskCompletedEvent.from(this, this@TaskExecutor.emitterName, returnValue, isDelegated, meta)
     with(producer) { event.sendTo(ServiceEventsTopic) }
   }
 
@@ -283,14 +284,14 @@ class TaskExecutor(
             // else use @Timeout annotation, or WithTimeout interface
           ?: serviceMethod.withTimeout.getOrThrow()
               // else use default value
-              ?: DEFAULT_TASK_TIMEOUT
+              ?: DEFAULT_TASK_WITH_TIMEOUT
 
     // use withRetry from registry, if it exists
     this.withRetry = registeredServiceExecutor.withRetry
         // else use @Timeout annotation, or WithTimeout interface
       ?: serviceMethod.withRetry.getOrThrow()
           // else use default value
-          ?: DEFAULT_TASK_RETRY
+          ?: DEFAULT_TASK_WITH_RETRY
 
     // check is this method has the @Async annotation
     this.isDelegated = serviceMethod.isDelegated
@@ -341,27 +342,27 @@ class TaskExecutor(
         // THE @Timeout ANNOTATION OR THE WithTimeout INTERFACE
         // THAT HAS A DIFFERENT MEANING IN WORKFLOWS
         // else use default value
-      ?: DEFAULT_WORKFLOW_TASK_TIMEOUT
+      ?: DEFAULT_WORKFLOW_TASK_WITH_TIMEOUT
 
     // use withRetry from registry, if it exists
     this.withRetry = registeredWorkflowExecutor.withRetry
         // else use @Retry annotation, or WithRetry interface
       ?: workflowMethod.withRetry.getOrThrow()
           // else use default value
-          ?: DEFAULT_WORKFLOW_TASK_RETRY
+          ?: DEFAULT_WORKFLOW_TASK_WITH_RETRY
 
     return Triple(serviceInstance, serviceMethod, serviceArgs)
   }
 
-  private fun ExecuteTask.logError(e: Throwable, description: () -> String) {
+  private fun ExecuteTask.logError(e: Throwable, description: (() -> String)?) {
     logger.error(e) {
-      "${serviceName}::${methodName} (${taskId}): ${description()}"
+      "${serviceName}::${methodName} (${taskId}): ${description?.let { it() } ?: e.message}"
     }
   }
 
-  private fun ExecuteTask.logWarn(e: Exception? = null, description: () -> String) {
+  private fun ExecuteTask.logWarn(e: Exception, description: (() -> String)?) {
     logger.warn(e) {
-      "${serviceName}::${methodName} (${taskId}): ${description()}"
+      "${serviceName}::${methodName} (${taskId}): ${description?.let { it() } ?: e.message}"
     }
   }
 
@@ -378,10 +379,10 @@ class TaskExecutor(
   }
 
   companion object {
-    val DEFAULT_TASK_TIMEOUT: WithTimeout? = null
-    val DEFAULT_TASK_RETRY: RetryPolicy = RetryPolicy.DEFAULT
-    val DEFAULT_WORKFLOW_TASK_TIMEOUT = WithTimeout { 60.0 }
-    val DEFAULT_WORKFLOW_TASK_RETRY: RetryPolicy? = null
+    val DEFAULT_TASK_WITH_TIMEOUT: WithTimeout? = null
+    val DEFAULT_TASK_WITH_RETRY: WithRetry? = null
+    val DEFAULT_WORKFLOW_TASK_WITH_TIMEOUT = WithTimeout { 60.0 }
+    val DEFAULT_WORKFLOW_TASK_WITH_RETRY: WithRetry? = null
     val DEFAULT_WORKFLOW_CHECK_MODE = WorkflowCheckMode.simple
   }
 }
