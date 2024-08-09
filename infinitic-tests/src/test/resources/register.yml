@@ -30,13 +30,15 @@ services:
   - name: annotatedService
     class: io.infinitic.utils.AnnotatedServiceImpl
     concurrency: 5
-  - name: io.infinitic.tests.utils.UtilService
-    class: io.infinitic.tests.utils.UtilServiceImpl
+  - name: io.infinitic.utils.UtilService
+    class: io.infinitic.utils.UtilServiceImpl
     concurrency: 5
+    timeoutInSeconds: 100
     retry:
       maximumRetries: 1
-  - name: io.infinitic.tests.utils.TestService
-    class: io.infinitic.tests.utils.TestServiceImpl
+      randomFactor: 0
+  - name: io.infinitic.utils.TestService
+    class: io.infinitic.utils.TestServiceImpl
     concurrency: 5
   - name: io.infinitic.tests.jsonView.JsonViewService
     class: io.infinitic.tests.jsonView.JsonViewServiceImpl
@@ -46,8 +48,8 @@ workflows:
   - name: annotatedWorkflow
     class: io.infinitic.utils.AnnotatedWorkflowImpl
     concurrency: 2
-  - name: io.infinitic.tests.utils.UtilWorkflow
-    class: io.infinitic.tests.utils.UtilWorkflowImpl
+  - name: io.infinitic.utils.UtilWorkflow
+    class: io.infinitic.utils.UtilWorkflowImpl
     concurrency: 2
   - name: io.infinitic.tests.branches.BranchesWorkflow
     class: io.infinitic.tests.branches.BranchesWorkflowImpl

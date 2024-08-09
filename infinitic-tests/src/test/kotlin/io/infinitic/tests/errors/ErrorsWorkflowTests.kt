@@ -30,8 +30,8 @@ import io.infinitic.exceptions.WorkflowFailedException
 import io.infinitic.exceptions.WorkflowTaskFailedException
 import io.infinitic.exceptions.WorkflowUnknownException
 import io.infinitic.tests.channels.ChannelsWorkflow
-import io.infinitic.tests.utils.UtilService
-import io.infinitic.tests.utils.UtilWorkflow
+import io.infinitic.utils.UtilService
+import io.infinitic.utils.UtilWorkflow
 import io.infinitic.workflows.DeferredStatus
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.StringSpec

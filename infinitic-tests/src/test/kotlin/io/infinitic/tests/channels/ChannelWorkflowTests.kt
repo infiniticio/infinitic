@@ -274,8 +274,6 @@ internal class ChannelWorkflowTests :
           later { repeat(count) { w.channelStrA.send("a") } }
 
           val error = shouldThrow<WorkflowFailedException> { deferred.await() }
-
-          println(error)
           (error.deferredException as WorkflowTaskFailedException).workerException.name shouldBe
               OutOfBoundAwaitException::class.java.name
         }

@@ -21,7 +21,7 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.tests.utils
+package io.infinitic.utils
 
 import io.infinitic.tasks.WithTimeout
 

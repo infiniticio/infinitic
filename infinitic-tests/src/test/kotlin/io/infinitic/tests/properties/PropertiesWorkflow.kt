@@ -23,7 +23,7 @@
 package io.infinitic.tests.properties
 
 import io.infinitic.annotations.Ignore
-import io.infinitic.tests.utils.UtilService
+import io.infinitic.utils.UtilService
 import io.infinitic.workflows.Deferred
 import io.infinitic.workflows.Workflow
 

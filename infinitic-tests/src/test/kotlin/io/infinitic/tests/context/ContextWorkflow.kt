@@ -24,7 +24,7 @@ package io.infinitic.tests.context
 
 import io.infinitic.common.tasks.data.TaskMeta
 import io.infinitic.common.workflows.data.workflows.WorkflowMeta
-import io.infinitic.tests.utils.UtilService
+import io.infinitic.utils.UtilService
 import io.infinitic.workflows.Workflow
 
 interface ContextWorkflow {

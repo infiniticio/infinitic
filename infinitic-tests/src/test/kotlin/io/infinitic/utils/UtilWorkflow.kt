@@ -20,7 +20,7 @@
  *
  * Licensor: infinitic.io
  */
-package io.infinitic.tests.utils
+package io.infinitic.utils
 
 import io.infinitic.annotations.Ignore
 import io.infinitic.tests.channels.ChannelsWorkflow

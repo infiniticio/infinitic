@@ -23,7 +23,7 @@
 package io.infinitic.tests.timers
 
 import io.infinitic.common.exceptions.thisShouldNotHappen
-import io.infinitic.tests.utils.UtilService
+import io.infinitic.utils.UtilService
 import io.infinitic.workflows.SendChannel
 import io.infinitic.workflows.Workflow
 import io.infinitic.workflows.or

@@ -27,7 +27,7 @@ import io.infinitic.exceptions.DeferredFailedException
 import io.infinitic.exceptions.TaskFailedException
 import io.infinitic.exceptions.WorkflowFailedException
 import io.infinitic.exceptions.WorkflowUnknownException
-import io.infinitic.tests.utils.UtilService
+import io.infinitic.utils.UtilService
 import io.infinitic.workflows.Deferred
 import io.infinitic.workflows.Workflow
 import java.time.Duration

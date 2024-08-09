@@ -23,7 +23,7 @@
 package io.infinitic.tests.deferred
 
 import io.infinitic.Test
-import io.infinitic.tests.utils.UtilWorkflow
+import io.infinitic.utils.UtilWorkflow
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.collections.shouldBeIn
 import io.kotest.matchers.shouldBe
