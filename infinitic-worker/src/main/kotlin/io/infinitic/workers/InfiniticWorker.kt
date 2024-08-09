@@ -28,6 +28,7 @@ import io.infinitic.autoclose.autoClose
 import io.infinitic.clients.InfiniticClient
 import io.infinitic.common.data.MillisInstant
 import io.infinitic.common.messages.Message
+import io.infinitic.common.tasks.executors.messages.ExecuteTask
 import io.infinitic.common.transport.DelayedServiceExecutorTopic
 import io.infinitic.common.transport.DelayedWorkflowEngineTopic
 import io.infinitic.common.transport.DelayedWorkflowTaskExecutorTopic
@@ -206,9 +207,14 @@ class InfiniticWorker(
               entity = it.key.toString(),
               handler = workflowTaskExecutor::handle,
               beforeDlq = { message, cause ->
-                logMessageSentToDLQ(message, cause)
-                message?.let {
-                  workflowTaskExecutor.sendTaskFailed(it, cause, Task.meta, sendingDlqMessage)
+                when (message) {
+                  null -> Unit
+                  is ExecuteTask -> {
+                    logMessageSentToDLQ(message, cause)
+                    with(workflowTaskExecutor) {
+                      message.sendTaskFailed(cause, Task.meta, sendingDlqMessage)
+                    }
+                  }
                 }
               },
               concurrency = it.value.concurrency,
@@ -264,9 +270,14 @@ class InfiniticWorker(
               entity = it.key.toString(),
               handler = taskExecutor::handle,
               beforeDlq = { message, cause ->
-                logMessageSentToDLQ(message, cause)
-                message?.let {
-                  taskExecutor.sendTaskFailed(it, cause, Task.meta, sendingDlqMessage)
+                when (message) {
+                  null -> Unit
+                  is ExecuteTask -> {
+                    logMessageSentToDLQ(message, cause)
+                    with(taskExecutor) {
+                      message.sendTaskFailed(cause, Task.meta, sendingDlqMessage)
+                    }
+                  }
                 }
               },
               concurrency = it.value.concurrency,
