@@ -68,10 +68,10 @@ data class PostgresConfig(
   }
 
   companion object {
-    private val pools = ConcurrentHashMap<PostgresConfig, HikariDataSource>()
-
     @JvmStatic
-    fun builder() = Builder()
+    fun builder() = PostgresConfigBuilder()
+
+    private val pools = ConcurrentHashMap<PostgresConfig, HikariDataSource>()
   }
 
   fun close() {
@@ -160,7 +160,7 @@ data class PostgresConfig(
   /**
    * PostgresConfig builder (Useful for Java user)
    */
-  class Builder {
+  class PostgresConfigBuilder {
     private val default = PostgresConfig()
 
     private var host = default.host

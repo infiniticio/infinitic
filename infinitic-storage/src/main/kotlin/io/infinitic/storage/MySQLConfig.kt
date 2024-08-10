@@ -68,10 +68,10 @@ data class MySQLConfig(
   }
 
   companion object {
-    private val pools = ConcurrentHashMap<MySQLConfig, HikariDataSource>()
-
     @JvmStatic
-    fun builder() = Builder()
+    fun builder() = MySQLConfigBuilder()
+    
+    private val pools = ConcurrentHashMap<MySQLConfig, HikariDataSource>()
   }
 
   fun close() {
@@ -160,7 +160,7 @@ data class MySQLConfig(
   /**
    * MySQLConfig builder (Useful for Java user)
    */
-  class Builder {
+  class MySQLConfigBuilder {
     private val default = MySQLConfig()
 
     private var host = default.host

@@ -24,9 +24,9 @@ package io.infinitic.cache.caches.caffeine
 
 import com.github.benmanes.caffeine.cache.Cache
 import com.github.benmanes.caffeine.cache.Caffeine
+import io.infinitic.cache.CaffeineConfig
 import io.infinitic.cache.caches.Flushable
 import io.infinitic.cache.caches.keyValue.CachedKeyValue
-import io.infinitic.cache.Caffeine as CaffeineConfig
 
 class CaffeineCachedKeyValue<S : Any>(config: CaffeineConfig) : CachedKeyValue<S>, Flushable {
   private var caffeine: Cache<String, S> = Caffeine.newBuilder().setup(config).build()

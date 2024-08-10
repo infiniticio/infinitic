@@ -22,7 +22,7 @@
  */
 package io.infinitic.cache.caches.caffeine
 
-import io.infinitic.cache.Caffeine
+import io.infinitic.cache.CaffeineConfig
 import io.kotest.assertions.throwables.shouldNotThrowAny
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
@@ -30,7 +30,7 @@ import io.kotest.matchers.shouldBe
 class CaffeineCachedKeyValueTests :
   StringSpec(
       {
-        val storage = CaffeineCachedKeyValue<ByteArray>(Caffeine())
+        val storage = CaffeineCachedKeyValue<ByteArray>(CaffeineConfig())
 
         val known = "foo"
         val unknown = "bar"

@@ -28,12 +28,12 @@ import io.infinitic.cache.caches.keySet.CachedKeySet
 import io.infinitic.cache.caches.keyValue.CachedKeyValue
 
 data class CacheConfig(
-  internal val caffeine: Caffeine? = null
+  internal val caffeine: CaffeineConfig? = null
 ) {
 
   companion object {
     @JvmStatic
-    fun from(caffeine: Caffeine) = CacheConfig(caffeine = caffeine)
+    fun from(caffeineConfig: CaffeineConfig) = CacheConfig(caffeine = caffeineConfig)
   }
 
   val type: CacheType by lazy {

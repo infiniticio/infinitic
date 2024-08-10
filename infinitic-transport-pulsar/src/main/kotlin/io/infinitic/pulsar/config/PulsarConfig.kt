@@ -40,7 +40,7 @@ import org.apache.pulsar.client.impl.auth.oauth2.AuthenticationFactoryOAuth2
 import org.apache.pulsar.client.impl.auth.AuthenticationAthenz as PulsarAuthenticationAthenz
 import org.apache.pulsar.client.impl.auth.AuthenticationSasl as PulsarAuthenticationSasl
 
-data class PulsarConfig @JvmOverloads constructor(
+data class PulsarConfig(
   val tenant: String,
   val namespace: String,
   val brokerServiceUrl: String = "pulsar://localhost:6650/",
@@ -59,7 +59,11 @@ data class PulsarConfig @JvmOverloads constructor(
   val producer: ProducerConfig = ProducerConfig(),
   val consumer: ConsumerConfig = ConsumerConfig()
 ) {
+
   companion object {
+    @JvmStatic
+    fun builder() = PulsarConfigBuilder()
+
     private val logger = KotlinLogging.logger {}
   }
 
@@ -243,8 +247,7 @@ data class PulsarConfig @JvmOverloads constructor(
   /**
    * PulsarConfig builder (Useful for Java user)
    */
-  @Suppress("unused")
-  class Builder {
+  class PulsarConfigBuilder {
     private val default: PulsarConfig = PulsarConfig("", "")
 
     private var tenant = default.tenant

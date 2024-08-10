@@ -34,10 +34,14 @@ import io.infinitic.pulsar.config.policies.PoliciesConfig
 @Suppress("MemberVisibilityCanBePrivate")
 class PulsarResources(
   val admin: PulsarInfiniticAdmin,
-    // tenant configuration
+  /**
+   * tenant configuration
+   */
   val tenant: String,
   val allowedClusters: Set<String>?,
-    // namespace configuration
+  /**
+   * namespace configuration
+   */
   val namespace: String,
   val adminRoles: Set<String>?,
   val policies: PoliciesConfig

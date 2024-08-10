@@ -59,16 +59,7 @@ data class StorageConfig(
 
   companion object {
     @JvmStatic
-    fun from(inMemoryConfig: InMemoryConfig) = StorageConfig(inMemory = inMemoryConfig)
-
-    @JvmStatic
-    fun from(redisConfig: RedisConfig) = StorageConfig(redis = redisConfig)
-
-    @JvmStatic
-    fun from(mysqlConfig: MySQLConfig) = StorageConfig(mysql = mysqlConfig)
-
-    @JvmStatic
-    fun from(postgresConfig: PostgresConfig) = StorageConfig(postgres = postgresConfig)
+    fun builder() = StorageConfigBuilder()
   }
 
   fun close() {
@@ -109,6 +100,27 @@ data class StorageConfig(
       postgres != null -> PostgresKeyValueStorage.from(postgres)
       else -> thisShouldNotHappen()
     }.let { CompressedKeyValueStorage(compression, it) }.withCache()
+  }
+
+  /**
+   * StorageConfig builder (Useful for Java user)
+   */
+  class StorageConfigBuilder {
+    private var inMemory: InMemoryConfig? = null
+    private var redis: RedisConfig? = null
+    private var mysql: MySQLConfig? = null
+    private var postgres: PostgresConfig? = null
+    private var compression: CompressionConfig? = null
+    private var cache: CacheConfig? = null
+
+    fun inMemory(inMemory: InMemoryConfig) = apply { this.inMemory = inMemory }
+    fun redis(redis: RedisConfig) = apply { this.redis = redis }
+    fun mysql(mysql: MySQLConfig) = apply { this.mysql = mysql }
+    fun postgres(postgres: PostgresConfig) = apply { this.postgres = postgres }
+    fun compression(compression: CompressionConfig) = apply { this.compression = compression }
+    fun cache(cache: CacheConfig) = apply { this.cache = cache }
+
+    fun build() = StorageConfig(inMemory, redis, mysql, postgres, compression, cache)
   }
 
   private fun thisShouldNotHappen(): Nothing {

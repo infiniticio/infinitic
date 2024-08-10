@@ -31,11 +31,11 @@ data class AuthenticationSaslConfig(
   val privateKey: Secret,
   val keyId: String = DEFAULT_KEY_ID,
 ) : ClientAuthenticationConfig() {
+
   /**
    * AuthenticationOAuth2Config builder (Useful for Java user)
    */
-  @Suppress("unused")
-  class Builder {
+  class AuthenticationSaslConfigBuilder {
     private var tenantDomain: String? = null
     private var tenantService: String? = null
     private var providerDomain: String? = null
@@ -58,6 +58,9 @@ data class AuthenticationSaslConfig(
   }
 
   companion object {
+    @JvmStatic
+    fun builder() = AuthenticationSaslConfigBuilder()
+
     private const val DEFAULT_KEY_ID = "0"
   }
 }

@@ -24,7 +24,7 @@ package io.infinitic.pulsar.config.policies
 
 import org.apache.pulsar.common.policies.data.SchemaCompatibilityStrategy
 
-data class PoliciesConfig @JvmOverloads constructor(
+data class PoliciesConfig(
     // Retain messages for 7 days
   val retentionTimeInMinutes: Int = 60 * 24 * 7,
     // Retain messages up to 1GB
@@ -47,11 +47,15 @@ data class PoliciesConfig @JvmOverloads constructor(
   val deduplicationEnabled: Boolean = true,
 ) {
 
+  companion object {
+    @JvmStatic
+    fun builder() = PoliciesConfigBuilder()
+  }
+
   /**
    * PoliciesConfig builder (Useful for Java user)
    */
-  @Suppress("unused")
-  class Builder {
+  class PoliciesConfigBuilder {
     private val default = PoliciesConfig()
 
     private var retentionTimeInMinutes = default.retentionTimeInMinutes

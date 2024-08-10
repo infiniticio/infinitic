@@ -35,8 +35,7 @@ data class AuthenticationAthenzConfig(
   /**
    * AuthenticationAthenzConfig builder (Useful for Java user)
    */
-  @Suppress("unused")
-  class Builder {
+  class AuthenticationAthenzConfigBuilder {
     private var tenantDomain: String? = null
     private var tenantService: String? = null
     private var providerDomain: String? = null
@@ -59,6 +58,9 @@ data class AuthenticationAthenzConfig(
   }
 
   companion object {
+    @JvmStatic
+    fun builder() = AuthenticationAthenzConfigBuilder()
+
     private const val DEFAULT_KEY_ID = "0"
   }
 }

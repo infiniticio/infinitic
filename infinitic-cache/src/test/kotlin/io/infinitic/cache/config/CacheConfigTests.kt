@@ -25,7 +25,7 @@ package io.infinitic.cache.config
 import com.sksamuel.hoplite.ConfigLoaderBuilder
 import com.sksamuel.hoplite.yaml.YamlPropertySource
 import io.infinitic.cache.CacheConfig
-import io.infinitic.cache.Caffeine
+import io.infinitic.cache.CaffeineConfig
 import io.infinitic.cache.caches.caffeine.CaffeineCachedKeySet
 import io.infinitic.cache.caches.caffeine.CaffeineCachedKeyValue
 import io.kotest.core.spec.style.StringSpec
@@ -59,7 +59,7 @@ cache:
   caffeine:
      """,
           )
-          config shouldBe CacheConfigImpl(cache = CacheConfig(caffeine = Caffeine()))
+          config shouldBe CacheConfigImpl(cache = CacheConfig(caffeine = CaffeineConfig()))
           config.cache.type shouldBe CacheConfig.CacheType.CAFFEINE
           config.cache.keyValue!!::class shouldBe CaffeineCachedKeyValue::class
           config.cache.keySet!!::class shouldBe CaffeineCachedKeySet::class
@@ -78,7 +78,7 @@ cache:
 
           config shouldBe CacheConfigImpl(
               cache = CacheConfig(
-                  caffeine = Caffeine(
+                  caffeine = CaffeineConfig(
                       100,
                       42,
                       64,

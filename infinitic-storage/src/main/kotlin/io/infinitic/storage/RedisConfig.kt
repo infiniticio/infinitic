@@ -38,11 +38,12 @@ data class RedisConfig(
   var ssl: Boolean = false,
   var poolConfig: PoolConfig = PoolConfig()
 ) {
+  
   companion object {
-    private val pools = ConcurrentHashMap<RedisConfig, JedisPool>()
-
     @JvmStatic
-    fun builder() = Builder()
+    fun builder() = RedisConfigBuilder()
+
+    private val pools = ConcurrentHashMap<RedisConfig, JedisPool>()
   }
 
   fun close() {
@@ -84,7 +85,7 @@ data class RedisConfig(
   /**
    * RedisConfig builder (Useful for Java user)
    */
-  class Builder {
+  class RedisConfigBuilder {
     private val default = RedisConfig()
 
     private var host = default.host

@@ -50,13 +50,19 @@ data class ConsumerConfig(
   val maxRedeliverCount: Int? = null
 ) {
   companion object {
+    @JvmStatic
+    fun builder() = ConsumerConfigBuilder()
+
     const val DEFAULT_MAX_REDELIVER_COUNT = 3
   }
 
   fun getMaxRedeliverCount() = maxRedeliverCount ?: DEFAULT_MAX_REDELIVER_COUNT
 
-  @Suppress("unused")
-  class Builder {
+
+  /**
+   * ConsumerConfig builder (Useful for Java user)
+   */
+  class ConsumerConfigBuilder {
     private val default = ConsumerConfig()
 
     private var loadConf = default.loadConf

@@ -29,12 +29,11 @@ data class AuthenticationOAuth2Config(
   val privateKey: URL,
   val audience: String
 ) : ClientAuthenticationConfig() {
-
+  
   /**
    * AuthenticationOAuth2Config builder (Useful for Java user)
    */
-  @Suppress("unused")
-  class Builder {
+  class AuthenticationOAuth2ConfigBuilder {
     private var issuerUrl: URL? = null
     private var privateKey: URL? = null
     private var audience: String? = null
@@ -48,5 +47,10 @@ data class AuthenticationOAuth2Config(
         privateKey ?: throw IllegalArgumentException("privateKey must be set"),
         audience ?: throw IllegalArgumentException("audience must be set"),
     )
+  }
+
+  companion object {
+    @JvmStatic
+    fun builder() = AuthenticationOAuth2ConfigBuilder()
   }
 }

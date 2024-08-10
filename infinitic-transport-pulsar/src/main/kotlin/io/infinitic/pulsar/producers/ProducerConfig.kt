@@ -49,8 +49,18 @@ data class ProducerConfig(
   val roundRobinRouterBatchingPartitionSwitchFrequency: Int? = null,
   val sendTimeoutSeconds: Double? = null
 ) {
-  @Suppress("unused")
-  class Builder {
+
+  companion object {
+    @JvmStatic
+    fun builder() = ProducerConfigBuilder()
+
+    const val DEFAULT_MAX_REDELIVER_COUNT = 3
+  }
+
+  /**
+   * ProducerConfig builder (Useful for Java user)
+   */
+  class ProducerConfigBuilder {
     private val default = ProducerConfig()
 
     private var autoUpdatePartitions = default.autoUpdatePartitions

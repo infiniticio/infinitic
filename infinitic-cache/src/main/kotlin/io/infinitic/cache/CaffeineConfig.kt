@@ -22,7 +22,7 @@
  */
 package io.infinitic.cache
 
-data class Caffeine(
+data class CaffeineConfig(
   val maximumSize: Long? = 10000, // 10k units
   val expireAfterAccess: Long? = 3600, // 1 hour
   val expireAfterWrite: Long? = 3600 // 1 hour
@@ -42,7 +42,7 @@ data class Caffeine(
    * Caffeine builder (Useful for Java user)
    */
   class CaffeineBuilder {
-    private val default = Caffeine()
+    private val default = CaffeineConfig()
 
     private var maximumSize = default.maximumSize
     private var expireAfterAccess = default.expireAfterAccess
@@ -52,7 +52,7 @@ data class Caffeine(
     fun setExpireAfterAccess(expAftAccess: Long) = apply { this.expireAfterAccess = expAftAccess }
     fun setExpireAfterWrite(expAftWrite: Long) = apply { this.expireAfterWrite = expAftWrite }
 
-    fun build() = Caffeine(
+    fun build() = CaffeineConfig(
         maximumSize = maximumSize,
         expireAfterAccess = expireAfterAccess,
         expireAfterWrite = expireAfterWrite,

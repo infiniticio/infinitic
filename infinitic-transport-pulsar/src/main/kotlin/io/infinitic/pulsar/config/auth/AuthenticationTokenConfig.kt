@@ -31,8 +31,7 @@ data class AuthenticationTokenConfig(
   /**
    * AuthenticationTokenConfig builder (Useful for Java user)
    */
-  @Suppress("unused")
-  class Builder {
+  class AuthenticationTokenConfigBuilder {
     private var token: String? = null
 
     fun token(token: String) = apply { this.token = token }
@@ -40,5 +39,10 @@ data class AuthenticationTokenConfig(
     fun build() = AuthenticationTokenConfig(
         Secret(token ?: throw IllegalArgumentException("token must be set")),
     )
+  }
+
+  companion object {
+    @JvmStatic
+    fun builder() = AuthenticationTokenConfigBuilder()
   }
 }

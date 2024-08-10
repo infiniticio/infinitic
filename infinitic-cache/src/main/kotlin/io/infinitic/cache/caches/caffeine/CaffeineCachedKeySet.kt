@@ -24,10 +24,10 @@ package io.infinitic.cache.caches.caffeine
 
 import com.github.benmanes.caffeine.cache.Cache
 import com.github.benmanes.caffeine.cache.Caffeine
+import io.infinitic.cache.CaffeineConfig
 import io.infinitic.cache.caches.Flushable
 import io.infinitic.cache.caches.data.Bytes
 import io.infinitic.cache.caches.keySet.CachedKeySet
-import io.infinitic.cache.Caffeine as CaffeineConfig
 
 class CaffeineCachedKeySet(config: CaffeineConfig) : CachedKeySet<ByteArray>, Flushable {
 
