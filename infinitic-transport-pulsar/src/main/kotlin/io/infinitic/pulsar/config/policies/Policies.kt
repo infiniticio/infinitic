@@ -45,4 +45,9 @@ data class Policies @JvmOverloads constructor(
   val isAllowAutoUpdateSchema: Boolean = true,
     // Enable message deduplication
   val deduplicationEnabled: Boolean = true,
-)
+) {
+  // Builder for Java users
+  class Builder {
+
+  }
+}

@@ -22,6 +22,6 @@
  */
 package io.infinitic.cache.config
 
-import io.infinitic.cache.Cache
+import io.infinitic.cache.CacheConfig
 
-data class CacheConfigImpl(override val cache: Cache = Cache()) : CacheConfigInterface
+data class CacheConfigImpl(val cacheConfig: CacheConfig = CacheConfig()) : CacheConfigInterface

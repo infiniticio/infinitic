@@ -24,12 +24,12 @@ package io.infinitic.cache.caches.caffeine
 
 import com.github.benmanes.caffeine.cache.RemovalCause
 import io.github.oshai.kotlinlogging.KotlinLogging
-import io.infinitic.cache.Cache
+import io.infinitic.cache.CacheConfig
 import io.infinitic.cache.Caffeine
 import java.util.concurrent.TimeUnit
 import com.github.benmanes.caffeine.cache.Caffeine as CaffeineCache
 
-internal val logger = KotlinLogging.logger(Cache::class.java.name)
+internal val logger = KotlinLogging.logger(CacheConfig::class.java.name)
 
 internal fun <S, T> CaffeineCache<S, T>.setup(config: Caffeine): CaffeineCache<S, T> {
 

@@ -22,8 +22,8 @@
  */
 package io.infinitic.storage
 
-import io.infinitic.cache.Cache
-import io.infinitic.storage.compression.Compression
+import io.infinitic.cache.CacheConfig
+import io.infinitic.storage.compression.CompressionConfig
 import io.infinitic.storage.databases.inMemory.InMemoryKeySetStorage
 import io.infinitic.storage.databases.inMemory.InMemoryKeyValueStorage
 import io.infinitic.storage.databases.mysql.MySQLKeySetStorage
@@ -38,20 +38,20 @@ import io.infinitic.storage.keyValue.CachedKeyValueStorage
 import io.infinitic.storage.keyValue.CompressedKeyValueStorage
 import io.infinitic.storage.keyValue.KeyValueStorage
 
-data class Storage(
-  private var inMemory: InMemory? = null,
-  private val redis: Redis? = null,
-  private val mysql: MySQL? = null,
-  private val postgres: Postgres? = null,
-  var compression: Compression? = null,
-  var cache: Cache? = null
+data class StorageConfig(
+  private var inMemory: InMemoryConfig? = null,
+  private val redis: RedisConfig? = null,
+  private val mysql: MySQLConfig? = null,
+  private val postgres: PostgresConfig? = null,
+  var compression: CompressionConfig? = null,
+  var cache: CacheConfig? = null
 ) {
   init {
     val nonNul = listOfNotNull(inMemory, redis, mysql, postgres)
 
     if (nonNul.isEmpty()) {
       // default storage is inMemory
-      inMemory = InMemory()
+      inMemory = InMemoryConfig()
     } else {
       require(nonNul.count() == 1) { "Storage should have only one definition: ${nonNul.joinToString { it::class.java.simpleName }}" }
     }
@@ -59,16 +59,16 @@ data class Storage(
 
   companion object {
     @JvmStatic
-    fun from(inMemory: InMemory) = Storage(inMemory = inMemory)
+    fun from(inMemoryConfig: InMemoryConfig) = StorageConfig(inMemory = inMemoryConfig)
 
     @JvmStatic
-    fun from(redis: Redis) = Storage(redis = redis)
+    fun from(redisConfig: RedisConfig) = StorageConfig(redis = redisConfig)
 
     @JvmStatic
-    fun from(mysql: MySQL) = Storage(mysql = mysql)
+    fun from(mysqlConfig: MySQLConfig) = StorageConfig(mysql = mysqlConfig)
 
     @JvmStatic
-    fun from(postgres: Postgres) = Storage(postgres = postgres)
+    fun from(postgresConfig: PostgresConfig) = StorageConfig(postgres = postgresConfig)
   }
 
   fun close() {

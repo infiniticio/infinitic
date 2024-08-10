@@ -23,7 +23,7 @@
 package io.infinitic.storage.databases.postgres
 
 import com.zaxxer.hikari.HikariDataSource
-import io.infinitic.storage.Postgres
+import io.infinitic.storage.PostgresConfig
 import io.infinitic.storage.keyValue.KeyValueStorage
 import org.jetbrains.annotations.TestOnly
 import kotlin.math.ceil
@@ -34,7 +34,8 @@ class PostgresKeyValueStorage(
 ) : KeyValueStorage {
 
   companion object {
-    fun from(config: Postgres) = PostgresKeyValueStorage(config.getPool(), config.keyValueTable)
+    fun from(config: PostgresConfig) =
+        PostgresKeyValueStorage(config.getPool(), config.keyValueTable)
   }
 
   init {

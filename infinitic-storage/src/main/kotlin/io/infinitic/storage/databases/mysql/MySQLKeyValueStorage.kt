@@ -23,7 +23,7 @@
 package io.infinitic.storage.databases.mysql
 
 import com.zaxxer.hikari.HikariDataSource
-import io.infinitic.storage.MySQL
+import io.infinitic.storage.MySQLConfig
 import io.infinitic.storage.keyValue.KeyValueStorage
 import org.jetbrains.annotations.TestOnly
 
@@ -33,7 +33,7 @@ class MySQLKeyValueStorage(
 ) : KeyValueStorage {
 
   companion object {
-    fun from(config: MySQL) = MySQLKeyValueStorage(config.getPool(), config.keyValueTable)
+    fun from(config: MySQLConfig) = MySQLKeyValueStorage(config.getPool(), config.keyValueTable)
   }
 
   init {

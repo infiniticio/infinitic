@@ -20,45 +20,45 @@
  *
  * Licensor: infinitic.io
  */
-package io.infinitic.cache
+package io.infinitic.storage
 
-import io.infinitic.cache.caches.caffeine.CaffeineCachedKeySet
-import io.infinitic.cache.caches.caffeine.CaffeineCachedKeyValue
-import io.infinitic.cache.caches.keySet.CachedKeySet
-import io.infinitic.cache.caches.keyValue.CachedKeyValue
+import io.infinitic.storage.data.Bytes
+import java.util.concurrent.ConcurrentHashMap
 
-data class Cache(
-  internal val caffeine: Caffeine? = null
-) {
-
+data class InMemoryConfig(private val type: String = "unused") {
   companion object {
-    @JvmStatic
-    fun from(caffeine: Caffeine) = Cache(caffeine = caffeine)
-  }
+    val pools = ConcurrentHashMap<InMemoryConfig, InMemoryPool>()
 
-  val type: CacheType by lazy {
-    when {
-      caffeine != null -> CacheType.CAFFEINE
-      else -> CacheType.NONE
+    fun close() {
+      pools.keys.forEach { it.close() }
     }
   }
 
-  val keySet: CachedKeySet<ByteArray>? by lazy {
-    when {
-      caffeine != null -> CaffeineCachedKeySet(caffeine)
-      else -> null
-    }
+  fun getPool() = pools.computeIfAbsent(this) { InMemoryPool() }
+
+  fun close() {
+    pools[this]?.close()
+    pools.remove(this)
   }
 
-  val keyValue: CachedKeyValue<ByteArray>? by lazy {
-    when {
-      caffeine != null -> CaffeineCachedKeyValue(caffeine)
-      else -> null
-    }
-  }
+  /**
+   * InMemoryPool class represents a pool for storing key-value and key-set pairs in memory.
+   */
+  class InMemoryPool {
+    private val _keySet = mutableMapOf<String, MutableSet<Bytes>>()
 
-  enum class CacheType {
-    NONE,
-    CAFFEINE
+    private val _keyValue = ConcurrentHashMap<String, ByteArray>()
+
+    internal val keySet
+      get() = _keySet
+
+    internal val keyValue
+      get() = _keyValue
+
+    fun close() {
+      _keyValue.clear()
+      _keySet.clear()
+    }
   }
 }
+

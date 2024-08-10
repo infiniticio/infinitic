@@ -27,7 +27,7 @@ import io.infinitic.common.workers.registry.ServiceFactory
 import io.infinitic.common.workers.registry.WorkerRegistry
 import io.infinitic.common.workers.registry.WorkflowFactories
 import io.infinitic.events.config.EventListener
-import io.infinitic.storage.Storage
+import io.infinitic.storage.StorageConfig
 import io.infinitic.tasks.WithRetry
 import io.infinitic.tasks.WithTimeout
 import io.infinitic.workers.register.config.ServiceDefault
@@ -44,7 +44,7 @@ interface InfiniticRegister : AutoCloseable {
   /**
    * Default value of Storage
    */
-  var defaultStorage: Storage
+  var defaultStorage: StorageConfig
 
   /**
    * Service default values
@@ -67,7 +67,7 @@ interface InfiniticRegister : AutoCloseable {
   fun registerServiceTagEngine(
     serviceName: String,
     concurrency: Int? = null,
-    storage: Storage? = null
+    storageConfig: StorageConfig? = null
   )
 
   /** Register service */
@@ -128,7 +128,7 @@ interface InfiniticRegister : AutoCloseable {
   fun registerWorkflowStateEngine(
     workflowName: String,
     concurrency: Int? = null,
-    storage: Storage? = null
+    storageConfig: StorageConfig? = null
   )
 
   /** Register workflow tag engine */
@@ -137,7 +137,7 @@ interface InfiniticRegister : AutoCloseable {
   fun registerWorkflowTagEngine(
     workflowName: String,
     concurrency: Int? = null,
-    storage: Storage? = null
+    storageConfig: StorageConfig? = null
   )
 
   /** Register workflow event listener */

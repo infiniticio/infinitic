@@ -22,11 +22,11 @@
  */
 package io.infinitic.tasks.tag.config
 
-import io.infinitic.storage.Storage
+import io.infinitic.storage.StorageConfig
 
 data class ServiceTagEngine(
   var concurrency: Int? = null,
-  var storage: Storage? = null,
+  var storage: StorageConfig? = null,
 ) {
   var isDefault: Boolean = false
 

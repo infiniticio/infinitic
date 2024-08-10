@@ -23,7 +23,7 @@
 package io.infinitic.storage.databases.postgres
 
 import com.zaxxer.hikari.HikariDataSource
-import io.infinitic.storage.Postgres
+import io.infinitic.storage.PostgresConfig
 import io.infinitic.storage.keySet.KeySetStorage
 import org.jetbrains.annotations.TestOnly
 
@@ -33,7 +33,7 @@ class PostgresKeySetStorage(
 ) : KeySetStorage {
 
   companion object {
-    fun from(config: Postgres) = PostgresKeySetStorage(config.getPool(), config.keySetTable)
+    fun from(config: PostgresConfig) = PostgresKeySetStorage(config.getPool(), config.keySetTable)
   }
 
   init {

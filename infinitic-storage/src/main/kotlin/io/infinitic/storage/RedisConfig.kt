@@ -28,7 +28,7 @@ import redis.clients.jedis.JedisPoolConfig
 import redis.clients.jedis.Protocol
 import java.util.concurrent.ConcurrentHashMap
 
-data class Redis(
+data class RedisConfig(
   val host: String = Protocol.DEFAULT_HOST,
   var port: Int = Protocol.DEFAULT_PORT,
   var timeout: Int = Protocol.DEFAULT_TIMEOUT,
@@ -39,10 +39,10 @@ data class Redis(
   var poolConfig: PoolConfig = PoolConfig()
 ) {
   companion object {
-    private val pools = ConcurrentHashMap<Redis, JedisPool>()
+    private val pools = ConcurrentHashMap<RedisConfig, JedisPool>()
 
     @JvmStatic
-    fun builder() = RedisBuilder()
+    fun builder() = Builder()
   }
 
   fun close() {
@@ -82,10 +82,10 @@ data class Redis(
   }
 
   /**
-   * Redis builder (Useful for Java user)
+   * RedisConfig builder (Useful for Java user)
    */
-  class RedisBuilder {
-    private val default = Redis()
+  class Builder {
+    private val default = RedisConfig()
 
     private var host = default.host
     private var port = default.port
@@ -107,7 +107,7 @@ data class Redis(
     fun setPoolConfig(poolConfigBuilder: PoolConfigBuilder) =
         apply { this.poolConfig = poolConfigBuilder.build() }
 
-    fun build() = Redis(host, port, timeout, user, password, database, ssl, poolConfig)
+    fun build() = RedisConfig(host, port, timeout, user, password, database, ssl, poolConfig)
   }
 
   /**

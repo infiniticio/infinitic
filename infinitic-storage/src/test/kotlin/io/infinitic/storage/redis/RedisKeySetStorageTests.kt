@@ -23,7 +23,7 @@
 package io.infinitic.storage.redis
 
 import io.infinitic.storage.DockerOnly
-import io.infinitic.storage.Redis
+import io.infinitic.storage.RedisConfig
 import io.infinitic.storage.data.Bytes
 import io.infinitic.storage.databases.redis.RedisKeySetStorage
 import io.kotest.core.annotation.EnabledIf
@@ -38,7 +38,7 @@ class RedisKeySetStorageTests :
       {
         val redisServer = GenericContainer(DockerImageName.parse("redis:7.2.3"))
             .withExposedPorts(6379).also { it.start() }
-        val config = Redis(host = redisServer.host, port = redisServer.firstMappedPort)
+        val config = RedisConfig(host = redisServer.host, port = redisServer.firstMappedPort)
         val storage = RedisKeySetStorage.from(config)
 
         afterSpec {

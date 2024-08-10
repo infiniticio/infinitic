@@ -27,10 +27,10 @@ import com.zaxxer.hikari.HikariConfig
 import com.zaxxer.hikari.HikariDataSource
 import java.util.concurrent.ConcurrentHashMap
 
-data class Postgres(
+data class MySQLConfig(
   val host: String = "127.0.0.1",
-  val port: Int = 5432,
-  val user: String = "postgres",
+  val port: Int = 3306,
+  val user: String = "root",
   val password: Secret? = null,
   val database: String = "infinitic",
   val keySetTable: String = "key_set_storage",
@@ -42,9 +42,9 @@ data class Postgres(
   val maxLifetime: Long? = null // milli seconds
 ) {
 
-  private val jdbcUrl = "jdbc:postgresql://$host:$port/$database"
-  private val jdbcUrlDefault = "jdbc:postgresql://$host:$port/postgres"
-  private val driverClassName = "org.postgresql.Driver"
+  private val jdbcUrl = "jdbc:mysql://$host:$port/$database"
+  private val jdbcUrlDefault = "jdbc:mysql://$host:$port/"
+  private val driverClassName = "com.mysql.cj.jdbc.Driver"
 
   init {
     maximumPoolSize?.let {
@@ -63,15 +63,15 @@ data class Postgres(
       require(it > 0) { "maxLifetime must be strictly positive" }
     }
 
-    require(keySetTable.isValidTableName()) { "'$keySetTable' is not a valid PostgresSQL table name" }
-    require(keyValueTable.isValidTableName()) { "'$keyValueTable' is not a valid PostgresSQL table name" }
+    require(keySetTable.isValidTableName()) { "'$keySetTable' is not a valid MySQL table name" }
+    require(keyValueTable.isValidTableName()) { "'$keyValueTable' is not a valid MySQL table name" }
   }
 
   companion object {
-    private val pools = ConcurrentHashMap<Postgres, HikariDataSource>()
+    private val pools = ConcurrentHashMap<MySQLConfig, HikariDataSource>()
 
     @JvmStatic
-    fun builder() = PostgresBuilder()
+    fun builder() = Builder()
   }
 
   fun close() {
@@ -79,15 +79,16 @@ data class Postgres(
     pools.remove(this)
   }
 
-  fun getPool() = pools.computeIfAbsent(this) {
-    // Create the Database if needed
-    initDatabase()
-    // create pool
-    HikariDataSource(hikariConfig)
-  }
+  fun getPool() =
+      pools.computeIfAbsent(this) {
+        // Create the Database if needed
+        initDatabase()
+        // create pool
+        HikariDataSource(hikariConfig)
+      }
 
   private val hikariConfig = HikariConfig().apply {
-    val config = this@Postgres
+    val config = this@MySQLConfig
     jdbcUrl = config.jdbcUrl
     driverClassName = config.driverClassName
     username = config.user
@@ -103,7 +104,7 @@ data class Postgres(
       connection.use { it.metaData.catalogs }.use { resultSet ->
         generateSequence {
           if (resultSet.next()) resultSet.getString(1) else null
-        }.any { it == databaseName }
+        }.any { databaseName.equals(it, ignoreCase = true) }
       }
 
   internal fun HikariDataSource.tableExists(tableName: String): Boolean =
@@ -127,29 +128,28 @@ data class Postgres(
 
   private fun getDefaultPool() = HikariDataSource(
       HikariConfig().apply {
+        val config = this@MySQLConfig
         // use a default source
-        jdbcUrl = this@Postgres.jdbcUrlDefault
-        driverClassName = this@Postgres.driverClassName
-        username = this@Postgres.user
-        password = this@Postgres.password?.value
+        jdbcUrl = config.jdbcUrlDefault
+        driverClassName = config.driverClassName
+        username = config.user
+        password = config.password?.value
       },
   )
 
   private fun String.isValidTableName(): Boolean {
     // Check length
-    // Note that since Postgres uses bytes and Kotlin uses UTF-16 characters,
-    // this will not be entirely correct for multi-byte characters.
-    if (toByteArray(Charsets.UTF_8).size > 63) {
+    if (length > 64) {
       return false
     }
 
     // Check first character
-    if (!first().isLetter() && first() != '_') {
+    if (!first().isLetter()) {
       return false
     }
 
     // Check illegal characters
-    if (any { !it.isLetterOrDigit() && it != '_' && it != '$' }) {
+    if (any { !it.isLetterOrDigit() && it != '_' && it != '$' && it != '#' }) {
       return false
     }
 
@@ -158,10 +158,10 @@ data class Postgres(
   }
 
   /**
-   * Postgres builder (Useful for Java user)
+   * MySQLConfig builder (Useful for Java user)
    */
-  class PostgresBuilder {
-    private val default = Postgres()
+  class Builder {
+    private val default = MySQLConfig()
 
     private var host = default.host
     private var port = default.port
@@ -189,19 +189,21 @@ data class Postgres(
     fun setConnectionTimeout(connTimeout: Long?) = apply { this.connectionTimeout = connTimeout }
     fun setMaxLifetime(maxLifetime: Long?) = apply { this.maxLifetime = maxLifetime }
 
-    fun build() = Postgres(
-        host = host,
-        port = port,
-        user = user,
-        password = password,
-        database = database,
-        keySetTable = keySetTable,
-        keyValueTable = keyValueTable,
-        maximumPoolSize = maximumPoolSize,
-        minimumIdle = minimumIdle,
-        idleTimeout = idleTimeout,
-        connectionTimeout = connectionTimeout,
-        maxLifetime = maxLifetime,
-    )
+    fun build(): MySQLConfig {
+      return MySQLConfig(
+          host = host,
+          port = port,
+          user = user,
+          password = password,
+          database = database,
+          keySetTable = keySetTable,
+          keyValueTable = keyValueTable,
+          maximumPoolSize = maximumPoolSize,
+          minimumIdle = minimumIdle,
+          idleTimeout = idleTimeout,
+          connectionTimeout = connectionTimeout,
+          maxLifetime = maxLifetime,
+      )
+    }
   }
 }

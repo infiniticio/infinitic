@@ -37,7 +37,7 @@ class CompressedKeyValueStorageTests :
       {
         val keyValueStorage = mockk<KeyValueStorage>()
         coEvery { keyValueStorage.get("foo") } returns "bar".toByteArray()
-        Compression.entries.forEach {
+        CompressionConfig.entries.forEach {
           coEvery { keyValueStorage.get(it.toString()) } returns it.compress("bar".toByteArray())
         }
         val bytes = slot<ByteArray>()
@@ -47,16 +47,16 @@ class CompressedKeyValueStorageTests :
         beforeTest { bytes.clear() }
 
         "get returns the uncompressed value, independently of the compressor used" {
-          Compression.entries.forEach { whatEverCompressor ->
+          CompressionConfig.entries.forEach { whatEverCompressor ->
             val compressedStorage = CompressedKeyValueStorage(whatEverCompressor, keyValueStorage)
             compressedStorage.get("foo")!!.contentEquals("bar".toByteArray()) shouldBe true
           }
         }
 
         "get returns a value decompressed, independently of the compressor used" {
-          Compression.entries.forEach { whatEver ->
+          CompressionConfig.entries.forEach { whatEver ->
             val compressedStorage = CompressedKeyValueStorage(whatEver, keyValueStorage)
-            Compression.entries.forEach {
+            CompressionConfig.entries.forEach {
               compressedStorage.get(it.toString())!!
                   .contentEquals("bar".toByteArray()) shouldBe true
             }
@@ -64,7 +64,7 @@ class CompressedKeyValueStorageTests :
         }
 
         "put stores a value compressed with the compressor provided" {
-          Compression.entries.forEach { compressor ->
+          CompressionConfig.entries.forEach { compressor ->
             val compressedStorage = CompressedKeyValueStorage(compressor, keyValueStorage)
             compressedStorage.put("foo", "bar".toByteArray())
             bytes.isCaptured shouldBe true

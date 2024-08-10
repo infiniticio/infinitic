@@ -22,7 +22,7 @@
  */
 package io.infinitic.storage.databases.inMemory
 
-import io.infinitic.storage.InMemory
+import io.infinitic.storage.InMemoryConfig
 import io.infinitic.storage.data.Bytes
 import io.infinitic.storage.keySet.KeySetStorage
 import org.jetbrains.annotations.TestOnly
@@ -31,7 +31,7 @@ class InMemoryKeySetStorage(internal val storage: MutableMap<String, MutableSet<
   KeySetStorage {
 
   companion object {
-    fun from(config: InMemory) = InMemoryKeySetStorage(config.getPool().keySet)
+    fun from(config: InMemoryConfig) = InMemoryKeySetStorage(config.getPool().keySet)
   }
 
   override suspend fun get(key: String): Set<ByteArray> {

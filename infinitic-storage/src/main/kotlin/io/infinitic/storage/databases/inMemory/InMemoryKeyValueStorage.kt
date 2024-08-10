@@ -22,7 +22,7 @@
  */
 package io.infinitic.storage.databases.inMemory
 
-import io.infinitic.storage.InMemory
+import io.infinitic.storage.InMemoryConfig
 import io.infinitic.storage.keyValue.KeyValueStorage
 import org.jetbrains.annotations.TestOnly
 import java.util.concurrent.ConcurrentHashMap
@@ -31,7 +31,7 @@ class InMemoryKeyValueStorage(internal val storage: ConcurrentHashMap<String, By
   KeyValueStorage {
 
   companion object {
-    fun from(config: InMemory) = InMemoryKeyValueStorage(config.getPool().keyValue)
+    fun from(config: InMemoryConfig) = InMemoryKeyValueStorage(config.getPool().keyValue)
   }
 
   override suspend fun get(key: String): ByteArray? {

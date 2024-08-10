@@ -28,7 +28,7 @@ import org.apache.commons.compress.compressors.CompressorStreamFactory
 import java.io.ByteArrayOutputStream
 
 @Suppress("EnumEntryName")
-enum class Compression {
+enum class CompressionConfig {
   gzip {
     override fun toString() = CompressorStreamFactory.GZIP
   },

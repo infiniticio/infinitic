@@ -36,7 +36,7 @@ import io.infinitic.common.workers.registry.WorkerRegistry
 import io.infinitic.common.workers.registry.WorkflowFactories
 import io.infinitic.common.workflows.data.workflows.WorkflowName
 import io.infinitic.events.config.EventListener
-import io.infinitic.storage.Storage
+import io.infinitic.storage.StorageConfig
 import io.infinitic.tasks.WithRetry
 import io.infinitic.tasks.WithTimeout
 import io.infinitic.tasks.tag.storage.BinaryTaskTagStorage
@@ -60,11 +60,11 @@ class InfiniticRegisterImpl : InfiniticRegister {
   private val logger by lazy { KotlinLogging.logger(logName ?: this::class.java.name) }
 
   // thread-safe set of all storage instances used
-  private val storages = ConcurrentHashMap.newKeySet<Storage>()
+  private val storages = ConcurrentHashMap.newKeySet<StorageConfig>()
 
   override val registry = WorkerRegistry()
 
-  override var defaultStorage: Storage = Storage()
+  override var defaultStorage: StorageConfig = StorageConfig()
   override var defaultEventListener: EventListener? = null
   override var serviceDefault: ServiceDefault = ServiceDefault()
   override var workflowDefault: WorkflowDefault = WorkflowDefault()
@@ -123,10 +123,10 @@ class InfiniticRegisterImpl : InfiniticRegister {
   override fun registerServiceTagEngine(
     serviceName: String,
     concurrency: Int?,
-    storage: Storage?
+    storageConfig: StorageConfig?
   ) {
     val service = ServiceName(serviceName)
-    val s = storage ?: serviceDefault.tagEngine?.storage ?: defaultStorage
+    val s = storageConfig ?: serviceDefault.tagEngine?.storage ?: defaultStorage
 
     storages.add(s)
 
@@ -215,10 +215,10 @@ class InfiniticRegisterImpl : InfiniticRegister {
   override fun registerWorkflowStateEngine(
     workflowName: String,
     concurrency: Int?,
-    storage: Storage?,
+    storageConfig: StorageConfig?,
   ) {
     val workflow = WorkflowName(workflowName)
-    val s = storage ?: workflowDefault.stateEngine?.storage ?: defaultStorage
+    val s = storageConfig ?: workflowDefault.stateEngine?.storageConfig ?: defaultStorage
 
     storages.add(s)
 
@@ -239,10 +239,10 @@ class InfiniticRegisterImpl : InfiniticRegister {
   override fun registerWorkflowTagEngine(
     workflowName: String,
     concurrency: Int?,
-    storage: Storage?,
+    storageConfig: StorageConfig?,
   ) {
     val workflow = WorkflowName(workflowName)
-    val s = storage ?: workflowDefault.stateEngine?.storage ?: defaultStorage
+    val s = storageConfig ?: workflowDefault.stateEngine?.storageConfig ?: defaultStorage
 
     storages.add(s)
 
@@ -326,7 +326,7 @@ class InfiniticRegisterImpl : InfiniticRegister {
               registerWorkflowStateEngine(
                   w.name,
                   it.concurrency,
-                  it.storage,
+                  it.storageConfig,
               )
             }
             // Workflow Event Listener

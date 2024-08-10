@@ -22,7 +22,7 @@
  */
 package io.infinitic.storage.inMemory
 
-import io.infinitic.storage.InMemory
+import io.infinitic.storage.InMemoryConfig
 import io.infinitic.storage.data.Bytes
 import io.infinitic.storage.databases.inMemory.InMemoryKeySetStorage
 import io.kotest.core.spec.style.StringSpec
@@ -31,7 +31,7 @@ import io.kotest.matchers.shouldBe
 class InMemoryKeySetStorageTests :
   StringSpec(
       {
-        val config = InMemory("test")
+        val config = InMemoryConfig("test")
         val storage = InMemoryKeySetStorage.from(config)
 
         beforeTest { storage.add("foo", "bar".toByteArray()) }

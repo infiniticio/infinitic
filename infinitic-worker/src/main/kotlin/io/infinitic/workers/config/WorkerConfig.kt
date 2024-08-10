@@ -26,8 +26,8 @@ import io.infinitic.common.config.loadConfigFromFile
 import io.infinitic.common.config.loadConfigFromResource
 import io.infinitic.common.config.loadConfigFromYaml
 import io.infinitic.events.config.EventListener
-import io.infinitic.pulsar.config.Pulsar
-import io.infinitic.storage.Storage
+import io.infinitic.pulsar.config.PulsarConfig
+import io.infinitic.storage.StorageConfig
 import io.infinitic.transport.config.Transport
 import io.infinitic.workers.register.config.Service
 import io.infinitic.workers.register.config.ServiceDefault
@@ -45,10 +45,10 @@ data class WorkerConfig @JvmOverloads constructor(
   override val transport: Transport = Transport.pulsar,
 
   /** Pulsar configuration */
-  override val pulsar: Pulsar? = null,
+  override val pulsar: PulsarConfig? = null,
 
   /** Default storage */
-  override val storage: Storage? = null,
+  override val storage: StorageConfig? = null,
 
   /** Workflows configuration */
   override val workflows: List<Workflow> = listOf(),

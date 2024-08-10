@@ -22,14 +22,14 @@
  */
 package io.infinitic.transport.config
 
-import io.infinitic.pulsar.config.Pulsar
+import io.infinitic.pulsar.config.PulsarConfig
 
 interface TransportConfigInterface {
   /** Transport configuration */
   val transport: Transport
 
   /** Pulsar configuration */
-  val pulsar: Pulsar?
+  val pulsar: PulsarConfig?
 
   /** Shutdown Grace Period */
   val shutdownGracePeriodInSeconds: Double

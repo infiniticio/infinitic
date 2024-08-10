@@ -24,7 +24,7 @@ package io.infinitic.storage.postgres
 
 import com.sksamuel.hoplite.Secret
 import io.infinitic.storage.DockerOnly
-import io.infinitic.storage.Postgres
+import io.infinitic.storage.PostgresConfig
 import io.infinitic.storage.data.Bytes
 import io.infinitic.storage.databases.postgres.PostgresKeySetStorage
 import io.kotest.core.annotation.EnabledIf
@@ -45,7 +45,7 @@ class PostgresKeySetStorageTests :
             }
             .also { it.start() }
 
-        val config = Postgres(
+        val config = PostgresConfig(
             host = postgresServer.host,
             port = postgresServer.firstMappedPort,
             user = postgresServer.username,

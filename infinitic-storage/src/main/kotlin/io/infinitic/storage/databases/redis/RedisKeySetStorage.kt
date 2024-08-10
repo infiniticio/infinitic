@@ -22,7 +22,7 @@
  */
 package io.infinitic.storage.databases.redis
 
-import io.infinitic.storage.Redis
+import io.infinitic.storage.RedisConfig
 import io.infinitic.storage.keySet.KeySetStorage
 import org.jetbrains.annotations.TestOnly
 import redis.clients.jedis.JedisPool
@@ -30,7 +30,7 @@ import redis.clients.jedis.JedisPool
 class RedisKeySetStorage(internal val pool: JedisPool) : KeySetStorage {
 
   companion object {
-    fun from(config: Redis) = RedisKeySetStorage(config.getPool())
+    fun from(config: RedisConfig) = RedisKeySetStorage(config.getPool())
   }
 
   override suspend fun get(key: String): Set<ByteArray> =
