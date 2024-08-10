@@ -24,11 +24,11 @@ package io.infinitic.pulsar.config
 
 import com.sksamuel.hoplite.Secret
 import io.github.oshai.kotlinlogging.KotlinLogging
-import io.infinitic.pulsar.config.auth.AuthenticationAthenz
-import io.infinitic.pulsar.config.auth.AuthenticationOAuth2
-import io.infinitic.pulsar.config.auth.AuthenticationSasl
-import io.infinitic.pulsar.config.auth.AuthenticationToken
-import io.infinitic.pulsar.config.auth.ClientAuthentication
+import io.infinitic.pulsar.config.auth.AuthenticationAthenzConfig
+import io.infinitic.pulsar.config.auth.AuthenticationOAuth2Config
+import io.infinitic.pulsar.config.auth.AuthenticationSaslConfig
+import io.infinitic.pulsar.config.auth.AuthenticationTokenConfig
+import io.infinitic.pulsar.config.auth.ClientAuthenticationConfig
 import io.infinitic.pulsar.config.policies.PoliciesConfig
 import io.infinitic.pulsar.consumers.ConsumerConfig
 import io.infinitic.pulsar.producers.ProducerConfig
@@ -54,7 +54,7 @@ data class PulsarConfig @JvmOverloads constructor(
   val tlsTrustStoreType: TlsTrustStoreType = TlsTrustStoreType.JKS,
   val tlsTrustStorePath: String? = null,
   val tlsTrustStorePassword: Secret? = null,
-  val authentication: ClientAuthentication? = null,
+  val authentication: ClientAuthenticationConfig? = null,
   val policies: PoliciesConfig = PoliciesConfig(),
   val producer: ProducerConfig = ProducerConfig(),
   val consumer: ConsumerConfig = ConsumerConfig()
@@ -117,12 +117,12 @@ data class PulsarConfig @JvmOverloads constructor(
       }
 
       when (authentication) {
-        is AuthenticationToken -> {
+        is AuthenticationTokenConfig -> {
           authentication(AuthenticationFactory.token(authentication.token.value))
           log["AuthenticationFactory.token"] = authentication.token
         }
 
-        is AuthenticationAthenz -> {
+        is AuthenticationAthenzConfig -> {
           authentication(
               AuthenticationFactory.create(
                   PulsarAuthenticationAthenz::class.java.name,
@@ -132,7 +132,7 @@ data class PulsarConfig @JvmOverloads constructor(
           log["AuthenticationFactory.AuthenticationAthenz"] = "****************"
         }
 
-        is AuthenticationSasl -> {
+        is AuthenticationSaslConfig -> {
           authentication(
               AuthenticationFactory.create(
                   PulsarAuthenticationSasl::class.java.name,
@@ -142,7 +142,7 @@ data class PulsarConfig @JvmOverloads constructor(
           log["AuthenticationFactory.AuthenticationSasl"] = "****************"
         }
 
-        is AuthenticationOAuth2 -> {
+        is AuthenticationOAuth2Config -> {
           authentication(
               AuthenticationFactoryOAuth2.clientCredentials(
                   authentication.issuerUrl,
@@ -193,12 +193,12 @@ data class PulsarConfig @JvmOverloads constructor(
       }
 
       when (authentication) {
-        is AuthenticationToken -> {
+        is AuthenticationTokenConfig -> {
           authentication(AuthenticationFactory.token(authentication.token.value))
           log["AuthenticationFactory.token"] = authentication.token
         }
 
-        is AuthenticationAthenz -> {
+        is AuthenticationAthenzConfig -> {
           authentication(
               AuthenticationFactory.create(
                   PulsarAuthenticationAthenz::class.java.name,
@@ -208,7 +208,7 @@ data class PulsarConfig @JvmOverloads constructor(
           log["AuthenticationFactory.AuthenticationAthenz"] = "****************"
         }
 
-        is AuthenticationSasl -> {
+        is AuthenticationSaslConfig -> {
           authentication(
               AuthenticationFactory.create(
                   PulsarAuthenticationSasl::class.java.name,
@@ -218,7 +218,7 @@ data class PulsarConfig @JvmOverloads constructor(
           log["AuthenticationFactory.AuthenticationSasl"] = "****************"
         }
 
-        is AuthenticationOAuth2 -> {
+        is AuthenticationOAuth2Config -> {
           authentication(
               AuthenticationFactoryOAuth2.clientCredentials(
                   authentication.issuerUrl,
@@ -304,7 +304,7 @@ data class PulsarConfig @JvmOverloads constructor(
     fun tlsTrustStorePassword(tlsTrustStorePassword: Secret?) =
         apply { this.tlsTrustStorePassword = tlsTrustStorePassword }
 
-    fun authentication(authentication: ClientAuthentication?) =
+    fun authentication(authentication: ClientAuthenticationConfig?) =
         apply { this.authentication = authentication }
 
     fun policies(policiesConfig: PoliciesConfig) =

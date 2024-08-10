@@ -22,7 +22,4 @@
  */
 package io.infinitic.pulsar.config.auth
 
-import java.net.URL
-
-data class AuthenticationOAuth2(val issuerUrl: URL, val privateKey: URL, val audience: String) :
-  ClientAuthentication()
+sealed class ClientAuthenticationConfig

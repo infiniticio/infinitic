@@ -41,13 +41,13 @@ class StorageConfigTests :
         "default storage should be inMemory" {
           val config = loadConfigFromYaml<StorageConfigImpl>("nothing:")
 
-          config shouldBe StorageConfigImpl(storageConfig = StorageConfig(inMemory = InMemoryConfig()))
+          config shouldBe StorageConfigImpl(storage = StorageConfig(inMemory = InMemoryConfig()))
         }
 
         "default storage should not be compressed" {
           val config = loadConfigFromYaml<StorageConfigImpl>("nothing:")
 
-          config shouldBe StorageConfigImpl(storageConfig = StorageConfig(compression = null))
+          config shouldBe StorageConfigImpl(storage = StorageConfig(compression = null))
         }
 
         "storage without type should default" {
@@ -65,7 +65,7 @@ storage:
      """,
           )
 
-          config shouldBe StorageConfigImpl(storageConfig = StorageConfig(inMemory = InMemoryConfig()))
+          config shouldBe StorageConfigImpl(storage = StorageConfig(inMemory = InMemoryConfig()))
         }
 
         "can choose Redis storage" {
@@ -76,7 +76,7 @@ storage:
      """,
           )
 
-          config shouldBe StorageConfigImpl(storageConfig = StorageConfig(redis = RedisConfig()))
+          config shouldBe StorageConfigImpl(storage = StorageConfig(redis = RedisConfig()))
         }
 
         "can choose MySQL storage" {
@@ -87,7 +87,7 @@ storage:
      """,
           )
 
-          config shouldBe StorageConfigImpl(storageConfig = StorageConfig(mysql = MySQLConfig()))
+          config shouldBe StorageConfigImpl(storage = StorageConfig(mysql = MySQLConfig()))
         }
 
         "can choose Postgres storage" {
@@ -98,7 +98,7 @@ storage:
      """,
           )
 
-          config shouldBe StorageConfigImpl(storageConfig = StorageConfig(postgres = PostgresConfig()))
+          config shouldBe StorageConfigImpl(storage = StorageConfig(postgres = PostgresConfig()))
         }
 
         "can not have multiple definition in storage" {

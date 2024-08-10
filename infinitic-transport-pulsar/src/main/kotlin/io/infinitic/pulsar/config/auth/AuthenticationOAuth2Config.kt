@@ -22,12 +22,31 @@
  */
 package io.infinitic.pulsar.config.auth
 
-import com.sksamuel.hoplite.Secret
+import java.net.URL
 
-data class AuthenticationSasl(
-  val tenantDomain: String,
-  val tenantService: String,
-  val providerDomain: String,
-  val privateKey: Secret,
-  val keyId: String = "0",
-) : ClientAuthentication()
+data class AuthenticationOAuth2Config(
+  val issuerUrl: URL,
+  val privateKey: URL,
+  val audience: String
+) : ClientAuthenticationConfig() {
+
+  /**
+   * AuthenticationOAuth2Config builder (Useful for Java user)
+   */
+  @Suppress("unused")
+  class Builder {
+    private var issuerUrl: URL? = null
+    private var privateKey: URL? = null
+    private var audience: String? = null
+
+    fun issuerUrl(issuerUrl: URL) = apply { this.issuerUrl = issuerUrl }
+    fun privateKey(privateKey: URL) = apply { this.privateKey = privateKey }
+    fun audience(audience: String) = apply { this.audience = audience }
+
+    fun build() = AuthenticationOAuth2Config(
+        issuerUrl ?: throw IllegalArgumentException("issuerUrl must be set"),
+        privateKey ?: throw IllegalArgumentException("privateKey must be set"),
+        audience ?: throw IllegalArgumentException("audience must be set"),
+    )
+  }
+}

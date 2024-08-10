@@ -24,10 +24,21 @@ package io.infinitic.pulsar.config.auth
 
 import com.sksamuel.hoplite.Secret
 
-data class AuthenticationAthenz(
-  val tenantDomain: String,
-  val tenantService: String,
-  val providerDomain: String,
-  val privateKey: Secret,
-  val keyId: String = "0",
-) : ClientAuthentication()
+data class AuthenticationTokenConfig(
+  val token: Secret
+) : ClientAuthenticationConfig() {
+
+  /**
+   * AuthenticationTokenConfig builder (Useful for Java user)
+   */
+  @Suppress("unused")
+  class Builder {
+    private var token: String? = null
+
+    fun token(token: String) = apply { this.token = token }
+
+    fun build() = AuthenticationTokenConfig(
+        Secret(token ?: throw IllegalArgumentException("token must be set")),
+    )
+  }
+}

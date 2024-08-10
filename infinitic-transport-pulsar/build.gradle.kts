@@ -25,6 +25,7 @@ plugins { `java-library` }
 dependencies {
   api(project(":infinitic-common"))
   api(project(":infinitic-task-executor"))
+
   implementation(project(":infinitic-autoclose"))
   implementation(project(":infinitic-workflow-tag"))
   implementation(project(":infinitic-workflow-engine"))
@@ -33,8 +34,8 @@ dependencies {
   implementation(Libs.Coroutines.jdk8)
   implementation(Libs.Pulsar.functions)
   implementation(Libs.Hoplite.yaml)
-  implementation(Libs.Hoplite.core)
 
+  api(Libs.Hoplite.core) // API needed for Secret class
   api(Libs.Pulsar.client)
   api(Libs.Pulsar.clientAdmin)
   api(Libs.Pulsar.authAthenz)
