@@ -25,6 +25,7 @@ package io.infinitic.events.config
 import io.infinitic.cloudEvents.CloudEventListener
 import io.infinitic.common.utils.getInstance
 
+@Suppress("unused")
 data class EventListenerConfig(
   var `class`: String? = null,
   var concurrency: Int? = null,
@@ -53,6 +54,36 @@ data class EventListenerConfig(
     subscriptionName?.let {
       require(it.isNotEmpty()) { error("'${::subscriptionName.name}' must not be empty") }
     }
+  }
+
+  companion object {
+    @JvmStatic
+    fun builder() = EventListenerConfigBuilder()
+  }
+
+  /**
+   * EventListenerConfig builder (Useful for Java user)
+   */
+  class EventListenerConfigBuilder {
+    private val default = EventListenerConfig()
+    private var `class` = default.`class`
+    private var concurrency = default.concurrency
+    private var subscriptionName = default.subscriptionName
+
+    fun `class`(`class`: String) =
+        apply { this.`class` = `class` }
+
+    fun concurrency(concurrency: Int) =
+        apply { this.concurrency = concurrency }
+
+    fun subscriptionName(subscriptionName: String) =
+        apply { this.subscriptionName = subscriptionName }
+
+    fun build() = EventListenerConfig(
+        `class`,
+        concurrency,
+        subscriptionName,
+    )
   }
 
   private fun error(txt: String) = "eventListener: $txt"

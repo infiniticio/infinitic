@@ -40,6 +40,7 @@ import org.apache.pulsar.client.impl.auth.oauth2.AuthenticationFactoryOAuth2
 import org.apache.pulsar.client.impl.auth.AuthenticationAthenz as PulsarAuthenticationAthenz
 import org.apache.pulsar.client.impl.auth.AuthenticationSasl as PulsarAuthenticationSasl
 
+@Suppress("unused")
 data class PulsarConfig(
   val tenant: String,
   val namespace: String,
@@ -249,7 +250,6 @@ data class PulsarConfig(
    */
   class PulsarConfigBuilder {
     private val default: PulsarConfig = PulsarConfig("", "")
-
     private var tenant = default.tenant
     private var namespace = default.namespace
     private var brokerServiceUrl = default.brokerServiceUrl
@@ -280,10 +280,10 @@ data class PulsarConfig(
     fun webServiceUrl(webServiceUrl: String) =
         apply { this.webServiceUrl = webServiceUrl }
 
-    fun allowedClusters(allowedClusters: Set<String>?) =
+    fun allowedClusters(allowedClusters: Set<String>) =
         apply { this.allowedClusters = allowedClusters }
 
-    fun adminRoles(adminRoles: Set<String>?) =
+    fun adminRoles(adminRoles: Set<String>) =
         apply { this.adminRoles = adminRoles }
 
     fun tlsAllowInsecureConnection(tlsAllowInsecureConnection: Boolean) =
@@ -292,7 +292,7 @@ data class PulsarConfig(
     fun tlsEnableHostnameVerification(tlsEnableHostnameVerification: Boolean) =
         apply { this.tlsEnableHostnameVerification = tlsEnableHostnameVerification }
 
-    fun tlsTrustCertsFilePath(tlsTrustCertsFilePath: String?) =
+    fun tlsTrustCertsFilePath(tlsTrustCertsFilePath: String) =
         apply { this.tlsTrustCertsFilePath = tlsTrustCertsFilePath }
 
     fun useKeyStoreTls(useKeyStoreTls: Boolean) =
@@ -301,13 +301,13 @@ data class PulsarConfig(
     fun tlsTrustStoreType(tlsTrustStoreType: TlsTrustStoreType) =
         apply { this.tlsTrustStoreType = tlsTrustStoreType }
 
-    fun tlsTrustStorePath(tlsTrustStorePath: String?) =
+    fun tlsTrustStorePath(tlsTrustStorePath: String) =
         apply { this.tlsTrustStorePath = tlsTrustStorePath }
 
-    fun tlsTrustStorePassword(tlsTrustStorePassword: Secret?) =
+    fun tlsTrustStorePassword(tlsTrustStorePassword: Secret) =
         apply { this.tlsTrustStorePassword = tlsTrustStorePassword }
 
-    fun authentication(authentication: ClientAuthenticationConfig?) =
+    fun authentication(authentication: ClientAuthenticationConfig) =
         apply { this.authentication = authentication }
 
     fun policies(policiesConfig: PoliciesConfig) =

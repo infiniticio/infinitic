@@ -33,28 +33,7 @@ import io.infinitic.workflows.engine.config.WorkflowStateEngine
 import io.infinitic.workflows.tag.config.WorkflowTagEngine
 import io.infinitic.workflows.Workflow as WorkflowBase
 
-/**
- * Represents a workflow entity with its properties and validation logic.
- *
- * @property name The name of the workflow.
- * @property class The class name for the workflow. Optional.
- * @property classes A list of class names for the workflow. Optional.
- * @property concurrency The concurrency value for the workflow. Optional.
- * @property timeoutInSeconds The timeout value in seconds for the workflow. Optional.
- * @property retry The retry policy for the workflow. Optional.
- * @property checkMode The workflow check mode. Optional.
- * @property tagEngine The tag engine for the workflow. Optional.
- * @property stateEngine The workflow state engine for the workflow. Optional.
- * @property eventListener The event listener for the workflow. Optional.
- * @property allClasses A mutable list of workflow base classes.
- *
- * @constructor Creates a Workflow instance.
- *
- * @throws IllegalArgumentException if the name is empty or all relevant properties are null.
- * @throws IllegalArgumentException if the class or any of the classes are empty.
- * @throws IllegalArgumentException if the concurrency is less than 0.
- * @throws IllegalArgumentException if the timeoutInSeconds is not greater than 0 or UNDEFINED_TIMEOUT.
- */
+@Suppress("unused")
 data class WorkflowConfig(
   val name: String,
   val `class`: String? = null,
@@ -98,6 +77,72 @@ data class WorkflowConfig(
     }
   }
 
+  companion object {
+    @JvmStatic
+    fun builder() = WorkflowConfigBuilder()
+  }
+
+  /**
+   * WorkflowConfig builder (Useful for Java user)
+   */
+  class WorkflowConfigBuilder {
+    private val default = WorkflowConfig("")
+    private var name = default.name
+    private var `class` = default.`class`
+    private var classes = default.classes
+    private var concurrency = default.concurrency
+    private var timeoutInSeconds = default.timeoutInSeconds
+    private var retry = default.retry
+    private var checkMode = default.checkMode
+    private var tagEngine = default.tagEngine
+    private var stateEngine = default.stateEngine
+    private var eventListener = default.eventListener
+
+    fun name(name: String) =
+        apply { this.name = name }
+
+    fun `class`(`class`: String) =
+        apply { this.`class` = `class` }
+
+    fun classes(classes: MutableList<String>) =
+        apply { this.classes = classes }
+
+    fun concurrency(concurrency: Int) =
+        apply { this.concurrency = concurrency }
+
+    fun timeoutInSeconds(timeoutInSeconds: Double) =
+        apply { this.timeoutInSeconds = timeoutInSeconds }
+
+    fun retry(retry: RetryPolicy) =
+        apply { this.retry = retry }
+
+    fun checkMode(checkMode: WorkflowCheckMode) =
+        apply { this.checkMode = checkMode }
+
+    fun tagEngine(tagEngine: WorkflowTagEngine) =
+        apply { this.tagEngine = tagEngine }
+
+    fun stateEngine(stateEngine: WorkflowStateEngine) =
+        apply { this.stateEngine = stateEngine }
+
+    fun eventListener(eventListener: EventListenerConfig) =
+        apply { this.eventListener = eventListener }
+
+
+    fun build() = WorkflowConfig(
+        name,
+        `class`,
+        classes,
+        concurrency,
+        timeoutInSeconds,
+        retry,
+        checkMode,
+        tagEngine,
+        stateEngine,
+        eventListener,
+    )
+  }
+
   private fun getWorkflowClass(className: String): Class<out Workflow> {
     // make sure to have a context to be able to create the workflow instance
     Workflow.setContext(emptyWorkflowContext)
@@ -113,8 +158,10 @@ data class WorkflowConfig(
       error("Class '${klass.name}' must extend '${WorkflowBase::class.java.name}'")
     }
 
-    @Suppress("UNCHECKED_CAST") return klass as Class<out WorkflowBase>
+    @Suppress("UNCHECKED_CAST")
+    return klass as Class<out WorkflowBase>
   }
 
   private fun error(txt: String) = "Workflow $name: $txt"
 }
+

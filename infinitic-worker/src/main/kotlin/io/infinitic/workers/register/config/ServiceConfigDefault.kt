@@ -26,6 +26,7 @@ import io.infinitic.common.workers.config.RetryPolicy
 import io.infinitic.events.config.EventListenerConfig
 import io.infinitic.tasks.tag.config.ServiceTagEngine
 
+@Suppress("unused")
 data class ServiceConfigDefault(
   val concurrency: Int? = null,
   val timeoutInSeconds: Double? = null,
@@ -41,6 +42,46 @@ data class ServiceConfigDefault(
     timeoutInSeconds?.let {
       require(it > 0) { error("'${::timeoutInSeconds.name}' must be strictly positive") }
     }
+  }
+
+  companion object {
+    @JvmStatic
+    fun builder() = ServiceConfigDefaultBuilder()
+  }
+
+  /**
+   * ServiceConfigDefault builder (Useful for Java user)
+   */
+  class ServiceConfigDefaultBuilder {
+    private val default = ServiceConfigDefault()
+    private var concurrency = default.concurrency
+    private var timeoutInSeconds = default.timeoutInSeconds
+    private var retry = default.retry
+    private var tagEngine = default.tagEngine
+    private var eventListener = default.eventListener
+
+    fun concurrency(concurrency: Int) =
+        apply { this.concurrency = concurrency }
+
+    fun timeoutInSeconds(timeoutInSeconds: Double) =
+        apply { this.timeoutInSeconds = timeoutInSeconds }
+
+    fun retry(retry: RetryPolicy) =
+        apply { this.retry = retry }
+
+    fun tagEngine(tagEngine: ServiceTagEngine) =
+        apply { this.tagEngine = tagEngine }
+
+    fun eventListener(eventListener: EventListenerConfig) =
+        apply { this.eventListener = eventListener }
+
+    fun build() = ServiceConfigDefault(
+        concurrency,
+        timeoutInSeconds,
+        retry,
+        tagEngine,
+        eventListener,
+    )
   }
 
   private fun error(msg: String) = "default service: $msg"

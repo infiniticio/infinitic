@@ -28,6 +28,7 @@ import org.apache.pulsar.client.api.HashingScheme
 import org.apache.pulsar.client.api.MessageRoutingMode
 import org.apache.pulsar.client.api.ProducerCryptoFailureAction
 
+@Suppress("unused")
 data class ProducerConfig(
   val autoUpdatePartitions: Boolean? = null,
   val autoUpdatePartitionsIntervalSeconds: Double? = null,
@@ -62,7 +63,6 @@ data class ProducerConfig(
    */
   class ProducerConfigBuilder {
     private val default = ProducerConfig()
-
     private var autoUpdatePartitions = default.autoUpdatePartitions
     private var autoUpdatePartitionsIntervalSeconds = default.autoUpdatePartitionsIntervalSeconds
     private var batchingMaxBytes = default.batchingMaxBytes

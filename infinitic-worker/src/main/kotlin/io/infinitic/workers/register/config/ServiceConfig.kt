@@ -28,17 +28,7 @@ import io.infinitic.common.workers.config.RetryPolicy
 import io.infinitic.events.config.EventListenerConfig
 import io.infinitic.tasks.tag.config.ServiceTagEngine
 
-/**
- * Represents a service.
- *
- * @property name The name of the service.
- * @property class The fully qualified class name of the service implementation.
- * @property concurrency The number of concurrent messages that can be handled by the service.
- * @property timeoutInSeconds The timeout value for the service in seconds.
- * @property retry The retry policy for the service.
- * @property tagEngine The tag engine for the service.
- * @property eventListener The event listener for the service.
- */
+@Suppress("unused")
 data class ServiceConfig(
   val name: String,
   val `class`: String? = null,
@@ -54,7 +44,7 @@ data class ServiceConfig(
     require(name.isNotEmpty()) { "'${::name.name}' can not be empty" }
 
     `class`?.let { klass ->
-      require(klass.isNotEmpty()) { error("'class' empty") }
+      require(klass.isNotEmpty()) { error("'class' can not be empty") }
 
       val instance = getInstance()
 
@@ -70,6 +60,56 @@ data class ServiceConfig(
         require(timeout > 0 || timeout == UNDEFINED_TIMEOUT) { error("'${::timeoutInSeconds.name}' must be an integer > 0") }
       }
     }
+  }
+
+  companion object {
+    @JvmStatic
+    fun builder() = ServiceConfigBuilder()
+  }
+
+  /**
+   * ServiceConfig builder (Useful for Java user)
+   */
+  class ServiceConfigBuilder {
+    private val default = ServiceConfig("", "")
+    private var name = default.name
+    private var `class` = default.`class`
+    private var concurrency = default.concurrency
+    private var timeoutInSeconds = default.timeoutInSeconds
+    private var retry = default.retry
+    private var tagEngine = default.tagEngine
+    private var eventListener = default.eventListener
+
+    fun name(name: String) =
+        apply { this.name = name }
+
+    fun `class`(`class`: String) =
+        apply { this.`class` = `class` }
+
+    fun concurrency(concurrency: Int) =
+        apply { this.concurrency = concurrency }
+
+    fun timeoutInSeconds(timeoutInSeconds: Double) =
+        apply { this.timeoutInSeconds = timeoutInSeconds }
+
+    fun retry(retry: RetryPolicy) =
+        apply { this.retry = retry }
+
+    fun tagEngine(tagEngine: ServiceTagEngine) =
+        apply { this.tagEngine = tagEngine }
+
+    fun eventListener(eventListener: EventListenerConfig) =
+        apply { this.eventListener = eventListener }
+
+    fun build() = ServiceConfig(
+        name,
+        `class`,
+        concurrency,
+        timeoutInSeconds,
+        retry,
+        tagEngine,
+        eventListener,
+    )
   }
 
   private fun error(txt: String) = "Service $name: $txt"

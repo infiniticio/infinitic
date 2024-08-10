@@ -28,6 +28,7 @@ import io.infinitic.workflows.WorkflowCheckMode
 import io.infinitic.workflows.engine.config.WorkflowStateEngine
 import io.infinitic.workflows.tag.config.WorkflowTagEngine
 
+@Suppress("unused")
 data class WorkflowConfigDefault(
   val concurrency: Int? = null,
   val timeoutInSeconds: Double? = null,
@@ -45,6 +46,56 @@ data class WorkflowConfigDefault(
     timeoutInSeconds?.let {
       require(it > 0) { error("'${::timeoutInSeconds.name}' must be strictly positive") }
     }
+  }
+
+  companion object {
+    @JvmStatic
+    fun builder() = WorkflowConfigDefaultBuilder()
+  }
+
+  /**
+   * WorkflowConfigDefault builder (Useful for Java user)
+   */
+  class WorkflowConfigDefaultBuilder {
+    val default = WorkflowConfigDefault()
+    private var concurrency = default.concurrency
+    private var timeoutInSeconds = default.timeoutInSeconds
+    private var retry = default.retry
+    private var tagEngine = default.tagEngine
+    private var stateEngine = default.stateEngine
+    private var checkMode = default.checkMode
+    private var eventListener = default.eventListener
+
+    fun concurrency(concurrency: Int) =
+        apply { this.concurrency = concurrency }
+
+    fun timeoutInSeconds(timeoutInSeconds: Double) =
+        apply { this.timeoutInSeconds = timeoutInSeconds }
+
+    fun retry(retry: RetryPolicy) =
+        apply { this.retry = retry }
+
+    fun tagEngine(tagEngine: WorkflowTagEngine) =
+        apply { this.tagEngine = tagEngine }
+
+    fun stateEngine(stateEngine: WorkflowStateEngine) =
+        apply { this.stateEngine = stateEngine }
+
+    fun checkMode(checkMode: WorkflowCheckMode) =
+        apply { this.checkMode = checkMode }
+
+    fun eventListener(eventListener: EventListenerConfig) =
+        apply { this.eventListener = eventListener }
+
+    fun build() = WorkflowConfigDefault(
+        concurrency,
+        timeoutInSeconds,
+        retry,
+        tagEngine,
+        stateEngine,
+        checkMode,
+        eventListener,
+    )
   }
 
   private fun error(msg: String) = "default workflow: $msg"

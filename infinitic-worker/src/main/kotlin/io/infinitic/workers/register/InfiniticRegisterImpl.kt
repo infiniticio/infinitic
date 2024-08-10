@@ -118,8 +118,7 @@ class InfiniticRegisterImpl : InfiniticRegister {
       }
     }
   }
-
-
+  
   override fun registerServiceTagEngine(
     serviceName: String,
     concurrency: Int?,

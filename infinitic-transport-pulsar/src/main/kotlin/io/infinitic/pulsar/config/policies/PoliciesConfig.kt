@@ -24,6 +24,7 @@ package io.infinitic.pulsar.config.policies
 
 import org.apache.pulsar.common.policies.data.SchemaCompatibilityStrategy
 
+@Suppress("unused")
 data class PoliciesConfig(
     // Retain messages for 7 days
   val retentionTimeInMinutes: Int = 60 * 24 * 7,

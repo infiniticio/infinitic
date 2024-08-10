@@ -25,6 +25,7 @@ package io.infinitic.pulsar.consumers
 
 import org.apache.pulsar.client.api.ConsumerCryptoFailureAction
 
+@Suppress("unused")
 data class ConsumerConfig(
   val loadConf: Map<String, String>? = null,
   val subscriptionProperties: Map<String, String>? = null,
@@ -64,7 +65,6 @@ data class ConsumerConfig(
    */
   class ConsumerConfigBuilder {
     private val default = ConsumerConfig()
-
     private var loadConf = default.loadConf
     private var subscriptionProperties = default.subscriptionProperties
     private var ackTimeoutSeconds = default.ackTimeoutSeconds
@@ -164,30 +164,29 @@ data class ConsumerConfig(
     fun maxRedeliverCount(maxRedeliverCount: Int) =
         apply { this.maxRedeliverCount = maxRedeliverCount }
 
-    fun build() =
-        ConsumerConfig(
-            loadConf,
-            subscriptionProperties,
-            ackTimeoutSeconds,
-            isAckReceiptEnabled,
-            ackTimeoutTickTimeSeconds,
-            negativeAckRedeliveryDelaySeconds,
-            defaultCryptoKeyReader,
-            cryptoFailureAction,
-            receiverQueueSize,
-            acknowledgmentGroupTimeSeconds,
-            replicateSubscriptionState,
-            maxTotalReceiverQueueSizeAcrossPartitions,
-            priorityLevel,
-            properties,
-            autoUpdatePartitions,
-            autoUpdatePartitionsIntervalSeconds,
-            enableBatchIndexAcknowledgment,
-            maxPendingChunkedMessage,
-            autoAckOldestChunkedMessageOnQueueFull,
-            expireTimeOfIncompleteChunkedMessageSeconds,
-            startPaused,
-            maxRedeliverCount,
-        )
+    fun build() = ConsumerConfig(
+        loadConf,
+        subscriptionProperties,
+        ackTimeoutSeconds,
+        isAckReceiptEnabled,
+        ackTimeoutTickTimeSeconds,
+        negativeAckRedeliveryDelaySeconds,
+        defaultCryptoKeyReader,
+        cryptoFailureAction,
+        receiverQueueSize,
+        acknowledgmentGroupTimeSeconds,
+        replicateSubscriptionState,
+        maxTotalReceiverQueueSizeAcrossPartitions,
+        priorityLevel,
+        properties,
+        autoUpdatePartitions,
+        autoUpdatePartitionsIntervalSeconds,
+        enableBatchIndexAcknowledgment,
+        maxPendingChunkedMessage,
+        autoAckOldestChunkedMessageOnQueueFull,
+        expireTimeOfIncompleteChunkedMessageSeconds,
+        startPaused,
+        maxRedeliverCount,
+    )
   }
 }
