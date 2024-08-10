@@ -40,7 +40,7 @@ import io.infinitic.common.transport.WorkflowTaskEventsTopic
 import io.infinitic.common.transport.WorkflowTaskExecutorTopic
 import io.infinitic.common.transport.WorkflowTopic
 import io.infinitic.pulsar.admin.PulsarInfiniticAdmin
-import io.infinitic.pulsar.config.policies.Policies
+import io.infinitic.pulsar.config.policies.PoliciesConfig
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
 import io.mockk.clearMocks
@@ -55,7 +55,7 @@ class PulsarResourcesTest : StringSpec(
       val pulsarInfiniticAdmin = mockk<PulsarInfiniticAdmin>()
       val allowedClusters = setOf("foo", "bar")
       val adminRoles = setOf("baz")
-      val policies = Policies()
+      val policiesConfig = PoliciesConfig()
       val tenant = "tenantTest"
       val namespace = "namespaceTest"
 
@@ -65,7 +65,7 @@ class PulsarResourcesTest : StringSpec(
           allowedClusters,
           namespace = namespace,
           adminRoles,
-          policies,
+          policiesConfig,
       )
 
       beforeEach {
@@ -106,8 +106,8 @@ class PulsarResourcesTest : StringSpec(
 
         coVerifyAll {
           pulsarInfiniticAdmin.initTenantOnce("tenantTest", allowedClusters, adminRoles)
-          pulsarInfiniticAdmin.initNamespaceOnce("tenantTest/namespaceTest", policies)
-          pulsarInfiniticAdmin.initTopicOnce(topic, true, policies.delayedTTLInSeconds)
+          pulsarInfiniticAdmin.initNamespaceOnce("tenantTest/namespaceTest", policiesConfig)
+          pulsarInfiniticAdmin.initTopicOnce(topic, true, policiesConfig.delayedTTLInSeconds)
         }
       }
 

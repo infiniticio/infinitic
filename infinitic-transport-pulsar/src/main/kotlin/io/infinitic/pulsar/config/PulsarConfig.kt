@@ -29,7 +29,7 @@ import io.infinitic.pulsar.config.auth.AuthenticationOAuth2
 import io.infinitic.pulsar.config.auth.AuthenticationSasl
 import io.infinitic.pulsar.config.auth.AuthenticationToken
 import io.infinitic.pulsar.config.auth.ClientAuthentication
-import io.infinitic.pulsar.config.policies.Policies
+import io.infinitic.pulsar.config.policies.PoliciesConfig
 import io.infinitic.pulsar.consumers.ConsumerConfig
 import io.infinitic.pulsar.producers.ProducerConfig
 import io.infinitic.serDe.java.Json.mapper
@@ -40,7 +40,7 @@ import org.apache.pulsar.client.impl.auth.oauth2.AuthenticationFactoryOAuth2
 import org.apache.pulsar.client.impl.auth.AuthenticationAthenz as PulsarAuthenticationAthenz
 import org.apache.pulsar.client.impl.auth.AuthenticationSasl as PulsarAuthenticationSasl
 
-data class Pulsar @JvmOverloads constructor(
+data class PulsarConfig @JvmOverloads constructor(
   val tenant: String,
   val namespace: String,
   val brokerServiceUrl: String = "pulsar://localhost:6650/",
@@ -55,7 +55,7 @@ data class Pulsar @JvmOverloads constructor(
   val tlsTrustStorePath: String? = null,
   val tlsTrustStorePassword: Secret? = null,
   val authentication: ClientAuthentication? = null,
-  val policies: Policies = Policies(),
+  val policies: PoliciesConfig = PoliciesConfig(),
   val producer: ProducerConfig = ProducerConfig(),
   val consumer: ConsumerConfig = ConsumerConfig()
 ) {
@@ -233,13 +233,107 @@ data class Pulsar @JvmOverloads constructor(
 
         null -> Unit
       }
-    }.build()
-        .also {
-          logger.info {
-            "Created PulsarClient with config: ${
-              log.map { "${it.key}=${it.value}" }.joinToString()
-            }"
-          }
-        }
+    }.build().also {
+      logger.info {
+        "Created PulsarClient with config: ${log.map { "${it.key}=${it.value}" }.joinToString()}"
+      }
+    }
+  }
+
+  /**
+   * PulsarConfig builder (Useful for Java user)
+   */
+  @Suppress("unused")
+  class Builder {
+    private val default: PulsarConfig = PulsarConfig("", "")
+
+    private var tenant = default.tenant
+    private var namespace = default.namespace
+    private var brokerServiceUrl = default.brokerServiceUrl
+    private var webServiceUrl = default.webServiceUrl
+    private var allowedClusters = default.allowedClusters
+    private var adminRoles = default.adminRoles
+    private var tlsAllowInsecureConnection = default.tlsAllowInsecureConnection
+    private var tlsEnableHostnameVerification = default.tlsEnableHostnameVerification
+    private var tlsTrustCertsFilePath = default.tlsTrustCertsFilePath
+    private var useKeyStoreTls = default.useKeyStoreTls
+    private var tlsTrustStoreType = default.tlsTrustStoreType
+    private var tlsTrustStorePath = default.tlsTrustStorePath
+    private var tlsTrustStorePassword = default.tlsTrustStorePassword
+    private var authentication = default.authentication
+    private var policies = default.policies
+    private var producer = default.producer
+    private var consumer = default.consumer
+
+    fun tenant(tenant: String) =
+        apply { this.tenant = tenant }
+
+    fun namespace(namespace: String) =
+        apply { this.namespace = namespace }
+
+    fun brokerServiceUrl(brokerServiceUrl: String) =
+        apply { this.brokerServiceUrl = brokerServiceUrl }
+
+    fun webServiceUrl(webServiceUrl: String) =
+        apply { this.webServiceUrl = webServiceUrl }
+
+    fun allowedClusters(allowedClusters: Set<String>?) =
+        apply { this.allowedClusters = allowedClusters }
+
+    fun adminRoles(adminRoles: Set<String>?) =
+        apply { this.adminRoles = adminRoles }
+
+    fun tlsAllowInsecureConnection(tlsAllowInsecureConnection: Boolean) =
+        apply { this.tlsAllowInsecureConnection = tlsAllowInsecureConnection }
+
+    fun tlsEnableHostnameVerification(tlsEnableHostnameVerification: Boolean) =
+        apply { this.tlsEnableHostnameVerification = tlsEnableHostnameVerification }
+
+    fun tlsTrustCertsFilePath(tlsTrustCertsFilePath: String?) =
+        apply { this.tlsTrustCertsFilePath = tlsTrustCertsFilePath }
+
+    fun useKeyStoreTls(useKeyStoreTls: Boolean) =
+        apply { this.useKeyStoreTls = useKeyStoreTls }
+
+    fun tlsTrustStoreType(tlsTrustStoreType: TlsTrustStoreType) =
+        apply { this.tlsTrustStoreType = tlsTrustStoreType }
+
+    fun tlsTrustStorePath(tlsTrustStorePath: String?) =
+        apply { this.tlsTrustStorePath = tlsTrustStorePath }
+
+    fun tlsTrustStorePassword(tlsTrustStorePassword: Secret?) =
+        apply { this.tlsTrustStorePassword = tlsTrustStorePassword }
+
+    fun authentication(authentication: ClientAuthentication?) =
+        apply { this.authentication = authentication }
+
+    fun policies(policiesConfig: PoliciesConfig) =
+        apply { this.policies = policiesConfig }
+
+    fun producer(producerConfig: ProducerConfig) =
+        apply { this.producer = producerConfig }
+
+    fun consumer(consumerConfig: ConsumerConfig) =
+        apply { this.consumer = consumerConfig }
+
+    fun build() = PulsarConfig(
+        tenant,
+        namespace,
+        brokerServiceUrl,
+        webServiceUrl,
+        allowedClusters,
+        adminRoles,
+        tlsAllowInsecureConnection,
+        tlsEnableHostnameVerification,
+        tlsTrustCertsFilePath,
+        useKeyStoreTls,
+        tlsTrustStoreType,
+        tlsTrustStorePath,
+        tlsTrustStorePassword,
+        authentication,
+        policies,
+        producer,
+        consumer,
+    )
   }
 }

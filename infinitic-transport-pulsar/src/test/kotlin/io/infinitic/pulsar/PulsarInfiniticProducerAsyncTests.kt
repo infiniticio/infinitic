@@ -51,7 +51,7 @@ import io.infinitic.common.workflows.engine.messages.WorkflowEventMessage
 import io.infinitic.common.workflows.tags.messages.WorkflowTagMessage
 import io.infinitic.pulsar.admin.PulsarInfiniticAdmin
 import io.infinitic.pulsar.client.PulsarInfiniticClient
-import io.infinitic.pulsar.config.policies.Policies
+import io.infinitic.pulsar.config.policies.PoliciesConfig
 import io.infinitic.pulsar.producers.Producer
 import io.infinitic.pulsar.producers.ProducerConfig
 import io.infinitic.pulsar.resources.PulsarResources
@@ -87,7 +87,7 @@ class PulsarInfiniticProducerAsyncTests : StringSpec(
           null,
           namespace,
           null,
-          Policies(),
+          PoliciesConfig(),
       )
       val pulsarProducerAsync =
           PulsarInfiniticProducerAsync(Producer(client, ProducerConfig()), pulsarResources)
@@ -109,7 +109,7 @@ class PulsarInfiniticProducerAsyncTests : StringSpec(
 
         // can be isSuccess or isFailure depending on other tests
         admin.createTenant(tenant, null, null)
-        admin.createNamespace("$tenant/$namespace", Policies())
+        admin.createNamespace("$tenant/$namespace", PoliciesConfig())
         // topic creation
         admin.createTopic(topic, false, 3600).isSuccess shouldBe true
 

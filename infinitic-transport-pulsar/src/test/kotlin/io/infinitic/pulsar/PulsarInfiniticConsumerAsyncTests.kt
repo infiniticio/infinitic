@@ -41,7 +41,7 @@ import io.infinitic.common.transport.WorkflowTaskEventsTopic
 import io.infinitic.common.transport.WorkflowTaskExecutorTopic
 import io.infinitic.common.workflows.data.workflows.WorkflowName
 import io.infinitic.pulsar.admin.PulsarInfiniticAdmin
-import io.infinitic.pulsar.config.policies.Policies
+import io.infinitic.pulsar.config.policies.PoliciesConfig
 import io.infinitic.pulsar.consumers.Consumer
 import io.infinitic.pulsar.resources.PulsarResources
 import io.kotest.core.spec.style.StringSpec
@@ -83,7 +83,7 @@ class PulsarInfiniticConsumerAsyncTests : StringSpec(
           setOf(),
           namespace,
           setOf(),
-          Policies(),
+          PoliciesConfig(),
       )
 
       val pulsarResources = spyk(original) {
