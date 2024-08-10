@@ -35,7 +35,7 @@ data class ServiceConfig(
   var concurrency: Int? = null,
   var timeoutInSeconds: Double? = UNDEFINED_TIMEOUT,
   var retry: RetryPolicy? = UNDEFINED_RETRY,
-  var tagEngine: ServiceTagEngine? = DEFAULT_SERVICE_TAG,
+  var tagEngine: ServiceTagEngine? = DEFAULT_SERVICE_TAG_ENGINE,
   var eventListener: EventListenerConfig? = UNDEFINED_EVENT_LISTENER,
 ) {
   fun getInstance(): Any = `class`!!.getInstance().getOrThrow()

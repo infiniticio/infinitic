@@ -46,7 +46,7 @@ internal val UNDEFINED_WITH_RETRY = WithRetry { _: Int, _: Exception -> null }
 
 internal val UNDEFINED_EVENT_LISTENER = EventListenerConfig().apply { isDefined = false }
 
-internal val DEFAULT_SERVICE_TAG = ServiceTagEngine().apply { isDefault = true }
+internal val DEFAULT_SERVICE_TAG_ENGINE = ServiceTagEngine().apply { isDefault = true }
 
 internal val DEFAULT_WORKFLOW_STATE_ENGINE = WorkflowStateEngine().apply { isDefault = true }
 
