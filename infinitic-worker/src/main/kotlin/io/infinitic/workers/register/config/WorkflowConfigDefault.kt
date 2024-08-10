@@ -23,15 +23,19 @@
 package io.infinitic.workers.register.config
 
 import io.infinitic.common.workers.config.RetryPolicy
-import io.infinitic.events.config.EventListener
-import io.infinitic.tasks.tag.config.ServiceTagEngine
+import io.infinitic.events.config.EventListenerConfig
+import io.infinitic.workflows.WorkflowCheckMode
+import io.infinitic.workflows.engine.config.WorkflowStateEngine
+import io.infinitic.workflows.tag.config.WorkflowTagEngine
 
-data class ServiceDefault(
+data class WorkflowConfigDefault(
   val concurrency: Int? = null,
   val timeoutInSeconds: Double? = null,
   val retry: RetryPolicy? = null,
-  val tagEngine: ServiceTagEngine? = null,
-  val eventListener: EventListener? = null
+  val tagEngine: WorkflowTagEngine? = null,
+  var stateEngine: WorkflowStateEngine? = null,
+  val checkMode: WorkflowCheckMode? = null,
+  val eventListener: EventListenerConfig? = null
 ) {
   init {
     concurrency?.let {
@@ -43,5 +47,6 @@ data class ServiceDefault(
     }
   }
 
-  private fun error(msg: String) = "default service: $msg"
+  private fun error(msg: String) = "default workflow: $msg"
+
 }

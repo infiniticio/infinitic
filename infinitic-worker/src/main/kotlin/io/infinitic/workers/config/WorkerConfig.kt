@@ -25,16 +25,16 @@ package io.infinitic.workers.config
 import io.infinitic.common.config.loadConfigFromFile
 import io.infinitic.common.config.loadConfigFromResource
 import io.infinitic.common.config.loadConfigFromYaml
-import io.infinitic.events.config.EventListener
+import io.infinitic.events.config.EventListenerConfig
 import io.infinitic.pulsar.config.PulsarConfig
 import io.infinitic.storage.StorageConfig
 import io.infinitic.transport.config.Transport
-import io.infinitic.workers.register.config.Service
-import io.infinitic.workers.register.config.ServiceDefault
-import io.infinitic.workers.register.config.Workflow
-import io.infinitic.workers.register.config.WorkflowDefault
+import io.infinitic.workers.register.config.ServiceConfig
+import io.infinitic.workers.register.config.ServiceConfigDefault
+import io.infinitic.workers.register.config.WorkflowConfig
+import io.infinitic.workers.register.config.WorkflowConfigDefault
 
-data class WorkerConfig @JvmOverloads constructor(
+data class WorkerConfig(
   /** Worker name */
   override val name: String? = null,
 
@@ -51,19 +51,19 @@ data class WorkerConfig @JvmOverloads constructor(
   override val storage: StorageConfig? = null,
 
   /** Workflows configuration */
-  override val workflows: List<Workflow> = listOf(),
+  override val workflows: List<WorkflowConfig> = listOf(),
 
   /** Services configuration */
-  override val services: List<Service> = listOf(),
+  override val services: List<ServiceConfig> = listOf(),
 
   /** Default service configuration */
-  override val serviceDefault: ServiceDefault? = null,
+  override val serviceDefault: ServiceConfigDefault? = null,
 
   /** Default workflow configuration */
-  override val workflowDefault: WorkflowDefault? = null,
+  override val workflowDefault: WorkflowConfigDefault? = null,
 
   /** Default event listener configuration */
-  override val eventListener: EventListener? = null
+  override val eventListener: EventListenerConfig? = null
 
 ) : WorkerConfigInterface {
 

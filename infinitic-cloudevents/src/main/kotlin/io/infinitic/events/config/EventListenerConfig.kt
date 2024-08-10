@@ -20,33 +20,40 @@
  *
  * Licensor: infinitic.io
  */
-package io.infinitic.workers.register.config
+package io.infinitic.events.config
 
-import io.infinitic.common.workers.config.RetryPolicy
-import io.infinitic.events.config.EventListener
-import io.infinitic.workflows.WorkflowCheckMode
-import io.infinitic.workflows.engine.config.WorkflowStateEngine
-import io.infinitic.workflows.tag.config.WorkflowTagEngine
+import io.infinitic.cloudEvents.CloudEventListener
+import io.infinitic.common.utils.getInstance
 
-data class WorkflowDefault(
-  val concurrency: Int? = null,
-  val timeoutInSeconds: Double? = null,
-  val retry: RetryPolicy? = null,
-  val tagEngine: WorkflowTagEngine? = null,
-  var stateEngine: WorkflowStateEngine? = null,
-  val checkMode: WorkflowCheckMode? = null,
-  val eventListener: EventListener? = null
+data class EventListenerConfig(
+  var `class`: String? = null,
+  var concurrency: Int? = null,
+  var subscriptionName: String? = null,
 ) {
+  var isDefined = true
+
+  val instance: CloudEventListener
+    get() = `class`!!.getInstance().getOrThrow() as CloudEventListener
+
   init {
-    concurrency?.let {
-      require(it >= 0) { error("'${::concurrency.name}' must be positive") }
+    `class`?.let {
+      require(it.isNotEmpty()) { error("'class' must not be empty") }
+      val instance = it.getInstance().getOrThrow()
+      require(instance is CloudEventListener) {
+        error("Class '$`class`' must implement '${CloudEventListener::class.java.name}'")
+      }
     }
 
-    timeoutInSeconds?.let {
-      require(it > 0) { error("'${::timeoutInSeconds.name}' must be strictly positive") }
+    concurrency?.let {
+      require(it >= 0) {
+        error("'${::concurrency.name}' must be an integer >= 0")
+      }
+    }
+
+    subscriptionName?.let {
+      require(it.isNotEmpty()) { error("'${::subscriptionName.name}' must not be empty") }
     }
   }
 
-  private fun error(msg: String) = "default workflow: $msg"
-
+  private fun error(txt: String) = "eventListener: $txt"
 }

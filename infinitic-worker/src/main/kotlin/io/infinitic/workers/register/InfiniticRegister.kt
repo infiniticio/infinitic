@@ -26,14 +26,14 @@ import io.infinitic.cloudEvents.CloudEventListener
 import io.infinitic.common.workers.registry.ServiceFactory
 import io.infinitic.common.workers.registry.WorkerRegistry
 import io.infinitic.common.workers.registry.WorkflowFactories
-import io.infinitic.events.config.EventListener
+import io.infinitic.events.config.EventListenerConfig
 import io.infinitic.storage.StorageConfig
 import io.infinitic.tasks.WithRetry
 import io.infinitic.tasks.WithTimeout
-import io.infinitic.workers.register.config.ServiceDefault
+import io.infinitic.workers.register.config.ServiceConfigDefault
 import io.infinitic.workers.register.config.UNDEFINED_WITH_RETRY
 import io.infinitic.workers.register.config.UNDEFINED_WITH_TIMEOUT
-import io.infinitic.workers.register.config.WorkflowDefault
+import io.infinitic.workers.register.config.WorkflowConfigDefault
 import io.infinitic.workflows.Workflow
 import io.infinitic.workflows.WorkflowCheckMode
 
@@ -49,17 +49,17 @@ interface InfiniticRegister : AutoCloseable {
   /**
    * Service default values
    */
-  var serviceDefault: ServiceDefault
+  var serviceDefault: ServiceConfigDefault
 
   /**
    * Workflow default values
    */
-  var workflowDefault: WorkflowDefault
+  var workflowDefault: WorkflowConfigDefault
 
   /**
    * Default value of EventListener
    */
-  var defaultEventListener: EventListener?
+  var defaultEventListener: EventListenerConfig?
 
   /** Register service tag engine */
   @Suppress("OVERLOADS_INTERFACE")

@@ -20,40 +20,28 @@
  *
  * Licensor: infinitic.io
  */
-package io.infinitic.events.config
+package io.infinitic.workers.register.config
 
-import io.infinitic.cloudEvents.CloudEventListener
-import io.infinitic.common.utils.getInstance
+import io.infinitic.common.workers.config.RetryPolicy
+import io.infinitic.events.config.EventListenerConfig
+import io.infinitic.tasks.tag.config.ServiceTagEngine
 
-data class EventListener(
-  var `class`: String? = null,
-  var concurrency: Int? = null,
-  var subscriptionName: String? = null,
+data class ServiceConfigDefault(
+  val concurrency: Int? = null,
+  val timeoutInSeconds: Double? = null,
+  val retry: RetryPolicy? = null,
+  val tagEngine: ServiceTagEngine? = null,
+  val eventListener: EventListenerConfig? = null
 ) {
-  var isDefined = true
-
-  val instance: CloudEventListener
-    get() = `class`!!.getInstance().getOrThrow() as CloudEventListener
-
   init {
-    `class`?.let {
-      require(it.isNotEmpty()) { error("'class' must not be empty") }
-      val instance = it.getInstance().getOrThrow()
-      require(instance is CloudEventListener) {
-        error("Class '$`class`' must implement '${CloudEventListener::class.java.name}'")
-      }
-    }
-
     concurrency?.let {
-      require(it >= 0) {
-        error("'${::concurrency.name}' must be an integer >= 0")
-      }
+      require(it >= 0) { error("'${::concurrency.name}' must be positive") }
     }
 
-    subscriptionName?.let {
-      require(it.isNotEmpty()) { error("'${::subscriptionName.name}' must not be empty") }
+    timeoutInSeconds?.let {
+      require(it > 0) { error("'${::timeoutInSeconds.name}' must be strictly positive") }
     }
   }
 
-  private fun error(txt: String) = "eventListener: $txt"
+  private fun error(msg: String) = "default service: $msg"
 }

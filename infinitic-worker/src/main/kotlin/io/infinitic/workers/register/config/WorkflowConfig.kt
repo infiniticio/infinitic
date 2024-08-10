@@ -26,7 +26,7 @@ import io.infinitic.common.utils.getInstance
 import io.infinitic.common.utils.isImplementationOf
 import io.infinitic.common.workers.config.RetryPolicy
 import io.infinitic.common.workflows.emptyWorkflowContext
-import io.infinitic.events.config.EventListener
+import io.infinitic.events.config.EventListenerConfig
 import io.infinitic.workflows.Workflow
 import io.infinitic.workflows.WorkflowCheckMode
 import io.infinitic.workflows.engine.config.WorkflowStateEngine
@@ -55,7 +55,7 @@ import io.infinitic.workflows.Workflow as WorkflowBase
  * @throws IllegalArgumentException if the concurrency is less than 0.
  * @throws IllegalArgumentException if the timeoutInSeconds is not greater than 0 or UNDEFINED_TIMEOUT.
  */
-data class Workflow(
+data class WorkflowConfig(
   val name: String,
   val `class`: String? = null,
   val classes: List<String>? = null,
@@ -65,7 +65,7 @@ data class Workflow(
   var checkMode: WorkflowCheckMode? = null,
   var tagEngine: WorkflowTagEngine? = DEFAULT_WORKFLOW_TAG_ENGINE,
   var stateEngine: WorkflowStateEngine? = DEFAULT_WORKFLOW_STATE_ENGINE,
-  var eventListener: EventListener? = UNDEFINED_EVENT_LISTENER,
+  var eventListener: EventListenerConfig? = UNDEFINED_EVENT_LISTENER,
 ) {
   val allClasses = mutableListOf<Class<out WorkflowBase>>()
 

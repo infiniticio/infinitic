@@ -25,7 +25,7 @@ package io.infinitic.workers.register.config
 import io.infinitic.common.utils.getInstance
 import io.infinitic.common.utils.isImplementationOf
 import io.infinitic.common.workers.config.RetryPolicy
-import io.infinitic.events.config.EventListener
+import io.infinitic.events.config.EventListenerConfig
 import io.infinitic.tasks.tag.config.ServiceTagEngine
 
 /**
@@ -39,14 +39,14 @@ import io.infinitic.tasks.tag.config.ServiceTagEngine
  * @property tagEngine The tag engine for the service.
  * @property eventListener The event listener for the service.
  */
-data class Service(
+data class ServiceConfig(
   val name: String,
   val `class`: String? = null,
   var concurrency: Int? = null,
   var timeoutInSeconds: Double? = UNDEFINED_TIMEOUT,
   var retry: RetryPolicy? = UNDEFINED_RETRY,
   var tagEngine: ServiceTagEngine? = DEFAULT_SERVICE_TAG,
-  var eventListener: EventListener? = UNDEFINED_EVENT_LISTENER,
+  var eventListener: EventListenerConfig? = UNDEFINED_EVENT_LISTENER,
 ) {
   fun getInstance(): Any = `class`!!.getInstance().getOrThrow()
 
@@ -66,8 +66,8 @@ data class Service(
         require(it >= 0) { error("'${::concurrency.name}' must be an integer >= 0") }
       }
 
-      timeoutInSeconds?.let  { timeout ->
-        require(timeout > 0 || timeout == UNDEFINED_TIMEOUT ) { error("'${::timeoutInSeconds.name}' must be an integer > 0") }
+      timeoutInSeconds?.let { timeout ->
+        require(timeout > 0 || timeout == UNDEFINED_TIMEOUT) { error("'${::timeoutInSeconds.name}' must be an integer > 0") }
       }
     }
   }

@@ -23,7 +23,7 @@
 package io.infinitic.workers.register.config
 
 import io.infinitic.common.workers.config.ExponentialBackoffRetryPolicy
-import io.infinitic.events.config.EventListener
+import io.infinitic.events.config.EventListenerConfig
 import io.infinitic.tasks.WithRetry
 import io.infinitic.tasks.WithTimeout
 import io.infinitic.tasks.tag.config.ServiceTagEngine
@@ -44,7 +44,7 @@ internal val UNDEFINED_RETRY = ExponentialBackoffRetryPolicy().apply { isDefined
 
 internal val UNDEFINED_WITH_RETRY = WithRetry { _: Int, _: Exception -> null }
 
-internal val UNDEFINED_EVENT_LISTENER = EventListener().apply { isDefined = false }
+internal val UNDEFINED_EVENT_LISTENER = EventListenerConfig().apply { isDefined = false }
 
 internal val DEFAULT_SERVICE_TAG = ServiceTagEngine().apply { isDefault = true }
 

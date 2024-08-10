@@ -35,18 +35,18 @@ import io.infinitic.common.workers.registry.ServiceFactory
 import io.infinitic.common.workers.registry.WorkerRegistry
 import io.infinitic.common.workers.registry.WorkflowFactories
 import io.infinitic.common.workflows.data.workflows.WorkflowName
-import io.infinitic.events.config.EventListener
+import io.infinitic.events.config.EventListenerConfig
 import io.infinitic.storage.StorageConfig
 import io.infinitic.tasks.WithRetry
 import io.infinitic.tasks.WithTimeout
 import io.infinitic.tasks.tag.storage.BinaryTaskTagStorage
 import io.infinitic.workers.config.WorkerConfigInterface
 import io.infinitic.workers.register.config.DEFAULT_CONCURRENCY
-import io.infinitic.workers.register.config.ServiceDefault
+import io.infinitic.workers.register.config.ServiceConfigDefault
 import io.infinitic.workers.register.config.UNDEFINED_TIMEOUT
 import io.infinitic.workers.register.config.UNDEFINED_WITH_RETRY
 import io.infinitic.workers.register.config.UNDEFINED_WITH_TIMEOUT
-import io.infinitic.workers.register.config.WorkflowDefault
+import io.infinitic.workers.register.config.WorkflowConfigDefault
 import io.infinitic.workflows.WorkflowCheckMode
 import io.infinitic.workflows.engine.storage.BinaryWorkflowStateStorage
 import io.infinitic.workflows.tag.storage.BinaryWorkflowTagStorage
@@ -65,9 +65,9 @@ class InfiniticRegisterImpl : InfiniticRegister {
   override val registry = WorkerRegistry()
 
   override var defaultStorage: StorageConfig = StorageConfig()
-  override var defaultEventListener: EventListener? = null
-  override var serviceDefault: ServiceDefault = ServiceDefault()
-  override var workflowDefault: WorkflowDefault = WorkflowDefault()
+  override var defaultEventListener: EventListenerConfig? = null
+  override var serviceDefault: ServiceConfigDefault = ServiceConfigDefault()
+  override var workflowDefault: WorkflowConfigDefault = WorkflowConfigDefault()
 
   override fun close() {
     storages.forEach {
