@@ -42,16 +42,16 @@ class CompressorTests :
         }
 
         fun getBytesWithCompressorHeader(
-          compression: Compression,
+          compressionConfig: CompressionConfig,
           header: Int = 300,
           length: Int = 1000
         ): ByteArray {
           val bytes = getBytes(length)
-          return compression.compress(bytes).copyOf(header) + getBytes(length - header)
+          return compressionConfig.compress(bytes).copyOf(header) + getBytes(length - header)
         }
 
         fun testDecompressing(original: ByteArray, compressed: ByteArray) {
-          val decompressed = Compression.decompress(compressed)
+          val decompressed = CompressionConfig.decompress(compressed)
           decompressed.contentEquals(original) shouldBe true
         }
 
@@ -61,14 +61,14 @@ class CompressorTests :
         }
 
         "Decompressing uncompressed data should return the same data, even with a compressor header" {
-          Compression.entries.forEach {
+          CompressionConfig.entries.forEach {
             val data = getBytesWithCompressorHeader(it)
             testDecompressing(data, data)
           }
         }
 
         "Decompressing compressed data should return the same data" {
-          Compression.entries.forEach {
+          CompressionConfig.entries.forEach {
             val data = getBytes()
             val compressed = it.compress(data)
             testDecompressing(data, compressed)
@@ -76,7 +76,7 @@ class CompressorTests :
         }
 
         "compressed data should be compressed" {
-          Compression.entries.forEach {
+          CompressionConfig.entries.forEach {
             val data = getBytes()
             val compressed = it.compress(data)
             compressed.size shouldBeLessThan data.size

@@ -25,12 +25,13 @@
 transport: inMemory
 
 pulsar:
+  brokerServiceUrl: "pulsar://localhost:6650/"
+  webServiceUrl: "http://localhost:8080"
   tenant: infinitic
   namespace: dev
   consumer:
     negativeAckRedeliveryDelaySeconds: 0.3
-#  brokerServiceUrl:
-#  webServiceUrl:
+
 #  authentication:
 #    issuerUrl:
 #    privateKey:

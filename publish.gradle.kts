@@ -25,7 +25,7 @@
 
 // To publish a new version:
 // * check the new version number CI.BASE
-// * run: RELEASE=true ./gradlew publish --rerun-tasks
+// * run: OSSRH_USERNAME=**** OSSRH_PASSWORD=**** RELEASE=true ./gradlew publish --rerun-tasks
 // * login to https://s01.oss.sonatype.org#stagingRepositories
 // * once the new version is uploaded in staging repositories, close it, then release it
 //

@@ -23,7 +23,7 @@
 package io.infinitic.pulsar.admin
 
 import io.github.oshai.kotlinlogging.KotlinLogging
-import io.infinitic.pulsar.config.policies.Policies
+import io.infinitic.pulsar.config.policies.PoliciesConfig
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.future.await
 import kotlinx.coroutines.runBlocking
@@ -154,7 +154,7 @@ class PulsarInfiniticAdmin(
    **/
   suspend fun initNamespaceOnce(
     fullNamespace: String,
-    config: Policies
+    config: PoliciesConfig
   ): Result<PulsarPolicies> = initializedNamespaces.computeIfAbsent(fullNamespace) {
     runBlocking {
       try {
@@ -304,7 +304,10 @@ class PulsarInfiniticAdmin(
         Result.failure(e)
       }
 
-  suspend fun createNamespace(fullNamespace: String, config: Policies): Result<PulsarPolicies> =
+  suspend fun createNamespace(
+    fullNamespace: String,
+    config: PoliciesConfig
+  ): Result<PulsarPolicies> =
       try {
         logger.debug { "Creating namespace '$fullNamespace'." }
         val pulsarPolicies = config.getPulsarPolicies()
@@ -505,7 +508,7 @@ class PulsarInfiniticAdmin(
     }
   }
 
-  private fun Policies.getPulsarPolicies() = PulsarPolicies().also {
+  private fun PoliciesConfig.getPulsarPolicies() = PulsarPolicies().also {
     it.retention_policies = RetentionPolicies(retentionTimeInMinutes, retentionSizeInMB)
     it.message_ttl_in_seconds = messageTTLInSeconds
     it.delayed_delivery_policies =

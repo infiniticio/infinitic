@@ -31,7 +31,7 @@ import io.infinitic.inMemory.InMemoryInfiniticProducerAsync
 import io.infinitic.pulsar.PulsarInfiniticConsumerAsync
 import io.infinitic.pulsar.PulsarInfiniticProducerAsync
 import io.infinitic.pulsar.client.PulsarInfiniticClient
-import io.infinitic.pulsar.config.Pulsar
+import io.infinitic.pulsar.config.PulsarConfig
 import io.infinitic.pulsar.consumers.Consumer
 import io.infinitic.pulsar.producers.Producer
 import io.infinitic.pulsar.resources.PulsarResources
@@ -42,7 +42,7 @@ data class TransportConfig(
   override val transport: Transport,
 
   /** Pulsar configuration */
-  override val pulsar: Pulsar?,
+  override val pulsar: PulsarConfig?,
 
   /** Shutdown Grace Period */
   override val shutdownGracePeriodInSeconds: Double

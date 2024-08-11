@@ -25,11 +25,6 @@ package io.infinitic.storage.config
 import com.sksamuel.hoplite.ConfigException
 import com.sksamuel.hoplite.ConfigLoaderBuilder
 import com.sksamuel.hoplite.yaml.YamlPropertySource
-import io.infinitic.storage.InMemory
-import io.infinitic.storage.MySQL
-import io.infinitic.storage.Postgres
-import io.infinitic.storage.Redis
-import io.infinitic.storage.Storage
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
@@ -38,16 +33,24 @@ import io.kotest.matchers.string.shouldContain
 class StorageConfigTests :
   StringSpec(
       {
+        "Can create StorageConfig through builder" {
+          val storageConfig = StorageConfig
+              .builder()
+              .build()
+
+          storageConfig shouldBe StorageConfig()
+        }
+
         "default storage should be inMemory" {
           val config = loadConfigFromYaml<StorageConfigImpl>("nothing:")
 
-          config shouldBe StorageConfigImpl(storage = Storage(inMemory = InMemory()))
+          config shouldBe StorageConfigImpl(storage = StorageConfig(inMemory = InMemoryConfig()))
         }
 
         "default storage should not be compressed" {
           val config = loadConfigFromYaml<StorageConfigImpl>("nothing:")
 
-          config shouldBe StorageConfigImpl(storage = Storage(compression = null))
+          config shouldBe StorageConfigImpl(storage = StorageConfig(compression = null))
         }
 
         "storage without type should default" {
@@ -65,7 +68,7 @@ storage:
      """,
           )
 
-          config shouldBe StorageConfigImpl(storage = Storage(inMemory = InMemory()))
+          config shouldBe StorageConfigImpl(storage = StorageConfig(inMemory = InMemoryConfig()))
         }
 
         "can choose Redis storage" {
@@ -76,7 +79,7 @@ storage:
      """,
           )
 
-          config shouldBe StorageConfigImpl(storage = Storage(redis = Redis()))
+          config shouldBe StorageConfigImpl(storage = StorageConfig(redis = RedisConfig()))
         }
 
         "can choose MySQL storage" {
@@ -87,7 +90,7 @@ storage:
      """,
           )
 
-          config shouldBe StorageConfigImpl(storage = Storage(mysql = MySQL()))
+          config shouldBe StorageConfigImpl(storage = StorageConfig(mysql = MySQLConfig()))
         }
 
         "can choose Postgres storage" {
@@ -98,7 +101,7 @@ storage:
      """,
           )
 
-          config shouldBe StorageConfigImpl(storage = Storage(postgres = Postgres()))
+          config shouldBe StorageConfigImpl(storage = StorageConfig(postgres = PostgresConfig()))
         }
 
         "can not have multiple definition in storage" {

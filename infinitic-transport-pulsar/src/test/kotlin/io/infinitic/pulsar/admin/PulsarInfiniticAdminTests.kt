@@ -24,7 +24,7 @@
 package io.infinitic.pulsar.admin
 
 import io.infinitic.common.fixtures.DockerOnly
-import io.infinitic.pulsar.config.policies.Policies
+import io.infinitic.pulsar.config.policies.PoliciesConfig
 import io.kotest.assertions.throwables.shouldNotThrow
 import io.kotest.core.annotation.EnabledIf
 import io.kotest.core.spec.style.StringSpec
@@ -67,10 +67,10 @@ class PulsarInfiniticAdminTests :
             admin.initTenantOnce("test-tenant", null, null).getOrThrow()
             CoroutineScope(Dispatchers.IO).async {
               launch {
-                admin.initNamespaceOnce("test-tenant/test-namespace", Policies()).getOrThrow()
+                admin.initNamespaceOnce("test-tenant/test-namespace", PoliciesConfig()).getOrThrow()
               }
               launch {
-                admin.initNamespaceOnce("test-tenant/test-namespace", Policies()).getOrThrow()
+                admin.initNamespaceOnce("test-tenant/test-namespace", PoliciesConfig()).getOrThrow()
               }
             }.await()
           }

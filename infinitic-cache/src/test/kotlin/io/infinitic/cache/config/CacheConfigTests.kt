@@ -24,8 +24,6 @@ package io.infinitic.cache.config
 
 import com.sksamuel.hoplite.ConfigLoaderBuilder
 import com.sksamuel.hoplite.yaml.YamlPropertySource
-import io.infinitic.cache.Cache
-import io.infinitic.cache.Caffeine
 import io.infinitic.cache.caches.caffeine.CaffeineCachedKeySet
 import io.infinitic.cache.caches.caffeine.CaffeineCachedKeyValue
 import io.kotest.core.spec.style.StringSpec
@@ -37,8 +35,8 @@ class CacheConfigTests :
         "default cache should be None" {
           val config = loadConfigFromYaml<CacheConfigImpl>("nothing:")
 
-          config shouldBe CacheConfigImpl(cache = Cache())
-          config.cache.type shouldBe Cache.CacheType.NONE
+          config shouldBe CacheConfigImpl(cache = CacheConfig())
+          config.cache.type shouldBe CacheConfig.CacheType.NONE
           config.cache.keyValue shouldBe null
           config.cache.keySet shouldBe null
         }
@@ -46,8 +44,8 @@ class CacheConfigTests :
         "cache without type should be None" {
           val config = loadConfigFromYaml<CacheConfigImpl>("cache:")
 
-          config shouldBe CacheConfigImpl(cache = Cache())
-          config.cache.type shouldBe Cache.CacheType.NONE
+          config shouldBe CacheConfigImpl(cache = CacheConfig())
+          config.cache.type shouldBe CacheConfig.CacheType.NONE
           config.cache.keyValue shouldBe null
           config.cache.keySet shouldBe null
         }
@@ -59,8 +57,8 @@ cache:
   caffeine:
      """,
           )
-          config shouldBe CacheConfigImpl(cache = Cache(caffeine = Caffeine()))
-          config.cache.type shouldBe Cache.CacheType.CAFFEINE
+          config shouldBe CacheConfigImpl(cache = CacheConfig(caffeine = CaffeineConfig()))
+          config.cache.type shouldBe CacheConfig.CacheType.CAFFEINE
           config.cache.keyValue!!::class shouldBe CaffeineCachedKeyValue::class
           config.cache.keySet!!::class shouldBe CaffeineCachedKeySet::class
         }
@@ -76,8 +74,16 @@ cache:
      """,
           )
 
-          config shouldBe CacheConfigImpl(cache = Cache(caffeine = Caffeine(100, 42, 64)))
-          config.cache.type shouldBe Cache.CacheType.CAFFEINE
+          config shouldBe CacheConfigImpl(
+              cache = CacheConfig(
+                  caffeine = CaffeineConfig(
+                      100,
+                      42,
+                      64,
+                  ),
+              ),
+          )
+          config.cache.type shouldBe CacheConfig.CacheType.CAFFEINE
           config.cache.keyValue!!::class shouldBe CaffeineCachedKeyValue::class
           config.cache.keySet!!::class shouldBe CaffeineCachedKeySet::class
         }

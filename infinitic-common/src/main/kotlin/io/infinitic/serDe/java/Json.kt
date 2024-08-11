@@ -35,6 +35,7 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import com.fasterxml.jackson.module.kotlin.KotlinFeature
 import com.fasterxml.jackson.module.kotlin.KotlinModule
 import com.fasterxml.jackson.module.kotlin.jsonMapper
+import com.sksamuel.hoplite.Secret
 import io.infinitic.workflows.Deferred
 import io.infinitic.workflows.DeferredJacksonSerializer
 import org.apache.avro.specific.SpecificRecordBase
@@ -48,7 +49,11 @@ object Json {
     addMixIn(Exception::class.java, ExceptionMixIn::class.java)
     addModule(JavaTimeModule())
     addModule(KotlinModule.Builder().configure(KotlinFeature.NullIsSameAsDefault, true).build())
-    addModule(SimpleModule().addSerializer(Deferred::class.java, DeferredJacksonSerializer()))
+    addModule(
+        SimpleModule()
+            .addSerializer(Deferred::class.java, DeferredJacksonSerializer())
+            .addSerializer(Secret::class.java, SecretSerializer()),
+    )
     configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false)
     configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false)
     configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
@@ -96,5 +101,14 @@ private class AvroListStringSerializer : JsonSerializer<List<String>>() {
       gen.writeString(o)
     }
     gen.writeEndArray()
+  }
+}
+
+/**
+ * Serializer for Secret object.
+ */
+class SecretSerializer : JsonSerializer<Secret>() {
+  override fun serialize(secret: Secret, gen: JsonGenerator, serializers: SerializerProvider) {
+    gen.writeString(secret.value)
   }
 }

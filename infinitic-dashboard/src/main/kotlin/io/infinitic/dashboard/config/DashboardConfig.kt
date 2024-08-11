@@ -25,13 +25,13 @@ package io.infinitic.dashboard.config
 import io.infinitic.common.config.loadConfigFromFile
 import io.infinitic.common.config.loadConfigFromResource
 import io.infinitic.common.config.loadConfigFromYaml
-import io.infinitic.pulsar.config.Pulsar
+import io.infinitic.pulsar.config.PulsarConfig
 
 data class DashboardConfig(
     /*
     Pulsar configuration
      */
-    val pulsar: Pulsar,
+    val pulsar: PulsarConfig,
 
     /*
     Port configuration

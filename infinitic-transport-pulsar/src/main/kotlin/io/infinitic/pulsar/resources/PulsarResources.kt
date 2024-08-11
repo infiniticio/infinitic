@@ -28,19 +28,23 @@ import io.infinitic.common.transport.MainSubscription
 import io.infinitic.common.transport.Topic
 import io.infinitic.common.transport.isDelayed
 import io.infinitic.pulsar.admin.PulsarInfiniticAdmin
-import io.infinitic.pulsar.config.Pulsar
-import io.infinitic.pulsar.config.policies.Policies
+import io.infinitic.pulsar.config.PulsarConfig
+import io.infinitic.pulsar.config.policies.PoliciesConfig
 
 @Suppress("MemberVisibilityCanBePrivate")
 class PulsarResources(
   val admin: PulsarInfiniticAdmin,
-    // tenant configuration
+  /**
+   * tenant configuration
+   */
   val tenant: String,
   val allowedClusters: Set<String>?,
-    // namespace configuration
+  /**
+   * namespace configuration
+   */
   val namespace: String,
   val adminRoles: Set<String>?,
-  val policies: Policies
+  val policies: PoliciesConfig
 ) {
 
   /**
@@ -155,13 +159,13 @@ class PulsarResources(
 
   companion object {
     /** Create TopicManager from a Pulsar configuration instance */
-    fun from(pulsar: Pulsar) = PulsarResources(
-        PulsarInfiniticAdmin(pulsar.admin),
-        pulsar.tenant,
-        pulsar.allowedClusters,
-        pulsar.namespace,
-        pulsar.adminRoles,
-        pulsar.policies,
+    fun from(pulsarConfig: PulsarConfig) = PulsarResources(
+        PulsarInfiniticAdmin(pulsarConfig.admin),
+        pulsarConfig.tenant,
+        pulsarConfig.allowedClusters,
+        pulsarConfig.namespace,
+        pulsarConfig.adminRoles,
+        pulsarConfig.policies,
     )
   }
 }

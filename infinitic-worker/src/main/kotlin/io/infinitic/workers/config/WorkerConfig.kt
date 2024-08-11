@@ -20,21 +20,23 @@
  *
  * Licensor: infinitic.io
  */
+
 package io.infinitic.workers.config
 
 import io.infinitic.common.config.loadConfigFromFile
 import io.infinitic.common.config.loadConfigFromResource
 import io.infinitic.common.config.loadConfigFromYaml
-import io.infinitic.events.config.EventListener
-import io.infinitic.pulsar.config.Pulsar
-import io.infinitic.storage.Storage
+import io.infinitic.events.config.EventListenerConfig
+import io.infinitic.pulsar.config.PulsarConfig
+import io.infinitic.storage.config.StorageConfig
 import io.infinitic.transport.config.Transport
-import io.infinitic.workers.register.config.Service
-import io.infinitic.workers.register.config.ServiceDefault
-import io.infinitic.workers.register.config.Workflow
-import io.infinitic.workers.register.config.WorkflowDefault
+import io.infinitic.workers.register.config.ServiceConfig
+import io.infinitic.workers.register.config.ServiceConfigDefault
+import io.infinitic.workers.register.config.WorkflowConfig
+import io.infinitic.workers.register.config.WorkflowConfigDefault
 
-data class WorkerConfig @JvmOverloads constructor(
+@Suppress("unused")
+data class WorkerConfig(
   /** Worker name */
   override val name: String? = null,
 
@@ -45,25 +47,25 @@ data class WorkerConfig @JvmOverloads constructor(
   override val transport: Transport = Transport.pulsar,
 
   /** Pulsar configuration */
-  override val pulsar: Pulsar? = null,
+  override val pulsar: PulsarConfig? = null,
 
   /** Default storage */
-  override val storage: Storage? = null,
+  override val storage: StorageConfig? = null,
 
   /** Workflows configuration */
-  override val workflows: List<Workflow> = listOf(),
+  override val workflows: List<WorkflowConfig> = listOf(),
 
   /** Services configuration */
-  override val services: List<Service> = listOf(),
+  override val services: List<ServiceConfig> = listOf(),
 
   /** Default service configuration */
-  override val serviceDefault: ServiceDefault? = null,
+  override val serviceDefault: ServiceConfigDefault? = null,
 
   /** Default workflow configuration */
-  override val workflowDefault: WorkflowDefault? = null,
+  override val workflowDefault: WorkflowConfigDefault? = null,
 
   /** Default event listener configuration */
-  override val eventListener: EventListener? = null
+  override val eventListener: EventListenerConfig? = null
 
 ) : WorkerConfigInterface {
 
@@ -90,5 +92,68 @@ data class WorkerConfig @JvmOverloads constructor(
     @JvmStatic
     fun fromYaml(vararg yamls: String): WorkerConfig =
         loadConfigFromYaml(*yamls)
+
+    @JvmStatic
+    fun builder() = WorkerConfigBuilder()
+  }
+
+  /**
+   * WorkerConfig builder (Useful for Java user)
+   */
+  class WorkerConfigBuilder {
+    private val default = WorkerConfig()
+    private var name = default.name
+    private var shutdownGracePeriodInSeconds = default.shutdownGracePeriodInSeconds
+    private var transport = default.transport
+    private var pulsar = default.pulsar
+    private var storage = default.storage
+    private var workflows = default.workflows
+    private var services = default.services
+    private var serviceDefault = default.serviceDefault
+    private var workflowDefault = default.workflowDefault
+    private var eventListener = default.eventListener
+
+    fun name(name: String) =
+        apply { this.name = name }
+
+    fun shutdownGracePeriodInSeconds(shutdownGracePeriodInSeconds: Double) =
+        apply { this.shutdownGracePeriodInSeconds = shutdownGracePeriodInSeconds }
+
+    fun transport(transport: Transport) =
+        apply { this.transport = transport }
+
+    fun pulsar(pulsar: PulsarConfig?) =
+        apply { this.pulsar = pulsar }
+
+    fun storage(storage: StorageConfig?) =
+        apply { this.storage = storage }
+
+    fun workflows(workflows: List<WorkflowConfig>) =
+        apply { this.workflows = workflows }
+
+    fun services(services: List<ServiceConfig>) =
+        apply { this.services = services }
+
+    fun serviceDefault(serviceDefault: ServiceConfigDefault?) =
+        apply { this.serviceDefault = serviceDefault }
+
+    fun workflowDefault(workflowDefault: WorkflowConfigDefault?) =
+        apply { this.workflowDefault = workflowDefault }
+
+    fun eventListener(eventListener: EventListenerConfig?) =
+        apply { this.eventListener = eventListener }
+
+    fun build() = WorkerConfig(
+        name,
+        shutdownGracePeriodInSeconds,
+        transport,
+        pulsar,
+        storage,
+        workflows,
+        services,
+        serviceDefault,
+        workflowDefault,
+        eventListener,
+    )
   }
 }

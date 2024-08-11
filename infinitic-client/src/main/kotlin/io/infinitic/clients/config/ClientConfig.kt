@@ -25,10 +25,10 @@ package io.infinitic.clients.config
 import io.infinitic.common.config.loadConfigFromFile
 import io.infinitic.common.config.loadConfigFromResource
 import io.infinitic.common.config.loadConfigFromYaml
-import io.infinitic.pulsar.config.Pulsar
+import io.infinitic.pulsar.config.PulsarConfig
 import io.infinitic.transport.config.Transport
 
-data class ClientConfig @JvmOverloads constructor(
+data class ClientConfig(
   /** Client name */
   override val name: String? = null,
 
@@ -36,7 +36,7 @@ data class ClientConfig @JvmOverloads constructor(
   override val transport: Transport = Transport.pulsar,
 
   /** Pulsar configuration */
-  override val pulsar: Pulsar? = null,
+  override val pulsar: PulsarConfig? = null,
 
   /** Shutdown Grace Period */
   override val shutdownGracePeriodInSeconds: Double = 10.0

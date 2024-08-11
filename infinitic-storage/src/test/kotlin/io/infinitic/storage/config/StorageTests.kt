@@ -24,20 +24,15 @@ package io.infinitic.storage.config
 
 import com.sksamuel.hoplite.Secret
 import io.infinitic.storage.DockerOnly
-import io.infinitic.storage.InMemory
-import io.infinitic.storage.MySQL
-import io.infinitic.storage.Postgres
-import io.infinitic.storage.Redis
-import io.infinitic.storage.Storage
-import io.infinitic.storage.databases.inMemory.InMemoryKeySetStorage
-import io.infinitic.storage.databases.inMemory.InMemoryKeyValueStorage
-import io.infinitic.storage.databases.mysql.MySQLKeySetStorage
-import io.infinitic.storage.databases.mysql.MySQLKeyValueStorage
-import io.infinitic.storage.databases.postgres.PostgresKeySetStorage
-import io.infinitic.storage.databases.postgres.PostgresKeyValueStorage
-import io.infinitic.storage.databases.redis.RedisKeySetStorage
-import io.infinitic.storage.databases.redis.RedisKeyValueStorage
 import io.infinitic.storage.keyValue.CompressedKeyValueStorage
+import io.infinitic.storage.storages.inMemory.InMemoryKeySetStorage
+import io.infinitic.storage.storages.inMemory.InMemoryKeyValueStorage
+import io.infinitic.storage.storages.mysql.MySQLKeySetStorage
+import io.infinitic.storage.storages.mysql.MySQLKeyValueStorage
+import io.infinitic.storage.storages.postgres.PostgresKeySetStorage
+import io.infinitic.storage.storages.postgres.PostgresKeyValueStorage
+import io.infinitic.storage.storages.redis.RedisKeySetStorage
+import io.infinitic.storage.storages.redis.RedisKeyValueStorage
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
 import org.testcontainers.containers.MySQLContainer
@@ -47,44 +42,44 @@ class StorageTests :
   StringSpec(
       {
         "default storage should be inMemory" {
-          val storage = Storage()
+          val storage = StorageConfig()
 
-          storage shouldBe Storage(inMemory = InMemory())
+          storage shouldBe StorageConfig(inMemory = InMemoryConfig())
         }
 
         "properties of InMemory" {
-          val config = Storage(inMemory = InMemory("test"), compression = null)
+          val config = StorageConfig(inMemory = InMemoryConfig("test"), compression = null)
 
-          config.type shouldBe Storage.StorageType.IN_MEMORY
+          config.type shouldBe StorageConfig.StorageType.IN_MEMORY
 
           // config.keySet should be InMemoryKeySetStorage()
           config.keySet::class shouldBe InMemoryKeySetStorage::class
           (config.keySet as InMemoryKeySetStorage).storage shouldBe
-              InMemoryKeySetStorage.from(InMemory("test")).storage
+              InMemoryKeySetStorage.from(InMemoryConfig("test")).storage
 
           // config.keyValue should be CompressedKeyValueStorage(InMemoryKeyValueStorage())
           config.keyValue::class shouldBe CompressedKeyValueStorage::class
           (config.keyValue as CompressedKeyValueStorage).storage::class shouldBe
               InMemoryKeyValueStorage::class
           ((config.keyValue as CompressedKeyValueStorage).storage as InMemoryKeyValueStorage)
-              .storage shouldBe InMemoryKeyValueStorage.from(InMemory("test")).storage
+              .storage shouldBe InMemoryKeyValueStorage.from(InMemoryConfig("test")).storage
         }
 
         "properties of Redis" {
-          val config = Storage(redis = Redis(), compression = null)
+          val config = StorageConfig(redis = RedisConfig(), compression = null)
 
-          config.type shouldBe Storage.StorageType.REDIS
+          config.type shouldBe StorageConfig.StorageType.REDIS
 
           // config.keySet should be RedisKeySetStorage(pool)
           config.keySet::class shouldBe RedisKeySetStorage::class
-          (config.keySet as RedisKeySetStorage).pool shouldBe RedisKeySetStorage.from(Redis()).pool
+          (config.keySet as RedisKeySetStorage).pool shouldBe RedisKeySetStorage.from(RedisConfig()).pool
 
           // config.keyValue should be CompressedKeyValueStorage(RedisKeyValueStorage(pool))
           config.keyValue::class shouldBe CompressedKeyValueStorage::class
           (config.keyValue as CompressedKeyValueStorage).storage::class shouldBe
               RedisKeyValueStorage::class
           ((config.keyValue as CompressedKeyValueStorage).storage as RedisKeyValueStorage)
-              .pool shouldBe RedisKeyValueStorage.from(Redis()).pool
+              .pool shouldBe RedisKeyValueStorage.from(RedisConfig()).pool
         }
 
         "properties of MySQL".config(enabledIf = { DockerOnly.shouldRun }) {
@@ -97,7 +92,7 @@ class StorageTests :
               }
               .also { it.start() }
 
-          val mysql = MySQL(
+          val mysql = MySQLConfig(
               host = mysqlServer.host,
               port = mysqlServer.firstMappedPort,
               user = mysqlServer.username,
@@ -105,9 +100,9 @@ class StorageTests :
               database = mysqlServer.databaseName,
           )
 
-          val config = Storage(mysql = mysql, compression = null)
+          val config = StorageConfig(mysql = mysql, compression = null)
 
-          config.type shouldBe Storage.StorageType.MYSQL
+          config.type shouldBe StorageConfig.StorageType.MYSQL
 
           // config.keySet should be MySQLKeySetStorage(pool)
           config.keySet::class shouldBe MySQLKeySetStorage::class
@@ -134,7 +129,7 @@ class StorageTests :
               }
               .also { it.start() }
 
-          val postgres = Postgres(
+          val postgresConfig = PostgresConfig(
               host = postgresServer.host,
               port = postgresServer.firstMappedPort,
               user = postgresServer.username,
@@ -142,22 +137,24 @@ class StorageTests :
               database = postgresServer.databaseName,
           )
 
-          val config = Storage(postgres = postgres, compression = null)
+          val config = StorageConfig(postgres = postgresConfig, compression = null)
 
-          config.type shouldBe Storage.StorageType.POSTGRES
+          config.type shouldBe StorageConfig.StorageType.POSTGRES
 
           // config.keySet should be PostgresKeySetStorage(pool)
           config.keySet::class shouldBe PostgresKeySetStorage::class
-          (config.keySet as PostgresKeySetStorage).pool shouldBe PostgresKeySetStorage.from(postgres).pool
+          (config.keySet as PostgresKeySetStorage).pool shouldBe PostgresKeySetStorage.from(
+              postgresConfig,
+          ).pool
 
           // config.keyValue should be CompressedKeyValueStorage(PostgresKeyValueStorage(pool))
           config.keyValue::class shouldBe CompressedKeyValueStorage::class
           (config.keyValue as CompressedKeyValueStorage).storage::class shouldBe
               PostgresKeyValueStorage::class
           (((config.keyValue as CompressedKeyValueStorage)).storage as PostgresKeyValueStorage)
-              .pool shouldBe PostgresKeyValueStorage.from(postgres).pool
+              .pool shouldBe PostgresKeyValueStorage.from(postgresConfig).pool
 
-          postgres.close()
+          postgresConfig.close()
           postgresServer.close()
         }
       },

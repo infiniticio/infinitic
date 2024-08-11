@@ -22,11 +22,11 @@
  */
 package io.infinitic.workflows.engine.config
 
-import io.infinitic.storage.Storage
+import io.infinitic.storage.config.StorageConfig
 
 data class WorkflowStateEngine(
   var concurrency: Int? = null,
-  var storage: Storage? = null,
+  var storageConfig: StorageConfig? = null,
 ) {
   var isDefault: Boolean = false
 

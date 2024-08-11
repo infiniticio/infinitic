@@ -23,7 +23,7 @@
 package io.infinitic.storage.keySet
 
 import io.github.oshai.kotlinlogging.KotlinLogging
-import io.infinitic.cache.caches.keySet.CachedKeySet
+import io.infinitic.cache.keySet.CachedKeySet
 import org.jetbrains.annotations.TestOnly
 
 class CachedKeySetStorage(
