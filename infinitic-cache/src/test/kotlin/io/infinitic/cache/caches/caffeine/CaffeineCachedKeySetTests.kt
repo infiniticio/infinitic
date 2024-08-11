@@ -22,7 +22,7 @@
  */
 package io.infinitic.cache.caches.caffeine
 
-import io.infinitic.cache.CaffeineConfig
+import io.infinitic.cache.config.CaffeineConfig
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
 

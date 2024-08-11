@@ -22,7 +22,7 @@
  */
 package io.infinitic.workflows.engine.config
 
-import io.infinitic.storage.StorageConfig
+import io.infinitic.storage.config.StorageConfig
 
 data class WorkflowStateEngine(
   var concurrency: Int? = null,

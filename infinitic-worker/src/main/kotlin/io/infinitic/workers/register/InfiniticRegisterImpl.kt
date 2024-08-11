@@ -36,7 +36,7 @@ import io.infinitic.common.workers.registry.WorkerRegistry
 import io.infinitic.common.workers.registry.WorkflowFactories
 import io.infinitic.common.workflows.data.workflows.WorkflowName
 import io.infinitic.events.config.EventListenerConfig
-import io.infinitic.storage.StorageConfig
+import io.infinitic.storage.config.StorageConfig
 import io.infinitic.tasks.WithRetry
 import io.infinitic.tasks.WithTimeout
 import io.infinitic.tasks.tag.storage.BinaryTaskTagStorage
@@ -118,7 +118,7 @@ class InfiniticRegisterImpl : InfiniticRegister {
       }
     }
   }
-  
+
   override fun registerServiceTagEngine(
     serviceName: String,
     concurrency: Int?,

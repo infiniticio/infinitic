@@ -20,42 +20,50 @@
  *
  * Licensor: infinitic.io
  */
-package io.infinitic.storage.keySet
+package io.infinitic.storage.storages.inMemory
 
-import io.github.oshai.kotlinlogging.KotlinLogging
-import io.infinitic.cache.keySet.CachedKeySet
+import io.infinitic.storage.config.InMemoryConfig
+import io.infinitic.storage.data.Bytes
+import io.infinitic.storage.keySet.KeySetStorage
 import org.jetbrains.annotations.TestOnly
 
-class CachedKeySetStorage(
-  private val cache: CachedKeySet<ByteArray>,
-  private val storage: KeySetStorage
-) : KeySetStorage {
+class InMemoryKeySetStorage(internal val storage: MutableMap<String, MutableSet<Bytes>>) :
+  KeySetStorage {
 
-  private val logger = KotlinLogging.logger {}
+  companion object {
+    fun from(config: InMemoryConfig) = InMemoryKeySetStorage(config.getPool().keySet)
+  }
 
-  override suspend fun get(key: String): Set<ByteArray> =
-      cache.get(key) ?: run {
-        logger.debug { "key $key - getSet - absent from cache, get from storage" }
-        storage.get(key).also { cache.set(key, it) }
-      }
+  override suspend fun get(key: String): Set<ByteArray> {
+    return getBytesPerKey(key).map { it.content }.toSet()
+  }
 
   override suspend fun add(key: String, value: ByteArray) {
-    storage.add(key, value)
-    cache.add(key, value)
+    getBytesPerKey(key).add(Bytes(value))
   }
 
   override suspend fun remove(key: String, value: ByteArray) {
-    cache.remove(key, value)
-    storage.remove(key, value)
+    getBytesPerKey(key).remove(Bytes(value))
+
+    // clean key if now empty
+    if (getBytesPerKey(key).isEmpty()) storage.remove(key)
   }
 
   override fun close() {
-    storage.close()
+    // Do nothing
   }
 
   @TestOnly
   override fun flush() {
-    storage.flush()
-    cache.flush()
+    storage.clear()
+  }
+
+  private fun getBytesPerKey(key: String): MutableSet<Bytes> {
+    return storage[key]
+      ?: run {
+        val set = mutableSetOf<Bytes>()
+        storage[key] = set
+        set
+      }
   }
 }

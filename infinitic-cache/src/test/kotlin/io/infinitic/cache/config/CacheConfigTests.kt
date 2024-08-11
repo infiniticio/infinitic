@@ -24,8 +24,6 @@ package io.infinitic.cache.config
 
 import com.sksamuel.hoplite.ConfigLoaderBuilder
 import com.sksamuel.hoplite.yaml.YamlPropertySource
-import io.infinitic.cache.CacheConfig
-import io.infinitic.cache.CaffeineConfig
 import io.infinitic.cache.caches.caffeine.CaffeineCachedKeySet
 import io.infinitic.cache.caches.caffeine.CaffeineCachedKeyValue
 import io.kotest.core.spec.style.StringSpec

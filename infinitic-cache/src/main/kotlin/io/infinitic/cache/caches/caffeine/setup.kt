@@ -24,8 +24,8 @@ package io.infinitic.cache.caches.caffeine
 
 import com.github.benmanes.caffeine.cache.RemovalCause
 import io.github.oshai.kotlinlogging.KotlinLogging
-import io.infinitic.cache.CacheConfig
-import io.infinitic.cache.CaffeineConfig
+import io.infinitic.cache.config.CacheConfig
+import io.infinitic.cache.config.CaffeineConfig
 import java.util.concurrent.TimeUnit
 import com.github.benmanes.caffeine.cache.Caffeine as CaffeineCache
 

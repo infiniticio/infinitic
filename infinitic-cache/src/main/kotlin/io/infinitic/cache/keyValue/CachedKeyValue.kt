@@ -20,8 +20,14 @@
  *
  * Licensor: infinitic.io
  */
-package io.infinitic.cache.config
+package io.infinitic.cache.keyValue
 
-internal data class CacheConfigImpl(
-  override val cache: CacheConfig = CacheConfig()
-) : CacheConfigInterface
+import io.infinitic.cache.Flushable
+
+interface CachedKeyValue<T> : Flushable {
+  fun getValue(key: String): T?
+
+  fun putValue(key: String, value: T)
+
+  fun delValue(key: String)
+}

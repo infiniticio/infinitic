@@ -27,7 +27,7 @@ import io.infinitic.common.workers.registry.ServiceFactory
 import io.infinitic.common.workers.registry.WorkerRegistry
 import io.infinitic.common.workers.registry.WorkflowFactories
 import io.infinitic.events.config.EventListenerConfig
-import io.infinitic.storage.StorageConfig
+import io.infinitic.storage.config.StorageConfig
 import io.infinitic.tasks.WithRetry
 import io.infinitic.tasks.WithTimeout
 import io.infinitic.workers.register.config.ServiceConfigDefault

@@ -22,8 +22,6 @@
  */
 package io.infinitic.storage.config
 
-import io.infinitic.storage.StorageConfig
-
-data class StorageConfigImpl(
+internal data class StorageConfigImpl(
   override val storage: StorageConfig = StorageConfig()
 ) : StorageConfigInterface

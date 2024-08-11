@@ -22,6 +22,43 @@
  */
 package io.infinitic.cache.config
 
-internal data class CacheConfigImpl(
-  override val cache: CacheConfig = CacheConfig()
-) : CacheConfigInterface
+import io.infinitic.cache.caches.caffeine.CaffeineCachedKeySet
+import io.infinitic.cache.caches.caffeine.CaffeineCachedKeyValue
+import io.infinitic.cache.keySet.CachedKeySet
+import io.infinitic.cache.keyValue.CachedKeyValue
+
+data class CacheConfig(
+  internal val caffeine: CaffeineConfig? = null
+) {
+
+  companion object {
+    @JvmStatic
+    fun from(caffeineConfig: CaffeineConfig) = CacheConfig(caffeine = caffeineConfig)
+  }
+
+  val type: CacheType by lazy {
+    when {
+      caffeine != null -> CacheType.CAFFEINE
+      else -> CacheType.NONE
+    }
+  }
+
+  val keySet: CachedKeySet<ByteArray>? by lazy {
+    when {
+      caffeine != null -> CaffeineCachedKeySet(caffeine)
+      else -> null
+    }
+  }
+
+  val keyValue: CachedKeyValue<ByteArray>? by lazy {
+    when {
+      caffeine != null -> CaffeineCachedKeyValue(caffeine)
+      else -> null
+    }
+  }
+
+  enum class CacheType {
+    NONE,
+    CAFFEINE
+  }
+}

@@ -28,7 +28,7 @@ import io.infinitic.common.config.loadConfigFromResource
 import io.infinitic.common.config.loadConfigFromYaml
 import io.infinitic.events.config.EventListenerConfig
 import io.infinitic.pulsar.config.PulsarConfig
-import io.infinitic.storage.StorageConfig
+import io.infinitic.storage.config.StorageConfig
 import io.infinitic.transport.config.Transport
 import io.infinitic.workers.register.config.ServiceConfig
 import io.infinitic.workers.register.config.ServiceConfigDefault

@@ -22,8 +22,6 @@
  */
 package io.infinitic.cache.config
 
-import io.infinitic.cache.CacheConfig
-
 /** Cache configuration */
 interface CacheConfigInterface {
   val cache: CacheConfig?

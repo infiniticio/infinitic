@@ -25,11 +25,6 @@ package io.infinitic.storage.config
 import com.sksamuel.hoplite.ConfigException
 import com.sksamuel.hoplite.ConfigLoaderBuilder
 import com.sksamuel.hoplite.yaml.YamlPropertySource
-import io.infinitic.storage.InMemoryConfig
-import io.infinitic.storage.MySQLConfig
-import io.infinitic.storage.PostgresConfig
-import io.infinitic.storage.RedisConfig
-import io.infinitic.storage.StorageConfig
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
@@ -38,6 +33,14 @@ import io.kotest.matchers.string.shouldContain
 class StorageConfigTests :
   StringSpec(
       {
+        "Can create StorageConfig through builder" {
+          val storageConfig = StorageConfig
+              .builder()
+              .build()
+
+          storageConfig shouldBe StorageConfig()
+        }
+
         "default storage should be inMemory" {
           val config = loadConfigFromYaml<StorageConfigImpl>("nothing:")
 

@@ -20,8 +20,8 @@
  *
  * Licensor: infinitic.io
  */
-package io.infinitic.cache.config
+package io.infinitic.cache
 
-internal data class CacheConfigImpl(
-  override val cache: CacheConfig = CacheConfig()
-) : CacheConfigInterface
+interface Flushable {
+  fun flush()
+}

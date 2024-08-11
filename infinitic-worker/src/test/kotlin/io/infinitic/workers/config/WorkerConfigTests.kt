@@ -45,22 +45,35 @@ internal class WorkerConfigTests :
         val serviceName = ServiceName(ServiceA::class.java.name)
         val serviceImplName = ServiceAImpl::class.java.name
 
+        "Can create WorkerConfig through builder" {
+          val workerName = "nameTest"
+          val workerConfig = WorkerConfig
+              .builder()
+              .name(workerName)
+              .build()
+
+          workerConfig shouldBe WorkerConfig(workerName)
+        }
+
         "Unknown class in ignoredExceptions should throw" {
           val e = shouldThrow<ConfigException> {
-            loadConfigFromYaml<WorkerConfig>("""
+            loadConfigFromYaml<WorkerConfig>(
+                """
 transport: inMemory
 serviceDefault:
     retry:
         ignoredExceptions:
             - foobar
-""")
+""",
+            )
           }
           e.message!! shouldContain "Class 'foobar' not found"
         }
 
         "Unknown class in ignoredExceptions in task should throw" {
           val e = shouldThrow<ConfigException> {
-            loadConfigFromYaml<WorkerConfig>("""
+            loadConfigFromYaml<WorkerConfig>(
+                """
 transport: inMemory
 services:
     - name: $serviceName
@@ -68,20 +81,23 @@ services:
       retry:
         ignoredExceptions:
           - foobar
-""")
+""",
+            )
           }
           e.message!! shouldContain "Class 'foobar' not found"
         }
 
         "No Exception class in ignoredExceptions should throw" {
           val e = shouldThrow<ConfigException> {
-            loadConfigFromYaml<WorkerConfig>("""
+            loadConfigFromYaml<WorkerConfig>(
+                """
 transport: inMemory
 serviceDefault:
   retry:
     ignoredExceptions:
       - io.infinitic.workers.InfiniticWorker
-""")
+""",
+            )
           }
           e.message!! shouldContain
               "'io.infinitic.workers.InfiniticWorker' in ignoredExceptions must be an Exception"
@@ -89,7 +105,8 @@ serviceDefault:
 
         "No Exception class in ignoredExceptions in task should throw" {
           val e = shouldThrow<ConfigException> {
-            loadConfigFromYaml<WorkerConfig>("""
+            loadConfigFromYaml<WorkerConfig>(
+                """
 transport: inMemory
 services:
     - name: $serviceName
@@ -97,7 +114,8 @@ services:
       retry:
         ignoredExceptions:
           - io.infinitic.workers.InfiniticWorker
-""")
+""",
+            )
           }
           e.message!! shouldContain
               "'io.infinitic.workers.InfiniticWorker' in ignoredExceptions must be an Exception"
@@ -105,13 +123,15 @@ services:
 
         "timeout in task should be positive" {
           val e = shouldThrow<ConfigException> {
-            loadConfigFromYaml<WorkerConfig>("""
+            loadConfigFromYaml<WorkerConfig>(
+                """
 transport: inMemory
 services:
     - name: $serviceName
       class: $serviceImplName
       timeoutInSeconds: 0
-""")
+""",
+            )
           }
           e.message!! shouldContain "timeoutInSeconds"
         }

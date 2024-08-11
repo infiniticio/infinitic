@@ -22,7 +22,7 @@
  */
 package io.infinitic.tasks.tag.config
 
-import io.infinitic.storage.StorageConfig
+import io.infinitic.storage.config.StorageConfig
 
 data class ServiceTagEngine(
   var concurrency: Int? = null,

@@ -20,8 +20,36 @@
  *
  * Licensor: infinitic.io
  */
-package io.infinitic.cache.config
+package io.infinitic.storage.storages.redis
 
-internal data class CacheConfigImpl(
-  override val cache: CacheConfig = CacheConfig()
-) : CacheConfigInterface
+import io.infinitic.storage.config.RedisConfig
+import io.infinitic.storage.keySet.KeySetStorage
+import org.jetbrains.annotations.TestOnly
+import redis.clients.jedis.JedisPool
+
+class RedisKeySetStorage(internal val pool: JedisPool) : KeySetStorage {
+
+  companion object {
+    fun from(config: RedisConfig) = RedisKeySetStorage(config.getPool())
+  }
+
+  override suspend fun get(key: String): Set<ByteArray> =
+      pool.resource.use { it.smembers(key.toByteArray()) }
+
+  override suspend fun add(key: String, value: ByteArray) {
+    pool.resource.use { it.sadd(key.toByteArray(), value) }
+  }
+
+  override suspend fun remove(key: String, value: ByteArray) {
+    pool.resource.use { it.srem(key.toByteArray(), value) }
+  }
+
+  override fun close() {
+    pool.close()
+  }
+
+  @TestOnly
+  override fun flush() {
+    pool.resource.use { it.flushDB() }
+  }
+}
