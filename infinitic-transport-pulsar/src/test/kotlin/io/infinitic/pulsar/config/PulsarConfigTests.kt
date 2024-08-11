@@ -24,12 +24,14 @@
 package io.infinitic.pulsar.config
 
 import io.infinitic.common.fixtures.DockerOnly
+import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.annotation.EnabledIf
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
+import io.kotest.matchers.string.shouldContain
 
 @EnabledIf(DockerOnly::class)
-class ConfigTests : StringSpec(
+class PulsarConfigTests : StringSpec(
     {
       val brokerServiceUrl = "pulsar://localhost:6650/"
       val webServiceUrl = "http://localhost:8080"
@@ -44,6 +46,50 @@ class ConfigTests : StringSpec(
             .namespace(dev)
             .build()
         config shouldBe PulsarConfig(brokerServiceUrl, webServiceUrl, tenant, dev)
+      }
+
+      "Create PulsarConfig without brokerServiceUrl should throw" {
+        val e = shouldThrow<IllegalArgumentException> {
+          PulsarConfig.builder()
+              .webServiceUrl(webServiceUrl)
+              .tenant(tenant)
+              .namespace(dev)
+              .build()
+        }
+        e.message shouldContain "pulsar://localhost:6650"
+      }
+
+      "Create PulsarConfig without webServiceUrl should throw" {
+        val e = shouldThrow<IllegalArgumentException> {
+          PulsarConfig.builder()
+              .brokerServiceUrl(brokerServiceUrl)
+              .tenant(tenant)
+              .namespace(dev)
+              .build()
+        }
+        e.message shouldContain "http://localhost:8080"
+      }
+
+      "Create PulsarConfig without tenant should throw" {
+        val e = shouldThrow<IllegalArgumentException> {
+          PulsarConfig.builder()
+              .brokerServiceUrl(brokerServiceUrl)
+              .webServiceUrl(webServiceUrl)
+              .namespace(dev)
+              .build()
+        }
+        e.message shouldContain "tenant"
+      }
+
+      "Create PulsarConfig without namespace should throw" {
+        val e = shouldThrow<IllegalArgumentException> {
+          PulsarConfig.builder()
+              .brokerServiceUrl(brokerServiceUrl)
+              .webServiceUrl(webServiceUrl)
+              .tenant(tenant)
+              .build()
+        }
+        e.message shouldContain "namespace"
       }
     },
 )

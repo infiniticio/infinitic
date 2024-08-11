@@ -66,26 +66,34 @@ data class PulsarConfig(
     fun builder() = PulsarConfigBuilder()
 
     private val logger = KotlinLogging.logger {}
+    private const val PULSAR_PROTOCOL = "pulsar://"
+    private const val PULSAR_PROTOCOL_SSL = "pulsar+ssl://"
+    private const val HTTP_PROTOCOL = "http://"
+    private const val HTTP_PROTOCOL_SSL = "https://"
   }
 
   init {
     require(
-        brokerServiceUrl.startsWith("pulsar://") || brokerServiceUrl.startsWith("pulsar+ssl://"),
+        brokerServiceUrl.startsWith(PULSAR_PROTOCOL) ||
+            brokerServiceUrl.startsWith(PULSAR_PROTOCOL_SSL),
     ) {
       when {
         brokerServiceUrl == "" -> "The brokerServiceUrl value MUST be provided. If you're using a " +
             "local Pulsar instance, the value is typically set to pulsar://localhost:6650/"
 
-        else -> "brokerServiceUrl MUST start with pulsar:// or pulsar+ssl://"
+        else -> "The brokerServiceUrl value MUST start with pulsar:// or pulsar+ssl://"
       }
     }
 
-    require(webServiceUrl.startsWith("http://") || webServiceUrl.startsWith("https://")) {
+    require(
+        webServiceUrl.startsWith(HTTP_PROTOCOL) ||
+            webServiceUrl.startsWith(HTTP_PROTOCOL_SSL),
+    ) {
       when {
         webServiceUrl == "" -> "The webServiceUrl value MUST be provided. If you're using a " +
             "local Pulsar instance, the value is typically set to http://localhost:8080"
 
-        else -> "webServiceUrl MUST start with http:// or https://"
+        else -> "The webServiceUrl value MUST start with http:// or https://"
       }
     }
 
@@ -260,7 +268,7 @@ data class PulsarConfig(
    */
   class PulsarConfigBuilder {
     private val default =
-        PulsarConfig("pulsar://".addUnset, "http://".addUnset, "".addUnset, "".addUnset)
+        PulsarConfig(PULSAR_PROTOCOL, HTTP_PROTOCOL, UNSET, UNSET)
     private var tenant = default.tenant
     private var namespace = default.namespace
     private var brokerServiceUrl = default.brokerServiceUrl
@@ -331,10 +339,10 @@ data class PulsarConfig(
         apply { this.consumer = consumerConfig }
 
     fun build() = PulsarConfig(
-        brokerServiceUrl.removeUnset,
-        webServiceUrl.removeUnset,
-        tenant.removeUnset,
-        namespace.removeUnset,
+        brokerServiceUrl.removeUnset(PULSAR_PROTOCOL),
+        webServiceUrl.removeUnset(HTTP_PROTOCOL),
+        tenant.removeUnset(),
+        namespace.removeUnset(),
         allowedClusters,
         adminRoles,
         tlsAllowInsecureConnection,
@@ -353,7 +361,8 @@ data class PulsarConfig(
 }
 
 private const val UNSET = "INFINITIC_UNSET_STRING"
-private val String.addUnset get() = this + UNSET
-private val String.removeUnset
-  get(): String = if (this.endsWith(UNSET)) this.removeSuffix(UNSET) else this
+private fun String.removeUnset(unset: String = UNSET): String = when (this) {
+  unset -> ""
+  else -> this
+}
 

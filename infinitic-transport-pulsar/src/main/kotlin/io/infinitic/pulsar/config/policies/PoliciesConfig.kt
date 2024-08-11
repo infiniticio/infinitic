@@ -58,7 +58,6 @@ data class PoliciesConfig(
    */
   class PoliciesConfigBuilder {
     private val default = PoliciesConfig()
-
     private var retentionTimeInMinutes = default.retentionTimeInMinutes
     private var retentionSizeInMB = default.retentionSizeInMB
     private var messageTTLInSeconds = default.messageTTLInSeconds
