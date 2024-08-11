@@ -82,7 +82,7 @@ data class PulsarConfig(
 
     require(webServiceUrl.startsWith("http://") || webServiceUrl.startsWith("https://")) {
       when {
-        brokerServiceUrl == "" -> "The webServiceUrl value MUST be provided. If you're using a " +
+        webServiceUrl == "" -> "The webServiceUrl value MUST be provided. If you're using a " +
             "local Pulsar instance, the value is typically set to http://localhost:8080"
 
         else -> "webServiceUrl MUST start with http:// or https://"
