@@ -71,7 +71,7 @@ data class ServiceConfig(
    * ServiceConfig builder (Useful for Java user)
    */
   class ServiceConfigBuilder {
-    private val default = ServiceConfig("", "")
+    private val default = ServiceConfig(UNSET)
     private var name = default.name
     private var `class` = default.`class`
     private var concurrency = default.concurrency
@@ -102,7 +102,7 @@ data class ServiceConfig(
         apply { this.eventListener = eventListener }
 
     fun build() = ServiceConfig(
-        name,
+        name.noUnset,
         `class`,
         concurrency,
         timeoutInSeconds,
@@ -114,3 +114,10 @@ data class ServiceConfig(
 
   private fun error(txt: String) = "Service $name: $txt"
 }
+
+private const val UNSET = "INFINITIC_UNSET_STRING"
+private val String.noUnset: String
+  get() = when (this) {
+    UNSET -> ""
+    else -> this
+  }

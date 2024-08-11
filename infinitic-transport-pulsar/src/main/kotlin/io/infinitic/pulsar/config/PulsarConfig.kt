@@ -42,10 +42,10 @@ import org.apache.pulsar.client.impl.auth.AuthenticationSasl as PulsarAuthentica
 
 @Suppress("unused")
 data class PulsarConfig(
+  val brokerServiceUrl: String, // "pulsar://localhost:6650/",
+  val webServiceUrl: String, // "http://localhost:8080",
   val tenant: String,
   val namespace: String,
-  val brokerServiceUrl: String = "pulsar://localhost:6650/",
-  val webServiceUrl: String = "http://localhost:8080",
   val allowedClusters: Set<String>? = null,
   val adminRoles: Set<String>? = null,
   val tlsAllowInsecureConnection: Boolean = false,
@@ -72,11 +72,21 @@ data class PulsarConfig(
     require(
         brokerServiceUrl.startsWith("pulsar://") || brokerServiceUrl.startsWith("pulsar+ssl://"),
     ) {
-      "brokerServiceUrl MUST start with pulsar:// or pulsar+ssl://"
+      when {
+        brokerServiceUrl == "" -> "The brokerServiceUrl value MUST be provided. If you're using a " +
+            "local Pulsar instance, the value is typically set to pulsar://localhost:6650/"
+
+        else -> "brokerServiceUrl MUST start with pulsar:// or pulsar+ssl://"
+      }
     }
 
     require(webServiceUrl.startsWith("http://") || webServiceUrl.startsWith("https://")) {
-      "webServiceUrl MUST start with http:// or https://"
+      when {
+        brokerServiceUrl == "" -> "The webServiceUrl value MUST be provided. If you're using a " +
+            "local Pulsar instance, the value is typically set to http://localhost:8080"
+
+        else -> "webServiceUrl MUST start with http:// or https://"
+      }
     }
 
     require(tenant.isNotEmpty()) { "tenant can NOT be empty" }
@@ -249,7 +259,8 @@ data class PulsarConfig(
    * PulsarConfig builder (Useful for Java user)
    */
   class PulsarConfigBuilder {
-    private val default: PulsarConfig = PulsarConfig("", "")
+    private val default =
+        PulsarConfig("pulsar://".addUnset, "http://".addUnset, "".addUnset, "".addUnset)
     private var tenant = default.tenant
     private var namespace = default.namespace
     private var brokerServiceUrl = default.brokerServiceUrl
@@ -320,10 +331,10 @@ data class PulsarConfig(
         apply { this.consumer = consumerConfig }
 
     fun build() = PulsarConfig(
-        tenant,
-        namespace,
-        brokerServiceUrl,
-        webServiceUrl,
+        brokerServiceUrl.removeUnset,
+        webServiceUrl.removeUnset,
+        tenant.removeUnset,
+        namespace.removeUnset,
         allowedClusters,
         adminRoles,
         tlsAllowInsecureConnection,
@@ -340,3 +351,9 @@ data class PulsarConfig(
     )
   }
 }
+
+private const val UNSET = "INFINITIC_UNSET_STRING"
+private val String.addUnset get() = this + UNSET
+private val String.removeUnset
+  get(): String = if (this.endsWith(UNSET)) this.removeSuffix(UNSET) else this
+

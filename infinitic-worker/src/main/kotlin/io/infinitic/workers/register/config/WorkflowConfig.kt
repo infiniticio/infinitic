@@ -86,7 +86,7 @@ data class WorkflowConfig(
    * WorkflowConfig builder (Useful for Java user)
    */
   class WorkflowConfigBuilder {
-    private val default = WorkflowConfig("")
+    private val default = WorkflowConfig(UNSET)
     private var name = default.name
     private var `class` = default.`class`
     private var classes = default.classes
@@ -130,7 +130,7 @@ data class WorkflowConfig(
 
 
     fun build() = WorkflowConfig(
-        name,
+        name.noUnset,
         `class`,
         classes,
         concurrency,
@@ -165,3 +165,9 @@ data class WorkflowConfig(
   private fun error(txt: String) = "Workflow $name: $txt"
 }
 
+private const val UNSET = "INFINITIC_UNSET_STRING"
+private val String.noUnset: String
+  get() = when (this) {
+    UNSET -> ""
+    else -> this
+  }
