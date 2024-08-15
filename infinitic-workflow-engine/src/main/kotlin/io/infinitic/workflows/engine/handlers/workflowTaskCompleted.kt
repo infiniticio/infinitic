@@ -148,7 +148,6 @@ internal fun CoroutineScope.workflowTaskCompleted(
         stepPosition = it.stepPosition,
         step = it.step,
         stepHash = it.stepHash,
-        stepStatus = it.step.status(),
         workflowTaskIndexAtStart = state.workflowTaskIndex,
     )
   }
