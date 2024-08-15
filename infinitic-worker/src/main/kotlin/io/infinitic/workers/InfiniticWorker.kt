@@ -70,7 +70,7 @@ import java.util.concurrent.CompletableFuture
 import kotlin.system.exitProcess
 
 @Suppress("unused")
-class InfiniticWorker(
+class InfiniticWorker private constructor(
   val register: InfiniticRegister,
   val consumerAsync: InfiniticConsumerAsync,
   val producerAsync: InfiniticProducerAsync,
