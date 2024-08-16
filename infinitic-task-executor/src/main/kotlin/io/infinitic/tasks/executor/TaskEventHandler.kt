@@ -136,7 +136,7 @@ class TaskEventHandler(producerAsync: InfiniticProducerAsync) {
             jsonViewClass = null,
         ) as WorkflowTaskReturnValue
 
-        // TODO After 0.13.0, workflowTaskInstant should not be null anymore
+        // Note: After 0.13.0, workflowTaskInstant should not be null anymore
         val workflowTaskInstant = result.workflowTaskInstant ?: publishTime
 
         // from there, workflowVersion is defined

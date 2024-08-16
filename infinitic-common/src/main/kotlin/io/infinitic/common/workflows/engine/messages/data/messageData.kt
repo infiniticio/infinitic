@@ -33,8 +33,10 @@ import io.infinitic.cloudEvents.SIGNAL_DATA
 import io.infinitic.cloudEvents.SIGNAL_ID
 import io.infinitic.cloudEvents.TASK_ARGS
 import io.infinitic.cloudEvents.TASK_ID
+import io.infinitic.cloudEvents.TASK_META
 import io.infinitic.cloudEvents.TASK_NAME
 import io.infinitic.cloudEvents.TASK_RETRY_SEQUENCE
+import io.infinitic.cloudEvents.TASK_TAGS
 import io.infinitic.cloudEvents.TIMEOUT
 import io.infinitic.cloudEvents.TIMER_DURATION
 import io.infinitic.cloudEvents.TIMER_ID
@@ -62,6 +64,7 @@ import io.infinitic.common.workflows.data.channels.SignalData
 import io.infinitic.common.workflows.data.channels.SignalId
 import io.infinitic.common.workflows.data.timers.TimerId
 import io.infinitic.common.workflows.data.workflowMethods.WorkflowMethodId
+import io.infinitic.common.workflows.data.workflowTasks.isWorkflowTask
 import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.data.workflows.WorkflowMeta
 import io.infinitic.common.workflows.data.workflows.WorkflowName
@@ -228,13 +231,23 @@ data class TaskDispatched(
   val timeoutInstant: MillisInstant?,
 ) : JsonAble {
   override fun toJson() = JsonObject(
-      mapOf(
-          SERVICE_NAME to serviceName.toJson(),
-          TASK_NAME to methodName.toJson(),
-          TASK_ARGS to methodParameters.toJson(),
-          TASK_ID to taskId.toJson(),
-          TASK_RETRY_SEQUENCE to taskRetrySequence.toJson(),
-      ),
+      when (serviceName.isWorkflowTask()) {
+        true -> mapOf(
+            TASK_ARGS to methodParameters.toJson(),
+            TASK_ID to taskId.toJson(),
+            TASK_RETRY_SEQUENCE to taskRetrySequence.toJson(),
+        )
+
+        false -> mapOf(
+            SERVICE_NAME to serviceName.toJson(),
+            TASK_NAME to methodName.toJson(),
+            TASK_ARGS to methodParameters.toJson(),
+            TASK_ID to taskId.toJson(),
+            TASK_META to taskMeta.toJson(),
+            TASK_TAGS to taskTags.toJson(),
+            TASK_RETRY_SEQUENCE to taskRetrySequence.toJson(),
+        )
+      },
   )
 }
 
