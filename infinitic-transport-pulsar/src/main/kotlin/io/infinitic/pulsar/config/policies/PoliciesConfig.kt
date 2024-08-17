@@ -33,7 +33,7 @@ data class PoliciesConfig(
     // Expire messages after 14 days
   val messageTTLInSeconds: Int = 3600 * 24 * 14,
     // Expire delayed messages after 1 year
-  val delayedTTLInSeconds: Int = 3600 * 24 * 366,
+  val timerTTLInSeconds: Int = 3600 * 24 * 366,
     // Delayed delivery tick time = 1 second
   val delayedDeliveryTickTimeMillis: Long = 1000,
     // Changes allowed: add optional fields, delete fields
@@ -61,7 +61,7 @@ data class PoliciesConfig(
     private var retentionTimeInMinutes = default.retentionTimeInMinutes
     private var retentionSizeInMB = default.retentionSizeInMB
     private var messageTTLInSeconds = default.messageTTLInSeconds
-    private var delayedTTLInSeconds = default.delayedTTLInSeconds
+    private var timerTTLInSeconds = default.timerTTLInSeconds
     private var delayedDeliveryTickTimeMillis = default.delayedDeliveryTickTimeMillis
     private var schemaCompatibilityStrategy = default.schemaCompatibilityStrategy
     private var allowAutoTopicCreation = default.allowAutoTopicCreation
@@ -78,8 +78,8 @@ data class PoliciesConfig(
     fun setMessageTTLInSeconds(messageTTLInSeconds: Int) =
         apply { this.messageTTLInSeconds = messageTTLInSeconds }
 
-    fun setDelayedTTLInSeconds(delayedTTLInSeconds: Int) =
-        apply { this.delayedTTLInSeconds = delayedTTLInSeconds }
+    fun setTimerTTLInSeconds(timerTTLInSeconds: Int) =
+        apply { this.timerTTLInSeconds = timerTTLInSeconds }
 
     fun setDelayedDeliveryTickTimeMillis(delayedDeliveryTickTimeMillis: Long) =
         apply { this.delayedDeliveryTickTimeMillis = delayedDeliveryTickTimeMillis }
@@ -103,7 +103,7 @@ data class PoliciesConfig(
         retentionTimeInMinutes,
         retentionSizeInMB,
         messageTTLInSeconds,
-        delayedTTLInSeconds,
+        timerTTLInSeconds,
         delayedDeliveryTickTimeMillis,
         schemaCompatibilityStrategy,
         allowAutoTopicCreation,
