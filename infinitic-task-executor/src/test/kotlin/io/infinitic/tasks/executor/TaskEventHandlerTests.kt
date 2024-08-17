@@ -55,17 +55,17 @@ import io.infinitic.common.tasks.tags.messages.RemoveTaskIdFromTag
 import io.infinitic.common.tasks.tags.messages.ServiceTagMessage
 import io.infinitic.common.tasks.tags.messages.SetDelegatedTaskData
 import io.infinitic.common.transport.ClientTopic
-import io.infinitic.common.transport.DelayedWorkflowEngineTopic
 import io.infinitic.common.transport.InfiniticProducerAsync
 import io.infinitic.common.transport.ServiceTagTopic
-import io.infinitic.common.transport.WorkflowEngineTopic
+import io.infinitic.common.transport.TimerWorkflowStateEngineTopic
+import io.infinitic.common.transport.WorkflowStateEngineTopic
 import io.infinitic.common.workers.config.WorkflowVersion
 import io.infinitic.common.workflows.data.workflowMethods.WorkflowMethodId
 import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.data.workflows.WorkflowName
 import io.infinitic.common.workflows.engine.messages.RemoteTaskCompleted
 import io.infinitic.common.workflows.engine.messages.RemoteTaskFailed
-import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
+import io.infinitic.common.workflows.engine.messages.WorkflowStateEngineMessage
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
 import io.mockk.coEvery
@@ -99,7 +99,7 @@ class TaskEventHandlerTests :
         val afterSlot = slot<MillisDuration>()
         val taskTagSlots = CopyOnWriteArrayList<ServiceTagMessage>() // multithreading update
         val clientSlot = slot<ClientMessage>()
-        val workflowEngineSlot = slot<WorkflowEngineMessage>()
+        val workflowEngineSlot = slot<WorkflowStateEngineMessage>()
 
         // mocks
         fun completed() = CompletableFuture.completedFuture(Unit)
@@ -108,11 +108,11 @@ class TaskEventHandlerTests :
           coEvery { capture(taskTagSlots).sendToAsync(ServiceTagTopic) } returns completed()
           coEvery { capture(clientSlot).sendToAsync(ClientTopic) } returns completed()
           coEvery {
-            capture(workflowEngineSlot).sendToAsync(WorkflowEngineTopic)
+            capture(workflowEngineSlot).sendToAsync(WorkflowStateEngineTopic)
           } returns completed()
           coEvery {
             capture(workflowEngineSlot).sendToAsync(
-                DelayedWorkflowEngineTopic,
+                TimerWorkflowStateEngineTopic,
                 capture(afterSlot),
             )
           } returns completed()

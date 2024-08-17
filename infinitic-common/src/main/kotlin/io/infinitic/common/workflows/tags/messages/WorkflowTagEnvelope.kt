@@ -45,7 +45,7 @@ data class WorkflowTagEnvelope(
   private val retryTasksByTag: RetryTasksByTag? = null,
   @AvroDefault(Avro.NULL) private val completeTimersByTag: CompleteTimersByTag? = null,
   private val getWorkflowIdsByTag: GetWorkflowIdsByTag? = null
-) : Envelope<WorkflowTagMessage> {
+) : Envelope<WorkflowTagEngineMessage> {
 
   init {
     val noNull = listOfNotNull(
@@ -67,7 +67,7 @@ data class WorkflowTagEnvelope(
   }
 
   companion object {
-    fun from(msg: WorkflowTagMessage) = when (msg) {
+    fun from(msg: WorkflowTagEngineMessage) = when (msg) {
 
       is DispatchWorkflowByCustomId -> WorkflowTagEnvelope(
           name = "${msg.workflowName}",
@@ -138,7 +138,7 @@ data class WorkflowTagEnvelope(
     val writerSchema = AvroSerDe.currentSchema(serializer())
   }
 
-  override fun message(): WorkflowTagMessage = when (type) {
+  override fun message(): WorkflowTagEngineMessage = when (type) {
     WorkflowTagMessageType.DISPATCH_WORKFLOW_BY_CUSTOM_ID -> dispatchWorkflowByCustomId
     WorkflowTagMessageType.ADD_TAG_TO_WORKFLOW -> addTagToWorkflow
     WorkflowTagMessageType.REMOVE_TAG_FROM_WORKFLOW -> removeTagFromWorkflow

@@ -55,7 +55,7 @@ data class WorkflowEngineEnvelope(
   @AvroDefault(Avro.NULL) private val taskTimedOut: RemoteTaskTimedOut? = null,
   private val taskFailed: RemoteTaskFailed? = null,
   private val taskCompleted: RemoteTaskCompleted? = null
-) : Envelope<WorkflowEngineMessage> {
+) : Envelope<WorkflowStateEngineMessage> {
   init {
     val noNull = listOfNotNull(
         dispatchWorkflow,
@@ -85,7 +85,7 @@ data class WorkflowEngineEnvelope(
   }
 
   companion object {
-    fun from(msg: WorkflowEngineMessage) = when (msg) {
+    fun from(msg: WorkflowStateEngineMessage) = when (msg) {
 
       is RemoteTimerCompleted -> WorkflowEngineEnvelope(
           workflowId = msg.workflowId,
@@ -210,7 +210,7 @@ data class WorkflowEngineEnvelope(
     val writerSchema = AvroSerDe.currentSchema(serializer())
   }
 
-  override fun message(): WorkflowEngineMessage = when (type) {
+  override fun message(): WorkflowStateEngineMessage = when (type) {
     WorkflowEngineMessageType.DISPATCH_WORKFLOW -> dispatchWorkflow
     WorkflowEngineMessageType.DISPATCH_METHOD -> dispatchMethod
     WorkflowEngineMessageType.WAIT_WORKFLOW -> waitWorkflow

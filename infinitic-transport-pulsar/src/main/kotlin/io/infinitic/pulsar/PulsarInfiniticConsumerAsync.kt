@@ -27,11 +27,12 @@ import io.infinitic.autoclose.autoClose
 import io.infinitic.common.data.MillisInstant
 import io.infinitic.common.messages.Message
 import io.infinitic.common.transport.ClientTopic
-import io.infinitic.common.transport.DelayedServiceExecutorTopic
-import io.infinitic.common.transport.DelayedWorkflowTaskExecutorTopic
+import io.infinitic.common.transport.EventListenerSubscription
+import io.infinitic.common.transport.EventLoggerSubscription
 import io.infinitic.common.transport.InfiniticConsumerAsync
-import io.infinitic.common.transport.ListenerSubscription
 import io.infinitic.common.transport.MainSubscription
+import io.infinitic.common.transport.RetryServiceExecutorTopic
+import io.infinitic.common.transport.RetryWorkflowTaskExecutorTopic
 import io.infinitic.common.transport.Subscription
 import io.infinitic.pulsar.consumers.Consumer
 import io.infinitic.pulsar.resources.PulsarResources
@@ -101,7 +102,7 @@ class PulsarInfiniticConsumerAsync(
     when (subscription.topic) {
       // we do nothing here, as WorkflowTaskExecutorTopic and ServiceExecutorTopic
       // do not need a distinct topic to handle delayed messages in Pulsar
-      DelayedWorkflowTaskExecutorTopic, DelayedServiceExecutorTopic -> return
+      RetryWorkflowTaskExecutorTopic, RetryServiceExecutorTopic -> return
       // record client name to be able to delete topic at closing
       ClientTopic -> clientName = entity
       else -> Unit
@@ -145,23 +146,26 @@ class PulsarInfiniticConsumerAsync(
 
   private val Subscription<*>.name
     get() = when (this) {
-      is ListenerSubscription -> name ?: defaultName
       is MainSubscription -> defaultName
+      is EventListenerSubscription -> name ?: defaultName
+      is EventLoggerSubscription -> name ?: defaultName
     }
 
   private val Subscription<*>.nameDLQ
     get() = when (this) {
-      is ListenerSubscription -> name?.let { "$it-dlq" } ?: defaultNameDLQ
       is MainSubscription -> defaultNameDLQ
+      is EventListenerSubscription -> name?.let { "$it-dlq" } ?: defaultNameDLQ
+      is EventLoggerSubscription -> name?.let { "$it-dlq" } ?: defaultNameDLQ
     }
 
   private val Subscription<*>.initialPosition
     get() = when (this) {
-      is ListenerSubscription -> name?.let {
-        SubscriptionInitialPosition.Earliest
-      } ?: defaultInitialPosition
-
       is MainSubscription -> defaultInitialPosition
+      is EventListenerSubscription -> name?.let { SubscriptionInitialPosition.Earliest }
+        ?: defaultInitialPosition
+
+      is EventLoggerSubscription -> name?.let { SubscriptionInitialPosition.Earliest }
+        ?: defaultInitialPosition
     }
 
   private suspend fun deleteClientTopics() {

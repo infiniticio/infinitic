@@ -416,7 +416,7 @@ data class RemoteMethodUnknown(
   @AvroName("methodRunId") override val workflowMethodId: WorkflowMethodId,
   override val emitterName: EmitterName,
   @AvroDefault(Avro.NULL) override var emittedAt: MillisInstant?
-) : WorkflowMessage(), WorkflowEngineMessage, MethodEvent
+) : WorkflowMessage(), WorkflowStateEngineMessage, MethodEvent
 
 /**
  * This event tells the workflow that the method of another workflow has been canceled.
@@ -437,7 +437,7 @@ data class RemoteMethodCanceled(
   @AvroName("methodRunId") override val workflowMethodId: WorkflowMethodId,
   override val emitterName: EmitterName,
   @AvroDefault(Avro.NULL) override var emittedAt: MillisInstant?
-) : WorkflowMessage(), WorkflowEngineMessage, MethodEvent
+) : WorkflowMessage(), WorkflowStateEngineMessage, MethodEvent
 
 /**
  * This event tells the workflow that the method of another workflow has failed.
@@ -458,7 +458,7 @@ data class RemoteMethodFailed(
   @AvroName("methodRunId") override val workflowMethodId: WorkflowMethodId,
   override val emitterName: EmitterName,
   @AvroDefault(Avro.NULL) override var emittedAt: MillisInstant?
-) : WorkflowMessage(), WorkflowEngineMessage, MethodEvent
+) : WorkflowMessage(), WorkflowStateEngineMessage, MethodEvent
 
 /**
  * This event tells the workflow that the method of another workflow has timed out.
@@ -478,7 +478,7 @@ data class RemoteMethodTimedOut(
   @AvroName("methodRunId") override val workflowMethodId: WorkflowMethodId,
   override val emitterName: EmitterName,
   @AvroDefault(Avro.NULL) override var emittedAt: MillisInstant?
-) : WorkflowMessage(), WorkflowEngineMessage, MethodEvent
+) : WorkflowMessage(), WorkflowStateEngineMessage, MethodEvent
 
 /**
  * This event tells the workflow that the method of another workflow has completed.
@@ -498,7 +498,7 @@ data class RemoteMethodCompleted(
   @AvroName("methodRunId") override val workflowMethodId: WorkflowMethodId,
   override val emitterName: EmitterName,
   @AvroDefault(Avro.NULL) override var emittedAt: MillisInstant?
-) : WorkflowMessage(), WorkflowEngineMessage, MethodEvent
+) : WorkflowMessage(), WorkflowStateEngineMessage, MethodEvent
 
 /**
  * This event tells the workflow that a task was canceled.
@@ -518,7 +518,7 @@ data class RemoteTaskCanceled(
   @AvroName("methodRunId") override val workflowMethodId: WorkflowMethodId,
   override val emitterName: EmitterName,
   @AvroDefault(Avro.NULL) override var emittedAt: MillisInstant?
-) : WorkflowMessage(), WorkflowEngineMessage, RemoteTaskEvent {
+) : WorkflowMessage(), WorkflowStateEngineMessage, RemoteTaskEvent {
   override fun taskId() = taskCanceledError.taskId
 
   override fun serviceName() = taskCanceledError.serviceName
@@ -541,7 +541,7 @@ data class RemoteTaskFailed(
   @AvroName("methodRunId") override val workflowMethodId: WorkflowMethodId,
   override val emitterName: EmitterName,
   @AvroDefault(Avro.NULL) override var emittedAt: MillisInstant?
-) : WorkflowMessage(), WorkflowEngineMessage, RemoteTaskEvent {
+) : WorkflowMessage(), WorkflowStateEngineMessage, RemoteTaskEvent {
   override fun taskId() = taskFailedError.taskId
 
   override fun serviceName() = taskFailedError.serviceName
@@ -565,7 +565,7 @@ data class RemoteTaskTimedOut(
   @AvroName("methodRunId") override val workflowMethodId: WorkflowMethodId,
   override val emitterName: EmitterName,
   @AvroDefault(Avro.NULL) override var emittedAt: MillisInstant?
-) : WorkflowMessage(), WorkflowEngineMessage, RemoteTaskEvent {
+) : WorkflowMessage(), WorkflowStateEngineMessage, RemoteTaskEvent {
   override fun taskId() = taskTimedOutError.taskId
 
   override fun serviceName() = taskTimedOutError.serviceName
@@ -587,7 +587,7 @@ data class RemoteTaskCompleted(
   @AvroName("methodRunId") override val workflowMethodId: WorkflowMethodId,
   override val emitterName: EmitterName,
   @AvroDefault(Avro.NULL) override var emittedAt: MillisInstant?
-) : WorkflowMessage(), WorkflowEngineMessage, RemoteTaskEvent {
+) : WorkflowMessage(), WorkflowStateEngineMessage, RemoteTaskEvent {
   override fun taskId() = taskReturnValue.taskId
 
   override fun serviceName() = taskReturnValue.serviceName
@@ -630,7 +630,7 @@ data class RemoteTimerCompleted(
   @AvroName("methodRunId") override val workflowMethodId: WorkflowMethodId,
   override val emitterName: EmitterName,
   @AvroDefault(Avro.NULL) override var emittedAt: MillisInstant?
-) : WorkflowMessage(), WorkflowEngineMessage, MethodEvent
+) : WorkflowMessage(), WorkflowStateEngineMessage, MethodEvent
 
 /**
  * This event tells us that the workflow has completed

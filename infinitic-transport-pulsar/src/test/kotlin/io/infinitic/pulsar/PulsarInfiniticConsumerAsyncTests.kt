@@ -28,15 +28,15 @@ import io.infinitic.common.data.MillisInstant
 import io.infinitic.common.messages.Message
 import io.infinitic.common.tasks.data.ServiceName
 import io.infinitic.common.transport.ClientTopic
-import io.infinitic.common.transport.DelayedWorkflowEngineTopic
 import io.infinitic.common.transport.MainSubscription
 import io.infinitic.common.transport.ServiceEventsTopic
 import io.infinitic.common.transport.ServiceExecutorTopic
 import io.infinitic.common.transport.ServiceTagTopic
+import io.infinitic.common.transport.TimerWorkflowStateEngineTopic
 import io.infinitic.common.transport.WorkflowCmdTopic
-import io.infinitic.common.transport.WorkflowEngineTopic
 import io.infinitic.common.transport.WorkflowEventsTopic
-import io.infinitic.common.transport.WorkflowTagTopic
+import io.infinitic.common.transport.WorkflowStateEngineTopic
+import io.infinitic.common.transport.WorkflowTagEngineTopic
 import io.infinitic.common.transport.WorkflowTaskEventsTopic
 import io.infinitic.common.transport.WorkflowTaskExecutorTopic
 import io.infinitic.common.workflows.data.workflows.WorkflowName
@@ -137,7 +137,7 @@ class PulsarInfiniticConsumerAsyncTests : StringSpec(
         val name = "$workflowName"
 
         infiniticConsumerAsync.start(
-            subscription = MainSubscription(WorkflowTagTopic),
+            subscription = MainSubscription(WorkflowTagEngineTopic),
             entity = name,
             handler = { _, _ -> },
             beforeDlq = { _, _ -> },
@@ -177,7 +177,7 @@ class PulsarInfiniticConsumerAsyncTests : StringSpec(
         val name = "$workflowName"
 
         infiniticConsumerAsync.start(
-            subscription = MainSubscription(WorkflowEngineTopic),
+            subscription = MainSubscription(WorkflowStateEngineTopic),
             entity = name,
             handler = { _, _ -> },
             beforeDlq = { _, _ -> },
@@ -197,7 +197,7 @@ class PulsarInfiniticConsumerAsyncTests : StringSpec(
         val name = "$workflowName"
 
         infiniticConsumerAsync.start(
-            subscription = MainSubscription(DelayedWorkflowEngineTopic),
+            subscription = MainSubscription(TimerWorkflowStateEngineTopic),
             entity = name,
             handler = { _, _ -> },
             beforeDlq = { _, _ -> },

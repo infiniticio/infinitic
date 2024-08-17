@@ -68,7 +68,7 @@ import io.infinitic.common.transport.MainSubscription
 import io.infinitic.common.transport.ServiceTagTopic
 import io.infinitic.common.transport.Topic
 import io.infinitic.common.transport.WorkflowCmdTopic
-import io.infinitic.common.transport.WorkflowTagTopic
+import io.infinitic.common.transport.WorkflowTagEngineTopic
 import io.infinitic.common.workflows.data.channels.SignalId
 import io.infinitic.common.workflows.data.workflowMethods.WorkflowMethodId
 import io.infinitic.common.workflows.data.workflows.WorkflowCancellationReason
@@ -315,7 +315,7 @@ internal class ClientDispatcher(
           emitterName = emitterName,
           emittedAt = null,
       )
-      msg.sendToAsync(WorkflowTagTopic)
+      msg.sendToAsync(WorkflowTagEngineTopic)
     }
 
     else -> thisShouldNotHappen()
@@ -344,7 +344,7 @@ internal class ClientDispatcher(
           emitterName = emitterName,
           emittedAt = null,
       )
-      msg.sendToAsync(WorkflowTagTopic)
+      msg.sendToAsync(WorkflowTagEngineTopic)
     }
 
     else -> thisShouldNotHappen()
@@ -390,7 +390,7 @@ internal class ClientDispatcher(
           emitterName = emitterName,
           emittedAt = null,
       )
-      msg.sendToAsync(WorkflowTagTopic)
+      msg.sendToAsync(WorkflowTagEngineTopic)
     }
 
     else -> thisShouldNotHappen()
@@ -429,7 +429,7 @@ internal class ClientDispatcher(
           emitterName = emitterName,
           emittedAt = null,
       )
-      msg.sendToAsync(WorkflowTagTopic)
+      msg.sendToAsync(WorkflowTagEngineTopic)
     }
 
     else -> thisShouldNotHappen()
@@ -454,7 +454,7 @@ internal class ClientDispatcher(
         emittedAt = null,
     )
     // synchronously sent the message to get errors
-    msg.sendToAsync(WorkflowTagTopic).join()
+    msg.sendToAsync(WorkflowTagEngineTopic).join()
 
     val workflowIdsByTag = waiting.join() as WorkflowIdsByTag
 
@@ -532,7 +532,7 @@ internal class ClientDispatcher(
 
         // first, we send all tags in parallel
         val futures = workflowTags.map {
-          it.sendToAsync(WorkflowTagTopic)
+          it.sendToAsync(WorkflowTagEngineTopic)
         }.toTypedArray()
         CompletableFuture.allOf(*futures).join()
 
@@ -573,7 +573,7 @@ internal class ClientDispatcher(
             emitterName = emitterName,
             emittedAt = null,
         )
-        dispatchWorkflowByCustomId.sendToAsync(WorkflowTagTopic).thenApply { deferred }
+        dispatchWorkflowByCustomId.sendToAsync(WorkflowTagEngineTopic).thenApply { deferred }
       }
       // more than 1 customId tag were provided
       else -> throw MultipleCustomIdException
@@ -683,7 +683,7 @@ internal class ClientDispatcher(
           emitterName = emitterName,
           emittedAt = null,
       )
-      dispatchMethodByTag.sendToAsync(WorkflowTagTopic)
+      dispatchMethodByTag.sendToAsync(WorkflowTagEngineTopic)
     }
   }
 
@@ -741,7 +741,7 @@ internal class ClientDispatcher(
             emittedAt = null,
             requester = clientRequester,
         )
-        sendSignalByTag.sendToAsync(WorkflowTagTopic)
+        sendSignalByTag.sendToAsync(WorkflowTagEngineTopic)
       }
 
       else -> thisShouldNotHappen()

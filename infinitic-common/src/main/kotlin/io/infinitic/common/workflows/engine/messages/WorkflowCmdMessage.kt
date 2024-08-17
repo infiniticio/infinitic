@@ -27,7 +27,7 @@ import io.infinitic.common.requester.Requester
 import kotlinx.serialization.Serializable
 
 @Serializable
-sealed interface WorkflowCmdMessage : WorkflowEngineMessage {
+sealed interface WorkflowCmdMessage : WorkflowStateEngineMessage {
   val requester: Requester?
 }
 

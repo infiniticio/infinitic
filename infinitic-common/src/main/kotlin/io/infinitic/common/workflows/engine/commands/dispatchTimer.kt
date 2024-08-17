@@ -55,5 +55,5 @@ suspend fun InfiniticProducer.dispatchTimer(
 
   // todo: Check if there is a way not to use MillisInstant.now()
   val delay = timerInstant - MillisInstant.now()
-  remoteTimerCompleted.sendTo(io.infinitic.common.transport.DelayedWorkflowEngineTopic, delay)
+  remoteTimerCompleted.sendTo(io.infinitic.common.transport.TimerWorkflowStateEngineTopic, delay)
 }

@@ -57,8 +57,8 @@ import io.infinitic.common.workflows.engine.messages.WaitWorkflow
 import io.infinitic.common.workflows.engine.messages.WorkflowCanceledEvent
 import io.infinitic.common.workflows.engine.messages.WorkflowCmdMessage
 import io.infinitic.common.workflows.engine.messages.WorkflowCompletedEvent
-import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
 import io.infinitic.common.workflows.engine.messages.WorkflowEventMessage
+import io.infinitic.common.workflows.engine.messages.WorkflowStateEngineMessage
 import io.infinitic.events.types.CANCEL
 import io.infinitic.events.types.CANCELED
 import io.infinitic.events.types.CANCEL_METHOD
@@ -108,7 +108,7 @@ internal fun WorkflowCmdMessage.workflowSimpleType(): String? = when (this) {
   is WaitWorkflow -> null
 }
 
-internal fun WorkflowEngineMessage.workflowSimpleType(): String? = when (this) {
+internal fun WorkflowStateEngineMessage.workflowSimpleType(): String? = when (this) {
   is WorkflowCmdMessage -> null
   is RemoteTimerCompleted -> TIMER_COMPLETED
   is RemoteMethodCompleted -> REMOTE_METHOD_COMPLETED
@@ -157,7 +157,7 @@ internal fun WorkflowEventMessage.workflowSimpleType(): String = when (this) {
 fun WorkflowCmdMessage.workflowType(): String? =
     this.workflowSimpleType()?.let { "$TYPE_WORKFLOW.$it" }
 
-fun WorkflowEngineMessage.workflowType(): String? =
+fun WorkflowStateEngineMessage.workflowType(): String? =
     this.workflowSimpleType()?.let { "$TYPE_WORKFLOW.$it" }
 
 fun WorkflowEventMessage.workflowType(): String = "$TYPE_WORKFLOW." + workflowSimpleType()

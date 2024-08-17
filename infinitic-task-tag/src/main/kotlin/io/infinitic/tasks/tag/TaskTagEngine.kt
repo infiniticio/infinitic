@@ -41,7 +41,7 @@ import io.infinitic.common.tasks.tags.storage.TaskTagStorage
 import io.infinitic.common.transport.ClientTopic
 import io.infinitic.common.transport.InfiniticProducerAsync
 import io.infinitic.common.transport.LoggedInfiniticProducer
-import io.infinitic.common.transport.WorkflowEngineTopic
+import io.infinitic.common.transport.WorkflowStateEngineTopic
 import io.infinitic.common.workflows.engine.messages.RemoteTaskCompleted
 import io.infinitic.tasks.tag.storage.LoggedTaskTagStorage
 import kotlinx.coroutines.coroutineScope
@@ -98,7 +98,7 @@ class TaskTagEngine(
       }
       // send to waiting workflow
       RemoteTaskCompleted.from(it, message.returnValue, emitterName, publishTime)?.let {
-        with(producer) { it.sendTo(WorkflowEngineTopic) }
+        with(producer) { it.sendTo(WorkflowStateEngineTopic) }
       }
       // delete delegatedTaskData
       storage.delDelegatedTaskData(message.taskId)

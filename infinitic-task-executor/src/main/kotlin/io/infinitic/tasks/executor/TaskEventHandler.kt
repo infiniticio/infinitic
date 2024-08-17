@@ -36,7 +36,7 @@ import io.infinitic.common.transport.ClientTopic
 import io.infinitic.common.transport.InfiniticProducerAsync
 import io.infinitic.common.transport.LoggedInfiniticProducer
 import io.infinitic.common.transport.ServiceTagTopic
-import io.infinitic.common.transport.WorkflowEngineTopic
+import io.infinitic.common.transport.WorkflowStateEngineTopic
 import io.infinitic.common.workflows.data.commands.DispatchNewMethodPastCommand
 import io.infinitic.common.workflows.data.commands.DispatchNewWorkflowPastCommand
 import io.infinitic.common.workflows.data.commands.DispatchTaskPastCommand
@@ -84,7 +84,7 @@ class TaskEventHandler(producerAsync: InfiniticProducerAsync) {
         }
         // send to parent workflow
         msg.getEventForWorkflow(emitterName, publishTime)?.let {
-          launch { with(producer) { it.sendTo(WorkflowEngineTopic) } }
+          launch { with(producer) { it.sendTo(WorkflowStateEngineTopic) } }
         }
       }
 
@@ -112,7 +112,7 @@ class TaskEventHandler(producerAsync: InfiniticProducerAsync) {
           }
           // send to parent workflow
           msg.getEventForWorkflow(emitterName, publishTime)?.let {
-            launch { with(producer) { it.sendTo(WorkflowEngineTopic) } }
+            launch { with(producer) { it.sendTo(WorkflowStateEngineTopic) } }
           }
           // remove tags
           msg.getEventsForTag(emitterName).forEach {

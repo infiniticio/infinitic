@@ -27,6 +27,7 @@ import io.infinitic.common.config.loadConfigFromFile
 import io.infinitic.common.config.loadConfigFromResource
 import io.infinitic.common.config.loadConfigFromYaml
 import io.infinitic.events.config.EventListenerConfig
+import io.infinitic.events.config.EventLoggerConfig
 import io.infinitic.pulsar.config.PulsarConfig
 import io.infinitic.storage.config.StorageConfig
 import io.infinitic.transport.config.Transport
@@ -65,8 +66,10 @@ data class WorkerConfig(
   override val workflowDefault: WorkflowConfigDefault? = null,
 
   /** Default event listener configuration */
-  override val eventListener: EventListenerConfig? = null
+  override val eventListener: EventListenerConfig? = null,
 
+  /** Default logger configuration */
+  override val eventLogger: EventLoggerConfig? = null
 ) : WorkerConfigInterface {
 
   init {
@@ -112,6 +115,7 @@ data class WorkerConfig(
     private var serviceDefault = default.serviceDefault
     private var workflowDefault = default.workflowDefault
     private var eventListener = default.eventListener
+    private var eventLogger = default.eventLogger
 
     fun name(name: String) =
         apply { this.name = name }
@@ -143,6 +147,9 @@ data class WorkerConfig(
     fun eventListener(eventListener: EventListenerConfig?) =
         apply { this.eventListener = eventListener }
 
+    fun logger(logger: EventLoggerConfig?) =
+        apply { this.eventLogger = logger }
+
     fun build() = WorkerConfig(
         name,
         shutdownGracePeriodInSeconds,
@@ -154,6 +161,7 @@ data class WorkerConfig(
         serviceDefault,
         workflowDefault,
         eventListener,
+        eventLogger,
     )
   }
 }

@@ -22,6 +22,6 @@
  */
 package io.infinitic.common.workers.registry
 
-import io.infinitic.common.workflows.tags.storage.WorkflowTagStorage
+import io.infinitic.common.workflows.engine.storage.WorkflowStateStorage
 
-data class RegisteredWorkflowTag(val concurrency: Int, var storage: WorkflowTagStorage)
+data class RegisteredWorkflowStateEngine(val concurrency: Int, val storage: WorkflowStateStorage)

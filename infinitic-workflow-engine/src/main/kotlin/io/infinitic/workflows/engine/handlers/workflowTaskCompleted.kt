@@ -53,7 +53,7 @@ import io.infinitic.common.workflows.engine.messages.DispatchMethod
 import io.infinitic.common.workflows.engine.messages.MethodCompletedEvent
 import io.infinitic.common.workflows.engine.messages.RemoteTaskCompleted
 import io.infinitic.common.workflows.engine.messages.SendSignal
-import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
+import io.infinitic.common.workflows.engine.messages.WorkflowStateEngineMessage
 import io.infinitic.common.workflows.engine.state.WorkflowState
 import io.infinitic.workflows.engine.helpers.stepTerminated
 import kotlinx.coroutines.CoroutineScope
@@ -116,7 +116,7 @@ internal fun CoroutineScope.workflowTaskCompleted(
     }
   }
 
-  val bufferedMessages = mutableListOf<WorkflowEngineMessage>()
+  val bufferedMessages = mutableListOf<WorkflowStateEngineMessage>()
 
   // add new commands to past commands
   workflowTaskReturnValue.newCommands.forEach {
@@ -198,7 +198,7 @@ internal fun dispatchMethodOnRunningWorkflowCmd(
   state: WorkflowState,
   workflowMethod: WorkflowMethod,
   producer: InfiniticProducer,
-  bufferedMessages: MutableList<WorkflowEngineMessage>
+  bufferedMessages: MutableList<WorkflowStateEngineMessage>
 ) {
   val command: DispatchNewMethodCommand = pastCommand.command
 
@@ -251,7 +251,7 @@ internal fun sendSignalCmd(
   state: WorkflowState,
   workflowMethod: WorkflowMethod,
   producer: InfiniticProducer,
-  bufferedMessages: MutableList<WorkflowEngineMessage>
+  bufferedMessages: MutableList<WorkflowStateEngineMessage>
 ) {
   val command: SendSignalCommand = pastCommand.command
 

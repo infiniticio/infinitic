@@ -23,6 +23,7 @@
 package io.infinitic.workers.register.config
 
 import io.infinitic.events.config.EventListenerConfig
+import io.infinitic.events.config.EventLoggerConfig
 
 interface RegisterConfigInterface {
   /** Workflows configuration */
@@ -39,4 +40,7 @@ interface RegisterConfigInterface {
 
   /** Default event listener configuration */
   val eventListener: EventListenerConfig?
+
+  /** Default logger configuration */
+  val eventLogger: EventLoggerConfig?
 }

@@ -33,22 +33,22 @@ import io.infinitic.common.tasks.events.messages.TaskStartedEvent
 import io.infinitic.common.tasks.executors.messages.ExecuteTask
 import io.infinitic.common.tasks.executors.messages.ServiceExecutorMessage
 import io.infinitic.common.transport.ClientTopic
-import io.infinitic.common.transport.DelayedServiceExecutorTopic
-import io.infinitic.common.transport.DelayedWorkflowEngineTopic
-import io.infinitic.common.transport.DelayedWorkflowTaskExecutorTopic
+import io.infinitic.common.transport.RetryServiceExecutorTopic
+import io.infinitic.common.transport.RetryWorkflowTaskExecutorTopic
 import io.infinitic.common.transport.ServiceEventsTopic
 import io.infinitic.common.transport.ServiceExecutorTopic
+import io.infinitic.common.transport.TimerWorkflowStateEngineTopic
 import io.infinitic.common.transport.WorkflowCmdTopic
-import io.infinitic.common.transport.WorkflowEngineTopic
 import io.infinitic.common.transport.WorkflowEventsTopic
-import io.infinitic.common.transport.WorkflowTagTopic
+import io.infinitic.common.transport.WorkflowStateEngineTopic
+import io.infinitic.common.transport.WorkflowTagEngineTopic
 import io.infinitic.common.transport.WorkflowTaskEventsTopic
 import io.infinitic.common.transport.WorkflowTaskExecutorTopic
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTask
 import io.infinitic.common.workflows.engine.messages.WorkflowCmdMessage
-import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
 import io.infinitic.common.workflows.engine.messages.WorkflowEventMessage
-import io.infinitic.common.workflows.tags.messages.WorkflowTagMessage
+import io.infinitic.common.workflows.engine.messages.WorkflowStateEngineMessage
+import io.infinitic.common.workflows.tags.messages.WorkflowTagEngineMessage
 import io.infinitic.pulsar.admin.PulsarInfiniticAdmin
 import io.infinitic.pulsar.client.PulsarInfiniticClient
 import io.infinitic.pulsar.config.policies.PoliciesConfig
@@ -127,15 +127,15 @@ class PulsarInfiniticProducerAsyncTests : StringSpec(
       }
 
       "publishing to an absent WorkflowTagTopic should not throw, should create the topic" {
-        val message = TestFactory.random<WorkflowTagMessage>()
+        val message = TestFactory.random<WorkflowTagEngineMessage>()
 
         // publishing to an absent ClientTopic should not throw
         shouldNotThrowAny {
-          pulsarProducerAsync.internalSendToAsync(message, WorkflowTagTopic).await()
+          pulsarProducerAsync.internalSendToAsync(message, WorkflowTagEngineTopic).await()
         }
 
         // publishing to an absent WorkflowTagTopic should create it
-        val topic = with(pulsarResources) { WorkflowTagTopic.fullName(message.entity()) }
+        val topic = with(pulsarResources) { WorkflowTagEngineTopic.fullName(message.entity()) }
         admin.getTopicInfo(topic).getOrThrow() shouldNotBe null
       }
 
@@ -153,32 +153,33 @@ class PulsarInfiniticProducerAsyncTests : StringSpec(
       }
 
       "publishing to an absent WorkflowEngineTopic should not throw, should create the topic" {
-        val message = TestFactory.random<WorkflowEngineMessage>()
+        val message = TestFactory.random<WorkflowStateEngineMessage>()
 
         // publishing to an absent WorkflowEngineTopic should not throw
         shouldNotThrowAny {
-          pulsarProducerAsync.internalSendToAsync(message, WorkflowEngineTopic).await()
+          pulsarProducerAsync.internalSendToAsync(message, WorkflowStateEngineTopic).await()
         }
 
         // publishing to an absent WorkflowEngineTopic should create it
-        val topic = with(pulsarResources) { WorkflowEngineTopic.fullName(message.entity()) }
+        val topic = with(pulsarResources) { WorkflowStateEngineTopic.fullName(message.entity()) }
         admin.getTopicInfo(topic).getOrThrow() shouldNotBe null
       }
 
       "publishing to an absent DelayedWorkflowEngineTopic should not throw, should create the topic" {
-        val message = TestFactory.random<WorkflowEngineMessage>()
+        val message = TestFactory.random<WorkflowStateEngineMessage>()
 
         // publishing to an absent DelayedWorkflowEngineTopic should not throw
         shouldNotThrowAny {
           pulsarProducerAsync.internalSendToAsync(
               message,
-              DelayedWorkflowEngineTopic,
+              TimerWorkflowStateEngineTopic,
               MillisDuration(1),
           ).await()
         }
 
         // publishing to an absent DelayedWorkflowEngineTopic should create it
-        val topic = with(pulsarResources) { DelayedWorkflowEngineTopic.fullName(message.entity()) }
+        val topic =
+            with(pulsarResources) { TimerWorkflowStateEngineTopic.fullName(message.entity()) }
         admin.getTopicInfo(topic).getOrThrow() shouldNotBe null
       }
 
@@ -222,14 +223,14 @@ class PulsarInfiniticProducerAsyncTests : StringSpec(
         shouldNotThrowAny {
           pulsarProducerAsync.internalSendToAsync(
               message,
-              DelayedWorkflowTaskExecutorTopic,
+              RetryWorkflowTaskExecutorTopic,
               MillisDuration(1),
           ).await()
         }
 
         // publishing to an absent DelayedWorkflowTaskExecutorTopic should create it
         val topic =
-            with(pulsarResources) { DelayedWorkflowTaskExecutorTopic.fullName(message.entity()) }
+            with(pulsarResources) { RetryWorkflowTaskExecutorTopic.fullName(message.entity()) }
         admin.getTopicInfo(topic).getOrThrow() shouldNotBe null
       }
 
@@ -269,13 +270,13 @@ class PulsarInfiniticProducerAsyncTests : StringSpec(
         shouldNotThrowAny {
           pulsarProducerAsync.internalSendToAsync(
               message,
-              DelayedServiceExecutorTopic,
+              RetryServiceExecutorTopic,
               MillisDuration(1),
           ).await()
         }
 
         // publishing to an absent DelayedServiceExecutorTopic should create it
-        val topic = with(pulsarResources) { DelayedServiceExecutorTopic.fullName(message.entity()) }
+        val topic = with(pulsarResources) { RetryServiceExecutorTopic.fullName(message.entity()) }
         admin.getTopicInfo(topic).getOrThrow() shouldNotBe null
       }
 

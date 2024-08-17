@@ -25,17 +25,21 @@ package io.infinitic.workers.register
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.infinitic.cloudEvents.CloudEventListener
 import io.infinitic.common.tasks.data.ServiceName
+import io.infinitic.common.utils.merge
 import io.infinitic.common.workers.registry.RegisteredEventListener
+import io.infinitic.common.workers.registry.RegisteredEventLogger
 import io.infinitic.common.workers.registry.RegisteredServiceExecutor
-import io.infinitic.common.workers.registry.RegisteredServiceTag
-import io.infinitic.common.workers.registry.RegisteredWorkflowEngine
+import io.infinitic.common.workers.registry.RegisteredServiceTagEngine
 import io.infinitic.common.workers.registry.RegisteredWorkflowExecutor
-import io.infinitic.common.workers.registry.RegisteredWorkflowTag
+import io.infinitic.common.workers.registry.RegisteredWorkflowStateEngine
+import io.infinitic.common.workers.registry.RegisteredWorkflowTagEngine
 import io.infinitic.common.workers.registry.ServiceFactory
 import io.infinitic.common.workers.registry.WorkerRegistry
 import io.infinitic.common.workers.registry.WorkflowFactories
 import io.infinitic.common.workflows.data.workflows.WorkflowName
 import io.infinitic.events.config.EventListenerConfig
+import io.infinitic.events.config.EventLoggerConfig
+import io.infinitic.logs.LogLevel
 import io.infinitic.storage.config.StorageConfig
 import io.infinitic.tasks.WithRetry
 import io.infinitic.tasks.WithTimeout
@@ -49,6 +53,7 @@ import io.infinitic.workers.register.config.UNDEFINED_WITH_TIMEOUT
 import io.infinitic.workers.register.config.WorkflowConfigDefault
 import io.infinitic.workflows.WorkflowCheckMode
 import io.infinitic.workflows.engine.storage.BinaryWorkflowStateStorage
+import io.infinitic.workflows.tag.config.WorkflowTagEngineConfig
 import io.infinitic.workflows.tag.storage.BinaryWorkflowTagStorage
 import java.security.InvalidParameterException
 import java.util.concurrent.ConcurrentHashMap
@@ -66,6 +71,7 @@ class InfiniticRegisterImpl : InfiniticRegister {
 
   override var defaultStorage: StorageConfig = StorageConfig()
   override var defaultEventListener: EventListenerConfig? = null
+  override var defaultEventLogger: EventLoggerConfig? = null
   override var serviceDefault: ServiceConfigDefault = ServiceConfigDefault()
   override var workflowDefault: WorkflowConfigDefault = WorkflowConfigDefault()
 
@@ -129,7 +135,7 @@ class InfiniticRegisterImpl : InfiniticRegister {
 
     storages.add(s)
 
-    registry.serviceTags[service] = RegisteredServiceTag(
+    registry.serviceTagEngines[service] = RegisteredServiceTagEngine(
         concurrency
           ?: serviceDefault.tagEngine?.concurrency
           ?: registry.serviceExecutors[service]?.concurrency
@@ -150,24 +156,55 @@ class InfiniticRegisterImpl : InfiniticRegister {
     subscriptionName: String?,
   ) {
     val service = ServiceName(serviceName)
+    val defaultConcurrency = registry.serviceExecutors[service]?.concurrency ?: DEFAULT_CONCURRENCY
+    val config =
+        EventListenerConfig(concurrency = concurrency, subscriptionName = subscriptionName) merge
+            serviceDefault.eventListener merge
+            defaultEventListener merge
+            EventListenerConfig(concurrency = defaultConcurrency)
 
-    registry.serviceListeners[service] = RegisteredEventListener(
-        eventListener
-          ?: serviceDefault.eventListener?.instance
-          ?: defaultEventListener?.instance
-          ?: throw InvalidParameterException("Missing ${CloudEventListener::class.simpleName} at registration for service $serviceName"),
-        concurrency
-          ?: serviceDefault.eventListener?.concurrency
-          ?: defaultEventListener?.concurrency
-          ?: registry.serviceExecutors[service]?.concurrency
-          ?: DEFAULT_CONCURRENCY,
-        subscriptionName
-          ?: serviceDefault.eventListener?.subscriptionName
-          ?: defaultEventListener?.subscriptionName,
+    val instance = eventListener ?: config.instance ?: throw InvalidParameterException(
+        "Missing ${CloudEventListener::class.simpleName} for service $serviceName",
+    )
+
+    registry.serviceEventListeners[service] = RegisteredEventListener(
+        instance,
+        config.concurrency!!,
+        config.subscriptionName,
     ).also {
       logger.info {
         "* service event listener ".padEnd(25) +
-            ": (concurrency: ${it.concurrency})"
+            ": (class: {${it.eventListener::class.java}}, concurrency: ${it.concurrency}), subscription: ${it.subscriptionName}"
+      }
+    }
+  }
+
+  override fun registerServiceLogger(
+    serviceName: String,
+    logLevel: LogLevel?,
+    loggerName: String?,
+    beautify: Boolean?,
+    concurrency: Int?,
+    subscriptionName: String?,
+  ) {
+    val service = ServiceName(serviceName)
+    val defaultConcurrency = registry.serviceExecutors[service]?.concurrency ?: DEFAULT_CONCURRENCY
+    val config =
+        EventLoggerConfig(logLevel, loggerName, beautify, concurrency, subscriptionName) merge
+            serviceDefault.eventLogger merge
+            defaultEventLogger merge
+            getDefaultEventLoggerConfig(defaultConcurrency)
+
+    registry.serviceEventLoggers[service] = RegisteredEventLogger(
+        config.logLevel!!,
+        config.loggerName!!,
+        config.beautify!!,
+        config.concurrency!!,
+        config.subscriptionName,
+    ).also {
+      logger.info {
+        "* service logger ".padEnd(25) +
+            ": (level: ${it.logLevel}, beautify: ${it.beautify}, concurrency: ${it.concurrency}, subscriptionName: ${it.subscriptionName})"
       }
     }
   }
@@ -217,11 +254,11 @@ class InfiniticRegisterImpl : InfiniticRegister {
     storageConfig: StorageConfig?,
   ) {
     val workflow = WorkflowName(workflowName)
-    val s = storageConfig ?: workflowDefault.stateEngine?.storageConfig ?: defaultStorage
+    val s = storageConfig ?: workflowDefault.stateEngine?.storage ?: defaultStorage
 
     storages.add(s)
 
-    registry.workflowEngines[workflow] = RegisteredWorkflowEngine(
+    registry.workflowStateEngines[workflow] = RegisteredWorkflowStateEngine(
         concurrency
           ?: workflowDefault.stateEngine?.concurrency
           ?: registry.workflowExecutors[workflow]?.concurrency
@@ -241,11 +278,14 @@ class InfiniticRegisterImpl : InfiniticRegister {
     storageConfig: StorageConfig?,
   ) {
     val workflow = WorkflowName(workflowName)
-    val s = storageConfig ?: workflowDefault.stateEngine?.storageConfig ?: defaultStorage
+    val config = WorkflowTagEngineConfig(concurrency, storageConfig) merge
+        workflowDefault.stateEngine
+
+    val s = storageConfig ?: workflowDefault.stateEngine?.storage ?: defaultStorage
 
     storages.add(s)
 
-    registry.workflowTags[WorkflowName(workflowName)] = RegisteredWorkflowTag(
+    registry.workflowTagEngines[WorkflowName(workflowName)] = RegisteredWorkflowTagEngine(
         concurrency
           ?: workflowDefault.tagEngine?.concurrency
           ?: registry.workflowExecutors[workflow]?.concurrency
@@ -266,27 +306,66 @@ class InfiniticRegisterImpl : InfiniticRegister {
     subscriptionName: String?,
   ) {
     val workflow = WorkflowName(workflowName)
-
-    registry.workflowListeners[workflow] = RegisteredEventListener(
-        eventListener
-          ?: workflowDefault.eventListener?.instance
-          ?: defaultEventListener?.instance
-          ?: throw InvalidParameterException("Missing ${CloudEventListener::class.simpleName} at registration for workflow $workflow"),
-        concurrency
-          ?: workflowDefault.eventListener?.concurrency
-          ?: defaultEventListener?.concurrency
-          ?: registry.workflowExecutors[workflow]?.concurrency
-          ?: DEFAULT_CONCURRENCY,
-        subscriptionName
-          ?: workflowDefault.eventListener?.subscriptionName
-          ?: defaultEventListener?.subscriptionName,
+    val defaultConcurrency =
+        registry.workflowExecutors[workflow]?.concurrency ?: DEFAULT_CONCURRENCY
+    val config =
+        EventListenerConfig(concurrency = concurrency, subscriptionName = subscriptionName) merge
+            workflowDefault.eventListener merge
+            defaultEventListener merge
+            EventListenerConfig(null, defaultConcurrency, null)
+    val listener = eventListener ?: config.instance ?: throw InvalidParameterException(
+        "Missing ${CloudEventListener::class.simpleName} for workflow $workflowName",
+    )
+    registry.workflowEventListeners[workflow] = RegisteredEventListener(
+        listener,
+        config.concurrency!!,
+        config.subscriptionName,
     ).also {
       logger.info {
         "* workflow event listener ".padEnd(25) +
-            ": (concurrency: ${it.concurrency})"
+            ": (class: ${it.eventListener::class.java}, concurrency: ${it.concurrency}, subscription: ${it.subscriptionName})"
       }
     }
   }
+
+  override fun registerWorkflowEventLogger(
+    workflowName: String,
+    logLevel: LogLevel?,
+    loggerName: String?,
+    beautify: Boolean?,
+    concurrency: Int?,
+    subscriptionName: String?,
+  ) {
+    val workflow = WorkflowName(workflowName)
+    val defaultConcurrency =
+        registry.workflowExecutors[workflow]?.concurrency ?: DEFAULT_CONCURRENCY
+    val config =
+        EventLoggerConfig(logLevel, loggerName, beautify, concurrency, subscriptionName) merge
+            workflowDefault.eventLogger merge
+            defaultEventLogger merge
+            getDefaultEventLoggerConfig(defaultConcurrency)
+
+    registry.workflowEventLoggers[workflow] = RegisteredEventLogger(
+        logLevel = config.logLevel!!,
+        loggerName = config.loggerName!!,
+        beautify = config.beautify!!,
+        concurrency = config.concurrency!!,
+        config.subscriptionName,
+    ).also {
+      logger.info {
+        "* workflow event logger ".padEnd(25) +
+            ": (level: ${it.logLevel}, beautify: ${it.beautify}, concurrency: ${it.concurrency}, subscription: ${it.subscriptionName})"
+      }
+    }
+  }
+
+  private fun getDefaultEventLoggerConfig(concurrency: Int) = EventLoggerConfig(
+      LogLevel.INFO,
+      "io.infinitic.workers.events",
+      true,
+      concurrency,
+      null,
+  )
 
   companion object {
     /** Create [InfiniticRegisterImpl] from config */
@@ -325,7 +404,7 @@ class InfiniticRegisterImpl : InfiniticRegister {
               registerWorkflowStateEngine(
                   w.name,
                   it.concurrency,
-                  it.storageConfig,
+                  it.storage,
               )
             }
             // Workflow Event Listener

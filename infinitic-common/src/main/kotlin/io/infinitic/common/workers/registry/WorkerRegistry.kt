@@ -27,40 +27,48 @@ import io.infinitic.common.workflows.data.workflows.WorkflowName
 import org.jetbrains.annotations.TestOnly
 
 class WorkerRegistry {
+  val serviceTagEngines = mutableMapOf<ServiceName, RegisteredServiceTagEngine>()
   val serviceExecutors = mutableMapOf<ServiceName, RegisteredServiceExecutor>()
-  val serviceTags = mutableMapOf<ServiceName, RegisteredServiceTag>()
-  val serviceListeners = mutableMapOf<ServiceName, RegisteredEventListener>()
+  val serviceEventListeners = mutableMapOf<ServiceName, RegisteredEventListener>()
+  val serviceEventLoggers = mutableMapOf<ServiceName, RegisteredEventLogger>()
 
-  val workflowEngines = mutableMapOf<WorkflowName, RegisteredWorkflowEngine>()
+  val workflowTagEngines = mutableMapOf<WorkflowName, RegisteredWorkflowTagEngine>()
+  val workflowStateEngines = mutableMapOf<WorkflowName, RegisteredWorkflowStateEngine>()
   val workflowExecutors = mutableMapOf<WorkflowName, RegisteredWorkflowExecutor>()
-  val workflowTags = mutableMapOf<WorkflowName, RegisteredWorkflowTag>()
-  val workflowListeners = mutableMapOf<WorkflowName, RegisteredEventListener>()
+  val workflowEventListeners = mutableMapOf<WorkflowName, RegisteredEventListener>()
+  val workflowEventLoggers = mutableMapOf<WorkflowName, RegisteredEventLogger>()
+
+  fun getRegisteredServiceTagEngine(serviceName: ServiceName) =
+      serviceTagEngines[serviceName]
 
   fun getRegisteredServiceExecutor(serviceName: ServiceName) =
       serviceExecutors[serviceName]
 
-  fun getRegisteredServiceTag(serviceName: ServiceName) =
-      serviceTags[serviceName]
+  fun getRegisteredServiceEventListener(serviceName: ServiceName) =
+      serviceEventListeners[serviceName]
+
+  fun getRegisteredServiceEventLogger(serviceName: ServiceName) =
+      serviceEventLoggers[serviceName]
+
+  fun getRegisteredWorkflowTagEngine(workflowName: WorkflowName) =
+      workflowTagEngines[workflowName]
+
+  fun getRegisteredWorkflowStateEngine(workflowName: WorkflowName) =
+      workflowStateEngines[workflowName]
 
   fun getRegisteredWorkflowExecutor(workflowName: WorkflowName) =
       workflowExecutors[workflowName]
 
-  fun getRegisteredWorkflowEngine(workflowName: WorkflowName) =
-      workflowEngines[workflowName]
-
-  fun getRegisteredWorkflowTag(workflowName: WorkflowName) =
-      workflowTags[workflowName]
-
-  fun getRegisteredServiceEventListener(serviceName: ServiceName) =
-      serviceListeners[serviceName]
-
   fun getRegisteredWorkflowEventListener(workflowName: WorkflowName) =
-      workflowListeners[workflowName]
+      workflowEventListeners[workflowName]
+
+  fun getRegisteredWorkflowEventLogger(workflowName: WorkflowName) =
+      workflowEventLoggers[workflowName]
 
   @TestOnly
   fun flush() {
-    serviceTags.values.forEach { it.storage.flush() }
-    workflowTags.values.forEach { it.storage.flush() }
-    workflowEngines.values.forEach { it.storage.flush() }
+    serviceTagEngines.values.forEach { it.storage.flush() }
+    workflowTagEngines.values.forEach { it.storage.flush() }
+    workflowStateEngines.values.forEach { it.storage.flush() }
   }
 }

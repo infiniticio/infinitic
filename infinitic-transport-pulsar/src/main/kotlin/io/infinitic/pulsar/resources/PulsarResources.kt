@@ -26,7 +26,7 @@ package io.infinitic.pulsar.resources
 import io.infinitic.common.messages.Message
 import io.infinitic.common.transport.MainSubscription
 import io.infinitic.common.transport.Topic
-import io.infinitic.common.transport.isDelayed
+import io.infinitic.common.transport.isTimer
 import io.infinitic.pulsar.admin.PulsarInfiniticAdmin
 import io.infinitic.pulsar.config.PulsarConfig
 import io.infinitic.pulsar.config.policies.PoliciesConfig
@@ -95,13 +95,13 @@ class PulsarResources(
     if (init) initTopicOnce(
         topic = it,
         isPartitioned = isPartitioned,
-        isDelayed = isDelayed,
+        isTimed = isTimer,
     )
 
     if (checkConsumer) admin.checkSubscriptionHasConsumerOnce(
         it,
         isPartitioned,
-        MainSubscription(this).defaultName,
+        MainSubscription(this).name,
     )
   }
 
@@ -115,7 +115,7 @@ class PulsarResources(
         if (init) initTopicOnce(
             topic = it,
             isPartitioned = isPartitioned,
-            isDelayed = isDelayed,
+            isTimed = isTimer,
         )
       }
 
@@ -131,15 +131,15 @@ class PulsarResources(
   suspend fun initTopicOnce(
     topic: String,
     isPartitioned: Boolean,
-    isDelayed: Boolean,
+    isTimed: Boolean,
   ): Result<Unit> {
     // initialize tenant once (do nothing on error)
     admin.initTenantOnce(tenant, allowedClusters, adminRoles)
     // initialize namespace once (do nothing on error)
     admin.initNamespaceOnce(namespaceFullName, policies)
     // initialize topic once  (do nothing on error)
-    val ttl = when (isDelayed) {
-      true -> policies.delayedTTLInSeconds
+    val ttl = when (isTimed) {
+      true -> policies.timerTTLInSeconds
       false -> policies.messageTTLInSeconds
     }
 

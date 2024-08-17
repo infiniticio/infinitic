@@ -24,19 +24,21 @@ package io.infinitic.workers.register.config
 
 import io.infinitic.common.workers.config.RetryPolicy
 import io.infinitic.events.config.EventListenerConfig
+import io.infinitic.events.config.EventLoggerConfig
 import io.infinitic.workflows.WorkflowCheckMode
-import io.infinitic.workflows.engine.config.WorkflowStateEngine
-import io.infinitic.workflows.tag.config.WorkflowTagEngine
+import io.infinitic.workflows.engine.config.WorkflowStateEngineConfig
+import io.infinitic.workflows.tag.config.WorkflowTagEngineConfig
 
 @Suppress("unused")
 data class WorkflowConfigDefault(
   val concurrency: Int? = null,
   val timeoutInSeconds: Double? = null,
   val retry: RetryPolicy? = null,
-  val tagEngine: WorkflowTagEngine? = null,
-  var stateEngine: WorkflowStateEngine? = null,
+  val tagEngine: WorkflowTagEngineConfig? = null,
+  var stateEngine: WorkflowStateEngineConfig? = null,
   val checkMode: WorkflowCheckMode? = null,
-  val eventListener: EventListenerConfig? = null
+  val eventListener: EventListenerConfig? = null,
+  val eventLogger: EventLoggerConfig? = null
 ) {
   init {
     concurrency?.let {
@@ -65,6 +67,7 @@ data class WorkflowConfigDefault(
     private var stateEngine = default.stateEngine
     private var checkMode = default.checkMode
     private var eventListener = default.eventListener
+    private var eventLogger = default.eventLogger
 
     fun concurrency(concurrency: Int) =
         apply { this.concurrency = concurrency }
@@ -75,10 +78,10 @@ data class WorkflowConfigDefault(
     fun retry(retry: RetryPolicy) =
         apply { this.retry = retry }
 
-    fun tagEngine(tagEngine: WorkflowTagEngine) =
+    fun tagEngine(tagEngine: WorkflowTagEngineConfig) =
         apply { this.tagEngine = tagEngine }
 
-    fun stateEngine(stateEngine: WorkflowStateEngine) =
+    fun stateEngine(stateEngine: WorkflowStateEngineConfig) =
         apply { this.stateEngine = stateEngine }
 
     fun checkMode(checkMode: WorkflowCheckMode) =
@@ -86,6 +89,9 @@ data class WorkflowConfigDefault(
 
     fun eventListener(eventListener: EventListenerConfig) =
         apply { this.eventListener = eventListener }
+
+    fun eventLogger(logger: EventLoggerConfig) =
+        apply { this.eventLogger = logger }
 
     fun build() = WorkflowConfigDefault(
         concurrency,
@@ -95,9 +101,9 @@ data class WorkflowConfigDefault(
         stateEngine,
         checkMode,
         eventListener,
+        eventLogger,
     )
   }
 
   private fun error(msg: String) = "default workflow: $msg"
-
 }

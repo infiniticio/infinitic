@@ -27,10 +27,11 @@ import io.infinitic.common.utils.isImplementationOf
 import io.infinitic.common.workers.config.RetryPolicy
 import io.infinitic.common.workflows.emptyWorkflowContext
 import io.infinitic.events.config.EventListenerConfig
+import io.infinitic.events.config.EventLoggerConfig
 import io.infinitic.workflows.Workflow
 import io.infinitic.workflows.WorkflowCheckMode
-import io.infinitic.workflows.engine.config.WorkflowStateEngine
-import io.infinitic.workflows.tag.config.WorkflowTagEngine
+import io.infinitic.workflows.engine.config.WorkflowStateEngineConfig
+import io.infinitic.workflows.tag.config.WorkflowTagEngineConfig
 import io.infinitic.workflows.Workflow as WorkflowBase
 
 @Suppress("unused")
@@ -42,9 +43,10 @@ data class WorkflowConfig(
   var timeoutInSeconds: Double? = UNDEFINED_TIMEOUT,
   var retry: RetryPolicy? = UNDEFINED_RETRY,
   var checkMode: WorkflowCheckMode? = null,
-  var tagEngine: WorkflowTagEngine? = DEFAULT_WORKFLOW_TAG_ENGINE,
-  var stateEngine: WorkflowStateEngine? = DEFAULT_WORKFLOW_STATE_ENGINE,
+  var tagEngine: WorkflowTagEngineConfig? = DEFAULT_WORKFLOW_TAG_ENGINE,
+  var stateEngine: WorkflowStateEngineConfig? = DEFAULT_WORKFLOW_STATE_ENGINE,
   var eventListener: EventListenerConfig? = UNDEFINED_EVENT_LISTENER,
+  val eventLogger: EventLoggerConfig? = UNDEFINED_EVENT_LOGGER
 ) {
   val allClasses = mutableListOf<Class<out WorkflowBase>>()
 
@@ -97,6 +99,7 @@ data class WorkflowConfig(
     private var tagEngine = default.tagEngine
     private var stateEngine = default.stateEngine
     private var eventListener = default.eventListener
+    private var eventLogger = default.eventLogger
 
     fun name(name: String) =
         apply { this.name = name }
@@ -119,15 +122,17 @@ data class WorkflowConfig(
     fun checkMode(checkMode: WorkflowCheckMode) =
         apply { this.checkMode = checkMode }
 
-    fun tagEngine(tagEngine: WorkflowTagEngine) =
+    fun tagEngine(tagEngine: WorkflowTagEngineConfig) =
         apply { this.tagEngine = tagEngine }
 
-    fun stateEngine(stateEngine: WorkflowStateEngine) =
+    fun stateEngine(stateEngine: WorkflowStateEngineConfig) =
         apply { this.stateEngine = stateEngine }
 
     fun eventListener(eventListener: EventListenerConfig) =
         apply { this.eventListener = eventListener }
 
+    fun eventLogger(eventLogger: EventLoggerConfig) =
+        apply { this.eventLogger = eventLogger }
 
     fun build() = WorkflowConfig(
         name.noUnset,
@@ -140,6 +145,7 @@ data class WorkflowConfig(
         tagEngine,
         stateEngine,
         eventListener,
+        eventLogger,
     )
   }
 

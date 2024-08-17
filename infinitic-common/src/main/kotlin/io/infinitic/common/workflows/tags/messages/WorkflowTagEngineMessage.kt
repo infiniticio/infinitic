@@ -60,7 +60,7 @@ interface WorkflowTagCmdMessage {
 
 @Serializable
 @AvroNamespace("io.infinitic.workflows.tag")
-sealed class WorkflowTagMessage : Message {
+sealed class WorkflowTagEngineMessage : Message {
   override val messageId = MessageId()
   abstract val workflowTag: WorkflowTag
   abstract val workflowName: WorkflowName
@@ -87,7 +87,7 @@ data class SendSignalByTag(
   @AvroDefault(Avro.NULL) override val requester: Requester?,
   @AvroDefault(Avro.NULL) override val emittedAt: MillisInstant?,
   override val emitterName: EmitterName,
-) : WorkflowTagMessage(), WorkflowTagCmdMessage
+) : WorkflowTagEngineMessage(), WorkflowTagCmdMessage
 
 /**
  * This message is a command to cancel all workflow instances with the provided tag.
@@ -102,7 +102,7 @@ data class CancelWorkflowByTag(
   @AvroDefault(Avro.NULL) override var requester: Requester?,
   @AvroDefault(Avro.NULL) override val emittedAt: MillisInstant?,
   override val emitterName: EmitterName,
-) : WorkflowTagMessage(), WorkflowTagCmdMessage {
+) : WorkflowTagEngineMessage(), WorkflowTagCmdMessage {
   init {
     // this is used only to handle previous messages that are still on <0.13 version
     // in topics or in bufferedMessages of a workflow state
@@ -130,7 +130,7 @@ data class RetryWorkflowTaskByTag(
   @AvroDefault(Avro.NULL) override val requester: Requester?,
   @AvroDefault(Avro.NULL) override val emittedAt: MillisInstant?,
   override val emitterName: EmitterName,
-) : WorkflowTagMessage(), WorkflowTagCmdMessage
+) : WorkflowTagEngineMessage(), WorkflowTagCmdMessage
 
 /**
  * This message is a command to retry the tasks of all workflow instances with the provided tag.
@@ -146,7 +146,7 @@ data class RetryTasksByTag(
   @AvroDefault(Avro.NULL) override val requester: Requester?,
   @AvroDefault(Avro.NULL) override val emittedAt: MillisInstant?,
   override val emitterName: EmitterName,
-) : WorkflowTagMessage(), WorkflowTagCmdMessage
+) : WorkflowTagEngineMessage(), WorkflowTagCmdMessage
 
 /**
  * This message is a command to complete all timers of all workflow instances with the provided tag.
@@ -161,7 +161,7 @@ data class CompleteTimersByTag(
   @AvroDefault(Avro.NULL) override val requester: Requester?,
   @AvroDefault(Avro.NULL) override val emittedAt: MillisInstant?,
   override val emitterName: EmitterName,
-) : WorkflowTagMessage(), WorkflowTagCmdMessage
+) : WorkflowTagEngineMessage(), WorkflowTagCmdMessage
 
 /**
  * This message is a command to tell the tag engine that a workflow with the provided tag is running
@@ -174,7 +174,7 @@ data class AddTagToWorkflow(
   val workflowId: WorkflowId,
   override val emitterName: EmitterName,
   @AvroDefault(Avro.NULL) override val emittedAt: MillisInstant?
-) : WorkflowTagMessage()
+) : WorkflowTagEngineMessage()
 
 /**
  * This message is a command to tell the tag engine that a workflow with the provided tag is not running anymore
@@ -187,7 +187,7 @@ data class RemoveTagFromWorkflow(
   val workflowId: WorkflowId,
   override val emitterName: EmitterName,
   @AvroDefault(Avro.NULL) override val emittedAt: MillisInstant?
-) : WorkflowTagMessage()
+) : WorkflowTagEngineMessage()
 
 /**
  * This message is a command to request the tag engine to send back the ids of all workflows with the provided tag
@@ -199,7 +199,7 @@ data class GetWorkflowIdsByTag(
   override val workflowTag: WorkflowTag,
   override val emitterName: EmitterName,
   @AvroDefault(Avro.NULL) override val emittedAt: MillisInstant?,
-) : WorkflowTagMessage()
+) : WorkflowTagEngineMessage()
 
 /**
  * This message is a command to dispatch a new workflow instance,
@@ -224,7 +224,7 @@ data class DispatchWorkflowByCustomId(
   val clientWaiting: Boolean,
   override val emitterName: EmitterName,
   @AvroDefault(Avro.NULL) override val emittedAt: MillisInstant?
-) : WorkflowTagMessage(), WorkflowTagCmdMessage {
+) : WorkflowTagEngineMessage(), WorkflowTagCmdMessage {
   init {
     require(workflowTag.isCustomId()) { "workflowTag must be a custom id" }
 
@@ -264,7 +264,7 @@ data class DispatchMethodByTag(
   @AvroDefault(Avro.NULL) val methodTimeout: MillisDuration? = null,
   @AvroDefault(Avro.NULL) override val emittedAt: MillisInstant?,
   override val emitterName: EmitterName,
-) : WorkflowTagMessage(), WorkflowTagCmdMessage {
+) : WorkflowTagEngineMessage(), WorkflowTagCmdMessage {
   init {
     // this is used only to handle previous messages that are still on <0.13 version
     // in topics or in bufferedMessages of a workflow state

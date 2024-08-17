@@ -77,8 +77,8 @@ import io.infinitic.common.workflows.engine.messages.WaitWorkflow
 import io.infinitic.common.workflows.engine.messages.WorkflowCanceledEvent
 import io.infinitic.common.workflows.engine.messages.WorkflowCmdMessage
 import io.infinitic.common.workflows.engine.messages.WorkflowCompletedEvent
-import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
 import io.infinitic.common.workflows.engine.messages.WorkflowEventMessage
+import io.infinitic.common.workflows.engine.messages.WorkflowStateEngineMessage
 import io.infinitic.events.errors.toJson
 import io.infinitic.events.types.REMOTE_METHOD_DISPATCHED
 import io.infinitic.events.types.SIGNAL_DISCARDED
@@ -183,7 +183,7 @@ fun WorkflowCmdMessage.toJson(): JsonObject = when (this) {
   is WaitWorkflow -> thisShouldNotHappen()
 }
 
-fun WorkflowEngineMessage.toJson(): JsonObject = when (this) {
+fun WorkflowStateEngineMessage.toJson(): JsonObject = when (this) {
 
   is WorkflowCmdMessage -> thisShouldNotHappen()
 

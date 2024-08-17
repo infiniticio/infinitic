@@ -44,8 +44,8 @@ import io.infinitic.common.transport.ServiceEventsTopic
 import io.infinitic.common.transport.ServiceExecutorTopic
 import io.infinitic.common.transport.Topic
 import io.infinitic.common.transport.WorkflowCmdTopic
-import io.infinitic.common.transport.WorkflowEngineTopic
 import io.infinitic.common.transport.WorkflowEventsTopic
+import io.infinitic.common.transport.WorkflowStateEngineTopic
 import io.infinitic.common.transport.WorkflowTaskEventsTopic
 import io.infinitic.common.transport.WorkflowTaskExecutorTopic
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTask
@@ -83,8 +83,8 @@ import io.infinitic.common.workflows.engine.messages.WaitWorkflow
 import io.infinitic.common.workflows.engine.messages.WorkflowCanceledEvent
 import io.infinitic.common.workflows.engine.messages.WorkflowCmdMessage
 import io.infinitic.common.workflows.engine.messages.WorkflowCompletedEvent
-import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
 import io.infinitic.common.workflows.engine.messages.WorkflowEventMessage
+import io.infinitic.common.workflows.engine.messages.WorkflowStateEngineMessage
 import io.infinitic.workers.InfiniticWorker
 import io.infinitic.workers.config.WorkerConfig
 import io.kotest.core.spec.style.StringSpec
@@ -165,14 +165,14 @@ suspend fun main() {
     }
   }
 
-  WorkflowEngineMessage::class.sealedSubclasses.forEach {
+  WorkflowStateEngineMessage::class.sealedSubclasses.forEach {
     if (!it.isSubclassOf(WorkflowCmdMessage::class)) {
       events.clear()
       val message = TestFactory.random(
           it,
           mapOf("workflowName" to WorkflowName("WorkflowA")),
       )
-      message.sendToTopic(WorkflowEngineTopic)
+      message.sendToTopic(WorkflowStateEngineTopic)
       events.firstOrNull()?.let { event ->
         val json = String(JsonFormat().serialize(event))
         println(message)
@@ -367,19 +367,19 @@ internal class CloudEventTests :
                     "requester" to ClientRequester(clientName = ClientName(RandomString().nextString())),
                 ),
             )
-            message.sendToTopic(WorkflowEngineTopic)
+            message.sendToTopic(WorkflowStateEngineTopic)
             events.size shouldBe 0
           }
         }
 
-        WorkflowEngineMessage::class.sealedSubclasses.forEach {
+        WorkflowStateEngineMessage::class.sealedSubclasses.forEach {
           if (!it.isSubclassOf(WorkflowCmdMessage::class)) {
             "Check ${it.simpleName} event envelope from engine topic" {
               val message = TestFactory.random(
                   it,
                   mapOf("workflowName" to WorkflowName("WorkflowA")),
               )
-              message.sendToTopic(WorkflowEngineTopic)
+              message.sendToTopic(WorkflowStateEngineTopic)
 
               val type = when (it) {
                 RemoteMethodCanceled::class -> "infinitic.workflow.remoteMethodCanceled"

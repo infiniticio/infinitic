@@ -58,7 +58,7 @@ import io.infinitic.common.transport.MainSubscription
 import io.infinitic.common.transport.ServiceTagTopic
 import io.infinitic.common.transport.Subscription
 import io.infinitic.common.transport.WorkflowCmdTopic
-import io.infinitic.common.transport.WorkflowTagTopic
+import io.infinitic.common.transport.WorkflowTagEngineTopic
 import io.infinitic.common.utils.IdGenerator
 import io.infinitic.common.workflows.data.channels.ChannelName
 import io.infinitic.common.workflows.data.channels.ChannelType
@@ -83,7 +83,7 @@ import io.infinitic.common.workflows.tags.messages.CancelWorkflowByTag
 import io.infinitic.common.workflows.tags.messages.DispatchMethodByTag
 import io.infinitic.common.workflows.tags.messages.GetWorkflowIdsByTag
 import io.infinitic.common.workflows.tags.messages.SendSignalByTag
-import io.infinitic.common.workflows.tags.messages.WorkflowTagMessage
+import io.infinitic.common.workflows.tags.messages.WorkflowTagEngineMessage
 import io.infinitic.exceptions.WorkflowTimedOutException
 import io.infinitic.exceptions.clients.InvalidChannelUsageException
 import io.infinitic.exceptions.clients.InvalidStubException
@@ -101,7 +101,8 @@ import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CopyOnWriteArrayList
 
 private val taskTagSlots = CopyOnWriteArrayList<ServiceTagMessage>() // multithreading update
-private val workflowTagSlots = CopyOnWriteArrayList<WorkflowTagMessage>() // multithreading update
+private val workflowTagSlots =
+    CopyOnWriteArrayList<WorkflowTagEngineMessage>() // multithreading update
 private val taskSlot = slot<ServiceExecutorMessage>()
 private val workflowCmdSlot = slot<WorkflowCmdMessage>()
 private val delaySlot = slot<MillisDuration>()
@@ -143,7 +144,7 @@ private fun engineResponse(): CompletableFuture<Unit> {
 private val producerAsync = mockk<InfiniticProducerAsync> {
   every { producerName } returns "$clientNameTest"
   coEvery { capture(taskTagSlots).sendToAsync(ServiceTagTopic) } answers { completed() }
-  coEvery { capture(workflowTagSlots).sendToAsync(WorkflowTagTopic) } answers { tagResponse() }
+  coEvery { capture(workflowTagSlots).sendToAsync(WorkflowTagEngineTopic) } answers { tagResponse() }
   coEvery { capture(workflowCmdSlot).sendToAsync(WorkflowCmdTopic) } answers { engineResponse() }
 }
 

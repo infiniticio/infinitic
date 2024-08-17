@@ -26,11 +26,11 @@ import io.infinitic.common.emitters.EmitterName
 import io.infinitic.common.requester.Requester
 import io.infinitic.common.requester.WorkflowRequester
 import io.infinitic.common.requester.workflowId
-import io.infinitic.common.transport.DelayedWorkflowEngineTopic
 import io.infinitic.common.transport.InfiniticProducer
+import io.infinitic.common.transport.TimerWorkflowStateEngineTopic
 import io.infinitic.common.transport.WorkflowCmdTopic
 import io.infinitic.common.transport.WorkflowEventsTopic
-import io.infinitic.common.transport.WorkflowTagTopic
+import io.infinitic.common.transport.WorkflowTagEngineTopic
 import io.infinitic.common.workflows.engine.messages.DispatchMethod
 import io.infinitic.common.workflows.engine.messages.DispatchWorkflow
 import io.infinitic.common.workflows.engine.messages.MethodCommandedEvent
@@ -68,7 +68,7 @@ suspend fun InfiniticProducer.dispatchRemoteMethod(
                   emittedAt = emittedAt,
               )
             }
-            addTagToWorkflow.sendTo(WorkflowTagTopic)
+            addTagToWorkflow.sendTo(WorkflowTagEngineTopic)
           }
         }
       }
@@ -95,7 +95,7 @@ suspend fun InfiniticProducer.dispatchRemoteMethod(
       remote.timeout?.let {
         launch {
           val remoteMethodTimedOut = dispatchWorkflow.remoteMethodTimedOut(emitterName, it)
-          remoteMethodTimedOut.sendTo(DelayedWorkflowEngineTopic, it)
+          remoteMethodTimedOut.sendTo(TimerWorkflowStateEngineTopic, it)
         }
       }
     }
@@ -120,7 +120,7 @@ suspend fun InfiniticProducer.dispatchRemoteMethod(
             emittedAt = emittedAt,
         )
       }
-      dispatchWorkflowByCustomId.sendTo(WorkflowTagTopic)
+      dispatchWorkflowByCustomId.sendTo(WorkflowTagEngineTopic)
     }
 
     // New Method on a workflow targeted by Id
@@ -173,9 +173,8 @@ suspend fun InfiniticProducer.dispatchRemoteMethod(
       // as the timeout is relative to the current workflow
       remote.timeout?.let {
         launch {
-          val remoteMethodTimedOut =
-              dispatchMethod.remoteMethodTimedOut(emitterName, it)
-          remoteMethodTimedOut.sendTo(DelayedWorkflowEngineTopic, it)
+          val remoteMethodTimedOut = dispatchMethod.remoteMethodTimedOut(emitterName, it)
+          remoteMethodTimedOut.sendTo(TimerWorkflowStateEngineTopic, it)
         }
       }
     }
@@ -198,7 +197,7 @@ suspend fun InfiniticProducer.dispatchRemoteMethod(
         )
       }
       // Note: tag engine MUST ignore this message for Id = parentWorkflowId
-      dispatchMethodByTag.sendTo(WorkflowTagTopic)
+      dispatchMethodByTag.sendTo(WorkflowTagEngineTopic)
     }
   }
 }

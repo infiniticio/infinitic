@@ -27,6 +27,8 @@ import io.infinitic.common.workers.registry.ServiceFactory
 import io.infinitic.common.workers.registry.WorkerRegistry
 import io.infinitic.common.workers.registry.WorkflowFactories
 import io.infinitic.events.config.EventListenerConfig
+import io.infinitic.events.config.EventLoggerConfig
+import io.infinitic.logs.LogLevel
 import io.infinitic.storage.config.StorageConfig
 import io.infinitic.tasks.WithRetry
 import io.infinitic.tasks.WithTimeout
@@ -61,6 +63,17 @@ interface InfiniticRegister : AutoCloseable {
    */
   var defaultEventListener: EventListenerConfig?
 
+  /**
+   * Default value of Logger
+   */
+  var defaultEventLogger: EventLoggerConfig?
+
+  /**
+   *
+   * Register Services
+   *
+   */
+
   /** Register service tag engine */
   @Suppress("OVERLOADS_INTERFACE")
   @JvmOverloads
@@ -92,7 +105,34 @@ interface InfiniticRegister : AutoCloseable {
     subscriptionName: String? = null,
   )
 
-  /** Register workflow */
+  /** Register service logger */
+  @Suppress("OVERLOADS_INTERFACE")
+  @JvmOverloads
+  fun registerServiceLogger(
+    serviceName: String,
+    logLevel: LogLevel? = null,
+    loggerName: String? = null,
+    beautify: Boolean? = null,
+    concurrency: Int? = null,
+    subscriptionName: String? = null,
+  )
+
+  /**
+   *
+   * Register workflows
+   *
+   */
+
+  /** Register workflow tag engine */
+  @Suppress("OVERLOADS_INTERFACE")
+  @JvmOverloads
+  fun registerWorkflowTagEngine(
+    workflowName: String,
+    concurrency: Int? = null,
+    storageConfig: StorageConfig? = null
+  )
+
+  /** Register workflow executor  */
   @Suppress("OVERLOADS_INTERFACE")
   @JvmOverloads
   fun registerWorkflowExecutor(
@@ -104,6 +144,7 @@ interface InfiniticRegister : AutoCloseable {
     checkMode: WorkflowCheckMode? = null,
   )
 
+  /** Register workflow executor  */
   @Suppress("OVERLOADS_INTERFACE")
   @JvmOverloads
   fun registerWorkflowExecutor(
@@ -131,15 +172,6 @@ interface InfiniticRegister : AutoCloseable {
     storageConfig: StorageConfig? = null
   )
 
-  /** Register workflow tag engine */
-  @Suppress("OVERLOADS_INTERFACE")
-  @JvmOverloads
-  fun registerWorkflowTagEngine(
-    workflowName: String,
-    concurrency: Int? = null,
-    storageConfig: StorageConfig? = null
-  )
-
   /** Register workflow event listener */
   @Suppress("OVERLOADS_INTERFACE")
   @JvmOverloads
@@ -147,6 +179,18 @@ interface InfiniticRegister : AutoCloseable {
     workflowName: String,
     concurrency: Int? = null,
     eventListener: CloudEventListener? = null,
+    subscriptionName: String? = null,
+  )
+
+  /** Register workflow logger */
+  @Suppress("OVERLOADS_INTERFACE")
+  @JvmOverloads
+  fun registerWorkflowEventLogger(
+    workflowName: String,
+    logLevel: LogLevel? = null,
+    loggerName: String? = null,
+    beautify: Boolean? = null,
+    concurrency: Int? = null,
     subscriptionName: String? = null,
   )
 }

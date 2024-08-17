@@ -23,6 +23,7 @@
 package io.infinitic.common.transport
 
 import io.infinitic.common.data.MillisDuration
+import io.infinitic.common.exceptions.thisShouldNotHappen
 import io.infinitic.common.messages.Message
 import io.infinitic.common.tasks.events.messages.ServiceEventMessage
 import io.infinitic.common.tasks.executors.messages.ServiceExecutorMessage
@@ -57,7 +58,7 @@ interface InfiniticProducerAsync {
     topic: Topic<T>,
     after: MillisDuration = MillisDuration(0)
   ): CompletableFuture<Unit> {
-    require(after <= 0 || topic.isDelayed) { "Trying to send to $topic with a delay $after" }
+    require(after <= 0 || topic.acceptDelayed) { thisShouldNotHappen("Trying to send to $topic with a delay $after") }
 
     // Switch to workflow-related topics for workflowTasks
     val t = when (this) {
@@ -67,7 +68,7 @@ interface InfiniticProducerAsync {
     }
 
     return when {
-      after <= 0 -> internalSendToAsync(this, t.withoutDelay, MillisDuration(0))
+      after <= 0 -> internalSendToAsync(this, t.withoutDelay)
       else -> internalSendToAsync(this, t, after)
     }
   }

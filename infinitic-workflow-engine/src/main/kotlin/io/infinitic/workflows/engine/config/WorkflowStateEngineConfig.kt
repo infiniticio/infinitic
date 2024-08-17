@@ -20,8 +20,44 @@
  *
  * Licensor: infinitic.io
  */
-package io.infinitic.common.workers.registry
+package io.infinitic.workflows.engine.config
 
-import io.infinitic.common.workflows.engine.storage.WorkflowStateStorage
+import io.infinitic.storage.config.StorageConfig
 
-data class RegisteredWorkflowEngine(val concurrency: Int, val storage: WorkflowStateStorage)
+data class WorkflowStateEngineConfig(
+  var concurrency: Int? = null,
+  var storage: StorageConfig? = null,
+) {
+  var isDefault: Boolean = false
+
+  init {
+    concurrency?.let {
+      require(it >= 0) { "concurrency must be positive" }
+    }
+  }
+
+  companion object {
+    @JvmStatic
+    fun builder() = WorkflowStateEngineConfigBuilder()
+  }
+
+  /**
+   * WorkflowStateEngineConfig builder (Useful for Java user)
+   */
+  class WorkflowStateEngineConfigBuilder {
+    private val default = WorkflowStateEngineConfig()
+    private var concurrency = default.concurrency
+    private var storage = default.storage
+
+    fun concurrency(concurrency: Int) =
+        apply { this.concurrency = concurrency }
+
+    fun storage(storage: StorageConfig) =
+        apply { this.storage = storage }
+
+    fun build() = WorkflowStateEngineConfig(
+        concurrency,
+        storage,
+    ).apply { isDefault = false }
+  }
+}

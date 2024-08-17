@@ -24,11 +24,12 @@ package io.infinitic.workers.register.config
 
 import io.infinitic.common.workers.config.ExponentialBackoffRetryPolicy
 import io.infinitic.events.config.EventListenerConfig
+import io.infinitic.events.config.EventLoggerConfig
 import io.infinitic.tasks.WithRetry
 import io.infinitic.tasks.WithTimeout
 import io.infinitic.tasks.tag.config.ServiceTagEngine
-import io.infinitic.workflows.engine.config.WorkflowStateEngine
-import io.infinitic.workflows.tag.config.WorkflowTagEngine
+import io.infinitic.workflows.engine.config.WorkflowStateEngineConfig
+import io.infinitic.workflows.tag.config.WorkflowTagEngineConfig
 
 /**
  * Note: Final default values for withRetry, withTimeout and workflow check mode
@@ -46,9 +47,11 @@ internal val UNDEFINED_WITH_RETRY = WithRetry { _: Int, _: Exception -> null }
 
 internal val UNDEFINED_EVENT_LISTENER = EventListenerConfig().apply { isDefined = false }
 
+internal val UNDEFINED_EVENT_LOGGER = EventLoggerConfig().apply { isDefined = false }
+
 internal val DEFAULT_SERVICE_TAG_ENGINE = ServiceTagEngine().apply { isDefault = true }
 
-internal val DEFAULT_WORKFLOW_STATE_ENGINE = WorkflowStateEngine().apply { isDefault = true }
+internal val DEFAULT_WORKFLOW_STATE_ENGINE = WorkflowStateEngineConfig().apply { isDefault = true }
 
-internal val DEFAULT_WORKFLOW_TAG_ENGINE = WorkflowTagEngine().apply { isDefault = true }
+internal val DEFAULT_WORKFLOW_TAG_ENGINE = WorkflowTagEngineConfig().apply { isDefault = true }
 

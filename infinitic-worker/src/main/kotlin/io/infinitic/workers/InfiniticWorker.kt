@@ -28,25 +28,31 @@ import io.infinitic.autoclose.autoClose
 import io.infinitic.clients.InfiniticClient
 import io.infinitic.common.data.MillisInstant
 import io.infinitic.common.messages.Message
+import io.infinitic.common.tasks.data.ServiceName
 import io.infinitic.common.tasks.executors.messages.ExecuteTask
-import io.infinitic.common.transport.DelayedServiceExecutorTopic
-import io.infinitic.common.transport.DelayedWorkflowEngineTopic
-import io.infinitic.common.transport.DelayedWorkflowTaskExecutorTopic
+import io.infinitic.common.tasks.tags.storage.TaskTagStorage
 import io.infinitic.common.transport.InfiniticConsumerAsync
 import io.infinitic.common.transport.InfiniticProducerAsync
-import io.infinitic.common.transport.ListenerSubscription
 import io.infinitic.common.transport.LoggedInfiniticProducer
 import io.infinitic.common.transport.MainSubscription
+import io.infinitic.common.transport.RetryServiceExecutorTopic
+import io.infinitic.common.transport.RetryWorkflowTaskExecutorTopic
 import io.infinitic.common.transport.ServiceEventsTopic
 import io.infinitic.common.transport.ServiceExecutorTopic
 import io.infinitic.common.transport.ServiceTagTopic
+import io.infinitic.common.transport.SubscriptionType
+import io.infinitic.common.transport.TimerWorkflowStateEngineTopic
 import io.infinitic.common.transport.WorkflowCmdTopic
-import io.infinitic.common.transport.WorkflowEngineTopic
 import io.infinitic.common.transport.WorkflowEventsTopic
-import io.infinitic.common.transport.WorkflowTagTopic
+import io.infinitic.common.transport.WorkflowStateEngineTopic
+import io.infinitic.common.transport.WorkflowTagEngineTopic
 import io.infinitic.common.transport.WorkflowTaskEventsTopic
 import io.infinitic.common.transport.WorkflowTaskExecutorTopic
+import io.infinitic.common.transport.create
+import io.infinitic.common.workflows.data.workflows.WorkflowName
 import io.infinitic.common.workflows.engine.messages.WorkflowCmdMessage
+import io.infinitic.common.workflows.engine.storage.WorkflowStateStorage
+import io.infinitic.common.workflows.tags.storage.WorkflowTagStorage
 import io.infinitic.events.toServiceCloudEvent
 import io.infinitic.events.toWorkflowCloudEvent
 import io.infinitic.pulsar.PulsarInfiniticConsumerAsync
@@ -63,6 +69,7 @@ import io.infinitic.workflows.engine.WorkflowCmdHandler
 import io.infinitic.workflows.engine.WorkflowEngine
 import io.infinitic.workflows.engine.WorkflowEventHandler
 import io.infinitic.workflows.tag.WorkflowTagEngine
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
@@ -105,6 +112,10 @@ class InfiniticWorker private constructor(
 
   private val sendingDlqMessage = { "Unable to process message, sending to Dead Letter Queue" }
 
+  val logMessageSentToDLQ = { message: Message?, e: Exception ->
+    logger.error(e) { "Sending message to DLQ ${message ?: "(Not Deserialized)"}" }
+  }
+
   override fun close() {
     client.close()
     autoClose()
@@ -129,310 +140,125 @@ class InfiniticWorker private constructor(
   fun startAsync(): CompletableFuture<Unit> {
     runBlocking(Dispatchers.IO) {
 
-      val logMessageSentToDLQ = { message: Message?, e: Exception ->
-        logger.error(e) { "Sending message to DLQ ${message ?: "(Not Deserialized)"}" }
+      workerRegistry.workflowTagEngines.forEach { (workflowName, registeredWorkflowTag) ->
+        // WORKFLOW TAG ENGINE
+        startWorkflowTagEngine(
+            workflowName,
+            registeredWorkflowTag.concurrency,
+            registeredWorkflowTag.storage,
+        )
       }
 
-      workerRegistry.workflowTags.forEach {
-        // WORKFLOW-TAG
-        launch {
-          val workflowTagEngine = WorkflowTagEngine(it.value.storage, producerAsync)
-          consumerAsync.start(
-              subscription = MainSubscription(WorkflowTagTopic),
-              entity = it.key.toString(),
-              handler = workflowTagEngine::handle,
-              beforeDlq = logMessageSentToDLQ,
-              concurrency = it.value.concurrency,
-          )
-        }
+      workerRegistry.workflowStateEngines.forEach { (workflowName, registeredWorkflowEngine) ->
+        // WORKFLOW STATE ENGINE
+        startWorkflowStateEngine(
+            workflowName,
+            registeredWorkflowEngine.concurrency,
+            registeredWorkflowEngine.storage,
+        )
       }
 
-      workerRegistry.workflowEngines.forEach {
-        // WORKFLOW-CMD
-        launch {
-          val workflowCmdHandler = WorkflowCmdHandler(producerAsync)
-          consumerAsync.start(
-              subscription = MainSubscription(WorkflowCmdTopic),
-              entity = it.key.toString(),
-              handler = workflowCmdHandler::handle,
-              beforeDlq = logMessageSentToDLQ,
-              concurrency = it.value.concurrency,
-          )
-        }
-
-        // WORKFLOW-STATE-ENGINE
-        launch {
-          val workflowEngine = WorkflowEngine(it.value.storage, producerAsync)
-          consumerAsync.start(
-              subscription = MainSubscription(WorkflowEngineTopic),
-              entity = it.key.toString(),
-              handler = workflowEngine::handle,
-              beforeDlq = logMessageSentToDLQ,
-              concurrency = it.value.concurrency,
-          )
-        }
-
-        // WORKFLOW-DELAY
-        launch {
-          consumerAsync.start(
-              subscription = MainSubscription(DelayedWorkflowEngineTopic),
-              entity = it.key.toString(),
-              handler = { msg, _ ->
-                with(delayedWorkflowProducer) { msg.sendTo(WorkflowEngineTopic) }
-              },
-              beforeDlq = logMessageSentToDLQ,
-              concurrency = it.value.concurrency,
-          )
-        }
-
-        // WORKFLOW-EVENTS
-        launch {
-          val workflowEventHandler = WorkflowEventHandler(producerAsync)
-          consumerAsync.start(
-              subscription = MainSubscription(WorkflowEventsTopic),
-              entity = it.key.toString(),
-              handler = workflowEventHandler::handle,
-              beforeDlq = logMessageSentToDLQ,
-              concurrency = it.value.concurrency,
-          )
-        }
+      workerRegistry.workflowExecutors.forEach { (workflowName, registeredWorkflowExecutor) ->
+        // WORKFLOW EXECUTOR
+        startWorkflowExecutor(
+            workflowName,
+            registeredWorkflowExecutor.concurrency,
+        )
       }
 
-      workerRegistry.workflowExecutors.forEach {
-        // WORKFLOW-TASK_EXECUTOR
-        launch {
-          val workflowTaskExecutor = TaskExecutor(workerRegistry, producerAsync, client)
-          consumerAsync.start(
-              subscription = MainSubscription(WorkflowTaskExecutorTopic),
-              entity = it.key.toString(),
-              handler = workflowTaskExecutor::handle,
-              beforeDlq = { message, cause ->
-                when (message) {
-                  null -> Unit
-                  is ExecuteTask -> {
-                    logMessageSentToDLQ(message, cause)
-                    with(workflowTaskExecutor) {
-                      message.sendTaskFailed(cause, Task.meta, sendingDlqMessage)
-                    }
-                  }
-                }
-              },
-              concurrency = it.value.concurrency,
-          )
-        }
-
-        // WORKFLOW-TASK_EXECUTOR-DELAY
-        launch {
-          consumerAsync.start(
-              subscription = MainSubscription(DelayedWorkflowTaskExecutorTopic),
-              entity = it.key.toString(),
-              handler = { msg, _ ->
-                with(delayedTaskProducer) { msg.sendTo(WorkflowTaskExecutorTopic) }
-              },
-              beforeDlq = logMessageSentToDLQ,
-              concurrency = it.value.concurrency,
-          )
-        }
-
-        // WORKFLOW-TASK-EVENT
-        launch {
-          val workflowTaskEventHandler = TaskEventHandler(producerAsync)
-          consumerAsync.start(
-              subscription = MainSubscription(WorkflowTaskEventsTopic),
-              entity = it.key.toString(),
-              handler = workflowTaskEventHandler::handle,
-              beforeDlq = logMessageSentToDLQ,
-              concurrency = it.value.concurrency,
-          )
-        }
+      workerRegistry.serviceTagEngines.forEach { (serviceName, registeredServiceTag) ->
+        // SERVICE TAG ENGINE
+        startServiceTagEngine(
+            serviceName,
+            registeredServiceTag.concurrency,
+            registeredServiceTag.storage,
+        )
       }
 
-      workerRegistry.serviceTags.forEach {
-        // TASK-TAG
-        launch {
-          val tagEngine = TaskTagEngine(it.value.storage, producerAsync)
-          consumerAsync.start(
-              subscription = MainSubscription(ServiceTagTopic),
-              entity = it.key.toString(),
-              handler = tagEngine::handle,
-              beforeDlq = logMessageSentToDLQ,
-              concurrency = it.value.concurrency,
-          )
-        }
+      workerRegistry.serviceExecutors.forEach { (serviceName, registeredEventListener) ->
+        // SERVICE EXECUTOR
+        startServiceExecutor(
+            serviceName,
+            registeredEventListener.concurrency,
+        )
       }
 
-      workerRegistry.serviceExecutors.forEach {
-        // TASK-EXECUTOR
-        launch {
-          val taskExecutor = TaskExecutor(workerRegistry, producerAsync, client)
-          consumerAsync.start(
-              subscription = MainSubscription(ServiceExecutorTopic),
-              entity = it.key.toString(),
-              handler = taskExecutor::handle,
-              beforeDlq = { message, cause ->
-                when (message) {
-                  null -> Unit
-                  is ExecuteTask -> {
-                    logMessageSentToDLQ(message, cause)
-                    with(taskExecutor) {
-                      message.sendTaskFailed(cause, Task.meta, sendingDlqMessage)
-                    }
-                  }
-                }
-              },
-              concurrency = it.value.concurrency,
-          )
-        }
-
-        // TASK-EXECUTOR-DELAY
-        launch {
-          consumerAsync.start(
-              subscription = MainSubscription(DelayedServiceExecutorTopic),
-              entity = it.key.toString(),
-              handler = { msg, _ -> with(delayedTaskProducer) { msg.sendTo(ServiceExecutorTopic) } },
-              beforeDlq = logMessageSentToDLQ,
-              concurrency = it.value.concurrency,
-          )
-        }
-
-        // TASK-EVENTS
-        launch {
-          val taskEventHandler = TaskEventHandler(producerAsync)
-          consumerAsync.start(
-              subscription = MainSubscription(ServiceEventsTopic),
-              entity = it.key.toString(),
-              handler = taskEventHandler::handle,
-              beforeDlq = logMessageSentToDLQ,
-              concurrency = it.value.concurrency,
-          )
-        }
-      }
-
-      // SERVICE EVENT LISTENER
-      workerRegistry.serviceListeners.forEach { (serviceName, registeredEventListener) ->
-        val subscriptionName = registeredEventListener.subscriptionName
-
-        val serviceEventListener = { message: Message, publishedAt: MillisInstant ->
+      workerRegistry.workflowEventListeners.forEach { (workflowName, registeredEventListener) ->
+        // WORKFLOW TASK EVENT LISTENER
+        startWorkflowTaskEventConsumer(
+            workflowName,
+            registeredEventListener.concurrency,
+            registeredEventListener.subscriptionName,
+            SubscriptionType.EVENT_LISTENER,
+        ) { message, publishedAt ->
           message.toServiceCloudEvent(publishedAt, source)?.let {
             registeredEventListener.eventListener.onEvent(it)
           } ?: Unit
         }
 
-        // TASK-EXECUTOR topic
-        launch {
-          consumerAsync.start(
-              subscription = ListenerSubscription(ServiceExecutorTopic, subscriptionName),
-              entity = serviceName.toString(),
-              handler = serviceEventListener,
-              beforeDlq = logMessageSentToDLQ,
-              concurrency = registeredEventListener.concurrency,
-          )
-        }
-        // TASK-EXECUTOR-DELAY topic
-        launch {
-          consumerAsync.start(
-              subscription = ListenerSubscription(DelayedServiceExecutorTopic, subscriptionName),
-              entity = serviceName.toString(),
-              handler = serviceEventListener,
-              beforeDlq = logMessageSentToDLQ,
-              concurrency = registeredEventListener.concurrency,
-          )
-        }
-        // TASK-EVENTS topic
-        launch {
-          consumerAsync.start(
-              subscription = ListenerSubscription(ServiceEventsTopic, subscriptionName),
-              entity = serviceName.toString(),
-              handler = serviceEventListener,
-              beforeDlq = logMessageSentToDLQ,
-              concurrency = registeredEventListener.concurrency,
-          )
-        }
-      }
-
-      // WORKFLOW EVENT LISTENER
-      workerRegistry.workflowListeners.forEach { (workflowName, registeredEventListener) ->
-        val subscriptionName = registeredEventListener.subscriptionName
-
-        val workflowTaskEventListener = { message: Message, publishedAt: MillisInstant ->
-          message.toServiceCloudEvent(publishedAt, source)?.let {
-            registeredEventListener.eventListener.onEvent(it)
-          } ?: Unit
-        }
-
-        // WORKFLOW-TASK-EXECUTOR topic
-        launch {
-          consumerAsync.start(
-              subscription = ListenerSubscription(WorkflowTaskExecutorTopic, subscriptionName),
-              entity = workflowName.toString(),
-              handler = workflowTaskEventListener,
-              beforeDlq = logMessageSentToDLQ,
-              concurrency = registeredEventListener.concurrency,
-          )
-        }
-        // WORKFLOW-TASK-EXECUTOR-DELAY topic
-        launch {
-          consumerAsync.start(
-              subscription = ListenerSubscription(
-                  DelayedWorkflowTaskExecutorTopic,
-                  subscriptionName,
-              ),
-              entity = workflowName.toString(),
-              handler = workflowTaskEventListener,
-              beforeDlq = logMessageSentToDLQ,
-              concurrency = registeredEventListener.concurrency,
-          )
-        }
-        // WORKFLOW-TASK-EVENTS topic
-        launch {
-          consumerAsync.start(
-              subscription = ListenerSubscription(WorkflowTaskEventsTopic, subscriptionName),
-              entity = workflowName.toString(),
-              handler = workflowTaskEventListener,
-              beforeDlq = logMessageSentToDLQ,
-              concurrency = registeredEventListener.concurrency,
-          )
-        }
-
-        val workflowEventListener = { message: Message, publishedAt: MillisInstant ->
+        // WORKFLOW EVENT LISTENER
+        startWorkflowEventConsumer(
+            workflowName,
+            registeredEventListener.concurrency,
+            registeredEventListener.subscriptionName,
+            SubscriptionType.EVENT_LISTENER,
+        ) { message, publishedAt ->
           message.toWorkflowCloudEvent(publishedAt, source)?.let {
             registeredEventListener.eventListener.onEvent(it)
           } ?: Unit
         }
+      }
 
-        // WORKFLOW-CMD topic
-        launch {
-          consumerAsync.start(
-              subscription = ListenerSubscription(WorkflowCmdTopic, subscriptionName),
-              entity = workflowName.toString(),
-              handler = workflowEventListener,
-              beforeDlq = logMessageSentToDLQ,
-              concurrency = registeredEventListener.concurrency,
-          )
+      workerRegistry.workflowEventLoggers.forEach { (workflowName, registeredEventLogger) ->
+        // WORKFLOW TASK EVENT LOGGER
+//        startWorkflowTaskEventConsumer(
+//            workflowName,
+//            registeredEventLogger.concurrency,
+//            registeredEventLogger.subscriptionName,
+//        ) { message, publishedAt ->
+//          message.toServiceCloudEvent(publishedAt, source)?.let {
+//            registeredEventLogger.log { it }
+//          } ?: Unit
+//        }
+
+        // WORKFLOW EVENT LOGGER
+        startWorkflowEventConsumer(
+            workflowName,
+            registeredEventLogger.concurrency,
+            registeredEventLogger.subscriptionName,
+            SubscriptionType.EVENT_LOGGER,
+        ) { message, publishedAt ->
+          message.toWorkflowCloudEvent(publishedAt, source)?.let {
+            registeredEventLogger.log { it }
+          } ?: Unit
         }
-        // WORKFLOW-STATE-ENGINE topic
-        launch {
-          consumerAsync.start(
-              subscription = ListenerSubscription(WorkflowEngineTopic, subscriptionName),
-              entity = workflowName.toString(),
-              handler = { message: Message, publishedAt: MillisInstant ->
-                // the event handler is not applied for WorkflowCmdMessage from clients
-                // as the event has already been handled in the workflow-cmd topic
-                if (message !is WorkflowCmdMessage) workflowEventListener(message, publishedAt)
-              },
-              beforeDlq = logMessageSentToDLQ,
-              concurrency = registeredEventListener.concurrency,
-          )
+      }
+
+      workerRegistry.serviceEventListeners.forEach { (serviceName, registeredEventListener) ->
+        // SERVICE EVENT LISTENER
+        startServiceEventConsumer(
+            serviceName,
+            registeredEventListener.concurrency,
+            registeredEventListener.subscriptionName,
+            SubscriptionType.EVENT_LISTENER,
+        ) { message: Message, publishedAt: MillisInstant ->
+          message.toServiceCloudEvent(publishedAt, source)?.let {
+            registeredEventListener.eventListener.onEvent(it)
+          } ?: Unit
         }
-        // WORKFLOW-EVENTS topic
-        launch {
-          consumerAsync.start(
-              subscription = ListenerSubscription(WorkflowEventsTopic, subscriptionName),
-              entity = workflowName.toString(),
-              handler = workflowEventListener,
-              beforeDlq = logMessageSentToDLQ,
-              concurrency = registeredEventListener.concurrency,
-          )
+      }
+
+      workerRegistry.serviceEventLoggers.forEach { (serviceName, registeredEventLogger) ->
+        // SERVICE EVENT LOGGER
+        startServiceEventConsumer(
+            serviceName,
+            registeredEventLogger.concurrency,
+            registeredEventLogger.subscriptionName,
+            SubscriptionType.EVENT_LOGGER,
+        ) { message: Message, publishedAt: MillisInstant ->
+          message.toServiceCloudEvent(publishedAt, source)?.let {
+            registeredEventLogger.log { it }
+          } ?: Unit
         }
       }
     }
@@ -502,5 +328,319 @@ class InfiniticWorker private constructor(
     @JvmStatic
     fun fromConfigYaml(vararg yamls: String): InfiniticWorker =
         fromConfig(WorkerConfig.fromYaml(*yamls))
+  }
+
+  private fun CoroutineScope.startWorkflowTagEngine(
+    workflowName: WorkflowName,
+    concurrency: Int,
+    storage: WorkflowTagStorage
+  ) {
+    // WORKFLOW-TAG
+    launch {
+      val workflowTagEngine = WorkflowTagEngine(storage, producerAsync)
+      consumerAsync.start(
+          subscription = MainSubscription(WorkflowTagEngineTopic),
+          entity = workflowName.toString(),
+          handler = workflowTagEngine::handle,
+          beforeDlq = logMessageSentToDLQ,
+          concurrency = concurrency,
+      )
+    }
+  }
+
+  private fun CoroutineScope.startWorkflowStateEngine(
+    workflowName: WorkflowName,
+    concurrency: Int,
+    storage: WorkflowStateStorage
+  ) {
+    // WORKFLOW-CMD
+    launch {
+      val workflowCmdHandler = WorkflowCmdHandler(producerAsync)
+      consumerAsync.start(
+          subscription = MainSubscription(WorkflowCmdTopic),
+          entity = workflowName.toString(),
+          handler = workflowCmdHandler::handle,
+          beforeDlq = logMessageSentToDLQ,
+          concurrency = concurrency,
+      )
+    }
+
+    // WORKFLOW-STATE-ENGINE
+    launch {
+      val workflowEngine = WorkflowEngine(storage, producerAsync)
+      consumerAsync.start(
+          subscription = MainSubscription(WorkflowStateEngineTopic),
+          entity = workflowName.toString(),
+          handler = workflowEngine::handle,
+          beforeDlq = logMessageSentToDLQ,
+          concurrency = concurrency,
+      )
+    }
+
+    // WORKFLOW-DELAY
+    launch {
+      consumerAsync.start(
+          subscription = MainSubscription(TimerWorkflowStateEngineTopic),
+          entity = workflowName.toString(),
+          handler = { msg, _ ->
+            with(delayedWorkflowProducer) { msg.sendTo(WorkflowStateEngineTopic) }
+          },
+          beforeDlq = logMessageSentToDLQ,
+          concurrency = concurrency,
+      )
+    }
+
+    // WORKFLOW-EVENTS
+    launch {
+      val workflowEventHandler = WorkflowEventHandler(producerAsync)
+      consumerAsync.start(
+          subscription = MainSubscription(WorkflowEventsTopic),
+          entity = workflowName.toString(),
+          handler = workflowEventHandler::handle,
+          beforeDlq = logMessageSentToDLQ,
+          concurrency = concurrency,
+      )
+    }
+  }
+
+  private fun CoroutineScope.startWorkflowExecutor(
+    workflowName: WorkflowName,
+    concurrency: Int
+  ) {
+    // WORKFLOW-TASK_EXECUTOR
+    launch {
+      val workflowTaskExecutor = TaskExecutor(workerRegistry, producerAsync, client)
+      consumerAsync.start(
+          subscription = MainSubscription(WorkflowTaskExecutorTopic),
+          entity = workflowName.toString(),
+          handler = workflowTaskExecutor::handle,
+          beforeDlq = { message, cause ->
+            when (message) {
+              null -> Unit
+              is ExecuteTask -> {
+                logMessageSentToDLQ(message, cause)
+                with(workflowTaskExecutor) {
+                  message.sendTaskFailed(cause, Task.meta, sendingDlqMessage)
+                }
+              }
+            }
+          },
+          concurrency = concurrency,
+      )
+    }
+
+    // WORKFLOW-TASK_EXECUTOR-DELAY
+    launch {
+      consumerAsync.start(
+          subscription = MainSubscription(RetryWorkflowTaskExecutorTopic),
+          entity = workflowName.toString(),
+          handler = { msg, _ ->
+            with(delayedTaskProducer) { msg.sendTo(WorkflowTaskExecutorTopic) }
+          },
+          beforeDlq = logMessageSentToDLQ,
+          concurrency = concurrency,
+      )
+    }
+
+    // WORKFLOW-TASK-EVENT
+    launch {
+      val workflowTaskEventHandler = TaskEventHandler(producerAsync)
+      consumerAsync.start(
+          subscription = MainSubscription(WorkflowTaskEventsTopic),
+          entity = workflowName.toString(),
+          handler = workflowTaskEventHandler::handle,
+          beforeDlq = logMessageSentToDLQ,
+          concurrency = concurrency,
+      )
+    }
+  }
+
+  private fun CoroutineScope.startServiceTagEngine(
+    serviceName: ServiceName,
+    concurrency: Int,
+    storage: TaskTagStorage
+  ) {
+    // TASK-TAG
+    launch {
+      val tagEngine = TaskTagEngine(storage, producerAsync)
+      consumerAsync.start(
+          subscription = MainSubscription(ServiceTagTopic),
+          entity = serviceName.toString(),
+          handler = tagEngine::handle,
+          beforeDlq = logMessageSentToDLQ,
+          concurrency = concurrency,
+      )
+    }
+  }
+
+  private fun CoroutineScope.startServiceExecutor(
+    serviceName: ServiceName,
+    concurrency: Int
+  ) {
+    // TASK-EXECUTOR
+    launch {
+      val taskExecutor = TaskExecutor(workerRegistry, producerAsync, client)
+      consumerAsync.start(
+          subscription = MainSubscription(ServiceExecutorTopic),
+          entity = serviceName.toString(),
+          handler = taskExecutor::handle,
+          beforeDlq = { message, cause ->
+            when (message) {
+              null -> Unit
+              is ExecuteTask -> {
+                logMessageSentToDLQ(message, cause)
+                with(taskExecutor) {
+                  message.sendTaskFailed(cause, Task.meta, sendingDlqMessage)
+                }
+              }
+            }
+          },
+          concurrency = concurrency,
+      )
+    }
+
+    // TASK-EXECUTOR-DELAY
+    launch {
+      consumerAsync.start(
+          subscription = MainSubscription(RetryServiceExecutorTopic),
+          entity = serviceName.toString(),
+          handler = { msg, _ -> with(delayedTaskProducer) { msg.sendTo(ServiceExecutorTopic) } },
+          beforeDlq = logMessageSentToDLQ,
+          concurrency = concurrency,
+      )
+    }
+
+    // TASK-EVENTS
+    launch {
+      val taskEventHandler = TaskEventHandler(producerAsync)
+      consumerAsync.start(
+          subscription = MainSubscription(ServiceEventsTopic),
+          entity = serviceName.toString(),
+          handler = taskEventHandler::handle,
+          beforeDlq = logMessageSentToDLQ,
+          concurrency = concurrency,
+      )
+    }
+  }
+
+  private fun CoroutineScope.startServiceEventConsumer(
+    serviceName: ServiceName,
+    concurrency: Int,
+    subscriptionName: String?,
+    subscriptionType: SubscriptionType,
+    consumer: (Message, MillisInstant) -> Unit
+  ) {
+    // TASK-EXECUTOR topic
+    launch {
+      consumerAsync.start(
+          subscription = subscriptionType.create(ServiceExecutorTopic, subscriptionName),
+          entity = serviceName.toString(),
+          handler = consumer,
+          beforeDlq = logMessageSentToDLQ,
+          concurrency = concurrency,
+      )
+    }
+    // TASK-EXECUTOR-DELAY topic
+    launch {
+      consumerAsync.start(
+          subscription = subscriptionType.create(RetryServiceExecutorTopic, subscriptionName),
+          entity = serviceName.toString(),
+          handler = consumer,
+          beforeDlq = logMessageSentToDLQ,
+          concurrency = concurrency,
+      )
+    }
+    // TASK-EVENTS topic
+    launch {
+      consumerAsync.start(
+          subscription = subscriptionType.create(ServiceEventsTopic, subscriptionName),
+          entity = serviceName.toString(),
+          handler = consumer,
+          beforeDlq = logMessageSentToDLQ,
+          concurrency = concurrency,
+      )
+    }
+  }
+
+  private fun CoroutineScope.startWorkflowTaskEventConsumer(
+    workflowName: WorkflowName,
+    concurrency: Int,
+    subscriptionName: String?,
+    subscriptionType: SubscriptionType,
+    consumer: (Message, MillisInstant) -> Unit
+  ) {
+    // WORKFLOW-TASK-EXECUTOR topic
+    launch {
+      consumerAsync.start(
+          subscription = subscriptionType.create(WorkflowTaskExecutorTopic, subscriptionName),
+          entity = workflowName.toString(),
+          handler = consumer,
+          beforeDlq = logMessageSentToDLQ,
+          concurrency = concurrency,
+      )
+    }
+    // WORKFLOW-TASK-EXECUTOR-DELAY topic
+    launch {
+      consumerAsync.start(
+          subscription = subscriptionType.create(RetryWorkflowTaskExecutorTopic, subscriptionName),
+          entity = workflowName.toString(),
+          handler = consumer,
+          beforeDlq = logMessageSentToDLQ,
+          concurrency = concurrency,
+      )
+    }
+    // WORKFLOW-TASK-EVENTS topic
+    launch {
+      consumerAsync.start(
+          subscription = subscriptionType.create(WorkflowTaskEventsTopic, subscriptionName),
+          entity = workflowName.toString(),
+          handler = consumer,
+          beforeDlq = logMessageSentToDLQ,
+          concurrency = concurrency,
+      )
+    }
+  }
+
+  private fun CoroutineScope.startWorkflowEventConsumer(
+    workflowName: WorkflowName,
+    concurrency: Int,
+    subscriptionName: String?,
+    subscriptionType: SubscriptionType,
+    consumer: (Message, MillisInstant) -> Unit
+  ) {
+    // WORKFLOW-CMD topic
+    launch {
+      consumerAsync.start(
+          subscription = subscriptionType.create(WorkflowCmdTopic, subscriptionName),
+          entity = workflowName.toString(),
+          handler = consumer,
+          beforeDlq = logMessageSentToDLQ,
+          concurrency = concurrency,
+      )
+    }
+    // WORKFLOW-STATE-ENGINE topic
+    launch {
+      consumerAsync.start(
+          subscription = subscriptionType.create(WorkflowStateEngineTopic, subscriptionName),
+          entity = workflowName.toString(),
+          handler = { message: Message, publishedAt: MillisInstant ->
+            // the event handler is not applied for WorkflowCmdMessage from clients
+            // as the event has already been handled in the workflow-cmd topic
+            if (message !is WorkflowCmdMessage) consumer(message, publishedAt)
+          },
+          beforeDlq = logMessageSentToDLQ,
+          concurrency = concurrency,
+      )
+    }
+    // WORKFLOW-EVENTS topic
+    launch {
+      consumerAsync.start(
+          subscription = subscriptionType.create(WorkflowEventsTopic, subscriptionName),
+          entity = workflowName.toString(),
+          handler = consumer,
+          beforeDlq = logMessageSentToDLQ,
+          concurrency = concurrency,
+      )
+    }
   }
 }

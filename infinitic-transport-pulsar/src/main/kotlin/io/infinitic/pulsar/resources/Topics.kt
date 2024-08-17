@@ -34,36 +34,39 @@ import io.infinitic.common.tasks.executors.messages.ServiceExecutorMessage
 import io.infinitic.common.tasks.tags.messages.ServiceTagEnvelope
 import io.infinitic.common.tasks.tags.messages.ServiceTagMessage
 import io.infinitic.common.transport.ClientTopic
-import io.infinitic.common.transport.DelayedServiceExecutorTopic
-import io.infinitic.common.transport.DelayedWorkflowEngineTopic
-import io.infinitic.common.transport.DelayedWorkflowTaskExecutorTopic
 import io.infinitic.common.transport.NamingTopic
+import io.infinitic.common.transport.RetryServiceExecutorTopic
+import io.infinitic.common.transport.RetryWorkflowTaskExecutorTopic
 import io.infinitic.common.transport.ServiceEventsTopic
 import io.infinitic.common.transport.ServiceExecutorTopic
 import io.infinitic.common.transport.ServiceTagTopic
 import io.infinitic.common.transport.ServiceTopic
+import io.infinitic.common.transport.TimerWorkflowStateEngineTopic
 import io.infinitic.common.transport.Topic
 import io.infinitic.common.transport.WorkflowCmdTopic
-import io.infinitic.common.transport.WorkflowEngineTopic
 import io.infinitic.common.transport.WorkflowEventsTopic
-import io.infinitic.common.transport.WorkflowTagTopic
+import io.infinitic.common.transport.WorkflowStateEngineTopic
+import io.infinitic.common.transport.WorkflowTagEngineTopic
 import io.infinitic.common.transport.WorkflowTaskEventsTopic
 import io.infinitic.common.transport.WorkflowTaskExecutorTopic
 import io.infinitic.common.transport.WorkflowTopic
 import io.infinitic.common.workflows.engine.messages.WorkflowCmdEnvelope
 import io.infinitic.common.workflows.engine.messages.WorkflowCmdMessage
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineEnvelope
-import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
 import io.infinitic.common.workflows.engine.messages.WorkflowEventEnvelope
 import io.infinitic.common.workflows.engine.messages.WorkflowEventMessage
+import io.infinitic.common.workflows.engine.messages.WorkflowStateEngineMessage
+import io.infinitic.common.workflows.tags.messages.WorkflowTagEngineMessage
 import io.infinitic.common.workflows.tags.messages.WorkflowTagEnvelope
-import io.infinitic.common.workflows.tags.messages.WorkflowTagMessage
 import io.infinitic.pulsar.schemas.schemaDefinition
 import org.apache.pulsar.client.api.Schema
 import org.apache.pulsar.shade.org.apache.commons.lang.StringEscapeUtils
 import kotlin.reflect.KClass
 
 private const val SEPARATOR = ":"
+
+
+internal val Topic<*>.prefixDLQ get() = "$prefix-dlq"
 
 /**
  * Determines whether a topic type is partitioned.
@@ -78,41 +81,13 @@ internal val Topic<*>.isPartitioned
   }
 
 /**
- * Determines the prefix string per topic type
- *
- * @return The prefix string for the topic.
- */
-fun Topic<*>.prefix() = when (this) {
-  WorkflowTagTopic -> "workflow-tag"
-  WorkflowCmdTopic -> "workflow-cmd"
-  WorkflowEngineTopic -> "workflow-engine"
-  DelayedWorkflowEngineTopic -> "workflow-delay"
-  WorkflowEventsTopic -> "workflow-events"
-  WorkflowTaskExecutorTopic, DelayedWorkflowTaskExecutorTopic -> "workflow-task-executor"
-  WorkflowTaskEventsTopic -> "workflow-task-events"
-  ServiceTagTopic -> "task-tag"
-  ServiceExecutorTopic, DelayedServiceExecutorTopic -> "task-executor"
-  ServiceEventsTopic -> "task-events"
-  ClientTopic -> "response"
-  NamingTopic -> "namer"
-}
-
-/**
- * Determines the prefix string per topic type for the dead letter queues
- *
- * @return The prefix string for the topic.
- */
-internal fun Topic<*>.prefixDLQ() = "${prefix()}-dlq"
-
-
-/**
  * Returns the name of the Topic based on topic type and the entity name
  *
  * @param entity The optional entity name (service name or workflow name).
  * @return The name of the Topic with optional entity name.
  */
 internal fun Topic<*>.name(entity: String?) =
-    prefix() + (entity?.let { "$SEPARATOR${StringEscapeUtils.escapeJava(it)}" } ?: "")
+    prefix + (entity?.let { "$SEPARATOR${StringEscapeUtils.escapeJava(it)}" } ?: "")
 
 /**
  * Returns the name of the Dead Letter Queue Topic based on topic type and the entity name
@@ -121,7 +96,7 @@ internal fun Topic<*>.name(entity: String?) =
  * @return The name of the Topic with optional entity name.
  */
 internal fun Topic<*>.nameDLQ(entity: String) =
-    "${prefixDLQ()}$SEPARATOR${StringEscapeUtils.escapeJava(entity)}"
+    "$prefixDLQ$SEPARATOR${StringEscapeUtils.escapeJava(entity)}"
 
 
 /**
@@ -142,12 +117,12 @@ internal val <S : Message> Topic<S>.schema: Schema<Envelope<out S>>
  */
 internal fun getServiceNameFromTopicName(topicName: String): String? {
   for (serviceTopic in ServiceTopic.entries) {
-    val prefix = serviceTopic.prefix() + SEPARATOR
+    val prefix = serviceTopic.prefix + SEPARATOR
     if (topicName.startsWith(prefix)) return StringEscapeUtils.unescapeJava(
         topicName.removePrefix(prefix),
     )
 
-    val prefixDLQ = serviceTopic.prefixDLQ() + SEPARATOR
+    val prefixDLQ = serviceTopic.prefixDLQ + SEPARATOR
     if (topicName.startsWith(prefixDLQ)) return StringEscapeUtils.unescapeJava(
         topicName.removePrefix(prefixDLQ),
     )
@@ -164,12 +139,12 @@ internal fun getServiceNameFromTopicName(topicName: String): String? {
  */
 internal fun getWorkflowNameFromTopicName(topicName: String): String? {
   for (workflowTopic in WorkflowTopic.entries) {
-    val prefix = workflowTopic.prefix() + SEPARATOR
+    val prefix = workflowTopic.prefix + SEPARATOR
     if (topicName.startsWith(prefix)) return StringEscapeUtils.unescapeJava(
         topicName.removePrefix(prefix),
     )
 
-    val prefixDLQ = workflowTopic.prefixDLQ() + SEPARATOR
+    val prefixDLQ = workflowTopic.prefixDLQ + SEPARATOR
     if (topicName.startsWith(prefixDLQ)) return StringEscapeUtils.unescapeJava(
         topicName.removePrefix(prefixDLQ),
     )
@@ -188,14 +163,14 @@ internal val <S : Message> Topic<S>.envelopeClass: KClass<Envelope<out S>>
   get() = when (this) {
     NamingTopic -> thisShouldNotHappen()
     ClientTopic -> ClientEnvelope::class
-    WorkflowTagTopic -> WorkflowTagEnvelope::class
+    WorkflowTagEngineTopic -> WorkflowTagEnvelope::class
     WorkflowCmdTopic -> WorkflowCmdEnvelope::class
-    WorkflowEngineTopic, DelayedWorkflowEngineTopic -> WorkflowEngineEnvelope::class
+    WorkflowStateEngineTopic, TimerWorkflowStateEngineTopic -> WorkflowEngineEnvelope::class
     WorkflowEventsTopic -> WorkflowEventEnvelope::class
-    WorkflowTaskExecutorTopic, DelayedWorkflowTaskExecutorTopic -> ServiceExecutorEnvelope::class
+    WorkflowTaskExecutorTopic, RetryWorkflowTaskExecutorTopic -> ServiceExecutorEnvelope::class
     WorkflowTaskEventsTopic -> ServiceEventEnvelope::class
     ServiceTagTopic -> ServiceTagEnvelope::class
-    ServiceExecutorTopic, DelayedServiceExecutorTopic -> ServiceExecutorEnvelope::class
+    ServiceExecutorTopic, RetryServiceExecutorTopic -> ServiceExecutorEnvelope::class
     ServiceEventsTopic -> ServiceEventEnvelope::class
   } as KClass<Envelope<out S>>
 
@@ -203,16 +178,16 @@ internal val <S : Message> Topic<S>.envelopeClass: KClass<Envelope<out S>>
 fun <S : Message> Topic<S>.envelope(message: S) = when (this) {
   NamingTopic -> thisShouldNotHappen()
   ClientTopic -> ClientEnvelope.from(message as ClientMessage)
-  WorkflowTagTopic -> WorkflowTagEnvelope.from(message as WorkflowTagMessage)
+  WorkflowTagEngineTopic -> WorkflowTagEnvelope.from(message as WorkflowTagEngineMessage)
   WorkflowCmdTopic -> WorkflowCmdEnvelope.from(message as WorkflowCmdMessage)
-  WorkflowEngineTopic, DelayedWorkflowEngineTopic -> WorkflowEngineEnvelope.from(message as WorkflowEngineMessage)
+  WorkflowStateEngineTopic, TimerWorkflowStateEngineTopic -> WorkflowEngineEnvelope.from(message as WorkflowStateEngineMessage)
   WorkflowEventsTopic -> WorkflowEventEnvelope.from(message as WorkflowEventMessage)
-  WorkflowTaskExecutorTopic, DelayedWorkflowTaskExecutorTopic ->
+  WorkflowTaskExecutorTopic, RetryWorkflowTaskExecutorTopic ->
     ServiceExecutorEnvelope.from(message as ServiceExecutorMessage)
 
   WorkflowTaskEventsTopic -> ServiceEventEnvelope.from(message as ServiceEventMessage)
   ServiceTagTopic -> ServiceTagEnvelope.from(message as ServiceTagMessage)
-  ServiceExecutorTopic, DelayedServiceExecutorTopic -> ServiceExecutorEnvelope.from(message as ServiceExecutorMessage)
+  ServiceExecutorTopic, RetryServiceExecutorTopic -> ServiceExecutorEnvelope.from(message as ServiceExecutorMessage)
   ServiceEventsTopic -> ServiceEventEnvelope.from(message as ServiceEventMessage)
 } as Envelope<out S>
 
