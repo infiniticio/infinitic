@@ -20,8 +20,6 @@
  *
  * Licensor: infinitic.io
  */
-@file:Suppress("unused")
-
 package io.infinitic.workers.samples
 
 import io.cloudevents.CloudEvent
@@ -34,3 +32,8 @@ internal class EventListenerImpl : CloudEventListener {
   }
 }
 
+internal class EventListenerFake : CloudEventListener {
+  override fun onEvent(event: CloudEvent) {
+    // do nothing
+  }
+}

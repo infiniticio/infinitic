@@ -360,10 +360,10 @@ class InfiniticRegisterImpl : InfiniticRegister {
     ).also {
       logger.info {
         "* Workflow Event Logger ".padEnd(25) + ": (" +
+            "concurrency: ${it.concurrency}, " +
             "logLevel: ${it.logLevel}, " +
             "loggerName: ${it.loggerName}, " +
-            "beautify: ${it.beautify}, " +
-            "concurrency: ${it.concurrency}" +
+            "beautify: ${it.beautify}" +
             (it.subscriptionName?.let { ", subscription: $it" } ?: "") +
             ")"
       }
@@ -399,6 +399,7 @@ class InfiniticRegisterImpl : InfiniticRegister {
           workerConfig.serviceDefault?.let { serviceDefault = it }
           workerConfig.workflowDefault?.let { workflowDefault = it }
           workerConfig.eventListener?.let { defaultEventListener = it }
+          workerConfig.eventLogger?.let { defaultEventLogger = it }
 
           for (workflowConfig in workerConfig.workflows) with(workflowConfig) {
             logger.info { "Workflow $name:" }

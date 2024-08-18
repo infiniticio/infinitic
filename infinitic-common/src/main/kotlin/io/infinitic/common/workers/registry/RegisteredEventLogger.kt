@@ -42,7 +42,7 @@ data class RegisteredEventLogger(
     false -> ObjectMapper().writer()
   }
 
-  val log = { message: CloudEvent -> logString(message.toJsonString()) }
+  val log = { cloudEvent: CloudEvent -> logFn { cloudEvent.toJsonString() } }
 
   private fun CloudEvent.toJsonString(): String {
     val jsonStr = String(JsonFormat().serialize(this))
@@ -50,14 +50,14 @@ data class RegisteredEventLogger(
     return writer.writeValueAsString(reader.readTree(jsonStr))
   }
 
-  private val logString by lazy {
+  private val logFn: (() -> Any?) -> Unit by lazy {
     when (logLevel) {
-      LogLevel.TRACE -> { message: String -> logger.trace { message } }
-      LogLevel.DEBUG -> { message: String -> logger.debug { message } }
-      LogLevel.INFO -> { message: String -> logger.info { message } }
-      LogLevel.WARN -> { message: String -> logger.warn { message } }
-      LogLevel.ERROR -> { message: String -> logger.error { message } }
-      LogLevel.OFF -> { _: String -> Unit }
+      LogLevel.TRACE -> logger::trace
+      LogLevel.DEBUG -> logger::debug
+      LogLevel.INFO -> logger::info
+      LogLevel.WARN -> logger::warn
+      LogLevel.ERROR -> logger::error
+      LogLevel.OFF -> { _: () -> Any? -> Unit }
     }
   }
 }
