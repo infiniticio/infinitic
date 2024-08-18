@@ -39,6 +39,7 @@ import io.infinitic.workers.register.config.WorkflowConfigDefault
 import io.infinitic.workflows.Workflow
 import io.infinitic.workflows.WorkflowCheckMode
 
+@Suppress("unused")
 interface InfiniticRegister : AutoCloseable {
 
   val registry: WorkerRegistry
@@ -47,16 +48,6 @@ interface InfiniticRegister : AutoCloseable {
    * Default value of Storage
    */
   var defaultStorage: StorageConfig
-
-  /**
-   * Service default values
-   */
-  var serviceDefault: ServiceConfigDefault
-
-  /**
-   * Workflow default values
-   */
-  var workflowDefault: WorkflowConfigDefault
 
   /**
    * Default value of EventListener
@@ -69,6 +60,16 @@ interface InfiniticRegister : AutoCloseable {
   var defaultEventLogger: EventLoggerConfig?
 
   /**
+   * Service default values
+   */
+  var serviceDefault: ServiceConfigDefault
+
+  /**
+   * Workflow default values
+   */
+  var workflowDefault: WorkflowConfigDefault
+
+  /**
    *
    * Register Services
    *
@@ -79,7 +80,7 @@ interface InfiniticRegister : AutoCloseable {
   @JvmOverloads
   fun registerServiceTagEngine(
     serviceName: String,
-    concurrency: Int? = null,
+    concurrency: Int,
     storageConfig: StorageConfig? = null
   )
 
@@ -89,7 +90,7 @@ interface InfiniticRegister : AutoCloseable {
   fun registerServiceExecutor(
     serviceName: String,
     serviceFactory: ServiceFactory,
-    concurrency: Int? = null,
+    concurrency: Int,
     withTimeout: WithTimeout? = UNDEFINED_WITH_TIMEOUT,
     withRetry: WithRetry? = UNDEFINED_WITH_RETRY
   )
@@ -100,20 +101,20 @@ interface InfiniticRegister : AutoCloseable {
   @JvmOverloads
   fun registerServiceEventListener(
     serviceName: String,
-    concurrency: Int? = null,
-    eventListener: CloudEventListener? = null,
+    concurrency: Int,
+    eventListener: CloudEventListener,
     subscriptionName: String? = null,
   )
 
   /** Register service logger */
   @Suppress("OVERLOADS_INTERFACE")
   @JvmOverloads
-  fun registerServiceLogger(
+  fun registerServiceEventLogger(
     serviceName: String,
+    concurrency: Int,
     logLevel: LogLevel? = null,
     loggerName: String? = null,
     beautify: Boolean? = null,
-    concurrency: Int? = null,
     subscriptionName: String? = null,
   )
 
@@ -128,7 +129,7 @@ interface InfiniticRegister : AutoCloseable {
   @JvmOverloads
   fun registerWorkflowTagEngine(
     workflowName: String,
-    concurrency: Int? = null,
+    concurrency: Int,
     storageConfig: StorageConfig? = null
   )
 
@@ -138,9 +139,9 @@ interface InfiniticRegister : AutoCloseable {
   fun registerWorkflowExecutor(
     workflowName: String,
     factories: WorkflowFactories,
-    concurrency: Int? = null,
-    withTimeout: WithTimeout? = UNDEFINED_WITH_TIMEOUT,
-    withRetry: WithRetry? = UNDEFINED_WITH_RETRY,
+    concurrency: Int,
+    withTimeout: WithTimeout?,
+    withRetry: WithRetry?,
     checkMode: WorkflowCheckMode? = null,
   )
 
@@ -150,7 +151,7 @@ interface InfiniticRegister : AutoCloseable {
   fun registerWorkflowExecutor(
     workflowName: String,
     factory: () -> Workflow,
-    concurrency: Int? = null,
+    concurrency: Int,
     withTimeout: WithTimeout? = UNDEFINED_WITH_TIMEOUT,
     withRetry: WithRetry? = UNDEFINED_WITH_RETRY,
     checkMode: WorkflowCheckMode? = null,
@@ -168,7 +169,7 @@ interface InfiniticRegister : AutoCloseable {
   @JvmOverloads
   fun registerWorkflowStateEngine(
     workflowName: String,
-    concurrency: Int? = null,
+    concurrency: Int,
     storageConfig: StorageConfig? = null
   )
 
@@ -177,8 +178,8 @@ interface InfiniticRegister : AutoCloseable {
   @JvmOverloads
   fun registerWorkflowEventListener(
     workflowName: String,
-    concurrency: Int? = null,
-    eventListener: CloudEventListener? = null,
+    concurrency: Int,
+    eventListener: CloudEventListener,
     subscriptionName: String? = null,
   )
 
@@ -187,10 +188,10 @@ interface InfiniticRegister : AutoCloseable {
   @JvmOverloads
   fun registerWorkflowEventLogger(
     workflowName: String,
+    concurrency: Int,
     logLevel: LogLevel? = null,
     loggerName: String? = null,
     beautify: Boolean? = null,
-    concurrency: Int? = null,
     subscriptionName: String? = null,
   )
 }

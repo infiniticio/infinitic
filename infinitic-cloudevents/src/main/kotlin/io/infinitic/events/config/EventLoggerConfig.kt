@@ -26,10 +26,10 @@ import io.infinitic.logs.LogLevel
 
 @Suppress("unused")
 data class EventLoggerConfig(
+  val concurrency: Int? = null,
   val logLevel: LogLevel? = null,
   val loggerName: String? = null,
   val beautify: Boolean? = null,
-  val concurrency: Int? = null,
   val subscriptionName: String? = null,
 ) {
   var isDefined = true
@@ -83,10 +83,10 @@ data class EventLoggerConfig(
         apply { this.subscriptionName = subscriptionName }
 
     fun build() = EventLoggerConfig(
+        concurrency = concurrency,
         logLevel = logLevel,
         loggerName = loggerName,
         beautify = beautify,
-        concurrency = concurrency,
         subscriptionName = subscriptionName,
     )
   }

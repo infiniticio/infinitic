@@ -22,26 +22,42 @@
  */
 package io.infinitic.common.workers.registry
 
+import com.fasterxml.jackson.databind.ObjectMapper
+import io.cloudevents.CloudEvent
+import io.cloudevents.jackson.JsonFormat
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.infinitic.logs.LogLevel
 
 data class RegisteredEventLogger(
+  val concurrency: Int,
   val logLevel: LogLevel,
   val loggerName: String,
   val beautify: Boolean,
-  val concurrency: Int,
   val subscriptionName: String?
 ) {
   private val logger = KotlinLogging.logger(loggerName)
+  private val reader = ObjectMapper().reader()
+  private val writer = when (beautify) {
+    true -> ObjectMapper().writerWithDefaultPrettyPrinter()
+    false -> ObjectMapper().writer()
+  }
 
-  val log by lazy {
+  val log = { message: CloudEvent -> logString(message.toJsonString()) }
+
+  private fun CloudEvent.toJsonString(): String {
+    val jsonStr = String(JsonFormat().serialize(this))
+
+    return writer.writeValueAsString(reader.readTree(jsonStr))
+  }
+
+  private val logString by lazy {
     when (logLevel) {
-      LogLevel.TRACE -> { message: () -> Any? -> logger.trace(message) }
-      LogLevel.DEBUG -> { message: () -> Any? -> logger.debug(message) }
-      LogLevel.INFO -> { message: () -> Any? -> logger.info(message) }
-      LogLevel.WARN -> { message: () -> Any? -> logger.warn(message) }
-      LogLevel.ERROR -> { message: () -> Any? -> logger.error(message) }
-      LogLevel.OFF -> { _: () -> Any? -> Unit }
+      LogLevel.TRACE -> { message: String -> logger.trace { message } }
+      LogLevel.DEBUG -> { message: String -> logger.debug { message } }
+      LogLevel.INFO -> { message: String -> logger.info { message } }
+      LogLevel.WARN -> { message: String -> logger.warn { message } }
+      LogLevel.ERROR -> { message: String -> logger.error { message } }
+      LogLevel.OFF -> { _: String -> Unit }
     }
   }
 }

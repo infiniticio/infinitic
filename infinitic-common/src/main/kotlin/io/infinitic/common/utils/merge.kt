@@ -24,15 +24,25 @@
 package io.infinitic.common.utils
 
 import kotlin.reflect.KParameter
-import kotlin.reflect.full.declaredMemberProperties
+import kotlin.reflect.full.memberProperties
 
-inline infix fun <reified T : Any> T?.merge(default: T?): T {
+@JvmName("mergeNullableRight")
+inline infix fun <reified T : Any> T.merge(default: T?): T {
+  if (default == null) return this
+
+  return this merge default
+}
+
+inline infix fun <reified T : Any> T.merge(default: T): T {
   val constructor = T::class.constructors.first()
   val params = constructor.parameters.associateBy({ it.name!! }, { it })
   val args = mutableMapOf<KParameter, Any?>()
 
-  T::class.declaredMemberProperties.forEach { prop ->
-    args[params[prop.name]!!] = this?.let { prop.get(it) } ?: default?.let { prop.get(it) }
+  T::class.memberProperties.forEach { prop ->
+    val parameter = params[prop.name]
+    if (parameter != null) {
+      args[parameter] = prop.get(this) ?: prop.get(default)
+    }
   }
 
   return constructor.callBy(args)

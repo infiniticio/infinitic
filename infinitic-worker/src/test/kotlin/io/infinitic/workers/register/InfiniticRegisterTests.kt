@@ -1,35 +1,16 @@
-/**
- * "Commons Clause" License Condition v1.0
- *
- * The Software is provided to you by the Licensor under the License, as defined below, subject to
- * the following condition.
- *
- * Without limiting other conditions in the License, the grant of rights under the License will not
- * include, and the License does not grant to you, the right to Sell the Software.
- *
- * For purposes of the foregoing, “Sell” means practicing any or all of the rights granted to you
- * under the License to provide to third parties, for a fee or other consideration (including
- * without limitation fees for hosting or consulting/ support services related to the Software), a
- * product or service whose value derives, entirely or substantially, from the functionality of the
- * Software. Any license notice or attribution required by the License must also include this
- * Commons Clause License Condition notice.
- *
- * Software: Infinitic
- *
- * License: MIT License (https://opensource.org/licenses/MIT)
- *
- * Licensor: infinitic.io
- */
-package io.infinitic.workers
+package io.infinitic.workers.register
 
 import io.infinitic.common.config.loadConfigFromYaml
 import io.infinitic.common.tasks.data.ServiceName
+import io.infinitic.common.workers.config.ExponentialBackoffRetryPolicy
+import io.infinitic.common.workers.registry.RegisteredServiceTagEngine
 import io.infinitic.common.workflows.data.workflows.WorkflowName
+import io.infinitic.logs.LogLevel
 import io.infinitic.workers.config.WorkerConfig
-import io.infinitic.workers.register.InfiniticRegisterImpl
 import io.infinitic.workers.samples.EventListenerImpl
 import io.infinitic.workers.samples.ServiceA
 import io.infinitic.workers.samples.ServiceAImpl
+import io.infinitic.workers.samples.ServiceEventListenerFake
 import io.infinitic.workers.samples.ServiceEventListenerImpl
 import io.infinitic.workers.samples.WorkflowA
 import io.infinitic.workers.samples.WorkflowAImpl
@@ -41,11 +22,17 @@ import io.kotest.matchers.shouldNotBe
 import io.kotest.matchers.string.shouldContain
 import io.kotest.matchers.types.shouldBeInstanceOf
 import java.security.InvalidParameterException
+import java.util.*
+import kotlin.random.Random
 
 private const val yaml = """
 transport: inMemory
 storage: inMemory
 """
+
+private open class TestException : Exception()
+
+private class ChildTestException : TestException()
 
 internal class InfiniticRegisterTests :
   StringSpec(
@@ -56,92 +43,187 @@ internal class InfiniticRegisterTests :
         val workflowImplName = WorkflowAImpl::class.java.name
         val eventListenerImpl = EventListenerImpl::class.java.name
 
-        "checking default for service" {
+        "checking default service settings" {
           val config = WorkerConfig.fromYaml(
               yaml,
               """
 services:
-    - name: $serviceName
-      class: $serviceImplName
+  - name: $serviceName
+    class: $serviceImplName
 """,
           )
           val register = InfiniticRegisterImpl.fromConfig(config)
-          val service = register.registry.getRegisteredServiceExecutor(serviceName)!!
-          service.withTimeout shouldBe null
-          service.withRetry shouldBe null
-          service.concurrency shouldBe 1
+          with(register.registry.serviceExecutors[serviceName]!!) {
+            withTimeout shouldBe null
+            withRetry shouldBe null
+            concurrency shouldBe 1
+          }
+          with(register.registry.serviceTagEngines[serviceName]!!) {
+            shouldBeInstanceOf<RegisteredServiceTagEngine>()
+            concurrency shouldBe 1
+          }
+          register.registry.serviceEventListeners[serviceName] shouldBe null
+          register.registry.serviceEventLoggers[serviceName] shouldBe null
         }
 
-        "get timeout for service executor from default" {
+        "checking explicit service settings" {
+          val concurrency = Random.nextInt(from = 1, until = Int.MAX_VALUE)
+          val timeoutInSeconds = Random.nextDouble()
+          val withRetry = ExponentialBackoffRetryPolicy(minimumSeconds = Random.nextDouble())
+          val config = WorkerConfig.fromYaml(
+              yaml,
+              """
+services:
+  - name: $serviceName
+    class: $serviceImplName
+    concurrency: $concurrency
+    timeoutInSeconds: $timeoutInSeconds
+    retry:
+      minimumSeconds: ${withRetry.minimumSeconds}
+    tagEngine:
+      concurrency: 42
+    eventListener:
+      class: ${ServiceEventListenerImpl::class.java.name}
+    eventLogger:
+      logLevel: WARN
+""",
+          )
+          val register = InfiniticRegisterImpl.fromConfig(config)
+          with(register.registry.serviceExecutors[serviceName]!!) {
+            withTimeout!!.getTimeoutInSeconds() shouldBe timeoutInSeconds
+            this.withRetry shouldBe withRetry
+            this.concurrency shouldBe concurrency
+          }
+          with(register.registry.serviceTagEngines[serviceName]!!) {
+            this.concurrency shouldBe 42
+          }
+          with(register.registry.serviceEventListeners[serviceName]) {
+            this shouldNotBe null
+            this!!.concurrency shouldBe concurrency
+          }
+          with(register.registry.serviceEventLoggers[serviceName]) {
+            this shouldNotBe null
+            this!!.concurrency shouldBe concurrency
+            this.logLevel shouldBe LogLevel.WARN
+          }
+        }
+
+        "Get service settings from serviceDefault" {
+          val concurrency = Random.nextInt(from = 1, until = Int.MAX_VALUE)
+          val timeoutInSeconds = Random.nextDouble()
+          val withRetry = ExponentialBackoffRetryPolicy(minimumSeconds = Random.nextDouble())
           val config = WorkerConfig.fromYaml(
               yaml,
               """
 serviceDefault:
-  timeoutInSeconds: 1
+  concurrency: $concurrency
+  timeoutInSeconds: $timeoutInSeconds
+  retry:
+    minimumSeconds: ${withRetry.minimumSeconds}
+  eventListener:
+    class: ${ServiceEventListenerImpl::class.java.name}
+  eventLogger:
+    logLevel: WARN
 services:
-    - name:  $serviceName
-      class: $serviceImplName
+  - name:  $serviceName
+    class: $serviceImplName
 """,
           )
           val register = InfiniticRegisterImpl.fromConfig(config)
-          val service = register.registry.getRegisteredServiceExecutor(serviceName)!!
-          service.withTimeout?.getTimeoutInSeconds() shouldBe 1.0
+          with(register.registry.serviceExecutors[serviceName]!!) {
+            withTimeout?.getTimeoutInSeconds() shouldBe timeoutInSeconds
+            this.withRetry shouldBe withRetry
+            this.concurrency shouldBe concurrency
+          }
+          with(register.registry.serviceEventListeners[serviceName]) {
+            this shouldNotBe null
+            this!!.concurrency shouldBe concurrency
+          }
+          with(register.registry.serviceEventLoggers[serviceName]) {
+            this shouldNotBe null
+            this!!.concurrency shouldBe concurrency
+            this.logLevel shouldBe LogLevel.WARN
+          }
         }
 
-        "explicit timeout in service should not be superseded with default" {
+        "Explicit service concurrency setting should not be overridden by serviceDefault" {
+          val concurrency = Random.nextInt(from = 2, until = Int.MAX_VALUE)
           val config = WorkerConfig.fromYaml(
               yaml,
               """
 serviceDefault:
-  timeoutInSeconds: 1
+  concurrency: 1
 services:
-    - name:  $serviceName
-      class: $serviceImplName
-      timeoutInSeconds: 2
+  - name:  $serviceName
+    class: $serviceImplName
+    concurrency: $concurrency
 """,
           )
           val register = InfiniticRegisterImpl.fromConfig(config)
-          val service = register.registry.getRegisteredServiceExecutor(serviceName)!!
-          service.withTimeout?.getTimeoutInSeconds() shouldBe 2.0
+          with(register.registry.serviceExecutors[serviceName]!!) {
+            this.concurrency shouldBe concurrency
+          }
         }
 
-        "explicit null timeout in service should not be superseded with default" {
+        "Explicit service timeout setting should not be overridden by serviceDefault" {
+          val timeoutInSeconds = Random.nextDouble()
           val config = WorkerConfig.fromYaml(
               yaml,
               """
 serviceDefault:
-  timeoutInSeconds: 1
+  timeoutInSeconds: 1.
 services:
-    - name: $serviceName
-      class: $serviceImplName
-      timeoutInSeconds: null
+  - name:  $serviceName
+    class: $serviceImplName
+    timeoutInSeconds: $timeoutInSeconds
 """,
           )
           val register = InfiniticRegisterImpl.fromConfig(config)
-          val service = register.registry.getRegisteredServiceExecutor(serviceName)!!
-          service.withTimeout shouldBe null
+          with(register.registry.serviceExecutors[serviceName]!!) {
+            withTimeout?.getTimeoutInSeconds() shouldBe timeoutInSeconds
+          }
         }
 
-        "get retry for service executor from default" {
+        "Explicit null service timeout setting should not be overridden by serviceDefault" {
           val config = WorkerConfig.fromYaml(
               yaml,
               """
-transport: inMemory
+serviceDefault:
+  timeoutInSeconds: 1.
+services:
+  - name: $serviceName
+    class: $serviceImplName
+    timeoutInSeconds: null
+""",
+          )
+          val register = InfiniticRegisterImpl.fromConfig(config)
+          with(register.registry.serviceExecutors[serviceName]!!) {
+            withTimeout?.getTimeoutInSeconds() shouldBe null
+          }
+        }
+
+        "Explicit service retry setting should not be overridden by serviceDefault" {
+          val withRetry = ExponentialBackoffRetryPolicy(maximumRetries = Random.nextInt(100, 1000))
+          val config = WorkerConfig.fromYaml(
+              yaml,
+              """
 serviceDefault:
   retry:
     maximumRetries: 42
 services:
-    - name: $serviceName
-      class: $serviceImplName
+  - name:  $serviceName
+    class: $serviceImplName
+    retry:
+      maximumRetries: ${withRetry.maximumRetries}
 """,
           )
           val register = InfiniticRegisterImpl.fromConfig(config)
-          val service = register.registry.getRegisteredServiceExecutor(serviceName)!!
-          service.withRetry!!.getSecondsBeforeRetry(42, Exception()) shouldBe null
-          service.withRetry!!.getSecondsBeforeRetry(41, Exception()) shouldNotBe null
+          with(register.registry.serviceExecutors[serviceName]!!) {
+            this.withRetry shouldBe withRetry
+          }
         }
 
-        "explicit retry in service should not be superseded with default" {
+        "Explicit null service retry setting should not be overridden by serviceDefault" {
           val config = WorkerConfig.fromYaml(
               yaml,
               """
@@ -149,37 +231,100 @@ serviceDefault:
   retry:
     maximumRetries: 42
 services:
-    - name:  $serviceName
-      class: $serviceImplName
-      retry:
-        maximumRetries: 100
+  - name:  $serviceName
+    class: $serviceImplName
+    retry: null
 """,
           )
           val register = InfiniticRegisterImpl.fromConfig(config)
-          val service = register.registry.getRegisteredServiceExecutor(serviceName)!!
-          service.withRetry!!.getSecondsBeforeRetry(100, Exception()) shouldBe null
-          service.withRetry!!.getSecondsBeforeRetry(99, Exception()) shouldNotBe null
+          with(register.registry.serviceExecutors[serviceName]!!) {
+            withRetry shouldBe null
+          }
         }
 
-        "explicit null retry in service should not be superseded with default" {
+        "Explicit service eventListener setting should not be overridden by serviceDefault" {
+          val subscriptionName = UUID.randomUUID().toString()
           val config = WorkerConfig.fromYaml(
               yaml,
               """
 serviceDefault:
-  retry:
-    maximumRetries: 42
+  eventListener:
+    class: ${ServiceEventListenerFake::class.java.name}
+    subscriptionName: $subscriptionName
 services:
     - name:  $serviceName
       class: $serviceImplName
-      retry: null
+      eventListener:
+        class: ${ServiceEventListenerImpl::class.java.name}
 """,
           )
           val register = InfiniticRegisterImpl.fromConfig(config)
-          val service = register.registry.getRegisteredServiceExecutor(serviceName)!!
-          service.withRetry shouldBe null
+          with(register.registry.serviceEventListeners[serviceName]) {
+            this shouldNotBe null
+            this!!.eventListener::class shouldBe ServiceEventListenerImpl::class
+            this.subscriptionName shouldBe subscriptionName
+          }
         }
 
-        "checking default in workflow" {
+        "Explicit null service eventListener setting should not be overridden by serviceDefault" {
+          val config = WorkerConfig.fromYaml(
+              yaml,
+              """
+serviceDefault:
+  eventListener:
+    class: ${ServiceEventListenerImpl::class.java.name}
+services:
+  - name: $serviceName
+    class: $serviceImplName
+    eventListener: null
+""",
+          )
+          val register = InfiniticRegisterImpl.fromConfig(config)
+          register.registry.serviceEventListeners[serviceName] shouldBe null
+        }
+
+        "Explicit service eventLogger setting should not be overridden by serviceDefault" {
+          val subscriptionName = UUID.randomUUID().toString()
+          val config = WorkerConfig.fromYaml(
+              yaml,
+              """
+serviceDefault:
+  eventLogger:
+    logLevel: WARN
+    subscriptionName: "$subscriptionName"
+services:
+    - name:  $serviceName
+      class: $serviceImplName
+      eventLogger:
+        logLevel: OFF
+""",
+          )
+          val register = InfiniticRegisterImpl.fromConfig(config)
+          with(register.registry.serviceEventLoggers[serviceName]) {
+            this shouldNotBe null
+            this!!.logLevel shouldBe LogLevel.OFF
+            this.subscriptionName shouldBe subscriptionName
+          }
+        }
+
+        "Explicit null service eventLogger setting should not be overridden by serviceDefault" {
+          val config = WorkerConfig.fromYaml(
+              yaml,
+              """
+serviceDefault:
+  eventLogger:
+    logLevel: WARN
+services:
+  - name: $serviceName
+    class: $serviceImplName
+    eventLogger: null
+""",
+          )
+          val register = InfiniticRegisterImpl.fromConfig(config)
+          register.registry.serviceEventLoggers[serviceName] shouldBe null
+        }
+
+        "checking default workflow settings" {
           val config = WorkerConfig.fromYaml(
               yaml,
               """
@@ -189,7 +334,7 @@ workflows:
 """,
           )
           val register = InfiniticRegisterImpl.fromConfig(config)
-          val workflow = register.registry.getRegisteredWorkflowExecutor(workflowName)!!
+          val workflow = register.registry.workflowExecutors[workflowName]!!
           workflow.withTimeout shouldBe null
           workflow.withRetry shouldBe null
           workflow.concurrency shouldBe 1
@@ -211,7 +356,7 @@ workflows:
 """,
               )
           val register = InfiniticRegisterImpl.fromConfig(config)
-          val workflow = register.registry.getRegisteredWorkflowExecutor(workflowName)!!
+          val workflow = register.registry.workflowExecutors[workflowName]!!
           workflow.withTimeout?.getTimeoutInSeconds() shouldBe 1.0
         }
 
@@ -228,7 +373,7 @@ workflows:
 """,
           )
           val register = InfiniticRegisterImpl.fromConfig(config)
-          val workflow = register.registry.getRegisteredWorkflowExecutor(workflowName)!!
+          val workflow = register.registry.workflowExecutors[workflowName]!!
           workflow.withTimeout?.getTimeoutInSeconds() shouldBe 2.0
         }
 
@@ -245,7 +390,7 @@ workflows:
 """,
           )
           val register = InfiniticRegisterImpl.fromConfig(config)
-          val workflow = register.registry.getRegisteredWorkflowExecutor(workflowName)!!
+          val workflow = register.registry.workflowExecutors[workflowName]!!
           workflow.withTimeout?.getTimeoutInSeconds() shouldBe null
         }
 
@@ -262,7 +407,7 @@ workflows:
 """,
           )
           val register = InfiniticRegisterImpl.fromConfig(config)
-          val workflow = register.registry.getRegisteredWorkflowExecutor(workflowName)!!
+          val workflow = register.registry.workflowExecutors[workflowName]!!
           workflow.withRetry!!.getSecondsBeforeRetry(42, Exception()) shouldBe null
           workflow.withRetry!!.getSecondsBeforeRetry(41, Exception()) shouldNotBe null
         }
@@ -282,7 +427,7 @@ workflows:
 """,
           )
           val register = InfiniticRegisterImpl.fromConfig(config)
-          val workflow = register.registry.getRegisteredWorkflowExecutor(workflowName)!!
+          val workflow = register.registry.workflowExecutors[workflowName]!!
           workflow.withRetry!!.getSecondsBeforeRetry(100, Exception()) shouldBe null
           workflow.withRetry!!.getSecondsBeforeRetry(99, Exception()) shouldNotBe null
         }
@@ -301,7 +446,7 @@ workflows:
 """,
           )
           val register = InfiniticRegisterImpl.fromConfig(config)
-          val workflow = register.registry.getRegisteredWorkflowExecutor(workflowName)!!
+          val workflow = register.registry.workflowExecutors[workflowName]!!
           workflow.withRetry shouldBe null
         }
 
@@ -317,7 +462,7 @@ workflows:
 """,
           )
           val register = InfiniticRegisterImpl.fromConfig(config)
-          val workflow = register.registry.getRegisteredWorkflowExecutor(workflowName)!!
+          val workflow = register.registry.workflowExecutors[workflowName]!!
           workflow.checkMode shouldBe WorkflowCheckMode.strict
         }
 
@@ -384,8 +529,8 @@ services:
               """,
           )
           val register = InfiniticRegisterImpl.fromConfig(config)
-          val tagEngine = register.registry.getRegisteredServiceTagEngine(serviceName)
-          val executor = register.registry.getRegisteredServiceExecutor(serviceName)
+          val tagEngine = register.registry.serviceTagEngines[serviceName]
+          val executor = register.registry.serviceExecutors[serviceName]
 
           executor shouldNotBe null
           tagEngine shouldBe null
@@ -402,8 +547,8 @@ services:
               """,
           )
           val register = InfiniticRegisterImpl.fromConfig(config)
-          val tagEngine = register.registry.getRegisteredServiceTagEngine(serviceName)
-          val executor = register.registry.getRegisteredServiceExecutor(serviceName)
+          val tagEngine = register.registry.serviceTagEngines[serviceName]
+          val executor = register.registry.serviceExecutors[serviceName]
 
           executor shouldBe null
           tagEngine shouldNotBe null
@@ -420,8 +565,8 @@ workflows:
               """,
           )
           val register = InfiniticRegisterImpl.fromConfig(config)
-          val tagEngine = register.registry.getRegisteredWorkflowTagEngine(workflowName)
-          val executor = register.registry.getRegisteredWorkflowExecutor(workflowName)
+          val tagEngine = register.registry.workflowTagEngines[workflowName]
+          val executor = register.registry.workflowExecutors[workflowName]
 
           executor shouldNotBe null
           tagEngine shouldBe null
@@ -438,14 +583,14 @@ workflows:
               """,
           )
           val register = InfiniticRegisterImpl.fromConfig(config)
-          val tagEngine = register.registry.getRegisteredWorkflowTagEngine(workflowName)
-          val executor = register.registry.getRegisteredWorkflowExecutor(workflowName)
+          val tagEngine = register.registry.workflowTagEngines[workflowName]
+          val executor = register.registry.workflowExecutors[workflowName]
 
           executor shouldBe null
           tagEngine shouldNotBe null
         }
 
-        "I can deploy a workflow executor without workflow engine" {
+        "I can deploy a workflow executor without state engine" {
           val config = WorkerConfig.fromYaml(
               yaml,
               """
@@ -457,11 +602,11 @@ workflows:
               """,
           )
           val register = InfiniticRegisterImpl.fromConfig(config)
-          val engine = register.registry.getRegisteredWorkflowStateEngine(workflowName)
-          val executor = register.registry.getRegisteredWorkflowExecutor(workflowName)
-
+          val executor = register.registry.workflowExecutors[workflowName]
           executor shouldNotBe null
           executor!!.concurrency shouldBe 5
+
+          val engine = register.registry.workflowStateEngines[workflowName]
           engine shouldBe null
         }
 
@@ -476,8 +621,8 @@ workflows:
               """,
           )
           val register = InfiniticRegisterImpl.fromConfig(config)
-          val engine = register.registry.getRegisteredWorkflowStateEngine(workflowName)
-          val executor = register.registry.getRegisteredWorkflowExecutor(workflowName)
+          val engine = register.registry.workflowStateEngines[workflowName]
+          val executor = register.registry.workflowExecutors[workflowName]
 
           executor shouldBe null
           engine shouldNotBe null
@@ -495,7 +640,7 @@ services:
               """,
           )
           val register = InfiniticRegisterImpl.fromConfig(config)
-          val listener = register.registry.getRegisteredServiceEventListener(serviceName)
+          val listener = register.registry.serviceEventListeners[serviceName]
 
           listener shouldBe null
         }
@@ -518,7 +663,7 @@ services:
           )
 
           val register = InfiniticRegisterImpl.fromConfig(config)
-          val listener = register.registry.getRegisteredServiceEventListener(serviceName)!!
+          val listener = register.registry.serviceEventListeners[serviceName]!!
 
           listener.eventListener.shouldBeInstanceOf<ServiceEventListenerImpl>()
           listener.concurrency shouldBe 100
@@ -541,7 +686,7 @@ services:
           )
 
           val register = InfiniticRegisterImpl.fromConfig(config)
-          val listener = register.registry.getRegisteredServiceEventListener(serviceName)!!
+          val listener = register.registry.serviceEventListeners[serviceName]!!
 
           listener.concurrency shouldBe 100
         }
@@ -560,7 +705,7 @@ services:
           )
 
           val register = InfiniticRegisterImpl.fromConfig(config)
-          val listener = register.registry.getRegisteredServiceEventListener(serviceName)!!
+          val listener = register.registry.serviceEventListeners[serviceName]!!
 
           listener.concurrency shouldBe 10
         }
@@ -580,7 +725,7 @@ services:
           )
 
           val register = InfiniticRegisterImpl.fromConfig(config)
-          val listener = register.registry.getRegisteredServiceEventListener(serviceName)!!
+          val listener = register.registry.serviceEventListeners[serviceName]!!
           listener.concurrency shouldBe 10
           listener.eventListener.shouldBeInstanceOf<EventListenerImpl>()
         }
@@ -601,7 +746,7 @@ services:
           )
 
           val register = InfiniticRegisterImpl.fromConfig(config)
-          val listener = register.registry.getRegisteredServiceEventListener(serviceName)!!
+          val listener = register.registry.serviceEventListeners[serviceName]!!
 
           listener.concurrency shouldBe 100
           listener.eventListener.shouldBeInstanceOf<EventListenerImpl>()
@@ -623,7 +768,7 @@ services:
             InfiniticRegisterImpl.fromConfig(config)
           }
 
-          e.message.shouldContain("Missing CloudEventListener at registration")
+          e.message.shouldContain("CloudEventListener")
         }
 
         "serviceDefault is used if NOT present" {
@@ -645,7 +790,7 @@ services:
           )
           val register = InfiniticRegisterImpl.fromConfig(config)
 
-          val service = register.registry.getRegisteredServiceExecutor(serviceName)
+          val service = register.registry.serviceExecutors[serviceName]
 
           service shouldNotBe null
           service?.concurrency shouldBe concurrency
@@ -675,7 +820,7 @@ services:
               """,
           )
           val register = InfiniticRegisterImpl.fromConfig(config)
-          val service = register.registry.getRegisteredServiceExecutor(serviceName)
+          val service = register.registry.serviceExecutors[serviceName]
 
           service shouldNotBe null
           service?.concurrency shouldBe 7
@@ -686,7 +831,7 @@ services:
         "serviceDefault is used, with a manual registration" {
           val concurrency = 10
           val timeoutInSeconds = 400.0
-          val maxRetries = 2
+          val withRetry = ExponentialBackoffRetryPolicy(maximumRetries = 2)
           val config = WorkerConfig.fromYaml(
               yaml,
               """
@@ -694,18 +839,18 @@ serviceDefault:
   concurrency: $concurrency
   timeoutInSeconds: $timeoutInSeconds
   retry:
-    maximumRetries: $maxRetries
+    maximumRetries: ${withRetry.maximumRetries}
               """,
           )
           val register = InfiniticRegisterImpl.fromConfig(config)
-          register.registerServiceExecutor(serviceName.toString(), { })
+          register.registerServiceExecutor(serviceName.toString(), { }, 7)
 
-          val service = register.registry.getRegisteredServiceExecutor(serviceName)
-
-          service shouldNotBe null
-          service?.concurrency shouldBe concurrency
-          service?.withTimeout?.getTimeoutInSeconds() shouldBe timeoutInSeconds
-          service?.withRetry?.getSecondsBeforeRetry(maxRetries, Exception()) shouldBe null
+          with(register.registry.serviceExecutors[serviceName]) {
+            this shouldNotBe null
+            this!!.concurrency shouldBe 7
+            this.withTimeout?.getTimeoutInSeconds() shouldBe timeoutInSeconds
+            this.withRetry shouldBe withRetry
+          }
         }
 
         "serviceDefault is NOT used, with a manual registration where configuration is present" {
@@ -731,7 +876,7 @@ serviceDefault:
               withRetry = { _: Int, _: Exception -> null },
           )
 
-          val service = register.registry.getRegisteredServiceExecutor(serviceName)
+          val service = register.registry.serviceExecutors[serviceName]
 
           service shouldNotBe null
           service?.concurrency shouldBe 7
@@ -740,7 +885,3 @@ serviceDefault:
         }
       },
   )
-
-private open class TestException : Exception()
-
-private class ChildTestException : TestException()

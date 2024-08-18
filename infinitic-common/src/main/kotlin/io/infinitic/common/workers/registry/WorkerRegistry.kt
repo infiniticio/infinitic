@@ -38,33 +38,6 @@ class WorkerRegistry {
   val workflowEventListeners = mutableMapOf<WorkflowName, RegisteredEventListener>()
   val workflowEventLoggers = mutableMapOf<WorkflowName, RegisteredEventLogger>()
 
-  fun getRegisteredServiceTagEngine(serviceName: ServiceName) =
-      serviceTagEngines[serviceName]
-
-  fun getRegisteredServiceExecutor(serviceName: ServiceName) =
-      serviceExecutors[serviceName]
-
-  fun getRegisteredServiceEventListener(serviceName: ServiceName) =
-      serviceEventListeners[serviceName]
-
-  fun getRegisteredServiceEventLogger(serviceName: ServiceName) =
-      serviceEventLoggers[serviceName]
-
-  fun getRegisteredWorkflowTagEngine(workflowName: WorkflowName) =
-      workflowTagEngines[workflowName]
-
-  fun getRegisteredWorkflowStateEngine(workflowName: WorkflowName) =
-      workflowStateEngines[workflowName]
-
-  fun getRegisteredWorkflowExecutor(workflowName: WorkflowName) =
-      workflowExecutors[workflowName]
-
-  fun getRegisteredWorkflowEventListener(workflowName: WorkflowName) =
-      workflowEventListeners[workflowName]
-
-  fun getRegisteredWorkflowEventLogger(workflowName: WorkflowName) =
-      workflowEventLoggers[workflowName]
-
   @TestOnly
   fun flush() {
     serviceTagEngines.values.forEach { it.storage.flush() }

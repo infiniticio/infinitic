@@ -28,6 +28,8 @@ import io.infinitic.common.workers.config.RetryPolicy
 import io.infinitic.common.workflows.emptyWorkflowContext
 import io.infinitic.events.config.EventListenerConfig
 import io.infinitic.events.config.EventLoggerConfig
+import io.infinitic.tasks.WithRetry
+import io.infinitic.tasks.WithTimeout
 import io.infinitic.workflows.Workflow
 import io.infinitic.workflows.WorkflowCheckMode
 import io.infinitic.workflows.engine.config.WorkflowStateEngineConfig
@@ -49,6 +51,18 @@ data class WorkflowConfig(
   val eventLogger: EventLoggerConfig? = UNDEFINED_EVENT_LOGGER
 ) {
   val allClasses = mutableListOf<Class<out WorkflowBase>>()
+
+  val withTimeout: WithTimeout? = when (timeoutInSeconds) {
+    null -> null
+    UNDEFINED_TIMEOUT -> UNDEFINED_WITH_TIMEOUT
+    else -> WithTimeout { timeoutInSeconds }
+  }
+
+  val withRetry: WithRetry? = when (retry) {
+    null -> null
+    UNDEFINED_RETRY -> UNDEFINED_WITH_RETRY
+    else -> retry
+  }
 
   init {
     require(name.isNotEmpty()) { "name can not be empty" }

@@ -102,6 +102,61 @@ class InfiniticWorker private constructor(
     )
   }
 
+  companion object {
+    /** Create [InfiniticWorker] from config */
+    @JvmStatic
+    fun fromConfig(workerConfig: WorkerConfigInterface): InfiniticWorker = with(workerConfig) {
+
+      val transportConfig = TransportConfig(transport, pulsar, shutdownGracePeriodInSeconds)
+
+      /** Infinitic Consumer */
+      val consumerAsync = transportConfig.consumerAsync
+
+      /** Infinitic  Producer */
+      val producerAsync = transportConfig.producerAsync
+
+      // set name, if it exists in the worker configuration
+      name?.let { producerAsync.producerName = it }
+
+      /** Infinitic Register */
+      // if an exception is thrown, we ensure to close the previously created resource
+      val register = try {
+        InfiniticRegisterImpl.fromConfig(this)
+      } catch (e: Exception) {
+        consumerAsync.close()
+        throw e
+      }
+
+      /** Infinitic Worker */
+      InfiniticWorker(
+          register,
+          consumerAsync,
+          producerAsync,
+          transportConfig.source,
+      ).also {
+        // close consumer with the worker
+        it.addAutoCloseResource(consumerAsync)
+        // close storages with the worker
+        it.addAutoCloseResource(register)
+      }
+    }
+
+    /** Create [InfiniticWorker] from config in resources */
+    @JvmStatic
+    fun fromConfigResource(vararg resources: String): InfiniticWorker =
+        fromConfig(WorkerConfig.fromResource(*resources))
+
+    /** Create [InfiniticWorker] from config in system file */
+    @JvmStatic
+    fun fromConfigFile(vararg files: String): InfiniticWorker =
+        fromConfig(WorkerConfig.fromFile(*files))
+
+    /** Create [InfiniticWorker] from yaml strings */
+    @JvmStatic
+    fun fromConfigYaml(vararg yamls: String): InfiniticWorker =
+        fromConfig(WorkerConfig.fromYaml(*yamls))
+  }
+
   private val delayedTaskProducer =
       LoggedInfiniticProducer(TaskExecutor::class.java.name, producerAsync)
 
@@ -229,7 +284,7 @@ class InfiniticWorker private constructor(
             SubscriptionType.EVENT_LOGGER,
         ) { message, publishedAt ->
           message.toWorkflowCloudEvent(publishedAt, source)?.let {
-            registeredEventLogger.log { it }
+            registeredEventLogger.log(it)
           } ?: Unit
         }
       }
@@ -256,9 +311,8 @@ class InfiniticWorker private constructor(
             registeredEventLogger.subscriptionName,
             SubscriptionType.EVENT_LOGGER,
         ) { message: Message, publishedAt: MillisInstant ->
-          message.toServiceCloudEvent(publishedAt, source)?.let {
-            registeredEventLogger.log { it }
-          } ?: Unit
+          message.toServiceCloudEvent(publishedAt, source)?.let { registeredEventLogger.log(it) }
+            ?: Unit
         }
       }
     }
@@ -273,62 +327,7 @@ class InfiniticWorker private constructor(
     return CompletableFuture.supplyAsync { consumerAsync.join() }
   }
 
-  companion object {
-    /** Create [InfiniticWorker] from config */
-    @JvmStatic
-    fun fromConfig(workerConfig: WorkerConfigInterface): InfiniticWorker = with(workerConfig) {
 
-      val transportConfig = TransportConfig(transport, pulsar, shutdownGracePeriodInSeconds)
-
-      /** Infinitic Consumer */
-      val consumerAsync = transportConfig.consumerAsync
-
-      /** Infinitic  Producer */
-      val producerAsync = transportConfig.producerAsync
-
-      // set name, if it exists in the worker configuration
-      name?.let { producerAsync.producerName = it }
-
-      /** Infinitic Register */
-      // if an exception is thrown, we ensure to close the previously created resource
-      val register = try {
-        InfiniticRegisterImpl.fromConfig(this).apply {
-          logName = InfiniticWorker::class.java.name
-        }
-      } catch (e: Exception) {
-        consumerAsync.close()
-        throw e
-      }
-
-      /** Infinitic Worker */
-      InfiniticWorker(
-          register,
-          consumerAsync,
-          producerAsync,
-          transportConfig.source,
-      ).also {
-        // close consumer with the worker
-        it.addAutoCloseResource(consumerAsync)
-        // close storages with the worker
-        it.addAutoCloseResource(register)
-      }
-    }
-
-    /** Create [InfiniticWorker] from config in resources */
-    @JvmStatic
-    fun fromConfigResource(vararg resources: String): InfiniticWorker =
-        fromConfig(WorkerConfig.fromResource(*resources))
-
-    /** Create [InfiniticWorker] from config in system file */
-    @JvmStatic
-    fun fromConfigFile(vararg files: String): InfiniticWorker =
-        fromConfig(WorkerConfig.fromFile(*files))
-
-    /** Create [InfiniticWorker] from yaml strings */
-    @JvmStatic
-    fun fromConfigYaml(vararg yamls: String): InfiniticWorker =
-        fromConfig(WorkerConfig.fromYaml(*yamls))
-  }
 
   private fun CoroutineScope.startWorkflowTagEngine(
     workflowName: WorkflowName,

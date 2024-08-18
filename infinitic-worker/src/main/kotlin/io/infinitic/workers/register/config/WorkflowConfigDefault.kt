@@ -25,6 +25,7 @@ package io.infinitic.workers.register.config
 import io.infinitic.common.workers.config.RetryPolicy
 import io.infinitic.events.config.EventListenerConfig
 import io.infinitic.events.config.EventLoggerConfig
+import io.infinitic.tasks.WithTimeout
 import io.infinitic.workflows.WorkflowCheckMode
 import io.infinitic.workflows.engine.config.WorkflowStateEngineConfig
 import io.infinitic.workflows.tag.config.WorkflowTagEngineConfig
@@ -48,6 +49,11 @@ data class WorkflowConfigDefault(
     timeoutInSeconds?.let {
       require(it > 0) { error("'${::timeoutInSeconds.name}' must be strictly positive") }
     }
+  }
+
+  val withTimeout: WithTimeout? = when (timeoutInSeconds) {
+    null -> null
+    else -> WithTimeout { timeoutInSeconds }
   }
 
   companion object {

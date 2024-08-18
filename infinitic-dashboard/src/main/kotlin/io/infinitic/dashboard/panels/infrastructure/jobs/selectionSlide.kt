@@ -29,7 +29,6 @@ import io.infinitic.dashboard.panels.infrastructure.requests.Failed
 import io.infinitic.dashboard.panels.infrastructure.requests.Loading
 import io.infinitic.dashboard.panels.infrastructure.requests.Request
 import io.infinitic.dashboard.slideovers.Slideover
-import io.infinitic.pulsar.resources.prefix
 import io.infinitic.serDe.java.Json
 import kweb.a
 import kweb.new
@@ -44,7 +43,7 @@ internal fun selectionSlide(
 ) =
     Slideover(
         selectionType.map {
-          "${it.prefix()} stats".replaceFirstChar { c -> c.uppercase() }
+          "${it.prefix} stats".replaceFirstChar { c -> c.uppercase() }
         },
         selectionStats,
     ) { kvar ->

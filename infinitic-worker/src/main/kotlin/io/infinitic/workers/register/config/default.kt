@@ -27,7 +27,7 @@ import io.infinitic.events.config.EventListenerConfig
 import io.infinitic.events.config.EventLoggerConfig
 import io.infinitic.tasks.WithRetry
 import io.infinitic.tasks.WithTimeout
-import io.infinitic.tasks.tag.config.ServiceTagEngine
+import io.infinitic.tasks.tag.config.ServiceTagEngineConfig
 import io.infinitic.workflows.engine.config.WorkflowStateEngineConfig
 import io.infinitic.workflows.tag.config.WorkflowTagEngineConfig
 
@@ -49,7 +49,7 @@ internal val UNDEFINED_EVENT_LISTENER = EventListenerConfig().apply { isDefined 
 
 internal val UNDEFINED_EVENT_LOGGER = EventLoggerConfig().apply { isDefined = false }
 
-internal val DEFAULT_SERVICE_TAG_ENGINE = ServiceTagEngine().apply { isDefault = true }
+internal val DEFAULT_SERVICE_TAG_ENGINE = ServiceTagEngineConfig().apply { isDefault = true }
 
 internal val DEFAULT_WORKFLOW_STATE_ENGINE = WorkflowStateEngineConfig().apply { isDefault = true }
 

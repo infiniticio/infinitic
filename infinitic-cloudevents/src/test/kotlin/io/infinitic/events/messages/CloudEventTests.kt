@@ -107,12 +107,12 @@ storage: inMemory
 """
 private val workerConfig = WorkerConfig.fromYaml(serviceConfig)
 private val events = mutableListOf<CloudEvent>()
-private val listener = mockk<CloudEventListener>() {
+private val eventListener = mockk<CloudEventListener> {
   every { onEvent(capture(events)) } just Runs
 }
 private val worker = InfiniticWorker.fromConfig(workerConfig).apply {
-  registerServiceEventListener("ServiceA", 2, listener, null)
-  registerWorkflowEventListener("WorkflowA", 2, listener, null)
+  registerServiceEventListener("ServiceA", 2, eventListener, null)
+  registerWorkflowEventListener("WorkflowA", 2, eventListener, null)
   startAsync()
 }
 

@@ -268,7 +268,7 @@ class TaskExecutor(
     methodParameterTypes: MethodParameterTypes?,
     methodArgs: MethodArgs
   ): Triple<Any, Method, Array<*>> {
-    val registeredServiceExecutor = workerRegistry.getRegisteredServiceExecutor(serviceName)!!
+    val registeredServiceExecutor = workerRegistry.serviceExecutors[serviceName]!!
 
     val serviceInstance = registeredServiceExecutor.factory()
     val serviceMethod = serviceInstance::class.java.getMethodPerNameAndParameters(
@@ -310,7 +310,7 @@ class TaskExecutor(
     val workflowTaskParameters = serviceArgs[0] as WorkflowTaskParameters
 
     // workflow registered in worker
-    val registeredWorkflowExecutor = workerRegistry.getRegisteredWorkflowExecutor(workflowName)!!
+    val registeredWorkflowExecutor = workerRegistry.workflowExecutors[workflowName]!!
     // workflow instance
     val workflowInstance = registeredWorkflowExecutor.getInstance(workflowTaskParameters)
     // method of the workflow instance

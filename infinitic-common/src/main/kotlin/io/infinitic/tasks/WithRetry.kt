@@ -24,6 +24,11 @@ package io.infinitic.tasks
 
 fun interface WithRetry {
   fun getSecondsBeforeRetry(retry: Int, e: Exception): Double?
+
+  companion object {
+    @JvmStatic
+    val NONE: WithTimeout = WithTimeout { null }
+  }
 }
 
 fun WithRetry.getMillisBeforeRetry(retry: Int, e: Exception) =

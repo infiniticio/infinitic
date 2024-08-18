@@ -20,23 +20,19 @@
  *
  * Licensor: infinitic.io
  */
-@file:Suppress("unused")
+package io.infinitic.tasks.tag.config
 
-package io.infinitic.workers.samples
+import io.infinitic.storage.config.StorageConfig
 
-import io.cloudevents.CloudEvent
-import io.infinitic.cloudEvents.CloudEventListener
+data class ServiceTagEngineConfig(
+  var concurrency: Int? = null,
+  var storage: StorageConfig? = null,
+) {
+  var isDefault: Boolean = false
 
-
-internal class ServiceEventListenerImpl : CloudEventListener {
-  override fun onEvent(event: CloudEvent) {
-    // do nothing
+  init {
+    concurrency?.let {
+      require(it >= 0) { "concurrency must be positive" }
+    }
   }
 }
-
-internal class ServiceEventListenerFake : CloudEventListener {
-  override fun onEvent(event: CloudEvent) {
-    // do nothing
-  }
-}
-

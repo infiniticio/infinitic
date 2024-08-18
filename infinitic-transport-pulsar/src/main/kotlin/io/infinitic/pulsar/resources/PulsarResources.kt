@@ -101,7 +101,7 @@ class PulsarResources(
     if (checkConsumer) admin.checkSubscriptionHasConsumerOnce(
         it,
         isPartitioned,
-        MainSubscription(this).name,
+        MainSubscription(this).defaultName,
     )
   }
 

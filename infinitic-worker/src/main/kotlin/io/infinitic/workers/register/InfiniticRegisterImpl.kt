@@ -44,25 +44,22 @@ import io.infinitic.storage.config.StorageConfig
 import io.infinitic.tasks.WithRetry
 import io.infinitic.tasks.WithTimeout
 import io.infinitic.tasks.tag.storage.BinaryTaskTagStorage
+import io.infinitic.workers.InfiniticWorker
 import io.infinitic.workers.config.WorkerConfigInterface
 import io.infinitic.workers.register.config.DEFAULT_CONCURRENCY
 import io.infinitic.workers.register.config.ServiceConfigDefault
-import io.infinitic.workers.register.config.UNDEFINED_TIMEOUT
+import io.infinitic.workers.register.config.UNDEFINED_EVENT_LISTENER
+import io.infinitic.workers.register.config.UNDEFINED_EVENT_LOGGER
 import io.infinitic.workers.register.config.UNDEFINED_WITH_RETRY
 import io.infinitic.workers.register.config.UNDEFINED_WITH_TIMEOUT
 import io.infinitic.workers.register.config.WorkflowConfigDefault
 import io.infinitic.workflows.WorkflowCheckMode
 import io.infinitic.workflows.engine.storage.BinaryWorkflowStateStorage
-import io.infinitic.workflows.tag.config.WorkflowTagEngineConfig
 import io.infinitic.workflows.tag.storage.BinaryWorkflowTagStorage
 import java.security.InvalidParameterException
 import java.util.concurrent.ConcurrentHashMap
 
 class InfiniticRegisterImpl : InfiniticRegister {
-
-  var logName: String? = null
-
-  private val logger by lazy { KotlinLogging.logger(logName ?: this::class.java.name) }
 
   // thread-safe set of all storage instances used
   private val storages = ConcurrentHashMap.newKeySet<StorageConfig>()
@@ -92,129 +89,137 @@ class InfiniticRegisterImpl : InfiniticRegister {
     }
   }
 
-  /** Register task */
+  /** Register Service Executor */
   override fun registerServiceExecutor(
     serviceName: String,
     serviceFactory: ServiceFactory,
-    concurrency: Int?,
+    concurrency: Int,
     withTimeout: WithTimeout?,
     withRetry: WithRetry?,
   ) {
+    val service = ServiceName(serviceName)
+
     val withT = when (withTimeout) {
       null -> null
-      else -> (if (withTimeout == UNDEFINED_WITH_TIMEOUT) null else withTimeout)
-        ?: serviceDefault.timeoutInSeconds?.let { WithTimeout { it } }
+      UNDEFINED_WITH_TIMEOUT -> serviceDefault.withTimeout
+      else -> withTimeout
     }
 
     val withR = when (withRetry) {
       null -> null
-      else -> (if (withRetry == UNDEFINED_WITH_RETRY) null else withRetry)
-        ?: serviceDefault.retry
+      UNDEFINED_WITH_RETRY -> serviceDefault.retry
+      else -> withRetry
     }
 
-    registry.serviceExecutors[ServiceName(serviceName)] = RegisteredServiceExecutor(
-        concurrency ?: serviceDefault.concurrency ?: DEFAULT_CONCURRENCY,
+    registry.serviceExecutors[service] = RegisteredServiceExecutor(
+        concurrency,
         serviceFactory,
         withT,
         withR,
     ).also {
       logger.info {
-        "* service executor".padEnd(25) +
-            ": (concurrency: ${it.concurrency}, class: ${it.factory()::class.java.simpleName})"
+        "* Service Executor".padEnd(25) + ": (" +
+            "concurrency: ${it.concurrency}, " +
+            "class: ${it.factory()::class.java.name}, " +
+            "timeout: ${
+              it.withTimeout?.getTimeoutInSeconds()?.let { String.format("%.2f", it) }
+            }s, " +
+            "withRetry: ${it.withRetry})"
       }
     }
   }
 
+  /** Register Service Tag Engine */
   override fun registerServiceTagEngine(
     serviceName: String,
-    concurrency: Int?,
+    concurrency: Int,
     storageConfig: StorageConfig?
   ) {
     val service = ServiceName(serviceName)
-    val s = storageConfig ?: serviceDefault.tagEngine?.storage ?: defaultStorage
-
-    storages.add(s)
+    val storage = storageConfig ?: serviceDefault.tagEngine?.storage ?: defaultStorage
+    storages.add(storage)
 
     registry.serviceTagEngines[service] = RegisteredServiceTagEngine(
-        concurrency
-          ?: serviceDefault.tagEngine?.concurrency
-          ?: registry.serviceExecutors[service]?.concurrency
-          ?: DEFAULT_CONCURRENCY,
-        BinaryTaskTagStorage(s.keyValue, s.keySet),
+        concurrency,
+        BinaryTaskTagStorage(storage.keyValue, storage.keySet),
     ).also {
       logger.info {
-        "* service tag engine".padEnd(25) +
-            ": (concurrency: ${it.concurrency}, storage: ${s.type}, cache: ${s.cache?.type}, compression: ${s.compression})"
+        "* Service Tag Engine".padEnd(25) + ": (" +
+            "concurrency: ${it.concurrency}, " +
+            "storage: ${storage.type}, " +
+            "cache: ${storage.cache?.type}, " +
+            "compression: ${storage.compression})"
       }
     }
   }
 
+  /** Register Service Event Listener */
   override fun registerServiceEventListener(
     serviceName: String,
-    concurrency: Int?,
-    eventListener: CloudEventListener?,
+    concurrency: Int,
+    eventListener: CloudEventListener,
     subscriptionName: String?,
   ) {
-    val service = ServiceName(serviceName)
-    val defaultConcurrency = registry.serviceExecutors[service]?.concurrency ?: DEFAULT_CONCURRENCY
-    val config =
-        EventListenerConfig(concurrency = concurrency, subscriptionName = subscriptionName) merge
-            serviceDefault.eventListener merge
-            defaultEventListener merge
-            EventListenerConfig(concurrency = defaultConcurrency)
+    val subName = subscriptionName
+      ?: serviceDefault.eventListener?.subscriptionName
+      ?: defaultEventListener?.subscriptionName
 
-    val instance = eventListener ?: config.instance ?: throw InvalidParameterException(
-        "Missing ${CloudEventListener::class.simpleName} for service $serviceName",
-    )
-
-    registry.serviceEventListeners[service] = RegisteredEventListener(
-        instance,
-        config.concurrency!!,
-        config.subscriptionName,
+    registry.serviceEventListeners[ServiceName(serviceName)] = RegisteredEventListener(
+        eventListener,
+        concurrency,
+        subName,
     ).also {
       logger.info {
-        "* service event listener ".padEnd(25) +
-            ": (class: {${it.eventListener::class.java}}, concurrency: ${it.concurrency}), subscription: ${it.subscriptionName}"
+        "* Service Event Listener".padEnd(25) + ": (" +
+            "concurrency: ${it.concurrency}, " +
+            "class: ${it.eventListener::class.java.name}" +
+            (it.subscriptionName?.let { ", subscription: $it" } ?: "") +
+            ")"
       }
     }
   }
 
-  override fun registerServiceLogger(
+  /** Register Service Event Logger */
+  override fun registerServiceEventLogger(
     serviceName: String,
+    concurrency: Int,
     logLevel: LogLevel?,
     loggerName: String?,
     beautify: Boolean?,
-    concurrency: Int?,
     subscriptionName: String?,
   ) {
     val service = ServiceName(serviceName)
-    val defaultConcurrency = registry.serviceExecutors[service]?.concurrency ?: DEFAULT_CONCURRENCY
     val config =
-        EventLoggerConfig(logLevel, loggerName, beautify, concurrency, subscriptionName) merge
+        EventLoggerConfig(concurrency, logLevel, loggerName, beautify, subscriptionName) merge
             serviceDefault.eventLogger merge
             defaultEventLogger merge
-            getDefaultEventLoggerConfig(defaultConcurrency)
+            defaultEventLoggerConfig
 
     registry.serviceEventLoggers[service] = RegisteredEventLogger(
+        config.concurrency!!,
         config.logLevel!!,
         config.loggerName!!,
         config.beautify!!,
-        config.concurrency!!,
         config.subscriptionName,
     ).also {
       logger.info {
-        "* service logger ".padEnd(25) +
-            ": (level: ${it.logLevel}, beautify: ${it.beautify}, concurrency: ${it.concurrency}, subscriptionName: ${it.subscriptionName})"
+        "* Service Event Logger ".padEnd(25) + ": (" +
+            "concurrency: ${it.concurrency}, " +
+            "logLevel: ${it.logLevel}, " +
+            "loggerName: ${it.loggerName}, " +
+            "beautify: ${it.beautify}" +
+            (it.subscriptionName?.let { ", subscription: $it" } ?: "") +
+            ")"
       }
     }
   }
 
 
-  /** Register workflow */
+  /** Register Workflow Executor */
   override fun registerWorkflowExecutor(
     workflowName: String,
     factories: WorkflowFactories,
-    concurrency: Int?,
+    concurrency: Int,
     withTimeout: WithTimeout?,
     withRetry: WithRetry?,
     checkMode: WorkflowCheckMode?,
@@ -223,151 +228,169 @@ class InfiniticRegisterImpl : InfiniticRegister {
 
     val withT = when (withTimeout) {
       null -> null
-      else -> (if (withTimeout == UNDEFINED_WITH_TIMEOUT) null else withTimeout)
-        ?: workflowDefault.timeoutInSeconds?.let { WithTimeout { it } }
+      UNDEFINED_WITH_TIMEOUT -> workflowDefault.withTimeout
+      else -> withTimeout
     }
 
     val withR = when (withRetry) {
       null -> null
-      else -> (if (withRetry == UNDEFINED_WITH_RETRY) null else withRetry)
-        ?: workflowDefault.retry
+      UNDEFINED_WITH_RETRY -> workflowDefault.retry
+      else -> withRetry
     }
 
     registry.workflowExecutors[workflow] = RegisteredWorkflowExecutor(
         workflow,
         factories,
-        concurrency ?: workflowDefault.concurrency ?: DEFAULT_CONCURRENCY,
+        concurrency,
         withT,
         withR,
         checkMode ?: workflowDefault.checkMode,
     ).also {
       logger.info {
-        "* workflow executor".padEnd(25) +
-            ": (concurrency: ${it.concurrency}, classes: ${it.classes.joinToString { it.simpleName }})"
+        "* Workflow Executor".padEnd(25) + ": (" +
+            "concurrency: ${it.concurrency}, " +
+            "classes: ${it.classes.joinToString { it.simpleName }}, " +
+            "timeout: ${
+              it.withTimeout?.getTimeoutInSeconds()?.let { String.format("%.2f", it) }
+            }s, " +
+            "withRetry: ${it.withRetry}" +
+            (it.checkMode?.let { ", checkMode: $it" } ?: "") +
+            ")"
       }
     }
   }
 
+  /** Register Workflow State Engine */
   override fun registerWorkflowStateEngine(
     workflowName: String,
-    concurrency: Int?,
+    concurrency: Int,
     storageConfig: StorageConfig?,
   ) {
     val workflow = WorkflowName(workflowName)
-    val s = storageConfig ?: workflowDefault.stateEngine?.storage ?: defaultStorage
 
-    storages.add(s)
+    val storage = storageConfig ?: workflowDefault.stateEngine?.storage ?: defaultStorage
+    storages.add(storage)
 
     registry.workflowStateEngines[workflow] = RegisteredWorkflowStateEngine(
-        concurrency
-          ?: workflowDefault.stateEngine?.concurrency
-          ?: registry.workflowExecutors[workflow]?.concurrency
-          ?: DEFAULT_CONCURRENCY,
-        BinaryWorkflowStateStorage(s.keyValue),
+        concurrency,
+        BinaryWorkflowStateStorage(storage.keyValue),
     ).also {
       logger.info {
-        "* workflow state engine".padEnd(25) +
-            ": (concurrency: ${it.concurrency}, storage: ${s.type}, cache: ${s.cache?.type}, compression: ${s.compression})"
+        "* Workflow State Engine".padEnd(25) + ": (" +
+            "concurrency: ${it.concurrency}, " +
+            "storage: ${storage.type}, " +
+            "cache: ${storage.cache?.type}, " +
+            "compression: ${storage.compression})"
       }
     }
   }
 
+  /** Register Workflow Tag Engine */
   override fun registerWorkflowTagEngine(
     workflowName: String,
-    concurrency: Int?,
+    concurrency: Int,
     storageConfig: StorageConfig?,
   ) {
-    val workflow = WorkflowName(workflowName)
-    val config = WorkflowTagEngineConfig(concurrency, storageConfig) merge
-        workflowDefault.stateEngine
-
-    val s = storageConfig ?: workflowDefault.stateEngine?.storage ?: defaultStorage
-
-    storages.add(s)
+    val storage = storageConfig ?: workflowDefault.tagEngine?.storage ?: defaultStorage
+    storages.add(storage)
 
     registry.workflowTagEngines[WorkflowName(workflowName)] = RegisteredWorkflowTagEngine(
-        concurrency
-          ?: workflowDefault.tagEngine?.concurrency
-          ?: registry.workflowExecutors[workflow]?.concurrency
-          ?: DEFAULT_CONCURRENCY,
-        BinaryWorkflowTagStorage(s.keyValue, s.keySet),
+        concurrency,
+        BinaryWorkflowTagStorage(storage.keyValue, storage.keySet),
     ).also {
       logger.info {
-        "* workflow tag engine".padEnd(25) +
-            ": (concurrency: ${it.concurrency}, storage: ${s.type}, cache: ${s.cache?.type}, compression: ${s.compression})"
+        "* Workflow Tag Engine".padEnd(25) + ": (" +
+            "concurrency: ${it.concurrency}, " +
+            "storage: ${storage.type}, " +
+            "cache: ${storage.cache?.type}, " +
+            "compression: ${storage.compression})"
       }
     }
   }
 
+  /** Register Workflow Event Listener */
   override fun registerWorkflowEventListener(
     workflowName: String,
-    concurrency: Int?,
-    eventListener: CloudEventListener?,
+    concurrency: Int,
+    eventListener: CloudEventListener,
     subscriptionName: String?,
   ) {
     val workflow = WorkflowName(workflowName)
-    val defaultConcurrency =
-        registry.workflowExecutors[workflow]?.concurrency ?: DEFAULT_CONCURRENCY
-    val config =
-        EventListenerConfig(concurrency = concurrency, subscriptionName = subscriptionName) merge
-            workflowDefault.eventListener merge
-            defaultEventListener merge
-            EventListenerConfig(null, defaultConcurrency, null)
-    val listener = eventListener ?: config.instance ?: throw InvalidParameterException(
-        "Missing ${CloudEventListener::class.simpleName} for workflow $workflowName",
-    )
+    val subName = subscriptionName
+      ?: workflowDefault.eventListener?.subscriptionName
+      ?: defaultEventListener?.subscriptionName
+
     registry.workflowEventListeners[workflow] = RegisteredEventListener(
-        listener,
-        config.concurrency!!,
-        config.subscriptionName,
+        eventListener,
+        concurrency,
+        subName,
     ).also {
       logger.info {
-        "* workflow event listener ".padEnd(25) +
-            ": (class: ${it.eventListener::class.java}, concurrency: ${it.concurrency}, subscription: ${it.subscriptionName})"
+        "* Workflow Event Listener".padEnd(25) + ": (" +
+            "concurrency: ${it.concurrency}, " +
+            "class: ${it.eventListener::class.java.name}" +
+            (it.subscriptionName?.let { ", subscription: $it" } ?: "") +
+            ")"
       }
     }
   }
 
+  /** Register Workflow Event Logger */
   override fun registerWorkflowEventLogger(
     workflowName: String,
+    concurrency: Int,
     logLevel: LogLevel?,
     loggerName: String?,
     beautify: Boolean?,
-    concurrency: Int?,
     subscriptionName: String?,
   ) {
     val workflow = WorkflowName(workflowName)
-    val defaultConcurrency =
-        registry.workflowExecutors[workflow]?.concurrency ?: DEFAULT_CONCURRENCY
     val config =
-        EventLoggerConfig(logLevel, loggerName, beautify, concurrency, subscriptionName) merge
+        EventLoggerConfig(concurrency, logLevel, loggerName, beautify, subscriptionName) merge
             workflowDefault.eventLogger merge
             defaultEventLogger merge
-            getDefaultEventLoggerConfig(defaultConcurrency)
+            defaultEventLoggerConfig
 
     registry.workflowEventLoggers[workflow] = RegisteredEventLogger(
+        concurrency = config.concurrency!!,
         logLevel = config.logLevel!!,
         loggerName = config.loggerName!!,
         beautify = config.beautify!!,
-        concurrency = config.concurrency!!,
         config.subscriptionName,
     ).also {
       logger.info {
-        "* workflow event logger ".padEnd(25) +
-            ": (level: ${it.logLevel}, beautify: ${it.beautify}, concurrency: ${it.concurrency}, subscription: ${it.subscriptionName})"
+        "* Workflow Event Logger ".padEnd(25) + ": (" +
+            "logLevel: ${it.logLevel}, " +
+            "loggerName: ${it.loggerName}, " +
+            "beautify: ${it.beautify}, " +
+            "concurrency: ${it.concurrency}" +
+            (it.subscriptionName?.let { ", subscription: $it" } ?: "") +
+            ")"
       }
     }
   }
 
-  private fun getDefaultEventLoggerConfig(concurrency: Int) = EventLoggerConfig(
+  private fun getDefaultServiceConcurrency(name: String) =
+      registry.serviceExecutors[ServiceName(name)]?.concurrency
+        ?: serviceDefault.concurrency
+        ?: DEFAULT_CONCURRENCY
+
+  private fun getDefaultWorkflowConcurrency(name: String) =
+      registry.workflowExecutors[WorkflowName(name)]?.concurrency
+        ?: workflowDefault.concurrency
+        ?: DEFAULT_CONCURRENCY
+
+  private val defaultEventLoggerConfig = EventLoggerConfig(
+      1,
       LogLevel.INFO,
-      "io.infinitic.workers.events",
+      "io.infinitic.workers.EventLogger",
       true,
-      concurrency,
       null,
   )
 
   companion object {
+    private val logger by lazy { KotlinLogging.logger(InfiniticWorker::class.java.name) }
+
     /** Create [InfiniticRegisterImpl] from config */
     @JvmStatic
     fun fromConfig(workerConfig: WorkerConfigInterface): InfiniticRegisterImpl =
@@ -377,80 +400,106 @@ class InfiniticRegisterImpl : InfiniticRegister {
           workerConfig.workflowDefault?.let { workflowDefault = it }
           workerConfig.eventListener?.let { defaultEventListener = it }
 
-          for (w in workerConfig.workflows) {
-            logger.info { "Workflow ${w.name}:" }
+          for (workflowConfig in workerConfig.workflows) with(workflowConfig) {
+            logger.info { "Workflow $name:" }
 
             // Workflow Executors are registered first, as it defines some default values for the others
-            if (w.allClasses.isNotEmpty()) {
+            if (allClasses.isNotEmpty()) {
               registerWorkflowExecutor(
-                  w.name,
-                  w.allClasses.map { { it.getDeclaredConstructor().newInstance() } },
-                  w.concurrency,
-                  w.timeoutInSeconds?.let { if (it == UNDEFINED_TIMEOUT) UNDEFINED_WITH_TIMEOUT else WithTimeout { it } },
-                  w.retry?.let { if (it.isDefined) it else UNDEFINED_WITH_RETRY },
-                  w.checkMode,
+                  name,
+                  allClasses.map { { it.getDeclaredConstructor().newInstance() } },
+                  concurrency ?: getDefaultWorkflowConcurrency(name),
+                  withTimeout,
+                  withRetry,
+                  checkMode,
               )
             }
             // Workflow Tag Engine
-            w.tagEngine?.let {
+            tagEngine?.merge(workflowDefault.tagEngine)?.let {
               registerWorkflowTagEngine(
-                  w.name,
-                  it.concurrency,
+                  name,
+                  it.concurrency ?: getDefaultWorkflowConcurrency(name),
                   it.storage,
               )
             }
             // Workflow State Engine
-            w.stateEngine?.let {
+            stateEngine?.merge(workflowDefault.stateEngine)?.let {
               registerWorkflowStateEngine(
-                  w.name,
-                  it.concurrency,
+                  name,
+                  it.concurrency ?: getDefaultWorkflowConcurrency(name),
                   it.storage,
               )
             }
             // Workflow Event Listener
-            w.eventListener?.let {
-              val listener = if (it.isDefined) it else null
-              if (listener != null || defaultEventListener != null) {
-                registerWorkflowEventListener(
-                    w.name,
-                    listener?.concurrency,
-                    listener?.`class`?.let { listener.instance },
-                    listener?.subscriptionName,
+            eventListener?.merge(workflowDefault.eventListener)?.merge(defaultEventListener)?.let {
+              if (it != UNDEFINED_EVENT_LISTENER) when (val instance = it.instance) {
+                null -> throw InvalidParameterException("Missing declaration of " + CloudEventListener::class.java.name)
+                else -> registerWorkflowEventListener(
+                    name,
+                    it.concurrency ?: getDefaultWorkflowConcurrency(name),
+                    instance,
+                    it.subscriptionName,
+                )
+              }
+            }
+            // Workflow Event Logger
+            eventLogger?.merge(workflowDefault.eventLogger)?.merge(defaultEventLogger)?.let {
+              if (it != UNDEFINED_EVENT_LOGGER) {
+                registerWorkflowEventLogger(
+                    name,
+                    it.concurrency ?: getDefaultWorkflowConcurrency(name),
+                    it.logLevel,
+                    it.loggerName,
+                    it.beautify,
+                    it.subscriptionName,
                 )
               }
             }
           }
 
-          for (s in workerConfig.services) {
-            logger.info { "Service ${s.name}:" }
+          for (service in workerConfig.services) with(service) {
+            logger.info { "Service $name:" }
 
             // Service Executors are registered first, as it defines some default values for the others
-            s.`class`?.let {
+            `class`?.let {
               registerServiceExecutor(
-                  s.name,
-                  { s.getInstance() },
-                  s.concurrency,
-                  s.timeoutInSeconds?.let { if (it == UNDEFINED_TIMEOUT) UNDEFINED_WITH_TIMEOUT else WithTimeout { it } },
-                  s.retry?.let { if (it.isDefined) it else UNDEFINED_WITH_RETRY },
+                  name,
+                  { getInstance() },
+                  concurrency ?: getDefaultServiceConcurrency(name),
+                  withTimeout,
+                  withRetry,
               )
             }
             // Service Tag Engine
-            s.tagEngine?.let {
+            tagEngine?.merge(serviceDefault.tagEngine)?.let {
               registerServiceTagEngine(
-                  s.name,
-                  it.concurrency,
+                  name,
+                  it.concurrency ?: getDefaultServiceConcurrency(name),
                   it.storage,
               )
             }
             // Service Event Listener
-            s.eventListener?.let {
-              val listener = if (it.isDefined) it else null
-              if (listener != null || defaultEventListener != null) {
-                registerServiceEventListener(
-                    s.name,
-                    listener?.concurrency,
-                    listener?.`class`?.let { listener.instance },
-                    listener?.subscriptionName,
+            eventListener?.merge(serviceDefault.eventListener)?.merge(defaultEventListener)?.let {
+              if (it != UNDEFINED_EVENT_LISTENER) when (val instance = it.instance) {
+                null -> throw InvalidParameterException("Missing declaration of " + CloudEventListener::class.java.name)
+                else -> registerServiceEventListener(
+                    name,
+                    it.concurrency ?: getDefaultServiceConcurrency(name),
+                    instance,
+                    it.subscriptionName,
+                )
+              }
+            }
+            // Service Event Logger
+            eventLogger?.merge(serviceDefault.eventLogger)?.merge(defaultEventLogger)?.let {
+              if (it != UNDEFINED_EVENT_LOGGER) {
+                registerServiceEventLogger(
+                    name,
+                    it.concurrency ?: getDefaultServiceConcurrency(name),
+                    it.logLevel,
+                    it.loggerName,
+                    it.beautify,
+                    it.subscriptionName,
                 )
               }
             }

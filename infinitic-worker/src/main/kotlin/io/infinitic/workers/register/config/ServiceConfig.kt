@@ -27,7 +27,9 @@ import io.infinitic.common.utils.isImplementationOf
 import io.infinitic.common.workers.config.RetryPolicy
 import io.infinitic.events.config.EventListenerConfig
 import io.infinitic.events.config.EventLoggerConfig
-import io.infinitic.tasks.tag.config.ServiceTagEngine
+import io.infinitic.tasks.WithRetry
+import io.infinitic.tasks.WithTimeout
+import io.infinitic.tasks.tag.config.ServiceTagEngineConfig
 
 @Suppress("unused")
 data class ServiceConfig(
@@ -36,11 +38,23 @@ data class ServiceConfig(
   var concurrency: Int? = null,
   var timeoutInSeconds: Double? = UNDEFINED_TIMEOUT,
   var retry: RetryPolicy? = UNDEFINED_RETRY,
-  var tagEngine: ServiceTagEngine? = DEFAULT_SERVICE_TAG_ENGINE,
+  var tagEngine: ServiceTagEngineConfig? = DEFAULT_SERVICE_TAG_ENGINE,
   var eventListener: EventListenerConfig? = UNDEFINED_EVENT_LISTENER,
   var eventLogger: EventLoggerConfig? = UNDEFINED_EVENT_LOGGER,
 ) {
   fun getInstance(): Any = `class`!!.getInstance().getOrThrow()
+
+  val withTimeout: WithTimeout? = when (timeoutInSeconds) {
+    null -> null
+    UNDEFINED_TIMEOUT -> UNDEFINED_WITH_TIMEOUT
+    else -> WithTimeout { timeoutInSeconds }
+  }
+
+  val withRetry: WithRetry? = when (retry) {
+    null -> null
+    UNDEFINED_RETRY -> UNDEFINED_WITH_RETRY
+    else -> retry
+  }
 
   init {
     require(name.isNotEmpty()) { "'${::name.name}' can not be empty" }
@@ -98,7 +112,7 @@ data class ServiceConfig(
     fun retry(retry: RetryPolicy) =
         apply { this.retry = retry }
 
-    fun tagEngine(tagEngine: ServiceTagEngine) =
+    fun tagEngine(tagEngine: ServiceTagEngineConfig) =
         apply { this.tagEngine = tagEngine }
 
     fun eventListener(eventListener: EventListenerConfig) =
