@@ -170,5 +170,4 @@ enum class CloudEventContext {
   abstract fun Message.subject(): String
   abstract fun Message.source(prefix: String): URI
   abstract fun Message.dataBytes(): ByteArray
-
 }

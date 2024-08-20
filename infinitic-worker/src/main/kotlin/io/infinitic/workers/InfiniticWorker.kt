@@ -53,6 +53,8 @@ import io.infinitic.common.workflows.data.workflows.WorkflowName
 import io.infinitic.common.workflows.engine.messages.WorkflowCmdMessage
 import io.infinitic.common.workflows.engine.storage.WorkflowStateStorage
 import io.infinitic.common.workflows.tags.storage.WorkflowTagStorage
+import io.infinitic.events.logServiceCloudEvent
+import io.infinitic.events.logWorkflowCloudEvent
 import io.infinitic.events.toServiceCloudEvent
 import io.infinitic.events.toWorkflowCloudEvent
 import io.infinitic.pulsar.PulsarInfiniticConsumerAsync
@@ -283,9 +285,12 @@ class InfiniticWorker private constructor(
             registeredEventLogger.subscriptionName,
             SubscriptionType.EVENT_LOGGER,
         ) { message, publishedAt ->
-          message.toWorkflowCloudEvent(publishedAt, source)?.let {
-            registeredEventLogger.log(it)
-          } ?: Unit
+          message.logWorkflowCloudEvent(
+              publishedAt,
+              source,
+              registeredEventLogger.beautify,
+              registeredEventLogger.log,
+          )
         }
       }
 
@@ -311,8 +316,12 @@ class InfiniticWorker private constructor(
             registeredEventLogger.subscriptionName,
             SubscriptionType.EVENT_LOGGER,
         ) { message: Message, publishedAt: MillisInstant ->
-          message.toServiceCloudEvent(publishedAt, source)?.let { registeredEventLogger.log(it) }
-            ?: Unit
+          message.logServiceCloudEvent(
+              publishedAt,
+              source,
+              registeredEventLogger.beautify,
+              registeredEventLogger.log,
+          )
         }
       }
     }
@@ -326,7 +335,6 @@ class InfiniticWorker private constructor(
 
     return CompletableFuture.supplyAsync { consumerAsync.join() }
   }
-
 
 
   private fun CoroutineScope.startWorkflowTagEngine(

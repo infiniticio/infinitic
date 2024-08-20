@@ -22,9 +22,6 @@
  */
 package io.infinitic.common.workers.registry
 
-import com.fasterxml.jackson.databind.ObjectMapper
-import io.cloudevents.CloudEvent
-import io.cloudevents.jackson.JsonFormat
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.infinitic.logs.LogLevel
 
@@ -36,21 +33,8 @@ data class RegisteredEventLogger(
   val subscriptionName: String?
 ) {
   private val logger = KotlinLogging.logger(loggerName)
-  private val reader = ObjectMapper().reader()
-  private val writer = when (beautify) {
-    true -> ObjectMapper().writerWithDefaultPrettyPrinter()
-    false -> ObjectMapper().writer()
-  }
-
-  val log = { cloudEvent: CloudEvent -> logFn { cloudEvent.toJsonString() } }
-
-  private fun CloudEvent.toJsonString(): String {
-    val jsonStr = String(JsonFormat().serialize(this))
-
-    return writer.writeValueAsString(reader.readTree(jsonStr))
-  }
-
-  private val logFn: (() -> Any?) -> Unit by lazy {
+  
+  val log: (() -> Any?) -> Unit by lazy {
     when (logLevel) {
       LogLevel.TRACE -> logger::trace
       LogLevel.DEBUG -> logger::debug
