@@ -302,6 +302,23 @@ services:
           register.registry.serviceEventListeners[serviceName] shouldBe null
         }
 
+        "if Event Listener class is not defined, it should throw an exception" {
+          val e = shouldThrow<InvalidParameterException> {
+            val config = WorkerConfig.fromYaml(
+                yaml,
+                """
+services:
+  - name: $serviceName
+    eventListener:
+      concurrency: 100
+              """,
+            )
+            InfiniticRegisterImpl.fromConfig(config)
+          }
+
+          e.message.shouldContain("CloudEventListener")
+        }
+
         "Explicit service eventLogger setting should not be overridden by serviceDefault" {
           val subscriptionName = UUID.randomUUID().toString()
           val config = WorkerConfig.fromYaml(
@@ -926,148 +943,6 @@ workflows:
           engine!!.concurrency shouldBe 5
         }
 
-
-        "There is no default Service Event Listener" {
-          val config = WorkerConfig.fromYaml(
-              yaml,
-              """
-services:
-  - name: $serviceName
-    class: $serviceImplName
-              """,
-          )
-          val register = InfiniticRegisterImpl.fromConfig(config)
-          val listener = register.registry.serviceEventListeners[serviceName]
-
-          listener shouldBe null
-        }
-
-        "Explicit Service Event Listener is not superseded by default" {
-          val config = WorkerConfig.fromYaml(
-              yaml,
-              """
-eventListener:
-  class: $eventListenerImpl
-  concurrency: 1
-services:
-  - name: $serviceName
-    class: $serviceImplName
-    concurrency: 10
-    eventListener:
-      class: ${EventListenerImpl::class.java.name}
-      concurrency: 100
-              """,
-          )
-
-          val register = InfiniticRegisterImpl.fromConfig(config)
-          val listener = register.registry.serviceEventListeners[serviceName]!!
-
-          listener.eventListener.shouldBeInstanceOf<EventListenerImpl>()
-          listener.concurrency shouldBe 100
-        }
-
-        "Service Event Listener concurrency is used when set" {
-          val config = WorkerConfig.fromYaml(
-              yaml,
-              """
-eventListener:
-  class: $eventListenerImpl
-  concurrency: 1
-services:
-  - name: $serviceName
-    class: $serviceImplName
-    concurrency: 10
-    eventListener:
-      concurrency: 100
-              """,
-          )
-
-          val register = InfiniticRegisterImpl.fromConfig(config)
-          val listener = register.registry.serviceEventListeners[serviceName]!!
-
-          listener.concurrency shouldBe 100
-        }
-
-        "Service Event Listener concurrency should inherit from Service" {
-          val config = WorkerConfig.fromYaml(
-              yaml,
-              """
-services:
-  - name: $serviceName
-    class: $serviceImplName
-    concurrency: 10
-    eventListener:
-      class: $eventListenerImpl
-              """,
-          )
-
-          val register = InfiniticRegisterImpl.fromConfig(config)
-          val listener = register.registry.serviceEventListeners[serviceName]!!
-
-          listener.concurrency shouldBe 10
-        }
-
-        "Service Event Listener concurrency should inherit from default Event Listener if set" {
-          val config = WorkerConfig.fromYaml(
-              yaml,
-              """
-eventListener:
-  class: io.infinitic.workers.samples.EventListenerImpl
-  concurrency: 10
-services:
-  - name: $serviceName
-    class: $serviceImplName
-    concurrency: 1
-              """,
-          )
-
-          val register = InfiniticRegisterImpl.fromConfig(config)
-          val listener = register.registry.serviceEventListeners[serviceName]!!
-          listener.concurrency shouldBe 10
-          listener.eventListener.shouldBeInstanceOf<EventListenerImpl>()
-        }
-
-        "if Service Event Listener concurrency is  defined, it should be used" {
-          val config = WorkerConfig.fromYaml(
-              yaml,
-              """
-eventListener:
-  class: io.infinitic.workers.samples.EventListenerImpl
-services:
-  - name: $serviceName
-    class: $serviceImplName
-    concurrency: 10
-    eventListener:
-      concurrency: 100
-              """,
-          )
-
-          val register = InfiniticRegisterImpl.fromConfig(config)
-          val listener = register.registry.serviceEventListeners[serviceName]!!
-
-          listener.concurrency shouldBe 100
-          listener.eventListener.shouldBeInstanceOf<EventListenerImpl>()
-        }
-
-        "if Event Listener class is not defined, it should throw an exception" {
-          val e = shouldThrow<InvalidParameterException> {
-            val config = WorkerConfig.fromYaml(
-                yaml,
-                """
-services:
-  - name: $serviceName
-    class: $serviceImplName
-    concurrency: 10
-    eventListener:
-      concurrency: 100
-              """,
-            )
-            InfiniticRegisterImpl.fromConfig(config)
-          }
-
-          e.message.shouldContain("CloudEventListener")
-        }
-
         "serviceDefault is used if NOT present" {
           val concurrency = 10
           val timeoutInSeconds = 400.0
@@ -1093,36 +968,6 @@ services:
           service?.concurrency shouldBe concurrency
           service?.withTimeout?.getTimeoutInSeconds() shouldBe timeoutInSeconds
           service?.withRetry?.getSecondsBeforeRetry(maxRetries, Exception()) shouldBe null
-        }
-
-        "serviceDefault is NOT used if explicit configuration is present" {
-          val concurrency = 10
-          val timeoutInSeconds = 400.0
-          val maxRetries = 2
-          val config = WorkerConfig.fromYaml(
-              yaml,
-              """
-serviceDefault:
-  concurrency: $concurrency
-  timeoutInSeconds: $timeoutInSeconds
-  retry:
-    maximumRetries: $maxRetries
-services:
-  - name: $serviceName
-    class: $serviceImplName
-    concurrency: 7
-    timeoutInSeconds: 100
-    retry:
-       maximumRetries: 1
-              """,
-          )
-          val register = InfiniticRegisterImpl.fromConfig(config)
-          val service = register.registry.serviceExecutors[serviceName]
-
-          service shouldNotBe null
-          service?.concurrency shouldBe 7
-          service?.withTimeout?.getTimeoutInSeconds() shouldBe 100.0
-          service?.withRetry?.getSecondsBeforeRetry(1, Exception()) shouldBe null
         }
 
         "serviceDefault is used, with a manual registration" {
