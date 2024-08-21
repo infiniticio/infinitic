@@ -28,7 +28,6 @@ import io.infinitic.common.data.MillisInstant
 import io.infinitic.common.messages.Message
 import io.infinitic.common.transport.ClientTopic
 import io.infinitic.common.transport.EventListenerSubscription
-import io.infinitic.common.transport.EventLoggerSubscription
 import io.infinitic.common.transport.InfiniticConsumerAsync
 import io.infinitic.common.transport.MainSubscription
 import io.infinitic.common.transport.RetryServiceExecutorTopic
@@ -148,23 +147,18 @@ class PulsarInfiniticConsumerAsync(
     get() = when (this) {
       is MainSubscription -> defaultName
       is EventListenerSubscription -> name ?: defaultName
-      is EventLoggerSubscription -> name ?: defaultName
     }
 
   private val Subscription<*>.nameDLQ
     get() = when (this) {
       is MainSubscription -> defaultNameDLQ
       is EventListenerSubscription -> name?.let { "$it-dlq" } ?: defaultNameDLQ
-      is EventLoggerSubscription -> name?.let { "$it-dlq" } ?: defaultNameDLQ
     }
 
   private val Subscription<*>.initialPosition
     get() = when (this) {
       is MainSubscription -> defaultInitialPosition
       is EventListenerSubscription -> name?.let { SubscriptionInitialPosition.Earliest }
-        ?: defaultInitialPosition
-
-      is EventLoggerSubscription -> name?.let { SubscriptionInitialPosition.Earliest }
         ?: defaultInitialPosition
     }
 

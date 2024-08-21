@@ -92,9 +92,8 @@ data class TransportConfig(
         Transport.inMemory -> {
           val mainChannels = InMemoryChannels()
           val eventListenerChannels = InMemoryChannels()
-          val eventLoggerChannels = InMemoryChannels()
-          val consumerAsync = InMemoryInfiniticConsumerAsync(mainChannels, eventListenerChannels, eventLoggerChannels)
-          val producerAsync = InMemoryInfiniticProducerAsync(mainChannels, eventListenerChannels, eventLoggerChannels)
+          val consumerAsync = InMemoryInfiniticConsumerAsync(mainChannels, eventListenerChannels)
+          val producerAsync = InMemoryInfiniticProducerAsync(mainChannels, eventListenerChannels)
           Pair(consumerAsync, producerAsync)
         }
       }

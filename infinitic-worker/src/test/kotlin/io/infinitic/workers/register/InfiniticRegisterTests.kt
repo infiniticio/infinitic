@@ -5,7 +5,6 @@ import io.infinitic.common.tasks.data.ServiceName
 import io.infinitic.common.workers.config.ExponentialBackoffRetryPolicy
 import io.infinitic.common.workers.registry.RegisteredServiceTagEngine
 import io.infinitic.common.workflows.data.workflows.WorkflowName
-import io.infinitic.logs.LogLevel
 import io.infinitic.workers.config.WorkerConfig
 import io.infinitic.workers.samples.EventListenerFake
 import io.infinitic.workers.samples.EventListenerImpl
@@ -39,7 +38,7 @@ internal class InfiniticRegisterTests :
         val serviceImplName = ServiceAImpl::class.java.name
         val workflowName = WorkflowName(WorkflowA::class.java.name)
         val workflowImplName = WorkflowAImpl::class.java.name
-        val eventListenerImpl = EventListenerImpl::class.java.name
+        val eventListenerImplName = EventListenerImpl::class.java.name
 
         "checking default service settings" {
           val config = WorkerConfig.fromYaml(
@@ -61,7 +60,6 @@ services:
             concurrency shouldBe 1
           }
           register.registry.serviceEventListeners[serviceName] shouldBe null
-          register.registry.serviceEventLoggers[serviceName] shouldBe null
         }
 
         "checking default service settings with explicit concurrency" {
@@ -102,9 +100,7 @@ services:
     tagEngine:
       concurrency: 42
     eventListener:
-      class: ${EventListenerImpl::class.java.name}
-    eventLogger:
-      logLevel: WARN
+      class: $eventListenerImplName
 """,
           )
           val register = InfiniticRegisterImpl.fromConfig(config)
@@ -120,11 +116,6 @@ services:
             this shouldNotBe null
             this!!.concurrency shouldBe concurrency
           }
-          with(register.registry.serviceEventLoggers[serviceName]) {
-            this shouldNotBe null
-            this!!.concurrency shouldBe concurrency
-            this.logLevel shouldBe LogLevel.WARN
-          }
         }
 
         "Get service settings from serviceDefault" {
@@ -139,9 +130,7 @@ serviceDefault:
   retry:
     minimumSeconds: ${withRetry.minimumSeconds}
   eventListener:
-    class: ${EventListenerImpl::class.java.name}
-  eventLogger:
-    logLevel: WARN
+    class: $eventListenerImplName
 services:
   - name:  $serviceName
     class: $serviceImplName
@@ -157,11 +146,6 @@ services:
           with(register.registry.serviceEventListeners[serviceName]) {
             this shouldNotBe null
             this!!.concurrency shouldBe concurrency
-          }
-          with(register.registry.serviceEventLoggers[serviceName]) {
-            this shouldNotBe null
-            this!!.concurrency shouldBe concurrency
-            this.logLevel shouldBe LogLevel.WARN
           }
         }
 
@@ -274,7 +258,7 @@ services:
     - name:  $serviceName
       class: $serviceImplName
       eventListener:
-        class: ${EventListenerImpl::class.java.name}
+        class: $eventListenerImplName
 """,
           )
           val register = InfiniticRegisterImpl.fromConfig(config)
@@ -291,7 +275,7 @@ services:
               """
 serviceDefault:
   eventListener:
-    class: ${EventListenerImpl::class.java.name}
+    class: $eventListenerImplName
 services:
   - name: $serviceName
     class: $serviceImplName
@@ -319,53 +303,12 @@ services:
           e.message.shouldContain("CloudEventListener")
         }
 
-        "Explicit service eventLogger setting should not be overridden by serviceDefault" {
-          val subscriptionName = UUID.randomUUID().toString()
-          val config = WorkerConfig.fromYaml(
-              yaml,
-              """
-serviceDefault:
-  eventLogger:
-    logLevel: WARN
-    subscriptionName: "$subscriptionName"
-services:
-    - name:  $serviceName
-      class: $serviceImplName
-      eventLogger:
-        logLevel: OFF
-""",
-          )
-          val register = InfiniticRegisterImpl.fromConfig(config)
-          with(register.registry.serviceEventLoggers[serviceName]) {
-            this shouldNotBe null
-            this!!.logLevel shouldBe LogLevel.OFF
-            this.subscriptionName shouldBe subscriptionName
-          }
-        }
-
-        "Explicit null service eventLogger setting should not be overridden by serviceDefault" {
-          val config = WorkerConfig.fromYaml(
-              yaml,
-              """
-serviceDefault:
-  eventLogger:
-    logLevel: WARN
-services:
-  - name: $serviceName
-    class: $serviceImplName
-    eventLogger: null
-""",
-          )
-          val register = InfiniticRegisterImpl.fromConfig(config)
-          register.registry.serviceEventLoggers[serviceName] shouldBe null
-        }
-
         "Get service eventListener settings from eventListener default" {
           val config = WorkerConfig.fromYaml(
               yaml,
               """
 eventListener:
-  class: ${EventListenerImpl::class.java.name}
+  class: $eventListenerImplName
 services:
   - name:  $serviceName
 """,
@@ -382,7 +325,7 @@ services:
               yaml,
               """
 eventListener:
-  class: ${EventListenerImpl::class.java.name}
+  class: $eventListenerImplName
 services:
   - name:  $serviceName
     eventListener:
@@ -402,7 +345,7 @@ services:
               yaml,
               """
 eventListener:
-  class: ${EventListenerImpl::class.java.name}
+  class: $eventListenerImplName
 services:
   - name:  $serviceName
     eventListener: null
@@ -411,59 +354,6 @@ services:
           println(config)
           val register = InfiniticRegisterImpl.fromConfig(config)
           register.registry.serviceEventListeners[serviceName] shouldBe null
-        }
-
-        "Get service eventLogger settings from eventLogger default" {
-          val config = WorkerConfig.fromYaml(
-              yaml,
-              """
-eventLogger:
-  logLevel: WARN
-services:
-  - name:  $serviceName
-""",
-          )
-          val register = InfiniticRegisterImpl.fromConfig(config)
-          with(register.registry.serviceEventLoggers[serviceName]) {
-            this shouldNotBe null
-            this!!.logLevel shouldBe LogLevel.WARN
-          }
-        }
-
-        "Explicit service eventLogger setting should not be overridden by eventLogger default" {
-          val config = WorkerConfig.fromYaml(
-              yaml,
-              """
-eventLogger:
-  logLevel: WARN
-services:
-  - name:  $serviceName
-    eventLogger:
-      logLevel: INFO
-""",
-          )
-          println(config)
-          val register = InfiniticRegisterImpl.fromConfig(config)
-          with(register.registry.serviceEventLoggers[serviceName]) {
-            this shouldNotBe null
-            this!!.logLevel shouldBe LogLevel.INFO
-          }
-        }
-
-        "Explicit null service eventLogger setting should not be overridden by eventLogger default" {
-          val config = WorkerConfig.fromYaml(
-              yaml,
-              """
-eventLogger:
-  logLevel: WARN
-services:
-  - name:  $serviceName
-    eventLogger: null
-""",
-          )
-          println(config)
-          val register = InfiniticRegisterImpl.fromConfig(config)
-          register.registry.serviceEventLoggers[serviceName] shouldBe null
         }
 
         "checking default workflow settings" {
@@ -491,9 +381,6 @@ workflows:
             this!!.concurrency shouldBe 1
           }
           with(register.registry.workflowEventListeners[workflowName]) {
-            this shouldBe null
-          }
-          with(register.registry.workflowEventLoggers[workflowName]) {
             this shouldBe null
           }
         }
@@ -536,9 +423,7 @@ workflows:
     retry:
       minimumSeconds: ${withRetry.minimumSeconds}
     eventListener:
-      class: ${EventListenerImpl::class.java.name}
-    eventLogger:
-      logLevel: WARN
+      class: $eventListenerImplName
 """,
           )
           val register = InfiniticRegisterImpl.fromConfig(config)
@@ -557,9 +442,6 @@ workflows:
           with(register.registry.workflowEventListeners[workflowName]!!) {
             eventListener::class shouldBe EventListenerImpl::class
           }
-          with(register.registry.workflowEventLoggers[workflowName]!!) {
-            logLevel shouldBe LogLevel.WARN
-          }
         }
 
         "Get workflow settings from workflowDefault" {
@@ -575,9 +457,7 @@ workflowDefault:
   retry:
     minimumSeconds: ${withRetry.minimumSeconds}
   eventListener:
-    class: ${EventListenerImpl::class.java.name}
-  eventLogger:
-    logLevel: WARN
+    class: $eventListenerImplName
 workflows:
   - name: $workflowName
     class: $workflowImplName
@@ -598,9 +478,6 @@ workflows:
           }
           with(register.registry.workflowEventListeners[workflowName]!!) {
             eventListener::class shouldBe EventListenerImpl::class
-          }
-          with(register.registry.workflowEventLoggers[workflowName]!!) {
-            logLevel shouldBe LogLevel.WARN
           }
         }
 
@@ -711,7 +588,7 @@ workflows:
   - name: $workflowName
     class: $workflowImplName
     eventListener:
-      class: ${EventListenerImpl::class.java.name}
+      class: $eventListenerImplName
 """,
           )
           val register = InfiniticRegisterImpl.fromConfig(config)
@@ -728,7 +605,7 @@ workflows:
               """
 workflowDefault:
   eventListener:
-    class: ${EventListenerImpl::class.java.name}
+    class: $eventListenerImplName
 workflows:
   - name: $workflowName
     class: $workflowImplName
@@ -737,47 +614,6 @@ workflows:
           )
           val register = InfiniticRegisterImpl.fromConfig(config)
           register.registry.workflowEventListeners[workflowName] shouldBe null
-        }
-
-        "Explicit workflow eventLogger setting should not be overridden by workflowDefault" {
-          val subscriptionName = UUID.randomUUID().toString()
-          val config = WorkerConfig.fromYaml(
-              yaml,
-              """
-workflowDefault:
-  eventLogger:
-    logLevel: WARN
-    subscriptionName: "$subscriptionName"
-workflows:
-  - name: $workflowName
-    class: $workflowImplName
-    eventLogger:
-      logLevel: OFF
-""",
-          )
-          val register = InfiniticRegisterImpl.fromConfig(config)
-          with(register.registry.workflowEventLoggers[workflowName]) {
-            this shouldNotBe null
-            this!!.logLevel shouldBe LogLevel.OFF
-            this.subscriptionName shouldBe subscriptionName
-          }
-        }
-
-        "Explicit null workflow eventLogger setting should not be overridden by workflowDefault" {
-          val config = WorkerConfig.fromYaml(
-              yaml,
-              """
-workflowDefault:
-  eventLogger:
-    logLevel: WARN
-workflows:
-  - name: $workflowName
-    class: $workflowImplName
-    eventLogger: null
-""",
-          )
-          val register = InfiniticRegisterImpl.fromConfig(config)
-          register.registry.workflowEventLoggers[workflowName] shouldBe null
         }
 
         "service executor do not retry if maximumRetries = 0" {

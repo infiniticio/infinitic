@@ -27,7 +27,6 @@ import io.infinitic.common.utils.isImplementationOf
 import io.infinitic.common.workers.config.RetryPolicy
 import io.infinitic.common.workflows.emptyWorkflowContext
 import io.infinitic.events.config.EventListenerConfig
-import io.infinitic.events.config.EventLoggerConfig
 import io.infinitic.tasks.WithRetry
 import io.infinitic.tasks.WithTimeout
 import io.infinitic.workflows.Workflow
@@ -48,7 +47,6 @@ data class WorkflowConfig(
   var tagEngine: WorkflowTagEngineConfig? = DEFAULT_WORKFLOW_TAG_ENGINE,
   var stateEngine: WorkflowStateEngineConfig? = DEFAULT_WORKFLOW_STATE_ENGINE,
   var eventListener: EventListenerConfig? = UNDEFINED_EVENT_LISTENER,
-  val eventLogger: EventLoggerConfig? = UNDEFINED_EVENT_LOGGER
 ) {
   val allClasses = mutableListOf<Class<out WorkflowBase>>()
 
@@ -113,7 +111,6 @@ data class WorkflowConfig(
     private var tagEngine = default.tagEngine
     private var stateEngine = default.stateEngine
     private var eventListener = default.eventListener
-    private var eventLogger = default.eventLogger
 
     fun name(name: String) =
         apply { this.name = name }
@@ -145,9 +142,6 @@ data class WorkflowConfig(
     fun eventListener(eventListener: EventListenerConfig) =
         apply { this.eventListener = eventListener }
 
-    fun eventLogger(eventLogger: EventLoggerConfig) =
-        apply { this.eventLogger = eventLogger }
-
     fun build() = WorkflowConfig(
         name.noUnset,
         `class`,
@@ -159,7 +153,6 @@ data class WorkflowConfig(
         tagEngine,
         stateEngine,
         eventListener,
-        eventLogger,
     )
   }
 

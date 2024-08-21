@@ -27,12 +27,11 @@ import io.infinitic.common.messages.Message
 enum class SubscriptionType {
   MAIN,
   EVENT_LISTENER,
-  EVENT_LOGGER
 }
 
 
-fun <S : Message> SubscriptionType.create(topic: Topic<S>, subscriptionName: String?) = when (this) {
-  SubscriptionType.MAIN -> MainSubscription(topic)
-  SubscriptionType.EVENT_LISTENER -> EventListenerSubscription(topic, subscriptionName)
-  SubscriptionType.EVENT_LOGGER -> EventLoggerSubscription(topic, subscriptionName)
-}
+fun <S : Message> SubscriptionType.create(topic: Topic<S>, subscriptionName: String?) =
+    when (this) {
+      SubscriptionType.MAIN -> MainSubscription(topic)
+      SubscriptionType.EVENT_LISTENER -> EventListenerSubscription(topic, subscriptionName)
+    }

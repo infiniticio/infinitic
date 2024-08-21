@@ -27,11 +27,10 @@ import io.infinitic.common.workers.registry.ServiceFactory
 import io.infinitic.common.workers.registry.WorkerRegistry
 import io.infinitic.common.workers.registry.WorkflowFactories
 import io.infinitic.events.config.EventListenerConfig
-import io.infinitic.events.config.EventLoggerConfig
-import io.infinitic.logs.LogLevel
 import io.infinitic.storage.config.StorageConfig
 import io.infinitic.tasks.WithRetry
 import io.infinitic.tasks.WithTimeout
+import io.infinitic.workers.register.config.LogsConfig
 import io.infinitic.workers.register.config.ServiceConfigDefault
 import io.infinitic.workers.register.config.UNDEFINED_WITH_RETRY
 import io.infinitic.workers.register.config.UNDEFINED_WITH_TIMEOUT
@@ -45,6 +44,11 @@ interface InfiniticRegister : AutoCloseable {
   val registry: WorkerRegistry
 
   /**
+   * Logs configuration
+   */
+  var logsConfig: LogsConfig
+
+  /**
    * Default value of Storage
    */
   var defaultStorage: StorageConfig
@@ -53,11 +57,6 @@ interface InfiniticRegister : AutoCloseable {
    * Default value of EventListener
    */
   var defaultEventListener: EventListenerConfig?
-
-  /**
-   * Default value of Logger
-   */
-  var defaultEventLogger: EventLoggerConfig?
 
   /**
    * Service default values
@@ -103,18 +102,6 @@ interface InfiniticRegister : AutoCloseable {
     serviceName: String,
     concurrency: Int,
     eventListener: CloudEventListener,
-    subscriptionName: String? = null,
-  )
-
-  /** Register service logger */
-  @Suppress("OVERLOADS_INTERFACE")
-  @JvmOverloads
-  fun registerServiceEventLogger(
-    serviceName: String,
-    concurrency: Int,
-    logLevel: LogLevel? = null,
-    loggerName: String? = null,
-    beautify: Boolean? = null,
     subscriptionName: String? = null,
   )
 
@@ -180,18 +167,6 @@ interface InfiniticRegister : AutoCloseable {
     workflowName: String,
     concurrency: Int,
     eventListener: CloudEventListener,
-    subscriptionName: String? = null,
-  )
-
-  /** Register workflow logger */
-  @Suppress("OVERLOADS_INTERFACE")
-  @JvmOverloads
-  fun registerWorkflowEventLogger(
-    workflowName: String,
-    concurrency: Int,
-    logLevel: LogLevel? = null,
-    loggerName: String? = null,
-    beautify: Boolean? = null,
     subscriptionName: String? = null,
   )
 }

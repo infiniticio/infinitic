@@ -53,10 +53,4 @@ data class EventListenerSubscription<S : Message>(
   override val withKey = false
 }
 
-data class EventLoggerSubscription<S : Message>(
-  override val topic: Topic<S>,
-  val name: String?
-) : Subscription<S>() {
-  override val withKey = false
-}
 

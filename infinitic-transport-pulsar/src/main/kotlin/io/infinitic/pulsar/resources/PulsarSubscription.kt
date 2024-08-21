@@ -23,7 +23,6 @@
 package io.infinitic.pulsar.resources
 
 import io.infinitic.common.transport.EventListenerSubscription
-import io.infinitic.common.transport.EventLoggerSubscription
 import io.infinitic.common.transport.MainSubscription
 import io.infinitic.common.transport.Subscription
 import org.apache.pulsar.client.api.SubscriptionInitialPosition
@@ -43,8 +42,6 @@ val Subscription<*>.defaultName
     is MainSubscription -> "${topic.prefix}-subscription"
     // BUT users can change the listener subscription name on purpose to replay the events
     is EventListenerSubscription -> "listener-subscription"
-    // BUT users can change the listener subscription name on purpose to replay the events
-    is EventLoggerSubscription -> "logger-subscription"
   }
 
 val Subscription<*>.defaultNameDLQ get() = "$defaultName-dlq"
@@ -53,6 +50,5 @@ val Subscription<*>.defaultInitialPosition
   get() = when (this) {
     is MainSubscription -> SubscriptionInitialPosition.Earliest
     is EventListenerSubscription -> SubscriptionInitialPosition.Latest
-    is EventLoggerSubscription -> SubscriptionInitialPosition.Latest
   }
 

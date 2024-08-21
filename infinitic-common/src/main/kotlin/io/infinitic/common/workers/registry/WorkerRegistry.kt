@@ -30,13 +30,11 @@ class WorkerRegistry {
   val serviceTagEngines = mutableMapOf<ServiceName, RegisteredServiceTagEngine>()
   val serviceExecutors = mutableMapOf<ServiceName, RegisteredServiceExecutor>()
   val serviceEventListeners = mutableMapOf<ServiceName, RegisteredEventListener>()
-  val serviceEventLoggers = mutableMapOf<ServiceName, RegisteredEventLogger>()
 
   val workflowTagEngines = mutableMapOf<WorkflowName, RegisteredWorkflowTagEngine>()
   val workflowStateEngines = mutableMapOf<WorkflowName, RegisteredWorkflowStateEngine>()
   val workflowExecutors = mutableMapOf<WorkflowName, RegisteredWorkflowExecutor>()
   val workflowEventListeners = mutableMapOf<WorkflowName, RegisteredEventListener>()
-  val workflowEventLoggers = mutableMapOf<WorkflowName, RegisteredEventLogger>()
 
   @TestOnly
   fun flush() {

@@ -20,28 +20,30 @@
  *
  * Licensor: infinitic.io
  */
-package io.infinitic.common.workers.registry
+package io.infinitic.workers.register.config
 
-import io.github.oshai.kotlinlogging.KotlinLogging
-import io.infinitic.logs.LogLevel
-
-data class RegisteredEventLogger(
-  val concurrency: Int,
-  val logLevel: LogLevel,
-  val loggerName: String,
-  val beautify: Boolean,
-  val subscriptionName: String?
+@Suppress("unused")
+data class LogsConfig(
+  val beautify: Boolean = true,
 ) {
-  private val logger = KotlinLogging.logger(loggerName)
-  
-  val log: (() -> Any?) -> Unit by lazy {
-    when (logLevel) {
-      LogLevel.TRACE -> logger::trace
-      LogLevel.DEBUG -> logger::debug
-      LogLevel.INFO -> logger::info
-      LogLevel.WARN -> logger::warn
-      LogLevel.ERROR -> logger::error
-      LogLevel.OFF -> { _: () -> Any? -> Unit }
-    }
+
+  companion object {
+    @JvmStatic
+    fun builder() = LogConfigBuilder()
+  }
+
+  /**
+   * ServiceConfig builder (Useful for Java user)
+   */
+  class LogConfigBuilder {
+    private val default = LogsConfig()
+    private var beautify = default.beautify
+
+    fun beautify(beautify: Boolean) =
+        apply { this.beautify = beautify }
+
+    fun build() = LogsConfig(
+        beautify,
+    )
   }
 }

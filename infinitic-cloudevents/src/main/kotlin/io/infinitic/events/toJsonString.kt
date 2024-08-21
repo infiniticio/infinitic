@@ -26,36 +26,16 @@ package io.infinitic.events
 import com.fasterxml.jackson.databind.ObjectMapper
 import io.cloudevents.CloudEvent
 import io.cloudevents.jackson.JsonFormat
-import io.infinitic.common.data.MillisInstant
-import io.infinitic.common.messages.Message
 
 private val reader = ObjectMapper().reader()
 private val writer = ObjectMapper().writer()
 private val prettyWriter = ObjectMapper().writerWithDefaultPrettyPrinter()
 
-private fun CloudEvent.toJsonString(beautify: Boolean): String {
+fun CloudEvent.toJsonString(beautify: Boolean): String {
   val jsonStr = String(JsonFormat().serialize(this))
 
   return when (beautify) {
     true -> prettyWriter
     false -> writer
   }.writeValueAsString(reader.readTree(jsonStr))
-}
-
-fun Message.logServiceCloudEvent(
-  publishedAt: MillisInstant,
-  prefix: String,
-  beautify: Boolean,
-  log: (() -> Any?) -> Unit
-) {
-  log { toServiceCloudEvent(publishedAt, prefix)?.toJsonString(beautify) }
-}
-
-fun Message.logWorkflowCloudEvent(
-  publishedAt: MillisInstant,
-  prefix: String,
-  beautify: Boolean,
-  log: (() -> Any?) -> Unit
-) {
-  log { toWorkflowCloudEvent(publishedAt, prefix)?.toJsonString(beautify) }
 }

@@ -23,9 +23,6 @@
 
 # Comment the line below to perform tests on a local Pulsar cluster
 
-eventLogger:
-  logLevel: INFO
-
 services:
   - name: annotatedService
     class: io.infinitic.utils.AnnotatedServiceImpl

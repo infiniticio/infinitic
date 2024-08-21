@@ -33,8 +33,7 @@ import java.util.concurrent.CompletableFuture
 
 class InMemoryInfiniticProducerAsync(
   private val mainChannels: InMemoryChannels,
-  private val eventListenerChannels: InMemoryChannels,
-  private val eventLoggerChannels: InMemoryChannels
+  private val eventListenerChannels: InMemoryChannels
 ) : InfiniticProducerAsync {
 
   private val logger = KotlinLogging.logger {}
@@ -47,7 +46,6 @@ class InMemoryInfiniticProducerAsync(
     return listOf(
         with(mainChannels) { channel(entity) },
         with(eventListenerChannels) { channel(entity) },
-        with(eventLoggerChannels) { channel(entity) },
     )
   }
 
@@ -57,7 +55,6 @@ class InMemoryInfiniticProducerAsync(
     return listOf(
         with(mainChannels) { channelForDelayed(entity) },
         with(eventListenerChannels) { channelForDelayed(entity) },
-        with(eventLoggerChannels) { channelForDelayed(entity) },
     )
   }
 

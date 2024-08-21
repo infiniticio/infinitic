@@ -24,7 +24,6 @@ package io.infinitic.workers.register.config
 
 import io.infinitic.common.workers.config.RetryPolicy
 import io.infinitic.events.config.EventListenerConfig
-import io.infinitic.events.config.EventLoggerConfig
 import io.infinitic.tasks.WithTimeout
 import io.infinitic.workflows.WorkflowCheckMode
 import io.infinitic.workflows.engine.config.WorkflowStateEngineConfig
@@ -39,7 +38,6 @@ data class WorkflowConfigDefault(
   var stateEngine: WorkflowStateEngineConfig? = null,
   val checkMode: WorkflowCheckMode? = null,
   val eventListener: EventListenerConfig? = null,
-  val eventLogger: EventLoggerConfig? = null
 ) {
   init {
     concurrency?.let {
@@ -73,7 +71,6 @@ data class WorkflowConfigDefault(
     private var stateEngine = default.stateEngine
     private var checkMode = default.checkMode
     private var eventListener = default.eventListener
-    private var eventLogger = default.eventLogger
 
     fun concurrency(concurrency: Int) =
         apply { this.concurrency = concurrency }
@@ -96,9 +93,6 @@ data class WorkflowConfigDefault(
     fun eventListener(eventListener: EventListenerConfig) =
         apply { this.eventListener = eventListener }
 
-    fun eventLogger(logger: EventLoggerConfig) =
-        apply { this.eventLogger = logger }
-
     fun build() = WorkflowConfigDefault(
         concurrency,
         timeoutInSeconds,
@@ -107,7 +101,6 @@ data class WorkflowConfigDefault(
         stateEngine,
         checkMode,
         eventListener,
-        eventLogger,
     )
   }
 

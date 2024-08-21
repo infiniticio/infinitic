@@ -27,7 +27,6 @@ import io.infinitic.cloudEvents.CloudEventListener
 import io.infinitic.common.tasks.data.ServiceName
 import io.infinitic.common.utils.merge
 import io.infinitic.common.workers.registry.RegisteredEventListener
-import io.infinitic.common.workers.registry.RegisteredEventLogger
 import io.infinitic.common.workers.registry.RegisteredServiceExecutor
 import io.infinitic.common.workers.registry.RegisteredServiceTagEngine
 import io.infinitic.common.workers.registry.RegisteredWorkflowExecutor
@@ -38,8 +37,6 @@ import io.infinitic.common.workers.registry.WorkerRegistry
 import io.infinitic.common.workers.registry.WorkflowFactories
 import io.infinitic.common.workflows.data.workflows.WorkflowName
 import io.infinitic.events.config.EventListenerConfig
-import io.infinitic.events.config.EventLoggerConfig
-import io.infinitic.logs.LogLevel
 import io.infinitic.storage.config.StorageConfig
 import io.infinitic.tasks.WithRetry
 import io.infinitic.tasks.WithTimeout
@@ -47,9 +44,9 @@ import io.infinitic.tasks.tag.storage.BinaryTaskTagStorage
 import io.infinitic.workers.InfiniticWorker
 import io.infinitic.workers.config.WorkerConfigInterface
 import io.infinitic.workers.register.config.DEFAULT_CONCURRENCY
+import io.infinitic.workers.register.config.LogsConfig
 import io.infinitic.workers.register.config.ServiceConfigDefault
 import io.infinitic.workers.register.config.UNDEFINED_EVENT_LISTENER
-import io.infinitic.workers.register.config.UNDEFINED_EVENT_LOGGER
 import io.infinitic.workers.register.config.UNDEFINED_WITH_RETRY
 import io.infinitic.workers.register.config.UNDEFINED_WITH_TIMEOUT
 import io.infinitic.workers.register.config.WorkflowConfigDefault
@@ -59,7 +56,7 @@ import io.infinitic.workflows.tag.storage.BinaryWorkflowTagStorage
 import java.security.InvalidParameterException
 import java.util.concurrent.ConcurrentHashMap
 
-class InfiniticRegisterImpl : InfiniticRegister {
+class InfiniticRegisterImpl(override var logsConfig: LogsConfig) : InfiniticRegister {
 
   // thread-safe set of all storage instances used
   private val storages = ConcurrentHashMap.newKeySet<StorageConfig>()
@@ -68,7 +65,6 @@ class InfiniticRegisterImpl : InfiniticRegister {
 
   override var defaultStorage: StorageConfig = StorageConfig()
   override var defaultEventListener: EventListenerConfig? = null
-  override var defaultEventLogger: EventLoggerConfig? = null
   override var serviceDefault: ServiceConfigDefault = ServiceConfigDefault()
   override var workflowDefault: WorkflowConfigDefault = WorkflowConfigDefault()
 
@@ -178,42 +174,6 @@ class InfiniticRegisterImpl : InfiniticRegister {
       }
     }
   }
-
-  /** Register Service Event Logger */
-  override fun registerServiceEventLogger(
-    serviceName: String,
-    concurrency: Int,
-    logLevel: LogLevel?,
-    loggerName: String?,
-    beautify: Boolean?,
-    subscriptionName: String?,
-  ) {
-    val service = ServiceName(serviceName)
-    val config =
-        EventLoggerConfig(concurrency, logLevel, loggerName, beautify, subscriptionName) merge
-            serviceDefault.eventLogger merge
-            defaultEventLogger merge
-            defaultEventLoggerConfig
-
-    registry.serviceEventLoggers[service] = RegisteredEventLogger(
-        config.concurrency!!,
-        config.logLevel!!,
-        config.loggerName!!,
-        config.beautify!!,
-        config.subscriptionName,
-    ).also {
-      logger.info {
-        "* Service Event Logger ".padEnd(25) + ": (" +
-            "concurrency: ${it.concurrency}, " +
-            "logLevel: ${it.logLevel}, " +
-            "loggerName: ${it.loggerName}, " +
-            "beautify: ${it.beautify}" +
-            (it.subscriptionName?.let { ", subscription: $it" } ?: "") +
-            ")"
-      }
-    }
-  }
-
 
   /** Register Workflow Executor */
   override fun registerWorkflowExecutor(
@@ -335,41 +295,6 @@ class InfiniticRegisterImpl : InfiniticRegister {
     }
   }
 
-  /** Register Workflow Event Logger */
-  override fun registerWorkflowEventLogger(
-    workflowName: String,
-    concurrency: Int,
-    logLevel: LogLevel?,
-    loggerName: String?,
-    beautify: Boolean?,
-    subscriptionName: String?,
-  ) {
-    val workflow = WorkflowName(workflowName)
-    val config =
-        EventLoggerConfig(concurrency, logLevel, loggerName, beautify, subscriptionName) merge
-            workflowDefault.eventLogger merge
-            defaultEventLogger merge
-            defaultEventLoggerConfig
-
-    registry.workflowEventLoggers[workflow] = RegisteredEventLogger(
-        concurrency = config.concurrency!!,
-        logLevel = config.logLevel!!,
-        loggerName = config.loggerName!!,
-        beautify = config.beautify!!,
-        config.subscriptionName,
-    ).also {
-      logger.info {
-        "* Workflow Event Logger ".padEnd(25) + ": (" +
-            "concurrency: ${it.concurrency}, " +
-            "logLevel: ${it.logLevel}, " +
-            "loggerName: ${it.loggerName}, " +
-            "beautify: ${it.beautify}" +
-            (it.subscriptionName?.let { ", subscription: $it" } ?: "") +
-            ")"
-      }
-    }
-  }
-
   private fun getDefaultServiceConcurrency(name: String) =
       registry.serviceExecutors[ServiceName(name)]?.concurrency
         ?: serviceDefault.concurrency
@@ -380,26 +305,18 @@ class InfiniticRegisterImpl : InfiniticRegister {
         ?: workflowDefault.concurrency
         ?: DEFAULT_CONCURRENCY
 
-  private val defaultEventLoggerConfig = EventLoggerConfig(
-      1,
-      LogLevel.INFO,
-      "io.infinitic.workers.EventLogger",
-      true,
-      null,
-  )
-
   companion object {
     private val logger by lazy { KotlinLogging.logger(InfiniticWorker::class.java.name) }
 
     /** Create [InfiniticRegisterImpl] from config */
     @JvmStatic
     fun fromConfig(workerConfig: WorkerConfigInterface): InfiniticRegisterImpl =
-        InfiniticRegisterImpl().apply {
+        InfiniticRegisterImpl(workerConfig.logs).apply {
+
           workerConfig.storage?.let { defaultStorage = it }
           workerConfig.serviceDefault?.let { serviceDefault = it }
           workerConfig.workflowDefault?.let { workflowDefault = it }
           workerConfig.eventListener?.let { defaultEventListener = it }
-          workerConfig.eventLogger?.let { defaultEventLogger = it }
 
           for (workflowConfig in workerConfig.workflows) with(workflowConfig) {
             logger.info { "Workflow $name:" }
@@ -443,19 +360,6 @@ class InfiniticRegisterImpl : InfiniticRegister {
                 )
               }
             }
-            // Workflow Event Logger
-            eventLogger?.merge(workflowDefault.eventLogger)?.merge(defaultEventLogger)?.let {
-              if (it != UNDEFINED_EVENT_LOGGER) {
-                registerWorkflowEventLogger(
-                    name,
-                    it.concurrency ?: getDefaultWorkflowConcurrency(name),
-                    it.logLevel,
-                    it.loggerName,
-                    it.beautify,
-                    it.subscriptionName,
-                )
-              }
-            }
           }
 
           for (service in workerConfig.services) with(service) {
@@ -487,19 +391,6 @@ class InfiniticRegisterImpl : InfiniticRegister {
                     name,
                     it.concurrency ?: getDefaultServiceConcurrency(name),
                     instance,
-                    it.subscriptionName,
-                )
-              }
-            }
-            // Service Event Logger
-            eventLogger?.merge(serviceDefault.eventLogger)?.merge(defaultEventLogger)?.let {
-              if (it != UNDEFINED_EVENT_LOGGER) {
-                registerServiceEventLogger(
-                    name,
-                    it.concurrency ?: getDefaultServiceConcurrency(name),
-                    it.logLevel,
-                    it.loggerName,
-                    it.beautify,
                     it.subscriptionName,
                 )
               }

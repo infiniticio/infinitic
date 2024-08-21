@@ -27,10 +27,10 @@ import io.infinitic.common.config.loadConfigFromFile
 import io.infinitic.common.config.loadConfigFromResource
 import io.infinitic.common.config.loadConfigFromYaml
 import io.infinitic.events.config.EventListenerConfig
-import io.infinitic.events.config.EventLoggerConfig
 import io.infinitic.pulsar.config.PulsarConfig
 import io.infinitic.storage.config.StorageConfig
 import io.infinitic.transport.config.Transport
+import io.infinitic.workers.register.config.LogsConfig
 import io.infinitic.workers.register.config.ServiceConfig
 import io.infinitic.workers.register.config.ServiceConfigDefault
 import io.infinitic.workers.register.config.WorkflowConfig
@@ -53,6 +53,9 @@ data class WorkerConfig(
   /** Default storage */
   override val storage: StorageConfig? = null,
 
+  /** Logs configuration */
+  override val logs: LogsConfig = LogsConfig(),
+
   /** Workflows configuration */
   override val workflows: List<WorkflowConfig> = listOf(),
 
@@ -68,12 +71,10 @@ data class WorkerConfig(
   /** Default event listener configuration */
   override val eventListener: EventListenerConfig? = null,
 
-  /** Default logger configuration */
-  override val eventLogger: EventLoggerConfig? = null
-) : WorkerConfigInterface {
+  ) : WorkerConfigInterface {
 
   init {
-    // check retry values
+// check retry values
     serviceDefault?.retry?.check()
     services.forEach { it.retry?.check() }
     workflowDefault?.retry?.check()
@@ -110,12 +111,12 @@ data class WorkerConfig(
     private var transport = default.transport
     private var pulsar = default.pulsar
     private var storage = default.storage
+    private var logs = default.logs
     private var workflows = default.workflows
     private var services = default.services
     private var serviceDefault = default.serviceDefault
     private var workflowDefault = default.workflowDefault
     private var eventListener = default.eventListener
-    private var eventLogger = default.eventLogger
 
     fun name(name: String) =
         apply { this.name = name }
@@ -132,6 +133,9 @@ data class WorkerConfig(
     fun storage(storage: StorageConfig?) =
         apply { this.storage = storage }
 
+    fun logs(logs: LogsConfig) =
+        apply { this.logs = logs }
+
     fun workflows(workflows: List<WorkflowConfig>) =
         apply { this.workflows = workflows }
 
@@ -147,21 +151,18 @@ data class WorkerConfig(
     fun eventListener(eventListener: EventListenerConfig?) =
         apply { this.eventListener = eventListener }
 
-    fun logger(logger: EventLoggerConfig?) =
-        apply { this.eventLogger = logger }
-
     fun build() = WorkerConfig(
         name,
         shutdownGracePeriodInSeconds,
         transport,
         pulsar,
         storage,
+        logs,
         workflows,
         services,
         serviceDefault,
         workflowDefault,
         eventListener,
-        eventLogger,
     )
   }
 }
