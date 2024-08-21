@@ -24,26 +24,33 @@ package io.infinitic.common.transport
 
 import io.infinitic.common.messages.Message
 
-sealed interface Subscription<S : Message> {
-  val topic: Topic<S>
-  val withKey: Boolean
+sealed class Subscription<S : Message> {
+  abstract val topic: Topic<S>
+  abstract val withKey: Boolean
 }
 
-data class MainSubscription<S : Message>(override val topic: Topic<S>) : Subscription<S> {
-  override val withKey = when (topic) {
-    WorkflowTagTopic,
-    WorkflowCmdTopic,
-    WorkflowEngineTopic,
-    WorkflowTaskExecutorTopic,
-    ServiceTagTopic -> true
-
-    else -> false
+data class MainSubscription<S : Message>(override val topic: Topic<S>) : Subscription<S>() {
+  init {
+    if (topic.acceptDelayed) require(!withKey) { "Keyed subscription are forbidden for topics accepting delayed messages" }
   }
+
+  override val withKey
+    get() = when (topic) {
+      WorkflowTagEngineTopic,
+      WorkflowCmdTopic,
+      WorkflowStateEngineTopic,
+      WorkflowTaskExecutorTopic,
+      ServiceTagTopic -> true
+
+      else -> false
+    }
 }
 
-data class ListenerSubscription<S : Message>(
+data class EventListenerSubscription<S : Message>(
   override val topic: Topic<S>,
   val name: String?
-) : Subscription<S> {
+) : Subscription<S>() {
   override val withKey = false
 }
+
+

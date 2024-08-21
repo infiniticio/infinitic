@@ -37,6 +37,7 @@ import io.infinitic.common.workflows.data.steps.StepStatus.Unknown
 import io.infinitic.common.workflows.data.workflowMethods.PositionInWorkflowMethod
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskIndex
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.Transient
 
 @Serializable
 @AvroNamespace("io.infinitic.workflows.data")
@@ -45,10 +46,21 @@ data class PastStep(
   val step: Step,
   val stepHash: StepHash,
   val workflowTaskIndexAtStart: WorkflowTaskIndex,
-  var stepStatus: StepStatus = StepStatus.Waiting,
   var propertiesNameHashAtTermination: Map<PropertyName, PropertyHash>? = null,
   var workflowTaskIndexAtTermination: WorkflowTaskIndex? = null
 ) {
+  @Transient
+  private lateinit var _stepStatus: StepStatus
+
+  var stepStatus: StepStatus
+    get() = when (::_stepStatus.isInitialized) {
+      true -> _stepStatus
+      false -> step.status().also { _stepStatus = it }
+    }
+    set(value) {
+      _stepStatus = value
+    }
+
   @JsonIgnore
   fun isTerminated() = stepStatus is Completed ||
       stepStatus is Canceled ||

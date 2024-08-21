@@ -80,5 +80,5 @@ interface MethodTerminated : WorkflowMessageInterface {
   fun getEventForAwaitingWorkflows(
     emitterName: EmitterName,
     emittedAt: MillisInstant
-  ): List<WorkflowEngineMessage>
+  ): List<WorkflowStateEngineMessage>
 }

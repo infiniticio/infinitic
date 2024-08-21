@@ -28,14 +28,14 @@ import io.infinitic.common.emitters.EmitterName
 import io.infinitic.common.tasks.data.TaskId
 import io.infinitic.common.transport.InfiniticProducerAsync
 import io.infinitic.common.transport.LoggedInfiniticProducer
-import io.infinitic.common.transport.WorkflowEngineTopic
 import io.infinitic.common.transport.WorkflowEventsTopic
+import io.infinitic.common.transport.WorkflowStateEngineTopic
 import io.infinitic.common.utils.IdGenerator
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskIndex
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskParameters
 import io.infinitic.common.workflows.engine.commands.dispatchTask
 import io.infinitic.common.workflows.engine.messages.DispatchWorkflow
-import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
+import io.infinitic.common.workflows.engine.messages.WorkflowStateEngineMessage
 import io.infinitic.common.workflows.engine.messages.requester
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
@@ -46,7 +46,7 @@ class WorkflowCmdHandler(producerAsync: InfiniticProducerAsync) {
   val producer = LoggedInfiniticProducer(this::class.java.name, producerAsync)
   val emitterName by lazy { EmitterName(producer.name) }
 
-  suspend fun handle(msg: WorkflowEngineMessage, publishTime: MillisInstant) {
+  suspend fun handle(msg: WorkflowStateEngineMessage, publishTime: MillisInstant) {
     msg.logTrace { "Processing $msg" }
 
     // define emittedAt from the publishing instant if not yet defined
@@ -54,7 +54,7 @@ class WorkflowCmdHandler(producerAsync: InfiniticProducerAsync) {
 
     when (msg) {
       is DispatchWorkflow -> dispatchNewWorkflow(msg, publishTime)
-      else -> with(producer) { msg.sendTo(WorkflowEngineTopic) }
+      else -> with(producer) { msg.sendTo(WorkflowStateEngineTopic) }
     }
 
     msg.logDebug { "Processed $msg" }
@@ -74,7 +74,7 @@ class WorkflowCmdHandler(producerAsync: InfiniticProducerAsync) {
                 IdGenerator.from(msg.emittedAt!!, "workflowId=${msg.workflowId}"),
             ),
         )
-        with(producer) { dispatchNewWorkflow.sendTo(WorkflowEngineTopic) }
+        with(producer) { dispatchNewWorkflow.sendTo(WorkflowStateEngineTopic) }
 
         // The workflowTask is sent only after the previous message,
         // to prevent a possible race condition where the outcome of the workflowTask
@@ -115,11 +115,11 @@ class WorkflowCmdHandler(producerAsync: InfiniticProducerAsync) {
         }
       }
 
-  private fun WorkflowEngineMessage.logDebug(description: () -> String) {
+  private fun WorkflowStateEngineMessage.logDebug(description: () -> String) {
     logger.debug { "$workflowName (${workflowId}): ${description()}" }
   }
 
-  private fun WorkflowEngineMessage.logTrace(description: () -> String) {
+  private fun WorkflowStateEngineMessage.logTrace(description: () -> String) {
     logger.trace { "$workflowName (${workflowId}): ${description()}" }
   }
 }

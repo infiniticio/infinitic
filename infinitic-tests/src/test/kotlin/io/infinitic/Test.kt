@@ -91,7 +91,7 @@ internal suspend fun InfiniticWorker.getWorkflowState(
   // that's why we are waiting here a bit before getting the state
   delay(200)
 
-  return registry.workflowEngines[WorkflowName(name)]!!.storage.getState(WorkflowId(id))
+  return registry.workflowStateEngines[WorkflowName(name)]!!.storage.getState(WorkflowId(id))
 }
 
 object ProjectConfig : AbstractProjectConfig() {

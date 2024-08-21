@@ -24,7 +24,7 @@
 package io.infinitic.cloudEvents
 
 const val ERROR = "error"
-const val RESULT = "result"
+const val OUTPUT = "output"
 const val WORKER_NAME = "workerName"
 const val INFINITIC_VERSION = "infiniticVersion"
 const val REQUESTER = "requester"

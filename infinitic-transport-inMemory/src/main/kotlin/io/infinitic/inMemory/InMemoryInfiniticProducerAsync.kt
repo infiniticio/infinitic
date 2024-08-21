@@ -27,13 +27,13 @@ import io.infinitic.common.data.MillisDuration
 import io.infinitic.common.messages.Message
 import io.infinitic.common.transport.InfiniticProducerAsync
 import io.infinitic.common.transport.Topic
-import io.infinitic.common.transport.isDelayed
+import io.infinitic.common.transport.acceptDelayed
 import kotlinx.coroutines.channels.Channel
 import java.util.concurrent.CompletableFuture
 
 class InMemoryInfiniticProducerAsync(
   private val mainChannels: InMemoryChannels,
-  private val listenerChannels: InMemoryChannels
+  private val eventListenerChannels: InMemoryChannels
 ) : InfiniticProducerAsync {
 
   private val logger = KotlinLogging.logger {}
@@ -45,7 +45,7 @@ class InMemoryInfiniticProducerAsync(
 
     return listOf(
         with(mainChannels) { channel(entity) },
-        with(listenerChannels) { channel(entity) },
+        with(eventListenerChannels) { channel(entity) },
     )
   }
 
@@ -54,7 +54,7 @@ class InMemoryInfiniticProducerAsync(
 
     return listOf(
         with(mainChannels) { channelForDelayed(entity) },
-        with(listenerChannels) { channelForDelayed(entity) },
+        with(eventListenerChannels) { channelForDelayed(entity) },
     )
   }
 
@@ -63,7 +63,7 @@ class InMemoryInfiniticProducerAsync(
     topic: Topic<T>,
     after: MillisDuration
   ): CompletableFuture<Unit> {
-    when (topic.isDelayed) {
+    when (topic.acceptDelayed) {
       true -> {
         topic.channelsForDelayedMessage(message).forEach {
           logger.trace { "Topic $topic(${it.id}): sending $message" }

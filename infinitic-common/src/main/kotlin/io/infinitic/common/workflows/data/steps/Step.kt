@@ -22,9 +22,6 @@
  */
 package io.infinitic.common.workflows.data.steps
 
-import com.fasterxml.jackson.annotation.JsonCreator
-import com.fasterxml.jackson.annotation.JsonIgnore
-import com.fasterxml.jackson.annotation.JsonTypeInfo
 import com.github.avrokotlin.avro4k.Avro
 import com.github.avrokotlin.avro4k.AvroDefault
 import io.infinitic.common.data.methods.MethodReturnValue
@@ -51,17 +48,14 @@ import kotlin.reflect.jvm.javaType
 import kotlin.reflect.typeOf
 
 @Serializable
-@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.PROPERTY, property = "@class")
 sealed class Step {
   // is this step currently terminated?
-  @JsonIgnore
   fun isTerminated(): Boolean = isTerminatedAt(WorkflowTaskIndex(MAX_VALUE))
 
   // get current status
   fun status(): StepStatus = statusAt(WorkflowTaskIndex(MAX_VALUE))
 
   // is this step terminated at provided index?
-  @JsonIgnore
   abstract fun isTerminatedAt(index: WorkflowTaskIndex): Boolean
 
   // get status at provided index
@@ -92,28 +86,23 @@ sealed class Step {
 
     // the type of the returned value, can be null for inline tasks
     @Transient
-    @JsonIgnore
     var returnValueType: Type? = null
 
     // the JsonViewClass of the returned value
     @Transient
-    @JsonIgnore
     var returnValueJsonViewClass: Class<*>? = null
 
     // status of first wait occurrence
-    @JsonIgnore
     var commandStatus: CommandStatus = Ongoing
 
     // only used in workflow task
     // statuses of multiple wait occurrences, non-null for ReceiveSignalPastCommand only
     @Transient
-    @JsonIgnore
     @AvroDefault(Avro.NULL)
     var commandStatuses: List<CommandStatus>? = null
 
     // max number of result for the command
     @Transient
-    @JsonIgnore
     @AvroDefault("1")
     var commandStatusLimit: Int? = null
 
@@ -133,17 +122,11 @@ sealed class Step {
           this.commandStatusLimit = pastCommand.command.receivedSignalLimit
         }
       }
-
-      // This is needed for Jackson deserialization
-      @JsonCreator
-      @JvmStatic
-      fun new(commandId: String) = Id(CommandId(commandId))
     }
 
     override fun hash() =
         StepHash(SerializedData.encode(commandId, CommandId::class.java, null).hash())
 
-    @JsonIgnore
     override fun isTerminatedAt(index: WorkflowTaskIndex) =
         when (statusAt(index)) {
           is StepStatus.Waiting -> false
@@ -180,7 +163,7 @@ sealed class Step {
     override fun statusAt(index: WorkflowTaskIndex) =
         when (val status = commandStatus) {
           is Ongoing -> StepStatus.Waiting
-          
+
           is Unknown ->
             when (index >= status.unknowingWorkflowTaskIndex) {
               true -> StepStatus.Unknown(
@@ -249,7 +232,6 @@ sealed class Step {
         ).hash(),
     )
 
-    @JsonIgnore
     override fun isTerminatedAt(index: WorkflowTaskIndex) =
         steps.all { it.isTerminatedAt(index) }
 
@@ -315,7 +297,6 @@ sealed class Step {
         ).hash(),
     )
 
-    @JsonIgnore
     override fun isTerminatedAt(index: WorkflowTaskIndex) =
         steps.any { it.isTerminatedAt(index) }
 

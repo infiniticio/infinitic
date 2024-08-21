@@ -27,9 +27,9 @@ import io.infinitic.common.emitters.EmitterName
 import io.infinitic.common.exceptions.thisShouldNotHappen
 import io.infinitic.common.requester.WorkflowRequester
 import io.infinitic.common.transport.InfiniticProducer
-import io.infinitic.common.transport.WorkflowEngineTopic
 import io.infinitic.common.transport.WorkflowEventsTopic
-import io.infinitic.common.transport.WorkflowTagTopic
+import io.infinitic.common.transport.WorkflowStateEngineTopic
+import io.infinitic.common.transport.WorkflowTagEngineTopic
 import io.infinitic.common.workflows.data.commands.DispatchNewMethodCommand
 import io.infinitic.common.workflows.data.commands.DispatchNewWorkflowCommand
 import io.infinitic.common.workflows.data.workflowMethods.WorkflowMethod
@@ -115,7 +115,7 @@ private fun CoroutineScope.cancelWorkflowMethod(
                     workflowMethodId = workflowMethod.workflowMethodId,
                 ),
             )
-            with(producer) { cancelWorkflow.sendTo(WorkflowEngineTopic) }
+            with(producer) { cancelWorkflow.sendTo(WorkflowStateEngineTopic) }
           }
 
           command.workflowTag != null -> launch {
@@ -133,7 +133,7 @@ private fun CoroutineScope.cancelWorkflowMethod(
                     workflowMethodId = workflowMethod.workflowMethodId,
                 ),
             )
-            with(producer) { cancelWorkflowByTag.sendTo(WorkflowTagTopic) }
+            with(producer) { cancelWorkflowByTag.sendTo(WorkflowTagEngineTopic) }
           }
 
           else -> thisShouldNotHappen()
@@ -156,7 +156,7 @@ private fun CoroutineScope.cancelWorkflowMethod(
                 workflowMethodId = workflowMethod.workflowMethodId,
             ),
         )
-        with(producer) { cancelWorkflow.sendTo(WorkflowEngineTopic) }
+        with(producer) { cancelWorkflow.sendTo(WorkflowStateEngineTopic) }
       }
 
       else -> Unit

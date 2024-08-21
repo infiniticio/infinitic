@@ -20,8 +20,44 @@
  *
  * Licensor: infinitic.io
  */
-package io.infinitic.common.workers.registry
+package io.infinitic.workflows.tag.config
 
-import io.infinitic.common.tasks.tags.storage.TaskTagStorage
+import io.infinitic.storage.config.StorageConfig
 
-data class RegisteredServiceTag(val concurrency: Int, val storage: TaskTagStorage)
+data class WorkflowTagEngineConfig(
+  var concurrency: Int? = null,
+  var storage: StorageConfig? = null,
+) {
+  var isDefault: Boolean = false
+
+  init {
+    concurrency?.let {
+      require(it >= 0) { "concurrency must be positive" }
+    }
+  }
+
+  companion object {
+    @JvmStatic
+    fun builder() = WorkflowTagEngineConfigBuilder()
+  }
+
+  /**
+   * WorkflowTagEngineConfig builder (Useful for Java user)
+   */
+  class WorkflowTagEngineConfigBuilder {
+    private val default = WorkflowTagEngineConfig()
+    private var concurrency = default.concurrency
+    private var storage = default.storage
+
+    fun concurrency(concurrency: Int) =
+        apply { this.concurrency = concurrency }
+
+    fun storage(storage: StorageConfig) =
+        apply { this.storage = storage }
+
+    fun build() = WorkflowTagEngineConfig(
+        concurrency,
+        storage,
+    ).apply { isDefault = false }
+  }
+}

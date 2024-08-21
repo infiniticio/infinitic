@@ -27,10 +27,12 @@ import io.infinitic.common.utils.isImplementationOf
 import io.infinitic.common.workers.config.RetryPolicy
 import io.infinitic.common.workflows.emptyWorkflowContext
 import io.infinitic.events.config.EventListenerConfig
+import io.infinitic.tasks.WithRetry
+import io.infinitic.tasks.WithTimeout
 import io.infinitic.workflows.Workflow
 import io.infinitic.workflows.WorkflowCheckMode
-import io.infinitic.workflows.engine.config.WorkflowStateEngine
-import io.infinitic.workflows.tag.config.WorkflowTagEngine
+import io.infinitic.workflows.engine.config.WorkflowStateEngineConfig
+import io.infinitic.workflows.tag.config.WorkflowTagEngineConfig
 import io.infinitic.workflows.Workflow as WorkflowBase
 
 @Suppress("unused")
@@ -42,11 +44,23 @@ data class WorkflowConfig(
   var timeoutInSeconds: Double? = UNDEFINED_TIMEOUT,
   var retry: RetryPolicy? = UNDEFINED_RETRY,
   var checkMode: WorkflowCheckMode? = null,
-  var tagEngine: WorkflowTagEngine? = DEFAULT_WORKFLOW_TAG_ENGINE,
-  var stateEngine: WorkflowStateEngine? = DEFAULT_WORKFLOW_STATE_ENGINE,
+  var tagEngine: WorkflowTagEngineConfig? = DEFAULT_WORKFLOW_TAG_ENGINE,
+  var stateEngine: WorkflowStateEngineConfig? = DEFAULT_WORKFLOW_STATE_ENGINE,
   var eventListener: EventListenerConfig? = UNDEFINED_EVENT_LISTENER,
 ) {
   val allClasses = mutableListOf<Class<out WorkflowBase>>()
+
+  val withTimeout: WithTimeout? = when (timeoutInSeconds) {
+    null -> null
+    UNDEFINED_TIMEOUT -> UNDEFINED_WITH_TIMEOUT
+    else -> WithTimeout { timeoutInSeconds }
+  }
+
+  val withRetry: WithRetry? = when (retry) {
+    null -> null
+    UNDEFINED_RETRY -> UNDEFINED_WITH_RETRY
+    else -> retry
+  }
 
   init {
     require(name.isNotEmpty()) { "name can not be empty" }
@@ -119,15 +133,14 @@ data class WorkflowConfig(
     fun checkMode(checkMode: WorkflowCheckMode) =
         apply { this.checkMode = checkMode }
 
-    fun tagEngine(tagEngine: WorkflowTagEngine) =
+    fun tagEngine(tagEngine: WorkflowTagEngineConfig) =
         apply { this.tagEngine = tagEngine }
 
-    fun stateEngine(stateEngine: WorkflowStateEngine) =
+    fun stateEngine(stateEngine: WorkflowStateEngineConfig) =
         apply { this.stateEngine = stateEngine }
 
     fun eventListener(eventListener: EventListenerConfig) =
         apply { this.eventListener = eventListener }
-
 
     fun build() = WorkflowConfig(
         name.noUnset,

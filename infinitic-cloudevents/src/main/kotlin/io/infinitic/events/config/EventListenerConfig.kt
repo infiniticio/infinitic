@@ -33,8 +33,8 @@ data class EventListenerConfig(
 ) {
   var isDefined = true
 
-  val instance: CloudEventListener
-    get() = `class`!!.getInstance().getOrThrow() as CloudEventListener
+  val instance: CloudEventListener?
+    get() = `class`?.getInstance()?.getOrThrow() as CloudEventListener?
 
   init {
     `class`?.let {

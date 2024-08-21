@@ -27,7 +27,7 @@ import io.infinitic.common.data.MillisInstant
 import kotlinx.serialization.Serializable
 
 @Serializable
-sealed interface WorkflowEngineMessage : WorkflowMessageInterface {
+sealed interface WorkflowStateEngineMessage : WorkflowMessageInterface {
   // emittedAt has been introduced in 0.13.0
   // This property represents the time this event is supposed to have been emitted:
   // * if published by a client: the publishing time (got from transport)
@@ -35,7 +35,7 @@ sealed interface WorkflowEngineMessage : WorkflowMessageInterface {
   var emittedAt: MillisInstant?
 }
 
-fun WorkflowEngineMessage.type(): WorkflowEngineMessageType = when (this) {
+fun WorkflowStateEngineMessage.type(): WorkflowEngineMessageType = when (this) {
   is RemoteMethodCanceled -> WorkflowEngineMessageType.CHILD_WORKFLOW_CANCELED
   is RemoteMethodCompleted -> WorkflowEngineMessageType.CHILD_WORKFLOW_COMPLETED
   is RemoteMethodFailed -> WorkflowEngineMessageType.CHILD_WORKFLOW_FAILED

@@ -25,8 +25,8 @@ package io.infinitic.events.data.services
 
 import io.infinitic.cloudEvents.ERROR
 import io.infinitic.cloudEvents.INFINITIC_VERSION
+import io.infinitic.cloudEvents.OUTPUT
 import io.infinitic.cloudEvents.REQUESTER
-import io.infinitic.cloudEvents.RESULT
 import io.infinitic.cloudEvents.SERVICE_NAME
 import io.infinitic.cloudEvents.TASK_ARGS
 import io.infinitic.cloudEvents.TASK_META
@@ -108,7 +108,7 @@ fun ServiceEventMessage.toJson(): JsonObject = when (this) {
 
   is TaskCompletedEvent -> JsonObject(
       mapOf(
-          RESULT to returnValue.toJson(),
+          OUTPUT to returnValue.toJson(),
           TASK_RETRY_SEQUENCE to taskRetrySequence.toJson(),
           TASK_RETRY_INDEX to taskRetryIndex.toJson(),
           SERVICE_NAME to serviceName.toJson(),

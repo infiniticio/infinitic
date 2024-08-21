@@ -28,17 +28,21 @@ import io.infinitic.common.tasks.events.messages.ServiceEventMessage
 import io.infinitic.common.tasks.executors.messages.ServiceExecutorMessage
 import io.infinitic.common.tasks.tags.messages.ServiceTagMessage
 import io.infinitic.common.workflows.engine.messages.WorkflowCmdMessage
-import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
 import io.infinitic.common.workflows.engine.messages.WorkflowEventMessage
-import io.infinitic.common.workflows.tags.messages.WorkflowTagMessage
+import io.infinitic.common.workflows.engine.messages.WorkflowStateEngineMessage
+import io.infinitic.common.workflows.tags.messages.WorkflowTagEngineMessage
 
 
-sealed class Topic<S : Message>
+sealed class Topic<S : Message> {
+  abstract val prefix: String
+}
 
 /**
  * Topic used to get a unique producer name
  */
-data object NamingTopic : Topic<Nothing>()
+data object NamingTopic : Topic<Nothing>() {
+  override val prefix = "namer"
+}
 
 /****************************************************
  *
@@ -46,7 +50,9 @@ data object NamingTopic : Topic<Nothing>()
  *
  ****************************************************/
 
-data object ClientTopic : Topic<ClientMessage>()
+data object ClientTopic : Topic<ClientMessage>() {
+  override val prefix = "response"
+}
 
 /****************************************************
  *
@@ -60,13 +66,22 @@ sealed class ServiceTopic<S : Message> : Topic<S>() {
   }
 }
 
-data object ServiceTagTopic : ServiceTopic<ServiceTagMessage>()
+data object ServiceTagTopic : ServiceTopic<ServiceTagMessage>() {
+  override val prefix = "task-tag"
+}
 
-data object ServiceExecutorTopic : ServiceTopic<ServiceExecutorMessage>()
+data object ServiceExecutorTopic : ServiceTopic<ServiceExecutorMessage>() {
+  override val prefix = "task-executor"
+}
 
-data object DelayedServiceExecutorTopic : ServiceTopic<ServiceExecutorMessage>()
+data object RetryServiceExecutorTopic : ServiceTopic<ServiceExecutorMessage>() {
+  override val prefix = "task-executor"
+}
 
-data object ServiceEventsTopic : ServiceTopic<ServiceEventMessage>()
+
+data object ServiceEventsTopic : ServiceTopic<ServiceEventMessage>() {
+  override val prefix = "task-events"
+}
 
 
 /****************************************************
@@ -83,35 +98,57 @@ sealed class WorkflowTopic<S : Message> : Topic<S>() {
 }
 
 
-data object WorkflowTagTopic : WorkflowTopic<WorkflowTagMessage>()
+data object WorkflowTagEngineTopic : WorkflowTopic<WorkflowTagEngineMessage>() {
+  override val prefix = "workflow-tag"
+}
 
-data object WorkflowCmdTopic : WorkflowTopic<WorkflowCmdMessage>()
+data object WorkflowCmdTopic : WorkflowTopic<WorkflowCmdMessage>() {
+  override val prefix = "workflow-cmd"
+}
 
-data object WorkflowEngineTopic : WorkflowTopic<WorkflowEngineMessage>()
+data object WorkflowStateEngineTopic : WorkflowTopic<WorkflowStateEngineMessage>() {
+  override val prefix = "workflow-engine"
+}
 
-data object DelayedWorkflowEngineTopic : WorkflowTopic<WorkflowEngineMessage>()
+data object TimerWorkflowStateEngineTopic : WorkflowTopic<WorkflowStateEngineMessage>() {
+  override val prefix = "workflow-delay"
+}
 
-data object WorkflowEventsTopic : WorkflowTopic<WorkflowEventMessage>()
+data object WorkflowEventsTopic : WorkflowTopic<WorkflowEventMessage>() {
+  override val prefix = "workflow-events"
+}
 
-data object WorkflowTaskExecutorTopic : WorkflowTopic<ServiceExecutorMessage>()
+data object WorkflowTaskExecutorTopic : WorkflowTopic<ServiceExecutorMessage>() {
+  override val prefix = "workflow-task-executor"
+}
 
-data object DelayedWorkflowTaskExecutorTopic : WorkflowTopic<ServiceExecutorMessage>()
+data object RetryWorkflowTaskExecutorTopic : WorkflowTopic<ServiceExecutorMessage>() {
+  override val prefix = "workflow-task-executor"
+}
 
-data object WorkflowTaskEventsTopic : WorkflowTopic<ServiceEventMessage>()
+data object WorkflowTaskEventsTopic : WorkflowTopic<ServiceEventMessage>() {
+  override val prefix = "workflow-task-events"
+}
 
 
 /**
- * Property indicating whether a topic type receives delayed message
+ * Property indicating whether a topic type receives delayed message used for timers or timeout
  * This is used to set up TTLInSeconds which mush be much higher for delayed messages
- *
- * @return `true` if the topic is delayed, `false` otherwise.
  */
-val Topic<*>.isDelayed
+val Topic<*>.isTimer
   get() = when (this) {
-    DelayedWorkflowEngineTopic,
-    DelayedWorkflowTaskExecutorTopic,
-    DelayedServiceExecutorTopic
-    -> true
+    TimerWorkflowStateEngineTopic -> true
+    else -> false
+  }
+
+/**
+ * Property indicating whether a topic type receives delayed message
+ */
+val Topic<*>.acceptDelayed
+  get() = when (this) {
+    TimerWorkflowStateEngineTopic -> true
+    RetryWorkflowTaskExecutorTopic -> true
+    RetryServiceExecutorTopic -> true
 
     else -> false
   }
@@ -124,9 +161,9 @@ val Topic<*>.isDelayed
 @Suppress("UNCHECKED_CAST")
 val <S : Message> Topic<S>.withoutDelay
   get() = when (this) {
-    DelayedWorkflowEngineTopic -> WorkflowEngineTopic
-    DelayedWorkflowTaskExecutorTopic -> WorkflowTaskExecutorTopic
-    DelayedServiceExecutorTopic -> ServiceExecutorTopic
+    TimerWorkflowStateEngineTopic -> WorkflowStateEngineTopic
+    RetryWorkflowTaskExecutorTopic -> WorkflowTaskExecutorTopic
+    RetryServiceExecutorTopic -> ServiceExecutorTopic
     else -> this
   } as Topic<S>
 
@@ -137,7 +174,7 @@ val <S : Message> Topic<S>.withoutDelay
 val <S : Message> Topic<S>.forWorkflow
   get() = when (this) {
     ServiceExecutorTopic -> WorkflowTaskExecutorTopic
-    DelayedServiceExecutorTopic -> DelayedWorkflowTaskExecutorTopic
+    RetryServiceExecutorTopic -> RetryWorkflowTaskExecutorTopic
     ServiceEventsTopic -> WorkflowTaskEventsTopic
     else -> this
   } as Topic<S>

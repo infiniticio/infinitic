@@ -22,7 +22,7 @@
  */
 package io.infinitic.pulsar.resources
 
-import io.infinitic.common.transport.ListenerSubscription
+import io.infinitic.common.transport.EventListenerSubscription
 import io.infinitic.common.transport.MainSubscription
 import io.infinitic.common.transport.Subscription
 import org.apache.pulsar.client.api.SubscriptionInitialPosition
@@ -39,20 +39,16 @@ val Subscription<*>.defaultName
     // IMPORTANT: subscription name MUST stay UNCHANGED through all Infinitic versions
     // as Pulsar identify subscriptions through their name.
     // Changing it would create a new one, and users would lose the cursor on acknowledged messages
-    is MainSubscription -> "${topic.prefix()}-subscription"
+    is MainSubscription -> "${topic.prefix}-subscription"
     // BUT users can change the listener subscription name on purpose to replay the events
-    is ListenerSubscription -> "listener-subscription"
+    is EventListenerSubscription -> "listener-subscription"
   }
 
-val Subscription<*>.defaultNameDLQ
-  get() = when (this) {
-    is MainSubscription -> "${topic.prefix()}-subscription-dlq"
-    is ListenerSubscription -> "listener-subscription-dlq"
-  }
+val Subscription<*>.defaultNameDLQ get() = "$defaultName-dlq"
 
 val Subscription<*>.defaultInitialPosition
   get() = when (this) {
     is MainSubscription -> SubscriptionInitialPosition.Earliest
-    is ListenerSubscription -> SubscriptionInitialPosition.Latest
+    is EventListenerSubscription -> SubscriptionInitialPosition.Latest
   }
 

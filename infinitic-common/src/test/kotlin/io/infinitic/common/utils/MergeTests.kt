@@ -20,19 +20,26 @@
  *
  * Licensor: infinitic.io
  */
-package io.infinitic.workflows.tag.config
+package io.infinitic.common.utils
 
-import io.infinitic.storage.config.StorageConfig
+import io.kotest.core.spec.style.StringSpec
+import io.kotest.matchers.shouldBe
 
-data class WorkflowTagEngine(
-  var concurrency: Int? = null,
-  var storage: StorageConfig? = null,
-) {
-  var isDefault: Boolean = false
+class MergeTests : StringSpec(
+    {
+      "Can merge 2 data classes" {
+        val oA = Data(p1 = "p1A", p4 = "p4A")
+        val oB = Data(p1 = "p1B", p2 = "p2B", p5 = setOf("p5B"))
 
-  init {
-    concurrency?.let {
-      require(it >= 0) { "concurrency must be positive" }
-    }
-  }
-}
+        (oA merge oB) shouldBe Data(p1 = "p1A", p2 = "p2B", p4 = "p4A", p5 = setOf("p5B"))
+      }
+    },
+)
+
+internal data class Data(
+  val p1: String? = null,
+  val p2: String? = null,
+  val p3: String? = null,
+  val p4: String? = null,
+  val p5: Set<String>? = null
+)

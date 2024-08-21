@@ -25,11 +25,11 @@ package io.infinitic.inMemory
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.infinitic.common.data.MillisInstant
 import io.infinitic.common.messages.Message
+import io.infinitic.common.transport.EventListenerSubscription
 import io.infinitic.common.transport.InfiniticConsumerAsync
-import io.infinitic.common.transport.ListenerSubscription
 import io.infinitic.common.transport.MainSubscription
 import io.infinitic.common.transport.Subscription
-import io.infinitic.common.transport.isDelayed
+import io.infinitic.common.transport.acceptDelayed
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -43,7 +43,7 @@ import kotlinx.coroutines.runBlocking
 
 class InMemoryInfiniticConsumerAsync(
   private val mainChannels: InMemoryChannels,
-  private val listenerChannels: InMemoryChannels
+  private val eventListenerChannels: InMemoryChannels,
 ) : InfiniticConsumerAsync {
 
   override var logName: String? = null
@@ -73,7 +73,7 @@ class InMemoryInfiniticConsumerAsync(
       true -> 1
       false -> concurrency
     }
-    when (subscription.topic.isDelayed) {
+    when (subscription.topic.acceptDelayed) {
       true -> {
         val channel = subscription.getDelayedChannel(entity)
         logger.info { "$subscription (${channel.id}) Starting consumer for $entity with concurrency = $c" }
@@ -148,12 +148,12 @@ class InMemoryInfiniticConsumerAsync(
 
   private fun <S : Message> Subscription<S>.getDelayedChannel(entity: String) = when (this) {
     is MainSubscription -> with(mainChannels) { topic.channelForDelayed(entity) }
-    is ListenerSubscription -> with(listenerChannels) { topic.channelForDelayed(entity) }
+    is EventListenerSubscription -> with(eventListenerChannels) { topic.channelForDelayed(entity) }
   }
 
   private fun <S : Message> Subscription<S>.getChannel(entity: String) = when (this) {
     is MainSubscription -> with(mainChannels) { topic.channel(entity) }
-    is ListenerSubscription -> with(listenerChannels) { topic.channel(entity) }
+    is EventListenerSubscription -> with(eventListenerChannels) { topic.channel(entity) }
   }
 
   // emulate sending to DLQ

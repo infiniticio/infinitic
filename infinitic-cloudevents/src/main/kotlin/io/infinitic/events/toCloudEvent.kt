@@ -33,8 +33,8 @@ import io.infinitic.common.requester.workflowName
 import io.infinitic.common.tasks.events.messages.ServiceEventMessage
 import io.infinitic.common.tasks.executors.messages.ServiceExecutorMessage
 import io.infinitic.common.workflows.engine.messages.WorkflowCmdMessage
-import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
 import io.infinitic.common.workflows.engine.messages.WorkflowEventMessage
+import io.infinitic.common.workflows.engine.messages.WorkflowStateEngineMessage
 import io.infinitic.events.data.services.serviceType
 import io.infinitic.events.data.services.toJson
 import io.infinitic.events.data.workflows.toJson
@@ -83,21 +83,21 @@ enum class CloudEventContext {
 
     override fun Message.type(): String? = when (this) {
       is WorkflowCmdMessage -> workflowType()
-      is WorkflowEngineMessage -> workflowType()
+      is WorkflowStateEngineMessage -> workflowType()
       is WorkflowEventMessage -> workflowType()
       else -> null
     }
 
     override fun Message.subject(): String = when (this) {
       is WorkflowCmdMessage -> workflowId
-      is WorkflowEngineMessage -> workflowId
+      is WorkflowStateEngineMessage -> workflowId
       is WorkflowEventMessage -> workflowId
       else -> thisShouldNotHappen()
     }.toString()
 
     override fun Message.source(prefix: String): URI = when (this) {
       is WorkflowCmdMessage -> workflowName
-      is WorkflowEngineMessage -> workflowName
+      is WorkflowStateEngineMessage -> workflowName
       is WorkflowEventMessage -> workflowName
       else -> thisShouldNotHappen()
     }.let {
@@ -106,14 +106,14 @@ enum class CloudEventContext {
 
     override fun Message.dataBytes(): ByteArray = when (this) {
       is WorkflowCmdMessage -> toJson()
-      is WorkflowEngineMessage -> toJson()
+      is WorkflowStateEngineMessage -> toJson()
       is WorkflowEventMessage -> toJson()
       else -> thisShouldNotHappen()
     }.toString().toByteArray()
 
     override fun Message.time(publishedAt: MillisInstant): OffsetDateTime = when (this) {
       is WorkflowCmdMessage -> publishedAt
-      is WorkflowEngineMessage -> emittedAt ?: publishedAt
+      is WorkflowStateEngineMessage -> emittedAt ?: publishedAt
       is WorkflowEventMessage -> publishedAt
       else -> thisShouldNotHappen()
     }.toOffsetDateTime()
@@ -170,5 +170,4 @@ enum class CloudEventContext {
   abstract fun Message.subject(): String
   abstract fun Message.source(prefix: String): URI
   abstract fun Message.dataBytes(): ByteArray
-
 }

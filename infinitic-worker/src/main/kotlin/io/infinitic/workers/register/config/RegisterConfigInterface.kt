@@ -25,6 +25,9 @@ package io.infinitic.workers.register.config
 import io.infinitic.events.config.EventListenerConfig
 
 interface RegisterConfigInterface {
+  /** Logs configuration */
+  val logs: LogsConfig
+
   /** Workflows configuration */
   val workflows: List<WorkflowConfig>
 

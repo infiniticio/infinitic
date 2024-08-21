@@ -26,6 +26,11 @@ import kotlin.math.max
 
 fun interface WithTimeout {
   fun getTimeoutInSeconds(): Double?
+
+  companion object {
+    @JvmStatic
+    val NONE: WithTimeout = WithTimeout { null }
+  }
 }
 
 val WithTimeout.millis: Result<Long?>

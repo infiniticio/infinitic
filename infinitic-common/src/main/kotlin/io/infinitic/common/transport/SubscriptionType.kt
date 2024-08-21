@@ -20,19 +20,18 @@
  *
  * Licensor: infinitic.io
  */
-package io.infinitic.workflows.engine.config
+package io.infinitic.common.transport
 
-import io.infinitic.storage.config.StorageConfig
+import io.infinitic.common.messages.Message
 
-data class WorkflowStateEngine(
-  var concurrency: Int? = null,
-  var storageConfig: StorageConfig? = null,
-) {
-  var isDefault: Boolean = false
-
-  init {
-    concurrency?.let {
-      require(it >= 0) { "concurrency must be positive" }
-    }
-  }
+enum class SubscriptionType {
+  MAIN,
+  EVENT_LISTENER,
 }
+
+
+fun <S : Message> SubscriptionType.create(topic: Topic<S>, subscriptionName: String?) =
+    when (this) {
+      SubscriptionType.MAIN -> MainSubscription(topic)
+      SubscriptionType.EVENT_LISTENER -> EventListenerSubscription(topic, subscriptionName)
+    }

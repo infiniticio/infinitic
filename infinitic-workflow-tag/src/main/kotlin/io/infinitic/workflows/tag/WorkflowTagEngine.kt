@@ -53,7 +53,7 @@ import io.infinitic.common.workflows.tags.messages.RemoveTagFromWorkflow
 import io.infinitic.common.workflows.tags.messages.RetryTasksByTag
 import io.infinitic.common.workflows.tags.messages.RetryWorkflowTaskByTag
 import io.infinitic.common.workflows.tags.messages.SendSignalByTag
-import io.infinitic.common.workflows.tags.messages.WorkflowTagMessage
+import io.infinitic.common.workflows.tags.messages.WorkflowTagEngineMessage
 import io.infinitic.common.workflows.tags.storage.WorkflowTagStorage
 import io.infinitic.workflows.tag.storage.LoggedWorkflowTagStorage
 import kotlinx.coroutines.coroutineScope
@@ -71,7 +71,7 @@ class WorkflowTagEngine(
 
   private val emitterName by lazy { EmitterName(producer.name) }
 
-  suspend fun handle(message: WorkflowTagMessage, publishTime: MillisInstant) {
+  suspend fun handle(message: WorkflowTagEngineMessage, publishTime: MillisInstant) {
     logger.debug { "receiving $message" }
 
     when (message) {
@@ -343,7 +343,7 @@ class WorkflowTagEngine(
     with(producer) { workflowIdsByTag.sendTo(ClientTopic) }
   }
 
-  private fun discardTagWithoutIds(message: WorkflowTagMessage) {
+  private fun discardTagWithoutIds(message: WorkflowTagEngineMessage) {
     logger.debug { "discarding as no workflow `${message.workflowName}` found for tag `${message.workflowTag}`" }
   }
 }

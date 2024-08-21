@@ -35,9 +35,9 @@ import io.infinitic.common.transport.ClientTopic
 import io.infinitic.common.transport.InfiniticProducer
 import io.infinitic.common.transport.InfiniticProducerAsync
 import io.infinitic.common.transport.LoggedInfiniticProducer
-import io.infinitic.common.transport.WorkflowEngineTopic
 import io.infinitic.common.transport.WorkflowEventsTopic
-import io.infinitic.common.transport.WorkflowTagTopic
+import io.infinitic.common.transport.WorkflowStateEngineTopic
+import io.infinitic.common.transport.WorkflowTagEngineTopic
 import io.infinitic.common.workflows.engine.messages.CancelWorkflow
 import io.infinitic.common.workflows.engine.messages.CompleteTimers
 import io.infinitic.common.workflows.engine.messages.CompleteWorkflow
@@ -60,8 +60,8 @@ import io.infinitic.common.workflows.engine.messages.RetryWorkflowTask
 import io.infinitic.common.workflows.engine.messages.SendSignal
 import io.infinitic.common.workflows.engine.messages.WaitWorkflow
 import io.infinitic.common.workflows.engine.messages.WorkflowCompletedEvent
-import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
 import io.infinitic.common.workflows.engine.messages.WorkflowEvent
+import io.infinitic.common.workflows.engine.messages.WorkflowStateEngineMessage
 import io.infinitic.common.workflows.engine.state.WorkflowState
 import io.infinitic.common.workflows.engine.storage.WorkflowStateStorage
 import io.infinitic.common.workflows.tags.messages.RemoveTagFromWorkflow
@@ -103,7 +103,7 @@ class WorkflowEngine(
   private val producer = LoggedInfiniticProducer(this::class.java.name, producerAsync)
   private val emitterName by lazy { EmitterName(this::class.java.name) }
 
-  suspend fun handle(message: WorkflowEngineMessage, publishTime: MillisInstant) {
+  suspend fun handle(message: WorkflowStateEngineMessage, publishTime: MillisInstant) {
     logDebug(message) { "Receiving $message" }
 
     // set producer id for logging purpose
@@ -168,12 +168,12 @@ class WorkflowEngine(
               emitterName = EmitterName(producer.name),
               emittedAt = state.runningWorkflowTaskInstant,
           )
-          launch { with(producer) { removeTagFromWorkflow.sendTo(WorkflowTagTopic) } }
+          launch { with(producer) { removeTagFromWorkflow.sendTo(WorkflowTagEngineTopic) } }
         }
       }
 
   private suspend fun processMessageWithoutState(
-    message: WorkflowEngineMessage
+    message: WorkflowStateEngineMessage
   ): WorkflowState? = coroutineScope {
     // targeted workflow is not found, we tell the message emitter
     when (message) {
@@ -223,7 +223,7 @@ class WorkflowEngine(
                 emitterName = emitterName,
                 emittedAt = message.emittedAt,
             )
-            with(producer) { childMethodFailed.sendTo(WorkflowEngineTopic) }
+            with(producer) { childMethodFailed.sendTo(WorkflowStateEngineTopic) }
           }
         }
       }
@@ -250,7 +250,7 @@ class WorkflowEngine(
   }
 
   private suspend fun processMessageWithState(
-    message: WorkflowEngineMessage,
+    message: WorkflowStateEngineMessage,
     state: WorkflowState
   ): WorkflowState? {
 
@@ -308,7 +308,7 @@ class WorkflowEngine(
     return state
   }
 
-  private fun logDiscarding(message: WorkflowEngineMessage, cause: () -> String) {
+  private fun logDiscarding(message: WorkflowStateEngineMessage, cause: () -> String) {
     val txt = { "Id ${message.workflowId} - discarding ${cause()}: $message" }
     when (message) {
       // these messages are expected, so we don't log them as warning
@@ -319,11 +319,14 @@ class WorkflowEngine(
     }
   }
 
-  private fun logDebug(message: WorkflowEngineMessage, txt: () -> String) {
+  private fun logDebug(message: WorkflowStateEngineMessage, txt: () -> String) {
     logger.debug { "Id ${message.workflowId} - ${txt()}" }
   }
 
-  private fun CoroutineScope.processMessage(state: WorkflowState, message: WorkflowEngineMessage) {
+  private fun CoroutineScope.processMessage(
+    state: WorkflowState,
+    message: WorkflowStateEngineMessage
+  ) {
     // if message is related to a workflowTask, it's not running anymore
     if (message.isWorkflowTaskEvent()) state.runningWorkflowTaskId = null
 

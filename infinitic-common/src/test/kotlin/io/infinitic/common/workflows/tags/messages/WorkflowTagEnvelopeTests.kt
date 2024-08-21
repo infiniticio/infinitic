@@ -36,7 +36,7 @@ import io.kotest.matchers.shouldBe
 class WorkflowTagEnvelopeTests :
   StringSpec(
       {
-        WorkflowTagMessage::class.sealedSubclasses.map {
+        WorkflowTagEngineMessage::class.sealedSubclasses.map {
           val msg = TestFactory.random(it)
 
           "WorkflowTagMessage(${msg::class.simpleName}) should have its tag as key" {
@@ -44,7 +44,7 @@ class WorkflowTagEnvelopeTests :
           }
         }
 
-        WorkflowTagMessage::class.sealedSubclasses.map {
+        WorkflowTagEngineMessage::class.sealedSubclasses.map {
           val tag = WorkflowTag(WorkflowTag.CUSTOM_ID_PREFIX + TestFactory.random(String::class))
           val msg = when (it) {
             DispatchWorkflowByCustomId::class -> TestFactory.random(it, mapOf("workflowTag" to tag))

@@ -44,9 +44,9 @@ import io.infinitic.common.tasks.events.messages.TaskRetriedEvent
 import io.infinitic.common.tasks.events.messages.TaskStartedEvent
 import io.infinitic.common.tasks.executors.messages.ExecuteTask
 import io.infinitic.common.tasks.executors.messages.ServiceExecutorMessage
-import io.infinitic.common.transport.DelayedServiceExecutorTopic
 import io.infinitic.common.transport.InfiniticProducerAsync
 import io.infinitic.common.transport.LoggedInfiniticProducer
+import io.infinitic.common.transport.RetryServiceExecutorTopic
 import io.infinitic.common.transport.ServiceEventsTopic
 import io.infinitic.common.utils.checkMode
 import io.infinitic.common.utils.getMethodPerNameAndParameters
@@ -235,7 +235,7 @@ class TaskExecutor(
     val emitterName = this@TaskExecutor.emitterName
 
     val executeTask = ExecuteTask.retryFrom(this, emitterName, cause, meta)
-    with(producer) { executeTask.sendTo(DelayedServiceExecutorTopic, delay) }
+    with(producer) { executeTask.sendTo(RetryServiceExecutorTopic, delay) }
 
     // once sent, we publish the event
     val event = TaskRetriedEvent.from(this, emitterName, cause, delay, meta)
@@ -268,7 +268,7 @@ class TaskExecutor(
     methodParameterTypes: MethodParameterTypes?,
     methodArgs: MethodArgs
   ): Triple<Any, Method, Array<*>> {
-    val registeredServiceExecutor = workerRegistry.getRegisteredServiceExecutor(serviceName)!!
+    val registeredServiceExecutor = workerRegistry.serviceExecutors[serviceName]!!
 
     val serviceInstance = registeredServiceExecutor.factory()
     val serviceMethod = serviceInstance::class.java.getMethodPerNameAndParameters(
@@ -310,7 +310,7 @@ class TaskExecutor(
     val workflowTaskParameters = serviceArgs[0] as WorkflowTaskParameters
 
     // workflow registered in worker
-    val registeredWorkflowExecutor = workerRegistry.getRegisteredWorkflowExecutor(workflowName)!!
+    val registeredWorkflowExecutor = workerRegistry.workflowExecutors[workflowName]!!
     // workflow instance
     val workflowInstance = registeredWorkflowExecutor.getInstance(workflowTaskParameters)
     // method of the workflow instance

@@ -24,7 +24,7 @@
 package io.infinitic.pulsar.client
 
 import io.infinitic.common.fixtures.TestFactory
-import io.infinitic.common.transport.WorkflowEngineTopic
+import io.infinitic.common.transport.WorkflowStateEngineTopic
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineEnvelope
 import io.infinitic.pulsar.consumers.ConsumerConfig
 import io.infinitic.pulsar.resources.schema
@@ -188,7 +188,7 @@ class PulsarInfiniticClientTests :
               consumerConfig = randomConfig,
           )
 
-          client.newConsumer(WorkflowEngineTopic.schema, consumerDef, null)
+          client.newConsumer(WorkflowStateEngineTopic.schema, consumerDef, null)
 
           // then
           topic.captured shouldBe randomTopic
@@ -254,7 +254,7 @@ class PulsarInfiniticClientTests :
               consumerConfig = randomConfig,
           )
 
-          client.newConsumer(WorkflowEngineTopic.schema, consumerDef, consumerDefDlq)
+          client.newConsumer(WorkflowStateEngineTopic.schema, consumerDef, consumerDefDlq)
 
           // then
           topic.captured shouldBe randomTopic

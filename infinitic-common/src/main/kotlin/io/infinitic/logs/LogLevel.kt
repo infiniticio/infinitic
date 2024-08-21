@@ -20,8 +20,13 @@
  *
  * Licensor: infinitic.io
  */
-package io.infinitic.common.workers.registry
+package io.infinitic.logs
 
-import io.infinitic.common.workflows.tags.storage.WorkflowTagStorage
-
-data class RegisteredWorkflowTag(val concurrency: Int, var storage: WorkflowTagStorage)
+enum class LogLevel {
+  TRACE,
+  DEBUG,
+  INFO,
+  WARN,
+  ERROR,
+  OFF
+}

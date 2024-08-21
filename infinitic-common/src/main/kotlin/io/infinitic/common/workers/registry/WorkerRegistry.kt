@@ -27,40 +27,19 @@ import io.infinitic.common.workflows.data.workflows.WorkflowName
 import org.jetbrains.annotations.TestOnly
 
 class WorkerRegistry {
+  val serviceTagEngines = mutableMapOf<ServiceName, RegisteredServiceTagEngine>()
   val serviceExecutors = mutableMapOf<ServiceName, RegisteredServiceExecutor>()
-  val serviceTags = mutableMapOf<ServiceName, RegisteredServiceTag>()
-  val serviceListeners = mutableMapOf<ServiceName, RegisteredEventListener>()
+  val serviceEventListeners = mutableMapOf<ServiceName, RegisteredEventListener>()
 
-  val workflowEngines = mutableMapOf<WorkflowName, RegisteredWorkflowEngine>()
+  val workflowTagEngines = mutableMapOf<WorkflowName, RegisteredWorkflowTagEngine>()
+  val workflowStateEngines = mutableMapOf<WorkflowName, RegisteredWorkflowStateEngine>()
   val workflowExecutors = mutableMapOf<WorkflowName, RegisteredWorkflowExecutor>()
-  val workflowTags = mutableMapOf<WorkflowName, RegisteredWorkflowTag>()
-  val workflowListeners = mutableMapOf<WorkflowName, RegisteredEventListener>()
-
-  fun getRegisteredServiceExecutor(serviceName: ServiceName) =
-      serviceExecutors[serviceName]
-
-  fun getRegisteredServiceTag(serviceName: ServiceName) =
-      serviceTags[serviceName]
-
-  fun getRegisteredWorkflowExecutor(workflowName: WorkflowName) =
-      workflowExecutors[workflowName]
-
-  fun getRegisteredWorkflowEngine(workflowName: WorkflowName) =
-      workflowEngines[workflowName]
-
-  fun getRegisteredWorkflowTag(workflowName: WorkflowName) =
-      workflowTags[workflowName]
-
-  fun getRegisteredServiceEventListener(serviceName: ServiceName) =
-      serviceListeners[serviceName]
-
-  fun getRegisteredWorkflowEventListener(workflowName: WorkflowName) =
-      workflowListeners[workflowName]
+  val workflowEventListeners = mutableMapOf<WorkflowName, RegisteredEventListener>()
 
   @TestOnly
   fun flush() {
-    serviceTags.values.forEach { it.storage.flush() }
-    workflowTags.values.forEach { it.storage.flush() }
-    workflowEngines.values.forEach { it.storage.flush() }
+    serviceTagEngines.values.forEach { it.storage.flush() }
+    workflowTagEngines.values.forEach { it.storage.flush() }
+    workflowStateEngines.values.forEach { it.storage.flush() }
   }
 }

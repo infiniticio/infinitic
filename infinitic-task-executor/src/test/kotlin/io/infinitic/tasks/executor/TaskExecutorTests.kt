@@ -50,8 +50,8 @@ import io.infinitic.common.tasks.events.messages.TaskStartedEvent
 import io.infinitic.common.tasks.executors.messages.ExecuteTask
 import io.infinitic.common.tasks.executors.messages.ServiceExecutorMessage
 import io.infinitic.common.tasks.tags.messages.RemoveTaskIdFromTag
-import io.infinitic.common.transport.DelayedServiceExecutorTopic
 import io.infinitic.common.transport.InfiniticProducerAsync
+import io.infinitic.common.transport.RetryServiceExecutorTopic
 import io.infinitic.common.transport.ServiceEventsTopic
 import io.infinitic.common.transport.ServiceExecutorTopic
 import io.infinitic.common.workers.config.ExponentialBackoffRetryPolicy
@@ -107,7 +107,7 @@ class TaskExecutorTests :
             capture(taskExecutorSlot).sendToAsync(ServiceExecutorTopic)
           } returns completed()
           coEvery {
-            capture(taskExecutorSlot).sendToAsync(DelayedServiceExecutorTopic, capture(afterSlot))
+            capture(taskExecutorSlot).sendToAsync(RetryServiceExecutorTopic, capture(afterSlot))
           } returns completed()
           coEvery { capture(taskEventSlot).sendToAsync(ServiceEventsTopic) } returns completed()
         }
@@ -125,7 +125,7 @@ class TaskExecutorTests :
         }
 
         "Task executed should send TaskStarted and TaskCompleted events" {
-          every { workerRegistry.getRegisteredServiceExecutor(testServiceName) } returns service
+          every { workerRegistry.serviceExecutors[testServiceName] } returns service
           val input = arrayOf(3, 3)
           val types = listOf(Int::class.java.name, Int::class.java.name)
           // with
@@ -148,7 +148,7 @@ class TaskExecutorTests :
         }
 
         "Should be able to run an explicit method with 2 parameters" {
-          every { workerRegistry.getRegisteredServiceExecutor(testServiceName) } returns service
+          every { workerRegistry.serviceExecutors[testServiceName] } returns service
           val input = arrayOf(3, "3")
           val types = listOf(Int::class.java.name, String::class.java.name)
           // with
@@ -168,7 +168,7 @@ class TaskExecutorTests :
         }
 
         "Should be able to run an explicit method with 2 parameters without parameterTypes" {
-          every { workerRegistry.getRegisteredServiceExecutor(testServiceName) } returns service
+          every { workerRegistry.serviceExecutors[testServiceName] } returns service
           val input = arrayOf(4, "3")
           val types = null
           val msg = getExecuteTask("other", input, types)
@@ -187,7 +187,7 @@ class TaskExecutorTests :
         }
 
         "Throwable should not be caught on task" {
-          every { workerRegistry.getRegisteredServiceExecutor(testServiceName) } returns service
+          every { workerRegistry.serviceExecutors[testServiceName] } returns service
           val input = arrayOf<Any>()
           val types = listOf<String>()
           val msg = getExecuteTask("withThrowable", input, types)
@@ -208,7 +208,7 @@ class TaskExecutorTests :
         }
 
         "Should throw ClassNotFoundException when trying to process an unknown task" {
-          every { workerRegistry.getRegisteredServiceExecutor(testServiceName) } throws
+          every { workerRegistry.serviceExecutors[testServiceName] } throws
               ClassNotFoundException("task")
           val input = arrayOf(2, "3")
           val types = listOf(Int::class.java.name, String::class.java.name)
@@ -228,7 +228,7 @@ class TaskExecutorTests :
         }
 
         "Should throw NoMethodFoundWithParameterTypesException when trying to process an unknown method" {
-          every { workerRegistry.getRegisteredServiceExecutor(testServiceName) } returns service
+          every { workerRegistry.serviceExecutors[testServiceName] } returns service
           val input = arrayOf(2, "3")
           val types = listOf(Int::class.java.name, String::class.java.name)
           // with
@@ -248,7 +248,7 @@ class TaskExecutorTests :
         }
 
         "Should throw NoMethodFoundWithParameterCount when trying to process an unknown method without parameterTypes" {
-          every { workerRegistry.getRegisteredServiceExecutor(testServiceName) } returns service
+          every { workerRegistry.serviceExecutors[testServiceName] } returns service
           val input = arrayOf(2, "3")
           // with
           val msg = getExecuteTask("unknown", input, null)
@@ -267,7 +267,7 @@ class TaskExecutorTests :
         }
 
         "Should throw TooManyMethodsFoundWithParameterCount when trying to process an unknown method without parameterTypes" {
-          every { workerRegistry.getRegisteredServiceExecutor(testServiceName) } returns service
+          every { workerRegistry.serviceExecutors[testServiceName] } returns service
           val input = arrayOf(2, "3")
           // with
           val msg = getExecuteTask("handle", input, null)
@@ -286,7 +286,7 @@ class TaskExecutorTests :
         }
 
         "Should retry with correct exception with Retry interface" {
-          every { workerRegistry.getRegisteredServiceExecutor(testServiceName) } returns
+          every { workerRegistry.serviceExecutors[testServiceName] } returns
               service.copy(factory = { SimpleServiceWithRetry() })
           // with
           val msg = getExecuteTask("handle", arrayOf(2, "3"), null)
@@ -310,7 +310,7 @@ class TaskExecutorTests :
         }
 
         "Should retry with correct exception with Retry annotation on method" {
-          every { workerRegistry.getRegisteredServiceExecutor(testServiceName) } returns
+          every { workerRegistry.serviceExecutors[testServiceName] } returns
               service.copy(factory = { ServiceWithRetryInMethod() })
           // with
           val msg = getExecuteTask("handle", arrayOf(2, "3"), null)
@@ -335,7 +335,7 @@ class TaskExecutorTests :
         }
 
         "Should retry with correct exception with Retry annotation on class" {
-          every { workerRegistry.getRegisteredServiceExecutor(testServiceName) } returns
+          every { workerRegistry.serviceExecutors[testServiceName] } returns
               service.copy(factory = { ServiceWithRetryInClass() })
           // with
           val msg = getExecuteTask("handle", arrayOf(2, "3"), null)
@@ -360,7 +360,7 @@ class TaskExecutorTests :
         }
 
         "Should not retry if error in getSecondsBeforeRetry" {
-          every { workerRegistry.getRegisteredServiceExecutor(testServiceName) } returns service.copy(
+          every { workerRegistry.serviceExecutors[testServiceName] } returns service.copy(
               factory = { ServiceWithBuggyRetryInClass() },
           )
           // with
@@ -380,7 +380,7 @@ class TaskExecutorTests :
         }
 
         "Should be able to access context from task" {
-          every { workerRegistry.getRegisteredServiceExecutor(testServiceName) } returns
+          every { workerRegistry.serviceExecutors[testServiceName] } returns
               service.copy(factory = { ServiceWithContext() })
           val input = arrayOf(2, "3")
           // with
@@ -403,7 +403,7 @@ class TaskExecutorTests :
         }
 
         "Should throw TimeoutException with timeout from Registry" {
-          every { workerRegistry.getRegisteredServiceExecutor(testServiceName) } returns
+          every { workerRegistry.serviceExecutors[testServiceName] } returns
               service.copy(
                   factory = { ServiceWithRegisteredTimeout() },
                   withTimeout = { 0.1 },
@@ -427,7 +427,7 @@ class TaskExecutorTests :
         }
 
         "Should throw TimeoutException with timeout from method Annotation" {
-          every { workerRegistry.getRegisteredServiceExecutor(testServiceName) } returns
+          every { workerRegistry.serviceExecutors[testServiceName] } returns
               service.copy(
                   factory = { ServiceWithTimeoutOnMethod() },
                   withRetry = ExponentialBackoffRetryPolicy(maximumRetries = 0),
@@ -451,7 +451,7 @@ class TaskExecutorTests :
         }
 
         "Should throw TimeoutException with timeout from class Annotation" {
-          every { workerRegistry.getRegisteredServiceExecutor(testServiceName) } returns
+          every { workerRegistry.serviceExecutors[testServiceName] } returns
               service.copy(
                   factory = { ServiceWithTimeoutOnClass() },
                   withRetry = ExponentialBackoffRetryPolicy(maximumRetries = 0),

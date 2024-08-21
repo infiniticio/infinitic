@@ -20,19 +20,6 @@
  *
  * Licensor: infinitic.io
  */
-package io.infinitic.tasks.tag.config
+package io.infinitic.workers
 
-import io.infinitic.storage.config.StorageConfig
 
-data class ServiceTagEngine(
-  var concurrency: Int? = null,
-  var storage: StorageConfig? = null,
-) {
-  var isDefault: Boolean = false
-
-  init {
-    concurrency?.let {
-      require(it >= 0) { "concurrency must be positive" }
-    }
-  }
-}

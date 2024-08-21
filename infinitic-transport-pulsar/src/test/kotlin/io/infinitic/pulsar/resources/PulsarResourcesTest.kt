@@ -25,17 +25,17 @@ package io.infinitic.pulsar.resources
 
 import io.infinitic.common.fixtures.TestFactory
 import io.infinitic.common.transport.ClientTopic
-import io.infinitic.common.transport.DelayedServiceExecutorTopic
-import io.infinitic.common.transport.DelayedWorkflowEngineTopic
-import io.infinitic.common.transport.DelayedWorkflowTaskExecutorTopic
+import io.infinitic.common.transport.RetryServiceExecutorTopic
+import io.infinitic.common.transport.RetryWorkflowTaskExecutorTopic
 import io.infinitic.common.transport.ServiceEventsTopic
 import io.infinitic.common.transport.ServiceExecutorTopic
 import io.infinitic.common.transport.ServiceTagTopic
 import io.infinitic.common.transport.ServiceTopic
+import io.infinitic.common.transport.TimerWorkflowStateEngineTopic
 import io.infinitic.common.transport.WorkflowCmdTopic
-import io.infinitic.common.transport.WorkflowEngineTopic
 import io.infinitic.common.transport.WorkflowEventsTopic
-import io.infinitic.common.transport.WorkflowTagTopic
+import io.infinitic.common.transport.WorkflowStateEngineTopic
+import io.infinitic.common.transport.WorkflowTagEngineTopic
 import io.infinitic.common.transport.WorkflowTaskEventsTopic
 import io.infinitic.common.transport.WorkflowTaskExecutorTopic
 import io.infinitic.common.transport.WorkflowTopic
@@ -101,13 +101,13 @@ class PulsarResourcesTest : StringSpec(
         pulsarResources.initTopicOnce(
             topic,
             isPartitioned = true,
-            isDelayed = true,
+            isTimed = true,
         ).isSuccess shouldBe true
 
         coVerifyAll {
           pulsarInfiniticAdmin.initTenantOnce("tenantTest", allowedClusters, adminRoles)
           pulsarInfiniticAdmin.initNamespaceOnce("tenantTest/namespaceTest", policiesConfig)
-          pulsarInfiniticAdmin.initTopicOnce(topic, true, policiesConfig.delayedTTLInSeconds)
+          pulsarInfiniticAdmin.initTopicOnce(topic, true, policiesConfig.timerTTLInSeconds)
         }
       }
 
@@ -139,22 +139,22 @@ class PulsarResourcesTest : StringSpec(
 
       "topics name MUST not change" {
         val entity = RandomString(10).nextString()
-        val prefix = "persistent://$tenant/$namespace"
+        val domain = "persistent://$tenant/$namespace"
 
         with(pulsarResources) {
-          ClientTopic.fullName(entity) shouldBe "$prefix/response:$entity"
-          WorkflowTagTopic.fullName(entity) shouldBe "$prefix/workflow-tag:$entity"
-          WorkflowCmdTopic.fullName(entity) shouldBe "$prefix/workflow-cmd:$entity"
-          WorkflowEngineTopic.fullName(entity) shouldBe "$prefix/workflow-engine:$entity"
-          DelayedWorkflowEngineTopic.fullName(entity) shouldBe "$prefix/workflow-delay:$entity"
-          WorkflowEventsTopic.fullName(entity) shouldBe "$prefix/workflow-events:$entity"
-          WorkflowTaskExecutorTopic.fullName(entity) shouldBe "$prefix/workflow-task-executor:$entity"
-          DelayedWorkflowTaskExecutorTopic.fullName(entity) shouldBe "$prefix/workflow-task-executor:$entity"
-          WorkflowTaskEventsTopic.fullName(entity) shouldBe "$prefix/workflow-task-events:$entity"
-          ServiceTagTopic.fullName(entity) shouldBe "$prefix/task-tag:$entity"
-          ServiceExecutorTopic.fullName(entity) shouldBe "$prefix/task-executor:$entity"
-          DelayedServiceExecutorTopic.fullName(entity) shouldBe "$prefix/task-executor:$entity"
-          ServiceEventsTopic.fullName(entity) shouldBe "$prefix/task-events:$entity"
+          ClientTopic.fullName(entity) shouldBe "$domain/response:$entity"
+          WorkflowTagEngineTopic.fullName(entity) shouldBe "$domain/workflow-tag:$entity"
+          WorkflowCmdTopic.fullName(entity) shouldBe "$domain/workflow-cmd:$entity"
+          WorkflowStateEngineTopic.fullName(entity) shouldBe "$domain/workflow-engine:$entity"
+          TimerWorkflowStateEngineTopic.fullName(entity) shouldBe "$domain/workflow-delay:$entity"
+          WorkflowEventsTopic.fullName(entity) shouldBe "$domain/workflow-events:$entity"
+          WorkflowTaskExecutorTopic.fullName(entity) shouldBe "$domain/workflow-task-executor:$entity"
+          RetryWorkflowTaskExecutorTopic.fullName(entity) shouldBe "$domain/workflow-task-executor:$entity"
+          WorkflowTaskEventsTopic.fullName(entity) shouldBe "$domain/workflow-task-events:$entity"
+          ServiceTagTopic.fullName(entity) shouldBe "$domain/task-tag:$entity"
+          ServiceExecutorTopic.fullName(entity) shouldBe "$domain/task-executor:$entity"
+          RetryServiceExecutorTopic.fullName(entity) shouldBe "$domain/task-executor:$entity"
+          ServiceEventsTopic.fullName(entity) shouldBe "$domain/task-events:$entity"
         }
       }
     },

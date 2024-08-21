@@ -28,7 +28,7 @@ import io.infinitic.common.emitters.EmitterName
 import io.infinitic.common.transport.ClientTopic
 import io.infinitic.common.transport.InfiniticProducerAsync
 import io.infinitic.common.transport.LoggedInfiniticProducer
-import io.infinitic.common.transport.WorkflowEngineTopic
+import io.infinitic.common.transport.WorkflowStateEngineTopic
 import io.infinitic.common.workflows.engine.messages.MethodCanceledEvent
 import io.infinitic.common.workflows.engine.messages.MethodCommandedEvent
 import io.infinitic.common.workflows.engine.messages.MethodCompletedEvent
@@ -88,7 +88,7 @@ class WorkflowEventHandler(producerAsync: InfiniticProducerAsync) {
     msg.getEventForAwaitingWorkflows(emitterName, publishTime)
         .filter { it.workflowId != msg.workflowId }
         .forEach { event ->
-          launch { with(producer) { event.sendTo(WorkflowEngineTopic) } }
+          launch { with(producer) { event.sendTo(WorkflowStateEngineTopic) } }
         }
   }
 
@@ -105,7 +105,7 @@ class WorkflowEventHandler(producerAsync: InfiniticProducerAsync) {
     msg.getEventForAwaitingWorkflows(emitterName, publishTime)
         .filter { it.workflowId != msg.workflowId }
         .forEach { event ->
-          launch { with(producer) { event.sendTo(WorkflowEngineTopic) } }
+          launch { with(producer) { event.sendTo(WorkflowStateEngineTopic) } }
         }
   }
 
@@ -122,7 +122,7 @@ class WorkflowEventHandler(producerAsync: InfiniticProducerAsync) {
     msg.getEventForAwaitingWorkflows(emitterName, publishTime)
         .filter { it.workflowId != msg.workflowId }
         .forEach { event ->
-          launch { with(producer) { event.sendTo(WorkflowEngineTopic) } }
+          launch { with(producer) { event.sendTo(WorkflowStateEngineTopic) } }
         }
   }
 
@@ -139,7 +139,7 @@ class WorkflowEventHandler(producerAsync: InfiniticProducerAsync) {
     msg.getEventForAwaitingWorkflows(emitterName, publishTime)
         .filter { it.workflowId != msg.workflowId }
         .forEach { event ->
-          launch { with(producer) { event.sendTo(WorkflowEngineTopic) } }
+          launch { with(producer) { event.sendTo(WorkflowStateEngineTopic) } }
         }
   }
 

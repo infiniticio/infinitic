@@ -20,17 +20,8 @@
  *
  * Licensor: infinitic.io
  */
-@file:Suppress("unused")
+package io.infinitic.common.workers.registry
 
-package io.infinitic.workers.samples
+import io.infinitic.common.workflows.tags.storage.WorkflowTagStorage
 
-import io.cloudevents.CloudEvent
-import io.infinitic.cloudEvents.CloudEventListener
-
-
-internal class ServiceEventListenerImpl : CloudEventListener {
-  override fun onEvent(event: CloudEvent) {
-    // do nothing
-  }
-}
-
+data class RegisteredWorkflowTagEngine(val concurrency: Int, var storage: WorkflowTagStorage)

@@ -23,6 +23,7 @@
 
 package io.infinitic.events.data.workflows
 
+import io.infinitic.common.exceptions.thisShouldNotHappen
 import io.infinitic.common.workflows.engine.messages.CancelWorkflow
 import io.infinitic.common.workflows.engine.messages.CompleteTimers
 import io.infinitic.common.workflows.engine.messages.CompleteWorkflow
@@ -56,8 +57,8 @@ import io.infinitic.common.workflows.engine.messages.WaitWorkflow
 import io.infinitic.common.workflows.engine.messages.WorkflowCanceledEvent
 import io.infinitic.common.workflows.engine.messages.WorkflowCmdMessage
 import io.infinitic.common.workflows.engine.messages.WorkflowCompletedEvent
-import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
 import io.infinitic.common.workflows.engine.messages.WorkflowEventMessage
+import io.infinitic.common.workflows.engine.messages.WorkflowStateEngineMessage
 import io.infinitic.events.types.CANCEL
 import io.infinitic.events.types.CANCELED
 import io.infinitic.events.types.CANCEL_METHOD
@@ -91,7 +92,7 @@ import io.infinitic.events.types.TIMER_COMPLETED
 import io.infinitic.events.types.TIMER_DISPATCHED
 import io.infinitic.events.types.TYPE_WORKFLOW
 
-fun WorkflowCmdMessage.workflowType(): String? = when (this) {
+internal fun WorkflowCmdMessage.workflowSimpleType(): String? = when (this) {
   is DispatchWorkflow -> START
   is DispatchMethod -> START_METHOD
   is CancelWorkflow -> when (workflowMethodId) {
@@ -105,9 +106,9 @@ fun WorkflowCmdMessage.workflowType(): String? = when (this) {
   is RetryWorkflowTask -> RETRY_EXECUTOR
   is SendSignal -> SIGNAL
   is WaitWorkflow -> null
-}?.let { "$TYPE_WORKFLOW.$it" }
+}
 
-fun WorkflowEngineMessage.workflowType(): String? = when (this) {
+internal fun WorkflowStateEngineMessage.workflowSimpleType(): String? = when (this) {
   is WorkflowCmdMessage -> null
   is RemoteTimerCompleted -> TIMER_COMPLETED
   is RemoteMethodCompleted -> REMOTE_METHOD_COMPLETED
@@ -116,7 +117,10 @@ fun WorkflowEngineMessage.workflowType(): String? = when (this) {
   is RemoteMethodTimedOut -> REMOTE_METHOD_TIMED_OUT
   is RemoteMethodUnknown -> REMOTE_METHOD_UNKNOWN
   is RemoteTaskCanceled -> null
-  is RemoteTaskTimedOut -> TASK_TIMED_OUT
+  is RemoteTaskTimedOut -> when (isWorkflowTaskEvent()) {
+    true -> thisShouldNotHappen() // Workflow tasks hava to timeout at workflow level
+    false -> TASK_TIMED_OUT
+  }
 
   is RemoteTaskFailed -> when (isWorkflowTaskEvent()) {
     true -> EXECUTOR_FAILED
@@ -127,9 +131,9 @@ fun WorkflowEngineMessage.workflowType(): String? = when (this) {
     true -> EXECUTOR_COMPLETED
     false -> TASK_COMPLETED
   }
-}?.let { "$TYPE_WORKFLOW.$it" }
+}
 
-fun WorkflowEventMessage.workflowType(): String = "$TYPE_WORKFLOW." + when (this) {
+internal fun WorkflowEventMessage.workflowSimpleType(): String = when (this) {
   is WorkflowCompletedEvent -> ENDED
   is WorkflowCanceledEvent -> CANCELED
   is MethodCommandedEvent -> START_METHOD
@@ -148,3 +152,12 @@ fun WorkflowEventMessage.workflowType(): String = "$TYPE_WORKFLOW." + when (this
   is SignalDiscardedEvent -> SIGNAL_DISCARDED
   is SignalReceivedEvent -> SIGNAL_RECEIVED
 }
+
+
+fun WorkflowCmdMessage.workflowType(): String? =
+    this.workflowSimpleType()?.let { "$TYPE_WORKFLOW.$it" }
+
+fun WorkflowStateEngineMessage.workflowType(): String? =
+    this.workflowSimpleType()?.let { "$TYPE_WORKFLOW.$it" }
+
+fun WorkflowEventMessage.workflowType(): String = "$TYPE_WORKFLOW." + workflowSimpleType()

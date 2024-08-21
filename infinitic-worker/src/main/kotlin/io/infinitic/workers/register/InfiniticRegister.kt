@@ -30,6 +30,7 @@ import io.infinitic.events.config.EventListenerConfig
 import io.infinitic.storage.config.StorageConfig
 import io.infinitic.tasks.WithRetry
 import io.infinitic.tasks.WithTimeout
+import io.infinitic.workers.register.config.LogsConfig
 import io.infinitic.workers.register.config.ServiceConfigDefault
 import io.infinitic.workers.register.config.UNDEFINED_WITH_RETRY
 import io.infinitic.workers.register.config.UNDEFINED_WITH_TIMEOUT
@@ -37,14 +38,25 @@ import io.infinitic.workers.register.config.WorkflowConfigDefault
 import io.infinitic.workflows.Workflow
 import io.infinitic.workflows.WorkflowCheckMode
 
+@Suppress("unused")
 interface InfiniticRegister : AutoCloseable {
 
   val registry: WorkerRegistry
 
   /**
+   * Logs configuration
+   */
+  var logsConfig: LogsConfig
+
+  /**
    * Default value of Storage
    */
   var defaultStorage: StorageConfig
+
+  /**
+   * Default value of EventListener
+   */
+  var defaultEventListener: EventListenerConfig?
 
   /**
    * Service default values
@@ -57,16 +69,17 @@ interface InfiniticRegister : AutoCloseable {
   var workflowDefault: WorkflowConfigDefault
 
   /**
-   * Default value of EventListener
+   *
+   * Register Services
+   *
    */
-  var defaultEventListener: EventListenerConfig?
 
   /** Register service tag engine */
   @Suppress("OVERLOADS_INTERFACE")
   @JvmOverloads
   fun registerServiceTagEngine(
     serviceName: String,
-    concurrency: Int? = null,
+    concurrency: Int,
     storageConfig: StorageConfig? = null
   )
 
@@ -76,7 +89,7 @@ interface InfiniticRegister : AutoCloseable {
   fun registerServiceExecutor(
     serviceName: String,
     serviceFactory: ServiceFactory,
-    concurrency: Int? = null,
+    concurrency: Int,
     withTimeout: WithTimeout? = UNDEFINED_WITH_TIMEOUT,
     withRetry: WithRetry? = UNDEFINED_WITH_RETRY
   )
@@ -87,29 +100,45 @@ interface InfiniticRegister : AutoCloseable {
   @JvmOverloads
   fun registerServiceEventListener(
     serviceName: String,
-    concurrency: Int? = null,
-    eventListener: CloudEventListener? = null,
+    concurrency: Int,
+    eventListener: CloudEventListener,
     subscriptionName: String? = null,
   )
 
-  /** Register workflow */
+  /**
+   *
+   * Register workflows
+   *
+   */
+
+  /** Register workflow tag engine */
+  @Suppress("OVERLOADS_INTERFACE")
+  @JvmOverloads
+  fun registerWorkflowTagEngine(
+    workflowName: String,
+    concurrency: Int,
+    storageConfig: StorageConfig? = null
+  )
+
+  /** Register workflow executor  */
   @Suppress("OVERLOADS_INTERFACE")
   @JvmOverloads
   fun registerWorkflowExecutor(
     workflowName: String,
     factories: WorkflowFactories,
-    concurrency: Int? = null,
-    withTimeout: WithTimeout? = UNDEFINED_WITH_TIMEOUT,
-    withRetry: WithRetry? = UNDEFINED_WITH_RETRY,
+    concurrency: Int,
+    withTimeout: WithTimeout?,
+    withRetry: WithRetry?,
     checkMode: WorkflowCheckMode? = null,
   )
 
+  /** Register workflow executor  */
   @Suppress("OVERLOADS_INTERFACE")
   @JvmOverloads
   fun registerWorkflowExecutor(
     workflowName: String,
     factory: () -> Workflow,
-    concurrency: Int? = null,
+    concurrency: Int,
     withTimeout: WithTimeout? = UNDEFINED_WITH_TIMEOUT,
     withRetry: WithRetry? = UNDEFINED_WITH_RETRY,
     checkMode: WorkflowCheckMode? = null,
@@ -127,16 +156,7 @@ interface InfiniticRegister : AutoCloseable {
   @JvmOverloads
   fun registerWorkflowStateEngine(
     workflowName: String,
-    concurrency: Int? = null,
-    storageConfig: StorageConfig? = null
-  )
-
-  /** Register workflow tag engine */
-  @Suppress("OVERLOADS_INTERFACE")
-  @JvmOverloads
-  fun registerWorkflowTagEngine(
-    workflowName: String,
-    concurrency: Int? = null,
+    concurrency: Int,
     storageConfig: StorageConfig? = null
   )
 
@@ -145,8 +165,8 @@ interface InfiniticRegister : AutoCloseable {
   @JvmOverloads
   fun registerWorkflowEventListener(
     workflowName: String,
-    concurrency: Int? = null,
-    eventListener: CloudEventListener? = null,
+    concurrency: Int,
+    eventListener: CloudEventListener,
     subscriptionName: String? = null,
   )
 }
