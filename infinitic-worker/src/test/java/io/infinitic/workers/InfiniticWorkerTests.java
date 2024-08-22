@@ -27,6 +27,8 @@ import io.infinitic.common.transport.InfiniticProducerAsync;
 import io.infinitic.pulsar.PulsarInfiniticConsumerAsync;
 import io.infinitic.pulsar.PulsarInfiniticProducerAsync;
 import io.infinitic.pulsar.config.PulsarConfig;
+import io.infinitic.storage.config.PostgresConfig;
+import io.infinitic.storage.config.StorageConfig;
 import io.infinitic.workers.config.WorkerConfig;
 import org.junit.jupiter.api.Test;
 
@@ -44,8 +46,16 @@ class InfiniticWorkerTests {
                 .namespace("dev")
                 .build();
 
+        StorageConfig storage = StorageConfig.builder()
+                .postgres(PostgresConfig
+                        .builder()
+                        .build()
+                ).build();
+
+
         WorkerConfig workerConfig = WorkerConfig.builder()
                 .pulsar(pulsar)
+                .storage(storage)
                 .build();
 
         try (InfiniticWorker worker = InfiniticWorker.fromConfig(workerConfig)) {

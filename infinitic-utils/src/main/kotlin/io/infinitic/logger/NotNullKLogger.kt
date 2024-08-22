@@ -20,21 +20,30 @@
  *
  * Licensor: infinitic.io
  */
-repositories { maven("https://jitpack.io") }
 
-plugins { application }
+package io.infinitic.logger
 
-application { mainClass.set("io.infinitic.dashboard.MainKt") }
+import io.github.oshai.kotlinlogging.KLogger
 
-dependencies {
-  api(project(":infinitic-transport-pulsar"))
-  api(project(":infinitic-transport"))
+class NotNullKLogger(val logger: KLogger) : KLogger by logger {
 
-  implementation(Libs.Kweb.core)
-  implementation(Libs.Pulsar.client)
-  implementation(Libs.Pulsar.clientAdmin)
+  override fun error(throwable: Throwable?, message: () -> Any?) {
+    if (isErrorEnabled()) message()?.let { logger.error(throwable) { it } }
+  }
 
-  implementation(project(":infinitic-utils"))
+  override fun warn(message: () -> Any?) {
+    if (isWarnEnabled()) message()?.let { logger.warn { it } }
+  }
+
+  override fun info(message: () -> Any?) {
+    if (isInfoEnabled()) message()?.let { logger.info { it } }
+  }
+
+  override fun debug(message: () -> Any?) {
+    if (isDebugEnabled()) message()?.let { logger.debug { it } }
+  }
+
+  override fun trace(message: () -> Any?) {
+    if (isTraceEnabled()) message()?.let { logger.trace { it } }
+  }
 }
-
-apply("../publish.gradle.kts")

@@ -64,6 +64,7 @@ import io.infinitic.common.workflows.tags.storage.WorkflowTagStorage
 import io.infinitic.events.toJsonString
 import io.infinitic.events.toServiceCloudEvent
 import io.infinitic.events.toWorkflowCloudEvent
+import io.infinitic.logger.NotNullKLogger
 import io.infinitic.pulsar.PulsarInfiniticConsumerAsync
 import io.infinitic.tasks.Task
 import io.infinitic.tasks.executor.TaskEventHandler
@@ -304,7 +305,8 @@ class InfiniticWorker private constructor(
     concurrency: Int,
     storage: WorkflowTagStorage
   ) {
-    val logger = KotlinLogging.logger("io.infinitic.cloudEvents.WorkflowTagEngine.$workflowName")
+    val logger =
+        NotNullKLogger(KotlinLogging.logger("io.infinitic.cloudEvents.WorkflowTagEngine.$workflowName"))
 
     // WORKFLOW-TAG
     launch {
@@ -331,7 +333,8 @@ class InfiniticWorker private constructor(
     concurrency: Int,
     storage: WorkflowStateStorage
   ) {
-    val logger = KotlinLogging.logger("io.infinitic.cloudEvents.WorkflowStateEngine.$workflowName")
+    val logger =
+        NotNullKLogger(KotlinLogging.logger("io.infinitic.cloudEvents.WorkflowStateEngine.$workflowName"))
     // WORKFLOW-CMD
     launch {
       val workflowCmdHandler = WorkflowCmdHandler(producerAsync)
@@ -409,7 +412,8 @@ class InfiniticWorker private constructor(
     workflowName: WorkflowName,
     concurrency: Int
   ) {
-    val logger = KotlinLogging.logger("io.infinitic.cloudEvents.WorkflowExecutor.$workflowName")
+    val logger =
+        NotNullKLogger(KotlinLogging.logger("io.infinitic.cloudEvents.WorkflowExecutor.$workflowName"))
 
     // WORKFLOW-TASK_EXECUTOR
     launch {
@@ -480,7 +484,8 @@ class InfiniticWorker private constructor(
     concurrency: Int,
     storage: TaskTagStorage
   ) {
-    val logger = KotlinLogging.logger("io.infinitic.cloudEvents.TaskTagEngine.$serviceName")
+    val logger =
+        NotNullKLogger(KotlinLogging.logger("io.infinitic.cloudEvents.TaskTagEngine.$serviceName"))
 
     // TASK-TAG
     launch {
@@ -506,7 +511,8 @@ class InfiniticWorker private constructor(
     serviceName: ServiceName,
     concurrency: Int
   ) {
-    val logger = KotlinLogging.logger("io.infinitic.cloudEvents.ServiceExecutor.$serviceName")
+    val logger =
+        NotNullKLogger(KotlinLogging.logger("io.infinitic.cloudEvents.ServiceExecutor.$serviceName"))
 
     // TASK-EXECUTOR
     launch {
@@ -704,7 +710,7 @@ class InfiniticWorker private constructor(
     } catch (e: Exception) {
       // Failure to log shouldn't break the application
       try {
-        error(e) { "Error while logging the CloudEvent json of: $this" }
+        error(e) { "Error while logging the CloudEvent json of: $message" }
       } catch (error: Exception) {
         System.err.println("Failed to log the original exception due to ${error.message}\n${error.stackTraceToString()}")
       }

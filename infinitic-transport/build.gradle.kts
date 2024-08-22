@@ -24,9 +24,9 @@
 dependencies {
   api(project(":infinitic-transport-pulsar"))
   api(project(":infinitic-transport-inMemory"))
-  
+
   implementation(project(":infinitic-common"))
-  implementation(project(":infinitic-autoclose"))
+  implementation(project(":infinitic-utils"))
   implementation(Libs.Pulsar.client)
   implementation(Libs.Pulsar.clientAdmin)
 }

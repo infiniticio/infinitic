@@ -118,7 +118,7 @@ object Libs {
   }
 
   object Logging {
-    const val jvm = "io.github.oshai:kotlin-logging-jvm:6.0.9"
+    const val jvm = "io.github.oshai:kotlin-logging-jvm:7.0.0"
   }
 
   object Compress {
