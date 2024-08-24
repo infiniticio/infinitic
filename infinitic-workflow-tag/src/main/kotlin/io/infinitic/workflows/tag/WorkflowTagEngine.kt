@@ -30,9 +30,8 @@ import io.infinitic.common.emitters.EmitterName
 import io.infinitic.common.exceptions.thisShouldNotHappen
 import io.infinitic.common.requester.workflowId
 import io.infinitic.common.transport.ClientTopic
-import io.infinitic.common.transport.InfiniticProducerAsync
-import io.infinitic.common.transport.LoggedInfiniticProducer
-import io.infinitic.common.transport.WorkflowCmdTopic
+import io.infinitic.common.transport.InfiniticProducer
+import io.infinitic.common.transport.WorkflowStateCmdTopic
 import io.infinitic.common.workflows.data.workflowMethods.WorkflowMethodId
 import io.infinitic.common.workflows.engine.commands.dispatchRemoteMethod
 import io.infinitic.common.workflows.engine.messages.CancelWorkflow
@@ -55,25 +54,18 @@ import io.infinitic.common.workflows.tags.messages.RetryWorkflowTaskByTag
 import io.infinitic.common.workflows.tags.messages.SendSignalByTag
 import io.infinitic.common.workflows.tags.messages.WorkflowTagEngineMessage
 import io.infinitic.common.workflows.tags.storage.WorkflowTagStorage
-import io.infinitic.workflows.tag.storage.LoggedWorkflowTagStorage
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 
 class WorkflowTagEngine(
-  storage: WorkflowTagStorage,
-  producerAsync: InfiniticProducerAsync
+  val storage: WorkflowTagStorage,
+  val producer: InfiniticProducer
 ) {
-  private val storage = LoggedWorkflowTagStorage(this::class.java.name, storage)
-
-  private val producer = LoggedInfiniticProducer(this::class.java.name, producerAsync)
-
-  private val logger = KotlinLogging.logger(this::class.java.name)
+  private val logger = KotlinLogging.logger {}
 
   private val emitterName by lazy { EmitterName(producer.name) }
 
   suspend fun handle(message: WorkflowTagEngineMessage, publishTime: MillisInstant) {
-    logger.debug { "receiving $message" }
-
     when (message) {
       is AddTagToWorkflow -> addTagToWorkflow(message)
       is RemoveTagFromWorkflow -> removeTagFromWorkflow(message)
@@ -148,7 +140,7 @@ class WorkflowTagEngine(
                 emittedAt = message.emittedAt ?: publishTime,
                 requester = requester,
             )
-            with(producer) { waitWorkflow.sendTo(WorkflowCmdTopic) }
+            with(producer) { waitWorkflow.sendTo(WorkflowStateCmdTopic) }
           }
         }
 
@@ -208,7 +200,7 @@ class WorkflowTagEngine(
               emittedAt = message.emittedAt ?: publishTime,
               requester = message.requester,
           )
-          with(producer) { retryWorkflowTask.sendTo(WorkflowCmdTopic) }
+          with(producer) { retryWorkflowTask.sendTo(WorkflowStateCmdTopic) }
         }
       }
     }
@@ -233,7 +225,7 @@ class WorkflowTagEngine(
                   emittedAt = message.emittedAt ?: publishTime,
                   requester = message.requester,
               )
-              with(producer) { retryTasks.sendTo(WorkflowCmdTopic) }
+              with(producer) { retryTasks.sendTo(WorkflowStateCmdTopic) }
             }
           }
         }
@@ -256,7 +248,7 @@ class WorkflowTagEngine(
                   emittedAt = message.emittedAt ?: publishTime,
                   requester = message.requester,
               )
-              with(producer) { completeTimers.sendTo(WorkflowCmdTopic) }
+              with(producer) { completeTimers.sendTo(WorkflowStateCmdTopic) }
             }
           }
         }
@@ -284,7 +276,7 @@ class WorkflowTagEngine(
                 emittedAt = message.emittedAt ?: publishTime,
                 requester = message.requester,
             )
-            with(producer) { cancelWorkflow.sendTo(WorkflowCmdTopic) }
+            with(producer) { cancelWorkflow.sendTo(WorkflowStateCmdTopic) }
           }
         }
       }
@@ -315,7 +307,7 @@ class WorkflowTagEngine(
                       requester = requester,
                   )
                 }
-                with(producer) { sendSignal.sendTo(WorkflowCmdTopic) }
+                with(producer) { sendSignal.sendTo(WorkflowStateCmdTopic) }
               }
             }
           }
@@ -344,6 +336,6 @@ class WorkflowTagEngine(
   }
 
   private fun discardTagWithoutIds(message: WorkflowTagEngineMessage) {
-    logger.debug { "discarding as no workflow `${message.workflowName}` found for tag `${message.workflowTag}`" }
+    logger.info { "discarding as no workflow `${message.workflowName}` found for tag `${message.workflowTag}`" }
   }
 }

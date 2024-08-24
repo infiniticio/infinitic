@@ -20,30 +20,15 @@
  *
  * Licensor: infinitic.io
  */
+package io.infinitic.workflows.engine
 
-package io.infinitic.logger
+import io.infinitic.common.data.MillisInstant
+import io.infinitic.common.transport.InfiniticProducer
+import io.infinitic.common.transport.WorkflowStateEngineTopic
+import io.infinitic.common.workflows.engine.messages.WorkflowStateEngineMessage
 
-import io.github.oshai.kotlinlogging.KLogger
-
-class NotNullKLogger(val logger: KLogger) : KLogger by logger {
-
-  override fun error(throwable: Throwable?, message: () -> Any?) {
-    if (isErrorEnabled()) message()?.let { logger.error(throwable) { it } }
-  }
-
-  override fun warn(message: () -> Any?) {
-    if (isWarnEnabled()) message()?.let { logger.warn { it } }
-  }
-
-  override fun info(message: () -> Any?) {
-    if (isInfoEnabled()) message()?.let { logger.info { it } }
-  }
-
-  override fun debug(message: () -> Any?) {
-    if (isDebugEnabled()) message()?.let { logger.debug { it } }
-  }
-
-  override fun trace(message: () -> Any?) {
-    if (isTraceEnabled()) message()?.let { logger.trace { it } }
+class WorkflowStateTimerHandler(val producer: InfiniticProducer) {
+  suspend fun handle(msg: WorkflowStateEngineMessage, publishTime: MillisInstant) {
+    with(producer) { msg.sendTo(WorkflowStateEngineTopic) }
   }
 }

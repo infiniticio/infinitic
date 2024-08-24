@@ -22,20 +22,18 @@
  */
 package io.infinitic.tasks.executor
 
-import io.github.oshai.kotlinlogging.KotlinLogging
 import io.infinitic.common.data.MillisInstant
 import io.infinitic.common.emitters.EmitterName
 import io.infinitic.common.requester.WorkflowRequester
-import io.infinitic.common.tasks.events.messages.ServiceEventMessage
+import io.infinitic.common.tasks.events.messages.ServiceExecutorEventMessage
 import io.infinitic.common.tasks.events.messages.TaskCompletedEvent
 import io.infinitic.common.tasks.events.messages.TaskFailedEvent
 import io.infinitic.common.tasks.events.messages.TaskRetriedEvent
 import io.infinitic.common.tasks.events.messages.TaskStartedEvent
 import io.infinitic.common.tasks.tags.messages.SetDelegatedTaskData
 import io.infinitic.common.transport.ClientTopic
-import io.infinitic.common.transport.InfiniticProducerAsync
-import io.infinitic.common.transport.LoggedInfiniticProducer
-import io.infinitic.common.transport.ServiceTagTopic
+import io.infinitic.common.transport.InfiniticProducer
+import io.infinitic.common.transport.ServiceTagEngineTopic
 import io.infinitic.common.transport.WorkflowStateEngineTopic
 import io.infinitic.common.workflows.data.commands.DispatchNewMethodPastCommand
 import io.infinitic.common.workflows.data.commands.DispatchNewWorkflowPastCommand
@@ -55,25 +53,17 @@ import io.infinitic.tasks.executor.events.dispatchTaskCmd
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 
-class TaskEventHandler(producerAsync: InfiniticProducerAsync) {
+class TaskEventHandler(val producer: InfiniticProducer) {
 
-  private val logger = KotlinLogging.logger(TaskExecutor::class.java.name)
+  private val emitterName by lazy { EmitterName(producer.name) }
 
-  val producer = LoggedInfiniticProducer(TaskExecutor::class.java.name, producerAsync)
-
-  private val emitterName by lazy { EmitterName(producerAsync.producerName) }
-
-  suspend fun handle(msg: ServiceEventMessage, publishTime: MillisInstant) {
-    msg.logDebug { "received $msg" }
-
+  suspend fun handle(msg: ServiceExecutorEventMessage, publishTime: MillisInstant) {
     when (msg) {
       is TaskCompletedEvent -> sendTaskCompleted(msg, publishTime)
       is TaskFailedEvent -> sendTaskFailed(msg, publishTime)
       is TaskRetriedEvent,
       is TaskStartedEvent -> Unit
     }
-
-    msg.logTrace { "processed $msg" }
   }
 
   private suspend fun sendTaskFailed(msg: TaskFailedEvent, publishTime: MillisInstant): Unit =
@@ -102,7 +92,7 @@ class TaskEventHandler(producerAsync: InfiniticProducerAsync) {
               taskId = msg.taskId,
               emitterName = emitterName,
           )
-          with(producer) { addTaskToTag.sendTo(ServiceTagTopic) }
+          with(producer) { addTaskToTag.sendTo(ServiceTagEngineTopic) }
         }
 
         false -> {
@@ -116,7 +106,7 @@ class TaskEventHandler(producerAsync: InfiniticProducerAsync) {
           }
           // remove tags
           msg.getEventsForTag(emitterName).forEach {
-            launch { with(producer) { it.sendTo(ServiceTagTopic) } }
+            launch { with(producer) { it.sendTo(ServiceTagEngineTopic) } }
           }
         }
       }
@@ -168,12 +158,4 @@ class TaskEventHandler(producerAsync: InfiniticProducerAsync) {
           }
         }
       }
-
-  private fun ServiceEventMessage.logDebug(description: () -> String) {
-    logger.debug { "$serviceName (${taskId}): ${description()}" }
-  }
-
-  private fun ServiceEventMessage.logTrace(description: () -> String) {
-    logger.trace { "$serviceName (${taskId}): ${description()}" }
-  }
 }

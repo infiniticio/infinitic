@@ -25,13 +25,14 @@ package io.infinitic.pulsar
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.infinitic.autoclose.autoClose
 import io.infinitic.common.data.MillisInstant
+import io.infinitic.common.logs.INFINITIC_WORKER
 import io.infinitic.common.messages.Message
 import io.infinitic.common.transport.ClientTopic
 import io.infinitic.common.transport.EventListenerSubscription
-import io.infinitic.common.transport.InfiniticConsumerAsync
+import io.infinitic.common.transport.InfiniticConsumer
 import io.infinitic.common.transport.MainSubscription
 import io.infinitic.common.transport.RetryServiceExecutorTopic
-import io.infinitic.common.transport.RetryWorkflowTaskExecutorTopic
+import io.infinitic.common.transport.RetryWorkflowExecutorTopic
 import io.infinitic.common.transport.Subscription
 import io.infinitic.pulsar.consumers.Consumer
 import io.infinitic.pulsar.resources.PulsarResources
@@ -48,19 +49,18 @@ import kotlinx.coroutines.withTimeout
 import org.apache.pulsar.client.api.SubscriptionInitialPosition
 import java.util.concurrent.atomic.AtomicBoolean
 
-class PulsarInfiniticConsumerAsync(
+class PulsarInfiniticConsumer(
   private val consumer: Consumer,
   private val pulsarResources: PulsarResources,
   val shutdownGracePeriodInSeconds: Double
-) : InfiniticConsumerAsync {
+) : InfiniticConsumer {
 
   override fun join() = consumer.join()
 
   private var isClosed: AtomicBoolean = AtomicBoolean(false)
 
   // See InfiniticWorker
-  override var logName: String? = null
-  private val logger by lazy { KotlinLogging.logger(logName ?: this::class.java.name) }
+  private val logger by lazy { KotlinLogging.logger(INFINITIC_WORKER) }
 
   private lateinit var clientName: String
 
@@ -95,13 +95,13 @@ class PulsarInfiniticConsumerAsync(
     subscription: Subscription<S>,
     entity: String,
     handler: suspend (S, MillisInstant) -> Unit,
-    beforeDlq: suspend (S?, Exception) -> Unit,
+    beforeDlq: (suspend (S?, Exception) -> Unit)?,
     concurrency: Int,
   ) {
     when (subscription.topic) {
       // we do nothing here, as WorkflowTaskExecutorTopic and ServiceExecutorTopic
       // do not need a distinct topic to handle delayed messages in Pulsar
-      RetryWorkflowTaskExecutorTopic, RetryServiceExecutorTopic -> return
+      RetryWorkflowExecutorTopic, RetryServiceExecutorTopic -> return
       // record client name to be able to delete topic at closing
       ClientTopic -> clientName = entity
       else -> Unit

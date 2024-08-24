@@ -22,6 +22,7 @@
  */
 package io.infinitic.clients
 
+import io.github.oshai.kotlinlogging.KotlinLogging
 import io.infinitic.autoclose.addAutoCloseResource
 import io.infinitic.autoclose.autoClose
 import io.infinitic.clients.config.ClientConfig
@@ -37,7 +38,7 @@ import io.infinitic.common.proxies.RequestByWorkflowId
 import io.infinitic.common.proxies.RequestByWorkflowTag
 import io.infinitic.common.tasks.data.ServiceName
 import io.infinitic.common.tasks.data.TaskId
-import io.infinitic.common.transport.InfiniticConsumerAsync
+import io.infinitic.common.transport.InfiniticConsumer
 import io.infinitic.common.transport.InfiniticProducerAsync
 import io.infinitic.common.transport.LoggedInfiniticProducer
 import io.infinitic.common.utils.annotatedName
@@ -55,17 +56,19 @@ import java.util.concurrent.atomic.AtomicBoolean
 
 @Suppress("unused")
 class InfiniticClient(
-  consumerAsync: InfiniticConsumerAsync,
+  consumerAsync: InfiniticConsumer,
   producerAsync: InfiniticProducerAsync
 ) : InfiniticClientInterface {
 
+  private val logger = KotlinLogging.logger {}
+
   private var isClosed: AtomicBoolean = AtomicBoolean(false)
 
-  private val producer = LoggedInfiniticProducer(this::class.java.name, producerAsync)
+  private val producer = LoggedInfiniticProducer(logger, producerAsync)
 
-  private val dispatcher = ClientDispatcher(this::class.java.name, consumerAsync, producerAsync)
+  private val dispatcher = ClientDispatcher(logger, consumerAsync, producerAsync)
 
-  override val name by lazy { producerAsync.producerName }
+  override val name by lazy { producer.name }
 
   /** Get last Deferred created by the call of a stub */
   override val lastDeferred get() = dispatcher.getLastDeferred()

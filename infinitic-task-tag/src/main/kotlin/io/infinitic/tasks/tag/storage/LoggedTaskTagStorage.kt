@@ -22,7 +22,7 @@
  */
 package io.infinitic.tasks.tag.storage
 
-import io.github.oshai.kotlinlogging.KotlinLogging
+import io.github.oshai.kotlinlogging.KLogger
 import io.infinitic.common.tasks.data.DelegatedTaskData
 import io.infinitic.common.tasks.data.ServiceName
 import io.infinitic.common.tasks.data.TaskId
@@ -31,12 +31,9 @@ import io.infinitic.common.tasks.tags.storage.TaskTagStorage
 import org.jetbrains.annotations.TestOnly
 
 class LoggedTaskTagStorage(
+  private val logger: KLogger,
   private val storage: TaskTagStorage
 ) : TaskTagStorage {
-
-  // TaskTagEngine
-  var logName: String? = null
-  private val logger = KotlinLogging.logger(logName ?: TaskTagStorage::class.java.name)
 
   override suspend fun getTaskIdsForTag(tag: TaskTag, serviceName: ServiceName): Set<TaskId> {
     logger.trace { "tag $tag - taskName $serviceName - getting TaskIds" }

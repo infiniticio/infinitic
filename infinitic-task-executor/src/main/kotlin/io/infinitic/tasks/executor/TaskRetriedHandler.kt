@@ -20,13 +20,21 @@
  *
  * Licensor: infinitic.io
  */
-package io.infinitic.logs
+package io.infinitic.tasks.executor
 
-enum class LogLevel {
-  TRACE,
-  DEBUG,
-  INFO,
-  WARN,
-  ERROR,
-  OFF
+import io.infinitic.common.data.MillisInstant
+import io.infinitic.common.tasks.executors.messages.ServiceExecutorMessage
+import io.infinitic.common.transport.InfiniticProducer
+import io.infinitic.common.transport.ServiceExecutorTopic
+import io.infinitic.common.transport.WorkflowExecutorTopic
+
+class TaskRetriedHandler(val producer: InfiniticProducer) {
+  suspend fun handle(msg: ServiceExecutorMessage, publishTime: MillisInstant) {
+    with(producer) {
+      when (msg.isWorkflowTask()) {
+        true -> msg.sendTo(WorkflowExecutorTopic)
+        false -> msg.sendTo(ServiceExecutorTopic)
+      }
+    }
+  }
 }

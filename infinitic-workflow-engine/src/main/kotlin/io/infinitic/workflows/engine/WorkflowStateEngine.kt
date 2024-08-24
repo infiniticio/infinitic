@@ -33,10 +33,8 @@ import io.infinitic.common.requester.WorkflowRequester
 import io.infinitic.common.tasks.executors.errors.MethodUnknownError
 import io.infinitic.common.transport.ClientTopic
 import io.infinitic.common.transport.InfiniticProducer
-import io.infinitic.common.transport.InfiniticProducerAsync
-import io.infinitic.common.transport.LoggedInfiniticProducer
-import io.infinitic.common.transport.WorkflowEventsTopic
 import io.infinitic.common.transport.WorkflowStateEngineTopic
+import io.infinitic.common.transport.WorkflowStateEventTopic
 import io.infinitic.common.transport.WorkflowTagEngineTopic
 import io.infinitic.common.workflows.engine.messages.CancelWorkflow
 import io.infinitic.common.workflows.engine.messages.CompleteTimers
@@ -85,31 +83,22 @@ import io.infinitic.workflows.engine.handlers.timerCompleted
 import io.infinitic.workflows.engine.handlers.waitWorkflow
 import io.infinitic.workflows.engine.handlers.workflowTaskCompleted
 import io.infinitic.workflows.engine.handlers.workflowTaskFailed
-import io.infinitic.workflows.engine.storage.LoggedWorkflowStateStorage
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 
-class WorkflowEngine(
-  storage: WorkflowStateStorage,
-  producerAsync: InfiniticProducerAsync
+class WorkflowStateEngine(
+  val storage: WorkflowStateStorage,
+  val producer: InfiniticProducer
 ) {
   companion object {
     const val NO_STATE_DISCARDING_REASON = "for having null workflow state"
   }
 
-  private val logger = KotlinLogging.logger(this::class.java.name)
-  private val storage = LoggedWorkflowStateStorage(this::class.java.name, storage)
-  private val producer = LoggedInfiniticProducer(this::class.java.name, producerAsync)
+  private val logger = KotlinLogging.logger {}
   private val emitterName by lazy { EmitterName(this::class.java.name) }
 
   suspend fun handle(message: WorkflowStateEngineMessage, publishTime: MillisInstant) {
-    logDebug(message) { "Receiving $message" }
-
-    // set producer id for logging purpose
-    // this works as a workflow engine instance process only one message at a time
-    producer.id = message.workflowId.toString()
-
     // get current state
     var state = storage.getState(message.workflowId)
 
@@ -155,7 +144,7 @@ class WorkflowEngine(
         workflowId = state.workflowId,
         emitterName = emitterName,
     )
-    with(producer) { workflowCompletedEvent.sendTo(WorkflowEventsTopic) }
+    with(producer) { workflowCompletedEvent.sendTo(WorkflowStateEventTopic) }
   }
 
   private suspend fun removeTags(producer: InfiniticProducer, state: WorkflowState) =

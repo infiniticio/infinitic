@@ -25,7 +25,7 @@ package io.infinitic.common.transport
 import io.infinitic.common.data.MillisDuration
 import io.infinitic.common.exceptions.thisShouldNotHappen
 import io.infinitic.common.messages.Message
-import io.infinitic.common.tasks.events.messages.ServiceEventMessage
+import io.infinitic.common.tasks.events.messages.ServiceExecutorEventMessage
 import io.infinitic.common.tasks.executors.messages.ServiceExecutorMessage
 import java.util.concurrent.CompletableFuture
 
@@ -63,7 +63,7 @@ interface InfiniticProducerAsync {
     // Switch to workflow-related topics for workflowTasks
     val t = when (this) {
       is ServiceExecutorMessage -> if (isWorkflowTask()) topic.forWorkflow else topic
-      is ServiceEventMessage -> if (isWorkflowTask()) topic.forWorkflow else topic
+      is ServiceExecutorEventMessage -> if (isWorkflowTask()) topic.forWorkflow else topic
       else -> topic
     }
 

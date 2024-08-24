@@ -22,19 +22,17 @@
  */
 package io.infinitic.workflows.engine.storage
 
-import io.github.oshai.kotlinlogging.KotlinLogging
+import io.github.oshai.kotlinlogging.KLogger
 import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.engine.state.WorkflowState
 import io.infinitic.common.workflows.engine.storage.WorkflowStateStorage
 import org.jetbrains.annotations.TestOnly
 
 class LoggedWorkflowStateStorage(
-  logName: String,
+  private val logger: KLogger,
   private val storage: WorkflowStateStorage,
 ) : WorkflowStateStorage {
-
-  private val logger = KotlinLogging.logger(logName)
-
+  
   override suspend fun getState(workflowId: WorkflowId): WorkflowState? {
     logger.trace { "Id $workflowId - Getting State" }
     val workflowState = storage.getState(workflowId)

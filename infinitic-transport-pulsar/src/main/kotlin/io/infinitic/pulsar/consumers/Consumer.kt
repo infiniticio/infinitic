@@ -55,7 +55,7 @@ class Consumer(
   private val consumerConfig: ConsumerConfig
 ) {
 
-  val logger = KotlinLogging.logger {}
+  private val logger = KotlinLogging.logger {}
 
   private val consumingScope =
       CoroutineScope(Executors.newCachedThreadPool().asCoroutineDispatcher())
@@ -98,7 +98,7 @@ class Consumer(
    * @param concurrency the number of consumers*/
   internal suspend fun <S : Message, T : Envelope<out S>> startListening(
     handler: suspend (S, MillisInstant) -> Unit,
-    beforeDlq: suspend (S?, Exception) -> Unit,
+    beforeDlq: (suspend (S?, Exception) -> Unit)?,
     schema: Schema<T>,
     topic: String,
     topicDlq: String?,
@@ -221,7 +221,7 @@ class Consumer(
   private suspend fun <T : Message, S : Envelope<out T>> processPulsarMessage(
     consumer: Consumer<S>,
     handler: suspend (T, MillisInstant) -> Unit,
-    beforeDlq: suspend (T?, Exception) -> Unit,
+    beforeDlq: (suspend (T?, Exception) -> Unit)?,
     topic: String,
     pulsarMessage: PulsarMessage<S>
   ) {
@@ -268,7 +268,7 @@ class Consumer(
   private suspend fun <T : Message, S : Envelope<out T>> negativeAcknowledge(
     consumer: Consumer<S>,
     pulsarMessage: PulsarMessage<out S>,
-    beforeDlq: suspend (T?, Exception) -> Unit,
+    beforeDlq: (suspend (T?, Exception) -> Unit)?,
     message: T?,
     cause: Exception
   ): Result<Unit> {
@@ -281,7 +281,7 @@ class Consumer(
     if (pulsarMessage.redeliveryCount == consumerConfig.getMaxRedeliverCount()) {
       try {
         logDebug(topic, messageId) { "Processing DLQ handler for $msg}" }
-        beforeDlq(message, cause)
+        beforeDlq?.let { it(message, cause) }
         logTrace(topic, messageId) { "Processed DLQ handler for $msg}" }
       } catch (e: Exception) {
         logWarn(e, topic, messageId) { "Exception when processing DLQ handler for $msg}" }

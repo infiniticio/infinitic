@@ -27,7 +27,7 @@ import io.infinitic.common.fixtures.checkBackwardCompatibility
 import io.infinitic.common.fixtures.checkOrCreateCurrentFile
 import io.infinitic.common.serDe.avro.AvroSerDe
 import io.infinitic.common.tasks.events.messages.ServiceEventEnvelope
-import io.infinitic.common.tasks.events.messages.ServiceEventMessage
+import io.infinitic.common.tasks.events.messages.ServiceExecutorEventMessage
 import io.kotest.assertions.throwables.shouldNotThrowAny
 import io.kotest.assertions.throwables.shouldThrowAny
 import io.kotest.core.spec.style.StringSpec
@@ -37,7 +37,7 @@ import io.kotest.matchers.shouldBe
 class ServiceEventEnvelopeTests :
   StringSpec(
       {
-        ServiceEventMessage::class.sealedSubclasses.map {
+        ServiceExecutorEventMessage::class.sealedSubclasses.map {
           val msg = TestFactory.random(it)
 
           "ServiceEventMessage(${msg::class.simpleName}) should be avro-convertible" {

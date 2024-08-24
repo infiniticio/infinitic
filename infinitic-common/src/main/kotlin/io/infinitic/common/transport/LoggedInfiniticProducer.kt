@@ -22,19 +22,15 @@
  */
 package io.infinitic.common.transport
 
-import io.github.oshai.kotlinlogging.KotlinLogging
+import io.github.oshai.kotlinlogging.KLogger
 import io.infinitic.common.data.MillisDuration
 import io.infinitic.common.messages.Message
 import kotlinx.coroutines.future.await
 
 class LoggedInfiniticProducer(
-  logName: String,
+  private val logger: KLogger,
   private val producerAsync: InfiniticProducerAsync,
 ) : InfiniticProducer {
-
-  private val logger = KotlinLogging.logger(logName)
-
-  lateinit var id: String
 
   override var name: String
     get() = producerAsync.producerName
@@ -53,16 +49,16 @@ class LoggedInfiniticProducer(
 
   private fun logDebug(message: Message, after: MillisDuration? = null) {
     logger.debug {
-      val idStr = if (::id.isInitialized) "Id $id - " else ""
-      val afterStr = if (after != null && after > 0) "After $after, s" else "S"
-      "$idStr${afterStr}ending $message"
+      when {
+        after == null || after <= 0 -> "Sending"
+        else -> "After $after, sending"
+      } + " message: $message"
     }
   }
 
   private fun logTrace(message: Message) {
     logger.trace {
-      val idStr = if (::id.isInitialized) "Id $id - " else ""
-      "${idStr}Sent $message"
+      "Message sent:    $message"
     }
   }
 }

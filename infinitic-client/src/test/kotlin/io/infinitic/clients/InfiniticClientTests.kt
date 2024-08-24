@@ -52,12 +52,12 @@ import io.infinitic.common.tasks.executors.messages.ServiceExecutorMessage
 import io.infinitic.common.tasks.tags.messages.CompleteDelegatedTask
 import io.infinitic.common.tasks.tags.messages.ServiceTagMessage
 import io.infinitic.common.transport.ClientTopic
-import io.infinitic.common.transport.InfiniticConsumerAsync
+import io.infinitic.common.transport.InfiniticConsumer
 import io.infinitic.common.transport.InfiniticProducerAsync
 import io.infinitic.common.transport.MainSubscription
-import io.infinitic.common.transport.ServiceTagTopic
+import io.infinitic.common.transport.ServiceTagEngineTopic
 import io.infinitic.common.transport.Subscription
-import io.infinitic.common.transport.WorkflowCmdTopic
+import io.infinitic.common.transport.WorkflowStateCmdTopic
 import io.infinitic.common.transport.WorkflowTagEngineTopic
 import io.infinitic.common.utils.IdGenerator
 import io.infinitic.common.workflows.data.channels.ChannelName
@@ -143,12 +143,12 @@ private fun engineResponse(): CompletableFuture<Unit> {
 
 private val producerAsync = mockk<InfiniticProducerAsync> {
   every { producerName } returns "$clientNameTest"
-  coEvery { capture(taskTagSlots).sendToAsync(ServiceTagTopic) } answers { completed() }
+  coEvery { capture(taskTagSlots).sendToAsync(ServiceTagEngineTopic) } answers { completed() }
   coEvery { capture(workflowTagSlots).sendToAsync(WorkflowTagEngineTopic) } answers { tagResponse() }
-  coEvery { capture(workflowCmdSlot).sendToAsync(WorkflowCmdTopic) } answers { engineResponse() }
+  coEvery { capture(workflowCmdSlot).sendToAsync(WorkflowStateCmdTopic) } answers { engineResponse() }
 }
 
-private val consumerAsync = mockk<InfiniticConsumerAsync> {
+private val consumerAsync = mockk<InfiniticConsumer> {
   coEvery { start(any<Subscription<*>>(), "$clientNameTest", any(), any(), any()) } just Runs
 }
 

@@ -36,7 +36,7 @@ import io.infinitic.cloudEvents.TASK_RETRY_INDEX
 import io.infinitic.cloudEvents.TASK_RETRY_SEQUENCE
 import io.infinitic.cloudEvents.TASK_TAGS
 import io.infinitic.cloudEvents.WORKER_NAME
-import io.infinitic.common.tasks.events.messages.ServiceEventMessage
+import io.infinitic.common.tasks.events.messages.ServiceExecutorEventMessage
 import io.infinitic.common.tasks.events.messages.TaskCompletedEvent
 import io.infinitic.common.tasks.events.messages.TaskFailedEvent
 import io.infinitic.common.tasks.events.messages.TaskRetriedEvent
@@ -62,7 +62,7 @@ fun ServiceExecutorMessage.toJson() = when (this) {
   )
 }
 
-fun ServiceEventMessage.toJson(): JsonObject = when (this) {
+fun ServiceExecutorEventMessage.toJson(): JsonObject = when (this) {
 
   is TaskStartedEvent -> JsonObject(
       mapOf(

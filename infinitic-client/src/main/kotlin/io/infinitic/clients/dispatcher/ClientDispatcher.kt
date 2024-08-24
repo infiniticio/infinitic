@@ -22,7 +22,7 @@
  */
 package io.infinitic.clients.dispatcher
 
-import io.github.oshai.kotlinlogging.KotlinLogging
+import io.github.oshai.kotlinlogging.KLogger
 import io.infinitic.clients.Deferred
 import io.infinitic.clients.deferred.DeferredChannel
 import io.infinitic.clients.deferred.DeferredSend
@@ -61,13 +61,14 @@ import io.infinitic.common.tasks.data.TaskId
 import io.infinitic.common.tasks.executors.errors.MethodFailedError
 import io.infinitic.common.tasks.tags.messages.CompleteDelegatedTask
 import io.infinitic.common.transport.ClientTopic
-import io.infinitic.common.transport.InfiniticConsumerAsync
+import io.infinitic.common.transport.InfiniticConsumer
 import io.infinitic.common.transport.InfiniticProducerAsync
+import io.infinitic.common.transport.LoggedInfiniticConsumer
 import io.infinitic.common.transport.LoggedInfiniticProducer
 import io.infinitic.common.transport.MainSubscription
-import io.infinitic.common.transport.ServiceTagTopic
+import io.infinitic.common.transport.ServiceTagEngineTopic
 import io.infinitic.common.transport.Topic
-import io.infinitic.common.transport.WorkflowCmdTopic
+import io.infinitic.common.transport.WorkflowStateCmdTopic
 import io.infinitic.common.transport.WorkflowTagEngineTopic
 import io.infinitic.common.workflows.data.channels.SignalId
 import io.infinitic.common.workflows.data.workflowMethods.WorkflowMethodId
@@ -113,13 +114,13 @@ import io.infinitic.common.workflows.engine.messages.RetryTasks as RetryTaskInWo
 import io.infinitic.common.workflows.tags.messages.RetryTasksByTag as RetryTaskInWorkflowByTag
 
 internal class ClientDispatcher(
-  logName: String,
-  private val consumerAsync: InfiniticConsumerAsync,
+  private val logger: KLogger,
+  consumer: InfiniticConsumer,
   private val producerAsync: InfiniticProducerAsync
 ) : ProxyDispatcher, Closeable {
-  private val logger = KotlinLogging.logger(logName)
 
-  private val producer = LoggedInfiniticProducer(logName, producerAsync)
+  private val consumer = LoggedInfiniticConsumer(logger, consumer)
+  private val producer = LoggedInfiniticProducer(logger, producerAsync)
 
   // Name of the client
   private val emitterName by lazy { EmitterName(producer.name) }
@@ -149,7 +150,6 @@ internal class ClientDispatcher(
   // a message received by the client is sent to responseFlow
   @Suppress("UNUSED_PARAMETER")
   internal suspend fun handle(message: ClientMessage, publishTime: MillisInstant) {
-    logger.debug { "Client ${producer.name}: Receiving $message" }
     responseFlow.emit(message)
   }
 
@@ -221,7 +221,7 @@ internal class ClientDispatcher(
 
     // calculate timeout from now
     val timeout = methodTimeout
-        ?.let { it.long - (System.currentTimeMillis() - dispatchTime) }
+        ?.let { it.millis - (System.currentTimeMillis() - dispatchTime) }
         ?.let { if (it < 0) 0 else it }
       ?: Long.MAX_VALUE
 
@@ -241,7 +241,7 @@ internal class ClientDispatcher(
           emittedAt = null,
       )
       // synchronously sent the message to get errors
-      waitWorkflow.sendToAsync(WorkflowCmdTopic)
+      waitWorkflow.sendToAsync(WorkflowStateCmdTopic)
     }
 
     // Get result
@@ -303,7 +303,7 @@ internal class ClientDispatcher(
           emitterName = emitterName,
           emittedAt = null,
       )
-      msg.sendToAsync(WorkflowCmdTopic)
+      msg.sendToAsync(WorkflowStateCmdTopic)
     }
 
     is RequestByWorkflowTag -> {
@@ -333,7 +333,7 @@ internal class ClientDispatcher(
           emitterName = emitterName,
           emittedAt = null,
       )
-      msg.sendToAsync(WorkflowCmdTopic)
+      msg.sendToAsync(WorkflowStateCmdTopic)
     }
 
     is RequestByWorkflowTag -> {
@@ -361,7 +361,7 @@ internal class ClientDispatcher(
         returnValue = returnValue,
         emitterName = emitterName,
     )
-    return msg.sendToAsync(ServiceTagTopic)
+    return msg.sendToAsync(ServiceTagEngineTopic)
   }
 
   fun completeTimersAsync(
@@ -378,7 +378,7 @@ internal class ClientDispatcher(
           emitterName = emitterName,
           emittedAt = null,
       )
-      msg.sendToAsync(WorkflowCmdTopic)
+      msg.sendToAsync(WorkflowStateCmdTopic)
     }
 
     is RequestByWorkflowTag -> {
@@ -415,7 +415,7 @@ internal class ClientDispatcher(
           requester = clientRequester,
           emittedAt = null,
       )
-      msg.sendToAsync(WorkflowCmdTopic)
+      msg.sendToAsync(WorkflowStateCmdTopic)
     }
 
     is RequestByWorkflowTag -> {
@@ -553,7 +553,7 @@ internal class ClientDispatcher(
 
         // workflow message is dispatched after tags
         // to avoid a potential race condition if the engine remove tags
-        dispatchWorkflow.sendToAsync(WorkflowCmdTopic).thenApply { deferred }
+        dispatchWorkflow.sendToAsync(WorkflowStateCmdTopic).thenApply { deferred }
       }
       // a customId tag was provided
       1 -> {
@@ -666,7 +666,7 @@ internal class ClientDispatcher(
           emitterName = emitterName,
           emittedAt = null,
       )
-      dispatchMethod.sendToAsync(WorkflowCmdTopic)
+      dispatchMethod.sendToAsync(WorkflowStateCmdTopic)
     }
 
     is RequestByWorkflowTag -> {
@@ -725,7 +725,7 @@ internal class ClientDispatcher(
             emittedAt = null,
             requester = clientRequester,
         )
-        sendSignal.sendToAsync(WorkflowCmdTopic)
+        sendSignal.sendToAsync(WorkflowStateCmdTopic)
       }
 
       is RequestByWorkflowTag -> {
@@ -766,10 +766,6 @@ internal class ClientDispatcher(
         )
       }
 
-  private val logMessageSentToDLQ = { message: Message?, e: Exception ->
-    logger.error(e) { "Unable to process message ${message ?: "(Not Deserialized)"}" }
-  }
-
   private fun waitForAsync(
     timeout: Long = Long.MAX_VALUE,
     predicate: suspend (ClientMessage) -> Boolean
@@ -778,11 +774,11 @@ internal class ClientDispatcher(
     synchronized(this) {
       if (!isClientConsumerInitialized) {
         runBlocking(clientScope.coroutineContext) {
-          consumerAsync.start(
+          consumer.start(
               subscription = MainSubscription(ClientTopic),
               entity = emitterName.toString(),
               handler = ::handle,
-              beforeDlq = logMessageSentToDLQ,
+              beforeDlq = null,
               concurrency = 1,
           )
           isClientConsumerInitialized = true

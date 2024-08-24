@@ -23,7 +23,7 @@
 
 package io.infinitic.events.data.services
 
-import io.infinitic.common.tasks.events.messages.ServiceEventMessage
+import io.infinitic.common.tasks.events.messages.ServiceExecutorEventMessage
 import io.infinitic.common.tasks.events.messages.TaskCompletedEvent
 import io.infinitic.common.tasks.events.messages.TaskFailedEvent
 import io.infinitic.common.tasks.events.messages.TaskRetriedEvent
@@ -38,7 +38,7 @@ import io.infinitic.events.types.START
 import io.infinitic.events.types.STARTED
 import io.infinitic.events.types.TYPE_TASK
 
-fun ServiceEventMessage.serviceType(): String = "$TYPE_TASK." + when (this) {
+fun ServiceExecutorEventMessage.serviceType(): String = "$TYPE_TASK." + when (this) {
   is TaskCompletedEvent -> when (isDelegated) {
     true -> DELEGATION_COMPLETED
     false -> COMPLETED

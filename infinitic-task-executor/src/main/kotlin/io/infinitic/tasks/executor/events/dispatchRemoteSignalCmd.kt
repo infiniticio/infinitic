@@ -27,7 +27,7 @@ import io.infinitic.common.emitters.EmitterName
 import io.infinitic.common.exceptions.thisShouldNotHappen
 import io.infinitic.common.requester.WorkflowRequester
 import io.infinitic.common.transport.InfiniticProducer
-import io.infinitic.common.transport.WorkflowEventsTopic
+import io.infinitic.common.transport.WorkflowStateEventTopic
 import io.infinitic.common.workflows.data.channels.SignalId
 import io.infinitic.common.workflows.data.commands.SendSignalCommand
 import io.infinitic.common.workflows.data.commands.SendSignalPastCommand
@@ -87,7 +87,7 @@ internal fun CoroutineScope.dispatchRemoteSignalCmd(
       emitterName = emitterName,
   )
   // Dispatching the workflow event
-  with(producer) { signalDispatchedEvent.sendTo(WorkflowEventsTopic) }
+  with(producer) { signalDispatchedEvent.sendTo(WorkflowStateEventTopic) }
 }
 
 

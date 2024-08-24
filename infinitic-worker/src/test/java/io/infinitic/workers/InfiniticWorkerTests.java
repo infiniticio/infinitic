@@ -22,9 +22,9 @@
  */
 package io.infinitic.workers;
 
-import io.infinitic.common.transport.InfiniticConsumerAsync;
+import io.infinitic.common.transport.InfiniticConsumer;
 import io.infinitic.common.transport.InfiniticProducerAsync;
-import io.infinitic.pulsar.PulsarInfiniticConsumerAsync;
+import io.infinitic.pulsar.PulsarInfiniticConsumer;
 import io.infinitic.pulsar.PulsarInfiniticProducerAsync;
 import io.infinitic.pulsar.config.PulsarConfig;
 import io.infinitic.storage.config.PostgresConfig;
@@ -59,9 +59,9 @@ class InfiniticWorkerTests {
                 .build();
 
         try (InfiniticWorker worker = InfiniticWorker.fromConfig(workerConfig)) {
-            InfiniticConsumerAsync c = worker.getConsumerAsync();
+            InfiniticConsumer c = worker.getConsumerAsync();
             InfiniticProducerAsync p = worker.getProducerAsync();
-            assertInstanceOf(PulsarInfiniticConsumerAsync.class, c);
+            assertInstanceOf(PulsarInfiniticConsumer.class, c);
             assertInstanceOf(PulsarInfiniticProducerAsync.class, p);
         }
     }

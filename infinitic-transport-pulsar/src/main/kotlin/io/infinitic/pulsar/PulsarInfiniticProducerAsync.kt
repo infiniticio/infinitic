@@ -74,14 +74,13 @@ class PulsarInfiniticProducerAsync(
     topic: Topic<T>,
     after: MillisDuration
   ): CompletableFuture<Unit> {
-    val topicFullName =
-        with(pulsarResources) {
-          topic.forEntity(
-              message.entity(),
-              init = topic.initWhenProducing,
-              checkConsumer = true,
-          )
-        }
+    val topicFullName = with(pulsarResources) {
+      topic.forEntity(
+          message.entity(),
+          init = topic.initWhenProducing,
+          checkConsumer = true,
+      )
+    }
 
     return producer.sendAsync(
         topic.envelope(message),

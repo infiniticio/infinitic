@@ -49,7 +49,7 @@ import io.infinitic.common.tasks.tags.messages.RemoveTaskIdFromTag
 import io.infinitic.common.tasks.tags.messages.SetDelegatedTaskData
 import io.infinitic.common.tasks.tags.storage.TaskTagStorage
 import io.infinitic.common.transport.ClientTopic
-import io.infinitic.common.transport.InfiniticProducerAsync
+import io.infinitic.common.transport.InfiniticProducer
 import io.infinitic.common.transport.WorkflowStateEngineTopic
 import io.infinitic.common.workers.data.WorkerName
 import io.infinitic.common.workflows.engine.messages.RemoteTaskCompleted
@@ -66,7 +66,6 @@ import io.mockk.every
 import io.mockk.just
 import io.mockk.mockk
 import io.mockk.slot
-import java.util.concurrent.CompletableFuture
 
 private fun <T : Any> captured(slot: CapturingSlot<T>) =
     if (slot.isCaptured) slot.captured else null
@@ -81,12 +80,10 @@ private var delegatedTaskData = slot<DelegatedTaskData>()
 
 private lateinit var tagStateStorage: TaskTagStorage
 
-private fun completed() = CompletableFuture.completedFuture(Unit)
-
-private val producerMock = mockk<InfiniticProducerAsync> {
-  every { producerName } returns "$workerName"
-  coEvery { capture(clientMessage).sendToAsync(ClientTopic) } returns completed()
-  coEvery { capture(workflowStateEngineMessage).sendToAsync(WorkflowStateEngineTopic) } returns completed()
+private val producerMock = mockk<InfiniticProducer> {
+  every { name } returns "$workerName"
+  coEvery { capture(clientMessage).sendTo(ClientTopic) } returns Unit
+  coEvery { capture(workflowStateEngineMessage).sendTo(WorkflowStateEngineTopic) } returns Unit
 }
 
 private inline fun <reified T : Any> random(values: Map<String, Any?>? = null) =
@@ -172,8 +169,8 @@ internal class TaskTagEngineTests :
           // then
           coVerifySequence {
             tagStateStorage.getTaskIdsForTag(msgIn.taskTag, msgIn.serviceName)
-            producerMock.producerName
-            with(producerMock) { capture(clientMessage).sendToAsync(ClientTopic) }
+            producerMock.name
+            with(producerMock) { capture(clientMessage).sendTo(ClientTopic) }
           }
           captured(taskTag) shouldBe msgIn.taskTag
           captured(serviceName) shouldBe msgIn.serviceName
@@ -239,9 +236,9 @@ internal class TaskTagEngineTests :
           // then
           coVerifySequence {
             tagStateStorage.getDelegatedTaskData(msgIn.taskId)
-            producerMock.producerName
+            producerMock.name
             with(producerMock) {
-              capture(workflowStateEngineMessage).sendToAsync(
+              capture(workflowStateEngineMessage).sendTo(
                   WorkflowStateEngineTopic,
               )
             }
@@ -279,8 +276,8 @@ internal class TaskTagEngineTests :
           // then
           coVerifySequence {
             tagStateStorage.getDelegatedTaskData(msgIn.taskId)
-            producerMock.producerName
-            with(producerMock) { capture(clientMessage).sendToAsync(ClientTopic) }
+            producerMock.name
+            with(producerMock) { capture(clientMessage).sendTo(ClientTopic) }
             tagStateStorage.delDelegatedTaskData(msgIn.taskId)
           }
           taskId.captured shouldBe msgIn.taskId

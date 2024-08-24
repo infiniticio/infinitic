@@ -34,7 +34,6 @@ class Producer(
   val client: PulsarInfiniticClient,
   private val producerConfig: ProducerConfig
 ) {
-
   val logger = KotlinLogging.logger {}
 
   suspend fun getUniqueName(namerTopic: String, proposedName: String?) =
@@ -62,7 +61,7 @@ class Producer(
             it.key(key)
           }
           if (after > 0) {
-            it.deliverAfter(after.long, TimeUnit.MILLISECONDS)
+            it.deliverAfter(after.millis, TimeUnit.MILLISECONDS)
           }
         }
         .sendAsync()

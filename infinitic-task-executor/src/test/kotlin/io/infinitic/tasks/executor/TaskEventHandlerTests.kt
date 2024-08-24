@@ -55,10 +55,10 @@ import io.infinitic.common.tasks.tags.messages.RemoveTaskIdFromTag
 import io.infinitic.common.tasks.tags.messages.ServiceTagMessage
 import io.infinitic.common.tasks.tags.messages.SetDelegatedTaskData
 import io.infinitic.common.transport.ClientTopic
-import io.infinitic.common.transport.InfiniticProducerAsync
-import io.infinitic.common.transport.ServiceTagTopic
-import io.infinitic.common.transport.TimerWorkflowStateEngineTopic
+import io.infinitic.common.transport.InfiniticProducer
+import io.infinitic.common.transport.ServiceTagEngineTopic
 import io.infinitic.common.transport.WorkflowStateEngineTopic
+import io.infinitic.common.transport.WorkflowStateTimerTopic
 import io.infinitic.common.workers.config.WorkflowVersion
 import io.infinitic.common.workflows.data.workflowMethods.WorkflowMethodId
 import io.infinitic.common.workflows.data.workflows.WorkflowId
@@ -103,19 +103,19 @@ class TaskEventHandlerTests :
 
         // mocks
         fun completed() = CompletableFuture.completedFuture(Unit)
-        val producerAsync = mockk<InfiniticProducerAsync> {
-          every { producerName } returns "$testEmitterName"
-          coEvery { capture(taskTagSlots).sendToAsync(ServiceTagTopic) } returns completed()
-          coEvery { capture(clientSlot).sendToAsync(ClientTopic) } returns completed()
+        val producerAsync = mockk<InfiniticProducer> {
+          every { name } returns "$testEmitterName"
+          coEvery { capture(taskTagSlots).sendTo(ServiceTagEngineTopic) } returns Unit
+          coEvery { capture(clientSlot).sendTo(ClientTopic) } returns Unit
           coEvery {
-            capture(workflowEngineSlot).sendToAsync(WorkflowStateEngineTopic)
-          } returns completed()
+            capture(workflowEngineSlot).sendTo(WorkflowStateEngineTopic)
+          } returns Unit
           coEvery {
-            capture(workflowEngineSlot).sendToAsync(
-                TimerWorkflowStateEngineTopic,
+            capture(workflowEngineSlot).sendTo(
+                WorkflowStateTimerTopic,
                 capture(afterSlot),
             )
-          } returns completed()
+          } returns Unit
         }
 
         val taskEventHandler = TaskEventHandler(producerAsync)

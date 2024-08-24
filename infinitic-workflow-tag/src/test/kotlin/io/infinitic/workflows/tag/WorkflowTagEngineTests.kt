@@ -27,6 +27,7 @@ import io.infinitic.common.clients.messages.WorkflowIdsByTag
 import io.infinitic.common.data.MillisInstant
 import io.infinitic.common.fixtures.TestFactory
 import io.infinitic.common.transport.ClientTopic
+import io.infinitic.common.transport.InfiniticProducer
 import io.infinitic.common.transport.InfiniticProducerAsync
 import io.infinitic.common.transport.WorkflowStateEngineTopic
 import io.infinitic.common.workflows.data.workflows.WorkflowId
@@ -57,7 +58,6 @@ import io.mockk.every
 import io.mockk.just
 import io.mockk.mockk
 import io.mockk.slot
-import java.util.concurrent.CompletableFuture
 
 private fun <T : Any> captured(slot: CapturingSlot<T>) =
     if (slot.isCaptured) slot.captured else null
@@ -267,13 +267,11 @@ private fun getEngine(
 ): WorkflowTagEngine {
   workflowTagStorage = mockWorkflowTagStorage(workflowTag, workflowName, workflowIds)
 
-  fun completed() = CompletableFuture.completedFuture(Unit)
-
-  producerAsync = mockk<InfiniticProducerAsync> {
-    every { producerName } returns "clientWorkflowTagEngineName"
-    coEvery { capture(clientSlot).sendToAsync(ClientTopic) } returns completed()
-    coEvery { capture(workflowEngineSlot).sendToAsync(WorkflowStateEngineTopic) } returns completed()
+  val producer = mockk<InfiniticProducer> {
+    every { name } returns "clientWorkflowTagEngineName"
+    coEvery { capture(clientSlot).sendTo(ClientTopic) } returns Unit
+    coEvery { capture(workflowEngineSlot).sendTo(WorkflowStateEngineTopic) } returns Unit
   }
 
-  return WorkflowTagEngine(workflowTagStorage, producerAsync)
+  return WorkflowTagEngine(workflowTagStorage, producer)
 }

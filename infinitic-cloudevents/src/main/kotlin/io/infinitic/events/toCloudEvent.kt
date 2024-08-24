@@ -30,7 +30,7 @@ import io.infinitic.common.data.Name
 import io.infinitic.common.exceptions.thisShouldNotHappen
 import io.infinitic.common.messages.Message
 import io.infinitic.common.requester.workflowName
-import io.infinitic.common.tasks.events.messages.ServiceEventMessage
+import io.infinitic.common.tasks.events.messages.ServiceExecutorEventMessage
 import io.infinitic.common.tasks.executors.messages.ServiceExecutorMessage
 import io.infinitic.common.workflows.engine.messages.WorkflowCmdMessage
 import io.infinitic.common.workflows.engine.messages.WorkflowEventMessage
@@ -123,13 +123,13 @@ enum class CloudEventContext {
 
     override fun Message.type(): String? = when (this) {
       is ServiceExecutorMessage -> serviceType()
-      is ServiceEventMessage -> serviceType()
+      is ServiceExecutorEventMessage -> serviceType()
       else -> null
     }
 
     override fun Message.subject(): String = when (this) {
       is ServiceExecutorMessage -> taskId
-      is ServiceEventMessage -> taskId
+      is ServiceExecutorEventMessage -> taskId
       else -> thisShouldNotHappen()
     }.toString()
 
@@ -139,7 +139,7 @@ enum class CloudEventContext {
         false -> serviceName.encoded
       }
 
-      is ServiceEventMessage -> when (isWorkflowTask()) {
+      is ServiceExecutorEventMessage -> when (isWorkflowTask()) {
         true -> "executor/${requester.workflowName.encoded}"
         false -> serviceName.encoded
       }
@@ -151,7 +151,7 @@ enum class CloudEventContext {
 
     override fun Message.dataBytes(): ByteArray = when (this) {
       is ServiceExecutorMessage -> toJson()
-      is ServiceEventMessage -> toJson()
+      is ServiceExecutorEventMessage -> toJson()
       else -> thisShouldNotHappen()
     }.toString().toByteArray()
 

@@ -61,7 +61,7 @@ import io.infinitic.exceptions.DeferredException
 import kotlinx.serialization.Serializable
 
 @Serializable
-sealed class ServiceEventMessage : Message {
+sealed class ServiceExecutorEventMessage : Message {
   val version: Version = Version(currentVersion)
   abstract val taskId: TaskId
   abstract val serviceName: ServiceName
@@ -98,7 +98,7 @@ data class TaskStartedEvent(
   override val clientWaiting: Boolean?,
   override val taskTags: Set<TaskTag>,
   override val taskMeta: TaskMeta,
-) : ServiceEventMessage() {
+) : ServiceExecutorEventMessage() {
   companion object {
     fun from(msg: ExecuteTask, emitterName: EmitterName) = TaskStartedEvent(
         serviceName = msg.serviceName,
@@ -131,7 +131,7 @@ data class TaskFailedEvent(
   override val taskMeta: TaskMeta,
   val executionError: ExecutionError,
   val deferredError: DeferredError?,
-) : ServiceEventMessage() {
+) : ServiceExecutorEventMessage() {
 
   fun getEventForClient(emitterName: EmitterName) =
       when (requester is ClientRequester && clientWaiting == true) {
@@ -205,7 +205,7 @@ data class TaskRetriedEvent(
   override val taskMeta: TaskMeta,
   val taskRetryDelay: MillisDuration,
   val lastError: ExecutionError,
-) : ServiceEventMessage() {
+) : ServiceExecutorEventMessage() {
 
   companion object {
     fun from(
@@ -247,7 +247,7 @@ data class TaskCompletedEvent(
   override val taskMeta: TaskMeta,
   val isDelegated: Boolean,
   val returnValue: MethodReturnValue,
-) : ServiceEventMessage() {
+) : ServiceExecutorEventMessage() {
 
   fun getDelegatedTaskData() = DelegatedTaskData(
       serviceName = serviceName,

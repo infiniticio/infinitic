@@ -20,30 +20,32 @@
  *
  * Licensor: infinitic.io
  */
-package io.infinitic.dashboard.panels.infrastructure
 
-import io.infinitic.common.transport.WorkflowExecutorTopic
-import io.infinitic.dashboard.Infinitic
-import io.infinitic.dashboard.panels.infrastructure.requests.Loading
-import org.apache.pulsar.common.policies.data.PartitionedTopicStats
-import java.time.Instant
+package io.infinitic.logger
 
-data class AllWorkflowsState(
-  override val names: JobNames = Loading(),
-  override val stats: JobStats = mapOf(),
-  val isLoading: Boolean = isLoading(names, stats),
-  val lastUpdatedAt: Instant = lastUpdatedAt(names, stats)
-) : AllJobsState(names, stats) {
+import io.github.oshai.kotlinlogging.KLogger
 
-  override fun create(names: JobNames, stats: JobStats) =
-      AllWorkflowsState(names = names, stats = stats)
+class IgnoreNullKLogger(val logger: KLogger) : KLogger by logger {
 
-  override suspend fun getNames() = Infinitic.pulsarResources.getWorkflowsName()
+  override fun error(throwable: Throwable?, message: () -> Any?) {
+    if (isErrorEnabled()) message()?.let { logger.error(throwable) { it } }
+  }
 
-  override suspend fun getPartitionedStats(name: String): Result<PartitionedTopicStats?> {
-    val topic =
-        with(Infinitic.pulsarResources) { WorkflowExecutorTopic.fullName(name) }
+  override fun warn(message: () -> Any?) {
+    if (isWarnEnabled()) message()?.let { logger.warn { it } }
+  }
 
-    return Infinitic.pulsarResources.admin.getPartitionedTopicStats(topic)
+  override fun info(message: () -> Any?) {
+    if (isInfoEnabled()) message()?.let { logger.info { it } }
+  }
+
+  override fun debug(message: () -> Any?) {
+    if (isDebugEnabled()) message()?.let { logger.debug { it } }
+  }
+
+  override fun trace(message: () -> Any?) {
+    if (isTraceEnabled()) message()?.let { logger.trace { it } }
   }
 }
+
+fun KLogger.ignoreNull() = IgnoreNullKLogger(this)

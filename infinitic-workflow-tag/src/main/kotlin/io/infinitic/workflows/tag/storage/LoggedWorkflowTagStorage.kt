@@ -22,7 +22,7 @@
  */
 package io.infinitic.workflows.tag.storage
 
-import io.github.oshai.kotlinlogging.KotlinLogging
+import io.github.oshai.kotlinlogging.KLogger
 import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.data.workflows.WorkflowName
 import io.infinitic.common.workflows.data.workflows.WorkflowTag
@@ -30,12 +30,10 @@ import io.infinitic.common.workflows.tags.storage.WorkflowTagStorage
 import org.jetbrains.annotations.TestOnly
 
 class LoggedWorkflowTagStorage(
-  logName: String,
+  private val logger: KLogger,
   private val storage: WorkflowTagStorage
 ) : WorkflowTagStorage {
-
-  private val logger = KotlinLogging.logger(logName)
-
+  
   override suspend fun getWorkflowIds(
     tag: WorkflowTag,
     workflowName: WorkflowName

@@ -22,35 +22,18 @@
  */
 package io.infinitic.common.transport
 
+import io.infinitic.common.data.MillisInstant
 import io.infinitic.common.messages.Message
 
-sealed class Subscription<S : Message> {
-  abstract val topic: Topic<S>
-  abstract val withKey: Boolean
+interface InfiniticConsumer : AutoCloseable {
+
+  fun join()
+
+  suspend fun <S : Message> start(
+    subscription: Subscription<S>,
+    entity: String,
+    handler: suspend (S, MillisInstant) -> Unit,
+    beforeDlq: (suspend (S?, Exception) -> Unit)?,
+    concurrency: Int
+  )
 }
-
-data class MainSubscription<S : Message>(override val topic: Topic<S>) : Subscription<S>() {
-  init {
-    if (topic.acceptDelayed) require(!withKey) { "Keyed subscription are forbidden for topics accepting delayed messages" }
-  }
-
-  override val withKey
-    get() = when (topic) {
-      WorkflowTagEngineTopic,
-      WorkflowStateCmdTopic,
-      WorkflowStateEngineTopic,
-      WorkflowExecutorTopic,
-      ServiceTagEngineTopic -> true
-
-      else -> false
-    }
-}
-
-data class EventListenerSubscription<S : Message>(
-  override val topic: Topic<S>,
-  val name: String?
-) : Subscription<S>() {
-  override val withKey = false
-}
-
-

@@ -22,14 +22,12 @@
  */
 package io.infinitic.workflows.engine
 
-import io.github.oshai.kotlinlogging.KotlinLogging
 import io.infinitic.common.data.MillisInstant
 import io.infinitic.common.emitters.EmitterName
 import io.infinitic.common.tasks.data.TaskId
-import io.infinitic.common.transport.InfiniticProducerAsync
-import io.infinitic.common.transport.LoggedInfiniticProducer
-import io.infinitic.common.transport.WorkflowEventsTopic
+import io.infinitic.common.transport.InfiniticProducer
 import io.infinitic.common.transport.WorkflowStateEngineTopic
+import io.infinitic.common.transport.WorkflowStateEventTopic
 import io.infinitic.common.utils.IdGenerator
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskIndex
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskParameters
@@ -40,15 +38,11 @@ import io.infinitic.common.workflows.engine.messages.requester
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 
-class WorkflowCmdHandler(producerAsync: InfiniticProducerAsync) {
+class WorkflowStateCmdHandler(val producer: InfiniticProducer) {
 
-  private val logger = KotlinLogging.logger(this::class.java.name)
-  val producer = LoggedInfiniticProducer(this::class.java.name, producerAsync)
   val emitterName by lazy { EmitterName(producer.name) }
 
   suspend fun handle(msg: WorkflowStateEngineMessage, publishTime: MillisInstant) {
-    msg.logTrace { "Processing $msg" }
-
     // define emittedAt from the publishing instant if not yet defined
     msg.emittedAt = msg.emittedAt ?: publishTime
 
@@ -56,8 +50,6 @@ class WorkflowCmdHandler(producerAsync: InfiniticProducerAsync) {
       is DispatchWorkflow -> dispatchNewWorkflow(msg, publishTime)
       else -> with(producer) { msg.sendTo(WorkflowStateEngineTopic) }
     }
-
-    msg.logDebug { "Processed $msg" }
   }
 
   // We dispatch a workflow task right away
@@ -104,22 +96,14 @@ class WorkflowCmdHandler(producerAsync: InfiniticProducerAsync) {
             // dispatch workflow task
             dispatchTask(taskDispatchedEvent.taskDispatched, taskDispatchedEvent.requester)
             // dispatch workflow event
-            taskDispatchedEvent.sendTo(WorkflowEventsTopic)
+            taskDispatchedEvent.sendTo(WorkflowStateEventTopic)
           }
 
 
           with(producer) {
             // event: starting new method
-            dispatchNewWorkflow.methodCommandedEvent(emitterName).sendTo(WorkflowEventsTopic)
+            dispatchNewWorkflow.methodCommandedEvent(emitterName).sendTo(WorkflowStateEventTopic)
           }
         }
       }
-
-  private fun WorkflowStateEngineMessage.logDebug(description: () -> String) {
-    logger.debug { "$workflowName (${workflowId}): ${description()}" }
-  }
-
-  private fun WorkflowStateEngineMessage.logTrace(description: () -> String) {
-    logger.trace { "$workflowName (${workflowId}): ${description()}" }
-  }
 }

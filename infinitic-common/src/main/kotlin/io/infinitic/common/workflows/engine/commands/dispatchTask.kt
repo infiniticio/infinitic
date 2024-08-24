@@ -32,8 +32,8 @@ import io.infinitic.common.tasks.executors.messages.ExecuteTask
 import io.infinitic.common.tasks.tags.messages.AddTaskIdToTag
 import io.infinitic.common.transport.InfiniticProducer
 import io.infinitic.common.transport.ServiceExecutorTopic
-import io.infinitic.common.transport.ServiceTagTopic
-import io.infinitic.common.transport.TimerWorkflowStateEngineTopic
+import io.infinitic.common.transport.ServiceTagEngineTopic
+import io.infinitic.common.transport.WorkflowStateTimerTopic
 import io.infinitic.common.workflows.engine.messages.RemoteTaskTimedOut
 import io.infinitic.common.workflows.engine.messages.data.TaskDispatched
 import kotlinx.coroutines.coroutineScope
@@ -75,7 +75,7 @@ suspend fun InfiniticProducer.dispatchTask(
           taskId = executeTask.taskId,
           emitterName = emitterName,
       )
-      addTaskIdToTag.sendTo(ServiceTagTopic)
+      addTaskIdToTag.sendTo(ServiceTagEngineTopic)
     }
   }
 
@@ -97,7 +97,7 @@ suspend fun InfiniticProducer.dispatchTask(
             emitterName = emitterName,
             emittedAt = it,
         )
-        remoteTaskTimedOut.sendTo(TimerWorkflowStateEngineTopic, it - MillisInstant.now())
+        remoteTaskTimedOut.sendTo(WorkflowStateTimerTopic, it - MillisInstant.now())
       }
     }
   }

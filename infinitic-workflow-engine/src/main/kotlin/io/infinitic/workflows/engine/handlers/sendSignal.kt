@@ -27,7 +27,7 @@ import io.infinitic.common.data.methods.MethodReturnValue
 import io.infinitic.common.emitters.EmitterName
 import io.infinitic.common.exceptions.thisShouldNotHappen
 import io.infinitic.common.transport.InfiniticProducer
-import io.infinitic.common.transport.WorkflowEventsTopic
+import io.infinitic.common.transport.WorkflowStateEventTopic
 import io.infinitic.common.workflows.data.commands.CommandStatus.Completed
 import io.infinitic.common.workflows.engine.messages.SendSignal
 import io.infinitic.common.workflows.engine.messages.SignalDiscardedEvent
@@ -85,7 +85,7 @@ internal fun CoroutineScope.sendSignal(
               workflowVersion = state.workflowVersion,
               emitterName = emitterName,
           )
-          with(producer) { signalReceivedEvent.sendTo(WorkflowEventsTopic) }
+          with(producer) { signalReceivedEvent.sendTo(WorkflowStateEventTopic) }
         }
 
       } ?: launch {
@@ -100,6 +100,6 @@ internal fun CoroutineScope.sendSignal(
         emitterName = emitterName,
     )
 
-    with(producer) { signalDiscardedEvent.sendTo(WorkflowEventsTopic) }
+    with(producer) { signalDiscardedEvent.sendTo(WorkflowStateEventTopic) }
   }
 }

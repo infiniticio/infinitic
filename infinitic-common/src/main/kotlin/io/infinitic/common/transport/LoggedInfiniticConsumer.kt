@@ -22,21 +22,51 @@
  */
 package io.infinitic.common.transport
 
+import io.github.oshai.kotlinlogging.KLogger
 import io.infinitic.common.data.MillisInstant
 import io.infinitic.common.messages.Message
 
-interface InfiniticConsumerAsync : AutoCloseable {
+class LoggedInfiniticConsumer(
+  private val logger: KLogger,
+  private val consumer: InfiniticConsumer,
+) : InfiniticConsumer {
 
-  // name used for logging
-  var logName: String?
+  override fun join() {
+    consumer.join()
+  }
 
-  fun join()
-
-  suspend fun <S : Message> start(
+  override suspend fun <S : Message> start(
     subscription: Subscription<S>,
     entity: String,
     handler: suspend (S, MillisInstant) -> Unit,
-    beforeDlq: suspend (S?, Exception) -> Unit,
+    beforeDlq: (suspend (S?, Exception) -> Unit)?,
     concurrency: Int
-  )
+  ) {
+    val loggedHandler: suspend (S, MillisInstant) -> Unit = { message, instant ->
+      logger.debug { "Processing: $message." }
+      handler(message, instant)
+      logger.trace { "Processed:  $message." }
+    }
+
+    val loggedBeforeDlq: suspend (S?, Exception) -> Unit = { message, e ->
+      logger.error(e) { "Sending message to DLQ: ${message ?: "(Not Deserialized)"}." }
+      beforeDlq?.let {
+        logger.debug { "BeforeDlq processing..." }
+        it(message, e)
+        logger.trace { "BeforeDlq processed." }
+      }
+    }
+
+    return consumer.start(
+        subscription,
+        entity,
+        loggedHandler,
+        loggedBeforeDlq,
+        concurrency,
+    )
+  }
+
+  override fun close() {
+    consumer.close()
+  }
 }

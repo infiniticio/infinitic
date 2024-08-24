@@ -33,21 +33,21 @@ import io.infinitic.common.fixtures.TestFactory
 import io.infinitic.common.messages.Message
 import io.infinitic.common.requester.ClientRequester
 import io.infinitic.common.tasks.data.ServiceName
-import io.infinitic.common.tasks.events.messages.ServiceEventMessage
+import io.infinitic.common.tasks.events.messages.ServiceExecutorEventMessage
 import io.infinitic.common.tasks.events.messages.TaskCompletedEvent
 import io.infinitic.common.tasks.events.messages.TaskFailedEvent
 import io.infinitic.common.tasks.events.messages.TaskRetriedEvent
 import io.infinitic.common.tasks.events.messages.TaskStartedEvent
 import io.infinitic.common.tasks.executors.messages.ExecuteTask
 import io.infinitic.common.tasks.executors.messages.ServiceExecutorMessage
-import io.infinitic.common.transport.ServiceEventsTopic
+import io.infinitic.common.transport.ServiceExecutorEventTopic
 import io.infinitic.common.transport.ServiceExecutorTopic
 import io.infinitic.common.transport.Topic
-import io.infinitic.common.transport.WorkflowCmdTopic
-import io.infinitic.common.transport.WorkflowEventsTopic
+import io.infinitic.common.transport.WorkflowExecutorEventTopic
+import io.infinitic.common.transport.WorkflowExecutorTopic
+import io.infinitic.common.transport.WorkflowStateCmdTopic
 import io.infinitic.common.transport.WorkflowStateEngineTopic
-import io.infinitic.common.transport.WorkflowTaskEventsTopic
-import io.infinitic.common.transport.WorkflowTaskExecutorTopic
+import io.infinitic.common.transport.WorkflowStateEventTopic
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTask
 import io.infinitic.common.workflows.data.workflows.WorkflowName
 import io.infinitic.common.workflows.engine.messages.CancelWorkflow
@@ -137,13 +137,13 @@ suspend fun main() {
     }
   }
 
-  ServiceEventMessage::class.sealedSubclasses.forEach {
+  ServiceExecutorEventMessage::class.sealedSubclasses.forEach {
     events.clear()
     val message = TestFactory.random(
         it,
         mapOf("serviceName" to ServiceName("ServiceA")),
     )
-    message.sendToTopic(ServiceEventsTopic)
+    message.sendToTopic(ServiceExecutorEventTopic)
     events.firstOrNull()?.let { event ->
       val json = String(JsonFormat().serialize(event))
       println(message)
@@ -157,7 +157,7 @@ suspend fun main() {
         it,
         mapOf("workflowName" to WorkflowName("WorkflowA")),
     )
-    message.sendToTopic(WorkflowCmdTopic)
+    message.sendToTopic(WorkflowStateCmdTopic)
     events.firstOrNull()?.let { event ->
       val json = String(JsonFormat().serialize(event))
       println(message)
@@ -187,7 +187,7 @@ suspend fun main() {
         it,
         mapOf("workflowName" to WorkflowName("WorkflowA")),
     )
-    message.sendToTopic(WorkflowEventsTopic)
+    message.sendToTopic(WorkflowStateEventTopic)
     events.firstOrNull()?.let { event ->
       val json = String(JsonFormat().serialize(event))
       println(message)
@@ -230,13 +230,13 @@ internal class CloudEventTests :
           }
         }
 
-        ServiceEventMessage::class.sealedSubclasses.forEach {
+        ServiceExecutorEventMessage::class.sealedSubclasses.forEach {
           "Check ${it.simpleName} event envelope from Service Events topic" {
             val message = TestFactory.random(
                 it,
                 mapOf("serviceName" to ServiceName("ServiceA")),
             )
-            message.sendToTopic(ServiceEventsTopic)
+            message.sendToTopic(ServiceExecutorEventTopic)
 
             events.size shouldBe 1
             val event = events.first()
@@ -267,7 +267,7 @@ internal class CloudEventTests :
                     "workflowName" to WorkflowName("WorkflowA"),
                 ),
             )
-            message.sendToTopic(WorkflowTaskExecutorTopic)
+            message.sendToTopic(WorkflowExecutorTopic)
 
             events.size shouldBe 1
             val event = events.first()
@@ -280,7 +280,7 @@ internal class CloudEventTests :
           }
         }
 
-        ServiceEventMessage::class.sealedSubclasses.forEach {
+        ServiceExecutorEventMessage::class.sealedSubclasses.forEach {
           "Check ${it.simpleName} source for WorkflowTask" {
             var message = TestFactory.random(
                 it,
@@ -292,7 +292,7 @@ internal class CloudEventTests :
             if (message is TaskCompletedEvent) {
               message = (message as TaskCompletedEvent).copy(isDelegated = false)
             }
-            message.sendToTopic(WorkflowTaskEventsTopic)
+            message.sendToTopic(WorkflowExecutorEventTopic)
 
             events.size shouldBe 1
             val event = events.first()
@@ -314,7 +314,7 @@ internal class CloudEventTests :
                 it,
                 mapOf("workflowName" to WorkflowName("WorkflowA")),
             )
-            message.sendToTopic(WorkflowCmdTopic)
+            message.sendToTopic(WorkflowStateCmdTopic)
 
             val type = when (it) {
               CancelWorkflow::class -> when ((message as CancelWorkflow).workflowMethodId) {
@@ -414,7 +414,7 @@ internal class CloudEventTests :
                 it,
                 mapOf("workflowName" to WorkflowName("WorkflowA")),
             )
-            message.sendToTopic(WorkflowEventsTopic)
+            message.sendToTopic(WorkflowStateEventTopic)
 
             val type = when (it) {
               WorkflowCompletedEvent::class -> "infinitic.workflow.ended"
