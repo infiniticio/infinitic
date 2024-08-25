@@ -22,6 +22,7 @@
  */
 package io.infinitic.inMemory
 
+import io.github.oshai.kotlinlogging.KLogger
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.infinitic.common.data.MillisInstant
 import io.infinitic.common.messages.Message
@@ -46,14 +47,22 @@ class InMemoryInfiniticConsumer(
   private val eventListenerChannels: InMemoryChannels,
 ) : InfiniticConsumer {
 
+  override lateinit var workerLogger: KLogger
+
   // Coroutine scope used to receive messages
   private val consumingScope = CoroutineScope(Dispatchers.IO)
 
   override fun join() {
-    runBlocking { consumingScope.coroutineContext.job.children.forEach { it.join() } }
+    runBlocking {
+      consumingScope.coroutineContext.job.children.forEach {
+        try {
+          it.join()
+        } catch (e: CancellationException) {
+          // do nothing
+        }
+      }
+    }
   }
-
-  private val logger = KotlinLogging.logger {}
 
   override fun close() {
     consumingScope.cancel()
@@ -162,11 +171,19 @@ class InMemoryInfiniticConsumer(
     e: Exception
   ) {
     try {
-      logger.trace { "Channel ${channel.id}: Telling about message sent to DLQ $message}" }
-      beforeDlq?.let { it(message, e) }
+      logger.error { "Channel ${channel.id}: Sending message to DLQ $message" }
+      beforeDlq?.let {
+        logger.debug { "BeforeDlq processing..." }
+        it(message, e)
+        logger.trace { "BeforeDlq processed." }
+      }
     } catch (e: Exception) {
-      logger.error(e) { "Channel ${channel.id}: Unable to tell about message sent to DLQ $message" }
+      logger.error(e) { "Channel ${channel.id}: Unable to process BeforeDlq" }
     }
+  }
+
+  companion object {
+    private val logger = KotlinLogging.logger {}
   }
 }
 

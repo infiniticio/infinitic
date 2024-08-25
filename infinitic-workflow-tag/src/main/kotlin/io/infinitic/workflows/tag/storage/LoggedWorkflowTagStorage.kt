@@ -33,14 +33,14 @@ class LoggedWorkflowTagStorage(
   private val logger: KLogger,
   private val storage: WorkflowTagStorage
 ) : WorkflowTagStorage {
-  
+
   override suspend fun getWorkflowIds(
     tag: WorkflowTag,
     workflowName: WorkflowName
   ): Set<WorkflowId> {
     val workflowIds = storage.getWorkflowIds(tag, workflowName)
     logger.debug {
-      "tag $tag - workflowName $workflowName - getWorkflowIds ${workflowIds.size} found"
+      "TAG $tag - workflowName $workflowName - getWorkflowIds ${workflowIds.size} found"
     }
 
     return workflowIds
@@ -51,7 +51,7 @@ class LoggedWorkflowTagStorage(
     workflowName: WorkflowName,
     workflowId: WorkflowId
   ) {
-    logger.debug { "tag $tag - name $workflowName - addWorkflowId $workflowId" }
+    logger.debug { "TAG $tag - name $workflowName - addWorkflowId $workflowId" }
     storage.addWorkflowId(tag, workflowName, workflowId)
   }
 
@@ -60,7 +60,7 @@ class LoggedWorkflowTagStorage(
     workflowName: WorkflowName,
     workflowId: WorkflowId
   ) {
-    logger.debug { "tag $tag - name $workflowName - removeWorkflowId $workflowId" }
+    logger.debug { "TAG $tag - name $workflowName - removeWorkflowId $workflowId" }
     storage.removeWorkflowId(tag, workflowName, workflowId)
   }
 

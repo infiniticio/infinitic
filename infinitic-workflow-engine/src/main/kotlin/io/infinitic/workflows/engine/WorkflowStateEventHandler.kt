@@ -22,6 +22,7 @@
  */
 package io.infinitic.workflows.engine
 
+import io.github.oshai.kotlinlogging.KotlinLogging
 import io.infinitic.common.data.MillisInstant
 import io.infinitic.common.emitters.EmitterName
 import io.infinitic.common.transport.ClientTopic
@@ -132,5 +133,9 @@ class WorkflowStateEventHandler(val producer: InfiniticProducer) {
         .forEach { event ->
           launch { with(producer) { event.sendTo(WorkflowStateEngineTopic) } }
         }
+  }
+
+  companion object {
+    val logger = KotlinLogging.logger { }
   }
 }

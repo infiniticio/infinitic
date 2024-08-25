@@ -31,10 +31,6 @@ class LoggedInfiniticConsumer(
   private val consumer: InfiniticConsumer,
 ) : InfiniticConsumer {
 
-  override fun join() {
-    consumer.join()
-  }
-
   override suspend fun <S : Message> start(
     subscription: Subscription<S>,
     entity: String,
@@ -43,9 +39,9 @@ class LoggedInfiniticConsumer(
     concurrency: Int
   ) {
     val loggedHandler: suspend (S, MillisInstant) -> Unit = { message, instant ->
-      logger.debug { "Processing: $message." }
+      logger.debug { formatLog(message.id(), "Processing:", message) }
       handler(message, instant)
-      logger.trace { "Processed:  $message." }
+      logger.trace { formatLog(message.id(), "Processed:", message) }
     }
 
     val loggedBeforeDlq: suspend (S?, Exception) -> Unit = { message, e ->
@@ -66,7 +62,18 @@ class LoggedInfiniticConsumer(
     )
   }
 
+  override var workerLogger: KLogger
+    get() = consumer.workerLogger
+    set(value) {
+      consumer.workerLogger = value
+    }
+
   override fun close() {
     consumer.close()
+  }
+
+
+  override fun join() {
+    consumer.join()
   }
 }

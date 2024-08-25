@@ -78,8 +78,6 @@ class TaskExecutor(
   private val producer: InfiniticProducer,
   private val client: InfiniticClientInterface
 ) {
-
-  private val logger = KotlinLogging.logger {}
   private val emitterName by lazy { EmitterName(producer.name) }
   private var withRetry: WithRetry? = null
   private var withTimeout: WithTimeout? = null
@@ -373,6 +371,8 @@ class TaskExecutor(
   }
 
   companion object {
+    val logger = KotlinLogging.logger {}
+
     val TASK_WITH_TIMEOUT_DEFAULT: WithTimeout? = null
     val TASK_WITH_RETRY_DEFAULT: WithRetry? = null
     val WORKFLOW_TASK_WITH_TIMEOUT_DEFAULT = WithTimeout { 60.0 }

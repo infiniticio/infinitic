@@ -42,23 +42,28 @@ class LoggedInfiniticProducer(
     topic: Topic<T>,
     after: MillisDuration
   ) {
-    logDebug(message)
+    logSending(message, after, topic)
     with(producer) { internalSendTo(message, topic, after) }
-    logTrace(message)
+    logSent(message, topic)
   }
-  
-  private fun logDebug(message: Message, after: MillisDuration? = null) {
+
+  private fun logSending(message: Message, after: MillisDuration, topic: Topic<*>) {
     logger.debug {
-      when {
-        after == null || after <= 0 -> "Sending"
-        else -> "After $after, sending"
-      } + " message: $message"
+      formatLog(
+          message.id(),
+          after.sending + " to ${topic::class.java.simpleName}:",
+          message,
+      )
     }
   }
 
-  private fun logTrace(message: Message) {
-    logger.trace {
-      "Message sent:    $message"
-    }
+  private fun logSent(message: Message, topic: Topic<*>) {
+    logger.trace { formatLog(message.id(), "Sent to ${topic::class.java.simpleName}:", message) }
   }
+
+  private val MillisDuration?.sending
+    get() = when {
+      this == null || this <= 0 -> "Sending"
+      else -> "After $this, sending"
+    }
 }

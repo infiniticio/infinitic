@@ -61,7 +61,6 @@ class WorkflowTagEngine(
   val storage: WorkflowTagStorage,
   val producer: InfiniticProducer
 ) {
-  private val logger = KotlinLogging.logger {}
 
   private val emitterName by lazy { EmitterName(producer.name) }
 
@@ -337,5 +336,9 @@ class WorkflowTagEngine(
 
   private fun discardTagWithoutIds(message: WorkflowTagEngineMessage) {
     logger.info { "discarding as no workflow `${message.workflowName}` found for tag `${message.workflowTag}`" }
+  }
+  
+  companion object {
+    val logger = KotlinLogging.logger {}
   }
 }

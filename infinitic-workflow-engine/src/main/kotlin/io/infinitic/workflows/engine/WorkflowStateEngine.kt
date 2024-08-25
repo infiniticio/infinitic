@@ -36,6 +36,7 @@ import io.infinitic.common.transport.InfiniticProducer
 import io.infinitic.common.transport.WorkflowStateEngineTopic
 import io.infinitic.common.transport.WorkflowStateEventTopic
 import io.infinitic.common.transport.WorkflowTagEngineTopic
+import io.infinitic.common.transport.formatLog
 import io.infinitic.common.workflows.engine.messages.CancelWorkflow
 import io.infinitic.common.workflows.engine.messages.CompleteTimers
 import io.infinitic.common.workflows.engine.messages.CompleteWorkflow
@@ -91,11 +92,13 @@ class WorkflowStateEngine(
   val storage: WorkflowStateStorage,
   val producer: InfiniticProducer
 ) {
+
   companion object {
     const val NO_STATE_DISCARDING_REASON = "for having null workflow state"
+
+    val logger = KotlinLogging.logger {}
   }
 
-  private val logger = KotlinLogging.logger {}
   private val emitterName by lazy { EmitterName(this::class.java.name) }
 
   suspend fun handle(message: WorkflowStateEngineMessage, publishTime: MillisInstant) {
@@ -268,7 +271,7 @@ class WorkflowStateEngine(
         if (message is WorkflowEvent && state.runningWorkflowTaskId != null) {
           // if a workflow task is ongoing then buffer all WorkflowEvent message,
           // except those associated to a WorkflowTask
-          logDebug(message) { "buffering $message" }
+          logDebug("Buffering:", message)
           state.messagesBuffer.add(message)
 
           return state
@@ -283,7 +286,7 @@ class WorkflowStateEngine(
       // process all buffered messages, while there is no workflowTask ongoing
       while (state.runningWorkflowTaskId == null && state.messagesBuffer.size > 0) {
         val msg = state.messagesBuffer.removeAt(0)
-        logDebug(msg) { "processing buffered message $msg" }
+        logDebug("Processing buffered message:", msg)
         processMessage(state, msg)
       }
     }
@@ -298,7 +301,7 @@ class WorkflowStateEngine(
   }
 
   private fun logDiscarding(message: WorkflowStateEngineMessage, cause: () -> String) {
-    val txt = { "Id ${message.workflowId} - discarding ${cause()}: $message" }
+    val txt = { formatLog(message.workflowId, "Discarding ${cause()}:", message) }
     when (message) {
       // these messages are expected, so we don't log them as warning
       is RemoteTaskTimedOut, is RemoteMethodTimedOut -> logger.debug(txt)
@@ -308,8 +311,8 @@ class WorkflowStateEngine(
     }
   }
 
-  private fun logDebug(message: WorkflowStateEngineMessage, txt: () -> String) {
-    logger.debug { "Id ${message.workflowId} - ${txt()}" }
+  private fun logDebug(command: String, message: WorkflowStateEngineMessage) {
+    logger.debug { formatLog(message.workflowId, command, message) }
   }
 
   private fun CoroutineScope.processMessage(

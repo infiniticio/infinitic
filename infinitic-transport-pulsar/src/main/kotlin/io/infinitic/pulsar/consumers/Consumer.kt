@@ -60,7 +60,7 @@ class Consumer(
   private val consumingScope =
       CoroutineScope(Executors.newCachedThreadPool().asCoroutineDispatcher())
 
-  val isActive get() = consumingScope.isActive
+  private val isActive get() = consumingScope.isActive
 
   fun cancel() {
     if (isActive) consumingScope.cancel()
@@ -91,7 +91,7 @@ class Consumer(
   ) {
     when (subscriptionType) {
       SubscriptionType.Key_Shared -> {
-        logger.debug { "Starting $concurrency consumers on topic $topic with subscription $subscriptionName" }
+        logger.debug { "Starting $concurrency $subscriptionType consumers on topic $topic with subscription $subscriptionName" }
 
         val consumers = List(concurrency) {
           getConsumer(
@@ -110,7 +110,7 @@ class Consumer(
       }
 
       else -> {
-        logger.debug { "Starting a consumer on topic $topic with subscription $subscriptionName" }
+        logger.debug { "Starting a $subscriptionType consumer on topic $topic with subscription $subscriptionName" }
 
         val consumer = getConsumer(
             schema = schema,
@@ -208,7 +208,7 @@ class Consumer(
       }
     }
   }
-  
+
   private fun closeConsumer(consumer: Consumer<*>) {
     logger.debug { "Closing consumer ${consumer.consumerName} after cancellation" }
     client.closeConsumer(consumer)

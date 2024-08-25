@@ -22,13 +22,19 @@
  */
 package io.infinitic.workflows.engine
 
+import io.github.oshai.kotlinlogging.KotlinLogging
 import io.infinitic.common.data.MillisInstant
 import io.infinitic.common.transport.InfiniticProducer
 import io.infinitic.common.transport.WorkflowStateEngineTopic
 import io.infinitic.common.workflows.engine.messages.WorkflowStateEngineMessage
 
+@Suppress("UNUSED_PARAMETER")
 class WorkflowStateTimerHandler(val producer: InfiniticProducer) {
   suspend fun handle(msg: WorkflowStateEngineMessage, publishTime: MillisInstant) {
     with(producer) { msg.sendTo(WorkflowStateEngineTopic) }
+  }
+
+  companion object {
+    val logger = KotlinLogging.logger { }
   }
 }

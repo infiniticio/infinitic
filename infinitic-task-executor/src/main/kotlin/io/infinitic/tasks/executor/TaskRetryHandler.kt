@@ -22,13 +22,15 @@
  */
 package io.infinitic.tasks.executor
 
+import io.github.oshai.kotlinlogging.KotlinLogging
 import io.infinitic.common.data.MillisInstant
 import io.infinitic.common.tasks.executors.messages.ServiceExecutorMessage
 import io.infinitic.common.transport.InfiniticProducer
 import io.infinitic.common.transport.ServiceExecutorTopic
 import io.infinitic.common.transport.WorkflowExecutorTopic
 
-class TaskRetriedHandler(val producer: InfiniticProducer) {
+@Suppress("UNUSED_PARAMETER")
+class TaskRetryHandler(val producer: InfiniticProducer) {
   suspend fun handle(msg: ServiceExecutorMessage, publishTime: MillisInstant) {
     with(producer) {
       when (msg.isWorkflowTask()) {
@@ -36,5 +38,9 @@ class TaskRetriedHandler(val producer: InfiniticProducer) {
         false -> msg.sendTo(ServiceExecutorTopic)
       }
     }
+  }
+
+  companion object {
+    val logger = KotlinLogging.logger {}
   }
 }

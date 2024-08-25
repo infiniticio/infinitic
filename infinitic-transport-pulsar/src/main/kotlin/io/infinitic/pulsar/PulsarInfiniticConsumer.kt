@@ -22,10 +22,9 @@
  */
 package io.infinitic.pulsar
 
-import io.github.oshai.kotlinlogging.KotlinLogging
+import io.github.oshai.kotlinlogging.KLogger
 import io.infinitic.autoclose.autoClose
 import io.infinitic.common.data.MillisInstant
-import io.infinitic.common.logs.INFINITIC_WORKER
 import io.infinitic.common.messages.Message
 import io.infinitic.common.transport.ClientTopic
 import io.infinitic.common.transport.EventListenerSubscription
@@ -55,34 +54,33 @@ class PulsarInfiniticConsumer(
   val shutdownGracePeriodInSeconds: Double
 ) : InfiniticConsumer {
 
+  override lateinit var workerLogger: KLogger
+
   override fun join() = consumer.join()
 
   private var isClosed: AtomicBoolean = AtomicBoolean(false)
-
-  // See InfiniticWorker
-  private val logger by lazy { KotlinLogging.logger(INFINITIC_WORKER) }
 
   private lateinit var clientName: String
 
   override fun close() {
     // we test if consumingScope is active, just in case
     // the user tries to manually close an already closed resource
-    if (!isClosed.getAndSet(true)) {
+    if (isClosed.compareAndSet(false, true)) {
       runBlocking {
         try {
           withTimeout((shutdownGracePeriodInSeconds * 1000L).toLong()) {
             // By cancelling the consumer coroutine, we interrupt the main loop of consumption
-            logger.info { "Processing ongoing messages..." }
+            workerLogger.info { "Processing ongoing messages..." }
             consumer.cancel()
             consumer.join()
-            logger.info { "All ongoing messages have been processed." }
+            workerLogger.info { "All ongoing messages have been processed." }
             // delete client topic after all in-memory messages have been processed
             deleteClientTopics()
             // then close other resources (typically pulsar client & admin)
             autoClose()
           }
         } catch (e: TimeoutCancellationException) {
-          logger.warn {
+          workerLogger.warn {
             "The grace period (${shutdownGracePeriodInSeconds}s) allotted to close was insufficient. " +
                 "Some ongoing messages may not have been processed properly."
           }
@@ -155,17 +153,17 @@ class PulsarInfiniticConsumer(
     if (::clientName.isInitialized) coroutineScope {
       launch {
         val clientTopic = with(pulsarResources) { ClientTopic.fullName(clientName) }
-        logger.debug { "Deleting client topic '$clientTopic'." }
+        workerLogger.debug { "Deleting client topic '$clientTopic'." }
         pulsarResources.deleteTopic(clientTopic)
-            .onFailure { logger.warn(it) { "Unable to delete client topic '$clientTopic'." } }
-            .onSuccess { logger.info { "Client topic '$clientTopic' deleted." } }
+            .onFailure { workerLogger.warn(it) { "Unable to delete client topic '$clientTopic'." } }
+            .onSuccess { workerLogger.info { "Client topic '$clientTopic' deleted." } }
       }
       launch {
         val clientDLQTopic = with(pulsarResources) { ClientTopic.fullNameDLQ(clientName) }
-        logger.debug { "Deleting client DLQ topic '$clientDLQTopic'." }
+        workerLogger.debug { "Deleting client DLQ topic '$clientDLQTopic'." }
         pulsarResources.deleteTopic(clientDLQTopic)
-            .onFailure { logger.warn(it) { "Unable to delete client DLQ topic '$clientDLQTopic'." } }
-            .onSuccess { logger.info { "Client DLQ topic '$clientDLQTopic' deleted." } }
+            .onFailure { workerLogger.warn(it) { "Unable to delete client DLQ topic '$clientDLQTopic'." } }
+            .onSuccess { workerLogger.info { "Client DLQ topic '$clientDLQTopic' deleted." } }
       }
     }
   }

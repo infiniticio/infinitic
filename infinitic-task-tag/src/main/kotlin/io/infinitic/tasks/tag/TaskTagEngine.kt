@@ -48,8 +48,6 @@ class TaskTagEngine(
   private val storage: TaskTagStorage,
   private val producer: InfiniticProducer
 ) {
-  private val logger = KotlinLogging.logger(this::class.java.name)
-
   private val emitterName by lazy { EmitterName(producer.name) }
 
   suspend fun handle(message: ServiceTagMessage, publishTime: MillisInstant) = coroutineScope {
@@ -108,5 +106,9 @@ class TaskTagEngine(
     )
 
     with(producer) { taskIdsByTag.sendTo(ClientTopic) }
+  }
+
+  companion object {
+    val logger = KotlinLogging.logger {}
   }
 }

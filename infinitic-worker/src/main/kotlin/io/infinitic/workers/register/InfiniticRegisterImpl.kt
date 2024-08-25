@@ -306,10 +306,10 @@ class InfiniticRegisterImpl(override var logsConfig: LogsConfig) : InfiniticRegi
         ?: DEFAULT_CONCURRENCY
 
   companion object {
-    private val logger by lazy { KotlinLogging.logger(InfiniticWorker::class.java.name) }
+    private val logger = KotlinLogging.logger(InfiniticWorker::class.java.name)
 
     private const val NONE = "none"
-    
+
     /** Create [InfiniticRegisterImpl] from config */
     @JvmStatic
     fun fromConfig(workerConfig: WorkerConfigInterface): InfiniticRegisterImpl =

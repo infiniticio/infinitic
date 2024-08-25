@@ -49,11 +49,7 @@ class PulsarInfiniticProducer(
   private val uniqueName: String by lazy {
     runBlocking(Dispatchers.IO) {
       val namingTopic = with(pulsarResources) {
-        NamingTopic.forEntity(
-            null,
-            init = true,
-            checkConsumer = false,
-        )
+        NamingTopic.forEntity(null, init = true, checkConsumer = false)
       }
       // Get unique name
       producer.getUniqueName(namingTopic, suggestedName).getOrThrow()
