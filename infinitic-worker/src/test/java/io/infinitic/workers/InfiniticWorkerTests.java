@@ -23,9 +23,9 @@
 package io.infinitic.workers;
 
 import io.infinitic.common.transport.InfiniticConsumer;
-import io.infinitic.common.transport.InfiniticProducerAsync;
+import io.infinitic.common.transport.InfiniticProducer;
 import io.infinitic.pulsar.PulsarInfiniticConsumer;
-import io.infinitic.pulsar.PulsarInfiniticProducerAsync;
+import io.infinitic.pulsar.PulsarInfiniticProducer;
 import io.infinitic.pulsar.config.PulsarConfig;
 import io.infinitic.storage.config.PostgresConfig;
 import io.infinitic.storage.config.StorageConfig;
@@ -59,10 +59,10 @@ class InfiniticWorkerTests {
                 .build();
 
         try (InfiniticWorker worker = InfiniticWorker.fromConfig(workerConfig)) {
-            InfiniticConsumer c = worker.getConsumerAsync();
-            InfiniticProducerAsync p = worker.getProducerAsync();
+            InfiniticConsumer c = worker.getConsumer();
+            InfiniticProducer p = worker.getProducer();
             assertInstanceOf(PulsarInfiniticConsumer.class, c);
-            assertInstanceOf(PulsarInfiniticProducerAsync.class, p);
+            assertInstanceOf(PulsarInfiniticProducer.class, p);
         }
     }
 }

@@ -117,7 +117,7 @@ private val worker = InfiniticWorker.fromConfig(workerConfig).apply {
 }
 
 private suspend fun <T : Message> T.sendToTopic(topic: Topic<T>) {
-  with(worker.producerAsync) { sendToAsync(topic).join() }
+  with(worker.producer) { sendTo(topic) }
   // wait a bit to let listener do its work
   delay(200)
 }
@@ -125,10 +125,7 @@ private suspend fun <T : Message> T.sendToTopic(topic: Topic<T>) {
 suspend fun main() {
   ServiceExecutorMessage::class.sealedSubclasses.forEach {
     events.clear()
-    val message = TestFactory.random(
-        it,
-        mapOf("serviceName" to ServiceName("ServiceA")),
-    )
+    val message = TestFactory.random(it, mapOf("serviceName" to ServiceName("ServiceA")))
     message.sendToTopic(ServiceExecutorTopic)
     events.firstOrNull()?.let { event ->
       val json = String(JsonFormat().serialize(event))
@@ -139,10 +136,7 @@ suspend fun main() {
 
   ServiceExecutorEventMessage::class.sealedSubclasses.forEach {
     events.clear()
-    val message = TestFactory.random(
-        it,
-        mapOf("serviceName" to ServiceName("ServiceA")),
-    )
+    val message = TestFactory.random(it, mapOf("serviceName" to ServiceName("ServiceA")))
     message.sendToTopic(ServiceExecutorEventTopic)
     events.firstOrNull()?.let { event ->
       val json = String(JsonFormat().serialize(event))
@@ -153,10 +147,7 @@ suspend fun main() {
 
   WorkflowCmdMessage::class.sealedSubclasses.forEach {
     events.clear()
-    val message = TestFactory.random(
-        it,
-        mapOf("workflowName" to WorkflowName("WorkflowA")),
-    )
+    val message = TestFactory.random(it, mapOf("workflowName" to WorkflowName("WorkflowA")))
     message.sendToTopic(WorkflowStateCmdTopic)
     events.firstOrNull()?.let { event ->
       val json = String(JsonFormat().serialize(event))
@@ -168,10 +159,7 @@ suspend fun main() {
   WorkflowStateEngineMessage::class.sealedSubclasses.forEach {
     if (!it.isSubclassOf(WorkflowCmdMessage::class)) {
       events.clear()
-      val message = TestFactory.random(
-          it,
-          mapOf("workflowName" to WorkflowName("WorkflowA")),
-      )
+      val message = TestFactory.random(it, mapOf("workflowName" to WorkflowName("WorkflowA")))
       message.sendToTopic(WorkflowStateEngineTopic)
       events.firstOrNull()?.let { event ->
         val json = String(JsonFormat().serialize(event))
@@ -183,10 +171,7 @@ suspend fun main() {
 
   WorkflowEventMessage::class.sealedSubclasses.forEach {
     events.clear()
-    val message = TestFactory.random(
-        it,
-        mapOf("workflowName" to WorkflowName("WorkflowA")),
-    )
+    val message = TestFactory.random(it, mapOf("workflowName" to WorkflowName("WorkflowA")))
     message.sendToTopic(WorkflowStateEventTopic)
     events.firstOrNull()?.let { event ->
       val json = String(JsonFormat().serialize(event))
@@ -211,10 +196,7 @@ internal class CloudEventTests :
 
         ServiceExecutorMessage::class.sealedSubclasses.forEach {
           "Check ${it.simpleName} event envelope from Service Executor topic" {
-            val message = TestFactory.random(
-                it,
-                mapOf("serviceName" to ServiceName("ServiceA")),
-            )
+            val message = TestFactory.random(it, mapOf("serviceName" to ServiceName("ServiceA")))
             message.sendToTopic(ServiceExecutorTopic)
 
             events.size shouldBe 1
@@ -232,10 +214,7 @@ internal class CloudEventTests :
 
         ServiceExecutorEventMessage::class.sealedSubclasses.forEach {
           "Check ${it.simpleName} event envelope from Service Events topic" {
-            val message = TestFactory.random(
-                it,
-                mapOf("serviceName" to ServiceName("ServiceA")),
-            )
+            val message = TestFactory.random(it, mapOf("serviceName" to ServiceName("ServiceA")))
             message.sendToTopic(ServiceExecutorEventTopic)
 
             events.size shouldBe 1
@@ -310,10 +289,7 @@ internal class CloudEventTests :
 
         WorkflowCmdMessage::class.sealedSubclasses.forEach {
           "Check ${it.simpleName} event envelope from cmd topic" {
-            val message = TestFactory.random(
-                it,
-                mapOf("workflowName" to WorkflowName("WorkflowA")),
-            )
+            val message = TestFactory.random(it, mapOf("workflowName" to WorkflowName("WorkflowA")))
             message.sendToTopic(WorkflowStateCmdTopic)
 
             val type = when (it) {
@@ -377,7 +353,8 @@ internal class CloudEventTests :
             "Check ${it.simpleName} event envelope from engine topic" {
               val message = TestFactory.random(
                   it,
-                  mapOf("workflowName" to WorkflowName("WorkflowA")),
+                  mapOf("workflowName" to WorkflowName("WorkflowA"),
+                  ),
               )
               message.sendToTopic(WorkflowStateEngineTopic)
 

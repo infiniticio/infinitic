@@ -27,6 +27,7 @@ import io.infinitic.common.data.MillisDuration
 import io.infinitic.common.messages.Envelope
 import io.infinitic.common.messages.Message
 import io.infinitic.pulsar.client.PulsarInfiniticClient
+import kotlinx.coroutines.future.await
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.TimeUnit
 
@@ -39,7 +40,15 @@ class Producer(
   suspend fun getUniqueName(namerTopic: String, proposedName: String?) =
       client.getUniqueName(namerTopic, proposedName)
 
-  fun sendAsync(
+  suspend fun send(
+    envelope: Envelope<out Message>,
+    after: MillisDuration,
+    topic: String,
+    producerName: String,
+    key: String? = null
+  ): Unit = sendAsync(envelope, after, topic, producerName, key).await()
+
+  internal fun sendAsync(
     envelope: Envelope<out Message>,
     after: MillisDuration,
     topic: String,

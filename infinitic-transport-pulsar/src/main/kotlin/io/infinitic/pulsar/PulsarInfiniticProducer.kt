@@ -25,7 +25,7 @@ package io.infinitic.pulsar
 import io.infinitic.common.data.MillisDuration
 import io.infinitic.common.messages.Message
 import io.infinitic.common.transport.ClientTopic
-import io.infinitic.common.transport.InfiniticProducerAsync
+import io.infinitic.common.transport.InfiniticProducer
 import io.infinitic.common.transport.NamingTopic
 import io.infinitic.common.transport.Topic
 import io.infinitic.pulsar.producers.Producer
@@ -36,13 +36,11 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import org.apache.pulsar.client.api.PulsarClientException.AlreadyClosedException
 import org.apache.pulsar.client.api.PulsarClientException.TopicDoesNotExistException
-import java.util.concurrent.CompletableFuture
-import java.util.concurrent.CompletionException
 
-class PulsarInfiniticProducerAsync(
+class PulsarInfiniticProducer(
   private val producer: Producer,
   private val pulsarResources: PulsarResources
-) : InfiniticProducerAsync {
+) : InfiniticProducer {
 
   private var suggestedName: String? = null
 
@@ -63,17 +61,17 @@ class PulsarInfiniticProducerAsync(
   }
 
   // (if set, must be done before sending the first message)
-  override var producerName: String
+  override var name: String
     get() = uniqueName
     set(value) {
       suggestedName = value
     }
 
-  override suspend fun <T : Message> internalSendToAsync(
+  override suspend fun <T : Message> internalSendTo(
     message: T,
     topic: Topic<T>,
     after: MillisDuration
-  ): CompletableFuture<Unit> {
+  ) {
     val topicFullName = with(pulsarResources) {
       topic.forEntity(
           message.entity(),
@@ -82,23 +80,25 @@ class PulsarInfiniticProducerAsync(
       )
     }
 
-    return producer.sendAsync(
-        topic.envelope(message),
-        after,
-        topicFullName,
-        producerName,
-        key = message.key(),
-    ).exceptionally { throwable ->
-      if (topic.canIgnore(throwable)) Unit
-      else throw throwable
+    return try {
+      producer.send(
+          topic.envelope(message),
+          after,
+          topicFullName,
+          name,
+          key = message.key(),
+      )
+    } catch (e: Exception) {
+      if (topic.canIgnore(e)) Unit
+      else throw e
     }
   }
 
-  private fun Topic<*>.canIgnore(throwable: Throwable): Boolean = when (this) {
+  private fun Topic<*>.canIgnore(e: Exception): Boolean = when (this) {
     // If response topic does not exist, it means the client closed
     // If producer is already closed, it means that the topics existed, was used, but does not exist anymore
     // in those cases, we are ok not to send this message
-    is ClientTopic -> (throwable is TopicDoesNotExistException || (throwable is CompletionException && throwable.cause is AlreadyClosedException))
+    is ClientTopic -> (e is TopicDoesNotExistException || e is AlreadyClosedException)
     else -> false
   }
 }

@@ -25,28 +25,28 @@ package io.infinitic.common.transport
 import io.github.oshai.kotlinlogging.KLogger
 import io.infinitic.common.data.MillisDuration
 import io.infinitic.common.messages.Message
-import kotlinx.coroutines.future.await
 
 class LoggedInfiniticProducer(
   private val logger: KLogger,
-  private val producerAsync: InfiniticProducerAsync,
+  private val producer: InfiniticProducer,
 ) : InfiniticProducer {
 
   override var name: String
-    get() = producerAsync.producerName
+    get() = producer.name
     set(value) {
-      producerAsync.producerName = value
+      producer.name = value
     }
 
-  override suspend fun <T : Message> T.sendTo(
+  override suspend fun <T : Message> internalSendTo(
+    message: T,
     topic: Topic<T>,
     after: MillisDuration
   ) {
-    logDebug(this)
-    with(producerAsync) { sendToAsync(topic, after) }.await()
-    logTrace(this)
+    logDebug(message)
+    with(producer) { internalSendTo(message, topic, after) }
+    logTrace(message)
   }
-
+  
   private fun logDebug(message: Message, after: MillisDuration? = null) {
     logger.debug {
       when {

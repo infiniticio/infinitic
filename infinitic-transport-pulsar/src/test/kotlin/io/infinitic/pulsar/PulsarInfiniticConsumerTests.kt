@@ -53,9 +53,8 @@ import io.mockk.spyk
 import net.bytebuddy.utility.RandomString
 import org.apache.pulsar.client.api.SubscriptionInitialPosition
 import org.apache.pulsar.client.api.SubscriptionType
-import java.util.concurrent.CompletableFuture
 
-class PulsarInfiniticConsumerAsyncTests : StringSpec(
+class PulsarInfiniticConsumerTests : StringSpec(
     {
       val clientName = ClientName("clientTest")
       val workflowName = WorkflowName("workflowTest")
@@ -107,7 +106,7 @@ class PulsarInfiniticConsumerAsyncTests : StringSpec(
               capture(consumerName),
               capture(concurrency),
           )
-        } returns CompletableFuture.completedFuture(Unit)
+        } returns Unit
       }
 
       val infiniticConsumerAsync = PulsarInfiniticConsumer(consumer, pulsarResources, 20.0)

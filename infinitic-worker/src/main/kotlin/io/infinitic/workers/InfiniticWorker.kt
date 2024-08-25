@@ -42,7 +42,7 @@ import io.infinitic.common.tasks.executors.messages.ServiceExecutorMessage
 import io.infinitic.common.tasks.tags.messages.ServiceTagMessage
 import io.infinitic.common.tasks.tags.storage.TaskTagStorage
 import io.infinitic.common.transport.InfiniticConsumer
-import io.infinitic.common.transport.InfiniticProducerAsync
+import io.infinitic.common.transport.InfiniticProducer
 import io.infinitic.common.transport.LoggedInfiniticConsumer
 import io.infinitic.common.transport.LoggedInfiniticProducer
 import io.infinitic.common.transport.MainSubscription
@@ -100,15 +100,15 @@ import kotlin.system.exitProcess
 @Suppress("unused")
 class InfiniticWorker private constructor(
   val register: InfiniticRegister,
-  val consumerAsync: InfiniticConsumer,
-  val producerAsync: InfiniticProducerAsync,
+  val consumer: InfiniticConsumer,
+  val producer: InfiniticProducer,
   val source: String
 ) : AutoCloseable, InfiniticRegister by register {
 
   private val logger = KotlinLogging.logger {}
 
   /** Infinitic Client */
-  val client = InfiniticClient(consumerAsync, producerAsync)
+  val client = InfiniticClient(consumer, producer)
 
   init {
     Runtime.getRuntime().addShutdownHook(
@@ -128,32 +128,27 @@ class InfiniticWorker private constructor(
       val transportConfig = TransportConfig(transport, pulsar, shutdownGracePeriodInSeconds)
 
       /** Infinitic Consumer */
-      val consumerAsync = transportConfig.consumerAsync
+      val consumer = transportConfig.consumer
 
       /** Infinitic  Producer */
-      val producerAsync = transportConfig.producerAsync
+      val producer = transportConfig.producer
 
       // set name, if it exists in the worker configuration
-      name?.let { producerAsync.producerName = it }
+      name?.let { producer.name = it }
 
       /** Infinitic Register */
       // if an exception is thrown, we ensure to close the previously created resource
       val register = try {
         InfiniticRegisterImpl.fromConfig(this)
       } catch (e: Exception) {
-        consumerAsync.close()
+        consumer.close()
         throw e
       }
 
       /** Infinitic Worker */
-      InfiniticWorker(
-          register,
-          consumerAsync,
-          producerAsync,
-          transportConfig.source,
-      ).also {
+      InfiniticWorker(register, consumer, producer, transportConfig.source).also {
         // close consumer with the worker
-        it.addAutoCloseResource(consumerAsync)
+        it.addAutoCloseResource(consumer)
         // close storages with the worker
         it.addAutoCloseResource(register)
       }
@@ -288,13 +283,13 @@ class InfiniticWorker private constructor(
     }
 
     logger.info {
-      "Worker \"${producerAsync.producerName}\" ready" + when (consumerAsync is PulsarInfiniticConsumer) {
-        true -> " (shutdownGracePeriodInSeconds=${consumerAsync.shutdownGracePeriodInSeconds}s)"
+      "Worker \"${producer.name}\" ready" + when (consumer is PulsarInfiniticConsumer) {
+        true -> " (shutdownGracePeriodInSeconds=${consumer.shutdownGracePeriodInSeconds}s)"
         false -> ""
       }
     }
 
-    return CompletableFuture.supplyAsync { consumerAsync.join() }
+    return CompletableFuture.supplyAsync { consumer.join() }
   }
 
   private fun CoroutineScope.startWorkflowTagEngine(
@@ -309,8 +304,8 @@ class InfiniticWorker private constructor(
     launch {
       val engineLogger = KotlinLogging.logger(WorkflowTagEngine::class.java.name)
       val loggedStorage = LoggedWorkflowTagStorage(engineLogger, storage)
-      val loggedConsumer = LoggedInfiniticConsumer(engineLogger, consumerAsync)
-      val loggedProducer = LoggedInfiniticProducer(engineLogger, producerAsync)
+      val loggedConsumer = LoggedInfiniticConsumer(engineLogger, consumer)
+      val loggedProducer = LoggedInfiniticProducer(engineLogger, producer)
 
       val workflowTagEngine = WorkflowTagEngine(loggedStorage, loggedProducer)
 
@@ -340,8 +335,8 @@ class InfiniticWorker private constructor(
     // WORKFLOW-CMD
     launch {
       val cmdHandlerLogger = KotlinLogging.logger(WorkflowStateCmdHandler::class.java.name)
-      val loggedConsumer = LoggedInfiniticConsumer(cmdHandlerLogger, consumerAsync)
-      val loggedProducer = LoggedInfiniticProducer(cmdHandlerLogger, producerAsync)
+      val loggedConsumer = LoggedInfiniticConsumer(cmdHandlerLogger, consumer)
+      val loggedProducer = LoggedInfiniticProducer(cmdHandlerLogger, producer)
       val workflowStateCmdHandler = WorkflowStateCmdHandler(loggedProducer)
 
       val handler: suspend (WorkflowStateEngineMessage, MillisInstant) -> Unit =
@@ -363,8 +358,8 @@ class InfiniticWorker private constructor(
     launch {
       val engineLogger = KotlinLogging.logger(WorkflowStateEngine::class.java.name)
       val loggedStorage = LoggedWorkflowStateStorage(engineLogger, storage)
-      val loggedConsumer = LoggedInfiniticConsumer(engineLogger, consumerAsync)
-      val loggedProducer = LoggedInfiniticProducer(engineLogger, producerAsync)
+      val loggedConsumer = LoggedInfiniticConsumer(engineLogger, consumer)
+      val loggedProducer = LoggedInfiniticProducer(engineLogger, producer)
       val workflowStateEngine = WorkflowStateEngine(loggedStorage, loggedProducer)
 
       val handler: suspend (WorkflowStateEngineMessage, MillisInstant) -> Unit =
@@ -387,8 +382,8 @@ class InfiniticWorker private constructor(
     // WORKFLOW TIMERS
     launch {
       val timerLogger = KotlinLogging.logger(WorkflowStateTimerHandler::class.java.name)
-      val loggedConsumer = LoggedInfiniticConsumer(timerLogger, consumerAsync)
-      val loggedProducer = LoggedInfiniticProducer(timerLogger, producerAsync)
+      val loggedConsumer = LoggedInfiniticConsumer(timerLogger, consumer)
+      val loggedProducer = LoggedInfiniticProducer(timerLogger, producer)
       val workflowStateTimerHandler = WorkflowStateTimerHandler(loggedProducer)
 
       // we do not use loggedConsumer to avoid logging twice the messages coming from delayed topics
@@ -404,8 +399,8 @@ class InfiniticWorker private constructor(
     // WORKFLOW-EVENTS
     launch {
       val eventHandlerLogger = KotlinLogging.logger(WorkflowStateEventHandler::class.java.name)
-      val loggedConsumer = LoggedInfiniticConsumer(eventHandlerLogger, consumerAsync)
-      val loggedProducer = LoggedInfiniticProducer(eventHandlerLogger, producerAsync)
+      val loggedConsumer = LoggedInfiniticConsumer(eventHandlerLogger, consumer)
+      val loggedProducer = LoggedInfiniticProducer(eventHandlerLogger, producer)
       val workflowStateEventHandler = WorkflowStateEventHandler(loggedProducer)
 
       val handler: suspend (WorkflowEventMessage, MillisInstant) -> Unit =
@@ -434,8 +429,8 @@ class InfiniticWorker private constructor(
     // WORKFLOW-TASK_EXECUTOR
     launch {
       val executorLogger = KotlinLogging.logger(TaskExecutor::class.java.name)
-      val loggedConsumer = LoggedInfiniticConsumer(executorLogger, consumerAsync)
-      val loggedProducer = LoggedInfiniticProducer(executorLogger, producerAsync)
+      val loggedConsumer = LoggedInfiniticConsumer(executorLogger, consumer)
+      val loggedProducer = LoggedInfiniticProducer(executorLogger, producer)
       val workflowTaskExecutor = TaskExecutor(workerRegistry, loggedProducer, client)
 
       val handler: suspend (ServiceExecutorMessage, MillisInstant) -> Unit =
@@ -465,8 +460,8 @@ class InfiniticWorker private constructor(
     // WORKFLOW-TASK_EXECUTOR-DELAY
     launch {
       val retriedLogger = KotlinLogging.logger(TaskRetriedHandler::class.java.name)
-      val loggedConsumer = LoggedInfiniticConsumer(retriedLogger, consumerAsync)
-      val loggedProducer = LoggedInfiniticProducer(retriedLogger, producerAsync)
+      val loggedConsumer = LoggedInfiniticConsumer(retriedLogger, consumer)
+      val loggedProducer = LoggedInfiniticProducer(retriedLogger, producer)
       val taskRetriedHandler = TaskRetriedHandler(loggedProducer)
 
       // we do not use loggedConsumer to avoid logging twice the messages coming from delayed topics
@@ -482,8 +477,8 @@ class InfiniticWorker private constructor(
     // WORKFLOW-TASK-EVENT
     launch {
       val taskEventLogger = KotlinLogging.logger(TaskEventHandler::class.java.name)
-      val loggedConsumer = LoggedInfiniticConsumer(taskEventLogger, consumerAsync)
-      val loggedProducer = LoggedInfiniticProducer(taskEventLogger, producerAsync)
+      val loggedConsumer = LoggedInfiniticConsumer(taskEventLogger, consumer)
+      val loggedProducer = LoggedInfiniticProducer(taskEventLogger, producer)
       val workflowTaskEventHandler = TaskEventHandler(loggedProducer)
 
       val handler: suspend (ServiceExecutorEventMessage, MillisInstant) -> Unit =
@@ -514,8 +509,8 @@ class InfiniticWorker private constructor(
     launch {
       val engineLogger = KotlinLogging.logger(TaskTagEngine::class.java.name)
       val loggedStorage = LoggedTaskTagStorage(engineLogger, storage)
-      val loggedConsumer = LoggedInfiniticConsumer(engineLogger, consumerAsync)
-      val loggedProducer = LoggedInfiniticProducer(engineLogger, producerAsync)
+      val loggedConsumer = LoggedInfiniticConsumer(engineLogger, consumer)
+      val loggedProducer = LoggedInfiniticProducer(engineLogger, producer)
       val taskTagEngine = TaskTagEngine(loggedStorage, loggedProducer)
 
       val handler: suspend (ServiceTagMessage, MillisInstant) -> Unit =
@@ -544,8 +539,8 @@ class InfiniticWorker private constructor(
     // TASK-EXECUTOR
     launch {
       val taskExecutorLogger = KotlinLogging.logger(TaskExecutor::class.java.name)
-      val loggedConsumer = LoggedInfiniticConsumer(taskExecutorLogger, consumerAsync)
-      val loggedProducer = LoggedInfiniticProducer(taskExecutorLogger, producerAsync)
+      val loggedConsumer = LoggedInfiniticConsumer(taskExecutorLogger, consumer)
+      val loggedProducer = LoggedInfiniticProducer(taskExecutorLogger, producer)
       val taskExecutor = TaskExecutor(workerRegistry, loggedProducer, client)
 
       val handler: suspend (ServiceExecutorMessage, MillisInstant) -> Unit =
@@ -575,8 +570,8 @@ class InfiniticWorker private constructor(
     // TASK-EXECUTOR-DELAY
     launch {
       val retriedLogger = KotlinLogging.logger(TaskRetriedHandler::class.java.name)
-      val loggedConsumer = LoggedInfiniticConsumer(retriedLogger, consumerAsync)
-      val loggedProducer = LoggedInfiniticProducer(retriedLogger, producerAsync)
+      val loggedConsumer = LoggedInfiniticConsumer(retriedLogger, consumer)
+      val loggedProducer = LoggedInfiniticProducer(retriedLogger, producer)
       val taskRetriedHandler = TaskRetriedHandler(loggedProducer)
 
       loggedConsumer.start(
@@ -591,8 +586,8 @@ class InfiniticWorker private constructor(
     // TASK-EVENTS
     launch {
       val eventHandlerLogger = KotlinLogging.logger(TaskEventHandler::class.java.name)
-      val loggedConsumer = LoggedInfiniticConsumer(eventHandlerLogger, consumerAsync)
-      val loggedProducer = LoggedInfiniticProducer(eventHandlerLogger, producerAsync)
+      val loggedConsumer = LoggedInfiniticConsumer(eventHandlerLogger, consumer)
+      val loggedProducer = LoggedInfiniticProducer(eventHandlerLogger, producer)
       val taskEventHandler = TaskEventHandler(loggedProducer)
 
       val handler: suspend (ServiceExecutorEventMessage, MillisInstant) -> Unit =
@@ -624,7 +619,7 @@ class InfiniticWorker private constructor(
   ) {
     // TASK-EXECUTOR topic
     launch {
-      consumerAsync.start(
+      consumer.start(
           subscription = subscriptionType.create(ServiceExecutorTopic, subscriptionName),
           entity = serviceName.toString(),
           handler = handler,
@@ -634,7 +629,7 @@ class InfiniticWorker private constructor(
     }
     // TASK-EXECUTOR-DELAY topic
     launch {
-      consumerAsync.start(
+      consumer.start(
           subscription = subscriptionType.create(RetryServiceExecutorTopic, subscriptionName),
           entity = serviceName.toString(),
           handler = handler,
@@ -644,7 +639,7 @@ class InfiniticWorker private constructor(
     }
     // TASK-EVENTS topic
     launch {
-      consumerAsync.start(
+      consumer.start(
           subscription = subscriptionType.create(ServiceExecutorEventTopic, subscriptionName),
           entity = serviceName.toString(),
           handler = handler,
@@ -663,7 +658,7 @@ class InfiniticWorker private constructor(
   ) {
     // WORKFLOW-TASK-EXECUTOR topic
     launch {
-      consumerAsync.start(
+      this@InfiniticWorker.consumer.start(
           subscription = subscriptionType.create(WorkflowExecutorTopic, subscriptionName),
           entity = workflowName.toString(),
           handler = consumer,
@@ -673,7 +668,7 @@ class InfiniticWorker private constructor(
     }
     // WORKFLOW-TASK-EXECUTOR-DELAY topic
     launch {
-      consumerAsync.start(
+      this@InfiniticWorker.consumer.start(
           subscription = subscriptionType.create(RetryWorkflowExecutorTopic, subscriptionName),
           entity = workflowName.toString(),
           handler = consumer,
@@ -683,7 +678,7 @@ class InfiniticWorker private constructor(
     }
     // WORKFLOW-TASK-EVENTS topic
     launch {
-      consumerAsync.start(
+      this@InfiniticWorker.consumer.start(
           subscription = subscriptionType.create(WorkflowExecutorEventTopic, subscriptionName),
           entity = workflowName.toString(),
           handler = consumer,
@@ -702,7 +697,7 @@ class InfiniticWorker private constructor(
   ) {
     // WORKFLOW-CMD topic
     launch {
-      consumerAsync.start(
+      this@InfiniticWorker.consumer.start(
           subscription = subscriptionType.create(WorkflowStateCmdTopic, subscriptionName),
           entity = workflowName.toString(),
           handler = consumer,
@@ -712,7 +707,7 @@ class InfiniticWorker private constructor(
     }
     // WORKFLOW-STATE-ENGINE topic
     launch {
-      consumerAsync.start(
+      this@InfiniticWorker.consumer.start(
           subscription = subscriptionType.create(WorkflowStateEngineTopic, subscriptionName),
           entity = workflowName.toString(),
           handler = { message: Message, publishedAt: MillisInstant ->
@@ -726,7 +721,7 @@ class InfiniticWorker private constructor(
     }
     // WORKFLOW-EVENTS topic
     launch {
-      consumerAsync.start(
+      this@InfiniticWorker.consumer.start(
           subscription = subscriptionType.create(WorkflowStateEventTopic, subscriptionName),
           entity = workflowName.toString(),
           handler = consumer,

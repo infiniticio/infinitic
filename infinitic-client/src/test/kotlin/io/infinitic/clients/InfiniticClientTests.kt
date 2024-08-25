@@ -53,7 +53,7 @@ import io.infinitic.common.tasks.tags.messages.CompleteDelegatedTask
 import io.infinitic.common.tasks.tags.messages.ServiceTagMessage
 import io.infinitic.common.transport.ClientTopic
 import io.infinitic.common.transport.InfiniticConsumer
-import io.infinitic.common.transport.InfiniticProducerAsync
+import io.infinitic.common.transport.InfiniticProducer
 import io.infinitic.common.transport.MainSubscription
 import io.infinitic.common.transport.ServiceTagEngineTopic
 import io.infinitic.common.transport.Subscription
@@ -97,7 +97,6 @@ import io.mockk.every
 import io.mockk.just
 import io.mockk.mockk
 import io.mockk.slot
-import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CopyOnWriteArrayList
 
 private val taskTagSlots = CopyOnWriteArrayList<ServiceTagMessage>() // multithreading update
@@ -109,8 +108,7 @@ private val delaySlot = slot<MillisDuration>()
 
 private val clientNameTest = ClientName("clientTest")
 private val emitterNameTest = EmitterName("clientTest")
-private fun completed() = CompletableFuture.completedFuture(Unit)
-private fun tagResponse(): CompletableFuture<Unit> {
+private fun tagResponse() {
   workflowTagSlots.forEach {
     if (it is GetWorkflowIdsByTag) {
       val workflowIdsByTag = WorkflowIdsByTag(
@@ -123,10 +121,9 @@ private fun tagResponse(): CompletableFuture<Unit> {
       later { client.handle(workflowIdsByTag, MillisInstant.now()) }
     }
   }
-  return completed()
 }
 
-private fun engineResponse(): CompletableFuture<Unit> {
+private fun engineResponse() {
   val msg = workflowCmdSlot.captured
   if (msg is DispatchWorkflow && msg.clientWaiting || msg is WaitWorkflow) {
     val methodCompleted = MethodCompleted(
@@ -138,21 +135,20 @@ private fun engineResponse(): CompletableFuture<Unit> {
     )
     later { client.handle(methodCompleted, MillisInstant.now()) }
   }
-  return completed()
 }
 
-private val producerAsync = mockk<InfiniticProducerAsync> {
-  every { producerName } returns "$clientNameTest"
-  coEvery { capture(taskTagSlots).sendToAsync(ServiceTagEngineTopic) } answers { completed() }
-  coEvery { capture(workflowTagSlots).sendToAsync(WorkflowTagEngineTopic) } answers { tagResponse() }
-  coEvery { capture(workflowCmdSlot).sendToAsync(WorkflowStateCmdTopic) } answers { engineResponse() }
+private val producer = mockk<InfiniticProducer> {
+  every { name } returns "$clientNameTest"
+  coEvery { capture(taskTagSlots).sendTo(ServiceTagEngineTopic) } answers { }
+  coEvery { capture(workflowTagSlots).sendTo(WorkflowTagEngineTopic) } answers { tagResponse() }
+  coEvery { capture(workflowCmdSlot).sendTo(WorkflowStateCmdTopic) } answers { engineResponse() }
 }
 
-private val consumerAsync = mockk<InfiniticConsumer> {
+private val consumer = mockk<InfiniticConsumer> {
   coEvery { start(any<Subscription<*>>(), "$clientNameTest", any(), any(), any()) } just Runs
 }
 
-private val client = InfiniticClient(consumerAsync, producerAsync)
+private val client = InfiniticClient(consumer, producer)
 
 internal class InfiniticClientTests : StringSpec(
     {
@@ -197,7 +193,7 @@ internal class InfiniticClientTests : StringSpec(
 
         // when asynchronously dispatching a workflow, the consumer should not be started
         coVerify(exactly = 0) {
-          consumerAsync.start(
+          consumer.start(
               MainSubscription(ClientTopic),
               "$clientNameTest",
               any(),
@@ -412,7 +408,7 @@ internal class InfiniticClientTests : StringSpec(
 
         // when waiting for a workflow, the consumer should be started
         coVerify {
-          consumerAsync.start(
+          consumer.start(
               MainSubscription(ClientTopic),
               "$clientNameTest",
               any(),
@@ -426,7 +422,7 @@ internal class InfiniticClientTests : StringSpec(
 
         // the consumer should be started only once
         coVerify(exactly = 1) {
-          consumerAsync.start(
+          consumer.start(
               MainSubscription(ClientTopic),
               "$clientNameTest",
               any(),

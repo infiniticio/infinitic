@@ -25,20 +25,19 @@ package io.infinitic.inMemory
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.infinitic.common.data.MillisDuration
 import io.infinitic.common.messages.Message
-import io.infinitic.common.transport.InfiniticProducerAsync
+import io.infinitic.common.transport.InfiniticProducer
 import io.infinitic.common.transport.Topic
 import io.infinitic.common.transport.acceptDelayed
 import kotlinx.coroutines.channels.Channel
-import java.util.concurrent.CompletableFuture
 
-class InMemoryInfiniticProducerAsync(
+class InMemoryInfiniticProducer(
   private val mainChannels: InMemoryChannels,
   private val eventListenerChannels: InMemoryChannels
-) : InfiniticProducerAsync {
+) : InfiniticProducer {
 
   private val logger = KotlinLogging.logger {}
 
-  override var producerName = DEFAULT_NAME
+  override var name = DEFAULT_NAME
 
   private fun <S : Message> Topic<S>.channelsForMessage(message: S): List<Channel<S>> {
     val entity = message.entity()
@@ -58,11 +57,11 @@ class InMemoryInfiniticProducerAsync(
     )
   }
 
-  override suspend fun <T : Message> internalSendToAsync(
+  override suspend fun <T : Message> internalSendTo(
     message: T,
     topic: Topic<T>,
     after: MillisDuration
-  ): CompletableFuture<Unit> {
+  ) {
     when (topic.acceptDelayed) {
       true -> {
         topic.channelsForDelayedMessage(message).forEach {
@@ -80,8 +79,6 @@ class InMemoryInfiniticProducerAsync(
         }
       }
     }
-
-    return CompletableFuture.completedFuture(Unit)
   }
 
   companion object {

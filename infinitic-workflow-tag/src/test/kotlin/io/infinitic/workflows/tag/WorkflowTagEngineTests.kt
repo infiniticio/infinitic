@@ -28,7 +28,6 @@ import io.infinitic.common.data.MillisInstant
 import io.infinitic.common.fixtures.TestFactory
 import io.infinitic.common.transport.ClientTopic
 import io.infinitic.common.transport.InfiniticProducer
-import io.infinitic.common.transport.InfiniticProducerAsync
 import io.infinitic.common.transport.WorkflowStateEngineTopic
 import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.data.workflows.WorkflowName
@@ -66,7 +65,7 @@ private val stateWorkflowId = slot<String>()
 private val workflowEngineSlot = slot<WorkflowStateEngineMessage>()
 private val clientSlot = slot<ClientMessage>()
 
-private lateinit var producerAsync: InfiniticProducerAsync
+private lateinit var producer: InfiniticProducer
 private lateinit var workflowTagStorage: WorkflowTagStorage
 
 private class WorkflowTagEngineTests :
@@ -84,9 +83,9 @@ private class WorkflowTagEngineTests :
           // then
           coVerifySequence {
             workflowTagStorage.getWorkflowIds(msgIn.workflowTag, msgIn.workflowName)
-            producerAsync.producerName
-            with(producerAsync) { ofType<CancelWorkflow>().sendToAsync(WorkflowStateEngineTopic) }
-            with(producerAsync) { ofType<CancelWorkflow>().sendToAsync(WorkflowStateEngineTopic) }
+            producer.name
+            with(producer) { ofType<CancelWorkflow>().sendTo(WorkflowStateEngineTopic) }
+            with(producer) { ofType<CancelWorkflow>().sendTo(WorkflowStateEngineTopic) }
           }
           confirmVerified()
           // checking last message
@@ -107,14 +106,12 @@ private class WorkflowTagEngineTests :
           // then
           coVerifySequence {
             workflowTagStorage.getWorkflowIds(msgIn.workflowTag, msgIn.workflowName)
-            producerAsync.producerName
-            with(producerAsync) {
-              ofType<RetryWorkflowTask>().sendToAsync(
-                  WorkflowStateEngineTopic,
-              )
+            producer.name
+            with(producer) {
+              ofType<RetryWorkflowTask>().sendTo(WorkflowStateEngineTopic)
             }
-            with(producerAsync) {
-              ofType<RetryWorkflowTask>().sendToAsync(
+            with(producer) {
+              ofType<RetryWorkflowTask>().sendTo(
                   WorkflowStateEngineTopic,
               )
             }
@@ -139,9 +136,9 @@ private class WorkflowTagEngineTests :
           // then
           coVerifySequence {
             workflowTagStorage.getWorkflowIds(msgIn.workflowTag, msgIn.workflowName)
-            producerAsync.producerName
-            with(producerAsync) { ofType<RetryTasks>().sendToAsync(WorkflowStateEngineTopic) }
-            with(producerAsync) { ofType<RetryTasks>().sendToAsync(WorkflowStateEngineTopic) }
+            producer.name
+            with(producer) { ofType<RetryTasks>().sendTo(WorkflowStateEngineTopic) }
+            with(producer) { ofType<RetryTasks>().sendTo(WorkflowStateEngineTopic) }
           }
           confirmVerified()
           // checking last message
@@ -166,9 +163,9 @@ private class WorkflowTagEngineTests :
           // then
           coVerifySequence {
             workflowTagStorage.getWorkflowIds(msgIn.workflowTag, msgIn.workflowName)
-            producerAsync.producerName
-            with(producerAsync) { ofType<CompleteTimers>().sendToAsync(WorkflowStateEngineTopic) }
-            with(producerAsync) { ofType<CompleteTimers>().sendToAsync(WorkflowStateEngineTopic) }
+            producer.name
+            with(producer) { ofType<CompleteTimers>().sendTo(WorkflowStateEngineTopic) }
+            with(producer) { ofType<CompleteTimers>().sendTo(WorkflowStateEngineTopic) }
           }
           confirmVerified()
           // checking last message
@@ -191,9 +188,9 @@ private class WorkflowTagEngineTests :
           // then
           coVerifySequence {
             workflowTagStorage.getWorkflowIds(msgIn.workflowTag, msgIn.workflowName)
-            producerAsync.producerName
-            with(producerAsync) { ofType<SendSignal>().sendToAsync(WorkflowStateEngineTopic) }
-            with(producerAsync) { ofType<SendSignal>().sendToAsync(WorkflowStateEngineTopic) }
+            producer.name
+            with(producer) { ofType<SendSignal>().sendTo(WorkflowStateEngineTopic) }
+            with(producer) { ofType<SendSignal>().sendTo(WorkflowStateEngineTopic) }
           }
           confirmVerified()
           // checking last message
@@ -225,8 +222,8 @@ private class WorkflowTagEngineTests :
           // then
           coVerifySequence {
             workflowTagStorage.getWorkflowIds(msgIn.workflowTag, msgIn.workflowName)
-            producerAsync.producerName
-            with(producerAsync) { ofType<WorkflowIdsByTag>().sendToAsync(ClientTopic) }
+            producer.name
+            with(producer) { ofType<WorkflowIdsByTag>().sendTo(ClientTopic) }
           }
           confirmVerified()
 

@@ -39,7 +39,8 @@ import io.infinitic.common.proxies.RequestByWorkflowTag
 import io.infinitic.common.tasks.data.ServiceName
 import io.infinitic.common.tasks.data.TaskId
 import io.infinitic.common.transport.InfiniticConsumer
-import io.infinitic.common.transport.InfiniticProducerAsync
+import io.infinitic.common.transport.InfiniticProducer
+import io.infinitic.common.transport.LoggedInfiniticConsumer
 import io.infinitic.common.transport.LoggedInfiniticProducer
 import io.infinitic.common.utils.annotatedName
 import io.infinitic.common.workflows.data.workflowMethods.WorkflowMethodId
@@ -49,6 +50,9 @@ import io.infinitic.exceptions.clients.InvalidIdTagSelectionException
 import io.infinitic.exceptions.clients.InvalidStubException
 import io.infinitic.transport.config.TransportConfig
 import io.infinitic.workflows.DeferredStatus
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.cancel
 import org.jetbrains.annotations.TestOnly
 import java.lang.reflect.Proxy
 import java.util.concurrent.CompletableFuture
@@ -56,17 +60,16 @@ import java.util.concurrent.atomic.AtomicBoolean
 
 @Suppress("unused")
 class InfiniticClient(
-  consumerAsync: InfiniticConsumer,
-  producerAsync: InfiniticProducerAsync
+  consumer: InfiniticConsumer,
+  producer: InfiniticProducer
 ) : InfiniticClientInterface {
-
-  private val logger = KotlinLogging.logger {}
 
   private var isClosed: AtomicBoolean = AtomicBoolean(false)
 
-  private val producer = LoggedInfiniticProducer(logger, producerAsync)
+  // Scope used to consuming messages
+  private val clientScope = CoroutineScope(Dispatchers.IO)
 
-  private val dispatcher = ClientDispatcher(logger, consumerAsync, producerAsync)
+  private val dispatcher = ClientDispatcher(clientScope, consumer, producer)
 
   override val name by lazy { producer.name }
 
@@ -75,20 +78,15 @@ class InfiniticClient(
 
   /** Close client if interrupted */
   init {
-    Runtime.getRuntime().addShutdownHook(
-        Thread {
-          close()
-        },
-    )
+    Runtime.getRuntime().addShutdownHook(Thread { close() })
   }
 
   override fun close() {
-    if (!isClosed.getAndSet(true)) {
-      dispatcher.close()
+    if (isClosed.compareAndSet(false, true)) {
+      clientScope.cancel()
       autoClose()
     }
   }
-
 
   /** Create a stub for a new workflow */
   override fun <T : Any> newWorkflow(
@@ -233,6 +231,9 @@ class InfiniticClient(
       }
 
   companion object {
+
+    private val logger = KotlinLogging.logger {}
+
     /** Create InfiniticClient from config */
     @JvmStatic
     fun fromConfig(config: ClientConfigInterface): InfiniticClient = with(config) {
@@ -240,18 +241,18 @@ class InfiniticClient(
       val transportConfig = TransportConfig(transport, pulsar, shutdownGracePeriodInSeconds)
 
       // Get Infinitic Consumer
-      val consumerAsync = transportConfig.consumerAsync
+      val consumer = LoggedInfiniticConsumer(logger, transportConfig.consumer)
 
       // Get Infinitic  Producer
-      val producerAsync = transportConfig.producerAsync
+      val producer = LoggedInfiniticProducer(logger, transportConfig.producer)
 
       // apply name if it exists
-      name?.let { producerAsync.producerName = it }
+      name?.let { producer.name = it }
 
       // Create Infinitic Client
-      InfiniticClient(consumerAsync, producerAsync).also {
+      InfiniticClient(consumer, producer).also {
         // close consumer with the client
-        it.addAutoCloseResource(consumerAsync)
+        it.addAutoCloseResource(consumer)
       }
     }
 

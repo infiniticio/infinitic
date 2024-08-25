@@ -107,25 +107,14 @@ class PulsarInfiniticConsumer(
       else -> Unit
     }
 
-    lateinit var topicName: String
-    lateinit var topicDLQName: String
+    // Retrieves the name the topic, If the topic doesn't exist yet, create it.
+    val topicName = with(pulsarResources) {
+      subscription.topic.forEntity(entity, true, checkConsumer = false)
+    }
 
-    coroutineScope {
-      // get name of topic, creates it if it does not exist yet
-      launch {
-        topicName = with(pulsarResources) {
-          subscription.topic.forEntity(
-              entity,
-              init = true,
-              checkConsumer = false,
-          )
-        }
-      }
-
-      // name of DLQ topic, creates it if it does not exist yet
-      launch {
-        topicDLQName = with(pulsarResources) { subscription.topic.forEntityDLQ(entity, true) }
-      }
+    // Retrieves the name the DLQ topic, If the topic doesn't exist yet, create it.
+    val topicDLQName = with(pulsarResources) {
+      subscription.topic.forEntityDLQ(entity, true)
     }
 
     consumer.startListening(
