@@ -36,11 +36,8 @@
 // in the repositories section of the gradle.build file
 
 apply(plugin = "java")
-
 apply(plugin = "java-library")
-
 apply(plugin = "maven-publish")
-
 apply(plugin = "signing")
 
 buildscript {
@@ -59,8 +56,7 @@ fun Project.signing(configure: SigningExtension.() -> Unit): Unit = configure(co
 
 fun Project.java(configure: JavaPluginExtension.() -> Unit): Unit = configure(configure)
 
-val publications: PublicationContainer =
-    (extensions.getByName("publishing") as PublishingExtension).publications
+val publications = (extensions.getByName("publishing") as PublishingExtension).publications
 
 signing {
   if (Ci.isRelease) {
