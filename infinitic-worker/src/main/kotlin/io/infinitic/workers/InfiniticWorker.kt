@@ -28,12 +28,12 @@ import io.github.oshai.kotlinlogging.KotlinLogging
 import io.infinitic.autoclose.addAutoCloseResource
 import io.infinitic.autoclose.autoClose
 import io.infinitic.clients.InfiniticClient
+import io.infinitic.cloudEvents.logs.CLOUD_EVENTS_SERVICE_EXECUTOR
+import io.infinitic.cloudEvents.logs.CLOUD_EVENTS_SERVICE_TAG_ENGINE
+import io.infinitic.cloudEvents.logs.CLOUD_EVENTS_WORKFLOW_EXECUTOR
+import io.infinitic.cloudEvents.logs.CLOUD_EVENTS_WORKFLOW_STATE_ENGINE
+import io.infinitic.cloudEvents.logs.CLOUD_EVENTS_WORKFLOW_TAG_ENGINE
 import io.infinitic.common.data.MillisInstant
-import io.infinitic.common.logs.SERVICE_EXECUTOR_CLOUD_EVENTS
-import io.infinitic.common.logs.SERVICE_TAG_ENGINE_CLOUD_EVENTS
-import io.infinitic.common.logs.WORKFLOW_EXECUTOR_CLOUD_EVENTS
-import io.infinitic.common.logs.WORKFLOW_STATE_ENGINE_CLOUD_EVENTS
-import io.infinitic.common.logs.WORKFLOW_TAG_ENGINE_CLOUD_EVENTS
 import io.infinitic.common.messages.Message
 import io.infinitic.common.tasks.data.ServiceName
 import io.infinitic.common.tasks.events.messages.ServiceExecutorEventMessage
@@ -299,7 +299,7 @@ class InfiniticWorker private constructor(
     concurrency: Int,
     storage: WorkflowTagStorage
   ) {
-    val eventLogger = KotlinLogging.logger("$WORKFLOW_TAG_ENGINE_CLOUD_EVENTS.$workflowName")
+    val eventLogger = KotlinLogging.logger("$CLOUD_EVENTS_WORKFLOW_TAG_ENGINE.$workflowName")
         .ignoreNull()
 
     // WORKFLOW-TAG
@@ -332,7 +332,7 @@ class InfiniticWorker private constructor(
     concurrency: Int,
     storage: WorkflowStateStorage
   ) {
-    val eventLogger = KotlinLogging.logger("$WORKFLOW_STATE_ENGINE_CLOUD_EVENTS.$workflowName")
+    val eventLogger = KotlinLogging.logger("$CLOUD_EVENTS_WORKFLOW_STATE_ENGINE.$workflowName")
         .ignoreNull()
     // WORKFLOW-CMD
     launch {
@@ -429,7 +429,7 @@ class InfiniticWorker private constructor(
     workflowName: WorkflowName,
     concurrency: Int
   ) {
-    val eventLogger = KotlinLogging.logger("$WORKFLOW_EXECUTOR_CLOUD_EVENTS.$workflowName")
+    val eventLogger = KotlinLogging.logger("$CLOUD_EVENTS_WORKFLOW_EXECUTOR.$workflowName")
         .ignoreNull()
 
     // WORKFLOW-TASK_EXECUTOR
@@ -510,7 +510,7 @@ class InfiniticWorker private constructor(
     concurrency: Int,
     storage: TaskTagStorage
   ) {
-    val eventLogger = KotlinLogging.logger("$SERVICE_TAG_ENGINE_CLOUD_EVENTS.$serviceName")
+    val eventLogger = KotlinLogging.logger("$CLOUD_EVENTS_SERVICE_TAG_ENGINE.$serviceName")
         .ignoreNull()
 
     // TASK-TAG
@@ -542,7 +542,7 @@ class InfiniticWorker private constructor(
     serviceName: ServiceName,
     concurrency: Int
   ) {
-    val eventLogger = KotlinLogging.logger("$SERVICE_EXECUTOR_CLOUD_EVENTS.$serviceName")
+    val eventLogger = KotlinLogging.logger("$CLOUD_EVENTS_SERVICE_EXECUTOR.$serviceName")
         .ignoreNull()
 
     // TASK-EXECUTOR

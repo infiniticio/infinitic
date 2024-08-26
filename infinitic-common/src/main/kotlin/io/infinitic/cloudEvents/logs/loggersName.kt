@@ -20,20 +20,19 @@
  *
  * Licensor: infinitic.io
  */
-package io.infinitic.common.logs
+package io.infinitic.cloudEvents.logs
 
 private const val INFINITIC_PREFIX = "io.infinitic"
-
 private const val CLOUD_EVENTS = "$INFINITIC_PREFIX.cloudEvents"
 
-const val WORKFLOW_STATE_ENGINE = "WorkflowStateEngine"
-const val WORKFLOW_TAG_ENGINE = "WorkflowTagEngine"
-const val WORKFLOW_EXECUTOR = "WorkflowExecutor"
-const val SERVICE_TAG_ENGINE = "ServiceTagEngine"
-const val SERVICE_EXECUTOR = "ServiceExecutor"
+private const val WORKFLOW_STATE_ENGINE = "WorkflowStateEngine"
+private const val WORKFLOW_TAG_ENGINE = "WorkflowTagEngine"
+private const val WORKFLOW_EXECUTOR = "WorkflowExecutor"
+private const val SERVICE_TAG_ENGINE = "ServiceTagEngine"
+private const val SERVICE_EXECUTOR = "ServiceExecutor"
 
-const val WORKFLOW_STATE_ENGINE_CLOUD_EVENTS = "$CLOUD_EVENTS.$WORKFLOW_STATE_ENGINE"
-const val WORKFLOW_TAG_ENGINE_CLOUD_EVENTS = "$CLOUD_EVENTS.$WORKFLOW_TAG_ENGINE"
-const val WORKFLOW_EXECUTOR_CLOUD_EVENTS = "$CLOUD_EVENTS.$WORKFLOW_EXECUTOR"
-const val SERVICE_TAG_ENGINE_CLOUD_EVENTS = "$CLOUD_EVENTS.$SERVICE_TAG_ENGINE"
-const val SERVICE_EXECUTOR_CLOUD_EVENTS = "$CLOUD_EVENTS.$SERVICE_EXECUTOR"
+const val CLOUD_EVENTS_WORKFLOW_STATE_ENGINE = "$CLOUD_EVENTS.$WORKFLOW_STATE_ENGINE"
+const val CLOUD_EVENTS_WORKFLOW_TAG_ENGINE = "$CLOUD_EVENTS.$WORKFLOW_TAG_ENGINE"
+const val CLOUD_EVENTS_WORKFLOW_EXECUTOR = "$CLOUD_EVENTS.$WORKFLOW_EXECUTOR"
+const val CLOUD_EVENTS_SERVICE_TAG_ENGINE = "$CLOUD_EVENTS.$SERVICE_TAG_ENGINE"
+const val CLOUD_EVENTS_SERVICE_EXECUTOR = "$CLOUD_EVENTS.$SERVICE_EXECUTOR"
