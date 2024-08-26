@@ -36,8 +36,11 @@
 // in the repositories section of the gradle.build file
 
 apply(plugin = "java")
+
 apply(plugin = "java-library")
+
 apply(plugin = "maven-publish")
+
 apply(plugin = "signing")
 
 buildscript {
