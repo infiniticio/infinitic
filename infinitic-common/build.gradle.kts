@@ -44,6 +44,7 @@ dependencies {
   testFixturesImplementation(Libs.Kotlin.reflect)
   testFixturesImplementation(Libs.EasyRandom.core)
   testFixturesImplementation(Libs.Coroutines.core)
+  testFixturesImplementation(Libs.Serialization.core)
   testFixturesImplementation(Libs.Kotest.junit5)
   testFixturesImplementation(Libs.Kotest.property)
   testFixturesImplementation(Libs.Pulsar.client)
