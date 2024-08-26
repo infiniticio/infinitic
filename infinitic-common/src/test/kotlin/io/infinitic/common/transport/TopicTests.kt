@@ -31,31 +31,31 @@ class TopicTests : StringSpec(
 
         fun Topic<*>.prefix() = when (this) {
           WorkflowTagEngineTopic -> "workflow-tag"
-          WorkflowCmdTopic -> "workflow-cmd"
+          WorkflowStateCmdTopic -> "workflow-cmd"
           WorkflowStateEngineTopic -> "workflow-engine"
-          TimerWorkflowStateEngineTopic -> "workflow-delay"
-          WorkflowEventsTopic -> "workflow-events"
-          WorkflowTaskExecutorTopic, RetryWorkflowTaskExecutorTopic -> "workflow-task-executor"
-          WorkflowTaskEventsTopic -> "workflow-task-events"
-          ServiceTagTopic -> "task-tag"
+          WorkflowStateTimerTopic -> "workflow-delay"
+          WorkflowStateEventTopic -> "workflow-events"
+          WorkflowExecutorTopic, RetryWorkflowExecutorTopic -> "workflow-task-executor"
+          WorkflowExecutorEventTopic -> "workflow-task-events"
+          ServiceTagEngineTopic -> "task-tag"
           ServiceExecutorTopic, RetryServiceExecutorTopic -> "task-executor"
-          ServiceEventsTopic -> "task-events"
+          ServiceExecutorEventTopic -> "task-events"
           ClientTopic -> "response"
           NamingTopic -> "namer"
         }
 
         with(WorkflowTagEngineTopic) { prefix shouldBe prefix() }
-        with(WorkflowCmdTopic) { prefix shouldBe prefix() }
+        with(WorkflowStateCmdTopic) { prefix shouldBe prefix() }
         with(WorkflowStateEngineTopic) { prefix shouldBe prefix() }
-        with(TimerWorkflowStateEngineTopic) { prefix shouldBe prefix() }
-        with(WorkflowEventsTopic) { prefix shouldBe prefix() }
-        with(WorkflowTaskExecutorTopic) { prefix shouldBe prefix() }
-        with(RetryWorkflowTaskExecutorTopic) { prefix shouldBe prefix() }
-        with(WorkflowTaskEventsTopic) { prefix shouldBe prefix() }
-        with(ServiceTagTopic) { prefix shouldBe prefix() }
+        with(WorkflowStateTimerTopic) { prefix shouldBe prefix() }
+        with(WorkflowStateEventTopic) { prefix shouldBe prefix() }
+        with(WorkflowExecutorTopic) { prefix shouldBe prefix() }
+        with(RetryWorkflowExecutorTopic) { prefix shouldBe prefix() }
+        with(WorkflowExecutorEventTopic) { prefix shouldBe prefix() }
+        with(ServiceTagEngineTopic) { prefix shouldBe prefix() }
         with(ServiceExecutorTopic) { prefix shouldBe prefix() }
         with(RetryServiceExecutorTopic) { prefix shouldBe prefix() }
-        with(ServiceEventsTopic) { prefix shouldBe prefix() }
+        with(ServiceExecutorEventTopic) { prefix shouldBe prefix() }
         with(ClientTopic) { prefix shouldBe prefix() }
         with(NamingTopic) { prefix shouldBe prefix() }
       }

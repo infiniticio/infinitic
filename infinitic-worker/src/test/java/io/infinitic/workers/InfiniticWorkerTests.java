@@ -22,11 +22,13 @@
  */
 package io.infinitic.workers;
 
-import io.infinitic.common.transport.InfiniticConsumerAsync;
-import io.infinitic.common.transport.InfiniticProducerAsync;
-import io.infinitic.pulsar.PulsarInfiniticConsumerAsync;
-import io.infinitic.pulsar.PulsarInfiniticProducerAsync;
+import io.infinitic.common.transport.InfiniticConsumer;
+import io.infinitic.common.transport.InfiniticProducer;
+import io.infinitic.pulsar.PulsarInfiniticConsumer;
+import io.infinitic.pulsar.PulsarInfiniticProducer;
 import io.infinitic.pulsar.config.PulsarConfig;
+import io.infinitic.storage.config.PostgresConfig;
+import io.infinitic.storage.config.StorageConfig;
 import io.infinitic.workers.config.WorkerConfig;
 import org.junit.jupiter.api.Test;
 
@@ -44,15 +46,23 @@ class InfiniticWorkerTests {
                 .namespace("dev")
                 .build();
 
+        StorageConfig storage = StorageConfig.builder()
+                .postgres(PostgresConfig
+                        .builder()
+                        .build()
+                ).build();
+
+
         WorkerConfig workerConfig = WorkerConfig.builder()
                 .pulsar(pulsar)
+                .storage(storage)
                 .build();
 
         try (InfiniticWorker worker = InfiniticWorker.fromConfig(workerConfig)) {
-            InfiniticConsumerAsync c = worker.getConsumerAsync();
-            InfiniticProducerAsync p = worker.getProducerAsync();
-            assertInstanceOf(PulsarInfiniticConsumerAsync.class, c);
-            assertInstanceOf(PulsarInfiniticProducerAsync.class, p);
+            InfiniticConsumer c = worker.getConsumer();
+            InfiniticProducer p = worker.getProducer();
+            assertInstanceOf(PulsarInfiniticConsumer.class, c);
+            assertInstanceOf(PulsarInfiniticProducer.class, p);
         }
     }
 }

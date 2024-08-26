@@ -20,21 +20,27 @@
  *
  * Licensor: infinitic.io
  */
-repositories { maven("https://jitpack.io") }
+package io.infinitic.tasks.executor
 
-plugins { application }
+import io.github.oshai.kotlinlogging.KotlinLogging
+import io.infinitic.common.data.MillisInstant
+import io.infinitic.common.tasks.executors.messages.ServiceExecutorMessage
+import io.infinitic.common.transport.InfiniticProducer
+import io.infinitic.common.transport.ServiceExecutorTopic
+import io.infinitic.common.transport.WorkflowExecutorTopic
 
-application { mainClass.set("io.infinitic.dashboard.MainKt") }
+@Suppress("UNUSED_PARAMETER")
+class TaskRetryHandler(val producer: InfiniticProducer) {
+  suspend fun handle(msg: ServiceExecutorMessage, publishTime: MillisInstant) {
+    with(producer) {
+      when (msg.isWorkflowTask()) {
+        true -> msg.sendTo(WorkflowExecutorTopic)
+        false -> msg.sendTo(ServiceExecutorTopic)
+      }
+    }
+  }
 
-dependencies {
-  api(project(":infinitic-transport-pulsar"))
-  api(project(":infinitic-transport"))
-
-  implementation(Libs.Kweb.core)
-  implementation(Libs.Pulsar.client)
-  implementation(Libs.Pulsar.clientAdmin)
-
-  implementation(project(":infinitic-utils"))
+  companion object {
+    val logger = KotlinLogging.logger {}
+  }
 }
-
-apply("../publish.gradle.kts")

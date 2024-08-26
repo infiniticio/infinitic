@@ -22,7 +22,7 @@
  */
 package io.infinitic.dashboard.panels.infrastructure
 
-import io.infinitic.common.transport.WorkflowTaskExecutorTopic
+import io.infinitic.common.transport.WorkflowExecutorTopic
 import io.infinitic.dashboard.Infinitic
 import io.infinitic.dashboard.panels.infrastructure.requests.Loading
 import org.apache.pulsar.common.policies.data.PartitionedTopicStats
@@ -42,7 +42,7 @@ data class AllWorkflowsState(
 
   override suspend fun getPartitionedStats(name: String): Result<PartitionedTopicStats?> {
     val topic =
-        with(Infinitic.pulsarResources) { WorkflowTaskExecutorTopic.fullName(name) }
+        with(Infinitic.pulsarResources) { WorkflowExecutorTopic.fullName(name) }
 
     return Infinitic.pulsarResources.admin.getPartitionedTopicStats(topic)
   }

@@ -21,7 +21,7 @@
  * Licensor: infinitic.io
  */
 dependencies {
-  implementation(project(":infinitic-autoclose"))
+  implementation(project(":infinitic-utils"))
   api(project(":infinitic-common"))
   api(project(":infinitic-transport"))
 

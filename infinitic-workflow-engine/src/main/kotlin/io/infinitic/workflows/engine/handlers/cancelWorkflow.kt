@@ -27,8 +27,8 @@ import io.infinitic.common.emitters.EmitterName
 import io.infinitic.common.exceptions.thisShouldNotHappen
 import io.infinitic.common.requester.WorkflowRequester
 import io.infinitic.common.transport.InfiniticProducer
-import io.infinitic.common.transport.WorkflowEventsTopic
 import io.infinitic.common.transport.WorkflowStateEngineTopic
+import io.infinitic.common.transport.WorkflowStateEventTopic
 import io.infinitic.common.transport.WorkflowTagEngineTopic
 import io.infinitic.common.workflows.data.commands.DispatchNewMethodCommand
 import io.infinitic.common.workflows.data.commands.DispatchNewWorkflowCommand
@@ -82,7 +82,7 @@ internal fun CoroutineScope.cancelWorkflow(
       workflowId = message.workflowId,
       emitterName = EmitterName(producer.name),
   )
-  with(producer) { workflowCanceledEvent.sendTo(WorkflowEventsTopic) }
+  with(producer) { workflowCanceledEvent.sendTo(WorkflowStateEventTopic) }
 }
 
 
@@ -173,6 +173,6 @@ private fun CoroutineScope.cancelWorkflowMethod(
         awaitingRequesters = workflowMethod.awaitingRequesters,
         emitterName = emitterName,
     )
-    with(producer) { methodCanceledEvent.sendTo(WorkflowEventsTopic) }
+    with(producer) { methodCanceledEvent.sendTo(WorkflowStateEventTopic) }
   }
 }

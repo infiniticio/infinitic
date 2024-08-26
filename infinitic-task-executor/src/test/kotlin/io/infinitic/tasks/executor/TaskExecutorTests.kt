@@ -42,7 +42,7 @@ import io.infinitic.common.tasks.data.TaskMeta
 import io.infinitic.common.tasks.data.TaskRetryIndex
 import io.infinitic.common.tasks.data.TaskRetrySequence
 import io.infinitic.common.tasks.data.TaskTag
-import io.infinitic.common.tasks.events.messages.ServiceEventMessage
+import io.infinitic.common.tasks.events.messages.ServiceExecutorEventMessage
 import io.infinitic.common.tasks.events.messages.TaskCompletedEvent
 import io.infinitic.common.tasks.events.messages.TaskFailedEvent
 import io.infinitic.common.tasks.events.messages.TaskRetriedEvent
@@ -50,9 +50,9 @@ import io.infinitic.common.tasks.events.messages.TaskStartedEvent
 import io.infinitic.common.tasks.executors.messages.ExecuteTask
 import io.infinitic.common.tasks.executors.messages.ServiceExecutorMessage
 import io.infinitic.common.tasks.tags.messages.RemoveTaskIdFromTag
-import io.infinitic.common.transport.InfiniticProducerAsync
+import io.infinitic.common.transport.InfiniticProducer
 import io.infinitic.common.transport.RetryServiceExecutorTopic
-import io.infinitic.common.transport.ServiceEventsTopic
+import io.infinitic.common.transport.ServiceExecutorEventTopic
 import io.infinitic.common.transport.ServiceExecutorTopic
 import io.infinitic.common.workers.config.ExponentialBackoffRetryPolicy
 import io.infinitic.common.workers.data.WorkerName
@@ -81,7 +81,6 @@ import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.slot
-import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.TimeoutException
 
@@ -95,24 +94,25 @@ class TaskExecutorTests :
         // slots
         val afterSlot = slot<MillisDuration>()
         val taskExecutorSlot = slot<ServiceExecutorMessage>()
-        val taskEventSlot = CopyOnWriteArrayList<ServiceEventMessage>()
+        val taskEventSlot = CopyOnWriteArrayList<ServiceExecutorEventMessage>()
 
         // mocks
-        fun completed() = CompletableFuture.completedFuture(Unit)
         val workerRegistry = mockk<WorkerRegistry>()
         val client = mockk<InfiniticClientInterface>()
-        val producerAsync = mockk<InfiniticProducerAsync> {
-          every { producerName } returns "$testWorkerName"
+        val producer = mockk<InfiniticProducer> {
+          every { name } returns "$testWorkerName"
           coEvery {
-            capture(taskExecutorSlot).sendToAsync(ServiceExecutorTopic)
-          } returns completed()
+            capture(taskExecutorSlot).sendTo(ServiceExecutorTopic)
+          } returns Unit
           coEvery {
-            capture(taskExecutorSlot).sendToAsync(RetryServiceExecutorTopic, capture(afterSlot))
-          } returns completed()
-          coEvery { capture(taskEventSlot).sendToAsync(ServiceEventsTopic) } returns completed()
+            capture(taskExecutorSlot).sendTo(RetryServiceExecutorTopic, capture(afterSlot))
+          } returns Unit
+          coEvery {
+            capture(taskEventSlot).sendTo(ServiceExecutorEventTopic)
+          } returns Unit
         }
 
-        var taskExecutor = TaskExecutor(workerRegistry, producerAsync, client)
+        var taskExecutor = TaskExecutor(workerRegistry, producer, client)
 
         val service = RegisteredServiceExecutor(1, { ServiceImplService() }, null, null)
 
@@ -204,7 +204,7 @@ class TaskExecutorTests :
           // Note that the Throwable sent (and not caught) during the test has the side effect
           // to cancel the coroutineScope of producerAsync, that's why we recreate it after the test
           // in a real case, the Throwable would kill the worker
-          taskExecutor = TaskExecutor(workerRegistry, producerAsync, client)
+          taskExecutor = TaskExecutor(workerRegistry, producer, client)
         }
 
         "Should throw ClassNotFoundException when trying to process an unknown task" {
@@ -585,7 +585,7 @@ private fun getTaskCompleted(
     isDelegated = false,
 )
 
-internal fun getRemoveTag(message: ServiceEventMessage, tag: String) = RemoveTaskIdFromTag(
+internal fun getRemoveTag(message: ServiceExecutorEventMessage, tag: String) = RemoveTaskIdFromTag(
     taskId = message.taskId,
     serviceName = message.serviceName,
     taskTag = TaskTag(tag),

@@ -39,30 +39,18 @@ import io.infinitic.common.tasks.tags.messages.ServiceTagMessage
 import io.infinitic.common.tasks.tags.messages.SetDelegatedTaskData
 import io.infinitic.common.tasks.tags.storage.TaskTagStorage
 import io.infinitic.common.transport.ClientTopic
-import io.infinitic.common.transport.InfiniticProducerAsync
-import io.infinitic.common.transport.LoggedInfiniticProducer
+import io.infinitic.common.transport.InfiniticProducer
 import io.infinitic.common.transport.WorkflowStateEngineTopic
 import io.infinitic.common.workflows.engine.messages.RemoteTaskCompleted
-import io.infinitic.tasks.tag.storage.LoggedTaskTagStorage
 import kotlinx.coroutines.coroutineScope
 
 class TaskTagEngine(
-  storage: TaskTagStorage,
-  producerAsync: InfiniticProducerAsync
+  private val storage: TaskTagStorage,
+  private val producer: InfiniticProducer
 ) {
-  private val storage = LoggedTaskTagStorage(storage).apply {
-    logName = this::class.java.name
-  }
-
-  private val producer = LoggedInfiniticProducer(this::class.java.name, producerAsync)
-
-  private val logger = KotlinLogging.logger(this::class.java.name)
-
   private val emitterName by lazy { EmitterName(producer.name) }
 
   suspend fun handle(message: ServiceTagMessage, publishTime: MillisInstant) = coroutineScope {
-    logger.debug { "receiving $message" }
-
     when (message) {
       is AddTaskIdToTag -> addTaskIdToTag(message)
       is RemoveTaskIdFromTag -> removeTaskIdFromTag(message)
@@ -118,5 +106,9 @@ class TaskTagEngine(
     )
 
     with(producer) { taskIdsByTag.sendTo(ClientTopic) }
+  }
+
+  companion object {
+    val logger = KotlinLogging.logger {}
   }
 }

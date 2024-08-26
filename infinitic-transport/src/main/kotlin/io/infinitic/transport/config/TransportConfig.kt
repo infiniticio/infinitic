@@ -23,13 +23,13 @@
 package io.infinitic.transport.config
 
 import io.infinitic.autoclose.addAutoCloseResource
-import io.infinitic.common.transport.InfiniticConsumerAsync
-import io.infinitic.common.transport.InfiniticProducerAsync
+import io.infinitic.common.transport.InfiniticConsumer
+import io.infinitic.common.transport.InfiniticProducer
 import io.infinitic.inMemory.InMemoryChannels
-import io.infinitic.inMemory.InMemoryInfiniticConsumerAsync
-import io.infinitic.inMemory.InMemoryInfiniticProducerAsync
-import io.infinitic.pulsar.PulsarInfiniticConsumerAsync
-import io.infinitic.pulsar.PulsarInfiniticProducerAsync
+import io.infinitic.inMemory.InMemoryInfiniticConsumer
+import io.infinitic.inMemory.InMemoryInfiniticProducer
+import io.infinitic.pulsar.PulsarInfiniticConsumer
+import io.infinitic.pulsar.PulsarInfiniticProducer
 import io.infinitic.pulsar.client.PulsarInfiniticClient
 import io.infinitic.pulsar.config.PulsarConfig
 import io.infinitic.pulsar.consumers.Consumer
@@ -67,41 +67,41 @@ data class TransportConfig(
 
   // we provide consumer and producer together,
   // as they must share the same configuration
-  private val cp: Pair<InfiniticConsumerAsync, InfiniticProducerAsync> =
+  private val cp: Pair<InfiniticConsumer, InfiniticProducer> =
       when (transport) {
         Transport.pulsar -> with(PulsarResources.from(pulsar!!)) {
           val client = PulsarInfiniticClient(pulsar.client)
 
-          val consumerAsync = PulsarInfiniticConsumerAsync(
+          val consumer = PulsarInfiniticConsumer(
               Consumer(client, pulsar.consumer),
               this,
               shutdownGracePeriodInSeconds,
           )
           // Pulsar client and admin will be closed with consumer
-          consumerAsync.addAutoCloseResource(pulsar.client)
-          consumerAsync.addAutoCloseResource(pulsar.admin)
+          consumer.addAutoCloseResource(pulsar.client)
+          consumer.addAutoCloseResource(pulsar.admin)
 
-          val producerAsync = PulsarInfiniticProducerAsync(
+          val producer = PulsarInfiniticProducer(
               Producer(client, pulsar.producer),
               this,
           )
 
-          Pair(consumerAsync, producerAsync)
+          Pair(consumer, producer)
         }
 
         Transport.inMemory -> {
           val mainChannels = InMemoryChannels()
           val eventListenerChannels = InMemoryChannels()
-          val consumerAsync = InMemoryInfiniticConsumerAsync(mainChannels, eventListenerChannels)
-          val producerAsync = InMemoryInfiniticProducerAsync(mainChannels, eventListenerChannels)
-          Pair(consumerAsync, producerAsync)
+          val consumer = InMemoryInfiniticConsumer(mainChannels, eventListenerChannels)
+          val producer = InMemoryInfiniticProducer(mainChannels, eventListenerChannels)
+          Pair(consumer, producer)
         }
       }
 
   /** Infinitic Consumer */
-  val consumerAsync: InfiniticConsumerAsync = cp.first
+  val consumer = cp.first
 
   /** Infinitic Producer */
-  val producerAsync: InfiniticProducerAsync = cp.second
+  val producer = cp.second
 }
 

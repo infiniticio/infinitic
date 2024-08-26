@@ -118,9 +118,9 @@ class InfiniticRegisterImpl(override var logsConfig: LogsConfig) : InfiniticRegi
             "concurrency: ${it.concurrency}, " +
             "class: ${it.factory()::class.java.name}, " +
             "timeout: ${
-              it.withTimeout?.getTimeoutInSeconds()?.let { String.format("%.2f", it) }
-            }s, " +
-            "withRetry: ${it.withRetry})"
+              it.withTimeout?.getTimeoutInSeconds()?.let { String.format("%.2fs", it) } ?: NONE
+            }, " +
+            "withRetry: ${it.withRetry ?: NONE})"
       }
     }
   }
@@ -143,8 +143,8 @@ class InfiniticRegisterImpl(override var logsConfig: LogsConfig) : InfiniticRegi
         "* Service Tag Engine".padEnd(25) + ": (" +
             "concurrency: ${it.concurrency}, " +
             "storage: ${storage.type}, " +
-            "cache: ${storage.cache?.type}, " +
-            "compression: ${storage.compression})"
+            "cache: ${storage.cache?.type ?: NONE}, " +
+            "compression: ${storage.compression ?: NONE})"
       }
     }
   }
@@ -211,9 +211,9 @@ class InfiniticRegisterImpl(override var logsConfig: LogsConfig) : InfiniticRegi
             "concurrency: ${it.concurrency}, " +
             "classes: ${it.classes.joinToString { it.simpleName }}, " +
             "timeout: ${
-              it.withTimeout?.getTimeoutInSeconds()?.let { String.format("%.2f", it) }
-            }s, " +
-            "withRetry: ${it.withRetry}" +
+              it.withTimeout?.getTimeoutInSeconds()?.let { String.format("%.2fs", it) } ?: NONE
+            }, " +
+            "withRetry: ${it.withRetry ?: NONE}" +
             (it.checkMode?.let { ", checkMode: $it" } ?: "") +
             ")"
       }
@@ -239,8 +239,8 @@ class InfiniticRegisterImpl(override var logsConfig: LogsConfig) : InfiniticRegi
         "* Workflow State Engine".padEnd(25) + ": (" +
             "concurrency: ${it.concurrency}, " +
             "storage: ${storage.type}, " +
-            "cache: ${storage.cache?.type}, " +
-            "compression: ${storage.compression})"
+            "cache: ${storage.cache?.type ?: NONE}, " +
+            "compression: ${storage.compression ?: NONE})"
       }
     }
   }
@@ -262,8 +262,8 @@ class InfiniticRegisterImpl(override var logsConfig: LogsConfig) : InfiniticRegi
         "* Workflow Tag Engine".padEnd(25) + ": (" +
             "concurrency: ${it.concurrency}, " +
             "storage: ${storage.type}, " +
-            "cache: ${storage.cache?.type}, " +
-            "compression: ${storage.compression})"
+            "cache: ${storage.cache?.type ?: NONE}, " +
+            "compression: ${storage.compression ?: NONE})"
       }
     }
   }
@@ -306,7 +306,9 @@ class InfiniticRegisterImpl(override var logsConfig: LogsConfig) : InfiniticRegi
         ?: DEFAULT_CONCURRENCY
 
   companion object {
-    private val logger by lazy { KotlinLogging.logger(InfiniticWorker::class.java.name) }
+    private val logger = KotlinLogging.logger(InfiniticWorker::class.java.name)
+
+    private const val NONE = "none"
 
     /** Create [InfiniticRegisterImpl] from config */
     @JvmStatic

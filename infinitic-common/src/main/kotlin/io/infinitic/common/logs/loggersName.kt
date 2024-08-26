@@ -20,21 +20,20 @@
  *
  * Licensor: infinitic.io
  */
-repositories { maven("https://jitpack.io") }
+package io.infinitic.common.logs
 
-plugins { application }
+private const val INFINITIC_PREFIX = "io.infinitic"
 
-application { mainClass.set("io.infinitic.dashboard.MainKt") }
+private const val CLOUD_EVENTS = "$INFINITIC_PREFIX.cloudEvents"
 
-dependencies {
-  api(project(":infinitic-transport-pulsar"))
-  api(project(":infinitic-transport"))
+const val WORKFLOW_STATE_ENGINE = "WorkflowStateEngine"
+const val WORKFLOW_TAG_ENGINE = "WorkflowTagEngine"
+const val WORKFLOW_EXECUTOR = "WorkflowExecutor"
+const val SERVICE_TAG_ENGINE = "ServiceTagEngine"
+const val SERVICE_EXECUTOR = "ServiceExecutor"
 
-  implementation(Libs.Kweb.core)
-  implementation(Libs.Pulsar.client)
-  implementation(Libs.Pulsar.clientAdmin)
-
-  implementation(project(":infinitic-utils"))
-}
-
-apply("../publish.gradle.kts")
+const val WORKFLOW_STATE_ENGINE_CLOUD_EVENTS = "$CLOUD_EVENTS.$WORKFLOW_STATE_ENGINE"
+const val WORKFLOW_TAG_ENGINE_CLOUD_EVENTS = "$CLOUD_EVENTS.$WORKFLOW_TAG_ENGINE"
+const val WORKFLOW_EXECUTOR_CLOUD_EVENTS = "$CLOUD_EVENTS.$WORKFLOW_EXECUTOR"
+const val SERVICE_TAG_ENGINE_CLOUD_EVENTS = "$CLOUD_EVENTS.$SERVICE_TAG_ENGINE"
+const val SERVICE_EXECUTOR_CLOUD_EVENTS = "$CLOUD_EVENTS.$SERVICE_EXECUTOR"

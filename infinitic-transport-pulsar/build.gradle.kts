@@ -26,7 +26,7 @@ dependencies {
   api(project(":infinitic-common"))
   api(project(":infinitic-task-executor"))
 
-  implementation(project(":infinitic-autoclose"))
+  implementation(project(":infinitic-utils"))
   implementation(project(":infinitic-workflow-tag"))
   implementation(project(":infinitic-workflow-engine"))
 

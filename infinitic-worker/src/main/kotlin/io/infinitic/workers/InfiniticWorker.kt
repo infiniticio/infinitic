@@ -29,30 +29,36 @@ import io.infinitic.autoclose.addAutoCloseResource
 import io.infinitic.autoclose.autoClose
 import io.infinitic.clients.InfiniticClient
 import io.infinitic.common.data.MillisInstant
+import io.infinitic.common.logs.SERVICE_EXECUTOR_CLOUD_EVENTS
+import io.infinitic.common.logs.SERVICE_TAG_ENGINE_CLOUD_EVENTS
+import io.infinitic.common.logs.WORKFLOW_EXECUTOR_CLOUD_EVENTS
+import io.infinitic.common.logs.WORKFLOW_STATE_ENGINE_CLOUD_EVENTS
+import io.infinitic.common.logs.WORKFLOW_TAG_ENGINE_CLOUD_EVENTS
 import io.infinitic.common.messages.Message
 import io.infinitic.common.tasks.data.ServiceName
-import io.infinitic.common.tasks.events.messages.ServiceEventMessage
+import io.infinitic.common.tasks.events.messages.ServiceExecutorEventMessage
 import io.infinitic.common.tasks.executors.messages.ExecuteTask
 import io.infinitic.common.tasks.executors.messages.ServiceExecutorMessage
 import io.infinitic.common.tasks.tags.messages.ServiceTagMessage
 import io.infinitic.common.tasks.tags.storage.TaskTagStorage
-import io.infinitic.common.transport.InfiniticConsumerAsync
-import io.infinitic.common.transport.InfiniticProducerAsync
+import io.infinitic.common.transport.InfiniticConsumer
+import io.infinitic.common.transport.InfiniticProducer
+import io.infinitic.common.transport.LoggedInfiniticConsumer
 import io.infinitic.common.transport.LoggedInfiniticProducer
 import io.infinitic.common.transport.MainSubscription
 import io.infinitic.common.transport.RetryServiceExecutorTopic
-import io.infinitic.common.transport.RetryWorkflowTaskExecutorTopic
-import io.infinitic.common.transport.ServiceEventsTopic
+import io.infinitic.common.transport.RetryWorkflowExecutorTopic
+import io.infinitic.common.transport.ServiceExecutorEventTopic
 import io.infinitic.common.transport.ServiceExecutorTopic
-import io.infinitic.common.transport.ServiceTagTopic
+import io.infinitic.common.transport.ServiceTagEngineTopic
 import io.infinitic.common.transport.SubscriptionType
-import io.infinitic.common.transport.TimerWorkflowStateEngineTopic
-import io.infinitic.common.transport.WorkflowCmdTopic
-import io.infinitic.common.transport.WorkflowEventsTopic
+import io.infinitic.common.transport.WorkflowExecutorEventTopic
+import io.infinitic.common.transport.WorkflowExecutorTopic
+import io.infinitic.common.transport.WorkflowStateCmdTopic
 import io.infinitic.common.transport.WorkflowStateEngineTopic
+import io.infinitic.common.transport.WorkflowStateEventTopic
+import io.infinitic.common.transport.WorkflowStateTimerTopic
 import io.infinitic.common.transport.WorkflowTagEngineTopic
-import io.infinitic.common.transport.WorkflowTaskEventsTopic
-import io.infinitic.common.transport.WorkflowTaskExecutorTopic
 import io.infinitic.common.transport.create
 import io.infinitic.common.workflows.data.workflows.WorkflowName
 import io.infinitic.common.workflows.engine.messages.WorkflowCmdMessage
@@ -64,20 +70,26 @@ import io.infinitic.common.workflows.tags.storage.WorkflowTagStorage
 import io.infinitic.events.toJsonString
 import io.infinitic.events.toServiceCloudEvent
 import io.infinitic.events.toWorkflowCloudEvent
-import io.infinitic.pulsar.PulsarInfiniticConsumerAsync
+import io.infinitic.logger.ignoreNull
+import io.infinitic.pulsar.PulsarInfiniticConsumer
 import io.infinitic.tasks.Task
 import io.infinitic.tasks.executor.TaskEventHandler
 import io.infinitic.tasks.executor.TaskExecutor
+import io.infinitic.tasks.executor.TaskRetryHandler
 import io.infinitic.tasks.tag.TaskTagEngine
+import io.infinitic.tasks.tag.storage.LoggedTaskTagStorage
 import io.infinitic.transport.config.TransportConfig
 import io.infinitic.workers.config.WorkerConfig
 import io.infinitic.workers.config.WorkerConfigInterface
 import io.infinitic.workers.register.InfiniticRegister
 import io.infinitic.workers.register.InfiniticRegisterImpl
-import io.infinitic.workflows.engine.WorkflowCmdHandler
-import io.infinitic.workflows.engine.WorkflowEngine
-import io.infinitic.workflows.engine.WorkflowEventHandler
+import io.infinitic.workflows.engine.WorkflowStateCmdHandler
+import io.infinitic.workflows.engine.WorkflowStateEngine
+import io.infinitic.workflows.engine.WorkflowStateEventHandler
+import io.infinitic.workflows.engine.WorkflowStateTimerHandler
+import io.infinitic.workflows.engine.storage.LoggedWorkflowStateStorage
 import io.infinitic.workflows.tag.WorkflowTagEngine
+import io.infinitic.workflows.tag.storage.LoggedWorkflowTagStorage
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -88,30 +100,29 @@ import kotlin.system.exitProcess
 @Suppress("unused")
 class InfiniticWorker private constructor(
   val register: InfiniticRegister,
-  val consumerAsync: InfiniticConsumerAsync,
-  val producerAsync: InfiniticProducerAsync,
-  val source: String
+  val consumer: InfiniticConsumer,
+  val producer: InfiniticProducer,
+  private val source: String
 ) : AutoCloseable, InfiniticRegister by register {
 
-  private val logger = KotlinLogging.logger {}
-
   /** Infinitic Client */
-  val client = InfiniticClient(consumerAsync, producerAsync)
+  val client = InfiniticClient(consumer, producer)
 
   init {
-    // Aggregate logs from consumerAsync with InfiniticWorker's
-    consumerAsync.logName = this::class.java.name
+    consumer.workerLogger = logger
 
     Runtime.getRuntime().addShutdownHook(
         Thread {
-          logger.info { "Closing worker!" }
+          logger.info { "Closing worker..." }
           close()
-          logger.info { "Worker closed" }
+          logger.info { "Worker closed." }
         },
     )
   }
 
   companion object {
+    private val logger = KotlinLogging.logger {}
+
     /** Create [InfiniticWorker] from config */
     @JvmStatic
     fun fromConfig(workerConfig: WorkerConfigInterface): InfiniticWorker = with(workerConfig) {
@@ -119,32 +130,27 @@ class InfiniticWorker private constructor(
       val transportConfig = TransportConfig(transport, pulsar, shutdownGracePeriodInSeconds)
 
       /** Infinitic Consumer */
-      val consumerAsync = transportConfig.consumerAsync
+      val consumer = transportConfig.consumer
 
       /** Infinitic  Producer */
-      val producerAsync = transportConfig.producerAsync
+      val producer = transportConfig.producer
 
       // set name, if it exists in the worker configuration
-      name?.let { producerAsync.producerName = it }
+      name?.let { producer.name = it }
 
       /** Infinitic Register */
       // if an exception is thrown, we ensure to close the previously created resource
       val register = try {
         InfiniticRegisterImpl.fromConfig(this)
       } catch (e: Exception) {
-        consumerAsync.close()
+        consumer.close()
         throw e
       }
 
       /** Infinitic Worker */
-      InfiniticWorker(
-          register,
-          consumerAsync,
-          producerAsync,
-          transportConfig.source,
-      ).also {
+      InfiniticWorker(register, consumer, producer, transportConfig.source).also {
         // close consumer with the worker
-        it.addAutoCloseResource(consumerAsync)
+        it.addAutoCloseResource(consumer)
         // close storages with the worker
         it.addAutoCloseResource(register)
       }
@@ -166,19 +172,9 @@ class InfiniticWorker private constructor(
         fromConfig(WorkerConfig.fromYaml(*yamls))
   }
 
-  private val delayedTaskProducer =
-      LoggedInfiniticProducer(TaskExecutor::class.java.name, producerAsync)
-
-  private val delayedWorkflowProducer =
-      LoggedInfiniticProducer(WorkflowEngine::class.java.name, producerAsync)
-
   private val workerRegistry = register.registry
 
-  private val sendingDlqMessage = { "Unable to process message, sending to Dead Letter Queue" }
-
-  val logMessageSentToDLQ = { message: Message?, e: Exception ->
-    logger.error(e) { "Sending message to DLQ ${message ?: "(Not Deserialized)"}" }
-  }
+  private val sendingMessageToDLQ = { "Unable to process message, sending to Dead Letter Queue" }
 
   override fun close() {
     client.close()
@@ -249,7 +245,7 @@ class InfiniticWorker private constructor(
 
       workerRegistry.workflowEventListeners.forEach { (workflowName, registeredEventListener) ->
         // WORKFLOW TASK EVENT LISTENER
-        startWorkflowTaskEventConsumer(
+        startWorkflowExecutorEventListener(
             workflowName,
             registeredEventListener.concurrency,
             registeredEventListener.subscriptionName,
@@ -261,7 +257,7 @@ class InfiniticWorker private constructor(
         }
 
         // WORKFLOW EVENT LISTENER
-        startWorkflowEventConsumer(
+        startWorkflowStateEventListener(
             workflowName,
             registeredEventListener.concurrency,
             registeredEventListener.subscriptionName,
@@ -275,7 +271,7 @@ class InfiniticWorker private constructor(
 
       workerRegistry.serviceEventListeners.forEach { (serviceName, registeredEventListener) ->
         // SERVICE EVENT LISTENER
-        startServiceEventConsumer(
+        startServiceEventListener(
             serviceName,
             registeredEventListener.concurrency,
             registeredEventListener.subscriptionName,
@@ -289,38 +285,43 @@ class InfiniticWorker private constructor(
     }
 
     logger.info {
-      "Worker \"${producerAsync.producerName}\" ready" + when (consumerAsync is PulsarInfiniticConsumerAsync) {
-        true -> " (shutdownGracePeriodInSeconds=${consumerAsync.shutdownGracePeriodInSeconds}s)"
+      "Worker \"${producer.name}\" ready" + when (consumer is PulsarInfiniticConsumer) {
+        true -> " (shutdownGracePeriodInSeconds=${consumer.shutdownGracePeriodInSeconds}s)"
         false -> ""
       }
     }
 
-    return CompletableFuture.supplyAsync { consumerAsync.join() }
+    return CompletableFuture.supplyAsync { consumer.join() }
   }
-
 
   private fun CoroutineScope.startWorkflowTagEngine(
     workflowName: WorkflowName,
     concurrency: Int,
     storage: WorkflowTagStorage
   ) {
-    val logger = KotlinLogging.logger("io.infinitic.cloudEvents.WorkflowTagEngine.$workflowName")
+    val eventLogger = KotlinLogging.logger("$WORKFLOW_TAG_ENGINE_CLOUD_EVENTS.$workflowName")
+        .ignoreNull()
 
     // WORKFLOW-TAG
     launch {
-      val workflowTagEngine = WorkflowTagEngine(storage, producerAsync)
+      val logger = WorkflowTagEngine.logger
+      val loggedStorage = LoggedWorkflowTagStorage(logger, storage)
+      val loggedConsumer = LoggedInfiniticConsumer(logger, consumer)
+      val loggedProducer = LoggedInfiniticProducer(logger, producer)
+
+      val workflowTagEngine = WorkflowTagEngine(loggedStorage, loggedProducer)
 
       val handler: suspend (WorkflowTagEngineMessage, MillisInstant) -> Unit =
           { message, publishedAt ->
-            logger.logWorkflowCloudEvent(message, publishedAt, source)
+            eventLogger.logWorkflowCloudEvent(message, publishedAt, source)
             workflowTagEngine.handle(message, publishedAt)
           }
 
-      consumerAsync.start(
+      loggedConsumer.start(
           subscription = MainSubscription(WorkflowTagEngineTopic),
           entity = workflowName.toString(),
           handler = handler,
-          beforeDlq = logMessageSentToDLQ,
+          beforeDlq = null,
           concurrency = concurrency,
       )
     }
@@ -331,75 +332,94 @@ class InfiniticWorker private constructor(
     concurrency: Int,
     storage: WorkflowStateStorage
   ) {
-    val logger = KotlinLogging.logger("io.infinitic.cloudEvents.WorkflowStateEngine.$workflowName")
+    val eventLogger = KotlinLogging.logger("$WORKFLOW_STATE_ENGINE_CLOUD_EVENTS.$workflowName")
+        .ignoreNull()
     // WORKFLOW-CMD
     launch {
-      val workflowCmdHandler = WorkflowCmdHandler(producerAsync)
+      val logger = WorkflowStateCmdHandler.logger
+      val loggedConsumer = LoggedInfiniticConsumer(logger, consumer)
+      val loggedProducer = LoggedInfiniticProducer(logger, producer)
+
+      val workflowStateCmdHandler = WorkflowStateCmdHandler(loggedProducer)
 
       val handler: suspend (WorkflowStateEngineMessage, MillisInstant) -> Unit =
           { message, publishedAt ->
-            logger.logWorkflowCloudEvent(message, publishedAt, source)
-            workflowCmdHandler.handle(message, publishedAt)
+            eventLogger.logWorkflowCloudEvent(message, publishedAt, source)
+            workflowStateCmdHandler.handle(message, publishedAt)
           }
 
-      consumerAsync.start(
-          subscription = MainSubscription(WorkflowCmdTopic),
+      loggedConsumer.start(
+          subscription = MainSubscription(WorkflowStateCmdTopic),
           entity = workflowName.toString(),
           handler = handler,
-          beforeDlq = logMessageSentToDLQ,
+          beforeDlq = null,
           concurrency = concurrency,
       )
     }
 
     // WORKFLOW-STATE-ENGINE
     launch {
-      val workflowEngine = WorkflowEngine(storage, producerAsync)
+      val logger = WorkflowStateEngine.logger
+      val loggedStorage = LoggedWorkflowStateStorage(logger, storage)
+      val loggedConsumer = LoggedInfiniticConsumer(logger, consumer)
+      val loggedProducer = LoggedInfiniticProducer(logger, producer)
+
+      val workflowStateEngine = WorkflowStateEngine(loggedStorage, loggedProducer)
 
       val handler: suspend (WorkflowStateEngineMessage, MillisInstant) -> Unit =
           { message, publishedAt ->
             if (message !is WorkflowCmdMessage) {
-              logger.logWorkflowCloudEvent(message, publishedAt, source)
+              eventLogger.logWorkflowCloudEvent(message, publishedAt, source)
             }
-            workflowEngine.handle(message, publishedAt)
+            workflowStateEngine.handle(message, publishedAt)
           }
 
-      consumerAsync.start(
+      loggedConsumer.start(
           subscription = MainSubscription(WorkflowStateEngineTopic),
           entity = workflowName.toString(),
           handler = handler,
-          beforeDlq = logMessageSentToDLQ,
+          beforeDlq = null,
           concurrency = concurrency,
       )
     }
 
-    // WORKFLOW-DELAY
+    // WORKFLOW TIMERS
     launch {
-      consumerAsync.start(
-          subscription = MainSubscription(TimerWorkflowStateEngineTopic),
+      val logger = WorkflowStateTimerHandler.logger
+      val loggedConsumer = LoggedInfiniticConsumer(logger, consumer)
+      val loggedProducer = LoggedInfiniticProducer(logger, producer)
+
+      val workflowStateTimerHandler = WorkflowStateTimerHandler(loggedProducer)
+
+      // we do not use loggedConsumer to avoid logging twice the messages coming from delayed topics
+      loggedConsumer.start(
+          subscription = MainSubscription(WorkflowStateTimerTopic),
           entity = workflowName.toString(),
-          handler = { msg, _ ->
-            with(delayedWorkflowProducer) { msg.sendTo(WorkflowStateEngineTopic) }
-          },
-          beforeDlq = logMessageSentToDLQ,
+          handler = workflowStateTimerHandler::handle,
+          beforeDlq = null,
           concurrency = concurrency,
       )
     }
 
     // WORKFLOW-EVENTS
     launch {
-      val workflowEventHandler = WorkflowEventHandler(producerAsync)
+      val logger = WorkflowStateEventHandler.logger
+      val loggedConsumer = LoggedInfiniticConsumer(logger, consumer)
+      val loggedProducer = LoggedInfiniticProducer(logger, producer)
+
+      val workflowStateEventHandler = WorkflowStateEventHandler(loggedProducer)
 
       val handler: suspend (WorkflowEventMessage, MillisInstant) -> Unit =
           { message, publishedAt ->
-            logger.logWorkflowCloudEvent(message, publishedAt, source)
-            workflowEventHandler.handle(message, publishedAt)
+            eventLogger.logWorkflowCloudEvent(message, publishedAt, source)
+            workflowStateEventHandler.handle(message, publishedAt)
           }
 
-      consumerAsync.start(
-          subscription = MainSubscription(WorkflowEventsTopic),
+      loggedConsumer.start(
+          subscription = MainSubscription(WorkflowStateEventTopic),
           entity = workflowName.toString(),
           handler = handler,
-          beforeDlq = logMessageSentToDLQ,
+          beforeDlq = null,
           concurrency = concurrency,
       )
     }
@@ -409,32 +429,34 @@ class InfiniticWorker private constructor(
     workflowName: WorkflowName,
     concurrency: Int
   ) {
-    val logger = KotlinLogging.logger("io.infinitic.cloudEvents.WorkflowExecutor.$workflowName")
+    val eventLogger = KotlinLogging.logger("$WORKFLOW_EXECUTOR_CLOUD_EVENTS.$workflowName")
+        .ignoreNull()
 
     // WORKFLOW-TASK_EXECUTOR
     launch {
-      val workflowTaskExecutor = TaskExecutor(workerRegistry, producerAsync, client)
+      val logger = TaskExecutor.logger
+      val loggedConsumer = LoggedInfiniticConsumer(logger, consumer)
+      val loggedProducer = LoggedInfiniticProducer(logger, producer)
+
+      val workflowTaskExecutor = TaskExecutor(workerRegistry, loggedProducer, client)
 
       val handler: suspend (ServiceExecutorMessage, MillisInstant) -> Unit =
           { message, publishedAt ->
-            logger.logServiceCloudEvent(message, publishedAt, source)
+            eventLogger.logServiceCloudEvent(message, publishedAt, source)
             workflowTaskExecutor.handle(message, publishedAt)
           }
 
       val beforeDlq: suspend (ServiceExecutorMessage?, Exception) -> Unit = { message, cause ->
         when (message) {
           null -> Unit
-          is ExecuteTask -> {
-            logMessageSentToDLQ(message, cause)
-            with(workflowTaskExecutor) {
-              message.sendTaskFailed(cause, Task.meta, sendingDlqMessage)
-            }
+          is ExecuteTask -> with(workflowTaskExecutor) {
+            message.sendTaskFailed(cause, Task.meta, sendingMessageToDLQ)
           }
         }
       }
 
-      consumerAsync.start(
-          subscription = MainSubscription(WorkflowTaskExecutorTopic),
+      loggedConsumer.start(
+          subscription = MainSubscription(WorkflowExecutorTopic),
           entity = workflowName.toString(),
           handler = handler,
           beforeDlq = beforeDlq,
@@ -444,32 +466,40 @@ class InfiniticWorker private constructor(
 
     // WORKFLOW-TASK_EXECUTOR-DELAY
     launch {
-      consumerAsync.start(
-          subscription = MainSubscription(RetryWorkflowTaskExecutorTopic),
+      val logger = TaskRetryHandler.logger
+      val loggedConsumer = LoggedInfiniticConsumer(logger, consumer)
+      val loggedProducer = LoggedInfiniticProducer(logger, producer)
+      val taskRetryHandler = TaskRetryHandler(loggedProducer)
+
+      // we do not use loggedConsumer to avoid logging twice the messages coming from delayed topics
+      loggedConsumer.start(
+          subscription = MainSubscription(RetryWorkflowExecutorTopic),
           entity = workflowName.toString(),
-          handler = { msg, _ ->
-            with(delayedTaskProducer) { msg.sendTo(WorkflowTaskExecutorTopic) }
-          },
-          beforeDlq = logMessageSentToDLQ,
+          handler = taskRetryHandler::handle,
+          beforeDlq = null,
           concurrency = concurrency,
       )
     }
 
     // WORKFLOW-TASK-EVENT
     launch {
-      val workflowTaskEventHandler = TaskEventHandler(producerAsync)
+      val logger = TaskEventHandler.logger
+      val loggedConsumer = LoggedInfiniticConsumer(logger, consumer)
+      val loggedProducer = LoggedInfiniticProducer(logger, producer)
 
-      val handler: suspend (ServiceEventMessage, MillisInstant) -> Unit =
+      val workflowTaskEventHandler = TaskEventHandler(loggedProducer)
+
+      val handler: suspend (ServiceExecutorEventMessage, MillisInstant) -> Unit =
           { message, publishedAt ->
-            logger.logServiceCloudEvent(message, publishedAt, source)
+            eventLogger.logServiceCloudEvent(message, publishedAt, source)
             workflowTaskEventHandler.handle(message, publishedAt)
           }
 
-      consumerAsync.start(
-          subscription = MainSubscription(WorkflowTaskEventsTopic),
+      loggedConsumer.start(
+          subscription = MainSubscription(WorkflowExecutorEventTopic),
           entity = workflowName.toString(),
           handler = handler,
-          beforeDlq = logMessageSentToDLQ,
+          beforeDlq = null,
           concurrency = concurrency,
       )
     }
@@ -480,23 +510,29 @@ class InfiniticWorker private constructor(
     concurrency: Int,
     storage: TaskTagStorage
   ) {
-    val logger = KotlinLogging.logger("io.infinitic.cloudEvents.TaskTagEngine.$serviceName")
+    val eventLogger = KotlinLogging.logger("$SERVICE_TAG_ENGINE_CLOUD_EVENTS.$serviceName")
+        .ignoreNull()
 
     // TASK-TAG
     launch {
-      val taskTagEngine = TaskTagEngine(storage, producerAsync)
+      val logger = TaskTagEngine.logger
+      val loggedStorage = LoggedTaskTagStorage(logger, storage)
+      val loggedConsumer = LoggedInfiniticConsumer(logger, consumer)
+      val loggedProducer = LoggedInfiniticProducer(logger, producer)
+
+      val taskTagEngine = TaskTagEngine(loggedStorage, loggedProducer)
 
       val handler: suspend (ServiceTagMessage, MillisInstant) -> Unit =
           { message, publishedAt ->
-            logger.logServiceCloudEvent(message, publishedAt, source)
+            eventLogger.logServiceCloudEvent(message, publishedAt, source)
             taskTagEngine.handle(message, publishedAt)
           }
 
-      consumerAsync.start(
-          subscription = MainSubscription(ServiceTagTopic),
+      loggedConsumer.start(
+          subscription = MainSubscription(ServiceTagEngineTopic),
           entity = serviceName.toString(),
           handler = handler,
-          beforeDlq = logMessageSentToDLQ,
+          beforeDlq = null,
           concurrency = concurrency,
       )
     }
@@ -506,31 +542,32 @@ class InfiniticWorker private constructor(
     serviceName: ServiceName,
     concurrency: Int
   ) {
-    val logger = KotlinLogging.logger("io.infinitic.cloudEvents.ServiceExecutor.$serviceName")
+    val eventLogger = KotlinLogging.logger("$SERVICE_EXECUTOR_CLOUD_EVENTS.$serviceName")
+        .ignoreNull()
 
     // TASK-EXECUTOR
     launch {
-      val taskExecutor = TaskExecutor(workerRegistry, producerAsync, client)
+      val logger = TaskExecutor.logger
+      val loggedConsumer = LoggedInfiniticConsumer(logger, consumer)
+      val loggedProducer = LoggedInfiniticProducer(logger, producer)
+      val taskExecutor = TaskExecutor(workerRegistry, loggedProducer, client)
 
       val handler: suspend (ServiceExecutorMessage, MillisInstant) -> Unit =
           { message, publishedAt ->
-            logger.logServiceCloudEvent(message, publishedAt, source)
+            eventLogger.logServiceCloudEvent(message, publishedAt, source)
             taskExecutor.handle(message, publishedAt)
           }
 
       val beforeDlq: suspend (ServiceExecutorMessage?, Exception) -> Unit = { message, cause ->
         when (message) {
           null -> Unit
-          is ExecuteTask -> {
-            logMessageSentToDLQ(message, cause)
-            with(taskExecutor) {
-              message.sendTaskFailed(cause, Task.meta, sendingDlqMessage)
-            }
+          is ExecuteTask -> with(taskExecutor) {
+            message.sendTaskFailed(cause, Task.meta, sendingMessageToDLQ)
           }
         }
       }
 
-      consumerAsync.start(
+      loggedConsumer.start(
           subscription = MainSubscription(ServiceExecutorTopic),
           entity = serviceName.toString(),
           handler = handler,
@@ -541,27 +578,79 @@ class InfiniticWorker private constructor(
 
     // TASK-EXECUTOR-DELAY
     launch {
-      consumerAsync.start(
+      val logger = TaskRetryHandler.logger
+      val loggedConsumer = LoggedInfiniticConsumer(logger, consumer)
+      val loggedProducer = LoggedInfiniticProducer(logger, producer)
+
+      val taskRetryHandler = TaskRetryHandler(loggedProducer)
+
+      loggedConsumer.start(
           subscription = MainSubscription(RetryServiceExecutorTopic),
           entity = serviceName.toString(),
-          handler = { msg, _ -> with(delayedTaskProducer) { msg.sendTo(ServiceExecutorTopic) } },
-          beforeDlq = logMessageSentToDLQ,
+          handler = taskRetryHandler::handle,
+          beforeDlq = null,
           concurrency = concurrency,
       )
     }
 
     // TASK-EVENTS
     launch {
-      val taskEventHandler = TaskEventHandler(producerAsync)
+      val logger = TaskEventHandler.logger
+      val loggedConsumer = LoggedInfiniticConsumer(logger, consumer)
+      val loggedProducer = LoggedInfiniticProducer(logger, producer)
+      val taskEventHandler = TaskEventHandler(loggedProducer)
 
-      val handler: suspend (ServiceEventMessage, MillisInstant) -> Unit =
+      val handler: suspend (ServiceExecutorEventMessage, MillisInstant) -> Unit =
           { message, publishedAt ->
-            logger.logServiceCloudEvent(message, publishedAt, source)
+            eventLogger.logServiceCloudEvent(message, publishedAt, source)
             taskEventHandler.handle(message, publishedAt)
           }
 
-      consumerAsync.start(
-          subscription = MainSubscription(ServiceEventsTopic),
+      loggedConsumer.start(
+          subscription = MainSubscription(ServiceExecutorEventTopic),
+          entity = serviceName.toString(),
+          handler = handler,
+          beforeDlq = null,
+          concurrency = concurrency,
+      )
+    }
+  }
+
+  private val logMessageSentToDLQ = { message: Message?, e: Exception ->
+    logger.error(e) { "Sending message to DLQ ${message ?: "(Not Deserialized)"}" }
+  }
+
+  private fun CoroutineScope.startServiceEventListener(
+    serviceName: ServiceName,
+    concurrency: Int,
+    subscriptionName: String?,
+    subscriptionType: SubscriptionType,
+    handler: (Message, MillisInstant) -> Unit
+  ) {
+    // TASK-EXECUTOR topic
+    launch {
+      consumer.start(
+          subscription = subscriptionType.create(ServiceExecutorTopic, subscriptionName),
+          entity = serviceName.toString(),
+          handler = handler,
+          beforeDlq = logMessageSentToDLQ,
+          concurrency = concurrency,
+      )
+    }
+    // TASK-EXECUTOR-DELAY topic
+    launch {
+      consumer.start(
+          subscription = subscriptionType.create(RetryServiceExecutorTopic, subscriptionName),
+          entity = serviceName.toString(),
+          handler = handler,
+          beforeDlq = logMessageSentToDLQ,
+          concurrency = concurrency,
+      )
+    }
+    // TASK-EVENTS topic
+    launch {
+      consumer.start(
+          subscription = subscriptionType.create(ServiceExecutorEventTopic, subscriptionName),
           entity = serviceName.toString(),
           handler = handler,
           beforeDlq = logMessageSentToDLQ,
@@ -570,110 +659,71 @@ class InfiniticWorker private constructor(
     }
   }
 
-  private fun CoroutineScope.startServiceEventConsumer(
-    serviceName: ServiceName,
-    concurrency: Int,
-    subscriptionName: String?,
-    subscriptionType: SubscriptionType,
-    consumer: (Message, MillisInstant) -> Unit
-  ) {
-    // TASK-EXECUTOR topic
-    launch {
-      consumerAsync.start(
-          subscription = subscriptionType.create(ServiceExecutorTopic, subscriptionName),
-          entity = serviceName.toString(),
-          handler = consumer,
-          beforeDlq = logMessageSentToDLQ,
-          concurrency = concurrency,
-      )
-    }
-    // TASK-EXECUTOR-DELAY topic
-    launch {
-      consumerAsync.start(
-          subscription = subscriptionType.create(RetryServiceExecutorTopic, subscriptionName),
-          entity = serviceName.toString(),
-          handler = consumer,
-          beforeDlq = logMessageSentToDLQ,
-          concurrency = concurrency,
-      )
-    }
-    // TASK-EVENTS topic
-    launch {
-      consumerAsync.start(
-          subscription = subscriptionType.create(ServiceEventsTopic, subscriptionName),
-          entity = serviceName.toString(),
-          handler = consumer,
-          beforeDlq = logMessageSentToDLQ,
-          concurrency = concurrency,
-      )
-    }
-  }
-
-  private fun CoroutineScope.startWorkflowTaskEventConsumer(
+  private fun CoroutineScope.startWorkflowExecutorEventListener(
     workflowName: WorkflowName,
     concurrency: Int,
     subscriptionName: String?,
     subscriptionType: SubscriptionType,
-    consumer: (Message, MillisInstant) -> Unit
+    handler: (Message, MillisInstant) -> Unit
   ) {
     // WORKFLOW-TASK-EXECUTOR topic
     launch {
-      consumerAsync.start(
-          subscription = subscriptionType.create(WorkflowTaskExecutorTopic, subscriptionName),
+      this@InfiniticWorker.consumer.start(
+          subscription = subscriptionType.create(WorkflowExecutorTopic, subscriptionName),
           entity = workflowName.toString(),
-          handler = consumer,
+          handler = handler,
           beforeDlq = logMessageSentToDLQ,
           concurrency = concurrency,
       )
     }
     // WORKFLOW-TASK-EXECUTOR-DELAY topic
     launch {
-      consumerAsync.start(
-          subscription = subscriptionType.create(RetryWorkflowTaskExecutorTopic, subscriptionName),
+      this@InfiniticWorker.consumer.start(
+          subscription = subscriptionType.create(RetryWorkflowExecutorTopic, subscriptionName),
           entity = workflowName.toString(),
-          handler = consumer,
+          handler = handler,
           beforeDlq = logMessageSentToDLQ,
           concurrency = concurrency,
       )
     }
     // WORKFLOW-TASK-EVENTS topic
     launch {
-      consumerAsync.start(
-          subscription = subscriptionType.create(WorkflowTaskEventsTopic, subscriptionName),
+      this@InfiniticWorker.consumer.start(
+          subscription = subscriptionType.create(WorkflowExecutorEventTopic, subscriptionName),
           entity = workflowName.toString(),
-          handler = consumer,
+          handler = handler,
           beforeDlq = logMessageSentToDLQ,
           concurrency = concurrency,
       )
     }
   }
 
-  private fun CoroutineScope.startWorkflowEventConsumer(
+  private fun CoroutineScope.startWorkflowStateEventListener(
     workflowName: WorkflowName,
     concurrency: Int,
     subscriptionName: String?,
     subscriptionType: SubscriptionType,
-    consumer: (Message, MillisInstant) -> Unit
+    handler: (Message, MillisInstant) -> Unit
   ) {
     // WORKFLOW-CMD topic
     launch {
-      consumerAsync.start(
-          subscription = subscriptionType.create(WorkflowCmdTopic, subscriptionName),
+      this@InfiniticWorker.consumer.start(
+          subscription = subscriptionType.create(WorkflowStateCmdTopic, subscriptionName),
           entity = workflowName.toString(),
-          handler = consumer,
+          handler = handler,
           beforeDlq = logMessageSentToDLQ,
           concurrency = concurrency,
       )
     }
     // WORKFLOW-STATE-ENGINE topic
     launch {
-      consumerAsync.start(
+      this@InfiniticWorker.consumer.start(
           subscription = subscriptionType.create(WorkflowStateEngineTopic, subscriptionName),
           entity = workflowName.toString(),
           handler = { message: Message, publishedAt: MillisInstant ->
             // the event handler is not applied for WorkflowCmdMessage from clients
             // as the event has already been handled in the workflow-cmd topic
-            if (message !is WorkflowCmdMessage) consumer(message, publishedAt)
+            if (message !is WorkflowCmdMessage) handler(message, publishedAt)
           },
           beforeDlq = logMessageSentToDLQ,
           concurrency = concurrency,
@@ -681,10 +731,10 @@ class InfiniticWorker private constructor(
     }
     // WORKFLOW-EVENTS topic
     launch {
-      consumerAsync.start(
-          subscription = subscriptionType.create(WorkflowEventsTopic, subscriptionName),
+      this@InfiniticWorker.consumer.start(
+          subscription = subscriptionType.create(WorkflowStateEventTopic, subscriptionName),
           entity = workflowName.toString(),
-          handler = consumer,
+          handler = handler,
           beforeDlq = logMessageSentToDLQ,
           concurrency = concurrency,
       )
@@ -704,7 +754,7 @@ class InfiniticWorker private constructor(
     } catch (e: Exception) {
       // Failure to log shouldn't break the application
       try {
-        error(e) { "Error while logging the CloudEvent json of: $this" }
+        error(e) { "Error while logging the CloudEvent json of: $message" }
       } catch (error: Exception) {
         System.err.println("Failed to log the original exception due to ${error.message}\n${error.stackTraceToString()}")
       }

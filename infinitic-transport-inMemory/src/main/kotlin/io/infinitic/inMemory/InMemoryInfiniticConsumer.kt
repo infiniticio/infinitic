@@ -22,11 +22,12 @@
  */
 package io.infinitic.inMemory
 
+import io.github.oshai.kotlinlogging.KLogger
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.infinitic.common.data.MillisInstant
 import io.infinitic.common.messages.Message
 import io.infinitic.common.transport.EventListenerSubscription
-import io.infinitic.common.transport.InfiniticConsumerAsync
+import io.infinitic.common.transport.InfiniticConsumer
 import io.infinitic.common.transport.MainSubscription
 import io.infinitic.common.transport.Subscription
 import io.infinitic.common.transport.acceptDelayed
@@ -41,21 +42,27 @@ import kotlinx.coroutines.job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 
-class InMemoryInfiniticConsumerAsync(
+class InMemoryInfiniticConsumer(
   private val mainChannels: InMemoryChannels,
   private val eventListenerChannels: InMemoryChannels,
-) : InfiniticConsumerAsync {
+) : InfiniticConsumer {
 
-  override var logName: String? = null
+  override lateinit var workerLogger: KLogger
 
   // Coroutine scope used to receive messages
   private val consumingScope = CoroutineScope(Dispatchers.IO)
 
   override fun join() {
-    runBlocking { consumingScope.coroutineContext.job.children.forEach { it.join() } }
+    runBlocking {
+      consumingScope.coroutineContext.job.children.forEach {
+        try {
+          it.join()
+        } catch (e: CancellationException) {
+          // do nothing
+        }
+      }
+    }
   }
-
-  private val logger = KotlinLogging.logger(logName ?: this::class.java.name)
 
   override fun close() {
     consumingScope.cancel()
@@ -66,7 +73,7 @@ class InMemoryInfiniticConsumerAsync(
     subscription: Subscription<S>,
     entity: String,
     handler: suspend (S, MillisInstant) -> Unit,
-    beforeDlq: suspend (S?, Exception) -> Unit,
+    beforeDlq: (suspend (S?, Exception) -> Unit)?,
     concurrency: Int
   ) {
     val c = when (subscription.withKey) {
@@ -92,7 +99,7 @@ class InMemoryInfiniticConsumerAsync(
   private suspend fun <S : Message> startLoop(
     subscription: Subscription<S>,
     handler: suspend (S, MillisInstant) -> Unit,
-    beforeDlq: suspend (S?, Exception) -> Unit,
+    beforeDlq: (suspend (S?, Exception) -> Unit)?,
     channel: Channel<S>,
     concurrency: Int
   ) = coroutineScope {
@@ -120,7 +127,7 @@ class InMemoryInfiniticConsumerAsync(
   private suspend fun <S : Message> startLoopForDelayed(
     subscription: Subscription<S>,
     handler: suspend (S, MillisInstant) -> Unit,
-    beforeDlq: suspend (S?, Exception) -> Unit,
+    beforeDlq: (suspend (S?, Exception) -> Unit)?,
     channel: Channel<DelayedMessage<S>>,
     concurrency: Int
   ) = coroutineScope {
@@ -130,7 +137,7 @@ class InMemoryInfiniticConsumerAsync(
           for (delayedMessage in channel) {
             try {
               val ts = MillisInstant.now()
-              delay(delayedMessage.after.long)
+              delay(delayedMessage.after.millis)
               logger.trace { "$subscription (${channel.id}): Handling ${delayedMessage.message}" }
               handler(delayedMessage.message, ts)
               logger.debug { "$subscription (${channel.id}): Handled ${delayedMessage.message}" }
@@ -158,17 +165,25 @@ class InMemoryInfiniticConsumerAsync(
 
   // emulate sending to DLQ
   private suspend fun <T : Message> sendToDlq(
-    beforeDlq: suspend (T?, Exception) -> Unit,
+    beforeDlq: (suspend (T?, Exception) -> Unit)?,
     channel: Channel<*>,
     message: T,
     e: Exception
   ) {
     try {
-      logger.trace { "Channel ${channel.id}: Telling about message sent to DLQ $message}" }
-      beforeDlq(message, e)
+      logger.error { "Channel ${channel.id}: Sending message to DLQ $message" }
+      beforeDlq?.let {
+        logger.debug { "BeforeDlq processing..." }
+        it(message, e)
+        logger.trace { "BeforeDlq processed." }
+      }
     } catch (e: Exception) {
-      logger.error(e) { "Channel ${channel.id}: Unable to tell about message sent to DLQ $message" }
+      logger.error(e) { "Channel ${channel.id}: Unable to process BeforeDlq" }
     }
+  }
+
+  companion object {
+    private val logger = KotlinLogging.logger {}
   }
 }
 

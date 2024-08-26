@@ -55,12 +55,12 @@ class Consumer(
   private val consumerConfig: ConsumerConfig
 ) {
 
-  val logger = KotlinLogging.logger {}
+  private val logger = KotlinLogging.logger {}
 
   private val consumingScope =
       CoroutineScope(Executors.newCachedThreadPool().asCoroutineDispatcher())
 
-  val isActive get() = consumingScope.isActive
+  private val isActive get() = consumingScope.isActive
 
   fun cancel() {
     if (isActive) consumingScope.cancel()
@@ -76,29 +76,9 @@ class Consumer(
     }
   }
 
-  /**
-   * Starts listening for messages on a Pulsar topic.
-   *
-   * Consumers are concurrently created on the current coroutine,
-   * but the consuming loop is done on consumingScope.
-   * The processing of message is done on a NonCancellable context
-   * to guarantee that the ongoing messages are handled entirely during a shutdown
-   *
-   * @param T the type of the message
-   * @param S the type of the envelope that wraps the message
-   * @param handler the handler function to process the received message
-   * @param beforeDlq the function to be called before sending a message to DLQ (Dead Letter Queue)
-   * @param schema the schema used to deserialize the message envelope
-   * @param topic the topic to listen to
-   * @param topicDlq the DLQ topic to send failed messages to (can be null)
-   * @param subscriptionName the subscription name for the regular topic
-   * @param subscriptionNameDlq the subscription name for the DLQ topic
-   * @param subscriptionType the subscription type to use (e.g., Exclusive, Shared, Key_Shared)
-   * @param consumerName the name of the consumer
-   * @param concurrency the number of consumers*/
   internal suspend fun <S : Message, T : Envelope<out S>> startListening(
     handler: suspend (S, MillisInstant) -> Unit,
-    beforeDlq: suspend (S?, Exception) -> Unit,
+    beforeDlq: (suspend (S?, Exception) -> Unit)?,
     schema: Schema<T>,
     topic: String,
     topicDlq: String?,
@@ -108,53 +88,30 @@ class Consumer(
     subscriptionInitialPosition: SubscriptionInitialPosition,
     consumerName: String,
     concurrency: Int
-  ) = coroutineScope {
-
-    logger.debug { "Starting $concurrency consumers on topic $topic with subscription $subscriptionName" }
-
+  ) {
     when (subscriptionType) {
-      SubscriptionType.Key_Shared ->
-        List(concurrency) {
-          launch {
-            val consumerNameIt = "$consumerName-$it"
-            // For Key_Shared subscription, we must create a new consumer for each executor coroutine
-            val consumer = getConsumer(
-                schema = schema,
-                topic = topic,
-                topicDlq = topicDlq,
-                subscriptionName = subscriptionName,
-                subscriptionNameDlq = subscriptionNameDlq,
-                subscriptionType = subscriptionType,
-                subscriptionInitialPosition = subscriptionInitialPosition,
-                consumerName = consumerNameIt,
-            ).getOrThrow()
+      SubscriptionType.Key_Shared -> {
+        logger.debug { "Starting $concurrency $subscriptionType consumers on topic $topic with subscription $subscriptionName" }
 
-            launch(consumingScope.coroutineContext) {
-              while (isActive) {
-                try {
-                  // await() is a suspendable and should be used instead of get()
-                  val pulsarMessage = consumer.receiveAsync().await()
-                  logDebug(topic, pulsarMessage.messageId) { "Received pulsar message" }
-                  // this ensures that ongoing messages are processed
-                  // even after scope is cancelled following an interruption or an Error
-                  withContext(NonCancellable) {
-                    processPulsarMessage(consumer, handler, beforeDlq, topic, pulsarMessage)
-                  }
-                } catch (e: CancellationException) {
-                  // if current scope is canceled, we just exit the while loop
-                  break
-                } catch (e: Throwable) {
-                  e.rethrowError(topic, where = "in $$consumerName")
-                  continue
-                }
-              }
-              closeConsumer(consumer)
-            }
-          }
+        val consumers = List(concurrency) {
+          getConsumer(
+              schema = schema,
+              topic = topic,
+              topicDlq = topicDlq,
+              subscriptionName = subscriptionName,
+              subscriptionNameDlq = subscriptionNameDlq,
+              subscriptionType = subscriptionType,
+              subscriptionInitialPosition = subscriptionInitialPosition,
+              consumerName = "$consumerName-$it",
+          ).getOrThrow()
         }
 
+        startListeningWithKey(handler, beforeDlq, consumers)
+      }
+
       else -> {
-        // For other subscription, we can use the same consumer for all executor coroutines
+        logger.debug { "Starting a $subscriptionType consumer on topic $topic with subscription $subscriptionName" }
+
         val consumer = getConsumer(
             schema = schema,
             topic = topic,
@@ -166,47 +123,88 @@ class Consumer(
             consumerName = consumerName,
         ).getOrThrow()
 
-        // Channel is backpressure aware
-        // we can use it to send messages to the executor coroutines
-        val channel = Channel<PulsarMessage<T>>()
+        startListeningWithoutKey(handler, beforeDlq, consumer, concurrency)
+      }
+    }
+  }
 
-        // start executor coroutines
-        launch(consumingScope.coroutineContext) {
-          val jobs = List(concurrency) {
-            launch {
-              try {
-                for (pulsarMessage: PulsarMessage<T> in channel) {
-                  // this ensures that ongoing messages are processed
-                  // even after scope is cancelled following an interruption or an Error
-                  withContext(NonCancellable) {
-                    processPulsarMessage(consumer, handler, beforeDlq, topic, pulsarMessage)
-                  }
-                }
-              } catch (e: CancellationException) {
-                logDebug(topic) { "Processor #$it closed in $consumerName after cancellation" }
+  private suspend fun <S : Message, T : Envelope<out S>> startListeningWithoutKey(
+    handler: suspend (S, MillisInstant) -> Unit,
+    beforeDlq: (suspend (S?, Exception) -> Unit)?,
+    consumer: Consumer<T>,
+    concurrency: Int
+  ) = coroutineScope {
+    // Channel is backpressure aware
+    // we can use it to send messages to the executor coroutines
+    val channel = Channel<PulsarMessage<T>>()
+
+    // start executor coroutines
+    launch(consumingScope.coroutineContext) {
+      val jobs = List(concurrency) {
+        launch {
+          try {
+            for (pulsarMessage: PulsarMessage<T> in channel) {
+              // this ensures that ongoing messages are processed
+              // even after scope is cancelled following an interruption or an Error
+              withContext(NonCancellable) {
+                processPulsarMessage(consumer, handler, beforeDlq, consumer.topic, pulsarMessage)
               }
             }
+          } catch (e: CancellationException) {
+            logDebug(consumer.topic) { "Processor #$it closed in ${consumer.consumerName} after cancellation" }
           }
-          // start message receiver
-          while (isActive) {
-            try {
-              // await() is a suspendable and should be used instead of get()
-              val pulsarMessage = consumer.receiveAsync().await()
-              logDebug(topic, pulsarMessage.messageId) { "Received pulsar message" }
-              channel.send(pulsarMessage)
-            } catch (e: CancellationException) {
-              logDebug(topic) { "Exiting receiving loop in $consumerName" }
-              // if current scope  is canceled, we just exit the while loop
-              break
-            } catch (e: Throwable) {
-              e.rethrowError(topic, where = "in $$consumerName")
-              continue
-            }
-          }
-          logDebug(topic) { "Waiting completion of ongoing messages in $consumerName" }
-          withContext(NonCancellable) { jobs.joinAll() }
-          closeConsumer(consumer)
         }
+      }
+      // start message receiver
+      while (isActive) {
+        try {
+          // await() is a suspendable and should be used instead of get()
+          val pulsarMessage = consumer.receiveAsync().await()
+          logDebug(consumer.topic, pulsarMessage.messageId) { "Received pulsar message" }
+          channel.send(pulsarMessage)
+        } catch (e: CancellationException) {
+          logDebug(consumer.topic) { "Exiting receiving loop in ${consumer.consumerName}" }
+          // if current scope  is canceled, we just exit the while loop
+          break
+        } catch (e: Throwable) {
+          e.rethrowError(consumer.topic, where = "in ${consumer.consumerName}")
+          continue
+        }
+      }
+      logDebug(consumer.topic) { "Waiting completion of ongoing messages in ${consumer.consumerName}" }
+      withContext(NonCancellable) { jobs.joinAll() }
+      closeConsumer(consumer)
+    }
+  }
+
+  private suspend fun <S : Message, T : Envelope<out S>> startListeningWithKey(
+    handler: suspend (S, MillisInstant) -> Unit,
+    beforeDlq: (suspend (S?, Exception) -> Unit)?,
+    consumers: List<Consumer<T>>,
+  ) = coroutineScope {
+
+    // For Key_Shared subscription, we must create a new consumer for each executor coroutine
+    consumers.forEach { consumer ->
+      launch(consumingScope.coroutineContext) {
+        while (isActive) {
+          try {
+            // await() is a suspendable and should be used instead of get()
+            val pulsarMessage = consumer.receiveAsync().await()
+            logDebug(consumer.topic, pulsarMessage.messageId) { "Received pulsar message" }
+            // this ensures that ongoing messages are processed
+            // even after scope is cancelled following an interruption or an Error
+            withContext(NonCancellable) {
+              processPulsarMessage(consumer, handler, beforeDlq, consumer.topic, pulsarMessage)
+            }
+          } catch (e: CancellationException) {
+            // if current scope is canceled, we just exit the while loop
+            break
+          } catch (e: Throwable) {
+            e.rethrowError(consumer.topic, where = "in ${consumer.consumerName}")
+            continue
+          }
+        }
+        closeConsumer(consumer)
       }
     }
   }
@@ -221,7 +219,7 @@ class Consumer(
   private suspend fun <T : Message, S : Envelope<out T>> processPulsarMessage(
     consumer: Consumer<S>,
     handler: suspend (T, MillisInstant) -> Unit,
-    beforeDlq: suspend (T?, Exception) -> Unit,
+    beforeDlq: (suspend (T?, Exception) -> Unit)?,
     topic: String,
     pulsarMessage: PulsarMessage<S>
   ) {
@@ -268,7 +266,7 @@ class Consumer(
   private suspend fun <T : Message, S : Envelope<out T>> negativeAcknowledge(
     consumer: Consumer<S>,
     pulsarMessage: PulsarMessage<out S>,
-    beforeDlq: suspend (T?, Exception) -> Unit,
+    beforeDlq: (suspend (T?, Exception) -> Unit)?,
     message: T?,
     cause: Exception
   ): Result<Unit> {
@@ -281,7 +279,7 @@ class Consumer(
     if (pulsarMessage.redeliveryCount == consumerConfig.getMaxRedeliverCount()) {
       try {
         logDebug(topic, messageId) { "Processing DLQ handler for $msg}" }
-        beforeDlq(message, cause)
+        beforeDlq?.let { it(message, cause) }
         logTrace(topic, messageId) { "Processed DLQ handler for $msg}" }
       } catch (e: Exception) {
         logWarn(e, topic, messageId) { "Exception when processing DLQ handler for $msg}" }

@@ -20,21 +20,21 @@
  *
  * Licensor: infinitic.io
  */
-repositories { maven("https://jitpack.io") }
+package io.infinitic.workflows.engine
 
-plugins { application }
+import io.github.oshai.kotlinlogging.KotlinLogging
+import io.infinitic.common.data.MillisInstant
+import io.infinitic.common.transport.InfiniticProducer
+import io.infinitic.common.transport.WorkflowStateEngineTopic
+import io.infinitic.common.workflows.engine.messages.WorkflowStateEngineMessage
 
-application { mainClass.set("io.infinitic.dashboard.MainKt") }
+@Suppress("UNUSED_PARAMETER")
+class WorkflowStateTimerHandler(val producer: InfiniticProducer) {
+  suspend fun handle(msg: WorkflowStateEngineMessage, publishTime: MillisInstant) {
+    with(producer) { msg.sendTo(WorkflowStateEngineTopic) }
+  }
 
-dependencies {
-  api(project(":infinitic-transport-pulsar"))
-  api(project(":infinitic-transport"))
-
-  implementation(Libs.Kweb.core)
-  implementation(Libs.Pulsar.client)
-  implementation(Libs.Pulsar.clientAdmin)
-
-  implementation(project(":infinitic-utils"))
+  companion object {
+    val logger = KotlinLogging.logger { }
+  }
 }
-
-apply("../publish.gradle.kts")

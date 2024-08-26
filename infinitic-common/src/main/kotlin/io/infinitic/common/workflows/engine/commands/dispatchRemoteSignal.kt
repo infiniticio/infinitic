@@ -26,7 +26,7 @@ import io.infinitic.common.emitters.EmitterName
 import io.infinitic.common.requester.Requester
 import io.infinitic.common.requester.workflowId
 import io.infinitic.common.transport.InfiniticProducer
-import io.infinitic.common.transport.WorkflowCmdTopic
+import io.infinitic.common.transport.WorkflowStateCmdTopic
 import io.infinitic.common.transport.WorkflowTagEngineTopic
 import io.infinitic.common.workflows.engine.messages.SendSignal
 import io.infinitic.common.workflows.engine.messages.data.RemoteSignalDispatched
@@ -61,7 +61,7 @@ suspend fun InfiniticProducer.dispatchRemoteSignal(
               requester = requester,
           )
         }
-        sendToChannel.sendTo(WorkflowCmdTopic)
+        sendToChannel.sendTo(WorkflowStateCmdTopic)
       }
     }
 

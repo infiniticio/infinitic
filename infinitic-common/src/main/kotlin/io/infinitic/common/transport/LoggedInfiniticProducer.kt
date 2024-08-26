@@ -22,47 +22,48 @@
  */
 package io.infinitic.common.transport
 
-import io.github.oshai.kotlinlogging.KotlinLogging
+import io.github.oshai.kotlinlogging.KLogger
 import io.infinitic.common.data.MillisDuration
 import io.infinitic.common.messages.Message
-import kotlinx.coroutines.future.await
 
 class LoggedInfiniticProducer(
-  logName: String,
-  private val producerAsync: InfiniticProducerAsync,
+  private val logger: KLogger,
+  private val producer: InfiniticProducer,
 ) : InfiniticProducer {
 
-  private val logger = KotlinLogging.logger(logName)
-
-  lateinit var id: String
-
   override var name: String
-    get() = producerAsync.producerName
+    get() = producer.name
     set(value) {
-      producerAsync.producerName = value
+      producer.name = value
     }
 
-  override suspend fun <T : Message> T.sendTo(
+  override suspend fun <T : Message> internalSendTo(
+    message: T,
     topic: Topic<T>,
     after: MillisDuration
   ) {
-    logDebug(this)
-    with(producerAsync) { sendToAsync(topic, after) }.await()
-    logTrace(this)
+    logSending(message, after, topic)
+    with(producer) { internalSendTo(message, topic, after) }
+    logSent(message, topic)
   }
 
-  private fun logDebug(message: Message, after: MillisDuration? = null) {
+  private fun logSending(message: Message, after: MillisDuration, topic: Topic<*>) {
     logger.debug {
-      val idStr = if (::id.isInitialized) "Id $id - " else ""
-      val afterStr = if (after != null && after > 0) "After $after, s" else "S"
-      "$idStr${afterStr}ending $message"
+      formatLog(
+          message.id(),
+          after.sending + " to ${topic::class.java.simpleName}:",
+          message,
+      )
     }
   }
 
-  private fun logTrace(message: Message) {
-    logger.trace {
-      val idStr = if (::id.isInitialized) "Id $id - " else ""
-      "${idStr}Sent $message"
-    }
+  private fun logSent(message: Message, topic: Topic<*>) {
+    logger.trace { formatLog(message.id(), "Sent to ${topic::class.java.simpleName}:", message) }
   }
+
+  private val MillisDuration?.sending
+    get() = when {
+      this == null || this <= 0 -> "Sending"
+      else -> "After $this, sending"
+    }
 }

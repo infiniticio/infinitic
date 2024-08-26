@@ -26,23 +26,23 @@ import io.infinitic.common.clients.messages.ClientMessage
 import io.infinitic.common.data.MillisDuration
 import io.infinitic.common.exceptions.thisShouldNotHappen
 import io.infinitic.common.messages.Message
-import io.infinitic.common.tasks.events.messages.ServiceEventMessage
+import io.infinitic.common.tasks.events.messages.ServiceExecutorEventMessage
 import io.infinitic.common.tasks.executors.messages.ServiceExecutorMessage
 import io.infinitic.common.tasks.tags.messages.ServiceTagMessage
 import io.infinitic.common.transport.ClientTopic
 import io.infinitic.common.transport.RetryServiceExecutorTopic
-import io.infinitic.common.transport.RetryWorkflowTaskExecutorTopic
-import io.infinitic.common.transport.ServiceEventsTopic
+import io.infinitic.common.transport.RetryWorkflowExecutorTopic
+import io.infinitic.common.transport.ServiceExecutorEventTopic
 import io.infinitic.common.transport.ServiceExecutorTopic
-import io.infinitic.common.transport.ServiceTagTopic
-import io.infinitic.common.transport.TimerWorkflowStateEngineTopic
+import io.infinitic.common.transport.ServiceTagEngineTopic
 import io.infinitic.common.transport.Topic
-import io.infinitic.common.transport.WorkflowCmdTopic
-import io.infinitic.common.transport.WorkflowEventsTopic
+import io.infinitic.common.transport.WorkflowExecutorEventTopic
+import io.infinitic.common.transport.WorkflowExecutorTopic
+import io.infinitic.common.transport.WorkflowStateCmdTopic
 import io.infinitic.common.transport.WorkflowStateEngineTopic
+import io.infinitic.common.transport.WorkflowStateEventTopic
+import io.infinitic.common.transport.WorkflowStateTimerTopic
 import io.infinitic.common.transport.WorkflowTagEngineTopic
-import io.infinitic.common.transport.WorkflowTaskEventsTopic
-import io.infinitic.common.transport.WorkflowTaskExecutorTopic
 import io.infinitic.common.workflows.engine.messages.WorkflowEventMessage
 import io.infinitic.common.workflows.engine.messages.WorkflowStateEngineMessage
 import io.infinitic.common.workflows.tags.messages.WorkflowTagEngineMessage
@@ -60,7 +60,7 @@ class InMemoryChannels {
   private val serviceExecutorChannels =
       ConcurrentHashMap<String, Channel<ServiceExecutorMessage>>()
   private val serviceEventsChannels =
-      ConcurrentHashMap<String, Channel<ServiceEventMessage>>()
+      ConcurrentHashMap<String, Channel<ServiceExecutorEventMessage>>()
   private val delayedServiceExecutorChannels =
       ConcurrentHashMap<String, Channel<DelayedMessage<ServiceExecutorMessage>>>()
   private val workflowCmdChannels =
@@ -74,22 +74,22 @@ class InMemoryChannels {
   private val workflowTaskExecutorChannels =
       ConcurrentHashMap<String, Channel<ServiceExecutorMessage>>()
   private val workflowTaskEventsChannels =
-      ConcurrentHashMap<String, Channel<ServiceEventMessage>>()
+      ConcurrentHashMap<String, Channel<ServiceExecutorEventMessage>>()
   private val delayedWorkflowTaskExecutorChannels =
       ConcurrentHashMap<String, Channel<DelayedMessage<ServiceExecutorMessage>>>()
 
   @Suppress("UNCHECKED_CAST")
   fun <S : Message> Topic<S>.channel(entity: String): Channel<S> = when (this) {
     ClientTopic -> clientChannels.getOrPut(entity, newChannel())
-    ServiceTagTopic -> serviceTagChannels.getOrPut(entity, newChannel())
+    ServiceTagEngineTopic -> serviceTagChannels.getOrPut(entity, newChannel())
     WorkflowTagEngineTopic -> workflowTagChannels.getOrPut(entity, newChannel())
     ServiceExecutorTopic -> serviceExecutorChannels.getOrPut(entity, newChannel())
-    ServiceEventsTopic -> serviceEventsChannels.getOrPut(entity, newChannel())
-    WorkflowCmdTopic -> workflowCmdChannels.getOrPut(entity, newChannel())
+    ServiceExecutorEventTopic -> serviceEventsChannels.getOrPut(entity, newChannel())
+    WorkflowStateCmdTopic -> workflowCmdChannels.getOrPut(entity, newChannel())
     WorkflowStateEngineTopic -> workflowEngineChannels.getOrPut(entity, newChannel())
-    WorkflowEventsTopic -> workflowEventsChannels.getOrPut(entity, newChannel())
-    WorkflowTaskExecutorTopic -> workflowTaskExecutorChannels.getOrPut(entity, newChannel())
-    WorkflowTaskEventsTopic -> workflowTaskEventsChannels.getOrPut(entity, newChannel())
+    WorkflowStateEventTopic -> workflowEventsChannels.getOrPut(entity, newChannel())
+    WorkflowExecutorTopic -> workflowTaskExecutorChannels.getOrPut(entity, newChannel())
+    WorkflowExecutorEventTopic -> workflowTaskEventsChannels.getOrPut(entity, newChannel())
     else -> thisShouldNotHappen()
   } as Channel<S>
 
@@ -97,12 +97,12 @@ class InMemoryChannels {
   fun <S : Message> Topic<S>.channelForDelayed(entity: String): Channel<DelayedMessage<S>> {
     return when (this) {
       RetryServiceExecutorTopic -> delayedServiceExecutorChannels.getOrPut(entity, newChannel())
-      TimerWorkflowStateEngineTopic -> delayedWorkflowEngineChannels.getOrPut(
+      WorkflowStateTimerTopic -> delayedWorkflowEngineChannels.getOrPut(
           entity,
           newChannel(),
       )
 
-      RetryWorkflowTaskExecutorTopic -> delayedWorkflowTaskExecutorChannels.getOrPut(
+      RetryWorkflowExecutorTopic -> delayedWorkflowTaskExecutorChannels.getOrPut(
           entity,
           newChannel(),
       )

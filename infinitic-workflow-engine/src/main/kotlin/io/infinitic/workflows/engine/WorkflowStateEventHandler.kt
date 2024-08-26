@@ -26,8 +26,7 @@ import io.github.oshai.kotlinlogging.KotlinLogging
 import io.infinitic.common.data.MillisInstant
 import io.infinitic.common.emitters.EmitterName
 import io.infinitic.common.transport.ClientTopic
-import io.infinitic.common.transport.InfiniticProducerAsync
-import io.infinitic.common.transport.LoggedInfiniticProducer
+import io.infinitic.common.transport.InfiniticProducer
 import io.infinitic.common.transport.WorkflowStateEngineTopic
 import io.infinitic.common.workflows.engine.messages.MethodCanceledEvent
 import io.infinitic.common.workflows.engine.messages.MethodCommandedEvent
@@ -46,16 +45,11 @@ import io.infinitic.common.workflows.engine.messages.WorkflowEventMessage
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 
-class WorkflowEventHandler(producerAsync: InfiniticProducerAsync) {
-
-  private val logger = KotlinLogging.logger(this::class.java.name)
-  val producer = LoggedInfiniticProducer(this::class.java.name, producerAsync)
+class WorkflowStateEventHandler(val producer: InfiniticProducer) {
 
   val emitterName by lazy { EmitterName(producer.name) }
 
   suspend fun handle(msg: WorkflowEventMessage, publishTime: MillisInstant) {
-    msg.logDebug { "received $msg" }
-
     when (msg) {
       is WorkflowCanceledEvent -> Unit
       is WorkflowCompletedEvent -> Unit
@@ -71,8 +65,6 @@ class WorkflowEventHandler(producerAsync: InfiniticProducerAsync) {
       is TimerDispatchedEvent -> Unit
       is SignalDispatchedEvent -> Unit
     }
-
-    msg.logTrace { "processed" }
   }
 
   private suspend fun sendWorkflowMethodCanceled(
@@ -143,11 +135,7 @@ class WorkflowEventHandler(producerAsync: InfiniticProducerAsync) {
         }
   }
 
-  private fun WorkflowEventMessage.logDebug(description: () -> String) {
-    logger.debug { "$workflowName (${workflowId}): ${description()}" }
-  }
-
-  private fun WorkflowEventMessage.logTrace(description: () -> String) {
-    logger.trace { "$workflowName (${workflowId}): ${description()}" }
+  companion object {
+    val logger = KotlinLogging.logger { }
   }
 }

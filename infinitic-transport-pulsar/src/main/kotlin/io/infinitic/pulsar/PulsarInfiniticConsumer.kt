@@ -22,16 +22,16 @@
  */
 package io.infinitic.pulsar
 
-import io.github.oshai.kotlinlogging.KotlinLogging
+import io.github.oshai.kotlinlogging.KLogger
 import io.infinitic.autoclose.autoClose
 import io.infinitic.common.data.MillisInstant
 import io.infinitic.common.messages.Message
 import io.infinitic.common.transport.ClientTopic
 import io.infinitic.common.transport.EventListenerSubscription
-import io.infinitic.common.transport.InfiniticConsumerAsync
+import io.infinitic.common.transport.InfiniticConsumer
 import io.infinitic.common.transport.MainSubscription
 import io.infinitic.common.transport.RetryServiceExecutorTopic
-import io.infinitic.common.transport.RetryWorkflowTaskExecutorTopic
+import io.infinitic.common.transport.RetryWorkflowExecutorTopic
 import io.infinitic.common.transport.Subscription
 import io.infinitic.pulsar.consumers.Consumer
 import io.infinitic.pulsar.resources.PulsarResources
@@ -48,41 +48,39 @@ import kotlinx.coroutines.withTimeout
 import org.apache.pulsar.client.api.SubscriptionInitialPosition
 import java.util.concurrent.atomic.AtomicBoolean
 
-class PulsarInfiniticConsumerAsync(
+class PulsarInfiniticConsumer(
   private val consumer: Consumer,
   private val pulsarResources: PulsarResources,
   val shutdownGracePeriodInSeconds: Double
-) : InfiniticConsumerAsync {
+) : InfiniticConsumer {
+
+  override lateinit var workerLogger: KLogger
 
   override fun join() = consumer.join()
 
   private var isClosed: AtomicBoolean = AtomicBoolean(false)
-
-  // See InfiniticWorker
-  override var logName: String? = null
-  private val logger by lazy { KotlinLogging.logger(logName ?: this::class.java.name) }
 
   private lateinit var clientName: String
 
   override fun close() {
     // we test if consumingScope is active, just in case
     // the user tries to manually close an already closed resource
-    if (!isClosed.getAndSet(true)) {
+    if (isClosed.compareAndSet(false, true)) {
       runBlocking {
         try {
           withTimeout((shutdownGracePeriodInSeconds * 1000L).toLong()) {
             // By cancelling the consumer coroutine, we interrupt the main loop of consumption
-            logger.info { "Processing ongoing messages..." }
+            workerLogger.info { "Processing ongoing messages..." }
             consumer.cancel()
             consumer.join()
-            logger.info { "All ongoing messages have been processed." }
+            workerLogger.info { "All ongoing messages have been processed." }
             // delete client topic after all in-memory messages have been processed
             deleteClientTopics()
             // then close other resources (typically pulsar client & admin)
             autoClose()
           }
         } catch (e: TimeoutCancellationException) {
-          logger.warn {
+          workerLogger.warn {
             "The grace period (${shutdownGracePeriodInSeconds}s) allotted to close was insufficient. " +
                 "Some ongoing messages may not have been processed properly."
           }
@@ -95,37 +93,26 @@ class PulsarInfiniticConsumerAsync(
     subscription: Subscription<S>,
     entity: String,
     handler: suspend (S, MillisInstant) -> Unit,
-    beforeDlq: suspend (S?, Exception) -> Unit,
+    beforeDlq: (suspend (S?, Exception) -> Unit)?,
     concurrency: Int,
   ) {
     when (subscription.topic) {
       // we do nothing here, as WorkflowTaskExecutorTopic and ServiceExecutorTopic
       // do not need a distinct topic to handle delayed messages in Pulsar
-      RetryWorkflowTaskExecutorTopic, RetryServiceExecutorTopic -> return
+      RetryWorkflowExecutorTopic, RetryServiceExecutorTopic -> return
       // record client name to be able to delete topic at closing
       ClientTopic -> clientName = entity
       else -> Unit
     }
 
-    lateinit var topicName: String
-    lateinit var topicDLQName: String
+    // Retrieves the name the topic, If the topic doesn't exist yet, create it.
+    val topicName = with(pulsarResources) {
+      subscription.topic.forEntity(entity, true, checkConsumer = false)
+    }
 
-    coroutineScope {
-      // get name of topic, creates it if it does not exist yet
-      launch {
-        topicName = with(pulsarResources) {
-          subscription.topic.forEntity(
-              entity,
-              init = true,
-              checkConsumer = false,
-          )
-        }
-      }
-
-      // name of DLQ topic, creates it if it does not exist yet
-      launch {
-        topicDLQName = with(pulsarResources) { subscription.topic.forEntityDLQ(entity, true) }
-      }
+    // Retrieves the name the DLQ topic, If the topic doesn't exist yet, create it.
+    val topicDLQName = with(pulsarResources) {
+      subscription.topic.forEntityDLQ(entity, true)
     }
 
     consumer.startListening(
@@ -166,17 +153,17 @@ class PulsarInfiniticConsumerAsync(
     if (::clientName.isInitialized) coroutineScope {
       launch {
         val clientTopic = with(pulsarResources) { ClientTopic.fullName(clientName) }
-        logger.debug { "Deleting client topic '$clientTopic'." }
+        workerLogger.debug { "Deleting client topic '$clientTopic'." }
         pulsarResources.deleteTopic(clientTopic)
-            .onFailure { logger.warn(it) { "Unable to delete client topic '$clientTopic'." } }
-            .onSuccess { logger.info { "Client topic '$clientTopic' deleted." } }
+            .onFailure { workerLogger.warn(it) { "Unable to delete client topic '$clientTopic'." } }
+            .onSuccess { workerLogger.info { "Client topic '$clientTopic' deleted." } }
       }
       launch {
         val clientDLQTopic = with(pulsarResources) { ClientTopic.fullNameDLQ(clientName) }
-        logger.debug { "Deleting client DLQ topic '$clientDLQTopic'." }
+        workerLogger.debug { "Deleting client DLQ topic '$clientDLQTopic'." }
         pulsarResources.deleteTopic(clientDLQTopic)
-            .onFailure { logger.warn(it) { "Unable to delete client DLQ topic '$clientDLQTopic'." } }
-            .onSuccess { logger.info { "Client DLQ topic '$clientDLQTopic' deleted." } }
+            .onFailure { workerLogger.warn(it) { "Unable to delete client DLQ topic '$clientDLQTopic'." } }
+            .onSuccess { workerLogger.info { "Client DLQ topic '$clientDLQTopic' deleted." } }
       }
     }
   }

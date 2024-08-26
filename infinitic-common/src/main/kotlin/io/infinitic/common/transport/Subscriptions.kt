@@ -37,10 +37,10 @@ data class MainSubscription<S : Message>(override val topic: Topic<S>) : Subscri
   override val withKey
     get() = when (topic) {
       WorkflowTagEngineTopic,
-      WorkflowCmdTopic,
+      WorkflowStateCmdTopic,
       WorkflowStateEngineTopic,
-      WorkflowTaskExecutorTopic,
-      ServiceTagTopic -> true
+      WorkflowExecutorTopic,
+      ServiceTagEngineTopic -> true
 
       else -> false
     }

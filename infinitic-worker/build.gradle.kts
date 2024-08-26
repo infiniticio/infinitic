@@ -29,12 +29,12 @@ dependencies {
   api(project(":infinitic-common"))
   api(project(":infinitic-cloudevents"))
 
-  implementation(project(":infinitic-autoclose"))
+  implementation(project(":infinitic-utils"))
   implementation(project(":infinitic-transport"))
   implementation(project(":infinitic-task-executor"))
   implementation(project(":infinitic-workflow-engine"))
   implementation(project(":infinitic-workflow-task"))
-  
+
   implementation(kotlin("reflect"))
   implementation(Libs.Coroutines.core)
   implementation(Libs.Coroutines.jdk8)

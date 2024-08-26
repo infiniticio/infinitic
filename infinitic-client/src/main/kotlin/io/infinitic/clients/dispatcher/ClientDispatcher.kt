@@ -22,7 +22,6 @@
  */
 package io.infinitic.clients.dispatcher
 
-import io.github.oshai.kotlinlogging.KotlinLogging
 import io.infinitic.clients.Deferred
 import io.infinitic.clients.deferred.DeferredChannel
 import io.infinitic.clients.deferred.DeferredSend
@@ -61,13 +60,12 @@ import io.infinitic.common.tasks.data.TaskId
 import io.infinitic.common.tasks.executors.errors.MethodFailedError
 import io.infinitic.common.tasks.tags.messages.CompleteDelegatedTask
 import io.infinitic.common.transport.ClientTopic
-import io.infinitic.common.transport.InfiniticConsumerAsync
-import io.infinitic.common.transport.InfiniticProducerAsync
-import io.infinitic.common.transport.LoggedInfiniticProducer
+import io.infinitic.common.transport.InfiniticConsumer
+import io.infinitic.common.transport.InfiniticProducer
 import io.infinitic.common.transport.MainSubscription
-import io.infinitic.common.transport.ServiceTagTopic
+import io.infinitic.common.transport.ServiceTagEngineTopic
 import io.infinitic.common.transport.Topic
-import io.infinitic.common.transport.WorkflowCmdTopic
+import io.infinitic.common.transport.WorkflowStateCmdTopic
 import io.infinitic.common.transport.WorkflowTagEngineTopic
 import io.infinitic.common.workflows.data.channels.SignalId
 import io.infinitic.common.workflows.data.workflowMethods.WorkflowMethodId
@@ -99,27 +97,22 @@ import io.infinitic.exceptions.clients.MultipleCustomIdException
 import io.infinitic.workflows.DeferredStatus
 import io.infinitic.workflows.SendChannel
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.future.future
-import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeoutOrNull
-import java.io.Closeable
+import org.jetbrains.annotations.TestOnly
 import java.lang.reflect.Method
 import java.util.concurrent.CompletableFuture
+import java.util.concurrent.atomic.AtomicBoolean
 import io.infinitic.common.workflows.engine.messages.RetryTasks as RetryTaskInWorkflow
 import io.infinitic.common.workflows.tags.messages.RetryTasksByTag as RetryTaskInWorkflowByTag
 
 internal class ClientDispatcher(
-  logName: String,
-  private val consumerAsync: InfiniticConsumerAsync,
-  private val producerAsync: InfiniticProducerAsync
-) : ProxyDispatcher, Closeable {
-  private val logger = KotlinLogging.logger(logName)
-
-  private val producer = LoggedInfiniticProducer(logName, producerAsync)
+  private val clientScope: CoroutineScope,
+  private val consumer: InfiniticConsumer,
+  private val producer: InfiniticProducer
+) : ProxyDispatcher {
 
   // Name of the client
   private val emitterName by lazy { EmitterName(producer.name) }
@@ -128,28 +121,18 @@ internal class ClientDispatcher(
   private val clientRequester by lazy { ClientRequester(clientName = ClientName.from(emitterName)) }
 
   // flag telling if the client consumer loop is initialized
-  private var isClientConsumerInitialized = false
-
-  // Scope used to consuming messages
-  private val clientScope = CoroutineScope(Dispatchers.IO)
+  private val isClientConsumerInitialized: AtomicBoolean = AtomicBoolean(false)
 
   // Flow used to receive messages
   private val responseFlow = MutableSharedFlow<ClientMessage>(replay = 0)
 
-  override fun close() {
-    // Do not wait anymore for messages
-    clientScope.cancel()
-  }
+  private suspend fun <T : Message> T.sendTo(topic: Topic<T>) = with(producer) { sendTo(topic) }
 
-  private fun <T : Message> T.sendToAsync(topic: Topic<T>) =
-      runBlocking(clientScope.coroutineContext) {
-        with(producerAsync) { sendToAsync(topic) }
-      }
+  private fun <T : Message> T.sendToAsync(topic: Topic<T>) = clientScope.future { sendTo(topic) }
 
   // a message received by the client is sent to responseFlow
   @Suppress("UNUSED_PARAMETER")
   internal suspend fun handle(message: ClientMessage, publishTime: MillisInstant) {
-    logger.debug { "Client ${producer.name}: Receiving $message" }
     responseFlow.emit(message)
   }
 
@@ -159,9 +142,9 @@ internal class ClientDispatcher(
   // asynchronous call: dispatch(stub::method)(*args)
   fun <R : Any?> dispatchAsync(handler: ProxyHandler<*>): CompletableFuture<Deferred<R>> =
       when (handler) {
-        is NewWorkflowProxyHandler -> dispatchNewWorkflowAsync(handler)
-        is ExistingWorkflowProxyHandler -> dispatchExistingWorkflowAsync(handler)
-        is ChannelProxyHandler -> dispatchSignalAsync(handler)
+        is NewWorkflowProxyHandler -> handler.dispatchMethodAsync()
+        is ExistingWorkflowProxyHandler -> handler.dispatchMethodAsync()
+        is ChannelProxyHandler -> handler.dispatchSignalAsync()
         is NewServiceProxyHandler -> thisShouldNotHappen()
         is ExistingServiceProxyHandler -> thisShouldNotHappen()
       }
@@ -169,9 +152,9 @@ internal class ClientDispatcher(
   // synchronous call: stub.method(*args)
   override fun <R : Any?> dispatchAndWait(handler: ProxyHandler<*>): R =
       when (handler) {
-        is NewWorkflowProxyHandler -> dispatchNewWorkflowAndWait(handler)
-        is ExistingWorkflowProxyHandler -> dispatchMethodOnExistingWorkflowAndWait(handler)
-        is ChannelProxyHandler -> dispatchSignalAndWait(handler)
+        is NewWorkflowProxyHandler -> handler.dispatchMethodAndWait()
+        is ExistingWorkflowProxyHandler -> handler.dispatchMethodAndWait()
+        is ChannelProxyHandler -> handler.dispatchSignalAndWait()
         is ExistingServiceProxyHandler -> thisShouldNotHappen()
         is NewServiceProxyHandler -> thisShouldNotHappen()
       }
@@ -216,24 +199,23 @@ internal class ClientDispatcher(
     dispatchTime: Long,
     clientWaiting: Boolean
   ): T {
-
-    val runId = workflowMethodId ?: WorkflowMethodId.from(workflowId)
+    val methodId = workflowMethodId ?: WorkflowMethodId.from(workflowId)
 
     // calculate timeout from now
     val timeout = methodTimeout
-        ?.let { it.long - (System.currentTimeMillis() - dispatchTime) }
+        ?.let { it.millis - (System.currentTimeMillis() - dispatchTime) }
         ?.let { if (it < 0) 0 else it }
       ?: Long.MAX_VALUE
 
     // lazily starts client consumer if not already started and waits
     val waiting = waitForAsync(timeout) {
-      it is MethodMessage && it.workflowId == workflowId && it.workflowMethodId == runId
+      it is MethodMessage && it.workflowId == workflowId && it.workflowMethodId == methodId
     }
 
     // if task was not initially sync, then send WaitTask message
     if (clientWaiting) {
       val waitWorkflow = WaitWorkflow(
-          workflowMethodId = runId,
+          workflowMethodId = methodId,
           workflowName = workflowName,
           workflowId = workflowId,
           requester = clientRequester,
@@ -241,7 +223,7 @@ internal class ClientDispatcher(
           emittedAt = null,
       )
       // synchronously sent the message to get errors
-      waitWorkflow.sendToAsync(WorkflowCmdTopic)
+      waitWorkflow.sendToAsync(WorkflowStateCmdTopic)
     }
 
     // Get result
@@ -303,7 +285,7 @@ internal class ClientDispatcher(
           emitterName = emitterName,
           emittedAt = null,
       )
-      msg.sendToAsync(WorkflowCmdTopic)
+      msg.sendToAsync(WorkflowStateCmdTopic)
     }
 
     is RequestByWorkflowTag -> {
@@ -333,7 +315,7 @@ internal class ClientDispatcher(
           emitterName = emitterName,
           emittedAt = null,
       )
-      msg.sendToAsync(WorkflowCmdTopic)
+      msg.sendToAsync(WorkflowStateCmdTopic)
     }
 
     is RequestByWorkflowTag -> {
@@ -361,7 +343,7 @@ internal class ClientDispatcher(
         returnValue = returnValue,
         emitterName = emitterName,
     )
-    return msg.sendToAsync(ServiceTagTopic)
+    return msg.sendToAsync(ServiceTagEngineTopic)
   }
 
   fun completeTimersAsync(
@@ -378,7 +360,7 @@ internal class ClientDispatcher(
           emitterName = emitterName,
           emittedAt = null,
       )
-      msg.sendToAsync(WorkflowCmdTopic)
+      msg.sendToAsync(WorkflowStateCmdTopic)
     }
 
     is RequestByWorkflowTag -> {
@@ -415,7 +397,7 @@ internal class ClientDispatcher(
           requester = clientRequester,
           emittedAt = null,
       )
-      msg.sendToAsync(WorkflowCmdTopic)
+      msg.sendToAsync(WorkflowStateCmdTopic)
     }
 
     is RequestByWorkflowTag -> {
@@ -463,36 +445,33 @@ internal class ClientDispatcher(
 
   // asynchronous call: dispatch(stub::method)(*args)
   @Suppress("UNCHECKED_CAST")
-  private fun <R : Any?> dispatchNewWorkflowAsync(
-    handler: NewWorkflowProxyHandler<*>
-  ): CompletableFuture<Deferred<R>> =
-      when (handler.isChannelGetter()) {
+  private fun <R : Any?> NewWorkflowProxyHandler<*>.dispatchMethodAsync(): CompletableFuture<Deferred<R>> =
+      when (isChannelGetter()) {
         true -> throw InvalidChannelUsageException()
         false -> {
           val deferredWorkflow = newDeferredWorkflow(
-              handler.workflowName,
-              handler.method,
-              handler.method.returnType as Class<R>,
-              getTimeout(handler),
+              workflowName,
+              method,
+              method.returnType as Class<R>,
+              getTimeout(),
           )
-
-          dispatchNewWorkflowAsync(deferredWorkflow, false, handler)
+          dispatchMethodAsync(deferredWorkflow, false)
         }
       }
 
   // synchronous call: stub.method(*args)
   @Suppress("UNCHECKED_CAST")
-  private fun <R : Any?> dispatchNewWorkflowAndWait(handler: NewWorkflowProxyHandler<*>): R =
-      when (handler.isChannelGetter()) {
+  private fun <R : Any?> NewWorkflowProxyHandler<*>.dispatchMethodAndWait(): R =
+      when (isChannelGetter()) {
         true -> throw InvalidChannelUsageException()
         false -> {
           val deferredWorkflow = newDeferredWorkflow(
-              handler.workflowName,
-              handler.method,
-              handler.method.returnType as Class<R>,
-              getTimeout(handler),
+              workflowName,
+              method,
+              method.returnType as Class<R>,
+              getTimeout(),
           )
-          dispatchNewWorkflowAsync(deferredWorkflow, true, handler)
+          dispatchMethodAsync(deferredWorkflow, true)
 
           awaitNewWorkflow(deferredWorkflow, false)
         }
@@ -507,44 +486,38 @@ internal class ClientDispatcher(
       // store in ThreadLocal to be used in ::getDeferred
       .also { localLastDeferred.set(it) }
 
-  private fun <R : Any?> dispatchNewWorkflowAsync(
+  private fun <R : Any?> NewWorkflowProxyHandler<*>.dispatchMethodAsync(
     deferred: NewDeferredWorkflow<R>,
     clientWaiting: Boolean,
-    handler: NewWorkflowProxyHandler<*>
   ): CompletableFuture<Deferred<R>> {
     // it's important to build those objects out of the coroutine scope
     // otherwise the handler's value could be changed if reused
-    val customIds = handler.workflowTags.filter { it.isCustomId() }
+    val customIds = workflowTags.filter { it.isCustomId() }
 
     return when (customIds.size) {
       // no customId tag provided
       0 -> {
-        // provided tags
-        val workflowTags = handler.workflowTags.map {
+        // first, we send all tags in parallel
+        val futures = workflowTags.map {
           AddTagToWorkflow(
               workflowName = deferred.workflowName,
               workflowTag = it,
               workflowId = deferred.workflowId,
               emitterName = emitterName,
               emittedAt = null,
-          )
+          ).sendToAsync(WorkflowTagEngineTopic)
         }
-
-        // first, we send all tags in parallel
-        val futures = workflowTags.map {
-          it.sendToAsync(WorkflowTagEngineTopic)
-        }.toTypedArray()
-        CompletableFuture.allOf(*futures).join()
+        CompletableFuture.allOf(*futures.toTypedArray()).join()
 
         // dispatch workflow message
         val dispatchWorkflow = DispatchWorkflow(
             workflowName = deferred.workflowName,
             workflowId = deferred.workflowId,
-            methodName = handler.annotatedMethodName,
-            methodParameters = handler.methodParameters,
-            methodParameterTypes = handler.methodParameterTypes,
-            workflowTags = handler.workflowTags,
-            workflowMeta = handler.workflowMeta,
+            methodName = annotatedMethodName,
+            methodParameters = methodParameters,
+            methodParameterTypes = methodParameterTypes,
+            workflowTags = workflowTags,
+            workflowMeta = workflowMeta,
             requester = clientRequester,
             clientWaiting = clientWaiting,
             emitterName = emitterName,
@@ -553,7 +526,7 @@ internal class ClientDispatcher(
 
         // workflow message is dispatched after tags
         // to avoid a potential race condition if the engine remove tags
-        dispatchWorkflow.sendToAsync(WorkflowCmdTopic).thenApply { deferred }
+        dispatchWorkflow.sendToAsync(WorkflowStateCmdTopic).thenApply { deferred }
       }
       // a customId tag was provided
       1 -> {
@@ -563,11 +536,11 @@ internal class ClientDispatcher(
             workflowTag = customIds.first(),
             workflowId = deferred.workflowId,
             methodName = MethodName(deferred.method.name),
-            methodParameters = handler.methodParameters,
-            methodParameterTypes = handler.methodParameterTypes,
+            methodParameters = methodParameters,
+            methodParameterTypes = methodParameterTypes,
             methodTimeout = deferred.methodTimeout,
-            workflowTags = handler.workflowTags,
-            workflowMeta = handler.workflowMeta,
+            workflowTags = workflowTags,
+            workflowMeta = workflowMeta,
             requester = clientRequester,
             clientWaiting = clientWaiting,
             emitterName = emitterName,
@@ -582,51 +555,46 @@ internal class ClientDispatcher(
 
   // asynchronous call: dispatch(stub::method)(*args)
   @Suppress("UNCHECKED_CAST")
-  private fun <R : Any?> dispatchExistingWorkflowAsync(
-    handler: ExistingWorkflowProxyHandler<*>
-  ): CompletableFuture<Deferred<R>> =
-      when (handler.isChannelGetter()) {
+  private fun <R : Any?> ExistingWorkflowProxyHandler<*>.dispatchMethodAsync(): CompletableFuture<Deferred<R>> =
+      when (isChannelGetter()) {
         true -> {
           // special case of getting a channel from a workflow
-          val channel = ChannelProxyHandler<SendChannel<*>>(handler).stub()
+          val channel = ChannelProxyHandler<SendChannel<*>>(this).stub()
           CompletableFuture.completedFuture(DeferredChannel(channel) as Deferred<R>)
         }
 
         false -> {
           val deferred = existingDeferredWorkflow(
-              handler.workflowName,
-              handler.requestBy,
-              handler.method,
-              handler.method.returnType as Class<R>,
-              getTimeout(handler),
+              workflowName,
+              requestBy,
+              method,
+              method.returnType as Class<R>,
+              getTimeout(),
           )
-
-          dispatchMethodOnExistingWorkflowAsync(deferred, false, handler)
-              .thenApply { deferred }
+          dispatchMethodAsync(deferred, false).thenApply { deferred }
         }
       }
 
   // synchronous call: stub.method(*args)
   @Suppress("UNCHECKED_CAST")
-  private fun <R : Any?> dispatchMethodOnExistingWorkflowAndWait(handler: ExistingWorkflowProxyHandler<*>): R =
-      when (handler.isChannelGetter()) {
+  private fun <R : Any?> ExistingWorkflowProxyHandler<*>.dispatchMethodAndWait(): R =
+      when (isChannelGetter()) {
         true -> {
           // special case of getting a channel from a workflow
           @Suppress("UNCHECKED_CAST")
-          ChannelProxyHandler<SendChannel<*>>(handler).stub() as R
+          ChannelProxyHandler<SendChannel<*>>(this).stub() as R
         }
 
         false -> {
           val deferred = existingDeferredWorkflow(
-              handler.workflowName,
-              handler.requestBy,
-              handler.method,
-              handler.method.returnType as Class<R>,
-              getTimeout(handler),
+              workflowName,
+              requestBy,
+              method,
+              method.returnType as Class<R>,
+              getTimeout(),
           )
-
           // synchronously sent the message to get errors
-          dispatchMethodOnExistingWorkflowAsync(deferred, true, handler).join()
+          dispatchMethodAsync(deferred, true).join()
 
           awaitExistingWorkflow(deferred, false)
         }
@@ -648,25 +616,24 @@ internal class ClientDispatcher(
   ) // store in ThreadLocal to be used in ::getDeferred
       .also { localLastDeferred.set(it) }
 
-  private fun <R : Any?> dispatchMethodOnExistingWorkflowAsync(
+  private fun <R : Any?> ExistingWorkflowProxyHandler<*>.dispatchMethodAsync(
     deferred: ExistingDeferredWorkflow<R>,
     clientWaiting: Boolean,
-    handler: ExistingWorkflowProxyHandler<*>
   ): CompletableFuture<Unit> = when (deferred.requestBy) {
     is RequestByWorkflowId -> {
       val dispatchMethod = DispatchMethod(
           workflowName = deferred.workflowName,
           workflowId = deferred.requestBy.workflowId,
           workflowMethodId = deferred.workflowMethodId,
-          workflowMethodName = handler.annotatedMethodName,
-          methodParameters = handler.methodParameters,
-          methodParameterTypes = handler.methodParameterTypes,
+          workflowMethodName = annotatedMethodName,
+          methodParameters = methodParameters,
+          methodParameterTypes = methodParameterTypes,
           requester = clientRequester,
           clientWaiting = clientWaiting,
           emitterName = emitterName,
           emittedAt = null,
       )
-      dispatchMethod.sendToAsync(WorkflowCmdTopic)
+      dispatchMethod.sendToAsync(WorkflowStateCmdTopic)
     }
 
     is RequestByWorkflowTag -> {
@@ -674,9 +641,9 @@ internal class ClientDispatcher(
           workflowName = deferred.workflowName,
           workflowTag = deferred.requestBy.workflowTag,
           workflowMethodId = deferred.workflowMethodId,
-          methodName = handler.annotatedMethodName,
-          methodParameterTypes = handler.methodParameterTypes,
-          methodParameters = handler.methodParameters,
+          methodName = annotatedMethodName,
+          methodParameterTypes = methodParameterTypes,
+          methodParameters = methodParameters,
           methodTimeout = deferred.methodTimeout,
           requester = clientRequester,
           clientWaiting = clientWaiting,
@@ -688,54 +655,51 @@ internal class ClientDispatcher(
   }
 
   // asynchronous call: dispatch(stub.channel::send, signal)
-  private fun <S : Any?> dispatchSignalAsync(
-    handler: ChannelProxyHandler<*>
-  ): CompletableFuture<Deferred<S>> {
+  private fun <S : Any?> ChannelProxyHandler<*>.dispatchSignalAsync(): CompletableFuture<Deferred<S>> {
     val deferredSend = deferredSend<S>()
 
-    return dispatchSignalAsync(deferredSend, handler).thenApply { deferredSend }
+    return dispatchSignalAsync(deferredSend).thenApply { deferredSend }
   }
 
   // synchronous call: stub.channel.send(signal)
-  private fun <S : Any?> dispatchSignalAndWait(handler: ChannelProxyHandler<*>): S {
+  private fun <S : Any?> ChannelProxyHandler<*>.dispatchSignalAndWait(): S {
     val deferredSend = deferredSend<S>()
 
     // dispatch signal synchronously
-    dispatchSignalAsync(deferredSend, handler).join()
+    dispatchSignalAsync(deferredSend).join()
 
     return deferredSend.await()
   }
 
-  private fun dispatchSignalAsync(
+  private fun ChannelProxyHandler<*>.dispatchSignalAsync(
     deferredSend: DeferredSend<*>,
-    handler: ChannelProxyHandler<*>
   ): CompletableFuture<Unit> {
-    if (handler.annotatedMethodName.toString() != SendChannel<*>::send.name) thisShouldNotHappen()
+    if (annotatedMethodName.toString() != SendChannel<*>::send.name) thisShouldNotHappen()
 
-    return when (handler.requestBy) {
+    return when (requestBy) {
       is RequestByWorkflowId -> {
         val sendSignal = SendSignal(
-            channelName = handler.channelName,
+            channelName = channelName,
             signalId = deferredSend.signalId,
-            signalData = handler.signalData,
-            channelTypes = handler.channelTypes,
-            workflowName = handler.workflowName,
-            workflowId = (handler.requestBy as RequestByWorkflowId).workflowId,
+            signalData = signalData,
+            channelTypes = channelTypes,
+            workflowName = workflowName,
+            workflowId = (requestBy as RequestByWorkflowId).workflowId,
             emitterName = emitterName,
             emittedAt = null,
             requester = clientRequester,
         )
-        sendSignal.sendToAsync(WorkflowCmdTopic)
+        sendSignal.sendToAsync(WorkflowStateCmdTopic)
       }
 
       is RequestByWorkflowTag -> {
         val sendSignalByTag = SendSignalByTag(
-            workflowName = handler.workflowName,
-            workflowTag = (handler.requestBy as RequestByWorkflowTag).workflowTag,
-            channelName = handler.channelName,
+            workflowName = workflowName,
+            workflowTag = (requestBy as RequestByWorkflowTag).workflowTag,
+            channelName = channelName,
             signalId = deferredSend.signalId,
-            signalData = handler.signalData,
-            channelTypes = handler.channelTypes,
+            signalData = signalData,
+            channelTypes = channelTypes,
             parentWorkflowId = null,
             emitterName = emitterName,
             emittedAt = null,
@@ -758,36 +722,26 @@ internal class ClientDispatcher(
   }
 
 
-  private fun getTimeout(handler: ProxyHandler<*>): MillisDuration? =
-      handler.timeoutInMillisDuration.getOrElse {
-        throw IllegalStateException(
-            "Unable to retrieve Timeout info when dispatching ${handler.method}",
-            it,
-        )
+  private fun ProxyHandler<*>.getTimeout(): MillisDuration? =
+      timeoutInMillisDuration.getOrElse {
+        throw IllegalStateException("Unable to retrieve Timeout info when dispatching $method", it)
       }
-
-  private val logMessageSentToDLQ = { message: Message?, e: Exception ->
-    logger.error(e) { "Unable to process message ${message ?: "(Not Deserialized)"}" }
-  }
 
   private fun waitForAsync(
     timeout: Long = Long.MAX_VALUE,
     predicate: suspend (ClientMessage) -> Boolean
   ): CompletableFuture<ClientMessage?> {
     // lazily starts client consumer if not already started
-    synchronized(this) {
-      if (!isClientConsumerInitialized) {
-        runBlocking(clientScope.coroutineContext) {
-          consumerAsync.start(
-              subscription = MainSubscription(ClientTopic),
-              entity = emitterName.toString(),
-              handler = ::handle,
-              beforeDlq = logMessageSentToDLQ,
-              concurrency = 1,
-          )
-          isClientConsumerInitialized = true
-        }
-      }
+    if (isClientConsumerInitialized.compareAndSet(false, true)) {
+      clientScope.future {
+        consumer.start(
+            subscription = MainSubscription(ClientTopic),
+            entity = emitterName.toString(),
+            handler = ::handle,
+            beforeDlq = null,
+            concurrency = 1,
+        )
+      }.join()
     }
 
     // wait for the first message that matches the predicate
@@ -800,6 +754,7 @@ internal class ClientDispatcher(
 
 
   companion object {
+    @TestOnly
     @JvmStatic
     private val localLastDeferred: ThreadLocal<Deferred<*>?> = ThreadLocal()
   }

@@ -51,9 +51,9 @@ data class MillisInstant(val long: Long = 0) : Comparable<Long>, JsonAble {
 
   override operator fun compareTo(other: Long): Int = this.long.compareTo(other)
 
-  operator fun plus(other: MillisDuration) = MillisInstant(this.long + other.long)
+  operator fun plus(other: MillisDuration) = MillisInstant(this.long + other.millis)
 
-  operator fun minus(other: MillisDuration) = MillisInstant(this.long - other.long)
+  operator fun minus(other: MillisDuration) = MillisInstant(this.long - other.millis)
 
   operator fun minus(other: MillisInstant) = MillisDuration(this.long - other.long)
 }

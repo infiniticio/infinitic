@@ -27,7 +27,7 @@ import io.infinitic.common.emitters.EmitterName
 import io.infinitic.common.exceptions.thisShouldNotHappen
 import io.infinitic.common.requester.WorkflowRequester
 import io.infinitic.common.transport.InfiniticProducer
-import io.infinitic.common.transport.WorkflowEventsTopic
+import io.infinitic.common.transport.WorkflowStateEventTopic
 import io.infinitic.common.workflows.data.commands.DispatchNewMethodCommand
 import io.infinitic.common.workflows.data.commands.DispatchNewMethodPastCommand
 import io.infinitic.common.workflows.data.workflowMethods.WorkflowMethodId
@@ -94,5 +94,5 @@ internal fun CoroutineScope.dispatchRemoteMethodCmd(
       emitterName = emitterName,
   )
   // Dispatching the workflow event
-  with(producer) { remoteMethodDispatchedEvent.sendTo(WorkflowEventsTopic) }
+  with(producer) { remoteMethodDispatchedEvent.sendTo(WorkflowStateEventTopic) }
 }

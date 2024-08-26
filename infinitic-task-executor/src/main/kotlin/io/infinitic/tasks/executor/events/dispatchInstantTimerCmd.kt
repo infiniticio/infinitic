@@ -26,7 +26,7 @@ import io.infinitic.common.data.MillisInstant
 import io.infinitic.common.emitters.EmitterName
 import io.infinitic.common.requester.WorkflowRequester
 import io.infinitic.common.transport.InfiniticProducer
-import io.infinitic.common.transport.WorkflowEventsTopic
+import io.infinitic.common.transport.WorkflowStateEventTopic
 import io.infinitic.common.workflows.data.commands.StartInstantTimerPastCommand
 import io.infinitic.common.workflows.data.timers.TimerId
 import io.infinitic.common.workflows.engine.commands.dispatchTimer
@@ -64,5 +64,5 @@ internal fun CoroutineScope.dispatchInstantTimerCmd(
       emitterName = emitterName,
   )
   // Dispatching the workflow event
-  with(producer) { timerDispatchedEvent.sendTo(WorkflowEventsTopic) }
+  with(producer) { timerDispatchedEvent.sendTo(WorkflowStateEventTopic) }
 }

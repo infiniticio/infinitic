@@ -28,7 +28,7 @@ import io.infinitic.common.tasks.executors.errors.DeferredError
 import io.infinitic.common.tasks.executors.errors.ExecutionError
 import io.infinitic.common.tasks.executors.errors.WorkflowTaskFailedError
 import io.infinitic.common.transport.InfiniticProducer
-import io.infinitic.common.transport.WorkflowEventsTopic
+import io.infinitic.common.transport.WorkflowStateEventTopic
 import io.infinitic.common.workers.data.WorkerName
 import io.infinitic.common.workflows.data.workflowMethods.awaitingRequesters
 import io.infinitic.common.workflows.engine.messages.MethodFailedEvent
@@ -77,7 +77,7 @@ internal fun CoroutineScope.workflowTaskFailed(
       emitterName = emitterName,
       deferredError = deferredError,
   )
-  launch { with(producer) { methodFailedEvent.sendTo(WorkflowEventsTopic) } }
+  launch { with(producer) { methodFailedEvent.sendTo(WorkflowStateEventTopic) } }
 
   // send info to itself by adding a fake message on messageBuffer
   methodFailedEvent.getEventForAwaitingWorkflows(emitterName, emittedAt)

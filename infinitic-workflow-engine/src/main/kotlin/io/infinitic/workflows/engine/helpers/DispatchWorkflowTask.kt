@@ -26,7 +26,7 @@ import io.infinitic.common.data.MillisInstant
 import io.infinitic.common.emitters.EmitterName
 import io.infinitic.common.tasks.data.TaskId
 import io.infinitic.common.transport.InfiniticProducer
-import io.infinitic.common.transport.WorkflowEventsTopic
+import io.infinitic.common.transport.WorkflowStateEventTopic
 import io.infinitic.common.workflows.data.workflowMethods.PositionInWorkflowMethod
 import io.infinitic.common.workflows.data.workflowMethods.WorkflowMethod
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskParameters
@@ -70,7 +70,7 @@ internal fun CoroutineScope.dispatchWorkflowTask(
       // dispatch workflow task
       dispatchTask(taskDispatchedEvent.taskDispatched, taskDispatchedEvent.requester)
       // dispatch workflow event
-      taskDispatchedEvent.sendTo(WorkflowEventsTopic)
+      taskDispatchedEvent.sendTo(WorkflowStateEventTopic)
     }
   }
 

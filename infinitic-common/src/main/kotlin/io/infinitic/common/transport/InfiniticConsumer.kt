@@ -20,13 +20,23 @@
  *
  * Licensor: infinitic.io
  */
-package io.infinitic.logs
+package io.infinitic.common.transport
 
-enum class LogLevel {
-  TRACE,
-  DEBUG,
-  INFO,
-  WARN,
-  ERROR,
-  OFF
+import io.github.oshai.kotlinlogging.KLogger
+import io.infinitic.common.data.MillisInstant
+import io.infinitic.common.messages.Message
+
+interface InfiniticConsumer : AutoCloseable {
+
+  var workerLogger: KLogger
+
+  fun join()
+
+  suspend fun <S : Message> start(
+    subscription: Subscription<S>,
+    entity: String,
+    handler: suspend (S, MillisInstant) -> Unit,
+    beforeDlq: (suspend (S?, Exception) -> Unit)?,
+    concurrency: Int
+  )
 }

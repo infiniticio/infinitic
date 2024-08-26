@@ -26,7 +26,7 @@ import io.infinitic.common.data.Version
 import io.infinitic.common.data.methods.MethodArgs
 import io.infinitic.common.serDe.SerializedData
 import io.infinitic.common.tasks.events.messages.ServiceEventEnvelope
-import io.infinitic.common.tasks.events.messages.ServiceEventMessage
+import io.infinitic.common.tasks.events.messages.ServiceExecutorEventMessage
 import io.infinitic.common.tasks.executors.errors.DeferredError
 import io.infinitic.common.tasks.executors.errors.ExecutionError
 import io.infinitic.common.workflows.data.commands.CommandId
@@ -89,7 +89,7 @@ object TestFactory {
           WorkflowEventEnvelope.from(random(sub))
         }
         .randomize(ServiceEventEnvelope::class.java) {
-          val sub = ServiceEventMessage::class.sealedSubclasses.shuffled().first()
+          val sub = ServiceExecutorEventMessage::class.sealedSubclasses.shuffled().first()
           ServiceEventEnvelope.from(random(sub))
         }
         .randomize(DeferredError::class.java) {

@@ -20,23 +20,32 @@
  *
  * Licensor: infinitic.io
  */
-package io.infinitic.common.transport
 
-import io.infinitic.common.data.MillisInstant
-import io.infinitic.common.messages.Message
+package io.infinitic.logger
 
-interface InfiniticConsumerAsync : AutoCloseable {
+import io.github.oshai.kotlinlogging.KLogger
 
-  // name used for logging
-  var logName: String?
+class IgnoreNullKLogger(val logger: KLogger) : KLogger by logger {
 
-  fun join()
+  override fun error(throwable: Throwable?, message: () -> Any?) {
+    if (isErrorEnabled()) message()?.let { logger.error(throwable) { it } }
+  }
 
-  suspend fun <S : Message> start(
-    subscription: Subscription<S>,
-    entity: String,
-    handler: suspend (S, MillisInstant) -> Unit,
-    beforeDlq: suspend (S?, Exception) -> Unit,
-    concurrency: Int
-  )
+  override fun warn(message: () -> Any?) {
+    if (isWarnEnabled()) message()?.let { logger.warn { it } }
+  }
+
+  override fun info(message: () -> Any?) {
+    if (isInfoEnabled()) message()?.let { logger.info { it } }
+  }
+
+  override fun debug(message: () -> Any?) {
+    if (isDebugEnabled()) message()?.let { logger.debug { it } }
+  }
+
+  override fun trace(message: () -> Any?) {
+    if (isTraceEnabled()) message()?.let { logger.trace { it } }
+  }
 }
+
+fun KLogger.ignoreNull() = IgnoreNullKLogger(this)

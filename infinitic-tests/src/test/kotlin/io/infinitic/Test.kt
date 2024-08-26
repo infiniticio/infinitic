@@ -32,6 +32,7 @@ import io.infinitic.workers.InfiniticWorker
 import io.infinitic.workers.config.WorkerConfig
 import io.kotest.core.config.AbstractProjectConfig
 import io.kotest.core.listeners.AfterProjectListener
+import io.kotest.core.listeners.BeforeProjectListener
 import io.kotest.core.spec.AutoScan
 import kotlinx.coroutines.delay
 import kotlin.time.Duration.Companion.milliseconds
@@ -59,8 +60,12 @@ internal object Test {
     }
   }
 
-  val worker = InfiniticWorker.fromConfig(workerConfig).also { it.startAsync() }
+  val worker = InfiniticWorker.fromConfig(workerConfig)
   val client = worker.client
+
+  fun start() {
+    worker.startAsync()
+  }
 
   fun stop() {
     worker.close()
@@ -69,11 +74,22 @@ internal object Test {
   }
 }
 
+
 /**
  * This listener is used to close resources after all tests
  */
 @AutoScan
-internal class FinalizeListener : AfterProjectListener {
+internal class BeforeListener : BeforeProjectListener {
+  override suspend fun beforeProject() {
+    Test.start()
+  }
+}
+
+/**
+ * This listener is used to close resources after all tests
+ */
+@AutoScan
+internal class AfterListener : AfterProjectListener {
   override suspend fun afterProject() {
     Test.stop()
   }

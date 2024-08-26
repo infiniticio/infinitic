@@ -26,7 +26,7 @@ import io.infinitic.common.emitters.EmitterName
 import io.infinitic.common.exceptions.thisShouldNotHappen
 import io.infinitic.common.requester.WorkflowRequester
 import io.infinitic.common.transport.InfiniticProducer
-import io.infinitic.common.transport.WorkflowEventsTopic
+import io.infinitic.common.transport.WorkflowStateEventTopic
 import io.infinitic.common.workflows.data.channels.ReceivingChannel
 import io.infinitic.common.workflows.data.channels.SignalId
 import io.infinitic.common.workflows.data.commands.DispatchNewMethodCommand
@@ -167,7 +167,7 @@ internal fun CoroutineScope.workflowTaskCompleted(
         returnValue = workflowMethod.methodReturnValue!!,
         emitterName = emitterName,
     )
-    launch { with(producer) { methodCompletedEvent.sendTo(WorkflowEventsTopic) } }
+    launch { with(producer) { methodCompletedEvent.sendTo(WorkflowStateEventTopic) } }
 
     // tell itself if needed
     methodCompletedEvent.getEventForAwaitingWorkflows(emitterName, emittedAt)

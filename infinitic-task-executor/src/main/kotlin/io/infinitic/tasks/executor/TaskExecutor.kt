@@ -44,10 +44,9 @@ import io.infinitic.common.tasks.events.messages.TaskRetriedEvent
 import io.infinitic.common.tasks.events.messages.TaskStartedEvent
 import io.infinitic.common.tasks.executors.messages.ExecuteTask
 import io.infinitic.common.tasks.executors.messages.ServiceExecutorMessage
-import io.infinitic.common.transport.InfiniticProducerAsync
-import io.infinitic.common.transport.LoggedInfiniticProducer
+import io.infinitic.common.transport.InfiniticProducer
 import io.infinitic.common.transport.RetryServiceExecutorTopic
-import io.infinitic.common.transport.ServiceEventsTopic
+import io.infinitic.common.transport.ServiceExecutorEventTopic
 import io.infinitic.common.utils.checkMode
 import io.infinitic.common.utils.getMethodPerNameAndParameters
 import io.infinitic.common.utils.isDelegated
@@ -76,13 +75,10 @@ import kotlin.reflect.jvm.javaMethod
 
 class TaskExecutor(
   private val workerRegistry: WorkerRegistry,
-  producerAsync: InfiniticProducerAsync,
+  private val producer: InfiniticProducer,
   private val client: InfiniticClientInterface
 ) {
-
-  private val logger = KotlinLogging.logger(this::class.java.name)
-  private val producer = LoggedInfiniticProducer(this::class.java.name, producerAsync)
-  private val emitterName by lazy { EmitterName(producerAsync.producerName) }
+  private val emitterName by lazy { EmitterName(producer.name) }
   private var withRetry: WithRetry? = null
   private var withTimeout: WithTimeout? = null
   private var isDelegated = false
@@ -90,11 +86,7 @@ class TaskExecutor(
   @Suppress("UNUSED_PARAMETER")
   suspend fun handle(msg: ServiceExecutorMessage, publishTime: MillisInstant) {
     when (msg) {
-      is ExecuteTask -> {
-        msg.logDebug { "received $msg" }
-        executeTask(msg)
-        msg.logTrace { "processed" }
-      }
+      is ExecuteTask -> executeTask(msg)
     }
   }
 
@@ -213,7 +205,7 @@ class TaskExecutor(
 
   private suspend fun ExecuteTask.sendTaskStarted() {
     val event = TaskStartedEvent.from(this, this@TaskExecutor.emitterName)
-    with(producer) { event.sendTo(ServiceEventsTopic) }
+    with(producer) { event.sendTo(ServiceExecutorEventTopic) }
   }
 
   suspend fun ExecuteTask.sendTaskFailed(
@@ -223,7 +215,7 @@ class TaskExecutor(
   ) {
     logError(cause, description)
     val event = TaskFailedEvent.from(this, this@TaskExecutor.emitterName, cause, meta)
-    with(producer) { event.sendTo(ServiceEventsTopic) }
+    with(producer) { event.sendTo(ServiceExecutorEventTopic) }
   }
 
   private suspend fun ExecuteTask.sendRetryTask(
@@ -239,7 +231,7 @@ class TaskExecutor(
 
     // once sent, we publish the event
     val event = TaskRetriedEvent.from(this, emitterName, cause, delay, meta)
-    with(producer) { event.sendTo(ServiceEventsTopic) }
+    with(producer) { event.sendTo(ServiceExecutorEventTopic) }
   }
 
   private suspend fun ExecuteTask.sendTaskCompleted(
@@ -253,7 +245,7 @@ class TaskExecutor(
     val returnValue = method.encodeReturnValue(output)
     val event =
         TaskCompletedEvent.from(this, this@TaskExecutor.emitterName, returnValue, isDelegated, meta)
-    with(producer) { event.sendTo(ServiceEventsTopic) }
+    with(producer) { event.sendTo(ServiceExecutorEventTopic) }
   }
 
   private fun ExecuteTask.parse(): Triple<Any, Method, Array<*>> =
@@ -379,6 +371,8 @@ class TaskExecutor(
   }
 
   companion object {
+    val logger = KotlinLogging.logger {}
+
     val TASK_WITH_TIMEOUT_DEFAULT: WithTimeout? = null
     val TASK_WITH_RETRY_DEFAULT: WithRetry? = null
     val WORKFLOW_TASK_WITH_TIMEOUT_DEFAULT = WithTimeout { 60.0 }

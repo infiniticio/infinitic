@@ -27,9 +27,9 @@ import io.infinitic.common.requester.Requester
 import io.infinitic.common.requester.WorkflowRequester
 import io.infinitic.common.requester.workflowId
 import io.infinitic.common.transport.InfiniticProducer
-import io.infinitic.common.transport.TimerWorkflowStateEngineTopic
-import io.infinitic.common.transport.WorkflowCmdTopic
-import io.infinitic.common.transport.WorkflowEventsTopic
+import io.infinitic.common.transport.WorkflowStateCmdTopic
+import io.infinitic.common.transport.WorkflowStateEventTopic
+import io.infinitic.common.transport.WorkflowStateTimerTopic
 import io.infinitic.common.transport.WorkflowTagEngineTopic
 import io.infinitic.common.workflows.engine.messages.DispatchMethod
 import io.infinitic.common.workflows.engine.messages.DispatchWorkflow
@@ -89,13 +89,13 @@ suspend fun InfiniticProducer.dispatchRemoteMethod(
             emittedAt = emittedAt,
         )
       }
-      launch { dispatchWorkflow.sendTo(WorkflowCmdTopic) }
+      launch { dispatchWorkflow.sendTo(WorkflowStateCmdTopic) }
 
       // send a timeout if needed
       remote.timeout?.let {
         launch {
           val remoteMethodTimedOut = dispatchWorkflow.remoteMethodTimedOut(emitterName, it)
-          remoteMethodTimedOut.sendTo(TimerWorkflowStateEngineTopic, it)
+          remoteMethodTimedOut.sendTo(WorkflowStateTimerTopic, it)
         }
       }
     }
@@ -160,11 +160,11 @@ suspend fun InfiniticProducer.dispatchRemoteMethod(
                   emitterName = emitterName,
               )
             }
-            methodCommandedEvent.sendTo(WorkflowEventsTopic)
+            methodCommandedEvent.sendTo(WorkflowStateEventTopic)
           }
           // if we target another workflow, the MethodCommandedEvent event
           // will be triggered by WorkflowCmdHandler
-          else -> dispatchMethod.sendTo(WorkflowCmdTopic)
+          else -> dispatchMethod.sendTo(WorkflowStateCmdTopic)
         }
       }
 
@@ -174,7 +174,7 @@ suspend fun InfiniticProducer.dispatchRemoteMethod(
       remote.timeout?.let {
         launch {
           val remoteMethodTimedOut = dispatchMethod.remoteMethodTimedOut(emitterName, it)
-          remoteMethodTimedOut.sendTo(TimerWorkflowStateEngineTopic, it)
+          remoteMethodTimedOut.sendTo(WorkflowStateTimerTopic, it)
         }
       }
     }
