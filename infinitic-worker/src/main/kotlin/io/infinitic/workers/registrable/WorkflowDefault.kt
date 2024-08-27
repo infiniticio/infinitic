@@ -20,29 +20,23 @@
  *
  * Licensor: infinitic.io
  */
-package io.infinitic.dashboard.panels.infrastructure
+package io.infinitic.workers.registrable
 
-import io.infinitic.common.transport.ServiceExecutorTopic
-import io.infinitic.dashboard.Infinitic
-import io.infinitic.dashboard.panels.infrastructure.requests.Loading
-import org.apache.pulsar.common.policies.data.PartitionedTopicStats
-import java.time.Instant
+import io.infinitic.tasks.WithRetry
+import io.infinitic.tasks.WithTimeout
+import io.infinitic.workflows.WorkflowCheckMode
 
-data class AllServicesState(
-  override val names: JobNames = Loading(),
-  override val stats: JobStats = mapOf(),
-  val isLoading: Boolean = isLoading(names, stats),
-  val lastUpdatedAt: Instant = lastUpdatedAt(names, stats)
-) : AllJobsState(names, stats) {
+class WorkflowDefault(
+  var concurrency: Int,
+  var withTimeout: WithTimeout?,
+  var withRetry: WithRetry?,
+  val checkMode: WorkflowCheckMode,
+) : Registrable {
 
-  override fun create(names: JobNames, stats: JobStats) =
-      AllServicesState(names = names, stats = stats)
+  fun constructor(concurrency: Int, withTimeout: WithTimeout?, withRetry: WithRetry?) =
+      WorkflowDefault(concurrency, withTimeout, withRetry, WorkflowCheckMode.simple)
 
-  override suspend fun getNames() = Infinitic.pulsarResources.getServiceNames()
-
-  override suspend fun getPartitionedStats(name: String): Result<PartitionedTopicStats?> {
-    val topic = with(Infinitic.pulsarResources) { ServiceExecutorTopic.fullName(name) }
-
-    return Infinitic.pulsarResources.admin.getPartitionedTopicStats(topic)
+  init {
+    require(concurrency > 0) { "Concurrency must be > 0" }
   }
 }

@@ -20,8 +20,17 @@
  *
  * Licensor: infinitic.io
  */
-package io.infinitic.common.workers.registry
+package io.infinitic.workers.registrable
 
-import io.infinitic.common.workflows.engine.storage.WorkflowStateStorage
+import io.infinitic.tasks.WithRetry
+import io.infinitic.tasks.WithTimeout
 
-data class RegisteredWorkflowStateEngine(val concurrency: Int, val storage: WorkflowStateStorage)
+class ServiceDefault(
+  val concurrency: Int,
+  val withTimeout: WithTimeout?,
+  val withRetry: WithRetry?
+) : Registrable {
+  init {
+    require(concurrency > 0) { "Concurrency must be > 0" }
+  }
+}

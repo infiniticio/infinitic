@@ -20,16 +20,11 @@
  *
  * Licensor: infinitic.io
  */
-package io.infinitic.common.workers.registry
+package io.infinitic.workers.registrable
 
-import io.infinitic.tasks.WithRetry
-import io.infinitic.tasks.WithTimeout
+import io.infinitic.common.workflows.engine.storage.WorkflowStateStorage
 
-typealias ServiceFactory = () -> Any
-
-data class RegisteredServiceExecutor(
+data class WorkflowStateEngine(
   val concurrency: Int,
-  val factory: ServiceFactory,
-  val withTimeout: WithTimeout?,
-  val withRetry: WithRetry?
-)
+  val storage: WorkflowStateStorage
+) : Registrable

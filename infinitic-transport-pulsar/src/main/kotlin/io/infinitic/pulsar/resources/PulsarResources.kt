@@ -61,12 +61,12 @@ class PulsarResources(
   suspend fun getTopicsFullName(): Set<String> = admin.getTopicsSet(namespaceFullName).getOrThrow()
 
   /** Set of service's names for current tenant and namespace */
-  suspend fun getServicesName(): Set<String> = getTopicsFullName().mapNotNull {
+  suspend fun getServiceNames(): Set<String> = getTopicsFullName().mapNotNull {
     getServiceNameFromTopicName(it.removePrefix(topicFullName("")))
   }.toSet()
 
   /** Set of workflow's names for current tenant and namespace */
-  suspend fun getWorkflowsName(): Set<String> = getTopicsFullName().mapNotNull {
+  suspend fun getWorkflowNames(): Set<String> = getTopicsFullName().mapNotNull {
     getWorkflowNameFromTopicName(it.removePrefix(topicFullName("")))
   }.toSet()
 

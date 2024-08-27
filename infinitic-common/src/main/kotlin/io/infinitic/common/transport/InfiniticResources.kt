@@ -20,29 +20,10 @@
  *
  * Licensor: infinitic.io
  */
-package io.infinitic.dashboard.panels.infrastructure
+package io.infinitic.common.transport
 
-import io.infinitic.common.transport.ServiceExecutorTopic
-import io.infinitic.dashboard.Infinitic
-import io.infinitic.dashboard.panels.infrastructure.requests.Loading
-import org.apache.pulsar.common.policies.data.PartitionedTopicStats
-import java.time.Instant
+interface InfiniticResources {
+  suspend fun getServices(): Set<String>
 
-data class AllServicesState(
-  override val names: JobNames = Loading(),
-  override val stats: JobStats = mapOf(),
-  val isLoading: Boolean = isLoading(names, stats),
-  val lastUpdatedAt: Instant = lastUpdatedAt(names, stats)
-) : AllJobsState(names, stats) {
-
-  override fun create(names: JobNames, stats: JobStats) =
-      AllServicesState(names = names, stats = stats)
-
-  override suspend fun getNames() = Infinitic.pulsarResources.getServiceNames()
-
-  override suspend fun getPartitionedStats(name: String): Result<PartitionedTopicStats?> {
-    val topic = with(Infinitic.pulsarResources) { ServiceExecutorTopic.fullName(name) }
-
-    return Infinitic.pulsarResources.admin.getPartitionedTopicStats(topic)
-  }
+  suspend fun getWorkflows(): Set<String>
 }

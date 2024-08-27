@@ -23,7 +23,6 @@
 package io.infinitic.workers.register.config
 
 import io.infinitic.common.workers.config.RetryPolicy
-import io.infinitic.events.config.EventListenerConfig
 import io.infinitic.tasks.WithTimeout
 import io.infinitic.tasks.tag.config.ServiceTagEngineConfig
 
@@ -32,8 +31,7 @@ data class ServiceConfigDefault(
   val concurrency: Int? = null,
   val timeoutInSeconds: Double? = null,
   val retry: RetryPolicy? = null,
-  val tagEngine: ServiceTagEngineConfig? = null,
-  val eventListener: EventListenerConfig? = null,
+  val tagEngine: ServiceTagEngineConfig? = null
 ) {
   init {
     concurrency?.let {
@@ -64,7 +62,6 @@ data class ServiceConfigDefault(
     private var timeoutInSeconds = default.timeoutInSeconds
     private var retry = default.retry
     private var tagEngine = default.tagEngine
-    private var eventListener = default.eventListener
 
     fun concurrency(concurrency: Int) =
         apply { this.concurrency = concurrency }
@@ -78,15 +75,11 @@ data class ServiceConfigDefault(
     fun tagEngine(tagEngine: ServiceTagEngineConfig) =
         apply { this.tagEngine = tagEngine }
 
-    fun eventListener(eventListener: EventListenerConfig) =
-        apply { this.eventListener = eventListener }
-
     fun build() = ServiceConfigDefault(
         concurrency,
         timeoutInSeconds,
         retry,
         tagEngine,
-        eventListener,
     )
   }
 

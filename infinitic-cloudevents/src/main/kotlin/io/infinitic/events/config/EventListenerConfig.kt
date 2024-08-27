@@ -23,26 +23,29 @@
 package io.infinitic.events.config
 
 import io.infinitic.cloudEvents.CloudEventListener
+import io.infinitic.cloudEvents.SelectionConfig
 import io.infinitic.common.utils.getInstance
 
 @Suppress("unused")
 data class EventListenerConfig(
-  var `class`: String? = null,
-  var concurrency: Int? = null,
-  var subscriptionName: String? = null,
+  val `class`: String,
+  val concurrency: Int? = null,
+  val subscriptionName: String? = null,
+  val services: SelectionConfig = SelectionConfig(),
+  val workflows: SelectionConfig = SelectionConfig()
 ) {
   var isDefined = true
 
-  val instance: CloudEventListener?
-    get() = `class`?.getInstance()?.getOrThrow() as CloudEventListener?
+  val instance: CloudEventListener
 
   init {
-    `class`?.let {
-      require(it.isNotEmpty()) { error("'class' must not be empty") }
-      val instance = it.getInstance().getOrThrow()
-      require(instance is CloudEventListener) {
+    with(`class`) {
+      require(isNotEmpty()) { error("'class' must not be empty") }
+      val obj = `class`.getInstance().getOrThrow()
+      require(obj is CloudEventListener) {
         error("Class '$`class`' must implement '${CloudEventListener::class.java.name}'")
       }
+      instance = obj
     }
 
     concurrency?.let {
@@ -61,14 +64,17 @@ data class EventListenerConfig(
     fun builder() = EventListenerConfigBuilder()
   }
 
+
   /**
    * EventListenerConfig builder (Useful for Java user)
    */
   class EventListenerConfigBuilder {
-    private val default = EventListenerConfig()
+    private val default = EventListenerConfig(UNSET)
     private var `class` = default.`class`
     private var concurrency = default.concurrency
     private var subscriptionName = default.subscriptionName
+    private var services = default.services
+    private var workflows = default.workflows
 
     fun `class`(`class`: String) =
         apply { this.`class` = `class` }
@@ -79,12 +85,28 @@ data class EventListenerConfig(
     fun subscriptionName(subscriptionName: String) =
         apply { this.subscriptionName = subscriptionName }
 
+    fun services(services: SelectionConfig) =
+        apply { this.services = services }
+
+    fun workflows(workflows: SelectionConfig) =
+        apply { this.workflows = workflows }
+
     fun build() = EventListenerConfig(
-        `class`,
+        `class`.removeUnset(),
         concurrency,
         subscriptionName,
+        services,
+        workflows,
     )
   }
 
   private fun error(txt: String) = "eventListener: $txt"
+
+
+}
+
+private const val UNSET = "INFINITIC_UNSET_STRING"
+private fun String.removeUnset(unset: String = UNSET): String = when (this) {
+  unset -> ""
+  else -> this
 }

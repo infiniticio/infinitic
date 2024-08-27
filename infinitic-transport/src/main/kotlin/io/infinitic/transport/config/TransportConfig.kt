@@ -25,11 +25,14 @@ package io.infinitic.transport.config
 import io.infinitic.autoclose.addAutoCloseResource
 import io.infinitic.common.transport.InfiniticConsumer
 import io.infinitic.common.transport.InfiniticProducer
+import io.infinitic.common.transport.InfiniticResources
 import io.infinitic.inMemory.InMemoryChannels
 import io.infinitic.inMemory.InMemoryInfiniticConsumer
 import io.infinitic.inMemory.InMemoryInfiniticProducer
+import io.infinitic.inMemory.InMemoryInfiniticResources
 import io.infinitic.pulsar.PulsarInfiniticConsumer
 import io.infinitic.pulsar.PulsarInfiniticProducer
+import io.infinitic.pulsar.PulsarInfiniticResources
 import io.infinitic.pulsar.client.PulsarInfiniticClient
 import io.infinitic.pulsar.config.PulsarConfig
 import io.infinitic.pulsar.consumers.Consumer
@@ -67,10 +70,12 @@ data class TransportConfig(
 
   // we provide consumer and producer together,
   // as they must share the same configuration
-  private val cp: Pair<InfiniticConsumer, InfiniticProducer> =
+  private val cp: Triple<InfiniticResources, InfiniticConsumer, InfiniticProducer> =
       when (transport) {
         Transport.pulsar -> with(PulsarResources.from(pulsar!!)) {
           val client = PulsarInfiniticClient(pulsar.client)
+
+          val resources = PulsarInfiniticResources(this)
 
           val consumer = PulsarInfiniticConsumer(
               Consumer(client, pulsar.consumer),
@@ -86,22 +91,26 @@ data class TransportConfig(
               this,
           )
 
-          Pair(consumer, producer)
+          Triple(resources, consumer, producer)
         }
 
         Transport.inMemory -> {
           val mainChannels = InMemoryChannels()
           val eventListenerChannels = InMemoryChannels()
+          val resources = InMemoryInfiniticResources(mainChannels)
           val consumer = InMemoryInfiniticConsumer(mainChannels, eventListenerChannels)
           val producer = InMemoryInfiniticProducer(mainChannels, eventListenerChannels)
-          Pair(consumer, producer)
+          Triple(resources, consumer, producer)
         }
       }
 
+  /** Infinitic Resources */
+  val resources = cp.first
+
   /** Infinitic Consumer */
-  val consumer = cp.first
+  val consumer = cp.second
 
   /** Infinitic Producer */
-  val producer = cp.second
+  val producer = cp.third
 }
 

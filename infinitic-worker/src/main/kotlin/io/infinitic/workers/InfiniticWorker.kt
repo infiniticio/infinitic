@@ -34,6 +34,7 @@ import io.infinitic.cloudEvents.logs.CLOUD_EVENTS_WORKFLOW_EXECUTOR
 import io.infinitic.cloudEvents.logs.CLOUD_EVENTS_WORKFLOW_STATE_ENGINE
 import io.infinitic.cloudEvents.logs.CLOUD_EVENTS_WORKFLOW_TAG_ENGINE
 import io.infinitic.common.data.MillisInstant
+import io.infinitic.common.exceptions.thisShouldNotHappen
 import io.infinitic.common.messages.Message
 import io.infinitic.common.tasks.data.ServiceName
 import io.infinitic.common.tasks.events.messages.ServiceExecutorEventMessage
@@ -43,8 +44,7 @@ import io.infinitic.common.tasks.tags.messages.ServiceTagMessage
 import io.infinitic.common.tasks.tags.storage.TaskTagStorage
 import io.infinitic.common.transport.InfiniticConsumer
 import io.infinitic.common.transport.InfiniticProducer
-import io.infinitic.common.transport.LoggedInfiniticConsumer
-import io.infinitic.common.transport.LoggedInfiniticProducer
+import io.infinitic.common.transport.InfiniticResources
 import io.infinitic.common.transport.MainSubscription
 import io.infinitic.common.transport.RetryServiceExecutorTopic
 import io.infinitic.common.transport.RetryWorkflowExecutorTopic
@@ -60,6 +60,8 @@ import io.infinitic.common.transport.WorkflowStateEventTopic
 import io.infinitic.common.transport.WorkflowStateTimerTopic
 import io.infinitic.common.transport.WorkflowTagEngineTopic
 import io.infinitic.common.transport.create
+import io.infinitic.common.transport.logged.LoggedInfiniticConsumer
+import io.infinitic.common.transport.logged.LoggedInfiniticProducer
 import io.infinitic.common.workflows.data.workflows.WorkflowName
 import io.infinitic.common.workflows.engine.messages.WorkflowCmdMessage
 import io.infinitic.common.workflows.engine.messages.WorkflowEventMessage
@@ -82,7 +84,12 @@ import io.infinitic.transport.config.TransportConfig
 import io.infinitic.workers.config.WorkerConfig
 import io.infinitic.workers.config.WorkerConfigInterface
 import io.infinitic.workers.register.InfiniticRegister
-import io.infinitic.workers.register.InfiniticRegisterImpl
+import io.infinitic.workers.registrable.Registrable
+import io.infinitic.workers.registrable.ServiceDefault
+import io.infinitic.workers.registrable.ServiceExecutor
+import io.infinitic.workers.registrable.WorkflowDefault
+import io.infinitic.workers.registrable.applyDefault
+import io.infinitic.workers.registrable.build
 import io.infinitic.workflows.engine.WorkflowStateCmdHandler
 import io.infinitic.workflows.engine.WorkflowStateEngine
 import io.infinitic.workflows.engine.WorkflowStateEventHandler
@@ -100,10 +107,11 @@ import kotlin.system.exitProcess
 @Suppress("unused")
 class InfiniticWorker private constructor(
   val register: InfiniticRegister,
+  val resources: InfiniticResources,
   val consumer: InfiniticConsumer,
   val producer: InfiniticProducer,
   private val source: String
-) : AutoCloseable, InfiniticRegister by register {
+) : AutoCloseable {
 
   /** Infinitic Client */
   val client = InfiniticClient(consumer, producer)
@@ -129,6 +137,9 @@ class InfiniticWorker private constructor(
 
       val transportConfig = TransportConfig(transport, pulsar, shutdownGracePeriodInSeconds)
 
+      /** Infinitic resources */
+      val resources = transportConfig.resources
+
       /** Infinitic Consumer */
       val consumer = transportConfig.consumer
 
@@ -141,14 +152,14 @@ class InfiniticWorker private constructor(
       /** Infinitic Register */
       // if an exception is thrown, we ensure to close the previously created resource
       val register = try {
-        InfiniticRegisterImpl.fromConfig(this)
+        InfiniticRegister.fromConfig(this)
       } catch (e: Exception) {
         consumer.close()
         throw e
       }
 
       /** Infinitic Worker */
-      InfiniticWorker(register, consumer, producer, transportConfig.source).also {
+      InfiniticWorker(register, resources, consumer, producer, transportConfig.source).also {
         // close consumer with the worker
         it.addAutoCloseResource(consumer)
         // close storages with the worker
@@ -179,6 +190,33 @@ class InfiniticWorker private constructor(
   override fun close() {
     client.close()
     autoClose()
+  }
+
+  private val registrable = mutableListOf<Registrable>()
+
+  fun register(vararg items: Registrable) {
+    items.forEach { registrable.add(it) }
+  }
+
+  private fun execRegistration() {
+    var serviceDefault: ServiceDefault? = null
+    var workflowDefault: WorkflowDefault? = null
+
+    registrable.forEach {
+      when (it) {
+        is ServiceDefault -> serviceDefault = it
+        is WorkflowDefault -> workflowDefault = it
+        else -> Unit
+      }
+    }
+
+    registrable.forEach {
+      when (it) {
+        is ServiceDefault, is WorkflowDefault -> Unit
+        is ServiceExecutor -> it.applyDefault(serviceDefault).build()
+        else -> thisShouldNotHappen()
+      }
+    }
   }
 
 
@@ -243,43 +281,50 @@ class InfiniticWorker private constructor(
         )
       }
 
-      workerRegistry.workflowEventListeners.forEach { (workflowName, registeredEventListener) ->
-        // WORKFLOW TASK EVENT LISTENER
-        startWorkflowExecutorEventListener(
-            workflowName,
-            registeredEventListener.concurrency,
-            registeredEventListener.subscriptionName,
-            SubscriptionType.EVENT_LISTENER,
-        ) { message, publishedAt ->
-          message.toServiceCloudEvent(publishedAt, source)?.let {
-            registeredEventListener.eventListener.onEvent(it)
-          } ?: Unit
-        }
-
-        // WORKFLOW EVENT LISTENER
-        startWorkflowStateEventListener(
-            workflowName,
-            registeredEventListener.concurrency,
-            registeredEventListener.subscriptionName,
-            SubscriptionType.EVENT_LISTENER,
-        ) { message, publishedAt ->
-          message.toWorkflowCloudEvent(publishedAt, source)?.let {
-            registeredEventListener.eventListener.onEvent(it)
-          } ?: Unit
-        }
-      }
-
-      workerRegistry.serviceEventListeners.forEach { (serviceName, registeredEventListener) ->
-        // SERVICE EVENT LISTENER
-        startServiceEventListener(
-            serviceName,
-            registeredEventListener.concurrency,
-            registeredEventListener.subscriptionName,
-            SubscriptionType.EVENT_LISTENER,
-        ) { message: Message, publishedAt: MillisInstant ->
-          message.toServiceCloudEvent(publishedAt, source)?.let {
-            registeredEventListener.eventListener.onEvent(it)
-          } ?: Unit
+      workerRegistry.eventListener?.let {
+        with(it) {
+          // for all services
+          resources.getServices().forEach { serviceName ->
+            // if this service is included in the RegisteredEventListener.services
+            if (services.isIncluded(serviceName)) {
+              startServiceEventListener(
+                  ServiceName(serviceName),
+                  concurrency,
+                  subscriptionName,
+                  SubscriptionType.EVENT_LISTENER,
+              ) { message: Message, publishedAt: MillisInstant ->
+                message.toServiceCloudEvent(publishedAt, source)?.let { cloudEvent ->
+                  eventListener.onEvent(cloudEvent)
+                } ?: Unit
+              }
+            }
+          }
+          // for all workflows
+          resources.getWorkflows().forEach { workflowName ->
+            // if this workflow is included in the RegisteredEventListener.workflows
+            if (workflows.isIncluded(workflowName)) {
+              startWorkflowExecutorEventListener(
+                  WorkflowName(workflowName),
+                  concurrency,
+                  subscriptionName,
+                  SubscriptionType.EVENT_LISTENER,
+              ) { message, publishedAt ->
+                message.toServiceCloudEvent(publishedAt, source)?.let { cloudEvent ->
+                  eventListener.onEvent(cloudEvent)
+                } ?: Unit
+              }
+              startWorkflowStateEventListener(
+                  WorkflowName(workflowName),
+                  concurrency,
+                  subscriptionName,
+                  SubscriptionType.EVENT_LISTENER,
+              ) { message, publishedAt ->
+                message.toWorkflowCloudEvent(publishedAt, source)?.let { cloudEvent ->
+                  eventListener.onEvent(cloudEvent)
+                } ?: Unit
+              }
+            }
+          }
         }
       }
     }
@@ -668,7 +713,7 @@ class InfiniticWorker private constructor(
   ) {
     // WORKFLOW-TASK-EXECUTOR topic
     launch {
-      this@InfiniticWorker.consumer.start(
+      consumer.start(
           subscription = subscriptionType.create(WorkflowExecutorTopic, subscriptionName),
           entity = workflowName.toString(),
           handler = handler,
@@ -678,7 +723,7 @@ class InfiniticWorker private constructor(
     }
     // WORKFLOW-TASK-EXECUTOR-DELAY topic
     launch {
-      this@InfiniticWorker.consumer.start(
+      consumer.start(
           subscription = subscriptionType.create(RetryWorkflowExecutorTopic, subscriptionName),
           entity = workflowName.toString(),
           handler = handler,
@@ -688,7 +733,7 @@ class InfiniticWorker private constructor(
     }
     // WORKFLOW-TASK-EVENTS topic
     launch {
-      this@InfiniticWorker.consumer.start(
+      consumer.start(
           subscription = subscriptionType.create(WorkflowExecutorEventTopic, subscriptionName),
           entity = workflowName.toString(),
           handler = handler,
@@ -707,7 +752,7 @@ class InfiniticWorker private constructor(
   ) {
     // WORKFLOW-CMD topic
     launch {
-      this@InfiniticWorker.consumer.start(
+      consumer.start(
           subscription = subscriptionType.create(WorkflowStateCmdTopic, subscriptionName),
           entity = workflowName.toString(),
           handler = handler,
@@ -717,7 +762,7 @@ class InfiniticWorker private constructor(
     }
     // WORKFLOW-STATE-ENGINE topic
     launch {
-      this@InfiniticWorker.consumer.start(
+      consumer.start(
           subscription = subscriptionType.create(WorkflowStateEngineTopic, subscriptionName),
           entity = workflowName.toString(),
           handler = { message: Message, publishedAt: MillisInstant ->
@@ -731,7 +776,7 @@ class InfiniticWorker private constructor(
     }
     // WORKFLOW-EVENTS topic
     launch {
-      this@InfiniticWorker.consumer.start(
+      consumer.start(
           subscription = subscriptionType.create(WorkflowStateEventTopic, subscriptionName),
           entity = workflowName.toString(),
           handler = handler,

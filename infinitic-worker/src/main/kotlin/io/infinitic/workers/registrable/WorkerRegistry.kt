@@ -20,21 +20,21 @@
  *
  * Licensor: infinitic.io
  */
-package io.infinitic.common.workers.registry
+package io.infinitic.workers.registrable
 
 import io.infinitic.common.tasks.data.ServiceName
 import io.infinitic.common.workflows.data.workflows.WorkflowName
 import org.jetbrains.annotations.TestOnly
 
 class WorkerRegistry {
-  val serviceTagEngines = mutableMapOf<ServiceName, RegisteredServiceTagEngine>()
+  val serviceTagEngines = mutableMapOf<ServiceName, ServiceTagEngine>()
   val serviceExecutors = mutableMapOf<ServiceName, RegisteredServiceExecutor>()
-  val serviceEventListeners = mutableMapOf<ServiceName, RegisteredEventListener>()
 
-  val workflowTagEngines = mutableMapOf<WorkflowName, RegisteredWorkflowTagEngine>()
-  val workflowStateEngines = mutableMapOf<WorkflowName, RegisteredWorkflowStateEngine>()
-  val workflowExecutors = mutableMapOf<WorkflowName, RegisteredWorkflowExecutor>()
-  val workflowEventListeners = mutableMapOf<WorkflowName, RegisteredEventListener>()
+  val workflowTagEngines = mutableMapOf<WorkflowName, WorkflowTagEngine>()
+  val workflowStateEngines = mutableMapOf<WorkflowName, WorkflowStateEngine>()
+  val workflowExecutors = mutableMapOf<WorkflowName, WorkflowExecutor>()
+
+  var eventListener: EventListener? = null
 
   @TestOnly
   fun flush() {

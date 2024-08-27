@@ -26,7 +26,6 @@ import io.infinitic.common.utils.getInstance
 import io.infinitic.common.utils.isImplementationOf
 import io.infinitic.common.workers.config.RetryPolicy
 import io.infinitic.common.workflows.emptyWorkflowContext
-import io.infinitic.events.config.EventListenerConfig
 import io.infinitic.tasks.WithRetry
 import io.infinitic.tasks.WithTimeout
 import io.infinitic.workflows.Workflow
@@ -46,7 +45,6 @@ data class WorkflowConfig(
   var checkMode: WorkflowCheckMode? = null,
   var tagEngine: WorkflowTagEngineConfig? = DEFAULT_WORKFLOW_TAG_ENGINE,
   var stateEngine: WorkflowStateEngineConfig? = DEFAULT_WORKFLOW_STATE_ENGINE,
-  var eventListener: EventListenerConfig? = UNDEFINED_EVENT_LISTENER,
 ) {
   val allClasses = mutableListOf<Class<out WorkflowBase>>()
 
@@ -66,8 +64,8 @@ data class WorkflowConfig(
     require(name.isNotEmpty()) { "name can not be empty" }
 
     when {
-      (`class` == null) && (classes == null) -> require(tagEngine != null || stateEngine != null || eventListener != null) {
-        error("'${::`class`.name}', '${::classes.name}', '${::tagEngine.name}', '${::stateEngine.name}' and '${::eventListener.name}' can not be all null")
+      (`class` == null) && (classes == null) -> require(tagEngine != null || stateEngine != null) {
+        error("'${::`class`.name}', '${::classes.name}', '${::tagEngine.name}', and '${::stateEngine.name}' can not be all null")
       }
 
       else -> {
@@ -110,7 +108,6 @@ data class WorkflowConfig(
     private var checkMode = default.checkMode
     private var tagEngine = default.tagEngine
     private var stateEngine = default.stateEngine
-    private var eventListener = default.eventListener
 
     fun name(name: String) =
         apply { this.name = name }
@@ -139,9 +136,6 @@ data class WorkflowConfig(
     fun stateEngine(stateEngine: WorkflowStateEngineConfig) =
         apply { this.stateEngine = stateEngine }
 
-    fun eventListener(eventListener: EventListenerConfig) =
-        apply { this.eventListener = eventListener }
-
     fun build() = WorkflowConfig(
         name.noUnset,
         `class`,
@@ -152,7 +146,6 @@ data class WorkflowConfig(
         checkMode,
         tagEngine,
         stateEngine,
-        eventListener,
     )
   }
 

@@ -25,7 +25,6 @@ package io.infinitic.workers.register.config
 import io.infinitic.common.utils.getInstance
 import io.infinitic.common.utils.isImplementationOf
 import io.infinitic.common.workers.config.RetryPolicy
-import io.infinitic.events.config.EventListenerConfig
 import io.infinitic.tasks.WithRetry
 import io.infinitic.tasks.WithTimeout
 import io.infinitic.tasks.tag.config.ServiceTagEngineConfig
@@ -38,7 +37,6 @@ data class ServiceConfig(
   var timeoutInSeconds: Double? = UNDEFINED_TIMEOUT,
   var retry: RetryPolicy? = UNDEFINED_RETRY,
   var tagEngine: ServiceTagEngineConfig? = DEFAULT_SERVICE_TAG_ENGINE,
-  var eventListener: EventListenerConfig? = UNDEFINED_EVENT_LISTENER,
 ) {
   fun getInstance(): Any = `class`!!.getInstance().getOrThrow()
 
@@ -92,7 +90,6 @@ data class ServiceConfig(
     private var timeoutInSeconds = default.timeoutInSeconds
     private var retry = default.retry
     private var tagEngine = default.tagEngine
-    private var eventListener = default.eventListener
 
     fun name(name: String) =
         apply { this.name = name }
@@ -112,9 +109,6 @@ data class ServiceConfig(
     fun tagEngine(tagEngine: ServiceTagEngineConfig) =
         apply { this.tagEngine = tagEngine }
 
-    fun eventListener(eventListener: EventListenerConfig) =
-        apply { this.eventListener = eventListener }
-
     fun build() = ServiceConfig(
         name.noUnset,
         `class`,
@@ -122,7 +116,6 @@ data class ServiceConfig(
         timeoutInSeconds,
         retry,
         tagEngine,
-        eventListener,
     )
   }
 

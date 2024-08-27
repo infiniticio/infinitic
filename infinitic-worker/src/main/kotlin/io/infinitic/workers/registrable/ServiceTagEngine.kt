@@ -20,12 +20,11 @@
  *
  * Licensor: infinitic.io
  */
-package io.infinitic.common.workers.registry
+package io.infinitic.workers.registrable
 
-import io.infinitic.cloudEvents.CloudEventListener
+import io.infinitic.common.tasks.tags.storage.TaskTagStorage
 
-data class RegisteredEventListener(
-  val eventListener: CloudEventListener,
+data class ServiceTagEngine(
   val concurrency: Int,
-  val subscriptionName: String?
-)
+  val storage: TaskTagStorage
+) : Registrable

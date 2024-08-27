@@ -20,8 +20,6 @@
  *
  * Licensor: infinitic.io
  */
-package io.infinitic.common.workers.registry
+package io.infinitic.workers.registrable
 
-import io.infinitic.common.tasks.tags.storage.TaskTagStorage
-
-data class RegisteredServiceTagEngine(val concurrency: Int, val storage: TaskTagStorage)
+sealed interface Registered

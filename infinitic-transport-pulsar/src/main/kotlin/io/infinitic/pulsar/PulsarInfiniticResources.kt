@@ -20,8 +20,15 @@
  *
  * Licensor: infinitic.io
  */
-package io.infinitic.common.workers.registry
+package io.infinitic.pulsar
 
-import io.infinitic.common.workflows.tags.storage.WorkflowTagStorage
+import io.infinitic.common.transport.InfiniticResources
+import io.infinitic.pulsar.resources.PulsarResources
 
-data class RegisteredWorkflowTagEngine(val concurrency: Int, var storage: WorkflowTagStorage)
+class PulsarInfiniticResources(
+  private val pulsarResources: PulsarResources
+) : InfiniticResources {
+  override suspend fun getServices(): Set<String> = pulsarResources.getServiceNames()
+
+  override suspend fun getWorkflows(): Set<String> = pulsarResources.getWorkflowNames()
+}

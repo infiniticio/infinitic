@@ -120,7 +120,7 @@ class PulsarResourcesTest : StringSpec(
             coEvery { getTopicsFullName() } returns setOf(topic)
           }
 
-          mockResources.getWorkflowsName() shouldBe setOf(workflowName)
+          mockResources.getWorkflowNames() shouldBe setOf(workflowName)
         }
       }
 
@@ -133,7 +133,7 @@ class PulsarResourcesTest : StringSpec(
             coEvery { getTopicsFullName() } returns setOf(topic)
           }
 
-          mockResources.getServicesName() shouldBe setOf(serviceName)
+          mockResources.getServiceNames() shouldBe setOf(serviceName)
         }
       }
 

@@ -40,8 +40,8 @@ import io.infinitic.common.tasks.data.ServiceName
 import io.infinitic.common.tasks.data.TaskId
 import io.infinitic.common.transport.InfiniticConsumer
 import io.infinitic.common.transport.InfiniticProducer
-import io.infinitic.common.transport.LoggedInfiniticConsumer
-import io.infinitic.common.transport.LoggedInfiniticProducer
+import io.infinitic.common.transport.logged.LoggedInfiniticConsumer
+import io.infinitic.common.transport.logged.LoggedInfiniticProducer
 import io.infinitic.common.utils.annotatedName
 import io.infinitic.common.workflows.data.workflowMethods.WorkflowMethodId
 import io.infinitic.common.workflows.data.workflows.WorkflowMeta

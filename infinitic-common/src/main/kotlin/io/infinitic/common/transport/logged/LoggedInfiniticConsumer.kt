@@ -20,11 +20,13 @@
  *
  * Licensor: infinitic.io
  */
-package io.infinitic.common.transport
+package io.infinitic.common.transport.logged
 
 import io.github.oshai.kotlinlogging.KLogger
 import io.infinitic.common.data.MillisInstant
 import io.infinitic.common.messages.Message
+import io.infinitic.common.transport.InfiniticConsumer
+import io.infinitic.common.transport.Subscription
 
 class LoggedInfiniticConsumer(
   private val logger: KLogger,

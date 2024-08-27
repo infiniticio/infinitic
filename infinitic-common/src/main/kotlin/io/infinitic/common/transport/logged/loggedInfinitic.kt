@@ -20,7 +20,7 @@
  *
  * Licensor: infinitic.io
  */
-package io.infinitic.common.transport
+package io.infinitic.common.transport.logged
 
 import io.infinitic.common.clients.messages.ClientMessage
 import io.infinitic.common.clients.messages.interfaces.MethodMessage

@@ -20,7 +20,7 @@
  *
  * Licensor: infinitic.io
  */
-package io.infinitic.common.workers.registry
+package io.infinitic.workers.registrable
 
 import io.infinitic.common.exceptions.thisShouldNotHappen
 import io.infinitic.common.workers.config.WorkflowVersion
@@ -37,14 +37,14 @@ import io.infinitic.workflows.WorkflowCheckMode
 typealias WorkflowFactories = List<() -> Workflow>
 typealias WorkflowFactory = () -> Workflow
 
-data class RegisteredWorkflowExecutor(
+data class WorkflowExecutor(
   val workflowName: WorkflowName,
   val factories: WorkflowFactories,
   val concurrency: Int,
   val withTimeout: WithTimeout?,
   val withRetry: WithRetry?,
   val checkMode: WorkflowCheckMode?
-) {
+) : Registrable {
   private var classFactoryInstanceByVersion: Map<WorkflowVersion, Triple<Class<out Workflow>, WorkflowFactory, Workflow>>
 
   var classes: List<Class<out Workflow>>

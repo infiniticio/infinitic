@@ -111,8 +111,7 @@ private val eventListener = mockk<CloudEventListener> {
   every { onEvent(capture(events)) } just Runs
 }
 private val worker = InfiniticWorker.fromConfig(workerConfig).apply {
-  registerServiceEventListener("ServiceA", 2, eventListener, null)
-  registerWorkflowEventListener("WorkflowA", 2, eventListener, null)
+  registerEventListener(eventListener, 2)
   startAsync()
 }
 
