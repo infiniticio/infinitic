@@ -20,7 +20,7 @@
  *
  * Licensor: infinitic.io
  */
-package io.infinitic.storage.storages.redis
+package io.infinitic.storage.databases.redis
 
 import io.infinitic.storage.config.RedisConfig
 import io.infinitic.storage.keyValue.KeyValueStorage

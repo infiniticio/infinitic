@@ -20,36 +20,32 @@
  *
  * Licensor: infinitic.io
  */
-package io.infinitic.storage.storages.redis
 
-import io.infinitic.storage.config.RedisConfig
-import io.infinitic.storage.keySet.KeySetStorage
-import org.jetbrains.annotations.TestOnly
-import redis.clients.jedis.JedisPool
+package io.infinitic.storage.config
 
-class RedisKeySetStorage(internal val pool: JedisPool) : KeySetStorage {
+import io.infinitic.common.config.loadConfigFromYaml
+import io.kotest.assertions.throwables.shouldNotThrowAny
+import io.kotest.core.spec.style.StringSpec
+import io.kotest.matchers.shouldBe
 
-  companion object {
-    fun from(config: RedisConfig) = RedisKeySetStorage(config.getPool())
-  }
+class InMemoryConfigTests :
+  StringSpec(
+      {
 
-  override suspend fun get(key: String): Set<ByteArray> =
-      pool.resource.use { it.smembers(key.toByteArray()) }
-
-  override suspend fun add(key: String, value: ByteArray) {
-    pool.resource.use { it.sadd(key.toByteArray(), value) }
-  }
-
-  override suspend fun remove(key: String, value: ByteArray) {
-    pool.resource.use { it.srem(key.toByteArray(), value) }
-  }
-
-  override fun close() {
-    pool.close()
-  }
-
-  @TestOnly
-  override fun flush() {
-    pool.resource.use { it.flushDB() }
-  }
-}
+        "can use InMemoryConfig" {
+          val config = shouldNotThrowAny {
+            loadConfigFromYaml<StorageConfigImpl>(
+                """
+storage:
+  inMemory:
+     """,
+            )
+          }
+          config.storage shouldBe InMemoryStorageConfig(
+              inMemory = InMemoryConfig(),
+              compression = null,
+              cache = null,
+          )
+        }
+      },
+  )

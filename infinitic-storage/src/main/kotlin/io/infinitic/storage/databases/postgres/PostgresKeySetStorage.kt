@@ -20,20 +20,20 @@
  *
  * Licensor: infinitic.io
  */
-package io.infinitic.storage.storages.mysql
+package io.infinitic.storage.databases.postgres
 
 import com.zaxxer.hikari.HikariDataSource
-import io.infinitic.storage.config.MySQLConfig
+import io.infinitic.storage.config.PostgresConfig
 import io.infinitic.storage.keySet.KeySetStorage
 import org.jetbrains.annotations.TestOnly
 
-class MySQLKeySetStorage(
+class PostgresKeySetStorage(
   internal val pool: HikariDataSource,
   private val tableName: String
 ) : KeySetStorage {
 
   companion object {
-    fun from(config: MySQLConfig) = MySQLKeySetStorage(config.getPool(), config.keySetTable)
+    fun from(config: PostgresConfig) = PostgresKeySetStorage(config.getPool(), config.keySetTable)
   }
 
   init {
@@ -41,9 +41,13 @@ class MySQLKeySetStorage(
     initKeySetTable()
   }
 
+  override fun close() {
+    pool.close()
+  }
+
   override suspend fun get(key: String): Set<ByteArray> =
       pool.connection.use { connection ->
-        connection.prepareStatement("SELECT `value` FROM $tableName WHERE `key` = ?")
+        connection.prepareStatement("SELECT value FROM $tableName WHERE key = ?")
             .use { statement ->
               statement.setString(1, key)
               statement.executeQuery().use {
@@ -58,7 +62,7 @@ class MySQLKeySetStorage(
 
   override suspend fun add(key: String, value: ByteArray) {
     pool.connection.use { connection ->
-      connection.prepareStatement("INSERT INTO $tableName (`key`, `value`) VALUES (?, ?)").use {
+      connection.prepareStatement("INSERT INTO $tableName (key, value) VALUES (?, ?)").use {
         it.setString(1, key)
         it.setBytes(2, value)
         it.executeUpdate()
@@ -68,16 +72,12 @@ class MySQLKeySetStorage(
 
   override suspend fun remove(key: String, value: ByteArray) {
     pool.connection.use { connection ->
-      connection.prepareStatement("DELETE FROM $tableName WHERE `key`=? AND `value`=?").use {
+      connection.prepareStatement("DELETE FROM $tableName WHERE key = ? AND value = ?").use {
         it.setString(1, key)
         it.setBytes(2, value)
         it.executeUpdate()
       }
     }
-  }
-
-  override fun close() {
-    pool.close()
   }
 
   @TestOnly
@@ -92,13 +92,19 @@ class MySQLKeySetStorage(
     // And value is typically a workflowId
     pool.connection.use { connection ->
       connection.prepareStatement(
-          "CREATE TABLE IF NOT EXISTS $tableName ( " +
-              "`id` BIGINT(20) AUTO_INCREMENT PRIMARY KEY," +
-              "`key` VARCHAR(255) NOT NULL," +
-              "`value` VARCHAR(255) NOT NULL," +
-              "KEY(`key`)," + // Non unique index creation for faster search
-              "KEY `key_value_idx` (`key`,`value`)" +
-              ") ENGINE=InnoDB DEFAULT CHARSET=utf8",
+          "CREATE TABLE IF NOT EXISTS $tableName (" +
+              "id SERIAL PRIMARY KEY," +
+              "key VARCHAR(255) NOT NULL," +
+              "value BYTEA NOT NULL" +
+              ");",
+      ).use { it.executeUpdate() }
+
+      connection.prepareStatement(
+          "CREATE INDEX IF NOT EXISTS index_key ON $tableName (key);",
+      ).use { it.executeUpdate() }
+
+      connection.prepareStatement(
+          "CREATE INDEX IF NOT EXISTS index_key_value ON $tableName (key, value);",
       ).use { it.executeUpdate() }
     }
   }

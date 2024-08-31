@@ -20,23 +20,36 @@
  *
  * Licensor: infinitic.io
  */
-package io.infinitic.workers.registrable
+package io.infinitic.storage.databases.redis
 
-import io.infinitic.tasks.WithRetry
-import io.infinitic.tasks.WithTimeout
-import io.infinitic.workflows.WorkflowCheckMode
+import io.infinitic.storage.config.RedisConfig
+import io.infinitic.storage.keySet.KeySetStorage
+import org.jetbrains.annotations.TestOnly
+import redis.clients.jedis.JedisPool
 
-class WorkflowDefault(
-  var concurrency: Int,
-  var withTimeout: WithTimeout?,
-  var withRetry: WithRetry?,
-  val checkMode: WorkflowCheckMode,
-) : Registrable {
+class RedisKeySetStorage(internal val pool: JedisPool) : KeySetStorage {
 
-  fun constructor(concurrency: Int, withTimeout: WithTimeout?, withRetry: WithRetry?) =
-      WorkflowDefault(concurrency, withTimeout, withRetry, WorkflowCheckMode.simple)
+  companion object {
+    fun from(config: RedisConfig) = RedisKeySetStorage(config.getPool())
+  }
 
-  init {
-    require(concurrency > 0) { "Concurrency must be > 0" }
+  override suspend fun get(key: String): Set<ByteArray> =
+      pool.resource.use { it.smembers(key.toByteArray()) }
+
+  override suspend fun add(key: String, value: ByteArray) {
+    pool.resource.use { it.sadd(key.toByteArray(), value) }
+  }
+
+  override suspend fun remove(key: String, value: ByteArray) {
+    pool.resource.use { it.srem(key.toByteArray(), value) }
+  }
+
+  override fun close() {
+    pool.close()
+  }
+
+  @TestOnly
+  override fun flush() {
+    pool.resource.use { it.flushDB() }
   }
 }

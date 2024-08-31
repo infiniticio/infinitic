@@ -20,20 +20,22 @@
  *
  * Licensor: infinitic.io
  */
-package io.infinitic.storage.storages.mysql
+package io.infinitic.storage.databases.postgres
 
 import com.zaxxer.hikari.HikariDataSource
-import io.infinitic.storage.config.MySQLConfig
+import io.infinitic.storage.config.PostgresConfig
 import io.infinitic.storage.keyValue.KeyValueStorage
 import org.jetbrains.annotations.TestOnly
+import kotlin.math.ceil
 
-class MySQLKeyValueStorage(
+class PostgresKeyValueStorage(
   internal val pool: HikariDataSource,
   private val tableName: String
 ) : KeyValueStorage {
 
   companion object {
-    fun from(config: MySQLConfig) = MySQLKeyValueStorage(config.getPool(), config.keyValueTable)
+    fun from(config: PostgresConfig) =
+        PostgresKeyValueStorage(config.getPool(), config.keyValueTable)
   }
 
   init {
@@ -41,12 +43,16 @@ class MySQLKeyValueStorage(
     initKeyValueTable()
   }
 
+  override fun close() {
+    pool.close()
+  }
+
   override suspend fun get(key: String): ByteArray? =
       pool.connection.use { connection ->
-        connection.prepareStatement("SELECT `value` FROM $tableName WHERE `key`=?")
-            .use { statement ->
-              statement.setString(1, key)
-              statement.executeQuery().use { resultSet ->
+        connection.prepareStatement("SELECT value FROM $tableName WHERE key=?")
+            .use {
+              it.setString(1, key)
+              it.executeQuery().use { resultSet ->
                 if (resultSet.next()) {
                   resultSet.getBytes("value")
                 } else null
@@ -58,13 +64,13 @@ class MySQLKeyValueStorage(
     pool.connection.use { connection ->
       connection
           .prepareStatement(
-              "INSERT INTO $tableName (`key`, `value`) VALUES (?, ?) " +
-                  "ON DUPLICATE KEY UPDATE `value`=?",
+              "INSERT INTO $tableName (key, value, value_size_in_KiB) VALUES (?, ?, ?) " +
+                  "ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value",
           )
           .use {
             it.setString(1, key)
             it.setBytes(2, value)
-            it.setBytes(3, value)
+            it.setInt(3, ceil(value.size / 1024.0).toInt())
             it.executeUpdate()
           }
     }
@@ -72,15 +78,11 @@ class MySQLKeyValueStorage(
 
   override suspend fun del(key: String) {
     pool.connection.use { connection ->
-      connection.prepareStatement("DELETE FROM $tableName WHERE `key`=?").use {
+      connection.prepareStatement("DELETE FROM $tableName WHERE key=?").use {
         it.setString(1, key)
         it.executeUpdate()
       }
     }
-  }
-
-  override fun close() {
-    pool.close()
   }
 
   @TestOnly
@@ -91,20 +93,20 @@ class MySQLKeyValueStorage(
   }
 
   private fun initKeyValueTable() {
-    // Here key is typically a workflowId
-    // And value is typically a serialized workflow state
     pool.connection.use { connection ->
       connection.prepareStatement(
           "CREATE TABLE IF NOT EXISTS $tableName (" +
-              "`id` BIGINT(20) AUTO_INCREMENT PRIMARY KEY," +
-              "`key` VARCHAR(255) NOT NULL UNIQUE," +
-              "`value` LONGBLOB NOT NULL," +
-              "`last_update` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP," +
-              "`value_size_in_KiB` BIGINT(20) GENERATED ALWAYS AS ((length(`value`) / 1024)) STORED," +
-              "KEY `value_size_index` (`value_size_in_KiB`)" +
-              ") ENGINE=InnoDB DEFAULT CHARSET=utf8",
-      )
-          .use { it.executeUpdate() }
+              "id BIGSERIAL PRIMARY KEY," +
+              "key VARCHAR(255) NOT NULL UNIQUE," +
+              "value BYTEA NOT NULL," +
+              "last_update TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP," +
+              "value_size_in_KiB INTEGER" +
+              ");",
+      ).use { it.executeUpdate() }
+
+      connection.prepareStatement(
+          "CREATE INDEX IF NOT EXISTS value_size_index ON $tableName(value_size_in_KiB);",
+      ).use { it.executeUpdate() }
     }
   }
 }

@@ -22,11 +22,9 @@
  */
 package io.infinitic.storage.databases.postgres
 
-import com.sksamuel.hoplite.Secret
 import io.infinitic.storage.DockerOnly
 import io.infinitic.storage.config.PostgresConfig
 import io.infinitic.storage.data.Bytes
-import io.infinitic.storage.storages.postgres.PostgresKeySetStorage
 import io.kotest.core.annotation.EnabledIf
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
@@ -49,7 +47,7 @@ class PostgresKeySetStorageTests :
             host = postgresServer.host,
             port = postgresServer.firstMappedPort,
             user = postgresServer.username,
-            password = Secret(postgresServer.password),
+            password = postgresServer.password,
             database = postgresServer.databaseName,
         )
 
