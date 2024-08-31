@@ -287,55 +287,55 @@ data class PulsarConfig(
     private var producer = default.producer
     private var consumer = default.consumer
 
-    fun tenant(tenant: String) =
+    fun setTenant(tenant: String) =
         apply { this.tenant = tenant }
 
-    fun namespace(namespace: String) =
+    fun setNamespace(namespace: String) =
         apply { this.namespace = namespace }
 
-    fun brokerServiceUrl(brokerServiceUrl: String) =
+    fun setBrokerServiceUrl(brokerServiceUrl: String) =
         apply { this.brokerServiceUrl = brokerServiceUrl }
 
-    fun webServiceUrl(webServiceUrl: String) =
+    fun setWebServiceUrl(webServiceUrl: String) =
         apply { this.webServiceUrl = webServiceUrl }
 
-    fun allowedClusters(allowedClusters: Set<String>) =
+    fun setAllowedClusters(allowedClusters: Set<String>) =
         apply { this.allowedClusters = allowedClusters }
 
-    fun adminRoles(adminRoles: Set<String>) =
+    fun setAdminRoles(adminRoles: Set<String>) =
         apply { this.adminRoles = adminRoles }
 
-    fun tlsAllowInsecureConnection(tlsAllowInsecureConnection: Boolean) =
+    fun setTlsAllowInsecureConnection(tlsAllowInsecureConnection: Boolean) =
         apply { this.tlsAllowInsecureConnection = tlsAllowInsecureConnection }
 
-    fun tlsEnableHostnameVerification(tlsEnableHostnameVerification: Boolean) =
+    fun setTlsEnableHostnameVerification(tlsEnableHostnameVerification: Boolean) =
         apply { this.tlsEnableHostnameVerification = tlsEnableHostnameVerification }
 
-    fun tlsTrustCertsFilePath(tlsTrustCertsFilePath: String) =
+    fun setTlsTrustCertsFilePath(tlsTrustCertsFilePath: String) =
         apply { this.tlsTrustCertsFilePath = tlsTrustCertsFilePath }
 
-    fun useKeyStoreTls(useKeyStoreTls: Boolean) =
+    fun setUseKeyStoreTls(useKeyStoreTls: Boolean) =
         apply { this.useKeyStoreTls = useKeyStoreTls }
 
-    fun tlsTrustStoreType(tlsTrustStoreType: TlsTrustStoreType) =
+    fun setTlsTrustStoreType(tlsTrustStoreType: TlsTrustStoreType) =
         apply { this.tlsTrustStoreType = tlsTrustStoreType }
 
-    fun tlsTrustStorePath(tlsTrustStorePath: String) =
+    fun setTlsTrustStorePath(tlsTrustStorePath: String) =
         apply { this.tlsTrustStorePath = tlsTrustStorePath }
 
-    fun tlsTrustStorePassword(tlsTrustStorePassword: Secret) =
+    fun setTlsTrustStorePassword(tlsTrustStorePassword: Secret) =
         apply { this.tlsTrustStorePassword = tlsTrustStorePassword }
 
-    fun authentication(authentication: ClientAuthenticationConfig) =
+    fun setAuthentication(authentication: ClientAuthenticationConfig) =
         apply { this.authentication = authentication }
 
-    fun policies(policiesConfig: PoliciesConfig) =
+    fun setPolicies(policiesConfig: PoliciesConfig) =
         apply { this.policies = policiesConfig }
 
-    fun producer(producerConfig: ProducerConfig) =
+    fun setProducer(producerConfig: ProducerConfig) =
         apply { this.producer = producerConfig }
 
-    fun consumer(consumerConfig: ConsumerConfig) =
+    fun setConsumer(consumerConfig: ConsumerConfig) =
         apply { this.consumer = consumerConfig }
 
     fun build() = PulsarConfig(

@@ -49,10 +49,10 @@ data class WorkflowStateEngineConfig(
     private var concurrency = default.concurrency
     private var storage = default.storage
 
-    fun concurrency(concurrency: Int) =
+    fun setConcurrency(concurrency: Int) =
         apply { this.concurrency = concurrency }
 
-    fun storage(storage: StorageConfig) =
+    fun setStorage(storage: StorageConfig) =
         apply { this.storage = storage }
 
     fun build() = WorkflowStateEngineConfig(

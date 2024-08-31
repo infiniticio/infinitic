@@ -109,31 +109,31 @@ data class WorkflowConfig(
     private var tagEngine = default.tagEngine
     private var stateEngine = default.stateEngine
 
-    fun name(name: String) =
+    fun setName(name: String) =
         apply { this.name = name }
 
-    fun `class`(`class`: String) =
+    fun setClass(`class`: String) =
         apply { this.`class` = `class` }
 
-    fun classes(classes: MutableList<String>) =
+    fun setClasses(classes: MutableList<String>) =
         apply { this.classes = classes }
 
-    fun concurrency(concurrency: Int) =
+    fun setConcurrency(concurrency: Int) =
         apply { this.concurrency = concurrency }
 
-    fun timeoutInSeconds(timeoutInSeconds: Double) =
+    fun setTimeoutInSeconds(timeoutInSeconds: Double) =
         apply { this.timeoutInSeconds = timeoutInSeconds }
 
-    fun retry(retry: RetryPolicy) =
+    fun setRetry(retry: RetryPolicy) =
         apply { this.retry = retry }
 
-    fun checkMode(checkMode: WorkflowCheckMode) =
+    fun setCheckMode(checkMode: WorkflowCheckMode) =
         apply { this.checkMode = checkMode }
 
-    fun tagEngine(tagEngine: WorkflowTagEngineConfig) =
+    fun setTagEngine(tagEngine: WorkflowTagEngineConfig) =
         apply { this.tagEngine = tagEngine }
 
-    fun stateEngine(stateEngine: WorkflowStateEngineConfig) =
+    fun setStateEngine(stateEngine: WorkflowStateEngineConfig) =
         apply { this.stateEngine = stateEngine }
 
     fun build() = WorkflowConfig(

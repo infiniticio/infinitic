@@ -24,12 +24,13 @@ package io.infinitic.pulsar.config.auth
 
 import java.net.URL
 
+@Suppress("unused")
 data class AuthenticationOAuth2Config(
   val issuerUrl: URL,
   val privateKey: URL,
   val audience: String
 ) : ClientAuthenticationConfig() {
-  
+
   /**
    * AuthenticationOAuth2Config builder (Useful for Java user)
    */
@@ -38,9 +39,9 @@ data class AuthenticationOAuth2Config(
     private var privateKey: URL? = null
     private var audience: String? = null
 
-    fun issuerUrl(issuerUrl: URL) = apply { this.issuerUrl = issuerUrl }
-    fun privateKey(privateKey: URL) = apply { this.privateKey = privateKey }
-    fun audience(audience: String) = apply { this.audience = audience }
+    fun setIssuerUrl(issuerUrl: URL) = apply { this.issuerUrl = issuerUrl }
+    fun setPrivateKey(privateKey: URL) = apply { this.privateKey = privateKey }
+    fun setAudience(audience: String) = apply { this.audience = audience }
 
     fun build() = AuthenticationOAuth2Config(
         issuerUrl ?: throw IllegalArgumentException("issuerUrl must be set"),

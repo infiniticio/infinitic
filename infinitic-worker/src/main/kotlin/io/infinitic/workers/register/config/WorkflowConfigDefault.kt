@@ -69,22 +69,22 @@ data class WorkflowConfigDefault(
     private var stateEngine = default.stateEngine
     private var checkMode = default.checkMode
 
-    fun concurrency(concurrency: Int) =
+    fun setConcurrency(concurrency: Int) =
         apply { this.concurrency = concurrency }
 
-    fun timeoutInSeconds(timeoutInSeconds: Double) =
+    fun setTimeoutInSeconds(timeoutInSeconds: Double) =
         apply { this.timeoutInSeconds = timeoutInSeconds }
 
-    fun retry(retry: RetryPolicy) =
+    fun setRetry(retry: RetryPolicy) =
         apply { this.retry = retry }
 
-    fun tagEngine(tagEngine: WorkflowTagEngineConfig) =
+    fun setTagEngine(tagEngine: WorkflowTagEngineConfig) =
         apply { this.tagEngine = tagEngine }
 
-    fun stateEngine(stateEngine: WorkflowStateEngineConfig) =
+    fun setStateEngine(stateEngine: WorkflowStateEngineConfig) =
         apply { this.stateEngine = stateEngine }
 
-    fun checkMode(checkMode: WorkflowCheckMode) =
+    fun setCheckMode(checkMode: WorkflowCheckMode) =
         apply { this.checkMode = checkMode }
 
     fun build() = WorkflowConfigDefault(

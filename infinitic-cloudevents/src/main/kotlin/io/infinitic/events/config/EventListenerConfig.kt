@@ -76,19 +76,19 @@ data class EventListenerConfig(
     private var services = default.services
     private var workflows = default.workflows
 
-    fun `class`(`class`: String) =
+    fun setClass(`class`: String) =
         apply { this.`class` = `class` }
 
-    fun concurrency(concurrency: Int) =
+    fun setConcurrency(concurrency: Int) =
         apply { this.concurrency = concurrency }
 
-    fun subscriptionName(subscriptionName: String) =
+    fun setSubscriptionName(subscriptionName: String) =
         apply { this.subscriptionName = subscriptionName }
 
-    fun services(services: SelectionConfig) =
+    fun setServices(services: SelectionConfig) =
         apply { this.services = services }
 
-    fun workflows(workflows: SelectionConfig) =
+    fun setWorkflows(workflows: SelectionConfig) =
         apply { this.workflows = workflows }
 
     fun build() = EventListenerConfig(

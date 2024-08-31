@@ -39,7 +39,7 @@ data class LogsConfig(
     private val default = LogsConfig()
     private var beautify = default.beautify
 
-    fun beautify(beautify: Boolean) =
+    fun setBeautify(beautify: Boolean) =
         apply { this.beautify = beautify }
 
     fun build() = LogsConfig(

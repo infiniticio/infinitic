@@ -118,37 +118,37 @@ data class WorkerConfig(
     private var workflowDefault = default.workflowDefault
     private var eventListener = default.eventListener
 
-    fun name(name: String) =
+    fun setName(name: String) =
         apply { this.name = name }
 
-    fun shutdownGracePeriodInSeconds(shutdownGracePeriodInSeconds: Double) =
+    fun setShutdownGracePeriodInSeconds(shutdownGracePeriodInSeconds: Double) =
         apply { this.shutdownGracePeriodInSeconds = shutdownGracePeriodInSeconds }
 
-    fun transport(transport: Transport) =
+    fun setTransport(transport: Transport) =
         apply { this.transport = transport }
 
-    fun pulsar(pulsar: PulsarConfig?) =
+    fun setPulsar(pulsar: PulsarConfig?) =
         apply { this.pulsar = pulsar }
 
-    fun storage(storage: StorageConfig?) =
+    fun setStorage(storage: StorageConfig?) =
         apply { this.storage = storage }
 
-    fun logs(logs: LogsConfig) =
+    fun setLogs(logs: LogsConfig) =
         apply { this.logs = logs }
 
-    fun workflows(workflows: List<WorkflowConfig>) =
+    fun setWorkflows(workflows: List<WorkflowConfig>) =
         apply { this.workflows = workflows }
 
-    fun services(services: List<ServiceConfig>) =
+    fun setServices(services: List<ServiceConfig>) =
         apply { this.services = services }
 
-    fun serviceDefault(serviceDefault: ServiceConfigDefault?) =
+    fun setServiceDefault(serviceDefault: ServiceConfigDefault?) =
         apply { this.serviceDefault = serviceDefault }
 
-    fun workflowDefault(workflowDefault: WorkflowConfigDefault?) =
+    fun setWorkflowDefault(workflowDefault: WorkflowConfigDefault?) =
         apply { this.workflowDefault = workflowDefault }
 
-    fun eventListener(eventListener: EventListenerConfig?) =
+    fun setEventListener(eventListener: EventListenerConfig?) =
         apply { this.eventListener = eventListener }
 
     fun build() = WorkerConfig(

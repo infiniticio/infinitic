@@ -91,22 +91,22 @@ data class ServiceConfig(
     private var retry = default.retry
     private var tagEngine = default.tagEngine
 
-    fun name(name: String) =
+    fun setName(name: String) =
         apply { this.name = name }
 
-    fun `class`(`class`: String) =
+    fun setClass(`class`: String) =
         apply { this.`class` = `class` }
 
-    fun concurrency(concurrency: Int) =
+    fun setConcurrency(concurrency: Int) =
         apply { this.concurrency = concurrency }
 
-    fun timeoutInSeconds(timeoutInSeconds: Double) =
+    fun setTimeoutInSeconds(timeoutInSeconds: Double) =
         apply { this.timeoutInSeconds = timeoutInSeconds }
 
-    fun retry(retry: RetryPolicy) =
+    fun setRetry(retry: RetryPolicy) =
         apply { this.retry = retry }
 
-    fun tagEngine(tagEngine: ServiceTagEngineConfig) =
+    fun setTagEngine(tagEngine: ServiceTagEngineConfig) =
         apply { this.tagEngine = tagEngine }
 
     fun build() = ServiceConfig(
