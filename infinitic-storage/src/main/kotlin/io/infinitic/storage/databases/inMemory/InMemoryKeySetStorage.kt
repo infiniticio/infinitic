@@ -20,7 +20,7 @@
  *
  * Licensor: infinitic.io
  */
-package io.infinitic.storage.storages.inMemory
+package io.infinitic.storage.databases.inMemory
 
 import io.infinitic.storage.config.InMemoryConfig
 import io.infinitic.storage.data.Bytes
