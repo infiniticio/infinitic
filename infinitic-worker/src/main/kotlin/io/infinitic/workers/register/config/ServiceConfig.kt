@@ -29,21 +29,22 @@ import io.infinitic.tasks.WithRetry
 import io.infinitic.tasks.WithTimeout
 import io.infinitic.tasks.tag.config.ServiceTagEngineConfig
 
+
 @Suppress("unused")
 data class ServiceConfig(
   val name: String,
   val `class`: String? = null,
   var concurrency: Int? = null,
-  var timeoutInSeconds: Double? = UNDEFINED_TIMEOUT,
+  var timeoutSeconds: Double? = UNDEFINED_TIMEOUT,
   var retry: RetryPolicy? = UNDEFINED_RETRY,
   var tagEngine: ServiceTagEngineConfig? = DEFAULT_SERVICE_TAG_ENGINE,
 ) {
   fun getInstance(): Any = `class`!!.getInstance().getOrThrow()
 
-  val withTimeout: WithTimeout? = when (timeoutInSeconds) {
+  val withTimeout: WithTimeout? = when (timeoutSeconds) {
     null -> null
     UNDEFINED_TIMEOUT -> UNDEFINED_WITH_TIMEOUT
-    else -> WithTimeout { timeoutInSeconds }
+    else -> WithTimeout { timeoutSeconds }
   }
 
   val withRetry: WithRetry? = when (retry) {
@@ -68,8 +69,8 @@ data class ServiceConfig(
         require(it >= 0) { error("'${::concurrency.name}' must be an integer >= 0") }
       }
 
-      timeoutInSeconds?.let { timeout ->
-        require(timeout > 0 || timeout == UNDEFINED_TIMEOUT) { error("'${::timeoutInSeconds.name}' must be an integer > 0") }
+      timeoutSeconds?.let { timeout ->
+        require(timeout > 0 || timeout == UNDEFINED_TIMEOUT) { error("'${::timeoutSeconds.name}' must be an integer > 0") }
       }
     }
   }
@@ -87,7 +88,7 @@ data class ServiceConfig(
     private var name = default.name
     private var `class` = default.`class`
     private var concurrency = default.concurrency
-    private var timeoutInSeconds = default.timeoutInSeconds
+    private var timeoutInSeconds = default.timeoutSeconds
     private var retry = default.retry
     private var tagEngine = default.tagEngine
 
