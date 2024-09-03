@@ -42,7 +42,7 @@ data class WorkerConfig(
   override val name: String? = null,
 
   /** Worker name */
-  override val shutdownGracePeriodInSeconds: Double = 30.0,
+  override val shutdownGracePeriodSeconds: Double = 30.0,
 
   /** Transport configuration */
   override val transport: Transport = Transport.pulsar,
@@ -107,7 +107,7 @@ data class WorkerConfig(
   class WorkerConfigBuilder {
     private val default = WorkerConfig()
     private var name = default.name
-    private var shutdownGracePeriodInSeconds = default.shutdownGracePeriodInSeconds
+    private var shutdownGracePeriodInSeconds = default.shutdownGracePeriodSeconds
     private var transport = default.transport
     private var pulsar = default.pulsar
     private var storage = default.storage
