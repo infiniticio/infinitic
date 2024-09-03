@@ -48,7 +48,7 @@ data class TransportConfig(
   override val pulsar: PulsarConfig?,
 
   /** Shutdown Grace Period */
-  override val shutdownGracePeriodInSeconds: Double
+  override val shutdownGracePeriodSeconds: Double
 ) : TransportConfigInterface {
 
   init {
@@ -56,7 +56,7 @@ data class TransportConfig(
       require(pulsar != null) { "Missing Pulsar configuration" }
     }
 
-    require(shutdownGracePeriodInSeconds >= 0) { "shutdownGracePeriodInSeconds must be >= 0" }
+    require(shutdownGracePeriodSeconds >= 0) { "shutdownGracePeriodInSeconds must be >= 0" }
   }
 
   /** This is used as source prefix for CloudEvents */
@@ -80,7 +80,7 @@ data class TransportConfig(
           val consumer = PulsarInfiniticConsumer(
               Consumer(client, pulsar.consumer),
               this,
-              shutdownGracePeriodInSeconds,
+              shutdownGracePeriodSeconds,
           )
           // Pulsar client and admin will be closed with consumer
           consumer.addAutoCloseResource(pulsar.client)
