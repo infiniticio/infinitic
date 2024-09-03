@@ -27,13 +27,13 @@ import org.apache.pulsar.common.policies.data.SchemaCompatibilityStrategy
 @Suppress("unused")
 data class PoliciesConfig(
     // Retain messages for 7 days
-  val retentionTimeInMinutes: Int = 60 * 24 * 7,
+  val retentionTimeMinutes: Int = 60 * 24 * 7,
     // Retain messages up to 1GB
-  val retentionSizeInMB: Long = 1024,
+  val retentionSizeMB: Long = 1024,
     // Expire messages after 14 days
-  val messageTTLInSeconds: Int = 3600 * 24 * 14,
+  val messageTTLSeconds: Int = 3600 * 24 * 14,
     // Expire delayed messages after 1 year
-  val timerTTLInSeconds: Int = 3600 * 24 * 366,
+  val timerTTLSeconds: Int = 3600 * 24 * 366,
     // Delayed delivery tick time = 1 second
   val delayedDeliveryTickTimeMillis: Long = 1000,
     // Changes allowed: add optional fields, delete fields
@@ -58,10 +58,10 @@ data class PoliciesConfig(
    */
   class PoliciesConfigBuilder {
     private val default = PoliciesConfig()
-    private var retentionTimeInMinutes = default.retentionTimeInMinutes
-    private var retentionSizeInMB = default.retentionSizeInMB
-    private var messageTTLInSeconds = default.messageTTLInSeconds
-    private var timerTTLInSeconds = default.timerTTLInSeconds
+    private var retentionTimeMinutes = default.retentionTimeMinutes
+    private var retentionSizeMB = default.retentionSizeMB
+    private var messageTTLSeconds = default.messageTTLSeconds
+    private var timerTTLSeconds = default.timerTTLSeconds
     private var delayedDeliveryTickTimeMillis = default.delayedDeliveryTickTimeMillis
     private var schemaCompatibilityStrategy = default.schemaCompatibilityStrategy
     private var allowAutoTopicCreation = default.allowAutoTopicCreation
@@ -69,17 +69,17 @@ data class PoliciesConfig(
     private var isAllowAutoUpdateSchema = default.isAllowAutoUpdateSchema
     private var deduplicationEnabled = default.deduplicationEnabled
 
-    fun setRetentionTimeInMinutes(retentionTimeInMinutes: Int) =
-        apply { this.retentionTimeInMinutes = retentionTimeInMinutes }
+    fun setRetentionTimeMinutes(retentionTimeMinutes: Int) =
+        apply { this.retentionTimeMinutes = retentionTimeMinutes }
 
-    fun setRetentionSizeInMB(retentionSizeInMB: Long) =
-        apply { this.retentionSizeInMB = retentionSizeInMB }
+    fun setRetentionSizeMB(retentionSizeMB: Long) =
+        apply { this.retentionSizeMB = retentionSizeMB }
 
-    fun setMessageTTLInSeconds(messageTTLInSeconds: Int) =
-        apply { this.messageTTLInSeconds = messageTTLInSeconds }
+    fun setMessageTTLSeconds(messageTTLSeconds: Int) =
+        apply { this.messageTTLSeconds = messageTTLSeconds }
 
-    fun setTimerTTLInSeconds(timerTTLInSeconds: Int) =
-        apply { this.timerTTLInSeconds = timerTTLInSeconds }
+    fun setTimerTTLSeconds(timerTTLSeconds: Int) =
+        apply { this.timerTTLSeconds = timerTTLSeconds }
 
     fun setDelayedDeliveryTickTimeMillis(delayedDeliveryTickTimeMillis: Long) =
         apply { this.delayedDeliveryTickTimeMillis = delayedDeliveryTickTimeMillis }
@@ -100,10 +100,10 @@ data class PoliciesConfig(
         apply { this.deduplicationEnabled = deduplicationEnabled }
 
     fun build() = PoliciesConfig(
-        retentionTimeInMinutes,
-        retentionSizeInMB,
-        messageTTLInSeconds,
-        timerTTLInSeconds,
+        retentionTimeMinutes,
+        retentionSizeMB,
+        messageTTLSeconds,
+        timerTTLSeconds,
         delayedDeliveryTickTimeMillis,
         schemaCompatibilityStrategy,
         allowAutoTopicCreation,
