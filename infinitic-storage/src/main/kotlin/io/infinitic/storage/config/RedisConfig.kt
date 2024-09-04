@@ -32,7 +32,7 @@ import java.util.concurrent.ConcurrentHashMap
  *
  * @property host The Redis server host address.
  * @property port The Redis server port number.
- * @property user The username to authenticate with Redis server (optional).
+ * @property username The username to authenticate with Redis server (optional).
  * @property password The password to authenticate with Redis server (optional).
  * @property database The Redis database index (default is 0).
  * @property timeout The timeout in milliseconds for socket connection timeout (default is 2000 milliseconds).
@@ -56,7 +56,7 @@ import java.util.concurrent.ConcurrentHashMap
 data class RedisConfig(
   val host: String,
   var port: Int,
-  var user: String? = null,
+  var username: String? = null,
   var password: String? = null,
   var database: Int = Protocol.DEFAULT_DATABASE,
   var timeout: Int = Protocol.DEFAULT_TIMEOUT,
@@ -84,7 +84,7 @@ data class RedisConfig(
    */
   override fun toString() =
       "${this::class.java.simpleName}(host='$host', port=$port" +
-          (user?.let { ", user='$it'" } ?: "") +
+          (username?.let { ", username='$it'" } ?: "") +
           (password?.let { ", password='******'" } ?: "") +
           ", database=$database, timeout=$timeout, ssl=$ssl, poolConfig=$poolConfig)"
 
@@ -102,7 +102,7 @@ data class RedisConfig(
   ): JedisPool = pools.getOrPut(this) {
     when (password.isNullOrEmpty()) {
       true -> JedisPool(jedisPoolConfig, host, port, timeout, ssl)
-      false -> JedisPool(jedisPoolConfig, host, port, timeout, user, password, database, ssl)
+      false -> JedisPool(jedisPoolConfig, host, port, timeout, username, password, database, ssl)
     }
   }
 
@@ -135,7 +135,7 @@ data class RedisConfig(
   class RedisConfigBuilder {
     private var host: String? = null
     private var port: Int? = null
-    private var user: String? = null
+    private var username: String? = null
     private var password: String? = null
     private var database: Int? = null
     private var timeout: Int? = null
@@ -144,7 +144,7 @@ data class RedisConfig(
 
     fun setHost(host: String) = apply { this.host = host }
     fun setPort(port: Int) = apply { this.port = port }
-    fun setUser(user: String) = apply { this.user = user }
+    fun setUserName(user: String) = apply { this.username = user }
     fun setPassword(password: String) = apply { this.password = password }
     fun setDatabase(database: Int) = apply { this.database = database }
     fun setTimeout(timeout: Int) = apply { this.timeout = timeout }
@@ -156,7 +156,7 @@ data class RedisConfig(
     fun build() = RedisConfig(
         host ?: throw IllegalArgumentException("${::host.name} must not be null"),
         port ?: throw IllegalArgumentException("${::port.name} must not be null"),
-        user,
+        username,
         password,
         database ?: Protocol.DEFAULT_DATABASE,
         timeout ?: Protocol.DEFAULT_TIMEOUT,

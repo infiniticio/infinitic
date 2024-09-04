@@ -31,7 +31,7 @@ import java.util.concurrent.ConcurrentHashMap
  *
  * @property host The host address of the PostgresSQL server.
  * @property port The port number on which the PostgresSQL server is listening.
- * @property user The username for connecting to the database.
+ * @property username The username for connecting to the database.
  * @property password The password for connecting to the database, if applicable.
  * @property database The name of the database to connect to. Optional, default is "infinitic".
  * @property keySetTable The name of the table used for key sets. Optional, default is "key_set_storage".
@@ -61,7 +61,7 @@ import java.util.concurrent.ConcurrentHashMap
 data class PostgresConfig(
   val host: String,
   val port: Int,
-  val user: String,
+  val username: String,
   val password: String? = null,
   val database: String = DEFAULT_DATABASE,
   val keySetTable: String = DEFAULT_KEY_SET_TABLE,
@@ -110,7 +110,7 @@ data class PostgresConfig(
    * The optional properties are included only if they have non-null values.
    */
   override fun toString() =
-      "${this::class.java.simpleName}(host='$host', port=$port, user='$user', password='******', " +
+      "${this::class.java.simpleName}(host='$host', port=$port, username='$username', password='******', " +
           "database=$database, keySetTable=$keySetTable, keyValueTable=$keyValueTable" +
           (maximumPoolSize?.let { ", maximumPoolSize=$it" } ?: "") +
           (minimumIdle?.let { ", minimumIdle=$it" } ?: "") +
@@ -146,7 +146,7 @@ data class PostgresConfig(
       val config = this@PostgresConfig
       jdbcUrl = config.jdbcUrl
       driverClassName = config.driverClassName
-      username = config.user
+      username = config.username
       password = config.password
       config.maximumPoolSize?.let { maximumPoolSize = it }
       config.minimumIdle?.let { minimumIdle = it }
@@ -187,7 +187,7 @@ data class PostgresConfig(
         // use a default source
         jdbcUrl = this@PostgresConfig.jdbcUrlDefault
         driverClassName = this@PostgresConfig.driverClassName
-        username = this@PostgresConfig.user
+        username = this@PostgresConfig.username
         password = this@PostgresConfig.password
       },
   )
@@ -225,7 +225,7 @@ data class PostgresConfig(
   class PostgresConfigBuilder {
     private var host: String? = null
     private var port: Int? = null
-    private var user: String? = null
+    private var username: String? = null
     private var password: String? = null
     private var database: String? = null
     private var keySetTable: String? = null
@@ -238,7 +238,7 @@ data class PostgresConfig(
 
     fun setHost(host: String) = apply { this.host = host }
     fun setPort(port: Int) = apply { this.port = port }
-    fun setUser(user: String) = apply { this.user = user }
+    fun setUserName(user: String) = apply { this.username = user }
     fun setPassword(password: String) = apply { this.password = password }
     fun setDatabase(database: String) = apply { this.database = database }
     fun setKeySetTable(keySetTable: String) = apply { this.keySetTable = keySetTable }
@@ -252,7 +252,8 @@ data class PostgresConfig(
     fun build() = PostgresConfig(
         host = host ?: throw IllegalArgumentException("${::host.name} must not be null"),
         port = port ?: throw IllegalArgumentException("${::port.name} must not be null"),
-        user = user ?: throw IllegalArgumentException("${::user.name} must not be null"),
+        username = username
+          ?: throw IllegalArgumentException("${::username.name} must not be null"),
         password = password,
         database = database ?: DEFAULT_DATABASE,
         keySetTable = keySetTable ?: DEFAULT_KEY_SET_TABLE,
