@@ -43,13 +43,17 @@ import io.kotest.matchers.types.shouldBeInstanceOf
 
 internal class WorkflowExecutorConfigTests : StringSpec(
     {
+      val workflowName = WorkflowAImpl::class.java.name
+
       "Can create WorkflowExecutorConfig through builder with default parameters" {
         val config = shouldNotThrowAny {
           WorkflowExecutorConfig.builder()
+              .setWorkflowName(workflowName)
               .addFactory { WorkflowAImpl() }
               .build()
         }
 
+        config.workflowName shouldBe workflowName
         config.shouldBeInstanceOf<WorkflowExecutorConfig>()
         config.factories.size shouldBe 1
         config.factories[0].invoke().shouldBeInstanceOf<WorkflowAImpl>()
@@ -62,6 +66,7 @@ internal class WorkflowExecutorConfigTests : StringSpec(
         val withRetry = ExponentialBackoffRetryPolicy()
         val config = shouldNotThrowAny {
           WorkflowExecutorConfig.builder()
+              .setWorkflowName(workflowName)
               .addFactory { WorkflowAImpl() }
               .setConcurrency(10)
               .setTimeoutSeconds(3.0)
@@ -75,9 +80,19 @@ internal class WorkflowExecutorConfigTests : StringSpec(
         config.withTimeout?.getTimeoutSeconds() shouldBe 3.0
       }
 
+      "workflowName is mandatory when building WorkflowExecutorConfig through builder" {
+        val e = shouldThrow<IllegalArgumentException> {
+          WorkflowExecutorConfig.builder()
+              .addFactory { WorkflowAImpl() }
+              .build()
+        }
+        e.message shouldContain "workflowName"
+      }
+
       "Concurrency must be positive when building WorkflowExecutorConfig" {
         val e = shouldThrow<IllegalArgumentException> {
           WorkflowExecutorConfig.builder()
+              .setWorkflowName(workflowName)
               .addFactory { WorkflowAImpl() }
               .setConcurrency(0)
               .build()
@@ -88,13 +103,14 @@ internal class WorkflowExecutorConfigTests : StringSpec(
       "Factory is mandatory when building WorkflowExecutorConfig" {
         val e = shouldThrow<IllegalArgumentException> {
           WorkflowExecutorConfig.builder()
+              .setWorkflowName(workflowName)
               .setConcurrency(1)
               .build()
         }
         e.message shouldContain "factory"
       }
 
-      "Can create WorkflowExecutorConfig through YAML with default parameters" {
+      "Can create WorkflowExecutorConfig through YAML without workflowName" {
         val config = shouldNotThrowAny {
           WorkflowExecutorConfig.fromYamlString(
               """
@@ -103,7 +119,7 @@ class: ${WorkflowAImpl::class.java.name}
           )
         }
 
-        println(config)
+        config.workflowName.isBlank() shouldBe true
         config.factories.size shouldBe 1
         config.factories[0].invoke().shouldBeInstanceOf<WorkflowAImpl>()
         config.concurrency shouldBe 1
@@ -193,7 +209,7 @@ class: ${WorkflowWithInvocationTargetException::class.java.name}
           )
         }
         e.message shouldContain
-            "Error when creating an instance of '${WorkflowWithInvocationTargetException::class.java.name}'"
+            "Error during class '${WorkflowWithInvocationTargetException::class.java.name}' instantiation"
       }
 
       "ExceptionInInitializer should throw cause" {
@@ -240,6 +256,7 @@ class: ${NotAWorkflow::class.java.name}
       "Can create WorkflowExecutorConfig with multiple versions" {
         val config = shouldNotThrowAny {
           WorkflowExecutorConfig.builder()
+              .setWorkflowName(MyWorkflow::class.java.name)
               .addFactory { MyWorkflow() }
               .addFactory { MyWorkflow_1() }
               .addFactory { MyWorkflow_2() }
@@ -274,6 +291,7 @@ classes:
       "Exception when workflows have same version (through builder)" {
         val e = shouldThrow<IllegalArgumentException> {
           WorkflowExecutorConfig.builder()
+              .setWorkflowName(MyWorkflow::class.java.name)
               .addFactory { MyWorkflow() }
               .addFactory { MyWorkflow_0() }
               .addFactory { MyWorkflow_1() }
@@ -302,16 +320,18 @@ classes:
         val w = MyWorkflow()
         shouldNotThrowAny {
           WorkflowExecutorConfig.builder()
+              .setWorkflowName(MyWorkflow::class.java.name)
               .addFactory { w }
               .build()
         }
       }
 
-      "should throw when factory returns the same instance but has no properties" {
+      "should throw when factory returns the same instance but has properties" {
         Workflow.setContext(emptyWorkflowContext)
         val w = MyWorkflow_WithContext()
         val e = shouldThrow<IllegalArgumentException> {
           WorkflowExecutorConfig.builder()
+              .setWorkflowName(MyWorkflow::class.java.name)
               .addFactory { w }
               .build()
         }

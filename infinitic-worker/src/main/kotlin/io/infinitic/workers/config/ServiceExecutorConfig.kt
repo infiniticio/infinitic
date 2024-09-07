@@ -38,6 +38,7 @@ internal const val UNSET_TIMEOUT = Double.MAX_VALUE
 @Suppress("unused")
 sealed class ServiceExecutorConfig {
 
+  abstract val serviceName: String
   abstract val factory: ServiceFactory
   abstract val concurrency: Int
 
@@ -85,10 +86,14 @@ sealed class ServiceExecutorConfig {
    * ServiceConfig builder
    */
   class ServiceExecutorConfigBuilder {
+    private var serviceName: String? = null
     private var factory: ServiceFactory? = null
     private var concurrency: Int = 1
     private var timeoutSeconds: Double? = UNSET_TIMEOUT
     private var withRetry: WithRetry? = WithRetry.UNSET
+
+    fun setServiceName(name: String) =
+        apply { this.serviceName = name }
 
     fun setFactory(factory: () -> Any) =
         apply { this.factory = factory }
@@ -103,11 +108,13 @@ sealed class ServiceExecutorConfig {
         apply { this.withRetry = retry }
 
     fun build(): ServiceExecutorConfig {
-      require(factory != null) { "factory must not be null" }
+      serviceName.checkServiceName()
+      require(factory != null) { "${::factory.name} must not be null" }
       concurrency.checkConcurrency()
       timeoutSeconds?.checkTimeout()
 
       return BuiltServiceExecutorConfig(
+          serviceName!!,
           factory!!,
           concurrency,
           withRetry,
@@ -121,6 +128,7 @@ sealed class ServiceExecutorConfig {
  * ServiceExecutorConfig built from builder
  */
 data class BuiltServiceExecutorConfig(
+  override val serviceName: String,
   override val factory: ServiceFactory,
   override val concurrency: Int,
   override val withRetry: WithRetry?,
@@ -131,11 +139,12 @@ data class BuiltServiceExecutorConfig(
  * ServiceExecutorConfig loaded from YAML
  */
 data class LoadedServiceExecutorConfig(
+  override var serviceName: String = "",
   val `class`: String,
   override val concurrency: Int = 1,
   val timeoutSeconds: Double? = UNSET_TIMEOUT,
   val retry: RetryPolicy? = UNSET_RETRY_POLICY,
-) : ServiceExecutorConfig() {
+) : ServiceExecutorConfig(), WithMutableServiceName {
 
   override val factory: () -> Any = { `class`.getInstance().getOrThrow() }
 
@@ -148,6 +157,15 @@ data class LoadedServiceExecutorConfig(
     concurrency.checkConcurrency()
     timeoutSeconds?.checkTimeout()
     retry?.check()
+  }
+
+  @JvmName("replaceServiceName")
+  internal fun setServiceName(name: String) {
+    if (serviceName == name) return
+    if (serviceName.isNotBlank()) {
+      throw IllegalStateException("serviceName is already set to '$serviceName'")
+    }
+    serviceName = name
   }
 }
 
@@ -167,6 +185,11 @@ internal fun String.checkClass() {
   require(isNotEmpty()) { "class can not be empty" }
 
   getInstance().getOrThrow()
+}
+
+internal fun String?.checkServiceName() {
+  require(this != null) { "serviceName must not be null" }
+  require(this.isNotBlank()) { "serviceName must not be blank" }
 }
 
 internal fun Int?.checkConcurrency() {

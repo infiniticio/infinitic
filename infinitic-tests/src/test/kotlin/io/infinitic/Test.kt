@@ -24,7 +24,6 @@ package io.infinitic
 
 import io.infinitic.common.fixtures.DockerOnly
 import io.infinitic.common.workflows.data.workflows.WorkflowId
-import io.infinitic.common.workflows.data.workflows.WorkflowName
 import io.infinitic.common.workflows.engine.state.WorkflowState
 import io.infinitic.transport.config.Transport
 import io.infinitic.utils.Listener
@@ -108,7 +107,7 @@ internal suspend fun InfiniticWorker.getWorkflowState(
   // that's why we are waiting here a bit before getting the state
   delay(200)
 
-  return registry.workflowStateEngines[WorkflowName(name)]!!.storage.getState(WorkflowId(id))
+  return getWorkflowStateEngineConfig(name)?.workflowStateStorage?.getState(WorkflowId(id))
 }
 
 object ProjectConfig : AbstractProjectConfig() {

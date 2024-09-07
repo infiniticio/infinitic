@@ -24,6 +24,7 @@ package io.infinitic.workflows.workflowTask
 
 import io.infinitic.common.workflows.data.properties.PropertyName
 import io.infinitic.common.workflows.data.properties.PropertyValue
+import io.infinitic.common.workflows.executors.getProperties
 import io.infinitic.workflows.workflowTask.workflows.WorkflowAImpl
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe

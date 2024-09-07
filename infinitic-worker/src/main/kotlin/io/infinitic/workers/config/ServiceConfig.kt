@@ -12,14 +12,17 @@ data class ServiceConfig(
   var tagEngine: ServiceTagEngineConfig? = null,
 ) {
   init {
-    require(name.isNotEmpty()) { "'${::name.name}' can not be empty" }
+    require(name.isNotBlank()) { "'${::name.name}' can not be blank" }
 
     executor?.let {
+      if (it is LoadedServiceExecutorConfig) it.setServiceName(name)
       val instance = it.factory()
       require(instance::class.java.isImplementationOf(name)) {
         error("Class '${instance::class.java.name}' must be an implementation of Service '$name', but is not.")
       }
     }
+
+    tagEngine?.setServiceName(name)
   }
 
   companion object {
@@ -44,4 +47,16 @@ data class ServiceConfig(
     fun fromYamlString(vararg yamls: String): ServiceConfig =
         loadFromYamlString(*yamls)
   }
+}
+
+internal interface WithMutableServiceName {
+  var serviceName: String
+}
+
+private fun WithMutableServiceName.setServiceName(name: String) {
+  if (serviceName == name) return
+  if (serviceName.isNotBlank()) {
+    throw IllegalStateException("${::serviceName.name} is already set to '$serviceName'")
+  }
+  serviceName = name
 }

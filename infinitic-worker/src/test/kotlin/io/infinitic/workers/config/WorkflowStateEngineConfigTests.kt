@@ -24,6 +24,7 @@ package io.infinitic.workers.config
 
 import io.infinitic.storage.config.InMemoryConfig
 import io.infinitic.storage.config.InMemoryStorageConfig
+import io.infinitic.workers.samples.WorkflowA
 import io.kotest.assertions.throwables.shouldNotThrowAny
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.StringSpec
@@ -33,13 +34,17 @@ import io.kotest.matchers.types.shouldBeInstanceOf
 
 internal class WorkflowStateEngineConfigTests : StringSpec(
     {
+      val workflowName = WorkflowA::class.java.name
       val storage = InMemoryStorageConfig(inMemory = InMemoryConfig())
 
       "Can create WorkflowStateEngineConfig through builder with default parameters" {
         val config = shouldNotThrowAny {
-          WorkflowStateEngineConfig.builder().build()
+          WorkflowStateEngineConfig.builder()
+              .setWorkflowName(workflowName)
+              .build()
         }
 
+        config.workflowName shouldBe workflowName
         config.shouldBeInstanceOf<WorkflowStateEngineConfig>()
         config.storage shouldBe null
         config.concurrency shouldBe 1
@@ -48,6 +53,7 @@ internal class WorkflowStateEngineConfigTests : StringSpec(
       "Can create WorkflowStateEngineConfig through builder with all parameters" {
         val config = shouldNotThrowAny {
           WorkflowStateEngineConfig.builder()
+              .setWorkflowName(workflowName)
               .setConcurrency(10)
               .setStorage(storage)
               .build()
@@ -58,13 +64,37 @@ internal class WorkflowStateEngineConfigTests : StringSpec(
         config.storage shouldBe storage
       }
 
+      "WorkflowName is mandatory when building WorkflowStateEngineConfig through builder" {
+        val e = shouldThrow<IllegalArgumentException> {
+          WorkflowStateEngineConfig.builder()
+              .build()
+        }
+        e.message shouldContain "workflowName"
+      }
+
       "Concurrency must be positive when building WorkflowStateEngineConfig" {
         val e = shouldThrow<IllegalArgumentException> {
           WorkflowStateEngineConfig.builder()
+              .setWorkflowName(workflowName)
               .setConcurrency(0)
               .build()
         }
         e.message shouldContain "concurrency"
+      }
+
+      "Can create WorkflowStateEngineConfig through YAML without workflowName" {
+        val config = shouldNotThrowAny {
+          WorkflowStateEngineConfig.fromYamlString(
+              """
+concurrency: 10
+          """,
+          )
+        }
+
+        config.shouldBeInstanceOf<WorkflowStateEngineConfig>()
+        config.workflowName.isBlank() shouldBe true
+        config.concurrency shouldBe 10
+        config.storage shouldBe null
       }
 
       "Can create WorkflowStateEngineConfig through YAML with all parameters" {

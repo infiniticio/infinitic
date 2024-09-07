@@ -29,7 +29,7 @@ import io.infinitic.workers.config.WorkflowExecutorConfig
 import io.infinitic.workers.config.WorkflowStateEngineConfig
 import io.infinitic.workers.config.WorkflowTagEngineConfig
 
-interface ConfigGettersInterface {
+interface ConfigGetterInterface {
   fun getEventListenersConfig(): EventListenerConfig?
 
   fun getServiceExecutorConfig(name: String): ServiceExecutorConfig?

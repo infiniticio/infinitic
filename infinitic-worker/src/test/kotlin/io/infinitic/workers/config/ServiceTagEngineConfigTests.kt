@@ -24,6 +24,7 @@ package io.infinitic.workers.config
 
 import io.infinitic.storage.config.InMemoryConfig
 import io.infinitic.storage.config.InMemoryStorageConfig
+import io.infinitic.workers.samples.ServiceA
 import io.kotest.assertions.throwables.shouldNotThrowAny
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.StringSpec
@@ -33,14 +34,17 @@ import io.kotest.matchers.types.shouldBeInstanceOf
 
 internal class ServiceTagEngineConfigTests : StringSpec(
     {
+      val serviceName = ServiceA::class.java.name
       val storage = InMemoryStorageConfig(inMemory = InMemoryConfig())
 
       "Can create ServiceTagEngineConfig through builder with default parameters" {
         val config = shouldNotThrowAny {
           ServiceTagEngineConfig.builder()
+              .setServiceName(serviceName)
               .build()
         }
 
+        config.serviceName shouldBe serviceName
         config.shouldBeInstanceOf<ServiceTagEngineConfig>()
         config.storage shouldBe null
         config.concurrency shouldBe 1
@@ -49,6 +53,7 @@ internal class ServiceTagEngineConfigTests : StringSpec(
       "Can create ServiceTagEngineConfig through builder with all parameters" {
         val config = shouldNotThrowAny {
           ServiceTagEngineConfig.builder()
+              .setServiceName(serviceName)
               .setConcurrency(10)
               .setStorage(storage)
               .build()
@@ -59,13 +64,35 @@ internal class ServiceTagEngineConfigTests : StringSpec(
         config.storage shouldBe storage
       }
 
+      "ServiceName is mandatory when building ServiceTagEngineConfig through builder" {
+        val e = shouldThrow<IllegalArgumentException> {
+          ServiceTagEngineConfig.builder()
+              .build()
+        }
+        e.message shouldContain "serviceName"
+      }
+
       "Concurrency must be positive when building ServiceTagEngineConfig" {
         val e = shouldThrow<IllegalArgumentException> {
           ServiceTagEngineConfig.builder()
+              .setServiceName(serviceName)
               .setConcurrency(0)
               .build()
         }
         e.message shouldContain "concurrency"
+      }
+
+      "Can create ServiceTagEngineConfig through YAML without serviceName" {
+        val config = shouldNotThrowAny {
+          ServiceTagEngineConfig.fromYamlString(
+              """
+concurrency: 10
+          """,
+          )
+        }
+
+        config.shouldBeInstanceOf<ServiceTagEngineConfig>()
+        config.concurrency shouldBe 10
       }
 
       "Can create ServiceTagEngineConfig through YAML with all parameters" {

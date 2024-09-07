@@ -30,7 +30,6 @@ import io.infinitic.config.loadFromYamlString
 import io.infinitic.pulsar.config.PulsarConfig
 import io.infinitic.storage.config.StorageConfig
 import io.infinitic.transport.config.Transport
-import io.infinitic.workers.registry.RegistryConfigInterface
 
 @Suppress("unused")
 data class InfiniticWorkerConfig(
@@ -53,15 +52,15 @@ data class InfiniticWorkerConfig(
   val logs: LogsConfig = LogsConfig(),
 
   /** Workflows configuration */
-  override val workflows: List<WorkflowConfig> = listOf(),
+  val workflows: List<WorkflowConfig> = listOf(),
 
   /** Services configuration */
-  override val services: List<ServiceConfig> = listOf(),
+  val services: List<ServiceConfig> = listOf(),
 
   /** Default event listener configuration */
-  override val eventListener: EventListenerConfig? = null,
+  val eventListener: EventListenerConfig? = null,
 
-  ) : RegistryConfigInterface {
+  ) {
 
   init {
     workflows.forEach { workflowConfig ->
@@ -83,9 +82,6 @@ data class InfiniticWorkerConfig(
   }
 
   companion object {
-    @JvmStatic
-    fun builder() = InfiniticWorkerConfigBuilder()
-
     /**
      * Create InfiniticWorkerConfig from files in file system
      */
@@ -106,86 +102,5 @@ data class InfiniticWorkerConfig(
     @JvmStatic
     fun fromYamlString(vararg yamls: String): InfiniticWorkerConfig =
         loadFromYamlString(*yamls)
-  }
-
-  /**
-   * InfiniticWorkerConfig builder
-   */
-  class InfiniticWorkerConfigBuilder() {
-    private val default = InfiniticWorkerConfig()
-    private var name = default.name
-    private var shutdownGracePeriodSeconds = default.shutdownGracePeriodSeconds
-    private var transport = default.transport
-    private var pulsar = default.pulsar
-    private var storage = default.storage
-    private var logs = default.logs
-    private var workflows = default.workflows.toMutableList()
-    private var services = default.services.toMutableList()
-    private var eventListener = default.eventListener
-
-    private fun getOrCreateServiceConfig(serviceName: String) =
-        services.firstOrNull { it.name == serviceName }
-          ?: ServiceConfig(serviceName).also { services.add(it) }
-
-    private fun getOrCreateWorkflowConfig(workflowName: String) =
-        workflows.firstOrNull { it.name == workflowName }
-          ?: WorkflowConfig(workflowName).also { workflows.add(it) }
-
-    fun setName(name: String) =
-        apply { this.name = name }
-
-    fun setShutdownGracePeriodSeconds(shutdownGracePeriodSeconds: Double) =
-        apply { this.shutdownGracePeriodSeconds = shutdownGracePeriodSeconds }
-
-    fun setTransport(transport: Transport) =
-        apply { this.transport = transport }
-
-    fun setPulsar(pulsar: PulsarConfig?) =
-        apply { this.pulsar = pulsar }
-
-    fun setStorage(storage: StorageConfig?) =
-        apply { this.storage = storage }
-
-    fun setLogs(logs: LogsConfig) =
-        apply { this.logs = logs }
-
-    fun addServiceExecutor(serviceName: String, executorConfig: ServiceExecutorConfig) =
-        apply { getOrCreateServiceConfig(serviceName).executor = executorConfig }
-
-    fun addServiceTagEngine(serviceName: String, tagEngineConfig: ServiceTagEngineConfig) =
-        apply { getOrCreateServiceConfig(serviceName).tagEngine = tagEngineConfig }
-
-    fun addWorkflowExecutor(
-      workflowName: String,
-      workflowExecutorConfig: WorkflowExecutorConfig
-    ) = apply { getOrCreateWorkflowConfig(workflowName).executor = workflowExecutorConfig }
-
-
-    fun addWorkflowStateEngine(
-      workflowName: String,
-      stateEngineConfig: WorkflowStateEngineConfig
-    ) = apply { getOrCreateWorkflowConfig(workflowName).stateEngine = stateEngineConfig }
-
-
-    fun addWorkflowTagEngine(
-      workflowName: String,
-      tagEngineConfig: WorkflowTagEngineConfig
-    ) = apply { getOrCreateWorkflowConfig(workflowName).tagEngine = tagEngineConfig }
-
-
-    fun setEventListener(eventListener: EventListenerConfig?) =
-        apply { this.eventListener = eventListener }
-
-
-    fun build() = InfiniticWorkerConfig(
-        name,
-        shutdownGracePeriodSeconds,
-        transport,
-        pulsar,
-        storage,
-        logs,
-        workflows,
-        services,
-    )
   }
 }

@@ -15,6 +15,7 @@ data class WorkflowConfig(
     require(name.isNotEmpty()) { "'${::name.name}' can not be empty" }
 
     executor?.let {
+      if (it is LoadedWorkflowExecutorConfig) it.setWorkflowName(name)
       val instances = it.factories.map { it() }
       instances.forEach { instance ->
         require(instance::class.java.isImplementationOf(name)) {
@@ -22,6 +23,8 @@ data class WorkflowConfig(
         }
       }
     }
+    tagEngine?.setWorkflowName(name)
+    stateEngine?.setWorkflowName(name)
   }
 
   companion object {
@@ -48,3 +51,14 @@ data class WorkflowConfig(
   }
 }
 
+interface WithMutableWorkflowName {
+  var workflowName: String
+}
+
+private fun WithMutableWorkflowName.setWorkflowName(name: String) {
+  if (workflowName == name) return
+  if (workflowName.isNotBlank()) {
+    throw IllegalStateException("${::workflowName.name} is already set to '$workflowName'")
+  }
+  workflowName = name
+}

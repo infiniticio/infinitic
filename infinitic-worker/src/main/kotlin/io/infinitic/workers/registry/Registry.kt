@@ -11,6 +11,7 @@ import io.infinitic.common.workflows.emptyWorkflowContext
 import io.infinitic.exceptions.workflows.UnknownWorkflowVersionException
 import io.infinitic.tasks.WithRetry
 import io.infinitic.tasks.WithTimeout
+import io.infinitic.workers.config.InfiniticWorkerConfig
 import io.infinitic.workers.config.ServiceConfig
 import io.infinitic.workers.config.ServiceExecutorConfig
 import io.infinitic.workers.config.WorkflowConfig
@@ -22,14 +23,15 @@ import io.infinitic.workflows.WorkflowCheckMode
 private typealias ClassFactoryInstance = Triple<Class<out Workflow>, () -> Workflow, Workflow>
 
 @Suppress("unused")
-class Registry(private val config: RegistryConfigInterface) : RegistryInterface,
-  ConfigGettersInterface {
+class Registry(
+  private val config: InfiniticWorkerConfig
+) : RegistryInterface, ConfigGetterInterface {
 
-  val services = config.services
+  internal val services = config.services
 
-  val workflows = config.workflows
+  internal val workflows = config.workflows
 
-  val eventListener = config.eventListener
+  internal val eventListener = config.eventListener
 
   override fun getServiceExecutorInstance(serviceName: ServiceName): Any =
       getServiceExecutor(serviceName).factory.invoke()
@@ -134,4 +136,5 @@ class Registry(private val config: RegistryConfigInterface) : RegistryInterface,
 
   override fun getWorkflowStateEngineConfig(name: String) =
       getWorkflow(WorkflowName(name))?.stateEngine
+
 }

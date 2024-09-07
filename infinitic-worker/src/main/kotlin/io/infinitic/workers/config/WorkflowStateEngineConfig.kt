@@ -22,17 +22,24 @@
  */
 package io.infinitic.workers.config
 
+import io.infinitic.common.exceptions.thisShouldNotHappen
 import io.infinitic.config.loadFromYamlFile
 import io.infinitic.config.loadFromYamlResource
 import io.infinitic.config.loadFromYamlString
 import io.infinitic.storage.config.StorageConfig
+import io.infinitic.workflows.engine.storage.BinaryWorkflowStateStorage
 
 data class WorkflowStateEngineConfig(
+  override var workflowName: String = "",
   val concurrency: Int = 1,
   var storage: StorageConfig? = null,
-) {
+) : WithMutableWorkflowName {
   init {
     require(concurrency >= 0) { "concurrency must be positive" }
+  }
+
+  val workflowStateStorage by lazy {
+    BinaryWorkflowStateStorage((storage ?: thisShouldNotHappen()).keyValue)
   }
 
   companion object {
@@ -66,8 +73,12 @@ data class WorkflowStateEngineConfig(
    */
   class WorkflowStateEngineConfigBuilder {
     private val default = WorkflowStateEngineConfig()
+    private var workflowName = default.workflowName
     private var concurrency = default.concurrency
     private var storage = default.storage
+
+    fun setWorkflowName(workflowName: String) =
+        apply { this.workflowName = workflowName }
 
     fun setConcurrency(concurrency: Int) =
         apply { this.concurrency = concurrency }
@@ -76,9 +87,11 @@ data class WorkflowStateEngineConfig(
         apply { this.storage = storage }
 
     fun build(): WorkflowStateEngineConfig {
+      workflowName.checkWorkflowName()
       concurrency.checkConcurrency()
 
       return WorkflowStateEngineConfig(
+          workflowName,
           concurrency,
           storage,
       )

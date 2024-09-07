@@ -22,9 +22,12 @@
  */
 package io.infinitic.workers
 
+import io.cloudevents.CloudEvent
+import io.infinitic.cloudEvents.CloudEventListener
 import io.infinitic.storage.config.InMemoryConfig
 import io.infinitic.storage.config.InMemoryStorageConfig
 import io.infinitic.transport.config.Transport
+import io.infinitic.workers.config.EventListenerConfig
 import io.infinitic.workers.config.ServiceExecutorConfig
 import io.infinitic.workers.config.ServiceTagEngineConfig
 import io.infinitic.workers.config.WorkflowExecutorConfig
@@ -37,28 +40,82 @@ import io.infinitic.workers.samples.WorkflowAImpl
 import io.kotest.assertions.throwables.shouldNotThrowAny
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
+import io.kotest.matchers.shouldNotBe
 import io.kotest.matchers.types.shouldBeInstanceOf
 
 internal class InfiniticWorkerTests : StringSpec(
     {
+      class TestEventListener : CloudEventListener {
+        override fun onEvent(event: CloudEvent) {}
+      }
+
+      val eventListener = EventListenerConfig.builder()
+          .setListener(TestEventListener())
+          .build()
+
       val storage = InMemoryStorageConfig(InMemoryConfig())
 
       val serviceName = ServiceA::class.java.name
       val serviceClass = ServiceAImpl::class.java.name
-      val serviceTagEngine = ServiceTagEngineConfig.builder().setStorage(storage).build()
-      val serviceExecutor = ServiceExecutorConfig.builder().setFactory { ServiceAImpl() }.build()
+
+      val serviceTagEngine = ServiceTagEngineConfig.builder()
+          .setServiceName(serviceName)
+          .setStorage(storage)
+          .build()
+
+      val serviceExecutor = ServiceExecutorConfig.builder()
+          .setServiceName(serviceName)
+          .setFactory { ServiceAImpl() }
+          .build()
 
       val workflowName = WorkflowA::class.java.name
       val workflowClass = WorkflowAImpl::class.java.name
-      val workflowTagEngine = WorkflowTagEngineConfig.builder().setStorage(storage).build()
-      val workflowExecutor = WorkflowExecutorConfig.builder().addFactory { WorkflowAImpl() }.build()
-      val workflowStateEngine = WorkflowStateEngineConfig.builder().setStorage(storage).build()
+
+      val workflowTagEngine = WorkflowTagEngineConfig.builder()
+          .setWorkflowName(workflowName)
+          .setStorage(storage)
+          .build()
+
+      val workflowExecutor = WorkflowExecutorConfig.builder()
+          .setWorkflowName(workflowName)
+          .addFactory { WorkflowAImpl() }
+          .build()
+
+      val workflowStateEngine = WorkflowStateEngineConfig.builder()
+          .setWorkflowName(workflowName)
+          .setStorage(storage)
+          .build()
+
+      "Can create Infinitic Worker as Event Listener through builder" {
+        val worker = shouldNotThrowAny {
+          InfiniticWorker.builder()
+              .setTransport(Transport.inMemory)
+              .setEventListener(eventListener)
+              .build()
+        }
+        worker.getEventListenersConfig() shouldBe eventListener
+      }
+
+      "Can create Infinitic Worker as Event Listener through Yaml" {
+        val worker = shouldNotThrowAny {
+          InfiniticWorker.fromYamlString(
+              """
+transport: inMemory
+eventListener:
+  class: ${TestEventListener::class.java.name}
+          """,
+          )
+        }
+        with(worker.getEventListenersConfig()) {
+          this?.listener?.shouldBeInstanceOf<TestEventListener>()
+        }
+      }
 
       "Can create Infinitic Worker as Service Executor through builder" {
         val worker = shouldNotThrowAny {
           InfiniticWorker.builder()
               .setTransport(Transport.inMemory)
-              .addServiceExecutor(serviceName, serviceExecutor)
+              .addServiceExecutor(serviceExecutor)
               .build()
         }
         worker.getServiceExecutorConfig(serviceName) shouldBe serviceExecutor
@@ -78,6 +135,7 @@ services:
         }
         with(worker.getServiceExecutorConfig(serviceName)) {
           this?.factory?.invoke().shouldBeInstanceOf<ServiceAImpl>()
+          this?.serviceName shouldBe serviceName
         }
       }
 
@@ -85,7 +143,7 @@ services:
         val worker = shouldNotThrowAny {
           InfiniticWorker.builder()
               .setTransport(Transport.inMemory)
-              .addServiceTagEngine(serviceName, serviceTagEngine)
+              .addServiceTagEngine(serviceTagEngine)
               .build()
         }
         worker.getServiceTagEngineConfig(serviceName) shouldBe serviceTagEngine
@@ -105,6 +163,7 @@ services:
           )
         }
         with(worker.getServiceTagEngineConfig(serviceName)) {
+          this?.serviceName shouldBe serviceName
           this?.concurrency shouldBe 1
           this?.storage.shouldBeInstanceOf<InMemoryStorageConfig>()
         }
@@ -124,6 +183,7 @@ services:
           )
         }
         with(worker.getServiceTagEngineConfig(serviceName)) {
+          this?.serviceName shouldBe serviceName
           this?.concurrency shouldBe 1
           this?.storage.shouldBeInstanceOf<InMemoryStorageConfig>()
         }
@@ -133,7 +193,7 @@ services:
         val worker = shouldNotThrowAny {
           InfiniticWorker.builder()
               .setTransport(Transport.inMemory)
-              .addWorkflowExecutor(workflowName, workflowExecutor)
+              .addWorkflowExecutor(workflowExecutor)
               .build()
         }
         worker.getWorkflowExecutorConfig(workflowName) shouldBe workflowExecutor
@@ -152,6 +212,7 @@ workflows:
           )
         }
         with(worker.getWorkflowExecutorConfig(workflowName)) {
+          this?.workflowName shouldBe workflowName
           this?.factories?.get(0)?.invoke().shouldBeInstanceOf<WorkflowAImpl>()
         }
       }
@@ -160,7 +221,7 @@ workflows:
         val worker = shouldNotThrowAny {
           InfiniticWorker.builder()
               .setTransport(Transport.inMemory)
-              .addWorkflowTagEngine(workflowName, workflowTagEngine)
+              .addWorkflowTagEngine(workflowTagEngine)
               .build()
         }
         worker.getWorkflowTagEngineConfig(workflowName) shouldBe workflowTagEngine
@@ -180,6 +241,7 @@ workflows:
           )
         }
         with(worker.getWorkflowTagEngineConfig(workflowName)) {
+          this?.workflowName shouldBe workflowName
           this?.concurrency shouldBe 1
           this?.storage.shouldBeInstanceOf<InMemoryStorageConfig>()
         }
@@ -199,6 +261,7 @@ workflows:
           )
         }
         with(worker.getWorkflowTagEngineConfig(workflowName)) {
+          this?.workflowName shouldBe workflowName
           this?.concurrency shouldBe 1
           this?.storage.shouldBeInstanceOf<InMemoryStorageConfig>()
         }
@@ -208,7 +271,7 @@ workflows:
         val worker = shouldNotThrowAny {
           InfiniticWorker.builder()
               .setTransport(Transport.inMemory)
-              .addWorkflowStateEngine(workflowName, workflowStateEngine)
+              .addWorkflowStateEngine(workflowStateEngine)
               .build()
         }
         worker.getWorkflowStateEngineConfig(workflowName) shouldBe workflowStateEngine
@@ -228,6 +291,7 @@ workflows:
           )
         }
         with(worker.getWorkflowStateEngineConfig(workflowName)) {
+          this?.workflowName shouldBe workflowName
           this?.concurrency shouldBe 1
           this?.storage.shouldBeInstanceOf<InMemoryStorageConfig>()
         }
@@ -247,6 +311,7 @@ workflows:
           )
         }
         with(worker.getWorkflowStateEngineConfig(workflowName)) {
+          this?.workflowName shouldBe workflowName
           this?.concurrency shouldBe 1
           this?.storage.shouldBeInstanceOf<InMemoryStorageConfig>()
         }
@@ -256,18 +321,51 @@ workflows:
         val worker = shouldNotThrowAny {
           InfiniticWorker.builder()
               .setTransport(Transport.inMemory)
-              .addServiceExecutor(serviceName, serviceExecutor)
-              .addServiceTagEngine(serviceName, serviceTagEngine)
-              .addWorkflowTagEngine(workflowName, workflowTagEngine)
-              .addWorkflowExecutor(workflowName, workflowExecutor)
-              .addWorkflowStateEngine(workflowName, workflowStateEngine)
+              .setEventListener(eventListener)
+              .addServiceExecutor(serviceExecutor)
+              .addServiceTagEngine(serviceTagEngine)
+              .addWorkflowTagEngine(workflowTagEngine)
+              .addWorkflowExecutor(workflowExecutor)
+              .addWorkflowStateEngine(workflowStateEngine)
               .build()
         }
+        worker.getEventListenersConfig() shouldBe eventListener
         worker.getServiceExecutorConfig(serviceName) shouldBe serviceExecutor
         worker.getServiceTagEngineConfig(serviceName) shouldBe serviceTagEngine
         worker.getWorkflowTagEngineConfig(workflowName) shouldBe workflowTagEngine
         worker.getWorkflowExecutorConfig(workflowName) shouldBe workflowExecutor
         worker.getWorkflowStateEngineConfig(workflowName) shouldBe workflowStateEngine
+      }
+
+      "Can create complete Infinitic Worker through Yaml with default storage" {
+        val worker = shouldNotThrowAny {
+          InfiniticWorker.fromYamlString(
+              """
+transport: inMemory
+eventListener:
+  class: ${TestEventListener::class.java.name}
+storage:
+  inMemory:
+services:
+- name: $serviceName
+  executor:
+    class: $serviceClass
+  tagEngine:
+workflows:
+- name: $workflowName
+  executor:
+    class: $workflowClass
+  stateEngine:
+  tagEngine:
+          """,
+          )
+        }
+        worker.getEventListenersConfig() shouldNotBe null
+        worker.getServiceExecutorConfig(serviceName) shouldNotBe null
+        worker.getServiceTagEngineConfig(serviceName) shouldNotBe null
+        worker.getWorkflowTagEngineConfig(workflowName) shouldNotBe null
+        worker.getWorkflowExecutorConfig(workflowName) shouldNotBe null
+        worker.getWorkflowStateEngineConfig(workflowName) shouldNotBe null
       }
     },
 )

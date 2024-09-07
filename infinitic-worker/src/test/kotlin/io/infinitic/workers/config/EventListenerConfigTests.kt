@@ -35,10 +35,7 @@ import io.kotest.matchers.types.shouldBeInstanceOf
 internal class EventListenerConfigTests : StringSpec(
     {
       class TestEventListener : CloudEventListener {
-        override fun onEvent(event: CloudEvent) {
-          TODO("Not yet implemented")
-        }
-
+        override fun onEvent(event: CloudEvent) {}
       }
 
       val listener = TestEventListener()

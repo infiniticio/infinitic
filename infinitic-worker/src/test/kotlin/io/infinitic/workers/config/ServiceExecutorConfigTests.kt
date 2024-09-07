@@ -39,15 +39,19 @@ import io.kotest.matchers.types.shouldBeInstanceOf
 
 internal class ServiceExecutorConfigTests : StringSpec(
     {
+      val serviceName = ServiceA::class.java.name
+
       "Can create ServiceExecutorConfig through builder with default parameters" {
         val config = shouldNotThrowAny {
           ServiceExecutorConfig.builder()
-              .setFactory { 1 }
+              .setServiceName(serviceName)
+              .setFactory { ServiceAImpl() }
               .build()
         }
 
         config.shouldBeInstanceOf<ServiceExecutorConfig>()
-        config.factory.invoke() shouldBe 1
+        config.serviceName shouldBe serviceName
+        config.factory.invoke().shouldBeInstanceOf<ServiceAImpl>()
         config.concurrency shouldBe 1
         config.withRetry shouldBe WithRetry.UNSET
         config.withTimeout shouldBe WithTimeout.UNSET
@@ -57,7 +61,8 @@ internal class ServiceExecutorConfigTests : StringSpec(
         val withRetry = ExponentialBackoffRetryPolicy()
         val config = shouldNotThrowAny {
           ServiceExecutorConfig.builder()
-              .setFactory { 1 }
+              .setServiceName(serviceName)
+              .setFactory { ServiceAImpl() }
               .setConcurrency(10)
               .setTimeoutSeconds(3.0)
               .withRetry(withRetry)
@@ -65,7 +70,7 @@ internal class ServiceExecutorConfigTests : StringSpec(
         }
 
         config.shouldBeInstanceOf<ServiceExecutorConfig>()
-        config.factory.invoke() shouldBe 1
+        config.factory.invoke().shouldBeInstanceOf<ServiceAImpl>()
         config.concurrency shouldBe 10
         config.withRetry shouldBe withRetry
         config.withTimeout?.getTimeoutSeconds() shouldBe 3.0
@@ -74,16 +79,28 @@ internal class ServiceExecutorConfigTests : StringSpec(
       "Concurrency must be positive when building ServiceExecutorConfig" {
         val e = shouldThrow<IllegalArgumentException> {
           ServiceExecutorConfig.builder()
-              .setFactory { 1 }
+              .setServiceName(serviceName)
+              .setFactory { ServiceAImpl() }
               .setConcurrency(0)
               .build()
         }
         e.message shouldContain "concurrency"
       }
 
+      "serviceName is mandatory when building ServiceExecutorConfig" {
+        val e = shouldThrow<IllegalArgumentException> {
+          ServiceExecutorConfig.builder()
+              .setFactory { ServiceAImpl() }
+              .setConcurrency(1)
+              .build()
+        }
+        e.message shouldContain "serviceName"
+      }
+
       "Factory is mandatory when building ServiceExecutorConfig" {
         val e = shouldThrow<IllegalArgumentException> {
           ServiceExecutorConfig.builder()
+              .setServiceName(serviceName)
               .setConcurrency(1)
               .build()
         }

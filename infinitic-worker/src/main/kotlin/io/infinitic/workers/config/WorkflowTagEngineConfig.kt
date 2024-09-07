@@ -22,18 +22,27 @@
  */
 package io.infinitic.workers.config
 
+import io.infinitic.common.exceptions.thisShouldNotHappen
 import io.infinitic.config.loadFromYamlFile
 import io.infinitic.config.loadFromYamlResource
 import io.infinitic.config.loadFromYamlString
 import io.infinitic.storage.config.StorageConfig
+import io.infinitic.workflows.tag.storage.BinaryWorkflowTagStorage
 
 data class WorkflowTagEngineConfig(
+  override var workflowName: String = "",
   var concurrency: Int = 1,
   var storage: StorageConfig? = null,
-) {
+) : WithMutableWorkflowName {
 
   init {
     require(concurrency >= 0) { "concurrency must be positive" }
+  }
+
+  val workflowTagStorage by lazy {
+    (storage ?: thisShouldNotHappen()).let {
+      BinaryWorkflowTagStorage(it.keyValue, it.keySet)
+    }
   }
 
   companion object {
@@ -67,8 +76,12 @@ data class WorkflowTagEngineConfig(
    */
   class WorkflowTagEngineConfigBuilder {
     private val default = WorkflowTagEngineConfig()
+    private var workflowName = default.workflowName
     private var concurrency = default.concurrency
     private var storage = default.storage
+
+    fun setWorkflowName(workflowName: String) =
+        apply { this.workflowName = workflowName }
 
     fun setConcurrency(concurrency: Int) =
         apply { this.concurrency = concurrency }
@@ -77,9 +90,11 @@ data class WorkflowTagEngineConfig(
         apply { this.storage = storage }
 
     fun build(): WorkflowTagEngineConfig {
+      workflowName.checkWorkflowName()
       concurrency.checkConcurrency()
 
       return WorkflowTagEngineConfig(
+          workflowName,
           concurrency,
           storage,
       )

@@ -39,6 +39,7 @@ import io.infinitic.common.tasks.events.messages.ServiceExecutorEventMessage
 import io.infinitic.common.tasks.executors.messages.ExecuteTask
 import io.infinitic.common.tasks.executors.messages.ServiceExecutorMessage
 import io.infinitic.common.tasks.tags.messages.ServiceTagMessage
+import io.infinitic.common.tasks.tags.storage.TaskTagStorage
 import io.infinitic.common.transport.InfiniticConsumer
 import io.infinitic.common.transport.InfiniticProducer
 import io.infinitic.common.transport.InfiniticResources
@@ -63,7 +64,9 @@ import io.infinitic.common.workflows.data.workflows.WorkflowName
 import io.infinitic.common.workflows.engine.messages.WorkflowCmdMessage
 import io.infinitic.common.workflows.engine.messages.WorkflowEventMessage
 import io.infinitic.common.workflows.engine.messages.WorkflowStateEngineMessage
+import io.infinitic.common.workflows.engine.storage.WorkflowStateStorage
 import io.infinitic.common.workflows.tags.messages.WorkflowTagEngineMessage
+import io.infinitic.common.workflows.tags.storage.WorkflowTagStorage
 import io.infinitic.config.loadFromYamlFile
 import io.infinitic.config.loadFromYamlResource
 import io.infinitic.config.loadFromYamlString
@@ -72,26 +75,22 @@ import io.infinitic.events.toServiceCloudEvent
 import io.infinitic.events.toWorkflowCloudEvent
 import io.infinitic.logger.ignoreNull
 import io.infinitic.pulsar.PulsarInfiniticConsumer
-import io.infinitic.storage.config.StorageConfig
 import io.infinitic.tasks.Task
 import io.infinitic.tasks.executor.TaskEventHandler
 import io.infinitic.tasks.executor.TaskExecutor
 import io.infinitic.tasks.executor.TaskRetryHandler
 import io.infinitic.tasks.tag.TaskTagEngine
-import io.infinitic.tasks.tag.storage.BinaryTaskTagStorage
 import io.infinitic.tasks.tag.storage.LoggedTaskTagStorage
 import io.infinitic.transport.config.TransportConfig
 import io.infinitic.workers.config.InfiniticWorkerConfig
-import io.infinitic.workers.registry.ConfigGettersInterface
+import io.infinitic.workers.registry.ConfigGetterInterface
 import io.infinitic.workers.registry.Registry
 import io.infinitic.workflows.engine.WorkflowStateCmdHandler
 import io.infinitic.workflows.engine.WorkflowStateEngine
 import io.infinitic.workflows.engine.WorkflowStateEventHandler
 import io.infinitic.workflows.engine.WorkflowStateTimerHandler
-import io.infinitic.workflows.engine.storage.BinaryWorkflowStateStorage
 import io.infinitic.workflows.engine.storage.LoggedWorkflowStateStorage
 import io.infinitic.workflows.tag.WorkflowTagEngine
-import io.infinitic.workflows.tag.storage.BinaryWorkflowTagStorage
 import io.infinitic.workflows.tag.storage.LoggedWorkflowTagStorage
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -108,7 +107,7 @@ class InfiniticWorker(
   private val producer: InfiniticProducer,
   private val source: String,
   private val beautifyLogs: Boolean
-) : AutoCloseable, ConfigGettersInterface by registry {
+) : AutoCloseable, ConfigGetterInterface by registry {
 
   /** Infinitic Client */
   val client = InfiniticClient(consumer, producer)
@@ -217,11 +216,11 @@ class InfiniticWorker(
         val workflowName = WorkflowName(workflowConfig.name)
         // WORKFLOW TAG ENGINE
         workflowConfig.tagEngine?.let {
-          startWorkflowTagEngine(workflowName, it.concurrency, it.storage!!)
+          startWorkflowTagEngine(workflowName, it.concurrency, it.workflowTagStorage)
         }
         // WORKFLOW STATE ENGINE
         workflowConfig.stateEngine?.let {
-          startWorkflowStateEngine(workflowName, it.concurrency, it.storage!!)
+          startWorkflowStateEngine(workflowName, it.concurrency, it.workflowStateStorage)
         }
         // WORKFLOW EXECUTOR
         workflowConfig.executor?.let {
@@ -233,7 +232,7 @@ class InfiniticWorker(
         val serviceName = ServiceName(serviceConfig.name)
         // SERVICE TAG ENGINE
         serviceConfig.tagEngine?.let {
-          startTaskTagEngine(serviceName, it.concurrency, it.storage!!)
+          startTaskTagEngine(serviceName, it.concurrency, it.taskTagStorage)
         }
         // SERVICE EXECUTOR
         serviceConfig.executor?.let {
@@ -302,12 +301,10 @@ class InfiniticWorker(
   private fun CoroutineScope.startWorkflowTagEngine(
     workflowName: WorkflowName,
     concurrency: Int,
-    storageConfig: StorageConfig
+    storage: WorkflowTagStorage
   ) {
     val eventLogger = KotlinLogging.logger("$CLOUD_EVENTS_WORKFLOW_TAG_ENGINE.$workflowName")
         .ignoreNull()
-
-    val storage = BinaryWorkflowTagStorage(storageConfig.keyValue, storageConfig.keySet)
 
     // WORKFLOW-TAG
     launch {
@@ -337,12 +334,10 @@ class InfiniticWorker(
   private fun CoroutineScope.startWorkflowStateEngine(
     workflowName: WorkflowName,
     concurrency: Int,
-    storageConfig: StorageConfig
+    storage: WorkflowStateStorage
   ) {
     val eventLogger = KotlinLogging.logger("$CLOUD_EVENTS_WORKFLOW_STATE_ENGINE.$workflowName")
         .ignoreNull()
-
-    val storage = BinaryWorkflowStateStorage(storageConfig.keyValue)
 
     // WORKFLOW-CMD
     launch {
@@ -518,12 +513,10 @@ class InfiniticWorker(
   private fun CoroutineScope.startTaskTagEngine(
     serviceName: ServiceName,
     concurrency: Int,
-    storageConfig: StorageConfig
+    storage: TaskTagStorage
   ) {
     val eventLogger = KotlinLogging.logger("$CLOUD_EVENTS_SERVICE_TAG_ENGINE.$serviceName")
         .ignoreNull()
-
-    val storage = BinaryTaskTagStorage(storageConfig.keyValue, storageConfig.keySet)
 
     // TASK-TAG
     launch {

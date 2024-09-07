@@ -41,6 +41,7 @@ internal typealias WorkflowFactories = List<WorkflowFactory>
 
 sealed class WorkflowExecutorConfig {
 
+  abstract val workflowName: String
   abstract val factories: WorkflowFactories
   abstract val concurrency: Int
   abstract val withRetry: WithRetry?
@@ -77,11 +78,15 @@ sealed class WorkflowExecutorConfig {
    * ServiceConfig builder
    */
   class WorkflowExecutorConfigBuilder {
+    private var workflowName: String? = null
     private var factories: MutableList<() -> Workflow> = mutableListOf()
     private var concurrency: Int = 1
     private var timeoutSeconds: Double? = UNSET_TIMEOUT
     private var withRetry: WithRetry? = WithRetry.UNSET
     private var checkMode: WorkflowCheckMode? = null
+
+    fun setWorkflowName(workflowName: String) =
+        apply { this.workflowName = workflowName }
 
     fun addFactory(factory: () -> Workflow) =
         apply { this.factories.add(factory) }
@@ -99,11 +104,12 @@ sealed class WorkflowExecutorConfig {
         apply { this.checkMode = checkMode }
 
     fun build(): WorkflowExecutorConfig {
-      require(factories.isNotEmpty()) { "At least one factory must be defined" }
+      workflowName.checkWorkflowName()
 
       // Needed if the workflow context is referenced within the properties of the workflow
       Workflow.setContext(emptyWorkflowContext)
 
+      require(factories.isNotEmpty()) { "At least one factory must be defined" }
       factories.checkVersionUniqueness()
       factories.checkInstanceUniqueness()
 
@@ -111,6 +117,7 @@ sealed class WorkflowExecutorConfig {
       timeoutSeconds?.checkTimeout()
 
       return BuiltWorkflowExecutorConfig(
+          workflowName!!,
           factories,
           concurrency,
           timeoutSeconds.withTimeout,
@@ -124,6 +131,7 @@ sealed class WorkflowExecutorConfig {
  * WorkflowExecutorConfig built from builders
  */
 data class BuiltWorkflowExecutorConfig(
+  override val workflowName: String,
   override val factories: WorkflowFactories,
   override val concurrency: Int,
   override var withTimeout: WithTimeout? = null,
@@ -135,13 +143,14 @@ data class BuiltWorkflowExecutorConfig(
  * WorkflowExecutorConfig loaded from YAML
  */
 data class LoadedWorkflowExecutorConfig(
+  override var workflowName: String = "",
   val `class`: String? = null,
   val classes: List<String>? = null,
   override val concurrency: Int = 1,
   val timeoutSeconds: Double? = UNSET_TIMEOUT,
   var retry: RetryPolicy? = UNSET_RETRY_POLICY,
   override var checkMode: WorkflowCheckMode? = null,
-) : WorkflowExecutorConfig() {
+) : WorkflowExecutorConfig(), WithMutableWorkflowName {
   private val allInstances = mutableListOf<Workflow>()
 
   override val withTimeout = timeoutSeconds.withTimeout
@@ -186,6 +195,11 @@ data class LoadedWorkflowExecutorConfig(
 
     return instance
   }
+}
+
+internal fun String?.checkWorkflowName() {
+  require(this != null) { "workflowName must not be null" }
+  require(this.isNotBlank()) { "workflowName must not be blank" }
 }
 
 internal fun WorkflowFactories.checkInstanceUniqueness() {

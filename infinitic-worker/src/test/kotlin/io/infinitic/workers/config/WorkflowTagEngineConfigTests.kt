@@ -24,6 +24,7 @@ package io.infinitic.workers.config
 
 import io.infinitic.storage.config.InMemoryConfig
 import io.infinitic.storage.config.InMemoryStorageConfig
+import io.infinitic.workers.samples.WorkflowA
 import io.kotest.assertions.throwables.shouldNotThrowAny
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.StringSpec
@@ -33,14 +34,18 @@ import io.kotest.matchers.types.shouldBeInstanceOf
 
 internal class WorkflowTagEngineConfigTests : StringSpec(
     {
+      val workflowName = WorkflowA::class.java.name
       val storage = InMemoryStorageConfig(inMemory = InMemoryConfig())
 
       "Can create WorkflowTagEngineConfig through builder with default parameters" {
         val config = shouldNotThrowAny {
-          WorkflowTagEngineConfig.builder().build()
+          WorkflowTagEngineConfig.builder()
+              .setWorkflowName(workflowName)
+              .build()
         }
 
         config.shouldBeInstanceOf<WorkflowTagEngineConfig>()
+        config.workflowName shouldBe workflowName
         config.storage shouldBe null
         config.concurrency shouldBe 1
       }
@@ -48,6 +53,7 @@ internal class WorkflowTagEngineConfigTests : StringSpec(
       "Can create WorkflowTagEngineConfig through builder with all parameters" {
         val config = shouldNotThrowAny {
           WorkflowTagEngineConfig.builder()
+              .setWorkflowName(workflowName)
               .setConcurrency(10)
               .setStorage(storage)
               .build()
@@ -58,13 +64,36 @@ internal class WorkflowTagEngineConfigTests : StringSpec(
         config.storage shouldBe storage
       }
 
+      "workflowName is mandatory when building WorkflowTagEngineConfig through builder" {
+        val e = shouldThrow<IllegalArgumentException> {
+          WorkflowTagEngineConfig.builder().build()
+        }
+        e.message shouldContain "workflowName"
+      }
+
       "Concurrency must be positive when building WorkflowTagEngineConfig" {
         val e = shouldThrow<IllegalArgumentException> {
           WorkflowTagEngineConfig.builder()
+              .setWorkflowName(workflowName)
               .setConcurrency(0)
               .build()
         }
         e.message shouldContain "concurrency"
+      }
+
+      "Can create WorkflowTagEngineConfig through YAML without workflowName" {
+        val config = shouldNotThrowAny {
+          WorkflowTagEngineConfig.fromYamlString(
+              """
+concurrency: 10
+          """,
+          )
+        }
+
+        config.shouldBeInstanceOf<WorkflowTagEngineConfig>()
+        config.workflowName.isBlank() shouldBe true
+        config.concurrency shouldBe 10
+        config.storage shouldBe null
       }
 
       "Can create WorkflowTagEngineConfig through YAML with all parameters" {

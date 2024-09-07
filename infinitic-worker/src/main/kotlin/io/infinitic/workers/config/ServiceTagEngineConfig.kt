@@ -22,17 +22,26 @@
  */
 package io.infinitic.workers.config
 
+import io.infinitic.common.exceptions.thisShouldNotHappen
 import io.infinitic.config.loadFromYamlFile
 import io.infinitic.config.loadFromYamlResource
 import io.infinitic.config.loadFromYamlString
 import io.infinitic.storage.config.StorageConfig
+import io.infinitic.tasks.tag.storage.BinaryTaskTagStorage
 
 data class ServiceTagEngineConfig(
+  override var serviceName: String = "",
   val concurrency: Int = 1,
   var storage: StorageConfig? = null,
-) {
+) : WithMutableServiceName {
   init {
-    require(concurrency > 0) { "concurrency must be > 0" }
+    require(concurrency > 0) { "${::concurrency.name} must be > 0" }
+  }
+
+  val taskTagStorage by lazy {
+    (storage ?: thisShouldNotHappen()).let {
+      BinaryTaskTagStorage(it.keyValue, it.keySet)
+    }
   }
 
   companion object {
@@ -67,8 +76,12 @@ data class ServiceTagEngineConfig(
    */
   class ServiceTagEngineConfigBuilder {
     private val default = ServiceTagEngineConfig()
+    private var serviceName = default.serviceName
     private var concurrency = default.concurrency
     private var storage = default.storage
+
+    fun setServiceName(serviceName: String) =
+        apply { this.serviceName = serviceName }
 
     fun setConcurrency(concurrency: Int) =
         apply { this.concurrency = concurrency }
@@ -76,9 +89,14 @@ data class ServiceTagEngineConfig(
     fun setStorage(storage: StorageConfig) =
         apply { this.storage = storage }
 
-    fun build() = ServiceTagEngineConfig(
-        concurrency,
-        storage,
-    )
+    fun build(): ServiceTagEngineConfig {
+      serviceName.checkServiceName()
+
+      return ServiceTagEngineConfig(
+          serviceName,
+          concurrency,
+          storage,
+      )
+    }
   }
 }

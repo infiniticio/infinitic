@@ -160,6 +160,25 @@ data class InMemoryStorageConfig(
   override val dbKeyValue: KeyValueStorage by lazy {
     InMemoryKeyValueStorage.from(inMemory)
   }
+
+  companion object {
+    @JvmStatic
+    fun builder() = InMemoryStorageConfigBuilder()
+  }
+
+  /**
+   * InMemoryStorageConfig builder
+   */
+  class InMemoryStorageConfigBuilder {
+    private var compression: CompressionConfig? = null
+    private var cache: CacheConfig? = null
+
+    fun build(): InMemoryStorageConfig = InMemoryStorageConfig(
+        InMemoryConfig(),
+        compression,
+        cache,
+    )
+  }
 }
 
 data class RedisStorageConfig(

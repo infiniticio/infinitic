@@ -25,120 +25,114 @@ package io.infinitic.workers
 import io.infinitic.pulsar.config.PulsarConfig
 import io.infinitic.storage.config.StorageConfig
 import io.infinitic.transport.config.Transport
-import io.infinitic.workers.config.*
+import io.infinitic.workers.config.EventListenerConfig
+import io.infinitic.workers.config.InfiniticWorkerConfig
+import io.infinitic.workers.config.LogsConfig
+import io.infinitic.workers.config.ServiceConfig
+import io.infinitic.workers.config.ServiceExecutorConfig
+import io.infinitic.workers.config.ServiceTagEngineConfig
+import io.infinitic.workers.config.WorkflowConfig
+import io.infinitic.workers.config.WorkflowExecutorConfig
+import io.infinitic.workers.config.WorkflowStateEngineConfig
+import io.infinitic.workers.config.WorkflowTagEngineConfig
 
 /**
  * InfiniticWorker builder
  */
 class InfiniticWorkerBuilder() {
-    private val default = InfiniticWorkerConfig()
-    private var name = default.name
-    private var shutdownGracePeriodSeconds = default.shutdownGracePeriodSeconds
-    private var transport = default.transport
-    private var pulsar = default.pulsar
-    private var storage = default.storage
-    private var logs = default.logs
-    private var workflows = default.workflows.toMutableList()
-    private var services = default.services.toMutableList()
-    private var eventListener = default.eventListener
+  private val default = InfiniticWorkerConfig()
+  private var name = default.name
+  private var shutdownGracePeriodSeconds = default.shutdownGracePeriodSeconds
+  private var transport = default.transport
+  private var pulsar = default.pulsar
+  private var storage = default.storage
+  private var logs = default.logs
+  private var workflows = default.workflows.toMutableList()
+  private var services = default.services.toMutableList()
+  private var eventListener = default.eventListener
 
-    private fun getOrCreateServiceConfig(serviceName: String) =
-        services.firstOrNull { it.name == serviceName }
-            ?: ServiceConfig(serviceName).also { services.add(it) }
+  private fun getOrCreateServiceConfig(serviceName: String) =
+      services.firstOrNull { it.name == serviceName }
+        ?: ServiceConfig(serviceName).also { services.add(it) }
 
-    private fun getOrCreateWorkflowConfig(workflowName: String) =
-        workflows.firstOrNull { it.name == workflowName }
-            ?: WorkflowConfig(workflowName).also { workflows.add(it) }
+  private fun getOrCreateWorkflowConfig(workflowName: String) =
+      workflows.firstOrNull { it.name == workflowName }
+        ?: WorkflowConfig(workflowName).also { workflows.add(it) }
 
-    fun setName(name: String) =
-        apply { this.name = name }
+  fun setName(name: String) =
+      apply { this.name = name }
 
-    fun setShutdownGracePeriodSeconds(shutdownGracePeriodSeconds: Double) =
-        apply { this.shutdownGracePeriodSeconds = shutdownGracePeriodSeconds }
+  fun setShutdownGracePeriodSeconds(shutdownGracePeriodSeconds: Double) =
+      apply { this.shutdownGracePeriodSeconds = shutdownGracePeriodSeconds }
 
-    fun setTransport(transport: Transport) =
-        apply { this.transport = transport }
+  fun setTransport(transport: Transport) =
+      apply { this.transport = transport }
 
-    fun setPulsar(pulsar: PulsarConfig?) =
-        apply { this.pulsar = pulsar }
+  fun setPulsar(pulsar: PulsarConfig?) =
+      apply { this.pulsar = pulsar }
 
-    fun setPulsar(pulsar: PulsarConfig.PulsarConfigBuilder) =
-        setPulsar(pulsar.build())
+  fun setPulsar(pulsar: PulsarConfig.PulsarConfigBuilder) =
+      setPulsar(pulsar.build())
 
-    fun setStorage(storage: StorageConfig?) =
-        apply { this.storage = storage }
+  fun setStorage(storage: StorageConfig?) =
+      apply { this.storage = storage }
 
-    fun setStorage(storage: StorageConfig.StorageConfigBuilder) =
-        setStorage(storage.build())
+  fun setStorage(storage: StorageConfig.StorageConfigBuilder) =
+      setStorage(storage.build())
 
-    fun setLogs(logs: LogsConfig) =
-        apply { this.logs = logs }
+  fun setLogs(logs: LogsConfig) =
+      apply { this.logs = logs }
 
-    fun setLogs(logs: LogsConfig.LogConfigBuilder) =
-        setLogs(logs.build())
+  fun setLogs(logs: LogsConfig.LogConfigBuilder) =
+      setLogs(logs.build())
 
-    fun addServiceExecutor(serviceName: String, executorConfig: ServiceExecutorConfig) =
-        apply { getOrCreateServiceConfig(serviceName).executor = executorConfig }
+  fun addServiceExecutor(config: ServiceExecutorConfig) =
+      apply { getOrCreateServiceConfig(config.serviceName).executor = config }
 
-    fun addServiceExecutor(
-        serviceName: String,
-        executorConfig: ServiceExecutorConfig.ServiceExecutorConfigBuilder
-    ) = addServiceExecutor(serviceName, executorConfig.build())
+  fun addServiceExecutor(config: ServiceExecutorConfig.ServiceExecutorConfigBuilder) =
+      addServiceExecutor(config.build())
 
-    fun addServiceTagEngine(serviceName: String, tagEngineConfig: ServiceTagEngineConfig) =
-        apply { getOrCreateServiceConfig(serviceName).tagEngine = tagEngineConfig }
+  fun addServiceTagEngine(config: ServiceTagEngineConfig) =
+      apply { getOrCreateServiceConfig(config.serviceName).tagEngine = config }
 
-    fun addServiceTagEngine(
-        serviceName: String,
-        tagEngineConfig: ServiceTagEngineConfig.ServiceTagEngineConfigBuilder
-    ) = addServiceTagEngine(serviceName, tagEngineConfig.build())
+  fun addServiceTagEngine(config: ServiceTagEngineConfig.ServiceTagEngineConfigBuilder) =
+      addServiceTagEngine(config.build())
 
-    fun addWorkflowExecutor(
-        workflowName: String,
-        workflowExecutorConfig: WorkflowExecutorConfig
-    ) = apply { getOrCreateWorkflowConfig(workflowName).executor = workflowExecutorConfig }
+  fun addWorkflowExecutor(config: WorkflowExecutorConfig) =
+      apply { getOrCreateWorkflowConfig(config.workflowName).executor = config }
 
-    fun addWorkflowExecutor(
-        workflowName: String,
-        workflowExecutorConfig: WorkflowExecutorConfig.WorkflowExecutorConfigBuilder
-    ) = addWorkflowExecutor(workflowName, workflowExecutorConfig.build())
+  fun addWorkflowExecutor(config: WorkflowExecutorConfig.WorkflowExecutorConfigBuilder) =
+      addWorkflowExecutor(config.build())
 
-    fun addWorkflowStateEngine(
-        workflowName: String,
-        stateEngineConfig: WorkflowStateEngineConfig
-    ) = apply { getOrCreateWorkflowConfig(workflowName).stateEngine = stateEngineConfig }
+  fun addWorkflowStateEngine(config: WorkflowStateEngineConfig) =
+      apply { getOrCreateWorkflowConfig(config.workflowName).stateEngine = config }
 
-    fun addWorkflowStateEngine(
-        workflowName: String,
-        stateEngineConfig: WorkflowStateEngineConfig.WorkflowStateEngineConfigBuilder
-    ) = addWorkflowStateEngine(workflowName, stateEngineConfig.build())
+  fun addWorkflowStateEngine(config: WorkflowStateEngineConfig.WorkflowStateEngineConfigBuilder) =
+      addWorkflowStateEngine(config.build())
 
-    fun addWorkflowTagEngine(
-        workflowName: String,
-        tagEngineConfig: WorkflowTagEngineConfig
-    ) = apply { getOrCreateWorkflowConfig(workflowName).tagEngine = tagEngineConfig }
+  fun addWorkflowTagEngine(config: WorkflowTagEngineConfig) =
+      apply { getOrCreateWorkflowConfig(config.workflowName).tagEngine = config }
 
-    fun addWorkflowTagEngine(
-        workflowName: String,
-        tagEngineConfig: WorkflowTagEngineConfig.WorkflowTagEngineConfigBuilder
-    ) = addWorkflowTagEngine(workflowName, tagEngineConfig.build())
+  fun addWorkflowTagEngine(config: WorkflowTagEngineConfig.WorkflowTagEngineConfigBuilder) =
+      addWorkflowTagEngine(config.build())
 
-    fun setEventListener(eventListener: EventListenerConfig?) =
-        apply { this.eventListener = eventListener }
+  fun setEventListener(eventListener: EventListenerConfig?) =
+      apply { this.eventListener = eventListener }
 
-    fun setEventListener(eventListener: EventListenerConfig.EventListenerConfigBuilder) =
-        setEventListener(eventListener.build())
+  fun setEventListener(eventListener: EventListenerConfig.EventListenerConfigBuilder) =
+      setEventListener(eventListener.build())
 
-    fun build() = InfiniticWorker.fromConfig(
-        InfiniticWorkerConfig(
-            name,
-            shutdownGracePeriodSeconds,
-            transport,
-            pulsar,
-            storage,
-            logs,
-            workflows,
-            services,
-        ),
-    )
+  fun build() = InfiniticWorker.fromConfig(
+      InfiniticWorkerConfig(
+          name,
+          shutdownGracePeriodSeconds,
+          transport,
+          pulsar,
+          storage,
+          logs,
+          workflows,
+          services,
+          eventListener,
+      ),
+  )
 }
