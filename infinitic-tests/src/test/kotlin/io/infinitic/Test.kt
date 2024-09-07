@@ -29,7 +29,7 @@ import io.infinitic.common.workflows.engine.state.WorkflowState
 import io.infinitic.transport.config.Transport
 import io.infinitic.utils.Listener
 import io.infinitic.workers.InfiniticWorker
-import io.infinitic.workers.config.WorkerConfig
+import io.infinitic.workers.config.InfiniticWorkerConfig
 import io.kotest.core.config.AbstractProjectConfig
 import io.kotest.core.listeners.AfterProjectListener
 import io.kotest.core.listeners.BeforeProjectListener
@@ -46,19 +46,20 @@ import kotlin.time.Duration.Companion.milliseconds
 internal object Test {
   private val pulsarServer = DockerOnly().pulsarServer
 
-  private val workerConfig = WorkerConfig.fromResource("/pulsar.yml", "/register.yml").let {
-    when (pulsarServer) {
-      null -> it.copy(transport = Transport.inMemory)
-      else -> it.copy(
-          transport = Transport.pulsar,
-          pulsar = it.pulsar!!.copy(
-              brokerServiceUrl = pulsarServer.pulsarBrokerUrl,
-              webServiceUrl = pulsarServer.httpServiceUrl,
-              policies = it.pulsar!!.policies.copy(delayedDeliveryTickTimeMillis = 1), // useful for tests
-          ),
-      )
-    }
-  }
+  private val workerConfig =
+      InfiniticWorkerConfig.fromYamlResource("/pulsar.yml", "/register.yml").let {
+        when (pulsarServer) {
+          null -> it.copy(transport = Transport.inMemory)
+          else -> it.copy(
+              transport = Transport.pulsar,
+              pulsar = it.pulsar!!.copy(
+                  brokerServiceUrl = pulsarServer.pulsarBrokerUrl,
+                  webServiceUrl = pulsarServer.httpServiceUrl,
+                  policies = it.pulsar!!.policies.copy(delayedDeliveryTickTimeMillis = 1), // useful for tests
+              ),
+          )
+        }
+      }
 
   val worker = InfiniticWorker.fromConfig(workerConfig)
   val client = worker.client

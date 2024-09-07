@@ -85,8 +85,11 @@ import io.infinitic.common.workflows.engine.messages.WorkflowCmdMessage
 import io.infinitic.common.workflows.engine.messages.WorkflowCompletedEvent
 import io.infinitic.common.workflows.engine.messages.WorkflowEventMessage
 import io.infinitic.common.workflows.engine.messages.WorkflowStateEngineMessage
+import io.infinitic.storage.config.InMemoryConfig
+import io.infinitic.storage.config.StorageConfig
+import io.infinitic.transport.config.Transport
 import io.infinitic.workers.InfiniticWorker
-import io.infinitic.workers.config.WorkerConfig
+import io.infinitic.workers.config.EventListenerConfig
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
 import io.mockk.Runs
@@ -101,19 +104,23 @@ import net.bytebuddy.utility.RandomString
 import java.net.URI
 import kotlin.reflect.full.isSubclassOf
 
-private const val serviceConfig = """
-transport: inMemory
-storage: inMemory
-"""
-private val workerConfig = WorkerConfig.fromYaml(serviceConfig)
 private val events = mutableListOf<CloudEvent>()
 private val eventListener = mockk<CloudEventListener> {
   every { onEvent(capture(events)) } just Runs
 }
-private val worker = InfiniticWorker.fromConfig(workerConfig).apply {
-  registerEventListener(eventListener, 2)
-  startAsync()
-}
+
+private val worker = InfiniticWorker.builder()
+    .setTransport(Transport.inMemory)
+    .setStorage(
+        StorageConfig.builder()
+            .setDatabase(InMemoryConfig()),
+    )
+    .setEventListener(
+        EventListenerConfig.builder()
+            .setListener(eventListener)
+            .setConcurrency(2),
+    )
+    .build()
 
 private suspend fun <T : Message> T.sendToTopic(topic: Topic<T>) {
   with(worker.producer) { sendTo(topic) }
@@ -352,7 +359,8 @@ internal class CloudEventTests :
             "Check ${it.simpleName} event envelope from engine topic" {
               val message = TestFactory.random(
                   it,
-                  mapOf("workflowName" to WorkflowName("WorkflowA"),
+                  mapOf(
+                      "workflowName" to WorkflowName("WorkflowA"),
                   ),
               )
               message.sendToTopic(WorkflowStateEngineTopic)

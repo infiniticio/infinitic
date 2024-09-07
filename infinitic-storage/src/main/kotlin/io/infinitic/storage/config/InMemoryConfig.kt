@@ -25,7 +25,7 @@ package io.infinitic.storage.config
 import io.infinitic.storage.data.Bytes
 import java.util.concurrent.ConcurrentHashMap
 
-data class InMemoryConfig(private val type: String = "unused") {
+data class InMemoryConfig(private val type: String = "unused") : DatabaseConfig {
 
   constructor() : this("unused")
 

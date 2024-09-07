@@ -25,11 +25,12 @@ package io.infinitic.cache.caches.caffeine
 import com.github.benmanes.caffeine.cache.Cache
 import com.github.benmanes.caffeine.cache.Caffeine
 import io.infinitic.cache.Flushable
-import io.infinitic.cache.config.CaffeineConfig
+import io.infinitic.cache.config.CaffeineCacheConfig
 import io.infinitic.cache.data.Bytes
 import io.infinitic.cache.keySet.CachedKeySet
 
-internal class CaffeineCachedKeySet(config: CaffeineConfig) : CachedKeySet<ByteArray>, Flushable {
+internal class CaffeineCachedKeySet(config: CaffeineCacheConfig) : CachedKeySet<ByteArray>,
+  Flushable {
 
   private val caffeine: Cache<String, Set<Bytes>> = Caffeine.newBuilder().setup(config).build()
 

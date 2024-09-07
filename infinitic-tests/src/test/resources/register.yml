@@ -30,7 +30,7 @@ services:
   - name: io.infinitic.utils.UtilService
     class: io.infinitic.utils.UtilServiceImpl
     concurrency: 5
-    timeoutInSeconds: 100
+    timeoutSeconds: 100
     retry:
       maximumRetries: 1
       randomFactor: 0

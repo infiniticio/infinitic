@@ -100,7 +100,7 @@ class PostgresConfigTests : StringSpec(
       }
 
       "toString() should obfuscate password" {
-        config.toString() shouldBe "PostgresConfig(host='${config.host}', port=${config.port}, user='${config.user}', password='******', " +
+        config.toString() shouldBe "PostgresConfig(host='${config.host}', port=${config.port}, username='${config.username}', password='******', " +
             "database=${config.database}, keySetTable=${config.keySetTable}, keyValueTable=${config.keyValueTable})"
       }
 
@@ -111,7 +111,7 @@ class PostgresConfigTests : StringSpec(
 storage:
   postgres:
     host: localhost
-    user: root
+    username: root
     """,
           )
         }
@@ -124,7 +124,7 @@ storage:
 storage:
   postgres:
     port: 3306
-    user: root
+    username: root
     """,
           )
         }
@@ -148,7 +148,7 @@ storage:
   postgres:
     host: localhost
     port: 3306
-    user: root"""
+    username: root"""
 
       "can load from yaml with only mandatory parameters" {
         val storageConfig = loadConfigFromYaml<StorageConfigImpl>(yaml)

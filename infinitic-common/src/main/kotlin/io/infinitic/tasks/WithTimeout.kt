@@ -28,8 +28,7 @@ fun interface WithTimeout {
   fun getTimeoutSeconds(): Double?
 
   companion object {
-    @JvmStatic
-    val NONE = WithTimeout { null }
+    val UNSET = WithTimeout { null }
   }
 }
 

@@ -33,6 +33,7 @@ import io.infinitic.common.data.methods.MethodParameterTypes
 import io.infinitic.common.data.methods.deserializeArgs
 import io.infinitic.common.data.methods.encodeReturnValue
 import io.infinitic.common.emitters.EmitterName
+import io.infinitic.common.registry.RegistryInterface
 import io.infinitic.common.requester.WorkflowRequester
 import io.infinitic.common.requester.workflowId
 import io.infinitic.common.requester.workflowName
@@ -52,7 +53,6 @@ import io.infinitic.common.utils.getMethodPerNameAndParameters
 import io.infinitic.common.utils.isDelegated
 import io.infinitic.common.utils.withRetry
 import io.infinitic.common.utils.withTimeout
-import io.infinitic.common.workers.registry.WorkerRegistry
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskParameters
 import io.infinitic.common.workflows.data.workflows.WorkflowName
 import io.infinitic.exceptions.DeferredException
@@ -74,7 +74,7 @@ import java.util.concurrent.TimeoutException
 import kotlin.reflect.jvm.javaMethod
 
 class TaskExecutor(
-  private val workerRegistry: WorkerRegistry,
+  private val registry: RegistryInterface,
   private val producer: InfiniticProducer,
   private val client: InfiniticClientInterface
 ) {
@@ -107,7 +107,6 @@ class TaskExecutor(
 
     val taskContext = TaskContextImpl(
         workerName = producer.name,
-        workerRegistry = workerRegistry,
         serviceName = msg.serviceName,
         taskId = msg.taskId,
         taskName = msg.methodName,
@@ -260,9 +259,8 @@ class TaskExecutor(
     methodParameterTypes: MethodParameterTypes?,
     methodArgs: MethodArgs
   ): Triple<Any, Method, Array<*>> {
-    val registeredServiceExecutor = workerRegistry.serviceExecutors[serviceName]!!
 
-    val serviceInstance = registeredServiceExecutor.factory()
+    val serviceInstance = registry.getServiceExecutorInstance(serviceName)
     val serviceMethod = serviceInstance::class.java.getMethodPerNameAndParameters(
         "$methodName",
         methodParameterTypes?.types,
@@ -270,20 +268,27 @@ class TaskExecutor(
     )
     val serviceArgs = serviceMethod.deserializeArgs(methodArgs)
 
-    this.withTimeout =
-        // use withTimeout from registry, if it exists
-        registeredServiceExecutor.withTimeout
-            // else use @Timeout annotation, or WithTimeout interface
-          ?: serviceMethod.withTimeout.getOrThrow()
-              // else use default value
-              ?: TASK_WITH_TIMEOUT_DEFAULT
+    this.withTimeout = when (val wt = registry.getServiceExecutorWithTimeout(serviceName)) {
+      WithTimeout.UNSET ->
+        //use @Timeout annotation, or WithTimeout interface
+        serviceMethod.withTimeout.getOrThrow()
+        // else use default value
+          ?: TASK_WITH_TIMEOUT_DEFAULT
+
+      else -> wt
+    }
 
     // use withRetry from registry, if it exists
-    this.withRetry = registeredServiceExecutor.withRetry
-        // else use @Timeout annotation, or WithTimeout interface
-      ?: serviceMethod.withRetry.getOrThrow()
-          // else use default value
+    this.withRetry = when (val wr = registry.getServiceExecutorWithRetry(serviceName)) {
+      WithRetry.UNSET ->
+        // use @Retry annotation, or WithRetry interface
+        serviceMethod.withRetry.getOrThrow()
+        // else use default value
           ?: TASK_WITH_RETRY_DEFAULT
+
+      else -> wr
+    }
+
 
     // check is this method has the @Async annotation
     this.isDelegated = serviceMethod.isDelegated
@@ -301,10 +306,8 @@ class TaskExecutor(
 
     val workflowTaskParameters = serviceArgs[0] as WorkflowTaskParameters
 
-    // workflow registered in worker
-    val registeredWorkflowExecutor = workerRegistry.workflowExecutors[workflowName]!!
     // workflow instance
-    val workflowInstance = registeredWorkflowExecutor.getInstance(workflowTaskParameters)
+    val workflowInstance = registry.getWorkflowExecutorInstance(workflowTaskParameters)
     // method of the workflow instance
     val workflowMethod = with(workflowTaskParameters) {
       workflowInstance::class.java.getMethodPerNameAndParameters(
@@ -315,7 +318,7 @@ class TaskExecutor(
     }
 
     // get checkMode from registry
-    val checkMode = registeredWorkflowExecutor.checkMode
+    val checkMode = registry.getWorkflowExecutorCheckMode(workflowName)
     // else use CheckMode method annotation on method or class
       ?: workflowMethod.checkMode
       // else use default value
@@ -328,20 +331,29 @@ class TaskExecutor(
     }
 
     // use withTimeout from registry, if it exists
-    this.withTimeout = registeredWorkflowExecutor.withTimeout
+    this.withTimeout = when (val wt = registry.getWorkflowExecutorWithTimeout(workflowName)) {
+      WithTimeout.UNSET ->
         // HERE WE ARE LOOKING FOR THE TIMEOUT OF THE WORKFLOW TASK
         // NOT OF THE WORKFLOW ITSELF, THAT'S WHY WE DO NOT LOOK FOR
         // THE @Timeout ANNOTATION OR THE WithTimeout INTERFACE
         // THAT HAS A DIFFERENT MEANING IN WORKFLOWS
         // else use default value
-      ?: WORKFLOW_TASK_WITH_TIMEOUT_DEFAULT
+        WORKFLOW_TASK_WITH_TIMEOUT_DEFAULT
+
+      else -> wt
+    }
 
     // use withRetry from registry, if it exists
-    this.withRetry = registeredWorkflowExecutor.withRetry
+    this.withRetry = when (val wr = registry.getWorkflowExecutorWithRetry(workflowName)) {
+      WithRetry.UNSET ->
         // else use @Retry annotation, or WithRetry interface
-      ?: workflowMethod.withRetry.getOrThrow()
-          // else use default value
+        workflowMethod.withRetry.getOrThrow()
+        // else use default value
           ?: WORKFLOW_TASK_WITH_RETRY_DEFAULT
+
+      else -> wr
+    }
+
 
     return Triple(serviceInstance, serviceMethod, serviceArgs)
   }

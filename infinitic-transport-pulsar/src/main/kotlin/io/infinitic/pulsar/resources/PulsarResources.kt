@@ -139,8 +139,8 @@ class PulsarResources(
     admin.initNamespaceOnce(namespaceFullName, policies)
     // initialize topic once  (do nothing on error)
     val ttl = when (isTimed) {
-      true -> policies.timerTTLInSeconds
-      false -> policies.messageTTLInSeconds
+      true -> policies.timerTTLSeconds
+      false -> policies.messageTTLSeconds
     }
 
     return admin.initTopicOnce(topic, isPartitioned, ttl).map { }

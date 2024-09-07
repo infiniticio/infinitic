@@ -28,11 +28,11 @@ import io.kotest.matchers.shouldBe
 class CaffeineConfigTests : StringSpec(
     {
       "Can create CaffeineConfig through builder" {
-        val caffeineConfig = CaffeineConfig
+        val caffeineCacheConfig = CaffeineCacheConfig
             .builder()
             .build()
 
-        caffeineConfig shouldBe CaffeineConfig()
+        caffeineCacheConfig shouldBe CaffeineCacheConfig()
       }
     },
 )

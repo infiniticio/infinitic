@@ -32,8 +32,6 @@ import kotlin.random.Random
 sealed class RetryPolicy(open val maximumRetries: Int, open val ignoredExceptions: List<String>) :
   WithRetry {
 
-  var isDefined = true
-
   val ignoredClasses: List<Class<*>> by lazy {
     ignoredExceptions.map { klass ->
       klass.getClass().getOrThrow().also {
@@ -66,6 +64,13 @@ sealed class RetryPolicy(open val maximumRetries: Int, open val ignoredException
   protected abstract fun getSecondsBeforeRetry(attempt: Int): Double?
 }
 
+@Suppress("ClassName")
+data object UNSET_RETRY_POLICY : RetryPolicy(0, listOf()) {
+  override fun check() {}
+  override fun getSecondsBeforeRetry(attempt: Int) = -Double.MAX_VALUE
+}
+
+@Suppress("unused")
 data class ExponentialBackoffRetryPolicy(
   val minimumSeconds: Double = 1.0,
   val maximumSeconds: Double = 1000 * minimumSeconds,
@@ -95,4 +100,46 @@ data class ExponentialBackoffRetryPolicy(
   override fun getSecondsBeforeRetry(attempt: Int): Double =
       min(maximumSeconds, minimumSeconds * backoffCoefficient.pow(attempt)) *
           (1 + randomFactor * (2 * Random.nextDouble() - 1))
+
+  companion object {
+    @JvmStatic
+    fun builder() = ExponentialBackoffRetryPolicyBuilder()
+  }
+
+  class ExponentialBackoffRetryPolicyBuilder() {
+    private val default = ExponentialBackoffRetryPolicy()
+    private var minimumSeconds = default.minimumSeconds
+    private var maximumSeconds = default.maximumSeconds
+    private var backoffCoefficient = default.backoffCoefficient
+    private var randomFactor = default.randomFactor
+    private var maximumRetries = default.maximumRetries
+    private var ignoredExceptions = default.ignoredExceptions as MutableList<String>
+
+    fun build() = ExponentialBackoffRetryPolicy(
+        minimumSeconds,
+        maximumSeconds,
+        backoffCoefficient,
+        randomFactor,
+        maximumRetries,
+        ignoredExceptions,
+    )
+
+    fun setMinimumSeconds(minimumSeconds: Double) =
+        apply { this.minimumSeconds = minimumSeconds }
+
+    fun setMaximumSeconds(maximumSeconds: Double) =
+        apply { this.maximumSeconds = maximumSeconds }
+
+    fun setBackoffCoefficient(backoffCoefficient: Double) =
+        apply { this.backoffCoefficient = backoffCoefficient }
+
+    fun setRandomFactor(randomFactor: Double) =
+        apply { this.randomFactor = randomFactor }
+
+    fun setMaximumRetries(maximumRetries: Int) =
+        apply { this.maximumRetries = maximumRetries }
+
+    fun addIgnoredException(exception: Class<Exception>) =
+        apply { ignoredExceptions.add(exception.name) }
+  }
 }

@@ -51,7 +51,7 @@ import java.util.concurrent.atomic.AtomicBoolean
 class PulsarInfiniticConsumer(
   private val consumer: Consumer,
   private val pulsarResources: PulsarResources,
-  val shutdownGracePeriodInSeconds: Double
+  val shutdownGracePeriodSeconds: Double
 ) : InfiniticConsumer {
 
   override lateinit var workerLogger: KLogger
@@ -68,7 +68,7 @@ class PulsarInfiniticConsumer(
     if (isClosed.compareAndSet(false, true)) {
       runBlocking {
         try {
-          withTimeout((shutdownGracePeriodInSeconds * 1000L).toLong()) {
+          withTimeout((shutdownGracePeriodSeconds * 1000L).toLong()) {
             // By cancelling the consumer coroutine, we interrupt the main loop of consumption
             workerLogger.info { "Processing ongoing messages..." }
             consumer.cancel()
@@ -81,7 +81,7 @@ class PulsarInfiniticConsumer(
           }
         } catch (e: TimeoutCancellationException) {
           workerLogger.warn {
-            "The grace period (${shutdownGracePeriodInSeconds}s) allotted to close was insufficient. " +
+            "The grace period (${shutdownGracePeriodSeconds}s) allotted to close was insufficient. " +
                 "Some ongoing messages may not have been processed properly."
           }
         }

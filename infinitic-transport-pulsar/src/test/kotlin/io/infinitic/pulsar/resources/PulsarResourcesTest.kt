@@ -107,7 +107,7 @@ class PulsarResourcesTest : StringSpec(
         coVerifyAll {
           pulsarInfiniticAdmin.initTenantOnce("tenantTest", allowedClusters, adminRoles)
           pulsarInfiniticAdmin.initNamespaceOnce("tenantTest/namespaceTest", policiesConfig)
-          pulsarInfiniticAdmin.initTopicOnce(topic, true, policiesConfig.timerTTLInSeconds)
+          pulsarInfiniticAdmin.initTopicOnce(topic, true, policiesConfig.timerTTLSeconds)
         }
       }
 

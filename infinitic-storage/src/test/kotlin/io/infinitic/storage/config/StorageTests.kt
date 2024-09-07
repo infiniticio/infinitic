@@ -92,7 +92,7 @@ class StorageTests :
           val mysql = MySQLConfig(
               host = mysqlServer.host,
               port = mysqlServer.firstMappedPort,
-              user = mysqlServer.username,
+              username = mysqlServer.username,
               password = mysqlServer.password,
           ).copy(database = mysqlServer.databaseName)
 
@@ -126,7 +126,7 @@ class StorageTests :
           val postgresConfig = PostgresConfig(
               host = postgresServer.host,
               port = postgresServer.firstMappedPort,
-              user = postgresServer.username,
+              username = postgresServer.username,
               password = postgresServer.password,
               database = postgresServer.databaseName,
           )

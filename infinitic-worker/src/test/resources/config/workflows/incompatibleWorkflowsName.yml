@@ -34,7 +34,8 @@ pulsar:
 
 workflows:
   - name: io.infinitic.workers.samples.WorkflowA
-    classes:
-      - io.infinitic.workers.samples.WorkflowAImpl
-      - io.infinitic.workers.samples.WorkflowAImpl2
+    executor:
+      classes:
+        - io.infinitic.workers.samples.WorkflowAImpl
+        - io.infinitic.workers.samples.WorkflowAImpl2
 

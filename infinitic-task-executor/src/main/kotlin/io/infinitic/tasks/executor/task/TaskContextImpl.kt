@@ -30,7 +30,6 @@ import io.infinitic.common.tasks.data.TaskRetryIndex
 import io.infinitic.common.tasks.data.TaskRetrySequence
 import io.infinitic.common.tasks.executors.errors.ExecutionError
 import io.infinitic.common.workers.config.WorkflowVersion
-import io.infinitic.common.workers.registry.WorkerRegistry
 import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.data.workflows.WorkflowName
 import io.infinitic.tasks.TaskContext
@@ -39,7 +38,6 @@ import io.infinitic.tasks.WithTimeout
 
 data class TaskContextImpl(
   override val workerName: String,
-  override val workerRegistry: WorkerRegistry,
   override val serviceName: ServiceName,
   override val taskId: TaskId,
   override val taskName: MethodName,

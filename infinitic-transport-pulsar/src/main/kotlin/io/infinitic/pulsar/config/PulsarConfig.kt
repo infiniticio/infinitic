@@ -40,6 +40,27 @@ import org.apache.pulsar.client.impl.auth.oauth2.AuthenticationFactoryOAuth2
 import org.apache.pulsar.client.impl.auth.AuthenticationAthenz as PulsarAuthenticationAthenz
 import org.apache.pulsar.client.impl.auth.AuthenticationSasl as PulsarAuthenticationSasl
 
+/**
+ * Configuration class for setting up Apache Pulsar connection properties.
+ *
+ * @property brokerServiceUrl URL for the Pulsar broker service.
+ * @property webServiceUrl URL for the Pulsar web service.
+ * @property tenant Pulsar tenant name.
+ * @property namespace Pulsar namespace name.
+ * @property allowedClusters Set of allowed clusters (optional).
+ * @property adminRoles Set of admin roles (optional).
+ * @property tlsAllowInsecureConnection Whether TLS allows insecure connections (optional).
+ * @property tlsEnableHostnameVerification Whether TLS enables hostname verification (optional).
+ * @property tlsTrustCertsFilePath Path to the TLS trust certificates file (optional).
+ * @property useKeyStoreTls Whether to use KeyStore for TLS (optional).
+ * @property tlsTrustStoreType Type of the TLS trust store (e.g., JKS, PKCS12) (optional).
+ * @property tlsTrustStorePath Path to the TLS trust store (optional).
+ * @property tlsTrustStorePassword Password for the TLS trust store (optional).
+ * @property authentication Client authentication configuration (optional).
+ * @property policies Pulsar policies configuration (default value provided).
+ * @property producer Pulsar producer configuration (default value provided).
+ * @property consumer Pulsar consumer configuration (default value provided).
+ */
 @Suppress("unused")
 data class PulsarConfig(
   val brokerServiceUrl: String, // "pulsar://localhost:6650/",

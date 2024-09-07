@@ -71,7 +71,7 @@ data class PostgresConfig(
   val idleTimeout: Long? = null, // milli seconds
   val connectionTimeout: Long? = null, // milli seconds
   val maxLifetime: Long? = null // milli seconds
-) {
+) : DatabaseConfig {
 
   private val jdbcUrl = "jdbc:postgresql://$host:$port/$database"
   private val jdbcUrlDefault = "jdbc:postgresql://$host:$port/postgres"
@@ -122,7 +122,7 @@ data class PostgresConfig(
   companion object {
     @JvmStatic
     fun builder() = PostgresConfigBuilder()
-
+    
     private val pools = ConcurrentHashMap<PostgresConfig, HikariDataSource>()
     private const val DEFAULT_KEY_VALUE_TABLE = "key_value_storage"
     private const val DEFAULT_KEY_SET_TABLE = "key_set_storage"

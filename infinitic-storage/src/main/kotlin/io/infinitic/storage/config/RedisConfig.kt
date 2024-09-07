@@ -62,7 +62,7 @@ data class RedisConfig(
   var timeout: Int = Protocol.DEFAULT_TIMEOUT,
   var ssl: Boolean = false,
   var poolConfig: PoolConfig = PoolConfig()
-) {
+) : DatabaseConfig {
 
   companion object {
     @JvmStatic

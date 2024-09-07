@@ -36,7 +36,7 @@ class PostgresConfigTest {
         builder = PostgresConfig.builder()
                 .setHost("localhost")
                 .setPort(5432)
-                .setUser("postgres")
+                .setUserName("postgres")
                 .setPassword("password");
     }
 
@@ -46,7 +46,7 @@ class PostgresConfigTest {
 
         assertEquals("localhost", config.getHost());
         assertEquals(5432, config.getPort());
-        assertEquals("postgres", config.getUser());
+        assertEquals("postgres", config.getUsername());
         assertEquals("password", config.getPassword());
         assertEquals("infinitic", config.getDatabase());
         assertEquals("key_set_storage", config.getKeySetTable());
@@ -59,7 +59,7 @@ class PostgresConfigTest {
                 IllegalArgumentException.class,
                 () -> MySQLConfig.builder()
                         .setHost("localhost")
-                        .setUser("root")
+                        .setUserName("root")
                         .build()
         );
         assertTrue(e.getMessage().contains("port"));
@@ -71,7 +71,7 @@ class PostgresConfigTest {
                 IllegalArgumentException.class,
                 () -> MySQLConfig.builder()
                         .setHost("localhost")
-                        .setUser("root")
+                        .setUserName("root")
                         .build()
         );
         assertTrue(e.getMessage().contains("port"));

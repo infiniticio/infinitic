@@ -30,10 +30,13 @@ pulsar:
   tenant: infinitic
   namespace: dev
 
+eventListener:
+  class: io.infinitic.workers.samples.UnknownListener
+
 services:
   - name: io.infinitic.workers.samples.ServiceA
-    class: io.infinitic.workers.samples.ServiceAImpl
-    eventListener:
-      class: io.infinitic.workers.samples.UnknownListener
+    executor:
+      class: io.infinitic.workers.samples.ServiceAImpl
+
 
 

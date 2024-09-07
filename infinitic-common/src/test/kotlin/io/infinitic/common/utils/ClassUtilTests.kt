@@ -99,12 +99,12 @@ class ClassUtilTests : StringSpec(
       }
 
       "can read timeout from interface with default" {
-        TrueBar::getTimeoutInSeconds.javaMethod!!.getMillisDuration(TrueBar::class.java)
+        TrueBar::getTimeoutSeconds.javaMethod!!.getMillisDuration(TrueBar::class.java)
             .getOrThrow() shouldBe MillisDuration(1000L)
       }
 
       "can not read timeout from interface without default" {
-        Bar::getTimeoutInSeconds.javaMethod!!.getMillisDuration(Bar::class.java)
+        Bar::getTimeoutSeconds.javaMethod!!.getMillisDuration(Bar::class.java)
             .getOrThrow() shouldBe null
       }
 
@@ -266,12 +266,12 @@ private interface Bar : WithTimeout {
 private class BarImpl : Bar {
   override fun foo() {}
 
-  override fun getTimeoutInSeconds() = 1.0
+  override fun getTimeoutSeconds() = 1.0
 }
 
 private interface TrueBar : WithTimeout {
   fun foo()
-  override fun getTimeoutInSeconds() = 1.0
+  override fun getTimeoutSeconds() = 1.0
 }
 
 private class TrueBarImpl : TrueBar {
@@ -281,5 +281,5 @@ private class TrueBarImpl : TrueBar {
 }
 
 class After10MilliSeconds : WithTimeout {
-  override fun getTimeoutInSeconds() = 0.01
+  override fun getTimeoutSeconds() = 0.01
 }

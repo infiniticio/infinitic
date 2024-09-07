@@ -23,13 +23,24 @@
 package io.infinitic.common.workflows.executors
 
 import com.fasterxml.jackson.annotation.JsonView
+import io.github.oshai.kotlinlogging.KLogger
+import io.infinitic.annotations.Ignore
 import io.infinitic.common.exceptions.thisShouldNotHappen
+import io.infinitic.common.workflows.data.properties.PropertyHash
 import io.infinitic.common.workflows.data.properties.PropertyName
 import io.infinitic.common.workflows.data.properties.PropertyValue
+import io.infinitic.workflows.Channel
+import io.infinitic.workflows.Workflow
+import org.slf4j.Logger
+import java.lang.reflect.Proxy
 import java.security.InvalidParameterException
 import kotlin.reflect.KProperty1
+import kotlin.reflect.full.createType
 import kotlin.reflect.full.findAnnotations
+import kotlin.reflect.full.hasAnnotation
+import kotlin.reflect.full.isSubtypeOf
 import kotlin.reflect.full.memberProperties
+import kotlin.reflect.full.starProjectedType
 import kotlin.reflect.jvm.javaField
 
 fun <T : Any> setPropertiesToObject(obj: T, values: Map<PropertyName, PropertyValue>) {
@@ -59,6 +70,32 @@ fun <T : Any> getPropertiesFromObject(
               )
             },
         )
+
+fun Workflow.setProperties(
+  propertiesHashValue: Map<PropertyHash, PropertyValue>,
+  propertiesNameHash: Map<PropertyName, PropertyHash>
+) {
+  val properties = propertiesNameHash.mapValues {
+    propertiesHashValue[it.value]
+      ?: thisShouldNotHappen("unknown hash ${it.value} in $propertiesHashValue")
+  }
+
+  setPropertiesToObject(this, properties)
+}
+
+fun Workflow.getProperties() =
+    getPropertiesFromObject(this) {
+      // excludes Channels
+      !it.first.returnType.isSubtypeOf(Channel::class.starProjectedType) &&
+          // excludes Proxies (tasks and workflows) and null
+          !(it.second?.let { Proxy.isProxyClass(it::class.java) } ?: true) &&
+          // exclude SLF4J loggers
+          !it.first.returnType.isSubtypeOf(Logger::class.createType()) &&
+          // exclude KotlinLogging loggers
+          !it.first.returnType.isSubtypeOf(KLogger::class.createType()) &&
+          // exclude Ignore annotation
+          !it.first.hasAnnotation<Ignore>()
+    }
 
 private val KProperty1<*, *>.jsonViewClass
   get(): Class<*>? {

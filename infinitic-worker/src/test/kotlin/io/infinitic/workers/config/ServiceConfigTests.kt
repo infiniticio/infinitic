@@ -22,21 +22,84 @@
  */
 package io.infinitic.workers.config
 
-import io.infinitic.workers.register.config.ServiceConfig
+import com.sksamuel.hoplite.ConfigException
+import io.infinitic.workers.samples.ServiceA
+import io.infinitic.workers.samples.ServiceAImpl
+import io.kotest.assertions.throwables.shouldNotThrowAny
+import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
+import io.kotest.matchers.string.shouldContain
+import io.kotest.matchers.types.shouldBeInstanceOf
 
-internal class ServiceConfigTests :
-  StringSpec(
-      {
-        val name = "testName"
+internal class ServiceConfigTests : StringSpec(
+    {
+      val serviceName = ServiceA::class.java.name
+      val serviceClass = ServiceAImpl::class.java.name
 
-        "Can create ServiceConfig through builder" {
-          val serviceConfig = ServiceConfig.builder()
-              .name(name)
-              .build()
-
-          serviceConfig shouldBe ServiceConfig(name)
+      "Can create ServiceConfig through YAML with an executor" {
+        val config = shouldNotThrowAny {
+          ServiceConfig.fromYamlString(
+              """
+name: $serviceName
+executor:
+  class: $serviceClass
+  concurrency: 10
+          """,
+          )
         }
-      },
-  )
+
+        config.name shouldBe serviceName
+        config.executor.shouldBeInstanceOf<ServiceExecutorConfig>()
+        config.tagEngine shouldBe null
+      }
+
+      "Can create ServiceConfig through YAML with a Tag Engine" {
+        val config = shouldNotThrowAny {
+          ServiceConfig.fromYamlString(
+              """
+name: $serviceName
+tagEngine:
+  concurrency: 10
+          """,
+          )
+        }
+
+        config.name shouldBe serviceName
+        config.executor shouldBe null
+        config.tagEngine.shouldBeInstanceOf<ServiceTagEngineConfig>()
+      }
+
+      "Can create ServiceConfig through YAML with both an Executor and a Tag Engine" {
+        val config = shouldNotThrowAny {
+          ServiceConfig.fromYamlString(
+              """
+name: $serviceName
+executor:
+  class: $serviceClass
+  concurrency: 10
+tagEngine:
+  concurrency: 10
+          """,
+          )
+        }
+
+        config.name shouldBe serviceName
+        config.executor.shouldBeInstanceOf<ServiceExecutorConfig>()
+        config.tagEngine.shouldBeInstanceOf<ServiceTagEngineConfig>()
+      }
+
+      "class must implements the Service" {
+        val e = shouldThrow<ConfigException> {
+          ServiceConfig.fromYamlString(
+              """
+name: UnknownService
+executor:
+  class: $serviceClass
+          """,
+          )
+        }
+        e.message shouldContain "'$serviceClass' must be an implementation of Service 'UnknownService'"
+      }
+    },
+)

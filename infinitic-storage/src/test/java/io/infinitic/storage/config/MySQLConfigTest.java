@@ -36,7 +36,7 @@ class MySQLConfigTest {
         builder = MySQLConfig.builder()
                 .setHost("localhost")
                 .setPort(3306)
-                .setUser("root")
+                .setUserName("root")
                 .setPassword("password");
     }
 
@@ -46,7 +46,7 @@ class MySQLConfigTest {
 
         assertEquals("localhost", config.getHost());
         assertEquals(3306, config.getPort());
-        assertEquals("root", config.getUser());
+        assertEquals("root", config.getUsername());
         assertEquals("password", config.getPassword());
         assertEquals("infinitic", config.getDatabase());
         assertEquals("key_set_storage", config.getKeySetTable());
@@ -59,7 +59,7 @@ class MySQLConfigTest {
                 IllegalArgumentException.class,
                 () -> MySQLConfig.builder()
                         .setHost("localhost")
-                        .setUser("root")
+                        .setUserName("root")
                         .build()
         );
         assertTrue(e.getMessage().contains("port"));
@@ -71,7 +71,7 @@ class MySQLConfigTest {
                 IllegalArgumentException.class,
                 () -> MySQLConfig.builder()
                         .setHost("localhost")
-                        .setUser("root")
+                        .setUserName("root")
                         .build()
         );
         assertTrue(e.getMessage().contains("port"));

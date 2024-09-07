@@ -24,47 +24,20 @@ package io.infinitic.cloudEvents
 
 @Suppress("unused")
 data class SelectionConfig(
-  val only: List<String>? = null,
-  val exclude: List<String> = listOf()
+  val allow: List<String>? = null,
+  val disallow: List<String> = listOf()
 ) {
-  var isDefined = true
-
   init {
-    only?.forEach {
-      require(it.isNotEmpty()) { error("'${::only.name}' must not contain empty element") }
+    allow?.forEach {
+      require(it.isNotEmpty()) { error("'${::allow.name}' must not contain empty element") }
     }
-    exclude.forEach {
-      require(it.isNotEmpty()) { error("'${::exclude.name}' must not contain empty element") }
+    disallow.forEach {
+      require(it.isNotEmpty()) { error("'${::disallow.name}' must not contain empty element") }
     }
-  }
-
-  companion object {
-    @JvmStatic
-    fun builder() = SelectionConfigBuilder()
   }
 
   fun isIncluded(name: String) =
-      (only == null || only.contains(name)) && !exclude.contains(name)
-  
-  /**
-   * EventListenerConfig builder (Useful for Java user)
-   */
-  class SelectionConfigBuilder {
-    private val default = SelectionConfig()
-    private var only = default.only
-    private var exclude = default.exclude
-
-    fun only(only: List<String>) =
-        apply { this.only = only }
-
-    fun exclude(exclude: List<String>) =
-        apply { this.exclude = exclude }
-
-    fun build() = SelectionConfig(
-        only,
-        exclude,
-    )
-  }
+      (allow == null || allow.contains(name)) && !disallow.contains(name)
 
   private fun error(txt: String) = "eventListener: $txt"
 }

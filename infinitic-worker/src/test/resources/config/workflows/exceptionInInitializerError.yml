@@ -34,5 +34,6 @@ pulsar:
 
 workflows:
   - name: io.infinitic.workers.samples.WorkflowA
-    class: io.infinitic.workers.samples.WorkflowWithExceptionInInitializerError
+    executor:
+      class: io.infinitic.workers.samples.WorkflowWithExceptionInInitializerError
 

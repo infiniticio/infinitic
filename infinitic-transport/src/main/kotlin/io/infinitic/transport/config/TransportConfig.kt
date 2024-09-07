@@ -56,7 +56,7 @@ data class TransportConfig(
       require(pulsar != null) { "Missing Pulsar configuration" }
     }
 
-    require(shutdownGracePeriodSeconds >= 0) { "shutdownGracePeriodInSeconds must be >= 0" }
+    require(shutdownGracePeriodSeconds >= 0) { "shutdownGracePeriodSeconds must be >= 0" }
   }
 
   /** This is used as source prefix for CloudEvents */

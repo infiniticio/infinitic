@@ -70,7 +70,7 @@ data class MySQLConfig(
   val idleTimeout: Long? = null, // milli seconds
   val connectionTimeout: Long? = null, // milli seconds
   val maxLifetime: Long? = null // milli seconds
-) {
+) : DatabaseConfig {
   private val jdbcUrl = "jdbc:mysql://$host:$port/$database"
   private val jdbcUrlDefault = "jdbc:mysql://$host:$port/"
   private val driverClassName = "com.mysql.cj.jdbc.Driver"
@@ -251,7 +251,8 @@ data class MySQLConfig(
       return MySQLConfig(
           host = host ?: throw IllegalArgumentException("${::host.name} must not be null"),
           port = port ?: throw IllegalArgumentException("${::port.name} must not be null"),
-          username = username ?: throw IllegalArgumentException("${::username.name} must not be null"),
+          username = username
+            ?: throw IllegalArgumentException("${::username.name} must not be null"),
           password = password,
           database = database ?: DEFAULT_DATABASE,
           keySetTable = keySetTable ?: DEFAULT_KEY_SET_TABLE,

@@ -35,31 +35,20 @@ class CacheConfigTests :
         "default cache should be None" {
           val config = loadConfigFromYaml<CacheConfigImpl>("nothing:")
 
-          config shouldBe CacheConfigImpl(cache = CacheConfig())
-          config.cache.type shouldBe CacheConfig.CacheType.NONE
-          config.cache.keyValue shouldBe null
-          config.cache.keySet shouldBe null
+          config shouldBe CacheConfigImpl(cache = null)
         }
 
-        "cache without type should be None" {
+        "can set null cache " {
+          val config = loadConfigFromYaml<CacheConfigImpl>("cache: null")
+
+          config shouldBe CacheConfigImpl(cache = null)
+        }
+
+        "default cache should be Caffeine" {
           val config = loadConfigFromYaml<CacheConfigImpl>("cache:")
 
-          config shouldBe CacheConfigImpl(cache = CacheConfig())
-          config.cache.type shouldBe CacheConfig.CacheType.NONE
-          config.cache.keyValue shouldBe null
-          config.cache.keySet shouldBe null
-        }
-
-        "can choose Caffeine cache" {
-          val config = loadConfigFromYaml<CacheConfigImpl>(
-              """
-cache:
-  caffeine:
-     """,
-          )
-          config shouldBe CacheConfigImpl(cache = CacheConfig(caffeine = CaffeineConfig()))
-          config.cache.type shouldBe CacheConfig.CacheType.CAFFEINE
-          config.cache.keyValue!!::class shouldBe CaffeineCachedKeyValue::class
+          config shouldBe CacheConfigImpl(cache = CaffeineCacheConfig())
+          config.cache?.keyValue!!::class shouldBe CaffeineCachedKeyValue::class
           config.cache.keySet!!::class shouldBe CaffeineCachedKeySet::class
         }
 
@@ -67,25 +56,19 @@ cache:
           val config = loadConfigFromYaml<CacheConfigImpl>(
               """
 cache:
-  caffeine:
-    maximumSize: 100
-    expireAfterAccess: 42
-    expireAfterWrite: 64
+  maximumSize: 100
+  expireAfterAccess: 42
+  expireAfterWrite: 64
      """,
           )
 
           config shouldBe CacheConfigImpl(
-              cache = CacheConfig(
-                  caffeine = CaffeineConfig(
-                      100,
-                      42,
-                      64,
-                  ),
+              cache = CaffeineCacheConfig(
+                  100,
+                  42,
+                  64,
               ),
           )
-          config.cache.type shouldBe CacheConfig.CacheType.CAFFEINE
-          config.cache.keyValue!!::class shouldBe CaffeineCachedKeyValue::class
-          config.cache.keySet!!::class shouldBe CaffeineCachedKeySet::class
         }
       },
   )

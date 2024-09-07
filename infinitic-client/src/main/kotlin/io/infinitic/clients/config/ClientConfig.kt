@@ -39,23 +39,23 @@ data class ClientConfig(
   override val pulsar: PulsarConfig? = null,
 
   /** Shutdown Grace Period */
-  override val shutdownGracePeriodInSeconds: Double = 10.0
+  override val shutdownGracePeriodSeconds: Double = 10.0
 ) : ClientConfigInterface {
 
   companion object {
     /** Create ClientConfig from file in file system */
     @JvmStatic
-    fun fromFile(vararg files: String): ClientConfig =
+    fun fromYamlFile(vararg files: String): ClientConfig =
         loadConfigFromFile<ClientConfig>(*files)
 
     /** Create ClientConfig from file in resources directory */
     @JvmStatic
-    fun fromResource(vararg resources: String): ClientConfig =
+    fun fromYamlResource(vararg resources: String): ClientConfig =
         loadConfigFromResource<ClientConfig>(*resources)
 
     /** Create ClientConfig from yaml strings */
     @JvmStatic
-    fun fromYaml(vararg yamls: String): ClientConfig =
+    fun fromYamlString(vararg yamls: String): ClientConfig =
         loadConfigFromYaml<ClientConfig>(*yamls)
   }
 }

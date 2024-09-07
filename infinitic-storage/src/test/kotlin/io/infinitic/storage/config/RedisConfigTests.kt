@@ -71,8 +71,8 @@ class RedisConfigTests : StringSpec(
       }
 
       "toString() should obfuscate password" {
-        with(config.copy(user = "admin", password = "<PASSWORD>")) {
-          toString() shouldBe "RedisConfig(host='$host', port=$port, user='$user', password='******'" +
+        with(config.copy(username = "admin", password = "<PASSWORD>")) {
+          toString() shouldBe "RedisConfig(host='$host', port=$port, username='$username', password='******'" +
               ", database=$database, timeout=$timeout, ssl=$ssl, poolConfig=$poolConfig)"
         }
       }
@@ -120,7 +120,7 @@ storage:
       "can load from yaml with optional parameters" {
         val storageConfig = loadConfigFromYaml<StorageConfigImpl>(
             yaml + """
-    user: root
+    username: root
     password: pass
     database: 1
     timeout: 2

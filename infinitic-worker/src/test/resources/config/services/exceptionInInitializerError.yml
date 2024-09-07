@@ -21,8 +21,7 @@
 #
 # Licensor: infinitic.io
 
-# Uncomment the line below to perform test on a local Pulsar cluster
-
+# comment the line below to perform test on a local Pulsar cluster
 transport: inMemory
 storage: inMemory
 
@@ -34,5 +33,6 @@ pulsar:
 
 services:
   - name: io.infinitic.workers.samples.ServiceA
-    class: io.infinitic.workers.samples.ServiceWithExceptionInInitializerError
+    executor:
+      class: io.infinitic.workers.samples.ServiceWithExceptionInInitializerError
 

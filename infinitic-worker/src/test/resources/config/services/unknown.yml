@@ -32,5 +32,6 @@ pulsar:
 
 services:
   - name: io.infinitic.workers.samples.ServiceA
-    class: io.infinitic.workers.samples.UnknownService
+    executor:
+      class: io.infinitic.workers.samples.UnknownService
 

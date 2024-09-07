@@ -45,7 +45,7 @@ class RedisConfigTest {
 
         assertEquals("localhost", config.getHost());
         assertEquals(6379, config.getPort());
-        assertNull(config.getUser());
+        assertNull(config.getUsername());
         assertNull(config.getPassword());
         assertEquals(Protocol.DEFAULT_DATABASE, config.getDatabase());
         assertEquals(Protocol.DEFAULT_TIMEOUT, config.getTimeout());
@@ -82,7 +82,7 @@ class RedisConfigTest {
     @Test
     void testOptionalParameters() {
         RedisConfig config = builder
-                .setUser("user")
+                .setUserName("user")
                 .setPassword("password")
                 .setDatabase(1)
                 .setTimeout(42)
@@ -94,7 +94,7 @@ class RedisConfigTest {
                         .build())
                 .build();
 
-        assertEquals("user", config.getUser());
+        assertEquals("user", config.getUsername());
         assertEquals("password", config.getPassword());
         assertEquals(1, config.getDatabase());
         assertEquals(42, config.getTimeout());

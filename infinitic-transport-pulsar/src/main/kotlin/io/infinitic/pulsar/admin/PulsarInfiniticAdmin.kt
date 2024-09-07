@@ -370,11 +370,11 @@ class PulsarInfiniticAdmin(
         Result.failure(e)
       }
 
-  fun setTopicTTL(topic: String, messageTTLInSecond: Int): Result<Int> = try {
-    logger.debug { "Topic '$topic': setting messageTTLInSecond=$messageTTLInSecond." }
-    topicPolicies.setMessageTTL(topic, messageTTLInSecond)
-    logger.info { "Topic '$topic': messageTTLInSecond=$messageTTLInSecond set." }
-    Result.success(messageTTLInSecond)
+  fun setTopicTTL(topic: String, messageTTLSeconds: Int): Result<Int> = try {
+    logger.debug { "Topic '$topic': setting messageTTLInSecond=$messageTTLSeconds." }
+    topicPolicies.setMessageTTL(topic, messageTTLSeconds)
+    logger.info { "Topic '$topic': messageTTLInSecond=$messageTTLSeconds set." }
+    Result.success(messageTTLSeconds)
   } catch (e: PulsarAdminException) {
     logger.warn(e) { "Topic '$topic': Unable to set message TTL for topic." }
     Result.failure(e)
@@ -509,8 +509,8 @@ class PulsarInfiniticAdmin(
   }
 
   private fun PoliciesConfig.getPulsarPolicies() = PulsarPolicies().also {
-    it.retention_policies = RetentionPolicies(retentionTimeInMinutes, retentionSizeInMB)
-    it.message_ttl_in_seconds = messageTTLInSeconds
+    it.retention_policies = RetentionPolicies(retentionTimeMinutes, retentionSizeMB)
+    it.message_ttl_in_seconds = messageTTLSeconds
     it.delayed_delivery_policies =
         DelayedDeliveryPoliciesImpl(delayedDeliveryTickTimeMillis, true)
     it.schema_compatibility_strategy = schemaCompatibilityStrategy

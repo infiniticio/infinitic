@@ -238,7 +238,7 @@ class InfiniticClient(
     @JvmStatic
     fun fromConfig(config: ClientConfigInterface): InfiniticClient = with(config) {
       // Create TransportConfig
-      val transportConfig = TransportConfig(transport, pulsar, shutdownGracePeriodInSeconds)
+      val transportConfig = TransportConfig(transport, pulsar, shutdownGracePeriodSeconds)
 
       // Get Infinitic Consumer
       val consumer = LoggedInfiniticConsumer(logger, transportConfig.consumer)
@@ -255,21 +255,20 @@ class InfiniticClient(
         it.addAutoCloseResource(consumer)
       }
     }
-
-
+    
     /** Create InfiniticClient with config from resources directory */
     @JvmStatic
-    fun fromConfigResource(vararg resources: String): InfiniticClient =
-        fromConfig(ClientConfig.fromResource(*resources))
+    fun fromYamlResource(vararg resources: String): InfiniticClient =
+        fromConfig(ClientConfig.fromYamlResource(*resources))
 
     /** Create InfiniticClient with config from system file */
     @JvmStatic
-    fun fromConfigFile(vararg files: String): InfiniticClient =
-        fromConfig(ClientConfig.fromFile(*files))
+    fun fromYamlFile(vararg files: String): InfiniticClient =
+        fromConfig(ClientConfig.fromYamlFile(*files))
 
     /** Create InfiniticClient with config from yaml strings */
     @JvmStatic
-    fun fromConfigYaml(vararg yamls: String): InfiniticClient =
-        fromConfig(ClientConfig.fromYaml(*yamls))
+    fun fromYamlString(vararg yamls: String): InfiniticClient =
+        fromConfig(ClientConfig.fromYamlString(*yamls))
   }
 }

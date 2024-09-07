@@ -26,9 +26,9 @@ package io.infinitic.utils
 import io.infinitic.tasks.WithTimeout
 
 class After100MilliSeconds : WithTimeout {
-  override fun getTimeoutInSeconds() = 0.1
+  override fun getTimeoutSeconds() = 0.1
 }
 
 class After1Second : WithTimeout {
-  override fun getTimeoutInSeconds() = 1.0
+  override fun getTimeoutSeconds() = 1.0
 }

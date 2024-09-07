@@ -34,5 +34,6 @@ pulsar:
 
 workflows:
   - name: UnknownWorkflow
-    class: io.infinitic.workers.samples.WorkflowAImpl
+    executor:
+      class: io.infinitic.workers.samples.WorkflowAImpl
 

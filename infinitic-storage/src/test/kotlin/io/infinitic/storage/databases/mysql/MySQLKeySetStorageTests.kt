@@ -46,7 +46,7 @@ class MySQLKeySetStorageTests :
         val config = MySQLConfig(
             host = mysqlServer.host,
             port = mysqlServer.firstMappedPort,
-            user = mysqlServer.username,
+            username = mysqlServer.username,
             password = mysqlServer.password,
         ).copy(database = mysqlServer.databaseName)
 

@@ -74,7 +74,7 @@ enum class CompressionConfig {
       } catch (e: Exception) {
         // see comment above
         logger.info(e) {
-          "Error when decompressing data with '$type' algorithm, fallback to not decompressing"
+          "Error occurred while decompressing data using the '$type' algorithm. Returning original data."
         }
         return data.also { out.close() }
       }

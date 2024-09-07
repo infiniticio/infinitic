@@ -26,7 +26,6 @@ import io.cloudevents.CloudEvent
 import io.github.oshai.kotlinlogging.KLogger
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.infinitic.autoclose.addAutoCloseResource
-import io.infinitic.autoclose.autoClose
 import io.infinitic.clients.InfiniticClient
 import io.infinitic.cloudEvents.logs.CLOUD_EVENTS_SERVICE_EXECUTOR
 import io.infinitic.cloudEvents.logs.CLOUD_EVENTS_SERVICE_TAG_ENGINE
@@ -34,14 +33,12 @@ import io.infinitic.cloudEvents.logs.CLOUD_EVENTS_WORKFLOW_EXECUTOR
 import io.infinitic.cloudEvents.logs.CLOUD_EVENTS_WORKFLOW_STATE_ENGINE
 import io.infinitic.cloudEvents.logs.CLOUD_EVENTS_WORKFLOW_TAG_ENGINE
 import io.infinitic.common.data.MillisInstant
-import io.infinitic.common.exceptions.thisShouldNotHappen
 import io.infinitic.common.messages.Message
 import io.infinitic.common.tasks.data.ServiceName
 import io.infinitic.common.tasks.events.messages.ServiceExecutorEventMessage
 import io.infinitic.common.tasks.executors.messages.ExecuteTask
 import io.infinitic.common.tasks.executors.messages.ServiceExecutorMessage
 import io.infinitic.common.tasks.tags.messages.ServiceTagMessage
-import io.infinitic.common.tasks.tags.storage.TaskTagStorage
 import io.infinitic.common.transport.InfiniticConsumer
 import io.infinitic.common.transport.InfiniticProducer
 import io.infinitic.common.transport.InfiniticResources
@@ -66,36 +63,35 @@ import io.infinitic.common.workflows.data.workflows.WorkflowName
 import io.infinitic.common.workflows.engine.messages.WorkflowCmdMessage
 import io.infinitic.common.workflows.engine.messages.WorkflowEventMessage
 import io.infinitic.common.workflows.engine.messages.WorkflowStateEngineMessage
-import io.infinitic.common.workflows.engine.storage.WorkflowStateStorage
 import io.infinitic.common.workflows.tags.messages.WorkflowTagEngineMessage
-import io.infinitic.common.workflows.tags.storage.WorkflowTagStorage
+import io.infinitic.config.loadFromYamlFile
+import io.infinitic.config.loadFromYamlResource
+import io.infinitic.config.loadFromYamlString
 import io.infinitic.events.toJsonString
 import io.infinitic.events.toServiceCloudEvent
 import io.infinitic.events.toWorkflowCloudEvent
 import io.infinitic.logger.ignoreNull
 import io.infinitic.pulsar.PulsarInfiniticConsumer
+import io.infinitic.storage.config.StorageConfig
 import io.infinitic.tasks.Task
 import io.infinitic.tasks.executor.TaskEventHandler
 import io.infinitic.tasks.executor.TaskExecutor
 import io.infinitic.tasks.executor.TaskRetryHandler
 import io.infinitic.tasks.tag.TaskTagEngine
+import io.infinitic.tasks.tag.storage.BinaryTaskTagStorage
 import io.infinitic.tasks.tag.storage.LoggedTaskTagStorage
 import io.infinitic.transport.config.TransportConfig
-import io.infinitic.workers.config.WorkerConfig
-import io.infinitic.workers.config.WorkerConfigInterface
-import io.infinitic.workers.register.InfiniticRegister
-import io.infinitic.workers.registrable.Registrable
-import io.infinitic.workers.registrable.ServiceDefault
-import io.infinitic.workers.registrable.ServiceExecutor
-import io.infinitic.workers.registrable.WorkflowDefault
-import io.infinitic.workers.registrable.applyDefault
-import io.infinitic.workers.registrable.build
+import io.infinitic.workers.config.InfiniticWorkerConfig
+import io.infinitic.workers.registry.ConfigGettersInterface
+import io.infinitic.workers.registry.Registry
 import io.infinitic.workflows.engine.WorkflowStateCmdHandler
 import io.infinitic.workflows.engine.WorkflowStateEngine
 import io.infinitic.workflows.engine.WorkflowStateEventHandler
 import io.infinitic.workflows.engine.WorkflowStateTimerHandler
+import io.infinitic.workflows.engine.storage.BinaryWorkflowStateStorage
 import io.infinitic.workflows.engine.storage.LoggedWorkflowStateStorage
 import io.infinitic.workflows.tag.WorkflowTagEngine
+import io.infinitic.workflows.tag.storage.BinaryWorkflowTagStorage
 import io.infinitic.workflows.tag.storage.LoggedWorkflowTagStorage
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -105,13 +101,14 @@ import java.util.concurrent.CompletableFuture
 import kotlin.system.exitProcess
 
 @Suppress("unused")
-class InfiniticWorker private constructor(
-  val register: InfiniticRegister,
-  val resources: InfiniticResources,
-  val consumer: InfiniticConsumer,
-  val producer: InfiniticProducer,
-  private val source: String
-) : AutoCloseable {
+class InfiniticWorker(
+  private val registry: Registry,
+  private val resources: InfiniticResources,
+  private val consumer: InfiniticConsumer,
+  private val producer: InfiniticProducer,
+  private val source: String,
+  private val beautifyLogs: Boolean
+) : AutoCloseable, ConfigGettersInterface by registry {
 
   /** Infinitic Client */
   val client = InfiniticClient(consumer, producer)
@@ -131,13 +128,16 @@ class InfiniticWorker private constructor(
   companion object {
     private val logger = KotlinLogging.logger {}
 
+    @JvmStatic
+    fun builder() = InfiniticWorkerBuilder()
+
     /** Create [InfiniticWorker] from config */
     @JvmStatic
-    fun fromConfig(workerConfig: WorkerConfigInterface): InfiniticWorker = with(workerConfig) {
+    fun fromConfig(workerConfig: InfiniticWorkerConfig): InfiniticWorker = with(workerConfig) {
 
-      val transportConfig = TransportConfig(transport, pulsar, shutdownGracePeriodInSeconds)
+      val transportConfig = TransportConfig(transport, pulsar, shutdownGracePeriodSeconds)
 
-      /** Infinitic resources */
+      /** Infinitic Resources */
       val resources = transportConfig.resources
 
       /** Infinitic Consumer */
@@ -151,74 +151,49 @@ class InfiniticWorker private constructor(
 
       /** Infinitic Register */
       // if an exception is thrown, we ensure to close the previously created resource
-      val register = try {
-        InfiniticRegister.fromConfig(this)
+      val registry = try {
+        Registry(workerConfig)
       } catch (e: Exception) {
         consumer.close()
         throw e
       }
 
       /** Infinitic Worker */
-      InfiniticWorker(register, resources, consumer, producer, transportConfig.source).also {
+      InfiniticWorker(
+          registry,
+          resources,
+          consumer,
+          producer,
+          transportConfig.source,
+          workerConfig.logs.beautify,
+      ).also {
         // close consumer with the worker
         it.addAutoCloseResource(consumer)
-        // close storages with the worker
-        it.addAutoCloseResource(register)
       }
     }
 
-    /** Create [InfiniticWorker] from config in resources */
+    /** Create [InfiniticWorker] from yaml resources */
     @JvmStatic
-    fun fromConfigResource(vararg resources: String): InfiniticWorker =
-        fromConfig(WorkerConfig.fromResource(*resources))
+    fun fromYamlResource(vararg resources: String) =
+        fromConfig(loadFromYamlResource(*resources))
 
-    /** Create [InfiniticWorker] from config in system file */
+    /** Create [InfiniticWorker] from yaml files */
     @JvmStatic
-    fun fromConfigFile(vararg files: String): InfiniticWorker =
-        fromConfig(WorkerConfig.fromFile(*files))
+    fun fromYamlFile(vararg files: String): InfiniticWorker =
+        fromConfig(loadFromYamlFile(*files))
 
     /** Create [InfiniticWorker] from yaml strings */
     @JvmStatic
-    fun fromConfigYaml(vararg yamls: String): InfiniticWorker =
-        fromConfig(WorkerConfig.fromYaml(*yamls))
+    fun fromYamlString(vararg yamls: String): InfiniticWorker =
+        fromConfig(loadFromYamlString(*yamls))
   }
-
-  private val workerRegistry = register.registry
 
   private val sendingMessageToDLQ = { "Unable to process message, sending to Dead Letter Queue" }
 
   override fun close() {
     client.close()
-    autoClose()
+    consumer.close()
   }
-
-  private val registrable = mutableListOf<Registrable>()
-
-  fun register(vararg items: Registrable) {
-    items.forEach { registrable.add(it) }
-  }
-
-  private fun execRegistration() {
-    var serviceDefault: ServiceDefault? = null
-    var workflowDefault: WorkflowDefault? = null
-
-    registrable.forEach {
-      when (it) {
-        is ServiceDefault -> serviceDefault = it
-        is WorkflowDefault -> workflowDefault = it
-        else -> Unit
-      }
-    }
-
-    registrable.forEach {
-      when (it) {
-        is ServiceDefault, is WorkflowDefault -> Unit
-        is ServiceExecutor -> it.applyDefault(serviceDefault).build()
-        else -> thisShouldNotHappen()
-      }
-    }
-  }
-
 
   /**
    * Start worker synchronously
@@ -238,55 +213,40 @@ class InfiniticWorker private constructor(
   fun startAsync(): CompletableFuture<Unit> {
     runBlocking(Dispatchers.IO) {
 
-      workerRegistry.workflowTagEngines.forEach { (workflowName, registeredWorkflowTag) ->
+      registry.workflows.forEach { workflowConfig ->
+        val workflowName = WorkflowName(workflowConfig.name)
         // WORKFLOW TAG ENGINE
-        startWorkflowTagEngine(
-            workflowName,
-            registeredWorkflowTag.concurrency,
-            registeredWorkflowTag.storage,
-        )
-      }
-
-      workerRegistry.workflowStateEngines.forEach { (workflowName, registeredWorkflowEngine) ->
+        workflowConfig.tagEngine?.let {
+          startWorkflowTagEngine(workflowName, it.concurrency, it.storage!!)
+        }
         // WORKFLOW STATE ENGINE
-        startWorkflowStateEngine(
-            workflowName,
-            registeredWorkflowEngine.concurrency,
-            registeredWorkflowEngine.storage,
-        )
-      }
-
-      workerRegistry.workflowExecutors.forEach { (workflowName, registeredWorkflowExecutor) ->
+        workflowConfig.stateEngine?.let {
+          startWorkflowStateEngine(workflowName, it.concurrency, it.storage!!)
+        }
         // WORKFLOW EXECUTOR
-        startWorkflowExecutor(
-            workflowName,
-            registeredWorkflowExecutor.concurrency,
-        )
+        workflowConfig.executor?.let {
+          startWorkflowExecutor(workflowName, it.concurrency)
+        }
       }
 
-      workerRegistry.serviceTagEngines.forEach { (serviceName, registeredServiceTag) ->
+      registry.services.forEach { serviceConfig ->
+        val serviceName = ServiceName(serviceConfig.name)
         // SERVICE TAG ENGINE
-        startTaskTagEngine(
-            serviceName,
-            registeredServiceTag.concurrency,
-            registeredServiceTag.storage,
-        )
-      }
-
-      workerRegistry.serviceExecutors.forEach { (serviceName, registeredEventListener) ->
+        serviceConfig.tagEngine?.let {
+          startTaskTagEngine(serviceName, it.concurrency, it.storage!!)
+        }
         // SERVICE EXECUTOR
-        startServiceExecutor(
-            serviceName,
-            registeredEventListener.concurrency,
-        )
+        serviceConfig.executor?.let {
+          startServiceExecutor(serviceName, it.concurrency)
+        }
       }
 
-      workerRegistry.eventListener?.let {
+      registry.eventListener?.let {
         with(it) {
           // for all services
           resources.getServices().forEach { serviceName ->
             // if this service is included in the RegisteredEventListener.services
-            if (services.isIncluded(serviceName)) {
+            if (it.isServiceAllowed(serviceName)) {
               startServiceEventListener(
                   ServiceName(serviceName),
                   concurrency,
@@ -294,7 +254,7 @@ class InfiniticWorker private constructor(
                   SubscriptionType.EVENT_LISTENER,
               ) { message: Message, publishedAt: MillisInstant ->
                 message.toServiceCloudEvent(publishedAt, source)?.let { cloudEvent ->
-                  eventListener.onEvent(cloudEvent)
+                  listener.onEvent(cloudEvent)
                 } ?: Unit
               }
             }
@@ -302,7 +262,7 @@ class InfiniticWorker private constructor(
           // for all workflows
           resources.getWorkflows().forEach { workflowName ->
             // if this workflow is included in the RegisteredEventListener.workflows
-            if (workflows.isIncluded(workflowName)) {
+            if (it.isWorkflowAllowed(workflowName)) {
               startWorkflowExecutorEventListener(
                   WorkflowName(workflowName),
                   concurrency,
@@ -310,7 +270,7 @@ class InfiniticWorker private constructor(
                   SubscriptionType.EVENT_LISTENER,
               ) { message, publishedAt ->
                 message.toServiceCloudEvent(publishedAt, source)?.let { cloudEvent ->
-                  eventListener.onEvent(cloudEvent)
+                  listener.onEvent(cloudEvent)
                 } ?: Unit
               }
               startWorkflowStateEventListener(
@@ -320,7 +280,7 @@ class InfiniticWorker private constructor(
                   SubscriptionType.EVENT_LISTENER,
               ) { message, publishedAt ->
                 message.toWorkflowCloudEvent(publishedAt, source)?.let { cloudEvent ->
-                  eventListener.onEvent(cloudEvent)
+                  listener.onEvent(cloudEvent)
                 } ?: Unit
               }
             }
@@ -331,7 +291,7 @@ class InfiniticWorker private constructor(
 
     logger.info {
       "Worker \"${producer.name}\" ready" + when (consumer is PulsarInfiniticConsumer) {
-        true -> " (shutdownGracePeriodInSeconds=${consumer.shutdownGracePeriodInSeconds}s)"
+        true -> " (shutdownGracePeriodSeconds=${consumer.shutdownGracePeriodSeconds}s)"
         false -> ""
       }
     }
@@ -342,10 +302,12 @@ class InfiniticWorker private constructor(
   private fun CoroutineScope.startWorkflowTagEngine(
     workflowName: WorkflowName,
     concurrency: Int,
-    storage: WorkflowTagStorage
+    storageConfig: StorageConfig
   ) {
     val eventLogger = KotlinLogging.logger("$CLOUD_EVENTS_WORKFLOW_TAG_ENGINE.$workflowName")
         .ignoreNull()
+
+    val storage = BinaryWorkflowTagStorage(storageConfig.keyValue, storageConfig.keySet)
 
     // WORKFLOW-TAG
     launch {
@@ -375,10 +337,13 @@ class InfiniticWorker private constructor(
   private fun CoroutineScope.startWorkflowStateEngine(
     workflowName: WorkflowName,
     concurrency: Int,
-    storage: WorkflowStateStorage
+    storageConfig: StorageConfig
   ) {
     val eventLogger = KotlinLogging.logger("$CLOUD_EVENTS_WORKFLOW_STATE_ENGINE.$workflowName")
         .ignoreNull()
+
+    val storage = BinaryWorkflowStateStorage(storageConfig.keyValue)
+
     // WORKFLOW-CMD
     launch {
       val logger = WorkflowStateCmdHandler.logger
@@ -483,7 +448,7 @@ class InfiniticWorker private constructor(
       val loggedConsumer = LoggedInfiniticConsumer(logger, consumer)
       val loggedProducer = LoggedInfiniticProducer(logger, producer)
 
-      val workflowTaskExecutor = TaskExecutor(workerRegistry, loggedProducer, client)
+      val workflowTaskExecutor = TaskExecutor(registry, loggedProducer, client)
 
       val handler: suspend (ServiceExecutorMessage, MillisInstant) -> Unit =
           { message, publishedAt ->
@@ -553,10 +518,12 @@ class InfiniticWorker private constructor(
   private fun CoroutineScope.startTaskTagEngine(
     serviceName: ServiceName,
     concurrency: Int,
-    storage: TaskTagStorage
+    storageConfig: StorageConfig
   ) {
     val eventLogger = KotlinLogging.logger("$CLOUD_EVENTS_SERVICE_TAG_ENGINE.$serviceName")
         .ignoreNull()
+
+    val storage = BinaryTaskTagStorage(storageConfig.keyValue, storageConfig.keySet)
 
     // TASK-TAG
     launch {
@@ -595,7 +562,7 @@ class InfiniticWorker private constructor(
       val logger = TaskExecutor.logger
       val loggedConsumer = LoggedInfiniticConsumer(logger, consumer)
       val loggedProducer = LoggedInfiniticProducer(logger, producer)
-      val taskExecutor = TaskExecutor(workerRegistry, loggedProducer, client)
+      val taskExecutor = TaskExecutor(registry, loggedProducer, client)
 
       val handler: suspend (ServiceExecutorMessage, MillisInstant) -> Unit =
           { message, publishedAt ->
@@ -794,7 +761,7 @@ class InfiniticWorker private constructor(
   ) {
     try {
       info {
-        message.eventProducer(publishedAt, prefix)?.toJsonString(register.logsConfig.beautify)
+        message.eventProducer(publishedAt, prefix)?.toJsonString(beautifyLogs)
       }
     } catch (e: Exception) {
       // Failure to log shouldn't break the application

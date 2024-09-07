@@ -46,7 +46,7 @@ class PostgresKeySetStorageTests :
         val config = PostgresConfig(
             host = postgresServer.host,
             port = postgresServer.firstMappedPort,
-            user = postgresServer.username,
+            username = postgresServer.username,
             password = postgresServer.password,
             database = postgresServer.databaseName,
         )
