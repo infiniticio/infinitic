@@ -20,8 +20,6 @@ import io.infinitic.workers.config.WorkflowFactory
 import io.infinitic.workflows.Workflow
 import io.infinitic.workflows.WorkflowCheckMode
 
-private typealias ClassFactoryInstance = Triple<Class<out Workflow>, () -> Workflow, Workflow>
-
 @Suppress("unused")
 class Registry(
   private val config: InfiniticWorkerConfig

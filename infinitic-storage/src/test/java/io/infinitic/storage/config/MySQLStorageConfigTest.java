@@ -28,12 +28,12 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-class MySQLConfigTest {
-    MySQLConfig.MySQLConfigBuilder builder;
+class MySQLStorageConfigTest {
+    MySQLStorageConfig.MySQLStorageConfigBuilder builder;
 
     @BeforeEach
     void setUp() {
-        builder = MySQLConfig.builder()
+        builder = MySQLStorageConfig.builder()
                 .setHost("localhost")
                 .setPort(3306)
                 .setUserName("root")
@@ -42,7 +42,7 @@ class MySQLConfigTest {
 
     @Test
     void testDefaultParameters() {
-        MySQLConfig config = builder.build();
+        MySQLStorageConfig config = builder.build();
 
         assertEquals("localhost", config.getHost());
         assertEquals(3306, config.getPort());
@@ -57,7 +57,7 @@ class MySQLConfigTest {
     void testMandatoryHostParameters() {
         IllegalArgumentException e = assertThrows(
                 IllegalArgumentException.class,
-                () -> MySQLConfig.builder()
+                () -> MySQLStorageConfig.builder()
                         .setHost("localhost")
                         .setUserName("root")
                         .build()
@@ -69,7 +69,7 @@ class MySQLConfigTest {
     void testMandatoryPortParameters() {
         IllegalArgumentException e = assertThrows(
                 IllegalArgumentException.class,
-                () -> MySQLConfig.builder()
+                () -> MySQLStorageConfig.builder()
                         .setHost("localhost")
                         .setUserName("root")
                         .build()
@@ -81,7 +81,7 @@ class MySQLConfigTest {
     void testMandatoryUserParameters() {
         IllegalArgumentException e = assertThrows(
                 IllegalArgumentException.class,
-                () -> MySQLConfig.builder()
+                () -> MySQLStorageConfig.builder()
                         .setHost("localhost")
                         .setPort(3306)
                         .build()
@@ -91,7 +91,7 @@ class MySQLConfigTest {
 
     @Test
     void testOptionalParameters() {
-        MySQLConfig config = builder
+        MySQLStorageConfig config = builder
                 .setConnectionTimeout(1L)
                 .setIdleTimeout(2L)
                 .setMaxLifetime(3L)

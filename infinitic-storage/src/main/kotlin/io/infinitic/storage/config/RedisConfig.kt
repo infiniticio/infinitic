@@ -52,22 +52,31 @@ import java.util.concurrent.ConcurrentHashMap
  *  .build();
  * ```
  */
+
+interface RedisConfigInterface {
+  val host: String
+  val port: Int
+  val username: String?
+  val password: String?
+  val database: Int
+  val timeout: Int
+  val ssl: Boolean
+  val poolConfig: RedisConfig.PoolConfig
+}
+
 @Suppress("unused")
 data class RedisConfig(
-  val host: String,
-  var port: Int,
-  var username: String? = null,
-  var password: String? = null,
-  var database: Int = Protocol.DEFAULT_DATABASE,
-  var timeout: Int = Protocol.DEFAULT_TIMEOUT,
-  var ssl: Boolean = false,
-  var poolConfig: PoolConfig = PoolConfig()
-) : DatabaseConfig {
+  override val host: String,
+  override val port: Int,
+  override val username: String? = null,
+  override val password: String? = null,
+  override val database: Int = Protocol.DEFAULT_DATABASE,
+  override val timeout: Int = Protocol.DEFAULT_TIMEOUT,
+  override val ssl: Boolean = false,
+  override val poolConfig: PoolConfig = PoolConfig()
+) : RedisConfigInterface {
 
   companion object {
-    @JvmStatic
-    fun builder() = RedisConfigBuilder()
-
     private val pools = ConcurrentHashMap<RedisConfig, JedisPool>()
   }
 
@@ -127,41 +136,5 @@ data class RedisConfig(
 
       fun build() = PoolConfig(maxTotal, maxIdle, minIdle)
     }
-  }
-
-  /**
-   * RedisConfig builder (Useful for Java user)
-   */
-  class RedisConfigBuilder {
-    private var host: String? = null
-    private var port: Int? = null
-    private var username: String? = null
-    private var password: String? = null
-    private var database: Int? = null
-    private var timeout: Int? = null
-    private var ssl: Boolean? = null
-    private var poolConfig: PoolConfig? = null
-
-    fun setHost(host: String) = apply { this.host = host }
-    fun setPort(port: Int) = apply { this.port = port }
-    fun setUserName(user: String) = apply { this.username = user }
-    fun setPassword(password: String) = apply { this.password = password }
-    fun setDatabase(database: Int) = apply { this.database = database }
-    fun setTimeout(timeout: Int) = apply { this.timeout = timeout }
-    fun setSsl(ssl: Boolean) = apply { this.ssl = ssl }
-    fun setPoolConfig(poolConfig: PoolConfig) = apply { this.poolConfig = poolConfig }
-    fun setPoolConfig(poolConfigBuilder: PoolConfig.PoolConfigBuilder) =
-        apply { this.poolConfig = poolConfigBuilder.build() }
-
-    fun build() = RedisConfig(
-        host ?: throw IllegalArgumentException("${::host.name} must not be null"),
-        port ?: throw IllegalArgumentException("${::port.name} must not be null"),
-        username,
-        password,
-        database ?: Protocol.DEFAULT_DATABASE,
-        timeout ?: Protocol.DEFAULT_TIMEOUT,
-        ssl ?: false,
-        poolConfig ?: PoolConfig(),
-    )
   }
 }

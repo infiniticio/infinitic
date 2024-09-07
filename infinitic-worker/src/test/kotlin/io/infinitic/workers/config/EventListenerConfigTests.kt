@@ -24,7 +24,10 @@ package io.infinitic.workers.config
 
 import io.cloudevents.CloudEvent
 import io.infinitic.cloudEvents.CloudEventListener
+import io.infinitic.common.utils.annotatedName
+import io.infinitic.workers.samples.ServiceA
 import io.infinitic.workers.samples.ServiceAImpl
+import io.infinitic.workers.samples.WorkflowA
 import io.kotest.assertions.throwables.shouldNotThrowAny
 import io.kotest.assertions.throwables.shouldThrowAny
 import io.kotest.core.spec.style.StringSpec
@@ -57,7 +60,7 @@ internal class EventListenerConfigTests : StringSpec(
         config.disallowedWorkflows.size shouldBe 0
       }
 
-      "Can create EventListenerConfig through YMAL with default parameters" {
+      "Can create EventListenerConfig through Yaml with default parameters" {
         val config = shouldNotThrowAny {
           EventListenerConfig.fromYamlString(
               """
@@ -84,12 +87,16 @@ class: ${TestEventListener::class.java.name}
               .setSubscriptionName("subscriptionName")
               .allowServices("service1", "service2")
               .allowServices("service3")
+              .allowServices(ServiceA::class.java)
               .allowWorkflows("workflow1", "workflow2")
               .allowWorkflows("workflow3")
+              .allowWorkflows(WorkflowA::class.java)
               .disallowServices("service4", "service5")
               .disallowServices("service6")
+              .disallowServices(ServiceA::class.java)
               .disallowWorkflows("workflow4", "workflow5")
               .disallowWorkflows("workflow6")
+              .disallowWorkflows(WorkflowA::class.java)
               .build()
         }
 
@@ -97,10 +104,30 @@ class: ${TestEventListener::class.java.name}
         config.listener shouldBe listener
         config.concurrency shouldBe 10
         config.subscriptionName shouldBe "subscriptionName"
-        config.allowedServices shouldBe listOf("service1", "service2", "service3")
-        config.allowedWorkflows shouldBe listOf("workflow1", "workflow2", "workflow3")
-        config.disallowedServices shouldBe listOf("service4", "service5", "service6")
-        config.disallowedWorkflows shouldBe listOf("workflow4", "workflow5", "workflow6")
+        config.allowedServices shouldBe listOf(
+            "service1",
+            "service2",
+            "service3",
+            ServiceA::class.java.annotatedName,
+        )
+        config.allowedWorkflows shouldBe listOf(
+            "workflow1",
+            "workflow2",
+            "workflow3",
+            WorkflowA::class.java.annotatedName,
+        )
+        config.disallowedServices shouldBe listOf(
+            "service4",
+            "service5",
+            "service6",
+            ServiceA::class.java.annotatedName,
+        )
+        config.disallowedWorkflows shouldBe listOf(
+            "workflow4",
+            "workflow5",
+            "workflow6",
+            WorkflowA::class.java.annotatedName,
+        )
       }
 
       "Can create EventListenerConfig through YMAL with all parameters" {

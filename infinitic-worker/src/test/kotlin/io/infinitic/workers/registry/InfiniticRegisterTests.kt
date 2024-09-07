@@ -43,8 +43,6 @@ import kotlin.random.Random
 
 private const val yaml = """
 transport: inMemory
-storage:
-  inMemory:
 """
 
 internal class InfiniticRegisterTests :
@@ -56,78 +54,8 @@ internal class InfiniticRegisterTests :
         val workflowImplName = WorkflowAImpl::class.java.name
         val eventListenerImplName = EventListenerImpl::class.java.name
 
-        "checking default Service Executor settings" {
-          val config = InfiniticWorkerConfig.fromYamlString(
-              yaml,
-              """
-services:
-  - name: $serviceName
-    executor:
-      class: $serviceImplName
-""",
-          )
-          with(config.services.first { it.name == serviceName.name }) {
-            executor?.concurrency shouldBe 1
-            executor?.withTimeout shouldBe WithTimeout.UNSET
-            executor?.withRetry shouldBe WithRetry.UNSET
-            tagEngine shouldBe null
-          }
-        }
 
-        "checking explicit Service Executor settings" {
-          val concurrency = Random.nextInt(from = 1, until = Int.MAX_VALUE)
-          val timeoutSeconds = Random.nextDouble()
-          val withRetry = ExponentialBackoffRetryPolicy(minimumSeconds = Random.nextDouble())
-          val config = InfiniticWorkerConfig.fromYamlString(
-              yaml,
-              """
-services:
-  - name: $serviceName
-    executor:
-      class: $serviceImplName
-      concurrency: $concurrency
-      timeoutSeconds: $timeoutSeconds
-      retry:
-        minimumSeconds: ${withRetry.minimumSeconds}
-""",
-          )
-          with(config.services.first { it.name == serviceName.name }) {
-            executor?.factory?.invoke().shouldBeInstanceOf<ServiceAImpl>()
-            executor?.concurrency shouldBe concurrency
-            executor?.withTimeout?.getTimeoutSeconds() shouldBe timeoutSeconds
-            executor?.withRetry shouldBe withRetry
-            tagEngine shouldBe null
-          }
-        }
 
-        "checking default Service Tag Engine settings" {
-          val db = MySQLConfig(host = "localhost", port = 3306, username = "root", password = "p")
-          val config = InfiniticWorkerConfig.fromYamlString(
-              yaml,
-              """
-storage:
-  compression: bzip2
-  mysql:
-    host: ${db.host}
-    port: ${db.port}
-    username: ${db.username}
-    password: ${db.password}
-
-services:
-  - name: $serviceName
-    tagEngine:
-      concurrency: 42
-""",
-          )
-          with(config.services.first { it.name == serviceName.name }) {
-            executor shouldBe null
-            tagEngine?.concurrency shouldBe 42
-            tagEngine?.storage shouldBe MySQLStorageConfig(
-                compression = CompressionConfig.bzip2,
-                mysql = db,
-            )
-          }
-        }
 
         "checking explicit Service Tag Engine settings" {
           val db = MySQLConfig(
@@ -139,6 +67,8 @@ services:
           val config = InfiniticWorkerConfig.fromYamlString(
               yaml,
               """
+storage:
+  inMemory:
 services:
   - name: $serviceName
     tagEngine:

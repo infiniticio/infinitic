@@ -32,8 +32,8 @@ import io.infinitic.workflows.tag.storage.BinaryWorkflowTagStorage
 data class WorkflowTagEngineConfig(
   override var workflowName: String = "",
   var concurrency: Int = 1,
-  var storage: StorageConfig? = null,
-) : WithMutableWorkflowName {
+  override var storage: StorageConfig? = null,
+) : WithMutableWorkflowName, WithMutableStorage {
 
   init {
     require(concurrency >= 0) { "concurrency must be positive" }

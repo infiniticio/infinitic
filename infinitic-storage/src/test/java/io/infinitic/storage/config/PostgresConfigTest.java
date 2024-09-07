@@ -29,11 +29,11 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 
 class PostgresConfigTest {
-    PostgresConfig.PostgresConfigBuilder builder;
+    PostgresStorageConfig.PostgresConfigBuilder builder;
 
     @BeforeEach
     void setUp() {
-        builder = PostgresConfig.builder()
+        builder = PostgresStorageConfig.builder()
                 .setHost("localhost")
                 .setPort(5432)
                 .setUserName("postgres")
@@ -42,7 +42,7 @@ class PostgresConfigTest {
 
     @Test
     void testDefaultParameters() {
-        PostgresConfig config = builder.build();
+        PostgresStorageConfig config = builder.build();
 
         assertEquals("localhost", config.getHost());
         assertEquals(5432, config.getPort());
@@ -57,7 +57,7 @@ class PostgresConfigTest {
     void testMandatoryHostParameters() {
         IllegalArgumentException e = assertThrows(
                 IllegalArgumentException.class,
-                () -> MySQLConfig.builder()
+                () -> PostgresStorageConfig.builder()
                         .setHost("localhost")
                         .setUserName("root")
                         .build()
@@ -69,7 +69,7 @@ class PostgresConfigTest {
     void testMandatoryPortParameters() {
         IllegalArgumentException e = assertThrows(
                 IllegalArgumentException.class,
-                () -> MySQLConfig.builder()
+                () -> PostgresStorageConfig.builder()
                         .setHost("localhost")
                         .setUserName("root")
                         .build()
@@ -81,7 +81,7 @@ class PostgresConfigTest {
     void testMandatoryUserParameters() {
         IllegalArgumentException e = assertThrows(
                 IllegalArgumentException.class,
-                () -> MySQLConfig.builder()
+                () -> PostgresStorageConfig.builder()
                         .setHost("localhost")
                         .setPort(3306)
                         .build()
@@ -91,7 +91,7 @@ class PostgresConfigTest {
 
     @Test
     void testOptionalParameters() {
-        PostgresConfig config = builder
+        PostgresStorageConfig config = builder
                 .setConnectionTimeout(1L)
                 .setIdleTimeout(2L)
                 .setMaxLifetime(3L)

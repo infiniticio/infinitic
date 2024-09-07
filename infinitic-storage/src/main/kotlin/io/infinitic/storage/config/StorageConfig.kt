@@ -23,19 +23,10 @@
 package io.infinitic.storage.config
 
 import io.infinitic.cache.config.CacheConfig
-import io.infinitic.cache.config.CaffeineCacheConfig
 import io.infinitic.config.loadFromYamlFile
 import io.infinitic.config.loadFromYamlResource
 import io.infinitic.config.loadFromYamlString
 import io.infinitic.storage.compression.CompressionConfig
-import io.infinitic.storage.databases.inMemory.InMemoryKeySetStorage
-import io.infinitic.storage.databases.inMemory.InMemoryKeyValueStorage
-import io.infinitic.storage.databases.mysql.MySQLKeySetStorage
-import io.infinitic.storage.databases.mysql.MySQLKeyValueStorage
-import io.infinitic.storage.databases.postgres.PostgresKeySetStorage
-import io.infinitic.storage.databases.postgres.PostgresKeyValueStorage
-import io.infinitic.storage.databases.redis.RedisKeySetStorage
-import io.infinitic.storage.databases.redis.RedisKeyValueStorage
 import io.infinitic.storage.keySet.CachedKeySetStorage
 import io.infinitic.storage.keySet.KeySetStorage
 import io.infinitic.storage.keyValue.CachedKeyValueStorage
@@ -75,9 +66,6 @@ sealed class StorageConfig {
   }
 
   companion object {
-    @JvmStatic
-    fun builder() = StorageConfigBuilder()
-
     /** Create StorageConfig from files in file system */
     @JvmStatic
     fun fromYamlFile(vararg files: String): StorageConfig =
@@ -94,131 +82,7 @@ sealed class StorageConfig {
         loadFromYamlString(*yamls)
   }
 
-  class StorageConfigBuilder {
-    private var compression: CompressionConfig? = null
-    private var cache: CacheConfig? = null
-    private var database: DatabaseConfig? = null
-
-    fun copy() = builder().apply {
-      this.compression = this@StorageConfigBuilder.compression
-      this.cache = this@StorageConfigBuilder.cache
-      this.database = this@StorageConfigBuilder.database
-    }
-
-    fun setCompression(compression: CompressionConfig) = apply { this.compression = compression }
-
-    fun setCache(caffeine: CaffeineCacheConfig) =
-        apply { this.cache = caffeine }
-
-    fun setCache(caffeine: CaffeineCacheConfig.CaffeineConfigBuilder) =
-        apply { this.cache = caffeine.build() }
-
-    fun setDatabase(mysql: MySQLConfig) =
-        apply { this.database = mysql }
-
-    fun setDatabase(mysql: MySQLConfig.MySQLConfigBuilder) =
-        setDatabase(mysql.build())
-
-    fun setDatabase(postgres: PostgresConfig) =
-        apply { this.database = postgres }
-
-    fun setDatabase(postgres: PostgresConfig.PostgresConfigBuilder) =
-        setDatabase(postgres.build())
-
-    fun setDatabase(redis: RedisConfig) =
-        apply { this.database = redis }
-
-    fun setDatabase(redis: RedisConfig.RedisConfigBuilder) =
-        setDatabase(redis.build())
-
-    fun setDatabase(inMemory: InMemoryConfig) = apply { this.database = inMemory }
-
-
-    fun build(): StorageConfig {
-      require(database != null) { "A database configuration must be provided before building the StorageConfig." }
-
-      return when (database!!) {
-        is InMemoryConfig -> InMemoryStorageConfig(database as InMemoryConfig, compression, cache)
-        is MySQLConfig -> MySQLStorageConfig(database as MySQLConfig, compression, cache)
-        is PostgresConfig -> PostgresStorageConfig(database as PostgresConfig, compression, cache)
-        is RedisConfig -> RedisStorageConfig(database as RedisConfig, compression, cache)
-      }
-    }
-  }
-}
-
-data class InMemoryStorageConfig(
-  internal val inMemory: InMemoryConfig,
-  override var compression: CompressionConfig? = null,
-  override var cache: CacheConfig? = null
-) : StorageConfig() {
-
-  override val dbKeySet: KeySetStorage by lazy {
-    InMemoryKeySetStorage.from(inMemory)
-  }
-
-  override val dbKeyValue: KeyValueStorage by lazy {
-    InMemoryKeyValueStorage.from(inMemory)
-  }
-
-  companion object {
-    @JvmStatic
-    fun builder() = InMemoryStorageConfigBuilder()
-  }
-
-  /**
-   * InMemoryStorageConfig builder
-   */
-  class InMemoryStorageConfigBuilder {
-    private var compression: CompressionConfig? = null
-    private var cache: CacheConfig? = null
-
-    fun build(): InMemoryStorageConfig = InMemoryStorageConfig(
-        InMemoryConfig(),
-        compression,
-        cache,
-    )
-  }
-}
-
-data class RedisStorageConfig(
-  internal val redis: RedisConfig,
-  override var compression: CompressionConfig? = null,
-  override var cache: CacheConfig? = null
-) : StorageConfig() {
-  override val dbKeyValue: KeyValueStorage by lazy {
-    RedisKeyValueStorage.from(redis)
-  }
-
-  override val dbKeySet: KeySetStorage by lazy {
-    RedisKeySetStorage.from(redis)
-  }
-}
-
-data class MySQLStorageConfig(
-  internal val mysql: MySQLConfig,
-  override var compression: CompressionConfig? = null,
-  override var cache: CacheConfig? = null
-) : StorageConfig() {
-  override val dbKeyValue: KeyValueStorage by lazy {
-    MySQLKeyValueStorage.from(mysql)
-  }
-
-  override val dbKeySet: KeySetStorage by lazy {
-    MySQLKeySetStorage.from(mysql)
-  }
-}
-
-data class PostgresStorageConfig(
-  internal val postgres: PostgresConfig,
-  override var compression: CompressionConfig? = null,
-  override var cache: CacheConfig? = null
-) : StorageConfig() {
-  override val dbKeyValue: KeyValueStorage by lazy {
-    PostgresKeyValueStorage.from(postgres)
-  }
-
-  override val dbKeySet: KeySetStorage by lazy {
-    PostgresKeySetStorage.from(postgres)
+  interface StorageConfigBuilder {
+    fun build(): StorageConfig
   }
 }

@@ -23,7 +23,6 @@
 
 package io.infinitic.workers.config
 
-import io.infinitic.common.utils.merge
 import io.infinitic.config.loadFromYamlFile
 import io.infinitic.config.loadFromYamlResource
 import io.infinitic.config.loadFromYamlString
@@ -65,17 +64,17 @@ data class InfiniticWorkerConfig(
   init {
     workflows.forEach { workflowConfig ->
       workflowConfig.stateEngine?.let {
-        it.storage = it.storage.merge(storage)
+        it.setStorage(storage)
           ?: throw IllegalArgumentException("Storage undefined for Workflow State Engine of '${workflowConfig.name}")
       }
       workflowConfig.tagEngine?.let {
-        it.storage = it.storage.merge(storage)
+        it.setStorage(storage)
           ?: throw IllegalArgumentException("Storage undefined for Workflow Tag Engine of '${workflowConfig.name}")
       }
     }
     services.forEach { serviceConfig ->
       serviceConfig.tagEngine?.let {
-        it.storage = it.storage.merge(storage)
+        it.setStorage(storage)
           ?: throw IllegalArgumentException("Storage undefined for Service Tag Engine of '${serviceConfig.name}")
       }
     }
@@ -103,4 +102,14 @@ data class InfiniticWorkerConfig(
     fun fromYamlString(vararg yamls: String): InfiniticWorkerConfig =
         loadFromYamlString(*yamls)
   }
+}
+
+internal interface WithMutableStorage {
+  var storage: StorageConfig?
+}
+
+private fun WithMutableStorage.setStorage(storage: StorageConfig?): StorageConfig? {
+  this.storage = this.storage ?: storage
+
+  return this.storage
 }

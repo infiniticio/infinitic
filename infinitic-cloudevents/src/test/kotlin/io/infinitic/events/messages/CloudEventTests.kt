@@ -85,8 +85,7 @@ import io.infinitic.common.workflows.engine.messages.WorkflowCmdMessage
 import io.infinitic.common.workflows.engine.messages.WorkflowCompletedEvent
 import io.infinitic.common.workflows.engine.messages.WorkflowEventMessage
 import io.infinitic.common.workflows.engine.messages.WorkflowStateEngineMessage
-import io.infinitic.storage.config.InMemoryConfig
-import io.infinitic.storage.config.StorageConfig
+import io.infinitic.storage.config.InMemoryStorageConfig
 import io.infinitic.transport.config.Transport
 import io.infinitic.workers.InfiniticWorker
 import io.infinitic.workers.config.EventListenerConfig
@@ -112,8 +111,7 @@ private val eventListener = mockk<CloudEventListener> {
 private val worker = InfiniticWorker.builder()
     .setTransport(Transport.inMemory)
     .setStorage(
-        StorageConfig.builder()
-            .setDatabase(InMemoryConfig()),
+        InMemoryStorageConfig.builder().build(),
     )
     .setEventListener(
         EventListenerConfig.builder()

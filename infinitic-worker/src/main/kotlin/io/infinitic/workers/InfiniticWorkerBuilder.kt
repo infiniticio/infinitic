@@ -20,6 +20,8 @@
  *
  * Licensor: infinitic.io
  */
+@file:Suppress("unused")
+
 package io.infinitic.workers
 
 import io.infinitic.pulsar.config.PulsarConfig
@@ -39,7 +41,7 @@ import io.infinitic.workers.config.WorkflowTagEngineConfig
 /**
  * InfiniticWorker builder
  */
-class InfiniticWorkerBuilder() {
+class InfiniticWorkerBuilder {
   private val default = InfiniticWorkerConfig()
   private var name = default.name
   private var shutdownGracePeriodSeconds = default.shutdownGracePeriodSeconds
@@ -68,13 +70,13 @@ class InfiniticWorkerBuilder() {
   fun setTransport(transport: Transport) =
       apply { this.transport = transport }
 
-  fun setPulsar(pulsar: PulsarConfig?) =
+  fun setPulsar(pulsar: PulsarConfig) =
       apply { this.pulsar = pulsar }
 
   fun setPulsar(pulsar: PulsarConfig.PulsarConfigBuilder) =
       setPulsar(pulsar.build())
 
-  fun setStorage(storage: StorageConfig?) =
+  fun setStorage(storage: StorageConfig) =
       apply { this.storage = storage }
 
   fun setStorage(storage: StorageConfig.StorageConfigBuilder) =

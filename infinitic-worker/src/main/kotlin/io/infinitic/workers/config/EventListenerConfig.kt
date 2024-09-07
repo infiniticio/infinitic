@@ -127,7 +127,7 @@ sealed class EventListenerConfig {
         apply { allowWorkflows(*(workflows.map { it.annotatedName }.toTypedArray())) }
 
     fun build(): EventListenerConfig {
-      require(listener != null) { "cloudEventListener must not be null" }
+      require(listener != null) { "${EventListenerConfig::listener.name} must not be null" }
 
       return BuiltEventListenerConfig(
           listener!!,

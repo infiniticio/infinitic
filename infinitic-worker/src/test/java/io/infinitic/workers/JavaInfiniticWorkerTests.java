@@ -23,7 +23,7 @@
 package io.infinitic.workers;
 
 import io.infinitic.pulsar.config.PulsarConfig;
-import io.infinitic.storage.config.PostgresConfig;
+import io.infinitic.storage.config.PostgresStorageConfig;
 import io.infinitic.storage.config.StorageConfig;
 import org.junit.jupiter.api.Test;
 
@@ -42,15 +42,12 @@ class JavaInfiniticWorkerTests {
                     .setNamespace("dev")
                     .build();
 
-            StorageConfig storage = StorageConfig.builder()
-                    .setDatabase(
-                            PostgresConfig.builder()
-                                    .setHost("localhost")
-                                    .setPort(5432)
-                                    .setUserName("postgres")
-                                    .setPassword("password")
-                                    .build()
-                    ).build();
+            StorageConfig storage = PostgresStorageConfig.builder()
+                    .setHost("localhost")
+                    .setPort(5432)
+                    .setUserName("postgres")
+                    .setPassword("password")
+                    .build();
 
 
             try (InfiniticWorker worker = InfiniticWorker.builder()

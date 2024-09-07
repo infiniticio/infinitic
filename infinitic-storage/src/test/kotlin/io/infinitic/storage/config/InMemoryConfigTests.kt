@@ -31,7 +31,6 @@ import io.kotest.matchers.shouldBe
 class InMemoryConfigTests :
   StringSpec(
       {
-
         "can use InMemoryConfig" {
           val config = shouldNotThrowAny {
             loadConfigFromYaml<StorageConfigImpl>(

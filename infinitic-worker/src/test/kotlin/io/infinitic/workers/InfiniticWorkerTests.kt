@@ -26,8 +26,10 @@ import io.cloudevents.CloudEvent
 import io.infinitic.cloudEvents.CloudEventListener
 import io.infinitic.storage.config.InMemoryConfig
 import io.infinitic.storage.config.InMemoryStorageConfig
+import io.infinitic.storage.config.MySQLConfig
 import io.infinitic.transport.config.Transport
 import io.infinitic.workers.config.EventListenerConfig
+import io.infinitic.workers.config.InfiniticWorkerConfig
 import io.infinitic.workers.config.ServiceExecutorConfig
 import io.infinitic.workers.config.ServiceTagEngineConfig
 import io.infinitic.workers.config.WorkflowExecutorConfig
@@ -366,6 +368,43 @@ workflows:
         worker.getWorkflowTagEngineConfig(workflowName) shouldNotBe null
         worker.getWorkflowExecutorConfig(workflowName) shouldNotBe null
         worker.getWorkflowStateEngineConfig(workflowName) shouldNotBe null
+      }
+
+      "explicit storage should not be replaced by default" {
+        val db = MySQLConfig(host = "localhost", port = 3306, username = "root", password = "p")
+        val config = InfiniticWorkerConfig.fromYamlString(
+            """
+transport: inMemory
+storage:
+  compression: bzip2
+  mysql:
+    host: ${db.host}
+    port: ${db.port}
+    username: ${db.username}
+    password: ${db.password}
+
+services:
+  - name: $serviceName
+    tagEngine:
+      storage:
+         inMemory:
+workflows:
+  - name: $workflowName
+    stateEngine:
+      storage:
+         inMemory:
+    tagEngine:
+      storage:
+         inMemory:
+""",
+        )
+        with(config.services.first { it.name == serviceName }) {
+          tagEngine?.storage.shouldBeInstanceOf<InMemoryStorageConfig>()
+        }
+        with(config.workflows.first { it.name == workflowName }) {
+          stateEngine?.storage.shouldBeInstanceOf<InMemoryStorageConfig>()
+          tagEngine?.storage.shouldBeInstanceOf<InMemoryStorageConfig>()
+        }
       }
     },
 )

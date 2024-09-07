@@ -71,6 +71,7 @@ internal class WorkflowExecutorConfigTests : StringSpec(
               .setConcurrency(10)
               .setTimeoutSeconds(3.0)
               .withRetry(withRetry)
+              .setCheckMode(WorkflowCheckMode.strict)
               .build()
         }
 
@@ -78,6 +79,7 @@ internal class WorkflowExecutorConfigTests : StringSpec(
         config.concurrency shouldBe 10
         config.withRetry shouldBe withRetry
         config.withTimeout?.getTimeoutSeconds() shouldBe 3.0
+        config.checkMode shouldBe WorkflowCheckMode.strict
       }
 
       "workflowName is mandatory when building WorkflowExecutorConfig through builder" {

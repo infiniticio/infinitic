@@ -30,18 +30,18 @@ import redis.clients.jedis.Protocol;
 import static org.junit.jupiter.api.Assertions.*;
 
 class RedisConfigTest {
-    RedisConfig.RedisConfigBuilder builder;
+    RedisStorageConfig.RedisStorageConfigBuilder builder;
 
     @BeforeEach
     void setUp() {
-        builder = RedisConfig.builder()
+        builder = RedisStorageConfig.builder()
                 .setHost("localhost")
                 .setPort(6379);
     }
 
     @Test
     void testDefaultParameters() {
-        RedisConfig config = builder.build();
+        RedisStorageConfig config = builder.build();
 
         assertEquals("localhost", config.getHost());
         assertEquals(6379, config.getPort());
@@ -61,7 +61,7 @@ class RedisConfigTest {
     void testMandatoryHostParameters() {
         IllegalArgumentException e = assertThrows(
                 IllegalArgumentException.class,
-                () -> MySQLConfig.builder()
+                () -> RedisStorageConfig.builder()
                         .setPort(3306)
                         .build()
         );
@@ -72,7 +72,7 @@ class RedisConfigTest {
     void testMandatoryPortParameters() {
         IllegalArgumentException e = assertThrows(
                 IllegalArgumentException.class,
-                () -> MySQLConfig.builder()
+                () -> RedisStorageConfig.builder()
                         .setHost("localhost")
                         .build()
         );
@@ -81,7 +81,7 @@ class RedisConfigTest {
 
     @Test
     void testOptionalParameters() {
-        RedisConfig config = builder
+        RedisStorageConfig config = builder
                 .setUserName("user")
                 .setPassword("password")
                 .setDatabase(1)

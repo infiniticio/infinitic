@@ -57,21 +57,37 @@ import java.util.concurrent.ConcurrentHashMap
  *  .build();
  * ```
  */
+
+interface PostgresConfigInterface {
+  val host: String
+  val port: Int
+  val username: String
+  val password: String?
+  val database: String
+  val keySetTable: String
+  val keyValueTable: String
+  val maximumPoolSize: Int?
+  val minimumIdle: Int?
+  val idleTimeout: Long?
+  val connectionTimeout: Long?
+  val maxLifetime: Long?
+}
+
 @Suppress("unused")
 data class PostgresConfig(
-  val host: String,
-  val port: Int,
-  val username: String,
-  val password: String? = null,
-  val database: String = DEFAULT_DATABASE,
-  val keySetTable: String = DEFAULT_KEY_SET_TABLE,
-  val keyValueTable: String = DEFAULT_KEY_VALUE_TABLE,
-  val maximumPoolSize: Int? = null,
-  val minimumIdle: Int? = null,
-  val idleTimeout: Long? = null, // milli seconds
-  val connectionTimeout: Long? = null, // milli seconds
-  val maxLifetime: Long? = null // milli seconds
-) : DatabaseConfig {
+  override val host: String,
+  override val port: Int,
+  override val username: String,
+  override val password: String? = null,
+  override val database: String = DEFAULT_DATABASE,
+  override val keySetTable: String = DEFAULT_KEY_SET_TABLE,
+  override val keyValueTable: String = DEFAULT_KEY_VALUE_TABLE,
+  override val maximumPoolSize: Int? = null,
+  override val minimumIdle: Int? = null,
+  override val idleTimeout: Long? = null, // milli seconds
+  override val connectionTimeout: Long? = null, // milli seconds
+  override val maxLifetime: Long? = null // milli seconds
+) : PostgresConfigInterface {
 
   private val jdbcUrl = "jdbc:postgresql://$host:$port/$database"
   private val jdbcUrlDefault = "jdbc:postgresql://$host:$port/postgres"
@@ -120,13 +136,11 @@ data class PostgresConfig(
           ")"
 
   companion object {
-    @JvmStatic
-    fun builder() = PostgresConfigBuilder()
-    
     private val pools = ConcurrentHashMap<PostgresConfig, HikariDataSource>()
-    private const val DEFAULT_KEY_VALUE_TABLE = "key_value_storage"
-    private const val DEFAULT_KEY_SET_TABLE = "key_set_storage"
-    private const val DEFAULT_DATABASE = "infinitic"
+
+    internal const val DEFAULT_KEY_VALUE_TABLE = "key_value_storage"
+    internal const val DEFAULT_KEY_SET_TABLE = "key_set_storage"
+    internal const val DEFAULT_DATABASE = "infinitic"
   }
 
   fun close() {
@@ -217,52 +231,5 @@ data class PostgresConfig(
 
     // Okay if it passed all checks
     return true
-  }
-
-  /**
-   * PostgresConfig builder (Useful for Java user)
-   */
-  class PostgresConfigBuilder {
-    private var host: String? = null
-    private var port: Int? = null
-    private var username: String? = null
-    private var password: String? = null
-    private var database: String? = null
-    private var keySetTable: String? = null
-    private var keyValueTable: String? = null
-    private var maximumPoolSize: Int? = null
-    private var minimumIdle: Int? = null
-    private var idleTimeout: Long? = null
-    private var connectionTimeout: Long? = null
-    private var maxLifetime: Long? = null
-
-    fun setHost(host: String) = apply { this.host = host }
-    fun setPort(port: Int) = apply { this.port = port }
-    fun setUserName(user: String) = apply { this.username = user }
-    fun setPassword(password: String) = apply { this.password = password }
-    fun setDatabase(database: String) = apply { this.database = database }
-    fun setKeySetTable(keySetTable: String) = apply { this.keySetTable = keySetTable }
-    fun setKeyValueTable(keyValueTable: String) = apply { this.keyValueTable = keyValueTable }
-    fun setMaximumPoolSize(maximumPoolSize: Int) = apply { this.maximumPoolSize = maximumPoolSize }
-    fun setMinimumIdle(minimumIdle: Int) = apply { this.minimumIdle = minimumIdle }
-    fun setIdleTimeout(idleTimeout: Long) = apply { this.idleTimeout = idleTimeout }
-    fun setConnectionTimeout(connTimeout: Long) = apply { this.connectionTimeout = connTimeout }
-    fun setMaxLifetime(maxLifetime: Long) = apply { this.maxLifetime = maxLifetime }
-
-    fun build() = PostgresConfig(
-        host = host ?: throw IllegalArgumentException("${::host.name} must not be null"),
-        port = port ?: throw IllegalArgumentException("${::port.name} must not be null"),
-        username = username
-          ?: throw IllegalArgumentException("${::username.name} must not be null"),
-        password = password,
-        database = database ?: DEFAULT_DATABASE,
-        keySetTable = keySetTable ?: DEFAULT_KEY_SET_TABLE,
-        keyValueTable = keyValueTable ?: DEFAULT_KEY_VALUE_TABLE,
-        maximumPoolSize = maximumPoolSize,
-        minimumIdle = minimumIdle,
-        idleTimeout = idleTimeout,
-        connectionTimeout = connectionTimeout,
-        maxLifetime = maxLifetime,
-    )
   }
 }

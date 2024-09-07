@@ -22,7 +22,6 @@
  */
 package io.infinitic.workers.config
 
-import io.infinitic.storage.config.InMemoryConfig
 import io.infinitic.storage.config.InMemoryStorageConfig
 import io.infinitic.workers.samples.ServiceA
 import io.kotest.assertions.throwables.shouldNotThrowAny
@@ -35,7 +34,7 @@ import io.kotest.matchers.types.shouldBeInstanceOf
 internal class ServiceTagEngineConfigTests : StringSpec(
     {
       val serviceName = ServiceA::class.java.name
-      val storage = InMemoryStorageConfig(inMemory = InMemoryConfig())
+      val storage = InMemoryStorageConfig.builder().build()
 
       "Can create ServiceTagEngineConfig through builder with default parameters" {
         val config = shouldNotThrowAny {

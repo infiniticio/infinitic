@@ -32,8 +32,8 @@ import io.infinitic.tasks.tag.storage.BinaryTaskTagStorage
 data class ServiceTagEngineConfig(
   override var serviceName: String = "",
   val concurrency: Int = 1,
-  var storage: StorageConfig? = null,
-) : WithMutableServiceName {
+  override var storage: StorageConfig? = null,
+) : WithMutableServiceName, WithMutableStorage {
   init {
     require(concurrency > 0) { "${::concurrency.name} must be > 0" }
   }
