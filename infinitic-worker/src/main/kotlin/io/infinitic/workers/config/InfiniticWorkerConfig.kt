@@ -26,23 +26,16 @@ package io.infinitic.workers.config
 import io.infinitic.config.loadFromYamlFile
 import io.infinitic.config.loadFromYamlResource
 import io.infinitic.config.loadFromYamlString
-import io.infinitic.pulsar.config.PulsarConfig
 import io.infinitic.storage.config.StorageConfig
-import io.infinitic.transport.config.Transport
+import io.infinitic.transport.config.TransportConfig
 
 @Suppress("unused")
 data class InfiniticWorkerConfig(
   /** Worker name */
   val name: String? = null,
 
-  /** Worker name */
-  val shutdownGracePeriodSeconds: Double = 30.0,
-
   /** Transport configuration */
-  val transport: Transport = Transport.pulsar,
-
-  /** Pulsar configuration */
-  val pulsar: PulsarConfig? = null,
+  val transport: TransportConfig,
 
   /** Default storage */
   val storage: StorageConfig? = null,

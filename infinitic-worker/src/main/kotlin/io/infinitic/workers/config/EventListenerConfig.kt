@@ -38,12 +38,13 @@ sealed class EventListenerConfig {
   abstract val disallowedServices: List<String>
   abstract val allowedWorkflows: List<String>?
   abstract val disallowedWorkflows: List<String>
+  abstract val refreshDelaySeconds: Double
 
-  fun isServiceAllowed(service: String): Boolean {
+  fun includeService(service: String): Boolean {
     return !disallowedServices.contains(service) && (allowedServices?.contains(service) != false)
   }
 
-  fun isWorkflowAllowed(workflow: String): Boolean {
+  fun includeWorkflow(workflow: String): Boolean {
     return !disallowedWorkflows.contains(workflow) && (allowedWorkflows?.contains(workflow) != false)
   }
 
@@ -84,6 +85,7 @@ sealed class EventListenerConfig {
     private val disallowedServices: MutableList<String> = mutableListOf()
     private var allowedWorkflows: MutableList<String>? = null
     private val disallowedWorkflows: MutableList<String> = mutableListOf()
+    private var refreshDelaySeconds: Double = 60.0
 
     fun setListener(cloudEventListener: CloudEventListener) =
         apply { this.listener = cloudEventListener }
@@ -126,6 +128,9 @@ sealed class EventListenerConfig {
     fun allowWorkflows(vararg workflows: Class<*>) =
         apply { allowWorkflows(*(workflows.map { it.annotatedName }.toTypedArray())) }
 
+    fun setRefreshDelaySeconds(refreshDelaySeconds: Double) =
+        apply { this.refreshDelaySeconds = refreshDelaySeconds }
+
     fun build(): EventListenerConfig {
       require(listener != null) { "${EventListenerConfig::listener.name} must not be null" }
 
@@ -133,6 +138,7 @@ sealed class EventListenerConfig {
           listener!!,
           concurrency,
           subscriptionName,
+          refreshDelaySeconds,
           allowedServices,
           disallowedServices,
           allowedWorkflows,
@@ -149,10 +155,11 @@ data class BuiltEventListenerConfig(
   override val listener: CloudEventListener,
   override val concurrency: Int,
   override val subscriptionName: String?,
+  override val refreshDelaySeconds: Double,
   override val allowedServices: MutableList<String>?,
   override val disallowedServices: MutableList<String>,
   override val allowedWorkflows: MutableList<String>?,
-  override val disallowedWorkflows: MutableList<String>
+  override val disallowedWorkflows: MutableList<String>,
 ) : EventListenerConfig()
 
 /**
@@ -162,6 +169,7 @@ data class LoadedEventListenerConfig(
   val `class`: String,
   override val concurrency: Int = 1,
   override val subscriptionName: String? = null,
+  override val refreshDelaySeconds: Double = 60.0,
   val services: SelectionConfig = SelectionConfig(),
   val workflows: SelectionConfig = SelectionConfig()
 ) : EventListenerConfig() {
@@ -183,6 +191,8 @@ data class LoadedEventListenerConfig(
     }
 
     require(concurrency > 0) { error("'${::concurrency.name}' must be > 0, but was $concurrency") }
+
+    require(refreshDelaySeconds >= 0) { error("'${::refreshDelaySeconds.name}' must be >= 0, but was $refreshDelaySeconds") }
 
     subscriptionName?.let {
       require(it.isNotEmpty()) { error("'when provided, ${::subscriptionName.name}' must not be empty") }

@@ -22,9 +22,13 @@
  */
 package io.infinitic.workers;
 
-import io.infinitic.pulsar.config.PulsarConfig;
+import io.infinitic.common.workers.config.ExponentialBackoffRetryPolicy;
 import io.infinitic.storage.config.PostgresStorageConfig;
 import io.infinitic.storage.config.StorageConfig;
+import io.infinitic.transport.config.PulsarTransportConfig;
+import io.infinitic.workers.config.*;
+import io.infinitic.workflows.Workflow;
+import io.infinitic.workflows.WorkflowCheckMode;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
@@ -33,9 +37,9 @@ import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 class JavaInfiniticWorkerTests {
 
     @Test
-    public void canCreateWorkerProgrammaticallyWithPulsar() {
+    public void canCreateWorkerThroughBuilders() {
         assertDoesNotThrow(() -> {
-            PulsarConfig pulsar = PulsarConfig.builder()
+            PulsarTransportConfig transport = PulsarTransportConfig.builder()
                     .setBrokerServiceUrl("pulsar://localhost:6650")
                     .setWebServiceUrl("http://localhost:8080")
                     .setTenant("infinitic")
@@ -50,12 +54,70 @@ class JavaInfiniticWorkerTests {
                     .build();
 
 
-            try (InfiniticWorker worker = InfiniticWorker.builder()
-                    .setPulsar(pulsar)
+            EventListenerConfig eventListener = EventListenerConfig.builder()
+                    .setListener(new TestEventListener())
+                    .allowServices("service1")
+                    .allowServices(ServiceA.class)
+                    .disallowServices("service2")
+                    .disallowServices(ServiceA.class)
+                    .allowWorkflows("workflow1")
+                    .allowWorkflows(ServiceA.class)
+                    .disallowWorkflows("workflow2")
+                    .disallowWorkflows(ServiceA.class)
+                    .setConcurrency(7)
+                    .build();
+
+            ServiceExecutorConfig serviceExecutor = ServiceExecutorConfig.builder()
+                    .setServiceName("service1")
+                    .setConcurrency(3)
+                    .setFactory(ServiceA::new)
+                    .withRetry(new ExponentialBackoffRetryPolicy())
+                    .setTimeoutSeconds(4.0)
+                    .build();
+
+            ServiceTagEngineConfig serviceTagEngine = ServiceTagEngineConfig.builder()
+                    .setConcurrency(6)
+                    .setServiceName("service1")
+                    .build();
+
+            WorkflowExecutorConfig workflowExecutor = WorkflowExecutorConfig.builder()
+                    .setConcurrency(5)
+                    .setTimeoutSeconds(3.0)
+                    .addFactory(WorkflowA::new)
+                    .setWorkflowName("workflow1")
+                    .setCheckMode(WorkflowCheckMode.simple)
+                    .build();
+
+            WorkflowTagEngineConfig workflowTagEngine = WorkflowTagEngineConfig.builder()
+                    .setConcurrency(4)
+                    .setWorkflowName("workflow1")
                     .setStorage(storage)
+                    .build();
+
+            WorkflowStateEngineConfig workflowStateEngine = WorkflowStateEngineConfig.builder()
+                    .setConcurrency(6)
+                    .setWorkflowName("workflow1")
+                    .build();
+
+            try (InfiniticWorker worker = InfiniticWorker.builder()
+                    .setTransport(transport)
+                    .setStorage(storage)
+                    .setEventListener(eventListener)
+                    .addServiceExecutor(serviceExecutor)
+                    .addServiceTagEngine(serviceTagEngine)
+                    .addWorkflowExecutor(workflowExecutor)
+                    .addWorkflowTagEngine(workflowTagEngine)
+                    .addWorkflowStateEngine(workflowStateEngine)
                     .build()
             ) {
+                // ok
             }
         });
     }
+}
+
+class ServiceA {
+}
+
+class WorkflowA extends Workflow {
 }

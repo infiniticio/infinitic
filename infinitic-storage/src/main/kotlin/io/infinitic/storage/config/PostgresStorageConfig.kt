@@ -37,6 +37,9 @@ data class PostgresStorageConfig(
   override var compression: CompressionConfig? = null,
   override var cache: CacheConfig? = null
 ) : StorageConfig(), PostgresConfigInterface by postgres {
+
+  override val type = "postgres"
+
   override val dbKeyValue: KeyValueStorage by lazy {
     PostgresKeyValueStorage.from(postgres)
   }

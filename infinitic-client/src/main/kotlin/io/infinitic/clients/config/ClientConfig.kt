@@ -25,21 +25,14 @@ package io.infinitic.clients.config
 import io.infinitic.common.config.loadConfigFromFile
 import io.infinitic.common.config.loadConfigFromResource
 import io.infinitic.common.config.loadConfigFromYaml
-import io.infinitic.pulsar.config.PulsarConfig
-import io.infinitic.transport.config.Transport
+import io.infinitic.transport.config.TransportConfig
 
 data class ClientConfig(
   /** Client name */
   override val name: String? = null,
 
   /** Transport configuration */
-  override val transport: Transport = Transport.pulsar,
-
-  /** Pulsar configuration */
-  override val pulsar: PulsarConfig? = null,
-
-  /** Shutdown Grace Period */
-  override val shutdownGracePeriodSeconds: Double = 10.0
+  override val transport: TransportConfig,
 ) : ClientConfigInterface {
 
   companion object {

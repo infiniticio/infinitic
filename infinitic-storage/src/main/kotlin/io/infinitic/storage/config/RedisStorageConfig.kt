@@ -36,6 +36,9 @@ data class RedisStorageConfig(
   override var compression: CompressionConfig? = null,
   override var cache: CacheConfig? = null
 ) : StorageConfig(), RedisConfigInterface by redis {
+
+  override val type = "redis"
+
   override val dbKeyValue: KeyValueStorage by lazy {
     RedisKeyValueStorage.from(redis)
   }

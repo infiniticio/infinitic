@@ -38,7 +38,7 @@ data class ServiceTagEngineConfig(
     require(concurrency > 0) { "${::concurrency.name} must be > 0" }
   }
 
-  val taskTagStorage by lazy {
+  val serviceTagStorage by lazy {
     (storage ?: thisShouldNotHappen()).let {
       BinaryTaskTagStorage(it.keyValue, it.keySet)
     }

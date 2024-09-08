@@ -20,11 +20,28 @@
  *
  * Licensor: infinitic.io
  */
-package io.infinitic.clients.config
+package io.infinitic.transport.config
 
-import io.infinitic.transport.config.TransportConfigInterface
+import io.infinitic.inMemory.InMemoryChannels
+import io.infinitic.inMemory.InMemoryInfiniticConsumer
+import io.infinitic.inMemory.InMemoryInfiniticProducer
+import io.infinitic.inMemory.InMemoryInfiniticResources
 
-interface ClientConfigInterface : TransportConfigInterface {
-  /** (Optional) Client name */
-  val name: String?
+data class InMemoryTransportConfig(
+  override val shutdownGracePeriodSeconds: Double = 0.0
+) : TransportConfig() {
+
+  init {
+    require(shutdownGracePeriodSeconds >= 0) { "shutdownGracePeriodSeconds must be >= 0" }
+  }
+  
+  override val cloudEventSource: String = "inMemory"
+
+  private val mainChannels = InMemoryChannels()
+  private val eventListenerChannels = InMemoryChannels()
+
+  override val resources = InMemoryInfiniticResources(mainChannels)
+  override val consumer = InMemoryInfiniticConsumer(mainChannels, eventListenerChannels)
+  override val producer = InMemoryInfiniticProducer(mainChannels, eventListenerChannels)
 }
+

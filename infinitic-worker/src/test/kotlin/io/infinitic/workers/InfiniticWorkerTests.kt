@@ -27,7 +27,7 @@ import io.infinitic.cloudEvents.CloudEventListener
 import io.infinitic.storage.config.InMemoryConfig
 import io.infinitic.storage.config.InMemoryStorageConfig
 import io.infinitic.storage.config.MySQLConfig
-import io.infinitic.transport.config.Transport
+import io.infinitic.transport.config.InMemoryTransportConfig
 import io.infinitic.workers.config.EventListenerConfig
 import io.infinitic.workers.config.InfiniticWorkerConfig
 import io.infinitic.workers.config.ServiceExecutorConfig
@@ -47,6 +47,8 @@ import io.kotest.matchers.types.shouldBeInstanceOf
 
 internal class InfiniticWorkerTests : StringSpec(
     {
+      val transport = InMemoryTransportConfig()
+
       class TestEventListener : CloudEventListener {
         override fun onEvent(event: CloudEvent) {}
       }
@@ -91,7 +93,7 @@ internal class InfiniticWorkerTests : StringSpec(
       "Can create Infinitic Worker as Event Listener through builder" {
         val worker = shouldNotThrowAny {
           InfiniticWorker.builder()
-              .setTransport(Transport.inMemory)
+              .setTransport(transport)
               .setEventListener(eventListener)
               .build()
         }
@@ -116,7 +118,7 @@ eventListener:
       "Can create Infinitic Worker as Service Executor through builder" {
         val worker = shouldNotThrowAny {
           InfiniticWorker.builder()
-              .setTransport(Transport.inMemory)
+              .setTransport(transport)
               .addServiceExecutor(serviceExecutor)
               .build()
         }
@@ -144,7 +146,7 @@ services:
       "Can create Infinitic Worker as Service Tag Engine through builder" {
         val worker = shouldNotThrowAny {
           InfiniticWorker.builder()
-              .setTransport(Transport.inMemory)
+              .setTransport(transport)
               .addServiceTagEngine(serviceTagEngine)
               .build()
         }
@@ -194,7 +196,7 @@ services:
       "Can create Infinitic Worker as Workflow Executor through builder" {
         val worker = shouldNotThrowAny {
           InfiniticWorker.builder()
-              .setTransport(Transport.inMemory)
+              .setTransport(transport)
               .addWorkflowExecutor(workflowExecutor)
               .build()
         }
@@ -222,7 +224,7 @@ workflows:
       "Can create Infinitic Worker as Workflow Tag Engine through builder" {
         val worker = shouldNotThrowAny {
           InfiniticWorker.builder()
-              .setTransport(Transport.inMemory)
+              .setTransport(transport)
               .addWorkflowTagEngine(workflowTagEngine)
               .build()
         }
@@ -272,7 +274,7 @@ workflows:
       "Can create Infinitic Worker as Workflow State Engine through builder" {
         val worker = shouldNotThrowAny {
           InfiniticWorker.builder()
-              .setTransport(Transport.inMemory)
+              .setTransport(transport)
               .addWorkflowStateEngine(workflowStateEngine)
               .build()
         }
@@ -322,7 +324,7 @@ workflows:
       "Can create complete Infinitic Worker through builder" {
         val worker = shouldNotThrowAny {
           InfiniticWorker.builder()
-              .setTransport(Transport.inMemory)
+              .setTransport(transport)
               .setEventListener(eventListener)
               .addServiceExecutor(serviceExecutor)
               .addServiceTagEngine(serviceTagEngine)

@@ -41,6 +41,8 @@ sealed class StorageConfig {
   abstract val dbKeyValue: KeyValueStorage
   abstract val dbKeySet: KeySetStorage
 
+  abstract val type: String
+
   fun compression(compression: CompressionConfig) =
       apply { this.compression = compression }
 

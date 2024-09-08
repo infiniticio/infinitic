@@ -35,12 +35,12 @@ import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
 import io.kotest.matchers.types.shouldBeInstanceOf
 
+internal class TestEventListener : CloudEventListener {
+  override fun onEvent(event: CloudEvent) {}
+}
+
 internal class EventListenerConfigTests : StringSpec(
     {
-      class TestEventListener : CloudEventListener {
-        override fun onEvent(event: CloudEvent) {}
-      }
-
       val listener = TestEventListener()
 
       "Can create EventListenerConfig through builder with default parameters" {
@@ -54,6 +54,7 @@ internal class EventListenerConfigTests : StringSpec(
         config.listener shouldBe listener
         config.concurrency shouldBe 1
         config.subscriptionName shouldBe null
+        config.refreshDelaySeconds shouldBe 60.0
         config.allowedServices shouldBe null
         config.allowedWorkflows shouldBe null
         config.disallowedServices.size shouldBe 0
@@ -73,6 +74,7 @@ class: ${TestEventListener::class.java.name}
         config.listener::class shouldBe TestEventListener::class
         config.concurrency shouldBe 1
         config.subscriptionName shouldBe null
+        config.refreshDelaySeconds shouldBe 60.0
         config.allowedServices shouldBe null
         config.allowedWorkflows shouldBe null
         config.disallowedServices.size shouldBe 0
@@ -85,6 +87,7 @@ class: ${TestEventListener::class.java.name}
               .setListener(listener)
               .setConcurrency(10)
               .setSubscriptionName("subscriptionName")
+              .setRefreshDelaySeconds(10.0)
               .allowServices("service1", "service2")
               .allowServices("service3")
               .allowServices(ServiceA::class.java)
@@ -104,6 +107,7 @@ class: ${TestEventListener::class.java.name}
         config.listener shouldBe listener
         config.concurrency shouldBe 10
         config.subscriptionName shouldBe "subscriptionName"
+        config.refreshDelaySeconds shouldBe 10.0
         config.allowedServices shouldBe listOf(
             "service1",
             "service2",
@@ -137,6 +141,7 @@ class: ${TestEventListener::class.java.name}
 class: ${TestEventListener::class.java.name}
 concurrency: 10
 subscriptionName: subscriptionName
+refreshDelaySeconds: 10
 services:
   allow:
     - service1
@@ -162,6 +167,7 @@ workflows:
         config.listener::class shouldBe TestEventListener::class
         config.concurrency shouldBe 10
         config.subscriptionName shouldBe "subscriptionName"
+        config.refreshDelaySeconds shouldBe 10.0
         config.allowedServices shouldBe listOf("service1", "service2", "service3")
         config.allowedWorkflows shouldBe listOf("workflow1", "workflow2", "workflow3")
         config.disallowedServices shouldBe listOf("service4", "service5", "service6")

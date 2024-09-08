@@ -122,6 +122,7 @@ sealed class WorkflowExecutorConfig {
           concurrency,
           timeoutSeconds.withTimeout,
           withRetry,
+          checkMode,
       )
     }
   }

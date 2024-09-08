@@ -14,14 +14,17 @@ import io.infinitic.tasks.WithTimeout
 import io.infinitic.workers.config.InfiniticWorkerConfig
 import io.infinitic.workers.config.ServiceConfig
 import io.infinitic.workers.config.ServiceExecutorConfig
+import io.infinitic.workers.config.ServiceTagEngineConfig
 import io.infinitic.workers.config.WorkflowConfig
 import io.infinitic.workers.config.WorkflowExecutorConfig
 import io.infinitic.workers.config.WorkflowFactory
+import io.infinitic.workers.config.WorkflowStateEngineConfig
+import io.infinitic.workers.config.WorkflowTagEngineConfig
 import io.infinitic.workflows.Workflow
 import io.infinitic.workflows.WorkflowCheckMode
 
 @Suppress("unused")
-class Registry(
+class InfiniticRegistry(
   private val config: InfiniticWorkerConfig
 ) : RegistryInterface, ConfigGetterInterface {
 
@@ -119,6 +122,21 @@ class Registry(
     }
 
   override fun getEventListenersConfig() = eventListener
+
+  override fun getServiceExecutorConfigs(): List<ServiceExecutorConfig> =
+      services.mapNotNull { it.executor }
+
+  override fun getServiceTagEngineConfigs(): List<ServiceTagEngineConfig> =
+      services.mapNotNull { it.tagEngine }
+
+  override fun getWorkflowExecutorConfigs(): List<WorkflowExecutorConfig> =
+      workflows.mapNotNull { it.executor }
+
+  override fun getWorkflowTagEngineConfigs(): List<WorkflowTagEngineConfig> =
+      workflows.mapNotNull { it.tagEngine }
+
+  override fun getWorkflowStateEngineConfigs(): List<WorkflowStateEngineConfig> =
+      workflows.mapNotNull { it.stateEngine }
 
   override fun getServiceExecutorConfig(name: String) =
       getService(ServiceName(name))?.executor

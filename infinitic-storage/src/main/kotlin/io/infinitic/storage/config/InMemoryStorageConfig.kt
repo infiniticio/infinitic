@@ -37,6 +37,7 @@ data class InMemoryStorageConfig(
   override val dbKeySet: KeySetStorage by lazy {
     InMemoryKeySetStorage.from(inMemory)
   }
+  override val type = "inMemory"
 
   override val dbKeyValue: KeyValueStorage by lazy {
     InMemoryKeyValueStorage.from(inMemory)
@@ -50,7 +51,7 @@ data class InMemoryStorageConfig(
   /**
    * InMemoryStorageConfig builder
    */
-  class InMemoryConfigBuilder: StorageConfigBuilder {
+  class InMemoryConfigBuilder : StorageConfigBuilder {
     private var compression: CompressionConfig? = null
     private var cache: CacheConfig? = null
 

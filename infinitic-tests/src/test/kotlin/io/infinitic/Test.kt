@@ -25,7 +25,8 @@ package io.infinitic
 import io.infinitic.common.fixtures.DockerOnly
 import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.engine.state.WorkflowState
-import io.infinitic.transport.config.Transport
+import io.infinitic.transport.config.InMemoryTransportConfig
+import io.infinitic.transport.config.PulsarTransportConfig
 import io.infinitic.utils.Listener
 import io.infinitic.workers.InfiniticWorker
 import io.infinitic.workers.config.InfiniticWorkerConfig
@@ -48,13 +49,16 @@ internal object Test {
   private val workerConfig =
       InfiniticWorkerConfig.fromYamlResource("/pulsar.yml", "/register.yml").let {
         when (pulsarServer) {
-          null -> it.copy(transport = Transport.inMemory)
+          null -> it.copy(transport = InMemoryTransportConfig())
           else -> it.copy(
-              transport = Transport.pulsar,
-              pulsar = it.pulsar!!.copy(
-                  brokerServiceUrl = pulsarServer.pulsarBrokerUrl,
-                  webServiceUrl = pulsarServer.httpServiceUrl,
-                  policies = it.pulsar!!.policies.copy(delayedDeliveryTickTimeMillis = 1), // useful for tests
+              transport = PulsarTransportConfig(
+                  pulsar = (it.transport as PulsarTransportConfig).pulsar.copy(
+                      brokerServiceUrl = pulsarServer.pulsarBrokerUrl,
+                      webServiceUrl = pulsarServer.httpServiceUrl,
+                      policies = (it.transport as PulsarTransportConfig).pulsar.policies.copy(
+                          delayedDeliveryTickTimeMillis = 1,
+                      ),
+                  ),
               ),
           )
         }

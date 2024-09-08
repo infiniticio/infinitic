@@ -23,6 +23,7 @@
 
 package io.infinitic.pulsar.resources
 
+import io.infinitic.autoclose.autoClose
 import io.infinitic.common.messages.Message
 import io.infinitic.common.transport.MainSubscription
 import io.infinitic.common.transport.Topic
@@ -45,12 +46,16 @@ class PulsarResources(
   val namespace: String,
   val adminRoles: Set<String>?,
   val policies: PoliciesConfig
-) {
+) : AutoCloseable {
 
   /**
    * Full name of the current Pulsar namespace
    */
   private val namespaceFullName = "$tenant/$namespace"
+
+  override fun close() {
+    autoClose()
+  }
 
   /**
    * Full name of a topic

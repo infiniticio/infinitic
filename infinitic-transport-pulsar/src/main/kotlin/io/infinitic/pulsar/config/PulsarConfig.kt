@@ -24,6 +24,9 @@ package io.infinitic.pulsar.config
 
 import com.sksamuel.hoplite.Secret
 import io.github.oshai.kotlinlogging.KotlinLogging
+import io.infinitic.config.loadFromYamlFile
+import io.infinitic.config.loadFromYamlResource
+import io.infinitic.config.loadFromYamlString
 import io.infinitic.pulsar.config.auth.AuthenticationAthenzConfig
 import io.infinitic.pulsar.config.auth.AuthenticationOAuth2Config
 import io.infinitic.pulsar.config.auth.AuthenticationSaslConfig
@@ -83,15 +86,33 @@ data class PulsarConfig(
 ) {
 
   companion object {
-    @JvmStatic
-    fun builder() = PulsarConfigBuilder()
-
     private val logger = KotlinLogging.logger {}
     private const val PULSAR_PROTOCOL = "pulsar://"
     private const val PULSAR_PROTOCOL_SSL = "pulsar+ssl://"
     private const val HTTP_PROTOCOL = "http://"
     private const val HTTP_PROTOCOL_SSL = "https://"
     private const val HIDDEN = "******"
+
+    /**
+     * Create PulsarConfig from files in file system
+     */
+    @JvmStatic
+    fun fromYamlFile(vararg files: String): PulsarConfig =
+        loadFromYamlFile(*files)
+
+    /**
+     * Create PulsarConfig from files in resources directory
+     */
+    @JvmStatic
+    fun fromYamlResource(vararg resources: String): PulsarConfig =
+        loadFromYamlResource(*resources)
+
+    /**
+     * Create PulsarConfig from yaml strings
+     */
+    @JvmStatic
+    fun fromYamlString(vararg yamls: String): PulsarConfig =
+        loadFromYamlString(*yamls)
   }
 
   init {
@@ -119,9 +140,9 @@ data class PulsarConfig(
       }
     }
 
-    require(tenant.isNotEmpty()) { "tenant can NOT be empty" }
+    require(tenant.isNotBlank()) { "tenant can NOT be blank" }
 
-    require(namespace.isNotEmpty()) { "namespace can NOT be empty" }
+    require(namespace.isNotBlank()) { "namespace can NOT be blank" }
 
     if (useKeyStoreTls == true) {
       require(tlsTrustStorePath != null) {
@@ -295,106 +316,6 @@ data class PulsarConfig(
       }
     }
   }
-
-  /**
-   * PulsarConfig builder (Useful for Java user)
-   */
-  class PulsarConfigBuilder {
-    private val default = PulsarConfig(PULSAR_PROTOCOL, HTTP_PROTOCOL, UNSET, UNSET)
-    private var tenant = default.tenant
-    private var namespace = default.namespace
-    private var brokerServiceUrl = default.brokerServiceUrl
-    private var webServiceUrl = default.webServiceUrl
-    private var allowedClusters = default.allowedClusters
-    private var adminRoles = default.adminRoles
-    private var tlsAllowInsecureConnection = default.tlsAllowInsecureConnection
-    private var tlsEnableHostnameVerification = default.tlsEnableHostnameVerification
-    private var tlsTrustCertsFilePath = default.tlsTrustCertsFilePath
-    private var useKeyStoreTls = default.useKeyStoreTls
-    private var tlsTrustStoreType = default.tlsTrustStoreType
-    private var tlsTrustStorePath = default.tlsTrustStorePath
-    private var tlsTrustStorePassword = default.tlsTrustStorePassword
-    private var authentication = default.authentication
-    private var policies = default.policies
-    private var producer = default.producer
-    private var consumer = default.consumer
-
-    fun setTenant(tenant: String) =
-        apply { this.tenant = tenant }
-
-    fun setNamespace(namespace: String) =
-        apply { this.namespace = namespace }
-
-    fun setBrokerServiceUrl(brokerServiceUrl: String) =
-        apply { this.brokerServiceUrl = brokerServiceUrl }
-
-    fun setWebServiceUrl(webServiceUrl: String) =
-        apply { this.webServiceUrl = webServiceUrl }
-
-    fun setAllowedClusters(allowedClusters: Set<String>) =
-        apply { this.allowedClusters = allowedClusters }
-
-    fun setAdminRoles(adminRoles: Set<String>) =
-        apply { this.adminRoles = adminRoles }
-
-    fun setTlsAllowInsecureConnection(tlsAllowInsecureConnection: Boolean) =
-        apply { this.tlsAllowInsecureConnection = tlsAllowInsecureConnection }
-
-    fun setTlsEnableHostnameVerification(tlsEnableHostnameVerification: Boolean) =
-        apply { this.tlsEnableHostnameVerification = tlsEnableHostnameVerification }
-
-    fun setTlsTrustCertsFilePath(tlsTrustCertsFilePath: String) =
-        apply { this.tlsTrustCertsFilePath = tlsTrustCertsFilePath }
-
-    fun setUseKeyStoreTls(useKeyStoreTls: Boolean) =
-        apply { this.useKeyStoreTls = useKeyStoreTls }
-
-    fun setTlsTrustStoreType(tlsTrustStoreType: TlsTrustStoreType) =
-        apply { this.tlsTrustStoreType = tlsTrustStoreType }
-
-    fun setTlsTrustStorePath(tlsTrustStorePath: String) =
-        apply { this.tlsTrustStorePath = tlsTrustStorePath }
-
-    fun setTlsTrustStorePassword(tlsTrustStorePassword: Secret) =
-        apply { this.tlsTrustStorePassword = tlsTrustStorePassword }
-
-    fun setAuthentication(authentication: ClientAuthenticationConfig) =
-        apply { this.authentication = authentication }
-
-    fun setPolicies(policiesConfig: PoliciesConfig) =
-        apply { this.policies = policiesConfig }
-
-    fun setProducer(producerConfig: ProducerConfig) =
-        apply { this.producer = producerConfig }
-
-    fun setConsumer(consumerConfig: ConsumerConfig) =
-        apply { this.consumer = consumerConfig }
-
-    fun build() = PulsarConfig(
-        brokerServiceUrl.removeUnset(PULSAR_PROTOCOL),
-        webServiceUrl.removeUnset(HTTP_PROTOCOL),
-        tenant.removeUnset(),
-        namespace.removeUnset(),
-        allowedClusters,
-        adminRoles,
-        tlsAllowInsecureConnection,
-        tlsEnableHostnameVerification,
-        tlsTrustCertsFilePath,
-        useKeyStoreTls,
-        tlsTrustStoreType,
-        tlsTrustStorePath,
-        tlsTrustStorePassword,
-        authentication,
-        policies,
-        producer,
-        consumer,
-    )
-  }
 }
 
-private const val UNSET = "INFINITIC_UNSET_STRING"
-private fun String.removeUnset(unset: String = UNSET): String = when (this) {
-  unset -> ""
-  else -> this
-}
 

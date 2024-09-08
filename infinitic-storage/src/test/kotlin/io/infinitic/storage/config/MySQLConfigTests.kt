@@ -113,7 +113,7 @@ storage:
     host: localhost
     username: root
     """,
-          )
+          ).also { println(it) }
         }
       }
 

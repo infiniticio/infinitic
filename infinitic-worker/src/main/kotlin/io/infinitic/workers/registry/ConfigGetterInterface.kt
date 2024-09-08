@@ -32,6 +32,16 @@ import io.infinitic.workers.config.WorkflowTagEngineConfig
 interface ConfigGetterInterface {
   fun getEventListenersConfig(): EventListenerConfig?
 
+  fun getServiceExecutorConfigs(): List<ServiceExecutorConfig>
+
+  fun getWorkflowExecutorConfigs(): List<WorkflowExecutorConfig>
+
+  fun getWorkflowTagEngineConfigs(): List<WorkflowTagEngineConfig>
+
+  fun getWorkflowStateEngineConfigs(): List<WorkflowStateEngineConfig>
+
+  fun getServiceTagEngineConfigs(): List<ServiceTagEngineConfig>
+  
   fun getServiceExecutorConfig(name: String): ServiceExecutorConfig?
 
   fun getServiceTagEngineConfig(name: String): ServiceTagEngineConfig?

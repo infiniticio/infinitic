@@ -32,6 +32,7 @@ import io.infinitic.config.loadFromYamlString
 sealed interface CacheConfig {
   val keySet: CachedKeySet<ByteArray>?
   val keyValue: CachedKeyValue<ByteArray>?
+  val type: String
 
   companion object {
     @JvmStatic

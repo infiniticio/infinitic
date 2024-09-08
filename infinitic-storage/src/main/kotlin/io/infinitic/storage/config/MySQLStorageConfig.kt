@@ -39,6 +39,8 @@ data class MySQLStorageConfig(
   override var cache: CacheConfig? = null
 ) : StorageConfig(), MySQLConfigInterface by mysql {
 
+  override val type = "mysql"
+
   override val dbKeyValue: KeyValueStorage by lazy {
     MySQLKeyValueStorage.from(mysql)
   }

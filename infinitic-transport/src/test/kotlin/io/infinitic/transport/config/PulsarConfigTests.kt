@@ -21,9 +21,10 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.pulsar.config
+package io.infinitic.transport.config
 
 import io.infinitic.common.fixtures.DockerOnly
+import io.infinitic.pulsar.config.PulsarConfig
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.annotation.EnabledIf
 import io.kotest.core.spec.style.StringSpec
@@ -39,43 +40,43 @@ class PulsarConfigTests : StringSpec(
       val dev = "dev"
 
       "Can create PulsarConfig through builder" {
-        val config = PulsarConfig.builder()
-            .brokerServiceUrl(brokerServiceUrl)
-            .webServiceUrl(webServiceUrl)
-            .tenant(tenant)
-            .namespace(dev)
+        val config = PulsarTransportConfig.builder()
+            .setBrokerServiceUrl(brokerServiceUrl)
+            .setWebServiceUrl(webServiceUrl)
+            .setTenant(tenant)
+            .setNamespace(dev)
             .build()
-        config shouldBe PulsarConfig(brokerServiceUrl, webServiceUrl, tenant, dev)
+        config.pulsar shouldBe PulsarConfig(brokerServiceUrl, webServiceUrl, tenant, dev)
       }
 
       "Create PulsarConfig without brokerServiceUrl should throw" {
         val e = shouldThrow<IllegalArgumentException> {
-          PulsarConfig.builder()
-              .webServiceUrl(webServiceUrl)
-              .tenant(tenant)
-              .namespace(dev)
+          PulsarTransportConfig.builder()
+              .setWebServiceUrl(webServiceUrl)
+              .setTenant(tenant)
+              .setNamespace(dev)
               .build()
         }
-        e.message shouldContain "pulsar://localhost:6650"
+        e.message shouldContain "brokerServiceUrl"
       }
 
       "Create PulsarConfig without webServiceUrl should throw" {
         val e = shouldThrow<IllegalArgumentException> {
-          PulsarConfig.builder()
-              .brokerServiceUrl(brokerServiceUrl)
-              .tenant(tenant)
-              .namespace(dev)
+          PulsarTransportConfig.builder()
+              .setBrokerServiceUrl(brokerServiceUrl)
+              .setTenant(tenant)
+              .setNamespace(dev)
               .build()
         }
-        e.message shouldContain "http://localhost:8080"
+        e.message shouldContain "webServiceUrl"
       }
 
       "Create PulsarConfig without tenant should throw" {
         val e = shouldThrow<IllegalArgumentException> {
-          PulsarConfig.builder()
-              .brokerServiceUrl(brokerServiceUrl)
-              .webServiceUrl(webServiceUrl)
-              .namespace(dev)
+          PulsarTransportConfig.builder()
+              .setBrokerServiceUrl(brokerServiceUrl)
+              .setWebServiceUrl(webServiceUrl)
+              .setNamespace(dev)
               .build()
         }
         e.message shouldContain "tenant"
@@ -83,10 +84,10 @@ class PulsarConfigTests : StringSpec(
 
       "Create PulsarConfig without namespace should throw" {
         val e = shouldThrow<IllegalArgumentException> {
-          PulsarConfig.builder()
-              .brokerServiceUrl(brokerServiceUrl)
-              .webServiceUrl(webServiceUrl)
-              .tenant(tenant)
+          PulsarTransportConfig.builder()
+              .setBrokerServiceUrl(brokerServiceUrl)
+              .setWebServiceUrl(webServiceUrl)
+              .setTenant(tenant)
               .build()
         }
         e.message shouldContain "namespace"

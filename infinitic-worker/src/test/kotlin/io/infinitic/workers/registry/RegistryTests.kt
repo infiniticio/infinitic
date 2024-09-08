@@ -4,7 +4,7 @@ import io.cloudevents.CloudEvent
 import io.infinitic.cloudEvents.CloudEventListener
 import io.infinitic.storage.config.InMemoryConfig
 import io.infinitic.storage.config.InMemoryStorageConfig
-import io.infinitic.transport.config.Transport
+import io.infinitic.transport.config.InMemoryTransportConfig
 import io.infinitic.workers.InfiniticWorker
 import io.infinitic.workers.config.EventListenerConfig
 import io.infinitic.workers.config.ServiceExecutorConfig
@@ -25,7 +25,7 @@ internal class RegistryTests : StringSpec(
         override fun onEvent(event: CloudEvent) {}
       }
 
-      val transport = Transport.inMemory
+      val transport = InMemoryTransportConfig()
 
       val eventListener = EventListenerConfig.builder()
           .setListener(TestEventListener())

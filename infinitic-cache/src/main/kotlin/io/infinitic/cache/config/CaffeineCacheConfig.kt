@@ -34,6 +34,8 @@ data class CaffeineCacheConfig(
   val expireAfterWrite: Long? = 3600 // 1 hour
 ) : CacheConfig {
 
+  override val type = "caffeine"
+  
   override val keySet: CachedKeySet<ByteArray> by lazy { CaffeineCachedKeySet(this) }
 
   override val keyValue: CachedKeyValue<ByteArray> by lazy { CaffeineCachedKeyValue(this) }

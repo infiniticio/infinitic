@@ -24,9 +24,8 @@
 
 package io.infinitic.workers
 
-import io.infinitic.pulsar.config.PulsarConfig
 import io.infinitic.storage.config.StorageConfig
-import io.infinitic.transport.config.Transport
+import io.infinitic.transport.config.TransportConfig
 import io.infinitic.workers.config.EventListenerConfig
 import io.infinitic.workers.config.InfiniticWorkerConfig
 import io.infinitic.workers.config.LogsConfig
@@ -42,16 +41,13 @@ import io.infinitic.workers.config.WorkflowTagEngineConfig
  * InfiniticWorker builder
  */
 class InfiniticWorkerBuilder {
-  private val default = InfiniticWorkerConfig()
-  private var name = default.name
-  private var shutdownGracePeriodSeconds = default.shutdownGracePeriodSeconds
-  private var transport = default.transport
-  private var pulsar = default.pulsar
-  private var storage = default.storage
-  private var logs = default.logs
-  private var workflows = default.workflows.toMutableList()
-  private var services = default.services.toMutableList()
-  private var eventListener = default.eventListener
+  private var name: String? = null
+  private var transport: TransportConfig? = null
+  private var storage: StorageConfig? = null
+  private var logs: LogsConfig = LogsConfig()
+  private var workflows: MutableList<WorkflowConfig> = mutableListOf()
+  private var services: MutableList<ServiceConfig> = mutableListOf()
+  private var eventListener: EventListenerConfig? = null
 
   private fun getOrCreateServiceConfig(serviceName: String) =
       services.firstOrNull { it.name == serviceName }
@@ -64,18 +60,12 @@ class InfiniticWorkerBuilder {
   fun setName(name: String) =
       apply { this.name = name }
 
-  fun setShutdownGracePeriodSeconds(shutdownGracePeriodSeconds: Double) =
-      apply { this.shutdownGracePeriodSeconds = shutdownGracePeriodSeconds }
-
-  fun setTransport(transport: Transport) =
+  fun setTransport(transport: TransportConfig) =
       apply { this.transport = transport }
 
-  fun setPulsar(pulsar: PulsarConfig) =
-      apply { this.pulsar = pulsar }
-
-  fun setPulsar(pulsar: PulsarConfig.PulsarConfigBuilder) =
-      setPulsar(pulsar.build())
-
+  fun setTransport(transport: TransportConfig.TransportConfigBuilder) =
+      setTransport(transport.build())
+  
   fun setStorage(storage: StorageConfig) =
       apply { this.storage = storage }
 
@@ -124,17 +114,19 @@ class InfiniticWorkerBuilder {
   fun setEventListener(eventListener: EventListenerConfig.EventListenerConfigBuilder) =
       setEventListener(eventListener.build())
 
-  fun build() = InfiniticWorker.fromConfig(
-      InfiniticWorkerConfig(
-          name,
-          shutdownGracePeriodSeconds,
-          transport,
-          pulsar,
-          storage,
-          logs,
-          workflows,
-          services,
-          eventListener,
-      ),
-  )
+  fun build(): InfiniticWorker {
+    require(transport != null) { "transport must not be null" }
+
+    val config = InfiniticWorkerConfig(
+        name,
+        transport!!,
+        storage,
+        logs,
+        workflows,
+        services,
+        eventListener,
+    )
+
+    return InfiniticWorker.fromConfig(config)
+  }
 }

@@ -26,7 +26,6 @@ import io.github.oshai.kotlinlogging.KotlinLogging
 import io.infinitic.autoclose.addAutoCloseResource
 import io.infinitic.autoclose.autoClose
 import io.infinitic.clients.config.ClientConfig
-import io.infinitic.clients.config.ClientConfigInterface
 import io.infinitic.clients.dispatcher.ClientDispatcher
 import io.infinitic.common.clients.messages.ClientMessage
 import io.infinitic.common.data.MillisInstant
@@ -48,7 +47,6 @@ import io.infinitic.common.workflows.data.workflows.WorkflowMeta
 import io.infinitic.common.workflows.data.workflows.WorkflowTag
 import io.infinitic.exceptions.clients.InvalidIdTagSelectionException
 import io.infinitic.exceptions.clients.InvalidStubException
-import io.infinitic.transport.config.TransportConfig
 import io.infinitic.workflows.DeferredStatus
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -236,26 +234,24 @@ class InfiniticClient(
 
     /** Create InfiniticClient from config */
     @JvmStatic
-    fun fromConfig(config: ClientConfigInterface): InfiniticClient = with(config) {
-      // Create TransportConfig
-      val transportConfig = TransportConfig(transport, pulsar, shutdownGracePeriodSeconds)
+    fun fromConfig(clientConfig: ClientConfig): InfiniticClient {
 
       // Get Infinitic Consumer
-      val consumer = LoggedInfiniticConsumer(logger, transportConfig.consumer)
+      val consumer = LoggedInfiniticConsumer(logger, clientConfig.transport.consumer)
 
       // Get Infinitic  Producer
-      val producer = LoggedInfiniticProducer(logger, transportConfig.producer)
+      val producer = LoggedInfiniticProducer(logger, clientConfig.transport.producer)
 
       // apply name if it exists
-      name?.let { producer.name = it }
+      clientConfig.name?.let { producer.name = it }
 
       // Create Infinitic Client
-      InfiniticClient(consumer, producer).also {
+      return InfiniticClient(consumer, producer).also {
         // close consumer with the client
         it.addAutoCloseResource(consumer)
       }
     }
-    
+
     /** Create InfiniticClient with config from resources directory */
     @JvmStatic
     fun fromYamlResource(vararg resources: String): InfiniticClient =

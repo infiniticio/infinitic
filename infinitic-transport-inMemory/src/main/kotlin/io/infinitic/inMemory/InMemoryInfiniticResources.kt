@@ -30,10 +30,12 @@ class InMemoryInfiniticResources(
 
   override suspend fun getServices() =
       mainChannels.serviceExecutorChannels.keys().toList().toSet()
+          .union(mainChannels.serviceTagEngineChannels.keys().toList().toSet())
 
   override suspend fun getWorkflows() =
       mainChannels.workflowExecutorChannels.keys().toList().toSet()
-
+          .union(mainChannels.workflowTagEngineChannels.keys().toList().toSet())
+          .union(mainChannels.workflowStateEngineChannels.keys().toList().toSet())
 }
 
 
