@@ -180,7 +180,6 @@ class SerDeTests : StringSpec(
       "Instant should be serializable / deserializable (with type)" {
         val val1: Instant = Instant.now()
         val val2 = SerializedData.encode(val1, Instant::class.java, null)
-            .also { println(it); println(Instant::class.java) }
             .decode(Instant::class.java, null)
 
         val2 shouldBe val1
@@ -331,7 +330,6 @@ class SerDeTests : StringSpec(
       "List of Objects wit serializer should be serializable / deserializable (without type)" {
         val val1 = listOf(Obj1("42", 42, Type.TYPE_1), Obj1("24", 24, Type.TYPE_2))
         val ser = SerializedData.encode(val1, null, null)
-        println(ser)
         val val2 = ser.decode(null, null)
 
         val2 shouldBe val1
@@ -340,7 +338,6 @@ class SerDeTests : StringSpec(
       "List of  Objects wit serializer should be serializable / deserializable (with type)" {
         val val1 = listOf(Obj1("42", 42, Type.TYPE_1), Obj1("24", 24, Type.TYPE_2))
         val ser = SerializedData.encode(val1, typeOf<List<Obj1>>().javaType, null)
-        println(ser)
         val val2 = ser.decode(typeOf<List<Obj1>>().javaType, null)
 
         val2 shouldBe val1

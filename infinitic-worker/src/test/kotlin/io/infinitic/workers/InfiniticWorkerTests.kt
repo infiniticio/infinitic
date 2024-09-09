@@ -24,6 +24,7 @@ package io.infinitic.workers
 
 import io.cloudevents.CloudEvent
 import io.infinitic.cloudEvents.CloudEventListener
+import io.infinitic.common.fixtures.later
 import io.infinitic.storage.config.InMemoryConfig
 import io.infinitic.storage.config.InMemoryStorageConfig
 import io.infinitic.storage.config.MySQLConfig
@@ -408,5 +409,34 @@ workflows:
           tagEngine?.storage.shouldBeInstanceOf<InMemoryStorageConfig>()
         }
       }
+
+      "startAsync() should not block" {
+        val worker = InfiniticWorker.builder()
+            .setTransport(transport)
+            .addServiceExecutor(serviceExecutor)
+            .build()
+        var flag = false
+        later {
+          flag = true
+          worker.close()
+        }
+        worker.startAsync()
+        flag shouldBe false
+      }
+
+      "start() should block" {
+        val worker = InfiniticWorker.builder()
+            .setTransport(transport)
+            .addServiceExecutor(serviceExecutor)
+            .build()
+        var flag = false
+        later {
+          flag = true
+          worker.close()
+        }
+        worker.start()
+        flag shouldBe true
+      }
+
     },
 )

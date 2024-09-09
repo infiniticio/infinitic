@@ -99,6 +99,7 @@ import io.infinitic.workflows.tag.WorkflowTagEngine
 import io.infinitic.workflows.tag.storage.LoggedWorkflowTagStorage
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.future.future
 import kotlinx.coroutines.launch
@@ -114,6 +115,9 @@ class InfiniticWorker(
   private val source: String,
   private val beautifyLogs: Boolean
 ) : AutoCloseable, ConfigGetterInterface by registry {
+
+  /** Coroutine scope used to launch consumers and await their termination */
+  private val scope = CoroutineScope(Dispatchers.IO)
 
   /** Infinitic Client */
   val client = InfiniticClient(consumer, producer)
@@ -179,6 +183,7 @@ class InfiniticWorker(
   override fun close() {
     client.close()
     consumer.close()
+    scope.cancel()
   }
 
   /**
@@ -196,7 +201,7 @@ class InfiniticWorker(
   /**
    * Start worker asynchronously
    */
-  fun startAsync(): CompletableFuture<Unit> = CoroutineScope(Dispatchers.IO).future {
+  fun startAsync(): CompletableFuture<Unit> = scope.future {
 
     registry.services.forEach { serviceConfig ->
       logger.info { "Service ${serviceConfig.name}:" }
@@ -223,7 +228,6 @@ class InfiniticWorker(
         true -> " (shutdownGracePeriodSeconds=${consumer.shutdownGracePeriodSeconds}s)"
         false -> ""
       }
-
     }
   }
 
@@ -292,6 +296,118 @@ class InfiniticWorker(
           "storage: ${config.storage?.type}, " +
           "cache: ${config.storage?.cache?.type ?: NONE}, " +
           "compression: ${config.storage?.compression ?: NONE})"
+    }
+  }
+
+  private fun CoroutineScope.startServiceTagEngine(config: ServiceTagEngineConfig) {
+    // Log Service Tag Engine configuration
+    logServiceTagEngineStart(config)
+
+    val logsEventLogger = KotlinLogging.logger(
+        "$CLOUD_EVENTS_SERVICE_TAG_ENGINE.${config.serviceName}",
+    ).ignoreNull()
+
+    // TASK-TAG
+    launch {
+      val logger = TaskTagEngine.logger
+      val loggedStorage = LoggedTaskTagStorage(logger, config.serviceTagStorage)
+      val loggedConsumer = LoggedInfiniticConsumer(logger, consumer)
+      val loggedProducer = LoggedInfiniticProducer(logger, producer)
+
+      val taskTagEngine = TaskTagEngine(loggedStorage, loggedProducer)
+
+      val handler: suspend (ServiceTagMessage, MillisInstant) -> Unit =
+          { message, publishedAt ->
+            logsEventLogger.logServiceCloudEvent(message, publishedAt, source)
+            taskTagEngine.handle(message, publishedAt)
+          }
+
+      loggedConsumer.start(
+          subscription = MainSubscription(ServiceTagEngineTopic),
+          entity = config.serviceName,
+          handler = handler,
+          beforeDlq = null,
+          concurrency = config.concurrency,
+      )
+    }
+  }
+
+  private fun CoroutineScope.startServiceExecutor(config: ServiceExecutorConfig) {
+    // Log Service Executor configuration
+    logServiceExecutorStart(config)
+
+    val logsEventLogger = KotlinLogging.logger(
+        "$CLOUD_EVENTS_SERVICE_EXECUTOR.${config.serviceName}",
+    ).ignoreNull()
+
+    // TASK-EXECUTOR
+    launch {
+      val logger = TaskExecutor.logger
+      val loggedConsumer = LoggedInfiniticConsumer(logger, consumer)
+      val loggedProducer = LoggedInfiniticProducer(logger, producer)
+      val taskExecutor = TaskExecutor(registry, loggedProducer, client)
+
+      val handler: suspend (ServiceExecutorMessage, MillisInstant) -> Unit =
+          { message, publishedAt ->
+            logsEventLogger.logServiceCloudEvent(message, publishedAt, source)
+            taskExecutor.handle(message, publishedAt)
+          }
+
+      val beforeDlq: suspend (ServiceExecutorMessage?, Exception) -> Unit = { message, cause ->
+        when (message) {
+          null -> Unit
+          is ExecuteTask -> with(taskExecutor) {
+            message.sendTaskFailed(cause, Task.meta, sendingMessageToDLQ)
+          }
+        }
+      }
+
+      loggedConsumer.start(
+          subscription = MainSubscription(ServiceExecutorTopic),
+          entity = config.serviceName,
+          handler = handler,
+          beforeDlq = beforeDlq,
+          concurrency = config.concurrency,
+      )
+    }
+
+    // TASK-EXECUTOR-DELAY
+    launch {
+      val logger = TaskRetryHandler.logger
+      val loggedConsumer = LoggedInfiniticConsumer(logger, consumer)
+      val loggedProducer = LoggedInfiniticProducer(logger, producer)
+
+      val taskRetryHandler = TaskRetryHandler(loggedProducer)
+
+      loggedConsumer.start(
+          subscription = MainSubscription(RetryServiceExecutorTopic),
+          entity = config.serviceName,
+          handler = taskRetryHandler::handle,
+          beforeDlq = null,
+          concurrency = config.concurrency,
+      )
+    }
+
+    // TASK-EVENTS
+    launch {
+      val logger = TaskEventHandler.logger
+      val loggedConsumer = LoggedInfiniticConsumer(logger, consumer)
+      val loggedProducer = LoggedInfiniticProducer(logger, producer)
+      val taskEventHandler = TaskEventHandler(loggedProducer)
+
+      val handler: suspend (ServiceExecutorEventMessage, MillisInstant) -> Unit =
+          { message, publishedAt ->
+            logsEventLogger.logServiceCloudEvent(message, publishedAt, source)
+            taskEventHandler.handle(message, publishedAt)
+          }
+
+      loggedConsumer.start(
+          subscription = MainSubscription(ServiceExecutorEventTopic),
+          entity = config.serviceName,
+          handler = handler,
+          beforeDlq = null,
+          concurrency = config.concurrency,
+      )
     }
   }
 
@@ -501,118 +617,6 @@ class InfiniticWorker(
       loggedConsumer.start(
           subscription = MainSubscription(WorkflowExecutorEventTopic),
           entity = config.workflowName,
-          handler = handler,
-          beforeDlq = null,
-          concurrency = config.concurrency,
-      )
-    }
-  }
-
-  private fun CoroutineScope.startServiceTagEngine(config: ServiceTagEngineConfig) {
-    // Log Service Tag Engine configuration
-    logServiceTagEngineStart(config)
-
-    val logsEventLogger = KotlinLogging.logger(
-        "$CLOUD_EVENTS_SERVICE_TAG_ENGINE.${config.serviceName}",
-    ).ignoreNull()
-
-    // TASK-TAG
-    launch {
-      val logger = TaskTagEngine.logger
-      val loggedStorage = LoggedTaskTagStorage(logger, config.serviceTagStorage)
-      val loggedConsumer = LoggedInfiniticConsumer(logger, consumer)
-      val loggedProducer = LoggedInfiniticProducer(logger, producer)
-
-      val taskTagEngine = TaskTagEngine(loggedStorage, loggedProducer)
-
-      val handler: suspend (ServiceTagMessage, MillisInstant) -> Unit =
-          { message, publishedAt ->
-            logsEventLogger.logServiceCloudEvent(message, publishedAt, source)
-            taskTagEngine.handle(message, publishedAt)
-          }
-
-      loggedConsumer.start(
-          subscription = MainSubscription(ServiceTagEngineTopic),
-          entity = config.serviceName,
-          handler = handler,
-          beforeDlq = null,
-          concurrency = config.concurrency,
-      )
-    }
-  }
-
-  private fun CoroutineScope.startServiceExecutor(config: ServiceExecutorConfig) {
-    // Log Service Executor configuration
-    logServiceExecutorStart(config)
-
-    val logsEventLogger = KotlinLogging.logger(
-        "$CLOUD_EVENTS_SERVICE_EXECUTOR.${config.serviceName}",
-    ).ignoreNull()
-
-    // TASK-EXECUTOR
-    launch {
-      val logger = TaskExecutor.logger
-      val loggedConsumer = LoggedInfiniticConsumer(logger, consumer)
-      val loggedProducer = LoggedInfiniticProducer(logger, producer)
-      val taskExecutor = TaskExecutor(registry, loggedProducer, client)
-
-      val handler: suspend (ServiceExecutorMessage, MillisInstant) -> Unit =
-          { message, publishedAt ->
-            logsEventLogger.logServiceCloudEvent(message, publishedAt, source)
-            taskExecutor.handle(message, publishedAt)
-          }
-
-      val beforeDlq: suspend (ServiceExecutorMessage?, Exception) -> Unit = { message, cause ->
-        when (message) {
-          null -> Unit
-          is ExecuteTask -> with(taskExecutor) {
-            message.sendTaskFailed(cause, Task.meta, sendingMessageToDLQ)
-          }
-        }
-      }
-
-      loggedConsumer.start(
-          subscription = MainSubscription(ServiceExecutorTopic),
-          entity = config.serviceName,
-          handler = handler,
-          beforeDlq = beforeDlq,
-          concurrency = config.concurrency,
-      )
-    }
-
-    // TASK-EXECUTOR-DELAY
-    launch {
-      val logger = TaskRetryHandler.logger
-      val loggedConsumer = LoggedInfiniticConsumer(logger, consumer)
-      val loggedProducer = LoggedInfiniticProducer(logger, producer)
-
-      val taskRetryHandler = TaskRetryHandler(loggedProducer)
-
-      loggedConsumer.start(
-          subscription = MainSubscription(RetryServiceExecutorTopic),
-          entity = config.serviceName,
-          handler = taskRetryHandler::handle,
-          beforeDlq = null,
-          concurrency = config.concurrency,
-      )
-    }
-
-    // TASK-EVENTS
-    launch {
-      val logger = TaskEventHandler.logger
-      val loggedConsumer = LoggedInfiniticConsumer(logger, consumer)
-      val loggedProducer = LoggedInfiniticProducer(logger, producer)
-      val taskEventHandler = TaskEventHandler(loggedProducer)
-
-      val handler: suspend (ServiceExecutorEventMessage, MillisInstant) -> Unit =
-          { message, publishedAt ->
-            logsEventLogger.logServiceCloudEvent(message, publishedAt, source)
-            taskEventHandler.handle(message, publishedAt)
-          }
-
-      loggedConsumer.start(
-          subscription = MainSubscription(ServiceExecutorEventTopic),
-          entity = config.serviceName,
           handler = handler,
           beforeDlq = null,
           concurrency = config.concurrency,
