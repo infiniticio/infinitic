@@ -26,26 +26,123 @@ import io.infinitic.common.fixtures.later
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.future.future
 import kotlinx.coroutines.isActive
+import kotlinx.coroutines.job
+import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeout
+import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.atomic.AtomicInteger
+import kotlin.random.Random
+
+private suspend fun processMessage(msg: String) {
+  println(">> processing $msg")
+  val d = Random.nextLong(1000)
+  when {
+    //d < 100 -> throw RuntimeException("error")
+    else -> delay(d)
+  }
+  println(">>>> processed $msg")
+}
+
+private class ConsumerWithoutKey {
+
+  suspend fun start(concurrency: Int) = coroutineScope {
+    val channel = Channel<String>()
+    // start executor coroutines
+    val jobs = List(concurrency) {
+      launch {
+        try {
+          for (msg: String in channel) {
+            // this ensures that ongoing messages are processed
+            // even after scope is cancelled following an interruption or an Error
+            withContext(NonCancellable) {
+              processMessage(msg)
+            }
+          }
+        } catch (e: CancellationException) {
+          println("Processor #$it closed after cancellation")
+        }
+      }
+    }
+    // start message receiver
+    var msg = 0
+    while (isActive) {
+      try {
+        msg++
+        println("receiving $msg")
+        channel.send(msg.toString())
+      } catch (e: CancellationException) {
+        println("Exiting receiving loop")
+        // if current scope  is canceled, we just exit the while loop
+        break
+      }
+    }
+    println("Waiting completion of ongoing messages")
+    withContext(NonCancellable) { jobs.joinAll() }
+  }
+}
+
+private class ConsumerWithKey {
+
+  suspend fun start(concurrency: Int) = coroutineScope {
+    val msg = AtomicInteger(0)
+    // start executor coroutines
+    // For Key_Shared subscription, we must create a new consumer for each executor coroutine
+    List(concurrency) { consumer ->
+      launch {
+        while (isActive) {
+          try {
+            msg.addAndGet(1)
+            println("receiving Consumer$consumer: $msg")
+            // this ensures that ongoing messages are processed
+            // even after scope is cancelled following an interruption or an Error
+            withContext(NonCancellable) {
+              processMessage("Consumer$consumer: $msg")
+            }
+          } catch (e: CancellationException) {
+            println("Exiting receiving loop $consumer")
+            // if current scope is canceled, we just exit the while loop
+            break
+          }
+        }
+        println("Closing consumer $consumer")
+      }
+    }
+  }
+}
 
 private class WorkerScaffold {
   private val scope = CoroutineScope(Dispatchers.IO)
+  private val consumerWithoutKey = ConsumerWithoutKey()
+  private val consumerWithKey = ConsumerWithKey()
+  private var isClosed: AtomicBoolean = AtomicBoolean(false)
+
+  init {
+    Runtime.getRuntime().addShutdownHook(
+        Thread {
+          close()
+        },
+    )
+  }
 
   fun startAsync() = scope.future {
+//    launch {
+//      consumerWithoutKey.start(5)
+//      println("consumerWithoutKey stopped")
+//    }
     launch {
-      while (isActive) {
-        delay(100)
-      }
-    }
-    launch {
-      while (isActive) {
-        delay(100)
-        //if (Random.nextDouble() < 0.05) throw RuntimeException("Internal startAsync error")
-      }
+      consumerWithKey.start(5)
+      println("consumerWithKey stopped")
     }
   }
 
@@ -62,7 +159,20 @@ private class WorkerScaffold {
   }
 
   fun close() {
-    scope.cancel()
+    if (isClosed.compareAndSet(false, true)) {
+      println("Closing worker...")
+      scope.cancel()
+      runBlocking {
+        try {
+          withTimeout(10) {
+            scope.coroutineContext.job.children.forEach { it.join() }
+          }
+        } catch (e: TimeoutCancellationException) {
+          println("The grace period allotted to close was insufficient.")
+        }
+      }
+      println("Worker closed.")
+    }
   }
 }
 
@@ -72,5 +182,5 @@ fun main() {
     worker.close()
   }
   worker.start()
-  println("ended")
+  println("That's all folks")
 }

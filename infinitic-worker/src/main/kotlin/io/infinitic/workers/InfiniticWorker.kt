@@ -25,7 +25,6 @@ package io.infinitic.workers
 import io.cloudevents.CloudEvent
 import io.github.oshai.kotlinlogging.KLogger
 import io.github.oshai.kotlinlogging.KotlinLogging
-import io.infinitic.autoclose.addAutoCloseResource
 import io.infinitic.clients.InfiniticClient
 import io.infinitic.cloudEvents.logs.CLOUD_EVENTS_SERVICE_EXECUTOR
 import io.infinitic.cloudEvents.logs.CLOUD_EVENTS_SERVICE_TAG_ENGINE
@@ -99,11 +98,16 @@ import io.infinitic.workflows.tag.WorkflowTagEngine
 import io.infinitic.workflows.tag.storage.LoggedWorkflowTagStorage
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.future.future
+import kotlinx.coroutines.job
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withTimeout
 import java.util.concurrent.CompletableFuture
+import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.system.exitProcess
 
 @Suppress("unused")
@@ -113,8 +117,19 @@ class InfiniticWorker(
   private val consumer: InfiniticConsumer,
   private val producer: InfiniticProducer,
   private val source: String,
-  private val beautifyLogs: Boolean
+  private val beautifyLogs: Boolean,
+  private val shutdownGracePeriodSeconds: Double
 ) : AutoCloseable, ConfigGetterInterface by registry {
+
+  /**
+   * Indicates whether the InfiniticWorker instance is closed.
+   *
+   * This variable is used to manage the state of the worker, ensuring that it can
+   * be safely closed and that no operations occur once the worker is marked as closed.
+   * When set to `true`, the worker is closing or has already closed; when set to `false`,
+   * the worker is operational.
+   */
+  private var isClosed: AtomicBoolean = AtomicBoolean(false)
 
   /** Coroutine scope used to launch consumers and await their termination */
   private val scope = CoroutineScope(Dispatchers.IO)
@@ -123,8 +138,6 @@ class InfiniticWorker(
   val client = InfiniticClient(consumer, producer)
 
   init {
-    consumer.workerLogger = logger
-
     Runtime.getRuntime().addShutdownHook(
         Thread {
           logger.info { "Closing worker..." }
@@ -133,6 +146,29 @@ class InfiniticWorker(
         },
     )
   }
+
+  override fun close() {
+    if (isClosed.compareAndSet(false, true)) {
+      logger.info { "Closing worker..." }
+      scope.cancel()
+      runBlocking {
+        try {
+          logger.info { "Processing ongoing messages..." }
+          withTimeout((shutdownGracePeriodSeconds * 1000).toLong()) {
+            scope.coroutineContext.job.children.forEach { it.join() }
+            logger.info { "All ongoing messages have been processed." }
+          }
+        } catch (e: TimeoutCancellationException) {
+          logger.warn {
+            "The grace period (${shutdownGracePeriodSeconds}s) allotted to close was insufficient. " +
+                "Some ongoing messages may not have been processed properly."
+          }
+        }
+      }
+      logger.info { "Worker closed." }
+    }
+  }
+
 
   companion object {
     private val logger = KotlinLogging.logger {}
@@ -156,9 +192,10 @@ class InfiniticWorker(
           transport.producer.also { producer -> name?.let { producer.name = it } },
           transport.cloudEventSource,
           logs.beautify,
+          transport.shutdownGracePeriodSeconds,
       ).also {
         // close consumer with the worker
-        it.addAutoCloseResource(transport.consumer)
+        //it.addAutoCloseResource(transport.consumer)
       }
     }
 
@@ -180,18 +217,12 @@ class InfiniticWorker(
 
   private val sendingMessageToDLQ = { "Unable to process message, sending to Dead Letter Queue" }
 
-  override fun close() {
-    client.close()
-    consumer.close()
-    scope.cancel()
-  }
-
   /**
    * Start worker synchronously
    * (blocks the current thread)
    */
   fun start(): Unit = try {
-    startAsync().get()
+    startAsync().join()
   } catch (e: Throwable) {
     logger.error(e) { "Exiting" }
     // this will trigger the shutdown hook

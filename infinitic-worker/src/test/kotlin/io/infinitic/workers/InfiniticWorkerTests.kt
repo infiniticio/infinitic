@@ -430,11 +430,13 @@ workflows:
             .addServiceExecutor(serviceExecutor)
             .build()
         var flag = false
-        later {
+        later(2000) {
           flag = true
           worker.close()
         }
+        println(System.currentTimeMillis())
         worker.start()
+        println(System.currentTimeMillis())
         flag shouldBe true
       }
 

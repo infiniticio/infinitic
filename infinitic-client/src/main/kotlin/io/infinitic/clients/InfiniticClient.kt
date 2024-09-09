@@ -23,7 +23,6 @@
 package io.infinitic.clients
 
 import io.github.oshai.kotlinlogging.KotlinLogging
-import io.infinitic.autoclose.addAutoCloseResource
 import io.infinitic.autoclose.autoClose
 import io.infinitic.clients.config.ClientConfig
 import io.infinitic.clients.dispatcher.ClientDispatcher
@@ -82,6 +81,7 @@ class InfiniticClient(
   override fun close() {
     if (isClosed.compareAndSet(false, true)) {
       clientScope.cancel()
+      //deleteClientTopic()
       autoClose()
     }
   }
@@ -227,6 +227,25 @@ class InfiniticClient(
 
         else -> throw InvalidStubException("$stub")
       }
+//
+//  private suspend fun deleteClientTopic() {
+//    if (::clientName.isInitialized) coroutineScope {
+//      launch {
+//        val clientTopic = with(pulsarResources) { io.infinitic.common.transport.ClientTopic.fullName(clientName) }
+//        workerLogger.debug { "Deleting client topic '$clientTopic'." }
+//        pulsarResources.deleteTopic(clientTopic)
+//            .onFailure { workerLogger.warn(it) { "Unable to delete client topic '$clientTopic'." } }
+//            .onSuccess { workerLogger.info { "Client topic '$clientTopic' deleted." } }
+//      }
+//      launch {
+//        val clientDLQTopic = with(pulsarResources) { io.infinitic.common.transport.ClientTopic.fullNameDLQ(clientName) }
+//        workerLogger.debug { "Deleting client DLQ topic '$clientDLQTopic'." }
+//        pulsarResources.deleteTopic(clientDLQTopic)
+//            .onFailure { workerLogger.warn(it) { "Unable to delete client DLQ topic '$clientDLQTopic'." } }
+//            .onSuccess { workerLogger.info { "Client DLQ topic '$clientDLQTopic' deleted." } }
+//      }
+//    }
+//  }
 
   companion object {
 
@@ -248,7 +267,7 @@ class InfiniticClient(
       // Create Infinitic Client
       return InfiniticClient(consumer, producer).also {
         // close consumer with the client
-        it.addAutoCloseResource(consumer)
+        //it.addAutoCloseResource(consumer)
       }
     }
 

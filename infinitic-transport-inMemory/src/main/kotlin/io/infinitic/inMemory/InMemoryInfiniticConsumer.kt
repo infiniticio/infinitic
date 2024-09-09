@@ -22,7 +22,6 @@
  */
 package io.infinitic.inMemory
 
-import io.github.oshai.kotlinlogging.KLogger
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.infinitic.common.data.MillisInstant
 import io.infinitic.common.messages.Message
@@ -32,43 +31,16 @@ import io.infinitic.common.transport.MainSubscription
 import io.infinitic.common.transport.Subscription
 import io.infinitic.common.transport.acceptDelayed
 import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.cancel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.job
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
 
 class InMemoryInfiniticConsumer(
   private val mainChannels: InMemoryChannels,
   private val eventListenerChannels: InMemoryChannels,
 ) : InfiniticConsumer {
-
-  override lateinit var workerLogger: KLogger
-
-  // Coroutine scope used to receive messages
-  private val consumingScope = CoroutineScope(Dispatchers.IO)
-
-  override fun join() {
-    runBlocking {
-      consumingScope.coroutineContext.job.children.forEach {
-        try {
-          it.join()
-        } catch (e: CancellationException) {
-          // do nothing
-        }
-      }
-    }
-  }
-
-  override fun close() {
-    consumingScope.cancel()
-    join()
-  }
-
+  
   override suspend fun <S : Message> start(
     subscription: Subscription<S>,
     entity: String,
@@ -104,7 +76,7 @@ class InMemoryInfiniticConsumer(
     concurrency: Int
   ) = coroutineScope {
     repeat(concurrency) {
-      launch(consumingScope.coroutineContext) {
+      launch {
         try {
           for (message in channel) {
             try {
@@ -132,7 +104,7 @@ class InMemoryInfiniticConsumer(
     concurrency: Int
   ) = coroutineScope {
     repeat(concurrency) {
-      launch(consumingScope.coroutineContext) {
+      launch {
         try {
           for (delayedMessage in channel) {
             try {

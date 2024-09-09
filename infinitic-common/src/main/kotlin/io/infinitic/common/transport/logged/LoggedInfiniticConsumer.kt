@@ -63,19 +63,4 @@ class LoggedInfiniticConsumer(
         concurrency,
     )
   }
-
-  override var workerLogger: KLogger
-    get() = consumer.workerLogger
-    set(value) {
-      consumer.workerLogger = value
-    }
-
-  override fun close() {
-    consumer.close()
-  }
-
-
-  override fun join() {
-    consumer.join()
-  }
 }

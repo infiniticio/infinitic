@@ -73,7 +73,7 @@ data class PulsarTransportConfig(
       pulsarResources,
       shutdownGracePeriodSeconds,
   ).also {
-    it.addAutoCloseResource(pulsar.client)
+    //it.addAutoCloseResource(pulsar.client)
   }
 
   /** Infinitic Producer */
