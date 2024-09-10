@@ -109,7 +109,7 @@ class UtilServiceImpl : UtilService {
 
   @Retry(NoRetry::class)
   override fun successAtRetry() = when (Task.retrySequence) {
-    0 -> throw ExpectedException("expected exception")
+    0 -> throw ExpectedException()
     else -> "ok"
   }
 

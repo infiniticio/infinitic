@@ -189,7 +189,7 @@ class InfiniticClient(
 
   @TestOnly
   internal suspend fun handle(message: ClientMessage, publishTime: MillisInstant) =
-      dispatcher.handle(message, publishTime)
+      dispatcher.responseFlow.emit(message)
 
   private fun getProxyHandler(stub: Any): ProxyHandler<*> {
     val exception by lazy { InvalidStubException("$stub") }

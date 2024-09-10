@@ -28,13 +28,13 @@ import io.infinitic.inMemory.InMemoryInfiniticProducer
 import io.infinitic.inMemory.InMemoryInfiniticResources
 
 data class InMemoryTransportConfig(
-  override val shutdownGracePeriodSeconds: Double = 0.0
+  override val shutdownGracePeriodSeconds: Double = 5.0
 ) : TransportConfig() {
 
   init {
-    require(shutdownGracePeriodSeconds >= 0) { "shutdownGracePeriodSeconds must be >= 0" }
+    require(shutdownGracePeriodSeconds > 0) { "shutdownGracePeriodSeconds must be > 0" }
   }
-  
+
   override val cloudEventSource: String = "inMemory"
 
   private val mainChannels = InMemoryChannels()

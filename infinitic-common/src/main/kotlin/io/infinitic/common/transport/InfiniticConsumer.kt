@@ -26,7 +26,7 @@ import io.infinitic.common.data.MillisInstant
 import io.infinitic.common.messages.Message
 
 interface InfiniticConsumer {
-  
+
   suspend fun <S : Message> start(
     subscription: Subscription<S>,
     entity: String,

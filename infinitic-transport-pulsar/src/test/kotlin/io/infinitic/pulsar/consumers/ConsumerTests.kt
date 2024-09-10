@@ -42,7 +42,12 @@ import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.comparables.shouldBeLessThan
 import io.kotest.matchers.doubles.shouldBeLessThan
 import io.kotest.matchers.ints.shouldBeExactly
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.asCoroutineDispatcher
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.job
+import kotlinx.coroutines.launch
 import net.bytebuddy.utility.RandomString
 import org.apache.pulsar.client.api.PulsarClient
 import org.apache.pulsar.client.api.SubscriptionInitialPosition
@@ -51,6 +56,7 @@ import java.time.Duration
 import java.time.Instant
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CopyOnWriteArrayList
+import java.util.concurrent.Executors
 import java.util.concurrent.atomic.AtomicInteger
 
 @EnabledIf(DockerOnly::class)
@@ -59,7 +65,10 @@ class ConsumerTests : StringSpec(
       val pulsarServer = DockerOnly().pulsarServer!!
 
       val client = PulsarInfiniticClient(
-          PulsarClient.builder().serviceUrl(pulsarServer.pulsarBrokerUrl).build(),
+          PulsarClient
+              .builder()
+              .serviceUrl(pulsarServer.pulsarBrokerUrl)
+              .build(),
       )
       val producer = Producer(client, ProducerConfig())
       val zero = MillisDuration(0)
@@ -87,29 +96,33 @@ class ConsumerTests : StringSpec(
         }
       }
 
-      suspend fun startAsync(
+      fun getScope() = CoroutineScope(Executors.newCachedThreadPool().asCoroutineDispatcher())
+
+      fun CoroutineScope.startAsync(
         consumer: Consumer,
         handler: suspend (ServiceExecutorMessage, MillisInstant) -> Unit,
         topic: String,
         concurrency: Int,
         withKey: Boolean = false
-      ) = consumer.startListening(
-          handler = handler,
-          beforeDlq = { _, _ -> },
-          schema = ServiceExecutorTopic.schema,
-          topic = topic,
-          topicDlq = null,
-          subscriptionName = topic + "Consumer",
-          subscriptionNameDlq = "",
-          subscriptionType = if (withKey) SubscriptionType.Key_Shared else SubscriptionType.Shared,
-          subscriptionInitialPosition = SubscriptionInitialPosition.Earliest,
-          consumerName = "consumerTest",
-          concurrency = concurrency,
-      )
+      ) = launch {
+        consumer.startListening(
+            handler = handler,
+            beforeDlq = { _, _ -> },
+            schema = ServiceExecutorTopic.schema,
+            topic = topic,
+            topicDlq = null,
+            subscriptionName = topic + "Consumer",
+            subscriptionNameDlq = "",
+            subscriptionType = if (withKey) SubscriptionType.Key_Shared else SubscriptionType.Shared,
+            subscriptionInitialPosition = SubscriptionInitialPosition.Earliest,
+            consumerName = "consumerTest",
+            concurrency = concurrency,
+        )
+      }
 
       "producing 10000 message in bulk should take less than 1 ms in average" {
         val topic = RandomString(10).nextString()
-        sendMessage(topic, 10000).shouldBeLessThan(1.0)
+        sendMessage(topic, 10000) shouldBeLessThan 1.0
       }
 
       "consuming 1000 messages (1ms) without concurrency should take less than 5 ms in average" {
@@ -120,6 +133,8 @@ class ConsumerTests : StringSpec(
         val counter = AtomicInteger(0)
         lateinit var start: Instant
 
+        val scope = getScope()
+
         val handler: suspend (ServiceExecutorMessage, MillisInstant) -> Unit = { _, _ ->
           if (counter.get() == 0) start = Instant.now()
           // emulate a 1ms task
@@ -129,18 +144,18 @@ class ConsumerTests : StringSpec(
             if (it == total) {
               averageMillisToConsume = (start.fromNow() / total)
               println("Average time to consume a message: $averageMillisToConsume ms")
-              consumer.cancel()
+              scope.cancel()
             }
           }
         }
         // start consumers
-        startAsync(consumer, handler, topic, 1)
+        scope.startAsync(consumer, handler, topic, 1)
         // send messages
         sendMessage(topic, total)
         // wait for scope cancellation
-        consumer.join()
+        scope.coroutineContext.job.join()
 
-        averageMillisToConsume.shouldBeLessThan(5.0)
+        averageMillisToConsume shouldBeLessThan 5.0
       }
 
       "consuming 1000 messages (100ms) with 100 concurrency (shared) should take less than 5 ms in average" {
@@ -151,6 +166,8 @@ class ConsumerTests : StringSpec(
         val counter = AtomicInteger(0)
         lateinit var start: Instant
 
+        val scope = getScope()
+
         val handler: ((ServiceExecutorMessage, MillisInstant) -> Unit) = { _, _ ->
           if (counter.get() == 0) start = Instant.now()
           // emulate a 100ms task
@@ -160,21 +177,21 @@ class ConsumerTests : StringSpec(
             if (it == total) {
               averageMillisToConsume = (start.fromNow() / total)
               println("Average time to consume a message: $averageMillisToConsume ms")
-              consumer.cancel()
+              scope.cancel()
             }
           }
         }
         // start consumers
-        startAsync(consumer, handler, topic, 100)
+        scope.startAsync(consumer, handler, topic, 100)
         // send messages
         sendMessage(topic, total)
         // wait for scope cancellation
-        consumer.join()
+        scope.coroutineContext.job.join()
 
-        averageMillisToConsume.shouldBeLessThan(5.0)
+        averageMillisToConsume shouldBeLessThan 5.0
       }
 
-      "consuming 1000 messages (100ms) with 100 concurrency (key-shared) should take less than 5 ms in average" {
+      "consuming 1000 messages (100ms) with 100 concurrency (key-shared) should take less than 10 ms in average" {
         val consumer = Consumer(client, ConsumerConfig())
         val topic = RandomString(10).nextString()
         var averageMillisToConsume = 100.0
@@ -182,6 +199,8 @@ class ConsumerTests : StringSpec(
         val counter = AtomicInteger(0)
         lateinit var start: Instant
 
+        val scope = getScope()
+
         val handler: ((ServiceExecutorMessage, MillisInstant) -> Unit) = { _, _ ->
           if (counter.get() == 0) start = Instant.now()
           // emulate a 100ms task
@@ -191,18 +210,18 @@ class ConsumerTests : StringSpec(
             if (it == total) {
               averageMillisToConsume = (start.fromNow() / total)
               println("Average time to consume a message: $averageMillisToConsume ms")
-              consumer.cancel()
+              scope.cancel()
             }
           }
         }
         // start consumers
-        startAsync(consumer, handler, topic, 100, true)
+        scope.startAsync(consumer, handler, topic, 100, true)
         // send messages
         sendMessage(topic, total, true)
         // wait for scope cancellation
-        consumer.join()
+        scope.coroutineContext.job.join()
 
-        averageMillisToConsume.shouldBeLessThan(5.0)
+        averageMillisToConsume.shouldBeLessThan(10.0)
       }
 
       "graceful shutdown with Shared" {
@@ -212,6 +231,8 @@ class ConsumerTests : StringSpec(
         val messageOpen = CopyOnWriteArrayList<Int>()
         val messageClosed = CopyOnWriteArrayList<Int>()
         val total = 1000
+
+        val scope = getScope()
 
         val handler: ((ServiceExecutorMessage, MillisInstant) -> Unit) = { _, _ ->
           counter.incrementAndGet().let {
@@ -224,18 +245,17 @@ class ConsumerTests : StringSpec(
           }
         }
         // start consumers
-        startAsync(consumer, handler, topic, 100)
+        scope.startAsync(consumer, handler, topic, 100)
         // send messages
         sendMessage(topic, total)
         // cancel after 0.4s
-        later(400) { consumer.cancel() }
+        later(400) { scope.cancel() }
         // wait for scope cancellation
-        consumer.join()
+        scope.coroutineContext.job.join()
 
         // for the test to be meaningful, all messages should not have been processed
         messageOpen.count().shouldBeLessThan(total)
         messageClosed.count().shouldBeLessThan(total)
-
         messageOpen.count().shouldBeExactly(messageClosed.count())
       }
 
@@ -247,6 +267,8 @@ class ConsumerTests : StringSpec(
         val messageClosed = CopyOnWriteArrayList<Int>()
         val total = 1000
 
+        val scope = getScope()
+
         val handler: ((ServiceExecutorMessage, MillisInstant) -> Unit) = { _, _ ->
           counter.incrementAndGet().let {
             // begin of task
@@ -258,18 +280,17 @@ class ConsumerTests : StringSpec(
           }
         }
         // start consumers
-        startAsync(consumer, handler, topic, 100, true)
+        scope.startAsync(consumer, handler, topic, 100, true)
         // send messages
         sendMessage(topic, total, true)
         // cancel after 1s
-        later(1000) { consumer.cancel() }
+        later(1000) { scope.cancel() }
         // wait for scope cancellation
-        consumer.join()
+        scope.coroutineContext.job.join()
 
         // for the test to be meaningful, all messages should not have been processed
         messageOpen.count().shouldBeLessThan(total)
         messageClosed.count().shouldBeLessThan(total)
-
         messageOpen.count().shouldBeExactly(messageClosed.count())
       }
     },

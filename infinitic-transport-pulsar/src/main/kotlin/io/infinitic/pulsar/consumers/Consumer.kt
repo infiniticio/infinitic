@@ -124,7 +124,15 @@ class Consumer(
             }
           }
         } catch (e: CancellationException) {
-          logInfo(consumer.topic) { "Processor #$it closed in ${consumer.consumerName} after cancellation" }
+          logInfo(consumer.topic) {
+            "Processor #$it closed in ${consumer.consumerName} after cancellation."
+          }
+        } catch (e: Throwable) {
+          logInfo(consumer.topic) {
+            "Processor #$it closed in ${consumer.consumerName} after error $e." +
+                "Waiting for completion of other ongoing messages"
+          }
+          throw e
         }
       }
     }
@@ -144,7 +152,6 @@ class Consumer(
         continue
       }
     }
-    logInfo(consumer.topic) { "Waiting completion of ongoing messages in ${consumer.consumerName}" }
     withContext(NonCancellable) { jobs.joinAll() }
     closeConsumer(consumer)
   }

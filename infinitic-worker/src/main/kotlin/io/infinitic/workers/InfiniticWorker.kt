@@ -108,6 +108,7 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.atomic.AtomicBoolean
+import kotlin.coroutines.cancellation.CancellationException
 import kotlin.system.exitProcess
 
 @Suppress("unused")
@@ -122,17 +123,19 @@ class InfiniticWorker(
 ) : AutoCloseable, ConfigGetterInterface by registry {
 
   /**
-   * Indicates whether the InfiniticWorker instance is closed.
+   * Indicates whether the InfiniticWorker instance is started.
    *
    * This variable is used to manage the state of the worker, ensuring that it can
    * be safely closed and that no operations occur once the worker is marked as closed.
-   * When set to `true`, the worker is closing or has already closed; when set to `false`,
-   * the worker is operational.
+   * When set to `false`, the worker is closed or not yet started;
+   * when set to `true`, the worker is operational.
    */
-  private var isClosed: AtomicBoolean = AtomicBoolean(false)
+  private var isStarted: AtomicBoolean = AtomicBoolean(false)
+
+  private lateinit var completableStart: CompletableFuture<Unit>
 
   /** Coroutine scope used to launch consumers and await their termination */
-  private val scope = CoroutineScope(Dispatchers.IO)
+  private var scope = CoroutineScope(Dispatchers.IO)
 
   /** Infinitic Client */
   val client = InfiniticClient(consumer, producer)
@@ -148,14 +151,14 @@ class InfiniticWorker(
   }
 
   override fun close() {
-    if (isClosed.compareAndSet(false, true)) {
+    if (isStarted.compareAndSet(true, false)) {
       logger.info { "Closing worker..." }
       scope.cancel()
       runBlocking {
         try {
           logger.info { "Processing ongoing messages..." }
           withTimeout((shutdownGracePeriodSeconds * 1000).toLong()) {
-            scope.coroutineContext.job.children.forEach { it.join() }
+            scope.coroutineContext.job.join()
             logger.info { "All ongoing messages have been processed." }
           }
         } catch (e: TimeoutCancellationException) {
@@ -223,8 +226,10 @@ class InfiniticWorker(
    */
   fun start(): Unit = try {
     startAsync().join()
+  } catch (e: CancellationException) {
+    // do nothing, the worker has been closed
   } catch (e: Throwable) {
-    logger.error(e) { "Exiting" }
+    logger.error(e) { "Error: exiting" }
     // this will trigger the shutdown hook
     exitProcess(1)
   }
@@ -232,34 +237,41 @@ class InfiniticWorker(
   /**
    * Start worker asynchronously
    */
-  fun startAsync(): CompletableFuture<Unit> = scope.future {
+  fun startAsync(): CompletableFuture<Unit> {
+    if (isStarted.compareAndSet(false, true)) {
+      scope = CoroutineScope(Dispatchers.IO)
 
-    registry.services.forEach { serviceConfig ->
-      logger.info { "Service ${serviceConfig.name}:" }
-      // Start SERVICE TAG ENGINE
-      serviceConfig.tagEngine?.let { startServiceTagEngine(it) }
-      // Start SERVICE EXECUTOR
-      serviceConfig.executor?.let { startServiceExecutor(it) }
-    }
+      completableStart = scope.future {
+        
+        registry.services.forEach { serviceConfig ->
+          logger.info { "Service ${serviceConfig.name}:" }
+          // Start SERVICE TAG ENGINE
+          serviceConfig.tagEngine?.let { startServiceTagEngine(it) }
+          // Start SERVICE EXECUTOR
+          serviceConfig.executor?.let { startServiceExecutor(it) }
+        }
 
-    registry.workflows.forEach { workflowConfig ->
-      logger.info { "Workflow ${workflowConfig.name}:" }
-      // Start WORKFLOW TAG ENGINE
-      workflowConfig.tagEngine?.let { startWorkflowTagEngine(it) }
-      // Start WORKFLOW STATE ENGINE
-      workflowConfig.stateEngine?.let { startWorkflowStateEngine(it) }
-      // Start WORKFLOW EXECUTOR
-      workflowConfig.executor?.let { startWorkflowExecutor(it) }
-    }
+        registry.workflows.forEach { workflowConfig ->
+          logger.info { "Workflow ${workflowConfig.name}:" }
+          // Start WORKFLOW TAG ENGINE
+          workflowConfig.tagEngine?.let { startWorkflowTagEngine(it) }
+          // Start WORKFLOW STATE ENGINE
+          workflowConfig.stateEngine?.let { startWorkflowStateEngine(it) }
+          // Start WORKFLOW EXECUTOR
+          workflowConfig.executor?.let { startWorkflowExecutor(it) }
+        }
 
-    registry.eventListener?.let { startEventListener(it) }
+        registry.eventListener?.let { startEventListener(it) }
 
-    logger.info {
-      "Worker \"${producer.name}\" ready" + when (consumer is PulsarInfiniticConsumer) {
-        true -> " (shutdownGracePeriodSeconds=${consumer.shutdownGracePeriodSeconds}s)"
-        false -> ""
+        logger.info {
+          "Worker \"${producer.name}\" ready" + when (consumer is PulsarInfiniticConsumer) {
+            true -> " (shutdownGracePeriodSeconds=${consumer.shutdownGracePeriodSeconds}s)"
+            false -> ""
+          }
+        }
       }
     }
+    return completableStart
   }
 
   private fun WithTimeout?.toLog() =

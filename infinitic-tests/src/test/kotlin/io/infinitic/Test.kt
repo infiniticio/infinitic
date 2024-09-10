@@ -43,11 +43,17 @@ import kotlin.time.Duration.Companion.milliseconds
  * If Docker is available, the tests are done on Pulsar, if not they are done in memory
  * Docker is available on GitHub.
  */
-internal object Test {
-  private val pulsarServer = DockerOnly().pulsarServer
 
-  private val workerConfig =
-      InfiniticWorkerConfig.fromYamlResource("/pulsar.yml", "/register.yml").let {
+fun main() {
+  Test.start()
+}
+
+internal object Test {
+
+  private val pulsarServer = DockerOnly().pulsarServer?.apply { start() }
+
+  private val workerConfig = InfiniticWorkerConfig
+      .fromYamlResource("/pulsar.yml", "/register.yml").let {
         when (pulsarServer) {
           null -> it.copy(transport = InMemoryTransportConfig())
           else -> it.copy(
@@ -62,13 +68,15 @@ internal object Test {
               ),
           )
         }
-      }
+      }.also { println(it) }
 
   val worker = InfiniticWorker.fromConfig(workerConfig)
   val client = worker.client
 
   fun start() {
+    println("Starting worker")
     worker.startAsync()
+    println("Worker started")
   }
 
   fun stop() {

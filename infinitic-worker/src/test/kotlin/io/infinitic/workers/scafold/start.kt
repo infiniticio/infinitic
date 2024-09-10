@@ -22,7 +22,6 @@
  */
 package io.infinitic.workers.scafold
 
-import io.infinitic.common.fixtures.later
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -43,12 +42,13 @@ import kotlinx.coroutines.withTimeout
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicInteger
 import kotlin.random.Random
+import kotlin.system.exitProcess
 
 private suspend fun processMessage(msg: String) {
   println(">> processing $msg")
   val d = Random.nextLong(1000)
   when {
-    //d < 100 -> throw RuntimeException("error")
+    //d < 50 -> throw RuntimeException("error $msg")
     else -> delay(d)
   }
   println(">>>> processed $msg")
@@ -71,6 +71,10 @@ private class ConsumerWithoutKey {
           }
         } catch (e: CancellationException) {
           println("Processor #$it closed after cancellation")
+        } catch (e: Exception) {
+          println("Processor #$it closed after error $e")
+          println("Waiting processing of ongoing messages")
+          throw e
         }
       }
     }
@@ -82,13 +86,12 @@ private class ConsumerWithoutKey {
         println("receiving $msg")
         channel.send(msg.toString())
       } catch (e: CancellationException) {
-        println("Exiting receiving loop")
         // if current scope  is canceled, we just exit the while loop
         break
       }
     }
-    println("Waiting completion of ongoing messages")
     withContext(NonCancellable) { jobs.joinAll() }
+    println("Closing consumer")
   }
 }
 
@@ -112,7 +115,10 @@ private class ConsumerWithKey {
           } catch (e: CancellationException) {
             println("Exiting receiving loop $consumer")
             // if current scope is canceled, we just exit the while loop
-            break
+            throw e
+          } catch (e: Exception) {
+            println("Closing consumer $consumer after Exception $e")
+            throw e
           }
         }
         println("Closing consumer $consumer")
@@ -121,7 +127,7 @@ private class ConsumerWithKey {
   }
 }
 
-private class WorkerScaffold {
+private class Worker {
   private val scope = CoroutineScope(Dispatchers.IO)
   private val consumerWithoutKey = ConsumerWithoutKey()
   private val consumerWithKey = ConsumerWithKey()
@@ -135,15 +141,36 @@ private class WorkerScaffold {
     )
   }
 
-  fun startAsync() = scope.future {
-//    launch {
-//      consumerWithoutKey.start(5)
-//      println("consumerWithoutKey stopped")
-//    }
+  fun CoroutineScope.startWithoutKey(concurrency: Int) {
     launch {
-      consumerWithKey.start(5)
+      println("consumerWithoutKey started")
+      try {
+        consumerWithoutKey.start(5)
+      } catch (e: CancellationException) {
+        // do nothing
+      }
+      println("consumerWithoutKey stopped")
+    }
+  }
+
+  fun CoroutineScope.startWithKey(concurrency: Int) {
+    launch {
+      println("consumerWithKey started")
+      try {
+        consumerWithKey.start(5)
+      } catch (e: CancellationException) {
+        // do nothing
+      }
       println("consumerWithKey stopped")
     }
+  }
+
+
+  fun startAsync() = scope.future {
+    println("a")
+    //startWithoutKey(5)
+    startWithKey(5)
+    println("b")
   }
 
   fun start() {
@@ -152,9 +179,8 @@ private class WorkerScaffold {
     } catch (e: CancellationException) {
       // do nothing
     } catch (e: Exception) {
-      println("closing...")
-      close()
-      throw e
+      println(e.printStackTrace())
+      exitProcess(1)
     }
   }
 
@@ -164,8 +190,9 @@ private class WorkerScaffold {
       scope.cancel()
       runBlocking {
         try {
-          withTimeout(10) {
+          withTimeout(1000) {
             scope.coroutineContext.job.children.forEach { it.join() }
+            println("all message processed")
           }
         } catch (e: TimeoutCancellationException) {
           println("The grace period allotted to close was insufficient.")
@@ -176,11 +203,12 @@ private class WorkerScaffold {
   }
 }
 
-fun main() {
-  val worker = WorkerScaffold()
-  later(2000) {
-    worker.close()
-  }
-  worker.start()
+suspend fun main() {
+  val worker = Worker()
+//  later(10000) {
+//    worker.close()
+//  }
+  worker.startAsync()
+  delay(1000)
   println("That's all folks")
 }
