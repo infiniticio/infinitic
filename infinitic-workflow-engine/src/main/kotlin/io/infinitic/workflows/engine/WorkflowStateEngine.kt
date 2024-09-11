@@ -36,7 +36,7 @@ import io.infinitic.common.transport.InfiniticProducer
 import io.infinitic.common.transport.WorkflowStateEngineTopic
 import io.infinitic.common.transport.WorkflowStateEventTopic
 import io.infinitic.common.transport.WorkflowTagEngineTopic
-import io.infinitic.common.transport.formatLog
+import io.infinitic.common.transport.logged.formatLog
 import io.infinitic.common.workflows.engine.messages.CancelWorkflow
 import io.infinitic.common.workflows.engine.messages.CompleteTimers
 import io.infinitic.common.workflows.engine.messages.CompleteWorkflow

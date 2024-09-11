@@ -404,7 +404,7 @@ internal val <T : Any> Class<T>.timeoutInMillis: Result<Long?>?
 
 private fun <T : Any> Class<T>.findTimeoutInMillis(): Result<Long?>? {
   // if this is not a WithTimeout interface, return null
-  if (!hasMethodImplemented(WithTimeout::getTimeoutInSeconds.javaMethod!!))
+  if (!hasMethodImplemented(WithTimeout::getTimeoutSeconds.javaMethod!!))
     return null
 
   // this is not an interface, we can build an instance and call the method
@@ -429,7 +429,7 @@ private fun <T : Any> Class<T>.findTimeoutInMillis(): Result<Long?>? {
 private fun <T : Any> mock(klass: Class<T>): T {
   val mock = mockkClass(klass.kotlin)
   when (mock is WithTimeout) {
-    true -> every { mock.getTimeoutInSeconds() } answers { callOriginal() }
+    true -> every { mock.getTimeoutSeconds() } answers { callOriginal() }
     false -> Unit
   }
   return mock
@@ -450,7 +450,7 @@ private val String.constructorError: String
 private val String.instanceError: String
   get() = "Error during class '$this' instantiation"
 
-internal fun <T> Class<T>.getInstance(
+fun <T> Class<T>.getInstance(
   noEmptyConstructor: String = (this.name).noEmptyConstructor,
   constructorError: String = (this.name).constructorError,
   instanceError: String = (this.name).instanceError,

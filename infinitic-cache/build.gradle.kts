@@ -21,6 +21,8 @@
  * Licensor: infinitic.io
  */
 dependencies {
+  implementation(project(":infinitic-utils"))
+
   implementation(Libs.Caffeine.caffeine)
 
   testImplementation(Libs.Hoplite.yaml)

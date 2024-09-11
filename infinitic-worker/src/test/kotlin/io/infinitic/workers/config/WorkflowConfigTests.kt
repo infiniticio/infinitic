@@ -22,21 +22,115 @@
  */
 package io.infinitic.workers.config
 
-import io.infinitic.workers.register.config.WorkflowConfig
+import com.sksamuel.hoplite.ConfigException
+import io.infinitic.workers.samples.WorkflowA
+import io.infinitic.workers.samples.WorkflowAImpl
+import io.infinitic.workers.samples.WorkflowAImpl_1
+import io.kotest.assertions.throwables.shouldNotThrowAny
+import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
+import io.kotest.matchers.string.shouldContain
+import io.kotest.matchers.types.shouldBeInstanceOf
 
 internal class WorkflowConfigTests :
   StringSpec(
       {
-        val name = "testName"
+        val workflowName = WorkflowA::class.java.name
+        val workflowClass = WorkflowAImpl::class.java.name
 
-        "Can create WorkflowConfig through builder" {
-          val workflowConfig = WorkflowConfig.builder()
-              .name(name)
-              .build()
+        "Can create WorkflowConfig through YAML with an executor" {
+          val config = shouldNotThrowAny {
+            WorkflowConfig.fromYamlString(
+                """
+name: $workflowName
+executor:
+  class: $workflowClass
+          """,
+            )
+          }
 
-          workflowConfig shouldBe WorkflowConfig(name)
+          config.name shouldBe workflowName
+          config.executor.shouldBeInstanceOf<WorkflowExecutorConfig>()
+          config.tagEngine shouldBe null
+          config.stateEngine shouldBe null
+        }
+
+        "Can create WorkflowConfig through YAML with an executor with multiple versions" {
+          shouldNotThrowAny {
+            WorkflowConfig.fromYamlString(
+                """
+name: $workflowName
+executor:
+  classes:
+    - $workflowClass
+    - ${WorkflowAImpl_1::class.java.name}
+          """,
+            )
+          }
+        }
+
+        "Can create WorkflowConfig through YAML with a Tag Engine" {
+          val config = shouldNotThrowAny {
+            WorkflowConfig.fromYamlString(
+                """
+name: $workflowName
+tagEngine:
+          """,
+            )
+          }
+
+          config.name shouldBe workflowName
+          config.executor shouldBe null
+          config.tagEngine.shouldBeInstanceOf<WorkflowTagEngineConfig>()
+          config.stateEngine shouldBe null
+        }
+
+        "Can create WorkflowConfig through YAML with a State Engine" {
+          val config = shouldNotThrowAny {
+            WorkflowConfig.fromYamlString(
+                """
+name: $workflowName
+stateEngine:
+          """,
+            )
+          }
+
+          config.name shouldBe workflowName
+          config.executor shouldBe null
+          config.tagEngine shouldBe null
+          config.stateEngine.shouldBeInstanceOf<WorkflowStateEngineConfig>()
+        }
+
+        "Can create WorkflowConfig through YAML with executor, tag engine and state engine" {
+          val config = shouldNotThrowAny {
+            WorkflowConfig.fromYamlString(
+                """
+name: $workflowName
+executor:
+  class: $workflowClass
+tagEngine:
+stateEngine:
+          """,
+            )
+          }
+          config.name shouldBe workflowName
+          config.executor.shouldBeInstanceOf<WorkflowExecutorConfig>()
+          config.tagEngine.shouldBeInstanceOf<WorkflowTagEngineConfig>()
+          config.stateEngine.shouldBeInstanceOf<WorkflowStateEngineConfig>()
+        }
+
+        "class must implements the Workflow" {
+          val e = shouldThrow<ConfigException> {
+            WorkflowConfig.fromYamlString(
+                """
+name: UnknownWorkflow
+executor:
+  class: $workflowClass
+          """,
+            )
+          }
+          e.message shouldContain "'$workflowClass' must be an implementation of Workflow 'UnknownWorkflow'"
         }
       },
   )

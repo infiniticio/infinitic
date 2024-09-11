@@ -22,10 +22,8 @@
  */
 package io.infinitic.storage.databases.postgres
 
-import com.sksamuel.hoplite.Secret
 import io.infinitic.storage.DockerOnly
 import io.infinitic.storage.config.PostgresConfig
-import io.infinitic.storage.storages.postgres.PostgresKeyValueStorage
 import io.kotest.core.annotation.EnabledIf
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
@@ -47,8 +45,8 @@ class PostgresKeyValueStorageTests :
         val config = PostgresConfig(
             host = postgresServer.host,
             port = postgresServer.firstMappedPort,
-            user = postgresServer.username,
-            password = Secret(postgresServer.password),
+            username = postgresServer.username,
+            password = postgresServer.password,
             database = postgresServer.databaseName,
         )
 

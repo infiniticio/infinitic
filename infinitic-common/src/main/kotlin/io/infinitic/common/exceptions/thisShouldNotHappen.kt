@@ -25,8 +25,9 @@ package io.infinitic.common.exceptions
 fun thisShouldNotHappen(reason: String? = null): Nothing =
     throw RuntimeException(
         "this should not happen${
-    when (reason) {
-        null -> ""
-        else -> ": $reason"
-    }
-    }")
+          when (reason) {
+            null -> ""
+            else -> ": $reason"
+          }
+        }",
+    )

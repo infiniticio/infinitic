@@ -29,6 +29,9 @@ object Task {
   private val context: ThreadLocal<TaskContext> = ThreadLocal.withInitial { null }
 
   @JvmStatic
+  fun hasContext() = context.get() != null
+
+  @JvmStatic
   fun setContext(c: TaskContext) {
     context.set(c)
   }

@@ -94,7 +94,7 @@ internal class ServiceWithTimeout : WithTimeout {
     return (i * j.toInt() * Task.retrySequence).toString()
   }
 
-  override fun getTimeoutInSeconds(): Double = TIMEOUT
+  override fun getTimeoutSeconds(): Double = TIMEOUT
 }
 
 @Timeout(TimeoutImpl::class)
@@ -146,9 +146,9 @@ internal class TimeoutImpl : WithTimeout {
     const val TIMEOUT = 0.1
   }
 
-  override fun getTimeoutInSeconds() = TIMEOUT
+  override fun getTimeoutSeconds() = TIMEOUT
 }
 
 internal class BuggyTimeoutImpl : WithTimeout {
-  override fun getTimeoutInSeconds(): Double = throw IllegalArgumentException()
+  override fun getTimeoutSeconds(): Double = throw IllegalArgumentException()
 }

@@ -43,7 +43,6 @@ class SerDeJavaTest {
     public void simpleObjectShouldBeSerializableDeserializable() {
         Pojo1 val1 = new Pojo1("42", 42, JType.TYPE_1);
         SerializedData data = SerializedData.encode(val1, null, null);
-        System.out.println(data);
 
         Assertions.assertEquals(val1, data.decode(null, null));
     }
@@ -63,9 +62,7 @@ class SerDeJavaTest {
         Pojo1 val1 = new Pojo1("42", 42, JType.TYPE_1);
         Pojo2 val2 = new Pojo2("42", 42);
         SerializedData original = SerializedData.encode(val2, Pojo2.class, null);
-        System.out.println(original.toJsonString());
         SerializedData data = original.copy(original.toJsonString().replace("Pojo2", "Pojo1").getBytes(), original.getDataType(), original.getMeta());
-        System.out.println(data.toJsonString());
 
         Assertions.assertEquals(val1, data.decode(Pojo1.class, null));
     }
@@ -76,7 +73,6 @@ class SerDeJavaTest {
         PojoWrapper val1 = new PojoWrapper(pojo, pojo);
 
         SerializedData data = SerializedData.encode(val1, null, null);
-        System.out.println(data.toJsonString());
 
         Assertions.assertEquals(val1, data.decode(null, null));
     }
@@ -89,9 +85,6 @@ class SerDeJavaTest {
         pojos.add(pojoa);
         pojos.add(pojob);
         SerializedData data = SerializedData.encode(pojos, null, null);
-
-        System.out.println(SerializedData.encode(pojoa, null, null));
-        System.out.println(data);
 
         Assertions.assertEquals(pojos, data.decode(null, null));
     }

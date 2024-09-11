@@ -23,7 +23,7 @@
 package io.infinitic.workflows.engine.storage
 
 import io.github.oshai.kotlinlogging.KLogger
-import io.infinitic.common.transport.formatLog
+import io.infinitic.common.transport.logged.formatLog
 import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.engine.state.WorkflowState
 import io.infinitic.common.workflows.engine.storage.WorkflowStateStorage

@@ -22,43 +22,36 @@
  */
 package io.infinitic.cache.config
 
-import io.infinitic.cache.caches.caffeine.CaffeineCachedKeySet
-import io.infinitic.cache.caches.caffeine.CaffeineCachedKeyValue
+import io.infinitic.cache.config.CaffeineCacheConfig.CaffeineConfigBuilder
 import io.infinitic.cache.keySet.CachedKeySet
 import io.infinitic.cache.keyValue.CachedKeyValue
+import io.infinitic.config.loadFromYamlFile
+import io.infinitic.config.loadFromYamlResource
+import io.infinitic.config.loadFromYamlString
 
-data class CacheConfig(
-  internal val caffeine: CaffeineConfig? = null
-) {
+sealed interface CacheConfig {
+  val keySet: CachedKeySet<ByteArray>?
+  val keyValue: CachedKeyValue<ByteArray>?
+  val type: String
 
   companion object {
     @JvmStatic
-    fun from(caffeineConfig: CaffeineConfig) = CacheConfig(caffeine = caffeineConfig)
-  }
+    fun builder() = CaffeineConfigBuilder()
 
-  val type: CacheType by lazy {
-    when {
-      caffeine != null -> CacheType.CAFFEINE
-      else -> CacheType.NONE
-    }
-  }
+    /** Create CacheConfig from files in file system */
+    @JvmStatic
+    fun fromYamlFile(vararg files: String): CacheConfig =
+        loadFromYamlFile(*files)
 
-  val keySet: CachedKeySet<ByteArray>? by lazy {
-    when {
-      caffeine != null -> CaffeineCachedKeySet(caffeine)
-      else -> null
-    }
-  }
+    /** Create CacheConfig from files in resources directory */
+    @JvmStatic
+    fun fromYamlResource(vararg resources: String): CacheConfig =
+        loadFromYamlResource(*resources)
 
-  val keyValue: CachedKeyValue<ByteArray>? by lazy {
-    when {
-      caffeine != null -> CaffeineCachedKeyValue(caffeine)
-      else -> null
-    }
-  }
-
-  enum class CacheType {
-    NONE,
-    CAFFEINE
+    /** Create CacheConfig from yaml strings */
+    @JvmStatic
+    fun fromYamlString(vararg yamls: String): CacheConfig =
+        loadFromYamlString(*yamls)
   }
 }
+

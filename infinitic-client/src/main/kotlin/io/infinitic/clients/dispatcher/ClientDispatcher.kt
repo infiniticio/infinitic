@@ -37,7 +37,6 @@ import io.infinitic.common.clients.messages.MethodUnknown
 import io.infinitic.common.clients.messages.WorkflowIdsByTag
 import io.infinitic.common.clients.messages.interfaces.MethodMessage
 import io.infinitic.common.data.MillisDuration
-import io.infinitic.common.data.MillisInstant
 import io.infinitic.common.data.methods.MethodName
 import io.infinitic.common.data.methods.MethodReturnValue
 import io.infinitic.common.data.methods.decodeReturnValue
@@ -97,10 +96,8 @@ import io.infinitic.exceptions.clients.MultipleCustomIdException
 import io.infinitic.workflows.DeferredStatus
 import io.infinitic.workflows.SendChannel
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.flow.MutableSharedFlow
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.future.future
-import kotlinx.coroutines.withTimeoutOrNull
+import kotlinx.coroutines.runBlocking
 import org.jetbrains.annotations.TestOnly
 import java.lang.reflect.Method
 import java.util.concurrent.CompletableFuture
@@ -121,19 +118,24 @@ internal class ClientDispatcher(
   private val clientRequester by lazy { ClientRequester(clientName = ClientName.from(emitterName)) }
 
   // flag telling if the client consumer loop is initialized
-  private val isClientConsumerInitialized: AtomicBoolean = AtomicBoolean(false)
+  private val hasClientConsumerStarted: AtomicBoolean = AtomicBoolean(false)
 
-  // Flow used to receive messages
-  private val responseFlow = MutableSharedFlow<ClientMessage>(replay = 0)
+  /**
+   * A mutable shared flow that buffers the latest `Result` of `ClientMessage`.
+   * This flow is used to publish and observe the outcome of client messages received by the dispatcher.
+   *
+   * The flow maintains a replay cache of 1 element, ensuring that the most recent value
+   * is always available to new subscribers immediately upon subscription,
+   * in particular the last exception if the consuming process failed
+   */
+  internal val responseFlow = ResponseFlow<ClientMessage>()
 
-  private suspend fun <T : Message> T.sendTo(topic: Topic<T>) = with(producer) { sendTo(topic) }
+  private suspend fun <T : Message> T.sendTo(topic: Topic<T>) = with(producer) {
+    sendTo(topic)
+  }
 
-  private fun <T : Message> T.sendToAsync(topic: Topic<T>) = clientScope.future { sendTo(topic) }
-
-  // a message received by the client is sent to responseFlow
-  @Suppress("UNUSED_PARAMETER")
-  internal suspend fun handle(message: ClientMessage, publishTime: MillisInstant) {
-    responseFlow.emit(message)
+  private fun <T : Message> T.sendToAsync(topic: Topic<T>) = clientScope.future {
+    sendTo(topic)
   }
 
   // Utility to get access to last deferred
@@ -208,7 +210,7 @@ internal class ClientDispatcher(
       ?: Long.MAX_VALUE
 
     // lazily starts client consumer if not already started and waits
-    val waiting = waitForAsync(timeout) {
+    val waiting = awaitAsync(timeout) {
       it is MethodMessage && it.workflowId == workflowId && it.workflowMethodId == methodId
     }
 
@@ -378,7 +380,6 @@ internal class ClientDispatcher(
     else -> thisShouldNotHappen()
   }
 
-
   fun retryTaskAsync(
     workflowName: WorkflowName,
     requestBy: RequestBy,
@@ -423,7 +424,7 @@ internal class ClientDispatcher(
     workflowTag: WorkflowTag
   ): Set<String> {
     // lazily starts client consumer if not already started and waits
-    val waiting = waitForAsync {
+    val waiting = awaitAsync {
       (it is WorkflowIdsByTag) &&
           (it.workflowName == workflowName) &&
           (it.workflowTag == workflowTag)
@@ -435,6 +436,7 @@ internal class ClientDispatcher(
         emitterName = emitterName,
         emittedAt = null,
     )
+
     // synchronously sent the message to get errors
     msg.sendToAsync(WorkflowTagEngineTopic).join()
 
@@ -721,37 +723,46 @@ internal class ClientDispatcher(
     return deferredSend
   }
 
-
   private fun ProxyHandler<*>.getTimeout(): MillisDuration? =
       timeoutInMillisDuration.getOrElse {
         throw IllegalStateException("Unable to retrieve Timeout info when dispatching $method", it)
       }
 
-  private fun waitForAsync(
-    timeout: Long = Long.MAX_VALUE,
-    predicate: suspend (ClientMessage) -> Boolean
-  ): CompletableFuture<ClientMessage?> {
-    // lazily starts client consumer if not already started
-    if (isClientConsumerInitialized.compareAndSet(false, true)) {
-      clientScope.future {
-        consumer.start(
-            subscription = MainSubscription(ClientTopic),
-            entity = emitterName.toString(),
-            handler = ::handle,
-            beforeDlq = null,
-            concurrency = 1,
-        )
-      }.join()
-    }
-
-    // wait for the first message that matches the predicate
-    return clientScope.future {
-      withTimeoutOrNull(timeout) {
-        responseFlow.first { predicate(it) }
-      }
+  private fun startListeningAsync(): CompletableFuture<Unit> = clientScope.future {
+    try {
+      consumer.start(
+          subscription = MainSubscription(ClientTopic),
+          entity = emitterName.toString(),
+          handler = { message, _ -> responseFlow.emit(message) },
+          beforeDlq = null,
+          concurrency = 1,
+      )
+    } catch (e: Exception) {
+      // all subsequent calls to await will fail and trigger this exception
+      responseFlow.emitThrowable(e)
+      throw e
     }
   }
 
+  private fun awaitAsync(
+    timeout: Long = Long.MAX_VALUE,
+    predicate: suspend (ClientMessage) -> Boolean
+  ): CompletableFuture<ClientMessage?> = clientScope.future {
+    await(timeout, predicate)
+  }
+
+  private fun await(
+    timeout: Long = Long.MAX_VALUE,
+    predicate: suspend (ClientMessage) -> Boolean
+  ): ClientMessage? = runBlocking {
+    if (hasClientConsumerStarted.compareAndSet(false, true)) {
+      // asynchronously starts client consumer if not already started
+      startListeningAsync()
+    }
+
+    // immediately wait for the message that matches the predicate
+    responseFlow.first(timeout) { predicate(it) }
+  }
 
   companion object {
     @TestOnly

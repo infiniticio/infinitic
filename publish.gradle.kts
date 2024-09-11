@@ -59,8 +59,7 @@ fun Project.signing(configure: SigningExtension.() -> Unit): Unit = configure(co
 
 fun Project.java(configure: JavaPluginExtension.() -> Unit): Unit = configure(configure)
 
-val publications: PublicationContainer =
-    (extensions.getByName("publishing") as PublishingExtension).publications
+val publications = (extensions.getByName("publishing") as PublishingExtension).publications
 
 signing {
   if (Ci.isRelease) {

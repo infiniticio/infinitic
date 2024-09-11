@@ -22,6 +22,7 @@
  */
 package io.infinitic.clients
 
+import io.infinitic.clients.config.InfiniticClientConfig
 import io.infinitic.clients.deferred.ExistingDeferredWorkflow
 import io.infinitic.clients.samples.FakeClass
 import io.infinitic.clients.samples.FakeInterface
@@ -35,7 +36,6 @@ import io.infinitic.common.clients.data.ClientName
 import io.infinitic.common.clients.messages.MethodCompleted
 import io.infinitic.common.clients.messages.WorkflowIdsByTag
 import io.infinitic.common.data.MillisDuration
-import io.infinitic.common.data.MillisInstant
 import io.infinitic.common.data.methods.MethodArgs
 import io.infinitic.common.data.methods.MethodName
 import io.infinitic.common.data.methods.MethodParameterTypes
@@ -52,8 +52,6 @@ import io.infinitic.common.tasks.executors.messages.ServiceExecutorMessage
 import io.infinitic.common.tasks.tags.messages.CompleteDelegatedTask
 import io.infinitic.common.tasks.tags.messages.ServiceTagMessage
 import io.infinitic.common.transport.ClientTopic
-import io.infinitic.common.transport.InfiniticConsumer
-import io.infinitic.common.transport.InfiniticProducer
 import io.infinitic.common.transport.MainSubscription
 import io.infinitic.common.transport.ServiceTagEngineTopic
 import io.infinitic.common.transport.Subscription
@@ -87,6 +85,9 @@ import io.infinitic.common.workflows.tags.messages.WorkflowTagEngineMessage
 import io.infinitic.exceptions.WorkflowTimedOutException
 import io.infinitic.exceptions.clients.InvalidChannelUsageException
 import io.infinitic.exceptions.clients.InvalidStubException
+import io.infinitic.inMemory.InMemoryInfiniticConsumer
+import io.infinitic.inMemory.InMemoryInfiniticProducer
+import io.infinitic.transport.config.InMemoryTransportConfig
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
@@ -99,9 +100,8 @@ import io.mockk.mockk
 import io.mockk.slot
 import java.util.concurrent.CopyOnWriteArrayList
 
-private val taskTagSlots = CopyOnWriteArrayList<ServiceTagMessage>() // multithreading update
-private val workflowTagSlots =
-    CopyOnWriteArrayList<WorkflowTagEngineMessage>() // multithreading update
+private val taskTagSlots = CopyOnWriteArrayList<ServiceTagMessage>()
+private val workflowTagSlots = CopyOnWriteArrayList<WorkflowTagEngineMessage>()
 private val taskSlot = slot<ServiceExecutorMessage>()
 private val workflowCmdSlot = slot<WorkflowCmdMessage>()
 private val delaySlot = slot<MillisDuration>()
@@ -118,7 +118,7 @@ private fun tagResponse() {
           workflowIds = setOf(WorkflowId(), WorkflowId()),
           emitterName = EmitterName("mockk"),
       )
-      later { client.handle(workflowIdsByTag, MillisInstant.now()) }
+      later { client.handle(workflowIdsByTag) }
     }
   }
 }
@@ -133,22 +133,36 @@ private fun engineResponse() {
         methodReturnValue = MethodReturnValue.from("success", null),
         emitterName = EmitterName("mockk"),
     )
-    later { client.handle(methodCompleted, MillisInstant.now()) }
+    later { client.handle(methodCompleted) }
   }
 }
 
-private val producer = mockk<InfiniticProducer> {
+internal val mockedProducer = mockk<InMemoryInfiniticProducer> {
   every { name } returns "$clientNameTest"
-  coEvery { capture(taskTagSlots).sendTo(ServiceTagEngineTopic) } answers { }
-  coEvery { capture(workflowTagSlots).sendTo(WorkflowTagEngineTopic) } answers { tagResponse() }
-  coEvery { capture(workflowCmdSlot).sendTo(WorkflowStateCmdTopic) } answers { engineResponse() }
+  coEvery {
+    internalSendTo(capture(taskTagSlots), ServiceTagEngineTopic)
+  } answers { }
+  coEvery {
+    internalSendTo(capture(workflowTagSlots), WorkflowTagEngineTopic)
+  } answers { tagResponse() }
+  coEvery {
+    internalSendTo(capture(workflowCmdSlot), WorkflowStateCmdTopic)
+  } answers { engineResponse() }
 }
 
-private val consumer = mockk<InfiniticConsumer> {
+internal val mockedConsumer = mockk<InMemoryInfiniticConsumer> {
   coEvery { start(any<Subscription<*>>(), "$clientNameTest", any(), any(), any()) } just Runs
 }
 
-private val client = InfiniticClient(consumer, producer)
+internal val mockedTransport = mockk<InMemoryTransportConfig> {
+  every { consumer } returns mockedConsumer
+  every { producer } returns mockedProducer
+  every { shutdownGracePeriodSeconds } returns 5.0
+}
+
+internal val infiniticClientConfig = InfiniticClientConfig(transport = mockedTransport)
+
+private val client = InfiniticClient(infiniticClientConfig)
 
 internal class InfiniticClientTests : StringSpec(
     {
@@ -193,7 +207,7 @@ internal class InfiniticClientTests : StringSpec(
 
         // when asynchronously dispatching a workflow, the consumer should not be started
         coVerify(exactly = 0) {
-          consumer.start(
+          mockedConsumer.start(
               MainSubscription(ClientTopic),
               "$clientNameTest",
               any(),
@@ -408,7 +422,7 @@ internal class InfiniticClientTests : StringSpec(
 
         // when waiting for a workflow, the consumer should be started
         coVerify {
-          consumer.start(
+          mockedConsumer.start(
               MainSubscription(ClientTopic),
               "$clientNameTest",
               any(),
@@ -422,7 +436,7 @@ internal class InfiniticClientTests : StringSpec(
 
         // the consumer should be started only once
         coVerify(exactly = 1) {
-          consumer.start(
+          mockedConsumer.start(
               MainSubscription(ClientTopic),
               "$clientNameTest",
               any(),

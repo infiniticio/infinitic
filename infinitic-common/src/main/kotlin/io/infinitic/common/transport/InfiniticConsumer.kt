@@ -22,15 +22,10 @@
  */
 package io.infinitic.common.transport
 
-import io.github.oshai.kotlinlogging.KLogger
 import io.infinitic.common.data.MillisInstant
 import io.infinitic.common.messages.Message
 
-interface InfiniticConsumer : AutoCloseable {
-
-  var workerLogger: KLogger
-
-  fun join()
+interface InfiniticConsumer {
 
   suspend fun <S : Message> start(
     subscription: Subscription<S>,

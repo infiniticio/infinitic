@@ -326,9 +326,9 @@ class WorkflowTagEngine(
 
     val workflowIdsByTag = WorkflowIdsByTag(
         recipientName = ClientName.from(message.emitterName),
-        message.workflowName,
-        message.workflowTag,
-        workflowIds,
+        workflowName = message.workflowName,
+        workflowTag = message.workflowTag,
+        workflowIds = workflowIds,
         emitterName = emitterName,
     )
     with(producer) { workflowIdsByTag.sendTo(ClientTopic) }
@@ -337,7 +337,7 @@ class WorkflowTagEngine(
   private fun discardTagWithoutIds(message: WorkflowTagEngineMessage) {
     logger.info { "discarding as no workflow `${message.workflowName}` found for tag `${message.workflowTag}`" }
   }
-  
+
   companion object {
     val logger = KotlinLogging.logger {}
   }

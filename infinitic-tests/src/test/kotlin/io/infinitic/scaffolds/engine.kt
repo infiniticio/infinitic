@@ -37,7 +37,7 @@ import java.util.concurrent.Executors
  * - that uncaught exception will terminate the app
  * - that there is no deadlock when back messages are not synchronous
  */
-fun main() {
+private fun main() {
   val threadPool = Executors.newCachedThreadPool()
   val scope = CoroutineScope(threadPool.asCoroutineDispatcher())
 
@@ -63,7 +63,7 @@ private fun <T> CoroutineScope.startEngine(
   }
 }
 
-suspend fun wait() = delay((Math.random() * 10L).toLong())
+private suspend fun wait() = delay((Math.random() * 10L).toLong())
 
 fun CoroutineScope.startEngine() {
   val msgNb = 1000

@@ -22,31 +22,131 @@
  */
 package io.infinitic.storage.config
 
+import com.sksamuel.hoplite.ConfigException
+import io.infinitic.common.config.loadConfigFromYaml
+import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
+import io.kotest.matchers.string.shouldContain
 
 class RedisConfigTests : StringSpec(
     {
-      "Can create RedisConfig through builder" {
-        val redisConfig = RedisConfig
-            .builder()
-            .build()
+      lateinit var config: RedisConfig
 
-        redisConfig shouldBe RedisConfig()
-      }
-
-      "Can create PoolConfig through builder" {
-        val poolConfig = RedisConfig.PoolConfig
-            .builder()
-            .build()
-
-        poolConfig shouldBe RedisConfig.PoolConfig()
+      beforeEach {
+        config = RedisConfig(host = "localhost", port = 6379)
       }
 
       "Check RedisConfig default values do not change to ensure backward compatibility" {
-        val redisConfig = RedisConfig()
+        config.database shouldBe 0
+        config.ssl shouldBe false
+      }
 
-        redisConfig.database shouldBe 0
+      "should throw for invalid host" {
+        val e = shouldThrow<IllegalArgumentException> {
+          config.copy(host = " ")
+        }
+        e.message shouldContain "host"
+      }
+
+      "should throw for invalid port" {
+        val e = shouldThrow<IllegalArgumentException> {
+          config.copy(port = 0)
+        }
+        e.message shouldContain "port"
+      }
+
+      "should throw for invalid database" {
+        val e = shouldThrow<IllegalArgumentException> {
+          config.copy(database = -1)
+        }
+        e.message shouldContain "database"
+      }
+
+      "should throw for invalid timeout" {
+        val e = shouldThrow<IllegalArgumentException> {
+          config.copy(timeout = 0)
+        }
+        e.message shouldContain "timeout"
+      }
+
+      "toString() should obfuscate password" {
+        with(config.copy(username = "admin", password = "<PASSWORD>")) {
+          toString() shouldBe "RedisConfig(host='$host', port=$port, username='$username', password='******'" +
+              ", database=$database, timeout=$timeout, ssl=$ssl, poolConfig=$poolConfig)"
+        }
+      }
+
+      "Can not load from yaml with no host" {
+        shouldThrow<ConfigException> {
+          loadConfigFromYaml<StorageConfigImpl>(
+              """
+storage:
+  redis:
+    port: 6379
+    """,
+          )
+        }
+      }
+
+      "Can not load from yaml with no port" {
+        shouldThrow<ConfigException> {
+          loadConfigFromYaml<StorageConfigImpl>(
+              """
+storage:
+  redis:
+    host: localhost
+    """,
+          )
+        }
+      }
+
+      val yaml = """
+storage:
+  redis:
+    host: localhost
+    port: 6379"""
+
+      "can load from yaml with only mandatory parameters" {
+        val storageConfig = loadConfigFromYaml<StorageConfigImpl>(yaml)
+
+        storageConfig.storage shouldBe RedisStorageConfig(
+            redis = RedisConfig("localhost", 6379),
+            cache = null,
+            compression = null,
+        )
+      }
+
+      "can load from yaml with optional parameters" {
+        val storageConfig = loadConfigFromYaml<StorageConfigImpl>(
+            yaml + """
+    username: root
+    password: pass
+    database: 1
+    timeout: 2
+    ssl: true
+    poolConfig:
+      maxTotal: 5
+      maxIdle: 6
+      minIdle: 7
+            """,
+        )
+
+        (storageConfig.storage as RedisStorageConfig).redis shouldBe
+            RedisConfig(
+                "localhost",
+                6379,
+                "root",
+                "pass",
+                1,
+                2,
+                true,
+                RedisConfig.PoolConfig(
+                    maxTotal = 5,
+                    maxIdle = 6,
+                    minIdle = 7,
+                ),
+            )
       }
     },
 )

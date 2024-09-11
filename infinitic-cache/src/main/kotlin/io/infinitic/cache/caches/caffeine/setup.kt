@@ -25,13 +25,13 @@ package io.infinitic.cache.caches.caffeine
 import com.github.benmanes.caffeine.cache.RemovalCause
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.infinitic.cache.config.CacheConfig
-import io.infinitic.cache.config.CaffeineConfig
+import io.infinitic.cache.config.CaffeineCacheConfig
 import java.util.concurrent.TimeUnit
 import com.github.benmanes.caffeine.cache.Caffeine as CaffeineCache
 
 internal val logger = KotlinLogging.logger(CacheConfig::class.java.name)
 
-internal fun <S, T> CaffeineCache<S, T>.setup(config: CaffeineConfig): CaffeineCache<S, T> {
+internal fun <S, T> CaffeineCache<S, T>.setup(config: CaffeineCacheConfig): CaffeineCache<S, T> {
 
   config.maximumSize?.let { maximumSize(it) }
   config.expireAfterAccess?.let { expireAfterAccess(it, TimeUnit.SECONDS) }

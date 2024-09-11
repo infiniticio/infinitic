@@ -25,10 +25,10 @@ package io.infinitic.cache.caches.caffeine
 import com.github.benmanes.caffeine.cache.Cache
 import com.github.benmanes.caffeine.cache.Caffeine
 import io.infinitic.cache.Flushable
-import io.infinitic.cache.config.CaffeineConfig
+import io.infinitic.cache.config.CaffeineCacheConfig
 import io.infinitic.cache.keyValue.CachedKeyValue
 
-internal class CaffeineCachedKeyValue<S : Any>(config: CaffeineConfig) : CachedKeyValue<S>,
+internal class CaffeineCachedKeyValue<S : Any>(config: CaffeineCacheConfig) : CachedKeyValue<S>,
   Flushable {
   private var caffeine: Cache<String, S> = Caffeine.newBuilder().setup(config).build()
 

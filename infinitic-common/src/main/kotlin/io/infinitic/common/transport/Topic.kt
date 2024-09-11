@@ -133,7 +133,7 @@ data object WorkflowExecutorEventTopic : WorkflowTopic<ServiceExecutorEventMessa
 
 /**
  * Property indicating whether a topic type receives delayed message used for timers or timeout
- * This is used to set up TTLInSeconds which mush be much higher for delayed messages
+ * This is used to set up TTLSeconds which mush be much higher for delayed messages
  */
 val Topic<*>.isTimer
   get() = when (this) {

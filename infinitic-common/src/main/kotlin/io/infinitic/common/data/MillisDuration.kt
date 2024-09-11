@@ -34,7 +34,7 @@ import kotlinx.serialization.json.JsonPrimitive
 
 @Serializable(with = MillisDurationSerializer::class)
 data class MillisDuration(val millis: Long) : Comparable<Long>, JsonAble {
-  override fun toString() = "${String.format("%.3fs", millis / 1000.0)}s"
+  override fun toString() = String.format("%.3fs", millis / 1000.0)
 
   override fun toJson() = JsonPrimitive(millis)
 

@@ -25,11 +25,11 @@ package io.infinitic.utils
 
 import io.infinitic.tasks.WithRetry
 
-class NoRetry : WithRetry {
+internal class NoRetry : WithRetry {
   override fun getSecondsBeforeRetry(retry: Int, e: Exception) = null
 }
 
-class Only1Retry : WithRetry {
+internal class Only1Retry : WithRetry {
   override fun getSecondsBeforeRetry(retry: Int, e: Exception) = when (retry) {
     0 -> 1.0
     else -> null

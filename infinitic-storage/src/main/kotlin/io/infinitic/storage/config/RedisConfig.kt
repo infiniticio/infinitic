@@ -22,30 +22,80 @@
  */
 package io.infinitic.storage.config
 
-import com.sksamuel.hoplite.Secret
 import redis.clients.jedis.JedisPool
 import redis.clients.jedis.JedisPoolConfig
 import redis.clients.jedis.Protocol
 import java.util.concurrent.ConcurrentHashMap
 
+/**
+ * RedisConfig is a data class that represents the configuration for connecting to a Redis server.
+ *
+ * @property host The Redis server host address.
+ * @property port The Redis server port number.
+ * @property username The username to authenticate with Redis server (optional).
+ * @property password The password to authenticate with Redis server (optional).
+ * @property database The Redis database index (default is 0).
+ * @property timeout The timeout in milliseconds for socket connection timeout (default is 2000 milliseconds).
+ * @property ssl A flag indicating whether to use SSL for the connection (default is false).
+ * @property poolConfig The configuration for the connection pool (default is PoolConfig with default values).
+ *
+ * Example for local development:
+ *
+ * ```kotlin
+ * RedisConfig("localhost", 6379)
+ * ```
+ *
+ * ```java
+ * RedisConfig.builder()
+ *  .setHost("localhost")
+ *  .setPort(6379)
+ *  .build();
+ * ```
+ */
+
+interface RedisConfigInterface {
+  val host: String
+  val port: Int
+  val username: String?
+  val password: String?
+  val database: Int
+  val timeout: Int
+  val ssl: Boolean
+  val poolConfig: RedisConfig.PoolConfig
+}
+
 @Suppress("unused")
 data class RedisConfig(
-  val host: String = Protocol.DEFAULT_HOST,
-  var port: Int = Protocol.DEFAULT_PORT,
-  var timeout: Int = Protocol.DEFAULT_TIMEOUT,
-  var user: String? = null,
-  var password: Secret? = null,
-  var database: Int = Protocol.DEFAULT_DATABASE,
-  var ssl: Boolean = false,
-  var poolConfig: PoolConfig = PoolConfig()
-) {
+  override val host: String,
+  override val port: Int,
+  override val username: String? = null,
+  override val password: String? = null,
+  override val database: Int = Protocol.DEFAULT_DATABASE,
+  override val timeout: Int = Protocol.DEFAULT_TIMEOUT,
+  override val ssl: Boolean = false,
+  override val poolConfig: PoolConfig = PoolConfig()
+) : RedisConfigInterface {
 
   companion object {
-    @JvmStatic
-    fun builder() = RedisConfigBuilder()
-
     private val pools = ConcurrentHashMap<RedisConfig, JedisPool>()
   }
+
+  init {
+    require(host.isNotBlank()) { "Invalid value for '${::host.name}': $host. The value must not be blank." }
+    require(port > 0) { "Invalid value for '${::port.name}': $port. The value must be > 0." }
+    require(database >= 0) { "Invalid value for '${::database.name}': $database. The value must be >= 0." }
+    require(timeout > 0) { "Invalid value for '${::timeout.name}': $timeout. The value must be > 0." }
+  }
+
+  /**
+   * Returns a string representation of the `PostgresConfig` object with an obfuscated password property.
+   * The optional properties are included only if they have non-null values.
+   */
+  override fun toString() =
+      "${this::class.java.simpleName}(host='$host', port=$port" +
+          (username?.let { ", username='$it'" } ?: "") +
+          (password?.let { ", password='******'" } ?: "") +
+          ", database=$database, timeout=$timeout, ssl=$ssl, poolConfig=$poolConfig)"
 
   fun close() {
     pools[this]?.close()
@@ -59,18 +109,9 @@ data class RedisConfig(
       it.minIdle = poolConfig.minIdle
     }
   ): JedisPool = pools.getOrPut(this) {
-    when (password?.value.isNullOrEmpty()) {
-      true -> JedisPool(jedisPoolConfig, host, port, database)
-      false -> JedisPool(
-          jedisPoolConfig,
-          host,
-          port,
-          timeout,
-          user,
-          password?.value,
-          database,
-          ssl,
-      )
+    when (password.isNullOrEmpty()) {
+      true -> JedisPool(jedisPoolConfig, host, port, timeout, ssl)
+      false -> JedisPool(jedisPoolConfig, host, port, timeout, username, password, database, ssl)
     }
   }
 
@@ -96,34 +137,4 @@ data class RedisConfig(
       fun build() = PoolConfig(maxTotal, maxIdle, minIdle)
     }
   }
-
-  /**
-   * RedisConfig builder (Useful for Java user)
-   */
-  class RedisConfigBuilder {
-    private val default = RedisConfig()
-    private var host = default.host
-    private var port = default.port
-    private var timeout = default.timeout
-    private var user = default.user
-    private var password = default.password
-    private var database = default.database
-    private var ssl = default.ssl
-    private var poolConfig = default.poolConfig
-
-    fun setHost(host: String) = apply { this.host = host }
-    fun setPort(port: Int) = apply { this.port = port }
-    fun setTimeout(timeout: Int) = apply { this.timeout = timeout }
-    fun setUser(user: String?) = apply { this.user = user }
-    fun setPassword(password: Secret?) = apply { this.password = password }
-    fun setDatabase(database: Int) = apply { this.database = database }
-    fun setSsl(ssl: Boolean) = apply { this.ssl = ssl }
-    fun setPoolConfig(poolConfig: PoolConfig) = apply { this.poolConfig = poolConfig }
-    fun setPoolConfig(poolConfigBuilder: PoolConfig.PoolConfigBuilder) =
-        apply { this.poolConfig = poolConfigBuilder.build() }
-
-    fun build() = RedisConfig(host, port, timeout, user, password, database, ssl, poolConfig)
-  }
 }
-
-

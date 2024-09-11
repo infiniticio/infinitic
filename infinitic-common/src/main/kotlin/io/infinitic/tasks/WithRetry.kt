@@ -26,8 +26,7 @@ fun interface WithRetry {
   fun getSecondsBeforeRetry(retry: Int, e: Exception): Double?
 
   companion object {
-    @JvmStatic
-    val NONE: WithTimeout = WithTimeout { null }
+    val UNSET = WithRetry { _, _ -> null }
   }
 }
 

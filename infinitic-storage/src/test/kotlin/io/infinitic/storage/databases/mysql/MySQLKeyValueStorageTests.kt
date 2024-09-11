@@ -22,10 +22,8 @@
  */
 package io.infinitic.storage.databases.mysql
 
-import com.sksamuel.hoplite.Secret
 import io.infinitic.storage.DockerOnly
 import io.infinitic.storage.config.MySQLConfig
-import io.infinitic.storage.storages.mysql.MySQLKeyValueStorage
 import io.kotest.core.annotation.EnabledIf
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
@@ -47,10 +45,9 @@ class MySQLKeyValueStorageTests :
         val config = MySQLConfig(
             host = mysqlServer.host,
             port = mysqlServer.firstMappedPort,
-            user = mysqlServer.username,
-            password = Secret(mysqlServer.password),
-            database = mysqlServer.databaseName,
-        )
+            username = mysqlServer.username,
+            password = mysqlServer.password,
+        ).copy(database = mysqlServer.databaseName)
 
         val storage = MySQLKeyValueStorage.from(config)
 

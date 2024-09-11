@@ -35,8 +35,6 @@ class InMemoryInfiniticProducer(
   private val eventListenerChannels: InMemoryChannels
 ) : InfiniticProducer {
 
-  private val logger = KotlinLogging.logger {}
-
   override var name = DEFAULT_NAME
 
   private fun <S : Message> Topic<S>.channelsForMessage(message: S): List<Channel<S>> {
@@ -83,6 +81,8 @@ class InMemoryInfiniticProducer(
 
   companion object {
     private const val DEFAULT_NAME = "inMemory"
+
+    private val logger = KotlinLogging.logger {}
   }
 }
 

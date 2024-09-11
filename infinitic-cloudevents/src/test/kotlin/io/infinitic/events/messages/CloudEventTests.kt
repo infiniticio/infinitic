@@ -85,8 +85,10 @@ import io.infinitic.common.workflows.engine.messages.WorkflowCmdMessage
 import io.infinitic.common.workflows.engine.messages.WorkflowCompletedEvent
 import io.infinitic.common.workflows.engine.messages.WorkflowEventMessage
 import io.infinitic.common.workflows.engine.messages.WorkflowStateEngineMessage
+import io.infinitic.storage.config.InMemoryStorageConfig
+import io.infinitic.transport.config.InMemoryTransportConfig
 import io.infinitic.workers.InfiniticWorker
-import io.infinitic.workers.config.WorkerConfig
+import io.infinitic.workers.config.EventListenerConfig
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
 import io.mockk.Runs
@@ -101,32 +103,39 @@ import net.bytebuddy.utility.RandomString
 import java.net.URI
 import kotlin.reflect.full.isSubclassOf
 
-private const val serviceConfig = """
-transport: inMemory
-storage: inMemory
-"""
-private val workerConfig = WorkerConfig.fromYaml(serviceConfig)
 private val events = mutableListOf<CloudEvent>()
 private val eventListener = mockk<CloudEventListener> {
   every { onEvent(capture(events)) } just Runs
 }
-private val worker = InfiniticWorker.fromConfig(workerConfig).apply {
-  registerServiceEventListener("ServiceA", 2, eventListener, null)
-  registerWorkflowEventListener("WorkflowA", 2, eventListener, null)
-  startAsync()
-}
+
+val transport = InMemoryTransportConfig()
+
+private val worker = InfiniticWorker.builder()
+    .setTransport(transport)
+    .setStorage(InMemoryStorageConfig.builder().build())
+    .setEventListener(
+        EventListenerConfig.builder()
+            .setListener(eventListener)
+            .setRefreshDelaySeconds(0.0)
+            .setConcurrency(2),
+    )
+    .build()
 
 private suspend fun <T : Message> T.sendToTopic(topic: Topic<T>) {
-  with(worker.producer) { sendTo(topic) }
+  with(transport.producer) { sendTo(topic) }
   // wait a bit to let listener do its work
-  delay(200)
+  // and the listener to discover new services and workflows
+  delay(100)
 }
 
 suspend fun main() {
+  worker.startAsync()
+
   ServiceExecutorMessage::class.sealedSubclasses.forEach {
     events.clear()
     val message = TestFactory.random(it, mapOf("serviceName" to ServiceName("ServiceA")))
     message.sendToTopic(ServiceExecutorTopic)
+
     events.firstOrNull()?.let { event ->
       val json = String(JsonFormat().serialize(event))
       println(message)
@@ -180,18 +189,22 @@ suspend fun main() {
     }
   }
 
-
+  worker.close()
 }
 
 internal class CloudEventTests :
   StringSpec(
       {
-        beforeTest {
-          events.clear()
+        beforeSpec {
+          worker.startAsync()
         }
 
         afterSpec {
           worker.close()
+        }
+
+        beforeEach {
+          events.clear()
         }
 
         ServiceExecutorMessage::class.sealedSubclasses.forEach {
@@ -202,7 +215,7 @@ internal class CloudEventTests :
             events.size shouldBe 1
             val event = events.first()
             event.id shouldBe message.messageId.toString()
-            event.source shouldBe URI("inmemory/services/ServiceA")
+            event.source shouldBe URI("inMemory/services/ServiceA")
             event.dataContentType shouldBe "application/json"
             event.subject shouldBe message.taskId.toString()
             event.type shouldBe when (it) {
@@ -220,7 +233,7 @@ internal class CloudEventTests :
             events.size shouldBe 1
             val event = events.first()
             event.id shouldBe message.messageId.toString()
-            event.source shouldBe URI("inmemory/services/ServiceA")
+            event.source shouldBe URI("inMemory/services/ServiceA")
             event.dataContentType shouldBe "application/json"
             event.subject shouldBe message.taskId.toString()
             event.type shouldBe when (it) {
@@ -250,7 +263,7 @@ internal class CloudEventTests :
 
             events.size shouldBe 1
             val event = events.first()
-            event.source shouldBe URI("inmemory/services/executor/WorkflowA")
+            event.source shouldBe URI("inMemory/services/executor/WorkflowA")
             event.subject shouldBe message.taskId.toString()
             event.type shouldBe when (it) {
               ExecuteTask::class -> "infinitic.task.start"
@@ -275,7 +288,7 @@ internal class CloudEventTests :
 
             events.size shouldBe 1
             val event = events.first()
-            event.source shouldBe URI("inmemory/services/executor/WorkflowA")
+            event.source shouldBe URI("inMemory/services/executor/WorkflowA")
             event.subject shouldBe message.taskId.toString()
             event.type shouldBe when (it) {
               TaskStartedEvent::class -> "infinitic.task.started"
@@ -313,7 +326,7 @@ internal class CloudEventTests :
             if (events.size == 1) {
               val event = events.first()
               event.id shouldBe message.messageId.toString()
-              event.source shouldBe URI("inmemory/workflows/WorkflowA")
+              event.source shouldBe URI("inMemory/workflows/WorkflowA")
               event.dataContentType shouldBe "application/json"
               event.subject shouldBe message.workflowId.toString()
               event.type shouldBe type
@@ -353,7 +366,8 @@ internal class CloudEventTests :
             "Check ${it.simpleName} event envelope from engine topic" {
               val message = TestFactory.random(
                   it,
-                  mapOf("workflowName" to WorkflowName("WorkflowA"),
+                  mapOf(
+                      "workflowName" to WorkflowName("WorkflowA"),
                   ),
               )
               message.sendToTopic(WorkflowStateEngineTopic)
@@ -376,7 +390,7 @@ internal class CloudEventTests :
               if (events.size == 1) {
                 val event = events.first()
                 event.id shouldBe message.messageId.toString()
-                event.source shouldBe URI("inmemory/workflows/WorkflowA")
+                event.source shouldBe URI("inMemory/workflows/WorkflowA")
                 event.dataContentType shouldBe "application/json"
                 event.subject shouldBe message.workflowId.toString()
                 event.type shouldBe type
@@ -414,7 +428,7 @@ internal class CloudEventTests :
             if (events.size == 1) {
               val event = events.first()
               event.id shouldBe message.messageId.toString()
-              event.source shouldBe URI("inmemory/workflows/WorkflowA")
+              event.source shouldBe URI("inMemory/workflows/WorkflowA")
               event.dataContentType shouldBe "application/json"
               event.subject shouldBe message.workflowId.toString()
               event.type shouldBe type

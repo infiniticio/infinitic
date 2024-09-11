@@ -22,14 +22,14 @@
  */
 package io.infinitic.cache.caches.caffeine
 
-import io.infinitic.cache.config.CaffeineConfig
+import io.infinitic.cache.config.CaffeineCacheConfig
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
 
 class CaffeineCachedKeySetTests :
   StringSpec(
       {
-        val storage = CaffeineCachedKeySet(CaffeineConfig())
+        val storage = CaffeineCachedKeySet(CaffeineCacheConfig())
 
         beforeTest { storage.set("key", setOf("foo".toByteArray(), "bar".toByteArray())) }
 

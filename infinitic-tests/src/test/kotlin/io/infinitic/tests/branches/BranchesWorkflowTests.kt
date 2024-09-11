@@ -41,11 +41,7 @@ internal class BranchesWorkflowTests : StringSpec(
       val utilWorkflow = client.newWorkflow(UtilWorkflow::class.java)
 
       // the first test has a large timeout to deal with Pulsar initialization
-      "Initialization".config(timeout = 2.minutes) {
-        branchesWorkflow.seq3() shouldBe "23ba"
-      }
-
-      "Sequential Workflow with an async branch" {
+      "Sequential Workflow with an async branch".config(timeout = 2.minutes) {
         branchesWorkflow.seq3() shouldBe "23ba"
 
         worker.getWorkflowState() shouldBe null

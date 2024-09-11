@@ -21,4 +21,9 @@
  * Licensor: infinitic.io
  */
 
+dependencies {
+  implementation(Libs.Hoplite.core)
+  implementation(Libs.Hoplite.yaml)
+}
+
 apply("../publish.gradle.kts")

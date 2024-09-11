@@ -24,12 +24,12 @@ package io.infinitic
 
 import io.infinitic.common.fixtures.DockerOnly
 import io.infinitic.common.workflows.data.workflows.WorkflowId
-import io.infinitic.common.workflows.data.workflows.WorkflowName
 import io.infinitic.common.workflows.engine.state.WorkflowState
-import io.infinitic.transport.config.Transport
+import io.infinitic.transport.config.InMemoryTransportConfig
+import io.infinitic.transport.config.PulsarTransportConfig
 import io.infinitic.utils.Listener
 import io.infinitic.workers.InfiniticWorker
-import io.infinitic.workers.config.WorkerConfig
+import io.infinitic.workers.config.InfiniticWorkerConfig
 import io.kotest.core.config.AbstractProjectConfig
 import io.kotest.core.listeners.AfterProjectListener
 import io.kotest.core.listeners.BeforeProjectListener
@@ -43,33 +43,45 @@ import kotlin.time.Duration.Companion.milliseconds
  * If Docker is available, the tests are done on Pulsar, if not they are done in memory
  * Docker is available on GitHub.
  */
+
+fun main() {
+  Test.start()
+}
+
 internal object Test {
+
   private val pulsarServer = DockerOnly().pulsarServer
 
-  private val workerConfig = WorkerConfig.fromResource("/pulsar.yml", "/register.yml").let {
-    when (pulsarServer) {
-      null -> it.copy(transport = Transport.inMemory)
-      else -> it.copy(
-          transport = Transport.pulsar,
-          pulsar = it.pulsar!!.copy(
-              brokerServiceUrl = pulsarServer.pulsarBrokerUrl,
-              webServiceUrl = pulsarServer.httpServiceUrl,
-              policies = it.pulsar!!.policies.copy(delayedDeliveryTickTimeMillis = 1), // useful for tests
-          ),
-      )
-    }
+  private val workerConfig by lazy {
+    InfiniticWorkerConfig
+        .fromYamlResource("/pulsar.yml", "/register.yml").let {
+          when (pulsarServer) {
+            null -> it.copy(transport = InMemoryTransportConfig())
+            else -> it.copy(
+                transport = PulsarTransportConfig(
+                    pulsar = (it.transport as PulsarTransportConfig).pulsar.copy(
+                        brokerServiceUrl = pulsarServer.pulsarBrokerUrl,
+                        webServiceUrl = pulsarServer.httpServiceUrl,
+                        policies = (it.transport as PulsarTransportConfig).pulsar.policies.copy(
+                            delayedDeliveryTickTimeMillis = 1,
+                        ),
+                    ),
+                ),
+            )
+          }
+        }
   }
 
-  val worker = InfiniticWorker.fromConfig(workerConfig)
-  val client = worker.client
+  val worker by lazy { InfiniticWorker(workerConfig) }
+  val client by lazy { worker.client }
 
   fun start() {
+    pulsarServer?.start()
     worker.startAsync()
   }
 
   fun stop() {
     worker.close()
-    client.close()
     pulsarServer?.stop()
   }
 }
@@ -107,7 +119,7 @@ internal suspend fun InfiniticWorker.getWorkflowState(
   // that's why we are waiting here a bit before getting the state
   delay(200)
 
-  return registry.workflowStateEngines[WorkflowName(name)]!!.storage.getState(WorkflowId(id))
+  return getWorkflowStateEngineConfig(name)?.workflowStateStorage?.getState(WorkflowId(id))
 }
 
 object ProjectConfig : AbstractProjectConfig() {

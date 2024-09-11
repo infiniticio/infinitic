@@ -91,77 +91,77 @@ data class ConsumerConfig(
     private var startPaused = default.startPaused
     private var maxRedeliverCount = default.maxRedeliverCount
 
-    fun loadConf(loadConf: Map<String, String>) =
+    fun setLoadConf(loadConf: Map<String, String>) =
         apply { this.loadConf = loadConf }
 
-    fun subscriptionProperties(subscriptionProperties: Map<String, String>) =
+    fun setSubscriptionProperties(subscriptionProperties: Map<String, String>) =
         apply { this.subscriptionProperties = subscriptionProperties }
 
-    fun ackTimeoutSeconds(ackTimeoutSeconds: Double) =
+    fun setAckTimeoutSeconds(ackTimeoutSeconds: Double) =
         apply { this.ackTimeoutSeconds = ackTimeoutSeconds }
 
-    fun isAckReceiptEnabled(isAckReceiptEnabled: Boolean) =
+    fun setIsAckReceiptEnabled(isAckReceiptEnabled: Boolean) =
         apply { this.isAckReceiptEnabled = isAckReceiptEnabled }
 
-    fun ackTimeoutTickTimeSeconds(ackTimeoutTickTimeSeconds: Double) =
+    fun setAckTimeoutTickTimeSeconds(ackTimeoutTickTimeSeconds: Double) =
         apply { this.ackTimeoutTickTimeSeconds = ackTimeoutTickTimeSeconds }
 
-    fun negativeAckRedeliveryDelaySeconds(negativeAckRedeliveryDelaySeconds: Double) =
+    fun setNegativeAckRedeliveryDelaySeconds(negativeAckRedeliveryDelaySeconds: Double) =
         apply { this.negativeAckRedeliveryDelaySeconds = negativeAckRedeliveryDelaySeconds }
 
-    fun defaultCryptoKeyReader(defaultCryptoKeyReader: String) =
+    fun setDefaultCryptoKeyReader(defaultCryptoKeyReader: String) =
         apply { this.defaultCryptoKeyReader = defaultCryptoKeyReader }
 
-    fun cryptoFailureAction(cryptoFailureAction: ConsumerCryptoFailureAction) =
+    fun setCryptoFailureAction(cryptoFailureAction: ConsumerCryptoFailureAction) =
         apply { this.cryptoFailureAction = cryptoFailureAction }
 
-    fun receiverQueueSize(receiverQueueSize: Int) =
+    fun setReceiverQueueSize(receiverQueueSize: Int) =
         apply { this.receiverQueueSize = receiverQueueSize }
 
-    fun acknowledgmentGroupTimeSeconds(acknowledgmentGroupTimeSeconds: Double) =
+    fun setAcknowledgmentGroupTimeSeconds(acknowledgmentGroupTimeSeconds: Double) =
         apply { this.acknowledgmentGroupTimeSeconds = acknowledgmentGroupTimeSeconds }
 
-    fun replicateSubscriptionState(replicateSubscriptionState: Boolean) =
+    fun setReplicateSubscriptionState(replicateSubscriptionState: Boolean) =
         apply { this.replicateSubscriptionState = replicateSubscriptionState }
 
-    fun maxTotalReceiverQueueSizeAcrossPartitions(maxTotalReceiverQueueSizeAcrossPartitions: Int) =
+    fun setMaxTotalReceiverQueueSizeAcrossPartitions(maxTotalReceiverQueueSizeAcrossPartitions: Int) =
         apply {
           this.maxTotalReceiverQueueSizeAcrossPartitions = maxTotalReceiverQueueSizeAcrossPartitions
         }
 
-    fun priorityLevel(priorityLevel: Int) =
+    fun setPriorityLevel(priorityLevel: Int) =
         apply { this.priorityLevel = priorityLevel }
 
-    fun properties(properties: Map<String, String>) =
+    fun setProperties(properties: Map<String, String>) =
         apply { this.properties = properties }
 
-    fun autoUpdatePartitions(autoUpdatePartitions: Boolean) =
+    fun setAutoUpdatePartitions(autoUpdatePartitions: Boolean) =
         apply { this.autoUpdatePartitions = autoUpdatePartitions }
 
-    fun autoUpdatePartitionsIntervalSeconds(autoUpdatePartitionsIntervalSeconds: Double) =
+    fun setAutoUpdatePartitionsIntervalSeconds(autoUpdatePartitionsIntervalSeconds: Double) =
         apply { this.autoUpdatePartitionsIntervalSeconds = autoUpdatePartitionsIntervalSeconds }
 
-    fun enableBatchIndexAcknowledgment(enableBatchIndexAcknowledgment: Boolean) =
+    fun setEnableBatchIndexAcknowledgment(enableBatchIndexAcknowledgment: Boolean) =
         apply { this.enableBatchIndexAcknowledgment = enableBatchIndexAcknowledgment }
 
-    fun maxPendingChunkedMessage(maxPendingChunkedMessage: Int) =
+    fun setMaxPendingChunkedMessage(maxPendingChunkedMessage: Int) =
         apply { this.maxPendingChunkedMessage = maxPendingChunkedMessage }
 
-    fun autoAckOldestChunkedMessageOnQueueFull(autoAckOldestChunkedMessageOnQueueFull: Boolean) =
+    fun setAutoAckOldestChunkedMessageOnQueueFull(autoAckOldestChunkedMessageOnQueueFull: Boolean) =
         apply {
           this.autoAckOldestChunkedMessageOnQueueFull = autoAckOldestChunkedMessageOnQueueFull
         }
 
-    fun expireTimeOfIncompleteChunkedMessageSeconds(expireTimeOfIncompleteChunkedMessageSeconds: Double) =
+    fun setExpireTimeOfIncompleteChunkedMessageSeconds(expireTimeOfIncompleteChunkedMessageSeconds: Double) =
         apply {
           this.expireTimeOfIncompleteChunkedMessageSeconds =
               expireTimeOfIncompleteChunkedMessageSeconds
         }
 
-    fun startPaused(startPaused: Boolean) =
+    fun setStartPaused(startPaused: Boolean) =
         apply { this.startPaused = startPaused }
 
-    fun maxRedeliverCount(maxRedeliverCount: Int) =
+    fun setMaxRedeliverCount(maxRedeliverCount: Int) =
         apply { this.maxRedeliverCount = maxRedeliverCount }
 
     fun build() = ConsumerConfig(

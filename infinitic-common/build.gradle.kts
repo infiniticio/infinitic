@@ -25,9 +25,10 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 plugins { id("java-test-fixtures") }
 
 dependencies {
-  implementation(Libs.Serialization.json)
-  implementation(Libs.JsonPath.jayway)
+  // JsonPath is used on client API
+  api(Libs.JsonPath.jayway)
 
+  implementation(Libs.Serialization.json)
   implementation(Libs.Mockk.mockk)
   implementation(Libs.Hoplite.core)
   implementation(Libs.Hoplite.yaml)

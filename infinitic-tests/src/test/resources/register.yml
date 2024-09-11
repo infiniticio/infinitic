@@ -25,76 +25,138 @@
 
 services:
   - name: annotatedService
-    class: io.infinitic.utils.AnnotatedServiceImpl
-    concurrency: 5
+    tagEngine:
+    executor:
+      class: io.infinitic.utils.AnnotatedServiceImpl
+      concurrency: 5
   - name: io.infinitic.utils.UtilService
-    class: io.infinitic.utils.UtilServiceImpl
-    concurrency: 5
-    timeoutInSeconds: 100
-    retry:
-      maximumRetries: 1
-      randomFactor: 0
+    tagEngine:
+    executor:
+      class: io.infinitic.utils.UtilServiceImpl
+      concurrency: 5
+      timeoutSeconds: 100
+      retry:
+        maximumRetries: 1
+        randomFactor: 0
   - name: io.infinitic.utils.TestService
-    class: io.infinitic.utils.TestServiceImpl
-    concurrency: 5
+    tagEngine:
+    executor:
+      class: io.infinitic.utils.TestServiceImpl
+      concurrency: 5
   - name: io.infinitic.tests.jsonView.JsonViewService
-    class: io.infinitic.tests.jsonView.JsonViewServiceImpl
-    concurrency: 5
+    tagEngine:
+    executor:
+      class: io.infinitic.tests.jsonView.JsonViewServiceImpl
+      concurrency: 5
 
 workflows:
   - name: annotatedWorkflow
-    class: io.infinitic.utils.AnnotatedWorkflowImpl
-    concurrency: 2
+    tagEngine:
+    stateEngine:
+    executor:
+      class: io.infinitic.utils.AnnotatedWorkflowImpl
+      concurrency: 2
   - name: io.infinitic.utils.UtilWorkflow
-    class: io.infinitic.utils.UtilWorkflowImpl
-    concurrency: 2
+    tagEngine:
+    stateEngine:
+    executor:
+      class: io.infinitic.utils.UtilWorkflowImpl
+      concurrency: 2
   - name: io.infinitic.tests.branches.BranchesWorkflow
-    class: io.infinitic.tests.branches.BranchesWorkflowImpl
-    concurrency: 2
+    tagEngine:
+    stateEngine:
+    executor:
+      class: io.infinitic.tests.branches.BranchesWorkflowImpl
+      concurrency: 2
   - name: io.infinitic.tests.channels.ChannelsWorkflow
-    class: io.infinitic.tests.channels.ChannelsWorkflowImpl
-    concurrency: 2
+    tagEngine:
+    stateEngine:
+    executor:
+      class: io.infinitic.tests.channels.ChannelsWorkflowImpl
+      concurrency: 2
   - name: io.infinitic.tests.children.ChildrenWorkflow
-    class: io.infinitic.tests.children.ChildrenWorkflowImpl
-    concurrency: 2
+    tagEngine:
+    stateEngine:
+    executor:
+      class: io.infinitic.tests.children.ChildrenWorkflowImpl
+      concurrency: 2
   - name: io.infinitic.tests.context.ContextWorkflow
-    class: io.infinitic.tests.context.ContextWorkflowImpl
-    concurrency: 2
+    tagEngine:
+    stateEngine:
+    executor:
+      class: io.infinitic.tests.context.ContextWorkflowImpl
+      concurrency: 2
   - name: io.infinitic.tests.deferred.DeferredWorkflow
-    class: io.infinitic.tests.deferred.DeferredWorkflowImpl
-    concurrency: 2
+    tagEngine:
+    stateEngine:
+    executor:
+      class: io.infinitic.tests.deferred.DeferredWorkflowImpl
+      concurrency: 2
   - name: io.infinitic.tests.errors.ErrorsWorkflow
-    class: io.infinitic.tests.errors.ErrorsWorkflowImpl
-    concurrency: 2
+    tagEngine:
+    stateEngine:
+    executor:
+      class: io.infinitic.tests.errors.ErrorsWorkflowImpl
+      concurrency: 2
   - name: io.infinitic.tests.inline.InlineWorkflow
-    class: io.infinitic.tests.inline.InlineWorkflowImpl
-    concurrency: 2
+    tagEngine:
+    stateEngine:
+    executor:
+      class: io.infinitic.tests.inline.InlineWorkflowImpl
+      concurrency: 2
   - name: io.infinitic.tests.properties.PropertiesWorkflow
-    class: io.infinitic.tests.properties.PropertiesWorkflowImpl
-    concurrency: 2
+    tagEngine:
+    stateEngine:
+    executor:
+      class: io.infinitic.tests.properties.PropertiesWorkflowImpl
+      concurrency: 2
   - name: io.infinitic.tests.syntax.SyntaxWorkflow
-    class: io.infinitic.tests.syntax.SyntaxWorkflowImpl
-    concurrency: 2
+    tagEngine:
+    stateEngine:
+    executor:
+      class: io.infinitic.tests.syntax.SyntaxWorkflowImpl
+      concurrency: 2
   - name: io.infinitic.tests.tags.TagWorkflow
-    class: io.infinitic.tests.tags.TagWorkflowImpl
-    concurrency: 2
+    tagEngine:
+    stateEngine:
+    executor:
+      class: io.infinitic.tests.tags.TagWorkflowImpl
+      concurrency: 2
   - name: io.infinitic.tests.timers.TimerWorkflow
-    class: io.infinitic.tests.timers.TimerWorkflowImpl
-    concurrency: 2
+    tagEngine:
+    stateEngine:
+    executor:
+      class: io.infinitic.tests.timers.TimerWorkflowImpl
+      concurrency: 2
   - name: io.infinitic.tests.timeouts.TimeoutsWorkflow
-    class: io.infinitic.tests.timeouts.TimeoutsWorkflowImpl
-    concurrency: 2
+    tagEngine:
+    stateEngine:
+    executor:
+      class: io.infinitic.tests.timeouts.TimeoutsWorkflowImpl
+      concurrency: 2
   - name: io.infinitic.tests.timeouts.ITimeoutWorkflow
-    class: io.infinitic.tests.timeouts.ITimeoutsWorkflowImpl
-    concurrency: 2
+    tagEngine:
+    stateEngine:
+    executor:
+      class: io.infinitic.tests.timeouts.ITimeoutsWorkflowImpl
+      concurrency: 2
   - name: io.infinitic.tests.versioning.VersionedWorkflow
-    classes:
-      - io.infinitic.tests.versioning.VersionedWorkflowImpl
-      - io.infinitic.tests.versioning.VersionedWorkflowImpl_1
-    concurrency: 2
+    tagEngine:
+    stateEngine:
+    executor:
+      classes:
+        - io.infinitic.tests.versioning.VersionedWorkflowImpl
+        - io.infinitic.tests.versioning.VersionedWorkflowImpl_1
+      concurrency: 2
   - name: Delegation
-    class: io.infinitic.tests.delegation.DelegationWorkflowImpl
-    concurrency: 2
+    tagEngine:
+    stateEngine:
+    executor:
+      class: io.infinitic.tests.delegation.DelegationWorkflowImpl
+      concurrency: 2
   - name: io.infinitic.tests.jsonView.JsonViewWorkflow
-    class: io.infinitic.tests.jsonView.JsonViewWorkflowImpl
-    concurrency: 5
+    tagEngine:
+    stateEngine:
+    executor:
+      class: io.infinitic.tests.jsonView.JsonViewWorkflowImpl
+      concurrency: 5

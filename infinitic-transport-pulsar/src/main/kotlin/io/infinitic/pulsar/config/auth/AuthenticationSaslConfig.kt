@@ -24,6 +24,7 @@ package io.infinitic.pulsar.config.auth
 
 import com.sksamuel.hoplite.Secret
 
+@Suppress("unused")
 data class AuthenticationSaslConfig(
   val tenantDomain: String,
   val tenantService: String,
@@ -42,11 +43,11 @@ data class AuthenticationSaslConfig(
     private var privateKey: String? = null
     private var keyId: String? = null
 
-    fun tenantDomain(tenantDomain: String) = apply { this.tenantDomain = tenantDomain }
-    fun tenantService(tenantService: String) = apply { this.tenantService = tenantService }
-    fun providerDomain(providerDomain: String) = apply { this.providerDomain = providerDomain }
-    fun privateKey(privateKey: String) = apply { this.privateKey = privateKey }
-    fun keyId(keyId: String) = apply { this.keyId = keyId }
+    fun setTenantDomain(tenantDomain: String) = apply { this.tenantDomain = tenantDomain }
+    fun setTenantService(tenantService: String) = apply { this.tenantService = tenantService }
+    fun setProviderDomain(providerDomain: String) = apply { this.providerDomain = providerDomain }
+    fun setPrivateKey(privateKey: String) = apply { this.privateKey = privateKey }
+    fun setKeyId(keyId: String) = apply { this.keyId = keyId }
 
     fun build() = AuthenticationSaslConfig(
         tenantDomain ?: throw IllegalArgumentException("tenantDomain must be set"),

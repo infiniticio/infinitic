@@ -23,18 +23,22 @@
 
 package io.infinitic.common.utils
 
+import io.infinitic.common.exceptions.thisShouldNotHappen
 import kotlin.reflect.KParameter
 import kotlin.reflect.full.memberProperties
+import kotlin.reflect.full.primaryConstructor
 
-@JvmName("mergeNullableRight")
-inline infix fun <reified T : Any> T.merge(default: T?): T {
-  if (default == null) return this
+@JvmName("mergeNullableLeft")
+inline infix fun <reified T : Any> T?.merge(default: T?): T? {
+  if (this == null) return default
 
   return this merge default
 }
 
-inline infix fun <reified T : Any> T.merge(default: T): T {
-  val constructor = T::class.constructors.first()
+inline infix fun <reified T : Any> T.merge(default: T?): T {
+  if (default == null) return this
+
+  val constructor = T::class.primaryConstructor ?: thisShouldNotHappen()
   val params = constructor.parameters.associateBy({ it.name!! }, { it })
   val args = mutableMapOf<KParameter, Any?>()
 

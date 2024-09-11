@@ -109,7 +109,7 @@ class UtilServiceImpl : UtilService {
 
   @Retry(NoRetry::class)
   override fun successAtRetry() = when (Task.retrySequence) {
-    0 -> throw ExpectedException("expected exception")
+    0 -> throw ExpectedException()
     else -> "ok"
   }
 
@@ -121,7 +121,7 @@ class UtilServiceImpl : UtilService {
 
   override fun getRetry(): Double? = Task.withRetry?.getSecondsBeforeRetry(0, RuntimeException())
 
-  override fun getTimeout(): Double? = Task.withTimeout?.getTimeoutInSeconds()
+  override fun getTimeout(): Double? = Task.withTimeout?.getTimeoutSeconds()
 
   override fun withTimeout(wait: Long): Long {
     Thread.sleep(wait)

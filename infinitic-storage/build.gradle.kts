@@ -23,6 +23,7 @@
 dependencies {
   // Cache
   implementation(project(":infinitic-cache"))
+  implementation(project(":infinitic-utils"))
 
   implementation(Libs.Hoplite.core)
   implementation("com.zaxxer:HikariCP:5.0.1")
@@ -43,7 +44,6 @@ dependencies {
   testImplementation(Libs.TestContainers.testcontainers)
   testImplementation(Libs.TestContainers.mysql)
   testImplementation(Libs.TestContainers.postgresql)
-  testImplementation(Libs.Hoplite.yaml)
 }
 
 apply("../publish.gradle.kts")

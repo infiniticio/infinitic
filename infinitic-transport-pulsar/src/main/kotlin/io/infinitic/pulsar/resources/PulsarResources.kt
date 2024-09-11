@@ -24,6 +24,7 @@
 package io.infinitic.pulsar.resources
 
 import io.infinitic.common.messages.Message
+import io.infinitic.common.transport.ClientTopic
 import io.infinitic.common.transport.MainSubscription
 import io.infinitic.common.transport.Topic
 import io.infinitic.common.transport.isTimer
@@ -61,12 +62,12 @@ class PulsarResources(
   suspend fun getTopicsFullName(): Set<String> = admin.getTopicsSet(namespaceFullName).getOrThrow()
 
   /** Set of service's names for current tenant and namespace */
-  suspend fun getServicesName(): Set<String> = getTopicsFullName().mapNotNull {
+  suspend fun getServiceNames(): Set<String> = getTopicsFullName().mapNotNull {
     getServiceNameFromTopicName(it.removePrefix(topicFullName("")))
   }.toSet()
 
   /** Set of workflow's names for current tenant and namespace */
-  suspend fun getWorkflowsName(): Set<String> = getTopicsFullName().mapNotNull {
+  suspend fun getWorkflowNames(): Set<String> = getTopicsFullName().mapNotNull {
     getWorkflowNameFromTopicName(it.removePrefix(topicFullName("")))
   }.toSet()
 
@@ -122,7 +123,7 @@ class PulsarResources(
   /**
    * Delete a topic by name
    */
-  suspend fun deleteTopic(topic: String): Result<Unit> = admin.deleteTopic(topic)
+  suspend fun deleteTopic(topic: String): Result<Unit?> = admin.deleteTopic(topic)
 
   /**
    * Check if a topic exists, and create it if not
@@ -134,16 +135,16 @@ class PulsarResources(
     isTimed: Boolean,
   ): Result<Unit> {
     // initialize tenant once (do nothing on error)
-    admin.initTenantOnce(tenant, allowedClusters, adminRoles)
+    admin.syncInitTenantOnce(tenant, allowedClusters, adminRoles)
     // initialize namespace once (do nothing on error)
-    admin.initNamespaceOnce(namespaceFullName, policies)
+    admin.syncInitNamespaceOnce(namespaceFullName, policies)
     // initialize topic once  (do nothing on error)
     val ttl = when (isTimed) {
-      true -> policies.timerTTLInSeconds
-      false -> policies.messageTTLInSeconds
+      true -> policies.timerTTLSeconds
+      false -> policies.messageTTLSeconds
     }
 
-    return admin.initTopicOnce(topic, isPartitioned, ttl).map { }
+    return admin.syncInitTopicOnce(topic, isPartitioned, ttl).map { }
   }
 
   /**
@@ -156,6 +157,18 @@ class PulsarResources(
     isDelayed: Boolean,
   ): Result<Unit?> = topic?.let { initTopicOnce(it, isPartitioned, isDelayed) }
     ?: Result.success(null)
+
+  /**
+   * Deletes the topic that corresponds to the specified client name.
+   * Returns:
+   * - Result.success(null) if the topic does not exist
+   * - Result.success(topicName) if the topic has been deleted
+   * - Result.failure(e) if the deletion failed
+   */
+  suspend fun deleteTopicForClient(clientName: String): Result<String?> {
+    val topicName = ClientTopic.fullName(clientName)
+    return deleteTopic(topicName).map { it?.let { topicName } }
+  }
 
   companion object {
     /** Create TopicManager from a Pulsar configuration instance */

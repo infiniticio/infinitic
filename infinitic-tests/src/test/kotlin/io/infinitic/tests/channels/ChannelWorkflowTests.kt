@@ -99,14 +99,12 @@ internal class ChannelWorkflowTests :
           deferred.await() shouldBe "Instant"
         }
 
-        "Sending event before waiting for it prevents catching" {
+        "Event is discarded if sent before waiting for it" {
           val deferred = client.dispatch(channelsWorkflow::channel3)
 
-          later {
-            client.getWorkflowById(
-                ChannelsWorkflow::class.java,
-                deferred.id,
-            ).channelStrA.send("test")
+          later(10) {
+            client.getWorkflowById(ChannelsWorkflow::class.java, deferred.id)
+                .channelStrA.send("test")
           }
 
           deferred.await() shouldBe "Instant"

@@ -22,86 +22,38 @@
  */
 package io.infinitic.transport.config
 
-import io.infinitic.autoclose.addAutoCloseResource
 import io.infinitic.common.transport.InfiniticConsumer
 import io.infinitic.common.transport.InfiniticProducer
-import io.infinitic.inMemory.InMemoryChannels
-import io.infinitic.inMemory.InMemoryInfiniticConsumer
-import io.infinitic.inMemory.InMemoryInfiniticProducer
-import io.infinitic.pulsar.PulsarInfiniticConsumer
-import io.infinitic.pulsar.PulsarInfiniticProducer
-import io.infinitic.pulsar.client.PulsarInfiniticClient
-import io.infinitic.pulsar.config.PulsarConfig
-import io.infinitic.pulsar.consumers.Consumer
-import io.infinitic.pulsar.producers.Producer
-import io.infinitic.pulsar.resources.PulsarResources
-import java.net.URLEncoder
+import io.infinitic.common.transport.InfiniticResources
 
-data class TransportConfig(
-  /** Transport configuration */
-  override val transport: Transport,
+sealed class TransportConfig: AutoCloseable {
+  /**
+   * Specifies the duration, in seconds, allowed for the system to gracefully shut down.
+   * During this period, the system will attempt to complete handle ongoing messages
+   */
+  abstract val shutdownGracePeriodSeconds: Double
 
-  /** Pulsar configuration */
-  override val pulsar: PulsarConfig?,
+  /**
+   * This property denotes the origin of the CloudEvents being generated or consumed.
+   */
+  abstract val cloudEventSource: String
 
-  /** Shutdown Grace Period */
-  override val shutdownGracePeriodInSeconds: Double
-) : TransportConfigInterface {
+  /**
+   * This property provides methods to fetch available services and workflows,
+   */
+  abstract val resources: InfiniticResources
 
-  init {
-    if (transport == Transport.pulsar) {
-      require(pulsar != null) { "Missing Pulsar configuration" }
-    }
+  /**
+   * This consumer is responsible for subscribing to and handling messages
+   */
+  abstract val consumer: InfiniticConsumer
 
-    require(shutdownGracePeriodInSeconds >= 0) { "shutdownGracePeriodInSeconds must be >= 0" }
+  /**
+   * This producer is responsible for sending messages asynchronously to specified topics
+   */
+  abstract val producer: InfiniticProducer
+
+  interface TransportConfigBuilder {
+    fun build(): TransportConfig
   }
-
-  /** This is used as source prefix for CloudEvents */
-  val source: String = when (transport) {
-    Transport.pulsar -> pulsar!!.brokerServiceUrl.removeSuffix("/") + "/" +
-        URLEncoder.encode(pulsar.tenant, Charsets.UTF_8) + "/" +
-        URLEncoder.encode(pulsar.namespace, Charsets.UTF_8)
-
-    Transport.inMemory -> "inmemory"
-  }
-
-  // we provide consumer and producer together,
-  // as they must share the same configuration
-  private val cp: Pair<InfiniticConsumer, InfiniticProducer> =
-      when (transport) {
-        Transport.pulsar -> with(PulsarResources.from(pulsar!!)) {
-          val client = PulsarInfiniticClient(pulsar.client)
-
-          val consumer = PulsarInfiniticConsumer(
-              Consumer(client, pulsar.consumer),
-              this,
-              shutdownGracePeriodInSeconds,
-          )
-          // Pulsar client and admin will be closed with consumer
-          consumer.addAutoCloseResource(pulsar.client)
-          consumer.addAutoCloseResource(pulsar.admin)
-
-          val producer = PulsarInfiniticProducer(
-              Producer(client, pulsar.producer),
-              this,
-          )
-
-          Pair(consumer, producer)
-        }
-
-        Transport.inMemory -> {
-          val mainChannels = InMemoryChannels()
-          val eventListenerChannels = InMemoryChannels()
-          val consumer = InMemoryInfiniticConsumer(mainChannels, eventListenerChannels)
-          val producer = InMemoryInfiniticProducer(mainChannels, eventListenerChannels)
-          Pair(consumer, producer)
-        }
-      }
-
-  /** Infinitic Consumer */
-  val consumer = cp.first
-
-  /** Infinitic Producer */
-  val producer = cp.second
 }
-

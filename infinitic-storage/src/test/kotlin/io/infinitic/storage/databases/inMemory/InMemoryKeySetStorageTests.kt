@@ -24,14 +24,13 @@ package io.infinitic.storage.databases.inMemory
 
 import io.infinitic.storage.config.InMemoryConfig
 import io.infinitic.storage.data.Bytes
-import io.infinitic.storage.storages.inMemory.InMemoryKeySetStorage
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
 
 class InMemoryKeySetStorageTests :
   StringSpec(
       {
-        val config = InMemoryConfig("test")
+        val config = InMemoryConfig()
         val storage = InMemoryKeySetStorage.from(config)
 
         beforeTest { storage.add("foo", "bar".toByteArray()) }

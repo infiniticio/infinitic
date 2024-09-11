@@ -57,13 +57,12 @@ enum class CompressionConfig {
       // have the signature of a compression type.
       // As such signature is generally only a few bytes, it should not be that rare.
       // That's why below we return the data if we have an error during the decompression.
-      val type =
-          try {
-            CompressorStreamFactory.detect(input)
-          } catch (e: CompressorException) {
-            // no compressor type found, return original
-            return data
-          }
+      val type = try {
+        CompressorStreamFactory.detect(input)
+      } catch (e: CompressorException) {
+        // no compressor type found, return original
+        return data
+      }
 
       val out = ByteArrayOutputStream()
       // decompress
@@ -74,7 +73,7 @@ enum class CompressionConfig {
       } catch (e: Exception) {
         // see comment above
         logger.info(e) {
-          "Error when decompressing data with '$type' algorithm, fallback to not decompressing"
+          "Error occurred while decompressing data using the '$type' algorithm. Returning original data."
         }
         return data.also { out.close() }
       }
