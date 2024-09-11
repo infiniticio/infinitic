@@ -112,10 +112,7 @@ class InfiniticWorker(
   val config: InfiniticWorkerConfigInterface,
 ) : AutoCloseable, ConfigGetterInterface {
 
-  private val registry = ExecutorRegistry(
-      config.services,
-      config.workflows,
-  )
+  private val registry = ExecutorRegistry(config.services, config.workflows)
 
   private fun getService(serviceName: String): ServiceConfig? =
       config.services.firstOrNull { it.name == serviceName }
@@ -123,32 +120,38 @@ class InfiniticWorker(
   private fun getWorkflow(workflowName: String): WorkflowConfig? =
       config.workflows.firstOrNull { it.name == workflowName }
 
-  override fun getEventListenersConfig() = config.eventListener
+  override fun getEventListenerConfig() =
+      config.eventListener
 
-  override fun getServiceExecutorConfigs(): List<ServiceExecutorConfig> =
+  override fun getServiceExecutorConfigs() =
       config.services.mapNotNull { it.executor }
 
-  override fun getServiceTagEngineConfigs(): List<ServiceTagEngineConfig> =
+  override fun getServiceTagEngineConfigs() =
       config.services.mapNotNull { it.tagEngine }
 
-  override fun getWorkflowExecutorConfigs(): List<WorkflowExecutorConfig> =
+  override fun getWorkflowExecutorConfigs() =
       config.workflows.mapNotNull { it.executor }
 
-  override fun getWorkflowTagEngineConfigs(): List<WorkflowTagEngineConfig> =
+  override fun getWorkflowTagEngineConfigs() =
       config.workflows.mapNotNull { it.tagEngine }
 
-  override fun getWorkflowStateEngineConfigs(): List<WorkflowStateEngineConfig> =
+  override fun getWorkflowStateEngineConfigs() =
       config.workflows.mapNotNull { it.stateEngine }
 
-  override fun getServiceExecutorConfig(name: String) = getService(name)?.executor
+  override fun getServiceExecutorConfig(serviceName: String) =
+      getService(serviceName)?.executor
 
-  override fun getServiceTagEngineConfig(name: String) = getService(name)?.tagEngine
+  override fun getServiceTagEngineConfig(serviceName: String) =
+      getService(serviceName)?.tagEngine
 
-  override fun getWorkflowExecutorConfig(name: String) = getWorkflow(name)?.executor
+  override fun getWorkflowExecutorConfig(workflowName: String) =
+      getWorkflow(workflowName)?.executor
 
-  override fun getWorkflowTagEngineConfig(name: String) = getWorkflow(name)?.tagEngine
+  override fun getWorkflowTagEngineConfig(workflowName: String) =
+      getWorkflow(workflowName)?.tagEngine
 
-  override fun getWorkflowStateEngineConfig(name: String) = getWorkflow(name)?.stateEngine
+  override fun getWorkflowStateEngineConfig(workflowName: String) =
+      getWorkflow(workflowName)?.stateEngine
 
   private val resources by lazy {
     config.transport.resources
@@ -198,7 +201,7 @@ class InfiniticWorker(
         }
       } catch (e: TimeoutCancellationException) {
         logger.warn {
-          "The grace period (${shutdownGracePeriodSeconds}s) allotted to close the worker was insufficient. " +
+          "The grace period (${shutdownGracePeriodSeconds}s) allotted when closing the worker was insufficient. " +
               "Some ongoing messages may not have been processed properly."
         }
       } finally {

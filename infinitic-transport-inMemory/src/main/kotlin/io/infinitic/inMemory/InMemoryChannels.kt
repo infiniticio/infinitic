@@ -51,32 +51,32 @@ import java.util.concurrent.ConcurrentHashMap
 
 class InMemoryChannels {
 
-  private val clientChannels =
-      ConcurrentHashMap<String, Channel<ClientMessage>>(10000)
+  internal val clientChannels =
+      ConcurrentHashMap<String, Channel<ClientMessage>>(100)
   internal val serviceTagEngineChannels =
-      ConcurrentHashMap<String, Channel<ServiceTagMessage>>(10000)
+      ConcurrentHashMap<String, Channel<ServiceTagMessage>>(100)
   internal val workflowTagEngineChannels =
-      ConcurrentHashMap<String, Channel<WorkflowTagEngineMessage>>(10000)
+      ConcurrentHashMap<String, Channel<WorkflowTagEngineMessage>>(100)
   internal val serviceExecutorChannels =
-      ConcurrentHashMap<String, Channel<ServiceExecutorMessage>>(10000)
+      ConcurrentHashMap<String, Channel<ServiceExecutorMessage>>(100)
   internal val serviceExecutorEventsChannels =
-      ConcurrentHashMap<String, Channel<ServiceExecutorEventMessage>>(10000)
+      ConcurrentHashMap<String, Channel<ServiceExecutorEventMessage>>(100)
   internal val retryServiceExecutorChannels =
-      ConcurrentHashMap<String, Channel<DelayedMessage<ServiceExecutorMessage>>>(10000)
+      ConcurrentHashMap<String, Channel<DelayedMessage<ServiceExecutorMessage>>>(100)
   internal val workflowStateCmdChannels =
-      ConcurrentHashMap<String, Channel<WorkflowStateEngineMessage>>(10000)
+      ConcurrentHashMap<String, Channel<WorkflowStateEngineMessage>>(100)
   internal val workflowStateEngineChannels =
-      ConcurrentHashMap<String, Channel<WorkflowStateEngineMessage>>(10000)
+      ConcurrentHashMap<String, Channel<WorkflowStateEngineMessage>>(100)
   internal val workflowStateTimerChannels =
-      ConcurrentHashMap<String, Channel<DelayedMessage<WorkflowStateEngineMessage>>>(10000)
+      ConcurrentHashMap<String, Channel<DelayedMessage<WorkflowStateEngineMessage>>>(100)
   internal val workflowStateEventChannels =
-      ConcurrentHashMap<String, Channel<WorkflowEventMessage>>(10000)
+      ConcurrentHashMap<String, Channel<WorkflowEventMessage>>(100)
   internal val workflowExecutorChannels =
-      ConcurrentHashMap<String, Channel<ServiceExecutorMessage>>(10000)
+      ConcurrentHashMap<String, Channel<ServiceExecutorMessage>>(100)
   internal val workflowExecutorEventChannels =
-      ConcurrentHashMap<String, Channel<ServiceExecutorEventMessage>>(10000)
+      ConcurrentHashMap<String, Channel<ServiceExecutorEventMessage>>(100)
   internal val retryWorkflowExecutorChannels =
-      ConcurrentHashMap<String, Channel<DelayedMessage<ServiceExecutorMessage>>>(10000)
+      ConcurrentHashMap<String, Channel<DelayedMessage<ServiceExecutorMessage>>>(100)
 
   @Suppress("UNCHECKED_CAST")
   fun <S : Message> Topic<S>.channel(entity: String): Channel<S> = when (this) {

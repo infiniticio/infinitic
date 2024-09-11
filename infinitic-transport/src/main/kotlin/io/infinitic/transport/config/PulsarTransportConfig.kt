@@ -23,6 +23,7 @@
 package io.infinitic.transport.config
 
 import com.sksamuel.hoplite.Secret
+import io.infinitic.properties.isLazyInitialized
 import io.infinitic.pulsar.PulsarInfiniticConsumer
 import io.infinitic.pulsar.PulsarInfiniticProducer
 import io.infinitic.pulsar.PulsarInfiniticResources
@@ -37,8 +38,6 @@ import io.infinitic.pulsar.producers.Producer
 import io.infinitic.pulsar.producers.ProducerConfig
 import io.infinitic.pulsar.resources.PulsarResources
 import java.net.URLEncoder
-import kotlin.reflect.KProperty0
-import kotlin.reflect.jvm.isAccessible
 
 @Suppress("unused")
 data class PulsarTransportConfig(
@@ -86,9 +85,6 @@ data class PulsarTransportConfig(
     )
   }
 
-  private val KProperty0<*>.isLazyInitialized
-    get() = (apply { isAccessible = true }.getDelegate() as? Lazy<*>)?.isInitialized() ?: false
-  
   companion object {
     @JvmStatic
     fun builder() = PulsarTransportConfigBuilder()

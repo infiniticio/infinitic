@@ -52,8 +52,8 @@ class PulsarInfiniticAdminTests :
           // This test ensures that this case is handled correctly.
           shouldNotThrow<PulsarAdminException> {
             CoroutineScope(Dispatchers.IO).async {
-              launch { admin.initTenantOnce("test-tenant", null, null).getOrThrow() }
-              launch { admin.initTenantOnce("test-tenant", null, null).getOrThrow() }
+              launch { admin.syncInitTenantOnce("test-tenant", null, null).getOrThrow() }
+              launch { admin.syncInitTenantOnce("test-tenant", null, null).getOrThrow() }
             }.await()
           }
         }
@@ -64,13 +64,15 @@ class PulsarInfiniticAdminTests :
           // with multiple new tags (there is one topic per tag).
           // This test ensures that this case is handled correctly.
           shouldNotThrow<PulsarAdminException> {
-            admin.initTenantOnce("test-tenant", null, null).getOrThrow()
+            admin.syncInitTenantOnce("test-tenant", null, null).getOrThrow()
             CoroutineScope(Dispatchers.IO).async {
               launch {
-                admin.initNamespaceOnce("test-tenant/test-namespace", PoliciesConfig()).getOrThrow()
+                admin.syncInitNamespaceOnce("test-tenant/test-namespace", PoliciesConfig())
+                    .getOrThrow()
               }
               launch {
-                admin.initNamespaceOnce("test-tenant/test-namespace", PoliciesConfig()).getOrThrow()
+                admin.syncInitNamespaceOnce("test-tenant/test-namespace", PoliciesConfig())
+                    .getOrThrow()
               }
             }.await()
           }
@@ -83,8 +85,8 @@ class PulsarInfiniticAdminTests :
           // This test ensures that this case is handled correctly.
           shouldNotThrow<PulsarAdminException> {
             coroutineScope {
-              launch { admin.initTopicOnce("test-topic", true, 60).getOrThrow() }
-              launch { admin.initTopicOnce("test-topic", true, 60).getOrThrow() }
+              launch { admin.syncInitTopicOnce("test-topic", true, 60).getOrThrow() }
+              launch { admin.syncInitTopicOnce("test-topic", true, 60).getOrThrow() }
             }
           }
         }

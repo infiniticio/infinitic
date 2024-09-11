@@ -28,13 +28,13 @@ import io.infinitic.common.transport.Subscription
 import org.apache.pulsar.client.api.SubscriptionInitialPosition
 import org.apache.pulsar.client.api.SubscriptionType
 
-val Subscription<*>.type
+internal val Subscription<*>.type
   get() = when (withKey) {
     true -> SubscriptionType.Key_Shared
     false -> SubscriptionType.Shared
   }
 
-val Subscription<*>.defaultName
+internal val Subscription<*>.defaultName
   get() = when (this) {
     // IMPORTANT: subscription name MUST stay UNCHANGED through all Infinitic versions
     // as Pulsar identify subscriptions through their name.
@@ -44,9 +44,9 @@ val Subscription<*>.defaultName
     is EventListenerSubscription -> "listener-subscription"
   }
 
-val Subscription<*>.defaultNameDLQ get() = "$defaultName-dlq"
+internal val Subscription<*>.defaultNameDLQ get() = "$defaultName-dlq"
 
-val Subscription<*>.defaultInitialPosition
+internal val Subscription<*>.defaultInitialPosition
   get() = when (this) {
     is MainSubscription -> SubscriptionInitialPosition.Earliest
     is EventListenerSubscription -> SubscriptionInitialPosition.Latest

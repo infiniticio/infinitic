@@ -43,6 +43,7 @@ import io.infinitic.common.workflows.data.workflows.WorkflowMeta
 import io.infinitic.common.workflows.data.workflows.WorkflowTag
 import io.infinitic.exceptions.clients.InvalidIdTagSelectionException
 import io.infinitic.exceptions.clients.InvalidStubException
+import io.infinitic.properties.isLazyInitialized
 import io.infinitic.workflows.DeferredStatus
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -61,12 +62,12 @@ class InfiniticClient(
   val config: InfiniticClientConfigInterface
 ) : InfiniticClientInterface {
 
-  // Get Infinitic Consumer
+  private val resources by lazy {
+    config.transport.resources
+  }
   private val consumer by lazy {
     LoggedInfiniticConsumer(logger, config.transport.consumer)
   }
-
-  // Get Infinitic  Producer
   private val producer by lazy {
     LoggedInfiniticProducer(logger, config.transport.producer).apply {
       config.name?.let { name = it }
@@ -80,7 +81,7 @@ class InfiniticClient(
   // Scope used to asynchronously send message, and also to consumes messages
   private val clientScope = CoroutineScope(Dispatchers.IO)
 
-  private val dispatcher = ClientDispatcher(clientScope, consumer, producer)
+  private val dispatcher by lazy { ClientDispatcher(clientScope, consumer, producer) }
 
   override val name by lazy { producer.name }
 
@@ -98,15 +99,29 @@ class InfiniticClient(
           }
         } catch (e: TimeoutCancellationException) {
           logger.warn {
-            "The grace period (${shutdownGracePeriodSeconds}s) allotted to close the client was insufficient." +
+            "The grace period (${shutdownGracePeriodSeconds}s) allotted when closing the client was insufficient." +
                 "Some ongoing messages may not have been sent properly."
           }
         } finally {
+          deleteClientTopics()
           config.transport.close()
         }
       }
       logger.info { "Client closed." }
-      //deleteClientTopic()
+    }
+  }
+
+  /**
+   * Deletes the topics associated with the client
+   * (Do NOT delete the client DLQ topic to allow manual inspection of failed messages)
+   */
+  private suspend fun deleteClientTopics() {
+    if (::consumer.isLazyInitialized) {
+      resources.deleteTopicForClient(name).getOrElse {
+        logger.warn(it) { "Unable to delete topic for client $name, please delete it manually." }
+      }?.let {
+        logger.info { "Client topic $it deleted." }
+      }
     }
   }
 
@@ -250,25 +265,6 @@ class InfiniticClient(
 
         else -> throw InvalidStubException("$stub")
       }
-//
-//  private suspend fun deleteClientTopic() {
-//    if (::clientName.isInitialized) coroutineScope {
-//      launch {
-//        val clientTopic = with(pulsarResources) { io.infinitic.common.transport.ClientTopic.fullName(clientName) }
-//        workerLogger.debug { "Deleting client topic '$clientTopic'." }
-//        pulsarResources.deleteTopic(clientTopic)
-//            .onFailure { workerLogger.warn(it) { "Unable to delete client topic '$clientTopic'." } }
-//            .onSuccess { workerLogger.info { "Client topic '$clientTopic' deleted." } }
-//      }
-//      launch {
-//        val clientDLQTopic = with(pulsarResources) { io.infinitic.common.transport.ClientTopic.fullNameDLQ(clientName) }
-//        workerLogger.debug { "Deleting client DLQ topic '$clientDLQTopic'." }
-//        pulsarResources.deleteTopic(clientDLQTopic)
-//            .onFailure { workerLogger.warn(it) { "Unable to delete client DLQ topic '$clientDLQTopic'." } }
-//            .onSuccess { workerLogger.info { "Client DLQ topic '$clientDLQTopic' deleted." } }
-//      }
-//    }
-//  }
 
   companion object {
 

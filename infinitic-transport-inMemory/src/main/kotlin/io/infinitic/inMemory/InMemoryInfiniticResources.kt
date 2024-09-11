@@ -36,6 +36,9 @@ class InMemoryInfiniticResources(
       mainChannels.workflowExecutorChannels.keys().toList().toSet()
           .union(mainChannels.workflowTagEngineChannels.keys().toList().toSet())
           .union(mainChannels.workflowStateEngineChannels.keys().toList().toSet())
+
+  override suspend fun deleteTopicForClient(clientName: String) =
+      Result.success(mainChannels.clientChannels.remove(clientName)?.let { clientName })
 }
 
 

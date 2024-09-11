@@ -85,15 +85,15 @@ class PulsarResourcesTest : StringSpec(
 
       "should be able to init delayed topic even if I can not check tenant and namespace" {
         coEvery {
-          pulsarInfiniticAdmin.initTenantOnce(any(), any(), any())
+          pulsarInfiniticAdmin.syncInitTenantOnce(any(), any(), any())
         } returns Result.failure(mockk())
 
         coEvery {
-          pulsarInfiniticAdmin.initNamespaceOnce(any(), any())
+          pulsarInfiniticAdmin.syncInitNamespaceOnce(any(), any())
         } returns Result.failure(mockk())
 
         coEvery {
-          pulsarInfiniticAdmin.initTopicOnce(any(), any(), any(), any())
+          pulsarInfiniticAdmin.syncInitTopicOnce(any(), any(), any())
         } returns Result.success(mockk())
 
         val topic = TestFactory.random<String>()
@@ -105,9 +105,9 @@ class PulsarResourcesTest : StringSpec(
         ).isSuccess shouldBe true
 
         coVerifyAll {
-          pulsarInfiniticAdmin.initTenantOnce("tenantTest", allowedClusters, adminRoles)
-          pulsarInfiniticAdmin.initNamespaceOnce("tenantTest/namespaceTest", policiesConfig)
-          pulsarInfiniticAdmin.initTopicOnce(topic, true, policiesConfig.timerTTLSeconds)
+          pulsarInfiniticAdmin.syncInitTenantOnce("tenantTest", allowedClusters, adminRoles)
+          pulsarInfiniticAdmin.syncInitNamespaceOnce("tenantTest/namespaceTest", policiesConfig)
+          pulsarInfiniticAdmin.syncInitTopicOnce(topic, true, policiesConfig.timerTTLSeconds)
         }
       }
 

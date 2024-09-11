@@ -26,7 +26,6 @@ import io.github.oshai.kotlinlogging.KotlinLogging
 import io.infinitic.pulsar.config.policies.PoliciesConfig
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.future.await
-import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import org.apache.pulsar.client.admin.PulsarAdmin
@@ -55,6 +54,8 @@ class PulsarInfiniticAdmin(
   private val namespaces = pulsarAdmin.namespaces()
 
   private val topicsMutex = Mutex()
+  private val namespacesMutex = Mutex()
+  private val tenantsMutex = Mutex()
 
   /**
    * Get set of clusters' name
@@ -121,24 +122,39 @@ class PulsarInfiniticAdmin(
    *  - Result.success(TenantInfo) if tenant exists or has been created
    *  - Result.failure(e) in case of error
    **/
-  suspend fun initTenantOnce(
+  suspend fun syncInitTenantOnce(
     tenant: String,
     allowedClusters: Set<String>?,
     adminRoles: Set<String>?
-  ): Result<TenantInfo> = initializedTenants.computeIfAbsent(tenant) {
-    runBlocking {
-      try {
-        // get tenant info or create it
-        val tenantInfo = getTenantInfo(tenant).getOrThrow()
-          ?: createTenant(tenant, allowedClusters, adminRoles).getOrThrow()
+  ): Result<TenantInfo> {
+    // First check if the tenant is already initialized, to avoid locking unnecessarily
+    initializedTenants[tenant]?.let { return it }
 
-        checkTenantInfo(tenant, tenantInfo, allowedClusters, adminRoles)
-        Result.success(tenantInfo)
-      } catch (e: Exception) {
-        logger.info(e) { "Unable to check/create tenant '$tenant'" }
-        Result.failure(e)
-      }
+    // Locking the section where we might do an expensive initialization
+    return tenantsMutex.withLock {
+      // Double-checked locking to ensure the tenant hasn't been initialized by another coroutine
+      initializedTenants[tenant]?.let { return it }
+
+      // Initialize the topic if it has not been initialized yet
+      initTenantOnce(tenant, allowedClusters, adminRoles)
+          .also { initializedTenants[tenant] = it }
     }
+  }
+
+  private suspend fun initTenantOnce(
+    tenant: String,
+    allowedClusters: Set<String>?,
+    adminRoles: Set<String>?
+  ): Result<TenantInfo> = try {
+    // get tenant info or create it
+    val tenantInfo = getTenantInfo(tenant).getOrThrow()
+      ?: createTenant(tenant, allowedClusters, adminRoles).getOrThrow()
+
+    checkTenantInfo(tenant, tenantInfo, allowedClusters, adminRoles)
+    Result.success(tenantInfo)
+  } catch (e: Exception) {
+    logger.info(e) { "Unable to check/create tenant '$tenant'" }
+    Result.failure(e)
   }
 
 
@@ -152,25 +168,38 @@ class PulsarInfiniticAdmin(
    *  - Result.success(Policies) if tenant exists or has been created
    *  - Result.failure(e) in case of error
    **/
-  suspend fun initNamespaceOnce(
+  suspend fun syncInitNamespaceOnce(
     fullNamespace: String,
     config: PoliciesConfig
-  ): Result<PulsarPolicies> = initializedNamespaces.computeIfAbsent(fullNamespace) {
-    runBlocking {
-      try {
-        // get Namespace policies or create it
-        val policies = getNamespacePolicies(fullNamespace).getOrThrow()
-          ?: createNamespace(fullNamespace, config).getOrThrow()
+  ): Result<PulsarPolicies> {
+    // First check if the namespace is already initialized, to avoid locking unnecessarily
+    initializedNamespaces[fullNamespace]?.let { return it }
 
-        checkNamespacePolicies(policies, config.getPulsarPolicies())
-        Result.success(policies)
-      } catch (e: Exception) {
-        logger.info(e) { "Unable to check/create namespace '$fullNamespace'" }
-        Result.failure(e)
-      }
+    // Locking the section where we might do an expensive initialization
+    return namespacesMutex.withLock {
+      // Double-checked locking to ensure the namespace hasn't been initialized by another coroutine
+      initializedNamespaces[fullNamespace]?.let { return it }
+
+      // Initialize the topic if it has not been initialized yet
+      initNamespaceOnce(fullNamespace, config)
+          .also { initializedNamespaces[fullNamespace] = it }
     }
   }
 
+  suspend fun initNamespaceOnce(
+    fullNamespace: String,
+    config: PoliciesConfig
+  ): Result<PulsarPolicies> = try {
+    // get Namespace policies or create it
+    val policies = getNamespacePolicies(fullNamespace).getOrThrow()
+      ?: createNamespace(fullNamespace, config).getOrThrow()
+
+    checkNamespacePolicies(policies, config.getPulsarPolicies())
+    Result.success(policies)
+  } catch (e: Exception) {
+    logger.info(e) { "Unable to check/create namespace '$fullNamespace'" }
+    Result.failure(e)
+  }
 
   /**
    * Ensure once that topic exists.
@@ -184,34 +213,48 @@ class PulsarInfiniticAdmin(
    *  - Result.success(Unit) if topic exists or has been created
    *  - Result.failure(e) in case of error
    **/
-  suspend fun initTopicOnce(
+  suspend fun syncInitTopicOnce(
+    topic: String,
+    isPartitioned: Boolean,
+    messageTTLPolicy: Int,
+  ): Result<TopicInfo> {
+    // First check if the topic is already initialized, to avoid locking unnecessarily
+    initializedTopics[topic]?.let { return it }
+
+    // Locking the section where we might do an expensive initialization
+    return topicsMutex.withLock {
+      // Double-checked locking to ensure the topic hasn't been initialized by another coroutine
+      initializedTopics[topic]?.let { return it }
+
+      // Initialize the topic if it has not been initialized yet
+      initTopicOnce(topic, isPartitioned, messageTTLPolicy)
+          .also { initializedTopics[topic] = it }
+    }
+  }
+
+  private suspend fun initTopicOnce(
     topic: String,
     isPartitioned: Boolean,
     messageTTLPolicy: Int,
     retry: Int = 0
-  ): Result<TopicInfo> = initializedTopics[topic]
-    ?: try {
-      // get topic info or creates it
-      val topicInfo = getTopicInfo(topic).getOrThrow()
-        ?: createTopic(topic, isPartitioned, messageTTLPolicy).getOrThrow()
-      checkTopicInfo(topic, topicInfo, TopicInfo(isPartitioned, messageTTLPolicy))
-      Result.success(topicInfo)
-    } catch (e: PulsarAdminException.ConflictException) {
-      when {
-        retry >= 3 -> {
-          logger.warn(e) { "Unable to check/create topic '$topic'" }
-          Result.failure(e)
-        }
-
-        else -> {
-          delay(Random.nextLong(100))
-          initTopicOnce(topic, isPartitioned, messageTTLPolicy, retry + 1)
-        }
-      }
-    } catch (e: Exception) {
-      logger.warn(e) { "Unable to check/create topic '$topic'" }
+  ): Result<TopicInfo> = try {
+    // get topic info or create it if it doesn't exist
+    val topicInfo = getTopicInfo(topic).getOrThrow()
+      ?: createTopic(topic, isPartitioned, messageTTLPolicy).getOrThrow()
+    checkTopicInfo(topic, topicInfo, TopicInfo(isPartitioned, messageTTLPolicy))
+    Result.success(topicInfo)
+  } catch (e: PulsarAdminException.ConflictException) {
+    if (retry >= 3) {
+      logger.warn(e) { "Unable to check/create topic '$topic' after $retry retries." }
       Result.failure(e)
-    }.also { topicsMutex.withLock { initializedTopics[topic] = it } }
+    } else {
+      delay(Random.nextLong(100))
+      initTopicOnce(topic, isPartitioned, messageTTLPolicy, retry + 1)
+    }
+  } catch (e: Exception) {
+    logger.warn(e) { "Unable to check/create topic '$topic'" }
+    Result.failure(e)
+  }
 
   /**
    * Delete topic.
@@ -220,14 +263,14 @@ class PulsarInfiniticAdmin(
    * - Result.success(Unit) in case of success or already deleted topic
    * - Result.failure(e) in case of error
    */
-  suspend fun deleteTopic(topic: String): Result<Unit> = try {
+  suspend fun deleteTopic(topic: String): Result<Unit?> = try {
     logger.debug { "Deleting topic $topic." }
     topics.deleteAsync(topic, true).await()
     logger.info { "Topic '$topic' deleted." }
     Result.success(Unit)
   } catch (e: PulsarAdminException.NotFoundException) {
     logger.debug { "Unable to delete topic '$topic' that does not exist." }
-    Result.success(Unit)
+    Result.success(null)
   } catch (e: PulsarAdminException) {
     logger.warn(e) { "Unable to delete topic '$topic'." }
     Result.failure(e)
@@ -553,13 +596,13 @@ class PulsarInfiniticAdmin(
   companion object {
     private const val DEFAULT_NUM_PARTITIONS = 3
 
-    // thread-safe set of initialized tenants
-    private val initializedTenants = ConcurrentHashMap<String, Result<TenantInfo>>()
+    // set of initialized tenants
+    private val initializedTenants = mutableMapOf<String, Result<TenantInfo>>()
 
-    // thread-safe set of initialized namespaces
-    private val initializedNamespaces = ConcurrentHashMap<String, Result<PulsarPolicies>>()
+    // set of initialized namespaces
+    private val initializedNamespaces = mutableMapOf<String, Result<PulsarPolicies>>()
 
-    // thread-safe set of initialized topics (topic name includes tenant and namespace)
+    // set of initialized topics (topic name includes tenant and namespace)
     private val initializedTopics = mutableMapOf<String, Result<TopicInfo>>()
 
     // thread-safe set of (topic, subscription name) that have already been checked for consumers

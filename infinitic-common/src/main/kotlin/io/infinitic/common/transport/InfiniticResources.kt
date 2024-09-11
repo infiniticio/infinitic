@@ -26,4 +26,6 @@ interface InfiniticResources {
   suspend fun getServices(): Set<String>
 
   suspend fun getWorkflows(): Set<String>
+
+  suspend fun deleteTopicForClient(clientName: String): Result<String?>
 }

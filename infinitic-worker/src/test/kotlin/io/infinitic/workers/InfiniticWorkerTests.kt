@@ -98,7 +98,7 @@ internal class InfiniticWorkerTests : StringSpec(
               .setEventListener(eventListener)
               .build()
         }
-        worker.getEventListenersConfig() shouldBe eventListener
+        worker.getEventListenerConfig() shouldBe eventListener
       }
 
       "Can create Infinitic Worker as Event Listener through Yaml" {
@@ -111,7 +111,7 @@ eventListener:
           """,
           )
         }
-        with(worker.getEventListenersConfig()) {
+        with(worker.getEventListenerConfig()) {
           this?.listener?.shouldBeInstanceOf<TestEventListener>()
         }
       }
@@ -334,7 +334,7 @@ workflows:
               .addWorkflowStateEngine(workflowStateEngine)
               .build()
         }
-        worker.getEventListenersConfig() shouldBe eventListener
+        worker.getEventListenerConfig() shouldBe eventListener
         worker.getServiceExecutorConfig(serviceName) shouldBe serviceExecutor
         worker.getServiceTagEngineConfig(serviceName) shouldBe serviceTagEngine
         worker.getWorkflowTagEngineConfig(workflowName) shouldBe workflowTagEngine
@@ -365,7 +365,7 @@ workflows:
           """,
           )
         }
-        worker.getEventListenersConfig() shouldNotBe null
+        worker.getEventListenerConfig() shouldNotBe null
         worker.getServiceExecutorConfig(serviceName) shouldNotBe null
         worker.getServiceTagEngineConfig(serviceName) shouldNotBe null
         worker.getWorkflowTagEngineConfig(workflowName) shouldNotBe null

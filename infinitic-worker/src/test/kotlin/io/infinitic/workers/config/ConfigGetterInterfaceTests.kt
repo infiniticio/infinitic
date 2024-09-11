@@ -84,7 +84,7 @@ internal class ConfigGetterInterfaceTests : StringSpec(
             .setEventListener(eventListener)
             .build()
 
-        worker.getEventListenersConfig() shouldBe eventListener
+        worker.getEventListenerConfig() shouldBe eventListener
       }
 
       "Can access ServiceExecutorConfig" {

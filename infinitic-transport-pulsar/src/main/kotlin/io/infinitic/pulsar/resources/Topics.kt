@@ -175,7 +175,7 @@ internal val <S : Message> Topic<S>.envelopeClass: KClass<Envelope<out S>>
   } as KClass<Envelope<out S>>
 
 @Suppress("UNCHECKED_CAST")
-fun <S : Message> Topic<S>.envelope(message: S) = when (this) {
+internal fun <S : Message> Topic<S>.envelope(message: S) = when (this) {
   NamingTopic -> thisShouldNotHappen()
   ClientTopic -> ClientEnvelope.from(message as ClientMessage)
   WorkflowTagEngineTopic -> WorkflowTagEnvelope.from(message as WorkflowTagEngineMessage)

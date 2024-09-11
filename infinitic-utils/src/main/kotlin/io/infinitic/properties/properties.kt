@@ -20,28 +20,15 @@
  *
  * Licensor: infinitic.io
  */
-package io.infinitic.workers.config
 
-interface ConfigGetterInterface {
-  fun getEventListenerConfig(): EventListenerConfig?
+package io.infinitic.properties
 
-  fun getServiceExecutorConfigs(): List<ServiceExecutorConfig>
+import kotlin.reflect.KProperty0
+import kotlin.reflect.jvm.isAccessible
 
-  fun getWorkflowExecutorConfigs(): List<WorkflowExecutorConfig>
-
-  fun getWorkflowTagEngineConfigs(): List<WorkflowTagEngineConfig>
-
-  fun getWorkflowStateEngineConfigs(): List<WorkflowStateEngineConfig>
-
-  fun getServiceTagEngineConfigs(): List<ServiceTagEngineConfig>
-
-  fun getServiceExecutorConfig(serviceName: String): ServiceExecutorConfig?
-
-  fun getServiceTagEngineConfig(serviceName: String): ServiceTagEngineConfig?
-
-  fun getWorkflowExecutorConfig(workflowName: String): WorkflowExecutorConfig?
-
-  fun getWorkflowTagEngineConfig(workflowName: String): WorkflowTagEngineConfig?
-
-  fun getWorkflowStateEngineConfig(workflowName: String): WorkflowStateEngineConfig?
-}
+/**
+ * This returns `true` if  property is lazy and has been initialized,
+ * otherwise it returns `false`.
+ */
+val KProperty0<*>.isLazyInitialized
+  get() = (apply { isAccessible = true }.getDelegate() as? Lazy<*>)?.isInitialized() ?: false
