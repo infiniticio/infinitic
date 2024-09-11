@@ -20,14 +20,7 @@
  *
  * Licensor: infinitic.io
  */
-package io.infinitic.workers.registry
-
-import io.infinitic.workers.config.EventListenerConfig
-import io.infinitic.workers.config.ServiceExecutorConfig
-import io.infinitic.workers.config.ServiceTagEngineConfig
-import io.infinitic.workers.config.WorkflowExecutorConfig
-import io.infinitic.workers.config.WorkflowStateEngineConfig
-import io.infinitic.workers.config.WorkflowTagEngineConfig
+package io.infinitic.workers.config
 
 interface ConfigGetterInterface {
   fun getEventListenersConfig(): EventListenerConfig?
@@ -41,7 +34,7 @@ interface ConfigGetterInterface {
   fun getWorkflowStateEngineConfigs(): List<WorkflowStateEngineConfig>
 
   fun getServiceTagEngineConfigs(): List<ServiceTagEngineConfig>
-  
+
   fun getServiceExecutorConfig(name: String): ServiceExecutorConfig?
 
   fun getServiceTagEngineConfig(name: String): ServiceTagEngineConfig?

@@ -39,13 +39,14 @@ import io.infinitic.pulsar.producers.ProducerConfig
 import io.infinitic.pulsar.resources.PulsarResources
 import java.net.URLEncoder
 
+@Suppress("unused")
 data class PulsarTransportConfig(
   val pulsar: PulsarConfig,
   override val shutdownGracePeriodSeconds: Double = 30.0
 ) : TransportConfig() {
 
   init {
-    require(shutdownGracePeriodSeconds >= 0) { "shutdownGracePeriodSeconds must be >= 0" }
+    require(shutdownGracePeriodSeconds > 0) { "shutdownGracePeriodSeconds must be > 0" }
   }
 
   companion object {

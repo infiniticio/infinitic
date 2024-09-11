@@ -20,8 +20,11 @@
  *
  * Licensor: infinitic.io
  */
-package io.infinitic.workers.registry
+package io.infinitic.clients.config
 
-private const val yaml = """
-transport: inMemory
-"""
+import io.infinitic.transport.config.TransportConfigInterface
+
+interface InfiniticClientConfigInterface : TransportConfigInterface {
+  /** (Optional) Client name */
+  val name: String?
+}

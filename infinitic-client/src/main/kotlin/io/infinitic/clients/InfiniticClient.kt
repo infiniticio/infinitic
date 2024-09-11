@@ -23,11 +23,10 @@
 package io.infinitic.clients
 
 import io.github.oshai.kotlinlogging.KotlinLogging
-import io.infinitic.autoclose.autoClose
-import io.infinitic.clients.config.ClientConfig
+import io.infinitic.clients.config.InfiniticClientConfig
+import io.infinitic.clients.config.InfiniticClientConfigInterface
 import io.infinitic.clients.dispatcher.ClientDispatcher
 import io.infinitic.common.clients.messages.ClientMessage
-import io.infinitic.common.data.MillisInstant
 import io.infinitic.common.data.methods.MethodReturnValue
 import io.infinitic.common.proxies.ExistingWorkflowProxyHandler
 import io.infinitic.common.proxies.NewWorkflowProxyHandler
@@ -36,8 +35,6 @@ import io.infinitic.common.proxies.RequestByWorkflowId
 import io.infinitic.common.proxies.RequestByWorkflowTag
 import io.infinitic.common.tasks.data.ServiceName
 import io.infinitic.common.tasks.data.TaskId
-import io.infinitic.common.transport.InfiniticConsumer
-import io.infinitic.common.transport.InfiniticProducer
 import io.infinitic.common.transport.logged.LoggedInfiniticConsumer
 import io.infinitic.common.transport.logged.LoggedInfiniticProducer
 import io.infinitic.common.utils.annotatedName
@@ -49,7 +46,11 @@ import io.infinitic.exceptions.clients.InvalidStubException
 import io.infinitic.workflows.DeferredStatus
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.job
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withTimeout
 import org.jetbrains.annotations.TestOnly
 import java.lang.reflect.Proxy
 import java.util.concurrent.CompletableFuture
@@ -57,9 +58,18 @@ import java.util.concurrent.atomic.AtomicBoolean
 
 @Suppress("unused")
 class InfiniticClient(
-  consumer: InfiniticConsumer,
-  producer: InfiniticProducer
+  config: InfiniticClientConfigInterface
 ) : InfiniticClientInterface {
+
+  // Get Infinitic Consumer
+  private val consumer = LoggedInfiniticConsumer(logger, config.transport.consumer)
+
+  // Get Infinitic  Producer
+  private val producer = LoggedInfiniticProducer(logger, config.transport.producer).apply {
+    config.name?.let { name = it }
+  }
+
+  private val shutdownGracePeriodSeconds = config.transport.shutdownGracePeriodSeconds
 
   private var isClosed: AtomicBoolean = AtomicBoolean(false)
 
@@ -80,9 +90,21 @@ class InfiniticClient(
 
   override fun close() {
     if (isClosed.compareAndSet(false, true)) {
+      logger.info { "Closing client..." }
       clientScope.cancel()
+      runBlocking {
+        try {
+          withTimeout((shutdownGracePeriodSeconds * 1000).toLong()) {
+            clientScope.coroutineContext.job.join()
+          }
+        } catch (e: TimeoutCancellationException) {
+          logger.warn {
+            "The grace period (${shutdownGracePeriodSeconds}s) allotted to close the client was insufficient."
+          }
+        }
+      }
+      logger.info { "Client closed." }
       //deleteClientTopic()
-      autoClose()
     }
   }
 
@@ -188,8 +210,7 @@ class InfiniticClient(
   }
 
   @TestOnly
-  internal suspend fun handle(message: ClientMessage, publishTime: MillisInstant) =
-      dispatcher.responseFlow.emit(message)
+  internal suspend fun handle(message: ClientMessage) = dispatcher.responseFlow.emit(message)
 
   private fun getProxyHandler(stub: Any): ProxyHandler<*> {
     val exception by lazy { InvalidStubException("$stub") }
@@ -251,39 +272,19 @@ class InfiniticClient(
 
     private val logger = KotlinLogging.logger {}
 
-    /** Create InfiniticClient from config */
-    @JvmStatic
-    fun fromConfig(clientConfig: ClientConfig): InfiniticClient {
-
-      // Get Infinitic Consumer
-      val consumer = LoggedInfiniticConsumer(logger, clientConfig.transport.consumer)
-
-      // Get Infinitic  Producer
-      val producer = LoggedInfiniticProducer(logger, clientConfig.transport.producer)
-
-      // apply name if it exists
-      clientConfig.name?.let { producer.name = it }
-
-      // Create Infinitic Client
-      return InfiniticClient(consumer, producer).also {
-        // close consumer with the client
-        //it.addAutoCloseResource(consumer)
-      }
-    }
-
     /** Create InfiniticClient with config from resources directory */
     @JvmStatic
-    fun fromYamlResource(vararg resources: String): InfiniticClient =
-        fromConfig(ClientConfig.fromYamlResource(*resources))
+    fun fromYamlResource(vararg resources: String) =
+        InfiniticClient(InfiniticClientConfig.fromYamlResource(*resources))
 
     /** Create InfiniticClient with config from system file */
     @JvmStatic
-    fun fromYamlFile(vararg files: String): InfiniticClient =
-        fromConfig(ClientConfig.fromYamlFile(*files))
+    fun fromYamlFile(vararg files: String) =
+        InfiniticClient(InfiniticClientConfig.fromYamlFile(*files))
 
     /** Create InfiniticClient with config from yaml strings */
     @JvmStatic
-    fun fromYamlString(vararg yamls: String): InfiniticClient =
-        fromConfig(ClientConfig.fromYamlString(*yamls))
+    fun fromYamlString(vararg yamls: String) =
+        InfiniticClient(InfiniticClientConfig.fromYamlString(*yamls))
   }
 }

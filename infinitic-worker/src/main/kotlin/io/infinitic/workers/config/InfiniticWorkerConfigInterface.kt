@@ -20,11 +20,26 @@
  *
  * Licensor: infinitic.io
  */
-package io.infinitic.clients.config
 
-import io.infinitic.transport.config.TransportConfigInterface
+package io.infinitic.workers.config
 
-interface ClientConfigInterface : TransportConfigInterface {
-  /** (Optional) Client name */
-  val name: String?
+import io.infinitic.clients.config.InfiniticClientConfigInterface
+import io.infinitic.storage.config.StorageConfig
+
+@Suppress("unused")
+interface InfiniticWorkerConfigInterface: InfiniticClientConfigInterface {
+  /** Default storage */
+  val storage: StorageConfig?
+
+  /** Logs configuration */
+  val logs: LogsConfig
+
+  /** Workflows configuration */
+  val workflows: List<WorkflowConfig>
+
+  /** Services configuration */
+  val services: List<ServiceConfig>
+
+  /** Default event listener configuration */
+  val eventListener: EventListenerConfig?
 }

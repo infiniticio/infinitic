@@ -33,7 +33,7 @@ import io.infinitic.common.data.methods.MethodParameterTypes
 import io.infinitic.common.data.methods.deserializeArgs
 import io.infinitic.common.data.methods.encodeReturnValue
 import io.infinitic.common.emitters.EmitterName
-import io.infinitic.common.registry.RegistryInterface
+import io.infinitic.common.registry.ExecutorRegistryInterface
 import io.infinitic.common.requester.WorkflowRequester
 import io.infinitic.common.requester.workflowId
 import io.infinitic.common.requester.workflowName
@@ -74,7 +74,7 @@ import java.util.concurrent.TimeoutException
 import kotlin.reflect.jvm.javaMethod
 
 class TaskExecutor(
-  private val registry: RegistryInterface,
+  private val registry: ExecutorRegistryInterface,
   private val producer: InfiniticProducer,
   private val client: InfiniticClientInterface
 ) {

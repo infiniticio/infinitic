@@ -130,9 +130,13 @@ internal class ClientDispatcher(
    */
   internal val responseFlow = ResponseFlow<ClientMessage>()
 
-  private suspend fun <T : Message> T.sendTo(topic: Topic<T>) = with(producer) { sendTo(topic) }
+  private suspend fun <T : Message> T.sendTo(topic: Topic<T>) = with(producer) {
+    sendTo(topic)
+  }
 
-  private fun <T : Message> T.sendToAsync(topic: Topic<T>) = clientScope.future { sendTo(topic) }
+  private fun <T : Message> T.sendToAsync(topic: Topic<T>) = clientScope.future {
+    sendTo(topic)
+  }
 
   // Utility to get access to last deferred
   internal fun getLastDeferred(): Deferred<*>? = localLastDeferred.get()
@@ -432,7 +436,7 @@ internal class ClientDispatcher(
         emitterName = emitterName,
         emittedAt = null,
     )
-    
+
     // synchronously sent the message to get errors
     msg.sendToAsync(WorkflowTagEngineTopic).join()
 

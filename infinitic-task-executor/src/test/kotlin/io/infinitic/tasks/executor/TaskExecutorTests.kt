@@ -35,7 +35,7 @@ import io.infinitic.common.data.methods.MethodReturnValue
 import io.infinitic.common.emitters.EmitterName
 import io.infinitic.common.fixtures.TestFactory
 import io.infinitic.common.fixtures.methodParametersFrom
-import io.infinitic.common.registry.RegistryInterface
+import io.infinitic.common.registry.ExecutorRegistryInterface
 import io.infinitic.common.requester.ClientRequester
 import io.infinitic.common.tasks.data.ServiceName
 import io.infinitic.common.tasks.data.TaskId
@@ -98,7 +98,7 @@ class TaskExecutorTests :
         val taskEventSlot = CopyOnWriteArrayList<ServiceExecutorEventMessage>()
 
         // mocks
-        val registry = mockk<RegistryInterface>()
+        val registry = mockk<ExecutorRegistryInterface>()
         val client = mockk<InfiniticClientInterface>()
         val producer = mockk<InfiniticProducer> {
           every { name } returns "$testWorkerName"

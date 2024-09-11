@@ -65,7 +65,7 @@ class InfiniticWorkerBuilder {
 
   fun setTransport(transport: TransportConfig.TransportConfigBuilder) =
       setTransport(transport.build())
-  
+
   fun setStorage(storage: StorageConfig) =
       apply { this.storage = storage }
 
@@ -127,6 +127,6 @@ class InfiniticWorkerBuilder {
         eventListener,
     )
 
-    return InfiniticWorker.fromConfig(config)
+    return InfiniticWorker(config)
   }
 }

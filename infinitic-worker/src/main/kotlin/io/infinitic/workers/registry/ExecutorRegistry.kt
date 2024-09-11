@@ -23,7 +23,7 @@
 package io.infinitic.workers.registry
 
 import io.infinitic.common.exceptions.thisShouldNotHappen
-import io.infinitic.common.registry.RegistryInterface
+import io.infinitic.common.registry.ExecutorRegistryInterface
 import io.infinitic.common.tasks.data.ServiceName
 import io.infinitic.common.workers.config.WorkflowVersion
 import io.infinitic.common.workflows.WorkflowContext
@@ -33,28 +33,18 @@ import io.infinitic.common.workflows.emptyWorkflowContext
 import io.infinitic.exceptions.workflows.UnknownWorkflowVersionException
 import io.infinitic.tasks.WithRetry
 import io.infinitic.tasks.WithTimeout
-import io.infinitic.workers.config.InfiniticWorkerConfig
 import io.infinitic.workers.config.ServiceConfig
 import io.infinitic.workers.config.ServiceExecutorConfig
-import io.infinitic.workers.config.ServiceTagEngineConfig
 import io.infinitic.workers.config.WorkflowConfig
 import io.infinitic.workers.config.WorkflowExecutorConfig
 import io.infinitic.workers.config.WorkflowFactory
-import io.infinitic.workers.config.WorkflowStateEngineConfig
-import io.infinitic.workers.config.WorkflowTagEngineConfig
 import io.infinitic.workflows.Workflow
 import io.infinitic.workflows.WorkflowCheckMode
 
-@Suppress("unused")
-class InfiniticRegistry(
-  private val config: InfiniticWorkerConfig
-) : RegistryInterface, ConfigGetterInterface {
-
-  internal val services = config.services
-
-  internal val workflows = config.workflows
-
-  internal val eventListener = config.eventListener
+class ExecutorRegistry(
+  private val services: List<ServiceConfig>,
+  private val workflows: List<WorkflowConfig>,
+) : ExecutorRegistryInterface {
 
   override fun getServiceExecutorInstance(serviceName: ServiceName): Any =
       getServiceExecutor(serviceName).factory.invoke()
@@ -92,13 +82,13 @@ class InfiniticRegistry(
       getWorkflowExecutor(workflowName).checkMode
 
   private fun getService(serviceName: ServiceName): ServiceConfig? =
-      config.services.firstOrNull { it.name == serviceName.name }
+      services.firstOrNull { it.name == serviceName.name }
 
   private fun getServiceExecutor(serviceName: ServiceName): ServiceExecutorConfig =
       getService(serviceName)?.executor ?: thisShouldNotHappen()
 
   private fun getWorkflow(workflowName: WorkflowName): WorkflowConfig? =
-      config.workflows.firstOrNull { it.name == workflowName.name }
+      workflows.firstOrNull { it.name == workflowName.name }
 
   private fun getWorkflowExecutor(workflowName: WorkflowName): WorkflowExecutorConfig =
       getWorkflow(workflowName)?.executor ?: thisShouldNotHappen()
@@ -111,7 +101,7 @@ class InfiniticRegistry(
       workflowVersion ?: getLastVersion(workflowName),
   ).invoke()
 
-  private val factoryByVersionByWorkflowName = config.workflows
+  private val factoryByVersionByWorkflowName = workflows
       .associateBy { WorkflowName(it.name) }
       .mapValues { it.value.executor?.instanceByVersion }
 
@@ -142,37 +132,4 @@ class InfiniticRegistry(
 
       return versions.zip(factories).toMap()
     }
-
-  override fun getEventListenersConfig() = eventListener
-
-  override fun getServiceExecutorConfigs(): List<ServiceExecutorConfig> =
-      services.mapNotNull { it.executor }
-
-  override fun getServiceTagEngineConfigs(): List<ServiceTagEngineConfig> =
-      services.mapNotNull { it.tagEngine }
-
-  override fun getWorkflowExecutorConfigs(): List<WorkflowExecutorConfig> =
-      workflows.mapNotNull { it.executor }
-
-  override fun getWorkflowTagEngineConfigs(): List<WorkflowTagEngineConfig> =
-      workflows.mapNotNull { it.tagEngine }
-
-  override fun getWorkflowStateEngineConfigs(): List<WorkflowStateEngineConfig> =
-      workflows.mapNotNull { it.stateEngine }
-
-  override fun getServiceExecutorConfig(name: String) =
-      getService(ServiceName(name))?.executor
-
-  override fun getServiceTagEngineConfig(name: String) =
-      getService(ServiceName(name))?.tagEngine
-
-  override fun getWorkflowExecutorConfig(name: String) =
-      getWorkflow(WorkflowName(name))?.executor
-
-  override fun getWorkflowTagEngineConfig(name: String) =
-      getWorkflow(WorkflowName(name))?.tagEngine
-
-  override fun getWorkflowStateEngineConfig(name: String) =
-      getWorkflow(WorkflowName(name))?.stateEngine
-
 }

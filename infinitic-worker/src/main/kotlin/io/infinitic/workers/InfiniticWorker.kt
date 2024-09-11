@@ -38,9 +38,6 @@ import io.infinitic.common.tasks.events.messages.ServiceExecutorEventMessage
 import io.infinitic.common.tasks.executors.messages.ExecuteTask
 import io.infinitic.common.tasks.executors.messages.ServiceExecutorMessage
 import io.infinitic.common.tasks.tags.messages.ServiceTagMessage
-import io.infinitic.common.transport.InfiniticConsumer
-import io.infinitic.common.transport.InfiniticProducer
-import io.infinitic.common.transport.InfiniticResources
 import io.infinitic.common.transport.MainSubscription
 import io.infinitic.common.transport.RetryServiceExecutorTopic
 import io.infinitic.common.transport.RetryWorkflowExecutorTopic
@@ -64,9 +61,6 @@ import io.infinitic.common.workflows.engine.messages.WorkflowCmdMessage
 import io.infinitic.common.workflows.engine.messages.WorkflowEventMessage
 import io.infinitic.common.workflows.engine.messages.WorkflowStateEngineMessage
 import io.infinitic.common.workflows.tags.messages.WorkflowTagEngineMessage
-import io.infinitic.config.loadFromYamlFile
-import io.infinitic.config.loadFromYamlResource
-import io.infinitic.config.loadFromYamlString
 import io.infinitic.events.toJsonString
 import io.infinitic.events.toServiceCloudEvent
 import io.infinitic.events.toWorkflowCloudEvent
@@ -79,15 +73,18 @@ import io.infinitic.tasks.executor.TaskExecutor
 import io.infinitic.tasks.executor.TaskRetryHandler
 import io.infinitic.tasks.tag.TaskTagEngine
 import io.infinitic.tasks.tag.storage.LoggedTaskTagStorage
+import io.infinitic.workers.config.ConfigGetterInterface
 import io.infinitic.workers.config.EventListenerConfig
 import io.infinitic.workers.config.InfiniticWorkerConfig
+import io.infinitic.workers.config.InfiniticWorkerConfigInterface
+import io.infinitic.workers.config.ServiceConfig
 import io.infinitic.workers.config.ServiceExecutorConfig
 import io.infinitic.workers.config.ServiceTagEngineConfig
+import io.infinitic.workers.config.WorkflowConfig
 import io.infinitic.workers.config.WorkflowExecutorConfig
 import io.infinitic.workers.config.WorkflowStateEngineConfig
 import io.infinitic.workers.config.WorkflowTagEngineConfig
-import io.infinitic.workers.registry.ConfigGetterInterface
-import io.infinitic.workers.registry.InfiniticRegistry
+import io.infinitic.workers.registry.ExecutorRegistry
 import io.infinitic.workflows.Workflow
 import io.infinitic.workflows.engine.WorkflowStateCmdHandler
 import io.infinitic.workflows.engine.WorkflowStateEngine
@@ -113,14 +110,53 @@ import kotlin.system.exitProcess
 
 @Suppress("unused")
 class InfiniticWorker(
-  private val registry: InfiniticRegistry,
-  private val resources: InfiniticResources,
-  private val consumer: InfiniticConsumer,
-  private val producer: InfiniticProducer,
-  private val source: String,
-  private val beautifyLogs: Boolean,
-  private val shutdownGracePeriodSeconds: Double
-) : AutoCloseable, ConfigGetterInterface by registry {
+  val config: InfiniticWorkerConfigInterface,
+) : AutoCloseable, ConfigGetterInterface {
+
+  private val registry = ExecutorRegistry(
+      config.services,
+      config.workflows,
+  )
+
+  private fun getService(serviceName: String): ServiceConfig? =
+      config.services.firstOrNull { it.name == serviceName }
+
+  private fun getWorkflow(workflowName: String): WorkflowConfig? =
+      config.workflows.firstOrNull { it.name == workflowName }
+
+  override fun getEventListenersConfig() = config.eventListener
+
+  override fun getServiceExecutorConfigs(): List<ServiceExecutorConfig> =
+      config.services.mapNotNull { it.executor }
+
+  override fun getServiceTagEngineConfigs(): List<ServiceTagEngineConfig> =
+      config.services.mapNotNull { it.tagEngine }
+
+  override fun getWorkflowExecutorConfigs(): List<WorkflowExecutorConfig> =
+      config.workflows.mapNotNull { it.executor }
+
+  override fun getWorkflowTagEngineConfigs(): List<WorkflowTagEngineConfig> =
+      config.workflows.mapNotNull { it.tagEngine }
+
+  override fun getWorkflowStateEngineConfigs(): List<WorkflowStateEngineConfig> =
+      config.workflows.mapNotNull { it.stateEngine }
+
+  override fun getServiceExecutorConfig(name: String) = getService(name)?.executor
+
+  override fun getServiceTagEngineConfig(name: String) = getService(name)?.tagEngine
+
+  override fun getWorkflowExecutorConfig(name: String) = getWorkflow(name)?.executor
+
+  override fun getWorkflowTagEngineConfig(name: String) = getWorkflow(name)?.tagEngine
+
+  override fun getWorkflowStateEngineConfig(name: String) = getWorkflow(name)?.stateEngine
+
+  internal val resources = config.transport.resources
+  internal val consumer = config.transport.consumer
+  internal val producer = config.transport.producer.apply { config.name?.let { name = it } }
+  internal val shutdownGracePeriodSeconds = config.transport.shutdownGracePeriodSeconds
+  internal val source = config.transport.cloudEventSource
+  internal val beautifyLogs = config.logs.beautify
 
   /**
    * Indicates whether the InfiniticWorker instance is started.
@@ -138,7 +174,7 @@ class InfiniticWorker(
   private var scope = CoroutineScope(Dispatchers.IO)
 
   /** Infinitic Client */
-  val client = InfiniticClient(consumer, producer)
+  val client = InfiniticClient(config)
 
   init {
     Runtime.getRuntime().addShutdownHook(
@@ -152,26 +188,34 @@ class InfiniticWorker(
 
   override fun close() {
     if (isStarted.compareAndSet(true, false)) {
-      logger.info { "Closing worker..." }
-      scope.cancel()
       runBlocking {
-        try {
-          logger.info { "Processing ongoing messages..." }
-          withTimeout((shutdownGracePeriodSeconds * 1000).toLong()) {
-            scope.coroutineContext.job.join()
-            logger.info { "All ongoing messages have been processed." }
-          }
-        } catch (e: TimeoutCancellationException) {
-          logger.warn {
-            "The grace period (${shutdownGracePeriodSeconds}s) allotted to close was insufficient. " +
-                "Some ongoing messages may not have been processed properly."
-          }
+        launch {
+          client.close()
+        }
+        launch {
+          closeWorker()
         }
       }
-      logger.info { "Worker closed." }
     }
   }
 
+  private suspend fun closeWorker() {
+    logger.info { "Closing worker..." }
+    try {
+      scope.cancel()
+      logger.info { "Processing ongoing messages..." }
+      withTimeout((shutdownGracePeriodSeconds * 1000).toLong()) {
+        scope.coroutineContext.job.join()
+        logger.info { "All ongoing messages have been processed." }
+      }
+    } catch (e: TimeoutCancellationException) {
+      logger.warn {
+        "The grace period (${shutdownGracePeriodSeconds}s) allotted to close the worker was insufficient. " +
+            "Some ongoing messages may not have been processed properly."
+      }
+    }
+    logger.info { "Worker closed." }
+  }
 
   companion object {
     private val logger = KotlinLogging.logger {}
@@ -180,42 +224,20 @@ class InfiniticWorker(
     @JvmStatic
     fun builder() = InfiniticWorkerBuilder()
 
-    /** Create [InfiniticWorker] from config */
-    @JvmStatic
-    fun fromConfig(workerConfig: InfiniticWorkerConfig): InfiniticWorker = with(workerConfig) {
-
-      /** Infinitic Register */
-      val registry = InfiniticRegistry(this)
-
-      /** Infinitic Worker */
-      InfiniticWorker(
-          registry,
-          transport.resources,
-          transport.consumer,
-          transport.producer.also { producer -> name?.let { producer.name = it } },
-          transport.cloudEventSource,
-          logs.beautify,
-          transport.shutdownGracePeriodSeconds,
-      ).also {
-        // close consumer with the worker
-        //it.addAutoCloseResource(transport.consumer)
-      }
-    }
-
     /** Create [InfiniticWorker] from yaml resources */
     @JvmStatic
     fun fromYamlResource(vararg resources: String) =
-        fromConfig(loadFromYamlResource(*resources))
+        InfiniticWorker(InfiniticWorkerConfig.fromYamlResource(*resources))
 
     /** Create [InfiniticWorker] from yaml files */
     @JvmStatic
     fun fromYamlFile(vararg files: String): InfiniticWorker =
-        fromConfig(loadFromYamlFile(*files))
+        InfiniticWorker(InfiniticWorkerConfig.fromYamlFile(*files))
 
     /** Create [InfiniticWorker] from yaml strings */
     @JvmStatic
     fun fromYamlString(vararg yamls: String): InfiniticWorker =
-        fromConfig(loadFromYamlString(*yamls))
+        InfiniticWorker(InfiniticWorkerConfig.fromYamlString(*yamls))
   }
 
   private val sendingMessageToDLQ = { "Unable to process message, sending to Dead Letter Queue" }
@@ -242,8 +264,10 @@ class InfiniticWorker(
       scope = CoroutineScope(Dispatchers.IO)
 
       completableStart = scope.future {
-        
-        registry.services.forEach { serviceConfig ->
+
+        getServiceTagEngineConfigs().forEach { startServiceTagEngine(it) }
+
+        config.services.forEach { serviceConfig ->
           logger.info { "Service ${serviceConfig.name}:" }
           // Start SERVICE TAG ENGINE
           serviceConfig.tagEngine?.let { startServiceTagEngine(it) }
@@ -251,7 +275,7 @@ class InfiniticWorker(
           serviceConfig.executor?.let { startServiceExecutor(it) }
         }
 
-        registry.workflows.forEach { workflowConfig ->
+        config.workflows.forEach { workflowConfig ->
           logger.info { "Workflow ${workflowConfig.name}:" }
           // Start WORKFLOW TAG ENGINE
           workflowConfig.tagEngine?.let { startWorkflowTagEngine(it) }
@@ -261,7 +285,7 @@ class InfiniticWorker(
           workflowConfig.executor?.let { startWorkflowExecutor(it) }
         }
 
-        registry.eventListener?.let { startEventListener(it) }
+        config.eventListener?.let { startEventListener(it) }
 
         logger.info {
           "Worker \"${producer.name}\" ready" + when (consumer is PulsarInfiniticConsumer) {

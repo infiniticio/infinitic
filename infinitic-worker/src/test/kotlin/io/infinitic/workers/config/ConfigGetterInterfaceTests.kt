@@ -20,7 +20,7 @@
  *
  * Licensor: infinitic.io
  */
-package io.infinitic.workers.registry
+package io.infinitic.workers.config
 
 import io.cloudevents.CloudEvent
 import io.infinitic.cloudEvents.CloudEventListener
@@ -28,12 +28,6 @@ import io.infinitic.storage.config.InMemoryConfig
 import io.infinitic.storage.config.InMemoryStorageConfig
 import io.infinitic.transport.config.InMemoryTransportConfig
 import io.infinitic.workers.InfiniticWorker
-import io.infinitic.workers.config.EventListenerConfig
-import io.infinitic.workers.config.ServiceExecutorConfig
-import io.infinitic.workers.config.ServiceTagEngineConfig
-import io.infinitic.workers.config.WorkflowExecutorConfig
-import io.infinitic.workers.config.WorkflowStateEngineConfig
-import io.infinitic.workers.config.WorkflowTagEngineConfig
 import io.infinitic.workers.samples.ServiceA
 import io.infinitic.workers.samples.ServiceAImpl
 import io.infinitic.workers.samples.WorkflowA
@@ -41,7 +35,7 @@ import io.infinitic.workers.samples.WorkflowAImpl
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
 
-internal class RegistryTests : StringSpec(
+internal class ConfigGetterInterfaceTests : StringSpec(
     {
       class TestEventListener : CloudEventListener {
         override fun onEvent(event: CloudEvent) {}

@@ -27,28 +27,28 @@ import io.infinitic.common.config.loadConfigFromResource
 import io.infinitic.common.config.loadConfigFromYaml
 import io.infinitic.transport.config.TransportConfig
 
-data class ClientConfig(
+data class InfiniticClientConfig(
   /** Client name */
   override val name: String? = null,
 
   /** Transport configuration */
   override val transport: TransportConfig,
-) : ClientConfigInterface {
+) : InfiniticClientConfigInterface {
 
   companion object {
     /** Create ClientConfig from file in file system */
     @JvmStatic
-    fun fromYamlFile(vararg files: String): ClientConfig =
-        loadConfigFromFile<ClientConfig>(*files)
+    fun fromYamlFile(vararg files: String): InfiniticClientConfig =
+        loadConfigFromFile<InfiniticClientConfig>(*files)
 
     /** Create ClientConfig from file in resources directory */
     @JvmStatic
-    fun fromYamlResource(vararg resources: String): ClientConfig =
-        loadConfigFromResource<ClientConfig>(*resources)
+    fun fromYamlResource(vararg resources: String): InfiniticClientConfig =
+        loadConfigFromResource<InfiniticClientConfig>(*resources)
 
     /** Create ClientConfig from yaml strings */
     @JvmStatic
-    fun fromYamlString(vararg yamls: String): ClientConfig =
-        loadConfigFromYaml<ClientConfig>(*yamls)
+    fun fromYamlString(vararg yamls: String): InfiniticClientConfig =
+        loadConfigFromYaml<InfiniticClientConfig>(*yamls)
   }
 }

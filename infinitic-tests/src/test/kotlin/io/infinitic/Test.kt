@@ -70,7 +70,7 @@ internal object Test {
         }
       }.also { println(it) }
 
-  val worker = InfiniticWorker.fromConfig(workerConfig)
+  val worker = InfiniticWorker(workerConfig)
   val client = worker.client
 
   fun start() {

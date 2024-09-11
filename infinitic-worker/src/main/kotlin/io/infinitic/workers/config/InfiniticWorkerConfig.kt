@@ -32,27 +32,27 @@ import io.infinitic.transport.config.TransportConfig
 @Suppress("unused")
 data class InfiniticWorkerConfig(
   /** Worker name */
-  val name: String? = null,
+  override val name: String? = null,
 
   /** Transport configuration */
-  val transport: TransportConfig,
+  override val transport: TransportConfig,
 
   /** Default storage */
-  val storage: StorageConfig? = null,
+  override val storage: StorageConfig? = null,
 
   /** Logs configuration */
-  val logs: LogsConfig = LogsConfig(),
+  override val logs: LogsConfig = LogsConfig(),
 
   /** Workflows configuration */
-  val workflows: List<WorkflowConfig> = listOf(),
+  override val workflows: List<WorkflowConfig> = listOf(),
 
   /** Services configuration */
-  val services: List<ServiceConfig> = listOf(),
+  override val services: List<ServiceConfig> = listOf(),
 
   /** Default event listener configuration */
-  val eventListener: EventListenerConfig? = null,
+  override val eventListener: EventListenerConfig? = null,
 
-  ) {
+  ) : InfiniticWorkerConfigInterface {
 
   init {
     workflows.forEach { workflowConfig ->
