@@ -43,5 +43,9 @@ data class InMemoryTransportConfig(
   override val resources = InMemoryInfiniticResources(mainChannels)
   override val consumer = InMemoryInfiniticConsumer(mainChannels, eventListenerChannels)
   override val producer = InMemoryInfiniticProducer(mainChannels, eventListenerChannels)
+
+  override fun close() {
+    // Do nothing
+  }
 }
 

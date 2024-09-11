@@ -65,7 +65,6 @@ import io.infinitic.events.toJsonString
 import io.infinitic.events.toServiceCloudEvent
 import io.infinitic.events.toWorkflowCloudEvent
 import io.infinitic.logger.ignoreNull
-import io.infinitic.pulsar.PulsarInfiniticConsumer
 import io.infinitic.tasks.Task
 import io.infinitic.tasks.WithTimeout
 import io.infinitic.tasks.executor.TaskEventHandler
@@ -151,12 +150,19 @@ class InfiniticWorker(
 
   override fun getWorkflowStateEngineConfig(name: String) = getWorkflow(name)?.stateEngine
 
-  internal val resources = config.transport.resources
-  internal val consumer = config.transport.consumer
-  internal val producer = config.transport.producer.apply { config.name?.let { name = it } }
-  internal val shutdownGracePeriodSeconds = config.transport.shutdownGracePeriodSeconds
-  internal val source = config.transport.cloudEventSource
-  internal val beautifyLogs = config.logs.beautify
+  private val resources by lazy {
+    config.transport.resources
+  }
+  private val consumer by lazy {
+    config.transport.consumer
+  }
+  private val producer by lazy {
+    config.transport.producer.apply { config.name?.let { name = it } }
+  }
+
+  private val shutdownGracePeriodSeconds = config.transport.shutdownGracePeriodSeconds
+  private val source = config.transport.cloudEventSource
+  private val beautifyLogs = config.logs.beautify
 
   /**
    * Indicates whether the InfiniticWorker instance is started.
@@ -177,45 +183,31 @@ class InfiniticWorker(
   val client = InfiniticClient(config)
 
   init {
-    Runtime.getRuntime().addShutdownHook(
-        Thread {
-          logger.info { "Closing worker..." }
-          close()
-          logger.info { "Worker closed." }
-        },
-    )
+    Runtime.getRuntime().addShutdownHook(Thread { close() })
   }
 
   override fun close() {
-    if (isStarted.compareAndSet(true, false)) {
-      runBlocking {
-        launch {
-          client.close()
+    if (isStarted.compareAndSet(true, false)) runBlocking {
+      logger.info { "Closing worker..." }
+      try {
+        scope.cancel()
+        logger.info { "Processing ongoing messages..." }
+        withTimeout((shutdownGracePeriodSeconds * 1000).toLong()) {
+          scope.coroutineContext.job.join()
+          logger.info { "All ongoing messages have been processed." }
         }
-        launch {
-          closeWorker()
+      } catch (e: TimeoutCancellationException) {
+        logger.warn {
+          "The grace period (${shutdownGracePeriodSeconds}s) allotted to close the worker was insufficient. " +
+              "Some ongoing messages may not have been processed properly."
         }
+      } finally {
+        client.close()
       }
+      logger.info { "Worker closed." }
     }
   }
 
-  private suspend fun closeWorker() {
-    logger.info { "Closing worker..." }
-    try {
-      scope.cancel()
-      logger.info { "Processing ongoing messages..." }
-      withTimeout((shutdownGracePeriodSeconds * 1000).toLong()) {
-        scope.coroutineContext.job.join()
-        logger.info { "All ongoing messages have been processed." }
-      }
-    } catch (e: TimeoutCancellationException) {
-      logger.warn {
-        "The grace period (${shutdownGracePeriodSeconds}s) allotted to close the worker was insufficient. " +
-            "Some ongoing messages may not have been processed properly."
-      }
-    }
-    logger.info { "Worker closed." }
-  }
 
   companion object {
     private val logger = KotlinLogging.logger {}
@@ -288,10 +280,7 @@ class InfiniticWorker(
         config.eventListener?.let { startEventListener(it) }
 
         logger.info {
-          "Worker \"${producer.name}\" ready" + when (consumer is PulsarInfiniticConsumer) {
-            true -> " (shutdownGracePeriodSeconds=${consumer.shutdownGracePeriodSeconds}s)"
-            false -> ""
-          }
+          "Worker \"${producer.name}\" ready (shutdownGracePeriodSeconds=${shutdownGracePeriodSeconds}s)"
         }
       }
     }

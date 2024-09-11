@@ -23,7 +23,6 @@
 package io.infinitic.transport.config
 
 import com.sksamuel.hoplite.Secret
-import io.infinitic.autoclose.addAutoCloseResource
 import io.infinitic.pulsar.PulsarInfiniticConsumer
 import io.infinitic.pulsar.PulsarInfiniticProducer
 import io.infinitic.pulsar.PulsarInfiniticResources
@@ -38,6 +37,8 @@ import io.infinitic.pulsar.producers.Producer
 import io.infinitic.pulsar.producers.ProducerConfig
 import io.infinitic.pulsar.resources.PulsarResources
 import java.net.URLEncoder
+import kotlin.reflect.KProperty0
+import kotlin.reflect.jvm.isAccessible
 
 @Suppress("unused")
 data class PulsarTransportConfig(
@@ -49,9 +50,9 @@ data class PulsarTransportConfig(
     require(shutdownGracePeriodSeconds > 0) { "shutdownGracePeriodSeconds must be > 0" }
   }
 
-  companion object {
-    @JvmStatic
-    fun builder() = PulsarTransportConfigBuilder()
+  override fun close() {
+    if (pulsar::admin.isLazyInitialized) pulsar.admin.close()
+    if (pulsar::client.isLazyInitialized) pulsar.client.close()
   }
 
   /** This is used as source prefix for CloudEvents */
@@ -60,28 +61,38 @@ data class PulsarTransportConfig(
       URLEncoder.encode(pulsar.namespace, Charsets.UTF_8)
 
 
-  private val client = PulsarInfiniticClient(pulsar.client)
-  private val pulsarResources = PulsarResources.from(pulsar).also {
-    it.addAutoCloseResource(pulsar.admin)
-  }
+  private val pulsarInfiniticClient by lazy { PulsarInfiniticClient(pulsar.client) }
+  private val pulsarResources by lazy { PulsarResources.from(pulsar) }
 
   /** Infinitic Resources */
-  override val resources = PulsarInfiniticResources(pulsarResources)
+  override val resources by lazy {
+    PulsarInfiniticResources(pulsarResources)
+  }
 
   /** Infinitic Consumer */
-  override val consumer = PulsarInfiniticConsumer(
-      Consumer(client, pulsar.consumer),
-      pulsarResources,
-      shutdownGracePeriodSeconds,
-  ).also {
-    //it.addAutoCloseResource(pulsar.client)
+  override val consumer by lazy {
+    PulsarInfiniticConsumer(
+        Consumer(pulsarInfiniticClient, pulsar.consumer),
+        pulsarResources,
+        shutdownGracePeriodSeconds,
+    )
   }
 
   /** Infinitic Producer */
-  override val producer = PulsarInfiniticProducer(
-      Producer(client, pulsar.producer),
-      pulsarResources,
-  )
+  override val producer by lazy {
+    PulsarInfiniticProducer(
+        Producer(pulsarInfiniticClient, pulsar.producer),
+        pulsarResources,
+    )
+  }
+
+  private val KProperty0<*>.isLazyInitialized
+    get() = (apply { isAccessible = true }.getDelegate() as? Lazy<*>)?.isInitialized() ?: false
+  
+  companion object {
+    @JvmStatic
+    fun builder() = PulsarTransportConfigBuilder()
+  }
 
   /**
    * PulsarConfig builder

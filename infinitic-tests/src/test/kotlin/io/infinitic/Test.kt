@@ -50,38 +50,38 @@ fun main() {
 
 internal object Test {
 
-  private val pulsarServer = DockerOnly().pulsarServer?.apply { start() }
+  private val pulsarServer = DockerOnly().pulsarServer
 
-  private val workerConfig = InfiniticWorkerConfig
-      .fromYamlResource("/pulsar.yml", "/register.yml").let {
-        when (pulsarServer) {
-          null -> it.copy(transport = InMemoryTransportConfig())
-          else -> it.copy(
-              transport = PulsarTransportConfig(
-                  pulsar = (it.transport as PulsarTransportConfig).pulsar.copy(
-                      brokerServiceUrl = pulsarServer.pulsarBrokerUrl,
-                      webServiceUrl = pulsarServer.httpServiceUrl,
-                      policies = (it.transport as PulsarTransportConfig).pulsar.policies.copy(
-                          delayedDeliveryTickTimeMillis = 1,
-                      ),
-                  ),
-              ),
-          )
+  private val workerConfig by lazy {
+    InfiniticWorkerConfig
+        .fromYamlResource("/pulsar.yml", "/register.yml").let {
+          when (pulsarServer) {
+            null -> it.copy(transport = InMemoryTransportConfig())
+            else -> it.copy(
+                transport = PulsarTransportConfig(
+                    pulsar = (it.transport as PulsarTransportConfig).pulsar.copy(
+                        brokerServiceUrl = pulsarServer.pulsarBrokerUrl,
+                        webServiceUrl = pulsarServer.httpServiceUrl,
+                        policies = (it.transport as PulsarTransportConfig).pulsar.policies.copy(
+                            delayedDeliveryTickTimeMillis = 1,
+                        ),
+                    ),
+                ),
+            )
+          }
         }
-      }.also { println(it) }
+  }
 
-  val worker = InfiniticWorker(workerConfig)
-  val client = worker.client
+  val worker by lazy { InfiniticWorker(workerConfig) }
+  val client by lazy { worker.client }
 
   fun start() {
-    println("Starting worker")
+    pulsarServer?.start()
     worker.startAsync()
-    println("Worker started")
   }
 
   fun stop() {
     worker.close()
-    client.close()
     pulsarServer?.stop()
   }
 }

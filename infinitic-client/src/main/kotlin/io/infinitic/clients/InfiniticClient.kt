@@ -58,22 +58,26 @@ import java.util.concurrent.atomic.AtomicBoolean
 
 @Suppress("unused")
 class InfiniticClient(
-  config: InfiniticClientConfigInterface
+  val config: InfiniticClientConfigInterface
 ) : InfiniticClientInterface {
 
   // Get Infinitic Consumer
-  private val consumer = LoggedInfiniticConsumer(logger, config.transport.consumer)
+  private val consumer by lazy {
+    LoggedInfiniticConsumer(logger, config.transport.consumer)
+  }
 
   // Get Infinitic  Producer
-  private val producer = LoggedInfiniticProducer(logger, config.transport.producer).apply {
-    config.name?.let { name = it }
+  private val producer by lazy {
+    LoggedInfiniticProducer(logger, config.transport.producer).apply {
+      config.name?.let { name = it }
+    }
   }
 
   private val shutdownGracePeriodSeconds = config.transport.shutdownGracePeriodSeconds
 
   private var isClosed: AtomicBoolean = AtomicBoolean(false)
 
-  // Scope used to consuming messages
+  // Scope used to asynchronously send message, and also to consumes messages
   private val clientScope = CoroutineScope(Dispatchers.IO)
 
   private val dispatcher = ClientDispatcher(clientScope, consumer, producer)
@@ -82,11 +86,6 @@ class InfiniticClient(
 
   /** Get last Deferred created by the call of a stub */
   override val lastDeferred get() = dispatcher.getLastDeferred()
-
-  /** Close client if interrupted */
-  init {
-    Runtime.getRuntime().addShutdownHook(Thread { close() })
-  }
 
   override fun close() {
     if (isClosed.compareAndSet(false, true)) {
@@ -99,8 +98,11 @@ class InfiniticClient(
           }
         } catch (e: TimeoutCancellationException) {
           logger.warn {
-            "The grace period (${shutdownGracePeriodSeconds}s) allotted to close the client was insufficient."
+            "The grace period (${shutdownGracePeriodSeconds}s) allotted to close the client was insufficient." +
+                "Some ongoing messages may not have been sent properly."
           }
+        } finally {
+          config.transport.close()
         }
       }
       logger.info { "Client closed." }

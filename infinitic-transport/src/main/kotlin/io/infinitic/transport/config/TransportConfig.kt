@@ -26,7 +26,7 @@ import io.infinitic.common.transport.InfiniticConsumer
 import io.infinitic.common.transport.InfiniticProducer
 import io.infinitic.common.transport.InfiniticResources
 
-sealed class TransportConfig {
+sealed class TransportConfig: AutoCloseable {
   /**
    * Specifies the duration, in seconds, allowed for the system to gracefully shut down.
    * During this period, the system will attempt to complete handle ongoing messages
