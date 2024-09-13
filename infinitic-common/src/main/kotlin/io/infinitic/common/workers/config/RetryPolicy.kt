@@ -25,6 +25,7 @@ package io.infinitic.common.workers.config
 import io.infinitic.common.exceptions.thisShouldNotHappen
 import io.infinitic.common.utils.getClass
 import io.infinitic.tasks.WithRetry
+import io.infinitic.tasks.WithRetryBuilder
 import kotlin.math.min
 import kotlin.math.pow
 import kotlin.random.Random
@@ -71,7 +72,7 @@ data object UNSET_RETRY_POLICY : RetryPolicy(0, listOf()) {
 }
 
 @Suppress("unused")
-data class ExponentialBackoffRetryPolicy(
+data class WithExponentialBackoffRetry(
   val minimumSeconds: Double = 1.0,
   val maximumSeconds: Double = 1000 * minimumSeconds,
   val backoffCoefficient: Double = 2.0,
@@ -80,8 +81,8 @@ data class ExponentialBackoffRetryPolicy(
   override val ignoredExceptions: List<String> = listOf()
 ) : RetryPolicy(maximumRetries, ignoredExceptions) {
 
-  // checks can not be in init {} as throwing exception in constructor prevents sealed class
-  // recognition by Hoplite
+  // checks can not be in init {} as throwing exception in constructor
+  // prevents sealed class recognition by Hoplite
   override fun check() {
     require(minimumSeconds > 0) { "${::minimumSeconds.name} MUST be > 0" }
     require(maximumSeconds >= 0) { "${::maximumSeconds.name} MUST be > 0" }
@@ -106,8 +107,8 @@ data class ExponentialBackoffRetryPolicy(
     fun builder() = ExponentialBackoffRetryPolicyBuilder()
   }
 
-  class ExponentialBackoffRetryPolicyBuilder() {
-    private val default = ExponentialBackoffRetryPolicy()
+  class ExponentialBackoffRetryPolicyBuilder : WithRetryBuilder {
+    private val default = WithExponentialBackoffRetry()
     private var minimumSeconds = default.minimumSeconds
     private var maximumSeconds = default.maximumSeconds
     private var backoffCoefficient = default.backoffCoefficient
@@ -115,7 +116,7 @@ data class ExponentialBackoffRetryPolicy(
     private var maximumRetries = default.maximumRetries
     private var ignoredExceptions = default.ignoredExceptions as MutableList<String>
 
-    fun build() = ExponentialBackoffRetryPolicy(
+    override fun build() = WithExponentialBackoffRetry(
         minimumSeconds,
         maximumSeconds,
         backoffCoefficient,
