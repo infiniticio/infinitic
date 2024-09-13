@@ -55,7 +55,7 @@ import io.infinitic.common.transport.InfiniticProducer
 import io.infinitic.common.transport.RetryServiceExecutorTopic
 import io.infinitic.common.transport.ServiceExecutorEventTopic
 import io.infinitic.common.transport.ServiceExecutorTopic
-import io.infinitic.common.workers.config.ExponentialBackoffRetryPolicy
+import io.infinitic.common.workers.config.WithExponentialBackoffRetry
 import io.infinitic.common.workers.data.WorkerName
 import io.infinitic.exceptions.tasks.ClassNotFoundException
 import io.infinitic.exceptions.tasks.NoMethodFoundWithParameterCountException
@@ -424,7 +424,7 @@ class TaskExecutorTests :
           every { registry.getServiceExecutorInstance(testServiceName) } returns ServiceWithRegisteredTimeout()
           every { registry.getServiceExecutorWithTimeout(testServiceName) } returns { 0.1 }
           every { registry.getServiceExecutorWithRetry(testServiceName) } returns
-              ExponentialBackoffRetryPolicy(maximumRetries = 0)
+              WithExponentialBackoffRetry(maximumRetries = 0)
           val types = listOf(Int::class.java.name, String::class.java.name)
           // with
           val msg = getExecuteTask("handle", arrayOf(2, "3"), types)
@@ -446,7 +446,7 @@ class TaskExecutorTests :
           every { registry.getServiceExecutorInstance(testServiceName) } returns ServiceWithTimeoutOnMethod()
           every { registry.getServiceExecutorWithTimeout(testServiceName) } returns WithTimeout.UNSET
           every { registry.getServiceExecutorWithRetry(testServiceName) } returns
-              ExponentialBackoffRetryPolicy(maximumRetries = 0)
+              WithExponentialBackoffRetry(maximumRetries = 0)
           val input = arrayOf(2, "3")
           val types = listOf(Int::class.java.name, String::class.java.name)
           // with
@@ -469,7 +469,7 @@ class TaskExecutorTests :
           every { registry.getServiceExecutorInstance(testServiceName) } returns ServiceWithTimeoutOnClass()
           every { registry.getServiceExecutorWithTimeout(testServiceName) } returns WithTimeout.UNSET
           every { registry.getServiceExecutorWithRetry(testServiceName) } returns
-              ExponentialBackoffRetryPolicy(maximumRetries = 0)
+              WithExponentialBackoffRetry(maximumRetries = 0)
           val input = arrayOf(2, "3")
           val types = listOf(Int::class.java.name, String::class.java.name)
           // with

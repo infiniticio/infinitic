@@ -71,7 +71,7 @@ data class RedisStorageConfig(
     fun setCache(cache: CacheConfig) = apply { this.cache = cache }
     fun setHost(host: String) = apply { this.host = host }
     fun setPort(port: Int) = apply { this.port = port }
-    fun setUserName(user: String) = apply { this.username = user }
+    fun setUsername(user: String) = apply { this.username = user }
     fun setPassword(password: String) = apply { this.password = password }
     fun setDatabase(database: Int) = apply { this.database = database }
     fun setTimeout(timeout: Int) = apply { this.timeout = timeout }

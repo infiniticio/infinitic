@@ -36,7 +36,7 @@ class MySQLStorageConfigTest {
         builder = MySQLStorageConfig.builder()
                 .setHost("localhost")
                 .setPort(3306)
-                .setUserName("root")
+                .setUsername("root")
                 .setPassword("password");
     }
 
@@ -59,7 +59,7 @@ class MySQLStorageConfigTest {
                 IllegalArgumentException.class,
                 () -> MySQLStorageConfig.builder()
                         .setHost("localhost")
-                        .setUserName("root")
+                        .setUsername("root")
                         .build()
         );
         assertTrue(e.getMessage().contains("port"));
@@ -71,7 +71,7 @@ class MySQLStorageConfigTest {
                 IllegalArgumentException.class,
                 () -> MySQLStorageConfig.builder()
                         .setHost("localhost")
-                        .setUserName("root")
+                        .setUsername("root")
                         .build()
         );
         assertTrue(e.getMessage().contains("port"));

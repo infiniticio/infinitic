@@ -36,7 +36,7 @@ sealed interface CacheConfig {
 
   companion object {
     @JvmStatic
-    fun builder() = CaffeineConfigBuilder()
+    fun builder(): CacheConfigBuilder = CaffeineConfigBuilder()
 
     /** Create CacheConfig from files in file system */
     @JvmStatic
@@ -52,6 +52,10 @@ sealed interface CacheConfig {
     @JvmStatic
     fun fromYamlString(vararg yamls: String): CacheConfig =
         loadFromYamlString(*yamls)
+  }
+
+  interface CacheConfigBuilder {
+    fun build(): CacheConfig
   }
 }
 

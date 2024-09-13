@@ -35,7 +35,7 @@ data class CaffeineCacheConfig(
 ) : CacheConfig {
 
   override val type = "caffeine"
-  
+
   override val keySet: CachedKeySet<ByteArray> by lazy { CaffeineCachedKeySet(this) }
 
   override val keyValue: CachedKeyValue<ByteArray> by lazy { CaffeineCachedKeyValue(this) }
@@ -55,7 +55,7 @@ data class CaffeineCacheConfig(
   /**
    * Caffeine builder (Useful for Java user)
    */
-  class CaffeineConfigBuilder {
+  class CaffeineConfigBuilder : CacheConfig.CacheConfigBuilder {
     private val default = CaffeineCacheConfig()
     private var maximumSize = default.maximumSize
     private var expireAfterAccess = default.expireAfterAccess
@@ -65,7 +65,7 @@ data class CaffeineCacheConfig(
     fun setExpireAfterAccess(expAftAccess: Long) = apply { this.expireAfterAccess = expAftAccess }
     fun setExpireAfterWrite(expAftWrite: Long) = apply { this.expireAfterWrite = expAftWrite }
 
-    fun build() = CaffeineCacheConfig(
+    override fun build() = CaffeineCacheConfig(
         maximumSize = maximumSize,
         expireAfterAccess = expireAfterAccess,
         expireAfterWrite = expireAfterWrite,
