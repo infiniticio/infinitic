@@ -20,11 +20,18 @@
  *
  * Licensor: infinitic.io
  */
-package io.infinitic.dashboard
+package io.infinitic.dashboard.config
 
-fun main(args: Array<String>) {
-  // get name of config file
-  val file = args.getOrNull(0) ?: "/infinitic.yml"
-  // start server
-  InfiniticDashboard.fromYamlResource(file).start()
+import io.infinitic.transport.config.TransportConfig
+
+interface DashboardConfigInterface {
+  /**
+   * Transport configuration
+   */
+  val transport: TransportConfig
+
+  /**
+   * Dashboard configuration
+   */
+  val dashboard: DashboardSettingsConfig
 }

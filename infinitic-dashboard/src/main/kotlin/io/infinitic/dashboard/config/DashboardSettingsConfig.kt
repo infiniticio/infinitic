@@ -20,11 +20,38 @@
  *
  * Licensor: infinitic.io
  */
-package io.infinitic.dashboard
+package io.infinitic.dashboard.config
 
-fun main(args: Array<String>) {
-  // get name of config file
-  val file = args.getOrNull(0) ?: "/infinitic.yml"
-  // start server
-  InfiniticDashboard.fromYamlResource(file).start()
+import io.infinitic.common.config.loadConfigFromFile
+import io.infinitic.common.config.loadConfigFromResource
+import io.infinitic.common.config.loadConfigFromYaml
+
+data class DashboardSettingsConfig(
+    /*
+    Port configuration
+     */
+    val port: Int = 16097,
+
+    /*
+    Debug (KWeb) configuration
+     */
+    val debug: Boolean = true
+) {
+
+  companion object {
+    /** Create DashboardSettingsConfig from file in file system */
+    @JvmStatic
+    fun fromYamlFile(vararg files: String) =
+        loadConfigFromFile<DashboardSettingsConfig>(*files)
+
+    /** Create DashboardSettingsConfig from file in resources directory */
+    @JvmStatic
+    fun fromYamlResource(vararg resources: String) =
+        loadConfigFromResource<DashboardSettingsConfig>(*resources)
+
+    /** Create DashboardSettingsConfig from yaml strings */
+    @JvmStatic
+    fun fromYamlString(vararg yamls: String) =
+        loadConfigFromYaml<DashboardSettingsConfig>(*yamls)
+  }
 }
