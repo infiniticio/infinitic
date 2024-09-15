@@ -26,13 +26,13 @@ import io.github.oshai.kotlinlogging.KotlinLogging
 import io.infinitic.common.data.MillisDuration
 import io.infinitic.common.messages.Envelope
 import io.infinitic.common.messages.Message
-import io.infinitic.pulsar.client.PulsarInfiniticClient
+import io.infinitic.pulsar.client.InfiniticPulsarClient
 import kotlinx.coroutines.future.await
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.TimeUnit
 
 class Producer(
-  val client: PulsarInfiniticClient,
+  val client: InfiniticPulsarClient,
   private val producerConfig: ProducerConfig
 ) {
   val logger = KotlinLogging.logger {}

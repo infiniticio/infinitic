@@ -34,7 +34,7 @@ import org.apache.avro.Schema
 @AvroNamespace("io.infinitic.workflows.events")
 data class WorkflowEventEnvelope(
   private val workflowId: WorkflowId,
-  private val type: WorkflowEventMessageType,
+  private val type: WorkflowStateEngineEventMessageType,
   private val workflowCompletedEvent: WorkflowCompletedEvent? = null,
   private val workflowCanceledEvent: WorkflowCanceledEvent? = null,
   private val methodDispatchedEvent: MethodCommandedEvent? = null,
@@ -49,7 +49,7 @@ data class WorkflowEventEnvelope(
   @AvroName("signalDiscarded") private val signalDiscardedEvent: SignalDiscardedEvent? = null,
   @AvroName("signalReceived") private val signalReceivedEvent: SignalReceivedEvent? = null,
 
-  ) : Envelope<WorkflowEventMessage> {
+  ) : Envelope<WorkflowStateEngineEventMessage> {
   init {
     val noNull = listOfNotNull(
         workflowCompletedEvent,
@@ -73,83 +73,83 @@ data class WorkflowEventEnvelope(
   }
 
   companion object {
-    fun from(msg: WorkflowEventMessage) = when (msg) {
+    fun from(msg: WorkflowStateEngineEventMessage) = when (msg) {
 
       is WorkflowCompletedEvent -> WorkflowEventEnvelope(
           workflowId = msg.workflowId,
-          type = WorkflowEventMessageType.WORKFLOW_COMPLETED,
+          type = WorkflowStateEngineEventMessageType.WORKFLOW_COMPLETED,
           workflowCompletedEvent = msg,
       )
 
       is WorkflowCanceledEvent -> WorkflowEventEnvelope(
           workflowId = msg.workflowId,
-          type = WorkflowEventMessageType.WORKFLOW_CANCELED,
+          type = WorkflowStateEngineEventMessageType.WORKFLOW_CANCELED,
           workflowCanceledEvent = msg,
       )
 
       is MethodCommandedEvent -> WorkflowEventEnvelope(
           workflowId = msg.workflowId,
-          type = WorkflowEventMessageType.METHOD_DISPATCHED,
+          type = WorkflowStateEngineEventMessageType.METHOD_DISPATCHED,
           methodDispatchedEvent = msg,
       )
 
       is MethodCompletedEvent -> WorkflowEventEnvelope(
           workflowId = msg.workflowId,
-          type = WorkflowEventMessageType.METHOD_COMPLETED,
+          type = WorkflowStateEngineEventMessageType.METHOD_COMPLETED,
           methodCompletedEvent = msg,
       )
 
       is MethodFailedEvent -> WorkflowEventEnvelope(
           workflowId = msg.workflowId,
-          type = WorkflowEventMessageType.METHOD_FAILED,
+          type = WorkflowStateEngineEventMessageType.METHOD_FAILED,
           methodFailedEvent = msg,
       )
 
       is MethodCanceledEvent -> WorkflowEventEnvelope(
           workflowId = msg.workflowId,
-          type = WorkflowEventMessageType.METHOD_CANCELED,
+          type = WorkflowStateEngineEventMessageType.METHOD_CANCELED,
           methodCanceledEvent = msg,
       )
 
       is MethodTimedOutEvent -> WorkflowEventEnvelope(
           workflowId = msg.workflowId,
-          type = WorkflowEventMessageType.METHOD_TIMED_OUT,
+          type = WorkflowStateEngineEventMessageType.METHOD_TIMED_OUT,
           methodTimedOutEvent = msg,
       )
 
       is TaskDispatchedEvent -> WorkflowEventEnvelope(
           workflowId = msg.workflowId,
-          type = WorkflowEventMessageType.TASK_DISPATCHED,
+          type = WorkflowStateEngineEventMessageType.TASK_DISPATCHED,
           taskDispatchedEvent = msg,
       )
 
       is RemoteMethodDispatchedEvent -> WorkflowEventEnvelope(
           workflowId = msg.workflowId,
-          type = WorkflowEventMessageType.REMOTE_METHOD_DISPATCHED,
+          type = WorkflowStateEngineEventMessageType.REMOTE_METHOD_DISPATCHED,
           remoteMethodDispatchedEvent = msg,
       )
 
       is TimerDispatchedEvent -> WorkflowEventEnvelope(
           workflowId = msg.workflowId,
-          type = WorkflowEventMessageType.TIMER_DISPATCHED,
+          type = WorkflowStateEngineEventMessageType.TIMER_DISPATCHED,
           timerDispatchedEvent = msg,
       )
 
       is SignalDispatchedEvent -> WorkflowEventEnvelope(
           workflowId = msg.workflowId,
-          type = WorkflowEventMessageType.REMOTE_SIGNAL_DISPATCHED,
+          type = WorkflowStateEngineEventMessageType.REMOTE_SIGNAL_DISPATCHED,
           signalDispatchedEvent = msg,
       )
 
       is SignalDiscardedEvent -> WorkflowEventEnvelope(
           workflowId = msg.workflowId,
-          type = WorkflowEventMessageType.SIGNAL_DISCARDED,
+          type = WorkflowStateEngineEventMessageType.SIGNAL_DISCARDED,
           signalDiscardedEvent = msg,
       )
 
       is SignalReceivedEvent -> WorkflowEventEnvelope(
           workflowId = msg.workflowId,
-          type = WorkflowEventMessageType.SIGNAL_RECEIVED,
+          type = WorkflowStateEngineEventMessageType.SIGNAL_RECEIVED,
           signalReceivedEvent = msg,
       )
     }
@@ -162,20 +162,20 @@ data class WorkflowEventEnvelope(
     val writerSchema = AvroSerDe.currentSchema(serializer())
   }
 
-  override fun message(): WorkflowEventMessage = when (type) {
-    WorkflowEventMessageType.WORKFLOW_COMPLETED -> workflowCompletedEvent
-    WorkflowEventMessageType.WORKFLOW_CANCELED -> workflowCanceledEvent
-    WorkflowEventMessageType.METHOD_DISPATCHED -> methodDispatchedEvent
-    WorkflowEventMessageType.METHOD_COMPLETED -> methodCompletedEvent
-    WorkflowEventMessageType.METHOD_FAILED -> methodFailedEvent
-    WorkflowEventMessageType.METHOD_CANCELED -> methodCanceledEvent
-    WorkflowEventMessageType.METHOD_TIMED_OUT -> methodTimedOutEvent
-    WorkflowEventMessageType.TASK_DISPATCHED -> taskDispatchedEvent
-    WorkflowEventMessageType.REMOTE_METHOD_DISPATCHED -> remoteMethodDispatchedEvent
-    WorkflowEventMessageType.TIMER_DISPATCHED -> timerDispatchedEvent
-    WorkflowEventMessageType.REMOTE_SIGNAL_DISPATCHED -> signalDispatchedEvent
-    WorkflowEventMessageType.SIGNAL_RECEIVED -> signalReceivedEvent
-    WorkflowEventMessageType.SIGNAL_DISCARDED -> signalDiscardedEvent
+  override fun message(): WorkflowStateEngineEventMessage = when (type) {
+    WorkflowStateEngineEventMessageType.WORKFLOW_COMPLETED -> workflowCompletedEvent
+    WorkflowStateEngineEventMessageType.WORKFLOW_CANCELED -> workflowCanceledEvent
+    WorkflowStateEngineEventMessageType.METHOD_DISPATCHED -> methodDispatchedEvent
+    WorkflowStateEngineEventMessageType.METHOD_COMPLETED -> methodCompletedEvent
+    WorkflowStateEngineEventMessageType.METHOD_FAILED -> methodFailedEvent
+    WorkflowStateEngineEventMessageType.METHOD_CANCELED -> methodCanceledEvent
+    WorkflowStateEngineEventMessageType.METHOD_TIMED_OUT -> methodTimedOutEvent
+    WorkflowStateEngineEventMessageType.TASK_DISPATCHED -> taskDispatchedEvent
+    WorkflowStateEngineEventMessageType.REMOTE_METHOD_DISPATCHED -> remoteMethodDispatchedEvent
+    WorkflowStateEngineEventMessageType.TIMER_DISPATCHED -> timerDispatchedEvent
+    WorkflowStateEngineEventMessageType.REMOTE_SIGNAL_DISPATCHED -> signalDispatchedEvent
+    WorkflowStateEngineEventMessageType.SIGNAL_RECEIVED -> signalReceivedEvent
+    WorkflowStateEngineEventMessageType.SIGNAL_DISCARDED -> signalDiscardedEvent
   }!!
 
   fun toByteArray() = AvroSerDe.writeBinary(this, serializer())

@@ -55,12 +55,14 @@ import io.infinitic.common.transport.WorkflowTagEngineTopic
 import io.infinitic.common.transport.create
 import io.infinitic.common.transport.logged.LoggedInfiniticConsumer
 import io.infinitic.common.transport.logged.LoggedInfiniticProducer
+import io.infinitic.common.transport.logged.LoggedInfiniticResources
 import io.infinitic.common.workflows.data.workflows.WorkflowName
 import io.infinitic.common.workflows.emptyWorkflowContext
-import io.infinitic.common.workflows.engine.messages.WorkflowCmdMessage
-import io.infinitic.common.workflows.engine.messages.WorkflowEventMessage
+import io.infinitic.common.workflows.engine.messages.WorkflowStateEngineCmdMessage
+import io.infinitic.common.workflows.engine.messages.WorkflowStateEngineEventMessage
 import io.infinitic.common.workflows.engine.messages.WorkflowStateEngineMessage
 import io.infinitic.common.workflows.tags.messages.WorkflowTagEngineMessage
+import io.infinitic.events.EventListener
 import io.infinitic.events.toJsonString
 import io.infinitic.events.toServiceCloudEvent
 import io.infinitic.events.toWorkflowCloudEvent
@@ -156,6 +158,7 @@ class InfiniticWorker(
   private val resources by lazy {
     config.transport.resources
   }
+
   private val consumer by lazy {
     config.transport.consumer
   }
@@ -545,7 +548,7 @@ class InfiniticWorker(
 
       val handler: suspend (WorkflowStateEngineMessage, MillisInstant) -> Unit =
           { message, publishedAt ->
-            if (message !is WorkflowCmdMessage) {
+            if (message !is WorkflowStateEngineCmdMessage) {
               logsEventLogger.logWorkflowCloudEvent(message, publishedAt, source)
             }
             workflowStateEngine.handle(message, publishedAt)
@@ -586,7 +589,7 @@ class InfiniticWorker(
 
       val workflowStateEventHandler = WorkflowStateEventHandler(loggedProducer)
 
-      val handler: suspend (WorkflowEventMessage, MillisInstant) -> Unit =
+      val handler: suspend (WorkflowStateEngineEventMessage, MillisInstant) -> Unit =
           { message, publishedAt ->
             logsEventLogger.logWorkflowCloudEvent(message, publishedAt, source)
             workflowStateEventHandler.handle(message, publishedAt)
@@ -735,19 +738,22 @@ class InfiniticWorker(
     starter: CoroutineScope.(String) -> Unit
   ) = launch {
     val processedServices = mutableSetOf<String>()
+    val loggedResources = LoggedInfiniticResources(EventListener.logger, resources)
 
     while (true) {
       // Retrieve the list of services
-      val currentServices = resources.getServices().filter { config.includeService(it) }
+      loggedResources.getServices().onSuccess { services ->
+        val currentServices = services.filter { config.includeService(it) }
 
-      // Determine new services that haven't been processed
-      val newServices = currentServices.filterNot { it in processedServices }
+        // Determine new services that haven't been processed
+        val newServices = currentServices.filterNot { it in processedServices }
 
-      // Launch starter for each new service
-      for (service in newServices) {
-        starter(service)
-        // Add the service to the set of processed services
-        processedServices.add(service)
+        // Launch starter for each new service
+        for (service in newServices) {
+          starter(service)
+          // Add the service to the set of processed services
+          processedServices.add(service)
+        }
       }
 
       delay((config.refreshDelaySeconds * 1000).toLong())
@@ -759,19 +765,22 @@ class InfiniticWorker(
     starter: CoroutineScope.(String) -> Unit
   ) = launch {
     val processedWorkflows = mutableSetOf<String>()
+    val loggedResources = LoggedInfiniticResources(EventListener.logger, resources)
 
     while (true) {
       // Retrieve the list of workflows
-      val currentServices = resources.getWorkflows().filter { config.includeWorkflow(it) }
+      loggedResources.getWorkflows().onSuccess { workflows ->
+        val currentWorkflows = workflows.filter { config.includeWorkflow(it) }
 
-      // Determine new workflows that haven't been processed
-      val newWorkflows = currentServices.filterNot { it in processedWorkflows }
+        // Determine new workflows that haven't been processed
+        val newWorkflows = currentWorkflows.filterNot { it in processedWorkflows }
 
-      // Launch starter for each new workflow
-      for (workflow in newWorkflows) {
-        starter(workflow)
-        // Add the workflow to the set of processed workflows
-        processedWorkflows.add(workflow)
+        // Launch starter for each new workflow
+        for (workflow in newWorkflows) {
+          starter(workflow)
+          // Add the workflow to the set of processed workflows
+          processedWorkflows.add(workflow)
+        }
       }
 
       delay((config.refreshDelaySeconds * 1000).toLong())
@@ -789,9 +798,11 @@ class InfiniticWorker(
     subscriptionType: SubscriptionType,
     handler: (Message, MillisInstant) -> Unit
   ) {
+    val loggedConsumer = LoggedInfiniticConsumer(EventListener.logger, consumer)
+
     // TASK-EXECUTOR topic
     launch {
-      consumer.start(
+      loggedConsumer.start(
           subscription = subscriptionType.create(ServiceExecutorTopic, subscriptionName),
           entity = serviceName.toString(),
           handler = handler,
@@ -801,7 +812,7 @@ class InfiniticWorker(
     }
     // TASK-EXECUTOR-DELAY topic
     launch {
-      consumer.start(
+      loggedConsumer.start(
           subscription = subscriptionType.create(RetryServiceExecutorTopic, subscriptionName),
           entity = serviceName.toString(),
           handler = handler,
@@ -811,7 +822,7 @@ class InfiniticWorker(
     }
     // TASK-EVENTS topic
     launch {
-      consumer.start(
+      loggedConsumer.start(
           subscription = subscriptionType.create(ServiceExecutorEventTopic, subscriptionName),
           entity = serviceName.toString(),
           handler = handler,
@@ -828,9 +839,11 @@ class InfiniticWorker(
     subscriptionType: SubscriptionType,
     handler: (Message, MillisInstant) -> Unit
   ) {
+    val loggedConsumer = LoggedInfiniticConsumer(EventListener.logger, consumer)
+
     // WORKFLOW-TASK-EXECUTOR topic
     launch {
-      consumer.start(
+      loggedConsumer.start(
           subscription = subscriptionType.create(WorkflowExecutorTopic, subscriptionName),
           entity = workflowName.toString(),
           handler = handler,
@@ -840,7 +853,7 @@ class InfiniticWorker(
     }
     // WORKFLOW-TASK-EXECUTOR-DELAY topic
     launch {
-      consumer.start(
+      loggedConsumer.start(
           subscription = subscriptionType.create(RetryWorkflowExecutorTopic, subscriptionName),
           entity = workflowName.toString(),
           handler = handler,
@@ -850,7 +863,7 @@ class InfiniticWorker(
     }
     // WORKFLOW-TASK-EVENTS topic
     launch {
-      consumer.start(
+      loggedConsumer.start(
           subscription = subscriptionType.create(WorkflowExecutorEventTopic, subscriptionName),
           entity = workflowName.toString(),
           handler = handler,
@@ -885,7 +898,7 @@ class InfiniticWorker(
           handler = { message: Message, publishedAt: MillisInstant ->
             // the event handler is not applied for WorkflowCmdMessage from clients
             // as the event has already been handled in the workflow-cmd topic
-            if (message !is WorkflowCmdMessage) handler(message, publishedAt)
+            if (message !is WorkflowStateEngineCmdMessage) handler(message, publishedAt)
           },
           beforeDlq = logMessageSentToDLQ,
           concurrency = concurrency,

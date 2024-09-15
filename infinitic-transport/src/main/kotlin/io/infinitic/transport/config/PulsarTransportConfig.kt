@@ -22,15 +22,13 @@
  */
 package io.infinitic.transport.config
 
-import com.sksamuel.hoplite.Secret
 import io.infinitic.properties.isLazyInitialized
 import io.infinitic.pulsar.PulsarInfiniticConsumer
 import io.infinitic.pulsar.PulsarInfiniticProducer
 import io.infinitic.pulsar.PulsarInfiniticResources
-import io.infinitic.pulsar.client.PulsarInfiniticClient
+import io.infinitic.pulsar.client.InfiniticPulsarClient
+import io.infinitic.pulsar.config.ClientConfig
 import io.infinitic.pulsar.config.PulsarConfig
-import io.infinitic.pulsar.config.TlsTrustStoreType
-import io.infinitic.pulsar.config.auth.ClientAuthenticationConfig
 import io.infinitic.pulsar.config.policies.PoliciesConfig
 import io.infinitic.pulsar.consumers.Consumer
 import io.infinitic.pulsar.consumers.ConsumerConfig
@@ -50,8 +48,8 @@ data class PulsarTransportConfig(
   }
 
   override fun close() {
-    if (pulsar::admin.isLazyInitialized) pulsar.admin.close()
-    if (pulsar::client.isLazyInitialized) pulsar.client.close()
+    if (pulsar::pulsarAdmin.isLazyInitialized) pulsar.pulsarAdmin.close()
+    if (pulsar::pulsarClient.isLazyInitialized) pulsar.pulsarClient.close()
   }
 
   /** This is used as source prefix for CloudEvents */
@@ -60,8 +58,8 @@ data class PulsarTransportConfig(
       URLEncoder.encode(pulsar.namespace, Charsets.UTF_8)
 
 
-  private val pulsarInfiniticClient by lazy { PulsarInfiniticClient(pulsar.client) }
-  private val pulsarResources by lazy { PulsarResources.from(pulsar) }
+  private val infiniticPulsarClient by lazy { InfiniticPulsarClient(pulsar.pulsarClient) }
+  private val pulsarResources by lazy { PulsarResources(pulsar) }
 
   /** Infinitic Resources */
   override val resources by lazy {
@@ -71,7 +69,7 @@ data class PulsarTransportConfig(
   /** Infinitic Consumer */
   override val consumer by lazy {
     PulsarInfiniticConsumer(
-        Consumer(pulsarInfiniticClient, pulsar.consumer),
+        Consumer(infiniticPulsarClient, pulsar.consumer),
         pulsarResources,
         shutdownGracePeriodSeconds,
     )
@@ -80,7 +78,7 @@ data class PulsarTransportConfig(
   /** Infinitic Producer */
   override val producer by lazy {
     PulsarInfiniticProducer(
-        Producer(pulsarInfiniticClient, pulsar.producer),
+        Producer(infiniticPulsarClient, pulsar.producer),
         pulsarResources,
     )
   }
@@ -101,14 +99,7 @@ data class PulsarTransportConfig(
     private var namespace: String? = null
     private var allowedClusters: Set<String>? = null
     private var adminRoles: Set<String>? = null
-    private var tlsAllowInsecureConnection: Boolean? = null
-    private var tlsEnableHostnameVerification: Boolean? = null
-    private var tlsTrustCertsFilePath: String? = null
-    private var useKeyStoreTls: Boolean? = null
-    private var tlsTrustStoreType: TlsTrustStoreType? = null
-    private var tlsTrustStorePath: String? = null
-    private var tlsTrustStorePassword: Secret? = null
-    private var authentication: ClientAuthenticationConfig? = null
+    private var client: ClientConfig = ClientConfig()
     private var policies: PoliciesConfig = PoliciesConfig()
     private var producer: ProducerConfig = ProducerConfig()
     private var consumer: ConsumerConfig = ConsumerConfig()
@@ -134,29 +125,11 @@ data class PulsarTransportConfig(
     fun setAdminRoles(adminRoles: Set<String>) =
         apply { this.adminRoles = adminRoles }
 
-    fun setTlsAllowInsecureConnection(tlsAllowInsecureConnection: Boolean) =
-        apply { this.tlsAllowInsecureConnection = tlsAllowInsecureConnection }
+    fun setClientConfig(clientConfig: ClientConfig) =
+        apply { this.client = clientConfig }
 
-    fun setTlsEnableHostnameVerification(tlsEnableHostnameVerification: Boolean) =
-        apply { this.tlsEnableHostnameVerification = tlsEnableHostnameVerification }
-
-    fun setTlsTrustCertsFilePath(tlsTrustCertsFilePath: String) =
-        apply { this.tlsTrustCertsFilePath = tlsTrustCertsFilePath }
-
-    fun setUseKeyStoreTls(useKeyStoreTls: Boolean) =
-        apply { this.useKeyStoreTls = useKeyStoreTls }
-
-    fun setTlsTrustStoreType(tlsTrustStoreType: TlsTrustStoreType) =
-        apply { this.tlsTrustStoreType = tlsTrustStoreType }
-
-    fun setTlsTrustStorePath(tlsTrustStorePath: String) =
-        apply { this.tlsTrustStorePath = tlsTrustStorePath }
-
-    fun setTlsTrustStorePassword(tlsTrustStorePassword: Secret) =
-        apply { this.tlsTrustStorePassword = tlsTrustStorePassword }
-
-    fun setAuthentication(authentication: ClientAuthenticationConfig) =
-        apply { this.authentication = authentication }
+    fun setClientConfig(clientConfig: ClientConfig.ClientConfigBuilder) =
+        setClientConfig(clientConfig.build())
 
     fun setPolicies(policiesConfig: PoliciesConfig) =
         apply { this.policies = policiesConfig }
@@ -164,17 +137,17 @@ data class PulsarTransportConfig(
     fun setPolicies(policiesConfig: PoliciesConfig.PoliciesConfigBuilder) =
         setPolicies(policiesConfig.build())
 
-    fun setProducer(producerConfig: ProducerConfig) =
+    fun setProducerConfig(producerConfig: ProducerConfig) =
         apply { this.producer = producerConfig }
 
-    fun setProducer(producerConfig: ProducerConfig.ProducerConfigBuilder) =
-        setProducer(producerConfig.build())
+    fun setProducerConfig(producerConfig: ProducerConfig.ProducerConfigBuilder) =
+        setProducerConfig(producerConfig.build())
 
-    fun setConsumer(consumerConfig: ConsumerConfig) =
+    fun setConsumerConfig(consumerConfig: ConsumerConfig) =
         apply { this.consumer = consumerConfig }
 
-    fun setConsumer(consumerConfig: ConsumerConfig.ConsumerConfigBuilder) =
-        setConsumer(consumerConfig.build())
+    fun setConsumerConfig(consumerConfig: ConsumerConfig.ConsumerConfigBuilder) =
+        setConsumerConfig(consumerConfig.build())
 
     override fun build(): PulsarTransportConfig {
       require(brokerServiceUrl != null) { "${PulsarConfig::brokerServiceUrl.name} must not be null" }
@@ -189,14 +162,7 @@ data class PulsarTransportConfig(
           namespace!!,
           allowedClusters,
           adminRoles,
-          tlsAllowInsecureConnection,
-          tlsEnableHostnameVerification,
-          tlsTrustCertsFilePath,
-          useKeyStoreTls,
-          tlsTrustStoreType,
-          tlsTrustStorePath,
-          tlsTrustStorePassword,
-          authentication,
+          client,
           policies,
           producer,
           consumer,

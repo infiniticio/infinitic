@@ -43,7 +43,7 @@ import io.infinitic.common.transport.WorkflowStateEngineTopic
 import io.infinitic.common.transport.WorkflowStateEventTopic
 import io.infinitic.common.transport.WorkflowStateTimerTopic
 import io.infinitic.common.transport.WorkflowTagEngineTopic
-import io.infinitic.common.workflows.engine.messages.WorkflowEventMessage
+import io.infinitic.common.workflows.engine.messages.WorkflowStateEngineEventMessage
 import io.infinitic.common.workflows.engine.messages.WorkflowStateEngineMessage
 import io.infinitic.common.workflows.tags.messages.WorkflowTagEngineMessage
 import kotlinx.coroutines.channels.Channel
@@ -70,7 +70,7 @@ class InMemoryChannels {
   internal val workflowStateTimerChannels =
       ConcurrentHashMap<String, Channel<DelayedMessage<WorkflowStateEngineMessage>>>(100)
   internal val workflowStateEventChannels =
-      ConcurrentHashMap<String, Channel<WorkflowEventMessage>>(100)
+      ConcurrentHashMap<String, Channel<WorkflowStateEngineEventMessage>>(100)
   internal val workflowExecutorChannels =
       ConcurrentHashMap<String, Channel<ServiceExecutorMessage>>(100)
   internal val workflowExecutorEventChannels =

@@ -28,17 +28,20 @@ class InMemoryInfiniticResources(
   private val mainChannels: InMemoryChannels,
 ) : InfiniticResources {
 
-  override suspend fun getServices() =
+  override suspend fun getServices() = Result.success(
       mainChannels.serviceExecutorChannels.keys().toList().toSet()
-          .union(mainChannels.serviceTagEngineChannels.keys().toList().toSet())
+          .union(mainChannels.serviceTagEngineChannels.keys().toList().toSet()),
+  )
 
-  override suspend fun getWorkflows() =
+  override suspend fun getWorkflows() = Result.success(
       mainChannels.workflowExecutorChannels.keys().toList().toSet()
           .union(mainChannels.workflowTagEngineChannels.keys().toList().toSet())
-          .union(mainChannels.workflowStateEngineChannels.keys().toList().toSet())
+          .union(mainChannels.workflowStateEngineChannels.keys().toList().toSet()),
+  )
 
-  override suspend fun deleteTopicForClient(clientName: String) =
-      Result.success(mainChannels.clientChannels.remove(clientName)?.let { clientName })
+  override suspend fun deleteTopicForClient(clientName: String) = Result.success(
+      mainChannels.clientChannels.remove(clientName)?.let { clientName },
+  )
 }
 
 

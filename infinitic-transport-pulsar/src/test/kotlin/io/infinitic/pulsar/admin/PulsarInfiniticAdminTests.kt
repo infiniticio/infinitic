@@ -41,7 +41,7 @@ class PulsarInfiniticAdminTests :
   StringSpec(
       {
         val pulsarServer = DockerOnly().pulsarServer!!
-        val admin = PulsarInfiniticAdmin(
+        val admin = InfiniticPulsarAdmin(
             PulsarAdmin.builder().serviceHttpUrl(pulsarServer.httpServiceUrl).build(),
         )
 

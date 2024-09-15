@@ -26,7 +26,7 @@ import io.github.oshai.kotlinlogging.KotlinLogging
 import io.infinitic.common.data.MillisInstant
 import io.infinitic.common.messages.Envelope
 import io.infinitic.common.messages.Message
-import io.infinitic.pulsar.client.PulsarInfiniticClient
+import io.infinitic.pulsar.client.InfiniticPulsarClient
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.coroutineScope
@@ -45,7 +45,7 @@ import kotlin.coroutines.cancellation.CancellationException
 import org.apache.pulsar.client.api.Message as PulsarMessage
 
 class Consumer(
-  val client: PulsarInfiniticClient,
+  val client: InfiniticPulsarClient,
   private val consumerConfig: ConsumerConfig
 ) {
   private val logger = KotlinLogging.logger {}
@@ -299,7 +299,7 @@ class Consumer(
     subscriptionInitialPosition: SubscriptionInitialPosition,
     consumerName: String,
   ): Result<Consumer<S>> {
-    val consumerDef = PulsarInfiniticClient.ConsumerDef(
+    val consumerDef = InfiniticPulsarClient.ConsumerDef(
         topic = topic,
         subscriptionName = subscriptionName, //  MUST be the same for all instances!
         subscriptionType = subscriptionType,
@@ -308,7 +308,7 @@ class Consumer(
         consumerConfig = consumerConfig,
     )
     val consumerDefDlq = topicDlq?.let {
-      PulsarInfiniticClient.ConsumerDef(
+      InfiniticPulsarClient.ConsumerDef(
           topic = it,
           subscriptionName = subscriptionNameDlq, //  MUST be the same for all instances!
           subscriptionType = SubscriptionType.Shared,

@@ -32,8 +32,8 @@ import io.infinitic.common.messages.Message
 import io.infinitic.common.requester.workflowName
 import io.infinitic.common.tasks.events.messages.ServiceExecutorEventMessage
 import io.infinitic.common.tasks.executors.messages.ServiceExecutorMessage
-import io.infinitic.common.workflows.engine.messages.WorkflowCmdMessage
-import io.infinitic.common.workflows.engine.messages.WorkflowEventMessage
+import io.infinitic.common.workflows.engine.messages.WorkflowStateEngineCmdMessage
+import io.infinitic.common.workflows.engine.messages.WorkflowStateEngineEventMessage
 import io.infinitic.common.workflows.engine.messages.WorkflowStateEngineMessage
 import io.infinitic.events.data.services.serviceType
 import io.infinitic.events.data.services.toJson
@@ -82,39 +82,39 @@ enum class CloudEventContext {
   WORKFLOW {
 
     override fun Message.type(): String? = when (this) {
-      is WorkflowCmdMessage -> workflowType()
+      is WorkflowStateEngineCmdMessage -> workflowType()
       is WorkflowStateEngineMessage -> workflowType()
-      is WorkflowEventMessage -> workflowType()
+      is WorkflowStateEngineEventMessage -> workflowType()
       else -> null
     }
 
     override fun Message.subject(): String = when (this) {
-      is WorkflowCmdMessage -> workflowId
+      is WorkflowStateEngineCmdMessage -> workflowId
       is WorkflowStateEngineMessage -> workflowId
-      is WorkflowEventMessage -> workflowId
+      is WorkflowStateEngineEventMessage -> workflowId
       else -> thisShouldNotHappen()
     }.toString()
 
     override fun Message.source(prefix: String): URI = when (this) {
-      is WorkflowCmdMessage -> workflowName
+      is WorkflowStateEngineCmdMessage -> workflowName
       is WorkflowStateEngineMessage -> workflowName
-      is WorkflowEventMessage -> workflowName
+      is WorkflowStateEngineEventMessage -> workflowName
       else -> thisShouldNotHappen()
     }.let {
       URI.create("$prefix/workflows/${it.encoded}")
     }
 
     override fun Message.dataBytes(): ByteArray = when (this) {
-      is WorkflowCmdMessage -> toJson()
+      is WorkflowStateEngineCmdMessage -> toJson()
       is WorkflowStateEngineMessage -> toJson()
-      is WorkflowEventMessage -> toJson()
+      is WorkflowStateEngineEventMessage -> toJson()
       else -> thisShouldNotHappen()
     }.toString().toByteArray()
 
     override fun Message.time(publishedAt: MillisInstant): OffsetDateTime = when (this) {
-      is WorkflowCmdMessage -> publishedAt
+      is WorkflowStateEngineCmdMessage -> publishedAt
       is WorkflowStateEngineMessage -> emittedAt ?: publishedAt
-      is WorkflowEventMessage -> publishedAt
+      is WorkflowStateEngineEventMessage -> publishedAt
       else -> thisShouldNotHappen()
     }.toOffsetDateTime()
   },

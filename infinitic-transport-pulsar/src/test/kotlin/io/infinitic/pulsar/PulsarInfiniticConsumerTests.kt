@@ -40,7 +40,7 @@ import io.infinitic.common.transport.WorkflowStateEventTopic
 import io.infinitic.common.transport.WorkflowStateTimerTopic
 import io.infinitic.common.transport.WorkflowTagEngineTopic
 import io.infinitic.common.workflows.data.workflows.WorkflowName
-import io.infinitic.pulsar.admin.PulsarInfiniticAdmin
+import io.infinitic.pulsar.config.PulsarConfig
 import io.infinitic.pulsar.config.policies.PoliciesConfig
 import io.infinitic.pulsar.consumers.Consumer
 import io.infinitic.pulsar.resources.PulsarResources
@@ -76,14 +76,17 @@ class PulsarInfiniticConsumerTests : StringSpec(
       val tenant = RandomString().nextString()
       val namespace = RandomString().nextString()
 
-      val original = PulsarResources(
-          mockk<PulsarInfiniticAdmin>(),
-          tenant,
-          setOf(),
-          namespace,
-          setOf(),
-          PoliciesConfig(),
+      val pulsarConfig = PulsarConfig(
+          brokerServiceUrl = "pulsar://localhost:6650",
+          webServiceUrl = "http://localhost:8080",
+          tenant = tenant,
+          namespace = namespace,
+          allowedClusters = setOf(),
+          adminRoles = setOf(),
+          policies = PoliciesConfig(),
       )
+
+      val original = PulsarResources(pulsarConfig)
 
       val pulsarResources = spyk(original) {
         coEvery { initTopicOnce(any(), any(), any()) } returns Result.success(Unit)

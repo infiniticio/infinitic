@@ -27,8 +27,8 @@ import io.infinitic.common.messages.Message
 import io.infinitic.common.tasks.events.messages.ServiceExecutorEventMessage
 import io.infinitic.common.tasks.executors.messages.ServiceExecutorMessage
 import io.infinitic.common.tasks.tags.messages.ServiceTagMessage
-import io.infinitic.common.workflows.engine.messages.WorkflowCmdMessage
-import io.infinitic.common.workflows.engine.messages.WorkflowEventMessage
+import io.infinitic.common.workflows.engine.messages.WorkflowStateEngineCmdMessage
+import io.infinitic.common.workflows.engine.messages.WorkflowStateEngineEventMessage
 import io.infinitic.common.workflows.engine.messages.WorkflowStateEngineMessage
 import io.infinitic.common.workflows.tags.messages.WorkflowTagEngineMessage
 
@@ -102,7 +102,7 @@ data object WorkflowTagEngineTopic : WorkflowTopic<WorkflowTagEngineMessage>() {
   override val prefix = "workflow-tag"
 }
 
-data object WorkflowStateCmdTopic : WorkflowTopic<WorkflowCmdMessage>() {
+data object WorkflowStateCmdTopic : WorkflowTopic<WorkflowStateEngineCmdMessage>() {
   override val prefix = "workflow-cmd"
 }
 
@@ -114,7 +114,7 @@ data object WorkflowStateTimerTopic : WorkflowTopic<WorkflowStateEngineMessage>(
   override val prefix = "workflow-delay"
 }
 
-data object WorkflowStateEventTopic : WorkflowTopic<WorkflowEventMessage>() {
+data object WorkflowStateEventTopic : WorkflowTopic<WorkflowStateEngineEventMessage>() {
   override val prefix = "workflow-events"
 }
 

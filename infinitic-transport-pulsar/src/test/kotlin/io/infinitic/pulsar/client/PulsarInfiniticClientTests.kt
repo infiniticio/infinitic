@@ -168,7 +168,7 @@ class PulsarInfiniticClientTests :
           every { newConsumer(any<Schema<WorkflowEngineEnvelope>>()) } returns getConsumerBuilder()
         }
 
-        val client = PulsarInfiniticClient(pulsarClient)
+        val client = InfiniticPulsarClient(pulsarClient)
 
         "Configuration given should be applied to consumer (no DLQ)" {
           val randomConfig = TestFactory.random<ConsumerConfig>()
@@ -179,7 +179,7 @@ class PulsarInfiniticClientTests :
           val randomConsumerName = TestFactory.random<String>()
 
           // when
-          val consumerDef = PulsarInfiniticClient.ConsumerDef(
+          val consumerDef = InfiniticPulsarClient.ConsumerDef(
               topic = randomTopic,
               subscriptionName = randomSubscriptionName, //  MUST be the same for all instances!
               subscriptionType = randomSubscriptionType,
@@ -237,7 +237,7 @@ class PulsarInfiniticClientTests :
           val randomConsumerName = TestFactory.random<String>()
 
           // when
-          val consumerDef = PulsarInfiniticClient.ConsumerDef(
+          val consumerDef = InfiniticPulsarClient.ConsumerDef(
               topic = "topic",
               subscriptionName = "subscriptionName",
               subscriptionType = SubscriptionType.Shared,
@@ -245,7 +245,7 @@ class PulsarInfiniticClientTests :
               consumerName = "consumerName",
               consumerConfig = randomConfig,
           )
-          val consumerDefDlq = PulsarInfiniticClient.ConsumerDef(
+          val consumerDefDlq = InfiniticPulsarClient.ConsumerDef(
               topic = randomTopic,
               subscriptionName = randomSubscriptionName,
               subscriptionType = randomSubscriptionType,

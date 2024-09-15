@@ -45,12 +45,13 @@ import io.infinitic.common.transport.WorkflowStateEventTopic
 import io.infinitic.common.transport.WorkflowStateTimerTopic
 import io.infinitic.common.transport.WorkflowTagEngineTopic
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTask
-import io.infinitic.common.workflows.engine.messages.WorkflowCmdMessage
-import io.infinitic.common.workflows.engine.messages.WorkflowEventMessage
+import io.infinitic.common.workflows.engine.messages.WorkflowStateEngineCmdMessage
+import io.infinitic.common.workflows.engine.messages.WorkflowStateEngineEventMessage
 import io.infinitic.common.workflows.engine.messages.WorkflowStateEngineMessage
 import io.infinitic.common.workflows.tags.messages.WorkflowTagEngineMessage
-import io.infinitic.pulsar.admin.PulsarInfiniticAdmin
-import io.infinitic.pulsar.client.PulsarInfiniticClient
+import io.infinitic.pulsar.admin.InfiniticPulsarAdmin
+import io.infinitic.pulsar.client.InfiniticPulsarClient
+import io.infinitic.pulsar.config.PulsarConfig
 import io.infinitic.pulsar.config.policies.PoliciesConfig
 import io.infinitic.pulsar.producers.Producer
 import io.infinitic.pulsar.producers.ProducerConfig
@@ -69,25 +70,26 @@ class PulsarInfiniticProducerTests : StringSpec(
     {
       val pulsarServer = DockerOnly().pulsarServer!!
 
-      val client = PulsarInfiniticClient(
+      val client = InfiniticPulsarClient(
           PulsarClient.builder().serviceUrl(pulsarServer.pulsarBrokerUrl).build(),
       )
 
-      val admin = PulsarInfiniticAdmin(
+      val admin = InfiniticPulsarAdmin(
           PulsarAdmin.builder().serviceHttpUrl(pulsarServer.httpServiceUrl).build(),
       )
 
       val tenant = RandomString(10).nextString()
       val namespace = RandomString(10).nextString()
 
-      val pulsarResources = PulsarResources(
-          admin,
-          tenant,
-          null,
-          namespace,
-          null,
-          PoliciesConfig(),
+      val pulsarConfig = PulsarConfig(
+          webServiceUrl = pulsarServer.httpServiceUrl,
+          brokerServiceUrl = pulsarServer.pulsarBrokerUrl,
+          tenant = tenant,
+          namespace = namespace,
       )
+
+      val pulsarResources = PulsarResources(pulsarConfig)
+
       val pulsarProducer =
           PulsarInfiniticProducer(Producer(client, ProducerConfig()), pulsarResources)
 
@@ -139,7 +141,7 @@ class PulsarInfiniticProducerTests : StringSpec(
       }
 
       "publishing to an absent WorkflowCmdTopic should not throw, should create the topic" {
-        val message = TestFactory.random<WorkflowCmdMessage>()
+        val message = TestFactory.random<WorkflowStateEngineCmdMessage>()
 
         // publishing to an absent WorkflowCmdTopic should not throw
         shouldNotThrowAny {
@@ -179,7 +181,7 @@ class PulsarInfiniticProducerTests : StringSpec(
       }
 
       "publishing to an absent WorkflowEventTopic should not throw, should create the topic" {
-        val message = TestFactory.random<WorkflowEventMessage>()
+        val message = TestFactory.random<WorkflowStateEngineEventMessage>()
 
 
         // publishing to an absent WorkflowEventsTopic should not throw

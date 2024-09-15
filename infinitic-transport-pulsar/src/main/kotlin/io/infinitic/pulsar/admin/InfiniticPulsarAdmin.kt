@@ -42,7 +42,7 @@ import org.apache.pulsar.common.policies.data.Policies as PulsarPolicies
 import org.apache.pulsar.common.policies.data.TopicType as PulsarTopicType
 
 @Suppress("MemberVisibilityCanBePrivate")
-class PulsarInfiniticAdmin(
+class InfiniticPulsarAdmin(
   pulsarAdmin: PulsarAdmin
 ) {
   private val logger = KotlinLogging.logger {}

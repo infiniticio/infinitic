@@ -43,7 +43,7 @@ import java.util.concurrent.TimeUnit
 import kotlin.reflect.KClass
 
 
-class PulsarInfiniticClient(private val pulsarClient: PulsarClient) {
+class InfiniticPulsarClient(private val pulsarClient: PulsarClient) {
 
   private val logger = KotlinLogging.logger {}
 

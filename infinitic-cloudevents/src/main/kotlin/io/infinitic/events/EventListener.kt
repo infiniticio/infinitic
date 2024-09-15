@@ -20,20 +20,15 @@
  *
  * Licensor: infinitic.io
  */
-package io.infinitic.pulsar
 
-import io.infinitic.common.transport.InfiniticResources
-import io.infinitic.pulsar.resources.PulsarResources
+package io.infinitic.events
 
-class PulsarInfiniticResources(
-  private val pulsarResources: PulsarResources
-) : InfiniticResources {
-  override suspend fun getServices() =
-      pulsarResources.getServiceNames()
+import io.github.oshai.kotlinlogging.KotlinLogging
+import io.infinitic.cloudEvents.CloudEventListener
 
-  override suspend fun getWorkflows() =
-      pulsarResources.getWorkflowNames()
+class EventListener(val listener: CloudEventListener, val source: String) {
 
-  override suspend fun deleteTopicForClient(clientName: String) =
-      pulsarResources.deleteTopicForClient(clientName)
+  companion object {
+    val logger = KotlinLogging.logger {}
+  }
 }

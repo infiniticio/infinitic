@@ -20,20 +20,32 @@
  *
  * Licensor: infinitic.io
  */
-package io.infinitic.pulsar
 
-import io.infinitic.common.transport.InfiniticResources
-import io.infinitic.pulsar.resources.PulsarResources
+package io.infinitic.pulsar.admin
 
-class PulsarInfiniticResources(
-  private val pulsarResources: PulsarResources
-) : InfiniticResources {
-  override suspend fun getServices() =
-      pulsarResources.getServiceNames()
+import com.sksamuel.hoplite.Secret
+import io.infinitic.pulsar.config.auth.ClientAuthenticationConfig
 
-  override suspend fun getWorkflows() =
-      pulsarResources.getWorkflowNames()
-
-  override suspend fun deleteTopicForClient(clientName: String) =
-      pulsarResources.deleteTopicForClient(clientName)
+@Suppress("unused")
+interface AdminConfigInterface {
+  val authentication: ClientAuthenticationConfig?
+  val tlsKeyFilePath: String?
+  val tlsCertificateFilePath: String?
+  val tlsTrustCertsFilePath: String?
+  val allowTlsInsecureConnection: Boolean?
+  val enableTlsHostnameVerification: Boolean?
+  val useKeyStoreTls: Boolean?
+  val sslProvider: String?
+  val tlsKeyStoreType: String?
+  val tlsKeyStorePath: String?
+  val tlsKeyStorePassword: String?
+  val tlsTrustStoreType: String?
+  val tlsTrustStorePath: String?
+  val tlsTrustStorePassword: Secret?
+  val tlsCiphers: Set<String>?
+  val tlsProtocols: Set<String>?
+  val connectionTimeoutSeconds: Double?
+  val readTimeoutSeconds: Double?
+  val requestTimeoutSeconds: Double?
+  val autoCertRefreshTime: Double?
 }

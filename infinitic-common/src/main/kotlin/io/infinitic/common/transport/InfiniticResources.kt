@@ -23,9 +23,9 @@
 package io.infinitic.common.transport
 
 interface InfiniticResources {
-  suspend fun getServices(): Set<String>
+  suspend fun getServices(): Result<Set<String>>
 
-  suspend fun getWorkflows(): Set<String>
+  suspend fun getWorkflows(): Result<Set<String>>
 
   suspend fun deleteTopicForClient(clientName: String): Result<String?>
 }

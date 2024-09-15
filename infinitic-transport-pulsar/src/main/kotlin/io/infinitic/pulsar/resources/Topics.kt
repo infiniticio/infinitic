@@ -51,10 +51,10 @@ import io.infinitic.common.transport.WorkflowStateTimerTopic
 import io.infinitic.common.transport.WorkflowTagEngineTopic
 import io.infinitic.common.transport.WorkflowTopic
 import io.infinitic.common.workflows.engine.messages.WorkflowCmdEnvelope
-import io.infinitic.common.workflows.engine.messages.WorkflowCmdMessage
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineEnvelope
 import io.infinitic.common.workflows.engine.messages.WorkflowEventEnvelope
-import io.infinitic.common.workflows.engine.messages.WorkflowEventMessage
+import io.infinitic.common.workflows.engine.messages.WorkflowStateEngineCmdMessage
+import io.infinitic.common.workflows.engine.messages.WorkflowStateEngineEventMessage
 import io.infinitic.common.workflows.engine.messages.WorkflowStateEngineMessage
 import io.infinitic.common.workflows.tags.messages.WorkflowTagEngineMessage
 import io.infinitic.common.workflows.tags.messages.WorkflowTagEnvelope
@@ -179,9 +179,9 @@ internal fun <S : Message> Topic<S>.envelope(message: S) = when (this) {
   NamingTopic -> thisShouldNotHappen()
   ClientTopic -> ClientEnvelope.from(message as ClientMessage)
   WorkflowTagEngineTopic -> WorkflowTagEnvelope.from(message as WorkflowTagEngineMessage)
-  WorkflowStateCmdTopic -> WorkflowCmdEnvelope.from(message as WorkflowCmdMessage)
+  WorkflowStateCmdTopic -> WorkflowCmdEnvelope.from(message as WorkflowStateEngineCmdMessage)
   WorkflowStateEngineTopic, WorkflowStateTimerTopic -> WorkflowEngineEnvelope.from(message as WorkflowStateEngineMessage)
-  WorkflowStateEventTopic -> WorkflowEventEnvelope.from(message as WorkflowEventMessage)
+  WorkflowStateEventTopic -> WorkflowEventEnvelope.from(message as WorkflowStateEngineEventMessage)
   WorkflowExecutorTopic, RetryWorkflowExecutorTopic ->
     ServiceExecutorEnvelope.from(message as ServiceExecutorMessage)
 

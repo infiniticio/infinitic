@@ -33,7 +33,7 @@ import io.infinitic.common.tasks.executors.messages.ExecuteTask
 import io.infinitic.common.tasks.executors.messages.ServiceExecutorEnvelope
 import io.infinitic.common.tasks.executors.messages.ServiceExecutorMessage
 import io.infinitic.common.transport.ServiceExecutorTopic
-import io.infinitic.pulsar.client.PulsarInfiniticClient
+import io.infinitic.pulsar.client.InfiniticPulsarClient
 import io.infinitic.pulsar.producers.Producer
 import io.infinitic.pulsar.producers.ProducerConfig
 import io.infinitic.pulsar.resources.schema
@@ -64,7 +64,7 @@ class ConsumerTests : StringSpec(
     {
       val pulsarServer = DockerOnly().pulsarServer!!
 
-      val client = PulsarInfiniticClient(
+      val client = InfiniticPulsarClient(
           PulsarClient
               .builder()
               .serviceUrl(pulsarServer.pulsarBrokerUrl)

@@ -81,9 +81,9 @@ import io.infinitic.common.workflows.engine.messages.TaskDispatchedEvent
 import io.infinitic.common.workflows.engine.messages.TimerDispatchedEvent
 import io.infinitic.common.workflows.engine.messages.WaitWorkflow
 import io.infinitic.common.workflows.engine.messages.WorkflowCanceledEvent
-import io.infinitic.common.workflows.engine.messages.WorkflowCmdMessage
 import io.infinitic.common.workflows.engine.messages.WorkflowCompletedEvent
-import io.infinitic.common.workflows.engine.messages.WorkflowEventMessage
+import io.infinitic.common.workflows.engine.messages.WorkflowStateEngineCmdMessage
+import io.infinitic.common.workflows.engine.messages.WorkflowStateEngineEventMessage
 import io.infinitic.common.workflows.engine.messages.WorkflowStateEngineMessage
 import io.infinitic.storage.config.InMemoryStorageConfig
 import io.infinitic.transport.config.InMemoryTransportConfig
@@ -154,7 +154,7 @@ suspend fun main() {
     }
   }
 
-  WorkflowCmdMessage::class.sealedSubclasses.forEach {
+  WorkflowStateEngineCmdMessage::class.sealedSubclasses.forEach {
     events.clear()
     val message = TestFactory.random(it, mapOf("workflowName" to WorkflowName("WorkflowA")))
     message.sendToTopic(WorkflowStateCmdTopic)
@@ -166,7 +166,7 @@ suspend fun main() {
   }
 
   WorkflowStateEngineMessage::class.sealedSubclasses.forEach {
-    if (!it.isSubclassOf(WorkflowCmdMessage::class)) {
+    if (!it.isSubclassOf(WorkflowStateEngineCmdMessage::class)) {
       events.clear()
       val message = TestFactory.random(it, mapOf("workflowName" to WorkflowName("WorkflowA")))
       message.sendToTopic(WorkflowStateEngineTopic)
@@ -178,7 +178,7 @@ suspend fun main() {
     }
   }
 
-  WorkflowEventMessage::class.sealedSubclasses.forEach {
+  WorkflowStateEngineEventMessage::class.sealedSubclasses.forEach {
     events.clear()
     val message = TestFactory.random(it, mapOf("workflowName" to WorkflowName("WorkflowA")))
     message.sendToTopic(WorkflowStateEventTopic)
@@ -300,7 +300,7 @@ internal class CloudEventTests :
           }
         }
 
-        WorkflowCmdMessage::class.sealedSubclasses.forEach {
+        WorkflowStateEngineCmdMessage::class.sealedSubclasses.forEach {
           "Check ${it.simpleName} event envelope from cmd topic" {
             val message = TestFactory.random(it, mapOf("workflowName" to WorkflowName("WorkflowA")))
             message.sendToTopic(WorkflowStateCmdTopic)
@@ -347,7 +347,7 @@ internal class CloudEventTests :
           json["taskName"]!!.jsonPrimitive.content shouldBe message.methodName.toString()
         }
 
-        WorkflowCmdMessage::class.sealedSubclasses.forEach {
+        WorkflowStateEngineCmdMessage::class.sealedSubclasses.forEach {
           "No ${it.simpleName} event should come from engine topic" {
             val message = TestFactory.random(
                 it,
@@ -362,7 +362,7 @@ internal class CloudEventTests :
         }
 
         WorkflowStateEngineMessage::class.sealedSubclasses.forEach {
-          if (!it.isSubclassOf(WorkflowCmdMessage::class)) {
+          if (!it.isSubclassOf(WorkflowStateEngineCmdMessage::class)) {
             "Check ${it.simpleName} event envelope from engine topic" {
               val message = TestFactory.random(
                   it,
@@ -399,7 +399,7 @@ internal class CloudEventTests :
           }
         }
 
-        WorkflowEventMessage::class.sealedSubclasses.forEach {
+        WorkflowStateEngineEventMessage::class.sealedSubclasses.forEach {
           "Check ${it.simpleName} event envelope from events topic" {
             val message = TestFactory.random(
                 it,

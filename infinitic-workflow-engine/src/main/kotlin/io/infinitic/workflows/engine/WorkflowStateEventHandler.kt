@@ -41,7 +41,7 @@ import io.infinitic.common.workflows.engine.messages.TaskDispatchedEvent
 import io.infinitic.common.workflows.engine.messages.TimerDispatchedEvent
 import io.infinitic.common.workflows.engine.messages.WorkflowCanceledEvent
 import io.infinitic.common.workflows.engine.messages.WorkflowCompletedEvent
-import io.infinitic.common.workflows.engine.messages.WorkflowEventMessage
+import io.infinitic.common.workflows.engine.messages.WorkflowStateEngineEventMessage
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 
@@ -49,7 +49,7 @@ class WorkflowStateEventHandler(val producer: InfiniticProducer) {
 
   val emitterName by lazy { EmitterName(producer.name) }
 
-  suspend fun handle(msg: WorkflowEventMessage, publishTime: MillisInstant) {
+  suspend fun handle(msg: WorkflowStateEngineEventMessage, publishTime: MillisInstant) {
     when (msg) {
       is WorkflowCanceledEvent -> Unit
       is WorkflowCompletedEvent -> Unit

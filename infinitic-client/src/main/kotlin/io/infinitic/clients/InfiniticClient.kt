@@ -37,6 +37,7 @@ import io.infinitic.common.tasks.data.ServiceName
 import io.infinitic.common.tasks.data.TaskId
 import io.infinitic.common.transport.logged.LoggedInfiniticConsumer
 import io.infinitic.common.transport.logged.LoggedInfiniticProducer
+import io.infinitic.common.transport.logged.LoggedInfiniticResources
 import io.infinitic.common.utils.annotatedName
 import io.infinitic.common.workflows.data.workflowMethods.WorkflowMethodId
 import io.infinitic.common.workflows.data.workflows.WorkflowMeta
@@ -63,7 +64,7 @@ class InfiniticClient(
 ) : InfiniticClientInterface {
 
   private val resources by lazy {
-    config.transport.resources
+    LoggedInfiniticResources(logger, config.transport.resources)
   }
   private val consumer by lazy {
     LoggedInfiniticConsumer(logger, config.transport.consumer)

@@ -35,7 +35,7 @@ import io.kotest.matchers.shouldBe
 class WorkflowEventEnvelopeTests :
   StringSpec(
       {
-        WorkflowEventMessage::class.sealedSubclasses.map {
+        WorkflowStateEngineEventMessage::class.sealedSubclasses.map {
           val msg = TestFactory.random(it)
 
           "WorkflowEventEnvelope: ${msg::class.simpleName} should be avro-convertible" {

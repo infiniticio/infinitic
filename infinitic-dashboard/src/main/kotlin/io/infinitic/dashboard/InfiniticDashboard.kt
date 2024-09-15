@@ -95,7 +95,7 @@ class InfiniticDashboard(
     /** Create Dashboard from a DashboardConfig */
     @JvmStatic
     fun fromConfig(dashboardConfig: DashboardConfig) = InfiniticDashboard(
-        PulsarResources.from(dashboardConfig.pulsar),
+        PulsarResources(dashboardConfig.pulsar),
         dashboardConfig.port,
         dashboardConfig.debug,
     ).also {

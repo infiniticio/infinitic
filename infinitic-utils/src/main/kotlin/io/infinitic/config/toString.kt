@@ -20,20 +20,20 @@
  *
  * Licensor: infinitic.io
  */
-package io.infinitic.pulsar
+package io.infinitic.config
 
-import io.infinitic.common.transport.InfiniticResources
-import io.infinitic.pulsar.resources.PulsarResources
+import kotlin.reflect.KClass
+import kotlin.reflect.full.memberProperties
+import kotlin.reflect.jvm.jvmErasure
 
-class PulsarInfiniticResources(
-  private val pulsarResources: PulsarResources
-) : InfiniticResources {
-  override suspend fun getServices() =
-      pulsarResources.getServiceNames()
+fun <T : Any> T.notNullPropertiesToString(interfaceClass: KClass<*>? = null) =
+    this::class.memberProperties
+        .filter { prop ->
+          // keep only properties that are part of the interface class
+          interfaceClass?.java?.isAssignableFrom(prop.returnType.jvmErasure.javaObjectType) ?: false
+        }
+        .mapNotNull { prop ->
+          // display non null properties
+          prop.call(this)?.let { "${prop.name}=$it" }
+        }.joinToString()
 
-  override suspend fun getWorkflows() =
-      pulsarResources.getWorkflowNames()
-
-  override suspend fun deleteTopicForClient(clientName: String) =
-      pulsarResources.deleteTopicForClient(clientName)
-}
