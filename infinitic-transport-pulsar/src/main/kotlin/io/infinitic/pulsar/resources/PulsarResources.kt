@@ -103,7 +103,7 @@ class PulsarResources(
     if (init) initTopicOnce(
         topic = it,
         isPartitioned = isPartitioned,
-        isTimed = isTimer,
+        isTimer = isTimer,
     )
 
     if (checkConsumer) admin.checkSubscriptionHasConsumerOnce(
@@ -123,7 +123,7 @@ class PulsarResources(
         if (init) initTopicOnce(
             topic = it,
             isPartitioned = isPartitioned,
-            isTimed = isTimer,
+            isTimer = isTimer,
         )
       }
 
@@ -139,14 +139,14 @@ class PulsarResources(
   suspend fun initTopicOnce(
     topic: String,
     isPartitioned: Boolean,
-    isTimed: Boolean,
+    isTimer: Boolean,
   ): Result<Unit> {
     // initialize tenant once (do nothing on error)
     admin.syncInitTenantOnce(tenant, allowedClusters, adminRoles)
     // initialize namespace once (do nothing on error)
     admin.syncInitNamespaceOnce(namespaceFullName, policies)
     // initialize topic once  (do nothing on error)
-    val ttl = when (isTimed) {
+    val ttl = when (isTimer) {
       true -> policies.timerTTLSeconds
       false -> policies.messageTTLSeconds
     }
@@ -161,8 +161,8 @@ class PulsarResources(
   suspend fun initDlqTopicOnce(
     topic: String?,
     isPartitioned: Boolean,
-    isDelayed: Boolean,
-  ): Result<Unit?> = topic?.let { initTopicOnce(it, isPartitioned, isDelayed) }
+    isTimer: Boolean,
+  ): Result<Unit?> = topic?.let { initTopicOnce(it, isPartitioned, isTimer) }
     ?: Result.success(null)
 
   /**

@@ -52,8 +52,8 @@ import io.infinitic.common.tasks.executors.messages.ExecuteTask
 import io.infinitic.common.tasks.executors.messages.ServiceExecutorMessage
 import io.infinitic.common.tasks.tags.messages.RemoveTaskIdFromTag
 import io.infinitic.common.transport.InfiniticProducer
-import io.infinitic.common.transport.RetryServiceExecutorTopic
 import io.infinitic.common.transport.ServiceExecutorEventTopic
+import io.infinitic.common.transport.ServiceExecutorRetryTopic
 import io.infinitic.common.transport.ServiceExecutorTopic
 import io.infinitic.common.workers.config.WithExponentialBackoffRetry
 import io.infinitic.common.workers.data.WorkerName
@@ -106,7 +106,7 @@ class TaskExecutorTests :
             capture(taskExecutorSlot).sendTo(ServiceExecutorTopic)
           } returns Unit
           coEvery {
-            capture(taskExecutorSlot).sendTo(RetryServiceExecutorTopic, capture(afterSlot))
+            capture(taskExecutorSlot).sendTo(ServiceExecutorRetryTopic, capture(afterSlot))
           } returns Unit
           coEvery {
             capture(taskEventSlot).sendTo(ServiceExecutorEventTopic)

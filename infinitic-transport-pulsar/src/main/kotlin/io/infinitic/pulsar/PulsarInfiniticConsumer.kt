@@ -27,12 +27,9 @@ import io.infinitic.common.messages.Message
 import io.infinitic.common.transport.EventListenerSubscription
 import io.infinitic.common.transport.InfiniticConsumer
 import io.infinitic.common.transport.MainSubscription
-import io.infinitic.common.transport.RetryServiceExecutorTopic
-import io.infinitic.common.transport.RetryWorkflowExecutorTopic
 import io.infinitic.common.transport.Subscription
 import io.infinitic.pulsar.consumers.Consumer
 import io.infinitic.pulsar.resources.PulsarResources
-import io.infinitic.pulsar.resources.defaultInitialPosition
 import io.infinitic.pulsar.resources.defaultName
 import io.infinitic.pulsar.resources.defaultNameDLQ
 import io.infinitic.pulsar.resources.schema
@@ -42,7 +39,6 @@ import org.apache.pulsar.client.api.SubscriptionInitialPosition
 class PulsarInfiniticConsumer(
   private val consumer: Consumer,
   private val pulsarResources: PulsarResources,
-  val shutdownGracePeriodSeconds: Double
 ) : InfiniticConsumer {
 
   override suspend fun <S : Message> start(
@@ -52,14 +48,6 @@ class PulsarInfiniticConsumer(
     beforeDlq: (suspend (S?, Exception) -> Unit)?,
     concurrency: Int,
   ) {
-    when (subscription.topic) {
-      // we do nothing here, as WorkflowTaskExecutorTopic and ServiceExecutorTopic
-      // do not need a distinct topic to handle delayed messages in Pulsar
-      RetryWorkflowExecutorTopic, RetryServiceExecutorTopic -> return
-
-      else -> Unit
-    }
-
     // Retrieves the name the topic, If the topic doesn't exist yet, create it.
     val topicName = with(pulsarResources) {
       subscription.topic.forEntity(entity, true, checkConsumer = false)
@@ -79,7 +67,7 @@ class PulsarInfiniticConsumer(
         subscriptionName = subscription.name,
         subscriptionNameDlq = subscription.nameDLQ,
         subscriptionType = subscription.type,
-        subscriptionInitialPosition = subscription.initialPosition,
+        subscriptionInitialPosition = SubscriptionInitialPosition.Earliest,
         consumerName = entity,
         concurrency = concurrency,
     )
@@ -95,13 +83,6 @@ class PulsarInfiniticConsumer(
     get() = when (this) {
       is MainSubscription -> defaultNameDLQ
       is EventListenerSubscription -> name?.let { "$it-dlq" } ?: defaultNameDLQ
-    }
-
-  private val Subscription<*>.initialPosition
-    get() = when (this) {
-      is MainSubscription -> defaultInitialPosition
-      is EventListenerSubscription -> name?.let { SubscriptionInitialPosition.Earliest }
-        ?: defaultInitialPosition
     }
 }
 

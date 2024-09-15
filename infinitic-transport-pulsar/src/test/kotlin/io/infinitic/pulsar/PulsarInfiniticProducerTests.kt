@@ -33,11 +33,11 @@ import io.infinitic.common.tasks.events.messages.TaskStartedEvent
 import io.infinitic.common.tasks.executors.messages.ExecuteTask
 import io.infinitic.common.tasks.executors.messages.ServiceExecutorMessage
 import io.infinitic.common.transport.ClientTopic
-import io.infinitic.common.transport.RetryServiceExecutorTopic
-import io.infinitic.common.transport.RetryWorkflowExecutorTopic
 import io.infinitic.common.transport.ServiceExecutorEventTopic
+import io.infinitic.common.transport.ServiceExecutorRetryTopic
 import io.infinitic.common.transport.ServiceExecutorTopic
 import io.infinitic.common.transport.WorkflowExecutorEventTopic
+import io.infinitic.common.transport.WorkflowExecutorRetryTopic
 import io.infinitic.common.transport.WorkflowExecutorTopic
 import io.infinitic.common.transport.WorkflowStateCmdTopic
 import io.infinitic.common.transport.WorkflowStateEngineTopic
@@ -218,12 +218,12 @@ class PulsarInfiniticProducerTests : StringSpec(
 
         // publishing to an absent DelayedWorkflowTaskExecutorTopic should not throw
         shouldNotThrowAny {
-          pulsarProducer.internalSendTo(message, RetryWorkflowExecutorTopic, MillisDuration(1))
+          pulsarProducer.internalSendTo(message, WorkflowExecutorRetryTopic, MillisDuration(1))
         }
 
         // publishing to an absent DelayedWorkflowTaskExecutorTopic should create it
         val topic =
-            with(pulsarResources) { RetryWorkflowExecutorTopic.fullName(message.entity()) }
+            with(pulsarResources) { WorkflowExecutorRetryTopic.fullName(message.entity()) }
         admin.getTopicInfo(topic).getOrThrow() shouldNotBe null
       }
 
@@ -263,13 +263,13 @@ class PulsarInfiniticProducerTests : StringSpec(
         shouldNotThrowAny {
           pulsarProducer.internalSendTo(
               message,
-              RetryServiceExecutorTopic,
+              ServiceExecutorRetryTopic,
               MillisDuration(1),
           )
         }
 
         // publishing to an absent DelayedServiceExecutorTopic should create it
-        val topic = with(pulsarResources) { RetryServiceExecutorTopic.fullName(message.entity()) }
+        val topic = with(pulsarResources) { ServiceExecutorRetryTopic.fullName(message.entity()) }
         admin.getTopicInfo(topic).getOrThrow() shouldNotBe null
       }
 

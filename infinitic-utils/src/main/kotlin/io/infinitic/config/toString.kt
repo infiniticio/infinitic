@@ -35,7 +35,6 @@ fun <T : Any> T.notNullPropertiesToString(interfaceClass: KClass<T>? = null): St
         // keep only properties that are part of the interface class
         interfaceProperties?.contains(prop.name) ?: true
       }
-      .also { println(it) }
       .mapNotNull { prop ->
         prop.isAccessible = true
         // display non null properties

@@ -25,7 +25,6 @@ package io.infinitic.pulsar.resources
 import io.infinitic.common.transport.EventListenerSubscription
 import io.infinitic.common.transport.MainSubscription
 import io.infinitic.common.transport.Subscription
-import org.apache.pulsar.client.api.SubscriptionInitialPosition
 import org.apache.pulsar.client.api.SubscriptionType
 
 internal val Subscription<*>.type
@@ -45,10 +44,3 @@ internal val Subscription<*>.defaultName
   }
 
 internal val Subscription<*>.defaultNameDLQ get() = "$defaultName-dlq"
-
-internal val Subscription<*>.defaultInitialPosition
-  get() = when (this) {
-    is MainSubscription -> SubscriptionInitialPosition.Earliest
-    is EventListenerSubscription -> SubscriptionInitialPosition.Latest
-  }
-

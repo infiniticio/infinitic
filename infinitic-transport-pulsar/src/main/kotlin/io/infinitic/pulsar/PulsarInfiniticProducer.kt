@@ -91,7 +91,7 @@ class PulsarInfiniticProducer(
   }
 
   private fun Topic<*>.canIgnore(e: Exception): Boolean = when (this) {
-    // If response topic does not exist, it means the client closed
+    // If response topic does not exist, it means the client has closed
     // If producer is already closed, it means that the topics existed, was used, but does not exist anymore
     // in those cases, we are ok not to send this message
     is ClientTopic -> (e is TopicDoesNotExistException || e is AlreadyClosedException)

@@ -30,13 +30,13 @@ import io.infinitic.common.tasks.events.messages.ServiceExecutorEventMessage
 import io.infinitic.common.tasks.executors.messages.ServiceExecutorMessage
 import io.infinitic.common.tasks.tags.messages.ServiceTagMessage
 import io.infinitic.common.transport.ClientTopic
-import io.infinitic.common.transport.RetryServiceExecutorTopic
-import io.infinitic.common.transport.RetryWorkflowExecutorTopic
 import io.infinitic.common.transport.ServiceExecutorEventTopic
+import io.infinitic.common.transport.ServiceExecutorRetryTopic
 import io.infinitic.common.transport.ServiceExecutorTopic
 import io.infinitic.common.transport.ServiceTagEngineTopic
 import io.infinitic.common.transport.Topic
 import io.infinitic.common.transport.WorkflowExecutorEventTopic
+import io.infinitic.common.transport.WorkflowExecutorRetryTopic
 import io.infinitic.common.transport.WorkflowExecutorTopic
 import io.infinitic.common.transport.WorkflowStateCmdTopic
 import io.infinitic.common.transport.WorkflowStateEngineTopic
@@ -96,13 +96,13 @@ class InMemoryChannels {
   @Suppress("UNCHECKED_CAST")
   fun <S : Message> Topic<S>.channelForDelayed(entity: String): Channel<DelayedMessage<S>> {
     return when (this) {
-      RetryServiceExecutorTopic -> retryServiceExecutorChannels.getOrPut(entity, newChannel())
+      ServiceExecutorRetryTopic -> retryServiceExecutorChannels.getOrPut(entity, newChannel())
       WorkflowStateTimerTopic -> workflowStateTimerChannels.getOrPut(
           entity,
           newChannel(),
       )
 
-      RetryWorkflowExecutorTopic -> retryWorkflowExecutorChannels.getOrPut(
+      WorkflowExecutorRetryTopic -> retryWorkflowExecutorChannels.getOrPut(
           entity,
           newChannel(),
       )

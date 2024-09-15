@@ -35,14 +35,14 @@ import io.infinitic.common.tasks.tags.messages.ServiceTagEnvelope
 import io.infinitic.common.tasks.tags.messages.ServiceTagMessage
 import io.infinitic.common.transport.ClientTopic
 import io.infinitic.common.transport.NamingTopic
-import io.infinitic.common.transport.RetryServiceExecutorTopic
-import io.infinitic.common.transport.RetryWorkflowExecutorTopic
 import io.infinitic.common.transport.ServiceExecutorEventTopic
+import io.infinitic.common.transport.ServiceExecutorRetryTopic
 import io.infinitic.common.transport.ServiceExecutorTopic
 import io.infinitic.common.transport.ServiceTagEngineTopic
 import io.infinitic.common.transport.ServiceTopic
 import io.infinitic.common.transport.Topic
 import io.infinitic.common.transport.WorkflowExecutorEventTopic
+import io.infinitic.common.transport.WorkflowExecutorRetryTopic
 import io.infinitic.common.transport.WorkflowExecutorTopic
 import io.infinitic.common.transport.WorkflowStateCmdTopic
 import io.infinitic.common.transport.WorkflowStateEngineTopic
@@ -167,10 +167,10 @@ internal val <S : Message> Topic<S>.envelopeClass: KClass<Envelope<out S>>
     WorkflowStateCmdTopic -> WorkflowCmdEnvelope::class
     WorkflowStateEngineTopic, WorkflowStateTimerTopic -> WorkflowEngineEnvelope::class
     WorkflowStateEventTopic -> WorkflowEventEnvelope::class
-    WorkflowExecutorTopic, RetryWorkflowExecutorTopic -> ServiceExecutorEnvelope::class
+    WorkflowExecutorTopic, WorkflowExecutorRetryTopic -> ServiceExecutorEnvelope::class
     WorkflowExecutorEventTopic -> ServiceEventEnvelope::class
     ServiceTagEngineTopic -> ServiceTagEnvelope::class
-    ServiceExecutorTopic, RetryServiceExecutorTopic -> ServiceExecutorEnvelope::class
+    ServiceExecutorTopic, ServiceExecutorRetryTopic -> ServiceExecutorEnvelope::class
     ServiceExecutorEventTopic -> ServiceEventEnvelope::class
   } as KClass<Envelope<out S>>
 
@@ -182,12 +182,12 @@ internal fun <S : Message> Topic<S>.envelope(message: S) = when (this) {
   WorkflowStateCmdTopic -> WorkflowCmdEnvelope.from(message as WorkflowStateEngineCmdMessage)
   WorkflowStateEngineTopic, WorkflowStateTimerTopic -> WorkflowEngineEnvelope.from(message as WorkflowStateEngineMessage)
   WorkflowStateEventTopic -> WorkflowEventEnvelope.from(message as WorkflowStateEngineEventMessage)
-  WorkflowExecutorTopic, RetryWorkflowExecutorTopic ->
+  WorkflowExecutorTopic, WorkflowExecutorRetryTopic ->
     ServiceExecutorEnvelope.from(message as ServiceExecutorMessage)
 
   WorkflowExecutorEventTopic -> ServiceEventEnvelope.from(message as ServiceExecutorEventMessage)
   ServiceTagEngineTopic -> ServiceTagEnvelope.from(message as ServiceTagMessage)
-  ServiceExecutorTopic, RetryServiceExecutorTopic -> ServiceExecutorEnvelope.from(message as ServiceExecutorMessage)
+  ServiceExecutorTopic, ServiceExecutorRetryTopic -> ServiceExecutorEnvelope.from(message as ServiceExecutorMessage)
   ServiceExecutorEventTopic -> ServiceEventEnvelope.from(message as ServiceExecutorEventMessage)
 } as Envelope<out S>
 

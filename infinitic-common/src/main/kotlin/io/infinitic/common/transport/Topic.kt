@@ -74,8 +74,8 @@ data object ServiceExecutorTopic : ServiceTopic<ServiceExecutorMessage>() {
   override val prefix = "task-executor"
 }
 
-data object RetryServiceExecutorTopic : ServiceTopic<ServiceExecutorMessage>() {
-  override val prefix = "task-executor"
+data object ServiceExecutorRetryTopic : ServiceTopic<ServiceExecutorMessage>() {
+  override val prefix = "task-retry"
 }
 
 
@@ -122,8 +122,8 @@ data object WorkflowExecutorTopic : WorkflowTopic<ServiceExecutorMessage>() {
   override val prefix = "workflow-task-executor"
 }
 
-data object RetryWorkflowExecutorTopic : WorkflowTopic<ServiceExecutorMessage>() {
-  override val prefix = "workflow-task-executor"
+data object WorkflowExecutorRetryTopic : WorkflowTopic<ServiceExecutorMessage>() {
+  override val prefix = "workflow-task-retry"
 }
 
 data object WorkflowExecutorEventTopic : WorkflowTopic<ServiceExecutorEventMessage>() {
@@ -147,8 +147,8 @@ val Topic<*>.isTimer
 val Topic<*>.acceptDelayed
   get() = when (this) {
     WorkflowStateTimerTopic -> true
-    RetryWorkflowExecutorTopic -> true
-    RetryServiceExecutorTopic -> true
+    WorkflowExecutorRetryTopic -> true
+    ServiceExecutorRetryTopic -> true
 
     else -> false
   }
@@ -162,8 +162,8 @@ val Topic<*>.acceptDelayed
 val <S : Message> Topic<S>.withoutDelay
   get() = when (this) {
     WorkflowStateTimerTopic -> WorkflowStateEngineTopic
-    RetryWorkflowExecutorTopic -> WorkflowExecutorTopic
-    RetryServiceExecutorTopic -> ServiceExecutorTopic
+    WorkflowExecutorRetryTopic -> WorkflowExecutorTopic
+    ServiceExecutorRetryTopic -> ServiceExecutorTopic
     else -> this
   } as Topic<S>
 
@@ -174,7 +174,7 @@ val <S : Message> Topic<S>.withoutDelay
 val <S : Message> Topic<S>.forWorkflow
   get() = when (this) {
     ServiceExecutorTopic -> WorkflowExecutorTopic
-    RetryServiceExecutorTopic -> RetryWorkflowExecutorTopic
+    ServiceExecutorRetryTopic -> WorkflowExecutorRetryTopic
     ServiceExecutorEventTopic -> WorkflowExecutorEventTopic
     else -> this
   } as Topic<S>

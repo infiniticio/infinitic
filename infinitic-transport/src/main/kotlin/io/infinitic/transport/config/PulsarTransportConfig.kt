@@ -71,7 +71,6 @@ data class PulsarTransportConfig(
     PulsarInfiniticConsumer(
         Consumer(infiniticPulsarClient, pulsar.consumer),
         pulsarResources,
-        shutdownGracePeriodSeconds,
     )
   }
 

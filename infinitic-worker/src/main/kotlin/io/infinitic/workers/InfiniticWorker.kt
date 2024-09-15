@@ -39,13 +39,13 @@ import io.infinitic.common.tasks.executors.messages.ExecuteTask
 import io.infinitic.common.tasks.executors.messages.ServiceExecutorMessage
 import io.infinitic.common.tasks.tags.messages.ServiceTagMessage
 import io.infinitic.common.transport.MainSubscription
-import io.infinitic.common.transport.RetryServiceExecutorTopic
-import io.infinitic.common.transport.RetryWorkflowExecutorTopic
 import io.infinitic.common.transport.ServiceExecutorEventTopic
+import io.infinitic.common.transport.ServiceExecutorRetryTopic
 import io.infinitic.common.transport.ServiceExecutorTopic
 import io.infinitic.common.transport.ServiceTagEngineTopic
 import io.infinitic.common.transport.SubscriptionType
 import io.infinitic.common.transport.WorkflowExecutorEventTopic
+import io.infinitic.common.transport.WorkflowExecutorRetryTopic
 import io.infinitic.common.transport.WorkflowExecutorTopic
 import io.infinitic.common.transport.WorkflowStateCmdTopic
 import io.infinitic.common.transport.WorkflowStateEngineTopic
@@ -433,7 +433,7 @@ class InfiniticWorker(
       )
     }
 
-    // TASK-EXECUTOR-DELAY
+    // TASK-EXECUTOR-RETRY
     launch {
       val logger = TaskRetryHandler.logger
       val loggedConsumer = LoggedInfiniticConsumer(logger, consumer)
@@ -442,7 +442,7 @@ class InfiniticWorker(
       val taskRetryHandler = TaskRetryHandler(loggedProducer)
 
       loggedConsumer.start(
-          subscription = MainSubscription(RetryServiceExecutorTopic),
+          subscription = MainSubscription(ServiceExecutorRetryTopic),
           entity = config.serviceName,
           handler = taskRetryHandler::handle,
           beforeDlq = null,
@@ -613,7 +613,7 @@ class InfiniticWorker(
         "$CLOUD_EVENTS_WORKFLOW_EXECUTOR.${config.workflowName}",
     ).ignoreNull()
 
-    // WORKFLOW-TASK_EXECUTOR
+    // WORKFLOW-EXECUTOR
     launch {
       val logger = TaskExecutor.logger
       val loggedConsumer = LoggedInfiniticConsumer(logger, consumer)
@@ -645,7 +645,7 @@ class InfiniticWorker(
       )
     }
 
-    // WORKFLOW-TASK_EXECUTOR-DELAY
+    // WORKFLOW-EXECUTOR-RETRY
     launch {
       val logger = TaskRetryHandler.logger
       val loggedConsumer = LoggedInfiniticConsumer(logger, consumer)
@@ -654,7 +654,7 @@ class InfiniticWorker(
 
       // we do not use loggedConsumer to avoid logging twice the messages coming from delayed topics
       loggedConsumer.start(
-          subscription = MainSubscription(RetryWorkflowExecutorTopic),
+          subscription = MainSubscription(WorkflowExecutorRetryTopic),
           entity = config.workflowName,
           handler = taskRetryHandler::handle,
           beforeDlq = null,
@@ -662,7 +662,7 @@ class InfiniticWorker(
       )
     }
 
-    // WORKFLOW-TASK-EVENT
+    // WORKFLOW-EXECUTOR-EVENT
     launch {
       val logger = TaskEventHandler.logger
       val loggedConsumer = LoggedInfiniticConsumer(logger, consumer)
@@ -813,7 +813,7 @@ class InfiniticWorker(
     // TASK-EXECUTOR-DELAY topic
     launch {
       loggedConsumer.start(
-          subscription = subscriptionType.create(RetryServiceExecutorTopic, subscriptionName),
+          subscription = subscriptionType.create(ServiceExecutorRetryTopic, subscriptionName),
           entity = serviceName.toString(),
           handler = handler,
           beforeDlq = logMessageSentToDLQ,
@@ -854,7 +854,7 @@ class InfiniticWorker(
     // WORKFLOW-TASK-EXECUTOR-DELAY topic
     launch {
       loggedConsumer.start(
-          subscription = subscriptionType.create(RetryWorkflowExecutorTopic, subscriptionName),
+          subscription = subscriptionType.create(WorkflowExecutorRetryTopic, subscriptionName),
           entity = workflowName.toString(),
           handler = handler,
           beforeDlq = logMessageSentToDLQ,

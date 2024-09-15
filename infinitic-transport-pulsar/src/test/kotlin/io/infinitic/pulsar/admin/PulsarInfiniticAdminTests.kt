@@ -28,67 +28,64 @@ import io.infinitic.pulsar.config.policies.PoliciesConfig
 import io.kotest.assertions.throwables.shouldNotThrow
 import io.kotest.core.annotation.EnabledIf
 import io.kotest.core.spec.style.StringSpec
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import org.apache.pulsar.client.admin.PulsarAdmin
 import org.apache.pulsar.client.admin.PulsarAdminException
+import kotlin.time.Duration.Companion.minutes
 
 @EnabledIf(DockerOnly::class)
-class PulsarInfiniticAdminTests :
-  StringSpec(
-      {
-        val pulsarServer = DockerOnly().pulsarServer!!
-        val admin = InfiniticPulsarAdmin(
-            PulsarAdmin.builder().serviceHttpUrl(pulsarServer.httpServiceUrl).build(),
-        )
+class PulsarInfiniticAdminTests : StringSpec(
+    {
+      val pulsarServer = DockerOnly().pulsarServer!!
+      val admin = InfiniticPulsarAdmin(
+          PulsarAdmin.builder().serviceHttpUrl(pulsarServer.httpServiceUrl).build(),
+      )
 
-        "can create the same tenant twice simultaneously" {
-          // As topics are created on the fly, it can happen that
-          // the same topic is created twice simultaneously, e.g. when dispatching a task
-          // with multiple new tags (there is one topic per tag).
-          // This test ensures that this case is handled correctly.
-          shouldNotThrow<PulsarAdminException> {
-            CoroutineScope(Dispatchers.IO).async {
-              launch { admin.syncInitTenantOnce("test-tenant", null, null).getOrThrow() }
-              launch { admin.syncInitTenantOnce("test-tenant", null, null).getOrThrow() }
-            }.await()
+      "can create the same tenant twice simultaneously".config(timeout = 2.minutes) {
+        // As topics are created on the fly, it can happen that
+        // the same topic is created twice simultaneously, e.g. when dispatching a task
+        // with multiple new tags (there is one topic per tag).
+        // This test ensures that this case is handled correctly.
+        shouldNotThrow<PulsarAdminException> {
+          coroutineScope {
+            launch { admin.syncInitTenantOnce("test-tenant", null, null).getOrThrow() }
+            launch { admin.syncInitTenantOnce("test-tenant", null, null).getOrThrow() }
           }
         }
+      }
 
-        "can create the same namespace twice simultaneously" {
-          // As topics are created on the fly, it can happen that
-          // the same topic is created twice simultaneously, e.g. when dispatching a task
-          // with multiple new tags (there is one topic per tag).
-          // This test ensures that this case is handled correctly.
-          shouldNotThrow<PulsarAdminException> {
-            admin.syncInitTenantOnce("test-tenant", null, null).getOrThrow()
-            CoroutineScope(Dispatchers.IO).async {
-              launch {
-                admin.syncInitNamespaceOnce("test-tenant/test-namespace", PoliciesConfig())
-                    .getOrThrow()
-              }
-              launch {
-                admin.syncInitNamespaceOnce("test-tenant/test-namespace", PoliciesConfig())
-                    .getOrThrow()
-              }
-            }.await()
-          }
-        }
-
-        "can create the same topic twice simultaneously" {
-          // As topics are created on the fly, it can happen that
-          // the same topic is created twice simultaneously, e.g. when dispatching a task
-          // with multiple new tags (there is one topic per tag).
-          // This test ensures that this case is handled correctly.
-          shouldNotThrow<PulsarAdminException> {
-            coroutineScope {
-              launch { admin.syncInitTopicOnce("test-topic", true, 60).getOrThrow() }
-              launch { admin.syncInitTopicOnce("test-topic", true, 60).getOrThrow() }
+      "can create the same namespace twice simultaneously" {
+        // As topics are created on the fly, it can happen that
+        // the same topic is created twice simultaneously, e.g. when dispatching a task
+        // with multiple new tags (there is one topic per tag).
+        // This test ensures that this case is handled correctly.
+        shouldNotThrow<PulsarAdminException> {
+          admin.syncInitTenantOnce("test-tenant", null, null).getOrThrow()
+          coroutineScope {
+            launch {
+              admin.syncInitNamespaceOnce("test-tenant/test-namespace", PoliciesConfig())
+                  .getOrThrow()
+            }
+            launch {
+              admin.syncInitNamespaceOnce("test-tenant/test-namespace", PoliciesConfig())
+                  .getOrThrow()
             }
           }
         }
-      },
-  )
+      }
+
+      "can create the same topic twice simultaneously" {
+        // As topics are created on the fly, it can happen that
+        // the same topic is created twice simultaneously, e.g. when dispatching a task
+        // with multiple new tags (there is one topic per tag).
+        // This test ensures that this case is handled correctly.
+        shouldNotThrow<PulsarAdminException> {
+          coroutineScope {
+            launch { admin.syncInitTopicOnce("test-topic", true, 60).getOrThrow() }
+            launch { admin.syncInitTopicOnce("test-topic", true, 60).getOrThrow() }
+          }
+        }
+      }
+    },
+)

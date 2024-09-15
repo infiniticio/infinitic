@@ -25,13 +25,13 @@ package io.infinitic.pulsar.resources
 
 import io.infinitic.common.fixtures.TestFactory
 import io.infinitic.common.transport.ClientTopic
-import io.infinitic.common.transport.RetryServiceExecutorTopic
-import io.infinitic.common.transport.RetryWorkflowExecutorTopic
 import io.infinitic.common.transport.ServiceExecutorEventTopic
+import io.infinitic.common.transport.ServiceExecutorRetryTopic
 import io.infinitic.common.transport.ServiceExecutorTopic
 import io.infinitic.common.transport.ServiceTagEngineTopic
 import io.infinitic.common.transport.ServiceTopic
 import io.infinitic.common.transport.WorkflowExecutorEventTopic
+import io.infinitic.common.transport.WorkflowExecutorRetryTopic
 import io.infinitic.common.transport.WorkflowExecutorTopic
 import io.infinitic.common.transport.WorkflowStateCmdTopic
 import io.infinitic.common.transport.WorkflowStateEngineTopic
@@ -108,7 +108,7 @@ class PulsarResourcesTest : StringSpec(
         pulsarResources.initTopicOnce(
             topic,
             isPartitioned = true,
-            isTimed = true,
+            isTimer = true,
         ).isSuccess shouldBe true
 
         coVerifyAll {
@@ -156,11 +156,11 @@ class PulsarResourcesTest : StringSpec(
           WorkflowStateTimerTopic.fullName(entity) shouldBe "$domain/workflow-delay:$entity"
           WorkflowStateEventTopic.fullName(entity) shouldBe "$domain/workflow-events:$entity"
           WorkflowExecutorTopic.fullName(entity) shouldBe "$domain/workflow-task-executor:$entity"
-          RetryWorkflowExecutorTopic.fullName(entity) shouldBe "$domain/workflow-task-executor:$entity"
+          WorkflowExecutorRetryTopic.fullName(entity) shouldBe "$domain/workflow-task-retry:$entity"
           WorkflowExecutorEventTopic.fullName(entity) shouldBe "$domain/workflow-task-events:$entity"
           ServiceTagEngineTopic.fullName(entity) shouldBe "$domain/task-tag:$entity"
           ServiceExecutorTopic.fullName(entity) shouldBe "$domain/task-executor:$entity"
-          RetryServiceExecutorTopic.fullName(entity) shouldBe "$domain/task-executor:$entity"
+          ServiceExecutorRetryTopic.fullName(entity) shouldBe "$domain/task-retry:$entity"
           ServiceExecutorEventTopic.fullName(entity) shouldBe "$domain/task-events:$entity"
         }
       }

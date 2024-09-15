@@ -112,7 +112,7 @@ class PulsarInfiniticConsumerTests : StringSpec(
         } returns Unit
       }
 
-      val infiniticConsumerAsync = PulsarInfiniticConsumer(consumer, pulsarResources, 20.0)
+      val infiniticConsumerAsync = PulsarInfiniticConsumer(consumer, pulsarResources)
 
       "should init client-response topic before consuming it" {
         val name = "$clientName"

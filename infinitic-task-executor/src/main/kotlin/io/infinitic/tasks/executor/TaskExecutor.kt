@@ -46,8 +46,8 @@ import io.infinitic.common.tasks.events.messages.TaskStartedEvent
 import io.infinitic.common.tasks.executors.messages.ExecuteTask
 import io.infinitic.common.tasks.executors.messages.ServiceExecutorMessage
 import io.infinitic.common.transport.InfiniticProducer
-import io.infinitic.common.transport.RetryServiceExecutorTopic
 import io.infinitic.common.transport.ServiceExecutorEventTopic
+import io.infinitic.common.transport.ServiceExecutorRetryTopic
 import io.infinitic.common.utils.checkMode
 import io.infinitic.common.utils.getMethodPerNameAndParameters
 import io.infinitic.common.utils.isDelegated
@@ -226,7 +226,7 @@ class TaskExecutor(
     val emitterName = this@TaskExecutor.emitterName
 
     val executeTask = ExecuteTask.retryFrom(this, emitterName, cause, meta)
-    with(producer) { executeTask.sendTo(RetryServiceExecutorTopic, delay) }
+    with(producer) { executeTask.sendTo(ServiceExecutorRetryTopic, delay) }
 
     // once sent, we publish the event
     val event = TaskRetriedEvent.from(this, emitterName, cause, delay, meta)
