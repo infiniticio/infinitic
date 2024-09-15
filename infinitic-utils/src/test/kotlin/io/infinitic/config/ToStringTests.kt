@@ -22,24 +22,33 @@
  */
 package io.infinitic.config
 
-import kotlin.reflect.KClass
-import kotlin.reflect.full.declaredMemberProperties
-import kotlin.reflect.full.memberProperties
-import kotlin.reflect.jvm.isAccessible
+import io.kotest.core.spec.style.StringSpec
+import io.kotest.matchers.shouldBe
 
-fun <T : Any> T.notNullPropertiesToString(interfaceClass: KClass<T>? = null): String {
-  val interfaceProperties = interfaceClass?.declaredMemberProperties?.map { it.name }
+internal class ToStringTests : StringSpec(
+    {
+      "Can display non null values" {
+        val config = FakeConfig(foo = "abc", bar = 3, qux = 1.0)
 
-  return this::class.memberProperties
-      .filter { prop ->
-        // keep only properties that are part of the interface class
-        interfaceProperties?.contains(prop.name) ?: true
+        config.notNullPropertiesToString() shouldBe "bar=3, foo=abc, qux=1.0"
       }
-      .also { println(it) }
-      .mapNotNull { prop ->
-        prop.isAccessible = true
-        // display non null properties
-        prop.call(this)?.let { "${prop.name}=$it" }
-      }.joinToString()
-}
 
+      "Can display non null values with interface" {
+        val config = FakeConfig(foo = "abc", bar = 3, qux = 1.0)
+
+        config.notNullPropertiesToString(FakeConfigService::class) shouldBe "foo=abc, qux=1.0"
+      }
+    },
+)
+
+private data class FakeConfig(
+  override val foo: String? = null,
+  val bar: Int? = null,
+  val baz: Boolean? = null,
+  override val qux: Double? = null,
+) : FakeConfigService
+
+private interface FakeConfigService {
+  val foo: String?
+  val qux: Double?
+}
