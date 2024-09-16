@@ -158,7 +158,7 @@ data class SerializedData(
   fun decode(type: Type?, jsonViewClass: Class<*>?): Any? =
       when (dataType) {
         SerializedDataType.NULL -> null
-        SerializedDataType.AVRO_WITH_SCHEMA -> decodeAvroWithSchema()
+        SerializedDataType.AVRO_WITH_SCHEMA -> decodeAvroWithSchemaFingerprint()
         SerializedDataType.JSON -> decodeJson(type, jsonViewClass)
         SerializedDataType.JSON_KOTLIN -> decodeJsonKotlin()
         SerializedDataType.JSON_JACKSON -> decodeJsonJackson(jsonViewClass)
@@ -190,7 +190,7 @@ data class SerializedData(
       "meta" to meta.mapValues { String(it.value) },
   ).toString()
 
-  private fun decodeAvroWithSchema(): Any {
+  private fun decodeAvroWithSchemaFingerprint(): Any {
     return when (getMetaJavaTypeString()) {
       WORKFLOW_TASK_PARAMETERS -> WorkflowTaskParameters.fromByteArray(bytes)
       WORKFLOW_TASK_RETURN_VALUE -> WorkflowTaskReturnValue.fromByteArray(bytes)
