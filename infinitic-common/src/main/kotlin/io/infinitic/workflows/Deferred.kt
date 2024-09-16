@@ -183,6 +183,6 @@ internal class DeferredJacksonSerializer : StdSerializer<Deferred<*>>(Deferred::
 private fun throwInvalidParameterException(): Nothing =
     throw InvalidParameterException(
         "Invalid usage detected. " +
-            "Deferred objects should not be present in Workflow properties or any method arguments. " +
+            "Deferred objects should not be present in Workflow properties or any public method arguments. " +
             "Please ensure to use deferred objects in their context.",
     )

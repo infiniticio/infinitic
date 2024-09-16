@@ -325,6 +325,7 @@ class TaskExecutor(
       ?: WORKFLOW_CHECK_MODE_DEFAULT
 
     serviceInstance.apply {
+      this.logger = TaskExecutor.logger
       this.checkMode = checkMode
       this.instance = workflowInstance
       this.method = workflowMethod

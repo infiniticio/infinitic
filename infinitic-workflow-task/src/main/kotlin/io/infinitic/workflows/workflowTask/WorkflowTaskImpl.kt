@@ -22,6 +22,7 @@
  */
 package io.infinitic.workflows.workflowTask
 
+import io.github.oshai.kotlinlogging.KLogger
 import io.infinitic.common.data.methods.deserializeArgs
 import io.infinitic.common.data.methods.encodeReturnValue
 import io.infinitic.common.workers.config.WorkflowVersion
@@ -41,6 +42,7 @@ import java.lang.reflect.Method
 
 class WorkflowTaskImpl : WorkflowTask {
 
+  lateinit var logger: KLogger
   lateinit var checkMode: WorkflowCheckMode
   lateinit var instance: Workflow
   lateinit var method: Method
@@ -55,7 +57,9 @@ class WorkflowTaskImpl : WorkflowTask {
 
     // define setProperties function
     val setProperties = { nameHashes: Map<PropertyName, PropertyHash> ->
-      instance.setProperties(workflowTaskParameters.workflowPropertiesHashValue, nameHashes)
+      with(logger) {
+        instance.setProperties(workflowTaskParameters.workflowPropertiesHashValue, nameHashes)
+      }
     }
 
     // give it to dispatcher

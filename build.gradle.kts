@@ -21,7 +21,6 @@
  * Licensor: infinitic.io
  */
 import com.adarshr.gradle.testlogger.theme.ThemeType
-import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 buildscript {
   repositories {
@@ -42,8 +41,6 @@ spotless {
   kotlin { ktfmt() }
   kotlinGradle { ktfmt() }
 }
-
-kotlin { jvmToolchain(17) }
 
 repositories { mavenCentral() }
 
@@ -86,10 +83,9 @@ subprojects {
   }
 
   kotlin {
-    compilerOptions {
-      jvmTarget.set(JvmTarget.JVM_17)
-      freeCompilerArgs.set(listOf("-Xjvm-default=all"))
-    }
+    jvmToolchain(17)
+    compilerOptions { freeCompilerArgs.set(listOf("-Xjvm-default=all", "-Xcontext-receivers")) }
+    sourceSets.all { languageSettings { optIn("kotlin.ExperimentalStdlibApi") } }
   }
 
   // Keep this to tell compatibility to applications

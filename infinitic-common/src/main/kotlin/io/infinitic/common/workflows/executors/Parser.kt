@@ -43,23 +43,49 @@ import kotlin.reflect.full.memberProperties
 import kotlin.reflect.full.starProjectedType
 import kotlin.reflect.jvm.javaField
 
-fun <T : Any> setPropertiesToObject(obj: T, values: Map<PropertyName, PropertyValue>) {
-  val properties = obj::class.memberProperties
+context(KLogger)
+fun Workflow.setProperties(
+  propertiesHashValue: Map<PropertyHash, PropertyValue>,
+  propertiesNameHash: Map<PropertyName, PropertyHash>
+) {
+  val properties = propertiesNameHash.mapValues {
+    propertiesHashValue[it.value]
+      ?: thisShouldNotHappen("unknown hash ${it.value} in $propertiesHashValue")
+  }
+
+  setProperties(properties)
+}
+
+fun Workflow.getProperties() = filterProperties {
+  // excludes Channels
+  !it.first.returnType.isSubtypeOf(Channel::class.starProjectedType) &&
+      // excludes Proxies (tasks and workflows) and null
+      !(it.second?.let { Proxy.isProxyClass(it::class.java) } ?: true) &&
+      // exclude SLF4J loggers
+      !it.first.returnType.isSubtypeOf(Logger::class.createType()) &&
+      // exclude KotlinLogging loggers
+      !it.first.returnType.isSubtypeOf(KLogger::class.createType()) &&
+      // exclude Ignore annotation
+      !it.first.hasAnnotation<Ignore>()
+}
+
+context(KLogger)
+private fun Workflow.setProperties(values: Map<PropertyName, PropertyValue>) {
+  val properties = this::class.memberProperties
   values.forEach { (name, value) ->
-    properties.find { it.name == name.name }?.let { setProperty(obj, it, value) }
-      ?: thisShouldNotHappen(
-          "Trying to set unknown property ${obj::class.java.name}:${name.name}",
-      )
+    properties.find { it.name == name.name }?.let { setProperty(this, it, value) }
+      ?: warn {
+        "The property '${name.name}' present in the workflow history for class " +
+            "'${this::class.java.name} is not recognized and will be ignored."
+      }
   }
 }
 
-fun <T : Any> getPropertiesFromObject(
-  obj: T,
-  filter: (p: Pair<KProperty1<out T, *>, Any?>) -> Boolean = { true }
+private fun Workflow.filterProperties(
+  filter: (p: Pair<KProperty1<out Workflow, *>, Any?>) -> Boolean = { true }
 ): Map<PropertyName, PropertyValue> =
-    obj::class
-        .memberProperties
-        .map { p: KProperty1<out T, *> -> Pair(p, getProperty(obj, p)) }
+    this::class.memberProperties
+        .map { p: KProperty1<out Workflow, *> -> Pair(p, getProperty(this, p)) }
         .filter { filter(it) }
         .associateBy(
             { PropertyName(it.first.name) },
@@ -70,32 +96,6 @@ fun <T : Any> getPropertiesFromObject(
               )
             },
         )
-
-fun Workflow.setProperties(
-  propertiesHashValue: Map<PropertyHash, PropertyValue>,
-  propertiesNameHash: Map<PropertyName, PropertyHash>
-) {
-  val properties = propertiesNameHash.mapValues {
-    propertiesHashValue[it.value]
-      ?: thisShouldNotHappen("unknown hash ${it.value} in $propertiesHashValue")
-  }
-
-  setPropertiesToObject(this, properties)
-}
-
-fun Workflow.getProperties() =
-    getPropertiesFromObject(this) {
-      // excludes Channels
-      !it.first.returnType.isSubtypeOf(Channel::class.starProjectedType) &&
-          // excludes Proxies (tasks and workflows) and null
-          !(it.second?.let { Proxy.isProxyClass(it::class.java) } ?: true) &&
-          // exclude SLF4J loggers
-          !it.first.returnType.isSubtypeOf(Logger::class.createType()) &&
-          // exclude KotlinLogging loggers
-          !it.first.returnType.isSubtypeOf(KLogger::class.createType()) &&
-          // exclude Ignore annotation
-          !it.first.hasAnnotation<Ignore>()
-    }
 
 private val KProperty1<*, *>.jsonViewClass
   get(): Class<*>? {

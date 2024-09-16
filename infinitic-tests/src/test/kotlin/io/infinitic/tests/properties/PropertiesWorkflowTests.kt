@@ -60,7 +60,7 @@ internal class PropertiesWorkflowTests :
         }
 
         /**
-         * It is still not possible to use Deferred in arguments, so here we just check the error
+         * It is not possible to use Deferred in arguments, so here we just check the error
          */
         "With non completed Deferred as branch argument" {
           val e = shouldThrow<WorkflowFailedException> {
@@ -72,7 +72,7 @@ internal class PropertiesWorkflowTests :
         }
 
         /**
-         * It is still not possible to use Deferred in arguments, so here we just check the error
+         * It is not possible to use Deferred in arguments, so here we just check the error
          */
         "With completed Deferred as branch argument" {
           val e = shouldThrow<WorkflowFailedException> {
