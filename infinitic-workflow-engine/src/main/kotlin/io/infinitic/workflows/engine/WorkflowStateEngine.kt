@@ -99,7 +99,7 @@ class WorkflowStateEngine(
     val logger = KotlinLogging.logger {}
   }
 
-  private val emitterName by lazy { EmitterName(this::class.java.name) }
+  private val emitterName by lazy { EmitterName(producer.name) }
 
   suspend fun handle(message: WorkflowStateEngineMessage, publishTime: MillisInstant) {
     // get current state
@@ -157,7 +157,7 @@ class WorkflowStateEngine(
               workflowName = state.workflowName,
               workflowTag = it,
               workflowId = state.workflowId,
-              emitterName = EmitterName(producer.name),
+              emitterName = emitterName,
               emittedAt = state.runningWorkflowTaskInstant,
           )
           launch { with(producer) { removeTagFromWorkflow.sendTo(WorkflowTagEngineTopic) } }
