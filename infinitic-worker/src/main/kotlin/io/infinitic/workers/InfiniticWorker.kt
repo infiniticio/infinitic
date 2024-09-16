@@ -26,11 +26,11 @@ import io.cloudevents.CloudEvent
 import io.github.oshai.kotlinlogging.KLogger
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.infinitic.clients.InfiniticClient
-import io.infinitic.cloudEvents.logs.CLOUD_EVENTS_SERVICE_EXECUTOR
-import io.infinitic.cloudEvents.logs.CLOUD_EVENTS_SERVICE_TAG_ENGINE
-import io.infinitic.cloudEvents.logs.CLOUD_EVENTS_WORKFLOW_EXECUTOR
-import io.infinitic.cloudEvents.logs.CLOUD_EVENTS_WORKFLOW_STATE_ENGINE
-import io.infinitic.cloudEvents.logs.CLOUD_EVENTS_WORKFLOW_TAG_ENGINE
+import io.infinitic.cloudEvents.logs.LOGS_SERVICE_EXECUTOR
+import io.infinitic.cloudEvents.logs.LOGS_SERVICE_TAG_ENGINE
+import io.infinitic.cloudEvents.logs.LOGS_WORKFLOW_EXECUTOR
+import io.infinitic.cloudEvents.logs.LOGS_WORKFLOW_STATE_ENGINE
+import io.infinitic.cloudEvents.logs.LOGS_WORKFLOW_TAG_ENGINE
 import io.infinitic.common.data.MillisInstant
 import io.infinitic.common.messages.Message
 import io.infinitic.common.tasks.data.ServiceName
@@ -167,7 +167,7 @@ class InfiniticWorker(
   }
 
   private val shutdownGracePeriodSeconds = config.transport.shutdownGracePeriodSeconds
-  private val source = config.transport.cloudEventSource
+  private val cloudEventSourcePrefix = config.transport.cloudEventSourcePrefix
   private val beautifyLogs = config.logs.beautify
 
   /**
@@ -366,7 +366,7 @@ class InfiniticWorker(
     logServiceTagEngineStart(config)
 
     val logsEventLogger = KotlinLogging.logger(
-        "$CLOUD_EVENTS_SERVICE_TAG_ENGINE.${config.serviceName}",
+        "$LOGS_SERVICE_TAG_ENGINE.${config.serviceName}",
     ).ignoreNull()
 
     // TASK-TAG
@@ -380,7 +380,7 @@ class InfiniticWorker(
 
       val handler: suspend (ServiceTagMessage, MillisInstant) -> Unit =
           { message, publishedAt ->
-            logsEventLogger.logServiceCloudEvent(message, publishedAt, source)
+            logsEventLogger.logServiceCloudEvent(message, publishedAt, cloudEventSourcePrefix)
             taskTagEngine.handle(message, publishedAt)
           }
 
@@ -399,7 +399,7 @@ class InfiniticWorker(
     logServiceExecutorStart(config)
 
     val logsEventLogger = KotlinLogging.logger(
-        "$CLOUD_EVENTS_SERVICE_EXECUTOR.${config.serviceName}",
+        "$LOGS_SERVICE_EXECUTOR.${config.serviceName}",
     ).ignoreNull()
 
     // TASK-EXECUTOR
@@ -411,7 +411,7 @@ class InfiniticWorker(
 
       val handler: suspend (ServiceExecutorMessage, MillisInstant) -> Unit =
           { message, publishedAt ->
-            logsEventLogger.logServiceCloudEvent(message, publishedAt, source)
+            logsEventLogger.logServiceCloudEvent(message, publishedAt, cloudEventSourcePrefix)
             taskExecutor.handle(message, publishedAt)
           }
 
@@ -459,7 +459,7 @@ class InfiniticWorker(
 
       val handler: suspend (ServiceExecutorEventMessage, MillisInstant) -> Unit =
           { message, publishedAt ->
-            logsEventLogger.logServiceCloudEvent(message, publishedAt, source)
+            logsEventLogger.logServiceCloudEvent(message, publishedAt, cloudEventSourcePrefix)
             taskEventHandler.handle(message, publishedAt)
           }
 
@@ -478,7 +478,7 @@ class InfiniticWorker(
     logWorkflowTagEngineStart(config)
 
     val logsEventLogger = KotlinLogging.logger(
-        "$CLOUD_EVENTS_WORKFLOW_TAG_ENGINE.${config.workflowName}",
+        "$LOGS_WORKFLOW_TAG_ENGINE.${config.workflowName}",
     ).ignoreNull()
 
     // WORKFLOW-TAG
@@ -492,7 +492,7 @@ class InfiniticWorker(
 
       val handler: suspend (WorkflowTagEngineMessage, MillisInstant) -> Unit =
           { message, publishedAt ->
-            logsEventLogger.logWorkflowCloudEvent(message, publishedAt, source)
+            logsEventLogger.logWorkflowCloudEvent(message, publishedAt, cloudEventSourcePrefix)
             workflowTagEngine.handle(message, publishedAt)
           }
 
@@ -511,7 +511,7 @@ class InfiniticWorker(
     logWorkflowStateEngineStart(config)
 
     val logsEventLogger = KotlinLogging.logger(
-        "$CLOUD_EVENTS_WORKFLOW_STATE_ENGINE.${config.workflowName}",
+        "$LOGS_WORKFLOW_STATE_ENGINE.${config.workflowName}",
     ).ignoreNull()
 
     // WORKFLOW-CMD
@@ -524,7 +524,7 @@ class InfiniticWorker(
 
       val handler: suspend (WorkflowStateEngineMessage, MillisInstant) -> Unit =
           { message, publishedAt ->
-            logsEventLogger.logWorkflowCloudEvent(message, publishedAt, source)
+            logsEventLogger.logWorkflowCloudEvent(message, publishedAt, cloudEventSourcePrefix)
             workflowStateCmdHandler.handle(message, publishedAt)
           }
 
@@ -549,7 +549,7 @@ class InfiniticWorker(
       val handler: suspend (WorkflowStateEngineMessage, MillisInstant) -> Unit =
           { message, publishedAt ->
             if (message !is WorkflowStateEngineCmdMessage) {
-              logsEventLogger.logWorkflowCloudEvent(message, publishedAt, source)
+              logsEventLogger.logWorkflowCloudEvent(message, publishedAt, cloudEventSourcePrefix)
             }
             workflowStateEngine.handle(message, publishedAt)
           }
@@ -591,7 +591,7 @@ class InfiniticWorker(
 
       val handler: suspend (WorkflowStateEngineEventMessage, MillisInstant) -> Unit =
           { message, publishedAt ->
-            logsEventLogger.logWorkflowCloudEvent(message, publishedAt, source)
+            logsEventLogger.logWorkflowCloudEvent(message, publishedAt, cloudEventSourcePrefix)
             workflowStateEventHandler.handle(message, publishedAt)
           }
 
@@ -610,7 +610,7 @@ class InfiniticWorker(
     logWorkflowExecutorStart(config)
 
     val logsEventLogger = KotlinLogging.logger(
-        "$CLOUD_EVENTS_WORKFLOW_EXECUTOR.${config.workflowName}",
+        "$LOGS_WORKFLOW_EXECUTOR.${config.workflowName}",
     ).ignoreNull()
 
     // WORKFLOW-EXECUTOR
@@ -623,7 +623,7 @@ class InfiniticWorker(
 
       val handler: suspend (ServiceExecutorMessage, MillisInstant) -> Unit =
           { message, publishedAt ->
-            logsEventLogger.logServiceCloudEvent(message, publishedAt, source)
+            logsEventLogger.logServiceCloudEvent(message, publishedAt, cloudEventSourcePrefix)
             workflowTaskExecutor.handle(message, publishedAt)
           }
 
@@ -672,7 +672,7 @@ class InfiniticWorker(
 
       val handler: suspend (ServiceExecutorEventMessage, MillisInstant) -> Unit =
           { message, publishedAt ->
-            logsEventLogger.logServiceCloudEvent(message, publishedAt, source)
+            logsEventLogger.logServiceCloudEvent(message, publishedAt, cloudEventSourcePrefix)
             workflowTaskEventHandler.handle(message, publishedAt)
           }
 
@@ -699,7 +699,7 @@ class InfiniticWorker(
             config.subscriptionName,
             SubscriptionType.EVENT_LISTENER,
         ) { message: Message, publishedAt: MillisInstant ->
-          message.toServiceCloudEvent(publishedAt, source)?.let { cloudEvent ->
+          message.toServiceCloudEvent(publishedAt, cloudEventSourcePrefix)?.let { cloudEvent ->
             config.listener.onEvent(cloudEvent)
           }
         }
@@ -715,7 +715,7 @@ class InfiniticWorker(
             config.subscriptionName,
             SubscriptionType.EVENT_LISTENER,
         ) { message, publishedAt ->
-          message.toServiceCloudEvent(publishedAt, source)?.let { cloudEvent ->
+          message.toServiceCloudEvent(publishedAt, cloudEventSourcePrefix)?.let { cloudEvent ->
             config.listener.onEvent(cloudEvent)
           }
         }
@@ -725,7 +725,7 @@ class InfiniticWorker(
             config.subscriptionName,
             SubscriptionType.EVENT_LISTENER,
         ) { message, publishedAt ->
-          message.toWorkflowCloudEvent(publishedAt, source)?.let { cloudEvent ->
+          message.toWorkflowCloudEvent(publishedAt, cloudEventSourcePrefix)?.let { cloudEvent ->
             config.listener.onEvent(cloudEvent)
           }
         }
@@ -923,7 +923,7 @@ class InfiniticWorker(
     eventProducer: Message.(MillisInstant, String) -> CloudEvent?
   ) {
     try {
-      info {
+      debug {
         message.eventProducer(publishedAt, prefix)?.toJsonString(beautifyLogs)
       }
     } catch (e: Exception) {

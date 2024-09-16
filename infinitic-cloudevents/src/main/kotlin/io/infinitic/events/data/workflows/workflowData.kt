@@ -44,6 +44,7 @@ import io.infinitic.cloudEvents.WORKFLOW_TAGS
 import io.infinitic.cloudEvents.WORKFLOW_VERSION
 import io.infinitic.common.exceptions.thisShouldNotHappen
 import io.infinitic.common.utils.toJson
+import io.infinitic.common.workers.config.toJson
 import io.infinitic.common.workflows.engine.messages.CancelWorkflow
 import io.infinitic.common.workflows.engine.messages.CompleteTimers
 import io.infinitic.common.workflows.engine.messages.CompleteWorkflow

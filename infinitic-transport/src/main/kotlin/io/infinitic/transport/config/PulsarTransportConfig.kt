@@ -53,7 +53,7 @@ data class PulsarTransportConfig(
   }
 
   /** This is used as source prefix for CloudEvents */
-  override val cloudEventSource: String = pulsar.brokerServiceUrl.removeSuffix("/") + "/" +
+  override val cloudEventSourcePrefix: String = pulsar.brokerServiceUrl.removeSuffix("/") + "/" +
       URLEncoder.encode(pulsar.tenant, Charsets.UTF_8) + "/" +
       URLEncoder.encode(pulsar.namespace, Charsets.UTF_8)
 

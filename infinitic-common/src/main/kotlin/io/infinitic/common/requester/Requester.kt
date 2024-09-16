@@ -33,8 +33,8 @@ import io.infinitic.common.clients.data.ClientName
 import io.infinitic.common.data.methods.MethodName
 import io.infinitic.common.exceptions.thisShouldNotHappen
 import io.infinitic.common.utils.JsonAble
-import io.infinitic.common.utils.toJson
 import io.infinitic.common.workers.config.WorkflowVersion
+import io.infinitic.common.workers.config.toJson
 import io.infinitic.common.workflows.data.workflowMethods.WorkflowMethodId
 import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.data.workflows.WorkflowName

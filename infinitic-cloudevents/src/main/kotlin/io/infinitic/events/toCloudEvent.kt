@@ -101,7 +101,7 @@ enum class CloudEventContext {
       is WorkflowStateEngineEventMessage -> workflowName
       else -> thisShouldNotHappen()
     }.let {
-      URI.create("$prefix/workflows/${it.encoded}")
+      URI.create("$prefix/workflows/stateEngine/${it.encoded}")
     }
 
     override fun Message.dataBytes(): ByteArray = when (this) {
@@ -135,18 +135,18 @@ enum class CloudEventContext {
 
     override fun Message.source(prefix: String): URI = when (this) {
       is ServiceExecutorMessage -> when (isWorkflowTask()) {
-        true -> "executor/${requester.workflowName.encoded}"
-        false -> serviceName.encoded
+        true -> "workflows/executor/${requester.workflowName.encoded}"
+        false -> "services/executor/${serviceName.encoded}"
       }
 
       is ServiceExecutorEventMessage -> when (isWorkflowTask()) {
-        true -> "executor/${requester.workflowName.encoded}"
-        false -> serviceName.encoded
+        true -> "workflows/executor/${requester.workflowName.encoded}"
+        false -> "services/executor/${serviceName.encoded}"
       }
 
       else -> thisShouldNotHappen()
     }.let {
-      URI.create("$prefix/services/$it")
+      URI.create("$prefix/$it")
     }
 
     override fun Message.dataBytes(): ByteArray = when (this) {

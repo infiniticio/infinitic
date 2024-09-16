@@ -217,7 +217,7 @@ internal class CloudEventTests : StringSpec(
           events.size shouldBe 1
           val event = events.first()
           event.id shouldBe message.messageId.toString()
-          event.source shouldBe URI("inMemory/services/ServiceA")
+          event.source shouldBe URI("inMemory/services/executor/ServiceA")
           event.dataContentType shouldBe "application/json"
           event.subject shouldBe message.taskId.toString()
           event.type shouldBe when (it) {
@@ -235,7 +235,7 @@ internal class CloudEventTests : StringSpec(
           events.size shouldBe 1
           val event = events.first()
           event.id shouldBe message.messageId.toString()
-          event.source shouldBe URI("inMemory/services/ServiceA")
+          event.source shouldBe URI("inMemory/services/executor/ServiceA")
           event.dataContentType shouldBe "application/json"
           event.subject shouldBe message.taskId.toString()
           event.type shouldBe when (it) {
@@ -265,7 +265,7 @@ internal class CloudEventTests : StringSpec(
 
           events.size shouldBe 1
           val event = events.first()
-          event.source shouldBe URI("inMemory/services/executor/WorkflowA")
+          event.source shouldBe URI("inMemory/workflows/executor/WorkflowA")
           event.subject shouldBe message.taskId.toString()
           event.type shouldBe when (it) {
             ExecuteTask::class -> "infinitic.task.start"
@@ -290,7 +290,7 @@ internal class CloudEventTests : StringSpec(
 
           events.size shouldBe 1
           val event = events.first()
-          event.source shouldBe URI("inMemory/services/executor/WorkflowA")
+          event.source shouldBe URI("inMemory/workflows/executor/WorkflowA")
           event.subject shouldBe message.taskId.toString()
           event.type shouldBe when (it) {
             TaskStartedEvent::class -> "infinitic.task.started"
@@ -328,7 +328,7 @@ internal class CloudEventTests : StringSpec(
           if (events.size == 1) {
             val event = events.first()
             event.id shouldBe message.messageId.toString()
-            event.source shouldBe URI("inMemory/workflows/WorkflowA")
+            event.source shouldBe URI("inMemory/workflows/stateEngine/WorkflowA")
             event.dataContentType shouldBe "application/json"
             event.subject shouldBe message.workflowId.toString()
             event.type shouldBe type
@@ -392,7 +392,7 @@ internal class CloudEventTests : StringSpec(
             if (events.size == 1) {
               val event = events.first()
               event.id shouldBe message.messageId.toString()
-              event.source shouldBe URI("inMemory/workflows/WorkflowA")
+              event.source shouldBe URI("inMemory/workflows/stateEngine/WorkflowA")
               event.dataContentType shouldBe "application/json"
               event.subject shouldBe message.workflowId.toString()
               event.type shouldBe type
@@ -430,7 +430,7 @@ internal class CloudEventTests : StringSpec(
           if (events.size == 1) {
             val event = events.first()
             event.id shouldBe message.messageId.toString()
-            event.source shouldBe URI("inMemory/workflows/WorkflowA")
+            event.source shouldBe URI("inMemory/workflows/stateEngine/WorkflowA")
             event.dataContentType shouldBe "application/json"
             event.subject shouldBe message.workflowId.toString()
             event.type shouldBe type

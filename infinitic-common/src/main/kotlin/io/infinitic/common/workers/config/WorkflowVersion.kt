@@ -22,20 +22,19 @@
  */
 package io.infinitic.common.workers.config
 
-import io.infinitic.common.utils.JsonAble
 import io.infinitic.workflows.Workflow
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonPrimitive
 
 @JvmInline
 @Serializable
-value class WorkflowVersion(private val v: Int) : Comparable<WorkflowVersion>, JsonAble {
+value class WorkflowVersion(private val v: Int) : Comparable<WorkflowVersion> {
   override fun compareTo(other: WorkflowVersion): Int = v.compareTo(other.v)
 
   override fun toString() = "$v"
 
 
-  override fun toJson() = JsonPrimitive(v)
+  fun toJson() = JsonPrimitive(v)
 
   fun toInt() = v
 
@@ -51,3 +50,5 @@ value class WorkflowVersion(private val v: Int) : Comparable<WorkflowVersion>, J
         )
   }
 }
+
+fun WorkflowVersion?.toJson() = this?.toJson() ?: JsonPrimitive(0)

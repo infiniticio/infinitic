@@ -35,7 +35,7 @@ data class InMemoryTransportConfig(
     require(shutdownGracePeriodSeconds > 0) { "shutdownGracePeriodSeconds must be > 0" }
   }
 
-  override val cloudEventSource: String = "inMemory"
+  override val cloudEventSourcePrefix: String = "inMemory"
 
   private val mainChannels = InMemoryChannels()
   private val eventListenerChannels = InMemoryChannels()
