@@ -34,6 +34,7 @@ data class PostgresConfig(
   val user: String = "postgres",
   val password: Secret? = null,
   val database: String = DEFAULT_DATABASE,
+  val schema: String? = null,
   val keySetTable: String = DEFAULT_KEY_SET_TABLE,
   val keyValueTable: String = DEFAULT_KEY_VALUE_TABLE,
   val maximumPoolSize: Int? = null,
@@ -96,6 +97,7 @@ data class PostgresConfig(
     driverClassName = config.driverClassName
     username = config.user
     password = config.password?.value
+    config.schema?.let { schema = it }
     config.maximumPoolSize?.let { maximumPoolSize = it }
     config.minimumIdle?.let { minimumIdle = it }
     config.idleTimeout?.let { idleTimeout = it }
@@ -136,6 +138,7 @@ data class PostgresConfig(
         driverClassName = this@PostgresConfig.driverClassName
         username = this@PostgresConfig.user
         password = this@PostgresConfig.password?.value
+        this@PostgresConfig.schema?.let { schema = it }
       },
   )
 
@@ -171,6 +174,7 @@ data class PostgresConfig(
     private var user = default.user
     private var password = default.password
     private var database = default.database
+    private var schema = default.schema
     private var keySetTable = default.keySetTable
     private var keyValueTable = default.keyValueTable
     private var maximumPoolSize = default.maximumPoolSize
@@ -182,15 +186,16 @@ data class PostgresConfig(
     fun setHost(host: String) = apply { this.host = host }
     fun setPort(port: Int) = apply { this.port = port }
     fun setUser(user: String) = apply { this.user = user }
-    fun setPassword(password: Secret?) = apply { this.password = password }
+    fun setPassword(password: Secret) = apply { this.password = password }
     fun setDatabase(database: String) = apply { this.database = database }
+    fun setSchema(schema: String) = apply { this.schema = schema }
     fun setKeySetTable(keySetTable: String) = apply { this.keySetTable = keySetTable }
     fun setKeyValueTable(keyValueTable: String) = apply { this.keyValueTable = keyValueTable }
-    fun setMaximumPoolSize(maximumPoolSize: Int?) = apply { this.maximumPoolSize = maximumPoolSize }
-    fun setMinimumIdle(minimumIdle: Int?) = apply { this.minimumIdle = minimumIdle }
-    fun setIdleTimeout(idleTimeout: Long?) = apply { this.idleTimeout = idleTimeout }
-    fun setConnectionTimeout(connTimeout: Long?) = apply { this.connectionTimeout = connTimeout }
-    fun setMaxLifetime(maxLifetime: Long?) = apply { this.maxLifetime = maxLifetime }
+    fun setMaximumPoolSize(maximumPoolSize: Int) = apply { this.maximumPoolSize = maximumPoolSize }
+    fun setMinimumIdle(minimumIdle: Int) = apply { this.minimumIdle = minimumIdle }
+    fun setIdleTimeout(idleTimeout: Long) = apply { this.idleTimeout = idleTimeout }
+    fun setConnectionTimeout(connTimeout: Long) = apply { this.connectionTimeout = connTimeout }
+    fun setMaxLifetime(maxLifetime: Long) = apply { this.maxLifetime = maxLifetime }
 
     fun build() = PostgresConfig(
         host = host,
@@ -198,6 +203,7 @@ data class PostgresConfig(
         user = user,
         password = password,
         database = database,
+        schema = schema,
         keySetTable = keySetTable,
         keyValueTable = keyValueTable,
         maximumPoolSize = maximumPoolSize,
