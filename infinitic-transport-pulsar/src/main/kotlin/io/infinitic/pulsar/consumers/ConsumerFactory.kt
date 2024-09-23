@@ -44,10 +44,13 @@ import java.util.concurrent.CompletionException
 import kotlin.coroutines.cancellation.CancellationException
 import org.apache.pulsar.client.api.Message as PulsarMessage
 
-class Consumer(
+class ConsumerFactory(
   val client: InfiniticPulsarClient,
   private val consumerConfig: ConsumerConfig
 ) {
+
+  val maxRedeliverCount = consumerConfig.getMaxRedeliverCount()
+
   private val logger = KotlinLogging.logger {}
 
   internal suspend fun <S : Message, T : Envelope<out S>> startListening(
@@ -289,7 +292,7 @@ class Consumer(
     }
   }
 
-  private fun <S : Envelope<out Message>> getConsumer(
+  fun <S : Envelope<out Message>> getConsumer(
     schema: Schema<S>,
     topic: String,
     topicDlq: String?,

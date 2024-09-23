@@ -77,15 +77,13 @@ fun Class<*>.getMethodPerNameAndParameters(
   parametersCount: Int
 ): Method = methodsCache.getOrPut(getCacheKey(this, methodName, parameterTypes, parametersCount)) {
   when (parameterTypes) {
-    null ->
-      getMethodPerAnnotationAndParametersCount(methodName, parametersCount)
-        ?: getMethodPerNameAndParameterCount(methodName, parametersCount)
-        ?: throw NoMethodFoundWithParameterCountException(name, methodName, parametersCount)
+    null -> getMethodPerAnnotationAndParametersCount(methodName, parametersCount)
+      ?: getMethodPerNameAndParameterCount(methodName, parametersCount)
+      ?: throw NoMethodFoundWithParameterCountException(name, methodName, parametersCount)
 
-    else ->
-      getMethodPerAnnotationAndParameterTypes(methodName, parameterTypes)
-        ?: getMethodPerNameAndParameterTypes(methodName, parameterTypes)
-        ?: throw NoMethodFoundWithParameterTypesException(name, methodName, parameterTypes)
+    else -> getMethodPerAnnotationAndParameterTypes(methodName, parameterTypes)
+      ?: getMethodPerNameAndParameterTypes(methodName, parameterTypes)
+      ?: throw NoMethodFoundWithParameterTypesException(name, methodName, parameterTypes)
   }
 }
 

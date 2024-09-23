@@ -20,18 +20,12 @@
  *
  * Licensor: infinitic.io
  */
+package io.infinitic.common.transport
 
-dependencies {
-  api(project(":infinitic-transport-pulsar"))
-  api(project(":infinitic-transport-inMemory"))
+import io.infinitic.common.data.MillisInstant
 
-  implementation(project(":infinitic-common"))
-  implementation(project(":infinitic-utils"))
-
-  implementation(Libs.Coroutines.core)
-  implementation(Libs.Coroutines.jdk8)
-  implementation(Libs.Pulsar.client)
-  implementation(Libs.Pulsar.clientAdmin)
+interface TransportMessage {
+  val messageId: String
+  val redeliveryCount: Int
+  val publishTime: MillisInstant
 }
-
-apply("../publish.gradle.kts")

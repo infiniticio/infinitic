@@ -99,7 +99,7 @@ class ConsumerTests : StringSpec(
       fun getScope() = CoroutineScope(Executors.newCachedThreadPool().asCoroutineDispatcher())
 
       fun CoroutineScope.startAsync(
-        consumer: Consumer,
+        consumer: ConsumerFactory,
         handler: suspend (ServiceExecutorMessage, MillisInstant) -> Unit,
         topic: String,
         concurrency: Int,
@@ -126,7 +126,7 @@ class ConsumerTests : StringSpec(
       }
 
       "consuming 1000 messages (1ms) without concurrency should take less than 5 ms in average" {
-        val consumer = Consumer(client, ConsumerConfig())
+        val consumer = ConsumerFactory(client, ConsumerConfig())
         val topic = RandomString(10).nextString()
         var averageMillisToConsume = 100.0
         val total = 1000
@@ -159,7 +159,7 @@ class ConsumerTests : StringSpec(
       }
 
       "consuming 1000 messages (100ms) with 100 concurrency (shared) should take less than 5 ms in average" {
-        val consumer = Consumer(client, ConsumerConfig())
+        val consumer = ConsumerFactory(client, ConsumerConfig())
         val topic = RandomString(10).nextString()
         var averageMillisToConsume = 100.0
         val total = 1000
@@ -192,7 +192,7 @@ class ConsumerTests : StringSpec(
       }
 
       "consuming 1000 messages (100ms) with 100 concurrency (key-shared) should take less than 10 ms in average" {
-        val consumer = Consumer(client, ConsumerConfig())
+        val consumer = ConsumerFactory(client, ConsumerConfig())
         val topic = RandomString(10).nextString()
         var averageMillisToConsume = 100.0
         val total = 1000
@@ -225,7 +225,7 @@ class ConsumerTests : StringSpec(
       }
 
       "graceful shutdown with Shared" {
-        val consumer = Consumer(client, ConsumerConfig())
+        val consumer = ConsumerFactory(client, ConsumerConfig())
         val topic = RandomString(10).nextString()
         val counter = AtomicInteger(0)
         val messageOpen = CopyOnWriteArrayList<Int>()
@@ -260,7 +260,7 @@ class ConsumerTests : StringSpec(
       }
 
       "graceful shutdown with Key-Shared" {
-        val consumer = Consumer(client, ConsumerConfig())
+        val consumer = ConsumerFactory(client, ConsumerConfig())
         val topic = RandomString(10).nextString()
         val counter = AtomicInteger(0)
         val messageOpen = CopyOnWriteArrayList<Int>()

@@ -20,18 +20,24 @@
  *
  * Licensor: infinitic.io
  */
+package io.infinitic.common.transport
 
-dependencies {
-  api(project(":infinitic-transport-pulsar"))
-  api(project(":infinitic-transport-inMemory"))
+import kotlinx.coroutines.future.await
+import java.util.concurrent.CompletableFuture
 
-  implementation(project(":infinitic-common"))
-  implementation(project(":infinitic-utils"))
+interface TransportConsumer<T : TransportMessage> {
+  fun receiveAsync(): CompletableFuture<T>
 
-  implementation(Libs.Coroutines.core)
-  implementation(Libs.Coroutines.jdk8)
-  implementation(Libs.Pulsar.client)
-  implementation(Libs.Pulsar.clientAdmin)
+  fun acknowledgeAsync(message: T): CompletableFuture<Unit>
+  fun negativeAcknowledgeAsync(message: T): CompletableFuture<Unit>
+
+  fun acknowledgeAsync(messages: List<T>): CompletableFuture<Unit>
+  fun negativeAcknowledgeAsync(messages: List<T>): CompletableFuture<Unit>
+
+  suspend fun acknowledge(message: T): Unit = acknowledgeAsync(message).await()
+  suspend fun negativeAcknowledge(message: T): Unit = negativeAcknowledgeAsync(message).await()
+
+  suspend fun acknowledge(messages: List<T>): Unit = acknowledgeAsync(messages).await()
+  suspend fun negativeAcknowledge(messages: List<T>): Unit =
+      negativeAcknowledgeAsync(messages).await()
 }
-
-apply("../publish.gradle.kts")

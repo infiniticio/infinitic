@@ -262,11 +262,10 @@ class InfiniticPulsarClient(private val pulsarClient: PulsarClient) {
           .ackTimeout(0, TimeUnit.MILLISECONDS)
 
       // to avoid immediate deletion of messages in DLQ, we immediately create a subscription
-      val consumerDlq =
-          newConsumer(schema, it).getOrElse { throwable ->
-            logger.error { "Unable to create consumer on DLQ topic ${it.topic}" }
-            return Result.failure(throwable)
-          }
+      val consumerDlq = newConsumer(schema, it).getOrElse { throwable ->
+        logger.error { "Unable to create consumer on DLQ topic ${it.topic}" }
+        return Result.failure(throwable)
+      }
       try {
         // we close the consumer immediately as we do not need it
         consumerDlq.close()

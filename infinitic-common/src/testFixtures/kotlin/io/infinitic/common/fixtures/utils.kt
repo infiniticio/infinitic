@@ -22,16 +22,32 @@
  */
 package io.infinitic.common.fixtures
 
+import io.kotest.assertions.throwables.shouldThrow
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import kotlin.coroutines.cancellation.CancellationException
 
 fun later(delay: Long = 100L, f: suspend CoroutineScope.() -> Unit) = CoroutineScope(Dispatchers.IO)
     .launch {
       delay(delay)
       f()
     }
+
+suspend fun runAndCancel(block: suspend CoroutineScope.() -> Unit): CancellationException {
+  val scope = CoroutineScope(Dispatchers.IO)
+
+  later { scope.cancel() }
+
+  return shouldThrow<CancellationException> {
+    withContext(scope.coroutineContext) {
+      block()
+    }
+  }
+}
 
 /**
  * Compare two strings representing a version number

@@ -40,7 +40,7 @@ class InMemoryInfiniticConsumer(
   private val mainChannels: InMemoryChannels,
   private val eventListenerChannels: InMemoryChannels,
 ) : InfiniticConsumer {
-  
+
   override suspend fun <S : Message> start(
     subscription: Subscription<S>,
     entity: String,

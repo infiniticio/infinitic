@@ -20,18 +20,21 @@
  *
  * Licensor: infinitic.io
  */
+package io.infinitic.common.transport
 
-dependencies {
-  api(project(":infinitic-transport-pulsar"))
-  api(project(":infinitic-transport-inMemory"))
+import kotlin.time.Duration
 
-  implementation(project(":infinitic-common"))
-  implementation(project(":infinitic-utils"))
-
-  implementation(Libs.Coroutines.core)
-  implementation(Libs.Coroutines.jdk8)
-  implementation(Libs.Pulsar.client)
-  implementation(Libs.Pulsar.clientAdmin)
+/**
+ * Data class representing how a specific message should be batched
+ * Messages with the same [batchKey] will be batched together, it typically represents a task type.
+ * [batchTime] and [batchSize] are expected to be always the same for a given [batchKey]
+ */
+data class MessageBatchConfig(
+  val batchKey: String,
+  val batchTime: Duration,
+  val batchSize: Int,
+) {
+  companion object {
+    val NONE = MessageBatchConfig("", Duration.ZERO, 1)
+  }
 }
-
-apply("../publish.gradle.kts")

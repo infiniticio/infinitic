@@ -20,18 +20,8 @@
  *
  * Licensor: infinitic.io
  */
+package io.infinitic.annotations
 
-dependencies {
-  api(project(":infinitic-transport-pulsar"))
-  api(project(":infinitic-transport-inMemory"))
-
-  implementation(project(":infinitic-common"))
-  implementation(project(":infinitic-utils"))
-
-  implementation(Libs.Coroutines.core)
-  implementation(Libs.Coroutines.jdk8)
-  implementation(Libs.Pulsar.client)
-  implementation(Libs.Pulsar.clientAdmin)
-}
-
-apply("../publish.gradle.kts")
+/** Use this annotation to define a timeout duration for tasks */
+@Target(AnnotationTarget.FUNCTION)
+annotation class Batch(val maxMessage: Long = 100, val maxDelaySeconds: Double = 1.0)

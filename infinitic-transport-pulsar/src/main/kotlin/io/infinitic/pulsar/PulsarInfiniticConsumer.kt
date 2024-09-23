@@ -23,21 +23,29 @@
 package io.infinitic.pulsar
 
 import io.infinitic.common.data.MillisInstant
+import io.infinitic.common.messages.Envelope
 import io.infinitic.common.messages.Message
 import io.infinitic.common.transport.EventListenerSubscription
 import io.infinitic.common.transport.InfiniticConsumer
 import io.infinitic.common.transport.MainSubscription
 import io.infinitic.common.transport.Subscription
-import io.infinitic.pulsar.consumers.Consumer
+import io.infinitic.common.transport.consumers.ConsumerSharedProcessor
+import io.infinitic.common.transport.consumers.ConsumerUniqueProcessor
+import io.infinitic.pulsar.consumers.ConsumerFactory
+import io.infinitic.pulsar.consumers.PulsarTransportConsumer
+import io.infinitic.pulsar.messages.PulsarTransportMessage
 import io.infinitic.pulsar.resources.PulsarResources
 import io.infinitic.pulsar.resources.defaultName
 import io.infinitic.pulsar.resources.defaultNameDLQ
 import io.infinitic.pulsar.resources.schema
 import io.infinitic.pulsar.resources.type
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.launch
 import org.apache.pulsar.client.api.SubscriptionInitialPosition
 
 class PulsarInfiniticConsumer(
-  private val consumer: Consumer,
+  private val consumerFactory: ConsumerFactory,
   private val pulsarResources: PulsarResources,
 ) : InfiniticConsumer {
 
@@ -58,9 +66,20 @@ class PulsarInfiniticConsumer(
       subscription.topic.forEntityDLQ(entity, true)
     }
 
-    consumer.startListening(
-        handler = handler,
-        beforeDlq = beforeDlq,
+    fun deserialize(message: PulsarTransportMessage<Envelope<out S>>): S =
+        message.toPulsarMessage().value.message()
+
+    suspend fun beforeNegativeAcknowledgement(
+      message: PulsarTransportMessage<Envelope<out S>>,
+      deserialized: S?,
+      cause: Exception
+    ) {
+      if (message.redeliveryCount == consumerFactory.maxRedeliverCount) {
+        beforeDlq?.let { it(deserialized, cause) }
+      }
+    }
+
+    fun buildConsumer(index: Int? = null) = consumerFactory.getConsumer(
         schema = subscription.topic.schema,
         topic = topicName,
         topicDlq = topicDLQName,
@@ -68,9 +87,39 @@ class PulsarInfiniticConsumer(
         subscriptionNameDlq = subscription.nameDLQ,
         subscriptionType = subscription.type,
         subscriptionInitialPosition = SubscriptionInitialPosition.Earliest,
-        consumerName = entity,
-        concurrency = concurrency,
-    )
+        consumerName = entity + (index?.let { "-$it" } ?: ""),
+    ).getOrThrow().let { PulsarTransportConsumer(it) }
+
+    when (subscription.withKey) {
+      true -> coroutineScope {
+        val consumers = List(concurrency) {
+          async { buildConsumer(it) }
+        }.map { it.await() }
+
+        List(concurrency) { index ->
+          launch {
+            val processor = ConsumerUniqueProcessor(
+                consumers[index],
+                ::deserialize,
+                handler,
+                ::beforeNegativeAcknowledgement,
+            )
+            processor.start()
+          }
+        }
+      }
+
+      false -> {
+        val processor = ConsumerSharedProcessor(
+            buildConsumer(),
+            ::deserialize,
+            handler,
+            ::beforeNegativeAcknowledgement,
+        )
+
+        processor.start(concurrency)
+      }
+    }
   }
 
   private val Subscription<*>.name
