@@ -20,6 +20,7 @@
  *
  * Licensor: infinitic.io
  */
+import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins { id("java-test-fixtures") }
 
@@ -52,11 +53,10 @@ dependencies {
   testFixturesApi(Libs.TestContainers.testcontainers)
 }
 
-tasks.withType<Test> {
+tasks.withType<KotlinCompile> {
   doFirst {
     val mainSourceSet = project.sourceSets.getByName("main")
     val resourcePath = mainSourceSet.resources.srcDirs.first().absolutePath
-    systemProperty("resourcePath", resourcePath)
 
     if (Ci.isRelease) {
       // File containing the list of all released versions
@@ -74,6 +74,14 @@ tasks.withType<Test> {
     val testFixturesResourcePath =
         project.sourceSets.getByName("testFixtures").resources.srcDirs.first().absolutePath
     File(testFixturesResourcePath, "/pulsar").writeText(Libs.Pulsar.version)
+  }
+}
+
+tasks.withType<Test> {
+  doFirst {
+    val mainSourceSet = project.sourceSets.getByName("main")
+    val resourcePath = mainSourceSet.resources.srcDirs.first().absolutePath
+    systemProperty("resourcePath", resourcePath)
   }
 }
 
