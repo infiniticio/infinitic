@@ -569,7 +569,7 @@ class InfiniticPulsarAdmin(
         AutoTopicCreationOverrideImpl(
             allowAutoTopicCreation,
             PulsarTopicType.PARTITIONED.toString(),
-            3,
+            DEFAULT_NUM_PARTITIONS,
         )
     it.schema_validation_enforced = schemaValidationEnforced
     it.is_allow_auto_update_schema = isAllowAutoUpdateSchema

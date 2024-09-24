@@ -121,10 +121,10 @@ internal fun CoroutineScope.workflowTaskCompleted(
   workflowTaskReturnValue.newCommands.forEach {
     when (it) {
       is DispatchNewMethodPastCommand ->
-        dispatchMethodOnRunningWorkflowCmd(it, state, workflowMethod, producer, bufferedMessages)
+        dispatchMethodOnRunningWorkflowCmd(it, state, workflowMethod, bufferedMessages)
 
       is SendSignalPastCommand ->
-        sendSignalCmd(it, state, workflowMethod, producer, bufferedMessages)
+        sendSignalCmd(it, state, workflowMethod, bufferedMessages)
 
       is ReceiveSignalPastCommand ->
         receiveSignalCmd(it, state)
@@ -201,11 +201,11 @@ internal fun dispatchMethodOnRunningWorkflowCmd(
   pastCommand: DispatchNewMethodPastCommand,
   state: WorkflowState,
   workflowMethod: WorkflowMethod,
-  producer: InfiniticProducer,
   bufferedMessages: MutableList<WorkflowStateEngineMessage>
 ) {
   val command: DispatchNewMethodCommand = pastCommand.command
 
+  // for workflows other than the current one, the dispatch has already been done post workflow executor
   if (
     (command.workflowId != null && state.workflowId == command.workflowId) ||
     (command.workflowTag != null && state.workflowTags.contains(command.workflowTag))
@@ -254,11 +254,11 @@ internal fun sendSignalCmd(
   pastCommand: SendSignalPastCommand,
   state: WorkflowState,
   workflowMethod: WorkflowMethod,
-  producer: InfiniticProducer,
   bufferedMessages: MutableList<WorkflowStateEngineMessage>
 ) {
   val command: SendSignalCommand = pastCommand.command
 
+  // for workflows other than the current one, the dispatch has already been done post workflow executor
   if (
     (command.workflowId != null && state.workflowId == command.workflowId) ||
     (command.workflowTag != null && state.workflowTags.contains(command.workflowTag))

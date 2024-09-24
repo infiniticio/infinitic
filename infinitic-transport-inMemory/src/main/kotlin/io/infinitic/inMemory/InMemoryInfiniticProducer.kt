@@ -39,10 +39,10 @@ class InMemoryInfiniticProducer(
 
   override suspend fun getName() = suggestedName
 
-  override fun setName(name: String) {
+  override fun setSuggestedName(name: String) {
     suggestedName = name
   }
-  
+
   private fun <S : Message> Topic<S>.channelsForMessage(message: S): List<Channel<S>> {
     val entity = message.entity()
 

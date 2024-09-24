@@ -71,7 +71,7 @@ class InfiniticClient(
   }
   private val producer by lazy {
     LoggedInfiniticProducer(logger, config.transport.producer).apply {
-      config.name?.let { setName(it) }
+      config.name?.let { setSuggestedName(it) }
     }
   }
 

@@ -42,14 +42,14 @@ import java.util.concurrent.CompletableFuture
 import java.util.concurrent.TimeUnit
 
 class PulsarInfiniticProducer(
-  val client: InfiniticPulsarClient,
+  private val client: InfiniticPulsarClient,
   private val pulsarProducerConfig: PulsarProducerConfig,
   private val pulsarResources: PulsarResources
 ) : InfiniticProducer {
 
   private var suggestedName: String? = null
 
-  override fun setName(name: String) {
+  override fun setSuggestedName(name: String) {
     suggestedName = name
   }
 
@@ -75,14 +75,13 @@ class PulsarInfiniticProducer(
     }
 
     return try {
-      val async: CompletableFuture<Unit> = sendEnvelopeAsync(
+      sendEnvelope(
           topic.envelope(message),
           after,
           topicFullName,
           getName(),
           key = message.key(),
       )
-      async.await()
     } catch (e: Exception) {
       if (topic.canIgnore(e)) Unit
       else throw e

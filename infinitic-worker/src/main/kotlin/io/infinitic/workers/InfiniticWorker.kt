@@ -163,7 +163,7 @@ class InfiniticWorker(
     config.transport.consumer
   }
   private val producer by lazy {
-    config.transport.producer.apply { config.name?.let { setName(it) } }
+    config.transport.producer.apply { config.name?.let { setSuggestedName(it) } }
   }
 
   private val shutdownGracePeriodSeconds = config.transport.shutdownGracePeriodSeconds
@@ -286,7 +286,7 @@ class InfiniticWorker(
         config.eventListener?.let { startEventListener(it) }
 
         val workerName = producer.getName()
-        
+
         logger.info {
           "Worker '$workerName' ready (shutdownGracePeriodSeconds=${shutdownGracePeriodSeconds}s)"
         }

@@ -48,7 +48,7 @@ import org.apache.pulsar.client.api.Schema
 import org.apache.pulsar.client.api.SubscriptionType
 
 class PulsarInfiniticConsumer(
-  val client: InfiniticPulsarClient,
+  private val client: InfiniticPulsarClient,
   private val pulsarConsumerConfig: PulsarConsumerConfig,
   private val pulsarResources: PulsarResources,
 ) : InfiniticConsumer {
@@ -64,7 +64,7 @@ class PulsarInfiniticConsumer(
     val topicName = with(pulsarResources) {
       subscription.topic.forEntity(entity, true, checkConsumer = false)
     }
-    
+
     // Retrieves the name the DLQ topic, If the topic doesn't exist yet, create it.
     val topicDLQName = with(pulsarResources) {
       subscription.topic.forEntityDLQ(entity, true)
@@ -95,9 +95,7 @@ class PulsarInfiniticConsumer(
 
     when (subscription.withKey) {
       true -> coroutineScope {
-        val consumers = List(concurrency) {
-          async { buildConsumer(it) }
-        }.map { it.await() }
+        val consumers = List(concurrency) { async { buildConsumer(it) } }.map { it.await() }
 
         List(concurrency) { index ->
           launch {

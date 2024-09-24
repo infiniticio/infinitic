@@ -35,8 +35,8 @@ class LoggedInfiniticProducer(
 
   override suspend fun getName() = producer.getName()
 
-  override fun setName(name: String) {
-    producer.setName(name)
+  override fun setSuggestedName(name: String) {
+    producer.setSuggestedName(name)
   }
 
   override suspend fun <T : Message> internalSendTo(
