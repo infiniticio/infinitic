@@ -29,7 +29,7 @@ import io.infinitic.pulsar.client.ClientConfigInterface
 import io.infinitic.pulsar.config.auth.ClientAuthenticationConfig
 
 @Suppress("unused")
-data class ClientConfig(
+data class PulsarClientConfig(
   override val listenerName: String? = null,
   override val connectionMaxIdleSeconds: Int? = null,
   override val authentication: ClientAuthenticationConfig? = null,
@@ -257,8 +257,8 @@ data class ClientConfig(
     fun setAutoCertRefreshTime(autoCertRefreshTime: Double) =
         apply { this.autoCertRefreshTime = autoCertRefreshTime }
 
-    fun build(): ClientConfig {
-      return ClientConfig(
+    fun build(): PulsarClientConfig {
+      return PulsarClientConfig(
           listenerName = listenerName,
           connectionMaxIdleSeconds = connectionMaxIdleSeconds,
           authentication = authentication,

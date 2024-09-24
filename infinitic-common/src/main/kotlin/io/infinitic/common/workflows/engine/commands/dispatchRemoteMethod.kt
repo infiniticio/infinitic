@@ -49,7 +49,8 @@ suspend fun InfiniticProducer.dispatchRemoteMethod(
   remote: RemoteMethodDispatched,
   requester: Requester,
 ) = coroutineScope {
-  val emitterName = EmitterName(name)
+
+  suspend fun getEmitterName() = EmitterName(getName())
 
   when (remote) {
     // New Workflow
@@ -64,7 +65,7 @@ suspend fun InfiniticProducer.dispatchRemoteMethod(
                   workflowName = workflowName,
                   workflowTag = it,
                   workflowId = workflowId,
-                  emitterName = emitterName,
+                  emitterName = getEmitterName(),
                   emittedAt = emittedAt,
               )
             }
@@ -85,7 +86,7 @@ suspend fun InfiniticProducer.dispatchRemoteMethod(
             workflowMeta = workflowMeta,
             requester = requester,
             clientWaiting = false,
-            emitterName = emitterName,
+            emitterName = getEmitterName(),
             emittedAt = emittedAt,
         )
       }
@@ -94,7 +95,7 @@ suspend fun InfiniticProducer.dispatchRemoteMethod(
       // send a timeout if needed
       remote.timeout?.let {
         launch {
-          val remoteMethodTimedOut = dispatchWorkflow.remoteMethodTimedOut(emitterName, it)
+          val remoteMethodTimedOut = dispatchWorkflow.remoteMethodTimedOut(getEmitterName(), it)
           remoteMethodTimedOut.sendTo(WorkflowStateTimerTopic, it)
         }
       }
@@ -116,7 +117,7 @@ suspend fun InfiniticProducer.dispatchRemoteMethod(
             workflowMeta = workflowMeta,
             requester = requester,
             clientWaiting = false,
-            emitterName = emitterName,
+            emitterName = getEmitterName(),
             emittedAt = emittedAt,
         )
       }
@@ -135,7 +136,7 @@ suspend fun InfiniticProducer.dispatchRemoteMethod(
             methodParameterTypes = methodParameterTypes,
             requester = requester,
             clientWaiting = false,
-            emitterName = emitterName,
+            emitterName = getEmitterName(),
             emittedAt = emittedAt,
         )
       }
@@ -157,7 +158,7 @@ suspend fun InfiniticProducer.dispatchRemoteMethod(
                   methodParameters = dispatchMethod.methodParameters,
                   methodParameterTypes = dispatchMethod.methodParameterTypes,
                   requester = requester,
-                  emitterName = emitterName,
+                  emitterName = getEmitterName(),
               )
             }
             methodCommandedEvent.sendTo(WorkflowStateEventTopic)
@@ -173,7 +174,7 @@ suspend fun InfiniticProducer.dispatchRemoteMethod(
       // as the timeout is relative to the current workflow
       remote.timeout?.let {
         launch {
-          val remoteMethodTimedOut = dispatchMethod.remoteMethodTimedOut(emitterName, it)
+          val remoteMethodTimedOut = dispatchMethod.remoteMethodTimedOut(getEmitterName(), it)
           remoteMethodTimedOut.sendTo(WorkflowStateTimerTopic, it)
         }
       }
@@ -192,7 +193,7 @@ suspend fun InfiniticProducer.dispatchRemoteMethod(
             methodTimeout = timeout,
             requester = requester,
             clientWaiting = false,
-            emitterName = emitterName,
+            emitterName = getEmitterName(),
             emittedAt = emittedAt,
         )
       }

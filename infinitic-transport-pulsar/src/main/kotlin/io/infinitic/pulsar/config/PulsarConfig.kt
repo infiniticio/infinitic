@@ -28,14 +28,15 @@ import io.infinitic.config.loadFromYamlResource
 import io.infinitic.config.loadFromYamlString
 import io.infinitic.config.notNullPropertiesToString
 import io.infinitic.pulsar.admin.AdminConfigInterface
+import io.infinitic.pulsar.admin.InfiniticPulsarAdmin
 import io.infinitic.pulsar.client.ClientConfigInterface
+import io.infinitic.pulsar.client.InfiniticPulsarClient
 import io.infinitic.pulsar.config.auth.AuthenticationAthenzConfig
 import io.infinitic.pulsar.config.auth.AuthenticationOAuth2Config
 import io.infinitic.pulsar.config.auth.AuthenticationSaslConfig
 import io.infinitic.pulsar.config.auth.AuthenticationTokenConfig
 import io.infinitic.pulsar.config.policies.PoliciesConfig
-import io.infinitic.pulsar.consumers.ConsumerConfig
-import io.infinitic.pulsar.producers.ProducerConfig
+import io.infinitic.pulsar.resources.PulsarResources
 import io.infinitic.serDe.java.Json.mapper
 import org.apache.pulsar.client.admin.PulsarAdmin
 import org.apache.pulsar.client.api.AuthenticationFactory
@@ -54,10 +55,10 @@ data class PulsarConfig(
   val namespace: String,
   val allowedClusters: Set<String>? = null,
   val adminRoles: Set<String>? = null,
-  val client: ClientConfig = ClientConfig(),
+  val client: PulsarClientConfig = PulsarClientConfig(),
   val policies: PoliciesConfig = PoliciesConfig(),
-  val producer: ProducerConfig = ProducerConfig(),
-  val consumer: ConsumerConfig = ConsumerConfig()
+  val producer: PulsarProducerConfig = PulsarProducerConfig(),
+  val consumer: PulsarConsumerConfig = PulsarConsumerConfig()
 ) {
 
   companion object {
@@ -119,6 +120,10 @@ data class PulsarConfig(
 
     require(namespace.isNotBlank()) { "namespace can NOT be blank" }
   }
+
+  val infiniticPulsarClient by lazy { InfiniticPulsarClient(pulsarClient) }
+  val infiniticPulsarAdmin by lazy { InfiniticPulsarAdmin(pulsarAdmin) }
+  val pulsarResources by lazy { PulsarResources(this) }
 
   val pulsarAdmin: PulsarAdmin by lazy {
     val admin: AdminConfigInterface = client

@@ -41,36 +41,25 @@ import io.infinitic.common.transport.WorkflowStateEventTopic
 import io.infinitic.common.transport.WorkflowStateTimerTopic
 import io.infinitic.common.transport.WorkflowTagEngineTopic
 import io.infinitic.common.workflows.data.workflows.WorkflowName
+import io.infinitic.pulsar.client.InfiniticPulsarClient
 import io.infinitic.pulsar.config.PulsarConfig
 import io.infinitic.pulsar.config.policies.PoliciesConfig
-import io.infinitic.pulsar.consumers.ConsumerFactory
 import io.infinitic.pulsar.resources.PulsarResources
 import io.kotest.core.spec.style.StringSpec
 import io.mockk.coEvery
 import io.mockk.coVerify
+import io.mockk.every
 import io.mockk.mockk
-import io.mockk.slot
 import io.mockk.spyk
 import net.bytebuddy.utility.RandomString
 import org.apache.pulsar.client.api.Consumer
 import org.apache.pulsar.client.api.Schema
-import org.apache.pulsar.client.api.SubscriptionInitialPosition
-import org.apache.pulsar.client.api.SubscriptionType
 
 class PulsarInfiniticConsumerTests : StringSpec(
     {
       val clientName = ClientName("clientTest")
       val workflowName = WorkflowName("workflowTest")
       val serviceName = ServiceName("serviceTest")
-
-      val topic = slot<String>()
-      val dlqTopic = slot<String?>()
-
-      val subscriptionName = slot<String>()
-      val subscriptionNameDlq = slot<String>()
-      val subscriptionType = slot<SubscriptionType>()
-      val subscriptionInitialPosition = slot<SubscriptionInitialPosition>()
-      val consumerName = slot<String>()
 
       val tenant = RandomString().nextString()
       val namespace = RandomString().nextString()
@@ -92,22 +81,13 @@ class PulsarInfiniticConsumerTests : StringSpec(
         coEvery { initDlqTopicOnce(any(), any(), any()) } returns Result.success(Unit)
       }
 
-      val consumer = mockk<ConsumerFactory> {
-        coEvery {
-          getConsumer(
-              any<Schema<Envelope<out Message>>>(),
-              capture(topic),
-              captureNullable(dlqTopic),
-              capture(subscriptionName),
-              capture(subscriptionNameDlq),
-              capture(subscriptionType),
-              capture(subscriptionInitialPosition),
-              capture(consumerName),
-          )
-        } returns Result.success(mockk<Consumer<Envelope<out Message>>>())
+      val client = mockk<InfiniticPulsarClient> {
+        every { newConsumer(any<Schema<Envelope<out Message>>>(), any(), any()) } returns
+            Result.success(mockk<Consumer<Envelope<out Message>>>())
       }
 
-      val infiniticConsumerAsync = PulsarInfiniticConsumer(consumer, pulsarResources)
+      val infiniticConsumerAsync =
+          PulsarInfiniticConsumer(client, pulsarConfig.consumer, pulsarResources)
 
       "should init client-response topic before consuming it" {
         val name = "$clientName"
@@ -125,8 +105,8 @@ class PulsarInfiniticConsumerTests : StringSpec(
         coVerify {
           pulsarResources.initTopicOnce(
               "persistent://$tenant/$namespace/response:$name",
-              false,
-              false,
+              isPartitioned = false,
+              isTimer = false,
           )
         }
       }
@@ -147,8 +127,8 @@ class PulsarInfiniticConsumerTests : StringSpec(
         coVerify {
           pulsarResources.initTopicOnce(
               "persistent://$tenant/$namespace/workflow-tag:$name",
-              true,
-              false,
+              isPartitioned = true,
+              isTimer = false,
           )
         }
       }
@@ -169,8 +149,8 @@ class PulsarInfiniticConsumerTests : StringSpec(
         coVerify {
           pulsarResources.initTopicOnce(
               "persistent://$tenant/$namespace/workflow-cmd:$name",
-              true,
-              false,
+              isPartitioned = true,
+              isTimer = false,
           )
         }
       }
@@ -191,8 +171,8 @@ class PulsarInfiniticConsumerTests : StringSpec(
         coVerify {
           pulsarResources.initTopicOnce(
               "persistent://$tenant/$namespace/workflow-engine:$name",
-              true,
-              false,
+              isPartitioned = true,
+              isTimer = false,
           )
         }
       }
@@ -213,8 +193,8 @@ class PulsarInfiniticConsumerTests : StringSpec(
         coVerify {
           pulsarResources.initTopicOnce(
               "persistent://$tenant/$namespace/workflow-delay:$name",
-              true,
-              true,
+              isPartitioned = true,
+              isTimer = true,
           )
         }
       }
@@ -235,8 +215,8 @@ class PulsarInfiniticConsumerTests : StringSpec(
         coVerify {
           pulsarResources.initTopicOnce(
               "persistent://$tenant/$namespace/workflow-events:$name",
-              true,
-              false,
+              isPartitioned = true,
+              isTimer = false,
           )
         }
       }
@@ -257,8 +237,8 @@ class PulsarInfiniticConsumerTests : StringSpec(
         coVerify {
           pulsarResources.initTopicOnce(
               "persistent://$tenant/$namespace/workflow-task-executor:$name",
-              true,
-              false,
+              isPartitioned = true,
+              isTimer = false,
           )
         }
       }
@@ -279,8 +259,8 @@ class PulsarInfiniticConsumerTests : StringSpec(
         coVerify {
           pulsarResources.initTopicOnce(
               "persistent://$tenant/$namespace/workflow-task-events:$name",
-              true,
-              false,
+              isPartitioned = true,
+              isTimer = false,
           )
         }
       }
@@ -301,8 +281,8 @@ class PulsarInfiniticConsumerTests : StringSpec(
         coVerify {
           pulsarResources.initTopicOnce(
               "persistent://$tenant/$namespace/task-tag:$name",
-              true,
-              false,
+              isPartitioned = true,
+              isTimer = false,
           )
         }
       }
@@ -323,8 +303,8 @@ class PulsarInfiniticConsumerTests : StringSpec(
         coVerify {
           pulsarResources.initTopicOnce(
               "persistent://$tenant/$namespace/task-executor:$name",
-              true,
-              false,
+              isPartitioned = true,
+              isTimer = false,
           )
         }
       }
@@ -345,8 +325,8 @@ class PulsarInfiniticConsumerTests : StringSpec(
         coVerify {
           pulsarResources.initTopicOnce(
               "persistent://$tenant/$namespace/task-events:$name",
-              true,
-              false,
+              isPartitioned = true,
+              isTimer = false,
           )
         }
       }

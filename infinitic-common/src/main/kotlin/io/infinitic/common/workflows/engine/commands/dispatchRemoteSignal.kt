@@ -38,7 +38,7 @@ suspend fun InfiniticProducer.dispatchRemoteSignal(
   signal: RemoteSignalDispatched,
   requester: Requester
 ) {
-  val emitterName = EmitterName(name)
+  suspend fun getEmitterName() = EmitterName(getName())
 
   when (signal) {
     is RemoteSignalDispatchedById -> when (signal.workflowId) {
@@ -56,7 +56,7 @@ suspend fun InfiniticProducer.dispatchRemoteSignal(
               signalId = signalId,
               signalData = signalData,
               channelTypes = channelTypes,
-              emitterName = emitterName,
+              emitterName = getEmitterName(),
               emittedAt = emittedAt,
               requester = requester,
           )
@@ -75,7 +75,7 @@ suspend fun InfiniticProducer.dispatchRemoteSignal(
             signalId = signalId,
             signalData = signalData,
             channelTypes = channelTypes,
-            emitterName = emitterName,
+            emitterName = getEmitterName(),
             emittedAt = emittedAt,
             requester = requester,
         )

@@ -26,15 +26,11 @@ import io.infinitic.properties.isLazyInitialized
 import io.infinitic.pulsar.PulsarInfiniticConsumer
 import io.infinitic.pulsar.PulsarInfiniticProducer
 import io.infinitic.pulsar.PulsarInfiniticResources
-import io.infinitic.pulsar.client.InfiniticPulsarClient
-import io.infinitic.pulsar.config.ClientConfig
+import io.infinitic.pulsar.config.PulsarClientConfig
 import io.infinitic.pulsar.config.PulsarConfig
+import io.infinitic.pulsar.config.PulsarConsumerConfig
+import io.infinitic.pulsar.config.PulsarProducerConfig
 import io.infinitic.pulsar.config.policies.PoliciesConfig
-import io.infinitic.pulsar.consumers.ConsumerConfig
-import io.infinitic.pulsar.consumers.ConsumerFactory
-import io.infinitic.pulsar.producers.Producer
-import io.infinitic.pulsar.producers.ProducerConfig
-import io.infinitic.pulsar.resources.PulsarResources
 import java.net.URLEncoder
 
 @Suppress("unused")
@@ -58,25 +54,24 @@ data class PulsarTransportConfig(
       URLEncoder.encode(pulsar.namespace, Charsets.UTF_8)
 
 
-  private val infiniticPulsarClient by lazy { InfiniticPulsarClient(pulsar.pulsarClient) }
-  private val pulsarResources by lazy { PulsarResources(pulsar) }
-
   /** Infinitic Resources */
-  override val resources by lazy { PulsarInfiniticResources(pulsarResources) }
+  override val resources by lazy { PulsarInfiniticResources(pulsar.pulsarResources) }
 
   /** Infinitic Consumer */
   override val consumer by lazy {
     PulsarInfiniticConsumer(
-        ConsumerFactory(infiniticPulsarClient, pulsar.consumer),
-        pulsarResources,
+        pulsar.infiniticPulsarClient,
+        pulsar.consumer,
+        pulsar.pulsarResources,
     )
   }
 
   /** Infinitic Producer */
   override val producer by lazy {
     PulsarInfiniticProducer(
-        Producer(infiniticPulsarClient, pulsar.producer),
-        pulsarResources,
+        pulsar.infiniticPulsarClient,
+        pulsar.producer,
+        pulsar.pulsarResources,
     )
   }
 
@@ -96,10 +91,10 @@ data class PulsarTransportConfig(
     private var namespace: String? = null
     private var allowedClusters: Set<String>? = null
     private var adminRoles: Set<String>? = null
-    private var client: ClientConfig = ClientConfig()
+    private var client: PulsarClientConfig = PulsarClientConfig()
     private var policies: PoliciesConfig = PoliciesConfig()
-    private var producer: ProducerConfig = ProducerConfig()
-    private var consumer: ConsumerConfig = ConsumerConfig()
+    private var producer: PulsarProducerConfig = PulsarProducerConfig()
+    private var consumer: PulsarConsumerConfig = PulsarConsumerConfig()
 
     fun setShutdownGracePeriodSeconds(shutdownGracePeriodSeconds: Double) =
         apply { this.shutdownGracePeriodSeconds = shutdownGracePeriodSeconds }
@@ -122,11 +117,11 @@ data class PulsarTransportConfig(
     fun setAdminRoles(adminRoles: Set<String>) =
         apply { this.adminRoles = adminRoles }
 
-    fun setClientConfig(clientConfig: ClientConfig) =
-        apply { this.client = clientConfig }
+    fun setClientConfig(pulsarClientConfig: PulsarClientConfig) =
+        apply { this.client = pulsarClientConfig }
 
-    fun setClientConfig(clientConfig: ClientConfig.ClientConfigBuilder) =
-        setClientConfig(clientConfig.build())
+    fun setClientConfig(pulsarClientConfig: PulsarClientConfig.ClientConfigBuilder) =
+        setClientConfig(pulsarClientConfig.build())
 
     fun setPolicies(policiesConfig: PoliciesConfig) =
         apply { this.policies = policiesConfig }
@@ -134,17 +129,17 @@ data class PulsarTransportConfig(
     fun setPolicies(policiesConfig: PoliciesConfig.PoliciesConfigBuilder) =
         setPolicies(policiesConfig.build())
 
-    fun setProducerConfig(producerConfig: ProducerConfig) =
-        apply { this.producer = producerConfig }
+    fun setProducerConfig(pulsarProducerConfig: PulsarProducerConfig) =
+        apply { this.producer = pulsarProducerConfig }
 
-    fun setProducerConfig(producerConfig: ProducerConfig.ProducerConfigBuilder) =
-        setProducerConfig(producerConfig.build())
+    fun setProducerConfig(pulsarProducerConfig: PulsarProducerConfig.ProducerConfigBuilder) =
+        setProducerConfig(pulsarProducerConfig.build())
 
-    fun setConsumerConfig(consumerConfig: ConsumerConfig) =
-        apply { this.consumer = consumerConfig }
+    fun setConsumerConfig(pulsarConsumerConfig: PulsarConsumerConfig) =
+        apply { this.consumer = pulsarConsumerConfig }
 
-    fun setConsumerConfig(consumerConfig: ConsumerConfig.ConsumerConfigBuilder) =
-        setConsumerConfig(consumerConfig.build())
+    fun setConsumerConfig(pulsarConsumerConfig: PulsarConsumerConfig.ConsumerConfigBuilder) =
+        setConsumerConfig(pulsarConsumerConfig.build())
 
     override fun build(): PulsarTransportConfig {
       require(brokerServiceUrl != null) { "${PulsarConfig::brokerServiceUrl.name} must not be null" }

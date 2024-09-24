@@ -112,7 +112,7 @@ internal class ClientDispatcher(
 ) : ProxyDispatcher {
 
   // Name of the client
-  private val emitterName by lazy { EmitterName(producer.name) }
+  private val emitterName by lazy { clientScope.future { EmitterName(producer.getName()) }.join() }
 
   // This as requester
   private val clientRequester by lazy { ClientRequester(clientName = ClientName.from(emitterName)) }
@@ -225,7 +225,7 @@ internal class ClientDispatcher(
           emittedAt = null,
       )
       // synchronously sent the message to get errors
-      waitWorkflow.sendToAsync(WorkflowStateCmdTopic)
+      waitWorkflow.sendToAsync(WorkflowStateCmdTopic).join()
     }
 
     // Get result

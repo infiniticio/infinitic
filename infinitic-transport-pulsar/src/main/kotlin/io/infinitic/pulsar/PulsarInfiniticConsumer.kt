@@ -31,9 +31,10 @@ import io.infinitic.common.transport.MainSubscription
 import io.infinitic.common.transport.Subscription
 import io.infinitic.common.transport.consumers.ConsumerSharedProcessor
 import io.infinitic.common.transport.consumers.ConsumerUniqueProcessor
-import io.infinitic.pulsar.consumers.ConsumerFactory
+import io.infinitic.pulsar.client.InfiniticPulsarClient
+import io.infinitic.pulsar.config.PulsarConsumerConfig
 import io.infinitic.pulsar.consumers.PulsarTransportConsumer
-import io.infinitic.pulsar.messages.PulsarTransportMessage
+import io.infinitic.pulsar.consumers.PulsarTransportMessage
 import io.infinitic.pulsar.resources.PulsarResources
 import io.infinitic.pulsar.resources.defaultName
 import io.infinitic.pulsar.resources.defaultNameDLQ
@@ -42,10 +43,13 @@ import io.infinitic.pulsar.resources.type
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
-import org.apache.pulsar.client.api.SubscriptionInitialPosition
+import org.apache.pulsar.client.api.Consumer
+import org.apache.pulsar.client.api.Schema
+import org.apache.pulsar.client.api.SubscriptionType
 
 class PulsarInfiniticConsumer(
-  private val consumerFactory: ConsumerFactory,
+  val client: InfiniticPulsarClient,
+  private val pulsarConsumerConfig: PulsarConsumerConfig,
   private val pulsarResources: PulsarResources,
 ) : InfiniticConsumer {
 
@@ -60,7 +64,7 @@ class PulsarInfiniticConsumer(
     val topicName = with(pulsarResources) {
       subscription.topic.forEntity(entity, true, checkConsumer = false)
     }
-
+    
     // Retrieves the name the DLQ topic, If the topic doesn't exist yet, create it.
     val topicDLQName = with(pulsarResources) {
       subscription.topic.forEntityDLQ(entity, true)
@@ -74,19 +78,18 @@ class PulsarInfiniticConsumer(
       deserialized: S?,
       cause: Exception
     ) {
-      if (message.redeliveryCount == consumerFactory.maxRedeliverCount) {
+      if (message.redeliveryCount == pulsarConsumerConfig.maxRedeliverCount) {
         beforeDlq?.let { it(deserialized, cause) }
       }
     }
 
-    fun buildConsumer(index: Int? = null) = consumerFactory.getConsumer(
+    fun buildConsumer(index: Int? = null) = getConsumer(
         schema = subscription.topic.schema,
         topic = topicName,
         topicDlq = topicDLQName,
         subscriptionName = subscription.name,
         subscriptionNameDlq = subscription.nameDLQ,
         subscriptionType = subscription.type,
-        subscriptionInitialPosition = SubscriptionInitialPosition.Earliest,
         consumerName = entity + (index?.let { "-$it" } ?: ""),
     ).getOrThrow().let { PulsarTransportConsumer(it) }
 
@@ -133,5 +136,34 @@ class PulsarInfiniticConsumer(
       is MainSubscription -> defaultNameDLQ
       is EventListenerSubscription -> name?.let { "$it-dlq" } ?: defaultNameDLQ
     }
+
+  private fun <S : Envelope<out Message>> getConsumer(
+    schema: Schema<S>,
+    topic: String,
+    topicDlq: String?,
+    subscriptionName: String,
+    subscriptionNameDlq: String,
+    subscriptionType: SubscriptionType,
+    consumerName: String,
+  ): Result<Consumer<S>> {
+    val consumerDef = InfiniticPulsarClient.ConsumerDef(
+        topic = topic,
+        subscriptionName = subscriptionName, //  MUST be the same for all instances!
+        subscriptionType = subscriptionType,
+        consumerName = consumerName,
+        pulsarConsumerConfig = pulsarConsumerConfig,
+    )
+    val consumerDefDlq = topicDlq?.let {
+      InfiniticPulsarClient.ConsumerDef(
+          topic = it,
+          subscriptionName = subscriptionNameDlq, //  MUST be the same for all instances!
+          subscriptionType = SubscriptionType.Shared,
+          consumerName = "$consumerName-dlq",
+          pulsarConsumerConfig = pulsarConsumerConfig,
+      )
+    }
+
+    return client.newConsumer(schema, consumerDef, consumerDefDlq)
+  }
 }
 

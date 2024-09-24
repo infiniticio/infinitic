@@ -22,6 +22,7 @@
  */
 package io.infinitic.common.fixtures
 
+import io.infinitic.common.data.MessageId
 import io.infinitic.common.data.Version
 import io.infinitic.common.data.methods.MethodArgs
 import io.infinitic.common.serDe.SerializedData
@@ -96,6 +97,7 @@ object TestFactory {
           val sub = DeferredError::class.sealedSubclasses.shuffled().first()
           random(sub)
         }
+        .randomize(MessageId::class.java) { MessageId() }
 
     values?.forEach { parameters.randomize(FieldPredicates.named(it.key), Randomizer { it.value }) }
 

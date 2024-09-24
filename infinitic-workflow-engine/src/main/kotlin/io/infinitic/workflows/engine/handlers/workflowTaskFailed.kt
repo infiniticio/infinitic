@@ -42,7 +42,6 @@ internal fun CoroutineScope.workflowTaskFailed(
   state: WorkflowState,
   message: RemoteTaskFailed
 ) {
-  val emitterName = EmitterName(producer.name)
   val emittedAt = state.runningWorkflowTaskInstant ?: thisShouldNotHappen()
 
   val workflowMethod = state.getRunningWorkflowMethod()
@@ -74,13 +73,18 @@ internal fun CoroutineScope.workflowTaskFailed(
       workflowMethodId = workflowMethod.workflowMethodId,
       workflowMethodName = workflowMethod.methodName,
       awaitingRequesters = workflowMethod.awaitingRequesters,
-      emitterName = emitterName,
+      emitterName = EmitterName.BUFFERED,
       deferredError = deferredError,
   )
-  launch { with(producer) { methodFailedEvent.sendTo(WorkflowStateEventTopic) } }
+  launch {
+    with(producer) {
+      methodFailedEvent.copy(emitterName = EmitterName(producer.getName()))
+          .sendTo(WorkflowStateEventTopic)
+    }
+  }
 
   // send info to itself by adding a fake message on messageBuffer
-  methodFailedEvent.getEventForAwaitingWorkflows(emitterName, emittedAt)
+  methodFailedEvent.getEventForAwaitingWorkflows(EmitterName.BUFFERED, emittedAt)
       .firstOrNull { it.workflowId == message.workflowId }
       ?.let { state.messagesBuffer.add(0, it) }
 }

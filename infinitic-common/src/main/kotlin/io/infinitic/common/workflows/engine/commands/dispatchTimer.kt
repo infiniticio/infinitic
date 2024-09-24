@@ -35,7 +35,7 @@ suspend fun InfiniticProducer.dispatchTimer(
   timerDispatched: TimerDispatched,
   requester: WorkflowRequester
 ) {
-  val emitterName = EmitterName(name)
+  val emitterName = EmitterName(getName())
 
   val timerInstant = when (timerDispatched) {
     is InstantTimerDispatched -> timerDispatched.timerInstant

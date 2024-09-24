@@ -40,7 +40,7 @@ import java.util.concurrent.CompletableFuture
 
 interface InfiniticClientInterface : Closeable {
   /** Client's name - this name must be unique through all connected clients */
-  val name: String
+  suspend fun getName(): String
 
   /** Get last Deferred created by the call of a stub */
   val lastDeferred: Deferred<*>?

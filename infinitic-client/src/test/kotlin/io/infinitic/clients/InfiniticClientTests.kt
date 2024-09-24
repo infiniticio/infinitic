@@ -108,11 +108,11 @@ private val delaySlot = slot<MillisDuration>()
 
 private val clientNameTest = ClientName("clientTest")
 private val emitterNameTest = EmitterName("clientTest")
-private fun tagResponse() {
+private suspend fun tagResponse() {
   workflowTagSlots.forEach {
     if (it is GetWorkflowIdsByTag) {
       val workflowIdsByTag = WorkflowIdsByTag(
-          recipientName = ClientName(client.name),
+          recipientName = ClientName(client.getName()),
           workflowName = it.workflowName,
           workflowTag = it.workflowTag,
           workflowIds = setOf(WorkflowId(), WorkflowId()),
@@ -123,11 +123,11 @@ private fun tagResponse() {
   }
 }
 
-private fun engineResponse() {
+private suspend fun engineResponse() {
   val msg = workflowCmdSlot.captured
   if (msg is DispatchWorkflow && msg.clientWaiting || msg is WaitWorkflow) {
     val methodCompleted = MethodCompleted(
-        recipientName = ClientName(client.name),
+        recipientName = ClientName(client.getName()),
         workflowId = msg.workflowId,
         workflowMethodId = WorkflowMethodId.from(msg.workflowId),
         methodReturnValue = MethodReturnValue.from("success", null),
@@ -138,16 +138,16 @@ private fun engineResponse() {
 }
 
 internal val mockedProducer = mockk<InMemoryInfiniticProducer> {
-  every { name } returns "$clientNameTest"
+  coEvery { getName() } returns "$clientNameTest"
   coEvery {
     internalSendTo(capture(taskTagSlots), ServiceTagEngineTopic)
   } answers { }
   coEvery {
     internalSendTo(capture(workflowTagSlots), WorkflowTagEngineTopic)
-  } answers { tagResponse() }
+  } coAnswers { tagResponse() }
   coEvery {
     internalSendTo(capture(workflowCmdSlot), WorkflowStateCmdTopic)
-  } answers { engineResponse() }
+  } coAnswers { engineResponse() }
 }
 
 internal val mockedConsumer = mockk<InMemoryInfiniticConsumer> {

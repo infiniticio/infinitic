@@ -21,12 +21,12 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.pulsar.consumers
+package io.infinitic.pulsar.config
 
 import org.apache.pulsar.client.api.ConsumerCryptoFailureAction
 
 @Suppress("unused")
-data class ConsumerConfig(
+data class PulsarConsumerConfig(
   val loadConf: Map<String, String>? = null,
   val subscriptionProperties: Map<String, String>? = null,
   val ackTimeoutSeconds: Double? = null,
@@ -64,7 +64,7 @@ data class ConsumerConfig(
    * ConsumerConfig builder (Useful for Java user)
    */
   class ConsumerConfigBuilder {
-    private val default = ConsumerConfig()
+    private val default = PulsarConsumerConfig()
     private var loadConf = default.loadConf
     private var subscriptionProperties = default.subscriptionProperties
     private var ackTimeoutSeconds = default.ackTimeoutSeconds
@@ -164,7 +164,7 @@ data class ConsumerConfig(
     fun setMaxRedeliverCount(maxRedeliverCount: Int) =
         apply { this.maxRedeliverCount = maxRedeliverCount }
 
-    fun build() = ConsumerConfig(
+    fun build() = PulsarConsumerConfig(
         loadConf,
         subscriptionProperties,
         ackTimeoutSeconds,

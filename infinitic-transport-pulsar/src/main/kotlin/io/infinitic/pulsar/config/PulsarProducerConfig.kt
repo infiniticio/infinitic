@@ -21,7 +21,7 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.pulsar.producers
+package io.infinitic.pulsar.config
 
 import org.apache.pulsar.client.api.CompressionType
 import org.apache.pulsar.client.api.HashingScheme
@@ -29,7 +29,7 @@ import org.apache.pulsar.client.api.MessageRoutingMode
 import org.apache.pulsar.client.api.ProducerCryptoFailureAction
 
 @Suppress("unused")
-data class ProducerConfig(
+data class PulsarProducerConfig(
   val autoUpdatePartitions: Boolean? = null,
   val autoUpdatePartitionsIntervalSeconds: Double? = null,
   val batchingMaxBytes: Int? = null,
@@ -62,7 +62,7 @@ data class ProducerConfig(
    * ProducerConfig builder (Useful for Java user)
    */
   class ProducerConfigBuilder {
-    private val default = ProducerConfig()
+    private val default = PulsarProducerConfig()
     private var autoUpdatePartitions = default.autoUpdatePartitions
     private var autoUpdatePartitionsIntervalSeconds = default.autoUpdatePartitionsIntervalSeconds
     private var batchingMaxBytes = default.batchingMaxBytes
@@ -145,7 +145,7 @@ data class ProducerConfig(
     fun setSendTimeoutSeconds(sendTimeoutSeconds: Double) =
         apply { this.sendTimeoutSeconds = sendTimeoutSeconds }
 
-    fun build() = ProducerConfig(
+    fun build() = PulsarProducerConfig(
         autoUpdatePartitions,
         autoUpdatePartitionsIntervalSeconds,
         batchingMaxBytes,

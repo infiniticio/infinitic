@@ -71,7 +71,7 @@ class InfiniticClient(
   }
   private val producer by lazy {
     LoggedInfiniticProducer(logger, config.transport.producer).apply {
-      config.name?.let { name = it }
+      config.name?.let { setName(it) }
     }
   }
 
@@ -84,7 +84,7 @@ class InfiniticClient(
 
   private val dispatcher by lazy { ClientDispatcher(clientScope, consumer, producer) }
 
-  override val name by lazy { producer.name }
+  override suspend fun getName() = producer.getName()
 
   /** Get last Deferred created by the call of a stub */
   override val lastDeferred get() = dispatcher.getLastDeferred()
@@ -118,6 +118,7 @@ class InfiniticClient(
    */
   private suspend fun deleteClientTopics() {
     if (::consumer.isLazyInitialized) {
+      val name = getName()
       resources.deleteTopicForClient(name).getOrElse {
         logger.warn(it) { "Unable to delete topic for client $name, please delete it manually." }
       }?.let {

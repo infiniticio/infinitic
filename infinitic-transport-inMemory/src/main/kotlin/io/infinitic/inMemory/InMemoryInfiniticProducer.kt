@@ -35,8 +35,14 @@ class InMemoryInfiniticProducer(
   private val eventListenerChannels: InMemoryChannels
 ) : InfiniticProducer {
 
-  override var name = DEFAULT_NAME
+  private var suggestedName = DEFAULT_NAME
 
+  override suspend fun getName() = suggestedName
+
+  override fun setName(name: String) {
+    suggestedName = name
+  }
+  
   private fun <S : Message> Topic<S>.channelsForMessage(message: S): List<Channel<S>> {
     val entity = message.entity()
 

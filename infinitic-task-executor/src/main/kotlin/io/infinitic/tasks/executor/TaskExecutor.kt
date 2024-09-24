@@ -78,7 +78,8 @@ class TaskExecutor(
   private val producer: InfiniticProducer,
   private val client: InfiniticClientInterface
 ) {
-  private val emitterName by lazy { EmitterName(producer.name) }
+  private suspend fun getEmitterName() = EmitterName(producer.getName())
+
   private var withRetry: WithRetry? = null
   private var withTimeout: WithTimeout? = null
   private var isDelegated = false
@@ -106,7 +107,7 @@ class TaskExecutor(
         }
 
     val taskContext = TaskContextImpl(
-        workerName = producer.name,
+        workerName = producer.getName(),
         serviceName = msg.serviceName,
         taskId = msg.taskId,
         taskName = msg.methodName,
@@ -203,7 +204,7 @@ class TaskExecutor(
   }
 
   private suspend fun ExecuteTask.sendTaskStarted() {
-    val event = TaskStartedEvent.from(this, this@TaskExecutor.emitterName)
+    val event = TaskStartedEvent.from(this, getEmitterName())
     with(producer) { event.sendTo(ServiceExecutorEventTopic) }
   }
 
@@ -213,7 +214,7 @@ class TaskExecutor(
     description: (() -> String)? = null
   ) {
     logError(cause, description)
-    val event = TaskFailedEvent.from(this, this@TaskExecutor.emitterName, cause, meta)
+    val event = TaskFailedEvent.from(this, getEmitterName(), cause, meta)
     with(producer) { event.sendTo(ServiceExecutorEventTopic) }
   }
 
@@ -223,13 +224,12 @@ class TaskExecutor(
     meta: Map<String, ByteArray>
   ) {
     logWarn(cause) { "Retrying in $delay" }
-    val emitterName = this@TaskExecutor.emitterName
 
-    val executeTask = ExecuteTask.retryFrom(this, emitterName, cause, meta)
+    val executeTask = ExecuteTask.retryFrom(this, getEmitterName(), cause, meta)
     with(producer) { executeTask.sendTo(ServiceExecutorRetryTopic, delay) }
 
     // once sent, we publish the event
-    val event = TaskRetriedEvent.from(this, emitterName, cause, delay, meta)
+    val event = TaskRetriedEvent.from(this, getEmitterName(), cause, delay, meta)
     with(producer) { event.sendTo(ServiceExecutorEventTopic) }
   }
 
@@ -243,7 +243,7 @@ class TaskExecutor(
     }
     val returnValue = method.encodeReturnValue(output)
     val event =
-        TaskCompletedEvent.from(this, this@TaskExecutor.emitterName, returnValue, isDelegated, meta)
+        TaskCompletedEvent.from(this, getEmitterName(), returnValue, isDelegated, meta)
     with(producer) { event.sendTo(ServiceExecutorEventTopic) }
   }
 

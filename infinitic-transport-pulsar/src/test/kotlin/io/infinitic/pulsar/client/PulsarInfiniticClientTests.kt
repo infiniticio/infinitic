@@ -26,7 +26,7 @@ package io.infinitic.pulsar.client
 import io.infinitic.common.fixtures.TestFactory
 import io.infinitic.common.transport.WorkflowStateEngineTopic
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineEnvelope
-import io.infinitic.pulsar.consumers.ConsumerConfig
+import io.infinitic.pulsar.config.PulsarConsumerConfig
 import io.infinitic.pulsar.resources.schema
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
@@ -171,7 +171,7 @@ class PulsarInfiniticClientTests :
         val client = InfiniticPulsarClient(pulsarClient)
 
         "Configuration given should be applied to consumer (no DLQ)" {
-          val randomConfig = TestFactory.random<ConsumerConfig>()
+          val randomConfig = TestFactory.random<PulsarConsumerConfig>()
           val randomTopic = TestFactory.random<String>()
           val randomSubscriptionName = TestFactory.random<String>()
           val randomSubscriptionType = TestFactory.random<SubscriptionType>()
@@ -183,9 +183,8 @@ class PulsarInfiniticClientTests :
               topic = randomTopic,
               subscriptionName = randomSubscriptionName, //  MUST be the same for all instances!
               subscriptionType = randomSubscriptionType,
-              subscriptionInitialPosition = randomSubscriptionInitialPosition,
               consumerName = randomConsumerName,
-              consumerConfig = randomConfig,
+              pulsarConsumerConfig = randomConfig,
           )
 
           client.newConsumer(WorkflowStateEngineTopic.schema, consumerDef, null)
@@ -229,11 +228,10 @@ class PulsarInfiniticClientTests :
         }
 
         "Configuration given should be applied to consumer (with DLQ)" {
-          val randomConfig = TestFactory.random<ConsumerConfig>()
+          val randomConfig = TestFactory.random<PulsarConsumerConfig>()
           val randomTopic = TestFactory.random<String>()
           val randomSubscriptionName = TestFactory.random<String>()
           val randomSubscriptionType = TestFactory.random<SubscriptionType>()
-          val randomSubscriptionInitialPosition = TestFactory.random<SubscriptionInitialPosition>()
           val randomConsumerName = TestFactory.random<String>()
 
           // when
@@ -241,17 +239,15 @@ class PulsarInfiniticClientTests :
               topic = "topic",
               subscriptionName = "subscriptionName",
               subscriptionType = SubscriptionType.Shared,
-              subscriptionInitialPosition = SubscriptionInitialPosition.Earliest,
               consumerName = "consumerName",
-              consumerConfig = randomConfig,
+              pulsarConsumerConfig = randomConfig,
           )
           val consumerDefDlq = InfiniticPulsarClient.ConsumerDef(
               topic = randomTopic,
               subscriptionName = randomSubscriptionName,
               subscriptionType = randomSubscriptionType,
-              subscriptionInitialPosition = randomSubscriptionInitialPosition,
               consumerName = randomConsumerName,
-              consumerConfig = randomConfig,
+              pulsarConsumerConfig = randomConfig,
           )
 
           client.newConsumer(WorkflowStateEngineTopic.schema, consumerDef, consumerDefDlq)

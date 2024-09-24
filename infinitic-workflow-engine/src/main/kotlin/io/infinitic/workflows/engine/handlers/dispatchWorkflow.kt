@@ -72,7 +72,7 @@ internal fun CoroutineScope.dispatchWorkflow(
   )
 
   launch {
-    val emitterName = EmitterName(producer.name)
+    val emitterName = EmitterName(producer.getName())
 
     with(producer) {
       message.methodCommandedEvent(emitterName).sendTo(WorkflowStateEventTopic)

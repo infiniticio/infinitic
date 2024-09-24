@@ -44,7 +44,7 @@ internal fun CoroutineScope.dispatchRemoteSignalCmd(
   workflowTaskInstant: MillisInstant,
   producer: InfiniticProducer,
 ) = launch {
-  val emitterName = EmitterName(producer.name)
+  val emitterName = EmitterName(producer.getName())
   val command: SendSignalCommand = pastCommand.command
   val signalId = SignalId.from(pastCommand.commandId)
   val signalData = command.signalData

@@ -27,8 +27,8 @@ plugins { application }
 application { mainClass.set("io.infinitic.dashboard.MainKt") }
 
 dependencies {
-  api(project(":infinitic-transport-pulsar"))
-  api(project(":infinitic-transport"))
+  implementation(project(":infinitic-transport"))
+  implementation(project(":infinitic-transport-pulsar"))
 
   implementation(Libs.Kweb.core)
   implementation(Libs.Pulsar.client)

@@ -43,7 +43,7 @@ suspend fun InfiniticProducer.dispatchTask(
   taskDispatched: TaskDispatched,
   requester: Requester
 ) = coroutineScope {
-  val emitterName = EmitterName(name)
+  val emitterName = EmitterName(getName())
 
   val executeTask = with(taskDispatched) {
     ExecuteTask(

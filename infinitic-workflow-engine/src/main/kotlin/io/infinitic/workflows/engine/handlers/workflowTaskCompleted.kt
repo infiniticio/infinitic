@@ -64,7 +64,6 @@ internal fun CoroutineScope.workflowTaskCompleted(
   state: WorkflowState,
   message: RemoteTaskCompleted
 ) {
-  val emitterName = EmitterName(producer.name)
   val emittedAt = state.runningWorkflowTaskInstant ?: thisShouldNotHappen()
 
   val workflowTaskReturnValue = message.taskReturnValue.returnValue.deserialize(
@@ -165,12 +164,17 @@ internal fun CoroutineScope.workflowTaskCompleted(
         workflowMethodId = workflowMethod.workflowMethodId,
         awaitingRequesters = workflowMethod.awaitingRequesters,
         returnValue = workflowMethod.methodReturnValue!!,
-        emitterName = emitterName,
+        emitterName = EmitterName.BUFFERED,
     )
-    launch { with(producer) { methodCompletedEvent.sendTo(WorkflowStateEventTopic) } }
+    launch {
+      with(producer) {
+        methodCompletedEvent.copy(emitterName = EmitterName(producer.getName()))
+            .sendTo(WorkflowStateEventTopic)
+      }
+    }
 
     // tell itself if needed
-    methodCompletedEvent.getEventForAwaitingWorkflows(emitterName, emittedAt)
+    methodCompletedEvent.getEventForAwaitingWorkflows(EmitterName.BUFFERED, emittedAt)
         .firstOrNull { it.workflowId == message.workflowId }?.let {
           bufferedMessages.add(it)
         }
@@ -221,7 +225,7 @@ internal fun dispatchMethodOnRunningWorkflowCmd(
             workflowMethodId = workflowMethod.workflowMethodId,
         ),
         clientWaiting = false,
-        emitterName = EmitterName(producer.name),
+        emitterName = EmitterName.BUFFERED,
         emittedAt = state.runningWorkflowTaskInstant,
     )
     bufferedMessages.add(dispatchMethod)
@@ -266,7 +270,7 @@ internal fun sendSignalCmd(
         channelTypes = command.channelTypes,
         workflowName = command.workflowName,
         workflowId = command.workflowId!!,
-        emitterName = EmitterName(producer.name),
+        emitterName = EmitterName.BUFFERED,
         emittedAt = state.runningWorkflowTaskInstant,
         requester = WorkflowRequester(
             workflowId = state.workflowId,

@@ -62,7 +62,7 @@ class WorkflowTagEngine(
   val producer: InfiniticProducer
 ) {
 
-  private val emitterName by lazy { EmitterName(producer.name) }
+  private suspend fun getEmitterName() = EmitterName(producer.getName())
 
   suspend fun handle(message: WorkflowTagEngineMessage, publishTime: MillisInstant) {
     when (message) {
@@ -195,7 +195,7 @@ class WorkflowTagEngine(
           val retryWorkflowTask = RetryWorkflowTask(
               workflowName = message.workflowName,
               workflowId = workflowId,
-              emitterName = emitterName,
+              emitterName = getEmitterName(),
               emittedAt = message.emittedAt ?: publishTime,
               requester = message.requester,
           )
@@ -220,7 +220,7 @@ class WorkflowTagEngine(
                   serviceName = message.serviceName,
                   workflowName = message.workflowName,
                   workflowId = workflowId,
-                  emitterName = emitterName,
+                  emitterName = getEmitterName(),
                   emittedAt = message.emittedAt ?: publishTime,
                   requester = message.requester,
               )
@@ -243,7 +243,7 @@ class WorkflowTagEngine(
                   workflowMethodId = message.workflowMethodId,
                   workflowName = message.workflowName,
                   workflowId = workflowId,
-                  emitterName = emitterName,
+                  emitterName = getEmitterName(),
                   emittedAt = message.emittedAt ?: publishTime,
                   requester = message.requester,
               )
@@ -271,7 +271,7 @@ class WorkflowTagEngine(
                 workflowMethodId = null,
                 workflowName = message.workflowName,
                 workflowId = workflowId,
-                emitterName = emitterName,
+                emitterName = getEmitterName(),
                 emittedAt = message.emittedAt ?: publishTime,
                 requester = message.requester,
             )
@@ -329,7 +329,7 @@ class WorkflowTagEngine(
         workflowName = message.workflowName,
         workflowTag = message.workflowTag,
         workflowIds = workflowIds,
-        emitterName = emitterName,
+        emitterName = getEmitterName(),
     )
     with(producer) { workflowIdsByTag.sendTo(ClientTopic) }
   }

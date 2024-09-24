@@ -175,21 +175,22 @@ internal val <S : Message> Topic<S>.envelopeClass: KClass<Envelope<out S>>
   } as KClass<Envelope<out S>>
 
 @Suppress("UNCHECKED_CAST")
-internal fun <S : Message> Topic<S>.envelope(message: S) = when (this) {
-  NamingTopic -> thisShouldNotHappen()
-  ClientTopic -> ClientEnvelope.from(message as ClientMessage)
-  WorkflowTagEngineTopic -> WorkflowTagEnvelope.from(message as WorkflowTagEngineMessage)
-  WorkflowStateCmdTopic -> WorkflowCmdEnvelope.from(message as WorkflowStateEngineCmdMessage)
-  WorkflowStateEngineTopic, WorkflowStateTimerTopic -> WorkflowEngineEnvelope.from(message as WorkflowStateEngineMessage)
-  WorkflowStateEventTopic -> WorkflowEventEnvelope.from(message as WorkflowStateEngineEventMessage)
-  WorkflowExecutorTopic, WorkflowExecutorRetryTopic ->
-    ServiceExecutorEnvelope.from(message as ServiceExecutorMessage)
+internal fun <S : Message> Topic<S>.envelope(message: S) =
+    when (this) {
+      NamingTopic -> thisShouldNotHappen()
+      ClientTopic -> ClientEnvelope.from(message as ClientMessage)
+      WorkflowTagEngineTopic -> WorkflowTagEnvelope.from(message as WorkflowTagEngineMessage)
+      WorkflowStateCmdTopic -> WorkflowCmdEnvelope.from(message as WorkflowStateEngineCmdMessage)
+      WorkflowStateEngineTopic, WorkflowStateTimerTopic -> WorkflowEngineEnvelope.from(message as WorkflowStateEngineMessage)
+      WorkflowStateEventTopic -> WorkflowEventEnvelope.from(message as WorkflowStateEngineEventMessage)
+      WorkflowExecutorTopic, WorkflowExecutorRetryTopic ->
+        ServiceExecutorEnvelope.from(message as ServiceExecutorMessage)
 
-  WorkflowExecutorEventTopic -> ServiceEventEnvelope.from(message as ServiceExecutorEventMessage)
-  ServiceTagEngineTopic -> ServiceTagEnvelope.from(message as ServiceTagMessage)
-  ServiceExecutorTopic, ServiceExecutorRetryTopic -> ServiceExecutorEnvelope.from(message as ServiceExecutorMessage)
-  ServiceExecutorEventTopic -> ServiceEventEnvelope.from(message as ServiceExecutorEventMessage)
-} as Envelope<out S>
+      WorkflowExecutorEventTopic -> ServiceEventEnvelope.from(message as ServiceExecutorEventMessage)
+      ServiceTagEngineTopic -> ServiceTagEnvelope.from(message as ServiceTagMessage)
+      ServiceExecutorTopic, ServiceExecutorRetryTopic -> ServiceExecutorEnvelope.from(message as ServiceExecutorMessage)
+      ServiceExecutorEventTopic -> ServiceEventEnvelope.from(message as ServiceExecutorEventMessage)
+    } as Envelope<out S>
 
 /**
  * Returns a boolean indicating if the topic should be created when producing a message to this topic

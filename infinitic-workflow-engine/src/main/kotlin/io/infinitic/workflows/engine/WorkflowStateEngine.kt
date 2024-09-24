@@ -99,7 +99,7 @@ class WorkflowStateEngine(
     val logger = KotlinLogging.logger {}
   }
 
-  private val emitterName by lazy { EmitterName(producer.name) }
+  private suspend fun getEmitterName() = EmitterName(producer.getName())
 
   suspend fun handle(message: WorkflowStateEngineMessage, publishTime: MillisInstant) {
     // get current state
@@ -145,7 +145,7 @@ class WorkflowStateEngine(
         workflowName = state.workflowName,
         workflowVersion = state.workflowVersion,
         workflowId = state.workflowId,
-        emitterName = emitterName,
+        emitterName = getEmitterName(),
     )
     with(producer) { workflowCompletedEvent.sendTo(WorkflowStateEventTopic) }
   }
@@ -157,7 +157,7 @@ class WorkflowStateEngine(
               workflowName = state.workflowName,
               workflowTag = it,
               workflowId = state.workflowId,
-              emitterName = emitterName,
+              emitterName = getEmitterName(),
               emittedAt = state.runningWorkflowTaskInstant,
           )
           launch { with(producer) { removeTagFromWorkflow.sendTo(WorkflowTagEngineTopic) } }
@@ -190,7 +190,7 @@ class WorkflowStateEngine(
                 recipientName = ClientName.from(message.emitterName),
                 message.workflowId,
                 message.workflowMethodId,
-                emitterName = emitterName,
+                emitterName = getEmitterName(),
             )
             with(producer) { methodUnknown.sendTo(ClientTopic) }
           }
@@ -212,7 +212,7 @@ class WorkflowStateEngine(
                 workflowVersion = requester.workflowVersion,
                 workflowMethodName = requester.workflowMethodName,
                 workflowMethodId = requester.workflowMethodId,
-                emitterName = emitterName,
+                emitterName = getEmitterName(),
                 emittedAt = message.emittedAt,
             )
             with(producer) { childMethodFailed.sendTo(WorkflowStateEngineTopic) }
@@ -227,7 +227,7 @@ class WorkflowStateEngine(
             recipientName = ClientName.from(message.emitterName),
             message.workflowId,
             message.workflowMethodId,
-            emitterName = emitterName,
+            emitterName = getEmitterName(),
         )
         with(producer) { methodUnknown.sendTo(ClientTopic) }
       }

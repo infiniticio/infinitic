@@ -20,26 +20,17 @@
  *
  * Licensor: infinitic.io
  */
-package io.infinitic.common.emitters
+package io.infinitic.pulsar.config
 
-import io.infinitic.common.clients.data.ClientName
-import io.infinitic.common.utils.JsonAble
-import io.infinitic.common.workers.data.WorkerName
-import kotlinx.serialization.Serializable
-import kotlinx.serialization.json.JsonPrimitive
+import io.infinitic.common.fixtures.DockerOnly
 
-
-@JvmInline
-@Serializable
-value class EmitterName(private val name: String) : JsonAble {
-  override fun toString() = name
-
-  override fun toJson() = JsonPrimitive(name)
-
-  companion object {
-    fun from(clientName: ClientName) = EmitterName(clientName.toString())
-    fun from(workerName: WorkerName) = EmitterName(workerName.toString())
-
-    val BUFFERED = EmitterName("buffered")
+val pulsarConfigTest by lazy {
+  DockerOnly().pulsarServer?.let {
+    PulsarConfig(
+        brokerServiceUrl = it.pulsarBrokerUrl,
+        webServiceUrl = it.httpServiceUrl,
+        tenant = "infinitic",
+        namespace = "tests",
+    )
   }
 }
