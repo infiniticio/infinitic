@@ -20,32 +20,16 @@
  *
  * Licensor: infinitic.io
  */
-package io.infinitic.transport.config
+package io.infinitic.inMemory.consumers
 
-import io.infinitic.inMemory.InMemoryInfiniticConsumer
-import io.infinitic.inMemory.InMemoryInfiniticProducer
-import io.infinitic.inMemory.InMemoryInfiniticResources
-import io.infinitic.inMemory.channels.InMemoryChannels
+import io.infinitic.common.data.MillisInstant
+import io.infinitic.common.messages.Message
+import io.infinitic.common.transport.TransportMessage
 
-data class InMemoryTransportConfig(
-  override val shutdownGracePeriodSeconds: Double = 5.0
-) : TransportConfig() {
-
-  init {
-    require(shutdownGracePeriodSeconds > 0) { "shutdownGracePeriodSeconds must be > 0" }
-  }
-
-  override val cloudEventSourcePrefix: String = "inMemory"
-
-  private val mainChannels = InMemoryChannels()
-  private val eventListenerChannels = InMemoryChannels()
-
-  override val resources = InMemoryInfiniticResources(mainChannels)
-  override val consumer = InMemoryInfiniticConsumer(mainChannels, eventListenerChannels)
-  override val producer = InMemoryInfiniticProducer(mainChannels, eventListenerChannels)
-
-  override fun close() {
-    // Do nothing
-  }
+class InMemoryTransportMessage<S : Message>(private val message: S) : TransportMessage {
+  override val messageId: String = message.messageId.toString()
+  override val redeliveryCount: Int = 0
+  override val publishTime: MillisInstant = MillisInstant.now()
+  internal fun toMessage() = message
 }
 

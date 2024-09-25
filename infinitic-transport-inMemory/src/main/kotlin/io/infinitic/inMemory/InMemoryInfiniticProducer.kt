@@ -28,6 +28,9 @@ import io.infinitic.common.messages.Message
 import io.infinitic.common.transport.InfiniticProducer
 import io.infinitic.common.transport.Topic
 import io.infinitic.common.transport.acceptDelayed
+import io.infinitic.inMemory.channels.DelayedMessage
+import io.infinitic.inMemory.channels.InMemoryChannels
+import io.infinitic.inMemory.channels.id
 import kotlinx.coroutines.channels.Channel
 
 class InMemoryInfiniticProducer(
@@ -41,24 +44,6 @@ class InMemoryInfiniticProducer(
 
   override fun setSuggestedName(name: String) {
     suggestedName = name
-  }
-
-  private fun <S : Message> Topic<S>.channelsForMessage(message: S): List<Channel<S>> {
-    val entity = message.entity()
-
-    return listOf(
-        with(mainChannels) { channel(entity) },
-        with(eventListenerChannels) { channel(entity) },
-    )
-  }
-
-  private fun <S : Message> Topic<S>.channelsForDelayedMessage(message: S): List<Channel<DelayedMessage<S>>> {
-    val entity = message.entity()
-
-    return listOf(
-        with(mainChannels) { channelForDelayed(entity) },
-        with(eventListenerChannels) { channelForDelayed(entity) },
-    )
   }
 
   override suspend fun <T : Message> internalSendTo(
@@ -83,6 +68,24 @@ class InMemoryInfiniticProducer(
         }
       }
     }
+  }
+
+  private fun <S : Message> Topic<S>.channelsForMessage(message: S): List<Channel<S>> {
+    val entity = message.entity()
+
+    return listOf(
+        with(mainChannels) { channel(entity) },
+        with(eventListenerChannels) { channel(entity) },
+    )
+  }
+
+  private fun <S : Message> Topic<S>.channelsForDelayedMessage(message: S): List<Channel<DelayedMessage<S>>> {
+    val entity = message.entity()
+
+    return listOf(
+        with(mainChannels) { channelForDelayed(entity) },
+        with(eventListenerChannels) { channelForDelayed(entity) },
+    )
   }
 
   companion object {

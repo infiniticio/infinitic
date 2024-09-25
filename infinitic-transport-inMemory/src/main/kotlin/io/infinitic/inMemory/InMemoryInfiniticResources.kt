@@ -23,6 +23,7 @@
 package io.infinitic.inMemory
 
 import io.infinitic.common.transport.InfiniticResources
+import io.infinitic.inMemory.channels.InMemoryChannels
 
 class InMemoryInfiniticResources(
   private val mainChannels: InMemoryChannels,
