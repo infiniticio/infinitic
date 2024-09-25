@@ -27,19 +27,22 @@ import io.infinitic.common.data.MillisInstant
 import io.infinitic.common.messages.Message
 import io.infinitic.common.transport.InfiniticConsumer
 import io.infinitic.common.transport.Subscription
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
 
 class LoggedInfiniticConsumer(
   private val logger: KLogger,
   private val consumer: InfiniticConsumer,
 ) : InfiniticConsumer {
 
-  override suspend fun <S : Message> start(
+  context(CoroutineScope)
+  override suspend fun <S : Message> startAsync(
     subscription: Subscription<S>,
     entity: String,
     handler: suspend (S, MillisInstant) -> Unit,
     beforeDlq: (suspend (S?, Exception) -> Unit)?,
     concurrency: Int
-  ) {
+  ): Job {
     val loggedHandler: suspend (S, MillisInstant) -> Unit = { message, instant ->
       logger.debug { formatLog(message.id(), "Processing:", message) }
       handler(message, instant)
@@ -55,7 +58,7 @@ class LoggedInfiniticConsumer(
       }
     }
 
-    return consumer.start(
+    return consumer.startAsync(
         subscription,
         entity,
         loggedHandler,

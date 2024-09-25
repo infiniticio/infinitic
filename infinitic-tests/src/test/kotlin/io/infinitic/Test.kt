@@ -43,11 +43,6 @@ import kotlin.time.Duration.Companion.milliseconds
  * If Docker is available, the tests are done on Pulsar, if not they are done in memory
  * Docker is available on GitHub.
  */
-
-fun main() {
-  Test.start()
-}
-
 internal object Test {
 
   private val pulsarServer = DockerOnly().pulsarServer

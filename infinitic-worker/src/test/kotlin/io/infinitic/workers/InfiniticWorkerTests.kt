@@ -427,7 +427,12 @@ workflows:
       "start() should block, and be released when closed" {
         val worker = InfiniticWorker.builder()
             .setTransport(transport)
+            .setEventListener(eventListener)
             .addServiceExecutor(serviceExecutor)
+            .addServiceTagEngine(serviceTagEngine)
+            .addWorkflowTagEngine(workflowTagEngine)
+            .addWorkflowExecutor(workflowExecutor)
+            .addWorkflowStateEngine(workflowStateEngine)
             .build()
 
         var flag = false

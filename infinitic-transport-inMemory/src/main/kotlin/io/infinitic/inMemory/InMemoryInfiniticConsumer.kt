@@ -31,6 +31,8 @@ import io.infinitic.common.transport.MainSubscription
 import io.infinitic.common.transport.Subscription
 import io.infinitic.common.transport.acceptDelayed
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
@@ -41,28 +43,29 @@ class InMemoryInfiniticConsumer(
   private val eventListenerChannels: InMemoryChannels,
 ) : InfiniticConsumer {
 
-  override suspend fun <S : Message> start(
+  context(CoroutineScope)
+  override suspend fun <S : Message> startAsync(
     subscription: Subscription<S>,
     entity: String,
     handler: suspend (S, MillisInstant) -> Unit,
     beforeDlq: (suspend (S?, Exception) -> Unit)?,
     concurrency: Int
-  ) {
+  ): Job {
     val c = when (subscription.withKey) {
       true -> 1
       false -> concurrency
     }
-    when (subscription.topic.acceptDelayed) {
+    return when (subscription.topic.acceptDelayed) {
       true -> {
         val channel = subscription.getDelayedChannel(entity)
         logger.info { "$subscription (${channel.id}) Starting consumer for $entity with concurrency = $c" }
-        startLoopForDelayed(subscription, handler, beforeDlq, channel, c)
+        launch { startLoopForDelayed(subscription, handler, beforeDlq, channel, c) }
       }
 
       false -> {
         val channel = subscription.getChannel(entity)
         logger.info { "$subscription (${channel.id}) Starting consumer for $entity with concurrency = $c" }
-        startLoop(subscription, handler, beforeDlq, channel, c)
+        launch { startLoop(subscription, handler, beforeDlq, channel, c) }
       }
     }
   }

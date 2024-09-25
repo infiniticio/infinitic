@@ -39,7 +39,11 @@ internal class ResponseFlow<T> {
   }
 
   suspend fun first(timeout: Long = Long.MAX_VALUE) = first(timeout) { true }
-  
+
+  /**
+   * Suspends until the first element that matches the given predicate is emitted by the response flow,
+   * or until the timeout is reached, in that case returns null
+   */
   suspend fun first(timeout: Long = Long.MAX_VALUE, predicate: suspend (T) -> Boolean): T? =
       withTimeoutOrNull(timeout) {
         var isFirst = true

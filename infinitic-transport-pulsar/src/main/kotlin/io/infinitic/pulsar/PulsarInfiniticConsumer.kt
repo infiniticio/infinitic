@@ -22,6 +22,7 @@
  */
 package io.infinitic.pulsar
 
+import io.github.oshai.kotlinlogging.KotlinLogging
 import io.infinitic.common.data.MillisInstant
 import io.infinitic.common.messages.Envelope
 import io.infinitic.common.messages.Message
@@ -40,6 +41,8 @@ import io.infinitic.pulsar.resources.defaultName
 import io.infinitic.pulsar.resources.defaultNameDLQ
 import io.infinitic.pulsar.resources.schema
 import io.infinitic.pulsar.resources.type
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
@@ -53,72 +56,104 @@ class PulsarInfiniticConsumer(
   private val pulsarResources: PulsarResources,
 ) : InfiniticConsumer {
 
-  override suspend fun <S : Message> start(
+  context(CoroutineScope)
+  override suspend fun <S : Message> startAsync(
     subscription: Subscription<S>,
     entity: String,
     handler: suspend (S, MillisInstant) -> Unit,
     beforeDlq: (suspend (S?, Exception) -> Unit)?,
     concurrency: Int,
-  ) {
-    // Retrieves the name the topic, If the topic doesn't exist yet, create it.
-    val topicName = with(pulsarResources) {
-      subscription.topic.forEntity(entity, true, checkConsumer = false)
+  ): Job {
+
+    // Retrieve the name of the topic and of the DLQ topic
+    // Create them if they do not exist.
+    val (topicName, topicDLQName) = coroutineScope {
+      val deferredTopic = async {
+        with(pulsarResources) {
+          subscription.topic.forEntity(entity, true, checkConsumer = false)
+        }
+      }
+      val deferredTopicDLQ = async {
+        with(pulsarResources) {
+          subscription.topic.forEntityDLQ(entity, true)
+        }
+      }
+      Pair(deferredTopic.await(), deferredTopicDLQ.await())
     }
 
-    // Retrieves the name the DLQ topic, If the topic doesn't exist yet, create it.
-    val topicDLQName = with(pulsarResources) {
-      subscription.topic.forEntityDLQ(entity, true)
-    }
-
-    fun deserialize(message: PulsarTransportMessage<Envelope<out S>>): S =
-        message.toPulsarMessage().value.message()
-
-    suspend fun beforeNegativeAcknowledgement(
-      message: PulsarTransportMessage<Envelope<out S>>,
-      deserialized: S?,
-      cause: Exception
-    ) {
-      if (message.redeliveryCount == pulsarConsumerConfig.maxRedeliverCount) {
-        beforeDlq?.let { it(deserialized, cause) }
+    val loggedDeserialize: suspend (PulsarTransportMessage<Envelope<out S>>) -> S = { message ->
+      logger.debug { "Deserializing message: ${message.messageId}" }
+      message.toPulsarMessage().value.message().also {
+        logger.trace { "Deserialized message: ${message.messageId}" }
       }
     }
 
-    fun buildConsumer(index: Int? = null) = getConsumer(
-        schema = subscription.topic.schema,
-        topic = topicName,
-        topicDlq = topicDLQName,
-        subscriptionName = subscription.name,
-        subscriptionNameDlq = subscription.nameDLQ,
-        subscriptionType = subscription.type,
-        consumerName = entity + (index?.let { "-$it" } ?: ""),
-    ).getOrThrow().let { PulsarTransportConsumer(it) }
+    val loggedHandler: suspend (S, MillisInstant) -> Unit = { message, publishTime ->
+      logger.debug { "Processing $message" }
+      handler(message, publishTime)
+      logger.trace { "Processed $message" }
+    }
 
-    when (subscription.withKey) {
-      true -> coroutineScope {
-        val consumers = List(concurrency) { async { buildConsumer(it) } }.map { it.await() }
+    val beforeNegativeAcknowledgement: suspend (PulsarTransportMessage<Envelope<out S>>, S?, Exception) -> Unit =
+        { message, deserialized, cause ->
+          if (message.redeliveryCount == pulsarConsumerConfig.maxRedeliverCount) {
+            beforeDlq?.let {
+              logger.debug { "Processing beforeNegativeAcknowledgement for ${deserialized ?: message.messageId}" }
+              it(deserialized, cause)
+              logger.trace { "Processed beforeNegativeAcknowledgement for ${deserialized ?: message.messageId}" }
+            }
+          }
+        }
 
-        List(concurrency) { index ->
-          launch {
-            val processor = ConsumerUniqueProcessor(
-                consumers[index],
-                ::deserialize,
-                handler,
-                ::beforeNegativeAcknowledgement,
-            )
-            processor.start()
+    fun buildConsumer(index: Int? = null): PulsarTransportConsumer<Envelope<out S>> {
+      logger.debug { "Creating consumer ${index?.let { "${it + 1} " } ?: ""}for $topicName" }
+      return getConsumer(
+          schema = subscription.topic.schema,
+          topic = topicName,
+          topicDlq = topicDLQName,
+          subscriptionName = subscription.name,
+          subscriptionNameDlq = subscription.nameDLQ,
+          subscriptionType = subscription.type,
+          consumerName = entity + (index?.let { "-$it" } ?: ""),
+      ).getOrThrow().let { PulsarTransportConsumer(it) }.also {
+        logger.trace { "Consumer created ${index?.let { "${it + 1} " } ?: ""}for $topicName" }
+      }
+    }
+
+    return when (subscription.withKey) {
+      true -> {
+        // build the consumers synchronously (but in parallel)
+        val consumers = coroutineScope {
+          List(concurrency) { async { buildConsumer(it) } }.map { it.await() }
+        }
+        launch {
+          coroutineScope {
+            List(concurrency) { index ->
+              launch {
+                ConsumerUniqueProcessor(
+                    consumers[index],
+                    loggedDeserialize,
+                    loggedHandler,
+                    beforeNegativeAcknowledgement,
+                ).start()
+              }
+            }
           }
         }
       }
 
-      false -> {
-        val processor = ConsumerSharedProcessor(
-            buildConsumer(),
-            ::deserialize,
-            handler,
-            ::beforeNegativeAcknowledgement,
-        )
 
-        processor.start(concurrency)
+      false -> {
+        // build the consumer synchronously
+        val consumer = buildConsumer()
+        launch {
+          ConsumerSharedProcessor(
+              consumer,
+              loggedDeserialize,
+              loggedHandler,
+              beforeNegativeAcknowledgement,
+          ).start(concurrency)
+        }
       }
     }
   }
@@ -162,6 +197,10 @@ class PulsarInfiniticConsumer(
     }
 
     return client.newConsumer(schema, consumerDef, consumerDefDlq)
+  }
+
+  companion object {
+    val logger = KotlinLogging.logger {}
   }
 }
 
