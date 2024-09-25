@@ -80,9 +80,9 @@ class InfiniticClient(
   private var isClosed: AtomicBoolean = AtomicBoolean(false)
 
   // Scope used to asynchronously send message, and also to consumes messages
-  private val clientScope = CoroutineScope(Dispatchers.IO)
+  internal val clientScope = CoroutineScope(Dispatchers.IO)
 
-  private val dispatcher by lazy { ClientDispatcher(clientScope, consumer, producer) }
+  private val dispatcher by lazy { ClientDispatcher(clientScope, consumer, producer, logger) }
 
   override suspend fun getName() = producer.getName()
 

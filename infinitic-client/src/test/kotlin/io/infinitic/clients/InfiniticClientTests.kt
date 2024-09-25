@@ -91,13 +91,15 @@ import io.infinitic.transport.config.InMemoryTransportConfig
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
-import io.mockk.Runs
+import io.mockk.clearAllMocks
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
-import io.mockk.just
 import io.mockk.mockk
 import io.mockk.slot
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import java.util.concurrent.CopyOnWriteArrayList
 
 private val taskTagSlots = CopyOnWriteArrayList<ServiceTagMessage>()
@@ -105,9 +107,11 @@ private val workflowTagSlots = CopyOnWriteArrayList<WorkflowTagEngineMessage>()
 private val taskSlot = slot<ServiceExecutorMessage>()
 private val workflowCmdSlot = slot<WorkflowStateEngineCmdMessage>()
 private val delaySlot = slot<MillisDuration>()
+private val scopeSlot = slot<CoroutineScope>()
 
 private val clientNameTest = ClientName("clientTest")
 private val emitterNameTest = EmitterName("clientTest")
+
 private suspend fun tagResponse() {
   workflowTagSlots.forEach {
     if (it is GetWorkflowIdsByTag) {
@@ -138,7 +142,9 @@ private suspend fun engineResponse() {
 }
 
 internal val mockedProducer = mockk<InMemoryInfiniticProducer> {
-  coEvery { getName() } returns "$clientNameTest"
+  coEvery {
+    getName()
+  } returns "$clientNameTest"
   coEvery {
     internalSendTo(capture(taskTagSlots), ServiceTagEngineTopic)
   } answers { }
@@ -151,7 +157,13 @@ internal val mockedProducer = mockk<InMemoryInfiniticProducer> {
 }
 
 internal val mockedConsumer = mockk<InMemoryInfiniticConsumer> {
-  coEvery { start(any<Subscription<*>>(), "$clientNameTest", any(), any(), any()) } just Runs
+  coEvery {
+    with(capture(scopeSlot)) {
+      startAsync(any<Subscription<*>>(), "$clientNameTest", any(), any(), 1)
+    }
+  } answers {
+    scopeSlot.captured.launch { delay(Long.MAX_VALUE) }
+  }
 }
 
 internal val mockedTransport = mockk<InMemoryTransportConfig> {
@@ -179,11 +191,16 @@ internal class InfiniticClientTests : StringSpec(
       val fakeWorkflowWithTags = client.newWorkflow(FakeWorkflow::class.java, tags = tags)
 
       beforeTest {
+        scopeSlot.clear()
         delaySlot.clear()
         taskTagSlots.clear()
         taskSlot.clear()
         workflowTagSlots.clear()
         workflowCmdSlot.clear()
+      }
+
+      afterTest {
+        clearAllMocks(answers = false)
       }
 
       "Should be able to dispatch a workflow" {
@@ -207,13 +224,15 @@ internal class InfiniticClientTests : StringSpec(
 
         // when asynchronously dispatching a workflow, the consumer should not be started
         coVerify(exactly = 0) {
-          mockedConsumer.start(
-              MainSubscription(ClientTopic),
-              "$clientNameTest",
-              any(),
-              any(),
-              1,
-          )
+          with(client.clientScope) {
+            mockedConsumer.start(
+                MainSubscription(ClientTopic),
+                "$clientNameTest",
+                any(),
+                any(),
+                1,
+            )
+          }
         }
       }
 
@@ -422,13 +441,15 @@ internal class InfiniticClientTests : StringSpec(
 
         // when waiting for a workflow, the consumer should be started
         coVerify {
-          mockedConsumer.start(
-              MainSubscription(ClientTopic),
-              "$clientNameTest",
-              any(),
-              any(),
-              1,
-          )
+          with(client.clientScope) {
+            mockedConsumer.startAsync(
+                MainSubscription(ClientTopic),
+                "$clientNameTest",
+                any(),
+                any(),
+                1,
+            )
+          }
         }
 
         // restart a workflow
@@ -436,13 +457,15 @@ internal class InfiniticClientTests : StringSpec(
 
         // the consumer should be started only once
         coVerify(exactly = 1) {
-          mockedConsumer.start(
-              MainSubscription(ClientTopic),
-              "$clientNameTest",
-              any(),
-              any(),
-              1,
-          )
+          with(client.clientScope) {
+            mockedConsumer.startAsync(
+                MainSubscription(ClientTopic),
+                "$clientNameTest",
+                any(),
+                any(),
+                1,
+            )
+          }
         }
       }
 
