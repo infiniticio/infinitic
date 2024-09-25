@@ -20,25 +20,32 @@
  *
  * Licensor: infinitic.io
  */
-package io.infinitic.transport.consumers
+package io.infinitic.common.transport.consumers
 
 import io.infinitic.common.data.MillisInstant
 import io.infinitic.common.fixtures.runAndCancel
-import io.infinitic.common.transport.consumers.ConsumerSharedProcessor
+import io.infinitic.common.transport.MessageBatchConfig
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
 import kotlin.random.Random
+import kotlin.time.Duration.Companion.milliseconds
 
-internal class ConsumerSharedProcessorTests : StringSpec(
+internal class ConsumerBatchedProcessorTests : StringSpec(
     {
-      val concurrency = Random.nextInt(100)
+      val concurrency = Random.nextInt(2, 100)
+
+      fun noProcess(message: DeserializedIntMessage, publishTime: MillisInstant) {
+        throw NoSuchMethodError()
+      }
 
       val processor = ConsumerSharedProcessor(
           Consumer(),
           ::deserialize,
-          ::process,
+          ::noProcess,
           ::beforeNegativeAcknowledgement,
+          ::assessBatching,
+          ::processBatch,
       )
 
       beforeEach {
@@ -67,16 +74,19 @@ internal class ConsumerSharedProcessorTests : StringSpec(
       }
 
       "An Error during deserialization throws" {
-        fun deserializeWitError(value: IntMessage) = DeserializedIntMessage(value).also {
+
+        fun deserializeWithError(value: IntMessage) = DeserializedIntMessage(value).also {
           if (it.value.value == 200) throw Error("Expected Error")
           deserializedList.add(it.value.value)
         }
 
         val processorWithError = ConsumerSharedProcessor(
             Consumer(),
-            ::deserializeWitError,
-            ::process,
+            ::deserializeWithError,
+            ::noProcess,
             ::beforeNegativeAcknowledgement,
+            ::assessBatching,
+            ::processBatch,
         )
 
         val e = shouldThrow<Error> { processorWithError.start(concurrency) }
@@ -86,17 +96,20 @@ internal class ConsumerSharedProcessorTests : StringSpec(
         negativeAcknowledgedList shouldBe emptyList()
       }
 
-      "An Error during processing throws" {
-        fun processWithError(message: DeserializedIntMessage, publishTime: MillisInstant) {
-          if (message.value.value == 200) throw Error("Expected Error")
-          processedList.add(message.value.value)
+      "An Error during batch processing throws" {
+        fun processBatchWithError(batch: List<DeserializedIntMessage>) {
+          if (batch.map { it.value.value }.contains(200)) throw Error("Expected Error")
+          println("processBatch: $batch")
+          processedList.addAll(batch.map { it.value.value })
         }
 
         val processorWithError = ConsumerSharedProcessor(
             Consumer(),
             ::deserialize,
-            ::processWithError,
+            ::noProcess,
             ::beforeNegativeAcknowledgement,
+            ::assessBatching,
+            ::processBatchWithError,
         )
 
         val e = shouldThrow<Error> { processorWithError.start(concurrency) }
@@ -109,15 +122,17 @@ internal class ConsumerSharedProcessorTests : StringSpec(
       "An exception during deserialization triggers negative acknowledgment" {
         fun deserializeWitError(value: IntMessage) = DeserializedIntMessage(value).also {
           if (it.value.value == 100) throw Exception("Expected Exception")
-          if (it.value.value == 200) throw Error("Expected Error")
+          if (it.value.value == 400) throw Error("Expected Error")
           deserializedList.add(it.value.value)
         }
 
         val processorWithException = ConsumerSharedProcessor(
             Consumer(),
             ::deserializeWitError,
-            ::process,
+            ::noProcess,
             ::beforeNegativeAcknowledgement,
+            ::assessBatching,
+            ::processBatch,
         )
 
         shouldThrow<Error> { processorWithException.start(concurrency) }
@@ -126,24 +141,95 @@ internal class ConsumerSharedProcessorTests : StringSpec(
         negativeAcknowledgedList shouldBe listOf(100)
       }
 
-      "An exception during processing triggers negative acknowledgment" {
-        fun processWithException(message: DeserializedIntMessage, publishTime: MillisInstant) {
-          if (message.value.value == 100) throw Exception("Expected Exception")
-          if (message.value.value == 200) throw Error("Expected Error")
-          processedList.add(message.value.value)
+      "An exception during batch processing triggers negative acknowledgment" {
+
+        fun processBatchWithError(batch: List<DeserializedIntMessage>) {
+          if (batch.map { it.value.value }.contains(100)) throw Exception("Expected Exception")
+          if (batch.map { it.value.value }.contains(200)) throw Error("Expected Error")
+          println("processBatch: $batch")
+          processedList.addAll(batch.map { it.value.value })
         }
 
         val processorWithException = ConsumerSharedProcessor(
             Consumer(),
             ::deserialize,
-            ::processWithException,
+            ::noProcess,
             ::beforeNegativeAcknowledgement,
+            ::assessBatching,
+            ::processBatchWithError,
         )
 
         shouldThrow<Error> { processorWithException.start(concurrency) }
         checkAllProcessedAreAcknowledged()
         checkBeforeNegativeAcknowledged()
-        negativeAcknowledgedList shouldBe listOf(100)
+        negativeAcknowledgedList.contains(100) shouldBe true
+        negativeAcknowledgedList.size shouldBe 20
       }
+
+      "Checking batching process by size" {
+
+        fun processBatchWithChecks(batch: List<DeserializedIntMessage>) {
+          // checking that batches are correct
+          batch.map { it.value.value % 2 }.toSet().size shouldBe 1
+          batch.size shouldBe 20
+
+          processedList.addAll(batch.map { it.value.value })
+        }
+
+        val processorWithError = ConsumerSharedProcessor(
+            Consumer(),
+            ::deserialize,
+            ::noProcess,
+            ::beforeNegativeAcknowledgement,
+            ::assessBatching,
+            ::processBatchWithChecks,
+        )
+
+        runAndCancel {
+          processorWithError.start(concurrency)
+        }
+
+        checkAllProcessedAreAcknowledged()
+        checkBeforeNegativeAcknowledged()
+        negativeAcknowledgedList shouldBe emptySet()
+      }
+
+      "Checking batching by time" {
+
+        fun assessTimeBatching(value: DeserializedIntMessage): MessageBatchConfig? {
+          val i = value.value.value
+          return when {
+            i == 0 -> null
+            (i % 2) == 0 -> MessageBatchConfig("even", 10.milliseconds, Int.MAX_VALUE)
+            (i % 2) == 1 -> MessageBatchConfig("odd", 10.milliseconds, Int.MAX_VALUE)
+            else -> throw IllegalStateException()
+          }
+        }
+
+        fun processBatchWithChecks(batch: List<DeserializedIntMessage>) {
+          // checking that batches are correct
+          batch.map { it.value.value % 2 }.toSet().size shouldBe 1
+          println("batch = $batch")
+          processedList.addAll(batch.map { it.value.value })
+        }
+
+        val processorWithError = ConsumerSharedProcessor(
+            Consumer(),
+            ::deserialize,
+            ::noProcess,
+            ::beforeNegativeAcknowledgement,
+            ::assessTimeBatching,
+            ::processBatchWithChecks,
+        )
+
+        runAndCancel {
+          processorWithError.start(concurrency)
+        }
+
+        checkAllProcessedAreAcknowledged()
+        checkBeforeNegativeAcknowledged()
+        negativeAcknowledgedList shouldBe emptySet()
+      }
+
     },
 )

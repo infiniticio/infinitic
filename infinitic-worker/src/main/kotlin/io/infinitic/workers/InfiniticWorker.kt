@@ -148,7 +148,7 @@ class InfiniticWorker(
       }
       logger.info { "Worker closed." }
     } else {
-      logger.warn { "Worker not started or already closed" }
+      logger.warn { "Worker has not started, or is already closing." }
     }
   }
 

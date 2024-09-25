@@ -49,6 +49,8 @@ import io.infinitic.common.workflows.engine.messages.WorkflowStateEngineCmdMessa
 import io.infinitic.common.workflows.engine.messages.WorkflowStateEngineEventMessage
 import io.infinitic.common.workflows.engine.messages.WorkflowStateEngineMessage
 import io.infinitic.common.workflows.tags.messages.WorkflowTagEngineMessage
+import io.infinitic.pulsar.admin.InfiniticPulsarAdmin
+import io.infinitic.pulsar.client.InfiniticPulsarClient
 import io.infinitic.pulsar.config.policies.PoliciesConfig
 import io.infinitic.pulsar.config.pulsarConfigTest
 import io.kotest.assertions.throwables.shouldNotThrowAny
@@ -61,7 +63,6 @@ import io.kotest.matchers.shouldNotBe
 class PulsarInfiniticProducerTests : StringSpec(
     {
       val pulsarConfig = pulsarConfigTest!!
-
       val admin = pulsarConfig.infiniticPulsarAdmin
       val tenant = pulsarConfig.tenant
       val namespace = pulsarConfig.namespace
@@ -72,6 +73,17 @@ class PulsarInfiniticProducerTests : StringSpec(
           pulsarConfig.producer,
           pulsarResources,
       )
+
+      beforeEach {
+        InfiniticPulsarClient.clearCaches()
+        InfiniticPulsarAdmin.clearCaches()
+      }
+
+      afterSpec {
+        pulsarConfig.pulsarClient.close()
+        pulsarConfig.pulsarAdmin.close()
+        DockerOnly().pulsarServer?.stop()
+      }
 
       "publishing to an absent ClientTopic should not throw, should NOT create the topic" {
         val message = TestFactory.random<ClientMessage>()

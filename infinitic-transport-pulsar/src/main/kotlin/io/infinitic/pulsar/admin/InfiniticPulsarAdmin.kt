@@ -604,6 +604,14 @@ class InfiniticPulsarAdmin(
   companion object {
     private const val DEFAULT_NUM_PARTITIONS = 3
 
+    @JvmStatic
+    fun clearCaches() {
+      initializedTenants.clear()
+      initializedNamespaces.clear()
+      initializedTopics.clear()
+      subscriptionCheckedForConsumers.clear()
+    }
+
     // set of initialized tenants
     private val initializedTenants = mutableMapOf<String, Result<TenantInfo>>()
 

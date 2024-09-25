@@ -23,7 +23,6 @@
 
 package io.infinitic.pulsar.consumers
 
-import io.infinitic.common.data.MessageId
 import io.infinitic.common.data.MillisDuration
 import io.infinitic.common.data.MillisInstant
 import io.infinitic.common.fixtures.DockerOnly
@@ -33,7 +32,6 @@ import io.infinitic.common.messages.Message
 import io.infinitic.common.tasks.data.ServiceName
 import io.infinitic.common.tasks.data.TaskId
 import io.infinitic.common.tasks.executors.messages.ExecuteTask
-import io.infinitic.common.tasks.executors.messages.ServiceExecutorEnvelope
 import io.infinitic.common.tasks.executors.messages.ServiceExecutorMessage
 import io.infinitic.common.transport.MainSubscription
 import io.infinitic.common.transport.ServiceExecutorTopic
@@ -60,7 +58,6 @@ import kotlinx.coroutines.withContext
 import net.bytebuddy.utility.RandomString
 import java.time.Duration
 import java.time.Instant
-import java.util.concurrent.CompletableFuture
 import java.util.concurrent.atomic.AtomicInteger
 
 @EnabledIf(DockerOnly::class)
@@ -68,16 +65,25 @@ class ConsumerTests : StringSpec(
     {
       val pulsarConfig = pulsarConfigTest!!
       val resources = pulsarConfig.pulsarResources
+
       val producer = PulsarInfiniticProducer(
           pulsarConfig.infiniticPulsarClient,
           pulsarConfig.producer,
           resources,
       )
+
       val consumer = PulsarInfiniticConsumer(
           pulsarConfig.infiniticPulsarClient,
           pulsarConfig.consumer,
           resources,
       )
+
+      afterSpec {
+        pulsarConfig.pulsarClient.close()
+        pulsarConfig.pulsarAdmin.close()
+        DockerOnly().pulsarServer?.stop()
+      }
+
       val zero = MillisDuration(0)
 
       fun Instant.fromNow() = Duration.between(this, Instant.now()).toMillis().toDouble()
@@ -97,28 +103,6 @@ class ConsumerTests : StringSpec(
             }
           }
         }
-        return (start.fromNow() / total).also {
-          println("Average time to send a message: $it ms")
-        }
-      }
-
-      // send `total` messages and returns the average time to send a message in millis
-      fun sendMessage(topicName: String, total: Int, withKey: Boolean = false): Double {
-        // creating messages in advance (creation time of messages should not be into the sending time)
-        val message = TestFactory.random<ExecuteTask>()
-        val envelopes = List(total) {
-          ServiceExecutorEnvelope.from(message.copy(messageId = MessageId()))
-        }
-        // sending messages
-        val start = Instant.now()
-        val futures = envelopes.map {
-          producer.sendEnvelopeAsync(
-              it, zero, topicName, "name",
-              key = if (withKey) it.message().messageId.toString() else null,
-          )
-        }
-        // wait for all to be sent
-        CompletableFuture.allOf(*futures.toTypedArray()).join()
         return (start.fromNow() / total).also {
           println("Average time to send a message: $it ms")
         }

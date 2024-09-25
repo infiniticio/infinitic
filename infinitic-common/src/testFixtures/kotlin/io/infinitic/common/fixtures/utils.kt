@@ -37,15 +37,21 @@ fun later(delay: Long = 100L, f: suspend CoroutineScope.() -> Unit) = CoroutineS
       f()
     }
 
-suspend fun runAndCancel(block: suspend CoroutineScope.() -> Unit): CancellationException {
+suspend fun runWithContextAndCancel(block: suspend context(CoroutineScope) () -> Unit) {
+  val scope = CoroutineScope(Dispatchers.IO)
+
+  later { scope.cancel() }
+
+  return block(scope)
+}
+
+suspend fun runAndCancel(block: suspend () -> Unit): CancellationException {
   val scope = CoroutineScope(Dispatchers.IO)
 
   later { scope.cancel() }
 
   return shouldThrow<CancellationException> {
-    withContext(scope.coroutineContext) {
-      block()
-    }
+    withContext(scope.coroutineContext) { block() }
   }
 }
 

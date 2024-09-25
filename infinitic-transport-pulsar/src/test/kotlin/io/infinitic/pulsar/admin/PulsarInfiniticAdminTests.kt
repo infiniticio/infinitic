@@ -37,10 +37,14 @@ import kotlin.time.Duration.Companion.minutes
 @EnabledIf(DockerOnly::class)
 class PulsarInfiniticAdminTests : StringSpec(
     {
-      val pulsarServer = DockerOnly().pulsarServer!!
-      val admin = InfiniticPulsarAdmin(
-          PulsarAdmin.builder().serviceHttpUrl(pulsarServer.httpServiceUrl).build(),
-      )
+      val pulsarServer = DockerOnly().pulsarServer!!.also { it.start() }
+      val pulsarAdmin = PulsarAdmin.builder().serviceHttpUrl(pulsarServer.httpServiceUrl).build()
+      val admin = InfiniticPulsarAdmin(pulsarAdmin)
+
+      afterSpec {
+        pulsarAdmin.close()
+        pulsarServer.stop()
+      }
 
       "can create the same tenant twice simultaneously".config(timeout = 2.minutes) {
         // As topics are created on the fly, it can happen that

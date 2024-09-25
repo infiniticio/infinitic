@@ -23,9 +23,14 @@
 package io.infinitic.pulsar.config
 
 import io.infinitic.common.fixtures.DockerOnly
+import io.infinitic.pulsar.admin.InfiniticPulsarAdmin
+import io.infinitic.pulsar.client.InfiniticPulsarClient
 
-val pulsarConfigTest by lazy {
-  DockerOnly().pulsarServer?.let {
+internal val pulsarConfigTest
+  get() = DockerOnly().pulsarServer?.let {
+    InfiniticPulsarClient.clearCaches()
+    InfiniticPulsarAdmin.clearCaches()
+    it.start()
     PulsarConfig(
         brokerServiceUrl = it.pulsarBrokerUrl,
         webServiceUrl = it.httpServiceUrl,
@@ -33,4 +38,4 @@ val pulsarConfigTest by lazy {
         namespace = "tests",
     )
   }
-}
+

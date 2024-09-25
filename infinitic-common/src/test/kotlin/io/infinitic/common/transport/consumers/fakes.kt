@@ -20,7 +20,7 @@
  *
  * Licensor: infinitic.io
  */
-package io.infinitic.transport.consumers
+package io.infinitic.common.transport.consumers
 
 import io.infinitic.common.data.MillisInstant
 import io.infinitic.common.transport.MessageBatchConfig

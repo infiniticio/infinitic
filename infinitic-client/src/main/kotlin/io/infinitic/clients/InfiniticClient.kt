@@ -104,7 +104,7 @@ class InfiniticClient(
                 "Some ongoing messages may not have been sent properly."
           }
         } finally {
-          deleteClientTopics()
+          deleteClientTopic()
           config.transport.close()
         }
       }
@@ -113,10 +113,10 @@ class InfiniticClient(
   }
 
   /**
-   * Deletes the topics associated with the client
+   * Deletes the topic associated with the client
    * (Do NOT delete the client DLQ topic to allow manual inspection of failed messages)
    */
-  private suspend fun deleteClientTopics() {
+  private suspend fun deleteClientTopic() {
     if (::consumer.isLazyInitialized) {
       val name = getName()
       resources.deleteTopicForClient(name).getOrElse {

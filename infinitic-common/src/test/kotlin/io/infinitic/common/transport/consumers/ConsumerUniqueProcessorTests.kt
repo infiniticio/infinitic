@@ -20,11 +20,10 @@
  *
  * Licensor: infinitic.io
  */
-package io.infinitic.transport.consumers
+package io.infinitic.common.transport.consumers
 
 import io.infinitic.common.data.MillisInstant
 import io.infinitic.common.fixtures.runAndCancel
-import io.infinitic.common.transport.consumers.ConsumerUniqueProcessor
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe

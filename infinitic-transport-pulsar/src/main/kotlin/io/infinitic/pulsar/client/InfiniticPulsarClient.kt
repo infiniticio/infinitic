@@ -85,21 +85,6 @@ class InfiniticPulsarClient(private val pulsarClient: PulsarClient) {
   }
 
   /**
-   * Closes a consumer and removes it from the list of consumers.
-   *
-   * @param consumer The consumer to close.
-   * @return Result of the close operation.
-   *         - Result.success(Unit) if the consumer was closed successfully.
-   *         - Result.failure(e) if an error occurred during the close operation.
-   */
-  fun closeConsumer(consumer: Consumer<*>): Result<Unit> = try {
-    consumer.close()
-    Result.success(Unit)
-  } catch (e: PulsarClientException) {
-    Result.failure(e)
-  }
-
-  /**
    * Get existing producer or create a new one
    *
    * Returns:
@@ -403,5 +388,10 @@ class InfiniticPulsarClient(private val pulsarClient: PulsarClient) {
   companion object {
     // producer per topic
     val producers = ConcurrentHashMap<String, Producer<Envelope<out Message>>>()
+
+    @JvmStatic
+    fun clearCaches() {
+      producers.clear()
+    }
   }
 }
