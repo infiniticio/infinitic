@@ -91,7 +91,7 @@ abstract class AbstractConsumerProcessor<S : TransportMessage, D : Any>(
   /**
    * Acknowledges the deserialized message.
    */
-  private suspend fun acknowledge(message: DeserializedMessage<S, D>) = try {
+  protected suspend fun acknowledge(message: DeserializedMessage<S, D>) = try {
     consumer.acknowledge(message.transportMessage)
   } catch (e: Exception) {
     logger.warn(e) { "Error when acknowledging message ${message.string}" }

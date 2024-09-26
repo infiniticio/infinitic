@@ -196,14 +196,14 @@ internal class ConsumerBatchedProcessorTests : StringSpec(
 
       "Checking batching by time" {
 
-        fun assessTimeBatching(value: DeserializedIntMessage): MessageBatchConfig? {
+        fun assessTimeBatching(value: DeserializedIntMessage): Result<MessageBatchConfig?> {
           val i = value.value.value
           return when {
             i == 0 -> null
             (i % 2) == 0 -> MessageBatchConfig("even", 10.milliseconds, Int.MAX_VALUE)
             (i % 2) == 1 -> MessageBatchConfig("odd", 10.milliseconds, Int.MAX_VALUE)
             else -> throw IllegalStateException()
-          }
+          }.let { Result.success(it) }
         }
 
         fun processBatchWithChecks(batch: List<DeserializedIntMessage>) {

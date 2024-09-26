@@ -108,14 +108,14 @@ internal fun processBatch(batch: List<DeserializedIntMessage>) {
   processedList.addAll(batch.map { it.value.value })
 }
 
-internal fun assessBatching(value: DeserializedIntMessage): MessageBatchConfig? {
+internal fun assessBatching(value: DeserializedIntMessage): Result<MessageBatchConfig?> {
   val i = value.value.value
   return when {
     i == 0 -> null
     (i % 2) == 0 -> MessageBatchConfig("even", 50.hours, 20)
     (i % 2) == 1 -> MessageBatchConfig("odd", 50.hours, 20)
     else -> throw IllegalStateException()
-  }
+  }.let { Result.success(it) }
 }
 
 internal fun beforeNegativeAcknowledgement(

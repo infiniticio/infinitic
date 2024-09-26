@@ -46,6 +46,7 @@ import io.infinitic.common.tasks.events.messages.TaskStartedEvent
 import io.infinitic.common.tasks.executors.messages.ExecuteTask
 import io.infinitic.common.tasks.executors.messages.ServiceExecutorMessage
 import io.infinitic.common.transport.InfiniticProducer
+import io.infinitic.common.transport.MessageBatchConfig
 import io.infinitic.common.transport.ServiceExecutorEventTopic
 import io.infinitic.common.transport.ServiceExecutorRetryTopic
 import io.infinitic.common.utils.checkMode
@@ -89,6 +90,18 @@ class TaskExecutor(
     when (msg) {
       is ExecuteTask -> executeTask(msg)
     }
+  }
+
+  suspend fun assessBatching(msg: ServiceExecutorMessage): Result<MessageBatchConfig?> =
+      when (msg) {
+        is ExecuteTask -> assessBatching(msg)
+      }
+
+  private suspend fun assessBatching(msg: ExecuteTask): Result<MessageBatchConfig?> = try {
+    Result.success(msg.parseBatching())
+  } catch (e: Exception) {
+    msg.sendTaskFailed(e, msg.taskMeta) { "Error when retrieving the batching config for $msg" }
+    Result.failure(e)
   }
 
   private suspend fun executeTask(msg: ExecuteTask) = coroutineScope {
@@ -247,6 +260,13 @@ class TaskExecutor(
     with(producer) { event.sendTo(ServiceExecutorEventTopic) }
   }
 
+  private fun ExecuteTask.parseBatching(): MessageBatchConfig? {
+    TODO()
+  }
+
+  /**
+   * @return Triple containing the service instance (Any), the method to be invoked (Method), and an array of arguments (Array<*>).
+   */
   private fun ExecuteTask.parse(): Triple<Any, Method, Array<*>> =
       when (isWorkflowTask()) {
         true -> parseWorkflowTask((requester as WorkflowRequester).workflowName, methodParameters)

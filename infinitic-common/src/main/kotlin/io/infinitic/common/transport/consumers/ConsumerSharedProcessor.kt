@@ -49,7 +49,7 @@ class ConsumerSharedProcessor<S : TransportMessage, D : Any>(
   deserialize: suspend (S) -> D,
   process: suspend (D, MillisInstant) -> Unit,
   beforeNegativeAcknowledgement: (suspend (S, D?, Exception) -> Unit)?,
-  private val assessBatching: ((D) -> MessageBatchConfig?)? = null,
+  private val assessBatching: ((D) -> Result<MessageBatchConfig?>)? = null,
   private val processBatch: (suspend (List<D>) -> Unit)? = null
 ) : AbstractConsumerProcessor<S, D>(
     consumer,
@@ -82,10 +82,24 @@ class ConsumerSharedProcessor<S : TransportMessage, D : Any>(
         .receiveAsFlow()
         .deserialize(concurrency)
         .collect { message ->
-          when (val config = assessBatching?.let { it(message.deserialized) }) {
-            null -> processChannel.send(MessageSingle(message))
-            else -> batchingChannels.send(config, message)
-          }
+          val batchConfigResult = assessBatching?.let { it(message.deserialized) }
+          batchConfigResult
+              ?.onFailure {
+                // assessBatching has the responsibility to tell
+                // the parent workflow that this task failed,
+                // but the consumer is done with this message
+                acknowledge(message)
+              }
+              ?.onSuccess { batchConfig ->
+                when (batchConfig) {
+                  // no batch config for this message, we just process it
+                  null -> processChannel.send(MessageSingle(message))
+                  // we found a batch config
+                  else -> batchingChannels.send(batchConfig, message)
+                }
+              }
+          // no assessBatching function, we just process the message
+            ?: processChannel.send(MessageSingle(message))
         }
   }
 
