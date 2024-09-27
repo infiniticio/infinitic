@@ -22,7 +22,7 @@
  */
 package io.infinitic.common.transport
 
-import kotlin.time.Duration
+import io.infinitic.common.data.MillisDuration
 
 /**
  * Data class representing how a specific message should be batched
@@ -31,10 +31,10 @@ import kotlin.time.Duration
  */
 data class MessageBatchConfig(
   val batchKey: String,
-  val batchTime: Duration,
+  val batchTime: MillisDuration,
   val batchSize: Int,
 ) {
   companion object {
-    val NONE = MessageBatchConfig("", Duration.ZERO, 1)
+    val NONE = MessageBatchConfig("", MillisDuration(0), 1)
   }
 }

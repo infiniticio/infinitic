@@ -23,6 +23,7 @@
 package io.infinitic.common.utils
 
 import com.fasterxml.jackson.annotation.JsonView
+import io.infinitic.annotations.Batch
 import io.infinitic.annotations.CheckMode
 import io.infinitic.annotations.Delegated
 import io.infinitic.annotations.Name
@@ -30,6 +31,7 @@ import io.infinitic.annotations.Retry
 import io.infinitic.annotations.Timeout
 import io.infinitic.common.data.MillisDuration
 import io.infinitic.common.exceptions.thisShouldNotHappen
+import io.infinitic.common.transport.MessageBatchConfig
 import io.infinitic.exceptions.tasks.NoMethodFoundWithParameterCountException
 import io.infinitic.exceptions.tasks.NoMethodFoundWithParameterTypesException
 import io.infinitic.exceptions.tasks.TooManyMethodsFoundWithParameterCountException
@@ -40,6 +42,8 @@ import io.infinitic.tasks.millis
 import io.infinitic.workflows.WorkflowCheckMode
 import io.mockk.every
 import io.mockk.mockkClass
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import org.jetbrains.annotations.TestOnly
 import java.lang.reflect.Constructor
 import java.lang.reflect.Method
@@ -182,6 +186,52 @@ val Method.annotatedName: String
       ?: name
   }
 
+/**
+ * Get the batchMethod of a method (if any)
+ */
+internal val batchMethodCache = mutableMapOf<Method, Method?>()
+
+private val batchMethodMutex = Mutex()
+
+suspend fun Method.getBatchMethod(): Method? {
+  if (batchMethodCache.containsKey(this)) {
+    // Return immediately if the cache already contains the current method
+    return batchMethodCache[this]
+  }
+  // Lock access to the cache to avoid race conditions
+  return batchMethodMutex.withLock {
+    // Retrieve the map of batch methods for the declaring class
+    val batchMethodMap = declaringClass.getBatchMethods()
+    // Update the cache with all methods of the declaring class
+    declaringClass.methods.forEach { method ->
+      batchMethodCache[method] = batchMethodMap[method]
+    }
+    // Return the corresponding value for the current method now in the cache
+    batchMethodCache[this]
+  }
+}
+
+suspend fun Method.getBatchConfig(): MessageBatchConfig? {
+  // Retrieve the method annotated as batch, if it exists
+  val batchMethod = getBatchMethod() ?: return null
+
+  // Find the @Batch annotation on this method
+  val batchAnnotation = batchMethod.findAnnotation(Batch::class.java) ?: thisShouldNotHappen()
+
+  // Create and return an instance of MessageBatchConfig from the annotation
+  return MessageBatchConfig(
+      batchTime = MillisDuration((batchAnnotation.maxDelaySeconds * 1000).toLong()),
+      batchSize = batchAnnotation.maxMessage,
+      batchKey = toUniqueString(),
+  )
+}
+
+private fun Method.toUniqueString(): String {
+  val className = declaringClass.name
+  val methodName = name
+  val parameterTypes = parameters.joinToString(separator = ",") { it.type.name }
+  return "$className.$methodName($parameterTypes)"
+}
 
 /**
  * Get the WithRetry instance of a method (if any)

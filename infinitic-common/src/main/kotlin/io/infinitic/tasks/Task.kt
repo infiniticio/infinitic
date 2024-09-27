@@ -28,6 +28,16 @@ import io.infinitic.common.tasks.executors.errors.ExecutionError
 object Task {
   private val context: ThreadLocal<TaskContext> = ThreadLocal.withInitial { null }
 
+  private val _batchContext: ThreadLocal<List<TaskContext>> = ThreadLocal.withInitial { listOf() }
+
+  @JvmStatic
+  val batchContext get() = _batchContext.get()
+
+  @JvmStatic
+  fun setBatchContext(lc: List<TaskContext>) {
+    _batchContext.set(lc)
+  }
+
   @JvmStatic
   fun hasContext() = context.get() != null
 

@@ -80,7 +80,7 @@ class WorkflowTaskImpl : WorkflowTask {
     // run method and get return value (null if end not reached)
     val methodReturnValue = try {
       // method is the workflow method currently processed
-      method.encodeReturnValue(method.invoke(instance, *parameters))
+      method.encodeReturnValue(method.invoke(instance, *parameters.toTypedArray()))
     } catch (e: InvocationTargetException) {
       when (val cause = e.cause ?: e) {
         // we reach an uncompleted step

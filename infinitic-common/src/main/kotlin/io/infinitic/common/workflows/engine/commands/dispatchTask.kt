@@ -57,7 +57,7 @@ suspend fun InfiniticProducer.dispatchTask(
         clientWaiting = false,
         methodName = methodName,
         methodParameterTypes = methodParameterTypes,
-        methodParameters = methodParameters,
+        methodArgs = methodParameters,
         lastError = null,
         emitterName = emitterName,
     )

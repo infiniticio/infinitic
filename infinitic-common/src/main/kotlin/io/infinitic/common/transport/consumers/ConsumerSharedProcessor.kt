@@ -219,7 +219,7 @@ class ConsumerSharedProcessor<S : TransportMessage, D : Any>(
 
     var nowMillis: Long = 0
     val buffer = mutableListOf<M>()
-    val timeoutMillis = config.batchTime.inWholeMilliseconds
+    val timeoutMillis = config.batchTime
     val bufferMutex = Mutex()
     lateinit var timeoutJob: Job
 
@@ -230,7 +230,7 @@ class ConsumerSharedProcessor<S : TransportMessage, D : Any>(
 
     fun CoroutineScope.startTimeoutJob() = launch {
       try {
-        delay(timeoutMillis)
+        delay(timeoutMillis.millis)
         // we reach the timeout, before the batch size
         val batch = bufferMutex.withLock {
           ArrayList(buffer).also { buffer.clear() }
