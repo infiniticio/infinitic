@@ -30,6 +30,8 @@ import java.lang.reflect.Method
 import java.lang.reflect.ParameterizedType
 import java.lang.reflect.Type
 import java.lang.reflect.WildcardType
+import kotlin.reflect.javaType
+import kotlin.reflect.typeOf
 
 /**
  * Retrieves a map associating single method with their batch methods for the class.
@@ -45,7 +47,7 @@ fun Class<*>.getBatchMethods(): Map<Method, Method> =
     methods.filter {
       // get all batched methods
       it.findAnnotation(Batch::class.java) != null
-    }.associateBy { batchMethod ->
+    }.associateByOrThrow { batchMethod ->
       // for this batch method, find all single method with the same annotated name
       methods.filter { singleMethod ->
         (batchMethod.annotatedName == singleMethod.annotatedName) &&
@@ -54,17 +56,37 @@ fun Class<*>.getBatchMethods(): Map<Method, Method> =
       }.also { candidates ->
         // we should not have a batch method without an associated single method
         if (candidates.isEmpty()) throw Exception(
-            "Corresponding single method not found for the @Batch method $name:${batchMethod.name}",
+            "No single method found corresponding to the @Batch method $name:${batchMethod.name}",
         )
         // we should not have a batch method with more than one associated single method
         if (candidates.size > 1) throw Exception(
-            "Multiple Corresponding single methods (${candidates.joinToString { it.name }}) " +
-                "found for the @Batch method $name:${batchMethod.name}",
+            "Multiple single methods (${candidates.joinToString { it.name }}) " +
+                "found Corresponding to @Batch method $name:${batchMethod.name}",
         )
       }.first()
     }
 
-private fun Method.isBatchedOf(method: Method): Boolean {
+private fun Iterable<Method>.associateByOrThrow(keySelector: (Method) -> Method): Map<Method, Method> {
+  val map = mutableMapOf<Method, Method>()
+  for (element in this) {
+    val key = keySelector(element)
+    if (map.containsKey(key)) {
+      val batches = listOf(map[key]!!, element)
+      throw Exception(
+          "Multiple @Batch methods (${batches.joinToString { it.name }}) found " +
+              "for the single method ${key.declaringClass}::${key.name}",
+      )
+    }
+    map[key] = element
+  }
+  return map
+}
+
+private fun Method.isBatchedOf(method: Method): Boolean =
+    hasBatchParametersOf(method) && hasBatchReturnValueOf(method)
+
+// Comparing the parameters
+private fun Method.hasBatchParametersOf(method: Method): Boolean {
   if (parameters.size != 1) throw Exception(
       "A @Batch method must have exactly one parameter that is a collection or an array. " +
           "The @Batch method ${declaringClass.name}::$name has ${parameters.size} parameters",
@@ -80,12 +102,28 @@ private fun Method.isBatchedOf(method: Method): Boolean {
   return elementType.isSameThan(singleTypes)
 }
 
+// Comparing the return value
+private fun Method.hasBatchReturnValueOf(method: Method): Boolean {
+  if (genericReturnType.isVoid()) return method.genericReturnType.isVoid()
+
+  val returnElementType = genericReturnType.getElementType()
+      ?.also { println("batch: returnElementType = ${it.typeName}") }
+    ?: throw Exception(
+        "A @Batch method must have a return type that is a collection or an array. " +
+            "But for the @Batch method ${declaringClass.name}::$name this type is $genericReturnType",
+    )
+  return returnElementType.isSameThan(method.genericReturnType)
+}
+
 private fun Type.isArray() = (this is Class<*> && isArray) || (this is GenericArrayType)
 
+// Is type a Collection? We exclude Set that does not preserve the elements
 private fun Type.isCollection(): Boolean {
   if (this !is ParameterizedType) return false
   return when (val rawType = this.rawType) {
-    is Class<*> -> Collection::class.java.isAssignableFrom(rawType)
+    is Class<*> -> Collection::class.java.isAssignableFrom(rawType) &&
+        !Set::class.java.isAssignableFrom(rawType)
+
     else -> false
   }
 }
@@ -136,10 +174,15 @@ private val primitiveToWrapperMap = mapOf<Type, Class<*>>(
     java.lang.Character.TYPE to java.lang.Character::class.java,
     java.lang.Boolean.TYPE to java.lang.Boolean::class.java,
     java.lang.Void.TYPE to java.lang.Void::class.java,
+    typeOf<Unit>().javaType to java.lang.Void::class.java,
 )
 
+private fun Type.isVoid() = (primitiveToWrapperMap[this] ?: this) == java.lang.Void::class.java
+
 private fun Type.isSameThan(type: Type) =
-    (primitiveToWrapperMap[this] ?: this) == (primitiveToWrapperMap[type] ?: type)
+    ((primitiveToWrapperMap[this] ?: this) == (primitiveToWrapperMap[type] ?: type)).also {
+      println("$this == $type -> $it")
+    }
 
 private fun Type.isSameThan(types: List<Type>): Boolean {
   return when {

@@ -23,19 +23,101 @@
 package io.infinitic.common.utils
 
 import io.infinitic.annotations.Batch
+import io.kotest.assertions.throwables.shouldNotThrowAny
+import io.kotest.assertions.throwables.shouldThrowAny
 import io.kotest.core.spec.style.StringSpec
+import io.kotest.matchers.shouldBe
+import io.kotest.matchers.string.shouldContain
 
 class BatchUtilTests : StringSpec(
     {
-      "getMethodPerNameAndParameters should return method" {
+      "Find single for batch method with 1 parameter and List" {
+        val klass = FooBatch1::class.java
+        val map = shouldNotThrowAny { klass.getBatchMethods() }
+        map.size shouldBe 1
+        map.keys.first() shouldBe klass.getMethod("bar", Int::class.java)
+        map.values.first() shouldBe klass.getMethod("bar", List::class.java)
+      }
 
+      "Find single for batch method with 1 parameter and vararg" {
+        val klass = FooBatch1bis::class.java
+        val map = shouldNotThrowAny { klass.getBatchMethods() }
+        map.size shouldBe 1
+        map.keys.first() shouldBe klass.getMethod("bar", Int::class.java)
+        map.values.first() shouldBe klass.methods[1]
+      }
+
+      "Find single for batch method with 2 parameters and List" {
+        val klass = FooBatch2::class.java
+        val map = shouldNotThrowAny { klass.getBatchMethods() }
+        map.size shouldBe 1
+        map.keys.first() shouldBe klass.getMethod("bar", Int::class.java, Int::class.java)
+        map.values.first() shouldBe klass.getMethod("bar", List::class.java)
+      }
+
+      "Find single for batch method with 2 parameters and vararg" {
+        val klass = FooBatch2bis::class.java
+        val map = shouldNotThrowAny { klass.getBatchMethods() }
+        map.size shouldBe 1
+        map.keys.first() shouldBe klass.getMethod("bar", Int::class.java, Int::class.java)
+        map.values.first() shouldBe klass.methods[1]
+      }
+
+      "Find single for batch method with 1 collection parameters" {
+        val klass = FooBatch3::class.java
+        val map = shouldNotThrowAny { klass.getBatchMethods() }
+        map.size shouldBe 1
+        map.keys.first() shouldBe klass.getMethod("bar", Set::class.java)
+        map.values.first() shouldBe klass.getMethod("bar", List::class.java)
+      }
+
+      "Find single for batch method with no return, batch with List<unit>" {
+        val klass = FooBatch4::class.java
+        val map = shouldNotThrowAny { klass.getBatchMethods() }
+        map.size shouldBe 1
+        map.keys.first() shouldBe klass.getMethod("bar", Int::class.java, Int::class.java)
+        map.values.first() shouldBe klass.getMethod("bar", List::class.java)
+      }
+
+      "Find single for batch method with no return" {
+        val klass = FooBatch5::class.java
+        val map = shouldNotThrowAny { klass.getBatchMethods() }
+        map.size shouldBe 1
+        map.keys.first() shouldBe klass.getMethod("bar", Int::class.java, Int::class.java)
+        map.values.first() shouldBe klass.getMethod("bar", List::class.java)
+      }
+
+      "batch method with more than 1 parameter should throw" {
+        val klass = FooBatchError1::class.java
+        val e = shouldThrowAny { klass.getBatchMethods() }
+        e.message.shouldContain("exactly one parameter")
+      }
+
+      "batch method without corresponding single method should throw" {
+        val klass = FooBatchError2::class.java
+        val e = shouldThrowAny { klass.getBatchMethods() }
+        e.message.shouldContain("No single method found")
+      }
+
+      "multiple batch methods for the same single method should throw" {
+        val klass = FooBatchError3::class.java
+        val e = shouldThrowAny { klass.getBatchMethods() }
+        e.message.shouldContain("Multiple @Batch methods")
+      }
+
+      "batch method with the wrong return type should throw" {
+        val klass = FooBatchError4::class.java
+        val e = shouldThrowAny { klass.getBatchMethods() }
+        e.message.shouldContain("No single method found")
+      }
+
+      "batch method with a return type other than List should throw" {
+        val klass = FooBatchError5::class.java
+        val e = shouldThrowAny { klass.getBatchMethods() }
+        e.message.shouldContain("return type")
       }
     },
 )
-
-fun main() {
-  println(FooBatch4::class.java.getBatchMethods())
-}
 
 // 1 parameter - Batched method with Collection parameter
 private class FooBatch1 {
@@ -77,12 +159,26 @@ private class FooBatch3 {
   fun bar(p: List<Set<Int>>): List<String> = p.map { it.toString() }
 }
 
-// 1 parameter - Batched method with Collection parameter
+// 1 parameter - No return - return List<Unit>
 private class FooBatch4 {
-  fun bar(p: ArrayList<Int>): String = p.toString()
+  fun bar(p: Int, q: Int) {
+    // do nothing
+  }
 
   @Batch
-  fun bar(p: List<ArrayList<Int>>): List<String> = p.map { it.toString() }
+  fun bar(p: List<PairInt>): List<Unit> = p.map { it.toString() }
+}
+
+// 1 parameter - No return
+private class FooBatch5 {
+  fun bar(p: Int, q: Int) {
+    // do nothing
+  }
+
+  @Batch
+  fun bar(p: List<PairInt>) {
+    // do nothing
+  }
 }
 
 // annotation @Batch without corresponding single method with the right parameters
@@ -110,6 +206,22 @@ private class FooBatchError3 {
 
   @Batch
   fun bar(vararg p: PairInt): List<String> = p.map { it.toString() }
+}
+
+// Not the right return type
+private class FooBatchError4 {
+  fun bar(p: Int, q: Int): String = p.toString() + q.toString()
+
+  @Batch
+  fun bar(p: List<PairInt>): List<Int> = p.map { it.p + it.q }
+}
+
+// Not a List in return type
+private class FooBatchError5 {
+  fun bar(p: Int, q: Int): String = p.toString() + q.toString()
+
+  @Batch
+  fun bar(p: List<PairInt>): String = "?"
 }
 
 private class PairInt(val p: Int, val q: Int)
