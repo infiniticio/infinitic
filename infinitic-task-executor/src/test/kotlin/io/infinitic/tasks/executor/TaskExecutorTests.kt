@@ -468,8 +468,9 @@ class TaskExecutorTests :
         "Should throw TimeoutException with timeout from class Annotation" {
           every { registry.getServiceExecutorInstance(testServiceName) } returns ServiceWithTimeoutOnClass()
           every { registry.getServiceExecutorWithTimeout(testServiceName) } returns WithTimeout.UNSET
-          every { registry.getServiceExecutorWithRetry(testServiceName) } returns
-              WithExponentialBackoffRetry(maximumRetries = 0)
+          every { registry.getServiceExecutorWithRetry(testServiceName) } returns WithExponentialBackoffRetry(
+              maximumRetries = 0,
+          )
           val input = arrayOf(2, "3")
           val types = listOf(Int::class.java.name, String::class.java.name)
           // with

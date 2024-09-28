@@ -87,12 +87,17 @@ class TaskExecutor(
   @Suppress("UNUSED_PARAMETER")
   suspend fun handle(msg: ServiceExecutorMessage, publishTime: MillisInstant) {
     when (msg) {
-      is ExecuteTask -> msg.executeTask()
+      is ExecuteTask -> msg.process()
     }
   }
 
-  suspend fun batchHandle(messages: List<ExecuteTask>) = coroutineScope {
-
+  suspend fun handleBatch(messages: List<ServiceExecutorMessage>) = coroutineScope {
+    val executeTasks = messages.map {
+      when (it) {
+        is ExecuteTask -> it
+      }
+    }
+    executeTasks.process()
   }
 
   suspend fun assessBatching(msg: ServiceExecutorMessage): Result<MessageBatchConfig?> =
@@ -127,32 +132,25 @@ class TaskExecutor(
     val contextList: List<TaskContext>
   )
 
-  private suspend fun List<ServiceExecutorMessage>.executeBatch() = coroutineScope {
+  private suspend fun List<ExecuteTask>.process() = coroutineScope {
+    // Signal that the tasks have started
+    sendTaskStarted()
 
-    val executorTasks = map {
-      when (it) {
-        is ExecuteTask -> async {
-          it.also { it.sendTaskStarted() }
-        }
-      }
-    }.toList().awaitAll()
+    // Parse the batch. If parsing fails, return without proceeding
+    val batchData = parseBatch().getOrElse { return@coroutineScope }
 
-    with(executorTasks) {
-      // Parse the batch. If parsing fails, return without proceeding
-      val batchData = parseBatch().getOrElse { return@coroutineScope }
+    // Get the batch timeout. If this operation fails, return without proceeding
+    val timeout = getBatchTimeout(batchData).getOrElse { return@coroutineScope }
 
-      // Get the task timeout. If this operation fails, return without proceeding
-      val timeout = getBatchTimeout(batchData).getOrElse { return@coroutineScope }
+    // Execute the batch with the specified timeout. If this operation fails, return without proceeding
+    val output = executeWithTimeout(batchData, timeout).getOrElse { return@coroutineScope }
 
-      // Execute the batch with the specified timeout. If this operation fails, return without proceeding
-      val output = executeWithTimeout(batchData, timeout).getOrElse { return@coroutineScope }
+    // All tasks have completed successfully
+    sendTaskCompleted(output, batchData)
 
-      // Signal all tasks have completed successfully
-      sendTaskCompleted(output, batchData)
-    }
   }
 
-  private suspend fun ExecuteTask.executeTask() = coroutineScope {
+  private suspend fun ExecuteTask.process() = coroutineScope {
     // Signal that the task has started
     sendTaskStarted()
 
@@ -169,6 +167,14 @@ class TaskExecutor(
     sendTaskCompleted(output, taskData)
   }
 
+  private suspend fun List<ExecuteTask>.sendTaskStarted() = coroutineScope {
+    map { executeTask ->
+      launch {
+        executeTask.sendTaskStarted()
+      }
+    }
+  }
+
   private suspend fun ExecuteTask.sendTaskStarted() {
     val event = TaskStartedEvent.from(this, getEmitterName())
     with(producer) { event.sendTo(ServiceExecutorEventTopic) }
@@ -178,7 +184,7 @@ class TaskExecutor(
     return try {
       parseBatchData().let { Result.success(it) }
     } catch (e: Exception) {
-      sendTaskFailed(e) { "Unable to parse batch of messages" }
+      sendTaskFailed(e, map { it.taskMeta }) { "Unable to parse batch of messages" }
       Result.failure(e)
     }
   }
@@ -212,8 +218,11 @@ class TaskExecutor(
   }
 
   private suspend fun List<ExecuteTask>.getBatchTimeout(batchData: BatchData): Result<Long> =
-      getTimeout(batchData.withTimeout) {
-        sendTaskFailed(it) { "Error in ${WithTimeout::getTimeoutSeconds.name} method" }
+      getTimeout(batchData.withTimeout) { e ->
+        sendTaskFailed(
+            e,
+            map { it.taskMeta },
+        ) { "Error in ${WithTimeout::getTimeoutSeconds.name} method" }
       }
 
   private suspend fun ExecuteTask.getTaskTimeout(taskData: TaskData): Result<Long> =
@@ -225,24 +234,27 @@ class TaskExecutor(
     batchData: BatchData,
     timeout: Long
   ): Result<List<Any?>> {
-    TODO()
-//    return try {
-//      withTimeout(timeout) {
-//        Task.setBatchContext(batchData.contextList)
-//        Result.success(
-//            batchData.method.invoke(batchData.instance, *batchData.argsList.toTypedArray()),
-//        )
-//      }
-//    } catch (e: TimeoutCancellationException) {
-//      handleTimeoutException(taskData, timeout)
-//      Result.failure(e)
-//    } catch (e: InvocationTargetException) {
-//      handleInvocationTargetException(taskData, e)
-//      Result.failure(e)
-//    } catch (e: Exception) {
-//      sendTaskFailed(e, taskData.context.meta)
-//      Result.failure(e)
-//    }
+    return try {
+      withTimeout(timeout) {
+        coroutineScope {
+          Task.setBatchContext(batchData.contextList)
+          Result.success(
+              batchData.method.invoke(batchData.instance, batchData.argsList) as List<Any?>,
+          )
+        }
+      }
+    } catch (e: TimeoutCancellationException) {
+      handleTimeoutException(batchData, timeout)
+      Result.failure(e)
+    } catch (e: InvocationTargetException) {
+      handleInvocationTargetException(batchData, e)
+      Result.failure(e)
+    } catch (e: Exception) {
+      sendTaskFailed(e, Task.batchContext.map { it.meta }) {
+        "An error occurred while processing batch messages"
+      }
+      Result.failure(e)
+    }
   }
 
   private suspend fun ExecuteTask.executeWithTimeout(
@@ -251,8 +263,10 @@ class TaskExecutor(
   ): Result<Any?> {
     return try {
       withTimeout(timeout) {
-        Task.setContext(taskData.context)
-        Result.success(taskData.method.invoke(taskData.instance, *taskData.args.toTypedArray()))
+        coroutineScope {
+          Task.setContext(taskData.context)
+          Result.success(taskData.method.invoke(taskData.instance, *taskData.args.toTypedArray()))
+        }
       }
     } catch (e: TimeoutCancellationException) {
       handleTimeoutException(taskData, timeout)
@@ -266,12 +280,34 @@ class TaskExecutor(
     }
   }
 
+  private suspend fun List<ExecuteTask>.handleTimeoutException(
+    batchData: BatchData,
+    timeout: Long
+  ) {
+    retryOrSendTaskFailed(
+        batchData.withRetry,
+        batchData.contextList,
+        TimeoutException("Batch execution timed-out after $timeout ms"),
+    )
+  }
+
   private suspend fun ExecuteTask.handleTimeoutException(taskData: TaskData, timeout: Long) {
     retryOrSendTaskFailed(
         taskData.withRetry,
         taskData.context,
         TimeoutException("Task execution timed-out after $timeout ms"),
     )
+  }
+
+  private suspend fun List<ExecuteTask>.handleInvocationTargetException(
+    batchData: BatchData,
+    e: InvocationTargetException
+  ) {
+    val cause = e.cause ?: e.targetException
+    when (cause) {
+      is Exception -> retryOrSendTaskFailed(batchData.withRetry, batchData.contextList, cause)
+      is Throwable -> throw cause
+    }
   }
 
   private suspend fun ExecuteTask.handleInvocationTargetException(
@@ -286,30 +322,73 @@ class TaskExecutor(
     }
   }
 
+  private suspend fun List<ExecuteTask>.retryOrSendTaskFailed(
+    withRetry: WithRetry?,
+    batchContext: List<TaskContext>,
+    cause: Exception
+  ) {
+    val metas = batchContext.map { it.meta }
+    val delaysMillis = getDelayMillis(withRetry, batchContext, cause)
+
+    delaysMillis.forEachIndexed { index, result ->
+      val executeTask = this[index]
+      val meta = metas[index]
+
+      result.onFailure { e ->
+        executeTask.sendTaskFailed(cause, meta) {
+          "Unable to retry. An exception (${e::class.java.name}) occurred in " +
+              "${withRetry!!::getSecondsBeforeRetry.name} method:\n${e.stackTraceToString()}"
+        }
+      }
+
+      result.onSuccess { delayMillis ->
+        when (delayMillis) {
+          null -> executeTask.sendTaskFailed(cause, meta) { "Unable to process batch messages" }
+          else -> executeTask.sendRetryTask(cause, MillisDuration(delayMillis), meta)
+        }
+      }
+    }
+  }
+
   private suspend fun ExecuteTask.retryOrSendTaskFailed(
     withRetry: WithRetry?,
     taskContext: TaskContext,
     cause: Exception
   ) {
-    val delayMillis = getDelayMillis(withRetry, taskContext, cause).getOrElse {
-      // We chose here not to obfuscate the initial cause of the failure
+    val delayResult = getDelayMillis(withRetry, taskContext, cause)
+
+    delayResult.onFailure { e ->
       sendTaskFailed(cause, taskContext.meta) {
-        "Unable to retry. A ${it::class.java.name} has threw in $withRetry method:\n" + it.stackTraceToString()
+        "Unable to retry. A ${e::class.java.name} has threw in $withRetry method:\n" + e.stackTraceToString()
       }
-      return
     }
 
-    when (delayMillis) {
-      null -> sendTaskFailed(cause, taskContext.meta)
-      else -> sendRetryTask(cause, MillisDuration(delayMillis), taskContext.meta)
+    delayResult.onSuccess { delayMillis ->
+      when (delayMillis) {
+        null -> sendTaskFailed(cause, taskContext.meta)
+        else -> sendRetryTask(cause, MillisDuration(delayMillis), taskContext.meta)
+      }
     }
   }
+
+  private suspend fun List<ExecuteTask>.getDelayMillis(
+    withRetry: WithRetry?,
+    taskContexts: List<TaskContext>,
+    cause: Exception
+  ): List<Result<Long?>> =
+      coroutineScope {
+        mapIndexed { index, executeTask ->
+          async {
+            executeTask.getDelayMillis(withRetry, taskContexts[index], cause)
+          }
+        }.toList().awaitAll()
+      }
 
   private fun ExecuteTask.getDelayMillis(
     withRetry: WithRetry?,
     taskContext: TaskContext,
     cause: Exception
-  ) = try {
+  ): Result<Long?> = try {
     logDebug { "Retrieving delay before retry" }
     // We set the localThread context here as it may be used in withRetry
     Task.setContext(taskContext)
@@ -323,11 +402,12 @@ class TaskExecutor(
 
   private suspend fun List<ExecuteTask>.sendTaskFailed(
     cause: Throwable,
-    description: (() -> String)
+    meta: List<Map<String, ByteArray>>,
+    description: (() -> String)?
   ) = coroutineScope {
-    map { executeTask ->
+    mapIndexed { index, executeTask ->
       launch {
-        executeTask.sendTaskFailed(cause, executeTask.taskMeta) { description() }
+        executeTask.sendTaskFailed(cause, meta[index], description)
       }
     }
   }
@@ -357,6 +437,22 @@ class TaskExecutor(
     with(producer) { event.sendTo(ServiceExecutorEventTopic) }
   }
 
+  private suspend fun List<ExecuteTask>.sendTaskCompleted(
+    output: List<Any?>,
+    batchData: BatchData
+  ) = coroutineScope {
+    mapIndexed { i, executeTask ->
+      launch {
+        executeTask.sendTaskCompleted(
+            output[i],
+            batchData.isDelegated,
+            batchData.method,
+            batchData.contextList[i].meta,
+        )
+      }
+    }
+  }
+
   private suspend fun ExecuteTask.sendTaskCompleted(
     output: Any?,
     isDelegated: Boolean,
@@ -375,22 +471,6 @@ class TaskExecutor(
         meta,
     )
     with(producer) { taskCompletedEvent.sendTo(ServiceExecutorEventTopic) }
-  }
-
-  private suspend fun List<ExecuteTask>.sendTaskCompleted(
-    output: List<Any?>,
-    batchData: BatchData
-  ) = coroutineScope {
-    mapIndexed { i, executeTask ->
-      launch {
-        executeTask.sendTaskCompleted(
-            output[i],
-            batchData.isDelegated,
-            batchData.method,
-            batchData.contextList[i].meta,
-        )
-      }
-    }
   }
 
   private suspend fun ExecuteTask.sendTaskCompleted(output: Any?, taskData: TaskData) =
@@ -436,15 +516,13 @@ class TaskExecutor(
     // Parse the task data
     val taskData = executeTask.parseBatch()
 
-    // Deserialize the method arguments for each task asynchronously
+    // Deserialize the method arguments for each task, asynchronously as it can be expensive
     val argsList = coroutineScope {
       map { async { taskData.method.deserializeArgs(it.methodArgs) } }.toList().awaitAll()
     }
 
     // Retrieve the context for each task asynchronously
-    val contextList = coroutineScope {
-      map { async { it.getContext(taskData.withRetry, taskData.withTimeout) } }.toList().awaitAll()
-    }
+    val contextList = map { it.getContext(taskData.withRetry, taskData.withTimeout) }
 
     // Return BatchTaskData containing the task information and contexts
     return BatchData(
