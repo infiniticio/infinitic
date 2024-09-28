@@ -22,6 +22,7 @@
  */
 package io.infinitic.common.transport.consumers
 
+import io.infinitic.common.data.MillisDuration
 import io.infinitic.common.data.MillisInstant
 import io.infinitic.common.transport.MessageBatchConfig
 import io.infinitic.common.transport.TransportConsumer
@@ -35,7 +36,6 @@ import java.util.*
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.atomic.AtomicInteger
 import kotlin.random.Random
-import kotlin.time.Duration.Companion.hours
 
 internal data class IntMessage(val value: Int) : TransportMessage {
   override val messageId: String = value.toString()
@@ -112,8 +112,8 @@ internal fun assessBatching(value: DeserializedIntMessage): Result<MessageBatchC
   val i = value.value.value
   return when {
     i == 0 -> null
-    (i % 2) == 0 -> MessageBatchConfig("even", 50.hours, 20)
-    (i % 2) == 1 -> MessageBatchConfig("odd", 50.hours, 20)
+    (i % 2) == 0 -> MessageBatchConfig("even", MillisDuration(1000 * 3600 * 50), 20)
+    (i % 2) == 1 -> MessageBatchConfig("odd", MillisDuration(1000 * 3600 * 50), 20)
     else -> throw IllegalStateException()
   }.let { Result.success(it) }
 }

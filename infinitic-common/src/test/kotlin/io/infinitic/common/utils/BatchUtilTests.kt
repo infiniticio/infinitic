@@ -60,7 +60,7 @@ class BatchUtilTests : StringSpec(
         val map = shouldNotThrowAny { klass.getBatchMethods() }
         map.size shouldBe 1
         map.keys.first() shouldBe klass.getMethod("bar", Int::class.java, Int::class.java)
-        map.values.first() shouldBe klass.methods[1]
+        map.values.first() shouldBe klass.methods.first { it.name == "bar" && it.parameters.first().isVarArgs }
       }
 
       "Find single for batch method with 1 collection parameters" {
@@ -84,6 +84,14 @@ class BatchUtilTests : StringSpec(
         val map = shouldNotThrowAny { klass.getBatchMethods() }
         map.size shouldBe 1
         map.keys.first() shouldBe klass.getMethod("bar", Int::class.java, Int::class.java)
+        map.values.first() shouldBe klass.getMethod("bar", List::class.java)
+      }
+
+      "Find single for batch method with generic parameters" {
+        val klass = FooBatch6::class.java
+        val map = shouldNotThrowAny { klass.getBatchMethods() }
+        map.size shouldBe 1
+        map.keys.first() shouldBe klass.getMethod("bar", MyPair::class.java)
         map.values.first() shouldBe klass.getMethod("bar", List::class.java)
       }
 
@@ -181,6 +189,18 @@ private class FooBatch5 {
   }
 }
 
+// 1 parameter - Parameter with Generic
+private class FooBatch6 {
+  fun bar(pair: MyPair<Int>) {
+    // do nothing
+  }
+
+  @Batch
+  fun bar(pairs: List<MyPair<Int>>) {
+    // do nothing
+  }
+}
+
 // annotation @Batch without corresponding single method with the right parameters
 private class FooBatchError1 {
   fun bar(p: Int): String = p.toString()
@@ -226,4 +246,5 @@ private class FooBatchError5 {
 
 private class PairInt(val p: Int, val q: Int)
 
+private class MyPair<T>(val p: T, val q: T)
 

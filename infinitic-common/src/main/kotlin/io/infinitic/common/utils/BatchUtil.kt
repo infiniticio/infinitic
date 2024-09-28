@@ -93,7 +93,7 @@ private fun Method.hasBatchParametersOf(method: Method): Boolean {
   )
   val parameter = parameters[0]
   val type: Type = parameter.parameterizedType
-  val elementType = type.getElementType()?.also { println("batch: elementType = ${it.typeName}") }
+  val elementType = type.getComponentType()?.also { println("batch: elementType = ${it.typeName}") }
     ?: throw Exception(
         "A @Batch method must have exactly one parameter that is a collection or an array. " +
             "But for the @Batch method ${declaringClass.name}::$name this type is $type",
@@ -106,7 +106,7 @@ private fun Method.hasBatchParametersOf(method: Method): Boolean {
 private fun Method.hasBatchReturnValueOf(method: Method): Boolean {
   if (genericReturnType.isVoid()) return method.genericReturnType.isVoid()
 
-  val returnElementType = genericReturnType.getElementType()
+  val returnElementType = genericReturnType.getComponentType()
       ?.also { println("batch: returnElementType = ${it.typeName}") }
     ?: throw Exception(
         "A @Batch method must have a return type that is a collection or an array. " +
@@ -118,12 +118,10 @@ private fun Method.hasBatchReturnValueOf(method: Method): Boolean {
 private fun Type.isArray() = (this is Class<*> && isArray) || (this is GenericArrayType)
 
 // Is type a Collection? We exclude Set that does not preserve the elements
-private fun Type.isCollection(): Boolean {
+private fun Type.isList(): Boolean {
   if (this !is ParameterizedType) return false
   return when (val rawType = this.rawType) {
-    is Class<*> -> Collection::class.java.isAssignableFrom(rawType) &&
-        !Set::class.java.isAssignableFrom(rawType)
-
+    is Class<*> -> List::class.java.isAssignableFrom(rawType)
     else -> false
   }
 }
@@ -136,7 +134,7 @@ private fun Type.isObject(): Boolean = if (this is Class<*>) when {
 }
 else false
 
-private fun Type.getElementType(): Type? {
+private fun Type.getComponentType(): Type? {
   return when {
     isArray() -> {
       when (this) {
@@ -146,7 +144,7 @@ private fun Type.getElementType(): Type? {
       }
     }
 
-    isCollection() -> extractBoundType((this as ParameterizedType).actualTypeArguments.first())
+    isList() -> extractBoundType((this as ParameterizedType).actualTypeArguments.first())
 
     else -> null
   }
@@ -195,7 +193,7 @@ private fun Type.isSameThan(types: List<Type>): Boolean {
 }
 
 private fun <S> Class<S>.getConstructorWith(types: List<Type>): Constructor<S>? {
-  val constructors = constructors.filter { constructor ->
+  val constructors = declaredConstructors.filter { constructor ->
     (constructor.parameterTypes.size == types.size) &&
         constructor.parameters.map { it.parameterizedType }.zip(types).all { (type, otherType) ->
           type.isSameThan(otherType)

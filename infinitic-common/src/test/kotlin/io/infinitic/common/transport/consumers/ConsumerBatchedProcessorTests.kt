@@ -22,6 +22,7 @@
  */
 package io.infinitic.common.transport.consumers
 
+import io.infinitic.common.data.MillisDuration
 import io.infinitic.common.data.MillisInstant
 import io.infinitic.common.fixtures.runAndCancel
 import io.infinitic.common.transport.MessageBatchConfig
@@ -29,7 +30,6 @@ import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
 import kotlin.random.Random
-import kotlin.time.Duration.Companion.milliseconds
 
 internal class ConsumerBatchedProcessorTests : StringSpec(
     {
@@ -200,8 +200,8 @@ internal class ConsumerBatchedProcessorTests : StringSpec(
           val i = value.value.value
           return when {
             i == 0 -> null
-            (i % 2) == 0 -> MessageBatchConfig("even", 10.milliseconds, Int.MAX_VALUE)
-            (i % 2) == 1 -> MessageBatchConfig("odd", 10.milliseconds, Int.MAX_VALUE)
+            (i % 2) == 0 -> MessageBatchConfig("even", MillisDuration(10), Int.MAX_VALUE)
+            (i % 2) == 1 -> MessageBatchConfig("odd", MillisDuration(10), Int.MAX_VALUE)
             else -> throw IllegalStateException()
           }.let { Result.success(it) }
         }
